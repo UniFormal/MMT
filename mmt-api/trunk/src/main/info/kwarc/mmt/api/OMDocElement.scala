@@ -14,11 +14,11 @@ import scala.xml.Node
   */
 trait StructuralElement extends Content with NamedElement {
   /** the MMT URI of the element */
-  def path: Path
+  def path: ComponentParent
 
   //def governingPath = path match {case c: ContentPath => Some(c) case _ => None}
   /** the containing knowledge item, a URL if none */
-  def parent: Path
+  def parent: ComponentParent
 
   /** the children of this element */
   def getDeclarations: List[StructuralElement]
@@ -28,10 +28,6 @@ trait StructuralElement extends Content with NamedElement {
 
   /** returns a specific component if present */
   def getComponent(k: ComponentKey) = getComponents find (_.key == k) map (_.value)
-
-  private var elaborated = false
-  def hasBeenElaborated = elaborated
-  def setElaborated {elaborated = true}
 
   /** If a StructuralElement has been generated (as opposed to being physically present in the document),
     * this gives its origin.

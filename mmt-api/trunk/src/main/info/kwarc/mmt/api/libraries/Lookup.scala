@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.utils._
 import scala.collection.mutable.HashSet
 
 /** A read-only abstraction of a library. A Library is a Lookup with write methods */
-abstract class Lookup {
+abstract class Lookup {self =>
    def apply(path : ContentPath) = get(path)
 
    private def defmsg(path : Path) : String = "element exists but has unexpected type at " + path
@@ -141,52 +141,26 @@ abstract class Lookup {
     * apply(t,m) can be used to apply a morphism to a term.
     */
    object ApplyMorphs extends Traverser[Term] {
+     def error(s: String) = throw GetError("no assignment found: " + s)
      def traverse(t: Term)(implicit con: Context, morph: Term) : Term = {
-       def notmeta(theo:MPath,ln:LocalName) : Term = {
-         val aOpt = getAs(classOf[Constant], morph, LocalName(theo) / ln, msg => throw GetError("assignment not found")).df
-         aOpt match {
-           case Some(df) => df
-           case None => getAs(classOf[Constant], theo ? ln).df match {
-             case Some(df) => traverse(df)
-             case None => morph match {
-               case OMID(p) => get(p) match {
-                 case s:Structure => OMS(s.path / LocalName(theo) / ln)
-                 case _ => t
-               }
-               case _ => t
-             }
-           }
-         }
-       }
        t match {
-        case OMM(arg, via) => traverse(arg)(con, OMCOMP(via, morph))
-        case OMS(theo ?? ln) => {
-          val source = morph match {
-            case OMID(p) => Some(get(p))
-            case _ => None
+        case OMM(arg, via) =>
+          traverse(arg)(con, OMCOMP(via, morph))
+        case OMS(theo ?? ln) =>
+          val aOpt = getAs(classOf[Constant], morph, LocalName(theo) / ln, msg => error(msg)).df
+          aOpt match {
+             case Some(df) => df
+             case None => getAs(classOf[Constant], theo ? ln).df match {
+                case Some(df) =>
+                  traverse(df)
+                case None =>
+                  println(theo,ln)
+                  println(morph)
+                  error((theo ? ln).toString)
+             }
           }
-          source match {
-            case Some(l: DeclaredLink) => {
-              val home = get(l.from.toMPath) match {
-                case t: DeclaredTheory => t.meta
-                case _ => None
-              }
-              val visibles = (home match {
-                case Some(x) => visible(OMMOD(x)).toList
-                case None => Nil
-              }).map(tm => tm.toMPath)
-              if (visibles contains theo) {
-                l.metamorph match {
-                  case Some(x) => traverse(t)(con,x)
-                  case None => Traverser(this,t)
-                }
-              } else notmeta(theo, ln)
-            }
-            case _ => notmeta(theo, ln)
-          }
-        }
-       case _ => Traverser(this,t)
-     }
+        case t => Traverser(this,t)
+       }
      }
    }
 }

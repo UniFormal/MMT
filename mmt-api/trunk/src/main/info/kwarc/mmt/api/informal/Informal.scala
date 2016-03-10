@@ -69,7 +69,7 @@ object FlexiformalNode {
 
 object Definition {
   def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term) : Constant = {
-    val const = Constant(home, name, None, None, Some(df), None)
+    val const = Constant(home, name, Nil, None, Some(df), None)
     const.metadata.add(new MetaDatum((new InformalSym("role")).path, OMA((new InformalSym("defines")).term, targets.map(OMS(_)))))
     const
   }
@@ -77,7 +77,7 @@ object Definition {
 
 object Assertion {
   def apply(home : Term, name : LocalName, df : Term) : Constant = {
-    val const = Constant(home, name, None, None, Some(df), None)
+    val const = Constant(home, name, Nil, None, Some(df), None)
     const.metadata.add(new MetaDatum((new InformalSym("role")).path, (new InformalSym("assertion")).term))
     const
   }
@@ -85,7 +85,7 @@ object Assertion {
 
 object Exercise {
   def apply(home : Term, name : LocalName, prob : Term, sol : Option[Term]) : Constant = {
-    val const = Constant(home, name, None, Some(prob), sol, None)
+    val const = Constant(home, name, Nil, Some(prob), sol, None)
     const.metadata.add(new MetaDatum((new InformalSym("role")).path, (new InformalSym("exercise")).term))
     const
   }
@@ -93,7 +93,7 @@ object Exercise {
 
 object Example {
   def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term) : Constant = {
-    val const = Constant(home, name, None, None, Some(df), None)
+    val const = Constant(home, name, Nil, None, Some(df), None)
     const.metadata.add(new MetaDatum((new InformalSym("role")).path, OMA((new InformalSym("example")).term, targets.map(OMS(_)))))
     const
   }
@@ -103,7 +103,7 @@ object Example {
 
 object PlainNarration {
   def apply(home : Term, name : LocalName, df : Term) : Constant = {
-    Constant(home, name, None, None, Some(df), None)
+    Constant(home, name, Nil, None, Some(df), None)
   }
 }
 

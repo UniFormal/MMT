@@ -87,6 +87,17 @@ class NotationContainer extends ComponentContainer {
       presentationDim.delete
       verbalizationDim.delete
    }
+   /** a copy of this NotationContainer with some other notations merged in */ 
+   def merge(that: NotationContainer) = {
+      val ntC = new NotationContainer()
+      val comps = List(ParsingNotationComponent,PresentationNotationComponent,VerbalizationNotationComponent)
+      comps.foreach {c =>
+        (this.apply(c) orElse that.apply(c)).foreach {not =>
+          ntC(c) = not
+        }
+      }
+      ntC
+   }
    def isDefined = parsing.isDefined || presentation.isDefined || verbalization.isDefined
    def getComponents = parsing.toList.map(_ => ParsingNotationComponent(this)) :::
                        presentation.toList.map(_ => PresentationNotationComponent(this))

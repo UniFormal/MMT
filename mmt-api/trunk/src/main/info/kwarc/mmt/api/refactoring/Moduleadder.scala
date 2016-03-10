@@ -35,7 +35,7 @@ object Moduleadder {
     v.add(new FinalConstant(
       OMID(v.path),
       ComplexStep(a._1.path.module) / a._1.name,
-      None,
+      Nil,
       TermContainer(a._1.tp),
       TermContainer(OMID(a._2.path)),
       None,

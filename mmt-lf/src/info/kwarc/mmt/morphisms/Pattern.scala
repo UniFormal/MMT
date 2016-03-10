@@ -14,6 +14,6 @@ import info.kwarc.mmt.lf._
  * it expands using LF-application to name : pattern(arguments)
  */
 class Instffance(home : Term, name : LocalName, val pattern : GlobalName, val arguments: List[Term]) extends
-     FinalConstant(home, name, None, TermContainer(ApplySpine(OMS(pattern), arguments:_*)),
+     FinalConstant(home, name, Nil, TermContainer(ApplySpine(OMS(pattern), arguments:_*)),
                                      TermContainer(None), None, NotationContainer()) {
 }

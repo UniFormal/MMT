@@ -313,6 +313,12 @@ class NotationBasedPresenter extends ObjectPresenter {
    implicit protected def getNotations(p: GlobalName): List[TextNotation] = {
       Presenter.getNotations(controller, p, twoDimensional)
    }
+   protected def getAlias(p: GlobalName): List[LocalName] = {
+     controller.globalLookup.getO(p) match {
+       case Some(d: Declaration) => d.alternativeNames
+       case _ => Nil
+     }
+   }
    /**
     * called on objects for which no notation is available
     * @return 1/0/-1 depending on the type of bracketing applied (yes/optional/no)
@@ -520,7 +526,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                    case Nil => //nothing to do
                    case hd :: tl => hd match {
                      case d: Delimiter =>
-                        val dE = d.expand(p)
+                        val dE = d.expand(p, getAlias(p))
                         doDelimiter(p, dE, Nil)
                      case p : PresentationMarker => doPresentationMarker(p, doMarkers)
                      case _ => ImplementationError("missing case in presenter of OMS")
@@ -615,7 +621,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                               // we know attributee.isDefined due to flattening
                               //TODO
                            case d: Delimiter =>
-                              val dE = d.expand(op)
+                              val dE = d.expand(op, getAlias(op))
                               val unpImps = if (unplacedImplicitsDone) Nil else unplacedImplicits map {
                                  case c @ ImplicitArg(n,_) =>
                                      () => doChild(c, args(n-firstArgNumber), 0); ()

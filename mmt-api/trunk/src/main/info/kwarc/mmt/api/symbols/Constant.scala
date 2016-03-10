@@ -9,12 +9,12 @@ import moc._
  * the abstract interface to MMT constants with a few basic methods 
  */
 abstract class Constant extends Declaration with HasNotation {
-   def alias: Option[LocalName]
+   def alias: List[LocalName]
    def tpC: TermContainer
    def dfC: TermContainer
    def rl : Option[String]
 
-  override def alternativeName = alias
+  override def alternativeNames = alias
 
   def tp = tpC.get
   def df = dfC.get
@@ -23,13 +23,13 @@ abstract class Constant extends Declaration with HasNotation {
   def getDeclarations = Nil
   
   def toNode =
-     <constant name={name.toPath} alias={alias.map(_.toPath).getOrElse(null)} role={rl.getOrElse(null)}>
+     <constant name={name.toPath} alias={if (alias.isEmpty) null else alias.map(_.toPath).mkString(" ")} role={rl.getOrElse(null)}>
        {getMetaDataNode}
        {if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil}
        {if (df.isDefined) <definition>{df.get.toOBJNode}</definition> else Nil}
        {notC.toNode}
      </constant>
-  override def toString = name.toString + alias.map(" @ " + _).getOrElse("") +
+  override def toString = name.toString + alias.map(" @ " + _).mkString(" ") +
      tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("") + notC.toString
 }
 
@@ -43,7 +43,7 @@ abstract class Constant extends Declaration with HasNotation {
  * @param df the optional definiens
  * @param rl the role of the constant
  */
-class FinalConstant(val home : Term, val name : LocalName, val alias: Option[LocalName],
+class FinalConstant(val home : Term, val name : LocalName, val alias: List[LocalName],
                val tpC : TermContainer, val dfC : TermContainer, val rl : Option[String], val notC: NotationContainer) extends Constant {
 }
 
@@ -54,10 +54,10 @@ object Constant {
     * all arguments are as in the primary constructor, except the terms, which are wrapped in the 
     * TermContainer factory
     */
-   def apply(home : Term, name : LocalName, alias: Option[LocalName], tp: Option[Term], df: Option[Term],
+   def apply(home : Term, name : LocalName, alias: List[LocalName], tp: Option[Term], df: Option[Term],
              rl : Option[String], not: NotationContainer = NotationContainer()) =
       new FinalConstant(home, name, alias, TermContainer(tp), TermContainer(df), rl, not)
-   def apply(home : Term, name : LocalName, alias: Option[LocalName],
+   def apply(home : Term, name : LocalName, alias: List[LocalName],
              tpC : TermContainer, dfC : TermContainer, rl : Option[String], notC: NotationContainer) =
       new FinalConstant(home, name, alias, tpC, dfC, rl, notC)
 }

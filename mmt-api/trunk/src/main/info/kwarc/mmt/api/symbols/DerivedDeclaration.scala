@@ -95,7 +95,7 @@ class GenerativePushout extends StructuralFeature("generative") {
         /** precompute domain and build the morphism */
         val domain = body.getDeclarations.map {d =>
           val ddN = dd.name / d.name
-          val assig = Constant(morphism.toTerm, d.name, None, None, Some(OMS(parent.path ? ddN)), None)
+          val assig = Constant(morphism.toTerm, d.name, Nil, None, Some(OMS(parent.path ? ddN)), None)
           morphism.add(assig)
           ddN
         }
@@ -104,7 +104,7 @@ class GenerativePushout extends StructuralFeature("generative") {
           case VarDecl(n,tp,df,nt) =>
              VarDecl(dd.name/n, tp map translate, df map translate, nt).toDeclaration(parent.toTerm)
           case c: Constant =>
-             Constant(parent.toTerm, dd.name/c.name, None, c.tp map translate, c.df map translate, None, c.notC)
+             Constant(parent.toTerm, dd.name/c.name, Nil, c.tp map translate, c.df map translate, None, c.notC)
           case nm: NestedModule => ???
           case d => throw LocalError("unexpected declaration in body of domain: " + d)
         }

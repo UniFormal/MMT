@@ -12,10 +12,6 @@ class RuleCache extends ChangeListener {
      
   private var rules = new utils.HashMapToSet[MPath,Rule]
 
-  override def onUpdate(e: StructuralElement) {
-     onDelete(e)
-     onAdd(e)
-  }
   override def onAdd(e: StructuralElement) {
      e match {
         case r: RuleConstant => r.home match {

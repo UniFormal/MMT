@@ -288,7 +288,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
         case a: DefinedStructure => DefLinkAssignment(home, a.name, a.from, OMCOMP(a.df :: tl))
       }
     case OMIDENT(t) => get(t, name, error) match {
-      case c: Constant => ConstantAssignment(home, name, None, Some(c.toTerm))
+      case c: Constant => ConstantAssignment(home, name, Nil, Some(c.toTerm))
       case l: Structure => DefLinkAssignment(home, name, l.from, l.toTerm)
     }
     case Morph.empty => error("empty morphism has no assignments")
@@ -321,33 +321,19 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
       case t: DeclaredTheory =>
          getInTheory(t, args, name, error)
       case v: DeclaredView =>
-        try {
-          getInLink(v, name, error)
-        } catch {
-          case PartialLink() =>
-            val da = get(v.from, name, sourceError) match {
-              // return default assignment
-              case c: Constant => ConstantAssignment(v.toTerm, name, None, None)
-              case s: Structure => DefLinkAssignment(v.toTerm, name, s.from, Morph.empty)
-              case _ => throw ImplementationError("unimplemented default assignment")
-            }
-            da.setOrigin(DefaultAssignment)
-            da
-        }
+         // if v is partial, the returned declaration may have an empty definiens
+         getInLink(v, name, error)
       case s: DeclaredStructure =>
-          try {
-            getInLink(s, name, error)
-          } catch {
-            case PartialLink() =>
-              // return default assignment
-              val da = get(s.from, name, sourceError) match {
-                case c: Constant => ConstantAssignment(s.toTerm, name, None, Some(OMID(s.path / name)))
-                case d: Structure => DefLinkAssignment(s.toTerm, name, d.from, OMDL(s.home.toMPath, s.name / name))
-                case _ => throw ImplementationError("unimplemented default assignment")
-              }
-              da.setOrigin(DefaultAssignment)
-              da
-          }
+         val assig = getInLink(s, name, error)
+         // structures are total: so we merge in a default definiens: s(n) = s/n
+         def defaultDef = TermContainer(OMS(s.home.toMPath ? translateNameByLink(name, s)))
+         assig match {
+            case ca: Constant if ca.df.isEmpty =>
+               new FinalConstant(ca.home, ca.name, ca.alias, ca.tpC, defaultDef, ca.rl, ca.notC)
+            case sa: DefinedStructure if sa.dfC.get.isEmpty =>
+               new DefinedStructure(sa.toTerm, sa.name, sa.tpC, defaultDef, sa.isImplicit)
+            case a => a
+         }
       case nm: NestedModule =>
         getDeclarationInElement(nm.module, args, name, error)
       case e =>
@@ -418,14 +404,21 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
       }
   }
 
-  /** thrown by getInLink if the link provides no assignment */
-  private case class PartialLink() extends java.lang.Throwable
-
   /** auxiliary method of get to unify lookup in structures and views
-    * throws PartialLink() if no assignment provided
+    * returns an empty Declaration (with only home and name set) if no assignment provided
     */
   private def getInLink(l: DeclaredLink, name: LocalName, error: String => Nothing): Declaration = {
-     l.getMostSpecific(name.simplify) match {
+     def default = {
+        val da = get(l.from, name, sourceError) match {
+          case c: Constant => Constant(l.toTerm, name, Nil, None, None, None) 
+          case d: Structure => new DefinedStructure(l.toTerm, name, d.tpC, TermContainer(None), false)
+          case _ => throw ImplementationError("unimplemented default assignment")
+        }
+        da.setOrigin(DefaultAssignment)
+        da
+     }
+     val nameS = name.simplify
+     l.getMostSpecific(nameS) match {
         case Some((a, LocalName(Nil))) =>
           a // perfect match
         case Some((a, ln)) => a match {
@@ -435,7 +428,28 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
             getDeclarationInTerm(a.df, ln, error) //TODO should be domain(a.df)/ln
         }
         case None =>
-          throw PartialLink()
+          val (theo, tname) = nameS.steps match {
+            case ComplexStep(theo)::tname => (theo,tname)
+            case _ => return default
+          }
+          // check if 'theo' is visible to the meta-theory of l.from; if so, use meta-morphism of l
+          val fromMeta = (l.from match {
+            case OMPMOD(from,_) =>
+              getO(from) match {
+                case Some(d: DeclaredTheory) =>
+                  d.meta
+                case _ => None //TODO
+              }
+            case _ => None //TODO
+          }).getOrElse {
+            return default
+          }
+          val vis = visible(OMMOD(fromMeta)) contains OMMOD(theo)
+          if (vis) {
+             val mtm = l.metamorph getOrElse OMIDENT(OMMOD(theo)) // meta-morphism defaults to identity
+             getDeclarationInTerm(mtm, name, error)
+          } else
+             default
      }
   }
 
@@ -490,61 +504,62 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
     }
   }
 
+  /**
+   * @param name name valid (possibly included) in the domain of l
+   * @param l a link
+   * @return [l] / name, but without name.head if simply refers to l.from 
+   */
+  private def translateNameByLink(name: LocalName, l: Link): LocalName = {
+    // the prefix of the new constant
+    val nameRest = (name.steps,l.from) match {
+      case (ComplexStep(p)::rest, OMMOD(q)) if p == q =>
+        // rest is declared locally in l.from: namePrefix / rest
+        LocalName(rest)
+      case _ =>
+        // in all other cases:  namePrefix / name
+        name
+    }
+    l.namePrefix / nameRest
+  }
+  
   /** auxiliary method of translate to unify translation along structures and views */
   private def translateByLink(decl: Declaration, l: Link, error: String => Nothing): Declaration =
     l match {
       case l: DefinedLink => translate(decl, l.df, error)
       case l: DeclaredLink =>
-        //compute e such that the home theory of decl is the domain of l by inserting an implicit morphism
+        // if necessary, first translate decl along implicit morphism into l.from
         val imp = implicitGraph(decl.home, l.from) getOrElse {
           throw GetError("no implicit morphism from " + decl.home + " to " + l.from)
         }
         val declT = translate(decl, imp, error)
-        // get the assignment for e provided by l (if any)
-        val assigOpt = try {
-          //Some(getInLink(l,declT.name, error))
-          Some(getInLink(l, ComplexStep(declT.parent) / declT.name, error))
-        } catch {
-          case PartialLink() =>
-            None
-          //try {Some(getInLink(l,ComplexStep(declT.parent) / declT.name,error))} catch {
-          //  case PartialLink() => None
-          //}
-        }
-        // the prefix of the new constant
-        val namePrefix = l match {
-          case s: Structure => s.name
-          case v: View => LocalName(ComplexStep(v.path))
-        }
-        // see assigOpt definition
-        val newName = namePrefix / (assigOpt match {
-          case Some(a: Constant) => a.name
-          case _ => declT.name
-        })
+        // get the assignment for declT provided by l (if any)
+        val qualName = ComplexStep(declT.parent) / declT.name
+        val assig = getInLink(l, qualName, error)
+        val newName = translateNameByLink(qualName, l)
         // TODO is it better to use lazy morphism application?
         def mapTerm(t: Term) = ApplyMorphs(t, l.toTerm, Context(l.from.toMPath)) //t * l.toTerm
-      // translate declT along assigOpt
-      val newDecl = declT match {
+        // translate declT along assigOpt
+        val newDecl = declT match {
           case c: Constant =>
-            val (alias, target, not) = assigOpt match {
-              //use alias and target (as definiens) from assignment
-              case Some(a: Constant) => (a.alias, a.df, a.not)
-              //translate old alias and definiens if no assignment given
-              case None => (None, None, None)
-              case _ => throw GetError("link " + l.path + " provides non-ConstantAssignment for constant " + c.path)
+            val a: Constant = assig match {
+              case a: Constant => a
+              case _ => throw GetError("link " + l.path + " provides non-constant for constant " + c.path)
             }
-            val newAlias = alias orElse c.alias.map(namePrefix / _)
-            val newDef = target orElse c.df.map(mapTerm)
-            val newNotC = not.map(notations.NotationContainer(_)) getOrElse c.notC
-            Constant(l.to, newName, newAlias, c.tp.map(mapTerm), newDef, c.rl, newNotC)
-          case r: Structure => assigOpt match {
-            case Some(a: DefinedStructure) =>
-              DefinedStructure(l.to, newName, r.from, a.df, isImplicit = false)
-            case None =>
-              DefinedStructure(l.to, newName, r.from, OMCOMP(r.toTerm, l.toTerm), isImplicit = false) //TODO should be a DeclaredStructure
-            case _ =>
-              throw GetError("link " + l.path + " provides bad assignment for structure " + r.path)
-          }
+            val newAlias = a.alias ::: c.alias.map(l.namePrefix / _)
+            val newTp = a.tp orElse c.tp.map(mapTerm)
+            val newDef = a.df orElse c.df.map(mapTerm)
+            val newNotC = a.notC merge c.notC
+            val newRole = a.rl orElse c.rl 
+            Constant(l.to, newName, newAlias, newTp, newDef, newRole, newNotC)
+          case r: Structure =>
+            val a = assig match {
+               case a: DefinedStructure => a
+               case _ => throw GetError("link " + l.path + " provides bad assignment for structure " + r.path)
+            }
+            val newDef = a.dfC.get.getOrElse {
+               OMCOMP(r.toTerm, l.toTerm) //TODO should result in DeclaredStructure
+            }
+            DefinedStructure(l.to, newName, r.from, newDef, false)
         }
         newDecl
     }

@@ -3,12 +3,13 @@ package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
 
 import scala.tools.nsc._
+import interpreter._
 
 /** a wrapper around the interactive Scala interpreter
  *  
  *  @param controller a controller that is used to initialize the Scala environment
  */
-class MMTILoop(controller: Controller) extends interpreter.ILoop {
+class MMTILoop(controller: Controller) extends ILoop {
    /** this is overridden in order to bind variables after the interpreter has been created */
    override def createInterpreter {
       super.createInterpreter
@@ -23,13 +24,18 @@ class MMTILoop(controller: Controller) extends interpreter.ILoop {
    }
    override def prompt = "scala-mmt> "
    private def init {
+     def printError(r: IR.Result, s: String) {
+       if (r != IR.Success)
+         println("binding of " + s + " failed")
+     }
+     intp.
      intp beQuietDuring {
          intp.interpret("import info.kwarc.mmt.api._")
-         intp.bind("controller", controller)
+         printError(intp.bind("controller", controller), "controller")
          val interpolator = new MMTInterpolator(controller)
-         intp.bind("interpolator", interpolator)
+         printError(intp.bind("interpolator", interpolator), "interpolator")
          val isimp = new InteractiveSimplifier(controller, this)
-         intp.bind("isimp", isimp)
+         val s = intp.bind("isimp", isimp)
          intp.interpret("import interpolator._")
       }
    }
@@ -38,6 +44,7 @@ class MMTILoop(controller: Controller) extends interpreter.ILoop {
       val settings = new Settings
       settings.usejavacp.value = true // make sure all classes of the Java classpath are available
       //settings.sourceReader.value = "SimpleReader"
+      //settings.debug.value = true
       command match {
          case None =>
             settings.Yreplsync.value = true

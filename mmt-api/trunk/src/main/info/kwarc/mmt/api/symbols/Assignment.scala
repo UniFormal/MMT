@@ -14,7 +14,7 @@ import notations._
   * @param target the term assigned to the symbol 
   */
 object ConstantAssignment {
-   def apply(home : Term, name : LocalName, alias: Option[LocalName], target : Option[Term]) =
+   def apply(home : Term, name : LocalName, alias: List[LocalName], target : Option[Term]) =
       Constant(home, name, alias, None, target, None, NotationContainer())
 }
 

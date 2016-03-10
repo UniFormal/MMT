@@ -14,6 +14,7 @@ import utils.xml.addAttrOrChild
  * @param name the name of the view
  */
 abstract class View(doc : DPath, name : LocalName) extends Module(doc, name) with Link {
+   def namePrefix = LocalName(path)
    protected def outerString = path + " : " + from.toString + " -> " + to.toString
    def toNode = {
       val node = <view name={name.last.toPath} base={doc.toPath} implicit={if (isImplicit) "true" else null}>

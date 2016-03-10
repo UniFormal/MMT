@@ -89,8 +89,12 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
         }
         case None => defaultPos 
      }
-     val (bef,aft) = items.splitAt(pos) // order(pos) == aft.head
-     items = bef ::: i :: aft
+     
+     val (bef,aft) = items.splitAt(pos) // items(pos) == aft.head
+     items = bef ::: (aft match {
+       case Nil => i :: aft
+       case hd::tl => hd :: i :: tl
+     })
   }
   
   /** updates or adds a child */

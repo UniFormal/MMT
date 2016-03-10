@@ -149,7 +149,7 @@ class LatexPresenter(oP: ObjectPresenter) extends Presenter(oP) {
      se match {
         case d: Document =>
           d.getDeclarations foreach doElement
-        case oe: UnknownOpaqueElement if oe.format == "latex" =>
+        case oe: UnknownOpaqueElement if isApplicable(oe.format) =>
           rh << oe.raw.text
         case t: DeclaredTheory =>
           controller.simplifier.flatten(t)
@@ -161,16 +161,13 @@ class LatexPresenter(oP: ObjectPresenter) extends Presenter(oP) {
         case c: Constant =>
           rh << SymDef(c.home.toMPath, c.name).toString
         case _ =>
-          rh << "skipping " + se.path
+          rh << "%% MMT: skipping " + se.path
      }
    }
    
    private def standaloneHeader {
-      rh << """\documentclass{stex}"""
-      rh << """\begin{document}"""
    }
    private def standaloneFooter {
-      rh << """\end{document}"""
    }
 }
 

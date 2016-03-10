@@ -46,7 +46,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
    }
    def toConstant(mp: MPath, con : Context) = {
      val sub = con.map(vd => vd.name / (OMS(mp ? name)))
-     symbols.Constant(OMMOD(mp), name, None, tp map(_^? sub), df map(_^? sub), None)
+     symbols.Constant(OMMOD(mp), name, Nil, tp map(_^? sub), df map(_^? sub), None)
    }
    def toNode = <om:OMV name={name.toPath}>{mdNode}{tpN}{dfN}</om:OMV> 
    def toCMLQVars(implicit qvars: Context) = <bvar><ci>{name.toPath}</ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</bvar>
@@ -71,7 +71,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
          case Some(df) =>
             DefinedStructure(home, name, from, df, false)
       }
-      case _ => Constant(home, name, None, tp, df, None, NotationContainer(not))
+      case _ => Constant(home, name, Nil, tp, df, None, NotationContainer(not))
    }
 }
 

@@ -636,7 +636,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     val endsAt = expectNext(i, ".")
 
     // create the constant object
-    val constant = Constant(OMMOD(cpath.module), cpath.name, None, constantType, constantDef, None, constantNotation)
+    val constant = Constant(OMMOD(cpath.module), cpath.name, Nil, constantType, constantDef, None, constantNotation)
     addSourceRef(constant, start, endsAt)
     addSemanticComment(constant, oldComment)
     add(constant)
@@ -1079,7 +1079,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     val endsAt = expectNext(i, ".")
 
     // add the constant assignment to the controller
-    val constantAssignment = ConstantAssignment(parent.toTerm, apath.name, None, Some(term))
+    val constantAssignment = ConstantAssignment(parent.toTerm, apath.name, Nil, Some(term))
     add(constantAssignment)
 
     // add semantic comment and source references

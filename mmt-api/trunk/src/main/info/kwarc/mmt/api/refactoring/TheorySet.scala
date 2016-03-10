@@ -70,7 +70,7 @@ sealed trait TheorySet {
       if (!theselosts.exists(p => p._1.name!=p._2.name || p._1.df.isDefined)) th add PlainInclude(incth.head.path,th.path) else {
         val s = DeclaredStructure(th.toTerm,getName(incth.head.name),incth.head.toTerm,false)
         theselosts foreach (p => if(p._1.name!=p._2.name || p._1.df.isDefined) {
-          val c = Constant(s.toTerm,ComplexStep(p._2.home.toMPath)/p._2.name,if(p._1.name!=p._2.name) Some(p._1.name) else None,
+          val c = Constant(s.toTerm,ComplexStep(p._2.home.toMPath)/p._2.name,if(p._1.name!=p._2.name) List(p._1.name) else Nil,
           p._2.tp,p._1.df,None)
           s add c
           newsubst = newsubst.map(q => if(q._1==p._1.path) (c.path,q._2) else q)+((c.path,p._1.path))

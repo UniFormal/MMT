@@ -12,41 +12,117 @@ import collection.immutable.{HashSet, HashMap}
 case class ByStructureSimplifier(home: Term, view: Term) extends Origin
 
 /**
+ * if set, the element is deactivated
+ */
+object ElaboratedElement extends BooleanClientProperty[StructuralElement](utils.mmt.baseURI / "clientProperties" / "controller" / "elaborated")
+
+
+/**
  * the primary class for all flattening, materialization, enriching of theories
  * 
  * code in [[Closer]] should be merged into here
  */
-class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS) {
+class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS) with ChangeListener {
   private lazy val memory = controller.memory
   private lazy val lup = controller.globalLookup
+  
+  override def logPrefix = "structure-simplifier"
   
   def apply(s: StructuralElement) {s match {
      case t: DeclaredTheory => flatten(t)
      case _ =>
   }}
   
-  /**
-   * flattens all structures in a theory
-   */
-  // TODO 2 boolean flags for includes and constants, extend to views
+  /** flattens all declarations in a theory */
+  // TODO extend to views
   def flatten(t: DeclaredTheory) {
-     if (! t.hasBeenElaborated) t.getNamedStructures.foreach {
-        case s: DeclaredStructure if !s.hasBeenElaborated =>
-           val dom = materialize(Context(t.path), s.from, true, None).asInstanceOf[DeclaredTheory]
-           flatten(dom)
-           val flats = dom.getDeclarations.map {d =>
-              lup.get(t.path ? (s.name / d.name))
-           }
-           flats.reverseMap {
-              case d: Declaration =>
-                 d.setOrigin(FromStructure(s.path))
-                 t.add(d, Some(s.name))
-              case _ => ()// impossible
-           }
-           s.setElaborated
-        case _ =>
+     if (ElaboratedElement.is(t))
+       return
+     try {
+        t.getDeclarations.foreach {d => flattenDeclaration(t, d)}
+     } finally {// if something goes wrong, don't try again
+      ElaboratedElement.set(t)
      }
-     t.setElaborated
+  }
+  
+  /** adds elaboration of d to parent */
+  private def flattenDeclaration(parent: DeclaredTheory, dOrig: Declaration) {
+    if (ElaboratedElement.is(dOrig))
+      return
+    lazy val alreadyIncluded = parent.getIncludes
+    val dElab: List[Declaration] = dOrig match {
+      // plain includes: copy (only) includes
+      case Include(h, from, Nil) =>
+        val dom = lup.getAs(classOf[DeclaredTheory], from)
+        flatten(dom)
+        dom.getDeclarations.flatMap {
+          case Include(_, p, args) =>
+            if (alreadyIncluded.contains(p)) {
+               if (args != Nil) {
+                 //TODO check for equality of arguments, if inequal raise error
+               }
+               Nil
+            }
+            else {
+               List(Include(h, p, args))
+            }
+          case _ =>
+            Nil
+        }
+      // any other import (including includes of complex theories): copy and translate all declarations
+      case s: Structure =>
+         val dom = materialize(Context(parent.path), s.from, true, None).asInstanceOf[DeclaredTheory]
+         flatten(dom)
+         dom.getDeclarations.map {d =>
+            lup.getAs(classOf[Declaration], parent.path ? (s.name / d.name))
+         }
+      // derived declarations: elaborate
+      case dd: DerivedDeclaration =>
+         controller.extman.get(classOf[StructuralFeature], dd.feature) match {
+           case None => Nil
+           case Some(sf) =>
+              val elab = sf.elaborate(parent, dd)
+              elab.getDeclarations
+         }
+      case _ =>
+        Nil
+    }
+    dElab.reverseMap {e =>
+       e.setOrigin(ElaborationOf(dOrig.path))
+       log("flattening yields " + e.path)
+       parent.add(e, Some(dOrig.name))
+    }
+    ElaboratedElement.set(dOrig)
+  }
+  
+  // TODO change management does not propagate to other theories yet
+  
+  /** deletes all declarations that were added by elaborating se */
+  override def onDelete(se: StructuralElement) {
+     if (! ElaboratedElement.is(se))
+       return
+     se match {
+       case d: Declaration =>
+         controller.get(d.home.toMPath) match {
+           case thy: DeclaredTheory =>
+             thy.getDeclarations.foreach {e =>
+               if (e.getOrigin == ElaborationOf(d.path))
+                 thy.delete(e.name)
+             }
+         }
+       case _ =>
+     }
+  }
+  /** reelaborates if old element was */
+  override def onUpdate(old: StructuralElement, nw: StructuralElement) {
+     if (! ElaboratedElement.is(old))
+       return
+     onDelete(old)
+     (controller.getO(nw.parent), nw) match {
+       case (Some(thy: DeclaredTheory), nw: Declaration) =>
+         flattenDeclaration(thy, nw)
+       case _ =>
+     }
   }
   
   private var materializeCounter = 0

@@ -37,7 +37,6 @@ class NotationGenerator extends ChangeListener {
          }
       case _ => false
    }
-   override def onUpdate(e: StructuralElement) {onAdd(e)}
    override def onAdd(e: StructuralElement) {e match {
       case c: Constant =>
          val notC = c.notC

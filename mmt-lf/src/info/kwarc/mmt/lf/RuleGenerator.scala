@@ -36,10 +36,6 @@ abstract class RuleGenerator extends ChangeListener {
      }
   }
      
-  override def onUpdate(e: StructuralElement) {
-     onDelete(e)
-     onAdd(e)
-  }
   override def onAdd(e: StructuralElement) {onCheck(e)}
   override def onDelete(e: StructuralElement) {
      getGeneratedRule(e.path).foreach {r => controller.delete(r.rulePath)}

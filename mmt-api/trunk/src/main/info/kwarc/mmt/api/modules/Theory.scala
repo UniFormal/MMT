@@ -86,6 +86,7 @@ class DeclaredTheory(doc : DPath, name : LocalName, mt : Option[MPath], var para
 class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) extends Theory(doc, name) with DefinedModule {
    val parameters = Context()
    def getComponents = List(DefComponent(dfC))
+   def df = dfC.get.getOrElse(TheoryExp.empty)
    override def toString = path + innerString
    def toNode = 
     <theory name={name.last.toPath} base={doc.toPath}>

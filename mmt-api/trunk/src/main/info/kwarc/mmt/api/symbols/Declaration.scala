@@ -49,7 +49,7 @@ abstract class Declaration extends ContentElement {
     * 
     *  None by default; overridden in particular by Constant
     */
-   def alternativeName: Option[LocalName] = None
+   def alternativeNames: List[LocalName] = Nil
    /** the full MMT URI, parent ? name */
    def path = GlobalName(parent, name)
    /** the OMS referencing this declaration */

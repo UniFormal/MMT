@@ -19,13 +19,13 @@ object Morph {
         case l: Link => Some(l.from)
       }
     } catch {
-      case _: Throwable => throw InvalidObject(m, "not a well-formed morphism")
+      case _: Exception => throw InvalidObject(m, "not a well-formed morphism")
     }
     case OMDL(h, n) => try {
       val structure = lib.getStructure(h ? n)
       Some(structure.from)
     } catch {
-      case _: Throwable => throw InvalidObject(m, "not a well-formed morphism")
+      case _: Exception => throw InvalidObject(m, "not a well-formed morphism")
     }
     case _ => None
   }
@@ -39,7 +39,7 @@ object Morph {
         case l: Link => Some(l.to)
       }
     } catch {
-      case _: Throwable => throw InvalidObject(m, "not a well-formed morphism: " + m)
+      case _: Exception => throw InvalidObject(m, "not a well-formed morphism: " + m)
     }
     case OMDL(t, _) => Some(OMMOD(t))
     case _ => None

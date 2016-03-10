@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.notations
 
 import info.kwarc.mmt.api._
+import utils._
 
 /** Objects of type Marker make up the pattern of a Notation */
 sealed abstract class Marker {
@@ -15,7 +16,7 @@ sealed abstract class Delimiter extends Marker {
     *  
     *  expansion is identity by default
     */
-   def expand(name: ContentPath) : Delimiter = this
+   def expand(name: ContentPath, alias: List[LocalName]) : Delimiter = this
 }
 
 /** helper object */
@@ -37,8 +38,7 @@ case class Delim(s: String) extends Delimiter {
       else if (List('%', 'V').contains(s(0)) || s.endsWith("…"))
          "%D" + s
       else {
-         try {s.toInt; "%D" + s}
-         catch {case e:Throwable => s}
+         if (stringToInt(s).isDefined) "%D" + s else s
       }
    }
    def text = if (s == "%w") " " else s
@@ -50,12 +50,8 @@ case class Delim(s: String) extends Delimiter {
  * These are only useful for presentation, not for parsing.
  */
 abstract class PlaceholderDelimiter extends Delimiter {
-   /** empty to make them useless for parsing */
+   /** empty to make them useless for parsing unless expanded */
    def text = ""
-   /** string to be used when expanding */
-   def expandString(name: ContentPath) : String
-   /** expansions uses expandString */
-   override def expand(name: ContentPath) = Delim(expandString(name))
 }
 
 /**
@@ -65,17 +61,20 @@ abstract class PlaceholderDelimiter extends Delimiter {
  */
 case class InstanceName() extends PlaceholderDelimiter {
    override def toString = "%i"
-   override def expandString(path: ContentPath) = if (path.name.length <= 1) "" else path.name.init.toPath
+   override def expand(path: ContentPath, alias: List[LocalName]) = Delim(if (path.name.length <= 1) "" else path.name.init.toPath)
 }
 
 /**
- * expands to the name of the symbol
+ * expands to the name of the symbol or an alias (whichever is the shortest) 
  * 
  * useful for repetitive notations that differ only in the name
  */
 case class SymbolName() extends PlaceholderDelimiter {
    override def toString = "%n"
-   override def expandString(path: ContentPath) = if (path.name.length < 1) "" else path.name.last.toPath
+   override def expand(path: ContentPath, alias: List[LocalName]) = {
+     val shortest = (path.name :: alias).sortBy(_.length).find(_.nonEmpty)
+     Delim(shortest.map(_.toPath).getOrElse(""))
+   }
 }
 
 sealed abstract class ArgumentMarker extends Marker with ArgumentComponent

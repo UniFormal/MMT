@@ -33,7 +33,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val firstTo
    }
    /** the markers that are still expected */
    private var left : List[Marker] = rules.head.notation.parsingMarkers.map {
-      case d: Delimiter => d.expand(rules.head.name) //only possible if rules.length == 1
+      case d: Delimiter => d.expand(rules.head.name, rules.head.alias) //only possible if rules.length == 1
       case m => m
    }
    /** the number of tokens that are part of the current argument(s),

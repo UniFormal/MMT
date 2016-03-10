@@ -421,7 +421,7 @@ class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
           changes.head match {
             //definition is deleted -> one more undefined constant -> assignment needed for it
             case UpdateComponent(cPath, DefComponent, Some(s), None) => 
-              val ca = ConstantAssignment(OMMOD(mod), lname, None, Some(emptyBox))
+              val ca = ConstantAssignment(OMMOD(mod), lname, Nil, Some(emptyBox))
               List(AddDeclaration(ca))                
            
             //definition is added -> one less undefined constant -> assignment for it no longer needed

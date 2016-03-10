@@ -643,7 +643,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case _ => context
       }
 
-      val contextRule = ParsingRule(utils.mmt.context, TextNotation.fromMarkers(Precedence.integer(0), None)(Var(1, true, Some(Delim(",")))))
+      val contextRule = ParsingRule(utils.mmt.context, Nil, TextNotation.fromMarkers(Precedence.integer(0), None)(Var(1, true, Some(Delim(",")))))
       val parameters = if (delim._1 == ">") {
         val (_, reg, p) = readParsedObject(contextMeta, Some(contextRule))
         val params = ParseResult.fromTerm(p) match {
@@ -753,10 +753,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     //initialize all components as omitted
     val tpC = new TermContainer
     val dfC = new TermContainer
-    var al: Option[LocalName] = None
+    var al: List[LocalName] = Nil
     val nt = new NotationContainer
     var rl: Option[String] = None
-    val cons = Constant(OMMOD(parent), name, None, tpC, dfC, None, nt)
+    val cons = Constant(OMMOD(parent), name, Nil, tpC, dfC, None, nt)
     // every iteration reads one delimiter and one object
     // @ alias or : TYPE or = DEFINIENS or #(#) NOTATION
     val keys = List(":", "=", "#", "##", "@", "role")
@@ -784,11 +784,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           doNotation(PresentationNotationComponent, nt, treg, cpath)
         case "@" =>
           val (str, _) = state.reader.readObject
-          if (al.isDefined)
-            errorCont(makeError(treg, "alias of this constant already given, ignored"))
-          else {
-            al = Some(LocalName.parse(str))
-          }
+          al ::= LocalName.parse(str)
         case "role" =>
           val (str, _) = state.reader.readObject
           rl = Some(str)

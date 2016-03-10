@@ -7,10 +7,10 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 
 /** couples an identifier with its notation */
-case class ParsingRule(name: ContentPath, notation: TextNotation) {
+case class ParsingRule(name: ContentPath, alias: List[LocalName], notation: TextNotation) {
   /** the first delimiter of this notation, which triggers the rule */
   def firstDelimString: Option[String] = notation.parsingMarkers collectFirst {
-    case d: Delimiter => d.expand(name).text
+    case d: Delimiter => d.expand(name, alias).text
     case SimpSeqArg(_, Delim(s), _) => s
     case LabelSeqArg(_,Delim(s),_,_,_) => s
   }
@@ -186,26 +186,17 @@ class NotationBasedParser extends ObjectParser {
 
   /** auxiliary function to collect all lexing and parsing rules in a given context */
   private def getRules(context: Context): (List[ParsingRule], List[LexerExtension]) = {
-    val closer = new libraries.Closer(controller)
     val support = context.getIncludes
     //TODO we can also collect notations attached to variables
-    support foreach {p => closer(p)}
     val includes = support.flatMap {p => controller.library.visible(OMMOD(p))}.distinct
-    val decls1 = includes flatMap {tm =>
+    val decls = includes flatMap {tm =>
       controller.localLookup.getO(tm.toMPath) match {
         case Some(d: modules.DeclaredTheory) =>
+           controller.simplifier.flatten(d)
            d.getDeclarations
         case _ => Nil
       }
     }
-    val decls = decls1.flatMap {
-      case s: DeclaredStructure => closer.getStructureDecls(s)
-      case d => List(d)
-    }.filter {
-      case s: DeclaredStructure => s.isImplicit
-      case _ => true
-    }
-
     val nots = decls.flatMap {
       case nm: NestedModule =>
         val args = nm.module match {
@@ -214,14 +205,14 @@ class NotationBasedParser extends ObjectParser {
         }
         val tn = new TextNotation(Mixfix(Delim(nm.name.toString) :: Range(0, args).toList.map(SimpArg(_))),
           Precedence.infinite, None)
-        List(ParsingRule(nm.module.path, tn))
+        List(ParsingRule(nm.module.path, Nil, tn))
       case c: Declaration with HasNotation =>
-        var names = (c.name :: c.alternativeName.toList).map(_.toString) //the names that can refer to this declaration
+        var names = (c.name :: c.alternativeNames).map(_.toString) //the names that can refer to this declaration
         if (c.name.last == SimpleStep("_")) names ::= c.name.init.toString
         //the unapplied notations consisting just of the name
         val unapp = names map (n => new TextNotation(Mixfix(List(Delim(n))), Precedence.infinite, None))
         val app = c.not.toList
-        (app ::: unapp).map(n => ParsingRule(c.path, n))
+        (app ::: unapp).map(n => ParsingRule(c.path, c.alternativeNames, n))
       case _ => Nil
     }
     val les = decls.flatMap {

@@ -51,7 +51,7 @@ object Functor {
         	       pt.body.map {
      		   case VarDecl(n,tp,df,_) =>
         		   val nname = inst.name / n     			
-        		   val c = Constant(theoExp,nname,None,tp.map(auxSub),df.map(auxSub),None)
+        		   val c = Constant(theoExp,nname,Nil,tp.map(auxSub),df.map(auxSub),None)
         		   controller.add(c)     		   
                   /*	
         			c.setOrigin(InstanceElaboration(inst.path)) //TODO Check InstanceElaboration

@@ -15,8 +15,13 @@ trait ChangeListener extends Extension {
    def onDelete(old: StructuralElement) {}
    /** called after updating the element
     *  @param newElem the element after its update
+    *  @param oldElem the element after its update
+    *  defaults to onDelete + onAdd
     */
-   def onUpdate(newElem: StructuralElement) {}
+   def onUpdate(oldElem: StructuralElement, newElem: StructuralElement) {
+      onDelete(oldElem)
+      onAdd(newElem)
+   }
    /** called after clearing the Constant */
    def onClear {}
    /** called after checking the element */
@@ -57,8 +62,8 @@ class Notify(listeners: List[ChangeListener], report: Report) {
       tryAll(_.onDelete(c))
    }
 
-   def onUpdate(newElem: StructuralElement) {
-      tryAll(_.onUpdate(newElem))
+   def onUpdate(oldElem: StructuralElement, newElem: StructuralElement) {
+      tryAll(_.onUpdate(oldElem, newElem))
    }
 
    def onClear {

@@ -38,7 +38,7 @@ trait ModuleDefiniens extends StructuralElement {
   /** the TermContainer holding the definiens */
    val dfC : TermContainer
    /** the definiens as a Term */
-   def df = dfC.get.get // TODO for now, we assume the definiens is always present
+   def df : Term
    protected def innerString = " = " + df.toString
    protected def innerNodes = getMetaDataNode ++ <definition>{df.toNode}</definition>
    def getDeclarations = Nil

@@ -93,7 +93,7 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             rh("theory " + t.name)
             t.meta.foreach(p => rh(" : "+p.toString))
             rh(" =\n")
-            t.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
+            t.getDeclarations.foreach {d => apply(d, indent+1)}
          case v: DeclaredView => doDeclaredView(v,indent)
          case nm: NestedModule =>
             apply(nm.module, indent+1)
@@ -107,7 +107,7 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
          case s: DefinedStructure =>
             rh("structure " + s.name + " : ")
             apply(s.from, Some(s.path $ TypeComponent))
-            rh(" abbrev")
+            rh(" abbrev ")
             apply(s.df, Some(s.path $ DefComponent))
       }
       endDecl(e)

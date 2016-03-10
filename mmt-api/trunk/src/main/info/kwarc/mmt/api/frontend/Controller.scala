@@ -414,13 +414,13 @@ class Controller extends ROController with ActionHandling with Logger {
                 InactiveElement.erase(old)
                 // notify listeners if a component changed
                 if (hasChanged)
-                   notifyListeners.onUpdate(nw)
+                   notifyListeners.onUpdate(old, nw)
               } else {
                 // delete the deactivated old one, and add the new one
                 log("overwriting deactivated " + old.path)
                 memory.content.update(nw)
                 //if (old.getOrigin != DefaultAssignment) notifyListeners.onDelete(old) // an old hack that should not be necessary anymore
-                notifyListeners.onUpdate(nw)
+                notifyListeners.onUpdate(old, nw)
               }
               memory.content.reorder(nw.path)
             //case Some(_) => // in this case, we could already report an error; but the None case reports it anyway

@@ -20,6 +20,9 @@ trait Link extends ContentElement {
    def toTerm : Term
    val isImplicit : Boolean
    
+   /** the prefix used when translating declarations along this link */
+   def namePrefix: LocalName
+   
    protected def innerNodes : Seq[scala.xml.Node]
    /** header as a string */
    protected def outerString : String
@@ -38,4 +41,6 @@ trait DeclaredLink extends Link with Body {
   /**
    * represents an MMT link given by an existing morphism
    */
-trait DefinedLink extends Link with ModuleDefiniens
+trait DefinedLink extends Link with ModuleDefiniens {
+   def df = dfC.get.getOrElse(Morph.empty)
+}

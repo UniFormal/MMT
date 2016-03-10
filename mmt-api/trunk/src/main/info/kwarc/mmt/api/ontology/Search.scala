@@ -35,7 +35,7 @@ object TermPattern {
    val qvarBinder = utils.mmt.mmtcd ? "qvar"
    val qvarMarkers = List(Delim("$"), Var(1, false, Some(Delim(","))), Delim(":"), SimpArg(2))
    val qvarNot = new TextNotation(Mixfix(qvarMarkers), Precedence.infinite, None)
-   val qvarRule = ParsingRule(qvarBinder, qvarNot)
+   val qvarRule = ParsingRule(qvarBinder, Nil, qvarNot)
    class RemoveUnknowns(unk: Context) extends StatelessTraverser {
       def traverse(t: Term)(implicit con : Context, init : State) = t match {
          case OMA(OMS(_), OMV(x) :: _) if unk.isDeclared(x) && ! con.isDeclared(x) => OMV(x)

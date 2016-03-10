@@ -202,9 +202,8 @@ class XMLReader(controller: Controller) extends Logger {
     	  addDeclaration(p)
       }
       val name = LocalName.parse(xml.attr(node,"name"), nsMap)
-      val alias = xml.attr(node, "alias") match {
-         case "" => None
-         case a => Some(LocalName.parse(a))
+      val alias = stringToList(xml.attr(node, "alias")) map {a =>
+         LocalName.parse(a)
       }
       val symbol = if (symbolWS.label == "opaque") symbolWS else xml.trimOneLevel(symbolWS)
       symbol match {

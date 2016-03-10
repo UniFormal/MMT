@@ -48,9 +48,6 @@ class SimplificationRuleGenerator extends ChangeListener {
      }
   }
      
-  override def onUpdate(e: StructuralElement) {
-     onAdd(e)
-  }
   override def onAdd(e: StructuralElement) {onCheck(e)}
   override def onDelete(e: StructuralElement) {
      getGeneratedRule(e.path).foreach {r => controller.delete(rulePath(r))}

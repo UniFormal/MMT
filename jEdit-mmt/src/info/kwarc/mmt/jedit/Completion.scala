@@ -36,7 +36,7 @@ class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constan
            (s, s.length + 1)
         case Some(not) =>
            val text = not.parsingMarkers.map {
-              case d: Delimiter => d.expand(con.path).text
+              case d: Delimiter => d.expand(con.path, con.alias).text
               case w: WordMarker => " " + w.word + " "
               case sa: SeqArg => " " + sa.sep.text + " "
               case a:Arg => " "
