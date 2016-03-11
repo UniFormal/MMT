@@ -53,6 +53,12 @@ case class OAFConf(local: File, remote: Option[URI]) extends BackendConf {
    val id = remote.toString
 }
 
+/**
+  * registers a folder on which to find archives
+  */
+case class MathPathConf(local: File) extends BackendConf {
+  val id = local.toString
+}
 
 /** defines an archive format
  *  @param id the format name
@@ -196,6 +202,8 @@ object MMTConfig {
            case "oaf" :: local :: args if args.length <= 1 =>
               val remote = args.headOption.map(URI(_))
               config.addEntry(OAFConf(relFile(local), remote))
+           case "mathpath" :: local :: Nil =>
+              config.addEntry(MathPathConf(File(local)))
            case _ => fail
         }
         case "base" => config.setBase(line)

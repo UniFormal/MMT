@@ -160,6 +160,9 @@ class Controller extends ROController with ActionHandling with Logger {
        conf.getEntries(classOf[NamespaceConf]).foreach {case NamespaceConf(id,uri) =>
           state.nsMap = state.nsMap.add(id, uri)
        }
+       conf.getEntries(classOf[MathPathConf]).foreach {c =>
+         addArchive(c.local)
+       }
        if (loadEverything) {
          loadAllArchives(conf)
          loadAllNeededTargets(conf)
