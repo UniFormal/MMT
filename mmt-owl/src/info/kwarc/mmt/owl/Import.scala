@@ -139,7 +139,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
         }
       } else
         n
-    val constant = Constant(OMMOD(currThy), name, None, Some(tp), None, None)
+    val constant = Constant(OMMOD(currThy), name, Nil, Some(tp), None, None)
     //theory name: ex, class name:woman, type, none for definition
     constant.metadata = md
     controller.add(constant)

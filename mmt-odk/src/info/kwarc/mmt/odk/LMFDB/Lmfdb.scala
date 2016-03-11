@@ -117,7 +117,7 @@ object LMFDBStore extends Storage {
      }
      val omls = toOML(json, db, fields)
      val df = Intro(schema.toTerm,omls)
-     val c = Constant(OMMOD(db.dbTheory), path.name, None, Some(tp), Some(df), None)
+     val c = Constant(OMMOD(db.dbTheory), path.name, Nil, Some(tp), Some(df), None)
      controller.add(c)
   }
 

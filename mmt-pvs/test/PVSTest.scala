@@ -20,9 +20,9 @@ object PVSTest {
     // controller.handleLine("log+ debug")
     // controller.handleLine("log+ pvs-omdoc")
     controller.handleLine("mathpath archive ../../MathHub")
-    controller.handleLine("build PVS/Prelude mmt-omdoc")
+    //controller.handleLine("build PVS/Prelude mmt-omdoc")
     //controller.handleLine("build PVS/Prelude pvs-omdoc")
-    //controller.handleLine("build PVS/NASA pvs-omdoc")
+    controller.handleLine("build PVS/NASA pvs-omdoc")
 
     /*
     val p1 = DPath(URI.http colon "pvs.csl.sri.com") ? "PVS"

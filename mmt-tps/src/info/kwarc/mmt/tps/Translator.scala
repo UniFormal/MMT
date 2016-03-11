@@ -77,7 +77,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             val tp = c._2
             val OptDef = defs.collectFirst{case (n,d) if n==c._1 => d}
             val OptNot = nots.collectFirst{case (n,d) if n==c._1 => d}
-            val c2 = Constant(th.toTerm,name,None,Some(tp),OptDef,None,OptNot.getOrElse(NotationContainer()))
+            val c2 = Constant(th.toTerm,name,Nil,Some(tp),OptDef,None,OptNot.getOrElse(NotationContainer()))
             vars = Nil
             println(c2)
             th add c2

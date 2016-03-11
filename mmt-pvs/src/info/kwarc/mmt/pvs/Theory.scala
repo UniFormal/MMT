@@ -253,6 +253,18 @@ object PVSTheory {
          ApplySpine(this.term,OML(LocalName(field),None,None)::expr::args:_*)
    }
 
+   object funupdate extends sym("funupdate") {
+      def apply(arg:Term,value:Term) = ApplySpine(this.term,arg,value)
+   }
+
+   object tupleupdate extends sym("tupleupdate") {
+      def apply(index:Int,value:Term) = ApplySpine(this.term,OMLIT(BigInt(index),NatLiterals),value)
+   }
+
+   object typeext extends sym("type_extension") {
+      def apply(tp : Term, by : Term) = ApplySpine(this.term,tp,by)
+   }
+
    /*
    object subtpJudg extends sym("subtpJudg") {
       def apply(subtp : Term, suptp : Term) = ApplySpine(this.term,subtp,suptp)
