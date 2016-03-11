@@ -193,9 +193,9 @@ object TranslationController {
 	}
 	
 	def makeConstant(n: LocalName, t: Term) : Constant =
-    Constant(OMMOD(currentTheory), n, None, Some(t), None, None)
+    Constant(OMMOD(currentTheory), n, Nil, Some(t), None, None)
   def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term]) : Constant =
-    Constant(OMMOD(currentTheory), n, None, tO, dO, None)
+    Constant(OMMOD(currentTheory), n, Nil, tO, dO, None)
     
   def addNotation(inst : Term, kind : String, absnr : Int) = {
     val lname = LocalName(kind + absnr.toString)
@@ -222,7 +222,7 @@ object TranslationController {
             sname :: (args ::: List(rsname)) //TODO, what if not 0 - argnr pair ?
         }
         val not = new TextNotation(Mixfix(markers), Precedence.integer(0), None)
-        val alias = ParsingController.resolveDef(currentAid, kind, absnr).map(LocalName(_))
+        val alias = ParsingController.resolveDef(currentAid, kind, absnr).map(LocalName(_)).toList
         val notAss = symbols.Constant(inst, MMTUtils.mainPatternName, alias, None, None, None, NotationContainer(not))
         TranslationController.controller.add(notAss)
       case x =>
@@ -255,7 +255,7 @@ object TranslationController {
 	          first :: (rest ::: List(last))
 	      }
           val not = new TextNotation(Mixfix(markers), Precedence.integer(0), None)
-          val alias = ParsingController.resolveDef(currentAid, kind, absnr).map(LocalName(_))
+          val alias = ParsingController.resolveDef(currentAid, kind, absnr).map(LocalName(_)).toList
           val notC = NotationContainer.apply(not)
           Constant(OMMOD(currentTheory), lname, alias ,Some(tp), Some(df), None, notC)
 	    case _ => 

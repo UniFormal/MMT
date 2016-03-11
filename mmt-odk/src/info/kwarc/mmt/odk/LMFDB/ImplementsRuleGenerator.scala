@@ -32,7 +32,7 @@ class ImplementsRuleGenerator extends ChangeListener {
      case _ => None
   }
      
-  override def onUpdate(e: StructuralElement) {
+  def onUpdate(e: StructuralElement) {
      onAdd(e)
   }
   override def onAdd(e: StructuralElement) {onCheck(e)}
