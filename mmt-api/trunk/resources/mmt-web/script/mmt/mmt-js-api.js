@@ -380,7 +380,7 @@ var qmt = {
    parse       : qmtAux.extensionFunction('parse'),
    infer       : qmtAux.extensionFunction('infer'),
    simplify    : qmtAux.extensionFunction('simplify'),
-   // align       : qmtAux.extensionFunction('align'),
+   align       : qmtAux.extensionFunction('align'),
    analyze     : qmtAux.extensionFunction('analyze'),
    present     : qmtAux.extensionFunction('present', function(){return "html";}),
    presentDecl : qmtAux.extensionFunction('presentDecl', function(){return "html";}),

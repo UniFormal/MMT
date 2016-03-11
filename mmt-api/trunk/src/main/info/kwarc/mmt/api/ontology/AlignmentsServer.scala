@@ -95,9 +95,9 @@ class AlignmentsServer extends ServerExtension("align") {
   private def getAlignmentsTo(from: GlobalName, in : DPath) = alignments.filter(a => a.from == from &&
     a.to.doc.toString.startsWith(in.toString))
 
-  def translate(t : Term, to : DPath) = (new Translator(to))(t)
+  def translate(t : Term, to : DPath) = Translator(to)(t)
 
-  private class Translator(target : DPath) extends StatelessTraverser {
+  private case class Translator(target : DPath) extends StatelessTraverser {
 
     def apply(t:Term) : Term = apply(t,Context.empty)
 
@@ -122,7 +122,7 @@ class AlignmentsServer extends ServerExtension("align") {
                  val alignmentMap = alignmentObject.toList.toMap
                  val from = Path.parseS(alignmentMap(JSONString("from")).toString, nsMap)
                  val to = Path.parseS(alignmentMap(JSONString("to")).toString, nsMap)
-                // alignments += Alignment(jsonstring.toString, from, to)
+                 alignments += SimpleAlignment(from, to)
             }
        case _ =>
       }
