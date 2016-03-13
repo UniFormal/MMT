@@ -10,9 +10,15 @@ import QueryTypeConversion._
 import java.net.URLDecoder
 import info.kwarc.mmt.api.utils._
 
+import scala.util.Try
+
 abstract class Alignment {
   val from : GlobalName
   val to : GlobalName
+
+}
+
+abstract class FormalAlignment extends Alignment {
 
   def applicable(t:Term) : Boolean = t match {
     case OMS(f) if f==from => true
@@ -31,13 +37,13 @@ abstract class Alignment {
   protected def translate(t: Term,cont : StatelessTraverser) : Term
 }
 
-case class SimpleAlignment(from : GlobalName, to : GlobalName) extends Alignment {
+case class SimpleAlignment(from : GlobalName, to : GlobalName) extends FormalAlignment {
 
   def altapplicable(t : Term) = false
   def translate(t : Term, cont : StatelessTraverser) = t // cannot ever occur
 }
 
-case class ArgumentAlignment(from : GlobalName, to : GlobalName, arguments: List[(Int,Int)]) extends Alignment {
+case class ArgumentAlignment(from : GlobalName, to : GlobalName, arguments: List[(Int,Int)]) extends FormalAlignment {
   def altapplicable(t : Term) = t match {
     case OMA(OMS(f),args) if f == from => true
     case _ => false
@@ -53,7 +59,7 @@ case class ArgumentAlignment(from : GlobalName, to : GlobalName, arguments: List
   }
 }
 
-case class PartialAlignment(from : GlobalName, to : GlobalName) extends Alignment {
+case class PartialAlignment(from : GlobalName, to : GlobalName) extends FormalAlignment {
   def altapplicable(t : Term) = false
   override def applicable(t:Term) = false
   def translate(t : Term, cont : StatelessTraverser) = t // cannot ever occur
@@ -71,10 +77,8 @@ class AlignmentsServer extends ServerExtension("align") {
   private val alignments = mutable.HashSet[Alignment]()
   
   override def start(args:List[String]) {
-    if (args.nonEmpty) {
-      val file = File(args.head)
-      readAlignments(file)
-    }
+    val file = File(args.head)
+    readAlignments(file)
     controller.extman.addExtension(new AlignQuery)
   }
   override def destroy {
@@ -94,10 +98,37 @@ class AlignmentsServer extends ServerExtension("align") {
   
   def getAlignments(from: GlobalName) = alignments.filter(_.from == from)
 
+
+  def getFormalAlignments(from: GlobalName) = alignments.collect{
+    case a:FormalAlignment if a.from == from => a
+  }
+
   def getAlignmentsTo(from: GlobalName, in : DPath) = alignments.filter(a => a.from == from &&
     a.to.doc.toString.startsWith(in.toString))
 
-  def translate(t : Term, to : DPath) = Translator(to)(t)
+  def getFormalAlignmentsTo(from: GlobalName, in : DPath) = alignments.collect{
+    case a:FormalAlignment if a.from == from && a.to.doc.toString.startsWith(in.toString) => a
+  }
+
+  def translate(t : Term, to : DPath) = try {Some(Translator(to)(t))} catch {
+    case CanNotTranslate => None
+    case e : Exception => throw e
+  }
+
+  def CanTranslateTo(t : Term) : List[(DPath,Term)] = {
+    val head = t.head.getOrElse(return Nil) match {
+      case n:GlobalName => n
+      case _ => return Nil
+    }
+    var ret : List[(DPath,Term)] = Nil
+    getFormalAlignments(head).map(_.to.doc).foreach(a =>{
+      val res = translate(t,a)
+      if (res.isDefined) ret ::= (a,res.get)
+    })
+    ret
+  }
+
+  private object CanNotTranslate extends Exception
 
   private case class Translator(target : DPath) extends StatelessTraverser {
 
@@ -107,8 +138,8 @@ class AlignmentsServer extends ServerExtension("align") {
 
     def traverse(t: Term)(implicit con: Context, init: Unit): Term = t match {
         // TODO this completely ignores all but the first alignment that matches
-      case s@OMS(p) => getAlignmentsTo(p,target).find(_.applicable(s)).map(_.apply(s)).getOrElse(???)
-      case s@OMA(f@OMS(fun),args) => getAlignmentsTo(fun,target).find(_.applicable(s)).map(_.apply(s)).getOrElse(Traverser(this,t))
+      case s@OMS(p) => getFormalAlignmentsTo(p,target).find(_.applicable(s)).map(_.apply(s)).getOrElse(throw CanNotTranslate)
+      case s@OMA(f@OMS(fun),args) => getFormalAlignmentsTo(fun,target).find(_.applicable(s)).map(_.apply(s)).getOrElse(Traverser(this,t))
       case _ => Traverser(this,t)
     }
   }
@@ -155,7 +186,7 @@ class AlignmentsServer extends ServerExtension("align") {
         case _ => throw ImplementationError("evaluation of ill-typed query")
       }
       controller.extman.get(classOf[AlignmentsServer])
-      translate(o, dpath)
+      translate(o, dpath).toList
     }
   }
 
