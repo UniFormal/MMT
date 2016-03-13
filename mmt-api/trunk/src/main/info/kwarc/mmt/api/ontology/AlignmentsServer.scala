@@ -71,8 +71,10 @@ class AlignmentsServer extends ServerExtension("align") {
   private val alignments = mutable.HashSet[Alignment]()
   
   override def start(args:List[String]) {
-    val file = File(args.head)
-    readAlignments(file)
+    if (args.nonEmpty) {
+      val file = File(args.head)
+      readAlignments(file)
+    }
     controller.extman.addExtension(new AlignQuery)
   }
   override def destroy {
@@ -143,6 +145,7 @@ class AlignmentsServer extends ServerExtension("align") {
         case o: Obj => ??? // TODO
         case _ => throw ImplementationError("evaluation of ill-typed query")
       }
+      controller.extman.get(classOf[AlignmentsServer])
       translate(o, dpath)
     }
   }
