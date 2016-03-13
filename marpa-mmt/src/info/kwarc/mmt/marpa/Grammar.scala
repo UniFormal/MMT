@@ -148,7 +148,7 @@ object Grammar {
 	//this function performs the recursion on Markers, while CreateRule just checks for uniqueness
 	def addRule(marker:Marker):String = marker match { 
 
-	case Arg(argNr,precedence) => {
+	case SimpArg(argNr,precedence) => {
 		val content =  precedence match {
 		case Some(x) => 
 		"renderB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::"renderE"::Nil
@@ -191,7 +191,7 @@ object Grammar {
 	}	
 
 
-	case SeqArg(argNr,delim,precedence) => {
+	case SimpSeqArg(argNr,delim,precedence) => {
 		val Delim(text) = delim
 				val delimName = addRule(Delim("#seq_"+text))
 				val argName :String = createArgRule(currentTopRuleNr, argNr.toString +"ArgSeq")
