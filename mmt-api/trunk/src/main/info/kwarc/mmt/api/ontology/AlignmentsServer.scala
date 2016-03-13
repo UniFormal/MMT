@@ -7,8 +7,8 @@ import web._
 
 import scala.collection.mutable
 import QueryTypeConversion._
-
-
+import java.net.URLDecoder
+import info.kwarc.mmt.api.utils._
 
 abstract class Alignment {
   val from : GlobalName
@@ -92,9 +92,9 @@ class AlignmentsServer extends ServerExtension("align") {
       Server.TextResponse(toS.mkString("\n"))
   }
   
-  private def getAlignments(from: GlobalName) = alignments.filter(_.from == from)
+  def getAlignments(from: GlobalName) = alignments.filter(_.from == from)
 
-  private def getAlignmentsTo(from: GlobalName, in : DPath) = alignments.filter(a => a.from == from &&
+  def getAlignmentsTo(from: GlobalName, in : DPath) = alignments.filter(a => a.from == from &&
     a.to.doc.toString.startsWith(in.toString))
 
   def translate(t : Term, to : DPath) = Translator(to)(t)
@@ -120,10 +120,18 @@ class AlignmentsServer extends ServerExtension("align") {
       case obj: JSONObject => obj.map foreach {
          case (jsonstring, alignmentList:JSONArray) =>
             alignmentList.values foreach {
-               case alignmentObject: JSONObject =>
-                 val alignmentMap = alignmentObject.toList.toMap
-                 val from = Path.parseS(alignmentMap(JSONString("from")).toString, nsMap)
-                 val to = Path.parseS(alignmentMap(JSONString("to")).toString, nsMap)
+               case alignmentObject: JSONObject =>            
+                 val Some(fromJSON) = alignmentObject("from");
+                 val Some(toJSON) =   alignmentObject("to");
+     
+                 val JSONString(fromString_) = fromJSON
+                 val JSONString(toString_) = toJSON
+                 val fromString = fromString_.replaceAll("//","/")
+                 val toString = toString_.replaceAll("//","/")
+                 println("FROM:" + fromString)
+                 println("TO:" + toString)
+                 val from = Path.parseS(fromString, nsMap)
+                 val to = Path.parseS(toString, nsMap)
                  alignments += SimpleAlignment(from, to)
             }
        case _ =>
@@ -132,6 +140,7 @@ class AlignmentsServer extends ServerExtension("align") {
     
     alignments foreach println
   }
+  
   /** translation along alignments */
   private class AlignQuery extends QueryExtension("align", ObjType, ObjType) {
     def evaluate(argument: BaseType, params: List[String]) = {

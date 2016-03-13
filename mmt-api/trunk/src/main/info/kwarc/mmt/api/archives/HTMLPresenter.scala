@@ -11,6 +11,9 @@ import opaque._
 import utils._
 
 import HTMLAttributes._
+import info.kwarc.mmt.api.ontology.AlignmentsServer
+import info.kwarc.mmt.api.ontology.Alignment
+import info.kwarc.mmt.api.web.ServerError
 
 abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
    override val outExt = "html"
@@ -100,6 +103,16 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
 
    def doDeclaration(d: Declaration) {
       val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
+      val alignmentsServer: AlignmentsServer = controller.extman.get(classOf[AlignmentsServer]) match {
+        case List(as) => as
+        case _ => throw ServerError("AlignmentsServer not available")
+      }
+//      println(d.path.toString)
+      val alignments = alignmentsServer.getAlignments(d.path)
+//      alignments foreach {
+//        case alignment => println("ALIGNMENT:" + alignment.toString)
+//      }
+
       div("constant toggle-root inlineBoxSibling") {
          div("constant-header") {
            span {doName(d.path)}
@@ -118,6 +131,9 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
            d.getComponents.reverseMap {case DeclarationComponent(comp, tc) =>
               if (tc.isDefined)
                 toggleComp(comp)
+           }
+           if (!alignments.isEmpty) {
+              toggle("alignments", "alignments")
            }
          }
          table("constant-body ") {
@@ -141,12 +157,12 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                   td {usedby foreach doPath}
                }
             }
-            if (! d.metadata.getTags.isEmpty)
+            if (! d.metadata.getTags.isEmpty) 
                tr("tags") {
                td {span(compLabel){text{" ---tags"}}}
                td {d.metadata.getTags.foreach {
                   k => div("tag") {text(k.toPath)}
-               }}
+               }}}
             }
             def doKey(k: GlobalName) {
                td{span("key " + compLabel, title=k.toPath) {text(k.toString)}}
@@ -159,6 +175,14 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                case md: metadata.MetaDatum => tr("metadatum metadata") {
                   doKey(md.key)
                   td {doMath(md.value, None)}
+               }
+            }
+            if (!alignments.isEmpty) {
+               tr("alignments") {
+                 td {span(compLabel){text{"aligned with"}}}
+                 td {alignments.foreach {a =>
+                    div("align") {text(a.to.toPath)}
+                 }
                }
             }
          }
