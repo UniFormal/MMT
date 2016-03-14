@@ -176,19 +176,17 @@ class AlignmentsServer extends ServerExtension("align") {
       case obj: JSONObject => obj.map foreach {
          case (JSONString("View"), alignmentList:JSONArray) =>
             alignmentList.values foreach {
-               case alignmentObject: JSONObject =>            
-                 val Some(fromJSON) = alignmentObject("from");
-                 val Some(toJSON) =   alignmentObject("to");
-     
-                 val JSONString(fromString_) = fromJSON
-                 val JSONString(toString_) = toJSON
-                 val fromString = fromString_.replaceAll("//","/")
-                 val toString = toString_.replaceAll("//","/")
-                 println("FROM:" + fromString)
-                 println("TO:" + toString)
-                 val from = Path.parseS(fromString, nsMap)
-                 val to = Path.parseS(toString, nsMap)
-                 alignments += SimpleAlignment(from, to)
+               case o: JSONObject =>
+                 alignments += SimpleAlignment(
+                   Path.parseS(o("from") match {
+                     case Some(JSONString(s)) => s
+                     case _ => ???
+                   },nsMap),
+                   Path.parseS(o("to") match {
+                     case Some(JSONString(s)) => s
+                     case _ => ???
+                   },nsMap)
+                 )
             }
          case (JSONString("Informal"),o:JSONObject) =>
           alignments += InformalAlignment(
@@ -226,8 +224,6 @@ class AlignmentsServer extends ServerExtension("align") {
       }
       case _ =>
     }
-    
-    alignments foreach println
   }
   
   /** translation along alignments */

@@ -125,25 +125,25 @@ object JSON {
 	     val (eaten, found) = if (first != '\\') {
 		    (first.toString,first.toString)
 	     } else {
-		    if (escaped.length <= 1)
-			   throw JSONError("unclosed escaped")
-			val second = escaped(1)
-            second match {
-               case '"' => (second.toString, second.toString)
-               case '\\' => (second.toString, second.toString)
-               case 'b' => ("b", "\b")
-               case 'f' => ("f", "\f")
-               case 'n' => ("n", "\n")
-               case 'r' => ("r", "\r")
-               case 't' => ("t", "\t")
-               case '/' => ("/","/")
-               case 'u' =>
-                 val hex = unescaped.substring(1,4)
-                 val char = Integer.parseInt(hex, 16).toChar
-                 (unescaped.substring(0,5), char)
-               case _ => throw JSONError("Illegal starting character " + escaped(1) + " for JSON")
-			}
-         }
+          if (escaped.length <= 1)
+             throw JSONError("unclosed escaped")
+          val second = escaped(1)
+          second match {
+             case '"' => (second.toString, second.toString)
+             case '\\' => (second.toString, second.toString)
+             case 'b' => ("b", "\b")
+             case 'f' => ("f", "\f")
+             case 'n' => ("n", "\n")
+             case 'r' => ("r", "\r")
+             case 't' => ("t", "\t")
+             case '/' => ("\\/", "/")
+             case 'u' =>
+                val hex = unescaped.substring(1, 4)
+                val char = Integer.parseInt(hex, 16).toChar
+                (unescaped.substring(0, 5), char)
+             case _ => throw JSONError("Illegal starting character " + escaped(1) + " for JSON")
+          }
+       }
 		 unescaped += found
          escaped = escaped.substring(eaten.length)
       }
