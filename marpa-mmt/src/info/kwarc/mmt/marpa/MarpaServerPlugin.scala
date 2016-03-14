@@ -152,11 +152,11 @@ def getContentMathML : HLet  = new HLet {
 				val reqBody = new Body(tk)
 				val paramsJSON : scala.util.parsing.json.JSONObject = bodyAsJSON(reqBody)
 				
-
 				val params = paramsJSON.obj
   			val status = params("status").toString
   			val key = params("key").toString
-  			val input = params("input").toString
+  			val input = java.net.URLDecoder.decode(params("input").toString, "UTF-8")
+  			
   		  val payloadUnparsed = params("payload") match {
 				  case scala.util.parsing.json.JSONObject(x) => x
 				}
@@ -259,8 +259,8 @@ def getContentMathML : HLet  = new HLet {
 				println("HTML Escaped cml  = " + cml)
 				cml = URLDecoder.decode(cml, "UTF-8")
 				println("URL Escaped cml = " + cml)
-				data += ("cml" -> cml)
-				data += ("input" -> input)
+				data += ("cml" -> java.net.URLEncoder.encode(cml, "UTF-8"))
+				data += ("input" -> java.net.URLEncoder.encode(input, "UTF-8"))
 				//      Ok(Json.toJson(response.toMap))
 				val dataJSONString : Map[String, JSONString] = data.map(pair => (pair._1 ->  JSONString(pair._2.toString)))
 				val resp = info.kwarc.mmt.api.utils.JSONObject(dataJSONString.toSeq : _*)
