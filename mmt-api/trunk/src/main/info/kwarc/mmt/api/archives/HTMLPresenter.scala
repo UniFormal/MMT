@@ -177,11 +177,11 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                   td {doMath(md.value, None)}
                }
             }
-            if (!alignments.isEmpty) {
+            if (alignments.nonEmpty) {
                tr("alignments") {
                  td {span(compLabel){text{"aligned with"}}}
                  td {alignments.foreach {a =>
-                    div("align") {text(a.to.toPath)}
+                    div("align") {text(a.link)}
                  }
                }
             }

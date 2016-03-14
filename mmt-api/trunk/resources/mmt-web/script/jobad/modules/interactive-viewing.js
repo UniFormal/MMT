@@ -103,7 +103,7 @@ var interactiveViewing = {
             if (alignTargets.length != 0) {
                var aligns = {};
                alignTargets.forEach(function(at) {
-                  aligns[at] = me.showComputationResult("a", "aligned", at)
+                  aligns[at] = me.showComputationResult("a", "align", at)
                })
                res["align to"] = aligns
             }

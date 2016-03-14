@@ -2,23 +2,21 @@ package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-import utils._
 import web._
 
 import scala.collection.mutable
 import QueryTypeConversion._
-import java.net.URLDecoder
 import info.kwarc.mmt.api.utils._
 
-import scala.util.Try
 
 abstract class Alignment {
   val from : GlobalName
-  val to : GlobalName
-
+  val link : String
 }
 
 abstract class FormalAlignment extends Alignment {
+  val to : GlobalName
+  val link = to.toString
 
   def applicable(t:Term) : Boolean = t match {
     case OMS(f) if f==from => true
@@ -64,6 +62,8 @@ case class PartialAlignment(from : GlobalName, to : GlobalName) extends FormalAl
   override def applicable(t:Term) = false
   def translate(t : Term, cont : StatelessTraverser) = t // cannot ever occur
 }
+
+case class InformalAlignment(from : GlobalName, link : String) extends Alignment
 /*
 case class Alignment(kind: String, from: GlobalName, to: GlobalName, args: Option[List[(Int,Int)]]) {
   override def toString = s"$kind $from $to"
@@ -80,9 +80,14 @@ class AlignmentsServer extends ServerExtension("align") {
     val file = File(args.head)
     readAlignments(file)
     controller.extman.addExtension(new AlignQuery)
+    controller.extman.addExtension(new CanTranslateQuery)
   }
   override def destroy {
     controller.extman.get(classOf[AlignQuery]) foreach {a =>
+      a.destroy
+      controller.extman.removeExtension(a)
+    }
+    controller.extman.get(classOf[CanTranslateQuery]) foreach {a =>
       a.destroy
       controller.extman.removeExtension(a)
     }
@@ -104,7 +109,7 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
   def getAlignmentsTo(from: GlobalName, in : DPath) = alignments.filter(a => a.from == from &&
-    a.to.doc.toString.startsWith(in.toString))
+    a.link.toString.startsWith(in.toString))
 
   def getFormalAlignmentsTo(from: GlobalName, in : DPath) = alignments.collect{
     case a:FormalAlignment if a.from == from && a.to.doc.toString.startsWith(in.toString) => a
@@ -115,17 +120,12 @@ class AlignmentsServer extends ServerExtension("align") {
     case e : Exception => throw e
   }
 
-  def CanTranslateTo(t : Term) : List[(DPath,Term)] = {
+  def CanTranslateTo(t : Term) : List[DPath] = {
     val head = t.head.getOrElse(return Nil) match {
       case n:GlobalName => n
       case _ => return Nil
     }
-    var ret : List[(DPath,Term)] = Nil
-    getFormalAlignments(head).map(_.to.doc).foreach(a =>{
-      val res = translate(t,a)
-      if (res.isDefined) ret ::= (a,res.get)
-    })
-    ret
+    getFormalAlignments(head).map(_.to.doc).toList
   }
 
   private object CanNotTranslate extends Exception
@@ -185,8 +185,19 @@ class AlignmentsServer extends ServerExtension("align") {
         case o: Obj => ??? // TODO
         case _ => throw ImplementationError("evaluation of ill-typed query")
       }
-      controller.extman.get(classOf[AlignmentsServer])
+      // controller.extman.get(classOf[AlignmentsServer])
       translate(o, dpath).toList
+    }
+  }
+
+  private class CanTranslateQuery extends QueryExtension("cantranslate",ObjType,PathType) {
+    def evaluate(argument : BaseType, params : List[String]) = {
+      val o = argument match {
+        case t : Term => t
+        case o: Obj => ??? // TODO
+        case _ => throw ImplementationError("evaluation of ill-typed query")
+      }
+      CanTranslateTo(o)
     }
   }
 
