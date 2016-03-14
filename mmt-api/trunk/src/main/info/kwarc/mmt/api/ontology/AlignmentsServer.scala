@@ -77,8 +77,10 @@ class AlignmentsServer extends ServerExtension("align") {
   private val alignments = mutable.HashSet[Alignment]()
   
   override def start(args:List[String]) {
-    val file = File(args.head)
-    readAlignments(file)
+    args.foreach(a => {
+      val file = File(a)
+      readAlignments(file)
+    })
     controller.extman.addExtension(new AlignQuery)
     controller.extman.addExtension(new CanTranslateQuery)
   }
@@ -149,7 +151,7 @@ class AlignmentsServer extends ServerExtension("align") {
     val json = JSON.parse(File.read(file))
     json match {
       case obj: JSONObject => obj.map foreach {
-         case (jsonstring, alignmentList:JSONArray) =>
+         case (JSONString("View"), alignmentList:JSONArray) =>
             alignmentList.values foreach {
                case alignmentObject: JSONObject =>            
                  val Some(fromJSON) = alignmentObject("from");
@@ -165,8 +167,19 @@ class AlignmentsServer extends ServerExtension("align") {
                  val to = Path.parseS(toString, nsMap)
                  alignments += SimpleAlignment(from, to)
             }
-       case _ =>
+         case _ =>
+         case (JSONString("Informal"),o:JSONObject) =>
+          alignments += InformalAlignment(
+            Path.parseS(o("from") match {
+              case Some(JSONString(s)) => s
+              case _ => ???
+            },nsMap),
+            o("to") match {
+              case Some(JSONString(s)) => s
+              case _ => ???
+            })
       }
+      case _ =>
     }
     
     alignments foreach println
