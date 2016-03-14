@@ -31,7 +31,8 @@ object Server {
   }
   /**
    * A text response that the server sends back to the browser
-   * @param text the message that is sent in the HTTP body
+    *
+    * @param text the message that is sent in the HTTP body
    */
   def TypedTextResponse(text: String, tp: String): HLet = new HSimpleLet {
     def act(tk: HTalk) {
@@ -43,25 +44,29 @@ object Server {
   }
   /**
    * A text response that the server sends back to the browser
-   * @param text the message that is sent in the HTTP body
+    *
+    * @param text the message that is sent in the HTTP body
    */
   def TextResponse(text: String, tp: String = "plain"): HLet = TypedTextResponse(text, "text/"+tp)
 
   /**
    * An XML response that the server sends back to the browser
-   * @param s the XML message that is sent in the HTTP body
+    *
+    * @param s the XML message that is sent in the HTTP body
    */
   def XmlResponse(s: String): HLet = TextResponse(s, "xml")
 
   /**
    * A json response
-   * @param json the message that is sent in the HTTP body
+    *
+    * @param json the message that is sent in the HTTP body
    */
   def JsonResponse(json: JSON) = TypedTextResponse(json.toString, "application/json")
 
   /**
    * An XML response that the server sends back to the browser
-   * @param node the XML message that is sent in the HTTP body
+    *
+    * @param node the XML message that is sent in the HTTP body
    */
   def XmlResponse(node: scala.xml.Node): HLet = TextResponse(node.toString, "xml")
   
@@ -123,10 +128,10 @@ class Body(tk: HTalk) {
     val bodyXML = try {
       scala.xml.XML.loadString(bodyString).head
     } catch {
-      case _ : Throwable => throw ServerError("invalid XML")
-       }
-       scala.xml.Utility.trim(bodyXML)
-     }
+      case _: Exception => throw ServerError("invalid XML")
+    }
+    scala.xml.Utility.trim(bodyXML)
+  }
 }
 
 
@@ -193,7 +198,8 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
 
   /**
    * A resource response that the server sends back to the browser
-   * @param path the path to the resource
+    *
+    * @param path the path to the resource
    */
   private def resourceResponse(path: String): HLet = new HSimpleLet {
     def act(tk: HTalk) {

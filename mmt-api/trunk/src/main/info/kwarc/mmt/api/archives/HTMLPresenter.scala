@@ -11,8 +11,7 @@ import opaque._
 import utils._
 
 import HTMLAttributes._
-import info.kwarc.mmt.api.ontology.AlignmentsServer
-import info.kwarc.mmt.api.ontology.Alignment
+import info.kwarc.mmt.api.ontology.{PhysicalResource, LogicalResource, AlignmentsServer, Alignment}
 import info.kwarc.mmt.api.web.ServerError
 
 abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
@@ -103,8 +102,8 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
 
    def doDeclaration(d: Declaration) {
       val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
-      val alignmentsServer: AlignmentsServer = controller.extman.get(classOf[AlignmentsServer]) match {
-        case List(as) => as
+      val alignmentsServer: AlignmentsServer = controller.extman.getOrAddExtension(classOf[AlignmentsServer],"align") match {
+        case Some(as) => as
         case _ => throw ServerError("AlignmentsServer not available")
       }
 //      println(d.path.toString)
@@ -180,8 +179,11 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
             if (alignments.nonEmpty) {
                tr("alignments") {
                  td {span(compLabel){text{"aligned with"}}}
-                 td {alignments.foreach {a =>
-                    div("align") {text(a.link)}
+                 td {alignments.foreach {al =>
+                    div("align") {al.link match {
+                      case LogicalResource(cpath) => doPath(cpath)
+                      case PhysicalResource(url) => htmlRh.a(url.toString)(text{url.toString})
+                    }}//text(a.link)}
                  }
                }
             }

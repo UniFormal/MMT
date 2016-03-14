@@ -8,17 +8,25 @@ import scala.collection.mutable
 import QueryTypeConversion._
 import info.kwarc.mmt.api.utils._
 
+sealed abstract class Resource
+
+case class LogicalResource(mmturi : ContentPath) extends Resource {
+  override def toString = mmturi.toPath
+}
+case class PhysicalResource(url : URI) extends Resource {
+  override def toString = url.toString
+}
 
 abstract class Alignment {
   val from : GlobalName
-  val link : String
+  val link : Resource
 
   def toJSON : (JSONString,JSONObject)
 }
 
 abstract class FormalAlignment extends Alignment {
   val to : GlobalName
-  val link = to.toString
+  val link : LogicalResource
 
   def applicable(t:Term) : Boolean = t match {
     case OMS(f) if f==from => true
@@ -38,6 +46,7 @@ abstract class FormalAlignment extends Alignment {
 }
 
 case class SimpleAlignment(from : GlobalName, to : GlobalName) extends FormalAlignment {
+  val link = LogicalResource(to)
 
   def altapplicable(t : Term) = false
   def translate(t : Term, cont : StatelessTraverser) = t // cannot ever occur
@@ -49,6 +58,8 @@ case class SimpleAlignment(from : GlobalName, to : GlobalName) extends FormalAli
 }
 
 case class ArgumentAlignment(from : GlobalName, to : GlobalName, arguments: List[(Int,Int)]) extends FormalAlignment {
+  val link = LogicalResource(to)
+
   def altapplicable(t : Term) = t match {
     case OMA(OMS(f),args) if f == from => true
     case _ => false
@@ -71,6 +82,8 @@ case class ArgumentAlignment(from : GlobalName, to : GlobalName, arguments: List
 }
 
 case class PartialAlignment(from : GlobalName, to : GlobalName) extends FormalAlignment {
+  val link = LogicalResource(to)
+
   def altapplicable(t : Term) = false
   override def applicable(t:Term) = false
   def translate(t : Term, cont : StatelessTraverser) = t // cannot ever occur
@@ -81,10 +94,11 @@ case class PartialAlignment(from : GlobalName, to : GlobalName) extends FormalAl
   )))
 }
 
-case class InformalAlignment(from : GlobalName, link : String) extends Alignment {
+case class InformalAlignment(from : GlobalName, to : URI) extends Alignment {
+  val link = PhysicalResource(to)
   def toJSON = (JSONString("Informal"),JSONObject(List(
     (JSONString("from"),JSONString(from.toString)),
-    (JSONString("to"),JSONString(link))
+    (JSONString("to"),JSONString(to.toString))
   )))
 }
 /*
@@ -120,7 +134,7 @@ class AlignmentsServer extends ServerExtension("align") {
 
   private val nsMap = NamespaceMap.empty
   
-  def apply(uriComps: List[String], query: String, body: Body) = {
+  def apply(path: List[String], query: String, body: Body) = {
       val from = Path.parseS(query, nsMap)
       val toS = getAlignments(from)
       Server.TextResponse(toS.mkString("\n"))
@@ -195,7 +209,7 @@ class AlignmentsServer extends ServerExtension("align") {
               case _ => ???
             },nsMap),
             o("to") match {
-              case Some(JSONString(s)) => s
+              case Some(JSONString(s)) => URI(s)
               case _ => ???
             })
          case (JSONString("Simple"),o:JSONObject) =>
