@@ -68,6 +68,25 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
            });
         });
     };
+    $scope.matchRow = function(res) {
+        var match = true;
+        for (k in $scope.columns) {
+            match = match && (String(res[k]).indexOf($scope.columns[k].search) > -1);
+        };
+        return match;
+    };
+    $scope.buildAll = function() {
+        for (var i = 0; i < $scope.results.length; i++) {
+            var res = $scope.results[i];
+            if ($scope.matchRow(res)) $scope.build(res);
+        };
+    };
+    $scope.cleanAll = function() {
+        for (var i = 0; i < $scope.results.length; i++) {
+            var res = $scope.results[i];
+            if ($scope.matchRow(res)) $scope.clean(res);
+        };
+    };
     $scope.hide = function(content) {
         $http.get(':errors/search2?' + $scope.field + '=' + content + '&hide=true').success(function(data) {
             $scope.hiddenData.push(data);
@@ -104,12 +123,6 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
         asc: false
     };
     $scope.matchFilters = function() {
-        return function(elem) {
-            var res = true;
-            for (k in $scope.columns) {
-                res = res && (String(elem[k]).indexOf($scope.columns[k].search) > -1);
-            };
-            return res;
-        }
+        return $scope.matchRow;
     };
   } ]);

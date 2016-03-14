@@ -103,8 +103,10 @@
         <thead>
         <tr>
             <th>
-                <a href="" ng-click="search()"
-                   title="search for selection">&#8631;</a>
+                <a href="" ng-click="buildAll()"
+                   title="rebuild all selected entries">&#10227;</a>
+                <a href="" ng-click="cleanAll()"
+                   title="clean all selected entries">&#10005;</a>
             </th>
             <th ng-repeat="key in colProps" ng-if="columns[key].x">
                 <span style="cursor:pointer"
