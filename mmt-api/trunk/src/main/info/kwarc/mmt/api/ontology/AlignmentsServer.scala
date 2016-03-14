@@ -12,6 +12,8 @@ import info.kwarc.mmt.api.utils._
 abstract class Alignment {
   val from : GlobalName
   val link : String
+
+  def toJSON : (JSONString,JSONObject)
 }
 
 abstract class FormalAlignment extends Alignment {
@@ -39,6 +41,11 @@ case class SimpleAlignment(from : GlobalName, to : GlobalName) extends FormalAli
 
   def altapplicable(t : Term) = false
   def translate(t : Term, cont : StatelessTraverser) = t // cannot ever occur
+
+  def toJSON = (JSONString("Simple"),JSONObject(List(
+    (JSONString("from"),JSONString(from.toString)),
+    (JSONString("to"),JSONString(to.toString))
+  )))
 }
 
 case class ArgumentAlignment(from : GlobalName, to : GlobalName, arguments: List[(Int,Int)]) extends FormalAlignment {
@@ -55,15 +62,31 @@ case class ArgumentAlignment(from : GlobalName, to : GlobalName, arguments: List
     case OMA(OMS(f),args) if f == from =>
       OMA(OMS(to),reorder(args).map(cont.apply(_,Context.empty))) // TODO insert variables
   }
+
+  def toJSON = (JSONString("Argument"),JSONObject(List(
+    (JSONString("from"),JSONString(from.toString)),
+    (JSONString("to"),JSONString(to.toString)),
+    (JSONString("args"),JSONArray(arguments.map(p => JSONArray.fromList(List(JSONInt(p._1),JSONInt(p._2))))))
+  )))
 }
 
 case class PartialAlignment(from : GlobalName, to : GlobalName) extends FormalAlignment {
   def altapplicable(t : Term) = false
   override def applicable(t:Term) = false
   def translate(t : Term, cont : StatelessTraverser) = t // cannot ever occur
+
+  def toJSON = (JSONString("Partial"),JSONObject(List(
+    (JSONString("from"),JSONString(from.toString)),
+    (JSONString("to"),JSONString(to.toString))
+  )))
 }
 
-case class InformalAlignment(from : GlobalName, link : String) extends Alignment
+case class InformalAlignment(from : GlobalName, link : String) extends Alignment {
+  def toJSON = (JSONString("Informal"),JSONObject(List(
+    (JSONString("from"),JSONString(from.toString)),
+    (JSONString("to"),JSONString(link))
+  )))
+}
 /*
 case class Alignment(kind: String, from: GlobalName, to: GlobalName, args: Option[List[(Int,Int)]]) {
   override def toString = s"$kind $from $to"
@@ -167,7 +190,6 @@ class AlignmentsServer extends ServerExtension("align") {
                  val to = Path.parseS(toString, nsMap)
                  alignments += SimpleAlignment(from, to)
             }
-         case _ =>
          case (JSONString("Informal"),o:JSONObject) =>
           alignments += InformalAlignment(
             Path.parseS(o("from") match {
@@ -178,6 +200,29 @@ class AlignmentsServer extends ServerExtension("align") {
               case Some(JSONString(s)) => s
               case _ => ???
             })
+         case (JSONString("Simple"),o:JSONObject) =>
+           alignments += SimpleAlignment(
+             Path.parseS(o("from") match {
+               case Some(JSONString(s)) => s
+               case _ => ???
+             },nsMap),
+             Path.parseS(o("to") match {
+               case Some(JSONString(s)) => s
+               case _ => ???
+             },nsMap)
+           )
+         case (JSONString("Partial"),o:JSONObject) =>
+           alignments += PartialAlignment(
+             Path.parseS(o("from") match {
+               case Some(JSONString(s)) => s
+               case _ => ???
+             },nsMap),
+             Path.parseS(o("to") match {
+               case Some(JSONString(s)) => s
+               case _ => ???
+             },nsMap)
+           )
+         case _ =>
       }
       case _ =>
     }
