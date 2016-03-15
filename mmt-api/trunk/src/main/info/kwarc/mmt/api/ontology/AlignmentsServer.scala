@@ -116,10 +116,41 @@ class AlignmentsServer extends ServerExtension("align") {
   override def start(args:List[String]) {
     args.foreach(a => {
       val file = File(a)
-      readAlignments(file)
+      if (file.getExtension match {case Some("json") => true case _ => false})
+        readJSON(file)
+      else readFile(file)
     })
     controller.extman.addExtension(new AlignQuery)
     controller.extman.addExtension(new CanTranslateQuery)
+
+    alignments += SimpleAlignment(
+      Path.parseS("http://pvs.csl.sri.com/Prelude?list_props?append",nsMap),
+      Path.parseS("http://code.google.com/p/hol-light/source/browse/trunk?lists?APPEND",nsMap)
+    )
+    alignments += SimpleAlignment(
+      Path.parseS("http://code.google.com/p/hol-light/source/browse/trunk?lists?APPEND",nsMap),
+      Path.parseS("http://pvs.csl.sri.com/Prelude?list_props?append",nsMap)
+    )
+    alignments += InformalAlignment(
+      Path.parseS("http://pvs.csl.sri.com/Prelude?list_props?append",nsMap),
+      URI("""https://en.wikipedia.org/wiki/List_(abstract_data_type)#Operations""")
+    )
+    alignments += InformalAlignment(
+      Path.parseS("http://code.google.com/p/hol-light/source/browse/trunk?lists?APPEND",nsMap),
+      URI("""https://en.wikipedia.org/wiki/List_(abstract_data_type)#Operations""")
+    )
+    alignments += SimpleAlignment(
+      Path.parseS("http://latin.omdoc.org/foundations/hollight?Kernel?bool",nsMap),
+      Path.parseS("http://pvs.csl.sri.com/?PVS?boolean",nsMap)
+    )
+    alignments += InformalAlignment(
+      Path.parseS("http://latin.omdoc.org/foundations/hollight?Kernel?bool",nsMap),
+      URI("https://en.wikipedia.org/wiki/Boolean_data_type")
+    )
+    alignments += InformalAlignment(
+      Path.parseS("http://pvs.csl.sri.com/?PVS?boolean",nsMap),
+      URI("https://en.wikipedia.org/wiki/Boolean_data_type")
+    )
   }
   override def destroy {
     controller.extman.get(classOf[AlignQuery]) foreach {a =>
@@ -135,9 +166,19 @@ class AlignmentsServer extends ServerExtension("align") {
   private val nsMap = NamespaceMap.empty
   
   def apply(path: List[String], query: String, body: Body) = {
-      val from = Path.parseS(query, nsMap)
-      val toS = getAlignments(from)
-      Server.TextResponse(toS.mkString("\n"))
+    path match {
+      case List("from") =>
+        val path = Path.parseS(query,nsMap)
+        val toS = getAlignments(path).map(_.link.toString)
+        //println("Alignment query: " + query)
+        //println("Alignments from " + path + ":\n" + toS.map(" - " + _).mkString("\n"))
+        Server.TextResponse(toS.mkString("\n"))
+      case _ =>
+        println(path) // List(from)
+        println(query) // an actual symbol path
+        println(body) //whatever
+        Server.TextResponse("")
+    }
   }
   
   def getAlignments(from: GlobalName) = alignments.filter(_.from == from)
@@ -183,8 +224,11 @@ class AlignmentsServer extends ServerExtension("align") {
     }
   }
 
+  private def readFile(file : File) {
 
-  private def readAlignments(file: File) {
+  }
+
+  private def readJSON(file: File) {
     val json = JSON.parse(File.read(file))
     json match {
       case obj: JSONObject => obj.map foreach {

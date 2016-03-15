@@ -98,18 +98,7 @@ var interactiveViewing = {
                res['unfold'] = function(){folded.removeMClass('math-folded');};
             else
                res['fold'] = function(){$(mmt.focus).addMClass('math-folded');};
-            var alignTargets = [];
-            $.ajax({'url': "/:align/from?" + mmt.currentURI,
-                    'async': false,
-                    'success': function(data) {alignTargets = data.split("\n");}
-            });
-            if (alignTargets.length != 0) {
-               var aligns = {};
-               alignTargets.forEach(function(at) {
-                  aligns[at] = function(){me.showComputationResult("a", "align", at)};
-               })
-               res["show aligned symbol"] = aligns
-            }
+
 		}
 		
 		if (mmt.currentURI !== null) {
@@ -125,6 +114,27 @@ var interactiveViewing = {
       	    };
       	    var name = mmt.splitMMTURI(uri, false).slice(-1)[0];
 			res["go to declaration of '" + name + "'"] = sub;
+
+            var alignTargets = [];
+                        $.ajax({'url': "/:align/from?" + mmt.currentURI,
+                                'async': false,
+                                'success': function(data) {alignTargets = data.split("\n");}
+                        });
+                        if (alignTargets.length != 0) {
+                           var aligns = {};
+                           alignTargets.forEach(function(at) {
+                                var asub = {};
+                                asub["in this window"] = function() {
+                                               me.navigate(at);
+                               	      	};
+                                           asub["in new window"] = function() {window.open("/?"+at, '_blank', '', false);};
+                                           asub["in remote listeners"] = function() {
+                               	            me.navigateServer(uri);
+                                     	    };
+                              aligns[at] = asub; //function(){me.showComputationResult("a", "align", at)};
+                           })
+                           res["go to aligned symbol"] = aligns;
+                        }
 
 			/*res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};*/
 			res["show declaration"] =
