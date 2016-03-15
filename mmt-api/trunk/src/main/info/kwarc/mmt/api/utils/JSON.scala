@@ -114,40 +114,38 @@ object JSON {
    }
    
    def parseString(s: Unparsed) = {
-      s.drop("\"")
-      val (p,closed) = s.next('"', '\\')
-      if (!closed)
+     s.drop("\"")
+     val (p,closed) = s.next('"', '\\')
+     if (!closed)
          throw JSONError("unclosed string")
-	  var escaped = p
-	  var unescaped = ""
-	  while (escaped.nonEmpty) {
+	   var escaped = p
+	   var unescaped = ""
+	   while (escaped.nonEmpty) {
 	     val first = escaped(0)
-	     val (eaten, found) = if (first != '\\') {
-		    (first.toString,first.toString)
+	     val (next, length) = if (first != '\\') {
+		    (first.toString,1)
 	     } else {
-          if (escaped.length <= 1)
-             throw JSONError("unclosed escaped")
-          val second = escaped(1)
+		      if (escaped.length <= 1)
+			      throw JSONError("unclosed escaped")
+			    val second = escaped(1)
           second match {
-             case '"' => (second.toString, second.toString)
-             case '\\' => (second.toString, second.toString)
-             case 'b' => ("b", "\b")
-             case 'f' => ("f", "\f")
-             case 'n' => ("n", "\n")
-             case 'r' => ("r", "\r")
-             case 't' => ("t", "\t")
-             case '/' => ("\\/", "/")
-             case 'u' =>
-                val hex = unescaped.substring(1, 4)
-                val char = Integer.parseInt(hex, 16).toChar
-                (unescaped.substring(0, 5), char)
-             case _ => throw JSONError("Illegal starting character " + escaped(1) + " for JSON")
-          }
-       }
-		 unescaped += found
-         escaped = escaped.substring(eaten.length)
-      }
-      JSONString(unescaped)
+               case '"' | '\\' | '/' => (second.toString, 2)
+               case 'b' => ("\b", 2)
+               case 'f' => ("\f", 2)
+               case 'n' => ("\n", 2)
+               case 'r' => ("\r", 2)
+               case 't' => ("\t", 2)
+               case 'u' =>
+                 val hex = escaped.substring(2,6)
+                 val char = Integer.parseInt(hex, 16).toChar
+                 (char, 6)
+               case _ => throw JSONError("Illegal starting character for JSON string escape: " + escaped(1))
+		      }
+	     }
+		   unescaped += next
+       escaped = escaped.substring(length)
+	   }
+     JSONString(unescaped)
    }
 
    def parseObject(s: Unparsed): JSONObject = {
