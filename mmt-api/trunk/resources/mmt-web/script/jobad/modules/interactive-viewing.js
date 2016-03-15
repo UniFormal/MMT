@@ -99,6 +99,10 @@ var interactiveViewing = {
             else
                res['fold'] = function(){$(mmt.focus).addMClass('math-folded');};
             var alignTargets = [];
+            $.ajax({'url': "/:align/from?" + mmt.currentURI,
+                    'async': false,
+                    'success': function(data) {alignTargets = data.split("\n");}
+            });
             if (alignTargets.length != 0) {
                var aligns = {};
                alignTargets.forEach(function(at) {
