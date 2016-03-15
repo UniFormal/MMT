@@ -109,18 +109,17 @@ var interactiveViewing = {
 		}
 		
 		if (mmt.currentURI !== null) {
-      	var uri = mmt.currentURI;
-
-			var sub = {};
-			var me = this;
-   	   sub["in this window"] = function() {
-            me.navigate(uri);
-      	};
-	      sub["in new window"] = function() {mmt.openCurrent();};
-   	   sub["in remote listeners"] = function() {
-            me.navigateServer(uri);
-      	};
-      	var name = mmt.splitMMTURI(uri, false).slice(-1)[0];
+            var uri = mmt.currentURI;
+            var sub = {};
+            var me = this;
+            sub["in this window"] = function() {
+                me.navigate(uri);
+	      	};
+            sub["in new window"] = function() {mmt.openCurrent();};
+            sub["in remote listeners"] = function() {
+	            me.navigateServer(uri);
+      	    };
+      	    var name = mmt.splitMMTURI(uri, false).slice(-1)[0];
 			res["go to declaration of '" + name + "'"] = sub;
 
 			/*res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};*/
