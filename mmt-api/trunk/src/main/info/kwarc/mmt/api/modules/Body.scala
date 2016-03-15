@@ -37,7 +37,7 @@ trait Body extends ContentElement with MutableElementContainer[Declaration] {sel
          doc.getDeclarations.foreach {
             case r: SRef => f(doc, r)
             case childDoc: Document => traverse(childDoc, f)
-            case _ => // impossible
+            case _ =>
          }
       }
    }
@@ -68,18 +68,30 @@ trait Body extends ContentElement with MutableElementContainer[Declaration] {sel
          }
       }
    /** adds a named declaration, throws exception if name already declared
-    *  @param afterOpt if given, the new declaration is inserted after that one; otherwise at end
-    *  @param inDoc nested document in which to insert; toplevel by default otherwise  
+    *  @param d declaration to add  
+    *  @param afterOpt the name of the [[Declaration]] after which to add; if omitted, add at end
     */
-   def add(s : Declaration, afterOpt: Option[LocalName] = None) {
+   def add(d : Declaration, afterOpt: Option[LocalName] = None) {
+      addDecl(d)
+      addRef(d, afterOpt map {n => After(n, false)})
+   }
+   
+   /** like add, but treats the second argument as the name of a [[NarrativeElement]] */
+   def addAfterNarrative(d: Declaration, after: LocalName) {
+      addDecl(d)
+      addRef(d, Some(After(after, true)))
+   }
+   
+   /** add a declaration to the content hash map only */
+   private def addDecl(s : Declaration) {
       val name = s.name
       if (statements.isDefinedAt(name)) {
          throw AddError("a declaration for the name " + name + " already exists")
       }
       statements(name) = s
       addAlternativeNames(s)
-      addRef(s, afterOpt)
    }
+   
    /** delete a named declaration (does not have to exist)
     *  @return the deleted declaration
     */
@@ -92,9 +104,10 @@ trait Body extends ContentElement with MutableElementContainer[Declaration] {sel
       }
    }
 
+   /** name of the declaration after which to add a declaration */ 
+   private case class After(name: LocalName, isNarrativeName: Boolean)
    /* adding/deleting the entry in the document */
-   
-   private def addRef(s: Declaration, afterOpt: Option[LocalName]) {
+   private def addRef(s: Declaration, afterOpt: Option[After]) {
       val inDoc = s.relativeDocumentHome
       val doc = asDocument.getLocally(inDoc) match {
          case Some(d: Document) => d
@@ -102,7 +115,10 @@ trait Body extends ContentElement with MutableElementContainer[Declaration] {sel
          case _ => throw AddError(s"document $inDoc does not exist in theory $path")
       }
       val ref = SRef(doc.path, s.path)
-      val afterSRef = afterOpt map {a => SRef(doc.path, path.toMPath ? a).name} // name of SRef to afterOpt
+      val afterSRef = afterOpt map {a =>
+        if (a.isNarrativeName) a.name
+        else SRef(doc.path, path.toMPath ? a.name).name // name of SRef to afterOpt
+      }
       doc.add(ref, afterSRef)
    }
    /** delete the SRef for the Declaration with local name 'name' */
