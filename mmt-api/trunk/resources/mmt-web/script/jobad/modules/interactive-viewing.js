@@ -98,16 +98,14 @@ var interactiveViewing = {
                res['unfold'] = function(){folded.removeMClass('math-folded');};
             else
                res['fold'] = function(){$(mmt.focus).addMClass('math-folded');};
-               /*
             var alignTargets = [];
             if (alignTargets.length != 0) {
                var aligns = {};
                alignTargets.forEach(function(at) {
-                  aligns[at] = me.showComputationResult("a", "align", at)
+                  aligns[at] = function(){me.showComputationResult("a", "align", at)};
                })
-               res["align to"] = aligns
+               res["show aligned symbol"] = aligns
             }
-            */
 		}
 		
 		if (mmt.currentURI !== null) {
