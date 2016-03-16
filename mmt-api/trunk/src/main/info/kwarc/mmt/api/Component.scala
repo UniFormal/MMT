@@ -1,7 +1,9 @@
 package info.kwarc.mmt.api
 
 /** A component of a declaration, e.g., the type of a [[Constant]] (akin to XML attributes) */
-case class DeclarationComponent(key: ComponentKey, value: ComponentContainer)
+case class DeclarationComponent(key: ComponentKey, value: ComponentContainer) extends NamedElement {
+  val name = LocalName(key.toString) //TODO integrate ComponentKey as LocalName
+}
 
 /** A ComponentContainer holds the data keyed by a DeclarationComponent */
 trait ComponentContainer {

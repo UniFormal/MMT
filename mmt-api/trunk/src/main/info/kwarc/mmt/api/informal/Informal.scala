@@ -63,47 +63,49 @@ object FlexiformalNode {
       
       new Elem(node.prefix, node.label, node.attributes, node.scope, false, child : _*)
   }
-  
-  
 }
 
 object Definition {
-  def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term) : Constant = {
+  def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)
     const.metadata.add(new MetaDatum((new InformalSym("role")).path, OMA((new InformalSym("defines")).term, targets.map(OMS(_)))))
+    const.setDocumentHome(localSection)
     const
   }
 }
 
 object Assertion {
-  def apply(home : Term, name : LocalName, df : Term) : Constant = {
+  def apply(home : Term, name : LocalName, df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)
     const.metadata.add(new MetaDatum((new InformalSym("role")).path, (new InformalSym("assertion")).term))
+    const.setDocumentHome(localSection)
     const
   }
 }
 
 object Exercise {
-  def apply(home : Term, name : LocalName, prob : Term, sol : Option[Term]) : Constant = {
+  def apply(home : Term, name : LocalName, prob : Term, sol : Option[Term], localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, Some(prob), sol, None)
     const.metadata.add(new MetaDatum((new InformalSym("role")).path, (new InformalSym("exercise")).term))
+    const.setDocumentHome(localSection)
     const
   }
 }
 
 object Example {
-  def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term) : Constant = {
+  def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)
     const.metadata.add(new MetaDatum((new InformalSym("role")).path, OMA((new InformalSym("example")).term, targets.map(OMS(_)))))
+    const.setDocumentHome(localSection)
     const
   }
 }
 
-
-
 object PlainNarration {
-  def apply(home : Term, name : LocalName, df : Term) : Constant = {
-    Constant(home, name, Nil, None, Some(df), None)
+  def apply(home : Term, name : LocalName, df : Term, localSection : LocalName) : Constant = {
+    val const = Constant(home, name, Nil, None, Some(df), None)
+    const.setDocumentHome(localSection)
+    const
   }
 }
 

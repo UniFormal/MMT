@@ -132,9 +132,13 @@ class LatexObjectPresenter extends NotationBasedPresenter {
  * replaces mmt with stex declarations, keeps embedded latex as is 
  */
 class LatexPresenter(oP: ObjectPresenter) extends Presenter(oP) {
-  def key = "mmt-latex"
+   def key = "mmt-latex"
    
+   var counter : Int = 1
+   override def isApplicable(format : String) = format == "latex"
+  
    def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
+      counter = 1 //resetting counter
       e match {
         case d: Document =>
           if (standalone) standaloneHeader
@@ -149,25 +153,36 @@ class LatexPresenter(oP: ObjectPresenter) extends Presenter(oP) {
      se match {
         case d: Document =>
           d.getDeclarations foreach doElement
+        case r: NRef =>
+           val e = controller.get(r.target)
+           doElement(e)
         case oe: UnknownOpaqueElement if isApplicable(oe.format) =>
-          rh << oe.raw.text
+          val id = "mixref" + counter
+          counter += 1
+          rh.writeln(s"""\\begin{module}[id=$id]""")
+          rh.writeln(oe.raw.text)
+          rh.writeln(s"""\\end{module}""")
+          
         case t: DeclaredTheory =>
           controller.simplifier.flatten(t)
-          rh << BeginModule(t.parent, t.name).toString()
-          doElement(t.asDocument) // or better t.getDeclarationsElaborated foreach doElement ?
-          rh << EndModule.toString()
+          rh.writeln(BeginModule(t.parent, t.name).toString())
+          doElement(t.asDocument)
+          rh.writeln(EndModule.toString())
         case PlainInclude(from, to) =>
-          rh << ImportModule(from).toString
+          rh.writeln(ImportModule(from).toString)
         case c: Constant =>
-          rh << SymDef(c.home.toMPath, c.name).toString
+          rh.writeln(SymDef(c.home.toMPath, c.name).toString)
         case _ =>
-          rh << "%% MMT: skipping " + se.path
+          rh.writeln("%% MMT: skipping " + se.path)
      }
    }
    
-   private def standaloneHeader {
+   private def standaloneHeader(implicit rh : RenderingHandler) {
+     rh.writeln("""\documentclass{omdoc}""")
+     rh.writeln("""\begin{document}""")
    }
-   private def standaloneFooter {
+   private def standaloneFooter(implicit rh : RenderingHandler) {
+     rh.writeln("""\end{document}""")
    }
 }
 

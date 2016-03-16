@@ -135,13 +135,17 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
     rh("</omdoc>")
   }
 
-  /** prints document with all generated references expande */
-  def toNodeResolved(lib: Lookup): Elem =
+  /** prints document with all generated references expanded 
+   *  @param lib the library where reference are looked up
+   *  @param expandAll whether to expand all references or only generated ones
+   *  false by default
+  */
+  def toNodeResolved(lib: Lookup, expandAll : Boolean = false): Elem =
       <omdoc base={path.toPath}>
         {getMetaDataNode}
         {items map {
            case d: Document => d.toNodeResolved(lib)
-           case r: NRef if r.isGenerated => lib.get(r.target).toNode
+           case r: NRef if (r.isGenerated || expandAll) => lib.get(r.target).toNode
            case i => i.toNode
         }}
      </omdoc>

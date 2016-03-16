@@ -104,6 +104,9 @@ class STeXImporter extends Importer {
     BuildResult.empty
   }
 
+  //TODO tmp
+  //override def log(s : => String, subgroup:Option[String]) = println(s)
+  
   def compileOne(inText: String, dpath: DPath): (String, List[Error]) = {
     val node = scala.xml.XML.loadString(inText) //clearXmlNS(
     val cleanNode = node //scala.xml.Utility.trim(node)
@@ -112,11 +115,11 @@ class STeXImporter extends Importer {
     val errors = errHandler.getErrors
     errors match {
       case Nil => //returning result
-        val docXML = controller.getDocument(dpath).toNodeResolved(controller.globalLookup)
+        val docXML = controller.getDocument(dpath).toNodeResolved(controller.globalLookup, true)
         (docXML.toString(), Nil)
       case _ => //reporting errors
         val doc = try {
-          controller.getDocument(dpath).toNodeResolved(controller.globalLookup).toString()
+          controller.getDocument(dpath).toNodeResolved(controller.globalLookup, true).toString()
         } catch {
           case e: Exception => ""
         }
@@ -208,7 +211,7 @@ class STeXImporter extends Importer {
   /**
     * translate third level, in-module elements (typically declarations)
     */
-  private def translateDeclaration(n: Node)(implicit doc: Document, thy: DeclaredTheory, errorCont: ErrorHandler) {
+  private def translateDeclaration(n: Node, localSection : LocalName = LocalName.empty)(implicit doc: Document, thy: DeclaredTheory, errorCont: ErrorHandler) {
     implicit val dpath = doc.path
     implicit val mpath = thy.path
     val sref = parseSourceRef(n, doc.path)
@@ -242,6 +245,7 @@ class STeXImporter extends Importer {
               const.metadata.add(sTeXMetaData.primarySymbol)
             case _ => //nothing to do
           }
+          const.setDocumentHome(localSection)
           add(const)
         case "definition" => //omdoc definition -> immt flexiformal declaration
           val name = getName(n, thy)
@@ -260,7 +264,7 @@ class STeXImporter extends Importer {
           parseNarrativeObject(n)(dpath, thy, errorCont) match {
             case None => //nothing to do
             case Some(no) =>
-              val dfn = Definition(OMMOD(mpath), name, targets.toList, no)
+              val dfn = Definition(OMMOD(mpath), name, targets.toList, no, localSection)
               sref.foreach(ref => SourceRef.update(dfn, ref))
               add(dfn)
           }
@@ -270,7 +274,7 @@ class STeXImporter extends Importer {
           parseNarrativeObject(n)(dpath, thy, errorCont) match {
             case None => //nothing to do
             case Some(no) =>
-              val ass = Assertion(OMMOD(mpath), name, no)
+              val ass = Assertion(OMMOD(mpath), name, no, localSection)
               sref.foreach(ref => SourceRef.update(ass, ref))
               add(ass)
           }
@@ -284,7 +288,7 @@ class STeXImporter extends Importer {
           parseNarrativeObject(n)(dpath, thy, errorCont) match {
             case None => //nothing to do
             case Some(no) =>
-              val ex = Example(OMMOD(mpath), name, targets.toList, no)
+              val ex = Example(OMMOD(mpath), name, targets.toList, no, localSection)
               sref.foreach(ref => SourceRef.update(ex, ref))
               add(ex)
           }
@@ -295,7 +299,7 @@ class STeXImporter extends Importer {
             case Some(no) =>
               val prob = no
               val sol = n.child.find(_.label == "solution").flatMap(c => parseNarrativeObject(c)(dpath, thy, errorCont))
-              val ex = Exercise(OMMOD(mpath), name, prob, sol)
+              val ex = Exercise(OMMOD(mpath), name, prob, sol, localSection)
               sref.foreach(ref => SourceRef.update(ex, ref))
               add(ex)
           }
@@ -304,7 +308,7 @@ class STeXImporter extends Importer {
           val name = getName(n, thy)
           parseNarrativeObject(n)(dpath, thy, errorCont) match {
             case Some(no) =>
-              val dfn = PlainNarration(OMMOD(mpath), name, no)
+              val dfn = PlainNarration(OMMOD(mpath), name, no, localSection)
               sref.foreach(ref => SourceRef.update(dfn, ref))
               add(dfn)
             case None => //nothing to do
@@ -359,23 +363,33 @@ class STeXImporter extends Importer {
         case "#PCDATA" => //ignore
         case "ul" => //possibly/usually structural list
           val nextLevel = n.child.filter(_.label == "li").flatMap(li => li.child)
-          println(nextLevel)
-          nextLevel.foreach(c => translateDeclaration(c))
-        case "omgroup" => //ignoring structure here
-          n.child.foreach(c => translateDeclaration(c))
+          nextLevel.foreach(c => translateDeclaration(c, localSection))
+        case "omgroup" | "theory" => 
+          val name = getName(n, thy)
+          val innerSect = localSection / name
+          val innerDoc = new Document(mpath.toDPath / innerSect, contentAncestor = Some(thy))
+          //NarrativeMetadata.title.update(innerDoc, title)
+          add(innerDoc)
+          n.child.foreach(c => translateDeclaration(c, innerSect))
+        case "oref" => //TODO should be a special transclusion reference for partial documents
+          val href = (n \ "@href").text
+          href.split("#").toList match {
+            case "foo" :: id :: Nil => //transclusion ref 
+              val op = new opaque.UnknownOpaqueElement(mpath.toDPath, "mmt", n.child)
+              add(op)
+            case _ => //nothing to do
+          }
+
         case _ =>
           log("Parsing " + n.label + " as plain narration")
           val name = getName(n, thy)
-          val nr = PlainNarration(OMMOD(mpath), name, translateCMP(rewriteCMP(n)))
+          val nr = PlainNarration(OMMOD(mpath), name, translateCMP(rewriteCMP(n)), localSection)
           add(nr)
       }
     } catch {
       case e: Exception =>
         val sref = parseSourceRef(n, doc.path)
         val err = STeXParseError.from(e, "Skipping declaration-level element `" + n.label + "` due to unexpected error", None, sref, None)
-        println(e.getMessage)
-        println(e.getStackTraceString)
-        println(n)
         errorCont(err)
     }
   }
@@ -808,6 +822,8 @@ class STeXImporter extends Importer {
   def parseMPath(s: String, base: DPath): MPath = {
     val parts = s.split("#")
     parts.toList match {
+      case "" :: tnameS :: Nil => //document-local import
+        base ? LocalName(tnameS)
       case fpathS :: tnameS :: Nil =>
         val dpath = parseRelDPath(fpathS, base)
         dpath ? LocalName(tnameS)

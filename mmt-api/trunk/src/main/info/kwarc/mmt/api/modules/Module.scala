@@ -32,6 +32,20 @@ trait DefinedModule extends Module with ModuleDefiniens {
 }
 
 /**
+ * An ContentElement that that is defined via a module
+ */
+trait ModuleWrapper extends ContentElement {
+  def module : Module  
+  def getComponents = module.getComponents 
+  def getDeclarations = module.getDeclarations
+  // bend over metadata pointer
+  this.metadata = module.metadata  
+  //default
+  def toNode = module.toNode
+  override def toString = module.toString
+}
+
+/**
  * A Module or Link given by existing modules/morphisms
  */
 trait ModuleDefiniens extends StructuralElement {
@@ -43,3 +57,4 @@ trait ModuleDefiniens extends StructuralElement {
    protected def innerNodes = getMetaDataNode ++ <definition>{df.toNode}</definition>
    def getDeclarations = Nil
 }
+

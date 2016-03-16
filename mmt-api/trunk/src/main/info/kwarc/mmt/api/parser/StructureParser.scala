@@ -495,7 +495,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                if (thisLevel > currentLevel+1) {
                   throw makeError(reg, s"no document at level ${thisLevel-1} open")
                }
-               val (name,title) = if (nameTitle.startsWith("#")) {
+               val (name,title) = if (nameTitle.startsWith(":")) {
                   val pos = nameTitle.indexWhere(_.isWhitespace)
                   (nameTitle.substring(1,pos),nameTitle.substring(pos).trim)
                } else {
