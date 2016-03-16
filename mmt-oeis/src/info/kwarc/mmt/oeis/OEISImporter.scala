@@ -171,7 +171,7 @@ class OEISImporter extends Importer {
           val name = LocalName(n.label + nr)
           parseNarrativeObject(n, sref) match {
             case Some(t) =>
-              val dfn = PlainNarration(OMMOD(mpath), name, t)
+              val dfn = PlainNarration(OMMOD(mpath), name, t, LocalName.empty)
               SourceRef.update(dfn, sref)
               controller.add(dfn)
             case _ => log("WARNING: Ignoring declaration due to no object " + n.toString)
@@ -181,7 +181,7 @@ class OEISImporter extends Importer {
           implicit val spath = mpath ? sname
           parseNarrativeObject(n, sref) match {
             case Some(fo) =>
-              val a = Assertion(OMMOD(mpath), sname, fo)
+              val a = Assertion(OMMOD(mpath), sname, fo, LocalName.empty)
               SourceRef.update(a, sref)
               controller.add(a)
             case _ => errorCont(OEISParseError("Ignoring declaration due to no object " + n.toString, Some(sref), Some(Level.Warning)))
