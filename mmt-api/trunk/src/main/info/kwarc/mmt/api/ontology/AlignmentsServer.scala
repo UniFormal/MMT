@@ -9,6 +9,7 @@ import QueryTypeConversion._
 import info.kwarc.mmt.api.utils._
 
 import scala.util.Try
+import scala.util.matching.Regex
 
 sealed abstract class Reference
 
@@ -277,9 +278,46 @@ class AlignmentsServer extends ServerExtension("align") {
     }
   }
 
+  private def makeAlignments(p1 : String, p2 : String, pars : List[(String,String)]): Unit = {
+    val argls = """\((\d+),(\d+)\)(.*)""".r
+    val direction = pars.find(p => p._1=="direction")
+    if (direction.isDefined) {
+      if (pars.exists(_._1 == "arguments")) {
+        var args : List[(Int,Int)] = Nil
+        val item = pars.find(_._1 == "arguments").get
+        var read = item._2.trim
+        while (read != "") read match {
+          case argls(i,j,r) =>
+            args ::= (i.toInt,j.toInt)
+            read = r.trim
+          case _ => throw new Exception("Malformed argument pair list: " + item._2)
+        }
+        val ret = if (direction.get._2 == "forward")
+          ArgumentAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),false,args,pars)
+        else if (direction.get._1 == "backward")
+          ArgumentAlignment(Path.parseMS(p2,nsMap),Path.parseMS(p1,nsMap),false,args,pars)
+        else
+          ArgumentAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),true,args,pars)
+        alignments += ret
+      } else {
+        val ret = if (direction.get._2 == "forward")
+          SimpleAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),false,pars)
+        else if (direction.get._1 == "backward")
+          SimpleAlignment(Path.parseMS(p2,nsMap),Path.parseMS(p1,nsMap),false,pars)
+        else if (direction.get._2 == "both")
+          SimpleAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),true,pars)
+        else throw new Exception("unknown alignment direction: " + direction.get._2)
+        alignments += ret
+      }
+    } else {
+      val from : Reference = Try(LogicalReference(Path.parseMS(p1,nsMap))).getOrElse(PhysicalReference(URI(p1)))
+      val to : Reference = Try(LogicalReference(Path.parseMS(p2,nsMap))).getOrElse(PhysicalReference(URI(p2)))
+      alignments += InformalAlignment(from,to,pars)
+    }
+  }
+
   private def readFile(file : File) {
     val param = """(.+)\s*=\s*\"(.+)\"\s*(.*)""".r
-    val argls = """\((\d+),(\d+)\)(.*)""".r
     val cmds = File.read(file).split("\n").map(_.trim).filter(_.nonEmpty)
     cmds foreach (s => {
       var rest = s
@@ -306,43 +344,10 @@ class AlignmentsServer extends ServerExtension("align") {
             rest = r.trim
           case _ => throw new Exception("Malformed alignment: " + s)
         }
-        val direction = pars.find(p => p._1=="direction")
-        if (direction.isDefined) {
-          if (pars.exists(_._1 == "arguments")) {
-            var args : List[(Int,Int)] = Nil
-            val item = pars.find(_._1 == "arguments").get
-            var read = item._2.trim
-            while (read != "") read match {
-              case argls(i,j,r) =>
-                args ::= (i.toInt,j.toInt)
-                rest = r.trim
-              case _ => throw new Exception("Malformed alignment: " + s)
-            }
-            val ret = if (direction.get._2 == "forward")
-              ArgumentAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),false,args,pars)
-            else if (direction.get._1 == "backward")
-              ArgumentAlignment(Path.parseMS(p2,nsMap),Path.parseMS(p1,nsMap),false,args,pars)
-            else
-              ArgumentAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),true,args,pars)
-            alignments += ret
-          } else {
-            val ret = if (direction.get._2 == "forward")
-              SimpleAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),false,pars)
-            else if (direction.get._1 == "backward")
-              SimpleAlignment(Path.parseMS(p2,nsMap),Path.parseMS(p1,nsMap),false,pars)
-            else if (direction.get._2 == "both")
-              SimpleAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),true,pars)
-            else throw new Exception("unknown alignment direction: " + direction.get._2)
-            alignments += ret
-          }
-        } else {
-          val from : Reference = Try(LogicalReference(Path.parseMS(p1,nsMap))).getOrElse(PhysicalReference(URI(p1)))
-          val to : Reference = Try(LogicalReference(Path.parseMS(p2,nsMap))).getOrElse(PhysicalReference(URI(p2)))
-          alignments += InformalAlignment(from,to,pars)
-        }
+        makeAlignments(p1,p2,pars)
       }
     })
-    // alignments foreach println
+     alignments foreach println
   }
   // TODO needs reworking
   private def readJSON(file: File) {
