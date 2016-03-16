@@ -11,7 +11,7 @@ import opaque._
 import utils._
 
 import HTMLAttributes._
-import info.kwarc.mmt.api.ontology.{PhysicalResource, LogicalResource, AlignmentsServer, Alignment}
+import info.kwarc.mmt.api.ontology.{PhysicalReference, LogicalReference, AlignmentsServer, Alignment}
 import info.kwarc.mmt.api.web.ServerError
 
 abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
@@ -180,9 +180,9 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                tr("alignments") {
                  td {span(compLabel){text{"aligned with"}}}
                  td {alignments.foreach {al =>
-                    div("align") {al.link match {
-                      case LogicalResource(cpath) => doPath(cpath)
-                      case PhysicalResource(url) => htmlRh.a(url.toString)(text{url.toString})
+                    div("align") {al.to match {
+                      case LogicalReference(cpath) => doPath(cpath)
+                      case PhysicalReference(url) => htmlRh.a(url.toString)(text{url.toString})
                     }}//text(a.link)}
                  }
                }

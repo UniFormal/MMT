@@ -8,46 +8,42 @@ import scala.collection.mutable
 import QueryTypeConversion._
 import info.kwarc.mmt.api.utils._
 
-sealed abstract class Resource {
-  def get : Any
-}
+import scala.util.Try
 
-case class LogicalResource(mmturi : ContentPath) extends Resource {
-  def get = mmturi
+sealed abstract class Reference
+
+case class LogicalReference(mmturi : ContentPath) extends Reference {
   override def toString = mmturi.toPath
 }
-case class PhysicalResource(url : URI) extends Resource {
-  def get = url
+case class PhysicalReference(url : URI) extends Reference {
   override def toString = url.toString
 }
 
 abstract class Alignment {
-  val from : ContentPath
-  val link : Resource
-
-  def fromTerm = from match {
-    case t:GlobalName => OMS(t)
-    case t: MPath => OMMOD(t)
-  }
+  val from : Reference
+  val to : Reference
 
   def ->(that : Alignment) : Alignment
 
   val props : List[(String,String)]
 
   def toJSON : (JSONString,JSONObject)
+
+  def reverse : Alignment
 }
 
 abstract class FormalAlignment extends Alignment {
-  val to : ContentPath
-  val link : LogicalResource
+  val from : LogicalReference
+  val to : LogicalReference
+  val invertible : Boolean
 
   def toTerm = to match {
-    case t:GlobalName => OMS(t)
-    case t: MPath => OMMOD(t)
+    case LogicalReference(t:GlobalName) => OMS(t)
+    case LogicalReference(t: MPath) => OMMOD(t)
   }
 
   def applicable(t:Term) : Boolean = t match {
-    case OMS(f) if f==from => true
+    case OMS(f) if f==from.mmturi => true
     case _ => altapplicable(t)
   }
   protected def altapplicable(t : Term) : Boolean
@@ -55,18 +51,15 @@ abstract class FormalAlignment extends Alignment {
   def apply(t : Term)(implicit cont : Option[StatelessTraverser] = None) : Term = {
     assert(applicable(t))
     t match {
-      case OMS(f) if f==from => toTerm
+      case OMS(f) if f==from.mmturi => toTerm
       case _ if cont.isDefined => translate(t,cont.get)
       case _ => ???
     }
   }
   protected def translate(t: Term,cont : StatelessTraverser) : Term
-
-  def reverse : FormalAlignment
 }
 
-case class SimpleAlignment(from : ContentPath, to : ContentPath, props : List[(String,String)] = Nil) extends FormalAlignment {
-  val link = LogicalResource(to)
+case class SimpleAlignment(from : LogicalReference, to : LogicalReference, invertible : Boolean, props : List[(String,String)]) extends FormalAlignment {
 
   def altapplicable(t : Term) = false
   def translate(t : Term, cont : StatelessTraverser) = t // cannot ever occur
@@ -76,20 +69,19 @@ case class SimpleAlignment(from : ContentPath, to : ContentPath, props : List[(S
     (JSONString("to"),JSONString(to.toString))
   )))
 
-  def reverse = SimpleAlignment(to,from,props)
+  def reverse = if (invertible) SimpleAlignment(to,from,true,Nil) else InformalAlignment(to,from)
 
   def ->(that:Alignment) = that match {
-    case SimpleAlignment(a,b,props2) => SimpleAlignment(from,b,Nil)
-    case ArgumentAlignment(a,b,args,props2) => ArgumentAlignment(from,b,args,Nil)
+    case SimpleAlignment(a,b,inv,props2) => SimpleAlignment(from,b,inv && invertible,Nil)
+    case ArgumentAlignment(a,b,inv,args,props2) => ArgumentAlignment(from,b,inv && invertible,args,Nil)
     case InformalAlignment(a,b,props2) => InformalAlignment(from,b,Nil)
   }
 }
 
-case class ArgumentAlignment(from : ContentPath, to : ContentPath, arguments: List[(Int,Int)], props : List[(String,String)] = Nil) extends FormalAlignment {
-  val link = LogicalResource(to)
+case class ArgumentAlignment(from : LogicalReference, to : LogicalReference, invertible : Boolean, arguments: List[(Int,Int)], props : List[(String,String)]) extends FormalAlignment {
 
   def altapplicable(t : Term) = t match {
-    case OMA(OMS(f),args) if f == from => true
+    case OMA(OMS(f),args) if f == from.mmturi => true
     case _ => false
   }
   private def reorder(args:List[Term]) = {
@@ -98,7 +90,7 @@ case class ArgumentAlignment(from : ContentPath, to : ContentPath, arguments: Li
     (1 to max).map(i => args(arguments.find(p => p._2==i).map(_._1).getOrElse(???))).toList // TODO insert variables
   }
   def translate(t:Term, cont : StatelessTraverser) = t match {
-    case OMA(OMS(f),args) if f == from =>
+    case OMA(OMS(f),args) if f == from.mmturi =>
       OMA(toTerm,reorder(args).map(cont.apply(_,Context.empty))) // TODO insert variables
   }
 
@@ -108,49 +100,42 @@ case class ArgumentAlignment(from : ContentPath, to : ContentPath, arguments: Li
     (JSONString("args"),JSONArray(arguments.map(p => JSONArray.fromList(List(JSONInt(p._1),JSONInt(p._2))))))
   )))
 
-  def reverse = ArgumentAlignment(to,from,arguments.map(p => (p._2,p._1)),props)
+  def reverse = if (invertible) ArgumentAlignment(to,from,true,arguments.map(p => (p._2,p._1)),props) else
+    InformalAlignment(to,from)
 
   def ->(that:Alignment) = that match {
-    case SimpleAlignment(a,b,props2) => ArgumentAlignment(from,b,arguments,Nil)
-    case ArgumentAlignment(a,b,args2,props2) => ArgumentAlignment(from,b,{
+    case SimpleAlignment(a,b,inv,props2) => ArgumentAlignment(from,b,inv&&invertible,arguments,Nil)
+    case ArgumentAlignment(a,b,inv,args2,props2) => ArgumentAlignment(from,b,inv&&invertible,{
       arguments.map(p => {
         val other = args2.find(q => p._2 == q._1).getOrElse(throw new Exception("Can not compose " + this + " with " + that))
         (p._1,other._2)
       })
       },Nil)
-    case InformalAlignment(a,b,props2) => InformalAlignment(from,b,Nil)
-  }
-
-}
-
-case class PartialAlignment(from : ContentPath, to : ContentPath, props : List[(String,String)] = Nil) extends FormalAlignment {
-  val link = LogicalResource(to)
-
-  def altapplicable(t : Term) = false
-  override def applicable(t:Term) = false
-  def translate(t : Term, cont : StatelessTraverser) = t // cannot ever occur
-
-  def toJSON = (JSONString("Partial"),JSONObject(List(
-    (JSONString("from"),JSONString(from.toString)),
-    (JSONString("to"),JSONString(to.toString))
-  )))
-
-  def reverse = PartialAlignment(to,from,props)
-
-  def ->(that:Alignment) = that match {
-    case SimpleAlignment(a,b,props2) => PartialAlignment(from,b,Nil)
-    case ArgumentAlignment(a,b,args,props2) => PartialAlignment(from,b,Nil)
-    case InformalAlignment(a,b,props2) => InformalAlignment(from,b,Nil)
+    case InformalAlignment(a,b,props2) => InformalAlignment(from,b)
   }
 }
 
-case class InformalAlignment(from : ContentPath, to : URI, props : List[(String,String)] = Nil) extends Alignment {
-  val link = PhysicalResource(to)
+case class InformalAlignment(from : Reference, to : Reference, props : List[(String,String)] = Nil) extends Alignment {
   def toJSON = (JSONString("Informal"),JSONObject(List(
     (JSONString("from"),JSONString(from.toString)),
     (JSONString("to"),JSONString(to.toString))
   )))
-  def ->(that:Alignment) = throw new Exception("Can not compose informal alignments")
+
+  def reverse = InformalAlignment(to,from)
+
+  def ->(that:Alignment) = that match {
+    case f: FormalAlignment => InformalAlignment(from,f.to)
+    case f: InformalAlignment => InformalAlignment(from,f.to)
+  }
+}
+
+object SimpleAlignment {
+  def apply(from : ContentPath, to : ContentPath, invertible : Boolean, props : List[(String,String)] = Nil) : SimpleAlignment
+    = SimpleAlignment(LogicalReference(from),LogicalReference(to),invertible,props)
+}
+object ArgumentAlignment {
+  def apply(from : ContentPath, to : ContentPath, invertible : Boolean, args: List[(Int,Int)], props : List[(String,String)] = Nil) : ArgumentAlignment
+  = ArgumentAlignment(LogicalReference(from),LogicalReference(to),invertible,args,props)
 }
 /*
 case class Alignment(kind: String, from: GlobalName, to: GlobalName, args: Option[List[(Int,Int)]]) {
@@ -221,7 +206,7 @@ class AlignmentsServer extends ServerExtension("align") {
     path match {
       case List("from") =>
         val path = Path.parseS(query,nsMap)
-        val toS = getAlignments(path).map(_.link.toString)
+        val toS = getAlignments(LogicalReference(path)).map(_.to.toString)
         //println("Alignment query: " + query)
         //println("Alignments from " + path + ":\n" + toS.map(" - " + _).mkString("\n"))
         Server.TextResponse(toS.mkString("\n"))
@@ -235,35 +220,33 @@ class AlignmentsServer extends ServerExtension("align") {
 
   // val dones : mutable.HashMap[ContentPath,List[Alignment]] = mutable.HashMap.empty
   
-  def getAlignments(from: ContentPath) : List[Alignment] = {
+  def getAlignments(from: Reference) : List[Alignment] = {
 
-    var res : List[ContentPath] = Nil
-    def recurse(c : ContentPath) : List[Alignment] = {
+    var res : List[Reference] = Nil
+    def recurse(c : Reference) : List[Alignment] = {
       //if (res.contains(c)) return Nil
       res ::= c
-      val ret = (alignments.filter(a => a.from == c).toList ::: alignments.collect{
-        case a : FormalAlignment if
-          a.props.contains(("kind", "bidirectional")) && a.to == c => a.reverse
-      }.toList).filter(a => !res.contains(a.link.get))
-      ret ::: ret.flatMap(_ match {
-        case a:FormalAlignment =>
-          recurse(a.to).map(a -> _)
-        case _ => Nil
-      }) //a => recurse(a.from).map(a -> _))
+      val ret = (alignments.filter(a => a.from == c).toList :::
+        alignments.collect{
+          case a if a.to == c => a.reverse
+        }.toList).filter(a => !res.contains(a.to))
+      ret ::: ret.flatMap(a => recurse(a.to).map(a -> _)) //a => recurse(a.from).map(a -> _))
     }
       recurse(from)
 
   }
 
-  def getFormalAlignments(from: ContentPath) = getAlignments(from).collect{
+  def getAlignments(from: ContentPath) : List[Alignment] = getAlignments(LogicalReference(from))
+
+  def getFormalAlignments(from: ContentPath) = getAlignments(LogicalReference(from)).collect{
     case a:FormalAlignment => a
   }
 
-  def getAlignmentsTo(from: ContentPath, in : DPath) = getAlignments(from).filter(a =>
-    a.link.toString.startsWith(in.toString))
+  def getAlignmentsTo(from: ContentPath, in : DPath) = getAlignments(LogicalReference(from)).filter(a =>
+    a.to.toString.startsWith(in.toString))
 
   def getFormalAlignmentsTo(from: ContentPath, in : DPath) = getFormalAlignments(from).filter(a =>
-    a.link.toString.startsWith(in.toString))
+    a.to.toString.startsWith(in.toString))
 
   def translate(t : Term, to : DPath) = try {Some(Translator(to)(t))} catch {
     case CanNotTranslate => None
@@ -275,7 +258,7 @@ class AlignmentsServer extends ServerExtension("align") {
       case n:GlobalName => n
       case _ => return Nil
     }
-    getFormalAlignments(head).map(_.to.doc).toList
+    getFormalAlignments(head).map(_.to.mmturi.doc).toList
   }
 
   private object CanNotTranslate extends Exception
@@ -323,28 +306,47 @@ class AlignmentsServer extends ServerExtension("align") {
             rest = r.trim
           case _ => throw new Exception("Malformed alignment: " + s)
         }
-        if (pars.contains(("kind","informal"))) {
-          alignments += InformalAlignment(Path.parseMS(p1,nsMap),URI(p2),pars.filter(_ != ("kind","informal")))
-        } else if (pars.contains(("kind","partial"))) {
-          alignments += PartialAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),pars.filter(_ != ("kind","partial")))
-        } else if (pars.exists(_._1 == "arguments")) {
-          var args : List[(Int,Int)] = Nil
-          val item = pars.find(_._1 == "arguments").get
-          var read = item._2.trim
-          while (read != "") read match {
-            case argls(i,j,r) =>
-              args ::= (i.toInt,j.toInt)
-              rest = r.trim
-            case _ => throw new Exception("Malformed alignment: " + s)
+        val direction = pars.find(p => p._1=="direction")
+        if (direction.isDefined) {
+          if (pars.exists(_._1 == "arguments")) {
+            var args : List[(Int,Int)] = Nil
+            val item = pars.find(_._1 == "arguments").get
+            var read = item._2.trim
+            while (read != "") read match {
+              case argls(i,j,r) =>
+                args ::= (i.toInt,j.toInt)
+                rest = r.trim
+              case _ => throw new Exception("Malformed alignment: " + s)
+            }
+            val ret = if (direction.get._2 == "forward")
+              ArgumentAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),false,args,pars)
+            else if (direction.get._1 == "backward")
+              ArgumentAlignment(Path.parseMS(p2,nsMap),Path.parseMS(p1,nsMap),false,args,pars)
+            else
+              ArgumentAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),true,args,pars)
+            alignments += ret
+          } else {
+            val ret = if (direction.get._2 == "forward")
+              SimpleAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),false,pars)
+            else if (direction.get._1 == "backward")
+              SimpleAlignment(Path.parseMS(p2,nsMap),Path.parseMS(p1,nsMap),false,pars)
+            else if (direction.get._2 == "both")
+              SimpleAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),true,pars)
+            else throw new Exception("unknown alignment direction: " + direction.get._2)
+            alignments += ret
           }
-          alignments += ArgumentAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),args,pars.filter(_ != ("partial","true")))
-        } else alignments += SimpleAlignment(Path.parseMS(p1,nsMap),Path.parseMS(p2,nsMap),pars)
+        } else {
+          val from : Reference = Try(LogicalReference(Path.parseMS(p1,nsMap))).getOrElse(PhysicalReference(URI(p1)))
+          val to : Reference = Try(LogicalReference(Path.parseMS(p2,nsMap))).getOrElse(PhysicalReference(URI(p2)))
+          alignments += InformalAlignment(from,to,pars)
+        }
       }
     })
     // alignments foreach println
   }
-
+  // TODO needs reworking
   private def readJSON(file: File) {
+    /*
     val json = JSON.parse(File.read(file))
     json match {
       case obj: JSONObject => obj.map foreach {
@@ -398,6 +400,7 @@ class AlignmentsServer extends ServerExtension("align") {
       }
       case _ =>
     }
+    */
   }
   
   /** translation along alignments */
