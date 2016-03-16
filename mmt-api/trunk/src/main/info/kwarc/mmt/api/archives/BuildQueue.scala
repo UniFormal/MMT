@@ -169,6 +169,8 @@ class BuildQueue extends BuildManager {
   /** global update policy */
   var updatePolicy = Update(Level.Force)
   var currentQueueTask: Option[QueuedTask] = None
+  /** the catalog from (logical) resource dependency to build dependency */
+  val catalog = new mutable.HashMap[ResourceDependency, BuildDependency]
 
   private var continue: Boolean = true
   private var stopOnEmpty: Boolean = false
@@ -178,6 +180,8 @@ class BuildQueue extends BuildManager {
   private def addTask(up: Update, qt: QueuedTask) {
     updatePolicy = up
     val qtDep = qt.task.asDependency
+    qt.willProvide.foreach(rd => if (catalog.contains(rd)) log(rd.toJString + " in " + catalog(rd).toJString)
+    else catalog(rd) = qtDep)
     if (alreadyBuilt isDefinedAt qtDep) {
       if (qt.dependencyClosure) {
         // dependency of previous job: skip
@@ -227,16 +231,25 @@ class BuildQueue extends BuildManager {
 
   private def getNextTask: Option[QueuedTask] = {
     val currentMissingDeps = getTopTask
-    val (bDeps, fDeps) = currentMissingDeps.partition {
+    val (bDeps, rDeps) = currentMissingDeps.partition {
       case bd: FileBuildDependency => true
       case _ => false
     }
-    val bds = bDeps.collect { case bd: BuildDependency => bd }
+    val rDeps1 = rDeps.map { rd => (rd, rd match {
+      case rs: LogicalDependency => catalog.get(rs)
+      case _ => None
+    })
+    }
+    val (lDeps1, fDeps1) = rDeps1.partition(_._2.isDefined)
+    val fDeps = fDeps1.map(_._1)
+    val lDeps = lDeps1.map(_._2.get)
+    val bds = lDeps ++ bDeps.collect { case bd: BuildDependency => bd }
     if (currentMissingDeps.nonEmpty) {
       val qt = currentQueueTask.get // is non-empty if deps are missing
       currentQueueTask = None
       if (fDeps.nonEmpty) {
         qt.missingDeps = fDeps
+        log("blocked: " + qt.toJString)
         blocked = blocked ::: List(qt)
         getNextTask
       } else {
@@ -297,7 +310,7 @@ class BuildQueue extends BuildManager {
   /** unblock previously blocked tasks whose dependencies have now been provided */
   private def unblockTasks(res: BuildResult) {
     blocked.foreach { bt =>
-      bt.missingDeps = bt.missingDeps.toList diff res.provided
+      bt.missingDeps = bt.missingDeps diff res.provided
     }
     val (unblocked, stillBlocked) = blocked.partition(_.missingDeps.isEmpty)
     blocked = stillBlocked
@@ -330,7 +343,7 @@ class BuildQueue extends BuildManager {
             val optRes = qt.target.checkOrRunBuildTask(qt.missingDeps.toSet, qt.task, updatePolicy)
             val res1 = optRes.getOrElse(BuildSuccess(Nil, Nil))
             val res = res1 match {
-                // let's assume for now that the estimation is better than the actual result
+              // let's assume for now that the estimation is better than the actual result
               case BuildSuccess(u, Nil) => BuildSuccess(u, qt.willProvide)
               case _ => res1
             }
@@ -349,8 +362,9 @@ class BuildQueue extends BuildManager {
                 if (optRes.isDefined || !alreadyBuilt.isDefinedAt(qtDep)) {
                   alreadyBuilt(qtDep) = res
                 }
-                // TODO write file errors/.../file.deps
-                // XML file containing used, provided, had errors
+              res.provided.foreach(catalog(_) = qtDep)
+              // TODO write file errors/.../file.deps
+              // XML file containing used, provided, had errors
               case MissingDependency(missing, provided) =>
                 // register missing dependencies and requeue
                 qt.missingDeps = missing

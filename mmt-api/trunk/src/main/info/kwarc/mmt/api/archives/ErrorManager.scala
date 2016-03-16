@@ -73,8 +73,18 @@ case class BuildError(archive: Archive, target: String, path: FilePath, data: Er
 object ErrorReader {
   /** only get errors equal or above errorLevel */
   def getBuildErrors(f: File, errorLevel: Level, log: Option[String => Unit]): List[ErrorContent] = {
-    val emptyErr = f.length == 0
-    val node = if (emptyErr) <errors></errors> else xml.readFile(f)
+    var emptyErr = f.length == 0
+    var emptyMsg = "corrupt empty error file"
+    val emptyNode = <errors></errors>
+    val node = if (emptyErr) emptyNode else
+      try {
+        xml.readFile(f)
+      } catch {
+        case e: Exception =>
+          emptyErr = true
+          emptyMsg = e.getMessage
+          emptyNode
+      }
     var bes: List[ErrorContent] = Nil
     node.child.foreach { x =>
       def getAttrs(attrs: List[String], x: Node): List[String] = {
@@ -106,7 +116,7 @@ object ErrorReader {
     }
     if (node.child.isEmpty && (emptyErr || errorLevel <= Level.Force)) {
       bes ::= ErrorContent("", 0, None, if (!f.exists) "cleaned"
-      else if (emptyErr) "corrupt empty error file" else "no error")
+      else if (emptyErr) emptyMsg else "no error")
     }
     bes.reverse
   }
