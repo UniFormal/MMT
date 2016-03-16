@@ -409,6 +409,10 @@ object Path {
       case p : DPath => p
       case p => throw ParseError("document path expected: " + p) 
    }
+   def parseMS(s : String, nsMap : NamespaceMap) : ContentPath = parse(s,nsMap) match {
+      case p : ContentPath => p
+      case p => throw ParseError("document path expected: " + p)
+   }
 }
 
 /** 
