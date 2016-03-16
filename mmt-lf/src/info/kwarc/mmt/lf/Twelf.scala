@@ -130,15 +130,24 @@ class Twelf extends Importer with frontend.ChangeListener {
     }
     if (!(outFile.exists && outFile.length > 0)) {
       error("unknown error: Twelf produced no omdoc file")
+      BuildFailure(Nil, Nil)
     } else
       try {
         val dp = bf.narrationDPath
         val ps = ParsingStream.fromFile(outFile, Some(dp.copy(uri = dp.uri.setExtension("omdoc"))))
-        seCont(controller.read(ps, interpret = false)(bf.errorCont))
+        val doc = controller.read(ps, interpret = false)(bf.errorCont)
+        seCont(doc)
+        val provided = doc.getModulesResolved(controller.globalLookup).map(_.path) map LogicalDependency
+        val used = Nil //TODO how to get exact dependencies at this point?
+             //TODO how to return MissingDependency?
+        if (bf.errorCont.hasNewErrors)
+          BuildFailure(used, provided)
+        else
+          BuildSuccess(used, provided)
       } catch {
         case e: scala.xml.parsing.FatalError =>
           error("XML error in omdoc file (likely too big for Twelf to write)")
+          BuildFailure(Nil, Nil)
       }
-    BuildResult.empty
   }
 }
