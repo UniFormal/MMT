@@ -179,6 +179,7 @@ class BuildQueue extends BuildManager {
 
   private def addTask(up: Update, qt: QueuedTask) {
     updatePolicy = up
+    log("added:" + qt.toJString)
     val qtDep = qt.task.asDependency
     qt.willProvide.foreach(rd => if (catalog.contains(rd)) log(rd.toJString + " in " + catalog(rd).toJString)
     else catalog(rd) = qtDep)

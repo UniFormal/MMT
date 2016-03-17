@@ -441,7 +441,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
         case _ => res
       }
     } catch {
-      case e: Error => bt.errorCont(e)
+      case e: Error =>
+        bt.errorCont(e)
+        res = BuildFailure(Nil, Nil)
       case e: Exception =>
         val le = LocalError("unknown build error: " + e.getMessage).setCausedBy(e)
         bt.errorCont(le)
