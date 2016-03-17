@@ -25,6 +25,8 @@ class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask) {
   var missingDeps: List[Dependency] = Nil
   /** resources that will be provided once successfully built */
   var willProvide: List[ResourceDependency] = Nil
+  /** update policy */
+  var updatePolicy = Update(Level.Force)
 
   def toJString: String = {
     val str = task.inPath.toString
@@ -166,8 +168,6 @@ class BuildQueue extends BuildManager {
   /** all tasks that were built (successfully or permanently-failing) since the last time the queue was empty */
   val alreadyBuilt = new mutable.HashMap[Dependency, BuildResult]
   var finishedBuilt = immutable.Queue[(Dependency, BuildResult)]()
-  /** global update policy */
-  var updatePolicy = Update(Level.Force)
   var currentQueueTask: Option[QueuedTask] = None
   /** the catalog from (logical) resource dependency to build dependency */
   val catalog = new mutable.HashMap[ResourceDependency, BuildDependency]
@@ -178,7 +178,7 @@ class BuildQueue extends BuildManager {
   val sleepTime: Int = 2000
 
   private def addTask(up: Update, qt: QueuedTask) {
-    updatePolicy = up
+    qt.updatePolicy = up
     log("added:" + qt.toJString)
     val qtDep = qt.task.asDependency
     qt.willProvide.foreach(rd => if (catalog.contains(rd)) log(rd.toJString + " in " + catalog(rd).toJString)
@@ -257,7 +257,7 @@ class BuildQueue extends BuildManager {
         qt.missingDeps = Nil
         queued.addFirst(qt)
         cycleCheck += qt.task.asDependency
-        bds.foreach(t => buildDependency(updatePolicy, t))
+        bds.foreach(t => buildDependency(qt.updatePolicy, t))
         getNextTask
       }
     } else currentQueueTask
@@ -341,7 +341,7 @@ class BuildQueue extends BuildManager {
         getNextTask match {
           case Some(qt) =>
             // TODO run this in a Future and track dependencies
-            val optRes = qt.target.checkOrRunBuildTask(qt.missingDeps.toSet, qt.task, updatePolicy)
+            val optRes = qt.target.checkOrRunBuildTask(qt.missingDeps.toSet, qt.task, qt.updatePolicy)
             val res1 = optRes.getOrElse(BuildSuccess(Nil, Nil))
             val res = res1 match {
               // let's assume for now that the estimation is better than the actual result
