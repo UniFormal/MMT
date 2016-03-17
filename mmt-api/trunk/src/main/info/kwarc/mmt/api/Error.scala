@@ -217,14 +217,19 @@ abstract class ExtensionError(prefix: String, s: String) extends Error(prefix + 
   * might produce a non-fatal error.
   */
 abstract class ErrorHandler {
+  /** the global indicator for errors that is not reset by mark */
   private var newErrors = false
+  private var assumeNoErrors = true
 
-  def mark() {
-    newErrors = false
+  def mark {
+    assumeNoErrors = true
   }
 
-  /** true if new errors occurred since the last call to mark */
+  /** true if errors occurred since creation */
   def hasNewErrors: Boolean = newErrors
+
+  /** true if no new errors occurred since the last call to mark */
+  def noErrorsAdded: Boolean = assumeNoErrors
 
   /** registers an error
     *
@@ -232,6 +237,7 @@ abstract class ErrorHandler {
     */
   def apply(e: Error) {
     newErrors = true
+    assumeNoErrors = false
     addError(e)
   }
 
