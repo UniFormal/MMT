@@ -100,41 +100,33 @@ var interactiveViewing = {
                res['fold'] = function(){$(mmt.focus).addMClass('math-folded');};
 
 		}
-		
+
 		if (mmt.currentURI !== null) {
             var uri = mmt.currentURI;
-            var sub = {};
             var me = this;
-            sub["in this window"] = function() {
-                me.navigate(uri);
-	      	};
-            sub["in new window"] = function() {mmt.openCurrent();};
-            sub["in remote listeners"] = function() {
-	            me.navigateServer(uri);
-      	    };
+
       	    var name = mmt.splitMMTURI(uri, false).slice(-1)[0];
-			res["go to declaration of '" + name + "'"] = sub;
+			res["go to declaration of '" + name + "'"] = me.addsub(uri);
 
             var alignTargets = [];
-                        $.ajax({'url': "/:align/from?" + mmt.currentURI,
-                                'async': false,
-                                'success': function(data) {alignTargets = data.split("\n");}
-                        });
-                        if (alignTargets.length != 0) {
-                           var aligns = {};
-                           alignTargets.forEach(function(at) {
-                                var asub = {};
-                                asub["in this window"] = function() {
-                                               me.navigate(at);
-                               	      	};
-                                           asub["in new window"] = function() {window.open("/?"+at, '_blank', '', false);};
-                                           asub["in remote listeners"] = function() {
-                               	            me.navigateServer(uri);
-                                     	    };
-                              aligns[at] = asub; //function(){me.showComputationResult("a", "align", at)};
-                           })
-                           res["go to aligned symbol"] = aligns;
-                        }
+
+            $.ajax({'url': "/:align/from?" + mmt.currentURI,
+              'async': false,
+	          // 'contentType': 'json',
+              'success': function(data) {
+                if (data.length != 0) {
+                  alignTargets = data.split("\n");
+                };
+              }
+            });
+
+            if (alignTargets.length != 0) {
+              var aligns = {};
+              alignTargets.forEach(function(at) {
+                aligns[at] = me.addsub(at); //function(){me.showComputationResult("a", "align", at)};
+              })
+              res["go to aligned symbol"] = aligns;
+            }
 
 			/*res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};*/
 			res["show declaration"] =
@@ -150,6 +142,19 @@ var interactiveViewing = {
          /*	res["comment"] = function(){me.addComment()};*/
 		}
 		return res;
+	},
+
+	addsub : function (link){
+      var me = this;
+	  var sub = {};
+      sub["in this window"] = function() {
+        me.navigate(link);
+      };
+      sub["in new window"] = function() {window.open("/?"+link, '_blank', '', false);};
+      sub["in remote listeners"] = function() {
+        me.navigateServer(link);
+      };
+      return sub;
 	},
 
 	/* functions for context menu items */
