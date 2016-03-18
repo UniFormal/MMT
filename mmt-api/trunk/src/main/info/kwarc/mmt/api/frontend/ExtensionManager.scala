@@ -5,7 +5,6 @@ import archives._
 import backend._
 import checking._
 import libraries._
-import info.kwarc.mmt.api.ontology.{AlignmentsServer, QueryExtension}
 import opaque._
 import parser._
 import presentation._
@@ -124,7 +123,7 @@ class ExtensionManager(controller: Controller) extends Logger {
   private[api] var extensions: List[Extension] = Nil
   private val knownExtensionTypes = List(
     classOf[Plugin], classOf[Foundation], classOf[ParserExtension], classOf[QueryTransformer],
-    classOf[QueryExtension],
+    classOf[ontology.QueryExtension],
     classOf[ChangeListener], classOf[ServerExtension],
     classOf[Parser], classOf[Checker], classOf[Prover], classOf[Interpreter], classOf[Simplifier], classOf[Presenter],
     classOf[BuildTarget]
@@ -297,7 +296,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       new web.SubmitCommentServer).foreach(addExtension(_))
     //queryExtensions
     List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
-      new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
+      new ontology.Present, new ontology.PresentDecl, new ontology.AlignmentsServer).foreach(addExtension(_))
     // shell extensions
     List(new ShellSendCommand).foreach(addExtension(_))
 
