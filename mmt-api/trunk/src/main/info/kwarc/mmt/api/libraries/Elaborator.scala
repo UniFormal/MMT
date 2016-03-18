@@ -19,20 +19,20 @@ object ElaboratedElement extends BooleanClientProperty[StructuralElement](utils.
 
 /**
  * the primary class for all flattening, materialization, enriching of theories
- * 
+ *
  * code in [[Closer]] should be merged into here
  */
 class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS) with ChangeListener {
   private lazy val memory = controller.memory
   private lazy val lup = controller.globalLookup
-  
+
   override def logPrefix = "structure-simplifier"
-  
+
   def apply(s: StructuralElement) {s match {
      case t: DeclaredTheory => flatten(t)
      case _ =>
   }}
-  
+
   /** flattens all declarations in a theory */
   // TODO extend to views
   def flatten(t: DeclaredTheory) {
@@ -40,11 +40,17 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
        return
      try {
         t.getDeclarations.foreach {d => flattenDeclaration(t, d)}
+        t.meta foreach {mt =>
+          val mtThy = lup.getO(mt) match {
+            case Some(d: DeclaredTheory) => flatten(d)
+            case _ =>
+          }
+        }
      } finally {// if something goes wrong, don't try again
       ElaboratedElement.set(t)
      }
   }
-  
+
   /** adds elaboration of d to parent */
   private def flattenDeclaration(parent: DeclaredTheory, dOrig: Declaration) {
     if (ElaboratedElement.is(dOrig))
@@ -94,9 +100,9 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
     }
     ElaboratedElement.set(dOrig)
   }
-  
+
   // TODO change management does not propagate to other theories yet
-  
+
   /** deletes all declarations that were added by elaborating se */
   override def onDelete(se: StructuralElement) {
      if (! ElaboratedElement.is(se))
@@ -124,7 +130,7 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
        case _ =>
      }
   }
-  
+
   private var materializeCounter = 0
   private def newName: MPath = {
      val i = materializeCounter
@@ -158,7 +164,7 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
         thy
     }
   }
-  
+
   def getBody(context: Context, moduleExp: Term): ElementContainer[NamedElement] = moduleExp match {
      case OMMOD(p) => lup.getTheory(p) match {
        case m: DefinedModule => getBody(context, m.df)
@@ -169,18 +175,18 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
   }
 
    /* everything below here is Mihnea's enrichment code, which may be outdated or incomplete */
-  
+
   /** auxiliary method of enriching */
   private lazy val loadAll = {
-    memory.ontology.getInds(ontology.IsTheory) foreach {p => 
+    memory.ontology.getInds(ontology.IsTheory) foreach {p =>
       controller.get(p)
-    } 
-    memory.ontology.getInds(ontology.IsView) foreach {p => 
+    }
+    memory.ontology.getInds(ontology.IsView) foreach {p =>
       controller.get(p)
     }
   }
   private lazy val modules = controller.memory.content.getModules
-  
+
   /**
    * adds declarations induced by views to all theories
    */
@@ -194,8 +200,8 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
     val views = modules collect {
       case v : DeclaredView if v.to == t.toTerm => v
     } // all views to T
-    
-    views foreach { v => 
+
+    views foreach { v =>
       val s = v.from
       implicit val rules = makeRules(v)
       modules collect {
@@ -204,13 +210,13 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
           // therefore we make a structure with sprime^v and add it to tbar
           /*
           val str = SimpleDeclaredStructure(tbar.toTerm, (LocalName(v.path) / sprime.path.toPath), sprime.path, false)
-          sprime.getDeclarations foreach {d => 
+          sprime.getDeclarations foreach {d =>
             str.add(rewrite(d))
           }
           tbar.add(str)
           */
           //conceptually this should be a structure, but adding the declarations directly is more efficient
-          sprime.getDeclarations foreach { 
+          sprime.getDeclarations foreach {
             case c : Constant => tbar.add(rewrite(c, s.toMPath, tbar.path, t.getInnerContext))
             case _ => //nothing for now //TODO handle structures
           }
@@ -235,32 +241,32 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
       val s = v.from
       implicit val rules = makeRules(v)
       modules collect {
-        case sprime : DeclaredTheory if memory.content.visible(sprime.toTerm).toSet.contains(s) => 
+        case sprime : DeclaredTheory if memory.content.visible(sprime.toTerm).toSet.contains(s) =>
           val tvw = new DeclaredTheory(t.parent, sprime.name / v.name, t.meta)
-          sprime.getDeclarations foreach { 
+          sprime.getDeclarations foreach {
             case c : Constant => tvw.add(rewrite(c, v.path, tbar.path, t.getInnerContext))
             case _ => //nothing for now //TODO handle structures
           }
           thys ::= tvw
       }
-      
+
     }
-    
+
     thys
   }
-  
-  
+
+
   private def makeRules(v : DeclaredView) : HashMap[Path, Term] = {
     val path = v.from.toMPath
     var rules = new HashMap[Path,Term]
     val decl = v.getDeclarations
-    
+
     v.getDeclarations foreach {
-      case c : Constant => 
+      case c : Constant =>
         c.df.foreach {t =>
           rules += (path ? c.name -> t)
         }
-      case d : DefinedStructure => 
+      case d : DefinedStructure =>
         try {
           controller.get(d.df.toMPath) match {
             case d : DeclaredView => rules ++= makeRules(d)
@@ -273,7 +279,7 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
     }
     rules
   }
-  
+
   private def rewrite(d : Declaration, vpath : MPath, newhome : MPath, context : Context)(implicit rules : HashMap[Path, Term]) : Declaration = d match {
     case c : Constant =>
       val newtpC = TermContainer(c.tp.map(t => controller.simplifier.apply(rewrite(t), context)))
@@ -284,17 +290,17 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
       newCons
     case x => x
   }
-  
-  
+
+
   private def rewrite(t : Term)(implicit rules : HashMap[Path, Term]) : Term = {
     t match {
-    case OMID(p) => 
+    case OMID(p) =>
       if (rules.isDefinedAt(p)) rules(p) else t
     case OMA(f, args) => OMA(rewrite(f), args.map(rewrite))
     case OMBINDC(b, con, bodies) => OMBINDC(rewrite(b), rewrite(con), bodies.map(rewrite))
     case _ => t
   }}
-   
+
   private def rewrite(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
     val vars = con.variables map {
       case VarDecl(n, tp, df, not) => VarDecl(n, tp.map(rewrite), df.map(rewrite), not)
