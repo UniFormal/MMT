@@ -166,15 +166,17 @@ class AlignmentsServer extends ServerExtension("align") {
   private val alignments = mutable.HashSet[Alignment]()
   
   override def start(args:List[String]) {
-    args.foreach(a => {
+    args.foreach(a => try {
       val file = File(a)
-      if (file.getExtension match {case Some("json") => true case _ => false})
-        readJSON(file)
-      else readFile(file)
+      val fs = FilePath.getall(file).filter(_.getExtension.contains("align"))
+      println("Files: " + fs)
+      fs.foreach(readFile)
+    } catch {
+      case e:Exception => println(e.getMessage)
     })
     controller.extman.addExtension(new AlignQuery)
     controller.extman.addExtension(new CanTranslateQuery)
-
+    /*
     alignments += SimpleAlignment(
       Path.parseS("http://pvs.csl.sri.com/Prelude?list_props?append",nsMap),
       Path.parseS("http://code.google.com/p/hol-light/source/browse/trunk?lists?APPEND",nsMap),true
@@ -191,6 +193,7 @@ class AlignmentsServer extends ServerExtension("align") {
       Path.parseS("http://latin.omdoc.org/foundations/hollight?Kernel?bool",nsMap),
       URI("https://en.wikipedia.org/wiki/Boolean_data_type")
     )
+    */
 
   }
   override def destroy {

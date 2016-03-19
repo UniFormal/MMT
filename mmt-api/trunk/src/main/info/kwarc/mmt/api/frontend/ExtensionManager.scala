@@ -296,7 +296,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       new web.SubmitCommentServer).foreach(addExtension(_))
     //queryExtensions
     List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
-      new ontology.Present, new ontology.PresentDecl, new ontology.AlignmentsServer).foreach(addExtension(_))
+      new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
     // shell extensions
     List(new ShellSendCommand).foreach(addExtension(_))
 

@@ -133,6 +133,10 @@ object FilePath {
    def apply(s:String): FilePath = FilePath(List(s))
    implicit def filePathToList(fp: FilePath) = fp.segments
    implicit def listToFilePath(l: List[String]) = FilePath(l)
+
+  def getall(f : File) : List[File] = rec(List(f))
+
+  private def rec(list : List[File]) : List[File] = list.flatMap(f => if (f.isDirectory) rec(f.children) else List(f))
 }
 
 /** constructs and pattern-matches absolute file:URIs in terms of absolute File's */
