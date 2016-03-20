@@ -177,7 +177,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                }
             }
             if (alignments.nonEmpty) {
-               tr("alignments") {
+               tr("alignments", attributes = List("style" -> "display:none;")) {
                  td {span(compLabel){text{"aligned with"}}}
                  td {alignments.foreach {al =>
                     div("align") {al.to match {
