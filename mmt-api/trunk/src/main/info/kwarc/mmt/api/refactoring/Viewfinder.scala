@@ -1,5 +1,5 @@
 package info.kwarc.mmt.api.refactoring
-
+/*
 import info.kwarc.mmt.api.frontend.{Logger, Controller}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.DeclaredTheory
@@ -351,8 +351,6 @@ case class Viewfinder(ctrl: Controller) extends Logger {
       )
     }
   }
-
-
-
 }
+*/
 */

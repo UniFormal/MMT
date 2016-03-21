@@ -1,5 +1,5 @@
 package info.kwarc.mmt.api.refactoring
-
+/*
 import info.kwarc.mmt.api.libraries.Closer
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.{GlobalName, LocalName}
@@ -70,3 +70,4 @@ object SubtractDeclaration {
     )
   }
 }
+*/

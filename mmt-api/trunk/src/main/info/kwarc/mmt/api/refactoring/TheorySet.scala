@@ -1,5 +1,5 @@
 package info.kwarc.mmt.api.refactoring
-
+/*
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.symbols._
@@ -129,3 +129,4 @@ object TheorySet {
   }
 
 }
+*/

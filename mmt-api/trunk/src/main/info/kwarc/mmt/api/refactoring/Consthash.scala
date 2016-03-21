@@ -1,5 +1,5 @@
 package info.kwarc.mmt.api.refactoring
-
+/*
 import info.kwarc.mmt.api.libraries.Closer
 import info.kwarc.mmt.api.{LocalName, MPath, GlobalName}
 import info.kwarc.mmt.api.frontend.Controller
@@ -220,3 +220,4 @@ object AxiomHandler {
   }
 
 }
+*/

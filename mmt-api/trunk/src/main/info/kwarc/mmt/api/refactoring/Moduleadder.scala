@@ -1,5 +1,5 @@
 package info.kwarc.mmt.api.refactoring
-
+/*
 import info.kwarc.mmt.api.{ComplexStep, SimpleStep, LocalName, GlobalName}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
@@ -141,3 +141,4 @@ object Moduleadder {
   }
 
 }
+*/

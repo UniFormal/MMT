@@ -6,7 +6,6 @@ import java.io.{File, FileWriter}
 import javax.swing._
 
 import info.kwarc.mmt.api.archives.Archive
-import info.kwarc.mmt.api.libraries.Closer
 import info.kwarc.mmt.api.objects.{Term, OMID}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{ReportHandler, Controller}

@@ -1,5 +1,5 @@
 package info.kwarc.mmt.api.refactoring
-
+/*
 import info.kwarc.mmt.api.frontend.{Logger, Controller}
 
 abstract class Intersecter extends Logger {
@@ -306,4 +306,5 @@ object Intersecter {
   }
 }
 
+*/
 */

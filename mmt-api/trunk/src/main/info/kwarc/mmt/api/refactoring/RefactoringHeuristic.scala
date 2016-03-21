@@ -1,5 +1,5 @@
 package info.kwarc.mmt.api.refactoring
-
+/*
 import info.kwarc.mmt.api.notations.{TextNotation, NotationContainer}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.{ComplexStep, NamespaceMap, LocalName, GlobalName}
@@ -81,3 +81,4 @@ case class NaiveHeuristic(ctrl : Controller) extends RefactoringHeuristic {
   }
 
 }
+*/

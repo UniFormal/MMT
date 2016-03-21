@@ -1,5 +1,5 @@
 package info.kwarc.mmt.api.refactoring
-
+/*
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Closer
 import info.kwarc.mmt.api.objects.OMS
@@ -286,3 +286,4 @@ object Viewset {
     apply(ass,sub,path)
   }
 }
+*/
