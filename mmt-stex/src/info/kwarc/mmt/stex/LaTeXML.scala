@@ -1,16 +1,14 @@
 package info.kwarc.mmt.stex
 
-import java.io.{PrintStream, InputStream}
 import java.net.{BindException, ServerSocket}
 import java.nio.file.Files
 
-import STeXUtils._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.utils.AnaArgs._
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
+import info.kwarc.mmt.api.utils.AnaArgs._
 import info.kwarc.mmt.api.utils._
+import info.kwarc.mmt.stex.STeXUtils._
 
 import scala.sys.process._
 
@@ -63,7 +61,7 @@ class AllTeX extends LaTeXDirTarget {
   }
 }
 
-import STeXUtils._
+import info.kwarc.mmt.stex.STeXUtils._
 
 /** sms generation */
 class SmsGenerator extends LaTeXBuildTarget {
@@ -217,9 +215,13 @@ class LaTeXML extends LaTeXBuildTarget {
   }
 
   private val provideMarker = "provides theory: "
+  private val missingFileMarker = "missing_file:"
+  private val endOfMissingFile = " Can't find"
 
-  private def readLogFile(bt: BuildTask, logFile: File): List[String] = {
+  private def readLogFile(bt: BuildTask, logFile: File): (List[String], List[String], Boolean) = {
     var providedTheories: List[String] = Nil
+    var missingFiles: List[String] = Nil
+    var errors = false
     LtxLog.phase = 1
     val source = readSourceRebust(logFile)
     source.getLines().foreach { line =>
@@ -235,8 +237,14 @@ class LaTeXML extends LaTeXBuildTarget {
         LtxLog.optLevel = newLevel
         LtxLog.msg = List(restLine)
         LtxLog.newMsg = false
-        if (newLevel.get == Level.Info && restLine.startsWith(provideMarker)) {
+        val level = newLevel.get
+        if (level >= Level.Error) errors = true
+        if (level == Level.Info && restLine.startsWith(provideMarker)) {
           providedTheories ::= restLine.substring(provideMarker.length)
+        }
+        if (level == Level.Error && restLine.startsWith(missingFileMarker)) {
+          val endPos = restLine.indexOf(endOfMissingFile)
+          missingFiles ::= restLine.substring(missingFileMarker.length, endPos)
         }
       }
       else if (line.startsWith("\t")) {
@@ -249,7 +257,7 @@ class LaTeXML extends LaTeXBuildTarget {
       else LtxLog.reportError(bt)
     }
     LtxLog.reportError(bt)
-    providedTheories.reverse
+    (missingFiles.reverse, providedTheories.reverse, errors)
   }
 
   private def extEnv(bt: BuildTask): List[(String, String)] = {
@@ -342,8 +350,11 @@ class LaTeXML extends LaTeXBuildTarget {
           bt.errorCont(LatexError(e.toString, output.toString))
       }
       var providedTheories: List[ResourceDependency] = Nil
+      var missingFiles: List[Dependency] = Nil
       if (logFile.exists()) {
-        val pTs = readLogFile(bt, logFile)
+        val (mFs, pTs, hasErrs) = readLogFile(bt, logFile)
+        failure = failure || hasErrs
+        missingFiles = mFs.map(s => PhysicalDependency(File(s)))
         providedTheories = pTs.map(s => LogicalDependency(Path.parseM("https://mathhub.info/" + s, NamespaceMap.empty)))
         if (pipeOutput) File.ReadLineWise(logFile)(println)
       }
@@ -351,7 +362,8 @@ class LaTeXML extends LaTeXBuildTarget {
       if (failure) {
         lmhOut.delete()
         logFailure(bt.outPath)
-        BuildFailure(Nil, providedTheories)
+        if (missingFiles.isEmpty) BuildFailure(Nil, providedTheories)
+        else MissingDependency(missingFiles, providedTheories)
       } else {
         logSuccess(bt.outPath)
         BuildSuccess(Nil, providedTheories)
