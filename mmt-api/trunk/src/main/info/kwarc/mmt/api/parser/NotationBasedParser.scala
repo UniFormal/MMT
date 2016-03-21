@@ -56,12 +56,12 @@ class NotationBasedParser extends ObjectParser {
      /** unknown variables */
      private var vardecls: List[VarDecl] = Nil
      private var counter = 0
-     
+
      /** free variables, whose types may depend on the unknowns */
      private var freevars: List[LocalName] = Nil
      def getFreeVars = freevars
      def bindFree(v : VarDecl) = freevars = freevars.filter(w => w!=v.name)
-     
+
      def getVariables(implicit pu: ParsingUnit): (Context,Context) = {
         val vdNames = vardecls.map(_.name)
         val fvDecls = freevars map {n =>
@@ -70,31 +70,31 @@ class NotationBasedParser extends ObjectParser {
         }
         (vardecls, fvDecls)
      }
-   
+
      private def next = {
        val s = counter.toString
        counter += 1
        s
      }
-   
+
      def reset() {
        vardecls = Nil
        counter = 0
        freevars = Nil
      }
-   
+
      /** name of an omitted implicit argument */
      def newArgument =
        LocalName("") / "I" / next
-   
+
      /** name of the omitted type of a variable */
      def newType(name: LocalName) =
        LocalName("") / name / next
-   
+
      /** name of an explicitly omitted argument */
      def newExplicitUnknown =
        LocalName("") / "_" / next
-   
+
      /** generates a new unknown variable, constructed by applying a fresh name to all bound variables */
      def newUnknown(name: LocalName, bvars: List[LocalName])(implicit pu: ParsingUnit) = {
        vardecls ::= VarDecl(name, None, None, None)
@@ -105,7 +105,7 @@ class NotationBasedParser extends ObjectParser {
          prag.defaultApplication(Some(pu.context.getIncludes.last), OMV(name), bvars.map(OMV(_)))
        }
      }
-   
+
      /** generates a new unknown variable for the index that chooses from a list of options in an ambiguity
       *  always an integer, thus independent of bound variables
       */
@@ -114,11 +114,11 @@ class NotationBasedParser extends ObjectParser {
        vardecls ::= VarDecl(name, None, None, None)
        OMV(name)
      }
-       
+
      /** generates a new free variable that is meant to be bound on the outside */
      def newFreeVariable(n: String) = {
        val name = LocalName(n)
-       freevars ::= name 
+       freevars ::= name
        OMV(name)
      }
   }
@@ -190,7 +190,7 @@ class NotationBasedParser extends ObjectParser {
     //TODO we can also collect notations attached to variables
     val includes = support.flatMap {p => controller.library.visible(OMMOD(p))}.distinct
     val decls = includes flatMap {tm =>
-      controller.localLookup.getO(tm.toMPath) match {
+      controller.globalLookup.getO(tm.toMPath) match {
         case Some(d: modules.DeclaredTheory) =>
            controller.simplifier.flatten(d)
            d.getDeclarations
@@ -226,9 +226,9 @@ class NotationBasedParser extends ObjectParser {
   }
 
   /** true if n may be the name of a free variable, see [[ParseResult]]
-   *  
+   *
    *  making this always true hides source errors
-   *  making this never true requires awkwardly binding all variables 
+   *  making this never true requires awkwardly binding all variables
    */
   private def mayBeFree(n: String) = {
      n != "" && n(0).isLetter &&
@@ -290,7 +290,7 @@ class NotationBasedParser extends ObjectParser {
    * @param attrib the resulting term should be a variable attribution
    */
   private def makeTerm(te: TokenListElem, boundVars: List[LocalName], attrib: Boolean = false)(implicit pu: ParsingUnit, errorCont: ErrorHandler): Term = {
-    // cases may return multiple options in case of ambiguity 
+    // cases may return multiple options in case of ambiguity
     val alternatives: List[Term] = te match {
       case Token(word, _, _, _) =>
         lazy val unparsed = OMSemiFormal(objects.Text("unknown", word)) // fallback option
@@ -364,7 +364,7 @@ class NotationBasedParser extends ObjectParser {
            ObjectParser.oneOf(av::l)
      }
   }
-  
+
   /** auxiliary method of makeTerm */
   private def makeTermFromMatchedList(ml: MatchedList, boundVars: List[LocalName], attrib: Boolean)(implicit pu: ParsingUnit, errorCont: ErrorHandler): List[Term] = {
      val notation = ml.an.rules.head.notation // all notations must agree
@@ -516,11 +516,11 @@ class NotationBasedParser extends ObjectParser {
         we cache those in UnknownCacher to make sure we only generate one set of unknown variables
       */
      /**
-      * used to 
+      * used to
       * on the first run, delegates to NotationBasedParser.newUnknown and caches the results
-      * 
+      *
       * on subsequent runs, uses the cached results
-      * 
+      *
       */
      object UnknownCacher {
         /** true iff this is the first run */
@@ -529,7 +529,7 @@ class NotationBasedParser extends ObjectParser {
         private var cachedUnknowns : List[Term] = Nil
         /** the remaining list of unknowns to be used during the current subsequent run */
         private var nextUnknowns: List[Term] = Nil
-        /** initializes before every subsequent run */ 
+        /** initializes before every subsequent run */
         def prepareNextRun {
            firstRun = false
            nextUnknowns = cachedUnknowns
