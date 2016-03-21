@@ -216,7 +216,10 @@ class LaTeXML extends LaTeXBuildTarget {
     }
   }
 
-  private def readLogFile(bt: BuildTask, logFile: File) {
+  private val provideMarker = "provides theory: "
+
+  private def readLogFile(bt: BuildTask, logFile: File): List[String] = {
+    var providedTheories: List[String] = Nil
     LtxLog.phase = 1
     val source = readSourceRebust(logFile)
     source.getLines().foreach { line =>
@@ -232,6 +235,9 @@ class LaTeXML extends LaTeXBuildTarget {
         LtxLog.optLevel = newLevel
         LtxLog.msg = List(restLine)
         LtxLog.newMsg = false
+        if (newLevel.get == Level.Info && restLine.startsWith(provideMarker)) {
+          providedTheories ::= restLine.substring(provideMarker.length)
+        }
       }
       else if (line.startsWith("\t")) {
         val sLine = line.substring(1)
@@ -243,6 +249,7 @@ class LaTeXML extends LaTeXBuildTarget {
       else LtxLog.reportError(bt)
     }
     LtxLog.reportError(bt)
+    providedTheories.reverse
   }
 
   private def extEnv(bt: BuildTask): List[(String, String)] = {
@@ -295,6 +302,7 @@ class LaTeXML extends LaTeXBuildTarget {
         pbc.!(ProcessLogger(_ => (), _ => ()))
         Thread.sleep(delaySecs)
       }
+      BuildResult.empty
     } else {
       val lmhOut = bt.outFile
       val logFile = bt.outFile.setExtension("ltxlog")
@@ -314,6 +322,7 @@ class LaTeXML extends LaTeXBuildTarget {
         preloads.map("--preload=" + _) ++
         paths.map("--path=" + _)
       log(argSeq.mkString(" ").replace(" --", "\n --"))
+      var failure = false
       try {
         val pbs = Process(Seq(latexmls, "--expire=" + expire, "--port=" + realPort,
           "--autoflush=100"), bt.archive / inDim, lEnv: _*)
@@ -324,24 +333,30 @@ class LaTeXML extends LaTeXBuildTarget {
         val pb = Process(argSeq, bt.archive / inDim, lEnv: _*)
         val exitCode = timeout(pb, procLogger(output, pipeOutput = false))
         if (exitCode != 0 || lmhOut.length == 0) {
-          bt.errorCont(LatexError("no omdoc created", output.toString))
-          lmhOut.delete()
-          logFailure(bt.outPath)
+          failure = true
+          bt.errorCont(LatexError(if (exitCode == 0) "no omdoc created" else "exit code " + exitCode, output.toString))
         }
-        if (lmhOut.exists()) logSuccess(bt.outPath)
       } catch {
         case e: Exception =>
-          lmhOut.delete()
+          failure = true
           bt.errorCont(LatexError(e.toString, output.toString))
-          logFailure(bt.outPath)
       }
+      var providedTheories: List[ResourceDependency] = Nil
       if (logFile.exists()) {
-        readLogFile(bt, logFile)
+        val pTs = readLogFile(bt, logFile)
+        providedTheories = pTs.map(s => LogicalDependency(Path.parseM("https://mathhub.info/" + s, NamespaceMap.empty)))
         if (pipeOutput) File.ReadLineWise(logFile)(println)
       }
       if (pipeOutput) print(output.toString)
+      if (failure) {
+        lmhOut.delete()
+        logFailure(bt.outPath)
+        BuildFailure(Nil, providedTheories)
+      } else {
+        logSuccess(bt.outPath)
+        BuildSuccess(Nil, providedTheories)
+      }
     }
-    BuildResult.empty
   }
 
   override def cleanFile(arch: Archive, curr: Current) {
