@@ -11,7 +11,6 @@
     <title>MMT Error Viewer</title>
 </head>
 <body>
-
 <div ng-controller="SearchController">
     <p><b>MMT Error Viewer</b> on <a ng-href="{{host}}" target="_blank">{{host}}</a> loaded at {{date}}
         (<a href="https://github.com/KWARC/MMT/issues/new" target="_blank">report issues here</a>)
@@ -26,6 +25,7 @@
             ng-options="columns[key].long for key in colProps "></select>
     as overview with maximal rows:
     <input type="number" min="0" max="10000" ng-click="group()"
+           ng-keypress="$event.which === 13 && group()"
            ng-model="maxGroups"/>
     <table title="grouped entries">
         <thead>
@@ -66,18 +66,16 @@
         </tr>
         </tbody>
     </table>
-
     <p/>
     <button ng-click="clearlast()">remove last hidden entry</button>
     <button ng-click="clearhidden()">clear all hidden entries</button>
     <button ng-click="clear()">clear search fields below</button>
     maximal entries:
-    <input type="number" min="0" max="10000" ng-model="maxNumber"/>
+    <input type="number" min="0" max="10000" ng-model="maxNumber" ng-keypress="$event.which === 13 && search()"/>
     <span>
         <span ng-show="number > results.length">{{number}} entries (showing {{results.length}})</span>
         <span ng-show="number <= results.length">result: {{results.length}}</span>
     </span>
-
     <p>restrict the number of displayed entries to support fast searches in every column.</p>
     Click
     <button ng-click="search()" title="search for selection" style="color:green;"><b>RELOAD</b></button>
@@ -126,7 +124,7 @@
                 <br/>
                 <a href="" ng-click="columns[key].search = ''"
                    title="clear text">&#10226;</a>
-                <input type="text" ng-model="columns[key].search" size="5"/>
+                <input type="text" ng-model="columns[key].search" size="5" ng-keypress="$event.which === 13 && search()"/>
             </th>
         </tr>
         </thead>
