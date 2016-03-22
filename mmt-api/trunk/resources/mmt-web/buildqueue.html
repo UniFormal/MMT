@@ -4,11 +4,11 @@
 <head>
     <script src="script/angularjs/angular-1.3.14/angular.min.js"></script>
     <script src="script/buildqueue/buildqueue.js"></script>
+    <title>MMT Build Queue</title>
 </head>
 <body>
-<h3 style="display:inline">BuildQueue viewer</h3>
-
 <div ng-controller="QueueViewer">
+    <p><b>MMT Build Queue</b> (via <a href="errorview.html">Error Viewer</a>)</p>
     <p>refresh rate:
     <input type="number" min="0" max="10000" ng-click="stopRepeat(); repeat()" ng-model="refreshRate"/>
         queue length {{queue.length}}</p>

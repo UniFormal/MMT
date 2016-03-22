@@ -8,11 +8,18 @@
     <script src="script/mmt/mmt-js-api.js"></script>
     <script src="script/errorview/errorview.js"></script>
     <link rel="stylesheet" href="css/errorview.css"/>
+    <title>MMT Error Viewer</title>
 </head>
 <body>
-<h3 style="display:inline">Error viewer</h3>
 
 <div ng-controller="SearchController">
+    <p><b>MMT Error Viewer</b> on <a ng-href="{{host}}" target="_blank">{{host}}</a> loaded at {{date}}
+        (<a href="https://github.com/KWARC/MMT/issues/new" target="_blank">report issues here</a>)
+        (<a href="https://github.com/KWARC/MMT/wiki/Error-Viewer-Help" target="_blank">get help</a>)
+    </p>
+    <span ng-show="host.indexOf('mathhub.info') > -1">
+        <a href="https://mathhub.info/mh/administrate_mathhub" target="_blank">Mathhub Admin</a>
+    </span>
     <p/>
     group errors by
     <select ng-click="group()" ng-model="field" ng-init="columns[shortMsg].long"
@@ -89,6 +96,7 @@
                   title="hide build results">&mdash;</span>
             <span ng-show="!showBuildResult" title="show build results">+</span>
         </a>
+        &nbsp;<a href="buildqueue.html" target="_blank">Queue</a>
         <span ng-show="showBuildResult"><p ng-bind-html="htmlText"/></span>
     </div>
     <select ng-model="buildLevel">

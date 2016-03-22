@@ -10,7 +10,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
       , fileLink : { x : false, long : 'content', search : '' }
       , fileDate : { x : false, long : 'modified', search : '' }
       , target : { x : true, long : 'target', search : '' }
-      , sourceRef : { x : true, long : 'source', search : '' }
+      , sourceRef : { x : false, long : 'source', search : '' }
       , sourceRegion : { x : false, long : 'range', search : '' }
       , shortMsg : { x : true, long : 'short message', search : '' }};
     $scope.colProps = [];
@@ -23,6 +23,8 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     $scope.maxNumber = 100;
     $scope.maxGroups = 6;
     $scope.searchText = '';
+    $scope.host=document.location.origin;
+    $scope.date=(new Date()).toString();
     $scope.query = function (doFilter, limit) {
          var res = '';
          for (k in $scope.columns) {
