@@ -17,8 +17,6 @@ import scala.xml.Node
 object Table {
   val columns: List[String] = List(
     "errLevel",
-    "errType",
-    "archive",
     "group",
     "repo",
     "fileName",
@@ -30,12 +28,12 @@ object Table {
     "shortMsg")
 }
 
-case class ErrorContent(tp: String, level: Level, sourceRef: Option[SourceRef], shortMsg: String) {
+case class ErrorContent(level: Level, sourceRef: Option[SourceRef], shortMsg: String) {
   def updateSource(optSource: Option[File]): ErrorContent = optSource match {
     case None => this
     case Some(src) => sourceRef match {
       case Some(_) => this
-      case None => ErrorContent(tp, level, Some(SourceRef(FileURI(src), parser.SourceRegion.none)), shortMsg)
+      case None => ErrorContent(level, Some(SourceRef(FileURI(src), parser.SourceRegion.none)), shortMsg)
     }
   }
 }
@@ -52,8 +50,6 @@ case class BuildError(archive: Archive, target: String, path: FilePath, data: Er
     val sourceFile = if (sourceURI.startsWith("file:")) sourceURI.substring(5) else ""
     val source = if (File(sourceFile).exists()) "file://" + sourceFile else ""
     List(if (clean || msg == "no error") "" else Level.toString(data.level),
-      data.tp,
-      archive.id,
       archive.root.up.getName,
       archive.root.getName,
       path.toString,
@@ -91,8 +87,8 @@ object ErrorReader {
         val as = x.attributes
         attrs map (a => as.get(a).getOrElse("").toString)
       }
-      val List(tgt, srcRef, errType, shortMsg, level) =
-        getAttrs(List("target", "sref", "type", "shortMsg", "level"), x)
+      val List(tgt, srcRef, shortMsg, level) =
+        getAttrs(List("target", "sref", "shortMsg", "level"), x)
       def infoMessage(msg: String) =
         log.foreach(e => e(msg + "\nFile: " + f + "\nNode: " + shortMsg))
       var lvl: Level = Level.Error
@@ -112,10 +108,10 @@ object ErrorReader {
         case e: Exception => infoMessage(e.getMessage)
       }
       if (lvl >= errorLevel)
-        bes ::= ErrorContent(errType, lvl, srcR, shortMsg)
+        bes ::= ErrorContent(lvl, srcR, shortMsg)
     }
     if (node.child.isEmpty && (emptyErr || errorLevel <= Level.Force)) {
-      bes ::= ErrorContent("", 0, None, if (!f.exists) "cleaned"
+      bes ::= ErrorContent(0, None, if (!f.exists) "cleaned"
       else if (emptyErr) emptyMsg else "no error")
     }
     bes.reverse

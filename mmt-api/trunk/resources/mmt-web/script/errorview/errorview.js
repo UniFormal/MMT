@@ -2,8 +2,6 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
   [ '$scope', '$http', '$window', function($scope, $http, $window) {
     $scope.columns =
       { errLevel : { x : true, long : 'level', search : '' }
-      , errType : { x : false, long : 'error type', search : '' }
-      , archive : { x : false, long : 'archive', search : '' }
       , group : { x : true, long : 'group', search : '' }
       , repo : { x : true, long : 'repo', search : '' }
       , fileName : { x : true, long : 'file name', search : '' }
@@ -55,19 +53,21 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     $scope.htmlText = '';
     $scope.showBuildResult = true;
     $scope.buildLevel = 0;
-    $scope.clean = function(res) {
-        action.exec(action.build(res.archive, "-" + res.target, encodeURIComponent(res.fileName)), function(data) {
-          $scope.htmlText = '';
-          $scope.search();
-        });
-    };
-    $scope.build = function(res) {
+    $scope.build = function(res, doClean) {
         $scope.buildCount += 1;
-        action.exec(action.build(res.archive, res.target + $scope.buildLevel, encodeURIComponent(res.fileName)), function(data) {
-           if (data !== '<div></div>') $scope.htmlText = data;
-           $scope.$apply(function () {
-             $scope.buildCount -= 1;
-           });
+        var tgt = res.target;
+        if (doClean) tgt = "-" + tgt
+        else tgt = tgt + $scope.buildLevel;
+        action.exec(action.build(res.group + "/" + res.repo, tgt, encodeURIComponent(res.fileName)), function(data) {
+          if (doClean) {
+              $scope.htmlText = '';
+              $scope.search();
+          } else {
+              if (data !== '<div></div>') $scope.htmlText = data;
+          };
+          $scope.$apply(function () {
+              $scope.buildCount -= 1;
+          });
         });
     };
     $scope.matchRow = function(res) {
@@ -77,16 +77,10 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
         };
         return match;
     };
-    $scope.buildAll = function() {
+    $scope.buildAll = function(doClean) {
         for (var i = 0; i < $scope.results.length; i++) {
             var res = $scope.results[i];
-            if ($scope.matchRow(res)) $scope.build(res);
-        };
-    };
-    $scope.cleanAll = function() {
-        for (var i = 0; i < $scope.results.length; i++) {
-            var res = $scope.results[i];
-            if ($scope.matchRow(res)) $scope.clean(res);
+            if ($scope.matchRow(res)) $scope.build(res, doClean);
         };
     };
     $scope.hide = function(content) {

@@ -111,9 +111,9 @@
         <thead>
         <tr>
             <th>
-                <a href="" ng-click="buildAll()"
+                <a href="" ng-click="buildAll(false)"
                    title="rebuild all selected entries">&#10227;</a>
-                <a href="" ng-click="cleanAll()"
+                <a href="" ng-click="buildAll(true)"
                    title="clean all selected entries">&#10005;</a>
             </th>
             <th ng-repeat="key in colProps" ng-if="columns[key].x">
@@ -134,9 +134,9 @@
         </thead>
         <tbody>
         <tr ng-repeat="res in results | filter : matchFilters() | orderBy : sort.col : sort.asc">
-            <td><a href="" ng-click="build(res)" title="rebuild file">
+            <td><a href="" ng-click="build(res, false)" title="rebuild file">
                 &#10227;</a>
-                <a href="" ng-click="clean(res)" title="clean file">
+                <a href="" ng-click="build(res, true)" title="clean file">
                 &#10005;</a>
             </td>
             <td ng-repeat="key in colProps" ng-if="columns[key].x">
