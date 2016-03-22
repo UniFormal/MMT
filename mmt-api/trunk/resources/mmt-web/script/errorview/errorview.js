@@ -12,7 +12,9 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
       , sourceRegion : { x : false, long : 'range', search : '' }
       , shortMsg : { x : true, long : 'short message', search : '' }};
     $scope.colProps = [];
-    for (k in $scope.columns) { $scope.colProps.push(k) };
+    for (k in $scope.columns) {
+        if (k != "fileLink" && k != "sourceRef") $scope.colProps.push(k);
+    };
     $scope.field = 'shortMsg';
     $scope.results = [];
     $scope.hiddenData = [];

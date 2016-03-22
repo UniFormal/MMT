@@ -49,14 +49,7 @@
         </tr>
         </tbody>
     </table>
-
     <p/>
-    display:
-    <span ng-repeat="key in colProps">
-        <input type="checkbox" ng-model="columns[key].x"/>
-        {{columns[key].long}}&nbsp;&nbsp;
-    </span>
-
     <table ng-show="hiddenData.length > 0" title="hidden entries">
         <thead>
         <tr>
@@ -107,6 +100,11 @@
         <option value="4">build on fatal error</option>
         <option value="5">build on change</option>
     </select>
+    display:
+    <span ng-repeat="key in colProps">
+        <input type="checkbox" ng-model="columns[key].x"/>
+        {{columns[key].long}}&nbsp;&nbsp;
+    </span>
     <table>
         <thead>
         <tr>
