@@ -174,6 +174,7 @@ class BuildQueue extends BuildManager {
 
   private var continue: Boolean = true
   private var stopOnEmpty: Boolean = false
+  private var finallyUnblocking = false
 
   val sleepTime: Int = 2000
 
@@ -277,7 +278,7 @@ class BuildQueue extends BuildManager {
           Some(bd)
         case fp if fp.startsWith(a.resolveDimension(source)) =>
           val imp = controller.extman.get(classOf[Importer], ???).getOrElse(return None) //TODO what importer to use?
-          val in = imp.producesFrom(out).getOrElse(return None)
+        val in = imp.producesFrom(out).getOrElse(return None)
           val bd = FileBuildDependency(imp.key, a, in)
           Some(bd)
         case _ =>
@@ -363,21 +364,20 @@ class BuildQueue extends BuildManager {
                 if (optRes.isDefined || !alreadyBuilt.isDefinedAt(qtDep)) {
                   alreadyBuilt(qtDep) = res
                 }
-              res.provided.foreach(catalog(_) = qtDep)
+                res.provided.foreach(catalog(_) = qtDep)
               // TODO write file errors/.../file.deps
               // XML file containing used, provided, had errors
               case MissingDependency(missing, provided) =>
                 // register missing dependencies and requeue
                 qt.missingDeps = missing
-                blocked = blocked ::: List(qt)
+                if (!finallyUnblocking) blocked = blocked ::: List(qt)
             }
             if (optRes.nonEmpty)
               unblockTasks(res)
           case None =>
-            cycleCheck = Set.empty
-            alreadyBuilt.clear
             if (blocked.nonEmpty) {
               log("flush blocked tasks by ignoring their missing dependencies")
+              finallyUnblocking = true
               val qt = blocked.head
               qt.missingDeps = Nil
               blocked = blocked.tail
@@ -385,8 +385,14 @@ class BuildQueue extends BuildManager {
             }
             else if (stopOnEmpty)
               continue = false
-            else
+            else {
+              if (currentQueueTask.isEmpty) {
+                cycleCheck = Set.empty
+                alreadyBuilt.clear
+                finallyUnblocking = false
+              }
               Thread.sleep(sleepTime)
+            }
         }
       }
     }
