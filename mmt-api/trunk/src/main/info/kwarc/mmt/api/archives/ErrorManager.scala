@@ -48,7 +48,7 @@ case class BuildError(archive: Archive, target: String, path: FilePath, data: Er
     val clean = msg == "cleaned"
     val sourceURI = data.sourceRef.fold("")(_.container.toString)
     val sourceFile = if (sourceURI.startsWith("file:")) sourceURI.substring(5) else ""
-    val source = if (File(sourceFile).exists()) "file://" + sourceFile else ""
+    val source = if (File(sourceFile).exists()) sourceFile else ""
     List(if (clean || msg == "no error") "" else Level.toString(data.level),
       archive.root.up.getName,
       archive.root.getName,
@@ -290,6 +290,10 @@ class ErrorManager extends Extension with Logger {
         val source = scala.io.Source.fromFile(query)
         val lines = try source.mkString finally source.close()
         Server.XmlResponse(lines)
+      case List("source") =>
+        val source = scala.io.Source.fromFile(query)
+        val lines = try source.mkString finally source.close()
+        Server.TextResponse(lines)
       case _ => Server.JsonResponse(serveJson(path, query))
     }
   }

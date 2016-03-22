@@ -136,13 +136,16 @@
                 &#10005;</a>
             </td>
             <td ng-repeat="key in colProps" ng-if="columns[key].x">
-                <span ng-if="key == 'fileLink' && res.shortMsg != 'cleaned'">
-                    <a href="" ng-click="serve(res[key])">{{res[key]}}</a>
+                <span ng-if="key == 'errLevel' && key.errLevel != ''">
+                    <a href="" ng-click="serve(res.fileLink)">{{res[key]}}</a>
                 </span>
-                <span ng-if="key == 'sourceRef' && res[key] != ''">
-                    <a ng-href="{{res[key]}}" target="_blank">{{res[key]}}</a>
+                <span ng-if="key == 'fileName' && res.sourceRef != ''">
+                    <a ng-href="https://gl.mathhub.info/{{res.group}}/{{res.repo}}/blob/master/source/{{res.fileName}}"
+                       target="_blank">&#8599;</a>
+                    &nbsp;
+                    <a href="" ng-click="serveSource(res.sourceRef)" target="_blank">{{res[key]}}</a>
                 </span>
-                <span ng-if="!(key == 'fileLink' && res.shortMsg != 'cleaned' || key == 'sourceRef' && res[key] != '')">
+                <span ng-if="!(key == 'errLevel' && key.errLevel != '' || key == 'fileName' && res.sourceRef != '')">
                     {{res[key]}}
                 </span>
             </td>
