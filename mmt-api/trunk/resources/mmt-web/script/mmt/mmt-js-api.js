@@ -163,7 +163,7 @@ var mmt = {
       if ((typeof mmtUrl) != 'undefined') {
          return mmtUrl + relUrl; //compute absolute uri to external mmt server
       } else {
-         return relUrl;
+         return relUrl.substring(1);
       }
    },
 
