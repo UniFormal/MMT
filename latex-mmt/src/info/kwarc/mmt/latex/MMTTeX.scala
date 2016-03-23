@@ -30,11 +30,8 @@ class MMTTeX extends ShellExtension("mmttex") {
    
    def run(args: List[String]) = args match {
      case "sty" :: fileName :: Nil => genSty(fileName)
-//     case "tex" :: fileName :: Nil => genTex(fileName)
-//     case "omdoc" :: fileName :: Nil => 
-     case "gen" :: fileName :: Nil => genFiles(File(fileName))
-     case "merge" :: fileName :: Nil => mergeFiles(File(fileName))
-//     case "stex" :: fileName :: Nil => processStexOmdoc(fileName)
+     case "gen" :: fileName :: Nil => genFiles(File(fileName).getAbsoluteFile)
+     case "merge" :: fileName :: Nil => mergeFiles(File(fileName).getAbsoluteFile)
      case _ => throw LocalError("Invalid Arguments: " + args.mkString)
    }
    

@@ -14,7 +14,7 @@ $(function () {
       "core" : {"animation": 0},
       "xml_data" : {
          "ajax" : {
-            "url" : "/:tree",
+            "url" : ":tree",
             "data" : function(node) {return (node == -1) ? ":root" : node.attr("id");}
          },
          "xsl" : "nest"
