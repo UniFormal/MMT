@@ -146,7 +146,7 @@ lazy val mizar = (project in file("mmt-mizar/trunk")).
   settings(commonSettings("mmt-mizar"): _*)
 
 lazy val frameit = (project in file("frameit-mmt")).
-  dependsOn(api, lfcatalog).
+  dependsOn(api, lfcatalog, lf).
   settings(commonSettings("frameit-mmt"): _*)
 
 lazy val pvs = (project in file("mmt-pvs")).
@@ -156,6 +156,10 @@ lazy val pvs = (project in file("mmt-pvs")).
 lazy val lfx = (project in file("mmt-lfx")).
   dependsOn(api, lf).
   settings(commonSettings("mmt-lfx"): _*)
+
+lazy val tps = (project in file("mmt-tps")).
+  dependsOn(api,lf).
+  settings(commonSettings("mmt-tps"): _*)
 
 lazy val odk = (project in file("mmt-odk")).
   dependsOn(api, lf).
