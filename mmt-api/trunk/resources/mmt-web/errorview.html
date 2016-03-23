@@ -69,7 +69,7 @@
     <p/>
     <button ng-click="clearlast()">remove last hidden entry</button>
     <button ng-click="clearhidden()">clear all hidden entries</button>
-    <button ng-click="clear()">clear search fields below</button>
+    <button ng-click="clear(); search()">clear search fields below</button>
     maximal entries:
     <input type="number" min="0" max="10000" ng-model="maxNumber" ng-keypress="$event.which === 13 && search()"/>
     <span>
