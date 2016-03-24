@@ -116,8 +116,10 @@ abstract class Quotient(val of: SemanticType) extends SemanticType {
 trait RepresentationType[V] {
    val cls: Class[V]
    def unapply(u: Any): Option[V] = u match {
-      case v: V@unchecked if cls.isInstance(v) => Some(v)
-      case v: V@unchecked if cls.isPrimitive && cls == u.getClass => Some(v) // isInstance is always false for primitive classes 
+      case v: V@unchecked if cls.isInstance(v) =>
+         Some(v)
+      case v: V@unchecked if cls.isPrimitive && cls == u.getClass =>
+         Some(v) // isInstance is always false for primitive classes
       case _ => None
    }
 }
@@ -174,11 +176,12 @@ object StandardRat extends Quotient(new Product(StandardInt,StandardNat)) {
 /** rational complex numbers */
 object ComplexRat extends Product(StandardRat, StandardRat) {
 }
-
-object StandardDouble extends Atomic[Double] {
-   val cls = classOf[Double]
-   val key = "OMF" 
-   def fromString(s: String) = s.toDouble
+// switched to java.lang.Double, because that's what .toDouble returns and
+// java.lang.Double =/= scala.Double
+object StandardDouble extends Atomic[java.lang.Double] {
+   val cls = classOf[java.lang.Double]
+   val key = "OMF"
+   def fromString(s: String) = s.toDouble //s.toDouble
    override def lex = Some(new parser.NumberLiteralLexer(true, false))
 }
 
