@@ -39,6 +39,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
                if (str != '') res = res + '&' + k + i + "=" + str;
                };
             };
+         if ($scope.compare.current != "contains") res = res + '&compare=' + $scope.compare.current;
          return '?limit=' + limit + res;
         };
     $scope.clear = function() {
@@ -73,10 +74,25 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
           });
         });
     };
+    $scope.compare =
+      { enum :
+        [ "contains"
+        , "older"
+        , "newer"
+        ]
+      , current : "contains"
+      };
     $scope.matchRow = function(res) {
         var match = true;
         for (k in $scope.columns) {
-            match = match && (String(res[k]).indexOf($scope.columns[k].search) > -1);
+            var searchText = $scope.columns[k].search;
+            var colMatch = String(res[k]).indexOf(searchText) > -1;
+            if (k == "fileDate") {
+                var comp = $scope.compare.current;
+                if (comp == "older") colMatch = res[k] < searchText;
+                if (comp == "newer") colMatch = res[k] >= searchText;
+            };
+            match = match && colMatch;
         };
         return match;
     };

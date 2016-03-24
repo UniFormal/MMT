@@ -21,7 +21,7 @@
     </span>
     <p/>
     group errors by
-    <select ng-click="group()" ng-model="field" ng-init="columns[shortMsg].long"
+    <select ng-click="group()" ng-model="field"
             ng-options="columns[key].long for key in colProps "></select>
     as overview with maximal rows:
     <input type="number" min="0" max="10000" ng-click="group()"
@@ -121,6 +121,9 @@
                     </span>
                     {{columns[key].long}}
                 </span>
+                <span ng-show="key == 'fileDate'">
+                    <select ng-click="search()" ng-model="compare.current" ng-options="option for option in compare.enum"></select>
+                </span>{{currentComp}}
                 <br/>
                 <a href="" ng-click="columns[key].search = ''"
                    title="clear text">&#10226;</a>

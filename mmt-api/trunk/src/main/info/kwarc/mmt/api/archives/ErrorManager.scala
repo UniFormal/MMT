@@ -248,6 +248,11 @@ class ErrorManager extends Extension with Logger {
   }
   private val defaultLimit: Int = 100
 
+  def toStrListAndDate(strList: List[String]): (List[String], String) = {
+    val (rest, date) = Table.columns.zip(strList).partition(_._1 != "fileDate")
+    (rest.map(_._2), date.head._2)
+  }
+
   def serveJson(path: List[String], query: String): JSON = {
     val wq = WebQuery.parse(query)
     val ps = wq.pairs map (_._1) map (_.filter(_.isDigit)) filter (_.nonEmpty) map (_.toInt)
@@ -257,14 +262,22 @@ class ErrorManager extends Extension with Logger {
       var as = Table.columns map (c => wq.string(c + i))
       hideQueries ::= as
     }
-    val args = Table.columns map (wq.string(_))
+    val args = Table.columns.filter(_ != "fileDate").map(wq.string(_))
     val limit = wq.int("limit", defaultLimit)
     val hide = wq.boolean("hide")
+    val compare = wq.string("compare")
+    val dateStr = wq.string("fileDate")
     val result: Iterator[BuildError] = iterator.filter { be2 =>
-      val be = be2.toStrList map (_.replace('+', ' ')) // '+' is turned to ' ' in query
+      val be3 = be2.toStrList map (_.replace('+', ' ')) // '+' is turned to ' ' in query
+      val (be, date) = toStrListAndDate(be3)
+      val dateMatch = compare match {
+        case "older" => date < dateStr
+        case "newer" => date >= dateStr
+        case _ => date.indexOf(dateStr) > -1
+      }
       //noinspection SideEffectsInMonadicTransformation
       assert(args.length == be.length)
-      args.zip(be).forall { case (a, b) => b.indexOf(a) > -1 } &&
+      dateMatch && args.zip(be).forall { case (a, b) => b.indexOf(a) > -1 } &&
         hideQueries.forall { hq => hq.zip(be).exists { case (a, b) => b.indexOf(a) == -1 } }
     }
     path match {
