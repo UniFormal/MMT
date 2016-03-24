@@ -2,6 +2,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
   [ '$scope', '$http', '$window', function($scope, $http, $window) {
     $scope.columns =
       { errLevel : { x : true, long : 'level', search : '' }
+      , errChild : { x : false, long : 'error child', search : '' }
       , group : { x : true, long : 'group', search : '' }
       , repo : { x : true, long : 'repo', search : '' }
       , fileName : { x : true, long : 'file name', search : '' }
@@ -13,7 +14,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
       , shortMsg : { x : true, long : 'short message', search : '' }};
     $scope.colProps = [];
     for (k in $scope.columns) {
-        if (k != "fileLink" && k != "sourceRef") $scope.colProps.push(k);
+        if (k != "errChild" && k != "fileLink" && k != "sourceRef") $scope.colProps.push(k);
     };
     $scope.field = 'shortMsg';
     $scope.results = [];
@@ -112,8 +113,8 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
           $scope.number = data[0].count;
         });
     };
-    $scope.serve = function(file) {
-        $window.open(':errors/file?' + encodeURIComponent(file), '_blank');
+    $scope.serve = function(file, child) {
+        $window.open(':errors/file?child=' + child + '&file=' + encodeURIComponent(file), '_blank');
     };
     $scope.serveSource = function(file) {
         $window.open(':errors/source?' + encodeURIComponent(file), '_blank');

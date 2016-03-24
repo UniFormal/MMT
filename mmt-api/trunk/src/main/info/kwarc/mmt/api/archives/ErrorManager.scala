@@ -10,6 +10,7 @@ import info.kwarc.mmt.api.ontology.TermPattern.RemoveUnknowns
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.web._
+import tiscaf.HLet
 
 import scala.collection.mutable
 import scala.xml.Node
@@ -17,6 +18,7 @@ import scala.xml.Node
 object Table {
   val columns: List[String] = List(
     "errLevel",
+    "errChild",
     "group",
     "repo",
     "fileName",
@@ -28,12 +30,12 @@ object Table {
     "shortMsg")
 }
 
-case class ErrorContent(level: Level, sourceRef: Option[SourceRef], shortMsg: String) {
+case class ErrorContent(child: Int, level: Level, sourceRef: Option[SourceRef], shortMsg: String) {
   def updateSource(optSource: Option[File]): ErrorContent = optSource match {
     case None => this
     case Some(src) => sourceRef match {
       case Some(_) => this
-      case None => ErrorContent(level, Some(SourceRef(FileURI(src), parser.SourceRegion.none)), shortMsg)
+      case None => ErrorContent(child, level, Some(SourceRef(FileURI(src), parser.SourceRegion.none)), shortMsg)
     }
   }
 }
@@ -50,6 +52,7 @@ case class BuildError(archive: Archive, target: String, path: FilePath, data: Er
     val sourceFile = if (sourceURI.startsWith("file:")) sourceURI.substring(5) else ""
     val source = if (File(sourceFile).exists()) sourceFile else ""
     List(if (clean || msg == "no error") "" else Level.toString(data.level),
+      data.child.toString,
       archive.root.up.getName,
       archive.root.getName,
       path.toString,
@@ -82,7 +85,7 @@ object ErrorReader {
           emptyNode
       }
     var bes: List[ErrorContent] = Nil
-    node.child.foreach { x =>
+    node.child.view.zipWithIndex.foreach { case (x, i) =>
       def getAttrs(attrs: List[String], x: Node): List[String] = {
         val as = x.attributes
         attrs map (a => as.get(a).getOrElse("").toString)
@@ -108,10 +111,10 @@ object ErrorReader {
         case e: Exception => infoMessage(e.getMessage)
       }
       if (lvl >= errorLevel)
-        bes ::= ErrorContent(lvl, srcR, shortMsg)
+        bes ::= ErrorContent(i, lvl, srcR, shortMsg)
     }
     if (node.child.isEmpty && (emptyErr || errorLevel <= Level.Force)) {
-      bes ::= ErrorContent(0, None, if (!f.exists) "cleaned"
+      bes ::= ErrorContent(0, 0, None, if (!f.exists) "cleaned"
       else if (emptyErr) emptyMsg else "no error")
     }
     bes.reverse
@@ -281,15 +284,26 @@ class ErrorManager extends Extension with Logger {
     }
   }
 
+  def getErrorAnswer(child: Int, fileName: String): HLet = {
+    val file = File(fileName)
+    try {
+      val node = xml.readFile(file)
+      val err = node.child(child)
+      Server.XmlResponse(err)
+    } catch {
+      case e: Exception =>
+        Server.TextResponse("could not extract " + (child + 1) + ". error from " + fileName + "\n" + e.getMessage)
+    }
+  }
+
   /** serves lists of [[Error]]s */
   private val serve = new ServerExtension("errors") {
     override def logPrefix = self.logPrefix
 
     def apply(path: List[String], query: String, body: Body) = path match {
       case List("file") =>
-        val source = scala.io.Source.fromFile(query)
-        val lines = try source.mkString finally source.close()
-        Server.XmlResponse(lines)
+        val wq = WebQuery.parse(query)
+        getErrorAnswer(wq.int("child"), wq.string("file"))
       case List("source") =>
         val source = scala.io.Source.fromFile(query)
         val lines = try source.mkString finally source.close()

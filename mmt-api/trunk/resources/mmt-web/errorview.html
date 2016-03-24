@@ -137,7 +137,7 @@
             </td>
             <td ng-repeat="key in colProps" ng-if="columns[key].x">
                 <span ng-if="key == 'errLevel' && key.errLevel != ''">
-                    <a href="" ng-click="serve(res.fileLink)">{{res[key]}}</a>
+                    <a href="" ng-click="serve(res.fileLink, res.errChild)">{{res[key]}}</a>
                 </span>
                 <span ng-if="key == 'fileName' && res.sourceRef != ''">
                     <a ng-href="https://gl.mathhub.info/{{res.group}}/{{res.repo}}/blob/master/source/{{res.fileName}}"
