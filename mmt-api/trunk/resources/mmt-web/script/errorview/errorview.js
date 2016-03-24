@@ -76,11 +76,10 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     };
     $scope.compare =
       { enum :
-        [ "contains"
+        [ "newer"
         , "older"
-        , "newer"
         ]
-      , current : "contains"
+      , current : "newer"
       };
     $scope.matchRow = function(res) {
         var match = true;
@@ -137,8 +136,8 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     };
     $scope.search();
     $scope.sort = {
-        col: 'id',
-        asc: false
+        col: 'fileDate',
+        asc: true
     };
     $scope.matchFilters = function() {
         return $scope.matchRow;

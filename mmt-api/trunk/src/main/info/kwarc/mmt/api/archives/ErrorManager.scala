@@ -262,9 +262,9 @@ class ErrorManager extends Extension with Logger {
       var as = Table.columns map (c => wq.string(c + i))
       hideQueries ::= as
     }
-    val args = Table.columns.filter(_ != "fileDate").map(wq.string(_))
-    val limit = wq.int("limit", defaultLimit)
     val hide = wq.boolean("hide")
+    val args = Table.columns.filter(_ != "fileDate" || hide).map(wq.string(_))
+    val limit = wq.int("limit", defaultLimit)
     val compare = wq.string("compare")
     val dateStr = wq.string("fileDate")
     val result: Iterator[BuildError] = iterator.filter { be2 =>
@@ -278,7 +278,7 @@ class ErrorManager extends Extension with Logger {
       //noinspection SideEffectsInMonadicTransformation
       assert(args.length == be.length)
       dateMatch && args.zip(be).forall { case (a, b) => b.indexOf(a) > -1 } &&
-        hideQueries.forall { hq => hq.zip(be).exists { case (a, b) => b.indexOf(a) == -1 } }
+        hideQueries.forall { hq => hq.zip(be3).exists { case (a, b) => b.indexOf(a) == -1 } }
     }
     path match {
       case List("count2") => JSONArray(JSONObject("count" -> JSONInt(result.length)))

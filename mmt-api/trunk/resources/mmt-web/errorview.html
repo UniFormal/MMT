@@ -22,7 +22,7 @@
     <p/>
     group errors by
     <select ng-click="group()" ng-model="field"
-            ng-options="columns[key].long for key in colProps "></select>
+            ng-options="columns[key].long for key in colProps"></select>
     as overview with maximal rows:
     <input type="number" min="0" max="10000" ng-click="group()"
            ng-keypress="$event.which === 13 && group()"
@@ -38,10 +38,10 @@
         <tr ng-repeat="g in groups">
             <td>{{g.count}}</td>
             <td>
-                <a href=""
+                <a ng-show="g.content != ''" href=""
                    ng-click="columns[field].search = g.content; search()"
                    title="select corresponding entries">&#8631;</a>
-                <a href=""
+                <a ng-show="g.content != ''" href=""
                    ng-click="hide(g.content)"
                    title="hide corresponding entries">&#8630;</a>
                 {{g.content}}
@@ -125,7 +125,7 @@
                     <select ng-click="search()" ng-model="compare.current" ng-options="option for option in compare.enum"></select>
                 </span>{{currentComp}}
                 <br/>
-                <a href="" ng-click="columns[key].search = ''"
+                <a href="" ng-click="columns[key].search = ''; search()"
                    title="clear text">&#10226;</a>
                 <input type="text" ng-model="columns[key].search" size="5" ng-keypress="$event.which === 13 && search()"/>
             </th>
