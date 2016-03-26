@@ -85,13 +85,13 @@ object Grammar {
     val notNamePattern = """\?.*""".r
     val removeInvalidCharPattern = """[^a-zA-Z0-9]""".r
     val Some(notNameWithInvalidChars) = notNamePattern findFirstIn path
-    val notName = removeInvalidCharPattern.replaceAllIn(notNameWithInvalidChars, "_") 
+    val notName = removeInvalidCharPattern.replaceAllIn(notNameWithInvalidChars, "_")
     val precStr = precedences.indexOf(prec.toString).toString
     val uniqueName = createTopRuleName(notName + "P" + precStr + "N" + ruleNumber)
 
     NotationContent ::= uniqueName
     currentTopRuleNr = ruleNumber
-    currentTopRulePrec = precedences.indexOf(prec)
+    currentTopRulePrec = precStr.toInt
 
     val content: List[String] = markers.map(
       x ⇒ x match {
@@ -129,11 +129,11 @@ object Grammar {
     }
   }
 
-  def createArgRule(topRuleNr: String, suff: String): String = {
-    val name = "argRule" + "N" + topRuleNr + "A" + suff
+  def createArgRule(topRuleNr: String, suff: String, prec: Int = currentTopRulePrec): String = {
+    val name = "argRuleN" + topRuleNr + "A" + suff
     val filteredRules = rules.filter(r ⇒ r match { case Rule(n, c) ⇒ n == name })
     if (filteredRules.isEmpty) {
-      rules = rules | Set(Rule(name, "renderB" :: Nil))
+      rules = rules | Set(Rule(name, "renderB" :: prec.toString :: Nil))
       name
     } else {
       name
@@ -145,27 +145,21 @@ object Grammar {
   def addRule(marker: Marker): String = marker match {
 
     case SimpArg(argNr, precedence) ⇒ {
-      val content = precedence match {
-        case Some(x) ⇒
-          "renderB" :: "nrB" :: argNr.toString :: "nrE" :: "prB" :: x.toString :: "prE" :: "renderE" :: Nil
-
+      precedence match {
+        case Some(prec) ⇒
+          createArgRule(currentTopRuleNr, argNr.toString + "Arg", prec.toString.toInt)
         case None ⇒
-          "renderB" :: "nrB" :: argNr.toString :: "nrE" :: "renderE" :: Nil
+          createArgRule(currentTopRuleNr, argNr.toString + "Arg")
       }
-      val result = createArgRule(currentTopRuleNr, argNr.toString + "Arg")
-      result
     }
 
     case Var(argNr, false, None, precedence) ⇒ {
-      val content = precedence match {
-        case Some(x) ⇒
-          "rendervarB" :: "nrB" :: argNr.toString :: "nrE" :: "prB" :: x.toString :: "prE" :: "rendervarE" :: Nil
-
+      precedence match {
+        case Some(prec) ⇒
+          createArgRule(currentTopRuleNr, argNr.toString + "Var", prec.toString.toInt)
         case None ⇒
-          "rendervarB" :: "nrB" :: argNr.toString :: "nrE" :: "rendervarE" :: Nil
+          createArgRule(currentTopRuleNr, argNr.toString + "Var")
       }
-      val result = createArgRule(currentTopRuleNr, argNr.toString + "Var")
-      result
     }
 
     case Var(argNr, false, Some(delim), precedence) ⇒ {
@@ -174,7 +168,6 @@ object Grammar {
       val argName: String = createArgRule(currentTopRuleNr, argNr.toString + "VarSeq")
       val content = precedence match {
         case Some(x) ⇒
-
           "iteratevarB" :: "nrB" :: argNr.toString :: "nrE" :: "prB" :: x.toString :: "prE" ::
             "separatorB" :: delimName :: "separatorE" :: argName :: "iteratevarE" :: Nil
         case None ⇒
@@ -191,11 +184,9 @@ object Grammar {
       val argName: String = createArgRule(currentTopRuleNr, argNr.toString + "ArgSeq")
       val content = precedence match {
         case Some(x) ⇒
-
           "iterateB" :: "nrB" :: argNr.toString :: "nrE" :: "prB" :: x.toString :: "prE" ::
             "separatorB" :: delimName :: "separatorE" :: argName :: "iterateE" :: Nil
         case None ⇒
-
           "iterateB" :: "nrB" :: argNr.toString :: "nrE" :: "separatorB" :: delimName ::
             "separatorE" :: argName :: "iterateE" :: Nil
       }
@@ -408,7 +399,6 @@ object Grammar {
 
   def toBNF(rule: Rule): String = {
     val Rule(name, content) = rule
-
     content match {
       case "ref" :: to :: Nil ⇒ name + "::= " + to
       case "topLevel" :: tl ⇒
@@ -424,8 +414,8 @@ object Grammar {
       case List("moB", text, "moE") ⇒ name + "::= " + "moB '" + text + "' moE"
       case List("miB", text, "miE") ⇒ name + "::= " + "miB '" + text + "' miE"
       case List("mnB", text, "mnE") ⇒ name + "::= " + "mnB '" + text + "' mnE"
-      case "renderB" :: tl          ⇒ name + "::= argRule"
-      case "rendervarB" :: tl       ⇒ name + "::= argRule"
+      case "renderB" :: prec :: tl  ⇒ name + "::= argRuleP" + prec 
+      //      case "rendervarB" :: tl       ⇒ name + "::= argRule"
       case "iterateB" :: tl ⇒
         val Some(delim) = content.find(x ⇒
           if (content.indexOf(x) > 0) {
@@ -499,6 +489,7 @@ object Grammar {
         "ExpressionList ::= Expression+" ::
         "Expression ::= Notation   " ::
         "             | Presentation " ::
+        "Notation ::= prec0 " ::
         Nil
 
     val presentation =
@@ -583,10 +574,15 @@ object Grammar {
         """textRule::= char | char textRule """ ::
         """ text ::= #empty""" ::
         """ char ~ [^<>]""" ::
-        """ argRule ::= Expression """ ::
         Nil
 
-    val grammarCore = grammarStart ::: presentation ::: mathMLelements ::: lexemes
+    val argRules = List
+      .range(0, precedences.size)
+      .map(prec ⇒ {
+          "argRuleP" + prec + " ::= prec" + prec + " | Presentation "
+      })
+
+    val grammarCore = grammarStart ::: argRules ::: presentation ::: mathMLelements ::: lexemes
     val extractedRules = Grammar.rules.toList.map(x ⇒ Grammar.toBNF(x)).map(_.toString)
 
     if (NotationContent.isEmpty) {
@@ -594,20 +590,41 @@ object Grammar {
       return List("#No notations found")
     }
     if (NotationContent.size == 1) {
-      val result = List("Notation ::= " + NotationContent.head)
+      val result = List("prec0 ::= " + NotationContent.head)
       cleanup()
       return result
     }
-    // If NotationContent has more than 1 notation
-    val head = NotationContent.head
-    val tail = NotationContent.tail
-    val Notation: List[String] = "Notation ::= " + head ::
-      tail.map(x ⇒
-        if (isOmitted(x)) "#Omitted rule" else "| " + x)
+    // Take into account precedences if NotationContent.size > 1
+    val notationsByPrecStrList = List
+      .range(0, precedences.size)
+      .map(prec ⇒ { NotationContent.filter { not ⇒ getPrecedenceFromName(not) == prec && !isOmitted(not) } })
+      .toList
+      .zipWithIndex
+      .map({
+        case (notList, prec) ⇒
+          val nextPrecedence = prec + 1
+          if (prec < precedences.size - 1)
+            "prec" + nextPrecedence.toString :: notList
+          else
+            notList
+      })
+
+    val Notation = notationsByPrecStrList
+      .zipWithIndex
+      .map({
+        case (notList, prec) ⇒
+          "prec" + prec + " ::= " + notList.mkString("\n| ")
+      })
 
     val result = grammarCore ::: Notation ::: extractedRules ::: eventList
     cleanup()
     result
+  }
+
+  def getPrecedenceFromName(ruleName: String): Int = {
+    val pattern = """(?<=P)([0-9]*)(?=N[0-9]*.*)""".r
+    val Some(matched) = pattern.findFirstIn(ruleName)
+    matched.toInt
   }
 
   def cleanup() {
