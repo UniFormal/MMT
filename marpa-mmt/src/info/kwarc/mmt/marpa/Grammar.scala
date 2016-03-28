@@ -129,7 +129,11 @@ object Grammar {
     }
   }
 
-  def createArgRule(topRuleNr: String, suff: String, prec: Int = currentTopRulePrec): String = {
+  def createArgRule(topRuleNr: String, suff: String, precTmp : Int = -1): String = {
+    val prec = if (precTmp == -1) currentTopRulePrec else precTmp
+    if (prec != currentTopRulePrec) {
+      println("Arg rule with precedence = " + prec.toString) //argument rules with custom precedences were used
+    }
     val name = "argRuleN" + topRuleNr + "A" + suff
     val filteredRules = rules.filter(r ⇒ r match { case Rule(n, c) ⇒ n == name })
     if (filteredRules.isEmpty) {
@@ -147,7 +151,7 @@ object Grammar {
     case SimpArg(argNr, precedence) ⇒ {
       precedence match {
         case Some(prec) ⇒
-          createArgRule(currentTopRuleNr, argNr.toString + "Arg", prec.toString.toInt)
+          createArgRule(currentTopRuleNr, argNr.toString + "Arg", precedences.indexOf(prec.toString))
         case None ⇒
           createArgRule(currentTopRuleNr, argNr.toString + "Arg")
       }
@@ -156,7 +160,7 @@ object Grammar {
     case Var(argNr, false, None, precedence) ⇒ {
       precedence match {
         case Some(prec) ⇒
-          createArgRule(currentTopRuleNr, argNr.toString + "Var", prec.toString.toInt)
+          createArgRule(currentTopRuleNr, argNr.toString + "Var", precedences.indexOf(prec.toString))
         case None ⇒
           createArgRule(currentTopRuleNr, argNr.toString + "Var")
       }
@@ -165,12 +169,13 @@ object Grammar {
     case Var(argNr, false, Some(delim), precedence) ⇒ {
       val Delim(text) = delim
       val delimName = addRule(Delim("#seq_" + text))
-      val argName: String = createArgRule(currentTopRuleNr, argNr.toString + "VarSeq")
       val content = precedence match {
         case Some(x) ⇒
+          val argName: String = createArgRule(currentTopRuleNr, argNr.toString + "VarSeq", precedences.indexOf(x.toString))
           "iteratevarB" :: "nrB" :: argNr.toString :: "nrE" :: "prB" :: x.toString :: "prE" ::
             "separatorB" :: delimName :: "separatorE" :: argName :: "iteratevarE" :: Nil
         case None ⇒
+          val argName: String = createArgRule(currentTopRuleNr, argNr.toString + "VarSeq")
           "iteratevarB" :: "nrB" :: argNr.toString :: "nrE" :: "separatorB" :: delimName ::
             "separatorE" :: argName :: "iteratevarE" :: Nil
       }
@@ -181,12 +186,13 @@ object Grammar {
     case SimpSeqArg(argNr, delim, precedence) ⇒ {
       val Delim(text) = delim
       val delimName = addRule(Delim("#seq_" + text))
-      val argName: String = createArgRule(currentTopRuleNr, argNr.toString + "ArgSeq")
       val content = precedence match {
         case Some(x) ⇒
+          val argName: String = createArgRule(currentTopRuleNr, argNr.toString + "ArgSeq", precedences.indexOf(x.toString))
           "iterateB" :: "nrB" :: argNr.toString :: "nrE" :: "prB" :: x.toString :: "prE" ::
             "separatorB" :: delimName :: "separatorE" :: argName :: "iterateE" :: Nil
         case None ⇒
+          val argName: String = createArgRule(currentTopRuleNr, argNr.toString + "ArgSeq")
           "iterateB" :: "nrB" :: argNr.toString :: "nrE" :: "separatorB" :: delimName ::
             "separatorE" :: argName :: "iterateE" :: Nil
       }
@@ -414,7 +420,7 @@ object Grammar {
       case List("moB", text, "moE") ⇒ name + "::= " + "moB '" + text + "' moE"
       case List("miB", text, "miE") ⇒ name + "::= " + "miB '" + text + "' miE"
       case List("mnB", text, "mnE") ⇒ name + "::= " + "mnB '" + text + "' mnE"
-      case "renderB" :: prec :: tl  ⇒ name + "::= argRuleP" + prec 
+      case "renderB" :: prec :: tl  ⇒ name + "::= argRuleP" + prec
       //      case "rendervarB" :: tl       ⇒ name + "::= argRule"
       case "iterateB" :: tl ⇒
         val Some(delim) = content.find(x ⇒
@@ -579,7 +585,7 @@ object Grammar {
     val argRules = List
       .range(0, precedences.size)
       .map(prec ⇒ {
-          "argRuleP" + prec + " ::= prec" + prec + " | Presentation "
+        "argRuleP" + prec + " ::= prec" + prec + " | Presentation "
       })
 
     val grammarCore = grammarStart ::: argRules ::: presentation ::: mathMLelements ::: lexemes
