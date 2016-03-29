@@ -1,17 +1,19 @@
 <!DOCTYPE html>
-<html ng-app="searchApp">
-<meta charset="UTF-8">
+<html lang="en" ng-app="searchApp">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <head>
-    <script src="script/angularjs/angular-1.5.3/angular.js"></script>
-    <script src="script/angularjs/angular-1.5.3/angular-sanitize.js"></script>
+    <script src="script/angularjs/angular-1.5.3/angular.min.js"></script>
+    <script src="script/angularjs/angular-1.5.3/angular-sanitize.min.js"></script>
     <script type="text/javascript" src="script/jquery/jquery.js"></script>
     <script src="script/mmt/mmt-js-api.js"></script>
     <script src="script/errorview/errorview.js"></script>
+    <link rel="stylesheet" href="css/bootstrap/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="css/errorview.css"/>
     <title>MMT Error Viewer</title>
 </head>
 <body>
-<div ng-controller="SearchController">
+<div class="container-fluid" ng-controller="SearchController">
     <p><b>MMT Error Viewer</b> on <a ng-href="{{host}}" target="_blank">{{host}}</a> loaded at {{date}}
         (<a href="https://github.com/KWARC/MMT/issues/new" target="_blank">report issues here</a>)
         (<a href="https://github.com/KWARC/MMT/wiki/Error-Viewer-Help" target="_blank">get help</a>)

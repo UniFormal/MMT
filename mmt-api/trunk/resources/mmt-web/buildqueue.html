@@ -1,13 +1,15 @@
 <!DOCTYPE html>
-<html ng-app="buildQueueApp">
-<meta charset="UTF-8">
+<html lang="en" ng-app="buildQueueApp">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <head>
     <script src="script/angularjs/angular-1.5.3/angular.min.js"></script>
     <script src="script/buildqueue/buildqueue.js"></script>
+    <link rel="stylesheet" href="css/bootstrap/css/bootstrap.min.css"/>
     <title>MMT Build Queue</title>
 </head>
 <body>
-<div ng-controller="QueueViewer">
+<div class="container-fluid" ng-controller="QueueViewer">
     <p><b>MMT Build Queue</b> (via <a href="errorview.html">Error Viewer</a>)</p>
     <p>refresh rate:
     <input type="number" min="0" max="10000" ng-click="stopRepeat(); repeat()" ng-model="refreshRate"/>
