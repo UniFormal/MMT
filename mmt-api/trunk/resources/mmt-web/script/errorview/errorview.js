@@ -56,7 +56,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     $scope.buildCount = 0;
     $scope.htmlText = '';
     $scope.showBuildResult = true;
-    $scope.buildLevel = 0;
+    $scope.buildLevel = "0";
     $scope.build = function(res, doClean) {
         $scope.buildCount += 1;
         var tgt = res.target;
