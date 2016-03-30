@@ -129,7 +129,7 @@ object Grammar {
     }
   }
 
-  def createArgRule(topRuleNr: String, suff: String, precTmp : Int = -1): String = {
+  def createArgRule(topRuleNr: String, suff: String, precTmp: Int = -1): String = {
     val prec = if (precTmp == -1) currentTopRulePrec else precTmp
     if (prec != currentTopRulePrec) {
       println("Arg rule with precedence = " + prec.toString) //argument rules with custom precedences were used
