@@ -79,7 +79,7 @@ case class SimpleAlignment(from: LogicalReference, to: LogicalReference, inverti
 
   override def toString = from.toString + " " + to.toString +
     " direction=" + (if (invertible) """"both"""" else """"forward"""") +
-    props.filter(x => x._1!="direction").map(p => " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
+    props.filter(x ⇒ x._1 != "direction").map(p ⇒ " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 }
 
 case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, invertible: Boolean, arguments: List[(Int, Int)]) extends FormalAlignment {
@@ -120,9 +120,9 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, inver
 
   override def toString = from.toString + " " + to.toString +
     " direction=" + (if (invertible) """"both"""" else """"forward"""") +
-    " " + """arguments="""" + arguments.map(p => "(" + p._1 + "," + p._2 + ")").mkString("") +
+    " " + """arguments="""" + arguments.map(p ⇒ "(" + p._1 + "," + p._2 + ")").mkString("") +
     """"""" +
-    props.filter(x => !(List("direction","arguments") contains x._1)).map(p => " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
+    props.filter(x ⇒ !(List("direction", "arguments") contains x._1)).map(p ⇒ " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 }
 
 case class InformalAlignment(from: Reference, to: Reference) extends Alignment {
@@ -139,7 +139,7 @@ case class InformalAlignment(from: Reference, to: Reference) extends Alignment {
   }
 
   override def toString = from.toString + " " + to.toString +
-    props.map(p => " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
+    props.map(p ⇒ " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 }
 
 object SimpleAlignment {
@@ -209,10 +209,20 @@ class AlignmentsServer extends ServerExtension("align") {
         println("Alignments from " + path + ":\n" + toS.map(" - " + _).mkString("\n"))
         Server.TextResponse(toS.mkString("\n"))
       case "add" :: _ ⇒
-        val from = query
-        val to = body.asString
-        println("Adding alignment from " + from + " to " + to)
-        val addedAlignments = processString(from + " " + to)
+        val str = Try(body.asString).getOrElse("")
+        val formData : JSONObject = Try(JSON.parse(str).asInstanceOf[JSONObject]).getOrElse(JSONObject(List()))
+        println(formData.toString)
+        val regex = """\\/""".r
+        val addedAlignments = if (formData.nonEmpty) {
+          val fromRaw = formData("from").getOrElse("").toString
+          val toRaw = formData("to").getOrElse("").toString
+          val from = regex.replaceAllIn(fromRaw,  "/")
+          val to = regex.replaceAllIn(toRaw, "/")
+          println("Adding alignment from " + from + " to " + to)
+          processString(from + " " + to)
+        } else {
+          0
+        }
         Server.TextResponse("Added " + addedAlignments + " alignments")
       case _ ⇒
         println(path) // List(from)
@@ -368,7 +378,7 @@ class AlignmentsServer extends ServerExtension("align") {
     println(alignmentsCount + " alignments read from " + file.toString)
   }
 
-  private def writeToFile(file:File) = File.write(file,alignments.map(_.toString).mkString("\n"))
+  private def writeToFile(file: File) = File.write(file, alignments.map(_.toString).mkString("\n"))
 
   // TODO needs reworking
   private def readJSON(file: File) {
