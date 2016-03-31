@@ -78,8 +78,8 @@ case class SimpleAlignment(from: LogicalReference, to: LogicalReference, inverti
   }
 
   override def toString = from.toString + " " + to.toString +
-    "direction=" + (if (invertible) """"both"""" else """"forward"""") +
-    props.map(p => " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
+    " direction=" + (if (invertible) """"both"""" else """"forward"""") +
+    props.filter(x => x._1!="direction").map(p => " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 }
 
 case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, invertible: Boolean, arguments: List[(Int, Int)]) extends FormalAlignment {
@@ -119,10 +119,10 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, inver
   }
 
   override def toString = from.toString + " " + to.toString +
-    "direction=" + (if (invertible) """"both"""" else """"forward"""") +
+    " direction=" + (if (invertible) """"both"""" else """"forward"""") +
     " " + """arguments="""" + arguments.map(p => "(" + p._1 + "," + p._2 + ")").mkString("") +
     """"""" +
-    props.map(p => " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
+    props.filter(x => !(List("direction","arguments") contains x._1)).map(p => " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 }
 
 case class InformalAlignment(from: Reference, to: Reference) extends Alignment {
@@ -223,6 +223,8 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
   // val dones : mutable.HashMap[ContentPath,List[Alignment]] = mutable.HashMap.empty
+
+  def getAll = alignments.toList
 
   def getAlignments(from: Reference): List[Alignment] = {
 
@@ -367,7 +369,7 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
   private def writeToFile(file:File) = File.write(file,alignments.map(_.toString).mkString("\n"))
-  
+
   // TODO needs reworking
   private def readJSON(file: File) {
     /*
