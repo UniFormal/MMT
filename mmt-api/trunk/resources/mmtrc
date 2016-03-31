@@ -5,8 +5,10 @@ tptp-twelf  info.kwarc.mmt.tptp.TPTPImporter
 mmt-latex   info.kwarc.mmt.api.archives.latex.LatexExporter
 mws         info.kwarc.mmt.api.archives.MWSHarvestExporter
 planetary   info.kwarc.mmt.planetary.PlanetaryPresenter
+mh-html     info.kwarc.mmt.planetary.MathHubFormalPresenter
 html        info.kwarc.mmt.api.archives.HTMLExporter
 svg         info.kwarc.mmt.api.archives.GraphViz
+index       info.kwarc.mmt.api.archives.OMDocImporter
 
 sms        info.kwarc.mmt.stex.SmsGenerator
 latexml    info.kwarc.mmt.stex.LaTeXML
