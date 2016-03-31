@@ -146,18 +146,55 @@ var interactiveViewing = {
             /*  res["comment"] = function(){me.addComment()};*/
 
             // Add alignment option
-            res["add alignment"] = function() {
-                var path = prompt("Enter alignment for " + uri, "");
-                $.ajax({
-                    type: "POST",
-                    url: "/:align/add?" + mmt.currentURI,
-                    data: path,
-                    contentType : 'text',
-                    success: function(data) {
-                        alert("Alignment add: " + data);
+
+            var alignment = { from: mmt.currentURI, to: "", params: [] };
+
+            function addAlignment() {
+                console.log("in getAlignment");
+                var dialogHtml =
+                    "<form id='addAlignmentForm'>"+
+                    "<fieldset id='addAlignment'>" +
+                    "<span>Path:</span><input id='alignmentPath' type='text'><br>" +
+                    "<span>Key:</span><input class='alignmentParamKey' type='text'>" +
+                    "<span>Value:</span><input class='alignmentParamValue' type='text'><br>" +
+                    "</fieldset>"+
+                    "</form>";
+
+                $(dialogHtml).dialog({
+                    title: "Add alignment",
+                    autoOpen: true,
+                    resizable: true,
+                    modal: true,
+                    closeOnEscape: true,
+                    height: 500,
+                    width: 500,
+                    buttons: {
+                        "Ok": function() {
+                            console.log($("#alignmentPath").val());
+                            alignment.to = $("#alignmentPath").val();
+                            $(this).dialog("close");
+                        },
+                        "Add Param": function() {
+                            console.log("Add param");
+                        }
+                    },
+                    close: function() {
+                        console.log(alignment);
+                        $.ajax({
+                            type: "POST",
+                            url: "/:align/add?",
+                            data: JSON.stringify(alignment),
+                            contentType:"application/json; charset=utf-8",
+                            success: function(data) {
+                                console.log("Alignment add: " + data);
+                            }
+                        });
+                        $(this).dialog('destroy');
                     }
+
                 });
-            };
+            }
+            res["add alignment"] = addAlignment;
         }
         return res;
     },
