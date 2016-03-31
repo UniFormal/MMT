@@ -76,6 +76,10 @@ case class SimpleAlignment(from: LogicalReference, to: LogicalReference, inverti
     case ArgumentAlignment(a, b, inv, args) ⇒ ArgumentAlignment(from, b, inv && invertible, args)
     case InformalAlignment(a, b)            ⇒ InformalAlignment(from, b)
   }
+
+  override def toString = from.toString + " " + to.toString +
+    "direction=" + (if (invertible) """"both"""" else """"forward"""") +
+    props.map(p => " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 }
 
 case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, invertible: Boolean, arguments: List[(Int, Int)]) extends FormalAlignment {
@@ -113,6 +117,12 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, inver
     })
     case InformalAlignment(a, b) ⇒ InformalAlignment(from, b)
   }
+
+  override def toString = from.toString + " " + to.toString +
+    "direction=" + (if (invertible) """"both"""" else """"forward"""") +
+    " " + """arguments="""" + arguments.map(p => "(" + p._1 + "," + p._2 + ")").mkString("") +
+    """"""" +
+    props.map(p => " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 }
 
 case class InformalAlignment(from: Reference, to: Reference) extends Alignment {
@@ -127,6 +137,9 @@ case class InformalAlignment(from: Reference, to: Reference) extends Alignment {
     case f: FormalAlignment   ⇒ InformalAlignment(from, f.to)
     case f: InformalAlignment ⇒ InformalAlignment(from, f.to)
   }
+
+  override def toString = from.toString + " " + to.toString +
+    props.map(p => " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 }
 
 object SimpleAlignment {
@@ -173,25 +186,6 @@ class AlignmentsServer extends ServerExtension("align") {
     })
     controller.extman.addExtension(new AlignQuery)
     controller.extman.addExtension(new CanTranslateQuery)
-    /*
-    alignments += SimpleAlignment(
-      Path.parseS("http://pvs.csl.sri.com/Prelude?list_props?append",nsMap),
-      Path.parseS("http://code.google.com/p/hol-light/source/browse/trunk?lists?APPEND",nsMap),true
-    )
-    alignments += InformalAlignment(
-      Path.parseS("http://pvs.csl.sri.com/Prelude?list_props?append",nsMap),
-      URI("""https://en.wikipedia.org/wiki/List_(abstract_data_type)#Operations""")
-    )
-    alignments += SimpleAlignment(
-      Path.parseS("http://latin.omdoc.org/foundations/hollight?Kernel?bool",nsMap),
-      Path.parseS("http://pvs.csl.sri.com/?PVS?boolean",nsMap),true
-    )
-    alignments += InformalAlignment(
-      Path.parseS("http://latin.omdoc.org/foundations/hollight?Kernel?bool",nsMap),
-      URI("https://en.wikipedia.org/wiki/Boolean_data_type")
-    )
-    */
-
   }
   override def destroy {
     controller.extman.get(classOf[AlignQuery]) foreach { a ⇒
@@ -268,7 +262,7 @@ class AlignmentsServer extends ServerExtension("align") {
       case n: GlobalName ⇒ n
       case _             ⇒ return Nil
     }
-    getFormalAlignments(head).map(_.to.mmturi.doc).toList
+    getFormalAlignments(head).map(_.to.mmturi.doc)
   }
 
   private object CanNotTranslate extends Exception
@@ -371,6 +365,9 @@ class AlignmentsServer extends ServerExtension("align") {
     val alignmentsCount = tmp.foldLeft(0)(_ + _)
     println(alignmentsCount + " alignments read from " + file.toString)
   }
+
+  private def writeToFile(file:File) = File.write(file,alignments.map(_.toString).mkString("\n"))
+  
   // TODO needs reworking
   private def readJSON(file: File) {
     /*
