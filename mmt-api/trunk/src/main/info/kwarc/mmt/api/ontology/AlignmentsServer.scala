@@ -52,17 +52,16 @@ abstract class FormalAlignment extends Alignment {
     assert(applicable(t))
     t match {
       case OMS(f) if f == from.mmturi ⇒ toTerm
-      case _ if cont.isDefined        ⇒ translate(t, cont.get)
-      case _                          ⇒ ???
+      case _                          ⇒ translate(t, cont)
     }
   }
-  protected def translate(t: Term, cont: StatelessTraverser): Term
+  protected def translate(t: Term, cont: Option[StatelessTraverser] = None): Term
 }
 
 case class SimpleAlignment(from: LogicalReference, to: LogicalReference, invertible: Boolean) extends FormalAlignment {
 
   def altapplicable(t: Term) = false
-  def translate(t: Term, cont: StatelessTraverser) = t // cannot ever occur
+  def translate(t: Term, cont: Option[StatelessTraverser]) = t // cannot ever occur
 
   def toJSON = (JSONString("Simple"), JSONObject(List(
     (JSONString("from"), JSONString(from.toString)),
@@ -82,20 +81,46 @@ case class SimpleAlignment(from: LogicalReference, to: LogicalReference, inverti
     props.filter(x ⇒ x._1 != "direction").map(p ⇒ " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 }
 
-case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, invertible: Boolean, arguments: List[(Int, Int)]) extends FormalAlignment {
+case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, invertible: Boolean,
+                             arguments: List[(Int, Int)]) extends FormalAlignment {
 
   def altapplicable(t: Term) = t match {
-    case OMA(OMS(f), args) if f == from.mmturi ⇒ true
-    case _                                     ⇒ false
+    case OMA(OMS(f), args) if f == from.mmturi        ⇒ true
+    case ApplyMatch(OMS(f), args) if f == from.mmturi => true
+    case _                                            ⇒ false
   }
   private def reorder(args: List[Term]) = {
-    // TODO what if the last arguments are implicit?
-    val max = arguments.sortBy(_._2).last._2
-    (1 to max).map(i ⇒ args(arguments.find(p ⇒ p._2 == i).map(_._1).getOrElse(???))).toList // TODO insert variables
+    var nargs = args.map(t => {
+      val apos = arguments.find(p => p._1==(args.indexOf(t) + 1))
+      if (apos.isDefined) (apos.get._2,t) else (0,t)
+    }).filter(_._1!=0).sortBy(_._1)
+    val max = nargs.map(_._1).max
+    (1 to max).map(i => nargs.find(p => p._1==i)).collect{
+      case Some(p) => p._2
+      case _ => ??? // TODO insert variables
+    }.toList
+    //val max = arguments.sortBy(_._2).last._2
+    //(1 to max).map(i ⇒ args(arguments.find(p ⇒ p._2 == i).map(_._1).getOrElse(???))).toList // TODO insert variables
   }
-  def translate(t: Term, cont: StatelessTraverser) = t match {
+  object ApplyMatch {
+    //TODO foundation independence
+    val path = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories") ? "LF" ? "apply"
+    val applyterm = OMS(path)
+    def apply(f: Term, a: Term*) = OMA(applyterm, f :: a.toList)
+    def unapply(t: Term) : Option[(Term,List[Term])] = t match {
+      case OMA(app, f :: args) if app == applyterm =>
+        unapply(f) match {
+          case None => Some((f, args))
+          case Some((c, args0)) => Some((c, args0 ::: args))
+        }
+      case _ => None
+    }
+  }
+  def translate(t: Term, cont: Option[StatelessTraverser]) = t match {
     case OMA(OMS(f), args) if f == from.mmturi ⇒
-      OMA(toTerm, reorder(args).map(cont.apply(_, Context.empty))) // TODO insert variables
+      OMA(toTerm, reorder(args).map(a => cont.map(_.apply(a, Context.empty)).getOrElse(a))) // TODO insert variables
+    case ApplyMatch(OMS(f),args) if f == from.mmturi =>
+      ApplyMatch(toTerm, reorder(args).map(a => cont.map(_.apply(a, Context.empty)).getOrElse(a)):_*)
   }
 
   def toJSON = (JSONString("Argument"), JSONObject(List(
@@ -472,5 +497,3 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
 }
-
-

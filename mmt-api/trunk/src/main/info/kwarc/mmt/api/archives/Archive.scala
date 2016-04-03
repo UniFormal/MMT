@@ -8,6 +8,7 @@ import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
 
 import scala.collection.mutable
+import scala.util.Try
 
 /** convenience class for traversing an Archive */
 case class Current(file: File, path: FilePath)
@@ -51,6 +52,8 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     }
     nsMap
   }
+
+  val foundation = properties.get("foundation").map(s => Path.parseM(s,namespaceMap))
 
   /** the absolute path to a given dimension */
   def /(dim: ArchiveDimension) = root / resolveDimension(dim)
