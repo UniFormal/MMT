@@ -27,7 +27,9 @@ abstract class Alignment {
 
   def ->(that: Alignment): Alignment
 
-  def toJSON: (JSONString, JSONObject)
+  // def toJSON: (JSONString, JSONObject)
+
+  var isGenerated = false
 
   def reverse: Alignment
 }
@@ -37,7 +39,7 @@ abstract class FormalAlignment extends Alignment {
   val to: LogicalReference
   val invertible: Boolean
 
-  def toTerm = to match {
+  def toTerm : Term = to match {
     case LogicalReference(t: GlobalName) ⇒ OMS(t)
     case LogicalReference(t: MPath)      ⇒ OMMOD(t)
   }
@@ -56,6 +58,45 @@ abstract class FormalAlignment extends Alignment {
     }
   }
   protected def translate(t: Term, cont: Option[StatelessTraverser] = None): Term
+
+  private val top = this
+
+  def ->(that: Alignment) = {
+    require(top.to == that.from)
+    that match {
+      case a : FormalAlignment =>
+        new FormalAlignment {
+          val from = top.from
+          val to = a.to
+          val invertible = top.invertible && a.invertible
+          override def applicable(t : Term) = top.applicable(t) && a.applicable(top.apply(t))
+          protected def altapplicable(t : Term) = top.altapplicable(t) && a.altapplicable(top.apply(t))
+          protected def translate(t: Term, cont: Option[StatelessTraverser] = None) =
+            a.apply(top.translate(t))
+          def reverse = a.reverse -> top.reverse
+          override val isGenerated = true
+        }
+      case i : InformalAlignment =>
+        val ret = InformalAlignment(top.from, i.to)
+        ret.isGenerated = true
+        ret
+    }
+  }
+}
+
+class ComplexAlignment(src : GlobalName, target : MPath,targetterm : Term) extends FormalAlignment {
+  val from = LogicalReference(src)
+  val to = LogicalReference(target)
+
+  val invertible = false
+
+  override def toTerm = targetterm
+
+  protected def altapplicable(t: Term) = false
+
+  // should never be called
+  protected def translate(t: Term, cont: Option[StatelessTraverser] = None): Term = toTerm
+  def reverse = InformalAlignment(to,from)
 }
 
 case class SimpleAlignment(from: LogicalReference, to: LogicalReference, invertible: Boolean) extends FormalAlignment {
@@ -69,12 +110,6 @@ case class SimpleAlignment(from: LogicalReference, to: LogicalReference, inverti
   )))
 
   def reverse = if (invertible) SimpleAlignment(to, from, true) else InformalAlignment(to, from)
-
-  def ->(that: Alignment) = that match {
-    case SimpleAlignment(a, b, inv)         ⇒ SimpleAlignment(from, b, inv && invertible)
-    case ArgumentAlignment(a, b, inv, args) ⇒ ArgumentAlignment(from, b, inv && invertible, args)
-    case InformalAlignment(a, b)            ⇒ InformalAlignment(from, b)
-  }
 
   override def toString = from.toString + " " + to.toString +
     " direction=" + (if (invertible) """"both"""" else """"forward"""") +
@@ -131,17 +166,6 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, inver
 
   def reverse = if (invertible) ArgumentAlignment(to, from, true, arguments.map(p ⇒ (p._2, p._1))) else
     InformalAlignment(to, from)
-
-  def ->(that: Alignment) = that match {
-    case SimpleAlignment(a, b, inv) ⇒ ArgumentAlignment(from, b, inv && invertible, arguments)
-    case ArgumentAlignment(a, b, inv, args2) ⇒ ArgumentAlignment(from, b, inv && invertible, {
-      arguments.map(p ⇒ {
-        val other = args2.find(q ⇒ p._2 == q._1).getOrElse(throw new Exception("Can not compose " + this + " with " + that))
-        (p._1, other._2)
-      })
-    })
-    case InformalAlignment(a, b) ⇒ InformalAlignment(from, b)
-  }
 
   override def toString = from.toString + " " + to.toString +
     " direction=" + (if (invertible) """"both"""" else """"forward"""") +
@@ -399,7 +423,7 @@ class AlignmentsServer extends ServerExtension("align") {
   private def readFile(file: File) {
     val cmds = File.read(file).split("\n").map(_.trim).filter(_.nonEmpty)
     val tmp = cmds map processString
-    val alignmentsCount = tmp.foldLeft(0)(_ + _)
+    val alignmentsCount = tmp.sum
     println(alignmentsCount + " alignments read from " + file.toString)
   }
 

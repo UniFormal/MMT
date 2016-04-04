@@ -177,7 +177,7 @@ object StandardRat extends Quotient(new Product(StandardInt,StandardNat)) {
 object ComplexRat extends Product(StandardRat, StandardRat) {
 }
 // switched to java.lang.Double, because that's what .toDouble returns and
-// java.lang.Double =/= scala.Double
+// java.lang.Double =/= scala.Double (problem in RepresentationType.unapply)
 object StandardDouble extends Atomic[java.lang.Double] {
    val cls = classOf[java.lang.Double]
    val key = "OMF"
