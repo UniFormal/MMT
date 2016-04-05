@@ -65,7 +65,7 @@ abstract class FormalAlignment extends Alignment {
     require(top.to == that.from)
     that match {
       case a : FormalAlignment =>
-        new FormalAlignment {
+        val ret = new FormalAlignment {
           val from = top.from
           val to = a.to
           val invertible = top.invertible && a.invertible
@@ -74,8 +74,9 @@ abstract class FormalAlignment extends Alignment {
           protected def translate(t: Term, cont: Option[StatelessTraverser] = None) =
             a.apply(top.translate(t))
           def reverse = a.reverse -> top.reverse
-          override val isGenerated = true
         }
+        ret.isGenerated = true
+        ret
       case i : InformalAlignment =>
         val ret = InformalAlignment(top.from, i.to)
         ret.isGenerated = true
