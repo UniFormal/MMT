@@ -68,34 +68,32 @@ class STeXImporter extends Importer {
   }
 
   var docCont: Map[DPath, Document => Unit] = Nil.toMap
-  var firstRun = true
-
-  override def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath) {
-    modifier match {
-      case Build(up) =>
-        //running twice, first to load all theories, then to successfully parse objects
-        build(arch, up, in)
-        firstRun = false
-        build(arch, up, in)
-        firstRun = true
-      case BuildDepsFirst(up) => buildDepsFirst(arch, up, in)
-      case Clean => clean(arch, in)
+  
+  override def estimateResult(bt : BuildTask) : BuildSuccess = {
+    val dpath = bt.narrationDPath
+    if (sTeX.inSmglom(dpath) && sTeX.getLanguage(dpath).isDefined) {
+      val segs = bt.inPath.segments
+      val masterName = segs.last.split('.').toList.reverse match {
+        case ext :: lang :: rest => (ext :: rest).reverse.mkString(".")
+        case _ => throw new ImplementationError("Wrong path language format in estimateResult: this should not happen")
+      }
+       val masterFile = FilePath(segs.init ::: List(masterName))
+       BuildSuccess(List(FileBuildDependency(bt.key, bt.archive,  masterFile)), Nil)
+    } else {
+       BuildSuccess(Nil, Nil)
     }
   }
-
+  
   def importDocument(bt: BuildTask, cont: Document => Unit): BuildResult = {
     try {
-      docCont += (bt.narrationDPath -> cont) // to reindex document
+      docCont += (bt.narrationDPath -> cont) // to reindex document if needed
       val src = scala.io.Source.fromFile(bt.inFile.toString)
       val cp = scala.xml.parsing.ConstructingParser.fromSource(src, preserveWS = true)
       val node: Node = cp.document()(0)
       src.close()
       translateDocument(node)(bt.narrationDPath, bt.errorCont)
       val doc = controller.getDocument(bt.narrationDPath)
-      if (firstRun || !sTeX.inSmglom(doc.path) || sTeX.getLanguage(doc.path).isDefined) {
-        //don't index smglom signatures, will call manually after bindings are added
-        cont(doc)
-      }
+      cont(doc)
     } catch {
       case e: Exception =>
         val err = STeXParseError.from(e, "Skipping article due to unexpected error", None, None, Some(Level.Fatal))
@@ -103,7 +101,7 @@ class STeXImporter extends Importer {
     }
     BuildResult.empty
   }
-
+  
   //TODO tmp
   //override def log(s : => String, subgroup:Option[String]) = println(s)
   
