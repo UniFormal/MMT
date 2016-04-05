@@ -23,12 +23,18 @@ case class BuildDepsFirst(update: Update) extends BuildTargetModifier {
   def toString(dim: String) = dim + "&"
 }
 
-case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModifiers = TestModifiers()) {
+case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModifiers = TestModifiers(),
+                  dependencyLevel: Option[Level] = Some(Level.Ignore)) {
   def key: String =
     if (errorLevel <= Level.Force) ""
     else if (errorLevel < Level.Ignore) "!" else "*"
 
   def toString(dim: String) = dim + key
+  // use dependency level for dependencies
+  def forDependencies: Update = dependencyLevel match {
+    case None => this
+    case Some(level) => Update(level, dryRun, testOpts, None)
+  }
 }
 
 case class Build(update: Update) extends BuildTargetModifier {
@@ -520,7 +526,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   def checkOrRunBuildTask(deps: Set[Dependency], bt: BuildTask, up: Update): Option[BuildResult] = {
     var res: Option[BuildResult] = None
     val outPath = bt.outPath
-    val Update(errLev, dryRun, testMod) = up
+    val Update(errLev, dryRun, testMod, _) = up
     val rn = rebuildNeeded(deps, bt, errLev)
     if (!rn) {
       logResult("up-to-date " + outPath)
@@ -599,13 +605,15 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
+    val requestedDeps = getFilesRec(a, in)
     val deps = getDepsMap(getFilesRec(a, in))
     val ts = Relational.flatTopsort(controller, deps)
     ts.foreach {
       case bd: FileBuildDependency =>
         val target = if (bd.key == key) this else bd.getTarget(controller)
         val bt = target.makeBuildTask(bd.archive, bd.inPath)
-        target.checkOrRunBuildTask(deps.getOrElse(bd, Set.empty), bt, up)
+        target.checkOrRunBuildTask(deps.getOrElse(bd, Set.empty), bt,
+          if (requestedDeps.contains(bd)) up else up.forDependencies)
       case _ =>
     }
   }

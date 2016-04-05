@@ -258,7 +258,7 @@ class BuildQueue extends BuildManager {
         qt.missingDeps = Nil
         queued.addFirst(qt)
         cycleCheck += qt.task.asDependency
-        bds.foreach(t => buildDependency(qt.updatePolicy, t))
+        bds.foreach(t => buildDependency(qt.updatePolicy.forDependencies, t))
         getNextTask
       }
     } else currentQueueTask
