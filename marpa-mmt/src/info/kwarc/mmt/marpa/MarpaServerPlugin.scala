@@ -160,21 +160,23 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
       val params = paramsJSON.obj
       val status = params("status").toString
       val key = params("key").toString
-      val input = java.net.URLDecoder.decode(params("input").toString, "UTF-8")
+      val input = params("input").toString
 
       val payloadUnparsed = params("payload") match {
         case scala.util.parsing.json.JSONObject(x) ⇒ x
       }
-      def parseJSONtoList(arr: scala.util.parsing.json.JSONArray): List[Int] = {
+      def parseJSONtoList(arr: scala.util.parsing.json.JSONArray): List[Any] = {
         val scala.util.parsing.json.JSONArray(list) = arr
         list map {
           case x: Int    ⇒ x
           case x: Double ⇒ x.toInt
           case x: Float  ⇒ x.toInt
+          case x: String => x
+          case JSONString(value) => value 
           case x         ⇒ throw ServerError("parseJSONtoList mismatch")
         }
       }
-      def parseJSONtoNestedList(arr: scala.util.parsing.json.JSONArray): List[List[Int]] = {
+      def parseJSONtoNestedList(arr: scala.util.parsing.json.JSONArray): List[List[Any]] = {
         val scala.util.parsing.json.JSONArray(list) = arr
         list.map({
           case innerList: scala.util.parsing.json.JSONArray ⇒ parseJSONtoList(innerList)
@@ -187,6 +189,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 
       println("Params = " + params.toString())
       println("Payload = " + payload.toString())
+      println("Input = " + input + " length " + input.length())
 
       var ruleNr: Int = -1;
       val pattern = "N(\\d+)$".r
@@ -201,9 +204,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
       var seqArgMap: Map[Int, List[String]] = new HashMap[Int, List[String]]();
       var seqVarMap: Map[Int, List[String]] = new HashMap[Int, List[String]]();
       //Construct argument maps
-      val notPosArr: List[List[Int]] = payload.getOrElse("position", List(List()))
-      val notStart: Int = notPosArr(0)(0)
-      val notLength: Int = notPosArr(0)(1)
+      val notPosArr: List[List[Any]] = payload.getOrElse("position", List(List()))
+      val notStart: Int = notPosArr(0)(0).asInstanceOf[Int]
+      val notLength: Int = notPosArr(0)(1).asInstanceOf[Int]
       payload foreach (p ⇒ {
         val key = p._1;
         val posArr = p._2;
@@ -221,8 +224,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
           p._2 foreach (pos ⇒ {
             //Depending on key type add to one of the maps
             val start = pos(0)
-            val length = pos(1)
-            var value = input.substring(notStart + start, notStart + start + length)
+            val length = pos(1)     
+            println("Argument substring = " + pos(2).toString)
+            var value = pos(2).asInstanceOf[String]
             println("key = " + key + " value = " + value)
             if (argType == "Arg") {
               argMap += (argNr -> value)
@@ -374,7 +378,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
     }
   }
   def bodyAsJSON(b: Body): scala.util.parsing.json.JSONObject = {
-    val bodyS = b.asString
+    val bodyS = java.net.URLDecoder.decode(b.asString, "UTF-8")
     scala.util.parsing.json.JSON.parseRaw(bodyS) match {
       case Some(j: scala.util.parsing.json.JSONObject) ⇒ j
       case _ ⇒ throw ServerError("Invalid JSON " + bodyS)
