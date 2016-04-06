@@ -60,13 +60,13 @@ trait STeXAnalysis {
       case mhinputRef(_, r, b) =>
         val fp = entryToPath(b)
         Option(r) match {
-          case Some(id) => mkDep(a, id, fp, "sms")
-          case None => Some(FileBuildDependency("sms", a, fp))
+          case Some(id) => mkDep(a, id, fp, key)
+          case None => Some(mkFileDep(key, a, fp))
         }
       case tikzinput(_, r, b) => mhRepos(a, r, b, "tikzsvg")
       case includeMhProblem(_, r, b) => mhRepos(a, r, b, key)
       case groups(_, r, b) =>
-        val depKey = if (line.startsWith("\\importmhmodule")) "sms" else key
+        val depKey = if (line.startsWith("\\importmhmodule") || line.startsWith("\\usemhmodule")) "sms" else key
         val fp = entryToPath(b)
         val optRepo = Option(r).map(_.split(",").toList.sorted.map(_.split("=").toList))
         optRepo match {
