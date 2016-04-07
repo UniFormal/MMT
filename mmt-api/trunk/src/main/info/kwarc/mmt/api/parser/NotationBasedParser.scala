@@ -188,8 +188,15 @@ class NotationBasedParser extends ObjectParser {
   private def getRules(context: Context): (List[ParsingRule], List[LexerExtension]) = {
     val support = context.getIncludes
     //TODO we can also collect notations attached to variables
-    val includes = support.flatMap {p => controller.library.visible(OMMOD(p))}.distinct
-    val decls = includes flatMap {tm =>
+    val visible = support.flatMap {p =>
+      controller.globalLookup.getO(p) match {
+        case Some(d: modules.DeclaredTheory) =>
+           controller.simplifier.flatten(d) // make sure p is recursively loaded before taking visible theories
+        case _ =>
+      }
+      controller.library.visible(OMMOD(p))
+    }.distinct
+    val decls = visible flatMap {tm =>
       controller.globalLookup.getO(tm.toMPath) match {
         case Some(d: modules.DeclaredTheory) =>
            controller.simplifier.flatten(d)
