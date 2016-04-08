@@ -30,7 +30,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
          var res = '';
          for (k in $scope.columns) {
                 var str = '';
-                if (doFilter) str = escape($scope.columns[k].search);
+                if (doFilter || k != $scope.field) str = escape($scope.columns[k].search);
                 if (str != '') res = res + '&' + k + "=" + str;
             };
          for (var i = 0; i < $scope.hiddenData.length; i++) {
