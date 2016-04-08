@@ -10,17 +10,23 @@
 </head>
 <body>
 <div class="container-fluid" ng-controller="QueueViewer">
-    <p><b>MMT Build Queue</b> (via <a href="errorview.html">Error Viewer</a>)</p>
+    <p id="top"><b>MMT Build Queue</b> (via <a href="errorview.html">Error Viewer</a>)
+        (<a href="https://github.com/KWARC/MMT/issues/new?title=buildqueue">report issues here</a>)
+        (<a href="https://github.com/KWARC/MMT/wiki/Build-Queue-Help">get help</a>)
+    </p>
     <p>refresh rate:
     <input type="number" min="0" max="10000" ng-click="stopRepeat(); repeat()" ng-model="refreshRate"/>
-        queue length {{queue.length}}</p>
-    queue<ul>
-    <li ng-repeat="e in queue.queue">{{e}}</li>
+        queue length {{queue.queue.length}}</p>
+    queue (go to <a href="#blocked">blocked</a>) (go to <a href="#finished">finished</a>)
+    <ul>
+        <li ng-repeat="e in queue.queue">{{e}}</li>
     </ul>
-    blocked<ul>
-    <li ng-repeat="e in queue.blocked">{{e}}</li>
+    <span id="blocked">blocked</span> (go to <a href="#top">top</a>)
+    <ul>
+        <li ng-repeat="e in queue.blocked">{{e}}</li>
     </ul>
-    finished<ul>
+    <span id="finished">finished</span> (go to <a href="#top">top</a>)
+    <ul>
     <li ng-repeat="e in queue.finished">
         {{e.dependency}} {{e.result.success ? "success" : "failure"}}
         <span ng-show="e.result.needed.length > 0">missing</span>
