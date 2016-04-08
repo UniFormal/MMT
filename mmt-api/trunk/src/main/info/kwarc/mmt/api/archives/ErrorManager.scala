@@ -6,14 +6,13 @@ import java.util.Date
 import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.ontology.TermPattern.RemoveUnknowns
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.web._
 import tiscaf.HLet
 
 import scala.collection.mutable
-import scala.xml.Node
+import scala.xml._
 
 object Table {
   val columns: List[String] = List(
@@ -88,7 +87,7 @@ object ErrorReader {
     node.child.view.zipWithIndex.foreach { case (x, i) =>
       def getAttrs(attrs: List[String], x: Node): List[String] = {
         val as = x.attributes
-        attrs map (a => as.get(a).getOrElse("").toString)
+        attrs map (a => as.get(a).getOrElse(NodeSeq.Empty).text)
       }
       val List(tgt, srcRef, shortMsg, level) =
         getAttrs(List("target", "sref", "shortMsg", "level"), x)
