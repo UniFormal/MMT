@@ -31,7 +31,7 @@ trait Extension extends Logger {
   /** a custom error class for this extension */
   case class LocalError(s: String) extends ExtensionError(logPrefix, s)
   /** convenience method for wrapping code in error handler that throws [[LocalError]] */
-  protected def catchErrors(msg: String)(code: => Unit): Unit = {
+  protected def catchErrors(msg: String)(code: => Unit) {
      try {code}
      catch {case e: Error =>
        log(LocalError(msg).setCausedBy(e))
@@ -44,6 +44,12 @@ trait Extension extends Logger {
        log(LocalError(msg).setCausedBy(e))
        recoverWith
      }
+  }
+  /** an [[ErrorHandler]] that wraps an error in a [[LocalError]] and throws it */
+  protected def makeErrorThrower(msg: String) = new ErrorHandler {
+    protected def addError(e: Error) {
+      throw LocalError(msg).setCausedBy(e)
+    }
   }
 
 
@@ -264,6 +270,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     val msp = new MMTStructurePresenter(nbpr)
     val rbs = new RuleBasedSimplifier
     val mss = new MMTStructureSimplifier(rbs)
+    val rbe = new execution.RuleBasedExecutor
     //use this for identifying structure and thus dependencies
     //val mmtStructureOnly = new OneStepInterpreter(new KeywordBasedParser(DefaultObjectParser))
     val mmtextr = ontology.MMTExtractor
@@ -278,7 +285,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       case _: Exception =>
     }
 
-    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover).foreach {e => addExtension(e)}
+    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover, rbe).foreach {e => addExtension(e)}
     // build manager
     addExtension(new TrivialBuildManager)
     //targets, opaque formats, and presenters
@@ -298,7 +305,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
       new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
     // shell extensions
-    List(new ShellSendCommand).foreach(addExtension(_))
+    List(new ShellSendCommand, new execution.ShellCommand).foreach(addExtension(_))
 
     lexerExtensions ::= GenericEscapeLexer
     lexerExtensions ::= UnicodeReplacer

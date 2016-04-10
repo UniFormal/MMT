@@ -123,19 +123,23 @@ abstract class LexFunction {
    def applicable(s: String, i: Int): Boolean
    /** @param s the string to lex
     *  @param i the current position in s
-    *  @return initial escape sequence, actual text, and terminal escape sequence
+    *  @return the result of lexing, and the original input that was lexed (including escape sequences etc.)
     */
-   def apply(s: String, i: Int): (String,String,String)   
+   def apply(s: String, i: Int): (String,String)
+   
+   /** unapply(apply(s,_)) == s */
+   def unapply(s: String): String
 }
 
 /** the parsing part of a [[LexParseExtension]] */
 abstract class ParseFunction {
-   /** @param begin as returned by lex
-    *  @param text as returned by lex
-    *  @param end as returned by lex
+   /** @param text as returned by lex
     *  @return the parsed Term
     */
-   def apply(begin: String, text: String, end: String): Term
+   def apply(text: String): Term
+
+   /** unapply(apply(s)) = s */
+   def unapply(t: Term): String
 }
 
 /**
@@ -144,10 +148,12 @@ abstract class ParseFunction {
 class LexParseExtension(lc: LexFunction, pc: ParseFunction) extends LexerExtension {
    def applicable(s: String, i: Int) = lc.applicable(s, i) 
    def apply(s: String, i: Int, firstPosition: SourcePosition): CFExternalToken = {
-      val (begin,text,end) = lc(s, i)
-      val t = pc(begin, text, end)
-      CFExternalToken(begin+text+end, firstPosition, t)
+      val (text,eaten) = lc(s, i)
+      val t = pc(text)
+      CFExternalToken(eaten, firstPosition, t)
    }
+   
+   def unapply(t: Term) = lc.unapply(pc.unapply(t))
 }
 
 /**
@@ -198,8 +204,11 @@ class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean) extend
            scanDigits
         }
      }
-     ("", s.substring(index,i), "")
+     val text = s.substring(index,i)
+     (text, text)
   }
+  
+  def unapply(s: String) = s
 }
 
 /**
@@ -225,8 +234,10 @@ class AsymmetricEscapeLexer(begin: String, end: String) extends LexFunction {
            i += 1
      }
      val text = s.substring(index+begin.length,i-end.length)
-     (begin, text, end)
+     (text, begin+text+end)
   }
+
+  def unapply(s: String) = begin + s + end
 }
 
 /**
@@ -237,7 +248,7 @@ class AsymmetricEscapeLexer(begin: String, end: String) extends LexFunction {
  * 
  * typical example: SymmetricEscapeLexer(", \)
  */
-class SymmetricEscapeLexer(delim: Char, exceptAfter: Char) extends LexFunction  {
+class SymmetricEscapeLexer(delim: Char, exceptAfter: Char) extends LexFunction {
   def applicable(s: String, i: Int) = s(i) == delim
   def apply(s: String, index: Int) = {
      var i = index+1
@@ -248,12 +259,10 @@ class SymmetricEscapeLexer(delim: Char, exceptAfter: Char) extends LexFunction  
            i += 1
      }
      val text = s.substring(index+1,i)
-     (delim.toString, text, if (i < s.length) delim.toString else "")
+     (text, delim.toString + text + (if (i < s.length) delim.toString else ""))
   }
-}
-
-class LiteralParser(rt: uom.RealizedType) extends ParseFunction {
-   def apply(begin: String, text: String, end: String) = rt.parse(text)
+  
+  def unapply(s: String) = delim.toString + s + delim.toString
 }
 
 class FixedLengthLiteralLexer(rt: uom.RealizedType, begin: String, length: Int) extends LexerExtension {
@@ -266,8 +275,16 @@ class FixedLengthLiteralLexer(rt: uom.RealizedType, begin: String, length: Int) 
    }
 }
 
+class LiteralParser(rt: uom.RealizedType) extends ParseFunction {
+   def apply(text: String) = rt.parse(text)
+   def unapply(t: Term) = t match {
+     case l: OMLITTrait => l.toString
+     case _ => throw ImplementationError("not a literal")
+   }
+}
+
 class SemiFormalParser(formatOpt: Option[String]) extends ParseFunction {
-   def apply(begin: String, text: String, end: String): Term = {
+   def apply(text: String): Term = {
       formatOpt match {
          case Some(format) =>
             OMSemiFormal(objects.Text(format, text))
@@ -278,6 +295,16 @@ class SemiFormalParser(formatOpt: Option[String]) extends ParseFunction {
             r.close
             OMSemiFormal(objects.Text(format, rest))
       }
+   }
+   
+   def unapply(t: Term) = {
+     t match {
+       case OMSemiFormal(Text(format, text)::Nil) => formatOpt match {
+         case Some(_) => text
+         case None => format + " " + text
+       }
+       case _ => throw ImplementationError("not a semiformal text")
+     }
    }
 }
 

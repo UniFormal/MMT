@@ -37,8 +37,6 @@ class ControllerState {
   var actionDefinitions: List[Defined] = Nil
   var currentActionDefinition: Option[Defined] = None
 
-  var environmentVariables = new scala.collection.mutable.ListMap[String, String]
-
   /** the configuration */
   val config = new MMTConfig
 }
@@ -141,7 +139,7 @@ class Controller extends ROController with ActionHandling with Logger {
 
   /** @return the value of an environment variable */
   def getEnvVar(name: String): Option[String] = {
-    state.environmentVariables.get(name) orElse Option(System.getenv.get(name))
+    state.config.getEntry(classOf[EnvVarConf], name).map(_.value) orElse Option(System.getenv.get(name))
   }
   
   /** @return the current OAF root */
@@ -340,7 +338,7 @@ class Controller extends ROController with ActionHandling with Logger {
     catch {
       case NotFound(p: Path) =>
         if (previous.contains(p))
-          throw GetError("retrieval failed for " + p)
+          throw GetError("retrieval failed due to cyclic loading of " + p)
         else {
           retrieve(p)
           iterate(a, p :: previous)

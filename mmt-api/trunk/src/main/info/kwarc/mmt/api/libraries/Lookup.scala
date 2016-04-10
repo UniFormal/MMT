@@ -154,8 +154,6 @@ abstract class Lookup {self =>
                 case Some(df) =>
                   traverse(df)
                 case None =>
-                  println(theo,ln)
-                  println(morph)
                   error((theo ? ln).toString)
              }
           }

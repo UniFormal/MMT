@@ -127,7 +127,14 @@ case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDe
    def before(name: LocalName): Context = {
       index(name) match {
          case None => this 
-         case Some(i) => Context(variables.take(variables.length-i):_*)
+         case Some(i) => Context(variables.take(variables.length-i-1):_*)
+      }
+   }
+   /** @return the suffix after and excluding the variable */
+   def after(name: LocalName): Context = {
+      index(name) match {
+         case None => Context.empty 
+         case Some(i) => Context(variables.drop(variables.length-i):_*)
       }
    }
    

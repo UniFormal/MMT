@@ -29,7 +29,7 @@ object Action extends RegexParsers {
 
   private def action = log | mathpath | archive | oaf | extension | mws | server |
     windowaction | execfile | defactions | scala | mbt |
-    setbase | envvar | read | interpret | graph | check | navigate |
+    setbase | read | interpret | graph | check | navigate |
     printall | printallxml | printConfig | diff | clear | exit | getaction // getaction must be at end for default get
 
   private def log = logfilets | logfile | loghtml | logconsole | logon | logoff
@@ -120,8 +120,6 @@ object Action extends RegexParsers {
   private def mbt = "mbt" ~> file ^^ { f => MBT(f) }
 
   private def setbase = "base" ~> path ^^ { p => SetBase(p) }
-
-  private def envvar = "envvar" ~> str ~ quotedStr ^^ { case name ~ value => SetEnvVar(name, value) }
 
   private def read = "read" ~> file ^^ { f => Read(f, false) }
 
@@ -312,14 +310,6 @@ case class LoggingOff(group: String) extends Action {
   */
 case class SetBase(base: Path) extends Action {
   override def toString = "base " + base
-}
-
-/** set an environment variable
-  *
-  * concrete syntax: envvar name "value"
-  */
-case class SetEnvVar(name: String, value: String) extends Action {
-  override def toString = s"""envvar $name "$value""""
 }
 
 /** load a file containing commands and execute them, fails on first error if any

@@ -76,8 +76,6 @@ trait ActionHandling {self: Controller =>
           case SetBase(b) =>
             state.nsMap = state.nsMap(b)
             report("response", "base: " + getBase)
-          case SetEnvVar(n, v) =>
-            state.environmentVariables(n) = v
           case ServerOn(port) => server match {
             case Some(serv) => logError("server already started on port " + serv.port)
             case None if Util.isTaken(port) => logError("port " + port + " is taken, server not started.")
@@ -158,10 +156,12 @@ trait ActionHandling {self: Controller =>
     }
   }
 
+  /** auxiliary method of makeAction */
   def usageOption: OptionDescrs = List(
     OptionDescr("usage", "", NoArg, "display usage message"),
     OptionDescr("help-command", "", NoArg, "help about the build target"))
 
+  /** handles [[ConfBuild]] */
   def confBuildAction(modS : String, targets : List[String], profile : String) = {
     val config = getConfig
     val mod  = modS match {
@@ -189,13 +189,14 @@ trait ActionHandling {self: Controller =>
       }
     }
   }
-
+  
+  /** handles [[MakeAction]] */ //TODO @CM this should become a ShellExtension
   def makeAction(key: String, allArgs: List[String]) {
     report.addHandler(ConsoleHandler)
     val optPair = BuildTargetModifier.splitArgs(allArgs, s => logError(s))
     optPair.foreach { case (mod, restArgs) =>
       val (args, fileNames) = AnaArgs.splitOptions(restArgs)
-      val home: File = File(System.getProperty("user.dir"))
+      val home = getHome
       val files = fileNames.map(s => File(home.resolve(s)))
       val realFiles = if (files.isEmpty)
         List(home)
@@ -280,7 +281,8 @@ trait ActionHandling {self: Controller =>
         }
     }
   }
-
+  
+  /** handles [[ArchiveBuild]] */ 
   def archiveBuildAction(ids: List[String], key: String, mod: BuildTargetModifier, in: FilePath) {
     ids.foreach { id =>
       val arch = backend.getArchive(id) getOrElse (throw GetError("archive not found: " + id))
@@ -310,6 +312,7 @@ trait ActionHandling {self: Controller =>
     }
   }
 
+  /** handles [[ExecFile]] */
   def execFileAction(f: File, nameOpt: Option[String]) {
     val folder = f.getParentFile
     // store old state, and initialize fresh state
@@ -330,6 +333,7 @@ trait ActionHandling {self: Controller =>
     }
   }
 
+  /** clone an archive using [[OAF]] and also clone its dependencies */
   def cloneRecursively(p: String) {
     val lcOpt = getOAFOrError.clone(p)
     lcOpt foreach { lc =>
@@ -348,6 +352,7 @@ trait ActionHandling {self: Controller =>
       a.properties.get("classpath").foreach { cp =>
         backend.openRealizationArchive(a.root / cp)
       }
+      a.properties
       notifyListeners.onArchiveOpen(a)
     }
   }

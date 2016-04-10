@@ -22,6 +22,11 @@ case class ExtensionConf(key : String, cls : String, args : List[String]) extend
    val id = key
 }
 
+/**
+ * sets an MMT-specific environment variable
+ */
+case class EnvVarConf(id : String, value: String) extends ConfEntry
+
 abstract class BackendConf extends ConfEntry
 
 /**

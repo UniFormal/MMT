@@ -22,8 +22,9 @@ object xml {
          cp.document()(0)
       } catch {case e: Exception =>
          throw XMLError("XML error while parsing " + file + ": " + e.getMessage)
+      } finally {
+         src.close
       }
-      src.close
       N
    }
 

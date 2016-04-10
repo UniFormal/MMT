@@ -43,28 +43,28 @@ class MathMLPresenter extends NotationBasedPresenter {
       ret
    }
    override def doIdentifier(p: ContentPath)(implicit pc : PresentationContext) {
-      val s = p match {
-         case m ?? name => name.toString  //not parsable if there are name clashes 
-         case _ => p.toPath
+      pc.html.mo(attributes = (symref -> p.toPath) :: jobadattribs) {
+        super.doIdentifier(p)
       }
-      val mo = utils.xml.element("mo", (symref -> p.toPath) :: jobadattribs, s)
-      pc.out(mo)
    }
    override def doVariable(n: LocalName)(implicit pc : PresentationContext) {
       val vdAtt = pc.context.find(_.decl.name == n) match {
          case None => Nil
          case Some(vd) => List(varref -> vd.declpos.toString)
       }
-      val mi = element("mi", vdAtt ::: jobadattribs, n.toString)
-      pc.out(mi)
+      pc.html.mi(attributes = vdAtt ::: jobadattribs) {
+        super.doVariable(n)
+      }
    }
    override def doLiteral(l: OMLITTrait)(implicit pc: PresentationContext) {
-      val mn = element("mn", jobadattribs, l.toString)
-      pc.out(mn)
+      pc.html.mn(attributes = jobadattribs) {
+        super.doLiteral(l)
+      }
    }
    override def doOperator(s: String)(implicit pc : PresentationContext) {
-      val mo = element("mo", Nil, s)
-      pc.out(mo)
+      pc.html.mo {
+        super.doOperator(s)
+      }
    }
    override def doDelimiter(p: GlobalName, d: Delimiter, implicits: List[Cont])(implicit pc : PresentationContext) {
       val mo = d.text match {

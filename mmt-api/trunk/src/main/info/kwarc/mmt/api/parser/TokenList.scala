@@ -128,13 +128,16 @@ object TokenList {
   *
   */
 class TokenList(private var tokens: List[TokenListElem]) {
-  /** returns a Token in a given position */
-  def apply(n: Int): TokenListElem =
+  /** should be guaranteed by invariance, but needed for subtle otherwise hard-to-find implementation errors */
+  private def checkIndex(n: Int, msg: String = "") {
     if (n >= tokens.length || n < 0)
-      throw ImplementationError("token index " + n + " out of range" +
-        (if (n > 0) " for list length " + tokens.length else ""))
-    else
-      tokens(n)
+      throw ImplementationError("token index " + n + " out of range in token list of length " + tokens.length + " (message: " + msg + "): " + tokens.toString)
+  }
+  /** returns a Token in a given position */
+  def apply(n: Int): TokenListElem = {
+    checkIndex(n)
+    tokens(n)
+  }
 
   /** returns a sublist of elements */
   def apply(from: Int, to: Int): List[TokenListElem] = tokens.slice(from, to)
@@ -172,6 +175,8 @@ class TokenList(private var tokens: List[TokenListElem]) {
         }
     }
     val (from, to) = an.fromTo
+    checkIndex(from, "active notation is " + an.toString)
+    checkIndex(to-1)
     val matched = new MatchedList(newTokens.reverse, an, tokens(from).firstPosition, tokens(to - 1).lastPosition)
     tokens = tokens.take(from) ::: matched :: tokens.drop(to)
     (from, to)

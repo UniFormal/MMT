@@ -84,7 +84,7 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
   }
 
   /** the currently open notations, inner-most first; initialized with the topRule or empty list */
-  private var active: List[ActiveNotation] = topRule.map(r => new ActiveNotation(this, List(r), 0)).toList
+  private var active: List[ActiveNotation] = topRule.map(r => new ActiveNotation(this, List(r), ScannerBacktrackInfo(0,0))).toList
 
   /**
    * precondition: ans.length + closable == active.length
@@ -202,6 +202,15 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
         throw ImplementationError("single Token in MatchedList")
     }
   }
+  
+  private def restoreBacktrackInfo(an: ActiveNotation) {
+    val bti = an.backtrackInfo
+    currentIndex = bti.currentIndex
+    active match {
+      case Nil => numCurrentTokens = bti.numCurrentTokens
+      case hd::_ => hd.numCurrentTokens = bti.numCurrentTokens
+    }
+  }
 
   /** tail-recursively going through the Token's */
   @tailrec
@@ -226,14 +235,15 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
           case Abort =>
             log("aborting")
             // go back to the beginning of the aborted notation
-            currentIndex = active(closable).firstToken
+            val aborted = active(closable)
             // drop innermost notations up to and including the one to be aborted, i.e., closable+1 notations
             active = active.drop(closable + 1)
+            restoreBacktrackInfo(aborted)
             // shift the token that opened the aborted notation
             advance()
           case Applicable =>
             //close the first active notations that are closable, then apply the next one
-            Range(0, closable) foreach { _ => closeFirst(true) }
+            Range(0, closable) foreach {_ => closeFirst(true)}
             applyFirst(false)
           case NotApplicable =>
             val futureTokens = availableFutureTokens
@@ -279,7 +289,11 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
                    */
                   Range(0, closable) foreach { _ => closeFirst(true) }
                 }
-                val an = new ActiveNotation(this, hd::others, currentIndex)
+                val nct = active match {
+                  case Nil => numCurrentTokens
+                  case hd::_ => hd.numCurrentTokens
+                }
+                val an = new ActiveNotation(this, hd::others, ScannerBacktrackInfo(currentIndex, nct))
                 active ::= an
                 applyFirst(true)
               case Nil =>
@@ -299,8 +313,9 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
         log("backtracking")
         //active notations left, but no further tokens left -> backtracking
         //drop innermost active notation and shift the token that triggered it
-        currentIndex = active.head.firstToken
+        val abort = active.head
         active = active.tail
+        restoreBacktrackInfo(abort)
         advance()
         // got to next token
         currentIndex += 1

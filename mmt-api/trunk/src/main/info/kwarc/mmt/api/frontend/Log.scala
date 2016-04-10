@@ -43,9 +43,10 @@ class Report extends Logger {
   def apply(prefix: => String, msg: => String) {
     lazy val caller = {
       val s = Thread.currentThread.getStackTrace
-      //TODO could also be Logger.log etc.
-      val i = s.indexWhere(e => e.getClassName == getClass.getName && e.getMethodName == "apply")
-      s(i + 1).toString
+      //TODO this is not always the most helpful entry
+      var i = s.lastIndexWhere(e => e.getMethodName == "log")
+      if (i == -1) i = 0
+      s(i+1).toString
     }
     val prefixList = utils.stringToList(prefix, "#")
     if (prefixList.forall(p => groups.contains(p)) || groups.contains("all")) {

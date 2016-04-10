@@ -17,7 +17,7 @@ object Differ {
       
       //println(p)
       val c2 = new Controller
-      c2.backend.addStore(c.backend.copyStorages(rev) :_ *)
+      c2.backend.addStore(c.backend.getStores :_ *) //TODO this used to change the revision when creating c2
       
       val mold = c.get(p) match {
         case m : Module => m

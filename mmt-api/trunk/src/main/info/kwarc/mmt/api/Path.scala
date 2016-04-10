@@ -106,6 +106,7 @@ sealed trait ContentPath extends Path with ComponentParent {
 }
 
 /** A path that is not a CPath (and thus may have a component) */
+//TODO should be called StructuralPath
 sealed trait ComponentParent extends Path {
    def $(comp: ComponentKey) = CPath(this, comp)
    def name: LocalName
@@ -153,6 +154,8 @@ case class GlobalName(module: MPath, name: LocalName) extends ContentPath with S
    def isSimple : Boolean = name.steps.forall(_.isInstanceOf[SimpleStep])
    /** if name.length == 1 then this.toMPath.toGlobalName == this */
    def toMPath = module / name
+   /** turns module into [[ComplexStep]] */
+   def toLocalName = ComplexStep(module) / name
 }
 
 object LocalName {

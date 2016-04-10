@@ -4,6 +4,8 @@ import frontend._
 import objects._
 import modules._
 import symbols._
+import uom._
+import backend._
 import scala.collection.mutable.{HashMap,HashSet}
 
 /** the type of all Rules
@@ -14,13 +16,37 @@ import scala.collection.mutable.{HashMap,HashSet}
 trait Rule {
    /** an MMT URI that is used to indicate when the Rule is applicable */
    def head: GlobalName
-   override def toString = {
-      var name = getClass.getName
+   def className = {
+      val name = getClass.getName
       if (name.endsWith("$"))
-         name = name.substring(0,name.length-1)
-      "rule " + name + " for " + head
+         name.substring(0,name.length-1)
+      else
+        name
+   }
+   override def toString = {
+      "rule " + className + " for " + head
    }
 }
+
+/** the [[SemanticType]] of all [[Rule]]s */
+class RuleType(be: Backend) extends Atomic[Rule] {
+   val cls = classOf[Rule]
+   override def toString(u: Any) = unapply(u).get.className
+
+   def fromString(s: String): Rule = {
+     try {be.loadRule(s, ???)}
+     catch {case NotApplicable(msg) =>
+       throw ParseError(msg)
+     }
+   }
+   /** scala"QUALIFIED-CLASS-NAME" */
+   override def lex = quotedLiteral("scala")
+}
+
+/**
+ * [[Rule]]s as literals (to be used as definies of constants that represent rules) 
+ */
+class RuleLiterals(be: backend.Backend) extends RepresentedRealizedType[Rule](OMS(utils.mmt.mmtcd ? "rule"), new RuleType(be))
 
 /** A RuleSet groups some Rule's. Its construction and use corresponds to algebraic theories. */
 class RuleSet {

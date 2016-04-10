@@ -98,6 +98,11 @@ case class File(toJava: java.io.File) {
 
   /** @return subdirectories of this directory */
   def subdirs: List[File] = children.filter(_.toJava.isDirectory)
+  
+  /** @return all files in this directory or any subdirectory */
+  def descendants: List[File] = children.flatMap {c =>
+    if (c.isDirectory) c.descendants else List(c)
+  }
 
   /** delete this, recursively if directory */
   def deleteDir {

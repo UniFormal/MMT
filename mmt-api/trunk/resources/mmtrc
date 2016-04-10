@@ -2,6 +2,7 @@
 twelf-omdoc info.kwarc.mmt.lf.Twelf
 lf-scala    info.kwarc.mmt.lf.ScalaExporter
 tptp-twelf  info.kwarc.mmt.tptp.TPTPImporter
+scala-bin   info.kwarc.mmt.api.archives.ScalaCompiler
 mmt-latex   info.kwarc.mmt.api.archives.latex.LatexExporter
 mws         info.kwarc.mmt.api.archives.MWSHarvestExporter
 planetary   info.kwarc.mmt.planetary.PlanetaryPresenter

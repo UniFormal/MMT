@@ -157,13 +157,8 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
 
 
 object Archive {
-  /** a string containing all characters that are illegal in file names */
-  val illegalChars = "'"
 
-  // TODO: (un)escape illegal characters, make case-insensitive distinct
-  def escape(s: String): String = s.replace("'", "(apos)")
-
-  def unescape(s: String): String = s.replace("(apos)", "'")
+  private val escaper = FileNameEscaping
 
   // scheme..authority / seg / ments / name.omdoc ----> scheme :// authority / seg / ments ? name
   def ContentPathToMMTPath(segs: FilePath): MPath = segs.segments match {
@@ -177,7 +172,7 @@ object Archive {
           case i => tl.last.substring(0, i)
         }
       }
-      DPath(URI(hd.substring(0, p), hd.substring(p + 2)) / tl.init) ? unescape(fileNameNoExt)
+      DPath(URI(hd.substring(0, p), hd.substring(p + 2)) / tl.init) ? escaper.unapply(fileNameNoExt)
   }
 
   // scheme..authority / seg / ments  ----> scheme :// authority / seg / ments
@@ -199,7 +194,7 @@ object Archive {
     val schemeString = uri.scheme.fold("")(_ + "..")
     FilePath(
       (schemeString + uri.authority.getOrElse("NONE")) :: uri.path :::
-        List(escape(m.name.toPath) + ".omdoc"))
+        List(escaper.apply(m.name.toPath) + ".omdoc"))
   }
 
   /** Makes sure that a path refers to a file, not to a folder, using .extension files to store information about folders

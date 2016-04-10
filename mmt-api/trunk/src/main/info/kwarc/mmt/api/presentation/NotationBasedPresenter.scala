@@ -75,7 +75,15 @@ class NotationBasedPresenter extends ObjectPresenter {
     * called by doDefaultTerm to render literals
     */
    def doLiteral(l: OMLITTrait)(implicit pc: PresentationContext) {
-      pc.out(l.toString)
+      lazy val default = l.toString
+      val lS = l match {
+        case l: OMLIT => l.rt.lexerExtension match {
+          case Some(le) => le.unapply(l)
+          case None => default
+        }
+        case l: UnknownOMLIT => default
+      }
+      pc.out(lS)
    }
    /**
     * called by various methods to render MMT-level operators, such as ,:=()

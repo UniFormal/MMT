@@ -5,6 +5,8 @@ import utils.MyList._
 
 import ActiveNotation._
 
+case class ScannerBacktrackInfo(currentIndex: Int, numCurrentTokens: Int)
+
 /** An ActiveNotation is a notation whose firstDelimToken has been scanned
  *  An ActiveNotation maintains state about the found and still-expected markers
  *  
@@ -12,8 +14,9 @@ import ActiveNotation._
  *  @param rules the parsing rules 
  *    must be non-empty;
  *    if not a singleton, all [[TextNotation]]s must TextNotation.agree 
+ *  @param firstToken the index of the Token that caused this notation to be opened (i.e., the first delimiter token)
  */
-class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val firstToken: Int) {
+class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtrackInfo: ScannerBacktrackInfo) {
    // invariant: found.reverse (qua List[Marker]) ::: left == markers of each rule
 
    override def toString = toShortString + " " + found.reverse.mkString("", " ", "")
