@@ -10,13 +10,14 @@ object ScalaOutDim extends RedirectableDimension("bin")
 /** a build target that delegates to the standard scala compiler */
 class ScalaCompiler extends BuildTarget {
    val key = "scala-bin"
-   
-   private def jars(f: File) = f.children.filter(_.getExtension == Some("jar"))
-   
+
+   private def jars(f: File) = f.children.filter(_.getExtension.contains("jar"))
+
    def build(a: Archive, up: Update, in: FilePath) {
-     val folderList = a.properties.get("scala").getOrElse("scala")
-     val folders = stringToList(folderList).map(d => a / Dim(d))
-     val files = folders.flatMap(f => f.descendants).filter(_.getExtension == Some("scala")).map(_.toString)
+     (a / ScalaOutDim).mkdirs
+     val folderList = a.properties.getOrElse("scala", "scala")
+     val folders = stringToList(folderList).map(d => a / Dim(d)).filter(_.exists)
+     val files = folders.flatMap(f => f.descendants).filter(_.getExtension.contains("scala")).map(_.toString)
      val classPath = MMTSystem.runStyle match {
        case FatJar(j) => List(j)
        case ThinJars(d) => jars(d/"lib") ::: jars(d/"main")
@@ -28,7 +29,7 @@ class ScalaCompiler extends BuildTarget {
      val args = ("-d" :: (a / ScalaOutDim).toString :: "-cp" :: classPathS :: files).toArray
      scala.tools.nsc.Main.process(args)
    }
-   
+
    def clean(a: Archive, in: FilePath) {
      delete(a / Dim("bin"))
    }
