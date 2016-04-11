@@ -338,12 +338,10 @@ class Controller extends ROController with ActionHandling with Logger {
     catch {
       case NotFound(p: Path) =>
         if (previous.contains(p))
-          throw GetError("retrieval failed due to cyclic loading of " + p)
+          throw GetError("retrieval failed (due to non-existence or cyclic dependency) for " + p)
         else {
-          retrieve(p)
-          iterate(a, p :: previous)
+          iterate({retrieve(p); a}, p :: previous)
         }
-
     }
   }
 

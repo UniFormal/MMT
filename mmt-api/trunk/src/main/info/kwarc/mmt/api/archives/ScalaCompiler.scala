@@ -26,6 +26,7 @@ class ScalaCompiler extends BuildTarget {
      }
      val sep = if (OS.detect == Windows) ";" else ":"
      val classPathS = classPath.map(_.toString).mkString(sep)
+     // -verbose -nowarn
      val args = ("-d" :: (a / ScalaOutDim).toString :: "-cp" :: classPathS :: files).toArray
      scala.tools.nsc.Main.process(args)
    }

@@ -143,7 +143,7 @@ abstract class UniverseRule(head: GlobalName) extends UnaryTermRule(head)
 trait ApplicableUnder extends Rule {
    def under: List[GlobalName]
    private lazy val ops = (under:::List(head)).map(p => OMS(p))
-   def applicable(tp: Term) = tp match {
+   def applicable(tm: Term) = tm match {
       case OMA(f,a) => (f::a).startsWith(ops)
       case OMS(p) => under == Nil && p == head
       case _ => false

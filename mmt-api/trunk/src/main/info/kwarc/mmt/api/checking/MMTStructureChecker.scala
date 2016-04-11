@@ -411,17 +411,21 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   //TODO make more reusable (maybe by moving to RuleBasedChecker?)
   private def checkTerm(context: Context, s: Term)(implicit env: Environment): Term = {
     s match {
-      //         case OMID(GlobalName(h, IncludeStep(from) / ln)) =>
-      //            if (! content.imports(from, h))
-      //               throw Invalid(from + " is not imported into " + h + " in " + s)
-      //            checkTerm(home, context, OMID(from % ln).from(s))
-      case OMS(path) =>
-        val ceOpt = try {
-          content.getO(path)
+      case OMMOD(p) =>
+        val mOpt = content.getO(p)
+        if (mOpt.isEmpty) {
+          env.errorCont(InvalidObject(s, "ill-formed module reference"))
         }
-        catch {
-          case e: GetError =>
-            env.errorCont(InvalidObject(s, "ill-formed constant reference"))
+        mOpt match {
+          case Some(m: Module) =>
+            //TODO check for visibility of a module
+        }
+        env.pCont(p)
+        s
+      case OMS(path) =>
+        val ceOpt = content.getO(path)
+        if (ceOpt.isEmpty) {
+           env.errorCont(InvalidObject(s, "ill-formed constant reference"))
         }
         ceOpt match {
           case Some(d: Declaration) =>

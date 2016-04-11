@@ -18,14 +18,13 @@ class RuleBasedExecutor extends Executor {
      val stack = new Stack
      val rules = RuleSet.collectRules(controller, context)
      val env = new RuntimeEnvironment(heap, stack, rules)
-     val runtime = new Runtime(controller, env)
-     log("executing " + prog + " with rules " + rules.toString)
+     val runtime = new Runtime(controller, env, logPrefix)
+     log("executing " + prog + " with rules " + env.execRules.map(_.toString).mkString(", "))
      runtime.execute(prog)
   }
 }
 
-class Runtime(controller: Controller, env: RuntimeEnvironment) extends ExecutionCallback with Logger {
-   val logPrefix = "executor"
+class Runtime(controller: Controller, env: RuntimeEnvironment, val logPrefix: String) extends ExecutionCallback with Logger {
    val report = controller.report
    
    def execute(progOrg: Term): Term = {
@@ -64,6 +63,7 @@ class Runtime(controller: Controller, env: RuntimeEnvironment) extends Execution
             log("trying to apply rule " + r.toString)
             return r(this, env, t)
           }
+          log("no applicable rule")
           executeChildren(prog)
       }
    }
