@@ -5,12 +5,15 @@ import utils._
 
 import MMTSystem._
 
+object ScalaInDim extends RedirectableDimension("scala")
+object ScalaOutDim extends RedirectableDimension("bin")
+
 /** a build target that delegates to the standard scala compiler */
 class ScalaCompiler extends BuildTarget {
    val key = "scala-bin"
    
    def build(a: Archive, up: Update, in: FilePath) {
-     val files = (a / Dim("scala") / in).descendants.filter(_.getExtension == Some("scala")).map(_.toString)
+     val files = (a / ScalaInDim / in).descendants.filter(_.getExtension == Some("scala")).map(_.toString)
      val classPath = MMTSystem.runStyle match {
        case FatJar(j) => List(j)
        case ThinJars(d) => List(d / "main")
@@ -18,7 +21,7 @@ class ScalaCompiler extends BuildTarget {
      }
      val sep = if (OS.detect == Windows) ";" else ":"
      val classPathS = classPath.map(_.toString).mkString(sep)
-     val args = ("-d" :: "bin" :: "-cp" :: classPathS :: files).toArray
+     val args = ("-d" :: (a / ScalaOutDim).toString :: "-cp" :: classPathS :: files).toArray
      scala.tools.nsc.Main.process(args)
    }
    
