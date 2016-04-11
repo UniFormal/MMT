@@ -73,6 +73,8 @@ class Runtime(controller: Controller, env: RuntimeEnvironment) extends Execution
        case ComplexTerm(p, subs, cont, args) =>
          val argsE = args map execute
          ComplexTerm(p, subs, cont, argsE)
+       case t =>
+         throw ExecutionError("cannot execute: " + t)
      }
    }
 }
