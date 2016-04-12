@@ -27,7 +27,7 @@ case class LFError(msg : String) extends java.lang.Exception(msg)
 
 object LF {
    val _base = Typed._base
-   val _path = _base ? "LF"
+   val _path = _base ? "LambdaPi"
    def constant(name : String) = OMS(_path ? name)
    lazy val hoas = notations.HOAS(Apply.path, Lambda.path, OfType.path)
 }

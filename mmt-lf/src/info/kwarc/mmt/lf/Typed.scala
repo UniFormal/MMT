@@ -5,7 +5,7 @@ import checking._
 
 object Typed {
    val _base = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories")
-   val path = _base ? "Typed"
+   val path = _base ? "TypedSymbols"
    /** the MMT URI of type */
    val ktype = path ? "type"
    /** the MMT URI of kind */
