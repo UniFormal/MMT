@@ -8,6 +8,7 @@ import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.utils._
 import parser._
+import info.kwarc.mmt.api.ontology._
 
 /** the backend of a [[Controller]]
   *
@@ -256,5 +257,80 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
         istream.close()
       }
     }
+  }
+
+  /** Querying **/
+
+  /** 
+    * Sends a query to this backend and returns all (distinct) matching paths. Throws [[NotApplicable]] if 
+    * the query is not applicable to any storage 
+    * @param q 
+    * @param controller 
+    * @return 
+    */
+  def query(q : Query)(implicit controller: Controller) : Iterable[Path] = {
+    queryS(q).map(_._1).toList.distinct
+  }
+
+  /** 
+    * Sends a query to this backend and returns all matching paths along with their storages. Throws [[NotApplicable]] if 
+    * the query is not applicable to any storage 
+    * @param q 
+    * @param controller 
+    * @return 
+    */
+  private def queryS(q: Query)(implicit controller: Controller) : Iterable[(Path, Storage)] = {
+    val results = stores.map(s => {
+      log("trying " + s)
+    try {
+      Some(s.query(q).map(p => (p, s)))
+    }
+    catch {
+      case NotApplicable(msg) =>
+        log(s.toString + " not applicable to " + q + (if (msg != "") " (" + msg + ")" else ""))
+        None
+    }
+    }).collect({case Some(x) => x})
+
+    if (results.isEmpty) throw NotApplicable("no backend available that is applicable to " + q)
+
+    results.foldLeft(Iterable[(Path, Storage)]())(_ ++ _)
+  }
+
+  /** 
+    * Sends a query to this backend and returns all (distinct) matching StructuralElement. Throws [[NotApplicable]] if 
+    * the query is not applicable to any storage .
+    * @param q 
+    * @param controller 
+    * @return 
+    */
+  def queryAndGet(q : Query)(implicit controller: Controller) : Iterable[StructuralElement] = {
+    queryAndGetS(q).map(_._1).toList.distinct
+  }
+
+  /** 
+    * Sends a query to this backend and returns all matching StructuralElement along with their storages. Throws [[NotApplicable]] if 
+    * the query is not applicable to any storage 
+    * @param q 
+    * @param controller 
+    * @return 
+    */
+  private def queryAndGetS(q: Query)(implicit controller: Controller) : Iterable[(StructuralElement, Storage)] = {
+    val results = stores.map(s => {
+      log("trying " + s)
+
+    try {
+      Some(s.queryAndGet(q).map(p => (p, s)))
+    }
+    catch {
+      case NotApplicable(msg) =>
+        log(s.toString + " not applicable to " + q + (if (msg != "") " (" + msg + ")" else ""))
+        None
+    }
+    }).collect({case Some(x) => x})
+
+    if (results.isEmpty) throw NotApplicable("no backend available that is applicable to " + q)
+
+    results.foldLeft(Iterable[(StructuralElement, Storage)]())(_ ++ _)
   }
 }
