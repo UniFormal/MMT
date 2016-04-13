@@ -360,7 +360,6 @@ class LaTeXML extends LaTeXBuildTarget {
       }
       if (pipeOutput) print(output.toString)
       if (failure) {
-        lmhOut.delete()
         logFailure(bt.outPath)
         if (missingFiles.isEmpty) BuildFailure(Nil, providedTheories)
         else MissingDependency(missingFiles, providedTheories)
