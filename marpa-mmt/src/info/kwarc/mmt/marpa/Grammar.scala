@@ -415,7 +415,7 @@ object Grammar {
           name + "::= " + tl.mkString(" ")
         }
       case "contentRule" :: tl      ⇒ name + "::= " + tl.mkString(" ")
-      case "Group" :: tl            ⇒ name + "::= " + tl.mkString(" ")
+      case "Group" :: tl            ⇒ name + "::= " + "mrowB " + tl.mkString(" ") + " mrowE"
       case "empty" :: Nil           ⇒ name + "::= " + "#Empty rule"
       case List("moB", text, "moE") ⇒ name + "::= " + "moB '" + text + "' moE"
       case List("miB", text, "miE") ⇒ name + "::= " + "miB '" + text + "' miE"

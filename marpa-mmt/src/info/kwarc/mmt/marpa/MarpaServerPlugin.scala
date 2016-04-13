@@ -66,13 +66,8 @@ import tiscaf.HLet
 import info.kwarc.mmt.api._
 import tiscaf.HTalk
 import info.kwarc.mmt.api.objects._
-import info.kwarc.sally4.nnexus.factories.comm.MarpaSubst
-import java.io.ByteArrayInputStream
-import java.io.IOException
-import java.io.ObjectInputStream
 import scala.collection.mutable.HashMap
 import scala.collection.Map
-import scala.collection.JavaConversions._
 import java.net.URLDecoder
 import info.kwarc.mmt.api.utils._
 import scala.collection.mutable.ListBuffer
@@ -80,7 +75,6 @@ import scala.collection.mutable.ListBuffer
 case class PlanetaryError(val text: String) extends Error(text)
 
 class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
-
   var pairIndexNotation: List[((info.kwarc.mmt.api.GlobalName, info.kwarc.mmt.api.notations.TextNotation), Int)] = List();
   override val logPrefix = "marpa"
   /** Server */
@@ -90,6 +84,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
         //Here the post request is handled
         case "getGrammar" :: _       ⇒ getGrammarResponse
         case "getContentMathML" :: _ ⇒ getContentMathML
+        case "getSemanticTree" :: _  => SemanticTree.getSemanticTree
         case _ ⇒ errorResponse("Invalid request: " + uriComps.mkString("/"),
           List(new PlanetaryError("Invalid Request" + uriComps)))
       }
@@ -148,7 +143,6 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
       }
     }
     recUnescape(text.toList, "", false)
-
   }
 
   def getContentMathML: HLet = new HLet {
@@ -226,7 +220,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
             val start = pos(0)
             val length = pos(1)     
             println("Argument substring = " + pos(2).toString)
-            var value = pos(2).asInstanceOf[String]
+            var value = pos(2).toString
             println("key = " + key + " value = " + value)
             if (argType == "Arg") {
               argMap += (argNr -> value)
