@@ -114,12 +114,12 @@ object ApplyTerm extends EliminationRule(Apply.path, OfType.path) {
                     None*/
                  case _ =>
                     val unks = solver.getUnsolvedVariables
-                    if (fTPi.freeVars.exists(unks.isDeclared(_))) {
+                    if (fTPi.freeVars.exists(unks.isDeclared)) {
                        // this might be convertible into a function type once the unknown variable is solved
                        history += "does not look like a function type at this point"
                        solver.error("this is not a function type (type level rewriting is not supported)")
                     } else {
-                       throw RuleNotApplicable
+                       None
                     }
                     None
               }
