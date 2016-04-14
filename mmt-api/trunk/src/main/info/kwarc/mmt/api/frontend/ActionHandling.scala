@@ -352,7 +352,6 @@ trait ActionHandling {self: Controller =>
       a.properties.get("classpath").foreach { cp =>
         backend.openRealizationArchive(a.root / cp)
       }
-      a.properties
       notifyListeners.onArchiveOpen(a)
     }
   }

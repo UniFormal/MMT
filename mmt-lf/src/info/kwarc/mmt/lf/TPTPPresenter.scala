@@ -115,7 +115,7 @@ class TPTPPresenter extends Presenter(TPTPObjectPresenter) {
       case t: DeclaredTheory =>
          controller.simplifier(t)
          t.meta.foreach {m =>
-            if (m != LF._path) {
+            if (m != LF.theoryPath) {
                val i = Include(OMMOD(t.path), m, Nil)
                apply(i)
                rh << "\n"

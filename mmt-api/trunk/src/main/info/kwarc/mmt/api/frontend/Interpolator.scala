@@ -31,6 +31,7 @@ class MMTInterpolator(controller: frontend.Controller) {
         case CPath(par,_) => par match {
            case p: MPath => p
            case GlobalName(t,_) => t
+           case dp: DPath => mmt.mmtcd
         }
      }
    def parse(ss: Iterable[String], ts: Iterable[Term], top: Option[ParsingRule], check: Boolean) = {

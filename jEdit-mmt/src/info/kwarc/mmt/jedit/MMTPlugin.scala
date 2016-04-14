@@ -63,7 +63,6 @@ class MMTPlugin extends EBPlugin with Logger {
       jEdit.getViews foreach customizeView
       // make tooltips stay longer
       javax.swing.ToolTipManager.sharedInstance().setDismissDelay(100000)
-
    }
    /** called by jEdit when plugin is unloaded */
    override def stop {

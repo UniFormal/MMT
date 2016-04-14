@@ -20,7 +20,7 @@ class RealizedType(val synType: Term, val semType: SemanticType) extends uom.UOM
    /** apply method to construct OMLITs as this(u) */
    def apply(u: univ) = {
       if (!semType.valid(u))
-         throw ParseError("invalid literal value: " + u)
+         throw ParseError("invalid literal value for type " + synType + ": " + u)
       val vN = semType.normalform(u)
       OMLIT(vN, this)
    }

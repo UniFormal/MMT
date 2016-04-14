@@ -22,7 +22,8 @@ class ScalaCompiler extends BuildTarget {
        case FatJar(j) => List(j)
        case ThinJars(d) => jars(d/"lib") ::: jars(d/"main")
        case r: Classes =>
-         jars(r.deploy / "lib") ::: List(r.parentFolder/"bin", r.projectFolder("mmt-lf")/"bin") //TODO don't hard-code LF path here
+         jars(r.deploy / "lib") ::: List(r.classFolder, r.projectFolder("mmt-lf")/"bin") //TODO don't hard-code LF path here
+       case OtherStyle => Nil
      }
      val sep = if (OS.detect == Windows) ";" else ":"
      val classPathS = classPath.map(_.toString).mkString(sep)

@@ -17,9 +17,10 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, componen
 }
 
 
-class StructuralFeatureRule(val feature: String) extends Rule {
-  val head = null
-}
+/**
+ * a rule that legitimizes a [[StructuralFeature]]
+ */
+case class StructuralFeatureRule(val feature: String) extends Rule
 
 /**
  * A StructureFeature defines the semantics of a [[DerivedDeclaration]]

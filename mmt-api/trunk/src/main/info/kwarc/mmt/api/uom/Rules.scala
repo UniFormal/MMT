@@ -29,7 +29,7 @@ case class GlobalChange(it: Term) extends Change
 case object NoChange extends Change
 
 /** super class of all rules used by the [[UOM]] */
-trait UOMRule extends Rule
+trait UOMRule extends SyntaxDrivenRule
 
 /** A DepthRule looks one level deep into the structure of one of the arguments of an operator
  * 

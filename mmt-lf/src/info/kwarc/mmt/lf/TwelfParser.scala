@@ -1239,7 +1239,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     i = skipws(i)
     // default to meta-theory LF
     if (meta.isEmpty)
-       meta = Some(LF._path)
+       meta = Some(LF.theoryPath)
 
     var theory : Theory = null
     if (flat.codePointAt(i) == '{') {

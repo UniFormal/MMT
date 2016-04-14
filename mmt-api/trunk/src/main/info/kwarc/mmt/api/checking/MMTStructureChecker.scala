@@ -419,6 +419,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         mOpt match {
           case Some(m: Module) =>
             //TODO check for visibility of a module
+          case _ =>
         }
         env.pCont(p)
         s

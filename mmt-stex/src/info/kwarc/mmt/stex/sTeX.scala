@@ -168,7 +168,7 @@ object OMDoc {
       val name = xml.attr(node, "name")
       val sym = resolveSPath(baseO, cdO, name, mpath, tsref)
       <om:OMS base={sym.module.parent.toPath} module={sym.module.name.last.toPath} name={sym.name.last.toPath}/>
-    case "OME" => <om:OMV name="error"/> //TODO temporary hack for OEIS
+    //case "OME" => <om:OMV name="error"/> //TODO this was a temporary hack for OEIS
     case "OME" => //OME(args) -> OMA(Informal.error -> args)
       val pre = OMS(Informal.constant("error")).toNode
       val newChild = node.child.map(n => rewriteCMP(n, tsref))

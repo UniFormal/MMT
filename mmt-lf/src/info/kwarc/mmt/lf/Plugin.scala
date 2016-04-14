@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import frontend._
 
 class Plugin extends frontend.Plugin {
-   val theory = LF._path
+   val theory = LF.theoryPath
    val dependencies = List("info.kwarc.mmt.morphisms.MorphismPlugin")
    override def start(args: List[String]) {
       val em = controller.extman
@@ -18,6 +18,6 @@ class Plugin extends frontend.Plugin {
       // foundation
       em.addExtension(new LFF)
       // pragmatic features
-      em.notationExtensions ::= new notations.HOASNotation(LF._path, LF.hoas)
+      em.notationExtensions ::= new notations.HOASNotation(LF.theoryPath, LF.hoas)
    }
 }

@@ -46,7 +46,7 @@ class ScalaExporter extends GenericScalaExporter {
          }
       }
       val metas = objects.TheoryExp.metas(t.toTerm)(controller.globalLookup)
-      val lfpos = metas.indexOf(LF._path)
+      val lfpos = metas.indexOf(LF.theoryPath)
       if (lfpos == -1) {
          log("skipping " + t.path + " (LF not meta-theory)")
          return

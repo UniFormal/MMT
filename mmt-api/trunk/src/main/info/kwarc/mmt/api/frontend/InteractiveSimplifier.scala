@@ -72,6 +72,7 @@ class InteractiveSimplifier(controller : Controller, intp : tools.nsc.interprete
           }
           OMA(f, newargs)
         }
+      case t => throw ImplementationError("missing case") 
     }
   }
   

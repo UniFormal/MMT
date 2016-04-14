@@ -7,7 +7,7 @@ import objects._
 /**
  * A rule used for forward or backward proof search
  */
-trait Tactic extends Rule {
+trait Tactic extends SyntaxDrivenRule {
    /**
     * convenience function to create an ApplicableTactic
     * 

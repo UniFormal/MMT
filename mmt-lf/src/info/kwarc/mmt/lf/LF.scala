@@ -27,7 +27,10 @@ case class LFError(msg : String) extends java.lang.Exception(msg)
 
 object LF {
    val _base = Typed._base
+   /** path of the theory that declares the symbols of LF */
    val _path = _base ? "LambdaPi"
+   /** path of the theory LF */
+   val theoryPath = _base ? "LF"
    def constant(name : String) = OMS(_path ? name)
    lazy val hoas = notations.HOAS(Apply.path, Lambda.path, OfType.path)
 }
@@ -186,7 +189,7 @@ object ApplyGeneral {
 /** The LF foundation. Implements type checking and equality */
 class LFF extends Foundation {
    override val logPrefix = "lf"
-   val foundTheory = LF._path
+   val foundTheory = LF.theoryPath
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit fl : FoundationLookup) : Boolean = {
       log("typing\n" + tm.toString + "\n" + tp.toString)
       (tm, tp) match {

@@ -31,7 +31,7 @@ trait CheckingCallback {
 }
 
 /** super class of all rules primarily used by the [[Solver]] */
-trait CheckingRule extends Rule
+trait CheckingRule extends SyntaxDrivenRule
 
 object TypingRule {
    /**
@@ -140,7 +140,7 @@ abstract class InhabitableRule(head: GlobalName) extends UnaryTermRule(head)
 /** checks a [[Universe]] judgement */
 abstract class UniverseRule(head: GlobalName) extends UnaryTermRule(head)
 
-trait ApplicableUnder extends Rule {
+trait ApplicableUnder extends SyntaxDrivenRule {
    def under: List[GlobalName]
    private lazy val ops = (under:::List(head)).map(p => OMS(p))
    def applicable(tm: Term) = tm match {

@@ -57,7 +57,13 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) with 
     * @param r a BreadthRule for n-ary operators and an AbbrevRule for nullary operators
     */
    def rule(r: Rule) {
-      val rc = new symbols.RuleConstant(toTerm, r.head.name, r)
+      val rc = {
+        val name = r match {
+          case r: SyntaxDrivenRule => r.head.name
+          case r => LocalName(r.className)
+        }
+        new symbols.RuleConstant(toTerm, name, r)
+      }
       add(rc)
    }
   

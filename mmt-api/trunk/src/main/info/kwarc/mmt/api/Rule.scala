@@ -14,8 +14,6 @@ import scala.collection.mutable.{HashMap,HashSet}
  * The Solver does not implement any back-tracking. Therefore, rules may only use callbacks if their effects are required.
  */
 trait Rule {
-   /** an MMT URI that is used to indicate when the Rule is applicable */
-   def head: GlobalName
    def className = {
       val name = getClass.getName
       if (name.endsWith("$"))
@@ -23,6 +21,15 @@ trait Rule {
       else
         name
    }
+   override def toString = {
+      "rule " + className
+   }
+}
+
+/** a rule for syntax-driven algorithms, applicable to expressions with a certain head */
+trait SyntaxDrivenRule extends Rule {
+   /** an MMT URI that is used to indicate when the Rule is applicable */
+   def head: GlobalName
    override def toString = {
       "rule " + className + " for " + head
    }
@@ -62,8 +69,8 @@ class RuleSet {
       else
          Nil
    }
-   def getByHead[R<:Rule](cls: Class[R], head: ContentPath): HashSet[R] = get(cls) filter {r => r.head == head}
-   def getFirst[R<:Rule](cls: Class[R], head: ContentPath): Option[R] = getByHead(cls, head).headOption
+   def getByHead[R<:SyntaxDrivenRule](cls: Class[R], head: ContentPath): HashSet[R] = get(cls) filter {r => r.head == head}
+   def getFirst[R<:SyntaxDrivenRule](cls: Class[R], head: ContentPath): Option[R] = getByHead(cls, head).headOption
    
    override def toString = rules.toList.map(_.toString).mkString(", ")
 

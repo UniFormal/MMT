@@ -579,7 +579,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     *  @param stack the context of tm
     *  @return (tmS, Some(r)) where tmS = tm and r from rm is applicable to tmS; (tmS, None) if tm = tmS and no further simplification rules are applicable
     */
-   private def limitedSimplify[R <: Rule](tm: Term, hs: HashSet[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
+   private def limitedSimplify[R <: CheckingRule](tm: Term, hs: HashSet[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
       safeSimplifyUntil[R](tm)(t => t.head flatMap {h => hs.find(_.head == h)})
 
    /** applies [[ComputationRule]]s expands definitions until a condition is satisfied;
@@ -646,6 +646,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
    def safecheck(j:Judgement)(implicit history : History): Option[Boolean] = state.immutably[Boolean](check(j)) match {
       case Success(s:Boolean) => Some(s)
+      case Success(_) => throw ImplementationError("illegal success value")
       case WouldFail => Some(false)
       case MightFail => None
    }
