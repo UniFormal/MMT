@@ -35,7 +35,8 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
 
    /**
     * defines the outer perspective of a derived declaration
-    * @param parent the containing module
+     *
+     * @param parent the containing module
     * @param dd the derived declaration (pre: dd.feature == feature)
     */
    def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration
@@ -83,6 +84,7 @@ class GenerativePushout extends StructuralFeature("generative") {
         case _ =>
           throw GetError("")
       }
+
       val context = parent.getInnerContext
       val body = controller.simplifier.getBody(context, dom)
 
@@ -132,4 +134,66 @@ class InductiveDataTypes extends StructuralFeature("inductive") {
 
    def modules(d: DerivedDeclaration): List[Module] = Nil
    def check(d: DerivedDeclaration)(implicit env: CheckingEnvironment) {}
+}
+
+// Binds theory parameters using Lambda/Pi in an include-like structure
+class BoundTheoryParameters(pi : GlobalName, lambda : GlobalName, applys : GlobalName)
+  extends StructuralFeature("BoundParams") {
+
+  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) : Elaboration = {
+    val dom = dd.getComponent(DomComponent) getOrElse {
+      throw GetError("")
+    } match {
+      case tc: TermContainer => tc.get.getOrElse {
+        throw GetError("")
+      }
+      case _ =>
+        throw GetError("")
+    }
+    val context = parent.getInnerContext
+    val body = controller.simplifier.getBody(context, dom) match {
+      case t : DeclaredTheory => t
+      case _ => throw GetError("Not a declared theory: " + dom)
+    }
+    controller.simplifier.apply(body)
+    val vars = body.parameters
+    if (vars.isEmpty) return new Elaboration {
+      val includes = PlainInclude(parent.path,body.path) :: body.getIncludes.map(PlainInclude(parent.path,_))
+      def domain = includes.map(_.name)
+      def getO(name: LocalName): Option[Declaration] = includes.find(_.name == name)
+    }
+
+    def bindPi(t : Term) = if (vars.nonEmpty) OMBIND(OMS(pi),vars,t) else t
+    def bindLambda(t : Term) = if (vars.nonEmpty) OMBIND(OMS(lambda),vars,t) else t
+    def applyPars(t : Term) = if (vars.nonEmpty) vars.foldLeft(t)((tm,v) =>
+      OMA(OMS(applys),List(tm,OMV(v.name)))) else t
+
+    new Elaboration {
+      var consts : List[FinalConstant] = Nil
+
+      val traverser = new StatelessTraverser {
+        def traverse(t: Term)(implicit con : Context, init : State) : Term = t match {
+          case OMS(p) if consts.exists(c => c.path == p) => applyPars(t)
+          case _ => Traverser(this,t)
+        }
+      }
+      val decls = body.getDeclarations.map(_ match {
+        case c : FinalConstant if !c.isGenerated =>
+          Constant(parent.toTerm,LocalName(c.parent) / c.name, c.alias.map(LocalName(c.parent) / _),
+            c.tp.map(t => bindPi(traverser.apply(t,Context.empty))),
+            c.df.map(t => bindLambda(traverser.apply(t,Context.empty))),c.rl,c.notC)
+        case c : FinalConstant => Constant(parent.toTerm,LocalName(c.parent) / c.name,
+          c.alias.map(LocalName(c.parent) / _),
+          c.tp,c.df,c.rl,c.notC)
+        case s : DeclaredStructure => DeclaredStructure(parent.toTerm,LocalName(s.parent) / s.name,s.from,s.isImplicit)
+        case _ => ???
+      })
+      //body
+      def domain: List[LocalName] = decls.map(_.name)
+      def getO(name: LocalName): Option[Declaration] = decls.find(_.name == name)
+    }
+
+  }
+  def modules(d: DerivedDeclaration): List[Module] = Nil
+  def check(d: DerivedDeclaration)(implicit env: CheckingEnvironment) {}
 }

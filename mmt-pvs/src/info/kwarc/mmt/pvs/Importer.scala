@@ -1,12 +1,48 @@
 package info.kwarc.mmt.pvs
 
 import syntax._
-
 import info.kwarc.mmt.api._
 import documents._
 import modules._
 import utils._
 import archives._
+import info.kwarc.mmt.LFX.Subtyping.subtypeOf
+import info.kwarc.mmt.api.objects.{Context, OMID}
+import info.kwarc.mmt.api.parser.{KeywordBasedParser, ParserExtension, ParserState, SourceRef}
+import info.kwarc.mmt.api.symbols.{BoundTheoryParameters, DerivedDeclaration, FinalConstant, TermContainer}
+import info.kwarc.mmt.lf.{Apply, Lambda, Pi}
+
+class Plugin extends frontend.Plugin {
+  val theory = PVSTheory.thpath
+  val dependencies = List("info.kwarc.mmt.lf.Plugin")
+  override def start(args: List[String]) {
+    val em = controller.extman
+    // content enhancers
+    em.addExtension(new LambdaPiInclude)
+    em.addExtension(new ParIncludeParserExt)
+    em.addExtension(new PVSImporter)
+  }
+}
+
+class ParIncludeParserExt extends ParserExtension {
+
+  def isApplicable(se: StructuralElement, keyword: String): Boolean = se match {
+    case th:DeclaredTheory => keyword == "LambdaPiInclude"
+    case _ => false
+  }
+
+  def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, keyword: String,con:Context) = se match {
+    case th:DeclaredTheory if keyword == "LambdaPiInclude" =>
+      val path = sp.readMPath(th.path)(s)._2
+      controller.add(BoundInclude(th,path))
+    case _ => s.errorCont(SourceError("SubTypeParserExt", SourceRef(s.ps.source, s.startPosition.toRegion),
+      "not applicable to StructuralElement "+se.getClass.toString))
+  }
+}
+
+class LambdaPiInclude extends BoundTheoryParameters(Pi.path,Lambda.path,Apply.path)
+case class BoundInclude(top:DeclaredTheory,from:MPath) extends DerivedDeclaration(top.toTerm,LocalName(from),"BoundParams",
+  List(DeclarationComponent(DomComponent,TermContainer(OMID(from)))))
 
 class PVSImporter extends Importer {
    val key = "pvs-omdoc"

@@ -2,7 +2,7 @@ package info.kwarc.mmt.pvs
 
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.api.{DPath, NamespaceMap, Path}
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.frontend.{Controller, Run}
 
 /**
  * Created by raupi on 22.07.15.
@@ -10,19 +10,21 @@ import info.kwarc.mmt.api.frontend.Controller
 object PVSTest {
   def main(args: Array[String]) {
     val path = "/home/raupi/lmh/MathHub/PVS/Prelude"
-    val controller = new Controller
+    val controller = Run.controller
     controller.handleLine("archive add ../MathHub")
     controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
-    controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
+    controller.handleLine("extension info.kwarc.mmt.pvs.Plugin")
     controller.handleLine("extension info.kwarc.mmt.api.archives.BuildQueue")
     controller.handleLine("log console")
     // controller.handleLine("log+ archive")
     // controller.handleLine("log+ debug")
     // controller.handleLine("log+ pvs-omdoc")
+    controller.handleLine("server on 8080")
     controller.handleLine("mathpath archive ../../MathHub")
-    //controller.handleLine("build PVS/Prelude mmt-omdoc")
-    controller.handleLine("build PVS/Prelude pvs-omdoc")
-    //controller.handleLine("build PVS/NASA pvs-omdoc")
+    controller.handleLine("make mmt-omdoc ../../MathHub/PVS")
+    controller.handleLine("make pvs-omdoc ../../MathHub/PVS")
+    //controller.handleLine("make PVS/Prelude pvs-omdoc")
+    //controller.handleLine("make PVS/NASA pvs-omdoc")
 
     /*
     val p1 = DPath(URI.http colon "pvs.csl.sri.com") ? "PVS"

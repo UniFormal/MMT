@@ -79,6 +79,16 @@ object Tangent extends RealizedOperator(path ? "tan") {
   }
 }
 
+object ArcTangent extends RealizedOperator(path ? "atan") {
+  val argTypes = List(RealLiterals)
+  val retType = RealLiterals
+
+  def apply(args: List[Term]): OMLIT = args match {
+    case List(RealLiterals(u : Double)) => RealLiterals.apply(scala.math.atan(u))
+    case _ => throw new Exception("Put a helpful error message here")
+  }
+}
+
 object Sine extends RealizedOperator(path ? "sin") {
   val argTypes = List(RealLiterals)
   val retType = RealLiterals
@@ -89,12 +99,32 @@ object Sine extends RealizedOperator(path ? "sin") {
   }
 }
 
+object ArcSine extends RealizedOperator(path ? "asin") {
+  val argTypes = List(RealLiterals)
+  val retType = RealLiterals
+
+  def apply(args: List[Term]): OMLIT = args match {
+    case List(RealLiterals(u : Double)) => RealLiterals.apply(scala.math.asin(u))
+    case _ => throw new Exception("Put a helpful error message here")
+  }
+}
+
 object Cosine extends RealizedOperator(path ? "cos") {
   val argTypes = List(RealLiterals)
   val retType = RealLiterals
 
   def apply(args: List[Term]): OMLIT = args match {
     case List(RealLiterals(u : Double)) => RealLiterals.apply(scala.math.cos(u))
+    case _ => throw new Exception("Put a helpful error message here")
+  }
+}
+
+object ArcCosine extends RealizedOperator(path ? "acos") {
+  val argTypes = List(RealLiterals)
+  val retType = RealLiterals
+
+  def apply(args: List[Term]): OMLIT = args match {
+    case List(RealLiterals(u : Double)) => RealLiterals.apply(scala.math.acos(u))
     case _ => throw new Exception("Put a helpful error message here")
   }
 }
