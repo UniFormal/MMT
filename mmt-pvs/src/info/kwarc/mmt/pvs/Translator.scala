@@ -28,7 +28,7 @@ abstract class ImportState(t:PVSImportTask) {
       t.controller.globalLookup(p).asInstanceOf[DeclaredTheory]
     } catch {
       case _ : Exception =>
-        if (p.toString contains "_adt") throw _adt(p) else
+        // if (p.toString contains "_adt") throw _adt(p) else
         throw Dependency(p)
     }
     t.deps::=p
@@ -36,7 +36,7 @@ abstract class ImportState(t:PVSImportTask) {
 }
 
 case class Dependency(p : MPath) extends Exception
-case class _adt(p : MPath) extends Exception
+//case class _adt(p : MPath) extends Exception
 
 class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document => Unit) {
 
@@ -50,8 +50,10 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       val modsM = d._modules map doModule
       val doc = new Document(bt.narrationDPath, true)
       modsM.foreach(m => {
-        controller.add(m)
-        doc.add(MRef(bt.narrationDPath, m.path))
+        val theory = new DeclaredTheory(m.parent,m.name,m.meta,m.parameters)
+        controller.add(theory)
+        m.getDeclarations foreach controller.add
+        doc.add(MRef(bt.narrationDPath, theory.path))
       }) //.add(m) ; MRef(bt.narrationDPath, m.path)})
       controller.add(doc)
       index(doc)
@@ -62,7 +64,10 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         deps::=p
         println("FAIL: " + state.th.name + " depends on " + deps)
         MissingDependency(deps.map(LogicalDependency),List(LogicalDependency(state.th.path)))
-      case t : Throwable => throw t
+      case t : Exception =>
+        println("Exception: " + t.getMessage)
+        t.printStackTrace()
+        sys.exit
     }
   }
 
@@ -563,8 +568,11 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
 
   def doPath(n:name,res:Option[resolution]) : Term = {
     var (id,thid,library_id,mappings,opttarget,allactuals) = (n,res) match {
-      case (name(id1,_,_,_,_,_,_),Some(resolution(theory_name(_,thid1,library_id1,mappings1,opttarget1,actuals,dactuals),ind))) =>
-        (id1+(if(ind>0) "_"+ind else ""),thid1,library_id1,mappings1,opttarget1,actuals:::dactuals)
+      case (name(id1,thid1,library_id1,mappings1,opttarget1,actuals1,dactuals1),Some(resolution(theory_name(_,thid2,library_id2,mappings2,opttarget2,actuals2,dactuals2),ind))) =>
+        (id1+(if(ind>0) "_"+ind else ""),
+          if (thid2 == "") thid1 else thid2,
+          if (library_id2 == "") library_id1 else library_id2,
+          mappings2,opttarget2,actuals2:::dactuals2)
       case (name(id1,thid1,library_id1,mappings1,opttarget1,actuals,dactuals),None) =>
         (id1,thid1,library_id1,mappings1,opttarget1,actuals:::dactuals)
     }
@@ -587,7 +595,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
     println("allactuals: " + allactuals)
     */
 
-    val dpath = doMPath(theory_name("",thid,library_id,mappings,opttarget,allactuals,Nil))
+    val mpath = doMPath(theory_name("",thid,library_id,mappings,opttarget,allactuals,Nil))
 
     if(mappings.nonEmpty) {
       println("Found mappings in doPath")
@@ -598,29 +606,36 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       sys.exit
     }
 
-    if(dpath.toString == state.th.path.toString && (
+    if(mpath.toString == state.th.path.toString && (
       state.parameters.exists(v => v.name==LocalName(id)) ||
       state.vars.exists(v => v.name==LocalName(id)))) {
       // if (state.vars.exists(v => v.name==LocalName(id))) println("Yields: " + OMV(id))
       OMV(id)
-    } else if (dpath.toString == state.th.path.toString) {
+    } else if (mpath.toString == state.th.path.toString) {
       OMS(state.th.path ? id)
     } else {
       if (state.isPrelude) {
         try {
-          state.addinclude(dpath)
+          state.addinclude(mpath)
         } catch {
+          /*
           case _adt(p) =>
             println("ADT: " + p ? id)
             throw Dependency(p)
+            */
           case e: Exception => throw e
         }
-      } // should be unnecessary ouside of Prelude
-      val sym = OMS(dpath ? id)
+      } else if (!(mpath.^^.toString startsWith "http://pvs.csl.sri.com") &&
+          !state.th.getIncludes.contains(mpath)) {
+        println("Import missing for " + mpath)
+        println("Imports: " + state.th.getIncludes)
+        sys.exit
+      }
+      // should be unnecessary ouside of Prelude
+      val sym = OMS(mpath ? id)
       // apply theory parameters
-      val ret = if (allactuals.nonEmpty) ApplySpine(sym, allactuals map (a => doObject(a)): _*) else sym
+      if (allactuals.nonEmpty) ApplySpine(sym, allactuals map (a => doObject(a)): _*) else sym
       // println("Yields: " + ret)
-      ret
     }
   }
 
@@ -653,6 +668,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         val ret = DPath(URI(library_id))
         println("PATH: " + ret)
         ret
+        sys.exit
       }
     // DPath((URI.http colon "pvs.csl.sri.com") / (if (library_id=="") "Prelude" else  library_id))
 

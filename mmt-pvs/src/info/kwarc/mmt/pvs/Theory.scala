@@ -1,6 +1,6 @@
 package info.kwarc.mmt.pvs
 
-import info.kwarc.mmt.LFX.LFRecords.{Recexp, Rectype, LFRecords}
+import info.kwarc.mmt.LFX.Records.Recexp
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.FinalConstant
