@@ -1,10 +1,15 @@
 package info.kwarc.mmt.LFX
 
 import info.kwarc.mmt.api.objects.Context
-import LFSubTyped._
+import Subtyping._
 import info.kwarc.mmt.api.symbols.FinalConstant
-import info.kwarc.mmt.api.{SourceError, StructuralElement, frontend}
-import info.kwarc.mmt.api.parser.{SourceRef, ParserState, KeywordBasedParser, ParserExtension}
+import info.kwarc.mmt.api.{DPath, SourceError, StructuralElement, frontend}
+import info.kwarc.mmt.api.parser.{KeywordBasedParser, ParserExtension, ParserState, SourceRef}
+import info.kwarc.mmt.api.utils.URI
+
+object LFX {
+  val ns = DPath(URI.http colon "gl.mathhub.info") / "MMT" / "LFX"
+}
 
 class SubTypeParserExt extends ParserExtension {
 
@@ -24,7 +29,7 @@ class SubTypeParserExt extends ParserExtension {
 }
 
 class Plugin extends frontend.Plugin {
-  val theory = LFSubTyped.LFSubTyped.path
+  val theory = Subtyping.SubTyped.path
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
     val em = controller.extman

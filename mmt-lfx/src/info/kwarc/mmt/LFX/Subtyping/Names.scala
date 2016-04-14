@@ -1,32 +1,29 @@
-package info.kwarc.mmt.LFX.LFSubTyped
+package info.kwarc.mmt.LFX.Subtyping
 
-import info.kwarc.mmt.api.symbols.FinalConstant
-import info.kwarc.mmt.api.{StructuralElement, DPath}
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.parser.{ParserState, KeywordBasedParser, ParserExtension}
-import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.LFX.LFX
 
-object LFSubTyped {
-  val baseURI = DPath(URI.http colon "cds.omdoc.org") / "LFX"
-  val thname = "Sub"
+object SubTyped {
+  val baseURI = LFX.ns / "Subtyping"
+  val thname = "SubSymbol"
   val path = baseURI ? thname
   def lfsubsymbol(name : String) = path ? name
-  val judgpath = baseURI ? "SubTypeJudg"
-  val predpath = baseURI ? "PredSub"
+  val judgpath = baseURI ? "JudgmentSymbol"
+  val predpath = baseURI ? "PredSubSymbols"
 }
 
 class LFSubSymbol(name:String) {
-  val path = LFSubTyped.path ? name
+  val path = SubTyped.path ? name
   val term = OMS(path)
 }
 
 class LFSubJudgSymbol(name:String) {
-  val path = LFSubTyped.judgpath ? name
+  val path = SubTyped.judgpath ? name
   val term = OMS(path)
 }
 
 class LFPredSubSymbol(name:String) {
-  val path = LFSubTyped.predpath ? name
+  val path = SubTyped.predpath ? name
   val term = OMS(path)
 }
 

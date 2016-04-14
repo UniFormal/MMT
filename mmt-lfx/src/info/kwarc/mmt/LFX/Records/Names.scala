@@ -1,20 +1,21 @@
-package info.kwarc.mmt.LFX.LFRecords
+package info.kwarc.mmt.LFX.Records
 
 import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.api.utils._
+import info.kwarc.mmt.LFX.LFX
 
-object LFRecords {
-  val baseURI = DPath(URI.http colon "cds.omdoc.org") / "LFX"
-  val thname = "Records"
+object Records {
+  val baseURI = LFX.ns / "Records"
+  val thname = "Symbols"
   val path = baseURI ? thname
   def lfrecsymbol(name : String) = path ? name
 }
 
 class LFRecSymbol(name:String) {
-  val path = LFRecords.path ? name
+  val path = Records.path ? name
   val term = OMS(path)
 }
 
