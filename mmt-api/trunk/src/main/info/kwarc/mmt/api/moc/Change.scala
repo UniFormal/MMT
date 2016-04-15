@@ -12,7 +12,7 @@ import scala.collection._
 import scala.collection.immutable.HashSet
 
 
-sealed abstract class Change {
+sealed trait Change {
   def toNode : Node
 }
 
