@@ -51,9 +51,8 @@ import net.liftweb.json._
 
 abstract class ParseTree
 case class Variants(treeList: List[ParseTree]) extends ParseTree
-case class Notation(name: String, arguments: List[Variants], before: String, after: String) extends ParseTree
-case class Argument(name: String, value: Variants) extends ParseTree
-case class SeqArgument(name: String, value: List[Variants]) extends ParseTree
+case class Notation(name: String, arguments: List[Argument]) extends ParseTree
+case class Argument(name: String, value: List[Variants]) extends ParseTree
 case class RawString(value: String) extends ParseTree
 
 case class SemanticTreeError(message: String) extends Exception
@@ -69,25 +68,40 @@ object SemanticTree {
       val input: String = reqBody.asString
       println("input = " + input)
 
-      // inputLength is taken from perl, to avoid encoding issues
-      val notations = sendGetNotationPosRequest(input)
-      println(notations)
-
+      val Variants(inputParses) = buildSemanticTree(input)
+      inputParses foreach {
+        case Notation(name, argList) => 
+          println("Notation = " + name)
+          argList foreach {
+            case Argument(argName, variantList) => 
+              println("    Argument = " + argName)
+              variantList foreach {
+                case Variants(list) => 
+                  if (variantList.size > 1) println("      Argument part (only for sequence args)")
+                  list.foreach((variant) => println("        Variant = " + variant.toString))
+              }
+          } 
+      }
+      
       val resp = info.kwarc.mmt.api.utils.JSONString("")
       tk.setHeader("Access-Control-Allow-Origin", "*")
       Server.JsonResponse(resp).aact(tk)
     }
   }
-
-  def buildSemanticTree(input: String): ParseTree = {
-    val notations: JValue = sendGetNotationPosRequest(input)
+  //  JObject(List(JField(message,JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)),
+  //  JField(status,JString(OK)),
+  //  JField(payload,JObject(List(JField(_natarith_multiplicationP7N58,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN58A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(10), JString(%3Cmi%3Ei%3C%2Fmi%3E))), JArray(List(JInt(20), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_intarith_modP7N155,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN155A1Arg,JArray(List(JArray(List(JInt(40), JInt(10), JString(%3Cmi%3E3%3C%2Fmi%3E)))))), JField(argRuleN155A2Arg,JArray(List(JArray(List(JInt(62), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_comparith_multiplicationP7N180,JArray(List(JObject(List(JField(argRuleN180A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(10), JString(%3Cmi%3Ei%3C%2Fmi%3E))), JArray(List(JInt(20), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E)))))), JField(position,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_intarith_additionP5N143,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(72), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN143A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))), JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_realarith_additionP5N205,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(72), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN205A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))), JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_intarith_multiplicationP7N149,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN149A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(10), JString(%3Cmi%3Ei%3C%2Fmi%3E))), JArray(List(JInt(20), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_arithmetics_additionP5N124,JArray(List(JObject(List(JField(argRuleN124A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))), JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(position,JArray(List(JArray(List(JInt(0), JInt(72), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_comparith_additionP5N174,JArray(List(JObject(List(JField(argRuleN174A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))), JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(position,JArray(List(JArray(List(JInt(0), JInt(72), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_realarith_multiplicationP7N211,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN211A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(10), JString(%3Cmi%3Ei%3C%2Fmi%3E))), JArray(List(JInt(20), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_natarith_modP7N64,JArray(List(JObject(List(JField(argRuleN64A2Arg,JArray(List(JArray(List(JInt(62), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E)))))), JField(position,JArray(List(JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN64A1Arg,JArray(List(JArray(List(JInt(40), JInt(10), JString(%3Cmi%3E3%3C%2Fmi%3E))))))))))), JField(_natarith_additionP5N52,JArray(List(JObject(List(JField(argRuleN52A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))), JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(position,JArray(List(JArray(List(JInt(0), JInt(72), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_arithmetics_multiplicationP7N132,JArray(List(JObject(List(JField(argRuleN132A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(10), JString(%3Cmi%3Ei%3C%2Fmi%3E))), JArray(List(JInt(20), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E)))))), JField(position,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_ratarith_multiplicationP7N24,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN24A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(10), JString(%3Cmi%3Ei%3C%2Fmi%3E))), JArray(List(JInt(20), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_ratarith_additionP5N18,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(72), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN18A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))), JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))))))))
+  def buildSemanticTree(input: String): Variants = {
+    val response: JValue = sendGetNotationPosRequest(input)
+    val notations: JObject = (response \ "payload").asInstanceOf[JObject]
+ 
     // Case 1: No notations
-    val semanticTree: ParseTree = notations match {
-      case JNothing ⇒ RawString(input)
+    val semanticTree: Variants = notations match {
+      case JObject(List()) ⇒ Variants(List(RawString(input)))
       case JObject(notationToParsesMap) ⇒ {
-        val treeList: List[ParseTree] = notationToParsesMap flatMap {
+        val treeList: List[Notation] = notationToParsesMap flatMap {
           case JField(notation, JArray(parsesForNotation)) ⇒
-            parsesForNotation.map((jvalue: JValue) ⇒ buildVariant(notation, jvalue))
+            parsesForNotation.map((jvalue: JValue) ⇒ buildNotationVariant(notation, jvalue.asInstanceOf[JObject]))
         }
         Variants(treeList)
       }
@@ -95,14 +109,23 @@ object SemanticTree {
     semanticTree
   }
 
-  def buildVariant(notation: String, parseTree: JValue): ParseTree = {
-    val JArray(position) = parseTree \ "position";
-    val JString(before) = position(3)
-    val JString(after) = position(4)
-   
-    // Build argument maps
-    
-    RawString("")
+  def buildNotationVariant(notation: String, jObject: JObject): Notation = {
+    val JObject(fieldListWithPosition) = jObject
+    val fieldList = fieldListWithPosition.filter({
+      case field@JField(argName, _) => argName != "position"
+    })
+    val arguments : List[Argument] = fieldList map {
+      case JField(argName, jvalue) => buildArgVariants(argName, jvalue.asInstanceOf[JArray])
+    }
+    Notation(notation, arguments)
+  }
+  
+  def buildArgVariants(argName: String, jArray: JArray): Argument = {
+    val JArray(listOfArgumentInfo) = jArray
+    val argSubstrings: List[String] = listOfArgumentInfo map {
+      case JArray(List(_,_,JString(substring))) => substring
+    }
+    Argument(argName, argSubstrings map buildSemanticTree) 
   }
 
   def sendGetNotationPosRequest(input: String) = {
