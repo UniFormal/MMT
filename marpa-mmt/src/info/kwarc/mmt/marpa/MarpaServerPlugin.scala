@@ -84,7 +84,10 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
         //Here the post request is handled
         case "getGrammar" :: _       ⇒ getGrammarResponse
         case "getContentMathML" :: _ ⇒ getContentMathML
-        case "getSemanticTree" :: _  => SemanticTree.getSemanticTree
+        case "getSemanticTree" :: _  => {
+          SemanticTree.grammarGenerator = this 
+          SemanticTree.getSemanticTree
+        }
         case _ ⇒ errorResponse("Invalid request: " + uriComps.mkString("/"),
           List(new PlanetaryError("Invalid Request" + uriComps)))
       }
@@ -301,10 +304,10 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
     val args = arity.arguments flatMap { a ⇒ getArg(a.number) }
 
     val term = ComplexTerm(spath, sub, con, args)
-    println("subs = " + arity.subargs.size)
-    println("con = " + arity.variables.size)
-    println("args = " + arity.arguments.size)
-    println("\nTerm = " + term.toCML.toString)
+//    println("subs = " + arity.subargs.size)
+//    println("con = " + arity.variables.size)
+//    println("args = " + arity.arguments.size)
+    println("Term = " + term.toCML.toString + "\n")
     term
   }
   //utils
