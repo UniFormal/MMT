@@ -12,7 +12,6 @@ import info.kwarc.mmt.lf._
  * This rule works for any universe U
  */
 object PiIntroduction extends BackwardInvertible {
-   override val head = Pi.path
    val priority = 5
    def apply(blackboard: MMTBlackboard, goal: Goal) = goal.conc match {
       case Pi(n,a,b) =>
@@ -28,13 +27,12 @@ object PiIntroduction extends BackwardInvertible {
 
 }
 
-/** the proof step ?:A ----> e(?,...?)  for e:Pi x1:A1,...,xn:An.A' where A' ^ s = A for some substitution s
+/** the proof step ?:A ----> e(?,...?)  for e:Pi x1:A1,...,xn:An.A' where A' &#94; s = A for some substitution s
  *
  * This rule works for any universe U and the case n=0.
  * This rule replace ?'s in the result with their terms if they can be inferred through unification.
  */
 object BackwardPiElimination extends BackwardSearch {
-   override val head = Pi.path
    val priority = 3
 
    private object UnnamedArgument {
@@ -199,7 +197,6 @@ object BackwardPiElimination extends BackwardSearch {
 }
 
 object ForwardPiElimination extends ForwardSearch {
-   override val head = Pi.path
    val priority = 0
 
    private var factSection:FactSection= null
@@ -301,7 +298,6 @@ object ForwardPiElimination extends ForwardSearch {
 }
 
 object TermGeneration extends ForwardSearch {
-   override val head = Pi.path
    val priority = 0
 
    //def respond()
@@ -364,7 +360,6 @@ class TransitivityGeneration(rel: GlobalName, ded: GlobalName) extends ForwardSe
 
    val Ded = new UnaryLFConstantScala(ded.module, ded.name.toString)
    val Rel = new BinaryLFConstantScala(rel.module, rel.name.toString)
-   override val head = Pi.path
    val priority = 0
 
    def generate(blackboard: MMTBlackboard, interactive: Boolean) = {
