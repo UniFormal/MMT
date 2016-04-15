@@ -118,15 +118,15 @@ object SemanticTree {
           }
       }
       println("END OF INPUT PARSES")
-      val CMLlist = inputParses.toCML
+      val CMLlist = inputParses.toCML.toSet.toList // Get unique parses
       println("CML ->")
       var i = 1
       CMLlist foreach {
         case str => println(i.toString + ") " + str) 
         i = i + 1
       }
-      
-      val resp = info.kwarc.mmt.api.utils.JSONString("")
+      val CMLlistJSON = CMLlist map info.kwarc.mmt.api.utils.JSONString
+      val resp = info.kwarc.mmt.api.utils.JSONArray(CMLlistJSON: _*)
       tk.setHeader("Access-Control-Allow-Origin", "*")
       Server.JsonResponse(resp).aact(tk)
     }
