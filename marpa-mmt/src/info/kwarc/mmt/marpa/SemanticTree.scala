@@ -52,53 +52,61 @@ import info.kwarc.mmt.marpa._
 import org.apache.commons.lang3._
 import scala.collection.mutable._
 
-abstract class ParseTree {
-  def toCML: List[String]
-}
-
-case class Variants(treeList: List[ParseTree]) extends ParseTree {
-  override def toCML: List[String] = {
-    treeList.flatMap(_.toCML)
-  }
-}
-
-case class Notation(name: String, arguments: List[Argument]) extends ParseTree {
-  override def toCML: List[String] = {
-    val argNames: List[String] = arguments map {
-      case Argument(name, _) ⇒ name
-    }
-    // For each argument, for each argument part, the list of all possible parses
-    val argCML: List[List[List[String]]] = arguments.map(_.argToCML)
-    // List(For each argument, for each argument part, one of the possible parses)
-    val argCMLcombs = SemanticTree.argumentPossibilities(argCML)
-    argCMLcombs.map((argComb) ⇒ {
-      SemanticTree.toCML(name, (argNames zip argComb))
-    })
-  }
-}
-
-case class Argument(name: String, value: List[Variants]) extends ParseTree {
-  override def toCML: List[String] = { throw SemanticTreeError("Argument::toCML is not defined"); List("") }
-  // For each argument part, the list of possible parses
-  def argToCML: List[List[String]] = {
-    value.map(_.toCML)
-  }
-}
-
-case class RawString(value: String) extends ParseTree {
-  override def toCML: List[String] = {
-    List(value)
-  }
-}
-
-case class SemanticTreeError(message: String) extends Exception
-
 object SemanticTree {
+  abstract class ParseTree {
+    def toCML: List[String]
+  }
+
+  case class Variants(treeList: List[ParseTree]) extends ParseTree {
+    override def toCML: List[String] = {
+      treeList.flatMap(_.toCML)
+    }
+  }
+
+  case class Notation(name: String, arguments: List[Argument]) extends ParseTree {
+    override def toCML: List[String] = {
+      val argNames: List[String] = arguments map {
+        case Argument(name, _) ⇒ name
+      }
+      // For each argument, for each argument part, the list of all possible parses
+      val argCML: List[List[List[String]]] = arguments.map(_.argToCML)
+      // List(For each argument, for each argument part, one of the possible parses)
+      val argCMLcombs = SemanticTree.argumentPossibilities(argCML)
+      argCMLcombs.map((argComb) ⇒ {
+        SemanticTree.toCML(name, (argNames zip argComb))
+      })
+    }
+  }
+
+  case class Argument(name: String, value: List[Variants]) extends ParseTree {
+    override def toCML: List[String] = { throw SemanticTreeError("Argument::toCML is not defined"); List("") }
+    // For each argument part, the list of possible parses
+    def argToCML: List[List[String]] = {
+      value.map(_.toCML)
+    }
+  }
+
+  case class RawString(value: String) extends ParseTree {
+    override def toCML: List[String] = {
+      List(value)
+    }
+  }
+
+  case class SemanticTreeError(message: String) extends Exception
+
   val url = "http://localhost:3000"
   val detectNotation = url + "/detect_notations"
   var grammarGenerator: MarpaGrammarGenerator = null
+
+  def resetTermSharingState {
+    toCMLShare = scala.collection.mutable.HashSet.empty[(String, List[(String, List[String])])] 
+    CMLTermId = 1
+  }
+
   def getSemanticTree: HLet = new HLet {
     def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
+      // clear up after previous request
+      resetTermSharingState
       println("-->getSemanticTree")
       val reqBody = new Body(tk)
       val input: String = reqBody.asString
@@ -134,12 +142,27 @@ object SemanticTree {
     }
   }
 
+  def createShareHrefTo(cml: String): String = {
+    val p = """^<[^\s]+?\s*? id=\"([\d]+)\".*$""".r
+    val p(idStr) = cml
+    val id = idStr.toInt
+    "<share href=\"#" + id + "\"/>"
+  }
+  var CMLTermId = 1
   val toCMLMemo = scala.collection.mutable.HashMap.empty[(String, List[(String, List[String])]), String]
+  var toCMLShare = scala.collection.mutable.HashSet.empty[(String, List[(String, List[String])])]
   def toCML(notation: String, arguments: List[(String, List[String])]): String = {
     val vals = toCMLMemo
+    var share = toCMLShare
     val argTuple = (notation, arguments)
-    if (vals.contains(argTuple)) {
-      return vals(argTuple)
+    if (vals contains argTuple) {
+      val result = vals(argTuple)
+      if (share contains argTuple) {
+        return createShareHrefTo(result)
+      } else {
+        share += argTuple
+        return vals(argTuple)
+      }
     }
     val argDecoded = arguments map {
       case (str, listStr) ⇒ (str, listStr map java.net.URLDecoder.decode)
@@ -197,8 +220,14 @@ object SemanticTree {
       argMap, varMap, seqArgMap, seqVarMap)
     val escapedResult = term.toCML.toString
     val unescapedResult = StringEscapeUtils unescapeXml escapedResult
-    val result = java.net.URLDecoder.decode(unescapedResult)
+    var result = java.net.URLDecoder.decode(unescapedResult)
+    // Insert term id between "<apply" and "/>..."
+    val resultPat = """(^<[^>]*?)(>.*$)""".r
+    val resultPat(s1, s2) = result
+    result = s1 + " id=\"" + CMLTermId.toString + "\" " + s2
+    CMLTermId += 1
     vals += ((argTuple, result))
+    share += argTuple
     return result
   }
 
