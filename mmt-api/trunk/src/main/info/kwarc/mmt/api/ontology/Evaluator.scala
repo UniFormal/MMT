@@ -172,7 +172,7 @@ class Evaluator(controller: Controller) {
                // replace both terms
                val rtm1 = tm1 ^? subst
                var rtm2 = tm2 ^? subst
-svn 
+
                // and check strict equality on the simplification
                controller.simplifier(rtm1, stack.context) == controller.simplifier(rtm2, stack.context)
              }
