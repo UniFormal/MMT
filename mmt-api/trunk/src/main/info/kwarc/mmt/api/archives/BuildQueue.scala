@@ -21,10 +21,12 @@ class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask) {
   /** task was not requested directly but added as dependency of some other task */
   var dependencyClosure: Boolean = false
 
+  private val estRes = target.estimateResult(task)
+
   /** dependencies that will be used but are not available */
-  var missingDeps: List[Dependency] = Nil
+  var missingDeps: List[Dependency] = estRes.used
   /** resources that will be provided once successfully built */
-  var willProvide: List[ResourceDependency] = Nil
+  var willProvide: List[ResourceDependency] = estRes.provided
   /** update policy */
   var updatePolicy = Update(Level.Force)
 
@@ -234,7 +236,7 @@ class BuildQueue extends BuildManager {
   private def getNextTask: Option[QueuedTask] = {
     val currentMissingDeps = getTopTask
     val (bDeps, rDeps) = currentMissingDeps.partition {
-      case bd: FileBuildDependency => true
+      case bd: BuildDependency => true
       case _ => false
     }
     val rDeps1 = rDeps.map { rd => (rd, rd match {
@@ -295,18 +297,17 @@ class BuildQueue extends BuildManager {
     * @param up
     * @param bd
     */
-  private def buildDependency(up: Update, bd: BuildDependency) = if (!cycleCheck.contains(bd)) bd match {
-    case fbd: FileBuildDependency =>
-      val tar = fbd.getTarget(controller)
-      val bt = tar.makeBuildTask(fbd.archive, fbd.inPath)
+  private def buildDependency(up: Update, bd: BuildDependency) = if (!cycleCheck.contains(bd)) {
+      val tar = bd.getTarget(controller)
+      val inFile =  bd.archive / tar.inDim / bd.inPath
+      val bt = bd match {
+        case _: FileBuildDependency => tar.makeBuildTask(bd.archive, bd.inPath)
+        case dbd: DirBuildDependency => tar.makeBuildTask(dbd.archive, dbd.inPath, dbd.children)
+      }
       val qt = new QueuedTask(tar, bt)
       qt.lowPriority = false
       qt.dependencyClosure = true
-      val estRes = tar.estimateResult(bt)
-      qt.missingDeps = estRes.used
-      qt.willProvide = estRes.provided
       addTask(up, qt)
-    case dbd: DirBuildDependency => // ignore for now
   }
 
   /** unblock previously blocked tasks whose dependencies have now been provided */

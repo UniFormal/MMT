@@ -362,9 +362,6 @@ abstract class TraversingBuildTarget extends BuildTarget {
       case Current(inFile, inPath) =>
         val bf = makeBuildTask(a, inPath, inFile, None, eCOpt)
         val qt = new QueuedTask(this, bf)
-        val estRes = estimateResult(bf)
-        qt.missingDeps = estRes.used
-        qt.willProvide = estRes.provided
         cont(qt)
         bf
     }, {
@@ -485,7 +482,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
     */
   def cleanDir(a: Archive, curr: Current) {
     val inPath = curr.path
-    delete(getFolderErrorFile(a, inPath))
+    val errFile = getFolderErrorFile(a, inPath)
+    delete(errFile)
+    val errDir = errFile.up
+    if (errDir.isDirectory) errDir.deleteDir
     controller.notifyListeners.onFileBuilt(a, this, inPath)
   }
 
@@ -570,9 +570,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   /** makes a build task for a single file (ignoring built children) for directories */
-  def makeBuildTask(a: Archive, inPath: FilePath): BuildTask = {
+  def makeBuildTask(a: Archive, inPath: FilePath, children: List[BuildTask] = Nil): BuildTask = {
     val inFile = a / inDim / inPath
-    makeBuildTask(a, inPath, inFile, if (inFile.isDirectory) Some(Nil) else None, None)
+    val isDir = inFile.isDirectory
+    assert(children.isEmpty || isDir)
+    makeBuildTask(a, inPath, inFile, if (isDir) Some(children) else None, None)
   }
 
   def getAnyDeps(dep: FileBuildDependency): Set[Dependency] = {

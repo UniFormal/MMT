@@ -154,8 +154,10 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
       if (key == "sms") Nil
       else
         readingSource(if (List("tikzsvg", "allpdf").contains(key)) "pdflatex" else key, bt.archive, in).toList
-    } else {
+    } else if (in.isDirectory) Nil
+    else {
       logResult("unknown file: " + in)
+      logResult(" for: " + key)
       Nil
     }
     BuildSuccess(ds.distinct, Nil) //TODO add estimate of provided resources
@@ -192,10 +194,8 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
 
   override def cleanDir(a: Archive, curr: Current) {
     super.cleanDir(a, curr)
-    val errDir = getFolderErrorFile(a, curr.path).up
     val outFile = getFolderOutFile(a, curr.path)
     val outDir = outFile.up
-    if (errDir.isDirectory) errDir.deleteDir
     outFile.getExtension.foreach(ext => getDirFilesByExt(a, outDir, List(ext)).foreach(deleteWithLog))
   }
 }
@@ -204,8 +204,13 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
   val outDim: ArchiveDimension = source
   override val outExt = "tex"
 
+  override def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath
+
   // we do nothing for single files
   def reallyBuildFile(bt: BuildTask): BuildResult = BuildResult.empty
+
+  protected def allFile(lang: Option[String]): String =
+    "all" + lang.map("." + _).getOrElse("") + ".tex"
 
   override def runBuildTask(bt: BuildTask): BuildResult = if (bt.isDir) {
     super.runBuildTask(bt)
@@ -216,19 +221,9 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
     delete(getErrorFile(a, curr.path))
   }
 
-  def dirFileFilter(f: String): Boolean
-
-  override def cleanDir(a: Archive, curr: Current) {
-    val dir = curr.file
-    if (dir.exists & dir.isDirectory) {
-      dir.list.filter(dirFileFilter).sorted.
-        map(f => dir / f).foreach(deleteWithLog)
-    }
-    val errFile = getFolderErrorFile(a, curr.path)
-    delete(errFile)
-    val errDir = errFile.up
-    if (errDir.isDirectory) errDir.deleteDir
-  }
+  // files to be cleaned
+  def dirFileFilter(f: String): Boolean =
+    f.startsWith("all.") && f.endsWith(".tex")
 
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
     a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel))({

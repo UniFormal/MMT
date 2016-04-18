@@ -12,11 +12,58 @@ import info.kwarc.mmt.stex.STeXUtils._
 
 import scala.sys.process._
 
+class AllPdf extends LaTeXDirTarget {
+  val key: String = "allpdf"
+
+  def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
+
+    BuildResult.empty
+  }
+
+  override def estimateResult(bt: BuildTask) = {
+    val a = bt.archive
+    if (bt.isDir) {
+      val files = getDirFiles(a, bt.inFile, includeFile)
+      val langs: Set[String] = files.flatMap(f => getLang(File(f))).toSet
+      val allLangFiles = langs.toList.sorted.map(l => allFile(Some(l)))
+      val allFiles = if (langFiles(None, files).isEmpty) allLangFiles
+      else
+        allFile(None) :: allLangFiles
+      val ls = allFiles.map(f => FileBuildDependency("pdflatex", a, bt.inPath / f))
+      BuildSuccess(ls :+ DirBuildDependency("alltex", a, bt.inPath,
+        files.map(f => makeBuildTask(a, bt.inPath / f))), Nil)
+    } else BuildSuccess(Nil, Nil)
+  }
+
+  override def cleanDir(a: Archive, curr: Current) {
+    val dir = curr.file
+    if (dir.exists & dir.isDirectory) {
+      dir.list.filter(dirFileFilter).sorted.
+        foreach { f =>
+          val d = FileBuildDependency("pdflatex", a, curr.path / f)
+          d.getTarget(controller).clean(a, d.inPath)
+        }
+    }
+    super.cleanDir(a, curr)
+  }
+}
+
 class AllTeX extends LaTeXDirTarget {
   val key: String = "alltex"
 
-  def dirFileFilter(f: String): Boolean =
-    f.startsWith("all.") && f.endsWith(".tex")
+  override def estimateResult(bt: BuildTask) = {
+    val a = bt.archive
+    if (bt.isDir) {
+      val files = getDirFiles(a, bt.inFile, includeFile)
+      val langs: Set[String] = files.flatMap(f => getLang(File(f))).toSet
+      val allLangFiles = langs.toList.sorted.map(l => allFile(Some(l)))
+      val allFiles = if (langFiles(None, files).isEmpty) allLangFiles
+      else
+        allFile(None) :: allLangFiles
+      val ls = allFiles.map(f => PhysicalDependency(bt.inFile / f))
+      BuildSuccess(Nil, ls)
+    } else BuildSuccess(Nil, Nil)
+  }
 
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
     val dirFiles = getDirFiles(a, dir, includeFile)
@@ -58,6 +105,15 @@ class AllTeX extends LaTeXDirTarget {
       w.close()
       logSuccess(outPath)
     }
+  }
+
+  override def cleanDir(a: Archive, curr: Current) {
+    val dir = curr.file
+    if (dir.exists & dir.isDirectory) {
+      dir.list.filter(dirFileFilter).sorted.
+        map(f => dir / f).foreach(deleteWithLog)
+    }
+    super.cleanDir(a, curr)
   }
 }
 
@@ -389,6 +445,9 @@ class PdfLatex extends LaTeXBuildTarget {
   val outDim: ArchiveDimension = Dim("export", "pdflatex", inDim.toString)
   private var pdflatexPath: String = "xelatex"
 
+  override def includeFile(n: String): Boolean =
+    n.endsWith(".tex") && !n.endsWith(localpathsFile)
+
   override def start(args: List[String]) {
     super.start(args)
     val (_, nonOpts) = splitOptions(remainingStartArguments)
@@ -456,24 +515,6 @@ class PdfLatex extends LaTeXBuildTarget {
     if (outDir.isDirectory) outDir.deleteDir
     val srcDir = a / inDim / curr.path
     getDirFilesByExt(a, srcDir, toBeCleanedExts).foreach(deleteWithLog)
-  }
-}
-
-class AllPdf extends PdfLatex {
-  override val key = "allpdf"
-
-  override def includeFile(n: String): Boolean =
-    n.endsWith(".tex") && n.startsWith("all.")
-
-  override def estimateResult(bt: BuildTask) = {
-    val in = bt.inFile
-    val a = bt.archive
-    val optLang = getLang(in)
-    val aStr = archString(a)
-    val name = in.getName
-    val ls = langFiles(optLang, getDirFiles(a, in.up, super.includeFile)).
-      filter(_ != name).map(f => FileBuildDependency("pdflatex", a, bt.inPath.dirPath / f))
-    BuildSuccess(ls, Nil)
   }
 }
 
