@@ -3,8 +3,12 @@ import info.kwarc.mmt.api._
 import utils._
 import frontend._
 import objects._
+import info.kwarc.mmt.api.checking._
+
 import libraries._
 import scala.collection.mutable.{HashSet}
+import info.kwarc.mmt.api.symbols.FinalConstant
+import objects.Conversions._
 
 /** a trait for all concrete data types that can be returned by queries; atomic types are paths and objects */
 trait BaseType
@@ -120,7 +124,7 @@ class Evaluator(controller: Controller) {
            rs.query(p.head.asInstanceOf[Path], by)(res += _)  // p has type List(Path) by precondition
          }
          res
-      case Closure(of) =>
+      case info.kwarc.mmt.api.ontology.Closure(of) =>
          evaluateElemPath(of) match { 
             case p : MPath =>
                val res = empty
@@ -137,6 +141,50 @@ class Evaluator(controller: Controller) {
         val res = empty
         res += t(i)
         res
+      case SelectByJudgement(from : Query, v: VarDecl, j : Judgement) =>
+
+         def checkFilter(b : BaseType) : Boolean = {
+
+           // find the term we want to investigate
+            val t : Term = b match {
+
+               // get paths from the controller or fallback to an OMS
+               case p : Path => controller.get(p) match {
+                  case fc : FinalConstant => fc.df match {
+                    case Some(tm) => tm
+                    case None => fc.toTerm
+                  }
+                  case _ => return false
+               }
+
+               // terms we can keep as is
+               case tm : Term => tm
+
+               // TODO: what to do with other objects
+               case o : Obj => return true
+            }
+
+           // make a substitution
+            val subst = v.name / t
+
+           j match {
+             case Equality(stack: Stack, tm1: Term, tm2: Term, tpOpt: Option[Term]) => {
+               // replace both terms
+               val rtm1 = tm1 ^? subst
+               var rtm2 = tm2 ^? subst
+svn 
+               // and check strict equality on the simplification
+               controller.simplifier(rtm1, stack.context) == controller.simplifier(rtm2, stack.context)
+             }
+               //TODO: Other components
+           }
+         }
+
+         // evaluate the query and filzer
+         evaluate(from) match {
+            case ElemResult(b : BaseType) => HashSet(b :: Nil)
+            case ESetResult(s : HashSet[List[BaseType]]) => s.map(_.filter(checkFilter))
+         }
       case QueryFunctionApply(fun, args, param) =>
          val argsE = evaluateESet(args)
          val res = empty

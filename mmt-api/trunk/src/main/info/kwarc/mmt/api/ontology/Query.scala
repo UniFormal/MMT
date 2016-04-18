@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api.ontology
 
+import javax.naming.NameParser
+
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
@@ -123,6 +125,9 @@ case class Tuple(components: List[Query]) extends Query
 
 /** projection */
 case class Projection(of: Query, index: Int) extends Query
+
+/** Returns all statements from a query that match a judgmenet containing a variable */
+case class SelectByJudgement(from : Query, v : VarDecl, j : Judgement) extends Query
 
 /** query that applies an atomic function */
 case class QueryFunctionApply(function: QueryExtension, argument: Query, params: List[String]) extends Query
@@ -370,6 +375,30 @@ object Query {
       case Elem(s) if 0 <= i && i < s.length => Elem(s(i - 1))
       case _ => throw ParseError("illegal query " + p)
     }
+    case SelectByJudgement(from : Query, v: VarDecl, j : Judgement) => {
+      val it = infer(from)
+
+      // we only support queries that return paths or sets of objects or paths
+      it match {
+        case Elem1(PathType) => true
+        case ESet1(PathType) => true
+        case Elem1(ObjType) => true
+
+        case ESet1(ObjType) => true
+        case _ => throw ParseError("illegal query " + q)
+      }
+
+      // for now we only support equality judgements
+      // TODO: Figure out if we want other types of judgements
+      // and how to handle them
+      j match {
+        case Equality(s, tm1, tm2, tpOpt) => true
+        case _ => throw ParseError("illegal query " + q)
+      }
+
+      it
+
+    }
   }
 
   /** parses a query; infer must be called to sure well-formedness
@@ -417,6 +446,17 @@ object Query {
     case <projection>{t}</projection> =>
       val i = xml.attrInt(n, "index", ParseError)
       Projection(parse(t), i)
+    case <selectbyjudgement>{from}{v}{ctx}{t1}{t2}</selectbyjudgement> =>
+      // TODO: Handle non-equality judgements
+      SelectByJudgement(
+        parse(from),
+        VarDecl.parse(v, NamespaceMap.empty),
+        Equality(
+          Stack(Context.parse(ctx, NamespaceMap.empty)),
+          Obj.parseTerm(t1, NamespaceMap.empty),
+          Obj.parseTerm(t2, NamespaceMap.empty),
+          None)
+      )
     case <function>{a}</function> =>
       val name = xml.attr(n, "name")
       val params = stringToList(xml.attr(n, "param"))
