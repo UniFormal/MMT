@@ -6,9 +6,12 @@ import web._
 
 import scala.collection.mutable
 import QueryTypeConversion._
+import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.frontend.{Controller, Extension}
+import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.utils._
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 import scala.util.matching.Regex
 
 sealed abstract class Reference
@@ -225,24 +228,24 @@ class AlignmentsServer extends ServerExtension("align") {
 
   private val alignments = mutable.HashSet[Alignment]()
 
+  private var archives : ArchiveStore = null
+
+
   override def start(args: List[String]) {
+    controller.extman.addExtension(new AlignQuery)
+    archives = new ArchiveStore
+    controller.extman.addExtension(archives)
     args.foreach(a ⇒ try {
       val file = File(a)
       val fs = FilePath.getall(file).filter(_.getExtension.contains("align"))
-      println("Files: " + fs)
+      log("Files: " + fs)
       fs.foreach(readFile)
     } catch {
       case e: Exception ⇒ println(e.getMessage)
     })
-    controller.extman.addExtension(new AlignQuery)
-    controller.extman.addExtension(new CanTranslateQuery)
   }
   override def destroy {
     controller.extman.get(classOf[AlignQuery]) foreach { a ⇒
-      a.destroy
-      controller.extman.removeExtension(a)
-    }
-    controller.extman.get(classOf[CanTranslateQuery]) foreach { a ⇒
       a.destroy
       controller.extman.removeExtension(a)
     }
@@ -250,34 +253,35 @@ class AlignmentsServer extends ServerExtension("align") {
 
   private var nsMap = NamespaceMap.empty
 
+
   def apply(path: List[String], query: String, body: Body) = {
     path match {
       case "from" :: _ ⇒
         val path = Path.parseS(query, nsMap)
         val toS = getAlignments(LogicalReference(path)).map(_.to.toString)
-        println("Alignment query: " + query)
-        println("Alignments from " + path + ":\n" + toS.map(" - " + _).mkString("\n"))
+        log("Alignment query: " + query)
+        log("Alignments from " + path + ":\n" + toS.map(" - " + _).mkString("\n"))
         Server.TextResponse(toS.mkString("\n"))
       case "add" :: _ ⇒
         val str = Try(body.asString).getOrElse("")
         val formData : JSONObject = Try(JSON.parse(str).asInstanceOf[JSONObject]).getOrElse(JSONObject(List()))
-        println(formData.toString)
+        log(formData.toString)
         val regex = """\\/""".r
         val addedAlignments = if (formData.nonEmpty) {
           val fromRaw = formData("from").getOrElse("").toString
           val toRaw = formData("to").getOrElse("").toString
           val from = regex.replaceAllIn(fromRaw,  "/")
           val to = regex.replaceAllIn(toRaw, "/")
-          println("Adding alignment from " + from + " to " + to)
+          log("Adding alignment from " + from + " to " + to)
           processString(from + " " + to)
         } else {
           0
         }
         Server.TextResponse("Added " + addedAlignments + " alignments")
       case _ ⇒
-        println(path) // List(from)
-        println(query) // an actual symbol path
-        println(body) //whatever
+        log(path.toString) // List(from)
+        log(query.toString) // an actual symbol path
+        log(body.toString) //whatever
         Server.TextResponse("")
     }
   }
@@ -319,13 +323,7 @@ class AlignmentsServer extends ServerExtension("align") {
     case e: Exception    ⇒ throw e
   }
 
-  def CanTranslateTo(t: Term): List[DPath] = {
-    val head = t.head.getOrElse(return Nil) match {
-      case n: GlobalName ⇒ n
-      case _             ⇒ return Nil
-    }
-    getFormalAlignments(head).map(_.to.mmturi.doc)
-  }
+  def CanTranslateTo(t: Term): List[String] = archives.getArchives
 
   private object CanNotTranslate extends Exception
 
@@ -425,7 +423,7 @@ class AlignmentsServer extends ServerExtension("align") {
     val cmds = File.read(file).split("\n").map(_.trim).filter(_.nonEmpty)
     val tmp = cmds map processString
     val alignmentsCount = tmp.sum
-    println(alignmentsCount + " alignments read from " + file.toString)
+    log(alignmentsCount + " alignments read from " + file.toString)
   }
 
   private def writeToFile(file: File) = File.write(file, alignments.map(_.toString).mkString("\n"))
@@ -492,9 +490,9 @@ class AlignmentsServer extends ServerExtension("align") {
   /** translation along alignments */
   private class AlignQuery extends QueryExtension("align", ObjType, ObjType) {
     def evaluate(argument: BaseType, params: List[String]) = {
-      println("Evaluating align query")
-      println(argument.toString)
-      params foreach println
+      log("Evaluating align query")
+      log(argument.toString)
+      params.foreach(p => log(p.toString))
       val dpath = params match {
         case p :: Nil ⇒ Path.parseD(p, NamespaceMap.empty)
         case Nil      ⇒ throw ParseError("parameter expected")
@@ -510,15 +508,100 @@ class AlignmentsServer extends ServerExtension("align") {
     }
   }
 
-  private class CanTranslateQuery extends QueryExtension("cantranslate", ObjType, PathType) {
-    def evaluate(argument: BaseType, params: List[String]) = {
-      val o = argument match {
-        case t: Term ⇒ t
-        case o: Obj  ⇒ ??? // TODO
-        case _       ⇒ throw ImplementationError("evaluation of ill-typed query")
+}
+
+abstract class FullArchive {
+  val archive : Archive
+  def foundations : List[DeclaredTheory]
+  require(archive.ns.isDefined)
+  val path = archive.ns.get
+  val name = archive.id
+
+  def declares(p : Path) : Boolean
+}
+
+class ArchiveStore extends Extension {
+
+  case class InternalFullArchive(archive : Archive, foundations : List[DeclaredTheory]) extends FullArchive {
+    private var contains : List[MPath] = Nil
+    private var isread = false
+
+    private def read = logGroup {
+      log("Read relational " + name + "...")
+      archive.readRelational(FilePath(""), controller, "rel")
+      log("Loading Theories...")
+      val theories = controller.evaluator.evaluate(Paths(IsTheory)).asInstanceOf[ESetResult].h.view.flatten.toList.map(s =>
+        Path.parse(s.toString))
+      logGroup {
+        log("Namespace: " + path)
+        contains = theories.filter(path <= _).collect {
+          case t:MPath => t
+        }.distinct
+        log("Theories: ")
+        logGroup {
+          contains.foreach(t => log(" - " + t.toString.drop(archive.ns.get.toString.length)))
+        }
       }
-      CanTranslateTo(o)
+      isread = true
+    }
+
+    def declares(p : Path) : Boolean = p match {
+      case d:DPath =>
+        path <= d
+      case m : MPath =>
+        path <= m || foundations.exists(t => t.path == m)
+      case s : GlobalName =>
+        declares(s.module)
     }
   }
 
+
+  private val stored : mutable.HashMap[String,FullArchive] =  mutable.HashMap()
+
+  // partially mirrors alignmentfinder; TODO clean up
+
+  private def flattened(th : DeclaredTheory) : List[DeclaredTheory] = {
+    Try(controller.simplifier.flatten(th))
+    val theories = //th ::
+      th.getIncludes.map(p => Try(controller.get(p).asInstanceOf[DeclaredTheory]))
+    val flats = theories.map({
+      case Success(t) => Try(flattened(t))
+      case Failure(e) => Failure(e)
+    })
+    val successes = flats.collect {
+      case Success(t) => t
+    }.flatten
+    th :: successes
+  }
+
+  override def logPrefix = "ArchiveStore"
+
+  override def start(args: List[String]) = Try {
+    val archs = controller.backend.getArchives
+    log("Archives found: " + archs.map(_.id).mkString(","))
+    log("Reading archives:")
+    logGroup {
+      archs foreach { a =>
+        log(a.id + "...")
+        logGroup {
+          if (a.ns.isDefined) {
+            log("Namespace: " + a.ns.get)
+            /*
+            val fnd = Try(controller.get(a.foundation.get).asInstanceOf[DeclaredTheory]).map(Some(_)).getOrElse(None)
+            log("Foundation: " + fnd.map(_.path.toString).getOrElse("None"))
+            val found = fnd.map(flattened).getOrElse(Nil).distinct
+            if (fnd.isDefined) log("Implied: " + found.tail.map(_.name.toString).mkString(", "))
+            */
+            stored += ((a.id, InternalFullArchive(a, Nil)))//((a.id, InternalFullArchive(a, found)))
+          } else {
+            log("No namespace given")
+          }
+        }
+      }
+    }
+  }
+
+  def getArchive(a : Archive) : Option[FullArchive] = stored.get(a.id)
+  def getArchive(s : String) : Option[FullArchive] = stored.get(s)
+  def getArchives : List[String] = stored.keys.toList
 }

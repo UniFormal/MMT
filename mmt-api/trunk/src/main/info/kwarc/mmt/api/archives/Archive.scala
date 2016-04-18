@@ -42,6 +42,9 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   val id = properties("id")
   val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
   /** the NamespaceMap built from the ns and ns-prefix properties */
+  val ns = properties.get("ns").map(s => Path.parse(
+    s,//if (s.last == '/') s.dropRight(1) else s,
+    NamespaceMap.empty))
   val namespaceMap = {
     var nsMap = NamespaceMap.empty
     val Matcher = utils.StringMatcher("", "-", "")
