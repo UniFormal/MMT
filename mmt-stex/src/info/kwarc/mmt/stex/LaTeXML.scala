@@ -62,7 +62,7 @@ class AllTeX extends LaTeXDirTarget {
         allFile(None) :: allLangFiles
       val ls = allFiles.map(f => PhysicalDependency(bt.inFile / f))
       BuildSuccess(Nil, ls)
-    } else BuildSuccess(Nil, Nil)
+    } else super.estimateResult(bt)
   }
 
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
