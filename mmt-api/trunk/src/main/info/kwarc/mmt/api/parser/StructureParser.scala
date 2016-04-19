@@ -949,19 +949,22 @@ trait MMTStructureEstimator {self: Interpreter =>
   private var provided: List[MPath] = Nil
 
   override def estimateResult(bt: BuildTask) = {
-     val (dp,ps) = buildTaskToParsingStream(bt)
-     used = Nil
-     provided = Nil
-     parser(ps)(bt.errorCont)
-     // convert i.e. p?NatRules/NatOnly to p?NatRules
-     used = used.map { mp =>
-       val steps = mp.name.steps
-       if (steps.isEmpty) mp else MPath(mp.parent, List(steps.head))
-     }
-     used = used.distinct
-     provided = provided.distinct
-     used = used diff provided
-     BuildSuccess(used map LogicalDependency, provided map LogicalDependency)
+    if (bt.isDir) BuildSuccess(Nil, Nil)
+    else {
+      val (dp, ps) = buildTaskToParsingStream(bt)
+      used = Nil
+      provided = Nil
+      parser(ps)(bt.errorCont)
+      // convert i.e. p?NatRules/NatOnly to p?NatRules
+      used = used.map { mp =>
+        val steps = mp.name.steps
+        if (steps.isEmpty) mp else MPath(mp.parent, List(steps.head))
+      }
+      used = used.distinct
+      provided = provided.distinct
+      used = used diff provided
+      BuildSuccess(used map LogicalDependency, provided map LogicalDependency)
+    }
   }
 
   private lazy val parser = new KeywordBasedParser(DefaultObjectParser) {
