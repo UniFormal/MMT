@@ -22,11 +22,11 @@
     <ul>
         <li ng-repeat="e in queue.queue">{{e}}</li>
     </ul>
-    <span id="blocked">blocked</span> (go to <a href="#top">top</a>)
+    <span id="blocked">blocked</span> (go to <a href="#top">top</a>) (go to <a href="#finished">finished</a>)
     <ul>
         <li ng-repeat="e in queue.blocked">{{e}}</li>
     </ul>
-    <span id="finished">finished</span> (go to <a href="#top">top</a>)
+    <span id="finished">finished</span> (go to <a href="#top">top</a>) (go to <a href="#blocked">blocked</a>)
     <ul>
     <li ng-repeat="e in queue.finished">
         {{e.dependency}} {{e.result.success ? "success" : "failure"}}

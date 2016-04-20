@@ -114,6 +114,7 @@
                 <a href="" ng-click="buildAll(true)"
                    title="clean all selected entries">&#10005;</a>
             </th>
+            <th>0</th>
             <th ng-repeat="key in colProps" ng-if="columns[key].x">
                 <span style="cursor:pointer"
                       ng-click="sort.col = key; sort.asc = !sort.asc">
@@ -140,6 +141,7 @@
                 <a href="" ng-click="build(res, true)" title="clean file">
                 &#10005;</a>
             </td>
+            <td>{{ $index + 1 }}</td>
             <td ng-repeat="key in colProps" ng-if="columns[key].x">
                 <span ng-if="key == 'errLevel' && key.errLevel != ''">
                     <a href="" ng-click="serve(res.fileLink, res.errChild)">{{res[key]}}</a>
