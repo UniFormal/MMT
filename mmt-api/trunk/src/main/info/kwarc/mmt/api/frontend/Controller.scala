@@ -95,7 +95,7 @@ class Controller extends ROController with ActionHandling with Logger {
   def buildManager = extman.get(classOf[BuildManager]).head
 
   /** converts between strict and pragmatic syntax using [[notations.NotationExtension]]s */
-  val pragmatic = new Pragmatics(this)
+  def pragmatic = extman.get(classOf[Pragmatics]).head
   /** the http server */
   var server: Option[Server] = None
   /** the catalog maintaining all registered physical storage units */

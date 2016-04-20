@@ -26,7 +26,7 @@ class EscapeManager(handlers: List[LexerExtension]) {
 /**
  * A LexerExtension bypasses the default lexing algorithm
  */
-abstract class LexerExtension {
+abstract class LexerExtension extends Rule {
    /**
     * @param s the string to lex
     * @param i the current character
@@ -62,6 +62,8 @@ class PrefixedTokenLexer(delim: Char, onlyLetters: Boolean = true, includeDelim:
      Token(word, firstPosition, true, text)
   }
 }
+
+object MMTURILexer extends PrefixedTokenLexer('`', false, false)
 
 /**
  * replaces words during lexing

@@ -64,7 +64,7 @@ case class SearchResult(cpath: CPath, pos: Position, term: Option[Term])
 /** an implementation of a search algorithm that calls [[MathWebSearch]] and filters the results */
 class Search(controller: Controller) {
    def apply(sq: SearchQuery, resolveResults: Boolean): List[SearchResult] = {
-      val mws = controller.extman.mws.getOrElse(throw ParseError("no mws defined"))
+      val mws = controller.extman.get(classOf[MathWebSearch]).headOption.getOrElse(throw ParseError("no mws defined"))
       val results = sq.pattern match {
          case Some(pattern) =>
             val mwsResults = mws(MathWebSearchQuery(pattern, 10))

@@ -373,8 +373,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           throw makeError(reg, "extraneous tokens, ignored: " + rest)
       }
     } catch {
-      case e: SourceError =>
-        errorCont(e)
+      case e: Error =>
+        val se = e match {
+          case e: SourceError => e
+          case e => makeError(currentSourceRegion, "error while parsing: " + e.getMessage).setCausedBy(e)
+        }
+        errorCont(se)
         if (!state.reader.endOfModule)
           state.reader.readModule
     }

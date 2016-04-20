@@ -292,11 +292,6 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
       case l: Structure => DefLinkAssignment(home, name, l.from, l.toTerm)
     }
     case Morph.empty => error("empty morphism has no assignments")
-    case MUnion(ms) => ms mapFind {
-      m => getO(m, name)
-    } getOrElse {
-      error("union of morphisms has no assignments except includes")
-    }
     case _ => error("unknown module: " + home)
   }
 

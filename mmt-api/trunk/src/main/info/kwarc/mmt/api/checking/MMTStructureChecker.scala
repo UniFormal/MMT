@@ -335,9 +335,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         val l = controller.globalLookup.getLink(p)
         env.pCont(p)
         (m, l.from, l.to)
-      case OMDL(to, name) =>
-        checkTheory(context, OMMOD(to))
-        content.get(to ? name) match {
+      case OMS(p) =>
+        checkTheory(context, OMMOD(p.module))
+        content.get(p) match {
           case l: Structure =>
             env.pCont(l.path)
             (m, l.from, l.to)

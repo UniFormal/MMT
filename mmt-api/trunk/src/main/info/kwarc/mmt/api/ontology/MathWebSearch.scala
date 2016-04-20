@@ -26,7 +26,7 @@ case class MathWebSearchQuery(pattern: TermPattern, answsize: Int = 1000, limitm
  * abstraction that wraps around a remote MathWebSearch server
  * @param url the URL of the server
  */
-class MathWebSearch(val url: java.net.URL) {
+class MathWebSearch(val url: java.net.URL) extends frontend.Extension {
    /** sends a query
     *  @param query the query, using this.qvarBinder at the toplevel to bind the query variables
     *  @return MathWebSearch's reply

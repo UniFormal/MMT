@@ -288,7 +288,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         }
         val tqs = qt.transformSearchQuery(mwsquery, params)
         def wrapMWS(n: Node): Node = <mws:query output="xml" limitmin={ offset.toString } answsize={ size.toString }>{ n }</mws:query>
-        val mws = controller.extman.mws.getOrElse(throw ServerError("no MathWebSearch engine defined")).url
+        val mws = controller.extman.get(classOf[ontology.MathWebSearch]).headOption.getOrElse(throw ServerError("no MathWebSearch engine defined")).url
 
         tqs.map(q => println(wrapMWS(q)))
         val res = tqs.map(q => utils.xml.post(mws, wrapMWS(q))) // calling MWS via HTTP post

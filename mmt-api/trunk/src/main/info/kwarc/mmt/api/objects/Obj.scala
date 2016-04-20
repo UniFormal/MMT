@@ -98,7 +98,7 @@ sealed abstract class Term extends Obj {
      * If the term is module level, this is guaranteed to be correct. */
    def toMPath : MPath = this match {
      case OMMOD(p) => p
-     case OMDL(h, n) => h / n 
+     case OMS(p) => p.module / p.name 
      case _ => mmt.mmtbase ? Obj.toPathEncoding(this)
    }
    /** applies copyFrom and returns this

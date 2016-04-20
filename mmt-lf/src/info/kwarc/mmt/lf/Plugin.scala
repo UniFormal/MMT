@@ -17,7 +17,7 @@ class Plugin extends frontend.Plugin {
       em.addExtension(new TwelfParser)
       // foundation
       em.addExtension(new LFF)
-      // pragmatic features
-      em.notationExtensions ::= new notations.HOASNotation(LF.theoryPath, LF.hoas)
    }
 }
+
+object LFHOAS extends notations.HOASNotation(LF.hoas)

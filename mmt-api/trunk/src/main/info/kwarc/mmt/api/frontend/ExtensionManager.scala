@@ -169,11 +169,6 @@ class ExtensionManager(controller: Controller) extends Logger {
     getOrAddExtension(cls, format)
    }
 
-  var lexerExtensions: List[LexerExtension] = Nil
-  var notationExtensions: List[notations.NotationExtension] = Nil
-
-  var mws: Option[ontology.MathWebSearch] = None
-
   val report = controller.report
   val logPrefix = "extman"
 
@@ -288,6 +283,8 @@ class ExtensionManager(controller: Controller) extends Logger {
     List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover, rbe).foreach {e => addExtension(e)}
     // build manager
     addExtension(new TrivialBuildManager)
+    // pragmatic-strict converter
+    addExtension(new notations.Pragmatics)
     //targets, opaque formats, and presenters
     List(new archives.HTMLExporter, new archives.PythonExporter, new uom.GenericScalaExporter, new uom.OpenMathScalaExporter,
       new TextInterpreter, new HTMLInterpreter,
@@ -306,13 +303,6 @@ class ExtensionManager(controller: Controller) extends Logger {
       new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
     // shell extensions
     List(new ShellSendCommand, new execution.ShellCommand).foreach(addExtension(_))
-
-    lexerExtensions ::= GenericEscapeLexer
-    lexerExtensions ::= UnicodeReplacer
-    //lexerExtensions ::= new PrefixedTokenLexer('\\')
-    lexerExtensions ::= new PrefixedTokenLexer('`', false, false)
-
-    notationExtensions ::= notations.MixfixNotation
   }
 
   def cleanup {

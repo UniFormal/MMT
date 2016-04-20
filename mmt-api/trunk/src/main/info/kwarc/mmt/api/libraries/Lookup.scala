@@ -104,7 +104,7 @@ abstract class Lookup {self =>
    def getDomain(a: Declaration) : (DeclaredTheory,Option[DeclaredLink]) = {
       val p = a.home match {
          case OMMOD(p) => p
-         case OMDL(p, name) => p ? name 
+         case OMS(p) => p 
          case _ => throw GetError("non-atomic link")
       }
       val l = get(p) match {

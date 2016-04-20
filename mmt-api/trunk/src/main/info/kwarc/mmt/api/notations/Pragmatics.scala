@@ -5,31 +5,53 @@ import objects._
 import modules._
 import frontend._
 import libraries._
+import symbols._
 
 import objects.Conversions._
 
-class Pragmatics(controller: Controller) {
+class Pragmatics extends ChangeListener {
    private lazy val lup = controller.globalLookup // must be lazy due to order of class initialization
-   private lazy val notExts = controller.extman.notationExtensions
 
-   private def applicableByLevel(level: Option[MPath]): NotationExtension = {
-      val applicable = notExts.filter {ne => (ne.applicableLevel, level) match {
-         case (None, None) => true
-         case (Some(aL), Some(l)) => controller.globalLookup.hasImplicit(OMMOD(aL), OMMOD(l))
-         case _ => false
-      }}
-      if (applicable.isEmpty) {
-         level match {
-            case None => MixfixNotation
-            case Some(l) =>
-               lup.getTheory(l) match {
-                  case t: DeclaredTheory => applicableByLevel(t.meta)
-                  case t: DefinedTheory => MixfixNotation 
-               }
-         }
-      } else {
-         applicable.maxBy(_.priority) 
+   /** caches (via change-listening) all known NotationExtensions */
+   private var notExts: List[(MPath, NotationExtension)] = Nil
+   
+   override def onAdd(se: StructuralElement) {
+     se match {
+       case rc: RuleConstant => rc.df match {
+         case ne: NotationExtension =>
+           notExts ::= (rc.home.toMPath, ne)
+         case _ =>
+       }
+       case _ =>
+     }
+   }
+   override def onDelete(se: StructuralElement) {
+     se match {
+       case rc: RuleConstant => rc.df match {
+         case ne: NotationExtension =>
+           notExts = notExts.filterNot {case (_,neC) => ne == neC}
+         case _ =>
+       }
+       case _ =>
+     }
+   }
+   override def onClear {
+     notExts = Nil
+   }
+   
+   /** a NotationExtension is applicable at level mp if it is visible to mp */
+   private def applicableByLevel(levelOpt: Option[MPath]): NotationExtension = {
+      val level = levelOpt getOrElse {return MixfixNotation}
+      val applicable = notExts.flatMap {case (thy, ne) => 
+        if (controller.globalLookup.hasImplicit(OMMOD(thy), OMMOD(level)))
+          List(ne)
+        else
+          Nil
       }
+      if (applicable.isEmpty)
+        MixfixNotation
+      else
+         applicable.maxBy(_.priority) 
    }
    def makeStrict(level: Option[MPath], op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation
          )(implicit newUnkwown: () => Term) : Term = {
@@ -45,7 +67,7 @@ class Pragmatics(controller: Controller) {
    }
    
    def makePragmatic(t: Term)(implicit getNotations: GlobalName => List[TextNotation]) : Option[PragmaticTerm] = {
-      val applicable = notExts.filter(_.isApplicable(t)).sortBy(_.priority).reverse
+      val applicable = notExts.view.map(_._2).filter(_.isApplicable(t)).sortBy(_.priority).reverse
       applicable.foreach {ne =>
          ne.destructTerm(t).foreach {tP => return Some(tP)}
       }
@@ -58,7 +80,7 @@ class Pragmatics(controller: Controller) {
    }
  
   private def hoass = notExts.flatMap {
-     case h: HOASNotation => List(h.hoas)
+     case (_, h: HOASNotation) => List(h.hoas)
      case _ => Nil
   } 
    

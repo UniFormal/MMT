@@ -21,8 +21,8 @@ object Morph {
     } catch {
       case _: Exception => throw InvalidObject(m, "not a well-formed morphism")
     }
-    case OMDL(h, n) => try {
-      val structure = lib.getStructure(h ? n)
+    case OMS(p) => try {
+      val structure = lib.getStructure(p)
       Some(structure.from)
     } catch {
       case _: Exception => throw InvalidObject(m, "not a well-formed morphism")
@@ -41,7 +41,7 @@ object Morph {
     } catch {
       case _: Exception => throw InvalidObject(m, "not a well-formed morphism: " + m)
     }
-    case OMDL(t, _) => Some(OMMOD(t))
+    case OMS(p) => Some(OMMOD(p.module))
     case _ => None
   }
 
@@ -59,12 +59,11 @@ object Morph {
     val mS = OMCOMP(associateComposition(m))
     mS match {
       case OMMOD(p) => OMMOD(p)
-      case OMDL(h, ln) =>
-        val lnS = ln.simplify
-        if (lnS.length == 1 && lnS.steps.head.isInstanceOf[ComplexStep])
+      case OMS(p) =>
+        if (p.name.length == 1 && p.name.steps.head.isInstanceOf[ComplexStep])
           OMCOMP()
         else
-          OMDL(h, lnS)
+          OMS(p)
       case OMIDENT(t) => OMCOMP()
       case OMCOMP(ms) =>
         val msS = (ms map simplify) filter {
@@ -76,14 +75,6 @@ object Morph {
           case Nil => OMCOMP()
           case h :: Nil => h
           case _ => OMCOMP(msS)
-        }
-      case MUnion(ms) =>
-        //  associativity             neutrality           idempotence  commutativity
-        val msS = (ms map simplify).flatMap(MUnion.associate).filterNot(_ == Morph.empty).distinct.sortBy(_.hashCode)
-        msS match {
-          case Nil => Morph.empty
-          case h :: Nil => h
-          case _ => MUnion(msS)
         }
     }
   }
@@ -204,7 +195,6 @@ object ModExp extends uom.TheoryScala {
 
   //TODO deprecate (still used by Twelf)
   val tunion = _path ? "theory-union"
-  val munion = _path ? "morphism-union"
 }
 
 /** An OMMOD represents a reference to a module (which may be a theory or a morphism expression). */
@@ -264,16 +254,6 @@ object ComplexTheory {
   def unapply(t: Term): Option[Context] = t match {
     case OMBINDC(OMID(this.path), body, Nil) => Some(body)
     case OMPMOD(p, args) => Some(Context(IncludeVarDecl(p, args)))
-    case _ => None
-  }
-}
-
-/** OMDL is used for the GlobalName of a structure */
-object OMDL {
-  def apply(cod: MPath, name: LocalName): Term = OMID(cod ? name)
-
-  def unapply(t: Term): Option[(MPath, LocalName)] = t match {
-    case OMID(cod ?? name) => Some((cod, name))
     case _ => None
   }
 }
@@ -364,26 +344,5 @@ object ComplexMorphism {
   def unapply(t: Term): Option[Substitution] = t match {
     case ComplexTerm(this.path, sub, Context(), Nil) => Some(sub)
     case _ => None
-  }
-}
-
-object MUnion {
-  val path = ModExp.munion
-
-  def apply(morphs: List[Term]): Term = morphs match {
-    case Nil => Morph.empty
-    case hd :: Nil => hd
-    case hd :: tl => OMA(OMID(this.path), morphs)
-  }
-
-  def unapply(t: Term): Option[List[Term]] = t match {
-    case OMA(OMID(this.path), morphs) if morphs.forall(_.isInstanceOf[Term]) => Some(morphs.asInstanceOf[List[Term]])
-    case _ => None
-  }
-
-  /** applies associativity of union by merging nested MUnion */
-  def associate(m: Term): List[Term] = m match {
-    case MUnion(ms) => ms flatMap associate
-    case _ => List(m)
   }
 }

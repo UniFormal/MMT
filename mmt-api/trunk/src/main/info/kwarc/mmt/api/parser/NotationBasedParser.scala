@@ -24,6 +24,7 @@ class NotationBasedParser extends ObjectParser {
 
   def isApplicable(format: String): Boolean = format == "mmt"
 
+  /** set by every call to appy, global for convenience */
   private lazy val prag = controller.pragmatic
 
   /**
@@ -131,7 +132,7 @@ class NotationBasedParser extends ObjectParser {
   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): ParseResult = {
     implicit val puI = pu
     //gathering notations and lexer extensions in scope
-    val (parsing, lexing) = getRules(pu.context)
+    val (parsing, lexing, _) = getRules(pu.context)
     val notations = tableNotations(parsing)
     Variables.reset()
     log("parsing: " + pu.term)
@@ -139,13 +140,12 @@ class NotationBasedParser extends ObjectParser {
     logGroup {
       notations.foreach(n => log(n.toString))
     }
-    val escMan = new EscapeManager(controller.extman.lexerExtensions ::: lexing)
+    val escMan = new EscapeManager(lexing)
     val tl = TokenList(pu.term, escMan, pu.source.region.start)
-    if (tl.getTokens.isEmpty) {
+    val result = if (tl.getTokens.isEmpty) {
       makeError("no tokens found: " + pu.term, pu.source.region)
       DefaultObjectParser(pu)
-    }
-    else {
+    } else {
       //scanning
       val sc = new Scanner(tl, pu.top, controller.report)
       // scan once with the top notation and make sure it matches the whole input
@@ -182,10 +182,11 @@ class NotationBasedParser extends ObjectParser {
         ParseResult(unk, free, tm)
       //}
     }
+    result
   }
 
   /** auxiliary function to collect all lexing and parsing rules in a given context */
-  private def getRules(context: Context): (List[ParsingRule], List[LexerExtension]) = {
+  private def getRules(context: Context): (List[ParsingRule], List[LexerExtension], List[NotationExtension]) = {
     val support = context.getIncludes
     //TODO we can also collect notations attached to variables
     val visible = support.flatMap {p =>
@@ -222,14 +223,21 @@ class NotationBasedParser extends ObjectParser {
         (app ::: unapp).map(n => ParsingRule(c.path, c.alternativeNames, n))
       case _ => Nil
     }
-    val les = decls.flatMap {
+    var les: List[LexerExtension] = Nil
+    var notExts: List[NotationExtension] = Nil
+    decls.foreach {
       case r: RuleConstant => r.df match {
-        case rt: uom.RealizedType => rt.lexerExtension.toList
-        case _ => Nil
+        case ne: NotationExtension =>
+          notExts ::= ne
+        case le: LexerExtension =>
+          les ::= le
+        case rt: uom.RealizedType =>
+          rt.lexerExtension.foreach {les ::= _}
+        case _ =>
       }
-      case _ => Nil
+      case _ =>
     }
-    (nots, les)
+    (nots, les, notExts)
   }
 
   /** true if n may be the name of a free variable, see [[ParseResult]]

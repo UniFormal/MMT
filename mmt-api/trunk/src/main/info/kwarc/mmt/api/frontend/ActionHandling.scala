@@ -64,7 +64,7 @@ trait ActionHandling {self: Controller =>
           case AddExtension(c, args) =>
             extman.addExtension(c, args)
           case AddMWS(uri) =>
-            extman.mws = Some(new MathWebSearch(uri.toURL))
+            extman.addExtension(new MathWebSearch(uri.toURL))
           case OAFInit(path) =>
             getOAFOrError.init(path)
           case OAFClone(path) =>

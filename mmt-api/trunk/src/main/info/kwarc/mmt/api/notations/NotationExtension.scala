@@ -151,10 +151,8 @@ case class PragmaticTerm(op: GlobalName, subs: Substitution, con: Context, args:
  *  
  *  It is returned by a FixityParser and used in a TextNotation
  */
-abstract class NotationExtension {
+abstract class NotationExtension extends Rule {
    def priority: Int
-   /** this can strictify notations for this meta-level */
-   def applicableLevel: Option[MPath]
    def isApplicable(t: Term): Boolean
    /** called to construct a term after a notation produced by this was used for parsing */
    def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
@@ -167,7 +165,6 @@ abstract class NotationExtension {
 /** the standard mixfix notation for a list of [[Marker]]s */
 object MixfixNotation extends NotationExtension {
    def priority = 0
-   def applicableLevel = None
    def isApplicable(t: Term) = true
    def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
       (implicit unknown: () => Term) = ComplexTerm(op, subs, con, args)
@@ -197,9 +194,8 @@ case class HOAS(apply: GlobalName, bind: GlobalName, typeAtt: GlobalName)
  * 
  * assumption: HOAS notations do not have arguments before context
  */
-class HOASNotation(val language: MPath, val hoas: HOAS) extends NotationExtension {
+class HOASNotation(val hoas: HOAS) extends NotationExtension {
    def priority = 1
-   def applicableLevel = Some(language)
    def isApplicable(t: Term) = t.head match {
       case Some(h) => List(hoas.apply, hoas.typeAtt) contains h
       case None => false
@@ -270,9 +266,8 @@ class HOASNotation(val language: MPath, val hoas: HOAS) extends NotationExtensio
  * 
  * assumption: notations give meta-arguments as arguments before context  
  */
-class NestedHOASNotation(language: MPath, obj: HOAS, meta: HOAS) extends NotationExtension {
+class NestedHOASNotation(obj: HOAS, meta: HOAS) extends NotationExtension {
    def priority = 2
-   def applicableLevel = Some(language)
    def isApplicable(t: Term) = t match {
       case OMA(OMS(meta.apply), OMS(obj.apply) :: _) => true
       case _ => false

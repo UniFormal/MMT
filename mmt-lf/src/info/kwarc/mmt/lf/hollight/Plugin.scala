@@ -9,6 +9,7 @@ class Plugin extends frontend.Plugin {
    val dependencies = List("info.kwarc.mmt.lf.Plugin")
    override def start(args: List[String]) {
       val em = controller.extman
-      em.notationExtensions ::= new notations.NestedHOASNotation(HOLLight.logic, HOLLight.hoas, LF.hoas)
    }
 }
+
+object HOLLightHOAS extends notations.NestedHOASNotation(HOLLight.hoas, LF.hoas)
