@@ -12,6 +12,7 @@ import info.kwarc.mmt.lf._
  * This rule works for any universe U
  */
 object PiIntroduction extends BackwardInvertible {
+   val head = Pi.path
    val priority = 5
    def apply(blackboard: MMTBlackboard, goal: Goal) = goal.conc match {
       case Pi(n,a,b) =>
@@ -33,6 +34,7 @@ object PiIntroduction extends BackwardInvertible {
  * This rule replace ?'s in the result with their terms if they can be inferred through unification.
  */
 object BackwardPiElimination extends BackwardSearch {
+   val head = Pi.path
    val priority = 3
 
    private object UnnamedArgument {
@@ -197,6 +199,7 @@ object BackwardPiElimination extends BackwardSearch {
 }
 
 object ForwardPiElimination extends ForwardSearch {
+   val head = Pi.path
    val priority = 0
 
    private var factSection:FactSection= null
@@ -298,6 +301,7 @@ object ForwardPiElimination extends ForwardSearch {
 }
 
 object TermGeneration extends ForwardSearch {
+   val head = Pi.path
    val priority = 0
 
    //def respond()
@@ -356,10 +360,11 @@ object TermGeneration extends ForwardSearch {
 }
 
 
-class TransitivityGeneration(rel: GlobalName, ded: GlobalName) extends ForwardSearch{
+class TransitivityGeneration(rel: GlobalName, ded: GlobalName) extends ForwardSearch {
 
    val Ded = new UnaryLFConstantScala(ded.module, ded.name.toString)
    val Rel = new BinaryLFConstantScala(rel.module, rel.name.toString)
+   val head = Pi.path
    val priority = 0
 
    def generate(blackboard: MMTBlackboard, interactive: Boolean) = {
