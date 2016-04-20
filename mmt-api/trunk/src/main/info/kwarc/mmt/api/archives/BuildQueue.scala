@@ -405,8 +405,13 @@ class BuildQueue extends BuildManager {
   }
 
   def getQueueInfo: JSON = synchronized {
+    val qSize = queued.size
     val iter = queued.iterator.asScala
-    val q = currentQueueTask.toList.map(q => JSONString("running: " + q.toJString)) ++ iter.toList.map(_.toJson)
+    val num = 48
+    val firsts = (if (qSize > num + 12) iter.take(num) else iter).toList.map(_.toJson)
+    val hasMore = iter.hasNext
+    val rest = if (hasMore) firsts :+ JSONString("and " + (qSize - num) + " more ...") else firsts
+    val q = currentQueueTask.toList.map(q => JSONString("running: " + q.toJString)) ++ rest
     val bs = blocked.map(_.toJson)
     val fs = finishedBuilt.map {
       case (d, r) =>

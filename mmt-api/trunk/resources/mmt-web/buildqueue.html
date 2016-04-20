@@ -14,9 +14,10 @@
         (<a href="https://github.com/KWARC/MMT/issues/new?title=buildqueue">report issues here</a>)
         (<a href="https://github.com/KWARC/MMT/wiki/Build-Queue-Help">get help</a>)
     </p>
-    <p>refresh rate:
-    <input type="number" min="0" max="10000" ng-click="stopRepeat(); repeat()" ng-model="refreshRate"/>
-        queue length {{queue.queue.length}}</p>
+    <p>refresh rate (secs):
+    <input type="number" min="1" max="1000" ng-click="stopRepeat(); repeat()" ng-model="refreshRate"/>
+    </p>
+    <p>queue length {{queue.queue.length}}</p>
     queue (go to <a href="#blocked">blocked</a>) (go to <a href="#finished">finished</a>)
     <ul>
         <li ng-repeat="e in queue.queue">{{e}}</li>
