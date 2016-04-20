@@ -8,6 +8,7 @@ import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath}
 
 import scala.collection.mutable
+import scala.util.Try
 
 case class Consthash(name:GlobalName, hash: List[Any], pars: List[GlobalName],
                      isProp: Boolean, optDef : Option[(Int,List[GlobalName])]) {
@@ -50,6 +51,14 @@ class Consthasher(controller:Controller,
                  ) {
 
   private var theories : scala.collection.mutable.HashMap[MPath,OpenTheoryhash] = mutable.HashMap[MPath,OpenTheoryhash]()
+  private val translator = controller.extman.get(classOf[Translator]).headOption.getOrElse {
+    val a = new Translator
+    controller.extman.addExtension(a)
+    a
+  }
+  private val translations = alignments.map(translator.fromAlignment) collect {
+    case Some(tr) => tr
+  }
 
   private class OpenTheoryhash(p : MPath) extends Theoryhash(p) {
     def addConstant(c : Consthash) = consts::=c
@@ -90,10 +99,10 @@ class Consthasher(controller:Controller,
     var pars : List[GlobalName] = Nil
 
     def traverse(t: Term)(implicit vars : List[LocalName]) : List[Int] = {
-      val al = alignments.find(_.applicable(t))
-      val allist = al.map(a => List(a.from.mmturi,a.to.mmturi)).getOrElse(Nil)
+      val al = translations.find(_.isApplicable(t))
+      val allist = al.map(a => List(a.from,a.to)).getOrElse(Nil)
       if (judgments._1.exists(p => allist contains p) || judgments._2.exists(p => allist contains p)) isAxiom = true
-      al.map(a => a.apply(t)).getOrElse(t) match {
+      al.map(a => a.apply(t).head).getOrElse(t) match {
         case OMV(name) =>
           List(0, 2 * vars.indexOf(name))
         case OMS(path) =>

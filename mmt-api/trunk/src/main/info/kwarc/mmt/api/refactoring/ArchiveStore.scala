@@ -1,0 +1,154 @@
+package info.kwarc.mmt.api.refactoring
+
+import info.kwarc.mmt.api.{DPath, GlobalName, MPath, Path}
+import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.frontend.Extension
+import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.ontology.{ESetResult, IsTheory, Paths}
+import info.kwarc.mmt.api.utils.FilePath
+
+import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
+
+abstract class FullArchive {
+  val archive : Archive
+  require(archive.ns.isDefined)
+  val path = archive.ns.get
+  val name = archive.id
+
+  def declares(p : Path) : Boolean
+  def read : Unit
+}
+
+class ArchiveStore extends Extension {
+  override def logPrefix = "ArchiveStore"
+
+  private case class InternalFullArchive(archive : Archive) extends FullArchive {
+    private var contains : List[MPath] = Nil
+    private var isread = false
+    private var readfoundation = false
+    private var foundations : List[DeclaredTheory] = Nil
+
+    def read = {
+      group {
+        if (!readfoundation) readfounds
+        log("Read relational " + name + "...")
+        archive.readRelational(FilePath(""), controller, "rel")
+        log("Loading Theories...")
+        val theories = controller.evaluator.evaluate(Paths(IsTheory)).asInstanceOf[ESetResult].h.view.flatten.toList.map(s =>
+          Path.parse(s.toString))
+        logGroup {
+          log("Namespace: " + path)
+          contains = theories.filter(path <= _).collect {
+            case t:MPath => t
+          }.distinct
+          log("Theories: ")
+          logGroup {
+            contains.foreach(t => log(" - " + t.toString.drop(archive.ns.get.toString.length)))
+          }
+        }
+        isread = true
+      }
+    }
+
+    def group[A](f : => A) : A = {
+      log("Archive " + name)
+      logGroup {f}
+    }
+
+    private def readfounds: Unit = {
+      val fnd = Try(controller.get(archive.foundation.get).asInstanceOf[DeclaredTheory]).map(Some(_)).getOrElse(None)
+      log("Foundation: " + fnd.map(_.path.toString).getOrElse("None"))
+
+      foundations = fnd.map(flattened).getOrElse(Nil).distinct
+      /*
+      try { fnd.foreach(controller.simplifier.apply(_)) } catch {
+        case e : Exception =>
+      }
+      foundations = fnd.map(t => Success(t) :: t.getIncludes.map(p => Try(controller.get(p).asInstanceOf[DeclaredTheory]))).getOrElse(Nil).collect{
+        case Success(t) => t
+      }
+      */
+      if (fnd.isDefined) log("Implied: " + foundations.tail.map(_.name.toString).mkString(", "))
+      readfoundation = true
+    }
+
+    def declares(p : Path) : Boolean = p match {
+      case d:DPath =>
+        path <= d
+      case m : MPath =>
+        path <= m || {
+          if(!readfoundation) group { readfounds }
+          foundations.exists(t => t.path == m)
+        }
+      case s : GlobalName =>
+        declares(s.module)
+    }
+  }
+
+
+  private val stored : mutable.HashMap[String,FullArchive] =  mutable.HashMap()
+
+  // partially mirrors alignmentfinder; TODO clean up
+
+  private val flatteneds : mutable.HashMap[MPath,List[DeclaredTheory]] = mutable.HashMap()
+
+  private def flattened(th : DeclaredTheory) : List[DeclaredTheory] = flatteneds.getOrElse(th.path,{
+    //Try(controller.simplifier.flatten(th))
+    val theories = //th ::
+      th.getIncludes.map(p => Try(controller.get(p).asInstanceOf[DeclaredTheory]))
+    val flats = theories.map({
+      case Success(t) => Try(flattened(t))
+      case Failure(e) => Failure(e)
+    })
+    val successes = flats.collect {
+      case Success(t) => t
+    }.flatten.distinct
+    flatteneds += ((th.path,th :: successes))
+    th :: successes
+  })
+
+  override def start(args: List[String]) = Try {
+    val archs = controller.backend.getArchives
+    log("Archives found: " + archs.map(_.id).mkString(","))
+    log("Reading archives:")
+    logGroup {
+      archs foreach { a =>
+        log(a.id + "...")
+        logGroup {
+          if (a.ns.isDefined) {
+            log("Namespace: " + a.ns.get)
+            stored += ((a.id, InternalFullArchive(a)))
+          } else {
+            log("No namespace given")
+          }
+        }
+      }
+    }
+  }
+
+  def getArchive(a : Archive) : Option[FullArchive] = stored.get(a.id)
+  def getArchive(s : String) : Option[FullArchive] = stored.get(s)
+  def getArchives : List[String] = stored.keys.toList
+
+  def find(c : Path) : Option[FullArchive] = stored.find(p => p._2.declares(c)).map(_._2)
+  def find(ls : List[GlobalName]) : Option[FullArchive] = stored.find(a => ls.forall(a._2.declares)).map(_._2)
+  def find(t : Term) : Option[FullArchive] = find(ArchiveStore.getSymbols(t))
+}
+
+object ArchiveStore {
+  def getSymbols(t : Term) : List[GlobalName] = {
+    var symbols : List[GlobalName] = Nil
+    object traverser extends StatelessTraverser {
+      def traverse(t:Term)(implicit con : Context, init : State) = t match {
+        case OMS(p) =>
+          symbols ::= p
+          t
+        case _ => Traverser(this,t)
+      }
+    }
+    traverser(t,())
+    symbols
+  }
+}

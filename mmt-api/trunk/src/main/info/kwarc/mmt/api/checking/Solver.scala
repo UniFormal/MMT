@@ -525,7 +525,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       case _:OMID | _:OMV | _:OMLITTrait => tm
       case ComplexTerm(op, subs, cont, args) =>
          val rOpt = rules.getFirst(classOf[ComputationRule], op)
-         rOpt flatMap {rule => rule(this)(tm, false)} match {
+         rOpt flatMap {rule =>
+           history += "Applying ComputationRule " + rOpt.get.toString
+           rule(this)(tm, false)
+         } match {
             case Some(tmS) =>
                log("simplified: " + tm + " ~~> " + tmS)
                history += "simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS)
@@ -554,6 +557,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             // use first applicable rule
             rOpt foreach {rule =>
                try {
+                 history += "Applying ComputationRule " + rule.toString
                  val ret =rule(this)(tm, false)
                  ret match {
                    case Some(tmS) =>
@@ -690,6 +694,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
            case _ => limitedSimplify(tp,rules.get(classOf[TypingRule])) match {
              case (tpS, Some(rule)) =>
                try {
+                 history += "Applying TypingRule " + rule.toString
                  rule(this)(tm, tpS)
                } catch {case TypingRule.SwitchToInference =>
                  checkByInference(tpS)
@@ -753,6 +758,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          limitedSimplify(tp,rules.get(classOf[TypingRule])) match {
            case (tpS, Some(rule)) =>
              try {
+                history += "Applying TypingRule " + rule.toString
                 rule(this)(tm, tpS)
              } catch {case TypingRule.SwitchToInference =>
                 checkByInference(tpS)
@@ -829,7 +835,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               val (tmS, ruleOpt) = limitedSimplify(tm, activerules)
               ruleOpt match {
                  case Some(rule) =>
-                    history += ("applying rule for " + rule.head.name.toString)
+                    history += ("Applying InferenceRule " + rule.toString)
                     haveresult = true
                     ret = try {rule(this)(tmS, covered)} catch {
                        case t : Exception if t==RuleNotApplicable =>
@@ -902,7 +908,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           haveresult = true
           rOpt match {
             case Some(rule) =>
-              history += ("applying rule for " + rule.head.name.toString)
+              history += ("Applying SubtypingRule " + rule.toString)
               (try { rule(this)(tp1S,tp2S)} catch {
                 case t : Exception if t==RuleNotApplicable =>
                   history+="rule not applicable!"
@@ -935,7 +941,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private def checkUniverse(j : Universe)(implicit history: History): Boolean = {
      implicit val stack = j.stack
      limitedSimplify(j.univ, rules.get(classOf[UniverseRule])) match {
-        case (uS, Some(rule)) => rule(this)(uS)
+        case (uS, Some(rule)) =>
+          history += "Applying UniverseRule " + rule.toString
+          rule(this)(uS)
         case (uS, None) => delay(Universe(stack, uS))
      }
    }
@@ -952,7 +960,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private def checkInhabitable(j : Inhabitable)(implicit history: History): Boolean = {
      implicit val stack = j.stack
      limitedSimplify(j.wfo, rules.get(classOf[InhabitableRule])) match {
-        case (uS, Some(rule)) => rule(this)(uS)
+        case (uS, Some(rule)) =>
+          history += "Applying InhabitableRule " + rule.toString
+          rule(this)(uS)
         case (uS, None) =>
            inferType(j.wfo)(stack, history + "inferring universe") match {
              case None =>
@@ -995,6 +1005,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       // 2) find a TermBasedEqualityRule (based on the heads of the terms)
       rules.get(classOf[TermBasedEqualityRule]).filter(r => r.applicable(tm1,tm2)) foreach {rule =>
          // we apply the first applicable rule
+         history += "Applying TermBasedEqualityRule " + rule.toString
          val contOpt = rule(this)(tm1,tm2,tpOpt)
          if (contOpt.isDefined) {
             return contOpt.get.apply
@@ -1014,7 +1025,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       // try to simplify the type until an equality rule is applicable
       val tbEqRules = rules.get(classOf[TypeBasedEqualityRule])
       safeSimplifyUntil(tp)(t => tbEqRules.find(_.applicable(t))) match {
-         case (tpS, Some(rule)) => 
+         case (tpS, Some(rule)) =>
+            history += "Applying TypeBasedEqualityRule " + rule.toString
             rule(this)(tm1S, tm2S, tpS) match {
                case Some(b) => b
                case None =>
@@ -1037,6 +1049,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       others foreach {t2 =>
          eqRules foreach {r =>
             if (r.applicable(t1,t2)) {
+               history += "Applying TermBasedEqualityRule " + r.toString
                val contOpt = r(this)(t1, t2, Some(tp))
                if (contOpt.isDefined) return contOpt
             }
@@ -1184,7 +1197,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             Solver.findSolvableVariable(rules.get(classOf[SolutionRule]), solution, j.tm1) match {
             case Some((rs, m)) =>
                rs.head(j) match {
-                  case Some((j2, msg)) => solveEquality(j2)(j2.stack, history + msg)
+                  case Some((j2, msg)) =>
+                    history += "Using Solution rule " + rs.head.getClass.toString
+                    solveEquality(j2)(j2.stack, (history + msg).branch)
                   case None => false
                }
             case _ => false
@@ -1219,11 +1234,14 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          //apply a foundation-dependent solving rule selected by the head of tm1
          case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tp.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
            val allrules =  rules.getByHead(classOf[TypeSolutionRule], h)
-           allrules.foreach(rule => Try(rule(this)(tm, tp)) match {
-                 case scala.util.Success(b:Boolean) => return b
+           allrules.foreach{rule =>
+             history += "Applying TypeSolutionRule " + rule.toString
+             Try(rule(this)(tm, tp)) match {
+                 case scala.util.Success(b:Boolean) =>
+                   return b
                  case Failure(RuleNotApplicable) =>
                  case Failure(t : Throwable) => throw t
-               })
+               }}
            false
          case _ => false
       }
@@ -1282,12 +1300,14 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          case (vd @ VarDecl(x, Some(tp), None, _), i) =>
             implicit val con : Context = solution.take(i)
             limitedSimplify(tp, rules.get(classOf[ForwardSolutionRule])) match {
-               case (tpS, Some(rule)) if rule.priority == priority => rule(this)(vd)
+               case (tpS, Some(rule)) if rule.priority == priority =>
+                 history += "Applying ForwardSolutionRule " + rule.toString
+                 rule(this)(vd)
                case _ => false
             }
          case _ => false
       }
-      results.exists(_ == true)
+      results.contains(true)
    }
 }
 
