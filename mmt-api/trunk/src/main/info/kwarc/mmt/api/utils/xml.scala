@@ -7,13 +7,13 @@ object xml {
       val attsS = atts.map(a => " " + a._1 + "=\"" + Utility.escape(a._2) + "\"").mkString("")
       "<" + label + attsS + (if (close) "/" else "") + ">"
    }
-   def closeTag(label: String) = "</" + label + ">" 
+   def closeTag(label: String) = "</" + label + ">"
    def element(label: String, atts: List[(String,String)], body: String) = {
       openTag(label, atts) + Utility.escape(body) + closeTag(label)
    }
 
-   case class XMLError(s: String) extends java.lang.Throwable(s)
-   
+   case class XMLError(s: String) extends info.kwarc.mmt.api.Error(s)
+
    /** reads an XML file and returns the first Node in it */
    def readFile(file : File) : scala.xml.Node = {
       val src = Source.fromFile(file.toJava, "utf-8") // utf-8 forced due to error with default codec
@@ -29,7 +29,7 @@ object xml {
    }
 
    /** writes an XML Node to a file
-    *  
+    *
     * overwrites existing files, creates directories if necessary
     */
    def writeFile(N : scala.xml.Node, file : File) {
@@ -38,7 +38,7 @@ object xml {
       out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "\n" + N.toString)
       out.close
    }
-  
+
    /** returns attribute value, "" if attribute not present */
    def attr(N : Node, att : String) : String = {
       val l = N.attribute(att).getOrElse(Nil).toList
@@ -79,15 +79,15 @@ object xml {
           (newnode, value)
       }
    }
-   
-   /** adds either key="value" or <key>value</key> to a node, depending on whether the value is a string or a node */ 
+
+   /** adds either key="value" or <key>value</key> to a node, depending on whether the value is a string or a node */
    def addAttrOrChild(n: Elem, key: String, value: Union[String,Node]) = value match {
       case Left(s) => addAttr(n, key, s)
       case Right(c) =>
-        val wc = Elem(null, key, Null, n.scope, true, c) 
+        val wc = Elem(null, key, Null, n.scope, true, c)
         n.copy(child = wc ++ n.child)
    }
- 
+
    /** removes the child with label "label" from "node" (if any), returns the remaining node and that child */
    def splitOffChild(node: Node, label : String) : (Node, Option[Node]) = node match {
        case scala.xml.Elem(p,l,a,s,cs @ _*) =>
@@ -102,7 +102,7 @@ object xml {
            (scala.xml.Elem(p,l,a,s,true,cs2 : _*), n)
        case n => (n, None)
    }
-   
+
    /** returns the list of namespaces of a node */
    def namespaces(nb: NamespaceBinding, seen: List[String] = Nil): List[(String,String)] = nb match {
       case TopScope => Nil
@@ -115,15 +115,15 @@ object xml {
             List((pNonNull,u))
          thisOne ::: namespaces(parent, pNonNull :: seen)
    }
-   
+
    /** removes empty direct children of a node */
    def trimOneLevel(n : Node) : Node = n match {
-     case e : Elem => 
+     case e : Elem =>
        val nonWSchild = e.child.filter(c => !Utility.trimProper(c).isEmpty)
        e.copy(child = nonWSchild)
      case _ => n
    }
-   
+
    // decode all occurrences of %HH
    def decodeURI(s: String) : String = {
       var in = s
@@ -163,7 +163,7 @@ object xml {
       }
       out
    }
-   
+
    def post(url: java.net.URL, input: Node) : Node = {
       val conn = url.openConnection()// returns java.net.HttpURLConnection if url is http
       conn.setDoOutput(true);
@@ -183,7 +183,7 @@ object xml {
       src.asInstanceOf[scala.io.BufferedSource].close
       output(0)
    }
-      
+
    /** common namespaces */
    def namespace(ns : String) : String = {
       ns match {
