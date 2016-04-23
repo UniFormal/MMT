@@ -50,7 +50,8 @@ abstract class RealizedOperator(op: GlobalName) extends BreadthRule(op) {
    private def applicable(args: List[Term]): Boolean = {
       if (args.length != argTypes.length) throw ParseError("")
       (args zip argTypes).forall {
-         case (l: OMLIT, lt) => l.rt == lt
+         //case (l: OMLIT, lt) => l.rt == lt
+         case (l,lt) if lt.unapply(l).isDefined => true
          case _ => false
       }
    }

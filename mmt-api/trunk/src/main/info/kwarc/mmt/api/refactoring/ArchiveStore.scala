@@ -130,11 +130,11 @@ class ArchiveStore extends Extension {
 
   def getArchive(a : Archive) : Option[FullArchive] = stored.get(a.id)
   def getArchive(s : String) : Option[FullArchive] = stored.get(s)
-  def getArchives : List[String] = stored.keys.toList
+  def getArchives : List[FullArchive] = stored.values.toList
 
-  def find(c : Path) : Option[FullArchive] = stored.find(p => p._2.declares(c)).map(_._2)
-  def find(ls : List[GlobalName]) : Option[FullArchive] = stored.find(a => ls.forall(a._2.declares)).map(_._2)
-  def find(t : Term) : Option[FullArchive] = find(ArchiveStore.getSymbols(t))
+  def find(c : Path) : List[FullArchive] = stored.filter(p => p._2.declares(c)).toList.map(_._2)
+  def find(ls : List[GlobalName]) : List[FullArchive] = stored.filter(a => ls.forall(a._2.declares)).toList.map(_._2)
+  def find(t : Term) : List[FullArchive] = find(ArchiveStore.getSymbols(t))
 }
 
 object ArchiveStore {

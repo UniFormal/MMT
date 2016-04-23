@@ -56,9 +56,7 @@ class Consthasher(controller:Controller,
     controller.extman.addExtension(a)
     a
   }
-  private val translations = alignments.map(translator.fromAlignment) collect {
-    case Some(tr) => tr
-  }
+  private val translations = alignments.flatMap(translator.fromAlignment)
 
   private class OpenTheoryhash(p : MPath) extends Theoryhash(p) {
     def addConstant(c : Consthash) = consts::=c
@@ -99,7 +97,7 @@ class Consthasher(controller:Controller,
     var pars : List[GlobalName] = Nil
 
     def traverse(t: Term)(implicit vars : List[LocalName]) : List[Int] = {
-      val al = translations.find(_.isApplicable(t))
+      val al = translations.find(_.isApplicable(t).isDefined)
       val allist = al.map(a => List(a.from,a.to)).getOrElse(Nil)
       if (judgments._1.exists(p => allist contains p) || judgments._2.exists(p => allist contains p)) isAxiom = true
       al.map(a => a.apply(t).head).getOrElse(t) match {

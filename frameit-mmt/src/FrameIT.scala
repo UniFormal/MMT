@@ -1,10 +1,10 @@
 package info.kwarc.mmt.frameit
 
 import info.kwarc.mmt.api._
-
 import uom._
 import web._
 import frontend._
+import info.kwarc.mmt.api.checking._
 import objects._
 import symbols._
 import modules._
@@ -13,9 +13,9 @@ import scala.collection._
 import scala.collection.immutable._
 import tiscaf._
 
-case class FrameitError(val text : String) extends Error(text)
+case class FrameitError(text : String) extends Error(text)
 
-class FrameViewer(controller : Controller){
+class FrameViewer extends Extension {
   
   def pushout(cpath : CPath, vpaths : MPath*) : Term = {
      val comp = controller.get(cpath.parent) match {
@@ -47,9 +47,13 @@ class FrameViewer(controller : Controller){
        case OMMOD(p) =>
          var rules = new HashMap[Path,Term]
          v.getDeclarations collect {
-           case c : Constant =>
-             c.df.foreach {t =>
-               rules += (p ? c.name -> t)
+           case c: Constant =>
+             c.df.foreach { t =>
+               c.name match {
+                 case LocalName(ComplexStep(path: MPath) :: ln) =>
+                   rules += (p ? ln -> t)
+                 case _ =>
+               }
              }
          }
          rules
@@ -74,9 +78,13 @@ class FrameViewer(controller : Controller){
 }
 
 class FrameitPlugin extends ServerExtension("frameit") with Logger {
-  
+
   override val logPrefix = "frameit"
-  val fv = new FrameViewer(controller)
+  lazy val fv = controller.extman.get(classOf[FrameViewer]).headOption.getOrElse {
+    val a = new FrameViewer
+    controller.extman.addExtension(a)
+    a
+  }//new FrameViewer(controller)
     
    /** Server */
    def apply(uriComps: List[String], query : String, body : web.Body): HLet = {
@@ -91,7 +99,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
          log(e.shortMsg)
          errorResponse(e.shortMsg)
        case e : Exception => 
-         errorResponse("Exception occured : " + e.getMessage())
+         errorResponse("Exception occured : " + e.getMessage)
      }
    }
    
@@ -132,13 +140,43 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
        TextResponse(tmS).aact(tk)
      } catch {
        case e : Error => log(e.shortMsg);errorResponse(e.shortMsg).aact(tk)
-       case e : Exception => errorResponse("Exception occured : " + e.getMessage()).aact(tk)
+       case e : Exception => errorResponse("Exception occured : " + e.getMessage).aact(tk)
      }
    }
    
    private def simplify(t : Term, home : MPath) : Term = {
      log("Before: " + t.toString)
-     val tS = controller.simplifier(t, objects.Context(VarDecl(OMV.anonymous, None, Some(OMMOD(home)), None)))
+     //val solver = new Solver(controller,cu,rules)
+     val th = controller.get(home) match {
+       case thx : DeclaredTheory => thx
+       case _ => throw FrameitError("No DeclaredTheory: " + home)
+     }
+     controller.simplifier.flatten(th)
+     val con = (objects.Context(home) :: th.getIncludes.map(p => objects.Context(p))).flatten
+     //val rules = RuleSet.collectRules(controller,con)
+     //println(rules.getAll.toList)
+     //val solver = new Solver(controller,CheckingUnit.byInference(None,con,t),rules)
+     val traverser = new StatelessTraverser {
+       override def traverse(t: Term)(implicit con: Context, init: State): Term = t match {
+         case tm@OMS(p) =>
+           controller.get(p) match {
+             case const : FinalConstant if const.df.isDefined =>
+               Traverser(this,const.df.get)
+             case _ => tm
+           }
+         case _ => Traverser(this,t)
+       }
+     }
+     var tS = traverser(t,())
+     /*
+     tS = solver.safeSimplifyUntil(tS)({
+       case tm : OMLIT => Some(tm)
+       case tm : UnknownOMLIT => Some(tm)
+       case _ => None
+     })(objects.Stack(con),NoHistory)._1
+     */
+     //val tS = solver.forcesimplify(t)(objects.Stack(con),NoHistory)
+     tS = controller.simplifier(tS,con)//controller.simplifier(t, objects.Context(home))
      log("After: " + tS.toString)
      tS
    }
@@ -155,7 +193,8 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
   
   /**
    * A text response that the server sends back to the browser
-   * @param text the message that is sent in the HTTP body
+    *
+    * @param text the message that is sent in the HTTP body
    */
   private def TextResponse(text: String): HLet = new HSimpleLet {    
     def act(tk: HTalk) {
@@ -164,6 +203,70 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
         .setContentType("text/plain; charset=utf8")
         .write(out)
     }
+  }
+
+  def run(solthS : String, vpathS : String) : String = {
+    /*
+    val cpath = Path.parse(cpathS) match {
+      case c : CPath => c
+      case gn : GlobalName => CPath(gn, DefComponent) //assuming definition
+      case p => throw FrameitError("Expected CPath or Global Name found " + p)
+    }
+    */
+    val sol = Path.parse(solthS) match {
+      case m : MPath => controller.get(m) match {
+        case t : DeclaredTheory => t
+        case _ => throw FrameitError("DeclaredTheory expected")
+      }
+      case _ => throw FrameitError("DeclaredTheory expected")
+    }
+    val vpath = Path.parse(vpathS) match {
+      case vp : MPath => vp
+      case p => throw FrameitError("Expected MPath found " + p)
+    }
+    val view = controller.get(vpath) match {
+      case d : DeclaredView => d
+      case _ => throw FrameitError("expected view")
+    }
+    val dom = view.from match {
+      case OMMOD(p) => controller.get(p) match {
+        case th : DeclaredTheory => th
+        case _ => throw FrameitError("DeclaredTheory expected")
+      }
+      case _ => throw FrameitError("Expected MPath found " + view.from)
+    }
+    val cod = view.to match {
+      case OMMOD(p) => controller.get(p) match {
+        case th : DeclaredTheory => th
+        case _ => throw FrameitError("DeclaredTheory expected")
+      }
+      case _ => throw FrameitError("Expected MPath found " + view.from)
+    }
+
+    val checker = new MMTStructureChecker(new RuleBasedChecker)
+    controller.extman.addExtension(checker)
+    implicit val ce : CheckingEnvironment = new CheckingEnvironment(ErrorThrower,RelationHandler.ignore)
+    controller.simplifier(view)
+    controller.simplifier(sol)
+    controller.simplifier(dom)
+    controller.simplifier(cod)
+    //controller.simplifier.flatten(th)
+    checker.apply(dom)
+    checker.apply(cod)
+    checker.apply(view)
+    checker.apply(sol)
+    val istotal = dom.getConstants.forall(c => {
+      // println("Checking " + c.name)
+      view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name)
+    })
+    if(!istotal) throw FrameitError("View not total")
+    sol.getConstants.map(c => {
+      val tp = c.tp.map(x => simplify(fv.pushout(c.path $ TypeComponent, vpath), view.to.toMPath))
+      val df = c.df.map(x => simplify(fv.pushout(c.path $ DefComponent, vpath), view.to.toMPath))
+      Constant(c.home,c.name,Nil,tp,df,None)
+    }).map(_.toNode.toString).mkString("\n")
+
+    //simplify(fv.pushout(cpath, vpath), view.to.toMPath)
   }
   
 }

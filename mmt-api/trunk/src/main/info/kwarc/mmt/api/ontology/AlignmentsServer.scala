@@ -255,7 +255,7 @@ class AlignmentsServer extends ServerExtension("align") {
 
   def translate(t: Term, to: DPath) = ???
 
-  def CanTranslateTo(t: Term): List[String] = archives.getArchives
+  def CanTranslateTo(t: Term): List[String] = archives.getArchives.map(_.name)
 
   private def makeAlignment(p1: String, p2: String, pars: List[(String, String)]): Unit = {
     val argls = """\((\d+),(\d+)\)(.*)""".r

@@ -157,7 +157,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
       * @return list of matches: tuples of operator, arguments, flag signalling whether the inner term is an OMS
       */
      def matches(t: Term): List[(GlobalName, List[Term], Boolean)] = t match {
-        case controller.pragmatic.StrictOMA(strApps, p, args) => List((p, args, false))
+        case StrictOMA(strApps, p, args) => List((p, args, false))
         case OMS(p) => List((p, Nil, true))
         case l: OMLIT =>
            matchRules.flatMap {m =>
@@ -211,7 +211,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
       var insideS = inside
       var changed = false
       state.breadthRules.filter(_.head == op) foreach {rule =>
-         val ch = rule.apply(insideS)
+         val ch = rule.apply.apply(insideS)
          log("rule " + rule + ": " + ch)
          ch match {
             case NoChange =>
