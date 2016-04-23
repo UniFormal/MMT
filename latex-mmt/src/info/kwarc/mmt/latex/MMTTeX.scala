@@ -9,7 +9,9 @@ import modules._
 import documents._
 import frontend._
 import objects._
+import libraries._
 import opaque._
+
 
 import info.kwarc.mmt.stex._
 
@@ -32,6 +34,10 @@ class MMTTeX extends ShellExtension("mmttex") {
      case "sty" :: fileName :: Nil => genSty(fileName)
      case "gen" :: fileName :: Nil => genFiles(File(fileName).getAbsoluteFile)
      case "merge" :: fileName :: Nil => mergeFiles(File(fileName).getAbsoluteFile)
+     case "make" :: fileName :: Nil => 
+       val file = File(fileName).getAbsoluteFile
+       genFiles(file)
+       mergeFiles(file)
      case _ => throw LocalError("Invalid Arguments: " + args.mkString)
    }
    
@@ -132,8 +138,54 @@ class MMTTeX extends ShellExtension("mmttex") {
        }
        val tdoc = t.asDocument
        refNames foreach (tdoc.delete(_))
+       t.getDeclarations foreach {
+         case c : Constant => 
+           val thy : DeclaredTheory = cont_other.get(t.path).asInstanceOf[DeclaredTheory]
+           c.tp.map(t => c.tpC.update(TermContainer(tr(t, cont_other.library -> thy))))
+           c.df.map(t => c.dfC.update(TermContainer(tr(t, cont_other.library -> thy))))
+         case _ => //ignore
+       }
+       
      case _ => //nothing to do
    }
+   
+   object tr extends Traverser[(Library, DeclaredTheory)] {
+     def traverse(t: Term)(implicit con : Context, p : (Library, DeclaredTheory)) : Term = t match {
+       case OMV(name) if name.toPath.startsWith("mixref") => 
+         val tm = p._2.get(name) match {
+           case c : Constant => c.df.get
+         }
+         tm
+       case OMV(name) => name.toString.split("@",-1).toList match {
+         case tname :: sname :: sterm :: Nil => 
+           try {
+             val decl = if (tname == "") p._2.get(LocalName(sname)) 
+                        else  p._1.get(p._2.parent ? tname ? sname)
+             decl match {
+               case c : Constant =>  
+                 if (sterm == "") {
+                   OMS(c.path)
+                 } else {
+                   val compS :: posS = sterm.split("\\.", -1).toList
+                   val pos = Position(posS.map(_.toInt))
+                     val comp = if (compS == "type") c.tp.get else c.df.get
+                     comp.subobject(pos)._2.asInstanceOf[Term]
+                 }
+             }
+           } catch {
+             case e : Throwable => 
+               val path = if (tname == "") p._2.path ? sname 
+                          else  p._2.parent ? tname ? sname
+               OMS(path)
+           }
+         case l => 
+           Traverser(this, t)
+       }
+       case t => Traverser(this,t)
+     }
+   }
+   
+   
      
      /*
        case c : Constant if (c.name.toPath.startsWith("mixref")) => 
