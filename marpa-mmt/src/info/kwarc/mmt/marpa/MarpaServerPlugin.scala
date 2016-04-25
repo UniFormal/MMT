@@ -72,6 +72,7 @@ import java.net.URLDecoder
 import info.kwarc.mmt.api.utils._
 import scala.collection.mutable.ListBuffer
 
+
 case class PlanetaryError(val text: String) extends Error(text)
 
 class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
@@ -277,6 +278,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
       Server.JsonResponse(resp).aact(tk)
     }
   }
+  
+  
 
   def doNotationTerm(spath: GlobalName,
                      not: TextNotation,
@@ -289,11 +292,27 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 
     def getArg(i: Int): List[Term] = {
       val sArgs: List[String] = seqArgMap.getOrElse(i, argMap.get(i).toList) //should throw exception instead of Nil
-      sArgs.map(a ⇒ OMV(a))
+      sArgs.map(a => scala.xml.XML.loadString(a) match {
+        case <mn>{value}</mn> => RawNode(<cn>{value}</cn>)
+        case <mi>{value}</mi> => OMV(value.text)
+        case _ => RawNode(a)
+      })
+      /*
+       *  <mn>x</mn> => OMI(x) for integers
+       *  <mi<x</mi> => OMV(x) 
+       *  <mo>s<mo> => OMS(s.toPath) 
+       *  CML (apply/csymbol) => eventually literal OMLit(CML) or OMFOREIGN
+       */
     }
     def getVarDecl(i: Int): List[VarDecl] = {
-      val sArgs: List[String] = seqArgMap.getOrElse(i, argMap.get(i).toList) //should throw exception instead of Nil
-      sArgs.map(a ⇒ VarDecl(LocalName(a), None, None, None))
+      val sArgs: List[String] = seqVarMap.getOrElse(i, varMap.get(i).toList) //should throw exception instead of Nil
+      sArgs.map(a ⇒ scala.xml.XML.loadString(a) match {
+        case <mn>{value}</mn> => VarDecl(LocalName(value.text), None, None, None)
+        case <mi>{value}</mi> => VarDecl(LocalName(value.text), None, None, None)
+        case <mo>{value}</mo> => VarDecl(LocalName(value.text), None, None, None)
+        case _ => VarDecl(LocalName(a), None, None, None)
+      })
+      // Strip a of <mn> / <mi> / <mo>
     }
 
     val arity = not.arity

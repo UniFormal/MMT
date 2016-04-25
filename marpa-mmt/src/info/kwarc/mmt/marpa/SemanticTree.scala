@@ -99,8 +99,20 @@ object SemanticTree {
   var grammarGenerator: MarpaGrammarGenerator = null
 
   def resetTermSharingState {
-    toCMLShare = scala.collection.mutable.HashSet.empty[(String, List[(String, List[String])])] 
+    toCMLShare = scala.collection.mutable.HashSet.empty[(String, List[(String, List[String])])]
     CMLTermId = 1
+  }
+
+  def bodyToJson(b: Body): JValue = {
+    var str = java.net.URLDecoder.decode(b.asString, "UTF-8")
+    str = str.split("&")
+      .map(x ⇒ x.split("=")
+        .map(y ⇒ if (y == "false" || y == "true") y else "\"" + y + "\"")
+        .mkString(":"))
+      .mkString(",")
+    str = "{ " + str + " }"
+    println(str)
+    return parse(str)
   }
 
   def getSemanticTree: HLet = new HLet {
@@ -109,8 +121,13 @@ object SemanticTree {
       resetTermSharingState
       println("-->getSemanticTree")
       val reqBody = new Body(tk)
-      val input: String = reqBody.asString
+      val inputJSON: JValue = bodyToJson(reqBody)
+      println(inputJSON)
+      val input: String = (inputJSON \ "input").asInstanceOf[JString].values
+      termSharing = (inputJSON \ "termSharing").asInstanceOf[JBool].values
+
       println("input = " + input)
+      println("term sharing = " + termSharing.toString)
 
       val inputParses = buildSemanticTree(input)
       inputParses.treeList foreach {
@@ -142,7 +159,12 @@ object SemanticTree {
     }
   }
 
+  var termSharing = false // Sharing is turned off for testing 
+
   def createShareHrefTo(cml: String): String = {
+    if (!termSharing) {
+      return cml
+    }
     val p = """^<[^\s]+?\s*? id=\"([\d]+)\".*$""".r
     val p(idStr) = cml
     val id = idStr.toInt
@@ -234,7 +256,7 @@ object SemanticTree {
   //  JObject(List(JField(message,JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)),
   //  JField(status,JString(OK)),
   //  JField(payload,JObject(List(JField(_natarith_multiplicationP7N58,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN58A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(10), JString(%3Cmi%3Ei%3C%2Fmi%3E))), JArray(List(JInt(20), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_intarith_modP7N155,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN155A1Arg,JArray(List(JArray(List(JInt(40), JInt(10), JString(%3Cmi%3E3%3C%2Fmi%3E)))))), JField(argRuleN155A2Arg,JArray(List(JArray(List(JInt(62), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_comparith_multiplicationP7N180,JArray(List(JObject(List(JField(argRuleN180A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(10), JString(%3Cmi%3Ei%3C%2Fmi%3E))), JArray(List(JInt(20), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E)))))), JField(position,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_intarith_additionP5N143,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(72), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN143A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))), JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_realarith_additionP5N205,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(72), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN205A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))), JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_intarith_multiplicationP7N149,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN149A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(10), JString(%3Cmi%3Ei%3C%2Fmi%3E))), JArray(List(JInt(20), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_arithmetics_additionP5N124,JArray(List(JObject(List(JField(argRuleN124A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))), JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(position,JArray(List(JArray(List(JInt(0), JInt(72), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_comparith_additionP5N174,JArray(List(JObject(List(JField(argRuleN174A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))), JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(position,JArray(List(JArray(List(JInt(0), JInt(72), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_realarith_multiplicationP7N211,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN211A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(10), JString(%3Cmi%3Ei%3C%2Fmi%3E))), JArray(List(JInt(20), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_natarith_modP7N64,JArray(List(JObject(List(JField(argRuleN64A2Arg,JArray(List(JArray(List(JInt(62), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E)))))), JField(position,JArray(List(JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN64A1Arg,JArray(List(JArray(List(JInt(40), JInt(10), JString(%3Cmi%3E3%3C%2Fmi%3E))))))))))), JField(_natarith_additionP5N52,JArray(List(JObject(List(JField(argRuleN52A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))), JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(position,JArray(List(JArray(List(JInt(0), JInt(72), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_arithmetics_multiplicationP7N132,JArray(List(JObject(List(JField(argRuleN132A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(10), JString(%3Cmi%3Ei%3C%2Fmi%3E))), JArray(List(JInt(20), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E)))))), JField(position,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_ratarith_multiplicationP7N24,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN24A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(10), JString(%3Cmi%3Ei%3C%2Fmi%3E))), JArray(List(JInt(20), JInt(10), JString(%3Cmi%3E5%3C%2Fmi%3E))))))))))), JField(_ratarith_additionP5N18,JArray(List(JObject(List(JField(position,JArray(List(JArray(List(JInt(0), JInt(72), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E%3Cmo%3E%2B%3C%2Fmo%3E%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E)))))), JField(argRuleN18A1ArgSeq,JArray(List(JArray(List(JInt(0), JInt(30), JString(%3Cmi%3Ei%3C%2Fmi%3E%3Cmo%3E%E2%81%A2%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))), JArray(List(JInt(40), JInt(32), JString(%3Cmi%3E3%3C%2Fmi%3E%3Cmo%3Emod%3C%2Fmo%3E%3Cmi%3E5%3C%2Fmi%3E))))))))))))))))
-  val buildSemanticTreeMemo = scala.collection.mutable.HashMap.empty[String, Variants]
+  var buildSemanticTreeMemo = scala.collection.mutable.HashMap.empty[String, Variants]
   def buildSemanticTree(input: String): Variants = {
     val vals = buildSemanticTreeMemo
     if (vals.contains(input)) {

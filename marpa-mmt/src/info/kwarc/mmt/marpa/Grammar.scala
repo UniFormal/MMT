@@ -266,7 +266,6 @@ object Grammar {
         var text = w
         if (text == "") {
           text = " "
-
         }
         if ((text == """⁢""" || text == "⁡") //unicode
           && flag == "") { //handling the invisible unicode char used for function application
