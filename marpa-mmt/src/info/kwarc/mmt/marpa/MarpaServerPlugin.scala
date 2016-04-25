@@ -72,7 +72,6 @@ import java.net.URLDecoder
 import info.kwarc.mmt.api.utils._
 import scala.collection.mutable.ListBuffer
 
-
 case class PlanetaryError(val text: String) extends Error(text)
 
 class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
@@ -85,8 +84,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
         //Here the post request is handled
         case "getGrammar" :: _       ⇒ getGrammarResponse
         case "getContentMathML" :: _ ⇒ getContentMathML
-        case "getSemanticTree" :: _  => {
-          SemanticTree.grammarGenerator = this 
+        case "getSemanticTree" :: _ ⇒ {
+          SemanticTree.grammarGenerator = this
           SemanticTree.getSemanticTree
         }
         case _ ⇒ errorResponse("Invalid request: " + uriComps.mkString("/"),
@@ -166,12 +165,12 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
       def parseJSONtoList(arr: scala.util.parsing.json.JSONArray): List[Any] = {
         val scala.util.parsing.json.JSONArray(list) = arr
         list map {
-          case x: Int    ⇒ x
-          case x: Double ⇒ x.toInt
-          case x: Float  ⇒ x.toInt
-          case x: String => x
-          case JSONString(value) => value 
-          case x         ⇒ throw ServerError("parseJSONtoList mismatch")
+          case x: Int            ⇒ x
+          case x: Double         ⇒ x.toInt
+          case x: Float          ⇒ x.toInt
+          case x: String         ⇒ x
+          case JSONString(value) ⇒ value
+          case x                 ⇒ throw ServerError("parseJSONtoList mismatch")
         }
       }
       def parseJSONtoNestedList(arr: scala.util.parsing.json.JSONArray): List[List[Any]] = {
@@ -222,7 +221,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
           p._2 foreach (pos ⇒ {
             //Depending on key type add to one of the maps
             val start = pos(0)
-            val length = pos(1)     
+            val length = pos(1)
             println("Argument substring = " + pos(2).toString)
             var value = pos(2).toString
             println("key = " + key + " value = " + value)
@@ -278,8 +277,6 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
       Server.JsonResponse(resp).aact(tk)
     }
   }
-  
-  
 
   def doNotationTerm(spath: GlobalName,
                      not: TextNotation,
@@ -292,10 +289,14 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 
     def getArg(i: Int): List[Term] = {
       val sArgs: List[String] = seqArgMap.getOrElse(i, argMap.get(i).toList) //should throw exception instead of Nil
-      sArgs.map(a => scala.xml.XML.loadString(a) match {
-        case <mn>{value}</mn> => RawNode(<cn>{value}</cn>)
-        case <mi>{value}</mi> => OMV(value.text)
-        case _ => RawNode(a)
+      sArgs.map(a ⇒ try {
+        scala.xml.XML.loadString(a) match {
+          case <mn>{ value }</mn> ⇒ RawNode(<cn>{ value }</cn>)
+          case <mi>{ value }</mi> ⇒ OMV(value.text)
+          case _                  ⇒ RawNode(a)
+        }
+      } catch {
+        case _: Throwable ⇒ RawNode("<mrow>" + a + "</mrow>")
       })
       /*
        *  <mn>x</mn> => OMI(x) for integers
@@ -306,11 +307,13 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
     }
     def getVarDecl(i: Int): List[VarDecl] = {
       val sArgs: List[String] = seqVarMap.getOrElse(i, varMap.get(i).toList) //should throw exception instead of Nil
-      sArgs.map(a ⇒ scala.xml.XML.loadString(a) match {
-        case <mn>{value}</mn> => VarDecl(LocalName(value.text), None, None, None)
-        case <mi>{value}</mi> => VarDecl(LocalName(value.text), None, None, None)
-        case <mo>{value}</mo> => VarDecl(LocalName(value.text), None, None, None)
-        case _ => VarDecl(LocalName(a), None, None, None)
+      sArgs.map(a ⇒ try{scala.xml.XML.loadString(a) match {
+        case <mn>{ value }</mn> ⇒ VarDecl(LocalName(value.text), None, None, None)
+        case <mi>{ value }</mi> ⇒ VarDecl(LocalName(value.text), None, None, None)
+        case <mo>{ value }</mo> ⇒ VarDecl(LocalName(value.text), None, None, None)
+        case _                  ⇒ VarDecl(LocalName(a), None, None, None)
+      }} catch{
+        case _:Throwable => VarDecl(LocalName("<mrow>" + a + "</mrow>"), None, None, None)
       })
       // Strip a of <mn> / <mi> / <mo>
     }
@@ -323,9 +326,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
     val args = arity.arguments flatMap { a ⇒ getArg(a.number) }
 
     val term = ComplexTerm(spath, sub, con, args)
-//    println("subs = " + arity.subargs.size)
-//    println("con = " + arity.variables.size)
-//    println("args = " + arity.arguments.size)
+    //    println("subs = " + arity.subargs.size)
+    //    println("con = " + arity.variables.size)
+    //    println("args = " + arity.arguments.size)
     println("Term = " + term.toCML.toString + "\n")
     term
   }
