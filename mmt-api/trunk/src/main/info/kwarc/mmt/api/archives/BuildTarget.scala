@@ -42,7 +42,7 @@ case class Build(update: Update) extends BuildTargetModifier {
 }
 
 /** forces building independent of status */
-object Build extends Build(Update(Level.Force))
+object Build extends Build(Update(Level.Force, dependencyLevel = Some(Level.Force)))
 
 import AnaArgs._
 
