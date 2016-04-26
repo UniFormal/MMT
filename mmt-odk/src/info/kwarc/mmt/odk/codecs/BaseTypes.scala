@@ -1,10 +1,10 @@
 package info.kwarc.mmt.odk.codecs
 
-import info.kwarc.mmt.api.objects.{Term, OMS}
-import info.kwarc.mmt.api.uom.{StandardString, StandardInt, RealizedType}
+import info.kwarc.mmt.api.objects.{OMS, Term}
+import info.kwarc.mmt.api.uom.{RealizedType, StandardInt, StandardNat, StandardString}
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.valuebases._
-import info.kwarc.mmt.lf.{ApplySpine, Apply}
+import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import info.kwarc.mmt.odk._
 
 object TMInt extends AtomicCodec[BigInt,JSON](Codecs.standardInt, OMS(Math.int), StandardInt) {
@@ -16,6 +16,36 @@ object TMInt extends AtomicCodec[BigInt,JSON](Codecs.standardInt, OMS(Math.int),
   }
   def decodeRep(j: JSON): BigInt = j match {
     case JSONInt(i) => BigInt(i)
+    case JSONString(s) => BigInt(s)
+    case _ => throw CodecNotApplicable
+  }
+}
+
+object TMNat extends AtomicCodec[BigInt,JSON](Codecs.standardNat, OMS(Math.nat), StandardNat) {
+  def encodeRep(i: BigInt): JSON = {
+    require(i>=0)
+    if (i.isValidInt)
+      JSONInt(i.toInt)
+    else
+      JSONString(i.toString)
+  }
+  def decodeRep(j: JSON): BigInt = j match {
+    case JSONInt(i) if i>= 0 => BigInt(i)
+    case JSONString(s) => BigInt(s)
+    case _ => throw CodecNotApplicable
+  }
+}
+
+object TMPos extends AtomicCodec[BigInt,JSON](Codecs.standardPos, OMS(Math.pos), StandardNat) {
+  def encodeRep(i: BigInt): JSON = {
+    require(i>=0)
+    if (i.isValidInt)
+      JSONInt(i.toInt)
+    else
+      JSONString(i.toString)
+  }
+  def decodeRep(j: JSON): BigInt = j match {
+    case JSONInt(i) if i>= 0 => BigInt(i)
     case JSONString(s) => BigInt(s)
     case _ => throw CodecNotApplicable
   }
@@ -114,7 +144,7 @@ object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, Math.ma
       ApplySpine(OMS(Math.vector), elemTp, NatLiterals.apply(m)),
       tms.map(StandardVector.construct(elemTp, _)))
   }
-
+  /*
   def apply(cs: Codec[JSON]*) = {
     val codec = cs.head
     new Codec[JSON](id(codec.exp), tp(codec.tp)) {
@@ -122,4 +152,6 @@ object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, Math.ma
       def decode(c: JSON) : Term = self.construct(codec.tp, self.separate(c).map(_.map(codec.decode)))
     }
   }
+  */
+  def apply(cs : Codec[JSON]*) = StandardVector(StandardVector(cs.head))
 }

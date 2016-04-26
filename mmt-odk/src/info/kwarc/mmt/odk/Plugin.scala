@@ -41,6 +41,7 @@ object Math {
   val ff = logic ? "false"
   val int = intliterals ? "int"
   val nat = natliterals ? "nat"
+  val pos = natliterals ? "pos"
   val succ = natliterals ? "nat_succ"
   val string = strings ? "string"
   val list = lists ? "list"
