@@ -13,7 +13,7 @@ case class URI(scheme: Option[String],
                private val abs: Boolean = false,
                query: Option[String] = None,
                fragment: Option[String] = None) {
-  private def isIllegal = (!abs && path.nonEmpty && (scheme.isDefined || authority.isDefined)) || (!abs && path.startsWith(List("")))
+  private def isIllegal = (!abs && path.nonEmpty && authority.isDefined) || (!abs && path.startsWith(List("")))
   if (isIllegal) throw ImplementationError("illegal URI: " + this)
   /** true if the path is absolute; automatically set to true if scheme or authority are present */
   def absolute: Boolean = abs
@@ -38,7 +38,7 @@ case class URI(scheme: Option[String],
     * trailing empty segment of this URI is dropped when appending
     */
   def /(p: List[String]): URI = {
-    val mustBeAbs = p.nonEmpty && (scheme.isDefined || authority.isDefined)
+    val mustBeAbs = p.nonEmpty && authority.isDefined
     URI(scheme, authority, pathNoTrailingSlash ::: p, absolute || mustBeAbs)
   }
 
@@ -89,13 +89,16 @@ case class URI(scheme: Option[String],
   /** parses a URI and resolves it against this */
   def resolve(s: String): URI = resolve(URI(s))
 
-  /** resolves a URI against this one (using the java.net.URI resolution algorithm except when u has no scheme, authority, path) */
+  private def merge(p: List[String], q: List[String]) = if (p.isEmpty) q else p.init ::: q
+  /** resolves a URI against this one (not using the java.net.URI resolution algorithm, which is buggy when u has no scheme, authority, path) */
   def resolve(u: URI): URI = {
-    //resolve implements old URI RFC, therefore special case for query-only URI needed
-    if (u.scheme.isEmpty && u.authority.isEmpty && u.path == Nil)
-      URI(scheme, authority, path, absolute, u.query, u.fragment)
-    else
-      URI(toJava.resolve(u.toJava))
+    if      (u.scheme.isDefined)    u
+    else if (u.authority.isDefined) URI(scheme, u.authority, u.path,              u.absolute,                      u.query, u.fragment)
+    else if (u.absolute)            URI(scheme, authority,   u.path,              u.absolute,                      u.query, u.fragment)
+    else if (u.path.nonEmpty)       URI(scheme, authority,   merge(path, u.path), absolute || authority.isDefined, u.query, u.fragment) 
+    else if (u.query.isDefined)     URI(scheme, authority,   path,                absolute,                        u.query, u.fragment)
+    else if (u.fragment.isDefined)  URI(scheme, authority,   path,                absolute,                        query,   u.fragment)
+    else                            this
   }
 
   /** removes an empty trailing segment, which results from a trailing / */
@@ -116,9 +119,11 @@ case class URI(scheme: Option[String],
   /** convenience: the authority or null */
   def authorityNull: String = authority.orNull
 
+  /** converts MMT's implementation to Java's (buggy) implementation of URIs */
   def toJava: net.URI = new net.URI(schemeNull, authorityNull, pathAsString, query.orNull, fragment.orNull)
 
-  override def toString: String = toJava.toString
+  private def mkS(p: String, s: Option[String]) = s.map(p+_).getOrElse("")
+  override def toString: String = scheme.map(_+":").getOrElse("") + mkS("//", authority) + pathAsString + mkS("?",query) + mkS("#",fragment)
 }
 
 object URI {
@@ -140,7 +145,7 @@ object URI {
     val jpath = m.group(5)
     val (pathString, absolute) = {
       if (jpath.startsWith("/")) (jpath.substring(1), true)
-      else if (scheme.isDefined) (jpath,true) else (jpath, false)
+      else (jpath, false)
     }
     var path = pathString.split("/", -1).toList
     if (path == List("")) //note: split returns at least List(""), never Nil
