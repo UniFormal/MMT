@@ -1,11 +1,10 @@
 package info.kwarc.mmt.pvs
 
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.opaque.{StringFragment, OpaqueText, OpaqueElement}
-import info.kwarc.mmt.api.symbols.{PlainInclude, FinalConstant, Constant}
-import info.kwarc.mmt.lf.{Lambda, Pi, ApplySpine}
+import info.kwarc.mmt.api.frontend.{Controller, Logger}
+import info.kwarc.mmt.api.opaque.{OpaqueElement, OpaqueText, StringFragment}
+import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, PlainInclude}
+import info.kwarc.mmt.lf.{ApplySpine, Lambda, Pi}
 import syntax._
-
 import info.kwarc.mmt.api._
 import documents._
 import modules._
@@ -38,7 +37,9 @@ abstract class ImportState(t:PVSImportTask) {
 case class Dependency(p : MPath) extends Exception
 //case class _adt(p : MPath) extends Exception
 
-class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document => Unit) {
+class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger {
+  def logPrefix = "pvs-omdoc"
+  protected def report = controller.report
 
   val path = bt.narrationDPath.^!.^!
   var state : ImportState = null
@@ -57,15 +58,15 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       }) //.add(m) ; MRef(bt.narrationDPath, m.path)})
       controller.add(doc)
       index(doc)
-      println("Success: " + state.th.name)
+      log("Success: " + state.th.name)
       BuildSuccess(deps.map(LogicalDependency),modsM.map(m => LogicalDependency(m.path)))
     } catch {
       case Dependency(p) =>
         deps::=p
-        println("FAIL: " + state.th.name + " depends on " + deps)
+        log("FAIL: " + state.th.name + " depends on " + deps)
         MissingDependency(deps.map(LogicalDependency),List(LogicalDependency(state.th.path)))
       case t : Exception =>
-        println("Exception: " + t.getMessage)
+        log("Exception: " + t.getMessage)
         t.printStackTrace()
         sys.exit
     }
@@ -88,16 +89,16 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
          throw Dependency(meta)
       }
       if (isPrel && named.id == "booleans") {
-        println("Skipped Booleans")
+        log("Skipped Booleans")
         // theory add new OpaqueText(path,List(StringFragment(""))).
         return theory
       }
       if (isPrel && named.id == "equalities") {
-        println("Skipped Equalities")
+        log("Skipped Equalities")
         return theory
       }
 
-      println("Doing " + theory.path)
+      log("Doing " + theory.path)
 
       theory_formals foreach doFormal
       assuming foreach doAssumption
@@ -121,7 +122,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           throw Dependency(meta)
       }
 
-      println("Doing " + theory.path)
+      log("Doing " + theory.path)
 
       importings foreach doFormal
       theory_formals foreach doFormal

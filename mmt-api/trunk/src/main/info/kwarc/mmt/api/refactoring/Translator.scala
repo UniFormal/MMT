@@ -2,42 +2,41 @@ package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Extension
-import info.kwarc.mmt.api.modules.DeclaredLink
+import info.kwarc.mmt.api.modules.{DeclaredLink, DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.symbols.FinalConstant
+import info.kwarc.mmt.api.symbols.{DeclaredStructure, FinalConstant}
 
 import scala.util.{Success, Try}
 
+/**
+  * Top class for all translations
+  */
 abstract class Translation {
   val source : List[FullArchive]
   val target : List[FullArchive]
-  def isApplicable(t : Term) : Option[(GlobalName,List[GlobalName])]
-  protected def translate(t : Term) : Term
 
+  // returns Some((p,l)) if applicable (None if not), where p is the symbol it applies to
+  // (needed to prevent circular translation) and l the list of newly introduced symbols
+  def isApplicable(t : Term) : Option[(GlobalName,List[GlobalName])]
+
+  protected def translate(t : Term) : Term
   def apply(t : Term) : Term = {
     if (isApplicable(t).isDefined) translate(t) else t
   }
 
-  /*
-  private val top = this
-  def ->(that : Translation) : Translation = new Translation {
-    val source = top.source
-    val target = that.target
-    def isApplicable(t : Term) = top.isApplicable(t) && top.apply(t).exists(tm => that.isApplicable(tm))
-    protected def translate(t : Term, cont : Term => List[Term]) : List[Term]
-     = top.apply(t).filter(that.isApplicable).flatMap(that.apply(_)).flatMap(cont)
-  }
-  */
-
   override def toString = "Translation from " + source.map(_.name).mkString(", ") + " to " + target.map(_.name).mkString(", ")
 }
 
+/**
+  * Groups translations together. Translations in the same group are preferably used jointly
+  */
 abstract class TranslationGroup {
   val translations : List[Translation]
   val source : List[FullArchive]
   val target : List[FullArchive]
 
+  // similar as above, but in addition returns the specific translations that are applicable
   def isApplicable(t : Term) : List[(GlobalName,List[GlobalName],Translation)] = translations.collect{
     case tr if tr.isApplicable(t).isDefined =>
       val ret = tr.isApplicable(t).get
@@ -63,7 +62,7 @@ sealed abstract class AlignmentTranslation(alignment : FormalAlignment) extends 
     target.map(_.name).mkString(", ") + "\nusing " + alignment.toString
 }
 
-case class SimpleLink(from : GlobalName, toTerm : Term, source : List[FullArchive], target: List[FullArchive], view:DeclaredLink) extends SimpleTranslation {
+case class SimpleLink(from : GlobalName, toTerm : Term, source : List[FullArchive], target: List[FullArchive], link:DeclaredLink) extends SimpleTranslation {
   val to = ArchiveStore.getSymbols(toTerm)
 
   lazy val toSymbols = ArchiveStore.getSymbols(toTerm)
@@ -78,39 +77,45 @@ case class SimpleLink(from : GlobalName, toTerm : Term, source : List[FullArchiv
   override def toString = "LinkTranslation from " + from.toString + " to " + toTerm.toString
 }
 
-case class InverseLinkTranslation(view : DeclaredLink, source : List[FullArchive], target : List[FullArchive]) extends TranslationGroup {
-  lazy val translations : List[Translation] = view.getDeclarations.collect{
+sealed abstract class LinkTranslation extends TranslationGroup {
+  val link : DeclaredLink
+}
+
+case class InverseViewTranslation(link : DeclaredView, source : List[FullArchive], target : List[FullArchive]) extends LinkTranslation {
+  lazy val translations : List[Translation] = link.getDeclarations.collect{
     case x : FinalConstant if x.df.isDefined =>
       (x.name,x.df.get) match {
         case (LocalName(ComplexStep(path : MPath) :: ln),OMS(p)) =>
-          Some(SimpleLink(p,OMS(path ? ln),source,target,view))
+          Some(SimpleLink(p,OMS(path ? ln),source,target,link))
         case _ => None
       }
   }.collect{
     case Some(t) => t
   }
 
-  override def toString = "InverseLinkTranslation from " + source.map(_.name).mkString(", ") + " to " + target.map(_.name).mkString(", ") +
-    "\nusing " + view.path.toString + "\n" +
+  override def toString = "InverseViewTranslation from " + source.map(_.name).mkString(", ") + " to " + target.map(_.name).mkString(", ") +
+    "\nusing " + link.path.toString + "\n" +
     translations.map(" - " + _.toString).mkString("\n")
 }
 
-case class LinkTranslation(view : DeclaredLink, source : List[FullArchive], target : List[FullArchive]) extends TranslationGroup {
-  lazy val translations = view.getDeclarations.collect{
+case class ViewTranslation(link : DeclaredView, source : List[FullArchive], target : List[FullArchive]) extends LinkTranslation {
+  lazy val translations = link.getDeclarations.collect{
     case x : FinalConstant if x.df.isDefined =>
       x.name match {
         case LocalName(ComplexStep(path : MPath) :: ln) =>
-          Some(SimpleLink(path ? ln, x.df.get,source,target,view))
+          Some(SimpleLink(path ? ln, x.df.get,source,target,link))
         case _ => None
       }
   }.collect{
     case Some(t) => t
   }
 
-  override def toString = "LinkTranslation from " + source.map(_.name).mkString(", ") + " to " + target.map(_.name).mkString(", ") +
-    "\nusing " + view.path.toString + "\n" +
+  override def toString = "ViewTranslation from " + source.map(_.name).mkString(", ") + " to " + target.map(_.name).mkString(", ") +
+    "\nusing " + link.path.toString + "\n" +
     translations.map(" - " + _.toString).mkString("\n")
 }
+
+
 
 class Translator extends Extension {
   override def logPrefix = "Translator"
@@ -206,6 +211,35 @@ class Translator extends Extension {
     }
   }
 
+  case class StructureTranslation(link : DeclaredStructure, source : List[FullArchive], target : List[FullArchive]) extends LinkTranslation {
+    val translations = link.from match {
+      case OMMOD(p) =>
+        controller.get(p) match {
+          case th : DeclaredTheory =>
+            th.getConstants.map(c => SimpleLink(c.path,OMS(link.path / c.name),source,target,link))
+          case _ => Nil
+        }
+      case _ => Nil
+    }
+
+    override def toString = "StructureTranslation from " + source.map(_.name).mkString(", ") + " to " + target.map(_.name).mkString(", ") +
+      "\nusing " + link.path.toString + "\n" +
+      translations.map(" - " + _.toString).mkString("\n")
+  }
+
+  case class InverseStructureTranslation(orig : StructureTranslation) extends LinkTranslation {
+    val target = orig.source
+    val source = orig.target
+    val link = orig.link
+    val translations = orig.translations map {
+      case SimpleLink(from,OMS(to),_,_,_) => SimpleLink(to,OMS(from),source,target,link)
+    }
+
+    override def toString = "InverseStructureTranslation from " + source.map(_.name).mkString(", ") + " to " + target.map(_.name).mkString(", ") +
+      "\nusing " + link.path.toString + "\n" +
+      translations.map(" - " + _.toString).mkString("\n")
+  }
+
   var translations : List[Translation] = Nil
   var translationgroups : List[TranslationGroup] = Nil
 
@@ -240,7 +274,7 @@ class Translator extends Extension {
     }
   }
 
-  def fromLink(v : DeclaredLink) : Option[(LinkTranslation,InverseLinkTranslation)] = {
+  def fromLink(v : DeclaredLink) : Option[(LinkTranslation,LinkTranslation)] = {
     val (from, to) = (v.from,v.to) match {
       case (OMMOD(p : MPath),OMMOD(q : MPath)) => (p,q)
       case _ => return None
@@ -248,7 +282,14 @@ class Translator extends Extension {
     val src = archives.find(from)
     val trg = archives.find(to)
     if (src.isEmpty || trg.isEmpty) return None
-    val ret = (LinkTranslation(v,src,trg),InverseLinkTranslation(v,trg,src))
+    val ret = v match {
+      case vw : DeclaredView =>
+        (ViewTranslation(vw,src,trg),InverseViewTranslation(vw,trg,src))
+      case str : DeclaredStructure =>
+        val tr = StructureTranslation(str,src,trg)
+        (tr,InverseStructureTranslation(tr))
+    }
+
     add(ret._1)
     add(ret._2)
     Some(ret)
@@ -259,62 +300,114 @@ class Translator extends Extension {
     case _ => None
   }
 
-  def apply(t : Term, target : FullArchive) : List[Term] = {
-
-    case class State(visited : List[GlobalName], applied : List[Translation], usedgroups : List[TranslationGroup]) {
-      def add(vs : GlobalName) = State(vs :: visited, applied,usedgroups)
-      def add(vs : (GlobalName,List[GlobalName],Translation)) = State(vs._1 :: visited, vs._3 :: applied, usedgroups)
-      def add(gr : (TranslationGroup,GlobalName,List[GlobalName],Translation)) =
+  private case class State(visited : List[GlobalName], applied : List[Translation], usedgroups : List[TranslationGroup]) {
+    def add(vs : GlobalName) = State(vs :: visited, applied,usedgroups)
+    def add(vs : (GlobalName,List[GlobalName],Translation)) = State(vs._1 :: visited, vs._3 :: applied, usedgroups)
+    def add(gr : (TranslationGroup,GlobalName,List[GlobalName],Translation)) =
       State(gr._2 :: visited, gr._4 :: applied, gr._1 :: usedgroups)
 
-      def +(s : State) =State(visited,applied,s.usedgroups ::: usedgroups)
-    }
-
-    def findApplicable(t : Term, state : State) : List[State] = {
-      val usedgroups = state.usedgroups.collect{
-        case g if g.isApplicable(t).nonEmpty => g.isApplicable(t)
-      }.flatten.filter(p => !p._2.filter(!target.declares(_)).exists(state.visited.contains))
-
-      if (usedgroups.nonEmpty) return usedgroups.map(u => state add u)
-
-      val newgroups = translationgroups.collect{
-        case gr if gr.isApplicable(t).nonEmpty => gr.isApplicable(t).map(p => (gr,p._1,p._2,p._3))
-      }.flatten.filter(p => !p._3.filter(!target.declares(_)).exists(state.visited.contains))
-
-      if (newgroups.nonEmpty) return newgroups.map(gr => state add gr)
-
-      val applicables = translations.collect {
-        case tr if tr.isApplicable(t).isDefined =>
-          val ret = tr.isApplicable(t).get
-          (ret._1,ret._2,tr)
-      }.filter(p => !p._2.filter(!target.declares(_)).exists(state.visited.contains))
-      applicables.map(p => state add p)
-    }
-
-    def traverse(t : Term, state : State = State(Nil,Nil,Nil)) : List[(Term,State)] = t match {
-      case OMS(p) =>
-        if (target.declares(p)) List((OMS(p),state))
-        else {
-          val ways = findApplicable(t, state)
-          if (ways.nonEmpty) ways.flatMap(s => traverse(s.applied.head.apply(t), s))
-          else {
-            val df = expandDefinition(p)
-            if (df.isDefined) traverse(df.get, state)
-            else Nil
-          }
-        }
-      case _ =>
-        val ways = findApplicable(t,state)
-        if (ways.nonEmpty) ways.flatMap(s => traverse(s.applied.head.apply(t), s))
-        else t match {
-          case OMA(f,args) =>
-            val trf = traverse(f,state)
-            ???
-        }
-    }
-
-    traverse(t).map(p => p._1)
+    def +(s : State) =State(visited,applied,s.usedgroups ::: usedgroups)
   }
+
+  private def findApplicable(t : Term, state : State)(implicit target: FullArchive) : List[State] = {
+    val usedgroups = state.usedgroups.collect{
+      case g if g.isApplicable(t).nonEmpty => g.isApplicable(t)
+    }.flatten.filter(p => !p._2.filter(!target.declares(_)).exists(state.visited.contains))
+
+    if (usedgroups.nonEmpty) return usedgroups.map(u => state add u)
+
+    val newgroups = translationgroups.collect{
+      case gr if gr.isApplicable(t).nonEmpty => gr.isApplicable(t).map(p => (gr,p._1,p._2,p._3))
+    }.flatten.filter(p => !p._3.filter(!target.declares(_)).exists(state.visited.contains))
+
+    if (newgroups.nonEmpty) return newgroups.map(gr => state add gr)
+
+    val applicables = translations.collect {
+      case tr if tr.isApplicable(t).isDefined =>
+        val ret = tr.isApplicable(t).get
+        (ret._1,ret._2,tr)
+    }.filter(p => !p._2.filter(!target.declares(_)).exists(state.visited.contains))
+    applicables.map(p => state add p)
+  }
+
+  private def traverse(con : Context, state : State)(implicit target: FullArchive) : List[(Context,State)] = {
+    val ret = traverse(state, con.variables.map(v => v.tp.get): _*)
+    ret.map{
+      case (l,st) => (Context(con.indices.map(i => VarDecl(con(i).name,Some(l(i)),None,None)):_*),st)
+    }
+  }
+
+  private def traverse(state: State, terms : Term*)(implicit target: FullArchive) : List[(List[Term],State)] =
+    if (terms.isEmpty) Nil else if (terms.length == 1) traverse(terms.head,state).map(p => (List(p._1),p._2)) else {
+      val last = traverse(terms.last, state) map {
+        case (tm, st) =>
+          (List(tm), st)
+      }
+      terms.dropRight(1).foldRight(last)({
+        case (arg,list) => list flatMap {
+          case (ls,st) =>
+            traverse(arg,state + st) map {
+              case (tm,nst) => (tm :: ls,nst)
+            }
+        }
+      })
+    }
+
+  private def traverse(t : Term, state : State)(implicit target: FullArchive) : List[(Term,State)] = t match {
+    case OMV(name) => List((t,state))
+    case OMS(p) =>
+      if (target.declares(p)) List((t, state))
+      else {
+        val ways = findApplicable(t, state)
+        if (ways.nonEmpty) ways.flatMap(s => traverse(s.applied.head.apply(t), s))
+        else {
+          val df = expandDefinition(p)
+          if (df.isDefined) traverse(df.get, state)
+          else Nil
+        }
+      }
+    case _ =>
+      val ways = findApplicable(t, state)
+      if (ways.nonEmpty) ways.flatMap(s => traverse(s.applied.head.apply(t), s))
+      else t match {
+        case OMA(f, args) =>
+          traverse(state,f :: args :_*) map {
+            case (ls,st) => (OMA(ls.head,ls.tail),st)
+          }
+        case OMBINDC(binder,con,bodies) =>
+          val nbinds = traverse(binder,state)
+          val ncons = nbinds flatMap {
+            case (tm,st) =>
+              val conts = traverse(con,state + st)
+              conts.map {
+                case (ncon,nst) => (tm,ncon,nst)
+              }
+          }
+          ncons flatMap {
+            case (nbinder,ncon,st2) =>
+              traverse(state + st2,bodies :_*) map {
+                case (ls,nst) => (OMBINDC(nbinder,ncon,ls),nst)
+              }
+          }
+        case UnknownOMLIT(s,tm) => traverse(tm,state) map {
+          case (ntm,st) => (UnknownOMLIT(s,ntm),st)
+        }
+        case OMLIT(value,rt) => traverse(rt.synType,state) map {
+          case (ntm,st) => (UnknownOMLIT(value.toString,ntm),st)
+        }
+        case OML(VarDecl(name,tp,df,not)) =>
+          val tps = if (tp.isDefined) traverse(tp.get,state).map(p => (Some(p._1),p._2)) else List((None,state))
+          val dfs = tps flatMap {
+            case (tpOpt,st) => if (df.isDefined) traverse(df.get,state + st).map(p => (tpOpt,Some(p._1),p._2)) else List((tpOpt,None,st))
+          }
+          dfs map {
+            case (tpOpt,dfOpt,nst) => (OML(name,tpOpt,dfOpt),nst)
+          }
+        case _ => Nil
+      }
+  }
+
+  def apply(t : Term, target : FullArchive) : List[Term] = traverse(t,State(Nil,Nil,Nil))(target).map(_._1)
 
   def apply(t : Term, target : String) : List[Term] = apply(t,archives.getArchive(target).getOrElse(return Nil))
 
@@ -361,12 +454,8 @@ class Translator extends Extension {
     }
   }
 
-  def add(t : Translation) =
-    translations = (t :: translations).distinct
+  def add(t : Translation) = translations = (t :: translations).distinct
 
-  def add(t : TranslationGroup) = {
-    translationgroups = (t :: translationgroups).distinct
-    translations = (t.translations ::: translations).distinct
-  }
+  def add(t : TranslationGroup) = translationgroups = (t :: translationgroups).distinct
 
 }

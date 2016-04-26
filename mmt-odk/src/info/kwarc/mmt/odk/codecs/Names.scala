@@ -17,10 +17,9 @@ object Codecs {
   val standardMatrix = path ? "standardMatrix"
 }
 
-object LMFDBCoder extends Coder(List(TMInt,TMString,BoolAsInt,StandardBool), List(TMList,StandardVector)) {
+object LMFDBCoder extends Coder(List(TMInt,TMString,BoolAsInt,StandardBool), List(TMList,StandardVector,StandardMatrix)) {
    override def destruct(t: Term) = t match {
      case ApplySpine(OMS(op), pars) => Some((op, pars))
      case _ => None
    }
 }
-

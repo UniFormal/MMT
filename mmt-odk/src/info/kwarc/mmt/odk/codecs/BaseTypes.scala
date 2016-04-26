@@ -89,33 +89,37 @@ object StandardVector extends CodecOperator[JSON](Codecs.standardVector, Math.ve
 
 }
 
-/*
+
 object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, Math.matrix) {self =>
 
   val typeParameterPositions : List[Int] = List(1)
 
-  def aggregate(n:Int,m:Int,cs: List[JSON]): JSON = JSONArray(cs:_*)
-  def separate(j: JSON): (Int,Int,List[JSON]) = j match {
-    case JSONArray(js@_*) => js.toList
+  def aggregate(cs: List[List[JSON]]): JSON = JSONArray(cs.map(l => JSONArray(l:_*)):_*)
+  def separate(j: JSON): List[List[JSON]] = j match {
+    case JSONArray(js@_*) =>
+      js.map({
+        case JSONArray(in@_*) => in.toList
+        case _ => throw CodecNotApplicable
+      }).toList
     case _ => throw CodecNotApplicable
   }
 
-  def destruct(tm: Term): List[List[Term]] = tm match {
-    case ApplySpine(OMS(Math.matrixconst), List(_,_,_,a,b)) => List(a,b)
-  }
+  def destruct(tm: Term): List[List[Term]] = StandardVector.destruct(tm).map(StandardVector.destruct)
   def construct(elemTp: Term, tms: List[List[Term]]): Term = {
-    tms match {
-      case List(a,b)
-    }
+    val n = tms.length
+    val m = if (n > 1) {
+      if (tms.tail.forall(_.length == tms.head.length)) tms.head.length else throw CodecNotApplicable
+    } else tms.length
+    StandardVector.construct(
+      ApplySpine(OMS(Math.vector), elemTp, NatLiterals.apply(m)),
+      tms.map(StandardVector.construct(elemTp, _)))
   }
 
   def apply(cs: Codec[JSON]*) = {
     val codec = cs.head
     new Codec[JSON](id(codec.exp), tp(codec.tp)) {
-      def encode(t: Term) = self.aggregate(self.destruct(t) map codec.encode)
-      def decode(c: JSON) = self.construct(codec.tp, self.separate(c) map codec.decode)
+      def encode(t: Term) : JSON = self.aggregate(self.destruct(t).map(_.map(codec.encode)))
+      def decode(c: JSON) : Term = self.construct(codec.tp, self.separate(c).map(_.map(codec.decode)))
     }
   }
-
 }
-*/

@@ -129,6 +129,9 @@ object URI {
 
   /** parses a URI (using the regular expression from the RFC) */
   def apply(s: String): URI = {
+    if (s.contains("odk:elliptic_curves")) {
+      println("here!")
+    }
     val m = pattern.matcher(s)
     if (!m.matches)
       throw new net.URISyntaxException(s, "malformed URI reference")
@@ -137,7 +140,7 @@ object URI {
     val jpath = m.group(5)
     val (pathString, absolute) = {
       if (jpath.startsWith("/")) (jpath.substring(1), true)
-      else (jpath, false)
+      else if (scheme.isDefined) (jpath,true) else (jpath, false)
     }
     var path = pathString.split("/", -1).toList
     if (path == List("")) //note: split returns at least List(""), never Nil

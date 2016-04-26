@@ -2,12 +2,12 @@ package info.kwarc.mmt.odk
 
 import info.kwarc.mmt.api._
 import frontend._
+import info.kwarc.mmt.api.checking.{History, Solver, SubtypingRule}
 import info.kwarc.mmt.odk.GAP
 import objects._
 import uom._
 import valuebases._
 import utils._
-
 import info.kwarc.mmt.lf._
 
 class Plugin extends frontend.Plugin {
@@ -72,3 +72,16 @@ object NatSuccInverse extends InverseOperator(Math.succ) {
 }
 
 object StringLiterals extends RealizedType(Apply(OMS(Math.tm),OMS(Math.string)),StandardString)
+
+object IntegerSubtype extends SubtypingRule {
+  val head = Math.int
+  def applicable(tp1: Term, tp2: Term): Boolean = (tp1,tp2) match {
+    case (NatLiterals.synType,IntegerLiterals.synType) => true
+    case _ => false
+  }
+
+  def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History) : Option[Boolean] = (tp1,tp2) match {
+    case (NatLiterals.synType,IntegerLiterals.synType) => Some(true)
+    case _ => None
+  }
+}
