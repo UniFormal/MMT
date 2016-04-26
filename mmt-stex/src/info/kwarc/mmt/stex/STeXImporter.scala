@@ -90,7 +90,9 @@ class STeXImporter extends Importer {
         */
         BuildSuccess(used.distinct, Nil)
       } catch {
-        case e : Exception => BuildSuccess(Nil, Nil)
+        case e : Exception =>
+          log("Error: Cannot estimate dependencies for " + bt.inFile + "due to unexpected error: " + e.getMessage)
+          BuildSuccess(Nil, Nil)
       }
     } else {
       BuildSuccess(Nil, Nil)      
