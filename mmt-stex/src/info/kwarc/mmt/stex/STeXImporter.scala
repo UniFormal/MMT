@@ -71,23 +71,27 @@ class STeXImporter extends Importer {
   
   override def estimateResult(bt : BuildTask) : BuildSuccess = {
     if (!bt.isDir) {
-      val dpath = bt.narrationDPath
-      val src = scala.io.Source.fromFile(bt.inFile.toString)
-      val cp = scala.xml.parsing.ConstructingParser.fromSource(src, preserveWS = true)
-      val node: Node = cp.document()(0)
-      src.close()
-      var used : List[Dependency] = node.child.flatMap(c => estimateModuleDeps(c, bt.narrationDPath)).toList
-      
-      //controller.backend.getArchive(id)
-      //FileBuildDependency("stex-importer", archive, inPath)
-      /*
-      println("-------------------")
-      println(dpath)
-      println(used)
-      println(provided)
-      println("################")
-      */
-      BuildSuccess(used.distinct, Nil)
+      try {
+        val dpath = bt.narrationDPath
+        val src = scala.io.Source.fromFile(bt.inFile.toString)
+        val cp = scala.xml.parsing.ConstructingParser.fromSource(src, preserveWS = true)
+        val node: Node = cp.document()(0)
+        src.close()
+        var used : List[Dependency] = node.child.flatMap(c => estimateModuleDeps(c, bt.narrationDPath)).toList
+        
+        //controller.backend.getArchive(id)
+        //FileBuildDependency("stex-importer", archive, inPath)
+        /*
+        println("-------------------")
+        println(dpath)
+        println(used)
+        println(provided)
+        println("################")
+        */
+        BuildSuccess(used.distinct, Nil)
+      } catch {
+        case e : Exception => BuildSuccess(Nil, Nil)
+      }
     } else {
       BuildSuccess(Nil, Nil)      
     }
@@ -121,7 +125,7 @@ class STeXImporter extends Importer {
   
   def importDocument(bt: BuildTask, cont: Document => Unit): BuildResult = {
     try {
-//      println(s"$counter. stex-importing " + bt.inPath)
+      println(s"$counter. stex-importing " + bt.inPath)
       counter += 1
       docCont += (bt.narrationDPath -> cont) // to reindex document if needed
       val src = scala.io.Source.fromFile(bt.inFile.toString)
