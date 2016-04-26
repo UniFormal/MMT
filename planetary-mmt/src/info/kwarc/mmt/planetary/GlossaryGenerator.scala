@@ -113,8 +113,8 @@ object GlossaryGenerator {
 
     val defs = controller.depstore.queryList(spath, ToObject(IRels.isDefinedBy)) flatMap {
           case p: Path =>
-            controller.get(p) match {
-              case fd: Constant =>
+            controller.getO(p) match {
+              case Some(fd: Constant) =>
                 val mpath = fd.home.toMPath
                 if (sTeX.getLanguage(mpath) == Some(lang)) {
                   Some(fd)

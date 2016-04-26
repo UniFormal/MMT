@@ -654,7 +654,6 @@ class STeXImporter extends Importer {
         <om:OMV name={"mixref" + refNr}> </om:OMV>
       } catch {
         case e : Exception => 
-          println(e)
           node
       }
     case "#PCDATA" => new scala.xml.Text(node.toString())
