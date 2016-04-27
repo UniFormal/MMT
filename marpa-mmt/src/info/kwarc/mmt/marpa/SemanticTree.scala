@@ -100,7 +100,6 @@ object SemanticTree {
 
   def resetTermSharingState {
     toCMLShare = scala.collection.mutable.HashSet.empty[(String, List[(String, List[String])])]
-    CMLTermId = 1
   }
 
   def bodyToJson(b: Body): JValue = {
