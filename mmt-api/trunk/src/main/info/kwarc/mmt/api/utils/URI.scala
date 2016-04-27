@@ -134,9 +134,6 @@ object URI {
 
   /** parses a URI (using the regular expression from the RFC) */
   def apply(s: String): URI = {
-    if (s.contains("odk:elliptic_curves")) {
-      println("here!")
-    }
     val m = pattern.matcher(s)
     if (!m.matches)
       throw new net.URISyntaxException(s, "malformed URI reference")

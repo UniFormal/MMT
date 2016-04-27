@@ -1,12 +1,9 @@
 package info.kwarc.mmt.odk
 
 import info.kwarc.mmt.api._
-import frontend._
 import info.kwarc.mmt.api.checking.{History, Solver, SubtypingRule}
-import info.kwarc.mmt.odk.GAP
 import objects._
 import uom._
-import valuebases._
 import utils._
 import info.kwarc.mmt.lf._
 
@@ -24,6 +21,7 @@ object ODK {
 }
 
 object Math {
+  def tm(s : GlobalName) = Apply(OMS(tms),OMS(s))
   val path = ODK.path ? "Math"
 
   val typesystem = ODK.path ? "Types"
@@ -35,7 +33,7 @@ object Math {
   val vectors = ODK.path ? "Vectors"
   val matrices = ODK.path ? "Matrices"
 
-  val tm = typesystem ? "tm"
+  val tms = typesystem ? "tm"
   val bool = logic ? "bool"
   val tt = logic ? "true"
   val ff = logic ? "false"
@@ -54,8 +52,8 @@ object Math {
   val matrixconst = matrices ? "matrix_const"
 }
 
-object IntegerLiterals extends RealizedType(Apply(OMS(Math.tm),OMS(Math.int)),StandardInt)
-object NatLiterals extends RealizedType(Apply(OMS(Math.tm),OMS(Math.nat)),StandardNat)
+object IntegerLiterals extends RealizedType(Math.tm(Math.int),StandardInt)
+object NatLiterals extends RealizedType(Math.tm(Math.nat),StandardNat)
 object NatSucc extends RealizedOperator(Math.succ) {
   val argTypes = List(NatLiterals)
   val retType = NatLiterals
@@ -72,7 +70,7 @@ object NatSuccInverse extends InverseOperator(Math.succ) {
   }
 }
 
-object StringLiterals extends RealizedType(Apply(OMS(Math.tm),OMS(Math.string)),StandardString)
+object StringLiterals extends RealizedType(Math.tm(Math.string),StandardString)
 
 object IntegerSubtype extends SubtypingRule {
   val head = Math.int
