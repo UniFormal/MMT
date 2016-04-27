@@ -44,6 +44,7 @@ abstract class MMTScript extends Extension {
   def loadConfig(f: String, autoload: Boolean = true) {
      val conf = MMTConfig.parse(File(f))
      controller.loadConfig(conf, autoload)
+     loadRelationalFor(!_.readonly) //TODO for now only loading writable archives for efficiency
   }
 
 
@@ -83,6 +84,10 @@ abstract class MMTScript extends Extension {
     archives.foreach(a => runExporters(a.id, btm))
   }
 
+  def loadRelationalFor(select : ArchiveConf => Boolean) {
+    val aids = config.getArchives.filter(select).map(_.id)
+    controller.archiveBuildAction(aids, "relational", Build, EmptyPath)
+  }
 
   def smartBuild(mod : String, profile : String, targets : List[String]) {
     controller.confBuildAction(mod, targets, profile)

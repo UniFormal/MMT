@@ -156,11 +156,6 @@ trait ActionHandling {self: Controller =>
     }
   }
 
-  /** auxiliary method of makeAction */
-  def usageOption: OptionDescrs = List(
-    OptionDescr("usage", "", NoArg, "display usage message"),
-    OptionDescr("help-command", "", NoArg, "help about the build target"))
-
   /** handles [[ConfBuild]] */
   def confBuildAction(modS : String, targets : List[String], profile : String) = {
     val config = getConfig
@@ -172,7 +167,7 @@ trait ActionHandling {self: Controller =>
     val archives = try {
       config.getProfile(profile).archives.map(aid => config.getArchive(aid))
     } catch {
-      case e : Exception => config.getArchives
+      case e : Exception => config.getWritableArchives
     }
     archives foreach {a =>
       config.getArchive(a.id).formats foreach {f =>
@@ -189,6 +184,11 @@ trait ActionHandling {self: Controller =>
       }
     }
   }
+
+  /** auxiliary method of makeAction */
+  def usageOption: OptionDescrs = List(
+    OptionDescr("usage", "", NoArg, "display usage message"),
+    OptionDescr("help-command", "", NoArg, "help about the build target"))
   
   /** handles [[MakeAction]] */ //TODO @CM this should become a ShellExtension
   def makeAction(key: String, allArgs: List[String]) {

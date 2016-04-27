@@ -30,9 +30,9 @@ case class EnvVarConf(id : String, value: String) extends ConfEntry
 abstract class BackendConf extends ConfEntry
 
 /**
- * registers an archive with its formats
+ * registers an archive with its formats and a flag of whether it is readonly (pregenerated) or should be built
  */
-case class ArchiveConf(id : String, formats : List[String]) extends BackendConf
+case class ArchiveConf(id : String, formats : List[String], readonly : Boolean) extends BackendConf
 
 /**
  * Registers a profile as a subset of active archives 
@@ -121,6 +121,8 @@ class MMTConfig {
        throw ConfigurationError("archive not registered: " + aid)
     }
     def getArchives = getEntries(classOf[ArchiveConf])
+    def getWritableArchives = getEntries(classOf[ArchiveConf]).filter(_.readonly == false) 
+    
     def getFormat(id: String) = getEntry(classOf[FormatConf], id) getOrElse {
        throw ConfigurationError("format not registered: " + id)
     }
@@ -176,7 +178,13 @@ object MMTConfig {
         case "archives" => split(line) match {
           case id :: fmtsS :: Nil =>
             val fmts = fmtsS.split(",").toList
-            config.addEntry(ArchiveConf(id, fmts))
+            config.addEntry(ArchiveConf(id, fmts, readonly = false))
+          case _ => fail
+        }
+        case "generated_archives" => split(line) match {
+          case id :: fmtsS :: Nil =>
+            val fmts = fmtsS.split(",").toList
+            config.addEntry(ArchiveConf(id, fmts, readonly = true))
           case _ => fail
         }
         case "namespaces" => split(line) match {
