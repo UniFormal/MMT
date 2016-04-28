@@ -17,7 +17,7 @@
     <p>refresh rate (secs):
     <input type="number" min="1" max="1000" ng-click="stopRepeat(); repeat()" ng-model="refreshRate"/>
     </p>
-    <p>queue length {{queue.queue.length}}</p>
+    <p>queue length {{queue.count}}</p>
     queue (go to <a href="#blocked">blocked</a>) (go to <a href="#finished">finished</a>)
     <ul>
         <li ng-repeat="e in queue.queue">{{e}}</li>

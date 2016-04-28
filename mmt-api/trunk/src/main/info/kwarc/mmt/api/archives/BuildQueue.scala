@@ -417,7 +417,8 @@ class BuildQueue extends BuildManager {
       case (d, r) =>
         JSONObject(("dependency", d.toJson), ("result", r.toJson))
     }
-    JSONObject(("queue", JSONArray(q: _*)),
+    JSONObject(("count", JSONInt(qSize)),
+      ("queue", JSONArray(q: _*)),
       ("blocked", JSONArray(bs: _*)),
       ("finished", JSONArray(fs: _*)))
   }
