@@ -14,6 +14,10 @@ the optional MODIFIER is one of:
  --force       definitely (re)create target file(s)
  --onChange    (re)create target file(s) only if sources or dependencies changed
                (this is the default without MODIFIER)
+ --forceDeps[=DIGIT]     (re)create target file(s) and set force for dependencies
+               5 corresponds to --force
+               0 corresponds to --forceDeps (with digit)
+               3 will rebuild dependencies with errors
  --onError[?][=DIGIT]    additionally retry target file(s) if a previous call failed.
                "?" only does a dry run
                DIGIT denotes the error level to check for (3 is the default: Error)

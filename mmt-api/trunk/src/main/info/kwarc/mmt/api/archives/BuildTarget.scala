@@ -30,6 +30,7 @@ case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModi
     else if (errorLevel < Level.Ignore) "!" else "*"
 
   def toString(dim: String) = dim + key
+
   // use dependency level for dependencies
   def forDependencies: Update = dependencyLevel match {
     case None => this
@@ -56,17 +57,20 @@ object BuildTargetModifier {
     OptionDescr("onError?", "", OptIntArg, "dry-run on error or change"),
     OptionDescr("onChange", "", NoArg, "rebuild on change"),
     OptionDescr("dry-run", "n", NoArg, "only show what needs to be build"),
+    OptionDescr("forceDeps", "", OptIntArg, "force building and allow to force dependencies"),
     OptionDescr("force", "", NoArg, "force building"),
     OptionDescr("test", "", NoArg, "compare build results with test dimension"),
     OptionDescr("test-add", "", NoArg, "add new output files to test dimension"),
     OptionDescr("test-update", "", NoArg, "update changed output files in test dimension")
   )
 
+  private def flagToLevel(flag: OptionValue, default: Level) = flag match {
+    case IntVal(i) => i - 1
+    case _ => default
+  }
+
   private def makeUpdateModifier(flag: OptionValue, dry: Boolean, testMod: TestModifiers): Update = Update(
-    flag match {
-      case IntVal(i) => i - 1
-      case _ => Level.Error
-    },
+    flagToLevel(flag, Level.Error),
     dryRun = dry,
     testMod)
 
@@ -80,17 +84,18 @@ object BuildTargetModifier {
     val dr = m.isDefinedAt("dry-run")
     val clean = m.get("clean").toList
     val force = m.get("force").toList
+    val forceDeps = m.get("forceDeps").toList
     val onChange = m.get("onChange").toList
     val onError = m.get("onError").toList
     val onErrorDry = m.get("onError?").toList
     val depsFirst = m.get("depsFirst").toList
     val depsFirstDry = m.get("depsFirst?").toList
-    val os = clean ++ force ++ onChange ++ onError ++ onErrorDry ++ depsFirst ++ depsFirstDry
+    val os = clean ++ force ++ forceDeps ++ onChange ++ onError ++ onErrorDry ++ depsFirst ++ depsFirstDry
     val testMod = makeTestModifiers(m)
     var fail = false
     var mod: BuildTargetModifier = Build(Update(Level.Ignore, dryRun = dr, testMod))
     if (os.length > 1) {
-      log("only one allowed of: clean, force, onChange, onError, depsFirst")
+      log("only one allowed of: clean, force, forceDeps, onChange, onError, depsFirst")
       fail = true
     }
     if (dr && clean.nonEmpty) {
@@ -102,6 +107,9 @@ object BuildTargetModifier {
     }
     force.foreach { _ =>
       mod = Build(Update(Level.Force, dryRun = dr, testMod))
+    }
+    forceDeps.foreach { o =>
+      mod = Build(Update(Level.Force, dryRun = dr, testMod, Some(flagToLevel(o, Level.Force))))
     }
     onChange.foreach { _ =>
       mod = Build(Update(Level.Ignore, dryRun = dr, testMod))
@@ -128,7 +136,8 @@ object BuildTargetModifier {
 }
 
 /* a trait for parsing options of extensions **/
-trait BuildTargetArguments { buildtarget: BuildTarget =>
+trait BuildTargetArguments {
+  buildtarget: BuildTarget =>
 
   def verbOpts: OptionDescrs = List(
     OptionDescr("quiet", "q", NoArg, "do not show result information"),
@@ -333,7 +342,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = BuildSuccess(Nil, Nil)
 
   /** abstract method to estimate the [[BuildResult]] without building, e.g., to predict dependencies */
-  def estimateResult(bf: BuildTask): BuildSuccess = BuildSuccess(Nil,Nil)
+  def estimateResult(bf: BuildTask): BuildSuccess = BuildSuccess(Nil, Nil)
 
   /** entry point for recursive building */
   def build(a: Archive, up: Update, in: FilePath = EmptyPath) {
