@@ -519,7 +519,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   def rebuildNeeded(deps: Set[Dependency], bt: BuildTask, level: Level): Boolean = {
     val errorFile = bt.asDependency.getErrorFile(controller)
     val errs = hadErrors(errorFile, level)
-    val mod = modified(bt.inFile, errorFile)
+    val mod = if (bt.isDir) false else modified(bt.inFile, errorFile)
     level <= Level.Force || mod || errs ||
       deps.exists {
         case bd: BuildDependency =>
