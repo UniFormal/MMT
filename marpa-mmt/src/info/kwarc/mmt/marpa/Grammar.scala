@@ -52,10 +52,10 @@ case class Rule(name: String, content: List[String]) extends GenericRule
 
 object Grammar {
   //TODO: Extract precedences from notations instead of hard coding
-  val precedences = List("-infinity", "0", "200", "300", "400", "500", "550", "600", "700", "800", "900")
+  val precedences = List("neginfty", "0", "200", "300", "350", "400", "450", "500", "550", "600", "650", "700", "800", "900", "1000")
   //TODO: rules that start or end with the following are not considered
   private var omittedRules = Set("N482", "_coset_", "_polynomialring_", "_logarithm_logarithm");
-
+  private var omittedRulesCounter = 0
   var currentTopRuleNr = ""
   var currentTopRulePrec = 1
 
@@ -75,9 +75,13 @@ object Grammar {
   }
 
   private def isOmitted(rule: String): Boolean = {
-    omittedRules.foldLeft(false) { (acc: Boolean, omitted: String) ⇒
+    val result = omittedRules.foldLeft(false) { (acc: Boolean, omitted: String) ⇒
       acc || rule.startsWith(omitted) || rule.endsWith(omitted)
     }
+    if (result) {
+      omittedRulesCounter += 1
+    }
+    result
   }
 
   //adds the Top Rule and all of the necessary subrules to the Grammar
@@ -87,6 +91,7 @@ object Grammar {
     val Some(notNameWithInvalidChars) = notNamePattern findFirstIn path
     val notName = removeInvalidCharPattern.replaceAllIn(notNameWithInvalidChars, "_")
     val precStr = precedences.indexOf(prec.toString).toString
+    if (precStr.toInt < 0) { println("Unknown precedence value: " + prec.toString) }
     val uniqueName = createTopRuleName(notName + "P" + precStr + "N" + ruleNumber)
 
     NotationContent ::= uniqueName
@@ -103,16 +108,15 @@ object Grammar {
         case _           ⇒ addRule(x)
       })
 
-    if (!(content.length == 1
-      && content(0).startsWith("argRule")) // do not include rules that only have one argRule (creates cycles)	   
-      ) {
+    if (!(content.length == 1 && content(0).startsWith("argRule")) // do not include rules that only have one argRule (creates cycles)	   
+    ) {
       rules = rules | Set((Rule(uniqueName, "topLevel" :: content))) //uniqueness of top level notations is assumed
     } else {
       omittedRules += uniqueName
     }
     if (!isOmitted(uniqueName)) {
       eventList ::= "event '" + uniqueName + "' = completed " + uniqueName
-    }
+    } 
   }
 
   //returns the name of the rule, adds the rule to the Set[Rule] only if it is not already there
@@ -492,13 +496,14 @@ object Grammar {
         "lexeme default = latm => 1" ::
         ":start ::= Expression " ::
         "ExpressionList ::= Expression+" ::
-        "Expression ::= Notation   " ::
-        "             | Presentation " ::
+        "Expression ::= Presentation   " ::
+        "             | Notation  " ::
         "Notation ::= prec0 " ::
         Nil
 
     val presentation =
-      "Presentation ::= mrowB ExpressionList mrowE " ::
+      "Presentation ::= mrowB Notation mrowE " ::
+        " | mrowB ExpressionList mrowE " ::
         " | moB '(' moE ExpressionList moB ')' moE " ::
         " | moB text moE " ::
         " | miB text miE " ::
@@ -621,8 +626,9 @@ object Grammar {
           "prec" + prec + " ::= " + notList.mkString("\n| ")
       })
 
-    val result = grammarCore ::: Notation ::: extractedRules ::: eventList
-    cleanup()
+    val result = grammarCore ::: Notation ::: extractedRules //::: eventList
+    println(omittedRulesCounter + " rules were omitted (would create cycles/other reasons)")
+    cleanup()    
     result
   }
 
@@ -637,5 +643,6 @@ object Grammar {
     rules = Set[Rule]();
     NotationContent = List.empty[String]
     index = 0;
+    omittedRulesCounter = 0;
   }
 }

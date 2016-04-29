@@ -88,7 +88,7 @@ object SemanticTree {
 
   case class RawString(value: String) extends ParseTree {
     override def toCML: List[String] = {
-      List(value)
+      List(value) 
     }
   }
 
@@ -124,11 +124,12 @@ object SemanticTree {
       println(inputJSON)
       val input: String = (inputJSON \ "input").asInstanceOf[JString].values
       termSharing = (inputJSON \ "termSharing").asInstanceOf[JBool].values
-
+      crossReference = (inputJSON \ "crossReference").asInstanceOf[JBool].values
       println("input = " + input)
       println("term sharing = " + termSharing.toString)
 
       val inputParses = buildSemanticTree(input)
+      println(inputParses.toString)
       inputParses.treeList foreach {
         case Notation(name, argList) ⇒
           println("Notation = " + name)
@@ -141,13 +142,14 @@ object SemanticTree {
                   list.foreach((variant) ⇒ println("        Variant = " + variant.toString))
               }
           }
+        case _ => 
       }
       println("END OF INPUT PARSES")
-      val CMLlist = inputParses.toCML.toSet.toList // Get unique parses
+      val CMLlist = inputParses.toCML.toSet.toList map java.net.URLDecoder.decode// Get unique parses
       println("CML ->")
       var i = 1
       CMLlist foreach {
-        case str ⇒
+        case str : String ⇒
           println(i.toString + ") " + str)
           i = i + 1
       }
@@ -158,7 +160,8 @@ object SemanticTree {
     }
   }
 
-  var termSharing = false // Sharing is turned off for testing 
+  var termSharing = false // Sharing is turned off by default
+  var crossReference = false
 
   def createShareHrefTo(cml: String): String = {
     if (!termSharing) {
@@ -317,12 +320,17 @@ object SemanticTree {
 
   val sendGetNotationPosRequestMemo = scala.collection.mutable.HashMap.empty[String, JValue]
   def sendGetNotationPosRequest(input: String): JValue = {
+    // Remove useless toplevel mrow
+    if (input.startsWith("%3Cmrow%3E") && input.endsWith("%3C%2Fmrow%3E")) {
+      return sendGetNotationPosRequest(input.substring(10, input.length - 13))
+    } 
+    // Memoization
     val vals = sendGetNotationPosRequestMemo
     if (vals.contains(input)) {
       vals(input)
     } else {
       println("sendGetNotationPosRequest input = " + input)
-      val response: String = Http(detectNotation).postData(input).asString.body
+      val response: String = Http(detectNotation).timeout(connTimeoutMs = 1000, readTimeoutMs = 60 * 1000).postData(input).asString.body
       val result = parse(response)
       vals += ((input, result))
       result
