@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex
 
+import java.io.StringWriter
 import java.net.{BindException, ServerSocket}
 import java.nio.file.Files
 
@@ -89,21 +90,23 @@ class AllTeX extends LaTeXDirTarget {
                             files: List[String], force: Boolean) {
     val all = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
     val ls = langFiles(lang, files)
-    val outPath = getOutPath(a, all)
-    if (!force && all.exists() && ls.forall(f => (dir / f).lastModified() < all.lastModified()))
-      logResult("up-to-date " + outPath) // does not detect deleted files!
-    else {
-      val w = File.Writer(all)
-      ambleText("pre", a, lang).foreach(w.println)
-      w.println("")
+      val w = new StringBuilder
+      def writeln(s: String): Unit = w.append(s + "\n")
+      ambleText("pre", a, lang).foreach(writeln)
+      writeln("")
       ls.foreach { f =>
-        w.println("\\begin{center} \\LARGE File: \\url{" + f + "} \\end{center}")
-        w.println("\\input{" + File(f).stripExtension + "} \\newpage")
-        w.println("")
+        writeln("\\begin{center} \\LARGE File: \\url{" + f + "} \\end{center}")
+        writeln("\\input{" + File(f).stripExtension + "} \\newpage")
+        writeln("")
       }
-      ambleText("post", a, lang).foreach(w.println)
-      w.close()
+      ambleText("post", a, lang).foreach(writeln)
+    val newContent = w.result
+    val outPath = getOutPath(a, all)
+    if (force || !all.exists() || File.read(all) != newContent) {
+      File.write(all, newContent)
       logSuccess(outPath)
+    } else {
+      logResult("up-to-date " + outPath)
     }
   }
 

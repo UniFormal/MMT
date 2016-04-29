@@ -338,8 +338,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
     *
     * @param bd            information about input/output file etc
     * @param builtChildren tasks for building the children
+    * @param level         error/force level to perform action depending on user input
     */
-  def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = BuildSuccess(Nil, Nil)
+  def buildDir(bd: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult = BuildSuccess(Nil, Nil)
 
   /** abstract method to estimate the [[BuildResult]] without building, e.g., to predict dependencies */
   def estimateResult(bf: BuildTask): BuildSuccess = BuildSuccess(Nil, Nil)
@@ -437,7 +438,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   /** like buildFile but with error handling, logging, etc.  */
-  def runBuildTask(bt: BuildTask): BuildResult = {
+  def runBuildTask(bt: BuildTask, level: Level): BuildResult = {
     if (!bt.isDir) {
       val prefix = "[" + inDim + " -> " + outDim + "] "
       report("archive", prefix + bt.inFile + " -> " + bt.outFile)
@@ -449,7 +450,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       res = bt.children match {
         case None => buildFile(bt)
         case Some(children@_ :: _) =>
-          buildDir(bt, children)
+          buildDir(bt, children, level)
         case _ => res
       }
     } catch {
@@ -519,7 +520,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   def rebuildNeeded(deps: Set[Dependency], bt: BuildTask, level: Level): Boolean = {
     val errorFile = bt.asDependency.getErrorFile(controller)
     val errs = hadErrors(errorFile, level)
-    val mod = if (bt.isDir) false else modified(bt.inFile, errorFile)
+    val mod = modified(bt.inFile, errorFile)
     level <= Level.Force || mod || errs ||
       deps.exists {
         case bd: BuildDependency =>
@@ -544,7 +545,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       logResult("out-dated " + outPath)
     }
     if (rn && !dryRun) {
-      res = Some(runBuildTask(bt))
+      res = Some(runBuildTask(bt, errLev))
     }
     if (testMod.makeTests) {
       compareOutputAndTest(testMod, bt)

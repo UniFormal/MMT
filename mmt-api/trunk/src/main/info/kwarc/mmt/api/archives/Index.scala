@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import documents._
 import frontend._
+import Level.Level
 import modules._
 import parser._
 import utils._
@@ -38,7 +39,7 @@ abstract class Importer extends TraversingBuildTarget {imp =>
     importDocument(bf, doc => indexDocument(bf.archive, doc, bf.inPath))
   }
 
-  override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = {
+  override def buildDir(bd: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult = {
     bd.outFile.up.mkdirs
     val doc = controller.get(DPath(bd.archive.narrationBase / bd.inPath.segments)).asInstanceOf[Document]
     val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")

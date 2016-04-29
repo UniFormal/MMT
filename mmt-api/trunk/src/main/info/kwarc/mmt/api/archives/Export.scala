@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import documents._
 import frontend._
+import Level.Level
 import modules._
 import objects._
 import presentation._
@@ -115,7 +116,7 @@ trait Exporter extends BuildTarget {
       BuildResult.empty
     }
 
-    override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = {
+    override def buildDir(bd: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult = {
       val dp = Archive.ContentPathToDPath(bd.inPath)
       val (nss, mps) = builtChildren.filter(!_.skipped).partition(_.isDir)
       outputTo(bd.outFile) {
@@ -139,7 +140,7 @@ trait Exporter extends BuildTarget {
       BuildResult.empty
     }
 
-    override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = {
+    override def buildDir(bd: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult = {
       val doc = controller.getDocument(bd.narrationDPath)
       outputTo(bd.outFile) {
         exportDocument(doc, bd)

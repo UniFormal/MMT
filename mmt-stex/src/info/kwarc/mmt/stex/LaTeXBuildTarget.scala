@@ -6,13 +6,12 @@ package info.kwarc.mmt.stex
 
 import java.util.regex.PatternSyntaxException
 
-import STeXUtils._
-import info.kwarc.mmt.api.ExtensionError
+import info.kwarc.mmt.api.Level._
 import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.utils._
-import AnaArgs._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.utils.{EmptyPath, FilePath, File}
+import info.kwarc.mmt.api.utils.AnaArgs._
+import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, _}
+import info.kwarc.mmt.api.{ExtensionError, Level}
+import info.kwarc.mmt.stex.STeXUtils._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
@@ -212,8 +211,8 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
   protected def allFile(lang: Option[String]): String =
     "all" + lang.map("." + _).getOrElse("") + ".tex"
 
-  override def runBuildTask(bt: BuildTask): BuildResult = if (bt.isDir) {
-    super.runBuildTask(bt)
+  override def runBuildTask(bt: BuildTask, level: Level): BuildResult = if (bt.isDir) {
+    super.runBuildTask(bt, level)
   } else BuildResult.empty
 
   override def cleanFile(a: Archive, curr: Current) {
@@ -234,8 +233,8 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
     })
   }
 
-  override def buildDir(bt: BuildTask, builtChildren: List[BuildTask]): BuildResult =
-    buildDir(bt.archive, bt.inPath, bt.inFile, force = true)
+  override def buildDir(bt: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult =
+    buildDir(bt.archive, bt.inPath, bt.inFile, force = level <= Level.Force)
 
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult
 }
