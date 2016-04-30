@@ -1,17 +1,21 @@
 package info.kwarc.mmt.odk.GAP
 
-import info.kwarc.mmt.api.archives.{RedirectableDimension, BuildResult, BuildTask, Importer}
+import info.kwarc.mmt.api.archives.{BuildResult, BuildTask, Importer, RedirectableDimension}
 import info.kwarc.mmt.api.documents.Document
+import info.kwarc.mmt.api.frontend.Logger
 import info.kwarc.mmt.api.{ParseError, utils}
 import info.kwarc.mmt.api.utils._
 
 import scala.util.Try
 
-object JSONImporter extends Importer {
+class JSONImporter extends Importer {
+  def toplog(s : => String) = log(s)
+  def toplogGroup[A](a : => A) = logGroup(a)
   val key = "gap-omdoc"
   def inExts = List("json")
+  override def logPrefix = "gap"
   override def inDim = RedirectableDimension("gap")
-  val reader = new GAPReader
+  lazy val reader = new GAPReader(this)
   // reader.export = 100
   // reader.file = Some(File("/home/raupi/lmh/MathHub/ODK/GAP/gap/bitesize.json"))
 
@@ -19,7 +23,7 @@ object JSONImporter extends Importer {
     //     if (bf.inFile.filepath.toString < startAt) return
     val d = bf.inFile.name
     val e = try {
-      println("reading...")
+      log("reading...")
       val read = File.read(bf.inFile) // .replace("\\\n","")
 
       reader(read)
@@ -28,7 +32,7 @@ object JSONImporter extends Importer {
         println(msg)
         sys.exit
     }
-    println(reader.all.length + " Objects parsed")
+    log(reader.all.length + " Objects parsed")
 
     /*
     val conv = new PVSImportTask(controller, bf, index)
@@ -40,7 +44,7 @@ object JSONImporter extends Importer {
       //conv.doModule(m)
     }
     */
-    val conv = new Translator(controller, bf, index)
+    val conv = new Translator(controller, bf, index,this)
     conv(reader)
     BuildResult.empty
   }
@@ -100,38 +104,45 @@ abstract class GAPObject {
 
 case class GAPProperty(name : String, implied : List[String], isTrue :Boolean = false) extends GAPObject {
   val dependencies = implied
+  override def toString = {if (isTrue) "True Property " else "Property "} + name + ": " + implied.map(_.toString).mkString(",")
 }
 case class GAPOperation(name : String, filters : List[List[List[String]]], methods : List[JSONObject]) extends GAPObject {
   val dependencies : List[String] = filters.flatMap(_.flatten)
+  override def toString = "Operation " + name + ": " + filters.map(l => " - " + l.map(_.toString).mkString(",")).mkString("\n")
 }
 case class GAPCategory(name : String, implied : List[String]) extends GAPObject {
   val dependencies = implied
+  override def toString = "Category " + name + ": " + implied.map(_.toString).mkString(",")
 }
 case class GAPAttribute(name : String, filters : List[String]) extends GAPObject {
   val dependencies = filters
+  override def toString = "Attribute " + name + ": " + filters.map(_.toString).mkString(",")
 }
 // case class GAPTester( name : String, implied : List[String]) extends GAPObject
 case class GAPRepresentation(name : String, implied : List[String]) extends GAPObject {
   val dependencies = implied
+  override def toString = "Representation " + name + ": " + implied.map(_.toString).mkString(",")
 }
 case class GAPFilter(name : String, implied : List[String]) extends GAPObject {
   val dependencies = implied
+  override def toString = "Filter " + name + ": " + implied.map(_.toString).mkString(",")
 }
 
 case class Tester(obj : GAPObject) extends GAPObject {
   val name = obj.name + ".tester"
   val dependencies = List()
   override def getInner = obj.getInner
-  override def toString = name
+  override def toString = "Tester of " + obj.toString
+
 }
 case class CategoryCollections(obj: GAPObject) extends GAPObject {
   val name = obj.name + ".catcollection"
   val dependencies = List()
   override def getInner = obj.getInner
-  override def toString = name
+  override def toString = "Collection of " + obj.toString
 }
 
-class GAPReader {
+class GAPReader(log : JSONImporter) {
 
   var properties : List[GAPProperty] = Nil
   var categories : List[GAPCategory] = Nil
@@ -150,7 +161,7 @@ class GAPReader {
   private var counter = 0
   private var exportstr : List[JSON] = Nil
 
-  private def convert(j : JSON) {
+  private def convert(j : JSON) : Unit = log.toplogGroup {
     j match {
       case obj : JSONObject =>
         if (file.isDefined) {
@@ -164,8 +175,8 @@ class GAPReader {
           case _ => throw new ParseError("Name missing or not a JSONString: " + obj)
         }
         name match {
-          case reg1(s) => return
-          case reg2(s) => return
+          case reg1(s) => return ()
+          case reg2(s) => return ()
           case _ =>
         }
         val tp = obj("type") match {
@@ -186,10 +197,12 @@ class GAPReader {
             })
             case _ => throw new ParseError("filters missing in " + obj)
           })
-          properties      ::= GAPProperty(name,impls)
           val missings = obj.map.filter(p => p._1.value!="name" && p._1.value!="implied" && p._1.value!="type"
           && p._1.value!="filters")
           if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
+          val ret = GAPProperty(name,impls)
+          log.toplog("Added: " + ret)
+          properties      ::= ret
         }
         else if (tp == "GAP_Operation") {
           val filters = obj("filters") match {
@@ -209,10 +222,12 @@ class GAPReader {
             case o: JSONObject => o
             case _ => throw new ParseError("Method in Operation not a JSONObject: " + obj)
           })
-          operations      ::= GAPOperation(name,filters,methods)
           val missings = obj.map.filter(p => p._1.value!="name" && p._1.value!="filters" && p._1.value!="type"
           && p._1.value!="methods")
           if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
+          val ret = GAPOperation(name,filters,methods)
+          log.toplog("Added: " + ret)
+          operations      ::= ret
         }
         else if (tp == "GAP_Attribute") {
           val filters = obj("filters") match {
@@ -222,9 +237,11 @@ class GAPReader {
             }
             case _ => throw new ParseError("filters missing in " + obj)
           }
-          attributes      ::= GAPAttribute(name,filters)
           val missings = obj.map.filter(p => p._1.value!="name" && p._1.value!="filters" && p._1.value!="type")
           if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
+          val ret = GAPAttribute(name,filters)
+          log.toplog("Added: " + ret)
+          attributes      ::= ret
         }
         else if (tp == "GAP_Representation") {
           val impls = obj("implied") match {
@@ -234,9 +251,11 @@ class GAPReader {
             }
             case _ => throw new ParseError("implied missing in " + obj)
           }
-          representations      ::= GAPRepresentation(name,impls)
           val missings = obj.map.filter(p => p._1.value!="name" && p._1.value!="implied" && p._1.value!="type")
           if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
+          val ret = GAPRepresentation(name,impls)
+          log.toplog("Added: " + ret)
+          representations      ::= ret
         }
         else if (tp == "GAP_Category") {
           val impls = obj("implied") match {
@@ -246,9 +265,11 @@ class GAPReader {
             }
             case _ => throw new ParseError("implied missing in " + obj)
           }
-          categories      ::= GAPCategory(name,impls)
           val missings = obj.map.filter(p => p._1.value!="name" && p._1.value!="implied" && p._1.value!="type")
           if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
+          val ret = GAPCategory(name,impls)
+          log.toplog("Added: " + ret)
+          categories      ::= ret
         }
         else if (tp == "GAP_Filter") {
           val impls = obj("implied") match {
@@ -258,9 +279,11 @@ class GAPReader {
             }
             case _ => throw new ParseError("implied missing in " + obj)
           }
-          filter      ::= GAPFilter(name,impls)
           val missings = obj.map.filter(p => p._1.value!="name" && p._1.value!="implied" && p._1.value!="type")
           if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
+          val ret = GAPFilter(name,impls)
+          log.toplog("Added: " + ret)
+          filter      ::= ret
         }
         else throw new ParseError("Type not yet implemented: " + tp + " in " + obj)
         /*
@@ -301,11 +324,11 @@ class GAPReader {
     }
   }
 
-  def apply(read:String): Unit = {
-    println("JSON Parsing...")
+  def apply(read:String): Unit = log.toplogGroup {
+    log.toplog("JSON Parsing...")
 
     val parsed = JSON.parse(read)
-    println("ToScala...")
+    log.toplog("ToScala...")
     apply(parsed)
   }
 

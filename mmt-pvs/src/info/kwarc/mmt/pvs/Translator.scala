@@ -12,6 +12,7 @@ import parser._
 import info.kwarc.mmt.api.objects._
 import utils._
 import archives._
+import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, RelationHandler}
 
 abstract class ImportState(t:PVSImportTask) {
   val isPrelude : Boolean
@@ -21,8 +22,11 @@ abstract class ImportState(t:PVSImportTask) {
   var tcc : Option[FinalConstant] = None
   var vars : Context = Context.empty
 
-  def addinclude(p : MPath) = if (!th.getIncludes.contains(p)) {
-    th add PlainInclude(p,th.path) // TODO Replace by fancy include
+  private var includes : List[MPath] = Nil
+
+  def addinclude(p : MPath) = if (!includes.contains(p)) {
+    th add BoundInclude(th,p) // TODO Replace by fancy include
+    /*
     try {
       t.controller.globalLookup(p).asInstanceOf[DeclaredTheory]
     } catch {
@@ -30,7 +34,9 @@ abstract class ImportState(t:PVSImportTask) {
         // if (p.toString contains "_adt") throw _adt(p) else
         throw Dependency(p)
     }
+    */
     t.deps::=p
+    includes ::= p
   }
 }
 
@@ -49,20 +55,36 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
     // println("Document:" +bt.narrationDPath)
     try {
       val modsM = d._modules map doModule
+       //.add(m) ; MRef(bt.narrationDPath, m.path)})
+      try {
+        deps foreach {
+          controller.get(_).asInstanceOf[DeclaredTheory]
+        }
+      } catch {
+        case e : Exception => throw Dependency(deps.head)
+      }
+      log("Translated: " + state.th.name)
       val doc = new Document(bt.narrationDPath, true)
-      modsM.foreach(m => {
+      modsM foreach (m => {
         val theory = new DeclaredTheory(m.parent,m.name,m.meta,m.parameters)
-        controller.add(theory)
+        controller add theory
+        doc add MRef(bt.narrationDPath, theory.path)
         m.getDeclarations foreach controller.add
-        doc.add(MRef(bt.narrationDPath, theory.path))
-      }) //.add(m) ; MRef(bt.narrationDPath, m.path)})
+      })
       controller.add(doc)
+
+      log("Checking:")
+      logGroup {
+        val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
+          throw GeneralError(s"no checker $id found")
+        }
+        modsM foreach (p => checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore)))
+      }
       index(doc)
-      log("Success: " + state.th.name)
       BuildSuccess(deps.map(LogicalDependency),modsM.map(m => LogicalDependency(m.path)))
     } catch {
       case Dependency(p) =>
-        deps::=p
+        deps = (p::deps).distinct
         log("FAIL: " + state.th.name + " depends on " + deps)
         MissingDependency(deps.map(LogicalDependency),List(LogicalDependency(state.th.path)))
       case t : Exception =>
@@ -81,13 +103,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         val isPrelude = isPrel
         val th = theory
       }
-      try {
-        controller.globalLookup(meta).asInstanceOf[DeclaredTheory]//.get(meta)
-        deps::=meta
-      } catch {
-        case t : Exception =>
-         throw Dependency(meta)
-      }
+      deps ::= meta
       if (isPrel && named.id == "booleans") {
         log("Skipped Booleans")
         // theory add new OpaqueText(path,List(StringFragment(""))).
@@ -109,7 +125,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       // println(" -- Datatype: " + named.id)
       val isPrel = path.toString == "http://pvs.csl.sri.com/Prelude"
       val meta = if (isPrel) PVSTheory.thpath else PVSTheory.preludepath
-      val theory = new DeclaredTheory(path, doName(named.id + "_adt"), Some(meta), Context.empty)
+      val theory = new DeclaredTheory(path, doName(named.id /* + "_adt" */ ), Some(meta), Context.empty)
       state = new ImportState(this) {
         val isPrelude = isPrel
         val th = theory
@@ -176,9 +192,10 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           PVSTheory.nonempty(OMV(v.name))),
           None,Some("Assumption")))
       }
-    case formal_subtype_decl(ChainedDecl(NamedDecl(id,_,_),_,_),nonempty,sup) =>
+
+    case formal_subtype_decl(ChainedDecl(NamedDecl(id,_,_),_,_),nonempty,sup,pred) =>
       val name = newName(id)
-      val actsup = doType(sup._internal)
+      val actsup = doType(sup)
       val v = VarDecl(name,Some(PVSTheory.tp.term),None,None)
       state.th.parameters = state.th.parameters ++ v
       if (nonempty.nonempty_p && nonempty.contains.isDefined) {
@@ -192,9 +209,13 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       }
       state.th add Constant(state.th.toTerm,newName("INTERNAL_Assumption"),Nil,
         Some(PVSTheory.subtpjudg(OMV(name),actsup)),None,Some("Assumption"))
+      /*
       state.th add Constant(state.th.toTerm,newName(id + "_pred"),Nil,
         Some(PVSTheory.expr(PVSTheory.fun_type(actsup,PVSTheory.bool.term))),None,Some("Assumption"))
       // TODO add type equality name = setsubtype(name_pred,actsup)
+      */
+      doDecl(pred)(true)
+
     case formal_const_decl(ChainedDecl(NamedDecl(id,_,_),_,_),tp) =>
       val fulltp = doType(tp._internal)
       val v = VarDecl(doName(id),Some(PVSTheory.expr(fulltp)),None,None)
@@ -311,6 +332,17 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       val p = doMPath(domain,false)
       //TODO 
       // state.th add DefinedTheory()
+    case e@expr_judgement(optNamed,bindings,expr,tp) =>
+      val name = newName(optNamed.id.getOrElse("Name_Judgment"))
+      val (exp,restp) = doExpr(expr)
+      val fulltp = PVSTheory.tpjudg(exp,restp,doType(tp._internal))
+      println(exp)
+      if (bindings.nonEmpty) {
+        println("bindings in Decl expr_judgement: " + bindings)
+        println(e)
+        sys.exit
+      }
+      state.th add Constant(state.th.toTerm,name,Nil,Some(fulltp),None,if (isAss) Some("Assumption") else None)
     case _ =>
       println("TODO Decl: " + d.getClass + ": " + d)
       sys.exit
@@ -469,17 +501,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           val (asstm,asstp) = doExpr(ass._expr)
           PVSTheory.update(ex,ass.assignment_args match {
             case field_assign(_,id)::args =>
-              /*
-              println("Update " + ex)
-              println(" - " + asstm)
-              println(" - " + asstp)
-              */
               val realargs = args.map(x => doExpr(x.asInstanceOf[Expr])._1)
-              /*
-              println("field_assign -> " + id +
-                (if (args.nonEmpty) "("+realargs.map(_.toString).mkString(", ")+")" else "") +
-                " = " + asstm)
-                */
               PVSTheory.recupdate(id,asstm,realargs)
             case List(proj_assign(_,i)) =>
               PVSTheory.tupleupdate(i,asstm)
@@ -496,48 +518,6 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           })
         }
         (assignlist.foldLeft(tm)((t,ass) => doUpdateAssignment(t,ass)),tp)
-        /*
-        val (tm,tp) = doExpr(expr)
-        (PVSTheory.recupdate(tm,assignlist.map(_ match {
-          case assignment(_,args,expr1) =>
-            val ass = doExpr(expr1)._1
-            args.head match {
-              case field_assign(_,id) => (id,
-                if (args.tail.isEmpty) ass
-                else PVSTheory.funupdate(PVSTheory.fieldapp(tm,id),List((PVSTheory.tuple_expr(args.tail.map(a => a match {
-                  case x : Expr => doExpr(x)
-                  case x =>
-                    println("TODO update_expr field assignment arg in tuple " + x.getClass)
-                    sys.exit
-                }))._1,ass)))
-                )
-              case varname_expr(_,id,_) => (id,
-                if (args.tail.isEmpty) ass
-                else PVSTheory.funupdate(PVSTheory.fieldapp(tm,id),List((PVSTheory.tuple_expr(args.tail.map(a => a match {
-                  case x : Expr => doExpr(x)
-                  case x =>
-                    println("TODO update_expr var assignment arg in tuple " + x.getClass)
-                    sys.exit
-                }))._1,ass)))
-                )
-              case proj_assign(_,ind) =>
-                if (args.tail.isEmpty) ass
-                ???
-              case x =>
-                println("TODO update_expr assignment arg type " + x.getClass)
-                println(x)
-                println(e)
-                println(tm)
-                println(assignlist)
-                println(ass)
-                println(args)
-                sys.exit
-            }
-          case x =>
-            println("TODO update_expr type " + x.getClass)
-            sys.exit
-        })),tp)
-        */
       case string_expr(_,str) => (OMLIT(str,StringLiterals),StringLiterals.synType)
       case _ =>
         println("TODO Expr: " + e.getClass + ": " + e)
@@ -626,12 +606,12 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
             */
           case e: Exception => throw e
         }
-      } else if (!(mpath.^^.toString startsWith "http://pvs.csl.sri.com") &&
+      } /* else if (!(mpath.^^.toString startsWith "http://pvs.csl.sri.com") &&
           !state.th.getIncludes.contains(mpath)) {
         println("Import missing for " + mpath)
         println("Imports: " + state.th.getIncludes)
         sys.exit
-      }
+      } */
       // should be unnecessary ouside of Prelude
       val sym = OMS(mpath ? id)
       // apply theory parameters
@@ -666,10 +646,10 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         }
       }
       else {
-        val ret = DPath(URI(library_id))
-        println("PATH: " + ret)
+        val ret = DPath(state.th.path.parent.uri.resolve(library_id))
+        //println("PATH: " + ret)
         ret
-        sys.exit
+        //sys.exit
       }
     // DPath((URI.http colon "pvs.csl.sri.com") / (if (library_id=="") "Prelude" else  library_id))
 

@@ -218,9 +218,9 @@ object PVSTheory {
       def apply(nametp : (LocalName,Term)*) =
          ApplySpine(this.term,Recexp(nametp.map(t => OML(t._1,Some(tp.term),Some(t._2))):_*))
       def unapply(t:Term) : Option[List[(String,Term)]] = t match {
-         case ApplySpine(this.term,l) => Some(l.map(_ match {
+         case ApplySpine(this.term,List(Recexp(l))) => Some(l.map({
             case OML(VarDecl(name,Some(tp.term),Some(df),not)) => (name.toString,df)
-            case _ => throw new Exception("Invalid Record type")
+            case tm @ _ => throw new Exception("Invalid Record type element: " + tm)
          }))
          case _ => None
       }

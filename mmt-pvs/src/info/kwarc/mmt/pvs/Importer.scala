@@ -9,7 +9,7 @@ import archives._
 import info.kwarc.mmt.LFX.Subtyping.subtypeOf
 import info.kwarc.mmt.api.objects.{Context, OMID}
 import info.kwarc.mmt.api.parser.{KeywordBasedParser, ParserExtension, ParserState, SourceRef}
-import info.kwarc.mmt.api.symbols.{BoundTheoryParameters, DerivedDeclaration, FinalConstant, TermContainer}
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.lf.{Apply, Lambda, Pi}
 
 class Plugin extends frontend.Plugin {
@@ -40,7 +40,8 @@ class ParIncludeParserExt extends ParserExtension {
   }
 }
 
-class LambdaPiInclude extends BoundTheoryParameters(Pi.path,Lambda.path,Apply.path)
+object LambdaPiIncludeRule extends StructuralFeatureRule("BoundParams")
+class LambdaPiInclude extends BoundTheoryParameters("BoundParams",Pi.path,Lambda.path,Apply.path)
 case class BoundInclude(top:DeclaredTheory,from:MPath) extends DerivedDeclaration(top.toTerm,LocalName(from),"BoundParams",
   List(DeclarationComponent(DomComponent,TermContainer(OMID(from)))))
 
@@ -51,25 +52,17 @@ class PVSImporter extends Importer {
 
    private val parseXML = syntax.makeParser
 
-   private var startAt = "/home/raupi/lmh/MathHub/PVS/NASA/source/vectors/pvsxml/vectors_3D_def"
+//   private var startAt = "/home/raupi/lmh/MathHub/PVS/NASA/source/vect_analysis/pvsxml/cont_real_vect2.xml"
 //   private var startAt = "/home/raupi/lmh/MathHub/PVS/Prelude/src/pvsxml/stdtokenizer"
    def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
 //      if (bf.inFile.toFilePath.toString < startAt) return BuildResult.empty
-      val d = bf.inFile.name
+      log("Reading " + bf.inFile)
       val e = try {
          parseXML(bf.inFile)
       } catch {
-         case utils.ExtractError(msg) =>
-            //ParseError("error in xml: " + msg)
-/*            if (ignoreMsg.exists(msg.startsWith))
-               return
-            i += 1
-            if (i > ignore) { */
-               println(msg)
-               sys.exit
-               //throw utils.ExtractError(msg)
-//            } else
-  //             return
+        case utils.ExtractError(msg) =>
+          println(msg)
+          sys.exit
       }
      //println(e)
 
@@ -79,8 +72,9 @@ class PVSImporter extends Importer {
             conv.doDocument(d)
          case m: syntax.Module =>
             conv.doDocument(pvs_file(List(m)))
-            //conv.doModule(m)
       }
-      // BuildResult.empty
+
+
+      //BuildResult.empty
    }
 }

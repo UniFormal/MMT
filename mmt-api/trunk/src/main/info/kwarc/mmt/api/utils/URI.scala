@@ -89,7 +89,12 @@ case class URI(scheme: Option[String],
   /** parses a URI and resolves it against this */
   def resolve(s: String): URI = resolve(URI(s))
 
-  private def merge(p: List[String], q: List[String]) = if (p.isEmpty) q else p.init ::: q
+  private def merge(p: List[String], q: List[String]) = dodots(if (p.isEmpty) q else p.init ::: q)
+  private def dodots(p : List[String]) = p.foldLeft[List[String]](Nil)((q,cur) =>
+    if (cur == ".") q
+    else if (cur == "..") q.tail
+    else cur :: q
+  ).reverse
   /** resolves a URI against this one (not using the java.net.URI resolution algorithm, which is buggy when u has no scheme, authority, path) */
   def resolve(u: URI): URI = {
     if      (u.scheme.isDefined)    u

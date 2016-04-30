@@ -63,7 +63,7 @@ sealed trait FormalParameter
 // not in rnc
 case class formal_type_decl(named: ChainedDecl, ne: NonEmptiness) extends FormalParameter
 /** type with given supertype -- a TYPE FROM A for a type A */
-case class formal_subtype_decl(named: ChainedDecl, ne: NonEmptiness, sup: DeclaredType) extends FormalParameter
+case class formal_subtype_decl(named: ChainedDecl, ne: NonEmptiness, _sup: Type, _pred: const_decl) extends FormalParameter
 /** typed constant -- c:A for a type A */
 case class formal_const_decl(named: ChainedDecl, tp: DeclaredType) extends FormalParameter
 /** model of a theory -- m: T for a theory T */
@@ -143,7 +143,7 @@ trait Judgement extends Decl
 /** p: |- A <: B */
 case class subtype_judgement(named: OptNamedDecl, sub: DeclaredType, sup: DeclaredType) extends Judgement
 /** p: |- t: A (some limitations on t) */
-case class expr_judgement(named: OptNamedDecl, _expr: Expr, tp: DeclaredType) extends Judgement
+case class expr_judgement(named: OptNamedDecl, bindings :List[binding], _expr: Expr, tp: DeclaredType) extends Judgement
 /** p: |- name: A (special case of expr_judgement) */
 case class name_judgement(named: OptNamedDecl, _name: name_expr, tp: DeclaredType) extends Judgement
 /** p: |- number: A (special case of expr_judgement) */

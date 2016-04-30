@@ -301,27 +301,36 @@ class Translator extends Extension {
   }
 
   private case class State(visited : List[GlobalName], applied : List[Translation], usedgroups : List[TranslationGroup]) {
-    def add(vs : GlobalName) = State(vs :: visited, applied,usedgroups)
+    //def add(vs : GlobalName) = State(vs :: visited, applied,usedgroups)
     def add(vs : (GlobalName,List[GlobalName],Translation)) = State(vs._1 :: visited, vs._3 :: applied, usedgroups)
     def add(gr : (TranslationGroup,GlobalName,List[GlobalName],Translation)) =
       State(gr._2 :: visited, gr._4 :: applied, gr._1 :: usedgroups)
 
-    def +(s : State) =State(visited,applied,s.usedgroups ::: usedgroups)
+    def +(s : State) =State(visited,s.applied ::: applied,s.usedgroups ::: usedgroups)
   }
 
   private def findApplicable(t : Term, state : State)(implicit target: FullArchive) : List[State] = {
+    // Use translations that have already been used
+    val usedtranslations = state.applied.collect {
+      case tr if tr.isApplicable(t).isDefined =>
+        val ret = tr.isApplicable(t).get
+        (ret._1,ret._2,tr)
+    }.filter(p => !p._2.filter(!target.declares(_)).exists(state.visited.contains))
+    if (usedtranslations.nonEmpty) return usedtranslations.map(u => state add u)
+
+    // Use translation groups that have already been used
     val usedgroups = state.usedgroups.collect{
       case g if g.isApplicable(t).nonEmpty => g.isApplicable(t)
     }.flatten.filter(p => !p._2.filter(!target.declares(_)).exists(state.visited.contains))
-
     if (usedgroups.nonEmpty) return usedgroups.map(u => state add u)
 
+    //open up new translation group
     val newgroups = translationgroups.collect{
       case gr if gr.isApplicable(t).nonEmpty => gr.isApplicable(t).map(p => (gr,p._1,p._2,p._3))
     }.flatten.filter(p => !p._3.filter(!target.declares(_)).exists(state.visited.contains))
-
     if (newgroups.nonEmpty) return newgroups.map(gr => state add gr)
 
+    // find other applicable translations
     val applicables = translations.collect {
       case tr if tr.isApplicable(t).isDefined =>
         val ret = tr.isApplicable(t).get
@@ -353,58 +362,60 @@ class Translator extends Extension {
       })
     }
 
-  private def traverse(t : Term, state : State)(implicit target: FullArchive) : List[(Term,State)] = t match {
-    case OMV(name) => List((t,state))
-    case OMS(p) =>
-      if (target.declares(p)) List((t, state))
-      else {
-        val ways = findApplicable(t, state)
-        if (ways.nonEmpty) ways.flatMap(s => traverse(s.applied.head.apply(t), s))
-        else {
-          val df = expandDefinition(p)
-          if (df.isDefined) traverse(df.get, state)
-          else Nil
+  private def traverse(t : Term, state : State)(implicit target: FullArchive) : List[(Term,State)] = {
+    // target already declares the symbols:
+    t match {
+      case OMV(name) => return List((t, state))
+      case OMS(p) if target.declares(p) => return List((t, state))
+      case _ =>
+    }
+
+    // Find applicable translations and apply them
+    val ways = findApplicable(t, state)
+    if (ways.nonEmpty) ways.flatMap(s => traverse(s.applied.head.apply(t), s))
+
+      // None applicable; traverse the term
+    else t match {
+      case OMS(p) =>
+        // no translations for symbol p => Expand definition (if possible)
+        val df = expandDefinition(p)
+        if (df.isDefined) traverse(df.get, state)
+        else Nil
+      case OMA(f, args) =>
+        traverse(state, f :: args: _*) map {
+          case (ls, st) => (OMA(ls.head, ls.tail), st)
         }
+      case OMBINDC(binder, con, bodies) =>
+        val nbinds = traverse(binder, state)
+        val ncons = nbinds flatMap {
+          case (tm, st) =>
+            val conts = traverse(con, state + st)
+            conts.map {
+              case (ncon, nst) => (tm, ncon, nst)
+            }
+        }
+        ncons flatMap {
+          case (nbinder, ncon, st2) =>
+            traverse(state + st2, bodies: _*) map {
+              case (ls, nst) => (OMBINDC(nbinder, ncon, ls), nst)
+            }
+        }
+      case UnknownOMLIT(s, tm) => traverse(tm, state) map {
+        case (ntm, st) => (UnknownOMLIT(s, ntm), st)
       }
-    case _ =>
-      val ways = findApplicable(t, state)
-      if (ways.nonEmpty) ways.flatMap(s => traverse(s.applied.head.apply(t), s))
-      else t match {
-        case OMA(f, args) =>
-          traverse(state,f :: args :_*) map {
-            case (ls,st) => (OMA(ls.head,ls.tail),st)
-          }
-        case OMBINDC(binder,con,bodies) =>
-          val nbinds = traverse(binder,state)
-          val ncons = nbinds flatMap {
-            case (tm,st) =>
-              val conts = traverse(con,state + st)
-              conts.map {
-                case (ncon,nst) => (tm,ncon,nst)
-              }
-          }
-          ncons flatMap {
-            case (nbinder,ncon,st2) =>
-              traverse(state + st2,bodies :_*) map {
-                case (ls,nst) => (OMBINDC(nbinder,ncon,ls),nst)
-              }
-          }
-        case UnknownOMLIT(s,tm) => traverse(tm,state) map {
-          case (ntm,st) => (UnknownOMLIT(s,ntm),st)
-        }
-        case OMLIT(value,rt) => traverse(rt.synType,state) map {
-          case (ntm,st) => (UnknownOMLIT(value.toString,ntm),st)
-        }
-        case OML(VarDecl(name,tp,df,not)) =>
-          val tps = if (tp.isDefined) traverse(tp.get,state).map(p => (Some(p._1),p._2)) else List((None,state))
-          val dfs = tps flatMap {
-            case (tpOpt,st) => if (df.isDefined) traverse(df.get,state + st).map(p => (tpOpt,Some(p._1),p._2)) else List((tpOpt,None,st))
-          }
-          dfs map {
-            case (tpOpt,dfOpt,nst) => (OML(name,tpOpt,dfOpt),nst)
-          }
-        case _ => Nil
+      case OMLIT(value, rt) => traverse(rt.synType, state) map {
+        case (ntm, st) => (UnknownOMLIT(value.toString, ntm), st)
       }
+      case OML(VarDecl(name, tp, df, not)) =>
+        val tps = if (tp.isDefined) traverse(tp.get, state).map(p => (Some(p._1), p._2)) else List((None, state))
+        val dfs = tps flatMap {
+          case (tpOpt, st) => if (df.isDefined) traverse(df.get, state + st).map(p => (tpOpt, Some(p._1), p._2)) else List((tpOpt, None, st))
+        }
+        dfs map {
+          case (tpOpt, dfOpt, nst) => (OML(name, tpOpt, dfOpt), nst)
+        }
+      case _ => Nil
+    }
   }
 
   def apply(t : Term, target : FullArchive) : List[Term] = traverse(t,State(Nil,Nil,Nil))(target).map(_._1)

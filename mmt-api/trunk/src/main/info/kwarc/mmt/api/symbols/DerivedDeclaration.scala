@@ -6,6 +6,8 @@ import frontend._
 import checking._
 import objects._
 
+import scala.xml.Elem
+
 /** A [[DerivedDeclaration]] is a syntactically like a nested theory.
  *  Its semantics is defined by the corresponding [[StructuralFeature]]
  */
@@ -13,7 +15,31 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, componen
    private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name, None)
 } with NestedModule(t) {
    // overriding to make the type stricter
-   override val module: DeclaredModule = t
+   override def module: DeclaredModule = t
+  override def toNode : Elem = {
+    <derived feature={feature} name={name.toString} base={t.parent.toString}>
+      {components.map(c => <component key={c.key.toString}>
+      {c.value match {
+        case t: TermContainer => t.get.get.toNode
+        case p: MPathContainer => p.get.get.toNode
+      }}
+    </component>)}{t.getDeclarations map (_.toNode)}
+    </derived>
+  }
+  // override def toNodeElab
+  override def toNode(rh: presentation.RenderingHandler) : Unit = {
+    rh << s"""<derived feature="$feature" name="${t.name}" base="${t.parent}">"""
+    components foreach (c => {
+      rh << s"""<component key="${c.key}">"""
+      c.value match {
+        case t: TermContainer => t.get.get.toNode(rh)
+        case p: MPathContainer => p.get.get.toNode(rh)
+      }
+      rh << s"""</component>"""
+    })
+    t.getDeclarations foreach(_.toNode(rh))
+    rh << "</derived>"
+  }
 }
 
 
@@ -138,8 +164,8 @@ class InductiveDataTypes extends StructuralFeature("inductive") {
 }
 
 // Binds theory parameters using Lambda/Pi in an include-like structure
-class BoundTheoryParameters(pi : GlobalName, lambda : GlobalName, applys : GlobalName)
-  extends StructuralFeature("BoundParams") {
+class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, applys : GlobalName)
+  extends StructuralFeature(id) {
 
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) : Elaboration = {
     val dom = dd.getComponent(DomComponent) getOrElse {
@@ -158,11 +184,13 @@ class BoundTheoryParameters(pi : GlobalName, lambda : GlobalName, applys : Globa
     }
     controller.simplifier.apply(body)
     val vars = body.parameters
+    /*
     if (vars.isEmpty) return new Elaboration {
       val includes = PlainInclude(parent.path,body.path) :: body.getIncludes.map(PlainInclude(parent.path,_))
       def domain = includes.map(_.name)
       def getO(name: LocalName): Option[Declaration] = includes.find(_.name == name)
     }
+    */
 
     def bindPi(t : Term) = if (vars.nonEmpty) OMBIND(OMS(pi),vars,t) else t
     def bindLambda(t : Term) = if (vars.nonEmpty) OMBIND(OMS(lambda),vars,t) else t

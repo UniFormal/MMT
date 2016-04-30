@@ -67,7 +67,8 @@ trait HasNotation {
    def not = notC.parsing
 }
 
-class NestedModule(val module: Module) extends Declaration with ModuleWrapper {
+class NestedModule(mod: Module) extends Declaration with ModuleWrapper {
+   def module = mod
   val home = OMMOD(module.parent ? module.name.init)
   val name = LocalName(module.name.last)
   

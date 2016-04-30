@@ -7,6 +7,6 @@ class Plugin extends frontend.Plugin {
   val theory = Math.path
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
-    controller.extman.addExtension(JSONImporter)
+    controller.extman.addExtension(new JSONImporter)
   }
 }
