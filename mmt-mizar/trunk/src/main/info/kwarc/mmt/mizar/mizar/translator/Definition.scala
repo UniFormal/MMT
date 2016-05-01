@@ -16,8 +16,6 @@ import info.kwarc.mmt.lf._
 import info.kwarc.mmt.morphisms._
 import objects.Conversions._
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.uom.OMLiteral._
-
 
 object DefinitionTranslator {
 
@@ -111,7 +109,9 @@ object DefinitionTranslator {
       case Some(s) => s
     }
     
-    f.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
+    val sind : uom.IntegerLiteral = uom.StandardInt
+    
+    f.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI.apply(p._2 + 1))))
     TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
     val args = f.args.map(x => TypeTranslator.translateTyp(x._2))
     val retType = TypeTranslator.translateTyp(f.retType)

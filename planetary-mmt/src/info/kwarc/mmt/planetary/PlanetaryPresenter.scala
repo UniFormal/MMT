@@ -45,7 +45,30 @@ class NotationPresenter(contr : Controller, var notations : List[(GlobalName,Tex
 }
 
 class InformalMathMLPresenter extends presentation.MathMLPresenter {
-   override def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
+   def doTermApplication(f : Term, args : List[Term])(implicit pc: PresentationContext) : Int = {
+     doDefault(f)
+     doBracketedGroup {
+       val comps : List[() => Unit] = args.zipWithIndex.map {case (t,i) =>
+         () => {
+           recurse(t)(pc.child(i))
+           ()
+         }
+       }
+       doListWithSeparator(comps, () => pc.out(", "))
+     }
+     1
+   }
+  
+   override def doDefault(o: Obj)(implicit pc: PresentationContext): Int = o match {
+     case ComplexTerm(op, subs, con, args) =>
+       if (subs.isEmpty && con.isEmpty) 
+         doTermApplication(OMS(op), args)
+       else super.doDefault(o)
+     case OMA(f, args) => doTermApplication(f, args)
+     case _ => super.doDefault(o)
+   }
+   
+  override def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
      implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, None)
      doInfToplevel(o) {
         recurse(o)
@@ -56,7 +79,7 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
     case p if p == Narration.path || p == MathMLNarration.path =>
       doInformal(v,t)(pc : PresentationContext)
       1
-    case _ => println("$@##@#@#@####"); doDefault(t)(pc)
+    case _ => doDefault(t)(pc)
   }
 
   def doInformal(t : Term, tm : Term)(implicit pc : PresentationContext) : Unit = t match {

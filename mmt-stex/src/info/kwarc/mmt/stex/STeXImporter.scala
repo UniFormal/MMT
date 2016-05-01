@@ -78,7 +78,6 @@ class STeXImporter extends Importer {
         val node: Node = cp.document()(0)
         src.close()
         var used : List[Dependency] = node.child.flatMap(c => estimateModuleDeps(c, bt.narrationDPath)).toList
-        
         //controller.backend.getArchive(id)
         //FileBuildDependency("stex-importer", archive, inPath)
         /*
@@ -127,7 +126,7 @@ class STeXImporter extends Importer {
   
   def importDocument(bt: BuildTask, cont: Document => Unit): BuildResult = {
     try {
-      println(s"$counter. stex-importing " + bt.inPath)
+      //println(s"$counter. stex-importing " + bt.inPath)
       counter += 1
       docCont += (bt.narrationDPath -> cont) // to reindex document if needed
       val src = scala.io.Source.fromFile(bt.inFile.toString)
@@ -552,11 +551,7 @@ class STeXImporter extends Importer {
         val role = (n \ "@role").text
         if (role == "definiendum") {
           //verbalization notation
-          val narr = <span class="stex-ref">
-            <b>
-              {n.child}
-            </b>
-          </span>
+          val narr = <span class="stex-ref"><b>{n.child}</b></span>
           val ref = FlexiformalRef(term, narr)
           try {
             val const = controller.memory.content.getConstant(refName)
@@ -606,9 +601,7 @@ class STeXImporter extends Importer {
           }
           ref
         } else {
-          val narr = <span class="stex-ref">
-            {n.child}
-          </span>
+          val narr = <span class="stex-ref">{n.child}</span>
           FlexiformalRef(term, narr)
         }
       case "#PCDATA" =>

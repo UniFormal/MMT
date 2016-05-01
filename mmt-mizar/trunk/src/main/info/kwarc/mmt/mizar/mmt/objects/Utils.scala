@@ -11,7 +11,6 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.lfs._
-import info.kwarc.mmt.api.uom.OMLiteral._
 
 
 object Mizar {
@@ -87,7 +86,7 @@ object MMTUtils {
 	    TranslationController.currentTheory
 	  else aid match {
 	  	case "HIDDEN" => Mizar.HiddenTh
-	  	case _ =>  DPath(Mizar.mmlBase / TranslationController.currentVersion.toString) ? aid
+	  	case _ =>  DPath(Mizar.mmlBase) ? aid
 	  }
 	}
 	

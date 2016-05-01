@@ -96,3 +96,7 @@ object MMTCluster {
 	}
 
 }
+
+object OMI {
+  def apply(i : Int) = uom.OMLiteral.OMI(BigInt(i))
+}

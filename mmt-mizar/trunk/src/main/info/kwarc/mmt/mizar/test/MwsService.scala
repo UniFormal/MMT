@@ -107,7 +107,6 @@ class MwsService() extends QueryTransformer {
   def parseQuery(n : scala.xml.Node, aid : String, mmlversion : String) : scala.xml.Node = {
     TranslationController.query = true
     TranslationController.currentAid = aid
-    TranslationController.currentVersion = mmlversion
     
     var nr = n.child.length
     val qvars = n.child.slice(0, nr - 1)

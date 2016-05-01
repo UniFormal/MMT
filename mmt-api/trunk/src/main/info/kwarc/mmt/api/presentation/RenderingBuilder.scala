@@ -49,11 +49,11 @@ abstract class RenderingHandler {
      write(getQualifiedName(prefix, label))
      write(attributes.toString) //starts with a space
      write(scope.toString) //starts with a space
-     write(">\n")
+     write(">")
    }
    /** write an XML end tag */
    def writeEndTag(prefix : String, label : String) {
-     write(s"</${getQualifiedName(prefix, label)}>\n")
+     write(s"</${getQualifiedName(prefix, label)}>")
    }
    /** releases all resources, empty by default */
    def done {}
