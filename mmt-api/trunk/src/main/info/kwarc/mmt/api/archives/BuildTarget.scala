@@ -36,6 +36,10 @@ case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModi
     case None => this
     case Some(level) => Update(level, dryRun, testOpts, None)
   }
+
+  // simple choice which update policy to use in favor of forcing
+  def merge(up: Update): Update =
+    if (up.errorLevel < errorLevel) up else this
 }
 
 case class Build(update: Update) extends BuildTargetModifier {

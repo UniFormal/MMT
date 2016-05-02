@@ -37,6 +37,13 @@ class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask) {
   }
 
   def toJson: JSONString = JSONString(toJString)
+
+  def merge(qt: QueuedTask): Unit = {
+    updatePolicy = updatePolicy.merge(qt.updatePolicy)
+    lowPriority = lowPriority && qt.lowPriority
+    dependencyClosure = dependencyClosure && qt.dependencyClosure
+    // not sure if missingDeps and willProvide should be merged
+  }
 }
 
 /** */
@@ -200,8 +207,10 @@ class BuildQueue extends BuildManager {
         // low priority: no need to add, skip
         return
       } else {
-        // high priority: queue again
-        queued.remove(alreadyQueued(qtDep))
+        // high priority: queue again but adjust updatePolicy
+        val qt2 = alreadyQueued(qtDep)
+        qt.merge(qt2)
+        queued.remove(qt2)
         alreadyQueued -= qtDep
       }
     }

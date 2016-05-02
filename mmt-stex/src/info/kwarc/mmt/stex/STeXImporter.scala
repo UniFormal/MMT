@@ -68,7 +68,7 @@ class STeXImporter extends Importer {
   }
 
   var docCont: Map[DPath, Document => Unit] = Nil.toMap
-  
+
   override def estimateResult(bt : BuildTask) : BuildSuccess = {
     if (!bt.isDir) {
       try {
@@ -94,18 +94,18 @@ class STeXImporter extends Importer {
           BuildSuccess(Nil, Nil)
       }
     } else {
-      BuildSuccess(Nil, Nil)      
+      BuildSuccess(Nil, Nil)
     }
   }
-  
+
   def estimateModuleDeps(n : Node, dpath : DPath) : List[FileBuildDependency] = n.label match {
-    case "theory" => 
+    case "theory" =>
       try {
         val tname = getNameO(n).get
         val mpath = dpath ? tname
-        val deps = n.child flatMap {i => 
+        val deps = n.child flatMap {i =>
           i.label match {
-            case "imports" => 
+            case "imports" =>
               val fromS = (i \ "@from").text.split("#")(0)
               val (group, repo, frags) = parseStexPath(fromS, dpath)
               val archive = controller.backend.getArchive(s"$group/$repo").get
@@ -116,17 +116,17 @@ class STeXImporter extends Importer {
         }
         deps.toList
       } catch {
-        case e : Exception => 
+        case e : Exception =>
           Nil
       }
     case _ => Nil //nothing to do
   }
-  
+
   var counter = 1
-  
+
   def importDocument(bt: BuildTask, cont: Document => Unit): BuildResult = {
     try {
-      //println(s"$counter. stex-importing " + bt.inPath)
+      // println(s"$counter. stex-importing " + bt.inPath)
       counter += 1
       docCont += (bt.narrationDPath -> cont) // to reindex document if needed
       val src = scala.io.Source.fromFile(bt.inFile.toString)
@@ -143,10 +143,10 @@ class STeXImporter extends Importer {
     }
     BuildResult.empty
   }
-  
+
   //TODO tmp
   //override def log(s : => String, subgroup:Option[String]) = println(s)
-  
+
   def compileOne(inText: String, dpath: DPath): (String, List[Error]) = {
     val node = scala.xml.XML.loadString(inText) //clearXmlNS(
     val cleanNode = node //scala.xml.Utility.trim(node)
@@ -404,7 +404,7 @@ class STeXImporter extends Importer {
         case "ul" => //possibly/usually structural list
           val nextLevel = n.child.filter(_.label == "li").flatMap(li => li.child)
           nextLevel.foreach(c => translateDeclaration(c, localSection))
-        case "omgroup" | "theory" => 
+        case "omgroup" | "theory" =>
           val name = getName(n, thy)
           val innerSect = localSection / name
           val innerDoc = new Document(mpath.toDPath / innerSect, contentAncestor = Some(thy))
@@ -414,7 +414,7 @@ class STeXImporter extends Importer {
         case "oref" => //TODO should be a special transclusion reference for partial documents
           val href = (n \ "@href").text
           href.split("#").toList match {
-            case "foo" :: id :: Nil => //transclusion ref 
+            case "foo" :: id :: Nil => //transclusion ref
               val op = new opaque.UnknownOpaqueElement(mpath.toDPath, "mmt", n.child)
               add(op)
             case _ => //nothing to do
@@ -594,8 +594,8 @@ class STeXImporter extends Importer {
             case e: GetError =>
               val err = new STeXParseError("Cannot add verbalization notation, symbol not found", Some(s"was looking for symbol $refName"), sref, Some(Level.Warning))
               errorCont(err)
-            case e: NoSuchElementException => 
-              val err = new STeXParseError("Cannot add verbalization notation, signature document not found for reindexing", 
+            case e: NoSuchElementException =>
+              val err = new STeXParseError("Cannot add verbalization notation, signature document not found for reindexing",
                                             Some(s"was looking for sig. document $dpath"), sref, Some(Level.Warning))
               errorCont(err)
           }
@@ -644,7 +644,7 @@ class STeXImporter extends Importer {
       val pre = OMS(Informal.constant("error")).toNode
       val newChild = node.child.map(rewriteCMP)
       new Elem(node.prefix, "OMA", node.attributes, node.scope, false, pre +: newChild: _*)
-    case "OMATTR" => // FOR MIXING paper, to be updated when latexml bug is fixed 
+    case "OMATTR" => // FOR MIXING paper, to be updated when latexml bug is fixed
       try {
         val trimmed = scala.xml.Utility.trim(node)
         val omforeign = trimmed.child(0).child(1) // OMATP -> OMFOREIGN
@@ -652,7 +652,7 @@ class STeXImporter extends Importer {
         require(omforeign.label == "FOREIGN", "attr value  should be OMFOREIGN")
         <om:OMV name={"mixref" + refNr}> </om:OMV>
       } catch {
-        case e : Exception => 
+        case e : Exception =>
           node
       }
     case "#PCDATA" => new scala.xml.Text(node.toString())
@@ -826,18 +826,18 @@ class STeXImporter extends Importer {
       None
     }
   }
-  
+
   def getNameO(n : Node) : Option[LocalName] = {
     val nameS = (n \ s"@{$xmlNS}id").text
-    if (nameS.isEmpty()) None else Some(LocalName(nameS)) 
+    if (nameS.isEmpty()) None else Some(LocalName(nameS))
   }
-  
+
   def getName(n: Node, container: StructuralElement): LocalName = getNameO(n) match {
     case Some(ln) => ln
     case None =>  LocalName("Anon" + container.getDeclarations.length.toString)
   }
 
-  
+
   def parseStexPath(s : String, base: DPath): (String, String, List[String]) = {
     val baseGroup = base.uri.path(0)
     val baseArchive = base.uri.path(1)
@@ -867,7 +867,7 @@ class STeXImporter extends Importer {
 
   def parseRelDPath(s: String, dpath: DPath): DPath = {
     val (group, archive, frags)= parseStexPath(s, dpath)
-    val base = mhBase / group / archive 
+    val base = mhBase / group / archive
     frags.foldLeft(base)((dc, x) => dc / x)
   }
 
