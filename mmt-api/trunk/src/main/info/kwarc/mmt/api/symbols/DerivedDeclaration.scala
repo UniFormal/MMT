@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import modules._
 import frontend._
 import checking._
+import info.kwarc.mmt.api.libraries.ElaboratedElement
 import objects._
 
 import scala.xml.Elem
@@ -15,6 +16,7 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, componen
    private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name, None)
 } with NestedModule(t) {
    // overriding to make the type stricter
+  override def getComponents = components
    override def module: DeclaredModule = t
   override def toNode : Elem = {
     <derived feature={feature} name={name.toString} base={t.parent.toString}>
@@ -206,17 +208,25 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
           case _ => Traverser(this,t)
         }
       }
-      val decls = body.getDeclarations.map(_ match {
+      val decls = body.getDeclarations.map(decl => decl match {
         case c : FinalConstant if !c.isGenerated =>
-          Constant(parent.toTerm,LocalName(c.parent) / c.name, c.alias.map(LocalName(c.parent) / _),
+          Some(Constant(parent.toTerm,LocalName(c.parent) / c.name, c.alias.map(LocalName(c.parent) / _),
             c.tp.map(t => bindPi(traverser.apply(t,Context.empty))),
-            c.df.map(t => bindLambda(traverser.apply(t,Context.empty))),c.rl,c.notC)
-        case c : FinalConstant => Constant(parent.toTerm,LocalName(c.parent) / c.name,
+            c.df.map(t => bindLambda(traverser.apply(t,Context.empty))),c.rl,c.notC))
+        case c : FinalConstant => Some(Constant(parent.toTerm,LocalName(c.parent) / c.name,
           c.alias.map(LocalName(c.parent) / _),
-          c.tp,c.df,c.rl,c.notC)
-        case s : DeclaredStructure => DeclaredStructure(parent.toTerm,LocalName(s.parent) / s.name,s.from,s.isImplicit)
-        case _ => ???
-      })
+          c.tp,c.df,c.rl,c.notC))
+        case s : DeclaredStructure =>
+          val ns = DeclaredStructure(parent.toTerm,LocalName(s.parent) / s.name,s.from,s.isImplicit)
+          ElaboratedElement.set(ns)
+          Some(ns)
+        case d : DerivedDeclaration =>
+          //val nd = new DerivedDeclaration(parent.toTerm,LocalName(d.parent) / d.name,d.feature,d.getComponents)
+          //ElaboratedElement.set(nd)
+          //nd
+          None
+        case _ => throw new Exception("TODO: BoundTheoryParameters/Elaboration Declaration case " + decl.getClass)
+      }) collect {case Some(x) => x}
       //body
       def domain: List[LocalName] = decls.map(_.name)
       def getO(name: LocalName): Option[Declaration] = decls.find(_.name == name)

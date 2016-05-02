@@ -30,23 +30,31 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogP
    private val searchForward      = rules.get(classOf[ForwardSearch]).toList
    
    implicit val facts = new Facts(this, 2, outerLogPrefix)
+
+   private def doTheory(p : MPath) = controller.globalLookup.getO(p) match {
+      case Some(t: modules.DeclaredTheory) =>
+         t.getDeclarations.foreach {
+            case c: Constant if !UncheckedElement.is(c) => c.tp.foreach { tp =>
+               val a = Atom(c.toTerm, tp, c.rl)
+               facts.addConstantAtom(a)
+            }
+            case _ =>
+         }
+      case _ =>
+   }
+   private def doTerm(t : Term) : Unit = t match {
+      case OMPMOD(p,_) =>
+         doTheory(p)
+      case ComplexTheory(body) => body foreach (v => v.tp match {
+         case Some(OMPMOD(p,_)) => doTheory(p)
+         case Some(tm) => facts.addConstantAtom(Atom(v.toTerm,tm,None))
+         case _ =>
+      })
+      case _ =>
+   }
    private def initFacts {
       val imports = controller.library.visibleDirect(ComplexTheory(goal.context))
-      imports.foreach {
-         case OMPMOD(p,_) =>
-            controller.globalLookup.getO(p) match {
-               case Some(t:modules.DeclaredTheory) =>
-                  t.getDeclarations.foreach {
-                     case c: Constant if ! UncheckedElement.is(c) => c.tp.foreach {tp =>
-                        val a = Atom(c.toTerm, tp, c.rl)
-                        facts.addConstantAtom(a)
-                     }
-                     case _ =>
-                  }
-               case _ =>
-            }
-         case _ =>
-      }
+      imports.foreach(doTerm)
       log("Initialized facts are:  \n"+facts)
    }
 
@@ -55,7 +63,8 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogP
 
    /**
     * tries to solve the goal
-    * @param levels the depth of the breadth-first searches
+     *
+     * @param levels the depth of the breadth-first searches
     * @return true if the goal was solved
     */
    def apply(levels: Int): Boolean = {
@@ -69,7 +78,8 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogP
    
    /**
     * a list of possible steps to be used in an interactive proof
-    * @param levels the search depth for forward search 
+     *
+     * @param levels the search depth for forward search
     * @return a list of possible solutions (possibly with holes)
     */
    def interactive(levels: Int): List[Term] = {
@@ -107,7 +117,8 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogP
    
    /**
     * applies backward search to all fully expanded goals
-    * @param g the goal to apply tactics to
+     *
+     * @param g the goal to apply tactics to
     */
    private def backwardSearch(g: Goal) {
       // recurse into subgoals first so that we do not recurse into freshly-added goals
@@ -135,7 +146,8 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogP
 
    /**
     * applies one tactic to a goal and expands the resulting subgoals
-    * @return true if the tactic made any progress
+     *
+     * @return true if the tactic made any progress
     */
    private def applyAndExpand(at: ApplicableTactic, g: Goal): Boolean = {
       val alt = at.apply().getOrElse(return false)

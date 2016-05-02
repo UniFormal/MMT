@@ -26,13 +26,14 @@ object PVSTheory {
    val thname = "PVS"
    val thpath = rootdpath ? thname//Path.parseM("http://pvs.csl.sri.com/?PVS",NamespaceMap.empty) // rootdpath ? thname
    val preludepath = rootdpath ? "Prelude" //Path.parseM("http://pvs.csl.sri.com/?Prelude",NamespaceMap.empty) //rootdpath ? "Prelude"
+   val natlit = thpath ? "NatLit"
    class sym(s: String) {
       val path = thpath ? s
       val term = OMS(path)
    }
 
    object tp extends sym("tp")
-   object unknown extends sym("unknown_type")
+   //object unknown extends sym("unknown_type")
 
    object expr extends sym("expr") {
       def apply(t:Term) = Apply(this.term,t)
@@ -42,7 +43,11 @@ object PVSTheory {
       }
    }
 
-   object nonempty extends sym("nonemtpy") {
+   object subtpissubtype extends sym("subtpissubtype") {
+      def apply(tp1 : Term, tp2 : Term, proof : GlobalName) = ApplySpine(this.term,tp1,tp2,OMS(proof))
+   }
+
+   object nonempty extends sym("nonempty") {
       def apply(t:Term) = Apply(this.term,t)
    }
 
@@ -86,9 +91,14 @@ object PVSTheory {
    }
 
    object apply extends sym("pvsapply") {
-      def apply(f : Term,t:Term,ftp : Term) : (Term,Term) = ftp match {
+      def apply(f : Term,t:Term,ftp : Term)(state:ImportState) : (Term,Term) = ftp match {
          case pvspi(x,tpx,Lambda(y,btp,rettp)) => (ApplySpine(this.term,tpx,Lambda(y,btp,rettp),f,t),rettp ^? y/t) //Apply(tpf,t))
-         case _ => (ApplySpine(this.term,unknown.term,unknown.term,f,t),unknown.term)
+         case _ if state != null => (ApplySpine(this.term,state.doUnknown,state.doUnknown,f,t),state.doUnknown)
+         case _ => throw new Exception("Unknown types in pvsapply")
+      }
+      def unapply(t : Term) : Option[(Term,Term,Term)] = t match {
+         case ApplySpine(this.term,List(tpx,Lambda(y,btp,rettp),f,t2)) =>
+          Some(f,t2,rettp ^? y/t2)
       }
    }
 
@@ -103,7 +113,7 @@ object PVSTheory {
    object pvspi extends sym("pvspi") {
       def apply(bound : LocalName, boundtp : Term, rettp : Term) = ApplySpine(this.term,boundtp,Lambda(bound,expr(boundtp),rettp))
       def unapply(t:Term) : Option[(LocalName,Term,Term)] = t match {
-         case ApplySpine(this.term,List(boundtp,Lambda(bound,expr(boundtp2),rettp))) if boundtp==boundtp2 =>
+         case ApplySpine(this.term,List(boundtp,Lambda(bound,expr(boundtp2),rettp))) =>
             Some(bound,boundtp,Lambda(bound,expr(boundtp),rettp))
          case fun_type(a,b) =>
             val x = Context.pickFresh(t.freeVars.map(VarDecl(_,None,None,None)),LocalName("__"))._1
@@ -112,7 +122,7 @@ object PVSTheory {
       }
    }
 
-   object tuple_type extends sym("tuple_type") { // TODO needs reworking
+   object tuple_type extends sym("tuple_tp") { // TODO needs reworking
       def apply(l:List[Term]) : Term = if (l.length==2) ApplySpine(this.term,l.head,l.tail.head) else
          if (l.length==1) l.head else
          ApplySpine(this.term,l.head,apply(l.tail))
@@ -126,7 +136,7 @@ object PVSTheory {
       def apply(bound : LocalName, boundtp : Term, rettp : Term) = ApplySpine(this.term,boundtp,
          Lambda(bound,boundtp,rettp))
       def unapply(t:Term) : Option[(LocalName,Term,Term)] = t match {
-         case ApplySpine(this.term,List(boundtp,Lambda(bound,boundtp2,rettp))) if boundtp==boundtp2 =>
+         case ApplySpine(this.term,List(boundtp,Lambda(bound,boundtp2,rettp))) =>
             Some(bound,boundtp,Lambda(bound,boundtp2,rettp))
          case tuple_type(l) => Some((Context.pickFresh(t.freeVars.map(VarDecl(_,None,None,None)),LocalName("__"))._1,
            l.head,tuple_type(l.tail)))
@@ -140,8 +150,12 @@ object PVSTheory {
            tuple_type(List(l.head._2,l.tail.head._2)))
          else if (l.length == 1) l.head else {
             val ret = apply(l.tail)
-            (ApplySpine(this.term,l.head._2,ret._2,ret._1),tuple_type(List(l.head._2,ret._2)))
+            (ApplySpine(this.term,l.head._2,ret._2,l.head._1,ret._1),tuple_type(List(l.head._2,ret._2)))
          }
+      def unapply(t : Term) : Option[List[(Term,Term)]] = t match {
+         case ApplySpine(this.term,List(tA,tB,a,b)) => Some((a,tA) :: unapply(b).getOrElse(List((b,tB))))
+         case _ => None
+      }
    }
 
    object typecast extends sym("TypeCast") {
@@ -182,10 +196,10 @@ object PVSTheory {
    }
 
    object equal extends sym("=") {
-      def apply(tp:Term,a:Term,b:Term) = PVSTheory.apply(
+      def apply(tp:Term,a:Term,b:Term)(state:ImportState) = PVSTheory.apply(
          Apply(this.term,tp),
          tuple_expr(List((a,tp),(b,tp)))._1,
-         fun_type(tuple_type(List(tp,tp)),bool.term))
+         fun_type(tuple_type(List(tp,tp)),bool.term))(state)
    }
 
    object tpjudg extends sym("tpjudg") {
@@ -231,10 +245,10 @@ object PVSTheory {
    }
 
    object projection extends sym("proj") {
-      def apply(tm:Term,tmtp:Term,i:Int) = {
+      def apply(tm:Term,tmtp:Term,i:Int)(state : ImportState) = {
          val tp = tmtp match {
             case PVSTheory.tuple_type(l) if i<=l.length => l(i-1)
-            case _ => unknown.term
+            case _ => state.doUnknown
          }
          (ApplySpine(this.term,tmtp,tp,tm,OMLIT(BigInt(i),NatLiterals)),tp)
       }
