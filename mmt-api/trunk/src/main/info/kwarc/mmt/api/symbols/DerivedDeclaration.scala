@@ -16,8 +16,9 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, componen
    private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name, None)
 } with NestedModule(t) {
    // overriding to make the type stricter
+  override def module: DeclaredModule = t
+
   override def getComponents = components
-   override def module: DeclaredModule = t
   override def toNode : Elem = {
     <derived feature={feature} name={name.toString} base={t.parent.toString}>
       {components.map(c => <component key={c.key.toString}>
@@ -29,7 +30,7 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, componen
     </derived>
   }
   // override def toNodeElab
-  override def toNode(rh: presentation.RenderingHandler) : Unit = {
+  override def toNode(rh: presentation.RenderingHandler) {
     rh << s"""<derived feature="$feature" name="${t.name}" base="${t.parent}">"""
     components foreach (c => {
       rh << s"""<component key="${c.key}">"""
@@ -42,6 +43,7 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, componen
     t.getDeclarations foreach(_.toNode(rh))
     rh << "</derived>"
   }
+  override def toString = feature + " " + name + "(" + components.map(_.value.toString).mkString(",") + ")" + t.innerString
 }
 
 

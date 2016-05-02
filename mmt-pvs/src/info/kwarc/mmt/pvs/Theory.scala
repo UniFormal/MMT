@@ -134,7 +134,7 @@ object PVSTheory {
 
    object pvssigma extends sym("pvssigma") {
       def apply(bound : LocalName, boundtp : Term, rettp : Term) = ApplySpine(this.term,boundtp,
-         Lambda(bound,boundtp,rettp))
+         Lambda(bound,expr(boundtp),rettp))
       def unapply(t:Term) : Option[(LocalName,Term,Term)] = t match {
          case ApplySpine(this.term,List(boundtp,Lambda(bound,boundtp2,rettp))) =>
             Some(bound,boundtp,Lambda(bound,boundtp2,rettp))
@@ -177,7 +177,7 @@ object PVSTheory {
    }
 
    object recursor extends sym("recursor") {
-      def apply(tp:Term,name:LocalName,expr:Term) = ApplySpine(this.term,tp,Lambda(name,expr(tp),expr))
+      def apply(tp:Term,name:LocalName,defi:Term) = ApplySpine(this.term,tp,Lambda(name,expr(tp),defi))
    }
 
    object selection extends sym("selection") {

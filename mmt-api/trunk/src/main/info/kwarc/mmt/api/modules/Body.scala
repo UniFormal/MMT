@@ -227,7 +227,7 @@ trait Body extends ContentElement with MutableElementContainer[Declaration] {sel
 
    /** getDeclarationsElaborated, without narrative structure */
    protected def innerNodesElab = getDeclarationsElaborated.map(_.toNode)
-   protected def innerString = {
+   def innerString = {
       def makeStrings(doc: Document, indent: Int): List[(Int,String)] = {
          doc.getDeclarations.flatMap {
             case r: SRef =>

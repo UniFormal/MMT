@@ -3,7 +3,7 @@ package info.kwarc.mmt.pvs
 import info.kwarc.mmt.api.frontend.{Controller, Logger}
 import info.kwarc.mmt.api.opaque.{OpaqueElement, OpaqueText, StringFragment}
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, PlainInclude}
-import info.kwarc.mmt.lf.{ApplySpine, Lambda, Pi}
+import info.kwarc.mmt.lf.{ApplySpine, Lambda, Pi, Typed}
 import syntax._
 import info.kwarc.mmt.api._
 import documents._
@@ -24,12 +24,21 @@ abstract class ImportState(t:PVSImportTask) {
   var tcc : Option[FinalConstant] = None
   var vars : Context = Context.empty
 
+  var inductive : Option[GlobalName] = None
+
   var unknowns = 0
   def doUnknown = OMV("""/i/""" + {unknowns+=1;unknowns-1})
   def bindUnknowns(t : Term) = {
     val symbs = t.freeVars.filter(p => !parameters.exists(v => v.name == p))
-    if (unknowns > 0) OMBIND(OMS(Path.parseS("http://cds.omdoc.org/mmt?mmt?unknown", NamespaceMap.empty)),
-      symbs.map(n => VarDecl(n, Some(PVSTheory.tp.term), None, None)).toList,
+    if (unknowns > 0 && symbs.nonEmpty) OMBIND(OMS(Path.parseS("http://cds.omdoc.org/mmt?mmt?unknown", NamespaceMap.empty)),
+      symbs.flatMap(n => {
+        val i = (0 until unknowns).find(j => n == LocalName("""/i/""" + j))/*.getOrElse(
+          throw new Exception("Wrong free Variable: " + n + " in " + t)
+        )*/
+        if (i.isDefined)
+          List(VarDecl(LocalName("""/I/""" + i),Some(OMS(Typed.ktype)),None,None),VarDecl(n, Some(OMV("""/I/""" + i)), None, None))
+        else Nil
+      }).toList,
       t)
     else t
   }
@@ -40,7 +49,7 @@ abstract class ImportState(t:PVSImportTask) {
   var includes : List[MPath] = Nil
 
   def addinclude(p : MPath) = if (!includes.contains(p)) {
-    th add BoundInclude(th,p) // TODO Replace by fancy include
+    th add BoundInclude(th,p)
     /*
     try {
       t.controller.globalLookup(p).asInstanceOf[DeclaredTheory]
@@ -252,107 +261,144 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       sys.exit
   }
 
-  def doDecl(d: Decl)(isAss : Boolean = false) : Unit = d match {
-    case macro_decl(decl) => doDecl(decl)(isAss)
-    case var_decl(id,unnamed,tp) => // Not needed
-    case tcc_decl(ChainedDecl(NamedDecl(id,_,_),_,_),Assertion(kind,formula)) =>
-      val c = Constant(state.th.toTerm,newName(id + "_TCC"),Nil,Some(PVSTheory.proof(kind,doExprAs(formula,PVSTheory.bool.term))),None,
-        Some(if (isAss) "Assumption_TCC" else "TCC"))
-      state.th add c
-      state.tcc = Some(c)
-    case const_decl(ChainedDecl(NamedDecl(id,_,_),_,_),arg_formals,tp,defOpt) =>
-      state.unknowns = 0
-      val tptm = doType(tp._declared)
-      val exptp = arg_formals.flatMap(_._bindings).foldRight(tptm)((b,t) =>
-        PVSTheory.pvspi(doName(b.id),doType(b._type),t)
-      )
-      val defi = defOpt.map(d => state.bindUnknowns(arg_formals.flatMap(_._bindings).foldRight(doExprAs(d,tptm),tptm)((b,t) =>
-        (PVSTheory.lambda(doName(b.id),doType(b._type),t._2,t._1),
-          PVSTheory.pvspi(doName(b.id),doType(b._type),t._2)
-          ))._1))
-      state.th add Constant(state.th.toTerm,newName(id),Nil,Some(state.bindUnknowns(PVSTheory.expr(exptp))),defi,if (isAss) Some("Assumption") else None)
-    case formula_decl(ChainedDecl(NamedDecl(id,_,_),_,_),Assertion(kind,form)) =>
-      state.vars = Nil
-      val phi = doExprAs(form,PVSTheory.bool.term)
-      state.th add Constant(state.th.toTerm,newName(id),Nil,Some(state.bind(PVSTheory.proof(kind,phi))),None,if (isAss) Some("Assumption") else None)
-    case conversion_decl(UnnamedDecl(_,_,_),kind,expr) => // TODO
-    case auto_rewrite(UnnamedDecl(_,_,_),key,kind,namelist) => // TODO
-    case def_decl(named,arg_formals,tp,df,optMeasure,optOrder) =>
-      state.unknowns = 0
-      val tptm = doType(tp._internal)
-      val name = newName(named.named.id)
-      val exptp = arg_formals.flatMap(_._bindings).foldRight(tptm)((b,t) =>
-        PVSTheory.pvspi(doName(b.id),doType(b._type),t)
-      )
-      //state.vars = state.vars++VarDecl(name,Some(exptp),None,None)
-      val (defi,_) = arg_formals.flatMap(_._bindings).foldRight(doExprAs(df,tptm),tptm)((b,t) =>
-        (PVSTheory.lambda(doName(b.id),doType(b._type),t._2,t._1),
-          PVSTheory.pvspi(doName(b.id),doType(b._type),t._2)
-      ))
-      //state.vars = Context.empty
-      state.th add Constant(state.th.toTerm,name,Nil,Some(state.bindUnknowns(PVSTheory.expr(exptp))),
-        Some(state.bindUnknowns(PVSTheory.recursor(exptp,name,defi))),if (isAss) Some("Assumption") else None)
-    case ind_decl(named,arg_formals,tp,df) =>
-      doDecl(def_decl(ChainedDecl(named,false,false),arg_formals,tp,df,None,None))(isAss) // TODO?
+  def doDecl(d: Decl)(isAss : Boolean = false) : Unit = {
+//    println(d)
+    d match {
+      case macro_decl(decl) => doDecl(decl)(isAss)
 
-    case application_judgement(ond,nameexpr,arg_formals,tp) =>
-      val name = newName(ond.id.getOrElse("App_Judgment"))
-      state.unknowns = 0
-      val (exp,restp) = doExpr(arg_formals.flatMap(_._bindings).foldLeft(nameexpr.asInstanceOf[Expr])((e,b) =>
-        application("",e,varname_expr("",b.id,b._type),false)))
-      val fulltp = Pi(arg_formals.flatMap(_._bindings).map(b => VarDecl(doName(b.id),
-        Some(PVSTheory.expr(doType(b._type))),None,None)),
-        PVSTheory.tpjudg(exp,restp,doType(tp._internal)))
-      state.th add Constant(state.th.toTerm,name,Nil,Some(state.bindUnknowns(fulltp)),None,if (isAss) Some("Assumption") else None)
-    case type_def_decl(NamedDecl(id,_,_),NonEmptiness(neb,exprOpt),arg_formals,df) =>
-      state.unknowns = 0
-      val defi = doType(df._declared)
-      val tp = arg_formals.flatMap(_._bindings).foldRight(PVSTheory.tp.term.asInstanceOf[Term])((b,t) =>
-        Pi(doName(b.id),doType(b._type),t))
-      val name = newName(id)
-      val c = Constant(state.th.toTerm,name,Nil,Some(state.bindUnknowns(tp)),Some(state.bindUnknowns(defi)),if (isAss) Some("Assumption") else None)
-      state.th add c
-      if (neb && exprOpt.isDefined) {
-        state.th.add(Constant(state.th.toTerm,newName("INTERNAL_Judgment"),Nil,Some(
-          state.bindUnknowns(PVSTheory.is_nonempty(c.toTerm,doExprAs(exprOpt.get,defi)))),
-          None,if (isAss) Some("Assumption") else None))
-      } else if (neb) {
-        state.th.add(Constant(state.th.toTerm,newName("INTERNAL_Judgment"),Nil,Some(
-          PVSTheory.nonempty(c.toTerm)),
-          None,if (isAss) Some("Assumption") else None))
-      }
-    case axiom_decl(ChainedDecl(NamedDecl(id,_,_),_,_),Assertion(kind,form)) =>
-      state.vars = Nil
-      val phi = doExprAs(form,PVSTheory.bool.term)
-      state.th add Constant(state.th.toTerm,newName(id),Nil,Some(state.bind(PVSTheory.proof(kind,phi))),None,if (isAss) Some("Assumption") else None)
-    case subtype_judgement(OptNamedDecl(id,_,_,_),sub,sup) =>
-      state.unknowns = 0
-      val subtp = doType(sub._internal)
-      val suptp = doType(sup._internal)
-      val c = Constant(state.th.toTerm,newName(id.getOrElse("INTERNAL_Judgment")),Nil,Some(
-        state.bindUnknowns(PVSTheory.subtpjudg(subtp,suptp))
-      ),None,None)
-      state.th add c
-      state.th add Constant(state.th.toTerm,newName(id.getOrElse("INTERNAL_Assumption")),Nil,
-        Some(state.bindUnknowns(subtypeJudg(PVSTheory.expr(subtp),PVSTheory.expr(suptp)))),
-        Some(state.bindUnknowns(PVSTheory.subtpissubtype(subtp,suptp,c.path))),Some("Assumption"))
-    case type_from_decl(ChainedDecl(NamedDecl(id,_,_),_,_),nonempty,tp) =>
-      state.unknowns = 0
-      val name = newName(id)
-      val realtp = doType(tp._declared)
-      val c = Constant(state.th.toTerm,name,Nil,Some(PVSTheory.tp.term),None,None)
-      state.th add c
-      val d = Constant(state.th.toTerm,newName("INTERNAL_Assumption"),Nil,
-        Some(state.bindUnknowns(PVSTheory.subtpjudg(OMS(c.path),realtp))),None,Some("Assumption"))
-      state.th add d
-      state.th add Constant(state.th.toTerm,newName("INTERNAL_Assumption"),Nil,
-        Some(state.bindUnknowns(subtypeJudg(PVSTheory.expr(OMS(c.path)),PVSTheory.expr(realtp)))),
-        Some(state.bindUnknowns(PVSTheory.subtpissubtype(OMS(c.path),realtp,d.path))),Some("Assumption"))
-      state.th add Constant(state.th.toTerm,newName(id + "_pred"),Nil,
-        Some(state.bindUnknowns(PVSTheory.expr(PVSTheory.fun_type(realtp,PVSTheory.bool.term)))),None,Some("Assumption"))
-    // TODO add type equality name = setsubtype(name_pred,actsup)
-    case type_decl(ChainedDecl(NamedDecl(id,_,_),_,_),nonempty) =>
-     // if (state.th.path != (PVSTheory.rootdpath / "Prelude") ? "numbers" && id!="number") {
+      case var_decl(id, unnamed, tp) => // Not needed
+
+      case tcc_decl(ChainedDecl(NamedDecl(id, _, _), _, _), Assertion(kind, formula)) =>
+        val c = Constant(state.th.toTerm, newName(id + "_TCC"), Nil, Some(PVSTheory.proof(kind, doExprAs(formula, PVSTheory.bool.term))), None,
+          Some(if (isAss) "Assumption_TCC" else "TCC"))
+        state.th add c
+        state.tcc = Some(c)
+
+      case const_decl(ChainedDecl(NamedDecl(id, _, _), _, _), arg_formals, tp, defOpt) =>
+        state.unknowns = 0
+        val tptm = doType(tp._declared)
+        val exptp = arg_formals.flatMap(_._bindings).foldRight(tptm)((b, t) =>
+          PVSTheory.pvspi(doName(b.id), doType(b._type), t)
+        )
+        val defi = defOpt.map(d => state.bindUnknowns(arg_formals.flatMap(_._bindings).foldRight(doExprAs(d, tptm), tptm)((b, t) =>
+          (PVSTheory.lambda(doName(b.id), doType(b._type), t._2, t._1),
+            PVSTheory.pvspi(doName(b.id), doType(b._type), t._2)
+            ))._1))
+        state.th add Constant(state.th.toTerm, newName(id), Nil, Some(state.bindUnknowns(PVSTheory.expr(exptp))), defi,
+          if (isAss) Some("Assumption") else None)
+
+      case formula_decl(ChainedDecl(NamedDecl(id, _, _), _, _), Assertion(kind, form)) =>
+        state.vars = Nil
+        val phi = doExprAs(form, PVSTheory.bool.term)
+        state.th add Constant(state.th.toTerm, newName(id), Nil, Some(state.bind(PVSTheory.proof(kind, phi))), None, if (isAss) Some("Assumption") else None)
+
+      case conversion_decl(UnnamedDecl(_, _, _), kind, expr) => // TODO
+
+      case auto_rewrite(UnnamedDecl(_, _, _), key, kind, namelist) => // TODO
+
+      case def_decl(named, arg_formals, tp, df, optMeasure, optOrder) =>
+        state.unknowns = 0
+        val tptm = doType(tp._internal)
+        val name = newName(named.named.id)
+        val exptp = arg_formals.flatMap(_._bindings).foldRight(tptm)((b, t) =>
+          PVSTheory.pvspi(doName(b.id), doType(b._type), t)
+        )
+        //state.vars = state.vars++VarDecl(name,Some(exptp),None,None)
+        val (defi, _) = arg_formals.flatMap(_._bindings).foldRight(doExprAs(df, tptm), tptm)((b, t) =>
+          (PVSTheory.lambda(doName(b.id), doType(b._type), t._2, t._1),
+            PVSTheory.pvspi(doName(b.id), doType(b._type), t._2)
+            ))
+        //state.vars = Context.empty
+        state.th add Constant(state.th.toTerm, name, Nil, Some(state.bindUnknowns(PVSTheory.expr(exptp))),
+          Some(state.bindUnknowns(PVSTheory.recursor(exptp, name, defi))), if (isAss) Some("Assumption") else None)
+
+      case ind_decl(named, arg_formals, tp, df) =>
+        //doDecl(def_decl(ChainedDecl(named,false,false),arg_formals,tp,df,None,None))(isAss) // TODO?
+        state.unknowns = 0
+        val tptm = doType(tp._internal)
+        val name = newName(named.id)
+        val exptp = arg_formals.flatMap(_._bindings).foldRight(tptm)((b, t) =>
+          PVSTheory.pvspi(doName(b.id), doType(b._type), t)
+        )
+        state.inductive = Some(state.th.path ? name)
+        //state.vars = state.vars++VarDecl(name,Some(exptp),None,None)
+        val defi = PVSTheory.recursor(exptp, name, arg_formals.flatMap(_._bindings).foldRight(doExprAs(df, tptm), tptm)((b, t) =>
+          (PVSTheory.lambda(doName(b.id), doType(b._type), t._2, t._1),
+            PVSTheory.pvspi(doName(b.id), doType(b._type), t._2)
+            ))._1)
+        state.inductive = None
+        //state.vars = Context.empty
+        state.th add Constant(state.th.toTerm, name, Nil, Some(state.bindUnknowns(PVSTheory.expr(exptp))),
+          Some(state.bindUnknowns(defi)), if (isAss) Some("Assumption") else None)
+
+      case application_judgement(ond, nameexpr, arg_formals, tp) =>
+        val name = newName(ond.id.getOrElse("App_Judgment"))
+        state.unknowns = 0
+        val (exp, restp) = doExpr(arg_formals.flatMap(_._bindings).foldLeft(nameexpr.asInstanceOf[Expr])((e, b) =>
+          application("", e, varname_expr("", b.id, b._type), false)))
+        val fulltp = Pi(arg_formals.flatMap(_._bindings).map(b => VarDecl(doName(b.id),
+          Some(PVSTheory.expr(doType(b._type))), None, None)),
+          PVSTheory.tpjudg(exp, restp, doType(tp._internal)))
+        state.th add Constant(state.th.toTerm, name, Nil, Some(state.bindUnknowns(fulltp)), None,
+          if (isAss) Some("Assumption") else None)
+
+      case type_def_decl(NamedDecl(id, _, _), NonEmptiness(neb, exprOpt), arg_formals, df) =>
+        state.unknowns = 0
+        val bindings = arg_formals.flatMap(_._bindings).map(b => (doName(b.id), doType(b._type)))
+        val defi = bindings.foldRight[Term](doType(df._declared))((b, t) =>
+          Lambda(b._1, b._2, t))
+        val tp = bindings.foldRight[Term](PVSTheory.tp.term)((b, t) =>
+          Pi(b._1, b._2, t))
+        val name = newName(id)
+        val c = Constant(state.th.toTerm, name, Nil, Some(state.bindUnknowns(tp)), Some(state.bindUnknowns(defi)),
+          if (isAss) Some("Assumption") else None)
+        state.th add c
+        if (neb && exprOpt.isDefined) {
+          state.th.add(Constant(state.th.toTerm, newName("INTERNAL_Judgment"), Nil, Some(
+            state.bindUnknowns(PVSTheory.is_nonempty(c.toTerm, doExprAs(exprOpt.get, defi)))),
+            None, if (isAss) Some("Assumption") else None))
+        } else if (neb) {
+          state.th.add(Constant(state.th.toTerm, newName("INTERNAL_Judgment"), Nil, Some(
+            PVSTheory.nonempty(c.toTerm)),
+            None, if (isAss) Some("Assumption") else None))
+        }
+
+      case axiom_decl(ChainedDecl(NamedDecl(id, _, _), _, _), Assertion(kind, form)) =>
+        state.vars = Nil
+        val phi = doExprAs(form, PVSTheory.bool.term)
+        state.th add Constant(state.th.toTerm, newName(id), Nil, Some(state.bind(PVSTheory.proof(kind, phi))), None,
+          if (isAss) Some("Assumption") else None)
+
+      case subtype_judgement(OptNamedDecl(id, _, _, _), sub, sup) =>
+        state.unknowns = 0
+        val subtp = doType(sub._internal)
+        val suptp = doType(sup._internal)
+        val c = Constant(state.th.toTerm, newName(id.getOrElse("INTERNAL_Judgment")), Nil, Some(
+          state.bindUnknowns(PVSTheory.subtpjudg(subtp, suptp))
+        ), None, None)
+        state.th add c
+        state.th add Constant(state.th.toTerm, newName(id.getOrElse("INTERNAL_Assumption")), Nil,
+          Some(state.bindUnknowns(subtypeJudg(PVSTheory.expr(subtp), PVSTheory.expr(suptp)))),
+          Some(state.bindUnknowns(PVSTheory.subtpissubtype(subtp, suptp, c.path))), Some("Assumption"))
+
+      case type_from_decl(ChainedDecl(NamedDecl(id, _, _), _, _), nonempty, tp) =>
+        state.unknowns = 0
+        val name = newName(id)
+        val realtp = doType(tp._declared)
+        val c = Constant(state.th.toTerm, name, Nil, Some(PVSTheory.tp.term), None, None)
+        state.th add c
+        val d = Constant(state.th.toTerm, newName("INTERNAL_Assumption"), Nil,
+          Some(state.bindUnknowns(PVSTheory.subtpjudg(OMS(c.path), realtp))), None, Some("Assumption"))
+        state.th add d
+        state.th add Constant(state.th.toTerm, newName("INTERNAL_Assumption"), Nil,
+          Some(state.bindUnknowns(subtypeJudg(PVSTheory.expr(OMS(c.path)), PVSTheory.expr(realtp)))),
+          Some(state.bindUnknowns(PVSTheory.subtpissubtype(OMS(c.path), realtp, d.path))), Some("Assumption"))
+        state.th add Constant(state.th.toTerm, newName(id + "_pred"), Nil,
+          Some(state.bindUnknowns(PVSTheory.expr(PVSTheory.fun_type(realtp, PVSTheory.bool.term)))), None, Some("Assumption"))
+      // TODO add type equality name = setsubtype(name_pred,actsup)
+
+      case type_decl(ChainedDecl(NamedDecl(id, _, _), _, _), nonempty) =>
+        // if (state.th.path != (PVSTheory.rootdpath / "Prelude") ? "numbers" && id!="number") {
         val c = Constant(state.th.toTerm, newName(id), Nil, Some(PVSTheory.tp.term), None, None)
         state.th add c
         if (nonempty) {
@@ -360,47 +406,48 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
             PVSTheory.nonempty(c.toTerm)),
             None, if (isAss) Some("Assumption") else None)
         }
-      /*
-      } else {
-        log("Assigning " + {(PVSTheory.rootdpath / "Prelude") ? "numbers" ? "number"} + " to " + PVSTheory.thpath ? "NatLit")
-        state.th add Constant(state.th.toTerm, newName(id), Nil, Some(PVSTheory.tp.term), Some(OMS(PVSTheory.thpath ? "NatLit")) , None)
-      }
-      */
-    case name_judgement(OptNamedDecl(id,_,_,_),nameexpr,tp) =>
-      val name = newName(id.getOrElse("Name_Judgment"))
-      state.unknowns = 0
-      val (exp,restp) = doExpr(nameexpr)
-      val fulltp = PVSTheory.tpjudg(exp,restp,doType(tp._internal))
-      state.th add Constant(state.th.toTerm,name,Nil,Some(state.bindUnknowns(fulltp)),None,if (isAss) Some("Assumption") else None)
-    case enumtype_decl(NamedDecl(id,_,_),enum_elts) =>
-      state.th add Constant(state.th.toTerm,newName(id),Nil,Some(PVSTheory.tp.term),
-        Some(PVSTheory.enumtype(enum_elts.map(_._id))),None)
-    case importing(_,namedec) =>
-      state.addinclude(doMPath(namedec,true))
-    case inline_datatype(InlineDatatypeBody(NamedDecl(id,_,_),arg_formals,constructors)) =>
-      // TODO check if right
-      val datatp = Constant(state.th.toTerm, doName(id), Nil, Some(PVSTheory.tp.term), None, None)
-      state.th add datatp
-      constructors foreach(doDatatypeConstructor(_,datatp))
-    case theory_decl(ChainedDecl(NamedDecl(id,_,_),_,_),domain) =>
-      val p = doMPath(domain,false)
-      //TODO 
-      // state.th add DefinedTheory()
-    case e@expr_judgement(optNamed,bindings,expr,tp) =>
-      val name = newName(optNamed.id.getOrElse("Name_Judgment"))
-      state.unknowns = 0
-      val (exp,restp) = doExpr(expr)
-      val fulltp = PVSTheory.tpjudg(exp,restp,doType(tp._internal))
-      //println(exp)
-      if (bindings.nonEmpty) {
-        println("bindings in Decl expr_judgement: " + bindings)
-        println(e)
+
+      case name_judgement(OptNamedDecl(id, _, _, _), nameexpr, tp) =>
+        val name = newName(id.getOrElse("Name_Judgment"))
+        state.unknowns = 0
+        val (exp, restp) = doExpr(nameexpr)
+        val fulltp = PVSTheory.tpjudg(exp, restp, doType(tp._internal))
+        state.th add Constant(state.th.toTerm, name, Nil, Some(state.bindUnknowns(fulltp)), None, if (isAss) Some("Assumption") else None)
+
+      case enumtype_decl(NamedDecl(id, _, _), enum_elts) =>
+        state.th add Constant(state.th.toTerm, newName(id), Nil, Some(PVSTheory.tp.term),
+          Some(PVSTheory.enumtype(enum_elts.map(_._id))), None)
+
+      case importing(_, namedec) =>
+        state.addinclude(doMPath(namedec, true))
+
+      case inline_datatype(InlineDatatypeBody(NamedDecl(id, _, _), arg_formals, constructors)) =>
+        // TODO check if right
+        val datatp = Constant(state.th.toTerm, doName(id), Nil, Some(PVSTheory.tp.term), None, None)
+        state.th add datatp
+        constructors foreach (doDatatypeConstructor(_, datatp))
+
+      case theory_decl(ChainedDecl(NamedDecl(id, _, _), _, _), domain) =>
+        val p = doMPath(domain, false)
+      //TODO
+        ???
+
+      case e@expr_judgement(optNamed, bindings, expr, tp) =>
+        val name = newName(optNamed.id.getOrElse("Name_Judgment"))
+        state.unknowns = 0
+        val (exp, restp) = doExpr(expr)
+        val fulltp = PVSTheory.tpjudg(exp, restp, doType(tp._internal))
+        //println(exp)
+        if (bindings.nonEmpty) {
+          println("bindings in Decl expr_judgement: " + bindings)
+          println(e)
+          sys.exit
+        }
+        state.th add Constant(state.th.toTerm, name, Nil, Some(state.bindUnknowns(fulltp)), None, if (isAss) Some("Assumption") else None)
+      case _ =>
+        println("TODO Decl: " + d.getClass + ": " + d)
         sys.exit
-      }
-      state.th add Constant(state.th.toTerm,name,Nil,Some(state.bindUnknowns(fulltp)),None,if (isAss) Some("Assumption") else None)
-    case _ =>
-      println("TODO Decl: " + d.getClass + ": " + d)
-      sys.exit
+    }
   }
 
   def doObject(o:Object) : Term = o match {
@@ -440,9 +487,9 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       case record_type(_,fields) =>
         PVSTheory.recordtp(fields.map(f => (doName(f.named.id),doType(f._type))):_*)
       case setsubtype(_,tp,exp) =>
-        PVSTheory.setsub(doType(tp),doBoundExpr(exp)._1)
+        PVSTheory.setsub(doType(tp),doExpr(exp)._1)
       case type_application(_,tpname,args) =>
-        ApplySpine(doType(tpname),args.map(doBoundExpr(_)._1):_*)
+        ApplySpine(doType(tpname),args.map(doExpr(_)._1):_*)
       case type_extension(_,tp,by) =>
         PVSTheory.typeext(doType(tp),doType(by))
       case _ =>
@@ -474,56 +521,66 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
     } else */ tm
   }
 
-  def doBoundExpr(e : Expr) = {
-    state.unknowns = 0
-    val (tm,tp) = doExpr(e)
-    (state.bindUnknowns(tm),state.bindUnknowns(tp))
-  }
-
   def doExpr(e: Expr): (Term,Term) = {
     val eM: (Term,Term) = e match {
       case name_expr(_,name,optp,res) =>
         (doPath(name,Some(res)),optp.map(doType).getOrElse(state.doUnknown))
+
       case forall_expr(_,bindings,body) => // TODO make this sequence compatible
+        val vars = state.vars
+        state.vars = Nil
         val bd = doExpr(body)._1
         val con = Context(bindings.map(b =>
         {
           val name = doName(b.id)
           val typ = doType(b._type)
-          state.vars = state.vars.variables.filter(_.name != name).toList
           VarDecl(name,Some(typ),None,None)
         }):_*)
+        bindings foreach (b=> state.vars = state.vars.variables.filter(_.name.toString != b.id.toString).toList)
+        state.vars = (state.vars ::: vars).distinct
         (PVSTheory.forall(con,bd),PVSTheory.bool.term)
+
       case exists_expr(_,bindings,body) =>
+        val vars = state.vars
+        state.vars = Nil
         val bd = doExpr(body)._1
         val con = Context(bindings.map(b => {
           val name = doName(b.id)
           val typ = doType(b._type)
-          state.vars = state.vars.variables.filter(_.name != name).toList
           VarDecl(name, Some(typ), None, None)
         }):_*)
+        bindings foreach (b=> state.vars = state.vars.variables.filter(_.name.toString != b.id.toString).toList)
+        state.vars = (state.vars ::: vars).distinct
         (PVSTheory.exists(con,bd),PVSTheory.bool.term)
+
       case application(_,f,arg,_) =>
         val (tmf,tpf) = doExpr(f)
         val (tmarg,tparg) = doExpr(arg)
         PVSTheory.apply(tmf,tmarg,tpf)(state)
       case lambda_expr(_,bindings,body) =>
+        val vars = state.vars
+        state.vars = Nil
         val (bd,tptarget) = doExpr(body)
-        bindings.foldRight((bd,tptarget))((b,pair) => {
+        val ret = bindings.foldRight((bd,tptarget))((b,pair) => {
           val tp = doType(b._type)
           val name = doName(b.id)
-          state.vars = state.vars.variables.filter(_.name != name).toList
           (PVSTheory.lambda(name, tp, pair._2, pair._1),
             PVSTheory.pvspi(name, tp, pair._2))
         })
+        bindings foreach (b=> state.vars = state.vars.variables.filter(_.name.toString != b.id.toString).toList)
+        state.vars = (state.vars ::: vars).distinct
+        ret
+
       case tuple_expr(_,args) =>
         val tms = args.map(doExpr)
         PVSTheory.tuple_expr(tms)
+
       case varname_expr(_,id,tp) =>
         val name = doName(id)
         val typ = doType(tp)
         state.vars ::= VarDecl(name,Some(typ),None,None)
         (OMV(name),typ)
+
       case cases_expr(_,expr,sels) =>
         // variables here?
         val (t,tp) = doExpr(expr)
@@ -537,12 +594,14 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           )
         })
         (PVSTheory.pvsmatch(t,tp,cases,state.doUnknown),state.doUnknown)
+
       case field_appl_expr(_,id,expr) =>
         val (tm,tmtp) = doExpr(expr)
         (PVSTheory.fieldapp(tm,id),tmtp match {
           case PVSTheory.recordtp(ls) => ls.find(p => p._1==id).getOrElse(("",state.doUnknown))._2
           case _ => state.doUnknown
         })
+
       case record_expr(_,asslist) =>
         val list = asslist.map(a => {
           val (df,tp) = doExpr(a._expr)
@@ -552,11 +611,15 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           },tp,df)
         })
         (PVSTheory.recordexpr(list:_*),PVSTheory.recordtp(list.map(t => (t._1,t._2)):_*))
+
       case number_expr(_,j) => (OMLIT(j,NatLiterals),NatLiterals.pvstp)
+
       case rational_expr(_,s) => (OMLIT(s.replace(" ","/"),RationalLiterals),RationalLiterals.pvstp)
+
       case proj_appl_expr(_,expr,i) =>
         val (tm,tp) = doExpr(expr)
         PVSTheory.projection(tm,tp,i)(state)
+
       case update_expr(_,expr,assignlist) =>
         // variables here?
         val (tm,tp) = doExpr(expr)
@@ -581,7 +644,9 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           })
         }
         (assignlist.foldLeft(tm)((t,ass) => doUpdateAssignment(t,ass)),tp)
+
       case string_expr(_,str) => (OMLIT(str,StringLiterals),StringLiterals.synType)
+
       case _ =>
         println("TODO Expr: " + e.getClass + ": " + e)
         sys.exit
@@ -631,7 +696,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       sys.exit
     }
 
-    if (mpath == state.th.path && state.parameters.exists(v => v.name==LocalName(id))) {
+    if (mpath == state.th.path && (state.parameters.exists(v => v.name==LocalName(id)) || state.inductive.contains(mpath ? id))) {
       // if (state.vars.exists(v => v.name==LocalName(id))) println("Yields: " + OMV(id))
       OMV(id)
     } else if (mpath.toString == state.th.path.toString) {

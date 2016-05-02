@@ -92,10 +92,11 @@ case class URI(scheme: Option[String],
   private def merge(p: List[String], q: List[String]) = dodots(if (p.isEmpty) q else p.init ::: q)
   private def dodots(p : List[String]) = p.foldLeft[List[String]](Nil)((q,cur) =>
     if (cur == ".") q
-    else if (cur == "..") q.tail
+    else if (cur == "..") if (q.isEmpty) Nil else q.tail
     else cur :: q
   ).reverse
   /** resolves a URI against this one (not using the java.net.URI resolution algorithm, which is buggy when u has no scheme, authority, path) */
+  // URI RFC calls dodots in more situations during resolution, but it seems not crucial in practice
   def resolve(u: URI): URI = {
     if      (u.scheme.isDefined)    u
     else if (u.authority.isDefined) URI(scheme, u.authority, u.path,              u.absolute,                      u.query, u.fragment)
