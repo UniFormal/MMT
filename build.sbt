@@ -173,6 +173,10 @@ lazy val stex = (project in file("mmt-stex")).
   dependsOn(api).
   settings(commonSettings("mmt-stex"): _*)
 
+lazy val guidedTours = (project in file("mmt-guidedTours")).
+  dependsOn(api).
+  settings(commonSettings("mmt-guidedTours"): _*)
+
 lazy val webEdit = (project in file("mmt-webEdit")).
   dependsOn(stex).
   settings(commonSettings("mmt-webEdit"): _*)
