@@ -68,21 +68,27 @@ object BuildResult {
   def empty: BuildResult = BuildSuccess(Nil, Nil)
 }
 
+case class BuildEmpty(str: String) extends BuildResult {
+  def used: List[Dependency] = Nil
+  def provided: List[ResourceDependency] = Nil
+  def toJson: JSON = JSONObject(("result", JSONString(str)) :: toJsonPart: _*)
+}
+
 /** successful build */
 case class BuildSuccess(used: List[Dependency], provided: List[ResourceDependency]) extends BuildResult {
-  def toJson: JSON = JSONObject(("success", JSONBoolean(true)) :: toJsonPart: _*)
+  def toJson: JSON = JSONObject(("result", JSONString("success")) :: toJsonPart: _*)
 }
 
 /** unrecoverable failure */
 case class BuildFailure(used: List[Dependency], provided: List[ResourceDependency]) extends BuildResult {
-  def toJson: JSON = JSONObject(("success", JSONBoolean(false)) :: toJsonPart: _*)
+  def toJson: JSON = JSONObject(("result", JSONString("failure")) :: toJsonPart: _*)
 }
 
 /** recoverable failure: build should be retried after building a missing dependency */
 case class MissingDependency(needed: List[Dependency], provided: List[ResourceDependency]) extends BuildResult {
   def used = Nil
 
-  def toJson: JSON = JSONObject(("success", JSONBoolean(false)) ::
+  def toJson: JSON = JSONObject(("result", JSONString("failed")) ::
     ("needed", JSONArray(needed.map(_.toJson): _*)) :: toJsonPart.tail: _*)
 }
 
@@ -352,8 +358,7 @@ class BuildQueue extends BuildManager {
         getNextTask match {
           case Some(qt) =>
             // TODO run this in a Future and track dependencies
-            val optRes = qt.target.checkOrRunBuildTask(qt.missingDeps.toSet, qt.task, qt.updatePolicy)
-            val res1 = optRes.getOrElse(BuildSuccess(Nil, Nil))
+            val res1 = qt.target.checkOrRunBuildTask(qt.missingDeps.toSet, qt.task, qt.updatePolicy)
             val res = res1 match {
               // let's assume for now that the estimation is better than the actual result
               case BuildSuccess(u, Nil) => BuildSuccess(u, qt.willProvide)
@@ -369,9 +374,9 @@ class BuildQueue extends BuildManager {
               finishedBuilt = finishedBuilt.dropRight(100)
             }
             res match {
-              case _: BuildSuccess | _: BuildFailure =>
+              case _: BuildSuccess | _: BuildFailure | _: BuildEmpty =>
                 // remember finished build
-                if (optRes.isDefined || !alreadyBuilt.isDefinedAt(qtDep)) {
+                if (!alreadyBuilt.isDefinedAt(qtDep)) {
                   alreadyBuilt(qtDep) = res
                 }
                 res.provided.foreach(catalog(_) = qtDep)
@@ -382,8 +387,7 @@ class BuildQueue extends BuildManager {
                 qt.missingDeps = missing
                 if (!finallyUnblocking) blocked = blocked ::: List(qt)
             }
-            if (optRes.nonEmpty)
-              unblockTasks(res)
+            unblockTasks(res)
           case None =>
             if (blocked.nonEmpty) {
               log("flush blocked tasks by ignoring their missing dependencies")

@@ -29,7 +29,7 @@
     <span id="finished">finished</span> (go to <a href="#top">top</a>) (go to <a href="#blocked">blocked</a>)
     <ul>
     <li ng-repeat="e in queue.finished">
-        {{e.dependency}} {{e.result.success ? "success" : "failure"}}
+        {{e.dependency}} {{e.result.result}}
         <span ng-show="e.result.needed.length > 0">missing</span>
         <ul>
             <li ng-repeat="n in e.result.needed">

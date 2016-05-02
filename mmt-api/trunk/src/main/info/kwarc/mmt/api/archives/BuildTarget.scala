@@ -344,7 +344,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * @param builtChildren tasks for building the children
     * @param level         error/force level to perform action depending on user input
     */
-  def buildDir(bd: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult = BuildSuccess(Nil, Nil)
+  def buildDir(bd: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult = BuildEmpty("nothing to be done")
 
   /** abstract method to estimate the [[BuildResult]] without building, e.g., to predict dependencies */
   def estimateResult(bf: BuildTask): BuildSuccess = BuildSuccess(Nil, Nil)
@@ -448,7 +448,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       report("archive", prefix + bt.inFile + " -> " + bt.outFile)
       bt.outFile.up.mkdirs
     }
-    var res: BuildResult = BuildResult.empty
+    var res: BuildResult = if (bt.isEmptyDir) BuildEmpty("empty-directory") else BuildResult.empty
     if (!bt.isEmptyDir) bt.errorCont.open
     try {
       res = bt.children match {
@@ -537,8 +537,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
     }
   }
 
-  def checkOrRunBuildTask(deps: Set[Dependency], bt: BuildTask, up: Update): Option[BuildResult] = {
-    var res: Option[BuildResult] = None
+  def checkOrRunBuildTask(deps: Set[Dependency], bt: BuildTask, up: Update): BuildResult = {
+    var res: BuildResult = BuildEmpty("up-to-date")
     val outPath = bt.outPath
     val Update(errLev, dryRun, testMod, _) = up
     val rn = rebuildNeeded(deps, bt, errLev)
@@ -547,9 +547,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
     }
     if (rn && dryRun) {
       logResult("out-dated " + outPath)
+      res = BuildEmpty("out-dated (dry run)")
     }
     if (rn && !dryRun) {
-      res = Some(runBuildTask(bt, errLev))
+      res = runBuildTask(bt, errLev)
     }
     if (testMod.makeTests) {
       compareOutputAndTest(testMod, bt)
