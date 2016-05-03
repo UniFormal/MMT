@@ -14,14 +14,14 @@ import parser.SourceRef
 /** This class stores information about a bound variable.
  * @param decl the variable declaration
  * @param binder the path of the binder (if atomic)
- * @param declpos the position of the variable declaration 
+ * @param declpos the position of the variable declaration
  */
 case class VarData(decl : VarDecl, binder : Option[GlobalName], declpos : Position) {
    /** the variable name */
    def name = decl.name
 }
 
-case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: List[(String,String)], 
+case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: List[(String,String)],
       source: Option[SourceRef], pos : Position, context : List[VarData], style: Option[PresentationContext => String]) {
    /** the output stream to print into */
    def out(s: String) {rh(s)}
@@ -43,16 +43,16 @@ case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: 
    val html = utils.HTML(out _)
 }
 
-/** 
+/**
  * presents objects using notations
- * 
+ *
  * The main methods do not produce any rendering themselves.
  * Instead, they call special methods that may be overridden for customization.
  * The default implementations produce plain text.
  *
  * The bracket placement algorithm is only approximate.
  * It will sometimes put too many and sometimes too few brackets.
- * The latter will confuse the NotationBasedParser, but rarely humans.    
+ * The latter will confuse the NotationBasedParser, but rarely humans.
  */
 class NotationBasedPresenter extends ObjectPresenter {
    /**
@@ -60,7 +60,7 @@ class NotationBasedPresenter extends ObjectPresenter {
     */
    def doIdentifier(p: ContentPath)(implicit pc: PresentationContext) {
       val s = p match {
-         case m ?? name => name.toPath  //not parsable if there are name clashes 
+         case m ?? name => name.toPath  //not parsable if there are name clashes
          case _ => p.toPath
       }
       pc.out(s)
@@ -115,14 +115,14 @@ class NotationBasedPresenter extends ObjectPresenter {
    def doSpace(level: Int)(implicit pc: PresentationContext) {
       Range(0,level).foreach {_ => pc.out(" ")}
    }
-   
+
    /**
-    * called once at the toplevel of every object to be rendered 
+    * called once at the toplevel of every object to be rendered
     */
    def doToplevel(body: => Unit)(implicit pc: PresentationContext) {
       body
    }
-   
+
    /**
     * called to wrap around subexpressions that must be bracketed
     * @param body the part between the brackets
@@ -156,14 +156,14 @@ class NotationBasedPresenter extends ObjectPresenter {
     * @param body the argument
     */
    def doInferredType(body: => Unit)(implicit pc: PresentationContext) {}
-   
+
    /** auxiliary type for a continuation function */
    type Cont = () => Unit
    /** called to render a scripted object - an optional decorated by several optional scripts
-    *  
+    *
     *  each script is passed as a continuation that must be called at the appropriate place
     *  @param main the object
-    *  
+    *
     * See [[notations.ScriptMarker]] for the meaning of the scripts
     */
    def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext) {
@@ -178,12 +178,12 @@ class NotationBasedPresenter extends ObjectPresenter {
       aux(sup, "^")
       doSpace(1)
    }
-   
+
    /** auxiliary function for inserting a separator (such as whitespace) into a list */
    def doListWithSeparator(l: List[Cont], sep: Cont) {
       if (l.isEmpty) return
       l.head()
-      l.tail.foreach {e => 
+      l.tail.foreach {e =>
          sep()
          e()
       }
@@ -200,7 +200,7 @@ class NotationBasedPresenter extends ObjectPresenter {
          doListWithSpace(below)
       }
    }
-   
+
    def doTd(ms : List[Cont])(implicit pc : PresentationContext) {
      doOperator("[&")
       ms foreach {e =>
@@ -209,7 +209,7 @@ class NotationBasedPresenter extends ObjectPresenter {
      }
      doOperator("&]")
    }
-   
+
    def doTr(ms : List[Cont])(implicit pc : PresentationContext) {
      doOperator("[\\")
       ms foreach {e =>
@@ -218,7 +218,7 @@ class NotationBasedPresenter extends ObjectPresenter {
      }
      doOperator("\\]")
    }
-    
+
    def doTable(ms : List[Cont])(implicit pc : PresentationContext) {
      doOperator("[[")
       ms foreach {e =>
@@ -244,7 +244,7 @@ class NotationBasedPresenter extends ObjectPresenter {
        doOperator("'")
        doBracketedGroup{
          base.head
-         base.tail foreach { e => 
+         base.tail foreach { e =>
            doSpace(1)
            e()
          }
@@ -252,11 +252,11 @@ class NotationBasedPresenter extends ObjectPresenter {
      }
      doSqrt(root)
    }
-   
+
    def doNumberMarker(arg : Delim)(implicit pc: PresentationContext) {
      doOperator("#num_" + arg.s)
    }
-   
+
    def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
      doOperator("#id_" + arg.s)
    }
@@ -271,7 +271,7 @@ class NotationBasedPresenter extends ObjectPresenter {
         }
       }
    }
-   
+
    def doPhantomMarker(args: List[Cont])(implicit pc: PresentationContext){
      doOperator("//*")
      doBracketedGroup {
@@ -283,41 +283,41 @@ class NotationBasedPresenter extends ObjectPresenter {
    }
      doOperator("*//")
    }
-   
+
    def doTextMarker(text : Delim)(implicit pc: PresentationContext){
      doOperator("/*" + text.s + "*/")
    }
-   
+
    def doGlyphMarker(src: Delim, alt: String="Failed to Load")(implicit pc: PresentationContext){
      doOperator("#glyph_"+src.s)
    }
-   
+
    def doLabelMarker(args: List[Cont], label : String ) (implicit pc: PresentationContext){
     doBracketedGroup {
       args.head
-      args.tail.foreach {e=> 
+      args.tail.foreach {e=>
         doSpace(1)
         e()
       }
     }
     doOperator( ".label(" +label+ ")" )
    }
-   
+
    def doWord(s : String)(implicit pc: PresentationContext) {
      pc.out(s)
    }
-    
-    
-   
+
+
+
    /** 1 or 2-dimensional notations, true by default */
    def twoDimensional : Boolean = true
-   
+
    /**
     * @param o the object to be presented
     * @return an object o' that is presented instead (e.g., o itself)
     *         one position p for each component c of o' such that the c is the p-subobject of o
     *         a notation to use for presenting o'
-    */ 
+    */
    implicit protected def getNotations(p: GlobalName): List[TextNotation] = {
       Presenter.getNotations(controller, p, twoDimensional)
    }
@@ -331,6 +331,7 @@ class NotationBasedPresenter extends ObjectPresenter {
     * called on objects for which no notation is available
     * @return 1/0/-1 depending on the type of bracketing applied (yes/optional/no)
     */
+   // TODO can this be a default notation
    def doDefault(o: Obj)(implicit pc: PresentationContext): Int = o match {
       case OMID(p) =>
          doIdentifier(p)
@@ -403,7 +404,7 @@ class NotationBasedPresenter extends ObjectPresenter {
             }
          }
          1
-      case OMATTR(t,k,v) => 
+      case OMATTR(t,k,v) =>
          doAttributedTerm(t, k, v)(pc)
          1
       case OMSemiFormal(parts) => parts.foreach {
@@ -467,7 +468,7 @@ class NotationBasedPresenter extends ObjectPresenter {
          }
          -1
    }
-   
+
    def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
       implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, None)
       doToplevel {
@@ -482,49 +483,49 @@ class NotationBasedPresenter extends ObjectPresenter {
      case GroupMarker(ms) =>
        doUnbracketedGroup { doMarkers(ms) }
      case s: ScriptMarker =>
-       def aux(mOpt: Option[Marker]) = mOpt.map {m => () => doMarkers(List(m))} 
+       def aux(mOpt: Option[Marker]) = mOpt.map {m => () => doMarkers(List(m))}
        doScript(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
      case FractionMarker(a,b,l) =>
-       def aux(m: Marker) = () => doMarkers(List(m)) 
+       def aux(m: Marker) = () => doMarkers(List(m))
        doFraction(a map aux, b map aux, l)
-     case NumberMarker(value) => 
+     case NumberMarker(value) =>
        doNumberMarker(value)
-     case IdenMarker(value) => 
+     case IdenMarker(value) =>
        doIdenMarker(value)
      case ErrorMarker(markers)=>
-       def aux(m: Marker) = () => doMarkers(List(m)) 
+       def aux(m: Marker) = () => doMarkers(List(m))
        doErrorMarker(markers map aux)
      case GlyphMarker(source,alt) =>
        doGlyphMarker(source,alt)
      case LabelMarker(markers,label) =>
-       def aux(m: Marker) = () => doMarkers(List(m)) 
+       def aux(m: Marker) = () => doMarkers(List(m))
        doLabelMarker(markers map aux,label)
      case PhantomMarker(markers) =>
-       def aux(m: Marker) = () => doMarkers(List(m)) 
+       def aux(m: Marker) = () => doMarkers(List(m))
        doPhantomMarker(markers map aux)
      case TextMarker(text) =>
        doTextMarker(text)
      case RootMarker(base, root) =>
-       def aux(m: Marker) = () => doMarkers(List(m)) 
+       def aux(m: Marker) = () => doMarkers(List(m))
        doRootMarker(base map aux,root map aux)
-     case TdMarker(ms) => 
-       def aux(m: Marker) = () => doMarkers(List(m)) 
+     case TdMarker(ms) =>
+       def aux(m: Marker) = () => doMarkers(List(m))
        doTd(ms map aux)
-     case TrMarker(ms) => 
-       def aux(m: Marker) = () => doMarkers(List(m)) 
+     case TrMarker(ms) =>
+       def aux(m: Marker) = () => doMarkers(List(m))
        doTr(ms map aux)
      case TableMarker(ms) =>
-       def aux(m: Marker) = () => doMarkers(List(m)) 
+       def aux(m: Marker) = () => doMarkers(List(m))
        doTable(ms map aux)
      case _ => doMarkers(List(m))
    }
-   /** 
+   /**
     *  @param bracket called to determine whether a non-atomic term rendered with a certain notation should be bracketed
     *  @return 1 if the term was bracketed
     */
    private def recurse(obj: Obj, bracket: TextNotation => Int)(implicit pcOrg: PresentationContext): Int = {
          val pc = pcOrg.copy(source = SourceRef.get(obj))
-         // recovery if no notation or other problem 
+         // recovery if no notation or other problem
          lazy val default = return doDefault(obj)(pc)
          obj match {
             case OMS(p) =>
@@ -564,7 +565,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                   val firstArgNumber = subargs.length+context.length+1
                   /*
                    * @param ac the component as which the child occurs
-                   * @param child the child into which we recurse 
+                   * @param child the child into which we recurse
                    * @param currentPosition the position from where we recurse
                    *         -1: left-open argument; 0: middle argument; 1: right-open
                    * @return the result of recursing into the child
@@ -635,49 +636,49 @@ class NotationBasedPresenter extends ObjectPresenter {
                                      () => doChild(c, args(n-firstArgNumber), 0); ()
                               }
                               val letters = dE.text.exists(_.isLetter)
-                              if (letters && previous.isDefined) doSpace(1)
+                              if (letters && previous.isDefined && !previous.get.isInstanceOf[Delimiter]) doSpace(1)
                               doDelimiter(op, dE, unpImps)(pc.copy(pos = pc.pos / pos(0)))
                               numDelimsSeen += 1
-                              if (letters && !markersLeft.isEmpty) doSpace(1)
+                              if (letters && !markersLeft.isEmpty && !markersLeft.head.isInstanceOf[Delimiter]) doSpace(1)
                            case s: SeqArg => //impossible due to flattening
                            case GroupMarker(ms) =>
                               doUnbracketedGroup { doMarkers(ms) }
                            case s: ScriptMarker =>
-                              def aux(mOpt: Option[Marker]) = mOpt.map {m => () => doMarkers(List(m))} 
+                              def aux(mOpt: Option[Marker]) = mOpt.map {m => () => doMarkers(List(m))}
                               doScript(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
                            case FractionMarker(a,b,l) =>
-                              def aux(m: Marker) = () => doMarkers(List(m)) 
+                              def aux(m: Marker) = () => doMarkers(List(m))
                               doFraction(a map aux, b map aux, l)
-                           case TdMarker(ms) => 
-                              def aux(m: Marker) = () => doMarkers(List(m)) 
+                           case TdMarker(ms) =>
+                              def aux(m: Marker) = () => doMarkers(List(m))
                               doTd(ms map aux)
-                           case TrMarker(ms) => 
-                              def aux(m: Marker) = () => doMarkers(List(m)) 
+                           case TrMarker(ms) =>
+                              def aux(m: Marker) = () => doMarkers(List(m))
                               doTr(ms map aux)
                            case TableMarker(ms) =>
-                              def aux(m: Marker) = () => doMarkers(List(m)) 
+                              def aux(m: Marker) = () => doMarkers(List(m))
                               doTable(ms map aux)
-                           case NumberMarker(value) => 
+                           case NumberMarker(value) =>
                               doNumberMarker(value)
-                           case IdenMarker(value) => 
+                           case IdenMarker(value) =>
                               doIdenMarker(value)
                            case ErrorMarker(markers)=>
-                              def aux(m: Marker) = () => doMarkers(List(m)) 
+                              def aux(m: Marker) = () => doMarkers(List(m))
                               doErrorMarker(markers map aux)
                            case GlyphMarker(source,alt) =>
                               doGlyphMarker(source,alt)
                            case LabelMarker(markers,label) =>
-                              def aux(m: Marker) = () => doMarkers(List(m)) 
+                              def aux(m: Marker) = () => doMarkers(List(m))
                               doLabelMarker(markers map aux,label)
                            case PhantomMarker(markers) =>
-                              def aux(m: Marker) = () => doMarkers(List(m)) 
+                              def aux(m: Marker) = () => doMarkers(List(m))
                               doPhantomMarker(markers map aux)
                            case TextMarker(text) =>
                               doTextMarker(text)
                            case RootMarker(base, root) =>
-                              def aux(m: Marker) = () => doMarkers(List(m)) 
+                              def aux(m: Marker) = () => doMarkers(List(m))
                               doRootMarker(base map aux,root map aux)
-                           case WordMarker(m) => doWord(m) 
+                           case WordMarker(m) => doWord(m)
                            case InferenceMarker =>
                               checking.Solver.infer(controller, pc.getContext, t, None) match {
                                  case Some(tp) =>
@@ -706,11 +707,11 @@ class NotationBasedPresenter extends ObjectPresenter {
               default
          }
    }
-   
+
    //to be overriden by subclasses if needed
    //TODO imlement this better
    def doAttributedTerm(t : Term, k : OMID, v : Term)(pc : PresentationContext) = doDefault(t)(pc)
-   
-   
-   
+
+
+
 }
