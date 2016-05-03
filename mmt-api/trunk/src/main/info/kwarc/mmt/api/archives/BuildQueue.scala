@@ -21,6 +21,9 @@ class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask) {
   /** task was not requested directly but added as dependency of some other task */
   var dependencyClosure: Boolean = false
 
+  /** task was eventually run despite being blocked due to missing dependencies */
+  var forceRun: List[Dependency] = Nil
+
   private val estRes = target.estimateResult(task)
 
   /** dependencies that will be used but are not available */
@@ -70,7 +73,9 @@ object BuildResult {
 
 case class BuildEmpty(str: String) extends BuildResult {
   def used: List[Dependency] = Nil
+
   def provided: List[ResourceDependency] = Nil
+
   def toJson: JSON = JSONObject(("result", JSONString(str)) :: toJsonPart: _*)
 }
 
@@ -313,16 +318,16 @@ class BuildQueue extends BuildManager {
     * @param bd
     */
   private def buildDependency(up: Update, bd: BuildDependency) = if (!cycleCheck.contains(bd)) {
-      val tar = bd.getTarget(controller)
-      val inFile =  bd.archive / tar.inDim / bd.inPath
-      val bt = bd match {
-        case _: FileBuildDependency => tar.makeBuildTask(bd.archive, bd.inPath)
-        case dbd: DirBuildDependency => tar.makeBuildTask(dbd.archive, dbd.inPath, dbd.children)
-      }
-      val qt = new QueuedTask(tar, bt)
-      qt.lowPriority = false
-      qt.dependencyClosure = true
-      addTask(up, qt)
+    val tar = bd.getTarget(controller)
+    val inFile = bd.archive / tar.inDim / bd.inPath
+    val bt = bd match {
+      case _: FileBuildDependency => tar.makeBuildTask(bd.archive, bd.inPath)
+      case dbd: DirBuildDependency => tar.makeBuildTask(dbd.archive, dbd.inPath, dbd.children)
+    }
+    val qt = new QueuedTask(tar, bt)
+    qt.lowPriority = false
+    qt.dependencyClosure = true
+    addTask(up, qt)
   }
 
   /** unblock previously blocked tasks whose dependencies have now been provided */
@@ -368,6 +373,11 @@ class BuildQueue extends BuildManager {
             if (!qt.dependencyClosure) cycleCheck -= qtDep
             synchronized {
               currentQueueTask = None
+              /* add two dummy results into the finished queue to show what happened to a blocked task */
+              if (qt.forceRun.nonEmpty) {
+                finishedBuilt +:=(qtDep, BuildEmpty("was blocked"))
+                finishedBuilt +:=(qtDep, MissingDependency(qt.forceRun, qt.willProvide))
+              }
               finishedBuilt +:=(qtDep, res)
             }
             if (finishedBuilt.length > 200) {
@@ -393,6 +403,7 @@ class BuildQueue extends BuildManager {
               log("flush blocked tasks by ignoring their missing dependencies")
               finallyUnblocking = true
               val qt = blocked.head
+              qt.forceRun = qt.missingDeps
               qt.missingDeps = Nil
               blocked = blocked.tail
               queued.add(qt)
