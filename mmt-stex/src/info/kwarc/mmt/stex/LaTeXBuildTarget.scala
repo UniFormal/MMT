@@ -112,7 +112,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   def reallyBuildFile(bt: BuildTask): BuildResult
 
   def buildFile(bt: BuildTask): BuildResult = if (!skip(bt)) reallyBuildFile(bt)
-  else BuildResult.empty
+  else BuildEmpty("file excluded by MANIFEST")
 
   protected def readingSource(key: String, a: Archive, in: File): Seq[Dependency] = {
     var res: List[Dependency] = Nil
@@ -206,14 +206,14 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
   override def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath
 
   // we do nothing for single files
-  def reallyBuildFile(bt: BuildTask): BuildResult = BuildResult.empty
+  def reallyBuildFile(bt: BuildTask): BuildResult = BuildEmpty("nothing to do for files")
 
   protected def allFile(lang: Option[String]): String =
     "all" + lang.map("." + _).getOrElse("") + ".tex"
 
   override def runBuildTask(bt: BuildTask, level: Level): BuildResult = if (bt.isDir) {
     super.runBuildTask(bt, level)
-  } else BuildResult.empty
+  } else reallyBuildFile(bt)
 
   override def cleanFile(a: Archive, curr: Current) {
     // these error files are no longer generated, though

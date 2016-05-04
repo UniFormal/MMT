@@ -142,6 +142,16 @@ class SmsGenerator extends LaTeXBuildTarget {
   }
 }
 
+class DepsGenerator extends LaTeXBuildTarget {
+  val key = "tex-deps"
+  val outDim: ArchiveDimension = RedirectableDimension("tex-deps")
+  override val outExt = "deps"
+  def reallyBuildFile(bt: BuildTask): BuildResult = {
+    logSuccess(bt.outPath)
+    BuildEmpty("only create error file as timestamp")
+  }
+}
+
 /** importer wrapper for stex */
 class LaTeXML extends LaTeXBuildTarget {
   val key = "latexml"

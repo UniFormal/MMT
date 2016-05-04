@@ -27,16 +27,15 @@ trait STeXAnalysis {
     controller.addArchive(root)
     controller.backend.getArchive(root) match {
       case None =>
-        logError("missing archive " + ar + " for " + fp)
+        if (key != "tex-deps") logError("missing archive " + ar + " for " + fp)
         None
       case Some(arch) => Some(mkFileDep(key, arch, fp))
     }
   }
 
   def mkFileDep(key: String, archive: Archive, filePath: FilePath): Dependency =
-    if (List("latexml", "pdflatex", "tikzsvg").contains(key)) {
-      val file = (archive / inDim / filePath).setExtension("tex")
-      PhysicalDependency(file)
+    if (List("latexml", "pdflatex", "tikzsvg", "tex-deps").contains(key)) {
+      FileBuildDependency("tex-deps", archive, filePath)
     } else {
       FileBuildDependency(key, archive, filePath)
     }

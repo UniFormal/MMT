@@ -26,6 +26,9 @@ class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask) {
 
   private val estRes = target.estimateResult(task)
 
+  /** dependencies that are needed for an up-to-date check */
+  val neededDeps: List[Dependency] = estRes.used
+
   /** dependencies that will be used but are not available */
   var missingDeps: List[Dependency] = estRes.used
   /** resources that will be provided once successfully built */
@@ -170,7 +173,7 @@ abstract class BuildManager extends Extension {
 class TrivialBuildManager extends BuildManager {
   def addTasks(up: Update, qts: Iterable[QueuedTask]) =
     qts.foreach { qt =>
-      qt.target.checkOrRunBuildTask(qt.missingDeps.toSet, qt.task, up)
+      qt.target.checkOrRunBuildTask(qt.neededDeps.toSet, qt.task, up)
     }
 
   // no need to wait
@@ -363,7 +366,7 @@ class BuildQueue extends BuildManager {
         getNextTask match {
           case Some(qt) =>
             // TODO run this in a Future and track dependencies
-            val res1 = qt.target.checkOrRunBuildTask(qt.missingDeps.toSet, qt.task, qt.updatePolicy)
+            val res1 = qt.target.checkOrRunBuildTask(qt.neededDeps.toSet, qt.task, qt.updatePolicy)
             val res = res1 match {
               // let's assume for now that the estimation is better than the actual result
               case BuildSuccess(u, Nil) => BuildSuccess(u, qt.willProvide)

@@ -13,6 +13,7 @@ index       info.kwarc.mmt.api.archives.OMDocImporter
 pvs-omdoc   info.kwarc.mmt.pvs.Plugin
 
 sms        info.kwarc.mmt.stex.SmsGenerator
+tex-deps   info.kwarc.mmt.stex.DepsGenerator
 latexml    info.kwarc.mmt.stex.LaTeXML
 pdflatex   info.kwarc.mmt.stex.PdfLatex
 tikzsvg    info.kwarc.mmt.stex.TikzSvg
