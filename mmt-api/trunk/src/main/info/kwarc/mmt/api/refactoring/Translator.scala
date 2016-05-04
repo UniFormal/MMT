@@ -55,7 +55,7 @@ abstract class SimpleTranslation extends Translation {
 sealed abstract class AlignmentTranslation(alignment : FormalAlignment) extends SimpleTranslation {
   require(alignment.to.mmturi.isInstanceOf[GlobalName])
   require(alignment.from.mmturi.isInstanceOf[GlobalName])
-  val from = alignment.to.mmturi.asInstanceOf[GlobalName]
+  val from = alignment.from.mmturi.asInstanceOf[GlobalName]
   val to = List(alignment.to.mmturi.asInstanceOf[GlobalName])
 
   override def toString = "AlignmentTranslation from " + source.map(_.name).mkString(", ") + " to " +
@@ -302,11 +302,11 @@ class Translator extends Extension {
 
   private case class State(visited : List[GlobalName], applied : List[Translation], usedgroups : List[TranslationGroup]) {
     //def add(vs : GlobalName) = State(vs :: visited, applied,usedgroups)
-    def add(vs : (GlobalName,List[GlobalName],Translation)) = State(vs._1 :: visited, vs._3 :: applied, usedgroups)
+    def add(vs : (GlobalName,List[GlobalName],Translation)) = State((vs._1 :: visited).distinct, (vs._3 :: applied).distinct, usedgroups)
     def add(gr : (TranslationGroup,GlobalName,List[GlobalName],Translation)) =
-      State(gr._2 :: visited, gr._4 :: applied, gr._1 :: usedgroups)
+      State((gr._2 :: visited).distinct, (gr._4 :: applied).distinct, (gr._1 :: usedgroups).distinct)
 
-    def +(s : State) =State(visited,s.applied ::: applied,s.usedgroups ::: usedgroups)
+    def +(s : State) =State(visited,(s.applied ::: applied).distinct,(s.usedgroups ::: usedgroups).distinct)
   }
 
   private def findApplicable(t : Term, state : State)(implicit target: FullArchive) : List[State] = {
@@ -455,6 +455,7 @@ class Translator extends Extension {
     archives.getArchives.foreach(a => a.read)
     loadLinks
     log(translations.length + " (Simple) Translations and " + translationgroups.length + " Alignment groups present")
+    /*
     log("Simple Translations:")
     logGroup{
       translations.foreach(t => log(t.toString))
@@ -463,6 +464,7 @@ class Translator extends Extension {
     logGroup{
       translationgroups.foreach(t => log(t.toString))
     }
+    */
   }
 
   def add(t : Translation) = translations = (t :: translations).distinct

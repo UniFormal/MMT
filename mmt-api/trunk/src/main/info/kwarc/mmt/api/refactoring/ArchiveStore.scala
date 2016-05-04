@@ -16,6 +16,7 @@ abstract class FullArchive {
   require(archive.ns.isDefined)
   val path = archive.ns.get
   val name = archive.id
+  def theories : List[MPath]
 
   def declares(p : Path) : Boolean
   def read : Unit
@@ -29,6 +30,10 @@ class ArchiveStore extends Extension {
     private var isread = false
     private var readfoundation = false
     private var foundations : List[DeclaredTheory] = Nil
+    def theories = {
+      if (!isread) read
+      contains ::: foundations.map(_.path)
+    }
 
     def read = {
       group {

@@ -155,13 +155,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         val isPrelude = isPrel
         val th = theory
       }
-      try {
-        controller.globalLookup(meta).asInstanceOf[DeclaredTheory]
-        deps::=meta
-      } catch {
-        case _ : Exception =>
-          throw Dependency(meta)
-      }
+      deps::=meta
 
       log("Doing " + theory.path)
 
@@ -190,11 +184,11 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
     val const = Constant(state.th.toTerm, conname, Nil, Some(state.bindUnknowns(PVSTheory.expr(contp))), None, Some("Constructor"))
     // println(const)
     val reco = Constant(state.th.toTerm, newName(con.recognizer), Nil, Some(
-      PVSTheory.expr(PVSTheory.fun_type(datatp.toTerm, PVSTheory.bool.term))), None, Some("Recognizer"))
+      state.bindUnknowns(PVSTheory.expr(PVSTheory.fun_type(datatp.toTerm, PVSTheory.bool.term)))), None, Some("Recognizer"))
     state.th add reco
     accs.foreach(ac =>
       state.th add Constant(state.th.toTerm, ac._1, Nil, Some(
-        PVSTheory.fun_type(PVSTheory.setsub(datatp.toTerm, reco.toTerm), ac._2)
+        state.bindUnknowns(PVSTheory.expr(PVSTheory.fun_type(PVSTheory.setsub(datatp.toTerm, reco.toTerm), ac._2)))
       ), None, Some("Accessor"))
     )
   }

@@ -9,7 +9,7 @@ import QueryTypeConversion._
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{DeclaredLink, DeclaredTheory, DeclaredView}
-import info.kwarc.mmt.api.refactoring.ArchiveStore
+import info.kwarc.mmt.api.refactoring.{ArchiveStore, FullArchive}
 import info.kwarc.mmt.api.symbols.{DeclaredStructure, DefinedStructure, FinalConstant}
 import info.kwarc.mmt.api.utils._
 
@@ -239,6 +239,21 @@ class AlignmentsServer extends ServerExtension("align") {
       ret ::: ret.flatMap(a ⇒ recurse(a.to).map(a -> _)) //a => recurse(a.from).map(a -> _))
     }
     recurse(from).distinct
+  }
+
+  def getFromArchive(from : FullArchive,to : Option[FullArchive]) = {
+    val thpaths = from.theories
+    val ths = thpaths.map (t => {
+      Try(controller.get(t).asInstanceOf[DeclaredTheory])
+    }).collect{
+      case Success(th) =>
+        controller.simplifier(th)
+        th
+    }
+    val consts = ths.map(t => Try(t.getConstants)).collect{case Success(c) => c}.flatten
+    val als = (consts.map(_.path) ::: thpaths).flatMap(getFormalAlignments)
+    if (to.isDefined) als.filter(a => to.get.declares(a.to.mmturi)) else als
+
   }
 
   def getAlignments(from: ContentPath): List[Alignment] = getAlignments(LogicalReference(from))

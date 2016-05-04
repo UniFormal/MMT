@@ -4,10 +4,7 @@ import syntax._
 import info.kwarc.mmt.api._
 import documents._
 import modules._
-import utils._
 import archives._
-import info.kwarc.mmt.LFX.LFX
-import info.kwarc.mmt.LFX.Subtyping.{subtypeJudg, subtypeOf}
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.notations.{HOAS, NestedHOASNotation}
 import info.kwarc.mmt.api.objects._
@@ -52,6 +49,7 @@ case class BoundInclude(top:DeclaredTheory,from:MPath) extends DerivedDeclaratio
   List(DeclarationComponent(DomComponent,TermContainer(OMID(from)))))
 
 object LambdaPiIncludeRule extends StructuralFeatureRule("BoundParams")
+
 object CurryingRule extends ComputationRule(PVSTheory.pvspi.path) {
   def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
     case pvspi(v1,pvssigma(v2,a,Lambda(_,_,b)),Lambda(_,_,c)) =>
