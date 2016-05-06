@@ -40,17 +40,17 @@ trait STeXAnalysis {
       FileBuildDependency(key, archive, filePath)
     }
 
-  def mhRepos(a: Archive, r: String, b: String, key: String): Option[Dependency] =  {
-         val fp = entryToPath(b)
-        val optRepo = Option(r).map(_.split(",").toList.map(_.split("=").toList).
-          filter {
-            case List("mhrepos", _) => true
-            case _ => false
-          })
-        optRepo match {
-          case Some(List(List(_, id))) => mkDep(a, id, fp, key)
-          case _ => Some(mkFileDep(key, a, fp))
-        }
+  def mhRepos(a: Archive, r: String, b: String, key: String): Option[Dependency] = {
+    val fp = entryToPath(b)
+    val optRepo = Option(r).map(_.split(",").toList.map(_.split("=").toList).
+      filter {
+        case List("mhrepos", _) => true
+        case _ => false
+      })
+    optRepo match {
+      case Some(List(List(_, id))) => mkDep(a, id, fp, key)
+      case _ => Some(mkFileDep(key, a, fp))
+    }
   }
 
   protected def matchPathAndRep(key: String, a: Archive, line: String): Option[Dependency] =
