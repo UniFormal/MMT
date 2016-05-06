@@ -119,7 +119,7 @@ trait STeXAnalysis {
   /** create sms file */
   private def createSms(a: Archive, inFile: File, outFile: File, enc: String) {
     val source = scala.io.Source.fromFile(inFile, enc)
-    val w = File.Writer(outFile)
+    val w = new StringBuilder
     source.getLines().foreach { line =>
       val l = stripComment(line).trim
       var n = l
@@ -148,9 +148,11 @@ trait STeXAnalysis {
             }
           case _ =>
         }
-        w.println(n + "%")
+        w.append(n + "%\n")
       }
     }
-    w.close()
+    val res = w.result
+    if (res.nonEmpty) File.write(outFile, res)
+    else log("no sms content")
   }
 }
