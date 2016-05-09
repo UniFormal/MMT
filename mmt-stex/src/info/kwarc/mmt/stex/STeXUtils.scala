@@ -77,30 +77,48 @@ object STeXUtils {
 
   def mkRegGroup(l: List[String]): String = l.mkString("(", "|", ")")
 
-  private val importKeys: List[String] = List(
-    "guse", "gimport", "usemhmodule", "importmhmodule", "includemhproblem", "begin\\{modnl\\}",
-    "begin\\{mhmodnl\\}", "mhinputref", "mhtikzinput", "cmhtikzinput", "tikzinput", "ctikzinput"
-  )
-  val importRegs: Regex = ("\\\\" + mkRegGroup(importKeys)).r
-  val groups: Regex = "\\\\\\w*\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
-  val includeMhProblem: Regex = "\\\\includemhproblem(\\[(.*?)\\])?\\{(.*?)\\}.*".r
-  val beginModnl: Regex = "\\\\begin\\{m?h?modnl\\}\\[.*?\\]?\\{(.*?)\\}.*".r
-  val mhinputRef: Regex = "\\\\mhinputref(\\[(.*?)\\])?\\{(.*?)\\}.*".r
-  val tikzinput: Regex = ".*\\\\c?m?h?tikzinput(\\[(.*?)\\])?\\{(.*?)\\}.*".r
-  val smsKeys: List[String] = List(
-    "gadopt", "symdef", "abbrdef", "symvariant", "keydef", "listkeydef",
-    "importmodule", "gimport", "adoptmodule", "importmhmodule", "adoptmhmodule"
-  )
-  val smsTopKeys: List[String] = List(
-    "module", "importmodulevia", "importmhmodulevia"
-  )
-  val smsRegs: Regex = {
-    val alt: String = smsTopKeys.mkString("\\{(", "|", ")\\}")
-    ("^\\\\(" + mkRegGroup(smsKeys) + "|begin" + alt + "|end" + alt + ")").r
-  }
-  val importMhModule: Regex = "\\\\importmhmodule\\[(.*?)\\](.*?)".r
-  val gimport: Regex = "\\\\gimport\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
+  def begin(s: String): String = "begin\\{" + s + "\\}"
 
+  val opt = "\\[(.*?)\\]"
+  val opt0 = "(" + opt + ")?"
+  val arg = "\\{(.*?)\\}"
+  val any = ".*"
+  val arg1 = arg + any
+  val optArg1 = opt0 + arg1
+  val bs = "\\\\"
+
+  private val importKeys: List[String] = List("modnl", "mhmodnl").map(begin) ++
+    List("guse", "gimport", "usemhmodule", "importmhmodule", "includemhproblem", "mhinputref") ++
+    List("mh", "cmh", "", "c").map(_ + "tikzimport")
+  val importRegs: Regex = (bs + mkRegGroup(importKeys)).r
+  val groups: Regex = (bs + "\\w*\\*?" + optArg1).r
+  val includeMhProblem: Regex = (bs + "includemhproblem" + optArg1).r
+  val beginModnl: Regex = (bs + begin("m?h?modnl") + opt + "?" + arg1).r
+  val mhinputRef: Regex = (bs + "mhinputref" + optArg1).r
+  val tikzinput: Regex = (any + bs + "c?m?h?tikzinput" + optArg1).r
+  val smsKeys: List[String] = List("gadopt", "symvariant", "gimport") ++
+    List("sym", "abbr", "key", "listkey").map(_ + "def") ++
+    List("import", "adopt", "importmh", "adoptmh").map(_ + "module")
+  val smsTopKeys: List[String] = List("module", "importmodulevia", "importmhmodulevia")
+  val smsStructures = List("g", "mh", "s").map(_ + "structure")
+  val smsViews = List("gviewsig", "gviewnl", "mhview", "view")
+  val smsRegs: Regex = {
+    val begins: String = begin(mkRegGroup(smsTopKeys ++ smsStructures ++ smsViews))
+    val ends: String = smsTopKeys.mkString("|end\\{(", "|", ")\\}")
+    ("^\\\\(" + mkRegGroup(smsKeys) + "|" + begins + ends + ")").r
+  }
+  val importMhModule: Regex = (bs + "importmhmodule" + opt + "(.*?)").r
+  val gimport: Regex = (bs + "gimport\\*?" + optArg1).r
+
+  def optArg2(s: String): String = bs + begin(s) + opt + arg + arg
+
+  val smsSStruct = optArg2("sstructure").r
+  val smsGStruct = (bs + begin("gstructure") + opt0 + arg + arg).r
+  val smsMhStruct = optArg2("mhstructure").r
+  val smsViewsig = (optArg2("gviewsig") + arg).r
+  val smsViewnl = (bs + begin("gviewnl") + opt0 + arg + arg + arg + arg).r
+  val smsMhView = (optArg2("mhview") + arg).r
+  val smsView = optArg2("view").r
 
   def entryToPath(p: String) = File(p).setExtension("tex").toFilePath
 
@@ -123,4 +141,3 @@ object STeXUtils {
     opt
   }
 }
-

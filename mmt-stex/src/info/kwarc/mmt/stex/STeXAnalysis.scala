@@ -107,14 +107,41 @@ trait STeXAnalysis {
     }
   }
 
-  private def mkImport(b: File, r: String, p: String, a: String, ext: String) =
-    "\\importmodule[load=" + b + "/" + r + "/source/" + p + ",ext=" + ext + "]" + a
+  private def mkImport(a: Archive, r: String, p: String, s: String, ext: String) =
+    "\\importmodule[load=" + a.root.up.up + "/" + r + "/source/" + p + ",ext=" + ext + "]" + s
 
-  private def mkMhImport(b: File, r: String, p: String, a: String) =
-    mkImport(b, r, p, a, "sms")
+  private def mkMhImport(a: Archive, r: String, p: String, s: String) =
+    mkImport(a, r, p, s, "sms")
 
-  private def mkGImport(b: File, r: String, p: String) =
-    "\\mhcurrentrepos{" + r + "}%\n" + mkImport(b, r, p, "{" + p + "}", "tex")
+  private def mkGImport(a: Archive, r: String, p: String) =
+    "\\mhcurrentrepos{" + r + "}%\n" + mkImport(a, r, p, "{" + p + "}", "tex")
+
+  private def getArgMap(r: String): Map[String, String] = {
+    val ll = r.split(",").toList.map(_.split("=").toList)
+    var m: Map[String, String] = Map.empty
+    ll.foreach {
+      case List(k, v) => m += ((k, v))
+      case _ =>
+    }
+    m
+  }
+
+  private def createMhImport(a: Archive, r: String, b: String): Option[String] = {
+    val m = getArgMap(r)
+    m.get("path").map(p => mkMhImport(a, m.getOrElse("repos", archString(a)), p, b))
+  }
+
+  private def createGImport(a: Archive, r: String, p: String): String = {
+    Option(r) match {
+      case Some(id) =>
+        mkGImport(a, id, p)
+      case None =>
+        mkGImport(a, archString(a), p)
+    }
+  }
+
+  private def createImport(r: String, p: String): String =
+    "\\importmodule[" + r + "]{" + p + "}"
 
   /** create sms file */
   private def createSms(a: Archive, inFile: File, outFile: File, enc: String) {
@@ -127,24 +154,41 @@ trait STeXAnalysis {
       if (verbIndex <= -1 && smsRegs.findFirstIn(l).isDefined) {
         l match {
           case importMhModule(r, b) =>
-            val m = r.split(",").toList.sorted.map(_.split("=").toList)
-            m match {
-              case List("path", p) :: tl =>
-                tl match {
-                  case Nil =>
-                    n = mkMhImport(a.root.up.up, archString(a), p, b)
-                  case List(List("repos", id)) =>
-                    n = mkMhImport(a.root.up.up, id, p, b)
-                  case _ =>
-                }
-              case _ =>
-            }
+            createMhImport(a, r, b).foreach(n = _)
           case gimport(_, r, p) =>
-            Option(r) match {
-              case Some(id) =>
-                n = mkGImport(a.root.up.up, id, p)
-              case None =>
-                n = mkGImport(a.root.up.up, archString(a), p)
+            n = createGImport(a, r, p)
+          case smsGStruct(_, r, _, p) =>
+            n = createGImport(a, r, p)
+          case smsMhStruct(r, _, p) =>
+            createMhImport(a, r, p).foreach(n = _)
+          case smsSStruct(r, _, p) =>
+            n = createImport(r, p)
+          case smsViewsig(r, _, f, t) =>
+            val m = getArgMap(r)
+            val fr = m.getOrElse("fromrepos", archString(a))
+            val tr = m.getOrElse("torepos", archString(a))
+            n = mkGImport(a, fr, f) + "\n" + mkGImport(a, tr, t)
+          case smsViewnl(_, r, p, _, _, _) =>
+            n = createGImport(a, r, p)
+          case smsMhView(r, _, f, t) =>
+            val m = getArgMap(r)
+            var ofp = m.get("frompath")
+            var otp = m.get("topath")
+            val fr = m.getOrElse("fromrepos", archString(a))
+            val tr = m.getOrElse("torepos", archString(a))
+            (ofp, otp) match {
+              case (Some(fp), Some(tp)) =>
+                n = mkMhImport(a, fr, fp, f) + "\n" + mkMhImport(a, tr, tp, t)
+              case _ => // this leaves the original begin line
+            }
+          case smsView(r, f, t) =>
+            val m = getArgMap(r)
+            val ofr = m.get("from")
+            val otr = m.get("to")
+            (ofr, otr) match {
+              case (Some(fr), Some(tr)) =>
+                n = createImport(fr, f) + "\n" + createImport(tr, t)
+              case _ => // this leaves the original begin line
             }
           case _ =>
         }
