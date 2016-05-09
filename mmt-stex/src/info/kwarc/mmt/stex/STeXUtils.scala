@@ -93,7 +93,7 @@ object STeXUtils {
   val importRegs: Regex = (bs + mkRegGroup(importKeys)).r
   val groups: Regex = (bs + "\\w*\\*?" + optArg1).r
   val includeMhProblem: Regex = (bs + "includemhproblem" + optArg1).r
-  val beginModnl: Regex = (bs + begin("m?h?modnl") + opt + "?" + arg1).r
+  val beginModnl: Regex = (bs + begin("m?h?modnl") + optArg1).r
   val mhinputRef: Regex = (bs + "mhinputref" + optArg1).r
   val tikzinput: Regex = (any + bs + "c?m?h?tikzinput" + optArg1).r
   val smsKeys: List[String] = List("gadopt", "symvariant", "gimport") ++

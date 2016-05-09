@@ -55,7 +55,7 @@ trait STeXAnalysis {
 
   protected def matchPathAndRep(key: String, a: Archive, line: String): Option[Dependency] =
     line match {
-      case beginModnl(b) => Some(mkFileDep(key, a, entryToPath(b)))
+      case beginModnl(_, _, b) => Some(mkFileDep(key, a, entryToPath(b)))
       case mhinputRef(_, r, b) =>
         val fp = entryToPath(b)
         Option(r) match {
