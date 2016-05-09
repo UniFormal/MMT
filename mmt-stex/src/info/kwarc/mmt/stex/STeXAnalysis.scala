@@ -67,16 +67,13 @@ trait STeXAnalysis {
       case groups(_, r, b) =>
         val depKey = if (line.startsWith("\\importmhmodule") || line.startsWith("\\usemhmodule")) "sms" else key
         val fp = entryToPath(b)
-        val optRepo = Option(r).map(_.split(",").toList.sorted.map(_.split("=").toList))
+        val optRepo = Option(r).map(splitArgs)
         optRepo match {
           case Some(List(List(id))) => mkDep(a, id, fp, depKey)
-          case Some(List("path", p) :: tl) =>
-            val path = entryToPath(p)
-            tl match {
-              case List(List("repos", id)) => mkDep(a, id, path, depKey)
-              case Nil => Some(mkFileDep(depKey, a, path))
-              case _ => None
-            }
+          case Some(ll) =>
+            val m = mkArgMap(ll)
+            val op = m.get("path")
+            op.flatMap(p => mkDep(a, m.getOrElse("repos", archString(a)), entryToPath(p), depKey))
           case None => Some(mkFileDep(depKey, a, fp))
           case _ => None
         }
@@ -116,8 +113,9 @@ trait STeXAnalysis {
   private def mkGImport(a: Archive, r: String, p: String) =
     "\\mhcurrentrepos{" + r + "}%\n" + mkImport(a, r, p, "{" + p + "}", "tex")
 
-  private def getArgMap(r: String): Map[String, String] = {
-    val ll = r.split(",").toList.map(_.split("=").toList)
+  private def splitArgs(r: String): List[List[String]] = r.split(",").toList.map(_.split("=").toList)
+
+  private def mkArgMap(ll: List[List[String]]): Map[String, String] = {
     var m: Map[String, String] = Map.empty
     ll.foreach {
       case List(k, v) => m += ((k, v))
@@ -125,6 +123,8 @@ trait STeXAnalysis {
     }
     m
   }
+
+  private def getArgMap(r: String): Map[String, String] = mkArgMap(splitArgs(r))
 
   private def createMhImport(a: Archive, r: String, b: String): Option[String] = {
     val m = getArgMap(r)
