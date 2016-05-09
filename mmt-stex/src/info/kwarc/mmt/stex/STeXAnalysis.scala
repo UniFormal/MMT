@@ -168,7 +168,7 @@ trait STeXAnalysis {
             val fr = m.getOrElse("fromrepos", archString(a))
             val tr = m.getOrElse("torepos", archString(a))
             n = mkGImport(a, fr, f) + "\n" + mkGImport(a, tr, t)
-          case smsViewnl(_, r, p, _, _, _) =>
+          case smsViewnl(_, r, p) =>
             n = createGImport(a, r, p)
           case smsMhView(r, _, f, t) =>
             val m = getArgMap(r)

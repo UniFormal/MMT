@@ -116,7 +116,7 @@ object STeXUtils {
   val smsGStruct = (bs + begin("gstructure") + opt0 + arg + arg).r
   val smsMhStruct = optArg2("mhstructure").r
   val smsViewsig = (optArg2("gviewsig") + arg).r
-  val smsViewnl = (bs + begin("gviewnl") + opt0 + arg + arg + arg + arg).r
+  val smsViewnl = (bs + begin("gviewnl") + opt0 + arg + any).r
   val smsMhView = (optArg2("mhview") + arg).r
   val smsView = optArg2("view").r
 
