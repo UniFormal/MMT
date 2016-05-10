@@ -73,7 +73,13 @@ trait STeXAnalysis {
           case Some(ll) =>
             val m = mkArgMap(ll)
             val op = m.get("path")
-            op.flatMap(p => mkDep(a, m.getOrElse("repos", archString(a)), entryToPath(p), depKey))
+            op.flatMap { pa =>
+              val p = entryToPath(pa)
+              m.get("repos") match {
+                case Some(r) => mkDep(a, r, p, depKey)
+                case None => Some(mkFileDep(depKey, a, p))
+              }
+            }
           case None => Some(mkFileDep(depKey, a, fp))
           case _ => None
         }
