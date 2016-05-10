@@ -12,7 +12,7 @@ import scala.util.{Success, Try}
 /**
   * Top class for all translations
   */
-abstract class Translation {
+abstract class Translation(val priority : Int) {
   val source : List[FullArchive]
   val target : List[FullArchive]
 
@@ -47,7 +47,7 @@ abstract class TranslationGroup {
     translations.map(" - " + _.toString).mkString("\n")
 }
 
-abstract class SimpleTranslation extends Translation {
+abstract class SimpleTranslation extends Translation(0) {
   val from : GlobalName
   val to : List[GlobalName]
 }
@@ -124,46 +124,55 @@ class Translator extends Extension {
 
   }
 
-  private case class SimpleAlignmentTranslation(a : SimpleAlignment, source : List[FullArchive], target : List[FullArchive])
+  private case class SimpleAlignmentTranslation(a: SimpleAlignment, source: List[FullArchive], target: List[FullArchive])
     extends AlignmentTranslation(a) {
-    def isApplicable(t : Term) = t match {
-      case OMS(p) if p == from => Some((from,to))
+    def isApplicable(t: Term) = t match {
+      case OMS(p) if p == from => Some((from, to))
       case _ => None
     }
-    protected def translate(t : Term) : Term = t match {
+
+    protected def translate(t: Term): Term = t match {
       case OMS(p) if p == from => OMS(to.head)
       case _ => t // can not ever occur
     }
   }
 
-  private case class ArgumentAlignmentTranslation(align : ArgumentAlignment, source : List[FullArchive], target : List[FullArchive])
+  private case class ArgumentAlignmentTranslation(align: ArgumentAlignment, source: List[FullArchive], target: List[FullArchive])
     extends AlignmentTranslation(align) {
 
     abstract class Application {
-      val symbol : Option[GlobalName]
-      def unapply(t : Term) : Option[(Term,List[Term])]
-      def apply(f : Term, args : List[Term], ls : List[GlobalName]) : Term
+      val symbol: Option[GlobalName]
+
+      def unapply(t: Term): Option[(Term, List[Term])]
+
+      def apply(f: Term, args: List[Term], ls: List[GlobalName]): Term
     }
 
     object OMApplication extends Application {
       val symbol = None
-      def apply(f : Term, args : List[Term], ls : List[GlobalName]) : Term = if (ls.isEmpty) OMA(f,args) else {
-        val app = SymbolApplication(ls.head,this)
-        app(f,args,ls.tail)
+
+      def apply(f: Term, args: List[Term], ls: List[GlobalName]): Term = if (ls.isEmpty) OMA(f, args)
+      else {
+        val app = SymbolApplication(ls.head, this)
+        app(f, args, ls.tail)
       }
-      def unapply(t : Term) = t match {
-        case OMA(f,args) => Some((f,args))
+
+      def unapply(t: Term) = t match {
+        case OMA(f, args) => Some((f, args))
         case _ => None
       }
     }
-    case class SymbolApplication(s : GlobalName, app : Application) extends Application {
+
+    case class SymbolApplication(s: GlobalName, app: Application) extends Application {
       val symbol = Some(s)
-      def apply(f : Term, args : List[Term], ls : List[GlobalName]) : Term = if (ls.isEmpty) args.foldLeft(f)((o,a) => app(OMS(s),List(o,a),Nil))
+
+      def apply(f: Term, args: List[Term], ls: List[GlobalName]): Term = if (ls.isEmpty) args.foldLeft(f)((o, a) => app(OMS(s), List(o, a), Nil))
       else {
-        val napp = SymbolApplication(ls.head,this)
-        napp(f,args,ls.tail)
+        val napp = SymbolApplication(ls.head, this)
+        napp(f, args, ls.tail)
       }
-      def unapply(t : Term) : Option[(Term,List[Term])] = t match {
+
+      def unapply(t: Term): Option[(Term, List[Term])] = t match {
         case app(OMS(sx), f :: args) if sx == s =>
           unapply(f) match {
             case None => Some((f, args))
@@ -174,29 +183,32 @@ class Translator extends Extension {
     }
 
     object Application {
-      def apply(f : Term, args : List[Term], ls : List[GlobalName]) = OMApplication(f,args,ls)
-      def unapply(t : Term) : Option[(Term,List[Term],List[GlobalName])] = smartunapply(t,OMApplication)
-      private def smartunapply(t : Term, app : Application) : Option[(Term,List[Term],List[GlobalName])] = t match {
-        case app(OMS(f),args) =>
+      def apply(f: Term, args: List[Term], ls: List[GlobalName]) = OMApplication(f, args, ls)
+
+      def unapply(t: Term): Option[(Term, List[Term], List[GlobalName])] = smartunapply(t, OMApplication)
+
+      private def smartunapply(t: Term, app: Application): Option[(Term, List[Term], List[GlobalName])] = t match {
+        case app(OMS(f), args) =>
           controller.get(f) match {
-            case c : FinalConstant if c.rl contains "apply" =>
-              val napp = SymbolApplication(f,app)
-              smartunapply(t,napp).map(r => (r._1,r._2,f :: r._3))
+            case c: FinalConstant if c.rl contains "apply" =>
+              val napp = SymbolApplication(f, app)
+              smartunapply(t, napp).map(r => (r._1, r._2, f :: r._3))
             case _ =>
-              Some((OMS(f),args,Nil))
+              Some((OMS(f), args, Nil))
           }
-        case app(f,args) =>
-          Some((f,args,Nil))
+        case app(f, args) =>
+          Some((f, args, Nil))
         case _ => None
       }
     }
 
-    def isApplicable(t : Term) = t match {
-      case OMS(p) if p == from => Some((from,to))
-      case Application(OMS(p),args,_) if p == from => Some((from,to))
+    def isApplicable(t: Term) = t match {
+      case OMS(p) if p == from => Some((from, to))
+      case Application(OMS(p), args, _) if p == from => Some((from, to))
       case _ => None
     }
-    private def reorder(ts : List[Term]) : List[Term] = {
+
+    private def reorder(ts: List[Term]): List[Term] = {
       val max = align.arguments.maxBy(p => p._2)._2
       (1 to max).map(i => {
         val ni = align.arguments.find(p => p._2 == i).map(_._1)
@@ -204,19 +216,20 @@ class Translator extends Extension {
         else ts(ni.get)
       }).toList
     }
-    protected def translate(t : Term) : Term = t match {
+
+    protected def translate(t: Term): Term = t match {
       case OMS(p) if p == from => OMS(to.head)
-      case Application(OMS(p),args,appls) if p == from => Application(OMS(to.head),reorder(args),appls)
+      case Application(OMS(p), args, appls) if p == from => Application(OMS(to.head), reorder(args), appls)
       case _ => t // can not ever occur
     }
   }
 
-  case class StructureTranslation(link : DeclaredStructure, source : List[FullArchive], target : List[FullArchive]) extends LinkTranslation {
+  case class StructureTranslation(link: DeclaredStructure, source: List[FullArchive], target: List[FullArchive]) extends LinkTranslation {
     val translations = link.from match {
       case OMMOD(p) =>
         controller.get(p) match {
-          case th : DeclaredTheory =>
-            th.getConstants.map(c => SimpleLink(c.path,OMS(link.path / c.name),source,target,link))
+          case th: DeclaredTheory =>
+            th.getConstants.map(c => SimpleLink(c.path, OMS(link.path / c.name), source, target, link))
           case _ => Nil
         }
       case _ => Nil
@@ -227,12 +240,12 @@ class Translator extends Extension {
       translations.map(" - " + _.toString).mkString("\n")
   }
 
-  case class InverseStructureTranslation(orig : StructureTranslation) extends LinkTranslation {
+  case class InverseStructureTranslation(orig: StructureTranslation) extends LinkTranslation {
     val target = orig.source
     val source = orig.target
     val link = orig.link
     val translations = orig.translations map {
-      case SimpleLink(from,OMS(to),_,_,_) => SimpleLink(to,OMS(from),source,target,link)
+      case SimpleLink(from, OMS(to), _, _, _) => SimpleLink(to, OMS(from), source, target, link)
     }
 
     override def toString = "InverseStructureTranslation from " + source.map(_.name).mkString(", ") + " to " + target.map(_.name).mkString(", ") +
@@ -240,8 +253,8 @@ class Translator extends Extension {
       translations.map(" - " + _.toString).mkString("\n")
   }
 
-  var translations : List[Translation] = Nil
-  var translationgroups : List[TranslationGroup] = Nil
+  var translations: List[Translation] = Nil
+  var translationgroups: List[TranslationGroup] = Nil
 
   lazy val archives = controller.extman.get(classOf[ArchiveStore]).headOption.getOrElse {
     val a = new ArchiveStore
@@ -254,40 +267,40 @@ class Translator extends Extension {
     a
   }
 
-  def fromAlignment(a : FormalAlignment) : List[AlignmentTranslation] = {
+  def fromAlignment(a: FormalAlignment): List[AlignmentTranslation] = {
     val src = archives.find(a.from.mmturi)
     val trg = archives.find(a.to.mmturi)
     if (src.isEmpty || trg.isEmpty) return Nil
     a match {
-      case al : SimpleAlignment =>
-        val ret = if (a.invertible) List(SimpleAlignmentTranslation(al,src,trg),
-          SimpleAlignmentTranslation(al.reverse.asInstanceOf[SimpleAlignment],trg,src))
-        else List(SimpleAlignmentTranslation(al,src,trg))
+      case al: SimpleAlignment =>
+        val ret = if (a.invertible) List(SimpleAlignmentTranslation(al, src, trg),
+          SimpleAlignmentTranslation(al.reverse.asInstanceOf[SimpleAlignment], trg, src))
+        else List(SimpleAlignmentTranslation(al, src, trg))
         translations = (ret ::: translations).distinct
         ret
-      case al : ArgumentAlignment =>
-        val ret = if (a.invertible) List(ArgumentAlignmentTranslation(al,src,trg),
-          ArgumentAlignmentTranslation(al.reverse.asInstanceOf[ArgumentAlignment],trg,src))
-        else List(ArgumentAlignmentTranslation(al,src,trg))
+      case al: ArgumentAlignment =>
+        val ret = if (a.invertible) List(ArgumentAlignmentTranslation(al, src, trg),
+          ArgumentAlignmentTranslation(al.reverse.asInstanceOf[ArgumentAlignment], trg, src))
+        else List(ArgumentAlignmentTranslation(al, src, trg))
         translations = (ret ::: translations).distinct
         ret
     }
   }
 
-  def fromLink(v : DeclaredLink) : Option[(LinkTranslation,LinkTranslation)] = {
-    val (from, to) = (v.from,v.to) match {
-      case (OMMOD(p : MPath),OMMOD(q : MPath)) => (p,q)
+  def fromLink(v: DeclaredLink): Option[(LinkTranslation, LinkTranslation)] = {
+    val (from, to) = (v.from, v.to) match {
+      case (OMMOD(p: MPath), OMMOD(q: MPath)) => (p, q)
       case _ => return None
     }
     val src = archives.find(from)
     val trg = archives.find(to)
     if (src.isEmpty || trg.isEmpty) return None
     val ret = v match {
-      case vw : DeclaredView =>
-        (ViewTranslation(vw,src,trg),InverseViewTranslation(vw,trg,src))
-      case str : DeclaredStructure =>
-        val tr = StructureTranslation(str,src,trg)
-        (tr,InverseStructureTranslation(tr))
+      case vw: DeclaredView =>
+        (ViewTranslation(vw, src, trg), InverseViewTranslation(vw, trg, src))
+      case str: DeclaredStructure =>
+        val tr = StructureTranslation(str, src, trg)
+        (tr, InverseStructureTranslation(tr))
     }
 
     add(ret._1)
@@ -295,74 +308,82 @@ class Translator extends Extension {
     Some(ret)
   }
 
-  private def expandDefinition(p : GlobalName) : Option[Term] = controller.get(p) match {
+  private def expandDefinition(p: GlobalName): Option[Term] = controller.get(p) match {
     case c: FinalConstant if c.df.isDefined => Some(c.df.get)
     case _ => None
   }
 
-  private case class State(visited : List[GlobalName], applied : List[Translation], usedgroups : List[TranslationGroup]) {
+  private case class State(visited: List[GlobalName], applied: List[Translation], usedgroups: List[TranslationGroup]) {
     //def add(vs : GlobalName) = State(vs :: visited, applied,usedgroups)
-    def add(vs : (GlobalName,List[GlobalName],Translation)) = State((vs._1 :: visited).distinct, (vs._3 :: applied).distinct, usedgroups)
-    def add(gr : (TranslationGroup,GlobalName,List[GlobalName],Translation)) =
+    def add(vs: (GlobalName, List[GlobalName], Translation)) = State((vs._1 :: visited).distinct, (vs._3 :: applied).distinct, usedgroups)
+
+    def add(gr: (TranslationGroup, GlobalName, List[GlobalName], Translation)) =
       State((gr._2 :: visited).distinct, (gr._4 :: applied).distinct, (gr._1 :: usedgroups).distinct)
 
-    def +(s : State) =State(visited,(s.applied ::: applied).distinct,(s.usedgroups ::: usedgroups).distinct)
+    def +(s: State) = State(visited, (s.applied ::: applied).distinct, (s.usedgroups ::: usedgroups).distinct)
   }
 
-  private def findApplicable(t : Term, state : State)(implicit target: FullArchive) : List[State] = {
+  private def findApplicable(t: Term, state: State)(implicit target: FullArchive): List[State] = {
     // Use translations that have already been used
-    val usedtranslations = state.applied.collect {
+    var usedtranslations = state.applied.collect {
       case tr if tr.isApplicable(t).isDefined =>
         val ret = tr.isApplicable(t).get
-        (ret._1,ret._2,tr)
+        (ret._1, ret._2, tr)
     }.filter(p => !p._2.filter(!target.declares(_)).exists(state.visited.contains))
     if (usedtranslations.nonEmpty) return usedtranslations.map(u => state add u)
 
     // Use translation groups that have already been used
-    val usedgroups = state.usedgroups.collect{
+    val usedgroups = state.usedgroups.collect {
       case g if g.isApplicable(t).nonEmpty => g.isApplicable(t)
     }.flatten.filter(p => !p._2.filter(!target.declares(_)).exists(state.visited.contains))
     if (usedgroups.nonEmpty) return usedgroups.map(u => state add u)
 
-    //open up new translation group
-    val newgroups = translationgroups.collect{
-      case gr if gr.isApplicable(t).nonEmpty => gr.isApplicable(t).map(p => (gr,p._1,p._2,p._3))
+    // find other applicable translations
+
+    //open up new translation groups
+    var returns : List[State] = Nil
+    val newgroups = translationgroups.collect {
+      case gr if gr.isApplicable(t).nonEmpty => gr.isApplicable(t).map(p => (gr, p._1, p._2, p._3))
     }.flatten.filter(p => !p._3.filter(!target.declares(_)).exists(state.visited.contains))
-    if (newgroups.nonEmpty) return newgroups.map(gr => state add gr)
+    returns = newgroups.map(gr => state add gr) ::: returns
 
     // find other applicable translations
     val applicables = translations.collect {
       case tr if tr.isApplicable(t).isDefined =>
         val ret = tr.isApplicable(t).get
-        (ret._1,ret._2,tr)
+        (ret._1, ret._2, tr)
     }.filter(p => !p._2.filter(!target.declares(_)).exists(state.visited.contains))
-    applicables.map(p => state add p)
+    returns = applicables.map(p => state add p) ::: returns
+
+    returns
   }
 
-  private def traverse(con : Context, state : State)(implicit target: FullArchive) : List[(Context,State)] = {
+  private def traverse(con: Context, state: State)(implicit target: FullArchive): List[(Context, State)] = {
     val ret = traverse(state, con.variables.map(v => v.tp.get): _*)
-    ret.map{
-      case (l,st) => (Context(con.indices.map(i => VarDecl(con(i).name,Some(l(i)),None,None)):_*),st)
+    ret.map {
+      case (l, st) => (Context(con.indices.map(i => VarDecl(con(i).name, Some(l(i)), None, None)): _*), st)
     }
   }
 
-  private def traverse(state: State, terms : Term*)(implicit target: FullArchive) : List[(List[Term],State)] =
-    if (terms.isEmpty) Nil else if (terms.length == 1) traverse(terms.head,state).map(p => (List(p._1),p._2)) else {
+  private def traverse(state: State, terms: Term*)(implicit target: FullArchive): List[(List[Term], State)] =
+    if (terms.isEmpty) Nil
+    else if (terms.length == 1) traverse(terms.head, state).map(p => (List(p._1), p._2))
+    else {
       val last = traverse(terms.last, state) map {
         case (tm, st) =>
           (List(tm), st)
       }
       terms.dropRight(1).foldRight(last)({
-        case (arg,list) => list flatMap {
-          case (ls,st) =>
-            traverse(arg,state + st) map {
-              case (tm,nst) => (tm :: ls,nst)
+        case (arg, list) => list flatMap {
+          case (ls, st) =>
+            traverse(arg, state + st) map {
+              case (tm, nst) => (tm :: ls, nst)
             }
         }
       })
     }
 
-  private def traverse(t : Term, state : State)(implicit target: FullArchive) : List[(Term,State)] = {
+  private def traverse(t: Term, state: State)(implicit target: FullArchive): List[(Term, State)] = {
     // target already declares the symbols:
     t match {
       case OMV(name) => return List((t, state))
@@ -374,7 +395,7 @@ class Translator extends Extension {
     val ways = findApplicable(t, state)
     if (ways.nonEmpty) ways.flatMap(s => traverse(s.applied.head.apply(t), s))
 
-      // None applicable; traverse the term
+    // None applicable; traverse the term
     else t match {
       case OMS(p) =>
         // no translations for symbol p => Expand definition (if possible)
@@ -418,9 +439,15 @@ class Translator extends Extension {
     }
   }
 
-  def apply(t : Term, target : FullArchive) : List[Term] = traverse(t,State(Nil,Nil,Nil))(target).map(_._1)
+  private def getContext(t : Term) : Context = {
+    val syms = ArchiveStore.getSymbols(t)
+    syms.map(m => Context(m.module)).foldLeft(Context.empty)((c1,c2) => c1 ++ c2)
+  }
 
-  def apply(t : Term, target : String) : List[Term] = apply(t,archives.getArchive(target).getOrElse(return Nil))
+  private def apply(t : Term, target : FullArchive, simplify : Boolean) : List[Term] = traverse(t,State(Nil,Nil,Nil))(target).map(r =>
+      if(simplify) controller.simplifier.apply(r._1,getContext(r._1)) else r._1).distinct
+
+  def apply(t : Term, target : String, simplify : Boolean = true) : List[Term] = apply(t,archives.getArchive(target).getOrElse(return Nil),simplify)
 
   def loadAlignments = {
     log("Getting Alignments from AlignmentServer...")
@@ -438,13 +465,14 @@ class Translator extends Extension {
   def loadLinks = {
     log("Collecting Links...")
     logGroup {
+      archives.getArchives.foreach(a => a.read)
       val links = (controller.evaluator.evaluate(Paths(IsView)).asInstanceOf[ESetResult].h.toList :::
         controller.evaluator.evaluate(Paths(IsStructure)).asInstanceOf[ESetResult].h.toList).flatten.map(s =>
         Path.parse(s.toString)).map(p => Try(controller.get(p))) collect {
           case Success(l: DeclaredLink) => l
         }
       log(links.length + " Links found")
-      log("Adding LinkAlignments...")
+      log("Adding LinkTranslations...")
       links foreach fromLink
       log("Done.")
     }
@@ -452,7 +480,6 @@ class Translator extends Extension {
 
   def loadAll = {
     loadAlignments
-    archives.getArchives.foreach(a => a.read)
     loadLinks
     log(translations.length + " (Simple) Translations and " + translationgroups.length + " Alignment groups present")
     /*
@@ -467,8 +494,8 @@ class Translator extends Extension {
     */
   }
 
-  def add(t : Translation) = translations = (t :: translations).distinct
+  def add(t : Translation) = translations = t :: translations
 
-  def add(t : TranslationGroup) = translationgroups = (t :: translationgroups).distinct
+  def add(t : TranslationGroup) = translationgroups = t :: translationgroups
 
 }
