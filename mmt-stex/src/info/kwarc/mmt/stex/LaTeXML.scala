@@ -90,16 +90,16 @@ class AllTeX extends LaTeXDirTarget {
                             files: List[String], force: Boolean) {
     val all = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
     val ls = langFiles(lang, files)
-      val w = new StringBuilder
-      def writeln(s: String): Unit = w.append(s + "\n")
-      ambleText("pre", a, lang).foreach(writeln)
+    val w = new StringBuilder
+    def writeln(s: String): Unit = w.append(s + "\n")
+    ambleText("pre", a, lang).foreach(writeln)
+    writeln("")
+    ls.foreach { f =>
+      writeln("\\begin{center} \\LARGE File: \\url{" + f + "} \\end{center}")
+      writeln("\\input{" + File(f).stripExtension + "} \\newpage")
       writeln("")
-      ls.foreach { f =>
-        writeln("\\begin{center} \\LARGE File: \\url{" + f + "} \\end{center}")
-        writeln("\\input{" + File(f).stripExtension + "} \\newpage")
-        writeln("")
-      }
-      ambleText("post", a, lang).foreach(writeln)
+    }
+    ambleText("post", a, lang).foreach(writeln)
     val newContent = w.result
     val outPath = getOutPath(a, all)
     if (force || !all.exists() || File.read(all) != newContent) {
@@ -132,7 +132,10 @@ class SmsGenerator extends LaTeXBuildTarget {
 
   def reallyBuildFile(bt: BuildTask): BuildResult = {
     createLocalPaths(bt)
-    try createSmsForEncodings(bt, encodings)
+    try {
+      createSms(bt.archive, bt.inFile, bt.outFile)
+      logSuccess(bt.outPath)
+    }
     catch {
       case e: Exception =>
         bt.errorCont(LocalError("sms exception: " + e))
@@ -146,6 +149,7 @@ class DepsGenerator extends LaTeXBuildTarget {
   val key = "tex-deps"
   val outDim: ArchiveDimension = RedirectableDimension("tex-deps")
   override val outExt = "deps"
+
   def reallyBuildFile(bt: BuildTask): BuildResult = {
     logSuccess(bt.outPath)
     BuildEmpty("only create error file as timestamp")

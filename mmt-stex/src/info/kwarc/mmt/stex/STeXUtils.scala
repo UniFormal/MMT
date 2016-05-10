@@ -57,7 +57,7 @@ object STeXUtils {
   }
 
   def readSourceRebust(f: File): BufferedSource =
-    scala.io.Source.fromFile(f)(Codec.ISO8859)
+    scala.io.Source.fromFile(f)
 
   def stripComment(line: String): String = {
     val idx = line.indexOf('%')

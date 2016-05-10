@@ -86,30 +86,6 @@ trait STeXAnalysis {
       case _ => None
     }
 
-  val encodings = List("ISO-8859-1", Charset.defaultCharset.toString, "UTF-8",
-    "UTF-16").distinct
-
-  /** pick encoding for sms creation */
-  def createSmsForEncodings(bt: BuildTask, encs: List[String]) {
-    val readMsg = "reading " + bt.inPath
-    encs match {
-      case hd :: tl =>
-        try {
-          log(readMsg + " using encoding " + hd)
-          createSms(bt.archive, bt.inFile, bt.outFile, hd)
-          logSuccess(bt.outPath)
-        }
-        catch {
-          case _: MalformedInputException =>
-            log(readMsg + bt.inPath + " failed")
-            createSmsForEncodings(bt, tl)
-        }
-      case Nil =>
-        bt.errorCont(LocalError("no suitable encoding found for " + bt.inPath))
-        logFailure(bt.outPath)
-    }
-  }
-
   private def mkImport(a: Archive, r: String, p: String, s: String, ext: String) =
     "\\importmodule[load=" + a.root.up.up + "/" + r + "/source/" + p + ",ext=" + ext + "]" + s
 
@@ -150,8 +126,8 @@ trait STeXAnalysis {
     "\\importmodule[" + r + "]{" + p + "}"
 
   /** create sms file */
-  private def createSms(a: Archive, inFile: File, outFile: File, enc: String) {
-    val source = scala.io.Source.fromFile(inFile, enc)
+  def createSms(a: Archive, inFile: File, outFile: File) {
+    val source = readSourceRebust(inFile)
     val w = new StringBuilder
     source.getLines().foreach { line =>
       val l = stripComment(line).trim
