@@ -75,42 +75,36 @@ object STeXUtils {
   def langFiles(lang: Option[String], files: List[String]): List[String] =
     files.filter(f => getLang(File(f)) == lang)
 
-  def mkRegGroup(l: List[String]): String = l.mkString("(", "|", ")")
+  private def mkRegGroup(l: List[String]): String = l.mkString("(", "|", ")")
 
-  def begin(s: String): String = "begin\\{" + s + "\\}"
+  private def begin(s: String): String = "begin\\{" + s + "\\}"
 
-  val opt = "\\[(.*?)\\]"
-  val opt0 = "(" + opt + ")?"
-  val arg = "\\{(.*?)\\}"
-  val any = ".*"
-  val arg1 = arg + any
-  val optArg1 = opt0 + arg1
-  val bs = "\\\\"
-
-  private val importKeys: List[String] = List("modnl", "mhmodnl").map(begin) ++
-    List("guse", "gimport", "usemhmodule", "importmhmodule", "includemhproblem", "mhinputref") ++
-    List("mh", "cmh", "", "c").map(_ + "tikzimport")
-  val importRegs: Regex = (bs + mkRegGroup(importKeys)).r
-  val groups: Regex = (bs + "\\w*\\*?" + optArg1).r
+  private val opt = "\\[(.*?)\\]"
+  private val opt0 = "(" + opt + ")?"
+  private val arg = "\\{(.*?)\\}"
+  private val any = ".*"
+  private val arg1 = arg + any
+  private val optArg1 = opt0 + arg1
+  private val bs = "\\\\"
+  private val importKeys: List[String] = List("guse", "usemhmodule")
+  val groups: Regex = (bs + mkRegGroup(importKeys) + "\\*?" + optArg1).r
   val includeMhProblem: Regex = (bs + "includemhproblem" + optArg1).r
   val beginModnl: Regex = (bs + begin("m?h?modnl") + optArg1).r
   val mhinputRef: Regex = (bs + "mhinputref" + optArg1).r
   val tikzinput: Regex = (any + bs + "c?m?h?tikzinput" + optArg1).r
-  val smsKeys: List[String] = List("gadopt", "symvariant", "gimport") ++
+  private val smsKeys: List[String] = List("gadopt", "symvariant", "gimport") ++
     List("sym", "abbr", "key", "listkey").map(_ + "def") ++
-    List("import", "adopt", "importmh", "adoptmh").map(_ + "module")
-  val smsTopKeys: List[String] = List("module", "importmodulevia", "importmhmodulevia")
-  val smsStructures = List("g", "mh", "s").map(_ + "structure")
-  val smsViews = List("gviewsig", "gviewnl", "mhview", "view")
+    List("import", "adopt", "adoptmh").map(_ + "module")
+  private val smsTopKeys: List[String] = List("module", "importmodulevia", "importmhmodulevia")
   val smsRegs: Regex = {
-    val begins: String = begin(mkRegGroup(smsTopKeys ++ smsStructures ++ smsViews))
+    val begins: String = begin(mkRegGroup(smsTopKeys))
     val ends: String = smsTopKeys.mkString("|end\\{(", "|", ")\\}")
     ("^\\\\(" + mkRegGroup(smsKeys) + "|" + begins + ends + ")").r
   }
   val importMhModule: Regex = (bs + "importmhmodule" + opt + "(.*?)").r
   val gimport: Regex = (bs + "gimport\\*?" + optArg1).r
 
-  def optArg2(s: String): String = bs + begin(s) + opt + arg + arg
+  private def optArg2(s: String): String = bs + begin(s) + opt + arg + arg
 
   val smsSStruct = optArg2("sstructure").r
   val smsGStruct = (bs + begin("gstructure") + opt0 + arg + arg).r

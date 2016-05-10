@@ -114,32 +114,22 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   def buildFile(bt: BuildTask): BuildResult = if (!skip(bt)) reallyBuildFile(bt)
   else BuildEmpty("file excluded by MANIFEST")
 
-  protected def readingSource(key: String, a: Archive, in: File): Seq[Dependency] = {
-    var res: List[Dependency] = Nil
+  protected def readingSource(key: String, a: Archive, in: File): List[Dependency] = {
     val source = readSourceRebust(in)
-    source.getLines().foreach { line =>
-      val l = stripComment(line).trim
-      val err = "unexpected line: " + l + "\nin file: " + in
-      val verbIndex = l.indexOf("\\verb")
-      if (verbIndex <= -1 && importRegs.findFirstIn(l).isDefined) {
-        matchPathAndRep(key, a, l) match {
-          case None => log(err)
-          case Some(p) => res ::= p
-        }
-      }
-    }
+    val STeXStructure(_, res) = mkSTeXStructure(key, a, source.getLines)
     log(in + ": " + res.mkString(", "))
     val outPath = getOutPath(a, in)
     val safe = res.filter {
       case FileBuildDependency(_, ar, fp) =>
         val f: File = ar / inDim / fp
         if (f == in) {
-          log(LocalError(outPath + " imports itself"))
+          log(outPath + " imports itself")
           false
         }
         else if (f.exists()) true
         else {
-          log(LocalError(outPath + " missing: " + f))
+          log(outPath + " missing: " + f)
+          // log messages oddly appear in different order for latexml and pdflatex
           false
         }
       case _ => true
@@ -152,7 +142,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     val ds = if (in.exists && in.isFile) {
       if (key == "sms") Nil
       else
-        readingSource(if (List("tikzsvg", "allpdf").contains(key)) "pdflatex" else key, bt.archive, in).toList
+        readingSource(if (List("tikzsvg", "allpdf").contains(key)) "pdflatex" else key, bt.archive, in)
     } else if (in.isDirectory) Nil
     else {
       logResult("unknown file: " + in)
