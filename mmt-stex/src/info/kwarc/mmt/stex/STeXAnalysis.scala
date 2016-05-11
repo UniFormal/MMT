@@ -58,6 +58,7 @@ trait STeXAnalysis {
   protected def matchPathAndRep(a: Archive, line: String): Option[Dependency] =
     line match {
       case beginModnl(_, _, b) => Some(mkFileDep(a, entryToPath(b)))
+      case includeGraphics(_, _, b) => Some(PhysicalDependency(File(b)))
       case importOrUseModule(r) => getArgMap(r).get("load").map(f => PhysicalDependency(File(f).setExtension(".sms")))
       case mhinputRef(_, r, b) =>
         val fp = entryToPath(b)
