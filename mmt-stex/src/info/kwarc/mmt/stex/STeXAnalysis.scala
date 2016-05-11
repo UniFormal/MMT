@@ -99,7 +99,7 @@ trait STeXAnalysis {
   private def mkArgMap(ll: List[List[String]]): Map[String, String] = {
     var m: Map[String, String] = Map.empty
     ll.foreach {
-      case List(k, v) => m += ((k, v))
+      case List(k, v) => m += ((k.trim, v.trim))
       case _ =>
     }
     m

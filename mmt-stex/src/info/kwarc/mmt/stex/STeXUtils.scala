@@ -79,14 +79,16 @@ object STeXUtils {
 
   private def begin(s: String): String = "begin\\{" + s + "\\}"
 
+  private val space = "\\s*"
   private val opt = "\\[(.*?)\\]"
   private val opt0 = "(" + opt + ")?"
-  private val arg = "\\{(.*?)\\}"
+  private val arg = space + "\\{(.*?)\\}"
   private val any = ".*"
   private val arg1 = arg + any
   private val optArg1 = opt0 + arg1
   private val bs = "\\\\"
-  val includeGraphics: Regex = (bs + "includegraphics" + optArg1).r
+  private val oStar = "\\*?"
+  val includeGraphics: Regex = (bs + "includegraphics" + oStar + optArg1).r
   val importOrUseModule: Regex = (bs + "(import|use)Module" + opt + any).r
   val guse: Regex = (bs + "guse" + opt + arg1).r
   val useMhProblem: Regex = (bs + "includemhproblem" + optArg1).r
@@ -104,7 +106,7 @@ object STeXUtils {
     ("^\\\\(" + mkRegGroup(smsKeys) + "|" + begins + ends + ")").r
   }
   val importMhModule: Regex = (bs + "importmhmodule" + opt + "(.*?)").r
-  val gimport: Regex = (bs + "gimport\\*?" + optArg1).r
+  val gimport: Regex = (bs + "gimport" + oStar + optArg1).r
 
   private def optArg2(s: String): String = bs + begin(s) + opt + arg + arg
 
