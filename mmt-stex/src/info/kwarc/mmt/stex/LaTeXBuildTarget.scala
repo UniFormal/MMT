@@ -114,7 +114,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   def buildFile(bt: BuildTask): BuildResult = if (!skip(bt)) reallyBuildFile(bt)
   else BuildEmpty("file excluded by MANIFEST")
 
-  protected def readingSource(key: String, a: Archive, in: File): List[Dependency] = {
+  protected def readingSource(a: Archive, in: File): List[Dependency] = {
     val source = readSourceRebust(in)
     val STeXStructure(_, res) = mkSTeXStructure(a, source.getLines)
     log(in + ": " + res.mkString(", "))
@@ -142,7 +142,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     val ds = if (in.exists && in.isFile) {
       if (key == "sms") Nil
       else
-        readingSource(if (List("tikzsvg", "allpdf").contains(key)) "pdflatex" else key, bt.archive, in)
+        readingSource(bt.archive, in)
     } else if (in.isDirectory) Nil
     else {
       logResult("unknown file: " + in)
