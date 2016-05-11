@@ -86,8 +86,8 @@ object STeXUtils {
   private val arg1 = arg + any
   private val optArg1 = opt0 + arg1
   private val bs = "\\\\"
-  private val importKeys: List[String] = List("guse", "usemhmodule")
-  val groups: Regex = (bs + mkRegGroup(importKeys) + "\\*?" + optArg1).r
+  val guse: Regex = (bs + "guse" + opt + arg1).r
+  val useMhProblem: Regex = (bs + "includemhproblem" + optArg1).r
   val includeMhProblem: Regex = (bs + "includemhproblem" + optArg1).r
   val beginModnl: Regex = (bs + begin("m?h?modnl") + optArg1).r
   val mhinputRef: Regex = (bs + "mhinputref" + optArg1).r

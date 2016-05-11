@@ -72,8 +72,10 @@ class AllTeX extends LaTeXDirTarget {
       createLocalPaths(a, dir)
       val deps = getDepsMap(getFilesRec(a, in))
       val ds = Relational.flatTopsort(controller, deps)
-      val ts = ds.collect { case bd: FileBuildDependency if bd.key == key => bd }.map(d => d.archive / inDim / d.inPath)
-      val files = ts.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
+      val ts = ds.collect {
+        case bd: FileBuildDependency if List(key, "tex-deps").contains(bd.key) => bd
+      }.map(d => d.archive / inDim / d.inPath)
+      val files = ts.distinct.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
       assert(files.length == dirFiles.length)
       val langs = files.flatMap(f => getLang(File(f))).toSet
       val nonLangFiles = langFiles(None, files)

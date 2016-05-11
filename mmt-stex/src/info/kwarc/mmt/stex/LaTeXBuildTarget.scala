@@ -116,7 +116,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
 
   protected def readingSource(key: String, a: Archive, in: File): List[Dependency] = {
     val source = readSourceRebust(in)
-    val STeXStructure(_, res) = mkSTeXStructure(key, a, source.getLines)
+    val STeXStructure(_, res) = mkSTeXStructure(a, source.getLines)
     log(in + ": " + res.mkString(", "))
     val outPath = getOutPath(a, in)
     val safe = res.filter {
