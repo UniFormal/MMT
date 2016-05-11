@@ -140,9 +140,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   override def estimateResult(bt: BuildTask) = {
     val in = bt.inFile
     val ds = if (in.exists && in.isFile) {
-      if (key == "sms") Nil
-      else
-        readingSource(bt.archive, in)
+      readingSource(bt.archive, in)
     } else if (in.isDirectory) Nil
     else {
       logResult("unknown file: " + in)
