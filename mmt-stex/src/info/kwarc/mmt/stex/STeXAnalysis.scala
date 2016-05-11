@@ -55,10 +55,19 @@ trait STeXAnalysis {
     case fd => fd
   }
 
-  protected def matchPathAndRep(a: Archive, line: String): Option[Dependency] =
+  protected def matchPathAndRep(a: Archive, inFile: File, line: String): Option[Dependency] =
     line match {
       case beginModnl(_, _, b) => Some(mkFileDep(a, entryToPath(b)))
-      case includeGraphics(_, _, b) => Some(PhysicalDependency(File(b)))
+      case includeGraphics(_, _, b) =>
+        val p = inFile.up / b
+        if (p.exists()) Some(PhysicalDependency(p))
+        else {
+          val os = List("png", "jpg", "eps").find { s =>
+            p.setExtension(s).exists
+          }
+          if (os.isEmpty) log(inFile + " misses graphics file: " + b)
+          os.map(s => PhysicalDependency(p.setExtension(s)))
+        }
       case importOrUseModule(r) => getArgMap(r).get("load").map(f => PhysicalDependency(File(f).setExtension(".sms")))
       case mhinputRef(_, r, b) =>
         val fp = entryToPath(b)
@@ -119,12 +128,12 @@ trait STeXAnalysis {
   def createSms(a: Archive, inFile: File, outFile: File) {
     val source = readSourceRebust(inFile)
     val w = new StringBuilder
-    val STeXStructure(smsLines, _) = mkSTeXStructure(a, source.getLines)
+    val STeXStructure(smsLines, _) = mkSTeXStructure(a, inFile, source.getLines)
     if (smsLines.nonEmpty) File.write(outFile, smsLines.reverse.mkString("", "\n", "\n"))
     else log("no sms content")
   }
 
-  def mkSTeXStructure(a: Archive, lines: Iterator[String]): STeXStructure = {
+  def mkSTeXStructure(a: Archive, inFile: File, lines: Iterator[String]): STeXStructure = {
     var struct = STeXStructure(Nil, Nil)
     def join(s: STeXStructure) = {
       struct = struct.join(s)
@@ -136,7 +145,7 @@ trait STeXAnalysis {
         val sl = matchSmsEntry(a, l)
         sl.foreach(join)
         if (key != "sms") {
-          val od = matchPathAndRep(a, l)
+          val od = matchPathAndRep(a, inFile, l)
           od.foreach(d => join(STeXStructure(Nil, List(d))))
         }
       }
