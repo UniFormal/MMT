@@ -22,15 +22,10 @@ class AllPdf extends LaTeXDirTarget {
   }
 
   override def estimateResult(bt: BuildTask) = {
-    val a = bt.archive
     if (bt.isDir) {
+      val a = bt.archive
       val files = getDirFiles(a, bt.inFile, includeFile)
-      val langs: Set[String] = files.flatMap(f => getLang(File(f))).toSet
-      val allLangFiles = langs.toList.sorted.map(l => allFile(Some(l)))
-      val allFiles = if (langFiles(None, files).isEmpty) allLangFiles
-      else
-        allFile(None) :: allLangFiles
-      val ls = allFiles.map(f => FileBuildDependency("pdflatex", a, bt.inPath / f))
+      val ls = getAllFiles(bt).map(f => FileBuildDependency("pdflatex", a, bt.inPath / f))
       BuildSuccess(ls :+ DirBuildDependency("alltex", a, bt.inPath,
         files.map(f => makeBuildTask(a, bt.inPath / f))), Nil)
     } else BuildSuccess(Nil, Nil)
@@ -53,16 +48,8 @@ class AllTeX extends LaTeXDirTarget {
   val key: String = "alltex"
 
   override def estimateResult(bt: BuildTask) = {
-    val a = bt.archive
     if (bt.isDir) {
-      val files = getDirFiles(a, bt.inFile, includeFile)
-      val langs: Set[String] = files.flatMap(f => getLang(File(f))).toSet
-      val allLangFiles = langs.toList.sorted.map(l => allFile(Some(l)))
-      val allFiles = if (langFiles(None, files).isEmpty) allLangFiles
-      else
-        allFile(None) :: allLangFiles
-      val ls = allFiles.map(f => PhysicalDependency(bt.inFile / f))
-      BuildSuccess(Nil, ls)
+      BuildSuccess(Nil, getAllFiles(bt).map(f => PhysicalDependency(bt.inFile / f)))
     } else super.estimateResult(bt)
   }
 

@@ -199,6 +199,16 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
   protected def allFile(lang: Option[String]): String =
     "all" + lang.map("." + _).getOrElse("") + ".tex"
 
+  protected def getAllFiles(bt: BuildTask): List[String] =
+    if (bt.isDir) {
+      val files = getDirFiles(bt.archive, bt.inFile, includeFile)
+      val langs: Set[String] = files.flatMap(f => getLang(File(f))).toSet
+      val allLangFiles = langs.toList.sorted.map(l => allFile(Some(l)))
+      if (langFiles(None, files).isEmpty) allLangFiles
+      else
+        allFile(None) :: allLangFiles
+    } else Nil
+
   override def runBuildTask(bt: BuildTask, level: Level): BuildResult = if (bt.isDir) {
     super.runBuildTask(bt, level)
   } else reallyBuildFile(bt)
