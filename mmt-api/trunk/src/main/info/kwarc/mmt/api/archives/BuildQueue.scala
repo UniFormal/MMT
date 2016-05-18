@@ -187,10 +187,10 @@ class BuildQueue extends BuildManager {
   private var cycleCheck: Set[BuildDependency] = Set.empty
 
   /** all tasks currently in the queue */
-  val alreadyQueued: mutable.HashMap[Dependency, QueuedTask] = new mutable.HashMap[Dependency, QueuedTask]
+  val alreadyQueued: mutable.HashMap[BuildDependency, QueuedTask] = new mutable.HashMap[BuildDependency, QueuedTask]
   /** all tasks that were built (successfully or permanently-failing) since the last time the queue was empty */
-  val alreadyBuilt: mutable.HashMap[Dependency, BuildResult] = new mutable.HashMap[Dependency, BuildResult]
-  var finishedBuilt: Queue[(Dependency, BuildResult)] = Queue[(Dependency, BuildResult)]()
+  val alreadyBuilt: mutable.HashMap[BuildDependency, BuildResult] = new mutable.HashMap[BuildDependency, BuildResult]
+  var finishedBuilt: Queue[(BuildDependency, BuildResult)] = Queue[(BuildDependency, BuildResult)]()
   var currentQueueTask: Option[QueuedTask] = None
   /** the catalog from (logical) resource dependency to build dependency */
   val catalog: mutable.HashMap[ResourceDependency, BuildDependency] = new mutable.HashMap[ResourceDependency, BuildDependency]
