@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.symbols.{DeclaredStructure, FinalConstant}
 
+import scala.collection.mutable
 import scala.util.{Success, Try}
 
 /**
@@ -31,17 +32,16 @@ abstract class Translation(val priority : Int) {
 /**
   * Groups translations together. Translations in the same group are preferably used jointly
   */
-abstract class TranslationGroup {
+abstract class TranslationGroup extends Translation(0) {
   val translations : List[Translation]
   val source : List[FullArchive]
   val target : List[FullArchive]
 
   // similar as above, but in addition returns the specific translations that are applicable
-  def isApplicable(t : Term) : List[(GlobalName,List[GlobalName],Translation)] = translations.collect{
-    case tr if tr.isApplicable(t).isDefined =>
-      val ret = tr.isApplicable(t).get
-      (ret._1,ret._2,tr)
+  def isApplicable(t : Term) : Option[(GlobalName,List[GlobalName])] = translations.collectFirst {
+    case tr if tr.isApplicable(t).isDefined => tr.isApplicable(t).get
   }
+  def translate(t : Term) = translations.find(tr => tr.isApplicable(t).isDefined).map(tr => tr.apply(t)).get
 
   override def toString = "TranslationGroup from " + source.mkString(", ") + " to " + target.mkString(", ") +
     translations.map(" - " + _.toString).mkString("\n")
@@ -313,6 +313,7 @@ class Translator extends Extension {
     case _ => None
   }
 
+  /*
   private case class State(visited: List[GlobalName], applied: List[Translation], usedgroups: List[TranslationGroup]) {
     //def add(vs : GlobalName) = State(vs :: visited, applied,usedgroups)
     def add(vs: (GlobalName, List[GlobalName], Translation)) = State((vs._1 :: visited).distinct, (vs._3 :: applied).distinct, usedgroups)
@@ -438,16 +439,134 @@ class Translator extends Extension {
       case _ => Nil
     }
   }
+  */
 
   private def getContext(t : Term) : Context = {
     val syms = ArchiveStore.getSymbols(t)
     syms.map(m => Context(m.module)).foldLeft(Context.empty)((c1,c2) => c1 ++ c2)
   }
 
+  /*
   private def apply(t : Term, target : FullArchive, simplify : Boolean) : List[Term] = traverse(t,State(Nil,Nil,Nil))(target).map(r =>
       if(simplify) controller.simplifier.apply(r._1,getContext(r._1)) else r._1).distinct
+   */
 
-  def apply(t : Term, target : String, simplify : Boolean = true) : List[Term] = apply(t,archives.getArchive(target).getOrElse(return Nil),simplify)
+  private object State {
+    sealed class Status
+    object done extends Status
+    object open extends Status
+    object checked extends Status
+    object blocked extends Status
+  }
+
+  private sealed abstract class State {
+    val term : Term
+    val orig : Term
+    val traversed : List[GlobalName]
+    val used : List[Translation]
+    // val usedgroups : List[TranslationGroup]
+    var status : State.Status
+    private val topstate = this
+
+    lazy val syms = ArchiveStore.getSymbols(term)
+    def +(t : Term,travs : List[GlobalName],nused : List[Translation])(implicit target : FullArchive) = new State {
+      val term = t
+      val orig = topstate.orig
+      val traversed = travs ::: topstate.traversed
+      val used = nused ::: topstate.used
+      var status = if (syms.forall(p => target.declares(p))) State.done else State.open
+    }
+  }
+
+  private def NewState(t : Term)(implicit target : FullArchive) : State = new State {
+    val term = t
+    val orig = t
+    val traversed = Nil
+    val used = Nil
+    // val usedgroups = Nil
+    var status = if (syms.forall(p => target.declares(p))) State.done else State.open
+  }
+
+  private case class ExpandDefinition(from : GlobalName,toTerm : Term) extends Translation(0) {
+    lazy val toSymbols = ArchiveStore.getSymbols(toTerm)
+    val target = Nil
+    val source = Nil
+    def isApplicable(t : Term) = t match {
+      case OMS(p) if p == from => Some((p,toSymbols))
+      case _ => None
+    }
+
+    protected def translate(t : Term) : Term = toTerm
+  }
+
+  private def findApplicable(state : State)(implicit target : FullArchive) : List[List[Translation]] = {
+    var applicables : List[(Translation,GlobalName)] = Nil
+    val trav = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, init: State): Term = {
+        t match {
+          case OMS(p) if target.declares(p) => return OMS(p)
+          case OMS(p) =>
+            val defi = expandDefinition(p)
+            if (defi.isDefined) applicables ::= (ExpandDefinition(p,defi.get),p)
+          case _ => {}
+        }
+        applicables :::= (translations ::: translationgroups).collect {
+          case tr if tr.isApplicable(t).isDefined =>
+            val ret = tr.isApplicable(t).get
+            (tr,ret._1, ret._2)
+        }.filter(p => !p._3.filter(!target.declares(_)).exists(state.traversed.contains)).map(tup => (tup._1,tup._2))
+        Traverser(this,t)
+      }
+    }
+    trav.apply(state.term,())
+    if (applicables.isEmpty) state.status = State.blocked
+    aggregate(applicables.groupBy(_._2).map(p => (p._1,p._2.map(_._1))))
+  }
+
+  private def aggregate(ls : Map[GlobalName,List[Translation]], dones : List[List[Translation]] = List(Nil))
+  : List[List[Translation]] = {
+    if (ls.isEmpty) dones
+    else if (ls.head._2.length == 1) aggregate(ls.tail,dones.map(l => ls.head._2.head :: l))
+    else aggregate(ls.tail,ls.head._2.flatMap(tr => dones.map(l => tr :: l)))
+  }
+
+  private def applytranslations(trls : List[Translation], state : State)(implicit target : FullArchive) : State = {
+    var traversed : List[GlobalName] = Nil
+    val trav = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, init: State): Term = {
+        val ret = trls.collectFirst{case tr if tr.isApplicable(t).isDefined =>
+          (tr,tr.isApplicable(t).get)}
+        if (ret.isDefined) {
+          traversed ::= ret.get._2._1
+          Traverser(this,ret.get._1.apply(t))
+        } else Traverser(this,t)
+      }
+    }
+    state.status = State.checked
+    state + (trav.apply(state.term,()),traversed,trls)
+  }
+
+  private def topapply(t : Term)(implicit target : FullArchive) : List[Term] = {
+    var states = List(NewState(t))
+    var newstates = states
+    while (newstates.nonEmpty && !newstates.exists(s => s.status == State.done)) {
+      newstates = newstates.flatMap(st => st.status match {
+        case State.open =>
+          val apps = findApplicable(st)
+          apps.map(tr => applytranslations(tr,st))
+        case _ => Nil
+      })
+      states :::= newstates
+    }
+    val dones = states.filter(p => p.status == State.done)
+    dones.map(_.term).distinct
+  }
+
+  def apply(t : Term, target : String, simplify : Boolean = true) : List[Term] = {
+    val ret = topapply(t)(archives.getArchive(target).getOrElse(return Nil))
+    if(simplify) ret.map(r => controller.simplifier.apply(r,getContext(r))).distinct else ret
+    // TODO simplify
+  }
 
   def loadAlignments = {
     log("Getting Alignments from AlignmentServer...")
