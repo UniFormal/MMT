@@ -17,6 +17,12 @@ angular.module('buildQueueApp', []).controller('QueueViewer',
           }
         })
       };
+      $scope.clear = function() {
+        $http.get(':queue/clear').success(function(data) {
+          $scope.refreshRate = 1;
+          $scope.refreshCount = 1;
+        })
+      };
       var stop;
       $scope.repeat = function() {
          stop = $interval($scope.list, $scope.refreshRate * 1000)

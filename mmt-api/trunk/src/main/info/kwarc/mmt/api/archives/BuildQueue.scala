@@ -453,7 +453,15 @@ class BuildQueue extends BuildManager {
   /** serves lists of [[Error]]s */
   private val serve = new ServerExtension("queue") {
     def apply(path: List[String], query: String, body: Body) = path match {
-      case _ =>
+      case List("clear") =>
+        finishedBuilt = Queue.empty
+        blocked = Nil
+        queued.clear
+        alreadyBuilt.clear
+        alreadyQueued.clear
+        cycleCheck = Set.empty
+        Server.JsonResponse(JSONNull)
+     case _ =>
         Server.JsonResponse(getQueueInfo)
     }
   }
