@@ -8,7 +8,7 @@ import utils._
 import web.{Body, Server, ServerExtension}
 
 import scala.collection.JavaConverters._
-import scala.collection.immutable
+import scala.collection.immutable.Queue
 import scala.collection.mutable
 
 /** */
@@ -182,18 +182,18 @@ class TrivialBuildManager extends BuildManager {
 
 /** queues build tasks for multi-threaded execution, includes dependency management */
 class BuildQueue extends BuildManager {
-  private val queued = new ConcurrentLinkedDeque[QueuedTask]
+  private val queued: ConcurrentLinkedDeque[QueuedTask] = new ConcurrentLinkedDeque[QueuedTask]
   private var blocked: List[QueuedTask] = Nil
   private var cycleCheck: Set[BuildDependency] = Set.empty
 
   /** all tasks currently in the queue */
-  val alreadyQueued = new mutable.HashMap[Dependency, QueuedTask]
+  val alreadyQueued: mutable.HashMap[Dependency, QueuedTask] = new mutable.HashMap[Dependency, QueuedTask]
   /** all tasks that were built (successfully or permanently-failing) since the last time the queue was empty */
-  val alreadyBuilt = new mutable.HashMap[Dependency, BuildResult]
-  var finishedBuilt = immutable.Queue[(Dependency, BuildResult)]()
+  val alreadyBuilt: mutable.HashMap[Dependency, BuildResult] = new mutable.HashMap[Dependency, BuildResult]
+  var finishedBuilt: Queue[(Dependency, BuildResult)] = Queue[(Dependency, BuildResult)]()
   var currentQueueTask: Option[QueuedTask] = None
   /** the catalog from (logical) resource dependency to build dependency */
-  val catalog = new mutable.HashMap[ResourceDependency, BuildDependency]
+  val catalog: mutable.HashMap[ResourceDependency, BuildDependency] = new mutable.HashMap[ResourceDependency, BuildDependency]
 
   private var continue: Boolean = true
   private var stopOnEmpty: Boolean = false
