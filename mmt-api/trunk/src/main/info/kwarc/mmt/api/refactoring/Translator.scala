@@ -456,7 +456,24 @@ class Translator extends Extension {
     object done extends Status
     object open extends Status
     object checked extends Status
-    object blocked extends Status
+    case class blocked(value : Double) extends Status
+    private var mods : List[(GlobalName,GlobalName)] = Nil
+    private var origs : List[GlobalName] = Nil
+    def reset(s : State) = {
+      mods = Nil
+      origs = s.syms
+    }
+    def revert(t : Term)(implicit target : FullArchive) : Term = {
+      val trav = new StatelessTraverser {
+        override def traverse(t: Term)(implicit con: Context, init: State): Term = t match {
+          case OMS(p) if !target.declares(p) && !origs.contains(p) =>
+            traverse(OMS(mods.find(q => q._2 == p).map(_._1).getOrElse(throw new Exception(""))))
+          case _ => Traverser(this,t)
+        }
+      }
+      trav(t,())
+    }
+    def addchange(from : GlobalName, to : GlobalName) = mods ::= (from,to)
   }
 
   private sealed abstract class State {
@@ -474,7 +491,15 @@ class Translator extends Extension {
       val orig = topstate.orig
       val traversed = travs ::: topstate.traversed
       val used = nused ::: topstate.used
-      var status = if (syms.forall(p => target.declares(p))) State.done else State.open
+      var status = {
+        val perc = syms.filter(p => target.declares(p))
+        if (perc.length == syms.length) State.done else State.open
+      }
+    }
+
+    def block(implicit target : FullArchive) = {
+      val perc = syms.filter(p => target.declares(p))
+      status = State.blocked(perc.length.toDouble / syms.length.toDouble)
     }
   }
 
@@ -519,14 +544,19 @@ class Translator extends Extension {
       }
     }
     trav.apply(state.term,())
-    if (applicables.isEmpty) state.status = State.blocked
-    aggregate(applicables.groupBy(_._2).map(p => (p._1,p._2.map(_._1))))
+    if (applicables.isEmpty) {
+      state.block
+    }
+    aggregate(applicables.groupBy(_._2).map(p => (p._1,p._2.map(_._1)))).map(_.distinct).distinct
   }
 
-  private def aggregate(ls : Map[GlobalName,List[Translation]], dones : List[List[Translation]] = List(Nil))
+  private def aggregate(ls : Map[GlobalName,List[Translation]], dones : List[List[Translation]] = Nil)
   : List[List[Translation]] = {
     if (ls.isEmpty) dones
-    else if (ls.head._2.length == 1) aggregate(ls.tail,dones.map(l => ls.head._2.head :: l))
+    else if (ls.head._2.length == 1) {
+      if (dones.nonEmpty) aggregate(ls.tail,dones.map(l => ls.head._2.head :: l))
+      else aggregate(ls.tail,List(List(ls.head._2.head)))
+    }
     else aggregate(ls.tail,ls.head._2.flatMap(tr => dones.map(l => tr :: l)))
   }
 
@@ -538,6 +568,7 @@ class Translator extends Extension {
           (tr,tr.isApplicable(t).get)}
         if (ret.isDefined) {
           traversed ::= ret.get._2._1
+          State.addchange(ret.get._2._1,ret.get._2._2.head)
           Traverser(this,ret.get._1.apply(t))
         } else Traverser(this,t)
       }
@@ -546,9 +577,10 @@ class Translator extends Extension {
     state + (trav.apply(state.term,()),traversed,trls)
   }
 
-  private def topapply(t : Term)(implicit target : FullArchive) : List[Term] = {
+  private def topapply(t : Term,getpartialresults : Boolean)(implicit target : FullArchive) : List[Term] = {
     var states = List(NewState(t))
     var newstates = states
+    State.reset(states.head)
     while (newstates.nonEmpty && !newstates.exists(s => s.status == State.done)) {
       newstates = newstates.flatMap(st => st.status match {
         case State.open =>
@@ -559,11 +591,15 @@ class Translator extends Extension {
       states :::= newstates
     }
     val dones = states.filter(p => p.status == State.done)
-    dones.map(_.term).distinct
+    if (dones.nonEmpty) dones.map(_.term).distinct
+    else if (getpartialresults) List(State.revert(states.collect {
+      case st if st.status.isInstanceOf[State.blocked] => st
+    }.maxBy(_.status.asInstanceOf[State.blocked].value).term))
+    else Nil
   }
 
-  def apply(t : Term, target : String, simplify : Boolean = true) : List[Term] = {
-    val ret = topapply(t)(archives.getArchive(target).getOrElse(return Nil))
+  def apply(t : Term, target : String, simplify : Boolean = true, getpartialresults : Boolean = false) : List[Term] = {
+    val ret = topapply(t,getpartialresults)(archives.getArchive(target).getOrElse(return Nil))
     if(simplify) ret.map(r => controller.simplifier.apply(r,getContext(r))).distinct else ret
     // TODO simplify
   }
