@@ -39,6 +39,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   extends ROArchive with Validate with ScalaCode with ZipArchive {
 
   val rootString = root.toString
+  val archString = root.up.getName + "/" + root.getName
   val id = properties("id")
   val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
   /** the NamespaceMap built from the ns and ns-prefix properties */

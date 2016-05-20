@@ -29,7 +29,7 @@ object STeXUtils {
         + c + sysEnv(tex)))
   }
 
-  def archString(a: Archive): String = a.root.up.getName + "/" + a.root.getName
+  def archString(a: Archive): String = a.archString
 
   def getLang(f: File): Option[String] = f.stripExtension.getExtension
 

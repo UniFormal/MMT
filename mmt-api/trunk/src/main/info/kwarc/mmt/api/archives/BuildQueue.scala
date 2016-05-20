@@ -317,8 +317,8 @@ class BuildQueue extends BuildManager {
 
   /** adds tasks for all dependencies of a task (given as a [[BuildDependency]])
     *
-    * @param up
-    * @param bd
+    * @param up the update level for the dependency
+    * @param bd build dependency to be added
     */
   private def buildDependency(up: Update, bd: BuildDependency) = if (!cycleCheck.contains(bd)) {
     val tar = bd.getTarget(controller)
@@ -450,6 +450,15 @@ class BuildQueue extends BuildManager {
       ("finished", JSONArray(fs: _*)))
   }
 
+  def getTraversingBuildTargetExtensions: List[String] =
+     controller.getConfig.getEntries(classOf[ExtensionConf]).collect {
+       case ExtensionConf(key, cls, args) if classOf[TraversingBuildTarget].isAssignableFrom(Class.forName(cls))
+         => key
+     }
+
+  def getArchives: List[String] =
+    controller.backend.getArchives.map(a => a.archString)
+
   /** serves lists of [[Error]]s */
   private val serve = new ServerExtension("queue") {
     def apply(path: List[String], query: String, body: Body) = path match {
@@ -461,7 +470,11 @@ class BuildQueue extends BuildManager {
         alreadyQueued.clear
         cycleCheck = Set.empty
         Server.JsonResponse(JSONNull)
-     case _ =>
+      case List("targets") =>
+        Server.JsonResponse(JSONArray(getTraversingBuildTargetExtensions.map(JSONString): _*))
+      case List("archives") =>
+        Server.JsonResponse(JSONArray(getArchives.map(JSONString): _*))
+      case _ =>
         Server.JsonResponse(getQueueInfo)
     }
   }
