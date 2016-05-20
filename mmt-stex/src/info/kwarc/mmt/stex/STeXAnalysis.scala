@@ -60,7 +60,7 @@ trait STeXAnalysis {
           STeXUtils.getAmbleFile(b + ".tex", a, None)
         else (inFile.up / b).setExtension("tex")
         val d = PhysicalDependency(p)
-        d :: (if (p.exists && !parents.contains(p)) getDeps(a, p, parents + p) else Nil)
+        d :: (if (!parents.contains(p)) getDeps(a, p, parents + p) else Nil)
       case includeGraphics(_, _, b) =>
         val gExts = List("png", "jpg", "eps", "pdf")
         val p = inFile.up / b
@@ -137,8 +137,12 @@ trait STeXAnalysis {
   }
 
   /** get dependencies */
-  def getDeps(a: Archive, in: File, parents: Set[File], amble: Option[File] = None): List[Dependency] =
-    mkSTeXStructure(a, in, readSourceRebust(amble.getOrElse(in)).getLines, parents).deps
+  def getDeps(a: Archive, in: File, parents: Set[File], amble: Option[File] = None): List[Dependency] = {
+    val f = amble.getOrElse(in)
+    if (f.exists)
+      mkSTeXStructure(a, in, readSourceRebust(f).getLines, parents).deps
+    else Nil
+  }
 
   /** in file is used for relative \input paths */
   def mkSTeXStructure(a: Archive, in: File, lines: Iterator[String], parents: Set[File]): STeXStructure = {
