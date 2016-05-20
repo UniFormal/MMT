@@ -114,9 +114,8 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   def buildFile(bt: BuildTask): BuildResult = if (!skip(bt)) reallyBuildFile(bt)
   else BuildEmpty("file excluded by MANIFEST")
 
-  protected def readingSource(a: Archive, in: File): List[Dependency] = {
-    val source = readSourceRebust(in)
-    val STeXStructure(_, res) = mkSTeXStructure(a, in, source.getLines)
+  protected def readingSource(a: Archive, in: File, amble: Option[File] = None): List[Dependency] = {
+    val res = getDeps(a, in, Set(in), amble)
     log(in + ": " + res.mkString(", "))
     val outPath = getOutPath(a, in)
     val safe = res.filter {
@@ -139,8 +138,16 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
 
   override def estimateResult(bt: BuildTask) = {
     val in = bt.inFile
+    val a = bt.archive
     val ds = if (in.exists && in.isFile) {
-      readingSource(bt.archive, in)
+      readingSource(a, in) ++
+        (if (noAmble(in)) Nil else {
+          val pre = getAmbleFile("pre", bt)
+          val post = getAmbleFile("post", bt)
+          List(pre, post).map(PhysicalDependency) ++
+            readingSource(a, in, Some(pre)) ++
+            readingSource(a, in, Some(post))
+        })
     } else if (in.isDirectory) Nil
     else {
       logResult("unknown file: " + in)

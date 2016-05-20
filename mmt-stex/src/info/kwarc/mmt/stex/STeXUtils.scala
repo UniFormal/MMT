@@ -88,6 +88,7 @@ object STeXUtils {
   private val optArg1 = opt0 + arg1
   private val bs = "\\\\"
   private val oStar = "\\*?"
+  val input: Regex = (bs + "(lib)?input" + oStar + optArg1).r
   val includeGraphics: Regex = (bs + "includegraphics" + oStar + optArg1).r
   val importOrUseModule: Regex = (bs + "(import|use)Module" + opt + any).r
   val guse: Regex = (bs + "guse" + opt + arg1).r
