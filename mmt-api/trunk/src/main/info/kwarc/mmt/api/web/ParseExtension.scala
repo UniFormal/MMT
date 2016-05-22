@@ -23,7 +23,7 @@ class ParseServer extends ServerExtension(":parse") {
           }
           val errorCont = new ErrorContainer(None)
           val ps = ParsingStream.fromString(text, dpath, format)
-          val doc = parser(ps)(errorCont)
+          val doc = parser(ps)(new StructureParserContinuations(errorCont))
           errorCont.getErrors match {
             case Nil => //no error -> parsing successful
                 val rb = new presentation.StringBuilder()

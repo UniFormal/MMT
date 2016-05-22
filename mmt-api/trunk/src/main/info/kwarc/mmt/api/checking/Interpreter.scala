@@ -63,9 +63,18 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Inter
 
   /** parses a [[ParsingStream]] and checks the result */
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement = {
+    val ce = new CheckingEnvironment(errorCont, RelationHandler.ignore)
     try {
-      val se = parser(ps)(errorCont)
-      checker(se)(new CheckingEnvironment(errorCont, RelationHandler.ignore))
+      val cont = new StructureParserContinuations(errorCont) {
+        override def onElement(se: StructuralElement) {
+          //checker.checknewElement(se)(ce)
+        }
+        override def onElementEnd(se: ContainerElement[_]) {
+          //checker.checkElementEnd(se)(ce)
+        }
+      }
+      val se = parser(ps)(cont)
+      checker(se)(ce)
       se
     } finally {
       ps.stream.close
@@ -76,5 +85,8 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Inter
 /** an interpreter created from a trusted parser */
 class OneStepInterpreter(parser: Parser) extends Interpreter {
     def format = parser.format
-    def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) = parser(ps)
+    def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) = {
+      val cont = new StructureParserContinuations(errorCont)
+      parser(ps)(cont)
+    }
 }

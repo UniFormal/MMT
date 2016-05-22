@@ -19,7 +19,7 @@ import utils._
  * @param reader the input stream, from which the parser reads (see ps below)
  * @param ps the encapsulated input that contains the buffered reader (also encapsulated in reader!)
  */
-class ParserState(val reader: Reader, val ps: ParsingStream, val errorCont: ErrorHandler) {
+class ParserState(val reader: Reader, val ps: ParsingStream, val cont: StructureParserContinuations) {
   /**
    * the namespace mapping set by
    * {{{
@@ -35,12 +35,14 @@ class ParserState(val reader: Reader, val ps: ParsingStream, val errorCont: Erro
   var startPosition = reader.getSourcePosition
 
   def copy(rd: Reader = reader): ParserState = {
-    val s = new ParserState(rd, ps, errorCont)
+    val s = new ParserState(rd, ps, cont)
     s.namespaces = namespaces
     s
   }
 
   def makeSourceRef(reg: SourceRegion) = SourceRef(ps.source, reg)
+
+  val errorCont = cont.errorCont
 }
 
 /** matches the keyword for a view */
@@ -89,6 +91,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     SourceRef.update(se, state.makeSourceRef(reg))
     try {
       controller.add(se)
+      state.cont.onElement(se)
     }
     catch {
       case e: Error =>
@@ -98,11 +101,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
   }
   /** called at the end of a document or module, does common bureaucracy */
-  protected def end(s: StructuralElement)(implicit state: ParserState) {
+  protected def end(s: ContainerElement[_])(implicit state: ParserState) {
     //extend source reference until end of element
     SourceRef.get(s) foreach { r =>
       SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getSourcePosition)))
     }
+    state.cont.onElementEnd(s)
     log("end " + s.path)
   }
   /** the region from the start of the current structural element to the current position */
@@ -156,8 +160,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   // ******************************* the entry points
 
-  def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) = {
-    val (se, _) = apply(new ParserState(new Reader(ps.stream), ps, errorCont))
+  def apply(ps: ParsingStream)(implicit cont: StructureParserContinuations) = {
+    val (se, _) = apply(new ParserState(new Reader(ps.stream), ps, cont))
     se
   }
 
@@ -483,8 +487,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             // close all sections from currentLevel up to and including thisLevel
             if (thisLevel <= currentLevel) {
                Range(currentLevel,thisLevel-1,-1).foreach {l =>
-                  mod.asDocument.getLocally(currentSection.take(l)).foreach {d =>
-                    end(d)
+                  mod.asDocument.getLocally(currentSection.take(l)).foreach {
+                    case d: Document => end(d)
                   }
                }
                nextSection = currentSection.take(thisLevel-1)
@@ -958,7 +962,7 @@ trait MMTStructureEstimator {self: Interpreter =>
       val (dp, ps) = buildTaskToParsingStream(bt)
       used = Nil
       provided = Nil
-      parser(ps)(bt.errorCont)
+      parser(ps)(new StructureParserContinuations(bt.errorCont))
       // convert i.e. p?NatRules/NatOnly to p?NatRules
       used = used.map { mp =>
         val steps = mp.name.steps
@@ -1010,6 +1014,6 @@ trait MMTStructureEstimator {self: Interpreter =>
       case _ =>
         super.getParseExt(se, key)
     }
-    override def end(s: StructuralElement)(implicit state: ParserState) {}
+    override def end(s: ContainerElement[_])(implicit state: ParserState) {}
   }
 }

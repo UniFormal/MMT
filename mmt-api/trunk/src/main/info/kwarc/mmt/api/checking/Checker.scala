@@ -62,6 +62,8 @@ object NullChecker {
       override def init(c: Controller){super.init(c); objectLevel.init(c)}
       val id = "null"
       def apply(e : StructuralElement)(implicit env: CheckingEnvironment) {}
+      def checknewElement(e : StructuralElement, cont : Option[Context] = None)(implicit ce: CheckingEnvironment) {}
+      def checkElementEnd(e: ContainerElement[_], cont : Option[Context] = None)(implicit ce: CheckingEnvironment) {}
    }
 }
 
@@ -74,5 +76,7 @@ abstract class Checker(val objectLevel: ObjectChecker) extends StructureChecker 
   /** relegates to objectChecker */
   def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) =
      objectLevel(cu, rules)
+   def checknewElement(e : StructuralElement, cont : Option[Context] = None)(implicit ce: CheckingEnvironment): Unit
+   def checkElementEnd(e: ContainerElement[_], cont : Option[Context] = None)(implicit ce: CheckingEnvironment): Unit
 }
 

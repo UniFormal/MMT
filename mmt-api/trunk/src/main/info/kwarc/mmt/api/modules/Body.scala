@@ -18,7 +18,7 @@ import documents._
  * In particular, declaration names must be unique independent of the narrative grouping.
  * The latter is stored as a [[Document]], which holds [[SRef]] to the logical declarations.  
 */
-trait Body extends ContentElement with MutableElementContainer[Declaration] {self =>
+trait Body extends ContentElement with ContainerElement[Declaration] {self =>
    /** the set of named statements, indexed by name
     * if a statement has an alternativeName, it occurs twice in this map
     */

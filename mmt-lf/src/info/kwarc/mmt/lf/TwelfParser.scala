@@ -17,10 +17,10 @@ import scala.collection.mutable._
 class TwelfParser extends Parser(new NotationBasedParser) {
   val format = "elf"
   
-  def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): Document = {
+  def apply(ps: ParsingStream)(implicit cont: StructureParserContinuations): Document = {
     init(ps)
     val (doc, errors) = readDocument()
-    errors reverseMap {e => errorCont(e)}
+    errors reverseMap {e => cont.errorCont(e)}
     doc
   }
   

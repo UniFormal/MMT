@@ -131,6 +131,26 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
      }
   }
 
+  override def onAdd(c: StructuralElement): Unit = {
+    val parent = c.parent match {
+      case cp : ContentPath => controller.get(cp)
+      case _ => return
+    }
+    if (!ElaboratedElement.is(parent)) return
+    (parent,c) match {
+      case (t : DeclaredTheory, dec : Declaration) =>
+        flattenDeclaration(t,dec)
+      case (s : DeclaredStructure, dec : Declaration) =>
+        controller.getO(s.parent) match {
+          case Some(t : DeclaredTheory) =>
+            onDelete(s)
+            flattenDeclaration(t,s)
+          case _ => {}
+        }
+      case _ => {}
+    }
+  }
+
   private var materializeCounter = 0
   private def newName: MPath = {
      val i = materializeCounter

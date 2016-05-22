@@ -45,6 +45,8 @@ trait MutableElementContainer[S <: NamedElement] extends ElementContainer[S] {
   def reorder(name: LocalName): Unit
 }
 
+trait ContainerElement[S <: StructuralElement] extends StructuralElement with MutableElementContainer[S]
+
 class ListContainer[S <: NamedElement](items: List[S]) extends ElementContainer[S] with DefaultLookup[S] {
   def getDeclarations = items
 }

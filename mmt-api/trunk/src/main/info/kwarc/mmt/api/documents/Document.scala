@@ -17,7 +17,7 @@ import scala.xml.Elem
  * @param nsMap the namespaces declared in this document
  */
 class Document(val path: DPath, val root: Boolean = false, val contentAncestor: Option[Body] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty)
-     extends NarrativeElement with MutableElementContainer[NarrativeElement] {
+     extends NarrativeElement with ContainerElement[NarrativeElement] {
   /** the containing document if root == false; otherwise, the URI without path */ 
   def parentOpt = if (root) None else Some(parent)
   val parent: DPath = if (root) path ^^ else path ^

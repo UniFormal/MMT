@@ -49,18 +49,21 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     check(Context.empty, e)
   }
 
-  /**
-    * @param context all variables and theories that may be used in e (including the theory in which is declared)
-    * @param e       the element to check
-    */
-  private def check(context: Context, e: StructuralElement)(implicit ce: CheckingEnvironment) {
+
+  private def getContext(e : StructuralElement) = controller.getO(e.parent) match {
+      case Some(th : DeclaredTheory) => th.getInnerContext.before(e.name)
+      case Some(v : DeclaredLink) => v.codomainAsContext
+      case _ => Context.empty
+    }
+
+  def checknewElement(e : StructuralElement, cont : Option[Context] = None)(implicit ce: CheckingEnvironment): Unit = {
+    val context = cont.getOrElse(getContext(e))
     val rules = RuleSet.collectRules(controller, context)
     implicit val env = new Environment(ce, rules, e.path)
     val path = e.path
     log("checking " + path)
     e match {
       case d: Document =>
-        d.getDeclarations foreach { i => check(context, i) }
       case oe: OpaqueElement =>
         controller.extman.get(classOf[OpaqueChecker], oe.format) match {
           case None => env.errorCont(InvalidElement(oe, "no checker found for format " + oe.format))
@@ -72,53 +75,25 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         check(context, controller.get(r.target))
       case t: DeclaredTheory =>
         var contextMeta = context
-        t.meta map { mt =>
+        t.meta foreach { mt =>
           checkTheory(context, OMMOD(mt))
           contextMeta = contextMeta ++ mt
         }
         checkContext(contextMeta, t.parameters)
-        val contextI = context ++ t.getInnerContext
-        // content structure
-        val tDecls = t.getPrimitiveDeclarations
-        // mark all children as unchecked
-        tDecls foreach { d =>
-          UncheckedElement.set(d)
-        }
-        // check each child and mark it as checked (independent of whether there are errors)
-        logGroup {
-          tDecls foreach { d =>
-            check(contextI, d)
-            UncheckedElement.erase(d)
-          }
-        }
-        // narrative structure
-        def doDoc(ne: NarrativeElement) {
-          ne match {
-            case doc: Document => doc.getDeclarations foreach doDoc
-            case r: NRef =>
-            case oe: OpaqueElement => check(contextI, oe)
-          }
-        }
-        doDoc(t.asDocument)
       case t: DefinedTheory =>
         val dfR = checkTheory(context, t.df)
         t.dfC.analyzed = dfR
       case v: DeclaredView =>
         checkTheory(context, v.from)
         checkTheory(context, v.to)
-        logGroup {
-          v.getPrimitiveDeclarations foreach { d => check(context ++ v.codomainAsContext, d) }
-        }
       case v: DefinedView =>
         checkTheory(context, v.from)
         checkTheory(context, v.to)
         val (dfR, _, _) = checkMorphism(context, v.df, Some(v.from), Some(v.to))
         v.dfC.analyzed = dfR
       case nm: NestedModule =>
-        check(context, nm.module)
       case s: DeclaredStructure =>
         checkTheory(context, s.from)
-        s.getPrimitiveDeclarations foreach { d => check(context, d) }
       case s: DefinedStructure =>
         val (thy, linkOpt) = content.getDomain(s)
         linkOpt match {
@@ -242,6 +217,98 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           }
           case _ => // cOrg has no definiens, nothing to do
         }
+      case rc: RuleConstant =>
+      case _ =>
+        //succeed for everything else but signal error
+        logError("unchecked " + path)
+    }
+    new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
+  }
+
+  def checkElementEnd(e: ContainerElement[_], cont : Option[Context] = None)(implicit ce: CheckingEnvironment): Unit = {
+    val context = cont.getOrElse(getContext(e))
+    val rules = RuleSet.collectRules(controller, context)
+    implicit val env = new Environment(ce, rules, e.path)
+    val path = e.path
+    log("checking " + path)
+    e match {
+      case d: Document =>
+      case t: DeclaredTheory =>
+        val contextI = context ++ t.getInnerContext
+        // narrative structure
+        def doDoc(ne: NarrativeElement) {
+          ne match {
+            case doc: Document => doc.getDeclarations foreach doDoc
+            case r: NRef =>
+            case oe: OpaqueElement => check(contextI, oe)
+          }
+        }
+        doDoc(t.asDocument)
+      case v: DeclaredView =>
+      case v: DefinedView =>
+      case nm: NestedModule =>
+        check(context, nm.module)
+      case s: DeclaredStructure =>
+
+      case _ =>
+        //succeed for everything else but signal error
+        logError("unchecked " + path)
+    }
+    new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
+  }
+
+  /**
+    * @param context all variables and theories that may be used in e (including the theory in which is declared)
+    * @param e       the element to check
+    */
+
+  private def check(context: Context, e: StructuralElement)(implicit ce: CheckingEnvironment) {
+    val rules = RuleSet.collectRules(controller, context)
+    implicit val env = new Environment(ce, rules, e.path)
+    val path = e.path
+    log("checking " + path)
+    e match {
+      case d: Document =>
+        d.getDeclarations foreach { i => check(context, i) }
+      case oe: OpaqueElement =>
+        checknewElement(oe,Some(context))
+      case r: NRef =>
+        checknewElement(r,Some(context))
+      case t: DeclaredTheory =>
+        checknewElement(t,Some(context))
+        val contextI = context ++ t.getInnerContext
+        // content structure
+        val tDecls = t.getPrimitiveDeclarations
+        // mark all children as unchecked
+        tDecls foreach { d =>
+          UncheckedElement.set(d)
+        }
+        // check each child and mark it as checked (independent of whether there are errors)
+        logGroup {
+          tDecls foreach { d =>
+            check(contextI, d)
+            UncheckedElement.erase(d)
+          }
+        }
+        checkElementEnd(t,Some(context))
+      case t: DefinedTheory =>
+        checknewElement(t,Some(context))
+      case v: DeclaredView =>
+        checknewElement(v,Some(context))
+        logGroup {
+          v.getPrimitiveDeclarations foreach { d => check(context ++ v.codomainAsContext, d) }
+        }
+      case v: DefinedView =>
+        checknewElement(v,Some(context))
+      case nm: NestedModule =>
+        checknewElement(nm,Some(context))
+      case s: DeclaredStructure =>
+        checknewElement(s,Some(context))
+        s.getPrimitiveDeclarations foreach { d => check(context, d) }
+      case s: DefinedStructure =>
+        checknewElement(s,Some(context))
+      case c: Constant =>
+        checknewElement(c,Some(context))
       case rc: RuleConstant =>
       case _ =>
         //succeed for everything else but signal error

@@ -23,20 +23,6 @@ class AlignmentFinder extends frontend.Extension {
     }.flatMap(flattened)
   }
 
-  private def getTheories(a : Archive): List[DeclaredTheory] = {
-    log("Reading relational of " + a.id)
-    a.readRelational(FilePath(""),controller,"rel")
-    log("collecting theories...")
-    val theories = controller.evaluator.evaluate(Paths(IsTheory)).asInstanceOf[ESetResult].h.flatten.toList.map(s =>
-      Path.parse(s.toString))
-    val fnd = a.foundation.map(controller.get(_).asInstanceOf[DeclaredTheory]).map(flattened).getOrElse(Nil)
-    val nbase = Path.parse(if (a.properties("ns").last == '/') a.properties("ns").dropRight(1) else a.properties("ns"))
-    val ths = (fnd ::: theories.filter(nbase <= _).map(s =>
-      Try(controller.get(s).asInstanceOf[DeclaredTheory])).filter(_.isSuccess).map(_.get)).distinct
-    log(ths.length + " theories in archive " + a.id + " found.")
-    ths
-  }
-
   private def getJudgment(ths : List[DeclaredTheory]) = {
     var i = 0
     var judg : Option[GlobalName] = None
@@ -55,9 +41,13 @@ class AlignmentFinder extends frontend.Extension {
     }
   }
 
-  def apply(a1 : Archive, a2 : Archive, fixing : List[FormalAlignment]) = {
-    var fromTheories = getTheories(a1)
-    var toTheories = getTheories(a2)
+  def apply(a1 : FullArchive, a2 : FullArchive, fixing : List[FormalAlignment]) = {
+    var fromTheories = a1.theories.map(controller.get).collect {
+      case t : DeclaredTheory => t
+    }
+    var toTheories = a1.theories.map(controller.get).collect {
+      case t : DeclaredTheory => t
+    }
 
     if (use_judgment) {
       log("finding Judgments...")

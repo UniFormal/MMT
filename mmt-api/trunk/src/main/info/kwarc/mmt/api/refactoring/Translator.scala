@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.modules.{DeclaredLink, DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.symbols.{DeclaredStructure, FinalConstant}
+import info.kwarc.mmt.api.web.{Body, ServerExtension}
 
 import scala.collection.mutable
 import scala.util.{Success, Try}
@@ -117,11 +118,15 @@ case class ViewTranslation(link : DeclaredView, source : List[FullArchive], targ
 
 
 
-class Translator extends Extension {
+class Translator extends ServerExtension("translate") {
   override def logPrefix = "Translator"
 
   override def start(args: List[String]) = {
 
+  }
+
+  def apply(path: List[String], query: String, body: Body) = {
+    ???
   }
 
   private case class SimpleAlignmentTranslation(a: SimpleAlignment, source: List[FullArchive], target: List[FullArchive])
