@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.modules.{DeclaredLink, DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.symbols.{DeclaredStructure, FinalConstant}
-import info.kwarc.mmt.api.web.{Body, ServerExtension}
+import info.kwarc.mmt.api.web.{Body, Server, ServerExtension}
 
 import scala.collection.mutable
 import scala.util.{Success, Try}
@@ -123,10 +123,6 @@ class Translator extends ServerExtension("translate") {
 
   override def start(args: List[String]) = {
 
-  }
-
-  def apply(path: List[String], query: String, body: Body) = {
-    ???
   }
 
   private case class SimpleAlignmentTranslation(a: SimpleAlignment, source: List[FullArchive], target: List[FullArchive])
@@ -270,6 +266,15 @@ class Translator extends ServerExtension("translate") {
     val a = new AlignmentsServer
     controller.extman.addExtension(a)
     a
+  }
+
+  def apply(path: List[String], query: String, body: Body) = path match {
+    case "libs" :: rest =>
+      Server.TextResponse(archives.getArchives.map(_.name).mkString(" "))
+    case "to" :: arch :: rest =>
+      val tm : Term = ???
+      val ret = apply(tm,arch,simplify = true, getpartialresults = false).map(_.toNode)
+      ??? // Server.XmlResponse(ret)
   }
 
   def fromAlignment(a: FormalAlignment): List[AlignmentTranslation] = {
