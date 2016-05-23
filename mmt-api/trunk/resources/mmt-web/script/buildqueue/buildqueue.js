@@ -45,9 +45,24 @@ angular.module('buildQueueApp', []).controller('QueueViewer',
           $scope.refreshCount = 1;
         })
       };
+      $scope.pause = false;
+      $scope.pauseOrContinue = function() {
+        $http.get(':queue/pause').success(function(data) {
+          $scope.pause = data;
+        })
+      };
+      $scope.fileName ='';
       $scope.make = function() {
-        action.exec(action.build($scope.archives.current, $scope.targets.current + $scope.buildLevel, ""), function(data) {
-      })};
+        var t = $scope.targets.current;
+        if ($scope.buildLevel == "-") t = "-" + t
+        else t = t + $scope.buildLevel;
+        $scope.buildLevel = "5";
+        var ca = $scope.archives.current;
+        for (var i = 0; i < $scope.archives.list.length; i++) {
+          var a = $scope.archives.list[i];
+          if (a != '' && (ca == a || ca == '')) {
+          action.exec(action.build(a, t, encodeURIComponent($scope.fileName)), function(data) {
+          })}}};
       var stop;
       $scope.repeat = function() {
          stop = $interval($scope.list, $scope.refreshRate * 1000)

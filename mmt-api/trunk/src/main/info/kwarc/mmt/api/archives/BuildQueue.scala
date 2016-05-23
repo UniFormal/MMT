@@ -196,6 +196,7 @@ class BuildQueue extends BuildManager {
   val catalog: mutable.HashMap[ResourceDependency, BuildDependency] = new mutable.HashMap[ResourceDependency, BuildDependency]
 
   private var continue: Boolean = true
+  private var pause: Boolean = false
   private var stopOnEmpty: Boolean = false
   private var finallyUnblocking = false
 
@@ -363,64 +364,67 @@ class BuildQueue extends BuildManager {
   val buildThread = new Thread {
     override def run {
       while (continue) {
-        getNextTask match {
-          case Some(qt) =>
-            // TODO run this in a Future and track dependencies
-            val res1 = qt.target.checkOrRunBuildTask(qt.neededDeps.toSet, qt.task, qt.updatePolicy)
-            val res = res1 match {
-              // let's assume for now that the estimation is better than the actual result
-              case BuildSuccess(u, Nil) => BuildSuccess(u, qt.willProvide)
-              case _ => res1
-            }
-            val qtDep = qt.task.asDependency
-            if (!qt.dependencyClosure) cycleCheck -= qtDep
-            synchronized {
-              currentQueueTask = None
-              /* add two dummy results into the finished queue to show what happened to a blocked task */
-              if (qt.forceRun.nonEmpty) {
-                finishedBuilt +:=(qtDep, BuildEmpty("was blocked"))
-                finishedBuilt +:=(qtDep, MissingDependency(qt.forceRun, qt.willProvide))
+        if (pause) Thread.sleep(sleepTime)
+        else {
+          getNextTask match {
+            case Some(qt) =>
+              // TODO run this in a Future and track dependencies
+              val res1 = qt.target.checkOrRunBuildTask(qt.neededDeps.toSet, qt.task, qt.updatePolicy)
+              val res = res1 match {
+                // let's assume for now that the estimation is better than the actual result
+                case BuildSuccess(u, Nil) => BuildSuccess(u, qt.willProvide)
+                case _ => res1
               }
-              finishedBuilt +:=(qtDep, res)
-            }
-            if (finishedBuilt.length > 200) {
-              finishedBuilt = finishedBuilt.dropRight(100)
-            }
-            res match {
-              case _: BuildSuccess | _: BuildFailure | _: BuildEmpty =>
-                // remember finished build
-                if (!alreadyBuilt.isDefinedAt(qtDep)) {
-                  alreadyBuilt(qtDep) = res
+              val qtDep = qt.task.asDependency
+              if (!qt.dependencyClosure) cycleCheck -= qtDep
+              synchronized {
+                currentQueueTask = None
+                /* add two dummy results into the finished queue to show what happened to a blocked task */
+                if (qt.forceRun.nonEmpty) {
+                  finishedBuilt +:=(qtDep, BuildEmpty("was blocked"))
+                  finishedBuilt +:=(qtDep, MissingDependency(qt.forceRun, qt.willProvide))
                 }
-                res.provided.foreach(catalog(_) = qtDep)
-              // TODO write file errors/.../file.deps
-              // XML file containing used, provided, had errors
-              case MissingDependency(missing, provided) =>
-                // register missing dependencies and requeue
-                qt.missingDeps = missing
-                if (!finallyUnblocking) blocked = blocked ::: List(qt)
-            }
-            unblockTasks(res)
-          case None =>
-            if (blocked.nonEmpty) {
-              log("flush blocked tasks by ignoring their missing dependencies")
-              finallyUnblocking = true
-              val qt = blocked.head
-              qt.forceRun = qt.missingDeps
-              qt.missingDeps = Nil
-              blocked = blocked.tail
-              queued.add(qt)
-            }
-            else if (stopOnEmpty)
-              continue = false
-            else {
-              if (currentQueueTask.isEmpty) {
-                cycleCheck = Set.empty
-                alreadyBuilt.clear
-                finallyUnblocking = false
+                finishedBuilt +:=(qtDep, res)
               }
-              Thread.sleep(sleepTime)
-            }
+              if (finishedBuilt.length > 200) {
+                finishedBuilt = finishedBuilt.dropRight(100)
+              }
+              res match {
+                case _: BuildSuccess | _: BuildFailure | _: BuildEmpty =>
+                  // remember finished build
+                  if (!alreadyBuilt.isDefinedAt(qtDep)) {
+                    alreadyBuilt(qtDep) = res
+                  }
+                  res.provided.foreach(catalog(_) = qtDep)
+                // TODO write file errors/.../file.deps
+                // XML file containing used, provided, had errors
+                case MissingDependency(missing, provided) =>
+                  // register missing dependencies and requeue
+                  qt.missingDeps = missing
+                  if (!finallyUnblocking) blocked = blocked ::: List(qt)
+              }
+              unblockTasks(res)
+            case None =>
+              if (blocked.nonEmpty) {
+                log("flush blocked tasks by ignoring their missing dependencies")
+                finallyUnblocking = true
+                val qt = blocked.head
+                qt.forceRun = qt.missingDeps
+                qt.missingDeps = Nil
+                blocked = blocked.tail
+                queued.add(qt)
+              }
+              else if (stopOnEmpty)
+                continue = false
+              else {
+                if (currentQueueTask.isEmpty) {
+                  cycleCheck = Set.empty
+                  alreadyBuilt.clear
+                  finallyUnblocking = false
+                }
+                Thread.sleep(sleepTime)
+              }
+          }
         }
       }
     }
@@ -451,10 +455,10 @@ class BuildQueue extends BuildManager {
   }
 
   def getTraversingBuildTargetExtensions: List[String] =
-     controller.getConfig.getEntries(classOf[ExtensionConf]).collect {
-       case ExtensionConf(key, cls, args) if classOf[TraversingBuildTarget].isAssignableFrom(Class.forName(cls))
-         => key
-     }
+    controller.getConfig.getEntries(classOf[ExtensionConf]).collect {
+      case ExtensionConf(key, cls, args) if classOf[BuildTarget].isAssignableFrom(Class.forName(cls))
+      => key
+    }
 
   def getArchives: List[String] =
     controller.backend.getArchives.map(a => a.archString)
@@ -470,6 +474,9 @@ class BuildQueue extends BuildManager {
         alreadyQueued.clear
         cycleCheck = Set.empty
         Server.JsonResponse(JSONNull)
+      case List("pause") =>
+        pause = !pause
+        Server.JsonResponse(JSONBoolean(pause))
       case List("targets") =>
         Server.JsonResponse(JSONArray(getTraversingBuildTargetExtensions.map(JSONString): _*))
       case List("archives") =>

@@ -141,7 +141,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     val a = bt.archive
     val ds = if (in.exists && in.isFile) {
       readingSource(a, in) ++
-        (if (noAmble(in)) Nil else {
+        (if (noAmble(in) || key == "sms") Nil else {
           val pre = getAmbleFile("pre", bt)
           val post = getAmbleFile("post", bt)
           List(pre, post).map(PhysicalDependency) ++
