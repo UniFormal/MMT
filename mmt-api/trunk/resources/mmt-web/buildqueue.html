@@ -45,7 +45,7 @@
     </p>
     queue (go to <a href="#blocked">blocked</a>) (go to <a href="#finished">finished</a>)
     <ul>
-        <li ng-repeat="e in queue.queue">{{e}}</li>
+        <li ng-repeat="e in queue.queue" ng-class="e.indexOf('running') > -1 ? 'text-warning' : ''">{{e}}</li>
     </ul>
     <span id="blocked">blocked</span> (go to <a href="#top">top</a>) (go to <a href="#finished">finished</a>)
     <ul>
@@ -53,7 +53,7 @@
     </ul>
     <span id="finished">finished</span> (go to <a href="#top">top</a>) (go to <a href="#blocked">blocked</a>)
     <ul>
-        <li ng-repeat="e in queue.finished">
+        <li ng-repeat="e in queue.finished" ng-class="colorOf(e.result.result)">
             {{e.dependency}} {{e.result.result}}
             <span ng-show="e.result.needed.length > 0">missing</span>
             <ul>

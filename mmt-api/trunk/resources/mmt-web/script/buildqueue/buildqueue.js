@@ -74,6 +74,13 @@ angular.module('buildQueueApp', []).controller('QueueViewer',
             stop = undefined;
           }
       };
+      $scope.colorOf = function(result) {
+        var res = 'text-mute';
+        if (result.indexOf('success') > -1) res = 'text-success';
+        if (result.indexOf('up-to-date') > -1) res = 'text-warning';
+        if (result.indexOf('failure') > -1) res = 'text-danger';
+        return res
+      };
       $scope.repeat();
       $scope.$watch('refreshRate', function() {
             $scope.stopRepeat();

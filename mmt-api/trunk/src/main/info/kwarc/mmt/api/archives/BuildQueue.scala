@@ -454,7 +454,7 @@ class BuildQueue extends BuildManager {
       ("finished", JSONArray(fs: _*)))
   }
 
-  def getTraversingBuildTargetExtensions: List[String] =
+  def getTraversingBuildTargetExtensions: List[String] =  "mmt-omdoc" ::
     controller.getConfig.getEntries(classOf[ExtensionConf]).collect {
       case ExtensionConf(key, cls, args) if classOf[BuildTarget].isAssignableFrom(Class.forName(cls))
       => key

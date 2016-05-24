@@ -10,7 +10,7 @@ import parser._
 
 // local XML databases or query engines to access local XML files: baseX or Saxon
 
-case class NotApplicable(message: String = "") extends java.lang.Throwable
+case class NotApplicable(message: String = "") extends Error(message)
 
 /** An abstraction over physical storage units that hold MMT content */
 abstract class Storage extends QueryResolver with OntologyResolver {
@@ -34,7 +34,7 @@ abstract class Storage extends QueryResolver with OntologyResolver {
     * a storage may add more/additional content than necessary, e.g., the containing file/theory or a dependency closure
     */
   def load(path: Path)(implicit controller: Controller)
-  
+
   //TODO: method for querying
   // def query(q: ???): Iterator[Path]
 
@@ -49,7 +49,7 @@ trait RealizationStorage {
    * @param cls the class name
    * @param p the path to use in error messages
    */
-  def loadRule(cls: String, p: Path): Rule = { 
+  def loadRule(cls: String, p: Path): Rule = {
     reflect(cls, p) match {
       case r: Rule => r
       case _ => throw BackendError("class for " + cls + " exists but is not a rule", p)
@@ -102,10 +102,10 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
   /**
    * load delegates to this method if the requested resource is a folder
    * @param uri the logical URI
-   * @param folder the physical location 
+   * @param folder the physical location
    */
   def loadFromFolder(uri: URI, suffix: List[String])(implicit controller: Controller) {
-    val folder = base / suffix 
+    val folder = base / suffix
     val entries = folder.list.toList.sorted.diff(List(".svn"))
     val prefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
     // dref must be unnamed; using name={n} would give the dref the same URI as the referenced document
@@ -119,21 +119,21 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
     val suffix = getSuffix(localBase, uri)
     val target = base / suffix
     if (target.isFile) {
-       val reader = File.Reader(target) 
+       val reader = File.Reader(target)
        loadXML(uri, path.doc, reader)
     } else if (target.isDirectory) {
        loadFromFolder(uri, suffix)
     } else throw BackendError("file/folder " + target + " not found or not accessible", path)
-    
+
   }
 }
 
 /**
  * like [[LocalCopy]] but optimized for [[Archive]]s
- * 
+ *
  * custom HTML snippets are spliced into folder-documents
  * @param a the archive
- * @param folderName file name of folder descriptions in source folder (without .html ending) 
+ * @param folderName file name of folder descriptions in source folder (without .html ending)
  */
 class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase = a.narrationBase}
       with LocalCopy(nBase.schemeNull, nBase.authorityNull, nBase.pathAsString, a / narration) {
@@ -146,7 +146,7 @@ class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase
          val htmlFile = a / source / suffix / (folderName + ".html")
          if (htmlFile.exists) {
             val htmlString = File.read(htmlFile)
-            val htmlDiv = s"""<div class="folder-description">$htmlString</div>""" 
+            val htmlDiv = s"""<div class="folder-description">$htmlString</div>"""
             Some(htmlDiv,"html")
          } else None
       }
@@ -174,7 +174,7 @@ class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extend
     //controller.report("backend", "trying to load class " + s)
     val r = reflect(s, mp) match {
       case r: uom.RealizationInScala => r
-      case _ => throw BackendError("class for " + mp + " exists but is not a realization", mp) 
+      case _ => throw BackendError("class for " + mp + " exists but is not a realization", mp)
     }
     try {
       r.init
