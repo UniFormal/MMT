@@ -110,14 +110,15 @@ class Controller extends ROController with ActionHandling with Logger {
   val propagator = new moc.OccursInImpactPropagator(memory)
   /** relational manager, handles extracting and parsing relational elements */
   val relman = new RelationalManager(this)
-  
+
   /** communication with components
-   *  @return a notifier for all currently registered [[ChangeListener]]s
+    *
+    *  @return a notifier for all currently registered [[ChangeListener]]s
    */
   private[api] def notifyListeners = new Notify(extman.get(classOf[ChangeListener]), report)
 
   // **************************** control state and configuration
-  
+
   /** all control state */
   protected val state = new ControllerState
 
@@ -141,7 +142,7 @@ class Controller extends ROController with ActionHandling with Logger {
   def getEnvVar(name: String): Option[String] = {
     state.config.getEntry(classOf[EnvVarConf], name).map(_.value) orElse Option(System.getenv.get(name))
   }
-  
+
   /** @return the current OAF root */
   def getOAF: Option[OAF] = {
     val ocO = state.config.getEntries(classOf[OAFConf]).headOption
@@ -170,7 +171,7 @@ class Controller extends ROController with ActionHandling with Logger {
      val cfg = MMTConfig.parse(f)
      loadConfig(cfg, loadEverything)
   }
-    
+
    private def loadAllArchives(conf: MMTConfig) {
        conf.getArchives foreach { arch =>
         addArchive(File(conf.getBase + arch.id))
@@ -183,7 +184,7 @@ class Controller extends ROController with ActionHandling with Logger {
         conf.getEntries(classOf[FormatConf]).find(_.id == id).getOrElse(throw ConfigurationError("Unknown format id: " + id))
       }
       val preloadedBuildTargets = extman.get(classOf[BuildTarget])
-      val neededTargets = activeFormats.flatMap(f => f.importers ::: f.exporters).distinct.flatMap {key => 
+      val neededTargets = activeFormats.flatMap(f => f.importers ::: f.exporters).distinct.flatMap {key =>
         if (!preloadedBuildTargets.exists(_.key == key)) {
           conf.getEntry(classOf[ExtensionConf], key)
         } else None
@@ -194,8 +195,8 @@ class Controller extends ROController with ActionHandling with Logger {
       }
    }
 
-  // *************************** initialization and termination 
-  
+  // *************************** initialization and termination
+
   private def init {
     extman.addDefaultExtensions
     // load default configuration
@@ -219,7 +220,7 @@ class Controller extends ROController with ActionHandling with Logger {
     }
     server = None
   }
-  
+
   // **************************** reading source files
 
   /** parses a ParsingStream with an appropriate parser and optionally checks it
@@ -282,7 +283,7 @@ class Controller extends ROController with ActionHandling with Logger {
   }
 
   // ******************************* lookup of MMT URIs
-  
+
   /** a lookup that uses only the current memory data structures */
   val localLookup = new LookupWithNotFoundHandler(library) {
     protected def handler[A](code: => A): A = try {
@@ -337,9 +338,9 @@ class Controller extends ROController with ActionHandling with Logger {
     }
     catch {
       case NotFound(p: Path) =>
-        if (previous.contains(p))
+        if (previous.contains(p)) {
           throw GetError("retrieval failed (due to non-existence or cyclic dependency) for " + p)
-        else {
+        } else {
           iterate({retrieve(p); a}, p :: previous)
         }
     }
@@ -388,10 +389,10 @@ class Controller extends ROController with ActionHandling with Logger {
                 // update everything but components and children
                 old.merge(nw)
                 var hasChanged = false // will be true if a component changed
-                var deletedKeys = old.getComponents.map(_.key).toSet // will contain the list of no-longer-present components 
+                var deletedKeys = old.getComponents.map(_.key).toSet // will contain the list of no-longer-present components
                 // update/add components
                 nw.getComponents.foreach {case DeclarationComponent(comp, cont) =>
-                  deletedKeys -= comp 
+                  deletedKeys -= comp
                   old.getComponent(comp).foreach {oldCont =>
                     val ch = oldCont.update(cont)
                     if (ch) {
@@ -483,7 +484,7 @@ class Controller extends ROController with ActionHandling with Logger {
         }
      }
   }
-   
+
   // ******************************* deleting elements
 
   /** deletes a document or module from memory

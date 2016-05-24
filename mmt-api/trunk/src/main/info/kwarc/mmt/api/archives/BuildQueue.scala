@@ -290,6 +290,7 @@ class BuildQueue extends BuildManager {
     } else currentQueueTask
   }
 
+  /* not used yet - logical dependencies resolved in getNextTask via catalog, file dependencies not resolved yet */
   private def findResource(r: ResourceDependency): Option[FileBuildDependency] = r match {
     case PhysicalDependency(f) =>
       val (root, out) = controller.backend.resolveAnyPhysical(f).getOrElse(return None)
@@ -350,6 +351,7 @@ class BuildQueue extends BuildManager {
   }
 
   override def destroy {
+    controller.extman.removeExtension(serve)
     synchronized {
       continue = false
     }
@@ -446,12 +448,12 @@ class BuildQueue extends BuildManager {
     val bs = blocked.map(_.toJson)
     val fs = finishedBuilt.map {
       case (d, r) =>
-        JSONObject(("dependency", d.toJson), ("result", r.toJson))
+        JSONObject("dependency" -> d.toJson, "result" -> r.toJson)
     }
-    JSONObject(("count", JSONInt(qSize)),
-      ("queue", JSONArray(q: _*)),
-      ("blocked", JSONArray(bs: _*)),
-      ("finished", JSONArray(fs: _*)))
+    JSONObject("count" -> JSONInt(qSize),
+      "queue" -> JSONArray(q: _*),
+      "blocked" -> JSONArray(bs: _*),
+      "finished" -> JSONArray(fs: _*))
   }
 
   def getTraversingBuildTargetExtensions: List[String] =  "mmt-omdoc" ::

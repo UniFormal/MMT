@@ -6,19 +6,19 @@ import Conversions._
 
 /**
  * a Fixity is used by a [[TextNotation]] to arrange arguments and delimiters
- * 
+ *
  * A Fixity is a high-level construct that elaborates into a list of [[Marker]]s. Parser and present only use the latter.
  */
 abstract class Fixity {
    /** the elaboration into markers */
    def markers: List[Marker]
    /** the string representation to use when serializing notations
-    *  pair of "fixity type" and type-specific argument(s) 
+    *  pair of "fixity type" and type-specific argument(s)
     */
    def asString: (String,String)
 }
 
-/** 
+/**
  *  the default Fixity, which is directly a list of markers
  */
 case class Mixfix(markers: List[Marker]) extends Fixity {
@@ -27,7 +27,7 @@ case class Mixfix(markers: List[Marker]) extends Fixity {
 
 /**
  * A SimpleFixity is one out of multiple typical fixities (infix, postfix, etc) characterized by using only a single delimiter.
- * 
+ *
  * impl and expl do not have to agree with the number of arguments demanded by the type system.
  *  * Notation has more arguments than function type: Notation extensions may handle the extra arguments.
  *    Example: equal : {a:tp} tm (a => a => bool), impl = 1, expl = 2
@@ -62,8 +62,8 @@ case class Prefix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity {
 }
 /**
  * delimiter after the first (explicit) argument
- * 
- * @param assoc None/Some(true)/Some(false) for none, left, right; currently ignored 
+ *
+ * @param assoc None/Some(true)/Some(false) for none, left, right; currently ignored
  */
 case class Infix(delim: Delimiter, impl: Int, expl: Int, assoc: Option[Boolean]) extends SimpleFixity {
    lazy val markers = assoc match {
@@ -81,16 +81,16 @@ case class Infix(delim: Delimiter, impl: Int, expl: Int, assoc: Option[Boolean])
    }
 }
 
-/** delimiter after the (explicit) arguments */ 
+/** delimiter after the (explicit) arguments */
 case class Postfix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity {
    lazy val markers = argsWithOp(expl)
    def asString = ("postfix", simpleArgs)
 }
 
 /** delimiter followed by first and second (explicit) argument with . in between
- *  
+ *
  * @param assoc merge with nested bindings using the same binder; currently ignored
- * 
+ *
  * assumes arguments are one variable and one scope; expl must be 1
  */
 case class Bindfix(delim: Delimiter, impl: Int, expl: Int, assoc: Boolean) extends SimpleFixity {
@@ -106,14 +106,14 @@ case class Bindfix(delim: Delimiter, impl: Int, expl: Int, assoc: Boolean) exten
  */
 object FixityParser {
    private def toInt(s: String) = try {s.toInt} catch {case e: Exception => throw ParseError("number expected, found: " + s)}
-   
+
    /** infix, infix-right, infix-left, prefix, postfix; followed by number of implicit arguments (defaults to 0)
-    *  
+    *
     *  @param fixityString one of prefix | postfix | infix | infix-left | infix-right | bindfix | bindfix-assoc
     *  @param args
     *   * for mixfix: the list of markers separated by whitespace
     *   * else: impl | delim | impl expl | impl delim | impl expl delim
-    *     where impl and expl are natural numbers, delim anything else 
+    *     where impl and expl are natural numbers, delim anything else
     */
    def parse(fixityString: String, args: List[String]): Fixity = {
       if (fixityString == "mixfix")
@@ -143,12 +143,12 @@ object FixityParser {
 }
 
 case class PragmaticTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attribution: Boolean, notation: TextNotation, pos: List[Position]) {
-   require(1 + subs.length + con.length + args.length == pos.length, "Positions don't match number of arguments (op, subs, context and args)") 
+   require(1 + subs.length + con.length + args.length == pos.length, "Positions don't match number of arguments (op, subs, context and args)")
    def term = ComplexTerm(op, subs, con, args)
 }
 
 /** A Fixity is a high-level description of a list of markers that can be used for parsing or presentation
- *  
+ *
  *  It is returned by a FixityParser and used in a TextNotation
  */
 abstract class NotationExtension extends Rule {
@@ -171,14 +171,12 @@ object MixfixNotation extends NotationExtension {
    def constructTerm(fun: Term, args: List[Term]) = OMA(fun, args)
    def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = t match {
       case ComplexTerm(op, subs, con, args) =>
-        getNotations(op).foldLeft[Option[PragmaticTerm]](None) { 
-          (res,not) => if (res.isDefined) res else {
+        getNotations(op).foreach {not =>
             if (not.arity.canHandle(subs.length, con.length, args.length, false)) {
-              Some(PragmaticTerm(op, subs, con, args, false, not, Position.positions(t)))
+              return Some(PragmaticTerm(op, subs, con, args, false, not, Position.positions(t)))
             }
-            else None
-          }
         }
+        return None
       case _ => None
    }
 }
@@ -187,11 +185,11 @@ case class HOAS(apply: GlobalName, bind: GlobalName, typeAtt: GlobalName)
 
 /**
  * OMA(apply, op, args)) <--> OMA(op, args)
- * 
+ *
  * OMA(apply, op, OMBIND(bind, context, args)) <--> OMBIND(op, context, args)
- * 
+ *
  * x: OMA(typeAtt, tp) <--> x: tp
- * 
+ *
  * assumption: HOAS notations do not have arguments before context
  */
 class HOASNotation(val hoas: HOAS) extends NotationExtension {
@@ -200,7 +198,7 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
       case Some(h) => List(hoas.apply, hoas.typeAtt) contains h
       case None => false
    }
-   
+
    def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
                 (implicit unknown: () => Term) : Term = {
       if (attrib) {
@@ -220,11 +218,11 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
       }
    }
    def constructTerm(fun: Term, args: List[Term]) = hoas.apply(fun::args)
-   
+
    def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = t match {
       case OMA(OMS(hoas.apply), OMS(op)::rest) =>
          val appPos = (0 until 1+rest.length).toList.map(i => Position(1+i))
-         getNotations(op).foldLeft[Option[PragmaticTerm]](None) { 
+         getNotations(op).foldLeft[Option[PragmaticTerm]](None) {
            (res,not) => if (res.isDefined) res else {
              if (not.arity.canHandle(0,0,rest.length, false)) {
                // OMA(apply, op, args)  <-->  OMA(op, args)
@@ -236,9 +234,9 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
                   val subs = rest.init.map(a => Sub(OMV.anonymous, a))
                   val opSubsPos = (0 until 1+subs.length).toList.map(i => Position(1+i))
                   val conArgsPos = (0 until con.length+args.length).toList.map(i => Position(rest.length+1) / (i+1))
-                  val bindPos = opSubsPos ::: conArgsPos 
+                  val bindPos = opSubsPos ::: conArgsPos
                   if (not.arity.canHandle(subs.length, con.length, args.length, false)) {
-                     val bindTerm = PragmaticTerm(op, subs, con, args, false, not, bindPos) 
+                     val bindTerm = PragmaticTerm(op, subs, con, args, false, not, bindPos)
                      Some(bindTerm)
                   } else
                      None
@@ -258,13 +256,13 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
 }
 
 /**
- * Church-style higher-order abstract (obj) syntax within LF-style higher-order abstract syntax (meta), 
- * 
+ * Church-style higher-order abstract (obj) syntax within LF-style higher-order abstract syntax (meta),
+ *
  * e.g.,
  *  apply: tm A=>B -> tm B -> tm B
  *  lam  : (tm A -> tm B) -> tm A=>B
- * 
- * assumption: notations give meta-arguments as arguments before context  
+ *
+ * assumption: notations give meta-arguments as arguments before context
  */
 class NestedHOASNotation(obj: HOAS, meta: HOAS) extends NotationExtension {
    def priority = 2
@@ -272,7 +270,7 @@ class NestedHOASNotation(obj: HOAS, meta: HOAS) extends NotationExtension {
       case OMA(OMS(meta.apply), OMS(obj.apply) :: _) => true
       case _ => false
    }
-   
+
    private def metaapplication(op: GlobalName, args: List[Term])(implicit unknown: () => Term) : Term =
       if (args.isEmpty) OMS(op) else OMA(OMS(meta.apply), OMS(op) :: args)
 
@@ -281,13 +279,13 @@ class NestedHOASNotation(obj: HOAS, meta: HOAS) extends NotationExtension {
 
    private def application(f: Term, args: List[Term])(implicit unknown: () => Term) : Term =
       args.foldLeft(f) {case (sofar, next) => application(sofar, next)}
-   
+
    private def binding(vd: VarDecl, scope: Term)(implicit unknown: () => Term): Term =
       meta.apply(OMS(obj.bind), unknown(), unknown(), meta.bind(vd, List(scope)))
 
    private def binding(con: Context, scope: Term)(implicit unknown: () => Term): Term =
       con.foldRight(scope) {case (next, sofar) => binding(next, sofar)}
-   
+
    def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation
                    )(implicit unknown: () => Term) : Term = {
       if (attrib) {
@@ -316,7 +314,7 @@ class NestedHOASNotation(obj: HOAS, meta: HOAS) extends NotationExtension {
       }
    }
    def constructTerm(fun: Term, args: List[Term]) = meta.apply(fun::args)
-   
+
    private def unapplication(t: Term) : Option[(GlobalName, List[Term], List[Term])] = t match {
       case OMA(OMS(meta.apply), OMS(obj.apply) :: List(_, _, f, a)) => unapplication(f).map {
          case (op, metaArgs, objArgs) => (op, metaArgs, objArgs ::: List(a))
@@ -332,10 +330,10 @@ class NestedHOASNotation(obj: HOAS, meta: HOAS) extends NotationExtension {
       }
       case t => (Context(), t)
    }
-   
+
    def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = {
       val (op, metaArgs, objArgs) = unapplication(t).getOrElse(return None)
-      getNotations(op).foldLeft[Option[PragmaticTerm]](None) { 
+      getNotations(op).foldLeft[Option[PragmaticTerm]](None) {
         (res,not) => if (res.isDefined) res else {
           val paths = (0 until objArgs.length).toList.map(i => Position((0 until i).toList.map(_ => 4)))
           val objArgPos = paths.reverse.map(p => p / 5)
@@ -343,7 +341,7 @@ class NestedHOASNotation(obj: HOAS, meta: HOAS) extends NotationExtension {
           val opMetaPos = if (metaArgs.isEmpty) List(opMetaPath)
              else (0 until metaArgs.length+1).toList.map(i => opMetaPath / (i+1))
           val arity = not.arity
-          val numLeadingImplArgs = if (arity.variables.isEmpty) 
+          val numLeadingImplArgs = if (arity.variables.isEmpty)
                 arity.arguments.takeWhile(_.isInstanceOf[ImplicitArg]).length
              else
                 0
