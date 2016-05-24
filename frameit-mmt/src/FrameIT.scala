@@ -4,7 +4,9 @@ import info.kwarc.mmt.api._
 import uom._
 import web._
 import frontend._
+import info.kwarc.mmt.api.backend.XMLReader
 import info.kwarc.mmt.api.checking._
+import info.kwarc.mmt.api.utils.URI
 import objects._
 import symbols._
 import modules._
@@ -80,6 +82,7 @@ class FrameViewer extends Extension {
 class FrameitPlugin extends ServerExtension("frameit") with Logger {
 
   override val logPrefix = "frameit"
+  val test : Class[FrameViewer] = classOf[FrameViewer]
   lazy val fv = controller.extman.get(classOf[FrameViewer]).headOption.getOrElse {
     val a = new FrameViewer
     controller.extman.addExtension(a)
@@ -87,22 +90,8 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
   }//new FrameViewer(controller)
     
    /** Server */
-   def apply(uriComps: List[String], query : String, body : web.Body): HLet = {
-     try {
-       uriComps match {
-         case "get" :: _ => GetResponse
-         case _ => errorResponse("Invalid request: " + uriComps.mkString("/"))
 
-       }
-     } catch {
-       case e : Error => 
-         log(e.shortMsg)
-         errorResponse(e.shortMsg)
-       case e : Exception => 
-         errorResponse("Exception occured : " + e.getMessage)
-     }
-   }
-   
+   /*
    private def CORS_AllowOrigin(origin : String) = true //for now
    
    private def checkCORS(tk : HTalk) : HTalk = tk.req.header("Origin")  match {
@@ -112,7 +101,8 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
        case false => tk
      }
    }
-   
+   */
+   /*
    private def GetResponse : HLet = new HSimpleLet {
 	 implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
      def act(tk : HTalk) = try {
@@ -143,6 +133,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
        case e : Exception => errorResponse("Exception occured : " + e.getMessage).aact(tk)
      }
    }
+   */
    
    private def simplify(t : Term, home : MPath) : Term = {
      log("Before: " + t.toString)
@@ -180,7 +171,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
      log("After: " + tS.toString)
      tS
    }
-   
+   /*
    // Utils
   private def bodyAsString(tk: HTalk): String = {
     val bodyArray: Array[Byte] = tk.req.octets.getOrElse(throw  FrameitError("no body found"))
@@ -203,6 +194,122 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
         .setContentType("text/plain; charset=utf8")
         .write(out)
     }
+  }
+
+*/
+
+  lazy val checker = {
+    val ret = new MMTStructureChecker(new RuleBasedChecker)
+    controller.extman.addExtension(ret)
+    ret
+  }
+  implicit val ce : CheckingEnvironment = new CheckingEnvironment(ErrorThrower,RelationHandler.ignore)
+
+  val dpath = DPath(URI.http colon "cds.omdoc.org") / "FrameIT"
+  val sitpath = dpath ? "situation_theory"
+  val viewpath = dpath ? "situation_problem_view"
+  def view = controller.get(viewpath) match {
+    case dv : DeclaredView => dv
+    case _ => throw new FrameitError("view does not exist!")
+  }
+  def sittheory = controller.get(sitpath) match {
+    case dt : DeclaredTheory => dt
+    case _ => throw new FrameitError("situation theory does not exist!")
+  }
+
+  def getdomcod = {
+    val dom = view.from match {
+      case OMMOD(p) => controller.get(p) match {
+        case th : DeclaredTheory => th
+        case _ => throw FrameitError("DeclaredView expected")
+      }
+      case _ => throw FrameitError("Expected MPath, found " + view.from)
+    }
+    val cod = view.to match {
+      case OMMOD(p) => controller.get(p) match {
+        case th : DeclaredTheory => th
+        case _ => throw FrameitError("DeclaredTheory for situation theory expected")
+      }
+      case _ => throw FrameitError("Expected MPath, found " + view.from)
+    }
+    (dom,cod)
+  }
+
+  implicit val unifun : StructuralElement => Unit = x => controller.add(x)
+
+  def apply(uriComps: List[String], query : String, body : web.Body): HLet = uriComps match {
+    case "init" :: rest => try {
+      controller.handleLine("build FrameIT mmt-omdoc")
+      Server.TextResponse("Success")
+    } catch {
+      case e : Exception => Server.errorResponse("Error initializing: " + e.getMessage)
+    }
+    case "pushout" :: rest => if (query.trim.startsWith("theory=")) {
+      try {
+        val sol = Path.parse(query.trim.drop(7)) match {
+          case m : MPath => controller.get(m) match {
+            case t : DeclaredTheory => t
+            case _ => throw FrameitError("Solution theory not a DeclaredTheory")
+          }
+          case _ => throw FrameitError(query.trim.drop(7) + " not an MPath")
+        }
+        controller.simplifier(sol)
+        try { checker.apply(sol) } catch {case e : Exception =>
+          throw new FrameitError("Solution theory does not type check: " + e.getMessage)}
+        val nodes = sol.getConstants.map(c => {
+          val tp = c.tp.map(x => simplify(fv.pushout(c.path $ TypeComponent, viewpath), view.to.toMPath))
+          val df = c.df.map(x => simplify(fv.pushout(c.path $ DefComponent, viewpath), view.to.toMPath))
+          Constant(c.home,c.name,Nil,tp,df,None)
+        }).map(_.toNode)
+        Server.XmlResponse(<theory>{nodes}</theory>)
+      } catch {
+        case e : Exception => Server.errorResponse(e.getMessage)
+      }
+    } else Server.errorResponse("Malformed query")
+    case "add" :: rest =>
+      try {
+        body.asXML match {
+          case <content>{seq @ _*}</content> =>
+            val sitth = seq.head
+            val viewxml = seq.tail.head
+            val reader = new XMLReader(controller)
+
+            try {
+              reader.readDocument(dpath, sitth)
+            } catch {
+              case e: Exception =>
+                throw new FrameitError("Malformed omdoc in situation theory: " + e.getMessage)
+            }
+            try {
+              reader.readDocument(dpath, viewxml)
+            } catch {
+              case e: Exception =>
+                throw new FrameitError("Malformed omdoc in view: " + e.getMessage)
+            }
+            val (dom,cod) = getdomcod
+            controller.simplifier(view)
+            controller.simplifier(dom)
+            controller.simplifier(cod)
+            try { checker.apply(dom) } catch {case e : Exception =>
+              throw new FrameitError("Domain of view does not type check: " + e.getMessage)}
+            try { checker.apply(cod) } catch {case e : Exception =>
+              throw new FrameitError("Codomain of view does not type check: " + e.getMessage)}
+            try { checker.apply(view) } catch {case e : Exception =>
+              throw new FrameitError("View does not type check: " + e.getMessage)}
+            try { checker.apply(sittheory) } catch {case e : Exception =>
+              throw new FrameitError("Situation theory does not type check: " + e.getMessage)}
+            val istotal = dom.getConstants.forall(c => {
+            // println("Checking " + c.name)
+              view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name)
+            })
+            if(!istotal) throw FrameitError("View not total")
+            Server.TextResponse("Okay")
+          case _ => throw new FrameitError("Malformed FrameIT request : not of form <content><THEORY><VIEW></content>")
+        }
+      } catch {
+        case e : Exception => Server.errorResponse(e.getMessage)
+      }
+    case _ => Server.errorResponse("Neither \"add\" nor \"pushout\"")
   }
 
   def run(solthS : String, vpathS : String) : String = {
