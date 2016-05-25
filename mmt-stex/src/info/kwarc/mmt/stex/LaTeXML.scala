@@ -46,7 +46,12 @@ class AllTeX extends LaTeXDirTarget {
   override def estimateResult(bt: BuildTask): BuildSuccess = {
     if (bt.isDir) {
       BuildSuccess(Nil, getAllFiles(bt).map(f => PhysicalDependency(bt.inFile / f)))
-    } else BuildResult.empty
+    } else {
+      val used = super.estimateResult(bt).used.collect {
+        case d@FileBuildDependency(k, _, _) if List("tex-deps", "sms").contains(k) => d
+      }
+      BuildSuccess(used, Nil)
+    }
   }
 
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
@@ -63,8 +68,11 @@ class AllTeX extends LaTeXDirTarget {
       assert(files.length == dirFiles.length)
       val langs = files.flatMap(f => getLang(File(f))).toSet
       val nonLangFiles = langFiles(None, files)
-      if (nonLangFiles.nonEmpty) success ||= createAllFile(a, None, dir, nonLangFiles, force)
-      langs.toList.sorted.foreach(l => success ||= createAllFile(a, Some(l), dir, files, force))
+      if (nonLangFiles.nonEmpty) success = createAllFile(a, None, dir, nonLangFiles, force)
+      langs.toList.sorted.foreach { l =>
+        val res = createAllFile(a, Some(l), dir, files, force)
+        success ||= res
+      }
     }
     if (success) BuildResult.empty
     else BuildEmpty("up-to-date")
