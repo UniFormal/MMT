@@ -301,7 +301,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   protected def getOutPath(a: Archive, outFile: File) = outFile.toFilePath
 
-  protected def getErrorFile(a: Archive, inPath: FilePath): File = FileBuildDependency(key, a, inPath).getErrorFile(controller)
+  protected def getErrorFile(a: Archive, inPath: FilePath): File =
+    FileBuildDependency(key, a, inPath).getErrorFile(controller)
 
   def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
 
@@ -347,7 +348,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   def buildDir(bd: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult = BuildEmpty("nothing to be done")
 
   /** abstract method to estimate the [[BuildResult]] without building, e.g., to predict dependencies */
-  def estimateResult(bf: BuildTask): BuildSuccess = BuildSuccess(Nil, Nil)
+  def estimateResult(bf: BuildTask): BuildSuccess = BuildResult.empty
 
   /** entry point for recursive building */
   def build(a: Archive, up: Update, in: FilePath = EmptyPath) {

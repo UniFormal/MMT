@@ -71,7 +71,7 @@ sealed abstract class BuildResult {
 }
 
 object BuildResult {
-  def empty: BuildResult = BuildSuccess(Nil, Nil)
+  def empty: BuildSuccess = BuildSuccess(Nil, Nil)
 }
 
 case class BuildEmpty(str: String) extends BuildResult {

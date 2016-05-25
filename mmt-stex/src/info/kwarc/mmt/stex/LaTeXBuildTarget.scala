@@ -136,12 +136,13 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     safe
   }
 
-  override def estimateResult(bt: BuildTask) = {
+  override def estimateResult(bt: BuildTask): BuildSuccess = {
     val in = bt.inFile
     val a = bt.archive
     val ds = if (in.exists && in.isFile) {
       readingSource(a, in) ++
-        (if (noAmble(in) || key == "sms") Nil else {
+        (if (noAmble(in) || key == "sms") Nil
+        else {
           val pre = getAmbleFile("pre", bt)
           val post = getAmbleFile("post", bt)
           List(pre, post).map(PhysicalDependency) ++
@@ -216,8 +217,27 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
         allFile(None) :: allLangFiles
     } else Nil
 
+  /** do not create error files in all cases */
   override def runBuildTask(bt: BuildTask, level: Level): BuildResult = if (bt.isDir) {
-    super.runBuildTask(bt, level)
+    var res: BuildResult = BuildResult.empty
+    var cont = bt.errorCont
+    try {
+      res = buildDir(bt, Nil, level)
+      res match {
+        case BuildSuccess(_, _) =>
+          cont.open
+          cont.close
+        case _ => // assume no failures in buildDir
+      }
+    } catch {
+      case e: Exception =>
+        cont.open
+        val le = LocalError("unknown build error: " + e.getMessage).setCausedBy(e)
+        cont(le)
+        cont.close
+        res = BuildFailure(Nil, Nil)
+    }
+    res
   } else reallyBuildFile(bt)
 
   override def cleanFile(a: Archive, curr: Current) {

@@ -1,6 +1,5 @@
 package info.kwarc.mmt.stex
 
-import java.io.StringWriter
 import java.net.{BindException, ServerSocket}
 import java.nio.file.Files
 
@@ -17,18 +16,15 @@ class AllPdf extends LaTeXDirTarget {
   val key: String = "allpdf"
 
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
-
     BuildResult.empty
   }
 
   override def estimateResult(bt: BuildTask) = {
     if (bt.isDir) {
       val a = bt.archive
-      val files = getDirFiles(a, bt.inFile, includeFile)
       val ls = getAllFiles(bt).map(f => FileBuildDependency("pdflatex", a, bt.inPath / f))
-      BuildSuccess(ls :+ DirBuildDependency("alltex", a, bt.inPath,
-        files.map(f => makeBuildTask(a, bt.inPath / f))), Nil)
-    } else BuildSuccess(Nil, Nil)
+      BuildSuccess(ls :+ DirBuildDependency("alltex", a, bt.inPath, Nil), Nil)
+    } else BuildResult.empty
   }
 
   override def cleanDir(a: Archive, curr: Current) {
@@ -47,14 +43,15 @@ class AllPdf extends LaTeXDirTarget {
 class AllTeX extends LaTeXDirTarget {
   val key: String = "alltex"
 
-  override def estimateResult(bt: BuildTask) = {
+  override def estimateResult(bt: BuildTask): BuildSuccess = {
     if (bt.isDir) {
       BuildSuccess(Nil, getAllFiles(bt).map(f => PhysicalDependency(bt.inFile / f)))
-    } else super.estimateResult(bt)
+    } else BuildResult.empty
   }
 
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
     val dirFiles = getDirFiles(a, dir, includeFile)
+    var success = false
     if (dirFiles.nonEmpty) {
       createLocalPaths(a, dir)
       val deps = getDepsMap(getFilesRec(a, in))
@@ -66,17 +63,19 @@ class AllTeX extends LaTeXDirTarget {
       assert(files.length == dirFiles.length)
       val langs = files.flatMap(f => getLang(File(f))).toSet
       val nonLangFiles = langFiles(None, files)
-      if (nonLangFiles.nonEmpty) createAllFile(a, None, dir, nonLangFiles, force)
-      langs.toList.sorted.foreach(l => createAllFile(a, Some(l), dir, files, force))
+      if (nonLangFiles.nonEmpty) success ||= createAllFile(a, None, dir, nonLangFiles, force)
+      langs.toList.sorted.foreach(l => success ||= createAllFile(a, Some(l), dir, files, force))
     }
-    BuildResult.empty
+    if (success) BuildResult.empty
+    else BuildEmpty("up-to-date")
   }
 
   private def ambleText(preOrPost: String, a: Archive, lang: Option[String]): List[String] =
     readSourceRebust(getAmbleFile(preOrPost, a, lang)).getLines().toList
 
+  /** return success */
   private def createAllFile(a: Archive, lang: Option[String], dir: File,
-                            files: List[String], force: Boolean) {
+                            files: List[String], force: Boolean): Boolean = {
     val all = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
     val ls = langFiles(lang, files)
     val w = new StringBuilder
@@ -94,8 +93,10 @@ class AllTeX extends LaTeXDirTarget {
     if (force || !all.exists() || File.read(all) != newContent) {
       File.write(all, newContent)
       logSuccess(outPath)
+      true
     } else {
       logResult("up-to-date " + outPath)
+      false
     }
   }
 
@@ -464,6 +465,13 @@ class PdfLatex extends LaTeXBuildTarget {
       pdflatexPath = newPath
       log("using executable \"" + pdflatexPath + "\"")
     }
+  }
+
+  override def estimateResult(bt: BuildTask): BuildSuccess = {
+    val bs@BuildSuccess(used, provided) = super.estimateResult(bt)
+    if (bt.inPath.name.startsWith("all.")) {
+      BuildSuccess(used :+ DirBuildDependency("alltex", bt.archive, bt.inPath.dirPath, Nil), provided)
+    } else bs
   }
 
   protected def runPdflatex(bt: BuildTask, output: StringBuffer): Int = {
