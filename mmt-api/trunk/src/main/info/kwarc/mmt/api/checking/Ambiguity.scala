@@ -45,7 +45,7 @@ object InferAmbiguous extends InferenceRule(ObjectParser.oneOf,ObjectParser.oneO
             if (nonFailures.length == 1) {
                // we can solve for OMV(n) if type inference failed for all but one alternative
                val theOne = nonFailures.head._2.toInt
-               checker.check(Equality(stack, choice, OMI(theOne), None))(history + "disambiguated")
+               checker.check(Equality(stack, choice, OMI(BigInt(theOne)), None))(history + "disambiguated")
                // after solving the next application of inferType will succeed
                // but we can return the right result immediatel
                choose(theOne)
