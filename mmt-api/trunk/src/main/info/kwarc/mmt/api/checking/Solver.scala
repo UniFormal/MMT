@@ -524,7 +524,29 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private def safeSimplify(tm: Term)(implicit stack: Stack, history: History): Term = tm match {
       case _:OMID | _:OMV | _:OMLITTrait => tm
       case ComplexTerm(op, subs, cont, args) =>
-         val rOpt = rules.getFirst(classOf[ComputationRule], op)
+         val rlist = rules.getByHead(classOf[ComputationRule], op)//.get(classOf[ComputationRule], op)
+          rlist foreach {rule =>
+            try {
+              rule(this)(tm, false) match {
+                case Some(tmS) =>
+                  history += "Applying ComputationRule " + rule.toString
+                  log("simplified: " + tm + " ~~> " + tmS)
+                  history += "simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS)
+                  return tmS.from(tm)
+                case _ => None
+              }
+            } catch {
+              case e : RuleNotApplicable => None
+              case e : Exception => throw e
+            }
+          }
+        // no rule or rule not applicable, recurse
+        val argsS = args map {a => safeSimplify(a)(stack ++ cont, history + "simplifying argument")}
+        val contS = cont mapTerms {case (c,t) => safeSimplify(t)(stack ++ c, history + "simplifying component of bound variable")}
+        val subsS = subs mapTerms {a => safeSimplify(a)(stack, history + "simplifying named argument")}
+        val tmS = ComplexTerm(op, subsS, contS, argsS).from(tm)
+        tmS
+        /*
          rOpt flatMap {rule =>
            history += "Applying ComputationRule " + rOpt.get.toString
            rule(this)(tm, false)
@@ -541,7 +563,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                val tmS = ComplexTerm(op, subsS, contS, argsS).from(tm)
                tmS
          }
+         */
    }
+  val thissolver = this
 
    /** simplifies one step overall */
    private def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = {
@@ -556,19 +580,19 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             val rOpt = rules.getByHead(classOf[ComputationRule], h)
             // use first applicable rule
             rOpt foreach {rule =>
-               try {
-                 history += "Applying ComputationRule " + rule.toString
-                 val ret =rule(this)(tm, false)
+                 val ret = try {
+                   rule(thissolver)(tm, false)
+                 } catch {
+                   case e : RuleNotApplicable => None
+                   case e : Exception => throw e
+                 }
                  ret match {
                    case Some(tmS) =>
+                     history += "Applying ComputationRule " + rule.toString
                      history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
                      return tmS
-                   case None => None
+                   case _ => None
                  }
-               } catch {
-                 case t : Exception if t==RuleNotApplicable => None
-                 case t : Throwable => throw t
-               }
             }
             // no applicable rule, expand a definition
             expandDefinition
@@ -838,7 +862,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                     history += ("Applying InferenceRule " + rule.toString)
                     haveresult = true
                     ret = try {rule(this)(tmS, covered)} catch {
-                       case t : Exception if t==RuleNotApplicable =>
+                       case t : RuleNotApplicable =>
                           history+="rule not applicable!"
                         haveresult = false
                         activerules -= rule
@@ -910,7 +934,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             case Some(rule) =>
               history += ("Applying SubtypingRule " + rule.toString)
               (try { rule(this)(tp1S,tp2S)} catch {
-                case t : Exception if t==RuleNotApplicable =>
+                case t : RuleNotApplicable =>
                   history+="rule not applicable!"
                   haveresult = false
                   activerules -= rule
@@ -1239,7 +1263,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
              Try(rule(this)(tm, tp)) match {
                  case scala.util.Success(b:Boolean) =>
                    return b
-                 case Failure(RuleNotApplicable) =>
+                 case Failure(t : RuleNotApplicable) =>
                  case Failure(t : Throwable) => throw t
                }}
            false

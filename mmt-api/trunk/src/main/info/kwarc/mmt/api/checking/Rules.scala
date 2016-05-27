@@ -40,7 +40,7 @@ object TypingRule {
    object SwitchToInference extends java.lang.Throwable
 }
 
-case object RuleNotApplicable extends Exception
+class RuleNotApplicable extends Exception("Not Applicable")
 
 /** An TypingRule checks a term against a type.
  *  It may recursively call other checks.
