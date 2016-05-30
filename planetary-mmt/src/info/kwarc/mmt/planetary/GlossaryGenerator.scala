@@ -56,7 +56,7 @@ object GlossaryGenerator {
     }
     present(verbs.flatten.flatten.toList.distinct)
     rh.get
-  }
+  } 
 
   // easy-to-use HTML markup
   protected val htmlRh = utils.HTML(s => rh(s))
@@ -101,6 +101,22 @@ object GlossaryGenerator {
       }
     }
   }
+  
+  private def getVerbalizations(path: MPath, lang: String) : List[TextNotation] = {
+    
+    //getPrimarySym(path : MPath) : Option[GlobalName]
+    val primarySyms = controller.depstore.getInds(IsPrimarySymbol)
+    val primarySymO = primarySyms.find { 
+      case p : GlobalName => p.module == path 
+      case _ => false
+    }
+    
+    //getVerbs(spath : Option[GlobalName], lang : String) : List[TextNotation]     
+    primarySymO.map(controller.get) match {
+      case Some(c:Constant) => c.notC.verbalizationDim.get(lang=Some(lang))
+      case _ => Nil
+    }
+  }
 
   private def present(lang : String, spath : GlobalName, not: TextNotation): Unit = {
     val doc = spath.doc
@@ -124,6 +140,46 @@ object GlossaryGenerator {
               case _ => None
             }
         }
+    
+    val primarySym = controller.depstore.queryList(spath, HasType(IsPrimarySymbol))
+    val hypernyms = if  (!primarySym.isEmpty) {
+      val mpath = spath.module 
+      controller.depstore.queryList(mpath, ToObject(IsHypernymOf)) flatMap {
+        case p: Path =>
+          controller.getO(p) match {
+            case Some(fd: Theory) =>
+              val mpath = fd.path
+              val verbs = getVerbalizations(mpath, lang)
+              if (verbs.isEmpty) {
+                None
+              } else {
+                Some(verbs)
+              }
+            case _ => None
+          }
+      }
+    } else Nil
+    
+    val hyponyms = if  (!primarySym.isEmpty) {
+      val mpath = spath.module 
+      controller.depstore.queryList(mpath, ToSubject(IsHypernymOf)) flatMap {
+        case p: Path =>
+          controller.getO(p) match {
+            case Some(fd: Theory) =>
+              val mpath = fd.path
+              val verbs = getVerbalizations(mpath, lang)
+              if (verbs.isEmpty) {
+                None
+              } else {
+                Some(verbs)
+              }
+            case _ => None
+          }
+      }
+    } else Nil
+    
+    val synonyms = constant.notC.verbalizationDim.get(lang=Some(lang)).filter(_ != not)
+    
     if (defs.isEmpty) {
       return;
     }
@@ -145,6 +201,21 @@ object GlossaryGenerator {
           rh(",")
           presenter.doShowHideTrigger("Notations", notId)
         }
+        val synId = getNewId
+        if (!synonyms.isEmpty) {
+          rh(",")
+          presenter.doShowHideTrigger("Synonyms", synId)
+        }
+        val hypId = getNewId
+        if (!hypernyms.isEmpty) {
+          rh(",")
+          presenter.doShowHideTrigger("Hypernyms", hypId)
+        }
+        val hyponId = getNewId
+        if (!hyponyms.isEmpty) {
+          rh(",")
+          presenter.doShowHideTrigger("Hyponyms", hyponId)
+        }
         //SVG
         rh(", <small><a target=\"_blank\" href=\"" + spath.doc.toPath + "!svg\"> Concept Graph </a></small>")
 
@@ -162,7 +233,7 @@ object GlossaryGenerator {
         }
         // Notations Table -- hidden by default, activated by notations trigger
         presenter.doNotationsTable(notations, notId)
-
+        
         // adding definition (as hidden for now)
         //("style" -> "display:none;")
         div(attributes = ("id" -> (defId)) :: ("style" -> "display:none;") :: Nil) {
@@ -170,6 +241,11 @@ object GlossaryGenerator {
             presenter.apply(fd)(rh)
           }
         }
+        
+        // adding terminological relations
+        presenter.doSynonymsList(synonyms, synId, lang)
+        presenter.doHypernymsList(hypernyms, hypId, lang)
+        presenter.doHyponymsList(hyponyms, hyponId, lang)
       }
       rh("<hr/>")
     }

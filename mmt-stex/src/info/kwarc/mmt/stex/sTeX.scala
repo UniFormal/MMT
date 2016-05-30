@@ -17,7 +17,6 @@ object sTeXMetaData {
   val primarySymbolPath = mod ? "primary-symbol"
   val rolePath = mod ? "role"
 
-  val conservativeExtensionPath = mod ? ""
   val primarySymbol : MetaDatum = new MetaDatum(rolePath, OMSTR("primary"))
   val conservativeExtension : MetaDatum = new MetaDatum(rolePath, OMSTR("conservative-extension"))
 }

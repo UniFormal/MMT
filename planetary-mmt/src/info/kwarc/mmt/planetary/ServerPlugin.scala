@@ -197,7 +197,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   
   private def generateGlossary : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val location = utils.File("/var/data/localmh/MathHub/glossary.html")
+      val location = utils.File("/home/akbar/localmh/MathHub/glossary.html")
       val glossary = GlossaryGenerator.generate(controller)
       utils.File.write(location, glossary)
       Server.TextResponse("Success").aact(tk)

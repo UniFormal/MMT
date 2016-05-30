@@ -354,6 +354,54 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        }
      }
    }
+   
+   def doHypernymsList(hypernyms : List[List[TextNotation]], id : String, lang : String) {
+     if (!hypernyms.isEmpty) {
+       div(attributes = ("id" -> (id)) :: ("style" -> "display:none;") :: Nil) {
+         h5 {
+           text{"Hypernyms:"}
+         }
+         ul {
+           hypernyms.foreach { h => li {
+               text{h.map(v => v.toText).mkString(", ")}
+             }
+           }
+         }
+       }
+     }
+   }
+   
+   def doHyponymsList(hyponyms : List[List[TextNotation]], id : String, lang : String) {
+     if (!hyponyms.isEmpty) {
+       div(attributes = ("id" -> (id)) :: ("style" -> "display:none;") :: Nil) {
+         h5 {
+           text{"Hyponyms:"}
+         }
+         ul {
+           hyponyms.foreach { h => li {
+               text{h.map(v => v.toText).mkString(", ")}
+             }
+           }
+         }
+       }
+     }
+   }
+   
+   def doSynonymsList(synonyms : List[TextNotation], id : String, lang : String) {
+     if (!synonyms.isEmpty) {
+       div(attributes = ("id" -> (id)) :: ("style" -> "display:none;") :: Nil) {
+         h5 {
+           text{"Synonyms:"}
+         }
+         ul {
+           synonyms.foreach { h => li {
+               text{h.toText}
+             }
+           }
+         }
+       }
+     }
+   }
 
    def doNotations(notations : List[(GlobalName, TextNotation)], path : GlobalName, instId : String = "") {
      if (!notations.isEmpty) {
