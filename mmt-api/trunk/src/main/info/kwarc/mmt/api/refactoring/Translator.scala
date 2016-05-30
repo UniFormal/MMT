@@ -494,6 +494,7 @@ class Translator extends ServerExtension("translate") {
     // val usedgroups : List[TranslationGroup]
     var status : State.Status
     private val topstate = this
+    var expdef = false
 
     lazy val syms = ArchiveStore.getSymbols(term)
     def +(t : Term,travs : List[GlobalName],nused : List[Translation])(implicit target : FullArchive) = new State {
@@ -584,7 +585,9 @@ class Translator extends ServerExtension("translate") {
       }
     }
     state.status = State.checked
-    state + (trav.apply(state.term,()),traversed,trls)
+    val ret = state + (trav.apply(state.term,()),traversed,trls)
+    if (trls.exists(_.isInstanceOf[ExpandDefinition])) ret.expdef = true
+    ret
   }
 
   private def topapply(t : Term,getpartialresults : Boolean)(implicit target : FullArchive) : List[Term] = {
@@ -602,9 +605,12 @@ class Translator extends ServerExtension("translate") {
     }
     val dones = states.filter(p => p.status == State.done)
     if (dones.nonEmpty) dones.map(_.term).distinct
-    else if (getpartialresults) List(State.revert(states.collect {
-      case st if st.status.isInstanceOf[State.blocked] => st
-    }.maxBy(_.status.asInstanceOf[State.blocked].value).term))
+    else if (getpartialresults) {
+      val ls = states.collect {
+        case st if st.status.isInstanceOf[State.blocked] => st
+      }
+      List((if (ls.exists(!_.expdef)) ls.filter(!_.expdef) else ls).maxBy(_.status.asInstanceOf[State.blocked].value).term)
+    }
     else Nil
   }
 

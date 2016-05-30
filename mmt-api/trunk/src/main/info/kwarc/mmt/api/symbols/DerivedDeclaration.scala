@@ -12,8 +12,9 @@ import scala.xml.Elem
 /** A [[DerivedDeclaration]] is a syntactically like a nested theory.
  *  Its semantics is defined by the corresponding [[StructuralFeature]]
  */
-class DerivedDeclaration(h: Term, name: LocalName, val feature: String, components: List[DeclarationComponent]) extends {
-   private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name, None)
+class DerivedDeclaration(h: Term, name: LocalName, val feature: String,
+                         components: List[DeclarationComponent], mt : Option[MPath] = None) extends {
+   private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name, mt)
 } with NestedModule(t) {
    // overriding to make the type stricter
   override def module: DeclaredModule = t
@@ -43,14 +44,24 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, componen
     t.getDeclarations foreach(_.toNode(rh))
     rh << "</derived>"
   }
-  override def toString = feature + " " + name + "(" + components.map(_.value.toString).mkString(",") + ")" + t.innerString
+  override def toString = feature +
+    {
+      name match {
+        case LocalName(ComplexStep(p) :: Nil) => ""
+        case _ => " " + name
+      }
+    } + {
+    if (components.nonEmpty) "(" + components.map(_.value.toString).mkString(",") + ")"
+    else if (components.length == 1) " " + components.head.value.toString
+    else ""
+  } + {if (t.getDeclarations.nonEmpty) " =\n" + t.innerString else ""}
 }
 
 
 /**
  * a rule that legitimizes a [[StructuralFeature]]
  */
-case class StructuralFeatureRule(val feature: String) extends Rule
+case class StructuralFeatureRule(feature: String, components : List[ComponentKey], mt : Option[MPath] = None, hasname : Boolean = true) extends Rule
 
 /**
  * A StructureFeature defines the semantics of a [[DerivedDeclaration]]

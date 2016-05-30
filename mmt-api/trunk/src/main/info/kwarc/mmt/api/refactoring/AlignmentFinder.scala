@@ -33,15 +33,7 @@ class AlignmentFinder extends frontend.Extension {
     judg
   }
 
-  object Identity{
-    def apply(s : GlobalName) = SimpleAlignment(LogicalReference(s), LogicalReference(s), invertible = true)
-    def unapply(f : FormalAlignment) : Option[GlobalName] = f match {
-      case SimpleAlignment(LogicalReference(n : GlobalName),LogicalReference(m : GlobalName),i) if n==m && i => Some(n)
-      case _ => None
-    }
-  }
-
-  def apply(a1 : FullArchive, a2 : FullArchive, fixing : List[FormalAlignment]) = {
+  def apply(a1 : FullArchive, a2 : FullArchive/*, fixing : List[FormalAlignment]*/) = {
     var fromTheories = a1.theories.map(controller.get).collect {
       case t : DeclaredTheory => t
     }
@@ -60,12 +52,12 @@ class AlignmentFinder extends frontend.Extension {
     val commonths = fromTheories.filter(toTheories.contains)
     fromTheories = fromTheories.filter(!commonths.contains(_))
     toTheories = toTheories.filter(!commonths.contains(_))
-    val alignments = fixing ::: commonths.flatMap(_.getConstants.map(c => Identity(c.path)))
+    //val alignments = fixing ::: commonths.flatMap(_.getConstants.map(c => Identity(c.path)))
 
-    log(alignments.length + " common or aligned symbol(pair)s")
+    //log(alignments.length + " common or aligned symbol(pair)s")
 
     log("Compute hashes")
-    val hasher = new Consthasher(controller,fromTheories,toTheories,commonths.map(_.path),alignments,(judg1,judg2),doDefs = false)
+    val hasher = new Consthasher(controller,fromTheories,toTheories,a1,a2,commonths.map(_.path),/*alignments,*/(judg1,judg2),doDefs = false)
     val hashes1 = fromTheories.map(hasher.getTheory)
     val hashes2 = toTheories.map(hasher.getTheory)
 

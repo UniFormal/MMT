@@ -44,8 +44,10 @@ class Theoryhash(val path:MPath) {
 class Consthasher(controller:Controller,
                   sources : List[DeclaredTheory],
                   targets : List[DeclaredTheory],
+                  from : FullArchive,
+                  to : FullArchive,
                   fixing : List[MPath],
-                  alignments : List[FormalAlignment],
+                  /*alignments : List[FormalAlignment],*/
                   judgments : (Option[GlobalName],Option[GlobalName]),
                   doDefs : Boolean
                  ) {
@@ -56,7 +58,7 @@ class Consthasher(controller:Controller,
     controller.extman.addExtension(a)
     a
   }
-  private val translations = alignments.flatMap(translator.fromAlignment)
+  // private val translations = alignments.flatMap(translator.fromAlignment)
 
   private class OpenTheoryhash(p : MPath) extends Theoryhash(p) {
     def addConstant(c : Consthash) = consts::=c
@@ -83,7 +85,7 @@ class Consthasher(controller:Controller,
     val h = new OpenTheoryhash(th.path)
     if (!fixing.contains(th.path)) {
       th.getConstants.collect({ case c : FinalConstant => c }) foreach (c =>
-        if (!alignments.exists(a => a.from.mmturi == c.path || a.to.mmturi == c.path)) h.addConstant(doConstant(c))
+       /* if (!alignments.exists(a => a.from.mmturi == c.path || a.to.mmturi == c.path)) */ h.addConstant(doConstant(c))
         )
       th.getIncludes.foreach(t => h.addInclude(getTheory(t)))
     }
@@ -96,7 +98,7 @@ class Consthasher(controller:Controller,
     var isAxiom = false
     var pars : List[GlobalName] = Nil
 
-    def traverse(t: Term)(implicit vars : List[LocalName]) : List[Int] = {
+    def traverse(t: Term)(implicit vars : List[LocalName]) : List[Int] = { ??? /*
       val al = translations.find(_.isApplicable(t).isDefined)
       val allist = al.map(a => List(a.from,a.to)).getOrElse(Nil)
       if (judgments._1.exists(p => allist contains p) || judgments._2.exists(p => allist contains p)) isAxiom = true
@@ -127,7 +129,7 @@ class Consthasher(controller:Controller,
         case tm =>
           println("Missing: " + tm.getClass)
           ???
-      }
+      } */
     }
     val hash = c.tp.map(traverse(_)(Nil)).getOrElse(Nil).asInstanceOf[List[Any]]
     val tppars = pars
