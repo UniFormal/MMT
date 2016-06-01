@@ -422,13 +422,15 @@ object ComplexTerm {
       case OMATTRMany(OMS(p), LabelledTerms(sub)) if ! sub.isEmpty => Some((p, sub, Context(), Nil))
       case OMA(OMATTRMany(OMS(p), LabelledTerms(sub)), args) => Some((p, sub, Context(), args))
       case OMBINDC(OMATTRMany(OMS(p), LabelledTerms(sub)), con, scopes) => Some((p, sub, con, scopes))
+      case OMBINDC(OMA(OMS(p), args), con, scopes) => 
+        val sub = Substitution(args.map(a => Sub(LocalName.empty, a)):_*)
+        Some((p, sub, con, scopes))
       case _ => None
    }
    def subobjects(t: Term) : Option[List[(Context, Obj)]] = unapply(t) map {case (op, subs, con, args) =>
       (Context(),OMS(op)) :: subs.subobjects ::: con.subobjects ::: args.map(a => (con,a))
    }
 }
-
 
 /**
  * Obj contains the parsing methods for objects.
