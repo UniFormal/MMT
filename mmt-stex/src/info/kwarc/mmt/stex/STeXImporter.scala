@@ -144,9 +144,6 @@ class STeXImporter extends Importer {
     BuildResult.empty
   }
 
-  //TODO tmp
-  //override def log(s : => String, subgroup:Option[String]) = println(s)
-
   def compileOne(inText: String, dpath: DPath): (String, List[Error]) = {
     val node = scala.xml.XML.loadString(inText) //clearXmlNS(
     val cleanNode = node //scala.xml.Utility.trim(node)
@@ -543,73 +540,80 @@ class STeXImporter extends Importer {
   def translateCMP(n: scala.xml.Node)(implicit dpath: DPath, thy: DeclaredTheory, errorCont: ErrorHandler): Term = {
     val sref = parseSourceRef(n, dpath)
     n.label match {
-      case "term" =>
-        var cd = (n \ "@cd").text
+      case "definiendum" =>
+        val cd = (n \ "@cd").text
         val name = (n \ "@name").text
         val refName = resolveSPath(Some(cd), name, thy.path)
         val term = OMS(refName)
-        val role = (n \ "@role").text
-        if (role == "definiendum") {
-          //verbalization notation
-          val narr = <span class="stex-ref"><b>{n.child}</b></span>
-          val ref = FlexiformalRef(term, narr)
-          try {
-            val const = controller.memory.content.getConstant(refName)
-            //creating notation
-            var i = 0
-            var markers: Seq[Marker] = Nil
-            var tmpS: String = ""
-            n.child.toList foreach {
-              case <OMOBJ>
-                {s}
-                </OMOBJ> => s.label match {
-                case "OMV" =>
-                  val name = xml.attr(s, "name")
-                  val delim = makeDelim("#id_" + name)
-                  markers = markers :+ delim
-                case _ => //default should never happen
-                  if (tmpS != "") {
-                    markers ++= tmpS.split(" ").map(Delim).toList
-                    tmpS = ""
-                  }
-                  i += 1
-                  markers = markers :+ SimpArg(i)
-              }
-              case c => tmpS += c.text
+        val narr = <span class="stex-ref"><b>{n.child}</b></span>
+        val ref = FlexiformalRef(term, narr)
+        try {
+          val const = controller.memory.content.getConstant(refName)
+          //creating notation
+          var i = 1
+          var markers: Seq[Marker] = Nil //representing the verbalization with args (if Any)
+          var markersOp: Seq[Marker] = Nil //representing the verbalization with no args (default values for args)
+          var hasArgs = false
+          n.child.toList foreach { c => c.label match {
+              case "OMOBJ" if c.child.length == 1 =>
+                //should be stored as it is for current content
+                //added as argument for verbalization notation
+                //added as placeholder Delimiter for default (no-args) verbalization
+                val obj = c.child.head
+                hasArgs = true
+                markers :+= SimpArg(i)
+                i += 1
+                val defaultDelim = obj.label match {
+                  case "OMV" => Delim((obj \ "@name").text)
+                  case _ => Delim("todo")
+                }
+                markersOp :+= defaultDelim
+              case "OMOBJ" =>
+                val err = new STeXParseError("Invalid Object", Some(s"more than one child"), sref, Some(Level.Warning))
+                errorCont(err)
+              case "meta" =>  
+              case _ => 
+                val words = c.text.split(" ").filterNot(_.isEmpty)
+                markers ++= words.map(Delim(_))
+                markersOp ++= words.map(Delim(_))
             }
-            if (tmpS != "") {
-              markers ++= tmpS.split(" ").map(Delim).toList
-              tmpS = ""
-            }
-            val prec = Precedence.integer(0)
-            val verbScope = NotationScope(None, sTeX.getLanguage(thy.path).toList, 0)
-            val not = TextNotation.fromMarkers(prec, None, verbScope)(markers: _*)
-            const.notC.verbalizationDim.set(not)
-            val doc = controller.getDocument(const.parent.doc, d => "cannot find parent doc for reindexing" + d)
-            docCont(doc.path)(doc) //reindexing that document
-          } catch {
-            case e: NotFound =>
-              val err = new STeXParseError("Cannot add verbalization notation, symbol not found", Some(s"was looking for symbol $refName"), sref, Some(Level.Warning))
-              errorCont(err)
-            case e: GetError =>
-              val err = new STeXParseError("Cannot add verbalization notation, symbol not found", Some(s"was looking for symbol $refName"), sref, Some(Level.Warning))
-              errorCont(err)
-            case e: NoSuchElementException =>
-              val err = new STeXParseError("Cannot add verbalization notation, signature document not found for reindexing",
-                                            Some(s"was looking for sig. document $dpath"), sref, Some(Level.Warning))
-              errorCont(err)
           }
-          ref
-        } else {
-          val narr = <span class="stex-ref">{n.child}</span>
-          FlexiformalRef(term, narr)
+          val prec = Precedence.integer(0)
+          val verbScope = NotationScope(None, sTeX.getLanguage(thy.path).toList, 0)
+          val not = TextNotation.fromMarkers(prec, None, verbScope)(markers: _*)
+          const.notC.verbalizationDim.set(not)
+          if (hasArgs) {
+            val notOp = TextNotation.fromMarkers(prec, None, verbScope)(markersOp: _*)
+            const.notC.verbalizationDim.set(not)
+          }
+          val doc = controller.getDocument(const.parent.doc, d => "cannot find parent doc for reindexing" + d)
+          docCont(doc.path)(doc) //reindexing that document
+        } catch {
+          case e: NotFound =>
+            val err = new STeXParseError("Cannot add verbalization notation, symbol not found", Some(s"was looking for symbol $refName"), sref, Some(Level.Warning))
+            errorCont(err)
+          case e: GetError =>
+            val err = new STeXParseError("Cannot add verbalization notation, symbol not found", Some(s"was looking for symbol $refName"), sref, Some(Level.Warning))
+            errorCont(err)
+          case e: NoSuchElementException =>
+            val err = new STeXParseError("Cannot add verbalization notation, signature document not found for reindexing",
+                                          Some(s"was looking for sig. document $dpath"), sref, Some(Level.Warning))
+            errorCont(err)
         }
+        ref
+      case "term" =>
+        val cd = (n \ "@cd").text
+        val name = (n \ "@name").text
+        val refName = resolveSPath(Some(cd), name, thy.path)
+        val term = OMS(refName)
+        val narr = <span class="stex-ref">{n.child}</span>
+        FlexiformalRef(term, narr)
       case "#PCDATA" =>
         makeNarrativeText(n.toString())
       case "OMOBJ" =>
         FlexiformalTerm(Obj.parseTerm(n, NamespaceMap(dpath)))
       case _ => //informal (narrative) term
-        val terms = getChildren(n)(n => n.label == "term" || n.label == "OMOBJ").map(p => (translateCMP(p._1), p._2))
+        val terms = getChildren(n)(n => n.label == "definiendum" || n.label == "term" || n.label == "OMOBJ").map(p => (translateCMP(p._1), p._2))
         FlexiformalNode(n, terms.toList)
     }
   }
@@ -625,10 +629,8 @@ class STeXImporter extends Importer {
     }
 
     val children = makeChildren(elems, "")
-    FlexiformalXML(<span type="XML">
-      {children}
-    </span>)
-
+    FlexiformalXML(<span type="XML">{children}</span>)
+    //TODO code above is unused, remove or use
     FlexiformalXML(scala.xml.Text(s))
   }
 
