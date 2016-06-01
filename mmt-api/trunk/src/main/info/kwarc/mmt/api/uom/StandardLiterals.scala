@@ -197,6 +197,7 @@ object StandardBool extends Atomic[java.lang.Boolean] {
      case "true" => true
      case "false" => false
    }
+   override def lex = Some(FiniteKeywordsLexer(List("true","false")))
 }
 
 import utils.URI

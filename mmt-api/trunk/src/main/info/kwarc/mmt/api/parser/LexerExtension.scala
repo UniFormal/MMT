@@ -158,6 +158,7 @@ class LexParseExtension(lc: LexFunction, pc: ParseFunction) extends LexerExtensi
    def unapply(t: Term) = lc.unapply(pc.unapply(t))
 }
 
+
 /**
  * A LexerExtension that lexes undelimited number literals
  * 
@@ -275,6 +276,24 @@ class FixedLengthLiteralLexer(rt: uom.RealizedType, begin: String, length: Int) 
       val t = rt.parse(text)
       CFExternalToken(begin+text, firstPosition, t)
    }
+}
+
+
+case class FiniteKeywordsLexer(keys : List[String]) extends LexFunction {
+  /** unapply(apply(s,_)) == s */
+  val sortedkeys = keys.sortBy(k => -k.length)
+  override def unapply(s: String): String = s
+
+  override def applicable(s : String, i : Int) : Boolean = {
+    if (i!=0 && s(i-1).isLetterOrDigit) return false
+    val si = s.substring(i)
+    sortedkeys.exists {k => si == k || (si.startsWith(k) && !si(k.length).isLetterOrDigit)}
+  }
+
+  override def apply(s: String, i: Int): (String,String) = {
+    val ret = sortedkeys.find(k => s.substring(i).startsWith(k)).get
+    (ret,ret)
+  }
 }
 
 class LiteralParser(rt: uom.RealizedType) extends ParseFunction {
