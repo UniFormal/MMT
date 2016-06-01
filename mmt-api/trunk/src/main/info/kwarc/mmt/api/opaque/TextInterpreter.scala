@@ -81,7 +81,7 @@ class TextInterpreter extends OpaqueElementInterpreter
       val u = new Unparsed(pu.term, errorFun)
       var i = -1
       var term = false
-      while (u.remainder.nonEmpty) {
+      while (!u.empty) {
          val begin = u.getSourcePosition
          var (fragS,dollarFound) = u.next('$', '\\') // {s => (s(0).toString,s(0).toString)}
          log((if (term) "term: " else "text: ") + fragS)

@@ -172,8 +172,8 @@ class GAPReader(log : JSONImporter) {
           val locations = obj("locations") match {
             case Some(ls : JSONArray) =>
               val list = ls.values
-              if (list.length > 1) throw new ParseError("Several loations in Operation: " + name + ": " + list)
-              else ls.head match {
+              //if (list.length > 1) {} // TODO throw new ParseError("Several loations in Operation: " + name + ": " + list)
+              /*else*/ ls.head match {
                 case o : JSONObject =>
                   (o("file"),o("line")) match {
                     case (Some(JSONString(fl)),Some(JSONInt(i))) => (fl,i)
@@ -371,12 +371,12 @@ sealed abstract class Operation extends GAPObject
 case class GAPOperation(namestr : String, filterstr : List[List[List[String]]], methods : List[GAPMethod], locations : (String,Int)) extends Operation with Haspath {
   val dependencies : List[String] = filterstr.flatMap(_.flatten)
   def filters(implicit all : List[GAPObject]) : List[List[List[GAPObject]]] = filterstr.map(_.map(_.map(reg.parse).filter(_.getInner != this)))
-  override def toString = "Operation " + name + ": " + filterstr.map(l => " - " + l.map(_.toString).mkString(",")).mkString("\n") +
+  override def toString = "Operation " + namestr + ": " + filterstr.map(l => " - " + l.map(_.toString).mkString(",")).mkString("\n") +
     methods.mkString("\n  ")
 
   val arity : Option[Int] = if (methods.isEmpty && filterstr.forall(_.forall(_.isEmpty))) Some(0)
-    else if (methods.nonEmpty && methods.forall(_.arity == methods.head.arity)) Some(methods.head.arity) else
-    throw new ParseError("Arity doesn't match! " + toString)
+    else if (methods.nonEmpty && methods.forall(_.arity == methods.head.arity)) Some(methods.head.arity)
+    else if (filterstr.isEmpty) Some(0) else Some(filterstr.head.length)
 
   private val steps = locations._1.replace("/home/makx/ac/gap/","").split("/").toList//.map(SimpleStep).toList
   val subpath : LocalName = if (steps.length>1) LocalName(steps.init.map(SimpleStep)) else LocalName("")
@@ -393,7 +393,7 @@ sealed abstract class Category extends GAPObject
 case class GAPCategory(namestr : String, impliedstr : List[String]) extends Category with Haspath {
   val dependencies = impliedstr
   def filters(implicit all : List[GAPObject]) : List[GAPObject] = impliedstr.map(reg.parse).filter(_.getInner != this)
-  override def toString = "Category " + name + ": " + impliedstr.mkString(",")
+  override def toString = "Category " + namestr + ": " + impliedstr.mkString(",")
 
   lazy val subpath : String = ???
   lazy val theory : LocalName = ???

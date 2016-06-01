@@ -2,6 +2,25 @@ package info.kwarc.mmt.api.utils
 
 import info.kwarc.mmt.api.parser.SourcePosition
 
+/**
+  * helper class for working with substrings without copying
+  * (standard Java substring method creates a copy)
+  */
+case class StringSlice(s: String, from: Int, to: Int) extends java.lang.CharSequence {
+   override def toString = s.substring(from,to)
+   def charAt(n: Int) = s(from+n)
+   def length = to-from
+   def subSequence(f: Int, t: Int) = StringSlice(s, from+f,from+t)
+   def startsWith(prefix: String) = {
+      prefix.length < length &&
+      s.substring(from, from + prefix.length) == prefix
+   }
+}
+
+object StringSlice {
+   def apply(s: String, from: Int) : StringSlice = StringSlice(s, from, s.length)
+}
+
 /** \n, \r, and \r\n are read as \n */
 class Unparsed(input: String, error: String => Nothing) {
    private var current: Int = 0
@@ -24,7 +43,8 @@ class Unparsed(input: String, error: String => Nothing) {
    /** the position of the next character to be read */
    def getSourcePosition = SourcePosition(offset, line, column)
 
-   def remainder = input.substring(current)
+   def remainder = StringSlice(input, current)
+
    def head = input(current)
    def next() = {
       if (empty) error("expected character, found nothing")
@@ -48,7 +68,7 @@ class Unparsed(input: String, error: String => Nothing) {
       this
    }
    def drop(s: String) {
-      if (remainder.startsWith(s)) {
+      if (StringSlice(input, offset).startsWith(s)) {
          current += s.length
          s.foreach {c => advancePositionBy(c)}
       } else
@@ -61,8 +81,8 @@ class Unparsed(input: String, error: String => Nothing) {
    import scala.util.matching.Regex
    /** matches at the beginning of the stream and returns the matched prefix */
    def next(regex: String): Regex.Match = {
-      val m = new Regex(regex)
-      val mt = m.findPrefixMatchOf(remainder).getOrElse {
+      val r = new Regex(regex)
+      val mt = r.findPrefixMatchOf(remainder).getOrElse {
          error(s"expected match of $regex, found $remainder")
       }
       drop(mt.matched)
