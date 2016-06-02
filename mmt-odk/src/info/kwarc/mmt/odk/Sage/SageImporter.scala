@@ -2,13 +2,21 @@ package info.kwarc.mmt.odk.Sage
 
 import info.kwarc.mmt.api.archives.{BuildResult, BuildTask, Importer, RedirectableDimension}
 import info.kwarc.mmt.api.documents.Document
-import info.kwarc.mmt.api.{ParseError, utils}
+import info.kwarc.mmt.api.{LocalName, ParseError, utils}
 import info.kwarc.mmt.api.utils._
 
 
-
+sealed abstract class SageObject
 case class ParsedCategory(name : String, implied: List[String], axioms: List[String], structure : List[String],
-                          doc : String, methods: JSONObject)
+                          doc : String, methods: JSONObject) extends SageObject {
+  override def toString = "Category " + name + "\n  Inherits: " + implied.mkString(",") + "\n  Axioms: " +
+    axioms.mkString(",") + "\n  Structure: " + structure.mkString(",") + "\n  Doc: " + doc
+
+  private val steps = name.replaceAll("""sage.categories.""","").split("\\.")
+  private val dpath = steps.init.foldLeft(Sage._base)((base,step) => base / step)
+  private val tname = LocalName(steps.last)
+  val path = dpath ? tname
+}
 
 class SageImporter extends Importer {
   def toplog(s : => String) = log(s)
@@ -59,10 +67,11 @@ class SageImporter extends Importer {
         println(msg)
         sys.exit
     }
+    categories foreach(c => log(c.toString))
     log(categories.length + " Objects parsed")
 
-    //val conv = ??? // new Translator(controller, bf, index,this)
-    //conv(reader)
+    val trans = new SageTranslator(controller,bf,index)
+    trans(categories)
     BuildResult.empty
   }
 }
