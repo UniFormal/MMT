@@ -10,7 +10,7 @@ class GAPImporter extends Importer {
   override def inDim = RedirectableDimension("gap")
 
   val docImporter = new GAPDocImporter
-  val sysImporter = new JSONImporter
+  val sysImporter = new GAPJSONImporter
   override val logPrefix = "gapimporter"
   
   override def init(controller : Controller) {

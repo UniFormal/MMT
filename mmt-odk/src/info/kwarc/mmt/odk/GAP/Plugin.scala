@@ -21,7 +21,7 @@ object GAP {
   val cat = OMS(theory ? "category")
   val filter = OMS(theory ? "filter")
 
-  val IsBool = OMS(theory ? "IsBool")
+  val IsBool = theory ? "IsBool"
 
   def dotp(tm : Term, tp : Term) = ApplySpine(OMS(theory ? "#"),tm,tp)
   def propfilt(tm : Term) = Apply(OMS(theory ? "propertyFilter"),tm)
@@ -32,7 +32,7 @@ class Plugin extends frontend.Plugin {
   val theory = GAP.theory
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
-    controller.extman.addExtension(new JSONImporter)
+    controller.extman.addExtension(new GAPJSONImporter)
   }
 }
 

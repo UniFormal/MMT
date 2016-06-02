@@ -13,6 +13,7 @@ class Plugin extends frontend.Plugin {
   override def start(args: List[String]) {
     controller.extman.addExtension(new LMFDB.Plugin)
     controller.extman.addExtension(new GAP.Plugin)
+    controller.extman.addExtension(new Sage.Plugin)
   }
 }
 

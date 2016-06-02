@@ -12,22 +12,13 @@ import info.kwarc.mmt.lf.{ApplySpine, Arrow, Pi}
 
 import scala.collection.mutable
 
-class Translator(controller: Controller, bt: BuildTask, index: Document => Unit, log : JSONImporter) {
-  var dones : List[GAPObject] = Nil
-
-  private var gap : GAPReader = null
+class Translator(controller: Controller, bt: BuildTask, index: Document => Unit, log : GAPJSONImporter) {
 
   private var theories : mutable.HashMap[MPath, DeclaredTheory] = mutable.HashMap.empty
 
-  def apply(ngap:GAPReader) = {
-    gap = ngap
-    log.toplog("sorting...")
-    var i = 0
-    dones = gap.all.sortBy(o => o.depweight(gap.all))
-    log.toplog("imported " + dones.length + " GAP Objects. Head: " + dones.head)
-
+  def apply(all : List[GAPObject]) = {
     log.toplog("Creating Theories...")
-    // dones foreach doObject
+    // all foreach doObject
 
     log.toplog("Checking...")
     log.toplogGroup {
@@ -48,8 +39,8 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
 
   private def objtotype(o : GAPObject) : Term = o match {
     case f : GAPFilter => f.toTerm
-    case p : Property => GAP.propfilt(p.toTerm)
-    case c : Category => GAP.catfilt(c.toTerm)
+    case p : GAPProperty => GAP.propfilt(p.toTerm)
+    case c : GAPCategory => GAP.catfilt(c.toTerm)
     case _ => throw new ParseError("Neither Filter, Category nor Property: " + o)
   }
 
@@ -65,10 +56,8 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
 
   private def doObject(obj : GAPObject) : Unit = {
     val cs : List[FinalConstant] = obj match {
-      case m : GAPMethod =>
-        Nil
-      case a : GAPAttribute =>
-        val filters = a.filters(dones)
+      case a : DeclaredAttribute =>
+        val filters = a.filters
         var consts = List(Constant(OMMOD(a.path.module),a.name,Nil,Some(Arrow(GAP.obj,GAP.obj)),None,None))
         //addConstant(c)
         if (a.returntype.isDefined) {
@@ -78,24 +67,26 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
         }
         addDependencies(a.path.module,filters.map(_.getInner).distinct)
         consts
-      case op : GAPOperation =>
+      case op : DeclaredOperation =>
         opcounter = 0
-        val filters = op.filters(dones)
+        val filters = op.filters
         var consts = List(Constant(OMMOD(op.path.module),op.name,Nil,Some(
           if (op.arity.isDefined) doArrow(op.arity.get) else doArrow(1)),None,None))
         //addConstant(c)
         if (op.arity.isDefined) consts ::= Constant(OMMOD(op.path.module),LocalName(op.name + "_type"),Nil,
           Some(???),None,None)
         // TODO TODO TODO
+        /*
         if (op.arity.isDefined) op.methods.foreach (m => {
           ???
         })
-        val allfilters = filters.flatten.flatten ::: op.methods.flatMap(_.filters(dones).flatten)
+        */
+        val allfilters = filters.flatten.flatten// ::: op.methods.flatMap(_.filters(dones).flatten)
         addDependencies(op.path.module,allfilters.map(_.getInner).distinct)
         consts
-      case cat : GAPCategory =>
+      case cat : DeclaredCategory =>
         opcounter = 0
-        val filters = cat.filters(dones)
+        val filters = cat.implied//(dones)
         if (cat == IsBool) return ()
         var consts = List(Constant(OMMOD(cat.path.module),cat.name,Nil,Some(GAP.cat),None,None))
         filters foreach (f =>
@@ -109,9 +100,9 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
           })
         addDependencies(cat.path.module,filters.map(_.getInner).distinct)
         consts
-      case filt : GAPFilter =>
+      case filt : DeclaredFilter =>
         opcounter = 0
-        val filters = filt.filters(dones)
+        val filters = filt.implied//(dones)
         var consts = List(Constant(OMMOD(filt.path.module),filt.name,Nil,Some(GAP.filter),None,None))
         filters foreach (f =>
         {
@@ -124,15 +115,15 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
         })
         addDependencies(filt.path.module,filters.map(_.getInner).distinct)
         consts
-      case prop : GAPProperty =>
-        val filters = prop.filters(dones)
+      case prop : DeclaredProperty =>
+        val filters = prop.filters//(dones)
         var consts = List(Constant(OMMOD(prop.path.module),prop.name,Nil,Some(doArrow(1)),None,None),
           Constant(OMMOD(prop.path.module),LocalName(prop.name + "_type"),Nil,Some(typeax(prop,List(filters),IsBool)),None,None))
         addDependencies(prop.path.module,filters.map(_.getInner).distinct)
         consts
       case rep : GAPRepresentation =>
         opcounter = 0
-        val filters = rep.filters(dones)
+        val filters = rep.implied//(dones)
         var consts = List(Constant(OMMOD(rep.path.module),rep.name,Nil,Some(GAP.filter),None,None))
         filters foreach (f =>
         {
@@ -151,7 +142,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
 
   private def doArrow(arity : Int) : Term = if (arity == 0) GAP.obj else Arrow(GAP.obj,doArrow(arity - 1))
 
-  private def addDependencies(thp : MPath, objs : List[Haspath]): Unit = objs foreach (obj => {
+  private def addDependencies(thp : MPath, objs : List[DeclaredObject]): Unit = objs foreach (obj => {
     if (theories.get(thp).isEmpty) {
       val th = new DeclaredTheory(thp.parent,thp.name,Some(GAP.theory))
       theories += ((th.path,th))
@@ -169,4 +160,5 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
     }
     c foreach controller.add
   }
+
 }

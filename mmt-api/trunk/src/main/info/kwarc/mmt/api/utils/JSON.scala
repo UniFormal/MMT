@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api.utils
 
+import info.kwarc.mmt.api.ParseError
+
 import scala.util.parsing.json.JSONFormat
 
 /**
@@ -43,6 +45,40 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
   override def toString =
     map.map { case (k, v) => k.toString + " : " + v.toString}.mkString("{", ",\n", "}")
   def apply(s: String): Option[JSON] = map.find(_._1 == JSONString(s)).map(_._2)
+
+  def getAs[A](cls: Class[A], s : String) : A = {
+    val ret = apply(s).getOrElse(throw new ParseError("Field \"" + s + "\" not defined in JSONObject " + this)) match {
+      case j : JSONValue => j.value
+      case other => other
+    }
+    ret match {
+      case j: A@unchecked if cls.isInstance(j) => j
+      case _ => throw new ParseError("getAs Error: A=" + A.toString + ", j:" + ret.getClass)
+    }
+  }
+  def getAsString(s : String) = try {
+    getAs(classOf[String], s)
+  } catch {
+    case e : Exception => ""
+  }
+  def getAsInt(s : String) : Int = apply(s).getOrElse(throw new ParseError("Field \"" + s + "\" not defined in JSONObject " + this)) match {
+    case j: JSONInt => j.value
+    case _ => throw new ParseError("Field \"" + s + "\" is not a JSONInt in " + this)
+  }
+  def getAsList[A](cls: Class[A],s : String) : List[A] = {
+    val ret = apply(s).getOrElse(throw new ParseError("Field \"" + s + "\" not defined in JSONObject " + this)) match {
+      case j : JSONArray => j.values.toList
+      case _ => throw new ParseError("Field \"" + s + "\" not da JSONArray " + this)
+    }
+    ret map {
+      case j : JSONValue if cls.isInstance(j.value) => j.value match {
+        case v: A@unchecked => v
+        case _ => throw new Exception("Impossible")
+      }
+      case j : A@unchecked if cls.isInstance(j) => j
+      case _ => throw new ParseError("getAs Error: A=" + A.toString + ", j:" + ret.getClass)
+    }
+  }
 }
 
 object JSONObject {

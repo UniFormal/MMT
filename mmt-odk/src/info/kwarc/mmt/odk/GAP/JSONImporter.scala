@@ -8,9 +8,37 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.lf.Apply
 
+import scala.collection.mutable
 import scala.util.Try
 
-class JSONImporter extends Importer {
+sealed abstract class ParsedObject {
+  val name : String
+  val dependencies: List[String]
+}
+case class ParsedMethod(op : String, filters : List[List[String]], comment : String, rank : Int) {
+  val dependencies = op :: filters.flatten.distinct
+}
+case class ParsedProperty(name : String, implied : List[String], isTrue :Boolean = false) extends ParsedObject {
+  val dependencies = implied
+}
+case class ParsedOperation(name : String, filters : List[List[List[String]]], methods : List[ParsedMethod], locations : (String,Int))
+  extends ParsedObject {
+  val dependencies = (filters.flatten.flatten).distinct
+}
+case class ParsedCategory(name : String, implied : List[String]) extends ParsedObject {
+  val dependencies = implied
+}
+case class ParsedAttribute(name : String, filters : List[String]) extends ParsedObject {
+  val dependencies = filters
+}
+case class ParsedRepresentation(name : String, implied : List[String]) extends ParsedObject {
+  val dependencies = implied
+}
+case class ParsedFilter(name : String, implied : List[String]) extends ParsedObject {
+  val dependencies = implied
+}
+
+class GAPJSONImporter extends Importer {
   def toplog(s : => String) = log(s)
   def toplogGroup[A](a : => A) = logGroup(a)
   val reporter = this.report
@@ -18,60 +46,103 @@ class JSONImporter extends Importer {
   def inExts = List("json")
   override def logPrefix = "gap"
   override def inDim = RedirectableDimension("gap")
-  lazy val reader = new GAPReader(this)
-  // reader.export = 100
-  // reader.file = Some(File("/home/raupi/lmh/MathHub/ODK/GAP/gap/bitesize.json"))
+
+  private var all : List[ParsedObject] = Nil
+  private var allmethods : List[ParsedMethod] = Nil
 
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
-    //     if (bf.inFile.filepath.toString < startAt) return
     val d = bf.inFile.name
     val e = try {
       log("reading...")
       val read = File.read(bf.inFile) // .replace("\\\n","")
-
-      reader(read)
+      log("JSON Parsing...")
+      val parsed = JSON.parse(read) match {
+        case JSONArray(ls@_*) => ls
+        case _ => throw new ParseError("File not a JSON Array")
+      }
+      log("To Scala...")
+      logGroup {
+        parsed.foreach({
+          case obj: JSONObject => parse(obj)
+          case j: JSON => throw new ParseError("Not a JSONObject: " + j)
+        })
+      }
     } catch {
       case utils.ExtractError(msg) =>
         println("utils.ExtractError")
         println(msg)
         sys.exit
     }
-    log(reader.all.length + " Objects parsed")
+    log(all.length + " Objects parsed")
+    all foreach (po => {
+      val done = dones.get(po)
+      if (done.isEmpty) getObject(po)
+    })
 
-    /*
-    val conv = new PVSImportTask(controller, bf, index)
-    e match {
-      case d: pvs_file =>
-        conv.doDocument(d)
-      case m: syntax.Module =>
-        conv.doDocument(pvs_file(List(m)))
-      //conv.doModule(m)
-    }
-    */
     val conv = new Translator(controller, bf, index,this)
-    conv(reader)
+    conv(dones.values.toList)
     BuildResult.empty
   }
-}
 
-class GAPReader(log : JSONImporter) {
+  private def parse(obj : JSONObject) {
+    val name = obj.getAsString("name")
+    val tp = obj.getAsString("type")
+    reg.regs foreach {r =>
+      name match {
+        case "IsBool" => return ()
+        case r(s) => return ()
+        case _ =>
+      }
+    }
+    val (ret,missing : List[String]) = tp match {
+      case "GAP_Property" | "GAP_TrueProperty" =>
+        val impls = Try(obj.getAsList(classOf[String],"implied")).getOrElse(
+          obj.getAsList(classOf[String],"filters")).filter(redfilter(name))
+        val missings = obj.map.filter(p => p._1.value!="name" && p._1.value!="implied" && p._1.value!="type"
+          && p._1.value!="filters")
+        if (missings.nonEmpty) throw new ParseError("GAP_Property has additional fields " + missings)
+        (ParsedProperty(name,impls,if (tp == "GAP_TrueProperty") true else false),List("implied","filters"))
 
-  var properties : List[GAPProperty] = Nil
-  var categories : List[GAPCategory] = List(IsBool)
-  var attributes : List[GAPAttribute] = Nil
-  // var tester : List[GAPTester] = Nil
-  var representations : List[GAPRepresentation] = Nil
-  var filter : List[GAPFilter] = Nil
-  var operations : List[GAPOperation] = Nil
+      case "GAP_Operation" =>
+        val filters = obj.getAsList(classOf[JSONArray],"filters") map (_.values.toList map {
+          case JSONArray(ls@_*) => (ls.toList map {
+            case JSONString(s) => s
+            case _ => throw new ParseError("GAP_Operation: filters is not an Array of Arrays of Strings!")
+          }).filter(redfilter(name))
+          case _ => throw new ParseError("GAP_Operation: filters is not an Array of JSONArrays!")
+        })
+        val methods = doMethods(obj.getAs(classOf[JSONObject],"methods"),name)
+        allmethods :::= methods
+        val locobj = obj.getAsList(classOf[JSONObject],"locations").head
+        val locations = (locobj.getAsString("file"),locobj.getAsInt("line"))
+        // TODO: don't just take the head!
+        (ParsedOperation(name,filters,methods,locations),List("filters","methods","locations"))
 
-  def all = (properties ++ operations ++ attributes ++ representations ++ categories ++ filter).distinct //++ categories ++ attributes ++ tester ++ representations ++ filter).distinct
+      case "GAP_Attribute" =>
+        val filters = obj.getAsList(classOf[String],"filters").filter(redfilter(name))
+        (ParsedAttribute(name,filters),List("filters"))
 
-  var export = 0
-  var file : Option[File] = None
-  private var counter = 0
-  private var exportstr : List[JSON] = Nil
+      case "GAP_Representation" =>
+        val implied = obj.getAsList(classOf[String],"implied").filter(redfilter(name))
+        (ParsedRepresentation(name,implied),List("implied"))
 
-  private def doMethods(j : JSONObject, op : String) : List[GAPMethod] = {
+      case "GAP_Category" =>
+        val implied = obj.getAsList(classOf[String],"implied").filter(redfilter(name))
+        (ParsedCategory(name,implied),List("implied"))
+
+      case "GAP_Filter" =>
+        val implied = obj.getAsList(classOf[String],"implied").filter(redfilter(name))
+        (ParsedFilter(name,implied),List("implied"))
+
+      case _ => throw new ParseError("Type not yet implemented: " + tp + " in " + obj)
+    }
+    val missings = obj.map.filter(p => !("name" :: "type" :: missing).contains(p._1.value))
+    if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
+    log("Added: " + ret)
+    all ::= ret
+  }
+
+  private def doMethods(j : JSONObject, op : String) : List[ParsedMethod] = {
     val lists : List[JSON] = (0 to 6).map(_.toString + "args").map(j.apply).map(_.getOrElse(throw new ParseError("<i>args not found in method: " + j))).toList
     lists flatMap (js => js match {
       case ar : JSONArray =>
@@ -82,223 +153,176 @@ class GAPReader(log : JSONImporter) {
       case _ => throw new ParseError("<i>args in method not a JSONArray: " + js)
     })
   }
+  private def redfilter(name : String)(s : String) : Boolean = {
+    val reals = reg.inner(s)
+    if (reals == "<<unknown>>" || reals == name) false else true
+  }
 
-  private def doMethod(j : JSONObject, op : String) : GAPMethod = {
-    val comment = j("comment").getOrElse("") match {
+
+  private def doMethod(obj : JSONObject, op : String) : ParsedMethod = {
+    val comment = obj.getAsString("comment")
+    val filters = obj.getAsList(classOf[JSONArray],"filters") map (_.values.toList.map{
       case JSONString(s) => s
-      case _ => throw new ParseError("comment not a JSONString:" + j)
+      case _ => throw new ParseError("GAP_Method: filters is not an Array of Arrays of Strings!")
+    }.filter(redfilter(op)))
+    val rank = obj.getAsInt("rank")
+    ParsedMethod(op,filters,comment,rank)
+  }
+
+  private val dones : mutable.HashMap[ParsedObject,GAPObject] = mutable.HashMap.empty
+  private val donemethods : mutable.HashMap[ParsedMethod,GAPMethod] = mutable.HashMap.empty
+
+  private def getObject(po : ParsedObject) : GAPObject = {
+    val done = dones.get(po)
+    if (done.isDefined) return done.get
+    val deps = logGroup {
+      (po.dependencies map { str => (str, reg.parse(str)) }).toMap
     }
-    val filters = j("filters").getOrElse(throw new ParseError("filters in method not found: " + j)) match {
-      case seq : JSONArray => seq.toList.map(_ match {
-        case ls : JSONArray => ls.toList.map(s => s match {
-          case JSONString(flt) => flt
-          case _ => throw new ParseError("filter " + s + " in method not a JSONString: " + j)
-        })
-        case _ => throw new ParseError("filters in method not a JSONArray: " + j)
+    val ret : GAPObject = po match {
+      case ParsedFilter(name,implied) =>
+        new DeclaredFilter(LocalName(name),implied map deps)
+      case ParsedRepresentation(name,implied) =>
+        new GAPRepresentation(LocalName(name),implied map deps)
+      case ParsedProperty(name,implied,istrue) =>
+        new DeclaredProperty(LocalName(name),implied map deps,istrue)
+      case ParsedAttribute(name,filters) =>
+        new DeclaredAttribute(LocalName(name), filters map deps)
+      case ParsedCategory(name,implied) =>
+        new DeclaredCategory(LocalName(name), implied map deps)
+      case ParsedOperation(name,filters,methods,locations) =>
+        new DeclaredOperation(LocalName(name),filters map (_ map (_ map deps)),locations)
+    }
+    dones += ((po,ret))
+    ret
+  }
+  def getMethod(pm : ParsedMethod) : GAPMethod = {
+    val done = donemethods.get(pm)
+    if (done.isDefined) return done.get
+    val deps = logGroup {
+      (pm.dependencies map { str => (str, reg.parse(str)) }).toMap
+    }
+    val ret = new GAPMethod(reg.parse(pm.op) match {
+      case op : GAPOperation => op
+      case _ => throw new ParseError("Method's Operation not an Operation: " + pm.op)
+    },pm.filters map (_ map deps),pm.comment,pm.rank)
+    donemethods += ((pm,ret))
+    ret
+  }
+
+  /*
+  case class ParsedMethod(op : String, filters : List[List[String]], comment : String, rank : Int)
+case class ParsedOperation(name : String, filters : List[List[List[String]]], methods : List[ParsedMethod], locations : (String,Int))
+  extends ParsedObject
+  */
+
+  object reg {
+    val regTester = """Tester\((\w+)\)""".r
+    val regCatCollection = """CategoryCollections\((\w+)\)""".r
+    val regSetter = """Setter\((\w+)\)""".r
+    val regHas = """Has(\w+)""".r
+    val regSet = """Set(\w+)""".r
+    val regGet = """Get\((\w+)\)""".r
+
+    def inner(s : String) : String = s match {
+      case regTester(r) => inner(r)
+      case regCatCollection(r) => inner(r)
+      case regSetter(r) => inner(r)
+      case regHas(r) => inner(r)
+      case regSet(r) => inner(r)
+      case regGet(r) => inner(r)
+      case _ => s
+    }
+
+    def parse(s : String) : GAPObject = s match {
+      case "IsBool" => IsBool
+      case regTester(a) => Tester(parse(a))
+      case regCatCollection(a) => CategoryCollections(parse(a))
+      case regSetter(a) => Setter(parse(a))
+      case regHas(a) => Has(parse(a) match {
+        case at : GAPAttribute => at
+        case _ => throw new ParseError("Expected GAPAttribute; returned " + parse(a).getClass + ": " + a)
       })
-      case _ => throw new ParseError("filters in method not a JSONArray: " + j)
+      case regSet(a) => GapSet(parse(a))
+      case regGet(a) => parse("Is" + a)
+      case "IS_SSORT_LIST" => parse("IsSortedList")
+      case "IS_NSORT_LIST" => parse("IsNSortedList")
+      case "IS_POSS_LIST" => parse("IsPositionsList")
+      case "LENGTH" => parse("Length")
+      case _ => getObject(all.find(_.name == s).getOrElse(throw new ParseError("GAP Object " + s + " not found")))
     }
-    val rank = j("rank").getOrElse(JSONInt(0)) match {
-      case JSONInt(i) => i
-      case _ => throw new ParseError("rank of method not an Integer: " + j)
-    }
-    GAPMethod(op,filters,comment,rank)
-  }
-
-  private def convert(j : JSON) : Unit = log.toplogGroup {
-    j match {
-      case obj : JSONObject =>
-        if (file.isDefined) {
-          if (counter==export) {
-            counter = 0
-            exportstr::=j
-          } else counter+=1
-        }
-        val name = obj("name") match {
-          case Some(s: JSONString) => s.value
-          case _ => throw new ParseError("Name missing or not a JSONString: " + obj)
-        }
-        reg.regs foreach {r =>
-          name match {
-            case r(s) => return ()
-            case _ =>
-          }
-        }
-        if (name == "IsBool") return ()
-
-        val tp = obj("type") match {
-          case Some(s : JSONString) => s.value
-          case _ => throw new ParseError("Type missing or not a JSONString: " + obj)
-        }
-        if (tp == "GAP_Property") {
-          val impls = Try(obj("implied") match {
-            case Some(l: JSONArray) => l.values.toList map (_ match {
-              case s:JSONString => s.value
-              case _ => throw new ParseError("implied not a List of JSONStrings: " + obj + "\n" + l.values.getClass)
-            })
-            case _ => throw new ParseError("implied missing in " + obj)
-          }).getOrElse(obj("filters") match {
-            case Some(l: JSONArray) => l.values.toList map (_ match {
-              case s:JSONString => s.value
-              case _ => throw new ParseError("filters not a List of JSONStrings: " + obj + "\n" + l.values.getClass)
-            })
-            case _ => throw new ParseError("filters missing in " + obj)
-          })
-          val missings = obj.map.filter(p => p._1.value!="name" && p._1.value!="implied" && p._1.value!="type"
-          && p._1.value!="filters")
-          if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
-          val ret = GAPProperty(name,impls)
-          log.toplog("Added: " + ret)
-          properties      ::= ret
-        }
-        else if (tp == "GAP_Operation") {
-          val filters = obj("filters") match {
-            case Some(l: JSONArray) => l.values.toList.map(_ match {
-              case a: JSONArray => a.values.toList.map(_ match {
-                case b : JSONArray => b.values.toList.map(_ match {
-                  case s : JSONString => s.value
-                  case _ => throw new ParseError("filter illdefined in Operation: " + obj)
-                })
-                case _ => throw new ParseError("filter illdefined in Operation: " + obj)
-              })
-              case _ => throw new ParseError("filter illdefined in Operation: " + obj)
-            })
-            case _ => throw new ParseError("filters missing in " + obj)
-          }
-          val methods = obj("methods") match {
-            case Some(o: JSONObject) => doMethods(o,name)
-            case _ => throw new ParseError("Method in Operation not a JSONObject: " + obj)
-          }
-          val locations = obj("locations") match {
-            case Some(ls : JSONArray) =>
-              val list = ls.values
-              //if (list.length > 1) {} // TODO throw new ParseError("Several loations in Operation: " + name + ": " + list)
-              /*else*/ ls.head match {
-                case o : JSONObject =>
-                  (o("file"),o("line")) match {
-                    case (Some(JSONString(fl)),Some(JSONInt(i))) => (fl,i)
-                    case _ => throw new ParseError("Locations in Operation ill-formed: " + obj)
-                  }
-                case _ => throw new ParseError("Location head in Operation not a JSONObject: " + obj)
-              }
-            case _ => throw new ParseError("Locations in Operation not a JSONArray: " + obj)
-          }
-          val missings = obj.map.filter(p => p._1.value!="name" && p._1.value!="filters" && p._1.value!="type"
-          && p._1.value!="methods" && p._1.value!="locations")
-          if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
-          val ret = GAPOperation(name,filters,methods,locations)
-          log.toplog("Added: " + ret)
-          operations      ::= ret
-        }
-        else if (tp == "GAP_Attribute") {
-          val filters = obj("filters") match {
-            case Some(l: JSONArray) => l.values.toList match {
-              case ls: List[JSONString] => ls.map(_.value)
-              case _ => throw new ParseError("filters not a List of JSONStrings: " + obj + "\n" + l.values.getClass)
-            }
-            case _ => throw new ParseError("filters missing in " + obj)
-          }
-          val missings = obj.map.filter(p => p._1.value!="name" && p._1.value!="filters" && p._1.value!="type")
-          if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
-          val ret = GAPAttribute(name,filters)
-          log.toplog("Added: " + ret)
-          attributes      ::= ret
-        }
-        else if (tp == "GAP_Representation") {
-          val impls = obj("implied") match {
-            case Some(l: JSONArray) => l.values.toList match {
-              case ls: List[JSONString] => ls.map(_.value)
-              case _ => throw new ParseError("implied not a List of JSONStrings: " + obj + "\n" + l.values.getClass)
-            }
-            case _ => throw new ParseError("implied missing in " + obj)
-          }
-          val missings = obj.map.filter(p => p._1.value!="name" && p._1.value!="implied" && p._1.value!="type")
-          if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
-          val ret = GAPRepresentation(name,impls)
-          log.toplog("Added: " + ret)
-          representations      ::= ret
-        }
-        else if (tp == "GAP_Category") {
-          val impls = obj("implied") match {
-            case Some(l: JSONArray) => l.values.toList match {
-              case ls: List[JSONString] => ls.map(_.value)
-              case _ => throw new ParseError("implied not a List of JSONStrings: " + obj + "\n" + l.values.getClass)
-            }
-            case _ => throw new ParseError("implied missing in " + obj)
-          }
-          val missings = obj.map.filter(p => p._1.value!="name" && p._1.value!="implied" && p._1.value!="type")
-          if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
-          val ret = GAPCategory(name,impls)
-          log.toplog("Added: " + ret)
-          categories      ::= ret
-        }
-        else if (tp == "GAP_Filter") {
-          val impls = obj("implied") match {
-            case Some(l: JSONArray) => l.values.toList match {
-              case ls: List[JSONString] => ls.map(_.value)
-              case _ => throw new ParseError("implied not a List of JSONStrings: " + obj + "\n" + l.values.getClass)
-            }
-            case _ => throw new ParseError("implied missing in " + obj)
-          }
-          val missings = obj.map.filter(p => p._1.value!="name" && p._1.value!="implied" && p._1.value!="type")
-          if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
-          val ret = GAPFilter(name,impls)
-          log.toplog("Added: " + ret)
-          filter      ::= ret
-        }
-        else throw new ParseError("Type not yet implemented: " + tp + " in " + obj)
-      case _ => throw new ParseError("Not a JSON Object: " + j)
-    }
-  }
-
-  def apply(json: JSON) {
-    json match {
-      case obj : JSONArray =>
-        obj.values.foreach(p => convert(p))// try { convert(p) } catch {case e:Throwable => println("Failure in " + p + "\n" + e.getMessage)})
-        if (file.isDefined) File.write(file.get,JSONArray(exportstr:_*).toString)
-      case _ => throw new ParseError("Not a JSON Object")
-    }
-  }
-
-  def apply(read:String): Unit = log.toplogGroup {
-    log.toplog("JSON Parsing...")
-
-    val parsed = JSON.parse(read)
-    log.toplog("ToScala...")
-    apply(parsed)
+    val regs = List(regTester,regCatCollection,regSetter,regHas,regSet,regGet)
   }
 
 }
 
-object reg {
-  val regTester = """Tester\((\w+)\)""".r
-  val regCatCollection = """CategoryCollections\((\w+)\)""".r
-  val regSetter = """Setter\((\w+)\)""".r
-  val regHas = """Has(\w+)""".r
-  val regSet = """Set(\w+)""".r
-  val regGet = """Get\((\w+)\)""".r
+sealed abstract class GAPObject {
+  def getInner : DeclaredObject
+  def toTerm : Term
+}
+sealed abstract class DeclaredObject extends GAPObject {
+  val path : GlobalName
+  def getInner = this
+  def toTerm = OMS(path)
+}
+trait GAPFilter extends GAPObject
+class DeclaredFilter(val name : LocalName, val implied : List[GAPObject]) extends DeclaredObject with GAPFilter {
+  lazy val path : GlobalName = ???
+}
+trait GAPCategory extends GAPObject
+class DeclaredCategory(val name : LocalName, val implied : List[GAPObject]) extends DeclaredObject with GAPCategory {
+  lazy val path : GlobalName = ???
+}
+class GAPRepresentation(val name : LocalName, val implied : List[GAPObject]) extends DeclaredObject {
+  lazy val path : GlobalName = ???
+}
+class GAPMethod(val operation: GAPOperation, val filters : List[List[GAPObject]], val comment : String, val rank : Int)
+trait GAPOperation extends GAPObject
+class DeclaredOperation(val name : LocalName, val filters : List[List[List[GAPObject]]],
+                        val locations : (String,Int)) extends DeclaredObject with GAPOperation {
+  private val steps = locations._1.replace("/home/makx/ac/gap/","").split("/").toList//.map(SimpleStep).toList
+  private val subpath : LocalName = if (steps.length>1) LocalName(steps.init.map(SimpleStep)) else LocalName("")
 
-  def parse(s : String)(implicit allobjs : List[GAPObject]) : GAPObject = s match {
-    case regTester(a) => Tester(parse(a))
-    case regCatCollection(a) => CategoryCollections(parse(a))
-    case regSetter(a) => Setter(parse(a))
-    case regHas(a) => Has(parse(a) match {
-      case at : GAPAttribute => at
-      case _ => throw new ParseError("Expected GAPAttribute; returned " + parse(a).getClass + ": " + a)
-    })
-    case regSet(a) => GapSet(parse(a))
-    case regGet(a) => parse("Is" + a)
-    case "IS_SSORT_LIST" => parse("IsSortedList")
-    case "IS_NSORT_LIST" => parse("IsNSortedList")
-    case "IS_POSS_LIST" => parse("IsPositionsList")
-    case "LENGTH" => parse("Length")
-    case _ => allobjs.find(_.namestr == s).getOrElse(throw new ParseError("GAPObject " + s + " not found!"))
-
+  val parent : MPath = {if (subpath != LocalName("")) GAP._base / subpath else GAP._base } ? {
+    if (steps.nonEmpty) LocalName(steps.last.split("\\.").toList.head) else
+      throw new ParseError("No theory name deducible from " + name)
   }
+  val path = parent ? name
 
-  val regs = List(regTester,regCatCollection,regSetter,regHas,regSet,regGet)
+  val arity : Option[Int] = None
+}
+trait GAPAttribute extends GAPObject {
+  val returntype : Option[GAPObject] = None
+}
+class DeclaredAttribute(val name : LocalName, val filters: List[GAPObject]) extends DeclaredObject with GAPAttribute {
+  lazy val path : GlobalName = ???
+}
+trait GAPProperty extends GAPAttribute
+class DeclaredProperty(name : LocalName, implied : List[GAPObject], val istrue : Boolean) extends DeclaredAttribute(name,implied) with GAPProperty
+
+object IsBool extends DeclaredCategory(LocalName("IsBool"),Nil) {
+  override lazy val path = GAP.IsBool
+}
+case class CategoryCollections(obj: GAPObject) extends GAPCategory {
+  def getInner = obj.getInner
+  def toTerm = Apply(GAP.catcollection,obj.toTerm)
+}
+object Setter {
+  def apply(obj : GAPObject) = GapSet(obj)
+}
+case class GapSet(obj: GAPObject) extends GAPOperation {
+  def getInner = obj.getInner
+  def toTerm = Apply(GAP.setter,obj.toTerm)
+}
+object Tester {
+  def apply(obj : GAPObject) = Has(obj)
+}
+case class Has(obj: GAPObject) extends GAPProperty {
+  def getInner = obj.getInner
+  def toTerm = Apply(GAP.has,obj.toTerm)
 }
 
+
+/*
 sealed abstract class GAPObject {
   val namestr: String
   val dependencies: List[String]
@@ -478,3 +502,4 @@ case class Has(obj: GAPObject) extends Property {
   override def toString = "Has " + obj.toString
   def toTerm = Apply(GAP.has,obj.toTerm)
 }
+*/
