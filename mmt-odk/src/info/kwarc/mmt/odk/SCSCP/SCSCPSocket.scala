@@ -1,8 +1,9 @@
 package info.kwarc.mmt.odk.SCSCP
 
 import java.net.Socket
-import OpenMath._
 import java.io.{BufferedReader, InputStreamReader}
+
+import info.kwarc.mmt.odk.OpenMath.{OMXMLEncoding, OMObject}
 
 
 /**
@@ -52,6 +53,9 @@ class SCSCPSocket (val socket: Socket) {
     * @return
     */
   private def read_socket_line : String = {
+    if(! socket.isConnected){
+      throw new SocketDisconnected
+    }
     input.readLine
   }
 
@@ -90,7 +94,7 @@ class SCSCPSocket (val socket: Socket) {
 
         // if we have an end node
         if (inst == end_pi){
-          val node = om_parser.decodeObject(scala.xml.XML.loadString(buffer.toString))
+          val node : OMObject = om_parser(scala.xml.XML.loadString(buffer.toString))
 
           return Some(Right[SCSCPPi, OMObject](node))
         } else if (inst == cancel_pi){
@@ -126,6 +130,10 @@ class SCSCPSocket (val socket: Socket) {
     * @param flush
     */
   private def write_string (s : String, flush : Boolean = true): Unit = {
+    if(! socket.isConnected){
+      throw new SocketDisconnected
+    }
+
     output.write(s.getBytes)
 
     if(flush){
@@ -147,7 +155,7 @@ class SCSCPSocket (val socket: Socket) {
     */
   def write_om(om : OMObject) : Unit = {
     write_pi(start_pi)
-    write_string(om_parser.encode(om).toString)
+    write_string(om_parser(om).toString)
     write_pi(end_pi)
   }
 
@@ -155,3 +163,8 @@ class SCSCPSocket (val socket: Socket) {
   def apply(om : OMObject) : Unit = write_om(om)
   def apply() : Option[Either[SCSCPPi, OMObject]] = try_read_socket
 }
+
+/**
+  * Exception that is thrown when an SCSCP Socket is disconnected and the user tries to read / write from it
+  */
+class SocketDisconnected extends Exception("SCSCPSocket instance is no longer connected")

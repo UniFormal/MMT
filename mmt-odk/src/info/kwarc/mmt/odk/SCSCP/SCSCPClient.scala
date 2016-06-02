@@ -1,6 +1,5 @@
 package info.kwarc.mmt.odk.SCSCP
 
-import OpenMath.OMObject
 import java.net.Socket
 
 
@@ -81,13 +80,22 @@ class SCSCPClient(host : String, port : Int = 26133, versions : List[String] = "
     }
   }
 
+  /**
+    * Quits the session with the SCSCP server
+    * @param reason Reason for quitting. Optional.
+    */
   def quit(reason : Option[String] = None) : Unit = {
+    // build the reson
     val mp : Map[String, String] = reason match {
       case Some(r) => Map(("reason", r))
       case None => Map()
     }
 
+    // send the quit message
     socket(SCSCPPi(Some("quit"), mp))
+
+    // and close the connection
+    socket.socket.close()
   }
 
 
