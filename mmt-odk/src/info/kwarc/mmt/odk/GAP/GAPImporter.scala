@@ -7,7 +7,8 @@ import documents._
 class GAPImporter extends Importer {
   val key = "gap-omdoc"
   def inExts = List("xml", "json")
-  
+  override def inDim = RedirectableDimension("gap")
+
   val docImporter = new GAPDocImporter
   val sysImporter = new JSONImporter
   override val logPrefix = "gapimporter"
