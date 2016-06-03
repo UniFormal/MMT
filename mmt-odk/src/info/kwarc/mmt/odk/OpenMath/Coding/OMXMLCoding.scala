@@ -1,80 +1,14 @@
-package info.kwarc.mmt.odk.OpenMath
+package info.kwarc.mmt.odk.OpenMath.Coding
 
-import scala.xml.{Node, Text, TextBuffer, Elem, Attribute, Null}
+import info.kwarc.mmt.odk.OpenMath._
+import java.net.URI
 
-abstract class OMEncoding[T] {
+import scala.xml.{TextBuffer, _}
 
-  /**
-    * Decodes an OpenMath Object
-    * @param t object to decode
-    * @return
-    */
-  def decode(t : T) : OMAny
-
-  /** decodes an OMNode object **/
-  def decodeNode(t : T) : OMNode
-
-  // DECODE convenience functions
-  // scala type inference for the win
-  private def dnp[S <: OMNode](t : T) : S = decodeNode(t) match { case s : S => s}
-
-  def decodeObject(t : T) : OMElement = dnp(t)
-  def decodeElement(t : T) : OMElement = dnp(t)
-  def decodeReference(t : T) : OMReference = dnp(t)
-  def decodeInteger(t : T) : OMInteger = dnp(t)
-  def decodeFloat(t : T) : OMFloat = dnp(t)
-  def decodeString(t : T) : OMString = dnp(t)
-  def decodeBytes(t : T) : OMBytes = dnp(t)
-  def decodeVariable(t : T) : OMVariable = dnp(t)
-  def decodeSymbol(t : T) : OMSymbol = dnp(t)
-  def decodeDerived(t : T) : OMDerivedElement = dnp(t)
-  def decodeForeign(t : T) : OMForeign = dnp(t)
-  def decodeCompound(t : T) : OMCompoundElement = dnp(t)
-  def decodeApplication(t : T) : OMApplication = dnp(t)
-  def decodeAttribution(t : T) : OMAttribution = dnp(t)
-  def decodeBinding(t : T) : OMBinding = dnp(t)
-  def decodeError (t : T) : OMError = dnp(t)
-
-
-  /**
-    * encodes an OpenMath related object
-    * @param om OpenMath Object to encode
-    * @return
-    */
-  def encode(om : OMAny) : T
-
-  def apply(om : OMAny) = encode(om)
-  def apply[S <: OMAny](t : T) : S = decode(t) match { case s : S => s}
-}
-
-object OMEncoding {
-  /**
-    * Converts a hexadecimal Double representation into a double
-    * @param hex length 16 hex string representing the number
-    * @return
-    */
-  def Hex2Double(hex : String) : Double = {
-    if(hex.length != 16){
-      throw new Exception("The hex must be exactly of length 16")
-    }
-
-    // Don't ask me how this works, its adpated from a really old implementation
-    // see [[fr.inria.openmath.omapi.implementation.XMLParser.parseLongHexInvertEndianess]]
-    val longHexInvertEndianess : Long = (0 to 7).foldRight(0 : Long)({
-      case (i, result) =>
-        val MSNib = Character.digit(hex.charAt(i * 2), 16)
-        val LSNib = Character.digit(hex.charAt(i * 2 + 1), 16)
-        (result << 8) | (MSNib << 4) | LSNib
-    })
-
-    java.lang.Double.longBitsToDouble(longHexInvertEndianess)
-  }
-
-  def Bytes2Hex(bytes : List[Byte]) : String = new sun.misc.BASE64Encoder().encode(bytes.toArray)
-  def Hex2Bytes(hex : String) : List[Byte] = new sun.misc.BASE64Decoder().decodeBuffer(hex).toList
-}
-
-class OMXMLEncoding extends OMEncoding[Node] {
+/**
+  * Represents OpenMath encoded as XML
+  */
+class OMXMLCoding extends OMCoding[Node] {
 
   private val ATTR_ID = "id"
   private val ATTR_HREF = "href"
@@ -101,10 +35,10 @@ class OMXMLEncoding extends OMEncoding[Node] {
 
   private def decodeAttributionPairs( v : Node ) : OMAttributionPairs = v match {
     case <OMATP>{cnodes @ _*}</OMATP> =>
-      val pairs = cnodes.toList.sliding(2, 2).map({case a :: b :: Nil => (decodeSymbol(a), decodeNode(b))}).toList
+      val pairs = cnodes.toList.sliding(2, 2).map({case a :: b :: Nil => (decodeSymbol(a), decodeAnyVal(b))}).toList
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
 
       OMAttributionPairs(pairs, id, cdbase)
   }
@@ -112,7 +46,7 @@ class OMXMLEncoding extends OMEncoding[Node] {
   private def decodeVar(v : Node) : OMVar = v match {
     case <OMV>{_*}</OMV> => OMVarVar(decodeVariable(v))
     case <OMATTR>{pnode}{vnode}</OMATTR> =>
-      var pairs = decodeAttributionPairs(pnode)
+      val pairs = decodeAttributionPairs(pnode)
       val value = decodeVar(vnode)
 
       val id = getOAttr(v, ATTR_ID)
@@ -129,16 +63,16 @@ class OMXMLEncoding extends OMEncoding[Node] {
       OMBindVariables(vars, id)
   }
 
-  def decodeNode(v : Node) : OMNode = OMXMLEncoding.trimNoFinalText(v) match {
+  def decodeAnyVal(v : Node): OMAnyVal = OMXMLCoding.trimNoFinalText(v) match {
     case <OMR></OMR> =>
-      var href = getAttr(v, ATTR_HREF)
+      var href = URI.create(getAttr(v, ATTR_HREF))
 
       val id = getOAttr(v, ATTR_ID)
 
       OMReference(href, id)
     // Basic Elements
     case <OMI>{iNode : Text}</OMI> =>
-      val int = BigInt(iNode.text)
+      val int = BigInt(iNode.text.trim)
 
       val id = getOAttr(v, ATTR_ID)
 
@@ -148,9 +82,9 @@ class OMXMLEncoding extends OMEncoding[Node] {
       val hex = getOAttr(v, ATTR_HEX)
 
       val dbl : Double = if(dec.isDefined){
-        dec.get.toDouble
+        dec.get.trim.toDouble
       } else {
-        OMEncoding.Hex2Double(hex.get)
+        OMCoding.hex2Double(hex.get.trim)
       }
 
       val id = getOAttr(v, ATTR_ID)
@@ -163,7 +97,7 @@ class OMXMLEncoding extends OMEncoding[Node] {
 
       OMString(text, id)
     case <OMB>{bNode : Text}</OMB> =>
-      val bytes = OMEncoding.Hex2Bytes(bNode.text)
+      val bytes = OMCoding.hex2Bytes(bNode.text)
 
       val id = getOAttr(v, ATTR_ID)
 
@@ -173,7 +107,7 @@ class OMXMLEncoding extends OMEncoding[Node] {
       val cd = getAttr(v, ATTR_CD)
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
 
       OMSymbol(name, cd, id, cdbase)
     case <OMV></OMV> =>
@@ -190,70 +124,70 @@ class OMXMLEncoding extends OMEncoding[Node] {
       val encoding = getOAttr(v, ATTR_ENCODING)
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
 
       OMForeign(obj, encoding, id, cdbase)
 
     // Compound elements
     case <OMA>{enode}{anodes @ _*}</OMA> =>
-      val elem = decodeNode(enode)
-      val args = anodes.map(decodeNode).toList
+      val elem = decodeExpression(enode)
+      val args = anodes.map(decodeExpression).toList
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
 
       OMApplication(elem, args, id, cdbase)
     case <OMATTR>{pnode}{onode}</OMATTR> =>
       val pairs = decodeAttributionPairs(pnode)
-      val obj = decodeNode(onode)
+      val obj = decodeExpression(onode)
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
 
       OMAttribution(pairs, obj, id, cdbase)
     case <OMBIND>{anode}{vnode}{cnode}</OMBIND> =>
-      val A = decodeNode(anode)
+      val B = decodeExpression(anode)
       val vars  = decodeBindVariables(vnode)
-      val C = decodeNode(cnode)
+      val C = decodeExpression(cnode)
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
 
-      OMBinding(A, vars, C, id, cdbase)
+      OMBinding(B, vars, C, id, cdbase)
     case <OME>{nnode}{pnodes @ _*}</OME> =>
       val name = decodeSymbol(nnode)
-      val params = pnodes.map(decodeNode).toList
+      val params = pnodes.map(decodeAnyVal).toList
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
 
       OMError(name, params, id, cdbase)
   }
 
   /**
     * Decodes an XML encoded OpenMath object
+    *
     * @param node Node to decode
     * @return any OpenMath related object
     */
-  def decode(node : Node) : OMAny = OMXMLEncoding.trimNoFinalText(node) match {
+  def decode(node : Node) : OMAny = OMXMLCoding.trimNoFinalText(node) match {
 
     // match a top level object in here
     case onode @ <OMOBJ>{enode}</OMOBJ> =>
+      val omel = decodeExpression(enode)
       val version = getOAttr(node, ATTR_VERSION)
-      val omel = decodeElement(enode)
 
       val id = getOAttr(onode, ATTR_ID)
-      val cdbase = getOAttr(onode, ATTR_CDBASE)
+      val cdbase = getOAttr(onode, ATTR_CDBASE).map(URI.create)
 
       OMObject(omel, version, id, cdbase)
 
     // special cases => match specific functionc
     case onode @ <OMATP>{_*}</OMATP> => decodeAttributionPairs(onode)
-    case onode @ <OMATTR>{_*}</OMATTR> => decodeVar(onode)
     case onode @ <OMBVAR>{_*}</OMBVAR> => decodeBindVariables(onode)
 
     // fallback to matching a generic OpenMath NOde
-    case onode => decodeNode(onode)
+    case n => decodeAnyVal(n)
   }
 
   private def encodeAttributionPairs(p : OMAttributionPairs) : Node = p match {
@@ -283,12 +217,12 @@ class OMXMLEncoding extends OMEncoding[Node] {
       )
   }
 
-  private def encodeNode(om : OMNode) = om match {
+  private def encodeNode(om: OMAnyVal) = om match {
     case OMReference(href, id) =>
       setAttr(
         <OMR></OMR>,
 
-        ATTR_HREF, href,
+        ATTR_HREF, href.toString,
 
         ATTR_ID, id orNull
       )
@@ -315,7 +249,7 @@ class OMXMLEncoding extends OMEncoding[Node] {
       )
     case OMBytes(bytes, id) =>
       setAttr(
-        <OMB>{OMEncoding.Bytes2Hex(bytes)}</OMB>,
+        <OMB>{OMCoding.bytes2Hex(bytes)}</OMB>,
 
         ATTR_ID, id orNull
       )
@@ -327,7 +261,7 @@ class OMXMLEncoding extends OMEncoding[Node] {
         ATTR_CD, cd,
 
         ATTR_ID, id orNull,
-        ATTR_CDBASE, cdbase orNull
+        ATTR_CDBASE, cdbase.map(_.toString) orNull
       )
     case OMVariable(name, id) =>
       setAttr(
@@ -350,7 +284,7 @@ class OMXMLEncoding extends OMEncoding[Node] {
         ATTR_ENCODING, encoding orNull,
 
         ATTR_ID, id orNull,
-        ATTR_CDBASE, cdbase orNull
+        ATTR_CDBASE, cdbase.map(_.toString) orNull
       )
 
     // Compound elements
@@ -361,7 +295,7 @@ class OMXMLEncoding extends OMEncoding[Node] {
         </OMA>,
 
         ATTR_ID, id orNull,
-        ATTR_CDBASE, cdbase orNull
+        ATTR_CDBASE, cdbase.map(_.toString) orNull
       )
     case OMAttribution(pairs, obj, id, cdbase) =>
       setAttr(
@@ -370,7 +304,7 @@ class OMXMLEncoding extends OMEncoding[Node] {
         </OMATTR>,
 
         ATTR_ID, id orNull,
-        ATTR_CDBASE, cdbase orNull
+        ATTR_CDBASE, cdbase.map(_.toString) orNull
       )
     case OMBinding(a, vars, c, id, cdbase) =>
       setAttr(
@@ -379,7 +313,7 @@ class OMXMLEncoding extends OMEncoding[Node] {
         </OMBIND>,
 
         ATTR_ID, id orNull,
-        ATTR_CDBASE, cdbase orNull
+        ATTR_CDBASE, cdbase.map(_.toString) orNull
       )
     case OMError(name, params, id, cdbase) =>
       setAttr(
@@ -388,12 +322,13 @@ class OMXMLEncoding extends OMEncoding[Node] {
         </OME>,
 
         ATTR_ID, id orNull,
-        ATTR_CDBASE, cdbase orNull
+        ATTR_CDBASE, cdbase.map(_.toString) orNull
       )
   }
 
   /**
     * Encodes an OpenMath object as XML
+    *
     * @param om OpenMath Object to encode
     * @return
     */
@@ -408,7 +343,7 @@ class OMXMLEncoding extends OMEncoding[Node] {
         ATTR_VERSION, version orNull,
 
         ATTR_ID, id orNull,
-        ATTR_CDBASE, cdbase orNull
+        ATTR_CDBASE, cdbase.map(_.toString) orNull
       )
 
     // special cases => match specific functionc
@@ -417,11 +352,11 @@ class OMXMLEncoding extends OMEncoding[Node] {
     case b : OMBindVariables => encodeBindVariables(b)
 
     // fallback to matching a generic OpenMath NOde
-    case n : OMNode => encodeNode(n)
+    case n: OMAnyVal => encodeNode(n)
   }
 }
 
-object OMXMLEncoding {
+object OMXMLCoding {
   /**
     * Like [[scala.xml.Utility.trim]] except that it leaves element with ONLY TEXT in them untouched
     */

@@ -1,6 +1,6 @@
-package info.kwarc.mmt.odk.SCSCP
+package info.kwarc.mmt.odk.SCSCP.Lowlevel
 
-import scala.xml.{Attribute, Text, Null}
+import scala.xml.{Attribute, Null, Text}
 
 /**
   * Represents a single XML processing instruction
