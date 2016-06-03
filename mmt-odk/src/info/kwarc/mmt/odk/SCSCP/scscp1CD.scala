@@ -1,7 +1,14 @@
 package info.kwarc.mmt.odk.SCSCP
 
+import info.kwarc.mmt.odk.OpenMath.OMSymbol
+
 
 object scscp1CD {
+  /* The name of the cd itself */
+  def apply(name : String) = {
+    OMSymbol(name, "scscp1CD", None, None)
+  }
+
   /* Main Messages */
   val procedure_call = "procedure_call"
   val procedure_completed = "procedure_completed"

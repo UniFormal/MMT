@@ -8,70 +8,44 @@ import info.kwarc.mmt.odk.OpenMath.{OMXMLEncoding, OMObject}
 
 /**
   * Represents a socket that can be used for SCSP communication
+  *
   * @param socket Underlying socket object to use
   */
 class SCSCPSocket (val socket: Socket) {
 
-  /**
-    * A parser to read / write OpenMath XML
-    */
-  private val om_parser = new OMXMLEncoding()
+  // Coder
+  private val coder = new OMXMLEncoding()
 
-
-  /**
-    * Processing instruction used to indicate the start of an OpenMath Element
-    */
-  private val start_pi = SCSCPPi(Some("start"), Map())
-
-  /**
-    * Processing instruction used to indicate the end of an OpenMath Element
-    */
-  private val end_pi = SCSCPPi(Some("end"), Map())
-
-  /**
-    * Processing instruction used to indicate the cancellation of an OpenMath Element
-    */
-  private val cancel_pi = SCSCPPi(Some("cancel"), Map())
-
-  /**
-    * Processing instruction to indicate the quitting of the server / client
-    */
-  private val quit_pi = SCSCPPi(Some("quit"), Map())
-
-  /**
-    * Input stream
-    */
+  // INPUT / OUTPUT Streams
   private val input = new BufferedReader(new InputStreamReader(socket.getInputStream, "UTF-8"))
-
-  /**
-    * Output Stream
-    */
   private val output = socket.getOutputStream
 
   /**
     * Waits and reads a single line from the input
+    *
     * @return
     */
   private def read_socket_line : String = {
     if(! socket.isConnected){
-      throw new SocketDisconnected
+      throw new ProtocolError("Unable to read from the socket")
     }
     input.readLine
   }
 
 
   /**
-    * Tries to read either a processing instruction or an OMObject
-    * from the socket.
+    * Reads the next object from this socket or returns None.
+    * Never throws exceptions.
+    *
     * @return
     */
-  def try_read_socket : Option[Either[SCSCPPi, OMObject]] = {
+  private def read : Option[Either[SCSCPPi, OMObject]] = {
     try {
       // read the processing instruction
       val inst = SCSCPPi(read_socket_line)
 
       // for the start instruction, continue
-      if(inst != start_pi){
+      if(inst != SCSCPSocket.START_INST){
         return Some(Left[SCSCPPi, OMObject](inst))
       }
     } catch {
@@ -93,11 +67,11 @@ class SCSCPSocket (val socket: Socket) {
         val inst = SCSCPPi(line)
 
         // if we have an end node
-        if (inst == end_pi){
-          val node : OMObject = om_parser(scala.xml.XML.loadString(buffer.toString))
+        if (inst == SCSCPSocket.END_INST){
+          val node : OMObject = coder(scala.xml.XML.loadString(buffer.toString))
 
           return Some(Right[SCSCPPi, OMObject](node))
-        } else if (inst == cancel_pi){
+        } else if (inst == SCSCPSocket.CANCEL_INST){
 
           // we cancelled the object
           return None
@@ -113,25 +87,13 @@ class SCSCPSocket (val socket: Socket) {
   }
 
   /**
-    * Reads a processing instruction from the socket or throws an exception.
-    * @return
-    */
-  def read_pi : SCSCPPi = try_read_socket match {case Some(Left(a)) => a}
-
-  /**
-    * Reads an OpenMath element from the socket or throws an exception.
-    * @return
-    */
-  def read_om = try_read_socket match {case Some(Right(a)) => a}
-
-  /**
-    * Writes a string to the socket
+    * Writes a String to this socket
     * @param s
     * @param flush
     */
-  private def write_string (s : String, flush : Boolean = true): Unit = {
+  private def write (s : String, flush : Boolean = true): Unit = {
     if(! socket.isConnected){
-      throw new SocketDisconnected
+      throw new ProtocolError("Unable to write to the socket")
     }
 
     output.write(s.getBytes)
@@ -142,29 +104,154 @@ class SCSCPSocket (val socket: Socket) {
   }
 
   /**
-    * Writes a processing instruction to the client
+    * Writes a processing Instruction to this socket
+    *
     * @param pi
     */
-  def write_pi(pi : SCSCPPi) : Unit = {
-    write_string(pi.toString)
+  def provide(pi : SCSCPPi) : Unit = {
+    write(pi.toString)
   }
 
   /**
-    * Writes an OmDoc element to the socket.
+    * Writes an OpenMath Element to this socket
     * @param om
     */
-  def write_om(om : OMObject) : Unit = {
-    write_pi(start_pi)
-    write_string(om_parser(om).toString)
-    write_pi(end_pi)
+  def provide(om : OMObject) : Unit = {
+    provide(SCSCPSocket.START_INST)
+    write(coder(om).toString)
+    provide(SCSCPSocket.END_INST)
   }
 
-  def apply(pi : SCSCPPi) : Unit = write_pi(pi)
-  def apply(om : OMObject) : Unit = write_om(om)
-  def apply() : Option[Either[SCSCPPi, OMObject]] = try_read_socket
+  /**
+    * Reads any processing instruction form the command line or throws
+    * a [[ProtocolError]].
+    * @return the processing instruction being read.
+    */
+  def expect_any_inst() : SCSCPPi = {
+    (try {
+      read
+    } catch {
+      case e: Exception =>
+        throw new ProtocolError("Unable to read from the socket. ")
+    }) match {
+      case None => throw new ProtocolError("Unable to read from the socket. ")
+      case Some(Right(om)) =>
+        throw new ProtocolError("Expected a processing instruction, got an OpenMath block. ")
+      case Some(Left(p)) => p
+    }
+  }
+
+  /**
+    * Reads the exact processing instruction from the command line or throws
+    * a [[ProtocolError]].
+    *
+    * @param pi Processing Instruction to read
+    */
+  def expect_this_inst(pi : SCSCPPi) : Unit = {
+
+    // expect any processing instruction
+    val got = expect_any_inst()
+
+    if(got != pi){
+      throw new ProtocolError("Expected " + pi + ", got " + got)
+    }
+  }
+
+  /**
+    * Reads any processing instruction with the the given key and attributes or
+    * throws a [[ProtocolError]].
+    * @param key Key that is expected in the processing instruction
+    * @param attributes List of attributes that is expected
+    * @return
+    */
+  def expect_any_inst_with(key : Option[String], attributes : String*) : SCSCPPi = {
+
+    // read a processing instruction
+    val got = expect_any_inst()
+
+    if(got.key != key){
+      throw new ProtocolError("Expected a processing instruction with key " + key +
+        ", got a processing instruction with key " + got.key)
+    }
+
+    attributes.foreach({
+      a =>
+        if(!got.attributes.contains(a)){
+          throw new ProtocolError("Expected a processing instruction with attribute " + a)
+        }
+    })
+
+    // return the processing instruction
+    got
+  }
+
+  /**
+    * Reads any OpenMath object from this socket or throws a [[ProtocolError]]
+    */
+  def expect_any_openmath() : OMObject = {
+    (try {
+      read
+    } catch {
+      case e: Exception =>
+        throw new ProtocolError("Unable to read from the socket. ")
+    }) match {
+      case None => throw new ProtocolError("Protocol error: Unable to read from the socket. ")
+      case Some(Left(r)) =>
+        throw new ProtocolError("Expected an OpenMath Block, got a processing instruction. ")
+      case Some(Right(om)) => om
+    }
+  }
+
+  /**
+    * Reads an OpenMath object that can be defined at the given partial the given partial function applies or
+    * @param one PatialFunction to use
+    * @tparam A
+    * @return
+    */
+  def expect_this_openmath[A <: OMObject](one : PartialFunction[OMObject, A]) : A = {
+
+    // read any object
+    val got = expect_any_openmath()
+
+    // try applying the partial function
+    one.lift(got) match {
+      case None =>
+        throw new ProtocolError("OpenMath block does not match expectation")
+      case Some(x) => x
+    }
+  }
+}
+
+object SCSCPSocket {
+  /**
+    * Processing instruction used to indicate the start of an OpenMath Element
+    */
+  val START_INST = SCSCPPi(Some("start"), Map())
+
+  /**
+    * Processing instruction used to indicate the end of an OpenMath Element
+    */
+  val END_INST = SCSCPPi(Some("end"), Map())
+
+  /**
+    * Processing instruction used to indicate the cancellation of an OpenMath Element
+    */
+  val CANCEL_INST = SCSCPPi(Some("cancel"), Map())
+
+  /**
+    * Processing instruction to indicate the quitting of the server / client
+    */
+  val QUIT_INST = SCSCPPi(Some("quit"), Map())
 }
 
 /**
   * Exception that is thrown when an SCSCP Socket is disconnected and the user tries to read / write from it
   */
 class SocketDisconnected extends Exception("SCSCPSocket instance is no longer connected")
+
+/**
+  * Represents an SCSCP Protocol Error
+  *
+  * @param message
+  */
+class ProtocolError(val message : String) extends Exception(message)

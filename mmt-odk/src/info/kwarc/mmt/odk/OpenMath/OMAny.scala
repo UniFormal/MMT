@@ -8,7 +8,26 @@ sealed abstract class OMAny
 /**
   * Shared base class for all stand-alone meanigful OpenMath objects
   */
-sealed abstract class OMNode extends OMAny
+sealed abstract class OMNode extends OMAny {
+
+  private def as[T <: OMNode] : T = this match {case t: T => t}
+
+  def asElement : OMElement = as
+  def asReference : OMReference = as
+  def asInteger : OMInteger = as
+  def asFloat : OMFloat = as
+  def asString : OMString = as
+  def asBytes : OMBytes = as
+  def asVariable : OMVariable = as
+  def asSymbol : OMSymbol = as
+  def asDerived : OMDerivedElement = as
+  def asForeign : OMForeign = as
+  def asCompound : OMCompoundElement = as
+  def asApplication : OMApplication = as
+  def asAttribution : OMAttribution = as
+  def asBinding : OMBinding = as
+  def asError : OMError = as
+}
 
 /**
   * Represents an OpenMath object
@@ -99,7 +118,15 @@ case class OMVariable(name : String, id : Option[String]) extends OMBasicElement
   * @param cdbase CD Base URI
   * @param id Identifier
   */
-case class OMSymbol(name : String, cd : String, id : Option[String], cdbase : Option[String] ) extends OMBasicElement with CommonAttributes with CDBaseAttribute
+case class OMSymbol(name : String, cd : String, id : Option[String], cdbase : Option[String] ) extends OMBasicElement with CommonAttributes with CDBaseAttribute {
+  /**
+    * Checks if this symbol semantically points to the same OMSymbol
+    * @param other
+    */
+  def === (other : OMSymbol): Boolean = {
+    (other.name == name) && (other.cdbase.getOrElse("") + cd == cdbase.getOrElse("") + cd)
+  }
+}
 
 /**
   * Derived OpenMath objects
@@ -132,7 +159,7 @@ sealed abstract class OMCompoundElement extends OMElement
   * @param id Identifier
   * @param cdbase CD Base URI
   */
-case class OMApplication( elem : OMElement, arguments : List[OMElement], id : Option[String], cdbase : Option[String]) extends OMCompoundElement with CompoundAttributes
+case class OMApplication( elem : OMNode, arguments : List[OMNode], id : Option[String], cdbase : Option[String]) extends OMCompoundElement with CompoundAttributes
 
 
 /**
@@ -142,7 +169,7 @@ case class OMApplication( elem : OMElement, arguments : List[OMElement], id : Op
   * @param id Idenfitier
   * @param cdbase CD Base URI
   */
-case class OMAttribution(pairs : OMAttributionPairs, obj : OMElement, id : Option[String], cdbase : Option[String]) extends OMCompoundElement with CompoundAttributes
+case class OMAttribution(pairs : OMAttributionPairs, obj : OMNode, id : Option[String], cdbase : Option[String]) extends OMCompoundElement with CompoundAttributes
 
 /**
   * List of Attribution pairs
@@ -150,7 +177,12 @@ case class OMAttribution(pairs : OMAttributionPairs, obj : OMElement, id : Optio
   * @param id Identifier
   * @param cdbase CD Base URI
   */
-case class OMAttributionPairs(pairs : List[(OMSymbol, OMNode)], id : Option[String], cdbase : Option[String]) extends OMAny with CompoundAttributes
+case class OMAttributionPairs(pairs : List[(OMSymbol, OMNode)], id : Option[String], cdbase : Option[String]) extends OMAny with CompoundAttributes {
+  def apply(key : OMSymbol) : Option[OMNode] = pairs.filter(_._1 === key) match {
+    case Nil => None
+    case h :: _ => Some(h._2)
+  }
+}
 
 
 /**
@@ -188,7 +220,7 @@ case class OMBindVariables(vars : List[OMVar], id : Option[String]) extends OMAn
   * @param id Identifier
   * @param cdbase CD Base URI
   */
-case class OMBinding(A : OMElement, vars: OMBindVariables, C : OMElement, id : Option[String], cdbase : Option[String]) extends OMCompoundElement with CommonAttributes
+case class OMBinding(A : OMNode, vars: OMBindVariables, C : OMNode, id : Option[String], cdbase : Option[String]) extends OMCompoundElement with CommonAttributes
 
 
 /**

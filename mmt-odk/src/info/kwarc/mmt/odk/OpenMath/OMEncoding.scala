@@ -196,8 +196,8 @@ class OMXMLEncoding extends OMEncoding[Node] {
 
     // Compound elements
     case <OMA>{enode}{anodes @ _*}</OMA> =>
-      val elem = decodeElement(enode)
-      val args = anodes.map(decodeElement).toList
+      val elem = decodeNode(enode)
+      val args = anodes.map(decodeNode).toList
 
       val id = getOAttr(v, ATTR_ID)
       val cdbase = getOAttr(v, ATTR_CDBASE)
@@ -205,16 +205,16 @@ class OMXMLEncoding extends OMEncoding[Node] {
       OMApplication(elem, args, id, cdbase)
     case <OMATTR>{pnode}{onode}</OMATTR> =>
       val pairs = decodeAttributionPairs(pnode)
-      val obj = decodeElement(onode)
+      val obj = decodeNode(onode)
 
       val id = getOAttr(v, ATTR_ID)
       val cdbase = getOAttr(v, ATTR_CDBASE)
 
       OMAttribution(pairs, obj, id, cdbase)
     case <OMBIND>{anode}{vnode}{cnode}</OMBIND> =>
-      val A = decodeElement(anode)
+      val A = decodeNode(anode)
       val vars  = decodeBindVariables(vnode)
-      val C = decodeElement(cnode)
+      val C = decodeNode(cnode)
 
       val id = getOAttr(v, ATTR_ID)
       val cdbase = getOAttr(v, ATTR_CDBASE)
