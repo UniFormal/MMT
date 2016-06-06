@@ -5,6 +5,7 @@ import java.net.Socket
 
 import info.kwarc.mmt.odk.OpenMath.Coding.OMXMLCoding
 import info.kwarc.mmt.odk.OpenMath.OMObject
+import info.kwarc.mmt.odk.SCSCP.Lowlevel.Readers.BufferedLineReader
 
 
 /**
@@ -12,13 +13,13 @@ import info.kwarc.mmt.odk.OpenMath.OMObject
   *
   * @param socket Underlying socket object to use
   */
-class SCSCPSocket (val socket: Socket) {
+class SCSCPSocket (val socket: Socket, val encoding : String = "UTF-8") {
 
   // Coder for OpenMath
   private val coder = new OMXMLCoding()
 
   // INPUT / OUTPUT Streams
-  private val input = new BufferedReader(new InputStreamReader(socket.getInputStream, "UTF-8"))
+  private val input = new BufferedLineReader(socket.getInputStream, "UTF-8")
   private val output = socket.getOutputStream
 
 
@@ -33,7 +34,7 @@ class SCSCPSocket (val socket: Socket) {
     if(! socket.isConnected || socket.isClosed){
       throw new ProtocolError("Unable to read from the socket")
     }
-    input.readLine
+    input.readLineBlock
   }
 
   /**
