@@ -15,17 +15,23 @@ object GAP {
   val get = OMS(theory ? "Is")
   val tester = OMS(theory ? "Tester")
   val catcollection = OMS(theory ? "CategoryCollection")
+  val catfamily = OMS(theory ? "CategoryCollection") // TODO
   val setter = OMS(theory ? "Set")
 
   val obj = OMS(theory ? "object")
   val cat = OMS(theory ? "category")
   val filter = OMS(theory ? "filter")
 
-  val IsBool = theory ? "IsBool"
+  def conj(tm1 : GAPFilter, tm2 : GAPFilter) = ApplySpine(OMS(theory ? "filter_and"),tm1.toTerm,tm2.toTerm)
+  def termconj(tm1 : Term, tm2 : Term) = ApplySpine(OMS(theory ? "filter_and"),tm1,tm2)
 
-  def dotp(tm : Term, tp : Term) = ApplySpine(OMS(theory ? "#"),tm,tp)
-  def propfilt(tm : Term) = Apply(OMS(theory ? "propertyFilter"),tm)
-  def catfilt(tm : Term) = Apply(OMS(theory ? "catFilter"),tm)
+  val IsBool = theory ? "IsBool"
+  val IsObject = theory ? "IsObject"
+
+  def dotp(tm : Term, tp : GAPObject) = ApplySpine(OMS(theory ? "#"),tm,Translator.objtotype(tp))
+  def propfilt(tm : GAPProperty) = Apply(OMS(theory ? "propertyFilter"),tm.toTerm)
+  def propfilt(tm : GAPOperation) = Apply(OMS(theory ? "propertyFilter"),tm.toTerm)
+  def catfilt(tm : GAPCategory) = Apply(OMS(theory ? "catFilter"),tm.toTerm)
 }
 
 class Plugin extends frontend.Plugin {

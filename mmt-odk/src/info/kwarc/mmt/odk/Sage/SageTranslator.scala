@@ -1,12 +1,13 @@
 package info.kwarc.mmt.odk.Sage
 
-import info.kwarc.mmt.api.{LocalName, MPath}
+import info.kwarc.mmt.api.{DPath, LocalName, MPath}
 import info.kwarc.mmt.api.archives.BuildTask
-import info.kwarc.mmt.api.documents.{Document, MRef}
+import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects.OMS
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
+import info.kwarc.mmt.api.utils.JSONObject
 
 import scala.collection.mutable
 
@@ -20,23 +21,40 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
   var allaxioms : List[Axiom] = Nil
 
   val theories : mutable.HashMap[String,DeclaredTheory] = mutable.HashMap.empty
-  val categories : mutable.HashMap[String,ParsedCategory] = mutable.HashMap.empty
+  val intcategories : mutable.HashMap[String,ParsedCategory] = mutable.HashMap.empty
+  var missings : List[String] = Nil
+  def categories(s : String) : ParsedCategory = intcategories(s)/* intcategories.getOrElse(s,{
+    missings ::= s
+    ParsedCategory(s,Nil,Nil,Nil,"INTERNAL",JSONObject(Nil))
+  }) */
 
-  val axth = new DeclaredTheory(Sage.docpath,LocalName("Axioms"),Some(Sage.theory))
+  val topdoc = new Document(DPath({Sage._base / "axioms"}.uri.setExtension("omdoc")),root = true)
+  val axth = new DeclaredTheory(Sage._base,LocalName("Axioms"),Some(Sage.theory))
+  controller add topdoc
   controller add axth
-  val doc = new Document(Sage.docpath)
-  doc add MRef(Sage.docpath,axth.path)
+  controller add MRef(topdoc.path,axth.path)
+  val docs : mutable.HashMap[DPath,Document] = mutable.HashMap((Sage.docpath,topdoc))
 
   private def doCategory(cat : ParsedCategory): Unit =
   theories.getOrElse(cat.name, {
     val th = new DeclaredTheory(cat.path.parent, cat.path.name, Some(Sage.theory))
     controller add th
-    controller add PlainInclude(axth.path, th.path)
-    theories += ((cat.name, th))
 
-    cat.implied foreach (s => doCategory(categories(s)))
-    cat.implied foreach (s => controller add PlainInclude(theories(s).path,th.path))
-    val importedaxioms = cat.implied.flatMap(s => categories(s).axioms).distinct
+    val doc = docs.getOrElse(th.parent,{
+      val ndoc = new Document(DPath(th.parent.uri.setExtension("omdoc")),root = true)
+      controller add ndoc
+      //controller add new DRef(topdoc.path,)
+      docs(th.parent) = ndoc
+      ndoc
+    })
+    controller add MRef(doc.path,th.path)
+
+    controller add PlainInclude(axth.path, th.path)
+    theories(cat.name) = th
+
+    cat.includes foreach (s => doCategory(categories(s)))
+    cat.includes foreach (s => controller add PlainInclude(theories(s).path,th.path))
+    val importedaxioms = cat.includes.flatMap(s => categories(s).axioms).distinct
 
     val newaxioms = cat.axioms.filter(!importedaxioms.contains(_))
     newaxioms foreach (ax => {
@@ -44,7 +62,8 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
       controller add c
     })
     // TODO more stuff
-    doc add MRef(Sage.docpath, th.path)
+
+    //controller add MRef(Sage.catdoc, th.path)
   }
   )
 
@@ -53,7 +72,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     ls foreach {
       case pc @ ParsedCategory(name,_,axioms,_,_,_) =>
         allaxioms :::= axioms map Axiom
-        categories += ((name,pc))
+        intcategories += ((name,pc))
     }
     allaxioms = allaxioms.distinct
 
@@ -66,7 +85,9 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
       case cat : ParsedCategory =>
         doCategory(cat)
     }
-
-    index(doc)
+    //index(doc)
+    //index(catdoc)
+    docs.values foreach index
+    missings.distinct foreach println
   }
 }

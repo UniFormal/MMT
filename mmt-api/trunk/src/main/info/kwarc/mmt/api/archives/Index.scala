@@ -69,10 +69,23 @@ abstract class Importer extends TraversingBuildTarget {imp =>
     relFileHandle.close
   }
 
-  /** index a document */
+  /** index a document
+    * @param doc the document to index
+    * @param inPath the path of the input file
+    * The produced narration file is the suffix of the document's path relative to the narration base.
+    */
   private def indexDocument(a: Archive, doc: Document, inPath: FilePath) {
     // write narration file
-    val narrFile = getOutFile(a, inPath)
+    val docPath = doc.path.dropPrefix(DPath(a.narrationBase)) match {
+      case Some(suffix) =>
+        val names = suffix.steps collect {
+          case SimpleStep(s) => s
+          case _ => throw LocalError("document path contains complex step")
+        }
+        FilePath(names)
+      case None => throw LocalError("document path must start with narration base")
+    }
+    val narrFile = getOutFile(a, docPath)
     log("[  -> narration ]     " + narrFile)
     val node = doc.toNode
     xml.writeFile(node, narrFile)

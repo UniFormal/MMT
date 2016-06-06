@@ -82,8 +82,8 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
 }
 
 object JSONObject {
-   implicit def toList(o: JSONObject) = o.map.toList
-   implicit def fromList(l: List[(JSONString,JSON)]) = JSONObject(l)
+   implicit def toList(o: JSONObject) : List[(JSONString,JSON)] = o.map.toList
+   implicit def fromList(l: List[(JSONString,JSON)]) : JSONObject = JSONObject(l)
    def apply(cases: (String,JSON)*): JSONObject = JSONObject(cases.toList map {case (k,v) => (JSONString(k),v)})
 }
 
@@ -112,7 +112,7 @@ object JSON {
       c match {
          case 'n' => parseNull(s)
          case 't'|'f' => parseBoolean(s)
-         case c if c == '-' || c.isDigit => parseNum(s)
+         case nc if nc == '-' || nc.isDigit => parseNum(s)
          case '"' => parseString(s)
          case '{' => parseObject(s)
          case '[' => parseArray(s)

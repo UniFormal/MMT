@@ -12,7 +12,7 @@ case class StringSlice(s: String, from: Int, to: Int) extends java.lang.CharSequ
    def length = to-from
    def subSequence(f: Int, t: Int) = StringSlice(s, from+f,from+t)
    def startsWith(prefix: String) = {
-      prefix.length < length &&
+      prefix.length <= length &&
       s.substring(from, from + prefix.length) == prefix
    }
 }

@@ -12,50 +12,70 @@ import info.kwarc.mmt.lf.{ApplySpine, Arrow, Pi}
 
 import scala.collection.mutable
 
+object Translator {
+  def objtotype(o : GAPObject) : Term = o match {
+    case p : GAPProperty => GAP.propfilt(p)
+    case c : GAPCategory => GAP.catfilt(c)
+    case f : GAPFilter => f.toTerm
+    case p : GAPOperation => GAP.propfilt(p)
+    case _ => throw new ParseError("Neither Filter, Category nor Property: " + o)
+  }
+}
+
 class Translator(controller: Controller, bt: BuildTask, index: Document => Unit, log : GAPJSONImporter) {
 
-  private var theories : mutable.HashMap[MPath, DeclaredTheory] = mutable.HashMap.empty
+  private val theories : mutable.HashMap[MPath, DeclaredTheory] = mutable.HashMap.empty
+  private val docs : mutable.HashMap[DPath, Document] = mutable.HashMap.empty /*((Path.parseD("http://www.gap-system.org/",NamespaceMap.empty),
+  new Document(Path.parseD("http://www.gap-system.org/",NamespaceMap.empty),root = true))) */
 
-  def apply(all : List[GAPObject]) = {
+  def apply(all : List[DeclaredObject]) : Unit = {
+
     log.toplog("Creating Theories...")
-    // all foreach doObject
+    all foreach doObject
 
     log.toplog("Checking...")
     log.toplogGroup {
       val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
         throw GeneralError(s"no mmt checker found")
       }
-      theories foreach (th => checker(th._2)(new CheckingEnvironment(new ErrorLogger(log.reporter), RelationHandler.ignore)))
+ //     theories foreach (th => checker(th._2)(new CheckingEnvironment(new ErrorLogger(controller.report), RelationHandler.ignore)))
     }
-    val dnames = theories.map(t => t._2.parent).toList.distinct
-    val docths = dnames.map(d => (d,theories.collect {case (_,th) if d <= th.path => th}))
-    val docs = docths.map(p => {
-      val doc = new Document(p._1)
-      p._2.foreach(t => doc add MRef(p._1,t.path))
-      doc
-    })
-    docs foreach index
-  }
-
-  private def objtotype(o : GAPObject) : Term = o match {
-    case f : GAPFilter => f.toTerm
-    case p : GAPProperty => GAP.propfilt(p.toTerm)
-    case c : GAPCategory => GAP.catfilt(c.toTerm)
-    case _ => throw new ParseError("Neither Filter, Category nor Property: " + o)
+    docs.values foreach index
   }
 
   private def typeax(f : GAPObject, inputs : List[List[GAPObject]], retob : GAPObject) : Term = {
     val con = Context((1 to inputs.length).map(i => LocalName("x" + i)).map(n => VarDecl(n,Some(GAP.obj),None,None)) :_*)
-    val rettp = GAP.dotp(ApplySpine(f.toTerm,con.map(vd => OMV(vd.name)) :_*), objtotype(retob))
+    val rettp = GAP.dotp(ApplySpine(f.toTerm,con.map(vd => OMV(vd.name)) :_*), retob)
     val realtm = inputs.indices.foldRight[Term](rettp)((i,t) => inputs(i).foldRight[Term](t)((o,tm) =>
-      Arrow(GAP.dotp(OMV(LocalName("x" + {i+1})),objtotype(o)),tm)))
+      Arrow(GAP.dotp(OMV(LocalName("x" + {i+1})),o),tm)))
     Pi(con,realtm)
   }
 
   private var opcounter = 0
 
-  private def doObject(obj : GAPObject) : Unit = {
+  private var dones : List[DeclaredObject] = List(IsBool,IsObject)
+
+  private def doObject(obj : DeclaredObject) : Unit = {
+    if (dones contains obj) return ()
+    if (obj.name.toString == "IsNonTrivial") {
+      print("")
+    }
+    obj.dependencies foreach doObject
+    if (obj.name.toString == "IsNonTrivial") {
+      print("")
+    }
     val cs : List[FinalConstant] = obj match {
+      case df : DefinedFilter =>
+        var consts = List(Constant(OMMOD(df.path.module),df.name,Nil,Some(GAP.filter),Some(df.defi),None))
+        addDependencies(df.path.module,df.dependencies)
+        consts
+
+      case prop : DeclaredProperty =>
+        val filters = prop.filters//(dones)
+        var consts = List(Constant(OMMOD(prop.path.module),prop.name,Nil,Some(doArrow(1)),None,None),
+          Constant(OMMOD(prop.path.module),LocalName(prop.name + "_type"),Nil,Some(typeax(prop,List(filters),IsBool)),None,None))
+        addDependencies(prop.path.module,obj.dependencies)
+        consts
       case a : DeclaredAttribute =>
         val filters = a.filters
         var consts = List(Constant(OMMOD(a.path.module),a.name,Nil,Some(Arrow(GAP.obj,GAP.obj)),None,None))
@@ -65,7 +85,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
             typeax(a,List(filters),a.returntype.get)
           ),None,None)
         }
-        addDependencies(a.path.module,filters.map(_.getInner).distinct)
+        addDependencies(a.path.module,obj.dependencies)
         consts
       case op : DeclaredOperation =>
         opcounter = 0
@@ -82,83 +102,89 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
         })
         */
         val allfilters = filters.flatten.flatten// ::: op.methods.flatMap(_.filters(dones).flatten)
-        addDependencies(op.path.module,allfilters.map(_.getInner).distinct)
+        addDependencies(op.path.module,obj.dependencies)
         consts
       case cat : DeclaredCategory =>
         opcounter = 0
         val filters = cat.implied//(dones)
-        if (cat == IsBool) return ()
+        if (cat == IsBool || cat == IsObject) return ()
         var consts = List(Constant(OMMOD(cat.path.module),cat.name,Nil,Some(GAP.cat),None,None))
         filters foreach (f =>
           {
             consts ::= Constant(OMMOD(cat.path.module),LocalName(cat.name + "_st" + opcounter),Nil,
               Some(Pi(LocalName("x"),GAP.obj,Arrow(
-                GAP.dotp(OMV("x"),GAP.catfilt(cat.toTerm)),
-                GAP.dotp(OMV("x"),objtotype(f))))),None,None
+                GAP.dotp(OMV("x"),cat),
+                GAP.dotp(OMV("x"),f)))),None,None
             )
             opcounter+=1
           })
-        addDependencies(cat.path.module,filters.map(_.getInner).distinct)
+        addDependencies(cat.path.module,obj.dependencies)
         consts
       case filt : DeclaredFilter =>
         opcounter = 0
         val filters = filt.implied//(dones)
+        if (filters.flatMap(_.getInner).exists(o => !dones.contains(o))) filters.flatMap(_.getInner) foreach doObject
         var consts = List(Constant(OMMOD(filt.path.module),filt.name,Nil,Some(GAP.filter),None,None))
         filters foreach (f =>
         {
           consts ::= Constant(OMMOD(filt.path.module),LocalName(filt.name + "_st" + opcounter),Nil,
             Some(Pi(LocalName("x"),GAP.obj,Arrow(
-              GAP.dotp(OMV("x"),filt.toTerm),
-              GAP.dotp(OMV("x"),objtotype(f))))),None,None
+              GAP.dotp(OMV("x"),filt),
+              GAP.dotp(OMV("x"),f)))),None,None
           )
           opcounter+=1
         })
-        addDependencies(filt.path.module,filters.map(_.getInner).distinct)
-        consts
-      case prop : DeclaredProperty =>
-        val filters = prop.filters//(dones)
-        var consts = List(Constant(OMMOD(prop.path.module),prop.name,Nil,Some(doArrow(1)),None,None),
-          Constant(OMMOD(prop.path.module),LocalName(prop.name + "_type"),Nil,Some(typeax(prop,List(filters),IsBool)),None,None))
-        addDependencies(prop.path.module,filters.map(_.getInner).distinct)
+        addDependencies(filt.path.module,obj.dependencies)
         consts
       case rep : GAPRepresentation =>
         opcounter = 0
         val filters = rep.implied//(dones)
+        if (filters.flatMap(_.getInner).exists(o => !dones.contains(o))) filters.flatMap(_.getInner) foreach doObject
         var consts = List(Constant(OMMOD(rep.path.module),rep.name,Nil,Some(GAP.filter),None,None))
         filters foreach (f =>
         {
           consts ::= Constant(OMMOD(rep.path.module),LocalName(rep.name + "_st" + opcounter),Nil,
             Some(Pi(LocalName("x"),GAP.obj,Arrow(
-              GAP.dotp(OMV("x"),rep.toTerm),
-              GAP.dotp(OMV("x"),objtotype(f))))),None,None
+              GAP.dotp(OMV("x"),rep),
+              GAP.dotp(OMV("x"),f)))),None,None
           )
           opcounter+=1
         })
-        addDependencies(rep.path.module,filters.map(_.getInner).distinct)
+        addDependencies(rep.path.module,obj.dependencies)
         consts
     }
-    addConstants(cs.reverse)
+    dones ::= obj
+    if (cs.nonEmpty) addConstants(cs.reverse)
   }
 
   private def doArrow(arity : Int) : Term = if (arity == 0) GAP.obj else Arrow(GAP.obj,doArrow(arity - 1))
 
   private def addDependencies(thp : MPath, objs : List[DeclaredObject]): Unit = objs foreach (obj => {
-    if (theories.get(thp).isEmpty) {
-      val th = new DeclaredTheory(thp.parent,thp.name,Some(GAP.theory))
-      theories += ((th.path,th))
-      controller add th
-    }
+    addTheory(thp)
     val th = theories.get(thp).get
     if (!th.getIncludes.contains(obj.path.module)) controller add PlainInclude(obj.path.module,thp)
   })
 
-  private def addConstants(c : List[FinalConstant]) = {
-    if (theories.get(c.head.parent).isEmpty) {
-      val th = new DeclaredTheory(c.head.parent.parent,c.head.parent.name,Some(GAP.theory))
-      theories += ((th.path,th))
-      controller add th
-    }
+  private def addConstants(c : List[FinalConstant]) = if (c.nonEmpty) {
+    addTheory(c.head.parent)
     c foreach controller.add
+  }
+
+  private def addTheory(mp : MPath) =  if (theories.get(mp).isEmpty) {
+    val th = new DeclaredTheory(mp.parent,mp.name,Some(GAP.theory))
+    theories += ((th.path,th))
+    controller add th
+    addtoDoc(mp)
+  }
+
+  private def addtoDoc(mp : MPath) = {
+    val doc = docs.getOrElse(mp.doc,{
+      val ret = new Document(DPath(mp.doc.uri.setExtension("omdoc")), root = true)
+      controller add ret
+      docs(mp.doc) = ret
+      ret
+    })
+    controller add MRef(doc.path,mp)
   }
 
 }

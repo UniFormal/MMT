@@ -14,6 +14,7 @@ import scala.xml.Elem
  *
  * @param path the URI of the document; for toplevel documents, this is a URL
  * @param root true if this does not have a containing document
+ * @param contentAncestor the closest container of this document that is a module (if any)
  * @param nsMap the namespaces declared in this document
  */
 class Document(val path: DPath, val root: Boolean = false, val contentAncestor: Option[Body] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty)

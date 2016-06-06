@@ -13,9 +13,10 @@ case class ParsedCategory(name : String, implied: List[String], axioms: List[Str
     axioms.mkString(",") + "\n  Structure: " + structure.mkString(",") + "\n  Doc: " + doc
 
   private val steps = name.replaceAll("""sage.categories.""","").split("\\.")
-  private val dpath = steps.init.foldLeft(Sage._base)((base,step) => base / step)
+  private val dpath = steps.init.foldLeft(Sage.catdoc)((base,step) => base / step)
   private val tname = LocalName(steps.last)
   val path = dpath ? tname
+  val includes = (implied ::: structure).distinct
 }
 
 class SageImporter extends Importer {
@@ -69,7 +70,6 @@ class SageImporter extends Importer {
     }
     categories foreach(c => log(c.toString))
     log(categories.length + " Objects parsed")
-
     val trans = new SageTranslator(controller,bf,index)
     trans(categories)
     BuildResult.empty

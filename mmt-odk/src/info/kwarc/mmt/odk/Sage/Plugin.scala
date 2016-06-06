@@ -7,10 +7,11 @@ import info.kwarc.mmt.lf.Apply
 
 object Sage {
   val _base = DPath(URI.http colon "www.sagemath.org")
-  val docpath = _base / "content"
+  val docpath : DPath = _base / "content"
   val theory = _base ? "Types"
   val category = theory ? "category"
   val prop = theory ? "prop"
+  val catdoc = docpath / "categories"
   def ded(tm : Term) = Apply(OMS(theory ? "ded"),tm)
 }
 
