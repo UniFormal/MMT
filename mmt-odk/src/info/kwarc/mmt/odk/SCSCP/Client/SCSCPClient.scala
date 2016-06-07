@@ -2,29 +2,31 @@ package info.kwarc.mmt.odk.SCSCP.Client
 
 import java.net.Socket
 
-import info.kwarc.mmt.odk.OpenMath.{OMApplication, OMExpression, OMSymbol}
+import info.kwarc.mmt.odk.OpenMath.{OMApplication, OMExpression, OMObject, OMSymbol}
 import info.kwarc.mmt.odk.SCSCP.CD.scscp2
-import info.kwarc.mmt.odk.SCSCP.Lowlevel.{ProtocolError, SCSCPPi, SCSCPSocket}
-import info.kwarc.mmt.odk.SCSCP.Protocol.{SCSCPCall, SCSCPResult, SCSCPCallArguments, SCSCPReturnObject}
-import info.kwarc.mmt.odk.SCSCP._
+import info.kwarc.mmt.odk.SCSCP.Lowlevel.Readers.SCSCPReader
+import info.kwarc.mmt.odk.SCSCP.Lowlevel.SCSCPPi
+import info.kwarc.mmt.odk.SCSCP.Lowlevel.Writers.SCSCPWriter
+import info.kwarc.mmt.odk.SCSCP.Protocol.{SCSCPCall, SCSCPCallArguments, SCSCPResult, SCSCPReturnObject}
+
+import scala.collection.mutable
 
 /**
-  * Implement an Symbolic Computation Software Composability Protocol Client
+  * Represents a client to an SCSCP
   *
-  * @param host Hostname of server to connect to
-  * @param port Port number to connect to. Defaults to 26133.
-  * @param versions Version(s) to be used by this SCSCP client. Will be prioritised in order.
+  * @param socket
+  * @param encoding
   */
-class SCSCPClient(host : String, port : Int = SCSCPClient.default_port, versions : List[String] = "1.3" :: Nil) {
+class SCSCPClient(socket : Socket, encoding : String = "UTF-8"){
 
-  //
-  // INITIALISATION
-  //
+  private final val INFO_MESSAGE : String = "info"
+  private final val QUIT_MESSAGE_KEY : String = "quit"
+  private final val QUIT_REASON_KEY : String = "reason"
+  private final val VERSIONS : List[String] = "1.3" :: Nil
 
-  /**
-    * The underlying SCSCPSocket used by this SCSCPClient.
-    */
-  private val socket : SCSCPSocket = new SCSCPSocket(new Socket(host, port))
+  // create reader and writer instances
+  val reader : SCSCPReader = new SCSCPReader(socket.getInputStream, encoding)
+  val writer : SCSCPWriter = new SCSCPWriter(socket.getOutputStream, encoding)
 
   /**
     * Connection code
@@ -32,40 +34,170 @@ class SCSCPClient(host : String, port : Int = SCSCPClient.default_port, versions
   val (service_name : String, service_version : String, service_id : String, scscp_version : String) =
   {
     // expect a processing instruction with none
-    val vpi = socket.expectAnyInstWith(None, "service_name", "service_version", "service_id")
+    val vpi = reader.getBlock match {
+      case Left(pi: SCSCPPi) => pi
+      case Right(_) => throw new ProtocolError("Excpected a processing instruction, got an OpenMathObject")
+    }
 
     //find the supported server versions
     val server_versions = vpi("scscp_versions").split(" ")
 
     // and select the one we can use or quit
-    val used_version = versions.filter(server_versions.contains(_)) match {
+    val used_version = VERSIONS.filter(server_versions.contains(_)) match {
       case Nil =>
-        quit(Some("version not supported"))
-        throw new ProtocolError("Server does not support SCSCP version")
+        quit(Some("This client only supports version 1.3"))
+        throw new ProtocolError("Server does not support SCSCP version 1.3, exiting")
       case h :: _ => h
     }
 
     // make a PI for the version
     val version_pi = SCSCPPi(Map(("version", used_version)))
 
-    // send it an expect it back
-    socket.write(version_pi)
-    socket.expectThisInst(version_pi)
+    // send a version
+    writer.write(version_pi)
+
+    // and expect it back
+    reader.getBlock match {
+      case Left(pi) => null
+      case _ => throw new ProtocolError("Server did not echo back the SCSCP version")
+    }
 
     // return the service name + version + id
     (vpi("service_name"), vpi("service_version"), vpi("service_id"), used_version)
   }
 
+
+  private var hasQuit = false
+
   /**
-    * Checks if this socket is still connected
+    * Checks if this SCSCPClient is still connected to the server
     *
     * @return
     */
-  def isConnected : Boolean = socket.socket.isConnected && !socket.socket.isClosed
+  def connected = socket.isConnected && !hasQuit
 
-  //
-  // BASIC FUNCTIONALITY
-  //
+
+  // The list information messages
+  private val info : mutable.Queue[String] = new mutable.Queue[String]
+
+  // list of cached results
+  private val results : mutable.Map[String, SCSCPResult] = mutable.Map()
+
+  /**
+    * Gets all information messages
+    *
+    * @return
+    */
+  def getInfoMessages : List[String] = info.toList
+
+  /**
+    * Protected function that gets called on information messages
+    *
+    * @param message
+    */
+  protected def onInfo(message : String) = {}
+
+  /**
+    * Protected function that gets called on Quit messages
+    *
+    * @param reason
+    */
+  protected def onQuit(reason : Option[String]) = {}
+
+  /**
+    * Handles a processing instruction
+    *
+    * @param pi
+    */
+  private def handle(pi : SCSCPPi) : Unit = {
+
+    // read info messages
+    if(pi.attributes.contains(INFO_MESSAGE)) {
+      val msg = pi(INFO_MESSAGE)
+      info.enqueue(msg)
+      onInfo(msg)
+    } else if (pi.key.contains(QUIT_MESSAGE_KEY)){
+      val reason = pi.attributes.lift(QUIT_REASON_KEY)
+      hasQuit = true
+      onQuit(reason)
+    } else {
+      throw new ProtocolError("Unknown Processing Ins")
+    }
+  }
+
+  private def handle(obj : OMObject) : Unit = {
+
+    // parse a result from the OMObject
+    val result = try {
+      SCSCPResult(obj)
+    } catch {
+      case e : Exception => throw new ProtocolError("Unable to parse OpenMath")
+    }
+
+    // store it in the result map
+    results(result.call_id) = result
+  }
+
+  /**
+    * Handles all items available locally
+    */
+  private def handleAll() : Unit = {
+    // read data
+    var hasData = true
+
+    while(hasData){
+      reader.get() match {
+        case Some(a) => handle(a)
+        case None =>
+          hasData = false
+      }
+    }
+
+  }
+
+  /**
+    * Handles an incoming messages
+    *
+    * @param message Message to handle
+    */
+  private def handle(message : Either[SCSCPPi,OMObject]) : Unit = message match {
+    case Left(pi : SCSCPPi) => handle(pi)
+    case Right(obj : OMObject) => handle(obj)
+  }
+
+  /**
+    * Gets a result for the given message it it is available
+    *
+    * @param call_id
+    * @return
+    */
+  def getResult(call_id : String) : Option[SCSCPResult] = {
+    // read all
+    handleAll()
+
+    // and return if it is available
+    results.lift(call_id)
+  }
+
+  /**
+    * Gets
+    *
+    * @param call_id
+    * @return
+    */
+  def fetchResult(call_id : String) : SCSCPResult = {
+
+    // handle everything
+    handleAll()
+
+    // while you don't have it get the next one
+    while(!results.contains(call_id)){
+      handle(reader.getBlock)
+    }
+
+    // and return it
+    results(call_id)
+  }
 
   /**
     * Quits the session with the SCSCP server
@@ -73,17 +205,17 @@ class SCSCPClient(host : String, port : Int = SCSCPClient.default_port, versions
     * @param reason Reason for quitting. Optional.
     */
   def quit(reason : Option[String] = None) : Unit = {
-    // build the reson
+    // build the reason
     val mp : Map[String, String] = reason match {
       case Some(r) => Map(("reason", r))
       case None => Map()
     }
-
-    // send the quit message
-    socket.write(SCSCPPi(Some("quit"), mp))
+    // send the quit message and notify
+    writer.write(SCSCPPi(Some("quit"), mp))
+    onQuit(reason)
 
     // and close the connection
-    socket.socket.close()
+    socket.close()
   }
 
   /**
@@ -92,99 +224,8 @@ class SCSCPClient(host : String, port : Int = SCSCPClient.default_port, versions
     * @param message Message to send
     */
   def info (message : String): Unit = {
-    socket.write(SCSCPPi(None, Map(("info", message))))
+    writer.write(SCSCPPi(None, Map(("info", message))))
   }
-
-
-  //
-  // INTERNAL STATE VARIABLES
-  //
-
-  /**
-    * A list of results from the server
-    */
-  private val results : scala.collection.mutable.Map[String, SCSCPResult] = scala.collection.mutable.Map()
-
-  /**
-    * A list of information messages from the server
-    */
-  private val infos : scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer()
-
-
-  //
-  // UPDATING INTERNAL STATE
-  //
-
-  /**
-    * Fetches the next item from the internal socket
-    * and adds it to the internal Queue
-    */
-  def fetch() : Unit = {
-    socket.read match {
-      // in case of an info message
-      case Left(SCSCPPi(None, a)) =>
-        if(a.contains("info")){
-          infos += a("info")
-        }
-      // in case of a quit message
-      case Left(q @ SCSCPPi(Some("quit"), _)) =>
-        if(q.attributes.contains("reason")) {
-          throw new ProtocolError("Unable to read from Server: Server has quit: " + q.attributes("reason"))
-        } else {
-          throw new ProtocolError("Unable to read from Server: Server has quit. ")
-        }
-
-      case Left(_) =>
-        throw new ProtocolError("Unknown processing instruction")
-
-      // everything else is a result
-      case Right(omobj) =>
-        val result = SCSCPResult(omobj)
-        results(result.call_id) = result
-    }
-  }
-
-  //
-  // READING INTERNAL STATE
-  //
-
-  /**
-    * Gets the list of information messages received by this Client.
-    *
-    * @return
-    */
-  def info : List[String] = infos.toList
-
-  /**
-    * Tries to get the result with the given id
-    *
-    * @return
-    */
-  def get(call_id : String) : Option[SCSCPResult] = results.lift(call_id)
-
-  /**
-    * Fetches the result with the given id. Blocks until the result is available.
-    *
-    * @param call_id Id of Call to fetch
-    * @return
-    */
-  def fetch(call_id : String) : SCSCPResult = {
-    while(true) {
-      get(call_id) match {
-        case None => fetch()
-        case Some(r) => return r
-      }
-    }
-
-    throw new IllegalStateException("Exited a non-breaking while(true) loop")
-  }
-
-
-  //
-  // MAKING PROCEDURE CALLS
-  //
-
-
 
   /**
     * Generates a new Call Id to be used with this SCSCPClient
@@ -215,7 +256,7 @@ class SCSCPClient(host : String, port : Int = SCSCPClient.default_port, versions
     val call_id = req.arguments.call_id
 
     // Send it as an OpenMath object
-    socket.write(req.toOMObject)
+    writer.write(req.toOMObject)
 
     // and return
     new SCSCPComputation(this, call_id)
@@ -234,12 +275,21 @@ class SCSCPClient(host : String, port : Int = SCSCPClient.default_port, versions
   }
 
   /**
+    * Makes a remote procedure call on the server
+    * @param app
+    * @return
+    */
+  def apply(app : OMApplication) : SCSCPComputation = app match {
+    case OMApplication(s : OMSymbol, arguments, _, _) => apply(s, arguments : _*)
+  }
+
+  /**
     * Sends an Interrupt Calls for the given call id
     *
     * @param call_id
     */
   def interrupt(call_id : String) : Unit = {
-    socket.write(SCSCPPi(Some("terminate"), Map(("call_id", call_id))))
+    writer.write(SCSCPPi(Some("terminate"), Map(("call_id", call_id))))
   }
 
 
@@ -261,9 +311,12 @@ class SCSCPClient(host : String, port : Int = SCSCPClient.default_port, versions
         args.map(_.asSymbol)
     }
   }
-
 }
 
-object SCSCPClient {
-  val default_port: Int = 26133
+object SCSCPClient{
+  def apply(host : String, port : Int = 26133, encoding : String = "UTF-8") =
+    new SCSCPClient(new java.net.Socket(host, port), encoding)
 }
+
+
+class ProtocolError(message : String) extends Exception("Protocol Error: "+message)

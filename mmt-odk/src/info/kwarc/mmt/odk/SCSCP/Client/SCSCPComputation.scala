@@ -28,14 +28,14 @@ class SCSCPComputation(client : SCSCPClient, val call_id : String) {
  *
     * @return
     */
-  def get() : Option[SCSCPResult] = client.get(call_id)
+  def get() : Option[SCSCPResult] = client.getResult(call_id)
 
   /**
     * Fetches the result of the computation from the server. Blocks until a result is available.
  *
     * @return
     */
-  def fetch(): SCSCPResult = client.fetch(call_id)
+  def fetch(): SCSCPResult = client.fetchResult(call_id)
 
   def fetchExpression() : OMExpression = {
     fetch() match {

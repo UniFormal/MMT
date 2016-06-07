@@ -11,7 +11,7 @@ object Example {
   def main(args: Array[String]): Unit = {
 
     // create a new client to the SCSCP protocol
-    val client = new SCSCPClient("chrystal.mcs.st-andrews.ac.uk", SCSCPClient.default_port)
+    val client = SCSCPClient("chrystal.mcs.st-andrews.ac.uk")
 
     // get the allowed symbol names
     val heads = client.getAllowedHeads
@@ -19,18 +19,28 @@ object Example {
 
     // this should have the addition symbol
     var additionSymbol = OMSymbol("addition", "scscp_transient_1", None, None)
-    println(heads.contains(additionSymbol))
+    println("Can the server do addition? "+heads.contains(additionSymbol))
 
-    // apply the addition symbol to 1 + 1
-    val computation = client(additionSymbol, OMInteger(1, None), OMInteger(1, None))
+    // method 1 of computating : Make an actual expression and call the client with it
+    val expression = OMApplication(additionSymbol, OMInteger(1, None) :: OMInteger(1, None) :: Nil, None, None)
+    val oneplusonecomputation = client(expression)
 
-    // fetch the result
-    val result = computation.fetch()
-    println(result)
+    // wait while we have results
+    while(oneplusonecomputation.get().isEmpty){
+      // result is empty
+      println("No results yet, waiting another few milliseconds")
+      Thread.sleep(100)
+    }
 
-    // and get this as an actual number (hopefully 2)
-    val oneplusone = result.get.asInteger.int
-    println(oneplusone)
+    // once we have it, turn it into an integer
+    println("1 + 1 = "+oneplusonecomputation.get().get.get.asInteger.int)
+
+    // method two: we give arguments directly
+    val zeropluszerocomputation = client(additionSymbol, OMInteger(0, None), OMInteger(0, None))
+
+    // and we can fetch it (i.e. wait for it to arrive)
+    val result = zeropluszerocomputation.fetch().get.asInteger.int
+    println("0 + 0 = "+result)
 
     // and finally quit the server
     client.quit(Some("Goodbye and thanks for all the fish"))
