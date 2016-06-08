@@ -92,11 +92,14 @@ class Shell {
   /** main method without exception handling */
   private def mainRaw(a: Array[String]) {
      // load additional configurations (default config is loaded by Controller.init)
-     val mainFolder = MMTSystem.runStyle.parentFolder.toList
-     val cfgLocations: List[File] = mainFolder.map(_ / "mmtrc") ::: List(MMTSystem.userConfigFile)
+     val deployFolder = MMTSystem.runStyle match {
+       case rs: MMTSystem.DeployRunStyle => Some(rs.deploy)
+       case _ => None
+     }
+     val cfgLocations: List[File] = deployFolder.toList.map(_ / "mmtrc") ::: List(MMTSystem.userConfigFile)
      cfgLocations foreach loadConfig
      // execute startup arguments
-     mainFolder foreach {f =>
+     deployFolder foreach {f =>
         loadMsl(f / "startup.msl")
      }
 

@@ -4,24 +4,26 @@ import info.kwarc.mmt.api.utils
 
 object MMTSystem {
   /** information about how MMT was run, needed to access resources */
-  sealed abstract class RunStyle {
-    /** the folder containing the jar file or the bin folder */
-    def parentFolder: Option[File]
-  }
-  sealed abstract class NotFatJar extends RunStyle {
-     /** the deploy folder */
-     def deploy: File
+  sealed abstract class RunStyle
+  /** run from expected folder structure */
+  sealed abstract class DeployRunStyle extends RunStyle {
+    /** the deploy folder */
+    def deploy: File
   }
   /** run from self-contained mmt.jar */
-  case class FatJar(jar: File) extends RunStyle {
-     def parentFolder = Some(jar.up) 
+  sealed trait IsFat {
+    def jar: File
   }
+  /** run from installed fat jar */
+  case class FatJar(jar: File) extends DeployRunStyle with IsFat{
+    def deploy = jar.up
+  }
+  /** run from a fat jar that is not part of the expected file structure */
+  case class DownloadedFatJar(jar: File) extends RunStyle with IsFat
   /** run from mmt-api.jar in deploy folder */
-  case class ThinJars(deploy: File) extends NotFatJar {
-    def parentFolder = Some(deploy / "main")
-  }
+  case class ThinJars(deploy: File) extends DeployRunStyle
   /** run from classes in src/mmt-api folder */
-  case class Classes(classFolder: File) extends NotFatJar {
+  case class Classes(classFolder: File) extends DeployRunStyle {
      val root = {
        var src = classFolder.up
        while (!src.isRoot && src.name != "src") src = src.up
@@ -29,14 +31,11 @@ object MMTSystem {
      }
      def deploy = root / "deploy"
      def api = root / "src" / "mmt-api" / "trunk"
-     def parentFolder = Some(api)
      def projectFolder(name: String) = api.up.up / name
      def resources = api / "resources"
    }
-  /** run in unknown way, in particular as part of jedit */
-   case object OtherStyle extends RunStyle {
-     def parentFolder = None
-   }
+   /** run in unknown way, in particular as part of jedit */
+   case object OtherStyle extends RunStyle
   
   /** the [[RunStyle]] of the current run */
   lazy val runStyle = {
@@ -46,9 +45,12 @@ object MMTSystem {
      else {
        val classFolder = File(location.getPath)
        if (classFolder.isFile) {
-         if (classFolder.name == "mmt.jar")
-           FatJar(classFolder)
-         else
+         if (classFolder.name == "mmt.jar") {
+           if (classFolder.up.name == "deploy")
+              FatJar(classFolder)
+           else
+              DownloadedFatJar(classFolder)
+         } else
            ThinJars(classFolder.up.up)
       } else {
          Classes(classFolder)
@@ -68,7 +70,7 @@ object MMTSystem {
    /** retrieves a resource from the jar or the resource folder depending on the [[RunStyle]], may be null */ 
    def getResource(path: String): java.io.InputStream = {
       runStyle match {
-        case _:FatJar | _:ThinJars | OtherStyle =>
+        case _:IsFat | _:ThinJars | OtherStyle =>
           getClass.getResourceAsStream(path) // the file inside the JAR
         case rs: Classes =>
           val file = rs.resources / path
@@ -78,5 +80,5 @@ object MMTSystem {
              null
       }
    }
-   def getResourceAsString(path: String): String = scala.io.Source.fromInputStream(getResource(path)).getLines.mkString("\n")
+   def getResourceAsString(path: String): String = utils.readFullStream(getResource(path))
 }

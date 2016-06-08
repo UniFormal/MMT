@@ -55,8 +55,8 @@ class Setup extends ShellExtension("jeditsetup") {
     val rl = MMTSystem.runStyle
     def getResource(path: String): String = {
       rl match {
-        case _: FatJar | OtherStyle => MMTSystem.getResourceAsString(path)
-        case s: NotFatJar => File.read(s.deploy.up / "src" / "jEdit-mmt" / "src" / "resources" / path)
+        case _: IsFat | OtherStyle => MMTSystem.getResourceAsString(path)
+        case s: DeployRunStyle => File.read(s.deploy.up / "src" / "jEdit-mmt" / "src" / "resources" / path)
       }
     }
     def getPluginResource(f: List[String]): String = getResource("/plugin/" + f.mkString("/"))
@@ -94,9 +94,9 @@ class Setup extends ShellExtension("jeditsetup") {
     (jedit / "jars").mkdirs()
     if (install) {
       rl match {
-        case FatJar(f) =>
-          copyFrom(f, Nil, List("jars", "MMTPlugin.jar"))
-        case nf: NotFatJar =>
+        case rs: IsFat =>
+          copyFrom(rs.jar, Nil, List("jars", "MMTPlugin.jar"))
+        case nf: DeployRunStyle =>
           if (fat)
             copyFrom(nf.deploy, List("mmt.jar"), List("jars", "MMTPlugin.jar"))
           else

@@ -63,10 +63,12 @@ def commonSettings(nameStr: String) = Seq(
   deploy <<= deployPackage("main/" + nameStr + ".jar"),
   test in assembly := {},
   assemblyMergeStrategy in assembly := {
-    case PathList("rootdoc.txt") => MergeStrategy.discard
-    case x =>
-      val oldStrategy = (assemblyMergeStrategy in assembly).value
-      oldStrategy(x)
+    case PathList("rootdoc.txt") => MergeStrategy.discard // 2 versions from from scala jars
+	case PathList("META-INF","MANIFEST.MF") => MergeStrategy.discard // should never be merged anyway
+    case x => MergeStrategy.singleOrError // work around weird behavior of default strategy, which renames files for no apparent reason
+	/*case x => 
+	  val oldStrategy = (assemblyMergeStrategy in assembly).value
+      oldStrategy(x)*/
   }
 )
 
@@ -88,14 +90,14 @@ lazy val api = (project in file("mmt-api/trunk")).
   dependsOn(tiscaf).
   settings(commonSettings("mmt-api"): _*).
   settings(
-    scalaSource in Compile := baseDirectory.value / "src/main",
-    scalaSource in Test := baseDirectory.value / "src/notests",
+    scalaSource in Compile := baseDirectory.value / "src" / "main",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
       "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
       "org.scala-lang.modules" %% "scala-xml" % "1.0.4")
   )
+  
 
 lazy val lfcatalog = (project in file("lfcatalog/trunk")).
   dependsOn(tiscaf).
@@ -207,7 +209,7 @@ lazy val mmt = (project in file("mmt-exts")).
     mainClass in assembly := Some("info.kwarc.mmt.api.frontend.Run"),
     assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
-      cp filter { j => jeditJars.contains(j.data.getName) }
+      cp filter {j => jeditJars.contains(j.data.getName)}
     },
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(
       prependShellScript = Some(Seq("#!/bin/bash", """exec /usr/bin/java -Xmx2048m -jar "$0" "$@"""")))

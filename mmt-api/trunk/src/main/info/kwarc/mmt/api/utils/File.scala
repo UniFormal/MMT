@@ -287,6 +287,19 @@ object File {
     }
     properties
   }
+  
+  /** copies a file */
+  def copy(from: File, to: File, replace: Boolean): Boolean = {
+    if (!from.exists || (to.exists && !replace)) {
+      false
+    } else {
+      to.getParentFile.mkdirs
+      val opt = if (replace) List(java.nio.file.StandardCopyOption.REPLACE_EXISTING) else Nil
+      java.nio.file.Files.copy(from.toPath, to.toPath, opt:_*)
+      true
+    }
+  }
+
 
   /** implicit conversion Java <-> Scala */
   implicit def scala2Java(file: File): java.io.File = file.toJava

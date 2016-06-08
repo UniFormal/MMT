@@ -17,6 +17,7 @@ object Utils {
    val root = File("..")
    /** MMT deploy directory */
    val deploy = root/"deploy"
+   
    /** MMT jEditPlugin release jars directory */
    val jEditPluginRelease = deploy/"jedit-plugin"/"plugin"/"jars"
    /** These methods are used by the target jedit/install to copy files to the local jEdit installation */

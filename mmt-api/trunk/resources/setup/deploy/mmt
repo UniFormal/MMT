@@ -1,0 +1,3 @@
+#!/bin/bash
+dir="$(dirname $0)"
+java -Xmx2048m -cp "$dir/mmt.jar" info.kwarc.mmt.api.frontend.Run "$@"

@@ -17,4 +17,6 @@ package object utils {
    def repeatString(s: String, n: Int, sep: String = "") = Range(0,n).map(_ => s).mkString(sep)
 
    def insertSep[A](l: List[A], sep: A) = if (l.isEmpty) Nil else l.flatMap(a => List(a,sep)).init
+   
+   def readFullStream(is: java.io.InputStream) = scala.io.Source.fromInputStream(is, "UTF-8").mkString
 }
