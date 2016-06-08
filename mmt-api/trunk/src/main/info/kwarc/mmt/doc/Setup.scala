@@ -8,6 +8,14 @@ import MMTSystem._
 
 /**
  * creates folder structure and a few files for MMT
+ * 
+ * if run without arguments: asks for root folder and creates folders systems/MMT and content/MathHub, installs jEdit plugin if jEdit found
+ * if run with arguments: fine-tuning of systems, content, and jEdit folder
+ * 
+ * if run from downloaded mmt.jar: creates the same folders, copies mmt.jar into systems/MMT/deploy, extracts files from resources/setup
+ * if run in any other way, in particular after cloning and building MMT: creates the same folders, configures sbt
+ * 
+ * In all cases, the MMT folder has the same structure 
  */
 class Setup extends ShellExtension("setup") {
    def helpText = "usage: setup [SYSTEM/FOLDER [CONTENT/FOLDER [JEDIT/SETTINGS/FOLDER]]]" 
