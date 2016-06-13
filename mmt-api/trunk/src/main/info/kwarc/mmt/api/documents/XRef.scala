@@ -23,7 +23,7 @@ class DRef(val parent : DPath, val name: LocalName, val target : DPath) extends 
    def toNode = <dref name={name.toPath} target={target.toPath}/>
 }
 
-/** reference to a [[Module]] */
+/** reference to a [[info.kwarc.mmt.api.modules.Module]] */
 class MRef(val parent : DPath, val name: LocalName, val target : MPath) extends NRef {
    def toNode = <mref name={name.toPath} target={target.toPath}/>
    def nameIsTrivial = name == LocalName(target)
@@ -33,7 +33,7 @@ object MRef {
    def apply(p : DPath, t : MPath) = new MRef(p, LocalName(t), t)
 }
 
-/** reference to a [[Declaration]]} */
+/** reference to a [[info.kwarc.mmt.api.symbols.Declaration]]} */
 class SRef(val parent : DPath, val name: LocalName, val target : GlobalName) extends NRef {
    def toNode = <sref name={name.toPath} target={target.toPath}/>
 }

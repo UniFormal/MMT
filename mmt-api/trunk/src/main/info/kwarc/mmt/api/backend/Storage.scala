@@ -102,7 +102,7 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
   /**
    * load delegates to this method if the requested resource is a folder
    * @param uri the logical URI
-   * @param folder the physical location
+   * @param suffix the physical location
    */
   def loadFromFolder(uri: URI, suffix: List[String])(implicit controller: Controller) {
     val folder = base / suffix
