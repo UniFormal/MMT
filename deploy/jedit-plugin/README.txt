@@ -1,0 +1,1 @@
+See https://svn.kwarc.info/repos/MMT/doc/html/index.html?applications/jedit.html for documentation.

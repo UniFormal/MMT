@@ -1,0 +1,7 @@
+// The file startup.msl, if it exists, is always executed on startup.
+// The following are example commands that are useful here.
+
+log console
+log+ oaf
+
+envvar Twelf "/PATH/TO/TWELF"
