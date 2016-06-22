@@ -6,3 +6,10 @@ target
 bin
 .cache-main
 .cache-tests
+
+# compiled stuff and IntelliJ files
+
+deploy/mmt.jar
+deploy/main/
+.idea
+.idea_modules
