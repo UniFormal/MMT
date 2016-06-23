@@ -157,6 +157,9 @@ class NotationBasedPresenter extends ObjectPresenter {
     */
    def doInferredType(body: => Unit)(implicit pc: PresentationContext) {}
 
+   //TODO imlement this better
+   def doAttributedTerm(t : Term, k : OMID, v : Term)(implicit pc : PresentationContext) = recurse(t)
+
    /** auxiliary type for a continuation function */
    type Cont = () => Unit
    /** called to render a scripted object - an optional decorated by several optional scripts
@@ -707,11 +710,4 @@ class NotationBasedPresenter extends ObjectPresenter {
               default
          }
    }
-
-   //to be overriden by subclasses if needed
-   //TODO imlement this better
-   def doAttributedTerm(t : Term, k : OMID, v : Term)(pc : PresentationContext) = doDefault(t)(pc)
-
-
-
 }

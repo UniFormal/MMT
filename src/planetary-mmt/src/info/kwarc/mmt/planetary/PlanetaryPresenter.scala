@@ -75,11 +75,11 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
      }
    }
 
-   override def doAttributedTerm(t : Term, k : OMID, v : Term)(pc : PresentationContext) = k.path match {
-    case p if p == Narration.path || p == MathMLNarration.path =>
-      doInformal(v,t)(pc : PresentationContext)
+   override def doAttributedTerm(t : Term, k : OMID, v : Term)(implicit pc : PresentationContext) = k.path match {
+    case Narration.path | MathMLNarration.path =>
+      doInformal(v,t)
       1
-    case _ => doDefault(t)(pc)
+    case _ => doDefault(t)
   }
 
   def doInformal(t : Term, tm : Term)(implicit pc : PresentationContext) : Unit = t match {
@@ -89,6 +89,7 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
     }
   }
 
+  // TODO this should override doToplevel and apply should go
   def doInfToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) = o match {
     case OMATTR(t, k, v) if k.path != MathMLNarration.path => //normal html
       val attrs = t.head.map(p => HTMLAttributes.symref -> p.toPath).toList
