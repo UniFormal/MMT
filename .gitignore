@@ -13,3 +13,6 @@ deploy/mmt.jar
 deploy/main/
 .idea
 .idea_modules
+
+# we need to commit jars explicitly
+.jar
