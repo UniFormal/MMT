@@ -15,4 +15,4 @@ deploy/main/
 .idea_modules
 
 # we need to commit jars explicitly
-.jar
+*.jar
