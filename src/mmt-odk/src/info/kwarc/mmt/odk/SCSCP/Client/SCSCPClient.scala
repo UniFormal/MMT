@@ -250,7 +250,7 @@ class SCSCPClient(socket : Socket, encoding : String = "UTF-8"){
     * @param req Request of function to call
     * @return
     */
-  def apply(req : SCSCPCall) : SCSCPComputation = {
+  def apply(req : SCSCPCall) : SCSCPClientComputation = {
 
     // grab the call id
     val call_id = req.arguments.call_id
@@ -259,7 +259,7 @@ class SCSCPClient(socket : Socket, encoding : String = "UTF-8"){
     writer.write(req.toOMObject)
 
     // and return
-    new SCSCPComputation(this, call_id)
+    new SCSCPClientComputation(this, call_id)
   }
 
   /**
@@ -269,17 +269,18 @@ class SCSCPClient(socket : Socket, encoding : String = "UTF-8"){
     * @param parameters Parameters for the procedure call
     * @return
     */
-  def apply(procedure : OMSymbol, parameters: OMExpression*) : SCSCPComputation = {
+  def apply(procedure : OMSymbol, parameters: OMExpression*) : SCSCPClientComputation = {
     val req = new SCSCPCall(procedure, SCSCPCallArguments(newCallId, Some(SCSCPReturnObject), null), parameters : _*)
     apply(req)
   }
 
   /**
     * Makes a remote procedure call on the server
+ *
     * @param app
     * @return
     */
-  def apply(app : OMApplication) : SCSCPComputation = app match {
+  def apply(app : OMApplication): SCSCPClientComputation = app match {
     case OMApplication(s : OMSymbol, arguments, _, _) => apply(s, arguments : _*)
   }
 
