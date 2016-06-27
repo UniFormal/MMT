@@ -4,12 +4,37 @@ import info.kwarc.mmt.api.utils.URI
 /**
   * Class for all OpenMath related objects
   */
-sealed abstract class OMAny
+sealed abstract class OMAny {
+  /**
+    * Substiutes all
+    *
+    * @param uri URI to resolve relative to
+    */
+  def absolutize(uri : URI) : OMAny
+}
+
+object OMAny {
+  /**
+    * Absolutizes a single URI with respect to a CDBase attribute.
+    *
+    * @param base base uri to resolve relative for
+    * @param relative Relative URI to resolve.
+    * @return
+    */
+  def absolutizeURI(base: URI, relative: Option[URI]) = {
+    relative match {
+      case None => base
+      case Some(x) => base.resolve(x)
+    }
+  }
+}
 
 /**
   * Shared Class for OpenMath Expressions + OpenMath Derived Objects
   */
 sealed abstract class OMAnyVal extends OMAny {
+
+  def absolutize(uri : URI) : OMAnyVal
 
   private def as[T <: OMAnyVal] : T = this match {case t: T => t}
 
@@ -38,12 +63,20 @@ sealed abstract class OMAnyVal extends OMAny {
   * @param version OpenMath object version
   * @param cdbase CD Base URI
   */
-case class OMObject(omel: OMExpression, version: Option[String], id : Option[String], cdbase : Option[URI]) extends OMAnyVal with CompoundAttributes
+case class OMObject(omel: OMExpression, version: Option[String], id : Option[String], cdbase : Option[URI]) extends OMAnyVal with CompoundAttributes {
+  def absolutize(uri : URI) : OMObject = {
+    val r = OMAny.absolutizeURI(uri, cdbase)
+
+    OMObject(omel.absolutize(r), version, id, Some(r))
+  }
+}
 
 /**
   * Base class for all OpenMath Expressions (i.e. proper objects according to the specification)
   */
 sealed abstract class OMExpression extends OMAnyVal {
+
+  def absolutize(uri : URI) : OMExpression
 
   /**
     * Applies this OpenMath Expression to a list of other expressions
@@ -65,7 +98,9 @@ sealed abstract class OMExpression extends OMAnyVal {
   * @param href Element that is refered
   * @param id Idenfitier
   */
-case class OMReference(href : URI, id : Option[String]) extends OMExpression with CommonAttributes
+case class OMReference(href : URI, id : Option[String]) extends OMExpression with CommonAttributes {
+  def absolutize(uri : URI) : OMReference = this
+}
 
 
 /**
@@ -81,7 +116,9 @@ sealed trait CDBaseAttribute {
 /**
   * Basic OpenMath objects (section 2.1.1)
   */
-sealed abstract class OMBasicElement extends OMExpression
+sealed abstract class OMBasicElement extends OMExpression {
+  def absolutize(uri : URI) : OMBasicElement
+}
 
 /**
   * trait for OpenMath Objects with common attributes
@@ -99,7 +136,9 @@ sealed trait CommonAttributes {
   * @param int Integer value
   * @param id Identifier
   */
-case class OMInteger(int : BigInt, id : Option[String]) extends OMBasicElement with CommonAttributes
+case class OMInteger(int : BigInt, id : Option[String]) extends OMBasicElement with CommonAttributes {
+  def absolutize(uri : URI) : OMInteger = this
+}
 
 /**
   * An OpenMath Floating Point Number
@@ -107,7 +146,9 @@ case class OMInteger(int : BigInt, id : Option[String]) extends OMBasicElement w
   * @param dbl  Double value
   * @param id Identifier
   */
-case class OMFloat(dbl : Double, id : Option[String]) extends OMBasicElement with CommonAttributes
+case class OMFloat(dbl : Double, id : Option[String]) extends OMBasicElement with CommonAttributes {
+  def absolutize(uri : URI) : OMFloat = this
+}
 
 /**
   * An OpenMath String
@@ -115,7 +156,9 @@ case class OMFloat(dbl : Double, id : Option[String]) extends OMBasicElement wit
   * @param text String
   * @param id Identifier
   */
-case class OMString(text : String, id : Option[String]) extends OMBasicElement with CommonAttributes
+case class OMString(text : String, id : Option[String]) extends OMBasicElement with CommonAttributes {
+  def absolutize(uri : URI) : OMString = this
+}
 
 /**
   * An OpenMath list of bytes
@@ -123,7 +166,9 @@ case class OMString(text : String, id : Option[String]) extends OMBasicElement w
   * @param bytes List of bytes
   * @param id Identifier
   */
-case class OMBytes(bytes : List[Byte], id : Option[String]) extends OMBasicElement with CommonAttributes
+case class OMBytes(bytes : List[Byte], id : Option[String]) extends OMBasicElement with CommonAttributes {
+  def absolutize(uri : URI) : OMBytes = this
+}
 
 /**
   * An OpenMath Symbol
@@ -134,6 +179,13 @@ case class OMBytes(bytes : List[Byte], id : Option[String]) extends OMBasicEleme
   * @param id Identifier
   */
 case class OMSymbol(name : String, cd : String, id : Option[String], cdbase : Option[URI] ) extends OMBasicElement with CommonAttributes with CDBaseAttribute {
+
+  def absolutize(uri : URI) : OMSymbol = {
+    val r = OMAny.absolutizeURI(uri, cdbase)
+
+    OMSymbol(name, cd, id, Some(r))
+  }
+
   /**
     * Checks if this symbol semantically points to the same OMSymbol
     *
@@ -150,12 +202,16 @@ case class OMSymbol(name : String, cd : String, id : Option[String], cdbase : Op
   * @param name Name
   * @param id Identifier
   */
-case class OMVariable(name : String, id : Option[String]) extends OMBasicElement with CommonAttributes
+case class OMVariable(name : String, id : Option[String]) extends OMBasicElement with CommonAttributes {
+  def absolutize(uri : URI) : OMVariable = this
+}
 
 /**
   * Derived OpenMath objects (section 2.1.2)
   */
-sealed abstract class OMDerivedElement extends OMAnyVal
+sealed abstract class OMDerivedElement extends OMAnyVal {
+  def absolutize(uri : URI) : OMDerivedElement
+}
 
 /**
   * An OpenMath Foreign Object
@@ -165,7 +221,18 @@ sealed abstract class OMDerivedElement extends OMAnyVal
   * @param id Identifier
   * @param cdbase CD Base URI
   */
-case class OMForeign(obj : Any, encoding : Option[String], id : Option[String], cdbase : Option[URI]) extends OMDerivedElement with CompoundAttributes
+case class OMForeign(obj : Any, encoding : Option[String], id : Option[String], cdbase : Option[URI]) extends OMDerivedElement with CompoundAttributes {
+  def absolutize(uri : URI) : OMForeign = {
+    val r = OMAny.absolutizeURI(uri, cdbase)
+
+    val mObj = obj match {
+      case a:OMAny => a.absolutize(r)
+      case _ => obj
+    }
+
+    OMForeign(mObj, encoding, id, Some(r))
+  }
+}
 
 /**
   * trait for OpenMath Objects with compund attributes
@@ -185,7 +252,16 @@ sealed abstract class OMCompoundElement extends OMExpression
   * @param id Identifier
   * @param cdbase CD Base URI
   */
-case class OMApplication( elem : OMExpression, arguments : List[OMExpression], id : Option[String], cdbase : Option[URI]) extends OMCompoundElement with CompoundAttributes
+case class OMApplication( elem : OMExpression, arguments : List[OMExpression], id : Option[String], cdbase : Option[URI]) extends OMCompoundElement with CompoundAttributes {
+  def absolutize(uri : URI) : OMApplication = {
+    val r = OMAny.absolutizeURI(uri, cdbase)
+
+    val mElem = elem.absolutize(r)
+    val mArguments = arguments.map(_.absolutize(r))
+
+    OMApplication(mElem, mArguments, id, Some(r))
+  }
+}
 
 
 /**
@@ -196,7 +272,16 @@ case class OMApplication( elem : OMExpression, arguments : List[OMExpression], i
   * @param id     Idenfitier
   * @param cdbase CD Base URI
   */
-case class OMAttribution(pairs: OMAttributionPairs, A: OMExpression, id: Option[String], cdbase: Option[URI]) extends OMCompoundElement with CompoundAttributes
+case class OMAttribution(pairs: OMAttributionPairs, A: OMExpression, id: Option[String], cdbase: Option[URI]) extends OMCompoundElement with CompoundAttributes {
+  def absolutize(uri : URI) : OMAttribution = {
+    val r = OMAny.absolutizeURI(uri, cdbase)
+
+    val mPairs = pairs.absolutize(r)
+    val mA = A.absolutize(r)
+
+    OMAttribution(mPairs, mA, id, Some(r))
+  }
+}
 
 /**
   * List of Attribution pairs
@@ -209,6 +294,16 @@ case class OMAttributionPairs(pairs : List[(OMSymbol, OMAnyVal)], id : Option[St
 
   if(pairs.isEmpty){
     throw new Exception("Malformed OpenMath: OMAttributionPairs must have at least one attributed variable. ")
+  }
+
+  def absolutize(uri : URI) : OMAttributionPairs = {
+    val r = OMAny.absolutizeURI(uri, cdbase)
+
+    val mPairs = pairs.map({
+      case (k, v) => (k.absolutize(r), v.absolutize(r))
+    })
+
+    OMAttributionPairs(mPairs, id, Some(r))
   }
 
   /**
@@ -241,7 +336,17 @@ case class OMAttributionPairs(pairs : List[(OMSymbol, OMAnyVal)], id : Option[St
   * @param id Identifier
   * @param cdbase CD Base URI
   */
-case class OMBinding(B: OMExpression, vars: OMBindVariables, C: OMExpression, id: Option[String], cdbase: Option[URI]) extends OMCompoundElement with CommonAttributes
+case class OMBinding(B: OMExpression, vars: OMBindVariables, C: OMExpression, id: Option[String], cdbase: Option[URI]) extends OMCompoundElement with CommonAttributes {
+  def absolutize(uri : URI) : OMBinding = {
+    val r = OMAny.absolutizeURI(uri, cdbase)
+
+    val mB = B.absolutize(r)
+    val mVars = vars.absolutize(r)
+    val mC = C.absolutize(r)
+
+    OMBinding(mB, mVars, mC, id, Some(r))
+  }
+}
 
 /**
   * Represents a Variable or Attributed Variable
@@ -253,6 +358,8 @@ sealed abstract class OMVar extends OMAny {
     * @return
     */
   def toExpression : OMExpression
+
+  def absolutize(uri : URI) : OMVar
 }
 
 object OMVar {
@@ -277,6 +384,10 @@ object OMVar {
   */
 case class OMVarVar(omv : OMVariable) extends OMVar {
   def toExpression : OMExpression = omv
+
+  def absolutize(uri : URI) : OMVarVar = {
+    OMVarVar(omv.absolutize(uri))
+  }
 }
 
 /**
@@ -288,6 +399,13 @@ case class OMVarVar(omv : OMVariable) extends OMVar {
   */
 case class OMAttVar(pairs: OMAttributionPairs, A : OMVar, id : Option[String]) extends OMVar with CommonAttributes {
   def toExpression : OMExpression = OMAttribution(pairs, A.toExpression, id, None)
+
+  def absolutize(uri : URI) : OMAttVar = {
+    val mPairs = pairs.absolutize(uri)
+    val mA = A.absolutize(uri)
+
+    OMAttVar(mPairs, mA, id)
+  }
 }
 
 /**
@@ -296,7 +414,13 @@ case class OMAttVar(pairs: OMAttributionPairs, A : OMVar, id : Option[String]) e
   * @param vars List of bound variables
   * @param id Identifier
   */
-case class OMBindVariables(vars : List[OMVar], id : Option[String]) extends OMAny with CommonAttributes
+case class OMBindVariables(vars : List[OMVar], id : Option[String]) extends OMAny with CommonAttributes {
+  def absolutize(uri : URI) : OMBindVariables = {
+    val mVars = vars.map(_.absolutize(uri))
+
+    OMBindVariables(mVars, id)
+  }
+}
 
 /**
   * An OpenMath Error
@@ -306,4 +430,14 @@ case class OMBindVariables(vars : List[OMVar], id : Option[String]) extends OMAn
   * @param id Identifier
   * @param cdbase CD Base URI
   */
-case class OMError(name : OMSymbol, params: List[OMAnyVal], id : Option[String], cdbase : Option[URI]) extends OMCompoundElement with CompoundAttributes
+case class OMError(name : OMSymbol, params: List[OMAnyVal], id : Option[String], cdbase : Option[URI]) extends OMCompoundElement with CompoundAttributes {
+  def absolutize(uri : URI) : OMError = {
+
+    val r = OMAny.absolutizeURI(uri, cdbase)
+
+    val mName = name.absolutize(r)
+    val mParams = params.map(_.absolutize(r))
+
+    OMError(mName, mParams, id, Some(r))
+  }
+}
