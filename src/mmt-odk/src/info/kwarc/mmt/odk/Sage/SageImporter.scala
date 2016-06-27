@@ -68,7 +68,7 @@ class SageImporter extends Importer {
         println(msg)
         sys.exit
     }
-    categories foreach(c => log(c.toString))
+    // categories foreach(c => log(c.toString))
     log(categories.length + " Objects parsed")
     val trans = new SageTranslator(controller,bf,index)
     trans(categories)

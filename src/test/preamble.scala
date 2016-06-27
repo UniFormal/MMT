@@ -27,8 +27,12 @@ abstract class Test(archivepath : String,
   def run : Unit
 
   def main(args: Array[String]): Unit = {
+    controller.handleLine("log file /home/raupi/lmh/mmtlog.txt")
     run
-    if (serverport.isDefined) controller.handleLine("server on " + serverport.get)
+    if (serverport.isDefined) {
+      controller.clear
+      controller.handleLine("server on " + serverport.get)
+    }
     if (gotoshell) Run.main(Array())
   }
 }
