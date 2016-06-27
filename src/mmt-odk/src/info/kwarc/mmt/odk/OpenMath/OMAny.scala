@@ -1,5 +1,5 @@
 package info.kwarc.mmt.odk.OpenMath
-import java.net.URI
+import info.kwarc.mmt.api.utils.URI
 
 /**
   * Class for all OpenMath related objects
@@ -34,7 +34,7 @@ sealed abstract class OMAnyVal extends OMAny {
   * Represents a single OpenMath object
  *
   * @param omel OpenMath element wrapped by this object
-  * @param id Identifier
+  * @param id XML-Identifier
   * @param version OpenMath object version
   * @param cdbase CD Base URI
   */

@@ -1,7 +1,7 @@
 package info.kwarc.mmt.odk.OpenMath.Coding
 
 import info.kwarc.mmt.odk.OpenMath._
-import java.net.URI
+import info.kwarc.mmt.api.utils.URI
 
 import scala.xml.{TextBuffer, _}
 
@@ -38,7 +38,7 @@ class OMXMLCoding extends OMCoding[Node] {
       val pairs = cnodes.toList.sliding(2, 2).map({case a :: b :: Nil => (decodeSymbol(a), decodeAnyVal(b))}).toList
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.apply)
 
       OMAttributionPairs(pairs, id, cdbase)
   }
@@ -65,7 +65,7 @@ class OMXMLCoding extends OMCoding[Node] {
 
   def decodeAnyVal(v : Node): OMAnyVal = OMXMLCoding.trimNoFinalText(v) match {
     case <OMR></OMR> =>
-      var href = URI.create(getAttr(v, ATTR_HREF))
+      var href = URI(getAttr(v, ATTR_HREF))
 
       val id = getOAttr(v, ATTR_ID)
 
@@ -107,7 +107,7 @@ class OMXMLCoding extends OMCoding[Node] {
       val cd = getAttr(v, ATTR_CD)
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.apply)
 
       OMSymbol(name, cd, id, cdbase)
     case <OMV></OMV> =>
@@ -124,7 +124,7 @@ class OMXMLCoding extends OMCoding[Node] {
       val encoding = getOAttr(v, ATTR_ENCODING)
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.apply)
 
       OMForeign(obj, encoding, id, cdbase)
 
@@ -134,7 +134,7 @@ class OMXMLCoding extends OMCoding[Node] {
       val args = anodes.map(decodeExpression).toList
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.apply)
 
       OMApplication(elem, args, id, cdbase)
     case <OMATTR>{pnode}{onode}</OMATTR> =>
@@ -142,7 +142,7 @@ class OMXMLCoding extends OMCoding[Node] {
       val obj = decodeExpression(onode)
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.apply)
 
       OMAttribution(pairs, obj, id, cdbase)
     case <OMBIND>{anode}{vnode}{cnode}</OMBIND> =>
@@ -151,7 +151,7 @@ class OMXMLCoding extends OMCoding[Node] {
       val C = decodeExpression(cnode)
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.apply)
 
       OMBinding(B, vars, C, id, cdbase)
     case <OME>{nnode}{pnodes @ _*}</OME> =>
@@ -159,7 +159,7 @@ class OMXMLCoding extends OMCoding[Node] {
       val params = pnodes.map(decodeAnyVal).toList
 
       val id = getOAttr(v, ATTR_ID)
-      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.create)
+      val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.apply)
 
       OMError(name, params, id, cdbase)
   }
@@ -178,7 +178,7 @@ class OMXMLCoding extends OMCoding[Node] {
       val version = getOAttr(node, ATTR_VERSION)
 
       val id = getOAttr(onode, ATTR_ID)
-      val cdbase = getOAttr(onode, ATTR_CDBASE).map(URI.create)
+      val cdbase = getOAttr(onode, ATTR_CDBASE).map(URI.apply)
 
       OMObject(omel, version, id, cdbase)
 
