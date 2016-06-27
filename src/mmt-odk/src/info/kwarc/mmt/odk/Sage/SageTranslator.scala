@@ -1,7 +1,8 @@
 package info.kwarc.mmt.odk.Sage
 
-import info.kwarc.mmt.api.{DPath, LocalName, MPath}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.BuildTask
+import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, RelationHandler}
 import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.DeclaredTheory
@@ -71,10 +72,12 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     // Do Axioms
     ls foreach {
       case pc @ ParsedCategory(name,_,axioms,_,_,_) =>
-        allaxioms :::= axioms map Axiom
+        allaxioms :::= (axioms map Axiom).reverse
         intcategories += ((name,pc))
     }
     allaxioms = allaxioms.distinct
+    // TODO weird hack around bug
+    controller add Constant(axth.toTerm,LocalName("Dummy"),Nil,None,None,None)
 
     allaxioms foreach (ax => {
       val c = Constant(axth.toTerm,LocalName(ax.name),Nil,Some(OMS(Sage.prop)),None,None)
@@ -85,6 +88,12 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
       case cat : ParsedCategory =>
         doCategory(cat)
     }
+    val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
+      throw GeneralError(s"no mmt checker found")
+    }
+    println(axth)
+    (axth :: theories.values.toList) foreach (th => checker(th)(new CheckingEnvironment(new ErrorLogger(controller.report), RelationHandler.ignore)))
+    println(axth)
     //index(doc)
     //index(catdoc)
     docs.values foreach index
