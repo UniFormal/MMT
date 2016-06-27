@@ -357,6 +357,7 @@ sealed abstract class OMVar extends OMAny {
  *
     * @return
     */
+  def name : String
   def toExpression : OMExpression
 
   def absolutize(uri : URI) : OMVar
@@ -388,6 +389,7 @@ case class OMVarVar(omv : OMVariable) extends OMVar {
   def absolutize(uri : URI) : OMVarVar = {
     OMVarVar(omv.absolutize(uri))
   }
+  def name = omv.name
 }
 
 /**
@@ -406,6 +408,7 @@ case class OMAttVar(pairs: OMAttributionPairs, A : OMVar, id : Option[String]) e
 
     OMAttVar(mPairs, mA, id)
   }
+  def name = A.name
 }
 
 /**
