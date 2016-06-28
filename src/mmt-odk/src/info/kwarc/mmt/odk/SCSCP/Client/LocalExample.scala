@@ -14,9 +14,12 @@ object LocalExample {
     println(client.getAllowedHeads)
 
     val DihedralGroup = OMSymbol("DihedralGroup", "scscp_transient_1", None, None)
+    val DihedralGroupAsPermGroup = OMSymbol("DihedralGroupAsPermGroup", "scscp_transient_1", None, None)
 
     val example = client(DihedralGroup(OMInteger(10, None))).fetchExpression()
+    val example2 = client(DihedralGroupAsPermGroup(OMInteger(10, None))).fetchExpression()
     println(example)
+    println(example2)
 
   }
 }

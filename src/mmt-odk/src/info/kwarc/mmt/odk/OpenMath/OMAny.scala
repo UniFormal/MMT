@@ -1,16 +1,83 @@
 package info.kwarc.mmt.odk.OpenMath
 import info.kwarc.mmt.api.utils.URI
 
+import scala.collection.GenTraversableOnce
+import scala.collection.mutable.ListBuffer
+
 /**
   * Class for all OpenMath related objects
   */
 sealed abstract class OMAny {
   /**
-    * Substiutes all
+    * Resolves all CDBase attributes relative to a URI.
     *
     * @param uri URI to resolve relative to
     */
   def absolutize(uri : URI) : OMAny
+
+  /**
+    * Maps all structural components of this OpenMath object.
+    *
+    * @param f Function to apply. Is expected to main subtypes [[OMAnyVal]], [[OMObject]], [[OMExpression]],
+    *          [[OMAttributionPairs]], [[OMSymbol]] within [[OMAttributionPairs]] and [[OMError]], [[OMVar]], [[OMBindVariables]]
+    */
+  def mapComponents(f : OMAny => OMAny) : OMAny
+
+  /**
+    * Extracts all components from this OpenMath object
+    *
+    * @return
+    */
+  def components : List[OMAny] = {
+
+    // we want to cache all the components
+    val buf = ListBuffer.empty[OMAny]
+
+    // map them
+    mapComponents(x =>{
+      buf += x
+      x
+    })
+
+    // and return the buffer
+    buf.toList
+  }
+
+  /**
+    * Applies a function to each component and returns a list of components.
+    *
+    * @param f Function to apply
+    * @tparam A return type of the function.
+    * @return
+    */
+  def foreachComponent[A](f : OMAny => A) : GenTraversableOnce[A] = {
+    components.view.map(f)
+  }
+
+  /**
+    * Gets an OpenMath Element by an identifier.
+    * @param id Id of element to find
+    * @return
+    */
+  def getAnyById(id : String) : Option[CommonAttributes] = components.collectFirst({case x: CommonAttributes if x.id.contains(id) => x})
+
+  /**
+    * De-reference OMRefs
+    * @param f Function to use for dereferencing.
+    */
+  def deReference(f : OMReference => OMExpression) : OMAny = mapComponents({
+    case r: OMReference => f(r)
+    case x => x
+  })
+
+  /**
+    * De-reference OMRefs that point into the local element.
+    * @return
+    */
+  def deReferenceLocals() : OMAny = deReference({
+    case OMReference(URI(None, None, Nil, false, None, Some(s)), _) => this.getAnyById(s).asInstanceOf[OMExpression]
+    case x : _ => x
+  })
 }
 
 object OMAny {
@@ -35,6 +102,7 @@ object OMAny {
 sealed abstract class OMAnyVal extends OMAny {
 
   def absolutize(uri : URI) : OMAnyVal
+  def mapComponents(f : OMAny => OMAny) : OMAnyVal
 
   private def as[T <: OMAnyVal] : T = this match {case t: T => t}
 
@@ -69,6 +137,13 @@ case class OMObject(omel: OMExpression, version: Option[String], id : Option[Str
 
     OMObject(omel.absolutize(r), version, id, Some(r))
   }
+
+  def mapComponents(f : OMAny => OMAny) : OMObject = {
+    val mEl = omel.mapComponents(f)
+    val mObj = OMObject(mEl, version, id, cdbase)
+
+    f(mObj).asInstanceOf[OMObject]
+  }
 }
 
 /**
@@ -77,6 +152,8 @@ case class OMObject(omel: OMExpression, version: Option[String], id : Option[Str
 sealed abstract class OMExpression extends OMAnyVal {
 
   def absolutize(uri : URI) : OMExpression
+
+  def mapComponents(f : OMAny => OMAny) : OMExpression
 
   /**
     * Applies this OpenMath Expression to a list of other expressions
@@ -100,13 +177,18 @@ sealed abstract class OMExpression extends OMAnyVal {
   */
 case class OMReference(href : URI, id : Option[String]) extends OMExpression with CommonAttributes {
   def absolutize(uri : URI) : OMReference = this
+
+  def mapComponents(f : OMAny => OMAny) : OMExpression = {
+    f(this).asInstanceOf[OMExpression]
+  }
+
 }
 
 
 /**
   * trait for OpenMath Objects with a cdbase attribute
   */
-sealed trait CDBaseAttribute {
+sealed trait CDBaseAttribute extends OMAny {
   /**
     * The base CD of this object
     */
@@ -118,12 +200,14 @@ sealed trait CDBaseAttribute {
   */
 sealed abstract class OMBasicElement extends OMExpression {
   def absolutize(uri : URI) : OMBasicElement
+
+  def mapComponents(f : OMAny => OMAny) : OMExpression
 }
 
 /**
   * trait for OpenMath Objects with common attributes
   */
-sealed trait CommonAttributes {
+sealed trait CommonAttributes extends OMAny {
   /**
     * the id of this object
     */
@@ -138,6 +222,11 @@ sealed trait CommonAttributes {
   */
 case class OMInteger(int : BigInt, id : Option[String]) extends OMBasicElement with CommonAttributes {
   def absolutize(uri : URI) : OMInteger = this
+
+  def mapComponents(f : OMAny => OMAny) : OMExpression = {
+    f(this).asInstanceOf[OMExpression]
+  }
+
 }
 
 /**
@@ -148,6 +237,11 @@ case class OMInteger(int : BigInt, id : Option[String]) extends OMBasicElement w
   */
 case class OMFloat(dbl : Double, id : Option[String]) extends OMBasicElement with CommonAttributes {
   def absolutize(uri : URI) : OMFloat = this
+
+  def mapComponents(f : OMAny => OMAny) : OMExpression = {
+    f(this).asInstanceOf[OMExpression]
+  }
+
 }
 
 /**
@@ -158,6 +252,11 @@ case class OMFloat(dbl : Double, id : Option[String]) extends OMBasicElement wit
   */
 case class OMString(text : String, id : Option[String]) extends OMBasicElement with CommonAttributes {
   def absolutize(uri : URI) : OMString = this
+
+  def mapComponents(f : OMAny => OMAny) : OMExpression = {
+    f(this).asInstanceOf[OMExpression]
+  }
+
 }
 
 /**
@@ -168,6 +267,11 @@ case class OMString(text : String, id : Option[String]) extends OMBasicElement w
   */
 case class OMBytes(bytes : List[Byte], id : Option[String]) extends OMBasicElement with CommonAttributes {
   def absolutize(uri : URI) : OMBytes = this
+
+  def mapComponents(f : OMAny => OMAny) : OMExpression = {
+    f(this).asInstanceOf[OMExpression]
+  }
+
 }
 
 /**
@@ -186,10 +290,14 @@ case class OMSymbol(name : String, cd : String, id : Option[String], cdbase : Op
     OMSymbol(name, cd, id, Some(r))
   }
 
+  def mapComponents(f : OMAny => OMAny) : OMExpression = {
+    f(this).asInstanceOf[OMExpression]
+  }
+
   /**
     * Checks if this symbol semantically points to the same OMSymbol
     *
-    * @param other
+    * @param other other Symbol to check.
     */
   def === (other : OMSymbol): Boolean = {
     (other.name == name) && (other.cdbase.map(_.toString).getOrElse("") + cd == cdbase.map(_.toString).getOrElse("") + cd)
@@ -204,6 +312,11 @@ case class OMSymbol(name : String, cd : String, id : Option[String], cdbase : Op
   */
 case class OMVariable(name : String, id : Option[String]) extends OMBasicElement with CommonAttributes {
   def absolutize(uri : URI) : OMVariable = this
+
+  def mapComponents(f : OMAny => OMAny) : OMExpression = {
+    f(this).asInstanceOf[OMExpression]
+  }
+
 }
 
 /**
@@ -211,6 +324,8 @@ case class OMVariable(name : String, id : Option[String]) extends OMBasicElement
   */
 sealed abstract class OMDerivedElement extends OMAnyVal {
   def absolutize(uri : URI) : OMDerivedElement
+
+  def mapComponents(f : OMAny => OMAny) : OMAnyVal
 }
 
 /**
@@ -225,24 +340,28 @@ case class OMForeign(obj : Any, encoding : Option[String], id : Option[String], 
   def absolutize(uri : URI) : OMForeign = {
     val r = OMAny.absolutizeURI(uri, cdbase)
 
-    val mObj = obj match {
-      case a:OMAny => a.absolutize(r)
-      case _ => obj
-    }
-
-    OMForeign(mObj, encoding, id, Some(r))
+    OMForeign(obj, encoding, id, Some(r))
   }
+
+  def mapComponents(f : OMAny => OMAny) : OMAnyVal = {
+    f(this).asInstanceOf[OMAnyVal]
+  }
+
 }
 
 /**
   * trait for OpenMath Objects with compund attributes
   */
-sealed trait CompoundAttributes extends CommonAttributes with CDBaseAttribute
+sealed trait CompoundAttributes extends OMAny with CommonAttributes with CDBaseAttribute
 
 /**
   * Compound OpenMath objects (section 2.1.3)
   */
-sealed abstract class OMCompoundElement extends OMExpression
+sealed abstract class OMCompoundElement extends OMExpression {
+  def absolutize(uri : URI) : OMCompoundElement
+
+  def mapComponents(f : OMAny => OMAny) : OMExpression
+}
 
 /**
   * An OpenMath Application Object
@@ -261,6 +380,15 @@ case class OMApplication( elem : OMExpression, arguments : List[OMExpression], i
 
     OMApplication(mElem, mArguments, id, Some(r))
   }
+
+  def mapComponents(f : OMAny => OMAny) : OMExpression = {
+    val mElem = elem.mapComponents(f)
+    val mArgs = arguments.map(_.mapComponents(f))
+
+    val mApps = OMApplication(mElem, mArgs, id, cdbase)
+    f(mApps).asInstanceOf[OMExpression]
+  }
+
 }
 
 
@@ -281,6 +409,16 @@ case class OMAttribution(pairs: OMAttributionPairs, A: OMExpression, id: Option[
 
     OMAttribution(mPairs, mA, id, Some(r))
   }
+
+  def mapComponents(f : OMAny => OMAny) : OMExpression = {
+    val mPairs = pairs.mapComponents(f)
+    val mA = A.mapComponents(f)
+
+    val mAttribution = OMAttribution(mPairs, mA, id, cdbase)
+
+    f(mAttribution).asInstanceOf[OMExpression]
+  }
+
 }
 
 /**
@@ -304,6 +442,15 @@ case class OMAttributionPairs(pairs : List[(OMSymbol, OMAnyVal)], id : Option[St
     })
 
     OMAttributionPairs(mPairs, id, Some(r))
+  }
+
+  def mapComponents(f : OMAny => OMAny) : OMAttributionPairs = {
+    val mPairs = pairs.map({
+      case (k, v) => (k.mapComponents(f).asInstanceOf[OMSymbol], v.mapComponents(f))
+    })
+
+    val mAttPairs = OMAttributionPairs(mPairs, id, cdbase)
+    f(mAttPairs).asInstanceOf[OMAttributionPairs]
   }
 
   /**
@@ -332,7 +479,7 @@ case class OMAttributionPairs(pairs : List[(OMSymbol, OMAnyVal)], id : Option[St
   *
   * @param B Binding object
   * @param vars variables to bind
-  * @param C
+  * @param C Bound Term
   * @param id Identifier
   * @param cdbase CD Base URI
   */
@@ -346,6 +493,16 @@ case class OMBinding(B: OMExpression, vars: OMBindVariables, C: OMExpression, id
 
     OMBinding(mB, mVars, mC, id, Some(r))
   }
+
+  def mapComponents(f : OMAny => OMAny) : OMExpression = {
+    val mB = B.mapComponents(f)
+    val mVars = vars.mapComponents(f)
+    val mC = C.mapComponents(f)
+
+    val mBinding = OMBinding(mB, mVars, mC, id, cdbase)
+    f(mBinding).asInstanceOf[OMExpression]
+  }
+
 }
 
 /**
@@ -360,6 +517,8 @@ sealed abstract class OMVar extends OMAny {
   def name : String
   def toExpression : OMExpression
 
+  def mapComponents(f : OMAny => OMAny) : OMVar
+
   def absolutize(uri : URI) : OMVar
 }
 
@@ -368,7 +527,7 @@ object OMVar {
     * Turns an OpenMath Expression representing a Variable or AttributedVariable
     * into an OMVar representation
  *
-    * @param expr
+    * @param expr Expression
     * @return
     */
   def fromExpression(expr : OMExpression) : OMVar = expr match {
@@ -389,6 +548,14 @@ case class OMVarVar(omv : OMVariable) extends OMVar {
   def absolutize(uri : URI) : OMVarVar = {
     OMVarVar(omv.absolutize(uri))
   }
+
+  def mapComponents(f : OMAny => OMAny) : OMVar = {
+    val momv = omv.mapComponents(f)
+
+    val mvarvar = OMVarVar(omv)
+    f(mvarvar).asInstanceOf[OMVar]
+  }
+
   def name = omv.name
 }
 
@@ -408,6 +575,15 @@ case class OMAttVar(pairs: OMAttributionPairs, A : OMVar, id : Option[String]) e
 
     OMAttVar(mPairs, mA, id)
   }
+
+  def mapComponents(f : OMAny => OMAny) : OMVar = {
+    val mPairs = pairs.mapComponents(f)
+    val mA = A.mapComponents(f)
+
+    val mAttVar = OMAttVar(mPairs, mA, id)
+    f(mAttVar).asInstanceOf[OMVar]
+  }
+
   def name = A.name
 }
 
@@ -423,6 +599,14 @@ case class OMBindVariables(vars : List[OMVar], id : Option[String]) extends OMAn
 
     OMBindVariables(mVars, id)
   }
+
+  def mapComponents(f : OMAny => OMAny) : OMBindVariables = {
+    val mVars = vars.map(_.mapComponents(f))
+
+    val mBindVariables = OMBindVariables(mVars, id)
+    f(mBindVariables).asInstanceOf[OMBindVariables]
+  }
+
 }
 
 /**
@@ -443,4 +627,13 @@ case class OMError(name : OMSymbol, params: List[OMAnyVal], id : Option[String],
 
     OMError(mName, mParams, id, Some(r))
   }
+
+  def mapComponents(f : OMAny => OMAny) : OMExpression = {
+    val mName = name.mapComponents(f).asInstanceOf[OMSymbol]
+    val mParams = params.map(_.mapComponents(f))
+
+    val mError = OMError(mName, mParams, id, cdbase)
+    f(mError).asInstanceOf[OMExpression]
+  }
+
 }
