@@ -86,7 +86,7 @@ lazy val tiscaf = (project in file("tiscaf")).
     )
   )
 
-lazy val api = (project in file("mmt-api/trunk")).
+lazy val api = (project in file("mmt-api")).
   dependsOn(tiscaf).
   settings(commonSettings("mmt-api"): _*).
   settings(
@@ -99,7 +99,7 @@ lazy val api = (project in file("mmt-api/trunk")).
   )
   
 
-lazy val lfcatalog = (project in file("lfcatalog/trunk")).
+lazy val lfcatalog = (project in file("lfcatalog")).
   dependsOn(tiscaf).
   settings(commonSettings("lfcatalog") ++ oneJarSettings: _*).
   settings(
@@ -143,7 +143,7 @@ lazy val lfs = (project in file("mmt-lfs")).
   dependsOn(api, lf).
   settings(commonSettings("mmt-lfs"): _*)
 
-lazy val mizar = (project in file("mmt-mizar/trunk")).
+lazy val mizar = (project in file("mmt-mizar")).
   dependsOn(api, lf, lfs).
   settings(commonSettings("mmt-mizar"): _*)
 
