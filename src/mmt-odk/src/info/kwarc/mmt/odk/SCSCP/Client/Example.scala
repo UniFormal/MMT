@@ -1,5 +1,6 @@
 package info.kwarc.mmt.odk.SCSCP.Client
 
+import info.kwarc.mmt.odk.OpenMath.Coding.OMMMTCoding
 import info.kwarc.mmt.odk.OpenMath._
 
 /**
@@ -31,6 +32,8 @@ object Example {
       println("No results yet, waiting another few milliseconds")
       Thread.sleep(100)
     }
+    val coding = new OMMMTCoding
+    println(coding.encode(oneplusonecomputation.get().get.get))
 
     // once we have it, turn it into an integer
     println("1 + 1 = "+oneplusonecomputation.get().get.get.asInteger.int)
