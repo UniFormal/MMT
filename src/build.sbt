@@ -87,10 +87,10 @@ lazy val tiscaf = (project in file("tiscaf")).
   )
 
 lazy val api = (project in file("mmt-api")).
-  dependsOn(tiscaf).
   settings(commonSettings("mmt-api"): _*).
   settings(
     scalaSource in Compile := baseDirectory.value / "src" / "main",
+    unmanagedJars in Compile += baseDirectory.value / "../../deploy/lib" / "tiscaf.jar",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
@@ -100,17 +100,18 @@ lazy val api = (project in file("mmt-api")).
   
 
 lazy val lfcatalog = (project in file("lfcatalog")).
-  dependsOn(tiscaf).
   settings(commonSettings("lfcatalog") ++ oneJarSettings: _*).
   settings(
+    unmanagedJars in Compile += baseDirectory.value / "../../deploy/lib" / "tiscaf.jar",
     libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.4",
     deploy <<= deployPackage("lfcatalog/lfcatalog.jar")
   )
 
 lazy val lf = (project in file("mmt-lf")).
-  dependsOn(api, lfcatalog).
+  dependsOn(api).
   settings(commonSettings("mmt-lf"): _*).
   settings(
+    unmanagedJars in Compile += baseDirectory.value / "../../deploy/lfcatalog" / "lfcatalog.jar",
     scalaSource in Test := baseDirectory.value / "test",
     libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
   )
@@ -148,8 +149,11 @@ lazy val mizar = (project in file("mmt-mizar")).
   settings(commonSettings("mmt-mizar"): _*)
 
 lazy val frameit = (project in file("frameit-mmt")).
-  dependsOn(api, lfcatalog, lf).
-  settings(commonSettings("frameit-mmt"): _*)
+  dependsOn(api, lf).
+  settings(commonSettings("frameit-mmt"): _*).
+  settings(
+      unmanagedJars in Compile += baseDirectory.value / "../../deploy/lfcatalog" / "lfcatalog.jar"
+  )
 
 lazy val pvs = (project in file("mmt-pvs")).
   dependsOn(api, lf, lfx).
