@@ -102,15 +102,8 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
 
    def doDeclaration(d: Declaration) {
       val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
-      val alignmentsServer: AlignmentsServer = controller.extman.getOrAddExtension(classOf[AlignmentsServer],"align") match {
-        case Some(as) => as
-        case _ => throw ServerError("AlignmentsServer not available")
-      }
-//      println(d.path.toString)
-      val alignments = alignmentsServer.getAlignments(d.path)
-//      alignments foreach {
-//        case alignment => println("ALIGNMENT:" + alignment.toString)
-//      }
+      val alignmentsServer: Option[AlignmentsServer] = controller.extman.getOrAddExtension(classOf[AlignmentsServer],"align")
+      val alignments = alignmentsServer.map(_.getAlignments(d.path)).getOrElse(Nil)
 
       div("constant toggle-root inlineBoxSibling") {
          div("constant-header") {

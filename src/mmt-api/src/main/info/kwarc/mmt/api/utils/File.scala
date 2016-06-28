@@ -227,7 +227,7 @@ object File {
    */
   def WriteLineWise(f: File, lines: List[String]) {
     val fw = Writer(f)
-    lines.foreach { l =>
+    lines.foreach {l =>
       fw.println(l)
     }
     fw.close
@@ -241,7 +241,7 @@ object File {
    */
   def read(f: File): String = {
     val s = new StringBuilder
-    ReadLineWise(f) { l => s.append(l + "\n") }
+    ReadLineWise(f) {l => s.append(l + "\n")}
     s.result
   }
 

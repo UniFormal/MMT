@@ -193,7 +193,7 @@ class AlignmentsServer extends ServerExtension("align") {
   private var nsMap = NamespaceMap.empty
 
 
-  def apply(path: List[String], query: String, body: Body) = {
+  def apply(path: List[String], query: String, body: Body, session: Session) = {
     path match {
       case "from" :: _ ⇒
         val path = Path.parseS(query, nsMap)

@@ -98,6 +98,9 @@ case class WebQuery(pairs: List[(String,String)]) {
    }
 }
 
+/** straightforward abstraction of the current session */
+case class Session(id: String)
+
 object WebQuery {
   /** parses k1=v1&...&kn=vn */
   def parse(query: String): WebQuery = {
@@ -162,6 +165,11 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
   protected class RequestHandler extends HApp {
     //override def buffered = true
     override def chunked = true // Content-Length is not set at the beginning of the response, so we can stream info while computing/reading from disk
+    override def sessionTimeoutMinutes = 60
+    // session tracking, access current session
+    override def tracking = HTracking.Cookie
+    override def cookieKey = "MMT_SESSIONID"
+    
     def resolve(req: HReqData): Option[HLet] = {
       lazy val reqString = "/" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query
       log("request for " + reqString)
@@ -176,7 +184,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
             def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
                log("handling request via plugin " + pl.logPrefix)
                val hl = try {
-                  pl(tl, req.query, new Body(tk))
+                  pl(tl, req.query, new Body(tk), Session(tk.ses.id))
                } catch {
                   case e: Error =>
                      errorResponse(e)

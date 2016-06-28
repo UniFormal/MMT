@@ -18,6 +18,7 @@ trait ActionHandling {self: Controller =>
   }
 
   // ******************************** handling actions
+
   // some actions are defined in separate methods below
 
   /** executes a string command */
@@ -155,7 +156,7 @@ trait ActionHandling {self: Controller =>
         if (act != NoAction && showLog) report("user", act.toString + " finished")
     }
   }
-
+    
   /** handles [[ConfBuild]] */
   def confBuildAction(modS : String, targets : List[String], profile : String) = {
     val config = getConfig
@@ -370,5 +371,13 @@ trait ActionHandling {self: Controller =>
       throw GeneralError(s"no checker $id found")
     }
     checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
+  }
+
+
+  // ******************************** handling messages
+  /** processes a message, see [[web.MessageHandler]] */
+  def handle(message: Message): String = {
+     // TODO
+     "not implemented yet: " + message.toString
   }
 }

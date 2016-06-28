@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentLinkedDeque
 import info.kwarc.mmt.api._
 import frontend._
 import utils._
-import web.{Body, Server, ServerExtension}
+import web._
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Queue
@@ -467,7 +467,7 @@ class BuildQueue extends BuildManager {
 
   /** serves lists of [[Error]]s */
   private val serve = new ServerExtension("queue") {
-    def apply(path: List[String], query: String, body: Body) = path match {
+    def apply(path: List[String], query: String, body: Body, session: Session) = path match {
       case List("clear") =>
         finishedBuilt = Queue.empty
         blocked = Nil

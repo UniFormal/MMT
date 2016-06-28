@@ -15,8 +15,9 @@ object TokenList {
   def isWhitespace(c: Char): Boolean = c.isWhitespace
 
   /** @return true if c is considered to be a number */
+  // OTHER_NUMBER is not treated as number in order to allow using e.g., superscripted numbers as operators without whitespace
   def isNumber(c: Char): Boolean =
-    List(DECIMAL_DIGIT_NUMBER, LETTER_NUMBER, OTHER_NUMBER) contains c.getType
+    List(DECIMAL_DIGIT_NUMBER, LETTER_NUMBER) contains c.getType
 
   /** @return true if c is considered a connector, i.e., a character that never breaks a word */
   def isConnector(c: Char): Boolean = c.getType == CONNECTOR_PUNCTUATION

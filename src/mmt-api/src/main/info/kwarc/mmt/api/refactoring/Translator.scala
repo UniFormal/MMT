@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.modules.{DeclaredLink, DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.symbols.{DeclaredStructure, FinalConstant}
-import info.kwarc.mmt.api.web.{Body, Server, ServerExtension}
+import info.kwarc.mmt.api.web.{Body, Server, Session, ServerExtension}
 
 import scala.collection.mutable
 import scala.util.{Success, Try}
@@ -268,7 +268,7 @@ class Translator extends ServerExtension("translate") {
     a
   }
 
-  def apply(path: List[String], query: String, body: Body) = path match {
+  def apply(path: List[String], query: String, body: Body, session: Session) = path match {
     case "libs" :: rest =>
       Server.TextResponse(archives.getArchives.map(_.name).mkString(" "))
     case "to" :: arch :: rest =>

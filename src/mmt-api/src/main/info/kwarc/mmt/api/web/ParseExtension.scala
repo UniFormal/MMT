@@ -7,7 +7,7 @@ import parser._
 import Server._
 
 class ParseServer extends ServerExtension(":parse") {
-    def apply(path: List[String], query: String, body: Body) = {
+    def apply(path: List[String], query: String, body: Body, session: Session) = {
       val wq = WebQuery.parse(query)
       val text = wq.string("text", throw LocalError("found no text to parse"))
       val save = wq.boolean("save", false) //if save parameter is "true" then save otherwise don't

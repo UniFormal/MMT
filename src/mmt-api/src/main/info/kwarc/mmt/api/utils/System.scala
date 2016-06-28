@@ -30,7 +30,7 @@ object MMTSystem {
        src.up
      }
      def deploy = root / "deploy"
-     def api = root / "src" / "mmt-api" / "trunk"
+     def api = root / "src" / "mmt-api"
      def projectFolder(name: String) = api.up.up / name
      def resources = api / "resources"
    }
