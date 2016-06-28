@@ -29,6 +29,17 @@ class OMMMTCoding(default : MPath = Path.parseM("http://cds.omdoc.org/?Default",
     case OMBindVariables(vars,id) => ???
   }
 
-  def decodeAnyVal(t : Term) : OMAnyVal = ???
+  def decodeAnyVal(t : Term) : OMAnyVal = t match {
+    case OMI(i) => OMInteger(i,None)
+    case OMF(r) => OMFloat(r,None)
+    case OMSTR(s) => OMString(s,None)
+    case OMS(p) => OMSymbol(p.name.toString,p.module.toString,None,None)
+    case OMV(name) => OMVariable(name.toString,None)
+    case OMA(f,args) => OMApplication(decexpr(f),args map decexpr,None,None)
+  }
+  private def decexpr(t : Term) = decode(t) match {
+    case expr: OMExpression => expr
+    case _ => throw new Exception("Does not yield OMExpression:" + t)
+  }
   def decode(t : Term) : OMAny = ??? // should probably recurse into the above
 }

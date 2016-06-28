@@ -91,9 +91,9 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
       throw GeneralError(s"no mmt checker found")
     }
-    println(axth)
+    //println(axth)
     (axth :: theories.values.toList) foreach (th => checker(th)(new CheckingEnvironment(new ErrorLogger(controller.report), RelationHandler.ignore)))
-    println(axth)
+    //println(axth)
     //index(doc)
     //index(catdoc)
     docs.values foreach index

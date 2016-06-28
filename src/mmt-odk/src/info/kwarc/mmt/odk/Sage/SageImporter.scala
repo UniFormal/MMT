@@ -35,18 +35,23 @@ class SageImporter extends Importer {
   def readJSON(input : JSON) = input match {
     case JSONArray(all@_*) => all foreach {
       case obj : JSONObject =>
-        val tp = obj.getAsString("type") match {
-          case "Sage_Category" => ()
-          case s : String => throw new ParseError("SAGE type not implemented: " + s)
+        val eaten = "type" :: {
+          obj.getAsString("type") match {
+            case "Sage_Category" =>
+              val name = obj.getAsString("name")
+              val doc = obj.getAsString("__doc__")
+              val implied = obj.getAsList(classOf[String], "implied")
+              val axioms = obj.getAsList(classOf[String], "axioms")
+              val structure = obj.getAsList(classOf[String], "structure")
+              val methods = obj.getAs(classOf[JSONObject], "required_methods")
+              val ncat = ParsedCategory(name, implied, axioms, structure, doc, methods)
+              categories ::= ncat
+              List("name", "__doc__", "implied", "axioms", "structure", "required_methods")
+            case s: String => throw new ParseError("SAGE type not implemented: " + s)
+          }
         }
-        val name = obj.getAsString("name")
-        val doc = obj.getAsString("__doc__")
-        val implied = obj.getAsList(classOf[String],"implied")
-        val axioms = obj.getAsList(classOf[String],"axioms")
-        val structure = obj.getAsList(classOf[String],"structure")
-        val methods = obj.getAs(classOf[JSONObject],"required_methods")
-        val ncat = ParsedCategory(name,implied,axioms,structure,doc,methods)
-        categories ::= ncat
+        val missings = obj.map.filter(p => !eaten.contains(p._1.value))
+        if (missings.nonEmpty) throw new ParseError("Object fields not implemented: " + missings)
       case j : JSON => throw new ParseError("Not a JSONObject: " + j)
     }
     case _ => throw new ParseError("Input not a JSONArray!")
