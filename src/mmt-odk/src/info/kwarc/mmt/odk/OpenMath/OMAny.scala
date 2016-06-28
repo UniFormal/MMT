@@ -76,7 +76,7 @@ sealed abstract class OMAny {
     */
   def deReferenceLocals() : OMAny = deReference({
     case OMReference(URI(None, None, Nil, false, None, Some(s)), _) => this.getAnyById(s).asInstanceOf[OMExpression]
-    case x : _ => x
+    case x => x
   })
 }
 
