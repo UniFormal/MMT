@@ -29,7 +29,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
     }
   }
 
-  def apply(uriComps: List[String], query: String, body: Body): HLet = {
+  def apply(uriComps: List[String], query: String, body: Body, session : Session): HLet = {
     try {
       uriComps match {
         case "autocomplete" :: _ => getAutocompleteResponse

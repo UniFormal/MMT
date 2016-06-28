@@ -187,7 +187,7 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
 
   def getSettings(path : List[String], query : String, body : Body) : Map[String, String]
 
-  def apply(path : List[String], query : String, body: Body) = {
+  def apply(path : List[String], query : String, body: Body, session: Session) = {
     val searchS = body.asString
     val settings = getSettings(path, query, body)
     val mathmlS = toHTML(process(searchS, settings))
