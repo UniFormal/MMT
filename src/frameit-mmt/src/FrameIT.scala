@@ -237,7 +237,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
 
   implicit val unifun : StructuralElement => Unit = x => controller.add(x)
 
-  def apply(uriComps: List[String], query : String, body : web.Body): HLet = uriComps match {
+  def apply(uriComps: List[String], query : String, body : web.Body, session : Session): HLet = uriComps match {
     case "init" :: rest => try {
       controller.handleLine("build FrameIT mmt-omdoc")
       Server.TextResponse("Success")

@@ -150,10 +150,7 @@ lazy val mizar = (project in file("mmt-mizar")).
 
 lazy val frameit = (project in file("frameit-mmt")).
   dependsOn(api, lf).
-  settings(commonSettings("frameit-mmt"): _*).
-  settings(
-      unmanagedJars in Compile += baseDirectory.value / "../../deploy/lfcatalog" / "lfcatalog.jar"
-  )
+  settings(commonSettings("frameit-mmt"): _*)
 
 lazy val pvs = (project in file("mmt-pvs")).
   dependsOn(api, lf, lfx).
