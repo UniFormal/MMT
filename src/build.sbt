@@ -74,6 +74,8 @@ def commonSettings(nameStr: String) = Seq(
 
 // individual projects
 
+/*
+ * TODO make these not build automatically on deploy
 lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
   settings(
@@ -85,6 +87,15 @@ lazy val tiscaf = (project in file("tiscaf")).
       "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     )
   )
+
+lazy val lfcatalog = (project in file("lfcatalog")).
+  settings(commonSettings("lfcatalog") ++ oneJarSettings: _*).
+  settings(
+    unmanagedJars in Compile += baseDirectory.value / "../../deploy/lib" / "tiscaf.jar",
+    libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.4",
+    deploy <<= deployPackage("lfcatalog/lfcatalog.jar")
+  )
+*/
 
 lazy val api = (project in file("mmt-api")).
   settings(commonSettings("mmt-api"): _*).
@@ -98,14 +109,6 @@ lazy val api = (project in file("mmt-api")).
       "org.scala-lang.modules" %% "scala-xml" % "1.0.4")
   )
   
-
-lazy val lfcatalog = (project in file("lfcatalog")).
-  settings(commonSettings("lfcatalog") ++ oneJarSettings: _*).
-  settings(
-    unmanagedJars in Compile += baseDirectory.value / "../../deploy/lib" / "tiscaf.jar",
-    libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.4",
-    deploy <<= deployPackage("lfcatalog/lfcatalog.jar")
-  )
 
 lazy val lf = (project in file("mmt-lf")).
   dependsOn(api).
