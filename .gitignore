@@ -1,18 +1,18 @@
 project/project
-target
-.classpath
-.project
-.settings
-bin
-.cache-main
-.cache-tests
 
-# compiled stuff and IntelliJ files
-
+# compiled stuff
 deploy/mmt.jar
-deploy/main/
+deploy/main/*.jar
+
+# IntelliJ Failes
 .idea
 .idea_modules
 
-# we need to commit jars explicitly
-*.jar
+# Eclipse Files
+bin
+.cache-main
+.cache-tests
+.project
+.settings
+target
+.classpath
