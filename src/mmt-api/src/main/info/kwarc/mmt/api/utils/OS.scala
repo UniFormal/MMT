@@ -25,7 +25,7 @@ object OS {
      detect match {
         case Windows => File(System.getenv("APPDATA"))
         case MacOS => uh / "Library"
-        case ProbablyUnix => uh
+        case os : Unix => uh
      }
   }
   
