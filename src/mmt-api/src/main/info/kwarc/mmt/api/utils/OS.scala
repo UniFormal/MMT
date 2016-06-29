@@ -5,6 +5,7 @@ abstract class OS
 abstract class Unix extends OS
 case object Linux extends Unix
 case object MacOS extends Unix
+case object DragonFly extends Unix
 case object Windows extends OS
 case object ProbablyUnix extends Unix
 
@@ -16,6 +17,7 @@ object OS {
      if (os.startsWith("Windows")) Windows
      else if (os.startsWith("Mac")) MacOS
      else if (os.startsWith("Linux")) Linux
+     else if (os.startsWith("Dragon")) DragonFly
      else ProbablyUnix
   }
   
@@ -26,6 +28,7 @@ object OS {
         case Windows => File(System.getenv("APPDATA"))
         case MacOS => uh / "Library"
         case Linux => uh
+        case DragonFly => uh
      }
   }
   
