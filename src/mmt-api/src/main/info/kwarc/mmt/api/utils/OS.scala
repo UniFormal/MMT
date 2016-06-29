@@ -29,6 +29,7 @@ object OS {
         case MacOS => uh / "Library"
         case Linux => uh
         case DragonFly => uh
+        case ProbablyUnix => uh 
      }
   }
   
