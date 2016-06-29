@@ -25,13 +25,17 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   override val logPrefix = "planetary"
      /** Server */   
   def apply(uriComps: List[String], query: String, body : Body, session: Session): HLet = {
+    lazy val json = body.asJSON match {
+      case j: JSONObject => j
+      case _ => throw ServerError("body must be json object")
+    }
     try {
       uriComps match {
-        case "getPresentation" :: _ => getPresentationResponse
+        case "getPresentation" :: _ => getPresentationResponse(json)
 //        case "getCompiled" :: _ => getCompiledResponse
-        case "getRelated" :: _ => getRelated
-        case "getNotations" :: _ => getNotations
-        case "getDefinitions" :: _ => getDefinitions
+        case "getRelated" :: _ => getRelated(json)
+        case "getNotations" :: _ => getNotations(json)
+        case "getDefinitions" :: _ => getDefinitions(json)
         case "generateGlossary" :: _ => generateGlossary
         case _ => errorResponse("Invalid request: " + uriComps.mkString("/"), List(new PlanetaryError("Invalid Request" + uriComps)))
        }
@@ -44,13 +48,10 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
     }
   }
   
-  def getNotations : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
-      val reqBody = new Body(tk)
-      val params = bodyAsJSON(reqBody).obj
-      val spathS = params.get("spath").getOrElse(throw ServerError("No spath found")).toString
-      val languageO = params.get("language").map(_.toString)
-      val dimensionO = params.get("dimension").map(_.toString)
+  def getNotations(params: JSONObject) = {
+      val spathS = params("spath").getOrElse(throw ServerError("No spath found")).toString
+      val languageO = params("language").map(_.toString)
+      val dimensionO = params("dimension").map(_.toString)
       
       val spath = Path.parse(spathS)
       controller.get(spath) match {
@@ -67,10 +68,9 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
             case None => notations
             case Some(lang) => notations.filter(_.scope.languages.contains(lang))
           }
-          Server.JsonResponse(JSONArray(notations.map(n => JSONArray(toStringMarkers(n).map(s => JSONString(s)) : _*)).toSeq :_*)).aact(tk)
+          Server.JsonResponse(JSONArray(notations.map(n => JSONArray(toStringMarkers(n).map(s => JSONString(s)) : _*)).toSeq :_*))
         case x => throw ServerError("Expected path pointing to constant, found :" + x.getClass())
       }
-    }
   }
   
   private def toStringMarkers(not : TextNotation) : List[String] = {
@@ -84,12 +84,9 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
     }
   }
   
-  private def getDefinitions : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
-      val reqBody = new Body(tk)
-      val params = bodyAsJSON(reqBody).obj
-      val spathS = params.get("spath").getOrElse(throw ServerError("No spath found")).toString
-      val languageO = params.get("language").map(_.toString)
+  private def getDefinitions(params: JSONObject) = {
+      val spathS = params("spath").getOrElse(throw ServerError("No spath found")).toString
+      val languageO = params("language").map(_.toString)
       val spath = Path.parse(spathS)
       var resultSet = controller.depstore.queryList(spath, ToObject(IRels.isDefinedBy))
       resultSet = languageO match {
@@ -108,19 +105,14 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
           case _ => None
         }
       }
-      
-      Server.JsonResponse(JSONArray(resultNodes.map(s => JSONString(s)).toSeq :_*)).aact(tk)
-    }
+      Server.JsonResponse(JSONArray(resultNodes.map(s => JSONString(s)).toSeq :_*))
   }
   
-  private def getRelated : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
-      val reqBody = new Body(tk)
-      val params = bodyAsJSON(reqBody).obj
+  private def getRelated(params: JSONObject) = {
       log("Received immt query request : " + params.toString)
-      val subjectS = params.get("subject").getOrElse(throw ServerError("No subject found")).toString
-      val relationS = params.get("relation").getOrElse(throw ServerError("No relation found")).toString
-      val returnS = params.get("return").getOrElse(throw ServerError("No return type found")).toString
+      val subjectS = params("subject").getOrElse(throw ServerError("No subject found")).toString
+      val relationS = params("relation").getOrElse(throw ServerError("No relation found")).toString
+      val returnS = params("return").getOrElse(throw ServerError("No return type found")).toString
       val subject = Path.parse(subjectS)
       val relation = controller.relman.parseBinary(relationS)
       log(subjectS + " " +  relationS + " " +returnS)
@@ -151,8 +143,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       val response = sb.get
       
       log("Sending Response: " + response)
-      Server.XmlResponse(response).aact(tk)
-    }
+      Server.XmlResponse(response)
   }
   
   /*
@@ -195,36 +186,25 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   }
   */
   
-  private def generateGlossary : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+  private def generateGlossary = {
+    try {
       val location = utils.File("/var/data/localmh/MathHub/glossary.html")
       val glossary = GlossaryGenerator.generate(controller)
       utils.File.write(location, glossary)
-      Server.TextResponse("Success").aact(tk)
+      Server.TextResponse("Success")
     } catch {
-      case e : Exception => Server.TextResponse(e.getMessage() + "\n" + e.getStackTrace.mkString("\n")).aact(tk)
+      case e : Exception => Server.TextResponse(e.getMessage() + "\n" + e.getStackTrace.mkString("\n"))
     }
   }
   
   
-  def bodyAsJSON(b : Body) = {
-    val bodyS = b.asString
-    scala.util.parsing.json.JSON.parseRaw(bodyS) match {
-      case Some(j : scala.util.parsing.json.JSONObject) => j
-      case _ => throw ServerError("Invalid JSON " + bodyS)
-    }
-  }
-  
-  
-  private def getPresentationResponse : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val reqBody = new Body(tk)
-      val params = bodyAsJSON(reqBody).obj
+  private def getPresentationResponse(params: JSONObject)= {
+    try {
       log("Received Presentation Request : " + params.toString)
-      val bodyS = params.get("body").getOrElse(throw ServerError("No Body Found")).toString
-      val dpathS = params.getOrElse("dpath","/tmp/").toString
+      val bodyS = params("body").getOrElse(throw ServerError("No Body Found")).toString
+      val dpathS = params("dpath").getOrElse("/tmp/").toString
       val dpath = DPath(utils.URI(dpathS))
-      val styleS = params.get("style").getOrElse("xml").toString
+      val styleS = params("style").getOrElse("xml").toString
       val presenter = controller.extman.get(classOf[Presenter]).find(_.isApplicable(styleS)) getOrElse {
         throw ServerError("no presenter found")
       }
@@ -239,14 +219,14 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       log("Sending Response: " + response)
       //val additional = GlossaryGenerator.generate(controller)
       //JsonResponse(response + additional, "", Nil).aact(tk)
-      JsonResponse(response, "", Nil).aact(tk)
+      JsonResponse(response, "", Nil)
       
      } catch {
        case e : Error => 
          log(e.shortMsg)
-         errorResponse(e.shortMsg, List(e)).aact(tk)
+         errorResponse(e.shortMsg, List(e))
        case e : Exception => 
-         errorResponse("Exception occured : "  + e.getStackTrace().mkString("\n"), List(e)).aact(tk)
+         errorResponse("Exception occured : "  + e.getStackTrace().mkString("\n"), List(e))
     }
   }
   
