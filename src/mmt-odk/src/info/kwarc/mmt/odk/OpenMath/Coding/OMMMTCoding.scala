@@ -1,21 +1,23 @@
 package info.kwarc.mmt.odk.OpenMath.Coding
-import info.kwarc.mmt.api.{LocalName, MPath, NamespaceMap, Path}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom.OMLiteral._
+import info.kwarc.mmt.api.utils.URI
 
 /**
   * Decode / Encode MMT Terms as OpenMath objects.
   */
-class OMMMTCoding(default : MPath = Path.parseM("http://cds.omdoc.org/?Default",NamespaceMap.empty)) extends OMCoding[Term] {
-  def encode(om : OMAny) : Term = om match {
+class OMMMTCoding(default : URI) extends OMCoding[Term] {
+  def encode(om : OMAny) : Term = actencode(om.absolutize(default))
+  protected def actencode(om : OMAny) : Term = om match {
     case OMObject(expr,_,_,_) => encode(expr)
     case OMReference(href,id) => ???
     case OMInteger(i,id) => OMI(i)
     case OMFloat(r,id) => OMF(r)
     case OMString(s,id) => OMSTR(s)
     case OMBytes(list,id) => ???
-    case OMSymbol(name,cd,id,cdbase) => OMS(Path.parseM(cd,NamespaceMap.empty) ? name)
+    case OMSymbol(name,cd,id,cdbase) => OMS(DPath(cdbase.get) ? cd ? name)
     case OMVariable(name,id) => OMV(name)
     case OMForeign(any,encoding,id,cdbase) => ???
     case OMApplication(f,args,id,cdbase) => OMA(encode(f),args map encode)
@@ -42,4 +44,16 @@ class OMMMTCoding(default : MPath = Path.parseM("http://cds.omdoc.org/?Default",
     case _ => throw new Exception("Does not yield OMExpression:" + t)
   }
   def decode(t : Term) : OMAny = ??? // should probably recurse into the above
+}
+
+object GAPEncoding extends OMMMTCoding(URI("http://www.gap-system.org")) {
+  override def encode(om : OMAny) : Term = actencode(om.mapComponents {
+    case OMSymbol(name, cd, id, cdbase) => cd match {
+      case "pcgroup1" => ???
+      case "permgp1" => ???
+      case _ => throw new Exception("cd not yet implemented: " + cd)
+    }
+    case ob => ob
+  }
+  )
 }

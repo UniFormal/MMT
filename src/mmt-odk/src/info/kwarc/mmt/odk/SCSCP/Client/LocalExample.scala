@@ -1,5 +1,6 @@
 package info.kwarc.mmt.odk.SCSCP.Client
 
+import info.kwarc.mmt.odk.OpenMath.Coding.{GAPEncoding, OMMMTCoding}
 import info.kwarc.mmt.odk.OpenMath.{OMApplication, OMInteger, OMSymbol}
 
 /**
@@ -20,6 +21,7 @@ object LocalExample {
     val example2 = client(DihedralGroupAsPermGroup(OMInteger(10, None))).fetchExpression()
     println(example)
     println(example2)
-
+    println(GAPEncoding(example))
+    println(GAPEncoding(example2))
   }
 }
