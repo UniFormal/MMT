@@ -135,6 +135,14 @@ class Body(tk: HTalk) {
     }
     scala.xml.Utility.trim(bodyXML)
   }
+  
+  def asJSON = {
+    try {
+      JSON.parse(asString)}
+    catch {case e: JSON.JSONError =>
+      throw ServerError("error in json body").setCausedBy(e)
+    }
+  }
 }
 
 
