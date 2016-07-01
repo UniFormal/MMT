@@ -109,7 +109,13 @@ class Evaluator(controller: Controller) {
          val res = empty
          rs.getInds(c) foreach {res += _}
          res
-      case Union(s,t) => evaluateESet(s) union evaluateESet(t)
+      case Union(s,t) =>
+        evaluateESet(s) union evaluateESet(t)
+      case Intersection(s,t) =>
+        val tE = evaluateESet(t)
+        evaluateESet(s) filter tE.contains 
+      case Difference(s,t) =>
+        evaluateESet(s) diff evaluateESet(t)
       case BigUnion(dom,s) =>
          val res = empty
          evaluateESet(dom) foreach {
@@ -124,7 +130,7 @@ class Evaluator(controller: Controller) {
            rs.query(p.head.asInstanceOf[Path], by)(res += _)  // p has type List(Path) by precondition
          }
          res
-      case info.kwarc.mmt.api.ontology.Closure(of) =>
+      case Closure(of) =>
          evaluateElemPath(of) match { 
             case p : MPath =>
                val res = empty
@@ -180,7 +186,7 @@ class Evaluator(controller: Controller) {
            }
          }
 
-         // evaluate the query and filzer
+         // evaluate the query and filter
          evaluate(from) match {
             case ElemResult(b : BaseType) => HashSet(b :: Nil)
             case ESetResult(s : HashSet[List[BaseType]]) => s.map(_.filter(checkFilter))

@@ -93,7 +93,6 @@ var interactiveViewing = {
 
         if (mmt.focusIsMath) {
             var me = this;
-            console.log("_test1");
             res["infer type"] = function() { me.showComputationResult("i", "inferred type") };
             res["simplify"] = function() { me.showComputationResult("s", "simplified") };
             // res["align query1"] = function() { me.showComputationResult("a", "align query2") };
@@ -135,13 +134,9 @@ var interactiveViewing = {
             /*res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};*/
             res["show declaration"] =
                 function() { me.showComp(null); };
-            res["show graph"] = function() {
-                var svgURI = ":svg?" + uri;
-                var title = uri.split('/');
-                var contentNode = inlineBox.create(mmt.target, title.slice(-1)[0]);
-                $(contentNode).addClass('graph-body');
-                mmt.ajaxAppendBox(svgURI, contentNode);
-            };
+            res["show theory graph"] = function() {me.showGraph("", uri);};
+            res["show declaration graph"] = function() {me.showGraph("decltree", uri);};
+
             res["show URI"] = function() { alert(uri); };
             /*  res["comment"] = function(){me.addComment()};*/
 
@@ -264,7 +259,13 @@ var interactiveViewing = {
             }
         );
     },
-
+    showGraph: function(kind, uri) {
+       var svgURI = ":svg/" + kind + "?" + uri;
+       var title = uri.split('/');
+       var contentNode = inlineBox.create(mmt.target, title.slice(-1)[0]);
+       $(contentNode).addClass('graph-body');
+       mmt.ajaxAppendBox(svgURI, contentNode);
+    },
     /* Helper Functions  */
     setVisib: function(prop, val) {
         var root = mmt.focusIsMath ? mmt.focus : mmt.focus.parentNode;

@@ -117,6 +117,12 @@ case class Union(left: Query, right: Query) extends Query
 /** union of a collection of sets indexed by a set */
 case class BigUnion(domain: Query, of: Query) extends Query
 
+/** intersection of sets */
+case class Intersection(left: Query, right: Query) extends Query
+
+/** difference of sets */
+case class Difference(of: Query, without: Query) extends Query
+
 /** comprehension subset of a set */
 case class Comprehension(domain: Query, pred: Prop) extends Query
 
@@ -126,7 +132,7 @@ case class Tuple(components: List[Query]) extends Query
 /** projection */
 case class Projection(of: Query, index: Int) extends Query
 
-/** Returns all statements from a query that match a judgmenet containing a variable */
+/** Returns all statements from a query that match a judgment containing a variable */
 case class SelectByJudgement(from : Query, v : VarDecl, j : Judgement) extends Query
 
 /** query that applies an atomic function */
@@ -156,7 +162,6 @@ case class And(left: Prop, right: Prop) extends Prop
 /** universal quantification over a set */
 case class Forall(domain: Query, scope: Prop) extends Prop
 
-
 /**
  * binary relations between paths, i.e., relation in the MMT ontology
  *
@@ -170,13 +175,15 @@ case class Forall(domain: Query, scope: Prop) extends Prop
  * could be used as a dependency relation between documents.
  */
 sealed abstract class RelationExp {
-  /** syntactic sugar for queries: Choice(this, q) */
+  /** union with another relation */
   def |(q: RelationExp) = Choice(this, q)
-
-  /** syntactic sugar for queries: Sequence(this, q) */
+  /** composition with another relation */
   def *(q: RelationExp) = Sequence(this, q)
-
-  /** the inverse/dual of this query */
+  /** reflexive-transitive closure */
+  def ^* = Reflexive | Transitive(this)
+  /** transitive closure */
+  def ^+ = Transitive(this)
+  /** inverse/dual */
   def unary_- : RelationExp
 }
 
@@ -227,13 +234,17 @@ case object Reflexive extends RelationExp {
   override def toString = "Id"
 }
 
-/** the reflexive relation restricted to a unary predicate
-  * This permits the restriction of a result set to elements of a certain type.
+/** the reflexive relation restricted to a set of paths
+  * This permits the restriction of a result set to, e.g., elements of a certain type.
   */
-case class HasType(tp: Unary) extends RelationExp {
+case class HasType(mustHave: Option[List[Unary]], mustNotHave: List[Unary]) extends RelationExp {
   def unary_- = this
 
-  override def toString = ":" + tp
+  override def toString = ":" + mustHave.mkString(",") + " \\ " + mustNotHave.mkString(",")
+}
+
+object HasType {
+  def apply(us: Unary*): RelationExp = HasType(Some(us.toList), Nil)
 }
 
 /** helper object for relation expressions */
@@ -276,6 +287,16 @@ object Query {
       throw ParseError("illegal query: " + q + "\nexpected: " + tp + "\nfound: " + it)
     }
   }
+  
+  def check(rel: RelationExp)(implicit context: List[QueryBaseType]) {rel match {
+    case ToObject(_) =>
+    case ToSubject(_) =>
+    case HasType(_,_) =>
+    case Transitive(r) => check(r)
+    case Choice(rs @ _*) => rs foreach {r => check(r)}
+    case Sequence(rs @ _*) => rs foreach {r => check(r)}
+    case Reflexive =>
+  }}
 
   def infer(b: BaseType) = b match {
     case p: Path => PathType
@@ -326,7 +347,8 @@ object Query {
           ESet(out)
         case _ => throw ParseError("illegal query: " + q)
       }
-    case Related(to, _) =>
+    case Related(to, by) =>
+      check(by)
       infer(to) match {
         case Elem1(PathType) => ESet(PathType)
         case ESet1(PathType) => ESet(PathType)
@@ -342,14 +364,9 @@ object Query {
     case Closure(of) =>
       check(of, Elem(PathType))
       ESet(PathType)
-    case Union(l, r) =>
-      (infer(l), infer(l)) match {
-        case (ESet(s), ESet(t)) if s == t => ESet(s)
-        case (Elem(s), Elem(t)) if s == t => ESet(s)
-        case (ESet(s), Elem(t)) if s == t => ESet(s)
-        case (Elem(s), ESet(t)) if s == t => ESet(s)
-        case _ => throw ParseError("expected set queries of equal type " + q)
-      }
+    case Union(l, r) => checkEqualType(l,r)
+    case Intersection(l, r) => checkEqualType(l,r)
+    case Difference(l, r) => checkEqualType(l,r)
     case BigUnion(d, of) => infer(d) match {
       case ESet(s) => infer(of)(s ::: context) match {
         case ESet(t) => ESet(t)
@@ -400,6 +417,15 @@ object Query {
 
     }
   }
+  
+  private def checkEqualType(l: Query, r: Query)(implicit context: List[QueryBaseType]): QueryType = (infer(l), infer(r)) match {
+    case (ESet(s), ESet(t)) if s == t => ESet(s)
+    case (Elem(s), Elem(t)) if s == t => ESet(s)
+    case (ESet(s), Elem(t)) if s == t => ESet(s)
+    case (Elem(s), ESet(t)) if s == t => ESet(s)
+    case _ => throw ParseError("expected set queries of equal type " + l + " " + r)
+  }
+
 
   /** parses a query; infer must be called to sure well-formedness
     * @param n the query to parse

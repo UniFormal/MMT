@@ -131,10 +131,6 @@ trait ActionHandling {self: Controller =>
             ps.stream.close
           case Check(p, id) =>
             checkAction(p, id)
-          case Graph(f) =>
-            val tg = new TheoryGraph(depstore)
-            val gv = new GraphExporter(tg.nodes.toIterable, Nil, tg)
-            gv.exportDot(f)
           case Navigate(p) =>
             notifyListeners.onNavigate(p)
           case a: GetAction => a.make(this)

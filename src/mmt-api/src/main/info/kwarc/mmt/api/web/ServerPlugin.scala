@@ -59,12 +59,15 @@ class PostServer extends ServerExtension("post") {
 class SVGServer extends ServerExtension("svg") {
   /**
    * @param path ignored
-   * @param query the document path
+   * @param query the [[Path]] for which to retrieve a graph
+   * @param path the export dimension of the kind of graph, "svg" by if empty
    * @param body ignored
+   * @param session ignored
    */
 
-  def apply(path: List[String], query: String, body: Body, session: Session) = {
+  def apply(httppath: List[String], query: String, body: Body, session: Session) = {
     val path = Path.parse(query, controller.getNamespaceMap)
+    val key = httppath.headOption.getOrElse("svg")
     val (inNarr, newPath) = path.dropComp match {
       // narrative
       case dp: DPath => (true, dp)
@@ -77,14 +80,14 @@ class SVGServer extends ServerExtension("svg") {
         throw LocalError("illegal path: " + query)
       }
       val inPathFile = Archive.narrationSegmentsAsFile(FilePath(inPath), "omdoc")
-      arch.root / "export" / "svg" / "narration" / inPathFile
+      arch.root / "export" / key / "narration" / inPathFile
     } else {
       val mp = newPath.asInstanceOf[MPath]
       val arch = controller.backend.findOwningArchive(mp).getOrElse {
         throw LocalError("illegal path: " + query)
       }
       val inPathFile = Archive.MMTPathToContentPath(mp)
-      arch.root / "export" / "svg" / "content" / inPathFile
+      arch.root / "export" / key / "content" / inPathFile
     }
     val node = utils.File.read(svgFile.setExtension("svg"))
     TypedTextResponse(node, "text")

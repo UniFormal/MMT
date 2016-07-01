@@ -26,6 +26,7 @@ case object IsNotation extends Unary("notation")
 /** Extractor extensions should use instances of this class to extend the ontology for unary relations */
 case class CustomUnary(name : String) extends Unary(name)
 
+
 /**
  * An object of type Binary represents a binary predicate between MMT paths in the MMT ontology.
  * The semantics of these objects is given by their name
@@ -37,6 +38,10 @@ sealed abstract class Binary(val desc : String, val backwardsDesc: String) {
    def unary_- = ToSubject(this)
    /** syntactic sugar for queries: ToObject(this) */
    def unary_+ = ToObject(this)
+}
+
+object Binary {
+  implicit def toRelation(b: Binary) = +b
 }
 
 // module - module, component - component
