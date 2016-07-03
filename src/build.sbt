@@ -203,7 +203,10 @@ lazy val latex = (project in file("latex-mmt")).
 
 lazy val oeis = (project in file("mmt-oeis")).
   dependsOn(planetary).
-  settings(mmtProjectsSettings("mmt-oeis"): _*)
+  settings(mmtProjectsSettings("mmt-oeis"): _*).
+  settings(
+    libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+  )
 
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
