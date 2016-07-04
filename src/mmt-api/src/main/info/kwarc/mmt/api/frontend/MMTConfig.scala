@@ -137,8 +137,10 @@ class MMTConfig {
 }
 
 
+/** helper functions for configurations */
 object MMTConfig {
-  private def split(line: String): List[String] = line.split("\\s+").toList
+  /** split at whitespace (allowing for quoted segments to contain whitespace) */
+  private def split(line: String): List[String] = splitAtWhitespace(line)
   /**
    * parses a configuration file
    *
@@ -159,7 +161,7 @@ object MMTConfig {
     var section = ""
     s.split('\n').foreach {l =>
       val line = l.trim
-      lazy val fail = println(s"invalid $section line: `" + line + "`")
+      lazy val fail = println(s"invalid $section line: " + line)
       if (line.startsWith("//") || line.isEmpty) {
         //ignore
       } else if (line.startsWith("#include")) {
@@ -219,6 +221,11 @@ object MMTConfig {
               config.addEntry(MathPathConf(File(local)))
            case _ => fail
         }
+        case "envvars" => split(line) match {
+          case name :: value :: Nil =>
+            config.addEntry(EnvVarConf(name, value))
+          case _ => fail
+        }        
         case "base" => config.setBase(line)
         case _ => split(line) match {
            case key::values =>

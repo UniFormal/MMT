@@ -28,10 +28,14 @@ class RelStore(report : frontend.Report) {
    def getInds : Iterator[Individual] = individuals.pairs map {case (t,p) => Individual(p,t)}
    /** retrieves all individual of a certain type */
    def getInds(tp: Unary) : Iterator[Path] = individuals(tp).iterator
-   /** retrieves type of an Individual */
+   /** retrieves type of an individual */
    def getType(p: Path) : Option[Unary] = types.get(p)
+   /** checks if an individual has a given type */   
+   def hasType(p: Path, tp: Unary) : Boolean = individuals(tp) contains p
    /** retrieves all Relation declarations */
    def getDeps : Iterator[Relation] = dependencies.pairs map {case ((p,q), d) => Relation(d,p,q)}
+   /** tests if there is a relation holds between two individuals */
+   def hasDep(from: Path, to: Path, bin: Binary) = dependencies((from,to)) contains bin
 
    //def getObjects(d : Binary) = subjects.keys.filter(_._1 == d).map(_._2).toSet
    //def getSubjects(d : Binary) = objects.keys.filter(_._2 == d).map(_._1).toSet
@@ -111,9 +115,17 @@ class RelStore(report : frontend.Report) {
          case hd :: tl => query(start, hd) {p => query(p, Sequence(tl : _*))}
       }
       //only start itself iff it has the right type
-      case HasType(tp) => if (hasType(start, tp)) add(start)
+      case HasType(mustOpt,mustNot) =>
+        val tpO = getType(start)
+        val inMust = mustOpt match {
+          case None => true
+          case Some(must) => tpO.map {tp => must contains tp}.getOrElse(false)
+        }
+        lazy val notInMustNot = tpO.map(tp => ! (mustNot contains tp)).getOrElse(true)
+        if (inMust && notInMustNot)
+          add(start)
    }}
-   def hasType(p: Path, tp: Unary) : Boolean = individuals(tp) contains p
+   
    
    /**
     * Returns the set of theories a theory depends on

@@ -29,7 +29,7 @@ object Action extends RegexParsers {
 
   private def action = log | mathpath | archive | oaf | extension | mws | server |
     windowaction | execfile | defactions | scala | mbt |
-    setbase | read | interpret | graph | check | navigate |
+    setbase | read | interpret | check | navigate |
     printall | printallxml | printConfig | diff | clear | exit | getaction // getaction must be at end for default get
 
   private def log = logfilets | logfile | loghtml | logconsole | logon | logoff
@@ -124,8 +124,6 @@ object Action extends RegexParsers {
   private def read = "read" ~> file ^^ { f => Read(f, false) }
 
   private def interpret = "interpret" ~> file ^^ { f => Read(f, true) }
-
-  private def graph = "graph" ~> file ^^ { f => Graph(f) }
 
   private def check = "check" ~> path ~ (str ?) ^^ { case p ~ idOpt => Check(p, idOpt.getOrElse("mmt")) }
 
@@ -348,10 +346,6 @@ case class Do(file: Option[File], name: String) extends Action {
 
 /** stores a command binding done with [[Define]] */
 case class Defined(file: File, name: String, body: List[Action])
-
-case class Graph(target: File) extends Action {
-  override def toString = "graph " + target
-}
 
 /** read a file containing MMT in OMDoc syntax
   *

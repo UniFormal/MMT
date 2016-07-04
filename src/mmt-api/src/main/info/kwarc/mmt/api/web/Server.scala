@@ -174,9 +174,12 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
     //override def buffered = true
     override def chunked = true // Content-Length is not set at the beginning of the response, so we can stream info while computing/reading from disk
     override def sessionTimeoutMinutes = 60
-    // session tracking, access current session
+    // session tracking, access current session; alternatively use HTracking.Uri
     override def tracking = HTracking.Cookie
+    // key used if session tracking via cookies
     override def cookieKey = "MMT_SESSIONID"
+    // key used in query if session tracking via URL
+    override def sidKey = "MMT_SESSIONID"
     
     def resolve(req: HReqData): Option[HLet] = {
       lazy val reqString = "/" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query
