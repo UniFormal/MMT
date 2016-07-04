@@ -12,11 +12,10 @@ branches:
 # - sudo apt-get install -qq graphviz smlnj jedit xvfb
 script:
  - cd src
- - sbt compile > /dev/null
+ - sbt compile
+ - sbt deployFull
+ - sbt apidoc
  - sbt test
- - sbt apidoc > /dev/null
- - sbt deploy > /dev/null
- - cd ..
  # - git clone http://gl.mathhub.info/meta/inf.git
  # - inf/config/MMT/testScripts/testUrtheories.sh
  # - inf/config/MMT/testScripts/testExamples.sh
