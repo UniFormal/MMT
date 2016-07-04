@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.frontend._
 
 import org.scalatest._
 
+@Ignore
 class WebServerSpec extends FlatSpec with Matchers {
   val controller = new Controller()
   val testLocation = "src/test/resources/WebServerTest/"

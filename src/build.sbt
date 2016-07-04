@@ -119,6 +119,7 @@ lazy val lf = (project in file("mmt-lf")).
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
     unmanagedJars in Compile += Utils.deploy.toJava / "lfcatalog" / "lfcatalog.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "tiscaf.jar",
     scalaSource in Test := baseDirectory.value / "test",
     libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
   )
