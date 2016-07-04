@@ -7,9 +7,9 @@ branches:
   only:
     - master
 
-before_install:
- - sudo apt-get update -qq
- - sudo apt-get install -qq graphviz smlnj jedit xvfb
+#before_install:
+# - sudo apt-get update -qq
+# - sudo apt-get install -qq graphviz smlnj jedit xvfb
 script:
  - cd src
  - sbt compile > /dev/null
@@ -17,13 +17,13 @@ script:
  - sbt apidoc > /dev/null
  - sbt deploy > /dev/null
  - cd ..
- - git clone http://gl.mathhub.info/meta/inf.git
- - inf/config/MMT/testScripts/testUrtheories.sh
- - inf/config/MMT/testScripts/testExamples.sh
- - inf/config/MMT/testScripts/testSms.sh
- - inf/config/MMT/testScripts/testTeX.sh
- - cp inf/config/MMT/cf95c94bae142eeed300a254d964f0bf $HOME/.subversion/auth/svn.ssl.server/
- - inf/config/MMT/setupTwelf.sh > /dev/null
- - export PATH=/usr/local/share/twelf-mod/bin:$PATH
- - inf/config/MMT/testScripts/testLATIN.sh
- - inf/config/MMT/testScripts/testJEdit.sh
+ # - git clone http://gl.mathhub.info/meta/inf.git
+ # - inf/config/MMT/testScripts/testUrtheories.sh
+ # - inf/config/MMT/testScripts/testExamples.sh
+ # - inf/config/MMT/testScripts/testSms.sh
+ # - inf/config/MMT/testScripts/testTeX.sh
+ # - cp inf/config/MMT/cf95c94bae142eeed300a254d964f0bf $HOME/.subversion/auth/svn.ssl.server/
+ # - inf/config/MMT/setupTwelf.sh > /dev/null
+ # - export PATH=/usr/local/share/twelf-mod/bin:$PATH
+ # - inf/config/MMT/testScripts/testLATIN.sh
+ # - inf/config/MMT/testScripts/testJEdit.sh
