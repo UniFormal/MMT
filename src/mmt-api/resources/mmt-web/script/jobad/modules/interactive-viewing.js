@@ -134,7 +134,7 @@ var interactiveViewing = {
             /*res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};*/
             res["show declaration"] =
                 function() { me.showComp(null); };
-            res["show theory graph"] = function() {me.showGraph("", uri);};
+            res["show theory graph"] = function() {me.showGraph("thygraph", uri);};
             res["show declaration graph"] = function() {me.showGraph("decltree", uri);};
 
             res["show URI"] = function() { alert(uri); };

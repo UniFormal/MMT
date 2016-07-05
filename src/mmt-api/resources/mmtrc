@@ -8,7 +8,8 @@ mws         info.kwarc.mmt.api.archives.MWSHarvestExporter
 planetary   info.kwarc.mmt.planetary.PlanetaryPresenter
 mh-html     info.kwarc.mmt.planetary.MathHubFormalPresenter
 html        info.kwarc.mmt.api.archives.HTMLExporter
-svg         info.kwarc.mmt.api.archives.GraphViz
+thygraph    info.kwarc.mmt.api.ontology.TheoryGraphExporter
+decltree    info.kwarc.mmt.api.ontology.DeclarationTreeExporter
 index       info.kwarc.mmt.api.archives.OMDocImporter
 pvs-omdoc   info.kwarc.mmt.pvs.Plugin
 
