@@ -15,7 +15,7 @@ object MMTSystem {
     def jar: File
   }
   /** run from installed fat jar */
-  case class FatJar(jar: File) extends DeployRunStyle with IsFat{
+  case class FatJar(jar: File) extends DeployRunStyle with IsFat {
     def deploy = jar.up
   }
   /** run from a fat jar that is not part of the expected file structure */

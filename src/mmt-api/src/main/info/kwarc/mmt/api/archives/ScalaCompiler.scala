@@ -19,7 +19,7 @@ class ScalaCompiler extends BuildTarget {
      val folders = stringToList(folderList).map(d => a / Dim(d)).filter(_.exists)
      val files = folders.flatMap(f => f.descendants).filter(_.getExtension.contains("scala")).map(_.toString)
      val classPath = MMTSystem.runStyle match {
-       case FatJar(j) => List(j)
+       case rs: IsFat => List(rs.jar)
        case ThinJars(d) => jars(d/"lib") ::: jars(d/"main")
        case r: Classes =>
          jars(r.deploy / "lib") ::: List(r.classFolder, r.projectFolder("mmt-lf")/"bin") //TODO don't hard-code LF path here

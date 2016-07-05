@@ -28,7 +28,7 @@ trait ObjectPresenter extends Extension {
  *  
  * see also [[Presenter]]
  */
-trait StructurePresenter extends Extension {
+trait StructurePresenter extends Exporter {
    /**
     * @param e the element to present
     * @param standalone if true, include appropriate header and footer
@@ -40,6 +40,12 @@ trait StructurePresenter extends Extension {
       apply(e)(sb)
       sb.get
    }
+   
+   def exportDocument(doc : documents.Document, bf: BuildTask) = apply(doc, true)(rh)
+   def exportTheory(thy : DeclaredTheory, bf: BuildTask) = apply(thy, true)(rh)
+   def exportView(view : DeclaredView, bf: BuildTask) = apply(view, true)(rh)
+   /** does nothing */
+   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 }
 
 /**
@@ -48,18 +54,13 @@ trait StructurePresenter extends Extension {
  * The format for which a Presenter is applicable is the same as the key used to run it as an exporter.
  */
 abstract class Presenter(val objectLevel: ObjectPresenter)
-   extends archives.Exporter with StructurePresenter with ObjectPresenter with LeveledExtension {
+   extends StructurePresenter with ObjectPresenter with LeveledExtension {
 
   /** relegates to objectPresenter */
   def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) = objectLevel(o, origin)
    
   def outDim = Dim("export", "presentation", key)
   
-  def exportDocument(doc : documents.Document, bf: BuildTask) = apply(doc, true)(rh)
-  def exportTheory(thy : DeclaredTheory, bf: BuildTask) = apply(thy, true)(rh)
-  def exportView(view : DeclaredView, bf: BuildTask) = apply(view, true)(rh)
-  /** does nothing */
-  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 }
 
 /** helper object */

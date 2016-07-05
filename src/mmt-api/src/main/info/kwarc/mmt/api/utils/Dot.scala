@@ -98,7 +98,8 @@ class DotToSVG(dotPath: File) {
     }
 
     /**
-     * exports in dot format
+     * @param the graph to layout
+     * @return the svg graph returned by dot
      */ 
     def apply(dg: DotGraph): String = {
       val outFile = File(System.getProperty("java.io.tmpdir")) / "graphviz.svg"

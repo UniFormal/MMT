@@ -60,6 +60,29 @@ abstract class RenderingHandler {
    /** returns a qualified name from a prefix and a local part */
    private def getQualifiedName(prefix : String, name: String) =
      if (prefix == "" || prefix == null) name else (prefix + ":" + name)
+
+   // indentation management  
+   private var indentLevel = 0
+   val indentString = "  "
+   protected var afterIndentationString = ""
+   /** renders a newline followed by indentation */
+   def nl {
+    apply("\n")
+    Range(0, indentLevel).foreach { _ =>
+      apply(indentString)
+    }
+   }
+   /** renders the body in such a way that all calls to nl create indentation one level deeper */
+   def indent(body: => Unit) {
+     indentLevel += 1
+     nl
+     try {
+       body
+     }
+     finally {
+       indentLevel -= 1
+     }
+   }
 }
 
 trait RenderingResult[A] extends RenderingHandler {

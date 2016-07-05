@@ -43,7 +43,7 @@ trait Exporter extends BuildTarget {
     controller.extman.addExtension(contentExporter, args)
     controller.extman.addExtension(narrationExporter, args)
   }
-
+  
   /** applied to each document (i.e., narration-folders and .omdoc files) */
   def exportDocument(doc: Document, bf: BuildTask)
 
@@ -148,30 +148,10 @@ trait Exporter extends BuildTarget {
       BuildResult.empty
     }
   }
-}
-
-trait IndentedExporter extends Exporter {
-  private var indentLevel = 0
-  val indentString = "  "
-  protected var afterIndentationString = ""
-
-  def indent(body: => Unit) {
-    indentLevel += 1
-    nl
-    try {
-      body
-    }
-    finally {
-      indentLevel -= 1
-    }
-  }
-
-  def nl {
-    rh("\n")
-    Range(0, indentLevel).foreach { _ =>
-      rh(indentString)
-    }
-  }
+  /* object asPresenter
+   * Such an object is not needed here.
+   * Instead any Exporter that makes sense to use as a Presenter should be implemented as a (Structure)Presenter to begin with
+   */
 }
 
 /** An Exporter that exports relative to a bifoundation

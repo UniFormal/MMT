@@ -60,7 +60,7 @@ class SVGServer extends ServerExtension("svg") {
   /**
    * @param path ignored
    * @param query the [[Path]] for which to retrieve a graph
-   * @param path the export dimension of the kind of graph, "svg" by if empty
+   * @param path the export dimension from which to taek the graph, "svg" by if empty
    * @param body ignored
    * @param session ignored
    */
@@ -89,7 +89,15 @@ class SVGServer extends ServerExtension("svg") {
       val inPathFile = Archive.MMTPathToContentPath(mp)
       arch.root / "export" / key / "content" / inPathFile
     }
-    val node = utils.File.read(svgFile.setExtension("svg"))
+    val node = if (svgFile.exists) {
+       utils.File.read(svgFile.setExtension("svg"))
+    } else {
+       val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
+         throw LocalError(s"svg file does not exist and exporter $key not available: $query")
+       }
+       val se = controller.get(path)
+       exp.asString(se)
+    }
     TypedTextResponse(node, "text")
   }
 }

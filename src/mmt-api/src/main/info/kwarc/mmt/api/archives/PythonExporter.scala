@@ -5,7 +5,7 @@ import modules._
 import symbols._
 import documents._
 
-class PythonExporter extends Exporter with IndentedExporter {
+class PythonExporter extends Exporter {
    val outDim = Dim("export", "python")
    override val outExt = "py"
    val key = "python"
@@ -13,20 +13,18 @@ class PythonExporter extends Exporter with IndentedExporter {
 
    private def comment(body: => Unit) {
       rh("# ")
-      afterIndentationString += "# "
       body
-      afterIndentationString = afterIndentationString.substring(0, afterIndentationString.length-2)
-      nl
+      rh.nl
    }
    private def cls(name: String)(body: => Unit) {
       rh("class " + name + ":")
-      indent(body)
-      nl
+      rh.indent(body)
+      rh.nl
    }
    private def df(name: String, vars: List[String])(body: => Unit) {
       rh("def " + name + vars.mkString("(", ", ", ")") + ":")
-      indent(body)
-      nl
+      rh.indent(body)
+      rh.nl
    }
 
    def exportTheory(t: DeclaredTheory, bf: BuildTask) {
@@ -63,5 +61,4 @@ class PythonExporter extends Exporter with IndentedExporter {
    def exportDocument(doc: Document, bt: BuildTask) {
 
    }
-
 }

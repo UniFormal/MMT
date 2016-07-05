@@ -5,11 +5,12 @@ import documents._
 import modules._
 import archives._
 import utils._
+import presentation._
 
 /**
  * builds a graph from relational and then calls dot to produce an svg file
  */
-abstract class RelationGraphExporter extends Exporter {
+abstract class RelationGraphExporter extends StructurePresenter {
   
   override def outExt = "svg"
   
@@ -30,35 +31,15 @@ abstract class RelationGraphExporter extends Exporter {
   // controller.depstore.querySet(container, Transitive(+Declares) * HasType(???))
   
   /** contains at least all elements of the document */
-  def exportDocument(doc: Document, bt: BuildTask) {
-    val dg = buildGraph(doc)
-    exportGraph(dg, bt)
-  }
-
-  /** contains at least the theory */
-  def exportTheory(thy: DeclaredTheory, bt: BuildTask) {
-    val dg = buildGraph(thy)
-    exportGraph(dg, bt)
-  }
-
-  /** contains at least domain, codomain, and view */
-  def exportView(view: DeclaredView, bt: BuildTask) {
-    //val theories = List(view.from, view.to).flatMap(objects.TheoryExp.getSupport)
-    val dg = buildGraph(view)
-    exportGraph(dg, bt)
-  }
-
-  /** nothing for now */
-  def exportNamespace(dpath: DPath, bt: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
-
-  private def exportGraph(dg: DotGraph, bt: BuildTask) {
+  def apply(se: StructuralElement, standalone: Boolean = false)(implicit rh: RenderingHandler) {
+    val dg = buildGraph(se)
     val dot = new DotToSVG(File(graphviz))
     val svg = try {
       dot(dg)
     } catch {
       case e: Exception => throw LocalError("error while producing graph").setCausedBy(e)
     }
-    File.write(bt.outFile, svg)
+    rh(svg)
   }
 }
 
@@ -95,7 +76,7 @@ class SimpleRelationGraphExporter(val key: String, nodeSet: RelationExp, edgeTyp
    }
 }
 
-class DeclarationTreeGraphExporter extends SimpleRelationGraphExporter("decltree", ((Includes | Declares)^*) * HasType(IsConstant,IsTheory), List(Includes,Declares))
+class DeclarationTreeExporter extends SimpleRelationGraphExporter("decltree", ((Includes | Declares)^*) * HasType(IsConstant,IsTheory), List(Includes,Declares))
 
 class DependencyGraphExporter extends SimpleRelationGraphExporter("depgraph", ((Includes | Declares)^*) * HasType(IsConstant), List(DependsOn))
 
