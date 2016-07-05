@@ -56,7 +56,7 @@ class PostServer extends ServerExtension("post") {
 }
 
 /** interprets the query as an MMT document URI and returns the SVG representation of the theory graph */
-class SVGServer extends ServerExtension("svg") {
+class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
   /**
    * @param path ignored
    * @param query the [[Path]] for which to retrieve a graph
@@ -68,27 +68,8 @@ class SVGServer extends ServerExtension("svg") {
   def apply(httppath: List[String], query: String, body: Body, session: Session) = {
     val path = Path.parse(query, controller.getNamespaceMap)
     val key = httppath.headOption.getOrElse("svg")
-    val (inNarr, newPath) = path.dropComp match {
-      // narrative
-      case dp: DPath => (true, dp)
-      // content
-      case c: ContentPath => (false, c.module)
-    }
-    val svgFile = if (inNarr) {
-      val dp = newPath.asInstanceOf[DPath]
-      val (arch, inPath) = controller.backend.resolveLogical(dp.uri).getOrElse {
-        throw LocalError("illegal path: " + query)
-      }
-      val inPathFile = Archive.narrationSegmentsAsFile(FilePath(inPath), "omdoc")
-      arch.root / "export" / key / "narration" / inPathFile
-    } else {
-      val mp = newPath.asInstanceOf[MPath]
-      val arch = controller.backend.findOwningArchive(mp).getOrElse {
-        throw LocalError("illegal path: " + query)
-      }
-      val inPathFile = Archive.MMTPathToContentPath(mp)
-      arch.root / "export" / key / "content" / inPathFile
-    }
+    val (exportFolder, relPath) = svgPath(path)
+    val svgFile = exportFolder / key / relPath
     val node = if (svgFile.exists) {
        utils.File.read(svgFile.setExtension("svg"))
     } else {
@@ -99,6 +80,45 @@ class SVGServer extends ServerExtension("svg") {
        exp.asString(se)
     }
     TypedTextResponse(node, "text")
+  }
+  
+  import Javascript._
+  import MMTJavascript._
+  def getEntries(path: Path) = {
+    val (exportFolder, relPath) = svgPath(path)
+    val existingKeys = exportFolder.children.collect {
+      case f if (f/relPath).exists => f.name
+    }
+    val exporterKeys = controller.extman.get(classOf[RelationGraphExporter]).map(_.key)
+    (existingKeys ::: exporterKeys).distinct.map {key =>
+      ContextMenuEntry("show " + key + " graph", showGraph(key, path.toPath))  
+    }
+  }
+  
+  /** @return (d,f) such that d/key/f is the path to the svg file for path exported by key */ 
+  private def svgPath(path: Path): (File, List[String]) = {
+    val (inNarr, newPath) = path.dropComp match {
+      // narrative
+      case dp: DPath => (true, dp)
+      // content
+      case c: ContentPath => (false, c.module)
+    }
+    val (arch, relPath) = if (inNarr) {
+      val dp = newPath.asInstanceOf[DPath]
+      val (arch, inPath) = controller.backend.resolveLogical(dp.uri).getOrElse {
+        throw LocalError("illegal path: " + path)
+      }
+      val inPathFile = Archive.narrationSegmentsAsFile(FilePath(inPath), "omdoc")
+      (arch, "narration" :: inPathFile)
+    } else {
+      val mp = newPath.asInstanceOf[MPath]
+      val arch = controller.backend.findOwningArchive(mp).getOrElse {
+        throw LocalError("illegal path: " + path)
+      }
+      val inPathFile = Archive.MMTPathToContentPath(mp)
+      (arch, "content" :: inPathFile)
+    }
+    (arch.root / "export", relPath)
   }
 }
 

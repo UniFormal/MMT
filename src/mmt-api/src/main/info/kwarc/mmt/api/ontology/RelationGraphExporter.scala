@@ -86,7 +86,7 @@ class DependencyGraphExporter extends SimpleRelationGraphExporter("depgraph", ((
  * uses [[ontology.TheoryGraphFragment]] to produce a dot file and then calls dot to produce an svg file
  */
 class TheoryGraphExporter extends RelationGraphExporter {
-  val key = "svg"
+  val key = "thygraph"
 
   private lazy val tg: ontology.TheoryGraph = new ontology.TheoryGraph(controller.depstore)
 

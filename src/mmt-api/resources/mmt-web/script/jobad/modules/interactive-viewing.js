@@ -132,12 +132,19 @@ var interactiveViewing = {
             }
 
             /*res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};*/
-            res["show declaration"] =
-                function() { me.showComp(null); };
-            res["show theory graph"] = function() {me.showGraph("thygraph", uri);};
-            res["show declaration graph"] = function() {me.showGraph("decltree", uri);};
-            res["show GAP graph"] = function() {me.showGraph("gapgraph", uri);};
+            res["show declaration"] = function() { me.showComp(null); };
 
+            /* this retrieves additional context menu entries from the server, see info.kwarc.mmt.api.web.ContextMenuAggregator */ 
+            $.ajax({
+                url: "/:menu?" + mmt.currentURI,
+                async: false,
+                success: function(json) {
+                   $.each(json, function(key,value) {
+                      res[key] = function() {eval(value)}
+                   });
+                }
+            });
+            
             res["show URI"] = function() { alert(uri); };
             /*  res["comment"] = function(){me.addComment()};*/
 

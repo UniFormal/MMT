@@ -298,7 +298,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     //parserExtensions ::= new ControlParser
     //serverPlugins
     List(new web.GetActionServer, new web.SVGServer, new web.QueryServer, new web.SearchServer,
-      new web.TreeView, new web.BreadcrumbsServer, new web.ActionServer,
+      new web.TreeView, new web.BreadcrumbsServer, new web.ActionServer, new web.ContextMenuAggregator,
       new web.SubmitCommentServer).foreach(addExtension(_))
     //queryExtensions
     List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
