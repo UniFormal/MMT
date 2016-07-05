@@ -36,7 +36,7 @@ abstract class Escaping {
   /** characters that are escaped by a custom string
    *  default: n/t/s for newline/tab/space; override as needed
    */
-  def useCustomEscape: List[(Char,String)] = List('\n' -> "n", '\t' -> "t", ' '  -> "sp")
+  def useCustomEscape: List[(Char,String)] = List('\n' -> "n", '\t' -> "t")
   private lazy val useCustomEscapeVal = useCustomEscape
 
   /** characters that are escaped because of an escape rule */
@@ -107,13 +107,18 @@ abstract class Escaping {
   }
 }
 
+object StandardStringEscaping extends Escaping {
+  val escapeChar = '\\'
+  override def usePlainEscape = super.usePlainEscape ::: List('"')
+}
+
 /** escapes a string into one that is a legal file name on Windows and Unix */
 object FileNameEscaping extends Escaping {
   val escapeChar = '$'
   
   override def usePlainEscape = Range(0,26).toList.map(i => (65+i).toChar)
   override def useCustomEscape = super.useCustomEscape ::: List(
-      '/' -> "sl", '?' -> "qm", '<' -> "le", '>' -> "gr", '\\' -> "bs",
+      ' '  -> "sp", '/' -> "sl", '?' -> "qm", '<' -> "le", '>' -> "gr", '\\' -> "bs",
       ':' -> "co", '*' -> "st", '|' -> "pi", '"' -> "qu", '^' -> "ca",
       '\'' -> "pr" // not sure why this is escaped; it's legal in file names but MMT archives used to escape it anyway
   )

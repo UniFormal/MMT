@@ -27,6 +27,9 @@ object Javascript {
     def toJS = name
     def apply(args: Expression*) = Apply(name, args:_*)
   }
+  case class Variable(name: String) extends Expression {
+    def toJS = name
+  }
   case class Function(params: String*)(body: Expression*) {
     def toJS = s"function(${params.mkString(",")}){${body.mkString("",";",";")}}"
   }
@@ -40,7 +43,7 @@ object Javascript {
     def toJS = i.toString
   }
   case class JSString(s: String) extends Expression {
-    def toJS = "\"" + s + "\""
+    def toJS = "\"" + StandardStringEscaping(s) + "\""
   }
   
   implicit def fromInt(i: Int) = JSInt(i)
