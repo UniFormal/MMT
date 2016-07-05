@@ -136,6 +136,7 @@ var interactiveViewing = {
                 function() { me.showComp(null); };
             res["show theory graph"] = function() {me.showGraph("thygraph", uri);};
             res["show declaration graph"] = function() {me.showGraph("decltree", uri);};
+            res["show GAP graph"] = function() {me.showGraph("gapgraph", uri);};
 
             res["show URI"] = function() { alert(uri); };
             /*  res["comment"] = function(){me.addComment()};*/

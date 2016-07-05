@@ -115,6 +115,7 @@ class GAPJSONImporter extends Importer {
     if (duplicates.nonEmpty) return BuildResult.empty
 
     val conv = new Translator(controller, bf, index,this)
+    log(newvalues.length + " Objects parsed.")
     conv(newvalues)
     BuildResult.empty
   }

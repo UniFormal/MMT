@@ -273,12 +273,14 @@ class ExtensionManager(controller: Controller) extends Logger {
     val rbp = new RuleBasedProver
     var prover: Extension = rbp
     //TODO temporary hack to replace old prover with Mark's AgentProver if the latter is on the classpath
+    /*
     val className = "info.kwarc.mmt.leo.provers.AgentProver"
     try {
       prover = Class.forName(className).newInstance.asInstanceOf[Extension]
     } catch {
       case _: Exception =>
     }
+    */
 
     List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover, rbe).foreach {e => addExtension(e)}
     // build manager

@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import documents._
 import modules._
 import archives._
+import info.kwarc.mmt.api.symbols.Declaration
 import utils._
 import presentation._
 
@@ -89,7 +90,7 @@ class TheoryGraphExporter extends RelationGraphExporter {
 
   private lazy val tg: ontology.TheoryGraph = new ontology.TheoryGraph(controller.depstore)
 
-  def buildGraph(se: StructuralElement) = {
+  def buildGraph(se: StructuralElement) : DotGraph = {
     val (theories, views) = se match {
       case doc: Document =>
         (controller.depstore.querySet(doc.path, Transitive(+Declares) * HasType(IsTheory)),
@@ -100,6 +101,7 @@ class TheoryGraphExporter extends RelationGraphExporter {
         (List(view.from, view.to).flatMap(objects.TheoryExp.getSupport),
          List(view.path)
         )
+      case d: Declaration => return buildGraph(controller.get(d.parent.doc))
     }
     val tgf = new ontology.TheoryGraphFragment(theories, views, tg)
     tgf.toDot

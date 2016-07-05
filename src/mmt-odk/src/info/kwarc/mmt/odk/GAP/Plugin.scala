@@ -1,11 +1,16 @@
 package info.kwarc.mmt.odk.GAP
 
 import info.kwarc.mmt.api.objects.{OMS, Term}
-import info.kwarc.mmt.api.{DPath, NamespaceMap, Path, frontend}
+import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.modules.DeclaredModule
+import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.{RealizedType, StandardBool, StandardDouble, StandardInt}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import info.kwarc.mmt.odk.Math
+
+import scala.collection.mutable
 
 object GAP {
   val _base = DPath(URI.http colon "www.gap-system.org")
@@ -34,11 +39,34 @@ object GAP {
   def catfilt(tm : GAPCategory) = Apply(OMS(theory ? "catFilter"),tm.toTerm)
 }
 
+object FilterRelations extends RelationalExtractor {
+  val Implies = CustomBinary("implies","implies","is implied by")
+  val IsFilter = CustomUnary("IsFilter")
+  val IsAttribute = CustomUnary("IsAttribute")
+
+  def allUnary = List(IsFilter, IsAttribute)
+  def allBinary = List(Implies)
+
+  val gaprels : scala.collection.mutable.HashMap[Constant,List[RelationalElement]] = mutable.HashMap.empty
+
+  def apply(e: StructuralElement)(implicit f: RelationalElement => Unit): Unit = e match {
+    case d: DeclaredModule => d.getDeclarations foreach {
+      case c: Constant => gaprels.getOrElse(c,Nil) foreach f
+      case _ =>
+    }
+    case _ =>
+  }
+}
+
+object GAPGraphExporter extends SimpleRelationGraphExporter("gapgraph", ((Includes | Declares | FilterRelations.Implies)^*) * HasType(IsConstant), List(DependsOn,FilterRelations.Implies))
+
 class Plugin extends frontend.Plugin {
   val theory = GAP.theory
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
     controller.extman.addExtension(new GAPJSONImporter)
+    controller.extman.addExtension(FilterRelations)
+    controller.extman.addExtension(GAPGraphExporter)
   }
 }
 

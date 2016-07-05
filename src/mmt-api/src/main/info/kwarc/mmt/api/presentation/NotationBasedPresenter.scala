@@ -529,10 +529,10 @@ class NotationBasedPresenter extends ObjectPresenter {
    private def recurse(obj: Obj, bracket: TextNotation => Int)(implicit pcOrg: PresentationContext): Int = {
          val pc = pcOrg.copy(source = SourceRef.get(obj))
          // recovery if no notation or other problem
-         lazy val default = return doDefault(obj)(pc)
+         lazy val default = doDefault(obj)(pc)
          obj match {
             case OMS(p) =>
-               val not = getNotations(p).find(_.arity.isConstant).getOrElse(default)
+               val not = getNotations(p).find(_.arity.isConstant).getOrElse(return default)
                if (not.arity.isConstant) {
                  def doMarkers(ms : List[Marker]) : Unit = ms match {
                    case Nil => //nothing to do
@@ -547,9 +547,9 @@ class NotationBasedPresenter extends ObjectPresenter {
                  }
                  doMarkers(not.presentationMarkers)
                  -1
-               } else default
+               } else return default
             case OMV(n) =>
-               val not = pc.context.find(_.name == n).getOrElse(default).decl.not.getOrElse(default)
+               val not = pc.context.find(_.name == n).getOrElse(return default).decl.not.getOrElse(return default)
                if (not.arity.isConstant) {
                   not.markers.foreach {
                      case d: Delimiter =>
@@ -557,11 +557,11 @@ class NotationBasedPresenter extends ObjectPresenter {
                      case _ => ImplementationError("missing case in presenter of OMV")
                   }
                  -1
-               } else default
+               } else return default
             case t @ ComplexTerm(_,_,_,_) =>
               controller.pragmatic.makePragmatic(t) match {
                case None =>
-                  default
+                  return default
                case Some(objP) =>
                   val PragmaticTerm(op, subargs, context, args, attrib, not, pos) = objP
                   val firstVarNumber = subargs.length+1
@@ -707,7 +707,7 @@ class NotationBasedPresenter extends ObjectPresenter {
             case OMATTR(t, k, v) =>
               doAttributedTerm(t, k, v)(pc)
             case t =>
-              default
+              return default
          }
    }
 }

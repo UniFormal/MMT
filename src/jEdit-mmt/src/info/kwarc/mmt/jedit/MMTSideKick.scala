@@ -77,21 +77,21 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
 
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {
       val path = File(buffer.getPath)
-      val uri = utils.FileURI(path)
-      val text = buffer.getText
-      val nsMap = controller.getNamespaceMap
-      val ps = controller.backend.resolvePhysical(path) match {
-         case None =>
-            ParsingStream.fromString(text, DPath(uri), path.getExtension.getOrElse(""), Some(nsMap))
-         case Some((a,p)) =>
-            ParsingStream.fromSourceFile(a, FilePath(p), Some(ParsingStream.stringToReader(text)), Some(nsMap))
-      }
-      log("parsing " + path)
-      val tree = new SideKickParsedData(path.toJava.getName)
-      val root = tree.root
       val errorCont = new ErrorListForwarder(mmt.errorSource, controller, path)
+      errorCont.reset
       try {
-         errorCont.reset
+         val uri = utils.FileURI(path)
+         val text = buffer.getText
+         val nsMap = controller.getNamespaceMap
+         val ps = controller.backend.resolvePhysical(path) match {
+            case None =>
+               ParsingStream.fromString(text, DPath(uri), path.getExtension.getOrElse(""), Some(nsMap))
+            case Some((a, p)) =>
+               ParsingStream.fromSourceFile(a, FilePath(p), Some(ParsingStream.stringToReader(text)), Some(nsMap))
+         }
+         log("parsing " + path)
+         val tree = new SideKickParsedData(path.toJava.getName)
+         val root = tree.root
          val doc = controller.read(ps, true, true)(errorCont) match {
             case d: Document => d
             case _ => throw ImplementationError("document expected")
@@ -100,13 +100,14 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          buildTreeDoc(root, doc)
          // register errors with ErrorList plugin
          // errorCont.readd
+         tree
       } catch {case e: Exception =>
          val msg = e.getClass + ": " + e.getMessage
          val pe = ParseError("unknown error: " + msg).setCausedBy(e)
-         errorCont(pe)
          log(msg)
+         errorCont(pe)
+          SideKickParsedData.getParsedData(jEdit.getActiveView)
       }
-      tree
    }
 
    override def stop {

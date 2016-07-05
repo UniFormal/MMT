@@ -7,8 +7,15 @@ import info.kwarc.mmt.api.utils._
 
 
 sealed abstract class SageObject
+case class SageMethod(name : String, doc : String, arity : Int, tp : String)
 case class ParsedCategory(name : String, implied: List[String], axioms: List[String], structure : List[String],
-                          doc : String, methods: JSONObject) extends SageObject {
+                          doc : String,
+                          mmt : String,
+                          gap : String,
+                          elem_methods: (String,List[SageMethod]),
+                          morph_methods: (String,List[SageMethod]),
+                          parent_methods: (String,List[SageMethod]),
+                          subcategory_methods : (String,List[SageMethod])) extends SageObject {
   override def toString = "Category " + name + "\n  Inherits: " + implied.mkString(",") + "\n  Axioms: " +
     axioms.mkString(",") + "\n  Structure: " + structure.mkString(",") + "\n  Doc: " + doc
 
@@ -16,7 +23,9 @@ case class ParsedCategory(name : String, implied: List[String], axioms: List[Str
   private val dpath = steps.init.foldLeft(Sage.catdoc)((base,step) => base / step)
   private val tname = LocalName(steps.last)
   val path = dpath ? tname
-  val includes = (implied ::: structure).distinct
+  val includes = implied.distinct
+
+  val isStructure = structure contains name
 }
 
 class SageImporter extends Importer {
@@ -32,6 +41,14 @@ class SageImporter extends Importer {
 
   var categories : List[ParsedCategory] = Nil
 
+  def doMethod(input : JSONObject, name : String, tp : String) : SageMethod = {
+    val doc = input.getAsString("__doc__")
+    val arity = try { input.getAsList(classOf[String],"args").length } catch {
+      case e : Exception => 0
+    }
+    SageMethod(name,doc,arity,tp)
+  }
+
   def readJSON(input : JSON) = input match {
     case JSONArray(all@_*) => all foreach {
       case obj : JSONObject =>
@@ -43,10 +60,37 @@ class SageImporter extends Importer {
               val implied = obj.getAsList(classOf[String], "implied")
               val axioms = obj.getAsList(classOf[String], "axioms")
               val structure = obj.getAsList(classOf[String], "structure")
-              val methods = obj.getAs(classOf[JSONObject], "required_methods")
-              val ncat = ParsedCategory(name, implied, axioms, structure, doc, methods)
+              /*
+              val methods = obj.getAs(classOf[JSONObject], "methods")
+              val elems = obj.getAs(classOf[JSONObject],"element_class").getAsList(classOf[JSONObject],"optional").map(
+                doMethod(_,true)) ::: methods.getAs(classOf[JSONObject],"element").getAsList(classOf[JSONObject],"required").map(doMethod(_,false))
+              val morphs = methods.getAs(classOf[JSONObject],"morphism").getAsList(classOf[JSONObject],"optional").map(
+                doMethod(_,true)) ::: methods.getAs(classOf[JSONObject],"morphism").getAsList(classOf[JSONObject],"required").map(doMethod(_,false))
+              val parents = methods.getAs(classOf[JSONObject],"parent").getAsList(classOf[JSONObject],"optional").map(
+                doMethod(_,true)) ::: methods.getAs(classOf[JSONObject],"parent").getAsList(classOf[JSONObject],"required").map(doMethod(_,false))
+              */
+              var mclass = obj.getAs(classOf[JSONObject],"element_class")
+              val elems = (mclass.getAsString("__doc__"),mclass.getAs(classOf[JSONObject],"methods").map.collect{
+                case (s,j : JSONObject) => doMethod(j,s.value,"element")
+              })
+              mclass = obj.getAs(classOf[JSONObject],"morphism_class")
+              val morphs = (mclass.getAsString("__doc__"),mclass.getAs(classOf[JSONObject],"methods").map.collect{
+                case (s,j : JSONObject) => doMethod(j,s.value,"morphism")
+              })
+              mclass = obj.getAs(classOf[JSONObject],"parent_class")
+              val parents = (mclass.getAsString("__doc__"),mclass.getAs(classOf[JSONObject],"methods").map.collect{
+                case (s,j : JSONObject) => doMethod(j,s.value,"parent")
+              })
+              mclass = obj.getAs(classOf[JSONObject],"subcategory_class")
+              val subcats = (mclass.getAsString("__doc__"),mclass.getAs(classOf[JSONObject],"methods").map.collect{
+                case (s,j : JSONObject) => doMethod(j,s.value,"subcategory")
+              })
+              val mmt = obj.getAsString("mmt")
+              val gap = obj.getAsString("gap")
+              val ncat = ParsedCategory(name, implied, axioms, structure, doc, mmt, gap, elems, morphs, parents,subcats)
               categories ::= ncat
-              List("name", "__doc__", "implied", "axioms", "structure", "required_methods")
+              List("name", "__doc__", "implied", "axioms", "structure", "element_class", "morphism_class",
+                "parent_class","gap","mmt","subcategory_class")
             case s: String => throw new ParseError("SAGE type not implemented: " + s)
           }
         }
@@ -71,6 +115,9 @@ class SageImporter extends Importer {
       case utils.ExtractError(msg) =>
         println("utils.ExtractError")
         println(msg)
+        sys.exit
+      case e : Exception =>
+        println(e.getMessage)
         sys.exit
     }
     // categories foreach(c => log(c.toString))

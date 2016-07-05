@@ -7,10 +7,12 @@ import info.kwarc.mmt.api.documents.{Document, MRef}
 import info.kwarc.mmt.api.frontend.{Controller, Logger}
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.ontology.{CustomBinary, CustomUnary}
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, PlainInclude}
 import info.kwarc.mmt.lf.{ApplySpine, Arrow, Pi}
 
 import scala.collection.mutable
+
 
 object Translator {
   def objtotype(o : GAPObject) : Term = o match {
@@ -55,6 +57,8 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
 
   private var dones : List[DeclaredObject] = List(IsBool,IsObject)
 
+  import FilterRelations._
+
   private def doObject(obj : DeclaredObject) : Unit = {
     if (dones contains obj) return ()
     if (obj.name.toString == "IsNonTrivial") {
@@ -64,18 +68,18 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
     if (obj.name.toString == "IsNonTrivial") {
       print("")
     }
-    val cs : List[FinalConstant] = obj match {
+    val (deps,cs) = obj match {
       case df : DefinedFilter =>
         var consts = List(Constant(OMMOD(df.path.module),df.name,Nil,Some(GAP.filter),Some(df.defi),None))
         addDependencies(df.path.module,df.dependencies)
-        consts
+        (IsFilter(consts.last.path) :: doImpls(consts.head,df.dependencies),consts)
 
       case prop : DeclaredProperty =>
         val filters = prop.filters//(dones)
         var consts = List(Constant(OMMOD(prop.path.module),prop.name,Nil,Some(doArrow(1)),None,None),
           Constant(OMMOD(prop.path.module),LocalName(prop.name + "_type"),Nil,Some(typeax(prop,List(filters),IsBool)),None,None))
         addDependencies(prop.path.module,obj.dependencies)
-        consts
+        (IsAttribute(consts.last.path) :: doImpls(consts.head,prop.dependencies),consts)
       case a : DeclaredAttribute =>
         val filters = a.filters
         var consts = List(Constant(OMMOD(a.path.module),a.name,Nil,Some(Arrow(GAP.obj,GAP.obj)),None,None))
@@ -86,7 +90,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
           ),None,None)
         }
         addDependencies(a.path.module,obj.dependencies)
-        consts
+        (IsAttribute(consts.last.path) :: doImpls(consts.head,a.dependencies),consts)
       case op : DeclaredOperation =>
         opcounter = 0
         val filters = op.filters
@@ -103,7 +107,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
         */
         val allfilters = filters.flatten.flatten// ::: op.methods.flatMap(_.filters(dones).flatten)
         addDependencies(op.path.module,obj.dependencies)
-        consts
+        (IsAttribute(consts.last.path) :: doImpls(consts.head,op.dependencies),consts)
       case cat : DeclaredCategory =>
         opcounter = 0
         val filters = cat.implied//(dones)
@@ -119,7 +123,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
             opcounter+=1
           })
         addDependencies(cat.path.module,obj.dependencies)
-        consts
+        (IsFilter(consts.last.path) :: doImpls(consts.head,cat.dependencies),consts)
       case filt : DeclaredFilter =>
         opcounter = 0
         val filters = filt.implied//(dones)
@@ -135,7 +139,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
           opcounter+=1
         })
         addDependencies(filt.path.module,obj.dependencies)
-        consts
+        (IsFilter(consts.last.path) :: doImpls(consts.head,filt.dependencies),consts)
       case rep : GAPRepresentation =>
         opcounter = 0
         val filters = rep.implied//(dones)
@@ -151,10 +155,13 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
           opcounter+=1
         })
         addDependencies(rep.path.module,obj.dependencies)
-        consts
+        (IsFilter(consts.last.path) :: doImpls(consts.head,rep.dependencies),consts)
     }
     dones ::= obj
-    if (cs.nonEmpty) addConstants(cs.reverse)
+    if (cs.nonEmpty) {
+      addConstants(cs.reverse)
+      gaprels += ((cs.last,deps))
+    }
   }
 
   private def doArrow(arity : Int) : Term = if (arity == 0) GAP.obj else Arrow(GAP.obj,doArrow(arity - 1))
@@ -164,6 +171,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
     val th = theories.get(thp).get
     if (!th.getIncludes.contains(obj.path.module)) controller add PlainInclude(obj.path.module,thp)
   })
+  private def doImpls(c : Constant, objs : List[DeclaredObject]) = objs.map(obj => Implies(c.path,obj.path))
 
   private def addConstants(c : List[FinalConstant]) = if (c.nonEmpty) {
     addTheory(c.head.parent)

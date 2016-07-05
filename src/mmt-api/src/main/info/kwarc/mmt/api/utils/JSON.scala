@@ -116,7 +116,8 @@ object JSON {
          case '"' => parseString(s)
          case '{' => parseObject(s)
          case '[' => parseArray(s)
-         case _ => throw JSONError("Illegal starting character for JSON")
+         case _ =>
+           throw JSONError("Illegal starting character for JSON")
       }
    }
    
