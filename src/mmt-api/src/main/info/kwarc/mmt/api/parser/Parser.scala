@@ -95,7 +95,10 @@ case class IsMod(modParent: MPath, relDocParent: LocalName) extends HasParentInf
   * @param format the format of the stream
   * @param stream the stream to parse
   */
-case class ParsingStream(source: URI, parentInfo: ParentInfo, nsMap: NamespaceMap, format: String, stream: java.io.BufferedReader)
+case class ParsingStream(source: URI, parentInfo: ParentInfo, nsMap: NamespaceMap, format: String, stream: java.io.BufferedReader) {
+  /** @return the whole stream as a string */
+  def fullString = Stream.continually(stream.readLine()).takeWhile(_ != null).mkString("\n")
+}
 
 object ParsingStream {
   /** to allow passing a string instead of a reader */

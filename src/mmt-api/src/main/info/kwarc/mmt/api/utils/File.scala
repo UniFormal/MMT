@@ -196,7 +196,7 @@ object File {
    * @param begin initial text
    * @param sep text in between elements
    * @param end terminal text
-   * @param work some code that calls its argument on every element
+   * @param work bind a variable "write" and call it to write into the file
    * example: (l: List[Node]) => stream(f, "<root>", "\n", "</root>"){out => l map {a => out(a.toString)}}
    */
   def stream(f: File, begin: String = "", sep: String = "", end: String="")(work: (String => Unit) => Unit) = {

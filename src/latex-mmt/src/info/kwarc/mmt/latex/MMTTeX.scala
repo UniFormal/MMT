@@ -30,7 +30,7 @@ class MMTTeX extends ShellExtension("mmttex") {
      controller.extman.addExtension(li, Nil)
    }
    
-   def run(args: List[String]) = args match {
+   def run(shell: Shell, args: List[String]) = args match {
      case "sty" :: fileName :: Nil => genSty(fileName)
      case "gen" :: fileName :: Nil => genFiles(File(fileName).getAbsoluteFile)
      case "merge" :: fileName :: Nil => mergeFiles(File(fileName).getAbsoluteFile)

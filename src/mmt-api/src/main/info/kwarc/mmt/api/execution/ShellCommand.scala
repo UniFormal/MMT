@@ -7,7 +7,8 @@ import parser._
 
 class ShellCommand extends ShellExtension("run") {
    def helpText = "mmt :run THEORY-URI PROGRAM-TERM"
-   def run(args: List[String]) = {
+   
+   def run(shell: Shell, args: List[String]) = {
      val exec = controller.extman.get(classOf[Executor]).headOption.getOrElse {
        throw LocalError("no executor found")
      }

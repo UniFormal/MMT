@@ -17,7 +17,7 @@ class Setup extends ShellExtension("jeditsetup") {
   def helpText = "needed arguments: (install | install-jars | uninstall) [JEDIT/SETTINGS/FOLDER]"
 
   /** run method as ShellExtension */
-  def run(args: List[String]): Boolean = {
+  def run(shell: Shell, args: List[String]): Boolean = {
     val l = args.length
     val (installOpt,fat) = if (l >= 1) args(0) match {
       case "install" => (Some(true),true)
@@ -41,7 +41,7 @@ class Setup extends ShellExtension("jeditsetup") {
     } else {
       println("trying to uninstall from " + jedit)
     }
-    doIt(jedit, install, fat)
+    doIt(shell, jedit, install, fat)
     true
   }
   
@@ -51,8 +51,8 @@ class Setup extends ShellExtension("jeditsetup") {
     * @param install true/false for install/uninstall
     * @param rl      resource location
     */
-  private def doIt(jedit: File, install: Boolean, fat: Boolean) {
-    val rl = MMTSystem.runStyle
+  private def doIt(shell: Shell, jedit: File, install: Boolean, fat: Boolean) {
+    val rl = shell.runStyle
     def getResource(path: String): String = {
       rl match {
         case _: IsFat | OtherStyle => MMTSystem.getResourceAsString(path)
@@ -63,23 +63,24 @@ class Setup extends ShellExtension("jeditsetup") {
     def handleResourceLineWise(path: String)(proc: String => Unit) =
        stringToList(getResource(path), "\\n").foreach(proc)
 
-    /** copies or deletes a file depending on install/uninstall */
-    def copyFrom(dir: File, f: List[String], g: List[String]) {
+    /** copies or deletes a file depending on install/uninstall, always overwrites existing files */
+    def copyOrDeleteJar(dir: File, f: List[String], g: List[String]) {
       if (install) {
-        copy(dir / f, jedit / g)
+        copy(dir / f, jedit / g, true)
       } else {
         delete(jedit / g)
       }
     }
-    def copyOrDelete(f: List[String]) = {
+    /** copies or deletes a file depending on install/uninstall, always overwrites existing files */
+    def copyOrDeleteResource(f: List[String], replace: Boolean) = {
       val file = jedit / f
       if (install) {
-        if (file.exists) {
-          println("warning: " + file + " already exists, skipping; you probably want to run uninstall first")
+        if (!file.exists || replace) {
+          println("writing: " + file)
+          File.write(file, getPluginResource(f))
         }
         else {
-          println("creating " + file)
-          File.write(file, getPluginResource(f))
+          println("already exists, skipping: " + file)
         }
       } else {
         delete(file)
@@ -95,12 +96,12 @@ class Setup extends ShellExtension("jeditsetup") {
     if (install) {
       rl match {
         case rs: IsFat =>
-          copyFrom(rs.jar, Nil, List("jars", "MMTPlugin.jar"))
+          copyOrDeleteJar(rs.jar, Nil, List("jars", "MMTPlugin.jar"))
         case nf: DeployRunStyle =>
           if (fat)
-            copyFrom(nf.deploy, List("mmt.jar"), List("jars", "MMTPlugin.jar"))
+            copyOrDeleteJar(nf.deploy, List("mmt.jar"), List("jars", "MMTPlugin.jar"))
           else
-            allJars.foreach(f => copyFrom(nf.deploy, f, List("jars", f.last)))
+            allJars.foreach(f => copyOrDeleteJar(nf.deploy, f, List("jars", f.last)))
         case OtherStyle =>
           println("cannot find jar files to install")
       }
@@ -110,7 +111,7 @@ class Setup extends ShellExtension("jeditsetup") {
     // modes
     // * copy/delete the mode files
     val modeFiles = List("mmt.xml", "mmtlog.xml", "msl.xml")
-    modeFiles.foreach { e => copyOrDelete(List("modes", e)) }
+    modeFiles.foreach { e => copyOrDeleteResource(List("modes", e), true) }
     // * read, update, write the catalog file
     val scat = "/plugin/modes/catalog"
     val jcat = jedit / "modes" / "catalog"
@@ -168,7 +169,7 @@ class Setup extends ShellExtension("jeditsetup") {
     }
     // copy/delete pluginFolder
     val plug = List("plugins", "info.kwarc.mmt.jedit.MMTPlugin")
-    copyOrDelete(plug ::: List("startup.msl"))
+    copyOrDeleteResource(plug ::: List("startup.msl"), false)
     if (!install) {
       val d = jedit / plug
       if (d.isDirectory) {
@@ -203,15 +204,13 @@ class Setup extends ShellExtension("jeditsetup") {
     }
   }
 
-  private def copy(from: File, to: File) {
-    if (to.exists) {
+  private def copy(from: File, to: File, overwrite: Boolean) {
+    if (to.exists && !overwrite) {
       println("warning: " + to + " already exists, skipping; you probably want to run uninstall first")
     } else {
-      to.getParentFile.mkdirs
-      if (from.exists) {
-        java.nio.file.Files.copy(from.toPath, to.toPath)
-        println("copying " + from + " to " + to)
-      } else {
+      println("copying " + from + " to " + to)
+      val success = File.copy(from, to, overwrite)
+      if (!success) {
         println("warning: " + from + " does not exist! (skipping)")
         println("jedit setup may be incomplete or inconsistent.")
       }

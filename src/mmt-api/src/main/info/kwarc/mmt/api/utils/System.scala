@@ -34,8 +34,8 @@ object MMTSystem {
      def projectFolder(name: String) = api.up.up / name
      def resources = api / "resources"
    }
-   /** run in unknown way, in particular as part of jedit */
-   case object OtherStyle extends RunStyle
+  /** run in unknown way, in particular as part of jedit */
+  case object OtherStyle extends RunStyle
   
   /** the [[RunStyle]] of the current run */
   lazy val runStyle = {

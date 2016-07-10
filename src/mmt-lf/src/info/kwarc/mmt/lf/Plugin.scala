@@ -20,4 +20,5 @@ class Plugin extends frontend.Plugin {
    }
 }
 
+/** added by rule in LF theory */
 object LFHOAS extends notations.HOASNotation(LF.hoas)

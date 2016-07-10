@@ -58,7 +58,7 @@ def commonSettings(nameStr: String) = Seq(
   resourceDirectory in Compile := baseDirectory.value / "resources",
   unmanagedBase := baseDirectory.value / "jars",
   isSnapshot := true,
-  publishTo := Some(Resolver.file("file", Utils.deploy/"main")),
+  publishTo := Some(Resolver.file("file", Utils.deploy.toJava/"main")),
   exportJars := true,
   autoAPIMappings := true,
   connectInput in run := true,
@@ -85,19 +85,14 @@ lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
   settings(
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
-    libraryDependencies ++= Seq(
-      "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
-      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
-      "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
-    ),
     deployFull <<= deployPackage("lib/tiscaf.jar")
   )
 
 lazy val lfcatalog = (project in file("lfcatalog")).
   settings(commonSettings("lfcatalog") ++ oneJarSettings: _*).
   settings(
-    unmanagedJars in Compile +=  Utils.deploy.toJava / "lib" / "tiscaf.jar",
-    libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.4",
+    unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "tiscaf.jar",
+	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar.jar",
     deployFull <<= deployPackage("lfcatalog/lfcatalog.jar")
   )
 
@@ -106,11 +101,10 @@ lazy val api = (project in file("mmt-api")).
   settings(
     scalaSource in Compile := baseDirectory.value / "src" / "main",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "tiscaf.jar",
-    libraryDependencies ++= Seq(
-      "org.scala-lang" % "scala-compiler" % scalaVersion.value,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
-      "org.scala-lang.modules" %% "scala-xml" % "1.0.4")
+	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-compiler.jar",
+	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-reflect.jar",
+ 	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
+	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar"
   )
   
 
@@ -137,15 +131,14 @@ lazy val tptp = (project in file("mmt-tptp")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-tptp"): _*).
   settings(
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "tptp-parser.jar",
-    libraryDependencies += "antlr" % "antlr" % "2.7.7"
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "leo.jar"
   )
 
 lazy val owl = (project in file("mmt-owl")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-owl"): _*).
   settings(
-    libraryDependencies += "net.sourceforge.owlapi" % "owlapi-apibinding" % "3.5.2"
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "owlapi-bin.jar"
   )
 
 lazy val lfs = (project in file("mmt-lfs")).
@@ -208,9 +201,9 @@ lazy val oeis = (project in file("mmt-oeis")).
 
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
-lazy val mmt = (project in file("mmt-exts")).
+lazy val mmt = (project in file("fatjar")).
   dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex).
-  settings(mmtProjectsSettings("mmt-exts"): _*).
+  settings(mmtProjectsSettings("fatjar"): _*).
   settings(
     exportJars := false,
     publish := {},
@@ -224,7 +217,7 @@ lazy val mmt = (project in file("mmt-exts")).
       prependShellScript = Some(Seq("#!/bin/bash", """exec /usr/bin/java -Xmx2048m -jar "$0" "$@"""")))
   )
 
-// jars to be used in Compile (in an assembly - that we no longer make - they should be excluded)
+// jars to be used in Compile but not in the fat jar
 val jeditJars = Seq(
   "Console.jar",
   "ErrorList.jar",
