@@ -1,5 +1,5 @@
 package info.kwarc.mmt.tptp
-
+/*
 import tptp._
 import java.io._
 import info.kwarc.mmt.tptp.TptpUtils._
@@ -135,3 +135,4 @@ class TptpParser {
     null
   }
 }
+*/

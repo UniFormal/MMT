@@ -1,5 +1,5 @@
 package info.kwarc.mmt.tptp
-
+/*
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 
@@ -39,3 +39,4 @@ class TptpCompiler extends Importer with backend.QueryTransformer {
     </mws:expr>)
   }
 }
+*/

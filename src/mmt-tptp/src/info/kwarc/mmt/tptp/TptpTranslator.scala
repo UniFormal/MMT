@@ -1,5 +1,5 @@
 package info.kwarc.mmt.tptp
-
+/*
 import scala.xml.Node
 import scala.collection.immutable._
 import scala.collection.mutable.LinkedHashMap
@@ -381,4 +381,4 @@ object TptpTranslator {
     translator.translate("Axioms", "LCL007+0.ax", File("/home/dimitar/projects/oaff/tptp/source/Axioms/LCL007+0.ax"))
     println("Done.")
   }
-}
+}*/

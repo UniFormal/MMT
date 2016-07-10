@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.utils._
 
+/** translates TPTP to Twelf using TPTP2x's prolog code */
 class TPTPImporter extends TraversingBuildTarget with BuildTargetArguments {
   val key: String = "tptp-twelf"
   val inDim = source
@@ -89,7 +90,7 @@ class TPTPImporter extends TraversingBuildTarget with BuildTargetArguments {
         tempFile.delete()
       }
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         outFile.delete()
         tempFile.delete()
         bt.errorCont(LocalError("exception for file: " + bt.inFile + "\n" +

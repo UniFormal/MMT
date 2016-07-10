@@ -6,13 +6,11 @@ import info.kwarc.mmt.api.utils._
 
 import scala.sys.process._
 
-// need this to execute shell commands
-
-
+// deprecated, probably obsolete
+/*
 /**
   * TPTP twelf Compiler, translates TPTP sources to twelf using tptp2x
   */
-// deprecated, probably obsolete
 class TptpTwelfCompiler extends TraversingBuildTarget {
   val key = "tptp-twelf"
   val inDim = source
@@ -38,3 +36,4 @@ class TptpTwelfCompiler extends TraversingBuildTarget {
     BuildResult.empty
   }
 }
+*/

@@ -1,5 +1,5 @@
 package info.kwarc.mmt.tptp
-
+/*
 import tptp.TptpParserOutput.BinaryConnective._
 import tptp.TptpParserOutput.Quantifier._
 import tptp.TptpParserOutput._
@@ -73,3 +73,4 @@ object TptpUtils {
       println(s)
   }
 }
+*/
