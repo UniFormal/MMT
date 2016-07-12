@@ -1,4 +1,6 @@
+# This file contains properties that are appended to the properties file of fresh jEdit users
 buffer.encoding=UTF-8
+# this means that space expands abbreviations
 view.expandOnInput=true
 view.wrapGuide=false
 sidekick-tree.dock-position=left
