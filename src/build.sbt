@@ -29,7 +29,7 @@ postProcessApi := postProcess(streams.value.log)
 lazy val cleandoc =
   taskKey[Unit]("remove api documentation.")
 
-cleandoc := delRecursive(streams.value.log, file("../doc/api"))
+cleandoc := delRecursive(streams.value.log, file("../apidoc"))
 
 lazy val apidoc =
   taskKey[Unit]("generate post processed api documentation.")
