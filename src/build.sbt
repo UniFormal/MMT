@@ -199,7 +199,7 @@ lazy val oeis = (project in file("mmt-oeis")).
   dependsOn(planetary).
   settings(mmtProjectsSettings("mmt-oeis"): _*).
   settings(
-    libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+    unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar"
   )
 
 // wrapper project that depends on most other projects
