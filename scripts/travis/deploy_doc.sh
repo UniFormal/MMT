@@ -6,7 +6,11 @@ if [ "$TRAVIS_PULL_REQUEST" != "false" -o "$TRAVIS_BRANCH" != "$SOURCE_BRANCH" ]
     exit 0
 fi
 
+# Configure git
+git config user.name "Travis CI"
+git config user.email "$COMMIT_AUTHOR_EMAIL"
 
+# Get the SHA
 SHA=$(git rev-parse --short HEAD)
 
 # Decrypt ssh key
@@ -20,17 +24,10 @@ eval `ssh-agent -s`
 ssh-add scripts/travis/deploy_key
 
 # Clone the repository
-git clone git@github.com:UniFormal/apidoc.git
+git clone git@github.com:UniFormal/apidoc.git apidoc
 
 # Build the API doc
 cd src && sbt apidoc && cd ..
 
-cd apidoc
-
 # Configure git
-git config user.name "Travis CI"
-git config user.email "$COMMIT_AUTHOR_EMAIL"
-git add .
-
-git commit -m "Auto-generate api documenation from UniFormal/MMT@$SHA"
-git push
+cd apidoc && git add . && git commit -m "Auto-generate api documenation from UniFormal/MMT@$SHA" && git push && cd ..

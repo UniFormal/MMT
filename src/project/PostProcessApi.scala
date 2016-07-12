@@ -61,7 +61,7 @@ object PostProcessApi {
         }
       }
     }
-    val apiDir = mmtFolder / "doc" / "api"
+    val apiDir = mmtFolder / "apidoc"
     if (apiDir.exists && apiDir.isDirectory) doFolder(apiDir, "../..")
     else log.error("missing api directory: " + apiDir)
   }
