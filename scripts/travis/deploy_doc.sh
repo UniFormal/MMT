@@ -1,5 +1,12 @@
 #!/bin/bash
 
+SOURCE_BRANCH="master"
+if [ "$TRAVIS_PULL_REQUEST" != "false" -o "$TRAVIS_BRANCH" != "$SOURCE_BRANCH" ]; then
+    echo "Not on the master branch; nothing to commit"
+    exit 0
+fi
+
+
 SHA=$(git rev-parse --short HEAD)
 
 # Decrypt ssh key

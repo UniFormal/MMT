@@ -17,7 +17,7 @@ scalacOptions in(ScalaUnidoc, unidoc) ++=
     Opts.doc.title("MMT") ++:
     Opts.doc.sourceUrl("file:/€{FILE_PATH}.scala")
 
-target in(ScalaUnidoc, unidoc) := file("../doc/api")
+target in(ScalaUnidoc, unidoc) := file("../apidoc")
 
 // our targets
 
