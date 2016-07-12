@@ -23,11 +23,15 @@ chmod 600 scripts/travis/deploy_key
 eval `ssh-agent -s`
 ssh-add scripts/travis/deploy_key
 
-# Clone the repository
-git clone git@github.com:UniFormal/apidoc.git apidoc
-
 # Build the API doc
 cd src && sbt apidoc && cd ..
 
-# Configure git
-cd apidoc && git add . && git commit -m "Auto-generate api documenation from UniFormal/MMT@$SHA" && git push && cd ..
+# Clone the git repo
+git clone git@github.com:UniFormal/apidoc.git apidoc_deploy
+
+# Cleanup and copy files
+cd apidoc_deploy && rm -rf * && git checkout .nojekyll && cd ..
+cp -r apidoc/* apidoc_deploy
+
+# Make a commit and push
+cd apidoc_deploy && git add -A . && git commit -m "Auto-generate api documenation from UniFormal/MMT@$SHA" && git push origin gh-pages && cd ..
