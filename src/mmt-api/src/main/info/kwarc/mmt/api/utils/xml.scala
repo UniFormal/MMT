@@ -176,6 +176,7 @@ object xml {
       src.asInstanceOf[scala.io.BufferedSource].close
       output(0)
    }
+   /** dereference a URL and return XML */
    def get(url: java.net.URL): Node = {
       val conn = url.openConnection()
       val src = scala.io.Source.fromInputStream(conn.getInputStream(), "UTF-8")

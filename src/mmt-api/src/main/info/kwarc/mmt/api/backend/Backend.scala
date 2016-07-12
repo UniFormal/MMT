@@ -237,26 +237,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   /** auxiliary function of openArchive */
   private def extractMar(file: File, newRoot: File) {
     log("unpacking archive " + file + " to " + newRoot)
-    val mar = new ZipFile(file)
-    var bytes = new Array[Byte](100000)
-    var len = -1
-    val enum = mar.entries
-    while (enum.hasMoreElements) {
-      val entry = enum.nextElement
-      val outFile = newRoot / entry.getName
-      outFile.getParentFile.mkdirs
-      if (!entry.isDirectory) {
-        val istream = mar.getInputStream(entry)
-        val ostream = new java.io.FileOutputStream(outFile)
-        while ( {
-          len = istream.read(bytes, 0, bytes.length)
-          len != -1
-        })
-          ostream.write(bytes, 0, len)
-        ostream.close()
-        istream.close()
-      }
-    }
+    File.unzip(file, newRoot)
   }
 
   /** Querying **/

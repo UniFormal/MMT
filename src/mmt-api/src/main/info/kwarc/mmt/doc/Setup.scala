@@ -168,6 +168,15 @@ class Setup extends ShellExtension("setup") {
                jEditSetup.run(shell, List("install",jsf.toString))
                println("done\n")
         
+               if (!(jsf / "jars" / "SideKick.jar").exists) {
+                 println("\n\nIt looks like you do not use jEdit a lot - maybe you've installed it just now?\n")
+                 println("I can change some of jEdit's settings and install additional jEdit plugins that MMT uses.\n")
+                 println("Do you want me to do that (y/n)?")
+                 if (shell.getYesNo(true)) {
+                   jEditSetup.run(shell, List("customize", jsf.toString))
+                 }
+               }
+               
                shell.runStyle match {
                  case _: DeployRunStyle =>
                    println("configuring sbt target for rebuilding and reinstalling the jEdit plugin from sources")

@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.utils
 
 import java.io._
+import java.util.zip._
 
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -300,6 +301,58 @@ object File {
     }
   }
 
+  /** unzips a file */
+  def unzip(from: File, toDir: File) {
+    val mar = new ZipFile(from)
+    try {
+      var bytes = new Array[Byte](100000)
+      var len = -1
+      val enum = mar.entries
+      while (enum.hasMoreElements) {
+        val entry = enum.nextElement
+        val outFile = toDir / entry.getName
+        outFile.up.mkdirs
+        if (!entry.isDirectory) {
+          val istream = mar.getInputStream(entry)
+          val ostream = new java.io.FileOutputStream(outFile)
+          try {
+            while ({
+              len = istream.read(bytes, 0, bytes.length)
+              len != -1
+            }) {
+              ostream.write(bytes, 0, len)
+            }
+          } finally {
+            ostream.close
+            istream.close
+          }
+        }
+      }
+    } finally {
+      mar.close
+    }
+  }
+  /** dereference a URL and save as a file */
+  def download(url: java.net.URL, file: File) {
+    val conn = url.openConnection
+    if (List("https","http") contains url.getProtocol) {
+      val httpConn = conn.asInstanceOf[java.net.HttpURLConnection]
+      // setFollowRedirects does not actually follow redirects
+      if (httpConn.getResponseCode.toString.startsWith("30")) {
+        val redirectURL = new java.net.URL(conn.getHeaderField("Location"))
+        return download(redirectURL, file) 
+      }
+    }
+    val input = conn.getInputStream
+    val output = new java.io.FileOutputStream(file)
+    try {
+      val byteArray = Stream.continually(input.read).takeWhile(_ != -1).map(_.toByte).toArray
+      output.write(byteArray)
+    } finally {
+      input.close
+      output.close
+    }
+  }
 
   /** implicit conversion Java <-> Scala */
   implicit def scala2Java(file: File): java.io.File = file.toJava
