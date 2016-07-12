@@ -17,7 +17,7 @@ scalacOptions in(ScalaUnidoc, unidoc) ++=
     Opts.doc.title("MMT") ++:
     Opts.doc.sourceUrl("file:/€{FILE_PATH}.scala")
 
-target in(ScalaUnidoc, unidoc) := file("../doc/api")
+target in(ScalaUnidoc, unidoc) := file("../apidoc")
 
 // our targets
 
@@ -29,7 +29,7 @@ postProcessApi := postProcess(streams.value.log)
 lazy val cleandoc =
   taskKey[Unit]("remove api documentation.")
 
-cleandoc := delRecursive(streams.value.log, file("../doc/api"))
+cleandoc := delRecursive(streams.value.log, file("../apidoc"))
 
 lazy val apidoc =
   taskKey[Unit]("generate post processed api documentation.")

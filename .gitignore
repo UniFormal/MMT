@@ -4,6 +4,10 @@ project/project
 deploy/mmt.jar
 deploy/main/*.jar
 
+# Documentation & Deploy
+apidoc
+scripts/travis/deploy_key
+
 # IntelliJ Failes
 .idea
 .idea_modules
