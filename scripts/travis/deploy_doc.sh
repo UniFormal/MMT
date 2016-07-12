@@ -23,7 +23,7 @@ ssh-add scripts/travis/deploy_key
 cd src && sbt apidoc && cd ..
 
 # Clone the git repo and do some setup
-git clone git@github.com:UniFormal/apidoc.git apidoc_deploy
+git clone --depth 1 git@github.com:UniFormal/apidoc.git apidoc_deploy 
 cd apidoc_deploy && git config user.name "Travis CI" && cd ..
 cd apidoc_deploy && git config user.email "$COMMIT_AUTHOR_EMAIL" && cd ..
 
@@ -33,4 +33,4 @@ cd apidoc_deploy && rm -rf * && git checkout .nojekyll && cd ..
 cp -r apidoc/* apidoc_deploy
 
 # Make a commit and push
-cd apidoc_deploy && git add -A . && git commit -m "Auto-generate api documenation from UniFormal/MMT@$SHA" && git push origin gh-pages && cd ..
+cd apidoc_deploy && git add -A . && git commit --amend -m "Auto-generate api documentation from UniFormal/MMT@$SHA" && git push --force-with-lease origin gh-pages && cd ..
