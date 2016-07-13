@@ -41,6 +41,7 @@ class Reader(val jr: java.io.BufferedReader) {
    private var line : Int = 0
    private var column : Int = 0
    private var offset : Int = 0
+   // most recent non-whitespace character that was read
    private var sourcePosition: SourcePosition = null
 
    /** @return the position of the next character to be read
@@ -93,8 +94,7 @@ class Reader(val jr: java.io.BufferedReader) {
        offset += 1
        c
    }
-   /** as read but skips initial whitespace
-    */
+   /** as read but skips initial whitespace */
    private def readSkipWS: Int = {
       var c:Int = 0
       do {
@@ -108,7 +108,9 @@ class Reader(val jr: java.io.BufferedReader) {
     * @param goal the delimiters to consider
     * @return the read string and its SourceRegion, both excluding the delimiter
     * This respects escaping and skips delimiters occurring within well-balanced escapes.
-    */ 
+    */
+   /*TODO it seems this erroneously includes the terminal delimiter.
+     Presumably, this is harmless for non-empty objects because more constrained regions are computed anyway by the ObjectParser*/
    private def readUntil(goal: Int*): (String, SourceRegion) = {
        val buffer = new StringBuilder
        var level = 0
@@ -206,6 +208,8 @@ object Reader {
    val RS = 30
    /** the ASCII character GS (decimal 31) ends MMT objects */
    val US = 31
+   /** the special delimiters */
+   def delims: List[Char] = List(FS,GS,RS,US).map(_.toChar)
    /** the ASCII character ESC (decimal 27) begins escaped parts */
    val escape = 27
    val escapeChar = '\u001b'

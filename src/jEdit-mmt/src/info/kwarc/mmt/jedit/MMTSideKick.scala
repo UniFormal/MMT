@@ -38,6 +38,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case a: MMTObjAsset =>
             a.obj match {
                case Hole(t) =>
+                  // run theorem prover to find options to fill the hole
                   val g = new proving.Goal(a.context, t)
                   val rules = RuleSet.collectRules(controller, a.context) //TODO should be cached
                   val prover = new proving.Searcher(controller, g, rules, logPrefix)
@@ -45,7 +46,20 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
                   val options = prover.interactive(3)
                   val comp = new ProverCompletion(view, controller, a.region, options)
                   return comp
-               case _ =>
+               case o =>
+                 // insert hole for the definiens of a constant whose type is known
+                 if (a.parent.component == DefComponent) {
+                   controller.globalLookup.getComponent(a.parent) match {
+                     case defTc: TermContainer if defTc.read.getOrElse("").trim.isEmpty =>
+                       controller.globalLookup.getComponent(a.parent.parent $ TypeComponent) match {
+                         case tpTc: TermContainer if tpTc.analyzed.isDefined =>
+                           val option = Hole(tpTc.analyzed.get)
+                           return new ProverCompletion(view, controller, a.region, List(option))
+                         case _ =>
+                       }
+                     case _ =>
+                   }
+                 }
             }
          case _ =>
       }

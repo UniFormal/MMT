@@ -61,7 +61,7 @@ class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constan
 }
 
 /**
- *
+ * auto-completion popup for options that are generated with types and holes
  */
 class ProverCompletion(view : org.gjt.sp.jedit.View, controller: Controller, region: SourceRegion, options: List[Term])
   extends SideKickCompletion(view, "", options.map(o => controller.presenter.asString(o))) {
@@ -72,9 +72,18 @@ class ProverCompletion(view : org.gjt.sp.jedit.View, controller: Controller, reg
      val newText = controller.presenter.asString(newTerm)
      // replace the old subterm with the new one
      // TODO decide whether to put brackets
-     // TODO put cursor in front of first hole, reparse buffer
      val ta = view.getEditPane.getTextArea
-     ta.setSelection(new Selection.Range(region.start.offset, region.end.offset+1))
-     ta.setSelectedText(newText)
+     val begin = region.start.offset
+     val beginChar = ta.getText(begin,1)
+     ta.setSelection(new Selection.Range(begin, region.end.offset+1))
+     // workaround for empty terms: selection includes US
+     val correctEmptyTerm = begin == region.end.offset && parser.Reader.delims.contains(beginChar(0))
+     // insert new text
+     ta.setSelectedText(newText + (if (correctEmptyTerm) beginChar else ""))
+     // reparse the buffer (will happen in background)
+     SideKickPlugin.parse(view, false)
+     // find next hole in the inserted text and move the caret to it
+     val nextHole = ta.getText(begin,newText.length).indexOf(beginChar)
+     ta.setCaretPosition(if (nextHole != -1) begin+nextHole else begin)
   }
 }
