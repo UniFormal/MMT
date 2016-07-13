@@ -121,9 +121,15 @@ class SageImporter extends Importer {
         sys.exit
     }
     // categories foreach(c => log(c.toString))
-    log(categories.length + " Objects parsed")
+    val allaxioms = categories.flatMap(_.axioms).distinct
+    val allmethods = categories.flatMap(c => c.elem_methods._2 ::: c.subcategory_methods._2 :::
+      c.morph_methods._2 ::: c.parent_methods._2).distinct
+    log(categories.length + " Categories")
+    log(allaxioms.length + " Axioms")
+    log(allmethods.length + " Methods")
+
     val trans = new SageTranslator(controller,bf,index)
-    trans(categories)
+    //trans(categories)
     BuildResult.empty
   }
 }

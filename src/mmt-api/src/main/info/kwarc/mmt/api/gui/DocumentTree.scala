@@ -162,6 +162,7 @@ class TreePane(controller: Controller) extends JPanel {
                   val act = Navigate(se.path)
                   controller.handle(act)
                }
+            case _ =>
          }
       }
    }

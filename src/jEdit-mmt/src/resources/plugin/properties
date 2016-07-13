@@ -5,3 +5,4 @@ view.expandOnInput=true
 view.wrapGuide=false
 sidekick-tree.dock-position=left
 error-list.dock-position=bottom
+view.showBufferSwitcher=false

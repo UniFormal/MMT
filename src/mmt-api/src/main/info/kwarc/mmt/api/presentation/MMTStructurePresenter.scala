@@ -5,6 +5,7 @@ import symbols._
 import patterns._
 import objects._
 import documents._
+import info.kwarc.mmt.api.opaque.{OpaqueElement, OpaqueTextPresenter}
 import modules._
 import symbols._
 import objects.Conversions._
@@ -88,8 +89,11 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             rh("document " + r.target.toPath)
          case r: MRef =>
             rh("module " + r.target.toPath)
+         case oe: OpaqueElement =>
+            controller.extman.get(classOf[OpaqueTextPresenter], oe.format)
          case c: Constant => doConstant(c,indent)
          case t: DeclaredTheory =>
+            //TODO this ignores all narrative structure inside a theory
             rh("theory " + t.name)
             t.meta.foreach(p => rh(" : "+p.toString))
             rh(" =\n")

@@ -212,7 +212,8 @@ class Setup extends ShellExtension("jeditsetup") {
     }
     
     
-    val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.1.0"), ("Console","5.1.4"))
+    val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.1.0"), ("Console","5.1.4"),
+      ("BufferTabs","1.2.4"))
     /** installs plugin dependencies and useful properties */
     def customize {
        // download jars from jEdit plugin central

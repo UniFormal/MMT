@@ -79,9 +79,20 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
       case s: Structure =>
          val dom = materialize(Context(parent.path), s.from, true, None).asInstanceOf[DeclaredTheory]
          flatten(dom)
-         dom.getDeclarations.map {d =>
-            lup.getAs(classOf[Declaration], parent.path ? (s.name / d.name))
-         }
+         dom.getDeclarations.flatMap(d => {
+           val dF = lup.getAs(classOf[Declaration], parent.path ? s.name / d.name)
+           d match {
+             case PlainInclude(_,i) =>
+               dF :: lup.get(i).getDeclarations.flatMap {
+                 case PlainInclude(_) =>
+                   Nil
+                 case id: Declaration =>
+                   val idF = lup.getAs(classOf[Declaration], parent.path ? (s.name / ComplexStep(i) / d.name))
+                   List(idF)
+               }
+             case d => List(dF)
+           }
+         })
       // derived declarations: elaborate
       case dd: DerivedDeclaration =>
          controller.extman.get(classOf[StructuralFeature], dd.feature) match {
@@ -158,7 +169,8 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
      utils.mmt.mmtbase ? LocalName("")/"E"/i.toString
   }
   /** Elaborate a theory expression into a module
-   *  @param exp the theory expression
+    *
+    *  @param exp the theory expression
    *  @param expandDefs materialize all DefinedTheory's and return a DeclaredTheory
    *  @param path the path to use if a new theory has to be created
    */

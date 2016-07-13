@@ -24,7 +24,7 @@ abstract class Test(archivepath : String,
   // If you want to log additional stuff, just put it in this list
 
   controller.handleLine("log console")
-  if (logfile.isDefined) controller.handleLine("log file " + logfile.get)// /home/raupi/lmh/mmtlog.txt")
+  if (logfile.isDefined) controller.handleLine("log html " + logfile.get)// /home/raupi/lmh/mmtlog.txt")
   logprefixes foreach (s => controller.handleLine("log+ " + s))
   controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
   controller.handleLine("extension info.kwarc.mmt.odk.Plugin")
@@ -38,7 +38,7 @@ abstract class Test(archivepath : String,
   def main(args: Array[String]): Unit = {
     run
     if (serverport.isDefined) {
-      controller.handleLine("clear")
+      //controller.handleLine("clear")
       controller.handleLine("server on " + serverport.get)
     }
     if (gotoshell) Run.main(Array())
@@ -54,5 +54,5 @@ abstract class DennisTest(prefixes : String*) extends Test(
   "/home/raupi/Stuff/Public",
   Some(8080),
   true,
-  Some("/home/raupi/lmh/mmtlog.txt")
+  Some("/home/raupi/lmh/mmtlog.html")
 )

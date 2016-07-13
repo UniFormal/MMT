@@ -17,6 +17,12 @@ trait OpaqueChecker extends OpaqueElementInterpreter {
    def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment): Unit
 }
 
+/** used to extend [[MMTStructurePresenter]]s */
+trait OpaqueTextPresenter extends OpaqueElementInterpreter {
+   /** @param oe the element to present */
+   def toString(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh: RenderingHandler): Unit
+}
+
 /** used to extend [[HTMLPresenter]]s */
 trait OpaqueHTMLPresenter extends OpaqueElementInterpreter {
    def toHTML(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh : RenderingHandler): Unit

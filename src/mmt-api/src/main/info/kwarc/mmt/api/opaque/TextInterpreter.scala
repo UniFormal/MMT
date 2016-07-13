@@ -54,7 +54,7 @@ class OpaqueText(val parent: DPath, val fragments: List[TextFragment]) extends O
 }
 
 class TextInterpreter extends OpaqueElementInterpreter
-                         with OpaqueTextParser with OpaqueChecker with OpaqueHTMLPresenter {
+                         with OpaqueTextParser with OpaqueChecker with OpaqueTextPresenter with OpaqueHTMLPresenter {
    type OE = OpaqueText
    override def logPrefix = "opaque_text"
    
@@ -120,6 +120,19 @@ class TextInterpreter extends OpaqueElementInterpreter
                val cu = CheckingUnit.byInference(Some(oe.path $ f.comp), context, t)
                oC(cu, rules)
             }
+      }
+   }
+
+   def toString(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh: RenderingHandler) {
+      val ot = downcast(oe)
+      ot.fragments.foreach {
+         case tf: TermFragment =>
+            tf.tc.get match {
+               case Some(t) => oP(t, None)
+               case None => rh << "\"" + tf.tc.read + "\""
+            }
+         case StringFragment(s) =>
+            rh(s)
       }
    }
    

@@ -12,10 +12,12 @@ class BackendPane(backend: Backend) extends {val ta = new JTextArea} with JScrol
       backend.getStores foreach {
          case a: Archive =>
             s += "archive " + a.id + " " + a.rootString + "\n"
-         case ra: RealizationArchive =>
+         case ra: RealizationStorage =>
             s += ra.toString
          case l: LocalCopy =>
             s += "mathpath fs " + l.localBase + " " + l.base + "\n"
+         case a =>
+            s += "other storage " + a.toString + "\n"
       }
       ta.setText(s) 
    }
