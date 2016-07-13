@@ -57,6 +57,7 @@ class Setup extends ShellExtension("jeditsetup") {
   private class DoIt(shell: Shell, jedit: File) {
     val jarFolder = jedit / "jars"
     val propsFile = jedit / "properties"
+    val keymapPath = List("keymaps", "imported_keys.props")
 
     val rl = shell.runStyle
     
@@ -70,6 +71,29 @@ class Setup extends ShellExtension("jeditsetup") {
     def handleResourceLineWise(path: String)(proc: String => Unit) =
        stringToList(getResource(path), "\\n").foreach(proc)
 
+    /** merge properties from a resource into a jEdit file */
+    def mergeProps(propsOldFile: File, propsAddResource: List[String]) {
+       var propsAdd = utils.stringToList(getPluginResource(propsAddResource), "\\n").flatMap {line =>
+         val i = line.indexOf("=")
+         if (!line.startsWith("#") && i != -1)
+           List((line.substring(0,i-1), line))
+         else
+           Nil
+       }
+       val propsOld = utils.stringToList(if (propsOldFile.exists) File.read(propsOldFile) else "", "\\n")
+       // override existing properties
+       var propsNew = propsOld.map {old =>
+         propsAdd.find{case (key,_) => old.startsWith(key)} match {
+           case None => old
+           case Some((key,nw)) =>
+             propsAdd = propsAdd.filterNot(_._1 == key)
+             nw
+         }
+       }
+       // append remaining new properties
+       propsNew = propsNew ::: propsAdd.map(_._2)
+       File.WriteLineWise(propsOldFile, propsNew)
+    }
  
     /** the actual install/uninstall process
       *
@@ -228,27 +252,9 @@ class Setup extends ShellExtension("jeditsetup") {
          }
        }
        
-       // add all properties from plugin/properties to jedit/properties, overriding existing ones
-       var propsAdd = utils.stringToList(getPluginResource(List("properties")), "\\n").flatMap {line =>
-         val i = line.indexOf("=")
-         if (!line.startsWith("#") && i != -1)
-           List((line.substring(0,i-1), line))
-         else
-           Nil
-       }
-       val propsOld = utils.stringToList(if (propsFile.exists) File.read(propsFile) else "", "\\n")
-       // override existing properties
-       var propsNew = propsOld.map {old =>
-         propsAdd.find{case (key,_) => old.startsWith(key)} match {
-           case None => old
-           case Some((key,nw)) =>
-             propsAdd = propsAdd.filterNot(_._1 == key)
-             nw
-         }
-       }
-       // append remaining new properties
-       propsNew = propsNew ::: propsAdd.map(_._2)
-       File.WriteLineWise(propsFile, propsNew)
+       // add all properties and keymaps
+       mergeProps(propsFile, List("properties"))
+       mergeProps(jedit / keymapPath, keymapPath)
     }
   }
 

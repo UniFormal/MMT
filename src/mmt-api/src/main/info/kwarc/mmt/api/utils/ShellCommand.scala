@@ -11,7 +11,7 @@ object ShellCommand {
     val proc = try {
        pb.start()
     } catch {case e: java.io.IOException =>
-       throw GeneralError("error while trying to run external process").setCausedBy(e)
+       return Some(e.getMessage) // GeneralError("error while trying to run external process").setCausedBy(e)
     }
 
     // read all output immediately to make sure proc does not deadlock if buffer size is limited
@@ -38,7 +38,7 @@ object ShellCommand {
 
   /**
    * @param command the command to run
-   * @return output+error stream if not successful
+   * @return output+error message if not successful
    */
   def run(command: String*): Option[String] = runInOpt(None, command: _*){_ => ()}
 
