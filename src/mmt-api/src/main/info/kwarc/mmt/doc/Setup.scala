@@ -149,7 +149,7 @@ class Setup extends ShellExtension("setup") {
       }
       controller.loadConfigFile(configFile, false)
   
-      println("cloning content repositories (by calling git; make sure it's installed and on your path)")
+      println("cloning or downloading content repositories (I'll try to use git; if that fails, I download a zip file)")
       contentFolder.mkdirs
       
       try {
@@ -188,6 +188,6 @@ class Setup extends ShellExtension("setup") {
       }
       println("\n\n\nThat's it. If there are no error messages above, you're ready to go.")
       println("\nThe main jar to execute is " + deploy/"mmt.jar")
-      println("\n\nTo update MMT, just rerun setup.")
+      println("\n\nTo force rerunning setup or to update MMT, just run `mmt.jar :setup`")
      }
 }

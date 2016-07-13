@@ -144,12 +144,12 @@ class Controller extends ROController with ActionHandling with Logger {
   }
 
   /** @return the current OAF root */
-  def getOAF: Option[OAF] = {
+  def getOAF: Option[MathHub] = {
     val ocO = state.config.getEntries(classOf[OAFConf]).headOption
     ocO map {oc =>
       if (!oc.local.isDirectory)
         throw GeneralError(oc.local + " is not a directory")
-      new OAF(oc.remote.getOrElse(OAF.defaultURL), oc.local, report)
+      new MathHub(oc.remote.getOrElse(MathHub.defaultURL), oc.local, report)
     }
   }
 

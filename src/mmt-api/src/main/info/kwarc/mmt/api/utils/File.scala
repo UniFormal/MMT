@@ -28,6 +28,8 @@ case class File(toJava: java.io.File) {
     rel
   }
 
+  def canonical = File(toJava.getCanonicalFile)
+  
   /** appends one path segment */
   def /(s: String): File = File(new java.io.File(toJava, s))
 
@@ -104,13 +106,15 @@ case class File(toJava: java.io.File) {
   def descendants: List[File] = children.flatMap {c =>
     if (c.isDirectory) c.descendants else List(c)
   }
+  
+  /** @return true if that begins with this */
+  def <=(that: File) = that.segments.startsWith(segments)
 
   /** delete this, recursively if directory */
   def deleteDir {
-    toJava.list foreach { n =>
-      val f = this / n
-      if (f.toJava.isDirectory) f.deleteDir
-      else f.toJava.delete
+   children foreach {c =>
+      if (c.isDirectory) c.deleteDir
+      else c.toJava.delete
     }
     toJava.delete
   }
@@ -302,7 +306,7 @@ object File {
   }
 
   /** unzips a file */
-  def unzip(from: File, toDir: File) {
+  def unzip(from: File, toDir: File, skipRootDir: Boolean = false) {
     val mar = new ZipFile(from)
     try {
       var bytes = new Array[Byte](100000)
@@ -310,7 +314,10 @@ object File {
       val enum = mar.entries
       while (enum.hasMoreElements) {
         val entry = enum.nextElement
-        val outFile = toDir / entry.getName
+        var relPath = stringToList(entry.getName, "/")
+        if (skipRootDir && relPath.length > 1)
+          relPath = relPath.tail
+        val outFile = toDir / relPath
         outFile.up.mkdirs
         if (!entry.isDirectory) {
           val istream = mar.getInputStream(entry)
@@ -344,6 +351,7 @@ object File {
       }
     }
     val input = conn.getInputStream
+    file.up.mkdirs
     val output = new java.io.FileOutputStream(file)
     try {
       val byteArray = Stream.continually(input.read).takeWhile(_ != -1).map(_.toByte).toArray

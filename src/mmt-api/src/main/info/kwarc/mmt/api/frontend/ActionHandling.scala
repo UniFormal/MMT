@@ -71,9 +71,9 @@ trait ActionHandling {self: Controller =>
           case OAFClone(path) =>
             cloneRecursively(path)
           case OAFPull =>
-            getOAFOrError.pull
+            getOAFOrError.pullAll
           case OAFPush =>
-            getOAFOrError.push
+            getOAFOrError.pushAll
           case SetBase(b) =>
             state.nsMap = state.nsMap(b)
             report("response", "base: " + getBase)
@@ -332,12 +332,13 @@ trait ActionHandling {self: Controller =>
 
   /** clone an archive using [[OAF]] and also clone its dependencies */
   def cloneRecursively(p: String) {
-    val lcOpt = getOAFOrError.clone(p)
+    val oaf = getOAFOrError
+    val lcOpt = oaf.clone(p) orElse oaf.download(p) 
     lcOpt foreach { lc =>
       val archs = backend.openArchive(lc)
       archs foreach { a =>
         val deps = stringToList(a.properties.getOrElse("dependencies", ""))
-        deps foreach { d => cloneRecursively(URI(d).pathAsString) }
+        deps foreach {d => cloneRecursively(URI(d).pathAsString)}
       }
     }
   }

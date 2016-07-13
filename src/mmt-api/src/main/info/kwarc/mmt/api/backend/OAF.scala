@@ -30,6 +30,43 @@ class WindowsGit(sh: String = "sh") extends Git {
    def apply(args: String*) = List(sh, "--login", "-c", UnixGit(args:_*).mkString("\"", " ", "\""))
 }
 
+/** client for repository managers (such as GitHub)
+ *  each repository is considered as an one archive, identified by a string (usually of the form GROUP/NAME as in GitHub)
+ */
+abstract class ArchiveHub {
+   val root: File
+   def localPath(id: String) = {
+     val ret = (root / id).canonical
+     // make sure dots in id do not cause trouble 
+     if (!(root <= ret)) throw GeneralError("local path escapes root path: " + ret) 
+     ret
+   }
+   /** create a new archive */
+   def init(id: String): Unit
+   /** clones a repository */
+   def clone(id: String): Option[File]
+   /** @return all locally available repositories */
+   def localArchiveIDs: List[String]
+   /** @return the directories of locally available repositories, i.e., grandchild directories of root */ 
+   def localPaths = localArchiveIDs map localPath
+   /** @return all remotely available repositories (unimplemented) */
+   def remoteArchiveIDs: List[String] = Nil //TODO
+   /** updates the local working copy of a repository */
+   def pull(id: String): Unit
+   /** pulls all local repositories */
+   def pullAll {
+     localArchiveIDs map pull
+   }
+   /** commits/pushes all changes to the remote server */
+   def push(id: String): Unit
+   /** pushes all local repositories */
+   def pushAll {
+     localArchiveIDs map push
+   }
+   /** downloads a remote repository as a zip file */
+   def download(id: String): Option[File]
+}
+
 /**
  * wraps around a git shell client to repositories holdings MMT archives
  *
@@ -41,7 +78,7 @@ class WindowsGit(sh: String = "sh") extends Git {
  * @param root the directory in which clones are created
  * @param report for logging
  */
-class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
+class MathHub(val uri: URI, val root: File, val report: Report) extends ArchiveHub with Logger {
    val logPrefix = "oaf"
    /** choose UnixGit or WindowsGit depending on OS */
    private val gitCommand = OS.detect match {case Windows => new WindowsGit() case _ => UnixGit}
@@ -77,31 +114,41 @@ class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
    }
    /** clones a repository */
    def clone(path: String): Option[File] = {
-      val localPath = root / path
-      if (localPath.exists) {
+      val lp = localPath(path)
+      if (lp.exists) {
          log("target directory exists, skipping")
       } else {
          val success = git(root, "clone", ssh(path), path)
-         if (!success) return None
+         if (!success) {
+           if (lp.exists) {
+              log("git failed, deleting " + lp)
+              lp.deleteDir
+           }
+           return None
+         }
       }
-      Some(localPath)
+      Some(lp)
    }
-   /** @return all repositories, i.e., grandchild directories of root */
-   def repositories = root.subdirs.flatMap(_.subdirs)
-   /** pulls all repositories under root */
-   def pull {
-      repositories.foreach {repos =>
-         git(repos, "pull", "origin", "master")
-      }
+   def localArchiveIDs = root.subdirs.flatMap {g => g.subdirs.map(r => g.name + r.name)}
+   def pull(id: String) {
+     git(localPath(id), "pull")
    }
-   /** pushes all repositories under root (does not commit) */
-   def push {
-      repositories.foreach {repos =>
-         git(repos, "push")
-      }
+   def push(id: String) {
+     git(localPath(id), "push")
+   }
+   def download(id: String) = {
+     TrustAllX509TrustManager.trustAll // gitlab uses certificate from startssl.com, which is not recognized by Java
+     val downloadURI = (uri / id / "repository" / "archive.zip") ? "ref=master"
+     val target = root/id
+     val zip = target.addExtension("zip")
+     log("downloading from " + downloadURI)
+     File.download(downloadURI.toURL, zip)
+     File.unzip(zip, target, skipRootDir = true)
+     zip.delete
+     Some(target)
    }
 }
 
-object OAF {
+object MathHub {
    val defaultURL = URI("http", "gl.mathhub.info")
 }
