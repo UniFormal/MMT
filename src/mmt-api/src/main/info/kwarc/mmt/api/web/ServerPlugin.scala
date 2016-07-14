@@ -268,27 +268,32 @@ class GetActionServer extends ServerExtension("mmt") {
 }
 
 /** an HTTP interface for processing [[Message]]s */
-class MessageHandler extends ServerExtension("") {
+class MessageHandler extends ServerExtension("content") {
   def apply(path: List[String], query: String, body: Body, session: Session) = {
      if (path.length != 1)
        throw LocalError("path must have length 1")
      val wq = WebQuery.parse(query)
      lazy val inFormat = wq.string("inFormat")
      lazy val outFormat = wq.string("outFormat")
+     lazy val theory = wq.string("theory")
+     lazy val context = objects.Context(Path.parseM(theory, controller.getNamespaceMap))
      lazy val inURI = Path.parse(wq.string("uri"))
      lazy val in = body.asString
-     val message: Message = path(1) match {
+     val message: Message = path.head match {
        case "get"    => GetMessage(inURI, outFormat)
        case "delete" => DeleteMessage(inURI)
        case "add"    => AddMessage(???, inFormat, in)
        case "update" => UpdateMessage(???, inFormat, in)
-       case "eval"   => EvaluateMessage(None, inFormat, in, outFormat)
-       case "prove"  => ProveMessage(None, inFormat, in, outFormat)
-       case "infer"  => InferMessage(None, inFormat, in, outFormat)
+       case "eval"   => EvaluateMessage(Some(context), inFormat, in, outFormat)
+       case "prove"  => ProveMessage(Some(context), inFormat, in, outFormat)
+       case "infer"  => InferMessage(Some(context), inFormat, in, outFormat)
        case s => throw LocalError("unknown command: " + s)
      }
-     val result = controller.handle(message)
-     XmlResponse("<result>" + result + "</done>")
+     controller.handle(message) match {
+       case ObjectResponse(obj, tp) => TextResponse(obj, tp)
+       case StructureResponse(id) => errorResponse(id)
+       case ErrorResponse(msg) => errorResponse(msg)
+     }
   }
 }
 

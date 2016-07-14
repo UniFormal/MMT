@@ -66,6 +66,7 @@ var uris = {
 /* special attribute names, must be kept in sync with info.kwarc.mmt.api.presentation.HTMLAttributes, see there for documentation */
 var mmtattr = function(){
    var prefix = "data-mmt-";
+   var jax = "data-mmtjax-";
    return {
       symref: prefix + "symref",
       varref: prefix + "varref",
@@ -75,7 +76,10 @@ var mmtattr = function(){
       position: prefix + "position",
       href: prefix + "href",
       load: prefix + "load",
-      toggleTarget: prefix + "toggle"
+      toggleTarget: prefix + "toggle",
+	  theory: jax + "theory",
+	  inFormat: jax + "informat",
+	  outFormat: jax + "outformat"
    }
 }();
 
@@ -392,7 +396,7 @@ var qmt = {
          url:qUrl,
          type:'POST',
          data:q,
-          dataType : 'xml',
+         dataType : 'xml',
          processData:false,
          contentType:'text/plain',
          success:cont,
@@ -410,7 +414,7 @@ var action = {
    exec : function(a, cont) {
       $.ajax({
          url: mmt.makeURL('/:action') + "?" + a,
-            dataType : 'text',
+         dataType : 'text',
          success:cont,
       });
    }
@@ -507,3 +511,43 @@ var svgHelper = {
       $(svg).attr('width', this.multiplyDim(w, by));
    },
 };
+
+/*
+  mmtjax is a Javascript function that allows interspersing MMT content into an HTML page.
+  This content is rendered by sending ajax requests to an MMT server.
+  It is not affiliated with MathJax in any way except for sharing the basic idea.
+*/
+var mmtjax = {
+   jax: function(server, theory, text, inFormat, outFormat, continuation) {
+	 var query = "theory=" + theory + "&inFormat=" + inFormat + "&outFormat=" + outFormat;
+	 $.ajax({
+		'url': server + ":content/eval?" + query,
+		'type': "post",
+		'contentType': "text/plain",
+		'processData': false,
+		'data': text,
+		'success': continuation,
+	});
+   },
+   
+   /* like jax but takes the input from a <script> element */
+   jaxElement(server, elem, cont) {
+	  var thy = $(elem).attr(mmtattr.theory);
+	  if (thy != null) {
+		 var inFormat = $(elem).attr(mmtattr.inFormat);
+		 var outFormat = $(elem).attr(mmtattr.outFormat);
+		 this.jax(server, thy, $(elem).text(), inFormat, outFormat, cont)
+	  }
+   },
+   
+   /* run jaxElement on all <script type='mmt'> tags and replace them with the result */
+   jaxDocument: function(server) {
+	   var me = this;
+	   
+	   $("script[type='mmt']").each(function(index, elem){
+		   function replace(res) {$(elem).replaceWith(res);};
+		   me.jaxElement(server, elem, replace);
+	   });
+   },
+};
+

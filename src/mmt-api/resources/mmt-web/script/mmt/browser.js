@@ -29,11 +29,7 @@ $(function () {
    $('[data-toggle="tooltip"]').tooltip()
 });
 
-// initialize popovers (still used?)
-$(function () {
-   $('[data-toggle="popover"]').popover({html:true})
-});
-
+/*
 // initialize incremental search
 $(function() {
    $('#treeview').jstree({
@@ -42,6 +38,7 @@ $(function() {
    var searcher = new Incsearch($('#incsearch'));
    var treeeview = new Treeview(searcher);
 });
+*/
 
 // add event handler to parse box that parses via the server 
 $(function(){

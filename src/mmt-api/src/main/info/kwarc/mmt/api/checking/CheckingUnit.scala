@@ -32,8 +32,12 @@ case class CheckingUnit(component: Option[CPath], context: Context, unknowns: Co
 
 object CheckingUnit {
    val unknownType = LocalName("") / "omitted_type"
-   def byInference(cpath: Option[CPath], context: Context, unkt: Term) = {
+   def byInference(cpath: Option[CPath], context: Context, unkt: Term): CheckingUnit = {
       val pr = ParseResult.fromTerm(unkt)
+      byInference(cpath, context, pr)
+   }
+   
+   def byInference(cpath: Option[CPath], context: Context, pr: ParseResult): CheckingUnit = {
       val j = Typing(Stack(pr.free), pr.term, OMV(unknownType))
       CheckingUnit(cpath, context, pr.unknown ++ VarDecl(unknownType,None,None,None), j)
    }
@@ -44,6 +48,10 @@ object CheckingUnit {
  * 
  * See [[CheckingUnit]].
  * 
- * @param solution the substitution for the unknown context
+ * @param solved true if term was checked successfully
+ * @param term the checked version of the term (possibly approximate if check failed)
+ * @param solution the substitution for the unknown context (possibly partial)
  */
-case class CheckingResult(solved: Boolean, solution: Option[Context])
+case class CheckingResult(solved: Boolean, solution: Option[Context], term: Term) {
+  def remainingUnknowns: Option[Context] = solution.map{sol => sol.filter {vd => vd.df.isEmpty}}
+}

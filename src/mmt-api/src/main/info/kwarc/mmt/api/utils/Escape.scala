@@ -123,3 +123,12 @@ object FileNameEscaping extends Escaping {
       '\'' -> "pr" // not sure why this is escaped; it's legal in file names but MMT archives used to escape it anyway
   )
 }
+
+/** escapes a string using the &-escapes of XML for <>&" */
+object XMLEscaping extends Escaping {
+  val escapeChar = '&'
+  override def usePlainEscape = Nil
+  override def useCustomEscape = List(
+    '>' -> "&gt;", '<' -> "&lt", '"' -> "&quot;", '&' -> "&amp;"
+  )
+}

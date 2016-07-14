@@ -9,6 +9,7 @@ import web._
 import parser._
 import backend._
 import ontology._
+import objects._
 
 /** an auxiliary class to split the [[Controller]] class into multiple files */
 trait ActionHandling {self: Controller =>
@@ -373,8 +374,26 @@ trait ActionHandling {self: Controller =>
 
   // ******************************** handling messages
   /** processes a message, see [[web.MessageHandler]] */
-  def handle(message: Message): String = {
-     // TODO
-     "not implemented yet: " + message.toString
+  def handle(message: Message): Response = try {
+     message match {
+       case EvaluateMessage(contOpt, in, text, out) =>
+         val interpreter = extman.get(classOf[checking.Interpreter], in).getOrElse {
+           return ErrorResponse("no parser found")
+         }
+         val presenter = extman.get(classOf[presentation.Presenter], out).getOrElse {
+           return ErrorResponse("no parser found")
+         }
+         val context = contOpt.getOrElse(Context.empty)
+         val pu = ParsingUnit(SourceRef.anonymous(text), context, text, getNamespaceMap)
+         val checked = interpreter(pu)(ErrorThrower)
+         val simplified = simplifier(checked, context)
+         val presented = presenter.asString(simplified)
+         ObjectResponse(presented, "html")
+       
+       case _ =>
+         ErrorResponse("not implemented yet: " + message.toString)
+     }
+  } catch {
+    case e: Error => ErrorResponse(e.toString)
   }
 }

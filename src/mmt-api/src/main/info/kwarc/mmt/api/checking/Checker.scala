@@ -55,7 +55,7 @@ trait StructureChecker extends FormatBasedExtension {
 object NullChecker {
    class Objects extends ObjectChecker {
       def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) = {
-         CheckingResult(false, None)
+         CheckingResult(false, None, cu.judgement.wfo)
       }
    }
    class Structure extends Checker(new Objects) {
@@ -76,7 +76,7 @@ abstract class Checker(val objectLevel: ObjectChecker) extends StructureChecker 
   /** relegates to objectChecker */
   def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) =
      objectLevel(cu, rules)
-   def checknewElement(e : StructuralElement, cont : Option[Context] = None)(implicit ce: CheckingEnvironment): Unit
-   def checkElementEnd(e: ContainerElement[_], cont : Option[Context] = None)(implicit ce: CheckingEnvironment): Unit
+  def checknewElement(e : StructuralElement, cont : Option[Context] = None)(implicit ce: CheckingEnvironment): Unit
+  def checkElementEnd(e: ContainerElement[_], cont : Option[Context] = None)(implicit ce: CheckingEnvironment): Unit
 }
 

@@ -82,7 +82,7 @@ class RuleBasedChecker extends ObjectChecker {
             log("not changed")
          }
       }
-      CheckingResult(success, Some(psol))
+      CheckingResult(success, Some(psol), result)
    }
    /**
     * A Traverser that reduces all redexes introduced by solving unknowns.

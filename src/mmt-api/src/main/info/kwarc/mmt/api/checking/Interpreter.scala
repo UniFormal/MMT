@@ -7,6 +7,7 @@ import frontend.Controller
 import ontology.{Declares, RelationExp}
 import parser._
 import utils._
+import objects._
 
 /** parses and returns a checked result */
 abstract class Interpreter extends Importer {
@@ -19,8 +20,10 @@ abstract class Interpreter extends Importer {
 
   def inExts = List(format)
 
-  /** parses a [[ParsingStream]] and returns a checked result */
+  /** structure interpretation */
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement
+  /** object interpretation */
+  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term
 
   /** converts the interface of [[Importer]] to the one of [[Parser]] */
   protected def buildTaskToParsingStream(bf: BuildTask): (DPath, ParsingStream) = {
@@ -80,13 +83,22 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Inter
       ps.stream.close
     }
   }
+
+  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term = {
+    val pr = parser(pu)
+    val cu = CheckingUnit.byInference(None, pu.context, pr)
+    val rules = RuleSet.collectRules(controller, pu.context)
+    val cr = checker(cu, rules)(new CheckingEnvironment(errorCont, RelationHandler.ignore))
+    cr.term
+  }
 }
 
 /** an interpreter created from a trusted parser */
-class OneStepInterpreter(parser: Parser) extends Interpreter {
+class OneStepInterpreter(val parser: Parser) extends Interpreter {
     def format = parser.format
     def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) = {
       val cont = new StructureParserContinuations(errorCont)
       parser(ps)(cont)
     }
+    def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = parser(pu).toTerm
 }

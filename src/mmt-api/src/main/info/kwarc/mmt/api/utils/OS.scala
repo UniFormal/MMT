@@ -31,6 +31,7 @@ object OS {
      }
   }
   
+  /** the default location of the jEdit settings folder, as specified by the jEdit documentation */
   def jEditSettingsFolder = {
      val jEditSettingsFolderName = OS.detect match {
        case Windows => "jEdit"

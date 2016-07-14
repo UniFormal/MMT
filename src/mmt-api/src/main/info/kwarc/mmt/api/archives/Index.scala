@@ -160,6 +160,9 @@ abstract class Importer extends TraversingBuildTarget {imp =>
         case e: Error => throw LocalError("no document produced")
       }
     }
+    def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = {
+      throw LocalError("can only interpret root documents")
+    }
   }
 }
 

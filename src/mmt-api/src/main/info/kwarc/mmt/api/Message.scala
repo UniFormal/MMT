@@ -81,3 +81,12 @@ case class InferMessage(context: Option[Context], inFormat: String, in: String, 
  * postcondition: thy |- out : in
  */
 case class ProveMessage(context: Option[Context], inFormat: String, in: String, outFormat: String) extends ObjectMessage
+
+/** type of responses for a [[Message]] */
+sealed abstract class Response
+
+case class StructureResponse(id: String) extends Response
+
+case class ObjectResponse(result: String, tp: String) extends Response
+
+case class ErrorResponse(message: String) extends Response

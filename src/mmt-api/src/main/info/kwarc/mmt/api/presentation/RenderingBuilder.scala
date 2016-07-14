@@ -22,6 +22,7 @@ abstract class RenderingHandler {
    /** output a string with line ending */
    def writeln(s: String) {apply(s + "\n")}
  
+   /*
    // Convenience methods for rendering XML
    /** begins an XML element, use empty prefix for unprefixed elements, content is provided by succeeding calls */ 
    def beginTag(prefix : String, label : String) {
@@ -55,11 +56,28 @@ abstract class RenderingHandler {
    def writeEndTag(prefix : String, label : String) {
      write(s"</${getQualifiedName(prefix, label)}>")
    }
-   /** releases all resources, empty by default */
-   def done {}
    /** returns a qualified name from a prefix and a local part */
    private def getQualifiedName(prefix : String, name: String) =
      if (prefix == "" || prefix == null) name else (prefix + ":" + name)
+   */
+   
+   /** write an XML element in a way that the XML nesting is reflected in the code (attribute values will be escaped) */
+   def elem(tag: String, attributes: (String,String)*)(body: => Unit) {
+     val attS = attributes.map {case (k,v) => s"""$k="${XMLEscaping(v)}""""}.mkString(" ", " ", "")
+     write(s"<$tag$attS>")
+     nl
+     indent(body)
+     write(s"</$tag>")
+     nl
+   }
+   
+   /** write text inside an xml element (will be escaped) */
+   def xmltext(s: String) {
+     write(XMLEscaping(s))
+   }
+   
+   /** releases all resources, empty by default */
+   def done {}
 
    // indentation management  
    private var indentLevel = 0

@@ -56,7 +56,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case _ => Context.empty
     }
 
-  def checknewElement(e : StructuralElement, cont : Option[Context] = None)(implicit ce: CheckingEnvironment): Unit = {
+  def checknewElement(e : StructuralElement, cont : Option[Context] = None)(implicit ce: CheckingEnvironment) {
     val context = cont.getOrElse(getContext(e))
     val rules = RuleSet.collectRules(controller, context)
     implicit val env = new Environment(ce, rules, e.path)
@@ -187,7 +187,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                 if (d.isInstanceOf[OMID])
                 // no need to check atomic definiens without expected type
                 // slightly hacky trick to allow atomic definitions in the absence of a type system
-                  performCheck = false
+                   performCheck = false
                 (pr.unknown ++ VarDecl(tpVar, None, None, None), OMV(tpVar), true)
             }
             val j = Typing(Stack(pr.free), pr.term, expTp, None)

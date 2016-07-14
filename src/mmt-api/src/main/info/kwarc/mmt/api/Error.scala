@@ -267,7 +267,7 @@ class FilteringErrorHandler(handler : ErrorHandler, filter : Error => Boolean) e
   override def mark = handler.mark
   override def hasNewErrors = handler.hasNewErrors
   override def catchIn(a: => Unit) = handler.catchIn(a)
-  override def apply(e: Error) =if (filter(e)) handler.apply(e) //otherwise ignore
+  override def apply(e: Error) = if (filter(e)) handler.apply(e) //otherwise ignore
   def addError(e : Error) = {} //nothing to do here, not called
 }
 

@@ -669,13 +669,11 @@ case class Present(c: MakeAbstract, param: String) extends MakeConcrete {
 /** retrieves all relational elements about a certain path and renders them as XML */
 case class Deps(path: Path) extends MakeConcrete {
   def make(controller: Controller, rb: RenderingHandler) {
-    rb.beginTag("", "mmtabox")
-    rb.writeAttribute("", "xmlns", "http://omdoc.org/abox")
-    rb.finishTag()
-    (controller.depstore.getInds ++ controller.depstore.getDeps).foreach(
-      (d: ontology.RelationalElement) => if (path <= d.path) rb(d.toNode)
-    )
-    rb.writeEndTag("", "mmtabox")
+    rb.elem("mmtabox", "xmlns" -> "http://omdoc.org/abox") {
+      (controller.depstore.getInds ++ controller.depstore.getDeps).foreach(
+        (d: ontology.RelationalElement) => if (path <= d.path) rb(d.toNode)
+      )
+    }
   }
 
   override def toString: String = path.toString + " deps"
