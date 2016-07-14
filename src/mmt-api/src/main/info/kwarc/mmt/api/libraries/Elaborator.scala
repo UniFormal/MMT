@@ -82,12 +82,12 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
          dom.getDeclarations.flatMap(d => {
            val dF = lup.getAs(classOf[Declaration], parent.path ? s.name / d.name)
            d match {
-             case PlainInclude(_,i) =>
+             case PlainInclude(i,_) =>
                dF :: lup.get(i).getDeclarations.flatMap {
-                 case PlainInclude(_) =>
+                 case PlainInclude(_,_) =>
                    Nil
                  case id: Declaration =>
-                   val idF = lup.getAs(classOf[Declaration], parent.path ? (s.name / ComplexStep(i) / d.name))
+                   val idF = lup.getAs(classOf[Declaration], parent.path ? (s.name / ComplexStep(i) / id.name))
                    List(idF)
                }
              case d => List(dF)
@@ -155,6 +155,7 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
         controller.getO(s.parent) match {
           case Some(t : DeclaredTheory) =>
             onDelete(s)
+            ElaboratedElement.erase(s)
             flattenDeclaration(t,s)
           case _ => {}
         }

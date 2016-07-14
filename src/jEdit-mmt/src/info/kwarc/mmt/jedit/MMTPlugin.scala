@@ -137,7 +137,7 @@ class MMTPlugin extends EBPlugin with Logger {
   def addMMTToolBar(view: View) {
     invokeLater {
       clearMMTToolBar(view)
-      val viewToolBar = view.getToolBar() 
+      val viewToolBar = view.getToolBar
       if (viewToolBar != null) {
         log("adding toolbar...")
         val newbar = new MMTToolBar(this)
@@ -147,9 +147,9 @@ class MMTPlugin extends EBPlugin with Logger {
   }
   /** removes MMT toolbar */
   def clearMMTToolBar(view: View) {
-    val viewToolBar = view.getToolBar()
+    val viewToolBar = view.getToolBar
     if (viewToolBar != null) {
-      log("Number of components of this view: " + viewToolBar.getComponentCount().toString)
+      log("Number of components of this view: " + viewToolBar.getComponentCount.toString)
       viewToolBar.getComponents foreach {comp => 
         if(comp.isInstanceOf[MMTToolBar]) {
           log("removing tool bar")
