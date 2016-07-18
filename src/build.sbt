@@ -85,6 +85,12 @@ lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
   settings(
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
+    scalaSource in Test := baseDirectory.value / "src/main/scala",
+    libraryDependencies ++= Seq(
+        "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
+        "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
+        "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
+    ),
     deployFull <<= deployPackage("lib/tiscaf.jar")
   )
 
@@ -101,10 +107,10 @@ lazy val api = (project in file("mmt-api")).
   settings(
     scalaSource in Compile := baseDirectory.value / "src" / "main",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "tiscaf.jar",
-	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-compiler.jar",
-	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-reflect.jar",
- 	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
-	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar"
+    unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-compiler.jar",
+    unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-reflect.jar",
+    unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
+    unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar"
   )
   
 
@@ -113,8 +119,8 @@ lazy val lf = (project in file("mmt-lf")).
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
     unmanagedJars in Compile += Utils.deploy.toJava / "lfcatalog" / "lfcatalog.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
     unmanagedJars in Test += Utils.deploy.toJava / "lib" / "tiscaf.jar",
-    scalaSource in Test := baseDirectory.value / "test",
     libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
   )
 
