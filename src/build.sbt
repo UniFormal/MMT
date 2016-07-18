@@ -92,7 +92,7 @@ lazy val lfcatalog = (project in file("lfcatalog")).
   settings(commonSettings("lfcatalog") ++ oneJarSettings: _*).
   settings(
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "tiscaf.jar",
-	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar.jar",
+  	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar",
     deployFull <<= deployPackage("lfcatalog/lfcatalog.jar")
   )
 
