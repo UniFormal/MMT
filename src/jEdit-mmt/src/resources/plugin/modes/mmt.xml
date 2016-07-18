@@ -110,6 +110,8 @@
 			<KEYWORD2>struct</KEYWORD2>
 			<KEYWORD2>implicit</KEYWORD2>
 			<KEYWORD2>structure</KEYWORD2>
+			<KEYWORD2>document</KEYWORD2>
+			<KEYWORD2>ref</KEYWORD2>
 		</KEYWORDS>
 	</RULES>
 

@@ -340,6 +340,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             readInDocument(d)
           }
           end(d)
+        case "ref" =>
+          val (_,path) = readMPath(doc.path)
+          seCont(MRef(doc.path,path))
         case "/" =>
             val oe = readOpaque(parentInfo, Context.empty)
             seCont(oe)

@@ -58,7 +58,7 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
          val res = textArea.offsetToXY(physicalLine, localOffset, startPoint)
          if (res != null) txtsegm(globalOffset).toInt match {
            case 28 =>
-             paintDelim(startPoint, new Color(high, low, low), "S")
+             paintDelim(startPoint, new Color(high, high, low), "S")
            case 29 =>
              paintDelim(startPoint, new Color(high, low, low), "M")
            case 30 =>
