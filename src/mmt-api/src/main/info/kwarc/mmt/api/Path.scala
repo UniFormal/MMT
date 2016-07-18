@@ -38,7 +38,7 @@ sealed abstract class Path extends ontology.BaseType {
    def toPathLong : String = toPath(true)
    /** as toPath, but escapes XML-illegal characters */
    def toPathEscaped = scala.xml.Utility.escape(toPath)
-   /** the last components of the path, useful for short displays */
+   /** the last components of the path, human-oriented (i.e., no escaping), useful for short displays */
    def last : String
    /** breaks an MMT URI reference into its components, all of which are optional */
    def toTriple : (Option[DPath], Option[LocalName], Option[LocalName]) = this match {
@@ -119,7 +119,7 @@ sealed trait ComponentParent extends Path {
  */
 case class MPath(parent : DPath, name : LocalName) extends ContentPath with SlashFunctions[MPath] with QuestionMarkFunctions[GlobalName]{
    def doc = parent
-   def last = name.steps.last.toPath
+   def last = name.steps.last.toString
    /** go down to a submodule */
    def /(n : LocalName) = MPath(parent, name / n)
    /** go down to a symbol */
@@ -145,7 +145,7 @@ case class GlobalName(module: MPath, name: LocalName) extends ContentPath with S
    def doc = module.doc
    def ^! = if (name.length == 1) module else GlobalName(module, name.init)
    def /(n : LocalName) = GlobalName(module, name / n)
-   def last = name.last.toPath
+   def last = name.last.toString
    def apply(args: List[Term]) : Term = OMA(OMS(this), args)
    def apply(args: Term*) : Term = apply(args.toList)
    def apply(con: Context, args: List[Term]) : Term = OMBINDC(OMS(this), con, args)
@@ -229,7 +229,7 @@ case class SimpleStep(name: String) extends LNStep {
 /** an include declaration; ComplexStep(fromPath) acts as the name of an unnamed structure */
 case class ComplexStep(path: MPath) extends LNStep {
    def toPath = "[" + path.toPath + "]"
-   override def toString = toPath
+   override def toString = "[" + path.toString + "]"
 }
 
 case class CPath(parent: ComponentParent, component: ComponentKey) extends Path {

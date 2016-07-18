@@ -112,10 +112,10 @@ class Matcher(controller : Controller, var metaContext : Context) {
 //    println("matching " + dterm.toString() + " with " + pterm.toString())    
         (dterm,pterm) match {
         	// OM reference
-        	case (OMID(a), OMID(b)) =>	// OMID(a) == OMID(b) does not work!?
-        	  							if (a.last == b.last) //Some(Substitution(Sub("OMID match",OMID(a))))  else None
-        									Some(Substitution())
-        									else None
+        	case (OMID(a), OMID(b)) =>
+							if (a == b) //Some(Substitution(Sub("OMID match",OMID(a)))) else None
+							Some(Substitution())
+							else None
         	// variables
             case (OMV(v),OMV(w)) => if ((v == w) && (con.isDeclared(v) && con.isDeclared(w)))
               Some(Substitution(Sub(OMV(w).name,OMV(v)))) 

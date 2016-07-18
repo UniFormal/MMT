@@ -35,19 +35,24 @@ case class DotError(m: String) extends Exception(m)
 
 /** converts a graph to SVG using the dot tool */
 class DotToSVG(dotPath: File) {
+  
+  /** dot has a bug, which does not XML escape <>&" in the generated SVG
+   * Therefore, this method is used to put escaped values in the dot file to begin with. 
+   */
+   private def esc(s: String) = XMLEscaping(s)
 
    // note graphviz does not like some characters (including -) in the tooltip attributes
    private def dotNode(n: DotNode) = {
-      s""""${n.id}" [label="${n.label}",tooltip="${n.cls}",href="${n.id.toPath}"];"""
+      s""""${n.id}" [label="${esc(n.label)}",tooltip="${esc(n.cls)}",href="${esc(n.id.toPath)}"];"""
    }
 
    private def dotEdge(e: DotEdge) = {
       val labelAtt = e.label match {
          case None => ""
-         case Some(l) => s"""label="$l","""
+         case Some(l) => s"""label="${esc(l)}","""
       }
-      val refAtt = e.id.map(p => s"""href="${p.toPath}",""").getOrElse("")
-      s""""${e.from.id.toPath}" -> "${e.to.id.toPath}" [${labelAtt}${refAtt}tooltip="${e.cls}",weight=${e.weight}];"""
+      val refAtt = e.id.map(p => s"""href="${esc(p.toPath)}",""").getOrElse("")
+      s""""${e.from.id.toPath}" -> "${e.to.id.toPath}" [${labelAtt}${refAtt}tooltip="${esc(e.cls)}",weight=${e.weight}];"""
    }
    
    private def toDot(dg: DotGraph, f: File) {
