@@ -3,6 +3,9 @@ package info.kwarc.mmt.openmath
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.BuildTask
 
+import objects._
+import presentation._
+
 /** An exporter that creates an OpenMath CD for every theory */
 class Exporter extends archives.Exporter {
   val key = "openmath"
@@ -53,4 +56,52 @@ class Exporter extends archives.Exporter {
   }
 }
 
+/** translates MMT objects into OpenMath objects in XML encoding
+ *  This is straightforward except for a few case where MMT objects go beyond OpenMath.
+ */
+object OpenMathPresenter extends ObjectPresenter {
+   /** a non-standard content dictionary declaring
+    *  * one symbol for the type of each literal, i.e., int, float, string, bytearray
+    *  * one symbol each for type and definition attribution
+    */
+   private val openmathCD = DPath(utils.URI("http", "www.openmath.org") / "cd") ? "OpenMath"
+   
+   val equals = openmathCD ? "def"
+   val isA = openmathCD ? "type"
+   
+   def apply(o: Obj, origin: Option[CPath] = None)(implicit rh : RenderingHandler) = {
+     o match {
+       case OMS(p) => <OMS name={p.name.toPath} cd={p.module.toPath} cdbase={p.doc.toString}/>
+       case OMV(n) => <OMV name={n.toPath}/>
+       case OMA(f, args) => <OMA>{(f::args).map(e => apply(e, None))}</OMA>
+       case OMBIND(binder, context, scope) =>
+         <OMBIND>{apply(binder,None)}{applyContext(context)}{apply(scope, None)}</OMBIND>
+       case l: OMLITTrait =>
+          l.synType match {
+            case OMS(GlobalName(this.openmathCD, name)) => name.toPath match {
+              case "OMI" => <OMI>{l.toString}</OMI>
+              case "OMF" => <OMF>{l.toString}</OMF>
+              case "OMSTR" => <OMSTR>{l.toString}</OMSTR>
+              case _ => throw LocalError("illegal literal or literal not implemented")
+            }
+            case _ =>
+              // default case for MMT literals that are not allowed in OpenMath
+              <OMSTR>{l.toString}</OMSTR>
+          }
+     }
+   }
+   def applyContext(con: Context)(implicit rh : RenderingHandler) = {
+     <OMBVAR>{con.map(applyVarDecl)}</OMBVAR>
+   }
+   def applyVarDecl(vd: VarDecl)(implicit rh : RenderingHandler) = {
+     val omv = <OMV name={vd.name.toPath}/>
+     val typeAttribution = vd.tp.toList.flatMap {tp => List(OMS(isA), tp)}
+     val defAttribution  = vd.df.toList.flatMap {df => List(OMS(equals), df)}
+     val keyValList = (typeAttribution ::: defAttribution).map(o => apply(o,None))
+     if (keyValList.isEmpty)
+       omv
+     else
+       <OMATTR><OMATP>{keyValList}</OMATP>{omv}</OMATTR>
+   }
+}
  
