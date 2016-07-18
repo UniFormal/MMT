@@ -129,6 +129,6 @@ object XMLEscaping extends Escaping {
   val escapeChar = '&'
   override def usePlainEscape = Nil
   override def useCustomEscape = List(
-    '>' -> "&gt;", '<' -> "&lt", '"' -> "&quot;", '&' -> "&amp;"
+    '>' -> "gt;", '<' -> "lt", '"' -> "quot;", '&' -> "amp;"
   )
 }

@@ -89,7 +89,7 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
     val existingKeys = exportFolder.children.collect {
       case f if (f/relPath).exists => f.name
     }
-    val exporterKeys = controller.extman.get(classOf[RelationGraphExporter]).map(_.key)
+    val exporterKeys = controller.extman.get(classOf[RelationGraphExporter]).filter(_.canHandle(path)).map(_.key)
     (existingKeys ::: exporterKeys).distinct.map {key =>
       ContextMenuEntry("show " + key + " graph", showGraph(key, path.toPath))  
     }

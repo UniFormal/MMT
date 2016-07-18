@@ -12,6 +12,7 @@ object NarrativeMetadata {
    def allAnnotators = allKeys map {k => new NarrativeMetadata(k)}
    
    val title = new NarrativeMetadata("title")
+   val description = new NarrativeMetadata("description")
 }
 
 /** this class should be generalized to allow any semi-formal values  */
