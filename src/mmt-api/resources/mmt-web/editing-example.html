@@ -1,0 +1,36 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+   <head>
+      <meta charset="UTF-8" />
+      <link rel="stylesheet" type="text/css" href="css/mmt.css" />
+      <script type="text/javascript" src="script/jquery/jquery.js"></script>
+      <script type="text/javascript" src="script/mmt/mmt-js-api.js"></script>
+      <script type="text/javascript">
+         var mmtUrl = "http://localhost:8080";
+         function mmtparse() {
+            var text = $("#inputbox").val();
+            var theory = $("#thyuri").val();
+           
+            var qr = qmt.parse(qmt.literalString(text), theory);
+
+            var qA = qmt.analyze(qr, theory);
+            qr = qmt.let(qA, qmt.tuple(qmt.present(qmt.bound(1)) + qmt.present(qmt.bound(2))));
+
+            qmt.exec(qr, function(data) {
+                 $("#outputbox").html("<p> result: " + $(data.firstChild.firstChild.firstChild).html() + "</p>");
+            });
+             
+         }
+      </script>
+
+   </head>
+   <body>
+      <div>
+      Base Theory:<input id="thyuri" type="text" size="30" value="http://cds.omdoc.org/examples?FOL"><br>
+      MMT Object:<br>
+      <textarea id="inputbox" rows="3"> forall [x] true </textarea> <br>
+      <button onclick="mmtparse()">Submit</button>
+      </div>
+      <div id="outputbox">
+      </div>
+   </body>
+</html>
