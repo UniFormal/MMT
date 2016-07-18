@@ -16,7 +16,7 @@
             qr = qmt.let(qA, qmt.tuple(qmt.present(qmt.bound(1)) + qmt.present(qmt.bound(2))));
 
             qmt.exec(qr, function(data) {
-                 $("#outputbox").html("<p> result: " + $(data.firstChild.firstChild.firstChild).html() + "</p>");
+                 $("#outputbox").html("<p> result: " + $(data.firstChild.firstChild).html() + "</p>");
             });
              
          }

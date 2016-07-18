@@ -1,12 +1,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
    <head>
       <meta charset="UTF-8" />
+      <link rel="stylesheet" type="text/css" href="css/mmt.css" />
       <script type="text/javascript" src="script/jquery/jquery.js"></script>
       <script type="text/javascript" src="script/mmt/mmt-js-api.js"></script>
-      <link rel="stylesheet" type="text/css" href="css/mmt.css" />
+      <script type="text/javascript" src="script/mmt/mmtjax.js"></script>
       
       <script type="text/javascript">
-      $(function(){mmtjax.jaxDocument("/")})
+      var mmtUrl = "http://localhost:8080/";
+      $(function(){mmtjax.jaxDocument(mmtUrl)});
       </script>
    </head>
    <body>
