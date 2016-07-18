@@ -13,7 +13,6 @@ trait Exporter extends BuildTarget {
   self =>
   /** must be set by deriving classes to direct output, not necessary if outputTo is used */
   protected var _rh: RenderingHandler = null
-
   /**
     * sends output to a certain file, file is created new and deleted if empty afterwards
  *
@@ -28,7 +27,6 @@ trait Exporter extends BuildTarget {
     if (out.toJava.length == 0)
       out.toJava.delete
   }
-
   /** gives access to the RenderingHandler for sending output */
   protected def rh = _rh
 
@@ -43,6 +41,11 @@ trait Exporter extends BuildTarget {
     controller.extman.addExtension(contentExporter, args)
     controller.extman.addExtension(narrationExporter, args)
   }
+
+  /** override this method if your exporter cannot export arbitrary content
+   *  @param p the MMT URI of a content element to be exported
+   */
+  def canHandle(p: Path) = true
   
   /** applied to each document (i.e., narration-folders and .omdoc files) */
   def exportDocument(doc: Document, bf: BuildTask)
