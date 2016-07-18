@@ -43,7 +43,8 @@ abstract class RenderingHandler {
    /** write an XML attribute at once, assumes inside open tag, always starts with space separating from previous output, can also be used for namespace bindings */
    def writeAttribute(prefix : String, name : String, value : String) {
      write(s""" ${getQualifiedName(prefix, name)}="$value"""")
-   }
+   }*/
+   @deprecated
    /** write an XML start tag at once, including attributes and scope */
    def writeStartTag(prefix : String, label : String, attributes : MetaData, scope : NamespaceBinding) {
      write("<")
@@ -52,14 +53,15 @@ abstract class RenderingHandler {
      write(scope.toString) //starts with a space
      write(">")
    }
+   @deprecated
    /** write an XML end tag */
    def writeEndTag(prefix : String, label : String) {
      write(s"</${getQualifiedName(prefix, label)}>")
    }
+   @deprecated
    /** returns a qualified name from a prefix and a local part */
    private def getQualifiedName(prefix : String, name: String) =
      if (prefix == "" || prefix == null) name else (prefix + ":" + name)
-   */
    
    /** write an XML element in a way that the XML nesting is reflected in the code (attribute values will be escaped) */
    def elem(tag: String, attributes: (String,String)*)(body: => Unit) {
