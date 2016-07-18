@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.BuildTask
 
 import objects._
+import documents._
 import presentation._
 
 /** An exporter that creates an OpenMath CD for every theory */
@@ -31,16 +32,14 @@ class Exporter extends archives.Exporter {
      <CDName>{thy.name.toString}</CDName>
      <CDBase>{thy.parent.toString}</CDBase>
      <CDURL>{thy.path.toString}</CDURL>
-     
-     <Description>
-     </Description>
+     {getDescription(thy)}
      {
        thy.asDocument.getDeclarations.flatMap {
   		   case c: symbols.Constant =>
   		     <CDDefinition>
   		       <Name>{c.name.toString}</Name>
   		       <Role>application</Role>
-  		       {<Description></Description>}
+  		       {getDescription(c)}
   		       {<CMP></CMP>}
   		       {<FMP></FMP>}
   		       {<Example></Example>}
@@ -53,6 +52,11 @@ class Exporter extends archives.Exporter {
 
     // write the XML element to the exorters output stream
     rh(cd)
+  }
+  
+  private def getDescription(se: StructuralElement) = NarrativeMetadata.description.get(se) match {
+     case Some(desc) => <Description>{desc}</Description>
+     case None => Nil
   }
 }
 
