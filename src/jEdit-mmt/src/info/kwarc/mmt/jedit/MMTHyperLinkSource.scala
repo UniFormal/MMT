@@ -8,6 +8,8 @@ import info.kwarc.mmt.api.utils._
 import org.gjt.sp.jedit._
 import sidekick._
 
+//TODO it should be enough to compute the SourceRef at click time
+/** implements the action for clicking on a hyperlink provided by [[MMTHyperlinkSource]] */
 class MMTHyperlink(start: Int, end: Int, startLine: Int, path: Path, ref: Option[SourceRef])
    extends AbstractHyperlink(start, end, startLine, path.toPath) {
    def click(view: View) {
@@ -16,6 +18,7 @@ class MMTHyperlink(start: Int, end: Int, startLine: Int, path: Path, ref: Option
 }
 
 object MMTHyperlink {
+   /** extracts physical source references from a structural element */
    def elemToSourceRef(controller: frontend.Controller, elem: StructuralElement) : Option[SourceRef] = {
        val ref = SourceRef.get(elem)
        // we may have a ref now, but it's only useful if it's a file:URI
@@ -30,6 +33,7 @@ object MMTHyperlink {
           }
        }
    }
+   /** navigates to a SourceRef in a jedit view */
    def navigateTo(view: View, ref: SourceRef) {
       ref match {
         case SourceRef(FileURI(file), region) =>
@@ -45,6 +49,7 @@ object MMTHyperlink {
    }
 }
 
+/** uses [[SourceRef]]s to provide hyperlinks in MMT documents */
 class MMTHyperlinkSource extends HyperlinkSource {
    val mmt : MMTPlugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
    val controller = mmt.controller
@@ -70,6 +75,8 @@ class MMTHyperlinkSource extends HyperlinkSource {
                       }
                     case _ => None
                   }
+               case a: MMTURIAsset =>
+                 controller.globalLookup.getO(a.path)
                case _ => None
                   //asset.getScope flatMap {home => libraries.Names.resolve(home, id)(controller.localLookup)}
             }

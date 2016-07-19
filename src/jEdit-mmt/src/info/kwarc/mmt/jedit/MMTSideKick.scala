@@ -125,7 +125,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    }
 
    override def stop {
-      // this should interrupt parsing, but it's tricky because we don't even know which extension it is
+      // TODO this is called from another tread and should interrupt parsing, but it's tricky because we don't even know which extension it is
    }
 
    private def getRegion(e: metadata.HasMetaData) : Option[SourceRegion] = SourceRef.get(e).map(_.region)
@@ -133,23 +133,27 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    /* build the sidekick outline tree: document node */
    private def buildTreeDoc(node: DefaultMutableTreeNode, doc: Document) {
       val reg = getRegion(doc) getOrElse SourceRegion(SourcePosition(0,0,0),SourcePosition(0,0,0))
-      val child = new DefaultMutableTreeNode(new MMTElemAsset(doc, doc.path.toPath, reg))
+      val child = new DefaultMutableTreeNode(new MMTElemAsset(doc, doc.path.last, reg))
       node.add(child)
       doc.getDeclarations foreach {
         case d: Document =>
            buildTreeDoc(child, d)
-        case d: DRef =>
-           buildTreeDoc(child, controller.getDocument(d.target))
-        case m: MRef =>
-           try {
-              val mod = controller.localLookup.getModule(m.target)
-              buildTreeMod(child, mod, Context(), reg)
-           } catch {case e: Error =>
-              // graceful degradation in case module could not be parsed
-              val child = new DefaultMutableTreeNode(new MMTAsset(m.target.name.toPath + " (unknown)", reg) {def getScope = null})
-              node.add(child)
+        case r: NRef =>
+           val rReg = getRegion(r) getOrElse reg
+           val rChild = new DefaultMutableTreeNode(new MMTURIAsset(r.target, rReg))
+           r match {
+              case d: DRef =>
+               child.add(rChild)
+              case m: MRef =>
+                 try {
+                    val mod = controller.localLookup.getModule(m.target)
+                    buildTreeMod(child, mod, Context.empty, reg)
+                 } catch {case e: Error =>
+                    // graceful degradation in case module could not be parsed
+                    child.add(rChild)
+                 }
+              case s: SRef =>
            }
-        case s: SRef =>
         case oe: opaque.OpaqueElement =>
       }
    }

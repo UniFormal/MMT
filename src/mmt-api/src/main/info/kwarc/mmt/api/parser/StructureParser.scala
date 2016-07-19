@@ -421,7 +421,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   private def readFeature(feature: StructuralFeatureRule, reg : SourceRegion, context : Context,
                           parent : DeclaredTheory, currentSection : LocalName,
                           patterns: List[(String, GlobalName)])(implicit state: ParserState) = {
-    val readname = if (feature.hasname) Some(readName) else None
+    var nameOpt = if (feature.hasname) Some(readName) else None
     def readFeatureComponent(comp : ComponentKey) : DeclarationComponent = comp match {
       case TypeComponent =>
         val tpC = new TermContainer
@@ -433,6 +433,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         DeclarationComponent(TypeComponent,dfC)
       case DomComponent =>
         val (_,p) = readMPath(parent.path)
+        if (nameOpt.isEmpty) nameOpt = Some(LocalName(p))
         val domC = new MPathContainer(Some(p))
         DeclarationComponent(DomComponent,domC)
       case CodComponent =>
@@ -441,12 +442,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         DeclarationComponent(CodComponent,codC)
       case _ => throw makeError(reg,"ComponentKey " + comp.getClass.toString + " not implemented")
     }
-    val components : List[DeclarationComponent] = if (feature.components.isEmpty) Nil
-      else feature.components.map(readFeatureComponent)
-    val name = readname.getOrElse(components.find(_.key == DomComponent).map(dc =>
-      LocalName(dc.value.asInstanceOf[MPathContainer].path.get)).getOrElse(
+    val components : List[DeclarationComponent] = feature.components.map(readFeatureComponent)
+    val name = nameOpt.getOrElse {
       throw makeError(reg, "DerivedDeclaration must either have name or DomComponent")
-    ))
+    }
     new DerivedDeclaration(OMID(parent.path),name,feature.feature,components,feature.mt)
   }
 
@@ -456,7 +455,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param context the context (including the containing module)
     * @param patterns the patterns of the meta-theory (precomputed in readInDocument)
     *
-    *                 this function handles one declaration if possible, then calls itself recursively
+    * this function handles one declaration if possible, then calls itself recursively
     */
   def readInModule(mod: Body, context: Context,
                            patterns: List[(String, GlobalName)])(implicit state: ParserState) {
@@ -508,7 +507,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             case thy: DeclaredTheory =>
               val (fromRef, from) = readMPath(thy.path)
               val incl = PlainInclude(from, thy.path)
-              SourceRef.update(incl.from, fromRef)
+              SourceRef.update(incl.from, fromRef) //TODO awkward, same problem for metatheory
               addDeclaration(incl)
             case link: DeclaredLink =>
               val (fromRef, from) = readMPath(link.path)
@@ -713,12 +712,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       val thy = DefinedTheory(ns, name, df)
       moduleCont(thy, parent)
     } else {
-      val meta = if (delim._1 == ":") {
-        val (_, p) = readMPath(tpath)
+      val metaReg = if (delim._1 == ":") {
+        val (r,m) = readMPath(tpath)
         delim = state.reader.readToken
-        Some(p)
+        Some((m,r))
       } else
         None
+      val meta = metaReg.map(_._1)
       val contextMeta = meta match {
         case Some(p) => context ++ p
         case _ => context
@@ -744,6 +744,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       } else
         Context.empty
       val t = new DeclaredTheory(ns, name, meta, parameters)
+      metaReg foreach {case (_,r) => SourceRef.update(t.metaC.get.get, r)} //awkward, same problem for structure domains
       moduleCont(t, parent)
       if (delim._1 == "=") {
         val patterns: List[(String, GlobalName)] = getPatternsFromMeta(meta)

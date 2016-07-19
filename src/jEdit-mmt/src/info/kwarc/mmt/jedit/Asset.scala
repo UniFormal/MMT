@@ -17,13 +17,24 @@ case class MyPosition(offset : Int) extends javax.swing.text.Position {
  * @param name the label of the asset
  * @param region the source region of the asset
  */ 
-abstract class MMTAsset(name: String, val region: SourceRegion)
+sealed abstract class MMTAsset(name: String, val region: SourceRegion)
   extends enhanced.SourceAsset(name, region.start.line, MyPosition(region.start.offset)) {
   setEnd(MyPosition(region.end.offset+1))
+  /** the base URIto use in the context of this asset */
   def getScope : Option[MPath]
 }
 
-/** node in the sidekick outline tree: declarations
+/**
+ * a node for URIs
+ */
+class MMTURIAsset(val path: Path, r: SourceRegion) extends MMTAsset(path.last, r) {
+  def getScope = path match {
+    case p: MPath => Some(p)
+    case _ => None
+  }
+}
+
+/** node for structural elements
  * @param elem the node in the MMT syntax tree
  */ 
 class MMTElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
@@ -42,7 +53,7 @@ class MMTElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion
    }
 }
 
-/** node in the sidekick outline tree: terms
+/** node for objects
  * @param term the node in the MMT syntax tree
  * @param parent the component containing the term
  * @param subobjectPosition the position in that term

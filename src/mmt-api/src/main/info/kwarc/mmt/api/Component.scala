@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api
 
+import objects._
+
 /** A component of a declaration, e.g., the type of a [[Constant]] (akin to XML attributes) */
 case class DeclarationComponent(key: ComponentKey, value: ComponentContainer) extends NamedElement {
   val name = LocalName(key.toString) //TODO integrate ComponentKey as LocalName
@@ -22,7 +24,7 @@ trait AbstractTermContainer extends ComponentContainer {
 }
 
 /** a dummy container for a stateless term */ 
-class FinalTermContainer(t: objects.Term) extends AbstractTermContainer {
+class FinalTermContainer(t: Term) extends AbstractTermContainer {
    def update(nw: ComponentContainer) = nw match {
       case nw: FinalTermContainer => nw.get != Some(t)
       case _ => true
@@ -32,19 +34,21 @@ class FinalTermContainer(t: objects.Term) extends AbstractTermContainer {
    def get = Some(t) 
 }
 
-/** container for a ContentPath */
-class MPathContainer(var path: Option[MPath]) extends AbstractTermContainer {
+/** container for an MPath */
+class MPathContainer(path: Option[MPath]) extends AbstractTermContainer {
+   /** internally stored as a term to allow for attaching metadata */
+   private var term: Option[Term]= path map {p => OMMOD(p)}
    def update(nw: ComponentContainer) = nw match {
       case nw: MPathContainer =>
-         val changed = path != nw.path
-         path = nw.path
+         val changed = term != nw.term
+         term = nw.term
          changed
       case _ => throw ImplementationError("expected atomic component")
    }
-   def delete {path = None}
-   def isDefined = path.isDefined
-   def get = path map {p => objects.OMMOD(p)}
-   def getPath = path
+   def delete {term = None}
+   def isDefined = term.isDefined
+   def get = term
+   def getPath = term map {case OMMOD(p) => p}
 }
 
 /** A ComponentKey identifies a [[DeclarationComponent]]. */

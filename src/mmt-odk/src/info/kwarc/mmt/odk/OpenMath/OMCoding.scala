@@ -19,6 +19,7 @@ abstract class OMCoding[T] {
   /** decodes an OMNode object **/
   def decodeAnyVal(t : T) : OMAnyVal
 
+  //TODO this does not work this way, check with Florian
   private def decodeAsVal[V <: OMAnyVal](t : T) : V = decodeAnyVal(t) match { case v : V => v}
 
   def decodeExpression(t : T): OMExpression = decodeAsVal(t)
