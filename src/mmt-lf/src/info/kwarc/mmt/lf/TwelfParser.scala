@@ -753,7 +753,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
   {
     var i = skipws(crawlKeyword(start, "%meta"))
     val (metaTheoryName, positionAfter) = crawlIdentifier(i)    // read meta theory name
-    parent.metaC.path = moduleToAbsoluteURI(i, metaTheoryName)
+    parent.metaC.update(new MPathContainer(moduleToAbsoluteURI(i, metaTheoryName)))
     i = positionAfter
     val endsAt = expectNext(i, ".")
     return endsAt + 1

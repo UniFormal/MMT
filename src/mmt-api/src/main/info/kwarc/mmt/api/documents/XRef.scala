@@ -29,6 +29,10 @@ class MRef(val parent : DPath, val name: LocalName, val target : MPath) extends 
    def nameIsTrivial = name == LocalName(target)
 }
 
+object DRef{
+   def apply(parent : DPath, sub : DPath) = new DRef(parent,LocalName(sub.toPath),sub)
+}
+
 object MRef {
    def apply(p : DPath, t : MPath) = new MRef(p, LocalName(t), t)
 }

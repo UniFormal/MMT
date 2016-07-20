@@ -125,7 +125,8 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
 
   override def toString: String = "document " + path + items.map("\n  " + _.toString).mkString + "\n"
 
-  def toNode: Elem = <omdoc base={path.toPath}>{getMetaDataNode}{items.map(_.toNode)}</omdoc>
+  def toNode: Elem = if (root) <omdoc base={path.toPath}>{getMetaDataNode}{items.map(_.toNode)}</omdoc>
+    else <omdoc name={name.toPath}>{getMetaDataNode}{items.map(_.toNode)}</omdoc>
 
   override def toNode(rh: presentation.RenderingHandler) {
     rh( s"""<omdoc base="${path.toPath}">""")

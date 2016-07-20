@@ -334,14 +334,17 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case "document" =>
           val name = readName
           val dpath = doc.path / name
-          val d = new Document(dpath)
+          val d = new Document(dpath,false,None,Nil,doc.nsMap)
           seCont(d)
+//          controller add DRef(doc.path,dpath)
+//          controller add d
           logGroup {
             readInDocument(d)
           }
           end(d)
+          state.reader.forceLastDelimiter(Reader.GS)
         case "ref" =>
-          val (_,path) = readMPath(doc.path)
+          val (_,path) = readMPath(DPath(state.namespaces.default))
           seCont(MRef(doc.path,path))
         case "/" =>
             val oe = readOpaque(parentInfo, Context.empty)

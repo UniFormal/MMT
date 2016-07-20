@@ -81,18 +81,18 @@ class XMLReader(controller: Controller) extends Logger {
     * reads a child of a document
     * @param nsMap used for relative paths, in particular for the namespace of modules
     * @param docOpt the containing document, if any; if given, XRef's will be generated
-    * @param node the node to parse
+    * @param nodeMd the node to parse
     */
    def readInDocument(nsMap: NamespaceMap, docOpt: Option[Document], nodeMd : Node)(implicit cont: StructuralElement => Unit) {
       lazy val doc = docOpt.getOrElse {throw ParseError("document element without containing document")}
       lazy val dname = LocalName.parse(xml.attr(nodeMd,"name"), nsMap)
       val (node, md) = MetaData.parseMetaDataChild(nodeMd, nsMap)
       node match {
-         case <omdoc>{mods}</omdoc> =>
+         case <omdoc>{mods @_*}</omdoc> =>
             val dpath = doc.path / dname
             val innerdoc = new Document(dpath)
             add(innerdoc, md)
-            readIn(nsMap, innerdoc, mods)
+            mods foreach (m => readIn(nsMap, innerdoc, m))
          case <opaque>{ops @_*}</opaque> =>
             val format = xml.attr(node, "format")
             val oi = controller.extman.get(classOf[OpaqueElementInterpreter], format).getOrElse {

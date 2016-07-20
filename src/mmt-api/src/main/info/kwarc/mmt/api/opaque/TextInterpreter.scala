@@ -70,6 +70,7 @@ class TextInterpreter extends OpaqueElementInterpreter
             val tc = TermContainer(t)
             i += 1
             new TermFragment(i, tc, () => ())
+         case e => StringFragment(e.toString())
       }
       new OpaqueText(parent, frags)
    }
