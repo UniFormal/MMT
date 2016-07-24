@@ -145,7 +145,7 @@ class Evaluator(controller: Controller) {
       case Projection(q,i) =>
         val t = evaluateElem(q)
         val res = empty
-        res += t(i)
+        res += t(i-1)
         res
       case SelectByJudgement(from : Query, v: VarDecl, j : Judgement) =>
 

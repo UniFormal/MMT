@@ -129,7 +129,8 @@ case class Comprehension(domain: Query, pred: Prop) extends Query
 /** tupling */
 case class Tuple(components: List[Query]) extends Query
 
-/** projection */
+/** projection
+ *  @param index the component to project out (starting from 1) */
 case class Projection(of: Query, index: Int) extends Query
 
 /** Returns all statements from a query that match a judgment containing a variable */
@@ -389,7 +390,7 @@ object Query {
       }
       Elem(bts)
     case Projection(p, i) => infer(p) match {
-      case Elem(s) if 0 <= i && i < s.length => Elem(s(i - 1))
+      case Elem(s) if 0 < i && i <= s.length => Elem(s(i - 1))
       case _ => throw ParseError("illegal query " + p)
     }
     case SelectByJudgement(from : Query, v: VarDecl, j : Judgement) => {

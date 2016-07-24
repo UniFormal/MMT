@@ -1,7 +1,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
    <head>
       <meta charset="UTF-8" />
-      <link rel="stylesheet" type="text/css" href="css/mmt.css" />
+      <link rel="stylesheet" type="text/css" href="css/mmt.css"/>
       <script type="text/javascript" src="script/jquery/jquery.js"></script>
       <script type="text/javascript" src="script/mmt/mmt-js-api.js"></script>
       <script type="text/javascript">
@@ -14,11 +14,11 @@
             var text = $("#inputbox").val();
             var theory = $("#thyuri").val();
             // build the QMT query that is to be executed on the server: parse, analyze, present
-            var qr = qmt.parse(qmt.literalString(text), theory);
-            var qA = qmt.analyze(qr, theory);
-            qr = qmt.let(qA, qmt.tuple(qmt.present(qmt.bound(1)) + qmt.present(qmt.bound(2))));
+            var qPar = qmt.parse(qmt.literalString(text), theory);
+            var qAna = qmt.analyze(qPar, theory);
+            var qPres = qmt.present(qmt.projection(qAna, 1)); // analyze returns pair of checked term and its type, we present only the former here
             // send the query to the server and insert the result as a child of outputpox
-            qmt.exec(qr, function(data) {
+            qmt.exec(qPres, function(data) {
                $("#outputbox").children().replaceWith($(data.firstChild.firstChild));
             });   
          }
