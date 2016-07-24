@@ -41,19 +41,19 @@ object PostProcessApi {
   def postProcess(log: Logger) = {
     val mmtFolder = File(System.getProperty("user.dir")).getParentFile
     val oldPrefix = "file:/" + mmtFolder.toString
-    def doFolder(path: File, newPrefix: String): Unit = {
+    def doFolder(path: File): Unit = {
       log.debug("processing: " + path)
       path.list foreach { e =>
         if (!e.startsWith(".")) {
           val f = path / e
           if (f.isDirectory)
-            doFolder(f, "../" + newPrefix)
+            doFolder(f)
           else if (e.endsWith(".html") && !e.startsWith("index")) {
             val s = io.Source.fromFile(f).getLines().mkString("", "\n", "\n")
             if (s.indexOf(oldPrefix) >= 0) {
               val w = new BufferedWriter(new FileWriter(f))
               log.debug("rewrote: " + f)
-              w.write(s.replace(oldPrefix, newPrefix))
+              w.write(s.replace(oldPrefix, "https://github.com/UniFormal/MMT/blob/master"))
               w.close()
             } else
               log.debug("skipping: " + f)
@@ -62,7 +62,7 @@ object PostProcessApi {
       }
     }
     val apiDir = mmtFolder / "apidoc"
-    if (apiDir.exists && apiDir.isDirectory) doFolder(apiDir, "../..")
+    if (apiDir.exists && apiDir.isDirectory) doFolder(apiDir)
     else log.error("missing api directory: " + apiDir)
   }
 }

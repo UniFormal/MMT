@@ -31,18 +31,18 @@ class XMLReader(controller: Controller) extends Logger {
    }
    /** adds metadata and calls the continuation functions */
    private def add(e : StructuralElement, md: Option[MetaData])(implicit cont: StructuralElement => Unit) {
-      md map {e.metadata = _}
+      md foreach {e.metadata = _}
       cont(e)
    }
    private def addModule(m: Module, md: Option[MetaData], docOpt: Option[Document])(implicit cont: StructuralElement => Unit) {
       add(m, md)
-      docOpt map (d => add(new MRef(d.path, LocalName(m.path), m.path)))
+      docOpt foreach (d => add(new MRef(d.path, LocalName(m.path), m.path)))
    }
    
    /**
     *  parses a document and forwards its declarations to the continuation function 
     *  @param dpath the URI of the document
-    *  @param node the document
+    *  @param nodeMd the document
     *  
     *  If the document has a base attribute, it is used as the default namespace of modules.
     */
@@ -124,25 +124,27 @@ class XMLReader(controller: Controller) extends Logger {
 		         log("theory " + name + " found")
 		         val tpath = namespace ? name
 		         seq match {
-		        	 case <definition>{d}</definition> =>
-		        	   val df = Obj.parseTerm(d, nsMap(tpath))
-		        	   val t = DefinedTheory(namespace, name, df)
-		        	   addModule(t, md, docOpt)
-		        	 case symbols => 
-				         val meta = xml.attr(m, "meta") match {
-				            case "" => None
-				            case mt =>
-				               log("meta-theory " + mt + " found")
-				               Some(Path.parseM(mt, nsMap(namespace)))
-				         }
-				         val t = new DeclaredTheory(namespace, name, meta)
-				         addModule(t, md, docOpt)
-                     logGroup {
-                        symbols.foreach {d => 
-                           readIn(nsMap, t, d)
-                        }
-                     }
-		         }
+                case <definition>
+                  {d}
+                  </definition> =>
+                   val df = Obj.parseTerm(d, nsMap(tpath))
+                   val t = DefinedTheory(namespace, name, df)
+                   addModule(t, md, docOpt)
+                case symbols =>
+                   val meta = xml.attr(m, "meta") match {
+                      case "" => None
+                      case mt =>
+                         log("meta-theory " + mt + " found")
+                         Some(Path.parseM(mt, nsMap(namespace)))
+                   }
+                   val t = new DeclaredTheory(namespace, name, meta)
+                   addModule(t, md, docOpt)
+                   logGroup {
+                      symbols.foreach { d =>
+                         readIn(nsMap, t, d)
+                      }
+                   }
+             }
 	         case <view>{_*}</view> =>
 	            log("view " + name + " found")
 	            val (m2, from) = getTheoryFromAttributeOrChild(m, "from", nsMap)
@@ -162,7 +164,7 @@ class XMLReader(controller: Controller) extends Logger {
                         }
                      }
                 }
-	         case <rel>{_*}</rel> => 
+	         case <rel>{_*}</rel> =>
 	            //ignoring logical relations, produced by Twelf, but not implemented yet
            case n if Utility.trimProper(n).isEmpty => //whitespace node => nothing to do 
            case _ => throw ParseError("element not allowed in document: " + m)
