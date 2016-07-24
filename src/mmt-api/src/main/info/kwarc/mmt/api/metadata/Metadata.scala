@@ -107,7 +107,7 @@ class MetaDatum(val key: GlobalName, val value: Obj) {
 
 /** helper object */
 object MetaDatum {
-   val keyBase = DPath(URI("http", "purl.org") / "dc" / "terms") ? "_"
+   val keyBase = documents.NarrativeMetadata.keyBase
    /** parses a MetaDatum */
    def parse(node: Node, nsMap: NamespaceMap) : MetaDatum = xml.trimOneLevel(node) match {
       case <link/> =>

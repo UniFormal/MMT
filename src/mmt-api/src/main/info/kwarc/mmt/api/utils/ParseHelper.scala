@@ -99,7 +99,7 @@ class Unparsed(input: String, error: String => Nothing) {
       while (!empty && head != until) {
          if (head == exceptAfter) {
             seen += head
-			next
+			      next
          }
          seen += head
          next

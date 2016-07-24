@@ -5,32 +5,33 @@
       <script type="text/javascript" src="script/jquery/jquery.js"></script>
       <script type="text/javascript" src="script/mmt/mmt-js-api.js"></script>
       <script type="text/javascript">
+         // the URL of the MMT query server
          var mmtUrl = "http://localhost:8080";
+         
+         // parses and checks the textarea and shows the results
          function mmtparse() {
+            // get the input
             var text = $("#inputbox").val();
             var theory = $("#thyuri").val();
-           
+            // build the QMT query that is to be executed on the server: parse, analyze, present
             var qr = qmt.parse(qmt.literalString(text), theory);
-
             var qA = qmt.analyze(qr, theory);
             qr = qmt.let(qA, qmt.tuple(qmt.present(qmt.bound(1)) + qmt.present(qmt.bound(2))));
-
+            // send the query to the server and insert the result as a child of outputpox
             qmt.exec(qr, function(data) {
-                 $("#outputbox").html("<p> result: " + $(data.firstChild.firstChild).html() + "</p>");
-            });
-             
+               $("#outputbox").children().replaceWith($(data.firstChild.firstChild));
+            });   
          }
       </script>
-
    </head>
+
    <body>
-      <div>
-      Base Theory:<input id="thyuri" type="text" size="30" value="http://cds.omdoc.org/examples?FOL"><br>
-      MMT Object:<br>
-      <textarea id="inputbox" rows="3"> forall [x] true </textarea> <br>
+     <div>
+      Base Theory: <input id="thyuri" type="text" size="50" value="http://cds.omdoc.org/examples/tutorial?Monoid"><br/>
+      MMT Object:<br/> <textarea id="inputbox" rows="3">∀[x] x ∘ e = x</textarea><br/>
       <button onclick="mmtparse()">Submit</button>
-      </div>
-      <div id="outputbox">
-      </div>
+     </div>
+     <div id="outputbox"><div/></div>
    </body>
+
 </html>

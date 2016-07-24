@@ -218,7 +218,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     catch {
       case e: ParseError =>
-        throw makeError(reg, "invalid identifier: " + e.getMessage)
+        throw makeError(reg, "invalid identifier: " + e.getMessage).setCausedBy(e)
     }
   }
 
@@ -234,7 +234,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     catch {
       case e: ParseError =>
-        throw makeError(reg, "invalid identifier: " + e.getMessage)
+        throw makeError(reg, "invalid identifier: " + e.getMessage).setCausedBy(e)
     }
     val ref = state.makeSourceRef(reg)
     (ref, mp)
@@ -252,7 +252,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     catch {
       case e: ParseError =>
-        throw makeError(reg, "invalid identifier: " + e.getMessage)
+        throw makeError(reg, "invalid identifier: " + e.getMessage).setCausedBy(e)
     }
   }
 
@@ -334,14 +334,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case "document" =>
           val name = readName
           val dpath = doc.path / name
-          val d = new Document(dpath,false,None,Nil,doc.nsMap)
+          val d = new Document(dpath, nsMap = state.namespaces)
           seCont(d)
-//          controller add DRef(doc.path,dpath)
-//          controller add d
           logGroup {
             readInDocument(d)
           }
           end(d)
+          //TODO awkward hack, avoid the FS delimiter of d to make the end-of-document check doc succeed as well
           state.reader.forceLastDelimiter(Reader.GS)
         case "ref" =>
           val (_,path) = readMPath(DPath(state.namespaces.default))
@@ -849,45 +848,52 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
     while (!state.reader.endOfDeclaration) {
       val (delim, treg) = state.reader.readToken
-      // branch based on the delimiter
-      delim match {
-        case ":" =>
-          if (tpC.read.isDefined) {
-            errorCont(makeError(treg, "type of this constant already given, ignored"))
-            state.reader.readObject
-          } else
-            doComponent(TypeComponent, tpC, context)
-        case "=" =>
-          if (dfC.read.isDefined) {
-            errorCont(makeError(treg, "definiens of this constant already given, ignored"))
-            state.reader.readObject
-          } else
-            doComponent(DefComponent, dfC, context)
-        case "#" =>
-          doNotation(ParsingNotationComponent, nt, treg, cpath)
-        case "##" =>
-          doNotation(PresentationNotationComponent, nt, treg, cpath)
-        case "@" =>
-          val (str, _) = state.reader.readObject
-          al ::= LocalName.parse(str)
-        case "role" =>
-          val (str, _) = state.reader.readObject
-          rl = Some(str)
-        case k => getParseExt(cons, k) match {
-          case Some(parser) =>
-            val (obj, reg) = state.reader.readObject
-            val reader = Reader(obj)
-            reader.setSourcePosition(reg.start)
-            parser(this, state.copy(reader), cons, k, context)
-          case None =>
-            if (!state.reader.endOfDeclaration) {
-              errorCont(makeError(treg, "expected " + keyString + ", found " + k))
-            } else if (k != "") {
-              if (!state.reader.endOfObject)
-                state.reader.readObject
-              errorCont(makeError(treg, "expected " + keyString + ", ignoring the next object"))
-            }
+      try {
+        // branch based on the delimiter
+        delim match {
+          case ":" =>
+            if (tpC.read.isDefined) {
+              errorCont(makeError(treg, "type of this constant already given, ignored"))
+              state.reader.readObject
+            } else
+              doComponent(TypeComponent, tpC, context)
+          case "=" =>
+            if (dfC.read.isDefined) {
+              errorCont(makeError(treg, "definiens of this constant already given, ignored"))
+              state.reader.readObject
+            } else
+              doComponent(DefComponent, dfC, context)
+          case "#" =>
+            doNotation(ParsingNotationComponent, nt, treg, cpath)
+          case "##" =>
+            doNotation(PresentationNotationComponent, nt, treg, cpath)
+          case "@" =>
+            val (str, _) = state.reader.readObject
+            al ::= LocalName.parse(str)
+          case "role" =>
+            val (str, _) = state.reader.readObject
+            rl = Some(str)
+          case k => getParseExt(cons, k) match {
+            case Some(parser) =>
+              val (obj, reg) = state.reader.readObject
+              val reader = Reader(obj)
+              reader.setSourcePosition(reg.start)
+              parser(this, state.copy(reader), cons, k, context)
+            case None =>
+              if (!state.reader.endOfDeclaration) {
+                errorCont(makeError(treg, "expected " + keyString + ", found " + k))
+              } else if (k != "") {
+                if (!state.reader.endOfObject)
+                  state.reader.readObject
+                errorCont(makeError(treg, "expected " + keyString + ", ignoring the next object"))
+              }
+          }
         }
+      } catch {
+        case e: Exception => 
+          errorCont(makeError(treg, "error in object").setCausedBy(e))
+          if (!state.reader.endOfObject)
+             state.reader.readObject
       }
     }
     val constant = Constant(OMMOD(parent), name, al, tpC, dfC, rl, nt)

@@ -59,11 +59,14 @@ class MMTHyperlinkSource extends HyperlinkSource {
       // return a previously found link if it is still applicable
       if (currentLink != null && currentLink.getStartOffset() <= caretPosition && currentLink.getEndOffset() >= caretPosition)
          return currentLink
+      val asset = SideKickParsedData.getParsedData(jEdit.getActiveView).getAssetAtOffset(caretPosition) match {
+        case a: MMTAsset => a
+        case _ => return null
+      }
       currentLink = MMTPlugin.getCurrentID(buffer, caretPosition) match {
          case None => null
          case Some((line, begin, end, id)) =>
             log(id)
-            val asset = SideKickParsedData.getParsedData(jEdit.getActiveView).getAssetAtOffset(caretPosition).asInstanceOf[MMTAsset]
             val elemOpt: Option[StructuralElement] = asset match {
                case a: MMTObjAsset =>
                   a.obj match {

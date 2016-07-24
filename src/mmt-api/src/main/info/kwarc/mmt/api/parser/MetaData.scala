@@ -6,22 +6,23 @@ import objects._
 /** 
  * A parser component for the keywords 'tag', 'meta', and 'link' to be parsed into the corresponding MetaDatum classes
  * 
- * It also treats various keys starting with @ as abbreviations of the respective Dublin core keys
+ * It also treats various keys starting with @_ as abbreviations of the respective Dublin core keys
  * 
  * The parse results are added directly to the containing element 
  */
 object MetadataParser extends ParserExtension {
    private val keywords = List("tag", "link", "meta")
-   private val extraKeywords = documents.NarrativeMetadata.allKeys.map("@"+_)
+   private val extraKeywords = documents.NarrativeMetadata.allKeys.map("@_"+_)
    def isApplicable(se: StructuralElement, kw: String) = (keywords:::extraKeywords) contains kw 
    def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, k: String, con:Context = Context.empty) {
-      val md = if (extraKeywords contains k) {
-         val key = MetaDatum.keyBase ? k.substring(1)
-         val (_,_,value) = sp.readParsedObject(Context(MetaDatum.keyBase))(s)
-         new MetaDatum(key,value)
+      if (extraKeywords contains k) {
+         val key = k.substring(2)
+         log("found " + key)
+         val (value,_) = s.reader.readObject
+         (new documents.NarrativeMetadata(key)).update(se, value)
       } else {
          val key = sp.readSPath(s.namespaces.base)(s)
-         k match {
+         val md = k match {
             case "tag" =>
                Tag(key)
             case "meta" =>
@@ -32,7 +33,7 @@ object MetadataParser extends ParserExtension {
                val value = s.namespaces.base.doc.uri resolve utils.URI(u)
                Link(key,value)
          }
+         se.metadata.add(md)
       }
-      se.metadata.add(md)
    }
 }

@@ -20,12 +20,12 @@ abstract class NRef extends NarrativeElement {
 
 /** reference to a document section */
 class DRef(val parent : DPath, val name: LocalName, val target : DPath) extends NRef {
-   def toNode = <dref name={name.toPath} target={target.toPath}/>
+   def toNode = <dref name={name.toPath} target={target.toPath}>{getMetaDataNode}</dref>
 }
 
 /** reference to a [[info.kwarc.mmt.api.modules.Module]] */
 class MRef(val parent : DPath, val name: LocalName, val target : MPath) extends NRef {
-   def toNode = <mref name={name.toPath} target={target.toPath}/>
+   def toNode = <mref name={name.toPath} target={target.toPath}>{getMetaDataNode}</mref>
    def nameIsTrivial = name == LocalName(target)
 }
 
@@ -39,7 +39,7 @@ object MRef {
 
 /** reference to a [[info.kwarc.mmt.api.symbols.Declaration]]} */
 class SRef(val parent : DPath, val name: LocalName, val target : GlobalName) extends NRef {
-   def toNode = <sref name={name.toPath} target={target.toPath}/>
+   def toNode = <sref name={name.toPath} target={target.toPath}>{getMetaDataNode}</sref>
 }
 
 object SRef {

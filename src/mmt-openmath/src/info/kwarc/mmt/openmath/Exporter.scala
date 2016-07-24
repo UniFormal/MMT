@@ -7,9 +7,28 @@ import objects._
 import documents._
 import presentation._
 
+object OpenMath {
+   /** a non-standard content dictionary declaring one symbol for the type of each literal, i.e., int, float, string, bytearray */
+   val omNamespace = DPath(utils.URI("http://www.openmath.org/cd"))
+   val cd = omNamespace ? "OpenMath"
+   
+   val OMI = cd ? "OMI"
+   val OMF = cd ? "OMF"
+   val OMSTR = cd ? "OMSTR"
+
+   /** the symbol for equality that is used for definitions */
+   val equals = omNamespace ? "relation1.ocd" ? "eq"
+   /** the symbol for the is-a relation that is used for type annotations */
+   val isA = omNamespace ? "set1" ? "in"
+}
+
 /** An exporter that creates an OpenMath CD for every theory */
 class Exporter extends archives.Exporter {
+  /** use "openmath" as the key of this build target */
   val key = "openmath"
+  
+  /** override the default file extension with "ocd" */
+  override val outExt = "ocd"
   
   /** We are only interested in CDs, so we skip documents */
   def exportDocument(doc: documents.Document, bt: BuildTask) {}
@@ -34,15 +53,20 @@ class Exporter extends archives.Exporter {
      <CDURL>{thy.path.toString}</CDURL>
      {getDescription(thy)}
      {
-       thy.asDocument.getDeclarations.flatMap {
+       thy.getDeclarations.flatMap {
   		   case c: symbols.Constant =>
   		     <CDDefinition>
   		       <Name>{c.name.toString}</Name>
   		       <Role>application</Role>
   		       {getDescription(c)}
-  		       {<CMP></CMP>}
-  		       {<FMP></FMP>}
-  		       {<Example></Example>}
+  		       {c.tp.toList.map {tp =>
+  		         // add an FMP "c isA tp" if c has a type
+  		         getFMP(c.path, tp, OpenMath.isA)
+  		       }}
+  		       {c.df.toList.map {df =>
+  		         // add an FMP "c equals df" if c has a definition
+  		         getFMP(c.path, df, OpenMath.equals)
+  		       }}
            </CDDefinition>
   		     
   		   case _ => Nil
@@ -50,13 +74,23 @@ class Exporter extends archives.Exporter {
      }
     </CD>
 
-    // write the XML element to the exorters output stream
+    // write the XML element to the exorter's output stream
     rh(cd)
   }
   
+  /** retrieves the description from MMT metadata and turns it into a <Description> element */
   private def getDescription(se: StructuralElement) = NarrativeMetadata.description.get(se) match {
      case Some(desc) => <Description>{desc}</Description>
      case None => Nil
+  }
+  
+  /** builds an FMP element for a symbol's type or definition
+   *  @param path the symbol URI
+   *  @param t the type/definition
+   *  @param oper the operator to use to combine the two */
+  private def getFMP(path: GlobalName, t: Term, oper: GlobalName) = {
+    val fmp = OMA(OMS(oper), List(OMS(path), t))
+    <FMP>{OpenMathPresenter.asXML(fmp)}</FMP>
   }
 }
 
@@ -64,44 +98,37 @@ class Exporter extends archives.Exporter {
  *  This is straightforward except for a few case where MMT objects go beyond OpenMath.
  */
 object OpenMathPresenter extends ObjectPresenter {
-   /** a non-standard content dictionary declaring
-    *  * one symbol for the type of each literal, i.e., int, float, string, bytearray
-    *  * one symbol each for type and definition attribution
-    */
-   private val openmathCD = DPath(utils.URI("http", "www.openmath.org") / "cd") ? "OpenMath"
+   def apply(o: Obj, origin: Option[CPath] = None)(implicit rh : RenderingHandler) {
+     // recursively translate to XML, wrap in OMOBJ, and write to output stream
+     rh(<OMOBJ>{applyRec(o)}</OMOBJ>)
+   }
    
-   val equals = openmathCD ? "def"
-   val isA = openmathCD ? "type"
-   
-   def apply(o: Obj, origin: Option[CPath] = None)(implicit rh : RenderingHandler) = {
+   private def applyRec(o: Obj): scala.xml.Node = {
      o match {
-       case OMS(p) => <OMS name={p.name.toPath} cd={p.module.toPath} cdbase={p.doc.toString}/>
+       case OMS(p) => <OMS name={p.name.toPath} cd={p.module.name.toPath} cdbase={p.doc.toString}/>
        case OMV(n) => <OMV name={n.toPath}/>
-       case OMA(f, args) => <OMA>{(f::args).map(e => apply(e, None))}</OMA>
+       case OMA(f, args) => <OMA>{(f::args).map(e => applyRec(e))}</OMA>
        case OMBIND(binder, context, scope) =>
-         <OMBIND>{apply(binder,None)}{applyContext(context)}{apply(scope, None)}</OMBIND>
+         <OMBIND>{applyRec(binder)}{applyContext(context)}{applyRec(scope)}</OMBIND>
        case l: OMLITTrait =>
           l.synType match {
-            case OMS(GlobalName(this.openmathCD, name)) => name.toPath match {
-              case "OMI" => <OMI>{l.toString}</OMI>
-              case "OMF" => <OMF>{l.toString}</OMF>
-              case "OMSTR" => <OMSTR>{l.toString}</OMSTR>
-              case _ => throw LocalError("illegal literal or literal not implemented")
-            }
+            case OMS(OpenMath.OMI) => <OMI>{l.toString}</OMI>
+            case OMS(OpenMath.OMF) => <OMF>{l.toString}</OMF>
+            case OMS(OpenMath.OMSTR) => <OMSTR>{l.toString}</OMSTR>
             case _ =>
               // default case for MMT literals that are not allowed in OpenMath
               <OMSTR>{l.toString}</OMSTR>
           }
      }
    }
-   def applyContext(con: Context)(implicit rh : RenderingHandler) = {
+   private def applyContext(con: Context): scala.xml.Node = {
      <OMBVAR>{con.map(applyVarDecl)}</OMBVAR>
    }
-   def applyVarDecl(vd: VarDecl)(implicit rh : RenderingHandler) = {
+   private def applyVarDecl(vd: VarDecl): scala.xml.Node = {
      val omv = <OMV name={vd.name.toPath}/>
-     val typeAttribution = vd.tp.toList.flatMap {tp => List(OMS(isA), tp)}
-     val defAttribution  = vd.df.toList.flatMap {df => List(OMS(equals), df)}
-     val keyValList = (typeAttribution ::: defAttribution).map(o => apply(o,None))
+     val typeAttribution = vd.tp.toList.flatMap {tp => List(OMS(OpenMath.isA), tp)}
+     val defAttribution  = vd.df.toList.flatMap {df => List(OMS(OpenMath.equals), df)}
+     val keyValList = (typeAttribution ::: defAttribution).map(o => applyRec(o))
      if (keyValList.isEmpty)
        omv
      else
