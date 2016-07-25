@@ -43,10 +43,11 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
    * @return list of modules declared/referenced anywhere in this Document (depth first)
    */
   def collectModules(controller: frontend.Controller): List[MPath] = items flatMap {
+    case d: Document => d.collectModules(controller)
     case r: MRef => List(r.target)
     case d: DRef => controller.get(d.target).asInstanceOf[Document].collectModules(controller)
     case _: SRef => Nil
-    case d: Document => d.collectModules(controller)
+    case _ => Nil
   }
 
   def getMostSpecific(name: LocalName) : Option[(NarrativeElement, LocalName)] = {

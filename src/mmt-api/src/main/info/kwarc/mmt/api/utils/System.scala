@@ -31,7 +31,7 @@ object MMTSystem {
      }
      def deploy = root / "deploy"
      def api = root / "src" / "mmt-api"
-     def projectFolder(name: String) = api.up.up / name
+     def projectFolder(name: String) = api.up / name
      def resources = api / "resources"
    }
   /** run in unknown way, in particular as part of jedit */
