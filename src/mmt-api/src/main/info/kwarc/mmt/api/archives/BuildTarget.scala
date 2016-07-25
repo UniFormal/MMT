@@ -221,7 +221,7 @@ abstract class BuildTarget extends FormatBasedExtension {
   protected def delete(f: File) {
     if (f.exists) {
       log("deleting " + f)
-      f.delete
+      f.deleteDir
     }
   }
 }
