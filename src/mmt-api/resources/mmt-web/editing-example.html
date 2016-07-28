@@ -16,7 +16,7 @@
          var mmtUrl = "http://localhost:8080";
          
          // parses and checks the textarea and shows the results
-         function mmtparse() {
+         function mmtParse() {
             // get the input
             var theory = $("#thyuri").val();
             var text = $("#inputbox").val();
@@ -30,7 +30,13 @@
             qmt.exec(qPres, function(data) {
                $("#outputbox").children().replaceWith($(data.firstChild.firstChild));
             });   
-         }
+         };
+		
+		// this function is called to toggle the display of the parts of the MathML that contain the subterms that were infered by MMT
+		// These are marked, e.g., by the css class 'reconstructed' and the presence of the class 'reconstructed-hidden' determines if the subterm should be hidden.
+		function mmtToggle(cls) {
+		    $('#outputbox').find('.' + cls).toggleClass(cls+'-hidden');
+		};
       </script>
    </head>
 
@@ -38,9 +44,15 @@
      <div>
       Base Theory: <input id="thyuri" type="text" size="50" value="http://cds.omdoc.org/examples/tutorial?Monoid"><br/>
       MMT Object:<br/> <textarea id="inputbox" rows="3">∀[x] x ∘ e = x</textarea><br/>
-      <button onclick="mmtparse()">Submit</button>
+      <button onclick="mmtParse()">Submit</button>
      </div>
-     <div id="outputbox"><div/></div>
+     <div id="outputbox"><div></div></div>
+	 
+	 <hr/>
+	 
+	 We can interactivlely change the appearance of MMT-produced MathML.
+	 For example, try <button onclick="mmtToggle('implicit-arg')">this button</button> to show the implicit arguments or <button onclick="mmtToggle('reconstructed')">this button</button> to show inferred types.
+	 
    </body>
 
 </html>
