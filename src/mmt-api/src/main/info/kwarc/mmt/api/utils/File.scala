@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api.utils
 
+import info.kwarc.mmt.api._
+
 import java.io._
 import java.util.zip._
 
@@ -344,10 +346,14 @@ object File {
     val conn = url.openConnection
     if (List("https","http") contains url.getProtocol) {
       val httpConn = conn.asInstanceOf[java.net.HttpURLConnection]
+      val resp = httpConn.getResponseCode
       // setFollowRedirects does not actually follow redirects
-      if (httpConn.getResponseCode.toString.startsWith("30")) {
+      if (resp.toString.startsWith("30")) {
         val redirectURL = new java.net.URL(conn.getHeaderField("Location"))
         return download(redirectURL, file) 
+      }
+      if (resp.toString.startsWith("40")) {
+        throw GeneralError("download of " + url + " failed, the destination file " + file + " may contain a hint as to what went wrong")
       }
     }
     val input = conn.getInputStream

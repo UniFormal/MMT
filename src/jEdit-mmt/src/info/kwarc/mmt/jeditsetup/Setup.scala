@@ -248,9 +248,14 @@ class Setup extends ShellExtension("jeditsetup") {
            val url = new java.net.URL(s"https://sourceforge.net/projects/jedit-plugins/files/$name/$version/$name-$version-bin.zip")
            val zip = target.setExtension("zip")
            println("downloading " + url)
-           File.download(url, zip)
-           File.unzip(zip, jarFolder)
-           zip.delete
+           try {
+             File.download(url, zip)
+             File.unzip(zip, jarFolder)
+           } catch {
+             case e: Exception => println(e.getMessage)
+           } finally {
+             zip.delete
+           }
          }
        }
        
