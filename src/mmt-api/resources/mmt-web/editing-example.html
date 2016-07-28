@@ -1,22 +1,31 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
    <head>
       <meta charset="UTF-8" />
+	  
+	  <!-- some css for MMT-produced MathML -->
       <link rel="stylesheet" type="text/css" href="css/mmt.css"/>
-      <script type="text/javascript" src="script/jquery/jquery.js"></script>
-      <script type="text/javascript" src="script/mmt/mmt-js-api.js"></script>
+	  <!-- jQuery (a standard Javascript library) -->
+      <script type="text/javascript" src="http://localhost:8080/script/jquery/jquery.js"></script>
+	  <!-- Javascript API for the MMT server -->
+      <script type="text/javascript" src="http://localhost:8080/script/mmt/mmt-js-api.js"></script>
+
       <script type="text/javascript">
+	     // the Javascript code that is specific to this demo
+
          // the URL of the MMT query server
          var mmtUrl = "http://localhost:8080";
          
          // parses and checks the textarea and shows the results
          function mmtparse() {
             // get the input
-            var text = $("#inputbox").val();
             var theory = $("#thyuri").val();
+            var text = $("#inputbox").val();
+
             // build the QMT query that is to be executed on the server: parse, analyze, present
             var qPar = qmt.parse(qmt.literalString(text), theory);
             var qAna = qmt.analyze(qPar, theory);
             var qPres = qmt.present(qmt.projection(qAna, 1)); // analyze returns pair of checked term and its type, we present only the former here
+
             // send the query to the server and insert the result as a child of outputpox
             qmt.exec(qPres, function(data) {
                $("#outputbox").children().replaceWith($(data.firstChild.firstChild));
