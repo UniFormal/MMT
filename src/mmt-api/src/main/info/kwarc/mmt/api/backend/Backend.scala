@@ -212,6 +212,14 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
        }
     }
   }
+  /** like resolveAnyPhysical but automatically loads and returns the archive */
+  def resolveAnyPhysicalAndLoad(f: File): Option[(Archive, List[String])] = {
+    resolveAnyPhysical(f) flatMap {
+      case (root,rel) =>
+        openArchive(root)
+        getArchive(root) map {a => (a, rel.tail)}
+    }
+  }
 
   /** creates and registers a RealizationArchive */
   def openRealizationArchive(file: File) {

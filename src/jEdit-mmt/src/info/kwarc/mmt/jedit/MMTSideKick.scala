@@ -97,7 +97,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          val uri = utils.FileURI(path)
          val text = buffer.getText
          val nsMap = controller.getNamespaceMap
-         val ps = controller.backend.resolvePhysical(path) match {
+         val ps = controller.backend.resolvePhysical(path) orElse controller.backend.resolveAnyPhysicalAndLoad(path) match {
             case None =>
                ParsingStream.fromString(text, DPath(uri), path.getExtension.getOrElse(""), Some(nsMap))
             case Some((a, p)) =>

@@ -4,5 +4,6 @@ buffer.encoding=UTF-8
 view.expandOnInput=true
 view.wrapGuide=false
 sidekick-tree.dock-position=left
+sidekick.buffer-save-parse=true
 error-list.dock-position=bottom
 view.showBufferSwitcher=false
