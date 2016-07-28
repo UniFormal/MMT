@@ -23,7 +23,9 @@ import web._
   *
   * A Controller catches it and retrieves the item dynamically.
   */
-case class NotFound(path: Path) extends java.lang.Throwable
+case class NotFound(path: Path) extends java.lang.Throwable {
+  override def toString = "NotFound(" + path + ")\n" + Stacktrace.asString(this)
+}
 
 /** minor variables kept by the controller, usually modifiable via actions */
 class ControllerState {
@@ -332,16 +334,17 @@ class Controller extends ROController with ActionHandling with Logger {
     *
     * stops if cyclic retrieval of resources
     */
-  private def iterate[A](a: => A, previous: List[Path]): A = {
+  private def iterate[A](a: => A, previous: List[NotFound]): A = {
     try {
       a
     }
     catch {
-      case NotFound(p: Path) =>
-        if (previous.contains(p)) {
+      case e : NotFound =>
+        val p = e.path
+        if (previous.exists(_.path == p)) {
           throw GetError("retrieval failed (due to non-existence or cyclic dependency) for " + p)
         } else {
-          iterate({retrieve(p); a}, p :: previous)
+          iterate({retrieve(p); a}, e :: previous)
         }
     }
   }

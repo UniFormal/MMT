@@ -75,7 +75,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
 
   val narrationBackend = new ArchiveNarrationStorage(this, "desc")
 
-  def load(p: Path)(implicit controller: Controller): Unit = {
+  def load(p: Path)(implicit controller: Controller) {
     p match {
       case doc: DPath =>
          narrationBackend.load(doc)
