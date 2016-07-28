@@ -173,7 +173,7 @@ abstract class BuildManager extends Extension {
 class TrivialBuildManager extends BuildManager {
   def addTasks(up: Update, qts: Iterable[QueuedTask]) =
     qts.foreach { qt =>
-      qt.target.checkOrRunBuildTask(qt.neededDeps.toSet, qt.task, up)
+      qt.target.checkOrRunBuildTask(Set(), qt.task, up)
     }
 
   // no need to wait

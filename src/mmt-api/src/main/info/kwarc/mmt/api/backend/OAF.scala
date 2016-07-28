@@ -88,7 +88,7 @@ class MathHub(val uri: URI, val root: File, val report: Report) extends ArchiveH
       val result = ShellCommand.runIn(dir, command :_*)
       result match {
          case Some(m) =>
-            report("error", m)
+            logError(m)
             false
          case None =>
             true
@@ -142,10 +142,15 @@ class MathHub(val uri: URI, val root: File, val report: Report) extends ArchiveH
      val target = root/id
      val zip = target.addExtension("zip")
      log("downloading from " + downloadURI)
-     File.download(downloadURI.toURL, zip)
-     File.unzip(zip, target, skipRootDir = true)
-     zip.delete
-     Some(target)
+     try {
+       File.download(downloadURI.toURL, zip)
+       File.unzip(zip, target, skipRootDir = true)
+       Some(target)
+     } catch {
+       case _: Exception => None
+     } finally {
+       zip.delete
+     }
    }
 }
 

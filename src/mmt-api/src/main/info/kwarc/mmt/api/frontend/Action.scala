@@ -457,7 +457,7 @@ case class ConfBuild(mod : String, targets : List[String], profile : String) ext
 
 /** handle the make command line */
 case class MakeAction(key: String, args: List[String]) extends Action {
-  override def toString = "make" + args.map(" " + _).mkString
+  override def toString = "make " + key + args.map(" " + _).mkString
 }
 
 /** builds a dimension in a previously opened archive */

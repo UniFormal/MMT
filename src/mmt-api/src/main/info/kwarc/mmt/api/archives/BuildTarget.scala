@@ -589,7 +589,6 @@ abstract class TraversingBuildTarget extends BuildTarget {
   def makeBuildTask(a: Archive, inPath: FilePath, children: List[BuildTask] = Nil): BuildTask = {
     val inFile = a / inDim / inPath
     val isDir = inFile.isDirectory
-    assert(children.isEmpty || isDir)
     makeBuildTask(a, inPath, inFile, if (isDir) Some(children) else None, None)
   }
 

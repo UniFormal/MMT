@@ -120,9 +120,9 @@ object ConsoleWriter extends RenderingHandler {
 /** writes text output to a file */
 class FileWriter(val filename : File) extends RenderingHandler {
    private val file = utils.File.Writer(filename)
-	def write(s : String) {
-	  file.write(s)
-	}
+	 def write(s : String) {
+	   file.write(s)
+	 }
    override def done {file.close}
 }
 

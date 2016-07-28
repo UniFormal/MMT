@@ -97,7 +97,7 @@ case class LocalSystem(base: URI) extends Storage {
 
 /** a Storage that retrieves repository URIs from the local working copy */
 class LocalCopy(scheme: String, authority: String, prefix: String, val base: File) extends Storage {
-  def localBase = URI(scheme + "://" + authority + prefix)
+  def localBase = URI(URI(Option(scheme), Option(authority)).toString + prefix)
 
   /**
    * load delegates to this method if the requested resource is a folder
@@ -124,7 +124,6 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
     } else if (target.isDirectory) {
        loadFromFolder(uri, suffix)
     } else throw BackendError("file/folder " + target + " not found or not accessible", path)
-
   }
 }
 

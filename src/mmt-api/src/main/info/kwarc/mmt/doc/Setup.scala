@@ -162,7 +162,7 @@ class Setup extends ShellExtension("setup") {
       jEditSettingsFolder foreach {jsf =>
          controller.extman.getOrAddExtension(classOf[ShellExtension], "jeditsetup") match {
             case None =>
-              println("jedit plugin not on classpath")
+              println("jedit-mmt is not on the classpath, so I can't set up jEdit.")
             case Some(jEditSetup) => 
                println("installing jEdit plugin")
                jEditSetup.run(shell, List("install",jsf.toString))
@@ -174,6 +174,7 @@ class Setup extends ShellExtension("setup") {
                  println("Do you want me to do that (y/n)?")
                  if (shell.getYesNo(true)) {
                    jEditSetup.run(shell, List("customize", jsf.toString))
+                   println("done\n")
                  }
                }
                
@@ -187,7 +188,7 @@ class Setup extends ShellExtension("setup") {
          }
       }
       println("\n\n\nThat's it. If there are no error messages above, you're ready to go.")
-      println("\nThe main jar to execute is " + deploy/"mmt.jar")
-      println("\n\nTo force rerunning setup or to update MMT, just run `mmt.jar :setup`")
+      println("\nThe main jar to execute is " + deploy/"mmt.jar" + ".")
+      println("\n\nTo force rerunning setup or to update MMT, just run `mmt.jar :setup`.")
      }
 }

@@ -301,7 +301,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   protected def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = {
-    libraries.Names.resolve(home, name)(controller.globalLookup) match {
+    libraries.Names.resolve(home, name)(controller.localLookup) match {
       case Some(ce: Constant) =>
         ComplexStep(ce.parent) / ce.name
       case Some(_) =>

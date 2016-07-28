@@ -188,7 +188,8 @@ trait ActionHandling {self: Controller =>
     OptionDescr("usage", "", NoArg, "display usage message"),
     OptionDescr("help-command", "", NoArg, "help about the build target"))
   
-  /** handles [[MakeAction]] */ //TODO @CM this should become a ShellExtension
+  /** handles [[MakeAction]] */
+  @deprecated //TODO this is now handled by the :make shell extension; some code may still have to be migrated there
   def makeAction(key: String, allArgs: List[String]) {
     report.addHandler(ConsoleHandler)
     val optPair = BuildTargetModifier.splitArgs(allArgs, s => logError(s))
@@ -211,6 +212,8 @@ trait ActionHandling {self: Controller =>
       val bt = extman.getOrAddExtension(classOf[BuildTarget], key, args) getOrElse {
          throw RegistrationError("build target not found: " + key)
       }
+      report.groups += bt.logPrefix
+      report.groups += "archives"
       if (usageOpts.nonEmpty) {
         val moreOpts = bt match {
           case pbt: BuildTargetArguments => pbt.verbOpts ++ pbt.buildOpts
@@ -219,11 +222,11 @@ trait ActionHandling {self: Controller =>
         AnaArgs.usageMessage(ShellArguments.toplevelArgs ++ usageOption ++
           BuildTargetModifier.optDescrs ++ moreOpts).foreach(println)
       } else {
-        inputs foreach { case (root, fp) =>
+        inputs foreach {case (root, fp) =>
           addArchive(root) // add the archive
           backend.getArchive(root) match {
             case None =>
-              // opening may fail despite resolveAnyPhysical (i.e. formerly by a MANIFEST.MF without id)
+              // opening may fail despite resolveAnyPhysical (i.e. for a MANIFEST.MF without id)
               logError("not an archive: " + root)
             case Some(archive) =>
               val inPath = fp.segments match {
@@ -318,7 +321,7 @@ trait ActionHandling {self: Controller =>
     val oldCAD = state.currentActionDefinition
     state.home = folder
     state.currentActionDefinition = None
-    // excecute the file
+    // execute the file
     File.read(f).split("\\n").foreach(f => handleLine(f))
     if (state.currentActionDefinition.isDefined)
       throw ParseError("end of definition expected")
@@ -334,13 +337,20 @@ trait ActionHandling {self: Controller =>
   /** clone an archive using [[OAF]] and also clone its dependencies */
   def cloneRecursively(p: String) {
     val oaf = getOAFOrError
-    val lcOpt = oaf.clone(p) orElse oaf.download(p) 
-    lcOpt foreach { lc =>
-      val archs = backend.openArchive(lc)
-      archs foreach { a =>
-        val deps = stringToList(a.properties.getOrElse("dependencies", ""))
-        deps foreach {d => cloneRecursively(URI(d).pathAsString)}
-      }
+    report("user", "trying to clone " + p)
+    val lc = oaf.clone(p) getOrElse {
+      logError("cloning failed, trying to download")
+      oaf.download(p) 
+    }.getOrElse {
+      logError("downloading failed, giving up")
+      return
+    }
+    val archs = backend.openArchive(lc)
+    archs foreach {a =>
+      val depS = a.properties.getOrElse("dependencies", "")
+      // TODO lmh falsely uses , as separator instead of space
+      val deps = if (depS.contains(",")) stringToList(depS, ",").map(_.trim) else stringToList(depS)
+      deps foreach {d => cloneRecursively(URI(d).pathAsString)}
     }
   }
 

@@ -73,6 +73,7 @@ class Setup extends ShellExtension("jeditsetup") {
 
     /** merge properties from a resource into a jEdit file */
     def mergeProps(propsOldFile: File, propsAddResource: List[String]) {
+       println("merging " + propsAddResource.mkString("/") + " into " + propsOldFile) 
        var propsAdd = utils.stringToList(getPluginResource(propsAddResource), "\\n").flatMap {line =>
          val i = line.indexOf("=")
          if (!line.startsWith("#") && i != -1)
@@ -246,6 +247,7 @@ class Setup extends ShellExtension("jeditsetup") {
          if (!target.exists) {
            val url = new java.net.URL(s"https://sourceforge.net/projects/jedit-plugins/files/$name/$version/$name-$version-bin.zip")
            val zip = target.setExtension("zip")
+           println("downloading " + url)
            File.download(url, zip)
            File.unzip(zip, jarFolder)
            zip.delete

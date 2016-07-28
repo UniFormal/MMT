@@ -41,7 +41,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   val rootString = root.toString
   val archString = root.up.getName + "/" + root.getName
   val id = properties("id")
-  val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
+  val narrationBase = properties.get("narration-base").map(utils.URI(_)).getOrElse(FileURI(root))
   /** the NamespaceMap built from the ns and ns-prefix properties */
   val ns = properties.get("ns").map(s => Path.parse(
     s,//if (s.last == '/') s.dropRight(1) else s,

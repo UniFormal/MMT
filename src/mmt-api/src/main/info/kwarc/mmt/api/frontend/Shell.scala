@@ -91,7 +91,6 @@ class Shell extends StandardIOHelper {
        case _ => None
      }
      val defRc = deployFolder.map(_/"mmtrc")
-     
      // load additional configurations (default config is loaded by Controller.init)
      val cfgLocations: List[File] = defRc.toList ::: List(MMTSystem.userConfigFile)
      cfgLocations foreach loadConfig

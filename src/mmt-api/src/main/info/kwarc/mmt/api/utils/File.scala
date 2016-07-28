@@ -97,7 +97,7 @@ case class File(toJava: java.io.File) {
   }
 
   /** @return children of this directory */
-  def children: List[File] = toJava.list.toList.sorted.map(this / _)
+  def children: List[File] = if (toJava.isFile) Nil else toJava.list.toList.sorted.map(this / _)
 
   /** @return subdirectories of this directory */
   def subdirs: List[File] = children.filter(_.toJava.isDirectory)

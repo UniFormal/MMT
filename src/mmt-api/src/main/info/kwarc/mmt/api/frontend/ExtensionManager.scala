@@ -258,7 +258,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     val kwp = new KeywordBasedParser(nbp)
     val rbc = new RuleBasedChecker
     val msc = new MMTStructureChecker(rbc)
-    val mmtint = new TwoStepInterpreter(kwp, msc) with MMTStructureEstimator
+    val mmtint = new TwoStepInterpreter(kwp, msc)// with MMTStructureEstimator
     val nbpr = new NotationBasedPresenter {
       override def twoDimensional = false
     }
@@ -304,7 +304,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
       new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
     // shell extensions
-    List(new ShellSendCommand, new execution.ShellCommand).foreach(addExtension(_))
+    List(new ShellSendCommand, new execution.ShellCommand, new Make).foreach(addExtension(_))
   }
 
   def cleanup {
