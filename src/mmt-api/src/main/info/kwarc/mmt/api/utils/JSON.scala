@@ -17,7 +17,11 @@ sealed abstract class JSONValue extends JSON {
    def value: Any
    override def toString = value.toString
 }
-sealed abstract class JSONNumber extends JSONValue 
+sealed abstract class JSONNumber extends JSONValue
+
+case object Infinity extends JSONNumber {
+  val value = "Infinity"
+}
 
 case class JSONInt(value: Int) extends JSONNumber
 
@@ -116,8 +120,9 @@ object JSON {
          case '"' => parseString(s)
          case '{' => parseObject(s)
          case '[' => parseArray(s)
+         case 'I' => parseNum(s)
          case _ =>
-           throw JSONError("Illegal starting character for JSON")
+           throw JSONError("Illegal starting character for JSON: " + c + " in " + s.remainder.subSequence(0,200))
       }
    }
    
@@ -139,6 +144,10 @@ object JSON {
    }
    
    def parseNum(s: Unparsed): JSONNumber = {
+     if (s.remainder.startsWith("Infinity")) {
+       s.drop("Infinity")
+       return Infinity
+     }
       val e = "(?: e|e\\+|e-|E|E\\+|E-)"
       val mt = s.next(s"(-)?(\\d+)(\\.\\d+)?($e\\d+)?")
       val List(sgn, main, frac, exp) = mt.subgroups

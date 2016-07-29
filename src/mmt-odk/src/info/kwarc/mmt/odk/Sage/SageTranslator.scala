@@ -67,39 +67,49 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     val importedstructs = (cat.includes ::: cat.structure.filterNot(_ == cat.name)).flatMap(s => categories(s).structure).distinct
     val newaxioms = cat.axioms.filter(!importedaxioms.contains(_))
     val newstructs = cat.structure.filter(s => !importedstructs.contains(s) && allstructures.contains(Structure(s)))
+
     newaxioms foreach (ax => {
       val c = Constant(th.toTerm, LocalName(ax), Nil, Some(Sage.ded(OMS(axth.path ? ax))), None, None)
       controller add c
     })
     newstructs foreach (s => controller add Constant(th.toTerm,LocalName(s),Nil,Some(Sage.structof(s)),None,None))
     //addOpaque("Element Methods:",th)
-    var sec = Some("Element Methods")
-    controller add new Document(th.path.toDPath / sec.get,root = false)
+    var sec : Option[String] = None
     def doMethod(m : SageMethod) = {
       val c = Constant(th.toTerm, LocalName(m.tp + "." + m.name), Nil, Some(doArity(m.arity)), None, None)
-      c.setDocumentHome(LocalName(sec.get))
+      if (sec.isDefined) c.setDocumentHome(LocalName(sec.get))
       controller add c
       addOpaque(m.doc, th, sec)
       //if (m.optional) addOpaque("(Optional)", th, sec)
     }
-    if (cat.elem_methods._1!="") addOpaque(cat.elem_methods._1,th,sec)
-    cat.elem_methods._2 foreach doMethod
 
-    sec = Some("Morphism Methods:")
-    controller add new Document(th.path.toDPath / sec.get,root = false)
-    if (cat.morph_methods._1!="") addOpaque(cat.morph_methods._1,th,sec)
-    cat.morph_methods._2 foreach doMethod
+    if (cat.elem_methods._2.nonEmpty) {
+      sec = Some("Element Methods")
+      controller add new Document(th.path.toDPath / sec.get,root = false)
+      if (cat.elem_methods._1 != "") addOpaque(cat.elem_methods._1, th, sec)
+      cat.elem_methods._2 foreach doMethod
+    }
 
-    sec = Some("Parent Methods:")
-    controller add new Document(th.path.toDPath / sec.get,root = false)
-    if (cat.parent_methods._1!="") addOpaque(cat.parent_methods._1,th,sec)
-    cat.parent_methods._2 foreach doMethod
+    if (cat.morph_methods._2.nonEmpty) {
+      sec = Some("Morphism Methods")
+      controller add new Document(th.path.toDPath / sec.get, root = false)
+      if (cat.morph_methods._1 != "") addOpaque(cat.morph_methods._1, th, sec)
+      cat.morph_methods._2 foreach doMethod
+    }
 
-    sec = Some("Subcategory Methods:")
-    controller add new Document(th.path.toDPath / sec.get,root = false)
-    if (cat.subcategory_methods._1!="") addOpaque(cat.subcategory_methods._1,th,sec)
-    cat.subcategory_methods._2 foreach doMethod
+    if (cat.parent_methods._2.nonEmpty) {
+      sec = Some("Parent Methods")
+      controller add new Document(th.path.toDPath / sec.get, root = false)
+      if (cat.parent_methods._1 != "") addOpaque(cat.parent_methods._1, th, sec)
+      cat.parent_methods._2 foreach doMethod
+    }
 
+    if (cat.subcategory_methods._2.nonEmpty) {
+      sec = Some("Subcategory Methods")
+      controller add new Document(th.path.toDPath / sec.get, root = false)
+      if (cat.subcategory_methods._1 != "") addOpaque(cat.subcategory_methods._1, th, sec)
+      cat.subcategory_methods._2 foreach doMethod
+    }
     //controller add MRef(Sage.catdoc, th.path)
   }
   )

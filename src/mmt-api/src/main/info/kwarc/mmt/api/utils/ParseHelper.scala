@@ -46,6 +46,8 @@ class Unparsed(input: String, error: String => Nothing) {
    def remainder = StringSlice(input, current)
 
    def head = input(current)
+   def getnext(n:Int) = StringSlice(input,current,current + n)
+
    def next() = {
       if (empty) error("expected character, found nothing")
       var c = head
@@ -72,7 +74,7 @@ class Unparsed(input: String, error: String => Nothing) {
          current += s.length
          s.foreach {c => advancePositionBy(c)}
       } else
-         error(s"expected $s, found $remainder")
+         error(s"expected $s, found " + remainder.subSequence(0,200))
    }
    def next(test: Char => Boolean): String = {
       if (test(head)) next() + next(test) else ""
@@ -83,7 +85,7 @@ class Unparsed(input: String, error: String => Nothing) {
    def next(regex: String): Regex.Match = {
       val r = new Regex(regex)
       val mt = r.findPrefixMatchOf(remainder).getOrElse {
-         error(s"expected match of $regex, found $remainder")
+         error(s"expected match of $regex, found " + remainder.subSequence(0,200))
       }
       drop(mt.matched)
       mt

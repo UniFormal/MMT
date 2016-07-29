@@ -129,7 +129,7 @@ class SageImporter extends Importer {
     log(allmethods.length + " Methods")
 
     val trans = new SageTranslator(controller,bf,index)
-    //trans(categories)
+    trans(categories)
     BuildResult.empty
   }
 }
