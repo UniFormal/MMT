@@ -5,20 +5,22 @@ import scala.util.parsing.combinator.Parsers
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.MutableList
 import scala.collection.immutable.Queue
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.GlobalName
+import scala.util.parsing.combinator.Parsers
 import scala.util.parsing.input.Reader
-import scala.util.parsing.input.CharSequenceReader
-import scala.util.parsing.input.NoPosition
 import scala.util.parsing.input.Position
 
-class Grammar(p: MMParser, syn: String => String, tc: String*) extends Parsers {
+
+class Grammar(db: MMDatabase, syn: String => String, tc: String*) extends Parsers {
   type Elem = Sym
-  val parsers = new HashMap[Constant, Parser[ParseNode]]
+  val parsers = new HashMap[Constant, Parser[Term]]
   val synMap = new HashMap[Constant, Constant]
   val varTypecodes = new HashSet[Constant]
-  varTypecodes ++= tc.map { cstr => p.Syms(cstr).asInstanceOf[Constant] }
-  val axiomByTC = new HashMap[Constant, MutableList[(Axiom, List[Sym])]]
-  p.Statements.list foreach {
-    case a: Axiom if varTypecodes.contains(a.formula.typecode) => {
+  varTypecodes ++= tc.map { cstr => db.Syms(cstr).asInstanceOf[Constant] }
+  val axiomByTC = new HashMap[Constant, MutableList[(Assert, List[Sym])]]
+  db.Statements.list foreach {
+    case a: Assert if varTypecodes.contains(a.formula.typecode) => {
       a.frame.dv.foreach(_ => throw new MMError(s"Syntax axiom ${a.label} has a DV condition"))
       a.frame.hyps.foreach {
         case _: Essential => throw new MMError(s"Syntax axiom ${a.label} has a hypothesis")
@@ -30,7 +32,7 @@ class Grammar(p: MMParser, syn: String => String, tc: String*) extends Parsers {
   }
   varTypecodes foreach { c =>
     var varP = acceptMatch(c.id+" var", { case vr: Variable
-      if vr.activeFloat.typecode == c => VarNode(vr.activeFloat) })
+      if vr.activeFloat.typecode == c => OMV(vr.activeFloat.label.name) })
     parsers(c) = axiomByTC.get(c) match {
       case None => varP
       case Some(l) => varP | buildParser(c.id, l)
@@ -38,13 +40,13 @@ class Grammar(p: MMParser, syn: String => String, tc: String*) extends Parsers {
   }
 
 
-  def buildParser(label: String, axioms: Seq[(Axiom, List[Sym])]): Parser[AxiomNode] = {
-    val out = new MutableList[Parser[AxiomNode]]
-    val constants = new HashMap[Constant, MutableList[(Axiom, List[Sym])]]
-    val variables = new HashMap[Constant, MutableList[(Axiom, List[Sym])]]
+  def buildParser(label: String, axioms: Seq[(Assert, List[Sym])]): Parser[Term] = {
+    val out = new MutableList[Parser[Term]]
+    val constants = new HashMap[Constant, MutableList[(Assert, List[Sym])]]
+    val variables = new HashMap[Constant, MutableList[(Assert, List[Sym])]]
     axioms foreach { case (a, l) =>
       l.headOption match {
-        case None => out += success(new AxiomNode(a, Nil))
+        case None => out += success(OMS(a.label))
         case Some(s) => s match {
           case c: Constant => constants.getOrElseUpdate(c, new MutableList) += ((a, l.tail))
           case v: Variable => variables.getOrElseUpdate(v.activeFloat.typecode, new MutableList) += ((a, l.tail))
@@ -52,7 +54,7 @@ class Grammar(p: MMParser, syn: String => String, tc: String*) extends Parsers {
       }
     }
     if (!constants.isEmpty) {
-      val constantsLookup = new HashMap[Sym, Parser[AxiomNode]]
+      val constantsLookup = new HashMap[Sym, Parser[Term]]
       constants foreach { case (c, l) => constantsLookup.put(c, buildParser(label + " " + c.id, l)) }
       out += Parser { in =>
         constantsLookup.get(in.first) match {
@@ -63,7 +65,7 @@ class Grammar(p: MMParser, syn: String => String, tc: String*) extends Parsers {
     }    
     variables foreach { case (c, l) =>
       val sub = buildParser(s"$label <${c.id}>", l)
-      out += parsers(c) ~ sub ^^ { case v ~ node => new AxiomNode(node.a, v :: node.child) }
+      out += parsers(c) ~ sub ^^ { case v ~ OMAorOMID(t, args) => OMA(t, v :: args) }
     }
     out.tail.foldRight(out.head)((a,b) => a | b)
   }
@@ -74,14 +76,14 @@ class Grammar(p: MMParser, syn: String => String, tc: String*) extends Parsers {
   }
 
   def parseAll {
-    p.Statements.list foreach { s => parse(s.label, s.formula) }
+    db.Statements.list foreach { s => parse(s.label, s.formula) }
   }
 
-  def parse(label: String, formula: Formula) {
+  def parse(label: GlobalName, formula: Formula) {
     val c = formula.typecode
     val result = phrase(parsers.get(synMap.getOrElseUpdate(c,
       if (varTypecodes.contains(c)) c
-      else p.Syms(syn(c.id)).asInstanceOf[Constant]
+      else db.Syms(syn(c.id)).asInstanceOf[Constant]
     )).get).apply(new SeqReader(formula.expr))
     formula.parse = if (result.successful) result.get else throw new MMError(s"$result - while parsing $label: $formula")
   }
@@ -108,13 +110,3 @@ class SeqReader[T](seq: Seq[T], offset: Int = 1) extends Reader[T] {
     str
   }
 }
-
-class ParseNode(s: Statement, child: List[ParseNode]) {
-  override def toString = if (child.isEmpty) s.label else {
-    var str = "(" + s.label;
-    child foreach { c => str += " " + c }
-    str + ")"
-  }
-}
-case class VarNode(f: Floating) extends ParseNode(f, Nil)
-case class AxiomNode(a: Axiom, child: List[ParseNode]) extends ParseNode(a, child)
