@@ -13,29 +13,10 @@ import scala.util.parsing.input.Position
 class Grammar(p: MMParser, syn: String => String, tc: String*) extends Parsers {
   type Elem = Sym
   val parsers = new HashMap[Constant, Parser[ParseNode]]
-  val parsersFirst = new HashMap[(Constant, Option[Constant]), MutableList[Parser[ParseNode]]]
   val synMap = new HashMap[Constant, Constant]
   val varTypecodes = new HashSet[Constant]
-  tc foreach { cstr =>
-    var c = p.Syms(cstr).asInstanceOf[Constant]
-    varTypecodes += c
-    var varP = acceptMatch(c.id+" var", { case vr: Variable
-      if vr.activeFloat.typecode == c => VarNode(vr.activeFloat) })
-    def inner(in: Input): ParseResult[ParseNode] = {
-      val tryit = { h: Option[Constant] =>
-        parsersFirst.getOrElseUpdate((c, h), new MutableList) foreach { p =>
-          val res = p(in)
-          if (res.successful) return res
-        }
-      }
-      val k = asConst(in.first)
-      if (k.isDefined) tryit(k)
-      tryit(None)
-      Failure("no match", in)
-    }
-    parsers(c) = varP | Parser { inner }.named("lookup")  
-  }
-    
+  varTypecodes ++= tc.map { cstr => p.Syms(cstr).asInstanceOf[Constant] }
+  val axiomByTC = new HashMap[Constant, MutableList[(Axiom, List[Sym])]]
   p.Statements.list foreach {
     case a: Axiom if varTypecodes.contains(a.formula.typecode) => {
       a.frame.dv.foreach(_ => throw new MMError(s"Syntax axiom ${a.label} has a DV condition"))
@@ -43,36 +24,57 @@ class Grammar(p: MMParser, syn: String => String, tc: String*) extends Parsers {
         case _: Essential => throw new MMError(s"Syntax axiom ${a.label} has a hypothesis")
         case _ =>
       }
-      def parserQ(i: Int): List[Sym] => Parser[List[ParseNode]] = {
-        case Nil => success(Nil).named("${a.label}.$i")
-        case s :: l => (s match {
-          case c: Constant => c ~> parserQ(i+1)(l)
-          case v: Variable => parsers.get(v.activeFloat.typecode).get ~ parserQ(i+1)(l) ^^ { case a ~ b => a :: b }
-        }).named(s"${a.label}.$i")
-      }
-      // Assumes no empty syntax axioms
-      parsersFirst.getOrElseUpdate((a.formula.typecode, asConst(a.formula.expr.head)), new MutableList) +=
-        parserQ(0)(a.formula.expr).map(AxiomNode(a, _)).named(a.label)
+      axiomByTC.getOrElseUpdate(a.formula.typecode, new MutableList) += ((a, a.formula.expr))
     }
     case _ =>
   }
+  varTypecodes foreach { c =>
+    var varP = acceptMatch(c.id+" var", { case vr: Variable
+      if vr.activeFloat.typecode == c => VarNode(vr.activeFloat) })
+    parsers(c) = axiomByTC.get(c) match {
+      case None => varP
+      case Some(l) => varP | buildParser(c.id, l)
+    }
+  }
 
+
+  def buildParser(label: String, axioms: Seq[(Axiom, List[Sym])]): Parser[AxiomNode] = {
+    val out = new MutableList[Parser[AxiomNode]]
+    val constants = new HashMap[Constant, MutableList[(Axiom, List[Sym])]]
+    val variables = new HashMap[Constant, MutableList[(Axiom, List[Sym])]]
+    axioms foreach { case (a, l) =>
+      l.headOption match {
+        case None => out += success(new AxiomNode(a, Nil))
+        case Some(s) => s match {
+          case c: Constant => constants.getOrElseUpdate(c, new MutableList) += ((a, l.tail))
+          case v: Variable => variables.getOrElseUpdate(v.activeFloat.typecode, new MutableList) += ((a, l.tail))
+        }
+      }
+    }
+    if (!constants.isEmpty) {
+      val constantsLookup = new HashMap[Sym, Parser[AxiomNode]]
+      constants foreach { case (c, l) => constantsLookup.put(c, buildParser(label + " " + c.id, l)) }
+      out += Parser { in =>
+        constantsLookup.get(in.first) match {
+          case Some(p) => p(in.rest)
+          case None => Failure("No match", in)
+        }
+      }
+    }    
+    variables foreach { case (c, l) =>
+      val sub = buildParser(s"$label <${c.id}>", l)
+      out += parsers(c) ~ sub ^^ { case v ~ node => new AxiomNode(node.a, v :: node.child) }
+    }
+    out.tail.foldRight(out.head)((a,b) => a | b)
+  }
+  
   def asConst(s: Sym): Option[Constant] = s match {
     case c: Constant => Some(c)
     case _ => None
   }
 
   def parseAll {
-    var i = 0
-    p.Statements.list foreach { s =>
-      i+=1
-      println(i + "/" + p.Statements.list.length + " " + s.formula)
-      
-      if (s.formula.toString == "|- ( { x | ph } = A <-> A. x ( ph <-> x e. A ) )") {
-        i
-      }
-      parse(s.label, s.formula)
-    }
+    p.Statements.list foreach { s => parse(s.label, s.formula) }
   }
 
   def parse(label: String, formula: Formula) {
