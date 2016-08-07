@@ -13,28 +13,28 @@ import scala.collection.mutable.HashSet
 import scala.util.parsing.combinator.Parsers
 
 class Importer extends archives.Importer {
-  val key = "mm-omdoc"
-  def inExts = List("mm")
+   val key = "mm-omdoc"
+   def inExts = List("mm")
   override def inDim = RedirectableDimension("mm")
 
-  def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
-    log("Reading " + bf.inFile)
-    val parser = new MMParser(bf.inFile)
+   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
+      log("Reading " + bf.inFile)
+      val parser = new MMParser(bf.inFile)
     val e =  try {
       log("File parsing...")
-      parser.parse
+         parser.parse
       log("Math parsing...")
       new Grammar(parser, {case "|-" => "wff"}, "wff", "set", "class").parseAll
     } catch {
       case MMError(s) => println(s)
       case e: Exception => e.printStackTrace()
     }
-    //println(e)
+     //println(e)
 
-    //val conv = new PVSImportTask(controller, bf, index)
+      //val conv = new PVSImportTask(controller, bf, index)
 
-    BuildResult.empty
-  }
+      BuildResult.empty
+   }
 
 }
 
@@ -70,19 +70,19 @@ case class MMParser(f: File) {
       } catch {
         case e: StringIndexOutOfBoundsException => up.remainder.toString
       }
-      c match {
-        case "$(" =>
-          up.drop("$(")
+    c match {
+      case "$(" =>
+        up.drop("$(")
           skipUntil("$)")
-        case "$c" =>
-          up.drop("$c")
+      case "$c" =>
+        up.drop("$c")
           readUntil("$.").foreach(s => Syms += Constant(s))
-        case "$v" =>
-          up.drop("$v")
+      case "$v" =>
+        up.drop("$v")
           readUntil("$.").foreach(s => Syms += Variable(s))
-        case "$d" =>
-          up.drop("$d")
-          up.trim
+      case "$d" =>
+        up.drop("$d")
+        up.trim
           val vars = readUntil("$.").map(s => Syms(s).asInstanceOf[Variable])
           frames push Disjointness(vars: _*) :: frames.pop
         case "${" =>
@@ -91,12 +91,12 @@ case class MMParser(f: File) {
         case "$}" =>
           up.drop("$}")
           frames.pop
-        case _ =>
+      case _ =>
           val label = readUntil(" ").headOption.getOrElse(return)
-          c = up.trim.getnext(2).toString
-          c match {
-            case "$f" =>
-              up.drop("$f")
+        c = up.trim.getnext(2).toString
+        c match {
+          case "$f" =>
+            up.drop("$f")
               val ls = readUntil("$.")
               if (ls.length != 2) throw new MMError("Incorrect $f statement")
               val const = Syms(ls(0)).asInstanceOf[Constant]
@@ -104,10 +104,10 @@ case class MMParser(f: File) {
               val stmt = Floating(label, const, v)
               Statements += stmt
               frames push stmt :: frames.pop
-              v.activeFloat = Some(stmt)
-            case "$e" =>
-              up.drop("$e")
-              up.trim
+              v.activeFloat = stmt
+          case "$e" =>
+            up.drop("$e")
+            up.trim
               val stmt = Essential(label, readFormula("$."))
               Statements += stmt
               frames push stmt :: frames.pop
@@ -118,13 +118,13 @@ case class MMParser(f: File) {
               Statements += Axiom(label, formula, Assert.trimFrame(formula, frames.head))
             case "$p" =>
               up.drop("$p")
-              up.trim
+            up.trim
               val formula = readFormula("$=")
               Statements += Provable(label, formula, Assert.trimFrame(formula, frames.head), readUntil("$."))
             case _ => throw new MMError("Not a valid metamath command: " + c + " in " + up.remainder.subSequence(0, 200))
-          }
-      }
+        }
     }
+  }
   }
   
   private def readUntil(s: String) = {
@@ -161,10 +161,6 @@ case class MMParser(f: File) {
     val ls = readUntil(s).map(Syms)
     Formula(ls.head.asInstanceOf[Constant], ls.tail)
   }
-  
-  def parseGrammar {
-    // TODO
-  }
 }
 
 class Sym(val id: String) {
@@ -173,7 +169,7 @@ class Sym(val id: String) {
 }
 case class Constant(override val id: String) extends Sym(id)
 case class Variable(override val id: String) extends Sym(id) {
-  var activeFloat: Option[Floating] = None
+  var activeFloat: Floating = _
 }
 
 case class Formula(typecode: Constant, expr: List[Sym]) {
