@@ -24,7 +24,7 @@ class Importer extends archives.Importer {
       log("File parsing...")
       parser.parse
       log("Math parsing...")
-      parser.parseGrammar
+      new Grammar(parser, {case "|-" => "wff"}, "wff", "set", "class").parseAll
     } catch {
       case MMError(s) => println(s)
       case e: Exception => e.printStackTrace()
@@ -41,7 +41,6 @@ class Importer extends archives.Importer {
 case class MMError(s: String) extends java.lang.Exception(s)
 
 case class MMParser(f: File) {
-
   object Syms extends HashMap[String, Sym] {
     def +=(s: Sym): Unit = {
       s.seq = size
@@ -51,9 +50,11 @@ case class MMParser(f: File) {
   }
 
   object Statements extends HashMap[String, Statement] {
+    val list = new MutableList[Statement]
     def +=(s: Statement): Unit = {
       s.seq = size
       if (put(s.label, s).isDefined) throw new MMError(s"Redefining statement $s")
+      list += s
     }
     override def apply(s: String): Statement = super.get(s).getOrElse(throw new MMError(s"Statement $s not found"))
   }
@@ -69,7 +70,6 @@ case class MMParser(f: File) {
       } catch {
         case e: StringIndexOutOfBoundsException => up.remainder.toString
       }
-      print(".")
       c match {
         case "$(" =>
           up.drop("$(")
@@ -104,6 +104,7 @@ case class MMParser(f: File) {
               val stmt = Floating(label, const, v)
               Statements += stmt
               frames push stmt :: frames.pop
+              v.activeFloat = Some(stmt)
             case "$e" =>
               up.drop("$e")
               up.trim
@@ -113,11 +114,13 @@ case class MMParser(f: File) {
             case "$a" =>
               up.drop("$a")
               up.trim
-              Statements += Axiom(label, readFormula("$."), frames.head)
+              val formula = readFormula("$.")
+              Statements += Axiom(label, formula, Assert.trimFrame(formula, frames.head))
             case "$p" =>
               up.drop("$p")
               up.trim
-              Statements += Provable(label, readFormula("$="), frames.head, readUntil("$."))
+              val formula = readFormula("$=")
+              Statements += Provable(label, formula, Assert.trimFrame(formula, frames.head), readUntil("$."))
             case _ => throw new MMError("Not a valid metamath command: " + c + " in " + up.remainder.subSequence(0, 200))
           }
       }
@@ -164,8 +167,6 @@ case class MMParser(f: File) {
   }
 }
 
-case class ParseNode(s: Statement, child: List[ParseNode])
-
 class Sym(val id: String) {
   def str = id
   var seq: Int = _
@@ -177,6 +178,11 @@ case class Variable(override val id: String) extends Sym(id) {
 
 case class Formula(typecode: Constant, expr: List[Sym]) {
   var parse: ParseNode = _
+  override def toString = {
+    var s = typecode.id
+    expr foreach { e => s += " " + e.id }
+    s
+  }
 }
 
 case class Disjointness(v: Variable*)
@@ -186,7 +192,7 @@ class Statement(val label: String, val formula: Formula) {
 }
 
 class Hypothesis(label: String, formula: Formula) extends Statement(label, formula)
-case class Floating(override val label: String, c: Constant, v: Variable) extends Hypothesis(label, Formula(c, List(v)))
+case class Floating(override val label: String, typecode: Constant, v: Variable) extends Hypothesis(label, Formula(typecode, List(v)))
 case class Essential(override val label: String, override val formula: Formula) extends Hypothesis(label, formula)
 
 class Frame(val dv: List[Disjointness], val hyps: List[Hypothesis]) {
@@ -203,8 +209,9 @@ class Frame(val dv: List[Disjointness], val hyps: List[Hypothesis]) {
   }
 }
 
-class Assert(label: String, formula: Formula, eframe: Frame) extends Statement(label, formula) {
-  val frame = {
+class Assert(label: String, formula: Formula, val frame: Frame) extends Statement(label, formula)
+object Assert {
+  def trimFrame(formula: Formula, eframe: Frame) = {
     val usedVars = new HashSet[Variable]
     (formula :: eframe.hyps collect {
       case e: Essential => e.formula
@@ -222,5 +229,6 @@ class Assert(label: String, formula: Formula, eframe: Frame) extends Statement(l
     })
   }
 }
-case class Axiom(override val label: String, override val formula: Formula, eframe: Frame) extends Assert(label, formula, eframe)
-case class Provable(override val label: String, override val formula: Formula, eframe: Frame, proof: List[String]) extends Assert(label, formula, eframe)
+
+case class Axiom(override val label: String, override val formula: Formula, override val frame: Frame) extends Assert(label, formula, frame)
+case class Provable(override val label: String, override val formula: Formula, override val frame: Frame, proof: List[String]) extends Assert(label, formula, frame)
