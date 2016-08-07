@@ -166,6 +166,7 @@ case class MMParser(f: File) {
 class Sym(val id: String) {
   def str = id
   var seq: Int = _
+  override def toString = id
 }
 case class Constant(override val id: String) extends Sym(id)
 case class Variable(override val id: String) extends Sym(id) {

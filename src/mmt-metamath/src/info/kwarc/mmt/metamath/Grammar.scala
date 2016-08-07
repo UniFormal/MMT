@@ -9,17 +9,55 @@ import scala.util.parsing.input.Reader
 import scala.util.parsing.input.CharSequenceReader
 import scala.util.parsing.input.NoPosition
 import scala.util.parsing.input.Position
-import scala.util.parsing.combinator.PackratParsers
 
-class Grammar(p: MMParser, syn: String => String, tc: String*) extends PackratParsers {
+class Grammar(p: MMParser, syn: String => String, tc: String*) extends Parsers {
   type Elem = Sym
-  val parsers = new HashMap[Axiom, PackratParser[ParseNode]]
-  val axioms = new HashMap[(Constant, Option[Constant]), MutableList[Axiom]]
+  val parsers = new HashMap[Constant, Parser[ParseNode]]
+  val parsersFirst = new HashMap[(Constant, Option[Constant]), MutableList[Parser[ParseNode]]]
   val synMap = new HashMap[Constant, Constant]
   val varTypecodes = new HashSet[Constant]
-  tc foreach { cstr => varTypecodes += p.Syms(cstr).asInstanceOf[Constant] }
+  tc foreach { cstr =>
+    var c = p.Syms(cstr).asInstanceOf[Constant]
+    varTypecodes += c
+    var varP = acceptMatch(c.id+" var", { case vr: Variable
+      if vr.activeFloat.typecode == c => VarNode(vr.activeFloat) })
+    def inner(in: Input): ParseResult[ParseNode] = {
+      val tryit = { h: Option[Constant] =>
+        parsersFirst.getOrElseUpdate((c, h), new MutableList) foreach { p =>
+          val res = p(in)
+          if (res.successful) return res
+        }
+      }
+      val k = asConst(in.first)
+      if (k.isDefined) tryit(k)
+      tryit(None)
+      Failure("no match", in)
+    }
+    parsers(c) = varP | Parser { inner }.named("lookup")  
+  }
+    
+  p.Statements.list foreach {
+    case a: Axiom if varTypecodes.contains(a.formula.typecode) => {
+      a.frame.dv.foreach(_ => throw new MMError(s"Syntax axiom ${a.label} has a DV condition"))
+      a.frame.hyps.foreach {
+        case _: Essential => throw new MMError(s"Syntax axiom ${a.label} has a hypothesis")
+        case _ =>
+      }
+      def parserQ(i: Int): List[Sym] => Parser[List[ParseNode]] = {
+        case Nil => success(Nil).named("${a.label}.$i")
+        case s :: l => (s match {
+          case c: Constant => c ~> parserQ(i+1)(l)
+          case v: Variable => parsers.get(v.activeFloat.typecode).get ~ parserQ(i+1)(l) ^^ { case a ~ b => a :: b }
+        }).named(s"${a.label}.$i")
+      }
+      // Assumes no empty syntax axioms
+      parsersFirst.getOrElseUpdate((a.formula.typecode, asConst(a.formula.expr.head)), new MutableList) +=
+        parserQ(0)(a.formula.expr).map(AxiomNode(a, _)).named(a.label)
+    }
+    case _ =>
+  }
 
-  def key(s: Sym): Option[Constant] = s match {
+  def asConst(s: Sym): Option[Constant] = s match {
     case c: Constant => Some(c)
     case _ => None
   }
@@ -27,63 +65,23 @@ class Grammar(p: MMParser, syn: String => String, tc: String*) extends PackratPa
   def parseAll {
     var i = 0
     p.Statements.list foreach { s =>
-      s match {
-        case a: Axiom if varTypecodes.contains(a.formula.typecode) => {
-          a.frame.dv.foreach(_ => throw new MMError(s"Syntax axiom ${a.label} has a DV condition"))
-          a.frame.hyps.foreach {
-            case _: Essential => throw new MMError(s"Syntax axiom ${a.label} has a hypothesis")
-            case _ =>
-          }
-          addAxiom(a)
-        }
-        case _ =>
-      }
       i+=1
       println(i + "/" + p.Statements.list.length + " " + s.formula)
+      
+      if (s.formula.toString == "|- ( { x | ph } = A <-> A. x ( ph <-> x e. A ) )") {
+        i
+      }
       parse(s.label, s.formula)
     }
-  }
-  
-  private def addAxiom(a: Axiom) {
-    axioms.getOrElseUpdate((a.formula.typecode, key(a.formula.expr.head)), new MutableList) += a
   }
 
   def parse(label: String, formula: Formula) {
     val c = formula.typecode
-    val result = phrase(parser(synMap.getOrElseUpdate(c,
+    val result = phrase(parsers.get(synMap.getOrElseUpdate(c,
       if (varTypecodes.contains(c)) c
       else p.Syms(syn(c.id)).asInstanceOf[Constant]
-    ))).apply(new SeqReader(formula.expr))
+    )).get).apply(new SeqReader(formula.expr))
     formula.parse = if (result.successful) result.get else throw new MMError(s"$result - while parsing $label: $formula")
-  }
-
-  def parser(typecode: Constant): PackratParser[ParseNode] = {
-    def inner(in: Input): ParseResult[ParseNode] = {
-      in.first match {
-        case v: Variable if v.activeFloat.typecode == typecode => return Success(VarNode(v.activeFloat), in.rest)
-        case _ =>
-      }
-      val tryit = { a: Axiom =>
-        val res = parsers.getOrElseUpdate(a, {
-          var parserQ = success(Queue.empty[ParseNode])
-          a.formula.expr foreach {
-            case c: Constant => parserQ = parserQ <~ c
-            case v: Variable => parserQ = parserQ ~
-              parser(v.activeFloat.typecode) ^^ { case a ~ b => a.enqueue(b) }
-          }
-          // Assumes no empty syntax axioms
-          parserQ.map(q => AxiomNode(a, q.toList))
-        })(in)
-        if (res.successful) return res
-      }
-      key(in.first) match {
-        case s @ Some(_) => axioms.getOrElseUpdate((typecode, s), new MutableList) foreach tryit
-        case None =>
-      }
-      axioms.getOrElseUpdate((typecode, None), new MutableList) foreach tryit
-      Failure("no match", in)
-    }
-    Parser { inner }
   }
 }
 
@@ -98,7 +96,15 @@ class SeqReader[T](seq: Seq[T], offset: Int = 1) extends Reader[T] {
     def lineContents = ""
   }
   def rest = new SeqReader(seq.tail, offset + 1)
-  override def toString = seq.toString
+  override def toString = {
+    var delim = ""
+    var str = ""
+    seq foreach { s =>
+      str += delim + s
+      delim = " "
+    }
+    str
+  }
 }
 
 class ParseNode(s: Statement, child: List[ParseNode]) {
