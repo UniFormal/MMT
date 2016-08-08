@@ -19,8 +19,8 @@ class Translator(val controller: Controller, bt: BuildTask, index: Document => U
   def addDatabase(db: MMDatabase) {
     val theory = new DeclaredTheory(path, db.mod.name, Some(Metamath.prelude), Context.empty)
     def toTerm(f: Formula) = OMS(db.mod ? f.typecode.id)(f.parse)
-    db.Statements.list foreach {
-      case Assert(label, formula, frame, proof) =>
+    db.statements.list foreach {
+      case Assert(label, formula, frame, _, _) =>
         val term = OMBINDC(FL, frame.hyps collect {
           case Floating(label, tc, v) =>
             VarDecl(LocalName(v.id), Some(OMS(db.mod ? tc.id)), None, None)

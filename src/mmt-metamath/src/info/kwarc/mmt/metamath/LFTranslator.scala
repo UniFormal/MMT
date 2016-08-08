@@ -19,8 +19,8 @@ class LFTranslator(val controller: Controller, bt: BuildTask, index: Document =>
   def addDatabase(db: MMDatabase) {
     require(db.mod == Metamath.setmm)
     val theory = new DeclaredTheory(path, db.mod.name, Some(Metamath.prelude), Context.empty)
-    db.Statements.list foreach {
-      case Assert(label, formula, frame, proof) =>
+    db.statements.list foreach {
+      case Assert(label, formula, frame, _, _) =>
         val term = ???
         theory add symbols.Constant(OMMOD(db.mod), label.name, Nil, Some(term), None, None)
       case _ =>

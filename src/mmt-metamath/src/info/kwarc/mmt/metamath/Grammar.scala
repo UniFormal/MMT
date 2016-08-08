@@ -12,15 +12,12 @@ import scala.util.parsing.input.Reader
 import scala.util.parsing.input.Position
 
 
-class Grammar(db: MMDatabase, syn: String => String, tc: String*) extends Parsers {
+class Grammar(db: MMDatabase) extends Parsers {
   type Elem = Sym
   val parsers = new HashMap[Constant, Parser[Term]]
-  val synMap = new HashMap[Constant, Constant]
-  val varTypecodes = new HashSet[Constant]
-  varTypecodes ++= tc.map { cstr => db.Syms(cstr).asInstanceOf[Constant] }
   val axiomByTC = new HashMap[Constant, MutableList[(Assert, List[Sym])]]
-  db.Statements.list foreach {
-    case a: Assert if varTypecodes.contains(a.formula.typecode) => {
+  db.statements.list foreach {
+    case a: Assert if db.vartyps.contains(a.formula.typecode) => {
       a.frame.dv.foreach(_ => throw new MMError(s"Syntax axiom ${a.label} has a DV condition"))
       a.frame.hyps.foreach {
         case _: Essential => throw new MMError(s"Syntax axiom ${a.label} has a hypothesis")
@@ -30,7 +27,7 @@ class Grammar(db: MMDatabase, syn: String => String, tc: String*) extends Parser
     }
     case _ =>
   }
-  varTypecodes foreach { c =>
+  db.vartyps foreach { c =>
     var varP = acceptMatch(c.id+" var", { case vr: Variable
       if vr.activeFloat.typecode == c => OMV(vr.id) })
     parsers(c) = axiomByTC.get(c) match {
@@ -76,15 +73,12 @@ class Grammar(db: MMDatabase, syn: String => String, tc: String*) extends Parser
   }
 
   def parseAll {
-    db.Statements.list foreach { s => parse(s.label, s.formula) }
+    db.statements.list foreach { s => parse(s.label, s.formula) }
   }
 
   def parse(label: GlobalName, formula: Formula) {
     val c = formula.typecode
-    val result = phrase(parsers.get(synMap.getOrElseUpdate(c,
-      if (varTypecodes.contains(c)) c
-      else db.Syms(syn(c.id)).asInstanceOf[Constant]
-    )).get).apply(new SeqReader(formula.expr))
+    val result = phrase(parsers.get(db.typecodes(c)).get).apply(new SeqReader(formula.expr))
     formula.parse = if (result.successful) result.get else throw new MMError(s"$result - while parsing $label: $formula")
   }
 }
