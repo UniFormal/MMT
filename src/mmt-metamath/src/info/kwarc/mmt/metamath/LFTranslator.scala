@@ -10,24 +10,18 @@ import info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.api.modules.DeclaredTheory
 
 
-class Translator(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger {
+class LFTranslator(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger {
   def logPrefix = "mm-omdoc"
   protected def report = controller.report
 
   val path = bt.narrationDPath.^!.^!
   
   def addDatabase(db: MMDatabase) {
+    require(db.mod == Metamath.setmm)
     val theory = new DeclaredTheory(path, db.mod.name, Some(Metamath.prelude), Context.empty)
-    def toTerm(f: Formula) = OMS(db.mod ? f.typecode.id)(f.parse)
     db.Statements.list foreach {
       case Assert(label, formula, frame, proof) =>
-        val term = OMBINDC(FL, frame.hyps collect {
-          case Floating(label, tc, v) =>
-            VarDecl(LocalName(v.id), Some(OMS(db.mod ? tc.id)), None, None)
-        }, frame.hyps.foldRight(toTerm(formula))((h, t) => h match {
-          case Essential(_, hypf) => ES(toTerm(hypf), t)
-          case _ => t
-        }) :: frame.dv.map { d => OMA(DV, d.v.map(v => OMV(v.id)).toList) })
+        val term = ???
         theory add symbols.Constant(OMMOD(db.mod), label.name, Nil, Some(term), None, None)
       case _ =>
     }

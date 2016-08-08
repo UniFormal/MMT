@@ -229,9 +229,9 @@ object Assert {
       case d: Disjointness => d.v filter usedVars.contains
     } collect {
       case seq if seq.length > 1 => Disjointness(seq: _*)
-    }, eframe.hyps filter {
+    } reverse, eframe.hyps filter {
       case Floating(_, _, v) => usedVars.contains(v)
       case _ => true
-    })
+    } reverse)
   }
 }

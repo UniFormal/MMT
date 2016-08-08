@@ -32,7 +32,7 @@ class Grammar(db: MMDatabase, syn: String => String, tc: String*) extends Parser
   }
   varTypecodes foreach { c =>
     var varP = acceptMatch(c.id+" var", { case vr: Variable
-      if vr.activeFloat.typecode == c => OMV(vr.activeFloat.label.name) })
+      if vr.activeFloat.typecode == c => OMV(vr.id) })
     parsers(c) = axiomByTC.get(c) match {
       case None => varP
       case Some(l) => varP | buildParser(c.id, l)
@@ -40,22 +40,22 @@ class Grammar(db: MMDatabase, syn: String => String, tc: String*) extends Parser
   }
 
 
-  def buildParser(label: String, axioms: Seq[(Assert, List[Sym])]): Parser[Term] = {
+  def buildParser(name: String, axioms: Seq[(Assert, List[Sym])]): Parser[Term] = {
     val out = new MutableList[Parser[Term]]
     val constants = new HashMap[Constant, MutableList[(Assert, List[Sym])]]
     val variables = new HashMap[Constant, MutableList[(Assert, List[Sym])]]
     axioms foreach { case (a, l) =>
       l.headOption match {
         case None => out += success(OMS(a.label))
-        case Some(s) => s match {
-          case c: Constant => constants.getOrElseUpdate(c, new MutableList) += ((a, l.tail))
-          case v: Variable => variables.getOrElseUpdate(v.activeFloat.typecode, new MutableList) += ((a, l.tail))
-        }
+        case Some(s) => (s match {
+          case c: Constant => constants.getOrElseUpdate(c, new MutableList)
+          case v: Variable => variables.getOrElseUpdate(v.activeFloat.typecode, new MutableList)
+        }) += ((a, l.tail))
       }
     }
     if (!constants.isEmpty) {
       val constantsLookup = new HashMap[Sym, Parser[Term]]
-      constants foreach { case (c, l) => constantsLookup.put(c, buildParser(label + " " + c.id, l)) }
+      constants foreach { case (c, l) => constantsLookup.put(c, buildParser(name + " " + c.id, l)) }
       out += Parser { in =>
         constantsLookup.get(in.first) match {
           case Some(p) => p(in.rest)
@@ -64,10 +64,10 @@ class Grammar(db: MMDatabase, syn: String => String, tc: String*) extends Parser
       }
     }    
     variables foreach { case (c, l) =>
-      val sub = buildParser(s"$label <${c.id}>", l)
+      val sub = buildParser(s"$name <${c.id}>", l)
       out += parsers(c) ~ sub ^^ { case v ~ OMAorOMID(t, args) => OMA(t, v :: args) }
     }
-    out.tail.foldRight(out.head)((a,b) => a | b)
+    out.tail.foldRight(out.head)((a,b) => a | b).named(name)
   }
   
   def asConst(s: Sym): Option[Constant] = s match {
