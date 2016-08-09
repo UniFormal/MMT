@@ -9,7 +9,7 @@ object StringMatcher {
 }
 
 /**
- * matches S1 in "beforeS1after"
+ * matches S1 in "before S1 after"
  */
 class StringMatcher(before: String, after: String) {
    private val baLength = before.length + after.length
@@ -23,7 +23,7 @@ class StringMatcher(before: String, after: String) {
 }
 
 /**
- * matches S1, S2 in "beforeS1middleS2after"
+ * matches S1, S2 in "before S1 middle S2 after"
  * 
  * first occurrence of 'middle' after 'before' is used if ambiguous
  */
@@ -45,7 +45,7 @@ class StringMatcher2(before: String, middle: String, after: String) {
 }
 
 /**
- * matches S1, ..., Sn in "beforeS1sep...sepSnafter"
+ * matches S1, ..., Sn in "before S1 sep ... sep Sn after"
  */
 class StringMatcher2Sep(before: String, sep: String, after: String) {
    private val baLength = before.length + after.length
@@ -62,7 +62,7 @@ class StringMatcher2Sep(before: String, sep: String, after: String) {
 }
 
 /**
- * matches S1, S2, S3 in "beforeS1middle1S2middle2S3after"
+ * matches S1, S2, S3 in "before S1 middle1 S2 middle2 S3 after"
  *
  * first occurrence of 'middle1' after 'before' and 'middle2' after 'middle1' is used if ambiguous
  */

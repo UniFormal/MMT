@@ -34,6 +34,13 @@ abstract class Storage extends QueryResolver with OntologyResolver {
     * a storage may add more/additional content than necessary, e.g., the containing file/theory or a dependency closure
     */
   def load(path: Path)(implicit controller: Controller)
+  
+  /** dereferences a path to a fragment of an already loaded StructuralElement and adds only that fragment
+   *  empty by default, storage that can retrieve individual fragments should override this
+   */
+  def loadFragment(neededPath: Path, existingPath: Path)(implicit controller: Controller) {
+    throw NotApplicable("")
+  }
 
   //TODO: method for querying
   // def query(q: ???): Iterator[Path]

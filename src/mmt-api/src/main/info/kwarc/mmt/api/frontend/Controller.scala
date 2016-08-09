@@ -23,7 +23,7 @@ import web._
   *
   * A Controller catches it and retrieves the item dynamically.
   */
-case class NotFound(path: Path) extends java.lang.Throwable {
+case class NotFound(path: Path, found: Option[Path] = None) extends java.lang.Throwable {
   override def toString = "NotFound(" + path + ")\n" + Stacktrace.asString(this)
 }
 
@@ -291,7 +291,7 @@ class Controller extends ROController with ActionHandling with Logger {
     protected def handler[A](code: => A): A = try {
       code
     } catch {
-      case NotFound(p) =>
+      case NotFound(p, _) =>
         throw GetError(p.toPath + " not known")
     }
 
@@ -339,31 +339,31 @@ class Controller extends ROController with ActionHandling with Logger {
       a
     }
     catch {
-      case e : NotFound =>
+      case e: NotFound =>
         val p = e.path
         if (previous.exists(_.path == p)) {
           throw GetError("retrieval failed (due to non-existence or cyclic dependency) for " + p)
         } else {
-          iterate({retrieve(p); a}, e :: previous)
+          iterate({retrieve(e); a}, e :: previous)
         }
     }
   }
 
   /** loads a path via the backend and reports it */
-  protected def retrieve(path: Path) {
-    log("retrieving " + path)
+  protected def retrieve(nf: NotFound) {
+    log("retrieving " + nf.path)
     logGroup {
       try {
         // loading objects into memory changes state, so make sure only one object is loaded at a time
         this.synchronized {
-          backend.load(path)(this)
+          backend.load(nf)(this)
         }
       } catch {
         case NotApplicable(msg) =>
           throw GetError("backend: " + msg)
       }
     }
-    log("retrieved " + path)
+    log("retrieved " + nf.path)
   }
 
   // ******************************* adding elements and in-memory change management

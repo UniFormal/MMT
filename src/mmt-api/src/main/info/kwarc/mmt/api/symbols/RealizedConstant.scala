@@ -57,15 +57,11 @@ object ParametricRuleConstantInterpreter {
       fromString(name, thy)
    }
    def fromString(s: String, thy: MPath): List[RuleConstant] = {
-      println("Here!")
       val inputs = s.split("""\s""").map(_.trim).filter(_.nonEmpty)
       val name = LocalName.parse(inputs.head, NamespaceMap(thy))
       val pars = inputs.tail.map(Path.parseS(_,NamespaceMap(thy)))
 
       val java = name.steps.mkString(".")
-      println("Input: " + s)
-      println("RuleName: " + name)
-      println("pars: " + pars.toList)
 
       // val applmethod = refclass.member(TermName("apply")).asMethod
       val rules = try {

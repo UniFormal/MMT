@@ -21,6 +21,9 @@ object StringSlice {
    def apply(s: String, from: Int) : StringSlice = StringSlice(s, from, s.length)
 }
 
+/** used by some [[Unparsed]] methods to determine bracketing structures */
+case class Brackets(pairs: List[(String,String)])
+
 /** \n, \r, and \r\n are read as \n */
 class Unparsed(input: String, error: String => Nothing) {
    private var current: Int = 0
@@ -94,7 +97,8 @@ class Unparsed(input: String, error: String => Nothing) {
    /**
     * returns all characters up to the next unescaped occurrence of 'until' (that occurrence is eaten but not returned)
     * @param until the delimiter to scan for
-    * @param exceptAfter the an escape character  
+    * @param exceptAfter the an escape character
+    * @return the found string (excluding the until), and false iff end of input reached  
     */
    def next(until: Char, exceptAfter: Char): (String,Boolean) = {
       var seen = ""
@@ -114,4 +118,6 @@ class Unparsed(input: String, error: String => Nothing) {
          (seen, true)
       }
    }
+   
+   //def nextSkipNestedBrackets(until: String, brackets: Brackets): (String, Boolean) 
 }

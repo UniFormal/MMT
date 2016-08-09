@@ -300,15 +300,17 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
   }
 
-  protected def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = {
-    libraries.Names.resolve(home, name)(controller.localLookup) match {
-      case Some(ce: Constant) =>
-        ComplexStep(ce.parent) / ce.name
+  /** resolve a name in the domain of a link and insert the necessary ComplexStep */
+  protected def resolveAssignmentName[A <: Declaration](cls: Class[A], home: Term, name: LocalName)(implicit state: ParserState) = {
+    TheoryExp.getSupport(home) foreach {p => controller.simplifier.flatten(p)}
+    controller.globalLookup.resolve(home, name) match {
+      case Some(d: Declaration) if cls.isInstance(d) =>
+        ComplexStep(d.parent) / d.name
       case Some(_) =>
-        errorCont(makeError(currentSourceRegion, "not a constant name: " + name))
+        errorCont(makeError(currentSourceRegion, "not a declaration name of the right type: " + name))
         name
       case None =>
-        errorCont(makeError(currentSourceRegion, "unknown name: " + name))
+        errorCont(makeError(currentSourceRegion, "unknown or ambiguous name: " + name))
         name
     }
   }
@@ -832,7 +834,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     */
   private def readConstant(givenName: LocalName, parent: MPath, link: Option[DeclaredLink],
                            context: Context)(implicit state: ParserState): Constant = {
-    val name = link.map { l => resolveName(l.from, givenName) }.getOrElse(givenName)
+    val name = link.map {l => resolveAssignmentName(classOf[Constant], l.from, givenName)}.getOrElse(givenName)
     val cpath = parent ? name
     //initialize all components as omitted
     val tpC = new TermContainer
@@ -910,7 +912,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   private def readStructure(parentInfo: IsMod, link: Option[DeclaredLink], context: Context,
                             isImplicit: Boolean)(implicit state: ParserState) {
     val givenName = readName
-    val name = link.map { l => resolveName(l.from, givenName) }.getOrElse(givenName)
+    val name = link.map {l => resolveAssignmentName(classOf[Structure], l.from, givenName)}.getOrElse(givenName)
     val spath = parentInfo.modParent ? name
     readDelimiter(":")
     val tpC = new TermContainer
@@ -1089,7 +1091,7 @@ trait MMTStructureEstimator {self: Interpreter =>
 
     // below: trivialize methods that are not needed for structure estimation
 
-    override def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = name
+    override def resolveAssignmentName[A](cls: Class[A], home: Term, name: LocalName)(implicit state: ParserState) = name
     override def getPatternsFromMeta(_o: Option[MPath]): List[(String, GlobalName)] = Nil
     override def errorCont(e: => SourceError)(implicit state: ParserState) {}
     override def getParseExt(se: StructuralElement, key: String): Option[ParserExtension] = key match {

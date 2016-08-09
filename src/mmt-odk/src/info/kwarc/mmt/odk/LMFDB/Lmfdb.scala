@@ -78,6 +78,10 @@ object LMFDBStore extends Storage {
        case _ =>
     }
   }
+  
+  override def loadFragment(needed: Path, known: Path)(implicit controller: Controller) {
+    load(needed)
+  }
 
   private def getElement(path: GlobalName, schema: DeclaredTheory, db: DB)(implicit controller: Controller) {
     def error(msg: String) = throw BackendError(msg, path)

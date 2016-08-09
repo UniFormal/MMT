@@ -1,10 +1,12 @@
 package info.kwarc.mmt.api.libraries
+
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.utils._
+import utils.MyList._
 
 import scala.collection.mutable.HashSet
 
@@ -122,7 +124,23 @@ abstract class Lookup {self =>
       (dom,Some(l))
    }
    
-   /**
+  /** resolves a LocalName in a theory or in any theory visible to it, returns None if ambiguous */
+  def resolve(home: Term, name: LocalName) : Option[StructuralElement] = {
+      {
+         getO(home, name)  // symbol in the current theory
+/*      } orElse {
+         home match {
+            case OMMOD(p) => getO(p.parent ? name) // module in the namespace of the current theory
+            case _ => None
+         }*/
+      } orElse {
+         val incls = visible(home).toList
+         val es = incls mapPartial {i => getO(i, name)}
+         if (es.length == 1) Some(es(0)) else None  // uniquely resolvable symbol in an included theory
+      }
+   }
+
+  /**
     * A Traverser that recursively expands definitions of Constants.
     * It carries along a test function that is used to determine when a constant should be expanded. 
     */

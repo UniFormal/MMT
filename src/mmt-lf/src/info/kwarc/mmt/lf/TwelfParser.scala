@@ -1038,7 +1038,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
    }
 
    private def resolveAssignmentName(home: Term, name: LocalName) = {
-      libraries.Names.resolve(home, name)(controller.globalLookup) match {
+      controller.globalLookup.resolve(home, name) match {
           case Some(ce: Constant) => Some(ComplexStep(ce.parent) / ce.name)
           case Some(_) => None
           case None => None

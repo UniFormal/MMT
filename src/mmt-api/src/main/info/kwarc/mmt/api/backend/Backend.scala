@@ -48,12 +48,16 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     *
     * throws [[NotApplicable]] if the resource is not known/available, [[BackendError]] if it is but something goes wrong
     */
-  def load(p: Path)(implicit controller: Controller) {
+  def load(nf: NotFound)(implicit controller: Controller) {
+    val p = nf.path
     log("loading " + p)
     stores foreach {hd =>
       log("trying " + hd)
       try {
-        hd.load(p)
+        nf.found match {
+          case None => hd.load(p)
+          case Some(exPath) => hd.loadFragment(p, exPath)
+        }
         return
       } catch {case NotApplicable(msg) =>
         log(hd.toString + " not applicable to " + p + (if (msg != "") " ("+msg+")" else ""))

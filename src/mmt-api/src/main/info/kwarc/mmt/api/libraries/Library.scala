@@ -121,9 +121,8 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
         case c: CPath => throw GetError("retrieval of components not possible")
      }
   }
-  /** retrieval in a module expressions */
+  /** retrieval in a module expression */
   def get(home: Term, name: LocalName, error: String => Nothing): Declaration = getDeclarationInTerm(home, name, error)
-
 
   // ******************* document level retrieval
   /**
@@ -373,7 +372,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
              case None =>
                error("cannot resolve " + mpath)
            }
-         case _ => throw NotFound(t.path ? name) // [[Storage]]s may add declarations to a theory dynamically, so we throw NotFound
+         case _ => throw NotFound(t.path ? name, Some(t.path)) // [[Storage]]s may add declarations to a theory dynamically, so we throw NotFound
        }
      }
   }
