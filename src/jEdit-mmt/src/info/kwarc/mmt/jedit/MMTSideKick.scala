@@ -2,7 +2,12 @@ package info.kwarc.mmt.jedit
 
 import javax.swing.tree.DefaultMutableTreeNode
 
+import scala.util.{Try,Success,Failure}
+
+import org.gjt.sp.jedit._
+import sidekick._
 import errorlist._
+
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.documents._
@@ -14,8 +19,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
-import org.gjt.sp.jedit._
-import sidekick._
 
 class MMTSideKick extends SideKickParser("mmt") with Logger {
    // gets jEdit's instance of MMTPlugin, jEdit will load the plugin if it is not loaded yet
@@ -88,7 +91,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       }
       new IDCompletion(view, controller, Nil, "", Nil)
    }
-
+   
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {
       val path = File(buffer.getPath)
       val errorCont = new ErrorListForwarder(mmt.errorSource, controller, path)
@@ -106,26 +109,48 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          log("parsing " + path)
          val tree = new SideKickParsedData(path.toJava.getName)
          val root = tree.root
-         val doc = controller.read(ps, true, true)(errorCont) match {
+         // read the document in a task that can be cancelled by the stop method
+         val task = new CancellableTask(controller.read(ps, true, true)(errorCont) match {
             case d: Document => d
             case _ => throw ImplementationError("document expected")
+         })
+         currentTask = Some(task)
+         // inspect the result of reading, fall back to loading whatever document is in memory
+         val doc = task.result match {
+           case Success(d) => d
+           case Failure(TaskCancelled) =>
+             val expectedPath = ps.parentInfo match {
+               case IsRootDoc(dp) => dp
+               case _ => throw ImplementationError("non document path")
+             }
+             val dOpt = controller.localLookup.getO(expectedPath)
+             controller.clear // try to restore consistent state
+             dOpt match {
+               case Some(d: Document) =>
+                 errorCont(new ParseError("reading was interrupted, returning partial result"))
+                 d
+               case _ => throw ImplementationError("non document")
+             }
+           case Failure(e) => throw e
          }
          // add narrative structure of doc to outline tree
          buildTreeDoc(root, doc)
-         // register errors with ErrorList plugin
-         // errorCont.readd
          tree
       } catch {case e: Exception =>
          val msg = e.getClass + ": " + e.getMessage
          val pe = ParseError("unknown error: " + msg).setCausedBy(e)
          log(msg)
          errorCont(pe)
-          SideKickParsedData.getParsedData(jEdit.getActiveView)
+         SideKickParsedData.getParsedData(jEdit.getActiveView)
       }
    }
 
+   /** stores the current parse task so that it can be stopped by the stop methpd */
+   private var currentTask: Option[CancellableTask[Document]] = None
+   // this is called from another tread and should interrupt parsing
    override def stop {
-      // TODO this is called from another tread and should interrupt parsing, but it's tricky because we don't even know which extension it is
+      // this may cause an inconsistent state but calling clear in parse method should fix most problems  
+      currentTask.foreach {_.cancel}
    }
 
    private def getRegion(e: metadata.HasMetaData) : Option[SourceRegion] = SourceRef.get(e).map(_.region)

@@ -3,6 +3,8 @@ package info.kwarc.mmt.api.utils
 import scala.concurrent._
 import java.lang._
 
+case object TaskCancelled extends java.lang.Throwable
+
 /**
  * Computes a value in a separate thread, thus allowing cancellation of the computation
  * 
@@ -18,12 +20,19 @@ class CancellableTask[A](c: => A) {
          try {
             val a = c
             p.success(a)
-         } catch {case e: Exception =>
-            p.failure(e)
+         } catch {
+           case e: Exception =>
+             p.failure(e)
+           case e: java.lang.ThreadDeath =>
+             p.failure(TaskCancelled)
          }
       }
    })
    t.start
+   
+   /** waits for the computation and returns the result */
+   def result: scala.util.Try[A] = Await.ready(future, scala.concurrent.duration.Duration.Inf).value.get
+   
    /** cancels the computation
     *  
     *  This may produce inconsistent states due to half-executed side effects, but it seems to be the only way to
@@ -31,6 +40,5 @@ class CancellableTask[A](c: => A) {
     */
    def cancel {
       t.stop
-      p.failure(new Exception)
    }
 }
