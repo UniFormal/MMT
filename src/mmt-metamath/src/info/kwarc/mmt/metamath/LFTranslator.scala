@@ -8,6 +8,9 @@ import Metamath._
 import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.api.modules.DeclaredTheory
+import org.metamath.scala.Database
+import info.kwarc.mmt.api.MPath
+import org.metamath.scala.Assert
 
 
 class LFTranslator(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger {
@@ -16,13 +19,13 @@ class LFTranslator(val controller: Controller, bt: BuildTask, index: Document =>
 
   val path = bt.narrationDPath.^!.^!
   
-  def addDatabase(db: MMDatabase) {
-    require(db.mod == Metamath.setmm)
-    val theory = new DeclaredTheory(path, db.mod.name, Some(Metamath.prelude), Context.empty)
-    db.statements.list foreach {
-      case Assert(label, formula, frame, _, _) =>
+  def addDatabase(db: Database) {
+    val mod = Metamath.setmm
+    val theory = new DeclaredTheory(path, mod.name, Some(Metamath.prelude), Context.empty)
+    db.decls foreach {
+      case a: Assert =>
         val term = ???
-        theory add symbols.Constant(OMMOD(db.mod), label.name, Nil, Some(term), None, None)
+        theory add symbols.Constant(OMMOD(mod), LocalName(a.label), Nil, Some(term), None, None)
       case _ =>
     }
     controller add theory
