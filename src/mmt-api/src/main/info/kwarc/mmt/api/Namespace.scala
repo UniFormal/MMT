@@ -17,18 +17,19 @@ case class NamespaceMap(base: Path, prefixes: List[(String,URI)] = Nil) {
    def add(p: String, u: String): NamespaceMap = add(p, URI(expand(u)))
    /** default namespace (URI of base) */
    def default = base.doc.uri
+   /** expands a CURIE in a string into a URI */
+   def expand(s: String): String = expand(URI(s)).toString
    /** expands a CURIE into a URI */
-   def expand(s: String): String = {
-      val u = URI(s)
+   def expand(u: URI): URI =
       if (u.scheme.isDefined && u.authority.isEmpty) {
+         val uS = u.copy(scheme = None)
          val p = u.scheme.get
          get(p) match {
-            case Some(r) => r.toString + s.substring(p.length+1)
-            case None => s
+            case Some(r) => URI(r.toString + uS.toString)
+            case None => uS
          }
-      } else s
-   }
-   /** compactifies an URI into a CURIE */
+      } else u
+   /** compactifies a URI into a CURIE */
    def compact(s: String): String = {
       val long = URI(s)
       prefixes.foreach {
@@ -36,6 +37,8 @@ case class NamespaceMap(base: Path, prefixes: List[(String,URI)] = Nil) {
       }
       return s
    }
+   /** parses, expands CURIE and resolves against base */
+   def resolve(u : String) = base.doc.uri resolve expand(utils.URI(u))
 }
 
 import scala.xml._

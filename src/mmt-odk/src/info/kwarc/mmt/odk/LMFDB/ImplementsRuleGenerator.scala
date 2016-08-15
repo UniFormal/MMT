@@ -27,10 +27,11 @@ class ImplementsRuleGenerator extends ChangeListener {
      }
   }
   
-  private def getImplemented(c: Constant): Option[GlobalName] = c.metadata.getValues(implKey).headOption.flatMap {
-     case OMS(p) => Some(p)
-     case _ => None
-  }
+  private def getImplemented(c: Constant): Option[GlobalName] =
+    c.metadata.getLinks(implKey).headOption.map(Path.fromURI(_, NamespaceMap.empty)).flatMap {
+      case n: GlobalName => Some(n)
+      case _ => None
+    }
      
   def onUpdate(e: StructuralElement) {
      onAdd(e)

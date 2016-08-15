@@ -416,6 +416,7 @@ object Path {
       case p : ContentPath => p
       case p => throw ParseError("document path expected: " + p)
    }
+   def fromURI(s : URI,nsmap : NamespaceMap) : Path = parse(s.toString,nsmap) // TODO properly
 }
 
 /** 
