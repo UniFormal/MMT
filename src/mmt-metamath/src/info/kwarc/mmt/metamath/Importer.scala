@@ -25,13 +25,12 @@ class Importer extends archives.Importer {
     val e = try {
       log("File parsing...")
       val db = parser.parse
-      log("Math parsing...")
-      new Grammar(db).parseAll
       log("Add to library...")
-      val conv = new Translator(controller, bf, index)
-      conv.addDatabase(db, Metamath._base ? bf.inFile.name)
+      val conv = new LFTranslator(controller, bf, index)
+      conv.addDatabase(db)
     } catch {
-      case MMError(s) => println(s)
+      case e @ MMError(s) => e.printStackTrace(); println(s)
+      case e => e.printStackTrace()
     }
 
     BuildResult.empty

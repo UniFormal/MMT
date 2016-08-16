@@ -35,8 +35,6 @@ object Metamath {
    val FL = OMS(prelude ? "FL")
    
    val setmm = _base ? "set.mm"
-   val lfbase = _base / "lf"
-   val setlf = lfbase ? "set.mm"
 
    def sconst(s: String) = OMS(setmm ? s)
    
