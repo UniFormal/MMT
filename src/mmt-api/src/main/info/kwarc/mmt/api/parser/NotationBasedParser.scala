@@ -136,9 +136,12 @@ class NotationBasedParser extends ObjectParser {
     val notations = tableNotations(parsing)
     Variables.reset()
     log("parsing: " + pu.term)
-    log("notations:")
+    log("rules:")
     logGroup {
+      log("parsing")
       notations.foreach(n => log(n.toString))
+      log("lexing")
+      lexing.foreach(r => log(r.toString))
     }
     val escMan = new EscapeManager(lexing)
     val tl = TokenList(pu.term, escMan, pu.source.region.start)
