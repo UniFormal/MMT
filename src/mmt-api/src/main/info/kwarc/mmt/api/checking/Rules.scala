@@ -30,6 +30,15 @@ trait CheckingCallback {
    def dryRun[A](code: => A): DryRunResult = MightFail
 }
 
+/**
+  * rules can throw this exception after being called if they are not applicable
+  * because actual back-tracking is not implemented yet, they may only do so
+  * if they have not recursed into any state-changing judgments yet
+  */
+trait MaytriggerBacktrack {
+   case class Backtrack() extends Exception("Not Applicable")
+}
+
 /** super class of all rules primarily used by the [[Solver]] */
 trait CheckingRule extends SyntaxDrivenRule
 
@@ -40,8 +49,6 @@ object TypingRule {
    object SwitchToInference extends java.lang.Throwable
 }
 
-class RuleNotApplicable extends Exception("Not Applicable")
-
 /** An TypingRule checks a term against a type.
  *  It may recursively call other checks.
  *  @param head the head of the type to which this rule is applicable 
@@ -50,8 +57,8 @@ abstract class TypingRule(val head: GlobalName) extends CheckingRule {
    /**
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm the term
-    *  @param the type
-    *  @param context its context
+    *  @param tp the type
+    *  @param stack its context
     *  @return true iff the typing judgment holds
     *  
     *  may throw SwitchToInference
@@ -62,13 +69,46 @@ abstract class TypingRule(val head: GlobalName) extends CheckingRule {
 /**
  * A SubtypingRule handles [[Subtyping]] judgements
  */
-abstract class SubtypingRule extends CheckingRule {
+abstract class SubtypingRule extends CheckingRule with MaytriggerBacktrack {
    def applicable(tp1: Term, tp2: Term): Boolean
    /**
     * pre all arguments covered
     * @return Some(b) if the judgment was proved/disproved, None if the result is inconclusive
     */
    def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History) : Option[Boolean]
+}
+
+sealed abstract class Variance
+case object Covariant extends Variance
+case object Contravariant extends Variance
+case object Invariant extends Variance
+case object Ignorevariant extends Variance
+
+/** |- op(args1) <: op(args2)  according to variances */
+class VarianceRule(val head: GlobalName, variance: List[Variance]) extends SubtypingRule {
+  def applicable(tp1: Term, tp2: Term) = (tp1,tp2) match {
+    case (OMA(OMS(this.head), _), OMA(OMS(this.head), _)) => true
+    case _ => false
+  }
+  def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+    val OMA(_, args1) = tp1
+    val OMA(_, args2) = tp2
+    if (args1.length != args2.length)
+      return Some(false)
+    if (args1.length != variance.length) {
+      return Some(false) // TODO what to do here?
+    }
+    history += "checking subtyping by applying variance rule"
+    val b = ((args1 zip args2) zip variance) forall {case ((a1,a2),v) =>
+        v match {
+          case Covariant => solver.check(Subtyping(stack, a1, a2))
+          case Contravariant => solver.check(Subtyping(stack, a2, a1))
+          case Invariant => solver.check(Equality(stack, a1, a2, None))
+          case Ignorevariant => true
+        }
+    }
+    Some(b)
+  }
 }
 
 /** A SupertypeRule represnts a type as a subtype of a bigger one
@@ -91,7 +131,7 @@ abstract class SupertypeRule(val head: GlobalName) extends CheckingRule {
  *  It may recursively infer the types of components.
  *  @param head the head of the term whose type this rule infers 
  */
-abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) extends CheckingRule {
+abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) extends CheckingRule with MaytriggerBacktrack {
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm the term
@@ -117,7 +157,7 @@ abstract class ComputationRule(val head: GlobalName) extends CheckingRule {
     *  @param check provides callbacks to the currently solved system of judgments
     *  @param tm the term to simplify
     *  @param covered if true, term can be assumed to be well-formed
-    *  @param context its context
+    *  @param stack its context
     *  @return the simplified term if simplification was possible
     */
    def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term]
@@ -159,7 +199,7 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
     *  @param tm1 the first term
     *  @param tm2 the second term
     *  @param tp their type
-    *  @param context their context
+    *  @param stack their context
     *  @return true iff the judgment holds
     */
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean]
