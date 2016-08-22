@@ -92,6 +92,10 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
     def semanticHighlighting(offset: Int): Option[SyntaxStyle] = {
       val as = MMTSideKick.getAssetAtOffset(editPane.getView, offset)
       // TODO: make this smarter (see jEdit's syntax highlighting preferences for the available token classes)
+      /* TODO some objects are missing source references and are marked like their super-term, i.e., as a ComplexTerm
+       * some OMV's, some OMID's, some top level lambdas in definitions (even though subobjects have source references)
+       * it's unclear why these objects lose or never acquire their source references  
+       */
       val tcOpt = as match {
         case Some(oa: MMTObjAsset) =>
           val tc = oa.pragmatic match {
@@ -102,7 +106,7 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
               if (oa.getScope == Some(op.module))
                 Token.KEYWORD3  // operator from current theory
               else
-                Token.KEYWORD4  // operator from meta-theory
+                Token.KEYWORD4  // operator from meta-theory or included theory
             case ComplexTerm(op,_,_,_) =>
               // applied operator and delimiters
               if (oa.getScope == Some(op.module))
