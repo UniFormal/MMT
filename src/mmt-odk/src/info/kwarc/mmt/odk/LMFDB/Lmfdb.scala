@@ -91,12 +91,18 @@ object LMFDBStore extends Storage {
        case t: Term => t
        case _ => error("metadata key 'key' not found in schema: " + schema.path)
     }
+
+    // HACK HACK HACK
+    val spath = OMS(Path.parseS("http://www.opendreamkit.org/?Strings?string", NamespaceMap.empty))
+
     val key = schema.metadata.getValues(Metadata.key).headOption.getOrElse {
-       error("metadata key 'key' not found in schema: " + schema.path)
+      error("metadata key 'key' not found in schema: " + schema.path)
     } match {
-       case StringLiterals(k) => k
-       case _ => error("metadata key 'key' is not a string in schema: " + schema.path)
+       case UnknownOMLIT(a, `spath`) => a.toString
+       case StringLiterals(k) => k // This no longer works
+       case s => println(s.getClass); error("metadata key 'key' is not a string in schema: " + schema.path)
     }
+
     
     val fields = schema.getConstants.flatMap {c =>
        c.metadata.getValues(Metadata.codec).headOption.toList.collect {
@@ -115,7 +121,7 @@ object LMFDBStore extends Storage {
                }
                JSONObject(flat)
             case _ =>
-               error("Error: ill-formed JSON returned dfrom LMFDB")
+               error("Error: ill-formed JSON returned from LMFDB")
        }
        case _ => error("Error querying LMFDB: not a JSON Object")
      }
