@@ -22,6 +22,9 @@ sealed abstract class MMTAsset(name: String, val region: SourceRegion)
   setEnd(MyPosition(region.end.offset+1))
   /** the base URIto use in the context of this asset */
   def getScope : Option[MPath]
+  
+  // this line is helpful for debugging: it shows the source regions in the sidekick tree
+  // setShort(name + " [" + region.toString + "]")
 }
 
 /**
@@ -58,7 +61,7 @@ class MMTElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion
  * @param parent the component containing the term
  * @param subobjectPosition the position in that term
  */ 
-class MMTObjAsset(val obj: Obj, val context: Context, val parent: CPath, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
+class MMTObjAsset(val obj: Obj, val pragmatic: Obj, val context: Context, val parent: CPath, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
   obj.head map {case p =>
     setLongDescription(p.toPath)
   }
