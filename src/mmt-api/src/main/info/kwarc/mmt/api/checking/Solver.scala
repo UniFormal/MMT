@@ -19,7 +19,7 @@ import scala.util.{Failure, Try}
  * false should not be returned without generating an error
  */
 
-object InferredType extends TermProperty[Term](utils.mmt.baseURI / "clientProperties" / "solver" / "inferred")
+object InferredType extends TermProperty[(Branchpoint,Term)](utils.mmt.baseURI / "clientProperties" / "solver" / "inferred")
 
 /** returned by [[Solver.dryRun]] as the result of a side-effect-free check */
 sealed trait DryRunResult
@@ -31,6 +31,15 @@ object WouldFail extends java.lang.Throwable with DryRunResult {
 }
 case class Success[A](result: A) extends DryRunResult {
    override def toString = "will succeed"
+}
+
+class Branchpoint(val parent: Option[Branchpoint], val delayed: List[DelayedConstraint], val depLength: Int, val solution: Context) {
+  def isRoot = parent.isEmpty
+  /** @return true if this branch contains anc */
+  def descendsFrom(anc: Branchpoint): Boolean = parent.contains(anc) || (parent match {
+    case None => false
+    case Some(p) => p.descendsFrom(anc)
+  })
 }
 
 
@@ -149,6 +158,56 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             pushedStates = pushedStates.tail
          }
       }
+      
+      /* first attempt at full backtracking; the code below is already partially used but has no effect yet
+       * - branchpoints build the tree and save the current state
+       * - backtracking restores current state
+       * - cached inferred types store the branchpoint, results are only valid if on branch
+       * 
+       * - new solutions are still collected in the state but not used anymore (minor de-optimization) to make constraints stateless
+       * 
+       * problems
+       * - how to avoid reproving constraints that are unaffected by backtracking?
+       * - how to backtrack when an error stems from a delayed constraint and the call to backtrackable has already terminated?
+       */
+      private var currentBranch: Branchpoint = makeBranchpoint(None)
+      def getCurrentBranch = currentBranch
+      def setCurrentBranch(bp: Branchpoint) {
+        currentBranch = bp
+      }
+      /** restore the state from immediately before bp was created */
+      private def backtrack(bp: Branchpoint) {
+        // restore constraints
+        _delayed = bp.delayed
+        // remove new dependencies
+        _dependencies = _dependencies.drop(_dependencies.length - bp.depLength)
+        // restore old solution
+        _solution = bp.solution
+        // no need to restore errors - any error should result in backtracking when !currentBranch.isRoot
+      }
+      private def makeBranchpoint(parent: Option[Branchpoint] = Some(currentBranch)) = {
+        new Branchpoint(parent, delayed, dependencies.length, solution)
+      }
+      class Backtrack extends Throwable
+      /** set a backtracking point and run code
+       *  @return result of code or None if error occurred
+       *  
+       *  even if this succeeds, new constraints may have been added that will fail in the future 
+       */
+      def backtrackable[A](code: => A): Option[A] = {
+        val bp = makeBranchpoint()
+        currentBranch = bp
+        try {
+          Some(code)
+        } catch {
+          case b: Backtrack =>
+            backtrack(bp)
+            None
+        } finally {
+          // even if we do not backtrack, we must update the current branch
+          currentBranch = currentBranch.parent.get // is defined because it was set above 
+        }
+      }
    }
    import state._
 
@@ -168,10 +227,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * This solution may contain unsolved variables, and there may be unresolved constraints.
     */
    def getPartialSolution : Context = solution
-   /**
-    * @return the context containing only the unsolved variables
-    */
+   /** @return the context containing only the unsolved variables */
    def getUnsolvedVariables : Context = solution.filter(_.df.isEmpty)
+   /** @return the the unsolved variables */
+   def getSolvedVariables : List[LocalName] = solution.filter(_.df.isDefined).map(_.name)
 
    /** @return the current list of unresolved constraints */
    def getConstraints : List[DelayedConstraint] = delayed
@@ -377,7 +436,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
    def apply(j: Judgement): Boolean = {
       val h = new History(Nil)
-      addConstraint(new DelayedJudgement(j, h, true))
+      val bi = new BranchInfo(h, getCurrentBranch)
+      addConstraint(new DelayedJudgement(j, bi, true))
       activate
    }
 
@@ -397,14 +457,18 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       } else {
          log("delaying: " + j.present)
          history += "(delayed)"
-         val dc = new DelayedJudgement(j, history, incomplete)
+         val bi = new BranchInfo(history, getCurrentBranch)
+         val dc = new DelayedJudgement(j, bi, incomplete)
          addConstraint(dc)
       }
       true
    }
 
    /** true if there is an activatable constraint that is not incomplete */
-   private def existsActivatable : Boolean = delayed.exists {d => d.isActivatable && !d.incomplete}
+   private def existsActivatable : Boolean = {
+     val solved = getSolvedVariables
+     delayed.exists {d => d.isActivatable(solved) && !d.incomplete}
+   }
 
    /**
     * processes the next activatable constraint until none are left
@@ -417,9 +481,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      def prepareS(s: Stack) =
         Stack(controller.simplifier(s.context ^^ subs, constantContext ++ solution, rules))
      // look for an activatable constraint
-     delayed foreach {_.solved(newsolutions)}
-     clearNewSolutions
-     val dcOpt = delayed.find {d => d.isActivatable && !d.incomplete} orElse {
+     val solved = getSolvedVariables
+     //delayed foreach {_.solved(newsolutions)} -- removed optimization for backtracking
+     clearNewSolutions // can be removed
+     val dcOpt = delayed.find {d => d.isActivatable(solved) && !d.incomplete} orElse {
          log("first invocation or no activatable constraint left, trying other constraint")
          delayed.find {_.incomplete}
      }
@@ -433,6 +498,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         case Some(dc) =>
            // activate a constraint
            removeConstraint(dc)
+           setCurrentBranch(dc.branch)
            // mayhold is the result of checking the activated constraint
            val mayhold = dc match {
               case dj: DelayedJudgement =>
@@ -506,7 +572,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          case Some(tp) =>
             cont(tp)
          case None =>
-            addConstraint(new DelayedInference(stack, history + "(inference delayed)", tm, cont))
+            val bi = new BranchInfo(history + "(inference delayed)", getCurrentBranch)
+            addConstraint(new DelayedInference(stack, bi, tm, cont))
             true
       }
    }
@@ -801,8 +868,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      history += "inferring type of " + presentObj(tm)
      // return previously inferred type, if any (previously unsolved variables are substituted)
      InferredType.get(tm) match {
-        case s @ Some(_) =>
-           return s.map(_ ^^ solution.toPartialSubstitution)
+        case Some((bp,tmI)) if getCurrentBranch.descendsFrom(bp) =>
+           return Some(tmI ^^ solution.toPartialSubstitution)
         case _ =>
      }
      val res = logGroup {
@@ -867,7 +934,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      log("inferred: " + res.getOrElse("failed"))
      // remember inferred type
      //TODO commented out for now because it clashes with forgetting solutions during a dryRun
-     //if (res.isDefined) InferredType.put(tm, res.get)
+     //res foreach {r => InferredType.put(tm, (getCurrentBranch,r))}
      res
    }
 

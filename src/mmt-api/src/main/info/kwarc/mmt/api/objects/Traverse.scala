@@ -45,13 +45,13 @@ object Traverser {
 	         ComplexTerm(op, newSubs, recCon(bound), newArgs).from(t)
 	      case OMA(f, args) => 
 	         val newArgs = args.map(a => rec(a))
-	         OMA(rec(f), newArgs)
+	         OMA(rec(f), newArgs).from(t)
 	      case OMPMOD(p, args) =>
 	         val newArgs = args.map(rec)
 	         OMPMOD(p, newArgs).from(t)
 		   case OMID(_) => t
 		   case OMV(_) => t
-			 case OML(VarDecl(n, tp, df, nt)) => OML(VarDecl(n, tp map rec, df map rec, nt))
+			 case OML(VarDecl(n, tp, df, nt)) => OML(VarDecl(n, tp map rec, df map rec, nt)).from(t)
 		   case t: OMLITTrait => t
 		   case OMFOREIGN(_) => t
 		   case OMATTR(arg,key,value) => OMATTR(rec(arg), key, rec(value)).from(t) //TODO traversal into key

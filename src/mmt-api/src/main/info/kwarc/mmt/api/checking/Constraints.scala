@@ -3,27 +3,26 @@ package info.kwarc.mmt.api.checking
 import info.kwarc.mmt.api._
 import objects._
 
+class BranchInfo(val history: History, val backtrack: Branchpoint)
+
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
 abstract class DelayedConstraint(val incomplete: Boolean) {
   protected val freeVars: scala.collection.Set[LocalName]
-  val history: History
-  private var activatable = false
-  /** This must be called whenever a variable that may occur free in this constraint has been solved */
-  def solved(names: List[LocalName]) {
-     if (! activatable && (names exists {name => freeVars contains name})) activatable = true
-  }
-  /** @return true if since delaying, a variable has been solved that occurs free in this Constraint */
-  def isActivatable = activatable
+  val branchInfo: BranchInfo
+  def history = branchInfo.history
+  def branch = branchInfo.backtrack
+  /** @return true if a solved variable occurs free in this Constraint */
+  def isActivatable(solved: List[LocalName]) = solved exists {name => freeVars contains name}
 }
 
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
-class DelayedJudgement(val constraint: Judgement, val history: History, incomplete: Boolean) extends DelayedConstraint(incomplete) {
+class DelayedJudgement(val constraint: Judgement, val branchInfo: BranchInfo, incomplete: Boolean) extends DelayedConstraint(incomplete) {
   protected val freeVars = constraint.freeVars
   override def toString = constraint.toString
 }
 
 /** A wrapper around a continuation function to be delayed until a certain type inference succeeds */
-class DelayedInference(val stack: Stack, val history: History, val tm: Term, val cont: Term => Boolean) extends DelayedConstraint(false) {
+class DelayedInference(val stack: Stack, val branchInfo: BranchInfo, val tm: Term, val cont: Term => Boolean) extends DelayedConstraint(false) {
    protected val freeVars = scala.collection.immutable.ListSet(tm.freeVars:_*)
    override def toString = "delayed inference of "  + tm.toString
 }
