@@ -16,6 +16,7 @@ case class NotApplicable(message: String = "") extends Error(message)
 abstract class Storage extends QueryResolver with OntologyResolver {
   protected def loadXML(u: URI, dpath: DPath, reader: BufferedReader)(implicit controller: Controller) {
     val ps = new ParsingStream(u, IsRootDoc(dpath), NamespaceMap(dpath), "omdoc", reader)
+    controller.report("storage", "found by " + toString + " at URL " + u)
     controller.read(ps, interpret = false)(ErrorThrower)
   }
 
