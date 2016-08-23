@@ -5,9 +5,9 @@ import frontend._
 import objects._
 import symbols._
 import checking._
+import info.kwarc.mmt.LFX.Records.{Getfield, Recexp}
 import uom._
 import utils._
-
 import info.kwarc.mmt.lf._
 
 class ImplementsRuleGenerator extends ChangeListener {
@@ -68,18 +68,20 @@ class ImplementsRuleGenerator extends ChangeListener {
  * @param names structure of the left hand side
  * @param rhs the right hand side
  */
-class ImplementsRule(val from: Constant, recordType: Term, impl: GlobalName) extends DepthRule(impl, records.Intro.path) {
+// TODO Needs to be reimplemented
+class ImplementsRule(val from: Constant, recordType: Term, impl: GlobalName) extends DepthRule(impl, Recexp.path) {
     override def toString = s"$impl(record) ~~> ${from.name}(record)"
     
-    def apply : Rewrite = {(bef,inn,aft) =>
-       if (!aft.isEmpty)
+    def apply : Rewrite = {(bef,inn,aft) => /*
+       if (aft.nonEmpty)
           NoChange
        else inn match {
           // ignoring before, which might contain, e.g., implicit arguments
           case tp :: fields if tp == recordType =>
-             val t = records.Elim(records.Intro(tp, fields), from.name)
+             val t = Getfield(Recexp(fields), from.name)
              GlobalChange(t)
           case _ => NoChange
-       }
+       } */ NoChange
     }
+
 }

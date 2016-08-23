@@ -27,10 +27,10 @@ class Importer extends archives.Importer {
       val db = parser.parse
       log("Add to library...")
       val conv = new LFTranslator(controller, bf, index)
-      conv.addDatabase(db)
+      val doc = conv.addDatabase(db)
+      index(doc)
     } catch {
-      case e @ MMError(s) => e.printStackTrace(); println(s)
-      case e => e.printStackTrace()
+      case e : Exception => throw LocalError("error while translating").setCausedBy(e)
     }
 
     BuildResult.empty

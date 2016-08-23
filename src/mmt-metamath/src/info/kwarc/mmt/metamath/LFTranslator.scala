@@ -3,12 +3,10 @@ package info.kwarc.mmt.metamath
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.Stack
 import scala.collection.mutable.TreeSet
-
 import org.metamath.scala._
-
 import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.archives.BuildTask
-import info.kwarc.mmt.api.documents.Document
+import info.kwarc.mmt.api.documents.{Document, MRef}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.frontend.Logger
 import info.kwarc.mmt.api.modules.DeclaredTheory
@@ -32,10 +30,13 @@ class LFTranslator(val controller: Controller, bt: BuildTask, index: Document =>
 
   val path = bt.narrationDPath.^!.^!
 
-  def addDatabase(db: Database) {
+  def addDatabase(db: Database): Document = {
     val mod = Metamath.setmm
+    val doc = new Document(path, root = true)
+    controller add doc
     val theory = new DeclaredTheory(path, mod.name, Some(LF.theoryPath), Context.empty)
     controller add theory
+    controller add MRef(doc.path, theory.path)
     val tr = new LFDBTranslator()(db)
     db.decls foreach {
       case a: Assert if a.syntax || a.typecode.id == "|-" =>
@@ -45,7 +46,7 @@ class LFTranslator(val controller: Controller, bt: BuildTask, index: Document =>
         controller add new OpaqueText(mod.toDPath, List(StringFragment(c.text)))
       case _ =>
     }
-    controller add theory
+    doc
   }
 }
 
@@ -162,7 +163,7 @@ class LFDBTranslator(implicit db: Database) {
   }
 
   def align(a: Assert): Term =
-    OMS(Metamath.setmm ? alignments.get(a).getOrElse(a.label))
+    OMS(Metamath.setmm ? alignments.getOrElse(a,a.label))
 
   type DependVars = HashMap[Floating, TreeSet[Floating]]
   def getDependVars(stmt: Assert): DependVars = {
