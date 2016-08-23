@@ -351,7 +351,7 @@ class Controller extends ROController with ActionHandling with Logger {
 
   /** loads a path via the backend and reports it */
   protected def retrieve(nf: NotFound) {
-    log("retrieving " + nf.path)
+    log("asking backend for URI " + nf.path)
     logGroup {
       try {
         // loading objects into memory changes state, so make sure only one object is loaded at a time
