@@ -59,7 +59,8 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
          Some(selectionColor)
        else
          //TODO if there is a single selection in the current line, jedit is still putting the lineHighlightColor
-         None    }
+         None
+    }
     /** paints MMT delimiter 'letter' at 'startPoint' with background 'color' */
     def paintDelim(startPoint: Point, color: Color, letter: String) {
        gfx.setColor(color)
@@ -116,7 +117,8 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
             case _: OMLITTrait => Token.LITERAL1
             case _ => Token.INVALID
           }
-          Some(tc)        case _ => None
+          Some(tc)
+        case _ => None
       }
       tcOpt.map(tc => styles(tc))
     }
@@ -141,7 +143,7 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
              val globalOffset = segment.offset + localOffset 
              val styleOpt = semanticHighlighting(globalOffset)
              styleOpt foreach {style =>
-                paintChar(globalOffset, startPoint, style, c.toChar)
+                if (MMTOptions.semantichighlighting.get.getOrElse(false)) paintChar(globalOffset, startPoint, style, c.toChar)
              }
          }
        }
@@ -200,7 +202,8 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
                case _ => null
             }
       }
-   }}
+   }
+}
 
 //to highlight the current expression implement this
 //class MMTMatcher extends org.gjt.sp.jedit.textarea.StructureMatcher

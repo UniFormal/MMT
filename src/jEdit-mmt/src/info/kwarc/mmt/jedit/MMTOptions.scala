@@ -84,7 +84,8 @@ object MMTOptions {
   val startup = new StringOption("startup", "custom startup msl file")
   val config = new StringOption("config", "custom configuration file")
   val archives = new StringOption("archives", "custom folder that contains archives")
-  val all = List(startup, config, archives)
+  val semantichighlighting = new BooleanOption("SemanticHighlighting","Semantic Highlighting")
+  val all = List(startup, config, archives, semantichighlighting)
 }
 
 /** the MMT plugin options pane using the options defined in the companion object */
