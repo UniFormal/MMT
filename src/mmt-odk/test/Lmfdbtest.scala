@@ -18,7 +18,6 @@ object Lmfdbtest {
 
        mathpath archive ../../MathHub/
 
-
        server on 8080
        extension info.kwarc.mmt.odk.Plugin
     """.split("\n").foreach(controller.handleLine(_))
