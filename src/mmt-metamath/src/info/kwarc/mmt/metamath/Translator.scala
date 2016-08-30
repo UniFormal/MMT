@@ -13,7 +13,7 @@ import info.kwarc.mmt.api.opaque.StringFragment
 import org.metamath.scala._
 import info.kwarc.mmt.api.MPath
 
-
+/*
 class Translator(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger {
   def logPrefix = "mm-omdoc"
   protected def report = controller.report
@@ -47,3 +47,4 @@ class Translator(val controller: Controller, bt: BuildTask, index: Document => U
     controller add theory
   }
 }
+*/

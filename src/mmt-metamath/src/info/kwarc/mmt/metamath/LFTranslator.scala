@@ -4,8 +4,9 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.Stack
 import scala.collection.mutable.TreeSet
 import org.metamath.scala._
-import info.kwarc.mmt.api.LocalName
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.BuildTask
+import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, RelationHandler}
 import info.kwarc.mmt.api.documents.{Document, MRef}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.frontend.Logger
@@ -17,35 +18,39 @@ import info.kwarc.mmt.api.objects.OMV
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.opaque.OpaqueText
 import info.kwarc.mmt.api.opaque.StringFragment
-import info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.lf.Apply
 import info.kwarc.mmt.lf.Arrow
 import info.kwarc.mmt.lf.Lambda
 import info.kwarc.mmt.lf.Pi
-import info.kwarc.mmt.lf.LF
 
 class LFTranslator(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger {
   def logPrefix = "mm-omdoc"
   protected def report = controller.report
 
-  val path = bt.narrationDPath.^!.^!
+  val path = bt.narrationDPath
 
   def addDatabase(db: Database): Document = {
     val mod = Metamath.setmm
     val doc = new Document(path, root = true)
     controller add doc
-    val theory = new DeclaredTheory(path, mod.name, Some(LF.theoryPath), Context.empty)
+    val theory = new DeclaredTheory(mod.doc, mod.name, Some(Metamath.prelude))
     controller add theory
     controller add MRef(doc.path, theory.path)
     val tr = new LFDBTranslator()(db)
-    db.decls foreach {
+    // TODO restricted to the first 1000 constants for inspection
+    val consts = db.decls.filter{case c: Comment => false case _ => true}
+    consts/*.dropRight(consts.length - 1000)*/ foreach {
       case a: Assert if a.syntax || a.typecode.id == "|-" =>
-        controller add symbols.Constant(OMMOD(mod), LocalName(a.label), Nil,
+        controller add symbols.Constant(theory.toTerm, LocalName(a.label), Nil,
           Some(tr.translateAssert(a)), tr.translateProof(a), None)
       case c: Comment =>
-        controller add new OpaqueText(mod.toDPath, List(StringFragment(c.text)))
+        controller add new OpaqueText(theory.asDocument.path, List(StringFragment(c.text)))
       case _ =>
     }
+    val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
+      throw GeneralError(s"no MMT checker found")
+    }
+    checker(theory)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
     doc
   }
 }
@@ -53,7 +58,7 @@ class LFTranslator(val controller: Controller, bt: BuildTask, index: Document =>
 class LFDBTranslator(implicit db: Database) {
   val boundVars = new HashMap[Assert, Array[Option[Array[Byte]]]]
   val syntaxToDefn = new HashMap[Assert, Assert]
-  val alignments = new HashMap[Assert, String]
+  val alignments = new HashMap[Assert, GlobalName]
 
   val SET = db.syms("set")
   val DED = db.syms("|-")
@@ -75,20 +80,21 @@ class LFDBTranslator(implicit db: Database) {
     (CAB, Array(None, Some(Array(1, 0)))))
 
   alignments += (
-    (WN, "not"),
-    (WI, "impl"),
-    (WB, "equiv"),
-    (WAL, "forall"),
-    (db.asserts("wa"), "and"),
-    (db.asserts("wo"), "or"),
-    (db.asserts("wtru"), "true"),
-    (db.asserts("wex"), "exists"),
-    (db.asserts("pm3.2i"), "andI"),
-    (db.asserts("simpli"), "andEl"),
-    (db.asserts("simpri"), "andEr"),
-    (db.asserts("orci"), "orIl"),
-    (db.asserts("olci"), "orIr"),
-    (db.asserts("impl"), "_impl"))
+    (WN, Metamath.not),
+    (WI, Metamath.impl),
+    (WB, Metamath.equiv),
+    (WAL, Metamath.setmm ? "forall"),
+    //(db.asserts("wff"), Metamath.wff),
+    (db.asserts("wa"), Metamath.and),
+    (db.asserts("wo"), Metamath.or),
+    (db.asserts("wtru"), Metamath.setmm ? "true"),
+    (db.asserts("wex"), Metamath.setmm ? "exists"),
+    (db.asserts("pm3.2i"), Metamath.setmm ? "andI"),
+    (db.asserts("simpli"), Metamath.setmm ? "andEl"),
+    (db.asserts("simpri"), Metamath.setmm ? "andEr"),
+    (db.asserts("orci"), Metamath.setmm ? "orIl"),
+    (db.asserts("olci"), Metamath.setmm ? "orIr"),
+    (db.asserts("impl"), Metamath.setmm ? "_impl"))
 
   db.decls foreach {
     case a: Assert => processBoundVars(a)
@@ -163,9 +169,10 @@ class LFDBTranslator(implicit db: Database) {
   }
 
   def align(a: Assert): Term =
-    OMS(Metamath.setmm ? alignments.getOrElse(a,a.label))
+    OMS(alignments.getOrElse(a, Metamath.setmm ? a.label))
 
   type DependVars = HashMap[Floating, TreeSet[Floating]]
+
   def getDependVars(stmt: Assert): DependVars = {
     implicit val dependVars = new DependVars
     stmt.hyps foreach {
@@ -187,9 +194,14 @@ class LFDBTranslator(implicit db: Database) {
     dependVars
   }
 
-  val LF_SET = OMS(Metamath.setmm ? "set")
-  def LF_type(s: Statement): Term = OMS(Metamath.setmm ? s.typecode.id)
-  val LF_DED = OMS(Metamath.setmm ? "|-")
+  val LF_SET = OMS(Metamath.set)
+
+  def LF_type(s: Statement): Term = s.typecode.id match {
+    case "wff" => OMS(Metamath.wff)
+    case _ => OMS(Metamath.setmm ? s.typecode.id)
+  }
+
+  val LF_DED = OMS(Metamath.|-)
 
   def LF_var(v: Floating): LocalName = LocalName(v.v.id)
 
@@ -250,7 +262,9 @@ class LFDBTranslator(implicit db: Database) {
           case Some(b) =>
             val needsFree = (b(i) & 2) != 0 ||
               child.zipWithIndex.exists { case (c, j) => b(j) == 3 && c.stmt.typecode != SET }
-            if (needsFree) node match { case HypNode(v: Floating) => Apply(ap, OMV(LF_var(v))) }
+            if (needsFree) node match {
+              case HypNode(v: Floating) => Apply(ap, OMV(LF_var(v)))
+            }
             else ap
           case _ =>
             Apply(ap, child.zip(bv).foldRight(translateTerm(node))((k, t) => k match {
@@ -268,7 +282,9 @@ class LFDBTranslator(implicit db: Database) {
     syntaxToDefn.getOrElse(a, return None).parse match {
       case AssertNode(eq, List(AssertNode(ax, child), p)) =>
         val bv = getBoundVars(a)
-        val t = try { translateTerm(p) } catch {
+        val t = try {
+          translateTerm(p)
+        } catch {
           case e: IllegalArgumentException => return None
         }
         Some(child.zipWithIndex.foldRight(t)((k, t) => k match {
@@ -289,6 +305,7 @@ class LFDBTranslator(implicit db: Database) {
 
   class ScanExpr(free: Option[TreeSet[Floating]] = None)(implicit val dependVars: DependVars) {
     val stack = new Stack[Floating]
+
     def scan(p: ParseTree) {
       p match {
         case HypNode(h: Floating) => free match {
@@ -308,5 +325,4 @@ class LFDBTranslator(implicit db: Database) {
       }
     }
   }
-
 }
