@@ -14,7 +14,6 @@ class TPSImporter extends Importer {
 
    private val parseXML = syntax.makeParser
 
-   private var startAt = "/home/raupi/lmh/MathHub/PVS/Prelude/src/pvsxml/K_props"
    def importDocument(bf: BuildTask, index: Document => Unit) : BuildResult = {
  //     if (bf.inFile.filepath.toString < startAt) return
       val d = bf.inFile.name

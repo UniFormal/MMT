@@ -108,6 +108,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case s: DefinedStructure =>
         checkElement(s,Some(context))
       case c: Constant =>
+        if (c.name.toString == "df-tru") {
+          println("here!")
+        }
         checkElement(c,Some(context))
       case rc: RuleConstant =>
       case _ =>
@@ -482,7 +485,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @return the reconstructed term
     */
   //TODO make more reusable (maybe by moving to RuleBasedChecker?)
-  private def checkTerm(context: Context, s: Term)(implicit env: Environment): Term = {
+  private def checkTerm(context: Context, s: Term)(implicit env: Environment, topterm : Term = s): Term = {
     s match {
       case OMMOD(p) =>
         val mOpt = content.getO(p)
@@ -499,16 +502,16 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case OMS(path) =>
         val ceOpt = content.getO(path)
         if (ceOpt.isEmpty) {
-           env.errorCont(InvalidObject(s, "ill-formed constant reference"))
+           env.errorCont(InvalidObject(topterm, "ill-formed constant reference " + path))
         }
         ceOpt match {
           case Some(d: Declaration) =>
             if (!content.hasImplicit(d.home, ComplexTheory(context)))
-              env.errorCont(InvalidObject(s, "constant " + d.path + " is not imported into current context " + context))
+              env.errorCont(InvalidObject(topterm, "constant " + d.path + " is not imported into current context " + context))
             if (UncheckedElement.is(d))
-              env.errorCont(InvalidObject(s, "constant " + d.path + " is used before being declared " + context))
+              env.errorCont(InvalidObject(topterm, "constant " + d.path + " is used before being declared " + context))
           case _ =>
-            env.errorCont(InvalidObject(s, path + " does not refer to constant"))
+            env.errorCont(InvalidObject(topterm, path + " does not refer to constant"))
         }
         env.pCont(path)
         //wrap in implicit morphism?
@@ -516,22 +519,22 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case OML(VarDecl(name, tp, df, _)) => OML(name, tp.map(checkTerm(context, _)), df.map(checkTerm(context, _)))
       case OMV(name) =>
         if (!context.isDeclared(name))
-          env.errorCont(InvalidObject(s, "variable is not declared"))
+          env.errorCont(InvalidObject(topterm, "variable is not declared"))
         s
       case ComplexTerm(c, subs, bound, args) =>
         val subsR = subs map { case Sub(v, t) => Sub(v, checkTerm(context, t)) }
         val boundR = checkContext(context, bound)
-        val argsR = args map { a => checkTerm(context ++ bound, a) }
+        val argsR = args map { a => checkTerm(context ++ bound, a)(env,topterm) }
         env.pCont(c)
         ComplexTerm(c, subsR, boundR, argsR).from(s)
       case OMA(f, args) =>
-        val fR = checkTerm(context, f)
-        val argsR = args map { a => checkTerm(context, a) }
+        val fR = checkTerm(context, f)(env,topterm)
+        val argsR = args map { a => checkTerm(context, a)(env,topterm) }
         OMA(fR, argsR)
       case OMATTR(arg, key, value) =>
-        val argR = checkTerm(context, arg)
+        val argR = checkTerm(context, arg)(env,topterm)
         checkTerm(context, key)
-        val valueR = checkTerm(context, value)
+        val valueR = checkTerm(context, value)(env,topterm)
         OMATTR(argR, key, valueR).from(s)
       case OMM(arg, morph) =>
         val (morphR, ComplexTheory(from), _) = checkMorphism(context, morph, None, Some(TheoryExp.empty))
