@@ -59,8 +59,8 @@ class ConceptServer extends ServerExtension("concepts") {
         {if (altnames.nonEmpty) {
           <div>
             <span>{"(See also: "}</span>
-            {altnames.init.map(n => <span><a href={"#:concepts?:concept=" + n}>{n}</a>{", "}</span>)}
-            <span><a href={"#:concepts?:concept=" + altnames.last}>{altnames.last}</a>{")"}</span>
+            {altnames.init.map(n => <span><a href="#" onclick={"conceptmenu.sideBarClick('" + n + "')"}>{n}</a>{", "}</span>)}
+            <span><a href="#" onclick={"conceptmenu.sideBarClick('" + altnames.last + "')"}>{altnames.last}</a>{")"}</span>
           </div><br/>
         }}
         {if (formals.nonEmpty) <div>{"Formal Resources: "}<ul>{formals}</ul></div> else ""}
