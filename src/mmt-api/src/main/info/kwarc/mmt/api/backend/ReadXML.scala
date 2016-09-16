@@ -211,7 +211,7 @@ class XMLReader(controller: Controller) extends Logger {
       }
       val symbol = if (symbolWS.label == "opaque") symbolWS else xml.trimOneLevel(symbolWS)
       symbol match {
-         case <document>{dnodes @_*}</document> =>
+         case <omdoc>{dnodes @_*}</omdoc> =>
             val name = xml.attr(symbol, "name")
             val innerDoc = new Document(docHome / name, contentAncestor = Some(body))
             add(innerDoc, md)

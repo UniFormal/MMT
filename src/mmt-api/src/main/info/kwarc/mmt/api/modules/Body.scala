@@ -217,9 +217,9 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
             case oe: opaque.OpaqueElement =>
                oe.toNode(rh) 
             case d: Document =>
-               rh << s"""<document name="${d.name.last.toPath}">"""
+               rh << s"""<omdoc name="${d.name.last.toPath}">"""
                streamNodes(d)
-               rh << "</document>"
+               rh << "</omdoc>"
          }
       }
       streamNodes(document)
