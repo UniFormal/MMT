@@ -251,13 +251,10 @@ class RuleBasedSimplifier extends ObjectSimplifier {
    private def applyCompRules(tm: Term)(implicit context: Context, state: UOMState): Change = {
       val cb = callback(state)
       state.compRules.foreach {rule =>
-         if (tm.head.contains(rule.head)) try {
-            rule(cb)(tm, true)(Stack(context), NoHistory).foreach {tmS =>
-               return GlobalChange(tmS)
-            }
-         } catch {
-           case e : RuleNotApplicable =>
-           case e : Exception => throw e
+         if (tm.head.contains(rule.head)) {
+           rule(cb)(tm, true)(Stack(context), NoHistory).foreach { tmS =>
+             return GlobalChange(tmS)
+           }
          }
       }
       NoChange

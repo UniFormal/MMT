@@ -150,6 +150,7 @@ trait STeXAnalysis {
     def join(s: STeXStructure) = {
       struct = struct.join(s)
     }
+
     lines.foreach { line =>
       val l = stripComment(line).trim
       val verbIndex = l.indexOf("\\verb")

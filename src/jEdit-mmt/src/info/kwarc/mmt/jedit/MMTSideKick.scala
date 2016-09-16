@@ -234,10 +234,10 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
 
    /** build the sidekick outline tree: component of a (module or symbol level) declaration */
    private def buildTreeComp(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, defaultReg: SourceRegion) {
-      val reg = getRegion(t) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
-      val child = new DefaultMutableTreeNode(new MMTObjAsset(t, context, parent, parent.component.toString, reg))
+      val reg = getRegion(t) getOrElse SourceRegion.none
+      val child = new DefaultMutableTreeNode(new MMTObjAsset(t, t, context, parent, parent.component.toString, reg))
       node.add(child)
-      buildTreeTerm(child, parent, t, context, reg)
+      buildTreeTerm(child, parent, t, context, defaultReg)
    }
 
    /** build the sidekick outline tree: notations */
@@ -258,7 +258,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       con mapVarDecls {case (previous, vd @ VarDecl(n, tp, df, _)) =>
          val reg = getRegion(vd) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
          val currentContext = context ++ previous
-         val child = new DefaultMutableTreeNode(new MMTObjAsset(vd, currentContext, parent, n.toString, reg))
+         val child = new DefaultMutableTreeNode(new MMTObjAsset(vd, vd, currentContext, parent, n.toString, reg))
          node.add(child)
          (tp.toList:::df.toList) foreach {t =>
             buildTreeTerm(child, parent, t, currentContext, reg)
@@ -267,8 +267,12 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    }
 
    /** build the sidekick outline tree: (sub)term node */
-   private def buildTreeTerm(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, defaultReg: SourceRegion) {
-      val reg = getRegion(t) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
+   private def buildTreeTerm(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, _unused_defaultReg: SourceRegion) {
+      var extraLabel = "" 
+      val reg = getRegion(t) getOrElse {
+        extraLabel = " [not in source]" // lack of source region indicates inferred subterms 
+        SourceRegion.none
+      }
       val tP = controller.pragmatic.mostPragmatic(t)
       val label = tP match {
          case OMV(n) => n.toString
@@ -279,7 +283,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case ComplexTerm(op, _,_,_) => op.last.toString
          case _ => ""
       }
-      val child = new DefaultMutableTreeNode(new MMTObjAsset(t, context, parent, label, reg))
+      val child = new DefaultMutableTreeNode(new MMTObjAsset(t, tP, context, parent, label+extraLabel, reg))
       node.add(child)
       tP match {
          case OML(VarDecl(_,tp,df,_)) =>

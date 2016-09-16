@@ -8,7 +8,8 @@ import info.kwarc.mmt.api.utils.URI
 object Metamath {
    val _base = DPath(URI.http colon "us.metamath.org")
    val prelude = _base ? "Prelude"
-   
+   val setmm = _base ? "set.mm"
+   /*
    /** Application symbol for $d sets */
    val DV = OMS(prelude ? "DV")
    /** Application symbol for $e (essential) hypotheses */
@@ -33,15 +34,17 @@ object Metamath {
     * </pre>
     */
    val FL = OMS(prelude ? "FL")
+   */
+   def setconst(s: String) = OMS(setmm ? s)
+   def prelconst(s : String) = prelude ? s
    
-   val setmm = _base ? "set.mm"
-
-   def sconst(s: String) = OMS(setmm ? s)
-   
-   val set = sconst("set")
-   val _class = sconst("class")
-   val wff = sconst("wff")
-   val |- = sconst("|-")
-
-   
+   val set = prelconst("set")
+   val _class = prelconst("class")
+   val wff = prelconst("wff")
+   val |- = prelconst("ded")
+   val not = prelconst("not")
+   val impl = prelconst("impl")
+   val equiv = prelconst("equiv")
+   val and = prelconst("and")
+   val or = prelconst("or")
 }

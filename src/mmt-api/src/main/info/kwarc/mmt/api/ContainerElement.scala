@@ -26,7 +26,7 @@ trait ElementContainer[+S <: NamedElement] {
 
 trait DefaultLookup[S <: NamedElement] {self: ElementContainer[S] =>
   def domain = getDeclarations.map(_.name)
-  def getO(name: LocalName) = getDeclarations.reverse.find(_.name == name)
+  def getO(name: LocalName) = getDeclarations.view.reverse.find(_.name == name)
   def getMostSpecific(name: LocalName): Option[(S,LocalName)] = {
     getDeclarations.reverse.foreach {i =>
       name.dropPrefix(i.name).foreach {suffix =>

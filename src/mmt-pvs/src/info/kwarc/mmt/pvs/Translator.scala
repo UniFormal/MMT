@@ -203,11 +203,12 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
 
   def doFormal(f:FormalParameter) : Unit = f match {
     case formal_type_decl(named,nonempty) =>
+      state.unknowns = 0
       val v = VarDecl(doName(named.named.id),Some(PVSTheory.tp.term),None,None)
       state.th.parameters = state.th.parameters ++ v
       if (nonempty.nonempty_p && nonempty.contains.isDefined) {
         state.th.add(Constant(state.th.toTerm,newName("INTERNAL_Assumption"),Nil,Some(
-          PVSTheory.is_nonempty(OMV(v.name),doExprAs(nonempty.contains.get,OMV(v.name)))),
+          state.bindUnknowns(PVSTheory.is_nonempty(OMV(v.name),doExprAs(nonempty.contains.get,OMV(v.name))))),
           None,Some("Assumption")))
       } else if (nonempty.nonempty_p) {
         state.th.add(Constant(state.th.toTerm,newName("INTERNAL_Assumption"),Nil,Some(
@@ -223,7 +224,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       state.th.parameters = state.th.parameters ++ v
       if (nonempty.nonempty_p && nonempty.contains.isDefined) {
         state.th.add(Constant(state.th.toTerm,newName("INTERNAL_Assumption"),Nil,Some(
-          PVSTheory.is_nonempty(OMV(v.name),doExprAs(nonempty.contains.get,OMV(v.name)))),
+          state.bindUnknowns(PVSTheory.is_nonempty(OMV(v.name),doExprAs(nonempty.contains.get,OMV(v.name))))),
           None,Some("Assumption")))
       } else if (nonempty.nonempty_p) {
         state.th.add(Constant(state.th.toTerm,newName("INTERNAL_Assumption"),Nil,Some(
@@ -263,7 +264,8 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       case var_decl(id, unnamed, tp) => // Not needed
 
       case tcc_decl(ChainedDecl(NamedDecl(id, _, _), _, _), Assertion(kind, formula)) =>
-        val c = Constant(state.th.toTerm, newName(id + "_TCC"), Nil, Some(PVSTheory.proof(kind, doExprAs(formula, PVSTheory.bool.term))), None,
+        state.unknowns = 0
+        val c = Constant(state.th.toTerm, newName(id + "_TCC"), Nil, Some(state.bind(PVSTheory.proof(kind, doExprAs(formula, PVSTheory.bool.term)))), None,
           Some(if (isAss) "Assumption_TCC" else "TCC"))
         state.th add c
         state.tcc = Some(c)
@@ -283,6 +285,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
 
       case formula_decl(ChainedDecl(NamedDecl(id, _, _), _, _), Assertion(kind, form)) =>
         state.vars = Nil
+        state.unknowns = 0
         val phi = doExprAs(form, PVSTheory.bool.term)
         state.th add Constant(state.th.toTerm, newName(id), Nil, Some(state.bind(PVSTheory.proof(kind, phi))), None, if (isAss) Some("Assumption") else None)
 

@@ -164,7 +164,7 @@ lazy val pvs = (project in file("mmt-pvs")).
   settings(mmtProjectsSettings("mmt-pvs"): _*)
 
 lazy val metamath = (project in file("mmt-metamath")).
-  dependsOn(api, lf).
+  dependsOn(api, lf, SourceDeps.mmScala).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
 
 lazy val lfx = (project in file("mmt-lfx")).
@@ -176,7 +176,7 @@ lazy val tps = (project in file("mmt-tps")).
   settings(mmtProjectsSettings("mmt-tps"): _*)
 
 lazy val odk = (project in file("mmt-odk")).
-  dependsOn(api, lf).
+  dependsOn(api, lf, lfx).
   settings(mmtProjectsSettings("mmt-odk"): _*)
 
 lazy val specware = (project in file("mmt-specware")).

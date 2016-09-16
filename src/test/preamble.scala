@@ -50,7 +50,7 @@ abstract class Test(archivepath : String,
   * As an example, here's my default. All test files of mine just extend this:
   */
 abstract class DennisTest(prefixes : String*) extends Test(
-  "/home/raupi/lmh/MathHub",
+  "/home/raupi/lmh/localmh/MathHub",
   prefixes.toList,
   "/home/raupi/lmh/Stuff/Public",
   Some(8080),

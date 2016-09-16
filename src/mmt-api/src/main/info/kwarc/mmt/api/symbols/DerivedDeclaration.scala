@@ -189,6 +189,9 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
       case tc: TermContainer => tc.get.getOrElse {
         throw GetError("")
       }
+      case mc : MPathContainer => mc.get.getOrElse {
+        throw GetError("")
+      }
       case _ =>
         throw GetError("")
     }

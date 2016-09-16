@@ -19,7 +19,7 @@ import scala.util.{Failure, Try}
  * false should not be returned without generating an error
  */
 
-object InferredType extends TermProperty[Term](utils.mmt.baseURI / "clientProperties" / "solver" / "inferred")
+object InferredType extends TermProperty[(Branchpoint,Term)](utils.mmt.baseURI / "clientProperties" / "solver" / "inferred")
 
 /** returned by [[Solver.dryRun]] as the result of a side-effect-free check */
 sealed trait DryRunResult
@@ -31,6 +31,15 @@ object WouldFail extends java.lang.Throwable with DryRunResult {
 }
 case class Success[A](result: A) extends DryRunResult {
    override def toString = "will succeed"
+}
+
+class Branchpoint(val parent: Option[Branchpoint], val delayed: List[DelayedConstraint], val depLength: Int, val solution: Context) {
+  def isRoot = parent.isEmpty
+  /** @return true if this branch contains anc */
+  def descendsFrom(anc: Branchpoint): Boolean = parent.contains(anc) || (parent match {
+    case None => false
+    case Some(p) => p.descendsFrom(anc)
+  })
 }
 
 
@@ -149,6 +158,56 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             pushedStates = pushedStates.tail
          }
       }
+      
+      /* first attempt at full backtracking; the code below is already partially used but has no effect yet
+       * - branchpoints build the tree and save the current state
+       * - backtracking restores current state
+       * - cached inferred types store the branchpoint, results are only valid if on branch
+       * 
+       * - new solutions are still collected in the state but not used anymore (minor de-optimization) to make constraints stateless
+       * 
+       * problems
+       * - how to avoid reproving constraints that are unaffected by backtracking?
+       * - how to backtrack when an error stems from a delayed constraint and the call to backtrackable has already terminated?
+       */
+      private var currentBranch: Branchpoint = makeBranchpoint(None)
+      def getCurrentBranch = currentBranch
+      def setCurrentBranch(bp: Branchpoint) {
+        currentBranch = bp
+      }
+      /** restore the state from immediately before bp was created */
+      private def backtrack(bp: Branchpoint) {
+        // restore constraints
+        _delayed = bp.delayed
+        // remove new dependencies
+        _dependencies = _dependencies.drop(_dependencies.length - bp.depLength)
+        // restore old solution
+        _solution = bp.solution
+        // no need to restore errors - any error should result in backtracking when !currentBranch.isRoot
+      }
+      private def makeBranchpoint(parent: Option[Branchpoint] = Some(currentBranch)) = {
+        new Branchpoint(parent, delayed, dependencies.length, solution)
+      }
+      class Backtrack extends Throwable
+      /** set a backtracking point and run code
+       *  @return result of code or None if error occurred
+       *  
+       *  even if this succeeds, new constraints may have been added that will fail in the future 
+       */
+      def backtrackable[A](code: => A): Option[A] = {
+        val bp = makeBranchpoint()
+        currentBranch = bp
+        try {
+          Some(code)
+        } catch {
+          case b: Backtrack =>
+            backtrack(bp)
+            None
+        } finally {
+          // even if we do not backtrack, we must update the current branch
+          currentBranch = currentBranch.parent.get // is defined because it was set above 
+        }
+      }
    }
    import state._
 
@@ -168,10 +227,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * This solution may contain unsolved variables, and there may be unresolved constraints.
     */
    def getPartialSolution : Context = solution
-   /**
-    * @return the context containing only the unsolved variables
-    */
+   /** @return the context containing only the unsolved variables */
    def getUnsolvedVariables : Context = solution.filter(_.df.isEmpty)
+   /** @return the the unsolved variables */
+   def getSolvedVariables : List[LocalName] = solution.filter(_.df.isDefined).map(_.name)
 
    /** @return the current list of unresolved constraints */
    def getConstraints : List[DelayedConstraint] = delayed
@@ -377,7 +436,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
    def apply(j: Judgement): Boolean = {
       val h = new History(Nil)
-      addConstraint(new DelayedJudgement(j, h, true))
+      val bi = new BranchInfo(h, getCurrentBranch)
+      addConstraint(new DelayedJudgement(j, bi, true))
       activate
    }
 
@@ -397,14 +457,18 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       } else {
          log("delaying: " + j.present)
          history += "(delayed)"
-         val dc = new DelayedJudgement(j, history, incomplete)
+         val bi = new BranchInfo(history, getCurrentBranch)
+         val dc = new DelayedJudgement(j, bi, incomplete)
          addConstraint(dc)
       }
       true
    }
 
    /** true if there is an activatable constraint that is not incomplete */
-   private def existsActivatable : Boolean = delayed.exists {d => d.isActivatable && !d.incomplete}
+   private def existsActivatable : Boolean = {
+     val solved = getSolvedVariables
+     delayed.exists {d => d.isActivatable(solved) && !d.incomplete}
+   }
 
    /**
     * processes the next activatable constraint until none are left
@@ -417,9 +481,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      def prepareS(s: Stack) =
         Stack(controller.simplifier(s.context ^^ subs, constantContext ++ solution, rules))
      // look for an activatable constraint
-     delayed foreach {_.solved(newsolutions)}
-     clearNewSolutions
-     val dcOpt = delayed.find {d => d.isActivatable && !d.incomplete} orElse {
+     val solved = getSolvedVariables
+     //delayed foreach {_.solved(newsolutions)} -- removed optimization for backtracking
+     clearNewSolutions // can be removed
+     val dcOpt = delayed.find {d => d.isActivatable(solved) && !d.incomplete} orElse {
          log("first invocation or no activatable constraint left, trying other constraint")
          delayed.find {_.incomplete}
      }
@@ -433,6 +498,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         case Some(dc) =>
            // activate a constraint
            removeConstraint(dc)
+           setCurrentBranch(dc.branch)
            // mayhold is the result of checking the activated constraint
            val mayhold = dc match {
               case dj: DelayedJudgement =>
@@ -506,7 +572,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          case Some(tp) =>
             cont(tp)
          case None =>
-            addConstraint(new DelayedInference(stack, history + "(inference delayed)", tm, cont))
+            val bi = new BranchInfo(history + "(inference delayed)", getCurrentBranch)
+            addConstraint(new DelayedInference(stack, bi, tm, cont))
             true
       }
    }
@@ -524,21 +591,16 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private def safeSimplify(tm: Term)(implicit stack: Stack, history: History): Term = tm match {
       case _:OMID | _:OMV | _:OMLITTrait => tm
       case ComplexTerm(op, subs, cont, args) =>
-         val rlist = rules.getByHead(classOf[ComputationRule], op)//.get(classOf[ComputationRule], op)
+         val rlist = rules.getByHead(classOf[ComputationRule], op)
           rlist foreach {rule =>
-            try {
               rule(this)(tm, false) match {
                 case Some(tmS) =>
                   history += "Applying ComputationRule " + rule.toString
                   log("simplified: " + tm + " ~~> " + tmS)
                   history += "simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS)
                   return tmS.from(tm)
-                case _ => None
+                case _ =>
               }
-            } catch {
-              case e : RuleNotApplicable => None
-              case e : Exception => throw e
-            }
           }
         // no rule or rule not applicable, recurse
         val argsS = args map {a => safeSimplify(a)(stack ++ cont, history + "simplifying argument")}
@@ -565,7 +627,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          }
          */
    }
-  val thissolver = this
 
    /** simplifies one step overall */
    private def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = {
@@ -580,18 +641,11 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             val rOpt = rules.getByHead(classOf[ComputationRule], h)
             // use first applicable rule
             rOpt foreach {rule =>
-                 val ret = try {
-                   rule(thissolver)(tm, false)
-                 } catch {
-                   case e : RuleNotApplicable => None
-                   case e : Exception => throw e
-                 }
-                 ret match {
-                   case Some(tmS) =>
-                     history += "Applying ComputationRule " + rule.toString
+                 val ret = rule(this)(tm, false)
+                 ret foreach {tmS =>
+                     history += "applying computation rule " + rule.toString
                      history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
                      return tmS
-                   case _ => None
                  }
             }
             // no applicable rule, expand a definition
@@ -603,7 +657,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    /** special case of the version below where we simplify until an applicable rule is found
  *
     *  @param tm the term to simplify
-    *  @param rm the RuleMap from which an applicable rule is needed
+    *  @param hs the RuleMap from which an applicable rule is needed
     *  @param stack the context of tm
     *  @return (tmS, Some(r)) where tmS = tm and r from rm is applicable to tmS; (tmS, None) if tm = tmS and no further simplification rules are applicable
     */
@@ -663,7 +717,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          log(j.presentAntecedent)
          j match {
             case j: Typing   => checkTyping(j)
-            case j: Subtyping   => checkSubtyping(j)
+            case j: Subtyping => checkSubtyping(j)
             case j: Equality => checkEquality(j)
             case j: Universe => checkUniverse(j)
             case j: Inhabitable => checkInhabitable(j)
@@ -784,8 +838,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
              try {
                 history += "Applying TypingRule " + rule.toString
                 rule(this)(tm, tpS)
-             } catch {case TypingRule.SwitchToInference =>
-                checkByInference(tpS)
+             } catch {
+               case TypingRule.SwitchToInference =>
+                  checkByInference(tpS)
              }
            case (tpS, None) =>
               // either this is an atomic type, or no typing rule is known
@@ -813,8 +868,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      history += "inferring type of " + presentObj(tm)
      // return previously inferred type, if any (previously unsolved variables are substituted)
      InferredType.get(tm) match {
-        case s @ Some(_) =>
-           return s.map(_ ^^ solution.toPartialSubstitution)
+        case Some((bp,tmI)) if getCurrentBranch.descendsFrom(bp) =>
+           return Some(tmI ^^ solution.toPartialSubstitution)
         case _ =>
      }
      val res = logGroup {
@@ -853,24 +908,24 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         //syntax-driven type inference
         resFoundInd orElse {
            var activerules = rules.get(classOf[InferenceRule])
-           var haveresult = false
-           var ret = None.asInstanceOf[Option[Term]]
-           while (!haveresult) {
-              val (tmS, ruleOpt) = limitedSimplify(tm, activerules)
+           var tmS = tm
+           var ret: Option[Term] = null
+           while (ret == null) {
+              val (tmp, ruleOpt) = limitedSimplify(tmS, activerules)
+              tmS = tmp
               ruleOpt match {
                  case Some(rule) =>
-                    history += ("Applying InferenceRule " + rule.toString)
-                    haveresult = true
-                    ret = try {rule(this)(tmS, covered)} catch {
-                       case t : RuleNotApplicable =>
-                          history+="rule not applicable!"
-                        haveresult = false
-                        activerules -= rule
-                        None
+                    history += ("applying inference rule " + rule.toString)
+                    try {
+                      ret = rule(this)(tmS, covered)
+                    } catch {
+                       case t : MaytriggerBacktrack#Backtrack =>
+                          history+="rule not applicable"
+                          activerules -= rule
                     }
                  case None =>
                     history += "no applicable rule"
-                    haveresult = true
+                    ret = None
               }
            }
            ret
@@ -879,7 +934,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      log("inferred: " + res.getOrElse("failed"))
      // remember inferred type
      //TODO commented out for now because it clashes with forgetting solutions during a dryRun
-     //if (res.isDefined) InferredType.put(tm, res.get)
+     //res foreach {r => InferredType.put(tm, (getCurrentBranch,r))}
      res
    }
 
@@ -892,58 +947,35 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     *
     * post: subtyping judgment is covered
     */
-   // TODO this should infer supertypes and equate those; then prove compatibility
-   // problem: what to do if unknowns block supertype inference?
-   // eventually, we have to solve here
-   // when can constants, unknowns, and variables be assumed to be maximal?
    private def checkSubtyping(j: Subtyping)(implicit history: History) : Boolean = {
       val stRules = rules.get(classOf[SubtypingRule])
-      // optimization: if there are no rules, we can skip immediately to equality checking
-     // if (stRules.nonEmpty) {
-     /*
-      def stcheck(activerules: Set[SubtypingRule]) : Option[Boolean] = {
-         if (activerules.isEmpty) return None
-         implicit val stack = j.stack
-         val (tp1S, tp2S, rOpt) = safeSimplifyUntil(j.tp1, j.tp2) { case (a1,a2) =>
-            activerules.find(_.applicable(a1,a2))
-         }
-         rOpt map {r => history += ("applying rule for " + r.head.name.toString); state.immutably(r(this)(tp1S, tp2S))} match {
-            case (Some(s:Success[a])) =>
-               val r = rOpt.get(this)(tp1S,tp2S)
-               history += ("yields "+r)
-               r
-            case _ =>
-               if (existsActivatable && rOpt.isDefined && (activerules-rOpt.get).isEmpty)
-                  // maybe other branches solve unknowns that make a rule applicable
-                  return Some(delay(Subtyping(stack, tp1S, tp2S), true))
-               else if (rOpt.isDefined) stcheck(activerules-rOpt.get) else None
-               // else return false
-         }
-      }
-      */
+      // TODO this fully expands definitions if no rule is applicable
+      // better: use an expansion algorithm that stops expanding if it is know that no rule will become applicable
       if (stRules.nonEmpty) {
         implicit val stack = j.stack
-        var activerules = rules.get(classOf[SubtypingRule])
-        var haveresult = false
-        while (!haveresult) {
-          val (tp1S, tp2S, rOpt) = safeSimplifyUntil(j.tp1, j.tp2) { case (a1,a2) =>
+        var activerules = stRules
+        var done = false
+        var tp1S = j.tp1
+        var tp2S = j.tp2
+        while (!done) {
+          val (tmp1, tmp2, rOpt) = safeSimplifyUntil(tp1S, tp2S) {case (a1,a2) =>
             activerules.find(_.applicable(a1,a2))
           }
-          haveresult = true
+          tp1S = tmp1
+          tp2S = tmp2
           rOpt match {
             case Some(rule) =>
-              history += ("Applying SubtypingRule " + rule.toString)
-              (try { rule(this)(tp1S,tp2S)} catch {
-                case t : RuleNotApplicable =>
-                  history+="rule not applicable!"
-                  haveresult = false
+              history += ("applying subtyping rule " + rule.toString)
+              try {
+                val b = rule(this)(tp1S,tp2S).getOrElse {throw rule.Backtrack()}
+                return b
+              } catch {
+                case t : MaytriggerBacktrack#Backtrack =>
+                  history+="rule not applicable"
                   activerules -= rule
-                  None
-              }) match {
-                case Some(b) => return b
-                case _ =>
               }
             case None =>
+              done = true
               // if (existsActivatable) return delay(Subtyping(stack, tp1S, tp2S), true)
           }
         }
@@ -1018,8 +1050,12 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       if (tm1S hasheq tm2S) return true
       // different literals are always non-equal
       (tm1S, tm2S) match {
-         case (l1: OMLIT, l2: OMLIT) => if (l1.value != l2.value) return error(s"$l1 and $l2 are inequal literals")
-         // TODO for equal values (and therefore different realized types) check compatibility of the types
+         case (l1: OMLIT, l2: OMLIT) =>
+           if (l1.value != l2.value)
+             return error(s"$l1 and $l2 are inequal literals")
+           else {
+             // TODO return true if the common value is a literal of the two distinct syntactic types
+           }
          case _ =>
       }
       // solve an unknown
@@ -1029,7 +1065,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       // 2) find a TermBasedEqualityRule (based on the heads of the terms)
       rules.get(classOf[TermBasedEqualityRule]).filter(r => r.applicable(tm1,tm2)) foreach {rule =>
          // we apply the first applicable rule
-         history += "Applying TermBasedEqualityRule " + rule.toString
+         history += "applying term-based equality rule " + rule.toString
          val contOpt = rule(this)(tm1,tm2,tpOpt)
          if (contOpt.isDefined && contOpt.get.apply) {
             return contOpt.get.apply
@@ -1050,7 +1086,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       val tbEqRules = rules.get(classOf[TypeBasedEqualityRule])
       safeSimplifyUntil(tp)(t => tbEqRules.find(_.applicable(t))) match {
          case (tpS, Some(rule)) =>
-            history += "Applying TypeBasedEqualityRule " + rule.toString
+            history += "applying type-based equality rule " + rule.toString
             rule(this)(tm1S, tm2S, tpS) match {
                case Some(b) => b
                case None =>
@@ -1257,13 +1293,12 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             }
          //apply a foundation-dependent solving rule selected by the head of tm1
          case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tp.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
-           val allrules =  rules.getByHead(classOf[TypeSolutionRule], h)
+           val allrules = rules.getByHead(classOf[TypeSolutionRule], h)
            allrules.foreach{rule =>
              history += "Applying TypeSolutionRule " + rule.toString
              Try(rule(this)(tm, tp)) match {
                  case scala.util.Success(b:Boolean) =>
                    return b
-                 case Failure(t : RuleNotApplicable) =>
                  case Failure(t : Throwable) => throw t
                }}
            false

@@ -40,7 +40,7 @@ object IntersectionSubtypeRule extends SubtypingRule {
         if (solver.safecheck(Subtyping(stack,t1,tp2)).getOrElse(false))
           Some(solver.check(Subtyping(stack,t1,tp2)))
         else Some(solver.check(Subtyping(stack,t2,tp2)))
-      case _ => throw new RuleNotApplicable
+      case _ => throw Backtrack()
     }
 }
 
@@ -98,7 +98,7 @@ object ApplyIntersection extends EliminationRule(Apply.path, OfType.path) {
         case Some(TypeIntersection(t1,t2)) =>
           history += "intersection type is: " + solver.presentObj(TypeIntersection(t1,t2))
           ApplyIntersectionHelper(f,t,TypeIntersection(t1,t2))(stack,solver,history)
-        case Some(x) => throw new RuleNotApplicable
+        case Some(x) => throw Backtrack()
         case _ =>
           history += "failed"
           solver.inferType(t)(stack, history.branch) // inference of the argument may solve some variables

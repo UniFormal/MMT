@@ -30,7 +30,7 @@ object MetadataParser extends ParserExtension {
                new MetaDatum(key,value)
             case "link" =>
                val (u,reg) = s.reader.readAll
-               val value = s.namespaces.base.doc.uri resolve utils.URI(u)
+               val value = s.namespaces.resolve(u)
                Link(key,value)
          }
          se.metadata.add(md)

@@ -240,7 +240,9 @@ case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDe
       val id = this.id // precompute value
       // sub ++ id.take(i) represents sub, x_1/x_1, ..., x_{i-1}/x_{i-1} 
       val newvars = variables.zipWithIndex map {case (vd, i) => vd ^^ (sub ++ id.take(i))}
-      Context(newvars :_*)
+      val ret = Context(newvars :_*)
+      ret.copyFrom(this)
+      ret
    }
    private[objects] def freeVars_ = {
       var except: List[LocalName] = Nil
@@ -311,7 +313,11 @@ case class Substitution(subs : Sub*) extends Obj {
    def ++(n:String, t:Term) : Substitution = this ++ Sub(LocalName(n),t)
    def ++(s: Sub) : Substitution = this ++ Substitution(s)
    def ++(that: Substitution) : Substitution = this ::: that
-   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this map {s => s ^^ sub}
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = {
+     val ret = this map {s => s ^^ sub}
+     ret.copyFrom(this)
+     ret
+   }
    private[objects] def freeVars_ = (this flatMap {_.freeVars_})
    def subobjects = subobjectsNoContext(subs.toList)
    def maps(n: LocalName): Boolean = this exists {_.name == n}
@@ -377,8 +383,11 @@ object Context {
       }
       (x, x1 / OMV(x))
    }
-	/** returns an alpha-renamed version of con that contains no variable from forbidden, and a substitution that performs the alpha-renaming */
+	/** returns an alpha-renamed version of con that declares no variable from forbidden, and a substitution that performs the alpha-renaming */
 	def makeFresh(con: Context, forbidden: List[LocalName]) : (Context,Substitution) = {
+	   if (forbidden.forall(n => !con.isDeclared(n)))
+   	    // optimization in case there is nothing to do
+	      return (con, con.id)
 	   var sub = Substitution()
 	   val conN = con map {case vd @ VarDecl(x,tp,df, _) =>
 	      var xn = x

@@ -26,7 +26,7 @@ object VarSubtypeRule extends SubtypingRule {
   def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History) : Option[Boolean] =
     tp1 match {
       case VarType(t) => Some(solver.check(Subtyping(stack,t,tp2)))
-      case _ => throw new RuleNotApplicable
+      case _ => throw Backtrack()
     }
 }
 

@@ -17,7 +17,6 @@ case class URI(scheme: Option[String],
   if (isIllegal) throw ImplementationError("illegal URI: " + this)
   /** true if the path is absolute; automatically set to true if scheme or authority are present */
   def absolute: Boolean = abs
-  // abs = absolute // TODO dirty hack
 
   /** drop authority, path, query, fragment, append authority and make path absolute */
   def colon(n: String): URI = URI(scheme, Some(n), abs = true)
