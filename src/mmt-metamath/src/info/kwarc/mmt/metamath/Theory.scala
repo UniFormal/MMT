@@ -47,4 +47,7 @@ object Metamath {
    val equiv = prelconst("equiv")
    val and = prelconst("and")
    val or = prelconst("or")
+   val mmtrue = prelconst("true")
+   val forall = prelconst("forall")
+   val exists = prelconst("exists")
 }

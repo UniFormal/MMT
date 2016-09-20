@@ -196,6 +196,10 @@ object File {
     strings.foreach { s => fw.write(s) }
     fw.close
   }
+
+  def append(f : File, strings: String*) {
+    scala.tools.nsc.io.File(f.toString).appendAll(strings:_*)
+  }
   
   /**
    * streams a list-like object to a file
@@ -343,20 +347,7 @@ object File {
   }
   /** dereference a URL and save as a file */
   def download(url: java.net.URL, file: File) {
-    val conn = url.openConnection
-    if (List("https","http") contains url.getProtocol) {
-      val httpConn = conn.asInstanceOf[java.net.HttpURLConnection]
-      val resp = httpConn.getResponseCode
-      // setFollowRedirects does not actually follow redirects
-      if (resp.toString.startsWith("30")) {
-        val redirectURL = new java.net.URL(conn.getHeaderField("Location"))
-        return download(redirectURL, file) 
-      }
-      if (resp.toString.startsWith("40")) {
-        throw GeneralError("download of " + url + " failed, the destination file " + file + " may contain a hint as to what went wrong")
-      }
-    }
-    val input = conn.getInputStream
+    val input = getFromURL(url)
     file.up.mkdirs
     val output = new java.io.FileOutputStream(file)
     try {
@@ -366,6 +357,23 @@ object File {
       input.close
       output.close
     }
+  }
+
+  def getFromURL(url: java.net.URL) : InputStream = {
+    val conn = url.openConnection
+    if (List("https","http") contains url.getProtocol) {
+      val httpConn = conn.asInstanceOf[java.net.HttpURLConnection]
+      val resp = httpConn.getResponseCode
+      // setFollowRedirects does not actually follow redirects
+      if (resp.toString.startsWith("30")) {
+        val redirectURL = new java.net.URL(conn.getHeaderField("Location"))
+        return getFromURL(redirectURL)
+      }
+      if (resp.toString.startsWith("40")) {
+        throw GeneralError("download of " + url + " failed")
+      }
+    }
+    conn.getInputStream
   }
 
   /** implicit conversion Java <-> Scala */

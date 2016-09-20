@@ -1,17 +1,16 @@
 // initialize jobad
 var JOBAD1;
 $(function(){	
-  JOBAD1 = new JOBAD($("#main,#parseForm #inputviewterm,#parseForm #inputviewtype,#results,#breadcrumbs,#sidebar,#Archives"));
+  JOBAD1 = new JOBAD($("#formal,#formal-table"));
 
   JOBAD1.modules.load("kwarc.mmt.hovering", []);
   JOBAD1.modules.load("kwarc.mmt.intvw", []);
   JOBAD1.Setup();
-  conceptmenu.concepts();
 });
 
 var conceptmenu = {
 	concepts: function() {
-		$("#main").replaceWith('<table id="layouttable"><tr><td class="layouttablecell"><div id="sidebar" class="cellcontent"> <div id="concepttree"><span/></div></div></td><td class="layouttablecell"><div class="cellcontent"><div id="conceptmain"><span/></div></div></div></td></tr></table>');
+		$("#center").replaceWith('<table id="layouttable"><tr><td class="layouttablecell"><div id="sidebar" class="cellcontent"> <div id="concepttree"><span/></div></div></td><td class="layouttablecell"><div class="cellcontent"><div id="conceptmain" class="conceptmain"><span/></div></div></div></td></tr></table>');
 		$("#concepttree").jstree({
       "core" : {"animation": 0},
       "xml_data" : {
@@ -44,4 +43,11 @@ var conceptmenu = {
 	sideBarClick : function(p) {
          this.replaceIn(mmt.makeURL('/:concepts?:concept=' + p), 'conceptmain');
    	},
+};
+
+var interaction = {
+   /** click on a search result */
+   resultClick: function(p){
+      interactiveViewing.navigate(p);
+   },
 };
