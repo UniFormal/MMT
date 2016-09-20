@@ -1,13 +1,10 @@
 package info.kwarc.mmt.api.web
 
-import info.kwarc.mmt.api.frontend.Logger
-import info.kwarc.mmt.api.{GeneralError, utils}
 import info.kwarc.mmt.api.utils.{File, HTML, URI}
-
 import scala.collection.immutable.List
 import scala.util.Try
-import scala.util.matching.Regex.Groups
-import scala.xml.{Elem, Node}
+import scala.xml.{Elem, Node, XML}
+import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
 
 abstract class WebExtractor {
   val scheme : String
@@ -20,7 +17,7 @@ abstract class WebExtractor {
     try {
       val byteArray = Stream.continually(input.read).takeWhile(_ != -1).map(_.toByte).toArray
       output.write(byteArray)
-      scala.xml.XML.loadString(output.toString)
+      XML.withSAXParser(new SAXFactoryImpl().newSAXParser()).loadString(output.toString)
     } catch {
       case e : Exception =>
         <html></html>
@@ -35,19 +32,19 @@ abstract class WebExtractor {
       (n \ child).toList.collect({case a : Elem => a}).headOption.getOrElse(throw new Exception("Child not found: " + child + " in " + n))
     else (n \ child).toList.collect({case a : Elem => a}).find(p => (p \ ("@" + prop._1)).text == prop._2).getOrElse(throw new Exception("Child not found: " + child + " in " + n))
   }
-  private def retrieveInt(n : Elem, child : Either[String,(String,String,String)]*) : Elem = {
+  private def retrieveInt(n : Elem, child : scala.util.Either[String,(String,String,String)]*) : Elem = {
     if (child.isEmpty) n
     else {
       val nnode = child.head match {
-        case Left(s) => getChild(n,s)
-        case Right((a,b,c)) => getChild(n,a,(b,c))
+        case scala.util.Left(s) => getChild(n,s)
+        case scala.util.Right((a,b,c)) => getChild(n,a,(b,c))
       }
       retrieveInt(nnode,child.tail:_*)
     }
   }
   def retrieve(n: Elem, child : Any*) : Elem = retrieveInt(n,child map {
-    case s : String => Left(s)
-    case (a : String,b : String, c : String) => Right((a,b,c))
+    case s : String => scala.util.Left(s)
+    case (a : String,b : String, c : String) => scala.util.Right((a,b,c))
     case _ => throw new Exception("Only strings or string triples allowed!")
   }:_*)
 
@@ -100,13 +97,17 @@ object WikiExtractor extends WebExtractor {
 object PlanetMathExtractor extends WebExtractor {
   val key = "planetmath.org"
   val scheme = "http"
-  override val dontpull: Boolean = true
   def content(pm : Elem, uri : String, h : HTML) = {
     pm match {
       case ht @ <html>{hbd @ _*}</html> =>
-        //val content = retrieve(ht,"body",("div","id","content"),("div","id","bodyContent"),("div","id","mw-content-text"))
-        h.a(uri) { h.text { uri } }
-        // TODO: I get malformed html back -.-
+        val content = retrieve(ht,"body",("div","id","page-wrapper"),
+          ("div","id","page"),("div","id","main-wrapper"),("div","id","main"),("div","id","content"),
+          ("div","class","section"),("div","class","region region-content"),("div","id","block-system-main"),
+          ("div","class","content"),("div","typeof","sioc:Item foaf:Document"),("div","class","content")
+        )
+        //content.child.foreach(a => println(a.toString.replace("\n","")))
+        //h.a(uri) { h.text { uri } }
+        h.literal(content)
     }
   }
 }
@@ -144,13 +145,23 @@ object WolframExtractor extends WebExtractor {
 object EncyclopediaOfMathExtractor extends WebExtractor {
   val key = "Encyclopedia of Math"
   val scheme = "https"
-  override val dontpull = true
   def content(pm : Elem, uri : String, h : HTML) = {
     pm match {
       case ht @ <html>{hbd @ _*}</html> =>
-        //val content = retrieve(ht,"body",("div","id","content"),("div","id","bodyContent"),("div","id","mw-content-text"))
-        h.a(uri) { h.text { uri } }
-      // TODO: I get malformed html back -.-
+        val content = retrieve(ht,"body",("div","id","OuterShell"),("div","id","InnerShell"),("div","id","ContentShell"),
+          ("div","id","content"),("div","id","InnerContent"),("div","id","bodyContent"),("div","id","mw-content-text")
+        )
+        var ret : List[Node] = Nil
+        var done = false
+        content.child.foreach(n => if(!done) n match {
+          case d @ <div>{s @ _*}</div> if (d \ "@id").text == "citeRevision" => done = true
+          case nod => ret ::= nod
+        })
+        val nret = ret.reverse.map(_.toString.replaceAll(
+          "href=\"/","href=\"https://www.encyclopediaofmath.org/").replaceAll(
+          "src=\"/","src=\"https://www.encyclopediaofmath.org/").replaceAll("href=\"#","href=\"" + uri + "#"))
+        h.literal(nret.mkString(""))
+        //h.a(uri) { h.text { uri } }
     }
   }
 }

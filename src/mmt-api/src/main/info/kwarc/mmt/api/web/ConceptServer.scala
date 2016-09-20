@@ -10,7 +10,6 @@ import tiscaf.HLet
 
 import scala.collection.immutable.List
 import scala.util.Try
-import scala.xml.Node
 
 /**
   * Created by raupi on 11.09.16.
@@ -70,8 +69,8 @@ class ConceptServer extends ServerExtension("concepts") {
       tr {
         td(attributes=List(("alignment","left"))) {
           div(cls = "ui-widget") {
-            new Element("label").apply(attributes = List(("for","tags"))) { text {"Search:"} }
-            new Element("input").apply(id="tags") {}
+            // new Element("label").apply(attributes = List(("for","tags"))) { text {"Search:"} }
+            // new Element("input").apply(id="tags") {}
           }
         }
         td(id="addalign",cls="addalign") {
@@ -99,23 +98,11 @@ class ConceptServer extends ServerExtension("concepts") {
     }
   }
 
-  lazy val concstring = alignments.getConcepts.map(s => "\"" + s + "\"").mkString(",")
-
   private def doFullPage(path : List[String]) = HTML.build(h => {
     import h._
     html(attributes = List(("xmlns","http://www.w3.org/1999/xhtml"))) {
       head {
         literal(htmlhead) // See at the bottom
-        new Element("script").apply() { literal{
-          """  $( function() {
-                     |    var availableTags = [""" +
-          "\"None\",\"test1\",\"test2\"" + //concstring +
-            """];
-                $( "#tags" ).autocomplete({
-                  source: availableTags
-                });
-              } );"""
-        } }
       }
       h.body {
         div(id="header") {
