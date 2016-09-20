@@ -1,10 +1,11 @@
 package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api.utils.{File, HTML, URI}
+import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
+
 import scala.collection.immutable.List
 import scala.util.Try
 import scala.xml.{Elem, Node, XML}
-import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
 
 abstract class WebExtractor {
   val scheme : String
