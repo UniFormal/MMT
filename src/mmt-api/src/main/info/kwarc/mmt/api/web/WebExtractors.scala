@@ -106,9 +106,16 @@ object PlanetMathExtractor extends WebExtractor {
           ("div","class","section"),("div","class","region region-content"),("div","id","block-system-main"),
           ("div","class","content"),("div","typeof","sioc:Item foaf:Document"),("div","class","content")
         )
+        var ret : List[Node] = Nil
+        var done = false
+        content.child.foreach(n => if(!done) n match {
+          case d @ <div>{s @ _*}</div> if (d \ "@class").text contains "related" => done = true
+          case nod => ret ::= nod
+        })
+        val nret = ret.reverse.map(_.toString)
+        h.literal(nret.mkString(""))
         //content.child.foreach(a => println(a.toString.replace("\n","")))
         //h.a(uri) { h.text { uri } }
-        h.literal(content)
     }
   }
 }

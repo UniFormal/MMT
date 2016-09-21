@@ -27,39 +27,22 @@ class ConceptServer extends ServerExtension("concepts") {
   val alphabet = List('0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t',
     'u','v','w','x','y','z','!')
 
-  private var filebase : File = null
   private var menu = ""
+  private var conlist : List[String] = Nil
 
   override def start(args: List[String]) = {
+    conlist = alignments.getConcepts.sortWith((a,b) => a.toLowerCase < b.toLowerCase)
     menu = HTML.build(makeMenu)
-    if (args.length > 1 && args.head.trim == "index") {
-      filebase = File(args(1))
-      val all = alignments.getConcepts
-      alphabet.foreach(saveIndex)
-      all foreach saveCon
-    } else if (args.nonEmpty) filebase = File(args.head)
-  }
-
-  def saveIndex(c : Char): Unit = if(filebase!=null) {
-    log("saving index " + c)
-    val file = (filebase / FileNameEscaping(c.toString)).addExtension("html")
-    File.write(file,doFullPage(List(c.toString)))
-  }
-  def saveCon(con : String): Unit = if(filebase!=null) {
-    log("saving concept: " + con)
-    val file = (filebase / "con" / FileNameEscaping(con.toLowerCase)).addExtension("html")
-    File.write(file,doFullPage(List("con",con)))
   }
 
   private def makeMenu(h : HTML) = {
     import h._
     log("Constructing menu...")
-    val all = alignments.getConcepts.sortWith((a,b) => a.toLowerCase < b.toLowerCase)
     val list = alphabet collect {
-      case '!' if all.exists(c => !alphabet.init.contains(c.toLowerCase.head)) => "!"
-      case a if all.exists(c => c.toLowerCase.head == a) => a.toString.toUpperCase
+      case '!' if conlist.exists(c => !alphabet.init.contains(c.toLowerCase.head)) => "!"
+      case a if conlist.exists(c => c.toLowerCase.head == a) => a.toString.toUpperCase
     }
-    ul { list.foreach(s => li { a("/:concepts/" + s) { text {s} } }) }
+    ul { list.foreach(s => li { a(":concepts?page=" + s) { text {s} } }) }
     log("Done.")
   }
 
@@ -69,12 +52,12 @@ class ConceptServer extends ServerExtension("concepts") {
       tr {
         td(attributes=List(("alignment","left"))) {
           div(cls = "ui-widget") {
-            // new Element("label").apply(attributes = List(("for","tags"))) { text {"Search:"} }
-            // new Element("input").apply(id="tags") {}
+            // new Element("label").apply(attributes = List(("for","mysearch"))) { text {"Search:"} }
+            literal {"""<input id="mysearch"/>"""}
           }
         }
         td(id="addalign",cls="addalign") {
-          new Element("form").apply(attributes=List(("action","/:concepts/add"))) {
+          new Element("form").apply(attributes=List(("action",":concepts/add"))) {
             text {"Add URI: "}
             new Element("input").apply(attributes=List(("type","text"),("name","URI"),("value","http://en.wikipedia.org/wiki/Cartesian_product"))) {}
             text {"  to Concept: "}
@@ -92,9 +75,9 @@ class ConceptServer extends ServerExtension("concepts") {
     if (!(l.length==1)) text { "Unknown index: " + l }
     else {
       h1 { text { l } }
-      val ls = if (l=="!") alignments.getConcepts.filter(c => !alphabet.init.exists(ch => c.toLowerCase.startsWith(ch.toString)))
-        else alignments.getConcepts.filter(_.toLowerCase.startsWith(l))
-      ul { ls.sortWith((a,b) => a.toLowerCase < b.toLowerCase).foreach(s => li { a("/:concepts/con/"+ URLEscaping.apply(s)) { text {s} }}) }
+      val ls = if (l=="!") conlist.filter(c => !alphabet.init.exists(ch => c.toLowerCase.startsWith(ch.toString)))
+        else conlist.filter(_.toLowerCase.startsWith(l))
+      ul { ls.sortWith((a,b) => a.toLowerCase < b.toLowerCase).foreach(s => li { a(":concepts?con="+ URLEscaping.apply(s)) { text {s} }}) }
     }
   }
 
@@ -133,35 +116,64 @@ class ConceptServer extends ServerExtension("concepts") {
     }
   })
 
+  def apply(path: List[String], query: String, body: Body, session: Session) : HLet =
+    if (path == List("add") && query != "") {
+      log("Query: " + query)
+      if (!query.startsWith("URI=") || !query.contains("&concept=")) Server.TextResponse("Malformed Query")
+      else {
+        val (uri, con) = (query.split('&').head.drop(4).trim, query.split('&')(1).replace("concept=", "").trim)
+        if (alignments.getConceptAlignments(con).map(_.toString.replace("http://", "").replace("https://", "")).contains(uri)) {
+          return Server.TextResponse("URI " + uri + " already aligned with \"" + con + "\"!")
+        }
+        val ref = Try(LogicalReference(Path.parseMS(uri, NamespaceMap.empty))).getOrElse(PhysicalReference(URI(uri)))
+        val alig = ConceptAlignment(ref, con)
+        alignments.addNew(alig)
+        if (!conlist.contains(con)) {
+          conlist = alignments.getConcepts
+          menu = HTML.build(makeMenu)
+          // saveIndex(con.head.toLower)
+        }
+        log("Added URI " + ref + " to concept: " + con)
+        Server.TextResponse("Added URI " + ref + " to concept: " + con + "\nTHANK YOU FOR CONTRIBUTING!")
+      }
+    } else if (path.isEmpty && query == "conlist") {
+      log("Query for conlist")
+      Server.TextResponse("[" + conlist.map(s => "\"" + s + "\"").mkString(",") + "]")
+    } else if (path.isEmpty && query.startsWith("page=")) {
+      val index = query(5).toLower
+      log("Query for page " + index)
+      Server.TypedTextResponse(doFullPage(List(index.toString)),"html")
+    } else if (path.isEmpty && query.startsWith("con=")) {
+      val con = URLEscaping.unapply(query.drop(4))
+      log("CALL constructing concept " + con)
+      Server.TypedTextResponse(doFullPage(List("con",con)),"html")
+    } else Server.TypedTextResponse(doFullPage(List("a")),"html")
+  /*
   def apply(path: List[String], query: String, body: Body, session: Session) : HLet = if (path == List("add") && query != "") {
     log("Query: " + query)
     if (!query.startsWith("URI=") || !query.contains("&concept=")) Server.TextResponse("Malformed Query") else {
       val (uri,con) = (query.split('&').head.drop(4).trim,query.split('&')(1).replace("concept=","").trim)
-      val all = alignments.getConcepts
       if (alignments.getConceptAlignments(con).map(_.toString.replace("http://","").replace("https://","")).contains(uri)) {
         return Server.TextResponse("URI " + uri + " already aligned with \"" + con + "\"!")
       }
       val ref = Try(LogicalReference(Path.parseMS(uri,NamespaceMap.empty))).getOrElse(PhysicalReference(URI(uri)))
       val alig = ConceptAlignment(ref,con)
-      if (!all.contains(con)) {
+      alignments.addNew(alig)
+      if (!conlist.contains(con)) {
+        conlist = alignments.getConcepts
         menu = HTML.build(makeMenu)
         // saveIndex(con.head.toLower)
-      }
-      alignments.addNew(alig)
-      if (filebase!=null) {
-        // saveCon(con)
       }
       log("Added URI " + ref + " to concept: " + con)
       Server.TextResponse("Added URI " + ref + " to concept: " + con + "\nTHANK YOU FOR CONTRIBUTING!")
     }
-  } else {
-    val ret = if (filebase!=null) {
-      val file = path.foldLeft(filebase)((f,s) => f / FileNameEscaping.apply(URLEscaping.unapply(s).toLowerCase)).addExtension("html")
-      if (file.exists) {
-        log("CALL Saved file " + file)
-        File.read(file)
-      }
-      else {
+  } else if (path.isEmpty && query == "conlist") {
+    Server.JsonResponse(JSONArray(alignments.getConcepts.map(JSONString) :_*))
+  } else if (path.isEmpty && query.startsWith("page=")) {
+    val index = query(5).toLower
+    ???
+  }
+    val ret = {
         if (path.length == 1 && path.head.length==1) {
           log("CALL constructing index " + path.head.head.toLower)
           saveIndex(path.head.head.toLower)
@@ -172,11 +184,14 @@ class ConceptServer extends ServerExtension("concepts") {
           File.read(file)
         } else "path malformed: " + path.mkString("/")
       }
-    } else doFullPage(path)
+    } else {
+      log("CALL constructing concept page " + URLEscaping.unapply(path(1)))
+      doFullPage(path)
+    }
     log("Call returned.")
-    Server.XmlResponse(ret)
+    Server.TypedTextResponse(ret,"html")
   }
-
+*/
   lazy val presenter = controller.extman.get(classOf[Presenter],"html").get.asInstanceOf[HTMLPresenter]
   lazy val archives : ArchiveStore = controller.extman.get(classOf[ArchiveStore]).headOption.getOrElse {
     val a = new ArchiveStore
@@ -206,10 +221,10 @@ class ConceptServer extends ServerExtension("concepts") {
         if (altnames.nonEmpty) div {
           text {"(See also: "}
           altnames.init.foreach(n => {
-            a("/:concepts/con/" + URLEscaping(n)) {text {n} }
+            a(":concepts?con=" + URLEscaping(n)) {text {n} }
             text {", "}
           })
-          a("/:concepts/con/" + URLEscaping(altnames.last)) {text {altnames.last} }
+          a(":concepts?con=" + URLEscaping(altnames.last)) {text {altnames.last} }
           text {")"}
         }
         def doInformal(s : => Unit) = tr { td(cls="ext-table",attributes = List(("align","center"))) { s }}
@@ -230,6 +245,7 @@ class ConceptServer extends ServerExtension("concepts") {
             }
           }
         }
+
         if (formals.nonEmpty) {
           h3 { text{ "Formal Libraries:" } }
           div(cls="document toggle-root inlineBoxSibling",id="formal") {
@@ -290,6 +306,7 @@ class ConceptServer extends ServerExtension("concepts") {
           }
           }
         }
+
       }
   }
   private def doFormal(p : Path) = {
@@ -307,42 +324,25 @@ class ConceptServer extends ServerExtension("concepts") {
   }
 
   val htmlhead = """<meta charset="UTF-8" />
-                   <!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> -->
                          <title>MMT Web Server</title>
-                         <script type="text/javascript" src="/script/jquery/jquery.js"></script>
-                         <link rel="stylesheet" type="text/css" href="/css/bootstrap/css/bootstrap.min.css"></link>
-                         <link rel="stylesheet" type="text/css" href="/css/mmt.css" />
-                         <link rel="stylesheet" type="text/css" href="/css/concepts.css" />
-                         <link rel="stylesheet" type="text/css" href="/css/JOBAD.css" />
-                         <link rel="stylesheet" type="text/css" href="/css/jquery/jquery-ui.css" />
-                   <!-- <link rel="stylesheet" type="text/css" href="/css/jquery/ui.base.css"/> -->
-                         <link rel="shortcut icon" href="/mmt2.png" />
-                         <!--
-                         <script src="/script/codemirror2/lib/codemirror.js"></script>
-                         <link rel="stylesheet" href="script/codemirror2/lib/codemirror.css" />
-                         <script src="/script/codemirror2/mode/lf/lf.js"></script>
-                         -->
-                         <script type="text/javascript" src="/script/jquery/jquery-ui.js"></script>
-                         <script type="text/javascript" src="/script/tree/jquery.hotkeys.js"></script><!-- used by  stree -->
-                         <script type="text/javascript" src="/script/tree/jquery.jstree.js"></script>
+                         <script type="text/javascript" src="script/jquery/jquery.js"></script>
+                         <script type="text/javascript" src="script/jquery/jquery-ui.js"></script>
+                         <link rel="stylesheet" type="text/css" href="css/bootstrap/css/bootstrap.min.css"></link>
+                         <link rel="stylesheet" type="text/css" href="css/mmt.css" />
+                         <link rel="stylesheet" type="text/css" href="css/concepts.css" />
+                         <link rel="stylesheet" type="text/css" href="css/JOBAD.css" />
+                         <link rel="stylesheet" type="text/css" href="css/jquery/jquery-ui.css" />
+                         <link rel="shortcut icon" href="mmt2.png" />
 
-                         <!-- incremental search by Kazuhisa Nakasho
-                         <script type="text/javascript" src="/script/incsearch/incsearch.js"></script> -->
-                         <script type="text/javascript" src="/script/incsearch/treeview.js"></script>
-                         <link rel='stylesheet' href='/css/incsearch/jstree.css'/>
-                         <link rel='stylesheet' href='/css/incsearch/index.css'/>
-                         <link rel='stylesheet' href='/css/incsearch/incsearch.css'/>
-                         <link rel='stylesheet' href='/css/incsearch/treeview.css'/>
 
                    <!-- Core JS API for MMT interaction -->
-                         <script type="text/javascript" src="/script/mmt/mmt-js-api.js"></script>
+                         <script type="text/javascript" src="script/mmt/mmt-js-api.js"></script>
                    <!-- JOBAD Deps -->
-                         <script type="text/javascript" src="/script/jobad/deps/underscore-min.js"></script>
+                        <script type="text/javascript" src="script/jobad/deps/underscore-min.js"></script>
                    <!-- JOBAD -->
-                         <script type="text/javascript" src="/script/jobad/JOBAD.js"></script>
+                         <script type="text/javascript" src="script/jobad/JOBAD.js"></script>
                    <!-- JOBAD Services -->
-                         <script type="text/javascript" src="/script/jobad/modules/hovering.js"></script>
-                         <script type="text/javascript" src="/script/jobad/modules/interactive-viewing.js"></script>
-                   <!-- browser-specific JS -->
-                         <script type="text/javascript" src="/script/mmt/concepts.js"></script>"""
+                         <script type="text/javascript" src="script/jobad/modules/hovering.js"></script>
+                         <script type="text/javascript" src="script/jobad/modules/interactive-concepts.js"></script>
+                         <script type="text/javascript" src="script/mmt/concepts.js"></script>"""
 }
