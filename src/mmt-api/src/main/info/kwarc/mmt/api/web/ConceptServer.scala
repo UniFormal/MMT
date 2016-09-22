@@ -54,6 +54,8 @@ class ConceptServer extends ServerExtension("concepts") {
           div(cls = "ui-widget") {
             // new Element("label").apply(attributes = List(("for","mysearch"))) { text {"Search:"} }
             literal {"""<input id="mysearch"/>"""}
+            new Element("input").apply(onclick = "window.location=\"?con=\" + document.getElementById(\"mysearch\").value",
+              attributes=List(("type","submit"),("value","Search"))) {}
           }
         }
         td(id="addalign",cls="addalign") {

@@ -110,6 +110,7 @@ object PlanetMathExtractor extends WebExtractor {
         var done = false
         content.child.foreach(n => if(!done) n match {
           case d @ <div>{s @ _*}</div> if (d \ "@class").text contains "related" => done = true
+          case d @ <section>{s @ _*}</section> if (d \ "@id").text == "bib" => done = true
           case nod => ret ::= nod
         })
         val nret = ret.reverse.map(_.toString)
@@ -127,7 +128,7 @@ object WolframExtractor extends WebExtractor {
   def content(pm : Elem, uri : String, h : HTML) = {
     pm match {
       case ht @ <html>{hbd @ _*}</html> =>
-        h.a(uri) { h.text { uri } }
+        h.a(scheme + "://" + uri) { h.text { uri } }
         // Waaay to slow!
         /*
         val c1 = retrieve(ht,"body",("table","id","pageTable"),"tr")
