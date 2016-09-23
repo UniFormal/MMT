@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api.archives.HTMLPresenter
-import info.kwarc.mmt.api.{NamespaceMap, Path}
+import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.presentation.{HTMLRenderingHandler, Presenter, RenderingResult}
 import info.kwarc.mmt.api.refactoring.ArchiveStore
@@ -150,56 +150,8 @@ class ConceptServer extends ServerExtension("concepts") {
       log("CALL constructing concept " + con)
       Server.TypedTextResponse(doFullPage(List("con",con)),"html")
     } else Server.TypedTextResponse(doFullPage(List("a")),"html")
-  /*
-  def apply(path: List[String], query: String, body: Body, session: Session) : HLet = if (path == List("add") && query != "") {
-    log("Query: " + query)
-    if (!query.startsWith("URI=") || !query.contains("&concept=")) Server.TextResponse("Malformed Query") else {
-      val (uri,con) = (query.split('&').head.drop(4).trim,query.split('&')(1).replace("concept=","").trim)
-      if (alignments.getConceptAlignments(con).map(_.toString.replace("http://","").replace("https://","")).contains(uri)) {
-        return Server.TextResponse("URI " + uri + " already aligned with \"" + con + "\"!")
-      }
-      val ref = Try(LogicalReference(Path.parseMS(uri,NamespaceMap.empty))).getOrElse(PhysicalReference(URI(uri)))
-      val alig = ConceptAlignment(ref,con)
-      alignments.addNew(alig)
-      if (!conlist.contains(con)) {
-        conlist = alignments.getConcepts
-        menu = HTML.build(makeMenu)
-        // saveIndex(con.head.toLower)
-      }
-      log("Added URI " + ref + " to concept: " + con)
-      Server.TextResponse("Added URI " + ref + " to concept: " + con + "\nTHANK YOU FOR CONTRIBUTING!")
-    }
-  } else if (path.isEmpty && query == "conlist") {
-    Server.JsonResponse(JSONArray(alignments.getConcepts.map(JSONString) :_*))
-  } else if (path.isEmpty && query.startsWith("page=")) {
-    val index = query(5).toLower
-    ???
-  }
-    val ret = {
-        if (path.length == 1 && path.head.length==1) {
-          log("CALL constructing index " + path.head.head.toLower)
-          saveIndex(path.head.head.toLower)
-          File.read(file)
-        } else if(path.length>1 && path.head == "con") {
-          log("CALL constructing concept " + URLEscaping.unapply(path(1)))
-          saveCon(URLEscaping.unapply(path(1)))
-          File.read(file)
-        } else "path malformed: " + path.mkString("/")
-      }
-    } else {
-      log("CALL constructing concept page " + URLEscaping.unapply(path(1)))
-      doFullPage(path)
-    }
-    log("Call returned.")
-    Server.TypedTextResponse(ret,"html")
-  }
-*/
+
   lazy val presenter = controller.extman.get(classOf[Presenter],"html").get.asInstanceOf[HTMLPresenter]
-  lazy val archives : ArchiveStore = controller.extman.get(classOf[ArchiveStore]).headOption.getOrElse {
-    val a = new ArchiveStore
-    controller.extman.addExtension(a)
-    a
-  }
 
   def makeConceptPage(con : String, h : HTML) = {
     val refs = alignments.getConceptAlignments(con)
@@ -254,7 +206,10 @@ class ConceptServer extends ServerExtension("concepts") {
           table(id="formal-table",cls="formal-table",attributes = List(("width","90%"))) {
             val pairs = formals map (path => {
               val src = controller.getO(path)
-              val arch = if (src.isDefined) archives.find(path).headOption.map(_.name) else None
+              val arch = if (src.isDefined) controller.backend.findOwningArchive(path match {
+                case mp : MPath => mp
+                case gn : GlobalName => gn.module
+              }).map(_.id) else None
               (arch, src, path)
             })
             pairs.filter(p => p._1.isDefined && p._2.isDefined) foreach { case (Some(arch), Some(src), _) => tr(cls="formal-table") {
