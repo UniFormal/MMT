@@ -120,6 +120,21 @@ class TermContainer extends AbstractTermContainer {
       List(_parsed,_analyzed).foreach {_.delete}
       dependsOn.clear
    }
+   
+   /** applies a function to the contained Term and returns a new TermContainer */
+   def map(f: Term => Term) = TermContainer(get map f)
+   
+   /** creates a deep copy of this container */
+   def copy = {
+     val tc = new TermContainer
+     tc.read = read
+     tc.parsed = parsed
+     tc.analyzed = analyzed
+     tc
+   }
+   def merge(that: TermContainer) = {
+     if (that.isDefined) that else this.copy
+   }
 }
 
 /** helper object */

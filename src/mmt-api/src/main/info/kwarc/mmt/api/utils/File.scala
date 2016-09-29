@@ -137,6 +137,7 @@ case class FilePath(segments: List[String]) {
   
   def getExtension = toFile.getExtension
   def setExtension(e: String) = toFile.setExtension(e).toFilePath
+  def stripExtension = toFile.stripExtension.toFilePath
 }
 
 object EmptyPath extends FilePath(Nil)

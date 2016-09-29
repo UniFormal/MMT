@@ -8,8 +8,14 @@ import scala.reflect.runtime.universe._
 trait Group
 
 /** thrown on all errors, e.g., when expected classes are not present or XML nodes are not present */
-case class ExtractError(msg: String) extends Exception(msg)
-   
+abstract class ExtractError(msg: String) extends Exception(msg)
+
+/** default case */
+case class FatalExtractError(msg: String) extends Exception(msg)
+
+/** thrown on all errors where extraction succeeded but the wrong type was found; these can be backtracked, e.g., if they follow a list */
+case class BacktrackableExtractError(msg: String) extends Exception(msg)
+
 
 /**
  * This class uses Scala reflection to parse XML into user-defined case classes.
@@ -19,8 +25,10 @@ case class ExtractError(msg: String) extends Exception(msg)
  * 
  * @param pkg the full name of the package in which the case classes are declared
  * 
- * An XML node is parsed into an case class instance as follows
- *  * the case class whose name is the tag name is used (except that XML - is treated as Scala _)
+ * An XML node is parsed into a case class instance as follows
+ *  * the case class whose name is the tag name is used except that
+ *    * XML - is treated as Scala _
+ *    * XML names that are Scala reserved words are prefixed by __ in Scala
  *  * the arguments to the class (technically: the single apply method of the companion object) are computed as follows:
  *   * k: String: the value of the attribute with key s, or the content of the child with tag k, ("" if neither present)
  *   * k: Int: accordingly
@@ -28,16 +36,19 @@ case class ExtractError(msg: String) extends Exception(msg)
  *   * t: A where A is one the case classes: recursive call on the single child of the child with tag t
  *   * t: Option[A]: accordingly, but the child may be absent
  *   * t: List[A]: accordingly but the child may have any number of children
- *   * _a: A, Option[A], List[A]: like the t-cases above but taking the next available child(ren)
- *      These must come last.
+ *   * t: G <: Group:  All arguments of G are computed and an instance of G constructed.
+ *   * _a: A, Option[A], List[A] (where A may be a subtype of Group): like the t-cases above but taking the next available child(ren) of type A
+ *        Effectively, all fields of G are imported into the current case class.
  *   The type A does not have to be a case class, e.g., the elements in a list can have the tags of subclasses of A.
  */
 class XMLToScala(pkg: String) {
    /** mirrors are used to evaluated reflected objects */
    private val m = runtimeMirror(getClass.getClassLoader)
 
+   // definitions for giving names to reflected Scala types
+   
    /** It's non-trivial to construct Type programmatically. So we take them by reflecting Dummy */
-   private case class Dummy(a: Int, b: Boolean, c: List[Int], d: Option[Int], e: Group, f: String,g:BigInt)
+   private case class Dummy(a: Int, b: Boolean, c: List[Int], d: Option[Int], e: Group, f: String, g:BigInt)
    /** the argument types of Dummy */
    private val dummyTypes = typeOf[Dummy].companion.member(TermName("apply")).asMethod.paramLists.flatten.toList.map(_.asTerm.info)
    /** the Type of Int (strangely != typeOf[Int]) */
@@ -62,17 +73,30 @@ class XMLToScala(pkg: String) {
    private object OptionType extends TypeRefMatcher(dummyTypes(3).asInstanceOf[TypeRef].sym)
    /** the Type of Group */
    private val GroupType = dummyTypes(4)
-      
+   
+   // functions for mapping between XML and Scala names
+   
+   private val scalaReserved = List("var", "val", "def", "type", "class", "object")
+   private val scalaEscapePrefix = "__"
    /** convert Scala id names to xml tag/key names */
-   def xmlName(s: String) = s.replace("_", "-")
+   def xmlName(s: String) = {
+     val s2 = if (s.startsWith(scalaEscapePrefix)) s.substring(scalaEscapePrefix.length) else s
+     s2.replace("_", "-")
+   }
    /** convert xml tag/key names to Scala id names */
-   def scalaName(s: String) = s.replace("-", "_")
+   def scalaName(s: String) = {
+     val s2 = s.replace("-", "_")
+     if (scalaReserved contains s2) scalaEscapePrefix + s2 else s2
+   }
+   
    /** (non-recursively) remove comments and whitespace-only text nodes */
    private def cleanNodes(nodes: List[Node]) = nodes.filter {
       case _:Comment => false
       case Text(s) if s.trim == "" => false
       case _ => true
    }
+   
+   // main functions
    
    /** read and parse a file */
    def apply(file: File) : Any = apply(xml.readFile(file))
@@ -81,12 +105,15 @@ class XMLToScala(pkg: String) {
       val c = try {
          Class.forName(pkg + "." + scalaName(node.label))
       } catch {
-         case e: java.lang.ClassNotFoundException => throw ExtractError("no class for " + node)
+         case e: java.lang.ClassNotFoundException => throw FatalExtractError("no class for " + node)
       }
       val foundType = m.classSymbol(c).toType
       apply(node, foundType)
    }
    
+   // abstraction from Scala reflection
+   
+   /** represents an argument of a reflected method */
    private case class Argument(scalaName: Name, userName: String, scalaType: Type)
 
    /** 
@@ -123,7 +150,7 @@ class XMLToScala(pkg: String) {
             val msg = println(s"error creating value of type $tp")
             val exp = arguments.map(a => a.scalaType.toString)
             val found = values.map(_.toString)
-            throw ExtractError(s"$msg\nexpected: $exp\nfound$found")
+            throw FatalExtractError(s"$msg\nexpected: $exp\nfound$found")
          case e: java.lang.reflect.InvocationTargetException =>
             // reflection succeeded, but errors during object initialization
             throw e.getCause
@@ -131,6 +158,8 @@ class XMLToScala(pkg: String) {
       result
    }
 
+   // the method doing the actual work
+   
    /** parse a Node of expected Type expType */
    private def apply(node: Node, expType: Type): Any = {
       //println(node.toString+"\n - "+node.child.map(x => x.isInstanceOf[SpecialNode].toString+":"+x.toString).mkString("\n - "))
@@ -142,15 +171,29 @@ class XMLToScala(pkg: String) {
       val c = try {
          Class.forName(pkg + "." + scalaName(node.label))
       } catch {
-         case e: java.lang.ClassNotFoundException => throw ExtractError("no class for " + node)
+         case e: java.lang.ClassNotFoundException => throw FatalExtractError("no class for " + node)
       }
       val foundType = m.classSymbol(c).toType
       if (! (foundType <:< expType))
-         throw ExtractError(s"expected $expType\nfound $node")
+         throw BacktrackableExtractError(s"expected $expType\nfound $node")
+
+      // state
       // the remaining children of node (removed once processed)
       var children = cleanNodes(node.child.toList).zipWithIndex
-         // the used attributes of node (added once processed)
+      // the used attributes of node (added once processed)
       var attributesTaken: List[String] = Nil
+      // wrapping this around some code that affects the state, restores the state if a BacktrackableExtractError is encountered
+      def backtrackable[A](body: => A): A = {
+        val oldChildren = children
+        val oldAttributesTaken = attributesTaken
+        try {body}
+        catch {case e: BacktrackableExtractError =>
+           children = oldChildren
+           attributesTaken = oldAttributesTaken
+           throw e
+        }
+      }
+      
       /** finds the string V by looking at (i) key="V" (ii) <key>V</key> (iii) "" */
       def getAttributeOrChild(scalaKey: String): String = {
          // special case: _key yields the body of the node, which must be text
@@ -160,7 +203,7 @@ class XMLToScala(pkg: String) {
                   // TODO sure about that?
                   children = Nil
                   return nodes.text
-               case nodes => throw ExtractError(s"text node expected in child $scalaKey: $nodes")
+               case nodes => throw FatalExtractError(s"text node expected in child $scalaKey: $nodes")
             }
          }
          val key = xmlName(scalaKey)
@@ -174,7 +217,7 @@ class XMLToScala(pkg: String) {
             keyChildren match {
                case Some(Text(s) :: Nil) => s
                case Some(nodes) if nodes.forall(_.isInstanceOf[SpecialNode]) => nodes.text // turn Text, EntityRef, Atom etc. into a single Text node
-               case Some(nodes) => throw ExtractError(s"text node expected in child $key: $nodes")
+               case Some(nodes) => throw FatalExtractError(s"text node expected in child $key: $nodes")
                case None => ""
             }
          }
@@ -192,6 +235,22 @@ class XMLToScala(pkg: String) {
             Some(cleanNodes(child.child.toList))
       }
       
+      /**
+       * gets either the next child or the next group of children
+       * if a group fails, the state is restored
+       */
+      def getSingleOrGroupChild(expType: Type): Any = {
+        if (expType <:< GroupType) {
+          backtrackable {
+            makeInstance(expType)(getArgumentValue)
+          }
+        } else {
+          val v = apply(children.head._1, expType)
+          children = children.tail
+          v
+        }
+      }
+      
       /** compute argument values one by one depending on the needed type */
       def getArgumentValue(arg: Argument): Any = arg match {
          // base type: use getAttributeOrChild
@@ -202,50 +261,55 @@ class XMLToScala(pkg: String) {
             val s = getAttributeOrChild(nS)
             if (s == "") 0 else
                try {s.toInt}
-               catch {case _: Exception => throw ExtractError(s"integer expected at key $nS: $s")}
+               catch {case _: Exception => throw FatalExtractError(s"integer expected at key $nS: $s")}
          case Argument(n, nS, BigIntType) =>
             val s = getAttributeOrChild(nS)
             if (s == "") 0 else
                try {BigInt(s)}
-               catch {case _: Exception => throw ExtractError(s"BigInt expected at key $nS: $s")}
+               catch {case _: Exception => throw FatalExtractError(s"BigInt expected at key $nS: $s")}
          case Argument(n, nS, BoolType) =>
             val s = getAttributeOrChild(nS)
             s.toLowerCase match {
                case "true" => true
                case "false" | "" => false
-               case b => throw ExtractError(s"boolean expected at key $nS: $b")
+               case b => throw FatalExtractError(s"boolean expected at key $nS: $b")
             }
-         // special argument _name: first remaining node
+         // special argument _name: first remaining node(s)
          case Argument(_, nS, argTp) if nS.startsWith("_") =>
             argTp match {
                case ListType(elemType) =>
-                  val vs = children.map {c => apply(c._1, elemType)}
-                  children = Nil
-                  vs
+                  var vs: List[Any] = Nil
+                  // take as many children as type-check
+                  While (children.nonEmpty) {
+                	  try {
+                      vs ::= getSingleOrGroupChild(elemType)
+                    } catch {case BacktrackableExtractError(_) =>
+                      While.break
+                    }
+                  }
+                  vs.reverse
                case OptionType(elemType) =>
-                  if (children.isEmpty) None
+                  if (children.isEmpty)
+                    None
                   else {
-                     val (child,_) = children.head
-                     // Some(apply(child, elemType))
-                     scala.util.Try(apply(child,elemType)) match {
-                        case Success(s) =>
-                           children = children.tail
-                           Some(s)
-                        case _ => None
+                     // take the next child if it type-checks, otherwise None
+                     try {
+                       val s = getSingleOrGroupChild(elemType)
+                       Some(s)
+                     } catch {case BacktrackableExtractError(_) =>
+                        None
                      }
                   }
                case _ =>
                   if (children == Nil) {
-                     throw ExtractError(s"no child left for $nS (of type $argTp) in " + node)
+                     throw FatalExtractError(s"no child left for $nS (of type $argTp) in " + node)
                   }
-                  val (child, _) = children.head
-                  children = children.tail
-                  apply(child,argTp)
+                  getSingleOrGroupChild(argTp)
             }
          // default case: use getKeyedChild
          case Argument(n, nS, argTp) =>
-            lazy val noNode      = ExtractError(s"no child with label $nS (of type ${showRaw(argTp)} ${showRaw(StringType)} found in $node")
-            lazy val wrongLength = ExtractError(s"$nS does not have exactly one child (of type $argTp) in $node")
+            lazy val noNode      = FatalExtractError(s"no child with label $nS (of type ${showRaw(argTp)} ${showRaw(StringType)} found in $node")
+            lazy val wrongLength = FatalExtractError(s"$nS does not have exactly one child (of type $argTp) in $node")
             var omitted = false
             val (keepLabel, nS2) = if (nS.endsWith("_")) (true, nS.substring(0,nS.length-1)) else (false, nS)
             val childNodes = getKeyedChild(nS2, keepLabel).getOrElse {
@@ -282,7 +346,7 @@ class XMLToScala(pkg: String) {
       }
       val res = makeInstance(foundType)(getArgumentValue)
       if (children.nonEmpty)
-         throw ExtractError(s"children left after constructing $res: " + children.map{case (c,i) => s"\n$i:$c"}.mkString(","))
+         throw FatalExtractError(s"children left after constructing $res: " + children.map{case (c,i) => s"\n$i:$c"}.mkString(","))
       res
    }
 }
@@ -290,7 +354,7 @@ class XMLToScala(pkg: String) {
 object XMLToScala {
    def checkString(value: String, allowed: String*) {
      if (! (allowed contains value))
-         throw ExtractError(s"illegal string value: $value; expected: ${allowed.mkString(",")}")
+         throw FatalExtractError(s"illegal string value: $value; expected: ${allowed.mkString(",")}")
    }
 }
 
@@ -298,13 +362,16 @@ object XMLToScala {
 
 case class A(a: String, b: Int, c: Boolean, d: B, e: List[B], f: Option[B], g: Option[C], _cs: List[C])
 case class B(a: String, _bs: List[B])
+
 abstract class C
 case class Ca(a: String) extends C
 case class Cb(_c1: C, _c2: C) extends C
 case class Cc(a: String, bc: G, d: String) extends C
+case class Cd(_bs: List[B], _c: Option[C]) extends C
+case class Ce(_js: List[J], _c: Option[C]) extends C
 case class G(b: String, h: H) extends Group
 case class H(c: String) extends Group
-
+case class J(_b: B, _c: C) extends Group
 // test cases
 object Test {
    val n1 = <A a="a" b="1" c="true">
@@ -314,13 +381,18 @@ object Test {
               <Ca a="a"/>
               <Cb><Ca a="a0"/> <Ca a="a1"/></Cb>
               <Cc a="a" b="b" c="c" d="d"/>
+              <Cd><B a="a1"/><B a="a2"/><Ca a="Ca"/></Cd>
+              <Ce><B a="a1"/><Ca a="Ca1"/><B a="a2"/><Ca a="Ca2"/><Ca a="Ca"/></Ce>
             </A>
    val r1 = A("a", 1, true,
                B("a", Nil),
                List(B("a1",Nil), B("a2",Nil)),
                None,
                Some(Ca("a")),
-               List(Ca("a"), Cb(Ca("a0"), Ca("a1")), Cc("a", G("b", H("c")), "d"))
+               List(Ca("a"), Cb(Ca("a0"), Ca("a1")), Cc("a", G("b", H("c")), "d"),
+                    Cd(List(B("a1",Nil), B("a2", Nil)), Some(Ca("Ca"))),
+                    Ce(List(J(B("a1",Nil), Ca("Ca1")), J(B("a2",Nil), Ca("Ca2"))), Some(Ca("Ca")))
+               )
              )
    def main(args: Array[String]) {
       val a1 = new XMLToScala("info.kwarc.mmt.api.utils").apply(n1)

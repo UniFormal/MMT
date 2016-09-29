@@ -20,6 +20,12 @@ class RuleConstant(val home : Term, val name : LocalName, val df: Rule) extends 
    override def toString = name.toString
    def getComponents = Nil //List((DefComponent, df))
    def getDeclarations = Nil
+   type ThisType = RuleConstant
+   def translate(newHome: Term, prefix: LocalName, translator: Translator) = {
+     val dfT = translator.applyRule(df)
+     new RuleConstant(newHome, prefix/name, dfT)
+   }
+   def merge(that: Declaration) = mergeError(that)
 }
 
 class RuleConstantInterpreter(be: Backend) {

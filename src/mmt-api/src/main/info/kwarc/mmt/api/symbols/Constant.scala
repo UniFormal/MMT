@@ -31,6 +31,29 @@ abstract class Constant extends Declaration with HasNotation {
      </constant>
   override def toString = name.toString + alias.map(" @ " + _).mkString(" ") +
      tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("") + notC.toString
+
+  type ThisType = Constant
+     
+  // finalizes the Constant if it is not final
+  def translate(newHome: Term, prefix: LocalName, translator: Translator): FinalConstant = {
+     Constant(
+         newHome, prefix / name, alias.map(prefix / _),
+         tpC.get map {t => translator.applyType(Context.empty, t)},
+         dfC.get map {d => translator.applyDef(Context.empty, d)},
+         rl, notC
+     )
+  }
+  // may finalize the Constant if it is not final
+  def merge(that: Declaration): Constant = that match {
+    case that: Constant =>
+      val aliasM = that.alias:::this.alias
+      val tpM = that.tpC merge this.tpC
+      val dfM = that.dfC merge this.dfC
+      val notM = that.notC merge this.notC
+      val rlM = that.rl orElse this.rl
+      new FinalConstant(this.home, this.name, aliasM, tpM, dfM, rlM, notM)
+    case _ => mergeError(that)
+  }
 }
 
 /**

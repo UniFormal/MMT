@@ -38,6 +38,9 @@ class Pattern(val home: Term, val name : LocalName, val params: Context, val bod
       case (vd,t) => Sub(vd.name, t)
    }
    def getSubstitution(i: Instance): Substitution = getSubstitution(i.matches)
+   type ThisType = Pattern
+   def translate(newHome: Term, prefix: LocalName, translator: Translator) = ???
+   def merge(that: Declaration) = ???
 }
 
 object Pattern {
@@ -69,6 +72,9 @@ class Instance(val home : Term, val name : LocalName, val pattern : GlobalName, 
    def getDeclarations = Nil
    override def toString = 
      "instance " + name.toString + " of pattern " + pattern.toString + " with " + { if (matches.isEmpty) "no args" else matches.map(_.toString).mkString("[ ", "; ", "]") }  
+   type ThisType = Instance
+   def translate(newHome: Term, prefix: LocalName, translator: Translator) = ???
+   def merge(that: Declaration) = ???
 }
 
 

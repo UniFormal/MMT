@@ -11,6 +11,9 @@ import notations._
  * These are the named statements living in [[info.kwarc.mmt.api.modules.Module]]s
  */
 abstract class Declaration extends ContentElement {
+   /** to allow for sharper types of fields, every subclass of Declaration defines this to be itself */
+   type ThisType >: this.type <: Declaration
+  
    /** the containing module */
    lazy val parent = home.toMPath
 
@@ -33,7 +36,7 @@ abstract class Declaration extends ContentElement {
    }
    
    /** the containing module
-    * 
+    * 9
     * this is almost always OMMOD(p:MPath),
     * the main exception are generated anonymous modules
     */
@@ -58,7 +61,13 @@ abstract class Declaration extends ContentElement {
    def implicitKey : Option[MPath] = None
 
    /** a recursively translated copy of this declaration */
-   def translate(translator: Translator): Declaration = ???
+   def translate(newHome: Term, prefix: LocalName, translator: Translator): ThisType
+   /** a new declaration with the same path obtained by replacing fields in 'this' with corresponding fields of 'that'
+    *  Unfortunately, this must take any declaration and throw an error if 'not (that : ThisType)' 
+    */
+   def merge(that: Declaration): ThisType
+   /** called to throw an error from within 'merge' */
+   protected def mergeError(that: Declaration): Nothing = throw GeneralError("cannot merge " + that.path + " into " + this.path)
 }
 
 /** declarations that have a notation */
@@ -67,9 +76,24 @@ trait HasNotation {
    def not = notC.parsing
 }
 
-class NestedModule(mod: Module) extends Declaration with ModuleWrapper {
+/** a [[Module]] as a [[Declaration]], i.e., inside some other module
+ *  @param home the containing module
+ *  @param name the name in that module
+ *  @param mod the contained module
+ *  invariant for non-induced NestedModule's: module.path == parent / name
+ */
+class NestedModule(val home: Term, val name: LocalName, mod: Module) extends Declaration with ModuleWrapper {
+   type ThisType = NestedModule
    def module = mod
-  val home = OMMOD(module.parent ? module.name.init)
-  val name = LocalName(module.name.last)
-  
+   //val home = OMMOD(module.parent ? module.name.init)
+   //val name = LocalName(module.name.last)
+   def translate(newHome: Term, prefix: LocalName, translator: Translator): NestedModule = {
+     val modT = mod.translate(utils.mmt.mmtbase, LocalName(newHome.toMPath/prefix)/name, translator)
+     new NestedModule(newHome, prefix/name, modT)
+   }
+   //TODO this is where patterns (seen as defined theories) can be mapped to larger theories
+   def merge(that: Declaration): NestedModule = {
+     mergeError(that)
+   }
+
 }

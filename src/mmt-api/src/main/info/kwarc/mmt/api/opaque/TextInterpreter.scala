@@ -84,10 +84,8 @@ class TextInterpreter extends OpaqueElementInterpreter
       var term = false
       while (!u.empty) {
          val begin = u.getSourcePosition
-         var (fragS,dollarFound) = u.next('$', '\\') // {s => (s(0).toString,s(0).toString)}
+         var fragS = u.takeUntilChar('$', '\\') // {s => (s(0).toString,s(0).toString)}
          log((if (term) "term: " else "text: ") + fragS)
-         if (!dollarFound && term)
-            errorFun("unclosed term")
          val end = u.getSourcePosition
          if (fragS.nonEmpty) {
             val frag = if (term) {

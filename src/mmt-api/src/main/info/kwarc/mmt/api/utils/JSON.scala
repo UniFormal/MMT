@@ -149,7 +149,7 @@ object JSON {
        return Infinity
      }
       val e = "(?: e|e\\+|e-|E|E\\+|E-)"
-      val mt = s.next(s"(-)?(\\d+)(\\.\\d+)?($e\\d+)?")
+      val mt = s.takeRegex(s"(-)?(\\d+)(\\.\\d+)?($e\\d+)?")
       val List(sgn, main, frac, exp) = mt.subgroups
       val jn = if (frac == null && exp == null) {
          val f = if (sgn == null) 1 else -1
@@ -161,9 +161,7 @@ object JSON {
    
    def parseString(s: Unparsed) = {
      s.drop("\"")
-     val (p,closed) = s.next('"', '\\')
-     if (!closed)
-         throw JSONError("unclosed string")
+     val p = s.takeUntilChar('"', '\\')
 	   var escaped = p
 	   var unescaped = ""
 	   while (escaped.nonEmpty) {

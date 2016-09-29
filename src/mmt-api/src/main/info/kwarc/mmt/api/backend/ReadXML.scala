@@ -283,7 +283,7 @@ class XMLReader(controller: Controller) extends Logger {
                case <definition>{d}</definition> =>
                   val df = Obj.parseTerm(d, nsMap)
                   val t = DefinedTheory(parent, tname, df)
-                  addDeclaration(new NestedModule(t))
+                  addDeclaration(new NestedModule(OMMOD(home), name, t))
                case symbols =>
                   val meta = xml.attr(symbol, "meta") match {
                      case "" => None
@@ -292,7 +292,7 @@ class XMLReader(controller: Controller) extends Logger {
                         Some(Path.parseM(mt, nsMap))
                   }
                   val t = new DeclaredTheory(parent, tname, meta)
-                  addDeclaration(new NestedModule(t))
+                  addDeclaration(new NestedModule(OMMOD(home), name, t))
                   symbols.foreach {d => 
                      logGroup {
                         readIn(nsMap, t, d)

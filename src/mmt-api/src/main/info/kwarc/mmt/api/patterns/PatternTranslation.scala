@@ -16,6 +16,9 @@ class PatternAssignment(val home : Term, val name : LocalName, val target : Patt
    override def toString = name + " |-> " + target.toString 
    def getComponents = Nil //TODO
    def getDeclarations = Nil
+   type ThisType = PatternAssignment
+   def translate(newHome: Term, prefix: LocalName, translator: Translator) = ???
+   def merge(that: Declaration) = ???
 }
 
 object Functor {

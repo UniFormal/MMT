@@ -15,7 +15,7 @@ import scala.xml.Elem
 class DerivedDeclaration(h: Term, name: LocalName, val feature: String,
                          components: List[DeclarationComponent], mt : Option[MPath] = None) extends {
    private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name, mt)
-} with NestedModule(t) {
+} with NestedModule(h, name, t) {
    // overriding to make the type stricter
   override def module: DeclaredModule = t
 
@@ -44,17 +44,38 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String,
     t.getDeclarations foreach(_.toNode(rh))
     rh << "</derived>"
   }
-  override def toString = feature +
-    {
+  override def toString = {
+    val s1 = {
       name match {
         case LocalName(ComplexStep(p) :: Nil) => ""
         case _ => " " + name
       }
-    } + {
-    if (components.nonEmpty) "(" + components.map(_.value.toString).mkString(",") + ")"
-    else if (components.length == 1) " " + components.head.value.toString
-    else ""
-  } + {if (t.getDeclarations.nonEmpty) " =\n" + t.innerString else ""}
+    }
+    val s2 = if (components.nonEmpty) "(" + components.map(_.value.toString).mkString(",") + ")"
+        else if (components.length == 1) " " + components.head.value.toString
+        else ""
+    val s3 = if (t.getDeclarations.nonEmpty) " =\n" + t.innerString else ""
+    feature + s1 + s2 + s3
+  }
+
+  override def translate(newHome: Term, prefix: LocalName, translator: Translator): DerivedDeclaration = {
+     // translate this as a [[NestedModue]], then extend the result to a DerivedDeclaration
+     val superT = super.translate(newHome, prefix, translator) // temporary, will be used to build result
+     // TODO using applyDef for all term components is not right, it's unclear if any translation is possible at all
+     def tl(t: Term) = translator.applyDef(Context.empty, t)
+     val compsT = components map {
+       case DeclarationComponent(k,tc: TermContainer) =>
+         DeclarationComponent(k, tc map tl)
+       case DeclarationComponent(k,nc: notations.NotationContainer) =>
+         DeclarationComponent(k, nc.copy)
+     }
+     // splice super in to res
+     val res = new DerivedDeclaration(superT.home, superT.name, feature, compsT, mt)
+     superT.module.getDeclarations.foreach {d =>
+       res.module.add(d)
+     }
+     res
+   }
 }
 
 
@@ -92,6 +113,7 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
  */
 abstract class Elaboration extends ElementContainer[Declaration] {
     def domain: List[LocalName]
+    
     /**
      * default implementation in terms of the other methods
      * may be overridden for efficiency
@@ -126,61 +148,44 @@ class GenerativePushout extends StructuralFeature("generative") {
         case _ =>
           throw GetError("")
       }
-
       val context = parent.getInnerContext
-      val body = controller.simplifier.getBody(context, dom)
-
+      val body = controller.simplifier.materialize(context, dom, true, None) match {
+        case m: DeclaredModule => m
+        case m: DefinedModule => throw ImplementationError("materialization failed")
+      }
+      
       new Elaboration {
         /** the morphism dd.dom -> parent of the pushout diagram: it maps every n to dd.name/n */
         private val morphism = new DeclaredView(parent.parent, parent.name/dd.name, dom, parent.toTerm, false)
-
-        private def translate(t: Term): Term = ??? //TODO
-
         /** precompute domain and build the morphism */
-        val domain = body.getDeclarations.map {d =>
+        val domain = body.getDeclarationsElaborated.map {d =>
           val ddN = dd.name / d.name
           val assig = Constant(morphism.toTerm, d.name, Nil, None, Some(OMS(parent.path ? ddN)), None)
           morphism.add(assig)
           ddN
         }
-
+        // translate each declaration and merge the assignment (if any) into it
+        private val translator = new ApplyMorphism(morphism.toTerm)
         def getO(name: LocalName): Option[Declaration] = body.getO(name) map {
-          case VarDecl(n,tp,df,nt) =>
-             VarDecl(dd.name/n, tp map translate, df map translate, nt).toDeclaration(parent.toTerm)
-          case c: Constant =>
-             Constant(parent.toTerm, dd.name/c.name, c.alias map (dd.name / _), c.tp map translate, c.df map translate, c.rl, c.notC)
-          case nm: NestedModule => ???
-          case d => throw LocalError("unexpected declaration in body of domain: " + d)
+          case d: Declaration =>
+             val dT = d.translate(parent.toTerm, dd.name, translator)
+             val dTM = dd.module.getO(name) match {
+               case None => dT
+               case Some(a) => dT merge a
+             }
+             dTM
+          case ne => throw LocalError("unexpected declaration in body of domain: " + ne.name)
         }
-
       }
    }
 
    def modules(d: DerivedDeclaration): List[Module] = Nil
-   def check(d: DerivedDeclaration)(implicit env: CheckingEnvironment) {}
-}
 
-class InductiveDataTypes extends StructuralFeature("inductive") {
-  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
-     new Elaboration {
-       def domain = {
-         dd.module.domain
-       }
-       def getO(name: LocalName) = {
-         dd.module.getO(name) map {d =>
-           d //TODO
-         }
-       }
-     }
-  }
-
-   def modules(d: DerivedDeclaration): List[Module] = Nil
    def check(d: DerivedDeclaration)(implicit env: CheckingEnvironment) {}
 }
 
 // Binds theory parameters using Lambda/Pi in an include-like structure
-class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, applys : GlobalName)
-  extends StructuralFeature(id) {
+class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, applys : GlobalName) extends StructuralFeature(id) {
 
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) : Elaboration = {
     val dom = dd.getComponent(DomComponent) getOrElse {
@@ -202,6 +207,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     }
     controller.simplifier.apply(body)
     val vars = body.parameters
+    val varsNames = vars.map(_.name)
     /*
     if (vars.isEmpty) return new Elaboration {
       val includes = PlainInclude(parent.path,body.path) :: body.getIncludes.map(PlainInclude(parent.path,_))
@@ -212,37 +218,41 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
 
     def bindPi(t : Term) = if (vars.nonEmpty) OMBIND(OMS(pi),vars,t) else t
     def bindLambda(t : Term) = if (vars.nonEmpty) OMBIND(OMS(lambda),vars,t) else t
-    def applyPars(t : Term) = if (vars.nonEmpty) vars.foldLeft(t)((tm,v) =>
-      OMA(OMS(applys),List(tm,OMV(v.name)))) else t
-
-    new Elaboration {
-      var consts : List[FinalConstant] = Nil
-
-      val traverser = new StatelessTraverser {
-        def traverse(t: Term)(implicit con : Context, init : State) : Term = t match {
-          case OMS(p) if consts.exists(c => c.path == p) => applyPars(t)
+    val applyPars = new StatelessTraverser {
+        def traverse(t: Term)(implicit con: Context, state: State) : Term = t match {
+          case OMS(p) if p.module == dd.module.path =>
+            vars.foldLeft(t)((tm,v) => OMA(OMS(applys),List(tm,OMV(v.name))))
+          case OMBINDC(bind, bvars, scps) =>
+            // rename all bound variables that are among the parameters to avoid capture
+            val (bvarsR, bvarsSub) = Context.makeFresh(bvars, varsNames ::: con.domain)
+            OMBINDC(traverse(bind), traverseContext(bvarsR), scps map {s => traverse(s ^? bvarsSub)(con++bvarsR, state)})
           case _ => Traverser(this,t)
         }
-      }
-      val decls = body.getDeclarations.map(decl => decl match {
-        case c : FinalConstant if !c.isGenerated =>
-          Some(Constant(parent.toTerm,LocalName(c.parent) / c.name, c.alias.map(LocalName(c.parent) / _),
-            c.tp.map(t => bindPi(traverser.apply(t,Context.empty))),
-            c.df.map(t => bindLambda(traverser.apply(t,Context.empty))),c.rl,c.notC))
-        case c : FinalConstant => Some(Constant(parent.toTerm,LocalName(c.parent) / c.name,
-          c.alias.map(LocalName(c.parent) / _),
-          c.tp,c.df,c.rl,c.notC))
+    }
+    val translator = new Translator {
+      def applyType(c: Context, t: Term) = bindPi(applyPars(t, c))
+      def applyDef(c: Context, t: Term) = bindLambda(applyPars(t, c))
+    }
+    val prefix = dd.name
+    new Elaboration {
+      val decls = body.getDeclarationsElaborated.flatMap {
+        case d =>
+          List(d.translate(parent.toTerm, prefix, translator))
+      /*  DM's old code
+        case c: Constant =>
+          //TODO @DM I don't think it's correct to treat generated constants differently here --FR 
+          val tpE = if (c.isGenerated) c.tp else c.tp.map(t => bindPi(applyPars(t, Context.empty)))
+          val dfE = if (c.isGenerated) c.df else c.df.map(t => bindLambda(applyPars(t, Context.empty)))
+          val cE = Constant(parent.toTerm, prefix/c.name, c.alias.map(prefix/_),tpE, dfE, c.rl, c.notC)
+          List(cE)
         case s : DeclaredStructure =>
-          val ns = DeclaredStructure(parent.toTerm,LocalName(s.parent) / s.name,s.from,s.isImplicit)
+          //TODO @DM This does not look right. We may have to drop the structure if vars.nonEmpty --FR 
+          val ns = DeclaredStructure(parent.toTerm, LocalName(s.parent)/s.name, s.from, s.isImplicit)
           ElaboratedElement.set(ns)
-          Some(ns)
-        case d : DerivedDeclaration =>
-          //val nd = new DerivedDeclaration(parent.toTerm,LocalName(d.parent) / d.name,d.feature,d.getComponents)
-          //ElaboratedElement.set(nd)
-          //nd
-          None
-        case _ => throw new Exception("TODO: BoundTheoryParameters/Elaboration Declaration case " + decl.getClass)
-      }) collect {case Some(x) => x}
+          List(ns)
+        case decl => throw LocalError("TODO: BoundTheoryParameters/Elaboration Declaration case " + decl.getClass)
+      */
+      }
       //body
       def domain: List[LocalName] = decls.map(_.name)
       def getO(name: LocalName): Option[Declaration] = decls.find(_.name == name)

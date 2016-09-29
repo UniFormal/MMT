@@ -13,7 +13,10 @@ abstract class Module(val parent : DPath, val name : LocalName) extends ContentE
    def path: MPath = parent ? name
    def toTerm = OMMOD(path)
    def superModule: Term = if (name.length > 1) OMMOD(parent ? name.tail) else TheoryExp.empty
+   // sharper type
+   def getDeclarations: List[Declaration]
    //def parameters : Context
+   def translate(newNS: DPath, prefix: LocalName, translator: Translator): Module 
 }
 
 /**
@@ -23,16 +26,18 @@ trait DeclaredModule extends Module with Body {
    /** the meta-theory, domain, and codomain are not part of the term components because it is just a Path */
    def getInnerContext: Context
    def asDocument: documents.Document
+   def translate(newNS: DPath, prefix: LocalName, translator: Translator): DeclaredModule 
 }
 
 /**
  * Module given by existing modules/morphisms
  */
 trait DefinedModule extends Module with ModuleDefiniens {
+   def translate(newNS: DPath, prefix: LocalName, translator: Translator): DefinedModule
 }
 
 /**
- * An ContentElement that that is defined via a module
+ * A [[ContentElement]] that that is defined via a module
  */
 trait ModuleWrapper extends ContentElement {
   def module : Module

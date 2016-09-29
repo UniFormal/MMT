@@ -119,7 +119,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val se = par match {
        case IsDoc(_) => m
        case IsMod(mp, ln) =>
-          val nm = new NestedModule(m)
+          // mp.name / mname == m.name
+          val mname = m.name.dropPrefix(mp.name).getOrElse {throw ImplementationError("illegal name of nested module")}
+          val nm = new NestedModule(OMMOD(mp), mname, m)
           nm.setDocumentHome(ln)
           nm
     }
