@@ -20,8 +20,8 @@ class PVSImporter extends Importer {
       val e = try {
          parseXML(bf.inFile)
       } catch {
-        case utils.ExtractError(msg) =>
-          println(msg)
+        case e : utils.ExtractError =>
+          println(e.msg)
           sys.exit
       }
      //println(e)

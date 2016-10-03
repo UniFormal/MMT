@@ -8,7 +8,7 @@ import scala.reflect.runtime.universe._
 trait Group
 
 /** thrown on all errors, e.g., when expected classes are not present or XML nodes are not present */
-abstract class ExtractError(msg: String) extends Exception(msg)
+abstract class ExtractError(val msg: String) extends Exception(msg)
 
 /** default case */
 case class FatalExtractError(msg: String) extends Exception(msg)
