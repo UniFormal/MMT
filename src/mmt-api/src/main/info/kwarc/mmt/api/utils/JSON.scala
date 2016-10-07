@@ -161,7 +161,9 @@ object JSON {
    
    def parseString(s: Unparsed) = {
      s.drop("\"")
-     val p = s.takeUntilChar('"', '\\')
+     val (p,closed) = s.takeUntilChar('"', '\\')
+     if (!closed)
+       throw JSONError("unclosed string")
 	   var escaped = p
 	   var unescaped = ""
 	   while (escaped.nonEmpty) {

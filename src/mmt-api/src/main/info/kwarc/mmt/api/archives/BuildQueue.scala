@@ -72,6 +72,13 @@ sealed abstract class BuildResult {
 
 object BuildResult {
   def empty: BuildSuccess = BuildSuccess(Nil, Nil)
+  /** convenience method to create the result of successfully importing a (typically) externally checked document */
+  def fromImportedDocument(doc: documents.Document) = {
+    val provs = doc.getDeclarations collect {
+      case r: documents.MRef => LogicalDependency(r.target)
+    }
+    BuildSuccess(Nil, provs)
+  }
 }
 
 case class BuildEmpty(str: String) extends BuildResult {

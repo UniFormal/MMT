@@ -245,7 +245,7 @@ class Setup extends ShellExtension("jeditsetup") {
        jars.foreach {case (name,version) =>
          val target = jarFolder / (name + ".jar")
          if (!target.exists) {
-           val url = new java.net.URL(s"https://sourceforge.net/projects/jedit-plugins/files/$name/$version/$name-$version-bin.zip")
+           val url = URI(s"https://sourceforge.net/projects/jedit-plugins/files/$name/$version/$name-$version-bin.zip")
            val zip = target.setExtension("zip")
            println("downloading " + url)
            try {

@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.utils
 
 import java.net
 
-import info.kwarc.mmt.api.ImplementationError
+import info.kwarc.mmt.api._
 
 /** Custom implementation of the URI RFC that's better than java.net.URI
   *
@@ -183,4 +183,22 @@ object URI {
   implicit def toJava(u: URI): java.net.URI = u.toJava
 
   implicit def fromJava(u: java.net.URI): URI = apply(u)
+  
+  def get(uri: URI): java.io.InputStream = {
+    val url = uri.toURL
+    val conn = url.openConnection
+    if (List("https","http") contains url.getProtocol) {
+      val httpConn = conn.asInstanceOf[java.net.HttpURLConnection]
+      val resp = httpConn.getResponseCode
+      // setFollowRedirects does not actually follow redirects
+      if (resp.toString.startsWith("30")) {
+        val redirectURL = URI(conn.getHeaderField("Location"))
+        return get(redirectURL)
+      }
+      if (resp.toString.startsWith("40")) {
+        throw GeneralError("download of " + url + " failed")
+      }
+    }
+    conn.getInputStream
+  }
 }

@@ -21,7 +21,7 @@ object xml {
       val N = try {
          cp.document()(0)
       } catch {case e: Exception =>
-         throw XMLError("XML error while parsing " + file + ": " + e.getMessage)
+         throw XMLError("XML error while parsing " + file + ": " + e.getMessage).setCausedBy(e)
       } finally {
          src.close
       }
@@ -177,12 +177,16 @@ object xml {
       output(0)
    }
    /** dereference a URL and return XML */
-   def get(url: java.net.URL): Node = {
-      val conn = url.openConnection()
-      val src = scala.io.Source.fromInputStream(conn.getInputStream(), "UTF-8")
-      val output = scala.xml.parsing.ConstructingParser.fromSource(src, false).document()
-      src.asInstanceOf[scala.io.BufferedSource].close
-      output(0)
+   def get(url: URI): Node = {
+      val input = URI.get(url)
+      val src = scala.io.Source.fromInputStream(input, "UTF-8")
+      try {
+         val output = scala.xml.parsing.ConstructingParser.fromSource(src, false).document()
+         output(0)
+      } finally {
+         input.close
+         src.asInstanceOf[scala.io.BufferedSource].close
+      }
    }
 
    /** common namespaces */
