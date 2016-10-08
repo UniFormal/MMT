@@ -347,8 +347,8 @@ object File {
     }
   }
   /** dereference a URL and save as a file */
-  def download(url: java.net.URL, file: File) {
-    val input = getFromURL(url)
+  def download(uri: URI, file: File) {
+    val input = URI.get(uri)
     file.up.mkdirs
     val output = new java.io.FileOutputStream(file)
     try {
@@ -358,23 +358,6 @@ object File {
       input.close
       output.close
     }
-  }
-
-  def getFromURL(url: java.net.URL) : InputStream = {
-    val conn = url.openConnection
-    if (List("https","http") contains url.getProtocol) {
-      val httpConn = conn.asInstanceOf[java.net.HttpURLConnection]
-      val resp = httpConn.getResponseCode
-      // setFollowRedirects does not actually follow redirects
-      if (resp.toString.startsWith("30")) {
-        val redirectURL = new java.net.URL(conn.getHeaderField("Location"))
-        return getFromURL(redirectURL)
-      }
-      if (resp.toString.startsWith("40")) {
-        throw GeneralError("download of " + url + " failed")
-      }
-    }
-    conn.getInputStream
   }
 
   /** implicit conversion Java <-> Scala */

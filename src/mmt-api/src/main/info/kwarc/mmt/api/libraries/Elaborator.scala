@@ -12,7 +12,7 @@ import collection.immutable.{HashSet, HashMap}
 case class ByStructureSimplifier(home: Term, view: Term) extends Origin
 
 /**
- * if set, the element is deactivated
+ * if set, the element has been elaborated
  */
 object ElaboratedElement extends ClientProperty[StructuralElement,Option[Boolean]](utils.mmt.baseURI / "clientProperties" / "controller" / "elaborated") {
   def is(t : StructuralElement) : Boolean = get(t).getOrElse(None).isDefined

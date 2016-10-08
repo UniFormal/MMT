@@ -108,7 +108,7 @@ class Unparsed(input: String, error: String => Nothing) {
     * @param exceptAfter the an escape character
     * @return the found string (excluding the until), and false iff end of input reached  
     */
-   def takeUntilChar(until: Char, exceptAfter: Char): String = {
+   def takeUntilChar(until: Char, exceptAfter: Char): (String,Boolean) = {
       var seen = ""
       while (!empty && head != until) {
          if (head == exceptAfter) {
@@ -119,11 +119,11 @@ class Unparsed(input: String, error: String => Nothing) {
          next
       }
       if (empty) {
-         error("expected " + until + " found end of file after reading " + seen)
+         (seen, false)
       }
       else {
          next
-         seen
+         (seen,true)
       }
    }
    

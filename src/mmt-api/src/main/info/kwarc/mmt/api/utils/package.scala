@@ -15,7 +15,7 @@ package object utils {
       case l => l
    }
    
-   /** splits a string at whitespace, quoted segments may contain whitespace, \" for quote */
+   /** splits a string at whitespace, quoted segments may contain whitespace, \" for quote, ignores leading/trailing whitespace */
    def splitAtWhitespace(s: String): List[String] = {
       var segments : List[String] = Nil
       var current = ""

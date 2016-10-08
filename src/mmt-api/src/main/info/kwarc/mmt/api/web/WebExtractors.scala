@@ -1,31 +1,29 @@
 package info.kwarc.mmt.api.web
 
-import info.kwarc.mmt.api.utils.{File, HTML, URI}
-import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
+import info.kwarc.mmt.api._
+import utils._
 
 import scala.collection.immutable.List
 import scala.util.Try
 import scala.xml.{Elem, Node, XML}
 
+//TODO FR@DM Using external libraries is not allowed by default. I've replaced your SAX parser call with xml.get
+
+/** TODO FR@DM this entire class is awful and must be cleaned up in order to remain here.
+ *  - Any is only allowed when you actually expect anything
+ *  - Using Either is generally indicative of badly-designed interfaces
+ *  - All exceptions thrown by MMT API must subclass api.Error.
+ *  - Retrieving children of XML elements is much simpler.
+ *    Use \\ to find non-direct children.
+ *    id attributes are globally unique - it's unnecessary and less robust to chain id-based retrievals 
+ */
 abstract class WebExtractor {
   val scheme : String
   val key : String
   val dontpull : Boolean = false
-  def pull(urlp: String) : Elem = {
-    val url = URI(scheme + "://" + urlp).toJava.toURL
-    val input = File.getFromURL(url)
-    var output = new java.io.ByteArrayOutputStream()
-    try {
-      val byteArray = Stream.continually(input.read).takeWhile(_ != -1).map(_.toByte).toArray
-      output.write(byteArray)
-      XML.withSAXParser(new SAXFactoryImpl().newSAXParser()).loadString(output.toString)
-    } catch {
-      case e : Exception =>
-        <html></html>
-    } finally {
-      input.close
-      output.close
-    }
+  def pull(urlp: String) : Elem = xml.get(URI(urlp)) match {
+    case e: Elem => e
+    case _ => throw GeneralError("retrieval succeeded but found other XML than a single element")
   }
 
   def getChild(n : Elem, child : String, prop : (String,String) = ("","")) : Elem = {
@@ -64,7 +62,7 @@ abstract class WebExtractor {
     }
   }
 
-  protected def content(node: Elem, uri : String, h : HTML)
+  protected def content(node: Elem, uri : String, h : HTML): Unit
 }
 
 object WikiExtractor extends WebExtractor {

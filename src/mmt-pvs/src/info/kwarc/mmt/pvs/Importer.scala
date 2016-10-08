@@ -20,11 +20,10 @@ class PVSImporter extends Importer {
       val e = try {
          parseXML(bf.inFile)
       } catch {
-        case e : utils.ExtractError =>
-          println(e.msg)
+        case e: utils.ExtractError =>
+          log(e.getMessage)
           sys.exit
       }
-     //println(e)
 
       val conv = new PVSImportTask(controller, bf, index)
       e match {
@@ -33,7 +32,6 @@ class PVSImporter extends Importer {
          case m: syntax.Module =>
             conv.doDocument(pvs_file(List(m)))
       }
-
 
       //BuildResult.empty
    }
