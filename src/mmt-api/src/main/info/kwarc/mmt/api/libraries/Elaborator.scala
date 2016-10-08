@@ -14,7 +14,14 @@ case class ByStructureSimplifier(home: Term, view: Term) extends Origin
 /**
  * if set, the element is deactivated
  */
-object ElaboratedElement extends BooleanClientProperty[StructuralElement](utils.mmt.baseURI / "clientProperties" / "controller" / "elaborated")
+object ElaboratedElement extends ClientProperty[StructuralElement,Option[Boolean]](utils.mmt.baseURI / "clientProperties" / "controller" / "elaborated") {
+  def is(t : StructuralElement) : Boolean = get(t).getOrElse(None).isDefined
+  def isProperly(t : StructuralElement) : Boolean = get(t).contains(Some(true))
+  def set(t: StructuralElement) {
+    put(t, Some(false))
+  }
+  def setProperly(t : StructuralElement) = put(t,Some(true))
+}
 
 
 /**
@@ -99,6 +106,7 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
            case None => Nil
            case Some(sf) =>
               val elab = sf.elaborate(parent, dd)
+              dd.module.setOrigin(GeneratedBy(dd.path))
               elab.getDeclarations
          }
       case _ =>
@@ -109,7 +117,7 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
        log("flattening yields " + e.path)
        parent.add(e, Some(dOrig.name))
     }
-    ElaboratedElement.set(dOrig)
+    if (dElab.isEmpty) ElaboratedElement.set(dOrig) else ElaboratedElement.setProperly(dOrig)
   }
 
   // TODO change management does not propagate to other theories yet
@@ -147,6 +155,25 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
       case cp : ContentPath => controller.get(cp)
       case _ => return
     }
+
+    parent.getOrigin match {
+      case GeneratedBy(dp : GlobalName) =>
+        val ddOpt = controller.getO(dp)
+        ddOpt match {
+          case Some(dd : DerivedDeclaration) =>
+            val thOpt = controller.getO(dd.parent)
+            thOpt match {
+              case Some(th : DeclaredTheory) =>
+                onDelete(dd)
+                ElaboratedElement.erase(dd)
+                flattenDeclaration(th,dd)
+              case _ =>
+            }
+          case _ =>
+        }
+      case _ =>
+    }
+
     if (!ElaboratedElement.is(parent)) return
     (parent,c) match {
       case (t : DeclaredTheory, dec : Declaration) =>

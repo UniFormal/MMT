@@ -108,9 +108,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case s: DefinedStructure =>
         checkElement(s,Some(context))
       case c: Constant =>
-        if (c.name.toString == "df-tru") {
-          println("here!")
-        }
         checkElement(c,Some(context))
       case rc: RuleConstant =>
       case _ =>

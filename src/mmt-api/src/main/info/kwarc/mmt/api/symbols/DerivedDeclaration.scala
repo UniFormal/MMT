@@ -82,7 +82,7 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String,
 /**
  * a rule that legitimizes a [[StructuralFeature]]
  */
-case class StructuralFeatureRule(feature: String, components : List[ComponentKey], mt : Option[MPath] = None, hasname : Boolean = true) extends Rule
+case class StructuralFeatureRule(feature: String, components : List[ComponentKey], mt : Option[MPath] = None, hasname : Boolean = true,usedom : Boolean = false, usecod : Boolean = false) extends Rule
 
 /**
  * A StructureFeature defines the semantics of a [[DerivedDeclaration]]
@@ -136,6 +136,9 @@ abstract class Elaboration extends ElementContainer[Declaration] {
  * Generative, definitional functors/pushouts with free instantiation
  * called structures in original MMT
  */
+
+object GenerativePushoutRule extends StructuralFeatureRule("generative",List(DomComponent),usedom = true)
+
 class GenerativePushout extends StructuralFeature("generative") {
 
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
@@ -143,6 +146,9 @@ class GenerativePushout extends StructuralFeature("generative") {
         throw GetError("")
       } match {
         case tc: TermContainer => tc.get.getOrElse {
+          throw GetError("")
+        }
+        case dc: MPathContainer => dc.get.getOrElse {
           throw GetError("")
         }
         case _ =>
@@ -166,16 +172,20 @@ class GenerativePushout extends StructuralFeature("generative") {
         }
         // translate each declaration and merge the assignment (if any) into it
         private val translator = new ApplyMorphism(morphism.toTerm)
-        def getO(name: LocalName): Option[Declaration] = body.getO(name) map {
-          case d: Declaration =>
-             val dT = d.translate(parent.toTerm, dd.name, translator)
-             val dTM = dd.module.getO(name) match {
-               case None => dT
-               case Some(a) => dT merge a
-             }
-             dTM
-          case ne => throw LocalError("unexpected declaration in body of domain: " + ne.name)
-        }
+        def getO(name: LocalName): Option[Declaration] =
+          if (name.steps.startsWith(dd.name.steps)) {
+            val rest = name.drop(dd.name.steps.length)
+            body.getO(rest) map {
+              case d: Declaration =>
+                val dT = d.translate(parent.toTerm, dd.name, translator)
+                val dTM = dd.module.getO(rest) match {
+                  case None => dT
+                  case Some(a) => dT merge a
+                }
+                dTM
+              case ne => throw LocalError("unexpected declaration in body of domain: " + ne.name)
+            }
+          } else None
       }
    }
 
