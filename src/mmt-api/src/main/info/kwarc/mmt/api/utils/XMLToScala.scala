@@ -142,7 +142,7 @@ class XMLToScala(pkg: String) {
          // convert to xmlName except for initial/terminal _
          val init = n.takeWhile(_ == '_')
          val term = n.reverse.takeWhile(_ == '_')
-         val n2 = n.substring(init.length, n.length-init.length-term.length)
+         val n2 = n.substring(init.length, n.length-term.length)
          Argument(n, init+xmlName(n2)+term, arg.asTerm.info)
       }
       val values = arguments map obtain
@@ -190,7 +190,7 @@ class XMLToScala(pkg: String) {
       }
       val foundType = m.classSymbol(c).toType
       if (! (foundType <:< expType)) {
-         val msg = s"expected $expType\nfound $node"
+         val msg = s"expected $expType\nfound $foundType in $node"
          throw BacktrackableExtractError(backtrackingToken, msg)
       }
 

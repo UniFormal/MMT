@@ -167,7 +167,14 @@ class ConceptServer extends ServerExtension("concepts") {
     }
     val informals = (uris collect {
       case PhysicalReference(uri) => uri.toString.replace("http://","").replace("https://","")
-    }).distinct
+    }).distinct.map(s =>
+      if (s.contains("wikipedia")) (s,0)
+      else if (s.contains("mathworld.wolfram")) (s,1)
+      else if (s.contains("encyclopediaofmath.org")) (s,2)
+      else if (s.contains("ncatlab.org")) (s,3)
+      else if (s.contains("planetmath.org")) (s,4)
+      else (s,5)
+    ).sortBy(_._2).map(_._1)
     import h._
     implicit val rh = new HTMLRenderingHandler(h)
       span {

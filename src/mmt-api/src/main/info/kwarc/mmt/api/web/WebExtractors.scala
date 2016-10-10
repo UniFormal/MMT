@@ -6,6 +6,7 @@ import utils._
 import scala.collection.immutable.List
 import scala.util.Try
 import scala.xml.{Elem, Node, XML}
+import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
 
 //TODO FR@DM Using external libraries is not allowed by default. I've replaced your SAX parser call with xml.get
 
@@ -21,10 +22,22 @@ abstract class WebExtractor {
   val scheme : String
   val key : String
   val dontpull : Boolean = false
-  def pull(urlp: String) : Elem = xml.get(URI(urlp)) match {
-    case e: Elem => e
-    case _ => throw GeneralError("retrieval succeeded but found other XML than a single element")
-  }
+  def pull(urlp: String) : Elem = {
+        val url = URI(scheme + "://" + urlp)
+        val input = URI.get(url)
+        var output = new java.io.ByteArrayOutputStream()
+        try {
+          val byteArray = Stream.continually(input.read).takeWhile(_ != -1).map(_.toByte).toArray
+          output.write(byteArray)
+          XML.withSAXParser(new SAXFactoryImpl().newSAXParser()).loadString(output.toString)
+        } catch {
+          case e : Exception =>
+            <html></html>
+        } finally {
+          input.close
+          output.close
+        }
+    }
 
   def getChild(n : Elem, child : String, prop : (String,String) = ("","")) : Elem = {
     if (prop == ("",""))
@@ -82,9 +95,11 @@ object WikiExtractor extends WebExtractor {
           case d @ <h3>{s @ _*}</h3> => done = true
           case d @ <table>{s @ _*}</table> if (d \ "@class").text contains "navbox" =>
           case d @ <table>{s @ _*}</table> if (d \ "@class").text contains "metadata" =>
+          case d @ <table>{s @ _*}</table> if (d \ "@class").text contains "infobox" =>
           case d @ <table>{s @ _*}</table> if (d \ "@class").text contains "ambox-Refimprove" =>
           case d @ <div>{s @ _*}</div> if (d \ "@id").text == "toc" => done = true
-          case nod => ret ::= nod
+          case nod if nod.toString.trim != "" && nod.toString.trim != "\n" => ret ::= nod
+          case _ =>
         })
         val nret = ret.reverse.map(_.toString.replaceAll(
           "href=\"/","href=\"http://en.wikipedia.org/").replaceAll("href=\"#","href=\"" + uri + "#"))
@@ -108,8 +123,11 @@ object PlanetMathExtractor extends WebExtractor {
         var done = false
         content.child.foreach(n => if(!done) n match {
           case d @ <div>{s @ _*}</div> if (d \ "@class").text contains "related" => done = true
+          case d @ <h1>{s @ _*}</h1> =>
+          case d @ <hgroup>{s @ _*}</hgroup> =>
           case d @ <section>{s @ _*}</section> if (d \ "@id").text == "bib" => done = true
-          case nod => ret ::= nod
+          case nod if nod.toString.trim != "" && nod.toString.trim != "\n" => ret ::= nod
+          case _ =>
         })
         val nret = ret.reverse.map(_.toString)
         h.literal(nret.mkString(""))
@@ -122,29 +140,31 @@ object PlanetMathExtractor extends WebExtractor {
 object WolframExtractor extends WebExtractor {
   val key = "Wolfram MathWorld"
   val scheme = "http"
-  override val dontpull = true
+  // override val dontpull = true
   def content(pm : Elem, uri : String, h : HTML) = {
     pm match {
       case ht @ <html>{hbd @ _*}</html> =>
-        h.a(scheme + "://" + uri) { h.text { uri } }
+        // h.a(scheme + "://" + uri) { h.text { uri } }
         // Waaay to slow!
-        /*
+
         val c1 = retrieve(ht,"body",("table","id","pageTable"),"tr")
         val content = retrieve(c1.child(1).asInstanceOf[Elem],("div","id","mainContent"))
         var ret : List[Node] = Nil
         var done = false
         content.child.foreach(n => if(!done) n match {
           case d @ <div>{s @ _*}</div> if (d \ "@class").text == "linktrail" =>
+          case d @ <div>{s @ _*}</div> if (d \ "@id").text == "NS" =>
           case d @ <h1>{s @ _*}</h1> =>
           case d @ <br/> =>
           case d @ <div>{s @ _*}</div> if (d \ "@id").text == "related" => done = true
-          case nod => ret ::= nod
+          case nod if nod.toString.trim != "" && nod.toString.trim != "\n" => ret ::= nod
+          case _ =>
         })
         val nret = ret.reverse.map(_.toString.replaceAll(
           "href=\"/","href=\"http://mathworld.wolfram.com/").replaceAll(
           "src=\"/","src=\"http://mathworld.wolfram.com/").replaceAll("href=\"#","href=\"" + uri + "#"))
         h.literal(nret.mkString(""))
-        */
+
     }
   }
 }
@@ -162,7 +182,8 @@ object EncyclopediaOfMathExtractor extends WebExtractor {
         var done = false
         content.child.foreach(n => if(!done) n match {
           case d @ <div>{s @ _*}</div> if (d \ "@id").text == "citeRevision" => done = true
-          case nod => ret ::= nod
+          case nod if nod.toString.trim != "" && nod.toString.trim != "\n" => ret ::= nod
+          case _ =>
         })
         val nret = ret.reverse.map(_.toString.replaceAll(
           "href=\"/","href=\"https://www.encyclopediaofmath.org/").replaceAll(
@@ -189,7 +210,8 @@ object NLabExtractor extends WebExtractor {
           case d @ <div>{s @ _*}</div> if (d \ "@id").text == "contents" =>
           case d @ <h2>{s @ _*}</h2> if ret.length>1 => done = true
           case d @ <h2>{s @ _*}</h2> if (d \ "@id").text contains "related" => done = true
-          case nod if nod.toString.trim != "" => ret ::= nod
+          case d @ <h2>{s @ _*}</h2> =>
+          case nod if nod.toString.trim != "" && nod.toString.trim != "\n" => ret ::= nod
           case _ =>
         })
         val nret = ret.reverse.map(_.toString.replaceAll(

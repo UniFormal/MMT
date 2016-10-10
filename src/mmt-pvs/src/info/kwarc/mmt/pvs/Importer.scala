@@ -12,10 +12,10 @@ class PVSImporter extends Importer {
 
    private val parseXML = syntax.makeParser
 
-//   private var startAt = "/home/raupi/lmh/MathHub/PVS/NASA/source/vect_analysis/pvsxml/cont_real_vect2.xml"
-   private var startAt = "/home/raupi/lmh/MathHub/PVS/Prelude/src/pvsxml/finite_sequences.xml"
+   //private var startAt = "/home/raupi/lmh/localmh/MathHub/PVS/NASA/source/vect_analysis/pvsxml/cont_real_vect2.xml"
+   // private var startAt = "/home/raupi/lmh/localmh/MathHub/PVS/Prelude/src/pvsxml/K_props.xml"
    def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
-      if (bf.inFile.toFilePath.toString < startAt) return BuildResult.empty
+   //   if (bf.inFile.toFilePath.toString < startAt) return BuildResult.empty
       log("Reading " + bf.inFile)
       val e = try {
          parseXML(bf.inFile)

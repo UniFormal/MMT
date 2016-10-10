@@ -53,8 +53,8 @@ class Consthasher(controller:Controller,
                  ) {
 
   private var theories : scala.collection.mutable.HashMap[MPath,OpenTheoryhash] = mutable.HashMap[MPath,OpenTheoryhash]()
-  private val translator = controller.extman.get(classOf[Translator]).headOption.getOrElse {
-    val a = new Translator
+  private val translator = controller.extman.get(classOf[AcrossLibraryTranslator]).headOption.getOrElse {
+    val a = new AcrossLibraryTranslator
     controller.extman.addExtension(a)
     a
   }
