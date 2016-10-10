@@ -233,13 +233,14 @@ class AlignmentsServer extends ServerExtension("align") {
 
   def CanTranslateTo(t: Term): List[String] = archives.getArchives.map(_.name)
 
-  def makeAlignment(p1: String, p2: String, pars: List[(String, String)]): Alignment = {
+  def makeAlignment(p1: String, p2: String, allpars: List[(String, String)]): Alignment = {
     val argls = """\((\d+),(\d+)\)(.*)""".r
-    val direction = pars.find(p ⇒ p._1 == "direction")
+    val direction = allpars.find(p ⇒ p._1 == "direction")
+    val pars = allpars.filterNot(p => p._1 == "direction" || p._1 == "arguments")
     if (direction.isDefined) {
-      if (pars.exists(_._1 == "arguments")) {
+      if (allpars.exists(_._1 == "arguments")) {
         var args: List[(Int, Int)] = Nil
-        val item = pars.find(_._1 == "arguments").get
+        val item = allpars.find(_._1 == "arguments").get
         var read = item._2.trim
         while (read != "") read match {
           case argls(i, j, r) ⇒

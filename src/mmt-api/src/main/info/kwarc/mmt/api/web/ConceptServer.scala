@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api.archives.HTMLPresenter
-import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.presentation.{HTMLRenderingHandler, Presenter, RenderingResult}
 import info.kwarc.mmt.api.refactoring.ArchiveStore
@@ -138,6 +138,28 @@ class ConceptServer extends ServerExtension("concepts") {
         log("Added URI " + ref + " to concept: " + con)
         Server.TextResponse("Added URI " + ref + " to concept: " + con + "\nTHANK YOU FOR CONTRIBUTING!")
       }
+    } else if (path == List("addFormal") && query != "") {
+      println(query)
+      val qs = query.split("&")
+      val nsm = NamespaceMap.empty
+      val from = qs.find(_.startsWith("from=")).getOrElse(???).drop(5)
+      val to = qs.find(_.startsWith("to=")).getOrElse(???).drop(3)
+      if (from == to) Server.errorResponse("Alignments must be between two different URIs!") else {
+        val invertible = qs.exists(_.startsWith("invertible="))
+        val parstring = qs.find(_.startsWith("attributes=")).map(s => URLEscaping.unapply(s.drop(11)).trim)
+        var rest = parstring.getOrElse("")
+        val param = """(.+)\s*=\s*\"(.+)\"\s*(.*)""".r
+        var pars : List[(String,String)] = List(("direction",if (invertible) "both" else "forward"))
+        while (rest != "") rest match {
+          case param(key, value, r) ⇒
+            pars ::= (key, value)
+            rest = r.trim
+          case _ ⇒ Server.errorResponse("Malformed alignment: " + rest)
+        }
+        val al = alignments.makeAlignment(from,to,pars)
+        alignments.addNew(al)
+        Server.TextResponse("New Alignment added: " + al.toString + "\nThank you!")
+      }
     } else if (path.isEmpty && query == "conlist") {
       log("Query for conlist")
       Server.TextResponse("[" + conlist.map(s => "\"" + s + "\"").mkString(",") + "]")
@@ -175,6 +197,7 @@ class ConceptServer extends ServerExtension("concepts") {
       else if (s.contains("planetmath.org")) (s,4)
       else (s,5)
     ).sortBy(_._2).map(_._1)
+    val formalaligs = formals.flatMap(p => alignments.getFormalAlignments(p)).filterNot(_.isGenerated)
     import h._
     implicit val rh = new HTMLRenderingHandler(h)
       span {
@@ -190,7 +213,7 @@ class ConceptServer extends ServerExtension("concepts") {
         }
         def doInformal(s : => Unit) = tr { td(cls="ext-table",attributes = List(("align","center"))) { s }}
         if (informals.nonEmpty) p {
-          h3 { text { "External Resources:"} }
+          h3 { text { "External Resources"} }
           div(id="externals") {
             table(id="ext-table",cls="ext-table",attributes = List(("width","90%"))) {
               informals.foreach(s =>
@@ -208,7 +231,7 @@ class ConceptServer extends ServerExtension("concepts") {
         }
 
         if (formals.nonEmpty) {
-          h3 { text{ "Formal Libraries:" } }
+          h3 { text{ "Formal Libraries" } }
           div(cls="document toggle-root inlineBoxSibling",id="formal") {
           table(id="formal-table",cls="formal-table",attributes = List(("width","90%"))) {
             val pairs = formals map (path => {
@@ -269,9 +292,70 @@ class ConceptServer extends ServerExtension("concepts") {
             }
           }
           }
+          // TODO pagebottom
+          if (formalaligs.nonEmpty) doAlignments(h,formalaligs)
+          if (formals.length > 1) doAlignmentCommit(h,formals)
         }
 
       }
+  }
+  private def doAlignmentCommit(h : HTML,formals : List[ContentPath]): Unit = {
+    import h._
+    h3 {text {"Add Formal Alignment"}}
+    form(":concepts/addFormal") { table {
+      tr {
+        td {text {"From: "}}
+        td {select("from") {
+          formals foreach (f => option(f.toString) { text {f.toString}})
+        }}
+      }
+      tr {
+        td { text {"To: "} }
+        td {select("to") {
+          formals foreach (f => option(f.toString) { text {f.toString}})
+        }}
+      }
+      tr {
+        td {}
+        td {input("checkbox", name = "invertible", value = "invertible") {
+          text { "invertible" }
+        }}
+      }
+      tr {
+        td { text { "Attributes:" } }
+        td { input("text", name = "attributes", value = "arguments=\"(1,2)\"") {  } }
+      }
+      tr {
+        td { input("submit",value="Submit") {} }
+        td {}
+      }
+    } }
+  }
+  private def doAlignments(h : HTML,aligs : List[FormalAlignment]): Unit = {
+    import h._
+    h3 {
+      text { "Formal Alignments" }
+    }
+    table(cls="formal-table",attributes = List(("width","90%"))) {
+      tr {
+        th {text { "From" }}
+        th {text { "To" }}
+        th {text { "Arguments" }}
+        th {text { "Invertible" }}
+        th {text { "Properties" }}
+      }
+      aligs foreach (al => tr {
+        td { a("/?" + al.from.mmturi.toString) {text {al.from.mmturi.toString} } }
+        td { a("/?" + al.to.mmturi.toString) {text {al.to.mmturi.toString} } }
+        td {text {al match {
+          case ArgumentAlignment(_,_,_,args) => args.map(p => p._1 + "=>" + p._2).mkString(", ")
+          case _ => "Simple"
+        }}}
+        td {text { if (al.invertible) "yes" else "no"}}
+        td {text { al.props.map(p => p._1 + "=" + p._2).mkString(", ") }}
+      })
+    }
+
   }
   private def doFormal(p : Path) = {
     try {

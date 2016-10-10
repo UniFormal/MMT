@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.utils
 
+import scala.collection.immutable.List
 import scala.xml.Utility.escape
 
 /**
@@ -110,6 +111,18 @@ abstract class HTML {
       out(s"""<a href="$ref">""")
       body
       out("</a>")
+   }
+   def form(action : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit): Unit = {
+      new Element("form").apply(cls,id,title,onclick,("action",action) :: attributes) { body }
+   }
+   def select(name : String, cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit) = {
+      new Element("select").apply(cls,id,title,onclick,("name",name) :: attributes) { body }
+   }
+   def input(itype : String = "", name : String = "", value : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit): Unit = {
+      new Element("input").apply(cls,id,title,onclick,("type",itype) :: List(("name",name),("value",value)).filterNot(_._2 == "") ::: attributes) { body }
+   }
+   def option(value : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit): Unit = {
+      new Element("option").apply(cls,id,title,onclick,("value",value) :: attributes) { body }
    }
    /** object element */
    def htmlobject(ref: String, tp: String) {
