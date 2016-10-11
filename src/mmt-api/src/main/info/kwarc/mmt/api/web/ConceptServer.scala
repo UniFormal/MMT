@@ -345,8 +345,8 @@ class ConceptServer extends ServerExtension("concepts") {
         th {text { "Properties" }}
       }
       aligs foreach (al => tr {
-        td { a("/?" + al.from.mmturi.toString) {text {al.from.mmturi.toString} } }
-        td { a("/?" + al.to.mmturi.toString) {text {al.to.mmturi.toString} } }
+        td { a("./?" + al.from.mmturi.toString) {text {al.from.mmturi.toString} } }
+        td { a("./?" + al.to.mmturi.toString) {text {al.to.mmturi.toString} } }
         td {text {al match {
           case ArgumentAlignment(_,_,_,args) => args.map(p => p._1 + "=>" + p._2).mkString(", ")
           case _ => "Simple"

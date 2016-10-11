@@ -80,7 +80,7 @@ abstract class WebExtractor {
 
 object WikiExtractor extends WebExtractor {
   val key = "Wikipedia"
-  val scheme = "http"
+  val scheme = "https"
   def content(wiki : Elem, uri : String, h : HTML) = {
     wiki match {
       case ht @ <html>{hbd @ _*}</html> =>
@@ -102,7 +102,7 @@ object WikiExtractor extends WebExtractor {
           case _ =>
         })
         val nret = ret.reverse.map(_.toString.replaceAll(
-          "href=\"/","href=\"http://en.wikipedia.org/").replaceAll("href=\"#","href=\"" + uri + "#"))
+          "href=\"/","href=\"https://en.wikipedia.org/").replaceAll("href=\"#","href=\"" + uri + "#"))
         h.literal(nret.mkString(""))
       }
     }
