@@ -21,7 +21,6 @@ class AlignmentsServer extends ServerExtension("align") {
 
   object alignments {
     private val set = mutable.HashMap[(Reference,Reference),Alignment]()
-    private val trcls = mutable.HashMap[Reference,List[Alignment]]()
 
     def toList = set.values.toList
 
@@ -127,6 +126,7 @@ class AlignmentsServer extends ServerExtension("align") {
       val afiles = fs.filter(f => f.getExtension.contains("align"))
       log("Files: " + afiles)
       afiles foreach readFile
+      log(alignments.toList.filterNot(_.isGenerated).length + " Alignments read")
     } catch {
       case e: Exception ⇒ throw e // println(e.getMessage)
     })

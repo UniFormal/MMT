@@ -113,6 +113,8 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             apply(s.from, Some(s.path $ TypeComponent))
             rh(" abbrev ")
             apply(s.df, Some(s.path $ DefComponent))
+         case r: RuleConstant =>
+            rh("rule " + r.df.className)
       }
       endDecl(e)
       rh("\n")
