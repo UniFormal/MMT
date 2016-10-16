@@ -47,11 +47,10 @@ object parameter {
 }
 
 /** inductive type definition */
-case class concrete_type(foc_name: String, _params: List[param_type], _df: List[TypedefPart]) extends ToplevelDeclaration
+case class concrete_type(foc_name: String, _params: List[param], _df: List[TypedefPart]) extends ToplevelDeclaration
 /** type variable giving the name of a parameter of a concrete type
- *  param_type is used temporarily to avoid clash with other param class
  */
-case class param_type(XMLtype: tvar)
+case class param(XMLtype: tvar)
 /** concrete (= defined) types are one of the following:
  *  an alias, a list of constructors, a list of record fields, an abstract type (also used for base types like Int that are bound to different types in different systems
  */

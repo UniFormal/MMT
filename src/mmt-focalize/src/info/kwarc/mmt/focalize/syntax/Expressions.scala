@@ -18,7 +18,7 @@ sealed trait SpeciesExpr extends CollectionOrSpeciesExpr
 sealed trait CollectionExpr extends CollectionOrSpeciesExpr
 
 /** instantiation of species parameters */ 
-case class app(_species: foc_name, _args: List[param]) extends SpeciesExpr
+case class app(_species: foc_name, _args: List[ty_param]) extends SpeciesExpr
 
 /** param_inst can be
  *  * Self: the collection implementing the current species (Java this),
@@ -27,9 +27,8 @@ case class app(_species: foc_name, _args: List[param]) extends SpeciesExpr
  *  * previous (entity or collection) parameter
  *  Note: A previous parameter is the only way to provide an entity parameter
  *  
- *  TODO currently these are confusingly exported as <param [infile=String]>String</param>
  */
-case class param(infile: String, _name: String)
+case class ty_param(infile: String, _name: String)
 
 /**
  * plain types

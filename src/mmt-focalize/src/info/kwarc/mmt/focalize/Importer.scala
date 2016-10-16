@@ -155,7 +155,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
          val (_, Some(dM)) = applyDec(thy, definition(NamedDecl(n, None, None), tp, df))
          addTypeConst(dM)
        case concrete_type(n, pars, df) =>
-         val cont = pars map {case param_type(tvar(n)) => VarDecl(LocalName(n), Some(OMS(Focalize.tp)), None, None)}
+         val cont = pars map {case param(tvar(n)) => VarDecl(LocalName(n), Some(OMS(Focalize.tp)), None, None)}
          def parTp(t: Term) = Pi(cont, t)
          val tpM = parTp(OMS(Focalize.tp))
          def tpConst(df: Option[Term], rl: String) = Constant(thy.toTerm, LocalName(n), Nil, Some(tpM), df, Some(rl))
@@ -263,7 +263,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
        case atom(_, file, name) =>
          (resolveName(file, name), Nil)
        case app(op, args) =>
-         val argsM = args map {case param(infile, name) =>
+         val argsM = args map {case ty_param(infile, name) =>
            if (name == "Self") {
              OMCOMP()// identity morphism of containing theory to instantiate parameters with corresponding imports into current theory
            } else {
