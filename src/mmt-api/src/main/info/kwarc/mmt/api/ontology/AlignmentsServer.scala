@@ -19,23 +19,22 @@ class AlignmentsServer extends ServerExtension("align") {
 
   override val logPrefix = "align"
 
-  object alignments {
+  private object alignments {
     private val set = mutable.HashMap[(Reference,Reference),Alignment]()
 
     def toList = set.values.toList
 
-    def get(r : URIReference) : List[URIAlignment] = {
-      var res: List[URIReference] = List(r)
-      def recurse(c: URIReference): List[URIAlignment] = {
+    def get(r : Reference, closure : Option[Alignment => Boolean] = None) : List[Alignment] = {
+      /*
+      var res: List[Reference] = List(r)
+      def recurse(c: Reference): List[Alignment] = {
         // if (res.contains(c)) return Nil
-        val neighb = filter(a ⇒ a.from == c && !res.contains(a.to)) collect {case a : URIAlignment => a}
+        val neighb = filter(a ⇒ a.from == c && !res.contains(a.to))
         res = res ::: neighb.map(_.to)
-        def recstep(a : URIAlignment) : List[URIReference] = {
+        def recstep(a : Alignment) : List[Reference] = {
           val first = recurse(a.to)
           val second = first.map(b => {
-            val comp = a -> b match {
-              case al : URIAlignment => al
-            }
+            val comp = a -> b
             +=(comp)
             comp.to
           })
@@ -43,9 +42,21 @@ class AlignmentsServer extends ServerExtension("align") {
         }
         val recs = neighb.flatMap(recstep)
         val trans = neighb.map(_.to) ::: recs
-        trans.map(p => set(c, p)).distinct collect {case a: URIAlignment => a}
+        trans.map(p => set(c, p)).distinct
       }
       recurse(r)
+      */
+      var res : List[Reference] = List(r)
+      def recurse(start : Alignment) : List[Alignment] = {
+        res ::= start.to
+        val allneighbs = filter(a => a.from == start.to) // && !res.contains(a.to) && closure.get(a))
+        val conts = allneighbs.filter(closure.get).map(a => add(start -> a)).filter(a => !res.contains(a.to))
+        start :: conts.flatMap(recurse)
+      }
+      if (closure.isEmpty) filter(a => a.from == r) else {
+        val all = filter(a => a.from == r).flatMap(recurse)
+        all.map(a => addToList(a,all)).distinct
+      }
     }
 
     def collect[B, That](pf: PartialFunction[Alignment, B])(implicit bf: CanBuildFrom[List[Alignment], B, That]) : That = toList.collect[B,That](pf)(bf)
@@ -54,15 +65,20 @@ class AlignmentsServer extends ServerExtension("align") {
     def map[B](f : Alignment => B) = toList.map(f)
 
     def +=(a : Alignment) = {
-      add(a)
-      add(a.reverse)
+      val newA = add(a)
+      val newAr = add(newA.reverse)
+      set((newA.from,newA.to)) = newA
+      set((newAr.from,newAr.to)) = newAr
     }
 
-    private def add(a : Alignment) = if (!set.isDefinedAt((a.from,a.to))) {
-      set((a.from,a.to)) = a
-    } else {
-      val old = set((a.from,a.to))
-      val newa = (a,old) match {
+    private def addToList(a : Alignment, b : List[Alignment]) = {
+      val ls = b.filter(al => al.from == a.from && al.to == a.to && al != a) ::: set.get((a.from,a.to)).toList
+      ls.foldLeft(a)((x,y) => add(x, Some(y)))
+    }
+
+    private def add(a : Alignment, bOpt : Option[Alignment] = None) : Alignment = {
+      val b = bOpt.getOrElse(set.getOrElse((a.from,a.to),return a))
+      (a,b) match {
         case (p1 : ConceptPair, p2 : ConceptPair) => p1
         case (p1 : ConceptAlignment, p2 : ConceptAlignment) => p1
         case (p1 : InformalAlignment, p2 : InformalAlignment) =>
@@ -104,11 +120,10 @@ class AlignmentsServer extends ServerExtension("align") {
           val ret = ArgumentAlignment(p2.from,p2.to, invertible, p2.arguments)
           ret.props = p1.props ::: p2.props
           ret
-        case _ => throw new Exception("Alignments not compatible: " + old.getClass + " and " + a.getClass)
+        case _ => throw new Exception("Alignments not compatible: " + a.getClass + " and " + b.getClass)
       }
-      set.remove((a.from,a.to))
-      set((a.from,a.to)) = newa
     }
+
   }
 
   private lazy val archives : ArchiveStore = controller.extman.get(classOf[ArchiveStore]).headOption.getOrElse {
@@ -154,7 +169,8 @@ class AlignmentsServer extends ServerExtension("align") {
     path match {
       case "from" :: _ ⇒
         val path = Path.parseS(query, nsMap)
-        val toS = alignments.get(LogicalReference(path)).map(_.to.toString)
+        val toS = if (query.contains("transitive=\"true\"")) alignments.get(LogicalReference(path), Some(_ => true)).map(_.to.toString)
+        else alignments.get(LogicalReference(path)).map(_.to.toString)
         log("Alignment query: " + query)
         log("Alignments from " + path + ":\n" + toS.map(" - " + _).mkString("\n"))
         Server.TextResponse(toS.mkString("\n"))
@@ -182,56 +198,28 @@ class AlignmentsServer extends ServerExtension("align") {
     }
   }
 
-  def getAll = alignments.toList
+  def getAllPrimitive = alignments.toList
+
+  def getAlignments(s : String) = alignments.get(ConceptReference(s),Some(_ => true))
+
+  def getAlignments(cp : ContentPath) = alignments.get(LogicalReference(cp),Some(_ => true))
+
+  def getFormalAlignments(cp : ContentPath) = alignments.get(LogicalReference(cp), Some(_.isInstanceOf[FormalAlignment])) collect {
+    case fa : FormalAlignment => fa
+  }
 
   def getConcepts = (alignments collect {
     case ca: ConceptAlignment => ConceptReference(ca.concept)
   }).distinct.map(_.con).sortWith((p,q) => p < q)
 
-  def getConceptAlignments(con : String) : List[Reference] = {
-    var set : Set[Reference] = Set(ConceptReference(con))
-
-    def recurse(refs : Set[Reference]) : Unit = {
-      val news = refs.flatMap(r => getAll collect {case a if a.from == r && !set.contains(a.to) => a.to})
-      if (news.nonEmpty) {
-        set ++= news
-        recurse(news.filter(a => !a.isInstanceOf[ConceptReference]))
-      }
-    }
-    recurse(set)
-    set.toList
+  def getConceptAlignments(con : String) = {
+    val direct = alignments.get(ConceptReference(con))
+    (direct ::: direct.flatMap(a => alignments.get(a.to,Some(_ => true))).collect{
+      case ca : ConceptAlignment if ConceptReference(ca.concept) != ConceptReference(con) => ConceptPair(con,ca.concept)
+      case ConceptPair(f,_) if f != ConceptReference(con) => ConceptPair(con,f.con)
+      case ConceptPair(_,t) if t != ConceptReference(con) => ConceptPair(con,t.con)
+    }).distinct
   }
-
-  def getFromArchive(from : FullArchive,to : Option[FullArchive]) = {
-    val thpaths = from.theories
-    val ths = thpaths.map (t => {
-      Try(controller.get(t).asInstanceOf[DeclaredTheory])
-    }).collect{
-      case Success(th) =>
-        controller.simplifier(th)
-        th
-    }
-    val consts = ths.map(t => Try(t.getConstants)).collect{case Success(c) => c}.flatten
-    val als = (consts.map(_.path) ::: thpaths).flatMap(getFormalAlignments)
-    if (to.isDefined) als.filter(a => to.get.declares(a.to.mmturi)) else als
-
-  }
-
-  def getAlignments(from: ContentPath): List[Alignment] = alignments.get(LogicalReference(from))
-
-  def getFormalAlignments(from: ContentPath) = alignments.get(LogicalReference(from)).collect {
-    case a: FormalAlignment ⇒ a
-  }
-
-  def getAlignmentsTo(from: ContentPath, in: DPath) = alignments.get(LogicalReference(from)).filter(a ⇒
-    a.to.toString.startsWith(in.toString))
-
-  def getFormalAlignmentsTo(from: ContentPath, in: DPath) = getFormalAlignments(from).filter(a ⇒
-    a.to.toString.startsWith(in.toString))
-
-  def translate(t: Term, to: DPath) = ???
-
-  def CanTranslateTo(t: Term): List[String] = archives.getArchives.map(_.name)
 
   def makeAlignment(p1: String, p2: String, allpars: List[(String, String)]): Alignment = {
     val argls = """\((\d+),(\d+)\)(.*)""".r
@@ -321,45 +309,10 @@ class AlignmentsServer extends ServerExtension("align") {
     val alignmentsCount = tmp.sum
     log(alignmentsCount + " alignments read from " + file.toString)
   }
-  /*
-  lazy val archs = controller.backend.getArchives.filter(_.id.startsWith("smglom"))
-  lazy val smglomdecls = {
-    log("Read Relational...")
-    archs.foreach(_.readRelational(FilePath(""),controller,"rel"))
-    val ret = controller.depstore.getInds(IsConstant).filter(_.toString.contains("smglom")).map(f => Try(controller.get(f)))
-    log("Done.")
-    ret.toList collect {case Success(c : Constant) => c}
-  }
 
-  private def readNnexus(file: File): Unit = {
-    val cmds = File.read(file).split("\n").map(_.trim).filter(_.nonEmpty)
-    val tmp = cmds map nnexusString
-    val alignmentsCount = tmp.sum
-    log(alignmentsCount + " alignments read from " + file.toString)
-    log(getConcepts.length + " Concepts")
-  }
-  private val nnstr = """INSERT INTO "concepts" VALUES("""
-  private def nnexusString(s : String) : Int = try {
-    if (s.length > nnstr.length && s.startsWith(nnstr)) {
-      val csv = s.drop(nnstr.length).dropRight(2).split(',').tail.init.map(_.tail.init)
-      val con = (csv.head + " " + csv(1)).trim.replace("''","'")
-      val uri = if (csv(5).startsWith("http://") || csv(5).startsWith("https://")) csv(5).replace("https://","http://") else "http://" + csv(5)
-      val nuri = if (uri.contains("smglom")) {
-        val options = smglomdecls.filter(_.name.toString contains uri.split('?').last).map(_.path)
-        if (options.length == 1) options.head.toString
-        else if (options.isEmpty) uri
-        else options.sortBy(s => s.name.toString.replace(uri.split('?').last,"").length).find(_.contains(".en.")).getOrElse(options.head).toString
-      } else  uri
-      val ref = Try(LogicalReference(Path.parseMS(nuri, nsMap))).getOrElse(PhysicalReference(URI(nuri)))
-      alignments += ConceptAlignment(ref, con)
-      1
-    } else 0
-  } catch {
-    case e: Exception => 0
-  }
-  */
+  def writeToFile(file: File) = File.write(file, getAsString)
 
-  def writeToFile(file: File) = File.write(file, alignments.filter(!_.isGenerated).map(_.toString).mkString("\n"))
+  def getAsString = alignments.filter(!_.isGenerated).map(_.toString).mkString("\n")
 
   // TODO needs reworking
   private def readJSON(file: File) {

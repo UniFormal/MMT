@@ -1,14 +1,16 @@
 package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.archives.Archive
-import info.kwarc.mmt.api.{GlobalName, LocalName}
+import info.kwarc.mmt.api.{GlobalName, LocalName, MPath}
 import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.{ArgumentAlignment, FormalAlignment, SimpleAlignment}
 import info.kwarc.mmt.api.symbols.{FinalConstant, UniformTranslator}
 import info.kwarc.mmt.api.web.{Body, Server, ServerExtension, Session}
 
 import scala.collection.mutable
+import scala.util.{Success, Try}
 
 
 // TODO replace by pragmatify ------------------------------------------------------------------------------------------
@@ -133,6 +135,7 @@ class AcrossLibraryTranslator extends ServerExtension("translate") {
   object TermClass {
     private val store : mutable.HashMap[Term,TermClass] = mutable.HashMap.empty
     def apply(tm : Term)(implicit to : Archive) = store.getOrElse(tm, new TermClass(tm))
+    def register(tm : Term, tc : TermClass) = store(tm) = tc
   }
 
   object Fail extends Exception
@@ -183,6 +186,7 @@ class AcrossLibraryTranslator extends ServerExtension("translate") {
     def applyTranslation(tr : AcrossLibraryTranslation) = {
       usedTranslations ::= tr
       steps ::= tr(currentTerm)
+      TermClass.register(steps.head,this)
       changedVar = true
     }
 
@@ -199,13 +203,15 @@ class AcrossLibraryTranslator extends ServerExtension("translate") {
         case OMA(f,args) => OMA(TermClass(f).update,(args map TermClass.apply).map(_.update))
         case OMV(_) => currentTerm
         case OMATTR(arg,key,value) => OMATTR(TermClass(arg).update,TermClass(key).update.asInstanceOf[OMID],TermClass(value).update)
-          // TODO -----------------------------------------------------------------------------^
-        case tx : OMLITTrait => ??? // TODO
+          // TODO -----------v-----------------------------------------------------------------^
+        case OMLIT(vl,_) => ???
+        case UnknownOMLIT(vl,st) => UnknownOMLIT(vl,TermClass(st).update)
         case OMFOREIGN(_) => currentTerm
         case OMSemiFormal(_) => currentTerm
         case OML(vd) => OML(updateVar(vd))
       }
       steps ::= ret
+      TermClass.register(ret,this)
       ret
     } else currentTerm
   }
@@ -226,7 +232,23 @@ class AcrossLibraryTranslator extends ServerExtension("translate") {
     symbols
   }
   */
-  def inArchive(p : GlobalName)(implicit target : Archive) = ???
+  def inArchive(path : GlobalName)(implicit target : Archive) : Boolean = (controller.backend.findOwningArchive(path.module) contains target) || {
+    val fndPath = target.foundation.getOrElse(return false)
+    val fnd = try {
+      val ret = controller.get(fndPath).asInstanceOf[DeclaredTheory]
+      controller.simplifier(ret)
+      ret
+    } catch {
+      case e : Exception => return false
+    }
+    val ths = fnd :: fnd.getIncludes.map(p => Try(controller.get(p))).collect{
+      case Success(th : DeclaredTheory) =>
+        controller.simplifier(th)
+        th
+    }
+    ths.flatMap(_.getDeclarations.map(_.path)) contains path
+  }
+  // foundation stuff
   // the whole strict/pragmatic-stuff
   // TODO --------------------------------------------------------------------------------------------------------------
 

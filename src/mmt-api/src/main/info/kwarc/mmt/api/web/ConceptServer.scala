@@ -176,7 +176,7 @@ class ConceptServer extends ServerExtension("concepts") {
   lazy val presenter = controller.extman.get(classOf[Presenter],"html").get.asInstanceOf[HTMLPresenter]
 
   def makeConceptPage(con : String, h : HTML) = {
-    val refs = alignments.getConceptAlignments(con)
+    val refs = alignments.getConceptAlignments(con).map(_.to)
     val altnames = refs.collect {
       case ConceptReference(s) if s!= con => s
     }
@@ -294,7 +294,12 @@ class ConceptServer extends ServerExtension("concepts") {
           }
           // TODO pagebottom
           if (formalaligs.nonEmpty) doAlignments(h,formalaligs)
-          if (formals.length > 1) doAlignmentCommit(h,formals)
+          val allformals = /* (formals ::: altnames.flatMap(alignments.getConceptAlignments).map(_.to).collect{
+            case LogicalReference(path) => path
+          }).distinct */ alignments.getAlignments(con).flatMap(al => List(al.from,al.to)) collect {
+            case LogicalReference(path) => path
+          }
+          if (allformals.length > 1) doAlignmentCommit(h,allformals)
         }
 
       }
