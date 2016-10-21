@@ -330,6 +330,30 @@ class BinaryConstantScala(val parent: MPath, val name: String) extends ConstantS
    }
 }
 
+class TernaryConstantScala(val parent: MPath, val name: String) extends ConstantScala {
+   def apply(arg1: Term, arg2: Term, arg3: Term) = path(arg1, arg2, arg3)
+   def unapply(t: Term) = t match {
+      case OMA(OMS(this.path), List(a1, a2, a3)) => Some((a1,a2,a3))
+      case _ => None
+   }
+}
+
+class FouraryConstantScala(val parent: MPath, val name: String) extends ConstantScala {
+   def apply(arg1: Term, arg2: Term, arg3: Term, arg4: Term) = path(arg1, arg2, arg3, arg4)
+   def unapply(t: Term) = t match {
+      case OMA(OMS(this.path), List(a1, a2, a3, a4)) => Some((a1,a2,a3,a4))
+      case _ => None
+   }
+}
+
+class FlexaryConstantScala(val parent: MPath, val name: String) extends ConstantScala {
+   def apply(args: Term*) = path(args:_*)
+   def unapplySeq(t: Term): Option[Seq[Term]] = t match {
+      case OMA(OMS(this.path), args) => Some(args)
+      case _ => None
+   }
+}
+
 trait ViewScala extends TheoryScala
 
 object ConstantScala {
