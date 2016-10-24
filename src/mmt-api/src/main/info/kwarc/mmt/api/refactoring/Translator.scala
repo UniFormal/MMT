@@ -239,21 +239,29 @@ class AcrossLibraryTranslator(controller : Controller, translations : List[Acros
       steps = steps.tail
       changedVar = true
     } else throw Fail
+    // prolly makes things faster
+    var storedResult : (Term,AcrossLibraryTranslation,Term) = null
 
     def applicable(tr : AcrossLibraryTranslation) = !finishedVar &&
       !usedTranslations.contains(tr) &&
       tr.applicable(currentTerm) && {
       val res = tr.apply(currentTerm)
-      !steps.contains(res)
+      if (!steps.contains(res)) {
+        storedResult = (currentTerm,tr,res)
+        true
+      } else false
     }
 
     private var changedVar = false
 
-    def applyTranslation(tr : AcrossLibraryTranslation) = {
-      usedTranslations ::= tr
-      steps ::= tr(currentTerm)
-      TermClass.register(steps.head,this)
-      changedVar = true
+    def applyTranslation(tr : AcrossLibraryTranslation) = storedResult match {
+      case (a,b,c) if a == currentTerm && b == tr => c
+      case _ => {
+        usedTranslations ::= tr
+        steps ::= tr(currentTerm)
+        TermClass.register(steps.head,this)
+        changedVar = true
+      }
     }
 
     def changed : Boolean = changedVar || immediateSubterms.exists(_.changed)
