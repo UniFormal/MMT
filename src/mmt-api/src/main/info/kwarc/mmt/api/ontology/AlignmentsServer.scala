@@ -198,7 +198,7 @@ class AlignmentsServer extends ServerExtension("align") {
     }
   }
 
-  def getAllPrimitive = alignments.toList
+  def getAll = alignments.toList
 
   def getAlignments(s : String) = alignments.get(ConceptReference(s),Some(_ => true))
 
