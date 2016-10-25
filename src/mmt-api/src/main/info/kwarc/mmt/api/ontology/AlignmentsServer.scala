@@ -25,27 +25,6 @@ class AlignmentsServer extends ServerExtension("align") {
     def toList = set.values.toList
 
     def get(r : Reference, closure : Option[Alignment => Boolean] = None) : List[Alignment] = {
-      /*
-      var res: List[Reference] = List(r)
-      def recurse(c: Reference): List[Alignment] = {
-        // if (res.contains(c)) return Nil
-        val neighb = filter(a ⇒ a.from == c && !res.contains(a.to))
-        res = res ::: neighb.map(_.to)
-        def recstep(a : Alignment) : List[Reference] = {
-          val first = recurse(a.to)
-          val second = first.map(b => {
-            val comp = a -> b
-            +=(comp)
-            comp.to
-          })
-          second
-        }
-        val recs = neighb.flatMap(recstep)
-        val trans = neighb.map(_.to) ::: recs
-        trans.map(p => set(c, p)).distinct
-      }
-      recurse(r)
-      */
       var res : List[Reference] = List(r)
       def recurse(start : Alignment) : List[Alignment] = {
         res ::= start.to
