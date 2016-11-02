@@ -84,27 +84,27 @@ class ScalaExporter extends GenericScalaExporter {
                val ini = s"  realizes {universe($synName)($semName)}"
                val decl = c.df match {
                   case None =>
-                     scalaVal(c.path, "RealizedType")
+                     scalaVal(c.path, "SemanticType")
                   case Some(d) => d match {
                      // nice idea but does not work well; better expand all definitions if they are used later
                      // case OMS(p) => scalaValDef(c.path, Some("RealizedType"), nameToScalaQ(p))
                      case _ =>
-                        scalaVal(c.path, "RealizedType")
+                        scalaVal(c.path, "SemanticType")
                   }
                }
                (decl, ini)
             } else {
-               // create "realizes {function(name, argType1, ..., argTypeN, retType)(function)}
+               // create "realizes {function(name, List(argType1, ..., argTypeN), retType)(function)}
                val (argsE, retE) = typeEras(tp)
-               val lts = (argsE ::: List(retE)).map(nameToScalaQ).mkString(", ")
-               val ini = s"  realizes {function($synName, $lts)($semName)}"
+               val lts = argsE.map(nameInScala).mkString("List(", ", ", ")") + ", " + nameInScala(retE) 
+               val ini = s"  realizes {function($synName, $lts)($semName _)}"
                // create def name(x0: argType1._univ, ..., xN: argTypeN._univ): retType.univ
                val names = args.zipWithIndex.map {
                   case ((Some(n), _), _) => n.toPath
                   case ((None   , _), i) => "x" + i.toString
                }
-               val argsES = argsE.map(a => nameToScalaQ(a) + ".univ")
-               val decl = scalaDef(c.path, names zip argsES, nameToScalaQ(retE) + ".univ")
+               val argsES = argsE.map(a => "Any") //nameToScalaQ(a) + "_univ")
+               val decl = scalaDef(c.path, names zip argsES, "Any") //nameToScalaQ(retE) + "_univ")
                (decl, ini)
                /*
                 val argsS = args.zipWithIndex.map {

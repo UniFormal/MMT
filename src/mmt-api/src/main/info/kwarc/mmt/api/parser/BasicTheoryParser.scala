@@ -19,7 +19,7 @@ abstract class BasicTheoryParser(objectParser: ObjectParser, meta: Option[MPath]
       val unp = new Unparsed(ps.fullString, s => throw LocalError(s))
       val uri = ps.nsMap.default
       val ns = DPath(uri.copy(path = uri.path.init))
-      val name = LocalName(FilePath(uri.path.last).stripExtension.segments.last)
+      val name = LocalName(FilePath(uri.path).stripExtension.name)
       val mpath = parseHeader(ns?name)(unp)
       val thy = new DeclaredTheory(mpath.doc, mpath.name, meta)
       val doc = new Document(ns, root = true, inititems = List(MRef(ns, thy.path)))
@@ -55,46 +55,4 @@ abstract class BasicTheoryParser(objectParser: ObjectParser, meta: Option[MPath]
         }
       }
    }
-}
-
-object Dedukti {
-  val _path = ???
-}
-class DeduktiParser(oP: ObjectParser) extends BasicTheoryParser(oP, Some(Dedukti._path)) {
-  val format = "dk"
-  def comments = List(BracketPair("(;",";)", true))
-  def inTermBrackets = List(BracketPair("(",")", false))
-  
-  def parseHeader(default: MPath)(implicit u: Unparsed) = {
-     u.trim
-     try {
-       val modname = u.takeRegex("#(.*)\\.").group(1)
-       default.doc ? modname
-     } catch {case e: LocalError =>
-       default
-     }
-  }
-  
-  def parseDeclaration(s: String)(implicit thy: DeclaredTheory) {
-     val sT = s.trim
-     val (name,tp,df) = if (sT.startsWith("def")) {
-       val i = sT.indexOf(":")
-       val n = sT.substring(i)
-       if (i == -1) throw LocalError("no : in declaration: " + s)
-       val tpdf = sT.substring(i+1,sT.length)
-       val j = tpdf.indexOf(":=")
-       if (j == -1)
-         (Some(n), tpdf, None)
-       else {
-         (Some(n), tpdf.substring(j), tpdf.substring(j+2, tpdf.length))
-       }
-     } else if (sT.startsWith("[")) {
-       (None, sT, None) //TODO multiple rules without . here
-     } else {
-       val i = sT.indexOf(":")
-       if (i == -1) throw LocalError("no : in declaration: " + s)
-       (Some(sT.substring(i)), sT.substring(i+1, sT.length), None)
-     }
-  }
-
 }

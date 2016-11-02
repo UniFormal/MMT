@@ -37,6 +37,19 @@ abstract class SemanticType {
    def enumerate: Option[Iterator[Any]] = None
 }
 
+trait RepresentationType[V] {
+   val cls: Class[V]
+   def unapply(u: Any): Option[V] = u match {
+      //TODO not typesafe for complex types, cls == u.getClass works for complex types but does not consider subtyping
+      case v: V@unchecked if cls.isInstance(v) =>
+         Some(v)
+      case v: V@unchecked if cls.isPrimitive && cls == u.getClass =>
+         Some(v) // isInstance is always false for primitive classes
+      case _ => None
+   }
+}
+trait RSemanticType[V] extends SemanticType with RepresentationType[V]
+
 object Product {
    val matcher = new utils.StringMatcher2("(",",",")")
 }
@@ -89,6 +102,10 @@ class Product(val left: SemanticType, val right: SemanticType) extends SemanticT
    }
 }
 
+class RProduct[U,V](l: RSemanticType[U], r: RSemanticType[V]) extends Product(l, r) with RSemanticType[(U,V)] {
+  val cls = classOf[(U,V)]
+}
+
 object ListType {
    val matcher = new utils.StringMatcher2Sep("[",",","]")
 }
@@ -107,6 +124,9 @@ class ListType(val over: SemanticType) extends SemanticType {
    def toString(u: Any) = u match {
       case us: List[_] => ListType.matcher(us map over.toString)
    }
+}
+class RList[U](o: RSemanticType[U]) extends ListType(o) with RSemanticType[List[U]] {
+  val cls = classOf[List[U]]
 }
 
 object TupleType {
@@ -128,6 +148,9 @@ class TupleType(val over: SemanticType, val dim: Int) extends SemanticType {
       case us: List[_] => TupleType.matcher(us map over.toString)
    }
 }
+class RTuple[U](o: RSemanticType[U], d: Int) extends TupleType(o,d) with RSemanticType[List[U]] {
+  val cls = classOf[List[U]]
+}
 
 abstract class Subtype(val of: SemanticType) extends SemanticType {
    def by(u: Any): Boolean
@@ -138,6 +161,9 @@ abstract class Subtype(val of: SemanticType) extends SemanticType {
    override def lex = of.lex
    /** for a finite subtype of an infinite type, hasNext will eventually run forever */ 
    override def enumerate = of.enumerate.map(i => i filter by)
+}
+abstract class RSubtype[U](of: RSemanticType[U]) extends Subtype(of) with RSemanticType[U] {
+  val cls = of.cls
 }
 
 abstract class Quotient(val of: SemanticType) extends SemanticType {
@@ -158,19 +184,11 @@ abstract class Quotient(val of: SemanticType) extends SemanticType {
      }
    }
 }
-
-trait RepresentationType[V] {
-   val cls: Class[V]
-   def unapply(u: Any): Option[V] = u match {
-      case v: V@unchecked if cls.isInstance(v) =>
-         Some(v)
-      case v: V@unchecked if cls.isPrimitive && cls == u.getClass =>
-         Some(v) // isInstance is always false for primitive classes
-      case _ => None
-   }
+abstract class RQuotient[V](of: RSemanticType[V]) extends Quotient(of) with RSemanticType[V] {
+  val cls = of.cls
 }
 
-abstract class Atomic[V] extends SemanticType with RepresentationType[V] {
+abstract class Atomic[V] extends RSemanticType[V] {
    override def valid(u: Any) = unapply(u).isDefined
    def toString(u: Any) = unapply(u).get.toString
    /** narrower type */
@@ -204,24 +222,24 @@ abstract class IntegerLiteral extends Atomic[BigInt] with IntegerRepresented {
 object StandardInt extends IntegerLiteral
 
 /** standard natural numbers */
-object StandardNat extends Subtype(StandardInt) with IntegerRepresented {
+object StandardNat extends RSubtype(StandardInt) {
    def by(u: Any) = StandardInt.unapply(u).get >= 0
 }
 
 /** standard positive natural numbers */
-object StandardPositive extends Subtype(StandardNat) with IntegerRepresented {
+object StandardPositive extends RSubtype(StandardNat) {
    def by(u: Any) = StandardInt.unapply(u).get != 0
 }
 
 /** standard integers modulo, i.e., a finite type of size modulus */
-class IntModulo(modulus: Int) extends Quotient(StandardInt) with IntegerRepresented {
+class IntModulo(modulus: Int) extends RQuotient(StandardInt) {
    def by(u: Any) = StandardInt.unapply(u).get mod modulus
    /** overridden for efficiency and to ensure termination */
    override def enumerate = Some((0 until modulus).iterator)
 }
 
 /** standard rational numbers */
-object StandardRat extends Quotient(new Product(StandardInt,StandardPositive)) {
+object StandardRat extends RQuotient(new RProduct(StandardInt,StandardPositive)) {
    def by(u: Any): (BigInt,BigInt) = {
       val (e:BigInt,d:BigInt) = u
       val gcd = e gcd d
@@ -242,7 +260,7 @@ object StandardRat extends Quotient(new Product(StandardInt,StandardPositive)) {
 
 
 /** rational complex numbers */
-object ComplexRat extends Product(StandardRat, StandardRat) {
+object ComplexRat extends RProduct(StandardRat, StandardRat) {
 }
 // switched to java.lang.Double, because that's what .toDouble returns and
 // java.lang.Double =/= scala.Double (problem in RepresentationType.unapply)

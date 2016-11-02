@@ -85,6 +85,17 @@ class Unparsed(input: String, error: String => Nothing) {
       if (test(head)) next() + takeWhile(test) else ""
    }
    
+   /** drops a String if possible
+    *  @return true if dropped
+    */
+   def takeIf(s: String): Boolean = {
+     if (remainder.startsWith(s)) {
+       drop(s)
+       true
+     } else
+       false
+   }
+   
    import scala.util.matching.Regex
    /** matches at the beginning of the stream and returns the matched prefix */
    def takeRegex(regex: String): Regex.Match = {

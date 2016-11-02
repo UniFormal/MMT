@@ -12,6 +12,7 @@ class RealizedType(val synType: Term, val semType: SemanticType) extends uom.UOM
       case rt: RealizedType => synType == rt.synType && semType == rt.semType
       case _ => false
    }
+   @deprecated
    type univ = Any
    def head = synType.head match {
       case Some(h: GlobalName) => h
@@ -39,7 +40,7 @@ class RealizedType(val synType: Term, val semType: SemanticType) extends uom.UOM
    def lexerExtension = semType.lex map {case l => new LexParseExtension(l, new LiteralParser(this))} 
 }
 
-class RepresentedRealizedType[V](synType: Term, semType: SemanticType with RepresentationType[V]) extends RealizedType(synType,semType) {
+class RepresentedRealizedType[V](synType: Term, semType: RSemanticType[V]) extends RealizedType(synType,semType) {
    override def unapply(u: objects.Term): Option[V] = super.unapply(u) flatMap semType.unapply
 }
 

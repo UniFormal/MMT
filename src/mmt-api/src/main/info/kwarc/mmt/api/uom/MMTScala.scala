@@ -8,7 +8,7 @@ import symbols._
 /**
  * a model of an MMT theory in Scala
  */
-abstract class RealizationInScala extends DeclaredTheory(null, null, None) with RuleCreators {
+abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
    // getClass only works inside the body, i.e., after initializing the super class
    // so we make the constructor arguments null and override afterwards
    // this will fail if one of the arguments is accessed during initialization of the superclass
@@ -86,13 +86,10 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) with 
            }
       }
    }
-}
+   
+   
+   // ******************* helper functions to create realizations in human-written subclasses
 
-/**
- * mixes helper functions into a [[RealizationInScala]] that allow creating rules conveniently
- */
-trait RuleCreators {
-   def rule(r: Rule): Unit
    private val invertTag = "invert"
    
    /**
@@ -101,21 +98,56 @@ trait RuleCreators {
    def universe(rt: RealizedType) {
       rule(rt)
    }
-   def universe(synType: GlobalName)(rt: RealizedType) {
-      universe(rt)
+   def universe(synType: GlobalName)(semType: SemanticType) {
+      universe(new RealizedType(OMS(synType), semType))
    }
-   /** adds a rule for implementing a nullary symbol */
-   def function(op:GlobalName, rType: RealizedType)(comp: rType.univ) {
-      val ar = new AbbrevRule(op, rType(comp))
-      rule(ar)
-      
-      val inv = new InverseOperator(op / invertTag) {
-         def unapply(l: OMLIT) = {
-            if (l == rType(comp)) Some((Nil))
-            else None
-         }
-      }
-      rule(inv)
+   
+   /** look up the realized type for a given operator */
+   private def getRealizedType(synType: GlobalName): Option[RealizedType] = {
+     getDeclarations foreach {
+       case rc: RuleConstant => rc.df match {
+         case rt: RealizedType if rt.synType == OMS(synType) => return Some(rt)
+         case _ =>
+       }
+       case _ =>
+     }
+     return None
+   }
+   
+   /** adds a rule for implementing a function symbol (argument and return types must have been added previously) */
+   def function(op:GlobalName, aTypesN: List[GlobalName], rTypeN: GlobalName)(fun: FunctionN) {
+     if (aTypesN.length != fun.arity) {
+       throw AddError("bad arity")
+     }
+     val rType = getRealizedType(rTypeN).get
+     val aTypes = aTypesN map {n => getRealizedType(n).get}
+     if (fun.arity == 0) { 
+       val ar = new AbbrevRule(op, rType(fun.app(Nil)))
+       rule(ar)
+       val inv = new InverseOperator(op / invertTag) {
+           def unapply(l: OMLIT) = {
+              if (l == rType(fun.app(Nil))) Some((Nil))
+              else None
+           }
+       }
+       rule(inv)
+     } else {
+        val ro = new RealizedOperator(op) {
+           val argTypes = aTypes
+           val retType = rType
+           def apply(args: List[Term]): OMLIT = {
+             if (args.length != fun.arity)
+               throw ImplementationError("illegal argument number")
+             val argsV = (aTypes zip args) map {case (aT, a) =>
+               aT.unapply(a).getOrElse {
+                 throw ImplementationError("illegal argument type")
+               }
+             }
+             rType(fun.app(argsV))
+           }
+        }
+        rule(ro)       
+     }
    }
 
    /** typed variant, experimental, not used by ScalaExporter yet */
@@ -130,155 +162,36 @@ trait RuleCreators {
       }
       rule(ro)
    }
-   
-   /** adds a rule for implementing a unary symbol */
-   def function(op:GlobalName, argType1: RealizedType, rType: RealizedType)(comp: argType1.univ => rType.univ) {
-      val ro = new RealizedOperator(op) {
-         val argTypes = List(argType1)
-         val retType = rType
-         def apply(args: List[Term]): OMLIT = args(0) match {
-            case argType1(x) => rType(comp(x))
-            case _ => throw ImplementationError("illegal arguments")
-         }
-      }
-      rule(ro)
-   }
-  def function(op:GlobalName, argType1: RealizedType, argType2: RealizedType, rType: RealizedType)
-            (comp: (argType1.univ, argType2.univ) => rType.univ) {
-      val ro = new RealizedOperator(op) {
-         val argTypes = List(argType1, argType2)
-         val retType = rType
-         def apply(args: List[Term]): OMLIT = (args(0), args(1)) match {
-            case (argType1(x), argType2(y)) => rType(comp(x,y))
-            case _ => throw ImplementationError("illegal arguments")
-         }
-      }
-      rule(ro)
-   }
-   def function(op:GlobalName, t1: RealizedType, t2: RealizedType, t3: RealizedType, r: RealizedType)
-            (comp: (t1.univ, t2.univ, t3.univ)
-                   => r.univ) {
-      val ro = new RealizedOperator(op) {
-         val argTypes = List(t1, t2, t3)
-         val retType = r
-         def apply(as: List[Term]): OMLIT = (as(0), as(1), as(2)) match {
-            case (t1(x1), t2(x2), t3(x3)) =>
-               r(comp(x1,x2, x3))
-            case _ => throw ImplementationError("illegal arguments")
-         }
-      }
-      rule(ro)
-   }
-   def function(op:GlobalName, t1: RealizedType, t2: RealizedType, t3: RealizedType, t4: RealizedType, r: RealizedType)
-            (comp: (t1.univ, t2.univ, t3.univ, t4.univ)
-                   => r.univ) {
-      val ro = new RealizedOperator(op) {
-         val argTypes = List(t1, t2, t3, t4)
-         val retType = r
-         def apply(as: List[Term]): OMLIT = (as(0), as(1), as(2), as(3)) match {
-            case (t1(x1), t2(x2), t3(x3), t4(x4)) =>
-               r(comp(x1,x2, x3, x4))
-            case _ => throw ImplementationError("illegal arguments")
-         }
-      }
-      rule(ro)
-   }
-   def function(op:GlobalName, t1: RealizedType, t2: RealizedType, t3: RealizedType, t4: RealizedType, t5: RealizedType, r: RealizedType)
-            (comp: (t1.univ, t2.univ, t3.univ, t4.univ, t5.univ)
-                   => r.univ) {
-      val ro = new RealizedOperator(op) {
-         val argTypes = List(t1, t2, t3, t4, t5)
-         val retType = r
-         def apply(as: List[Term]): OMLIT = (as(0), as(1), as(2), as(3), as(4)) match {
-            case (t1(x1), t2(x2), t3(x3), t4(x4), t5(x5)) =>
-               r(comp(x1,x2, x3, x4, x5))
-            case _ => throw ImplementationError("illegal arguments")
-         }
-      }
-      rule(ro)
-   }
-   def function(op:GlobalName, t1: RealizedType, t2: RealizedType, t3: RealizedType, t4: RealizedType, t5: RealizedType, t6: RealizedType,
-             r: RealizedType)
-            (comp: (t1.univ, t2.univ, t3.univ, t4.univ, t5.univ, t6.univ)
-                   => r.univ) {
-      val ro = new RealizedOperator(op) {
-         val argTypes = List(t1, t2, t3, t4, t5, t6)
-         val retType = r
-         def apply(as: List[Term]): OMLIT = (as(0), as(1), as(2), as(3), as(4), as(5)) match {
-            case (t1(x1), t2(x2), t3(x3), t4(x4), t5(x5), t6(x6)) =>
-               r(comp(x1,x2, x3, x4, x5, x6))
-            case _ => throw ImplementationError("illegal arguments")
-         }
-      }
-      rule(ro)
-   }
-   def function(op:GlobalName, t1: RealizedType, t2: RealizedType, t3: RealizedType, t4: RealizedType, t5: RealizedType, t6: RealizedType,
-             t7: RealizedType, r: RealizedType)
-            (comp: (t1.univ, t2.univ, t3.univ, t4.univ, t5.univ, t6.univ, t7.univ)
-                   => r.univ) {
-      val ro = new RealizedOperator(op) {
-         val argTypes = List(t1, t2, t3, t4, t5, t6, t7)
-         val retType = r
-         def apply(as: List[Term]): OMLIT = (as(0), as(1), as(2), as(3), as(4), as(5), as(6)) match {
-            case (t1(x1), t2(x2), t3(x3), t4(x4), t5(x5), t6(x6), t7(x7)) =>
-               r(comp(x1,x2, x3, x4, x5, x6, x7))
-            case _ => throw ImplementationError("illegal arguments")
-         }
-      }
-      rule(ro)
-   }
-   def function(op:GlobalName, t1: RealizedType, t2: RealizedType, t3: RealizedType, t4: RealizedType, t5: RealizedType, t6: RealizedType,
-             t7: RealizedType, t8: RealizedType, r: RealizedType)
-            (comp: (t1.univ, t2.univ, t3.univ, t4.univ, t5.univ, t6.univ, t7.univ, t8.univ)
-                   => r.univ) {
-      val ro = new RealizedOperator(op) {
-         val argTypes = List(t1, t2, t3, t4, t5, t6, t7, t8)
-         val retType = r
-         def apply(as: List[Term]): OMLIT = (as(0), as(1), as(2), as(3), as(4), as(5), as(6), as(7)) match {
-            case (t1(x1), t2(x2), t3(x3), t4(x4), t5(x5), t6(x6), t7(x7), t8(x8)) =>
-               r(comp(x1,x2, x3, x4, x5, x6, x7, x8))
-            case _ => throw ImplementationError("illegal arguments")
-         }
-      }
-      rule(ro)
-   }
-   def function(op:GlobalName, t1: RealizedType, t2: RealizedType, t3: RealizedType, t4: RealizedType, t5: RealizedType, t6: RealizedType,
-             t7: RealizedType, t8: RealizedType, t9: RealizedType, r: RealizedType)
-            (comp: (t1.univ, t2.univ, t3.univ, t4.univ, t5.univ, t6.univ, t7.univ, t8.univ, t9.univ)
-                   => r.univ) {
-      val ro = new RealizedOperator(op) {
-         val argTypes = List(t1, t2, t3, t4, t5, t6, t7, t8, t9)
-         val retType = r
-         def apply(as: List[Term]): OMLIT = (as(0), as(1), as(2), as(3), as(4), as(5), as(6), as(7), as(8)) match {
-            case (t1(x1), t2(x2), t3(x3), t4(x4), t5(x5), t6(x6), t7(x7), t8(x8), t9(x9)) =>
-               r(comp(x1,x2, x3, x4, x5, x6, x7, x8, x9))
-            case _ => throw ImplementationError("illegal arguments")
-         }
-      }
-      rule(ro)
-   }
-   def function(op:GlobalName, t1: RealizedType, t2: RealizedType, t3: RealizedType, t4: RealizedType, t5: RealizedType, t6: RealizedType,
-             t7: RealizedType, t8: RealizedType, t9: RealizedType, t10: RealizedType, r: RealizedType)
-            (comp: (t1.univ, t2.univ, t3.univ, t4.univ, t5.univ, t6.univ, t7.univ, t8.univ, t9.univ, t10.univ)
-                   => r.univ) {
-      val ro = new RealizedOperator(op) {
-         val argTypes = List(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)
-         val retType = r
-         def apply(as: List[Term]): OMLIT = (as(0), as(1), as(2), as(3), as(4), as(5), as(6), as(7), as(8), as(9)) match {
-            case (t1(x1), t2(x2), t3(x3), t4(x4), t5(x5), t6(x6), t7(x7), t8(x8), t9(x9), t10(x10)) =>
-               r(comp(x1,x2, x3, x4, x5, x6, x7, x8, x9, x10))
-            case _ => throw ImplementationError("illegal arguments")
-         }
-      }
-      rule(ro)
-   }
 
    /** the partial inverse of a unary operator */
-   def inverse(op: GlobalName, argType: RealizedType, rType: RealizedType)(comp: rType.univ => Option[argType.univ]) {
+   def inverse(op: GlobalName, aTypeN: GlobalName, rTypeN: GlobalName)(comp: Any => Option[Any]) {
+     val rType = getRealizedType(rTypeN).get
+     val List(aType) = List(aTypeN) map {n => getRealizedType(n).get}      
+     val inv = new InverseOperator(op / invertTag) {
+        def unapply(l: OMLIT) = l match {
+            case rType(y) => comp(y) match {
+               case Some(x) => Some(List(aType(x)))
+               case None => None
+            }
+            case _ => None
+        }
+      }
+      rule(inv)
+   }
+   /** the partial inverse of an n-ary operator */
+   def inverse(op: GlobalName, aTypesN: List[GlobalName], rTypeN: GlobalName)(fun: InvFunctionN) {
+      val rType = getRealizedType(rTypeN).get
+      val aTypes = aTypesN map {n => getRealizedType(n).get}      
       val inv = new InverseOperator(op / invertTag) {
          def unapply(l: OMLIT) = l match {
-            case rType(y) => comp(y) match {
-               case Some(x) => Some(List(argType(x)))
+            case rType(y) => fun.app(y) match {
+               case Some(xs) =>
+                 if (xs.length != aTypes.length)
+                   None
+                 else {
+                   val argsV = (aTypes zip xs) map {case (aT,x) => aT(x)}
+                   Some(argsV)
+                 }
                case None => None
             }
             case _ => None
@@ -286,20 +199,27 @@ trait RuleCreators {
       }
       rule(inv)
    }
-   /** the partial inverse of a binary operator */
-   def inverse(op: GlobalName, argType1: RealizedType, argType2: RealizedType, rType: RealizedType)
-            (comp: rType.univ => Option[(argType1.univ,argType2.univ)]) {
-      val inv = new InverseOperator(op / invertTag) {
-         def unapply(l: OMLIT) = l match {
-            case rType(y) => comp(y) match {
-               case Some((x1,x2)) => Some(List(argType1(x1), argType2(x2)))
-               case None => None
-            }
-            case _ => None
-         }
-      }
-      rule(inv)
-   }
+}
+
+/** a flexary function, used by [[RealizationInScala]] */
+class FunctionN(val arity: Int, val app: List[Any] => Any)
+object FunctionN {
+   implicit def from0(f: Any) = new FunctionN(0, l => f)
+   implicit def from1(f: Any => Any) = new FunctionN(1, l => f(l(0)))
+   implicit def from2(f: (Any,Any) => Any) = new FunctionN(2, l => f(l(0),l(1)))
+   implicit def from3(f: (Any,Any,Any) => Any) = new FunctionN(3, l => f(l(0),l(1),l(2)))
+   implicit def from4(f: (Any,Any,Any,Any) => Any) = new FunctionN(4, l => f(l(0),l(1),l(2),l(3)))
+   implicit def from5(f: (Any,Any,Any,Any,Any) => Any) = new FunctionN(5, l => f(l(0),l(1),l(2),l(3),l(4)))
+   implicit def from6(f: (Any,Any,Any,Any,Any,Any) => Any) = new FunctionN(6, l => f(l(0),l(1),l(2),l(3),l(4),l(5)))
+   implicit def from7(f: (Any,Any,Any,Any,Any,Any,Any) => Any) = new FunctionN(7, l => f(l(0),l(1),l(2),l(3),l(4),l(5),l(6)))
+   implicit def from8(f: (Any,Any,Any,Any,Any,Any,Any,Any) => Any) = new FunctionN(8, l => f(l(0),l(1),l(2),l(3),l(4),l(5),l(6),l(7)))
+}
+
+/** a flexary function, used by [[RealizationInScala]] */
+class InvFunctionN(val arity: Int, val app: Any => Option[List[Any]])
+object InvFunctionN {
+   implicit def from1(f: Any => Option[Any]) = new InvFunctionN(1, l => f(l).map(u => List(u)))
+   implicit def from2(f: Any => Option[(Any,Any)]) = new InvFunctionN(2, l => f(l).map(u => List(u._1,u._2)))
 }
 
 trait TheoryScala {
