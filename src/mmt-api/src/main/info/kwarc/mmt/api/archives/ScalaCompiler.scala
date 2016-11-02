@@ -18,6 +18,10 @@ class ScalaCompiler extends BuildTarget {
      val folderList = a.properties.getOrElse("scala", "scala")
      val folders = stringToList(folderList).map(d => a / Dim(d)).filter(_.exists)
      val files = folders.flatMap(f => f.descendants).filter(_.getExtension.contains("scala")).map(_.toString)
+     if (files.isEmpty) {
+       log("no scala files found in folders " + folders.mkString(", "))
+       return
+     }
      val classPath = MMTSystem.runStyle match {
        case rs: IsFat => List(rs.jar)
        case ThinJars(d) => jars(d/"lib") ::: jars(d/"main")
