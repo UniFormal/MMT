@@ -122,11 +122,12 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
      val rType = getRealizedType(rTypeN).get
      val aTypes = aTypesN map {n => getRealizedType(n).get}
      if (fun.arity == 0) { 
-       val ar = new AbbrevRule(op, rType(fun.app(Nil)))
+       val lit = rType(fun.app(Nil))
+       val ar = new AbbrevRule(op, lit)
        rule(ar)
        val inv = new InverseOperator(op / invertTag) {
            def unapply(l: OMLIT) = {
-              if (l == rType(fun.app(Nil))) Some((Nil))
+              if (l == lit) Some(Nil)
               else None
            }
        }
