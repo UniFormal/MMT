@@ -103,24 +103,24 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
    }
    
    /** look up the realized type for a given operator */
-   private def getRealizedType(synType: GlobalName): Option[RealizedType] = {
+   protected def getRealizedType(synType: GlobalName): RealizedType = {
      getDeclarations foreach {
        case rc: RuleConstant => rc.df match {
-         case rt: RealizedType if rt.synType == OMS(synType) => return Some(rt)
+         case rt: RealizedType if rt.synType == OMS(synType) => return rt
          case _ =>
        }
        case _ =>
      }
-     return None
+     throw AddError("cannot add rule for operator " + synType + " before adding the operator's realization")
    }
    
    /** adds a rule for implementing a function symbol (argument and return types must have been added previously) */
    def function(op:GlobalName, aTypesN: List[GlobalName], rTypeN: GlobalName)(fun: FunctionN) {
      if (aTypesN.length != fun.arity) {
-       throw AddError("bad arity")
+         throw AddError("function realizing " + op + " of arity " + aTypesN.length + " has wrong arity " + fun.arity)
      }
-     val rType = getRealizedType(rTypeN).get
-     val aTypes = aTypesN map {n => getRealizedType(n).get}
+     val rType = getRealizedType(rTypeN)
+     val aTypes = aTypesN map {n => getRealizedType(n)}
      if (fun.arity == 0) { 
        val lit = rType(fun.app(Nil))
        val ar = new AbbrevRule(op, lit)
@@ -166,8 +166,8 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
 
    /** the partial inverse of a unary operator */
    def inverse(op: GlobalName, aTypeN: GlobalName, rTypeN: GlobalName)(comp: Any => Option[Any]) {
-     val rType = getRealizedType(rTypeN).get
-     val List(aType) = List(aTypeN) map {n => getRealizedType(n).get}      
+     val rType = getRealizedType(rTypeN)
+     val List(aType) = List(aTypeN) map {n => getRealizedType(n)}      
      val inv = new InverseOperator(op / invertTag) {
         def unapply(l: OMLIT) = l match {
             case rType(y) => comp(y) match {
@@ -181,8 +181,11 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
    }
    /** the partial inverse of an n-ary operator */
    def inverse(op: GlobalName, aTypesN: List[GlobalName], rTypeN: GlobalName)(fun: InvFunctionN) {
-      val rType = getRealizedType(rTypeN).get
-      val aTypes = aTypesN map {n => getRealizedType(n).get}      
+      if (aTypesN.length != fun.arity) {
+         throw AddError("function realizing " + op + " of arity " + aTypesN.length + " has wrong arity " + fun.arity)
+      }
+      val rType = getRealizedType(rTypeN)
+      val aTypes = aTypesN map {n => getRealizedType(n)}      
       val inv = new InverseOperator(op / invertTag) {
          def unapply(l: OMLIT) = l match {
             case rType(y) => fun.app(y) match {
@@ -216,7 +219,7 @@ object FunctionN {
    implicit def from8(f: (Any,Any,Any,Any,Any,Any,Any,Any) => Any) = new FunctionN(8, l => f(l(0),l(1),l(2),l(3),l(4),l(5),l(6),l(7)))
 }
 
-/** a flexary function, used by [[RealizationInScala]] */
+/** inverse of a flexary function, used by [[RealizationInScala]] */
 class InvFunctionN(val arity: Int, val app: Any => Option[List[Any]])
 object InvFunctionN {
    implicit def from1(f: Any => Option[Any]) = new InvFunctionN(1, l => f(l).map(u => List(u)))

@@ -12,8 +12,7 @@ class RealizedType(val synType: Term, val semType: SemanticType) extends uom.UOM
       case rt: RealizedType => synType == rt.synType && semType == rt.semType
       case _ => false
    }
-   @deprecated
-   type univ = Any
+   private type univ = Any
    def head = synType.head match {
       case Some(h: GlobalName) => h
       case _ => throw ImplementationError("syntactic type must have head")

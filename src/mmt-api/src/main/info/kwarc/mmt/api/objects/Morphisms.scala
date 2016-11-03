@@ -167,7 +167,7 @@ object TheoryExp {
       body.getDomain
   }
 
-  /** all directly included named theories */
+  /** all inherently included named theories */
   def getSupport(t: Term): List[MPath] = t match {
     case OMMOD(p) => List(p)
     case ComplexTheory(cont) => cont.getIncludes

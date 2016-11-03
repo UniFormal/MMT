@@ -584,7 +584,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
     */
   private def visibleVia(to: Term): mutable.HashSet[(Term, Term)] = {
     val hs = implicitGraph.into(to)
-    hs add(to, OMCOMP())
+    TheoryExp.getSupport(to) foreach {p => hs add(OMMOD(p), OMCOMP())}
     hs
   }
 
@@ -592,8 +592,11 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
   def visible(to: Term): mutable.HashSet[Term] = visibleVia(to).map(_._1)
 
   /** as visible but only those where the morphism is trivial (i.e., all includes) */
-  def visibleDirect(to: Term): mutable.HashSet[Term] = visibleVia(to).flatMap { case (from, via) =>
-    if (via == OMCOMP()) List(from) else Nil
+  def visibleDirect(to: Term): mutable.HashSet[Term] = {
+    val via = visibleVia(to)
+    via.flatMap {case (from, via) =>
+      if (via == OMCOMP()) List(from) else Nil
+    }
   }
 
   /** returns the symbol from which the argument symbol arose by a structure declaration */

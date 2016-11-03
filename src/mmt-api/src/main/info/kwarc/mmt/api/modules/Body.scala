@@ -187,10 +187,6 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
       }
       decs.reverse
    }
-   /** the list of declarations in the order of addition, excludes generated declarations */
-   def getPrimitiveDeclarations = getDeclarations.filterNot(_.isGenerated)
-   /** the list of declarations using elaborated declarations where possible */
-   def getDeclarationsElaborated = getDeclarations.filterNot(ElaboratedElement.isProperly)
    /** getPrimitiveDeclarations, with narrative structure */
    protected def innerNodes = {
       def makeNodes(doc: Document): scala.xml.NodeSeq = {

@@ -40,41 +40,65 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     }
   }
 
-  private def getContext(e : StructuralElement) = controller.getO(e.parent) match {
-      case Some(th : DeclaredTheory) => th.getInnerContext.before(e.name)
-      case Some(v : DeclaredLink) => v.codomainAsContext
-      case _ => Context.empty
-  }
-
   /**
     * checks a StructuralElement
     *
     * @param e the element to check
     */
   def apply(e: StructuralElement)(implicit ce: CheckingEnvironment) {
-    check(Context.empty, e)
+    val cont = getContext(e)
+    check(cont, e)
   }
 
+  /** computes the context in which an element must be checked
+   *  during top-down traversal, this method allows checking to start in the middle
+   */
+  private def getContext(e: StructuralElement): Context = {
+    lazy val parent = controller.get(e.parent)
+    e match {
+      case d: NarrativeElement => d.parentOpt match {
+        case None => d match {
+          case d: Document => d.contentAncestor match {
+            case None => Context.empty
+            case Some(m) => getInnerContext(m)
+          }
+          case _ => Context.empty
+        }
+        case Some(p) => getContext(parent)
+      }
+      case m: Module => m.superModule match {
+        case None => Context.empty
+        case Some(smP) => controller.get(smP) match {
+          case sm: DeclaredModule => getInnerContext(sm)
+          case sm: DefinedModule => getContext(m) // should never occur
+        }
+      }
+      case d: Declaration => parent match {
+        case m: DeclaredModule => getInnerContext(m)
+        case m: DefinedModule => getContext(m) // should never occur
+      }
+    }
+  }
+  /** @return the context in which the body of ContainerElement is checked */
+  private def getInnerContext(e: ContainerElement[_]) = makeInnerContext(getContext(e), e)
+  
   /**
     * @param context all variables and theories that may be used in e (including the theory in which is declared)
     * @param e       the element to check
     */
-  // TODO this function should ideally just delegate to checkNewElement and checkElementEnd
   private def check(context: Context, e: StructuralElement)(implicit ce: CheckingEnvironment) {
+    if (e.path.toString.endsWith("zero"))
+      true
     val rules = RuleSet.collectRules(controller, context)
     implicit val env = new Environment(ce, rules, e.path)
     val path = e.path
-    log("checking " + path)
+    log("checking " + path + " using " + rules.toString)
     e match {
-      case d: Document =>
-        d.getDeclarations foreach { i => check(context, i) }
-      case oe: OpaqueElement =>
-        checkElement(oe,Some(context))
-      case r: NRef =>
-        checkElement(r,Some(context))
+      //TODO merge this case with the generic case for ContainerElements
+      //the extended treatment is probably needed for all ContainerElements anyway
       case t: DeclaredTheory =>
-        checkElement(t,Some(context))
-        val contextI = context ++ t.getInnerContext
+        checkElementBegin(t,context)
+        val contextI = makeInnerContext(context, t)
         // content structure
         val tDecls = t.getPrimitiveDeclarations
         // mark all children as unchecked
@@ -88,43 +112,16 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             UncheckedElement.erase(d)
           }
         }
-        checkElementEnd(t,Some(context))
-      case t: DefinedTheory =>
-        checkElement(t,Some(context))
-      case v: DeclaredView =>
-        checkElement(v,Some(context))
+        checkElementEnd(t,context)
+      case c: ContainerElement[_] =>
+        checkElementBegin(c, context)
+        val contextI = makeInnerContext(context, c)
         logGroup {
-          v.getPrimitiveDeclarations foreach { d => check(context ++ v.codomainAsContext, d) }
+          c.getPrimitiveDeclarations foreach {
+            i => check(contextI, i)
+          }
         }
-        checkElementEnd(v, Some(context))
-      case v: DefinedView =>
-        checkElement(v,Some(context))
-      case nm: NestedModule =>
-        check(context,nm.module)
-      case s: DeclaredStructure =>
-        checkElement(s,Some(context))
-        s.getPrimitiveDeclarations foreach { d => check(context, d) }
-        checkElementEnd(s, Some(context))
-      case s: DefinedStructure =>
-        checkElement(s,Some(context))
-      case c: Constant =>
-        checkElement(c,Some(context))
-      case rc: RuleConstant =>
-      case _ =>
-        //succeed for everything else but signal error
-        logError("unchecked " + path)
-    }
-    new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
-  }
-
-  private def checkElement(e : StructuralElement, cont : Option[Context] = None)(implicit ce: CheckingEnvironment) {
-    val context = cont.getOrElse(getContext(e))
-    val rules = RuleSet.collectRules(controller, context)
-    implicit val env = new Environment(ce, rules, e.path)
-    val path = e.path
-    log("checking " + path)
-    e match {
-      case d: Document =>
+        checkElementEnd(c, context)
       case oe: OpaqueElement =>
         controller.extman.get(classOf[OpaqueChecker], oe.format) match {
           case None => env.errorCont(InvalidElement(oe, "no checker found for format " + oe.format))
@@ -134,28 +131,16 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       //TODO check all declarations, components? currently done in each OpaqueChecker
       case r: NRef =>
         check(context, controller.get(r.target))
-      case t: DeclaredTheory =>
-        var contextMeta = context
-        t.meta foreach { mt =>
-          checkTheory(context, OMMOD(mt))
-          contextMeta = contextMeta ++ mt
-        }
-        checkContext(contextMeta, t.parameters)
+      case nm: NestedModule =>
+        check(context, nm.module)
       case t: DefinedTheory =>
         val dfR = checkTheory(context, t.df)
         t.dfC.analyzed = dfR
-      case v: DeclaredView =>
-        checkTheory(context, v.from)
-        checkTheory(context, v.to)
       case v: DefinedView =>
         checkTheory(context, v.from)
         checkTheory(context, v.to)
         val (dfR, _, _) = checkMorphism(context, v.df, Some(v.from), Some(v.to))
         v.dfC.analyzed = dfR
-      case nm: NestedModule =>
-        checkElement(nm.module, cont)
-      case s: DeclaredStructure =>
-        checkTheory(context, s.from)
       case s: DefinedStructure =>
         val (thy, linkOpt) = content.getDomain(s)
         linkOpt match {
@@ -287,42 +272,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
   }
 
-  private def checkElementEnd(e: ContainerElement[_], cont : Option[Context] = None)(implicit ce: CheckingEnvironment) {
-    val context = cont.getOrElse(getContext(e))
-    val rules = RuleSet.collectRules(controller, context)
-    implicit val env = new Environment(ce, rules, e.path)
-    val path = e.path
-    log("checking " + path)
-    e match {
-      case d: Document =>
-      case t: DeclaredTheory =>
-        val contextI = context ++ t.getInnerContext
-        // check all the narrative structure (at the end to allow forward references)
-        def doDoc(ne: NarrativeElement) {
-          ne match {
-            case doc: Document => doc.getDeclarations foreach doDoc
-            case r: NRef =>
-            case oe: OpaqueElement => check(contextI, oe)
-          }
-        }
-        doDoc(t.asDocument)
-        // recurse for all nested modules
-        t.getDeclarations.foreach {
-          case nm: NestedModule => nm.module match {
-            case dm: DeclaredModule => checkElementEnd(dm, Some(context))
-            case _ =>
-          }
-          case _ =>
-        }
-      case v: DeclaredView =>
-      case s: DeclaredStructure =>
-      case _ =>
-        //succeed for everything else but signal error
-        logError("unchecked " + path)
-    }
-    new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
-  }
-
   /** determines which dimension of a term (parsed, analyzed, or neither) is checked */
   private def getTermToCheck(tc: TermContainer, dim: String) = {
     if (tc.parsed.isDefined && tc.analyzed.isDefined) {
@@ -343,6 +292,69 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     }
   }
 
+  // ***** ContainerElements *****
+  
+  /** computes the context in which the body of ContainerElement is checked */
+  private def makeInnerContext(context: Context, e: ContainerElement[_]) = e match {
+    case d: Document => context
+    case m: DeclaredModule => context ++ m.getInnerContext
+    case s: DeclaredStructure => context
+  }
+  
+  /** auxiliary method of check */
+  private def checkElementBegin(e : ContainerElement[_], context : Context)(implicit env: Environment) {
+    val rules = env.rules
+    implicit val ce = env.ce
+    val path = e.path
+    e match {
+      case d: Document =>
+      case t: DeclaredTheory =>
+        var contextMeta = context
+        t.meta foreach { mt =>
+          checkTheory(context, OMMOD(mt))
+          contextMeta = contextMeta ++ mt
+        }
+        checkContext(contextMeta, t.parameters)
+      case v: DeclaredView =>
+        checkTheory(context, v.from)
+        checkTheory(context, v.to)
+      case s: DeclaredStructure =>
+        checkTheory(context, s.from)
+      case _ =>
+        //succeed for everything else but signal error
+        logError("unchecked " + path)
+    }
+  }
+
+  /** auxiliary method of check */
+  private def checkElementEnd(e: ContainerElement[_], context: Context)(implicit env: Environment) {
+    val rules = env.rules
+    implicit val ce = env.ce
+    val path = e.path
+    e match {
+      case d: Document =>
+      case t: DeclaredTheory =>
+        val contextI = makeInnerContext(context, t)
+        // check all the narrative structure (at the end to allow forward references)
+        //TODO currently this is called on a NestedModule before the rest of the parent is checked
+        def doDoc(ne: NarrativeElement) {
+          ne match {
+            case doc: Document => doc.getDeclarations foreach doDoc
+            case r: NRef =>
+            case oe: OpaqueElement => check(contextI, oe)
+          }
+        }
+        doDoc(t.asDocument)
+      case v: DeclaredView =>
+      case s: DeclaredStructure =>
+      case _ =>
+        //succeed for everything else but signal error
+        logError("unchecked " + path)
+    }
+  }
+
+  // *****
+  
   /** checks whether a theory object is well-formed
     *
     * @param context the context relative to which m is checked
@@ -540,7 +552,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case l: OMLIT =>
         val synType = l.rt.synType
         checkTerm(context, synType)
-        val rts = env.rules.getByHead(classOf[uom.RealizedType], l.rt.head)
+        val rts = env.rules.get(classOf[uom.RealizedType])
         if (!(rts contains l.rt))
           env.errorCont(InvalidObject(s, "literal not in scope: " + l.toString))
         l
@@ -552,7 +564,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           case rule :: Nil =>
             rule.parse(v).from(s)
           case Nil =>
-            env.errorCont(InvalidObject(s, "unknown literal type"))
+            env.errorCont(InvalidObject(s, "unknown literal type " + synType))
             s
           case _ =>
             env.errorCont(InvalidObject(s, "multiple literal rules for the same type"))

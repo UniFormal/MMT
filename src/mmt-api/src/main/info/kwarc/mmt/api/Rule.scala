@@ -79,6 +79,8 @@ class RuleSet {
 object RuleSet {
    def collectRules(controller: Controller, context: Context): RuleSet = {
       val imports = controller.library.visibleDirect(ComplexTheory(context))
+      //TODO once rules are translatable, this should handle translations between rules
+      //TODO even if rules are not translatable, the morphism bringing a theory into may happen to be the identity for some rule, which can then be collected here
       val rs = new RuleSet
       imports.foreach {
          case OMPMOD(p,_) =>
@@ -87,12 +89,12 @@ object RuleSet {
                   // trying all declarations because some rules might be generated
                   t.getDeclarations.foreach {
                      case rc: RuleConstant =>
-                           rs.declares(rc.df)
-                     case _ => Nil
+                        rs.declares(rc.df)
+                     case _ =>
                   }
-               case _ => Nil
+               case _ =>
             }
-         case _ => Nil
+         case _ =>
       }
       rs
    }

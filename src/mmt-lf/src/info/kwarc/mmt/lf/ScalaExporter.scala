@@ -66,7 +66,7 @@ class ScalaExporter extends GenericScalaExporter {
          //TODO exclude declarations with extraneous types that should not be implemented, e.g., m:MOR a b
          case SimpleStructure(s, fromPath) if !s.isInclude =>
             // unnamed structures have been handled above already
-            rh.writeln("  val " + nameToScalaQ(s.path) + ": " + mpathToScala(fromPath))
+            rh.writeln("  val " + nameToScalaQ(s.path) + ": " + mpathToScala(fromPath, packageSep))
          case _ =>
       }
       rh.writeln("}\n")
@@ -130,7 +130,8 @@ import uom._
 
 /** this can be mixed into Scala-models of MMT theories to simplify adding additional rules */
 trait SolutionRules extends RealizationInScala {
-   def solve_unary(op:GlobalName, argType: RealizedType, rType: RealizedType)(invert: rType.univ => Option[argType.univ]) = {
+   def solve_unary(op:GlobalName, argTypeN: GlobalName, rTypeN: GlobalName)(invert: Any => Option[Any]) = {
+      val List(argType, rType) = List(argTypeN, rTypeN) map getRealizedType
       val sr = new SolutionRule(op / "invert") {
          def applicable(tm1: Term) = tm1 match {
             case ApplySpine(OMS(`op`), List(_)) => Some(1)
@@ -145,8 +146,9 @@ trait SolutionRules extends RealizationInScala {
       }
       rule(sr)
    }
-   def solve_binary_right(op:GlobalName, argType1: RealizedType, argType2: RealizedType, rType: RealizedType)
-            (invert: (rType.univ,argType2.univ) => Option[argType1.univ]) = {
+   def solve_binary_right(op:GlobalName, argType1N: GlobalName, argType2N: GlobalName, rTypeN: GlobalName)
+            (invert: (Any,Any) => Option[Any]) = {
+      val List(argType1, argType2, rType) = List(argType1N, argType2N, rTypeN) map getRealizedType
       val sr = new SolutionRule(op / "right-invert") {
          def applicable(tm1: Term) = tm1 match {
             case ApplySpine(OMS(`op`), List(_,argType2(_))) => Some(1)
@@ -161,8 +163,9 @@ trait SolutionRules extends RealizationInScala {
       }
       rule(sr)
    }
-   def solve_binary_left(op:GlobalName, argType1: RealizedType, argType2: RealizedType, rType: RealizedType)
-            (invert: (argType1.univ,rType.univ) => Option[argType2.univ]) = {
+   def solve_binary_left(op:GlobalName, argType1N: GlobalName, argType2N: GlobalName, rTypeN: GlobalName)
+            (invert: (Any,Any) => Option[Any]) = {
+      val List(argType1, argType2, rType) = List(argType1N, argType2N, rTypeN) map getRealizedType
       val sr = new SolutionRule(op / "left-invert") {
          def applicable(tm1: Term) = tm1 match {
             case ApplySpine(OMS(`op`), List(argType1(_),_)) => Some(2)
