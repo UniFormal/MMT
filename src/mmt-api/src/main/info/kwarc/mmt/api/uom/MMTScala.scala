@@ -205,7 +205,7 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
 /** a flexary function, used by [[RealizationInScala]] */
 class FunctionN(val arity: Int, val app: List[Any] => Any)
 object FunctionN {
-   implicit def from0(f: Any) = new FunctionN(0, l => f)
+   implicit def from0(f: () => Any) = new FunctionN(0, l => f())
    implicit def from1(f: Any => Any) = new FunctionN(1, l => f(l(0)))
    implicit def from2(f: (Any,Any) => Any) = new FunctionN(2, l => f(l(0),l(1)))
    implicit def from3(f: (Any,Any,Any) => Any) = new FunctionN(3, l => f(l(0),l(1),l(2)))

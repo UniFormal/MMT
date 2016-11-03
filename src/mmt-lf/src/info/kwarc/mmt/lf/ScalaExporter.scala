@@ -97,8 +97,7 @@ class ScalaExporter extends GenericScalaExporter {
                // create "realizes {function(name, List(argType1, ..., argTypeN), retType)(function)}
                val (argsE, retE) = typeEras(tp)
                val lts = argsE.map(nameInScala).mkString("List(", ", ", ")") + ", " + nameInScala(retE)
-               val underscore = if (argsE.isEmpty) "" else " _"
-               val ini = s"  realizes {function($synName, $lts)($semName$underscore)}"
+               val ini = s"  realizes {function($synName, $lts)($semName _)}"
                // create def name(x0: argType1.univ, ..., xN: argTypeN.univ): retType.univ
                val names = args.zipWithIndex.map {
                   case ((Some(n), _), _) => n.toPath
