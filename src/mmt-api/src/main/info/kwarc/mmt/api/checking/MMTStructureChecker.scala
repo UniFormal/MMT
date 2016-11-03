@@ -87,8 +87,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @param e       the element to check
     */
   private def check(context: Context, e: StructuralElement)(implicit ce: CheckingEnvironment) {
-    if (e.path.toString.endsWith("zero"))
-      true
     val rules = RuleSet.collectRules(controller, context)
     implicit val env = new Environment(ce, rules, e.path)
     val path = e.path
