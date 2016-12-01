@@ -5,14 +5,13 @@ import info.kwarc.mmt.api.{GlobalName, LocalName}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{DeclaredLink, DeclaredTheory}
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.ontology.{ArgumentAlignment, FormalAlignment, SimpleAlignment}
+import info.kwarc.mmt.api.ontology.{ArgumentAlignment, FormalAlignment}
 import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure, UniformTranslator}
 
 import scala.collection.mutable
 import scala.util.{Success, Try}
 
-
-// TODO replace by pragmatify ------------------------------------------------------------------------------------------
+/*
 abstract class Application {
   val symbol: Option[GlobalName]
 
@@ -75,15 +74,17 @@ object Application {
     case _ => None
   }
 }
+*/
 
-//TODO continue --------------------------------------------------------------------------------------------------------
 abstract class AcrossLibraryTranslation extends UniformTranslator {
   def applicable(tm : Term) : Boolean
   def apply(tm : Term) : Term
   def apply(context: Context, tm: Term) : Term = apply(tm)
 }
-case class AlignmentTranslation(alignment : FormalAlignment) extends AcrossLibraryTranslation {
+
+case class AlignmentTranslation(alignment : FormalAlignment)(implicit controller : Controller) extends AcrossLibraryTranslation {
   override def toString: String = "Alignment " + alignment.toString
+  /*
   lazy val traverser = alignment match {
     case SimpleAlignment(from,to,_) => new StatelessTraverser {
       override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
@@ -109,15 +110,36 @@ case class AlignmentTranslation(alignment : FormalAlignment) extends AcrossLibra
       }
     }
   }
-  def apply(tm : Term) = traverser(tm,())
+  */
+
+  private val appl = controller.pragmatic.StrictOMA
+
+  def apply(tm : Term) = //traverser(tm,())
+    (alignment,tm) match {
+      case (_,OMID(alignment.from.mmturi)) => OMID(alignment.to.mmturi)
+      case (align @ ArgumentAlignment(_,_,_,_),appl(ls,alignment.from.mmturi,args)) =>
+        // println("Pragma! " + ls + " from " + align.from.mmturi)
+        def reorder(ts: List[Term]): List[Term] = {
+          val max = align.arguments.maxBy(p => p._2)._2
+          (1 to max).map(i => {
+            val ni = align.arguments.find(p => p._2 == i).map(_._1)
+            if (ni.isEmpty) OMV(LocalName("_")) // TODO implicit arguments
+            else ts(ni.get)
+          }).toList
+        }
+        appl(ls,align.to.mmturi match {
+          case gn : GlobalName => gn
+        },reorder(args))
+    }
 
   // TODO use pragmatic instead
   def applicable(tm : Term) = (alignment,tm) match {
     case (_,OMID(alignment.from.mmturi)) => true
-    case (ArgumentAlignment(_,_,_,_),Application(OMS(alignment.from.mmturi), args, appls)) => true
+    case (ArgumentAlignment(_,_,_,_),appl(_,alignment.from.mmturi, args)) => true
     case _ => false
   }
 }
+
 abstract class TranslationGroup {
   def applicable(tm : Term)(implicit trl : AcrossLibraryTranslator) : List[(AcrossLibraryTranslation,Term)]
 }
@@ -134,6 +156,7 @@ case class LinkTranslation(ln : DeclaredLink)(implicit controller: Controller) e
       require(tm == OMS(p))
       ln match {
         case s : DeclaredStructure => OMS(s.parent ? (ln.name / p.name))
+          // TODO views
       }
     }
   }
@@ -230,7 +253,7 @@ class AcrossLibraryTranslator(controller : Controller,
       rest.nonEmpty
     })
     if (gr.isDefined) {
-      println("Applying group " + gr.get)
+      // println("Applying group " + gr.get)
       if (!openGroups.contains(gr.get)) openGroups ::= gr.get
       val ret = rest.find(p =>
         if (TermClass(p._2).applicable(p._1)) {
@@ -352,7 +375,7 @@ class AcrossLibraryTranslator(controller : Controller,
         case Finished => Finished
         case Failed => Failed
         case _ => currentTerm match {
-          case OMS(p) if inArchive(p)(to) =>
+          case OMS(p) if inArchive(p,to) =>
             backtrackstack = backtrackstack.filterNot(p => p._2 == this && steps.exists(q => q._1 contains p._1))
             Finished
           case OMS(_) => stateVar
@@ -371,7 +394,7 @@ class AcrossLibraryTranslator(controller : Controller,
     state
 
     def backtrack : Boolean = {
-      println("Backtracking " + currentTerm)
+      // println("Backtracking " + currentTerm)
       if ( /* usedTranslations.nonEmpty */ steps.head._1.isDefined && steps.length > 1) {
         usedTranslations ::= steps.head._1.get
         steps = steps.tail
@@ -402,8 +425,8 @@ class AcrossLibraryTranslator(controller : Controller,
         case _ => (Some(tr), tr(currentTerm))
       })
       backtrackstack ::= ((steps.head._1.get, this))
-      println("Applying " + tr.toString + "to:\n" + termtostr(steps(1)._2))
-      println(this)
+      // println("Applying " + tr.toString + "to:\n" + termtostr(steps(1)._2))
+      // println(this)
       //usedTranslations ::= tr
       TermClass.register(currentTerm, this)
       stateVar = Changed(New)
@@ -442,7 +465,7 @@ class AcrossLibraryTranslator(controller : Controller,
     def revertPartially: Term = if (state == Finished) currentTerm
     else original match {
       case OMS(p) =>
-        println("Reverting: " + p + " -> " + termtostr(original))
+        // println("Reverting: " + p + " -> " + termtostr(original))
         steps = List((None, original))
         original
       case _ =>
@@ -464,7 +487,7 @@ class AcrossLibraryTranslator(controller : Controller,
 
     // TODO (potentially) replace by better stuff ------------------------------------------------------------------------
 
-    def inArchive(path: GlobalName)(implicit target: Archive): Boolean = (controller.backend.findOwningArchive(path.module) contains target) || {
+    def inArchive(path: GlobalName, target: Archive): Boolean = (controller.backend.findOwningArchive(path.module) contains target) || {
       val fndPath = target.foundation.getOrElse(return false)
       val fnd = try {
         val ret = controller.get(fndPath).asInstanceOf[DeclaredTheory]
@@ -480,10 +503,6 @@ class AcrossLibraryTranslator(controller : Controller,
       }
       ths.flatMap(_.getDeclarations.map(_.path)) contains path
     }
-
-    // foundation stuff
-    // TODO: the whole strict/pragmatic-stuff
     // TODO --------------------------------------------------------------------------------------------------------------
-
   }
 }
