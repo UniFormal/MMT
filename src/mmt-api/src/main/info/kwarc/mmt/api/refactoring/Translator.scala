@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{DeclaredLink, DeclaredTheory}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.{ArgumentAlignment, FormalAlignment, SimpleAlignment}
-import info.kwarc.mmt.api.symbols.{Constant, UniformTranslator}
+import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure, UniformTranslator}
 
 import scala.collection.mutable
 import scala.util.{Success, Try}
@@ -80,9 +80,10 @@ object Application {
 abstract class AcrossLibraryTranslation extends UniformTranslator {
   def applicable(tm : Term) : Boolean
   def apply(tm : Term) : Term
-  def apply(context: Context, tm: Term): Term = apply(tm)
+  def apply(context: Context, tm: Term) : Term = apply(tm)
 }
 case class AlignmentTranslation(alignment : FormalAlignment) extends AcrossLibraryTranslation {
+  override def toString: String = "Alignment " + alignment.toString
   lazy val traverser = alignment match {
     case SimpleAlignment(from,to,_) => new StatelessTraverser {
       override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
@@ -117,8 +118,31 @@ case class AlignmentTranslation(alignment : FormalAlignment) extends AcrossLibra
     case _ => false
   }
 }
-case class LinkTranslation(ln : DeclaredLink) extends AcrossLibraryTranslation {
+abstract class TranslationGroup {
+  def applicable(tm : Term)(implicit trl : AcrossLibraryTranslator) : List[(AcrossLibraryTranslation,Term)]
+}
 
+case class LinkTranslation(ln : DeclaredLink)(implicit controller: Controller) extends TranslationGroup {
+  override def toString: String = "DeclaredLink " + ln.path
+  val from = ln.from match {
+    case OMMOD(mp) => mp
+    case _ => ??? // TODO materialize properly
+  }
+  case class InnerTranslation(p : GlobalName) extends AcrossLibraryTranslation {
+    def applicable(tm : Term) = true
+    def apply(tm : Term) = {
+      require(tm == OMS(p))
+      ln match {
+        case s : DeclaredStructure => OMS(s.parent ? (ln.name / p.name))
+      }
+    }
+  }
+
+  def applicable(tm : Term)(implicit trl : AcrossLibraryTranslator) =
+    AcrossLibraryTranslator.getSymbols(tm).filter(s => s.module == from).map(p => (InnerTranslation(p),OMS(p)))
+}
+
+object AcrossLibraryTranslator {
   // TODO maybe replace -----------------------------------------------------------------
   def getSymbols(tm : Term) = {
     var symbols : List[GlobalName] = Nil
@@ -135,17 +159,12 @@ case class LinkTranslation(ln : DeclaredLink) extends AcrossLibraryTranslation {
   }
 
   // TODO --------------------------------------------------------------------------------
-
-  val from = ln.from match {
-    case OMMOD(mp) => mp
-    case _ => ??? // TODO materialize properly
-  }
-
-  def applicable(tm : Term) = getSymbols(tm).exists(s => s.module == from)
-  def apply(tm : Term) = ??? // TODO apply morphism
 }
 
-class AcrossLibraryTranslator(controller : Controller, translations : List[AcrossLibraryTranslation]) /* extends ServerExtension("translate") */ {
+class AcrossLibraryTranslator(controller : Controller,
+                              translations : List[AcrossLibraryTranslation],
+                              groups: List[TranslationGroup],
+                              to : Archive) /* extends ServerExtension("translate") */ {
   /* override def logPrefix = "Translator"
 
   override def start(args: List[String]) = {
@@ -156,113 +175,186 @@ class AcrossLibraryTranslator(controller : Controller, translations : List[Acros
     ???
   }
   */
+  private implicit val trl = this
 
   object DefinitionExpander extends AcrossLibraryTranslation {
-    def applicable (tm : Term) = tm match {
+    def applicable(tm: Term) = tm match {
       case OMS(p) =>
         controller.get(p) match {
-          case c : Constant if c.df.isDefined => true
+          case c: Constant if c.df.isDefined => true
           case _ => false
         }
       case _ => false
     }
 
-    def apply(tm : Term) = tm match {
+    def apply(tm: Term) = tm match {
       case OMS(p) =>
         controller.get(p) match {
-          case c : Constant if c.df.isDefined => c.df.get
+          case c: Constant if c.df.isDefined => c.df.get
         }
     }
   }
 
-  private def innerTranslate(tc : TermClass)(implicit to : Archive) : Unit = tc.state match {
-    case Finished =>
-    case Failed =>
-    case Changed(_) =>
+  private var openGroups: List[TranslationGroup] = Nil
+  private var backtrackstack: List[(AcrossLibraryTranslation, TermClass)] = Nil
+
+  private def innerTranslate(tc: TermClass): Boolean = tc.state match {
+    case Finished => false
+    case Failed => false
+    // case Changed(_) =>
     case _ =>
       val tr = findTranslations(tc.currentTerm).find(t => tc.applicable(t))
-      if (tr.isDefined) tc.applyTranslation(tr.get)
+      if (tr.isDefined) {
+        tc.applyTranslation(tr.get)
+        true
+      }
       else {
         var changed = false
         val immsubs = tc.immediateSubterms
-        immsubs foreach (it => if (!changed) {
-          innerTranslate(it)
-          if (it.state.isInstanceOf[Changed]) changed = true
+        immsubs foreach (it => /* if (!changed) */ {
+          val prest = it.state
+          val ret = innerTranslate(it)
+          changed = changed || ret
         })
-        if (!changed) tc.backtrack
+        if (!changed) {
+          // println("No change: " + tc)
+          tc.backtrack
+        } else true
       }
   }
 
-  def translate(tm : Term, to : Archive) : (Term, Boolean) = {
-    implicit val target = to
-    val tc = TermClass(tm)
-    try {
-      while (tc.state != Finished) {
-        innerTranslate(tc)
-        tc.update
-        if (tc.state == Failed) throw Fail
-      }
-      (tc.currentTerm,true)
-    } catch {
-      case Fail => (tc.revertPartially,false)
+  private def applyGroup(ls: List[TranslationGroup], tc: TermClass): Boolean = {
+    var rest: List[(AcrossLibraryTranslation, Term)] = Nil
+    val gr = ls.find(g => {
+      rest = g.applicable(tc.currentTerm)
+      rest.nonEmpty
+    })
+    if (gr.isDefined) {
+      println("Applying group " + gr.get)
+      if (!openGroups.contains(gr.get)) openGroups ::= gr.get
+      val ret = rest.find(p =>
+        if (TermClass(p._2).applicable(p._1)) {
+          TermClass(p._2).applyTranslation(p._1)
+          true
+        } else false
+      )
+      ret.isDefined
+    } else false
+  }
+
+  private def translateGroups(tc: TermClass): Boolean = {
+    if (openGroups.nonEmpty) {
+      applyGroup(openGroups, tc)
+    } else {
+      // open up new
+      applyGroup(groups, tc)
+      //false
     }
   }
 
-  private def findTranslations(tm : Term) : List[AcrossLibraryTranslation] = (DefinitionExpander :: translations).filter(_.applicable(tm))
+  var origs: List[Term] = Nil
+
+  def translate(tm: Term): (Term, Boolean) = {
+    implicit val target = to
+    val tc = TermClass(tm)
+    def st(tm: TermClass): List[Term] = tm.currentTerm :: tm.immediateSubterms.flatMap(st)
+    origs = st(tc)
+    try {
+      while (tc.state != Finished) {
+        if (!translateGroups(tc)) {
+          innerTranslate(tc)
+        }
+        tc.update
+        if (tc.state == Failed) throw Fail
+      }
+      (tc.currentTerm, true)
+    } catch {
+      case Fail =>
+        //TermClass.getAll.foreach(println)
+        (tc.revertPartially, false)
+    }
+  }
+
+  private def findTranslations(tm: Term): List[AcrossLibraryTranslation] = (DefinitionExpander :: translations).filter(_.applicable(tm))
 
   object TermClass {
-    private val store : mutable.HashMap[Term,TermClass] = mutable.HashMap.empty
-    def apply(tm : Term)(implicit to : Archive) = store.getOrElse(tm, {
+    private val store: mutable.HashMap[Term, TermClass] = mutable.HashMap.empty
+
+    def apply(tm: Term) = store.getOrElse(tm, {
       val ret = new TermClass(tm)
       store(tm) = ret
       ret
     })
-    def register(tm : Term, tc : TermClass) = store(tm) = tc
+
+    def register(tm: Term, tc: TermClass) = store(tm) = tc
+
+    def getAll = store.values.toList.distinct
   }
 
   object Fail extends Exception
 
   sealed class TermClassState
+
   case object Finished extends TermClassState
+
   case object Failed extends TermClassState
+
   case object Todo extends TermClassState
 
   sealed class Change
+
   case object New extends Change
+
   case object Backtracked extends Change
-  case class Changed(ch : Change) extends TermClassState
 
-  class TermClass(val original : Term)(implicit to : Archive) {
-    override def toString = "TermClass: " + steps.head + "\nPredecessors: " + steps.tail.map(_.toString).mkString("\n")
-    private var steps : List[Term] = List(original)
-    def currentTerm = steps.head
-    private var usedTranslations : List[AcrossLibraryTranslation] = Nil
+  case class Changed(ch: Change) extends TermClassState
 
-    def immediateSubterms : List[TermClass] = (currentTerm match {
+  class TermClass(val original: Term) {
+    private def termtostr(tm: Term) = tm match {
+      case OMS(p) => p.module.name + "?" + p.name
+      case _ => controller.presenter.objectLevel.asString(tm)
+    }
+
+    override def toString =
+      "---------------\nTermClass: " + termtostr(original) + "\n" +
+        "Steps:\n" + steps.init.map(t => termtostr(t._2)).mkString("\n") + "\n" +
+        "---------------"
+
+    //+ steps.head + "\nPredecessors: " + steps.tail.map(_.toString).mkString("\n")
+    private var steps: List[(Option[AcrossLibraryTranslation], Term)] = List((None, original))
+
+    def currentTerm = steps.head._2
+
+    private var usedTranslations: List[AcrossLibraryTranslation] = Nil
+
+    def immediateSubterms: List[TermClass] = (currentTerm match {
       case OMID(_) => Nil
-      case OMBINDC(binder,con,scopes) => TermClass(binder) :: con.variables.flatMap(v =>
+      case OMBINDC(binder, con, scopes) => TermClass(binder) :: con.variables.flatMap(v =>
         v.tp.toList ::: v.df.toList
       ).map(TermClass.apply).toList ::: scopes.map(TermClass.apply)
-      case OMA(f,args) => TermClass(f) :: (args map TermClass.apply)
+      case OMA(f, args) => TermClass(f) :: (args map TermClass.apply)
       case OMV(_) => Nil
-      case OMATTR(arg,key,value) => List(TermClass(arg),TermClass(key),TermClass(value))
-      case tx : OMLITTrait => List(TermClass(tx.synType))
+      case OMATTR(arg, key, value) => List(TermClass(arg), TermClass(key), TermClass(value))
+      case tx: OMLITTrait => List(TermClass(tx.synType))
       case OMFOREIGN(_) => Nil
       case OMSemiFormal(_) => Nil
-      case OML(VarDecl(_,tpOpt,dfOpt,_)) => (tpOpt.toList ::: dfOpt.toList).map(TermClass.apply)
+      case OML(VarDecl(_, tpOpt, dfOpt, _)) => (tpOpt.toList ::: dfOpt.toList).map(TermClass.apply)
     }).distinct
 
     // private def subtermsNondistinct : List[TermClass] = this :: immediateSubterms.flatMap(_.subtermsNondistinct)
 
     // def subterms : List[TermClass] = subtermsNondistinct.distinct
 
-    private var stateVar : TermClassState = Todo
-    def state : TermClassState = {
+    private var stateVar: TermClassState = Todo
+
+    def state: TermClassState = {
       val newstate = stateVar match {
         case Finished => Finished
         case Failed => Failed
         case _ => currentTerm match {
-          case OMS(p) if inArchive(p) => Finished
+          case OMS(p) if inArchive(p)(to) =>
+            backtrackstack = backtrackstack.filterNot(p => p._2 == this && steps.exists(q => q._1 contains p._1))
+            Finished
           case OMS(_) => stateVar
           case _ =>
             val states = immediateSubterms.map(_.state)
@@ -278,42 +370,50 @@ class AcrossLibraryTranslator(controller : Controller, translations : List[Acros
 
     state
 
-    def backtrack = if (usedTranslations.nonEmpty && steps.length > 1) {
-      steps = steps.tail
-      stateVar = Changed(Backtracked)
-    } else stateVar = Failed
-    // prolly makes things faster
-    var storedResult : (Term,AcrossLibraryTranslation,Term) = null
+    def backtrack : Boolean = {
+      println("Backtracking " + currentTerm)
+      if ( /* usedTranslations.nonEmpty */ steps.head._1.isDefined && steps.length > 1) {
+        usedTranslations ::= steps.head._1.get
+        steps = steps.tail
+        stateVar = Changed(Backtracked)
+        true
+      } else {
+        stateVar = Failed
+        false
+      }
+    }
 
-    def applicable(tr : AcrossLibraryTranslation) = !(stateVar == Finished) &&
-      !usedTranslations.contains(tr) &&
+    // prolly makes things faster
+    var storedResult: (Term, AcrossLibraryTranslation, Term) = null
+
+    def applicable(tr: AcrossLibraryTranslation) = !(stateVar == Finished) &&
+      //!usedTranslations.contains(tr) &&
       tr.applicable(currentTerm) && {
       val res = tr(currentTerm)
-      if (!steps.contains(res)) {
-        storedResult = (currentTerm,tr,res)
+      if (!steps.map(_._2).contains(res)) {
+        storedResult = (currentTerm, tr, res)
         true
       } else false
     }
 
-    def applyTranslation(tr : AcrossLibraryTranslation) = {
+    def applyTranslation(tr: AcrossLibraryTranslation) = {
       steps ::= (storedResult match {
-        case (a, b, c) if a == currentTerm && b == tr => c
-        case _ => tr(currentTerm)
+        case (a, b, c) if a == currentTerm && b == tr => (Some(tr), c)
+        case _ => (Some(tr), tr(currentTerm))
       })
-      usedTranslations ::= tr
-      TermClass.register(steps.head, this)
+      backtrackstack ::= ((steps.head._1.get, this))
+      println("Applying " + tr.toString + "to:\n" + termtostr(steps(1)._2))
+      println(this)
+      //usedTranslations ::= tr
+      TermClass.register(currentTerm, this)
       stateVar = Changed(New)
     }
 
-    private def updateVar(vd : VarDecl) : VarDecl = VarDecl(vd.name,vd.tp.map(t => TermClass(t).update),vd.df.map(t => TermClass(t).update),vd.not)
-    private def updateContext(con : Context) : Context = con.variables.map(updateVar).toList
+    private def updateVar(vd: VarDecl): VarDecl = VarDecl(vd.name, vd.tp.map(t => TermClass(t).update), vd.df.map(t => TermClass(t).update), vd.not)
 
-    def update : Term = if (immediateSubterms.map(_.state) contains Changed(Backtracked) ) {
-        backtrack
-        immediateSubterms.map(_.update)
-        stateVar = Todo
-        currentTerm
-      } else {
+    private def updateContext(con: Context): Context = con.variables.map(updateVar).toList
+
+    def update: Term = {
       val ret: Term = currentTerm match {
         case OMID(_) =>
           stateVar = Todo
@@ -332,43 +432,58 @@ class AcrossLibraryTranslator(controller : Controller, translations : List[Acros
         case OML(vd) => OML(updateVar(vd))
       }
       if (ret != currentTerm) {
-        steps ::= ret
+        steps ::= (None, ret)
         TermClass.register(ret, this)
       }
       state
       ret
     }
 
-    def revertPartially : Term = if (state == Finished) currentTerm else currentTerm match {
+    def revertPartially: Term = if (state == Finished) currentTerm
+    else original match {
       case OMS(p) =>
-        steps = List(original)
+        println("Reverting: " + p + " -> " + termtostr(original))
+        steps = List((None, original))
         original
       case _ =>
-        immediateSubterms.map(_.revertPartially)
-        update
+        /*
+        val reason = immediateSubterms.find(t => !origs.contains(t.original) &&
+          t.state != Finished &&
+          steps.exists(s => s._1.isDefined)
+          )
+        if (reason.isDefined) {
+          println("Reverting: " + currentTerm + " -> " + original)
+          println("Reason: " + reason.get.original)
+          steps = List((None, original))
+          original
+        } else { */
+          immediateSubterms.map(_.revertPartially)
+          update
+          // }
     }
+
+    // TODO (potentially) replace by better stuff ------------------------------------------------------------------------
+
+    def inArchive(path: GlobalName)(implicit target: Archive): Boolean = (controller.backend.findOwningArchive(path.module) contains target) || {
+      val fndPath = target.foundation.getOrElse(return false)
+      val fnd = try {
+        val ret = controller.get(fndPath).asInstanceOf[DeclaredTheory]
+        controller.simplifier(ret)
+        ret
+      } catch {
+        case e: Exception => return false
+      }
+      val ths = fnd :: fnd.getIncludes.map(p => Try(controller.get(p))).collect {
+        case Success(th: DeclaredTheory) =>
+          controller.simplifier(th)
+          th
+      }
+      ths.flatMap(_.getDeclarations.map(_.path)) contains path
+    }
+
+    // foundation stuff
+    // TODO: the whole strict/pragmatic-stuff
+    // TODO --------------------------------------------------------------------------------------------------------------
+
   }
-
-  // TODO (potentially) replace by better stuff ------------------------------------------------------------------------
-
-  def inArchive(path : GlobalName)(implicit target : Archive) : Boolean = (controller.backend.findOwningArchive(path.module) contains target) || {
-    val fndPath = target.foundation.getOrElse(return false)
-    val fnd = try {
-      val ret = controller.get(fndPath).asInstanceOf[DeclaredTheory]
-      controller.simplifier(ret)
-      ret
-    } catch {
-      case e : Exception => return false
-    }
-    val ths = fnd :: fnd.getIncludes.map(p => Try(controller.get(p))).collect{
-      case Success(th : DeclaredTheory) =>
-        controller.simplifier(th)
-        th
-    }
-    ths.flatMap(_.getDeclarations.map(_.path)) contains path
-  }
-  // foundation stuff
-  // TODO: the whole strict/pragmatic-stuff
-  // TODO --------------------------------------------------------------------------------------------------------------
-
 }

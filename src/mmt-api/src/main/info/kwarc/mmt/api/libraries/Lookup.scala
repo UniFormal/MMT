@@ -168,7 +168,9 @@ abstract class Lookup {self =>
           val aOpt = getAs(classOf[Constant], morph, LocalName(theo) / ln, msg => error(msg)).df
           aOpt match {
              case Some(df) => df
-             case None => getAs(classOf[Constant], theo ? ln).df match {
+             case None =>
+               // TODO check if already included in codomain
+               getAs(classOf[Constant], theo ? ln).df match {
                 case Some(df) =>
                   traverse(df)
                 case None =>
