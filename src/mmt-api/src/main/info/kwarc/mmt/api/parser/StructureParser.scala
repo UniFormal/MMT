@@ -119,7 +119,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val se = par match {
        case IsDoc(_) => m
        case IsMod(mp, ln) =>
-          val nm = new NestedModule(m)
+          // mp.name / mname == m.name
+          val mname = m.name.dropPrefix(mp.name).getOrElse {throw ImplementationError("illegal name of nested module")}
+          val nm = new NestedModule(OMMOD(mp), mname, m)
           nm.setDocumentHome(ln)
           nm
     }
@@ -396,7 +398,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     readInDocument(doc) // compiled code is not actually tail-recursive
   }
 
-  /** auxiliary function to collect all lexing and parsing rules in a given context */
+  /** auxiliary function to collect all structural feature rules in a given context */
   private def getStructuralFeatures(context: Context) : List[StructuralFeatureRule] = {
     val support = context.getIncludes
     //TODO we can also collect notations attached to variables
@@ -450,7 +452,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val name = nameOpt.getOrElse {
       throw makeError(reg, "DerivedDeclaration must either have name or DomComponent")
     }
-    new DerivedDeclaration(OMID(parent.path),name,feature.feature,components,feature.mt)
+    new DerivedDeclaration(OMID(parent.path),name,feature.feature,components,
+      if (feature.usedom) components.find(_.key == DomComponent).map(_.value.asInstanceOf[MPathContainer].getPath.get)
+      else if (feature.usecod) components.find(_.key == CodComponent).map(_.value.asInstanceOf[MPathContainer].getPath.get)
+      else feature.mt)
   }
 
   /** the main loop for reading declarations that can occur in a theory

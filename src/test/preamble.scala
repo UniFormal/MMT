@@ -1,3 +1,4 @@
+import info.kwarc.mmt.api
 import info.kwarc.mmt.api.frontend.Run
 
 /** An abstract class for test methods. Instantiates a controller, sets the mathpath for archives,
@@ -29,31 +30,34 @@ abstract class Test(archivepath : String,
   controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
   controller.handleLine("extension info.kwarc.mmt.odk.Plugin")
   controller.handleLine("extension info.kwarc.mmt.pvs.Plugin")
-  controller.handleLine("extension info.kwarc.mmt.metamath.Plugin")
+  // controller.handleLine("extension info.kwarc.mmt.metamath.Plugin")
   controller.handleLine("mathpath archive " + archivepath)
   controller.handleLine("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath)
 
 
   def run : Unit
 
-  def main(args: Array[String]): Unit = {
-    run
-    if (serverport.isDefined) {
-      //controller.handleLine("clear")
-      controller.handleLine("server on " + serverport.get)
+  def main(args: Array[String]): Unit = try {
+      run
+      if (serverport.isDefined) {
+        //controller.handleLine("clear")
+        controller.handleLine("server on " + serverport.get)
+      }
+      if (gotoshell) Run.main(Array())
+    } catch {
+      case e: api.Error => println(e.toStringLong)
+        sys.exit
     }
-    if (gotoshell) Run.main(Array())
-  }
 }
 
 /**
   * As an example, here's my default. All test files of mine just extend this:
   */
 abstract class DennisTest(prefixes : String*) extends Test(
-  "/home/raupi/lmh/localmh/MathHub",
+  "/home/jazzpirate/work/MathHub",
   prefixes.toList,
-  "/home/raupi/lmh/Stuff/Public",
+  "/home/jazzpirate/work/Stuff/Public",
   Some(8080),
   true,
-  Some("/home/raupi/lmh/mmtlog.html")
+  Some("/home/jazzpirate/work/mmtlog.html")
 )

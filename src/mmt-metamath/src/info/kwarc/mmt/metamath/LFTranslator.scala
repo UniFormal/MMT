@@ -11,23 +11,38 @@ import info.kwarc.mmt.api.documents.{Document, MRef}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.frontend.Logger
 import info.kwarc.mmt.api.modules.DeclaredTheory
-import info.kwarc.mmt.api.objects.Context
-import info.kwarc.mmt.api.objects.OMMOD
-import info.kwarc.mmt.api.objects.OMS
-import info.kwarc.mmt.api.objects.OMV
-import info.kwarc.mmt.api.objects.Term
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.opaque.OpaqueText
 import info.kwarc.mmt.api.opaque.StringFragment
-import info.kwarc.mmt.lf.Apply
-import info.kwarc.mmt.lf.Arrow
-import info.kwarc.mmt.lf.Lambda
-import info.kwarc.mmt.lf.Pi
+import info.kwarc.mmt.lf._
 
 class LFTranslator(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger {
   def logPrefix = "mm-omdoc"
   protected def report = controller.report
 
   val path = bt.narrationDPath
+
+  protected val traverser = new StatelessTraverser {
+    override def traverse(t: Term)(implicit con: Context, init: State): Term = t match {
+        /*
+      case ApplySpine(OMS(Metamath.forall),List(f,OMV(v))) =>
+        Apply(OMS(Metamath.forall),Lambda(v,OMS(Metamath._class),Traverser(this,f)))
+      case ApplySpine(OMS(Metamath.exists),List(f,OMV(v))) =>
+        Apply(OMS(Metamath.exists),Lambda(v,OMS(Metamath._class),Traverser(this,f)))
+      case Apply(OMS(Metamath.forall),tm) =>
+        Apply(OMS(Metamath.forall),Lambda(LocalName("_"),OMS(Metamath._class),Traverser(this,tm)))
+      case Apply(OMS(Metamath.exists),tm) =>
+        Apply(OMS(Metamath.exists),Lambda(LocalName("_"),OMS(Metamath._class),Traverser(this,tm)))
+
+      case ApplySpine(OMS(Metamath.forall),ls) =>
+        println(ls.map(_.getClass.toString).mkString(","))
+        Traverser(this,t)
+        */
+      case _ => Traverser(this,t)
+    }
+  }
+
+  protected def doTerm(t : Term) : Term = traverser(t,())
 
   def addDatabase(db: Database): Document = {
     val mod = Metamath.setmm
@@ -42,7 +57,7 @@ class LFTranslator(val controller: Controller, bt: BuildTask, index: Document =>
     consts/*.dropRight(consts.length - 1000)*/ foreach {
       case a: Assert if a.syntax || a.typecode.id == "|-" =>
         controller add symbols.Constant(theory.toTerm, LocalName(a.label), Nil,
-          Some(tr.translateAssert(a)), tr.translateProof(a), None)
+          Some(doTerm(tr.translateAssert(a))), tr.translateProof(a).map(doTerm), None)
       case c: Comment =>
         controller add new OpaqueText(theory.asDocument.path, List(StringFragment(c.text)))
       case _ =>
@@ -78,24 +93,23 @@ class LFDBTranslator(implicit db: Database) {
     (CV, Array(Some(Array(2)))),
     (WCEQ, Array(None, None)),
     (CAB, Array(None, Some(Array(1, 0)))))
-
+/*
   alignments += (
     (WN, Metamath.not),
     (WI, Metamath.impl),
     (WB, Metamath.equiv),
-    (WAL, Metamath.setmm ? "forall"),
-    //(db.asserts("wff"), Metamath.wff),
+    (WAL, Metamath.forall),
     (db.asserts("wa"), Metamath.and),
     (db.asserts("wo"), Metamath.or),
-    (db.asserts("wtru"), Metamath.setmm ? "true"),
-    (db.asserts("wex"), Metamath.setmm ? "exists"),
+    (db.asserts("wtru"), Metamath.mmtrue),
+    (db.asserts("wex"), Metamath.exists),
     (db.asserts("pm3.2i"), Metamath.setmm ? "andI"),
     (db.asserts("simpli"), Metamath.setmm ? "andEl"),
     (db.asserts("simpri"), Metamath.setmm ? "andEr"),
     (db.asserts("orci"), Metamath.setmm ? "orIl"),
     (db.asserts("olci"), Metamath.setmm ? "orIr"),
     (db.asserts("impl"), Metamath.setmm ? "_impl"))
-
+*/
   db.decls foreach {
     case a: Assert => processBoundVars(a)
     case _ =>
@@ -194,7 +208,7 @@ class LFDBTranslator(implicit db: Database) {
     dependVars
   }
 
-  val LF_SET = OMS(Metamath.set)
+  val LF_SET = OMS(Metamath.setmm ? "set")
 
   def LF_type(s: Statement): Term = s.typecode.id match {
     case "wff" => OMS(Metamath.wff)

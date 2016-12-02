@@ -21,8 +21,8 @@ object StringSlice {
    def apply(s: String, from: Int) : StringSlice = StringSlice(s, from, s.length)
 }
 
-/** used by some [[Unparsed]] methods to determine bracketing structures */
-case class Brackets(pairs: List[(String,String)])
+/** a pair of matching brackets, e.g., BracketPair("[","]",false) or BracketPair("//","\n",true) */
+case class BracketPair(open: String, close: String, ignore: Boolean)
 
 /** \n, \r, and \r\n are read as \n */
 class Unparsed(input: String, error: String => Nothing) {
@@ -51,6 +51,8 @@ class Unparsed(input: String, error: String => Nothing) {
    def head = input(current)
    def getnext(n:Int) = StringSlice(input,current,current + n)
 
+   def errorExpected(exp: String) = error("expected: " + exp + "; found " + remainder.subSequence(0,200))
+   
    def next() = {
       if (empty) error("expected character, found nothing")
       var c = head
@@ -77,21 +79,38 @@ class Unparsed(input: String, error: String => Nothing) {
          current += s.length
          s.foreach {c => advancePositionBy(c)}
       } else
-         error(s"expected $s, found " + remainder.subSequence(0,200))
+         errorExpected(s)
    }
-   def next(test: Char => Boolean): String = {
-      if (test(head)) next() + next(test) else ""
+   def takeWhile(test: Char => Boolean): String = {
+      if (test(head)) next() + takeWhile(test) else ""
+   }
+   
+   /** drops a String if possible
+    *  @return true if dropped
+    */
+   def takeIf(s: String): Boolean = {
+     if (remainder.startsWith(s)) {
+       drop(s)
+       true
+     } else
+       false
    }
    
    import scala.util.matching.Regex
    /** matches at the beginning of the stream and returns the matched prefix */
-   def next(regex: String): Regex.Match = {
+   def takeRegex(regex: String): Regex.Match = {
       val r = new Regex(regex)
       val mt = r.findPrefixMatchOf(remainder).getOrElse {
-         error(s"expected match of $regex, found " + remainder.subSequence(0,200))
+         errorExpected("match of " + regex)
       }
       drop(mt.matched)
       mt
+   }
+
+   /** returns the string until the first match of a regular expression */
+   def takeUntilRegex(regex: String): String = {
+      val mt = takeRegex("(.*)"+regex)
+      mt.group(1)
    }
    
    /**
@@ -100,7 +119,7 @@ class Unparsed(input: String, error: String => Nothing) {
     * @param exceptAfter the an escape character
     * @return the found string (excluding the until), and false iff end of input reached  
     */
-   def next(until: Char, exceptAfter: Char): (String,Boolean) = {
+   def takeUntilChar(until: Char, exceptAfter: Char): (String,Boolean) = {
       var seen = ""
       while (!empty && head != until) {
          if (head == exceptAfter) {
@@ -115,9 +134,29 @@ class Unparsed(input: String, error: String => Nothing) {
       }
       else {
          next
-         (seen, true)
+         (seen,true)
       }
    }
    
-   //def nextSkipNestedBrackets(until: String, brackets: Brackets): (String, Boolean) 
+   /** return all characters until a certain string is encountered outside well-nested brackets */
+   def takeUntilString(until: String, brackets: List[BracketPair]): String = {
+      var seen = ""
+      while (true) {
+        val r = remainder
+        if (empty) {
+          error("expected a closing bracket, found of file")
+        } else if (r.startsWith(until)) {
+          drop(until)
+          return seen
+        } else {brackets.find(bp => r.startsWith(bp.open)) match {
+          case Some(bp) =>
+            drop(bp.open)
+            val s = takeUntilString(bp.close, brackets)
+            if (!bp.ignore) seen += bp.open + s + bp.close
+          case None =>
+            seen += next
+        }}
+      }
+      return seen // impossible
+   }
 }

@@ -31,6 +31,8 @@ object GenericScalaExporter {
     
   def nameToScalaQ(p: GlobalName) = (p.module.name.toPath + "_" + escapeChars(p.name.toPath)).replace(".", "__")
 
+  def nameInScala(p: GlobalName) = (p.module.name.toPath).replace(".", "__") + "." + escapeChars(p.name.toPath) + ".path"
+
   def nameToScala(l: LocalName) = escape(l.toPath.replace("/", "."))
 
   /** package URI */

@@ -47,6 +47,15 @@ class DeclaredView(doc : DPath, name : LocalName, val from : Term, val to : Term
    }
    def getInnerContext = codomainAsContext
    def getComponents = List(DomComponent(new FinalTermContainer(from)),CodComponent(new FinalTermContainer(to)))
+
+   def translate(newNS: DPath, newName: LocalName, translator: Translator): DeclaredView = {
+     def tl(m: Term)= translator.applyModule(Context.empty, m)
+     val res = new DeclaredView(newNS, newName, tl(from), tl(to), isImplicit)
+     getDeclarations foreach {d =>
+       res.add(d.translate(res.toTerm, LocalName.empty, translator))
+     }
+     res
+   }
 }
 
   /**
@@ -62,6 +71,10 @@ class DeclaredView(doc : DPath, name : LocalName, val from : Term, val to : Term
 class DefinedView(doc : DPath, name : LocalName, val from : Term, val to : Term, val dfC : TermContainer, val isImplicit : Boolean)
       extends View(doc, name) with DefinedModule with DefinedLink {
    def getComponents = List(DeclarationComponent(DefComponent, dfC))
+   def translate(newNS: DPath, prefix: LocalName, translator: Translator): DefinedModule = {
+     def tl(m: Term)= translator.applyModule(Context.empty, m)
+     new DefinedView(newNS, prefix/name, tl(from), tl(to), dfC map tl, isImplicit)
+   }
 }
 
 object DefinedView {

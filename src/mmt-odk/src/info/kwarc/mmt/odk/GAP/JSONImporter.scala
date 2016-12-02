@@ -81,9 +81,9 @@ class GAPJSONImporter extends Importer {
         })
       }
     } catch {
-      case utils.ExtractError(msg) =>
+      case e: utils.ExtractError =>
         println("utils.ExtractError")
-        println(msg)
+        println(e.msg)
         sys.exit
     }
     log(all.length + " Objects parsed.")

@@ -17,6 +17,7 @@ import presentation._
  * @param from the domain theory
  */
 abstract class Structure extends Declaration with Link {
+   type ThisType = Structure
    /** the domain/type of the structure */
    val tpC: TermContainer
    /** the domain of the structure as a Term, may fail if tpC is undefined */
@@ -60,6 +61,35 @@ abstract class Structure extends Declaration with Link {
 class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermContainer, val isImplicit : Boolean)
       extends Structure with DeclaredLink {
    def getComponents = List(DomComponent(tpC))
+
+   def translate(newHome: Term, prefix: LocalName, translator: Translator): DeclaredStructure = {
+     def tl(m: Term)= translator.applyModule(Context.empty, m)
+     val res = new DeclaredStructure(home, prefix/name, tpC map tl, isImplicit)
+     getDeclarations foreach {d =>
+       res.add(d.translate(res.toTerm, LocalName.empty, translator))
+     }
+     res
+   }
+   def merge(that: Declaration): Structure = {
+     that match {
+       case that: DefinedStructure =>
+         new DefinedStructure(this.home, this.name, tpC.copy, that.dfC, isImplicit)
+       case that: DeclaredStructure =>
+         val res = new DeclaredStructure(this.home, this.name, tpC.copy, isImplicit)
+         // TODO we may have to copy dThis and dThat
+         this.getDeclarations foreach {dThis =>
+            res.add(dThis)
+         }
+         that.getDeclarations.foreach {dThat =>
+           this.getO(dThat.name) match {
+             case None => res.add(dThat)
+             case Some(dThis) => res.update(dThis merge dThat)
+           }
+         }
+         res
+       case _ => mergeError(that)
+     }
+   }
 }
 
  /**
@@ -75,8 +105,23 @@ class DefinedStructure(val home : Term, val name : LocalName,
                        val tpC: TermContainer, val dfC : TermContainer, val isImplicit : Boolean)
       extends Structure with DefinedLink {
    def getComponents = List(DomComponent(tpC), DefComponent(dfC))
+   
+   def translate(newHome: Term, prefix: LocalName, translator: Translator): DefinedStructure = {
+     def tl(m: Term)= translator.applyModule(Context.empty, m)
+     new DefinedStructure(home, prefix/name, tpC map tl, dfC map tl, isImplicit)
+   }
+   def merge(that: Declaration): DefinedStructure = {
+     that match {
+       case that: DefinedStructure =>
+         val dfM = that.dfC merge this.dfC
+         new DefinedStructure(home, name, tpC.copy, dfM, isImplicit)
+       case that: DeclaredStructure =>
+         // this is a degenerate case
+         new DefinedStructure(home, name, tpC.copy, dfC.copy, isImplicit)
+       case _ => mergeError(that)
+     }
+   }
 }
-
 
 /** apply/unapply functions for [[DeclaredStructure]]s whose domain is an MPath */
 object SimpleDeclaredStructure {

@@ -96,7 +96,7 @@ case class type_def_decl(named: NamedDecl, ne: NonEmptiness, arg_formals: List[b
 /**
  * c(G) : A [= t]
  */
-case class const_decl(named: ChainedDecl, arg_formals: List[bindings], tp: DeclaredType, _def: Option[Expr]) extends Decl with Group {
+case class const_decl(named: ChainedDecl, arg_formals: List[bindings], tp: DeclaredType, _def: Option[Expr]) extends Decl {
   override def toString() = named.named.id + "[" + arg_formals.map(_.toString).mkString(", ") + "]: " + tp + " = " + _def.map(_.toString)
 }
 /** defined constant that is always expanded */

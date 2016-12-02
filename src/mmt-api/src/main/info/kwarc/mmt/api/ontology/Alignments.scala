@@ -20,6 +20,13 @@ case class PhysicalReference(url: URI) extends URIReference {
 
 case class ConceptReference(con : String) extends Reference {
   override def toString = con
+
+  override def equals(o: scala.Any): Boolean = o match {
+    case cr : ConceptReference if cr.con.toLowerCase == con.toLowerCase => true
+    case _ => false
+  }
+
+  override def hashCode(): Int = con.toLowerCase().hashCode()
 }
 
 sealed abstract class Alignment {
@@ -36,21 +43,34 @@ sealed abstract class Alignment {
   def reverse: Alignment
 }
 
+sealed abstract class URIAlignment extends Alignment {
+  val from: URIReference
+  val to: URIReference
+}
+
 object ConceptPair {
   def apply(from : String, to : String) : ConceptPair = ConceptPair(ConceptReference(from),ConceptReference(to))
 }
 case class ConceptPair(from : ConceptReference, to : ConceptReference) extends Alignment {
-  def  ->(that : Alignment): Alignment =  that match {
-    case ConceptPair(fr, t) => ConceptPair(from, t)
-    case ca : ConceptAlignment => ConceptAlignment(from,ca.ref)
+  def  ->(that : Alignment): Alignment = {
+    val ret = that match {
+      case ConceptPair(fr, t) => ConceptPair(from, t)
+      case ca : ConceptAlignment => ConceptAlignment(from,ca.ref)
+    }
+    ret.isGenerated = true
+    ret
   }
-  def reverse = ConceptPair(to,from)
+  def reverse = {
+    val ret = ConceptPair(to,from)
+    ret.isGenerated = true
+    ret
+  }
 
   override def toString = "< " + from + " | " + to + " >"
 }
 
 object ConceptAlignment{
-  def apply(ref : Reference, con : String) : ConceptAlignment = ConceptAlignment(ref,ConceptReference(con.toLowerCase))
+  def apply(ref : Reference, con : String) : ConceptAlignment = ConceptAlignment(ref,ConceptReference(con))
 }
 case class ConceptAlignment(from: Reference, to : Reference) extends Alignment {
   require((from,to) match {
@@ -59,26 +79,32 @@ case class ConceptAlignment(from: Reference, to : Reference) extends Alignment {
     case _ => false
   })
   val (concept,ref,right) = (from,to) match {
-    case (ConceptReference(s),r) => (s,r,false)
-    case (r,ConceptReference(s)) => (s,r,true)
+    case (ConceptReference(s),r: URIReference) => (s,r,false)
+    case (r: URIReference,ConceptReference(s)) => (s,r,true)
   }
   def ->(that: Alignment): Alignment = {
     require (to == that.from)
-    that match {
+    val ret = that match {
       case ca @ ConceptAlignment(ffr,tto) =>
-        if (right) InformalAlignment(ref,tto) else ConceptPair(concept,ca.concept)
-      case cp @ ConceptPair(ffr,tto) => ConceptAlignment(from,tto)
-      case a : FormalAlignment => ConceptAlignment(ConceptReference(concept),a.to)
-      case a : InformalAlignment => ConceptAlignment(ConceptReference(concept),a.to)
-      case _ => throw new Exception("incompatible alignments can't be composed")
+        if (right) InformalAlignment(ref,tto.asInstanceOf[URIReference]) else ConceptPair(concept,ca.concept)
+      case cp @ ConceptPair(ffr,tto) if right => ConceptAlignment(from,tto)
+      case a : FormalAlignment if !right => ConceptAlignment(ConceptReference(concept),a.to)
+      case a : InformalAlignment if !right => ConceptAlignment(ConceptReference(concept),a.to)
+      case _ => throw new Exception("incompatible alignments can't be composed: " + this + " and " + that)
     }
+    ret.isGenerated = true
+    ret
   }
 
   override def toString = "| " + concept + " | " + ref.toString + " |"
-  def reverse = ConceptAlignment(to,from)
+  def reverse = {
+    val ret = ConceptAlignment(to,from)
+    ret.isGenerated = true
+    ret
+  }
 }
 
-sealed abstract class FormalAlignment extends Alignment {
+sealed abstract class FormalAlignment extends URIAlignment {
   val from: LogicalReference
   val to: LogicalReference
   val invertible: Boolean
@@ -96,11 +122,16 @@ case class SimpleAlignment(from: LogicalReference, to: LogicalReference, inverti
     (JSONString("to"), JSONString(to.toString))
   )))
 
-  def reverse = if (invertible) SimpleAlignment(to, from, true) else InformalAlignment(to, from)
+  def reverse = {
+    val ret = if (invertible) SimpleAlignment(to, from, true) else InformalAlignment(to, from)
+    ret.isGenerated = true
+    ret
+  }
 
   def ->(that: Alignment): Alignment = {
     require(to == that.from)
     val ret = that match {
+      case ConceptAlignment(tfrom,tto) => ConceptAlignment(from,tto)
       case SimpleAlignment(tfrom, tto, inv) =>
         SimpleAlignment(from, tto, invertible && inv)
       case InformalAlignment(tfrom, tto) =>
@@ -125,8 +156,12 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, inver
     (JSONString("args"), JSONArray(arguments.map(p ⇒ JSONArray.fromList(List(JSONInt(p._1), JSONInt(p._2))))))
   )))
 
-  def reverse = if (invertible) ArgumentAlignment(to, from, true, arguments.map(p ⇒ (p._2, p._1))) else
-    InformalAlignment(to, from)
+  def reverse = {
+    val ret = if (invertible) ArgumentAlignment(to, from, true, arguments.map(p ⇒ (p._2, p._1))) else
+      InformalAlignment(to, from)
+    ret.isGenerated = true
+    ret
+  }
 
   override def toString = from.toString + " " + to.toString +
     " direction=" + (if (invertible) """"both"""" else """"forward"""") +
@@ -156,20 +191,27 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, inver
   }
 }
 
-case class InformalAlignment(from: Reference, to: Reference) extends Alignment {
+case class InformalAlignment(from: URIReference, to: URIReference) extends URIAlignment {
   def toJSON = (JSONString("Informal"), JSONObject(List(
     (JSONString("from"), JSONString(from.toString)),
     (JSONString("to"), JSONString(to.toString))
   )))
 
-  def reverse = InformalAlignment(to, from)
+  def reverse = {
+    val ret = InformalAlignment(to, from)
+    ret.isGenerated = true
+    ret
+  }
 
   override def toString = from.toString + " " + to.toString +
     props.map(p ⇒ " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 
   def ->(that: Alignment): Alignment = {
     require(to == that.from)
-    val ret = InformalAlignment(from,that.to)
+    val ret = that match {
+      case ConceptAlignment(_,tto) => ConceptAlignment(from,tto)
+      case _ => InformalAlignment(from,that.to.asInstanceOf[URIReference])
+    }
     ret.isGenerated = true
     ret
   }

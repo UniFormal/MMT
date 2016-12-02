@@ -45,10 +45,10 @@ class Notify(listeners: List[ChangeListener], report: Report) {
         try {f(l)}
         catch {
           case e: Error =>
-             val ee = l.LocalError("change listener caused error").setCausedBy(e)
+             val ee = l.LocalError("error while responding to change").setCausedBy(e)
              report(ee)
            case e: Exception =>
-             val ee = l.LocalError("change listener caused error").setCausedBy(e)
+             val ee = l.LocalError("error while responding to change").setCausedBy(e)
              report(ee)
          }
      }

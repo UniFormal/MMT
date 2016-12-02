@@ -20,13 +20,13 @@ class TPSImporter extends Importer {
       val e = try {
          parseXML(bf.inFile)
       } catch {
-         case utils.ExtractError(msg) =>
+         case e : utils.ExtractError =>
             //ParseError("error in xml: " + msg)
 /*            if (ignoreMsg.exists(msg.startsWith))
                return
             i += 1
             if (i > ignore) { */
-               println(msg)
+               println(e.msg)
                sys.exit
                //throw utils.ExtractError(msg)
 //            } else

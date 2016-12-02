@@ -98,6 +98,8 @@ class NotationContainer extends ComponentContainer {
       }
       ntC
    }
+   def copy = NotationContainer() merge this
+   
    def isDefined = parsing.isDefined || presentation.isDefined || verbalization.isDefined
    def getComponents = parsing.toList.map(_ => ParsingNotationComponent(this)) :::
                        presentation.toList.map(_ => PresentationNotationComponent(this))
@@ -177,8 +179,8 @@ object NotationContainer {
       nc
    }
    def apply(tn: TextNotation, tn2: TextNotation, tn3: TextNotation): NotationContainer = {
-      val nc = apply(tn)
-      nc.verbalizationDim.set(tn2)
+      val nc = apply(tn, tn2)
+      nc.verbalizationDim.set(tn3)
       nc
    }
    /** parses a notation element containing several notations of different dimensions (1-dimensional is default) */

@@ -13,7 +13,7 @@ import scala.xml.Elem
  * The content itself is stored in the controller.
  *
  * @param path the URI of the document; for toplevel documents, this is a URL
- * @param root true if this does not have a containing document
+ * @param root true if this does not have a directly containing document (true for modules seen as documents)
  * @param contentAncestor the closest container of this document that is a module (if any)
  * @param nsMap the namespaces declared in this document
  */

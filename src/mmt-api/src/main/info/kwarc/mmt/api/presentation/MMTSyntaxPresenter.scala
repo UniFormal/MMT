@@ -1,10 +1,10 @@
 package info.kwarc.mmt.api.presentation
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.documents.{MRef, DRef, Document}
-import info.kwarc.mmt.api.modules.{DefinedView, DefinedTheory, DeclaredView, DeclaredTheory}
+import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
+import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView, DefinedTheory, DefinedView}
 import info.kwarc.mmt.api.parser.Reader
-import info.kwarc.mmt.api.symbols.{DefinedStructure, DeclaredStructure, NestedModule, Constant}
+import info.kwarc.mmt.api.symbols._
 
 /**
  * Basically a copy of MMTStructurePresenter(NotationBasedPresenter), that should yield parsable MMT Code
@@ -16,10 +16,11 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     case x: DRef                => rh(Reader.GS.toChar.toString) // check?
     case x: MRef                => rh(Reader.GS.toChar.toString) // check?
     case x: Constant            => rh(Reader.RS.toChar.toString)
+    case x: RuleConstant            => rh(Reader.RS.toChar.toString)
     case x: DeclaredTheory      => rh(Reader.GS.toChar.toString)
     case x: DeclaredView        => rh(Reader.GS.toChar.toString)
-    case x: NestedModule        => { }                           // check?
-    case x: DeclaredStructure   => { }
+    case x: NestedModule        => rh(Reader.GS.toChar.toString)                           // check?
+    case x: DeclaredStructure   => rh(Reader.GS.toChar.toString)
     case x: DefinedTheory       => rh(Reader.RS.toChar.toString) // check?
     case x: DefinedView         => rh(Reader.RS.toChar.toString) // check?
     case x: DefinedStructure    => rh(Reader.RS.toChar.toString) // check?

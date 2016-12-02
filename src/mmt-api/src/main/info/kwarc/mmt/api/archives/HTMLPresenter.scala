@@ -9,9 +9,8 @@ import presentation._
 import symbols._
 import opaque._
 import utils._
-
 import HTMLAttributes._
-import info.kwarc.mmt.api.ontology.{PhysicalReference, LogicalReference, AlignmentsServer, Alignment}
+import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.web.ServerError
 
 abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
@@ -176,6 +175,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                     div("align") {al.to match {
                       case LogicalReference(cpath) => doPath(cpath)
                       case PhysicalReference(url) => htmlRh.a(url.toString)(text{url.toString})
+                      case ConceptReference(c) => htmlRh.text(c)
                     }}//text(a.link)}
                  }
                }

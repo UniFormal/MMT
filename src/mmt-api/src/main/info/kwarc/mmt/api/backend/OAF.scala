@@ -143,7 +143,7 @@ class MathHub(val uri: URI, val root: File, val report: Report) extends ArchiveH
      val zip = target.addExtension("zip")
      log("downloading from " + downloadURI)
      try {
-       File.download(downloadURI.toURL, zip)
+       File.download(downloadURI, zip)
        File.unzip(zip, target, skipRootDir = true)
        Some(target)
      } catch {

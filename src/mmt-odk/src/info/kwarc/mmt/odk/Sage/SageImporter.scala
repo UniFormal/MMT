@@ -112,9 +112,9 @@ class SageImporter extends Importer {
       log("To Scala...")
       readJSON(parsed)
     } catch {
-      case utils.ExtractError(msg) =>
+      case e: utils.ExtractError =>
         println("utils.ExtractError")
-        println(msg)
+        println(e.msg)
         sys.exit
       case e : Exception =>
         println(e.getMessage)

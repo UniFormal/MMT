@@ -24,7 +24,7 @@ abstract class OpaqueElement extends NarrativeElement {
    override def toString = raw.toString
    lazy val name = LocalName("opaque_" + raw.hashCode.toString) //TODO this is not always unique  
    def path = parent / name
-   def parentOpt = Some(parent)
+   def parentOpt: Some[DPath] = Some(parent)
    def getDeclarations = Nil
 }
 

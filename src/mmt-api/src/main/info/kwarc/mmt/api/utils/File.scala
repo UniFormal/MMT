@@ -137,6 +137,7 @@ case class FilePath(segments: List[String]) {
   
   def getExtension = toFile.getExtension
   def setExtension(e: String) = toFile.setExtension(e).toFilePath
+  def stripExtension = toFile.stripExtension.toFilePath
 }
 
 object EmptyPath extends FilePath(Nil)
@@ -195,6 +196,10 @@ object File {
     val fw = Writer(f)
     strings.foreach { s => fw.write(s) }
     fw.close
+  }
+
+  def append(f : File, strings: String*) {
+    scala.tools.nsc.io.File(f.toString).appendAll(strings:_*)
   }
   
   /**
@@ -342,21 +347,8 @@ object File {
     }
   }
   /** dereference a URL and save as a file */
-  def download(url: java.net.URL, file: File) {
-    val conn = url.openConnection
-    if (List("https","http") contains url.getProtocol) {
-      val httpConn = conn.asInstanceOf[java.net.HttpURLConnection]
-      val resp = httpConn.getResponseCode
-      // setFollowRedirects does not actually follow redirects
-      if (resp.toString.startsWith("30")) {
-        val redirectURL = new java.net.URL(conn.getHeaderField("Location"))
-        return download(redirectURL, file) 
-      }
-      if (resp.toString.startsWith("40")) {
-        throw GeneralError("download of " + url + " failed, the destination file " + file + " may contain a hint as to what went wrong")
-      }
-    }
-    val input = conn.getInputStream
+  def download(uri: URI, file: File) {
+    val input = URI.get(uri)
     file.up.mkdirs
     val output = new java.io.FileOutputStream(file)
     try {

@@ -45,7 +45,12 @@ trait MutableElementContainer[S <: NamedElement] extends ElementContainer[S] {
   def reorder(name: LocalName): Unit
 }
 
-trait ContainerElement[S <: StructuralElement] extends StructuralElement with MutableElementContainer[S]
+trait ContainerElement[S <: StructuralElement] extends StructuralElement with MutableElementContainer[S] {
+   /** the list of declarations in the order of addition, excludes generated declarations */
+   def getPrimitiveDeclarations = getDeclarations.filterNot(_.isGenerated)
+   /** the list of declarations using elaborated declarations where possible */
+   def getDeclarationsElaborated = getDeclarations.filterNot(libraries.ElaboratedElement.isProperly)  
+}
 
 class ListContainer[S <: NamedElement](items: List[S]) extends ElementContainer[S] with DefaultLookup[S] {
   def getDeclarations = items

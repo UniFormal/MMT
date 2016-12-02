@@ -132,3 +132,12 @@ object XMLEscaping extends Escaping {
     '>' -> "gt;", '<' -> "lt;", '"' -> "quot;", '&' -> "amp;"
   )
 }
+
+/** escapes a string using the %-escapes for URLs */
+object URLEscaping extends Escaping {
+  val escapeChar = '%'
+  override def usePlainEscape = Nil
+  override def useCustomEscape = List(
+    ' ' -> "20"
+  )
+}

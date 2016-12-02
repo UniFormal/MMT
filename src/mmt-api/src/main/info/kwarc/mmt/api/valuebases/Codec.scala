@@ -16,7 +16,7 @@ abstract class Codec[Code](val exp: Term, val tp: Term) {
    def decode(c: Code): Term
 }
 
-abstract class AtomicCodec[Rep,Code](id: GlobalName, tp: Term, semType: SemanticType with RepresentationType[Rep]) extends Codec[Code](OMS(id), tp) {
+abstract class AtomicCodec[Rep,Code](id: GlobalName, tp: Term, semType: RSemanticType[Rep]) extends Codec[Code](OMS(id), tp) {
    val rt = new RepresentedRealizedType(tp, semType)
    def encodeRep(r: Rep): Code
    def encode(t: Term): Code = t match {

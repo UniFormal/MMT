@@ -328,23 +328,29 @@ class Controller extends ROController with ActionHandling with Logger {
     * @param a this is evaluated until evaluation does not throw NotFound
     * @return the evaluation
     */
-  def iterate[A](a: => A): A = iterate(a, Nil)
+  def iterate[A](a: => A): A = iterate(a, Nil, true)
 
   /** repeatedly tries to evaluate its argument while missing resources (NotFound(p)) are retrieved
     *
     * stops if cyclic retrieval of resources
     */
-  private def iterate[A](a: => A, previous: List[NotFound]): A = {
+  private def iterate[A](a: => A, previous: List[NotFound], org: Boolean): A = {
     try {
       a
     }
     catch {
       case e: NotFound =>
         val p = e.path
+        val eprev = e :: previous
         if (previous.exists(_.path == p)) {
-          throw GetError("retrieval failed (due to non-existence or cyclic dependency) for " + p)
+          val msg = if (org)
+            "retrieval finished, but element was not in memory afterwards"
+          else
+            "cyclic dependency while trying to retrieve"
+          throw GetError("cannot retrieve " + eprev.last.path + ": " + msg)
         } else {
-          iterate({retrieve(e); a}, e :: previous)
+          iterate({retrieve(e)}, eprev, false)
+          iterate(a, eprev, true)
         }
     }
   }

@@ -66,7 +66,7 @@ class ScalaExporter extends GenericScalaExporter {
          //TODO exclude declarations with extraneous types that should not be implemented, e.g., m:MOR a b
          case SimpleStructure(s, fromPath) if !s.isInclude =>
             // unnamed structures have been handled above already
-            rh.writeln("  val " + nameToScalaQ(s.path) + ": " + mpathToScala(fromPath))
+            rh.writeln("  val " + nameToScalaQ(s.path) + ": " + mpathToScala(fromPath, packageSep))
          case _ =>
       }
       rh.writeln("}\n")
@@ -84,27 +84,27 @@ class ScalaExporter extends GenericScalaExporter {
                val ini = s"  realizes {universe($synName)($semName)}"
                val decl = c.df match {
                   case None =>
-                     scalaVal(c.path, "RealizedType")
+                     scalaVal(c.path, "SemanticType")
                   case Some(d) => d match {
                      // nice idea but does not work well; better expand all definitions if they are used later
                      // case OMS(p) => scalaValDef(c.path, Some("RealizedType"), nameToScalaQ(p))
                      case _ =>
-                        scalaVal(c.path, "RealizedType")
+                        scalaVal(c.path, "SemanticType")
                   }
                }
                (decl, ini)
             } else {
-               // create "realizes {function(name, argType1, ..., argTypeN, retType)(function)}
+               // create "realizes {function(name, List(argType1, ..., argTypeN), retType)(function)}
                val (argsE, retE) = typeEras(tp)
-               val lts = (argsE ::: List(retE)).map(nameToScalaQ).mkString(", ")
-               val ini = s"  realizes {function($synName, $lts)($semName)}"
-               // create def name(x0: argType1._univ, ..., xN: argTypeN._univ): retType.univ
+               val lts = argsE.map(nameInScala).mkString("List(", ", ", ")") + ", " + nameInScala(retE)
+               val ini = s"  realizes {function($synName, $lts)($semName _)}"
+               // create def name(x0: argType1.univ, ..., xN: argTypeN.univ): retType.univ
                val names = args.zipWithIndex.map {
                   case ((Some(n), _), _) => n.toPath
                   case ((None   , _), i) => "x" + i.toString
                }
-               val argsES = argsE.map(a => nameToScalaQ(a) + ".univ")
-               val decl = scalaDef(c.path, names zip argsES, nameToScalaQ(retE) + ".univ")
+               val argsES = argsE.map(a => "Any") //nameToScalaQ(a) + ".univ")
+               val decl = scalaDef(c.path, names zip argsES, "Any") //nameToScalaQ(retE) + ".univ")
                (decl, ini)
                /*
                 val argsS = args.zipWithIndex.map {
@@ -130,7 +130,8 @@ import uom._
 
 /** this can be mixed into Scala-models of MMT theories to simplify adding additional rules */
 trait SolutionRules extends RealizationInScala {
-   def solve_unary(op:GlobalName, argType: RealizedType, rType: RealizedType)(invert: rType.univ => Option[argType.univ]) = {
+   def solve_unary(op:GlobalName, argTypeN: GlobalName, rTypeN: GlobalName)(invert: Any => Option[Any]) = {
+      val List(argType, rType) = List(argTypeN, rTypeN) map getRealizedType
       val sr = new SolutionRule(op / "invert") {
          def applicable(tm1: Term) = tm1 match {
             case ApplySpine(OMS(`op`), List(_)) => Some(1)
@@ -145,8 +146,9 @@ trait SolutionRules extends RealizationInScala {
       }
       rule(sr)
    }
-   def solve_binary_right(op:GlobalName, argType1: RealizedType, argType2: RealizedType, rType: RealizedType)
-            (invert: (rType.univ,argType2.univ) => Option[argType1.univ]) = {
+   def solve_binary_right(op:GlobalName, argType1N: GlobalName, argType2N: GlobalName, rTypeN: GlobalName)
+            (invert: (Any,Any) => Option[Any]) = {
+      val List(argType1, argType2, rType) = List(argType1N, argType2N, rTypeN) map getRealizedType
       val sr = new SolutionRule(op / "right-invert") {
          def applicable(tm1: Term) = tm1 match {
             case ApplySpine(OMS(`op`), List(_,argType2(_))) => Some(1)
@@ -161,8 +163,9 @@ trait SolutionRules extends RealizationInScala {
       }
       rule(sr)
    }
-   def solve_binary_left(op:GlobalName, argType1: RealizedType, argType2: RealizedType, rType: RealizedType)
-            (invert: (argType1.univ,rType.univ) => Option[argType2.univ]) = {
+   def solve_binary_left(op:GlobalName, argType1N: GlobalName, argType2N: GlobalName, rTypeN: GlobalName)
+            (invert: (Any,Any) => Option[Any]) = {
+      val List(argType1, argType2, rType) = List(argType1N, argType2N, rTypeN) map getRealizedType
       val sr = new SolutionRule(op / "left-invert") {
          def applicable(tm1: Term) = tm1 match {
             case ApplySpine(OMS(`op`), List(argType1(_),_)) => Some(2)

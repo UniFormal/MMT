@@ -30,19 +30,20 @@ table {
 /* header */
 
 #header {
-   font-weight: bold;
-   font-size: large;
+   /* font-weight: bold;
+   font-size: large; */
    border: black 1px solid;
    border-radius: 5px;
-   text-align: center;
    background-color: lightyellow;
 }
+
 /* middle area (containing #sidebar and #breadcrumbs+#main) */
 
 #middle {
 }
 
 #layouttable {
+	width:100%;
 }
 
 .layouttablecell {
@@ -54,10 +55,10 @@ table {
    border-color: lightgray;
 }
 
-/* fully use horizontal space */
+/* fully use horizontal space 
 td.layouttablecell:last-child {
   width:100%;
-}
+} */
 
 .layouttablecell .celltitle {
    background-color: lightblue;
@@ -78,7 +79,7 @@ td.layouttablecell:last-child {
    /*overflow: scroll;*/  
 }
 
-#Archives {
+#pathtree {
   
 }
 
@@ -90,11 +91,23 @@ a.treerelation {
    background: lightgray;
 }
 
+
+/* breadcrumbs */
+
+#breadcrumbs {
+   height: 30px;
+   font-size:20px;
+   margin-top: 3%;
+   margin-left: 10px;
+   margin-right: 10px;
+   color: blue;
+   white-space: nowrap;
+   border: 1px solid black;
+}
+
 /* content area */
 
 #main {
-   padding-top: 3%;
-   padding-left: 10px;
    overflow: visible;
    width:100%;
 }
@@ -457,4 +470,43 @@ div.graph {
     overflow-y: hidden;
     max-width: 80px; 
     width: 100px;*/
+}
+
+table.ext-table { 
+    border-spacing: 10px;
+    border-collapse: separate;
+}
+
+td.ext-table {
+    	padding: 10px;
+	border-spacing: 10;
+}
+
+table.formal-table {
+	border-spacing: 10px;
+    	border-collapse: separate;
+}
+
+tr.formal-table {
+    	padding: 10px;
+	border-spacing: 10;
+}
+
+table.external-content {
+	border: solid 1px black;
+   	background-color: whitesmoke;
+}
+
+tr.external-header {
+	text-align: center;
+	border-bottom: 1px solid black;
+}
+
+th.external-header {
+	text-align: center;
+	border-bottom: 1px solid black;
+}
+td.addalign {
+   	font-size: small;
+	text-align: right;
 }
