@@ -175,6 +175,10 @@ lazy val tps = (project in file("mmt-tps")).
   dependsOn(api,lf).
   settings(mmtProjectsSettings("mmt-tps"): _*)
 
+lazy val imps = (project in file("mmt-imps")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-imps"): _*)
+
 lazy val odk = (project in file("mmt-odk")).
   dependsOn(api, lf, lfx).
   settings(mmtProjectsSettings("mmt-odk"): _*)
@@ -219,7 +223,7 @@ lazy val oeis = (project in file("mmt-oeis")).
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
 lazy val mmt = (project in file("fatjar")).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps).
   settings(mmtProjectsSettings("fatjar"): _*).
   settings(
     exportJars := false,
