@@ -45,6 +45,7 @@ class LispParser
         {
             case ex : StringIndexOutOfBoundsException =>
             {
+				// Some printouts for manual inspection, to be removed later
 				println("Summary (" + exprs.length + " expressions):\n")
 				
 				for (e <- exprs)
@@ -63,9 +64,7 @@ class LispParser
 				}
 			}
         }
-
-        println("\n#########################\n")
-
+        
         // Return one expression with all the smaller expressions as children
         return Exp(exprs)
     }
@@ -78,12 +77,14 @@ class LispParser
         var open   : Int = 1
         var closed : Int = 0
 
+		// While expression is still ongoing
         while (open - closed != 0)
         {
 			println("iteration, head is " + u.head)
 			
             if (u.head == '"')
             {
+				// String literal parsing (defStrings etc.)
                 val sr_start : SourcePosition = u.getSourcePosition
 
                 u.next
@@ -98,6 +99,8 @@ class LispParser
             }
             else if (u.head == '(')
             {
+				// Some children are complete expressions in themselves
+				// necessitating a recursive call
                 u.next
                 val chld : (LispExp, SourceRef) = parseExpAndSourceRef(u)
                 
@@ -106,6 +109,7 @@ class LispParser
             }
             else if (u.head == ')')
             {
+				// Don't forget to take care of closed brackets
 				closed += 1
 			}
             else if (isWhitespace(u.head))
@@ -115,6 +119,8 @@ class LispParser
             }
             else
             {
+				// Some children, as for example but not limited to
+				// names, are just blank strings
                 val sr_start : SourcePosition = u.getSourcePosition
 
                 val str : String = u.takeWhile(c => !(isWhitespace(c)) && c != ')')
@@ -124,8 +130,8 @@ class LispParser
                 val sr        : SourceRef      = SourceRef(null, sr_region)
 
                 children = children ++ List((new Str("\"" + str + "\""), sr))
-                //u.next
             }
+            // TODO: This doesn't handle lists (e.g. of names, lambdas) correctly, I think
         }
 
         val sourceRef_end    : SourcePosition = u.getSourcePosition
