@@ -39,13 +39,13 @@ class LispParser
         while (!hrld)
         {
             // Skip to next open brace
-            u.next(_ != '(')
+            u.takeWhile(_ != '(')
 
-            if (u.next(_ != ' ') == "(herald")
+            if (u.takeWhile(_ != ' ') == "(herald")
             {
                 hrld = true
                 u.next // skip space
-                mdl = u.next(_ != ')')
+                mdl = u.takeWhile(_ != ')')
                 mdl.trim
             }
         }
@@ -56,10 +56,10 @@ class LispParser
             while (true)
             {
                 // Skip to next open brace
-                u.next(_ != '(')
+                u.takeWhile(_ != '(')
                 val sourceRef_start : SourcePosition = u.getSourcePosition
                 u.next
-                val form = u.next(c => !(isWhitespace(c)))
+                val form = u.takeWhile(c => !(isWhitespace(c)))
                 var newExpr : Option[LispExp] = None
 
                 form match {
@@ -95,7 +95,7 @@ class LispParser
     private def parseConstant (u : Unparsed) : LispExp =
     {
         println("\n~ Found a constant:")
-        u.next(_ != ' ')
+        u.takeWhile(_ != ' ')
 
         val nm     : String = parseName(u)
         val defStr : String = parseDefinitionString(u)
@@ -116,25 +116,25 @@ class LispParser
 
     private def parseName (u : Unparsed) : String =
     {
-        u.next(isWhitespace _)
-        var nm = u.next(c => !(isWhitespace(c)))
+        u.takeWhile(isWhitespace _)
+        var nm = u.takeWhile(c => !(isWhitespace(c)))
         println("    name:   " + nm)
         return ""
     }
 
     private def parseDefinitionString (u : Unparsed) : String =
     {
-        u.next(_ != '"')
+        u.takeWhile(_ != '"')
         u.next
-        var strng = u.next(_ != '"')
+        var strng = u.takeWhile(_ != '"')
         println("    defStr: \"" + strng  + '"')
         return ('"' + strng  + '"')
     }
 
     private def parseTheoryName (u : Unparsed) : String =
     {
-        u.next(_ != '(')
-        u.next(c => !(isWhitespace(c)))
+        u.takeWhile(_ != '(')
+        u.takeWhile(c => !(isWhitespace(c)))
 
         var thry : String = untilEndOfExpr(u)
         thry = thry.init
@@ -153,8 +153,8 @@ class LispParser
 			while (!(bar == "(sort"))
 			{
 				println("bar is " + bar)
-				u.next(_ != '(')
-				bar = u.next(c => !(isWhitespace(c)))
+				u.takeWhile(_ != '(')
+				bar = u.takeWhile(c => !(isWhitespace(c)))
 			}
 			
 			var srt : String = untilEndOfExpr(u)
@@ -204,7 +204,7 @@ class LispParser
     private def parseExpr (u : Unparsed) : LispExp =
     {
 		// Ident is from open paren until whitespace
-		val ident : String = u.next(c => !(isWhitespace(c)))
+		val ident : String = u.takeWhile(c => !(isWhitespace(c)))
 		
 		return Exp(ident, List.empty)
 	}
