@@ -8,8 +8,8 @@ import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
 import tiscaf._
-
 import Server._
+import info.kwarc.mmt.api.objects.Context
 
 /**
  * An MMT extensions that handles certain requests in MMT's HTTP server.
@@ -134,8 +134,8 @@ class QueryServer extends ServerExtension("query") {
     log("qmt query: " + mmtquery)
     val q = Query.parse(mmtquery)(controller.extman.get(classOf[QueryExtension]), controller.relman)
     //log("qmt query: " + q.toString)
-    Query.infer(q)(Nil) // type checking
-    val res = controller.evaluator.evaluate(q)
+    QueryChecker.infer(q)(Context.empty) // type checking
+    val res = controller.evaluator(q)
     val resp = res.toNode
     XmlResponse(resp)
   }

@@ -103,7 +103,7 @@ class Controller extends ROController with ActionHandling with Logger {
   /** the catalog maintaining all registered physical storage units */
   val backend = new Backend(extman, report)
   /** the query engine */
-  val evaluator = new ontology.Evaluator(this)
+  val evaluator = new ontology.QueryEvaluator(this)
   /** the window manager */
   lazy val winman = new WindowManager(this) // lazy so that GUI dependencies are optional
   /** moc.refiner - handling pragmatic changes in scope */

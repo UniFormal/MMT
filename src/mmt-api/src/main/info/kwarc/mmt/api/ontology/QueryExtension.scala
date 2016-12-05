@@ -5,7 +5,10 @@ import frontend._
 import objects._
 import presentation.Presenter
 
+import scala.language.implicitConversions
+import QueryResultConversion._
 import QueryTypeConversion._
+
 
 /** A QueryExtension provides the syntax and and semantics for an atomic function of the QMT query language
  *  
@@ -24,10 +27,11 @@ abstract class QueryExtension(val name: String, val in: QueryType, val out: Quer
       case _ => throw ParseError("exactly one paramater expected")
    } 
    /** the semantics of this function
-    *  @param the evaluation of the argument
-    *  @param param the MPath this family of functions is parametrized by
+    *  @param argument evaluation of the argument
+    *  @param params the MPath this family of functions is parametrized by
     */
    def evaluate(argument: BaseType, params: List[String]): List[BaseType]
+   // def eval(q : Query, subst: Query.QuerySubsitution, e: QueryEvaluator, ) : QueryResult
 }
 
 import parser._
@@ -52,7 +56,7 @@ class Infer extends QueryExtension("infer", ObjType, ObjType) {
       val mp = mpath(params)
       val found = extman.getFoundation(mp).getOrElse(throw GetError("no applicable type inference engine defined"))
       argument match { 
-         case OMBIND(Evaluator.free, cont, obj) =>
+         case OMBIND(QueryEvaluator.free, cont, obj) =>
            found.inference(obj, cont)(lup)
          case t: Term => found.inference(t, Context())(lup)
          case o: Obj => throw GetError("object exists but is not a term: " + o)
@@ -84,7 +88,7 @@ class Simplify extends QueryExtension("simplify", ObjType, ObjType) {
    def evaluate(argument: BaseType, params: List[String]) = {
       val mp = mpath(params)
       argument match { 
-         case OMBIND(Evaluator.free, cont, body) =>
+         case OMBIND(QueryEvaluator.free, cont, body) =>
             controller.simplifier(body, Context(mp) ++ cont)
          case o: Obj =>
             controller.simplifier(o, Context(mp))

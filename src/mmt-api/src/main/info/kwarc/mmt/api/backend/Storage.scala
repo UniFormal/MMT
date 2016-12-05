@@ -13,7 +13,7 @@ import parser._
 case class NotApplicable(message: String = "") extends Error(message)
 
 /** An abstraction over physical storage units that hold MMT content */
-abstract class Storage extends QueryResolver with OntologyResolver {
+abstract class Storage {
   protected def loadXML(u: URI, dpath: DPath, reader: BufferedReader)(implicit controller: Controller) {
     val ps = new ParsingStream(u, IsRootDoc(dpath), NamespaceMap(dpath), "omdoc", reader)
     controller.report("storage", "found by " + toString + " at URL " + u)

@@ -1,4 +1,6 @@
 package info.kwarc.mmt.api.utils
+import info.kwarc.mmt.api.LocalName
+
 import scala.xml._
 import scala.io.Source
 
@@ -52,6 +54,12 @@ object xml {
       else
          l.map(_.text).mkString("","","")
    }
+   /** Turns an attribute into a LocalName **/
+   def attrL(N : Node, att: String) : LocalName = {
+      val l = N.attribute(att).getOrElse(Nil).toList
+      LocalName.parse(l.map(_.text).mkString("","",""))
+   }
+
    /** like attr but forces integer value
     */
    def attrInt(N: Node, att: String, exc: String => Throwable) : Int = {

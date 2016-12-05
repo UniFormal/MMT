@@ -5,11 +5,13 @@ import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.ontology.{ESetResult, IsTheory, Paths}
+import info.kwarc.mmt.api.ontology.{SetResult, IsTheory, Paths}
 import info.kwarc.mmt.api.utils.FilePath
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
+
+import info.kwarc.mmt.api.ontology.QueryResultConversion._
 
 abstract class FullArchive {
   val archive : Archive
@@ -41,7 +43,7 @@ class ArchiveStore extends Extension {
         log("Read relational " + name + "...")
         archive.readRelational(FilePath(""), controller, "rel")
         log("Loading Theories...")
-        val theories = controller.evaluator.evaluate(Paths(IsTheory)).asInstanceOf[ESetResult].h.view.flatten.toList.map(s =>
+        val theories = controller.evaluator(Paths(IsTheory)).asInstanceOf[SetResult].s.view.toList.map(s =>
           Path.parse(s.toString))
         logGroup {
           log("Namespace: " + path)

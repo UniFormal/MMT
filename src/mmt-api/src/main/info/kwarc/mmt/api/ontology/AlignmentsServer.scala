@@ -5,7 +5,6 @@ import info.kwarc.mmt.api.objects._
 import web._
 
 import scala.collection.mutable
-import QueryTypeConversion._
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.refactoring.{ArchiveStore, FullArchive}
 import info.kwarc.mmt.api.symbols.Constant
@@ -299,7 +298,7 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
   /** translation along alignments */
-  private class AlignQuery extends QueryExtension("align", PathType, ESet(StringType)) {
+  private class AlignQuery extends QueryExtension("align", ElementQuery(PathType), SetElementQuery(StringType)) {
     def evaluate(argument: BaseType, params: List[String]) = {
       log("Evaluating align query")
       log(argument.toString)
