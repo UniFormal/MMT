@@ -53,7 +53,7 @@ $(function(){
       var q = qmt.parse(qmt.literalString(inpbox.val()));
       if (ana.checked) {
          var qA = qmt.analyze(q);
-         q = qmt.let(qA, qmt.tuple(simpPres(qmt.bound(1)) + simpPres(qmt.bound(2))));
+         q = qmt.Let('x', qA, qmt.Tuple([simpPres(qmt.bound('x')), simpPres(qmt.bound('x'))]));
       } else {
          q = simpPres(q);
       }

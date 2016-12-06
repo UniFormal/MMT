@@ -339,13 +339,22 @@ var mmt = {
 var XML = {
    // helper function to produce xml attributes: key="value"
    attr : function (key, value) {return ' ' + key + '="' + value + '"';},
-   // helper function to produce xml elements with 0-2 attributes:
+
+   // helper function to produce xml elements with as many attributes as needed
    // <tag key1="value1" key2="value">content</tag>
    // all arguments except tag can be null
-   elem : function (tag, content, key1, value1, key2, value2) {
-      var att1 = (key1 == null) ? "" : this.attr(key1,value1);
-      var att2 = (key2 == null) ? "" : this.attr(key2,value2);
-      var atts = att1 + att2;
+   elem : function (tag, content/*, key1, value1, key2, value2, ... */) {
+      var atts = '';
+
+      // add all the key / value pairs
+      var key, value;
+      for(var i = 2; i < arguments.length; i+=2) {
+        key = arguments[i];
+        value = arguments[i + 1];
+        atts += (key == null)?"":this.attr(key, value);
+      }
+
+      // write the begin and ending tags
       var begin = '<' + tag + atts;
       if (content == null) {
          return begin + '/>';
@@ -356,38 +365,127 @@ var XML = {
 };
 
 var qmtAux = {
-   // returns a binary convenience function that returns a QMT query expression for a unary atomic function
-   // the second argument is an MMT URI that the unary function is parametrized by
-   // defaultParam: a function returning the default value of the second argument of the returned function
-   extensionFunction : function(name, defaultParam) {
+    // returns a binary convenience function that returns a QMT query expression for a unary atomic function
+    // the second argument is an MMT URI that the unary function is parametrized by
+    // defaultParam: a function returning the default value of the second argument of the returned function
+    queryFunctionApply : function(name, defaultParam) {
       return function(o, param) {
          var p = (param == null) ? ((defaultParam == null) ? mmt.getActiveTheory() : defaultParam()) : param;
          return XML.elem('function', o, 'name', name, 'param', p);
       };
-   },
+    },
+
+    // a function that always returns the same constant
+    c : function(n){return function(){return n};},
+
+    // identity function
+    i : function(e){return e;}
+
 };
 
 // functions to build and run QMT queries
 var qmt = {
-   // helper functions to build queries (as XML strings)
-   literalPath : function (p) {return XML.elem('literal', null, 'uri', p);},
-   literalString : function (p) {return XML.elem('literal', p);},
-   bound      : function(i) {return XML.elem('bound', null, 'index', i);},
-   component  : function (o, c) {return XML.elem('component', o, 'index', c);},
-   subobject  : function (o, p) {return XML.elem('subobject', o, 'position', p);},
-   tuple       : function(os) {return XML.elem('tuple', os);},
-   projection  : function(o, i) {return XML.elem('projection', o, 'index', i);},
-   let         : function(v, i) {return XML.elem('let', v + i);},
-   toobject    : function(rel) {return XML.elem('toobject', null, 'relation', rel);},
-   tosubject   : function(rel) {return XML.elem('tosubject', null, 'relation', rel);},
-   related     : function(to, by) {return XML.elem('related', to + by);},
-   parse       : qmtAux.extensionFunction('parse'),
-   infer       : qmtAux.extensionFunction('infer'),
-   simplify    : qmtAux.extensionFunction('simplify'),
-   align       : qmtAux.extensionFunction('align'),
-   analyze     : qmtAux.extensionFunction('analyze'),
-   present     : qmtAux.extensionFunction('present', function(){return "html";}),
-   presentDecl : qmtAux.extensionFunction('presentDecl', function(){return "html";}),
+    // Query
+    I               : function(q, h){return XML.elem('i', q, 'hint', h);},
+    Bound           : function(n){return XML.elem("bound", null, "index", n);},
+    Component       : function(o,i){return XML.elem("component", o, "index", i);},
+    SubObject       : function(o,p){return XML.elem("subobject", o, "position", p);},
+    Related         : function(t,b){return XML.elem("related", t+b);},
+    Literal         : function(l){return XML.elem("literal", l);},
+    Literals        : function(ls){return XML.elem("literals", ls.join(""));},
+    Let             : function(n, v, i){return XML.elem("let", v+i, "name", n);},
+    Singleton       : function(e){return XML.elem("singleton", e);},
+    Paths           : function(c){return XML.elem("uris", null, "concept", c);},
+    Unifies         : function(w){return XML.elem("unifies", w);},
+    Closure         : function(of){return XML.elem("closure", of);},
+    Union           : function(l,r){return XML.elem("union", l + r);},
+    BigUnion        : function(n,d,s){return XML.elem("bigunion", d+s, "name", n);},
+    Intersection    : function(l,r){return XML.elem("intersection", l+r);},
+    Difference      : function(l,r){return XML.elem("difference", l+r);},
+    Comprehension   : function(n,d,p){return XML.elem("comprehension", d+p, "name", n)},
+    Tuple           : function(cs){return XML.elem("tuple", cs.join(""));},
+    Projection      : function(t,i){return XML.elem("projection", t, "index", i);},
+
+    // ComponentKey
+    TypeComponent           : qmtAux.c("type"),
+    DefComponent            : qmtAux.c("def"),
+    DomComponent            : qmtAux.c("domain"),
+    CodComponent            : qmtAux.c("codomain"),
+    ParamsComponent         : qmtAux.c("params"),
+    PatternBodyComponent    : qmtAux.c("pattern-body"),
+    MetaDataComponent       : qmtAux.c("metadata"),
+    OtherComponent          : function(s){return "ext-"+s;},
+
+    // Position
+    Position    : function(l){return l.join("_");},
+
+    // RelationExp
+    Sequence    : function(qs){return XML.elem("sequence", qs.join(""));},
+    Choice      : function(qs){return XML.elem("choice", qs.join(""));},
+    Transitive  : function(r){return XML.elem("transitive", r);},
+    Reflexive   : function(){return XML.elem("reflexive");},
+    Inverse     : function(r){return XML.elem("inverse", r);},
+    ToObject    : function(r){return XML.elem("toobject", null, "relation", r);},
+    ToSubject   : function(r){return XML.elem("tosubject", null, "relation", r);},
+
+    // Unary
+    IsDocument  : qmtAux.c("document"),
+    IsTheory    : qmtAux.c("theory"),
+    IsView      : qmtAux.c("view"),
+    IsStyle     : qmtAux.c("style"),
+    IsStructure : qmtAux.c("structure"),
+    IsConstant  : qmtAux.c("constant"),
+    IsPattern   : qmtAux.c("pattern"),
+    IsInstance  : qmtAux.c("instance"),
+    IsConAss    : qmtAux.c("conass"),
+    IsStrAss    : qmtAux.c("strass"),
+    IsNotation  : qmtAux.c("notation"),
+    CustomUnary : qmtAux.i,
+
+
+    // Binary
+    DependsOn       : qmtAux.c("DependsOn"),
+    HasMeta         : qmtAux.c("HasMeta"),
+    Includes        : qmtAux.c("Includes"),
+    HasDomain       : qmtAux.c("HasDomain"),
+    HasCodomain     : qmtAux.c("HasCodomain"),
+    IsInstanceOf    : qmtAux.c("IsInstanceOf"),
+    RefersTo        : qmtAux.c("RefersTo"),
+    Declares        : qmtAux.c("Declares"),
+    IsAliasFor      : qmtAux.c("IsAliasFor"),
+    IsAlignedWith   : qmtAux.c("IsAlignedWith"),
+    CustomBinary    : qmtAux.i,
+
+    // BaseType
+    Object  : function(o){return XML.elem("object", o);},
+    XML     : function(x){return XML.elem("xml", x);},
+    String  : function(s){return XML.elem("string", s)},
+    URI     : function(u){return XML.elem("uri", null, "path", u);},
+
+    // Prop
+    IsA         : function(e){return XML.elem("isa", e);},
+    PrefixOf    : function(s,l){return XML.elem("prefixof", s+l);},
+    IsIn        : function(e,f){return XML.elem("isin", e+f);},
+    IsEmpty     : function(e){return XML.elem("isempty", e);},
+    Equal       : function(l,r){return XML.elem("equal", l+r);},
+    And         : function(l,r){return XML.elem("and", l+r);},
+    Or          : function(l,r){return XML.elem("or", l+r);},
+    Not         : function(e){return XML.elem("not", e);},
+    Forall      : function(n,d,f){return XML.elem("forall", d+f, "name", n);},
+    Exists      : function(n,d,f){return XML.elem("exists", d+f, "name", n);},
+
+    // other helpers
+    literalPath     : function(p){return qmt.Literal(qmt.URI(p));},
+    literalString   : function(s){return qmt.Literal(qmt.String(s));},
+
+    // queryFunctionApply
+    parse       : qmtAux.queryFunctionApply('parse'),
+    infer       : qmtAux.queryFunctionApply('infer'),
+    simplify    : qmtAux.queryFunctionApply('simplify'),
+    align       : qmtAux.queryFunctionApply('align'),
+    analyze     : qmtAux.queryFunctionApply('analyze'),
+    present     : qmtAux.queryFunctionApply('present', function(){return "html";}),
+    presentDecl : qmtAux.queryFunctionApply('presentDecl', function(){return "html";}),
 
    /* executes a QMT query (as constructed by helper functions) via ajax and runs a continuation on the result */
    exec : function (q, cont) {

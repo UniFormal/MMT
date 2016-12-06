@@ -24,7 +24,7 @@
             // build the QMT query that is to be executed on the server: parse, analyze, present
             var qPar = qmt.parse(qmt.literalString(text), theory);
             var qAna = qmt.analyze(qPar, theory);
-            var qPres = qmt.present(qmt.projection(qAna, 1)); // analyze returns pair of checked term and its type, we present only the former here
+            var qPres = qmt.present(qmt.Projection(qAna, 1)); // analyze returns pair of checked term and its type, we present only the former here
 
             // send the query to the server and insert the result as a child of outputpox
             qmt.exec(qPres, function(data) {

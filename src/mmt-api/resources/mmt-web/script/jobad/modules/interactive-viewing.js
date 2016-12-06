@@ -229,7 +229,7 @@ var interactiveViewing = {
      */
     showComputationResult: function(key, title, param) {
         console.log("In show computation result");
-        var q = qmt.subobject(qmt.component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition)
+        var q = qmt.SubObject(qmt.Component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition)
         console.log(mmt.currentPosition);
         console.log(mmt.currentElement);
         console.log(mmt.currentComponent);
@@ -246,7 +246,7 @@ var interactiveViewing = {
     showComp: function(comp) {
         var q = qmt.literalPath(mmt.currentURI)
         if (comp != null)
-            q = qmt.present(qmt.component(q, comp))
+            q = qmt.present(qmt.Component(q, comp))
         else
             q = qmt.presentDecl(q)
         var title = (comp != null ? comp + " of " : "") + mmt.currentURI
