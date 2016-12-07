@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.objects._
 import scala.collection.mutable.HashSet
 
 
+
 object QueryEvaluator {
   val free = OMID(utils.mmt.mmtbase ? "mmt" ? "free")
   type QuerySubstitution = List[(LocalName, BaseType)]
@@ -14,6 +15,9 @@ object QueryEvaluator {
 
 /** evaluates a query expression to a query result */
 class QueryEvaluator(controller: Controller) {
+
+  private lazy val evaluators : List[QueryEvaluationExtension] = controller.extman.get(classOf[QueryEvaluationExtension])
+
   /**
     * Evaluates a Query in memory, expects all I()s to be resolved already
     *
@@ -52,52 +56,65 @@ class QueryEvaluator(controller: Controller) {
   /**
     * Evaluates an element query.
     *
-    * @param q       Query to evaluate
-    * @param context Context to evaluate Query in
+    * @param q Query to evaluate
+    * @param subst Substiution (Context) to evaluate query in
     * @return
     */
   private def evalElem(q: Query)(implicit subst: QueryEvaluator.QuerySubstitution): List[BaseType] = evalSet(q).head // just take the head
 
   /**
-    * Evaluates a single element query
+    * Evaluates a Elem[_] query
     *
-    * @param q
+    * @param q Query to evaluate
+    * @param subst Substiution (Context) to evaluate query in
+    *
     * @return
     */
   private def evalSingleElem(q: Query)(implicit subst: QueryEvaluator.QuerySubstitution): BaseType = evalElem(q).head
 
 
   /**
-    * Evaluates
+    * Evaluates a Elem[Path] Query
     *
-    * @param e
-    * @param subst
+    * @param e Query to evaluate
+    * @param subst Substiution (Context) to evaluate query in
     * @return
     */
   private def evalSinglePath(e: Query)(implicit subst: QueryEvaluator.QuerySubstitution): Path = evalSingleElem(e).asInstanceOf[Path]
 
-  /** pre: Query.infer(e) = Elem(ObjectType) */
+  /**
+    * Evaluates a Elem[Obj] Query
+    *
+    * @param e Query to evaluate
+    * @param subst Substiution (Context) to evaluate query in
+    * @return
+    */
   private def evalElemObj(e: Query)(implicit subst: QueryEvaluator.QuerySubstitution): Obj = evalSingleElem(e).asInstanceOf[Obj]
 
   /**
-    * Evaluates an isoltaed querySet.
+    * Evaluates a SetTuple[_] query
     *
-    * @param q
-    * @param hint
-    * @param subst
+    * @param q Query to evaluate
+    * @param subst Substiution (Context) to evaluate query in
     * @return
     */
-  private def evalISet(q: Query, hint: String)(implicit subst: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = ???
-
   private def evalSet(q: Query)(implicit subst: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = q match {
     /** evaluate a query with a hint */
-    case I(qq, Some(h)) => evalISet(qq, h)
+    case I(qq, Some(h)) =>
+      val matching = evaluators.filter(_.name == h)
+      if(matching.length != 1){
+        throw ImplementationError("ill-typed query: Missing extenstion for QueryHint. ")
+      }
+      matching.head.evaluate(q, this)
 
     /** evaluate a query without a hint */
-    case I(qq, None) => evalSet(qq) // TODO: Throw a warning or think about what to do
+    case I(qq, None) =>
+      log("Found I() with an empty hint, ignoring ... ")
+      evalSet(qq)
 
     /** bound variable => lookup in the substitution */
-    case Bound(vn) => singleton(subst.find(_._1 == vn).get._2)
+    case Bound(vn) =>
+      singleton(subst.find(_._1 == vn).get._2)
 
     /** get the components of a path */
     case ontology.Component(of, comp) =>
@@ -117,12 +134,15 @@ class QueryEvaluator(controller: Controller) {
 
     /** retrieve a subobject of a single result */
     case SubObject(of, pos) =>
-      val (con, obj) = evalElemObj(of).subobject(pos)
-      val closure = obj match {
-        case t: Term => OMBIND(QueryEvaluator.free, con, t)
-        case o => o //TODO assuming bound variables occur only in terms
-      }
-      singleton(closure)
+      val res = empty
+      evalSet(of).foreach(e => {
+        val (con, obj) = e.asInstanceOf[Obj].subobject(pos)
+        res += (obj match {
+          case t: Term => OMBIND(QueryEvaluator.free, con, t)
+          case o => o //TODO assuming bound variables occur only in terms
+        })
+      })
+      res
 
     /** query the rs for all the objects */
     case Related(to, by) =>
@@ -133,7 +153,8 @@ class QueryEvaluator(controller: Controller) {
       res
 
     /** Literal => return the item as is */
-    case Literal(b) => singleton(b)
+    case Literal(b) =>
+      singleton(b)
 
     /** Literals => return the items as is */
     case Literals(bs@_*) =>

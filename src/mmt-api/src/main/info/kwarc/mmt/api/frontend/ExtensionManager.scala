@@ -129,7 +129,7 @@ class ExtensionManager(controller: Controller) extends Logger {
   private[api] var extensions: List[Extension] = Nil
   private val knownExtensionTypes = List(
     classOf[Plugin], classOf[Foundation], classOf[ParserExtension], classOf[QueryTransformer],
-    classOf[ontology.QueryExtension],
+    classOf[ontology.QueryFunctionExtension],
     classOf[ChangeListener], classOf[ServerExtension],
     classOf[Parser], classOf[Checker], classOf[Prover], classOf[Interpreter], classOf[Simplifier], classOf[Presenter],
     classOf[BuildTarget]

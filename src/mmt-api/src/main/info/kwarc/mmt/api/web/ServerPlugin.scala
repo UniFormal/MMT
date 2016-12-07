@@ -132,7 +132,7 @@ class QueryServer extends ServerExtension("query") {
   def apply(path: List[String], httpquery: String, body: Body, session: Session) = {
     val mmtquery = body.asXML
     log("qmt query: " + mmtquery)
-    val q = Query.parse(mmtquery)(controller.extman.get(classOf[QueryExtension]), controller.relman)
+    val q = Query.parse(mmtquery)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
     //log("qmt query: " + q.toString)
     QueryChecker.infer(q)(Context.empty) // type checking
     val res = controller.evaluator(q)

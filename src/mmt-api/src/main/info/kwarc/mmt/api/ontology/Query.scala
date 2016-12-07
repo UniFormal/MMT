@@ -69,7 +69,7 @@ case class Tuple(components: List[Query]) extends Query
 case class Projection(of: Query, index: Int) extends Query
 
 /** query that applies an atomic function */
-case class QueryFunctionApply(function: QueryExtension, argument: Query, params: List[String]) extends Query
+case class QueryFunctionApply(function: QueryFunctionExtension, argument: Query, params: List[String]) extends Query
 
 object Query {
   /**
@@ -79,7 +79,7 @@ object Query {
     * @param relManager RelationalManager to use
     * @return
     */
-  def parse(n: Node)(implicit queryFunctions: List[QueryExtension], relManager: RelationalManager): Query = n match {
+  def parse(n: Node)(implicit queryFunctions: List[QueryFunctionExtension], relManager: RelationalManager): Query = n match {
 
     /** the isolated query with an optional hint */
     case <i>{q}</i> =>

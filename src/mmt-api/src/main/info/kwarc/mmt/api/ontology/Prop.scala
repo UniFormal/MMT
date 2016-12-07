@@ -63,7 +63,7 @@ object Prop {
     * @param relManager RelationalManager to use
     * @return
     */
-  def parse(n: Node)(implicit queryFunctions: List[QueryExtension], relManager: RelationalManager): Prop = n match {
+  def parse(n: Node)(implicit queryFunctions: List[QueryFunctionExtension], relManager: RelationalManager): Prop = n match {
     case <isa>{e}</isa> =>
       IsA(Query.parse(e), relManager.parseUnary(xml.attr(n, "concept")))
 
