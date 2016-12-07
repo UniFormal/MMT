@@ -3,6 +3,7 @@ package info.kwarc.mmt.lfs
 import info.kwarc.mmt.api._
 import utils._
 
+@deprecated("use info.kwarc.mmt.lf.sequences instead")
 object LFS {
    val baseURI = URI("http", "cds.omdoc.org")
    val lfsbase = DPath(baseURI / "omdoc" / "seq.omdoc")
