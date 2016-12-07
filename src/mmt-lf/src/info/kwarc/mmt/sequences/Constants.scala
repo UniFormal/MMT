@@ -34,4 +34,6 @@ object LFS {
          case _ => None
       }
    }
+   
+   object flatseq extends FlexaryConstantScala(_path, "flatseq")
 }
