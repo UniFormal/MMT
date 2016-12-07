@@ -195,6 +195,8 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
       }
       LocalName(stepsRS.reverse)
    }
+   /** the identity substitution this->this */
+   def id = Sub(this, OMV(this))
    /** returns the list of all prefixes of this name, from atomic to this one */
    def prefixes : List[LocalName] = if (this.length <= 1) List(this) else init.prefixes ::: List(this)
    /** machine-oriented string representation of this name, parsable and official */

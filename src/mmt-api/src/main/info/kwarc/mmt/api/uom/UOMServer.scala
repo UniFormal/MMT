@@ -245,6 +245,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
       }
       def simplify(t: Term)(implicit stack: Stack, history: History) =
          apply(t, stack.context, state.rules)
+      def outerContext = Context.empty
    }
 
    /** applies all computation rules */

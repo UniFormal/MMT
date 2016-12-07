@@ -18,8 +18,12 @@ object Continue {
  * passed to [[Rule]]s to permit callbacks to the Solver
  */
 trait CheckingCallback {
+   /** a fixed context prefix that is not part of the contexts passed to the other methods */ 
+   def outerContext : Context
+   
    //def getType(p: GlobalName): Option[Term]
    //def getDef(p: GlobalName): Option[Term]
+
    /** checking */
    def check(j: Judgement)(implicit history: History): Boolean
    /** possibly unsafe simplification */
@@ -28,6 +32,9 @@ trait CheckingCallback {
    def inferType(t : Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = None
    /** @return MightFail by default */
    def dryRun[A](code: => A): DryRunResult = MightFail
+
+   /** flag an error */
+   def error(message: => String)(implicit history: History): Boolean = false
 }
 
 /**
@@ -200,7 +207,7 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
     *  @param tm2 the second term
     *  @param tp their type
     *  @param stack their context
-    *  @return true iff the judgment holds
+    *  @return true iff the judgment holds; None if the solver should proceed with term-based equality checking
     */
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean]
 }

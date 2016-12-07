@@ -251,7 +251,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    implicit val presentObj : Obj => String = o => controller.presenter.asString(o)
 
    /** the context that is not part of judgements */
-   private def outerContext = constantContext ++ solution
+   def outerContext = constantContext ++ solution
 
    /**
     * logs a string representation of the current state
@@ -411,7 +411,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
  *
     *  @return false
     */
-   def error(message: => String)(implicit history: History): Boolean = {
+   override def error(message: => String)(implicit history: History): Boolean = {
       log("error: " + message)
       addError(history + message)
       // maybe return true so that more errors are found
@@ -444,7 +444,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    /** delays a constraint for future processing
  *
     * @param j the Judgement to be delayed
-    * @param activatable true if the judgment can be activated immediately
     * @return true (i.e., delayed Judgment's always return success)
     */
    private def delay(j: Judgement, incomplete: Boolean = false)(implicit history: History): Boolean = {
@@ -586,7 +585,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       tS
    }
 
-   /** simplifies safelfy one step along each branches, well-formedness is preserved+reflected */
+   /** simplifies safely one step along each branches, well-formedness is preserved+reflected */
    //TODO merge with limitedSimplify; offer simplification strategies
    private def safeSimplify(tm: Term)(implicit stack: Stack, history: History): Term = tm match {
       case _:OMID | _:OMV | _:OMLITTrait => tm
@@ -994,6 +993,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     *
     * post: j is covered
     */
+   // TODO this should be removed; instead LF should use low-priority InhabitableRules that apply to any term
    private def checkUniverse(j : Universe)(implicit history: History): Boolean = {
      implicit val stack = j.stack
      limitedSimplify(j.univ, rules.get(classOf[UniverseRule])) match {

@@ -66,12 +66,13 @@ class Matcher(controller: Controller, rules: RuleSet, context: Context, queryVar
       }
       def simplify(t: Term)(implicit stack: Stack, history: History) =
          controller.simplifier(t, stack.context, rules)
+      def outerContext = context ++ querySolution
    }
 
    /**
     *  the matching function
     *  @param goal the term to be matched
-    *  @param query the term to match against, this term may contain the queryVars and the goalVars freely
+    *  @param query the term to match against, this term may contain the queryVars and the context variables freely
     *  @return true if the terms match
     */ 
    def apply(goal: Term, query: Term) = {
@@ -84,10 +85,10 @@ class Matcher(controller: Controller, rules: RuleSet, context: Context, queryVar
    
    /**
     *  the main recursion function that tries to match context, queryVars, bound |- goal = query
-    *  @param goal the term to be matched
+    *  @param goalOrg the term to be matched
     *    goal may not contain variables from queryVar
-    *  @param query the term to match against
-    *  @param bound the bound variables that have been encountered during recursion
+    *  @param queryOrg the term to match against
+    *  @param boundOrg the bound variables that have been encountered during recursion
     *  @return true if the terms match
     */ 
    private def aux(boundOrg: Context, goalOrg: Term, queryOrg: Term): Boolean = {
