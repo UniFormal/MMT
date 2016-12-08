@@ -12,12 +12,24 @@ import info.kwarc.mmt.api.libraries.LookupWithNotFoundHandler
 
 import scala.collection.mutable.HashSet
 
-/** Shared class for extentsions that are related to queries */
+/** Extension that allow for the evaluation of (a subset of) queries */
 abstract class QueryExtension(val name: String) extends Extension {
   // must be lazy because controller is initially null
   protected lazy val extman: ExtensionManager = controller.extman
 
   protected lazy val lup: LookupWithNotFoundHandler = controller.globalLookup
+
+  /** Evaluates a single Query */
+
+  /**
+    * Evaluates a single Query
+    *
+    * @param q           Query to evaluate
+    * @param e           A QueryEvaluator to use for recursive queries
+    * @param substiution Substiution (Context) to apply QueryEvaluation in
+    * @return
+    */
+  def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]]
 }
 
 
@@ -42,15 +54,14 @@ abstract class QueryFunctionExtension(override val name: String, val in: QueryTy
     * @param params   the MPath this family of functions is parametrized by
     */
   def evaluate(argument: BaseType, params: List[String]): List[BaseType]
-}
 
-/**
-  * A QueryEvaluationExtension is used by I() clauses to evaluate a part of the query
-  *
-  * @param name
-  */
-abstract class QueryEvaluationExtension(override val name: String) extends QueryExtension(name) {
-  def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]]
+
+  def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = {
+    val (subquery, params) = q match {case QueryFunctionApply(f, a, p) if f.name == name => (a, p)}
+
+    /** evaluate for i.head is enough by precondition */
+    e.evalSet(subquery).map(i => evaluate(i.head, params))
+  }
 }
 
 import parser._

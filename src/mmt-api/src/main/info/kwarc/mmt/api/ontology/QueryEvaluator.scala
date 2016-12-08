@@ -16,7 +16,7 @@ object QueryEvaluator {
 /** evaluates a query expression to a query result */
 class QueryEvaluator(controller: Controller) {
 
-  private lazy val evaluators : List[QueryEvaluationExtension] = controller.extman.get(classOf[QueryEvaluationExtension])
+  private lazy val evaluators : List[QueryExtension] = controller.extman.get(classOf[QueryExtension])
 
   /**
     * Evaluates a Query in memory, expects all I()s to be resolved already
@@ -45,8 +45,8 @@ class QueryEvaluator(controller: Controller) {
   private def empty = new ResultSet
 
   private def singleton(b: BaseType) = {
-    val res = empty;
-    res += b;
+    val res = empty
+    res += b
     res
   }
 
@@ -60,7 +60,7 @@ class QueryEvaluator(controller: Controller) {
     * @param subst Substiution (Context) to evaluate query in
     * @return
     */
-  private def evalElem(q: Query)(implicit subst: QueryEvaluator.QuerySubstitution): List[BaseType] = evalSet(q).head // just take the head
+  def evalElem(q: Query)(implicit subst: QueryEvaluator.QuerySubstitution): List[BaseType] = evalSet(q).head // just take the head
 
   /**
     * Evaluates a Elem[_] query
@@ -70,7 +70,7 @@ class QueryEvaluator(controller: Controller) {
     *
     * @return
     */
-  private def evalSingleElem(q: Query)(implicit subst: QueryEvaluator.QuerySubstitution): BaseType = evalElem(q).head
+  def evalSingleElem(q: Query)(implicit subst: QueryEvaluator.QuerySubstitution): BaseType = evalElem(q).head
 
 
   /**
@@ -80,7 +80,7 @@ class QueryEvaluator(controller: Controller) {
     * @param subst Substiution (Context) to evaluate query in
     * @return
     */
-  private def evalSinglePath(e: Query)(implicit subst: QueryEvaluator.QuerySubstitution): Path = evalSingleElem(e).asInstanceOf[Path]
+  def evalSinglePath(e: Query)(implicit subst: QueryEvaluator.QuerySubstitution): Path = evalSingleElem(e).asInstanceOf[Path]
 
   /**
     * Evaluates a Elem[Obj] Query
@@ -89,7 +89,7 @@ class QueryEvaluator(controller: Controller) {
     * @param subst Substiution (Context) to evaluate query in
     * @return
     */
-  private def evalElemObj(e: Query)(implicit subst: QueryEvaluator.QuerySubstitution): Obj = evalSingleElem(e).asInstanceOf[Obj]
+  def evalElemObj(e: Query)(implicit subst: QueryEvaluator.QuerySubstitution): Obj = evalSingleElem(e).asInstanceOf[Obj]
 
   /**
     * Evaluates a SetTuple[_] query
@@ -98,7 +98,7 @@ class QueryEvaluator(controller: Controller) {
     * @param subst Substiution (Context) to evaluate query in
     * @return
     */
-  private def evalSet(q: Query)(implicit subst: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = q match {
+  def evalSet(q: Query)(implicit subst: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = q match {
     /** evaluate a query with a hint */
     case I(qq, Some(h)) =>
       val matching = evaluators.filter(_.name == h)
@@ -189,7 +189,7 @@ class QueryEvaluator(controller: Controller) {
       throw ImplementationError("Unifies() query not implemented")
 
     /** close of a set of paths */
-    case Closure(of) =>
+    case ontology.Closure(of) =>
       evalSinglePath(of) match {
         case p: MPath =>
           val res = empty
@@ -237,16 +237,9 @@ class QueryEvaluator(controller: Controller) {
       res += t(i - 1)
       res
 
-    /** applies a Query Function */
+    /** apply a query function using the function itself */
     case QueryFunctionApply(fun, args, param) =>
-      val argsE = evalSet(args)
-      val res = empty
-      argsE foreach {
-        case List(b) =>
-          res += fun.evaluate(b, param)
-        case _ => throw ImplementationError("ill-typed query")
-      }
-      res
+      fun.evaluate(q, this)
 
     case _ => throw ImplementationError("unknown query")
   }
