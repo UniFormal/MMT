@@ -8,7 +8,7 @@ import scala.util.Try
 import scala.xml.{Elem, Node, XML}
 //import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
 
-//TODO FR@DM Using external libraries is not allowed by default. I've replaced your SAX parser call with xml.get
+//TODO FR@DM Using external libraries is not allowed by default.
 
 /** TODO FR@DM this entire class is awful and must be cleaned up in order to remain here.
  *  - Any is only allowed when you actually expect anything

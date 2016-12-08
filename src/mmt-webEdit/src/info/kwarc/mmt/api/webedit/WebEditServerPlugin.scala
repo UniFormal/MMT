@@ -91,7 +91,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   }
 
   private def getMinIncludes: HLet = new HLet {
-    def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = try {
+    def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
       val reqBody = new Body(tk)
       val params = bodyAsJSON(reqBody).obj
 
@@ -104,7 +104,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   }
 
   private def getAutocompleteResponse: HLet = new HLet {
-    def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = try {
+    def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
       val reqBody = new Body(tk)
       val params = bodyAsJSON(reqBody).obj
 
@@ -118,7 +118,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   }
 
   private def getSymbolCompletion: HLet = new HLet {
-    def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = try {
+    def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
       val reqBody = new Body(tk)
       val params = bodyAsJSON(reqBody).obj
 
@@ -178,7 +178,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   // }
 
   private def getConstantCorrection: HLet = new HLet {
-    def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = try {
+    def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
       val reqBody = new Body(tk)
       val params = bodyAsJSON(reqBody).obj
 
@@ -192,7 +192,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   }
 
   private def getIncludeCorrection: HLet = new HLet {
-    def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = try {
+    def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
       val reqBody = new Body(tk)
       val params = bodyAsJSON(reqBody).obj
 
