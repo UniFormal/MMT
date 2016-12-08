@@ -27,7 +27,7 @@ trait AbstractTermContainer extends ComponentContainer {
 class FinalTermContainer(t: Term) extends AbstractTermContainer {
    def update(nw: ComponentContainer) = nw match {
       case nw: FinalTermContainer => nw.get != Some(t)
-      case _ => true
+      case _ => throw ImplementationError("cannot update final term container")
    }
    def delete {}
    def isDefined = true
@@ -49,6 +49,32 @@ class MPathContainer(path: Option[MPath]) extends AbstractTermContainer {
    def isDefined = term.isDefined
    def get = term
    def getPath = term map {case OMMOD(p) => p}
+}
+
+/** container for mutable contexts */ 
+class ContextContainer extends ComponentContainer {
+   private var context: Option[Context] = None
+   def update(nw: ComponentContainer) = nw match {
+      case nw: ContextContainer =>
+        val changed = nw.get != context
+        context = nw.context
+        changed
+      case _ => throw ImplementationError("expected context")
+   }
+   def isDefined = context.isDefined
+   def get = context
+   def set(c: Context) {
+     context = Some(c)
+   }
+   def delete {context = None}
+}
+
+object ContextContainer {
+  def apply(c: Context) = {
+    val cc = new ContextContainer
+    cc.context = Some(c)
+    cc
+  }
 }
 
 /** A ComponentKey identifies a [[DeclarationComponent]]. */
@@ -80,6 +106,9 @@ case object DomComponent  extends ComponentKey("domain")
 /** codomain of a [[modules.Link]] */
 case object CodComponent  extends ComponentKey("codomain")
 
+/** parameters */
+case object ParamsComponent extends ComponentKey("params")
+
 /** custom component, e.g., in a [[DerivedDeclaration]] */
 case class OtherComponent(s: String) extends ComponentKey(s)
 
@@ -99,7 +128,6 @@ object NotationComponent {
 }
 
 // the following components are used only by change management
-case object ParamsComponent extends  ComponentKey("params")
 case object PatternBodyComponent extends ComponentKey("pattern-body")
 case object MetaDataComponent extends ComponentKey("metadata")
 

@@ -15,6 +15,8 @@ import utils.MyList._
 
 import scala.io.Source
 
+/*
+
 /** tries to turn constants into instances
  */
 class PatternChecker(controller: Controller) {
@@ -282,7 +284,7 @@ object PatternTest  {
 }
 
 
-
+*/
 
 
 

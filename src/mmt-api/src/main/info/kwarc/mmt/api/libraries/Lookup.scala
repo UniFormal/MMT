@@ -72,10 +72,10 @@ abstract class Lookup {self =>
      get(path) match {case e : Constant => e case _ => throw GetError(msg(path))} 
    def getStructure(path : GlobalName, msg : Path => String = defmsg) : Structure =
      get(path) match {case e : Structure => e case _ => throw GetError(msg(path))} 
-   def getPatternAssignment(path : GlobalName, msg : Path => String = defmsg) : PatternAssignment =
+/*   def getPatternAssignment(path : GlobalName, msg : Path => String = defmsg) : PatternAssignment =
      get(path) match {case e : PatternAssignment => e case _ => throw GetError(msg(path))} 
    def getPattern(path : GlobalName, msg: Path => String = defmsg) : Pattern = 
-     get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}
+     get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}*/
    
    def getComponent(path: CPath) : ComponentContainer = {
       val se = getO(path.parent).getOrElse(throw GetError("parent does not exist: " + path))

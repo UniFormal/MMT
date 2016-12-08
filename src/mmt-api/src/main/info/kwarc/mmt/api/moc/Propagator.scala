@@ -156,8 +156,6 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
     dec match {
       case c : Constant => h + dec.path + CPath(c.path, TypeComponent) + CPath(c.path, DefComponent)
       case s : Structure => h + dec.path + CPath(s.path, DomComponent)
-      case p : Pattern => h + dec.path + CPath(p.path, ParamsComponent) + CPath(p.path, PatternBodyComponent)
-      case i : Instance => h + dec.path + CPath(i.path, TypeComponent)
       //case a : ConstantAssignment => h + dec.path + CPath(a.path, DefComponent)
       //case d : DefLinkAssignment => h + dec.path + CPath(d.path, DefComponent)
     } 
@@ -239,11 +237,6 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
       case (c : Constant, TypeComponent) => makeChange(c.tp)
       case (c : Constant, DefComponent) => makeChange(c.df)
 
-      /* Patterns */
-      case (p : Pattern, _) => None //TODO makeChange(Some(p.params))
-
-      /* Instance */
-      case (i : Instance, _) => None
     }
     chOpt.toList
     case _ => Nil  
@@ -342,12 +335,6 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
       /* Constants */
       case (c : Constant, TypeComponent) => makeChange(c.tp)
       case (c : Constant, DefComponent) => makeChange(c.df)
-
-      /* Patterns */
-      case (p : Pattern, _) => None //TODO makeChange(Some(p.params))
-
-      /* Instance */
-      case (i : Instance, _) => None
 
     }
     chOpt.toList

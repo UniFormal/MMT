@@ -109,7 +109,7 @@ object Presenter {
    def getNotations(controller: frontend.Controller, p: ContentPath, twoDim: Boolean) : List[TextNotation] = {
       val notC = controller.globalLookup.getO(p) flatMap {
          case c: symbols.Constant => if (c.notC.isDefined) Some(c.notC) else None
-         case p: patterns.Pattern => if (p.notC.isDefined) Some(p.notC) else None
+         //TODO DD
          case _ => None
       }
       val dim = if (twoDim) 2 else 1

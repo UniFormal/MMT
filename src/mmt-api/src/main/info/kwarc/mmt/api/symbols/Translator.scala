@@ -51,6 +51,40 @@ abstract class UniformTranslator extends Translator {
 }
 
 /** a translator that applies a morphism (lazily) */
-class ApplyMorphism(morph: Term) extends UniformTranslator {
+case class ApplyMorphism(morph: Term) extends UniformTranslator {
    def apply(context: Context, tm: Term) = tm * morph
+}
+
+/** a translator that renames local names of a module */
+abstract class Renamer extends UniformTranslator {
+  def rename(old: GlobalName): Option[GlobalName]
+  private object trav extends StatelessTraverser {
+    def traverse(t: Term)(implicit con : Context, state : State) = t match {
+      case OMS(p) => rename(p) match {
+        case None => t
+        case Some(pR) => OMS(pR)
+      }
+      case _ => Traverser(this, t)
+    }
+  }
+  def apply(c:Context, t: Term) = trav(t, c)
+}
+
+object Renamer {
+  /** convenience for creating [[Renamer]]s */
+  def apply(r: GlobalName => Option[GlobalName]) = new Renamer {
+    def rename(n: GlobalName) = r(n)
+  }
+  /** a [[Renamer]] of finitely many symbols */
+  def apply(rs: (GlobalName,GlobalName)*) = new Renamer {
+    def rename(n: GlobalName) = rs.toList.find(_._1 == n) map {r => r._2}
+  }
+  /** a [[Renamer]] that prefixes all names */
+  def prefix(m: MPath, prefix: GlobalName) = Renamer {p =>
+    if (p.module == m) Some(prefix / p.name) else None
+  }
+}
+
+case class ApplySubs(subs: Substitution) extends UniformTranslator {
+  def apply(context: Context, tm: Term) = tm ^? (subs ++ context.id)
 }

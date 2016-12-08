@@ -88,13 +88,6 @@ object Patcher {
     case (c : Constant, TypeComponent, Some(s : Term)) => Constant(c.home, c.name, c.alias, Some(s), c.df, c.rl, c.notC)
     case (c : Constant, TypeComponent, None) => Constant(c.home, c.name, c.alias, None, c.df, c.rl, c.notC)
 
-    /** Patterns */
-    case(p : Pattern,  ParamsComponent, Some(params : Context)) => new Pattern(p.home, p.name, params, p.body, p.notC)
-    case(p : Pattern,  PatternBodyComponent, Some(body : Context)) => new Pattern(p.home, p.name, p.params, body, p.notC)
-
-    /** Instances */
-    case(i : Instance, TypeComponent, Some(OMA(OMID(p), matches))) if i.pattern == p => new Instance(i.home, i.name, i.pattern, matches)
-
     case _ => throw UpdateError("Unexpected component update found while applying Diff.\n" +
                                 "ContentElement = " + d.toString + "\n" +
                                 "compName = " + comp +  "\n" +

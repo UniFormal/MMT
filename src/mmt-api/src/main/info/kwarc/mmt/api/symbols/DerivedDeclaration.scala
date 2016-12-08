@@ -13,8 +13,8 @@ import scala.xml.Elem
  *  Its semantics is defined by the corresponding [[StructuralFeature]]
  */
 class DerivedDeclaration(h: Term, name: LocalName, val feature: String,
-                         components: List[DeclarationComponent], mt : Option[MPath] = None) extends {
-   private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name, mt)
+                         components: List[DeclarationComponent]) extends {
+   private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name, None)
 } with NestedModule(h, name, t) {
    // overriding to make the type stricter
   override def module: DeclaredModule = t
@@ -70,7 +70,7 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String,
          DeclarationComponent(k, nc.copy)
      }
      // splice super in to res
-     val res = new DerivedDeclaration(superT.home, superT.name, feature, compsT, mt)
+     val res = new DerivedDeclaration(superT.home, superT.name, feature, compsT)
      superT.module.getDeclarations.foreach {d =>
        res.module.add(d)
      }
@@ -82,7 +82,7 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String,
 /**
  * a rule that legitimizes a [[StructuralFeature]]
  */
-case class StructuralFeatureRule(feature: String, components : List[ComponentKey], mt : Option[MPath] = None, hasname : Boolean = true,usedom : Boolean = false, usecod : Boolean = false) extends Rule
+case class StructuralFeatureRule(feature: String, components : List[ComponentKey], hasname : Boolean = true) extends Rule
 
 /**
  * A StructureFeature defines the semantics of a [[DerivedDeclaration]]
@@ -92,9 +92,11 @@ case class StructuralFeatureRule(feature: String, components : List[ComponentKey
  */
 abstract class StructuralFeature(val feature: String) extends FormatBasedExtension {
    def isApplicable(s: String) = s == feature
+   
+   def getInnerContext(d: DerivedDeclaration): Context = Context.empty
 
    /** called after checking components and inner declarations */
-   def check(d: DerivedDeclaration)(implicit env: CheckingEnvironment): Unit
+   def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit
 
    /**
     * defines the outer perspective of a derived declaration
@@ -137,7 +139,7 @@ abstract class Elaboration extends ElementContainer[Declaration] {
  * called structures in original MMT
  */
 
-object GenerativePushoutRule extends StructuralFeatureRule("generative",List(DomComponent),usedom = true)
+object GenerativePushoutRule extends StructuralFeatureRule("generative",List(DomComponent))
 
 class GenerativePushout extends StructuralFeature("generative") {
 
@@ -191,7 +193,7 @@ class GenerativePushout extends StructuralFeature("generative") {
 
    def modules(d: DerivedDeclaration): List[Module] = Nil
 
-   def check(d: DerivedDeclaration)(implicit env: CheckingEnvironment) {}
+   def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 }
 
 // Binds theory parameters using Lambda/Pi in an include-like structure
@@ -270,5 +272,5 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
 
   }
   def modules(d: DerivedDeclaration): List[Module] = Nil
-  def check(d: DerivedDeclaration)(implicit env: CheckingEnvironment) {}
+  def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 }

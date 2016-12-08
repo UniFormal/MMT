@@ -20,13 +20,23 @@ abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name) {
  * @param parameters the interface/parameters/arguments of the theory
  */
 // TODO find a way that does not require parameters to be vars
-class DeclaredTheory(doc : DPath, name : LocalName, mt : Option[MPath], var parameters: Context = Context())
+class DeclaredTheory(doc : DPath, name : LocalName, mt : Option[MPath], params: Context = Context())
       extends Theory(doc, name) with DeclaredModule {
    /** the container of the meta-theory */
    val metaC = new MPathContainer(mt)
    /** the meta-theory */
    def meta = metaC.getPath
-   def getComponents = if (meta.isEmpty) Nil else List(DeclarationComponent(TypeComponent, metaC))
+   /** the container of the parameters */
+   val paramC = ContextContainer(params)
+   /** @return the parameters */
+   def parameters = paramC.get getOrElse Context.empty
+
+   def getComponents = {
+     val mtComp = if (metaC.isDefined) List(DeclarationComponent(TypeComponent, metaC)) else Nil
+     val prComp = if (paramC.isDefined) List(DeclarationComponent(ParamsComponent, paramC)) else Nil
+     mtComp ::: prComp
+   }
+   
    /** the context governing the body: meta-theory, parameters, and this theory */
    def getInnerContext = {
       val self = IncludeVarDecl(path, parameters.id.map(_.target))
@@ -51,16 +61,11 @@ class DeclaredTheory(doc : DPath, name : LocalName, mt : Option[MPath], var para
       case s: Structure if ! s.isInclude => List(s)
       case _ => Nil
    }
-   /** convenience method to obtain all patterns */
-   def getPatterns:List[patterns.Pattern] = getDeclarations.flatMap {
-      case p: patterns.Pattern => List(p)
-      case _ => Nil
+   /** convenience method to obtain all derived declarations for a given feature */
+   def getDerivedDeclarations(f: String) = getDeclarations.collect {
+     case dd: DerivedDeclaration if dd.feature == f => dd
    }
-   /** convenience method to obtain all pattern instances */
-   def getInstances:List[patterns.Instance] = getDeclarations.flatMap {
-      case p: patterns.Instance => List(p)
-      case _ => Nil
-   }
+
    override def toString = "theory " + path + meta.map(" : " + _.toPath).getOrElse("") +
      (if(parameters.nonEmpty) " > " + parameters else "") + "\n" + innerString
    def toNode =

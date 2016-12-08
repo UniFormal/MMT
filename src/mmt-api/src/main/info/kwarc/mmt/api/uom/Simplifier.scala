@@ -4,11 +4,16 @@ import info.kwarc.mmt.api._
 import frontend._
 import checking._
 import objects._
+import symbols._
 import modules._
 
 /** simplifies/rewrites objects */
-trait ObjectSimplifier extends Extension {
+trait ObjectSimplifier extends Extension {self =>
    def apply(obj: Obj, context: Context, rules: RuleSet): obj.ThisType
+   
+   def toTranslator(rules: RuleSet) = new UniformTranslator {
+     def apply(c: Context, t: Term) = self.apply(t, c, rules) 
+   }
 }
 
 /** simplifies/elaborates structural elements */

@@ -25,8 +25,8 @@ abstract class RelationalExtractor extends Extension {
 /** The Extractor produces the declaration-level relational representation of a SructuralElement
  */
 object MMTExtractor extends RelationalExtractor {
-   val allUnary = List(IsDocument,IsTheory,IsView,IsStyle,IsConstant,IsStructure,IsConAss,
-                          IsStrAss,IsNotation,IsPattern,IsInstance)
+   val allUnary = List(IsDocument,IsTheory,IsView,IsConstant,IsStructure,IsConAss,
+                          IsStrAss,IsNotation,IsDerivedDeclaration,IsPattern,IsInstance)
    val allBinary = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,
   		 IsAlignedWith)
 
@@ -87,19 +87,21 @@ object MMTExtractor extends RelationalExtractor {
                         f(HasCodomain(s.path, TheoryExp.simplify(s.to).toMPath))
                         f(IsStructure(s.path))
                      }
-                  case nm: NestedModule =>
-                     f(dec)
-                     apply(nm.module)
                   case rc: RuleConstant =>
                      f(dec)
                      f(IsConstant(rc.path))
-                  case p: Pattern =>
+                  case dd: DerivedDeclaration =>
                      f(dec)
-                     f(IsPattern(p.path))
-                  case i: Instance =>
+                     f(IsDerivedDeclaration(dd.path))
+                     dd.feature match {
+                       case Pattern.feature => f(IsPattern(dd.path))
+                       case Instance.feature =>
+                          f(IsInstance(dd.path))
+                          Instance.getPattern(dd).foreach {p => f(IsInstanceOf(dd.path, p._1))}
+                     }
+                  case nm: NestedModule =>
                      f(dec)
-                     f(IsInstance(i.path))
-                     f(IsInstanceOf(i.path, i.pattern))
+                     apply(nm.module)
                }
             }}
          case _ =>

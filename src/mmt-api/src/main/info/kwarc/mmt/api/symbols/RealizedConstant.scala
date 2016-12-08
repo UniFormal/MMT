@@ -57,6 +57,7 @@ class RuleConstantParser extends ParserExtension {
    }
 }
 
+@deprecated
 object ParametricRuleConstantInterpreter {
    def fromNode(n: Node, thy: MPath): List[RuleConstant] = {
       val name = xml.attr(n, "name")

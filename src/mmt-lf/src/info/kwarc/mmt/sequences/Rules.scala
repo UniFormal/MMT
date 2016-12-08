@@ -7,12 +7,8 @@ import objects.Conversions._
 
 import info.kwarc.mmt.lf._
 
-import TypeSequences._
-import LFS._
+import Sequences._
 import Nat._
-
-// TODO upgrade natural numbers from examples to official theory; use that instead of urtheory nats
-// add proof rules for leq
 
 /* TODO inferring the type of ApplySpine(f, a_1,...,a_n) must work with entire argument sequence if some a_i is a sequence
  * current rules work if sequence arguments always provided as sequence term
@@ -27,7 +23,7 @@ import Nat._
 /** |- type ^ n UNIVERSE */
 object UniverseNType extends UniverseRule(ntype.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm match {
-      case TypeSequences.ntype(n) =>
+      case Sequences.ntype(n) =>
          solver.check(Typing(stack, n, OMS(nat))) //TODO already covered by precondition or universe rules?
    }
 }
@@ -35,7 +31,7 @@ object UniverseNType extends UniverseRule(ntype.path) {
 /** |- type ^ n : kind */
 object NTypeTerm extends InferenceRule(ntype.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
-      case TypeSequences.ntype(n) =>
+      case Sequences.ntype(n) =>
          if (!covered)
             solver.check(Typing(stack, n, OMS(nat)))
          Some(OMS(Typed.kind))
@@ -51,23 +47,22 @@ object EllipsisInfer extends InferenceRule(ellipsis.path, OfType.path) {
    private val low = "low"
    private val up  = "up"
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
-      case LFS.ellipsis(m, n, i, t) =>
+      case Sequences.ellipsis(n, i, t) =>
          val stackI = stack ++ i%OMS(nat)
-         val stackILU = stackI ++ i/low%leq(m, OMV(i)) ++ i/up%leq(OMV(i), n)
+         val stackILU = stackI ++ i/up%leq(OMV(i), n)
          val aOpt = solver.inferType(t)(stackILU , history)
          aOpt flatMap {a =>
             if (a == OMS(Typed.ktype)) {
-               val length = if (m == natlit(1)) n else succ(minus(n,m)) // optimize n-m+1 ---> n 
-               Some(ntype(length))
+               Some(ntype(n))
             } else {
                val ok = covered || {
                   // generated variables i/low and i/up may not appear in inferred type
-                  !a.freeVars.exists(x => x == i/low || x == i/up) &&
+                  !a.freeVars.contains(i/up) &&
                   // inferred types must actually by types
                   solver.check(Typing(stackI, a, OMS(Typed.ktype)))
                }
                if (ok)
-                  Some(ellipsis(m,n,i,a))
+                  Some(ellipsis(n,i,a))
                else
                   // TODO error message?
                   None
@@ -84,7 +79,7 @@ object EllipsisInfer extends InferenceRule(ellipsis.path, OfType.path) {
  */
 object FlatSeqInfer extends InferenceRule(flatseq.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
-      case LFS.flatseq(ts@_*) =>
+      case Sequences.flatseq(ts@_*) =>
          val tsI = ts map {t => solver.inferType(t, covered).getOrElse(return None)}
          Some(flatseq(tsI:_*))
       case _ => None
@@ -107,18 +102,18 @@ object FlatSeqInfer extends InferenceRule(flatseq.path, OfType.path) {
  */
 object IndexInfer extends InferenceRule(index.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
-      case LFS.index(s, at) =>
+      case Sequences.index(s, at) =>
          if (!covered)
            solver.check(Typing(stack, at, OMS(Nat.nat)))
          val sTOpt = solver.inferType(s)
          sTOpt flatMap {
-            case TypeSequences.ntype(n) =>
-               if (covered || Length.checkWithin(solver)(OMS(one), at, n))
+            case Sequences.ntype(n) =>
+               if (covered || Length.checkBelow(solver)(at, n))
                   Some(OMS(Typed.ktype))
                else
                   None
-            case LFS.ellipsis(m,n,i,a) =>
-               if (covered || Length.checkWithin(solver)(OMS(one), at, n))
+            case Sequences.ellipsis(n,i,a) =>
+               if (covered || Length.checkBelow(solver)(at, n))
                   Some(a ^? (i -> at))
                else
                   None
@@ -137,17 +132,16 @@ object IndexInfer extends InferenceRule(index.path, OfType.path) {
  *  applicable only if m and n simplify to literals
  */
 object EllipsisTypeCheck extends TypingRule(ellipsis.path) {
-  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) = {
-    val equalLengthChecked = Length.checkEqual(solver, tm, tp)
-    if (!equalLengthChecked) {
-      // TODO delay
+  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
+    val equalLength = Length.checkEqual(solver, tm, tp).getOrElse {
+      ???// TODO delay
     }
-    val LFS.ellipsis(m, n, i, a) = tp
-    val mS = solver.simplify(m)
+    if (!equalLength) return false
+    val Sequences.ellipsis(n, i, a) = tp
     val nS = solver.simplify(n)
-    (mS,nS) match {
-      case (Nat.natlit(mI),Nat.natlit(nI)) =>
-        (mI to nI) forall {iI =>
+    nS match {
+      case Nat.natlit(nI) =>
+        (BigInt(0) until nI) forall {iI =>
           val iL = natlit(iI)
           solver.check(Typing(stack, index(tm, iL), a ^? (i -> iL)))
         }
@@ -167,17 +161,18 @@ object EllipsisTypeCheck extends TypingRule(ellipsis.path) {
  */
 object EllipsisEqualityCheck extends TypeBasedEqualityRule(Nil, ellipsis.path) {
   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
-    val equalLengthChecked = Length.checkEqual(solver,tm1,tp) && Length.checkEqual(solver,tm2,tp)
-    if (!equalLengthChecked) {
-      ??? // TODO delay
+    val equalLength = List(tm1,tm2).map {tm => Length.checkEqual(solver,tm,tp).getOrElse {
+       ??? // TODO delay
+    }}
+    if (equalLength contains false) {
+      return Some(false)
     }
     // check type of each element
-    val LFS.ellipsis(m, n, i, a) = tp
-    val mS = solver.simplify(m)
+    val Sequences.ellipsis(n, i, a) = tp
     val nS = solver.simplify(n)
-    (mS,nS) match {
-      case (Nat.natlit(mI),Nat.natlit(nI)) =>
-        val res = (mI to nI) forall {iI =>
+    nS match {
+      case Nat.natlit(nI) =>
+        val res = (BigInt(0) until nI) forall {iI =>
           val iL = natlit(iI)
           solver.check(Equality(stack, index(tm1, iL), index(tm2, iL), Some(a ^? (i -> iL))))
         }
@@ -192,24 +187,24 @@ object EllipsisEqualityCheck extends TypeBasedEqualityRule(Nil, ellipsis.path) {
  */
 object IndexCompute extends ComputationRule(index.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
-    val LFS.index(s,at) = tm
+    val Sequences.index(s,at) = tm
     at match {
       case Nat.natlit(n) =>
         s match {
-          case LFS.ellipsis(m,n,i,t) =>
+          case Sequences.ellipsis(n,i,t) =>
             if (!covered) {
-               Length.checkWithin(solver)(m,at,n)
+               Length.checkBelow(solver)(at,n)
             }
-            val tS = t ^? (i -> minus(plus(m,at), OMS(one)))
+            val tS = t ^? (i -> at)
             Some(tS)
-          case LFS.flatseq(as@_*) =>
+          case Sequences.flatseq(as@_*) =>
             if (!covered) {
-              if (n == 0 || n>as.length) {
+              if (n>=as.length) {
                 solver.error("index out of bounds: " + at)
                 None
               }
             }
-            Some(as(n.toInt-1))
+            Some(as(n.toInt))
           case _ => None
         }
       case _ => None
@@ -256,23 +251,11 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
    /** flattens an argument sequence */
    private def applyList(tms: List[Term])(implicit solver: CheckingCallback, stack: Stack, history: History): List[Term] = {
      tms.flatMap {
-        case TypeSequences.ntype(n) =>
-            val nS = solver.simplify(n)
-            nS match {
-              case Nat.natlit(nL) =>
-                (1 to nL.toInt).toList.map(_ => OMS(Typed.ktype))
-              case _ => List(ntype(nS)) 
-            }
-        case LFS.ellipsis(m, n, i, t) =>
-            val mS = solver.simplify(m)
-            val nS = solver.simplify(n)
-            (mS,nS) match {
-               case (Nat.natlit(mL),Nat.natlit(nL)) =>
-                  ellipsisToList(mL,nL,i, t)
-               case _ =>
-                  List(ellipsis(mS,nS,i,t))
-             }
-        case LFS.flatseq(ts@_*) => ts
+        case Sequences.ntype(Nat.natlit(n)) =>
+           (BigInt(1) to n).toList.map(_ => OMS(Typed.ktype))
+        case Sequences.ellipsis(Nat.natlit(n), i, t) =>
+            ellipsisToList(n, i, t)
+        case Sequences.flatseq(ts@_*) => ts
         case a => List(a)
       }
    }
@@ -285,18 +268,18 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
         vdS match {
           case VarDecl(name, Some(t), dfs, _) =>
             t match {
-               case TypeSequences.ntype(Nat.natlit(n)) =>
-                  val types = (1 to n.toInt).toList.map(_ => OMS(Typed.ktype))
-                  val (vds,sub) = seqVarToList(name, 1, types, dfs)
+               case Sequences.ntype(Nat.natlit(n)) =>
+                  val types = (BigInt(0) until n).toList.map(_ => OMS(Typed.ktype))
+                  val (vds,sub) = seqVarToList(name, types, dfs)
                   subs = subs ++ sub
                   vds
-               case LFS.ellipsis(Nat.natlit(m),Nat.natlit(n),i,a) =>
-                  val types = ellipsisToList(m,n,i,a)
-                  val (vds, sub) = seqVarToList(name, m, types, dfs)
+               case Sequences.ellipsis(Nat.natlit(n),i,a) =>
+                  val types = ellipsisToList(n,i,a)
+                  val (vds, sub) = seqVarToList(name, types, dfs)
                   subs = subs ++ sub
                   vds
-               case LFS.flatseq(tps@_*) =>
-                  val (vds, sub) = seqVarToList(name, 1, tps.toList, dfs)
+               case Sequences.flatseq(tps@_*) =>
+                  val (vds, sub) = seqVarToList(name, tps.toList, dfs)
                   subs = subs ++ sub
                   vds
                case _ =>
@@ -312,17 +295,17 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
    }
 
    /** turns an ellipsis whose bounds normalizes to a literal into a list of Terms */
-   private def ellipsisToList(m: BigInt, n: BigInt, i: LocalName, t: Term): List[Term] =
-      (m.toInt to n.toInt).toList.map(x => t ^? (i -> Nat.natlit(x)))
+   private def ellipsisToList(n: BigInt, i: LocalName, t: Term): List[Term] =
+      (BigInt(0) until n).toList.map(x => t ^? (i -> Nat.natlit(x)))
 
    /**
     * turns a sequence variable (whose type is a sequence of types) into a variable sequence
     * also returns the substitution that maps the sequence variable to the variable sequence
     */
-   private def seqVarToList(x: LocalName, from: BigInt, tps: List[Term], df: Option[Term]): (List[VarDecl],Sub) = {
-      val vds = (0 until tps.length).toList.map {i =>
-         val name = x / (from+i).toString
-         VarDecl(name, Some(tps(i)), None, None)
+   private def seqVarToList(x: LocalName, tps: List[Term], df: Option[Term]): (List[VarDecl],Sub) = {
+      val vds = (BigInt(0) until tps.length).toList.map {i =>
+         val name = x / i.toString
+         VarDecl(name, Some(tps(i.toInt)), None, None)
       }
       val vars = flatseq(vds.map(vd => OMV(vd.name)):_*) 
       (vds, x -> vars)

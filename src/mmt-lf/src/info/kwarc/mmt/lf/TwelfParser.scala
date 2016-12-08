@@ -975,68 +975,6 @@ class TwelfParser extends Parser(new NotationBasedParser) {
       return (varDecl, endsAt + 1)
     }
 
-
-  /** reads a pattern declaration.
-     * @param start the position of the initial % from %pattern
-     * @param parent the parent theory
-     * @return position after the block
-     * @throws SourceError for syntactical errors */
-   private def crawlPatternDeclaration(start: Int, parent: Theory) : Int =
-   {
-     //var domain : Option[Term] = None
-     //var isImplicit : Boolean = false
-
-     val oldComment = keepComment
-
-     var i = skipws(crawlKeyword(start, "%pattern"))
-
-     // parse the name
-     val (name, positionAfter) = crawlIdentifier(i)
-     i = positionAfter
-     i = skipwscomments(i)
-     val patternMPath = parent.path / name
-     
-     // skip over '='
-     i = expectNext(i, "=")
-     i += "=".length
-     i = skipwscomments(i)
-
-     val (parameterContext, posAfter) = crawlParameterList(i, patternMPath)
-     i = posAfter
-     
-     // go to '{'
-     i = expectNext(i, "{")
-
-     // parse the pattern body
-     val (body, posAfterPatternBody) = crawlPatternBody(i, patternMPath, parameterContext)
-     i = expectNext(posAfterPatternBody, "}")
-     i = skipwscomments(i+1)
-         // read the optional notation
-
-    var patternNotation = new NotationContainer
-    if (flat.codePointAt(i) == '#') {
-      i += 1  // jump over '#'
-      i = skipwscomments(i)
-      val (not, posAfter) = crawlNotation(i, List("."), parent.path ? name)
-      addSourceRef(not, i, posAfter - 1)
-      patternNotation.parsingDim.set(not)
-      i = posAfter
-      i = skipwscomments(i)
-    }
-
-     val endsAt = expectNext(i, ".")
-
-     val pattern = new Pattern(parent.toTerm, LocalName(name), parameterContext, body, patternNotation)
-     // add the semantic comment and source reference
-     addSemanticComment(pattern, oldComment)
-     addSourceRef(pattern, start, endsAt)
-
-     // add the pattern to the parent theory
-     add(pattern)
-
-     return endsAt + 1
-   }
-
    private def resolveAssignmentName(home: Term, name: LocalName) = {
       controller.globalLookup.resolve(home, name) match {
           case Some(ce: Constant) => Some(ComplexStep(ce.parent) / ce.name)
@@ -1194,10 +1132,6 @@ class TwelfParser extends Parser(new NotationBasedParser) {
       else if (flat.startsWith("%struct", i)) {
         // read structure declaration
         i = crawlStructureDeclaration(i, parent)
-      }
-      else if (flat.startsWith("%pattern", i)) {
-        // read pattern declaration
-        i = crawlPatternDeclaration(i, parent)
       }
       else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
         i = skipAfterDot(i)
@@ -1527,16 +1461,6 @@ class TwelfParser extends Parser(new NotationBasedParser) {
         i = positionAfter
         i = expectNext(i, ".") + 1
       }
-      else if (flat.startsWith("%instance", i)) {
-        // read pattern instance
-        i = skipws(crawlKeyword(i, "%instance"))
-        val meta = parent.meta.getOrElse(throw TextParseError(toPos(i), "instance declaration reuqires meta-theory") )
-        val (name, positionAfter) = crawlIdentifier(i)
-        i = positionAfter
-        i = skipwscomments(i)
-        val pattern = meta ? name
-        i = crawlInstanceDeclaration(i, parent.path, pattern)
-      }
       else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
         i = skipAfterDot(i)
       }
@@ -1550,46 +1474,4 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     }
     return i
   }
-  
-    /** 
-     * reads a instance declaration.
-     * @param start the position of the initial % from %instance
-     * @param parent the parent theory
-     * @return position after the block/
-     * @throws SourceError for syntactical errors
-     * example instance declaration syntax
-     *   (%instance pattern) name arg1 ... argn
-     *   (%pattern) name arg1 ... argn
-     */
-   private def crawlInstanceDeclaration(start: Int, parent: MPath, pattern: GlobalName) : Int =
-   {
-     var i = start
-     val oldComment = keepComment
-     // parse instance name
-     val (n, positionAfter) = crawlIdentifier(i)
-     val nameI = LocalName(n)
-     i = positionAfter
-     i = skipwscomments(i)
-     val instancePath = parent ? nameI     
-     val (t,posAfter) = if (flat.charAt(i) != '.') {
-        crawlTerm(i, Nil, Nil, instancePath $ TypeComponent, Context(parent))
-     }
-     else
-        (OMS(pattern), i)
-     val matches = controller.pragmatic.mostPragmatic(t) match {
-        case OMA(OMID(`pattern`), args) => args
-        case OMID(`pattern`) => Nil
-        case p : OMID => List(p)
-        case f : OMA => List(f)
-        case _ => { println(t.toString())
-        throw TextParseError(toPos(i), "not an instance declaration for pattern " + pattern)}
-     }
-     i = posAfter
-     val endsAt = expectNext(i, ".")
-     // add the pattern instance to the parent theory           
-      val instance = new Instance(OMMOD(parent), nameI, pattern, matches)
-      add(instance)
-     
-      return endsAt + 1
-   } 
 }

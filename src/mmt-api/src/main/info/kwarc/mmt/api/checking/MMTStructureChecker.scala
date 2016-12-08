@@ -13,6 +13,18 @@ import opaque._
 
 import objects.Conversions._
 
+/** variant of CheckingEnvironment that carries around more structure */
+class ExtendedCheckingEnvironment(val ce: CheckingEnvironment, val objectChecker: ObjectChecker, val rules: RuleSet, p: Path) {
+  def pCont(q: Path) {
+    ce.reCont(RefersTo(q, p))
+  }
+
+  def errorCont(e: Error) {
+    ce.errorCont(e)
+  }
+}
+
+
 /** A StructureChecker traverses structural elements and checks them structurally.
   *
   * Deriving classes may override unitCont and reCont to customize the behavior.
@@ -28,17 +40,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   private lazy val extman = controller.extman
   private implicit lazy val content = controller.globalLookup
   override val logPrefix = "checker"
-
-  /** variant of CheckingEnvironment that carries around more structure */
-  private class Environment(val ce: CheckingEnvironment, val rules: RuleSet, p: Path) {
-    def pCont(q: Path) {
-      ce.reCont(RefersTo(q, p))
-    }
-
-    def errorCont(e: Error) {
-      ce.errorCont(e)
-    }
-  }
 
   /**
     * checks a StructuralElement
@@ -88,7 +89,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     */
   private def check(context: Context, e: StructuralElement)(implicit ce: CheckingEnvironment) {
     val rules = RuleSet.collectRules(controller, context)
-    implicit val env = new Environment(ce, rules, e.path)
+    implicit val env = new ExtendedCheckingEnvironment(ce, objectChecker, rules, e.path)
     val path = e.path
     log("checking " + path + " using " + rules.toString)
     e match {
@@ -129,6 +130,16 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       //TODO check all declarations, components? currently done in each OpaqueChecker
       case r: NRef =>
         check(context, controller.get(r.target))
+      case dd: DerivedDeclaration =>
+        val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
+        sfOpt match {
+          case None =>
+            env.errorCont(InvalidElement(dd, s"structural feature ${dd.feature} not registered"))
+          case Some(sf) =>
+            val conInner = sf.getInnerContext(dd)
+            check(context ++ conInner, dd.module)
+            sf.check(dd)
+        }
       case nm: NestedModule =>
         check(context, nm.module)
       case t: DefinedTheory =>
@@ -300,7 +311,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   }
   
   /** auxiliary method of check */
-  private def checkElementBegin(e : ContainerElement[_], context : Context)(implicit env: Environment) {
+  private def checkElementBegin(e : ContainerElement[_], context : Context)(implicit env: ExtendedCheckingEnvironment) {
     val rules = env.rules
     implicit val ce = env.ce
     val path = e.path
@@ -325,7 +336,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   }
 
   /** auxiliary method of check */
-  private def checkElementEnd(e: ContainerElement[_], context: Context)(implicit env: Environment) {
+  private def checkElementEnd(e: ContainerElement[_], context: Context)(implicit env: ExtendedCheckingEnvironment) {
     val rules = env.rules
     implicit val ce = env.ce
     val path = e.path
@@ -359,7 +370,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @param t       the theory
     * @return the reconstructed theory
     */
-  private def checkTheory(context: Context, t: Term)(implicit env: Environment): Term = {
+  private def checkTheory(context: Context, t: Term)(implicit env: ExtendedCheckingEnvironment): Term = {
     t match {
       case OMPMOD(p, args) =>
         val thy = try {
@@ -400,7 +411,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @param codOpt  the codomain
     * @return the reconstructed morphism (with implicit morphisms inserted), its domain, and codomain
     */
-  private def checkMorphism(context: Context, m: Term, domOpt: Option[Term], codOpt: Option[Term])(implicit env: Environment): (Term, Term, Term) = {
+  private def checkMorphism(context: Context, m: Term, domOpt: Option[Term], codOpt: Option[Term])(implicit env: ExtendedCheckingEnvironment): (Term, Term, Term) = {
     val dom = domOpt orElse Morph.domain(m)(content) getOrElse {
       throw InvalidObject(m, "cannot infer domain of morphism")
     }
@@ -468,7 +479,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   /**
     * special case of checkMorphism, where the morphism is checked relative to its codomain
     */
-  private def checkRealization(context: Context, r: Term, dom: Term)(implicit env: Environment) =
+  private def checkRealization(context: Context, r: Term, dom: Term)(implicit env: ExtendedCheckingEnvironment) =
     checkMorphism(context, r, Some(dom), Some(TheoryExp.empty))
 
   /**
@@ -478,7 +489,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @param t       the term
     * @return the reconstructed term
     */
-  private def checkTermTop(context: Context, t: Term)(implicit env: Environment): (Term, Boolean) = {
+  private def checkTermTop(context: Context, t: Term)(implicit env: ExtendedCheckingEnvironment): (Term, Boolean) = {
     env.ce.errorCont.mark
     val tR = checkTerm(context, t)
     (tR, env.ce.errorCont.noErrorsAdded)
@@ -492,7 +503,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @return the reconstructed term
     */
   //TODO make more reusable (maybe by moving to RuleBasedChecker?)
-  private def checkTerm(context: Context, s: Term)(implicit env: Environment, topterm : Term = s): Term = {
+  private def checkTerm(context: Context, s: Term)(implicit env: ExtendedCheckingEnvironment, topterm : Term = s): Term = {
     s match {
       case OMMOD(p) =>
         val mOpt = content.getO(p)
@@ -581,7 +592,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @return the reconstructed context
     *         if context is valid, then this succeeds iff context ++ con is valid
     */
-  private def checkContext(context: Context, con: Context)(implicit env: Environment): Context = {
+  private def checkContext(context: Context, con: Context)(implicit env: ExtendedCheckingEnvironment): Context = {
     con.mapVarDecls { case (c, vd) =>
       val currentContext = context ++ c
       vd match {
@@ -620,7 +631,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @param allowPartial if true, do not require totality of subs
     * @return the reconstructed substitution
     */
-  private def checkSubstitution(context: Context, subs: Substitution, from: Context, to: Context, allowPartial: Boolean)(implicit env: Environment): Substitution = {
+  private def checkSubstitution(context: Context, subs: Substitution, from: Context, to: Context, allowPartial: Boolean)(implicit env: ExtendedCheckingEnvironment): Substitution = {
     // collect all names to be mapped
     var fromDomain = from.getDomain
     var subsDomain = subs.asContext.getDomain
@@ -683,7 +694,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   }
 
   /** special case of checkSubstitution for total substitutions into the empty context */
-  private def checkSubstitutionRealization(context: Context, subs: Substitution, from: Context)(implicit env: Environment) =
+  private def checkSubstitutionRealization(context: Context, subs: Substitution, from: Context)(implicit env: ExtendedCheckingEnvironment) =
     checkSubstitution(context, subs, from, Context(), false)
 }
 

@@ -194,17 +194,6 @@ class XMLReader(controller: Controller) extends Logger {
          add(d, md)
       }
       
-      def doPat(name : LocalName, parOpt : Option[Node], con : Node, xmlNotation : NodeSeq) {
-    	  log("pattern " + name.toString + " found")
-    	  val pr = parOpt match {
-    	 	  case Some(par) => Context.parse(par, nsMap)
-    	 	  case None      => Context()
-    	  }
-    	  val cn = Context.parse(con, nsMap)
-        val notation = NotationContainer.parse(xmlNotation, home ? name)
-    	  val p = new Pattern(homeTerm, name, pr, cn, notation)
-    	  addDeclaration(p)
-      }
       val name = LocalName.parse(xml.attr(node,"name"), nsMap)
       val alias = stringToList(xml.attr(node, "alias")) map {a =>
          LocalName.parse(a)
@@ -314,7 +303,7 @@ class XMLReader(controller: Controller) extends Logger {
          case <parameters>{parN}</parameters> =>
             val par = Context.parse(parN, nsMap)
             body match {
-               case d: DeclaredTheory => d.parameters = par
+               case d: DeclaredTheory => d.paramC.set(par)
                case _ => throw ParseError("parameters outside declared theory")
             }
          case <derived>{body @_*}</derived> =>
@@ -332,29 +321,6 @@ class XMLReader(controller: Controller) extends Logger {
                   readInModule(home / name, nsMap, dd.module, d)
                }
             }
-         //TODO remove patterns and instances
-         case <pattern>{ch @_*}</pattern> => 
-           log("pattern with name " + name + " found")
-           <pattern> {ch.map(xml.trimOneLevel)} </pattern> match {
-             case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
-                log("pattern with name " + name + " found")
-                doPat(name, Some(params), decls, Nil)
-             case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations><notation>{ns @_*}</notation></pattern> =>
-                log("pattern with name " + name + " found")
-                doPat(name, Some(params), decls, ns)
-             case <pattern><declarations>{decls}</declarations></pattern> =>
-                log("pattern with name " + name + " found")
-                doPat(name, None, decls, Nil)
-             case <pattern><declarations>{decls}</declarations><notation>{ns @ _*}</notation></pattern> =>
-                log("pattern with name " + name + " found")
-                doPat(name, None, decls, ns)
-           }
-         case <instance>{ns @ _*}</instance> =>
-            val p = xml.attr(symbol,"pattern")
-         	log("instance " + name.toString + " of pattern " + p + " found")
-         	val args = ns map (Obj.parseTerm(_, nsMap))
-            val inst = new Instance(homeTerm,name,Path.parseS(p,nsMap),args.toList)
-            addDeclaration(inst)
          case scala.xml.Comment(_) =>
          case n if Utility.trimProper(n).isEmpty => //whitespace node => nothing to do 
          case _ => throw ParseError("symbol level element expected: " + symbol)

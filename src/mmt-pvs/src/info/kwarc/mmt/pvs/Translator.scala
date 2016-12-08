@@ -205,7 +205,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
     case formal_type_decl(named,nonempty) =>
       state.unknowns = 0
       val v = VarDecl(doName(named.named.id),Some(PVSTheory.tp.term),None,None)
-      state.th.parameters = state.th.parameters ++ v
+      state.th.paramC.set(state.th.parameters ++ v)
       if (nonempty.nonempty_p && nonempty.contains.isDefined) {
         state.th.add(Constant(state.th.toTerm,newName("INTERNAL_Assumption"),Nil,Some(
           state.bindUnknowns(PVSTheory.is_nonempty(OMV(v.name),doExprAs(nonempty.contains.get,OMV(v.name))))),
@@ -221,7 +221,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       state.unknowns = 0
       val actsup = doType(sup)
       val v = VarDecl(name,Some(PVSTheory.tp.term),None,None)
-      state.th.parameters = state.th.parameters ++ v
+      state.th.paramC.set(state.th.parameters ++ v)
       if (nonempty.nonempty_p && nonempty.contains.isDefined) {
         state.th.add(Constant(state.th.toTerm,newName("INTERNAL_Assumption"),Nil,Some(
           state.bindUnknowns(PVSTheory.is_nonempty(OMV(v.name),doExprAs(nonempty.contains.get,OMV(v.name))))),
@@ -249,7 +249,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       state.unknowns = 0
       val fulltp = doType(tp._internal)
       val v = VarDecl(doName(id),Some(state.bindUnknowns(PVSTheory.expr(fulltp))),None,None)
-      state.th.parameters = state.th.parameters ++ v
+      state.th.paramC.set(state.th.parameters ++ v)
     case d : Decl => doDecl(d)(true)
     case _ =>
       println("TODO Formal: " + f.getClass + ": " + f)

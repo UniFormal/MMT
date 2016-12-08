@@ -6,8 +6,7 @@ import objects._
 
 import info.kwarc.mmt.lf._
 
-import TypeSequences._
-import LFS._
+import Sequences._
 import Nat._
 
 /** auxiliary functions for length-based operations on sequences */
@@ -21,13 +20,13 @@ object Length {
   def infer(solver: CheckingCallback, tm: Term)(implicit stack: Stack) : Option[Term] = {
     tm match {
       case Univ(_) => ONE
-      case ntype(l) => Some(l)
+      case Sequences.ntype(l) => Some(l)
       case Lambda(_,_,_) => ONE
       case Pi(_,_,_) => ONE
       case Apply(_,_) => ONE
-      case LFS.ellipsis(m,n,_,_) => Some(succ(minus(n,m)))
-      case LFS.flatseq(as @ _*) => Some(natlit(as.length))
-      case LFS.index(_,_) => ONE
+      case Sequences.ellipsis(n,_,_) => Some(n)
+      case Sequences.flatseq(as @ _*) => Some(natlit(as.length))
+      case Sequences.index(_,_) => ONE
       case OMS(p) => ONE
       case OMV(x) => (solver.outerContext++stack.context)(x).tp match {
         case Some(t) => infer(solver,t)
@@ -39,18 +38,19 @@ object Length {
     }
   }
 
-  /** check that two expressions have the same length by calling an equality check
-   *  @return false if the lengths could not be compared
+  /** check |tm1| = |tm2| for two sequences by calling an equality check on the length
+   *  @return the result, if a check was possible
    */
   //TODO can we partially solve an unknown if one term has no length?
-  def checkEqual(solver: CheckingCallback, tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean = {
-    val l1 = Length.infer(solver, tm1) getOrElse {return false}
-    val l2 = Length.infer(solver, tm2) getOrElse {return false}
-    solver.check(Equality(stack, l1, l2, Some(OMS(nat))))
+  def checkEqual(solver: CheckingCallback, tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+    val l1 = Length.infer(solver, tm1) getOrElse {return None}
+    val l2 = Length.infer(solver, tm2) getOrElse {return None}
+    val r = solver.check(Equality(stack, l1, l2, Some(OMS(nat))))
+    Some(r)
   }
   
-  def checkWithin(solver: CheckingCallback)(low: Term, t: Term, up: Term)(implicit stack: Stack, history: History): Boolean = {
-      solver.check(Inhabited(stack, leq(low, t))) &&
+  /** check t <= up for natural numbers */
+  def checkBelow(solver: CheckingCallback)(t: Term, up: Term)(implicit stack: Stack, history: History): Boolean = {
       solver.check(Inhabited(stack, leq(t, up))) 
-   }
+  }
 }

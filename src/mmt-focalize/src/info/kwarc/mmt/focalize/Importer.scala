@@ -106,7 +106,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
               modInfos ::= SpeciesParameter(nM)
               VarDecl(nM, Some(tpM), None, None)
            }
-           thy.parameters = parsM
+           thy.paramC.set(parsM)
            decls foreach {d =>
              val (ii, dM) = applyDec(thy, d)
              dM foreach {d =>

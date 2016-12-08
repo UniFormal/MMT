@@ -46,7 +46,8 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
      if (ElaboratedElement.is(t))
        return
      try {
-        t.getDeclarations.foreach {d => flattenDeclaration(t, d)}
+        val rules = RuleSet.collectRules(controller, Context(t.path))
+        t.getDeclarations.foreach {d => flattenDeclaration(t, d, Some(rules))}
         t.meta foreach {mt =>
           val mtThy = lup.getO(mt) match {
             case Some(d: DeclaredTheory) => flatten(d)
@@ -59,9 +60,12 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
   }
 
   /** adds elaboration of d to parent */
-  private def flattenDeclaration(parent: DeclaredTheory, dOrig: Declaration) {
+  private def flattenDeclaration(parent: DeclaredTheory, dOrig: Declaration, rulesOpt: Option[RuleSet] = None) {
     if (ElaboratedElement.is(dOrig))
       return
+    lazy val rules = rulesOpt.getOrElse {
+      RuleSet.collectRules(controller, Context(parent.path))
+    }
     lazy val alreadyIncluded = parent.getIncludes
     val dElab: List[Declaration] = dOrig match {
       // plain includes: copy (only) includes
@@ -107,7 +111,10 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
            case Some(sf) =>
               val elab = sf.elaborate(parent, dd)
               dd.module.setOrigin(GeneratedBy(dd.path))
-              elab.getDeclarations
+              val simp = oS.toTranslator(rules)
+              elab.getDeclarations.map {d =>
+                d.translate(d.home, LocalName.empty, simp)
+              }
          }
       case _ =>
         Nil

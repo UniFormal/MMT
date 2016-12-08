@@ -10,6 +10,7 @@ import presentation._
 import frontend._
 import utils._
 
+/*
 
 class PatternAssignment(val home : Term, val name : LocalName, val target : PatternExpression) extends Declaration {
    def toNode = <pattern name={name.toPath}>{getMetaDataNode}{target.toOBJNode}</pattern>
@@ -74,3 +75,5 @@ object Functor {
     null
   }
 }
+
+*/

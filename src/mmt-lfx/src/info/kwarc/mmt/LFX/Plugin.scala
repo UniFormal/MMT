@@ -5,7 +5,7 @@ import Subtyping._
 import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory, Module}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.checking.CheckingEnvironment
+import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.parser.{KeywordBasedParser, ParserExtension, ParserState, SourceRef}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{Arrow, Typed}
@@ -72,7 +72,7 @@ class SubtypeFeature extends StructuralFeature("Subtype") {
 
   }
   def modules(d: DerivedDeclaration): List[Module] = Nil
-  def check(d: DerivedDeclaration)(implicit env: CheckingEnvironment): Unit = {
+  def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
     if (!d.name.toString.startsWith("_")) throw GetError("Name of Subtype Declaration must start with '_'!")
   }
 }

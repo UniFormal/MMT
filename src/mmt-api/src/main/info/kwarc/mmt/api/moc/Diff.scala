@@ -109,40 +109,6 @@ object Differ {
     new StrictDiff(changes)
 	}
 	  
-  /**
-   * compares two patterns 
-   * @param old the first pattern
-   * @param nw the second pattern
-   * @return the (strict) diff representing the difference between old and nw 
-   */
-	private def comparePatterns(old : Pattern, nw : Pattern) : StrictDiff = {
-    var changes : List[StrictChange] = Nil
-
-    if (old.params != nw.params){
-      changes = UpdateComponent(old.path, ParamsComponent, Some(old.params), Some(nw.params)) :: changes
-    }
-
-    if (old.body != nw.body) {
-      changes = UpdateComponent(old.path, PatternBodyComponent, Some(old.body), Some(nw.body)) :: changes
-    }
-
-	  new StrictDiff(changes)
-	}
-	
-	/**
-   * compares two instances 
-   * @param old the first instance
-   * @param nw the second instance
-   * @return the (strict) diff representing the difference between old and nw 
-   */
-	private def compareInstances(old : Instance, nw : Instance) : StrictDiff = {
-     var changes : List[StrictChange] = Nil
-     if (old.tp != nw.tp) {
-	    changes = UpdateComponent(old.path, TypeComponent, Some(old.tp), Some(nw.tp)) :: changes
-	   }
-     new StrictDiff(changes)
-	}
-	
 	/**
    * compares two declarations 
    * @param old the first declaration
@@ -155,10 +121,6 @@ object Differ {
         compareConstants(o,n)
       case (o : Structure, n : Structure) =>
         compareStructures(o,n)
-      case (o : Pattern, n : Pattern) =>
-        comparePatterns(o,n)
-      case (o : Instance, n : Instance) =>
-        compareInstances(o,n)
     }
   }
 

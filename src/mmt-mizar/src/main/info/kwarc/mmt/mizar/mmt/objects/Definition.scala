@@ -9,6 +9,7 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
+import notations._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.lfs._
 
@@ -17,13 +18,9 @@ import objects.Conversions._
 import info.kwarc.mmt.mizar.mizar.translator._
 
 object Pattern {
+  //TODO home is not used
   def apply(home: Term, name : LocalName, params: Context, body : Context) = {
-     val thy = new DeclaredTheory(Mizar.MizarPatternsTh.doc, Mizar.MizarPatternsTh.name / name, None, params)
-     body mapVarDecls {case (con, vd) =>
-       val c = vd.toConstant(thy.path, con)
-       thy.add(c)
-     }
-     thy
+     patterns.Pattern(OMMOD(Mizar.MizarPatternsTh), name, params, body, NotationContainer())
   }
 }
 
