@@ -61,12 +61,10 @@ class Theory2LogicSyntax {
 	 */
 	def getDecls(sl : List[symbols.Declaration]) : List[Declaration] = {
 	  sl.mapPartial{
-	    case a : Pattern => {
-	      val name = a.name.toString
-	      val args = a.params.variables.toList.mapPartial{ v =>
-	        v.tp
-	      } 
-	      val ars = args.map{ q => head(q) }
+	    case Pattern(_,n,params,_) => {
+	      val name = n.toString
+	      val args = params.variables.toList.mapPartial {v => v.tp} 
+	      val ars = args.map {q => head(q)}
 	      Some(Declaration(name, ars))
 	    }
 	    case _ => None  
@@ -103,21 +101,13 @@ class Theory2LogicSyntax {
 	      case x => None // not FunType
 	    }
 	    // produce ConstantSymbol
-	    case a : Pattern => {
-	      
-	      
-	      val cos = a.body.variables.toList.mapPartial{ v =>
-	        	v.tp
-	      }
-	      
-	      val args = a.params.variables.toList.mapPartial{ v =>
-	    	  	v.tp
-	      } map {x => head(x)}
-	      
+	    case Pattern(home, name, params, body) => {
+	      val cos = body.getConstants.mapPartial{c => c.tp}
+	      val args = params.toList.mapPartial{v => v.tp} map {x => head(x)}
 	      
 	      val cs = cos mapPartial { x =>
 	        if (head(x) == cat) 
-	        	Some(ConstantSymbol(a.name.toString, head(x).toString,args))
+	        	Some(ConstantSymbol(name.toString, head(x).toString,args))
 	        else None
 	      }
 	      Some(cs)
