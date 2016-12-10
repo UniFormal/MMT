@@ -92,7 +92,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       modsM foreach (m => {
         val theory = new DeclaredTheory(m.parent,m.name,m.meta,m.parameters)
         controller add theory
-        m.getDeclarations foreach controller.add
+        m.getDeclarations foreach {controller.add(_)}
         controller simplifier theory
         doc add MRef(bt.narrationDPath, theory.path)
       })
