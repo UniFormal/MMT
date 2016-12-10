@@ -7,9 +7,18 @@ import uom._
 import utils.MyList.fromList
 
 object Common {
-   /** convenience function for recursively checking the judgement |- a: type */
-   def isType(solver: Solver, a: Term)(implicit stack: Stack, history: History) =
-      solver.check(Typing(stack, a, OMS(Typed.ktype), Some(OfType.path)))(history + "type of bound variable must be a type")
+   /** checks that a type can be quantified over
+    *  to maximize extensibility, we allow a bound variables x:a if a:U:kind for some U
+    *
+    *  in plain LF, this is only possible if U=type, i.e., if a:type
+    *  other frameworks may want to reuse the LF typing rules with more options for U
+    */
+   def isTypeLike(solver: Solver, a: Term)(implicit stack: Stack, history: History) = {
+     val h = history + "checking the size of the type of the bound variable"
+     solver.inferTypeAndThen(a)(stack, h) {aT =>
+        solver.check(Typing(stack, aT, OMS(Typed.kind), Some(OfType.path)))(h)
+     }
+   }
 
    /** performs safe simplifications and variable transformation to force the argument to become a Pi
     * @param solver the Solver
@@ -58,7 +67,7 @@ object PiTerm extends FormationRule(Pi.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Pi(x,a,b) =>
-           if (!covered) isType(solver,a)
+           if (!covered) isTypeLike(solver,a)
            val (xn,sub) = Common.pickFresh(solver, x)
            solver.inferType(b ^? sub)(stack ++ xn % a, history) flatMap {bT =>
               if (bT.freeVars contains xn) {
@@ -80,7 +89,7 @@ object LambdaTerm extends IntroductionRule(Lambda.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Lambda(x,a,t) =>
-           if (!covered) isType(solver,a)
+           if (!covered) isTypeLike(solver,a)
            val (xn,sub) = Common.pickFresh(solver, x)
            solver.inferType(t ^? sub)(stack ++ xn % a, history) map {b => Pi(xn,a,b)}
         case _ => None // should be impossible
@@ -133,10 +142,7 @@ object PiType extends TypingRule(Pi.path) {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = {
       (tm,tp) match {
          case (Lambda(x1,a1,t),Pi(x2,a2,b)) =>
-            //checking of a1:type necessary because checkEquality does not check typing
-            //isType(solver,a1)
             solver.check(Equality(stack,a1,a2,None))(history+"domains must be equal")
-            // solver.checkTyping(a2,LF.ktype)(stack) is redundant after the above have succeeded, but checking it anyway might help solve variables
             val (xn,sub1) = Common.pickFresh(solver, x1)
             val sub2 = x2 / OMV(xn)
             solver.check(Typing(stack ++ xn % a2, t ^? sub1, b ^? sub2))(history + "type checking rule for Pi")

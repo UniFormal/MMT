@@ -20,10 +20,10 @@ object Length {
   def infer(solver: CheckingCallback, tm: Term)(implicit stack: Stack) : Option[Term] = {
     tm match {
       case Univ(_) => ONE
-      case Sequences.ntype(l) => Some(l)
       case Lambda(_,_,_) => ONE
       case Pi(_,_,_) => ONE
       case Apply(_,_) => ONE
+      case Sequences.rep(_,n) => Some(n)
       case Sequences.ellipsis(n,_,_) => Some(n)
       case Sequences.flatseq(as @ _*) => Some(natlit(as.length))
       case Sequences.index(_,_) => ONE
@@ -45,12 +45,12 @@ object Length {
   def checkEqual(solver: CheckingCallback, tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     val l1 = Length.infer(solver, tm1) getOrElse {return None}
     val l2 = Length.infer(solver, tm2) getOrElse {return None}
-    val r = solver.check(Equality(stack, l1, l2, Some(OMS(nat))))
+    val r = solver.check(Equality(stack, l1, l2, Some(OMS(nat))))(history.branch)
     Some(r)
   }
   
   /** check t <= up for natural numbers */
   def checkBelow(solver: CheckingCallback)(t: Term, up: Term)(implicit stack: Stack, history: History): Boolean = {
-      solver.check(Inhabited(stack, leq(t, up))) 
+      solver.check(Inhabited(stack, lessType(t, up)))(history.branch)
   }
 }
