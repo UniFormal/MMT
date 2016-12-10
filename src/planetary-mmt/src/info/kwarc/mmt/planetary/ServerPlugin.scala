@@ -211,7 +211,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       val reader = new XMLReader(controller)
       val bodyXML = scala.xml.XML.loadString(bodyS)
       val cont = controller //new Controller
-      reader.readDocument(dpath, bodyXML)(cont.add)
+      reader.readDocument(dpath, bodyXML)(cont.add(_))
       val doc : Document = cont.getDocument(dpath, dp => "doc not found at path " + dp)
       val rb = new StringBuilder()
       presenter.apply(doc)(rb)
