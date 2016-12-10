@@ -1,7 +1,7 @@
 <ACTIONS>
-	<ACTION NAME="mmt-browser-compile">
+	<ACTION NAME="mmt-browser-build">
 		<CODE>
-		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).compileActions.compileSelected(view, browser);
+		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).buildActions.buildSelected(view, browser);
 		</CODE>
 	</ACTION>
 </ACTIONS>

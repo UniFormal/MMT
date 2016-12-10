@@ -19,36 +19,16 @@
 		   wm.addDockableWindow("mmt-graphdockable");
 		</CODE>
 	</ACTION>
-	<ACTION NAME="mmt-compile">
+	<ACTION NAME="mmt-build">
 		<CODE>
-		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).compileActions().compileCurrent(view);
+		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).buildActions().buildCurrent(view);
 		</CODE>
 	</ACTION>
-	<ACTION NAME="mmt-show">
-		<CODE>
-		   info.kwarc.mmt.jedit.Hider.show(textArea);
-		</CODE>
-	</ACTION>
-	<ACTION NAME="mmt-hide">
-		<CODE>
-		   info.kwarc.mmt.jedit.Hider.hide(textArea);
-		</CODE>
-	</ACTION>
-	<ACTION NAME="mmt-hideCurrent">
-		<CODE>
-		   info.kwarc.mmt.jedit.Hider.hideCurrent(textArea);
-		</CODE>
-	</ACTION>
-	<ACTION NAME="mmt-makeHidable">
-		<CODE>
-		   info.kwarc.mmt.jedit.Hider.makeHidable(textArea);
-		</CODE>
-	</ACTION>
-	<ACTION NAME="mmt-hideshow">
-		<CODE>
-		   info.kwarc.mmt.jedit.Hider.hideshow(textArea);
-		</CODE>
-	</ACTION>
+    <ACTION NAME="mmt-buildopen">
+        <CODE>
+           jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).buildActions().buildOpen(view);
+        </CODE>
+    </ACTION>
 	<ACTION NAME="mmt-insert-US">
 		<CODE>
 		   info.kwarc.mmt.jedit.Inserter.insertUSorTab(textArea);

@@ -21,7 +21,7 @@ class MMTPlugin extends EBPlugin with Logger {
    val logPrefix = "jedit"
    val errorSource = new MMTErrorSource
 
-   val compileActions = new CompileActions(this)
+   val buildActions = new BuildActions(this)
 
    /** implements onNavigate hook in terms of the methods of MMTHyperlink */
    val mmtListener = new ChangeListener {

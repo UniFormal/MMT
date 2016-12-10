@@ -30,25 +30,20 @@ mmt-treedockable-show.label=Show Theory Tree
 mmt-refactordockable-show.label=Refactor theories
 mmt-graphdockable-show.label=Show Theory Graph
 mmt-dockable-show.label=Show Dockable
-mmt-compile.label=Build current buffer
+mmt-build.label=Build current buffer
+mmt-buildopen.label=Build open buffers
 mmt-insert-US.label=Insert Object Terminator (US)
 mmt-insert-RS.label=Insert Declaration Terminator (RS)
 mmt-insert-GS.label=Insert Module Terminator (GS)
-mmt-show.label=show hidable parts
-mmt-hide.label=hide hidable parts
-mmt-hideshow.label=toggle hidable parts
-mmt-makeHidable.label=make selection hidable
-mmt-hideCurrent.label=hide current
 
 # labels for actions defined in browser.actions.xml
-mmt-browser-compile.label=Build
+mmt-browser-build.label=Build
 
 # menu items for jEdit views
 plugin.info.kwarc.mmt.jedit.MMTPlugin.menu.label=MMT
 plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=\
-mmt-dockable-show mmt-treedockable-show mmt-refactordockable-show mmt-graphdockable-show mmt-compile \
+mmt-dockable-show mmt-treedockable-show mmt-refactordockable-show mmt-graphdockable-show mmt-build mmt-buildopen \
 - mmt-insert-US mmt-insert-RS mmt-insert-GS
-# - mmt-show mmt-hide mmt-hideshow mmt-hideCurrent mmt-makeHidable
 
 # menu items for file system browsers
 plugin.info.kwarc.mmt.jedit.MMTPlugin.browser-menu=mmt-browser-compile

@@ -5,32 +5,47 @@ import info.kwarc.mmt.api.archives.source
 import info.kwarc.mmt.api.utils._
 import org.gjt.sp.jedit._
 
-/** This class is factored out from MMTPlugin to structure the code better.
- * It collects all compilation-related functionality. */
-class CompileActions(mmtplugin: MMTPlugin) {
+/** This class collects all build-related functionality to be triggered by GUI button, jedit actions, etc.. */
+class BuildActions(mmtplugin: MMTPlugin) {
    private val errorSource = mmtplugin.errorSource
    private val controller = mmtplugin.controller
    private def log(msg: String) {controller.report("jedit-compile", msg)}
    
-   /** compiles a buffer or directory */
-   def compile(f: String) {
+   /** builds a file or directory */
+   def build(f: String) {
       val file = File(f)
-      implicit val errorCont = new ErrorListForwarder(errorSource, controller, file)
+      val errorCont = new ErrorListForwarder(errorSource, controller, file)
       errorCont.reset
       if (file.isFile) {
-         log("compiling buffer " + file)
+         log("build file " + file)
          try {
-            controller.build(file)
-         } catch {case e: Error => errorCont(e)}
+            controller.build(file)(errorCont)
+         } catch {
+           case e: Error => errorCont(e)
+         }
       }
    }
-   def compileCurrent(view: View) {
+
+   //TODO saving may trigger sidekick-parsing in which parsing and building happen at the same time totally confusing each other
+   private def saveAndBuild(view: View, buffer: Buffer) {
+      if (buffer.isDirty) {
+         buffer.save(view, null)
+         io.VFSManager.waitForRequests // wait until buffer is saved
+      }
+      build(buffer.getPath)   }
+   
+   /** saves and builds the current file of the current view */
+   def buildCurrent(view: View) {
       val buffer = view.getBuffer
-      buffer.save(view, null)
-      io.VFSManager.waitForRequests // wait until buffer is saved
-      compile(buffer.getPath)
+      saveAndBuild(view, buffer)
    }
-   def compileSelected(view: View, brw: browser.VFSBrowser) {
+   /** saves and builds the open files in the current view */
+   def buildOpen(view: View) {
+      val buffers = view.getBuffers
+      buffers.foreach {b => saveAndBuild(view, b)}
+   }
+   /** saves and build the file/folder currently selected in the the file browser */
+   def buildSelected(view: View, brw: browser.VFSBrowser) {
       val files = brw.getSelectedFiles
       files foreach {vfsfile =>
          val file = vfsfile.getPath
@@ -42,7 +57,7 @@ class CompileActions(mmtplugin: MMTPlugin) {
                io.VFSManager.waitForRequests // wait until buffer is saved
             }
          }
-         compile(file)
+         build(file)
       }
    }
 }

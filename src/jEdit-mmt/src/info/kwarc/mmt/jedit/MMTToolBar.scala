@@ -21,49 +21,49 @@ class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
   private def view = jEdit.getActiveView()
   
   private def init {
-    val insUS = Swing.Button("O") {
+    val insUS = Swing.Button("O", tooltip = "Inserts object delimiter (US)") {
        Inserter.insertUSorTab(view.getTextArea())     
     }
-    insUS.setToolTipText("Inserts object delimiter (US)")
-  
-    val insRS = Swing.Button("D") {
+    val insRS = Swing.Button("D", tooltip = "Inserts declaration delimiter (RS)") {
        Inserter.insertRSReturn(view.getTextArea())
     }
-    insRS.setToolTipText("Inserts declaration delimiter (RS)")
-    
-    val insGS = Swing.Button("M") {
+    val insGS = Swing.Button("M", tooltip = "Inserts module delimiter (GS)") {
        Inserter.insertGSReturn(view.getTextArea())
     }
-    insGS.setToolTipText("Inserts module delimiter (GS)")
   
-    val clrButton = Swing.Button("Clear") {
+    val buildButton = Swing.Button("Build", tooltip = "Builds current file") {
+      mmtp.buildActions.buildCurrent(view)
+    }
+    val buildOpenButton = Swing.Button("Build all", tooltip = "Builds all open files") {
+      mmtp.buildActions.buildOpen(view)
+    }
+
+    val clrButton = Swing.Button("Clear", tooltip = "Clears MMT memory") {
       controller.clear
     }
-    clrButton.setToolTipText("Clears MMT memory")
+
     val clrIMG = (new ImageIcon(this.getClass().getResource("/images/clear_button.png"))).getImage()
     val clrIMGs = clrIMG.getScaledInstance(16, 16, java.awt.Image.SCALE_SMOOTH )
     clrButton.setIcon(new ImageIcon(clrIMGs))
     
-    val clrFileButton = Swing.Button("Clear File") {
+    val clrFileButton = Swing.Button("Clear File", tooltip = "Clears current file from MMT memory") {
        val pd = sidekick.SideKickParsedData.getParsedData(view)
        pd.root.getUserObject match {
          case a: MMTElemAsset =>
             a.elem match {
                case d: documents.Document =>
-                 d.collectModules(controller) foreach {p => controller.delete(p)}
                  controller.delete(d.path)
                case _ =>
             }
          case _ =>
        }
     }
-    clrFileButton.setToolTipText("Clears current file from MMT memory")
 
-    val toolBar = new JToolBar("Symbol toolbar")
-    //toolBar.setFloatable(false)
     add(insUS)
     add(insRS)
     add(insGS)
+    add(buildButton)
+    add(buildOpenButton)
     add(clrButton)
     add(clrFileButton)
   }
