@@ -86,7 +86,7 @@ class FlatteningMWSExporter extends Exporter {
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
     try {
-      doc.collectModules(controller) collect {
+      doc.getModules(controller.globalLookup) collect {
         case _ =>
       }
     } catch {

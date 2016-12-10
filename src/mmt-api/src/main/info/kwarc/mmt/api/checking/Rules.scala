@@ -47,13 +47,16 @@ trait MaytriggerBacktrack {
 }
 
 /** super class of all rules primarily used by the [[Solver]] */
-trait CheckingRule extends SyntaxDrivenRule
+trait CheckingRule extends SyntaxDrivenRule {
+  /** may be thrown to indicate that the judgment that the rules was called on should be delayed */
+  case class DelayJudgment(msg: String) extends Throwable
+}
 
 object TypingRule {
    /**
     * may be thrown by a TypingRule to indicate that type of tm should be inferred and equated to tp 
     */
-   object SwitchToInference extends java.lang.Throwable
+  case object SwitchToInference extends Throwable
 }
 
 /** An TypingRule checks a term against a type.

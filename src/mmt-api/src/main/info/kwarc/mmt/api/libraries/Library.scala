@@ -658,9 +658,9 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
    * adds a declaration
    * @param e the added declaration
    */
-  def add(e: StructuralElement) {
+  def add(e: StructuralElement, afterOpt: Option[LocalName]) {
     log("adding " + e.path + " (which is a " + e.getClass.getName + ")")
-    val adder = new Adder(e)
+    val adder = new Adder(e, afterOpt)
     e match {
        case doc: Document if doc.root =>
           // special treatment for root documents, this case can't be detected by ChangeProcessor
@@ -683,8 +683,9 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
           }
         case t: DefinedTheory =>
           implicitGraph(t.df, t.toTerm) = OMIDENT(t.toTerm)
+        case dd: DerivedDeclaration =>
         case e: NestedModule =>
-          add(e.module)
+          add(e.module, None)
           implicitGraph(e.home, e.module.toTerm) = OMIDENT(e.home)
         case _ =>
         //TODO add equational axioms
@@ -696,13 +697,18 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
   }
 
   /** the bureaucracy of adding 'se' */
-  private class Adder(se: StructuralElement) extends ChangeProcessor {
+  private class Adder(se: StructuralElement, afterOpt: Option[LocalName]) extends ChangeProcessor {
      def errorFun(msg: String) = throw AddError(msg)
      def wrongType(exp: String) {errorFun("expected a " + exp)}
+     def checkNoAfter {
+       if (afterOpt.isDefined)
+         errorFun("adding after a declaration only allowed in containers")
+     }
      def run {
         apply(se.path)
      }
      def primitiveDocument(dp: DPath) = {
+        checkNoAfter
         se match {
            case doc: Document =>
               documents(dp) = doc
@@ -713,12 +719,13 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
      def otherNarrativeElement(doc: Document, ln: LocalName) = {
         se match {
            case ne: NarrativeElement =>
-              doc.add(ne)
+              doc.add(ne, afterOpt)
            case _ =>
               wrongType("narrative element")
         }
      }
      def primitiveModule(mp: MPath) = {
+        checkNoAfter
         se match {
            case mod: Module =>
               modules(mp) = mod
@@ -729,12 +736,13 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
      def otherContentElement(body: Body, ln: LocalName) = {
         se match {
            case d: Declaration =>
-              body.add(d)
+              body.add(d, afterOpt)
            case _ =>
               wrongType("declaration")
         }
      }
      def component(cp: CPath, cont: ComponentContainer) = {
+        checkNoAfter
         wrongType("content element") // should be impoosible
      }
   }
@@ -751,9 +759,17 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
     Deleter.apply(path)
   }
 
+  private val lib = this
   private object Deleter extends ChangeProcessor {
      def errorFun(msg: String) = throw DeleteError(msg)
      def primitiveDocument(dp: DPath) = {
+        // delete all modules of this document
+        documents.get(dp) foreach {doc =>
+          doc.getModules(lib).foreach {mp =>
+            primitiveModule(mp)
+          }
+        }
+        // delete the document
         documents -= dp
      }
      def otherNarrativeElement(doc: Document, ln: LocalName) = {
@@ -785,7 +801,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
   }
 
   /** almost the same as Adder; the only overrides are replacing "add" and "Add" with "update" and "Update" */
-  private class Updater(se: StructuralElement) extends Adder(se) {
+  private class Updater(se: StructuralElement) extends Adder(se, None) {
      override def errorFun(msg: String) = throw UpdateError(msg)
      override def otherNarrativeElement(doc: Document, ln: LocalName) = {
         se match {
@@ -841,8 +857,10 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
          getO(p.parent) foreach {
             se => se.getComponent(DefComponent) foreach {
                case df: TermContainer =>
-                  log("definiens needs recheck")
-                  df.setAnalyzedDirty
+                  if (df.isDefined) {
+                    log("definiens needs recheck")
+                    df.setAnalyzedDirty
+                  }
                case _ =>
             }
          }

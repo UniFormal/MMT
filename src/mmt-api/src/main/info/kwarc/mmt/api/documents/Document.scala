@@ -33,23 +33,20 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
   /** returns the list of children of the document (including narration) */
   def getDeclarations: List[NarrativeElement] = items
 
-  /** returns the list of modules declared in the document */
-  def getModulesResolved(lib: Lookup): List[Module] = items collect {
-    case r: MRef => lib.getModule(r.target)
-  }
- 
   /**
-   * @param controller Controller for looking up documents
-   * @return list of modules declared/referenced anywhere in this Document (depth first)
+   * @return list of modules declared in this Document or its children (depth first)
    */
-  def collectModules(controller: frontend.Controller): List[MPath] = items flatMap {
-    case d: Document => d.collectModules(controller)
+  def getModules(lib: Lookup): List[MPath] = items flatMap {
+    case d: Document => d.getModules(lib)
     case r: MRef => List(r.target)
-    case d: DRef => controller.get(d.target).asInstanceOf[Document].collectModules(controller)
+    case d: DRef => lib.get(d.target).asInstanceOf[Document].getModules(lib)
     case _: SRef => Nil
     case _ => Nil
   }
 
+  /** like getModules but resolves all modules */
+  def getModulesResolved(lib: Lookup): List[Module] = getModules(lib) map {mp => lib.getModule(mp)}
+ 
   def getMostSpecific(name: LocalName) : Option[(NarrativeElement, LocalName)] = {
      if (name.isEmpty) Some((this, LocalName.empty))
      else {

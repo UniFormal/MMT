@@ -122,7 +122,7 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
     dElab.reverseMap {e =>
        e.setOrigin(ElaborationOf(dOrig.path))
        log("flattening yields " + e.path)
-       parent.add(e, Some(dOrig.name))
+       controller.add(e, Some(dOrig.name))
     }
     if (dElab.isEmpty) ElaboratedElement.set(dOrig) else ElaboratedElement.setProperly(dOrig)
   }
@@ -157,7 +157,14 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
      }
   }
 
-  override def onAdd(c: StructuralElement): Unit = {
+  override def onAdd(c: StructuralElement) {
+    // this makes sure there are no cycles, i.e., elaboration triggering itself
+    // not sure if this is needed or even reasonable
+    c.getOrigin match {
+      case ElaborationOf(_) => return
+      case _ =>
+    }
+    
     val parent = c.parent match {
       case cp : ContentPath => controller.get(cp)
       case _ => return

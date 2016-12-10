@@ -274,14 +274,17 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
   * It is also possible to override the method buildDir to post process directory content.
   */
 abstract class TraversingBuildTarget extends BuildTarget {
+  
+  // ***************** abstract or overridable methods for configuring basic properties such as file extensions
+  
   /** the input dimension/archive folder */
   def inDim: ArchiveDimension
 
   /** the output archive folder */
   def outDim: ArchiveDimension
 
-  /** if true, multiple files/folders are built in parallel */
-  def parallel: Boolean = false
+  /** the name that is used for the special file representing the containing folder, empty by default */
+  protected val folderName = ""
 
   /** the file extension used for generated files, defaults to outDim, override as needed */
   def outExt: String = outDim match {
@@ -289,29 +292,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     case d => d.toString
   }
 
-  /** the name that is used for the special file representing the containing folder, empty by default */
-  protected val folderName = ""
-
-  protected def getOutFile(a: Archive, inPath: FilePath) = (a / outDim / inPath).setExtension(outExt)
-
-  protected def getTestOutFile(a: Archive, inPath: FilePath) =
-    (a / Dim("test", outDim.toString) / inPath).setExtension(outExt)
-
-  protected def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath / (folderName + "." + outExt)
-
-  protected def getOutPath(a: Archive, outFile: File) = outFile.toFilePath
-
-  protected def getErrorFile(a: Archive, inPath: FilePath): File =
-    FileBuildDependency(key, a, inPath).getErrorFile(controller)
-
-  def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
-
-  /** some logging for lmh */
-  protected def logResult(s: String) {
-    log(s, Some("result"))
-  }
-
-  /** there is no inExt, instead we test to check which files should be used;
+ /** there is no inExt, instead we test to check which files should be used;
     * this is often a test for the file extension
     *
     * This must be such that all auxiliary files are skipped.
@@ -331,7 +312,16 @@ abstract class TraversingBuildTarget extends BuildTarget {
   /** true by default; override to skip auxiliary directories */
   def includeDir(name: String): Boolean = true
 
-  /** the main abstract method that implementations must provide: builds one file
+  /** if true, multiple files/folders are built in parallel */
+  def parallel: Boolean = false
+
+
+  // ***************** the essential abstract or overridable methods for building
+  
+  /** estimate the [[BuildResult]] without building, e.g., to predict dependencies */
+  def estimateResult(bf: BuildTask): BuildSuccess = BuildResult.empty
+
+  /** the main abstract method for building one file
     *
     * @param bf information about input/output file etc
     */
@@ -347,31 +337,51 @@ abstract class TraversingBuildTarget extends BuildTarget {
     */
   def buildDir(bd: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult = BuildEmpty("nothing to be done")
 
-  /** abstract method to estimate the [[BuildResult]] without building, e.g., to predict dependencies */
-  def estimateResult(bf: BuildTask): BuildSuccess = BuildResult.empty
+  /// ***************** auxiliary methods for computing paths to output/error files etc.
+  
+  protected def getOutFile(a: Archive, inPath: FilePath) = (a / outDim / inPath).setExtension(outExt)
 
-  /** entry point for recursive building */
-  def build(a: Archive, up: Update, in: FilePath = EmptyPath) {
+  protected def getTestOutFile(a: Archive, inPath: FilePath) =
+    (a / Dim("test", outDim.toString) / inPath).setExtension(outExt)
+
+  protected def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath / (folderName + "." + outExt)
+
+  protected def getOutPath(a: Archive, outFile: File) = outFile.toFilePath
+
+  protected def getErrorFile(a: Archive, inPath: FilePath): File =
+    FileBuildDependency(key, a, inPath).getErrorFile(controller)
+
+  def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
+
+  /** auxiliary method for logging results */
+  protected def logResult(s: String) {
+    log(s, Some("result"))
+  }
+
+  // ***************** building (i.e., create build tasks and add them to build manager)
+  
+  /** delegates to build */
+  def build(a: Archive, up: Update, in: FilePath) {
     build(a, up, in, None)
   }
 
-  def build(a: Archive, up: Update, in: FilePath, errorCont: Option[ErrorHandler]) {
+  /** entry point for recursive building */
+  def build(a: Archive, up: Update, in: FilePath, errorCont: Option[ErrorHandler] = None) {
     val qts = makeBuildTasks(a, in, errorCont)
-    // TODO delete output (and error) file?
     controller.buildManager.addTasks(up, qts)
   }
 
   /** like build, but returns all build tasks without adding them to the build manager */
-  def makeBuildTasks(a: Archive, in: FilePath, errorCont: Option[ErrorHandler]): List[QueuedTask] = {
+  private def makeBuildTasks(a: Archive, in: FilePath, errorCont: Option[ErrorHandler]): List[QueuedTask] = {
     var tasks: List[QueuedTask] = Nil
-    buildAux(in, a, errorCont) { qt =>
+    makeBuildTasksAux(in, a, errorCont) { qt =>
       tasks ::= qt
     }
     tasks.reverse
   }
 
   /** recursive creation of [[BuildTask]]s */
-  private def buildAux(in: FilePath, a: Archive, eCOpt: Option[ErrorHandler])(cont: QueuedTask => Unit) {
+  private def makeBuildTasksAux(in: FilePath, a: Archive, eCOpt: Option[ErrorHandler])(cont: QueuedTask => Unit) {
     //build every file
     a.traverse[BuildTask](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case Current(inFile, inPath) =>
@@ -389,17 +399,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
     })
   }
 
-  private def makeHandler(a: Archive, inPath: FilePath, isDir: Boolean = false) = {
-    val errFileName = if (isDir) getFolderErrorFile(a, inPath)
-    else getErrorFile(a, inPath)
-    new ErrorWriter(errFileName, Some(report))
-  }
-
-  /** create a [[BuildTask]] from some if its components
+  /** create a single [[BuildTask]]
     *
     * @param eCOpt optional additional [[ErrorHandler]], errors are always written to errors dimension
     */
-  protected def makeBuildTask(a: Archive, inPath: FilePath, inFile: File,
+  private def makeBuildTask(a: Archive, inPath: FilePath, inFile: File,
                               children: Option[List[BuildTask]], eCOpt: Option[ErrorHandler]): BuildTask = {
     val errorWriter = makeHandler(a, inPath, children.isDefined)
     val errorCont = eCOpt match {
@@ -410,7 +414,66 @@ abstract class TraversingBuildTarget extends BuildTarget {
     new BuildTask(key, a, inFile, children, inPath, outFile, errorCont)
   }
 
-  def compareOutputAndTest(testMod: TestModifiers, bt: BuildTask) {
+  /** makes a build task for a single file (ignoring built children) or directory */
+  // TODO: public because it is called by BuildQueue on dependencies; clean that up
+  def makeBuildTask(a: Archive, inPath: FilePath, children: List[BuildTask] = Nil): BuildTask = {
+    val inFile = a / inDim / inPath
+    val isDir = inFile.isDirectory
+    makeBuildTask(a, inPath, inFile, if (isDir) Some(children) else None, None)
+  }
+
+  /** auxiliary function to create an error handler */
+  private def makeHandler(a: Archive, inPath: FilePath, isDir: Boolean = false) = {
+    val errFileName = if (isDir) getFolderErrorFile(a, inPath)
+    else getErrorFile(a, inPath)
+    new ErrorWriter(errFileName, Some(report))
+  }
+ 
+  // ******************* Actual building (i.e., when the build manager calls a build task)
+  
+  // TODO the methods in this section should be revised together with a revision of the BuildQueue
+  
+  /** the entry point for build managers */
+  def checkOrRunBuildTask(deps: Set[Dependency], bt: BuildTask, up: Update): BuildResult = {
+    var res: BuildResult = BuildEmpty("up-to-date")
+    val outPath = bt.outPath
+    val Update(errLev, dryRun, testMod, _) = up
+    val rn = rebuildNeeded(deps, bt, errLev)
+    if (!rn) {
+      logResult("up-to-date " + outPath)
+    }
+    if (rn && dryRun) {
+      logResult("out-dated " + outPath)
+      res = BuildEmpty("out-dated (dry run)")
+    }
+    if (rn && !dryRun) {
+      res = runBuildTask(bt, errLev)
+    }
+    if (testMod.makeTests) {
+      compareOutputAndTest(testMod, bt)
+    }
+    res
+  }
+
+  /** auxiliary method of checkOrRunBuildTask */
+  private def rebuildNeeded(deps: Set[Dependency], bt: BuildTask, level: Level): Boolean = {
+    val errorFile = bt.asDependency.getErrorFile(controller)
+    val errs = hadErrors(errorFile, level)
+    val mod = modified(bt.inFile, errorFile)
+    level <= Level.Force || mod || errs ||
+      deps.exists {
+        case bd: BuildDependency =>
+          val errFile = bd.getErrorFile(controller)
+          modified(errFile, errorFile)
+        case PhysicalDependency(fFile) => modified(fFile, errorFile)
+        case _ => false // for now
+      } || bt.isDir && bt.children.getOrElse(Nil).exists { bf =>
+      modified(bf.asDependency.getErrorFile(controller), errorFile)
+    }
+  }
+
+  /** auxiliary method of checkOrRunBuildTask */
+  private def compareOutputAndTest(testMod: TestModifiers, bt: BuildTask) {
     val testFile = getTestOutFile(bt.archive, bt.inPath)
     val diffFile = testFile.addExtension("diff")
     val outFile = bt.outFile
@@ -441,9 +504,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
       logResult("no output: " + outFile)
     }
   }
-
-  /** like buildFile but with error handling, logging, etc.  */
-  def runBuildTask(bt: BuildTask, level: Level): BuildResult = {
+  
+  /** wraps around buildFile to add error handling, logging, etc.  */
+  // TODO should be private, exposed only because it is overridden by LaTeXDirTarget
+  protected def runBuildTask(bt: BuildTask, level: Level): BuildResult = {
     if (!bt.isDir) {
       val prefix = "[" + inDim + " -> " + outDim + "] "
       report("archive", prefix + bt.inFile + " -> " + bt.outFile)
@@ -453,8 +517,12 @@ abstract class TraversingBuildTarget extends BuildTarget {
     if (!bt.isEmptyDir) bt.errorCont.open
     try {
       res = bt.children match {
-        case None => buildFile(bt)
+        case None =>
+          // remove the old document from memory (if any) and build the file
+          controller.delete(bt.narrationDPath)
+          buildFile(bt)
         case Some(children@_ :: _) =>
+          // build a directory
           buildDir(bt, children, level)
         case _ => res
       }
@@ -473,6 +541,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
     res
   }
 
+  // ********************* functions for delete, update, change management etc.
+  
   /** additional method that implementations may provide: cleans one file
     *
     * deletes the output and error file by default, may be overridden to, e.g., delete auxiliary files
@@ -485,7 +555,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     val outFile = getOutFile(a, inPath)
     delete(outFile)
     delete(getErrorFile(a, inPath))
-    controller.notifyListeners.onFileBuilt(a, this, inPath)
+    //controller.notifyListeners.onFileBuilt(a, this, inPath)
   }
 
   /** additional method that implementations may provide: cleans one directory
@@ -501,7 +571,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     delete(errFile)
     val errDir = errFile.up
     if (errDir.isDirectory) errDir.deleteDir
-    controller.notifyListeners.onFileBuilt(a, this, inPath)
+    //controller.notifyListeners.onFileBuilt(a, this, inPath)
   }
 
   /** recursively delete output files in parallel (!) */
@@ -510,7 +580,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       { c => cleanFile(a, c) }, { case (c, _) => cleanDir(a, c) })
   }
 
-  def modified(inFile: File, errorFile: File): Boolean = {
+  private def modified(inFile: File, errorFile: File): Boolean = {
     val mod = Modification(inFile, errorFile)
     mod == Modified || mod == Added
   }
@@ -522,45 +592,12 @@ abstract class TraversingBuildTarget extends BuildTarget {
     else
       errorFile.exists && ErrorReader.getBuildErrors(errorFile, errorLevel, None).nonEmpty
 
-  def rebuildNeeded(deps: Set[Dependency], bt: BuildTask, level: Level): Boolean = {
-    val errorFile = bt.asDependency.getErrorFile(controller)
-    val errs = hadErrors(errorFile, level)
-    val mod = modified(bt.inFile, errorFile)
-    level <= Level.Force || mod || errs ||
-      deps.exists {
-        case bd: BuildDependency =>
-          val errFile = bd.getErrorFile(controller)
-          modified(errFile, errorFile)
-        case PhysicalDependency(fFile) => modified(fFile, errorFile)
-        case _ => false // for now
-      } || bt.isDir && bt.children.getOrElse(Nil).exists { bf =>
-      modified(bf.asDependency.getErrorFile(controller), errorFile)
-    }
-  }
 
-  def checkOrRunBuildTask(deps: Set[Dependency], bt: BuildTask, up: Update): BuildResult = {
-    var res: BuildResult = BuildEmpty("up-to-date")
-    val outPath = bt.outPath
-    val Update(errLev, dryRun, testMod, _) = up
-    val rn = rebuildNeeded(deps, bt, errLev)
-    if (!rn) {
-      logResult("up-to-date " + outPath)
-    }
-    if (rn && dryRun) {
-      logResult("out-dated " + outPath)
-      res = BuildEmpty("out-dated (dry run)")
-    }
-    if (rn && !dryRun) {
-      res = runBuildTask(bt, errLev)
-    }
-    if (testMod.makeTests) {
-      compareOutputAndTest(testMod, bt)
-    }
-    res
-  }
-
+  // *********** methods for the deprecated buildDepsFirst, which is still exposed in the interface and may or may not still be used
+  
   /*
-   here is still some duplicate work.
+   anything here needs complete revision
+   
    getFilesRec is similar to makeBuildTasks, both traverse the folders recursively
    - getFilesRec returns files to be built as dependencies (but no directories)
    - makeBuildTasks returns QueuedTasks (also for directories)
@@ -574,8 +611,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
     "depFirst" is currently only kept for comparison and testing purposes and may eventually be disposed off
   */
 
+  @deprecated 
   private def getDeps(bt: BuildTask): Set[Dependency] = estimateResult(bt).used.toSet
 
+  // TODO called by AllTeX target
+  @deprecated 
   protected def getFilesRec(a: Archive, in: FilePath): Set[Dependency] = {
     val inFile = a / inDim / in
     if (inFile.isDirectory)
@@ -585,14 +625,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
     else Set.empty
   }
 
-  /** makes a build task for a single file (ignoring built children) for directories */
-  def makeBuildTask(a: Archive, inPath: FilePath, children: List[BuildTask] = Nil): BuildTask = {
-    val inFile = a / inDim / inPath
-    val isDir = inFile.isDirectory
-    makeBuildTask(a, inPath, inFile, if (isDir) Some(children) else None, None)
-  }
-
-  def getAnyDeps(dep: FileBuildDependency): Set[Dependency] = {
+  @deprecated 
+  private def getAnyDeps(dep: FileBuildDependency): Set[Dependency] = {
     if (dep.key == key) {
       // we are within the current target
       getDeps(makeBuildTask(dep.archive, dep.inPath))
@@ -603,7 +637,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
     }
   }
 
-  def getDepsMap(args: Set[Dependency]): Map[Dependency, Set[Dependency]] = {
+  // TODO called by AllTeX target
+  @deprecated 
+  protected def getDepsMap(args: Set[Dependency]): Map[Dependency, Set[Dependency]] = {
     var visited: Set[Dependency] = Set.empty
     var unknown = args
     var deps: Map[Dependency, Set[Dependency]] = Map.empty
@@ -621,6 +657,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     deps
   }
 
+  @deprecated 
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
     val requestedDeps = getFilesRec(a, in)
     val deps = getDepsMap(getFilesRec(a, in))

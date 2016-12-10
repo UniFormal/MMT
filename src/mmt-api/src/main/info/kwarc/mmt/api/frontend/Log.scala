@@ -12,22 +12,30 @@ trait Logger {
 
   def logPrefix: String
 
+  /** logs a message with this logger's logprefix */
   protected def log(s: => String, subgroup: Option[String] = None) =
     report(logPrefix + subgroup.map("-" + _).getOrElse(""), s)
 
+  /** temporary logging - always logged */
+  // calls to this method are for debugging; if they are committed, they should be removed
+  protected def logTemp(s: => String) =
+    report("temp", s"($logPrefix) $s")
+
+  /** log as an error message */
+  protected def logError(s: => String) = report("error", s"($logPrefix) $s")
+
+  /** logs an error - always logged */
   protected def log(e: Error) = report(e)
 
+  /** wraps around a group to create nested logging */
   protected def logGroup[A](a: => A): A = {
     report.indent
     try {
       a
-    }
-    finally {
+    } finally {
       report.unindent
     }
   }
-
-  protected def logError(s: => String) = report("error", "(" + logPrefix + ") " + s)
 }
 
 /** Instances of Report handle all output to the user */
@@ -36,8 +44,8 @@ class Report extends Logger {
   val report = this
 
   /** output is categorized, the elements of group determine which categories are considered
-    * the categories "user" (for user input) and "error" are output by default */
-  private[api] val groups = scala.collection.mutable.Set[String]("user", "error")
+    * the categories "user" (for user input), "error" are output by default, and "temp" (for temporary logging during debugging) */
+  private[api] val groups = scala.collection.mutable.Set[String]("user", "error", "temp")
 
   /** logs a message if logging is switched on for the group */
   def apply(prefix: => String, msg: => String) {

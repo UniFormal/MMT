@@ -115,7 +115,7 @@ abstract class Importer extends TraversingBuildTarget {imp =>
       val doc = controller.read(ParsingStream.fromFile(narrFile, Some(DPath(a.narrationBase / narrPath.segments)), Some(a.namespaceMap)), interpret = false)(new ErrorLogger(report))
       // TODO remove document from controller? mark document as dirty in controller?
       //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly
-      doc.collectModules(controller) foreach {mp =>
+      doc.getModules(controller.globalLookup) foreach {mp =>
         val cPath = Archive.MMTPathToContentPath(mp)
         delete(a / content / cPath)
         delete((a / relational / cPath).setExtension("rel"))

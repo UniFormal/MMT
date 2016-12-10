@@ -246,24 +246,6 @@ trait ActionHandling {self: Controller =>
     }
   }
 
-  /** builds a file in an archive choosing an appropriate importer */
-  // obsolete? only used by jedit
-  def build(f: File)(implicit errorCont: ErrorHandler) {
-    backend.resolvePhysical(f) match {
-      case Some((a, p)) =>
-        val format = f.getExtension.getOrElse {
-          throw GeneralError("no file extension")
-        }
-        val importer = extman.get(classOf[Importer]).find(_.inExts contains format).getOrElse {
-          throw GeneralError("no importer found")
-        }
-        log("building " + f)
-        importer.build(a, Build.update, FilePath(p), Some(errorCont))
-      case None =>
-        throw GeneralError(f + " is not in a known archive")
-    }
-  }
-
   /** auxiliary function of makeAction: guess which files/folders the users wants to build
     *
     * @return archive root and relative path in it

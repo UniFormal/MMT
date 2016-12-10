@@ -40,7 +40,7 @@ class DeclaredTheory(doc : DPath, name : LocalName, mt : Option[MPath], params: 
    /** the context governing the body: meta-theory, parameters, and this theory */
    def getInnerContext = {
       val self = IncludeVarDecl(path, parameters.id.map(_.target))
-      meta.map(p => Context(p)).getOrElse(Context()) ++ parameters ++ self
+      meta.map(p => Context(p)).getOrElse(Context.empty) ++ parameters ++ self
    }
    /** convenience method to obtain all constants */
    def getConstants:List[Constant] = getDeclarations.flatMap {

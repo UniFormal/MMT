@@ -43,7 +43,7 @@ object Swing {
       jp
    }
    
-   def Button(label: String)(action: => Unit): JButton = {
+   def Button(label: String, tooltip: String = "")(action: => Unit): JButton = {
       val b = new JButton(label)
       val al = new ActionListener {
          def actionPerformed(e: ActionEvent) {
@@ -51,6 +51,7 @@ object Swing {
          }
       }
       b.addActionListener(al)
+      b.setToolTipText(tooltip)
       b
    }
    

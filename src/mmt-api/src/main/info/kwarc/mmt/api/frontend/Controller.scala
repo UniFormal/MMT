@@ -225,7 +225,7 @@ class Controller extends ROController with ActionHandling with Logger {
 
   // **************************** reading source files
 
-  /** parses a ParsingStream with an appropriate parser and optionally checks it
+  /** parses a ParsingStream with an appropriate parser or interpreter and optionally checks it
     *
     * @param ps the input
     * @param interpret if true, try to use an interpreter, not a parser
@@ -282,6 +282,23 @@ class Controller extends ROController with ActionHandling with Logger {
      oldDocOpt getOrElse {
         globalLookup.getAs(classOf[Document], dpath)
      }
+  }
+
+  /** builds a file/folder in an archive using an appropriate importer */
+  def build(f: File)(implicit errorCont: ErrorHandler) {
+    backend.resolvePhysical(f) orElse backend.resolveAnyPhysicalAndLoad(f) match {
+      case Some((a, p)) =>
+        val format = f.getExtension.getOrElse {
+          throw GeneralError("no file extension in " + f)
+        }
+        val importer = extman.get(classOf[Importer]).find(_.inExts contains format).getOrElse {
+          throw GeneralError("no importer found for " + f)
+        }
+        log("building " + f)
+        importer.build(a, Build.update, FilePath(p), Some(errorCont))
+      case None =>
+        throw GeneralError("not in a known archive: " + f)
+    }
   }
 
   // ******************************* lookup of MMT URIs
@@ -374,8 +391,10 @@ class Controller extends ROController with ActionHandling with Logger {
 
   // ******************************* adding elements and in-memory change management
 
-  /** adds a knowledge item */
-  def add(nw: StructuralElement) {
+  /** adds a knowledge item
+   *  @param afterOpt the name of the declaration after which it should be added (only inside modules, documents)
+   */
+  def add(nw: StructuralElement, afterOpt: Option[LocalName] = None) {
     iterate {
           localLookup.getO(nw.path) match {
             case Some(old) if InactiveElement.is(old) =>
@@ -435,7 +454,7 @@ class Controller extends ROController with ActionHandling with Logger {
             //case Some(_) => // in this case, we could already report an error; but the None case reports it anyway
             case _ =>
               // the normal case
-              memory.content.add(nw)
+              memory.content.add(nw, afterOpt)
               // load extension providing semantics for a Module
               nw match {
                 case m: Module =>
@@ -504,8 +523,9 @@ class Controller extends ROController with ActionHandling with Logger {
       case cp: CPath =>
          throw DeleteError("deletion of component paths not implemented")
       case p =>
-        library.delete(p)
-        localLookup.getO(p) foreach {se =>
+        val seOpt = localLookup.getO(p) 
+        seOpt foreach {se =>
+          library.delete(p) // would throw NotFound if seOpt.isEmpty
           notifyListeners.onDelete(se)
         }
     }

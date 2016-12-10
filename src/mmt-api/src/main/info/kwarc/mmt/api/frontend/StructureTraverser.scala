@@ -10,7 +10,7 @@ class StructureTrffaverser(controller: Controller) {
     /** applies f to all Terms in s */
     def apply(s: StructuralElement)(implicit f: (CPath,TermContainer) => Unit) {s match {
        case d: Document =>
-          d.collectModules(controller)
+          d.getModules(controller.globalLookup)
        //case m: DefinedModule =>
          // f(m.path $ DefComponent, m.df)
        case c: Constant =>

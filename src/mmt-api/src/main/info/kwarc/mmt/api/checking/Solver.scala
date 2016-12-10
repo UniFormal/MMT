@@ -517,8 +517,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                        check(Equality(prepareS(stack), prepare(tm1, true), prepare(tm2, true), tp.map {x => prepare(x, true)}))
                     case Universe(stack, tm) =>
                        check(Universe(prepareS(stack), prepare(tm)))
-                    case Inhabitable(stack, tm) =>
-                       check(Inhabitable(prepareS(stack), prepare(tm)))
+                    case Inhabitable(stack, tp) =>
+                       check(Inhabitable(prepareS(stack), prepare(tp)))
+                    case Inhabited(stack, tp) =>
+                       check(Inhabited(prepareS(stack), prepare(tp, true)))
                  }
               case di: DelayedInference =>
                   implicit val stackP = prepareS(di.stack)
@@ -757,6 +759,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          }
      }
      tm match {
+       //TODO if the type has a typing rule and the term is OMV/OMS, we have two conflicting strategies
+       //it's unclear which one works better
+       
        // the foundation-independent cases
        case OMV(x) => getVar(x).tp match {
          case None =>
@@ -764,23 +769,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               solveType(x, tp) //TODO: check for occurrences of bound variables?
             else
               error("untyped variable type-checks against nothing: " + x)
-         // TODO: Make this less ugly! (Necessary to get DynamicLF work (checking of typed variables against a type using rules))
-         case Some(t) =>  safecheck(Subtyping(stack, t, tp)) match { // check, whether given type already checks out; if not, look for rules
-           case Some(true) =>
+         case Some(t) => 
              check(Subtyping(stack, t, tp))
-           case _ => limitedSimplify(tp,rules.get(classOf[TypingRule])) match {
-             case (tpS, Some(rule)) =>
-               try {
-                 history += "Applying TypingRule " + rule.toString
-                 rule(this)(tm, tpS)
-               } catch {case TypingRule.SwitchToInference =>
-                 checkByInference(tpS)
-               }
-             case (tpS, None) =>
-               // either this is an atomic type, or no typing rule is known
-               checkByInference(tpS)
-           }
-         }
        }
        case OMS(p) =>
          getType(p) match {
@@ -796,42 +786,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        // the foundation-dependent cases
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
-         /*
-         var activerules = rules.get(classOf[TypingRule])
-         var haveresult = false
-         var ret = None.asInstanceOf[Option[Boolean]]
-         while (!haveresult) {
-           val (tpS, ruleOpt) = limitedSimplify(tm, activerules)
-           ruleOpt match {
-             case Some(rule) =>
-               history += ("applying rule for " + rule.head.name.toString)
-               haveresult = true
-               ret = try {Some(rule(this)(tm,tpS))} catch {
-                 case t : Exception if t==RuleNotApplicable =>
-                   history+="rule not applicable!"
-                   haveresult = false
-                   activerules -= rule
-                   None
-                 case TypingRule.SwitchToInference =>
-                   val r = checkByInference(tpS)
-                   if (r) {
-                     haveresult = true
-                     Some(true)
-                   } else {
-                     haveresult = false
-                     activerules -= rule
-                     None
-                   }
-               }
-             case None =>
-               history += "no applicable rule"
-               haveresult = true
-               Some(checkByInference(tpS))
-           }
-         }
-         ret.getOrElse(false)
-          */
-
          limitedSimplify(tp,rules.get(classOf[TypingRule])) match {
            case (tpS, Some(rule)) =>
              try {
@@ -839,7 +793,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                 rule(this)(tm, tpS)
              } catch {
                case TypingRule.SwitchToInference =>
-                  checkByInference(tpS)
+                 checkByInference(tpS)
+               case rule.DelayJudgment(msg) =>
+                 delay(Typing(stack, tm, tpS, j.tpSymb))(history + msg)
              }
            case (tpS, None) =>
               // either this is an atomic type, or no typing rule is known
@@ -1087,7 +1043,13 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       safeSimplifyUntil(tp)(t => tbEqRules.find(_.applicable(t))) match {
          case (tpS, Some(rule)) =>
             history += "applying type-based equality rule " + rule.toString
-            rule(this)(tm1S, tm2S, tpS) match {
+            val res = try {
+              rule(this)(tm1S, tm2S, tpS)
+            } catch {
+              case rule.DelayJudgment(msg) =>
+                return delay(Equality(stack, tm1S, tm2S, Some(tpS)))(history + msg)
+            }
+            res match {
                case Some(b) => b
                case None =>
                   checkEqualityTermBased(List(tm1S), List(tm2S), false)(stack, history, tp)

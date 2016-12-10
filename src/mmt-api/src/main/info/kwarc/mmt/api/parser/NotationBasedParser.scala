@@ -192,20 +192,23 @@ class NotationBasedParser extends ObjectParser {
   private def getRules(context: Context): (List[ParsingRule], List[LexerExtension], List[NotationExtension]) = {
     val support = context.getIncludes
     //TODO we can also collect notations attached to variables
-    val visible = support.flatMap {p =>
-      controller.globalLookup.getO(p) match {
-        case Some(d: modules.DeclaredTheory) =>
-           controller.simplifier.flatten(d) // make sure p is recursively loaded before taking visible theories
-        case _ =>
-      }
+    val visibles = support.map {p =>
+      val dO = controller.globalLookup.getO(p)
+      dO foreach {d =>
+        controller.simplifier(d)
+        true
+      } // make sure p is recursively loaded before taking visible theories
       controller.library.visible(OMMOD(p))
-    }.distinct
+    }
+    val visible = visibles.flatten.distinct
     val decls = visible flatMap {tm =>
-      controller.globalLookup.getO(tm.toMPath) match {
-        case Some(d: modules.DeclaredTheory) =>
-           controller.simplifier.flatten(d)
-           d.getDeclarations
-        case _ => Nil
+      val se = controller.globalLookup.getO(tm.toMPath)
+      se match {
+        case Some(d) =>
+          controller.simplifier(d)
+          d.getDeclarations
+        case None =>
+          Nil
       }
     }
     val nots = decls.flatMap {
@@ -310,7 +313,7 @@ class NotationBasedParser extends ObjectParser {
   private def makeTerm(te: TokenListElem, boundVars: List[LocalName], attrib: Boolean = false)(implicit pu: ParsingUnit, errorCont: ErrorHandler): Term = {
     // cases may return multiple options in case of ambiguity
     val alternatives: List[Term] = te match {
-      case Token(word, _, _, _) =>
+      case te @ Token(word, _, _, _) =>
         lazy val unparsed = OMSemiFormal(objects.Text("unknown", word)) // fallback option
         val name = LocalName.parse(word)
         val term = if (boundVars.contains(name) || getFreeVars.contains(name) || pu.context.exists(_.name == name)) {
@@ -321,27 +324,7 @@ class NotationBasedParser extends ObjectParser {
           newUnknown(newExplicitUnknown, boundVars)
         } else if (word.count(_ == '?') > 0) {
           // ... or qualified identifiers
-          val segments = utils.stringToList(word, "\\?")
-          // recognizing identifiers ?THY?SYM is awkward because it would require always lexing initial ? as identifiers
-          // but we cannot always prepend ? because the identifier could also be NS?THY
-          // Therefore, we prepend ? using a heuristic
-          val qid = segments match {
-            case fst :: _ :: Nil if !fst.contains(':') && Character.isUpperCase(fst.charAt(0))
-            => "?" + word
-            case _ => word
-          }
-          try {
-            Path.parse(qid, pu.nsMap) match {
-              case p: ContentPath => OMID(p)
-              case p =>
-                makeError("content path expected: " + p, te.region)
-                unparsed
-            }
-          } catch {
-            case ParseError(msg) =>
-              makeError(msg, te.region)
-              unparsed
-          }
+          makeIdentifier(te).map(OMID(_)).getOrElse(unparsed)
         } else if (mayBeFree(word)) {
            newFreeVariable(word)
         } else {
@@ -382,6 +365,35 @@ class NotationBasedParser extends ObjectParser {
            ObjectParser.oneOf(av::l)
      }
   }
+  
+  /** auxiliary method of makeTerm
+   *  parses qualified identifiers, possibly heuristically
+   */
+  private def makeIdentifier(te: Token)(implicit pu: ParsingUnit, errorCont: ErrorHandler): Option[ContentPath] = {
+    val word = te.word
+    val segments = utils.stringToList(word, "\\?")
+    // recognizing identifiers ?THY?SYM is awkward because it would require always lexing initial ? as identifiers
+    // but we cannot always prepend ? because the identifier could also be NS?THY
+    // Therefore, we prepend ? using a heuristic
+    val qid = segments match {
+      case fst :: _ :: Nil if !fst.contains(':') && Character.isUpperCase(fst.charAt(0)) => "?" + word
+      case _ => word
+    }
+    try {
+      Path.parse(qid, pu.nsMap) match {
+        case p: ContentPath => Some(p)
+        case p =>
+          makeError("content path expected: " + p, te.region)
+          None
+      }
+    } catch {
+      case ParseError(msg) =>
+        // TODO recover by trying to resolve the identifier
+        makeError(msg, te.region)
+        None
+    }
+  }
+  
 
   /** auxiliary method of makeTerm */
   private def makeTermFromMatchedList(ml: MatchedList, boundVars: List[LocalName], attrib: Boolean)(implicit pu: ParsingUnit, errorCont: ErrorHandler): List[Term] = {
