@@ -186,6 +186,20 @@ object ApplyGeneral {
    def unapply(t: Term) : Option[(Term,List[Term])] = ApplySpine.unapply(t).orElse(Some((t,Nil)))
 }
 
+/**
+ * auxiliary con/destructor for HOAS binders, e.g., forall [x:A] b
+ */
+object Binder {
+  def apply(binder: GlobalName, bound: Context, body: Term) = {
+    Apply(OMS(binder), Lambda(bound, body))
+  }
+  def unapply(t: Term) : Option[(GlobalName, LocalName, Term, Term)] = t match {
+     case Apply(OMS(binder), Lambda(x, tp, body)) => Some((binder, x, tp, body))
+     case _ => None
+  }
+}
+
+
 /** The LF foundation. Implements type checking and equality */
 class LFF extends Foundation {
    override val logPrefix = "lf"
