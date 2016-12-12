@@ -187,11 +187,11 @@ object ApplyGeneral {
 }
 
 /**
- * auxiliary con/destructor for HOAS binders, e.g., forall [x:A] b
+ * auxiliary con/destructor for HOAS binders, e.g., forall [x:a] b
  */
 object Binder {
-  def apply(binder: GlobalName, x: LocalName, tp: Term, body: Term): Term = {
-    Apply(OMS(binder), Lambda(x, tp, body))
+  def apply(binder: GlobalName, x: LocalName, lfType: Term, body: Term): Term = {
+    Apply(OMS(binder), Lambda(x, lfType, body))
   }
   def apply(binder: GlobalName, context: Context, body: Term): Term = {
     context.foldRight(body) {case (next, sofar) =>
@@ -204,7 +204,6 @@ object Binder {
      case _ => None
   }
 }
-
 
 /** The LF foundation. Implements type checking and equality */
 class LFF extends Foundation {

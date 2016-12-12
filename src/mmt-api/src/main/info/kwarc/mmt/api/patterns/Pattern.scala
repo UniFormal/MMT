@@ -10,6 +10,7 @@ import checking._
 
 
 class PatternFeature extends StructuralFeature(Pattern.feature) {
+   def expectedComponents = List(">" -> ParamsComponent)
 
    override def getInnerContext(d: DerivedDeclaration) = Pattern.getParameters(d)
   
@@ -27,8 +28,8 @@ object Pattern {
   val feature = "pattern"
   
   def apply(home: Term, name : LocalName, params: Context, body : Context, notC: NotationContainer) = {
-    val comps = DeclarationComponent(ParamsComponent, ContextContainer(params)) :: notC.getComponents
-    val dd = new DerivedDeclaration(home, name, "pattern", Nil)
+    val comp = DeclarationComponent(ParamsComponent, ContextContainer(params))
+    val dd = new DerivedDeclaration(home, name, "pattern", List(comp), notC)
     body.mapVarDecls {case (con, vd) =>
       val c = vd.toConstant(home.toMPath, con)
       dd.module.add(c)
@@ -56,6 +57,8 @@ object Pattern {
 }
 
 class InstanceFeature extends StructuralFeature(Instance.feature) {
+  
+   def expectedComponents = Nil
   
    private def getPattern(dd: DerivedDeclaration): Option[(DerivedDeclaration,List[Term])] = {
      val (p,args) = Instance.getPattern(dd).getOrElse {return None}
@@ -111,8 +114,8 @@ object Instance {
   val feature = "instance"
   def apply(home : Term, name : LocalName, pattern: GlobalName, args: List[Term], notC: NotationContainer) = {
     val patExp = OMA(OMS(pattern), args) 
-    val comps = DeclarationComponent(TypeComponent, TermContainer(patExp)) :: notC.getComponents
-    val dd = new DerivedDeclaration(home, name, feature, comps)
+    val comp = DeclarationComponent(TypeComponent, TermContainer(patExp))
+    val dd = new DerivedDeclaration(home, name, feature, List(comp), notC)
     dd
   }
   

@@ -64,6 +64,9 @@ package object utils {
 
    /** inserts a separator element in between all elements of a list */
    def insertSep[A](l: List[A], sep: A) = if (l.isEmpty) Nil else l.flatMap(a => List(a,sep)).init
+   
+   /** applies a list of pairs seen as a map */
+   def listmap[A,B](l: List[(A,B)], a: A): Option[B] = l.find(_._1 == a).map(_._2)
 
    /** slurps an entire stream into a string */
    def readFullStream(is: java.io.InputStream) = scala.io.Source.fromInputStream(is, "UTF-8").mkString

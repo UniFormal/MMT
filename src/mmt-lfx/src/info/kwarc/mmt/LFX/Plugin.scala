@@ -1,13 +1,15 @@
 package info.kwarc.mmt.LFX
 
-import info.kwarc.mmt.api.objects.{Context, OMS, Term}
-import Subtyping._
-import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory, Module}
-import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.checking._
-import info.kwarc.mmt.api.parser.{KeywordBasedParser, ParserExtension, ParserState, SourceRef}
-import info.kwarc.mmt.api.utils.URI
+import objects.{Context, OMS, Term}
+import modules.{DeclaredModule, DeclaredTheory, Module}
+import symbols._
+import checking._
+import parser.{KeywordBasedParser, ParserExtension, ParserState, SourceRef}
+import utils.URI
+import notations._
+
+import Subtyping._
 import info.kwarc.mmt.lf.{Arrow, Typed}
 
 object LFX {
@@ -42,13 +44,15 @@ class Plugin extends frontend.Plugin {
   }
 }
 
-object PredSubFeature extends StructuralFeatureRule("Subtype",List(TypeComponent),hasname = true)
+object SubtypeDecl {
+  val feature = "Subtype"
+  def apply(top : DeclaredTheory, givenname : String, suptp : Term, notC: NotationContainer = NotationContainer()) =
+    new DerivedDeclaration(top.toTerm,LocalName(givenname),feature, List(DeclarationComponent(TypeComponent,TermContainer(suptp))), notC)
+}
 
-case class SubtypeDecl(top : DeclaredTheory, givenname : String, suptp : Term) extends
-  DerivedDeclaration(top.toTerm,LocalName(givenname),"Subtype",
-  List(DeclarationComponent(TypeComponent,TermContainer(suptp))))
-
-class SubtypeFeature extends StructuralFeature("Subtype") {
+class SubtypeFeature extends StructuralFeature(SubtypeDecl.feature) {
+  
+  def expectedComponents = List("<:" -> TypeComponent)
 
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) : Elaboration = {
     val suptp = dd.getComponent(TypeComponent) getOrElse {

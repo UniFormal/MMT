@@ -97,21 +97,25 @@ object ComponentKey {
   }
 }
 
+/** components that are MMT objects */
+abstract class ObjComponentKey(s: String) extends ComponentKey(s)
+
 /** type of a [[symbols.Constant]] */
-case object TypeComponent extends ComponentKey("type")
+case object TypeComponent extends ObjComponentKey("type")
 /** definiens of [[symbols.Constant]], DefinedTheory, DefinedView, DefinedStructure */
-case object DefComponent  extends ComponentKey("definition")
+case object DefComponent  extends ObjComponentKey("definition")
 /** domain of a [[modules.Link]], meta-theory of a theory */
-case object DomComponent  extends ComponentKey("domain")
+case object DomComponent  extends ObjComponentKey("domain")
 /** codomain of a [[modules.Link]] */
-case object CodComponent  extends ComponentKey("codomain")
+case object CodComponent  extends ObjComponentKey("codomain")
 
 /** parameters */
-case object ParamsComponent extends ComponentKey("params")
+case object ParamsComponent extends ObjComponentKey("params")
 
 /** custom component, e.g., in a [[DerivedDeclaration]] */
 case class OtherComponent(s: String) extends ComponentKey(s)
 
+/** components that are notations */
 abstract class NotationComponentKey(s: String) extends ComponentKey(s)
 /** (text-based) parsing notation of a symbol */
 case object ParsingNotationComponent extends NotationComponentKey("parsing-notation")

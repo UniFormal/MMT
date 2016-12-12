@@ -6,14 +6,14 @@ import frontend._
 import checking._
 import info.kwarc.mmt.api.libraries.ElaboratedElement
 import objects._
+import notations._
 
 import scala.xml.Elem
 
 /** A [[DerivedDeclaration]] is a syntactically like a nested theory.
  *  Its semantics is defined by the corresponding [[StructuralFeature]]
  */
-class DerivedDeclaration(h: Term, name: LocalName, val feature: String,
-                         components: List[DeclarationComponent]) extends {
+class DerivedDeclaration(h: Term, name: LocalName, val feature: String, components: List[DeclarationComponent], notC: NotationContainer) extends {
    private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name, None)
 } with NestedModule(h, name, t) {
    // overriding to make the type stricter
@@ -22,12 +22,15 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String,
   override def getComponents = components
   override def toNode : Elem = {
     <derived feature={feature} name={name.toString} base={t.parent.toString}>
-      {components.map(c => <component key={c.key.toString}>
-      {c.value match {
-        case t: TermContainer => t.get.get.toNode
-        case p: MPathContainer => p.get.get.toNode
-      }}
-    </component>)}{t.getDeclarations map (_.toNode)}
+      {components.map(c =>
+        <component key={c.key.toString}>
+        {c.value match {
+          case t: TermContainer => t.get.get.toNode
+          case p: MPathContainer => p.get.get.toNode
+        }}
+      </component>)}
+      {notC.toNode}
+      {t.getDeclarations map (_.toNode)}
     </derived>
   }
   // override def toNodeElab
@@ -70,7 +73,7 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String,
          DeclarationComponent(k, nc.copy)
      }
      // splice super in to res
-     val res = new DerivedDeclaration(superT.home, superT.name, feature, compsT)
+     val res = new DerivedDeclaration(superT.home, superT.name, feature, compsT, notC)
      superT.module.getDeclarations.foreach {d =>
        res.module.add(d)
      }
@@ -82,7 +85,7 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String,
 /**
  * a rule that legitimizes a [[StructuralFeature]]
  */
-case class StructuralFeatureRule(feature: String, components : List[ComponentKey], hasname : Boolean = true) extends Rule
+case class StructuralFeatureRule(feature: String) extends Rule
 
 /**
  * A StructureFeature defines the semantics of a [[DerivedDeclaration]]
@@ -92,7 +95,17 @@ case class StructuralFeatureRule(feature: String, components : List[ComponentKey
  */
 abstract class StructuralFeature(val feature: String) extends FormatBasedExtension {
    def isApplicable(s: String) = s == feature
+
+   /**  if derived declarations of this feature are unnamed, this method should be overriden with a function that generates a name */
+   def unnamedDeclarations: Option[List[DeclarationComponent] => LocalName] = None
    
+   /**
+    * the term components that declarations of this feature must provide and strings for parsing/presenting them
+    * 
+    * also defines the order of the components
+    */
+   def expectedComponents: List[(String,ObjComponentKey)]
+  
    def getInnerContext(d: DerivedDeclaration): Context = Context.empty
 
    /** called after checking components and inner declarations */
@@ -138,10 +151,9 @@ abstract class Elaboration extends ElementContainer[Declaration] {
  * Generative, definitional functors/pushouts with free instantiation
  * called structures in original MMT
  */
-
-object GenerativePushoutRule extends StructuralFeatureRule("generative",List(DomComponent))
-
 class GenerativePushout extends StructuralFeature("generative") {
+  
+  def expectedComponents = List(":" -> DomComponent)
 
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
       val dom = dd.getComponent(DomComponent) getOrElse {
@@ -199,6 +211,8 @@ class GenerativePushout extends StructuralFeature("generative") {
 // Binds theory parameters using Lambda/Pi in an include-like structure
 class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, applys : GlobalName) extends StructuralFeature(id) {
 
+  def expectedComponents = Nil
+  
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) : Elaboration = {
     val dom = dd.getComponent(DomComponent) getOrElse {
       throw GetError("")

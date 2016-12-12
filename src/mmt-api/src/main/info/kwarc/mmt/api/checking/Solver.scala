@@ -380,7 +380,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       val valueS = simplify(value)(Stack.empty, history)
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.tp.isDefined)
-         check(Equality(Stack.empty, valueS, solved.tp.get, None))(history + "solution for type must be equal to previously found solution") //TODO
+         check(Equality(Stack.empty, valueS, solved.tp.get, None))(history + "solution for type must be equal to previously found solution")
       else {
          val vd = solved.copy(tp = Some(valueS))
          solution = left ::: vd :: right
@@ -392,19 +392,34 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private def typeCheckSolution(vd: VarDecl)(implicit history: History): Boolean = {
       (vd.tp, vd.df) match {
          case (Some(tp), Some(df)) =>
-            check(Typing(Stack.empty, df, tp))(history + "checking solution of metavariable against solved type")
+           check(Typing(Stack.empty, df, tp))(history + "checking solution of metavariable against solved type")
          case _ => true
       }
    }
 
    /**
     * @param newVars new unknowns; creating new unknowns during checking permits variable transformations
-    * @param before the variable before which to insert the new ones
+    * @param before the variable before which to insert the new ones, otherwise insert at end 
     */
-   def addUnknowns(newVars: Context, before: LocalName): Boolean = {
-      val (left, right) = solution.span(_.name != before)
+   def addUnknowns(newVars: Context, before: Option[LocalName]): Boolean = {
+      val (left, right) = before match {
+        case Some(b) => solution.span(_.name != before)
+        case None => (solution.toList,Nil)
+      }
       solution = left ::: newVars ::: right
       true
+   }
+   
+   /**
+    * define x:tp as the unique value that satisfies the constraint
+    * 
+    * this is implemented by adding a fresh unknown, and running the constraint
+    *
+    * this can be used to compute a value in logic programming style, where the computation is given by a functional predicate
+    */
+   def defineByConstraint(x: LocalName, tp: Term)(constraint: Term => Boolean) {
+     addUnknowns(x%tp, None)
+     constraint(OMV(x))
    }
 
    /** registers an error

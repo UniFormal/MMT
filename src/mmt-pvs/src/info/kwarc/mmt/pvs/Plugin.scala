@@ -1,13 +1,15 @@
 package info.kwarc.mmt.pvs
 
-import info.kwarc.mmt.api.{GlobalName, _}
-import info.kwarc.mmt.api.checking.{Solver, SubtypingRule, _}
-import info.kwarc.mmt.api.modules.DeclaredTheory
-import info.kwarc.mmt.api.notations.{HOAS, NestedHOASNotation}
-import info.kwarc.mmt.api.objects.{OMS, _}
-import info.kwarc.mmt.api.symbols.{BoundTheoryParameters, DerivedDeclaration, StructuralFeatureRule, TermContainer}
+import info.kwarc.mmt.api._
+import checking._
+import modules.DeclaredTheory
+import notations.{HOAS, NestedHOASNotation}
+import objects._
+import objects.Conversions._
+import notations._
+import symbols.{BoundTheoryParameters, DerivedDeclaration, StructuralFeatureRule, TermContainer}
+
 import info.kwarc.mmt.lf.{Apply, LF, Lambda, Pi}
-import info.kwarc.mmt.api.objects.Conversions._
 
 class Plugin extends frontend.Plugin {
   val theory = PVSTheory.thpath
@@ -23,11 +25,15 @@ class Plugin extends frontend.Plugin {
 import PVSTheory._
 
 
-class LambdaPiInclude extends BoundTheoryParameters("BoundInclude",Pi.path,Lambda.path,Apply.path)
-case class BoundInclude(top:DeclaredTheory,from:MPath) extends DerivedDeclaration(top.toTerm,LocalName(from),"BoundInclude",
-  List(DeclarationComponent(DomComponent,TermContainer(OMID(from)))))
+class LambdaPiInclude extends BoundTheoryParameters(BoundInclude.feature,Pi.path,Lambda.path,Apply.path)
 
-object BoundIncludeRule extends StructuralFeatureRule("BoundInclude",List(DomComponent),hasname = false)
+object BoundInclude {
+  val feature = "BoundInclude"
+  def apply(top: DeclaredTheory, from: MPath) = {
+    val comps = List(DeclarationComponent(DomComponent,TermContainer(OMID(from))))
+    new DerivedDeclaration(top.toTerm, LocalName(from), feature, comps, new NotationContainer())
+  }
+}
 
 object CurryingRule extends ComputationRule(PVSTheory.pvspi.path) {
   def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {

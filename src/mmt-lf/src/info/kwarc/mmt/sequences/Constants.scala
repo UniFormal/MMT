@@ -28,4 +28,6 @@ object Sequences {
    }
    
    object flatseq extends FlexaryConstantScala(_path, "flatseq")
+   
+   object comp extends UnaryConstantScala(_path, "comp")
 }

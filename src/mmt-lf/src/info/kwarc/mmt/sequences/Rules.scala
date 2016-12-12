@@ -352,3 +352,45 @@ object FlexaryArrow extends ExpandEllipsis(Arrow.path)
 object FlexaryLambda extends ExpandEllipsis(Lambda.path)
 /** expands ellipses in the arguments of an apply */
 object FlexaryApply extends ExpandEllipsis(Apply.path)
+/** expands ellipses in the arguments of a composition */
+object FlexaryComposition extends ExpandEllipsis(comp.path)
+
+/**
+ * s.i : A.i -> B.i for i=0,...,n
+ * A_{i+1} = B.i for i=0,...,n-1
+ * ------------------------------
+ * comp(s) : A.0 -> B.n
+ */
+object FlexaryCompositionInfer extends InferenceRule(comp.path, OfType.path) {
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+     val Sequences.comp(s) = tm
+     val n = Length.infer(solver, s).getOrElse{return None}
+     val (i,_) = Common.pickFresh(solver, LocalName("i"))
+     val iT = OMV(i)
+     solver.inferType(index(s, i), covered)(stack++i%n, history + "infering type of functions") flatMap {fT =>
+        val fTS = Common.makePi(solver, fT)
+        fTS match {
+           case Pi(x,a,b) =>
+             if (b.freeVars contains x) {
+               solver.error("can only compose simple functions")
+               return None
+             }
+             // m = pred(n), i.e., succ(m) = n
+             val (m,_) = Common.pickFresh(solver, LocalName("pred"))
+             solver.defineByConstraint(m, OMS(nat)){mT => 
+               solver.check(Equality(stack, succ(mT), n, Some(OMS(nat))))(history + "obtaining predecessor of length")
+             }
+             // A.{i+1} = B.i 
+             val mT = OMV(m)
+             val j = Equality(stack ++ i%mT, index(a,succ(iT)), index(b, iT), None)
+             solver.check(j)(history + "checking composability")
+             // A.0 -> B.m
+             val tp = Arrow(index(a, OMS(zero)), index(b, mT))
+             Some(tp)
+           case _ =>
+             solver.error("argument of composition must be a function")
+             None
+        }
+     }
+   }
+}

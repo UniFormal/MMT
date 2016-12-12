@@ -26,7 +26,7 @@ class BuildActions(mmtplugin: MMTPlugin) {
       }
    }
 
-   //TODO saving may trigger sidekick-parsing in which parsing and building happen at the same time totally confusing each other
+   //TODO saving may trigger sidekick-parsing in which case parsing and building happen at the same time and likely confuse each other
    private def saveAndBuild(view: View, buffer: Buffer) {
       if (buffer.isDirty) {
          buffer.save(view, null)

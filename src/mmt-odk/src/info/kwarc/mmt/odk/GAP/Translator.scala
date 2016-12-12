@@ -175,7 +175,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
 
   private def addConstants(c : List[FinalConstant]) = if (c.nonEmpty) {
     addTheory(c.head.parent)
-    c foreach controller.add
+    c foreach {d => controller.add(d)}
   }
 
   private def addTheory(mp : MPath) =  if (theories.get(mp).isEmpty) {

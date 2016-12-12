@@ -5,6 +5,7 @@ import modules._
 import checking._
 
 class NamedInductiveTypes extends StructuralFeature("inductive") {
+  def expectedComponents = Nil
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
      new Elaboration {
        def domain = {

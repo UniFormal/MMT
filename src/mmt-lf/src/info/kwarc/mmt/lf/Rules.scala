@@ -45,7 +45,7 @@ object Common {
            // if we have not done the variable transformation before, add the new unknowns
            if (! solver.getPartialSolution.isDeclared(mD.name)) {
               val newVars = Context(VarDecl(mD.name, None, None, None), VarDecl(mC.name, None, None, None))
-              solver.addUnknowns(newVars, m)
+              solver.addUnknowns(newVars, Some(m))
            }
            history += ("trying to solve "+m+" as "+solver.presentObj(mSol))
            // solve m in terms of newVars
