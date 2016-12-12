@@ -190,8 +190,14 @@ object ApplyGeneral {
  * auxiliary con/destructor for HOAS binders, e.g., forall [x:A] b
  */
 object Binder {
-  def apply(binder: GlobalName, bound: Context, body: Term) = {
-    Apply(OMS(binder), Lambda(bound, body))
+  def apply(binder: GlobalName, x: LocalName, tp: Term, body: Term): Term = {
+    Apply(OMS(binder), Lambda(x, tp, body))
+  }
+  def apply(binder: GlobalName, context: Context, body: Term): Term = {
+    context.foldRight(body) {case (next, sofar) =>
+      val VarDecl(name, Some(tp), None, _) = next
+      apply(binder, name, tp, sofar)
+    }
   }
   def unapply(t: Term) : Option[(GlobalName, LocalName, Term, Term)] = t match {
      case Apply(OMS(binder), Lambda(x, tp, body)) => Some((binder, x, tp, body))
