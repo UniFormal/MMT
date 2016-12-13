@@ -59,7 +59,7 @@ object Traverser {
 		   case OMID(_) => t
 		   case OMV(_) => t
 			 case OML(VarDecl(n, tp, df, nt)) => OML(VarDecl(n, tp map rec, df map rec, nt)).from(t)
-		   case t: OMLITTrait => t
+		   case t: OMLITTrait => t //TODO also traverse immutable synType?
 		   case OMFOREIGN(_) => t
 		   case OMATTR(arg,key,value) => OMATTR(rec(arg), key, rec(value)).from(t) //TODO traversal into key
 		   case OMSemiFormal(tokens) => 

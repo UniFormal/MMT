@@ -58,7 +58,7 @@ object Pattern {
 
 class InstanceFeature extends StructuralFeature(Instance.feature) {
   
-   def expectedComponents = Nil
+   def expectedComponents = List(":" -> TypeComponent)
   
    private def getPattern(dd: DerivedDeclaration): Option[(DerivedDeclaration,List[Term])] = {
      val (p,args) = Instance.getPattern(dd).getOrElse {return None}
@@ -112,13 +112,17 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
 
 object Instance {
   val feature = "instance"
-  def apply(home : Term, name : LocalName, pattern: GlobalName, args: List[Term], notC: NotationContainer) = {
+  def apply(home : Term, name : LocalName, pattern: GlobalName, args: List[Term], notC: NotationContainer): DerivedDeclaration = {
     val patExp = OMA(OMS(pattern), args) 
-    val comp = DeclarationComponent(TypeComponent, TermContainer(patExp))
+    apply(home, name, TermContainer(patExp), notC)
+  }
+  
+  def apply(home : Term, name : LocalName, tpC: TermContainer, notC: NotationContainer): DerivedDeclaration = {
+    val comp = DeclarationComponent(TypeComponent, tpC)
     val dd = new DerivedDeclaration(home, name, feature, List(comp), notC)
     dd
   }
-  
+
   /** returns the pattern of an instance */
   def getPattern(dd: DerivedDeclaration) = {
      val tp = dd.getComponent(TypeComponent).flatMap {

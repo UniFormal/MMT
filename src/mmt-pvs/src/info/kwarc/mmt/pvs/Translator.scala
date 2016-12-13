@@ -90,7 +90,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       log("Translated: " + state.th.name)
       val doc = new Document(bt.narrationDPath, true)
       modsM foreach (m => {
-        val theory = new DeclaredTheory(m.parent,m.name,m.meta,m.parameters)
+        val theory = new DeclaredTheory(m.parent,m.name,m.meta,m.paramC)
         controller add theory
         m.getDeclarations foreach {controller.add(_)}
         controller simplifier theory
@@ -123,7 +123,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
     case theory(named, theory_formals, assuming, exporting, decls) =>
       val isPrel = path.toString == "http://pvs.csl.sri.com/Prelude"
       val meta = if (isPrel) PVSTheory.thpath else PVSTheory.preludepath
-      val theory = new DeclaredTheory(path, doName(named.id), Some(meta), Context.empty)
+      val theory = new DeclaredTheory(path, doName(named.id), Some(meta))
       state = new ImportState(this) {
         val isPrelude = isPrel
         val th = theory
@@ -150,7 +150,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       // println(" -- Datatype: " + named.id)
       val isPrel = path.toString == "http://pvs.csl.sri.com/Prelude"
       val meta = if (isPrel) PVSTheory.thpath else PVSTheory.preludepath
-      val theory = new DeclaredTheory(path, doName(named.id /* + "_adt" */ ), Some(meta), Context.empty)
+      val theory = new DeclaredTheory(path, doName(named.id /* + "_adt" */ ), Some(meta))
       state = new ImportState(this) {
         val isPrelude = isPrel
         val th = theory
@@ -201,6 +201,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       sys.exit
   }
 
+  //TODO FR@DM: why are you adding constants here? Shouldn't these be parameters of the theory?
   def doFormal(f:FormalParameter) : Unit = f match {
     case formal_type_decl(named,nonempty) =>
       state.unknowns = 0

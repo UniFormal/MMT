@@ -27,7 +27,7 @@ trait CheckingCallback {
    /** checking */
    def check(j: Judgement)(implicit history: History): Boolean
    /** possibly unsafe simplification */
-   def simplify(t : Term)(implicit stack: Stack, history: History): Term
+   def simplify(t : Obj)(implicit stack: Stack, history: History): t.ThisType
    /** type inference, fails by default */
    def inferType(t : Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = None
    /** @return MightFail by default */

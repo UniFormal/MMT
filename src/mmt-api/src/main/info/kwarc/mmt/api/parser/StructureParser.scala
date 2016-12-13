@@ -136,8 +136,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    *
    * Fatal errors are recovered from by defaulting to [[DefaultObjectParser]]
    */
-  private def puCont(pu: ParsingUnit)(implicit state: ParserState): Term = {
-    val pr = try {
+  private def puCont(pu: ParsingUnit)(implicit state: ParserState): ParseResult = {
+    try {
       objectParser(pu)(state.errorCont)
     } catch {
       case e: Error =>
@@ -146,7 +146,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         state.errorCont(se)
         DefaultObjectParser(pu)(state.errorCont)
     }
-    pr.toTerm
   }
 
   /**
@@ -278,19 +277,42 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
  *
    * @return the raw string, the region, and the parsed term
    */
-  def readParsedObject(context: Context, topRule: Option[ParsingRule] = None)(implicit state: ParserState): (String, SourceRegion, Term) = {
+  def readParsedObject(context: Context, topRule: Option[ParsingRule] = None)(implicit state: ParserState): (String, SourceRegion, ParseResult) = {
     val (obj, reg) = state.reader.readObject
     val pu = ParsingUnit(state.makeSourceRef(reg), context, obj, state.namespaces, topRule)
-    val parsed = puCont(pu)
-    (obj, reg, parsed)
+    val pr = puCont(pu)
+    (obj, reg, pr)
   }
-
+  
   private def doComponent(c: ComponentKey, tc: TermContainer, cont: Context)(implicit state: ParserState) {
-    val (obj, _, tm) = readParsedObject(cont)
+    val (obj, _, pr) = readParsedObject(cont)
     tc.read = obj
-    tc.parsed = tm
+    tc.parsed = pr.toTerm
   }
 
+  private val contextRule = ParsingRule(utils.mmt.context, Nil, TextNotation.fromMarkers(Precedence.integer(0), None)(Var(1, true, Some(Delim(",")))))
+  /** like doComponent, but expects to find a context (using contextRule notation) */
+  private def doContextComponent(cc: ContextContainer, context: Context)(implicit state: ParserState) {
+    val (obj, reg, pr) = readParsedObject(context, Some(contextRule))
+    cc.read = obj
+    val cont: Context = pr.term match {
+      case OMBINDC(OMS(utils.mmt.context), cont, Nil) =>
+        cont
+      case _ =>
+        errorCont(makeError(reg, "not a context: " + controller.presenter.asString(pr.toTerm)))
+        Context.empty
+    }
+    cc.parsed = cont
+    cc.unknowns = pr.unknown
+    cc.free = pr.free
+  }
+/*
+    val cont = ParseResult.fromTerm(p) match {
+
+*/
+  
+  
+  
   private def doNotation(c: NotationComponentKey, nc: NotationContainer, treg: SourceRegion)(implicit state: ParserState) {
     val notString = state.reader.readObject._1
     if (nc(c).isDefined)
@@ -624,8 +646,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val tpath = ns ? name
     var delim = state.reader.readToken
     if (delim._1 == "abbrev") {
-      val (_, _, df) = readParsedObject(context)
-      val thy = DefinedTheory(ns, name, df)
+      val (_, _, pr) = readParsedObject(context)
+      val thy = DefinedTheory(ns, name, pr.toTerm)
       moduleCont(thy, parent)
     } else {
       val metaReg = if (delim._1 == ":") {
@@ -640,20 +662,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case _ => context
       }
 
-      val contextRule = ParsingRule(utils.mmt.context, Nil, TextNotation.fromMarkers(Precedence.integer(0), None)(Var(1, true, Some(Delim(",")))))
-      val parameters = if (delim._1 == ">") {
-        val (_, reg, p) = readParsedObject(contextMeta, Some(contextRule))
-        val params = ParseResult.fromTerm(p) match {
-          case ParseResult(unk, free, OMBINDC(OMS(utils.mmt.context), cont, Nil)) => unk ++ free ++ cont
-          case _ =>
-            errorCont(makeError(reg, "parameters of theory must be context: " + controller.presenter.asString(p)))
-            Context.empty
-        }
+      val paramC = new ContextContainer
+      if (delim._1 == ">") {
+        doContextComponent(paramC, contextMeta)
         delim = state.reader.readToken
-        params
-      } else
-        Context.empty
-      val t = new DeclaredTheory(ns, name, meta, parameters)
+      }
+      val t = new DeclaredTheory(ns, name, meta, paramC)
       metaReg foreach {case (_,r) => SourceRef.update(t.metaC.get.get, r)} //awkward, same problem for structure domains
       moduleCont(t, parent)
       if (delim._1 == "=") {
@@ -697,7 +711,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     readDelimiter("abbrev", "=") match {
       case "abbrev" =>
         val (_, _, df) = readParsedObject(context)
-        val v = DefinedView(ns, name, from, to, df, isImplicit)
+        val v = DefinedView(ns, name, from, to, df.toTerm, isImplicit)
         moduleCont(v, parent)
       case "=" =>
         val v = new DeclaredView(ns, name, from, to, isImplicit) // TODO add metamorph?
@@ -768,6 +782,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               (key,cont) match {
                 case (_, tc: TermContainer) =>
                   doComponent(key, tc, context)
+                case (_, cc: ContextContainer) =>
+                  doContextComponent(cc, context)
                 case (nk: NotationComponentKey, nc: NotationContainer) =>
                   doNotation(nk, nc, treg)
                 case _ => throw ImplementationError("illegal component")
@@ -907,7 +923,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   private def readDerivedDeclaration(feature: StructuralFeature, parent: MPath, context: Context)(implicit state: ParserState) = {
     val nameOpt = if (feature.unnamedDeclarations.isEmpty) Some(readName) else None
     val tcs = feature.expectedComponents map {
-      case (s, k) => (s -> (k, new TermContainer)) //TODO must allow for context components for patterns
+      case (s, k) =>
+        val oc = k match {
+          case _: TermComponentKey => new TermContainer
+          case ParamsComponent => new ContextContainer
+        }
+        (s -> (k, oc))
     }
     val notC = new NotationContainer
     val compSpecs = tcs ::: notationComponentSpec(notC)
@@ -927,16 +948,19 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    *  
    *  parses 'pattern(name, args) NOTATIONS' where name is a free variable for the name of the instance */
   private def readInstance(pattern: DerivedDeclaration, tpath: MPath)(implicit state: ParserState): DerivedDeclaration = {
-    val (_, reg, tm) = readParsedObject(Context(tpath))
-    val (name,args) = controller.pragmatic.mostPragmatic(tm) match {
+    val context = Context(tpath)
+    val patNot = pattern.notC.parsing map {n => ParsingRule(pattern.path, Nil, n)}
+    val (_, reg, pr) = readParsedObject(context, patNot)
+    val (name,tp) = controller.pragmatic.mostPragmatic(pr.term) match {
       case OMA(OMS(pattern), OMV(n)::as) =>
-        (n,as)
+        (n,OMA(OMS(pattern), as))
       case _ =>
         throw makeError(reg, "not an instance of pattern " + pattern)
     }
+    val tpC = TermContainer(pr.copy(term = tp).toTerm)
     val nc = NotationContainer()
-    readComponents(Context(tpath), notationComponentSpec(nc))
-    Instance(OMMOD(tpath), name, pattern.path, args, nc)
+    readComponents(context, notationComponentSpec(nc))
+    Instance(OMMOD(tpath), name, tpC, nc)
   }
   
   private def readOpaque(pi: HasParentInfo, context: Context)(implicit state: ParserState): OpaqueElement = {

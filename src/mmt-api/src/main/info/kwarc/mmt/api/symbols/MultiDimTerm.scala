@@ -2,22 +2,23 @@ package info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.api._
 import objects._
 
-/** a mutable wrapper around a Term together with status information */
-class TermDimension {
+/** a mutable wrapper around a value together with status information */
+class ObjDimension[T] {
    /** the Term */
-   var term: Option[Term] = None
-   /** getter for term, but only if it is not dirty */
-   def termIfNotDirty = if (dirty) None else term
-   /** true if the Term is dirty, i.e., has to be recomputed */
+   var obj: Option[T] = None
+   /** getter, but only if not dirty */
+   def termIfNotDirty = if (dirty) None else obj
+   /** true if dirty, i.e., has to be recomputed */
    var dirty: Boolean = false
    /** the time of the last change */
    var time : Long = System.currentTimeMillis
    /** delete all data */
    def delete {
-      term = None
+      obj = None
       dirty = false
+      time = System.currentTimeMillis
    }
-   override def toString = term.toString + (if (dirty) " (dirty)" else "")
+   override def toString = obj.toString + (if (dirty) " (dirty)" else "")
 }
 
 /** TermContainer acts as the interface between the structural and the object level
@@ -31,17 +32,17 @@ class TermDimension {
  * The representations are read < parsed < analyzed.
  * Setting a representation marks the higher representations as dirty.
  */
-class TermContainer extends AbstractTermContainer {
+trait ObjContainer[T] {
    private var _read     : Option[String] = None
-   private val _parsed   = new TermDimension
-   private val _analyzed = new TermDimension
+   private val _parsed   = new ObjDimension[T]
+   private val _analyzed = new ObjDimension[T]
    override def toString = "read: " + _read.toString + "\nparsed: " + _parsed.toString + "\nanalyzed: " + _analyzed.toString
    /** the unparsed string representation */
    def read = _read
    /** the parsed representation without further analysis */
-   def parsed = _parsed.term
+   def parsed = _parsed.obj
    /** the analyzed representation after type and argument reconstruction */
-   def analyzed = _analyzed.term
+   def analyzed = _analyzed.obj
    /** setter for the unparsed string representation */
    def read_=(s: Option[String]): Boolean = {
       val changed = s != _read
@@ -54,8 +55,8 @@ class TermContainer extends AbstractTermContainer {
    }
    def read_=(s: String) {read_=(Some(s))}
    /** setter for the parsed representation without further analysis */
-   def parsed_=(t: Option[Term]): Boolean = {
-      val changed = t != _parsed.term
+   def parsed_=(t: Option[T]): Boolean = {
+      val changed = t != _parsed.obj
       /*
        * TODO assume old-parsed (op), old-analyzed (oa), new-parsed (np), need new-analyzed (na)
        * metadata of oa points to metadata of op
@@ -63,7 +64,7 @@ class TermContainer extends AbstractTermContainer {
        * if op != np, we compute na anyway, no problem
        * if op == np, na := oa except that metadata of np must be integrated into metadata of op  
        */
-      _parsed.term = t
+      _parsed.obj = t
       if (changed) {
          _parsed.time    = System.currentTimeMillis
          _analyzed.dirty = true
@@ -71,19 +72,23 @@ class TermContainer extends AbstractTermContainer {
       _parsed.dirty = false
       changed
    }
-   def parsed_=(t: Term) {parsed_=(Some(t))}
+   def parsed_=(t: T) {parsed_=(Some(t))}
    /** setter for the analyzed representation */
-   def analyzed_=(t: Option[Term]): Boolean = {
-      val changed = t != _analyzed.term
-      _analyzed.term = t  // set this even if equal in order to get the metadata of the new term
+   def analyzed_=(t: Option[T]): Boolean = {
+      val changed = t != _analyzed.obj
+      _analyzed.obj = t  // set this even if equal in order to get the metadata of the new term
       if (changed) {
          _analyzed.time = System.currentTimeMillis
       }
       _analyzed.dirty = false
       changed
    }
-   def analyzed_=(t: Term): Boolean = {
+   def analyzed_=(t: T): Boolean = {
       analyzed_=(Some(t))
+   }
+   /** sets an analyzed value */
+   def set(t: T) {
+     analyzed = t
    }
    /** true if the term must still be (re)parsed */
    def isParsedDirty = ! _parsed.dirty
@@ -96,22 +101,9 @@ class TermContainer extends AbstractTermContainer {
    /** time of the last change */
    def lastChangeAnalyzed = _analyzed.time
    /** getter for the best available non-dirty representation: analyzed or parsed */
-   def get: Option[Term] = _analyzed.termIfNotDirty orElse _parsed.termIfNotDirty
+   def get: Option[T] = _analyzed.termIfNotDirty orElse _parsed.termIfNotDirty
    /** true if any dimension is present, i.e., if the component is present */
    def isDefined = _read.isDefined || get.isDefined
-   /** copies over the components of another TermContainer
-    *  dependent dimensions that are not part of tc become dirty
-    */
-   def update(tc: ComponentContainer) = {tc match {
-      case tc: TermContainer =>
-         var changed = (read = tc.read)
-         if (changed || tc.parsed.isDefined)
-            changed |= (parsed = tc.parsed)
-         if (changed || tc.analyzed.isDefined)
-            changed |= (analyzed = tc.analyzed)
-         changed
-      case _ => throw ImplementationError("not a TermContainer")
-   }}
    /** stores the set of components that analysis depended on */
    lazy val dependsOn = new scala.collection.mutable.HashSet[CPath]
    /** delete this component */
@@ -120,21 +112,49 @@ class TermContainer extends AbstractTermContainer {
       List(_parsed,_analyzed).foreach {_.delete}
       dependsOn.clear
    }
+
+   // auxiliary methods that cannot be implemented generically in Scala
+   type ThisType <: ObjContainer[T]
+   /** creates a new empty container for the same type */
+   protected def newEmpty: ThisType
+   /** checks if a container stores objects of the same type */
+   protected def hasSameType(oc: ObjContainer[_]): Boolean
    
-   /** applies a function to the contained Term and returns a new TermContainer */
-   def map(f: Term => Term) = TermContainer(get map f)
-   
+   /** copies over the components of another TermContainer
+    *  dependent dimensions that are not part of tc become dirty
+    */
+   def update(tc: ComponentContainer) = {tc match {
+      case tc: ObjContainer[T] if hasSameType(tc) =>
+         var changed = (read = tc.read)
+         if (changed || tc.parsed.isDefined)
+            changed |= (parsed = tc.parsed)
+         if (changed || tc.analyzed.isDefined)
+            changed |= (analyzed = tc.analyzed)
+         changed
+      case _ => throw ImplementationError("not a TermContainer")
+   }}
+
    /** creates a deep copy of this container */
-   def copy = {
-     val tc = new TermContainer
+   def copy: ThisType = {
+     val tc = newEmpty
      tc.read = read
      tc.parsed = parsed
      tc.analyzed = analyzed
      tc
    }
-   def merge(that: TermContainer) = {
+   def merge(that: ThisType): ThisType = {
      if (that.isDefined) that else this.copy
    }
+}
+
+/** container for mutable terms */ 
+class TermContainer extends AbstractTermContainer with ObjContainer[Term] {
+   type ThisType = TermContainer
+   protected def newEmpty = new TermContainer
+   protected def hasSameType(oc: ObjContainer[_]) = oc.isInstanceOf[TermContainer]
+   
+   /** applies a function to the contained Term and returns a new TermContainer */
+   def map(f: Term => Term) = TermContainer(get map f)
 }
 
 /** helper object */
@@ -161,4 +181,24 @@ object TermContainer {
       }      
       tc
    }
+}
+
+/** container for mutable contexts */ 
+class ContextContainer extends AbstractObjectContainer with ObjContainer[Context] {
+   var unknowns = Context.empty
+   var free = Context.empty
+
+   type ThisType = ContextContainer
+   protected def newEmpty = new ContextContainer
+   protected def hasSameType(oc: ObjContainer[_]) = oc.isInstanceOf[ContextContainer]
+}
+
+object ContextContainer {
+   /** convenience factory for an analyzed context */
+   def apply(c: Context): ContextContainer = {
+     val cc = new ContextContainer
+     cc.analyzed = c
+     cc
+   }
+
 }

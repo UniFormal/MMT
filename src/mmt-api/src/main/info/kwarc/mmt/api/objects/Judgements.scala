@@ -49,20 +49,6 @@ case class Equality(stack: Stack, tm1: Term, tm2: Term, tpOpt: Option[Term]) ext
    def swap = Equality(stack, tm2, tm1, tpOpt)
 }
 
-/** represents an equality judgement between contexts
- * context |- ctx = ctx
- */
-case class EqualityContext(stack: Stack, context1: Context, context2: Context) extends Judgement {
-   lazy val freeVars = {
-     val ret = new HashSet[LocalName]
-     val fvs = stack.context.freeVars_ ::: context2.freeVars_ :::context1.freeVars_
-     fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
-     ret
-   }
-   override def presentSucceedent(implicit cont: Obj => String): String =
-      cont(context1) + " = " + cont(context2)
-}
-
 
 /**
  *  Common code for some binary judgements
@@ -71,7 +57,7 @@ abstract class BinaryObjJudgement(stack: Stack, left: Obj, right: Obj, delim: St
    lazy val freeVars = {
     val ret = new HashSet[LocalName]
     val fvs = stack.context.freeVars_ ::: left.freeVars_ ::: right.freeVars_
-    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
+    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n} //only vars from obj should be kicked out here
     ret
   }
   override def presentSucceedent(implicit cont: Obj => String): String =
@@ -100,7 +86,7 @@ abstract class UnaryObjJudgement(stack: Stack, obj: Obj, label: String) extends 
    lazy val freeVars = {
     val ret = new HashSet[LocalName]
     val fvs = stack.context.freeVars_ ::: obj.freeVars_
-    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
+    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n} //only vars from obj should be kicked out here (multiple places in this file)
     ret
   }
   override def presentSucceedent(implicit cont: Obj => String): String =
@@ -144,12 +130,19 @@ object IsRealization {
    def apply(stack: Stack, morphism: Term, from: Term) = IsMorphism(stack, morphism, from, ComplexTheory(Nil))
 }
 
+/** well-formedness of contexts */
 case class IsContext(stack: Stack, con: Context) extends UnaryObjJudgement(stack, con, "Context")
-case class IsSubstitution(stack: Stack, substitution: Substitution, from: Context, to: Context) extends Judgement {
-  lazy val freeVars = {
-    val ret = new HashSet[LocalName]
-    val fvs = stack.context.freeVars_ ::: substitution.freeVars_ ::: from.freeVars_ ::: to.freeVars_
-    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
-    ret
-  }
+
+/** represents an equality judgement between contexts
+ * context |- context1 = context2
+ */
+case class EqualityContext(stack: Stack, context1: Context, context2: Context) extends Judgement {
+   lazy val freeVars = {
+     val ret = new HashSet[LocalName]
+     val fvs = stack.context.freeVars_ ::: context2.freeVars_ :::context1.freeVars_
+     fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
+     ret
+   }
+   override def presentSucceedent(implicit cont: Obj => String): String =
+      cont(context1) + " = " + cont(context2)
 }

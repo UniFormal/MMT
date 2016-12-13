@@ -64,7 +64,7 @@ class Matcher(controller: Controller, rules: RuleSet, context: Context, queryVar
          case j: EqualityContext => auxCon(j.context, j.context1, j.context2).isDefined
          case _ => false
       }
-      def simplify(t: Term)(implicit stack: Stack, history: History) =
+      def simplify(t: Obj)(implicit stack: Stack, history: History) =
          controller.simplifier(t, stack.context, rules)
       def outerContext = context ++ querySolution
    }

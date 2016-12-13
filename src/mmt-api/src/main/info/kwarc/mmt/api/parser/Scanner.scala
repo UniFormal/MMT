@@ -360,7 +360,7 @@ case class FoundDelim(pos: Int, delim: Delimiter) extends Found {
   *              (as TokenList's are mutable, slice is not necessarily valid in the future)
   * @param n the number of the Arg
   */
-abstract class FoundArg extends Found {
+sealed abstract class FoundArg extends Found {
   val slice: TokenSlice
   val n: Int
   override def toString: String = slice.toString
@@ -371,13 +371,13 @@ abstract class FoundArg extends Found {
 
 case class FoundSimpArg(slice : TokenSlice, n : Int) extends FoundArg
 
-case class FoundOML(slice : TokenSlice, n: Int, typed : Boolean, defined : Boolean) extends FoundArg
+case class FoundOML(slice : TokenSlice, n: Int, info: LabelInfo) extends FoundArg
 
 /** represents an [[notations.SeqArg]] that was found
   * @param n the number of the SeqArg
   * @param args the arguments that were found
   */
-abstract class FoundSeqArg extends Found {
+sealed abstract class FoundSeqArg extends Found {
   val n: Int
   val args: List[FoundArg]
   override def toString: String = n.toString + args.map(_.toString).mkString(":(", " ", ")")
@@ -388,7 +388,7 @@ abstract class FoundSeqArg extends Found {
 
 case class FoundSimpSeqArg(n : Int, args : List[FoundSimpArg]) extends FoundSeqArg
 
-case class FoundSeqOML(n: Int, args: List[FoundOML],typed : Boolean, defined : Boolean) extends FoundSeqArg
+case class FoundSeqOML(n: Int, args: List[FoundOML], info: LabelInfo) extends FoundSeqArg
 
 /** helper class for representing a single found variable
   * @param pos first Token

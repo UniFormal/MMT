@@ -68,49 +68,49 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
       left = prepicked ::: left
    }
    /** pick all available Token's as SimpArg(n) or LabelArg(n, typed, defined) */
-   private def PickAll(n: Int, isOML:Option[(Boolean,Boolean)]) : FoundArg = isOML match {
+   private def PickAll(n: Int, isOML:Option[LabelInfo]) : FoundArg = isOML match {
       case None => FoundSimpArg(scanner.pick(numCurrentTokens), n)
-      case Some((typed,defined)) => FoundOML(scanner.pick(numCurrentTokens),n,typed,defined)
+      case Some(io) => FoundOML(scanner.pick(numCurrentTokens),n,io)
    }
    /** pick exactly ns.length available Tokens as ns.map(Arg(_)) or ns.map(LabelArg(_,...)) */
-   private def PickSingles(ns: List[(Int,Option[(Boolean, Boolean)])]) = {
+   private def PickSingles(ns: List[(Int,Option[LabelInfo])]) = {
       val fs = ns reverseMap {case (n,isOML) =>
          isOML match {
             case None => FoundSimpArg(scanner.pick(1), n)
-            case Some((istyped, isdefined)) => FoundOML(scanner.pick(1), n, istyped, isdefined)
+            case Some(io) => FoundOML(scanner.pick(1), n, io)
          }
       }
       found = fs ::: found
    }
    
-   private def PickAllSeq(n: Int, isOML:Option[(Boolean,Boolean)]) = {
+   private def PickAllSeq(n: Int, infoOpt:Option[LabelInfo]) = {
       val ts = scanner.pick(numCurrentTokens)
-      val a = isOML match {
+      val a = infoOpt match {
          case None => FoundSimpArg(ts, n)
-         case Some((isT, isD)) => FoundOML(ts, n, isT, isD)
+         case Some(info) => FoundOML(ts, n, info)
       }
       found.headOption match {
-         case Some(FoundSeqOML(m, args, tp, df)) if m == n && isOML.isDefined =>
-            found = FoundSeqOML(n, args ::: List(a.asInstanceOf[FoundOML]), tp, df) :: found.tail
-         case Some(FoundSimpSeqArg(m, args)) if m == n && isOML.isEmpty =>
+         case Some(FoundSimpSeqArg(m, args)) if m == n && infoOpt.isEmpty =>
             found = FoundSimpSeqArg(n, args ::: List(a.asInstanceOf[FoundSimpArg])) :: found.tail
+         case Some(FoundSeqOML(m, args, info)) if m == n && infoOpt.isDefined =>
+            found = FoundSeqOML(n, args ::: List(a.asInstanceOf[FoundOML]), info) :: found.tail
          case _ =>
-            val f = isOML match {
+            val f = infoOpt match {
                case None => FoundSimpSeqArg(n, List(a.asInstanceOf[FoundSimpArg]))
-               case Some((isT, isD)) => FoundSeqOML(n, List(a.asInstanceOf[FoundOML]), isT, isD)
+               case Some(info) => FoundSeqOML(n, List(a.asInstanceOf[FoundOML]), info)
             }
             found ::= f
       }
    }
 
-   private def SeqDone(n: Int, isOML:Option[(Boolean,Boolean)]) {
+   private def SeqDone(n: Int, isOML:Option[LabelInfo]) {
       found.headOption match {
          case Some(FoundSimpSeqArg(m, _)) if m == n =>
-         case Some(FoundSeqOML(m,_,_,_)) if m == n =>
+         case Some(FoundSeqOML(m,_,_)) if m == n =>
          case _ =>
             val f = isOML match {
                case None => FoundSimpSeqArg(n, Nil)
-               case Some((isT,isD)) => FoundSeqOML(n,Nil,isT,isD)
+               case Some(info) => FoundSeqOML(n,Nil,info)
             }
             found ::= f
       }
@@ -136,7 +136,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
    
    private def inSeqArg(n: Int) = found match {
       case FoundSimpSeqArg(m, _) :: _ if m == n => true
-      case FoundSeqOML(m,_,_,_) :: _ if m == n => true
+      case FoundSeqOML(m,_,_) :: _ if m == n => true
       case _ => false
    }
    
@@ -144,8 +144,8 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
     *  a List[Int] (possibly Nil) that corresponds to a List[Arg]
     * and the remaining List[Marker]
     */
-   private def splitOffArgs(ms: List[Marker], ns: List[(Int,Option[(Boolean,Boolean)])] = Nil) : (List[(Int,Option[(Boolean,Boolean)])], List[Marker]) = ms match {
-      case LabelArg(n,typed,defined,_) :: rest => splitOffArgs(rest, (n,Some((typed,defined))) :: ns)
+   private def splitOffArgs(ms: List[Marker], ns: List[(Int,Option[LabelInfo])] = Nil) : (List[(Int,Option[LabelInfo])], List[Marker]) = ms match {
+      case (la@LabelArg(n,_,_,_)) :: rest => splitOffArgs(rest, (n,Some(la.info)) :: ns)
       case SimpArg(n, _) :: rest => splitOffArgs(rest, (n,None) :: ns)
       case Delim("%w") :: rest => splitOffArgs(rest, ns)
       case rest => (ns.reverse, rest)
@@ -237,33 +237,16 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                   deleteDelim(currentIndex)
                }
          }
-         case (Nil, LabelSeqArg(n,Delimiter(s),tp,df,_) :: _) if matches(s) =>
-            onApply {
-               PickAllSeq(n,Some((tp,df)))
-               addPrepickedDelims(Delim(s),currentToken)
-            }
          case (Nil, SimpSeqArg(n, Delimiter(s),_) :: _) if matches(s) =>
               onApply {
                  PickAllSeq(n,None)
                  addPrepickedDelims(Delim(s), currentToken)
               }
-         case (Nil, LabelSeqArg(n,Delimiter(t),tp,df,_) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
-            if (numCurrentTokens > 0) {
-               //picks the last element of the sequence (possibly the only one)
-               onApplyI {currentIndex =>
-                  PickAllSeq(n,Some((tp,df)))
-                  delete(1)
-                  deleteDelim(currentIndex)
-               }
-            } else if (numCurrentTokens == 0) {
-               //picks nothing and finds an empty sequence
-               onApplyI {currentIndex =>
-                  SeqDone(n,Some((tp,df)))
-                  delete(1)
-                  deleteDelim(currentIndex)
-               }
-            } else
-               NotApplicable //abort?
+         case (Nil, (lsa @ LabelSeqArg(n,Delimiter(s),_,_,_,_)) :: _) if matches(s) =>
+            onApply {
+               PickAllSeq(n,Some(lsa.info))
+               addPrepickedDelims(Delim(s),currentToken)
+            }
          case (Nil, SimpSeqArg(n, Delimiter(t),_) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
               if (numCurrentTokens > 0) {
                  //picks the last element of the sequence (possibly the only one)
@@ -281,6 +264,23 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                  }
               } else
                  NotApplicable //abort?
+         case (Nil, (lsa @ LabelSeqArg(n,Delimiter(t),_,_,_,_)) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
+            if (numCurrentTokens > 0) {
+               //picks the last element of the sequence (possibly the only one)
+               onApplyI {currentIndex =>
+                  PickAllSeq(n,Some(lsa.info))
+                  delete(1)
+                  deleteDelim(currentIndex)
+               }
+            } else if (numCurrentTokens == 0) {
+               //picks nothing and finds an empty sequence
+               onApplyI {currentIndex =>
+                  SeqDone(n,Some(lsa.info))
+                  delete(1)
+                  deleteDelim(currentIndex)
+               }
+            } else
+               NotApplicable //abort?
          // start a variable
          case (Nil, (vm @ Var(n, _, sep, _)) :: rest) =>
             numCurrentTokens match {
@@ -383,10 +383,10 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                 // can't close because we've never started vm, still need to parse vm
                 NotApplicable
          }
-         case (List((n,Some((tp,df)))), Nil) if numCurrentTokens > 0 =>
+         case (List((n,Some(info))), Nil) if numCurrentTokens > 0 =>
             // one argument taking all available Token's
             onApply {
-               found ::= PickAll(n,Some((tp,df)))
+               found ::= PickAll(n,Some(info))
                delete(1)
             }
          // as many arguments as there are Token's

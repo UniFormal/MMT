@@ -24,10 +24,10 @@ class SubTypeParserExt extends ParserExtension {
   }
 
   def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, keyword: String,con:Context) = se match {
-    case c:FinalConstant if keyword == "<:" =>
-      val (obj, reg, tm) = sp.readParsedObject(con)(s)
+    case c: Constant if keyword == "<:" =>
+      val (obj, reg, pr) = sp.readParsedObject(con)(s)
       c.tpC.read = obj
-      c.tpC.parsed = subtypeOf(tm)
+      c.tpC.parsed = pr.map(t => subtypeOf(t)).toTerm
     case _ => s.errorCont(SourceError("SubTypeParserExt", SourceRef(s.ps.source, s.startPosition.toRegion),
       "not applicable to StructuralElement "+se.getClass.toString))
   }

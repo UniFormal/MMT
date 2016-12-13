@@ -370,7 +370,7 @@ object OMSemiFormal {
 }
 
 /**
- * experimental constructor for labels and labelled terms
+ * local declarations with type and/or definiens, with scope, but not subject to alpha-renaming and substitution
  * 
  * These could be used for the typed/defined fields in a record type/value or the selection function. 
  */

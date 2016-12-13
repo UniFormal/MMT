@@ -12,7 +12,7 @@ case class ParsingRule(name: ContentPath, alias: List[LocalName], notation: Text
   def firstDelimString: Option[String] = notation.parsingMarkers collectFirst {
     case d: Delimiter => d.expand(name, alias).text
     case SimpSeqArg(_, Delim(s), _) => s
-    case LabelSeqArg(_,Delim(s),_,_,_) => s
+    case LabelSeqArg(_,Delim(s),_,_,_,_) => s
   }
 }
 
@@ -24,7 +24,6 @@ class NotationBasedParser extends ObjectParser {
 
   def isApplicable(format: String): Boolean = format == "mmt"
 
-  /** set by every call to appy, global for convenience */
   private lazy val prag = controller.pragmatic
 
   /**
@@ -54,15 +53,16 @@ class NotationBasedParser extends ObjectParser {
   private object Variables {
      // due to the recursive processing, variables in children are always found first
      // so adding to the front yields the right order
-     /** unknown variables */
+     /** unknowns */
      private var vardecls: List[VarDecl] = Nil
      private var counter = 0
 
-     /** free variables, whose types may depend on the unknowns */
+     /** free variables (whose types may depend on the unknowns) */
      private var freevars: List[LocalName] = Nil
+     /** @return the free variables detected so far */
      def getFreeVars = freevars
-     def bindFree(v : VarDecl) = freevars = freevars.filter(w => w!=v.name)
-
+     
+     /** @return returns the unknown and free variables at the end, free vars have unknown types */
      def getVariables(implicit pu: ParsingUnit): (Context,Context) = {
         val vdNames = vardecls.map(_.name)
         val fvDecls = freevars map {n =>
@@ -151,23 +151,8 @@ class NotationBasedParser extends ObjectParser {
     } else {
       //scanning
       val sc = new Scanner(tl, pu.top, controller.report)
-      // scan once with the top notation and make sure it matches the whole input
-      /*val wrongTop = pu.top match {
-        case Some(n) =>
-          log("scanning top notation: " + n)
-          sc.scan(List(n))
-          sc.tl.getTokens match {
-            case hd :: Nil if hd.isInstanceOf[MatchedList] => false
-            case _ =>
-              makeError("top notation did not match whole input: " + n.toString, pu.source.region)
-              true
-          }
-        case _ => false
-      }
-      if (wrongTop)
-        DefaultObjectParser(pu)
-      else {*/
-        // now scan with all notations in increasing order of precedence
+        // scanner initially scans with top rule, now scan with all notations in increasing order of precedence
+        // TODO does it make sense to sort by meta-theory-level first, then by precedence?
         notations foreach {
           case (priority, nots) => sc.scan(nots)
         }
@@ -183,7 +168,6 @@ class NotationBasedParser extends ObjectParser {
         log("parse result: " + tm.toString)
         val (unk, free) = getVariables
         ParseResult(unk, free, tm)
-      //}
     }
     result
   }
@@ -254,52 +238,6 @@ class NotationBasedParser extends ObjectParser {
   private def mayBeFree(n: String) = {
      n != "" && n(0).isLetter &&
      n.forall(c => c.isLetter || c.isDigit)
-  }
-
-  private def makeOML(te: TokenListElem, boundVars: List[LocalName], typed : Boolean, defed : Boolean, attrib: Boolean = false)
-                      (implicit pu: ParsingUnit, errorCont: ErrorHandler): Term = {
-    var (name,tp,df) = getOMLObj(makeTerm(te,boundVars))
-    if (typed && tp.isEmpty) tp = Some(newUnknown(newExplicitUnknown, boundVars))
-    if (defed && df.isEmpty) df = Some(newUnknown(newExplicitUnknown, boundVars))
-    val t = OML(name,tp,df)
-    bindFree(t.vd)
-    t
-  }
-
-  def getOMLObj(t : Term) : (LocalName,Option[Term],Option[Term]) = {
-    object OMLtype {
-      def unapply(t : Term) : Option[(Term,Term)] = t match {
-        case OMA(OMS(f),List(a,b)) =>
-          controller.get(f) match {
-            case c:FinalConstant if c.rl contains "OMLType" => Some((a,b))
-            case _ => None
-          }
-        case _ => None
-      }
-    }
-    object OMLdef {
-      def unapply(t : Term) : Option[(Term,Term)] = t match {
-        case OMA(OMS(f),List(a,b)) =>
-          controller.get(f) match {
-            case c:FinalConstant if c.rl contains "OMLDef" => Some((a,b))
-            case _ => None
-          }
-        case _ => None
-      }
-    }
-    t match {
-      case OMLtype(OMLdef(OMV(n),df),tp) =>
-        (n,Some(tp),Some(df))
-      case OMLtype(OMV(n),OMLdef(tp,df)) =>
-        (n,Some(tp),Some(df))
-      case OMLtype(OMV(n),tp) =>
-        (n,Some(tp),None)
-      case OMLdef(OMLtype(OMV(n),tp),df) => (n,Some(tp),Some(df))
-      case OMLdef(OMV(n),OMLtype(df,tp)) => (n,Some(tp),Some(df))
-      case OMLdef(OMV(n),df) => (n,None,Some(df))
-      case OMV(n) => (n,None,None)
-      case _ => throw new Exception("OML malformed")
-    }
   }
 
 
@@ -412,13 +350,16 @@ class NotationBasedParser extends ObjectParser {
        case _ => Nil
      }.sortBy(_._1.number)
      val newBVarNames = newBVars.map(_._2)
-     // the prefix of newBVarNames just before a certain variable identified by its Var marker and
-     // within that FoundVar's sequence of variables by its name
-     def newBVarNamesBefore(vm: Var, name: LocalName): List[LocalName] = {
+     /** the bound variables occurring in a variable: the prefix of newBVarNames just before a certain variable identified by its Var marker and
+         within that FoundVar's sequence of variables by its name */
+     def boundVarsInVar(vm: Var, name: LocalName): List[LocalName] = {
        val pos = newBVars.indexWhere(_ ==(vm, name))
-       newBVarNames.take(pos)
+       boundVars ::: newBVarNames.take(pos)
      }
+     /** the bound variable in argument, distinguishing arguments before and after the variables */
+     def boundVarsInArg(n: Int): List[LocalName] = if (n < firstVar) boundVars else boundVars ::: newBVarNames
      // 3 lists for the children, in concrete syntax order, together with their position in the abstract syntax
+     // order does not matter except that sequence elements (which have the same position) must occur in sequence order 
      // the arguments before the variables
      var subs: List[(Int, Term)] = Nil
      // the variable declaration list (name + type)
@@ -428,45 +369,58 @@ class NotationBasedParser extends ObjectParser {
      // We walk through found and fill subs, vars, and args by
      // recursively processing the respective TokenListElem in ml.tokens
      var i = 0 //the position of the next TokenListElem in ml.tokens
+     /** adds terms to either subs or args, depending on n and increments i*/
+     def addTerms(n: Int, terms: List[Term]) {
+        val nterms = terms.map((n,_))
+        if (n < firstVar) subs = subs ::: nterms
+         else args = args ::: nterms
+         i += terms.length
+     }
      found foreach {
        case _: FoundDelim =>
        // argument before the variables
-       case FoundSimpArg(_, n) if n < firstVar =>
-         subs ::=(n, makeTerm(ml.tokens(i), boundVars))
-         i += 1
-       case FoundOML(_,n,tp,df) if n < firstVar =>
-         subs ::=(n, makeOML(ml.tokens(i), boundVars,tp,df))
-         i+=1
-       // argument behind the variables: as above but all newBVarNames are added to the context
        case FoundSimpArg(_, n) =>
-         args ::=(n, makeTerm(ml.tokens(i), boundVars ::: newBVarNames))
-         i += 1
-       case FoundOML(_, n,tp,df) =>
-         args ::=(n, makeOML(ml.tokens(i),boundVars ::: newBVarNames,tp,df))
-         i += 1
-       // sequence arguments: as the two cases above, but as many TokenListElement as the sequence has elements
-       case FoundSimpSeqArg(n, fas) if n < firstVar =>
-         val toks = ml.tokens.slice(i, i + fas.length)
-         subs = subs ::: toks.map(t => (n, makeTerm(t, boundVars)))
-         i += fas.length
-       case FoundSeqOML(n,fas,tp,df) if n < firstVar =>
-         val toks = ml.tokens.slice(i, i + fas.length)
-         subs = subs ::: toks.map(t => (n, makeOML(t,boundVars,tp,df)))
-         i += fas.length
+         val r = makeTerm(ml.tokens(i), boundVarsInArg(n))
+         addTerms(n, List(r))
+       // label arguments: as the cases above but with makeOML instead of makeTerm
+       case FoundOML(_,n,info) =>
+         val r = makeOML(ml.tokens(i), boundVarsInArg(n),info)
+         addTerms(n, List(r))
+       // sequence arguments: as the case above, but as many TokenListElement as the sequence has elements
        case FoundSimpSeqArg(n, fas) =>
          val toks = ml.tokens.slice(i, i + fas.length)
-         args = args ::: toks.map(t => (n, makeTerm(t, boundVars ::: newBVarNames)))
-         i += fas.length
-       case FoundSeqOML(n,fas,tp,df) =>
+         val r = toks.map(t => makeTerm(t, boundVarsInArg(n)))
+         addTerms(n, r)
+       // label sequence arguments: as above
+       case FoundSeqOML(n,fas,info) =>
          val toks = ml.tokens.slice(i, i + fas.length)
-         args = args ::: toks.map(t => (n,makeOML(t, boundVars ::: newBVarNames,tp,df)))
+         // the names encountered in the sequence so far
+         // if the sequence is dependent, these names are bound in the remainder 
+         var omlNames: List[LocalName] = Nil
+         val r = toks.map {tok =>
+           val usableOMLNames = if (info.dependent) omlNames else Nil
+           val term = makeOML(tok,boundVarsInArg(n):::usableOMLNames,info)
+           if (info.dependent) {
+             // substitute all OMV(n) with OML(n) for n in omlNames
+             val omlSub = omlNames map (n => Sub(n, OML(n, None, None)))
+             term match {
+               case o: OML => omlNames ::= o.name
+               case _ =>
+             }
+             term ^? omlSub
+           }
+           else
+             term
+         }
+         addTerms(n, r)
+       // variables
        case fv: FoundVar =>
          fv.getVars foreach { case SingleFoundVar(pos, nameToken, tpOpt) =>
            val name = LocalName(nameToken.word)
            // a variable declaration, so take one TokenListElement for the type
            val tp = tpOpt map { _ =>
              i += 1
-             val stp = makeTerm(ml.tokens(i - 1), boundVars ::: newBVarNamesBefore(fv.marker, name), attrib = true)
+             val stp = makeTerm(ml.tokens(i - 1), boundVarsInVar(fv.marker, name), attrib = true)
              // remove toplevel operator, e.g., :
              stp match {
                case prag.StrictTyping(stpt) => stpt
@@ -495,7 +449,7 @@ class NotationBasedParser extends ObjectParser {
         case SimpArg(n, _) =>
           val a = subs.find(_._1 == n).get // must exist if notation matched
           List(a._2)
-        case LabelSeqArg(n,_,_,_,_) =>
+        case LabelSeqArg(n,_,_,_,_,_) =>
           val as = subs.filter(_._1 == n)
           as.map(_._2)
         case SimpSeqArg(n, _, _) =>
@@ -513,7 +467,7 @@ class NotationBasedParser extends ObjectParser {
         case SimpArg(n, _) =>
           val a = args.find(_._1 == n).get // must exist if notation matched
           List(a._2)
-        case LabelSeqArg(n, _, _,_,_) =>
+        case LabelSeqArg(n, _, _,_,_,_) =>
           val as = args.filter(_._1 == n)
           as.map(_._2)
         case SimpSeqArg(n, _, _) =>
@@ -528,10 +482,10 @@ class NotationBasedParser extends ObjectParser {
           else tp match {
             case Some(_) => (tp, false)
             case None =>
-              //new meta-variable for unknown type
+              //new unknown for the type
               //under a binder, apply the meta-variable to all governing bound variables
               //these are the boundVars and all preceding vars of the current binder
-              val governingBVars = boundVars ::: newBVarNamesBefore(vm, vname)
+              val governingBVars = boundVarsInVar(vm, vname)
               val t = newUnknown(newType(vname), governingBVars)
               (Some(t), true)
           }
@@ -607,5 +561,60 @@ class NotationBasedParser extends ObjectParser {
         UnknownCacher.prepareNextRun
         a
      }
+  }
+  
+  /** like makeTerm but interprets OMA(:,OMA(=,v)) as an OML */
+  private def makeOML(te: TokenListElem, boundVars: List[LocalName], info: LabelInfo, attrib: Boolean = false)
+                      (implicit pu: ParsingUnit, errorCont: ErrorHandler): Term = {
+    val t = makeTerm(te,boundVars)
+    t match {
+      case OMLTypeDef(name, tpOpt, dfOpt) =>
+         val tp = tpOpt orElse {if (info.typed) Some(newUnknown(newExplicitUnknown, boundVars)) else None} 
+         val df = dfOpt orElse {if (info.defined) Some(newUnknown(newExplicitUnknown, boundVars)) else None}
+         val l = OML(name,tp,df)
+         l
+      case _ =>
+        makeError("expected label, found other term", te.region)
+        t
+    }
+  }
+
+  /** matches v[:T][=D] */
+  private object OMLTypeDef {
+    def unapply(t : Term) : Option[(LocalName,Option[Term],Option[Term])] = t match {
+      case OMLtype(OMLdef(OMV(n),df),tp) =>
+        Some((n,Some(tp),Some(df)))
+      case OMLtype(OMV(n),OMLdef(tp,df)) =>
+        Some((n,Some(tp),Some(df)))
+      case OMLtype(OMV(n),tp) =>
+        Some((n,Some(tp),None))
+      case OMLdef(OMLtype(OMV(n),tp),df) => Some((n,Some(tp),Some(df)))
+      case OMLdef(OMV(n),OMLtype(df,tp)) => Some((n,Some(tp),Some(df)))
+      case OMLdef(OMV(n),df) => Some((n,None,Some(df)))
+      case OMV(n) => Some((n,None,None))
+      case _ => None
+    }
+  }
+  /** matches v:T where : is constant with role OMLType */
+  private object OMLtype {
+    def unapply(t : Term) : Option[(Term,Term)] = t match {
+      case OMA(OMS(f),List(a,b)) =>
+        controller.get(f) match {
+          case c:Constant if c.rl contains "OMLType" => Some((a,b))
+          case _ => None
+        }
+      case _ => None
+    }
+  }
+  /** matches v=T where = is constant with role OMLDef */
+  private object OMLdef {
+    def unapply(t : Term) : Option[(Term,Term)] = t match {
+      case OMA(OMS(f),List(a,b)) =>
+        controller.get(f) match {
+          case c:Constant if c.rl contains "OMLDef" => Some((a,b))
+          case _ => None
+        }
+      case _ => None
+    }
   }
 }

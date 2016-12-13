@@ -39,6 +39,9 @@ case class ParseResult(unknown: Context, free: Context, term: Term) {
       }
       res
   }
+   
+  /** replaces the term */
+  def map(f: Term => Term) = copy(term = f(term))
 }
 
 object ParseResult {

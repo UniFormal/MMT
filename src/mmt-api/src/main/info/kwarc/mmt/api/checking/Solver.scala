@@ -595,7 +595,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    }
 
    /** unsafe: via UOM */
-   def simplify(t : Term)(implicit stack: Stack, history: History) = {
+   def simplify(t : Obj)(implicit stack: Stack, history: History) = {
       val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context, rules)
       if (tS != t)
          history += ("simplified: " + presentObj(t) + " ~~> " + presentObj(tS))
@@ -738,6 +738,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             case j: Universe => checkUniverse(j)
             case j: Inhabitable => checkInhabitable(j)
             case j: Inhabited => checkInhabited(j)
+            case j: IsContext => checkContext(j)
+            case j: EqualityContext => checkEqualityContext(j)
          }
       }
    }
@@ -1001,7 +1003,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    }
 
    /** proves an Equality Judgment by recursively applying in particular EqualityRule's.
- *
+    *
     * @param j the judgement
     * @return false if the Judgment is definitely not provable; true if it has been proved or delayed
     *
@@ -1027,7 +1029,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
            else {
              // TODO return true if the common value is a literal of the two distinct syntactic types
            }
-         case _ =>
       }
       // solve an unknown
       val solved = solveEquality(j) || solveEquality(j.swap)
@@ -1249,6 +1250,44 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
    }
    /* ********************** end of auxiliary methods of checkEquality ***************************/
+   
+   /* ********************** methods for contexts ***************************/
+   
+  /** checks contexts */
+   private def checkContext(j: IsContext)(implicit history: History): Boolean = {
+     implicit val stack = j.stack
+     val con = simplify(j.context)
+     con forall {vd =>
+       (vd.tp,vd.df) match {
+         case (None,None) => true
+         case (Some(tp),Some(df)) => check(Typing(j.stack, tp, df, None))(history + "defined declaration must be well-typed")
+         case (Some(tp), None) => check(Inhabitable(j.stack, tp))(history + "type in contexts must be inhabitable")
+         case (None, Some(df)) => inferTypeAndThen(df)(j.stack, history + "definiens in context must be well-formed") {_ => true}
+       }
+     }
+   }
+
+  /** checks equality of context */
+   private def checkEqualityContext(j: EqualityContext)(implicit history: History): Boolean = {
+     implicit val stack = j.stack
+     if (j.context1.length != j.context2.length)
+       return error("contexts do not have the same length")
+     val c1 = simplify(j.context1)
+     val c2 = simplify(j.context2)
+     def checkOptTerm(tO1: Option[Term], tO2: Option[Term]) = (tO1,tO2) match {
+       case (None,None) => true
+       case (Some(t1),Some(t2)) => check(Equality(j.stack, t1, t2, None))(history + "component-wise equality of contexts")
+       case _ => error("contexts do not have the same shape")
+     }
+     (c1 zip c2) forall {case (vd1, vd2) =>
+       if (vd1.name != vd2.name)
+         error("contexts do not declare the same variables")
+       checkOptTerm(vd1.tp, vd2.tp) && checkOptTerm(vd1.df, vd2.df)
+     }
+   }
+
+   /* ************************************************************ */
+   
 
    def solveTyping(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
       tm match {

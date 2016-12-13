@@ -19,8 +19,12 @@ trait ComponentContainer {
    def isDefined: Boolean
 }
 
-trait AbstractTermContainer extends ComponentContainer {
-   def get: Option[objects.Term]
+trait AbstractObjectContainer extends ComponentContainer {
+   def get: Option[Obj]
+}
+
+trait AbstractTermContainer extends AbstractObjectContainer {
+   def get: Option[Term]
 }
 
 /** a dummy container for a stateless term */ 
@@ -51,32 +55,6 @@ class MPathContainer(path: Option[MPath]) extends AbstractTermContainer {
    def getPath = term map {case OMMOD(p) => p}
 }
 
-/** container for mutable contexts */ 
-class ContextContainer extends ComponentContainer {
-   private var context: Option[Context] = None
-   def update(nw: ComponentContainer) = nw match {
-      case nw: ContextContainer =>
-        val changed = nw.get != context
-        context = nw.context
-        changed
-      case _ => throw ImplementationError("expected context")
-   }
-   def isDefined = context.isDefined
-   def get = context
-   def set(c: Context) {
-     context = Some(c)
-   }
-   def delete {context = None}
-}
-
-object ContextContainer {
-  def apply(c: Context) = {
-    val cc = new ContextContainer
-    cc.context = Some(c)
-    cc
-  }
-}
-
 /** A ComponentKey identifies a [[DeclarationComponent]]. */
 abstract class ComponentKey(s : String) {
    override def toString = s
@@ -100,14 +78,17 @@ object ComponentKey {
 /** components that are MMT objects */
 abstract class ObjComponentKey(s: String) extends ComponentKey(s)
 
+/** components that are MMT terms */
+abstract class TermComponentKey(s: String) extends ObjComponentKey(s)
+
 /** type of a [[symbols.Constant]] */
-case object TypeComponent extends ObjComponentKey("type")
+case object TypeComponent extends TermComponentKey("type")
 /** definiens of [[symbols.Constant]], DefinedTheory, DefinedView, DefinedStructure */
-case object DefComponent  extends ObjComponentKey("definition")
+case object DefComponent  extends TermComponentKey("definition")
 /** domain of a [[modules.Link]], meta-theory of a theory */
-case object DomComponent  extends ObjComponentKey("domain")
+case object DomComponent  extends TermComponentKey("domain")
 /** codomain of a [[modules.Link]] */
-case object CodComponent  extends ObjComponentKey("codomain")
+case object CodComponent  extends TermComponentKey("codomain")
 
 /** parameters */
 case object ParamsComponent extends ObjComponentKey("params")

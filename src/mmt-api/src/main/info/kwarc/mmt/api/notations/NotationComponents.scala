@@ -82,21 +82,22 @@ sealed abstract class ArgumentMarker extends Marker with ArgumentComponent
 /** an argument
   *
   * @param n absolute value is the argument position, negative iff it is in the binding scope
- */
+  */
 sealed abstract class Arg extends ArgumentMarker {
   val number: Int
-  val precedence : Option[Precedence]
-   override def toString = number.toString
-   def by(s:String) : SeqArg = SimpSeqArg(number,Delim(s))
+  /* this may come in handy some time but is not used at the moment */ 
+  //val precedence : Option[Precedence]
+  override def toString = number.toString
+  /**
+   * @return the corresponding sequence
+   * @param s the delimiter
+   */
+  def by(s:String) : SeqArg = SimpSeqArg(number,Delim(s))
 
 }
 
+/** normal arguments */
 case class SimpArg(number : Int, precedence : Option[Precedence] = None) extends Arg
-
-case class LabelArg(number : Int, typed: Boolean, defined : Boolean, precedence : Option[Precedence] = None) extends Arg {
-  override def toString = "L" + number.toString + (if (typed) "T" else "") + (if (defined) "D" else "")
-  override def by(s:String) = LabelSeqArg(number,Delim(s),typed,defined)
-}
 
 /**
  * an implicit argument
@@ -118,15 +119,44 @@ sealed abstract class SeqArg extends ArgumentMarker {
   def makeCorrespondingArg(n: Int): Arg
   val precedence : Option[Precedence]
   override def toString = number.toString + sep + "…"
-   override def isSequence = true
+  override def isSequence = true
 }
 
+/**
+ * sequence of [[SimpArg]]
+ * @param sep the separator
+ */
 
 case class SimpSeqArg(number : Int, sep : Delim, precedence : Option[Precedence] = None) extends SeqArg {
   def makeCorrespondingArg(n: Int) = SimpArg(n, precedence)
 }
 
-case class LabelSeqArg(number: Int, sep: Delim, typed : Boolean, defined : Boolean, precedence : Option[Precedence] = None) extends SeqArg {
+
+/** bundles flags for properties of [[LabelArg]] and [[LabelSeqArg]]
+ * @param typed types are required
+ * @param defined definitions are required
+ * @param dependent definitions are required
+ */
+case class LabelInfo(typed: Boolean, defined: Boolean, dependent: Boolean)
+
+/** OML arguments, possibly with required type/definiens
+ */
+case class LabelArg(number : Int, typed: Boolean, defined: Boolean, precedence : Option[Precedence] = None) extends Arg {
+  def info = LabelInfo(typed, defined, false)
+  override def toString = "L" + number.toString + (if (typed) "T" else "") + (if (defined) "D" else "")
+  /**
+   * @return the corresponding (dependent) sequence
+   * @param s the delimiter
+   */
+  override def by(s:String) = LabelSeqArg(number,Delim(s),typed,defined,true)
+}
+
+/**
+ * sequence of [[LabelArg]]
+ * @param dependent elements in the sequence may refer to previous names
+ */
+case class LabelSeqArg(number: Int, sep: Delim, typed : Boolean, defined : Boolean, dependent: Boolean, precedence : Option[Precedence] = None) extends SeqArg {
+  def info = LabelInfo(typed, defined, dependent)
   override def toString = "L" + number.toString + (if (typed) "T" else "") + (if (defined) "D" else "") + sep + "…"
   def makeCorrespondingArg(n: Int) = LabelArg(n, typed, defined, precedence)
 }
@@ -529,7 +559,7 @@ object Marker {
             } else
                throw ParseError("not a valid marker " + s)
          case s: String if s.startsWith("L") && s(1).isDigit =>
-           //On ---> OML
+           //Ln ---> OML
            var i = 1
            while (i < s.length && s(i).isDigit) {i+=1}
            val n = s.substring(1,i).toInt
@@ -546,8 +576,14 @@ object Marker {
            }
            if (d.endsWith("…")) {
              val sep = d.dropRight(1)
-             LabelSeqArg(n,Delim(sep),typed,defined)
-           } else LabelArg(n,typed,defined)
+             var dependent = false
+             if (d.startsWith("d")) {
+               d = d.substring(1)
+               dependent = true
+             }
+             LabelSeqArg(n,Delim(sep),typed,defined,dependent)
+           } else
+             LabelArg(n,typed,defined)
          case s: String if s.endsWith("…") && s(0).isDigit =>
             //nsep… ---> sequence argument/scope
             var i = 0
