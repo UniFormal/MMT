@@ -91,7 +91,11 @@ case class StructuralFeatureRule(feature: String) extends Rule
  * A StructureFeature defines the semantics of a [[DerivedDeclaration]]
  *
  * The semantics consists of a set of declarations that are injected into the parent theory after the [[DerivedDeclaration]]
- * These are called the 'outer declarations'
+ * These are called the 'outer declarations'.
+ * 
+ * All methods that take a dd:DerivedDeclaration can assume
+ * - dd.feature == this.feature
+ * - dd.getComponents has the same components as this.expectedComponents and in the same order 
  */
 abstract class StructuralFeature(val feature: String) extends FormatBasedExtension {
    def isApplicable(s: String) = s == feature
@@ -106,20 +110,21 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
     */
    def expectedComponents: List[(String,ObjComponentKey)]
   
-   def getInnerContext(d: DerivedDeclaration): Context = Context.empty
+   /** additional context relative to which to interpret the body of a derived declaration */ 
+   def getInnerContext(dd: DerivedDeclaration): Context = Context.empty
 
-   /** called after checking components and inner declarations */
-   def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit
+   /** called after checking components and inner declarations for additional feature-specific checks */
+   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit
 
    /**
     * defines the outer perspective of a derived declaration
-     *
-     * @param parent the containing module
-    * @param dd the derived declaration (pre: dd.feature == feature)
+    *
+    * @param parent the containing module
+    * @param dd the derived declaration
     */
    def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration
 
-   def modules(d: DerivedDeclaration): List[Module]
+   def modules(dd: DerivedDeclaration): List[Module]
 
 }
 
@@ -147,14 +152,33 @@ abstract class Elaboration extends ElementContainer[Declaration] {
     }
 }
 
+/** for structural features with unnamed declarations whose names are generated from the domain component */
+trait IncludeLike {self: StructuralFeature =>
+  def expectedComponents = List("<-" -> DomComponent)
+  private def error = {
+    throw LocalError("no domain path found")
+  }
+  private def generateName(comps: List[DeclarationComponent]) = {
+    comps find {_.key == DomComponent} match {
+      case Some(dc) => dc.value match {
+        case mc: MPathContainer => mc.getPath match {
+          case Some(mp) => LocalName(mp)
+          case None => error
+        }
+        case _ => error
+      }
+      case None => error
+    }
+  }
+  override def unnamedDeclarations = Some(generateName _)
+}
+
 /**
  * Generative, definitional functors/pushouts with free instantiation
  * called structures in original MMT
  */
-class GenerativePushout extends StructuralFeature("generative") {
+class GenerativePushout extends StructuralFeature("generative") with IncludeLike {
   
-  def expectedComponents = List(":" -> DomComponent)
-
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
       val dom = dd.getComponent(DomComponent) getOrElse {
         throw GetError("")
@@ -209,10 +233,8 @@ class GenerativePushout extends StructuralFeature("generative") {
 }
 
 // Binds theory parameters using Lambda/Pi in an include-like structure
-class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, applys : GlobalName) extends StructuralFeature(id) {
+class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, applys : GlobalName) extends StructuralFeature(id) with IncludeLike {
 
-  def expectedComponents = Nil
-  
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) : Elaboration = {
     val dom = dd.getComponent(DomComponent) getOrElse {
       throw GetError("")

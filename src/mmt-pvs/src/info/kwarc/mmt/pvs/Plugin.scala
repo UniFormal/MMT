@@ -24,7 +24,6 @@ class Plugin extends frontend.Plugin {
 
 import PVSTheory._
 
-
 class LambdaPiInclude extends BoundTheoryParameters(BoundInclude.feature,Pi.path,Lambda.path,Apply.path)
 
 object BoundInclude {
@@ -34,6 +33,8 @@ object BoundInclude {
     new DerivedDeclaration(top.toTerm, LocalName(from), feature, comps, new NotationContainer())
   }
 }
+
+object BoundIncludeRule extends StructuralFeatureRule(BoundInclude.feature)
 
 object CurryingRule extends ComputationRule(PVSTheory.pvspi.path) {
   def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {

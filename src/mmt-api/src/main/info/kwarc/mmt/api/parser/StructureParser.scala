@@ -605,16 +605,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     readInModuleAux(mod, docRoot / nextSection, context, features) // compiled code is not actually tail-recursive
   }
 
-  // *************** auxiliary methods of readInModule and readInDocument that read particular elements
-
-  private def readParameters(context: Context)(implicit state: ParserState): Context = {
-    val (name,srg) = state.reader.readToken
-    readDelimiter(":")
-    val (obj,reg,parsed) = readParsedObject(context)
-    val vdc = VarDecl(LocalName(name),Some(parsed),None,None)
-    if (!state.reader.endOfDeclaration) readParameters(context++vdc)++vdc
-      else vdc
-  }
   /** auxiliary function to read Theories
  *
     * @param parent the containing document or module (if any)
@@ -661,12 +651,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         }
         delim = state.reader.readToken
         params
-
-        /*
-        val ct = readParameters(contextMeta)
-        delim = state.reader.readToken
-        ct
-        */
       } else
         Context.empty
       val t = new DeclaredTheory(ns, name, meta, parameters)
@@ -923,7 +907,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   private def readDerivedDeclaration(feature: StructuralFeature, parent: MPath, context: Context)(implicit state: ParserState) = {
     val nameOpt = if (feature.unnamedDeclarations.isEmpty) Some(readName) else None
     val tcs = feature.expectedComponents map {
-      case (s, k) => (s -> (k, new TermContainer))
+      case (s, k) => (s -> (k, new TermContainer)) //TODO must allow for context components for patterns
     }
     val notC = new NotationContainer
     val compSpecs = tcs ::: notationComponentSpec(notC)
