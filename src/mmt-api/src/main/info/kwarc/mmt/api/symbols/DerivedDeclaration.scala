@@ -165,6 +165,12 @@ trait IncludeLike {self: StructuralFeature =>
           case Some(mp) => LocalName(mp)
           case None => error
         }
+        case tc : TermContainer => tc.get match {
+          case Some(OMMOD(mp)) =>
+            LocalName(mp)
+          case _ =>
+            error
+        }
         case _ => error
       }
       case None => error
@@ -308,5 +314,12 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
 
   }
   def modules(d: DerivedDeclaration): List[Module] = Nil
-  def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
+    try {
+      controller.get(d.path)
+    } catch {
+      case e : Throwable => println(e.getClass)
+        sys.exit()
+    }
+  }
 }

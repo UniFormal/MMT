@@ -100,7 +100,9 @@ case class const_decl(named: ChainedDecl, arg_formals: List[bindings], tp: Decla
   override def toString() = named.named.id + "[" + arg_formals.map(_.toString).mkString(", ") + "]: " + tp + " = " + _def.map(_.toString)
 }
 /** defined constant that is always expanded */
-case class macro_decl(decl: const_decl) extends Decl
+case class macro_decl(named: ChainedDecl, arg_formals: List[bindings], tp: DeclaredType, _def: Option[Expr]) extends Decl {
+  def decl = const_decl(named,arg_formals,tp,_def)
+}
 
 /* can all have formals */
 /** named import (parameters, instantiations, and renamings are part of the name); rnc to be revisited */
