@@ -150,7 +150,7 @@ class PresentDecl extends QueryFunctionExtension("presentDecl", PathType, XMLTyp
       case p: Path =>
         val rb = new presentation.StringBuilder
         val e = controller.get(p)
-        val pr = extman.get(classOf[Presenter], params(0)).getOrElse(throw ParseError("unknown format"))
+        val pr = extman.get(classOf[Presenter], params.head).getOrElse(throw ParseError("unknown format"))
         pr(e)(rb)
         XMLValue(scala.xml.XML.loadString(rb.get))
       case _ => throw ImplementationError("evaluation of ill-typed query")

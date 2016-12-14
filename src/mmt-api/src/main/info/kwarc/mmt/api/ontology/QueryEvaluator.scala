@@ -13,6 +13,31 @@ object QueryEvaluator {
   type QuerySubstitution = List[(LocalName, BaseType)]
 }
 
+class ResultSet extends HashSet[List[BaseType]] {
+  def +=(b: BaseType) {
+    this += List(b)
+  }
+}
+
+object ResultSet {
+  def singleton(b : BaseType) : ResultSet = fromElementList(List(b))
+
+  def fromElementList( lst : Seq[BaseType]): ResultSet = {
+    val r = new ResultSet
+    lst.foreach {
+      r += List(_)
+    }
+    r
+  }
+  def fromTupleList( lst : Seq[Seq[BaseType]]) : ResultSet = {
+    val r = new ResultSet
+    lst.foreach {
+      r += _.toList
+    }
+    r
+  }
+}
+
 /** evaluates a query expression to a query result */
 class QueryEvaluator(controller: Controller) {
 
@@ -34,12 +59,6 @@ class QueryEvaluator(controller: Controller) {
 
   private def log(msg: => String) {
     controller.report("query", msg)
-  }
-
-  private class ResultSet extends HashSet[List[BaseType]] {
-    def +=(b: BaseType) {
-      this += List(b)
-    }
   }
 
   private def empty = new ResultSet
@@ -154,7 +173,7 @@ class QueryEvaluator(controller: Controller) {
 
     /** Literal => return the item as is */
     case Literal(b) =>
-      singleton(b)
+      ResultSet.singleton(b)
 
     /** Literals => return the items as is */
     case Literals(bs@_*) =>
@@ -177,11 +196,7 @@ class QueryEvaluator(controller: Controller) {
 
     /** get a set of paths to objects */
     case Paths(c) =>
-      val res = empty
-      rs.getInds(c) foreach {
-        res += _
-      }
-      res
+      ResultSet.fromElementList(rs.getInds(c).toSeq)
 
     /** all objects that unify with a certain object */
     case Unifies(_) =>
