@@ -28,10 +28,17 @@ class RuleConstant(val home : Term, val name : LocalName, val df: Rule) extends 
    def merge(that: Declaration) = mergeError(that)
 }
 
-class RuleConstantInterpreter(be: Backend) {
+/**
+ * loads a rule (by reflection) given by a LocalName corresponding to a java name of a [[Rule]] object or of a [[StructuralFeature]] class
+ */
+class RuleConstantInterpreter(controller: frontend.Controller) {
    def apply(name: LocalName, thy: MPath): RuleConstant = {
-      val java = name.steps.mkString(".")
-      val rule = be.loadRule(java, thy?name)
+      val java = name.steps.mkString("$")
+      val rule = controller.extman.addExtensionO(java, Nil) match {
+        case Some(sf: StructuralFeature) => sf.getRule
+        case Some(_) => throw ParseError("extension exists but does not provide a rule")
+        case None => controller.backend.loadRule(java, thy?name)
+      }
       new RuleConstant(OMMOD(thy), name, rule)
    }
 }
@@ -41,8 +48,9 @@ import modules._
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
+// TODO the rule name followed by arguments should be parsed into a single Term, which is given to the RuleConstantInterpreter
 class RuleConstantParser extends ParserExtension {
-   private lazy val rci = new RuleConstantInterpreter(controller.backend)
+   private lazy val rci = new RuleConstantInterpreter(controller)
    def isApplicable(se: StructuralElement, keyword: String) = {
       se.isInstanceOf[DeclaredTheory] && keyword == "rule"
    }
@@ -101,6 +109,7 @@ object ParametricRuleConstantInterpreter {
    }
 }
 
+@deprecated
 abstract class RuleList {
    def getRules : List[Rule]
 }

@@ -3,55 +3,16 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import parser._
 
-/**
- * SemanticType's are closed under subtypes and quotients by using valid and normalform.
- * 
- * In other words, the triple (U, valid, normalform) forms a partial equivalence relation on a Scala type.
- * 
- * For technical reasons, U is fixed as the type [[Any]].
- */
-abstract class SemanticType {
-   /** the predicate on the semantic type used to obtain subtypes
-    *  
-    *  true by default
-    */
-   def valid(u: Any): Boolean = true
-   /** the equivalence relation (given as a normal form conversion) on the semantic type used to obtain quotient types
-    *  
-    *  pre: valid(u) == true
-    *  
-    *  identity by default
-    */
-   def normalform(u: Any): Any = u
-   /** converts strings into values; pre: s == toString(u) for some u with valid(u) == true */
-   def fromString(s: String) : Any
-   /** converts values into strings; pre: valid(u) == true */
-   def toString(u: Any) : String
-   /** convenience method to construct a lexer for this type */
-   def quotedLiteral(key: String) = Some(new AsymmetricEscapeLexer(key+"\"", "\""))
-   /** convenience method to construct a lexer for this type */
-   def escapedLiteral(begin: String, end: String) = Some(new AsymmetricEscapeLexer(begin, end))
-   /** @return a LexerExtension that is to be used when this type is in scope */
-   def lex: Option[parser.LexFunction] = None
-   /** @return a fresh iterator over values of this type */
-   def enumerate: Option[Iterator[Any]] = None
-}
-
-trait RepresentationType[V] {
-   val cls: Class[V]
-   def unapply(u: Any): Option[V] = u match {
-      //TODO not typesafe for complex types, cls == u.getClass works for complex types but does not consider subtyping
-      case v: V@unchecked if cls.isInstance(v) =>
-         Some(v)
-      case v: V@unchecked if cls.isPrimitive && cls == u.getClass =>
-         Some(v) // isInstance is always false for primitive classes
-      case _ => None
-   }
-}
-trait RSemanticType[V] extends SemanticType with RepresentationType[V]
+import SemanticOperator._
 
 object Product {
    val matcher = new utils.StringMatcher2("(",",",")")
+   
+   def tensor(left: Unary, right: Unary) = {
+     val f = new Product(left.from, right.from)
+     val t = new Product(left.to, right.to)
+     t.pairOps(f.toLeft compose left, f.toRight compose right)
+   }
 }
 class Product(val left: SemanticType, val right: SemanticType) extends SemanticType {
    override def valid(u: Any) = u match {
@@ -99,6 +60,23 @@ class Product(val left: SemanticType, val right: SemanticType) extends SemanticT
        }
      }
      Some(i)
+   }
+   
+   val toLeft = Unary(this, left)({case (x,y) => x})
+   val toRight = Unary(this, right)({case (x,y) => y})
+   
+   def pairOps(f1: Unary, f2: Unary): Unary = {
+     if (f1.from == f2.from && f1.to == left && f2.to == right) {
+       Unary(f1.from, this) {x => (f1.map(x), f2.map(x))}
+     } else
+       throw ImplementationError("ill-typed")
+   }
+   
+   override def embed(into: SemanticType) = into match {
+     case p: Product => (left.embed(p.left), right.embed(p.right)) match {
+       case (Some(eL), Some(eR)) => Some(Product.tensor(eL,eR))
+       case _ => None
+     }
    }
 }
 
@@ -161,6 +139,11 @@ abstract class Subtype(val of: SemanticType) extends SemanticType {
    override def lex = of.lex
    /** for a finite subtype of an infinite type, hasNext will eventually run forever */ 
    override def enumerate = of.enumerate.map(i => i filter by)
+   
+   /** inclusion into the supertype */
+   def incl = Unary(this, of){x => x}
+   
+   override def embed(into: SemanticType) = super.embed(into) orElse {of.embed(into) map {e => incl compose e}}
 }
 abstract class RSubtype[U](of: RSemanticType[U]) extends Subtype(of) with RSemanticType[U] {
   val cls = of.cls
@@ -183,6 +166,9 @@ abstract class Quotient(val of: SemanticType) extends SemanticType {
        take
      }
    }
+   
+   /** the projection of an element to its representative */
+   def repr = Unary(of, this) {x => normalform(x)}
 }
 abstract class RQuotient[V](of: RSemanticType[V]) extends Quotient(of) with RSemanticType[V] {
   val cls = of.cls
@@ -195,7 +181,7 @@ abstract class Atomic[V] extends RSemanticType[V] {
    def fromString(s: String): V
 }
 
-trait IntegerRepresented extends RepresentationType[BigInt] {
+trait IntegerRepresented extends RSemanticType[BigInt] {
   val cls = classOf[BigInt]
 }
 
@@ -219,7 +205,15 @@ abstract class IntegerLiteral extends Atomic[BigInt] with IntegerRepresented {
 }
 
 /** standard integer numbers */
-object StandardInt extends IntegerLiteral
+object StandardInt extends IntegerLiteral {
+  /** embedding into the rationals */
+  override def embed(into: SemanticType) = super.embed(into) orElse {
+    if (into == StandardRat)
+      Some(Unary(this, into) {x => (x,1)})
+    else
+      None
+  }
+}
 
 /** standard natural numbers */
 object StandardNat extends RSubtype(StandardInt) {
@@ -256,6 +250,16 @@ object StandardRat extends RQuotient(new RProduct(StandardInt,StandardPositive))
       case s => (StandardInt.fromString(s.trim),1)
    }
    override def lex = Some(new parser.NumberLiteralLexer(false,true))
+   
+  /** embedding into the complex numbers */
+  override def embed(into: SemanticType) = super.embed(into) orElse {
+    if (into == ComplexRat)
+      Some(Unary(this, into) {x => (x,1)})
+    else if (into == StandardDouble)
+      Some(Unary(this, into) {case StandardRat(x,y) => x.toDouble/y.toDouble})
+    else
+      None
+  }
 }
 
 
@@ -293,6 +297,34 @@ object URILiteral extends Atomic[URI] {
    val cls = classOf[URI]
    def fromString(s: String) = URI(s)
    override def lex = quotedLiteral("uri")
+}
+
+/** defines [[SemanticOperator]]s for the standard arithmetic operations */
+object Arithmetic {
+  import SemanticOperator._
+  private val N = StandardNat
+  private val Z = StandardInt
+  private val Q = StandardRat
+
+  object Zero extends Value(Z)(0) {
+    alsoHasType(N)
+  }
+
+  object One extends Value(Z)(1) {
+    alsoHasType(N)
+  }
+
+  object Succ extends Unary(Z,Z)({case Z(x) => x+1}) {
+    alsoHasType(N =>: N)
+  }
+
+  object Plus extends Binary(Z,Z,Z)({case (Z(x),Z(y)) => x+y}) {
+    alsoHasType (N =>: N =>: N)
+  }
+  
+  object Times extends Binary(Z,Z,Z)({case (Z(x),Z(y)) => x*y}) {
+    alsoHasType (N =>: N =>: N)
+  }
 }
 
 /** OpenMath's literals

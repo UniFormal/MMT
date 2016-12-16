@@ -4,49 +4,31 @@ import info.kwarc.mmt.api._
 import objects._
 import parser._
 
-/**
- * A RealizedType couples a syntactic type (a [[Term]]) with a semantic type (a PER on the universe of Scala values).
- */
-class RealizedType(val synType: Term, val semType: SemanticType) extends uom.UOMRule {
-   override def equals(that: Any) = that match {
-      case rt: RealizedType => synType == rt.synType && semType == rt.semType
-      case _ => false
-   }
-   private type univ = Any
-   def head = synType.head match {
-      case Some(h: GlobalName) => h
-      case _ => throw ImplementationError("syntactic type must have head")
-   }
-   /** apply method to construct OMLITs as this(u) */
-   def apply(u: univ) = {
-      if (!semType.valid(u))
-         throw ParseError("invalid literal value for type " + synType + ": " + u)
-      val vN = semType.normalform(u)
-      OMLIT(vN, this)
-   }
-   /** unapply method to pattern-match OMLITs as this(u) */
-   def unapply(t: Term) : Option[univ] = t match {
-      case OMLIT(v, rt) if rt == this => Some(v)
-      case UnknownOMLIT(v,st) if st == synType => Some(semType.fromString(v))
-      case _ => None
-   }
-   /** @return the OMLIT obtained by using fromString */
-   def parse(s: String) = {
-      val sP = semType.fromString(s)
-      apply(sP)
-   }
-   /** @return the lexer extension to be used by the lexer, defined in terms of the LexFunction lex */
-   def lexerExtension = semType.lex map {case l => new LexParseExtension(l, new LiteralParser(this))} 
+/** helper class to store the type of a [[RealizedOperator]]s */
+case class SynOpType(args: List[Term], ret: Term) {
+  def arity = args.length
+  def =>:(arg: Term) = SynOpType(arg::args, ret)
 }
 
-class RepresentedRealizedType[V](synType: Term, semType: RSemanticType[V]) extends RealizedType(synType,semType) {
-   override def unapply(u: objects.Term): Option[V] = super.unapply(u) flatMap semType.unapply
+/** helper class to store the type of a [[SemanticOperator]]s */
+case class SemOpType(args: List[SemanticType], ret: SemanticType) {
+  def arity = args.length
+  /** enables the notation a =>: b =>: c for function types */
+  def =>:(arg: SemanticType) = SemOpType(arg::args, ret)
 }
 
 /** A RealizedOperator couples a syntactic function (a Constant) with a semantic function (a Scala function) */
-abstract class RealizedOperator(op: GlobalName) extends BreadthRule(op) {
-   val argTypes: List[RealizedType]
-   val retType : RealizedType
+class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: SemanticOperator, semTp: SemOpType) extends BreadthRule(synOp) {
+   if (synTp.arity != semTp.arity)
+     throw ImplementationError("illtyped realization")
+   if (!semOp.getTypes.contains(semTp))
+     throw ImplementationError("illtyped realization")
+
+   val arity = synTp.arity
+   
+   private val argTypes: List[RealizedType] = (synTp.args zip semTp.args) map {case (syn,sem) => RealizedType(syn,sem)} 
+   private val retType : RealizedType = RealizedType(synTp.ret, semTp.ret)
+   
    private def applicable(args: List[Term]): Boolean = {
       if (args.length != argTypes.length) throw ParseError("")
       (args zip argTypes).forall {
@@ -55,16 +37,33 @@ abstract class RealizedOperator(op: GlobalName) extends BreadthRule(op) {
          case _ => false
       }
    }
-   def apply(args: List[Term]): OMLIT
+   
+   def apply(args: List[Term]): OMLIT = {
+      if (args.length != arity)
+        throw ImplementationError("illegal argument number")
+      val argsV = (argTypes zip args) map {case (aT, a) =>
+        aT.unapply(a).getOrElse {
+          throw ImplementationError("illegal argument type")
+        }
+      }
+      retType(semOp(argsV))
+   }
    
    val apply: Rewrite = (args: List[Term]) => {
-         if (applicable(args))
-            GlobalChange(apply(args))
-         else
-            NoChange
+     if (applicable(args))
+        GlobalChange(apply(args))
+     else
+        NoChange
    }
 }
 
+object RealizedOperator {
+  /** checks if semOp is declared to have a type that realizes synTp */
+  def check(lookup: Term => RealizedType)(semOp: SemanticOperator, synTp: SynOpType): Option[SemOpType] = {
+     val retS::argsS = (synTp.ret::synTp.args) map {a => lookup(a).semType} 
+     semOp.getTypes.find {st => st.args == argsS && st.ret == retS}
+  }
+}
 
 /** 
  *  counterpart to a [[RealizedOperator]] for the partial inverse

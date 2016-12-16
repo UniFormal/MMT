@@ -18,6 +18,7 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, componen
 } with NestedModule(h, name, t) with HasNotation {
    // overriding to make the type stricter
   override def module: DeclaredModule = t
+  def modulePath = module.path
 
   override def getComponents = components
   override def toNode : Elem = {
@@ -39,13 +40,18 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, componen
     components foreach (c => {
       rh << s"""<component key="${c.key}">"""
       c.value match {
-        case t: TermContainer => t.get.get.toNode(rh)
-        case p: MPathContainer => p.get.get.toNode(rh)
+        case oc: AbstractObjectContainer => oc.get.get.toNode(rh)
       }
       rh << s"""</component>"""
     })
+    rh(notC.toNode)
     t.getDeclarations foreach(_.toNode(rh))
     rh << "</derived>"
+  }
+  private def componentToString(dc: DeclarationComponent) = {
+    dc.value match {
+      case oc: AbstractObjectContainer => oc.get.map(_.toString).getOrElse("")
+    }
   }
   override def toString = {
     val s1 = {
@@ -54,8 +60,8 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, componen
         case _ => " " + name
       }
     }
-    val s2 = if (components.nonEmpty) "(" + components.map(_.value.toString).mkString(",") + ")"
-        else if (components.length == 1) " " + components.head.value.toString
+    val s2 = if (components.nonEmpty) " (" + components.map(componentToString).mkString(",") + ")"
+        else if (components.length == 1) " " + componentToString(components.head)
         else ""
     val s3 = if (t.getDeclarations.nonEmpty) " =\n" + t.innerString else ""
     feature + s1 + s2 + s3
@@ -125,7 +131,9 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
    def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration
 
    def modules(dd: DerivedDeclaration): List[Module]
-
+   
+   /** returns the rule constant for using this feature in a theory */
+   def getRule = StructuralFeatureRule(feature)
 }
 
 /**
@@ -139,7 +147,7 @@ abstract class Elaboration extends ElementContainer[Declaration] {
      * may be overridden for efficiency
      */
     def getDeclarations = {
-      domain.map {n => getO(n).get}
+      domain.map {n => getO(n).getOrElse {throw ImplementationError(n + " is said to occur in domain of elaboration but retrieval failed")}}
     }
 
     def getMostSpecific(name: LocalName): Option[(Declaration,LocalName)] = {

@@ -25,7 +25,7 @@ object Length {
       case Apply(_,_) => ONE
       case Sequences.rep(_,n) => Some(n)
       case Sequences.ellipsis(n,_,_) => Some(n)
-      case Sequences.flatseq(as @ _*) => Some(natlit(as.length))
+      case Sequences.flatseq(as @ _*) => Some(NatRules.NatLit(as.length))
       case Sequences.index(_,_) => ONE
       case OMS(p) => ONE
       case OMV(x) => (solver.outerContext++stack.context)(x).tp match {

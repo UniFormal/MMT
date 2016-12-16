@@ -416,8 +416,8 @@ class NotationBasedPresenter extends ObjectPresenter {
             case XMLNode(n) => pc.out(n.toString)
          }
          1
-      case OML(vd) =>
-         doDefault(vd)
+      case o:OML =>
+         doDefault(o.vd)
       case VarDecl(n,tp,df, not) =>
          n match {
             case LocalName(List(ComplexStep(_))) => doOperator("include")

@@ -199,7 +199,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     if (s == "")
       throw makeError(reg, "name expected")
     try {
-      LocalName.parse(s)
+      LocalName.parse(s, state.namespaces)
     }
     catch {
       case e: ParseError =>
@@ -575,13 +575,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           featureOpt match {
             case Some(sf) =>
               // 0) a derived declarations for a StructuralFeature visible to the theory
-              val dd = readDerivedDeclaration(sf, mpath, context)
-              addDeclaration(dd)
-              val delim = state.reader.readToken
-              val innerContext = sf.getInnerContext(dd)
-              if (delim._1 == "=") readInModule(dd.module, context++innerContext, features)
+              readDerivedDeclaration(sf, parentInfo, context)
             case None =>
-              val patOpt = listmap(features.patterns, k)
+              val patOpt = listmap(features.patterns, LocalName.parse(k))
               patOpt match {
                 case Some(pattern) =>
                   // 1) an instance of a Pattern with LocalName k visible in meta-theory
@@ -628,7 +624,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   /** auxiliary function to read Theories
- *
+    *
     * @param parent the containing document or module (if any)
     * @param context the context (excluding the theory to be read)
     */
@@ -683,7 +679,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   /** auxiliary function to read views
- *
+    *
     * @param parent the containing document/module
     * @param context the context (excluding the view to be read)
     * @param isImplicit whether the view is implicit
@@ -759,7 +755,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                 }
               case _ =>
             }
-            case dd @ Pattern(_,_,_,_) => ps ::= (dd.name, dd)
+            case dd @ Pattern(_,_,_,_) =>
+              ps ::= (dd.name, dd)
             case _ =>
           }
         case _ =>
@@ -768,11 +765,17 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     new Features(fs, ps)
   }
 
-  /** auxiliary method for reading declarations that reads a list of components */
+  /** auxiliary method for reading declarations that reads a list of components
+   *  @param context the current context
+   *  @param expected the components to read as (initial delimiter, (key, container))
+   *  @param until an initial delimiter that stops parsing components
+   *  @return true if the delimiter until was found; false if end of declaration was found
+   */
   // TODO use this in readConstant
-  private def readComponents(context: Context, expected: List[(String,(ComponentKey,ComponentContainer))])(implicit state: ParserState) {
+  private def readComponents(context: Context, expected: List[(String,(ComponentKey,ComponentContainer))], until: Option[String])(implicit state: ParserState): Boolean = {
      while (!state.reader.endOfDeclaration) {
        val (delim, treg) = state.reader.readToken
+       if (until contains delim) return true
        listmap(expected, delim) match {
           case Some((key,cont)) =>
             if (cont.isDefined) {
@@ -794,6 +797,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             state.reader.endOfObject
        }
      }
+     return false
   }
   /** auxiliary function to build input for readComponents for notation components */
   private def notationComponentSpec(nc: NotationContainer) =
@@ -920,7 +924,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   /** reads the header of a [[DerivedDeclaration]] */
-  private def readDerivedDeclaration(feature: StructuralFeature, parent: MPath, context: Context)(implicit state: ParserState) = {
+  private def readDerivedDeclaration(feature: StructuralFeature, parentInfo: IsMod, context: Context)(implicit state: ParserState) = {
+    val parent = parentInfo.modParent
     val nameOpt = if (feature.unnamedDeclarations.isEmpty) Some(readName) else None
     val tcs = feature.expectedComponents map {
       case (s, k) =>
@@ -932,7 +937,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     val notC = new NotationContainer
     val compSpecs = tcs ::: notationComponentSpec(notC)
-    readComponents(context, compSpecs)
+    val equalFound = readComponents(context, compSpecs, Some("="))
     val components = tcs map {case (_, (k,tc)) => DeclarationComponent(k,tc)}
     val name = nameOpt.getOrElse {
       try {
@@ -941,7 +946,15 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         throw ParseError("error while generating name of unnamed feature").setCausedBy(e)
       }
     }
-    new DerivedDeclaration(OMID(parent), name, feature.feature, components, notC)
+    val dd = new DerivedDeclaration(OMID(parent), name, feature.feature, components, notC)
+    dd.setDocumentHome(parentInfo.relDocParent)
+    seCont(dd)
+    if (equalFound) {
+       val innerContext = feature.getInnerContext(dd)
+       val features = getFeatures(parent)
+       readInModule(dd.module, context++innerContext, features)
+    }
+    end(dd.module) //TODO is this correct?
   }
 
   /** returns an instance of [[InstanceFeature]]
@@ -949,17 +962,17 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    *  parses 'pattern(name, args) NOTATIONS' where name is a free variable for the name of the instance */
   private def readInstance(pattern: DerivedDeclaration, tpath: MPath)(implicit state: ParserState): DerivedDeclaration = {
     val context = Context(tpath)
-    val patNot = pattern.notC.parsing map {n => ParsingRule(pattern.path, Nil, n)}
+    val patNot = pattern.notC.parsing map {n => ParsingRule(pattern.modulePath, Nil, n)}
     val (_, reg, pr) = readParsedObject(context, patNot)
-    val (name,tp) = controller.pragmatic.mostPragmatic(pr.term) match {
-      case OMA(OMS(pattern), OMV(n)::as) =>
-        (n,OMA(OMS(pattern), as))
+    val (name,tp) = pr.term match {
+      case OMPMOD(pattern, OML(n,None,None)::as) =>
+        (n,OMPMOD(pattern, as))
       case _ =>
-        throw makeError(reg, "not an instance of pattern " + pattern)
+        throw makeError(reg, "not an instance of pattern " + pattern.path + ": " + pr)
     }
     val tpC = TermContainer(pr.copy(term = tp).toTerm)
     val nc = NotationContainer()
-    readComponents(context, notationComponentSpec(nc))
+    readComponents(context, notationComponentSpec(nc), None)
     Instance(OMMOD(tpath), name, tpC, nc)
   }
   

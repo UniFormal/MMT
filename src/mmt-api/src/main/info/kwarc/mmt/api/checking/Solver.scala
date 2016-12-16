@@ -1029,6 +1029,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
            else {
              // TODO return true if the common value is a literal of the two distinct syntactic types
            }
+         case _ =>
       }
       // solve an unknown
       val solved = solveEquality(j) || solveEquality(j.swap)

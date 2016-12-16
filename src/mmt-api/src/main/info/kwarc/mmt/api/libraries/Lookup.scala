@@ -111,8 +111,12 @@ abstract class Lookup {self =>
       }
       val l = get(p) match {
          case t: DeclaredTheory => return (t, None)
+         case nm: NestedModule => nm.module match {
+           case t: DeclaredTheory => return (t, None)
+           case l: DeclaredLink => l
+         }
          case l: DeclaredLink => l
-         case _ => throw GetError("non-declared link") 
+         case _ => throw GetError("unknown home encountered while getting domain of " + a.path) 
       }
       val dom = l.from match {
          case OMMOD(t) => getAs(classOf[Theory],t) match {

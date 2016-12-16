@@ -31,8 +31,10 @@ class ObjDimension[T] {
  * 
  * The representations are read < parsed < analyzed.
  * Setting a representation marks the higher representations as dirty.
+ * 
+ * @tparam T the type of objects stored; the type bound is not actually needed, but it helps putting sharper bound on some return types  
  */
-trait ObjContainer[T] {
+trait ObjContainer[T <: Obj] {
    private var _read     : Option[String] = None
    private val _parsed   = new ObjDimension[T]
    private val _analyzed = new ObjDimension[T]

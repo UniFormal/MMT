@@ -23,7 +23,7 @@ import scala.xml.{Node,NodeSeq,Utility}
 class XMLReader(controller: Controller) extends Logger {
    val report = controller.report
    val logPrefix = "reader"
-   private val rci = new RuleConstantInterpreter(controller.backend)
+   private val rci = new RuleConstantInterpreter(controller)
 
    /** calls the continuation function */
    private def add(e : StructuralElement)(implicit cont: StructuralElement => Unit) {

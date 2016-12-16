@@ -188,8 +188,9 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
      }
      val (mod, left) = modulesGetRoot(p)
      val ce = getContentAux(mod, left)
-     // at this level, NestedModules are artifacts, so we don't unwrap the module
      ce match {
+        case dd: DerivedDeclaration => dd
+        // at this level, NestedModules are artifacts, so we unwrap the module if it's not a derived declaration
         case nm: NestedModule => nm.module
         case ce => ce
      }

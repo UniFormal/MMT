@@ -122,6 +122,11 @@ class NotationBasedParser extends ObjectParser {
        freevars ::= name
        OMV(name)
      }
+     
+     /** removes a free variable if it is later found out that it can be interpreted otherwise, used for OMLs */
+     def removeFreeVariable(n: LocalName) {
+       freevars = freevars diff List(n)
+     }
   }
   import Variables._
 
@@ -180,7 +185,6 @@ class NotationBasedParser extends ObjectParser {
       val dO = controller.globalLookup.getO(p)
       dO foreach {d =>
         controller.simplifier(d)
-        true
       } // make sure p is recursively loaded before taking visible theories
       controller.library.visible(OMMOD(p))
     }
@@ -204,7 +208,7 @@ class NotationBasedParser extends ObjectParser {
         val tn = new TextNotation(Mixfix(Delim(nm.name.toString) :: Range(0, args).toList.map(SimpArg(_))),
           Precedence.infinite, None)
         List(ParsingRule(nm.module.path, Nil, tn))
-      case c: Declaration with HasNotation =>
+      case c: Constant => // Declaration with HasNotation might collect too much here
         var names = (c.name :: c.alternativeNames).map(_.toString) //the names that can refer to this declaration
         if (c.name.last == SimpleStep("_")) names ::= c.name.init.toString
         //the unapplied notations consisting just of the name
@@ -568,7 +572,8 @@ class NotationBasedParser extends ObjectParser {
                       (implicit pu: ParsingUnit, errorCont: ErrorHandler): Term = {
     val t = makeTerm(te,boundVars)
     t match {
-      case OMLTypeDef(name, tpOpt, dfOpt) =>
+      case OMLTypeDef(name, tpOpt, dfOpt) if !boundVars.contains(name) && getFreeVars.contains(name) =>
+         removeFreeVariable(name)
          val tp = tpOpt orElse {if (info.typed) Some(newUnknown(newExplicitUnknown, boundVars)) else None} 
          val df = dfOpt orElse {if (info.defined) Some(newUnknown(newExplicitUnknown, boundVars)) else None}
          val l = OML(name,tp,df)

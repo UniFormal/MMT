@@ -27,9 +27,10 @@ object NotationScope {
 
 /**
  * A TextNotation is a Notation that can be used for parsing objects in text syntax
- * @param name the symbol to which this notation applies
- * @param allMarkers the Markers making up the notation
+ * @param fixity the mixfix notation
  * @param precendence the precedence, notations with lower precedence are tried first, thus grab larger subterms
+ * @param meta the meta-theory of this notation if different from the current meta-theory
+ * @param scope
  * 
  * a typed Var must be preceded by a Delim because Var.key does not trigger the notation
  * 

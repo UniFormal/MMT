@@ -1,9 +1,9 @@
 package info.kwarc.mmt.frameit
 
 import info.kwarc.mmt.api.objects.{OMLIT, OMS, Term}
-import info.kwarc.mmt.api.uom.{RealizedOperator, RealizedType, StandardDouble}
-import info.kwarc.mmt.api.{DPath, utils}
-import info.kwarc.mmt.lf.Apply
+import info.kwarc.mmt.api.uom._
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.lf._
 
 /**
   * Created by raupi on 23.03.16.
@@ -17,124 +17,30 @@ object PlanarGeometry {
 
 import info.kwarc.mmt.frameit.PlanarGeometry._
 
-object RealLiterals extends RealizedType(Apply(OMS(tm),OMS(path ? "reals")),StandardDouble)
+import SynOpType._
+import SemOpType._
+import SemanticOperator._
 
-object Negative extends RealizedOperator(path ? "negative") {
-  val argTypes = List(RealLiterals)
-  val retType = RealLiterals
+//TODO these are [[SemanticOperator]]s now that are independent of specific MMT URIs; the connection between MMT URIs and semantic operators is made in .mmt syntax now
+// the corresponding .mmt files have to be adapted
 
-  def apply(args: List[Term]): OMLIT = args match {
-    case List(RealLiterals(u : Double)) => RealLiterals.apply(-u)
-    case _ => throw new Exception("Put a helpful error message here")
-  }
+object DoubleFunctions {
+   
+   val r = Apply(OMS(tm),OMS(path ? "reals"))
+   val R = StandardDouble
+   
+   object Negative extends Unary(R,R)({case R(x) => -x})
+   object Addition extends Binary(R,R,R)({case (R(x),R(y)) => x+y})
+   object Multiplication extends Binary(R,R,R)({case (R(x),R(y)) => x*y})
+   object Division extends Binary(R,R,R)({case (R(x),R(y)) => x/y})
+   object Modulo extends  Binary(R,R,R)({case (R(x),R(y)) => x % y})
+   object Tangent extends Unary(R,R) ({case R(x) => scala.math.tan(scala.math.toRadians(x))})
+   object ArcTangent extends Unary(R,R) ({case R(x) => scala.math.atan(scala.math.toRadians(x))})
+   object Sine extends Unary(R,R)({case R(x) => scala.math.sin(scala.math.toRadians(x))})
+   object ArcSine extends Unary(R,R)({case R(x) => scala.math.asin(scala.math.toRadians(x))})
+   object Cosine extends Unary(R,R)({case R(x) => scala.math.cos(scala.math.toRadians(x))})
+   object ArcCosine extends Unary(R,R)({case R(x) => scala.math.acos(scala.math.toRadians(x))})
+   object SquareRoot extends Unary(R,R)({case R(x) => scala.math.sqrt(x)})
 }
 
-object Addition extends RealizedOperator(path ? "add") {
-  val argTypes = List(RealLiterals, RealLiterals)
-  val retType = RealLiterals
-
-  def apply(args: List[Term]): OMLIT = args match {
-    case List(RealLiterals(u : Double), RealLiterals(v : Double)) => RealLiterals.apply(u + v)
-    case _ => throw new Exception("Put a helpful error message here")
-  }
-}
-
-object Multiplication extends RealizedOperator(path ? "mul") {
-  val argTypes = List(RealLiterals, RealLiterals)
-  val retType = RealLiterals
-
-  def apply(args: List[Term]): OMLIT = args match {
-    case List(RealLiterals(u : Double), RealLiterals(v : Double)) => RealLiterals.apply(u * v)
-    case _ => throw new Exception("Put a helpful error message here")
-  }
-}
-
-object Division extends RealizedOperator(path ? "div") {
-  val argTypes = List(RealLiterals, RealLiterals)
-  val retType = RealLiterals
-
-  def apply(args: List[Term]): OMLIT = args match {
-    case List(RealLiterals(u : Double), RealLiterals(v : Double)) => RealLiterals.apply(u / v)
-    case _ => throw new Exception("Put a helpful error message here")
-  }
-}
-
-object Modulo extends RealizedOperator(path ? "mod") {
-  val argTypes = List(RealLiterals, RealLiterals)
-  val retType = RealLiterals
-
-  def apply(args: List[Term]): OMLIT = args match {
-    case List(RealLiterals(u : Double), RealLiterals(v : Double)) => RealLiterals.apply(u % v)
-    case _ => throw new Exception("Put a helpful error message here")
-  }
-}
-
-object Tangent extends RealizedOperator(path ? "tan") {
-  val argTypes = List(RealLiterals)
-  val retType = RealLiterals
-
-  def apply(args: List[Term]): OMLIT = args match {
-    case List(RealLiterals(u : Double)) => RealLiterals.apply(scala.math.tan(scala.math.toRadians(u)))
-    case _ => throw new Exception("Put a helpful error message here")
-  }
-}
-
-object ArcTangent extends RealizedOperator(path ? "atan") {
-  val argTypes = List(RealLiterals)
-  val retType = RealLiterals
-
-  def apply(args: List[Term]): OMLIT = args match {
-    case List(RealLiterals(u : Double)) => RealLiterals.apply(scala.math.atan(scala.math.toRadians(u)))
-    case _ => throw new Exception("Put a helpful error message here")
-  }
-}
-
-object Sine extends RealizedOperator(path ? "sin") {
-  val argTypes = List(RealLiterals)
-  val retType = RealLiterals
-
-  def apply(args: List[Term]): OMLIT = args match {
-    case List(RealLiterals(u : Double)) => RealLiterals.apply(scala.math.sin(scala.math.toRadians(u)))
-    case _ => throw new Exception("Put a helpful error message here")
-  }
-}
-
-object ArcSine extends RealizedOperator(path ? "asin") {
-  val argTypes = List(RealLiterals)
-  val retType = RealLiterals
-
-  def apply(args: List[Term]): OMLIT = args match {
-    case List(RealLiterals(u : Double)) => RealLiterals.apply(scala.math.asin(scala.math.toRadians(u)))
-    case _ => throw new Exception("Put a helpful error message here")
-  }
-}
-
-object Cosine extends RealizedOperator(path ? "cos") {
-  val argTypes = List(RealLiterals)
-  val retType = RealLiterals
-
-  def apply(args: List[Term]): OMLIT = args match {
-    case List(RealLiterals(u : Double)) => RealLiterals.apply(scala.math.cos(scala.math.toRadians(u)))
-    case _ => throw new Exception("Put a helpful error message here")
-  }
-}
-
-object ArcCosine extends RealizedOperator(path ? "acos") {
-  val argTypes = List(RealLiterals)
-  val retType = RealLiterals
-
-  def apply(args: List[Term]): OMLIT = args match {
-    case List(RealLiterals(u : Double)) => RealLiterals.apply(scala.math.acos(scala.math.toRadians(u)))
-    case _ => throw new Exception("Put a helpful error message here")
-  }
-}
-
-object SquareRoot extends RealizedOperator(path ? "sqrt") {
-  val argTypes = List(RealLiterals)
-  val retType = RealLiterals
-
-  def apply(args: List[Term]): OMLIT = args match {
-    case List(RealLiterals(u : Double)) => RealLiterals.apply(scala.math.sqrt(u))
-    case _ => throw new Exception("Put a helpful error message here")
-  }
-}
+object RealLiterals extends RepresentedRealizedType(DoubleFunctions.r,DoubleFunctions.R)

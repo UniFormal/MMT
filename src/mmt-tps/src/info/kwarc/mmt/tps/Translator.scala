@@ -5,7 +5,7 @@ import java.io.{FileWriter, PrintWriter}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
+import info.kwarc.mmt.api.symbols.{Constant, PlainInclude, ContextContainer}
 import syntax._
 import info.kwarc.mmt.api._
 import documents._
@@ -81,7 +81,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
    def doModule(d:DPath)(m: syntax.Module): modules.Module = m match {
       case t: theory =>
          val cont = Nil // (t.theory_formals map doFormalPars) collect {case Some(v) => v}
-      implicit val th = new DeclaredTheory(path,doName(t.id),Some(TPSTheory.thpath),cont)
+      implicit val th = new DeclaredTheory(path,doName(t.id),Some(TPSTheory.thpath),ContextContainer(cont))
          // TODO: assuming, exporting_, possibly named stuff?
          controller add th
          t._decls foreach doDecl
