@@ -49,7 +49,7 @@ class ImplementsRuleGenerator extends ChangeListener {
          val ruleName = c.name / nameSuffix
          log("generating rule " + ruleName)
          val rule = new ImplementsRule(c, c.home, impl)
-         val ruleConst = new RuleConstant(c.home, ruleName, rule)
+         val ruleConst = new RuleConstant(c.home, ruleName, OMS(c.path), Some(rule)) //TODO better type
          ruleConst.setOrigin(GeneratedBy(this))
          controller.add(ruleConst)
        case _ =>
