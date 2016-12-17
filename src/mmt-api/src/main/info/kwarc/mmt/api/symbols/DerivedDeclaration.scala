@@ -106,10 +106,7 @@ case class StructuralFeatureRule(feature: String) extends Rule
 abstract class StructuralFeature(val feature: String) extends FormatBasedExtension {
    def isApplicable(s: String) = s == feature
    
-   lazy val mpath = {
-     val segs = utils.stringToList(getClass.getCanonicalName, "\\.")
-     DPath(utils.URI("scala", segs.init.reverse.mkString("."))) ? segs.last
-   }
+   lazy val mpath = SemanticObject.javaToMMT(getClass.getCanonicalName)
 
    /**  if derived declarations of this feature are unnamed, this method should be overriden with a function that generates a name */
    def unnamedDeclarations: Option[List[DeclarationComponent] => LocalName] = None

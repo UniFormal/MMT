@@ -561,12 +561,17 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
 
   // ******************* additional retrieval methods
 
-  def getDeclarationsInScope(mod: Term): List[Content] = {
-    val impls = visibleVia(mod).toList
-    val decls = impls flatMap { case (from, via) =>
-      get(from.toMPath).getDeclarations
+  def getDeclarationsInScope(mod: Term): Iterator[StructuralElement] = {
+    val impls = visibleVia(mod).iterator
+    impls flatMap {case (from, via) =>
+      get(from.toMPath) match {
+        case d: DeclaredTheory =>
+          via match {
+            case OMCOMP(Nil) => d.getDeclarations.iterator
+            case _ => Nil //TODO d.translate(mod, ???, ApplyMorphism(via))
+          }
+      }
     }
-    decls
   }
 
   /** retrieve the implicit morphism "from --implicit--> to" */

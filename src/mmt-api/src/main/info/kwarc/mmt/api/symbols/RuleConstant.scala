@@ -39,6 +39,7 @@ class RuleConstantInterpreter(controller: frontend.Controller) {
    def createRule(thy: MPath, rl: Term): Rule = {
       val (rlP,rlArgs) = rl match {
         case OMPMOD(rlP, rlArgs) => (rlP, rlArgs)
+        case OMA(_,OMMOD(rlP) :: rlArgs) => (rlP,rlArgs) //TODO temporary fix because Realize rules parsed with the wrong notation 
         case _ => throw ParseError("cannot interpret as semantic object: " + rl)
       }
       controller.extman.addExtensionO(SemanticObject.mmtToJava(rlP, true), Nil) match {
@@ -53,7 +54,7 @@ class RuleConstantInterpreter(controller: frontend.Controller) {
               if (rlArgs.nonEmpty) throw ParseError("too many arguments")
               r              
             case r: ParametricRule =>
-              r(rlArgs)
+              r(controller, thy, rlArgs)
             case _ => throw ParseError("semantic object exists but is not a rule: " + rl)
           }
       }
@@ -69,7 +70,6 @@ class RuleConstantInterpreter(controller: frontend.Controller) {
 import parser._
 import modules._
 
-// TODO the rule name followed by arguments should be parsed into a single Term, which is given to the RuleConstantInterpreter
 class RuleConstantParser extends ParserExtension {
    private lazy val rci = new RuleConstantInterpreter(controller)
    def isApplicable(se: StructuralElement, keyword: String) = {
@@ -79,7 +79,7 @@ class RuleConstantParser extends ParserExtension {
       val (_,_,pr) = sp.readParsedObject(con, None)(s)
       val thy = se.asInstanceOf[DeclaredTheory].path
       if (!pr.isPlainTerm)
-        throw ParseError("can only interpret plain terms as rules")
+        throw ParseError("can only interpret plain terms as rules, found: " + pr.toTerm)
       val rc = rci(thy, pr.term)
       controller add rc
    }

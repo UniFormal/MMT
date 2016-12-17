@@ -21,7 +21,11 @@ trait Rule extends SemanticObject {
 
 /** parametric rules can be instantiated to obtain rules */ 
 abstract class ParametricRule extends SemanticObject {
-  def apply(args: List[Term]): Rule
+  /**
+   * @param thy the containing theory
+   * @param args the parameters of the rule
+   */
+  def apply(controller: Controller, thy: MPath, args: List[Term]): Rule
 }
 
 /** a rule for syntax-driven algorithms, applicable to expressions with a certain head */
