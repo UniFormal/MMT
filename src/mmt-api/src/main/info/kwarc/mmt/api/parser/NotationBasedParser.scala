@@ -220,7 +220,7 @@ class NotationBasedParser extends ObjectParser {
     var les: List[LexerExtension] = Nil
     var notExts: List[NotationExtension] = Nil
     decls.foreach {
-      case r: RuleConstant => r.df match {
+      case r: RuleConstant => r.df.foreach {
         case ne: NotationExtension =>
           notExts ::= ne
         case le: LexerExtension =>

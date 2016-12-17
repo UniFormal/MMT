@@ -18,7 +18,7 @@ case class SemOpType(args: List[SemanticType], ret: SemanticType) {
 }
 
 /** A RealizedOperator couples a syntactic function (a Constant) with a semantic function (a Scala function) */
-class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: SemanticOperator, semTp: SemOpType) extends BreadthRule(synOp) {
+case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: SemanticOperator, semTp: SemOpType) extends BreadthRule(synOp) {
    if (synTp.arity != semTp.arity)
      throw ImplementationError("illtyped realization")
    if (!semOp.getTypes.contains(semTp))

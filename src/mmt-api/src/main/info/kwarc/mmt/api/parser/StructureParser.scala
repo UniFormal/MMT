@@ -745,7 +745,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case Some(d: modules.DeclaredTheory) =>
           controller.simplifier.flatten(d)
           d.getDeclarations.foreach {
-            case rc: RuleConstant => rc.df match {
+            case rc: RuleConstant => rc.df.foreach {
               case r: StructuralFeatureRule =>
                 val sf = controller.extman.get(classOf[StructuralFeature], r.feature) match {
                   case Some(sf) =>

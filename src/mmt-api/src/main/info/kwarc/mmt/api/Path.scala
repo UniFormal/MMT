@@ -68,6 +68,7 @@ trait SlashFunctions[A] {
 trait QuestionMarkFunctions[A] {
    def ?(n: LocalName): A
    def ?(n: String): A = this ? LocalName(n)
+   def ?(ns: List[String]): A = this ? LocalName(ns:_*)
    def ?(n: LNStep): A = this ? LocalName(n)
 }
 
@@ -160,7 +161,7 @@ case class GlobalName(module: MPath, name: LocalName) extends ContentPath with S
 
 object LocalName {
    def apply(step: LNStep) : LocalName = LocalName(List(step))
-   def apply(step: String) : LocalName = LocalName(SimpleStep(step))
+   def apply(steps: String*) : LocalName = LocalName(steps.toList map SimpleStep)
    def apply(p: MPath) : LocalName = LocalName(ComplexStep(p))
    implicit def toList(ln: LocalName): List[LNStep] = ln.steps
    implicit def fromList(l: List[LNStep]): LocalName = LocalName(l)

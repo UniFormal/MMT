@@ -19,7 +19,6 @@ class NamedInductiveTypes extends StructuralFeature("inductive") {
      }
   }
 
-   def modules(d: DerivedDeclaration): List[Module] = Nil
    def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 }
 

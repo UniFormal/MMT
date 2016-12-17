@@ -99,6 +99,7 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             rh(" =\n")
             t.getDeclarations.foreach {d => apply(d, indent+1)}
          case v: DeclaredView => doDeclaredView(v,indent)
+         case dd: DerivedDeclaration => ??? //TODO
          case nm: NestedModule =>
             apply(nm.module, indent+1)
          case s: DeclaredStructure => doDeclaredStructure(s,indent)
@@ -114,7 +115,9 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             rh(" abbrev ")
             apply(s.df, Some(s.path $ DefComponent))
          case r: RuleConstant =>
-            rh("rule " + r.df.className)
+            if (r.df.isEmpty) rh("unknown ")
+            rh("rule ")
+            apply(r.tp, Some(r.path $ TypeComponent))
       }
       endDecl(e)
       rh("\n")

@@ -105,6 +105,11 @@ case class StructuralFeatureRule(feature: String) extends Rule
  */
 abstract class StructuralFeature(val feature: String) extends FormatBasedExtension {
    def isApplicable(s: String) = s == feature
+   
+   lazy val mpath = {
+     val segs = utils.stringToList(getClass.getCanonicalName, "\\.")
+     DPath(utils.URI("scala", segs.init.reverse.mkString("."))) ? segs.last
+   }
 
    /**  if derived declarations of this feature are unnamed, this method should be overriden with a function that generates a name */
    def unnamedDeclarations: Option[List[DeclarationComponent] => LocalName] = None
@@ -130,7 +135,8 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
     */
    def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration
 
-   def modules(dd: DerivedDeclaration): List[Module]
+   /** override as needed */
+   def modules(dd: DerivedDeclaration): List[Module] = Nil
    
    /** returns the rule constant for using this feature in a theory */
    def getRule = StructuralFeatureRule(feature)
@@ -235,8 +241,6 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
       }
    }
 
-   def modules(d: DerivedDeclaration): List[Module] = Nil
-
    def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 }
 
@@ -315,6 +319,6 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     }
 
   }
-  def modules(d: DerivedDeclaration): List[Module] = Nil
+
   def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 }

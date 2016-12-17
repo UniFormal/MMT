@@ -17,7 +17,7 @@ class Pragmatics extends ChangeListener {
 
    override def onAdd(se: StructuralElement) {
      se match {
-       case rc: RuleConstant => rc.df match {
+       case rc: RuleConstant => rc.df.foreach {
          case ne: NotationExtension =>
            notExts ::= (rc.home.toMPath, ne)
          case _ =>
@@ -27,7 +27,7 @@ class Pragmatics extends ChangeListener {
    }
    override def onDelete(se: StructuralElement) {
      se match {
-       case rc: RuleConstant => rc.df match {
+       case rc: RuleConstant => rc.df.foreach {
          case ne: NotationExtension =>
            notExts = notExts.filterNot {case (_,neC) => ne == neC}
          case _ =>

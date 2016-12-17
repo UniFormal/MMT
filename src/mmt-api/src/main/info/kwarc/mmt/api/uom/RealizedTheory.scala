@@ -56,13 +56,11 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
     * adds a [[RuleConstant]] realizing r.head as r to this model
     * @param r a BreadthRule for n-ary operators and an AbbrevRule for nullary operators
     */
-   def rule(r: Rule) {
+   def rule(r: SyntaxDrivenRule) {
       val rc = {
-        val name = r match {
-          case r: SyntaxDrivenRule => r.head.name
-          case r => LocalName(r.className)
-        }
-        new symbols.RuleConstant(toTerm, name, r)
+        val name = r.head.name / "realize"
+        val tp = OMS(r.head)
+        new symbols.RuleConstant(toTerm, name, tp, Some(r)) //TODO nicer type
       }
       add(rc)
    }
@@ -106,7 +104,7 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
    protected def getRealizedType(synType: GlobalName): RealizedType = {
      getDeclarations foreach {
        case rc: RuleConstant => rc.df match {
-         case rt: RealizedType if rt.synType == OMS(synType) => return rt
+         case Some(rt: RealizedType) if rt.synType == OMS(synType) => return rt
          case _ =>
        }
        case _ =>

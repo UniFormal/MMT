@@ -57,20 +57,19 @@ trait RealizationStorage {
    * @param cls the class name
    * @param p the path to use in error messages
    */
-  def loadRule(cls: String, p: Path): Rule = {
+  def loadObject(p: MPath): SemanticObject = {
+    val cls = SemanticObject.mmtToJava(p)
     reflect(cls, p) match {
-      case r: Rule => r
-      case _ => throw BackendError("class for " + cls + " exists but is not a rule", p)
+      case r: SemanticObject => r
+      case _ => throw BackendError("object exists but is not a semantic object", p)
     }
   }
 
   /** gets the Scala object for a class name */
-  def reflect(s: String, p: Path): AnyRef = {
-    val cls = s + "$"
+  def reflect(cls: String, p: Path): AnyRef = {
     val c = try {
       Class.forName(cls, true, loader)
-    }
-    catch {
+    } catch {
       case e: ClassNotFoundException =>
         throw NotApplicable("class " + cls + " not found")
       case e: ExceptionInInitializerError =>

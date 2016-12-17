@@ -21,7 +21,6 @@ class PatternFeature extends StructuralFeature(Pattern.feature) {
      def getO(n: LocalName) = None
    }
 
-   def modules(d: DerivedDeclaration) = Nil
 }
 
 object Pattern {
@@ -106,8 +105,6 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
        Some(dT)
      }
    }
-
-   def modules(d: DerivedDeclaration) = Nil
 }
 
 object Instance {

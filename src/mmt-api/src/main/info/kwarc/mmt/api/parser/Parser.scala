@@ -39,7 +39,9 @@ case class ParseResult(unknown: Context, free: Context, term: Term) {
       }
       res
   }
-   
+   /** true if no unknowns/free variables found */
+  def isPlainTerm = unknown.isEmpty && free.isEmpty
+ 
   /** replaces the term */
   def map(f: Term => Term) = copy(term = f(term))
 }

@@ -75,7 +75,6 @@ class SubtypeFeature extends StructuralFeature(SubtypeDecl.feature) {
     }
 
   }
-  def modules(d: DerivedDeclaration): List[Module] = Nil
   def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
     if (!d.name.toString.startsWith("_")) throw GetError("Name of Subtype Declaration must start with '_'!")
   }

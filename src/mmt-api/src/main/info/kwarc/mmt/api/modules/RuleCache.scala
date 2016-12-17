@@ -15,7 +15,7 @@ class RuleCache extends ChangeListener {
   override def onAdd(e: StructuralElement) {
      e match {
         case r: RuleConstant => r.home match {
-           case OMMOD(t) => rules(t) += r.df
+           case OMMOD(t) => r.df foreach {rdf => rules(t) += rdf}
            case _ =>
         }
         case _ =>
@@ -24,7 +24,7 @@ class RuleCache extends ChangeListener {
   override def onDelete(e: StructuralElement) {
      e match {
         case r: RuleConstant => r.home match {
-           case OMMOD(t) => rules(t) -= r.df
+           case OMMOD(t) => r.df foreach {rdf => rules(t) -= rdf}
            case _ =>
         }
         case _ =>
