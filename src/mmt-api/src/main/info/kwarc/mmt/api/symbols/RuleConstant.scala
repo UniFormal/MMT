@@ -16,7 +16,7 @@ import scala.xml.Node
  * @param df the rule this declaration provides
  */
 class RuleConstant(val home : Term, val name : LocalName, val tp: Term, var df: Option[Rule]) extends Declaration {
-   def toNode = <ruleconstant name={name.toPath}>{tp.toNode}</ruleconstant>
+   def toNode = <ruleconstant name={name.toPath}><type>{tp.toNode}</type></ruleconstant>
    override def toString = name.toString
    def getComponents = List(TypeComponent(new FinalTermContainer(tp))) // df?
    def getDeclarations = Nil
@@ -41,7 +41,7 @@ class RuleConstantInterpreter(controller: frontend.Controller) {
         case OMPMOD(rlP, rlArgs) => (rlP, rlArgs)
         case _ => throw ParseError("cannot interpret as semantic object: " + rl)
       }
-      controller.extman.addExtensionO(SemanticObject.mmtToJava(rlP), Nil) match {
+      controller.extman.addExtensionO(SemanticObject.mmtToJava(rlP, true), Nil) match {
         case Some(sf: StructuralFeature) =>
           if (rlArgs.nonEmpty) throw ParseError("too many arguments")
           sf.getRule

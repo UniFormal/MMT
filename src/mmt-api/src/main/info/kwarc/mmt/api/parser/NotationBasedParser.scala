@@ -312,17 +312,25 @@ class NotationBasedParser extends ObjectParser {
    *  parses qualified identifiers, possibly heuristically
    */
   private def makeIdentifier(te: Token)(implicit pu: ParsingUnit, errorCont: ErrorHandler): Option[ContentPath] = {
-    val word = te.word
+    var word = te.word
     val segments = utils.stringToList(word, "\\?")
     // recognizing identifiers ?THY?SYM is awkward because it would require always lexing initial ? as identifiers
     // but we cannot always prepend ? because the identifier could also be NS?THY
     // Therefore, we prepend ? using a heuristic
-    val qid = segments match {
-      case fst :: _ :: Nil if !fst.contains(':') && Character.isUpperCase(fst.charAt(0)) => "?" + word
-      case _ => word
+    segments match {
+      case fst :: _ :: Nil if !fst.contains(':') && Character.isUpperCase(fst.charAt(0)) =>
+        word = "?" + word
+      case _ =>
+    }
+    // recognizing prefix:REST is awkward because : is usually used in notations
+    // therefore, we insert : if prefix is a known namespace prefix
+    // this introduces the (less awkward problem) that relative paths may not start with a namespace prefix
+    val beforeFirstSlash = segments.head.takeWhile(_ != '/')
+    if (!beforeFirstSlash.contains(':') && pu.nsMap.get(beforeFirstSlash).isDefined) {
+      word = beforeFirstSlash + ":" + word.substring(beforeFirstSlash.length)
     }
     try {
-      Path.parse(qid, pu.nsMap) match {
+      Path.parse(word, pu.nsMap) match {
         case p: ContentPath => Some(p)
         case p =>
           makeError("content path expected: " + p, te.region)
@@ -376,8 +384,10 @@ class NotationBasedParser extends ObjectParser {
      /** adds terms to either subs or args, depending on n and increments i*/
      def addTerms(n: Int, terms: List[Term]) {
         val nterms = terms.map((n,_))
-        if (n < firstVar) subs = subs ::: nterms
-         else args = args ::: nterms
+        if (n < firstVar)
+          subs = subs ::: nterms
+        else
+          args = args ::: nterms
          i += terms.length
      }
      found foreach {

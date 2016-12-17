@@ -17,12 +17,12 @@ object SemanticObject {
   }
   
   /** converts an MMT URI into a java class name of a Scala object */
-  def mmtToJava(m: MPath) = {
-    val auth = m.parent.uri.authority.getOrElse("")
-    val nameParts = m.name.map(_.toPath + "$")
-    revertDotList(auth) + "." + nameParts
+  def mmtToJava(m: MPath, isClass: Boolean = false) = {
+    val uri = m.parent.uri
+    val auth = uri.authority.getOrElse("")
+    val authParts = utils.stringToList(auth, "\\.").reverse
+    val path = uri.path
+    val nameParts = m.name.map(_.toPath).mkString("$") + (if (isClass) "" else "$")
+    (authParts ::: path ::: List(nameParts)).mkString(".")
   }
-    
-  /** reverts a dot-separated list, seen as a string */
-  private def revertDotList(s: String) = utils.stringToList(s, "\\.").reverse.mkString(".")
 }

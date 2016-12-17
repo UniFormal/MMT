@@ -77,7 +77,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
           }
        case _ =>
      }
-     throw NotApplicable("no applicable backend available")
+     throw NotApplicable("no backend applicable to " + p)
   }
 
   private def manifestLocations(root: File) = List(root / "META-INF", root).map(_ / "MANIFEST.MF")
