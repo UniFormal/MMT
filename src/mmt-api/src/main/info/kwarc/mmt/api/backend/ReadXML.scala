@@ -292,7 +292,7 @@ class XMLReader(controller: Controller) extends Logger {
             log("found rule constant " + name + ", trying RuleConstantInterpreter")
             val tp = Obj.parseTerm(tpN, nsMap)
             try {
-              val rc = rci(home, tp)
+              val rc = rci(home, tp, true)
               addDeclaration(rc)
             } catch {
               case NotApplicable(msg) =>

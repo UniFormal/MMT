@@ -24,7 +24,7 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, componen
   override def toNode : Elem = {
     <derived feature={feature} name={name.toString} base={t.parent.toString}>
       {components.map(c =>
-        <component key={c.key.toString}>
+      <component key={c.key.toString}>
         {c.value match {
           case t: TermContainer => t.get.get.toNode
           case p: MPathContainer => p.get.get.toNode

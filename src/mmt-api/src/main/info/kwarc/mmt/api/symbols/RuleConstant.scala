@@ -32,17 +32,15 @@ class RuleConstant(val home : Term, val name : LocalName, val tp: Term, var df: 
  * loads a rule (by reflection) given by a LocalName corresponding to a java name of a [[Rule]] object or of a [[StructuralFeature]] class
  */
 class RuleConstantInterpreter(controller: frontend.Controller) {
-   /** interprets a term as a rule, which may have to be loaded
-    *  @param thy the containing theory
-    *  @param rl the term representing the rule
+   /** computes the definiens of a rule constant by creating the rule
     */
-   def createRule(thy: MPath, rl: Term): Rule = {
+   def createRule(rc: RuleConstant) {
+      val rl = rc.tp
       val (rlP,rlArgs) = rl match {
-        case OMPMOD(rlP, rlArgs) => (rlP, rlArgs)
-        case OMA(_,OMMOD(rlP) :: rlArgs) => (rlP,rlArgs) //TODO temporary fix because Realize rules parsed with the wrong notation 
+        case OMPMOD(p,as) => (p,as)
         case _ => throw ParseError("cannot interpret as semantic object: " + rl)
       }
-      controller.extman.addExtensionO(SemanticObject.mmtToJava(rlP, true), Nil) match {
+      val rule = controller.extman.addExtensionO(SemanticObject.mmtToJava(rlP, true), Nil) match {
         case Some(sf: StructuralFeature) =>
           if (rlArgs.nonEmpty) throw ParseError("too many arguments")
           sf.getRule
@@ -54,16 +52,31 @@ class RuleConstantInterpreter(controller: frontend.Controller) {
               if (rlArgs.nonEmpty) throw ParseError("too many arguments")
               r              
             case r: ParametricRule =>
-              r(controller, thy, rlArgs)
+              r(controller, rc.home, rlArgs)
             case _ => throw ParseError("semantic object exists but is not a rule: " + rl)
           }
       }
+      rc.df = Some(rule)
    }
   
-   def apply(thy: MPath, rl: Term): RuleConstant = {
-      val rule = createRule(thy, rl)
-      val OMPMOD(mp,_) = rl
-      new RuleConstant(OMMOD(thy), LocalName(mp), rl, Some(rule))
+   /**
+    * @param thy the containing theory
+    * @param rl the rule (i.e., the type of the rule constant)
+    * @param create force creation of the rule (default: only if no arguments)
+    */
+   def apply(thy: MPath, rl: Term, create: Boolean): RuleConstant = {
+      val (rlP,rlArgs) = rl match {
+        case OMPMOD(rlP, rlArgs) => (rlP, rlArgs)
+        case _ => throw ParseError("cannot interpret as semantic object: " + rl)
+      }
+      val name = if (rlArgs.isEmpty)
+        LocalName(rlP)
+      else
+        LocalName(rlP) / rl.hashCode.toString //TODO compute better name
+      val rc = new RuleConstant(OMMOD(thy), name, rl, None)
+      // rules without arguments can be created immediately (to be used during parsing)
+      if (rlArgs.isEmpty || create) createRule(rc)
+      rc
    }  
 }
 
@@ -80,7 +93,7 @@ class RuleConstantParser extends ParserExtension {
       val thy = se.asInstanceOf[DeclaredTheory].path
       if (!pr.isPlainTerm)
         throw ParseError("can only interpret plain terms as rules, found: " + pr.toTerm)
-      val rc = rci(thy, pr.term)
+      val rc = rci(thy, pr.term, false)
       controller add rc
    }
 }

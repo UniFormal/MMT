@@ -274,6 +274,14 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           case _ => // cOrg has no definiens, nothing to do
         }
       case rc: RuleConstant =>
+        //checkTerm(context, rc.tp) //TODO calling this tries to load RealizedTheories for all OMMODs that point into Scala
+        if (rc.df.isEmpty) {
+          if (ParseResult.fromTerm(rc.tp).isPlainTerm) {
+             new RuleConstantInterpreter(controller).createRule(rc)
+          } else {
+             env.errorCont(InvalidElement(rc, "type of rule constant not fully checked"))
+          }
+        }
       case _ =>
         //succeed for everything else but signal error
         logError("unchecked " + path)
