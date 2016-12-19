@@ -4,8 +4,7 @@ import info.kwarc.mmt.api._
 import modules._
 import checking._
 
-class NamedInductiveTypes extends StructuralFeature("inductive") {
-  def expectedComponents = Nil
+class NamedInductiveTypes extends StructuralFeature("inductive") with ParametricTheoryLike {
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
      new Elaboration {
        def domain = {
@@ -18,7 +17,5 @@ class NamedInductiveTypes extends StructuralFeature("inductive") {
        }
      }
   }
-
-   def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 }
 

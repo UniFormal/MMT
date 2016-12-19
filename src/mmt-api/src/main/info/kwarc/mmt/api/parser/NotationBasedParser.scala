@@ -560,9 +560,12 @@ class NotationBasedParser extends ObjectParser {
         }
         con match {
            case con: MPath =>
-             if (finalSubs.nonEmpty || finalVars.nonEmpty)
-               makeError("no context or substitution allowed in module application", ml.region)
-             OMPMOD(con, finalArgs)
+             if (finalSubs.nonEmpty)
+               makeError("no substitution allowed in module application", ml.region)
+             if (finalVars.isEmpty)
+               OMPMOD(con, finalArgs)
+             else
+               OMBINDC(OMMOD(con), finalVars, finalArgs)
            case con: GlobalName =>
              prag.makeStrict(level, con, finalSub, Context(finalVars: _*), finalArgs, attrib, notation)(
                 () => UnknownCacher.getNext

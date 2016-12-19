@@ -41,10 +41,7 @@ abstract class Structure extends Declaration with Link {
    protected def outerString = nameOrKeyword + from.toString
    def toNode = {
       val nameAtt = if (isInclude) null else name.toPath
-      val (fromAtt,fromNode) = from match {
-         case OMMOD(fromPath) => (fromPath.toPath, Nil)
-         case _ => (null, <from>{from.toNode}</from>)
-      }
+      val (fromAtt,fromNode) = backend.ReadXML.makeTermAttributeOrChild(from, "from")
       val implAtt =if (isInclude) null else if (isImplicit) "true" else null 
       <import name={nameAtt} from={fromAtt} implicit={implAtt}>{fromNode}{innerNodes}</import>
    }

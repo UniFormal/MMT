@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.web
 
-import info.kwarc.mmt.api.archives.HTMLPresenter
+import info.kwarc.mmt.api.presentation.HTMLPresenter
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.presentation.{HTMLRenderingHandler, Presenter, RenderingResult}

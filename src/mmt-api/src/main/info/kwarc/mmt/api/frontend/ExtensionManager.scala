@@ -301,7 +301,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     // pragmatic-strict converter
     addExtension(new notations.Pragmatics)
     //targets, opaque formats, and presenters
-    List(new archives.HTMLExporter, new archives.PythonExporter, new uom.GenericScalaExporter, new uom.OpenMathScalaExporter,
+    List(new info.kwarc.mmt.api.presentation.HTMLExporter, new archives.PythonExporter, new uom.GenericScalaExporter, new uom.OpenMathScalaExporter,
       new TextInterpreter, new HTMLInterpreter,
       TextPresenter, OMDocPresenter).foreach {
       e => addExtension(e)

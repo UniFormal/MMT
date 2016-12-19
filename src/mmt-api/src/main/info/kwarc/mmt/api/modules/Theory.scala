@@ -19,13 +19,12 @@ abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name) {
  * @param mt the optional meta-theory
  * @param parameters the interface/parameters/arguments of the theory
  */
-// TODO find a way that does not require parameters to be vars
 class DeclaredTheory(doc : DPath, name : LocalName, mt : Option[MPath], val paramC: ContextContainer = new ContextContainer)
       extends Theory(doc, name) with DeclaredModule {
    /** the container of the meta-theory */
-   val metaC = new MPathContainer(mt)
+   val metaC = TermContainer(mt.map(OMMOD(_)))
    /** the meta-theory */
-   def meta = metaC.getPath
+   def meta = metaC.get map {case OMMOD(mt) => mt}
    /** @return the parameters */
    def parameters = paramC.get getOrElse Context.empty
 

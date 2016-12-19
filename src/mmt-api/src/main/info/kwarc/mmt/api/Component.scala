@@ -38,23 +38,6 @@ class FinalTermContainer(t: Term) extends AbstractTermContainer {
    def get = Some(t) 
 }
 
-/** container for an MPath */
-class MPathContainer(path: Option[MPath]) extends AbstractTermContainer {
-   /** internally stored as a term to allow for attaching metadata */
-   private var term: Option[Term]= path map {p => OMMOD(p)}
-   def update(nw: ComponentContainer) = nw match {
-      case nw: MPathContainer =>
-         val changed = term != nw.term
-         term = nw.term
-         changed
-      case _ => throw ImplementationError("expected atomic component")
-   }
-   def delete {term = None}
-   def isDefined = term.isDefined
-   def get = term
-   def getPath = term map {case OMMOD(p) => p}
-}
-
 /** A ComponentKey identifies a [[DeclarationComponent]]. */
 abstract class ComponentKey(s : String) {
    override def toString = s

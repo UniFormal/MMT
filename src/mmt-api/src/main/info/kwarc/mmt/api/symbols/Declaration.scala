@@ -66,6 +66,7 @@ abstract class Declaration extends ContentElement {
     *  Unfortunately, this must take any declaration and throw an error if 'not (that : ThisType)' 
     */
    def merge(that: Declaration): ThisType
+
    /** called to throw an error from within 'merge' */
    protected def mergeError(that: Declaration): Nothing = throw GeneralError("cannot merge " + that.path + " into " + this.path)
 }

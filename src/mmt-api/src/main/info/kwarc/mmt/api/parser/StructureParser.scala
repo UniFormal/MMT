@@ -926,27 +926,14 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /** reads the header of a [[DerivedDeclaration]] */
   private def readDerivedDeclaration(feature: StructuralFeature, parentInfo: IsMod, context: Context)(implicit state: ParserState) = {
     val parent = parentInfo.modParent
-    val nameOpt = if (feature.unnamedDeclarations.isEmpty) Some(readName) else None
-    val tcs = feature.expectedComponents map {
-      case (s, k) =>
-        val oc = k match {
-          case _: TermComponentKey => new TermContainer
-          case ParamsComponent => new ContextContainer
-        }
-        (s -> (k, oc))
-    }
+    val pr = feature.getHeaderRule
+    val (_, reg, header) = readParsedObject(context, Some(pr))
+    val (name, tp) = feature.processHeader(header.term)
+    val tpC = TermContainer(header.copy(term = tp).toTerm)
     val notC = new NotationContainer
-    val compSpecs = tcs ::: notationComponentSpec(notC)
+    val compSpecs = notationComponentSpec(notC)
     val equalFound = readComponents(context, compSpecs, Some("="))
-    val components = tcs map {case (_, (k,tc)) => DeclarationComponent(k,tc)}
-    val name = nameOpt.getOrElse {
-      try {
-        feature.unnamedDeclarations.get(components)
-      } catch {case e: Exception =>
-        throw ParseError("error while generating name of unnamed feature").setCausedBy(e)
-      }
-    }
-    val dd = new DerivedDeclaration(OMID(parent), name, feature.feature, components, notC)
+    val dd = new DerivedDeclaration(OMID(parent), name, feature.feature, TermContainer(tp), notC)
     dd.setDocumentHome(parentInfo.relDocParent)
     seCont(dd)
     if (equalFound) {

@@ -205,7 +205,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    private def buildTreeDecl(node: DefaultMutableTreeNode, dec: Declaration, context: Context, defaultReg: SourceRegion) {
       val reg = getRegion(dec) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
       dec match {
-         case nm: NestedModule =>
+         case nm: NestedModule if !nm.isInstanceOf[DerivedDeclaration] =>
             buildTreeMod(node, nm.module, context, reg)
             return
          case _ =>
@@ -220,6 +220,12 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val child = new DefaultMutableTreeNode(new MMTElemAsset(dec, label, reg))
       node.add(child)
       buildTreeComps(child, dec, context, reg)
+      dec match {
+        case dd: DerivedDeclaration =>
+          val sf = controller.extman.get(classOf[StructuralFeature], dd.feature).getOrElse {throw ImplementationError("unknown feature: " + dd.feature)}
+          dd.module.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, d, context ++ sf.getInnerContext(dd), reg)}
+        case _ =>
+      }
    }
 
    /** add child nodes for all components of an element */

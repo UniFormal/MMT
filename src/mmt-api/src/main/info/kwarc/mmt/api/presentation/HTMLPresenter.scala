@@ -1,17 +1,22 @@
-package info.kwarc.mmt.api.archives
+package info.kwarc.mmt.api.presentation
 
 import info.kwarc.mmt.api._
-import documents._
-import modules._
-import notations._
-import objects._
-import presentation._
-import symbols._
-import opaque._
-import utils._
-import HTMLAttributes._
+import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.notations._
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.presentation._
+import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.opaque._
+import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.web.ServerError
+import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.archives.BuildTask
+import info.kwarc.mmt.api.opaque.OpaqueHTMLPresenter
+
+import HTMLAttributes._
+import File.scala2Java
+import scala.Range
 
 abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
    override val outExt = "html"

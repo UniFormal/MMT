@@ -29,8 +29,8 @@ class LambdaPiInclude extends BoundTheoryParameters(BoundInclude.feature,Pi.path
 object BoundInclude {
   val feature = "BoundInclude"
   def apply(top: MPath, from: MPath) = {
-    val comps = List(DeclarationComponent(DomComponent,TermContainer(OMID(from))))
-    new DerivedDeclaration(OMMOD(top), LocalName(from), feature, comps, new NotationContainer())
+    val tpC = TermContainer(OMMOD(from))
+    new DerivedDeclaration(OMMOD(top), LocalName(from), feature, tpC, new NotationContainer())
   }
 }
 
