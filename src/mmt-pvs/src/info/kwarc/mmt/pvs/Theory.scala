@@ -217,7 +217,7 @@ object PVSTheory {
    }
 
    object fieldapp extends sym("fieldapp") {
-      def apply(tm : Term, field : String) = ApplySpine(this.term,tm,OML(VarDecl(LocalName(field),None,None,None)))
+      def apply(tm : Term, field : String) = ApplySpine(this.term,tm,OML(LocalName(field),None,None))
    }
 
    object recordexpr extends sym("recordexpr") {
@@ -233,7 +233,7 @@ object PVSTheory {
          ApplySpine(this.term,Recexp(nametp.map(t => OML(t._1,Some(tp.term),Some(t._2))):_*))
       def unapply(t:Term) : Option[List[(String,Term)]] = t match {
          case ApplySpine(this.term,List(Recexp(l))) => Some(l.map({
-            case OML(VarDecl(name,Some(tp.term),Some(df),not)) => (name.toString,df)
+            case OML(name,Some(tp.term),Some(df)) => (name.toString,df)
             case tm @ _ => throw new Exception("Invalid Record type element: " + tm)
          }))
          case _ => None

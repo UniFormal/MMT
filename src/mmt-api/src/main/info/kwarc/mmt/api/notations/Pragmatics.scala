@@ -17,7 +17,7 @@ class Pragmatics extends ChangeListener {
 
    override def onAdd(se: StructuralElement) {
      se match {
-       case rc: RuleConstant => rc.df match {
+       case rc: RuleConstant => rc.df.foreach {
          case ne: NotationExtension =>
            notExts ::= (rc.home.toMPath, ne)
          case _ =>
@@ -27,7 +27,7 @@ class Pragmatics extends ChangeListener {
    }
    override def onDelete(se: StructuralElement) {
      se match {
-       case rc: RuleConstant => rc.df match {
+       case rc: RuleConstant => rc.df.foreach {
          case ne: NotationExtension =>
            notExts = notExts.filterNot {case (_,neC) => ne == neC}
          case _ =>
@@ -58,12 +58,17 @@ class Pragmatics extends ChangeListener {
       applicableByLevel(level).constructTerm(op, subs, con, args, attrib, not)
    }
 
-   /** the default treatment for application-like constructions without a known operator
-    *  used for: apply meta-variables to its dependent bound variables; whitespace operator
-    *  @return currently the OMA formed using the first apply operator found; should be cleaned up
+   /**
+    * the default treatment for application-like constructions without a known operator
+    * used for: apply meta-variables to its dependent bound variables; whitespace operator; application of MPath
+    * 
+    * @return as dictated by notation extension, OMA by default
     */
    def defaultApplication(level: Option[MPath], fun: Term, args: List[Term]): Term = {
-      applicableByLevel(level).constructTerm(fun, args)
+      fun match {
+        case OMMOD(_) => OMA(fun, args)
+        case _ => applicableByLevel(level).constructTerm(fun, args) 
+      }
    }
 
    def makePragmatic(t: Term)(implicit getNotations: GlobalName => List[TextNotation]) : Option[PragmaticTerm] = {

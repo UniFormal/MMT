@@ -21,7 +21,7 @@ class LFRecSymbol(name:String) {
 
 object Rectype extends LFRecSymbol("Rectype") {
   def apply(v:OML*) = OMA(this.term, v.toList)
-  def apply(con: Context) = OMA(this.term, con map {v => OML(v)})
+  def apply(con: Context) = OMA(this.term, con map {v => v.toOML})
   def unapply(t : Term) : Option[List[OML]] = t match {
     case OMA(this.term,ls) => Some(ls map {_ match {case o:OML => o case _ => return None}})
     case this.term => Some(Nil)
@@ -31,7 +31,7 @@ object Rectype extends LFRecSymbol("Rectype") {
 
 object Recexp extends LFRecSymbol("Recexp") {
   def apply(v:OML*) = OMA(this.term, v.toList)
-  def apply(con: Context) = OMA(this.term, con map {v => OML(v)})
+  def apply(con: Context) = OMA(this.term, con map {v => v.toOML})
   def unapply(t : Term) : Option[List[OML]] = t match {
     case OMA(this.term,ls) => Some(ls map {_ match {case o:OML => o case _ => return None}})
     case this.term => Some(Nil)

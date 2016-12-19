@@ -13,17 +13,19 @@ import scala.collection.mutable.{HashMap,HashSet}
  * All Rules have an apply method that is passed a Solver for callbacks.
  * The Solver does not implement any back-tracking. Therefore, rules may only use callbacks if their effects are required.
  */
-trait Rule {
-   def className = {
-      val name = getClass.getName
-      if (name.endsWith("$"))
-         name.substring(0,name.length-1)
-      else
-        name
-   }
+trait Rule extends SemanticObject {
    override def toString = {
-      "rule " + className
+      "rule " + mpath
    }
+}
+
+/** parametric rules can be instantiated to obtain rules */ 
+abstract class ParametricRule extends SemanticObject {
+  /**
+   * @param home the containing theory
+   * @param args the parameters of the rule
+   */
+  def apply(controller: Controller, home: Term, args: List[Term]): Rule
 }
 
 /** a rule for syntax-driven algorithms, applicable to expressions with a certain head */
@@ -31,18 +33,23 @@ trait SyntaxDrivenRule extends Rule {
    /** an MMT URI that is used to indicate when the Rule is applicable */
    def head: GlobalName
    override def toString = {
-      "rule " + className + " for " + head
+      "rule " + mpath + " for " + head
    }
 }
 
 /** the [[SemanticType]] of all [[Rule]]s */
 class RuleType(be: Backend) extends Atomic[Rule] {
    val cls = classOf[Rule]
-   override def toString(u: Any) = unapply(u).get.className
+   override def toString(u: Any) = unapply(u).get.mpath.toString
 
    def fromString(s: String): Rule = {
-     try {be.loadRule(s, ???)}
-     catch {case NotApplicable(msg) =>
+     try {
+       val mp = Path.parseM(s, NamespaceMap.empty)
+       be.loadObject(mp) match {
+         case r: Rule => r
+         case _ => throw ParseError("object exists but is not a rule")
+       }
+     } catch {case NotApplicable(msg) =>
        throw ParseError(msg)
      }
    }
@@ -89,7 +96,7 @@ object RuleSet {
                   // trying all declarations because some rules might be generated
                   t.getDeclarations.foreach {
                      case rc: RuleConstant =>
-                        rs.declares(rc.df)
+                        rc.df foreach {r => rs.declares(r)}
                      case _ =>
                   }
                case _ =>

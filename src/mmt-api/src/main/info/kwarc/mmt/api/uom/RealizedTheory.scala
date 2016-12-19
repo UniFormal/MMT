@@ -56,13 +56,11 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
     * adds a [[RuleConstant]] realizing r.head as r to this model
     * @param r a BreadthRule for n-ary operators and an AbbrevRule for nullary operators
     */
-   def rule(r: Rule) {
+   def rule(r: SyntaxDrivenRule) {
       val rc = {
-        val name = r match {
-          case r: SyntaxDrivenRule => r.head.name
-          case r => LocalName(r.className)
-        }
-        new symbols.RuleConstant(toTerm, name, r)
+        val name = r.head.name / "realize"
+        val tp = OMS(r.head)
+        new symbols.RuleConstant(toTerm, name, tp, Some(r)) //TODO nicer type
       }
       add(rc)
    }
@@ -106,7 +104,7 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
    protected def getRealizedType(synType: GlobalName): RealizedType = {
      getDeclarations foreach {
        case rc: RuleConstant => rc.df match {
-         case rt: RealizedType if rt.synType == OMS(synType) => return rt
+         case Some(rt: RealizedType) if rt.synType == OMS(synType) => return rt
          case _ =>
        }
        case _ =>
@@ -133,34 +131,27 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
        }
        rule(inv)
      } else {
-        val ro = new RealizedOperator(op) {
-           val argTypes = aTypes
-           val retType = rType
-           def apply(args: List[Term]): OMLIT = {
-             if (args.length != fun.arity)
-               throw ImplementationError("illegal argument number")
-             val argsV = (aTypes zip args) map {case (aT, a) =>
-               aT.unapply(a).getOrElse {
-                 throw ImplementationError("illegal argument type")
-               }
-             }
-             rType(fun.app(argsV))
-           }
+        val synTp = SynOpType(aTypes.map(_.synType), rType.synType)
+        val semOp = new SemanticOperator(aTypes.map(_.semType) =>: rType.semType) {
+          def apply(args: List[Any]) = fun.app(args)
         }
+        val semTp = semOp.getTypes.head
+        val ro = new RealizedOperator(op, synTp, semOp, semTp)
         rule(ro)       
      }
    }
 
    /** typed variant, experimental, not used by ScalaExporter yet */
    def functionT[U,V](op:GlobalName, argType1: RepresentedRealizedType[U], rType: RepresentedRealizedType[V])(comp: U => V) {
-      val ro = new RealizedOperator(op) {
-         val argTypes = List(argType1)
-         val retType = rType
-         def apply(args: List[Term]): OMLIT = args(0) match {
-            case argType1(x) => rType(comp(x))
+      val synTp = SynOpType(List(argType1.synType), rType.synType)
+      val semOp = new SemanticOperator(List(argType1.semType) =>: rType.semType) {
+        def apply(args: List[Any]) = args(0) match {
+            case argType1.semType(x) => comp(x)
             case _ => throw ImplementationError("illegal arguments")
-         }
+        }
       }
+      val semTp = semOp.getTypes.head
+      val ro = new RealizedOperator(op, synTp, semOp, semTp)
       rule(ro)
    }
 
@@ -206,7 +197,7 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
 }
 
 /** a flexary function, used by [[RealizationInScala]] */
-class FunctionN(val arity: Int, val app: List[Any] => Any)
+class FunctionN private (val arity: Int, val app: List[Any] => Any)
 object FunctionN {
    implicit def from0(f: () => Any) = new FunctionN(0, l => f())
    implicit def from1(f: Any => Any) = new FunctionN(1, l => f(l(0)))
@@ -220,7 +211,7 @@ object FunctionN {
 }
 
 /** inverse of a flexary function, used by [[RealizationInScala]] */
-class InvFunctionN(val arity: Int, val app: Any => Option[List[Any]])
+class InvFunctionN private (val arity: Int, val app: Any => Option[List[Any]])
 object InvFunctionN {
    implicit def from1(f: Any => Option[Any]) = new InvFunctionN(1, l => f(l).map(u => List(u)))
    implicit def from2(f: Any => Option[(Any,Any)]) = new InvFunctionN(2, l => f(l).map(u => List(u._1,u._2)))

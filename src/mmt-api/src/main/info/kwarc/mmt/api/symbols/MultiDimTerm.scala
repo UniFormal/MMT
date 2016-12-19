@@ -31,8 +31,10 @@ class ObjDimension[T] {
  * 
  * The representations are read < parsed < analyzed.
  * Setting a representation marks the higher representations as dirty.
+ * 
+ * @tparam T the type of objects stored; the type bound is not actually needed, but it helps putting sharper bound on some return types  
  */
-trait ObjContainer[T] {
+trait ObjContainer[T <: Obj] {
    private var _read     : Option[String] = None
    private val _parsed   = new ObjDimension[T]
    private val _analyzed = new ObjDimension[T]
@@ -100,6 +102,7 @@ trait ObjContainer[T] {
    def setAnalyzedDirty {_analyzed.dirty = true}
    /** time of the last change */
    def lastChangeAnalyzed = _analyzed.time
+   
    /** getter for the best available non-dirty representation: analyzed or parsed */
    def get: Option[T] = _analyzed.termIfNotDirty orElse _parsed.termIfNotDirty
    /** true if any dimension is present, i.e., if the component is present */
@@ -155,6 +158,17 @@ class TermContainer extends AbstractTermContainer with ObjContainer[Term] {
    
    /** applies a function to the contained Term and returns a new TermContainer */
    def map(f: Term => Term) = TermContainer(get map f)
+
+   /** returns the analyzed term if it has been successfully and completely checked */ 
+   def getAnalyzedIfFullyChecked = {
+     if (isAnalyzedDirty) None else analyzed flatMap {t =>
+       val pr = parser.ParseResult.fromTerm(t)
+       if (pr.unknown.isEmpty && pr.free.isEmpty)
+         Some(pr.term)
+       else
+         None
+     }
+   }
 }
 
 /** helper object */

@@ -374,26 +374,14 @@ object OMSemiFormal {
  * 
  * These could be used for the typed/defined fields in a record type/value or the selection function. 
  */
-case class OML(vd: VarDecl) extends Term {
+case class OML(name: LocalName, tp: Option[Term], df: Option[Term]) extends Term {
+    def vd = VarDecl(name, tp, df, None)
     private[objects] def freeVars_ = vd.freeVars
     def head = None
     def subobjects = subobjectsNoContext(vd.tp.toList ::: vd.df.toList)
-    def substitute(sub: Substitution)(implicit sa: SubstitutionApplier) = OML(vd ^^ sub)
+    def substitute(sub: Substitution)(implicit sa: SubstitutionApplier) = OML(name, tp map (_ ^^ sub), df map (_ ^^ sub))
     def toCMLQVars(implicit qvars: Context) = <label>{vd.toCMLQVars}</label>
     def toNode = vd.toNode.copy(label = "OML")
-    val name = vd.name
-    val tp = vd.tp
-    val df = vd.df
-}
-
-object OML {
-   def apply(name : LocalName, tp : Option[Term], df : Option[Term]) : OML = OML(VarDecl(name,tp,df,None))
-   /*
-   def unapply(t : Term) : Option[(LocalName,Option[Term],Option[Term])] = t match {
-      case o : OML => Some((o.vd.name,o.vd.tp,o.vd.df))
-      case _ => None
-   }
-   */
 }
 
 /**
@@ -541,7 +529,7 @@ object Obj {
             OMSemiFormal(sf)
          case l:scala.xml.Elem if l.label == "OML" =>
             val vd = VarDecl.parse(l.copy(label = "OMV"), nsMap)
-            OML(vd)
+            vd.toOML
          case _ => throw ParseError("not a well-formed term: " + N.toString)
       }
       mdOpt.foreach {md => o.metadata = md}

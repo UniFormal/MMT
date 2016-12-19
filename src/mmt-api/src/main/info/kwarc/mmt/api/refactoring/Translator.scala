@@ -361,7 +361,7 @@ class AcrossLibraryTranslator(controller : Controller,
       case tx: OMLITTrait => List(TermClass(tx.synType))
       case OMFOREIGN(_) => Nil
       case OMSemiFormal(_) => Nil
-      case OML(VarDecl(_, tpOpt, dfOpt, _)) => (tpOpt.toList ::: dfOpt.toList).map(TermClass.apply)
+      case OML(_, tpOpt, dfOpt) => (tpOpt.toList ::: dfOpt.toList).map(TermClass.apply)
     }).distinct
 
     // private def subtermsNondistinct : List[TermClass] = this :: immediateSubterms.flatMap(_.subtermsNondistinct)
@@ -452,7 +452,7 @@ class AcrossLibraryTranslator(controller : Controller,
         case UnknownOMLIT(vl, st) => UnknownOMLIT(vl, TermClass(st).update)
         case OMFOREIGN(_) => currentTerm
         case OMSemiFormal(_) => currentTerm
-        case OML(vd) => OML(updateVar(vd))
+        case o:OML => updateVar(o.vd).toOML
       }
       if (ret != currentTerm) {
         steps ::= (None, ret)

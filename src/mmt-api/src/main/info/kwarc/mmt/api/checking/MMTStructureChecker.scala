@@ -134,7 +134,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         sfOpt match {
           case None =>
-            env.errorCont(InvalidElement(dd, s"structural feature ${dd.feature} not registered"))
+            env.errorCont(InvalidElement(dd, s"structural feature '${dd.feature}' not registered"))
           case Some(sf) =>
             val conInner = sf.getInnerContext(dd)
             check(context ++ conInner, dd.module)
@@ -274,6 +274,14 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           case _ => // cOrg has no definiens, nothing to do
         }
       case rc: RuleConstant =>
+        //checkTerm(context, rc.tp) //TODO calling this tries to load RealizedTheories for all OMMODs that point into Scala
+        if (rc.df.isEmpty) {
+          if (ParseResult.fromTerm(rc.tp).isPlainTerm) {
+             new RuleConstantInterpreter(controller).createRule(rc)
+          } else {
+             env.errorCont(InvalidElement(rc, "type of rule constant not fully checked"))
+          }
+        }
       case _ =>
         //succeed for everything else but signal error
         logError("unchecked " + path)
@@ -534,7 +542,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         env.pCont(path)
         //wrap in implicit morphism?
         s
-      case OML(VarDecl(name, tp, df, _)) => OML(name, tp.map(checkTerm(context, _)), df.map(checkTerm(context, _)))
+      case OML(name, tp, df) => OML(name, tp.map(checkTerm(context, _)), df.map(checkTerm(context, _)))
       case OMV(name) =>
         if (!context.isDeclared(name))
           env.errorCont(InvalidObject(s, "variable is not declared"))

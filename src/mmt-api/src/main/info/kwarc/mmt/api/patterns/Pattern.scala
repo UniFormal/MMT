@@ -21,7 +21,6 @@ class PatternFeature extends StructuralFeature(Pattern.feature) {
      def getO(n: LocalName) = None
    }
 
-   def modules(d: DerivedDeclaration) = Nil
 }
 
 object Pattern {
@@ -53,18 +52,18 @@ object Pattern {
        case cc: ContextContainer => cc.get
        case _ => None
      } getOrElse Context.empty
-   }
+  }
 }
 
 class InstanceFeature extends StructuralFeature(Instance.feature) {
   
    def expectedComponents = List(":" -> TypeComponent)
   
-   private def getPattern(dd: DerivedDeclaration): Option[(DerivedDeclaration,List[Term])] = {
-     val (p,args) = Instance.getPattern(dd).getOrElse {return None}
+   private def getPattern(inst: DerivedDeclaration): Option[(DerivedDeclaration,List[Term])] = {
+     val (p,args) = Instance.getPattern(inst).getOrElse {return None}
      val patOpt = controller.globalLookup.getO(p)
      patOpt match {
-       case Some(pat: DerivedDeclaration) if pat.feature == "pattern" =>
+       case Some(pat: DerivedDeclaration) if pat.feature == Pattern.feature =>
          Some((pat, args))
        case _ => None
      }
@@ -91,7 +90,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
    
    def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = new Elaboration {
      private lazy val (pattern,args) = getPattern(dd).getOrElse {
-       throw ImplementationError("elaborating ill-formed instance")
+       throw InvalidElement(dd, "ill-formed instance")
      }
      private lazy val params = Pattern.getParameters(pattern)
      lazy val domain = {
@@ -100,20 +99,18 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
        }
      }
      def getO(n: LocalName): Option[Declaration] = {
-       val d = pattern.module.getO(n).getOrElse(return None)
+       val d = pattern.module.getO(n.tail).getOrElse(return None)
        val subs = (params zip args) map {case (vd,a) => Sub(vd.name, a)}
        val dT = d.translate(dd.home, dd.name, ApplySubs(subs) compose Renamer.prefix(pattern.module.path, dd.path))
        Some(dT)
      }
    }
-
-   def modules(d: DerivedDeclaration) = Nil
 }
 
 object Instance {
   val feature = "instance"
   def apply(home : Term, name : LocalName, pattern: GlobalName, args: List[Term], notC: NotationContainer): DerivedDeclaration = {
-    val patExp = OMA(OMS(pattern), args) 
+    val patExp = OMPMOD(pattern.toMPath, args) 
     apply(home, name, TermContainer(patExp), notC)
   }
   
@@ -130,7 +127,7 @@ object Instance {
        case _ => None
      }
      tp flatMap {
-       case OMA(OMS(p), args) => Some((p,args))
+       case OMPMOD(p, args) => Some((p,args))
        case _ => None
      }
   }

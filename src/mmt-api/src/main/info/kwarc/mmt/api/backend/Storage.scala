@@ -57,35 +57,34 @@ trait RealizationStorage {
    * @param cls the class name
    * @param p the path to use in error messages
    */
-  def loadRule(cls: String, p: Path): Rule = {
+  def loadObject(p: MPath): SemanticObject = {
+    val cls = SemanticObject.mmtToJava(p)
     reflect(cls, p) match {
-      case r: Rule => r
-      case _ => throw BackendError("class for " + cls + " exists but is not a rule", p)
+      case r: SemanticObject => r
+      case _ => throw BackendError("object exists but is not a semantic object", p)
     }
   }
 
-  /** gets the Scala object for a class name */
-  def reflect(s: String, p: Path): AnyRef = {
-    val cls = s + "$"
+  /** gets the object or class for a java class name (cls must be in Scala's syntax for java .class files) */
+  protected def reflect(cls: String, p: Path): AnyRef = {
     val c = try {
       Class.forName(cls, true, loader)
-    }
-    catch {
+    } catch {
       case e: ClassNotFoundException =>
         throw NotApplicable("class " + cls + " not found")
       case e: ExceptionInInitializerError =>
-        throw BackendError("class for " + p + " exists, but an error occurred when initializing it", p).setCausedBy(e)
+        throw BackendError(s"class $cls for $p exists, but an error occurred when initializing it", p).setCausedBy(e)
       case e: LinkageError =>
-        throw BackendError("class for " + p + " exists, but an error occurred when linking it", p).setCausedBy(e)
+        throw BackendError(s"class $cls for $p exists, but an error occurred when linking it", p).setCausedBy(e)
       case e: Error =>
-        throw BackendError("class for " + p + " exists, but: " + e.getMessage, p).setCausedBy(e)
+        throw BackendError(s"class $cls for $p exists, but: " + e.getMessage, p).setCausedBy(e)
     }
     try {
       c.getField("MODULE$").get(null)
     }
     catch {
       case e: java.lang.Exception =>
-        throw BackendError("java class for " + p + " exists, but an error occurred when accessing the Scala object", p).setCausedBy(e)
+        throw BackendError(s"class $cls for $p exists, but an error occurred when accessing the Scala object", p).setCausedBy(e)
     }
   }
 }
@@ -179,7 +178,7 @@ class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extend
     }
     val s = uom.GenericScalaExporter.mpathToScala(mp)
     //controller.report("backend", "trying to load class " + s)
-    val r = reflect(s, mp) match {
+    val r = reflect(s + "$", mp) match {
       case r: uom.RealizationInScala => r
       case _ => throw BackendError("class for " + mp + " exists but is not a realization", mp)
     }

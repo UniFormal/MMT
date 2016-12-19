@@ -158,7 +158,7 @@ object LMFDBStore extends Storage {
          throw BackendError("could not find JSON value " + key + " in \n" + json, db.schemaTheory) //TODO use correct path
       }
       val df = codec.decode(dfJ)
-      OML(VarDecl(LocalName(key), None, Some(df), None))
+      OML(LocalName(key), None, Some(df))
     }
   }
 

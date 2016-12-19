@@ -10,7 +10,7 @@ import uom._
  * There are a number of desirable properties that Translator can have.
  * In particular: preservation of typing, equality; commute with substitution.  
  */
-abstract class Translator {
+abstract class Translator {self =>
    /** map terms that occur on the left side of MMT's typing judgment */
    def applyDef(context: Context, tm: Term): Term
    /**
@@ -37,8 +37,8 @@ abstract class Translator {
    
    /** diagrammatic composition (first this, then that) */
    def compose(that: Translator) = new Translator {
-     def applyDef(con: Context, tm: Term) = that.applyDef(this.applyContext(con), this.applyDef(con, tm))
-     def applyType(con: Context, tm: Term)  = that.applyType(this.applyContext(con), this.applyType(con, tm))
+     def applyDef(con: Context, tm: Term) = that.applyDef(self.applyContext(con), self.applyDef(con, tm))
+     def applyType(con: Context, tm: Term) = that.applyType(self.applyContext(con), self.applyType(con, tm))
    }
 }
 

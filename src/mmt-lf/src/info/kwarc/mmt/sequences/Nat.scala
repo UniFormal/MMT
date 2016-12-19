@@ -27,6 +27,4 @@ object Nat {
    
    /** a < b : type */
    def lessType(a: Term, b: Term) = Bool.ded(leq(succ(a),b))
-   
-   val natlit = new uom.RepresentedRealizedType(OMS(nat), uom.StandardNat)
 }

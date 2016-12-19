@@ -51,19 +51,21 @@ object Math {
   val vectorprepend = vectors ? "vector_prepend"
   val matrix = matrices ? "matrix"
   val matrixconst = matrices ? "matrix_const"
+  
+  val n = tm(nat)
+  val z = tm(int)
+  val N = StandardNat
+  val Z = StandardInt
 }
 
-object IntegerLiterals extends RealizedType(Math.tm(Math.int),StandardInt)
-object NatLiterals extends RealizedType(Math.tm(Math.nat),StandardNat)
-object NatSucc extends RealizedOperator(Math.succ) {
-  val argTypes = List(NatLiterals)
-  val retType = NatLiterals
+import Math._
+import SemanticOperator._
 
-  def apply(args: List[Term]): OMLIT = args match {
-    case List(NatLiterals(u : BigInt)) => NatLiterals.apply(u + 1)
-    case _ => throw new Exception("Put a helpful error message here")
-  }
-}
+object IntegerLiterals extends RealizedType(z,Z)
+object NatLiterals extends RealizedType(n,N)
+
+object NatSucc extends RealizedOperator(succ, n =>: n, Arithmetic.Succ, N =>: N)
+
 object NatSuccInverse extends InverseOperator(Math.succ) {
   def unapply(l: OMLIT): Option[List[OMLIT]] = l match {
     case NatLiterals(u : BigInt) if u>0 => Some(List(NatLiterals(u-1)))

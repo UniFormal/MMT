@@ -179,7 +179,11 @@ class ExtensionManager(controller: Controller) extends Logger {
     */
   def addExtension(cls: String, args: List[String]): Extension = {
     log("trying to create extension " + cls)
-    val clsJ = Class.forName(cls)
+    val clsJ = try {
+       Class.forName(cls)
+    } catch {
+      case e: Exception => throw RegistrationError("error while trying to load class " + cls).setCausedBy(e)
+    }
     extensions.find(e => e.getClass == clsJ).foreach {e =>
        log("... already loaded, skipping")
        return e
@@ -194,6 +198,15 @@ class ExtensionManager(controller: Controller) extends Logger {
     ext
   }
 
+  /** like addExtension but throws no errors */
+  def addExtensionO(cls: String, args: List[String]): Option[Extension] = {
+    try {
+      Some(addExtension(cls, args))
+    } catch {
+      case r: RegistrationError => None
+    }
+  }
+  
   /** initializes and adds an extension */
   def addExtension(ext: Extension, args: List[String] = Nil) {
     log("adding extension " + ext.getClass.toString)

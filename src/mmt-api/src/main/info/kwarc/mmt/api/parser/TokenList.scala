@@ -19,15 +19,15 @@ object TokenList {
   def isNumber(c: Char): Boolean =
     List(DECIMAL_DIGIT_NUMBER, LETTER_NUMBER) contains c.getType
 
+  def isLetterOrNumber(c: Char) = isLetter(c) || isNumber(c)
+    
   /** @return true if c is considered a connector, i.e., a character that never breaks a word */
   def isConnector(c: Char): Boolean = c.getType == CONNECTOR_PUNCTUATION
 
   /** @return true if there is no word break between before and after */
   def canFollow(before: Char, after: Char): Boolean =
     !isWhitespace(after) &&
-      (isConnector(before) || isConnector(after) ||
-        (isLetter(before) || isNumber(before)) == (isLetter(after) || isNumber(after))
-        )
+      (isConnector(before) || isConnector(after) || (isLetterOrNumber(before) == isLetterOrNumber(after)))
 
   /** the Tokenizer
     *

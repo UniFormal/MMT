@@ -9,6 +9,7 @@ import info.kwarc.mmt.lf._
 
 import Sequences._
 import Nat._
+import NatRules.NatLit
 
 /* TODO inferring the type of ApplySpine(f, a_1,...,a_n) must work with entire argument sequence if some a_i is a sequence
  * current rules work if sequence arguments always provided as sequence term
@@ -93,7 +94,7 @@ object FlatSeqInfer extends InferenceRule(flatseq.path, OfType.path) {
       case Sequences.flatseq(ts@_*) =>
          val tsI = ts map {t => solver.inferType(t, covered)(stack, history.branch).getOrElse(return None)}
          if (tsI.distinct.length == 1)
-           Some(rep(tsI.head, natlit(tsI.length))) // optimization if all types are the same
+           Some(rep(tsI.head, NatLit(tsI.length))) // optimization if all types are the same
          else
            Some(flatseq(tsI:_*))
       case _ => None
@@ -152,7 +153,7 @@ object IndexCompute extends ComputationRule(index.path) {
         Some(a)
       case Sequences.flatseq(as@_*) =>
         at match {
-          case Nat.natlit(l) =>
+          case NatLit(l) =>
             Some(as(l.toInt))
           case _ => None
         }
@@ -180,9 +181,9 @@ class SequenceTypeCheck(op: GlobalName) extends TypingRule(op) {
     val n = Length.infer(solver, tp).get
     val nS = solver.simplify(n)
     nS match {
-      case Nat.natlit(nI) =>
+      case NatLit(nI) =>
         (BigInt(0) until nI) forall {iI =>
-          val iL = natlit(iI)
+          val iL = NatLit(iI)
           solver.check(Typing(stack, index(tm, iL), index(tp, iL)))
         }
       case _ => throw DelayJudgment("length not known")
@@ -215,9 +216,9 @@ class SequenceEqualityCheck(op: GlobalName) extends TypeBasedEqualityRule(Nil, o
     val n = Length.infer(solver, tp).get
     val nS = solver.simplify(n)
     nS match {
-      case Nat.natlit(nI) =>
+      case NatLit(nI) =>
         val res = (BigInt(0) until nI) forall {iI =>
-          val iL = natlit(iI)
+          val iL = NatLit(iI)
           solver.check(Equality(stack, index(tm1, iL), index(tm2, iL), Some(index(tp, iL))))
         }
         Some(res)
@@ -283,9 +284,9 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
    /** flattens an argument sequence */
    private def applyList(tms: List[Term])(implicit solver: CheckingCallback, stack: Stack, history: History): List[Term] = {
      tms.flatMap {
-        case Sequences.rep(t, Nat.natlit(n)) =>
+        case Sequences.rep(t, NatLit(n)) =>
            (BigInt(0) until n).toList.map(_ => t)
-        case Sequences.ellipsis(Nat.natlit(n), i, t) =>
+        case Sequences.ellipsis(NatLit(n), i, t) =>
             ellipsisToList(n, i, t)
         case Sequences.flatseq(ts@_*) => ts
         case a => List(a)
@@ -300,12 +301,12 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
         vdS match {
           case VarDecl(name, Some(t), dfs, _) =>
             t match {
-               case Sequences.rep(tp, Nat.natlit(n)) =>
+               case Sequences.rep(tp, NatLit(n)) =>
                   val types = (BigInt(0) until n).toList.map(_ => tp)
                   val (vds,sub) = seqVarToList(name, types, dfs)
                   subs = subs ++ sub
                   vds
-               case Sequences.ellipsis(Nat.natlit(n),i,a) =>
+               case Sequences.ellipsis(NatLit(n),i,a) =>
                   val types = ellipsisToList(n,i,a)
                   val (vds, sub) = seqVarToList(name, types, dfs)
                   subs = subs ++ sub
@@ -328,7 +329,7 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
 
    /** turns an ellipsis whose bounds normalizes to a literal into a list of Terms */
    private def ellipsisToList(n: BigInt, i: LocalName, t: Term): List[Term] =
-      (BigInt(0) until n).toList.map(x => t ^? (i -> Nat.natlit(x)))
+      (BigInt(0) until n).toList.map(x => t ^? (i -> NatLit(x)))
 
    /**
     * turns a sequence variable (whose type is a sequence of types) into a variable sequence

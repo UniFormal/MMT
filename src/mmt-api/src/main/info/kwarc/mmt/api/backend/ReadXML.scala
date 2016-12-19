@@ -23,7 +23,7 @@ import scala.xml.{Node,NodeSeq,Utility}
 class XMLReader(controller: Controller) extends Logger {
    val report = controller.report
    val logPrefix = "reader"
-   private val rci = new RuleConstantInterpreter(controller.backend)
+   private val rci = new RuleConstantInterpreter(controller)
 
    /** calls the continuation function */
    private def add(e : StructuralElement)(implicit cont: StructuralElement => Unit) {
@@ -288,10 +288,11 @@ class XMLReader(controller: Controller) extends Logger {
                      }
                   }
             }
-         case <ruleconstant/> =>
+         case <ruleconstant><type>{tpN}</type></ruleconstant> =>
             log("found rule constant " + name + ", trying RuleConstantInterpreter")
+            val tp = Obj.parseTerm(tpN, nsMap)
             try {
-              val rc = rci(name, home)
+              val rc = rci(home, tp, true)
               addDeclaration(rc)
             } catch {
               case NotApplicable(msg) =>
