@@ -26,21 +26,18 @@ import SemanticOperator._
 
 object DoubleFunctions {
    
-   val r = Apply(OMS(tm),OMS(path ? "reals"))
-   val R = StandardDouble
+   val R = StandardDouble // realizes Apply(OMS(tm),OMS(path ? "reals")
    
-   object Negative extends Unary(R,R)({case R(x) => -x})
-   object Addition extends Binary(R,R,R)({case (R(x),R(y)) => x+y})
-   object Multiplication extends Binary(R,R,R)({case (R(x),R(y)) => x*y})
-   object Division extends Binary(R,R,R)({case (R(x),R(y)) => x/y})
-   object Modulo extends  Binary(R,R,R)({case (R(x),R(y)) => x % y})
-   object Tangent extends Unary(R,R) ({case R(x) => scala.math.tan(scala.math.toRadians(x))})
-   object ArcTangent extends Unary(R,R) ({case R(x) => scala.math.atan(scala.math.toRadians(x))})
-   object Sine extends Unary(R,R)({case R(x) => scala.math.sin(scala.math.toRadians(x))})
-   object ArcSine extends Unary(R,R)({case R(x) => scala.math.asin(scala.math.toRadians(x))})
-   object Cosine extends Unary(R,R)({case R(x) => scala.math.cos(scala.math.toRadians(x))})
-   object ArcCosine extends Unary(R,R)({case R(x) => scala.math.acos(scala.math.toRadians(x))})
-   object SquareRoot extends Unary(R,R)({case R(x) => scala.math.sqrt(x)})
+   object Negative extends Unary(R,R, {case R(x) => -x})
+   object Addition extends Binary(R,R,R, {case (R(x),R(y)) => x+y})
+   object Multiplication extends Binary(R,R,R, {case (R(x),R(y)) => x*y})
+   object Division extends Binary(R,R,R, {case (R(x),R(y)) => x/y})
+   object Modulo extends  Binary(R,R,R, {case (R(x),R(y)) => x % y})
+   object Tangent extends Unary(R,R, {case R(x) => scala.math.tan(scala.math.toRadians(x))})
+   object ArcTangent extends Unary(R,R, {case R(x) => scala.math.atan(scala.math.toRadians(x))})
+   object Sine extends Unary(R,R, {case R(x) => scala.math.sin(scala.math.toRadians(x))})
+   object ArcSine extends Unary(R,R, {case R(x) => scala.math.asin(scala.math.toRadians(x))})
+   object Cosine extends Unary(R,R, {case R(x) => scala.math.cos(scala.math.toRadians(x))})
+   object ArcCosine extends Unary(R,R, {case R(x) => scala.math.acos(scala.math.toRadians(x))})
+   object SquareRoot extends Unary(R,R, {case R(x) => scala.math.sqrt(x)})
 }
-
-object RealLiterals extends RepresentedRealizedType(DoubleFunctions.r,DoubleFunctions.R)
