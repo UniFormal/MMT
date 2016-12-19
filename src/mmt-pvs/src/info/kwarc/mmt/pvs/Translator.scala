@@ -138,13 +138,6 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       })
       controller.add(doc)
 
-      if (ths.head.path.toString == "http://pvs.csl.sri.com/Prelude?identity_props") {
-        controller.simplifier(ths.head)
-        ths.head.getDeclarations foreach (d => println(controller.presenter.asString(d)))
-        readLine()
-        print("")
-      }
-
       log("Checking:")
       logGroup {
         val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {

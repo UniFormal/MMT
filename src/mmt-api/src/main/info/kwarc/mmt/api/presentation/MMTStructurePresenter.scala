@@ -99,7 +99,7 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             rh(" =\n")
             t.getDeclarations.foreach {d => apply(d, indent+1)}
          case v: DeclaredView => doDeclaredView(v,indent)
-         case dd: DerivedDeclaration => ??? //TODO
+         case dd: DerivedDeclaration => // ??? //TODO
          case nm: NestedModule =>
             apply(nm.module, indent+1)
          case s: DeclaredStructure => doDeclaredStructure(s,indent)

@@ -10,9 +10,12 @@ object SemanticObject {
   def javaToMMT(cls: String) = {
     val segs = utils.stringToList(cls, "\\.")
     val nJ = segs.last
+    val names = if (!nJ.endsWith("$")) List(segs.last.trim)
+    else utils.stringToList(segs.last, "$").init
+    /*
     if (!nJ.endsWith("$"))
         throw GeneralError("object name should end in $: " + cls)
-    val names = utils.stringToList(segs.last, "$").init
+    val names = utils.stringToList(segs.last, "$").init */
     DPath(utils.URI("scala", segs.init.reverse.mkString("."))) ? names
   }
   
