@@ -274,8 +274,8 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     def bindLambda(t : Term) = if (vars.nonEmpty) OMBIND(OMS(lambda),vars,t) else t
     val applyPars = new StatelessTraverser {
         def traverse(t: Term)(implicit con: Context, state: State) : Term = t match {
-          case OMS(p) if p.module == dd.module.path =>
-            vars.foldLeft(t)((tm,v) => OMA(OMS(applys),List(tm,OMV(v.name))))
+          case OMS(p) if p.module == body.path => //dd.module.path =>
+            vars.foldLeft[Term](OMS(dd.parent ? (LocalName(body.path) / p.name)))((tm,v) => OMA(OMS(applys),List(tm,OMV(v.name))))
           case OMBINDC(bind, bvars, scps) =>
             // rename all bound variables that are among the parameters to avoid capture
             val (bvarsR, bvarsSub) = Context.makeFresh(bvars, varsNames ::: con.domain)
@@ -288,10 +288,13 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
       def applyDef(c: Context, t: Term) = bindLambda(applyPars(t, c))
     }
     val prefix = dd.name
-    new Elaboration {
+    val elab = new Elaboration {
       val decls = body.getDeclarationsElaborated.flatMap {
         case d =>
-          List(d.translate(parent.toTerm, prefix, translator))
+          // println(controller.presenter.asString(d))
+          val ret = d.translate(parent.toTerm, prefix, translator)
+          // println(controller.presenter.asString(ret))
+          List(ret)//d.translate(parent.toTerm, prefix, translator))
       /*  DM's old code
         case c: Constant =>
           //TODO @DM I don't think it's correct to treat generated constants differently here --FR 
@@ -311,7 +314,8 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
       def domain: List[LocalName] = decls.map(_.name)
       def getO(name: LocalName): Option[Declaration] = decls.find(_.name == name)
     }
-
+    // println(vars)
+    elab
   }
   def modules(d: DerivedDeclaration): List[Module] = Nil
   def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {

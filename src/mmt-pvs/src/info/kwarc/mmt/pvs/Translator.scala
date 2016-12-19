@@ -63,13 +63,27 @@ abstract class ImportState(t:PVSImportTask) {
     case VarDecl(name,Some(tp),df,not) => VarDecl(name,Some(PVSTheory.expr(tp)),df,not)
   },t) else t)
 
-  def addinclude(p : MPath) =
+  def addinclude(p : MPath) : Unit =
     if (inFormals && !th.includes.contains(p)) {
-      th.parameters = th.parameters /* ++ DerivedVarDecl(LocalName(p),PVSTheory.thpath,BoundIncludeRule,
-        List(DeclarationComponent(DomComponent,TermContainer(OMID(p))))) */
+      val or = t.controller.getO(p).asInstanceOf[Option[DeclaredTheory]]
+      if (or.isDefined) {
+        or.get.getDerivedDeclarations(BoundInclude.feature).foreach(d =>
+          addinclude(d.getComponent(DomComponent).get.asInstanceOf[AbstractTermContainer].get match {
+            case Some(OMMOD(np)) => np
+          }))
+      }
+      th.parameters = th.parameters ++ DerivedVarDecl(LocalName(p),BoundIncludeRule.feature,
+        List(OMMOD(p)))
       t.deps::=p
       th.includes ::= (p,true)
     } else if (!th.includes.contains(p)) {
+      val or = t.controller.getO(p).asInstanceOf[Option[DeclaredTheory]]
+      if (or.isDefined) {
+        or.get.getDerivedDeclarations(BoundInclude.feature).foreach(d =>
+          addinclude(d.getComponent(DomComponent).get.asInstanceOf[AbstractTermContainer].get match {
+          case Some(OMMOD(np)) => np
+        }))
+      }
       th add BoundInclude(th.path,p)
       /*
       try {
@@ -123,6 +137,13 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         theory
       })
       controller.add(doc)
+
+      if (ths.head.path.toString == "http://pvs.csl.sri.com/Prelude?identity_props") {
+        controller.simplifier(ths.head)
+        ths.head.getDeclarations foreach (d => println(controller.presenter.asString(d)))
+        readLine()
+        print("")
+      }
 
       log("Checking:")
       logGroup {

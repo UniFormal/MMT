@@ -102,6 +102,18 @@ object StructureVarDecl {
    }
 }
 
+object DerivedVarDecl {
+   val path = Path.parseS("http://cds.omdoc.org/mmt?mmt?StructuralFeature",NamespaceMap.empty)
+   private def ftTerm(ft : String) = OMA(OMS(path),List(OMV(LocalName(ft))))
+   def apply(name : LocalName, feat : String, comps : List[Term]) =
+      VarDecl(name,Some(OMA(ftTerm(feat),comps)),None,None)
+   def unapply(vd : VarDecl) : Option[(LocalName,String,List[Term])] = vd.tp match {
+      case Some(OMA(OMA(OMS(`path`),List(OMV(ft))),comps)) => Some((vd.name,ft.toString,comps))
+      case Some(OMA(OMS(`path`),List(OMV(ft)))) => Some((vd.name,ft.toString,Nil))
+      case _ => None
+   }
+}
+
 /** represents an MMT context as a list of variable declarations */
 case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDecl] with DefaultLookup[VarDecl] {
    type ThisType = Context

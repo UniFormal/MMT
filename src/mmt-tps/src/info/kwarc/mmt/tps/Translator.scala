@@ -81,8 +81,9 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
    def doModule(d:DPath)(m: syntax.Module): modules.Module = m match {
       case t: theory =>
          val cont = Nil // (t.theory_formals map doFormalPars) collect {case Some(v) => v}
-      implicit val th = new DeclaredTheory(path,doName(t.id),Some(TPSTheory.thpath),cont)
+      implicit val th = new DeclaredTheory(path,doName(t.id),Some(TPSTheory.thpath))
          // TODO: assuming, exporting_, possibly named stuff?
+         // TODO theory context
          controller add th
          t._decls foreach doDecl
          symbols foreach (c => {
