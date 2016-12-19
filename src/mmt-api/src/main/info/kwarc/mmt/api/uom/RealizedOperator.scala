@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import objects._
 import parser._
+import checking._
 
 /** helper class to store the type of a [[RealizedOperator]]s */
 case class SynOpType(args: List[Term], ret: Term) {
@@ -54,6 +55,28 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
         GlobalChange(apply(args))
      else
         NoChange
+   }
+   
+   /** the solution rule if the semantic operator is invertible */
+   //TODO pragmatic applications
+   def getSolutionRule: Option[SolutionRule] = semOp match {
+     case so: Invertible =>
+       val sr = new SolutionRule(synOp) {
+         def applicable(t: Term) = t match {
+           case OMA(OMS(`synOp`), args) =>
+             val nonlits = args.zipWithIndex.filterNot(_._1.isInstanceOf[OMLIT])
+             nonlits match {
+               case (_,i)::Nil => Some(i)
+               case _ => None
+             }
+           case _ => None
+         }
+         def apply(j: Equality): Option[(Equality,String)] = {
+           None //TODO
+         }
+       }
+       Some(sr)
+     case _ => None
    }
 }
 

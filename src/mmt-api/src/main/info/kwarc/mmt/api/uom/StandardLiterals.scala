@@ -62,8 +62,8 @@ class Product(val left: SemanticType, val right: SemanticType) extends SemanticT
      Some(i)
    }
    
-   val toLeft = Unary(this, left)({case (x,y) => x})
-   val toRight = Unary(this, right)({case (x,y) => y})
+   val toLeft = Unary(this, left){case (x,y) => x}
+   val toRight = Unary(this, right){case (x,y) => y}
    
    def pairOps(f1: Unary, f2: Unary): Unary = {
      if (f1.from == f2.from && f1.to == left && f2.to == right) {
@@ -314,16 +314,16 @@ object Arithmetic {
     alsoHasType(N)
   }
 
-  object Succ extends Unary(Z,Z)({case Z(x) => x+1}) {
+  object Succ extends InvertibleUnary(Z,Z, {case Z(x) => x+1}, {case Z(x) => Some(x-1)}) {
     alsoHasType(N =>: N)
   }
 
-  object Plus extends Binary(Z,Z,Z)({case (Z(x),Z(y)) => x+y}) {
-    alsoHasType (N =>: N =>: N)
+  object Plus extends InvertibleBinary(Z,Z,Z, {case (Z(x),Z(y)) => x+y}) with Commutative {
+    def invertLeft(x:Any,r:Any) = (x,r) match {case (Z(x),Z(r)) => Some(r-x)}
   }
   
-  object Times extends Binary(Z,Z,Z)({case (Z(x),Z(y)) => x*y}) {
-    alsoHasType (N =>: N =>: N)
+  object Times extends InvertibleBinary(Z,Z,Z, {case (Z(x),Z(y)) => x*y}) with Commutative {
+    def invertLeft(x:Any,r:Any) = (x,r) match {case (Z(x),Z(r)) => if ((r mod x) == 0) Some(r/x) else None}
   }
 }
 

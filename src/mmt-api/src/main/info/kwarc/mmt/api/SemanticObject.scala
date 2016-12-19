@@ -10,13 +10,10 @@ object SemanticObject {
   def javaToMMT(cls: String) = {
     val segs = utils.stringToList(cls, "\\.")
     val nJ = segs.last
-    val names = if (!nJ.endsWith("$")) List(segs.last.trim)
-    else utils.stringToList(segs.last, "$").init
-    /*
-    if (!nJ.endsWith("$"))
-        throw GeneralError("object name should end in $: " + cls)
-    val names = utils.stringToList(segs.last, "$").init */
-    DPath(utils.URI("scala", segs.init.reverse.mkString("."))) ? names
+    var nameS = segs.last
+    if (nameS.endsWith("$")) nameS = nameS.init
+    val nameSegs = utils.stringToList(nameS, "$")
+    DPath(utils.URI("scala", segs.init.reverse.mkString("."))) ? nameSegs
   }
   
   /** converts an MMT URI into a java class name of a Scala object */
