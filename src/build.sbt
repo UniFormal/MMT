@@ -248,6 +248,7 @@ val jeditJars = Seq(
   "Hyperlinks.jar",
   "jedit.jar",
   "SideKick.jar"
+  "jsr.jar"
 )
 
 val install =
