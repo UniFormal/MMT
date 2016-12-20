@@ -97,7 +97,10 @@ object MMTExtractor extends RelationalExtractor {
                        case Pattern.feature => f(IsPattern(dd.path))
                        case Instance.feature =>
                           f(IsInstance(dd.path))
-                          Instance.getPattern(dd).foreach {p => f(IsInstanceOf(dd.path, p._1))}
+                          dd.tpC.get match {
+                            case Some(Instance.Type(p,_)) => f(IsInstanceOf(dd.path, p))
+                            case _ =>
+                          }
                        case _ =>
                      }
                   case nm: NestedModule =>

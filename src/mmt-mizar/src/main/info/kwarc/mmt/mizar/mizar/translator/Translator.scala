@@ -19,8 +19,9 @@ class MizarCompiler extends archives.Importer {
   val key = "mizar-omdoc"
 
   def inExts = List("miz")
+  override def includeFile(s:String) = super.includeFile(s) && s != "HIDDEN.miz"
 
-  var lib:  List[String] = Nil
+  var lib:  List[String] = List("HIDDEN")
 
   def addToLib(article: String) {
     lib ::= article
@@ -71,6 +72,7 @@ class MizarCompiler extends archives.Importer {
   override def start(args: List[String] = Nil) {
     //TranslationController.controller.handle(ExecFile(File(new java.io.File("m2o-startup.mmt"))))
     TranslationController.controller = controller
+    // add theory with Mizar patterns to memory
   }
 
   def getBase(f: File): String = {
@@ -112,18 +114,6 @@ class MizarCompiler extends archives.Importer {
   def translateArticle(mml: String, aid: String, docBase: DPath) {
     val name = aid.toLowerCase()    
 
-    //special handling for the HIDDEN article, it will hold the mizar patterns theory
-    //TODO kind of a hack
-    if (aid == "HIDDEN") { 
-      val dpath = getDPath(docBase, name)
-      val doc = new Document(dpath, true)
-      TranslationController.add(doc)
-      val thy = MizarPatterns.makeTheory
-      TranslationController.add(thy)
-      TranslationController.add(MRef(doc.path, thy.path))
-      addToLib(aid)
-    }
-    
     if (isInLib(aid)) //already translated it
       return
       

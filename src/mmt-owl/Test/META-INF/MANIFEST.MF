@@ -9,7 +9,7 @@ compilation: owl@source -> omdoc@compiled
 source-base: http://oaff.omdoc.org/owl
 
 //gives the base URI for the source documents
-narration-base: http://docs.omdoc.org/
+narration-base: http://docs.omdoc.org/owl-test
 
 //anything that has uri starting with http://cds.omdoc.org/ is in the lib folder
 catalog: http://cds.omdoc.org/ lib

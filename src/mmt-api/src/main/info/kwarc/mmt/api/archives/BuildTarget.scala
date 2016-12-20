@@ -292,11 +292,12 @@ abstract class TraversingBuildTarget extends BuildTarget {
     case d => d.toString
   }
 
- /** there is no inExt, instead we test to check which files should be used;
+  /** there is no inExt, instead we test to check which files should be used;
     * this is often a test for the file extension
     *
     * This must be such that all auxiliary files are skipped.
     * see defaultFileExtension if you need an inExt (for meta targets)
+    * @param name the name of the file (no path, with extension)
     */
   def includeFile(name: String): Boolean
 
@@ -309,7 +310,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
     */
   def producesFrom(outPath: FilePath): Option[FilePath] = None
 
-  /** true by default; override to skip auxiliary directories */
+  /** true by default; override to skip auxiliary directories
+   *  @param name the name of the directory (no path)
+   */
   def includeDir(name: String): Boolean = true
 
   /** if true, multiple files/folders are built in parallel */

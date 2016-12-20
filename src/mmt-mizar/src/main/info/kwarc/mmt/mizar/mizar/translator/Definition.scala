@@ -2,7 +2,9 @@ package info.kwarc.mmt.mizar.mizar.translator
 
 import info.kwarc.mmt.mizar.mizar.objects._
 import info.kwarc.mmt.mizar.mmt.objects._
+import MizSeq._
 import info.kwarc.mmt.mizar.mizar.reader._
+
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.utils._
@@ -11,7 +13,6 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.lfs._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.morphisms._
 import objects.Conversions._
@@ -52,7 +53,7 @@ object DefinitionTranslator {
       case None => getName(p.prefix ,"R", p.absnr)
       case Some(s) => s
     }
-    p.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
+    p.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))//TODO OMI I think you need to remove the +1 here and in similar places
     TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
 
     val args = p.args.map(x => TypeTranslator.translateTyp(x._2))
@@ -109,7 +110,7 @@ object DefinitionTranslator {
     
     val sind : uom.IntegerLiteral = uom.StandardInt
     
-    f.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI.apply(p._2 + 1))))
+    f.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
     TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
     val args = f.args.map(x => TypeTranslator.translateTyp(x._2))
     val retType = TypeTranslator.translateTyp(f.retType)

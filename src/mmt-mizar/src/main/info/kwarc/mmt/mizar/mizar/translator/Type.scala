@@ -3,10 +3,11 @@ package info.kwarc.mmt.mizar.mizar.translator
 import info.kwarc.mmt.mizar.mizar.objects._
 import info.kwarc.mmt.mizar.mizar.reader._
 import info.kwarc.mmt.mizar.mmt.objects._
+import MizSeq._
+
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.lfs._
 
 object TypeTranslator {
 	def translateTyp(t : MizTyp) : Term = {
@@ -30,7 +31,7 @@ object TypeTranslator {
 			}
 			case t : MizFunc => MMTFunc(MMTResolve(t.aid, t.kind, t.absnr), t.args.map(translateTerm).toList) 
 			case t : MizSchemeFunc => t.args.length match {
-			  case 0 => Index(OMV("x"), OMI(t.nr))
+			  case 0 => Index(OMV("x"), OMI(t.nr)) //TODO OMI I think you need -1 here and in all similar places
 			  case _ => Mizar.apply(Index(OMV("x"), OMI(t.nr)), t.args.map(TypeTranslator.translateTerm) : _*)
 			}
 
@@ -44,7 +45,7 @@ object TypeTranslator {
 			  val v = TranslationController.getFreeVar()
 			  args.map(x => TranslationController.clearVarBinder())
 			  args.foldRight[(Term,Term)](form -> Mizar.fraenkel(v,Mizar.set,Mizar.eq(OMV(v),term),term))((p,r) => (Lambda(LocalName(p._2), p._1,r._1) -> Mizar.fraenkel(p._2,p._1,r._1,r._2)))._2		  
-			case t : MizNum => OMI(t.nr)
+			case t : MizNum => Mizar.num(t.nr)
 			case t : MizPrivFunc => translateTerm(t.term)
 			case _ => throw ImplementationError("Error in TypeTranslator -> translateTerm -> case _" + term.toString)
 		}

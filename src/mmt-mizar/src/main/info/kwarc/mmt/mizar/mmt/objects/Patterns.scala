@@ -60,13 +60,4 @@ object MizarPatterns {
                    RegPatterns.MizConditionalReg,
                    RegPatterns.MizFunctionalReg
                    )
-  private val mpath = Mizar.MizarPatternsTh
-  def makeTheory : DeclaredTheory = {
-    val thy = new DeclaredTheory(mpath.doc, mpath.name, Some(Mizar.MizarTh))
-    patterns foreach {p => 
-      thy.add(p)
-    }
-    thy
-  }
-
 }
