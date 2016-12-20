@@ -247,7 +247,7 @@ val jeditJars = Seq(
   "ErrorList.jar",
   "Hyperlinks.jar",
   "jedit.jar",
-  "SideKick.jar"
+  "SideKick.jar",
   "jsr.jar"
 )
 
