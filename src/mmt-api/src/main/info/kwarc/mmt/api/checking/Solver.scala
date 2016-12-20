@@ -678,7 +678,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     *  @return (tmS, Some(r)) where tmS = tm and r from rm is applicable to tmS; (tmS, None) if tm = tmS and no further simplification rules are applicable
     */
    private def limitedSimplify[R <: CheckingRule](tm: Term, hs: HashSet[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
-      safeSimplifyUntil[R](tm)(t => t.head flatMap {h => hs.find(_.head == h)})
+      safeSimplifyUntil[R](tm)(t => t.head flatMap {h => hs.find(_.heads contains h)})
 
    /** applies [[ComputationRule]]s expands definitions until a condition is satisfied;
     *  A typical case is transformation into weak head normal form.
@@ -878,6 +878,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         }
         //foundation-dependent cases if necessary
         //syntax-driven type inference
+        //rules may trigger backtracking, in which case the next rule is tried until one yields a result
         resFoundInd orElse {
            var activerules = rules.get(classOf[InferenceRule])
            var tmS = tm

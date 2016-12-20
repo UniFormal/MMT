@@ -23,6 +23,7 @@ object Realize extends ParametricRule {
      throw ParseError("no realized type known: " + synTp)
    }
 
+   //TODO checks are called even when an .omdoc file is read
    def apply(controller: Controller, home: Term, args: List[Term]) = {
      if (args.length != 2) throw ParseError("two arguments expected")
      val List(syn,sem) = args

@@ -132,7 +132,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           case Some(sf) =>
             dd.tpC.get foreach {tp =>
               val tpR = checkTerm(context, tp)
-              dd.tpC.analyzed = tpR
+              // not using tpR here because source references are gone
             }
             val conInner = sf.getInnerContext(dd)
             check(context ++ conInner, dd.module)
@@ -179,7 +179,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             }
         }
       case rc: RuleConstant =>
-        checkTerm(context, rc.tp)
+        val _ = checkTerm(context, rc.tp)
         if (rc.df.isEmpty) {
           if (ParseResult.fromTerm(rc.tp).isPlainTerm) {
              new RuleConstantInterpreter(controller).createRule(rc)

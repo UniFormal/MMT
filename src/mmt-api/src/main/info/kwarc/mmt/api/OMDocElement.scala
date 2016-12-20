@@ -82,6 +82,9 @@ trait StructuralElement extends Content with NamedElement {
   * This includes virtual knowledge items.
   */
 trait ContentElement extends StructuralElement {
+  /** the kind of declaration, e.g., "constant" */
+  val feature: String
+   
   def path: ContentPath
 
   /** returns all children of this elements */

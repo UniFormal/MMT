@@ -76,8 +76,8 @@ class RuleSet {
       else
          Nil
    }
-   def getByHead[R<:SyntaxDrivenRule](cls: Class[R], head: ContentPath): HashSet[R] = get(cls) filter {r => r.head == head}
-   def getFirst[R<:SyntaxDrivenRule](cls: Class[R], head: ContentPath): Option[R] = getByHead(cls, head).headOption
+   def getByHead[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): HashSet[R] = get(cls) filter {r => r.head == head || (r.alternativeHeads contains head)}
+   def getFirst[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): Option[R] = getByHead(cls, head).headOption
    
    override def toString = rules.toList.map(_.toString).mkString(", ")
 

@@ -7,6 +7,7 @@ import objects.Conversions._
 import utils._
 
 abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name) {
+   val feature = "theory"
    def parameters: Context
 }
 /**

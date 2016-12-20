@@ -83,7 +83,7 @@ case class DPath(uri : URI) extends Path with ComponentParent with SlashFunction
    override def equals(that: Any) = that match {
      case that: DPath =>
        this.uri.authority == that.uri.authority &&
-       ((this.uri.authority.isDefined && this.uri.path.isEmpty) || this.uri.absolute == that.uri.absolute)
+       ((this.uri.authority.isDefined && this.uri.path.isEmpty) || this.uri.absolute == that.uri.absolute) &&
        this.uri.pathNoTrailingSlash == that.uri.pathNoTrailingSlash
        // query and fragment must be empty anyway
      case _ => false

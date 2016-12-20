@@ -99,7 +99,7 @@ class Matcher(controller: Controller, rules: RuleSet, context: Context, queryVar
          r(callback)(goalOrg, queryOrg, None)(Stack(boundOrg), NoHistory) foreach {cont => return cont()}
       }
       // 3) try to isolate a query variable 
-      // j is the equality judgement that we try to apply solution rules to
+      // j is the equality judgment that we try to apply solution rules to
       var j = Equality(Stack(boundOrg), queryOrg, goalOrg, None)
       // applies all the rules found by findSolvableVariable
       def applyRules(rs: List[SolutionRule]) {

@@ -9,6 +9,7 @@ import moc._
  * the abstract interface to MMT constants with a few basic methods 
  */
 abstract class Constant extends Declaration with HasNotation {
+   val feature = "constant"
    def alias: List[LocalName]
    def tpC: TermContainer
    def dfC: TermContainer

@@ -70,7 +70,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
          case OMM(t, mor) =>
             val tM = controller.globalLookup.ApplyMorphs(t, mor)
             traverse(tM)
-         case OMA(OMS(_), _) =>
+         case ComplexTerm(_,_,_,_) =>
             log("trying to simplify " + controller.presenter.asString(t))
             logGroup {
                //log("state is" + init.t + " at " + init.path.toString)
@@ -145,6 +145,13 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                      }
                   }
             }
+         case _: OMBINDC => applyCompRules(t) match {
+            case GlobalChange(tS) =>
+              applyAux(tS, true)
+            case _ =>
+              // LocalChange is impossible
+             (t, globalChange)
+         }
          // no rules applicable
          case _ => (t, globalChange)
       }
@@ -252,8 +259,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {
    private def applyCompRules(tm: Term)(implicit context: Context, state: UOMState): Change = {
       val cb = callback(state)
       state.compRules.foreach {rule =>
-         if (tm.head.contains(rule.head)) {
-           rule(cb)(tm, true)(Stack(context), NoHistory).foreach { tmS =>
+         if (rule.heads contains tm.head.orNull) {
+           rule(cb)(tm, true)(Stack(context), NoHistory).foreach {tmS =>
              return GlobalChange(tmS)
            }
          }

@@ -13,7 +13,7 @@ import scala.xml.Elem
 /** A [[DerivedDeclaration]] is a syntactically like a nested theory.
  *  Its semantics is defined by the corresponding [[StructuralFeature]]
  */
-class DerivedDeclaration(h: Term, name: LocalName, val feature: String, val tpC: TermContainer, val notC: NotationContainer) extends {
+class DerivedDeclaration(h: Term, name: LocalName, override val feature: String, val tpC: TermContainer, val notC: NotationContainer) extends {
    private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name, None)
 } with NestedModule(h, name, t) with HasNotation {
    // overriding to make the type stricter
@@ -25,7 +25,7 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, val tpC:
   private def tpAttNode = tpC.get.map {t => backend.ReadXML.makeTermAttributeOrChild(t, "type")}.getOrElse((null,Nil))
   override def toNode : Elem = {
     val (tpAtt, tpNode) = tpAttNode
-    <derived feature={feature} name={name.toString} base={t.parent.toString} type={tpAtt}>
+    <derived feature={feature} name={name.toPath} base={t.parent.toPath} type={tpAtt}>
       {tpNode}
       {notC.toNode}
       {t.getDeclarations map (_.toNode)}
@@ -34,7 +34,7 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, val tpC:
   // override def toNodeElab
   override def toNode(rh: presentation.RenderingHandler) {
     val (tpAtt, tpNode) = tpAttNode
-    rh << s"""<derived feature="$feature" name="${t.name}" base="${t.parent}">"""
+    rh << s"""<derived feature="$feature" name="${name.toPath}" base="${t.parent.toPath}">"""
     tpC.get.foreach {tp =>
       rh << "<type>"
       rh(tp.toNode)

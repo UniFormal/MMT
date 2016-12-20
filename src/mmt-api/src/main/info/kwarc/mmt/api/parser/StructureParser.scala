@@ -210,12 +210,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /** read a DPath from the stream
     * throws SourceError iff ill-formed or empty
     */
-  def readDPath(newBase: Path)(implicit state: ParserState): DPath = {
+  def readDPath(implicit state: ParserState): DPath = {
     val (s, reg) = state.reader.readToSpace
     if (s == "")
       throw makeError(reg, "MMT URI expected")
     try {
-      Path.parseD(s, state.namespaces(newBase))
+      val p = Path.parseD(s, state.namespaces)
+      p
     }
     catch {
       case e: ParseError =>
@@ -375,11 +376,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             seCont(oe)
         case "namespace" =>
           // default namespace is set relative to current default namespace
-          val ns = readDPath(DPath(state.namespaces.default))
+          val ns = readDPath
           state.namespaces = state.namespaces(DPath(ns.uri))
         case "import" =>
           val (n, _) = state.reader.readToken
-          val ns = readDPath(DPath(state.namespaces.default))
+          val ns = readDPath
           state.namespaces = state.namespaces.add(n, ns.uri)
         case "theory" =>
           readTheory(parentInfo, Context.empty)
@@ -929,6 +930,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val pr = feature.getHeaderRule
     val (_, reg, header) = readParsedObject(context, Some(pr))
     val (name, tp) = feature.processHeader(header.term)
+    SourceRef.update(tp, state.makeSourceRef(reg))
     val tpC = TermContainer(header.copy(term = tp).toTerm)
     val notC = new NotationContainer
     val compSpecs = notationComponentSpec(notC)
@@ -952,8 +954,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val patNot = pattern.notC.parsing map {n => ParsingRule(pattern.modulePath, Nil, n)}
     val (_, reg, pr) = readParsedObject(context, patNot)
     val (name,tp) = pr.term match {
-      case OMPMOD(pattern, OML(n,None,None)::as) =>
-        (n,OMPMOD(pattern, as))
+      case t @ OMPMOD(pattern, OML(n,None,None)::as) =>
+        (n,OMPMOD(pattern, as).from(t))
       case _ =>
         throw makeError(reg, "not an instance of pattern " + pattern.path + ": " + pr)
     }

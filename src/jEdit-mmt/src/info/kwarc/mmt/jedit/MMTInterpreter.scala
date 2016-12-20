@@ -155,12 +155,10 @@ Non-commands are MMT code.
           getTextArea.getCaretPosition
 
         //Gets current theory and current metatheory
-        val ct = (try{
-          MMTSideKick.getAssetAtOffset(currView, caretPos).orNull.getScope.orNull
-        } catch {
-          case _ : Throwable =>
-            output.print(null, "Caret not positioned in theory!")
-        }).asInstanceOf[MPath]
+        val ct = MMTSideKick.getAssetAtOffset(currView, caretPos).flatMap(_.getScope).getOrElse {
+          output.print(null, "Caret not positioned in theory!")
+          throw new Exception
+        }
 
         val mt = try{
           controller.handle(SetBase(ct))
@@ -170,29 +168,29 @@ Non-commands are MMT code.
             case _ => ""
           }
         } catch {
-          case _ : Throwable=> ""
+          case _ : Exception => ""
         }
 
         //Type checking and simplification
 
         //Parsing occurs here
         try {
-          val tp = interpolator.parse(List(command), Nil, None, check = false)
-          val tP = controller.presenter.asString(tp)
+          //TODO why does parsing happen twice in different ways?
+          val u = interpolator.parse(List(command), Nil, None, check = false)
+          val uS = controller.presenter.asString(u)
 
-          output.print(null, "Internal form: " + tp.toString)
-          output.print(null, tP)
+          output.print(null, "Internal form: " + u.toString)
+          output.print(null, uS)
 
           //-------------
           val str = command
           val theory = ct
 
-          val pu = ParsingUnit(SourceRef.anonymous(str),
-            Context(theory), str, NamespaceMap(theory.doc), None)
+          val pu = ParsingUnit(SourceRef.anonymous(str), Context(theory), str, NamespaceMap(theory.doc), None)
           val parser = controller.extman.get(classOf[Parser], "mmt").get
           val t = parser(pu)(ErrorThrower).toTerm
           //Type checking
-	       val stack = Stack(Context(theory))
+	        val stack = Stack(Context(theory))
           val solveout = checking.Solver.check(controller, stack, t)
 
           val (tR, tpR) = solveout match{
@@ -202,32 +200,21 @@ Non-commands are MMT code.
               throw new Exception("Checking error!")
           }
 
-          //Def expanding
-          val tExp = controller.globalLookup.ExpandDefinitions(tR,
-            p => p.doc == scratchnspace)
-
-          //Simplification
-          val tRS = tExp match {
-            case null => null
-            case _ => controller.simplifier(tExp, Context(theory))
+          def simp(k: Term) = {
+            val uE = controller.globalLookup.ExpandDefinitions(k, p => p.doc == scratchnspace)
+            controller.simplifier(uE, Context(theory))
           }
+          val tRS = simp(tR)
+          val tpRS = simp(tpR)
 
           output.print(null, "===DEBUG===")
-
-          if ((tR, tpR) != (null, null)){
-            //output.print(null, tR.toString)
-            //output.print(null, tpR.toString)
-            //output.print(null, tRS.toString)
-            //output.print(null, controller.simplifier(tRS, Context(theory)).toString)
-            output.print(null, tExp.toString)
-          }
-
+          output.print(null, tRS.toString)
+          output.print(null, tpRS.toString)
           output.print(null, "===========")
           //-------------
 
           if (scratchoutput){
-            addDeclaration(scratch, scratchtheory,
-              tP, mt, ct.toString)
+            addDeclaration(scratch, scratchtheory, controller.presenter.asString(tRS), mt, ct.toString)
             scratch.setReadOnly(true)
           }
 
@@ -238,7 +225,7 @@ Non-commands are MMT code.
             output.print(null, "Error:")
             output.print(null, e.toString)
             success = Some(false)
-          case e : Throwable=>
+          case e : Exception =>
             val eM = GeneralError("unknown exception during parsing").setCausedBy(e)
             output.print(null, e.toString)
             e.printStackTrace()
@@ -259,8 +246,7 @@ Non-commands are MMT code.
    mtname      : Metatheory name
    tname       : Theory to include
    */
-  def addDeclaration(buffer : Buffer, theoryName : String,
-    declaration : String, mtname : String, tname : String) {
+  def addDeclaration(buffer : Buffer, theoryName : String, declaration : String, mtname : String, tname : String) {
 
     val tpattern = ("""(?s).*theory """ +
       theoryName + """(.*?)=\n(.*?)""" + Reader.GS.toChar.toString).r

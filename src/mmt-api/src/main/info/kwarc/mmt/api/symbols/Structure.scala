@@ -18,6 +18,7 @@ import presentation._
  */
 abstract class Structure extends Declaration with Link {
    type ThisType = Structure
+   val feature = "structure"
    /** the domain/type of the structure */
    val tpC: TermContainer
    /** the domain of the structure as a Term, may fail if tpC is undefined */

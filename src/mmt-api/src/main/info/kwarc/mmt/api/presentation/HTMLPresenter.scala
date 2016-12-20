@@ -23,7 +23,6 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
 
    def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
      this._rh = rh
-     controller.simplifier(s)
      s match {
        case doc : Document =>
          doHTMLOrNot(doc.path, standalone) {doDocument(doc)}
@@ -105,97 +104,95 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       }
    }
 
-   def doDeclaration(d: Declaration) { 
-     d match {
-       case dd : DerivedDeclaration => 
-         controller.extman.get(classOf[StructuralFeature], dd.feature) match {
-           case None => //TODO should throw some error 
-           case Some(feature) => //TODO implement -- for Mizar its OK to do nothing here
+   def doDeclaration(d: Declaration) {
+      val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
+      val alignmentsServer: Option[AlignmentsServer] = controller.extman.getOrAddExtension(classOf[AlignmentsServer],"align")
+      val alignments = alignmentsServer.map(_.getAlignments(d.path)).getOrElse(Nil)
+
+      div("constant toggle-root inlineBoxSibling") {
+         div("constant-header") {
+           span {text(d.feature + " ")}
+           span {doName(d.path)}
+           def toggleComp(comp: ComponentKey) {
+              toggle(compRow(comp), comp.toString.replace("-", " "))
+           }
+           def toggle(key: String, label: String) {
+              button(compToggle, attributes = List(toggleTarget -> key)) {text(label)}
+           }
+           if (! usedby.isEmpty)
+              toggle("used-by", "used by")
+           if (! d.metadata.getTags.isEmpty)
+              toggle("tags", "tags")
+           if (! d.metadata.getAll.isEmpty)
+              toggle("metadata", "metadata")
+           d.getComponents.reverseMap {case DeclarationComponent(comp, tc) =>
+              if (tc.isDefined)
+                toggleComp(comp)
+           }
+           if (!alignments.isEmpty) {
+              toggle("alignments", "alignments")
+           }
          }
-       case _ => 
-         val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
-         val alignmentsServer: Option[AlignmentsServer] = controller.extman.getOrAddExtension(classOf[AlignmentsServer],"align")
-         val alignments = alignmentsServer.map(_.getAlignments(d.path)).getOrElse(Nil)
-  
-         div("constant toggle-root inlineBoxSibling") {
-            div("constant-header") {
-              span {doName(d.path)}
-              def toggleComp(comp: ComponentKey) {
-                 toggle(compRow(comp), comp.toString.replace("-", " "))
-              }
-              def toggle(key: String, label: String) {
-                 button(compToggle, attributes = List(toggleTarget -> key)) {text(label)}
-              }
-              if (! usedby.isEmpty)
-                 toggle("used-by", "used by")
-              if (! d.metadata.getTags.isEmpty)
-                 toggle("tags", "tags")
-              if (! d.metadata.getAll.isEmpty)
-                 toggle("metadata", "metadata")
-              d.getComponents.reverseMap {case DeclarationComponent(comp, tc) =>
-                 if (tc.isDefined)
-                   toggleComp(comp)
-              }
-              if (!alignments.isEmpty) {
-                 toggle("alignments", "alignments")
-              }
-            }
-            table("constant-body ") {
-               d.getComponents.foreach {
-                  case DeclarationComponent(comp, tc: AbstractTermContainer) =>
-                     tr(compRow(comp)) {
-                        tc.get.foreach {t =>
-                            doComponent(d.path $ comp, t)
-                        }
+         table("constant-body ") {
+            d.getComponents.foreach {
+               case DeclarationComponent(comp, tc: AbstractTermContainer) =>
+                  tr(compRow(comp)) {
+                     tc.get.foreach {t =>
+                         doComponent(d.path $ comp, t)
                      }
-                  case DeclarationComponent(comp: NotationComponentKey, nc: NotationContainer) =>
-                     tr(compRow(comp)) {
-                        nc(comp).foreach {n =>
-                           doNotComponent(d.path $ comp, n)
-                         }
-                     }
-               }
-               if (! usedby.isEmpty) {
-                  tr("used-by") {
-                     td {span(compLabel) {text{"used by"}}}
-                     td {usedby foreach doPath}
                   }
-               }
-               if (! d.metadata.getTags.isEmpty) 
-                 tr("tags") {
-                 td {span(compLabel){text{" ---tags"}}}
-                 td {d.metadata.getTags.foreach {
-                   k => div("tag") {text(k.toPath)}
-                 }}}
-               }
-               def doKey(k: GlobalName) {
-                 td{span("key " + compLabel, title=k.toPath) {text(k.toString)}}
-               }
-               d.metadata.getAll.foreach {
-                 case metadata.Link(k,u) => tr("link metadata") {
-                    doKey(k)
-                    td {a(u.toString) {text(u.toString)}}
-                 }
-                 case md: metadata.MetaDatum => tr("metadatum metadata") {
-                    doKey(md.key)
-                    td {doMath(md.value, None)}
-                 }
-               }
-               if (alignments.nonEmpty) {
-                 tr("alignments", attributes = List("style" -> "display:none;")) {
-                   td {span(compLabel){text{"aligned with"}}}
-                   td {alignments.foreach {al =>
-                      div("align") {al.to match {
-                        case LogicalReference(cpath) => doPath(cpath)
-                        case PhysicalReference(url) => htmlRh.a(url.toString)(text{url.toString})
-                        case ConceptReference(c) => htmlRh.text(c)
-                      }}//text(a.link)}
-                   }
-                 }
+               case DeclarationComponent(comp: NotationComponentKey, nc: NotationContainer) =>
+                  tr(compRow(comp)) {
+                     nc(comp).foreach {n =>
+                        doNotComponent(d.path $ comp, n)
+                      }
+                  }
+            }
+            if (! usedby.isEmpty) {
+               tr("used-by") {
+                  td {span(compLabel) {text{"used by"}}}
+                  td {usedby foreach doPath}
                }
             }
-          }
-     }
+            if (! d.metadata.getTags.isEmpty) { 
+               tr("tags") {
+               td {span(compLabel){text{" ---tags"}}}
+               td {d.metadata.getTags.foreach {
+                  k => div("tag") {text(k.toPath)}
+               }}}
+            }
+            def doKey(k: GlobalName) {
+               td{span("key " + compLabel, title=k.toPath) {text(k.toString)}}
+            }
+            d.metadata.getAll.foreach {
+               case metadata.Link(k,u) => tr("link metadata") {
+                  doKey(k)
+                  td {a(u.toString) {text(u.toString)}}
+               }
+               case md: metadata.MetaDatum => tr("metadatum metadata") {
+                  doKey(md.key)
+                  td {doMath(md.value, None)}
+               }
+            }
+            if (alignments.nonEmpty) {
+               tr("alignments", attributes = List("style" -> "display:none;")) {
+                 td {span(compLabel){text{"aligned with"}}}
+                 td {alignments.foreach {al =>
+                    div("align") {al.to match {
+                      case LogicalReference(cpath) => doPath(cpath)
+                      case PhysicalReference(url) => htmlRh.a(url.toString)(text{url.toString})
+                      case ConceptReference(c) => htmlRh.text(c)
+                    }}//text(a.link)}
+                 }}
+               }
+            }
+            d.getDeclarations foreach {b =>
+              tr {
+                td(attributes = List("colspan" -> "2")) {doDeclaration(b)}
+              }
+            }
+         }
+      }
    }
 
    private def doComponent(cpath: CPath, t: Obj) {

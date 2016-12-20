@@ -16,6 +16,7 @@ import scala.xml.Node
  * @param df the rule this declaration provides
  */
 class RuleConstant(val home : Term, val name : LocalName, val tp: Term, var df: Option[Rule]) extends Declaration {
+   val feature = "rule"
    def toNode = <ruleconstant name={name.toPath}><type>{tp.toNode}</type></ruleconstant>
    override def toString = name.toString
    def getComponents = List(TypeComponent(new FinalTermContainer(tp))) // df?

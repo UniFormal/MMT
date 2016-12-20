@@ -48,6 +48,10 @@ trait MaytriggerBacktrack {
 
 /** super class of all rules primarily used by the [[Solver]] */
 trait CheckingRule extends SyntaxDrivenRule {
+  /** additional heads that can trigger the rule, e.g., arrow for a rule with head Pi */
+  def alternativeHeads: List[GlobalName] = Nil
+  def heads = head::alternativeHeads
+  
   /** may be thrown to indicate that the judgment that the rules was called on should be delayed */
   case class DelayJudgment(msg: String) extends Throwable
 }
@@ -190,12 +194,12 @@ abstract class InhabitableRule(head: GlobalName) extends UnaryTermRule(head)
 /** checks a [[Universe]] judgement */
 abstract class UniverseRule(head: GlobalName) extends UnaryTermRule(head)
 
-trait ApplicableUnder extends SyntaxDrivenRule {
+trait ApplicableUnder extends CheckingRule {
    def under: List[GlobalName]
    private lazy val ops = (under:::List(head)).map(p => OMS(p))
    def applicable(tm: Term) = tm match {
       case OMA(f,a) => (f::a).startsWith(ops)
-      case OMS(p) => under == Nil && p == head
+      case OMS(p) => under == Nil && heads.contains(p)
       case _ => false
    }
 }
@@ -243,6 +247,7 @@ abstract class TermBasedEqualityRule extends CheckingRule {
  *  @param left the head of the first term
  *  @param right the head of the second term 
  */
+// TODO this currently ignores alternativeHeads, which is probably fine
 abstract class TermHeadBasedEqualityRule(val under: List[GlobalName], val left: GlobalName, val right: GlobalName) extends TermBasedEqualityRule {
    val head = left
    private val opsLeft  = (under:::List(left)).map(p => OMS(p))
