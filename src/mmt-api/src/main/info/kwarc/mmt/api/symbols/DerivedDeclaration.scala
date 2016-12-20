@@ -5,6 +5,7 @@ import modules._
 import frontend._
 import checking._
 import info.kwarc.mmt.api.libraries.ElaboratedElement
+import info.kwarc.mmt.api.ontology.IsDerivedDeclaration
 import objects._
 import notations._
 
@@ -299,6 +300,12 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     val prefix = dd.name
     val elab = new Elaboration {
       val decls = body.getDeclarationsElaborated.flatMap {
+        case d : DerivedDeclaration if d.feature == feature =>
+          if (!body.getDerivedDeclarations(feature).map(_.name).contains(d.name)) {
+            val nd = new DerivedDeclaration(dd.home,d.name,feature,d.getComponents,d.notC)
+            nd :: elaborate(parent,nd).getDeclarations
+          }
+          else Nil
         case d =>
           // println(controller.presenter.asString(d))
           val ret = d.translate(parent.toTerm, prefix, translator)

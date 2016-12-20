@@ -105,12 +105,12 @@ object StructureVarDecl {
 
 object DerivedVarDecl {
    val path = Path.parseS("http://cds.omdoc.org/mmt?mmt?StructuralFeature",NamespaceMap.empty)
-   private def ftTerm(ft : String) = OMA(OMS(path),List(OMV(LocalName(ft))))
+   private def ftTerm(ft : String) = OMA(OMS(path),List(OML(LocalName(ft),None,None)))
    def apply(name : LocalName, feat : String, comps : List[Term]) =
       VarDecl(name,Some(OMA(ftTerm(feat),comps)),None,None)
    def unapply(vd : VarDecl) : Option[(LocalName,String,List[Term])] = vd.tp match {
-      case Some(OMA(OMA(OMS(`path`),List(OMV(ft))),comps)) => Some((vd.name,ft.toString,comps))
-      case Some(OMA(OMS(`path`),List(OMV(ft)))) => Some((vd.name,ft.toString,Nil))
+      case Some(OMA(OMA(OMS(`path`),List(OML(ft,None,None))),comps)) => Some((vd.name,ft.toString,comps))
+      case Some(OMA(OMS(`path`),List(OML(ft,None,None)))) => Some((vd.name,ft.toString,Nil))
       case _ => None
    }
 }

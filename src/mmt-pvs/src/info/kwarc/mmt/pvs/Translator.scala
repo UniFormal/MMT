@@ -77,13 +77,17 @@ abstract class ImportState(t:PVSImportTask) {
       t.deps::=p
       th.includes ::= (p,true)
     } else if (!th.includes.contains(p)) {
+      /*
       val or = t.controller.getO(p).asInstanceOf[Option[DeclaredTheory]]
       if (or.isDefined) {
         or.get.getDerivedDeclarations(BoundInclude.feature).foreach(d =>
-          addinclude(d.getComponent(DomComponent).get.asInstanceOf[AbstractTermContainer].get match {
-          case Some(OMMOD(np)) => np
-        }))
-      }
+          d.getComponent(DomComponent).get.asInstanceOf[AbstractTermContainer].get match {
+          case Some(OMMOD(np)) => addinclude(np)
+          case _ => println("Weird: " + d.path)
+              println("    - " + d.getComponent(DomComponent).get.asInstanceOf[AbstractTermContainer].get)
+              readLine()
+        })
+      } */
       th add BoundInclude(th.path,p)
       /*
       try {
@@ -264,7 +268,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         val name = newName(id)
         state.unknowns = 0
         val actsup = doType(sup)
-        val v = VarDecl(name,Some(PVSTheory.tp.term),None,None)
+        val v = VarDecl(name,Some(state.bindUnknowns(PVSTheory.powertp(actsup))),None,None)
         state.th.parameters = state.th.parameters ++ v
         state.inFormals = false
         if (nonempty.nonempty_p && nonempty.contains.isDefined) {
@@ -276,6 +280,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
             PVSTheory.nonempty(OMV(v.name))),
             None,Some("Assumption")))
         }
+        /*
         val c = Constant(state.th.toTerm,newName("INTERNAL_Assumption"),Nil,
           Some(PVSTheory.subtpjudg(OMV(name),actsup)),None,Some("Assumption"))
         state.th add c
@@ -283,6 +288,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           Some(state.bindUnknowns(subtypeJudg(PVSTheory.expr(OMV(name)),PVSTheory.expr(actsup)))),
           Some(PVSTheory.subtpissubtype(OMV(name),actsup,c.path)),
           Some("Assumption"))
+          */
         /*
         state.th add Constant(state.th.toTerm,newName(id + "_pred"),Nil,
           Some(PVSTheory.expr(PVSTheory.fun_type(actsup,PVSTheory.bool.term))),None,Some("Assumption"))

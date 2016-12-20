@@ -279,6 +279,10 @@ object PVSTheory {
       def apply(tp : Term, by : Term) = ApplySpine(this.term,tp,by)
    }
 
+   object powertp extends sym("powertp") {
+      def apply(tp : Term) = Apply(this.term,tp)
+   }
+
    /*
    object subtpJudg extends sym("subtpJudg") {
       def apply(subtp : Term, suptp : Term) = ApplySpine(this.term,subtp,suptp)

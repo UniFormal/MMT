@@ -380,7 +380,7 @@ object Path {
                else
                   current += 1
             case '#' => throw ParseError("MMT-URI may not have fragment: " + s)
-            case '[' if current == 2 =>
+            case '[' if current == 2 || current == 1 =>
                val pos = left.indexOf("]")
                if (pos == -1)
                   comp(current) += '[' //unclosed [ not treated specially
