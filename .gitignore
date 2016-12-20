@@ -1,5 +1,8 @@
 project/project
 
+# mmtrc --created by installed
+deploy/mmtrc
+
 # compiled stuff
 deploy/mmt.jar
 deploy/main/*.jar

@@ -47,12 +47,12 @@ class Plugin extends frontend.Plugin {
 object SubtypeDecl {
   val feature = "Subtype"
   def apply(top : DeclaredTheory, givenname : String, suptp : Term, notC: NotationContainer = NotationContainer()) =
-    new DerivedDeclaration(top.toTerm,LocalName(givenname),feature, List(DeclarationComponent(TypeComponent,TermContainer(suptp))), notC)
+    new DerivedDeclaration(top.toTerm,LocalName(givenname),feature, TermContainer(suptp), notC)
 }
 
 class SubtypeFeature extends StructuralFeature(SubtypeDecl.feature) {
   
-  def expectedComponents = List("<:" -> TypeComponent)
+  def getHeaderNotation = List(LabelArg(1,false,false), Delim("<:"), SimpArg(2))
 
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) : Elaboration = {
     val suptp = dd.getComponent(TypeComponent) getOrElse {

@@ -262,7 +262,7 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
       implicit val s = solver
       tm match {
          // turn sequence arguments into argument sequences
-         case ApplySpine(f, args) =>
+         case OMA(f, args) =>
             val argsE = applyList(args)
             if (argsE != args)
                Some(ApplySpine(f, argsE:_*))
@@ -346,9 +346,7 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
 }
 
 /** expands ellipses in the arguments of a Pi */
-object FlexaryPi extends ExpandEllipsis(Pi.path)
-/** expands ellipses in the arguments of an arrow */
-object FlexaryArrow extends ExpandEllipsis(Arrow.path)
+object FlexaryPi extends ExpandEllipsis(Pi.path) with PiOrArrowRule
 /** expands ellipses in the arguments of a lambda */
 object FlexaryLambda extends ExpandEllipsis(Lambda.path)
 /** expands ellipses in the arguments of an apply */

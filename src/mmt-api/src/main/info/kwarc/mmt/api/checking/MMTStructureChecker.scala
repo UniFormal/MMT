@@ -29,12 +29,6 @@ class ExtendedCheckingEnvironment(val ce: CheckingEnvironment, val objectChecker
   *
   * Deriving classes may override unitCont and reCont to customize the behavior.
   */
-//Note: Even Library.addUnchecked checks that declarations can only be added to atomic declared theories/views.
-//Therefore, the home modules are not checked here.
-//Body.add checks that no two declarations of the same name exist. Therefore, names are not checked here.
-//Names that are prefixes of other names in the same body are permitted.
-//  This works well for links, for theories it is questionable. Refusing declaration with non-primitive names might be forbidden.
-//  When retrieving, more specific entries overrule the more general ones.
 class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectChecker) {
   val id = "mmt"
   private lazy val extman = controller.extman
@@ -136,6 +130,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           case None =>
             env.errorCont(InvalidElement(dd, s"structural feature '${dd.feature}' not registered"))
           case Some(sf) =>
+            dd.tpC.get foreach {tp =>
+              val tpR = checkTerm(context, tp)
+              // not using tpR here because source references are gone
+            }
             val conInner = sf.getInnerContext(dd)
             check(context ++ conInner, dd.module)
             sf.check(dd)
@@ -179,6 +177,15 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               }
               checkRealization(context, s.df, s.from)
             }
+        }
+      case rc: RuleConstant =>
+        val _ = checkTerm(context, rc.tp)
+        if (rc.df.isEmpty) {
+          if (ParseResult.fromTerm(rc.tp).isPlainTerm) {
+             new RuleConstantInterpreter(controller).createRule(rc)
+          } else {
+             env.errorCont(InvalidElement(rc, "type of rule constant not fully checked"))
+          }
         }
       case c: Constant =>
         // determine whether we are in a theory or a link
@@ -272,15 +279,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               c.dfC.analyzed = expDef
           }
           case _ => // cOrg has no definiens, nothing to do
-        }
-      case rc: RuleConstant =>
-        //checkTerm(context, rc.tp) //TODO calling this tries to load RealizedTheories for all OMMODs that point into Scala
-        if (rc.df.isEmpty) {
-          if (ParseResult.fromTerm(rc.tp).isPlainTerm) {
-             new RuleConstantInterpreter(controller).createRule(rc)
-          } else {
-             env.errorCont(InvalidElement(rc, "type of rule constant not fully checked"))
-          }
         }
       case _ =>
         //succeed for everything else but signal error
@@ -514,14 +512,18 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   private def checkTerm(context: Context, s: Term)(implicit env: ExtendedCheckingEnvironment): Term = {
     s match {
       case OMMOD(p) =>
-        val mOpt = content.getO(p)
-        if (mOpt.isEmpty) {
-          env.errorCont(InvalidObject(s, "ill-formed module reference"))
-        }
-        mOpt match {
-          case Some(m: Module) =>
-            //TODO check for visibility of a module
-          case _ =>
+        if (p.doc.uri.scheme contains "scala") {
+          // TODO Scala classes/objects will be loaded in different ways depending on function 
+        } else {
+          val mOpt = content.getO(p)
+          if (mOpt.isEmpty) {
+            env.errorCont(InvalidObject(s, "ill-formed module reference"))
+          }
+          mOpt match {
+            case Some(m: Module) =>
+              //TODO check for visibility of a module
+            case _ =>
+          }
         }
         env.pCont(p)
         s
@@ -557,6 +559,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         val fR = checkTerm(context, f)
         val argsR = args map { a => checkTerm(context, a) }
         OMA(fR, argsR)
+      case OMBINDC(bin, con, args) =>
+        val binR = checkTerm(context, bin)
+        val conR = checkContext(context, con)
+        val argsR = args map {a => checkTerm(context, a)}
+        OMBINDC(binR, conR, argsR)
       case OMATTR(arg, key, value) =>
         val argR = checkTerm(context, arg)
         checkTerm(context, key)

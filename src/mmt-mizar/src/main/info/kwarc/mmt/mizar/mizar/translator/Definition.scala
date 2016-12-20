@@ -1,8 +1,8 @@
 package info.kwarc.mmt.mizar.mizar.translator
 
 import info.kwarc.mmt.mizar.mizar.objects._
-import info.kwarc.mmt.mizar.mizar.reader._
 import info.kwarc.mmt.mizar.mmt.objects._
+import info.kwarc.mmt.mizar.mizar.reader._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.utils._
@@ -45,9 +45,8 @@ object DefinitionTranslator {
       val const = makeConstant(LocalName(name), tp)
       TranslationController.controller.add(const)
     }
-
   }
-
+  
   def translatePredMeansDef(p: MizPredMeansDef) = {
     val name = p.name match {
       case None => getName(p.prefix ,"R", p.absnr)
@@ -67,11 +66,10 @@ object DefinitionTranslator {
       case _ => DefPatterns.MizPredMeansPartialDef
     }
 
-    val inst = Instance(OMMOD(TranslationController.currentTheory),
-      LocalName(name), pattern.path, matches)
+    val notC = TranslationController.getNotation("R", p.absnr)
+    val inst = MizInstance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, p)
     TranslationController.controller.add(inst)
-    TranslationController.addNotation(inst.toTerm, "R", p.absnr)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(p.dts)
   }
@@ -94,11 +92,11 @@ object DefinitionTranslator {
       case _ => DefPatterns.MizPredIsPartialDef
     }
 
-    val inst = Instance(OMMOD(TranslationController.currentTheory),
-      LocalName(name), pattern.path, matches)
+    val notC = TranslationController.getNotation("R", p.absnr)
+    val inst = MizInstance(OMMOD(TranslationController.currentTheory),
+      LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, p)
     TranslationController.controller.add(inst)
-    TranslationController.addNotation(inst.toTerm, "R", p.absnr)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(p.dts)
   }
@@ -124,11 +122,11 @@ object DefinitionTranslator {
       case _ => DefPatterns.MizFuncMeansPartialDef
     }
 
-    val inst = Instance(OMMOD(TranslationController.currentTheory),
-      LocalName(name), pattern.path, matches)
+    val notC = TranslationController.getNotation(f.kind, f.absnr)
+    val inst = MizInstance(OMMOD(TranslationController.currentTheory),
+      LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, f)
     TranslationController.controller.add(inst)
-    TranslationController.addNotation(inst.toTerm, f.kind, f.absnr)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(f.dts)
   }
@@ -151,11 +149,11 @@ object DefinitionTranslator {
       case _ => DefPatterns.MizFuncIsPartialDef
     }
 
-    val inst = Instance(OMMOD(TranslationController.currentTheory),
-      LocalName(name), pattern.path, matches)
+    val notC = TranslationController.getNotation(f.kind, f.absnr)
+    val inst = MizInstance(OMMOD(TranslationController.currentTheory),
+      LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, f)
     TranslationController.controller.add(inst)
-    TranslationController.addNotation(inst.toTerm, f.kind, f.absnr)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(f.dts)
   }
@@ -178,11 +176,11 @@ object DefinitionTranslator {
       case _ => DefPatterns.MizModeMeansPartialDef
     }
 
-    val inst = Instance(OMMOD(TranslationController.currentTheory),
-      LocalName(name), pattern.path, matches)
+    val notC = TranslationController.getNotation("M", m.absnr)
+    val inst = MizInstance(OMMOD(TranslationController.currentTheory),
+      LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, m)
     TranslationController.controller.add(inst)
-    TranslationController.addNotation(inst.toTerm, "M", m.absnr)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(m.dts)
   }
@@ -204,12 +202,12 @@ object DefinitionTranslator {
       case None => DefPatterns.MizModeIsCompleteDef
       case _ => DefPatterns.MizModeIsPartialDef
     }
-
-    val inst = Instance(OMMOD(TranslationController.currentTheory),
-      LocalName(name), pattern.path, matches)
+    
+    val notC = TranslationController.getNotation("M", m.absnr)
+    val inst = MizInstance(OMMOD(TranslationController.currentTheory),
+      LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, m)
     TranslationController.controller.add(inst)
-    TranslationController.addNotation(inst.toTerm, "M", m.absnr)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(m.dts)
 
@@ -234,11 +232,11 @@ object DefinitionTranslator {
       case _ => DefPatterns.MizAttrMeansPartialDef
     }
 
-    val inst = Instance(OMMOD(TranslationController.currentTheory),
-      LocalName(name), pattern.path, matches)
+    val notC = TranslationController.getNotation("V", a.absnr)
+    val inst = MizInstance(OMMOD(TranslationController.currentTheory),
+      LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, a)
     TranslationController.controller.add(inst)
-    TranslationController.addNotation(inst.toTerm, "V", a.absnr)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(a.dts)
   }
@@ -262,12 +260,12 @@ object DefinitionTranslator {
       case None => DefPatterns.MizAttrIsCompleteDef
       case _ => DefPatterns.MizAttrIsPartialDef
     }
-
-    val inst = Instance(OMMOD(TranslationController.currentTheory),
-      LocalName(name), pattern.path, matches)
+    
+    val notC = TranslationController.getNotation("V", a.absnr)
+    val inst = MizInstance(OMMOD(TranslationController.currentTheory),
+      LocalName(name), pattern.path, matches, notCont = notC)
     TranslationController.addSourceRef(inst, a)
     TranslationController.controller.add(inst)
-    TranslationController.addNotation(inst.toTerm, "V", a.absnr)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(a.dts)
   }
@@ -314,7 +312,7 @@ object DefinitionTranslator {
       //val sub = (OMV("mType") / mt) ++ (OMV("retType") / rt)
       val matches = List(mt, rt)
       val pattern = DefPatterns.MizSelDef
-      val i = Instance(OMMOD(TranslationController.currentTheory), LocalName(sname), pattern.path, matches)
+      val i = MizInstance(OMMOD(TranslationController.currentTheory), LocalName(sname), pattern.path, matches)
       TranslationController.addSourceRef(i, s)
       TranslationController.controller.add(i)
       TranslationController.clearLocusVarContext()
@@ -332,7 +330,7 @@ object DefinitionTranslator {
     //val matches = (OMV("n") / OMI(args.length)) ++ (OMV("args") / Sequence(args: _*)) ++ genFieldsSub(fields.reverse)
     val matches = OMI(args.length) :: Sequence(args: _*) :: genFieldsSub(fields.reverse).map(_.target)
     val pattern = DefPatterns.MizStructDef(nrFields)
-    val inst = Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches)
+    val inst = MizInstance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches)
 
     TranslationController.addSourceRef(inst, s)
     TranslationController.controller.add(inst)

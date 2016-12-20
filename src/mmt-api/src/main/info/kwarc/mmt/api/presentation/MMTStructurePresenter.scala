@@ -99,7 +99,16 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             rh(" =\n")
             t.getDeclarations.foreach {d => apply(d, indent+1)}
          case v: DeclaredView => doDeclaredView(v,indent)
-         case dd: DerivedDeclaration => // ??? //TODO
+         case dd: DerivedDeclaration =>
+            rh << dd.feature + " "
+            controller.extman.get(classOf[StructuralFeature], dd.feature) match {
+              case None => rh << dd.name + " (implementation is not known)"
+              case Some(sf) =>
+                val header = sf.makeHeader(dd)
+                apply(header, Some(dd.path $ TypeComponent))
+            }
+            rh << "\n"
+            dd.module.getDeclarations.foreach {d => apply(d, indent+1)}
          case nm: NestedModule =>
             apply(nm.module, indent+1)
          case s: DeclaredStructure => doDeclaredStructure(s,indent)

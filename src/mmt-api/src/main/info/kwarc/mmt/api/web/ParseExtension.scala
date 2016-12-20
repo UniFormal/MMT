@@ -33,7 +33,7 @@ class ParseServer extends ServerExtension(":parse") {
                 } else {
                   mod
                 }
-                val presenter = new archives.HTMLExporter() 
+                val presenter = new info.kwarc.mmt.api.presentation.HTMLExporter() 
                 presenter(module)(rb)
                 val thyString = rb.get
                 var response: List[(String,JSON)] = Nil

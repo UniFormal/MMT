@@ -38,23 +38,6 @@ class FinalTermContainer(t: Term) extends AbstractTermContainer {
    def get = Some(t) 
 }
 
-/** container for an MPath */
-class MPathContainer(path: Option[MPath]) extends AbstractTermContainer {
-   /** internally stored as a term to allow for attaching metadata */
-   private var term: Option[Term]= path map {p => OMMOD(p)}
-   def update(nw: ComponentContainer) = nw match {
-      case nw: MPathContainer =>
-         val changed = term != nw.term
-         term = nw.term
-         changed
-      case _ => throw ImplementationError("expected atomic component")
-   }
-   def delete {term = None}
-   def isDefined = term.isDefined
-   def get = term
-   def getPath = term map {case OMMOD(p) => p}
-}
-
 /** A ComponentKey identifies a [[DeclarationComponent]]. */
 abstract class ComponentKey(s : String) {
    override def toString = s
@@ -86,11 +69,14 @@ case object TypeComponent extends TermComponentKey("type")
 /** definiens of [[symbols.Constant]], DefinedTheory, DefinedView, DefinedStructure */
 case object DefComponent  extends TermComponentKey("definition")
 /** domain of a [[modules.Link]], meta-theory of a theory */
+@deprecated("replace with TypeComponent")
 case object DomComponent  extends TermComponentKey("domain")
 /** codomain of a [[modules.Link]] */
+@deprecated("replace with TypeComponent")
 case object CodComponent  extends TermComponentKey("codomain")
 
 /** parameters */
+@deprecated("replace with TypeComponent")
 case object ParamsComponent extends ObjComponentKey("params")
 
 /** custom component, e.g., in a [[DerivedDeclaration]] */

@@ -205,7 +205,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    private def buildTreeDecl(node: DefaultMutableTreeNode, dec: Declaration, context: Context, defaultReg: SourceRegion) {
       val reg = getRegion(dec) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
       dec match {
-         case nm: NestedModule =>
+         case nm: NestedModule if !nm.isInstanceOf[DerivedDeclaration] =>
             buildTreeMod(node, nm.module, context, reg)
             return
          case _ =>
@@ -213,13 +213,18 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val label = dec match {
          case PlainInclude(from,_) => "include " + from.last
          case PlainViewInclude(_,_,incl) => "include " + incl.last
-         case s: Structure => "structure " + s.name.toString
-         case c: Constant => c.name.toString
-         case d => d.name.toString
+         case r: RuleConstant => r.feature
+         case d => d.feature + " " + d.name.toString
       }
       val child = new DefaultMutableTreeNode(new MMTElemAsset(dec, label, reg))
       node.add(child)
       buildTreeComps(child, dec, context, reg)
+      dec match {
+        case dd: DerivedDeclaration =>
+          val sf = controller.extman.get(classOf[StructuralFeature], dd.feature).getOrElse {throw ImplementationError("unknown feature: " + dd.feature)}
+          dd.module.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, d, context ++ sf.getInnerContext(dd), reg)}
+        case _ =>
+      }
    }
 
    /** add child nodes for all components of an element */
@@ -282,7 +287,8 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case OML(nm,_,_) => nm.toString
          case OMSemiFormal(_) => "unparsed: " + tP.toString
          case ComplexTerm(op, _,_,_) => op.last.toString
-         case _ => ""
+         case OMA(OMID(p),_) => p.name.last.toString
+         case OMBINDC(OMID(p),_,_) => p.name.last.toString
       }
       val child = new DefaultMutableTreeNode(new MMTObjAsset(t, tP, context, parent, label+extraLabel, reg))
       node.add(child)

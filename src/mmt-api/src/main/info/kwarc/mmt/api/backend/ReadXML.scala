@@ -13,7 +13,7 @@ import ontology._
 import presentation._
 import opaque._
 
-import scala.xml.{Node,NodeSeq,Utility}
+import scala.xml.{Elem,Null,TopScope,Node,NodeSeq,Utility}
 
 /** A Reader parses XML/MMT and calls controller.add(e) on every found content element e
  *  
@@ -147,8 +147,8 @@ class XMLReader(controller: Controller) extends Logger {
              }
 	         case <view>{_*}</view> =>
 	            log("view " + name + " found")
-	            val (m2, from) = getTheoryFromAttributeOrChild(m, "from", nsMap)
-	            val (m3, to) = getTheoryFromAttributeOrChild(m2, "to", nsMap)
+	            val (m2, from) = ReadXML.getTermFromAttributeOrChild(m, "from", nsMap)
+	            val (m3, to) = ReadXML.getTermFromAttributeOrChild(m2, "to", nsMap)
 	            val isImplicit = parseImplicit(m)
 	            m3.child match {
                   case <definition>{d}</definition> :: Nil =>
@@ -249,7 +249,7 @@ class XMLReader(controller: Controller) extends Logger {
             addDeclaration(c)
          case imp @ <import>{seq @ _*}</import> =>
             log("import " + name + " found")
-            val (rest, from) = getTheoryFromAttributeOrChild(imp, "from", nsMap)
+            val (rest, from) = ReadXML.getTermFromAttributeOrChild(imp, "from", nsMap)
             val adjustedName = if (name.length > 0) name else from match {
                case OMMOD(p) => LocalName(p)
                case _ => throw ParseError("domain of include must be atomic")
@@ -307,20 +307,16 @@ class XMLReader(controller: Controller) extends Logger {
                case d: DeclaredTheory => d.paramC.set(par)
                case _ => throw ParseError("parameters outside declared theory")
             }
-         case <derived>{body @_*}</derived> =>
+         case ddN @ <derived>{body @_*}</derived> =>
             val feature = xml.attr(symbol, "feature")
-            val (comps,notDecls) = body.map(xml.trimOneLevel).partition(_.label == "component")
-            val components = comps.toList map {c =>
-               val key = ComponentKey.parse(xml.attr(c, "key"))
-               val value = TermContainer(Obj.parseTerm(c, nsMap))
-               DeclarationComponent(key, value)
-            }
-            val (not,decls) = notDecls match {
+            val (body2,tp) = ReadXML.getTermFromAttributeOrChild(ddN, "type", nsMap)
+            val tpC = TermContainer(tp)
+            val (not,decls) = body2.child match {
               case hd::tl if hd.label == "notations" => (Some(hd),tl)
-              case _ => (None, notDecls)
+              case ds => (None, ds)
             }
             val notC = not.map {case node => NotationContainer.parse(node.child, home ? name)}.getOrElse(new NotationContainer())
-            val dd = new DerivedDeclaration(homeTerm, name, feature, components, notC)
+            val dd = new DerivedDeclaration(homeTerm, name, feature, tpC, notC)
             addDeclaration(dd)
             decls.foreach {d =>
                logGroup {
@@ -340,8 +336,11 @@ class XMLReader(controller: Controller) extends Logger {
          case s => throw ParseError("true|false expected in implicit attribute, found " + s)
       }
    }
-   /** parses a theory using the attribute or child "component" of "n", returns the remaining node and the theory */
-   private def getTheoryFromAttributeOrChild(n: Node, component: String, nsMap: NamespaceMap) : (Node, Term) = {
+}
+
+object ReadXML {
+  /** parses a term using the attribute or child "component" of "n", returns the remaining node and the term */
+  def getTermFromAttributeOrChild(n: Node, component: String, nsMap: NamespaceMap) : (Node, Term) = {
       val (newnode, value) = xml.getAttrOrChild(n, component)
       val thy = value match { 
          case Left(s) => OMMOD(Path.parseM(s, nsMap))
@@ -351,5 +350,13 @@ class XMLReader(controller: Controller) extends Logger {
              else throw ParseError("ill-formed theory: " + c)
       }
       (newnode, thy)
-   }
+  }
+  
+  /** parses a theory using the attribute or child "component" of "n", returns the remaining node and the theory */
+  def makeTermAttributeOrChild(t: Term, key: String): (String,Seq[Node]) = { 
+     t match {
+        case OMMOD(fromPath) => (fromPath.toPath, Nil)
+        case _ => (null, Elem(null, key, Null, TopScope, t.toNode))
+     }
+  }
 }

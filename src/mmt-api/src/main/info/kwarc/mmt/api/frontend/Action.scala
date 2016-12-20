@@ -29,175 +29,115 @@ object Action extends RegexParsers {
 
   private def action = log | mathpath | archive | oaf | extension | mws | server |
     windowaction | execfile | defactions | scala | mbt |
-    setbase | read | interpret | check | navigate |
+    setbase | read | interpret | check | checkTerm | navigate |
     printall | printallxml | printConfig | diff | clear | exit | getaction // getaction must be at end for default get
 
   private def log = logfilets | logfile | loghtml | logconsole | logon | logoff
-
   private def logfile = "log file" ~> file ^^ { f => AddReportHandler(new TextFileHandler(f, false)) }
-
   private def logfilets = "log filets" ~> file ^^ { f => AddReportHandler(new TextFileHandler(f, true)) }
-
   private def logconsole = "log console" ^^ { case _ => AddReportHandler(ConsoleHandler) }
-
   private def loghtml = "log html" ~> file ^^ { f => AddReportHandler(new HtmlFileHandler(f)) }
-
   private def logon = "log+" ~> str ^^ { s => LoggingOn(s) }
-
   private def logoff = "log-" ~> str ^^ { s => LoggingOff(s) }
 
   private def mathpath = "mathpath" ~> (mathpathArchive | mathpathLocal | mathpathFS | mathpathJava)
-
   private def mathpathArchive = "archive" ~> file ^^ { f => AddArchive(f) }
-
   private def mathpathLocal = "local" ^^ { case _ => Local }
-
   private def mathpathFS = "fs" ~> uri ~ file ^^ { case u ~ f => AddMathPathFS(u, f) }
-
   private def mathpathJava = "java" ~> file ^^ { f => AddMathPathJava(f) }
 
   private def archive = archopen | archdim | archmar | archbuild | filebuild | confbuild
-
   private def archopen = "archive" ~> "add" ~> file ^^ { f => AddArchive(f) }
-
   private def optFilePath = (str ?) ^^ { case in => FilePath(stringToList(in.getOrElse(""), "/")) }
-
   private def archbuild = "build" ~> stringList ~ keyMod ~ optFilePath ^^ {
     case ids ~ km ~ in =>
       ArchiveBuild(ids, km._1, km._2, in)
   }
-  
   private def confbuild = "cbuild" ~> str ~ stringList ~ str ^^ {
     case mod ~ comps ~ profile => 
       ConfBuild(mod, comps, profile)
   }
-
   private def filebuild = ("make" | "rbuild") ~> str ~ (str *) ^^ {
     case key ~ args => MakeAction(key, args)
   }
-
   private def archdim = "archive" ~> stringList ~ dimension ~ optFilePath ^^ {
     case ids ~ dim ~ s =>
       ArchiveBuild(ids, dim, Build, s)
   }
-
   private def dimension = "check" | "validate" | "relational" | "integrate" | "test" | "close"
-
   private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ { case id ~ trg => ArchiveMar(id, trg) }
 
   private def oaf = "oaf" ~> (oafInit | oafClone | oafPull | oafPush)
-
   private def oafInit = "init" ~> str ^^ { case s => OAFInit(s) }
-
   private def oafClone = "clone" ~> str ^^ { case s => OAFClone(s) }
-
   private def oafPull = "pull" ^^ { _ => OAFPull }
-
   private def oafPush = "push" ^^ { _ => OAFPush }
 
-  private def extension = "extension" ~> str ~ (strMaybeQuoted *) ^^ { case c ~ args => AddExtension(c, args) }
-
-  private def mws = "mws" ~> uri ^^ { u => AddMWS(u) }
-
   private def server = serveron | serveroff
-
   private def serveron = "server" ~> "on" ~> int ^^ { i => ServerOn(i) }
-
   private def serveroff = "server" ~> "off" ^^ { _ => ServerOff }
 
   private def execfile = "file " ~> file ~ (str ?) ^^ { case f ~ s => ExecFile(f, s) }
-
   private def defactions = define | enddefine | dodefined
-
   private def define = "define " ~> str ^^ { s => Define(s) }
-
   private def enddefine = "end" ^^ { case _ => EndDefine }
-
   private def dodefined = "do " ~> str ~ (file ?) ^^ { case s ~ f => Do(f, s) }
 
   private def scala = "scala" ~> ("[^\\n]*" r) ^^ { s => val t = s.trim; Scala(if (t == "") None else Some(t)) }
+  private def mbt = "mbt" ~> file ^^ {f => MBT(f)}
 
-  private def mbt = "mbt" ~> file ^^ { f => MBT(f) }
+  private def read = "read" ~> file ^^ {f => Read(f, false)}
+  private def interpret = "interpret" ~> file ^^ {f => Read(f, true)}
+  private def check = "check" ~> path ~ (str ?) ^^ {case p ~ idOpt => Check(p, idOpt.getOrElse("mmt"))}
 
-  private def setbase = "base" ~> path ^^ { p => SetBase(p) }
-
-  private def read = "read" ~> file ^^ { f => Read(f, false) }
-
-  private def interpret = "interpret" ~> file ^^ { f => Read(f, true) }
-
-  private def check = "check" ~> path ~ (str ?) ^^ { case p ~ idOpt => Check(p, idOpt.getOrElse("mmt")) }
-
-  private def navigate = "navigate" ~> path ^^ { p => Navigate(p) }
-
+  private def checkTerm = "term" ~> quotedStr ^^ {s => CheckTerm(s)}
+  
   private def printall = "printAll" ^^ { case _ => PrintAll }
-
   private def printallxml = "printXML" ^^ { case _ => PrintAllXML }
-
   private def printConfig = "printConfig" ^^ { case _ => PrintConfig }
 
+  private def extension = "extension" ~> str ~ (strMaybeQuoted *) ^^ { case c ~ args => AddExtension(c, args) }
+  private def mws = "mws" ~> uri ^^ { u => AddMWS(u) }
+  private def navigate = "navigate" ~> path ^^ { p => Navigate(p) }
+  private def setbase = "base" ~> path ^^ { p => SetBase(p) }
   private def clear = "clear" ^^ { case _ => Clear }
-
   private def exit = "exit" ^^ { case _ => Exit }
 
   private def diff = path ~ ("diff" ~> int) ^^ { case p ~ i => Compare(p, i) }
 
   private def getaction = tofile | towindow | respond | print
-
   // print is default
   private def tofile = presentation ~ ("write" ~> file) ^^ { case p ~ f => GetAction(ToFile(p, f)) }
-
   private def towindow = presentation ~ ("window" ~> str) ^^ { case p ~ w => GetAction(ToWindow(p, w)) }
-
   private def respond = (presentation <~ "respond") ^^ { case p => GetAction(Respond(p)) }
-
   private def print = presentation ^^ { p => GetAction(Print(p)) }
-
   private def presentation = present | deps | defaultPresent
-
   private def present = content ~ ("present" ~> str) ^^ { case c ~ p => Present(c, p) }
-
   private def deps = path <~ "deps" ^^ { case p => Deps(p) }
-
   private def defaultPresent = content ^^ { c => Present(c, "text") }
-
   private def content = "get" ~> (closure | elaboration | component | get)
-
   private def closure = path <~ "closure" ^^ { p => Closure(p) }
-
   private def elaboration = path <~ "elaboration" ^^ { p => Elaboration(p) }
-
   private def component = (path <~ "component") ~ str ^^ { case p ~ s => Component(p, ComponentKey.parse(s)) }
-
   private def get = path ^^ { p => Get(p) }
 
   private def windowaction = windowclose | windowpos | gui
-
   private def windowclose = "window" ~> str <~ "close" ^^ { s => WindowClose(s) }
-
   private def windowpos = ("window" ~> str <~ "position") ~ int ~ int ^^ { case s ~ x ~ y => WindowPosition(s, x, y) }
-
   private def gui = "gui" ~> ("on" | "off") ^^ { s => BrowserAction(s) }
 
   /* common non-terminals */
   private def path = str ^^ { s => Path.parse(s, nsMap) }
-
   private def mpath = str ^^ { s => Path.parseM(s, nsMap) }
-
   // [str_1,...,str_n] or str
   private def stringList = ("\\[.*\\]" r) ^^ { s => stringToList(s.substring(1, s.length - 1), ",") } |
     str ^^ { s => List(s) }
-
   private def file = str ^^ { s => File(home.resolve(s)) }
-
   private def uri = str ^^ { s => URI(s) }
-
   private def int = str ^^ { s => s.toInt }
-
   private def strMaybeQuoted = quotedStr | str
-
   /** regular expression for non-empty word without whitespace */
   private def str = "\\S+" r
-
   /** regular expression for quoted string (that may contain whitespace) */
   private def quotedStr = ("\".*\"" r) ^^ { s => s.substring(1, s.length - 1) }
 
@@ -358,6 +298,11 @@ case class Read(file: File, interpret: Boolean) extends Action {
 /** check a knowledge item with respect to a certain checker */
 case class Check(p: Path, id: String) extends Action {
   override def toString = s"check $p $id"
+}
+
+/** check a knowledge item with respect to a certain checker */
+case class CheckTerm(s: String) extends Action {
+  override def toString = "term \"" + s + "\""
 }
 
 /** navigate to knowledge item */

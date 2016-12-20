@@ -77,6 +77,17 @@ trait QuestionMarkFunctions[A] {
  * @param uri the URI of the document (may not contain query or fragment)
  */
 case class DPath(uri : URI) extends Path with ComponentParent with SlashFunctions[DPath] with QuestionMarkFunctions[MPath] {
+   if (uri.query.isDefined || uri.fragment.isDefined) throw ImplementationError("MMT namespace URI may not have query or fragment")
+   
+   /** two paths are equal if their URIs are except that the scheme is ignored and AUTH/ == AUTH */
+   override def equals(that: Any) = that match {
+     case that: DPath =>
+       this.uri.authority == that.uri.authority &&
+       ((this.uri.authority.isDefined && this.uri.path.isEmpty) || this.uri.absolute == that.uri.absolute) &&
+       this.uri.pathNoTrailingSlash == that.uri.pathNoTrailingSlash
+       // query and fragment must be empty anyway
+     case _ => false
+   }
    def ^^ = DPath(uri ^!)
    /** the path of this document, this == ^^ / name */
    def name = LocalName(uri.path map {s => LNStep.parse(s, NamespaceMap.empty)})

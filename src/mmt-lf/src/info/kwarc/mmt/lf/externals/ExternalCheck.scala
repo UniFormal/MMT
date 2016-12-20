@@ -24,7 +24,7 @@ object Key extends TernaryConstantScala(External._path, "key") {
   }
 }
 
-abstract class ExternalKeyRule(val head: GlobalName) extends SyntaxDrivenRule {
+abstract class ExternalKeyRule(val head: GlobalName) extends CheckingRule {
   def apply(solver: Solver)(context: Context, tm: Term, tp: Term): Boolean
 }
 

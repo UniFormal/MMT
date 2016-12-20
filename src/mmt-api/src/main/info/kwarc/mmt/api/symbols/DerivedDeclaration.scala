@@ -14,46 +14,38 @@ import scala.xml.Elem
 /** A [[DerivedDeclaration]] is a syntactically like a nested theory.
  *  Its semantics is defined by the corresponding [[StructuralFeature]]
  */
-class DerivedDeclaration(h: Term, name: LocalName, val feature: String, components: List[DeclarationComponent], val notC: NotationContainer) extends {
+class DerivedDeclaration(h: Term, name: LocalName, override val feature: String, val tpC: TermContainer, val notC: NotationContainer) extends {
    private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name, None)
 } with NestedModule(h, name, t) with HasNotation {
    // overriding to make the type stricter
   override def module: DeclaredModule = t
   def modulePath = module.path
 
-  override def getComponents = components
+  override def getComponents = TypeComponent(tpC) :: notC.getComponents
+  
+  private def tpAttNode = tpC.get.map {t => backend.ReadXML.makeTermAttributeOrChild(t, "type")}.getOrElse((null,Nil))
   override def toNode : Elem = {
-    <derived feature={feature} name={name.toString} base={t.parent.toString}>
-      {components.map(c =>
-      <component key={c.key.toString}>
-        {c.value match {
-          case t: TermContainer => t.get.get.toNode
-          case p: MPathContainer => p.get.get.toNode
-        }}
-      </component>)}
+    val (tpAtt, tpNode) = tpAttNode
+    <derived feature={feature} name={name.toPath} base={t.parent.toPath} type={tpAtt}>
+      {tpNode}
       {notC.toNode}
       {t.getDeclarations map (_.toNode)}
     </derived>
   }
   // override def toNodeElab
   override def toNode(rh: presentation.RenderingHandler) {
-    rh << s"""<derived feature="$feature" name="${t.name}" base="${t.parent}">"""
-    components foreach (c => {
-      rh << s"""<component key="${c.key}">"""
-      c.value match {
-        case oc: AbstractObjectContainer => oc.get.get.toNode(rh)
-      }
-      rh << s"""</component>"""
-    })
+    val (tpAtt, tpNode) = tpAttNode
+    rh << s"""<derived feature="$feature" name="${name.toPath}" base="${t.parent.toPath}">"""
+    tpC.get.foreach {tp =>
+      rh << "<type>"
+      rh(tp.toNode)
+      rh << "</type>"
+    }
     rh(notC.toNode)
     t.getDeclarations foreach(_.toNode(rh))
     rh << "</derived>"
   }
-  private def componentToString(dc: DeclarationComponent) = {
-    dc.value match {
-      case oc: AbstractObjectContainer => oc.get.map(_.toString).getOrElse("")
-    }
-  }
+
   override def toString = {
     val s1 = {
       name match {
@@ -61,26 +53,16 @@ class DerivedDeclaration(h: Term, name: LocalName, val feature: String, componen
         case _ => " " + name
       }
     }
-    val s2 = if (components.nonEmpty) " (" + components.map(componentToString).mkString(",") + ")"
-        else if (components.length == 1) " " + componentToString(components.head)
-        else ""
-    val s3 = if (t.getDeclarations.nonEmpty) " =\n" + t.innerString else ""
-    feature + s1 + s2 + s3
+    val s2 = if (t.getDeclarations.nonEmpty) " =\n" + t.innerString else ""
+    feature + s1 + tpC.get.map(" " + _.toString).getOrElse("") + s2
   }
 
   override def translate(newHome: Term, prefix: LocalName, translator: Translator): DerivedDeclaration = {
      // translate this as a [[NestedModue]], then extend the result to a DerivedDeclaration
      val superT = super.translate(newHome, prefix, translator) // temporary, will be used to build result
-     // TODO using applyDef for all term components is not right, it's unclear if any translation is possible at all
-     def tl(t: Term) = translator.applyDef(Context.empty, t)
-     val compsT = components map {
-       case DeclarationComponent(k,tc: TermContainer) =>
-         DeclarationComponent(k, tc map tl)
-       case DeclarationComponent(k,nc: notations.NotationContainer) =>
-         DeclarationComponent(k, nc.copy)
-     }
+     val tpT = tpC.get map {tp => translator.applyType(Context.empty, tp)}
      // splice super in to res
-     val res = new DerivedDeclaration(superT.home, superT.name, feature, compsT, notC)
+     val res = new DerivedDeclaration(superT.home, superT.name, feature, TermContainer(tpT), notC)
      superT.module.getDeclarations.foreach {d =>
        res.module.add(d)
      }
@@ -109,15 +91,36 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
    
    lazy val mpath = SemanticObject.javaToMMT(getClass.getCanonicalName)
 
-   /**  if derived declarations of this feature are unnamed, this method should be overriden with a function that generates a name */
-   def unnamedDeclarations: Option[List[DeclarationComponent] => LocalName] = None
+   /** the notation for the header */
+   def getHeaderNotation: List[Marker]
+   
+   /** the parse rule for the header */
+   def getHeaderRule = parser.ParsingRule(mpath, Nil, TextNotation(Mixfix(getHeaderNotation), Precedence.integer(0), None))
+   
+   /** parses the header term of a derived declaration into its name and type
+    *  by default it is interpreted as OMA(mpath, name :: args) where OMA(mpath, args) is the type
+    */
+   def processHeader(header: Term): (LocalName,Term) = {
+     header match {
+       case OMA(OMMOD(`mpath`), OML(name, None, None)::args) =>
+         val tp = OMA(OMMOD(mpath), args)
+         (name, tp)
+     }
+   }
+   
+   /** inverse of processHeader */
+   def makeHeader(dd: DerivedDeclaration): Term = {
+     dd.tpC.get match {
+       case Some(OMA(OMMOD(`mpath`), args)) => OMA(OMMOD(mpath), OML(dd.name, None, None) :: args)
+     }
+   }
    
    /**
     * the term components that declarations of this feature must provide and strings for parsing/presenting them
     * 
     * also defines the order of the components
     */
-   def expectedComponents: List[(String,ObjComponentKey)]
+   def expectedComponents: List[(String,ObjComponentKey)] = Nil
   
    /** additional context relative to which to interpret the body of a derived declaration */ 
    def getInnerContext(dd: DerivedDeclaration): Context = Context.empty
@@ -164,31 +167,61 @@ abstract class Elaboration extends ElementContainer[Declaration] {
     }
 }
 
-/** for structural features with unnamed declarations whose names are generated from the domain component */
+/** for structural features with unnamed declarations whose type is an instance of a named theory */
 trait IncludeLike {self: StructuralFeature =>
-  def expectedComponents = List("<-" -> DomComponent)
   private def error = {
     throw LocalError("no domain path found")
   }
-  private def generateName(comps: List[DeclarationComponent]) = {
-    comps find {_.key == DomComponent} match {
-      case Some(dc) => dc.value match {
-        case mc: MPathContainer => mc.getPath match {
-          case Some(mp) => LocalName(mp)
-          case None => error
-        }
-        case tc : TermContainer => tc.get match {
-          case Some(OMMOD(mp)) =>
-            LocalName(mp)
-          case _ =>
-            error
-        }
-        case _ => error
-      }
-      case None => error
-    }
+  
+  def getHeaderNotation = List(SimpArg(1))
+  
+  override def processHeader(header: Term) = header match {
+    case OMA(OMMOD(`mpath`), (t @ OMPMOD(p,_))::Nil) => (LocalName(p), t)
   }
-  override def unnamedDeclarations = Some(generateName _)
+  
+  override def makeHeader(dd: DerivedDeclaration) = OMA(OMMOD(`mpath`), dd.tpC.get.get :: Nil)
+  
+  /** the type (as a theory) */
+  def getDomain(dd: DerivedDeclaration): Term = dd.tpC.get.get
+}
+
+/** for structural features that are parametric theories with special meaning, e.g., patterns, inductive types */
+trait ParametricTheoryLike {self: StructuralFeature =>
+   val Type = ParametricTheoryLike.Type(getClass)
+   
+   def getHeaderNotation = List(LabelArg(2, false, false), Delim("("), Var(1, true, Some(Delim(","))), Delim(")")) 
+
+   override def getInnerContext(dd: DerivedDeclaration) = Type.getParameters(dd)
+   
+   override def processHeader(header: Term) = header match {
+     case OMBIND(OMMOD(`mpath`), cont, OML(name,None,None)) => (name, Type(cont))
+   }
+   override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
+     case Some(Type(cont)) => OMBIND(OMMOD(mpath), cont, OML(dd.name, None,None))
+   }
+
+   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+     //TODO check IsContext here
+   }
+}
+
+/** helper object */
+object ParametricTheoryLike {
+   /** official apply/unapply methods for the type of a ParametricTheoryLike derived declaration */ 
+   case class Type[A <: ParametricTheoryLike](cls: Class[A]) {
+     val mpath = SemanticObject.javaToMMT(cls.getCanonicalName)
+     
+     def apply(params: Context) = OMBINDC(OMMOD(mpath), params, Nil)
+     def unapply(t: Term) = t match {
+       case OMBINDC(OMMOD(this.mpath), params, Nil) => Some((params))
+       case _ => None
+     }
+     
+     /** retrieves the parameters */
+     def getParameters(dd: DerivedDeclaration) = {
+       dd.tpC.get.flatMap(unapply).getOrElse(Context.empty)
+     }
+   }
 }
 
 /**
@@ -198,18 +231,7 @@ trait IncludeLike {self: StructuralFeature =>
 class GenerativePushout extends StructuralFeature("generative") with IncludeLike {
   
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
-      val dom = dd.getComponent(DomComponent) getOrElse {
-        throw GetError("")
-      } match {
-        case tc: TermContainer => tc.get.getOrElse {
-          throw GetError("")
-        }
-        case dc: MPathContainer => dc.get.getOrElse {
-          throw GetError("")
-        }
-        case _ =>
-          throw GetError("")
-      }
+      val dom = getDomain(dd)
       val context = parent.getInnerContext
       val body = controller.simplifier.materialize(context, dom, true, None) match {
         case m: DeclaredModule => m
@@ -252,18 +274,7 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
 class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, applys : GlobalName) extends StructuralFeature(id) with IncludeLike {
 
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) : Elaboration = {
-    val dom = dd.getComponent(DomComponent) getOrElse {
-      throw GetError("")
-    } match {
-      case tc: TermContainer => tc.get.getOrElse {
-        throw GetError("")
-      }
-      case mc : MPathContainer => mc.get.getOrElse {
-        throw GetError("")
-      }
-      case _ =>
-        throw GetError("")
-    }
+    val dom = getDomain(dd)
     val context = parent.getInnerContext
     val body = controller.simplifier.getBody(context, dom) match {
       case t : DeclaredTheory => t

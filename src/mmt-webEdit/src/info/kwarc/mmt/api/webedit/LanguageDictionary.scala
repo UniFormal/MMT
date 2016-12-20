@@ -19,6 +19,7 @@ class LanguageDictionary(controller : Controller) {
 	lazy val consLang = getPairsOfLanguage()
 	
 	//FIXME : delete this.
+	// Probably meant to add Mixfix(List(c.name.toString)) for using symbol local name as default english verbalization
 	private def addNotation(lang : String, c : Constant) {
 	  val not = new TextNotation(Mixfix(Nil), Precedence.integer(12), None, NotationScope(None, List(lang), 0))
 	  c.notC.verbalizationDim.set(not)
@@ -26,7 +27,7 @@ class LanguageDictionary(controller : Controller) {
 	}
 	
 	/*
-	 * returns a map[global markers, map[language, list[text notations]]]
+	 * returns a map[global name, map[language, list[text notations]]]
 	 */
 	def getPairsOfLanguage() = {
 	  val paths = controller.depstore.getInds(ontology.IsConstant)
@@ -36,6 +37,7 @@ class LanguageDictionary(controller : Controller) {
 	      c.path -> c.notC.verbalizationDim.notations.values.toList.flatten
 	    }
 	  })
+	  
 	  val pairs = constants map {case(con,not) => con -> (not.flatMap(x => x.scope.languages).distinct -> not)}
 	  val langMap = pairs map { case (con,(langs, not)) => {
 	    val result = new collection.mutable.HashMap[String,List[TextNotation]]

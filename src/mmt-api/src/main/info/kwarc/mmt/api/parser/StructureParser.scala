@@ -210,12 +210,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /** read a DPath from the stream
     * throws SourceError iff ill-formed or empty
     */
-  def readDPath(newBase: Path)(implicit state: ParserState): DPath = {
+  def readDPath(implicit state: ParserState): DPath = {
     val (s, reg) = state.reader.readToSpace
     if (s == "")
       throw makeError(reg, "MMT URI expected")
     try {
-      Path.parseD(s, state.namespaces(newBase))
+      val p = Path.parseD(s, state.namespaces)
+      p
     }
     catch {
       case e: ParseError =>
@@ -375,11 +376,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             seCont(oe)
         case "namespace" =>
           // default namespace is set relative to current default namespace
-          val ns = readDPath(DPath(state.namespaces.default))
+          val ns = readDPath
           state.namespaces = state.namespaces(DPath(ns.uri))
         case "import" =>
           val (n, _) = state.reader.readToken
-          val ns = readDPath(DPath(state.namespaces.default))
+          val ns = readDPath
           state.namespaces = state.namespaces.add(n, ns.uri)
         case "theory" =>
           readTheory(parentInfo, Context.empty)
@@ -727,7 +728,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     controller.extman.getParserExtension(se, key)
 
   /** holds the structural features and patterns that are available during parsing */
-  protected class Features(val features: List[(String,StructuralFeature)], val patterns: List[(LocalName,DerivedDeclaration)])
+  protected class Features(val features: List[(String,StructuralFeature)], val patterns: List[(LocalName,(StructuralFeature,DerivedDeclaration))])
   protected val noFeatures = new Features(Nil,Nil)
   
   /** auxiliary function to collect all structural feature rules in a given context */
@@ -739,7 +740,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       case _ => Nil
     }
     var fs: List[(String,StructuralFeature)] = Nil
-    var ps: List[(LocalName,DerivedDeclaration)] = Nil
+    var ps: List[(LocalName,(StructuralFeature,DerivedDeclaration))] = Nil
     visible foreach {tm =>
       controller.globalLookup.getO(tm.toMPath) match {
         case Some(d: modules.DeclaredTheory) =>
@@ -747,16 +748,20 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           d.getDeclarations.foreach {
             case rc: RuleConstant => rc.df.foreach {
               case r: StructuralFeatureRule =>
-                val sf = controller.extman.get(classOf[StructuralFeature], r.feature) match {
+                controller.extman.get(classOf[StructuralFeature], r.feature) match {
                   case Some(sf) =>
-                    fs ::= (r.feature, sf)
+                    fs ::= r.feature -> sf
                   case None =>
                     // maybe generate warning; error will be thrown anyway when the rule constant is checked
                 }
               case _ =>
             }
             case dd @ Pattern(_,_,_,_) =>
-              ps ::= (dd.name, dd)
+              controller.extman.get(classOf[StructuralFeature], Instance.feature) match {
+                case Some(sf) =>
+                  ps ::= dd.name -> (sf, dd)
+                case None =>
+              }
             case _ =>
           }
         case _ =>
@@ -926,27 +931,15 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /** reads the header of a [[DerivedDeclaration]] */
   private def readDerivedDeclaration(feature: StructuralFeature, parentInfo: IsMod, context: Context)(implicit state: ParserState) = {
     val parent = parentInfo.modParent
-    val nameOpt = if (feature.unnamedDeclarations.isEmpty) Some(readName) else None
-    val tcs = feature.expectedComponents map {
-      case (s, k) =>
-        val oc = k match {
-          case _: TermComponentKey => new TermContainer
-          case ParamsComponent => new ContextContainer
-        }
-        (s -> (k, oc))
-    }
+    val pr = feature.getHeaderRule
+    val (_, reg, header) = readParsedObject(context, Some(pr))
+    val (name, tp) = feature.processHeader(header.term)
+    SourceRef.update(tp, state.makeSourceRef(reg))
+    val tpC = TermContainer(header.copy(term = tp).toTerm)
     val notC = new NotationContainer
-    val compSpecs = tcs ::: notationComponentSpec(notC)
+    val compSpecs = notationComponentSpec(notC)
     val equalFound = readComponents(context, compSpecs, Some("="))
-    val components = tcs map {case (_, (k,tc)) => DeclarationComponent(k,tc)}
-    val name = nameOpt.getOrElse {
-      try {
-        feature.unnamedDeclarations.get(components)
-      } catch {case e: Exception =>
-        throw ParseError("error while generating name of unnamed feature").setCausedBy(e)
-      }
-    }
-    val dd = new DerivedDeclaration(OMID(parent), name, feature.feature, components, notC)
+    val dd = new DerivedDeclaration(OMID(parent), name, feature.feature, TermContainer(tp), notC)
     dd.setDocumentHome(parentInfo.relDocParent)
     seCont(dd)
     if (equalFound) {
@@ -960,16 +953,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /** returns an instance of [[InstanceFeature]]
    *  
    *  parses 'pattern(name, args) NOTATIONS' where name is a free variable for the name of the instance */
-  private def readInstance(pattern: DerivedDeclaration, tpath: MPath)(implicit state: ParserState): DerivedDeclaration = {
+  private def readInstance(instFeatPattern: (StructuralFeature,DerivedDeclaration), tpath: MPath)(implicit state: ParserState): DerivedDeclaration = {
+    val (instFeat, pattern) = instFeatPattern
     val context = Context(tpath)
     val patNot = pattern.notC.parsing map {n => ParsingRule(pattern.modulePath, Nil, n)}
     val (_, reg, pr) = readParsedObject(context, patNot)
-    val (name,tp) = pr.term match {
-      case OMPMOD(pattern, OML(n,None,None)::as) =>
-        (n,OMPMOD(pattern, as))
-      case _ =>
-        throw makeError(reg, "not an instance of pattern " + pattern.path + ": " + pr)
-    }
+    val (name,tp) = instFeat.processHeader(pr.term)
+    SourceRef.update(tp, state.makeSourceRef(reg))
     val tpC = TermContainer(pr.copy(term = tp).toTerm)
     val nc = NotationContainer()
     readComponents(context, notationComponentSpec(nc), None)

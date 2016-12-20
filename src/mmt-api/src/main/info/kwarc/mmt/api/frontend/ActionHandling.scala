@@ -132,6 +132,18 @@ trait ActionHandling {self: Controller =>
             ps.stream.close
           case Check(p, id) =>
             checkAction(p, id)
+          case CheckTerm(s) =>
+            getBase match {
+              case m: ContentPath =>
+                handle(EvaluateMessage(Some(Context(m.module)), "mmt", s, "present-text-notations")) match {
+                  case ObjectResponse(sC, _) =>
+                    report("user", sC)
+                  case ErrorResponse(msg) =>
+                    report("user", msg)
+                  case _ => // impossible 
+                }
+              case _ => report("error", "base must be content path") 
+            }
           case Navigate(p) =>
             notifyListeners.onNavigate(p)
           case a: GetAction => a.make(this)
@@ -370,10 +382,10 @@ trait ActionHandling {self: Controller =>
      message match {
        case EvaluateMessage(contOpt, in, text, out) =>
          val interpreter = extman.get(classOf[checking.Interpreter], in).getOrElse {
-           return ErrorResponse("no parser found")
+           return ErrorResponse("no interpreter found for " + in)
          }
          val presenter = extman.get(classOf[presentation.Presenter], out).getOrElse {
-           return ErrorResponse("no parser found")
+           return ErrorResponse("no presenter found for " + out)
          }
          val context = contOpt.getOrElse(Context.empty)
          val pu = ParsingUnit(SourceRef.anonymous(text), context, text, getNamespaceMap)

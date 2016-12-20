@@ -36,7 +36,7 @@ abstract class Declaration extends ContentElement {
    }
    
    /** the containing module
-    * 9
+    *
     * this is almost always OMMOD(p:MPath),
     * the main exception are generated anonymous modules
     */
@@ -60,12 +60,16 @@ abstract class Declaration extends ContentElement {
    /** the component used to identify anonymous declarations, e.g., the from of an import, None by default but may be overridden */ 
    def implicitKey : Option[MPath] = None
 
+   // sharper type
+   def getDeclarations: List[Declaration]
+   
    /** a recursively translated copy of this declaration */
    def translate(newHome: Term, prefix: LocalName, translator: Translator): ThisType
    /** a new declaration with the same path obtained by replacing fields in 'this' with corresponding fields of 'that'
     *  Unfortunately, this must take any declaration and throw an error if 'not (that : ThisType)' 
     */
    def merge(that: Declaration): ThisType
+
    /** called to throw an error from within 'merge' */
    protected def mergeError(that: Declaration): Nothing = throw GeneralError("cannot merge " + that.path + " into " + this.path)
 }
@@ -84,6 +88,7 @@ trait HasNotation {
  */
 class NestedModule(val home: Term, val name: LocalName, mod: Module) extends Declaration with ModuleWrapper {
    type ThisType = NestedModule
+   val feature = mod.feature
    def module = mod
    //val home = OMMOD(module.parent ? module.name.init)
    //val name = LocalName(module.name.last)

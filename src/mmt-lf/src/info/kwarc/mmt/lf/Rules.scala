@@ -60,10 +60,14 @@ object Common {
 
 import Common._
 
+trait PiOrArrowRule {self: CheckingRule =>
+  override def alternativeHeads = List(Arrow.path)
+}
+
 /** Formation: the type inference rule x:A:type|-B:U  --->  Pi x:A.B : U
  * This rule works for any universe U
   * */
-object PiTerm extends FormationRule(Pi.path, OfType.path) {
+object PiTerm extends FormationRule(Pi.path, OfType.path) with PiOrArrowRule {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Pi(x,a,b) =>
@@ -138,7 +142,7 @@ object ApplyTerm extends EliminationRule(Apply.path, OfType.path) {
 }
 
 /** type-checking: the type checking rule x:A|-f x:B  --->  f : Pi x:A.B */
-object PiType extends TypingRule(Pi.path) {
+object PiType extends TypingRule(Pi.path) with PiOrArrowRule {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = {
       (tm,tp) match {
          case (Lambda(x1,a1,t),Pi(x2,a2,b)) =>
@@ -156,7 +160,7 @@ object PiType extends TypingRule(Pi.path) {
 
 /** equality-checking: the extensionality rule (equivalent to Eta) x:A|-f x = g x : B --->  f = g  : Pi x:A. B
  * If possible, the name of the new variable x is taken from f, g, or their type; otherwise, a fresh variable is invented. */
-object Extensionality extends TypeBasedEqualityRule(Nil, Pi.path) {
+object Extensionality extends TypeBasedEqualityRule(Nil, Pi.path) with PiOrArrowRule {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
       val Pi(x, a, b) = tp
       // pick fresh variable name, trying to reuse existing name 
@@ -201,10 +205,9 @@ object LambdaCongruence extends TermHeadBasedEqualityRule(Nil, Lambda.path, Lamb
  *  
  *  We cannot use HeadBasedEqualityRule here because we have to flatten nested Pis and consider -> in addition.
  */
-object PiCongruence extends TermBasedEqualityRule {
+object PiCongruence extends TermBasedEqualityRule with PiOrArrowRule {
    val head = Pi.path
-   private val heads = List(Some(Pi.path), Some(Arrow.path))
-   def applicable(tm1: Term, tm2: Term) = heads.contains(tm1.head) && heads.contains(tm2.head)
+   def applicable(tm1: Term, tm2: Term) = heads.contains(tm1.head.orNull) && heads.contains(tm2.head.orNull)
    def apply(checker: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
       (tm1,tm2) match {
          case (Pi(x1,a1,t1), Pi(x2,a2,t2)) =>
@@ -287,7 +290,8 @@ object UnsafeBeta extends BreadthRule(Apply.path){
 
 
 /** A simplification rule that implements A -> B = Pi x:A.B  for fresh x.
- * LocalName.Anon is used for x */ 
+ * LocalName.Anon is used for x */
+// not used anymore because Pi rules now also apply to arrow
 object ExpandArrow extends ComputationRule(Arrow.path) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
       case Arrow(a,b) => Some(Pi(OMV.anonymous, a, b))
