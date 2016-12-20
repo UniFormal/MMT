@@ -13,6 +13,21 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
    /** a default notation in case the pattern is not known */
    def getHeaderNotation = List(LabelArg(1,false,false), Delim(":"), SimpArg(1))
   
+   override def processHeader(header: Term): (LocalName,Term) = {
+     header match {
+       case OMA(OMMOD(pat), OML(name, None, None) :: args) =>
+         val tp = OMA(OMMOD(pat), args)
+         (name, tp)
+     }
+   }
+   
+   /** inverse of processHeader */
+   override def makeHeader(dd: DerivedDeclaration): Term = {
+     dd.tpC.get match {
+       case Some(OMA(OMMOD(pat), args)) => OMA(OMMOD(pat), OML(dd.name, None, None) :: args)
+     }
+   }
+
    private def getPattern(inst: DerivedDeclaration): Option[(DerivedDeclaration,List[Term])] = {
      val (p,args) = Instance.getPattern(inst).getOrElse {return None}
      val patOpt = controller.globalLookup.getO(p)
@@ -69,15 +84,15 @@ object Instance {
   val feature = "instance"
 
   object Type {
-    def apply(pat: GlobalName, args: List[Term]) = OMA(OMS(pat), args)
+    def apply(pat: MPath, args: List[Term]) = OMA(OMMOD(pat), args)
     def unapply(t: Term) = t match {
-       case OMA(OMS(pat), args) => Some(pat, args)
+       case OMA(OMMOD(pat), args) => Some(pat, args)
        case _ => None
     }
   }
 
   def apply(home : Term, name : LocalName, pattern: GlobalName, args: List[Term], notC: NotationContainer): DerivedDeclaration = {
-    val patExp = Type(pattern, args) 
+    val patExp = Type(pattern.toMPath, args) 
     apply(home, name, TermContainer(patExp), notC)
   }
   

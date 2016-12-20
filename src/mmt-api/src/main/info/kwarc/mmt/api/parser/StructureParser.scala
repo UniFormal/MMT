@@ -728,7 +728,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     controller.extman.getParserExtension(se, key)
 
   /** holds the structural features and patterns that are available during parsing */
-  protected class Features(val features: List[(String,StructuralFeature)], val patterns: List[(LocalName,DerivedDeclaration)])
+  protected class Features(val features: List[(String,StructuralFeature)], val patterns: List[(LocalName,(StructuralFeature,DerivedDeclaration))])
   protected val noFeatures = new Features(Nil,Nil)
   
   /** auxiliary function to collect all structural feature rules in a given context */
@@ -740,7 +740,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       case _ => Nil
     }
     var fs: List[(String,StructuralFeature)] = Nil
-    var ps: List[(LocalName,DerivedDeclaration)] = Nil
+    var ps: List[(LocalName,(StructuralFeature,DerivedDeclaration))] = Nil
     visible foreach {tm =>
       controller.globalLookup.getO(tm.toMPath) match {
         case Some(d: modules.DeclaredTheory) =>
@@ -748,16 +748,20 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           d.getDeclarations.foreach {
             case rc: RuleConstant => rc.df.foreach {
               case r: StructuralFeatureRule =>
-                val sf = controller.extman.get(classOf[StructuralFeature], r.feature) match {
+                controller.extman.get(classOf[StructuralFeature], r.feature) match {
                   case Some(sf) =>
-                    fs ::= (r.feature, sf)
+                    fs ::= r.feature -> sf
                   case None =>
                     // maybe generate warning; error will be thrown anyway when the rule constant is checked
                 }
               case _ =>
             }
             case dd @ Pattern(_,_,_,_) =>
-              ps ::= (dd.name, dd)
+              controller.extman.get(classOf[StructuralFeature], Instance.feature) match {
+                case Some(sf) =>
+                  ps ::= dd.name -> (sf, dd)
+                case None =>
+              }
             case _ =>
           }
         case _ =>
@@ -949,16 +953,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /** returns an instance of [[InstanceFeature]]
    *  
    *  parses 'pattern(name, args) NOTATIONS' where name is a free variable for the name of the instance */
-  private def readInstance(pattern: DerivedDeclaration, tpath: MPath)(implicit state: ParserState): DerivedDeclaration = {
+  private def readInstance(instFeatPattern: (StructuralFeature,DerivedDeclaration), tpath: MPath)(implicit state: ParserState): DerivedDeclaration = {
+    val (instFeat, pattern) = instFeatPattern
     val context = Context(tpath)
     val patNot = pattern.notC.parsing map {n => ParsingRule(pattern.modulePath, Nil, n)}
     val (_, reg, pr) = readParsedObject(context, patNot)
-    val (name,tp) = pr.term match {
-      case t @ OMPMOD(pattern, OML(n,None,None)::as) =>
-        (n,OMPMOD(pattern, as).from(t))
-      case _ =>
-        throw makeError(reg, "not an instance of pattern " + pattern.path + ": " + pr)
-    }
+    val (name,tp) = instFeat.processHeader(pr.term)
+    SourceRef.update(tp, state.makeSourceRef(reg))
     val tpC = TermContainer(pr.copy(term = tp).toTerm)
     val nc = NotationContainer()
     readComponents(context, notationComponentSpec(nc), None)
