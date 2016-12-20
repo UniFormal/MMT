@@ -54,8 +54,12 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
      }
      def getO(n: LocalName): Option[Declaration] = {
        val d = pattern.module.getO(n.tail).getOrElse(return None)
+       val dN = d match {
+         case c : Constant if c.name == OMV.anonymous => Constant(c.home, c.name, c.alias, c.tpC, c.dfC, c.rl, dd.notC)
+         case _ => d
+       }
        val subs = (params zip args) map {case (vd,a) => Sub(vd.name, a)}
-       val dT = d.translate(dd.home, dd.name, ApplySubs(subs) compose Renamer.prefix(pattern.module.path, dd.path))
+       val dT = dN.translate(dd.home, dd.name, ApplySubs(subs) compose Renamer.prefix(pattern.module.path, dd.path))
        Some(dT)
      }
    }
@@ -65,15 +69,15 @@ object Instance {
   val feature = "instance"
 
   object Type {
-    def apply(pat: MPath, args: List[Term]) = OMA(OMMOD(pat), args)
+    def apply(pat: GlobalName, args: List[Term]) = OMA(OMS(pat), args)
     def unapply(t: Term) = t match {
-       case OMA(OMMOD(pat), args) => Some(pat, args)
+       case OMA(OMS(pat), args) => Some(pat, args)
        case _ => None
     }
   }
 
   def apply(home : Term, name : LocalName, pattern: GlobalName, args: List[Term], notC: NotationContainer): DerivedDeclaration = {
-    val patExp = Type(pattern.toMPath, args) 
+    val patExp = Type(pattern, args) 
     apply(home, name, TermContainer(patExp), notC)
   }
   

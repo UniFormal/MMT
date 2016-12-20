@@ -216,7 +216,7 @@ object ArticleTranslator {
 	  //val matches = ("prop" / PropositionTranslator.translateProposition(l.prop))
 	  val matches = List(PropositionTranslator.translateProposition(l.prop))
 	  val pattern = artPatterns.Lemma
-	  val i = Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches)
+	  val i = MizInstance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches)
 	  TranslationController.addSourceRef(i, l)
 	  TranslationController.add(i)
 	}

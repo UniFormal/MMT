@@ -20,7 +20,7 @@ class MizarCompiler extends archives.Importer {
 
   def inExts = List("miz")
 
-  var lib:  List[String] = "HIDDEN" :: Nil
+  var lib:  List[String] = Nil
 
   def addToLib(article: String) {
     lib ::= article
@@ -110,9 +110,23 @@ class MizarCompiler extends archives.Importer {
   */
 
   def translateArticle(mml: String, aid: String, docBase: DPath) {
-    val name = aid.toLowerCase()
+    val name = aid.toLowerCase()    
+
+    //special handling for the HIDDEN article, it will hold the mizar patterns theory
+    //TODO kind of a hack
+    if (aid == "HIDDEN") { 
+      val dpath = getDPath(docBase, name)
+      val doc = new Document(dpath, true)
+      TranslationController.add(doc)
+      val thy = MizarPatterns.makeTheory
+      TranslationController.add(thy)
+      TranslationController.add(MRef(doc.path, thy.path))
+      addToLib(aid)
+    }
+    
     if (isInLib(aid)) //already translated it
       return
+      
     //files
     val xmlabs = mml + "/source/" + name + ".xmlabs" //TODO perhaps replace
     val dcx = mml + "/source/" + name + ".dcx"

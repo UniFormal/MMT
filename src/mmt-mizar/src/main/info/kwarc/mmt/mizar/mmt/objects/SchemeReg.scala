@@ -15,10 +15,8 @@ import info.kwarc.mmt.lfs._
 
 import info.kwarc.mmt.morphisms._
 
-
-
 object RegPatterns  {
-  val MizExistentialReg = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizExistentialRegistration"),
+  val MizExistentialReg = MizPattern(LocalName("MizExistentialRegistration"),
 		  Context(VarDecl(LocalName("n"), None, None, None),
 				  VarDecl(LocalName("argTypes"), Some(SeqMap(Mizar.tp, LocalName("i"), OMV("n"))), None, None),
 				  VarDecl(LocalName("typ"), Some(Mizar.tp), None, None),
@@ -30,7 +28,7 @@ object RegPatterns  {
 		      None, None)))
 				  
   
-  val MizFunctionalReg = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizFunctionalRegistration"),
+  val MizFunctionalReg = MizPattern(LocalName("MizFunctionalRegistration"),
 		  Context(VarDecl(LocalName("n"), None, None, None),
 				  VarDecl(LocalName("argTypes"), Some(SeqMap(Mizar.tp, LocalName("i"), OMV("n"))), None, None),
 				  VarDecl(LocalName("functor"), Some(Mizar.tp), None, None),
@@ -43,7 +41,7 @@ object RegPatterns  {
 		      None, None)))
 	  
     
-  val MizConditionalReg = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizConditionalRegistration"),
+  val MizConditionalReg = MizPattern(LocalName("MizConditionalRegistration"),
 		  Context(VarDecl(LocalName("n"), None, None, None),
 				  VarDecl(LocalName("argTypes"), Some(SeqMap(Mizar.tp, LocalName("i"), OMV("n"))), None, None),
 				  VarDecl(LocalName("typ"), Some(Mizar.tp), None, None),
@@ -57,7 +55,7 @@ object RegPatterns  {
 }
 
 object SchemePatterns {
-  val MizSchemeDef = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizSchemeDef"),
+  val MizSchemeDef = MizPattern(LocalName("MizSchemeDef"),
 						Context(VarDecl(LocalName("n"), None, None, None),
 					                 VarDecl(LocalName("args"), Some(SeqMap(Mizar.tp, LocalName("i"), OMV("n"))), None, None)) ++ 
 					                 Context(VarDecl(LocalName("m"), None, None, None),

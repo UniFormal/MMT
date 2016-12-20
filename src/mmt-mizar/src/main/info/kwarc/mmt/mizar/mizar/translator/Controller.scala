@@ -196,7 +196,7 @@ object TranslationController {
   def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term]) : Constant =
     Constant(OMMOD(currentTheory), n, Nil, tO, dO, None)
     
-  def addNotation(inst : Term, kind : String, absnr : Int) = {
+  def getNotation(kind : String, absnr : Int) : NotationContainer = {
     val lname = LocalName(kind + absnr.toString)
     val name = currentTheory ? lname
     ParsingController.dictionary.getFormatByAbsnr(currentAid, kind, absnr) match {
@@ -221,11 +221,9 @@ object TranslationController {
             sname :: (args ::: List(rsname)) //TODO, what if not 0 - argnr pair ?
         }
         val not = new TextNotation(Mixfix(markers), Precedence.integer(0), None)
-        val alias = ParsingController.resolveDef(currentAid, kind, absnr).map(LocalName(_)).toList
-        val notAss = symbols.Constant(inst, MMTUtils.mainPatternName, alias, None, None, None, NotationContainer(not))
-        TranslationController.controller.add(notAss)
+        NotationContainer.apply(not)
       case x =>
-        None
+        NotationContainer()
     }
   }
 	

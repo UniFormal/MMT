@@ -36,7 +36,7 @@ object SchemeRegTranslator {
 		//val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes :_*)) ++ (OMV("typ") / typ) ++ (OMV("cluster") / cluster)
 	   val matches = List(OMI(argNr), Sequence(argTypes :_*), typ, cluster)
 		val pattern = RegPatterns.MizExistentialReg
-		val i = Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches)
+		val i = MizInstance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches)
 		TranslationController.clearLocusVarContext()
 		TranslationController.addSourceRef(i, rc)
 		TranslationController.add(i)
@@ -54,7 +54,7 @@ object SchemeRegTranslator {
 		//val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes : _*)) ++ (OMV("functor") / functor) ++ (OMV("cluster") / cluster)
 	   val matches = List(OMI(argNr), Sequence(argTypes : _*), functor, cluster)
 		val pattern = RegPatterns.MizFunctionalReg
-		val i = Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches)
+		val i = MizInstance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches)
 		
 		TranslationController.clearLocusVarContext()
 
@@ -78,7 +78,7 @@ object SchemeRegTranslator {
       val matches = List(OMI(argNr),  Sequence(argTypes : _*), typ, first,  second)
 	
 		val pattern = RegPatterns.MizConditionalReg
-		val i = Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches)
+		val i = MizInstance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches)
 		TranslationController.clearLocusVarContext()
 		TranslationController.addSourceRef(i, cc)
 		TranslationController.add(i)
@@ -117,7 +117,7 @@ object SchemeRegTranslator {
 	    val pattern = SchemePatterns.MizSchemeDef
 	    //val matches = ("n" / OMI(args.length)) ++ (OMV("args") / Sequence(args : _*)) ++ ("m" / OMI(premises.length)) ++ (OMV("premises") / Sequence(premises :_ *)) ++ ("prop" / prop)
        val matches = List(OMI(args.length), Sequence(args : _*), OMI(premises.length), Sequence(premises :_ *), prop)
-	    val i = Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches)
+	    val i = MizInstance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches)
 	    TranslationController.clearLocusVarContext()
 	    TranslationController.addSourceRef(i, s)
 	    TranslationController.add(i)

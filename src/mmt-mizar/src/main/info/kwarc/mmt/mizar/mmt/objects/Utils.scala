@@ -1,6 +1,7 @@
 package info.kwarc.mmt.mizar.mmt.objects
 
 import info.kwarc.mmt.mizar.mizar.translator.TranslationController
+
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.utils._
@@ -9,6 +10,7 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
+import notations._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.lfs._
 
@@ -17,10 +19,11 @@ object Mizar {
 	val mmlBase = utils.URI("http", "oaff.mathweb.org") / "MML"
   val mathHubBase = "http://gl.mathhub.info/Mizar/MML/blob/master"
 	private val mizarBase =  DPath(utils.URI("http", "latin.omdoc.org") / "foundations"/ "mizar")
-	val MizarTh = mizarBase ? "mizar-curry"
+	val MizarTh = mizarBase ? "Mizar"
 	val MizarPatternsTh = mizarBase ? "mizar-patterns"
 	val HiddenTh = mizarBase ? "HIDDEN"
-  val MizarInformal = mizarBase ? "mizar-informal"
+  //TODO
+	val MizarInformal = mizarBase ? "mizar-informal"
 	
   def by : Term = OMID(MizarInformal ? "by")
   def from : Term = OMID(MizarInformal ? "from")
@@ -32,17 +35,13 @@ object Mizar {
 			case "R2" => OMID(HiddenTh ? name)
 			case _ => OMID(MizarTh ? name)
 		}
-		
 	}
 	
 	def compact(t : Term) : Term = {
 		t
 	}
 	
-	def apply(f : Term, args : Term*) = args.length match {
-	  case 0 => f
-	  case _ => ApplySpine(f, args : _*)
-	}
+	def apply(f : Term, args : Term*) = ApplyGeneral(f, args.toList)
 	
 	def prop : Term = constant("prop")
 	def any : Term = constant("any")
@@ -68,7 +67,9 @@ object Mizar {
 	  not(OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, None)), not(prop)))
 	
 	def forall(v : String, tp : Term, prop : Term) = 
-	  OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, None)), prop)
+	  ApplySpine(Mizar.constant("for"), tp, Lambda(LocalName(v), Mizar.any, prop))
+	  
+//	  OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, None)), prop)
 	
 	def attr(t : Term) = apply(Mizar.constant("attr"), t)
 	def adjective(cluster : Term, typ : Term) = apply(Mizar.constant("adjective"), typ, cluster)

@@ -39,6 +39,14 @@ object Pattern {
       case thy: DeclaredTheory => thy
       case _ => throw ImplementationError("pattern must contain theory")
     }
-    Some((dd.home,dd.name, pars, thy))
+    Some((dd.home,dd.name, pars, thy)) 
+  }
+  
+  /** pre: d.feature == "pattern" */
+  def getParameters(d: DerivedDeclaration) = {
+     d.getComponent(ParamsComponent).flatMap {
+       case cc: ContextContainer => cc.get
+       case _ => None
+     } getOrElse Context.empty
   }
 }
