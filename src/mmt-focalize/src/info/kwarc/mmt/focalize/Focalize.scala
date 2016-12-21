@@ -34,7 +34,7 @@ object Focalize {
   val tuple = _path ? "tuple"
   
   val int = _path ? "int"
-  object intLiterals extends RealizedType(OMS(int), StandardInt)
+  object intLiterals extends RepresentedRealizedType(OMS(int), StandardInt)
   
   val omittedProof = _path ? "omittedProof"
 }

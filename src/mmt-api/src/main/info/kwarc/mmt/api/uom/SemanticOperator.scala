@@ -12,10 +12,13 @@ abstract class SemanticOperator(val tp: SemOpType) extends SemanticObject {
   lazy val arity = tp.arity
 
   protected def alsoHasType(t: SemOpType) {
-    if (tp.arity != arity)
-      throw ImplementationError("illegal arity")
-    else
       types ::= t
+  }
+  
+  /** basic type checking */
+  override def init {
+    if (types.exists(_.arity != arity))
+      throw ImplementationError("types of semantic operator do not have the same arity")
   }
   
   /**

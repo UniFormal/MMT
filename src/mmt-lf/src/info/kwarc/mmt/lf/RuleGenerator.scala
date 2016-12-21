@@ -29,7 +29,7 @@ abstract class RuleGenerator extends ChangeListener {
      p match {
         case p: GlobalName =>
            controller.globalLookup.getO(p / nameSuffix) match {
-              case Some(r: RuleConstant) => Some(r.df.asInstanceOf[GeneratedRule])
+              case Some(r: RuleConstant) => r.df.map(df => df.asInstanceOf[GeneratedRule])
               case _ => None
            }
         case _ => None

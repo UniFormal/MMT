@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.ontology
 
+import info.kwarc.mmt.api._ 
 import info.kwarc.mmt.api.{ContentPath, GlobalName, MPath}
 import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
 import info.kwarc.mmt.api.utils._
@@ -8,7 +9,7 @@ import scala.collection.immutable.List
 
 sealed abstract class Reference
 
-sealed class URIReference extends Reference
+sealed abstract class URIReference extends Reference
 
 case class LogicalReference(mmturi: ContentPath) extends URIReference {
   override def toString = mmturi.toPath
@@ -56,6 +57,7 @@ case class ConceptPair(from : ConceptReference, to : ConceptReference) extends A
     val ret = that match {
       case ConceptPair(fr, t) => ConceptPair(from, t)
       case ca : ConceptAlignment => ConceptAlignment(from,ca.ref)
+      case _ => throw ImplementationError("missing case") //TODO
     }
     ret.isGenerated = true
     ret
@@ -138,6 +140,7 @@ case class SimpleAlignment(from: LogicalReference, to: LogicalReference, inverti
         InformalAlignment(from,tto)
       case ArgumentAlignment(tfrom,tto,inv,arguments) =>
         ArgumentAlignment(from,tto,invertible && inv,arguments)
+      case _ => throw ImplementationError("missing case") //TODO
     }
     ret.isGenerated = true
     ret
@@ -185,6 +188,7 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, inver
         InformalAlignment(from,tto)
       case ArgumentAlignment(tfrom,tto,inv,args2) =>
         ArgumentAlignment(from,tto,invertible && inv,combine(args2))
+      case _ => throw ImplementationError("missing case") //TODO      
     }
     ret.isGenerated = true
     ret

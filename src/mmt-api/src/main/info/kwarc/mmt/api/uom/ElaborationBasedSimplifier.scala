@@ -1,10 +1,12 @@
-package info.kwarc.mmt.api.libraries
+package info.kwarc.mmt.api.uom
+
 import info.kwarc.mmt.api._
 import frontend._
 import modules._
 import symbols._
 import patterns._
 import objects._
+
 import utils.MyList.fromList
 import collection.immutable.{HashSet, HashMap}
 
@@ -29,42 +31,56 @@ object ElaboratedElement extends ClientProperty[StructuralElement,Option[Boolean
  *
  * code in [[Closer]] should be merged into here
  */
-class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS) with ChangeListener {
+class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS) with ChangeListener {
   private lazy val memory = controller.memory
   private lazy val lup = controller.globalLookup
 
   override def logPrefix = "structure-simplifier"
 
-  def apply(s: StructuralElement) {s match {
-     case t: DeclaredTheory => flatten(t)
+  def apply(s: StructuralElement) {
+    log("simplifying " + s.path)
+    s match {
+     case m: DeclaredModule => flatten(m)
+     case d: DefinedModule => // TODO materialize
+     case d: Declaration => d.home match {
+       case OMMOD(p) =>
+         val mod = controller.globalLookup.getAs(classOf[DeclaredModule], p)
+         flattenDeclaration(mod, d, None)
+       case _ => // TODO materialize 
+     }
      case _ =>
-  }}
+    }
+  }
+    
 
   /** flattens all declarations in a theory */
-  // TODO extend to views
-  def flatten(t: DeclaredTheory) {
-     if (ElaboratedElement.is(t))
+  private def flatten(m: DeclaredModule) {
+     if (ElaboratedElement.is(m))
        return
+     log("flattening " + m.path)
      try {
-        val rules = RuleSet.collectRules(controller, Context(t.path))
-        t.getDeclarations.foreach {d => flattenDeclaration(t, d, Some(rules))}
-        t.meta foreach {mt =>
-          val mtThy = lup.getO(mt) match {
-            case Some(d: DeclaredTheory) => flatten(d)
-            case _ =>
-          }
+        val rules = RuleSet.collectRules(controller, m.getInnerContext)
+        m match {
+          case t: DeclaredTheory =>
+            t.meta foreach apply
+          case _ =>
         }
+        m.getDeclarations.foreach {d => flattenDeclaration(m, d, Some(rules))}
      } finally {// if something goes wrong, don't try again
-      ElaboratedElement.set(t)
+      ElaboratedElement.set(m)
      }
   }
 
   /** adds elaboration of d to parent */
-  private def flattenDeclaration(parent: DeclaredTheory, dOrig: Declaration, rulesOpt: Option[RuleSet] = None) {
+  private def flattenDeclaration(mod: DeclaredModule, dOrig: Declaration, rulesOpt: Option[RuleSet] = None) {
     if (ElaboratedElement.is(dOrig))
       return
     lazy val rules = rulesOpt.getOrElse {
-      RuleSet.collectRules(controller, Context(parent.path))
+      RuleSet.collectRules(controller, mod.getInnerContext)
+    }
+    val parent = mod match {
+      case t: DeclaredTheory => t
+      case _ => return //TODO
     }
     lazy val alreadyIncluded = parent.getIncludes
     val dElab: List[Declaration] = dOrig match {

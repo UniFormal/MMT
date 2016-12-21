@@ -142,6 +142,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       private type StateData = Context
       /** a stack of states for backtracking */
       private var pushedStates: List[StateData] = Nil
+      
+      def isDryRun = pushedStates.nonEmpty
 
       /** evaluates its arguments without applying its side effects on the state
  *
@@ -366,6 +368,27 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          typeCheckSolution(vd)
       }
    }
+   
+   /** moves declarations in solution to the right so that 'name' occurs as far to the right as allowed by dependencies */
+   private def moveToRight(name: LocalName) {
+     val (before, it::rest) = solution.span(_.name != name)
+     var toLeft = Context.empty
+     var toEnd = Context(it)
+     var toEndNames = List(name)
+     rest.foreach {vd =>
+       if (utils.disjoint(vd.freeVars, toEndNames)) {
+         // no dependency: move over vd
+         toLeft = toLeft ++ vd
+       } else {
+         // dependency: also move vd to the end
+         toEnd = toEnd ++ vd
+         toEndNames ::= vd.name
+       }
+     }
+     solution = before ++ toLeft ++ toEnd
+     log("moved " + name + " to the right, new solution: " + presentObj(solution))
+   }
+   
    /** registers the solved type for a variable
     *
     * If a type exists already, their equality is checked.
@@ -384,6 +407,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       else {
          val vd = solved.copy(tp = Some(valueS))
          solution = left ::: vd :: right
+         log("new solution: " + solution)
          //no need to register this in newsolutions (TODO: or is there?)
          typeCheckSolution(vd)
       }
@@ -403,7 +427,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    def addUnknowns(newVars: Context, before: Option[LocalName]): Boolean = {
       val (left, right) = before match {
-        case Some(b) => solution.span(_.name != before)
+        case Some(b) => solution.span(_.name != b)
         case None => (solution.toList,Nil)
       }
       solution = left ::: newVars ::: right
@@ -414,7 +438,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * define x:tp as the unique value that satisfies the constraint
     * 
     * this is implemented by adding a fresh unknown, and running the constraint
-    *
     * this can be used to compute a value in logic programming style, where the computation is given by a functional predicate
     */
    def defineByConstraint(x: LocalName, tp: Term)(constraint: Term => Boolean) {
@@ -444,7 +467,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     *  @param j the Judgement
     *  @return if false, j is disproved; if true, j holds relative to all delayed judgements
     *
-    *  Note that this may return true even if can be disproved, namely if the delayed judgements are disproved later.
+    *  Note that this may return true even if j can be disproved, namely if the delayed judgements are disproved later.
     *
     *  If this returns false, an error must have been registered.
     */
@@ -506,9 +529,12 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         case None =>
            // no activatable constraint
            if (delayed.isEmpty && errors.isEmpty)
+              // all clear except that some unknwons not solved
               noActivatableConstraint
-           else
-              false
+           else {
+             // usually errors.isEmpty, i.e., return true but with constraints left
+             errors.isEmpty
+           }
         case Some(dc) =>
            // activate a constraint
            removeConstraint(dc)
@@ -594,7 +620,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
    }
 
-   /** unsafe: via UOM */
+   /** unsafe via ObjectSimplifier */
    def simplify(t : Obj)(implicit stack: Stack, history: History) = {
       val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context, rules)
       if (tS != t)
@@ -611,7 +637,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           rlist foreach {rule =>
               rule(this)(tm, false) match {
                 case Some(tmS) =>
-                  history += "Applying ComputationRule " + rule.toString
+                  history += "applying computation rule " + rule.toString
                   log("simplified: " + tm + " ~~> " + tmS)
                   history += "simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS)
                   return tmS.from(tm)
@@ -619,29 +645,11 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               }
           }
         // no rule or rule not applicable, recurse
-        val argsS = args map {a => safeSimplify(a)(stack ++ cont, history + "simplifying argument")}
+        val subsS = subs mapTerms {a => safeSimplify(a)(stack, history + "simplifying argument before context")}
         val contS = cont mapTerms {case (c,t) => safeSimplify(t)(stack ++ c, history + "simplifying component of bound variable")}
-        val subsS = subs mapTerms {a => safeSimplify(a)(stack, history + "simplifying named argument")}
+        val argsS = args map {a => safeSimplify(a)(stack ++ cont, history + "simplifying argument")}
         val tmS = ComplexTerm(op, subsS, contS, argsS).from(tm)
         tmS
-        /*
-         rOpt flatMap {rule =>
-           history += "Applying ComputationRule " + rOpt.get.toString
-           rule(this)(tm, false)
-         } match {
-            case Some(tmS) =>
-               log("simplified: " + tm + " ~~> " + tmS)
-               history += "simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS)
-               tmS.from(tm)
-            case None =>
-               // no rule or rule not applicable, recurse
-               val argsS = args map {a => safeSimplify(a)(stack ++ cont, history + "simplifying argument")}
-               val contS = cont mapTerms {case (c,t) => safeSimplify(t)(stack ++ c, history + "simplifying component of bound variable")}
-               val subsS = subs mapTerms {a => safeSimplify(a)(stack, history + "simplifying named argument")}
-               val tmS = ComplexTerm(op, subsS, contS, argsS).from(tm)
-               tmS
-         }
-         */
    }
 
    /** simplifies one step overall */
@@ -728,9 +736,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    def check(j: Judgement)(implicit history: History): Boolean = {
       history += j
-      log(j.presentSucceedent)
+      log("checking: " + j.presentSucceedent)
       logGroup {
-         log(j.presentAntecedent)
+         log("in context: " + j.presentAntecedent)
          j match {
             case j: Typing   => checkTyping(j)
             case j: Subtyping => checkSubtyping(j)
@@ -904,10 +912,11 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
            ret
         }
      }
-     log("inferred: " + res.getOrElse("failed"))
-     // remember inferred type
-     //TODO commented out for now because it clashes with forgetting solutions during a dryRun
-     //res foreach {r => InferredType.put(tm, (getCurrentBranch,r))}
+     log("inferred: " + res.map(presentObj).getOrElse("failed"))
+     //remember inferred type
+     if (!isDryRun) {
+       res foreach {r => InferredType.put(tm, (getCurrentBranch,r))}
+     }
      res
    }
 
@@ -1022,6 +1031,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       // 1) base cases, e.g., identical terms, solving unknowns
       // identical terms
       if (tm1S hasheq tm2S) return true
+      if (presentObj(tm1S) == presentObj(tm2S) && presentObj(tm1S) == "tm (shift A)=(shift B)")
+        true
       // different literals are always non-equal
       (tm1S, tm2S) match {
          case (l1: OMLIT, l2: OMLIT) =>
@@ -1033,16 +1044,18 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          case _ =>
       }
       // solve an unknown
-      val solved = solveEquality(j) || solveEquality(j.swap)
+      val jS = j.copy(tm1 = tm1S, tm2 = tm2S)
+      val solved = solveEquality(jS) || solveEquality(jS.swap)
       if (solved) return true
 
-      // 2) find a TermBasedEqualityRule (based on the heads of the terms)
-      rules.get(classOf[TermBasedEqualityRule]).filter(r => r.applicable(tm1,tm2)) foreach {rule =>
+      // 2) find a TermBasedEqualityRule
+      rules.get(classOf[TermBasedEqualityRule]).filter(r => r.applicable(tm1S,tm2S)) foreach {rule =>
          // we apply the first applicable rule
          history += "applying term-based equality rule " + rule.toString
-         val contOpt = rule(this)(tm1,tm2,tpOpt)
-         if (contOpt.isDefined && contOpt.get.apply) {
-            return contOpt.get.apply
+         val contOpt = rule(this)(tm1S,tm2S,tpOpt)
+         contOpt match {
+           case Some(cont) => return cont.apply
+           case None =>
          }
       }
 
@@ -1157,7 +1170,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    private def checkEqualityCongruence(t1: TorsoForm, t2: TorsoForm)(implicit stack : Stack, history: History, tp: Term): Boolean = {
       lazy val j = Equality(stack, t1.toHeadForm, t2.toHeadForm, Some(tp))
-      lazy val noFreeVars = j.freeVars.isEmpty
+      lazy val noFreeVars = j.freeVars.isEmpty // unknowns left in j?
       /* The torso form focuses on sequences of elimination operators to the same torso.
        * If the heads of the terms are introduction operators h, the congruence rule can usually be applied greedily
        * because introduction is usually injective.
@@ -1219,6 +1232,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          case OMV(m) =>
             if (!solution.isDeclared(m))
                return false
+            moveToRight(m)
             val remainingFreeVars = notAllowedInSolution(m, j.tm2)
             if (remainingFreeVars.isEmpty) {
                // we can solve m already, the remaining unknowns in tm2 can be filled in later
@@ -1227,6 +1241,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                res
             } else {
                history += ("free variables remain: " + remainingFreeVars.mkString(", "))
+               history += presentObj(solution)
                delay(j)
                // meta-variable solution has free variable --> type error unless free variable disappears later
                // better: we can rearrange the unknown variables (which ultimately may not depend on each other anyway)
@@ -1297,13 +1312,14 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          case OMV(m) =>
             if (!solution.isDeclared(m))
                return false
+            moveToRight(m)
             val remainingFreeVars = notAllowedInSolution(m, tp)
             if (remainingFreeVars.isEmpty) {
                // we can solve m already, the remaining unknowns in tm2 can be filled in later
                val res = solveType(m, tp)
                res
             } else {
-               history += ("free variables remain: " + remainingFreeVars.mkString(", "))
+               history += ("bound variables or unknowns remain in potential solution: " + remainingFreeVars.mkString(", "))
                delay(Typing(stack,tm,tp))
                // meta-variable solution has free variable --> type error unless free variable disappears later
                // better: we can rearrange the unknown variables (which ultimately may not depend on each other anyway)

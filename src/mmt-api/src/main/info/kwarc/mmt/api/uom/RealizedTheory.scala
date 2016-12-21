@@ -8,7 +8,7 @@ import symbols._
 /**
  * a model of an MMT theory in Scala
  */
-abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
+abstract class RealizationInScala extends DeclaredTheory(null, null, None) with SemanticObject {
    // getClass only works inside the body, i.e., after initializing the super class
    // so we make the constructor arguments null and override afterwards
    // this will fail if one of the arguments is accessed during initialization of the superclass
@@ -42,7 +42,7 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
    /**
     * creates the actual body of this class from the body
     */
-   def init {
+   override def init {
       try {
          _lazyBody.reverseMap {b => b()}
       } finally {
@@ -120,7 +120,7 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
      val rType = getRealizedType(rTypeN)
      val aTypes = aTypesN map {n => getRealizedType(n)}
      if (fun.arity == 0) { 
-       val lit = rType(fun.app(Nil))
+       val lit = rType of fun.app(Nil)
        val ar = new AbbrevRule(op, lit)
        rule(ar)
        val inv = new InverseOperator(op / invertTag) {
@@ -162,7 +162,7 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
      val inv = new InverseOperator(op / invertTag) {
         def unapply(l: OMLIT) = l match {
             case rType(y) => comp(y) match {
-               case Some(x) => Some(List(aType(x)))
+               case Some(x) => Some(List(aType of x))
                case None => None
             }
             case _ => None
@@ -184,7 +184,7 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
                  if (xs.length != aTypes.length)
                    None
                  else {
-                   val argsV = (aTypes zip xs) map {case (aT,x) => aT(x)}
+                   val argsV = (aTypes zip xs) map {case (aT,x) => aT of x}
                    Some(argsV)
                  }
                case None => None

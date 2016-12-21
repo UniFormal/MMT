@@ -9,7 +9,7 @@ object ShallowPolymorphism extends InhabitableRule(Pi.path) with PiOrArrowRule {
    def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Boolean = {
       tp match {
          case Pi(x,a,b) =>
-            val historyArg = history + "toplevel argument must be typed by universe"
+            val historyArg = history + (x.toString + " must be typed by universe")
             solver.inferTypeAndThen(a)(stack, historyArg + "infer type") {u =>
                solver.check(Universe(stack, u))(historyArg + "check universe")
             } &&

@@ -24,7 +24,7 @@ case class UOMState(t : Term, context: Context, rules: RuleSet, path : List[Int]
 /** A RuleBasedSimplifier applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
 // This class used to be called UOM
 class RuleBasedSimplifier extends ObjectSimplifier {
-  override val logPrefix = "uom"
+  override val logPrefix = "object-simplifier"
 
   private lazy val StrictOMA = controller.pragmatic.StrictOMA
    
@@ -45,7 +45,13 @@ class RuleBasedSimplifier extends ObjectSimplifier {
       val result = obj match {
          case t: Term =>
             val initState = new UOMState(t, context, rules, Nil)
-            val tS: Term = traverse(t,initState, context)
+            val tS: Term = 
+              try {
+                traverse(t,initState, context)
+              } catch {
+                case e: Exception =>
+                  throw GeneralError("error while simplifying " + controller.presenter.asString(obj)).setCausedBy(e)
+              }
             tS
          case c: Context =>
             c.mapTerms {case (sofar, t) => apply(t, context ++ sofar, rules)}
@@ -132,7 +138,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                   else {
                      //state (3)
                      //log("applying breadth rules to " + outer(argsSS))
-                     applyBreadthRules(outer, argsSS) orelse applyCompRules(t) match {
+                     applyBreadthRules(outer, argsSS) orelse applyCompRules(tS) match {
                         case GlobalChange(tSS) =>
                            // go back to state (1), remember that a global change was produced
                            applyAux(tSS, true)
@@ -145,13 +151,15 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                      }
                   }
             }
-         case _: OMBINDC => applyCompRules(t) match {
-            case GlobalChange(tS) =>
-              applyAux(tS, true)
-            case _ =>
-              // LocalChange is impossible
-             (t, globalChange)
-         }
+         case _: OMBINDC =>
+           val tS = Traverser.apply(this, t)
+           applyCompRules(tS) match {
+             case GlobalChange(tSS) =>
+               applyAux(tSS, true)
+             case _ =>
+               // LocalChange is impossible
+              (tS, globalChange)
+            }
          // no rules applicable
          case _ => (t, globalChange)
       }

@@ -418,7 +418,7 @@ class URIProducer extends BuildTarget {
            controller.globalLookup.getO(thy) match {
              case Some(d: DeclaredTheory) =>
                catchErrors("error while flattening " + d.path) {
-                  controller.simplifier.flatten(d)
+                  controller.simplifier(d)
                }
                d.getDeclarationsElaborated.foreach {
                  case c: Constant =>

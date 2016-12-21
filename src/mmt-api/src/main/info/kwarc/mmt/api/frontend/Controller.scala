@@ -354,8 +354,7 @@ class Controller extends ROController with ActionHandling with Logger {
   private def iterate[A](a: => A, previous: List[NotFound], org: Boolean): A = {
     try {
       a
-    }
-    catch {
+    } catch {
       case e: NotFound =>
         val p = e.path
         val eprev = e :: previous

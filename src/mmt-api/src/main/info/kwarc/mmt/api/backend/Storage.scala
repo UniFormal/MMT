@@ -59,14 +59,11 @@ trait RealizationStorage {
    */
   def loadObject(p: MPath): SemanticObject = {
     val cls = SemanticObject.mmtToJava(p)
-    reflect(cls, p) match {
-      case r: SemanticObject => r
-      case _ => throw BackendError("object exists but is not a semantic object", p)
-    }
+    reflect(cls, p)
   }
 
-  /** gets the object or class for a java class name (cls must be in Scala's syntax for java .class files) */
-  protected def reflect(cls: String, p: Path): AnyRef = {
+  /** gets the object for a java class name (cls must be in Scala's syntax for java .class files) */
+  protected def reflect(cls: String, p: Path): SemanticObject = {
     val c = try {
       Class.forName(cls, true, loader)
     } catch {
@@ -79,12 +76,24 @@ trait RealizationStorage {
       case e: Error =>
         throw BackendError(s"class $cls for $p exists, but: " + e.getMessage, p).setCausedBy(e)
     }
-    try {
+    val r = try {
       c.getField("MODULE$").get(null)
     }
     catch {
-      case e: java.lang.Exception =>
+      case e: Exception =>
         throw BackendError(s"class $cls for $p exists, but an error occurred when accessing the Scala object", p).setCausedBy(e)
+    }
+    r match {
+      case r: SemanticObject =>
+        try {
+          r.init
+        } catch {
+          case e: Exception =>
+            throw BackendError(s"semantic object $cls for $p exists, but an error occurred when initializing it", p).setCausedBy(e)
+        }
+        r
+      case _ =>
+        throw BackendError(s"object $cls for $p exists, but it is not an instance of SemanticObject", p)
     }
   }
 }

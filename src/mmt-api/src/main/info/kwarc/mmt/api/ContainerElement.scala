@@ -49,7 +49,7 @@ trait ContainerElement[S <: StructuralElement] extends StructuralElement with Mu
    /** the list of declarations in the order of addition, excludes generated declarations */
    def getPrimitiveDeclarations = getDeclarations.filterNot(_.isGenerated)
    /** the list of declarations using elaborated declarations where possible */
-   def getDeclarationsElaborated = getDeclarations.filterNot(libraries.ElaboratedElement.isProperly)  
+   def getDeclarationsElaborated = getDeclarations.filterNot(uom.ElaboratedElement.isProperly)  
 }
 
 class ListContainer[S <: NamedElement](items: List[S]) extends ElementContainer[S] with DefaultLookup[S] {

@@ -286,7 +286,7 @@ object OMATTRMany {
 /** The joint methods of OMLIT and UnknownOMLIT */
 sealed trait OMLITTrait extends Term {
    def synType: Term
-   def head = synType.head
+   def head = None // synType.head is awkward because it false triggers rules
    def synTypeXML = Obj.toStringOrNode(synType)
    def toNode = addAttrOrChild(<om:OMLIT value={toString}/>, "type", synTypeXML)
    def toCMLQVars(implicit qvars: Context) = addAttrOrChild(<cn encoding="mmt-literal">{toString}</cn>, "definitionURL", synTypeXML)

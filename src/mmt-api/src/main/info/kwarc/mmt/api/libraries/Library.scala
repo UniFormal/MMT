@@ -561,15 +561,19 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
 
   // ******************* additional retrieval methods
 
-  def getDeclarationsInScope(mod: Term): Iterator[StructuralElement] = {
-    val impls = visibleVia(mod).iterator
-    impls flatMap {case (from, via) =>
+  /** all declarations that are visible (based on what is currently loaded) to a theory */
+  //TODO this should be lazier (e.g., by returning an iterator), especially when declarations are translated.
+  //However, laziness breaks the NotFound handling in the Controller
+  def getDeclarationsInScope(mod: Term): List[StructuralElement] = {
+    val impls = visibleVia(mod).toList
+    impls.flatMap {case (from, via) =>
       get(from.toMPath) match {
         case d: DeclaredTheory =>
           via match {
             case OMCOMP(Nil) => d.getDeclarations.iterator
             case _ => Nil //TODO d.translate(mod, ???, ApplyMorphism(via))
           }
+        case _ => Nil //TODO materialize?
       }
     }
   }

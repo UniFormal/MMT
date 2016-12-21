@@ -139,7 +139,7 @@ trait SolutionRules extends RealizationInScala {
          }
          def apply(j: Equality) = (j.tm1, j.tm2) match {
             case (ApplySpine(_, List(t)), rType(y)) => invert(y) map {x =>
-                  (Equality(j.stack, t, argType(x), None), "inverting " + op.toString)
+                  (Equality(j.stack, t, argType of x, None), "inverting " + op.toString)
             }
             case _ => None
          }
@@ -156,7 +156,7 @@ trait SolutionRules extends RealizationInScala {
          }
          def apply(j: Equality) = (j.tm1, j.tm2) match {
             case (ApplySpine(_, List(t, argType2(x2))), rType(y)) => invert(y,x2) map {x1 =>
-                  (Equality(j.stack, t, argType1(x1), None), "inverting " + op.toString)
+                  (Equality(j.stack, t, argType1 of x1, None), "inverting " + op.toString)
             }
             case _ => None
          }
@@ -173,7 +173,7 @@ trait SolutionRules extends RealizationInScala {
          }
          def apply(j: Equality) = (j.tm1, j.tm2) match {
             case (ApplySpine(_, List(argType1(x1), t)), rType(y)) => invert(x1,y) map {x2 =>
-                  (Equality(j.stack, t, argType2(x2), None), "inverting " + op.toString)
+                  (Equality(j.stack, t, argType2 of x2, None), "inverting " + op.toString)
             }
             case _ => None
          }

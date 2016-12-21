@@ -79,8 +79,8 @@ object Mizar {
 	  apply(Mizar.constant("fraenkel"), t, Lambda(LocalName(v), Mizar.any, p), Lambda(LocalName(v), Mizar.any, f))
 	  
   
-	val numRT = new uom.RealizedType(any, uom.StandardInt)
-	def num(i: Int) = numRT(BigInt(i))
+	val numRT = new uom.RepresentedRealizedType(any, uom.StandardInt)
+	def num(i: Int) = numRT(i)
 }
 
 object MMTUtils {

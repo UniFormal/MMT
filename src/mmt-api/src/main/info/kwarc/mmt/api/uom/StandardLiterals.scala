@@ -174,6 +174,7 @@ abstract class RQuotient[V](of: RSemanticType[V]) extends Quotient(of) with RSem
   val cls = of.cls
 }
 
+/** a type that is equal to an existing Scala type */ 
 abstract class Atomic[V] extends RSemanticType[V] {
    override def valid(u: Any) = unapply(u).isDefined
    def toString(u: Any) = unapply(u).get.toString
@@ -181,6 +182,7 @@ abstract class Atomic[V] extends RSemanticType[V] {
    def fromString(s: String): V
 }
 
+/** types whose underlying representation uses integers */
 trait IntegerRepresented extends RSemanticType[BigInt] {
   val cls = classOf[BigInt]
 }
@@ -319,10 +321,12 @@ object Arithmetic {
   }
 
   object Plus extends InvertibleBinary(Z,Z,Z, {case (Z(x),Z(y)) => x+y}) with Commutative {
+    alsoHasType(N =>: N =>: N)
     def invertLeft(x:Any,r:Any) = (x,r) match {case (Z(x),Z(r)) => Some(r-x)}
   }
   
   object Times extends InvertibleBinary(Z,Z,Z, {case (Z(x),Z(y)) => x*y}) with Commutative {
+    alsoHasType(N =>: N =>: N)
     def invertLeft(x:Any,r:Any) = (x,r) match {case (Z(x),Z(r)) => if ((r mod x) == 0) Some(r/x) else None}
   }
 }

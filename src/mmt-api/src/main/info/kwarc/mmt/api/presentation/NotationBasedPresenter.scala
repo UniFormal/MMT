@@ -473,6 +473,10 @@ class NotationBasedPresenter extends ObjectPresenter {
    }
 
    def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
+      origin.map(_.parent).foreach {
+        case p: ContentPath => controller.simplifier(p.module)
+        case _ =>
+      }
       implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, None)
       doToplevel {
          recurse(o)

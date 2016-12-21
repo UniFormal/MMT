@@ -9,10 +9,7 @@ import objects._
  */
 abstract class Change {
    /** corresponds to Option.orelse */
-   def orelse(that: => Change): Change = this match {
-      case NoChange => that
-      case c => c
-   }
+   def orelse(that: => Change): Change = if (this == NoChange) that else this
 }
 
 /** A LocalChange leaves the structure of a term unchanged, but changes its arguments

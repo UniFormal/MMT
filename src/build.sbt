@@ -155,7 +155,7 @@ lazy val lfs = (project in file("mmt-lfs")).
   settings(mmtProjectsSettings("mmt-lfs"): _*)
 
 lazy val mizar = (project in file("mmt-mizar")).
-  dependsOn(api, lf, lfs).
+  dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-mizar"): _*)
 
 lazy val frameit = (project in file("frameit-mmt")).

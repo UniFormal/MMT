@@ -22,7 +22,10 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
    def beginDecl(e: StructuralElement)(implicit rh: RenderingHandler) {}
    def endDecl(e: StructuralElement)(implicit rh: RenderingHandler) {}
    
-   def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {apply(e, 0)(rh)}
+   def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
+     controller.simplifier(e)
+     apply(e, 0)(rh)
+   }
 
    protected def doConstant(c: Constant,indent:Int)(implicit rh: RenderingHandler) = {
       rh("constant " + c.name)

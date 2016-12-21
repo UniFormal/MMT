@@ -184,6 +184,7 @@ class ThinGeneratedCategory {
       case OMPMOD(p, args) => impl.outOf(from) //TODO check agreement with args
       case TUnion(ts) => impl.outOf(TheoryExp.simplify(from)) //TODO does not yield all morphisms
       case ComplexTheory(cont) => impl.outOf(from)  //TODO does not yield all morphisms
+      case _ => HashSet.empty
    }
    /** retrieves all pairs (from,morph) for to */
    def into (to: Term) : HashSet[(Term,Term)] = to match {
@@ -192,6 +193,7 @@ class ThinGeneratedCategory {
       case TUnion(ts) => HashSet(ts:_*).flatMap(t => into(t))
       case ComplexTheory(cont) =>
          HashSet(cont.getIncludes:_*).flatMap(t => into(OMMOD(t)))
+      case _ => HashSet.empty
    }
    
    def clear {

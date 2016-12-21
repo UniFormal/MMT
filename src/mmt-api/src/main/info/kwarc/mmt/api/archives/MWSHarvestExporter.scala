@@ -9,8 +9,8 @@ import backend._
 import objects._
 import utils._
 import documents._
-import libraries._
 import parser._
+import uom._
 
 import scala.collection.immutable.{HashMap}
 import scala.xml.Node
@@ -134,7 +134,7 @@ import metadata._
 class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
   def key: String = "flatmws"
   override val outExt = "html"
-  lazy val mf = controller.extman.get(classOf[MMTStructureSimplifier]).head
+  lazy val mf = controller.extman.get(classOf[ElaborationBasedSimplifier]).head
   def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
     this._rh = rh
     val f = rh match {

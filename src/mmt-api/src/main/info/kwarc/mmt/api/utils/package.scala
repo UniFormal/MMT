@@ -67,6 +67,9 @@ package object utils {
    
    /** applies a list of pairs seen as a map */
    def listmap[A,B](l: List[(A,B)], a: A): Option[B] = l.find(_._1 == a).map(_._2)
+   
+   /** disjointness of two lists */
+   def disjoint[A](l: List[A], m: List[A]) = l.forall(a => ! m.contains(a))
 
    /** slurps an entire stream into a string */
    def readFullStream(is: java.io.InputStream) = scala.io.Source.fromInputStream(is, "UTF-8").mkString

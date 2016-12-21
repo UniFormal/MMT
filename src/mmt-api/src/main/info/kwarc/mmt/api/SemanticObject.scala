@@ -2,7 +2,13 @@ package info.kwarc.mmt.api
 
 /** superclass for all semantic objects, i.e., objects that live in the semantic domain provided Scala */ 
 trait SemanticObject {
+  /** the MMT URI of this object, derived from its Scala name: scala://package?name */
   lazy val mpath = SemanticObject.javaToMMT(getClass.getCanonicalName)
+  
+  /** errors in Java initializers are hard to debug; therefore, objects should put initialization code here, which will be called by MMT
+   *  empty by default, may throw errors
+   */
+  def init {}
 }
 
 object SemanticObject {
