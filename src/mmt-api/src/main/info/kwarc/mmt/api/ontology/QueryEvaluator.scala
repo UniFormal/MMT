@@ -155,10 +155,12 @@ class QueryEvaluator(controller: Controller) {
     case SubObject(of, pos) =>
       val res = empty
       evalSet(of).foreach(e => {
-        val (con, obj) = e.asInstanceOf[Obj].subobject(pos)
-        res += (obj match {
-          case t: Term => OMBIND(QueryEvaluator.free, con, t)
-          case o => o //TODO assuming bound variables occur only in terms
+        res += e.map(f => {
+          val (con, obj) = f.asInstanceOf[Obj].subobject(pos)
+          obj match {
+            case t: Term => OMBIND(QueryEvaluator.free, con, t)
+            case o => o //TODO assuming bound variables occur only in terms
+          }
         })
       })
       res
