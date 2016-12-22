@@ -163,7 +163,7 @@ object TranslationController {
 		varContext = new ArrayStack()
 	}
 	
-	def addLocusVarBinder(tm : Term) : Unit = {
+	def addLocusVarBinder(tm : Term) {
 		locusVarContext.push(tm)
 	}
 	

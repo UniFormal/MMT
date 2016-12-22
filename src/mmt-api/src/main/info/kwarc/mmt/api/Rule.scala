@@ -15,7 +15,7 @@ import scala.collection.mutable.{HashMap,HashSet}
  */
 trait Rule extends SemanticObject {
    override def toString = {
-      "rule " + mpath
+      "rule " + mpath.name
    }
 }
 
@@ -33,7 +33,7 @@ trait SyntaxDrivenRule extends Rule {
    /** an MMT URI that is used to indicate when the Rule is applicable */
    def head: GlobalName
    override def toString = {
-      "rule " + mpath + " for " + head
+      "rule " + mpath.name + " for " + head.name //strangely, super.toString does not work here (Scala bug?)
    }
 }
 
@@ -84,23 +84,17 @@ class RuleSet {
 }
 
 object RuleSet {
+   /** collects all rules visible to a context, based on what is currently loaded into memory */
    def collectRules(controller: Controller, context: Context): RuleSet = {
-      val imports = controller.library.visibleDirect(ComplexTheory(context))
-      //TODO once rules are translatable, this should handle translations between rules
-      //TODO even if rules are not translatable, the morphism bringing a theory into may happen to be the identity for some rule, which can then be collected here
+      val support = context.getIncludes
+      val decls = support.flatMap {p =>
+        controller.globalLookup.getDeclarationsInScope(OMMOD(p))
+      }.distinct
       val rs = new RuleSet
-      imports.foreach {
-         case OMPMOD(p,_) =>
-            controller.globalLookup.getO(p) match {
-               case Some(t:DeclaredTheory) =>
-                  // trying all declarations because some rules might be generated
-                  t.getDeclarations.foreach {
-                     case rc: RuleConstant =>
-                        rc.df foreach {r => rs.declares(r)}
-                     case _ =>
-                  }
-               case _ =>
-            }
+      val rci = new RuleConstantInterpreter(controller)
+      decls.foreach {
+         case rc: RuleConstant =>
+            rc.df foreach {r => rs.declares(r)}
          case _ =>
       }
       rs

@@ -20,10 +20,14 @@ case class SemOpType(args: List[SemanticType], ret: SemanticType) {
 
 /** A RealizedOperator couples a syntactic function (a Constant) with a semantic function (a Scala function) */
 case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: SemanticOperator, semTp: SemOpType) extends BreadthRule(synOp) {
-   if (synTp.arity != semTp.arity)
-     throw ImplementationError("illtyped realization")
-   if (!semOp.getTypes.contains(semTp))
-     throw ImplementationError("illtyped realization")
+  /** basic type-checking */
+  override def init {
+     semOp.init
+     if (synTp.arity != semTp.arity)
+       throw ImplementationError("syntactic and semantic arity are not equal")
+     if (!semOp.getTypes.contains(semTp))
+       throw ImplementationError("the semantic operator does not have the semantic type")
+  }
 
    val arity = synTp.arity
    
@@ -31,7 +35,7 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
    private val retType : RealizedType = RealizedType(synTp.ret, semTp.ret)
    
    private def applicable(args: List[Term]): Boolean = {
-      if (args.length != argTypes.length) throw ParseError("")
+      if (args.length != argTypes.length) return false
       (args zip argTypes).forall {
          //case (l: OMLIT, lt) => l.rt == lt
          case (l,lt) if lt.unapply(l).isDefined => true
@@ -47,7 +51,7 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
           throw ImplementationError("illegal argument type")
         }
       }
-      retType(semOp(argsV))
+      retType of semOp(argsV) 
    }
    
    val apply: Rewrite = (args: List[Term]) => {

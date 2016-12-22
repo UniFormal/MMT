@@ -326,7 +326,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   /** resolve a name in the domain of a link and insert the necessary ComplexStep */
   protected def resolveAssignmentName[A <: Declaration](cls: Class[A], home: Term, name: LocalName)(implicit state: ParserState) = {
-    TheoryExp.getSupport(home) foreach {p => controller.simplifier.flatten(p)}
+    TheoryExp.getSupport(home) foreach {p => controller.simplifier(p)}
     controller.globalLookup.resolve(home, name) match {
       case Some(d: Declaration) if cls.isInstance(d) =>
         ComplexStep(d.parent) / d.name
@@ -733,39 +733,27 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   
   /** auxiliary function to collect all structural feature rules in a given context */
   protected def getFeatures(mp: MPath): Features = {
-    val visible = controller.globalLookup.getO(mp) match {
-      case Some(d: modules.DeclaredTheory) =>
-        controller.simplifier.flatten(d)
-        controller.library.visible(OMMOD(mp))
-      case _ => Nil
-    }
+    controller.simplifier(mp)
     var fs: List[(String,StructuralFeature)] = Nil
     var ps: List[(LocalName,(StructuralFeature,DerivedDeclaration))] = Nil
-    visible foreach {tm =>
-      controller.globalLookup.getO(tm.toMPath) match {
-        case Some(d: modules.DeclaredTheory) =>
-          controller.simplifier.flatten(d)
-          d.getDeclarations.foreach {
-            case rc: RuleConstant => rc.df.foreach {
-              case r: StructuralFeatureRule =>
-                controller.extman.get(classOf[StructuralFeature], r.feature) match {
-                  case Some(sf) =>
-                    fs ::= r.feature -> sf
-                  case None =>
-                    // maybe generate warning; error will be thrown anyway when the rule constant is checked
-                }
-              case _ =>
-            }
-            case dd @ Pattern(_,_,_,_) =>
-              controller.extman.get(classOf[StructuralFeature], Instance.feature) match {
-                case Some(sf) =>
-                  ps ::= dd.name -> (sf, dd)
-                case None =>
-              }
-            case _ =>
+    controller.globalLookup.getDeclarationsInScope(OMMOD(mp)).foreach {
+      case rc: RuleConstant => rc.df.foreach {
+        case r: StructuralFeatureRule =>
+          controller.extman.get(classOf[StructuralFeature], r.feature) match {
+            case Some(sf) =>
+              fs ::= r.feature -> sf
+            case None =>
+              // maybe generate warning; error will be thrown anyway when the rule constant is checked
           }
         case _ =>
       }
+      case dd @ Pattern(_,_,_,_) =>
+        controller.extman.get(classOf[StructuralFeature], Instance.feature) match {
+          case Some(sf) =>
+            ps ::= dd.name -> (sf, dd)
+          case None =>
+        }
+      case _ =>
     }
     new Features(fs, ps)
   }

@@ -277,7 +277,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     }
     val msp = new MMTStructurePresenter(nbpr)
     val rbs = new RuleBasedSimplifier
-    val mss = new MMTStructureSimplifier(rbs)
+    val mss = new ElaborationBasedSimplifier(rbs)
     val rbe = new execution.RuleBasedExecutor
     //use this for identifying structure and thus dependencies
     //val mmtStructureOnly = new OneStepInterpreter(new KeywordBasedParser(DefaultObjectParser))

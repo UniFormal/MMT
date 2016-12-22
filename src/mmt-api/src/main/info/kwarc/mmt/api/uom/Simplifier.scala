@@ -18,17 +18,13 @@ trait ObjectSimplifier extends Extension {self =>
 
 /** simplifies/elaborates structural elements */
 trait StructureSimplifier extends Extension {
+   /** convenience abbreviation */
    def apply(p: ContentPath) {
      apply(controller.get(p))
    }
+   /** flattens and elaborates the dependency closure of this element, typically called on a [[DeclaredTheory]] */
    def apply(se: StructuralElement): Unit
-   def flatten(p: MPath) {
-     controller.get(p) match {
-       case d: DeclaredTheory => flatten(d)
-       case _ =>
-     }
-   }
-   def flatten(t: DeclaredTheory): Unit
+   
    def materialize(context: Context, exp: Term, expandDefs: Boolean, pathOpt: Option[MPath]): Module
    
    def getBody(context: Context, moduleExp: Term): ElementContainer[NamedElement]

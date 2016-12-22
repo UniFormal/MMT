@@ -31,3 +31,8 @@ object Sequences {
    
    object comp extends UnaryConstantScala(_path, "comp")
 }
+
+object LFS {
+  val _base = Typed._base
+  val _path = _base ? "LFS"
+}

@@ -32,12 +32,16 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
    }
 
    private def getPattern(inst: DerivedDeclaration): Option[(DerivedDeclaration,List[Term])] = {
-     val (p,args) = Instance.getPattern(inst).getOrElse {return None}
-     val patOpt = controller.globalLookup.getO(p)
-     patOpt match {
-       case Some(pat: DerivedDeclaration) if pat.feature == Pattern.feature =>
-         Some((pat, args))
-       case _ => None
+     inst.tpC.get match {
+       case Some(Instance.Type(p,args)) =>
+         val patOpt = controller.globalLookup.getO(p)
+         patOpt match {
+           case Some(pat: DerivedDeclaration) if pat.feature == Pattern.feature =>
+             Some((pat, args))
+           case _ => throw LocalError("pattern not found: instance " + inst.path + " with pattern " + p)
+         }
+       case Some(_) => throw LocalError("instance has unexpexted type: " + inst.path)
+       case None => throw LocalError("instance has no type: " + inst.path)
      }
    }
   
@@ -73,7 +77,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
      def getO(n: LocalName): Option[Declaration] = {
        val d = pattern.module.getO(n.tail).getOrElse(return None)
        val dN = d match {
-         case c : Constant if c.name == OMV.anonymous => Constant(c.home, c.name, c.alias, c.tpC, c.dfC, c.rl, dd.notC)
+         case c: Constant if c.name == OMV.anonymous => Constant(c.home, c.name, c.alias, c.tpC, c.dfC, c.rl, dd.notC)
          case _ => d
        }
        val subs = (params zip args) map {case (vd,a) => Sub(vd.name, a)}
@@ -102,14 +106,5 @@ object Instance {
   def apply(home : Term, name : LocalName, tpC: TermContainer, notC: NotationContainer): DerivedDeclaration = {
     val dd = new DerivedDeclaration(home, name, feature, tpC, notC)
     dd
-  }
-
-  /** returns the pattern of an instance */
-  def getPattern(dd: DerivedDeclaration) = {
-     val tp = dd.tpC.get
-     tp flatMap {
-       case Type(p,args) => Some((p,args))
-       case _ => None
-     }
   }
 }

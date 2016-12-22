@@ -16,7 +16,7 @@ class Heap(id: Int, controller: Controller) extends DeclaredTheory(utils.mmt.mmt
       val i = new Instance(path, of.path, instanceId)
       instanceId += 1
       
-      controller.simplifier.flatten(of)
+      controller.simplifier(of)
       of.getDeclarations.foreach {
          case c: Constant if c.rl contains "state" =>
            val cI = Constant(i.toTerm, ComplexStep(of.path) / c.name, Nil, None, c.df, None)

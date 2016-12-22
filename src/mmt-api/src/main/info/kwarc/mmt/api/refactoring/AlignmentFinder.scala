@@ -17,7 +17,7 @@ class AlignmentFinder extends frontend.Extension {
   var allpairs : List[(Consthash,Consthash)] = Nil
 
   private def flattened(th : DeclaredTheory) : List[DeclaredTheory] = {
-    Try(controller.simplifier.flatten(th))
+    Try(controller.simplifier(th))
     th :: th.getIncludes.map(p => Try(controller.get(p).asInstanceOf[DeclaredTheory])).collect{
       case Success(t) => t
     }.flatMap(flattened)

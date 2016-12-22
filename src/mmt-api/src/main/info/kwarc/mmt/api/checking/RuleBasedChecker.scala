@@ -5,6 +5,7 @@ import objects._
 import symbols._
 import modules._
 import frontend._
+import parser._
 
 /**
  * the primary object level checker of MMT
@@ -36,14 +37,22 @@ class RuleBasedChecker extends ObjectChecker {
       val psol = solver.getPartialSolution
       val remUnknowns = solver.getUnsolvedVariables 
       val subs = psol.toPartialSubstitution
-      val t = parser.ParseResult(Context.empty,cu.judgement.context, cu.judgement.wfo).toTerm
-      val tI = t ^? subs //fill in inferred values
-      val tIS = SimplifyInferred(tI, rules, cu.context ++ remUnknowns) //substitution may have created simplifiable terms
-      TermProperty.eraseAll(tIS) // reset term properties (whether a term is, e.g., simplified, depends on where it is used)
-      val result = parser.ParseResult(remUnknowns, Context.empty, tIS).toTerm
+      val con = cu.judgement.context
+      val tm = cu.judgement.wfo
+      val contm = ParseResult(Context.empty, con, tm).toTerm //bundle them to make substitution easier
+      val contmI = contm ^? subs //fill in inferred values
+      val contmIS = SimplifyInferred(contmI, rules, cu.context ++ remUnknowns) //substitution may have created simplifiable terms
+      TermProperty.eraseAll(contmIS) // reset term properties (whether a term is, e.g., simplified, depends on where it is used)
+      val pr = ParseResult.fromTerm(contmIS).copy(unknown = remUnknowns)
+      val result = pr.toTerm
       //now report results, dependencies, errors
-      val solution = solver.getSolution
       val success = solver.checkSucceeded
+      if (success) {
+        // free variables may remain but their types are solved
+        if (pr.free.nonEmpty) {
+          env.errorCont(InvalidUnit(cu, NoHistory, "check succeeded, but free variables remained"))
+        }
+      }
       // ** logging and error reporting **
       if (success) {
          log("success")

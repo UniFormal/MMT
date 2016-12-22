@@ -51,14 +51,15 @@ abstract class SemanticType extends SemanticObject {
    def =>:(args: List[SemanticType]) = SemOpType(args, this)
 }
 
-/**
- * this can be mixed into semantic types to make the underlying representation type explicit
- */
-trait RepresentationType[V] {self: SemanticType =>
+/** a semantic type whose underlying representation type is made explicit */
+trait RSemanticType[V] extends SemanticType {
    /** this must be the class object of V (which cannot be implemented generically here in Scala) */
    val cls: Class[V]
    
-   /** provides matchin based on the type */ 
+   /** does nothing but triggers Scala type checking */
+   def apply(v: V): Any = v
+   
+   /** does nothing but refines the Scala type if possible */ 
    def unapply(u: Any): Option[V] = u match {
       //TODO not typesafe for complex types, cls == u.getClass works for complex types but does not consider subtyping
       case v: V@unchecked if cls.isInstance(v) =>
@@ -67,12 +68,4 @@ trait RepresentationType[V] {self: SemanticType =>
          Some(v) // isInstance is always false for primitive classes
       case _ => None
    }
-   
-   /** casts an object into V without checking */
-   def ~(u: Any):V = unapply(u).get
-   /** alias for ~ for alternative notation */
-   def ::(u: Any): V = this ~ u
 }
-
-/** a semantic type whose underlying representation type is made explicit */
-trait RSemanticType[V] extends SemanticType with RepresentationType[V]

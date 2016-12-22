@@ -23,6 +23,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
 
    def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
      this._rh = rh
+     controller.simplifier(s)
      s match {
        case doc : Document =>
          doHTMLOrNot(doc.path, standalone) {doDocument(doc)}

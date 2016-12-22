@@ -2,13 +2,14 @@ package info.kwarc.mmt.mizar.mizar.translator
 
 import info.kwarc.mmt.mizar.mizar.objects._
 import info.kwarc.mmt.mizar.mmt.objects._
+import MizSeq._
+
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.objects.Conversions._
 
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.lfs._
 
 import info.kwarc.mmt.morphisms._
 
@@ -24,7 +25,7 @@ object SchemeRegTranslator {
 	
 	def translateRCluster(rc : MizRCluster) = {
 		val name = "RC" + rc.nr  
-		rc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
+		rc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1)))) //TODO OMI I think you need to remove the +1 here and in similar places
 
 		val argTypes = rc.args.map(TypeTranslator.translateTyp)
 		

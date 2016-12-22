@@ -4,9 +4,8 @@ import info.kwarc.mmt.api.{LocalName, _}
 import modules._
 import frontend._
 import checking._
-import info.kwarc.mmt.api.libraries.ElaboratedElement
-import info.kwarc.mmt.api.ontology.IsDerivedDeclaration
-import objects.{OMV, _}
+import uom.ElaboratedElement
+import objects._
 import notations._
 
 import scala.xml.Elem
@@ -74,7 +73,9 @@ class DerivedDeclaration(h: Term, name: LocalName, override val feature: String,
 /**
  * a rule that legitimizes a [[StructuralFeature]]
  */
-case class StructuralFeatureRule(feature: String) extends Rule
+case class StructuralFeatureRule(feature: String) extends Rule {
+  override def toString = "rule for feature " + feature
+}
 
 /**
  * A StructureFeature defines the semantics of a [[DerivedDeclaration]]

@@ -1,6 +1,7 @@
 package info.kwarc.mmt.mizar.mmt.objects
 
 import info.kwarc.mmt.mizar.mizar.translator.TranslationController
+import MizSeq._
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
@@ -12,7 +13,6 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import notations._
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.lfs._
 
 
 object Mizar {
@@ -77,6 +77,10 @@ object Mizar {
 	def choice(tp : Term) = apply(Mizar.constant("choice"), tp)
 	def fraenkel(v : String, t : Term, p : Term, f : Term) = 
 	  apply(Mizar.constant("fraenkel"), t, Lambda(LocalName(v), Mizar.any, p), Lambda(LocalName(v), Mizar.any, f))
+	  
+  
+	val numRT = new uom.RepresentedRealizedType(any, uom.StandardInt)
+	def num(i: Int) = numRT(i)
 }
 
 object MMTUtils {

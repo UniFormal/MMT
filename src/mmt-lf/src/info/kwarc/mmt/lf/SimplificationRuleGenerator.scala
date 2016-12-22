@@ -41,7 +41,7 @@ class SimplificationRuleGenerator extends ChangeListener {
      p match {
         case p: GlobalName =>
            controller.globalLookup.getO(p / SimplifyTag) match {
-              case Some(r: RuleConstant) => Some(r.df.asInstanceOf[GeneratedDepthRule])
+              case Some(r: RuleConstant) => r.df.map(df => df.asInstanceOf[GeneratedDepthRule])
               case _ => None
            }
         case _ => None

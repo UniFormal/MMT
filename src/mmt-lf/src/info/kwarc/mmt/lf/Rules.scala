@@ -15,8 +15,13 @@ object Common {
     */
    def isTypeLike(solver: Solver, a: Term)(implicit stack: Stack, history: History) = {
      val h = history + "checking the size of the type of the bound variable"
+     val kind = OMS(Typed.kind)
      solver.inferTypeAndThen(a)(stack, h) {aT =>
-        solver.check(Typing(stack, aT, OMS(Typed.kind), Some(OfType.path)))(h)
+        if (aT == kind) {
+          solver.error("type of bound variable is too big: " + solver.presentObj(aT))
+        } else {
+          solver.check(Typing(stack, aT, kind, Some(OfType.path)))(h)
+        }
      }
    }
 
@@ -104,8 +109,10 @@ object LambdaTerm extends IntroductionRule(Lambda.path, OfType.path) {
 /** Elimination: the type inference rule f : Pi x:A.B  ,  t : A  --->  f t : B [x/t]
  * This rule works for B:U for any universe U */
 object ApplyTerm extends EliminationRule(Apply.path, OfType.path) {
-   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
-     case Apply(f,t) =>
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+     // calling Beta first could make this rule more reusable because it would avoid inferring the type of a possibly large lambda 
+     tm match {
+      case Apply(f,t) =>
         history += "inferring type of function " + solver.presentObj(f)
         val fTOpt = solver.inferType(f)(stack, history.branch)
         fTOpt match {
@@ -137,7 +144,8 @@ object ApplyTerm extends EliminationRule(Apply.path, OfType.path) {
                     None
               }
         }
-     case _ => None // should be impossible
+      case _ => None // should be impossible
+    }
    }
 }
 
@@ -242,9 +250,9 @@ object Beta extends ComputationRule(Apply.path) {
             reduced = true
             reduce(t ^? (x / s), rest)
          case (f, Nil) =>
-            //all arguments were used
-            //only possible if there was a reduction, so no need for 'if (reduced)'
-            Some(f)
+            //all arguments were used, recurse in case f is again a redex
+            //otherwise, return f (only possible if there was a reduction, so no need for 'if (reduced)')
+            apply(solver)(f, covered) orElse Some(f)
          case _ => 
             /*// simplify f recursively to see if it becomes a Lambda
             val fS = solver.simplify(f)
@@ -259,6 +267,7 @@ object Beta extends ComputationRule(Apply.path) {
       tm match {
          //using ApplySpine here also normalizes curried application by merging them into a single one
          case ApplySpine(f, args) => reduce(f, args)
+         case _ => None // only possible after recursing
       }
    }
 }

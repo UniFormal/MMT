@@ -31,6 +31,7 @@ jeditsetup info.kwarc.mmt.jeditsetup.Setup
 
 #semantics
 http://cds.omdoc.org/urtheories?LF info.kwarc.mmt.lf.Plugin
+http://latin.omdoc.org/foundations/mizar?Mizar info.kwarc.mmt.mizar.Plugin
 
 #namespaces
 ur         http://cds.omdoc.org/urtheories

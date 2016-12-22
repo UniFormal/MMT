@@ -4,20 +4,20 @@ import info.kwarc.mmt.LFX.Records.Recexp
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.FinalConstant
-import info.kwarc.mmt.api.uom.{StandardRat, StandardString, StandardNat, RealizedType}
+import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.lf.{Lambda, Apply, ApplySpine}
 import info.kwarc.mmt.pvs.PVSTheory.expr
 import utils._
 import objects.Conversions._
 
 
-object NatLiterals extends RealizedType(expr(OMS(PVSTheory.thpath ? "NatLit")),StandardNat) {
+object NatLiterals extends RepresentedRealizedType(expr(OMS(PVSTheory.thpath ? "NatLit")),StandardNat) {
    val pvstp = OMS(PVSTheory.thpath ? "NatLit")
 }
-object StringLiterals extends RealizedType(expr(OMS(PVSTheory.thpath ? "StringLit")),StandardString) {
+object StringLiterals extends RepresentedRealizedType(expr(OMS(PVSTheory.thpath ? "StringLit")),StandardString) {
    val pvstp = OMS(PVSTheory.thpath ? "StringLit")
 }
-object RationalLiterals extends RealizedType(expr(OMS(PVSTheory.thpath ? "RatLit")),StandardRat) {
+object RationalLiterals extends RepresentedRealizedType(expr(OMS(PVSTheory.thpath ? "RatLit")),StandardRat) {
    val pvstp = OMS(PVSTheory.thpath ? "RatLit")
 }
 

@@ -129,9 +129,9 @@ class MathHub(val uri: URI, val root: File, val report: Report) extends ArchiveH
       }
       Some(lp)
    }
-   def localArchiveIDs = root.subdirs.flatMap {g => g.subdirs.map(r => g.name + r.name)}
+   def localArchiveIDs = root.subdirs.flatMap {g => g.subdirs.map(r => g.name + "/" + r.name)}
    def pull(id: String) {
-     git(localPath(id), "pull")
+     git(localPath(id), "pull", "origin", "master")
    }
    def push(id: String) {
      git(localPath(id), "push")

@@ -54,7 +54,7 @@ class NotationBasedParser extends ObjectParser {
      // due to the recursive processing, variables in children are always found first
      // so adding to the front yields the right order
      /** unknowns */
-     private var vardecls: List[VarDecl] = Nil
+     private var unknowns: List[VarDecl] = Nil
      private var counter = 0
 
      /** free variables (whose types may depend on the unknowns) */
@@ -64,12 +64,11 @@ class NotationBasedParser extends ObjectParser {
      
      /** @return returns the unknown and free variables at the end, free vars have unknown types */
      def getVariables(implicit pu: ParsingUnit): (Context,Context) = {
-        val vdNames = vardecls.map(_.name)
         val fvDecls = freevars map {n =>
-           val tp = newUnknown(newType(n), vdNames)
+           val tp = newUnknown(newType(n), Nil) // types of free variables must be closed; alternative: allow any other free variable
            VarDecl(n, Some(tp), None, None)
         }
-        (vardecls, fvDecls)
+        (unknowns, fvDecls)
      }
 
      private def next = {
@@ -79,7 +78,7 @@ class NotationBasedParser extends ObjectParser {
      }
 
      def reset() {
-       vardecls = Nil
+       unknowns = Nil
        counter = 0
        freevars = Nil
      }
@@ -98,7 +97,7 @@ class NotationBasedParser extends ObjectParser {
 
      /** generates a new unknown variable, constructed by applying a fresh name to all bound variables */
      def newUnknown(name: LocalName, bvars: List[LocalName])(implicit pu: ParsingUnit) = {
-       vardecls ::= VarDecl(name, None, None, None)
+       unknowns ::= VarDecl(name, None, None, None)
        if (bvars.isEmpty)
          OMV(name)
        else {
@@ -112,7 +111,7 @@ class NotationBasedParser extends ObjectParser {
       */
      def newAmbiguity = {
        val name = LocalName("") / "A" / next
-       vardecls ::= VarDecl(name, None, None, None)
+       unknowns ::= VarDecl(name, None, None, None)
        OMV(name)
      }
 
@@ -180,46 +179,24 @@ class NotationBasedParser extends ObjectParser {
   /** auxiliary function to collect all lexing and parsing rules in a given context */
   private def getRules(context: Context): (List[ParsingRule], List[LexerExtension], List[NotationExtension]) = {
     val support = context.getIncludes
-    //TODO we can also collect notations attached to variables
-    val visibles = support.map {p =>
-      val dO = controller.globalLookup.getO(p)
-      dO foreach {d =>
-        controller.simplifier(d)
-      } // make sure p is recursively loaded before taking visible theories
-      controller.library.visible(OMMOD(p))
+    //TODO we might also collect notations attached to variables
+    support.foreach {p =>
+      controller.simplifier(p)
     }
-    val visible = visibles.flatten.distinct
-    val decls = visible flatMap {tm =>
-      val se = controller.globalLookup.getO(tm.toMPath)
-      se match {
-        case Some(d) =>
-          controller.simplifier(d)
-          d.getDeclarations
-        case None =>
-          Nil
-      }
-    }
-    val nots = decls.flatMap {
-      case nm: NestedModule =>
-        val args = nm.module match {
-          case t: Theory => t.parameters.length
-          case v: View => 0
-        }
-        val tn = new TextNotation(Mixfix(Delim(nm.name.toString) :: Range(0, args).toList.map(SimpArg(_))),
-          Precedence.infinite, None)
-        List(ParsingRule(nm.module.path, Nil, tn))
+    val decls = support.flatMap {p => controller.globalLookup.getDeclarationsInScope(OMMOD(p))}.distinct
+    var nots: List[ParsingRule] = Nil
+    var les: List[LexerExtension] = Nil
+    var notExts: List[NotationExtension] = Nil
+    decls.foreach {
       case c: Constant => // Declaration with HasNotation might collect too much here
         var names = (c.name :: c.alternativeNames).map(_.toString) //the names that can refer to this declaration
         if (c.name.last == SimpleStep("_")) names ::= c.name.init.toString
         //the unapplied notations consisting just of the name
         val unapp = names map (n => new TextNotation(Mixfix(List(Delim(n))), Precedence.infinite, None))
         val app = c.not.toList
-        (app ::: unapp).map(n => ParsingRule(c.path, c.alternativeNames, n))
-      case _ => Nil
-    }
-    var les: List[LexerExtension] = Nil
-    var notExts: List[NotationExtension] = Nil
-    decls.foreach {
+        (app ::: unapp).foreach {n =>
+          nots ::= ParsingRule(c.path, c.alternativeNames, n)
+        }
       case r: RuleConstant => r.df.foreach {
         case ne: NotationExtension =>
           notExts ::= ne
@@ -229,6 +206,14 @@ class NotationBasedParser extends ObjectParser {
           rt.lexerExtension.foreach {les ::= _}
         case _ =>
       }
+      case nm: NestedModule =>
+        val args = nm.module match {
+          case t: Theory => t.parameters.length
+          case v: View => 0
+        }
+        val ms = Mixfix(Delim(nm.name.toString) :: Range(0, args).toList.map(SimpArg(_)))
+        val tn = new TextNotation(ms, Precedence.infinite, None)
+        nots ::= ParsingRule(nm.module.path, Nil, tn)
       case _ =>
     }
     (nots, les, notExts)
