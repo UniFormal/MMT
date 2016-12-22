@@ -106,7 +106,7 @@ object StandardVector extends CodecOperator[JSON](Codecs.standardVector, Math.ve
   def construct(elemTp: Term, tms: List[Term]): Term = {
     tms.foldLeft[Term](Apply(OMS(Math.zerovec),elemTp)) {
       case (sofar, next) =>
-        ApplySpine(OMS(Math.vectorprepend), elemTp, NatLiterals(BigInt(destruct(sofar).length)), next, sofar)
+        ApplySpine(OMS(Math.vectorprepend), elemTp, NatLiterals.of(BigInt(destruct(sofar).length)), next, sofar)
     }
   }
 
@@ -142,7 +142,7 @@ object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, Math.ma
       if (tms.tail.forall(_.length == tms.head.length)) tms.head.length else throw CodecNotApplicable
     } else tms.length
     StandardVector.construct(
-      ApplySpine(OMS(Math.vector), elemTp, NatLiterals.apply(m)),
+      ApplySpine(OMS(Math.vector), elemTp, NatLiterals.of(m)),
       tms.map(StandardVector.construct(elemTp, _)))
   }
   /*

@@ -164,7 +164,7 @@ class LatexPresenter(oP: ObjectPresenter) extends Presenter(oP) {
           rh.writeln(s"""\\end{module}""")
           
         case t: DeclaredTheory =>
-          controller.simplifier.flatten(t)
+          controller.simplifier.apply(t)
           rh.writeln(BeginModule(t.parent, t.name).toString())
           doElement(t.asDocument)
           rh.writeln(EndModule.toString())

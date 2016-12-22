@@ -142,7 +142,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
        case thx : DeclaredTheory => thx
        case _ => throw FrameitError("No DeclaredTheory: " + home)
      }
-     controller.simplifier.flatten(th)
+     controller.simplifier.apply(th)
      val con = (objects.Context(home) :: th.getIncludes.map(p => objects.Context(p))).flatten
      //val rules = RuleSet.collectRules(controller,con)
      //println(rules.getAll.toList)

@@ -68,7 +68,7 @@ object NatSucc extends RealizedOperator(succ, n =>: n, Arithmetic.Succ, N =>: N)
 
 object NatSuccInverse extends InverseOperator(Math.succ) {
   def unapply(l: OMLIT): Option[List[OMLIT]] = l match {
-    case NatLiterals(u : BigInt) if u>0 => Some(List(NatLiterals(u-1)))
+    case NatLiterals(u : BigInt) if u>0 => Some(List(NatLiterals.of(u-1)))
     case _ => None
   }
 }
