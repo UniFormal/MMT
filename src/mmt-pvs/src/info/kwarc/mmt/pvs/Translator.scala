@@ -65,6 +65,7 @@ abstract class ImportState(t:PVSImportTask) {
 
   def addinclude(p : MPath) : Unit =
     if (inFormals && !th.includes.contains(p)) {
+      /*
       val or = t.controller.getO(p).asInstanceOf[Option[DeclaredTheory]]
       if (or.isDefined) {
         or.get.getDerivedDeclarations(BoundInclude.feature).foreach(d =>
@@ -72,8 +73,9 @@ abstract class ImportState(t:PVSImportTask) {
             case Some(OMMOD(np)) => np
           }))
       }
-      th.parameters = th.parameters ++ DerivedVarDecl(LocalName(p),BoundIncludeRule.feature,
-        List(OMMOD(p)))
+      */
+      th.parameters = th.parameters ++ DerivedVarDecl(LocalName(p),BoundInclude.feature,BoundInclude.mpath,List(OMMOD(p)))/* DerivedVarDecl(LocalName(p),BoundIncludeRule.feature,
+        Some(OMMOD(p))) */
       t.deps::=p
       th.includes ::= (p,true)
     } else if (!th.includes.contains(p)) {

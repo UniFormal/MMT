@@ -91,7 +91,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       //the extended treatment is probably needed for all ContainerElements anyway
       case t: DeclaredTheory =>
         checkElementBegin(t,context)
-        val contextI = makeInnerContext(context, t)
+        val contextI = checkContext(Context.empty,makeInnerContext(context, t))
         // content structure
         val tDecls = t.getPrimitiveDeclarations
         // mark all children as unchecked
@@ -608,9 +608,15 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     *         if context is valid, then this succeeds iff context ++ con is valid
     */
   private def checkContext(context: Context, con: Context)(implicit env: ExtendedCheckingEnvironment): Context = {
-    con.mapVarDecls { case (c, vd) =>
+    con.toList.foldLeft(Context.empty)((c, vd) => {
       val currentContext = context ++ c
-      vd match {
+      c ++ (vd match {
+        case dv @ DerivedVarDecl(name,feat,_,args) =>
+          val sfOpt = extman.get(classOf[StructuralFeature], feat)
+          if (sfOpt.isDefined) {
+            sfOpt.get.checkInContext(currentContext,dv)
+            vd :: sfOpt.get.elaborateInContext(currentContext,dv)
+          } else List(vd)
         case StructureVarDecl(name, tp, dfOpt) =>
           // a variable that imports another theory
           // type must be a theory
@@ -625,16 +631,16 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               df
           }
           }
-          StructureVarDecl(name, tp, dfR)
+          List(StructureVarDecl(name, tp, dfR))
         case VarDecl(name, tp, df, not) =>
           // a normal variable
           val tpR = tp.map(x => checkTerm(currentContext, x))
           val dfR = df.map(x => checkTerm(currentContext, x))
           val vdR = VarDecl(name, tpR, dfR, not)
           vdR.copyFrom(vd)
-          vdR
-      }
-    }
+          List(vdR)
+      })
+    })
   }
 
   /** Checks structural well-formedness of a substitution relative to a home theory.

@@ -27,6 +27,7 @@ import PVSTheory._
 class LambdaPiInclude extends BoundTheoryParameters(BoundInclude.feature,Pi.path,Lambda.path,Apply.path)
 
 object BoundInclude {
+  val mpath = SemanticObject.javaToMMT("info.kwarc.mmt.pvs.LambdaPiInclude")
   val feature = "BoundInclude"
   def apply(top: MPath, from: MPath) = {
     val tpC = TermContainer(OMMOD(from))

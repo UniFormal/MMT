@@ -105,12 +105,13 @@ object StructureVarDecl {
 
 object DerivedVarDecl {
    val path = Path.parseS("http://cds.omdoc.org/mmt?mmt?StructuralFeature",NamespaceMap.empty)
-   private def ftTerm(ft : String) = OMA(OMS(path),List(OML(LocalName(ft),None,None)))
-   def apply(name : LocalName, feat : String, comps : List[Term]) =
-      VarDecl(name,Some(OMA(ftTerm(feat),comps)),None,None)
-   def unapply(vd : VarDecl) : Option[(LocalName,String,List[Term])] = vd.tp match {
-      case Some(OMA(OMA(OMS(`path`),List(OML(ft,None,None))),comps)) => Some((vd.name,ft.toString,comps))
-      case Some(OMA(OMS(`path`),List(OML(ft,None,None)))) => Some((vd.name,ft.toString,Nil))
+   def maketerm(feat : String,tp : Term) =
+      OMA(OMS(path), List(OML(LocalName(feat),None,None),tp))
+   def apply(name : LocalName, feat : String, mp : MPath, args : List[Term]) =
+      VarDecl(name,Some(maketerm(feat,OMA(OMMOD(mp),args))),None,None)
+   def unapply(vd : VarDecl) : Option[(LocalName,String,MPath,List[Term])] = vd.tp match {
+      case Some(OMA(OMS(`path`),List(OML(feat,None,None),OMA(OMMOD(mp),args))))
+         if mp.toDPath.uri.scheme.contains("scala") => Some((vd.name,feat.toString,mp,args))
       case _ => None
    }
 }

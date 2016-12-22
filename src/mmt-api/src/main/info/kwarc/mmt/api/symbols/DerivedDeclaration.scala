@@ -1,12 +1,12 @@
 package info.kwarc.mmt.api.symbols
 
-import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.{LocalName, _}
 import modules._
 import frontend._
 import checking._
 import info.kwarc.mmt.api.libraries.ElaboratedElement
 import info.kwarc.mmt.api.ontology.IsDerivedDeclaration
-import objects._
+import objects.{OMV, _}
 import notations._
 
 import scala.xml.Elem
@@ -127,6 +127,7 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
 
    /** called after checking components and inner declarations for additional feature-specific checks */
    def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit
+   def checkInContext(prev : Context, dv : VarDecl)
 
    /**
     * defines the outer perspective of a derived declaration
@@ -135,6 +136,7 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
     * @param dd the derived declaration
     */
    def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration
+   def elaborateInContext(prev : Context, dv : VarDecl) : Context
 
    /** override as needed */
    def modules(dd: DerivedDeclaration): List[Module] = Nil
@@ -229,6 +231,9 @@ object ParametricTheoryLike {
  * called structures in original MMT
  */
 class GenerativePushout extends StructuralFeature("generative") with IncludeLike {
+
+  def checkInContext(prev : Context, dv: VarDecl): Unit = {}
+  def elaborateInContext(prev: Context, dv: VarDecl): Context = Context.empty
   
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
       val dom = getDomain(dd)
@@ -272,6 +277,57 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
 
 // Binds theory parameters using Lambda/Pi in an include-like structure
 class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, applys : GlobalName) extends StructuralFeature(id) with IncludeLike {
+  def checkInContext(prev : Context, dv: VarDecl): Unit = dv match {
+    case DerivedVarDecl(LocalName(ComplexStep(p) :: Nil),`id`,`mpath`,List(OMMOD(q))) if p == q => checkpath(p)
+    case _ =>
+  }
+
+
+  private def bindPi(t : Term)(implicit vars : Context) = if (vars.nonEmpty) OMBIND(OMS(pi),vars,t) else t
+  private def bindLambda(t : Term)(implicit vars : Context) = if (vars.nonEmpty) OMBIND(OMS(lambda),vars,t) else t
+
+  private def applyParams(body : DeclaredTheory,toTerm : LocalName => Term)(vars : Context) = new StatelessTraverser {
+    val varsNames = vars.map(_.name)
+    def traverse(t: Term)(implicit con: Context, state: State) : Term = t match {
+      case OMS(p) if p.module == body.path => //dd.module.path =>
+        vars.foldLeft[Term](toTerm(LocalName(body.path) / p.name))((tm,v) => OMA(OMS(applys),List(tm,OMV(v.name))))
+      case OMBINDC(bind, bvars, scps) =>
+        // rename all bound variables that are among the parameters to avoid capture
+        val (bvarsR, bvarsSub) = Context.makeFresh(bvars, varsNames ::: con.domain)
+        OMBINDC(traverse(bind), traverseContext(bvarsR), scps map {s => traverse(s ^? bvarsSub)(con++bvarsR, state)})
+      case _ => Traverser(this,t)
+    }
+  }
+  private def mkTranslator(body : DeclaredTheory, toTerm : LocalName => Term)(implicit vars : Context) = new Translator {
+    val applyPars = applyParams(body,toTerm)(vars)
+    def applyType(c: Context, t: Term) = bindPi(applyPars(t, c))
+    def applyDef(c: Context, t: Term) = bindLambda(applyPars(t, c))
+  }
+
+  def elaborateInContext(context: Context, dv: VarDecl): Context = dv match {
+    case DerivedVarDecl(LocalName(ComplexStep(dom) :: Nil), `id`,`mpath`, List(OMMOD(q))) if dom == q =>
+      val body = controller.simplifier.getBody(context, OMMOD(dom)) match {
+        case t : DeclaredTheory => t
+        case _ => throw GetError("Not a declared theory: " + dom)
+      }
+      controller.simplifier.apply(body)
+      implicit val vars = body.parameters
+      val translator = mkTranslator(body,n => OMV(n))
+      val prefix = ComplexStep(dom)
+      body.getDeclarationsElaborated.flatMap {
+        case d : DerivedDeclaration if d.feature == feature =>
+          if (!body.getDerivedDeclarations(feature).map(_.name).contains(d.name)) {
+            val nd = DerivedVarDecl(d.name,id,mpath,d.tpC.get.toList)//(dd.home,d.name,feature,d.tpC,d.notC)
+            nd :: elaborateInContext(context,nd)
+          }
+          else Nil
+        case d : FinalConstant =>
+          val ret = VarDecl(prefix / d.name,d.tp.map(translator.applyType(context,_)),
+            d.df.map(translator.applyDef(context,_)),d.not)//d.translate(parent.toTerm, prefix, translator)
+          List(ret)
+      }
+    case _ => Context.empty
+  }
 
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) : Elaboration = {
     val dom = getDomain(dd)
@@ -281,8 +337,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
       case _ => throw GetError("Not a declared theory: " + dom)
     }
     controller.simplifier.apply(body)
-    val vars = body.parameters
-    val varsNames = vars.map(_.name)
+    implicit val vars = body.parameters
     /*
     if (vars.isEmpty) return new Elaboration {
       val includes = PlainInclude(parent.path,body.path) :: body.getIncludes.map(PlainInclude(parent.path,_))
@@ -290,30 +345,14 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
       def getO(name: LocalName): Option[Declaration] = includes.find(_.name == name)
     }
     */
+    val translator = mkTranslator(body,n => OMS(dd.parent ? n))
 
-    def bindPi(t : Term) = if (vars.nonEmpty) OMBIND(OMS(pi),vars,t) else t
-    def bindLambda(t : Term) = if (vars.nonEmpty) OMBIND(OMS(lambda),vars,t) else t
-    val applyPars = new StatelessTraverser {
-        def traverse(t: Term)(implicit con: Context, state: State) : Term = t match {
-          case OMS(p) if p.module == body.path => //dd.module.path =>
-            vars.foldLeft[Term](OMS(dd.parent ? (LocalName(body.path) / p.name)))((tm,v) => OMA(OMS(applys),List(tm,OMV(v.name))))
-          case OMBINDC(bind, bvars, scps) =>
-            // rename all bound variables that are among the parameters to avoid capture
-            val (bvarsR, bvarsSub) = Context.makeFresh(bvars, varsNames ::: con.domain)
-            OMBINDC(traverse(bind), traverseContext(bvarsR), scps map {s => traverse(s ^? bvarsSub)(con++bvarsR, state)})
-          case _ => Traverser(this,t)
-        }
-    }
-    val translator = new Translator {
-      def applyType(c: Context, t: Term) = bindPi(applyPars(t, c))
-      def applyDef(c: Context, t: Term) = bindLambda(applyPars(t, c))
-    }
     val prefix = dd.name
     val elab = new Elaboration {
       val decls = body.getDeclarationsElaborated.flatMap {
         case d : DerivedDeclaration if d.feature == feature =>
           if (!body.getDerivedDeclarations(feature).map(_.name).contains(d.name)) {
-            val nd = new DerivedDeclaration(dd.home,d.name,feature,d.getComponents,d.notC)
+            val nd = new DerivedDeclaration(dd.home,d.name,feature,d.tpC,d.notC)
             nd :: elaborate(parent,nd).getDeclarations
           }
           else Nil
@@ -344,13 +383,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     // println(vars)
     elab
   }
+  private def checkpath(mp : MPath) = controller.get(mp)
   // def modules(d: DerivedDeclaration): List[Module] = Nil
-  def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
-    try {
-      controller.get(d.path)
-    } catch {
-      case e : Throwable => println(e.getClass)
-        sys.exit()
-    }
-  }
+  def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 }

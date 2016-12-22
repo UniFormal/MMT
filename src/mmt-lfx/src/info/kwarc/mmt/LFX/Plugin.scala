@@ -1,14 +1,13 @@
 package info.kwarc.mmt.LFX
 
 import info.kwarc.mmt.api._
-import objects.{Context, OMS, Term}
+import objects.{Context, OMS, Term, VarDecl}
 import modules.{DeclaredModule, DeclaredTheory, Module}
 import symbols._
 import checking._
 import parser.{KeywordBasedParser, ParserExtension, ParserState, SourceRef}
 import utils.URI
 import notations._
-
 import Subtyping._
 import info.kwarc.mmt.lf.{Arrow, Typed}
 
@@ -51,6 +50,9 @@ object SubtypeDecl {
 }
 
 class SubtypeFeature extends StructuralFeature(SubtypeDecl.feature) {
+
+  def checkInContext(prev : Context, dv: VarDecl): Unit = {}
+  def elaborateInContext(prev: Context, dv: VarDecl): Context = Context.empty
   
   def getHeaderNotation = List(LabelArg(1,false,false), Delim("<:"), SimpArg(2))
 

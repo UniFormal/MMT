@@ -1041,7 +1041,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          // we apply the first applicable rule
          history += "applying term-based equality rule " + rule.toString
          val contOpt = rule(this)(tm1,tm2,tpOpt)
-         if (contOpt.isDefined && contOpt.get.apply) {
+         if (contOpt.isDefined) {
             return contOpt.get.apply
          }
       }
