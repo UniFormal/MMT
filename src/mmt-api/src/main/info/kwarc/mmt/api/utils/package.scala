@@ -70,6 +70,12 @@ package object utils {
    
    /** disjointness of two lists */
    def disjoint[A](l: List[A], m: List[A]) = l.forall(a => ! m.contains(a))
+   
+   /** variant of fold such that associate(List(a), unit)(comp) = a instead of comp(unit, a) */
+   def associate[A](l: List[A], unit: A)(comp: (A,A) => A): A = l match {
+     case Nil => unit
+     case hd::tl => tl.fold(hd)(comp)
+   }
 
    /** slurps an entire stream into a string */
    def readFullStream(is: java.io.InputStream) = scala.io.Source.fromInputStream(is, "UTF-8").mkString
