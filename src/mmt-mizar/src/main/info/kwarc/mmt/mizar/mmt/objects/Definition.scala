@@ -136,7 +136,6 @@ object MMTAttrTypingElab {
   }
 }
 
-
 object MMTAttrIsElab {
   	def apply(argNr : String, argTypes : String, mType : String, caseNr : String, cases : String, results : String, defResult : Option[String]) : Context = {
 	  val v = TranslationController.getFreeVar()

@@ -31,8 +31,8 @@ object TypeTranslator {
 			}
 			case t : MizFunc => MMTFunc(MMTResolve(t.aid, t.kind, t.absnr), t.args.map(translateTerm).toList) 
 			case t : MizSchemeFunc => t.args.length match {
-			  case 0 => Index(OMV("x"), OMI(t.nr)) //TODO OMI I think you need -1 here and in all similar places
-			  case _ => Mizar.apply(Index(OMV("x"), OMI(t.nr)), t.args.map(TypeTranslator.translateTerm) : _*)
+			  case 0 => Index(OMV("x"), OMI(t.nr - 1))
+			  case _ => Mizar.apply(Index(OMV("x"), OMI(t.nr - 1)), t.args.map(TypeTranslator.translateTerm) : _*)
 			}
 
 			case t : MizLocusVar => TranslationController.resolveLocusVar(t.nr)

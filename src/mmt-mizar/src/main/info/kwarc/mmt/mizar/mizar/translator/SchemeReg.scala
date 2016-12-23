@@ -25,7 +25,7 @@ object SchemeRegTranslator {
 	
 	def translateRCluster(rc : MizRCluster) = {
 		val name = "RC" + rc.nr  
-		rc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1)))) //TODO OMI I think you need to remove the +1 here and in similar places
+		rc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
 
 		val argTypes = rc.args.map(TypeTranslator.translateTyp)
 		
@@ -45,7 +45,7 @@ object SchemeRegTranslator {
 	
 	def translateFCluster(fc : MizFCluster) = {
 		val name = "FC" + fc.nr  
-		fc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
+		fc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
 
 		val argTypes = fc.args.map(TypeTranslator.translateTyp)
 		val argNr = argTypes.length
@@ -67,7 +67,7 @@ object SchemeRegTranslator {
 	def translateCCluster(cc : MizCCluster) = {
 		val name = "CC" + cc.nr  
 	  
-		cc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
+		cc.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
 
 		val argTypes = cc.args.map(TypeTranslator.translateTyp)
 		val argNr = argTypes.length
@@ -105,7 +105,7 @@ object SchemeRegTranslator {
 	def translateScheme(s : MizSchemeDef) = {
 	  val name = "S" + s.schemeNr
 	  
-	  s.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
+	  s.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
 
 	  
 	  val args = s.args.map(x => translateSchemeArg(x))

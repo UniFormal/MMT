@@ -28,8 +28,8 @@ object PropositionTranslator {
 			}
 			case f : MizPred => MMTPred(f.aid, f.absnr, f.kind, f.terms.map(TypeTranslator.translateTerm))
 			case f : MizSchemePred => f.terms.length match {
-			  case 0 => Index(OMV("x"), OMI(f.nr)) //TODO OMI I think you need -1 here
-			  case _ => Mizar.apply(Index(OMV("x"), OMI(f.nr)), f.terms.map(TypeTranslator.translateTerm) : _*)
+			  case 0 => Index(OMV("x"), OMI(f.nr-1))
+			  case _ => Mizar.apply(Index(OMV("x"), OMI(f.nr-1)), f.terms.map(TypeTranslator.translateTerm) : _*)
 			}
 			case f : MizPrivPred =>  {
 				val form = translateFormula(f.formula)

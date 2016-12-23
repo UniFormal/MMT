@@ -51,9 +51,8 @@ object Mizar {
 	def is(t1 : Term, t2 : Term) = apply(constant("is"), t1, t2)
 	def be(t1 : Term, t2 : Term) = apply(constant("be"), t1, t2)
 	
-	def and(tms : Term*) : Term = apply(constant("and"), tms : _*)
-
-	def or(tms : Term*) : Term = apply(constant("or"), tms : _*)
+	def and(tms : Term*) : Term = apply(constant("and"), OMI(tms.length) +: tms :_*)
+	def or(tms : Term*) : Term = apply(constant("or"), OMI(tms.length) +: tms :_*)
 	
 	def implies(tm1 : Term, tm2 : Term) : Term = apply(constant("implies"), tm1, tm2)
 	
@@ -64,8 +63,7 @@ object Mizar {
 	def eq(t1 : Term, t2 : Term) = apply(constant("R1"), t1, t2)
 	
 	def exists(v : String, tp : Term, prop : Term) = 
-	  not(OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, None)), not(prop)))
-	
+	  ApplySpine(Mizar.constant("ex"), tp, Lambda(LocalName(v), Mizar.any, prop))	
 	def forall(v : String, tp : Term, prop : Term) = 
 	  ApplySpine(Mizar.constant("for"), tp, Lambda(LocalName(v), Mizar.any, prop))
 	  

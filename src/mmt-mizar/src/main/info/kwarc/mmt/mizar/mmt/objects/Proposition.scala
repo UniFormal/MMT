@@ -12,11 +12,11 @@ import info.kwarc.mmt.lf._
 
 
 object MMTNot {
-	def apply(form : Term) = Mizar.apply(Mizar.constant("not"), form)
+	def apply(form : Term) = Mizar.not(form)
 }
 
 object MMTAnd {
-	def apply(forms : List[Term]) = Mizar.apply(Mizar.constant("and"), forms :_ *) 
+	def apply(forms : List[Term]) = Mizar.and(forms :_*) 
 }
 
 object MMTFor {
@@ -25,7 +25,7 @@ object MMTFor {
 
 //only for queries, so exists is allowed
 object MMTExists {
-	def apply(vname : String, tp : Term, form : Term) = OMBIND(Mizar.apply(Mizar.constant("ex"), tp), Context(VarDecl(LocalName(vname), Some(Mizar.any), None, None)), form)
+	def apply(vname : String, tp : Term, form : Term) = Mizar.exists(vname, tp, form)
 }
 
 object MMTPred {
@@ -40,7 +40,7 @@ object MMTPrivPred {
 }
 */
 object MMTIs {
-	def apply(tm : Term, tp : Term) = Mizar.apply(Mizar.constant("is"), tm, tp)
+	def apply(tm : Term, tp : Term) = Mizar.is(tm, tp)
 }
 
 object MMTVerum {
