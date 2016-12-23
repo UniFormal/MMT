@@ -86,6 +86,8 @@ class RuleBasedChecker extends ObjectChecker {
             tc.setAnalyzedDirty // revisit failed declarations
          if (changed) {
             log("changed")
+            //TODO building removes the original from memory; thus, we always detect a change here even if the rebuilding did not change anything
+            //solution: before building, instead of deleting a document, move it to quarantine; run a diff afterwards
             controller.memory.content.notifyUpdated(comp) //TODO: this could be cleaner if taken care of by the onCheck method
          } else {
             log("not changed")

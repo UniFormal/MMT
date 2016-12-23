@@ -5,6 +5,12 @@ import info.kwarc.mmt.api.objects._
 
 
 object QueryChecker {
+  // TODO: Actually write this theory and possible swap around the path
+  private val QMTBaseTypes = Path.parseM("http://cds.omdoc.org/urtheories?QueryTypes", NamespaceMap.empty)
+  private val pathPath = QMTBaseTypes ? "Path"
+  private val objectPath = QMTBaseTypes ? "Object"
+  private val xmlPath = QMTBaseTypes ? "XML"
+  private val stringPath = QMTBaseTypes ? "String"
 
   /**
     * Checks that a proposition is well-formed or throws a [[ParseError]]

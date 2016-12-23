@@ -43,9 +43,9 @@ trait Invertible {
 
 /** used to pass the arguments to the unapply method of a [[SemanticOperator]] */
 sealed abstract class UnapplyArg
-case class KnownArg(value: Any) extends UnapplyArg
+case class KnownArg(value: Any, pos: Int) extends UnapplyArg
 /** an unknown argument that unappy must solve by calling solve */
-class UnknownArg(val tp: SemanticType) extends UnapplyArg {
+class UnknownArg(val tp: SemanticType, val pos: Int) extends UnapplyArg {
   private var value: Option[Any] = None
   def solve(a: Any) = {
     if (tp.valid(a)) {
@@ -79,7 +79,7 @@ object SemanticOperator {
   class InvertibleUnary(f: SemanticType, t: SemanticType, m: Any => Any, val imap: Any => Option[Any]) extends Unary(f,t,m) with Invertible {
     def invert(args: List[UnapplyArg], res: Any) = imap(res) match {
       case Some(a) => args.head match {
-        case KnownArg(v) => Some(a == v)
+        case KnownArg(v,_) => Some(a == v)
         case u: UnknownArg => Some(u.solve(a))
       }
       case None => Some(false)
@@ -97,9 +97,9 @@ object SemanticOperator {
     def invertLeft(right: Any, res: Any): Option[Any]
     def invertRight(right: Any, res: Any): Option[Any]
     def invert(args: List[UnapplyArg], res: Any) = args match {
-      case List(KnownArg(x),KnownArg(y)) => Some(m(x,y) == res)
-      case List(KnownArg(x),u: UnknownArg) => invertRight(x,res) map {y => u.solve(y)}
-      case List(u: UnknownArg,KnownArg(y)) => invertLeft(y, res) map {x => u.solve(x)}
+      case List(KnownArg(x,_),KnownArg(y,_)) => Some(m(x,y) == res)
+      case List(KnownArg(x,_),u: UnknownArg) => invertRight(x,res) map {y => u.solve(y)}
+      case List(u: UnknownArg,KnownArg(y,_)) => invertLeft(y, res) map {x => u.solve(x)}
       case List(u: UnknownArg,v: UnknownArg) => None
     }
   }

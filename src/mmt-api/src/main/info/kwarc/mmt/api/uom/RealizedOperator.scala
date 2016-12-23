@@ -67,7 +67,7 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
      case so: Invertible =>
        val sr = new SolutionRule(synOp) {
          def applicable(t: Term) = t match {
-           case OMA(OMS(`synOp`), args) =>
+           case OMA(OMS(`synOp`), args) if args.length == arity =>
              val nonlits = args.zipWithIndex.filterNot(_._1.isInstanceOf[OMLIT])
              nonlits match {
                case (_,i)::Nil => Some(i)
@@ -76,7 +76,29 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
            case _ => None
          }
          def apply(j: Equality): Option[(Equality,String)] = {
-           None //TODO
+           val res = j.tm2 match {
+             case retType(v) => v
+             case _ => return None
+           }
+           val OMA(_, args) = j.tm1
+           val ukArgs = args.zipWithIndex map {
+             case (l: OMLIT, p) => KnownArg(l.value, p)
+             case (_, p) => new UnknownArg(semTp.args(p), p)
+           }
+           so.invert(ukArgs, res) flatMap {b =>
+             if (b) {
+               val eqs = ukArgs.flatMap {
+                 case u: UnknownArg =>
+                   val p = u.pos
+                   val eq = Equality(j.stack, args(p), argTypes(p) of u.getSolution.get, Some(synTp.args(p)))
+                   List(eq)
+                 case _ => Nil
+               }
+               Some((eqs.head, "inverting operator " + synOp))
+             } else
+               // actually, we can signal failure, but the rule does not have access to the solver
+               None
+           }
          }
        }
        Some(sr)
