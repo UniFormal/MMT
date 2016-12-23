@@ -61,8 +61,8 @@ object Math {
 import Math._
 import SemanticOperator._
 
-object IntegerLiterals extends RealizedType(z,Z)
-object NatLiterals extends RealizedType(n,N)
+object IntegerLiterals extends RepresentedRealizedType(z,Z)
+object NatLiterals extends RepresentedRealizedType(n,N)
 
 object NatSucc extends RealizedOperator(succ, n =>: n, Arithmetic.Succ, N =>: N)
 

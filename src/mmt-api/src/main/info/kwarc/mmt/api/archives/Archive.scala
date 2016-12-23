@@ -80,10 +80,11 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
       case doc: DPath =>
          narrationBackend.load(doc)
       case mod: MPath =>
-        val p = MMTPathToContentPath(mod)
+        val topmod = mod.doc ? mod.name.head
+        val p = MMTPathToContentPath(topmod)
         if (!p.exists) throw NotApplicable("file not found")
         // dpath is a dummy URI to be used when creating the Document that contains the module mod
-        val dpath = DPath(narrationBase / Archive.MMTPathToContentPath(mod).segments)
+        val dpath = DPath(narrationBase / Archive.MMTPathToContentPath(topmod).segments)
         loadXML(mod.doc.uri, dpath, File.Reader(p))
       case m ?? _ => load(m)
     }

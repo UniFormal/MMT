@@ -318,7 +318,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    def getType(p: GlobalName): Option[Term] = {
       val c = controller.globalLookup.getConstant(p)
       if (c.tpC.analyzed.isDefined) addDependency(p $ TypeComponent)
-      c.tpC.analyzed
+      c.tpC.getAnalyzedIfFullyChecked
    }
    /** retrieves the definiens of a constant and registers the dependency
     *
@@ -327,7 +327,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    def getDef(p: GlobalName) : Option[Term] = {
       val c = controller.globalLookup.getConstant(p)
       if (c.dfC.analyzed.isDefined) addDependency(p $ DefComponent)
-      c.dfC.analyzed
+      c.dfC.getAnalyzedIfFullyChecked
    }
    def getModule(p: MPath) : Option[Module] = {
       controller.globalLookup.getO(p) match {

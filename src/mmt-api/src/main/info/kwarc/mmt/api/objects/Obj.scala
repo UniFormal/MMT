@@ -384,6 +384,10 @@ case class OML(name: LocalName, tp: Option[Term], df: Option[Term]) extends Term
     def toNode = vd.toNode.copy(label = "OML")
 }
 
+case object OML {
+  def apply(name: LocalName): OML = OML(name, None, None)
+}
+
 /**
  * ComplexTerm provides apply/unapply methods to unify OMA and OMBINDC as well as named arguments and complex binders
  * 

@@ -90,8 +90,15 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
                val eqs = ukArgs.flatMap {
                  case u: UnknownArg =>
                    val p = u.pos
-                   val eq = Equality(j.stack, args(p), argTypes(p) of u.getSolution.get, Some(synTp.args(p)))
-                   List(eq)
+                   u.getSolution match {
+                     case Some(uS) =>
+                       val eq = Equality(j.stack, args(p), argTypes(p) of uS, Some(synTp.args(p)))
+                       List(eq)
+                     case None =>
+                       // the inversion rule thinks it found a solution but it was discarded because it was invalid (because the expected type sharper)
+                       // we can signal failure here as well
+                       None
+                   }
                  case _ => Nil
                }
                Some((eqs.head, "inverting operator " + synOp))
@@ -104,6 +111,8 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
        Some(sr)
      case _ => None
    }
+   
+   override def getRules = super.getRules ::: getSolutionRule.toList
 }
 
 object RealizedOperator {

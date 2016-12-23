@@ -55,7 +55,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         case None => d match {
           case d: Document => d.contentAncestor match {
             case None => Context.empty
-            case Some(m) => getInnerContext(m)
+            case Some(m) => getContextWithInner(m)
           }
           case _ => Context.empty
         }
@@ -64,18 +64,18 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case m: Module => m.superModule match {
         case None => Context.empty
         case Some(smP) => controller.get(smP) match {
-          case sm: DeclaredModule => getInnerContext(sm)
+          case sm: DeclaredModule => getContextWithInner(sm)
           case sm: DefinedModule => getContext(m) // should never occur
         }
       }
       case d: Declaration => parent match {
-        case m: DeclaredModule => getInnerContext(m)
+        case m: DeclaredModule => getContextWithInner(m)
         case m: DefinedModule => getContext(m) // should never occur
       }
     }
   }
-  /** @return the context in which the body of ContainerElement is checked */
-  private def getInnerContext(e: ContainerElement[_]) = makeInnerContext(getContext(e), e)
+  /** auxiliary method of getContext, returns the context in which the body of ContainerElement is checked */
+  private def getContextWithInner(e: ContainerElement[_]) = getContext(e) ++ getExtraInnerContext(e)
   
   /**
     * @param context all variables and theories that may be used in e (including the theory in which is declared)
@@ -91,7 +91,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       //the extended treatment is probably needed for all ContainerElements anyway
       case t: DeclaredTheory =>
         checkElementBegin(t,context)
-        val contextI = checkContext(Context.empty,makeInnerContext(context, t))
+        val contextI = context ++ checkContext(context, getExtraInnerContext(t))
         // content structure
         val tDecls = t.getPrimitiveDeclarations
         // mark all children as unchecked
@@ -108,7 +108,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         checkElementEnd(t,context)
       case c: ContainerElement[_] =>
         checkElementBegin(c, context)
-        val contextI = makeInnerContext(context, c)
+        val contextI = context ++ getExtraInnerContext(c)
         logGroup {
           c.getPrimitiveDeclarations foreach {
             i => check(contextI, i)
@@ -309,11 +309,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
 
   // ***** ContainerElements *****
   
-  /** computes the context in which the body of ContainerElement is checked */
-  private def makeInnerContext(context: Context, e: ContainerElement[_]) = e match {
-    case d: Document => context
-    case m: DeclaredModule => context ++ m.getInnerContext
-    case s: DeclaredStructure => context
+  /** additional context for checking the body of ContainerElement */
+  private def getExtraInnerContext(e: ContainerElement[_]) = e match {
+    case d: Document => Context.empty
+    case m: DeclaredModule => m.getInnerContext
+    case s: DeclaredStructure => Context.empty
   }
   
   /** auxiliary method of check */
@@ -349,7 +349,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     e match {
       case d: Document =>
       case t: DeclaredTheory =>
-        val contextI = makeInnerContext(context, t)
+        val contextI = context ++ getExtraInnerContext(t)
         // check all the narrative structure (at the end to allow forward references)
         //TODO currently this is called on a NestedModule before the rest of the parent is checked
         def doDoc(ne: NarrativeElement) {
@@ -379,12 +379,16 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   private def checkTheory(context: Context, t: Term)(implicit env: ExtendedCheckingEnvironment): Term = {
     t match {
       case OMPMOD(p, args) =>
-        val thy = try {
+        val dec = try {
           controller.globalLookup.get(p)
         } catch {
           case e: Error =>
             env.errorCont(InvalidObject(t, "unknown identifier: " + p.toPath).setCausedBy(e))
             return t
+        }
+        val thy = dec match {
+          case t: Module => t
+          case nm: NestedModule => nm.module
         }
         thy match {
           case thy: Theory =>
@@ -396,7 +400,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             }
             checkSubstitution(context, subs, pars, Context(), false)
           case _ =>
-            env.errorCont(InvalidObject(t, "not a theory identifier" + p.toPath))
+            env.errorCont(InvalidObject(t, "not a theory identifier: " + p.toPath))
         }
         t
       case ComplexTheory(body) =>
@@ -608,9 +612,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     *         if context is valid, then this succeeds iff context ++ con is valid
     */
   private def checkContext(context: Context, con: Context)(implicit env: ExtendedCheckingEnvironment): Context = {
-    con.toList.foldLeft(Context.empty)((c, vd) => {
-      val currentContext = context ++ c
-      c ++ (vd match {
+    con.mapVarDecls {case (sofar, vd) =>
+      val currentContext = context ++ sofar
+      vd match {
         case dv @ DerivedVarDecl(name,feat,_,args) =>
           val sfOpt = extman.get(classOf[StructuralFeature], feat)
           if (sfOpt.isDefined) {
@@ -622,15 +626,14 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           // type must be a theory
           checkTheory(currentContext, tp)
           // definiens must be a partial substitution
-          val dfR = dfOpt map { df => (tp, df) match {
+          val dfR = dfOpt map {df => (tp, df) match {
             case (ComplexTheory(tpCon), ComplexMorphism(dfSubs)) =>
-              val subsR = checkSubstitution(currentContext, dfSubs, tpCon, Context(), true)
+              val subsR = checkSubstitution(currentContext, dfSubs, tpCon, Context.empty, true)
               ComplexMorphism(subsR)
             case _ =>
               env.errorCont(InvalidObject(vd, "definiens of theory-level variable must be a partial substitution, found " + df))
               df
-          }
-          }
+          }}
           List(StructureVarDecl(name, tp, dfR))
         case VarDecl(name, tp, df, not) =>
           // a normal variable
@@ -639,8 +642,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           val vdR = VarDecl(name, tpR, dfR, not)
           vdR.copyFrom(vd)
           List(vdR)
-      })
-    })
+      }
+    }.flatten
   }
 
   /** Checks structural well-formedness of a substitution relative to a home theory.

@@ -570,7 +570,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
       get(from.toMPath) match {
         case d: DeclaredTheory =>
           via match {
-            case OMCOMP(Nil) => d.getDeclarations.iterator
+            case OMCOMP(Nil) => d.getDeclarations
             case _ => Nil //TODO d.translate(mod, ???, ApplyMorphism(via))
           }
         case _ => Nil //TODO materialize?

@@ -59,11 +59,11 @@ package object utils {
    /** turns a list into a string  by inserting a separator */
    def listToString[A](l: List[A], sep: String) = l.map(_.toString).mkString(sep)
    
-   /** repeats a strings a number of times, optionally with a separtor */
+   /** repeats a strings a number of times, optionally with a separator */
    def repeatString(s: String, n: Int, sep: String = "") = Range(0,n).map(_ => s).mkString(sep)
 
    /** inserts a separator element in between all elements of a list */
-   def insertSep[A](l: List[A], sep: A) = if (l.isEmpty) Nil else l.flatMap(a => List(a,sep)).init
+   def insertSep[A](l: List[A], sep: A) = if (l.isEmpty) Nil else l.flatMap(a => List(sep,a)).tail
    
    /** applies a list of pairs seen as a map */
    def listmap[A,B](l: List[(A,B)], a: A): Option[B] = l.find(_._1 == a).map(_._2)

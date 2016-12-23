@@ -17,6 +17,8 @@ trait Rule extends SemanticObject {
    override def toString = {
       "rule " + mpath.name
    }
+   /** normally the singleton list of this rule; but rules may bundle additional rules as well */ 
+   def getRules = List(this)
 }
 
 /** parametric rules can be instantiated to obtain rules */ 
@@ -94,7 +96,7 @@ object RuleSet {
       val rci = new RuleConstantInterpreter(controller)
       decls.foreach {
          case rc: RuleConstant =>
-            rc.df foreach {r => rs.declares(r)}
+            rc.df foreach {r => rs.declares(r.getRules :_*)}
          case _ =>
       }
       rs

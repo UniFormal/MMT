@@ -108,17 +108,21 @@ object LambdaTerm extends IntroductionRule(Lambda.path, OfType.path) {
 
 /** Elimination: the type inference rule f : Pi x:A.B  ,  t : A  --->  f t : B [x/t]
  * This rule works for B:U for any universe U */
+//TODO this does not work for LFS application if a sequence of arguments is not wrapped in a flatseq, e.g., like when parsing a sequence notation
+//e.g., sequence notation 2and... parses 'x and y' as (and ? x) y 
 object ApplyTerm extends EliminationRule(Apply.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
      // calling Beta first could make this rule more reusable because it would avoid inferring the type of a possibly large lambda 
      tm match {
       case Apply(f,t) =>
+        if (solver.presentObj(f) == "x")
+          true
         history += "inferring type of function " + solver.presentObj(f)
         val fTOpt = solver.inferType(f)(stack, history.branch)
         fTOpt match {
            case None =>
               history += "failed"
-              solver.inferType(t)(stack, history.branch) // inference of the argument may solve some varialbes
+              solver.inferType(t)(stack, history.branch) // inference of the argument may solve some variables
               None
            case Some(fT) =>
               history += "function type is: " + solver.presentObj(fT)
