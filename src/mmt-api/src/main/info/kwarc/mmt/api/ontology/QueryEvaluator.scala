@@ -124,7 +124,7 @@ class QueryEvaluator(controller: Controller) {
       if(matching.length != 1){
         throw ImplementationError("ill-typed query: Missing extenstion for QueryHint. ")
       }
-      matching.head.evaluate(q, this)
+      matching.head.evaluate(qq, this)
 
     /** evaluate a query without a hint */
     case I(qq, None) =>
