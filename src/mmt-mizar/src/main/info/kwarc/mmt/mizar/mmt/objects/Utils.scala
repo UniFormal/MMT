@@ -30,9 +30,9 @@ object Mizar {
     
 	def constant(name : String) : Term = {
 		name match {
-			case "M1" => OMID(HiddenTh ? name)
-			case "R1" => OMID(HiddenTh ? name)
-			case "R2" => OMID(HiddenTh ? name)
+  		case "set" => OMID(HiddenTh ? name)
+	  	case "eq" => OMID(MizarTh ? name) //officially in Hidden but in our case its in the Mizar base theory
+			case "in" => OMID(HiddenTh ? name)
 			case _ => OMID(MizarTh ? name)
 		}
 	}
@@ -46,13 +46,19 @@ object Mizar {
 	def prop : Term = constant("prop")
 	def any : Term = constant("any")
 	def tp : Term = constant("tp")
-	def set = constant("M1")
+	def set = constant("set")
 	
 	def is(t1 : Term, t2 : Term) = apply(constant("is"), t1, t2)
 	def be(t1 : Term, t2 : Term) = apply(constant("be"), t1, t2)
 	
-	def and(tms : Term*) : Term = apply(constant("and"), OMI(tms.length) +: tms :_*)
-	def or(tms : Term*) : Term = apply(constant("or"), OMI(tms.length) +: tms :_*)
+	def and(tms : List[Term]) : Term = apply(constant("and"), OMI(tms.length) :: tms :_*)
+	  //apply(constant("and"), OMI(tms.length), apply(Sequence, tms :_*))
+	def or(tms : List[Term]) : Term = apply(constant("or"), OMI(tms.length) :: tms :_*)
+	
+	// Special function for 'and' and 'or' applied to an sequence (e.g. Ellipsis or sequence variable)
+	def seqConn(connective : String, length : Term, seq : Term) : Term = 
+	  apply(constant(connective), length, seq)
+
 	
 	def implies(tm1 : Term, tm2 : Term) : Term = apply(constant("implies"), tm1, tm2)
 	
@@ -60,7 +66,7 @@ object Mizar {
 	
 	def proof(t : Term) = apply(constant("proof"), t)
 	
-	def eq(t1 : Term, t2 : Term) = apply(constant("R1"), t1, t2)
+	def eq(t1 : Term, t2 : Term) = apply(constant("eq"), t1, t2)
 	
 	def exists(v : String, tp : Term, prop : Term) = 
 	  ApplySpine(Mizar.constant("ex"), tp, Lambda(LocalName(v), Mizar.any, prop))	
@@ -111,33 +117,33 @@ object MMTUtils {
 	}
 	
 	def args(argNr : String, body : Term) : Term = {
-	  Arrow(SeqMap(Mizar.any, LocalName("i") ,OMV(argNr)), body)
+	  Arrow(Ellipsis(OMV(argNr), LocalName("i"), Mizar.any), body)
 	}
 	
 	def args(name : String, argNr : String, body : Term) : Term = {
-	  Pi(LocalName("x"), SeqMap(Mizar.any, LocalName("i"), OMV(argNr)), body)
+	  Pi(LocalName("x"), Ellipsis(OMV(argNr), LocalName("i"), Mizar.any), body)
 	}
 	
 	def args(name : String, argNr : Int, body : Term) : Term = {
-			Pi(LocalName("x"), SeqMap(Mizar.any, LocalName("i"), OMI(argNr)), body)
+			Pi(LocalName("x"), Ellipsis(OMI(argNr), LocalName("i"), Mizar.any), body)
 	}
 	
 	def argTypes(args : String, types : String, argNr : String, body : Term) : Term = {
 	  	     Arrow( 
-	  	         SeqMap(Mizar.be(Index(OMV(args), OMV("i")),Index(OMV(types),OMV("i"))), LocalName("i"), OMV(argNr)),
+	  	         Ellipsis(OMV(argNr), LocalName("i"), Mizar.be(Index(OMV(args), OMV("i")),Index(OMV(types),OMV("i")))),
 	         	 body)
 	}
 	
 	def argTypes(args : String, types : List[Term], argNr : Int, body : Term) : Term = {
 	  	     Arrow( 
-	  	         SeqMap(Mizar.be(Index(OMV(args), OMV("i")),Index(Sequence(types : _*),OMV("i"))), LocalName("i"), OMI(argNr)),
+	  	         Ellipsis(OMI(argNr), LocalName("i"), Mizar.be(Index(OMV(args), OMV("i")), Index(Sequence(types : _*), OMV("i")))),
 	         	 body)
 	}
 	
 	
 	def argTypes(name : String, args : String, types : String, argNr : String, body : Term) : Term = {
 	  	     Pi(LocalName(name), 
-	  	        SeqMap(Mizar.be(Index(OMV(args), OMV("i")),Index(OMV(types),OMV("i"))), LocalName("i"), OMV(argNr)),
+	  	        Ellipsis(OMV(argNr), LocalName("i"), Mizar.be(Index(OMV(args), OMV("i")),Index(OMV(types),OMV("i")))),
 	         	 body)
 	}
 	
@@ -145,7 +151,7 @@ object MMTUtils {
 	def argTypes(name : String, args : String, types : List[Term], argNr : Int, body : Term) : Term = types.length match {
 	  case 0 => body
 	  case _ => Pi(LocalName(name), 
-	  	        SeqMap(Mizar.be(Index(OMV("x"), OMV("i")),Index(Sequence(types : _*),OMV("i"))), LocalName("i"), OMI(argNr)),
+	  	        Ellipsis(OMI(argNr), LocalName("i"), Mizar.be(Index(OMV("x"), OMV("i")), Index(Sequence(types : _*), OMV("i")))),
 	         	 body)
 	}
 	

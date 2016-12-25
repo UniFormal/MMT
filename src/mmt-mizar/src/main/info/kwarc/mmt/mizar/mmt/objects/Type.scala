@@ -19,19 +19,23 @@ object MMTResolve {
 	 
 			kind match {
 			  case "R" => 
-			    val lname =  aid+kind+absnr match {
-			    	case "HIDDENR1" => "==" :: Nil
-			    	case "HIDDENR2" => "in" :: Nil
-			    	case _ => (kind + absnr) :: MMTUtils.mainPatternName.toPath ::  Nil
+			    aid+kind+absnr match {
+			    	case "HIDDENR1" => Mizar.constant("eq")
+			    	case "HIDDENR2" => Mizar.constant("in")
+			    	case _ => 
+			    	  val lname = (kind + absnr) :: MMTUtils.mainPatternName.toPath ::  Nil
+			    	  OMID(MMTUtils.getPath(aid, lname))
 			    }
-			    OMID(MMTUtils.getPath(aid, lname))
+			    
 			  case "M" => 
-			    val lname =  aid+kind+absnr match {
-			    	case "HIDDENM1" => "set" :: Nil //oficially object but we use set for now
-			    	case "HIDDENM2" => "set" :: Nil
-			    	case _ => (kind + absnr) :: MMTUtils.mainPatternName.toPath :: Nil
+			    aid+kind+absnr match {
+			    	case "HIDDENM1" => Mizar.constant("set") //officially object but we use set for now
+			    	case "HIDDENM2" => Mizar.constant("set")
+			    	case _ => 
+			    	  val lname = (kind + absnr) :: MMTUtils.mainPatternName.toPath :: Nil
+			    	  OMID(MMTUtils.getPath(aid, lname))
 			    }
-			    OMID(MMTUtils.getPath(aid, lname))
+			    
 			  case "K" => 
 			    val lname = (kind + absnr) :: MMTUtils.mainPatternName.toPath :: Nil
 			    OMID(MMTUtils.getPath(aid, lname))
@@ -54,7 +58,6 @@ object MMTResolve {
 			  case "G" => 
 			    val lname = ("L" + absnr) :: "aggr" :: Nil //non-default for scheme
 			    OMID(MMTUtils.getPath(aid, lname))
-			  
 			}
 	}
 }
@@ -66,7 +69,7 @@ object MMTTerm {
 object MMTAttribute {
 	def apply(aid : String, kind : String, absnr : Int, value : Boolean) : Term = {
 		value match {
-		  case false => Mizar.apply(Mizar.constant("neg-attr"), MMTResolve(aid, kind, absnr))
+		  case false => Mizar.apply(Mizar.constant("neg_attr"), MMTResolve(aid, kind, absnr))
 		  case true => MMTResolve(aid, kind, absnr)
 		}
 	}

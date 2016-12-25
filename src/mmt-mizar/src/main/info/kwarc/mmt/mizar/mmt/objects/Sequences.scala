@@ -9,8 +9,9 @@ import sequences._
 object MizSeq {
   val Index = Sequences.index
   val Rep = Sequences.rep
-  def SeqMap(body: Term, index: LocalName, to: Term) = Sequences.ellipsis(to,index,body)
+  val Ellipsis = Sequences.ellipsis
   val Sequence = Sequences.flatseq
+  //def SeqMap(body: Term, index: LocalName, to: Term) = Sequences.ellipsis(to,index,body)
   
   def OMI(i: Int) = NatRules.NatLit(i)
 }

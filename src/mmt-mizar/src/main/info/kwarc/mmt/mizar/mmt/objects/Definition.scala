@@ -78,20 +78,21 @@ object MMTIsElab {
 				Context(VarDecl("meaning",
 							Some(MMTUtils.args("x", argNr,
 								MMTUtils.argTypes("x", argTypes, argNr,
-								 		 Mizar.proof(Mizar.and(SeqMap(Mizar.implies(Index(cases,"i"),Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x")), Index(results, "i"))),"i", OMV(caseNr)),
-								 				   Mizar.implies(Mizar.and(SeqMap(Mizar.not(Index(cases,"i")),"i", OMV(caseNr))),
-								 				       Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x")), OMV(defRes)))))))),
+								 		 Mizar.proof(Mizar.and(List(
+								 		     Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Index(cases,"i"),Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x")), Index(results, "i"))))),
+								 				   Mizar.implies(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Mizar.not(Index(cases,"i")))),
+								 				       Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x")), OMV(defRes))))))))),
 							None, None))
 			case None =>
 				Context(VarDecl("meaning",
 							Some(MMTUtils.args("x", argNr,
 								MMTUtils.argTypes("x", argTypes, argNr,
-								 		 Mizar.proof(Mizar.and(SeqMap(Mizar.implies(Index(cases,"i"),Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x")), Index(results, "i"))),"i", OMV(caseNr))))))),
+								 		 Mizar.proof(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Index(cases,"i"),Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x")), Index(results, "i"))))))))),
 							None, None),
 						VarDecl("completeness",
 						    Some(MMTUtils.args("x", argNr,
 								MMTUtils.argTypes("x", argTypes, argNr,
-								    Mizar.proof(Mizar.or(SeqMap(Index(cases,"i"),"i", OMV(caseNr))))))),
+								    Mizar.proof(Mizar.seqConn("or", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Index(cases,"i"))))))),
 							None, None))
 		}
 	}
@@ -104,20 +105,20 @@ object MMTMeansElab {
 				Context(VarDecl("meaning",
 							Some(MMTUtils.args("x", argNr,
 								MMTUtils.argTypes("x", argTypes, argNr,
-								 		 Mizar.proof(Mizar.and(SeqMap(Mizar.implies(Index(cases,"i"),Index(results, "i")),"i", OMV(caseNr)),
-								 				   Mizar.implies(Mizar.and(SeqMap(Mizar.not(Index(cases,"i")),"i", OMV(caseNr))),
-								 				       OMV(defRes))))))),
+								 		 Mizar.proof(Mizar.and(List(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Mizar.implies(Index(cases,"i"),Index(results, "i")))),
+								 				   Mizar.implies(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.not(Index(cases,"i")))),
+								 				       OMV(defRes)))))))),
 							None, None))
 			case None =>
 				Context(VarDecl("meaning",
 							Some(MMTUtils.args("x", argNr,
 								MMTUtils.argTypes("x", argTypes, argNr,
-								 		 Mizar.proof(Mizar.and(SeqMap(Mizar.implies(Index(cases,"i"),Index(results, "i")),"i", OMV(caseNr))))))),
+								 		 Mizar.proof(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Mizar.implies(Index(cases,"i"),Index(results, "i")))))))),
 							None, None),
 						VarDecl("completeness",
 						    Some(MMTUtils.args("x", argNr,
 								MMTUtils.argTypes("x", argTypes, argNr,
-								    Mizar.proof(Mizar.or(SeqMap(Index(cases,"i"),"i", OMV(caseNr))))))),
+								    Mizar.proof(Mizar.seqConn("or", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Index(cases,"i"))))))),
 							None, None))
 		}
 	}
@@ -144,22 +145,23 @@ object MMTAttrIsElab {
 				Context(VarDecl("meaning",
 							Some(MMTUtils.args("x", argNr,
 								MMTUtils.argTypes("x", argTypes, argNr,
-								 		 Mizar.proof(Mizar.and(SeqMap(Mizar.implies(Index(cases,"i"),Mizar.forall(v, OMV(mType), Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName),
-								 		     OMV("x"),OMV(mType)), Index(results, "i")))),"i", OMV(caseNr)),
-								 				   Mizar.implies(Mizar.and(SeqMap(Mizar.not(Index(cases,"i")),"i", OMV(caseNr))),
-								 				       Mizar.forall(v, OMV(mType), Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x"), OMV(mType)), OMV(defRes))))))))),
+								 		 Mizar.proof(Mizar.and(List(
+								 		     Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Index(cases,"i"),Mizar.forall(v, OMV(mType), Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName),
+								 		     OMV("x"),OMV(mType)), Index(results, "i")))))),
+								 				   Mizar.implies(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.not(Index(cases,"i")))),
+								 				       Mizar.forall(v, OMV(mType), Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x"), OMV(mType)), OMV(defRes)))))))))),
 							None, None))
 			case None =>
 				Context(VarDecl("meaning",
 							Some(MMTUtils.args("x", argNr,
 								MMTUtils.argTypes("x", argTypes, argNr,
-								 		 Mizar.proof(Mizar.and(SeqMap(Mizar.implies(Index(cases,"i"),Mizar.forall(v, OMV(mType), Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName),
-								 		     OMV("x"), OMV(mType)), Index(results, "i")))),"i", OMV(caseNr))))))),
+								 		 Mizar.proof(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Index(cases,"i"),Mizar.forall(v, OMV(mType), Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName),
+								 		     OMV("x"), OMV(mType)), Index(results, "i")))))))))),
 						None, None),
 						VarDecl("completeness",
 						    Some(MMTUtils.args("x", argNr,
 								MMTUtils.argTypes("x", argTypes, argNr,
-								    Mizar.proof(Mizar.or(SeqMap(Index(cases,"i"),"i", OMV(caseNr))))))),
+								    Mizar.proof(Mizar.seqConn("or", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Index(cases,"i"))))))),
 							None, None))
 
 		}
@@ -174,27 +176,27 @@ object MMTAttrMeansElab {
 				Context(VarDecl("meaning",
 							Some(MMTUtils.args("x", argNr,
 								MMTUtils.argTypes("x", argTypes, argNr,
-								 		 Mizar.proof(Mizar.and(SeqMap(Mizar.implies(Index(cases,"i"),Mizar.forall(v, OMV(mType),
+								 		 Mizar.proof(Mizar.and(List(
+								 		     Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Index(cases,"i"),Mizar.forall(v, OMV(mType),
 								 		     Mizar.implies(Mizar.is(OMV(v), Mizar.adjective(Mizar.apply(OMV(MMTUtils.mainPatternName),
-								 		         OMV("x"),OMV(mType)),OMV(mType))), Index(results, "i")))),"i", OMV(caseNr)),
-								 				   Mizar.implies(Mizar.and(SeqMap(Mizar.not(Index(cases,"i")),"i", OMV(caseNr))),
+								 		         OMV("x"),OMV(mType)),OMV(mType))), Index(results, "i")))))),
+								 				   Mizar.implies(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.not(Index(cases,"i")))),
 								 				       Mizar.forall(v, OMV(mType), Mizar.implies(Mizar.is(OMV(v), Mizar.adjective(Mizar.apply(OMV(MMTUtils.mainPatternName),
-								 				           OMV("x"),OMV(mType)),OMV(mType))), OMV(defRes))))))))),
+								 				           OMV("x"),OMV(mType)),OMV(mType))), OMV(defRes)))))))))),
 							None, None))
 			case None =>
 				Context(VarDecl("meaning",
 							Some(MMTUtils.args("x", argNr,
 								MMTUtils.argTypes("x", argTypes, argNr,
-								 		 Mizar.proof(Mizar.and(SeqMap(Mizar.implies(Index(cases,"i"), Mizar.forall(v, OMV(mType),
+								 		 Mizar.proof(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Index(cases,"i"), Mizar.forall(v, OMV(mType),
 								 		     Mizar.implies(Mizar.is(OMV(v), Mizar.adjective(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x"),OMV(mType)),OMV(mType))),
-								 		         Index(results, "i")))),"i", OMV(caseNr))))))),
+								 		         Index(results, "i")))))))))),
 						None, None),
 						VarDecl("completeness",
 						    Some(MMTUtils.args("x", argNr,
 								MMTUtils.argTypes("x", argTypes, argNr,
-								    Mizar.proof(Mizar.or(SeqMap(Index(cases,"i"),"i", OMV(caseNr))))))),
+								    Mizar.proof(Mizar.seqConn("or", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Index(cases,"i"))))))),
 							None, None))
-
 		}
 	}
 }

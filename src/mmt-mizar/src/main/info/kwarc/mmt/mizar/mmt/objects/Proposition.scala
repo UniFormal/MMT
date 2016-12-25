@@ -16,7 +16,7 @@ object MMTNot {
 }
 
 object MMTAnd {
-	def apply(forms : List[Term]) = Mizar.and(forms :_*) 
+	def apply(forms : List[Term]) = Mizar.and(forms) 
 }
 
 object MMTFor {
