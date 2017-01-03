@@ -36,7 +36,9 @@ class DefinitionExpander(controller: frontend.Controller) extends StatelessTrave
             case None => DefinitionsExpanded(t)
          }
          case OMV(n) => con(n).df match {
-            case Some(tE) => tE.from(t)
+            case Some(tE) =>
+              //TODO variable definitions that contain shadowed variables may not be expanded
+              tE.from(t)
             case None => DefinitionsExpanded(OMV(n)) 
          }
          case _ => Traverser(this, t)

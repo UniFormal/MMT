@@ -61,6 +61,12 @@ object Common {
    }
    def pickFresh(solver: Solver, x: LocalName)(implicit stack: Stack) =
       Context.pickFresh(solver.constantContext ++ solver.getPartialSolution ++ stack.context, x)
+   
+   /** true if a term is an unknown applied to arguments */
+   def isUnknownTerm(solver: Solver, t: Term) = t match {
+     case ApplyGeneral(OMV(u), _) => solver.getUnsolvedVariables.isDeclared(u)
+     case _ => false
+   }
 }
 
 import Common._
@@ -108,15 +114,11 @@ object LambdaTerm extends IntroductionRule(Lambda.path, OfType.path) {
 
 /** Elimination: the type inference rule f : Pi x:A.B  ,  t : A  --->  f t : B [x/t]
  * This rule works for B:U for any universe U */
-//TODO this does not work for LFS application if a sequence of arguments is not wrapped in a flatseq, e.g., like when parsing a sequence notation
-//e.g., sequence notation 2and... parses 'x and y' as (and ? x) y 
 object ApplyTerm extends EliminationRule(Apply.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
      // calling Beta first could make this rule more reusable because it would avoid inferring the type of a possibly large lambda 
      tm match {
       case Apply(f,t) =>
-        if (solver.presentObj(f) == "x")
-          true
         history += "inferring type of function " + solver.presentObj(f)
         val fTOpt = solver.inferType(f)(stack, history.branch)
         fTOpt match {

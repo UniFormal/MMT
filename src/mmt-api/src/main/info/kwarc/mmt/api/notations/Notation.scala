@@ -126,6 +126,7 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
          arguments={argumentString}> {scope.toNode} </notation>
    }
    
+   /** number of arguments before the first delimiter */
    def openArgs(fromRight: Boolean) : Int = {
       var i = 0
       val ms = if (fromRight) parsingMarkers.reverse else parsingMarkers
@@ -143,6 +144,21 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
    }
    def isLeftOpen = openArgs(false) > 0
    def isRightOpen = openArgs(true) > 0
+   
+   /** true if there is definitely a delimiter (i.e., not just a sequence separator) */
+   def hasDelimiter: Boolean = markers exists {
+     case _: Delimiter => true
+     case _ => false
+   }
+   
+   /** @return true if this arity can present ComplexTerm(name, subs, vars, args) and has an attribution if necessary */
+   def canHandle(subs: Int, vars: Int, args: Int, att: Boolean) = {
+      (arity.numNormalSubs == subs || (arity.numNormalSubs < subs && arity.numSeqSubs >= 1)) &&
+      (arity.numNormalVars == vars || (arity.numNormalVars < vars && arity.numSeqVars >= 1)) &&
+      (arity.numNormalArgs == args || (arity.numNormalArgs < args && arity.numSeqArgs >= 1)) &&
+      (hasDelimiter || args > arity.numNormalArgs + arity.numSeqArgs) && // this hacky case precludes confusion when flexary operators would disappear in the presentation 
+      (! att || arity.attribution)
+   }   
 }
 
 object TextNotation {

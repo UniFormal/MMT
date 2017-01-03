@@ -172,7 +172,7 @@ object MixfixNotation extends NotationExtension {
    def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = t match {
       case ComplexTerm(op, subs, con, args) =>
         getNotations(op).foreach {not =>
-            if (not.arity.canHandle(subs.length, con.length, args.length, false)) {
+            if (not.canHandle(subs.length, con.length, args.length, false)) {
               return Some(PragmaticTerm(op, subs, con, args, false, not, Position.positions(t)))
             }
         }
@@ -224,9 +224,9 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
          val appPos = (0 until 1+rest.length).toList.map(i => Position(1+i))
          getNotations(op).foldLeft[Option[PragmaticTerm]](None) {
            (res,not) => if (res.isDefined) res else {
-             if (not.arity.canHandle(0,0,rest.length, false)) {
+             if (not.canHandle(0,0,rest.length, false)) {
                // OMA(apply, op, args)  <-->  OMA(op, args)
-               val appTerm = PragmaticTerm(op, Substitution(), Context(), rest, false, not, appPos)
+               val appTerm = PragmaticTerm(op, Substitution.empty, Context.empty, rest, false, not, appPos)
                Some(appTerm)
              } else rest.reverse match {
                case OMBINDC(OMS(hoas.bind), con, args) :: _ =>
@@ -235,7 +235,7 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
                   val opSubsPos = (0 until 1+subs.length).toList.map(i => Position(1+i))
                   val conArgsPos = (0 until con.length+args.length).toList.map(i => Position(rest.length+1) / (i+1))
                   val bindPos = opSubsPos ::: conArgsPos
-                  if (not.arity.canHandle(subs.length, con.length, args.length, false)) {
+                  if (not.canHandle(subs.length, con.length, args.length, false)) {
                      val bindTerm = PragmaticTerm(op, subs, con, args, false, not, bindPos)
                      Some(bindTerm)
                   } else
@@ -348,13 +348,13 @@ class NestedHOASNotation(obj: HOAS, meta: HOAS) extends NotationExtension {
           val numSubArgs = metaArgs.length - numLeadingImplArgs
           val subargs = metaArgs.take(numSubArgs)
           val args = metaArgs.drop(numSubArgs) ::: objArgs
-          if (arity.canHandle(subargs.length,0,args.length, false)) {
+          if (not.canHandle(subargs.length,0,args.length, false)) {
              // List(), List(4), ..., List(4, ..., 4)
              val tP = PragmaticTerm(op, subargs.map(Sub(OMV.anonymous, _)), Nil, args, false, not, opMetaPos ::: objArgPos)
              Some(tP)
           } else if (objArgs.length == 1) {
              val (con, scope) = unbinding(objArgs.last)
-             if (arity.canHandle(metaArgs.length, con.length, 1, false)) {
+             if (not.canHandle(metaArgs.length, con.length, 1, false)) {
                 // List(), List(4,2), ..., List(4,2,...,4,2)
                 val conPaths = (0 until con.length).toList.map(i => (0 until i).toList.flatMap(_ => List(4,2)))
                 val conPos = conPaths.map(p => Position(5) / p / 4 / 1)

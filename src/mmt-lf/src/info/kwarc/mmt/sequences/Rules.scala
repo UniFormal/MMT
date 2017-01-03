@@ -55,12 +55,13 @@ object NTypeTerm extends InferenceRule(rep.path, OfType.path) {
  *  i, i/up |- t(i) : type       --->  |- [t(i)] i=0^n : type^n
  */
 object EllipsisInfer extends InferenceRule(ellipsis.path, OfType.path) {
-   private val up  = "up"
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
-      case Sequences.ellipsis(n, i, t) =>
+      case Sequences.ellipsis(n, _, t) =>
+         val (i,sub) = pickFreshIndexVar(solver, tm)
          val stackI = stack ++ i%OMS(nat)
-         val stackILU = stackI ++ i/up%lessType(OMV(i), n)
-         val aOpt = solver.inferType(t)(stackILU , history.branch)
+         val iup = upBoundName(i)
+         val stackILU = stackI ++ iup%lessType(OMV(i), n)
+         val aOpt = solver.inferType(t ^? sub)(stackILU , history.branch)
          aOpt flatMap {a =>
             if (a == OMS(Typed.ktype)) {
                // sequences of types
@@ -69,7 +70,7 @@ object EllipsisInfer extends InferenceRule(ellipsis.path, OfType.path) {
                // sequences of typed terms
                val ok = covered || {
                   // generated variables i/low and i/up may not appear in inferred type
-                  !a.freeVars.contains(i/up) &&
+                  !a.freeVars.contains(iup) &&
                   // inferred types must actually by types
                   solver.check(Typing(stackI, a, OMS(Typed.ktype)))(history.branch)
                }
@@ -186,7 +187,13 @@ class SequenceTypeCheck(op: GlobalName) extends TypingRule(op) {
           val iL = NatLit(iI)
           solver.check(Typing(stack, index(tm, iL), index(tp, iL)))
         }
-      case _ => throw DelayJudgment("length not known")
+      case OMV(x) =>
+        val i = pickFreshIndexVar(solver, tm)._1
+        val iV = OMV(i)
+        val iup = upBoundName(i)
+        val newCon = stack ++ i%OMS(nat) ++ iup%lessType(iV, nS)
+        solver.check(Typing(newCon, index(tm, iV), index(tp, iV)))
+      case _ => throw DelayJudgment("length not a literal")
     }
   }
 }
@@ -265,7 +272,7 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
          case OMA(f, args) =>
             val argsE = applyList(args)
             if (argsE != args)
-               Some(ApplySpine(f, argsE:_*))
+               Some(OMA(f, argsE))
             else
                None
          // turn sequence variables into variable sequences
@@ -353,6 +360,54 @@ object FlexaryLambda extends ExpandEllipsis(Lambda.path)
 object FlexaryApply extends ExpandEllipsis(Apply.path)
 /** expands ellipses in the arguments of a composition */
 object FlexaryComposition extends ExpandEllipsis(comp.path)
+
+/** matches an operator that expects sequence arguments against an argument sequence
+ *
+ *  this rule is called before ApplyTerm, solves unknown arity arguments, then fails
+ *  once the arities are solved, ApplyTerm can do the rest 
+ */
+object SolveArity extends InferenceRule(Apply.path, OfType.path) {
+   /** make sure this is called before the usual rule */
+   override val priority = 5
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+      history += solver.presentObj(tm)
+      val (op, args) = tm match {
+        case ApplySpine(OMS(op), args) => (op,args)
+        case _ => throw Backtrack("operator not symbol")
+      }
+      val opTp = solver.getType(op) getOrElse {throw Backtrack("operator has no type")}
+      val FunType(expTps,ret) = opTp
+      if (expTps.length == args.length)
+        throw Backtrack("number of (possibly sequence) arguments matches expected number; no arity solving needed")
+      // there are more argument sequences than expected: some arguments must be grouped into sequences
+      val expNats = expTps.takeWhile {case (n,tp) => n.isDefined && tp == OMS(nat)}
+      if (expNats.length != 1)
+        throw Backtrack("can only solve for a single natural number") // TODO multiple nats; nats that do not occur at beginning
+      val n = expNats.head._1.get
+      if (!Common.isUnknownTerm(solver, args.head))
+        throw Backtrack("arity already known")
+      //val expLs = expTps map {case (_,tp) => Length.infer(solver, tp).getOrElse{return None}}
+      // Length.infer(a) == None if a is bound variable with omitted type: heuristically assume length 1
+      val argLs = args map {a => Length.infer(solver, a).getOrElse{OMS(one)}}
+      if (argLs exists (_ != OMS(one))) {
+         // TODO case where some arguments are given as sequences
+         /*if (args.length == expTp.length) {
+           val tpLs = expTps map {case ()
+           val lengthsMatch = (argLs zip expTpLs) 
+         }*/
+         history += "can only handle handle pure argument sequences"
+         throw Backtrack("can't solve arity, assuming argument grouping matches expected grouping")
+      }
+      val nS = NatLit(args.tail.length)
+      solver.check(Equality(stack, args.head, nS, Some(OMS(nat))))(history + "solving by number of arguments")
+      history += "solved arity as " + args.tail.length + ", defering to other rules"
+      throw Backtrack("solved arity as " + args.tail.length) 
+   }
+}
+
+/* TODO add a ComputationRule that overrides Beta similar to SolveArity
+ * that is needed in particular when definition expansion introduces beta-redexes with argument sequences
+ */
 
 /**
  * s.i : A.i -> B.i for i=0,...,n

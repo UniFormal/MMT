@@ -152,13 +152,6 @@ case class Arity(subargs: List[ArgumentComponent],
       }
       result.reverse
    }
-   /** @return true if ComplexTerm(name, subs, vars, args) has enough components for this arity and provides for an attribution if necessary */
-   def canHandle(subs: Int, vars: Int, args: Int, att: Boolean) = {
-      (numNormalSubs == subs || (numNormalSubs < subs && numSeqSubs >= 1)) &&
-      (numNormalVars == vars || (numNormalVars < vars && numSeqVars >= 1)) &&
-      (numNormalArgs == args || (numNormalArgs < args && numSeqArgs >= 1)) &&
-      (! att || attribution)
-   }
   /**
     * flattens all sequence arguments/variables of a notation according to a complex term
     * 

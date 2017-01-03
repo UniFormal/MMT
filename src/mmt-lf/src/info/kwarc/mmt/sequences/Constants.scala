@@ -30,6 +30,17 @@ object Sequences {
    object flatseq extends FlexaryConstantScala(_path, "flatseq")
    
    object comp extends UnaryConstantScala(_path, "comp")
+
+   def upBoundName(n: LocalName)  = n / "up"
+  
+   /** generates a fresh name for an index variable, preferably the one use in a given ellipsis */
+   def pickFreshIndexVar(solver: checking.Solver, ell: Term)(implicit stack: Stack) = {
+     val prefer = ell match {
+      case Sequences.ellipsis(_, i, _) => i
+      case _ => LocalName("i")
+     }
+     Common.pickFresh(solver, prefer)
+   }
 }
 
 object LFS {

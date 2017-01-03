@@ -5,6 +5,7 @@ import libraries._
 import objects._
 import objects.Conversions._
 
+/** continuation used by some rules */
 class Continue[A](a: => A) {
    def apply() = a
 }
@@ -43,7 +44,9 @@ trait CheckingCallback {
   * if they have not recursed into any state-changing judgments yet
   */
 trait MaytriggerBacktrack {
-   case class Backtrack() extends Exception("Not Applicable")
+   case class Backtrack(msg: String) extends Throwable {
+     override def getMessage = "rule not applicable: " + msg
+   }
 }
 
 /** super class of all rules primarily used by the [[Solver]] */
@@ -51,6 +54,14 @@ trait CheckingRule extends SyntaxDrivenRule {
   /** additional heads that can trigger the rule, e.g., arrow for a rule with head Pi */
   def alternativeHeads: List[GlobalName] = Nil
   def heads = head::alternativeHeads
+  
+  /** when multiple rules are applicable, rules with higher priorities are preferred
+   *  
+   *  creating a new rule with higher priority can be used to effectively drop imported rules
+   *  
+   */
+   // TODO priority is only in some situations so far, in particular for type inference
+  def priority: Int = 0
   
   /** may be thrown to indicate that the judgment that the rules was called on should be delayed */
   case class DelayJudgment(msg: String) extends Throwable
@@ -294,23 +305,25 @@ class CongruenceRule(head: GlobalName) extends TermHeadBasedEqualityRule(Nil, he
  * @param priority rules with high priority are applied to a freshly activated constraint is activated;
  *   others when no activatable constraint exists 
  */
-abstract class ForwardSolutionRule(val head: GlobalName, val priority: ForwardSolutionRule.Priority) extends CheckingRule {
+abstract class ForwardSolutionRule(val head: GlobalName, p: ForwardSolutionRule.Priority) extends CheckingRule {
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param decl the declaration of an unknown
     *  @return true iff it solved a variable
     */
    def apply(solver: Solver)(decl: VarDecl)(implicit stack: Stack, history: History): Boolean
+   
+   override def priority = p
 }
 
 /** auxiliary object for the class ForwardSolutionRule */
 object ForwardSolutionRule {
    /** the two-valued type of priorities */
-   type Priority = Boolean
+   type Priority = Int
    /** high priority */
-   val high = true
+   val high = +1
    /** low priority */
-   val log = false
+   val low = -1
 }
 
 /**

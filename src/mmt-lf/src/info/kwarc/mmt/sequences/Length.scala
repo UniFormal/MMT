@@ -17,7 +17,7 @@ object Length {
    *  fails only for variables without type, e.g., unknowns representing types
    *  assumes that expressions cannot be simplified into ellipsis or ntype
    */
-  def infer(solver: CheckingCallback, tm: Term)(implicit stack: Stack) : Option[Term] = {
+  def infer(context: Context, tm: Term) : Option[Term] = {
     tm match {
       case Univ(_) => ONE
       case Lambda(_,_,_) => ONE
@@ -28,8 +28,8 @@ object Length {
       case Sequences.flatseq(as @ _*) => Some(NatRules.NatLit(as.length))
       case Sequences.index(_,_) => ONE
       case OMS(p) => ONE
-      case OMV(x) => (solver.outerContext++stack.context)(x).tp match {
-        case Some(t) => infer(solver,t)
+      case OMV(x) => context(x).tp match {
+        case Some(t) => infer(context,t)
         case None => None
       }
       case _: OMLITTrait => ONE
@@ -37,6 +37,11 @@ object Length {
       case OMBINDC(_,_,_) => ONE
     }
   }
+  /** convenience */
+  def infer(solver: CheckingCallback, tm: Term)(implicit stack: Stack): Option[Term] = infer(solver.outerContext++stack.context, tm)
+  
+  /** true if length is known to be 1 */
+  def isIndividual(context: Context, t: Term) = infer(context, t) == ONE
 
   /** check |tm1| = |tm2| for two sequences by calling an equality check on the length
    *  @return the result, if a check was possible

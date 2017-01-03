@@ -254,6 +254,13 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
    /** the context that is not part of judgements */
    def outerContext = constantContext ++ solution
+   
+   /** precomputes relevant rule sets, ordered by priority */
+   private def getRules[R<:CheckingRule](cls: Class[R]) = rules.get(cls).toList.sortBy(_.priority).reverse 
+   private val inferenceRules = getRules(classOf[InferenceRule])
+   private val subtypingRules = getRules(classOf[SubtypingRule])
+   /* convenience function for going to the next rule after a has been tried */
+   private def dropTill[A](l: List[A], a: A) = l.dropWhile(_ != a).tail
 
    /**
     * logs a string representation of the current state
@@ -309,7 +316,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
    }
 
-   /* TODO get* methods must pass context; only checked constants may be looked up */
+   /* TODO get* methods must pass context */
 
    /** retrieves the type type of a constant and registers the dependency
     *
@@ -440,7 +447,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * this is implemented by adding a fresh unknown, and running the constraint
     * this can be used to compute a value in logic programming style, where the computation is given by a functional predicate
     */
-   def defineByConstraint(x: LocalName, tp: Term)(constraint: Term => Boolean) {
+   def defineByConstraint(x: LocalName, tp: Term)(constraint: Term => Boolean) = {
      addUnknowns(x%tp, None)
      constraint(OMV(x))
    }
@@ -516,6 +523,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private def activate : Boolean = {
      val subs = solution.toPartialSubstitution
      def prepareS(s: Stack) =
+        //  ^^ subs might be redundant because simplifier expands defined variables
+        // but there may be subtleties because terms may already be marked as simple 
         Stack(controller.simplifier(s.context ^^ subs, constantContext ++ solution, rules))
      // look for an activatable constraint
      val solved = getSolvedVariables
@@ -545,8 +554,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                  val j = dj.constraint
                  implicit val history = dj.history
                  implicit val stack = j.stack
-                 def prepare(t: Term, covered: Boolean = false) =
-                    if (covered) simplify(t ^^ subs) else (t ^^ subs)
+                 def prepare(t: Term, covered: Boolean = false) = substituteSolved(t, covered)
                  //logState() // noticably slows down type-checking, only use for debugging
                  log("activating: " + j.present)
                  j match {
@@ -617,109 +625,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             val bi = new BranchInfo(history + "(inference delayed)", getCurrentBranch)
             addConstraint(new DelayedInference(stack, bi, tm, cont))
             true
-      }
-   }
-
-   /** unsafe via ObjectSimplifier */
-   def simplify(t : Obj)(implicit stack: Stack, history: History) = {
-      val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context, rules)
-      if (tS != t)
-         history += ("simplified: " + presentObj(t) + " ~~> " + presentObj(tS))
-      tS
-   }
-
-   /** simplifies safely one step along each branches, well-formedness is preserved+reflected */
-   //TODO merge with limitedSimplify; offer simplification strategies
-   private def safeSimplify(tm: Term)(implicit stack: Stack, history: History): Term = tm match {
-      case _:OMID | _:OMV | _:OMLITTrait => tm
-      case ComplexTerm(op, subs, cont, args) =>
-         val rlist = rules.getByHead(classOf[ComputationRule], op)
-          rlist foreach {rule =>
-              rule(this)(tm, false) match {
-                case Some(tmS) =>
-                  history += "applying computation rule " + rule.toString
-                  log("simplified: " + tm + " ~~> " + tmS)
-                  history += "simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS)
-                  return tmS.from(tm)
-                case _ =>
-              }
-          }
-        // no rule or rule not applicable, recurse
-        val subsS = subs mapTerms {a => safeSimplify(a)(stack, history + "simplifying argument before context")}
-        val contS = cont mapTerms {case (c,t) => safeSimplify(t)(stack ++ c, history + "simplifying component of bound variable")}
-        val argsS = args map {a => safeSimplify(a)(stack ++ cont, history + "simplifying argument")}
-        val tmS = ComplexTerm(op, subsS, contS, argsS).from(tm)
-        tmS
-   }
-
-   /** simplifies one step overall */
-   private def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = {
-      def expandDefinition: Term = {
-         val tmE = defExp(tm,outerContext++stack.context)
-         if (tmE hashneq tm)
-            history += ("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
-         tmE
-      }
-      tm.head match {
-         case Some(h) =>
-            val rOpt = rules.getByHead(classOf[ComputationRule], h)
-            // use first applicable rule
-            rOpt foreach {rule =>
-                 val ret = rule(this)(tm, false)
-                 ret foreach {tmS =>
-                     history += "applying computation rule " + rule.toString
-                     history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
-                     return tmS
-                 }
-            }
-            // no applicable rule, expand a definition
-            expandDefinition
-         case None => expandDefinition
-      }
-   }
-
-   /** special case of the version below where we simplify until an applicable rule is found
- *
-    *  @param tm the term to simplify
-    *  @param hs the RuleMap from which an applicable rule is needed
-    *  @param stack the context of tm
-    *  @return (tmS, Some(r)) where tmS = tm and r from rm is applicable to tmS; (tmS, None) if tm = tmS and no further simplification rules are applicable
-    */
-   private def limitedSimplify[R <: CheckingRule](tm: Term, hs: HashSet[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
-      safeSimplifyUntil[R](tm)(t => t.head flatMap {h => hs.find(_.heads contains h)})
-
-   /** applies [[ComputationRule]]s expands definitions until a condition is satisfied;
-    *  A typical case is transformation into weak head normal form.
- *
-    *  @param tm the term to simplify (It may be simple already.)
-    *  @param simple a term is considered simple if this function returns a non-None result
-    *  @param stack the context of tm
-    *  @return (tmS, Some(a)) if tmS is simple and simple(tm)=tmS; (tmS, None) if tmS is not simple but no further simplification rules are applicable
-    */
-   def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = {
-      simple(tm) match {
-         case Some(a) => (tm,Some(a))
-         case None =>
-            val tmS = safeSimplifyOne(tm)
-            if (tmS hashneq tm)
-               safeSimplifyUntil(tmS)(simple)
-            else
-               (tm, None)
-      }
-   }
-   /** like the other method but simplifies two terms in parallel */
-   @scala.annotation.tailrec
-   final def safeSimplifyUntil[A](tm1: Term, tm2: Term)(simple: (Term,Term) => Option[A])
-                           (implicit stack: Stack, history: History): (Term,Term,Option[A]) = {
-      simple(tm1,tm2) match {
-         case Some(a) => (tm1,tm2,Some(a))
-         case None =>
-            val tm1S = safeSimplifyOne(tm1)
-            val tm2S = safeSimplifyOne(tm2)
-            if ((tm1S hashneq tm1) || (tm2S hashneq tm2))
-                  safeSimplifyUntil(tm1S, tm2S)(simple)
-               else
-                  (tm1S,tm2S,None)
       }
    }
 
@@ -870,7 +775,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           case l: OMLIT =>
              history += "lookup in literal"
              // structurally well-formed literals carry their type
-             return Some(l.rt.synType) // no need to use InferredType.put on literals
+             Some(l.rt.synType) // no need to use InferredType.put on literals
           case OMMOD(p) =>
              // types of theories and views are formed using meta-level operators
              history += "lookup in library"
@@ -888,7 +793,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         //syntax-driven type inference
         //rules may trigger backtracking, in which case the next rule is tried until one yields a result
         resFoundInd orElse {
-           var activerules = rules.get(classOf[InferenceRule])
+           var activerules = inferenceRules
            var tmS = tm
            var ret: Option[Term] = null
            while (ret == null) {
@@ -901,8 +806,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                       ret = rule(this)(tmS, covered)
                     } catch {
                        case t : MaytriggerBacktrack#Backtrack =>
-                          history+="rule not applicable"
-                          activerules -= rule
+                          history += t.getMessage
+                          activerules = dropTill(activerules, rule)
                     }
                  case None =>
                     history += "no applicable rule"
@@ -917,7 +822,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      if (!isDryRun) {
        res foreach {r => InferredType.put(tm, (getCurrentBranch,r))}
      }
-     res
+     res map {r => substituteSolved(r, true)} // inference result must be well-typed, can be simplified
    }
 
    /** proves a Subtyping Judgement
@@ -930,12 +835,11 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * post: subtyping judgment is covered
     */
    private def checkSubtyping(j: Subtyping)(implicit history: History) : Boolean = {
-      val stRules = rules.get(classOf[SubtypingRule])
       // TODO this fully expands definitions if no rule is applicable
       // better: use an expansion algorithm that stops expanding if it is know that no rule will become applicable
-      if (stRules.nonEmpty) {
+      if (subtypingRules.nonEmpty) {
         implicit val stack = j.stack
-        var activerules = stRules
+        var activerules = subtypingRules
         var done = false
         var tp1S = j.tp1
         var tp2S = j.tp2
@@ -949,12 +853,12 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             case Some(rule) =>
               history += ("applying subtyping rule " + rule.toString)
               try {
-                val b = rule(this)(tp1S,tp2S).getOrElse {throw rule.Backtrack()}
+                val b = rule(this)(tp1S,tp2S).getOrElse {throw rule.Backtrack("")}
                 return b
               } catch {
                 case t : MaytriggerBacktrack#Backtrack =>
-                  history+="rule not applicable"
-                  activerules -= rule
+                  history += t.getMessage
+                  activerules = dropTill(activerules, rule)
               }
             case None =>
               done = true
@@ -1269,6 +1173,130 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    }
    /* ********************** end of auxiliary methods of checkEquality ***************************/
    
+   /* ********************** simplification ******************************************************/
+
+   /**
+    * unsafe via ObjectSimplifier
+    * this subsumes substituting for solved unknowns before simplifier expands defined variables
+    */
+   def simplify(t : Obj)(implicit stack: Stack, history: History) = {
+      val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context, rules)
+      if (tS != t)
+         history += ("simplified: " + presentObj(t) + " ~~> " + presentObj(tS))
+      tS
+   }
+   
+   /** substitutes solved unknowns, then possibly calls simplification
+    *  (simplification alone does not necessary subsitute solved unknowns because simpleness is cached)
+    */
+   private def substituteSolved(t: Term, covered: Boolean)(implicit stack: Stack, history: History): Term = {
+      val subs = solution.toPartialSubstitution
+      val tS = t ^^ subs
+      if (covered) simplify(tS) else tS
+   }
+
+
+   /** simplifies safely one step along each branches, well-formedness is preserved+reflected */
+   //TODO merge with limitedSimplify; offer simplification strategies
+   private def safeSimplify(tm: Term)(implicit stack: Stack, history: History): Term = tm match {
+      case _:OMID | _:OMLITTrait => tm
+      case OMV(n) => (stack.context.getO(n) orElse solution.getO(n) orElse constantContext.getO(n)) match {
+        case Some(vd) if vd.tp.isDefined =>
+          //TODO variable definitions that contain shadowed variables may not be expanded
+          safeSimplify(vd.tp.get)
+        case _ => tm
+      }
+      case ComplexTerm(op, subs, cont, args) =>
+         val rlist = rules.getByHead(classOf[ComputationRule], op)
+          rlist foreach {rule =>
+              rule(this)(tm, false) match {
+                case Some(tmS) =>
+                  history += "applying computation rule " + rule.toString
+                  log("simplified: " + tm + " ~~> " + tmS)
+                  history += "simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS)
+                  return tmS.from(tm)
+                case _ =>
+              }
+          }
+        // no rule or rule not applicable, recurse
+        val subsS = subs mapTerms {a => safeSimplify(a)(stack, history + "simplifying argument before context")}
+        val contS = cont mapTerms {case (c,t) => safeSimplify(t)(stack ++ c, history + "simplifying component of bound variable")}
+        val argsS = args map {a => safeSimplify(a)(stack ++ cont, history + "simplifying argument")}
+        val tmS = ComplexTerm(op, subsS, contS, argsS).from(tm)
+        tmS
+   }
+
+   /** simplifies one step overall */
+   private def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = {
+      def expandDefinition: Term = {
+         val tmE = defExp(tm,outerContext++stack.context)
+         if (tmE hashneq tm)
+            history += ("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
+         tmE
+      }
+      tm.head match {
+         case Some(h) =>
+            val rOpt = rules.getByHead(classOf[ComputationRule], h)
+            // use first applicable rule
+            rOpt foreach {rule =>
+                 val ret = rule(this)(tm, false)
+                 ret foreach {tmS =>
+                     history += "applying computation rule " + rule.toString
+                     history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
+                     return tmS
+                 }
+            }
+            // no applicable rule, expand a definition
+            expandDefinition
+         case None => expandDefinition
+      }
+   }
+
+   /** special case of the version below where we simplify until an applicable rule is found
+ *
+    *  @param tm the term to simplify
+    *  @param hs the RuleMap from which an applicable rule is needed
+    *  @param stack the context of tm
+    *  @return (tmS, Some(r)) where tmS = tm and r from rm is applicable to tmS; (tmS, None) if tm = tmS and no further simplification rules are applicable
+    */
+   private def limitedSimplify[R <: CheckingRule](tm: Term, hs: Iterable[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
+      safeSimplifyUntil[R](tm)(t => t.head flatMap {h => hs.find(_.heads contains h)})
+
+   /** applies [[ComputationRule]]s expands definitions until a condition is satisfied;
+    *  A typical case is transformation into weak head normal form.
+ *
+    *  @param tm the term to simplify (It may be simple already.)
+    *  @param simple a term is considered simple if this function returns a non-None result
+    *  @param stack the context of tm
+    *  @return (tmS, Some(a)) if tmS is simple and simple(tm)=tmS; (tmS, None) if tmS is not simple but no further simplification rules are applicable
+    */
+   def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = {
+      simple(tm) match {
+         case Some(a) => (tm,Some(a))
+         case None =>
+            val tmS = safeSimplifyOne(tm)
+            if (tmS hashneq tm)
+               safeSimplifyUntil(tmS)(simple)
+            else
+               (tm, None)
+      }
+   }
+   /** like the other method but simplifies two terms in parallel */
+   @scala.annotation.tailrec
+   final def safeSimplifyUntil[A](tm1: Term, tm2: Term)(simple: (Term,Term) => Option[A])
+                           (implicit stack: Stack, history: History): (Term,Term,Option[A]) = {
+      simple(tm1,tm2) match {
+         case Some(a) => (tm1,tm2,Some(a))
+         case None =>
+            val tm1S = safeSimplifyOne(tm1)
+            val tm2S = safeSimplifyOne(tm2)
+            if ((tm1S hashneq tm1) || (tm2S hashneq tm2))
+                  safeSimplifyUntil(tm1S, tm2S)(simple)
+               else
+                  (tm1S,tm2S,None)
+      }
+   }
+
    /* ********************** methods for contexts ***************************/
    
   /** checks contexts */
@@ -1459,6 +1487,4 @@ object Solver {
       case OMV(m) if unknowns.isDeclared(m) => Some((Nil, m))
       case _ => None
    }
-
-
 }

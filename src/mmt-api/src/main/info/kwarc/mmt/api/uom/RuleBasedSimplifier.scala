@@ -22,7 +22,6 @@ case class UOMState(t : Term, context: Context, rules: RuleSet, path : List[Int]
 }
 
 /** A RuleBasedSimplifier applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
-// This class used to be called UOM
 class RuleBasedSimplifier extends ObjectSimplifier {
   override val logPrefix = "object-simplifier"
 
@@ -66,18 +65,24 @@ class RuleBasedSimplifier extends ObjectSimplifier {
    private val traverse = new Traverser[UOMState] {
       // by marking with and testing for Simplified(_), we avoid traversing a term twice
       // Note that certain operations remove the simplified marker: changing the toplevel, substitution application 
-      def traverse(t: Term)(implicit con : Context, init: UOMState) : Term = t match {
-         // this term is the result of simplification
-         /*case Simple(t) =>
-            log("already simplified " + controller.presenter.asString(t))
-            t*/
+      def traverse(t: Term)(implicit con : Context, init: UOMState) : Term = {
+       log("traversing into " + controller.presenter.asString(t))
+       t match {
+         // TODO why was this important optimization commented out? Does it cause subtle problems?
+         // this term is already the result of simplification, so return as is
+         case Simple(t) =>
+            log("term is already simple")
+            t
          // this term was simplified before resulting in tS
-         case SimplificationResult(tS) => tS
+         case SimplificationResult(tS) =>
+           log("structure-shared term was already simplified")
+           tS
+         // apply morphisms TODO should become computation rule once module expressions are handled properly
          case OMM(t, mor) =>
             val tM = controller.globalLookup.ApplyMorphs(t, mor)
             traverse(tM)
+         // the main case
          case ComplexTerm(_,_,_,_) =>
-            log("trying to simplify " + controller.presenter.asString(t))
             logGroup {
                //log("state is" + init.t + " at " + init.path.toString)
                val (tS, globalChange) = logGroup {
@@ -91,16 +96,26 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                else
                   tSM
             }
+         // expand abbreviations but not definitions
          case OMS(p) =>
             applyAbbrevRules(p) match {
               case GlobalChange(tS) => tS.from(t)
               case NoChange => Simple(t)
               // LocalChange impossible
             }
+         // expand definitions of variables (Simple(_) prevents this case if the definiens is added later, e.g., when solving an unknown)
+         case OMV(n) => con(n).df match {
+           case Some(d) =>
+             log("expanding and simplifying definition of variable " + n)
+             traverse(d)(con.before(n), init)
+           case None =>
+             t
+         }
          case _ =>
             val tS = Simple(Traverser(this, t))
             SimplificationResult.put(t, tS)
             tS
+       }
       }
 
      /** an auxiliary method of apply that applies simplification rules
@@ -115,7 +130,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
       def applyAux(t: Term, globalChange: Boolean = false)(implicit con : Context, init: UOMState) : (Term, Boolean) = t match {
          case StrictOMA(strictApps, outer, args) =>
             // state (1)
-            //log("applying depth rules to   " + t)
+            log("applying depth rules to   " + t)
             applyDepthRules(outer, Nil, args) match {
                case GlobalChange(tS) =>
                   // go back to state (1), remember that a global change was produced
@@ -124,7 +139,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                   // applyDepthRules returns a LocalChange even if no depth rule was applicable
                   throw ImplementationError("impossible case")
                case LocalChange(argsS) =>
-                  // state (2) 
+                  // state (2)
+                  log("simplifying arguments")
                   val argsSS = argsS.zipWithIndex map {
                      case (a,i) => traverse(a)(con, init.enter(i + 1)) // +1 adjusts for the f in OMA(f, args)
                   }
@@ -137,7 +153,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                       applyAux(tS, globalChange)
                   else {
                      //state (3)
-                     //log("applying breadth rules to " + outer(argsSS))
+                     log("applying breadth and computation rules")
                      applyBreadthRules(outer, argsSS) orelse applyCompRules(tS) match {
                         case GlobalChange(tSS) =>
                            // go back to state (1), remember that a global change was produced
@@ -151,7 +167,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                      }
                   }
             }
-         case _: OMBINDC =>
+         // traverse and apply computation rules for any other complex term
+         case _: OMBINDC | _: OMA =>
+           log("applyAux with " + controller.presenter.asString(t))
            val tS = Traverser.apply(this, t)
            applyCompRules(tS) match {
              case GlobalChange(tSS) =>
@@ -278,7 +296,14 @@ class RuleBasedSimplifier extends ObjectSimplifier {
 }
 
 /**
- * UOM uses this to remember that a Term has been simplified already to avoid recursing into it again 
+ * UOM uses this to store the result of simplifying a Term in the original term so that it can be reused 
+ */
+object SimplificationResult extends TermProperty[Term](utils.mmt.baseURI / "clientProperties" / "uom" / "result") {
+   def unapply(t: Term) = get(t)
+}
+
+/**
+ * UOM uses this to remember that a Term is the result of simplification to avoid recursing into it again 
  */
 object Simple extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "simplified")
 
@@ -287,10 +312,3 @@ object Simple extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties"
  * this information is passed upwards during recursive simplification
  */
 object Changed extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "changed")
-
-/**
- * UOM uses this to store the result of simplifying a Term in the original term so that it can be reused 
- */
-object SimplificationResult extends TermProperty[Term](utils.mmt.baseURI / "clientProperties" / "uom" / "result") {
-   def unapply(t: Term) = get(t)
-}
