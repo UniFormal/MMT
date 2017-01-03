@@ -111,6 +111,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {
            case None =>
              t
          }
+         // literals read from XML may not be recognized
+         case u: UnknownOMLIT =>
+           u.recognize(init.rules).getOrElse(u)
          case _ =>
             val tS = Simple(Traverser(this, t))
             SimplificationResult.put(t, tS)
@@ -130,7 +133,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
       def applyAux(t: Term, globalChange: Boolean = false)(implicit con : Context, init: UOMState) : (Term, Boolean) = t match {
          case StrictOMA(strictApps, outer, args) =>
             // state (1)
-            log("applying depth rules to   " + t)
+            log("applying depth rules to   " + controller.presenter.asString(t))
             applyDepthRules(outer, Nil, args) match {
                case GlobalChange(tS) =>
                   // go back to state (1), remember that a global change was produced
@@ -141,8 +144,10 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                case LocalChange(argsS) =>
                   // state (2)
                   log("simplifying arguments")
-                  val argsSS = argsS.zipWithIndex map {
+                  val argsSS = logGroup {
+                    argsS.zipWithIndex map {
                      case (a,i) => traverse(a)(con, init.enter(i + 1)) // +1 adjusts for the f in OMA(f, args)
+                    }
                   }
                   val tS = StrictOMA(strictApps, outer, argsSS)
                   // if any argument changed globally, go back to state (1)
@@ -154,6 +159,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                   else {
                      //state (3)
                      log("applying breadth and computation rules")
+                     if (controller.presenter.asString(t) == "⟨(x.i) be (⟨(adjective set [z:any]true)⟩.i)|i:1⟩→(typing x) be (adjective set [z:any]true)")
+                       true
                      applyBreadthRules(outer, argsSS) orelse applyCompRules(tS) match {
                         case GlobalChange(tSS) =>
                            // go back to state (1), remember that a global change was produced

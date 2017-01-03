@@ -14,10 +14,15 @@ case class NotApplicable(message: String = "") extends Error(message)
 
 /** An abstraction over physical storage units that hold MMT content */
 abstract class Storage {
+  /** implementing classes should call this to load an OMDoc XML stream (which this method will close afterwards) */
   protected def loadXML(u: URI, dpath: DPath, reader: BufferedReader)(implicit controller: Controller) {
     val ps = new ParsingStream(u, IsRootDoc(dpath), NamespaceMap(dpath), "omdoc", reader)
     controller.report("storage", "found by " + toString + " at URL " + u)
-    controller.read(ps, interpret = false)(ErrorThrower)
+    try {
+      controller.read(ps, interpret = false)(ErrorThrower)
+    } finally {
+      ps.stream.close
+    }
   }
 
   protected def getSuffix(base: utils.URI, uri: utils.URI): List[String] = {

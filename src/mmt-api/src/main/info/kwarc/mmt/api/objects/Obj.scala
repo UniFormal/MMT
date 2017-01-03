@@ -105,7 +105,7 @@ sealed abstract class Term extends Obj {
     * 
     * @return this object but with the metadata from o
     */
-   def from(o: Term): Term = {
+   def from(o: Term): this.type = {
       copyFrom(o)
       this
    }
@@ -326,7 +326,14 @@ case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait 
  *  @param synType the type of the this literal
  */
 case class UnknownOMLIT(value: String, synType: Term) extends Term with OMLITTrait {
-   override def toString = value
+   override def toString = "\"" + value + "\""
+   
+   /** convert to OMLIT by choosing an applicable rule */
+   def recognize(rules: RuleSet) = {
+     rules.get(classOf[uom.RealizedType]).find(_.synType == synType).map {rule =>
+       rule.parse(value).from(this)
+     }
+   }
 }
 
 /**

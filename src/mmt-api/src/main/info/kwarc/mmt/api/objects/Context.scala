@@ -45,7 +45,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
       }
    }
    def toConstant(mp: MPath, con : Context) = {
-     val sub = con.map(vd => vd.name / (OMS(mp ? name)))
+     val sub = con.map(vd => vd.name / (OMS(mp ? vd.name)))
      symbols.Constant(OMMOD(mp), name, Nil, tp map(_^? sub), df map(_^? sub), None)
    }
    def toOML = OML(name, tp, df)

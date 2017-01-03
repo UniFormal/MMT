@@ -29,7 +29,7 @@ object Pattern {
     val tp = Type(params)
     val dd = new DerivedDeclaration(home, name, "pattern", TermContainer(tp), notC)
     body.mapVarDecls {case (con, vd) =>
-      val c = vd.toConstant(home.toMPath, con)
+      val c = vd.toConstant(dd.modulePath, con)
       dd.module.add(c)
     }
     dd
