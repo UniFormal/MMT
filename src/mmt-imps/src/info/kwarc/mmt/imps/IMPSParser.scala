@@ -15,11 +15,19 @@ import utils._
 
 abstract class LispExp
 
-case class Exp(children : List[(LispExp, SourceRef)]) extends LispExp
+case class Exp(children : List[LispExp], src : SourceRef) extends LispExp
 case class Str(str : String) extends LispExp
 
-// IMPS Special Forms
-case class Constant(name : String, defstr : String, theory : String, sort : Option[String], usages : Option[List[String]]) extends LispExp
+// small IMPS Special Forms
+case class Theory(thy : String)        extends LispExp
+case class Sort(srt : String)          extends LispExp
+case class Witness(wtnss : String)     extends LispExp
+case class Usages(usgs : List[String]) extends LispExp
+
+// larger IMPS Special Forms
+case class Heralding(module : String) extends LispExp
+case class Constant(name : String, defstr : String, theory : Theory, sort : Option[Sort], usages : Option[List[String]]) extends LispExp
+case class AtomicSort(sortName : String, quasiSortString : String, theory : Option[Theory], usages : Option[List[String]], witness : Option[Witness]) extends LispExp
 
 class LispParser
 {
@@ -27,7 +35,8 @@ class LispParser
 
     private def parse(u: Unparsed): LispExp =
     {
-        var exprs : List[(LispExp, SourceRef)] = List.empty
+		val sr_start : SourcePosition = u.getSourcePosition
+        var exprs : List[Exp] = List.empty
 
         // Parse as much as possible
         try
@@ -37,8 +46,8 @@ class LispParser
                 // Skip to next open brace
                 u.takeWhile(_ != '(')
                 u.next
-                val expression = parseExpAndSourceRef(u)
-                exprs = exprs ++ List(expression)
+                val exp = parseExpAndSourceRef(u)
+                exprs = exprs ::: List(exp)
             }
         }
         catch
@@ -46,42 +55,29 @@ class LispParser
             case ex : StringIndexOutOfBoundsException =>
             {
 				// Some printouts for manual inspection, to be removed later
-				println("Summary (" + exprs.length + " expressions):\n")
-				
-				for (e <- exprs)
-				{
-					e._1 match {
-						case Exp(cs) => println("Expression with " + cs.length + " children!") 
-						                for (k <- cs)
-						                {
-											k._1 match {
-												case Str(s) => println("    child: " + s)
-												case _      => println("    complete subexpression")
-										    }
-										}
-						case _       => println("~~")
-					}
-				}
+				println("Summary: " + exprs.length + " expressions parsed")
 			}
         }
         
+        val sr_end    : SourcePosition = u.getSourcePosition
+        val sr_region : SourceRegion   = SourceRegion(sr_start, sr_end)
+        val sr        : SourceRef      = SourceRef(null, sr_region)
+        
         // Return one expression with all the smaller expressions as children
-        return Exp(exprs)
+        return Exp(exprs, sr)
     }
 
-    private def parseExpAndSourceRef (u : Unparsed) : (LispExp, SourceRef) =
+    private def parseExpAndSourceRef (u : Unparsed) : Exp =
     {
         val sourceRef_start : SourcePosition = u.getSourcePosition
-        var children : List[(LispExp, SourceRef)] = List.empty
+        var children : List[Exp] = List.empty
 
         var open   : Int = 1
         var closed : Int = 0
 
 		// While expression is still ongoing
         while (open - closed != 0)
-        {
-			println("iteration, head is " + u.head)
-			
+        {			
             if (u.head == '"')
             {
 				// String literal parsing (defStrings etc.)
@@ -94,7 +90,7 @@ class LispParser
                 val sr_region : SourceRegion   = SourceRegion(sr_start, sr_end)
                 val sr        : SourceRef      = SourceRef(null, sr_region)
 
-                children = children ++ List((new Str("\"" + str + "\""), sr))
+                children = children ::: List(Exp(List(new Str("\"" + str + "\"")), sr))
                 u.next
             }
             else if (u.head == '(')
@@ -102,9 +98,8 @@ class LispParser
 				// Some children are complete expressions in themselves
 				// necessitating a recursive call
                 u.next
-                val chld : (LispExp, SourceRef) = parseExpAndSourceRef(u)
-                
-                children = children ++ List(chld)
+                val chld : Exp = parseExpAndSourceRef(u)
+                children = children ::: List(chld)
                 u.next
             }
             else if (u.head == ')')
@@ -129,7 +124,7 @@ class LispParser
                 val sr_region : SourceRegion   = SourceRegion(sr_start, sr_end)
                 val sr        : SourceRef      = SourceRef(null, sr_region)
 
-                children = children ++ List((new Str("\"" + str + "\""), sr))
+                children = children ::: List(Exp(List(new Str(str)), sr))
             }
             // TODO: This doesn't handle lists (e.g. of names, lambdas) correctly, I think
         }
@@ -139,8 +134,132 @@ class LispParser
         val sourceRef        : SourceRef      = SourceRef(null, sourceRef_region)
         // TODO: Implement correct URI
 
-        return (Exp(children), sourceRef)
+        return Exp(children, sourceRef)
     }
+    
+    private def parseExpressions (exprs : List[Exp]) : List[LispExp] =
+    {
+		var parsedExprs : List[LispExp] = List.empty
+		
+		for (e <- exprs)
+		{
+			e.children.head match {
+				case Str("herald")          => println("herald parsed")
+				case Str("def-atomic-sort") => var as : Option[LispExp] = parseAtomicSort(e)
+			                                   if (!(as.isEmpty)) {
+												   parsedExprs = parsedExprs ::: List(as.get) 
+				                                   println("atomic sort parsed")
+										       } else { println("atomic sort not parsed") }
+				case Str(str)               => println(str)
+				case _                      => println("Couldn't parse, adding unaltered Exp")
+			}
+		}
+		
+		return parsedExprs
+	}
+    
+    // ######################### Smaller Parsers
+    
+    private def parseAtomicSort (e : Exp) : Option[LispExp] =
+    {
+		var name : Option[String] = None
+		var qss  : Option[String] = None
+		
+		var thy     : Option[Theory]       = None
+		var usages  : Option[List[String]] = None
+		var witness : Option[Witness]      = None
+		
+		val cs : Int = e.children.length
+		if (cs >= 2 && e.children(0) == Str("def-atomic-sort"))
+		{
+			/* Parse positional arguments */
+			e.children(1) match { case Str(x) => name = Some(x) }
+			e.children(2) match { case Str(y) => qss  = Some(y) }
+			
+			/* Parse modifier and keyword arguments */
+			var i : Int = 3
+			while (cs - i >= 0)
+			{
+				println("Checking an optional argument!")
+				/*
+				if (parseTheory(e.children(i)._1)  != None) {thy = parseTheory(e.children(i)._1)}
+				if (parseUsages(e.children(i)._1)  != None) {thy = parseUsages(e.children(i)._1)}
+				if (parseWitness(e.children(i)._1) != None) {thy = parseWitness(e.children(i)._1)}*/
+				i += 1
+			}
+			
+			if (name.isEmpty || qss.isEmpty) { return None }
+			else { return Some(AtomicSort(name.get, qss.get, thy, usages, witness)) }
+			
+		} else { return None }
+	}
+	
+	private def parseConstant (e : Exp) : Option[LispExp] =
+	{
+		return None
+	}
+	
+	// ######### Tiny parsers
+	
+	private def parseHeralding (e : Exp) : Option[Heralding] =
+	{
+		if ((e.children.length == 2) && (e.children(0) == Str("herald"))) {
+			e.children(1) match {
+				case Str(x) => return Some(Heralding(x))
+				case _      => return None
+			}
+		} else {
+			return None
+		}
+	}
+	
+	private def parseTheory (e : Exp) : Option[Theory] =
+	{
+		if ((e.children.length == 2) && (e.children(0) == Str("theory"))) {
+			e.children(1) match {
+				case Str(x) => return Some(Theory(x))
+				case _      => return None
+			}
+		} else {
+			return None
+		}
+	}
+	
+	private def parseWitness (e : Exp) : Option[Witness] =
+	{
+		if ((e.children.length == 2) && (e.children(0) == Str("witness"))) {
+			e.children(1) match {
+				case Str(x) => return Some(Witness(x))
+				case _      => return None
+			}
+		} else {
+			return None
+		}
+	}
+	
+	private def parseUsages (e : Exp) : Option[Usages] =
+	{
+		var usgs : List[String] = List.empty
+		
+		if ((e.children.length >= 2) && (e.children(0) == Str("usages")))
+		{
+			var i : Int = 2
+			
+			while (i <= e.children.length)
+			{
+				e.children(i) match
+				{
+					case Str(x) => usgs = usgs ::: List(x)
+					case _      => return None
+				}
+				i += 1;
+			}
+			return Some(Usages(usgs))
+			
+		} else {
+			return None
+		}
+	}
 }
 
 // this might eventually subclass archives.Importer
