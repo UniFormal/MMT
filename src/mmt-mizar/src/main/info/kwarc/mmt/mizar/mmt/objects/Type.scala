@@ -83,18 +83,15 @@ object MMTFunc {
 }
 
 object MMTCluster {
-	def apply(adjs : List[Term]) :Term = {
-	  adjs.length match {
-	    case 0 => MMTUtils.nullAttribute
-	    case _ =>  clusterAttrs(adjs)		
-	  }
+	def apply(adjs : List[Term]): Term = {
+	  clusterAttrs(adjs)
 	}
 
 	private def clusterAttrs(adjs : List[Term]) : Term = {
 		adjs match {
-			case hd :: (hd2 :: tl) => Mizar.cluster(hd, clusterAttrs(hd2 :: tl))
+			case Nil => MMTUtils.nullAttribute
 			case hd :: Nil => hd
-			case Nil => OMV("error in cluster attrs")
+			case hd ::  tl => Mizar.cluster(hd, clusterAttrs(tl))
 		}
 	}
 

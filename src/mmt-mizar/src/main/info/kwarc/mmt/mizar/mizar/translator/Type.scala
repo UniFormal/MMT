@@ -10,17 +10,23 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.lf._
 
 object TypeTranslator {
-	def translateTyp(t : MizTyp) : Term = {
-		val tpfunc = MMTResolve(t.aid, t.kind, t.absnr)
-		val tms = t.terms.map(translateTerm)
-		val cluster = translateCluster(t.clusters(0))
-		val tp = tms.length match {
-		  case 0 => tpfunc
-		  case _ => Mizar.apply(tpfunc, tms : _*)
-		}
-		Mizar.adjective(cluster,tp)
-	}
-	
+  def translateTyp(t : MizTyp) : Term = {
+    val tpfunc = MMTResolve(t.aid, t.kind, t.absnr)
+    val tms = t.terms.map(translateTerm)
+    val tp = tms.length match {
+      case 0 => tpfunc
+      case _ => Mizar.apply(tpfunc, tms : _*)
+    }
+    val mizCluster = t.clusters(0)
+    mizCluster.adjs match {
+      case Nil => tp
+      case _ => 
+        val cluster = translateCluster(mizCluster)
+        Mizar.adjective(cluster,tp)
+    }
+  }
+
+  
 	def translateTerm(term : MizTerm) : Term = {
 		term match {
 			case t : MizVar => TranslationController.resolveVar(t.nr) 
@@ -55,7 +61,7 @@ object TypeTranslator {
 		MMTAttribute(adj.aid, adj.kind, adj.absnr, adj.value) 
 	}
 	
-	def translateCluster(c : MizCluster) : Term = {
+	def translateCluster(c : MizCluster) :Term = {
 		MMTCluster(c.adjs.map(translateAdjective(_)))
 	}
 	
