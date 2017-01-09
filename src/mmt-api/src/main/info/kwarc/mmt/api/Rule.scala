@@ -101,7 +101,7 @@ class MutableRuleSet extends RuleSet {
 
 object RuleSet {
    /** collects all rules visible to a context, based on what is currently loaded into memory */
-   def collectRules(controller: Controller, context: Context): RuleSet = {
+   def collectRules(controller: Controller, context: Context): MutableRuleSet = {
       val support = context.getIncludes
       val decls = support.flatMap {p =>
         controller.globalLookup.getDeclarationsInScope(OMMOD(p))

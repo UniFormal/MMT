@@ -19,6 +19,7 @@ import Conversions._
 class Matcher(controller: Controller, rules: RuleSet) extends Logger {
    def logPrefix = "matcher"
    def report = controller.report
+   private def presentObj(o: Obj) = controller.presenter.asString(o)
    
    private val solutionRules = rules.get(classOf[SolutionRule])
    private val equalityRules = rules.get(classOf[TermBasedEqualityRule])
@@ -106,7 +107,14 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
    
    /** tp level match function */
    private def matchTerms(goal: Term, query: Term) = {
-     log(s"matching $querySolution such that |- $goal = $query")
+     log(s"matching ${presentObj(querySolution)} such that |- ${presentObj(goal)} = ${presentObj(query)}")
+     def isNot(t: Term) = t match {
+       case OMA(OMS(op), OMS(conn) :: _) => op.name.toString == "apply" && conn.name.toString == "not"
+       case _ => false
+     }
+     if (isNot(goal) && isNot(query)) {
+        true
+     }
      aux(Nil, goal, query)
    }
    
@@ -123,7 +131,9 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
       if (goalOrg hasheq queryOrg) return true
       // 2) try term-based equality rules
       equalityRules.filter(r => r.applicable(goalOrg, queryOrg)) foreach {r =>
-         r(callback)(goalOrg, queryOrg, None)(Stack(boundOrg), NoHistory) foreach {cont => return cont()}
+         r(callback)(goalOrg, queryOrg, None)(Stack(boundOrg), NoHistory) foreach {cont =>
+           return cont()
+         }
       }
       // 3) try to isolate a query variable 
       // j is the equality judgment that we try to apply solution rules to
@@ -160,7 +170,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
             if (!bM) return false
             val rename = auxCon(bound, bound1, bound2).getOrElse(return false)
             (sc1 zip sc2) forall {
-               case (s1, s2) => aux(bound ++ bound2, s1 ^? rename, s2)
+               case (s1, s2) => aux(bound ++ bound1, s1, s2 ^? rename)
             }
          case (l1: OMLIT, l2: OMLIT) => l1.value == l2.value
          // this case works for constants (true if equal), and all asymmetric combinations (always false) 
@@ -180,15 +190,15 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
    private def auxCon(bound: Context, goal: Context, query: Context): Option[Substitution] = {
       if (goal.length != query.length) return None
       var rename = Substitution()
-      (goal zip query.declsInContext.toList) foreach {
-         case (VarDecl(x1,tp1,df1, _), (queryBound, VarDecl(x2,tp2, df2, _))) =>
+      (goal.declsInContext.toList zip query) foreach {
+         case ((goalBound, VarDecl(x1,tp1,df1, _)), VarDecl(x2,tp2, df2, _)) =>
             List((tp1,tp2), (df1,df2)) foreach {
                case (None,None) => true
                case (Some(t1), Some(t2)) =>
-                  aux(bound ++ queryBound, t1 ^? rename, t2)
+                  aux(bound ++ goalBound, t1, t2 ^? rename)
                case _ => return None
             }
-            rename ++= (x1/OMV(x2))
+            rename ++= (x2/OMV(x1))
       }
       Some(rename)
    }

@@ -304,63 +304,6 @@ class RuleBasedSimplifier extends ObjectSimplifier {
       }
       NoChange
    }
-
-   // ************************* complification ********************************
-   
-   def complify(obj: Obj, context: Context, rules: RuleSet): obj.ThisType = {
-     compTraverse.traverseObject(obj)(context, new ComplifyState(rules))
-   }
-   
-   /** like UOMSTate */
-   private class ComplifyState(rules: RuleSet) {
-     val matcher = new Matcher(controller, rules)
-     val complifyRules = rules.get(classOf[ComplificationRule])
-   }
-   
-   /** exhaustively applies complification rules */
-   private object compTraverse extends Traverser[ComplifyState] {
-     /** exhaustively apply all rules to this term, return result if changed */
-     private def tryComplifyRules(t: Term, changed: Boolean = false)(implicit context: Context, state: ComplifyState): Option[Term] = {
-       state.complifyRules.foreach {r =>
-         r(state.matcher, context, t).foreach {tC => return tryComplifyRules(tC, true)}
-       }
-       if (changed) Some(t) else None
-     }
-
-     /** thrown to bubble up a change to the previous traversal level */
-     private case class ComplificationChange(result: Term) extends Throwable 
-     
-     def traverse(t: Term)(implicit con : Context, state: ComplifyState) = {
-       try {
-         traverseAux(t)
-        } catch {case ComplificationChange(tC) =>
-          // any change bubbles up all the way until here
-          tC
-        }
-     }
-
-     private def traverseAux(t: Term)(implicit con : Context, state: ComplifyState): Term = {
-       t match {
-         case Complified(tC) =>
-           // already done
-           tC
-         case t => tryComplifyRules(t) match {
-           case Some(tC) =>
-             // bubble up change
-             throw ComplificationChange(tC)
-           case None => try {
-             // apply to subterms
-             val tC = Traverser(this, t)
-             // no change, so remember that we are done
-             Complified(tC)
-           } catch {case ComplificationChange(tC) =>
-             // there was a change in a subterm, repeat
-             traverseAux(tC)
-           }
-         }
-       }
-     }
-   }
 }
 
 object RuleBasedSimplifier {
@@ -375,13 +318,7 @@ object RuleBasedSimplifier {
    * used to remember that a Term is the result of simplification to avoid recursing into it again 
    */
   object Simple extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "simplified")
-  
-  /**
-   * used to remember that a Term is the result of complification to avoid recursing into it again 
-   */
-  object Complified extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "complified")
-  
-  
+    
   /**
    * used to remember whether a Term underwent a GlobalChange during simplification
    * this information is passed upwards during recursive simplification

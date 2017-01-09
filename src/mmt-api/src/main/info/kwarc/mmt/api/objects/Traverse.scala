@@ -37,6 +37,13 @@ abstract class Traverser[A] {
      // this is statically well-typed, but we need a cast because Scala does not see it
      result.asInstanceOf[obj.ThisType]
    }
+   
+   /** this traverser as a translator
+    *  @param newInit creates a fresh initial state
+    */
+   def toTranslator(newInit: () => A) = new symbols.UniformTranslator {
+     def apply(c: Context, t: Term) = traverse(t)(c, newInit()) 
+   }
 }
 
 /**
@@ -44,6 +51,8 @@ abstract class Traverser[A] {
  */
 abstract class StatelessTraverser extends Traverser[Unit] {
    def apply(t: Term, con : Context) : Term = traverse(t)(con, ())
+   
+   def toTranslator(): symbols.Translator = toTranslator(() => ())
 }
 
 object Traverser {

@@ -25,16 +25,8 @@ case class GlobalChange(it: Term) extends Change
 /** no change */
 case object NoChange extends Change
 
-object UOMRule {
-  type Phase = Int
-  val Simplify = 1
-  val Complify = -1
-}
-
 /** super class of all rules used by the [[UOM]] */
-trait UOMRule extends SyntaxDrivenRule {
-  def phase: UOMRule.Phase = UOMRule.Simplify
-}
+trait UOMRule extends SyntaxDrivenRule
 
 /** an arbitrary rewrite/computation/simplification rule */
 // TDOO this should become part of UOMRule, breadth/depth rules should be instances
@@ -47,9 +39,7 @@ trait TermTransformationRule extends UOMRule {
  *  
  *  separating these rules is important to avoid cycles during simplification
  */
-trait ComplificationRule extends TermTransformationRule {
-  override def phase = UOMRule.Complify
-}
+trait ComplificationRule extends TermTransformationRule
 
 /** A DepthRule looks one level deep into the structure of one of the arguments of an operator
  * 
@@ -92,18 +82,15 @@ abstract class BreadthRule(val head: GlobalName) extends UOMRule {
 }
 
 /** An AbbrevRule expands a symbol into a term */ 
-class AbbrevRule(val head: GlobalName, val term: Term) extends UOMRule {
-  object complifyRule extends RewriteRule(???, Context.empty, term, OMS(head)) with ComplificationRule
-  override def getRules = complifyRule :: super.getRules
-}
+class AbbrevRule(val head: GlobalName, val term: Term) extends UOMRule
 
 /** a general rewrite rule
  *  @param templateVars the free variables to fill in through matching
  *  @param template the left-hand side
  *  @param result the right-hand side
  */
-class RewriteRule(ops: List[GlobalName], templateVars: Context, template: Term, val result: Term) extends TermTransformationRule {
-  val head = ops.last
+class RewriteRule(val head: GlobalName, templateVars: Context, template: Term, val result: Term)
+  extends TermTransformationRule {
   def apply(matcher: Matcher, goalContext: Context, goal: Term) = {
     matcher(goalContext, goal, templateVars, template) match {
       case MatchSuccess(sub) => Some(result ^? sub)

@@ -211,6 +211,7 @@ trait ApplicableUnder extends CheckingRule {
    def applicable(tm: Term) = tm match {
       case OMA(f,a) => (f::a).startsWith(ops)
       case OMS(p) => under == Nil && heads.contains(p)
+      case OMBINDC(OMS(p), _, _) => p == head && under.isEmpty
       case _ => false
    }
 }

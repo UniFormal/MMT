@@ -12,9 +12,6 @@ trait ObjectSimplifier extends Extension {self =>
    /** applies rules to simplify an object */
    def apply(obj: Obj, context: Context, rules: RuleSet): obj.ThisType
    
-   /** applies only complification rules, used to unsimplify a fully-processed object, e.g., to undo definition expansion */
-   def complify(obj: Obj, context: Context, rules: RuleSet): obj.ThisType
-   
    def toTranslator(rules: RuleSet) = new UniformTranslator {
      def apply(c: Context, t: Term) = self.apply(t, c, rules) 
    }
