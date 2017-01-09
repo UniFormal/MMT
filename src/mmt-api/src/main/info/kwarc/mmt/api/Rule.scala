@@ -64,25 +64,39 @@ class RuleType(be: Backend) extends Atomic[Rule] {
  */
 class RuleLiterals(be: backend.Backend) extends RepresentedRealizedType[Rule](OMS(utils.mmt.mmtcd ? "rule"), new RuleType(be))
 
-/** A RuleSet groups some Rule's. Its construction and use corresponds to algebraic theories. */
-class RuleSet {
-   private val rules = new HashSet[Rule]
-
-   def declares(rs: Rule*) {rs foreach {rules += _}}
-   def imports(rss: RuleSet*) {rss foreach {rules ++= _.rules}}
+/** A RuleSet groups some Rule's. */
+abstract class RuleSet {self =>
+   /** the underlying set of rules */
+   def getAll: Iterable[Rule]
    
-   def getAll = rules
-   def get[R<:Rule](cls: Class[R]): HashSet[R] = rules flatMap {r =>
+   def get[R<:Rule](cls: Class[R]): Iterable[R] = getAll flatMap {r =>
       if (cls.isInstance(r))
          List(r.asInstanceOf[R])
       else
          Nil
    }
-   def getByHead[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): HashSet[R] = get(cls) filter {r => r.head == head || (r.alternativeHeads contains head)}
-   def getFirst[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): Option[R] = getByHead(cls, head).headOption
+   def getByHead[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): Iterable[R] =
+     get(cls) filter {r => r.head == head || (r.alternativeHeads contains head)}
+   def getFirst[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): Option[R] =
+     getByHead(cls, head).headOption
    
-   override def toString = rules.toList.map(_.toString).mkString(", ")
+   override def toString = getAll.toList.map(_.toString).mkString(", ")
+   
+   /** filters this set by a predicate */
+   def filter(include: Rule => Boolean) = new RuleSet {
+     def getAll = self.getAll.filter(include)
+   }
+}
 
+/** standard implementation of using set of rules hashed by their head */
+class MutableRuleSet extends RuleSet {
+   private val rules = new HashSet[Rule]
+
+   /* Its construction and use corresponds to algebraic theories. */ 
+   def declares(rs: Rule*) {rs foreach {rules += _}}
+   def imports(rss: RuleSet*) {rss foreach {rules ++= _.getAll}}
+
+   def getAll = rules
 }
 
 object RuleSet {
@@ -92,7 +106,7 @@ object RuleSet {
       val decls = support.flatMap {p =>
         controller.globalLookup.getDeclarationsInScope(OMMOD(p))
       }.distinct
-      val rs = new RuleSet
+      val rs = new MutableRuleSet
       val rci = new RuleConstantInterpreter(controller)
       decls.foreach {
          case rc: RuleConstant =>

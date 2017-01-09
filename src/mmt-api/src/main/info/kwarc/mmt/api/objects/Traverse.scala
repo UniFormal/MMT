@@ -23,6 +23,20 @@ abstract class Traverser[A] {
          vd.copy(tp = newt, df = newd)
       }
    }
+   
+   /** traverses any object by mapping all the terms in it */
+   def traverseObject(obj: Obj)(implicit con: Context, state: State): obj.ThisType = {
+     val result = obj match {
+       case t: Term => traverse(t)
+       case c: Context => traverseContext(c)
+       case vd: VarDecl => traverseContext(Context(vd)).variables.head
+       case s: Substitution =>
+         s.map {case Sub(x,t) => Sub(x, traverse(t))}
+       case s: Sub => Sub(s.name, traverse(s.target))
+     }
+     // this is statically well-typed, but we need a cast because Scala does not see it
+     result.asInstanceOf[obj.ThisType]
+   }
 }
 
 /**

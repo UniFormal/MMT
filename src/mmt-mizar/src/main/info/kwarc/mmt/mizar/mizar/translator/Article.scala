@@ -3,7 +3,6 @@ package info.kwarc.mmt.mizar.mizar.translator
 import info.kwarc.mmt.mizar.mizar.objects._
 import info.kwarc.mmt.mizar.mizar.reader._
 import info.kwarc.mmt.mizar.mmt.objects._
-
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.utils._
@@ -13,11 +12,10 @@ import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import objects.Conversions._
-
 import info.kwarc.mmt.lf.Arrow
 import info.kwarc.mmt.lf.Lambda
-
 import info.kwarc.mmt.morphisms._
+import org.omdoc.latin.foundations.mizar.MizInstance
 
 
 object ArticleTranslator {

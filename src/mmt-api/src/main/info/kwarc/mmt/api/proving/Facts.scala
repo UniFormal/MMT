@@ -172,15 +172,16 @@ class Facts(prover: Searcher, shapeDepth: Int, outerLogPrefix: String) extends f
     */
    private def matchFact(queryVars: Context, query: Term, f: Fact): Option[(Substitution,Term)] = {
       val (queryFresh, freshSub) = Context.makeFresh(queryVars, f.goal.fullContext.map(_.name)) 
-      val matcher = prover.makeMatcher(f.goal.fullContext, queryFresh)
-      val matches = matcher(f.tp, query)
-      if (matches) {
-         val solution = matcher.getSolution
-         // we need freshSub ^ solution but restricted to those variables that were solved
-         val freshSubRestrict = freshSub.filter {case Sub(_, OMV(qF)) => solution.maps(qF)}
-         Some((freshSubRestrict ^ solution, f.tm))
-      } else
+      val matcher = prover.makeMatcher
+      val matches = matcher(f.goal.fullContext, f.tp, queryFresh, query)
+      matches match {
+        case MatchSuccess(solution) =>
+           // we need freshSub ^ solution but restricted to those variables that were solved
+           val freshSubRestrict = freshSub.filter {case Sub(_, OMV(qF)) => solution.maps(qF)}
+           Some((freshSubRestrict ^ solution, f.tm))
+        case _ =>
          None
+      }
    }
    
    /**

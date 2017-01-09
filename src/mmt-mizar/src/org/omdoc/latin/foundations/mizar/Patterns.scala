@@ -1,4 +1,4 @@
-package info.kwarc.mmt.mizar.mmt.objects
+package org.omdoc.latin.foundations.mizar
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
@@ -6,6 +6,8 @@ import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.documents._
+
+import info.kwarc.mmt.mizar.mmt.objects._
 
 //Utility objects for constructing MMT Patterns and  MMT Instances (of Patterns) for the Mizar Import
 //Main function is to shield the rest of Mizar code from changes to the MMT API.
@@ -21,7 +23,10 @@ object MizInstance {
    }
 }
 
-object MizarPatterns {
+object MizarPatterns extends uom.RealizedTheory(Some(info.kwarc.mmt.sequences.LFS._path)) {
+  // the path used to include this
+  override lazy val mpath = Mizar.MizarPatternsTh
+  
   val patterns : List[DerivedDeclaration] 
                = List(
                    DefPatterns.MizAttrIsCompleteDef,
@@ -59,4 +64,9 @@ object MizarPatterns {
                    RegPatterns.MizConditionalReg,
                    RegPatterns.MizFunctionalReg
                    )
+  // lazily build the body of the theory
+  declare {
+    add(PlainInclude(Mizar.HiddenTh, path))
+    patterns foreach {add(_,None)}
+  }
 }

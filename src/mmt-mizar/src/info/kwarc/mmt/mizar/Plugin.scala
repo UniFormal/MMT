@@ -4,9 +4,10 @@ import info.kwarc.mmt._
 import info.kwarc.mmt.api._
 import documents._
 import modules._
-
 import info.kwarc.mmt.mizar.mmt.objects._
+import org.omdoc.latin.foundations.mizar.MizarPatterns
 
+/*
 class Plugin extends frontend.Plugin {
   val theory = Mizar.MizarPatternsTh
   val dependencies = Nil
@@ -25,3 +26,4 @@ class Plugin extends frontend.Plugin {
     controller.add(MRef(dpath, thy.path))
   }
 }
+*/

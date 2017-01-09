@@ -20,7 +20,8 @@ object Mizar {
   val mathHubBase = "http://gl.mathhub.info/Mizar/MML/blob/master"
 	private val mizarBase =  DPath(utils.URI("http", "latin.omdoc.org") / "foundations"/ "mizar")
 	val MizarTh = mizarBase ? "Mizar"
-	val MizarPatternsTh = mizarBase ? "mizar-patterns"
+	val MizarPatternsTh = mizarBase ? "MizarPatterns"
+	
 	val HiddenTh = mizarBase ? "HIDDEN"
   //TODO
 	val MizarInformal = mizarBase ? "mizar-informal"

@@ -4,7 +4,6 @@ import info.kwarc.mmt.mizar.mizar.objects._
 import info.kwarc.mmt.mizar.mmt.objects._
 import MizSeq._
 import info.kwarc.mmt.mizar.mizar.reader._
-
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.utils._
@@ -17,6 +16,7 @@ import info.kwarc.mmt.lf._
 import info.kwarc.mmt.morphisms._
 import objects.Conversions._
 import info.kwarc.mmt.api.notations.NotationContainer
+import org.omdoc.latin.foundations.mizar.MizInstance
 
 object DefinitionTranslator {
 

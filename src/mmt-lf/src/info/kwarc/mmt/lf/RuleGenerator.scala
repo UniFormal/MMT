@@ -83,13 +83,14 @@ abstract class RuleGenerator extends ChangeListener {
             new TypingRule(???) {
               def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) = {
                  val rec = new Recurser(solver)
-                 val mt = rec.makeMatcher(stack.context, r.parameters)
-                 val matches = mt(a,tm) && mt(b, tp)
-                 if (matches && mt.getUnsolvedVariables.isEmpty) {
-                    val sub = mt.getSolution
-                    r.assumptions.forall(a => rec(a ^ sub))
-                 } else
+                 val mt = rec.makeMatcher
+                 val matches = mt(rec.solverContext ++ stack.context, r.parameters) {eq => eq(a, tm) && eq(b, tp)}
+                 matches match {
+                   case MatchSuccess(sub) =>
+                      r.assumptions.forall(a => rec(a ^ sub))
+                   case _ =>
                     ??? // not applicable
+                 }
               }
            }
      }
@@ -113,8 +114,8 @@ abstract class RuleGenerator extends ChangeListener {
         }
         solver.check(j)
      }
-     def makeMatcher(context: Context, qVars: Context) = {
-        new Matcher(solver.controller, solver.rules, solverContext ++ context, qVars)
+     def makeMatcher = {
+        new Matcher(solver.controller, solver.rules)
      }
   }
 }

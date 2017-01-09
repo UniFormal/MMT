@@ -2,7 +2,6 @@ package info.kwarc.mmt.mizar.mmt.objects
 
 import info.kwarc.mmt.mizar.mizar.translator._
 import MizSeq._
-
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.utils._
@@ -12,8 +11,8 @@ import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
-
 import info.kwarc.mmt.morphisms._
+import org.omdoc.latin.foundations.mizar.MizPattern
 
 object RegPatterns  {
   val MizExistentialReg = MizPattern(LocalName("MizExistentialRegistration"),

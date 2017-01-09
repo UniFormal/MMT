@@ -193,7 +193,7 @@ class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extend
     val s = uom.GenericScalaExporter.mpathToScala(mp)
     //controller.report("backend", "trying to load class " + s)
     val r = reflect(s + "$", mp) match {
-      case r: uom.RealizationInScala => r
+      case r: uom.RealizedTheory => r
       case _ => throw BackendError("class for " + mp + " exists but is not a realization", mp)
     }
     try {
