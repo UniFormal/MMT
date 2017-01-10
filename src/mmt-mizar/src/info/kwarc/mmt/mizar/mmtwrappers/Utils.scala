@@ -122,15 +122,18 @@ object MMTUtils {
 	  getTheoryPath(aid) ? LocalName(name.map(SimpleStep)) 
 	}
 	
-	//new args
+	//Lambda args
 	
 	def LamArgs(name: String, argNr : Int, body : Term) : Term = {
 	  Lambda(LocalName("x"), Ellipsis(OMI(argNr), LocalName("i"), Mizar.any), body)
 	}
 	
 	
+	def Lam(name : String, tp : Term, body : Term) : Term = {
+	  Lambda(LocalName(name), tp, body)
+	}
 	
-	// old args
+	// Pi args
 	def PiArgs(argNr : String, body : Term) : Term = {
 	  Arrow(Ellipsis(OMV(argNr), LocalName("i"), Mizar.any), body)
 	}

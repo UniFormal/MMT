@@ -66,13 +66,14 @@ object DefinitionTranslator {
       case Some(s) => s
     }
     p.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
-    TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
-
+    //TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
+    TranslationController.addLocusVarBinder(OMV("it"))
+    
     val args = p.args.map(x => TypeTranslator.translateTyp(x._2))
     //val retType = TypeTranslator.translateTyp(p.retType)
     val cases = p.cases.map(x => PropositionTranslator.translateFormula(x._2))
-    val results = p.cases.map(x => PropositionTranslator.translateFormula(x._1))
-    val default = p.form.map(PropositionTranslator.translateFormula)
+    val results = p.cases.map(x => MMTUtils.Lam("it", Mizar.prop, PropositionTranslator.translateFormula(x._1)))
+    val default = p.form.map(d => MMTUtils.Lam("it", Mizar.prop, PropositionTranslator.translateFormula(d)))
     val matches = makeSubs(args, None, cases, results, default)
     val pattern = default match {
       case None => DefPatterns.MizPredMeansCompleteDef
@@ -123,12 +124,13 @@ object DefinitionTranslator {
     val sind : uom.IntegerLiteral = uom.StandardInt
     
     f.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
-    TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
+    //TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
+    TranslationController.addLocusVarBinder(OMV("it"))
     val args = f.args.map(x => TypeTranslator.translateTyp(x._2))
     val retType = TypeTranslator.translateTyp(f.retType)
     val cases = f.cases.map(x => PropositionTranslator.translateFormula(x._2))
-    val results = f.cases.map(x => PropositionTranslator.translateFormula(x._1))
-    val default = f.form.map(PropositionTranslator.translateFormula)
+    val results = f.cases.map(x => MMTUtils.Lam("it", Mizar.any, PropositionTranslator.translateFormula(x._1)))
+    val default = f.form.map(d => MMTUtils.Lam("it", Mizar.any, PropositionTranslator.translateFormula(d)))
     val matches = makeSubs(args, Some(("retType", retType)), cases, results, default)
     val pattern = default match {
       case None => DefPatterns.MizFuncMeansCompleteDef
@@ -177,12 +179,13 @@ object DefinitionTranslator {
       case Some(s) => s
     }
     m.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
-    TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
-
+    //TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
+    TranslationController.addLocusVarBinder(OMV("it"))
+    
     val args = m.args.map(x => TypeTranslator.translateTyp(x._2))
     val cases = m.cases.map(x => PropositionTranslator.translateFormula(x._2))
-    val results = m.cases.map(x => PropositionTranslator.translateFormula(x._1))
-    val default = m.form.map(PropositionTranslator.translateFormula)
+    val results = m.cases.map(x => MMTUtils.Lam("it", Mizar.tp, PropositionTranslator.translateFormula(x._1)))
+    val default = m.form.map(d => MMTUtils.Lam("it", Mizar.tp, PropositionTranslator.translateFormula(d)))
     val matches = makeSubs(args, None, cases, results, default)
     val pattern = default match {
       case None => DefPatterns.MizModeMeansCompleteDef
@@ -232,13 +235,14 @@ object DefinitionTranslator {
       case Some(s) => s
     }
     a.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
-    TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
-
+    //TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
+    TranslationController.addLocusVarBinder(OMV("it"))
+    
     val args = a.args.map(x => TypeTranslator.translateTyp(x._2))
     val mType = TypeTranslator.translateTyp(a.retType)
     val cases = a.cases.map(x => PropositionTranslator.translateFormula(x._2))
-    val results = a.cases.map(x => PropositionTranslator.translateFormula(x._1))
-    val default = a.form.map(PropositionTranslator.translateFormula)
+    val results = a.cases.map(x => MMTUtils.Lam("it", mType, PropositionTranslator.translateFormula(x._1)))
+    val default = a.form.map(f => MMTUtils.Lam("it", mType, PropositionTranslator.translateFormula(f)))
     val matches = makeSubs(args, Some(("mType", mType)), cases, results, default)
     val pattern = default match {
       case None => DefPatterns.MizAttrMeansCompleteDef
@@ -261,7 +265,7 @@ object DefinitionTranslator {
     }
     
     a.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
-    TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
+    //TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
 
     val args = a.args.map(x => TypeTranslator.translateTyp(x._2))
     val mType = TypeTranslator.translateTyp(a.retType)
