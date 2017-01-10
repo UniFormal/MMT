@@ -179,7 +179,6 @@ object DefinitionTranslator {
       case Some(s) => s
     }
     m.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
-    //TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
     TranslationController.addLocusVarBinder(OMV("it"))
     
     val args = m.args.map(x => TypeTranslator.translateTyp(x._2))

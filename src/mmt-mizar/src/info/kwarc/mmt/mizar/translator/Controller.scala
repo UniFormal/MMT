@@ -164,7 +164,13 @@ object TranslationController {
 			varContext.push(OMV(x))
 			x			
 		case None =>
-			val name = "x" + varContext.length
+		  val n = varContext.length
+		  val base = (n % 10 + 'a').toChar.toString
+		  val counter = (n / 10) match {
+		    case 0 => ""
+		    case n =>  n.toString
+		  }
+		  val name = base + counter		  
 			varContext.push(OMV(name))
 			name
 	}
