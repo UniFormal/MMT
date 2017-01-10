@@ -32,20 +32,20 @@ case class Str(str : String) extends LispExp {
 
 // small IMPS Special Forms
 case class Theory(thy : String, src : SourceRef) extends LispExp {
-    override def toString() : String = { return "  (theory " + thy }
+    override def toString() : String = { return "(theory " + thy + ")"}
 }
 
 case class Sort(sort : String, src : SourceRef) extends LispExp {
-    override def toString() : String = { return "  (sort " + sort }
+    override def toString() : String = { return "(sort " + sort + ")" }
 }
 
 case class Witness(witness : String, src : SourceRef) extends LispExp {
-    override def toString() : String = { return "  (witness " + witness }
+    override def toString() : String = { return "(witness " + witness + ")"}
 }
 
 case class Usages(usgs : List[String], src : SourceRef) extends LispExp {
     override def toString() : String = {
-        var str : String = "  (usages "
+        var str : String = "(usages "
         str = str + " " + usgs.head
         for (u <- usgs.tail)
         {
@@ -69,15 +69,16 @@ case class LoadSection(section : String, src : SourceRef) extends LispExp {
 case class AtomicSort(sortName        : String,
                       quasiSortString : String,
                       theory          : Option[Theory],
-                      usages          : Option[List[String]],
+                      usages          : Option[Usages],
                       witness         : Option[Witness],
                       src : SourceRef) extends LispExp {
     override def toString() : String = {
-        var str : String = "Atomic Sort called " + sortName
-        str = str + " with predicate " + quasiSortString + "."
+        var str : String = "(def-atomic-sort " + sortName
+        str = str + "\n  " + quasiSortString
         if (!(theory.isEmpty)) { str = str + "\n  " + theory.get.toString}
-        if (!(usages.isEmpty)) { str = str + "\n  " + theory.get.toString}
-        if (!(witness.isEmpty)) { str = str + "\n  " + theory.get.toString}
+        if (!(usages.isEmpty)) { str = str + "\n  " + usages.get.toString}
+        if (!(witness.isEmpty)) { str = str + "\n  " + witness.get.toString}
+        str = str + ")"
         return str
     }
 }
@@ -240,26 +241,32 @@ class LispParser
         var name : Option[String] = None
         var qss  : Option[String] = None
 
-        var thy     : Option[Theory]       = None
-        var usages  : Option[List[String]] = None
-        var witness : Option[Witness]      = None
+        var thy     : Option[Theory]  = None
+        var usages  : Option[Usages]  = None
+        var witness : Option[Witness] = None
 
         val cs : Int = e.children.length
-        if (cs >= 2 && e.children(0) == Str("def-atomic-sort"))
+        if (cs >= 2)
         {
             /* Parse positional arguments */
-            e.children(1) match { case Str(x) => name = Some(x) }
-            e.children(2) match { case Str(y) => qss  = Some(y) }
+            e.children(1) match { case Exp(List(Str(x)), _) => name = Some(x) }
+            e.children(2) match { case Exp(List(Str(y)), _) => qss  = Some(y) }
 
             /* Parse modifier and keyword arguments */
             var i : Int = 3
-            while (cs - i >= 0)
+            while (cs - i > 0)
             {
-                println("Checking an optional argument!")
-                /*
-                if (parseTheory(e.children(i)._1)  != None) {thy = parseTheory(e.children(i)._1)}
-                if (parseUsages(e.children(i)._1)  != None) {thy = parseUsages(e.children(i)._1)}
-                if (parseWitness(e.children(i)._1) != None) {thy = parseWitness(e.children(i)._1)}*/
+				println(e.children(i).toString)
+				
+				e.children(i) match{
+					case Exp(ds,src) => ds.head match {
+						case Exp(List(Str("theory")),_)  => println("parsing theory") ; thy     = parseTheory(Exp(ds,src))
+						case Exp(List(Str("usages")),_)  => println("parsing usages") ; usages  = parseUsages(Exp(ds,src))
+						case Exp(List(Str("witness")),_) => println("parsing witness") ; witness = parseWitness(Exp(ds,src))
+						case _         => ()
+					}
+					case _                                  => ()
+				}
                 i += 1
             }
 
@@ -295,20 +302,20 @@ class LispParser
 
     private def parseTheory (e : Exp) : Option[Theory] =
     {
-        if ((e.children.length == 2) && (e.children(0) == Str("theory"))) {
+        if (e.children.length == 2) {
             e.children(1) match {
-                case Str(x) => return Some(Theory(x, e.src))
-                case _      => return None
+                case Exp(List(Str(x)),_) => return Some(Theory(x, e.src))
+                case _                   => return None
             }
         } else { return None }
     }
 
     private def parseWitness (e : Exp) : Option[Witness] =
     {
-        if ((e.children.length == 2) && (e.children(0) == Str("witness"))) {
+        if (e.children.length == 2) {
             e.children(1) match {
-                case Str(x) => return Some(Witness(x, e.src))
-                case _      => return None
+                case Exp(List(Str(x)),_) => return Some(Witness(x, e.src))
+                case _                   => return None
             }
         } else { return None }
     }
@@ -317,7 +324,7 @@ class LispParser
     {
         var usgs : List[String] = List.empty
 
-        if ((e.children.length >= 2) && (e.children(0) == Str("usages")))
+        if (e.children.length >= 2)
         {
             var i : Int = 2
 
@@ -325,8 +332,8 @@ class LispParser
             {
                 e.children(i) match
                 {
-                    case Str(x) => usgs = usgs ::: List(x)
-                    case _      => return None
+                    case Exp(List(Str(x)),_) => usgs = usgs ::: List(x)
+                    case _                   => return None
                 }
                 i += 1;
             }
