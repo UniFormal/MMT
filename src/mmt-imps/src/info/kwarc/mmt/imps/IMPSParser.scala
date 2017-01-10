@@ -56,10 +56,15 @@ case class Usages(usgs : List[String], src : SourceRef) extends LispExp {
     }
 }
 
-// larger IMPS Special Forms
 case class Heralding(module : String, src : SourceRef) extends LispExp {
     override def toString() : String = { return "(herald " + module + ")"}
 }
+
+case class LoadSection(section : String, src : SourceRef) extends LispExp {
+    override def toString() : String = { return "(load-section " + section + ")"}
+}
+
+// larger IMPS Special Forms
 
 case class AtomicSort(sortName        : String,
                       quasiSortString : String,
@@ -210,7 +215,11 @@ class LispParser
                                                             println("DBG: heralding parsed")
                                                             return eprime
                                                         } else { println("DBG: heralding not parsed") }
-            case Exp(List(Str("load-section")),s)    => println("DBG: laod-section recognised, not parsed")
+            case Exp(List(Str("load-section")),s)    => var eprime : Option[LispExp] = parseLoadSection(e)
+                                                        if (!(eprime.isEmpty)) {
+                                                            println("DBG: load-section parsed")
+                                                            return eprime
+                                                        } else { println("DBG: load-section not parsed") }
             case Exp(List(Str("def-atomic-sort")),s) => var as : Option[LispExp] = parseAtomicSort(e)
                                                         if (!(as.isEmpty)) {
                                                             println("DBG: atomic sort parsed")
@@ -261,6 +270,17 @@ class LispParser
     }
 
     // ######### Tiny parsers
+    
+    private def parseLoadSection (e : Exp) : Option[LoadSection] = 
+    {
+		if (e.children.length == 2)
+        {
+            e.children(1) match {
+                case Exp(List(Str(x)),_) => return Some(LoadSection(x, e.src))
+                case _                   => return None
+            }
+        } else { return None }
+	}
 
     private def parseHeralding (e : Exp) : Option[Heralding] =
     {
