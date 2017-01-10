@@ -29,8 +29,8 @@ object SchemeRegTranslator {
 		
 		val argNr = argTypes.length
 		
-		val typ = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateTyp(rc.typ)))
-		val cluster = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(rc.cluster)))
+		val typ = MMTUtils.PiArgs("x", argTypes.length, MMTUtils.PiArgTypes("x", argTypes, argTypes.length, TypeTranslator.translateTyp(rc.typ)))
+		val cluster = MMTUtils.PiArgs("x", argTypes.length, MMTUtils.PiArgTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(rc.cluster)))
 	
 		//val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes :_*)) ++ (OMV("typ") / typ) ++ (OMV("cluster") / cluster)
 	   val matches = List(OMI(argNr), Sequence(argTypes :_*), typ, cluster)
@@ -47,8 +47,8 @@ object SchemeRegTranslator {
 
 		val argTypes = fc.args.map(TypeTranslator.translateTyp)
 		val argNr = argTypes.length
-		val functor = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateTerm(fc.functor)))
-		val cluster = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(fc.cluster)))
+		val functor = MMTUtils.PiArgs("x", argTypes.length, MMTUtils.PiArgTypes("x", argTypes, argTypes.length, TypeTranslator.translateTerm(fc.functor)))
+		val cluster = MMTUtils.PiArgs("x", argTypes.length, MMTUtils.PiArgTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(fc.cluster)))
 	
 		//val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes : _*)) ++ (OMV("functor") / functor) ++ (OMV("cluster") / cluster)
 	   val matches = List(OMI(argNr), Sequence(argTypes : _*), functor, cluster)
@@ -69,9 +69,9 @@ object SchemeRegTranslator {
 
 		val argTypes = cc.args.map(TypeTranslator.translateTyp)
 		val argNr = argTypes.length
-		val typ = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateTyp(cc.typ)))
-		val first = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(cc.first)))
-		val second = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(cc.second)))
+		val typ = MMTUtils.PiArgs("x", argTypes.length, MMTUtils.PiArgTypes("x", argTypes, argTypes.length, TypeTranslator.translateTyp(cc.typ)))
+		val first = MMTUtils.PiArgs("x", argTypes.length, MMTUtils.PiArgTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(cc.first)))
+		val second = MMTUtils.PiArgs("x", argTypes.length, MMTUtils.PiArgTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(cc.second)))
 
 		//val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes : _*)) ++ (OMV("typ") / typ) ++ (OMV("first") / first) ++ (OMV("second") / second)
       val matches = List(OMI(argNr),  Sequence(argTypes : _*), typ, first,  second)
@@ -108,9 +108,9 @@ object SchemeRegTranslator {
 	  
 	  val args = s.args.map(x => translateSchemeArg(x))
 	  
-	  val premises = s.premises.map(x => PropositionTranslator.translateProposition(x)).map(x => MMTUtils.args("x", args.length, MMTUtils.argTypes("x", args, args.length, x)))
+	  val premises = s.premises.map(x => PropositionTranslator.translateProposition(x)).map(x => MMTUtils.PiArgs("x", args.length, MMTUtils.PiArgTypes("x", args, args.length, x)))
 	  
-	  val prop = MMTUtils.args("x", args.length, MMTUtils.argTypes("x", args, args.length, PropositionTranslator.translateProposition(s.prop)))
+	  val prop = MMTUtils.PiArgs("x", args.length, MMTUtils.PiArgTypes("x", args, args.length, PropositionTranslator.translateProposition(s.prop)))
 	  //pattern
 	  val inst = {
 	    val pattern = SchemePatterns.MizSchemeDef

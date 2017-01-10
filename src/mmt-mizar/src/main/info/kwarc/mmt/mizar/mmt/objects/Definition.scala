@@ -29,17 +29,17 @@ object MMTArgs {
 }
 
 object MMTCases {
-	def apply(nr : String, cases : String, results : String, default : Option[String]) : Context  = {
+	def apply(argsnr : String, casesnr : String, cases : String, results : String, default : Option[String]) : Context  = {
+	  val con = Context(
+       VarDecl(casesnr, None, None, None),
+       VarDecl(cases, Some(Rep(Arrow(Rep(Mizar.any, OMV(argsnr)), Mizar.prop), OMV(casesnr))), None, None),
+       VarDecl(results,Some(Rep(Arrow(Rep(Mizar.any, OMV(argsnr)), Mizar.any), OMV(casesnr))), None, None)
+		)
+	  
 		default match {
-			case Some(s) => Context(
-					   VarDecl(nr, None, None, None),
-					   VarDecl(cases, Some(Rep(Mizar.prop, OMV(nr))), None, None) ,
-					   VarDecl(results,Some(Rep(Mizar.any, OMV(nr))), None, None),
-					   VarDecl(s, Some(Mizar.any), None, None))
-			case None => Context(
-					   VarDecl(nr, None, None, None),
-					   VarDecl(cases, Some(Rep(Mizar.prop, OMV(nr))), None, None) ,
-					   VarDecl(results,Some(Rep(Mizar.any,OMV(nr))), None, None))
+			case Some(s) => 
+			  con ++ VarDecl(s, Some(Arrow(Rep(Mizar.any, OMV(argsnr)), Mizar.any)), None, None)
+			case None => con 
 		}
 	}
 }
@@ -49,7 +49,7 @@ object MMTCases {
 
 object MMTDefElab {
 	def apply(argNr : String, ret : Term) : Context = {
-	  Context(VarDecl(MMTUtils.mainPatternName, Some(MMTUtils.args(argNr, ret)), None, None))
+	  Context(VarDecl(MMTUtils.mainPatternName, Some(MMTUtils.PiArgs(argNr, ret)), None, None))
 	}
 }
 
@@ -57,8 +57,8 @@ object MMTDefElab {
 object MMTArgTypesElab {
 	def apply(argNr : String, argTypes : String, retType : Term)  :  Context  = {
 		Context(VarDecl("typing",
-							Some(MMTUtils.args("x", argNr,
-									MMTUtils.argTypes("x", argTypes, argNr,
+							Some(MMTUtils.PiArgs("x", argNr,
+									MMTUtils.PiArgTypes("x", argTypes, argNr,
 										Mizar.be(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x")), retType)
 									    )
 							    )),
@@ -66,30 +66,28 @@ object MMTArgTypesElab {
 	}
 }
 
-
-
 object MMTIsElab {
 	def apply(argNr : String, argTypes : String, caseNr : String, cases : String, results : String, defResult : Option[String]) : Context = {
 		defResult match {
 			case Some(defRes) =>
 				Context(VarDecl("meaning",
-							Some(MMTUtils.args("x", argNr,
-								MMTUtils.argTypes("x", argTypes, argNr,
+							Some(MMTUtils.PiArgs("x", argNr,
+								MMTUtils.PiArgTypes("x", argTypes, argNr,
 								 		 Mizar.proof(Mizar.and(List(
-								 		     Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Index(cases,"i"),Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x")), Index(results, "i"))))),
-								 				   Mizar.implies(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Mizar.not(Index(cases,"i")))),
-								 				       Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x")), OMV(defRes))))))))),
+								 		     Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Mizar.apply(Index(cases,"i"), OMV("x")),Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x")), Mizar.apply(Index(results, "i"), OMV("x")))))),
+								 				   Mizar.implies(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Mizar.not(Mizar.apply(Index(cases,"i"), OMV("x"))))),
+								 				       Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x")), Mizar.apply(OMV(defRes), OMV("x")))))))))),
 							None, None))
 			case None =>
 				Context(VarDecl("meaning",
-							Some(MMTUtils.args("x", argNr,
-								MMTUtils.argTypes("x", argTypes, argNr,
-								 		 Mizar.proof(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Index(cases,"i"),Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x")), Index(results, "i"))))))))),
+							Some(MMTUtils.PiArgs("x", argNr,
+								MMTUtils.PiArgTypes("x", argTypes, argNr,
+								 		 Mizar.proof(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Mizar.apply(Index(cases,"i"),OMV("x")),Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x")), Mizar.apply(Index(results, "i"), OMV("x")))))))))),
 							None, None),
 						VarDecl("completeness",
-						    Some(MMTUtils.args("x", argNr,
-								MMTUtils.argTypes("x", argTypes, argNr,
-								    Mizar.proof(Mizar.seqConn("or", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Index(cases,"i"))))))),
+						    Some(MMTUtils.PiArgs("x", argNr,
+								MMTUtils.PiArgTypes("x", argTypes, argNr,
+								    Mizar.proof(Mizar.seqConn("or", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Mizar.apply(Index(cases,"i"), OMV("x")))))))),
 							None, None))
 		}
 	}
@@ -100,22 +98,22 @@ object MMTMeansElab {
 		defResult match {
 			case Some(defRes) =>
 				Context(VarDecl("meaning",
-							Some(MMTUtils.args("x", argNr,
-								MMTUtils.argTypes("x", argTypes, argNr,
-								 		 Mizar.proof(Mizar.and(List(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Mizar.implies(Index(cases,"i"),Index(results, "i")))),
-								 				   Mizar.implies(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.not(Index(cases,"i")))),
-								 				       OMV(defRes)))))))),
+							Some(MMTUtils.PiArgs("x", argNr,
+								MMTUtils.PiArgTypes("x", argTypes, argNr,
+								 		 Mizar.proof(Mizar.and(List(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Mizar.implies(Mizar.apply(Index(cases,"i"),OMV("x")),Mizar.apply(Index(results, "i"),OMV("x"))))),
+								 				   Mizar.implies(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.not(Mizar.apply(Index(cases,"i"),OMV("x"))))),
+								 				       Mizar.apply(OMV(defRes), OMV("x"))))))))),
 							None, None))
 			case None =>
 				Context(VarDecl("meaning",
-							Some(MMTUtils.args("x", argNr,
-								MMTUtils.argTypes("x", argTypes, argNr,
-								 		 Mizar.proof(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Mizar.implies(Index(cases,"i"),Index(results, "i")))))))),
+							Some(MMTUtils.PiArgs("x", argNr,
+								MMTUtils.PiArgTypes("x", argTypes, argNr,
+								 		 Mizar.proof(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Mizar.implies(Mizar.apply(Index(cases,"i"),OMV("x")),Mizar.apply(Index(results, "i"),OMV("x"))))))))),
 							None, None),
 						VarDecl("completeness",
-						    Some(MMTUtils.args("x", argNr,
-								MMTUtils.argTypes("x", argTypes, argNr,
-								    Mizar.proof(Mizar.seqConn("or", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Index(cases,"i"))))))),
+						    Some(MMTUtils.PiArgs("x", argNr,
+								MMTUtils.PiArgTypes("x", argTypes, argNr,
+								    Mizar.proof(Mizar.seqConn("or", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.apply(Index(cases,"i"),OMV("x")))))))),
 							None, None))
 		}
 	}
@@ -126,8 +124,8 @@ object MMTAttrTypingElab {
   def apply(argNr : String, argTypes : String,  mType : String) = {
 	  val varName = ParsingController.dictionary.getFreeVar()
 	  Context(VarDecl("typing",
-			  Some(MMTUtils.args("x", argNr,
-			    MMTUtils.argTypes("x", argTypes, argNr,
+			  Some(MMTUtils.PiArgs("x", argNr,
+			    MMTUtils.PiArgTypes("x", argTypes, argNr,
 			         Pi("mType", Mizar.tp,
 			             Mizar.forall(varName, Mizar.adjective(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x"),OMV(mType)), OMV(mType)), Mizar.is(OMV(varName),OMV(mType)))
 			    )))),None, None))
@@ -140,25 +138,25 @@ object MMTAttrIsElab {
   	  defResult match {
 			case Some(defRes) =>
 				Context(VarDecl("meaning",
-							Some(MMTUtils.args("x", argNr,
-								MMTUtils.argTypes("x", argTypes, argNr,
+							Some(MMTUtils.PiArgs("x", argNr,
+								MMTUtils.PiArgTypes("x", argTypes, argNr,
 								 		 Mizar.proof(Mizar.and(List(
-								 		     Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Index(cases,"i"),Mizar.forall(v, OMV(mType), Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName),
-								 		     OMV("x"),OMV(mType)), Index(results, "i")))))),
-								 				   Mizar.implies(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.not(Index(cases,"i")))),
-								 				       Mizar.forall(v, OMV(mType), Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x"), OMV(mType)), OMV(defRes)))))))))),
+								 		     Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Mizar.apply(Index(cases,"i"),OMV("x")),Mizar.forall(v, OMV(mType), Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName),
+								 		     OMV("x"),OMV(mType)), Mizar.apply(Index(results, "i"),OMV("x"))))))),
+								 				   Mizar.implies(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.not(Mizar.apply(Index(cases,"i"),OMV("x"))))),
+								 				       Mizar.forall(v, OMV(mType), Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x"), OMV(mType)), Mizar.apply(OMV(defRes), OMV("x"))))))))))),
 							None, None))
 			case None =>
 				Context(VarDecl("meaning",
-							Some(MMTUtils.args("x", argNr,
-								MMTUtils.argTypes("x", argTypes, argNr,
-								 		 Mizar.proof(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Index(cases,"i"),Mizar.forall(v, OMV(mType), Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName),
-								 		     OMV("x"), OMV(mType)), Index(results, "i")))))))))),
+							Some(MMTUtils.PiArgs("x", argNr,
+								MMTUtils.PiArgTypes("x", argTypes, argNr,
+								 		 Mizar.proof(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Mizar.apply(Index(cases,"i"),OMV("x")),Mizar.forall(v, OMV(mType), Mizar.eq(Mizar.apply(OMV(MMTUtils.mainPatternName),
+								 		     OMV("x"), OMV(mType)), Mizar.apply(Index(results, "i"),OMV("x"))))))))))),
 						None, None),
 						VarDecl("completeness",
-						    Some(MMTUtils.args("x", argNr,
-								MMTUtils.argTypes("x", argTypes, argNr,
-								    Mizar.proof(Mizar.seqConn("or", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Index(cases,"i"))))))),
+						    Some(MMTUtils.PiArgs("x", argNr,
+								MMTUtils.PiArgTypes("x", argTypes, argNr,
+								    Mizar.proof(Mizar.seqConn("or", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.apply(Index(cases,"i"),OMV("x")))))))),
 							None, None))
 
 		}
@@ -171,28 +169,28 @@ object MMTAttrMeansElab {
   	  defResult match {
 			case Some(defRes) =>
 				Context(VarDecl("meaning",
-							Some(MMTUtils.args("x", argNr,
-								MMTUtils.argTypes("x", argTypes, argNr,
+							Some(MMTUtils.PiArgs("x", argNr,
+								MMTUtils.PiArgTypes("x", argTypes, argNr,
 								 		 Mizar.proof(Mizar.and(List(
-								 		     Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Index(cases,"i"),Mizar.forall(v, OMV(mType),
+								 		     Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Mizar.apply(Index(cases,"i"),OMV("x")),Mizar.forall(v, OMV(mType),
 								 		     Mizar.implies(Mizar.is(OMV(v), Mizar.adjective(Mizar.apply(OMV(MMTUtils.mainPatternName),
-								 		         OMV("x"),OMV(mType)),OMV(mType))), Index(results, "i")))))),
-								 				   Mizar.implies(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.not(Index(cases,"i")))),
+								 		         OMV("x"),OMV(mType)),OMV(mType))), Mizar.apply(Index(results, "i"),OMV("x"))))))),
+								 				   Mizar.implies(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.not(Mizar.apply(Index(cases,"i"),OMV("x"))))),
 								 				       Mizar.forall(v, OMV(mType), Mizar.implies(Mizar.is(OMV(v), Mizar.adjective(Mizar.apply(OMV(MMTUtils.mainPatternName),
-								 				           OMV("x"),OMV(mType)),OMV(mType))), OMV(defRes)))))))))),
+								 				           OMV("x"),OMV(mType)),OMV(mType))), Mizar.apply(OMV(defRes), OMV("x"))))))))))),
 							None, None))
 			case None =>
 				Context(VarDecl("meaning",
-							Some(MMTUtils.args("x", argNr,
-								MMTUtils.argTypes("x", argTypes, argNr,
-								 		 Mizar.proof(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Index(cases,"i"), Mizar.forall(v, OMV(mType),
+							Some(MMTUtils.PiArgs("x", argNr,
+								MMTUtils.PiArgTypes("x", argTypes, argNr,
+								 		 Mizar.proof(Mizar.seqConn("and", OMV(caseNr), Ellipsis(OMV(caseNr), "i", Mizar.implies(Mizar.apply(Index(cases,"i"),OMV("x")), Mizar.forall(v, OMV(mType),
 								 		     Mizar.implies(Mizar.is(OMV(v), Mizar.adjective(Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x"),OMV(mType)),OMV(mType))),
-								 		         Index(results, "i")))))))))),
+								 		         Mizar.apply(Index(results, "i"),OMV("x"))))))))))),
 						None, None),
 						VarDecl("completeness",
-						    Some(MMTUtils.args("x", argNr,
-								MMTUtils.argTypes("x", argTypes, argNr,
-								    Mizar.proof(Mizar.seqConn("or", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Index(cases,"i"))))))),
+						    Some(MMTUtils.PiArgs("x", argNr,
+								MMTUtils.PiArgTypes("x", argTypes, argNr,
+								    Mizar.proof(Mizar.seqConn("or", OMV(caseNr), Ellipsis(OMV(caseNr),"i", Mizar.apply(Index(cases,"i"),OMV("x")))))))),
 							None, None))
 		}
 	}
@@ -203,72 +201,72 @@ object MMTAttrMeansElab {
 object DefPatterns {
 
 	val MizPredMeansPartialDef = MizPattern(LocalName("MizPredMeansPartialDef"),
-		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", Some("default")),
+		   			    MMTArgs("n", "args", None) ++ MMTCases("n", "m", "cases", "results", Some("default")),
 						MMTDefElab("n",Mizar.prop) ++ MMTArgTypesElab("n", "args", Mizar.prop) ++ MMTMeansElab("pred","n", "args", "m", "cases", "results", Some("default"))
 		  )
 	val MizPredMeansCompleteDef = MizPattern(LocalName("MizPredMeansCompleteDef"),
-		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", None),
+		   			    MMTArgs("n", "args", None) ++ MMTCases("n", "m", "cases", "results", None),
 						MMTDefElab("n",Mizar.prop) ++ MMTArgTypesElab("n", "args", Mizar.prop) ++ MMTMeansElab("pred","n", "args", "m", "cases", "results", None)
 		  )
 
 	val MizPredIsPartialDef = MizPattern(LocalName("MizPredIsPartialDef"),
-		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", Some("default")),
+		   			    MMTArgs("n", "args", None) ++ MMTCases("n", "m", "cases", "results", Some("default")),
 						MMTDefElab("n",Mizar.prop) ++ MMTArgTypesElab("n", "args", Mizar.prop) ++ MMTIsElab("n", "args", "m", "cases", "results", Some("default"))
 		  )
 	val MizPredIsCompleteDef = MizPattern(LocalName("MizPredIsCompleteDef"),
-		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", None),
+		   			    MMTArgs("n", "args", None) ++ MMTCases("n", "m", "cases", "results", None),
 						MMTDefElab("n",Mizar.prop) ++ MMTArgTypesElab("n", "args", Mizar.prop) ++ MMTIsElab("n", "args", "m", "cases", "results", None)
 		  )
 
 	val MizFuncMeansPartialDef = MizPattern(LocalName("MizFuncMeansPartialDef"),
-		   			    MMTArgs("n", "args", Some("retType")) ++ MMTCases("m", "cases", "results", Some("default")),
+		   			    MMTArgs("n", "args", Some("retType")) ++ MMTCases("n", "m", "cases", "results", Some("default")),
 						MMTDefElab("n",Mizar.any) ++ MMTArgTypesElab("n", "args", "retType") ++ MMTMeansElab("func","n", "args", "m", "cases", "results", Some("default"))
 		  )
 	val MizFuncMeansCompleteDef = MizPattern(LocalName("MizFuncMeansCompleteDef"),
-		   			    MMTArgs("n", "args", Some("retType")) ++ MMTCases("m", "cases", "results", None),
+		   			    MMTArgs("n", "args", Some("retType")) ++ MMTCases("n", "m", "cases", "results", None),
 						MMTDefElab("n",Mizar.any) ++ MMTArgTypesElab("n", "args", "retType") ++ MMTMeansElab("func","n", "args", "m", "cases", "results", None)
 		  )
 
 	val MizFuncIsPartialDef = MizPattern(LocalName("MizFuncIsPartialDef"),
-		   			    MMTArgs("n", "args", Some("retType")) ++ MMTCases("m", "cases", "results", Some("default")),
+		   			    MMTArgs("n", "args", Some("retType")) ++ MMTCases("n", "m", "cases", "results", Some("default")),
 						MMTDefElab("n",Mizar.any) ++ MMTArgTypesElab("n", "args", "retType") ++ MMTIsElab("n", "args", "m", "cases", "results", Some("default"))
 		  )
 	val MizFuncIsCompleteDef = MizPattern(LocalName("MizFuncIsCompleteDef"),
-		   			    MMTArgs("n", "args", Some("retType")) ++ MMTCases("m", "cases", "results", None),
+		   			    MMTArgs("n", "args", Some("retType")) ++ MMTCases("n", "m", "cases", "results", None),
 						MMTDefElab("n",Mizar.any) ++ MMTArgTypesElab("n", "args", "retType") ++ MMTIsElab("n", "args", "m", "cases", "results", None)
 		  )
 	val MizModeMeansPartialDef = MizPattern(LocalName("MizModeMeansPartialDef"),
-		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", Some("default")),
+		   			    MMTArgs("n", "args", None) ++ MMTCases("n", "m", "cases", "results", Some("default")),
 						MMTDefElab("n",Mizar.tp) ++ MMTArgTypesElab("n", "args", Mizar.tp) ++ MMTMeansElab("mode","n", "args", "m", "cases", "results", Some("default"))
 		  )
 	val MizModeMeansCompleteDef = MizPattern(LocalName("MizModeMeansCompleteDef"),
-		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", None),
+		   			    MMTArgs("n", "args", None) ++ MMTCases("n", "m", "cases", "results", None),
 						MMTDefElab("n",Mizar.tp) ++ MMTArgTypesElab("n", "args", Mizar.tp) ++ MMTMeansElab("mode","n", "args", "m", "cases", "results", None)
 		  )
 
 	val MizModeIsPartialDef = MizPattern(LocalName("MizModeIsPartialDef"),
-		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", Some("default")),
+		   			    MMTArgs("n", "args", None) ++ MMTCases("n", "m", "cases", "results", Some("default")),
 						MMTDefElab("n",Mizar.tp) ++ MMTArgTypesElab("n", "args", Mizar.tp) ++ MMTIsElab("n", "args", "m", "cases", "results", Some("default"))
 		  )
 	val MizModeIsCompleteDef = MizPattern(LocalName("MizModeIsCompleteDef"),
-		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", None),
+		   			    MMTArgs("n", "args", None) ++ MMTCases("n", "m", "cases", "results", None),
 						MMTDefElab("n",Mizar.tp) ++ MMTArgTypesElab("n", "args", Mizar.tp) ++ MMTIsElab("n", "args", "m", "cases", "results", None)
 		  )
 
 	val MizAttrMeansPartialDef = MizPattern(LocalName("MizAttrMeansPartialDef"),
-		   			    MMTArgs("n", "args", None) ++ Context(VarDecl("mType", Some(Mizar.tp), None, None)) ++MMTCases("m", "cases", "results", Some("default")),
+		   			    MMTArgs("n", "args", None) ++ Context(VarDecl("mType", Some(Mizar.tp), None, None)) ++MMTCases("n", "m", "cases", "results", Some("default")),
 						MMTDefElab("n",Mizar.attr(OMV("mType"))) ++ MMTAttrTypingElab("n", "args", "mType") ++ MMTAttrMeansElab("n", "args", "mType", "m", "cases", "results", Some("default"))
 		  )
 	val MizAttrMeansCompleteDef = MizPattern(LocalName("MizAttrMeansCompleteDef"),
-		   			    MMTArgs("n", "args", None) ++ Context(VarDecl("mType", Some(Mizar.tp), None, None)) ++MMTCases("m", "cases", "results", None),
+		   			    MMTArgs("n", "args", None) ++ Context(VarDecl("mType", Some(Mizar.tp), None, None)) ++MMTCases("n", "m", "cases", "results", None),
 						MMTDefElab("n",Mizar.attr(OMV("mType"))) ++ MMTAttrTypingElab("n", "args", "mType") ++ MMTAttrMeansElab("n", "args", "mType", "m", "cases", "results", None)
 		  )
 	val MizAttrIsPartialDef = MizPattern(LocalName("MizAttrIsPartialDef"),
-		   			    MMTArgs("n", "args", None) ++ Context(VarDecl("mType", Some(Mizar.tp), None, None)) ++MMTCases("m", "cases", "results", Some("default")),
+		   			    MMTArgs("n", "args", None) ++ Context(VarDecl("mType", Some(Mizar.tp), None, None)) ++MMTCases("n", "m", "cases", "results", Some("default")),
 						MMTDefElab("n",Mizar.attr(OMV("mType"))) ++ MMTAttrTypingElab("n", "args", "mType") ++ MMTAttrIsElab("n", "args", "mType", "m", "cases", "results", Some("default"))
 		  )
 	val MizAttrIsCompleteDef = MizPattern(LocalName("MizAttrIsCompleteDef"),
-		   			    MMTArgs("n", "args", None) ++ Context(VarDecl("mType", Some(Mizar.tp), None, None)) ++MMTCases("m", "cases", "results", None),
+		   			    MMTArgs("n", "args", None) ++ Context(VarDecl("mType", Some(Mizar.tp), None, None)) ++MMTCases("n", "m", "cases", "results", None),
 						MMTDefElab("n",Mizar.attr(OMV("mType"))) ++ MMTAttrTypingElab("n", "args", "mType") ++ MMTAttrIsElab("n", "args", "mType", "m", "cases", "results", None)
 		  )
 
@@ -290,9 +288,9 @@ object DefPatterns {
 	def MizStructDef(nrMS : Int) = {
 	  MizPattern(LocalName("MizStructDef" + nrMS),
 						MMTArgs("n","args",None) ++ genMSDecl(nrMS),
-						Context(VarDecl(MMTUtils.mainPatternName,Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "args", "n",Mizar.tp))) , None, None),
-						  VarDecl("aggr", Some(MMTUtils.args("x", "n", MMTUtils.argTypes("p","x", "args", "n",Mizar.set))), None, None),
-						  VarDecl("aggr_prop",Some(MMTUtils.args("x", "n", MMTUtils.argTypes("p","x", "args", "n",
+						Context(VarDecl(MMTUtils.mainPatternName,Some(MMTUtils.PiArgs("x", "n", MMTUtils.PiArgTypes("x", "args", "n",Mizar.tp))) , None, None),
+						  VarDecl("aggr", Some(MMTUtils.PiArgs("x", "n", MMTUtils.PiArgTypes("p","x", "args", "n",Mizar.set))), None, None),
+						  VarDecl("aggr_prop",Some(MMTUtils.PiArgs("x", "n", MMTUtils.PiArgTypes("p","x", "args", "n",
 						      Mizar.be(Mizar.apply(OMV("aggr"), OMV("x"), OMV("p")), Mizar.apply(OMV(MMTUtils.mainPatternName), OMV("x"), OMV("p")))))), None, None),
 						  VarDecl("strict",Some(Arrow(Mizar.any, Mizar.prop)), None, None))  ++ genMSElab(nrMS))
 	}
@@ -303,5 +301,4 @@ object DefPatterns {
 			    	VarDecl("retType", Some(Mizar.tp), None, None)),
 			Context(VarDecl(MMTUtils.mainPatternName, Some(Arrow(Mizar.any, Mizar.any)), None, None),
 					VarDecl("sel_prop", Some(Mizar.proof(Mizar.forall("t",OMV("mType"),Mizar.is(Mizar.apply(OMV(MMTUtils.mainPatternName),OMV("t")),OMV("retType"))))), None, None)))
-
 }

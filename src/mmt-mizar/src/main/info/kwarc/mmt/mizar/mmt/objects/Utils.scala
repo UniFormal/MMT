@@ -117,44 +117,54 @@ object MMTUtils {
 	  getTheoryPath(aid) ? LocalName(name.map(SimpleStep)) 
 	}
 	
-	def args(argNr : String, body : Term) : Term = {
+	//new args
+	
+	def LamArgs(name: String, argNr : Int, body : Term) : Term = {
+	  Lambda(LocalName("x"), Ellipsis(OMI(argNr), LocalName("i"), Mizar.any), body)
+	}
+	
+	
+	
+	// old args
+	def PiArgs(argNr : String, body : Term) : Term = {
 	  Arrow(Ellipsis(OMV(argNr), LocalName("i"), Mizar.any), body)
 	}
 	
-	def args(name : String, argNr : String, body : Term) : Term = {
+	
+	def PiArgs(name : String, argNr : String, body : Term) : Term = {
 	  Pi(LocalName("x"), Ellipsis(OMV(argNr), LocalName("i"), Mizar.any), body)
 	}
+
 	
-	def args(name : String, argNr : Int, body : Term) : Term = {
+	def PiArgs(name : String, argNr : Int, body : Term) : Term = {
 			Pi(LocalName("x"), Ellipsis(OMI(argNr), LocalName("i"), Mizar.any), body)
 	}
 	
-	def argTypes(args : String, types : String, argNr : String, body : Term) : Term = {
+	def PiArgTypes(args : String, types : String, argNr : String, body : Term) : Term = {
 	  	     Arrow( 
 	  	         Ellipsis(OMV(argNr), LocalName("i"), Mizar.be(Index(OMV(args), OMV("i")),Index(OMV(types),OMV("i")))),
 	         	 body)
 	}
 	
-	def argTypes(args : String, types : List[Term], argNr : Int, body : Term) : Term = {
+	def PiArgTypes(args : String, types : List[Term], argNr : Int, body : Term) : Term = {
 	  	     Arrow( 
 	  	         Ellipsis(OMI(argNr), LocalName("i"), Mizar.be(Index(OMV(args), OMV("i")), Index(Sequence(types : _*), OMV("i")))),
 	         	 body)
 	}
 	
 	
-	def argTypes(name : String, args : String, types : String, argNr : String, body : Term) : Term = {
+	def PiArgTypes(name : String, args : String, types : String, argNr : String, body : Term) : Term = {
 	  	     Pi(LocalName(name), 
 	  	        Ellipsis(OMV(argNr), LocalName("i"), Mizar.be(Index(OMV(args), OMV("i")),Index(OMV(types),OMV("i")))),
 	         	 body)
 	}
 	
-	
-	def argTypes(name : String, args : String, types : List[Term], argNr : Int, body : Term) : Term = types.length match {
+	def PiArgTypes(name : String, args : String, types : List[Term], argNr : Int, body : Term) : Term = types.length match {
 	  case 0 => body
 	  case _ => Pi(LocalName(name), 
 	  	        Ellipsis(OMI(argNr), LocalName("i"), Mizar.be(Index(OMV("x"), OMV("i")), Index(Sequence(types : _*), OMV("i")))),
 	         	 body)
 	}
-	
+		
 	def nullAttribute = Lambda(LocalName("z"), Mizar.any, Mizar.constant("true"))
 }
