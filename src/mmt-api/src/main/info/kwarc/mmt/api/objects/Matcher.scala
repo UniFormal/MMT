@@ -15,6 +15,8 @@ import Conversions._
  *  @param controller needed for lookups when type checking the matches
  *  @param queryVars the substitution variables in the template term 
  *  @param context free Variables of goal and template, these must be treated in the same way as constants
+ *  
+ *  the class can be reused for multiple matches using the same RuleSet but is not thread-safe
  */
 class Matcher(controller: Controller, rules: RuleSet) extends Logger {
    def logPrefix = "matcher"
@@ -87,7 +89,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     *  
     *  @param doit a function that takes an equality predicate (for matching) and returns true if the match is possible
     *  e.g., basic matching is obtained as apply(queryVars){eq => eq(goal, query)}
-    */ 
+    */
    def apply(goalContext: Context, queryVars: Context)(doit: ((Term,Term) => Boolean) => Boolean): MatchResult = {
       constantContext = goalContext
       querySolution = queryVars
@@ -108,6 +110,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
    /** tp level match function */
    private def matchTerms(goal: Term, query: Term) = {
      log(s"matching ${presentObj(querySolution)} such that |- ${presentObj(goal)} = ${presentObj(query)}")
+     //TODO delete
      def isNot(t: Term) = t match {
        case OMA(OMS(op), OMS(conn) :: _) => op.name.toString == "apply" && conn.name.toString == "not"
        case _ => false
@@ -115,6 +118,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
      if (isNot(goal) && isNot(query)) {
         true
      }
+     //END DELETE
      aux(Nil, goal, query)
    }
    
@@ -183,9 +187,9 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     * @param goal a context
     * @param query a context with query variables to match against goal
     * @param context joint free variables of goal and query
-    * @return if goal and query match up to alpha-renaming, the substitution goal -> query that performs the alpha-renaming
+    * @return if goal and query match up to alpha-renaming, the substitution query -> goal that performs the alpha-renaming
     * 
-    * terms occurring inside goal are alpha-renamed accordingly
+    * terms occurring inside query are alpha-renamed accordingly
     */
    private def auxCon(bound: Context, goal: Context, query: Context): Option[Substitution] = {
       if (goal.length != query.length) return None

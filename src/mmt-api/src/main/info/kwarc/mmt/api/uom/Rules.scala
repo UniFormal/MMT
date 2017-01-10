@@ -84,17 +84,31 @@ abstract class BreadthRule(val head: GlobalName) extends UOMRule {
 /** An AbbrevRule expands a symbol into a term */ 
 class AbbrevRule(val head: GlobalName, val term: Term) extends UOMRule
 
-/** a general rewrite rule
+/** a transformation based on matching the input term
  *  @param templateVars the free variables to fill in through matching
  *  @param template the left-hand side
- *  @param result the right-hand side
  */
-class RewriteRule(val head: GlobalName, templateVars: Context, template: Term, val result: Term)
-  extends TermTransformationRule {
+abstract class MatchingRule(templateVars: Context, template: Term) extends TermTransformationRule {
+  /** 
+   *  @param goal the term that was matched
+   *  @param templateSolution the substitution for the template variables
+   *  @return the transformed term
+   */
+  def makeResult(goal: Term, templateSolution: Substitution): Option[Term]
   def apply(matcher: Matcher, goalContext: Context, goal: Term) = {
     matcher(goalContext, goal, templateVars, template) match {
-      case MatchSuccess(sub) => Some(result ^? sub)
+      case MatchSuccess(sub) => makeResult(goal, sub)
       case _ => None
     }
   }
+}
+
+/**
+ * a general rewrite rule
+ * @param result the right-hand side (relative to the template variables)
+ */
+class RewriteRule(val head: GlobalName, templateVars: Context, template: Term, val result: Term)
+  extends MatchingRule(templateVars, template) {
+  
+  def makeResult(goal: Term, sub: Substitution) = Some(result ^? sub)
 }
