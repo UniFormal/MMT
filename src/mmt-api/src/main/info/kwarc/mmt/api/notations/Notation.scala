@@ -142,7 +142,9 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
       }
       i
    }
+   /** there are argumetns before the first delimiter */
    def isLeftOpen = openArgs(false) > 0
+   /** there are argumetns after the last delimiter */
    def isRightOpen = openArgs(true) > 0
    
    /** true if there is definitely a delimiter (i.e., not just a sequence separator) */

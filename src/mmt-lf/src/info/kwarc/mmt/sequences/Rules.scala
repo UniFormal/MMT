@@ -2,6 +2,7 @@ package info.kwarc.mmt.sequences
 
 import info.kwarc.mmt.api._
 import checking._
+import uom._
 import objects._
 import objects.Conversions._
 
@@ -251,6 +252,17 @@ object ExpandRep extends ComputationRule(rep.path) {
    }
 }
 
+/** inverse of ExpandRep, useful for complification */
+object ContractRep extends TermTransformationRule with ComplificationRule {
+  val head = rep.path
+  def apply(matcher: Matcher, c: Context, t: Term) = {
+    t match {
+      case Sequences.ellipsis(n, x, t) if ! t.freeVars.contains(x) => Some(rep(t,n))
+      case _ => None
+    }
+  }
+}
+
 /**
  * the beta-style rule
  * [E(i)]_{i=1}^n  --->  E(1),...,E(n)
@@ -266,7 +278,7 @@ object ExpandRep extends ComputationRule(rep.path) {
 class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
 
    /**
-    * higher than beta reduction to make sure, functions and arguments are expanded at the same time
+    * higher than beta-reduction to make sure, functions and arguments are expanded at the same time
     * (the function is anyway expanded before the argument list because simplification recurses into subexpressions)
     */
    override val priority = 10
@@ -306,7 +318,7 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
       }
    }
    
-   /** flattens a context and returns the substituion */
+   /** flattens a context and returns the substitution */
    private def applyCont(con: Context)(implicit solver: CheckingCallback, stack: Stack, history: History): (Context,Substitution) = {
       var subs = Substitution.empty
       val newCon = con.mapVarDecls {case (conPrefix, vd) =>

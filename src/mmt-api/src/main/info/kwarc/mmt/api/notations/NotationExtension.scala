@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.notations
 
 import info.kwarc.mmt.api._
+import utils._
 import objects._
 import Conversions._
 
@@ -220,8 +221,8 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
    def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = t match {
       case OMA(OMS(hoas.apply), OMS(op)::rest) =>
          val appPos = (0 until 1+rest.length).toList.map(i => Position(1+i))
-         getNotations(op).foldLeft[Option[PragmaticTerm]](None) {
-           (res,not) => if (res.isDefined) res else {
+         val notations = getNotations(op) 
+         MyList(notations) mapFind {not =>
              if (not.canHandle(0,0,rest.length, false)) {
                // OMA(apply, op, args)  <-->  OMA(op, args)
                val appTerm = PragmaticTerm(op, Substitution.empty, Context.empty, rest, false, not, appPos)
@@ -237,10 +238,9 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
                      val bindTerm = PragmaticTerm(op, subs, con, args, false, not, bindPos)
                      Some(bindTerm)
                   } else
-                     None
+                    None
                case _ => None
              }
-           }
          }
       case OMA(OMS(hoas.typeAtt), List(tp)) => tp match {
          case OMS(op) =>

@@ -6,8 +6,9 @@ import objects._
 /**
  * the arity of a symbol describes what kind of objects can be formed from it
  * 
+ * @param subargs arguments before the context
  * @param variables the variable positions in order
- * @param arguments the argument positions in order
+ * @param arguments arguments after the context
  * @param attribution true if it can attribute an object
  * 
  * special cases and analogs in the OpenMath role system for a symbol s:
@@ -21,9 +22,9 @@ case class Arity(subargs: List[ArgumentComponent],
                  arguments: List[ArgumentComponent], attribution: Boolean) {
    def components = variables ::: arguments
    def length = components.length
-   def isConstant    = (! attribution) &&    arguments.isEmpty  &&    variables.isEmpty
-   def isApplication = (! attribution) && (subargs.isEmpty) && variables.isEmpty && (! arguments.isEmpty)
-   def isPlainBinder = (! attribution) && (subargs.isEmpty) && (! variables.isEmpty) && arguments.length == 1
+   def isConstant    = (! attribution) && subargs.isEmpty && arguments.isEmpty && variables.isEmpty
+   def isApplication = (! attribution) && subargs.isEmpty && variables.isEmpty && (! arguments.isEmpty)
+   def isPlainBinder = (! attribution) && subargs.isEmpty && (! variables.isEmpty) && arguments.length == 1
    def numSeqSubs = subargs.count(_.isInstanceOf[SeqArg])
    def numSeqArgs = arguments.count(_.isInstanceOf[SeqArg])
    def numSeqVars = variables.count {

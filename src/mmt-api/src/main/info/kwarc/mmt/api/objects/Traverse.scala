@@ -69,13 +69,14 @@ object Traverser {
                vd.copy(tp = newt, df = newd)
          }
 	   t match {
-	      case ComplexTerm(op, subs, bound, args) =>
-	         val newSubs = subs.map(s => s.copy(target = rec(s.target)))
-	         val newArgs = args.map(a => rec(a)(con ++ bound, state))
-	         ComplexTerm(op, newSubs, trav.traverseContext(bound), newArgs).from(t)
 	      case OMA(f, args) => 
 	         val newArgs = args.map(a => rec(a))
 	         OMA(rec(f), newArgs).from(t)
+	      case OMBINDC(b,bound,args) =>
+	         val newB = rec(b)
+           val newArgs = args.map(a => rec(a)(con ++ bound, state))
+           val newBound = trav.traverseContext(bound)
+	         OMBINDC(newB, newBound, newArgs).from(t)
 	      case OMPMOD(p, args) =>
 	         val newArgs = args.map(rec)
 	         OMPMOD(p, newArgs).from(t)

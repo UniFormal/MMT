@@ -163,8 +163,6 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                   else {
                      //state (3)
                      log("applying breadth and computation rules")
-                     if (controller.presenter.asString(t) == "⟨(x.i) be (⟨(adjective set [z:any]true)⟩.i)|i:1⟩→(typing x) be (adjective set [z:any]true)")
-                       true
                      applyBreadthRules(outer, argsSS) orelse applyCompRules(tS) match {
                         case GlobalChange(tSS) =>
                            // go back to state (1), remember that a global change was produced

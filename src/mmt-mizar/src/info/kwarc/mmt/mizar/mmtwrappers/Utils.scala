@@ -46,39 +46,45 @@ object Mizar {
 	def apply(f : Term, args : Term*) = ApplyGeneral(f, args.toList)
 	
 	def prop : Term = constant("prop")
-	def any : Term = constant("any")
+	val any : Term = constant("any")
 	def tp : Term = constant("tp")
 	def set = constant("set")
 	
 	def is(t1 : Term, t2 : Term) = apply(constant("is"), t1, t2)
 	def be(t1 : Term, t2 : Term) = apply(constant("be"), t1, t2)
 	
-	def trueCon = constant("true")
-
-	def falseCon = constant("false")
-	
-	def and(tms : List[Term]) : Term = apply(constant("and"), OMI(tms.length) :: tms :_*)
+	def andCon = constantName("and")
+	def and(tms : List[Term]) : Term = apply(OMS(andCon), OMI(tms.length) :: tms :_*)
 	  //apply(constant("and"), OMI(tms.length), apply(Sequence, tms :_*))
-	def or(tms : List[Term]) : Term = apply(constant("or"), OMI(tms.length) :: tms :_*)
+	def orCon = constantName("or")
+	def or(tms : List[Term]) : Term = apply(OMS(orCon), OMI(tms.length) :: tms :_*)
 	
 	// Special function for 'and' and 'or' applied to an sequence (e.g. Ellipsis or sequence variable)
 	def seqConn(connective : String, length : Term, seq : Term) : Term = 
 	  apply(constant(connective), length, seq)
 
 	
-	def implies(tm1 : Term, tm2 : Term) : Term = apply(constant("implies"), tm1, tm2)
-	def iff(tm1 : Term, tm2 : Term) : Term = apply(constant("iff"), tm1, tm2)
+	def trueCon = constant("true")
+	def falseCon = constant("false")
 	
-	def not(tm : Term) : Term = apply(constant("not"), tm)
+	object implies extends BinaryLFConstantScala(MizarTh, "implies")
+	object iff extends BinaryLFConstantScala(MizarTh, "iff")
+	object not extends UnaryLFConstantScala(MizarTh, "not")
+	def eqCon = constantName("eq")
+	object eq extends BinaryLFConstantScala(eqCon.module, "eq")
 	
-	def proof(t : Term) = apply(constant("proof"), t)
+	class Quantifier(n: String) {
+	  def apply(v : String, a : Term, prop : Term) = ApplySpine(OMS(constantName(n)), a, Lambda(LocalName(v), Mizar.any, prop))
+	  def unapply(t: Term): Option[(String,Term,Term)] = t match {
+	    case ApplySpine(OMS(q), List(a, Lambda(x, Mizar.any, prop))) if q == constantName(n) => Some((x.toString, a, prop))
+	    case _ => None
+	  }
+	}
+	object forall extends Quantifier("for")
+	object exists extends Quantifier("ex")
 	
-	def eq(t1 : Term, t2 : Term) = apply(constant("eq"), t1, t2)
-	
-	def exists(v : String, tp : Term, prop : Term) = 
-	  ApplySpine(Mizar.constant("ex"), tp, Lambda(LocalName(v), Mizar.any, prop))	
-	def forall(v : String, tp : Term, prop : Term) = 
-	  ApplySpine(Mizar.constant("for"), tp, Lambda(LocalName(v), Mizar.any, prop))
+	object proof extends UnaryLFConstantScala(MizarTh, "proof")
+
 	  
 //	  OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, None)), prop)
 	

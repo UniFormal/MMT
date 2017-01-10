@@ -57,7 +57,11 @@ class MathMLPresenter extends NotationBasedPresenter {
       }
    }
    override def doLiteral(l: OMLITTrait)(implicit pc: PresentationContext) {
-      pc.html.mn(attributes = jobadattribs) {
+      val symAtt = l.synType match {
+        case OMID(p) => List(symref -> p.toPath)
+        case _ => Nil
+      }
+      pc.html.mn(attributes = symAtt ::: jobadattribs) {
         super.doLiteral(l)
       }
    }

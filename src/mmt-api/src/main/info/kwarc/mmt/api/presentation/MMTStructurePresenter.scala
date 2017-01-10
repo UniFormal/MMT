@@ -23,7 +23,7 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
    def endDecl(e: StructuralElement)(implicit rh: RenderingHandler) {}
    
    def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
-     controller.simplifier(e)
+     controller.simplifier(e) //TODO simplifying here is bad for elements that are not part of the diagram yet
      apply(e, 0)(rh)
    }
 

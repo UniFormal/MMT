@@ -57,11 +57,13 @@ case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: 
 class NotationBasedPresenter extends ObjectPresenter {
    /**
     * called by doDefaultTerm to render symbols
+    * 
+    * names are given in human-oriented form and not parsable if there are name clashes
     */
    def doIdentifier(p: ContentPath)(implicit pc: PresentationContext) {
       val s = p match {
-         case m ?? name => name.toPath  //not parsable if there are name clashes
-         case _ => p.toPath
+         case GlobalName(_, name) => name.toPath
+         case MPath(_, name) => "?" + name.toPath
       }
       pc.out(s)
    }
@@ -526,6 +528,7 @@ class NotationBasedPresenter extends ObjectPresenter {
        doTable(ms map aux)
      case _ => doMarkers(List(m))
    }
+   
    /**
     *  @param bracket called to determine whether a non-atomic term rendered with a certain notation should be bracketed
     *  @return 1 if the term was bracketed
@@ -602,12 +605,16 @@ class NotationBasedPresenter extends ObjectPresenter {
                   /* processes a list of markers left-to-right
                    *   for ArgumentMarkers, renders argument via doChild
                    *   for DelimiterMarkers, renders delimiter via doDelimiter
-                   *   for presentation markers, recurses into groups and arranges them according to doXXX methods
+                   *   for presentation markers, recurses into groups and arranges them according to doX methods
                    */
                   def doMarkers(markers: List[Marker]) {
-                     val numDelims = markers.count(_.isInstanceOf[Delimiter])
+                     val numDelims = markers count countsAsDelim
                      var numDelimsSeen = 0
-                     def currentPosition = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
+                     def currentPosition = {
+                       if (numDelimsSeen == 0) -1
+                       else if (numDelimsSeen == numDelims) 1
+                       else 0
+                     }
                      // the while loop removes elements from markersLeft until it is empty
                      var markersLeft = markers
                      // the most recently removed marker
@@ -645,7 +652,6 @@ class NotationBasedPresenter extends ObjectPresenter {
                               val letters = dE.text.exists(_.isLetter)
                               if (letters && previous.isDefined && !previous.get.isInstanceOf[Delimiter]) doSpace(1)
                               doDelimiter(op, dE, unpImps)(pc.copy(pos = pc.pos / pos(0)))
-                              numDelimsSeen += 1
                               if (letters && !markersLeft.isEmpty && !markersLeft.head.isInstanceOf[Delimiter]) doSpace(1)
                            case s: SeqArg => //impossible due to flattening
                            case GroupMarker(ms) =>
@@ -695,6 +701,9 @@ class NotationBasedPresenter extends ObjectPresenter {
                                     doOperator("?")
                               }
                         }
+                        if (countsAsDelim(current)) {
+                          numDelimsSeen += 1
+                        }
                         previous = Some(current)
                      }
                   }
@@ -713,5 +722,12 @@ class NotationBasedPresenter extends ObjectPresenter {
             case t =>
               return default
          }
+   }
+   /** auxiliary function of recurse: whether a marker acts as a delimiter for the purposes of bracket elimination */ 
+   private def countsAsDelim(m: Marker): Boolean = m match {
+     case d: Delimiter => true
+     case s: ScriptMarker => countsAsDelim(s.main)
+     case f: FractionMarker => f.line
+     case _ => false
    }
 }

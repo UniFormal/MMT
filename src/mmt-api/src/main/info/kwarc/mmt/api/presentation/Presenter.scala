@@ -87,19 +87,24 @@ object Presenter {
     *     - from the left argument of a left-open notation into a right-closed notation
     *     - from a middle argument into a left- and right-closed notation
     *     - the right argument of a right-open notation into a left-closed notation
+    *   these cases are handled below, but some heuristic fine-tuning is necessary
     * - when multiple arguments occur without delimiter, brackets are usually needed
     * - generally, omitting brackets may screw up parsing 
     */
    def bracket(outerPrecedence: Precedence, delimitation: Int, innerNotation: TextNotation) : Int = {
       val innerPrecedence = innerNotation.precedence
       if (outerPrecedence == Precedence.neginfinite || innerPrecedence == Precedence.infinite)
+         // brackets explicitly prevented
+         -1
+      else if (!innerNotation.isLeftOpen && !innerNotation.isRightOpen)
+         // inner notations brings its own brackets
          -1
       else {
          val yes = delimitation match {
             //the = case puts brackets into x * (y / z) if * and / have the same precedence
-            case 1 => outerPrecedence >= innerPrecedence && (innerNotation.isLeftOpen || innerNotation.arity.numNormalArgs > 1)
+            case 1 => outerPrecedence >= innerPrecedence && (innerNotation.isLeftOpen) // || innerNotation.arity.numNormalArgs > 1) // the commented-out part does not seem to make sense but it is kept for inspiration
             case 0 => outerPrecedence >= innerPrecedence && (innerNotation.isLeftOpen || innerNotation.isRightOpen)
-            case -1 => outerPrecedence >= innerPrecedence && (innerNotation.isRightOpen || innerNotation.arity.numNormalArgs > 1)
+            case -1 => outerPrecedence >= innerPrecedence && (innerNotation.isRightOpen) // || innerNotation.arity.numNormalArgs > 1)
             case _ => throw ImplementationError("illegal position")
          }
          if (yes) 1 else 0
@@ -109,7 +114,7 @@ object Presenter {
    def getNotations(controller: frontend.Controller, p: ContentPath, twoDim: Boolean) : List[TextNotation] = {
       val notC = controller.globalLookup.getO(p) flatMap {
          case c: symbols.Constant => if (c.notC.isDefined) Some(c.notC) else None
-         //TODO DD
+         case d: symbols.DerivedDeclaration => None //TODO
          case _ => None
       }
       val dim = if (twoDim) 2 else 1

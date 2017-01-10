@@ -5,7 +5,7 @@ package info.kwarc.mmt.api.presentation
  */
 object HTMLAttributes {
    /**
-    * HTML5-compliant pseudo namespace of MMT-generated attributes
+    * HTML5-compliant pseudo-namespace of MMT-generated attributes
     */
    val prefix = "data-mmt-"
    /** reference to the corresponding MMT URI

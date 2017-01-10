@@ -66,7 +66,7 @@ object InfInt {
       case "-infinity" => NegInfinite
       case i =>
          try {Finite(i.toInt)}
-         catch {case _ : Throwable => throw ParseError("illegal InfInt: " + i)}
+         catch {case _ : Exception => throw ParseError("illegal InfInt: " + i)}
    }
 }
 
@@ -103,6 +103,6 @@ object Precedence {
     */
    def parse(s : String) : Precedence = {
       try {Precedence(InfInt.parse(s.replace("*","")), s.endsWith("*"))}
-      catch {case _ : Throwable => throw ParseError("illegal precedence: " + s)}
+      catch {case _ : Exception => throw ParseError("illegal precedence: " + s)}
    }
 }
