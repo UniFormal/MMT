@@ -27,7 +27,8 @@ object MizInstance {
        inst.translate(complifier)
      } catch {case e: Exception =>
        val argsS = arguments.map(a => TranslationController.controller.presenter.asString(a)).mkString("\n")
-       throw GeneralError("error while complifying instance of pattern " + pattern + " with arguments\n" + argsS).setCausedBy(e)
+       println("error while complifying instance of pattern " + pattern + " with arguments\n" + argsS)
+       inst
      }
    }
 }
