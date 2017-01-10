@@ -1,27 +1,15 @@
 package org.omdoc.latin.foundations.mizar
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.documents._
+import objects._
+import notations._
+import symbols._
+import modules._
+import documents._
 
-import info.kwarc.mmt.mizar.mmt.objects._
-
-//Utility objects for constructing MMT Patterns and  MMT Instances (of Patterns) for the Mizar Import
-//Main function is to shield the rest of Mizar code from changes to the MMT API.
-//Typically only these two objects need to be updated if the structural extensions API of MMT changes
-object MizPattern {
-  def apply(name : LocalName, params: Context, body : Context) = {
-     patterns.Pattern(OMMOD(Mizar.MizarPatternsTh), name, params, body, NotationContainer())
-  }
-}
-object MizInstance {
-   def apply(home : Term, name : LocalName, pattern : GlobalName, arguments: List[Term], notCont: NotationContainer = NotationContainer()) = {
-     patterns.Instance(home, name, pattern, arguments, notCont)
-   }
-}
+import info.kwarc.mmt.mizar._
+import mmtwrappers._
+import translator._
 
 object MizarPatterns extends uom.RealizedTheory(Some(info.kwarc.mmt.sequences.LFS._path)) {
   // the path used to include this
