@@ -1,5 +1,7 @@
 package info.kwarc.mmt.imps
 
+import java.io._
+
 import scala.io.Source
 import Character.isWhitespace
 
@@ -109,14 +111,23 @@ class LispParser
         val sr_region : SourceRegion   = SourceRegion(sr_start, sr_end)
         val sr        : SourceRef      = SourceRef(null, sr_region)
 
-        // Return one expression with all the smaller expressions as children
-        println(exprs.toString)
-        println("~~~~~~~~~")
-        val parsedExprs = exprs.map(x => parseExpressions(x)).filter(y => !(y.isEmpty)).map(z => z.get)
+		// Actually parse Exps and filter for successes
+        val parsedExprs : List[LispExp] = exprs.map(parseExpression).filter(y => !(y.isEmpty)).map(z => z.get)
+
+		// Truncate output.t to 0 length
+		val pw = new PrintWriter("output.t");
+		pw.close
+		
+		// Print parsed expressions for diff
+		val fw = new FileWriter("output.t", true)
         for (p <- parsedExprs)
         {
-			println(p.toString)
-		}
+            println("\n" + p.toString)
+            fw.write(p.toString + "\n")
+        }
+        fw.close()
+
+        // Return one expression with all the smaller expressions as children
         return Exp(parsedExprs, sr)
     }
 
@@ -190,7 +201,7 @@ class LispParser
         return Exp(children, sourceRef)
     }
 
-    private def parseExpressions (e : Exp) : Option[LispExp] =
+    private def parseExpression (e : Exp) : Option[LispExp] =
     {
         e.children.head match
         {
@@ -247,11 +258,6 @@ class LispParser
             else { return Some(AtomicSort(name.get, qss.get, thy, usages, witness, e.src)) }
 
         } else { return None }
-    }
-
-    private def parseConstant (e : Exp) : Option[LispExp] =
-    {
-        return None
     }
 
     // ######### Tiny parsers
