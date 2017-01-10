@@ -326,7 +326,7 @@ case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait 
  *  @param synType the type of the this literal
  */
 case class UnknownOMLIT(value: String, synType: Term) extends Term with OMLITTrait {
-   override def toString = "\"" + value + "\""
+   override def toString = value
    
    /** convert to OMLIT by choosing an applicable rule */
    def recognize(rules: RuleSet) = {

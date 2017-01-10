@@ -129,7 +129,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               dd.module.setOrigin(GeneratedBy(dd.path))
               val simp = oS.toTranslator(rules)
               elab.getDeclarations.map {d =>
-                val dS = d.translate(d.home, LocalName.empty, simp)
+                val dS = d.translate(simp)
                 dS
               }
          }

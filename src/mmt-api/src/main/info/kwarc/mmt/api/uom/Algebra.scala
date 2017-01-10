@@ -384,7 +384,7 @@ class Complement(op: GlobalName, neg: GlobalName, bound: GlobalName) extends Bre
 // now some prepackaged sets of rules for common structures
 
 /** A Semigroup packages the simplification rules that yield normalization in a semigroup. */
-class Semigroup(op: GlobalName) extends RuleSet {
+class Semigroup(op: GlobalName) extends MutableRuleSet {
    protected val collect = new Collect(op, utils.OpenMath.base ? "ring1" ? "power", None, None, false)
    declares (
      new Association(op),
@@ -451,7 +451,7 @@ class BoundedSemiLattice(op: GlobalName, bound: GlobalName) extends Monoid(op, b
  * For example, "BooleanLattice(conj, disj, truth, falsity, neg)" yields the rules for a disjunctive normal form
  * in which redundant occurrences of "truth" and "falsity" are eliminated.  
  */ 
-class BooleanLattice(meet: GlobalName, join: GlobalName, top: GlobalName, bottom: GlobalName, compl: GlobalName) extends RuleSet {
+class BooleanLattice(meet: GlobalName, join: GlobalName, top: GlobalName, bottom: GlobalName, compl: GlobalName) extends MutableRuleSet {
    imports (
        new BoundedSemiLattice(meet, top),
        new BoundedSemiLattice(join, bottom)

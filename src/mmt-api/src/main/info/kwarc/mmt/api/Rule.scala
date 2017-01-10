@@ -19,6 +19,15 @@ trait Rule extends SemanticObject {
    }
    /** normally the singleton list of this rule; but rules may bundle additional rules as well */ 
    def getRules = List(this)
+
+ /** when multiple rules are applicable, rules with higher priorities are preferred
+   *  
+   *  creating a new rule with higher priority can be used to effectively drop imported rules
+   *  
+   */
+   // TODO priority is only in some situations so far, in particular for type inference or term-transformation
+  def priority: Int = 0
+  
 }
 
 /** parametric rules can be instantiated to obtain rules */ 
@@ -64,35 +73,49 @@ class RuleType(be: Backend) extends Atomic[Rule] {
  */
 class RuleLiterals(be: backend.Backend) extends RepresentedRealizedType[Rule](OMS(utils.mmt.mmtcd ? "rule"), new RuleType(be))
 
-/** A RuleSet groups some Rule's. Its construction and use corresponds to algebraic theories. */
-class RuleSet {
-   private val rules = new HashSet[Rule]
-
-   def declares(rs: Rule*) {rs foreach {rules += _}}
-   def imports(rss: RuleSet*) {rss foreach {rules ++= _.rules}}
+/** A RuleSet groups some Rule's. */
+abstract class RuleSet {self =>
+   /** the underlying set of rules */
+   def getAll: Iterable[Rule]
    
-   def getAll = rules
-   def get[R<:Rule](cls: Class[R]): HashSet[R] = rules flatMap {r =>
+   def get[R<:Rule](cls: Class[R]): Iterable[R] = getAll flatMap {r =>
       if (cls.isInstance(r))
          List(r.asInstanceOf[R])
       else
          Nil
    }
-   def getByHead[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): HashSet[R] = get(cls) filter {r => r.head == head || (r.alternativeHeads contains head)}
-   def getFirst[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): Option[R] = getByHead(cls, head).headOption
+   def getByHead[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): Iterable[R] =
+     get(cls) filter {r => r.head == head || (r.alternativeHeads contains head)}
+   def getFirst[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): Option[R] =
+     getByHead(cls, head).headOption
    
-   override def toString = rules.toList.map(_.toString).mkString(", ")
+   override def toString = getAll.toList.map(_.toString).mkString(", ")
+   
+   /** filters this set by a predicate */
+   def filter(include: Rule => Boolean) = new RuleSet {
+     def getAll = self.getAll.filter(include)
+   }
+}
 
+/** standard implementation of using set of rules hashed by their head */
+class MutableRuleSet extends RuleSet {
+   private val rules = new HashSet[Rule]
+
+   /* Its construction and use corresponds to algebraic theories. */ 
+   def declares(rs: Rule*) {rs foreach {rules += _}}
+   def imports(rss: RuleSet*) {rss foreach {rules ++= _.getAll}}
+
+   def getAll = rules
 }
 
 object RuleSet {
    /** collects all rules visible to a context, based on what is currently loaded into memory */
-   def collectRules(controller: Controller, context: Context): RuleSet = {
+   def collectRules(controller: Controller, context: Context): MutableRuleSet = {
       val support = context.getIncludes
       val decls = support.flatMap {p =>
         controller.globalLookup.getDeclarationsInScope(OMMOD(p))
       }.distinct
-      val rs = new RuleSet
+      val rs = new MutableRuleSet
       val rci = new RuleConstantInterpreter(controller)
       decls.foreach {
          case rc: RuleConstant =>

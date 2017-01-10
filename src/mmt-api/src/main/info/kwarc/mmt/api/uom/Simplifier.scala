@@ -9,6 +9,7 @@ import modules._
 
 /** simplifies/rewrites objects */
 trait ObjectSimplifier extends Extension {self =>
+   /** applies rules to simplify an object */
    def apply(obj: Obj, context: Context, rules: RuleSet): obj.ThisType
    
    def toTranslator(rules: RuleSet) = new UniformTranslator {

@@ -6,29 +6,15 @@ import modules._
 import symbols._
 
 /**
- * a model of an MMT theory in Scala
+ * a theory written directly in Scala
  */
-abstract class RealizationInScala extends DeclaredTheory(null, null, None) with SemanticObject {
+abstract class RealizedTheory(mt: Option[MPath]) extends DeclaredTheory(null, null, mt) with SemanticObject {
    // getClass only works inside the body, i.e., after initializing the super class
    // so we make the constructor arguments null and override afterwards
    // this will fail if one of the arguments is accessed during initialization of the superclass
-   override val parent = GenericScalaExporter.scalaToDPath(getClass.getPackage.getName)
-   override val name = {
-      val cls = getClass
-      var n = cls.getName.substring(cls.getPackage.getName.length+1)
-      if (n.endsWith("$"))
-         n = n.substring(0,n.length-1)
-      LocalName(n)
-   }
+   override val parent = mpath.parent
+   override val name = mpath.name
    
-   /** the modelled theory */
-   val _domain: TheoryScala
-   
-   /** the MMT URI of the modelled theory */
-   lazy val _path = _domain._path
-   /** the name of the modelled theory */
-   lazy val _name = _domain._name
-
    /** the body of this theory
     *  
     *  this is maintained lazily so that it can be built by the initializer of inheriting classes
@@ -36,7 +22,7 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) with 
     */
    private var _lazyBody : List[() => Unit] = Nil
    /** takes a argument and adds it to the _lazyBody */
-   protected def realizes(b: => Unit) {
+   protected def declare(b: => Unit) {
       _lazyBody ::= (() => b)
    }
    /**
@@ -49,8 +35,35 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) with 
          _lazyBody = Nil // make sure, nothing gets added twice
       }
    }
+}
 
-   realizes {add(symbols.PlainInclude(_path, path))}
+
+/**
+ * a model of an MMT theory written in Scala
+ */
+abstract class RealizationInScala extends RealizedTheory(None) {
+   //override val parent = GenericScalaExporter.scalaToDPath(getClass.getPackage.getName)
+   /*override val name = {
+      val cls = getClass
+      var n = cls.getName.substring(cls.getPackage.getName.length+1)
+      if (n.endsWith("$"))
+         n = n.substring(0,n.length-1)
+      LocalName(n)
+   }*/
+   
+   /** the modelled theory */
+   val _domain: TheoryScala
+   
+   /** the MMT URI of the modelled theory */
+   lazy val _path = _domain._path
+   /** the name of the modelled theory */
+   lazy val _name = _domain._name
+
+   declare {add(symbols.PlainInclude(_path, path))}
+
+   protected def realizes(b: => Unit) {
+      declare {b}
+   }
    
    /**
     * adds a [[RuleConstant]] realizing r.head as r to this model

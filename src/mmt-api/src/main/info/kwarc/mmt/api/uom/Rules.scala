@@ -28,6 +28,19 @@ case object NoChange extends Change
 /** super class of all rules used by the [[UOM]] */
 trait UOMRule extends SyntaxDrivenRule
 
+/** an arbitrary rewrite/computation/simplification rule */
+// TDOO this should become part of UOMRule, breadth/depth rules should be instances
+trait TermTransformationRule extends UOMRule {
+  /** try to apply this return, result result if applicable */
+  def apply(matcher: Matcher, goalContext: Context, goal: Term): Option[Term]
+}
+
+/** a rule that should only be used during complification
+ *  
+ *  separating these rules is important to avoid cycles during simplification
+ */
+trait ComplificationRule extends TermTransformationRule
+
 /** A DepthRule looks one level deep into the structure of one of the arguments of an operator
  * 
  * It is applicable to a term of the form
@@ -68,6 +81,34 @@ abstract class BreadthRule(val head: GlobalName) extends UOMRule {
    val apply: Rewrite
 }
 
-/** An AbbrevRule expands a symbol into a term
- */ 
+/** An AbbrevRule expands a symbol into a term */ 
 class AbbrevRule(val head: GlobalName, val term: Term) extends UOMRule
+
+/** a transformation based on matching the input term
+ *  @param templateVars the free variables to fill in through matching
+ *  @param template the left-hand side
+ */
+abstract class MatchingRule(templateVars: Context, template: Term) extends TermTransformationRule {
+  /** 
+   *  @param goal the term that was matched
+   *  @param templateSolution the substitution for the template variables
+   *  @return the transformed term
+   */
+  def makeResult(goal: Term, templateSolution: Substitution): Option[Term]
+  def apply(matcher: Matcher, goalContext: Context, goal: Term) = {
+    matcher(goalContext, goal, templateVars, template) match {
+      case MatchSuccess(sub) => makeResult(goal, sub)
+      case _ => None
+    }
+  }
+}
+
+/**
+ * a general rewrite rule
+ * @param result the right-hand side (relative to the template variables)
+ */
+class RewriteRule(val head: GlobalName, templateVars: Context, template: Term, val result: Term)
+  extends MatchingRule(templateVars, template) {
+  
+  def makeResult(goal: Term, sub: Substitution) = Some(result ^? sub)
+}

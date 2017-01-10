@@ -15,15 +15,19 @@ import Conversions._
  *  @param controller needed for lookups when type checking the matches
  *  @param queryVars the substitution variables in the template term 
  *  @param context free Variables of goal and template, these must be treated in the same way as constants
+ *  
+ *  the class can be reused for multiple matches using the same RuleSet but is not thread-safe
  */
-class Matcher(controller: Controller, rules: RuleSet, context: Context, queryVars: Context) extends Logger {
+class Matcher(controller: Controller, rules: RuleSet) extends Logger {
    def logPrefix = "matcher"
    def report = controller.report
+   private def presentObj(o: Obj) = controller.presenter.asString(o)
    
    private val solutionRules = rules.get(classOf[SolutionRule])
    private val equalityRules = rules.get(classOf[TermBasedEqualityRule])
    
-   private var querySolution : Context = queryVars
+   private var constantContext: Context = Context.empty
+   private var querySolution : Context = Context.empty
    def getUnsolvedVariables : List[LocalName] = querySolution collect {
       case VarDecl(x,_,None,_) => x
    }
@@ -40,9 +44,9 @@ class Matcher(controller: Controller, rules: RuleSet, context: Context, queryVar
     */
    private def solve(name: LocalName, value: Term) : Boolean = {
       val (left, solved :: right) = querySolution.span(_.name != name)
-      val valueS = controller.simplifier(value, context ++ left, rules)
+      val valueS = controller.simplifier(value, constantContext ++ left, rules)
       solved.tp foreach {tp =>
-         val valueTp = Solver.infer(controller, context, value, Some(rules)).getOrElse(return false)
+         val valueTp = Solver.infer(controller, constantContext, value, Some(rules)).getOrElse(return false)
          val tpmatch = aux(Nil, valueTp, tp)
          if (!tpmatch) return false
       }
@@ -66,21 +70,47 @@ class Matcher(controller: Controller, rules: RuleSet, context: Context, queryVar
       }
       def simplify(t: Obj)(implicit stack: Stack, history: History) =
          controller.simplifier(t, stack.context, rules)
-      def outerContext = context ++ querySolution
+      def outerContext = constantContext ++ querySolution
    }
 
    /**
     *  the matching function
-    *  @param goal the term to be matched
+    *  @param goalContext the global context
+    *  @param goal the term to be matched, relative to goalContext
     *  @param query the term to match against, this term may contain the queryVars and the context variables freely
     *  @return true if the terms match
     */ 
-   def apply(goal: Term, query: Term) = {
-      log(s"matching $queryVars such that context |- $goal = $query")
-      val res = aux(Nil, goal, query)
-      if (res) log("matched: " + getSolution)
-      else log("no match")
-      res
+   def apply(goalContext: Context, goal: Term, queryVars: Context, query: Term): MatchResult = {
+     apply(goalContext, queryVars) {eq => eq(goal, query)}
+   }
+
+   /**
+    *  most general matching function that allows arbitrary checks
+    *  
+    *  @param doit a function that takes an equality predicate (for matching) and returns true if the match is possible
+    *  e.g., basic matching is obtained as apply(queryVars){eq => eq(goal, query)}
+    */
+   def apply(goalContext: Context, queryVars: Context)(doit: ((Term,Term) => Boolean) => Boolean): MatchResult = {
+      constantContext = goalContext
+      querySolution = queryVars
+      val res = doit(matchTerms)
+      if (res) {
+        log("matched: " + getSolution)
+        if (getUnsolvedVariables.isEmpty)
+           MatchSuccess(getSolution)
+        else
+           MatchInconclusive
+      }
+      else {
+        log("no match")
+        MatchFail
+      }
+   }
+   
+   /** tp level match function */
+   private def matchTerms(goal: Term, query: Term) = {
+     log(s"matching ${presentObj(querySolution)} such that |- ${presentObj(goal)} = ${presentObj(query)}")
+     aux(Nil, goal, query)
    }
    
    /**
@@ -96,7 +126,9 @@ class Matcher(controller: Controller, rules: RuleSet, context: Context, queryVar
       if (goalOrg hasheq queryOrg) return true
       // 2) try term-based equality rules
       equalityRules.filter(r => r.applicable(goalOrg, queryOrg)) foreach {r =>
-         r(callback)(goalOrg, queryOrg, None)(Stack(boundOrg), NoHistory) foreach {cont => return cont()}
+         r(callback)(goalOrg, queryOrg, None)(Stack(boundOrg), NoHistory) foreach {cont =>
+           return cont()
+         }
       }
       // 3) try to isolate a query variable 
       // j is the equality judgment that we try to apply solution rules to
@@ -112,14 +144,11 @@ class Matcher(controller: Controller, rules: RuleSet, context: Context, queryVar
       val (goal, query, bound) = (j.tm2, j.tm1, j.context)
       // 4) default: congruence
       (goal, query) match {
-         case (_,OMV(x)) if context.isDeclared(x) || bound.isDeclared(x) =>
+         case (_,OMV(x)) if constantContext.isDeclared(x) || bound.isDeclared(x) =>
             // these variables are treated like constants
-            // this case must come first because they bound variables might shadow query variables 
+            // this case must come first because the bound variables might shadow query variables 
             goal == query
          case (_,OMV(x)) if querySolution.isDeclared(x) =>
-            // x2 must be a query variable (check anyway, to avoid subtle bugs)
-            if (!queryVars.isDeclared(x))
-               throw ImplementationError(s"undeclared variable $x")
             // if goal does not contain bound variables, solve for x
             if (goal.freeVars.forall(v => !bound.isDeclared(v)))
                solve(x, goal)
@@ -136,11 +165,11 @@ class Matcher(controller: Controller, rules: RuleSet, context: Context, queryVar
             if (!bM) return false
             val rename = auxCon(bound, bound1, bound2).getOrElse(return false)
             (sc1 zip sc2) forall {
-               case (s1, s2) => aux(bound ++ bound2, s1 ^? rename, s2)
+               case (s1, s2) => aux(bound ++ bound1, s1, s2 ^? rename)
             }
          case (l1: OMLIT, l2: OMLIT) => l1.value == l2.value
          // this case works for constants (true if equal), and all asymmetric combinations (always false) 
-         case (t1,t2) => t1 == t2 // TODO: other cases
+         case (t1,t2) => t1 hasheq t2 // TODO: other cases
       }
    }
    
@@ -149,23 +178,29 @@ class Matcher(controller: Controller, rules: RuleSet, context: Context, queryVar
     * @param goal a context
     * @param query a context with query variables to match against goal
     * @param context joint free variables of goal and query
-    * @return if goal and query match up to alpha-renaming, the substitution goal -> query that performs the alpha-renaming
+    * @return if goal and query match up to alpha-renaming, the substitution query -> goal that performs the alpha-renaming
     * 
-    * terms occurring inside goal are alpha-renamed accordingly
+    * terms occurring inside query are alpha-renamed accordingly
     */
    private def auxCon(bound: Context, goal: Context, query: Context): Option[Substitution] = {
       if (goal.length != query.length) return None
       var rename = Substitution()
-      (goal zip query.declsInContext.toList) foreach {
-         case (VarDecl(x1,tp1,df1, _), (queryBound, VarDecl(x2,tp2, df2, _))) =>
+      (goal.declsInContext.toList zip query) foreach {
+         case ((goalBound, VarDecl(x1,tp1,df1, _)), VarDecl(x2,tp2, df2, _)) =>
             List((tp1,tp2), (df1,df2)) foreach {
                case (None,None) => true
                case (Some(t1), Some(t2)) =>
-                  aux(bound ++ queryBound, t1 ^? rename, t2)
+                  aux(bound ++ goalBound, t1, t2 ^? rename)
                case _ => return None
             }
-            rename ++= (x1/OMV(x2))
+            rename ++= (x2/OMV(x1))
       }
       Some(rename)
    }
 }
+
+/** returned by the [[Matcher]] */
+abstract class MatchResult
+case class MatchSuccess(solution: Substitution) extends MatchResult
+case object MatchFail extends MatchResult
+case object MatchInconclusive extends MatchResult

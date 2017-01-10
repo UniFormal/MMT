@@ -63,8 +63,13 @@ abstract class Declaration extends ContentElement {
    // sharper type
    def getDeclarations: List[Declaration]
    
-   /** a recursively translated copy of this declaration */
+   /** a recursively translated copy of this declaration with a URI
+    *  @param newHome the home theory of the result
+    *  @param prefix the prefix used to form the name of the new declaration
+    */
    def translate(newHome: Term, prefix: LocalName, translator: Translator): ThisType
+   /** a recursively translated copy of this declaration */
+   def translate(translator: Translator): ThisType = translate(home, LocalName.empty, translator)
    /** a new declaration with the same path obtained by replacing fields in 'this' with corresponding fields of 'that'
     *  Unfortunately, this must take any declaration and throw an error if 'not (that : ThisType)' 
     */

@@ -68,13 +68,6 @@ trait ForwardInvertible extends InvertibleTactic {
  * This is used in backward proof search 
  */
 trait BackwardSearch extends Tactic {
-   /**
-    * backward rules change the goal so that usually only one rule can be applied if multiple are applicable
-    * 
-    * higher-prioritiy is used to decide which rule to apply  
-    */ 
-   def priority: Int
-
    /** applies the tactic to a goal
     *  
     *  @param prover the calling prover, used for callbacks

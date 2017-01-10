@@ -59,7 +59,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogP
    }
 
    /** convenience function to create a matcher in the current situation */
-   def makeMatcher(context: Context, queryVars: Context) = new Matcher(controller, rules, context, queryVars)
+   def makeMatcher = new Matcher(controller, rules)
 
    /**
     * tries to solve the goal

@@ -21,6 +21,10 @@ case class UOMState(t : Term, context: Context, rules: RuleSet, path : List[Int]
   val matchRules = rules.get(classOf[InverseOperator])
 }
 
+//TODO Simplifier should not be pragmatics-aware, instead each rule should have 'under' field
+
+import RuleBasedSimplifier._
+
 /** A RuleBasedSimplifier applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
 class RuleBasedSimplifier extends ObjectSimplifier {
   override val logPrefix = "object-simplifier"
@@ -130,7 +134,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
        * @param globalChange true if there has been a GlobalChange so far
        * @return the simplified term and a Boolean indicating whether a GlobalChange occurred
        */
-      def applyAux(t: Term, globalChange: Boolean = false)(implicit con : Context, init: UOMState) : (Term, Boolean) = t match {
+      private def applyAux(t: Term, globalChange: Boolean = false)(implicit con : Context, init: UOMState) : (Term, Boolean) = t match {
          case StrictOMA(strictApps, outer, args) =>
             // state (1)
             log("applying depth rules to   " + controller.presenter.asString(t))
@@ -191,10 +195,10 @@ class RuleBasedSimplifier extends ObjectSimplifier {
    }
   
   /** object for matching the inner term in a depth rule */
-  class InnerTermMatcher(controller: frontend.Controller, matchRules: List[InverseOperator]) {
+  private class InnerTermMatcher(controller: frontend.Controller, matchRules: List[InverseOperator]) {
      /**
       * unifies matching OMA, strict OMS, OMS, literals that can be the result of applying a realized operator
-      * @return list of matches: tuples of operator, arguments, flag signalling whether the inner term is an OMS
+      * @return list of matches: tuples of operator, arguments, flag signaling whether the inner term is an OMS
       */
      def matches(t: Term): List[(GlobalName, List[Term], Boolean)] = t match {
         case StrictOMA(strApps, p, args) => List((p, args, false))
@@ -302,20 +306,22 @@ class RuleBasedSimplifier extends ObjectSimplifier {
    }
 }
 
-/**
- * UOM uses this to store the result of simplifying a Term in the original term so that it can be reused 
- */
-object SimplificationResult extends TermProperty[Term](utils.mmt.baseURI / "clientProperties" / "uom" / "result") {
-   def unapply(t: Term) = get(t)
+object RuleBasedSimplifier {
+  /**
+   * used to store the result of simplifying a Term in the original term so that it can be reused 
+   */
+  object SimplificationResult extends TermProperty[Term](utils.mmt.baseURI / "clientProperties" / "uom" / "result") {
+     def unapply(t: Term) = get(t)
+  }
+  
+  /**
+   * used to remember that a Term is the result of simplification to avoid recursing into it again 
+   */
+  object Simple extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "simplified")
+    
+  /**
+   * used to remember whether a Term underwent a GlobalChange during simplification
+   * this information is passed upwards during recursive simplification
+   */
+  object Changed extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "changed")
 }
-
-/**
- * UOM uses this to remember that a Term is the result of simplification to avoid recursing into it again 
- */
-object Simple extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "simplified")
-
-/**
- * UOM uses this to remember whether a Term underwent a GlobalChange during simplification
- * this information is passed upwards during recursive simplification
- */
-object Changed extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "changed")
