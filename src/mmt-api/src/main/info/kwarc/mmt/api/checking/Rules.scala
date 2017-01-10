@@ -55,14 +55,6 @@ trait CheckingRule extends SyntaxDrivenRule {
   def alternativeHeads: List[GlobalName] = Nil
   def heads = head::alternativeHeads
   
-  /** when multiple rules are applicable, rules with higher priorities are preferred
-   *  
-   *  creating a new rule with higher priority can be used to effectively drop imported rules
-   *  
-   */
-   // TODO priority is only in some situations so far, in particular for type inference
-  def priority: Int = 0
-  
   /** may be thrown to indicate that the judgment that the rules was called on should be delayed */
   case class DelayJudgment(msg: String) extends Throwable
 }

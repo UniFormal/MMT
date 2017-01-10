@@ -152,7 +152,6 @@ case class PragmaticTerm(op: GlobalName, subs: Substitution, con: Context, args:
  *  It is returned by a FixityParser and used in a TextNotation
  */
 abstract class NotationExtension extends Rule {
-   def priority: Int
    def isApplicable(t: Term): Boolean
    /** called to construct a term after a notation produced by this was used for parsing */
    def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
@@ -164,7 +163,6 @@ abstract class NotationExtension extends Rule {
 
 /** the standard mixfix notation for a list of [[Marker]]s */
 object MixfixNotation extends NotationExtension {
-   def priority = 0
    def isApplicable(t: Term) = true
    def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
       (implicit unknown: () => Term) = ComplexTerm(op, subs, con, args)
@@ -193,7 +191,7 @@ case class HOAS(apply: GlobalName, bind: GlobalName, typeAtt: GlobalName)
  * assumption: HOAS notations do not have arguments before context
  */
 class HOASNotation(val hoas: HOAS) extends NotationExtension {
-   def priority = 1
+   override def priority = 1
    def isApplicable(t: Term) = t.head match {
       case Some(h) => List(hoas.apply, hoas.typeAtt) contains h
       case None => false
@@ -265,7 +263,7 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
  * assumption: notations give meta-arguments as arguments before context
  */
 class NestedHOASNotation(obj: HOAS, meta: HOAS) extends NotationExtension {
-   def priority = 2
+   override def priority = 2
    def isApplicable(t: Term) = t match {
       case OMA(OMS(meta.apply), OMS(obj.apply) :: _) => true
       case _ => false

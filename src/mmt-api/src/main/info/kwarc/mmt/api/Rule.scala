@@ -19,6 +19,15 @@ trait Rule extends SemanticObject {
    }
    /** normally the singleton list of this rule; but rules may bundle additional rules as well */ 
    def getRules = List(this)
+
+ /** when multiple rules are applicable, rules with higher priorities are preferred
+   *  
+   *  creating a new rule with higher priority can be used to effectively drop imported rules
+   *  
+   */
+   // TODO priority is only in some situations so far, in particular for type inference or term-transformation
+  def priority: Int = 0
+  
 }
 
 /** parametric rules can be instantiated to obtain rules */ 

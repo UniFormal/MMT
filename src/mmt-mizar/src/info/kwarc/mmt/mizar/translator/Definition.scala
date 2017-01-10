@@ -56,7 +56,7 @@ object DefinitionTranslator {
       TranslationController.addGlobalProp(dt.prop.nr, name)
       val tp = PropositionTranslator.translateProposition(dt.prop)
       val const = makeConstant(LocalName(name), tp)
-      TranslationController.controller.add(const)
+      TranslationController.add(const)
     }
   }
   
@@ -82,7 +82,7 @@ object DefinitionTranslator {
     val notC = TranslationController.getNotation("R", p.absnr)
     val inst = MizInstance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, p)
-    TranslationController.controller.add(inst)
+    TranslationController.add(inst)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(p.dts)
   }
@@ -109,7 +109,7 @@ object DefinitionTranslator {
     val inst = MizInstance(OMMOD(TranslationController.currentTheory),
       LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, p)
-    TranslationController.controller.add(inst)
+    TranslationController.add(inst)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(p.dts)
   }
@@ -139,7 +139,7 @@ object DefinitionTranslator {
     val inst = MizInstance(OMMOD(TranslationController.currentTheory),
       LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, f)
-    TranslationController.controller.add(inst)
+    TranslationController.add(inst)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(f.dts)
   }
@@ -166,7 +166,7 @@ object DefinitionTranslator {
     val inst = MizInstance(OMMOD(TranslationController.currentTheory),
       LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, f)
-    TranslationController.controller.add(inst)
+    TranslationController.add(inst)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(f.dts)
   }
@@ -193,7 +193,7 @@ object DefinitionTranslator {
     val inst = MizInstance(OMMOD(TranslationController.currentTheory),
       LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, m)
-    TranslationController.controller.add(inst)
+    TranslationController.add(inst)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(m.dts)
   }
@@ -220,7 +220,7 @@ object DefinitionTranslator {
     val inst = MizInstance(OMMOD(TranslationController.currentTheory),
       LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, m)
-    TranslationController.controller.add(inst)
+    TranslationController.add(inst)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(m.dts)
 
@@ -249,7 +249,7 @@ object DefinitionTranslator {
     val inst = MizInstance(OMMOD(TranslationController.currentTheory),
       LocalName(name), pattern.path, matches, notC)
     TranslationController.addSourceRef(inst, a)
-    TranslationController.controller.add(inst)
+    TranslationController.add(inst)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(a.dts)
   }
@@ -278,7 +278,7 @@ object DefinitionTranslator {
     val inst = MizInstance(OMMOD(TranslationController.currentTheory),
       LocalName(name), pattern.path, matches, notCont = notC)
     TranslationController.addSourceRef(inst, a)
-    TranslationController.controller.add(inst)
+    TranslationController.add(inst)
     TranslationController.clearLocusVarContext()
     makeDefTheorems(a.dts)
   }
@@ -327,7 +327,7 @@ object DefinitionTranslator {
       val pattern = DefPatterns.MizSelDef
       val i = MizInstance(OMMOD(TranslationController.currentTheory), LocalName(sname), pattern.path, matches)
       TranslationController.addSourceRef(i, s)
-      TranslationController.controller.add(i)
+      TranslationController.add(i)
       TranslationController.clearLocusVarContext()
 
     })
@@ -346,7 +346,7 @@ object DefinitionTranslator {
     val inst = MizInstance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.path, matches)
 
     TranslationController.addSourceRef(inst, s)
-    TranslationController.controller.add(inst)
+    TranslationController.add(inst)
     TranslationController.clearLocusVarContext()
 
   }

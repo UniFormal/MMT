@@ -79,10 +79,28 @@ object TranslationController {
         parser.SourceRef.update(mmtEl, ref)
     }
 	
-	def add(e : StructuralElement) {
+	def add(e: NarrativeElement) {
 		controller.add(e)
 	}
-	
+	def add(m: Module) {
+	  controller.add(m)
+	}
+	def add(e : Declaration) {
+	  val eC = complify(e)
+		controller.add(eC)
+	}
+	private def complify(d: Declaration) = {
+     val rules = RuleSet.collectRules(controller, Context(Mizar.MizarPatternsTh))
+     org.omdoc.latin.foundations.mizar.IntroductionRule.allRules.foreach {rules.declares(_)}
+     val complifier = controller.complifier(rules).toTranslator
+     try {
+       d.translate(complifier)
+     } catch {case e: Exception =>
+       println("error while complifying instance " + d.path)
+       d
+     }
+  }
+
 	def resolveVar(nr : Int) : Term = {
 	    varContext(varContext.length - nr) 
 	}

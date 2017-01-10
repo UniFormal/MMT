@@ -110,15 +110,6 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
    /** tp level match function */
    private def matchTerms(goal: Term, query: Term) = {
      log(s"matching ${presentObj(querySolution)} such that |- ${presentObj(goal)} = ${presentObj(query)}")
-     //TODO delete
-     def isNot(t: Term) = t match {
-       case OMA(OMS(op), OMS(conn) :: _) => op.name.toString == "apply" && conn.name.toString == "not"
-       case _ => false
-     }
-     if (isNot(goal) && isNot(query)) {
-        true
-     }
-     //END DELETE
      aux(Nil, goal, query)
    }
    

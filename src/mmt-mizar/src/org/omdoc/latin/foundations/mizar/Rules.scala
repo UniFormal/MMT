@@ -31,7 +31,10 @@ object IntroduceDisjunction extends RewriteRule(constantName("or"), context(2), 
 /**
  * not (X and not Y) ---> X implies Y
  */
-object IntroduceImplication extends RewriteRule(constantName("implies"), context(2), not(and(List(X,not(Y)))), implies(X,Y)) with ComplificationRule
+object IntroduceImplication extends RewriteRule(constantName("implies"), context(2), not(and(List(X,not(Y)))), implies(X,Y)) with ComplificationRule {
+  /** lower than [[IntroduceDisjunction]] */
+  override def priority = -5
+}
 
 /**
  * true => X  ---> X

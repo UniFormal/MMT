@@ -11,7 +11,6 @@ import proving._
  */
 object PiIntroduction extends BackwardInvertible {
    val head = Pi.path
-   def priority = 5
    def apply(prover: Searcher, goal: Goal) = goal.conc match {
       case Pi(n,a,b) =>
          onApply("Pi introduction") {
@@ -31,7 +30,7 @@ object PiIntroduction extends BackwardInvertible {
  */
 object BackwardPiElimination extends BackwardSearch {
    val head = Pi.path
-   val priority = 3
+   override val priority = 3
 
    private object UnnamedArgument {
       def unapply(vd: VarDecl) = vd match {
