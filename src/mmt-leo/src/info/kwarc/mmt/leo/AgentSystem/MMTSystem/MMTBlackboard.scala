@@ -17,7 +17,7 @@ class MMTBlackboard(val rules:RuleSet,val goal: Goal)(implicit c: Controller,olp
   implicit val presentObj: Obj => String = o => controller.presenter.asString(o)
 
   /** convenience function to create a matcher in the current situation */
-  def makeMatcher(context: Context, queryVars: Context) = new Matcher(controller, rules, context, queryVars)
+  def makeMatcher = new Matcher(controller, rules)
 
   /** Boolean representing the status of the prof goal */
   override def finished: Boolean = goal.isSolved

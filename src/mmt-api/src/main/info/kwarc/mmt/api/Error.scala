@@ -160,10 +160,7 @@ object CompilerError {
 abstract class Invalid(s: String) extends Error(s)
 
 /** errors that occur when structural elements are invalid */
-case class InvalidElement(elem: StructuralElement, s: String, causedBy: Option[Error] = None)
-  extends Invalid("invalid element: " + s + ": " + elem.path.toPath) {
-  if (causedBy.isDefined) setCausedBy(causedBy.get)
-}
+case class InvalidElement(elem: StructuralElement, s: String) extends Invalid("invalid element: " + s + ": " + elem.path.toPath)
 
 /** errors that occur when objects are invalid */
 case class InvalidObject(obj: objects.Obj, s: String) extends Invalid("invalid object (" + s + "): " + obj)

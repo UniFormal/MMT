@@ -67,6 +67,7 @@ object Mizar {
 
 	
 	def implies(tm1 : Term, tm2 : Term) : Term = apply(constant("implies"), tm1, tm2)
+	def iff(tm1 : Term, tm2 : Term) : Term = apply(constant("iff"), tm1, tm2)
 	
 	def not(tm : Term) : Term = apply(constant("not"), tm)
 	

@@ -278,7 +278,8 @@ object Beta extends ComputationRule(Apply.path) {
    }
 }
 
-/** 
+/*
+/**
  *  should be redundant, but maybe more efficient
  */
 object UnsafeBeta extends BreadthRule(Apply.path){
@@ -302,6 +303,7 @@ object UnsafeBeta extends BreadthRule(Apply.path){
       reduce(args.head, args.tail)
    }
 }
+*/
 
 
 /** A simplification rule that implements A -> B = Pi x:A.B  for fresh x.

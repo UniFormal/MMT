@@ -24,10 +24,10 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogP
    
    implicit val presentObj: Obj => String = o => controller.presenter.asString(o)
    
-   private val invertibleBackward = rules.get(classOf[BackwardInvertible]).toList
-   private val invertibleForward  = rules.get(classOf[ForwardInvertible]).toList
-   private val searchBackward     = rules.get(classOf[BackwardSearch]).toList.sortBy(_.priority).reverse
-   private val searchForward      = rules.get(classOf[ForwardSearch]).toList
+   private val invertibleBackward = rules.getOrdered(classOf[BackwardInvertible])
+   private val invertibleForward  = rules.getOrdered(classOf[ForwardInvertible])
+   private val searchBackward     = rules.getOrdered(classOf[BackwardSearch])
+   private val searchForward      = rules.getOrdered(classOf[ForwardSearch])
    
    implicit val facts = new Facts(this, 2, outerLogPrefix)
 

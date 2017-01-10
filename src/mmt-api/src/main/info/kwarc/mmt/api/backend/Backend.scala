@@ -67,19 +67,19 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   }
 
   /** like load but tries to load a Rule (no side-effects) */
-  def loadObject(p: MPath): SemanticObject = {
+  def loadObjectO(p: MPath): Option[SemanticObject] = {
      stores.foreach {
        case rs: RealizationStorage =>
           val obj = try {
-            return rs.loadObject(p)
+            return Some(rs.loadObject(p))
           } catch {
             case NotApplicable(_) =>
           }
        case _ =>
      }
-     throw NotApplicable("no backend applicable to " + p)
+     None
   }
-
+  
   private def manifestLocations(root: File) = List(root / "META-INF", root).map(_ / "MANIFEST.MF")
 
   private def manifestLocation(root: File): Option[File] =

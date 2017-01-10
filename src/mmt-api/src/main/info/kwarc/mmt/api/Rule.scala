@@ -54,14 +54,11 @@ class RuleType(be: Backend) extends Atomic[Rule] {
    override def toString(u: Any) = unapply(u).get.mpath.toString
 
    def fromString(s: String): Rule = {
-     try {
-       val mp = Path.parseM(s, NamespaceMap.empty)
-       be.loadObject(mp) match {
-         case r: Rule => r
-         case _ => throw ParseError("object exists but is not a rule")
-       }
-     } catch {case NotApplicable(msg) =>
-       throw ParseError(msg)
+     val mp = Path.parseM(s, NamespaceMap.empty)
+     be.loadObjectO(mp) match {
+       case Some(r: Rule) => r
+       case Some(_) => throw ParseError("object exists but is not a rule")
+       case None => throw ParseError("object does not exist") 
      }
    }
    /** scala"QUALIFIED-CLASS-NAME" */
@@ -78,14 +75,21 @@ abstract class RuleSet {self =>
    /** the underlying set of rules */
    def getAll: Iterable[Rule]
    
+   /** get all rules of a certain type */
    def get[R<:Rule](cls: Class[R]): Iterable[R] = getAll flatMap {r =>
       if (cls.isInstance(r))
          List(r.asInstanceOf[R])
       else
          Nil
    }
+   /** like get but ordered by descending priority */
+   def getOrdered[R<:Rule](cls: Class[R]) = get(cls).toList.sortBy(r => - r.priority)
+   
+   /** get all rules a certain type with a certain head */
    def getByHead[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): Iterable[R] =
      get(cls) filter {r => r.head == head || (r.alternativeHeads contains head)}
+   
+   /** get the first rule of a certain type with a certain head */
    def getFirst[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): Option[R] =
      getByHead(cls, head).headOption
    

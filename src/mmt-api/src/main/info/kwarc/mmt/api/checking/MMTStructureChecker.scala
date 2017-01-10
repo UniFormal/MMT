@@ -182,7 +182,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         val _ = checkTerm(context, rc.tp)
         if (rc.df.isEmpty) {
           if (ParseResult.fromTerm(rc.tp).isPlainTerm) {
-             new RuleConstantInterpreter(controller).createRule(rc)
+             try {
+               new RuleConstantInterpreter(controller).createRule(rc)
+             } catch {case e: Error =>
+               env.errorCont(e)
+             }
           } else {
              env.errorCont(InvalidElement(rc, "type of rule constant not fully checked"))
           }

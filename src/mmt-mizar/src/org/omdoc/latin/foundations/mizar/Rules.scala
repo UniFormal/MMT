@@ -18,7 +18,7 @@ object IntroductionRule {
   val boundVar = "BOUND"
   def hasBoundVar(f: Term) = apply(f, OMV(boundVar))
   
-  val allRules = List(IntroduceDisjunction,IntroduceImplication,TrivialImplication,IntroduceExistential)
+  val allRules = List(IntroduceDisjunction,IntroduceImplication,IntroduceEquivalence,IntroduceExistential)
 }
 
 import IntroductionRule._
@@ -37,11 +37,12 @@ object IntroduceImplication extends RewriteRule(constantName("implies"), context
 }
 
 /**
- * true => X  ---> X
- * 
- * (terms like this are not the result of a Mizar definition but an artifact of using flexary implication in the patterns)
+ * (X implies Y) and (Y implies X) ---> X equiv Y
  */
-object TrivialImplication extends RewriteRule(constantName("implies"), context(1), implies(trueCon, X), X) with ComplificationRule
+object IntroduceEquivalence extends RewriteRule(constantName("iff"), context(2), and(List(implies(X,Y),implies(Y,X))), iff(X,Y)) with ComplificationRule {
+  /** lower than [[IntroduceImplication]] because it can only fire afterwards anyway */
+  override def priority = -10
+}
 
 /**
  * not forall x. not P(x) ---> exists x. P(x)

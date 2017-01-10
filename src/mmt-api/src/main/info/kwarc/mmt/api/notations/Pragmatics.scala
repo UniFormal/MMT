@@ -72,7 +72,7 @@ class Pragmatics extends ChangeListener {
    }
 
    def makePragmatic(t: Term)(implicit getNotations: GlobalName => List[TextNotation]) : Option[PragmaticTerm] = {
-      var applicable = (MixfixNotation::notExts.map(_._2)).filter(_.isApplicable(t)).sortBy(_.priority).reverse
+      var applicable = (MixfixNotation::notExts.map(_._2)).filter(_.isApplicable(t)).sortBy(r => -r.priority)
       applicable.foreach { ne =>
          ne.destructTerm(t).foreach {tP => return Some(tP)}
       }

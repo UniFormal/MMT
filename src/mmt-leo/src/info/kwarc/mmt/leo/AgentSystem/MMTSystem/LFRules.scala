@@ -13,7 +13,7 @@ import info.kwarc.mmt.lf._
  */
 object PiIntroduction extends BackwardInvertible {
    val head = Pi.path
-   val priority = 5
+   override val priority = 5
    def apply(blackboard: MMTBlackboard, goal: Goal) = goal.conc match {
       case Pi(n,a,b) =>
          onApply("Pi introduction") {
@@ -35,7 +35,7 @@ object PiIntroduction extends BackwardInvertible {
  */
 object BackwardPiElimination extends BackwardSearch {
    val head = Pi.path
-   val priority = 3
+   override val priority = 3
 
    private object UnnamedArgument {
       def unapply(vd: VarDecl) = vd match {
@@ -81,10 +81,12 @@ object BackwardPiElimination extends BackwardSearch {
       val scopeFresh = scope ^? rename
       // match goal against scope, trying to solve for scope's free variables
       // TODO using a first-order matcher is too naive in general - for the general case, we need to use the Solver
-      val matcher = blackboard.makeMatcher(context, paramsFresh)
-      val matchFound = matcher(goal, scopeFresh)
-      if (!matchFound) return None
-      val solution = matcher.getSolution
+      val matcher = blackboard.makeMatcher
+      val matchFound = matcher(context, goal, paramsFresh, scopeFresh)
+      val solution = matchFound match {
+        case MatchSuccess(sub) => sub
+        case _ => return None
+      }
       // now scope ^ rename ^ solution == goal
       var result = Context()
       bindings foreach {b =>
@@ -200,8 +202,6 @@ object BackwardPiElimination extends BackwardSearch {
 
 object ForwardPiElimination extends ForwardSearch {
    val head = Pi.path
-   val priority = 0
-
    private var factSection:FactSection= null
 
 
@@ -302,7 +302,6 @@ object ForwardPiElimination extends ForwardSearch {
 
 object TermGeneration extends ForwardSearch {
    val head = Pi.path
-   val priority = 0
 
    //def respond()
 
@@ -365,7 +364,6 @@ class TransitivityGeneration(rel: GlobalName, ded: GlobalName) extends ForwardSe
    val Ded = new UnaryLFConstantScala(ded.module, ded.name.toString)
    val Rel = new BinaryLFConstantScala(rel.module, rel.name.toString)
    val head = Pi.path
-   val priority = 0
 
    def generate(blackboard: MMTBlackboard, interactive: Boolean) = {
       // add all facts to the transitivity database

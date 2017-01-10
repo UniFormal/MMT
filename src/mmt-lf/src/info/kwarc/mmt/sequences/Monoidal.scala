@@ -18,31 +18,45 @@ object NoSeqs {
 }
 
 
-/** takes flexary composition operator op: {n} a^n -> a and its neutral element and yields BreadthRule that applies monoid laws */
-object Monoidal extends ParametricRule {
+/** takes flexary composition operator op: {n} a^n -> a  and implements associativity and related simplifications */
+class Association(monoid: Boolean, semilattice: Boolean) extends ParametricRule {
   def apply(controller: Controller, home: Term, args: List[Term]) = {
-    val (op,neut) = args match {
-      case OMS(o) :: n :: Nil => (o,n)
-      case _ => throw ParseError("arguments must be identifier and term") 
+    val (op,neutOpt) = args match {
+      case OMS(o) :: Nil if !monoid => (o,None)
+      case OMS(o) :: n :: Nil if monoid => (o,Some(n))
+      case _ => throw ParseError("arguments must be identifier and (if monoid) term") 
     }
     // TODO check type of op
     new BreadthRule(op) {
       val apply: Rewrite = as => {
         as match {
           case NoSeqs(l) =>
-            val lF = l.flatMap {
-              case t if t == neut => Nil // neutrality
+            var lF = l.flatMap {
+              case t if neutOpt contains t => Nil // neutrality
               case ApplySpine(OMS(this.head), NoSeqs(xs)) => xs // associativity
               case x => List(x)
             }
+            if (semilattice)
+              lF = lF.distinct // idempotence (in the presence of commutativity)
             val nF = lF.length
-            if (nF == 0) GlobalChange(neut)
+            if (neutOpt.isDefined && nF == 0) GlobalChange(neutOpt.get)
             else if (nF == 1) GlobalChange(lF.head)
             else if (nF != l.length) LocalChange(NoSeqs(lF))
             else NoChange
-          case _ => NoChange
+          case _ =>
+            //TODO we can still do something in this case
+            NoChange
         }
       }
     }
   }
 }
+
+/** additionally takes a neutral element */
+object Monoid extends Association(true, false)
+
+/** eliminates duplicates among the arguments */
+object Semilattice extends Association(false, true)
+
+/** combines monoid and semilattice laws */
+object BoundedSemilattice extends Association(true, true)

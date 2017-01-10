@@ -12,9 +12,9 @@ case class UOMState(t : Term, context: Context, rules: RuleSet, path : List[Int]
   /** precomputes the available rules */
   val depthRules = rules.get(classOf[DepthRule])
   /** precomputes the available rules */
-  val breadthRules = rules.get(classOf[BreadthRule])
+  val breadthRules = rules.getOrdered(classOf[BreadthRule])
   /** precomputes the available rules */
-  val compRules = rules.get(classOf[ComputationRule])
+  val compRules = rules.getOrdered(classOf[ComputationRule])
   /** precomputes the available rules */
   val abbrevRules = rules.get(classOf[AbbrevRule])
   /** precomputes the available rules */

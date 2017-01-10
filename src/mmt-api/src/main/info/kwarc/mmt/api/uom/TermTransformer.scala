@@ -18,7 +18,7 @@ class TermTransformer(id: String, controller: Controller, rules: RuleSet, use: T
    private def presentObj(t: Term) = controller.presenter.asString(t)
   
    private val matcher = new Matcher(controller, rules)
-   private val transformRules = rules.get(classOf[TermTransformationRule]).filter(use).toList.sortBy(_.priority).reverse
+   private val transformRules = rules.getOrdered(classOf[TermTransformationRule]).filter(use)
    
    /**
     * used to remember that a Term is the result of transformation to avoid recursing into it again 

@@ -256,9 +256,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    def outerContext = constantContext ++ solution
    
    /** precomputes relevant rule sets, ordered by priority */
-   private def getRules[R<:CheckingRule](cls: Class[R]) = rules.get(cls).toList.sortBy(_.priority).reverse 
-   private val inferenceRules = getRules(classOf[InferenceRule])
-   private val subtypingRules = getRules(classOf[SubtypingRule])
+   private val computationRules = rules.getOrdered(classOf[ComputationRule])
+   private val inferenceRules = rules.getOrdered(classOf[InferenceRule])
+   private val subtypingRules = rules.getOrdered(classOf[SubtypingRule])
    /* convenience function for going to the next rule after a has been tried */
    private def dropTill[A](l: List[A], a: A) = l.dropWhile(_ != a).tail
 
@@ -1207,8 +1207,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         case _ => tm
       }
       case ComplexTerm(op, subs, cont, args) =>
-         val rlist = rules.getByHead(classOf[ComputationRule], op)
-          rlist foreach {rule =>
+         computationRules foreach {rule =>
+            if (rule.head == op) {
               rule(this)(tm, false) match {
                 case Some(tmS) =>
                   history += "applying computation rule " + rule.toString
@@ -1217,6 +1217,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                   return tmS.from(tm)
                 case _ =>
               }
+            }
           }
         // no rule or rule not applicable, recurse
         val subsS = subs mapTerms {a => safeSimplify(a)(stack, history + "simplifying argument before context")}
@@ -1236,15 +1237,16 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
       tm.head match {
          case Some(h) =>
-            val rOpt = rules.getByHead(classOf[ComputationRule], h)
             // use first applicable rule
-            rOpt foreach {rule =>
+            computationRules foreach {rule =>
+               if (rule.head == h) {
                  val ret = rule(this)(tm, false)
                  ret foreach {tmS =>
                      history += "applying computation rule " + rule.toString
                      history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
                      return tmS
                  }
+               }
             }
             // no applicable rule, expand a definition
             expandDefinition

@@ -265,6 +265,12 @@ object ExpandRep extends ComputationRule(rep.path) {
  */ 
 class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
 
+   /**
+    * higher than beta reduction to make sure, functions and arguments are expanded at the same time
+    * (the function is anyway expanded before the argument list because simplification recurses into subexpressions)
+    */
+   override val priority = 10
+  
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       implicit val s = solver
       tm match {
