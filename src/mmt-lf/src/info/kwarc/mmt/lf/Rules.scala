@@ -240,21 +240,29 @@ object PiCongruence extends TermBasedEqualityRule with PiOrArrowRule {
    }
 }
 
-/** computation: the beta-reduction rule s : A  --->  (lambda x:A.t) s = t [x/s]
- * If not applicable, the function term is simplified recursively and the rule tried again.
+/**
+ * the beta-reduction rule reducible(s,A)  --->  (lambda x:A.t) s = t [x/s]
+ * 
+ * the reducibility judgment is left abstract, usually the typing judgment s:A
+ * 
  * This rule also normalizes nested applications so that it implicitly implements the currying rule (f s) t = f(s,t).
  */ 
-object Beta extends ComputationRule(Apply.path) {
+abstract class AbstractBeta extends ComputationRule(Apply.path) {
+   
+   /** checks if argument tm can be supplied for expected type tp */
+   def reducible(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History): Boolean
+  
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       var reduced = false // remembers if there was a reduction
       // auxiliary recursive function to beta-reduce as often as possible
       // returns Some(reducedTerm) or None if no reduction
       def reduce(f: Term, args: List[Term]): Option[Term] = (f,args) match {
          case (Lambda(x,a,t), s :: rest) =>
-            if (!covered)
-               solver.check(Typing(stack, s, a))(history + "argument must have domain type") //TODO what if false?
-            reduced = true
-            reduce(t ^? (x / s), rest)
+            if (reducible(solver)(s,a,covered)) {
+              reduced = true
+              reduce(t ^? (x / s), rest)
+            } else 
+              None
          case (f, Nil) =>
             //all arguments were used, recurse in case f is again a redex
             //otherwise, return f (only possible if there was a reduction, so no need for 'if (reduced)')
@@ -275,6 +283,15 @@ object Beta extends ComputationRule(Apply.path) {
          case ApplySpine(f, args) => reduce(f, args)
          case _ => None // only possible after recursing
       }
+   }
+}
+
+/**
+ * the usual beta-reduction rule s : A  --->  (lambda x:A.t) s = t [x/s]
+ */ 
+object Beta extends AbstractBeta {
+   def reducible(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
+      covered || solver.check(Typing(stack, tm, tp))(history + "argument must have domain type") //if the latter is false, we might fail immediately
    }
 }
 

@@ -276,28 +276,21 @@ object ContractRep extends TermTransformationRule with ComplificationRule {
  * Typically, sequence variables occur with indices that are index variables of ellipses. Those ellipses must have been previously simplified. 
  */ 
 class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
-
-   /**
-    * higher than beta-reduction to make sure, functions and arguments are expanded at the same time
-    * (the function is anyway expanded before the argument list because simplification recurses into subexpressions)
-    */
-   override val priority = 10
-  
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       implicit val s = solver
       tm match {
          // turn sequence arguments into argument sequences
          case OMA(f, args) =>
-            val argsE = applyList(args)
+            val argsE = ExpandEllipsis.applyList(args)
             if (argsE != args)
                Some(OMA(f, argsE))
             else
                None
          // turn sequence variables into variable sequences
          case OMBINDC(binder, con, args) =>
-            val (conE,subs) = applyCont(con)
+            val (conE,subs) = ExpandEllipsis.applyCont(con)
             val argsS = args map {a => a ^? subs}
-            val argsE = applyList(argsS)
+            val argsE = ExpandEllipsis.applyList(argsS)
             if (conE != con || argsE != args) {
               Some(OMBINDC(binder, conE, argsE))
             } else
@@ -305,9 +298,11 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
          case _ => None
       }
    }
+}
 
+object ExpandEllipsis {
    /** flattens an argument sequence */
-   private def applyList(tms: List[Term])(implicit solver: CheckingCallback, stack: Stack, history: History): List[Term] = {
+   def applyList(tms: List[Term])(implicit solver: CheckingCallback, stack: Stack, history: History): List[Term] = {
      tms.flatMap {
         case Sequences.rep(t, NatLit(n)) =>
            (BigInt(0) until n).toList.map(_ => t)
@@ -319,7 +314,7 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
    }
    
    /** flattens a context and returns the substitution */
-   private def applyCont(con: Context)(implicit solver: CheckingCallback, stack: Stack, history: History): (Context,Substitution) = {
+   def applyCont(con: Context)(implicit solver: CheckingCallback, stack: Stack, history: History): (Context,Substitution) = {
       var subs = Substitution.empty
       val newCon = con.mapVarDecls {case (conPrefix, vd) =>
         val vdS = vd ^? subs
@@ -384,6 +379,8 @@ object FlexaryComposition extends ExpandEllipsis(comp.path)
  *  this rule is called before ApplyTerm, solves unknown arity arguments, then fails
  *  once the arities are solved, ApplyTerm can do the rest 
  */
+//TODO this fails examples/sequences.mmt because arity is solved as 0 after iterating with ApplyTerm
+//TODO examples/nat.mmt fails because X+O-->X does not fire during equality check even though it fires when simplifying manually
 object SolveArity extends InferenceRule(Apply.path, OfType.path) {
    /** make sure this is called before the usual rule */
    override val priority = 5
@@ -423,9 +420,19 @@ object SolveArity extends InferenceRule(Apply.path, OfType.path) {
    }
 }
 
-/* TODO add a ComputationRule that overrides Beta similar to SolveArity
- * that is needed in particular when definition expansion introduces beta-redexes with argument sequences
- */
+/**
+ * Like Beta but reduces only if the expected and provided length agree
+ */ 
+object LengthAwareBeta extends AbstractBeta {
+   def reducible(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History): Boolean = {
+      val tmL = Length.infer(solver, tm).getOrElse {return false}
+      val tpL = Length.infer(solver, tp).getOrElse {return false}
+      tmL == tpL && Beta.reducible(solver)(tm, tp, covered)
+   }
+   
+   /** LF's beta-rule must be shadowed because it would allow not-length-matching reduction */ 
+   override def shadowedRules = List(Beta)
+}
 
 /**
  * s.i : A.i -> B.i for i=0,...,n

@@ -669,7 +669,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
    * @param e the added declaration
    */
   def add(e: StructuralElement, afterOpt: Option[LocalName]) {
-    log("adding " + e.path + " (which is a " + e.getClass.getName + ")")
+    log("adding " + e.path + " (which has Scala type " + e.getClass.getName + ")")
     val adder = new Adder(e, afterOpt)
     e match {
        case doc: Document if doc.root =>

@@ -112,7 +112,7 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
      case _ => None
    }
    
-   override def getRules = super.getRules ::: getSolutionRule.toList
+   override def providedRules = super.providedRules ::: getSolutionRule.toList
 }
 
 object RealizedOperator {

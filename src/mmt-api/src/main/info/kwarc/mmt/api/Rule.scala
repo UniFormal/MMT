@@ -18,7 +18,11 @@ trait Rule extends SemanticObject {
       "rule " + mpath.name
    }
    /** normally the singleton list of this rule; but rules may bundle additional rules as well */ 
-   def getRules = List(this)
+   def providedRules = List(this)
+   /** normally the empty list; but rules may list rules here that should be removed from the context
+    *  this can be used to override imported rules
+    */    
+   def shadowedRules: List[Rule] = Nil
 
  /** when multiple rules are applicable, rules with higher priorities are preferred
    *  
@@ -108,6 +112,7 @@ class MutableRuleSet extends RuleSet {
    /* Its construction and use corresponds to algebraic theories. */ 
    def declares(rs: Rule*) {rs foreach {rules += _}}
    def imports(rss: RuleSet*) {rss foreach {rules ++= _.getAll}}
+   def shadow(rs: Rule*) {rs foreach {rules -= _}} 
 
    def getAll = rules
 }
@@ -120,12 +125,16 @@ object RuleSet {
         controller.globalLookup.getDeclarationsInScope(OMMOD(p))
       }.distinct
       val rs = new MutableRuleSet
-      val rci = new RuleConstantInterpreter(controller)
+      var shadowed: List[Rule] = Nil
       decls.foreach {
          case rc: RuleConstant =>
-            rc.df foreach {r => rs.declares(r.getRules :_*)}
+            rc.df foreach {r =>
+              rs.declares(r.providedRules :_*)
+              shadowed :::= r.shadowedRules
+            }
          case _ =>
       }
+      rs.shadow(shadowed:_*)
       rs
    }
 }

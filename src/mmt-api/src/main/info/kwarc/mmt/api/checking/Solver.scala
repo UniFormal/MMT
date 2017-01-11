@@ -1379,11 +1379,20 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * post: inhabitation judgment is covered
     */
    private def checkInhabited(j : Inhabited)(implicit history: History): Boolean = {
-      val res = prove(j.context, j.tp)
+      val res = prove(j.tp)(j.stack, history)
       if (res.isDefined)
          true
       else
          delay(j)
+   }
+
+   /**
+    *  tries to prove a goal
+    *
+    *  @return the proof term if successful
+    */
+   def prove(conc: Term)(implicit stack: Stack, history: History): Option[Term] = {
+      prove(constantContext ++ solution ++ stack.context, conc)
    }
 
    private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {
@@ -1406,14 +1415,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       None
    }
 
-   /**
-    *  tries to prove a goal
- *
-    *  @return the proof term if successful
-    */
-   def prove(conc: Term)(implicit stack: Stack, history: History): Option[Term] = {
-      prove(constantContext ++ solution ++ stack.context, conc)
-   }
 
    /** applies all ForwardSolutionRules of the given priority
  *

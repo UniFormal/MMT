@@ -362,7 +362,7 @@ class Controller extends ROController with ActionHandling with Logger {
         val eprev = e :: previous
         if (previous.exists(_.path == p)) {
           val msg = if (org)
-            "retrieval finished, but element was not in memory afterwards"
+            "retrieval finished, but element was not in memory afterwards (this usually means the backend loaded an element whose URI is not the one that was requested)"
           else
             "cyclic dependency while trying to retrieve"
           throw GetError("cannot retrieve " + eprev.last.path + ": " + msg)
