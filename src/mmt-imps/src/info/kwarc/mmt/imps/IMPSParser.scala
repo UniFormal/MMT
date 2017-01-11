@@ -211,23 +211,29 @@ class LispParser
     {
         e.children.head match
         {
-            case Exp(List(Str("herald")),s)          => var eprime : Option[LispExp] = parseHeralding(e)
-                                                        if (!(eprime.isEmpty)) {
-                                                            println("DBG: heralding parsed")
-                                                            return eprime
-                                                        } else { println("DBG: heralding not parsed") }
-            case Exp(List(Str("load-section")),s)    => var eprime : Option[LispExp] = parseLoadSection(e)
-                                                        if (!(eprime.isEmpty)) {
-                                                            println("DBG: load-section parsed")
-                                                            return eprime
-                                                        } else { println("DBG: load-section not parsed") }
-            case Exp(List(Str("def-atomic-sort")),s) => var as : Option[LispExp] = parseAtomicSort(e)
-                                                        if (!(as.isEmpty)) {
-                                                            println("DBG: atomic sort parsed")
-                                                            return as
-                                                        } else { println("DBG: atomic sort not parsed") }
-            case q                                   => println("DBG: Couldn't parse, adding unaltered Exp:\n~~~")
-                                                        println(q.toString + "\n~~~")
+            case Exp(cs,s) => cs.head match {
+				case Str("herald") => var eprime : Option[LispExp] = parseHeralding(e)
+                                      if (!(eprime.isEmpty)) {
+                                          println("DBG: heralding parsed")
+                                          return eprime
+                                      } else { println("DBG: heralding not parsed") }
+                                      
+                case Str("load-section") => var eprime : Option[LispExp] = parseLoadSection(e)
+                                            if (!(eprime.isEmpty)) {
+                                                println("DBG: load-section parsed")
+                                                return eprime
+                                            } else { println("DBG: load-section not parsed") }
+                                            
+			    case Str("def-atomic-sort") => var as : Option[LispExp] = parseAtomicSort(e)
+                                               if (!(as.isEmpty)) {
+                                                   println("DBG: atomic sort parsed")
+                                                   return as
+                                               } else { println("DBG: atomic sort not parsed") }
+                case _                      => println("DBG: unrecognised structure, not parsed!")
+            }
+             
+            case q  => println("DBG: Couldn't parse:\n~~~")
+                       println(q.toString + "\n~~~")
         }
 
         /* Return None of nothing could be parsed */
