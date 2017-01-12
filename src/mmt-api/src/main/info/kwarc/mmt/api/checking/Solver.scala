@@ -1194,9 +1194,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    }
    
    /** substitutes solved unknowns, then possibly calls simplification
-    *  (simplification alone does not necessary subsitute solved unknowns because simpleness is cached)
+    *  (simplification alone does not necessary substitute solved unknowns because simpleness is cached)
     */
-   private def substituteSolved(t: Term, covered: Boolean)(implicit stack: Stack, history: History): Term = {
+   def substituteSolved(t: Term, covered: Boolean)(implicit stack: Stack, history: History): Term = {
       val subs = solution.toPartialSubstitution
       val tS = t ^^ subs
       if (covered) simplify(tS) else tS

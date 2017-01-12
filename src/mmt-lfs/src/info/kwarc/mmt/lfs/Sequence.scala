@@ -147,7 +147,9 @@ object SeqNormalize {
   
   def normalize(cont : Context)(implicit lookup : Lookup, context : Context) : (Context,Substitution) = {
     cont match {
-      case con ++ VarDecl(x,tpO,dfO,nt) =>
+      case _ if cont.nonEmpty =>
+        val con = cont.init
+        val VarDecl(x,tpO,dfO,nt) = cont.last
         val (conN, sub) = normalize(con)
         val tpN = tpO map {tp => normalize(tp ^ sub)}
         val dfN = dfO map {df => normalize(df ^ sub)}                

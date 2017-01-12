@@ -144,7 +144,8 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
               history += "argument is: " + solver.presentObj(t)
               if (conforms(solver)(t, a, covered)) {
                  history += "substituting argument in return type"
-                 val bS = solver.simplify(b ^? (x/t)) // substitution may introduce redexes, so simplify right away
+                 // substitute for x and newly-solved unknowns (as solved by conforms) and simplify
+                 val bS = solver.substituteSolved(b ^? (x/t), true)
                  iterate(bS, rest)
               } else {
                 history += "argument check did not succeed, giving up for now"

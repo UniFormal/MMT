@@ -80,6 +80,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
          case Simple(t) =>
             log("term is already simple")
             t*/
+         //TODO strangely, taking the optimization out introduces a checking error in mizar.mmt
          // this term was simplified before resulting in tS
          case SimplificationResult(tS) =>
            log("structure-shared term was already simplified")
