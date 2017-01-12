@@ -69,21 +69,21 @@ object Traverser {
                vd.copy(tp = newt, df = newd)
          }
 	   t match {
-	      case OMA(f, args) => 
+	     case OMA(f, args) => 
 	         val newArgs = args.map(a => rec(a))
 	         OMA(rec(f), newArgs).from(t)
-	      case OMBINDC(b,bound,args) =>
+	     case OMBINDC(b,bound,args) =>
 	         val newB = rec(b)
            val newArgs = args.map(a => rec(a)(con ++ bound, state))
            val newBound = trav.traverseContext(bound)
 	         OMBINDC(newB, newBound, newArgs).from(t)
-	      case OMPMOD(p, args) =>
+	     case OMPMOD(p, args) =>
 	         val newArgs = args.map(rec)
 	         OMPMOD(p, newArgs).from(t)
 		   case OMID(_) => t
 		   case OMV(_) => t
 			 case OML(n, tp, df) => OML(n, tp map rec, df map rec).from(t)
-		   case t: OMLITTrait => t //TODO also traverse immutable synType?
+		   case t: OMLITTrait => t //TODO also traverse synType?
 		   case OMFOREIGN(_) => t
 		   case OMATTR(arg,key,value) => OMATTR(rec(arg), key, rec(value)).from(t) //TODO traversal into key
 		   case OMSemiFormal(tokens) => 

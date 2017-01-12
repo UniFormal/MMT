@@ -112,48 +112,84 @@ object LambdaTerm extends IntroductionRule(Lambda.path, OfType.path) {
    }
 }
 
-/** Elimination: the type inference rule f : Pi x:A.B  ,  t : A  --->  f t : B [x/t]
- * This rule works for B:U for any universe U */
-object ApplyTerm extends EliminationRule(Apply.path, OfType.path) {
+/** common code for rules regarding the elimination-form: inference and reduction */
+abstract class ArgumentChecker {  
+   /** checks if argument tm can be supplied for expected type tp */
+   def apply(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History): Boolean
+}
+
+/** default implementation: type-check against expected type if not covered; skip if covered */
+object StandardArgumentChecker extends ArgumentChecker {
+   def apply(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History) =
+      covered || solver.check(Typing(stack, tm, tp))(history + "argument must have domain type")
+}
+
+
+/** Elimination: the type inference rule f : Pi x:A.B  ,  conforms(t,A)  --->  f t : B [x/t]
+ *
+ * This rule works for B:U for any universe U
+ * 
+ * This rule implements currying and all arguments at once 
+ */
+class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
-     // calling Beta first could make this rule more reusable because it would avoid inferring the type of a possibly large lambda 
-     tm match {
-      case Apply(f,t) =>
-        history += "inferring type of function " + solver.presentObj(f)
-        val fTOpt = solver.inferType(f)(stack, history.branch)
-        fTOpt match {
-           case None =>
-              history += "failed"
-              solver.inferType(t)(stack, history.branch) // inference of the argument may solve some variables
-              None
-           case Some(fT) =>
-              history += "function type is: " + solver.presentObj(fT)
+      // calling Beta first could make this rule more reusable because it would avoid inferring the type of a possibly large lambda 
+      
+      // auxiliary function that handles one argument at a time
+      def iterate(fT: Term, args: List[Term]): Option[Term] = {
+         history += "function type is: " + solver.presentObj(fT)
+         (fT,args) match {
+           case (fT, Nil) => Some(fT) 
+           case (Pi(x,a,b), t::rest) =>
+              history += "argument is: " + solver.presentObj(t)
+              if (conforms(solver)(t, a, covered)) {
+                 history += "substituting argument in return type"
+                 val bS = solver.simplify(b ^? (x/t)) // substitution may introduce redexes, so simplify right away
+                 iterate(bS, rest)
+              } else {
+                history += "argument check did not succeed, giving up for now"
+                None
+              }
+           /*case ApplyGeneral(OMV(u), _) =>
+              history += "does not look like a function type at this point"
+              None*/
+           case _ =>
               val fTPi = Common.makePi(solver, fT)
               if (fTPi != fT)
-                 history += "function type is: " + solver.presentObj(fTPi)
-              fTPi match {
-                 case Pi(x,a,b) =>
-                    if (!covered) solver.check(Typing(stack, t, a))(history + "argument must have domain type")
-                    Some(b ^? (x / t))
-                 /*case ApplyGeneral(OMV(u), _) =>
-                    history += "does not look like a function type at this point"
-                    None*/
-                 case _ =>
-                    val unks = solver.getUnsolvedVariables
-                    if (fTPi.freeVars.exists(unks.isDeclared)) {
-                       // this might be convertible into a function type once the unknown variable is solved
-                       history += "does not look like a function type at this point"
-                       solver.error("this is not a function type (type level rewriting is not supported)")
-                    } else {
-                       None
-                    }
-                    None
+                 iterate(fTPi, args)
+              else {
+                val unks = solver.getUnsolvedVariables
+                if (fTPi.freeVars.exists(unks.isDeclared)) {
+                   // this might be convertible into a function type once the unknown variable is solved
+                   history += "does not look like a function type at this point"
+                   solver.error("this is not a function type (type level rewriting is not supported)")
+                   None
+                } else {
+                   None
+                }
               }
         }
-      case _ => None // should be impossible
-    }
+      }
+      tm match {
+         case ApplySpine(f,args) =>
+            history += "inferring type of function " + solver.presentObj(f)
+            val fTOpt = solver.inferType(f)(stack, history.branch)
+            fTOpt match {
+              case Some(fT) =>
+                iterate(fT, args)
+              case None =>
+                history += "failed"
+                args.foreach {t => solver.inferType(t)(stack, history.branch)} // inference of the argument may solve some variables
+                None
+            }
+         case _ =>
+            None // should be impossible
+      }
    }
 }
+
+/** the usual inference rule with conforms(t,A) = t:A */
+object ApplyTerm extends GenericApplyTerm(StandardArgumentChecker)
 
 /** type-checking: the type checking rule x:A|-f x:B  --->  f : Pi x:A.B */
 object PiType extends TypingRule(Pi.path) with PiOrArrowRule {
@@ -246,23 +282,22 @@ object PiCongruence extends TermBasedEqualityRule with PiOrArrowRule {
  * the reducibility judgment is left abstract, usually the typing judgment s:A
  * 
  * This rule also normalizes nested applications so that it implicitly implements the currying rule (f s) t = f(s,t).
- */ 
-abstract class AbstractBeta extends ComputationRule(Apply.path) {
+ */
+class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path) {
    
-   /** checks if argument tm can be supplied for expected type tp */
-   def reducible(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History): Boolean
-  
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       var reduced = false // remembers if there was a reduction
       // auxiliary recursive function to beta-reduce as often as possible
       // returns Some(reducedTerm) or None if no reduction
       def reduce(f: Term, args: List[Term]): Option[Term] = (f,args) match {
          case (Lambda(x,a,t), s :: rest) =>
-            if (reducible(solver)(s,a,covered)) {
+            if (conforms(solver)(s,a,covered)) {
               reduced = true
               reduce(t ^? (x / s), rest)
-            } else 
+            } else {
+              history += "cannot beta-reduce at this point"
               None
+            }
          case (f, Nil) =>
             //all arguments were used, recurse in case f is again a redex
             //otherwise, return f (only possible if there was a reduction, so no need for 'if (reduced)')
@@ -289,11 +324,7 @@ abstract class AbstractBeta extends ComputationRule(Apply.path) {
 /**
  * the usual beta-reduction rule s : A  --->  (lambda x:A.t) s = t [x/s]
  */ 
-object Beta extends AbstractBeta {
-   def reducible(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
-      covered || solver.check(Typing(stack, tm, tp))(history + "argument must have domain type") //if the latter is false, we might fail immediately
-   }
-}
+object Beta extends GenericBeta(StandardArgumentChecker)
 
 /*
 /**

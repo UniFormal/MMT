@@ -31,8 +31,8 @@ trait CheckingCallback {
    def simplify(t : Obj)(implicit stack: Stack, history: History): t.ThisType
    /** type inference, fails by default */
    def inferType(t : Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = None
-   /** @return MightFail by default */
-   def dryRun[A](code: => A): DryRunResult = MightFail
+   /** runs code and succeeds by default */
+   def dryRun[A](code: => A): DryRunResult = Success(code)
 
    /** flag an error */
    def error(message: => String)(implicit history: History): Boolean = false
@@ -273,20 +273,25 @@ class CongruenceRule(head: GlobalName) extends TermHeadBasedEqualityRule(Nil, he
    def apply(checker: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
       (tm1,tm2) match {
          case (ComplexTerm(this.head, args1, cont1, scps1), ComplexTerm(this.head, args2, cont2, scps2)) =>
-            if (args1.length == args2.length && cont1.length == cont2.length && scps1.length == scps2.length) {
-               val cont = Continue {
+            val cont = Continue {
+               if (args1.length == args2.length && cont1.length == cont2.length && scps1.length == scps2.length) {
                   val args = (args1 zip args2) forall {case (Sub(l1,a1),Sub(l2,a2)) =>
-                     l1 == l2 && checker.check(Equality(stack,a1,a2,None))}
-                  val argsCont = args && checker.check(EqualityContext(stack, cont1, cont2))
-                  val alpha = (cont2 alpha cont1).get // defined because cont1.length == cont2.length
-                  val argsContScps = argsCont && (scps1 zip scps2).forall {case (s1,s2) =>
-                     checker.check(Equality(stack ++ cont1, s1, s2 ^ alpha, None))
+                     l1 == l2 && checker.check(Equality(stack,a1,a2,None))(history + "checking equality of arguments")
                   }
+                  
+                  val argsCont = args && checker.check(EqualityContext(stack, cont1, cont2, true))(history + "checking equality of contexts")
+                  val alpha = (cont2 alpha cont1).get // defined because cont1.length == cont2.length
+
+                  val argsContScps = argsCont && (scps1 zip scps2).forall {case (s1,s2) =>
+                     checker.check(Equality(stack ++ cont1, s1, s2 ^ alpha, None))(history + "checking equality of arguments")
+                  }
+                  
                   argsContScps
+               } else {
+                  checker.error("terms do not have the same number or arguments")
                }
-               Some(cont)
-            } else
-               None
+            }
+            Some(cont)
          case _ => None
       }
    }

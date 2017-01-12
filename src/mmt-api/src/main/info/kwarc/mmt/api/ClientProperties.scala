@@ -71,19 +71,21 @@ class TermProperty[A](p: URI) extends ClientProperty[Obj, A](p)
 class BooleanTermProperty(p: URI) extends BooleanClientProperty[Obj](p)
 
 object TermProperty {
-   /** removes all term properties recursively */
+   /** removes all term properties recursively (not a Traverser to avoid copying the Term) */
    def eraseAll(t: Term) {
       t.clientProperty.clear
       t match {
-         case ComplexTerm(_, subs, cont, args) =>
-            subs.foreach {s => eraseAll(s.target)}
-            cont.foreach {v => 
-               v.tp foreach eraseAll
-               v.df foreach eraseAll
-            }
-            args foreach eraseAll
+        case OMA(f,as) => (f::as) foreach eraseAll
+        case OMBINDC(b,cont,as) =>
+          (b::as) foreach eraseAll
+          cont foreach {v => 
+            v.tp foreach eraseAll
+            v.df foreach eraseAll
+          }
+         case o:OML =>
+            o.tp foreach eraseAll
+            o.df foreach eraseAll
          case _ =>
       }
    }
 }
-

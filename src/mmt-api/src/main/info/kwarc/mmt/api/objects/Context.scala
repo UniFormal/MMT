@@ -140,6 +140,9 @@ case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDe
 	   case -1 => None
 	   case i => Some(variables.length - i - 1) 
    }
+   
+   def length = variables.length // can't be taken from implicit conversion to List because that competes with conversion to String 
+   
    /** @return the prefix up to and excluding the variable */
    def before(name: LocalName): Context = {
       index(name) match {
@@ -476,14 +479,4 @@ object Sub {
       mdOpt.foreach {md => s.metadata = md}
       s
    }
-}
-
-/** Concatenation of contexts and substitutions (extractor object) */
-object ++ {
-   def unapply(c: Context) : Option[(Context,VarDecl)] =
-      if (c.isEmpty) None
-      else Some((c.init, c.last))
-   def unapply(s: Substitution) : Option[(Substitution,Sub)] =
-      if (s.isEmpty) None
-      else Some((s.init, s.last))
 }

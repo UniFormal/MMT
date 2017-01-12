@@ -108,7 +108,7 @@ class SimplificationRuleGenerator extends ChangeListener {
   object OuterInnerTerm {
      def unapply(t: Term): Option[OuterInnerNames] = t match {
         case ApplyGeneral(OMS(outer), args) =>
-           // we try break args into bfr ::: OMA(inner, ins) ::: aft
+           // we try to break args into bfr ::: OMA(inner, ins) ::: aft
            var bfr : List[LocalName] = Nil
            var inner : GlobalName = null
            var ins : List[LocalName] = Nil

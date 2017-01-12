@@ -136,7 +136,7 @@ case class IsContext(stack: Stack, con: Context) extends UnaryObjJudgement(stack
 /** represents an equality judgement between contexts
  * context |- context1 = context2
  */
-case class EqualityContext(stack: Stack, context1: Context, context2: Context) extends Judgement {
+case class EqualityContext(stack: Stack, context1: Context, context2: Context, uptoAlpha: Boolean) extends Judgement {
    lazy val freeVars = {
      val ret = new HashSet[LocalName]
      val fvs = stack.context.freeVars_ ::: context2.freeVars_ :::context1.freeVars_

@@ -14,8 +14,10 @@ object Length {
   private val ONE = Some(OMS(one))
   /** fast (no recursion) computation of the length of an expression
    *  
-   *  fails only for variables without type, e.g., unknowns representing types
    *  assumes that expressions cannot be simplified into ellipsis or ntype
+   *
+   *  currently succeeds for all terms by assuming that unknown terms always have length 1
+   *  unknowns representing sequences are desirable but their unknown length would block type inference
    */
   def infer(context: Context, tm: Term) : Option[Term] = {
     tm match {
@@ -28,10 +30,9 @@ object Length {
       case Sequences.flatseq(as @ _*) => Some(NatRules.NatLit(as.length))
       case Sequences.index(_,_) => ONE
       case OMS(p) => ONE
-      case OMV(x) => context(x).tp match {
-        case Some(t) => infer(context,t)
-        case None => None
-      }
+      case OMV(x) =>
+        val vd = context(x)
+        vd.tp.flatMap {t => infer(context,t)} orElse vd.df.flatMap {t => infer(context,t)} orElse ONE
       case _: OMLITTrait => ONE
       case OMA(_,_) => ONE
       case OMBINDC(_,_,_) => ONE

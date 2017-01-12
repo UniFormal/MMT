@@ -238,6 +238,9 @@ class SequenceEqualityCheck(op: GlobalName) extends TypeBasedEqualityRule(Nil, o
 object EllipsisEqualityCheck extends SequenceEqualityCheck(ellipsis.path)
 object RepEqualityCheck extends SequenceEqualityCheck(rep.path)
 
+object EllipsisInjective extends CongruenceRule(ellipsis.path)
+
+object FlatseqInjective extends CongruenceRule(flatseq.path)
 
 /** a^n ---> [a]i=0^n for fresh i */
 object ExpandRep extends ComputationRule(rep.path) {
@@ -374,13 +377,50 @@ object FlexaryApply extends ExpandEllipsis(Apply.path)
 /** expands ellipses in the arguments of a composition */
 object FlexaryComposition extends ExpandEllipsis(comp.path)
 
+/**
+ * Restriction of StandardArgumentChecker that requires that expected and provided length agree
+ */ 
+object LengthAwareArgumentChecker extends ArgumentChecker {
+   def apply(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History): Boolean = {
+      def sameLength = {
+        history += "argument and expected type have the same length"
+        StandardArgumentChecker(solver)(tm, tp, covered)
+      }
+      val tmLO = Length.infer(solver, tm)
+      val tpLO = Length.infer(solver, tp)
+      // try equating the lengths
+      (tmLO, tpLO) match {
+        case (Some(tmL),Some(tpL)) =>
+          val r = solver.dryRun(solver.check(Equality(stack,tmL,tpL,Some(OMS(Nat.nat))))(history + "checking equality of lengths"))
+          r match {
+            case Success(true) => return sameLength
+            case _ =>
+          }
+        case _ =>
+      }
+      solver.dryRun(solver.check(Typing(stack, tm, tp))(history + "cannot tell if lengths equal; trying type-checking")) match {
+        case Success(true) => sameLength
+        case _ => false
+      }
+   }
+}
+
+object LengthAwareApplyTerm extends GenericApplyTerm(LengthAwareArgumentChecker) {
+   /** LF's rule must be shadowed because it would allow not-length-matching inference */ 
+   override def shadowedRules = List(ApplyTerm)
+}
+
+object LengthAwareBeta extends GenericBeta(LengthAwareArgumentChecker) {
+   /** LF's beta-rule must be shadowed because it would allow not-length-matching reduction */ 
+   override def shadowedRules = List(Beta)
+}
+
+
 /** matches an operator that expects sequence arguments against an argument sequence
  *
  *  this rule is called before ApplyTerm, solves unknown arity arguments, then fails
  *  once the arities are solved, ApplyTerm can do the rest 
  */
-//TODO this fails examples/sequences.mmt because arity is solved as 0 after iterating with ApplyTerm
-//TODO examples/nat.mmt fails because X+O-->X does not fire during equality check even though it fires when simplifying manually
 object SolveArity extends InferenceRule(Apply.path, OfType.path) {
    /** make sure this is called before the usual rule */
    override val priority = 5
@@ -415,23 +455,8 @@ object SolveArity extends InferenceRule(Apply.path, OfType.path) {
       }
       val nS = NatLit(args.tail.length)
       solver.check(Equality(stack, args.head, nS, Some(OMS(nat))))(history + "solving by number of arguments")
-      history += "solved arity as " + args.tail.length + ", defering to other rules"
-      throw Backtrack("solved arity as " + args.tail.length) 
+      throw Backtrack("solved arity as " + args.tail.length + ", defering to other rules") 
    }
-}
-
-/**
- * Like Beta but reduces only if the expected and provided length agree
- */ 
-object LengthAwareBeta extends AbstractBeta {
-   def reducible(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History): Boolean = {
-      val tmL = Length.infer(solver, tm).getOrElse {return false}
-      val tpL = Length.infer(solver, tp).getOrElse {return false}
-      tmL == tpL && Beta.reducible(solver)(tm, tp, covered)
-   }
-   
-   /** LF's beta-rule must be shadowed because it would allow not-length-matching reduction */ 
-   override def shadowedRules = List(Beta)
 }
 
 /**

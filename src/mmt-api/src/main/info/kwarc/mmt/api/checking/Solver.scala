@@ -22,14 +22,17 @@ import scala.util.{Failure, Try}
 object InferredType extends TermProperty[(Branchpoint,Term)](utils.mmt.baseURI / "clientProperties" / "solver" / "inferred")
 
 /** returned by [[Solver.dryRun]] as the result of a side-effect-free check */
-sealed trait DryRunResult
+sealed trait DryRunResult {
+  def get:Option[_] = None
+}
 case object MightFail extends java.lang.Throwable with DryRunResult {
    override def toString = "might fail"
 }
-object WouldFail extends java.lang.Throwable with DryRunResult {
+case object WouldFail extends java.lang.Throwable with DryRunResult {
    override def toString = "will fail"
 }
 case class Success[A](result: A) extends DryRunResult {
+   override def get = Some(result)
    override def toString = "will succeed"
 }
 
@@ -111,7 +114,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       /** registers an error */
       def addError(e: History) {
          if (mutable) _errors ::= e
-         else throw WouldFail
+         else {
+           throw WouldFail
+         }
       }
       /** registers a dependency */
       def addDependency(p: CPath) {
@@ -458,7 +463,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    override def error(message: => String)(implicit history: History): Boolean = {
       log("error: " + message)
-      addError(history + message)
+      history += message
+      addError(history)
       // maybe return true so that more errors are found
       false
    }
@@ -955,12 +961,13 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       // 2) find a TermBasedEqualityRule
       rules.get(classOf[TermBasedEqualityRule]).filter(r => r.applicable(tm1S,tm2S)) foreach {rule =>
          // we apply the first applicable rule
-         history += "applying term-based equality rule " + rule.toString
-
+         history += "trying term-based equality rule " + rule.toString
          val contOpt = rule(this)(tm1S,tm2S,tpOpt)
          contOpt match {
-           case Some(cont) => return cont.apply
+           case Some(cont) =>
+             return cont.apply
            case None =>
+             history += "rule not applicable"
          }
       }
 
@@ -1318,19 +1325,31 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
   /** checks equality of context */
    private def checkEqualityContext(j: EqualityContext)(implicit history: History): Boolean = {
      implicit val stack = j.stack
-     if (j.context1.length != j.context2.length)
+     if (j.context1.length != j.context2.length) {
        return error("contexts do not have the same length")
+     }
      val c1 = simplify(j.context1)
      val c2 = simplify(j.context2)
+     var sub = Substitution.empty
      def checkOptTerm(tO1: Option[Term], tO2: Option[Term]) = (tO1,tO2) match {
-       case (None,None) => true
-       case (Some(t1),Some(t2)) => check(Equality(j.stack, t1, t2, None))(history + "component-wise equality of contexts")
-       case _ => error("contexts do not have the same shape")
+       case (None,None) =>
+         true
+       case (Some(t1),Some(t2)) =>
+         check(Equality(j.stack, t1, t2 ^? sub, None))(history + "component-wise equality of contexts")
+       case _ =>
+         error("contexts do not have the same shape")
      }
      (c1 zip c2) forall {case (vd1, vd2) =>
-       if (vd1.name != vd2.name)
-         error("contexts do not declare the same variables")
-       checkOptTerm(vd1.tp, vd2.tp) && checkOptTerm(vd1.df, vd2.df)
+       val names = if (j.uptoAlpha) {
+         sub = sub ++ (vd2.name -> OMV(vd1.name))
+         true
+       } else {
+         if (vd1.name != vd2.name)
+           error("contexts do not declare the same variables")
+         else
+           true
+       }
+       names && checkOptTerm(vd1.tp, vd2.tp) && checkOptTerm(vd1.df, vd2.df)
      }
    }
 

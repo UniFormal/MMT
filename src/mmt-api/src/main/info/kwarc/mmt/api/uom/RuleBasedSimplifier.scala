@@ -72,11 +72,14 @@ class RuleBasedSimplifier extends ObjectSimplifier {
       def traverse(t: Term)(implicit con : Context, init: UOMState) : Term = {
        log("traversing into " + controller.presenter.asString(t))
        t match {
-         // TODO why was this important optimization commented out? Does it cause subtle problems?
+         /* TODO this optimization saves 10-20% on examples (One would expect it to save more time.) by avoiding retraversal of simplified terms.
+            However, there is a subtle problem: When looking up a type and simplifying it, the marker may be reintroduced on the previously checked term.
+            Then later lookups will consider it simple even if they occur in a context with more simplification rules.
+            The RuleBasedChecker already removes these markers after each CheckingUnit, but that is not enough.
          // this term is already the result of simplification, so return as is
          case Simple(t) =>
             log("term is already simple")
-            t
+            t*/
          // this term was simplified before resulting in tS
          case SimplificationResult(tS) =>
            log("structure-shared term was already simplified")
@@ -208,7 +211,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                  case Some(args) => List((m.head, args, args.isEmpty)) 
               }
            }
-           Nil
+           Nil //TODO use match rules
         case _ => Nil
      } 
   }
