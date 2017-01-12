@@ -1,3 +1,8 @@
+When translating all files, some problem keeps occuring when it comes to hidden.miz.
+All other files go through.
+
+I couldn't find out when/where MizarPatterns is written to the content folder.
+
 Presumably MizPredMeansPartialDef never refers to 'it'. At least it does not for R1.
 Instead of 'it <=> F', MML simply contains 'F'.
 Therefore, 'it' should not be bound.
