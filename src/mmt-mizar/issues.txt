@@ -1,0 +1,6 @@
+Presumably MizPredMeansPartialDef never refers to 'it'. At least it does not for R1.
+Instead of 'it <=> F', MML simply contains 'F'.
+Therefore, 'it' should not be bound.
+
+MizSchemeDef (e.g., S1) produces a formula in type position.
+Maybe 'proof' is missing? Or maybe a quantifier should be a Pi instead?
