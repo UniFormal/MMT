@@ -1,3 +1,8 @@
+When translating all articles, I get at some point
+  archive: [source -> narration] C:\other\oaff\Mizar\testmml\source\hidden.miz -> C:\other\oaff\Mizar\testmml\narration\hidden.omdoc
+  error: get error: backend: no backend available that is applicable to http://latin.omdoc.org/foundations/mizar?mizar-patterns
+I can't find the place that has the outdated URI mizar-patterns.
+  
 Presumably MizPredMeansPartialDef never refers to 'it'. At least it does not for R1.
 Instead of 'it <=> F', MML simply contains 'F'.
 Therefore, 'it' should not be bound.
