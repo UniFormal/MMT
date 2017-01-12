@@ -50,7 +50,7 @@ case class Witness(witness : String, src : SourceRef) extends LispExp {
 
 case class Usages(usgs : List[String], src : SourceRef) extends LispExp {
     override def toString() : String =
-    {		
+    {
         var str : String = "(usages "
         str = str + usgs.head
         for (u <- usgs.tail)
@@ -72,9 +72,9 @@ case class LoadSection(section : String, src : SourceRef) extends LispExp {
 
 /* IMPS SPECIAL FORMS */
 
-/* def-atomic-sort 
+/* def-atomic-sort
  * Documentation: IMPS manual pgs. 158, 159 */
-case class AtomicSort(sortName        : String,	         /* Positional Argument, Required */
+case class AtomicSort(sortName        : String,          /* Positional Argument, Required */
                       quasiSortString : String,          /* Positional Argument, Required */
                       theory          : Theory,          /* Keyword Argument, Required */
                       usages          : Option[Usages],  /* Keyword Argument, Optional */
@@ -104,7 +104,7 @@ case class Constant(constantName : String,         /* Positional Argument, Requi
                     src          : SourceRef)      /* SourceRef for MMT */
                     extends LispExp
 {
-	override def toString() : String =
+    override def toString() : String =
     {
         var str : String = "(def-constant " + constantName
         str = str + "\n  " + defExpString
@@ -122,11 +122,11 @@ class LispParser
 {
     def parse(s: String): LispExp = parse(new Unparsed(s, msg => throw GeneralError(msg)))
 
-    /* Take an Unparsed object (info.kwarc.mmt.api.utils.Unparsed) 
+    /* Take an Unparsed object (info.kwarc.mmt.api.utils.Unparsed)
      * and parse the heck out of it */
     private def parse(u : Unparsed) : LispExp =
     {
-		/* Expression starts at the very beginning */
+        /* Expression starts at the very beginning */
         val sr_start : SourcePosition = u.getSourcePosition
         var exprs : List[Exp] = List.empty
 
@@ -144,9 +144,9 @@ class LispParser
         }
         catch
         {
-			// TODO: Re-work this into something else other than
-			//       an ugly try-catch block
-			
+            // TODO: Re-work this into something else other than
+            //       an ugly try-catch block
+
             case ex : StringIndexOutOfBoundsException =>
             {
                 // Some printouts for manual inspection, to be removed later
@@ -159,15 +159,15 @@ class LispParser
         val sr_region : SourceRegion   = SourceRegion(sr_start, sr_end)
         val sr        : SourceRef      = SourceRef(null, sr_region)
 
-		/* Actually parse Exps and filter for successes */
+        /* Actually parse Exps and filter for successes */
         val parsedExprs : List[LispExp] = exprs.map(parseExpression).filter(y => !(y.isEmpty)).map(z => z.get)
 
-		/* Truncate output.t to 0 length */
-		val pw = new PrintWriter("output.t");
-		pw.close
-		
-		/* Print parsed expressions for diff */
-		val fw = new FileWriter("output.t", true)
+        /* Truncate output.t to 0 length */
+        val pw = new PrintWriter("output.t");
+        pw.close
+
+        /* Print parsed expressions for diff */
+        val fw = new FileWriter("output.t", true)
         for (p <- parsedExprs)
         {
             println("\n" + p.toString)
@@ -179,7 +179,7 @@ class LispParser
         return Exp(parsedExprs, sr)
     }
 
-    /* Create an EXP expression from Unparsed object, until brackets 
+    /* Create an EXP expression from Unparsed object, until brackets
      * are balanced again. This way, it is extremely easy to parse the
      * correct amount of source. Yay Lisp. */
     private def parseExpAndSourceRef (u : Unparsed) : Exp =
@@ -193,7 +193,7 @@ class LispParser
         /* While expression is still ongoing, keep parsing */
         while (open - closed != 0)
         {
-			// TODO: Casematch here more beautiful?
+            // TODO: Casematch here more beautiful?
             if (u.head == '"')
             {
                 /* String literal parsing (defStrings etc.) */
@@ -211,7 +211,7 @@ class LispParser
             }
             else if (u.head == '(')
             {
-                /* Some children are complete expressions in themselves 
+                /* Some children are complete expressions in themselves
                  * necessitating a recursive call here */
                 u.next
                 val chld : Exp = parseExpAndSourceRef(u)
@@ -240,10 +240,9 @@ class LispParser
                 val sr_region : SourceRegion   = SourceRegion(sr_start, sr_end)
                 val sr        : SourceRef      = SourceRef(null, sr_region)
 
-				// TODO: Is this nesting overkill / overcommplicated?
+                // TODO: Is this nesting overkill / overcommplicated?
                 children = children ::: List(Exp(List(new Str(str)), sr))
             }
-            // TODO: This doesn't handle lists (e.g. of names, lambdas) correctly, I think
         }
 
         val sourceRef_end    : SourcePosition = u.getSourcePosition
@@ -257,29 +256,29 @@ class LispParser
     /* Parse a single EXP expression into a special form or similar (if possible) */
     private def parseExpression (e : Exp) : Option[LispExp] =
     {
-		/* Patter matching down/through to appropriate level */
+        /* Patter matching down/through to appropriate level */
         e.children.head match
         {
             case Exp(cs,s) => cs.head match
             {
-				/* toplevel stuff */
-				case Str("herald") => var eprime : Option[LispExp] = parseHeralding(e)
+                /* toplevel stuff */
+                case Str("herald") => var eprime : Option[LispExp] = parseHeralding(e)
                                       if (!(eprime.isEmpty)) { return eprime }
-                                      
+
                 case Str("load-section") => var eprime : Option[LispExp] = parseLoadSection(e)
                                             if (!(eprime.isEmpty)) { return eprime }
-                
+
                 /* Actual IMPS special forms */
-			    case Str("def-atomic-sort") => var as : Option[LispExp] = parseAtomicSort(e)
+                case Str("def-atomic-sort") => var as : Option[LispExp] = parseAtomicSort(e)
                                                if (!(as.isEmpty)) { return as }
-                                               
+
                 case Str("def-constant") => var c : Option[LispExp] = parseConstant(e)
                                             if (!(c.isEmpty)) { return c }
-                                               
+
                 /* Catchall case */
                 case _                      => println("DBG: unrecognised structure, not parsed!")
             }
-             
+
             case q  => println("DBG: Couldn't parse:\n~~~")
                        println(q.toString + "\n~~~")
         }
@@ -289,22 +288,22 @@ class LispParser
     }
 
     /* ######### Smaller parsers, mosty IMPS special forms ######### */
-    
-    /* Parser for IMPS special form def-atomic sort 
+
+    /* Parser for IMPS special form def-atomic sort
      * Documentation: IMPS manual pgs. 168, 169 */
     private def parseConstant (e : Exp) : Option[LispExp] =
     {
-		// Required arguments
+        // Required arguments
         var name       : Option[String] = None
         var defstring  : Option[String] = None
         var thy        : Option[Theory] = None
-        
+
         // Optional arguments
         var usages : Option[Usages] = None
         var sort   : Option[Sort]   = None
 
         val cs : Int = e.children.length
-        
+
         /* Three arguments minimum because three req. arguments */
         if (cs >= 3)
         {
@@ -315,42 +314,42 @@ class LispParser
             /* Parse keyword arguments, these can come in any order */
             var i : Int = 3
             while (cs - i > 0)
-            {				
-				e.children(i) match {
-					case Exp(ds,src) => ds.head match
-					{
-						case Exp(List(Str("theory")),_) => thy    = parseTheory(Exp(ds,src))
-						case Exp(List(Str("usages")),_) => usages = parseUsages(Exp(ds,src))
-						case Exp(List(Str("sort")),_)   => sort   = parseSort(Exp(ds,src))
-						case _                           => ()
-					}
-					case _ => ()
-				}
+            {
+                e.children(i) match {
+                    case Exp(ds,src) => ds.head match
+                    {
+                        case Exp(List(Str("theory")),_) => thy    = parseTheory(Exp(ds,src))
+                        case Exp(List(Str("usages")),_) => usages = parseUsages(Exp(ds,src))
+                        case Exp(List(Str("sort")),_)   => sort   = parseSort(Exp(ds,src))
+                        case _                           => ()
+                    }
+                    case _ => ()
+                }
                 i += 1
             }
 
-			/* check for required arguments */
+            /* check for required arguments */
             if (name.isEmpty || defstring.isEmpty || thy.isEmpty) { return None }
             else { return Some(Constant(name.get, defstring.get, thy.get, sort, usages, e.src)) }
 
         } else { return None }
     }
 
-    /* Parser for IMPS special form def-atomic sort 
+    /* Parser for IMPS special form def-atomic sort
      * Documentation: IMPS manual pgs. 158, 159 */
     private def parseAtomicSort (e : Exp) : Option[LispExp] =
     {
-		// Required arguments
+        // Required arguments
         var name : Option[String] = None
         var qss  : Option[String] = None
         var thy  : Option[Theory] = None
-        
+
         // Optional arguments
         var usages  : Option[Usages]  = None
         var witness : Option[Witness] = None
 
         val cs : Int = e.children.length
-        
+
         /* Three arguments minimum because three req. arguments */
         if (cs >= 3)
         {
@@ -361,21 +360,21 @@ class LispParser
             /* Parse keyword arguments, these can come in any order */
             var i : Int = 3
             while (cs - i > 0)
-            {				
-				e.children(i) match {
-					case Exp(ds,src) => ds.head match
-					{
-						case Exp(List(Str("theory")),_)  => thy     = parseTheory(Exp(ds,src))
-						case Exp(List(Str("usages")),_)  => usages  = parseUsages(Exp(ds,src))
-						case Exp(List(Str("witness")),_) => witness = parseWitness(Exp(ds,src))
-						case _                           => ()
-					}
-					case _ => ()
-				}
+            {
+                e.children(i) match {
+                    case Exp(ds,src) => ds.head match
+                    {
+                        case Exp(List(Str("theory")),_)  => thy     = parseTheory(Exp(ds,src))
+                        case Exp(List(Str("usages")),_)  => usages  = parseUsages(Exp(ds,src))
+                        case Exp(List(Str("witness")),_) => witness = parseWitness(Exp(ds,src))
+                        case _                           => ()
+                    }
+                    case _ => ()
+                }
                 i += 1
             }
 
-			/* check for required arguments */
+            /* check for required arguments */
             if (name.isEmpty || qss.isEmpty || thy.isEmpty) { return None }
             else { return Some(AtomicSort(name.get, qss.get, thy.get, usages, witness, e.src)) }
 
@@ -383,19 +382,19 @@ class LispParser
     }
 
     /* ######### Tiny parsers, mostly arguments to def-forms ######### */
-    
+
     /* Parser for IMPS load-section objects
      * used in: toplevel imports */
-    private def parseLoadSection (e : Exp) : Option[LoadSection] = 
+    private def parseLoadSection (e : Exp) : Option[LoadSection] =
     {
-		if (e.children.length == 2)
+        if (e.children.length == 2)
         {
             e.children(1) match {
                 case Exp(List(Str(x)),_) => return Some(LoadSection(x, e.src))
                 case _                   => return None
             }
         } else { return None }
-	}
+    }
 
     /* Parser for IMPS herald objects
      * used in: toplevel module declaration */
@@ -433,7 +432,7 @@ class LispParser
             }
         } else { return None }
     }
-    
+
     /* Parser for IMPS sort argument objects
      * used in: def-constant, ... */
     private def parseSort (e : Exp) : Option[Sort] =
@@ -450,7 +449,7 @@ class LispParser
      * used in: def-atomic-sort */
     private def parseUsages (e : Exp) : Option[Usages] =
     {
-		/* Can contain one or multiple usages */
+        /* Can contain one or multiple usages */
         var usgs : List[String] = List.empty
 
 
@@ -459,7 +458,7 @@ class LispParser
             var i : Int = 1
             while (i < e.children.length)
             {
-				e.children(i) match
+                e.children(i) match
                 {
                     case Exp(List(Str(x)),_) => usgs = usgs ::: List(x)
                     case _                   => return None
@@ -480,7 +479,7 @@ class IMPSImporter extends ShellExtension("imps")
 
     def run(shell: Shell, args: List[String]) =
     {
-		/* Read first argument as filepath, load and parse file */
+        /* Read first argument as filepath, load and parse file */
         println("Scanning file " + args(0))
         val fileContents = Source.fromFile(args(0)).getLines.mkString
 
