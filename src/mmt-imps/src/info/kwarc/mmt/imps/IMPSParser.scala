@@ -49,12 +49,13 @@ case class Witness(witness : String, src : SourceRef) extends LispExp {
 }
 
 case class Usages(usgs : List[String], src : SourceRef) extends LispExp {
-    override def toString() : String = {
+    override def toString() : String =
+    {		
         var str : String = "(usages "
-        str = str + " " + usgs.head
+        str = str + usgs.head
         for (u <- usgs.tail)
         {
-            str = str + ", " + u
+            str = str + " " + u
         }
         str = str + ")"
         return str
@@ -88,6 +89,28 @@ case class AtomicSort(sortName        : String,	         /* Positional Argument,
         str = str + "\n  " + theory.toString
         if (!(usages.isEmpty)) { str = str + "\n  " + usages.get.toString}
         if (!(witness.isEmpty)) { str = str + "\n  " + witness.get.toString}
+        str = str + ")"
+        return str
+    }
+}
+
+/* def-constant
+ * Ducomentation: IMPS manual pgs. 168,169 */
+case class Constant(constantName : String,         /* Positional Argument, Required */
+                    defExpString : String,         /* Positional Argument, Required */
+                    theory       : Theory,         /* Keyword Argument, Required */
+                    sort         : Option[Sort],   /* Keyword Argument, Optional */
+                    usages       : Option[Usages], /* Keyword Argument, Optional */
+                    src          : SourceRef)      /* SourceRef for MMT */
+                    extends LispExp
+{
+	override def toString() : String =
+    {
+        var str : String = "(def-constant " + constantName
+        str = str + "\n  " + defExpString
+        str = str + "\n  " + theory.toString
+        if (!(usages.isEmpty)) { str = str + "\n  " + usages.get.toString}
+        if (!(sort.isEmpty)) { str = str + "\n  " + sort.get.toString}
         str = str + ")"
         return str
     }
@@ -250,6 +273,9 @@ class LispParser
 			    case Str("def-atomic-sort") => var as : Option[LispExp] = parseAtomicSort(e)
                                                if (!(as.isEmpty)) { return as }
                                                
+                case Str("def-constant") => var c : Option[LispExp] = parseConstant(e)
+                                            if (!(c.isEmpty)) { return c }
+                                               
                 /* Catchall case */
                 case _                      => println("DBG: unrecognised structure, not parsed!")
             }
@@ -263,6 +289,52 @@ class LispParser
     }
 
     /* ######### Smaller parsers, mosty IMPS special forms ######### */
+    
+    /* Parser for IMPS special form def-atomic sort 
+     * Documentation: IMPS manual pgs. 168, 169 */
+    private def parseConstant (e : Exp) : Option[LispExp] =
+    {
+		// Required arguments
+        var name       : Option[String] = None
+        var defstring  : Option[String] = None
+        var thy        : Option[Theory] = None
+        
+        // Optional arguments
+        var usages : Option[Usages] = None
+        var sort   : Option[Sort]   = None
+
+        val cs : Int = e.children.length
+        
+        /* Three arguments minimum because three req. arguments */
+        if (cs >= 3)
+        {
+            /* Parse positional arguments */
+            e.children(1) match { case Exp(List(Str(x)), _) => name      = Some(x) }
+            e.children(2) match { case Exp(List(Str(y)), _) => defstring = Some(y) }
+
+            /* Parse keyword arguments, these can come in any order */
+            var i : Int = 3
+            while (cs - i > 0)
+            {				
+				e.children(i) match {
+					case Exp(ds,src) => ds.head match
+					{
+						case Exp(List(Str("theory")),_) => thy    = parseTheory(Exp(ds,src))
+						case Exp(List(Str("usages")),_) => usages = parseUsages(Exp(ds,src))
+						case Exp(List(Str("sort")),_)   => sort   = parseSort(Exp(ds,src))
+						case _                           => ()
+					}
+					case _ => ()
+				}
+                i += 1
+            }
+
+			/* check for required arguments */
+            if (name.isEmpty || defstring.isEmpty || thy.isEmpty) { return None }
+            else { return Some(Constant(name.get, defstring.get, thy.get, sort, usages, e.src)) }
+
+        } else { return None }
+    }
 
     /* Parser for IMPS special form def-atomic sort 
      * Documentation: IMPS manual pgs. 158, 159 */
@@ -338,7 +410,7 @@ class LispParser
         } else { return None }
     }
 
-    /* Parser for IMPS theory objects
+    /* Parser for IMPS theory argument objects
      * used in: def-atomic-sort... */
     private def parseTheory (e : Exp) : Option[Theory] =
     {
@@ -350,7 +422,7 @@ class LispParser
         } else { return None }
     }
 
-    /* Parser for IMPS witness objects
+    /* Parser for IMPS witness argument objects
      * used in: def-atomic-sort, ... */
     private def parseWitness (e : Exp) : Option[Witness] =
     {
@@ -361,27 +433,41 @@ class LispParser
             }
         } else { return None }
     }
+    
+    /* Parser for IMPS sort argument objects
+     * used in: def-constant, ... */
+    private def parseSort (e : Exp) : Option[Sort] =
+    {
+        if (e.children.length == 2) {
+            e.children(1) match {
+                case Exp(List(Str(x)),_) => return Some(Sort(x, e.src))
+                case _                   => return None
+            }
+        } else { return None }
+    }
 
     /* Parser for IMPS usages objects
      * used in: def-atomic-sort */
     private def parseUsages (e : Exp) : Option[Usages] =
     {
-		// Can contain one or multiple usages
+		/* Can contain one or multiple usages */
         var usgs : List[String] = List.empty
+
 
         if (e.children.length >= 2)
         {
-            var i : Int = 2
-            while (i <= e.children.length)
+            var i : Int = 1
+            while (i < e.children.length)
             {
-                e.children(i) match
+				e.children(i) match
                 {
                     case Exp(List(Str(x)),_) => usgs = usgs ::: List(x)
                     case _                   => return None
                 }
                 i += 1;
             }
-            return Some(Usages(usgs, e.src))
+            if (usgs != List.empty)
+            { return Some(Usages(usgs, e.src)) } else { return None }
 
         } else { return None }
     }
