@@ -1,14 +1,15 @@
-package info.kwarc.mmt.odk.SCSCP.Client
+package info.kwarc.mmt.odk.SCSCP.Example
 
-import info.kwarc.mmt.odk.OpenMath.Coding.{GAPEncoding, OMMMTCoding}
+import info.kwarc.mmt.odk.OpenMath.Coding.GAPEncoding
 import info.kwarc.mmt.odk.OpenMath._
+import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
 
 /**
   * An example SCSCPClient case
   *
   * Computes 1 + 1 on chrystal.mcs.st-andrews.ac.uk
   */
-object Example {
+object ClientExample {
   def main(args: Array[String]): Unit = {
 
     // create a new client to the SCSCP protocol

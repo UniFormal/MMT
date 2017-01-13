@@ -7,35 +7,35 @@ import scala.collection.mutable
 /**
   * Represents a reader that can read lines both in a blocking and non-blocking way.
   *
-  * @param stream InputStream to read / write characters from
+  * @param stream   InputStream to read / write characters from
   * @param encoding Encoding to use. Defaults to UTF-8.
   */
-class BufferedLineReader(stream : InputStream, val encoding : String = "UTF-8") {
+class BufferedLineReader(stream: InputStream, val encoding: String = "UTF-8") {
 
 
-  private final val CARRIAGE_RETURN_CHAR  : Char = '\r'
-  private final val NEWLINE_CHAR : Char = '\n'
+  private final val CARRIAGE_RETURN_CHAR: Char = '\r'
+  private final val NEWLINE_CHAR: Char = '\n'
 
 
   // the reader for the input stream
-  private val reader : InputStreamReader = new InputStreamReader(stream, encoding)
+  private val reader: InputStreamReader = new InputStreamReader(stream, encoding)
 
   // a list of characters contained in the input queue
-  private val chars : mutable.Queue[Char] = mutable.Queue()
+  private val chars: mutable.Queue[Char] = mutable.Queue()
 
   /**
     * Enqueues the next character received from the socket.
     * Blocks in case no character is currently available
     */
-  private def enQueue() : Unit = {
+  private def enQueue(): Unit = {
     chars.enqueue(reader.read().asInstanceOf[Char])
   }
 
   /**
     * Fills up the InQueue with all characters already available
     */
-  private def fillQueue() : Unit = {
-    while(reader.ready()){
+  private def fillQueue(): Unit = {
+    while (reader.ready()) {
       enQueue()
     }
   }
@@ -43,14 +43,14 @@ class BufferedLineReader(stream : InputStream, val encoding : String = "UTF-8") 
   /**
     * Resets this BufferedLineReader to the first char it read.
     */
-  def reset() : Unit = stream.reset()
+  def reset(): Unit = stream.reset()
 
   /**
     * Checks if this BufferedSocketReader has a character that is ready to be read
     *
     * @return
     */
-  def hasChar : Boolean = chars.nonEmpty || reader.ready()
+  def hasChar: Boolean = chars.nonEmpty || reader.ready()
 
   /**
     * Reads the next character in this BufferedLineReader.
@@ -58,13 +58,13 @@ class BufferedLineReader(stream : InputStream, val encoding : String = "UTF-8") 
     *
     * @return
     */
-  def readChar : Option[Char] = {
+  def readChar: Option[Char] = {
 
     // Read all available characters
     fillQueue()
 
     // and return if it is empty or not
-    if(chars.isEmpty){
+    if (chars.isEmpty) {
       None
     } else {
       Some(chars.dequeue())
@@ -76,9 +76,9 @@ class BufferedLineReader(stream : InputStream, val encoding : String = "UTF-8") 
     *
     * @return
     */
-  def readCharBlock : Char = {
+  def readCharBlock: Char = {
     // if we have no characters, wait for the next one
-    if(chars.isEmpty){
+    if (chars.isEmpty) {
       enQueue()
     }
 
@@ -92,7 +92,7 @@ class BufferedLineReader(stream : InputStream, val encoding : String = "UTF-8") 
     * @param block Boolean indicating if we should block until the next character is available
     * @return
     */
-  def readChar(block : Boolean = false) : Option[Char] = if(block) Some(readCharBlock) else readChar
+  def readChar(block: Boolean = false): Option[Char] = if (block) Some(readCharBlock) else readChar
 
   /**
     * Checks if a line ends at a given position
@@ -100,7 +100,7 @@ class BufferedLineReader(stream : InputStream, val encoding : String = "UTF-8") 
     * @param pos Position to check end of line at
     * @return
     */
-  private def isEndOfLine(pos : Int) : Boolean = {
+  private def isEndOfLine(pos: Int): Boolean = {
     // get a function for the options
     val clift = chars.lift
 
@@ -118,7 +118,7 @@ class BufferedLineReader(stream : InputStream, val encoding : String = "UTF-8") 
   /**
     * Removes the end of line character from the current Quenue
     */
-  private def deQueueEnd() : Unit = {
+  private def deQueueEnd(): Unit = {
     val clift = chars.lift
 
     (clift(0), clift(1)) match {
@@ -138,7 +138,7 @@ class BufferedLineReader(stream : InputStream, val encoding : String = "UTF-8") 
     *
     * @return
     */
-  def getLineLength : Option[Int] = {
+  def getLineLength: Option[Int] = {
     // fill up
     fillQueue()
 
@@ -147,10 +147,10 @@ class BufferedLineReader(stream : InputStream, val encoding : String = "UTF-8") 
     val l = chars.length - 1
 
     // iterate through the Q
-    while(i <= l){
+    while (i <= l) {
 
       // if it is the end of the line congrats
-      if(isEndOfLine(i)){
+      if (isEndOfLine(i)) {
         return Some(i)
       }
 
@@ -166,14 +166,14 @@ class BufferedLineReader(stream : InputStream, val encoding : String = "UTF-8") 
     *
     * @return
     */
-  def hasLine : Boolean = getLineLength.isDefined
+  def hasLine: Boolean = getLineLength.isDefined
 
   /**
     * Reads the next line in this BufferedLineReader.
     * Does not block, i.e. returns None if no line is currently available.
     */
-  def readLine : Option[String] = {
-    getLineLength.map(ln => {
+  def readLine: Option[String] = {
+    val lines = getLineLength.map(ln => {
 
       // get a line
       val line = (1 to ln).map(i => chars.dequeue()).mkString
@@ -184,39 +184,41 @@ class BufferedLineReader(stream : InputStream, val encoding : String = "UTF-8") 
       // and return the line
       line
     })
+
+    lines
   }
 
   /**
     * Reads the next line in this BufferedLineReader.
     * Blocks, i.e. waits until a new line is available if it currently isn't
     */
-  def readLineBlock : String = {
+  def readLineBlock: String = {
     // the current line
     val line = new StringBuilder
 
     // indicator for a carriage return character
     var hasCR = false
 
-    while(true){
+    while (true) {
       // read the next character
       val char = readCharBlock
 
       // if we have a newline, return
-      if(char == NEWLINE_CHAR){
+      if (char == NEWLINE_CHAR) {
         return line.toString
       }
 
       // if we had a cr, but no newline add it back
-      if(hasCR){
+      if (hasCR) {
         line += CARRIAGE_RETURN_CHAR
         hasCR = false
       }
 
       // if we had a CR, indicate it for the next iteration
-      if(char == CARRIAGE_RETURN_CHAR){
+      if (char == CARRIAGE_RETURN_CHAR) {
         hasCR = true
 
-      // else just append the char to the buffer
+        // else just append the char to the buffer
       } else {
         line += char
       }
@@ -231,5 +233,5 @@ class BufferedLineReader(stream : InputStream, val encoding : String = "UTF-8") 
     * @param block Boolean indicating if we should block until the next line is available
     * @return
     */
-  def readLine(block : Boolean) : Option[String] = if(block) Some(readLineBlock) else readLine
+  def readLine(block: Boolean): Option[String] = if (block) Some(readLineBlock) else readLine
 }

@@ -7,7 +7,7 @@ import info.kwarc.mmt.odk.OpenMath.Coding.OMXMLCoding
 import info.kwarc.mmt.odk.OpenMath.OMObject
 import info.kwarc.mmt.odk.SCSCP.Lowlevel.SCSCPPi
 
-class SCSCPWriter(stream : OutputStream, val encoding : String = "UTF-8") {
+class SCSCPWriter(stream: OutputStream, val encoding: String = "UTF-8") {
 
   // hard coded instructions
   final private val START_INST = SCSCPPi(Some("start"), Map())
@@ -19,9 +19,10 @@ class SCSCPWriter(stream : OutputStream, val encoding : String = "UTF-8") {
 
   /**
     * Writes a string to the stream
+    *
     * @param s
     */
-  private def write(s : String) : Unit = {
+  private def write(s: String): Unit = {
     stream.write(
       (s + "\n").getBytes(Charset.forName(encoding))
     )
@@ -32,22 +33,14 @@ class SCSCPWriter(stream : OutputStream, val encoding : String = "UTF-8") {
   /**
     * Writes a processing instruction to the stream
     */
-  def write(pi : SCSCPPi) : Unit = write(pi.toString)
+  def write(pi: SCSCPPi): Unit = write(pi.toString)
 
   /**
     * Writes an OpenMath object to the stream
     */
-  def write(om : OMObject) : Unit = {
+  def write(om: OMObject): Unit = {
     write(START_INST)
     write(coder(om).toString)
     write(END_INST)
-  }
-
-  /**
-    * Writes an OpenMath object or a processing instruction to the stream
-    */
-  def write(d : Either[SCSCPPi, OMObject]) : Unit = d match {
-    case Left(pi) => write(pi)
-    case Right(om) => write(om)
   }
 }

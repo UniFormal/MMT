@@ -96,6 +96,9 @@ class OMXMLCoding extends OMCoding[Node] {
       val id = getOAttr(v, ATTR_ID)
 
       OMString(text, id)
+    case <OMSTR></OMSTR> =>
+      val id = getOAttr(v, ATTR_ID)
+      OMString("", id)
     case <OMB>{bNode : Text}</OMB> =>
       val bytes = OMCoding.hex2Bytes(bNode.text)
 
