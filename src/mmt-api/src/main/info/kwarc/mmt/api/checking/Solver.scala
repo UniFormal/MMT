@@ -266,6 +266,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private val subtypingRules = rules.getOrdered(classOf[SubtypingRule])
    /* convenience function for going to the next rule after a has been tried */
    private def dropTill[A](l: List[A], a: A) = l.dropWhile(_ != a).tail
+  private def dropJust[A](l: List[A], a:A) = {val i = l.indexOf(a); l.take(i) ::: l.drop(i+1)}
 
    /**
     * logs a string representation of the current state
@@ -813,7 +814,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                     } catch {
                        case t : MaytriggerBacktrack#Backtrack =>
                           history += t.getMessage
-                          activerules = dropTill(activerules, rule)
+                          activerules = /*dropTill(activerules,rule)*/ dropJust(activerules, rule)
                     }
                  case None =>
                     history += "no applicable rule"
@@ -864,7 +865,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               } catch {
                 case t : MaytriggerBacktrack#Backtrack =>
                   history += t.getMessage
-                  activerules = dropTill(activerules, rule)
+                  activerules = dropJust(activerules, rule)
               }
             case None =>
               done = true
