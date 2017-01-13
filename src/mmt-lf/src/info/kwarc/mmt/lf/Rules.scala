@@ -13,6 +13,9 @@ object Common {
     *  in plain LF, this is only possible if U=type, i.e., if a:type
     *  other frameworks may want to reuse the LF typing rules with more options for U
     */
+   // TODO this thing explicitely excludes anything that is not a type, but is used by rules
+    // TODO that are a part of PLF!
+
    def isTypeLike(solver: Solver, a: Term)(implicit stack: Stack, history: History) = {
      val h = history + "checking the size of the type of the bound variable"
      val kind = OMS(Typed.kind)
@@ -104,7 +107,7 @@ object LambdaTerm extends IntroductionRule(Lambda.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Lambda(x,a,t) =>
-           if (!covered) isTypeLike(solver,a)
+           if (!covered) solver.inferType(a)//isTypeLike(solver,a)
            val (xn,sub) = Common.pickFresh(solver, x)
            solver.inferType(t ^? sub)(stack ++ xn % a, history) map {b => Pi(xn,a,b)}
         case _ => None // should be impossible
@@ -121,7 +124,11 @@ abstract class ArgumentChecker {
 /** default implementation: type-check against expected type if not covered; skip if covered */
 object StandardArgumentChecker extends ArgumentChecker {
    def apply(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History) =
-      covered || solver.check(Typing(stack, tm, tp))(history + "argument must have domain type")
+      covered || {
+        val ret = solver.check(Typing(stack, tm, tp))(history + "argument must have domain type")
+        print("")
+        ret
+      }
 }
 
 
@@ -139,16 +146,19 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
       def iterate(fT: Term, args: List[Term]): Option[Term] = {
          history += "function type is: " + solver.presentObj(fT)
          (fT,args) match {
-           case (fT, Nil) => Some(fT) 
+           case (`fT`, Nil) => Some(fT)
            case (Pi(x,a,b), t::rest) =>
               history += "argument is: " + solver.presentObj(t)
+             if (solver.presentObj(t) == "n" && solver.presentObj(a) == "nat_lit") {
+               print("")
+             }
               if (conforms(solver)(t, a, covered)) {
                  history += "substituting argument in return type"
                  // substitute for x and newly-solved unknowns (as solved by conforms) and simplify
                  val bS = solver.substituteSolved(b ^? (x/t), true)
                  iterate(bS, rest)
               } else {
-                history += "argument check did not succeed, giving up for now"
+                history += "argument check did not succeed: " + solver.presentObj(t) + ":" + solver.presentObj(a) + ", giving up for now"
                 None
               }
            /*case ApplyGeneral(OMV(u), _) =>
