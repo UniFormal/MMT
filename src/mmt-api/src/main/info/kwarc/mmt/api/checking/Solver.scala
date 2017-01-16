@@ -846,7 +846,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       // better: use an expansion algorithm that stops expanding if it is know that no rule will become applicable
 
      // Redundant, but timesaving and makes errors go away:
-     if (j.tp1 == j.tp2) return true // check(Equality(j.stack, j.tp1, j.tp2, None))
+     if (safecheck(Equality(j.stack,j.tp1,j.tp2,None)) contains true) {
+       return check(Equality(j.stack,j.tp1,j.tp2,None))
+     }
 
       if (subtypingRules.nonEmpty) {
         implicit val stack = j.stack

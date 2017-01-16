@@ -149,9 +149,6 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
            case (`fT`, Nil) => Some(fT)
            case (Pi(x,a,b), t::rest) =>
               history += "argument is: " + solver.presentObj(t)
-             if (solver.presentObj(t) == "n" && solver.presentObj(a) == "nat_lit") {
-               print("")
-             }
               if (conforms(solver)(t, a, covered)) {
                  history += "substituting argument in return type"
                  // substitute for x and newly-solved unknowns (as solved by conforms) and simplify
@@ -210,7 +207,9 @@ object PiType extends TypingRule(Pi.path) with PiOrArrowRule {
             solver.check(Equality(stack,a1,a2,None))(history+"domains must be equal")
             val (xn,sub1) = Common.pickFresh(solver, x1)
             val sub2 = x2 / OMV(xn)
-            solver.check(Typing(stack ++ xn % a2, t ^? sub1, b ^? sub2))(history + "type checking rule for Pi")
+            val nt = solver.substituteSolved(a2,true)
+           // seems to be necessary, in case a2 has only been solved during the equality check above...
+            solver.check(Typing(stack ++ xn % nt, t ^? sub1, b ^? sub2))(history + "type checking rule for Pi")
          case (tm, Pi(x2, a2, b)) =>
             val (xn,sub) = Common.pickFresh(solver, x2)
             val j = Typing(stack ++ xn % a2,  Apply(tm, xn), b ^? sub)
