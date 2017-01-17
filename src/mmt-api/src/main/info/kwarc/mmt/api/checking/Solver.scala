@@ -597,21 +597,29 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    private def noActivatableConstraint: Boolean = {
       solution.declsInContext.forall {
-         case (cont, VarDecl(x, Some(tp), None,_)) =>
+         case (_, VarDecl(_, _, Some(_), _)) =>
+           // solved
+           true 
+         case (cont, VarDecl(x, tpOpt, None,_)) =>
+            // unsolved, maybe use prover based on needed type
             implicit val history = new History(Nil)
-            history += "proving open goals"
-            // TODO prover should only be called in certain cases:
-            // - if the variable indicates that uniqueness is not required
-            // - if its type indicates that uniqueness is guaranteed (e.g., due to proof irrelevance if)
-            // the present code seems to generate way too many calls to the prover although that seems to rarely happen in practice
-            prove(constantContext++cont,tp)(history) match {
-               case Some(p) =>
-                  solve(x, p)
-               case None =>
-                  error("unproved")
+            tpOpt match {
+              case None =>
+                error("unsolved unknown " + x) 
+              case Some(tp) =>
+                val rO = rules.get(classOf[TermIrrelevanceRule]).find(r => r.applicable(tp))
+                if (rO.isDefined) {
+                  history += "proving open goal of term-irrelevant type"
+                  prove(constantContext++cont,tp)(history) match {
+                     case Some(p) =>
+                        solve(x, p)
+                     case None =>
+                        error("unproved")
+                  }
+                } else {
+                  error("unsolved unknown: " + x)
+                }
             }
-         case _ =>
-            true
       }
    }
 

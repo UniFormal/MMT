@@ -223,6 +223,14 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean]
 }
 
+/** always succeeds, e.g., as needed to implement proof irrelevance */
+class TermIrrelevanceRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
+  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+    history += "all terms of this type are equal"
+    Some(true)
+  }
+}
+
 /**
  * A TermBasedEqualityRule checks the equality of two terms without considering types
  */
