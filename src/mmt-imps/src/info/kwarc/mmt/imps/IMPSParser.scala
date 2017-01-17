@@ -40,6 +40,10 @@ case class Theory(thy : String, src : SourceRef) extends LispExp {
     override def toString() : String = { return "(theory " + thy + ")"}
 }
 
+case class Language(lang : String, src : SourceRef) extends LispExp {
+    override def toString() : String = { return "(language " + lang + ")"}
+}
+
 case class Sort(sort : String, src : SourceRef) extends LispExp {
     override def toString() : String = { return "(sort " + sort + ")" }
 }
@@ -56,6 +60,20 @@ case class Usages(usgs : List[String], src : SourceRef) extends LispExp {
         for (u <- usgs.tail)
         {
             str = str + " " + u
+        }
+        str = str + ")"
+        return str
+    }
+}
+
+case class FixedTheories(thrs : List[String], src : SourceRef) extends LispExp {
+	override def toString() : String =
+    {
+        var str : String = "(fixed-theories "
+        str = str + thrs.head
+        for (t <- thrs.tail)
+        {
+            str = str + " " + t
         }
         str = str + ")"
         return str
@@ -111,6 +129,26 @@ case class Constant(constantName : String,         /* Positional Argument, Requi
         str = str + "\n  " + theory.toString
         if (!(usages.isEmpty)) { str = str + "\n  " + usages.get.toString}
         if (!(sort.isEmpty)) { str = str + "\n  " + sort.get.toString}
+        str = str + ")"
+        return str
+    }
+}
+
+/* def-quasi-constructor
+ * Documentation: IMPS manual pgs. 176, 177 */
+case class QuasiConstructor(name             : String,               /* Positional Argument, Required */
+                           lambdaExprString : String,                /* Positional Argument, Required */
+                           language         : Language,              /* Keyword Argument, Required */
+                           fixedTheories    : Option[FixedTheories], /* Keyword Argument, Optional */
+                           src              : SourceRef)             /* SourceRef for MMT */
+                           extends LispExp
+{
+    override def toString() : String =
+    {
+        var str : String = "(def-quasi-contructor " + name
+        str = str + "\n  " + lambdaExprString
+        str = str + "\n  " + language.toString
+        if (!(fixedTheories.isEmpty)) { str = str + "\n  " + fixedTheories.get.toString}
         str = str + ")"
         return str
     }
@@ -274,6 +312,9 @@ class LispParser
 
                 case Str("def-constant") => var c : Option[LispExp] = parseConstant(e)
                                             if (!(c.isEmpty)) { return c }
+                                            
+                case Str("def-quasi-constructor") => var qc : Option[LispExp] = parseQuasiConstructor(e)
+                                                     if (!(qc.isEmpty)) { return qc }
 
                 /* Catchall case */
                 case _                      => println("DBG: unrecognised structure, not parsed!")
@@ -289,7 +330,7 @@ class LispParser
 
     /* ######### Smaller parsers, mosty IMPS special forms ######### */
 
-    /* Parser for IMPS special form def-atomic sort
+    /* Parser for IMPS special form def-constants
      * Documentation: IMPS manual pgs. 168, 169 */
     private def parseConstant (e : Exp) : Option[LispExp] =
     {
@@ -380,6 +421,50 @@ class LispParser
 
         } else { return None }
     }
+    
+    /* Parser for IMPS special form def-quasi-constructor
+     * Documentation: IMPS manual pgs. 177, 178 */
+    private def parseQuasiConstructor (e : Exp) : Option[LispExp] =
+    {
+        // Required arguments
+        var name   : Option[String]   = None
+        var expstr : Option[String]   = None
+        var lang   : Option[Language] = None
+
+        // Optional arguments
+        var fixed  : Option[FixedTheories] = None
+
+        val cs : Int = e.children.length
+
+        /* Three arguments minimum because three req. arguments */
+        if (cs >= 3)
+        {
+            /* Parse positional arguments */
+            e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
+            e.children(2) match { case Exp(List(Str(y)), _) => expstr = Some(y) }
+
+            /* Parse keyword arguments, these can come in any order */
+            var i : Int = 3
+            while (cs - i > 0)
+            {
+                e.children(i) match {
+                    case Exp(ds,src) => ds.head match
+                    {
+                        case Exp(List(Str("language")),_)       => lang  = parseLanguage(Exp(ds,src))
+                        case Exp(List(Str("fixed-theories")),_) => fixed = parseFixedTheories(Exp(ds,src))
+                        case _                           => ()
+                    }
+                    case _ => ()
+                }
+                i += 1
+            }
+
+            /* check for required arguments */
+            if (name.isEmpty || expstr.isEmpty || lang.isEmpty) { return None }
+            else { return Some(QuasiConstructor(name.get, expstr.get, lang.get, fixed, e.src)) }
+
+        } else { return None }
+    }
 
     /* ######### Tiny parsers, mostly arguments to def-forms ######### */
 
@@ -432,6 +517,18 @@ class LispParser
             }
         } else { return None }
     }
+    
+    /* Parser for IMPS language argument objects
+     * used in: def-quasi-constructor, ... */
+    private def parseLanguage (e : Exp) : Option[Language] =
+    {
+        if (e.children.length == 2) {
+            e.children(1) match {
+                case Exp(List(Str(x)),_) => return Some(Language(x, e.src))
+                case _                   => return None
+            }
+        } else { return None }
+    }
 
     /* Parser for IMPS sort argument objects
      * used in: def-constant, ... */
@@ -452,7 +549,6 @@ class LispParser
         /* Can contain one or multiple usages */
         var usgs : List[String] = List.empty
 
-
         if (e.children.length >= 2)
         {
             var i : Int = 1
@@ -467,6 +563,31 @@ class LispParser
             }
             if (usgs != List.empty)
             { return Some(Usages(usgs, e.src)) } else { return None }
+
+        } else { return None }
+    }
+    
+    /* Parser for IMPS fixed theories objects
+     * used in: def-quasi-constructor */
+    private def parseFixedTheories (e : Exp) : Option[FixedTheories] =
+    {
+        /* Can contain one or multiple usages */
+        var fixed : List[String] = List.empty
+
+        if (e.children.length >= 2)
+        {
+            var i : Int = 1
+            while (i < e.children.length)
+            {
+                e.children(i) match
+                {
+                    case Exp(List(Str(x)),_) => fixed = fixed ::: List(x)
+                    case _                   => return None
+                }
+                i += 1;
+            }
+            if (fixed != List.empty)
+            { return Some(FixedTheories(fixed, e.src)) } else { return None }
 
         } else { return None }
     }
