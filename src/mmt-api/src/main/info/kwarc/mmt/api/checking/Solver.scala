@@ -545,7 +545,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         case None =>
            // no activatable constraint
            if (delayed.isEmpty && errors.isEmpty)
-              // all clear except that some unknwons not solved
+              // all clear except that some unknowns not solved
               noActivatableConstraint
            else {
              // usually errors.isEmpty, i.e., return true but with constraints left
@@ -600,6 +600,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          case (cont, VarDecl(x, Some(tp), None,_)) =>
             implicit val history = new History(Nil)
             history += "proving open goals"
+            // TODO prover should only be called in certain cases:
+            // - if the variable indicates that uniqueness is not required
+            // - if its type indicates that uniqueness is guaranteed (e.g., due to proof irrelevance if)
+            // the present code seems to generate way too many calls to the prover although that seems to rarely happen in practice
             prove(constantContext++cont,tp)(history) match {
                case Some(p) =>
                   solve(x, p)
