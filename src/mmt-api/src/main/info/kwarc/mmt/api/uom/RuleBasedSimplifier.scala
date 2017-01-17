@@ -53,6 +53,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                 traverse(t,initState, context)
               } catch {
                 case e: Exception =>
+                  e.printStackTrace()
                   throw GeneralError("error while simplifying " + controller.presenter.asString(obj)).setCausedBy(e)
               }
             tS

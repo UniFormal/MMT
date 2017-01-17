@@ -58,9 +58,8 @@ class PostServer extends ServerExtension("post") {
 /** interprets the query as an MMT document URI and returns the SVG representation of the theory graph */
 class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
   /**
-   * @param path ignored
+   * @param httppath the export dimension from which to take the graph, "svg" by if empty
    * @param query the [[Path]] for which to retrieve a graph
-   * @param path the export dimension from which to taek the graph, "svg" by if empty
    * @param body ignored
    * @param session ignored
    */

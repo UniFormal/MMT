@@ -266,6 +266,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private val subtypingRules = rules.getOrdered(classOf[SubtypingRule])
    /* convenience function for going to the next rule after a has been tried */
    private def dropTill[A](l: List[A], a: A) = l.dropWhile(_ != a).tail
+  private def dropJust[A](l: List[A], a:A) = {val i = l.indexOf(a); l.take(i) ::: l.drop(i+1)}
 
    /**
     * logs a string representation of the current state
@@ -544,7 +545,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         case None =>
            // no activatable constraint
            if (delayed.isEmpty && errors.isEmpty)
-              // all clear except that some unknwons not solved
+              // all clear except that some unknowns not solved
               noActivatableConstraint
            else {
              // usually errors.isEmpty, i.e., return true but with constraints left
@@ -596,17 +597,29 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    private def noActivatableConstraint: Boolean = {
       solution.declsInContext.forall {
-         case (cont, VarDecl(x, Some(tp), None,_)) =>
+         case (_, VarDecl(_, _, Some(_), _)) =>
+           // solved
+           true 
+         case (cont, VarDecl(x, tpOpt, None,_)) =>
+            // unsolved, maybe use prover based on needed type
             implicit val history = new History(Nil)
-            history += "proving open goals"
-            prove(constantContext++cont,tp)(history) match {
-               case Some(p) =>
-                  solve(x, p)
-               case None =>
-                  error("unproved")
+            tpOpt match {
+              case None =>
+                error("unsolved unknown " + x) 
+              case Some(tp) =>
+                val rO = rules.get(classOf[TermIrrelevanceRule]).find(r => r.applicable(tp))
+                if (rO.isDefined) {
+                  history += "proving open goal of term-irrelevant type"
+                  prove(constantContext++cont,tp)(history) match {
+                     case Some(p) =>
+                        solve(x, p)
+                     case None =>
+                        error("unproved")
+                  }
+                } else {
+                  error("unsolved unknown: " + x)
+                }
             }
-         case _ =>
-            true
       }
    }
 
@@ -813,7 +826,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                     } catch {
                        case t : MaytriggerBacktrack#Backtrack =>
                           history += t.getMessage
-                          activerules = dropTill(activerules, rule)
+                          activerules = /*dropTill(activerules,rule)*/ dropJust(activerules, rule)
                     }
                  case None =>
                     history += "no applicable rule"
@@ -843,6 +856,12 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private def checkSubtyping(j: Subtyping)(implicit history: History) : Boolean = {
       // TODO this fully expands definitions if no rule is applicable
       // better: use an expansion algorithm that stops expanding if it is know that no rule will become applicable
+
+     // Redundant, but timesaving and makes errors go away:
+     if (safecheck(Equality(j.stack,j.tp1,j.tp2,None)) contains true) {
+       return check(Equality(j.stack,j.tp1,j.tp2,None))
+     }
+
       if (subtypingRules.nonEmpty) {
         implicit val stack = j.stack
         var activerules = subtypingRules
@@ -864,7 +883,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               } catch {
                 case t : MaytriggerBacktrack#Backtrack =>
                   history += t.getMessage
-                  activerules = dropTill(activerules, rule)
+                  activerules = dropJust(activerules, rule)
               }
             case None =>
               done = true
