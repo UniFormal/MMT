@@ -70,7 +70,7 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
     val (exportFolder, relPath) = svgPath(path)
     val svgFile = exportFolder / key / relPath
     val node = if (svgFile.exists) {
-       utils.File.read(svgFile.setExtension("svg"))
+      utils.File.read(svgFile.setExtension("svg"))
     } else {
        val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
          throw LocalError(s"svg file does not exist and exporter $key not available: $query")
@@ -78,7 +78,7 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
        val se = controller.get(path)
        exp.asString(se)
     }
-    TypedTextResponse(node, "text")
+    TypedTextResponse(node, "image/svg+xml")
   }
   
   import Javascript._

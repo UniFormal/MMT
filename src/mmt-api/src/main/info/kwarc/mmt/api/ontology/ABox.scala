@@ -52,6 +52,7 @@ class RelStore(report : frontend.Report) {
            case Individual(p, tp) =>
               types(p) = tp
               individuals += (tp, p)
+              objects += ((p.^!,Declares),p) // seems to be necessary to add theories to their namespaces
          }
       }
    }
@@ -97,16 +98,16 @@ class RelStore(report : frontend.Report) {
       //only start itself
       case Reflexive => add(start)
       //the set of paths related to start via arbitrarily many q-steps (depth-first, children before parent)
-      case Transitive(q) =>
+      case Transitive(qn) =>
          var added = HashSet.empty[Path]
          def step(p : Path) {
             if (! added.contains(p)) {
                added += p
-               val next = query(p, q)(step)
+               val next = query(p, qn)(step)
                add(p) //add parent only after children
             }
          }
-         val next = query(start, q)(step)
+         val next = query(start, qn)(step)
       //the set of paths related to start by any of the relations in qs (in the order listed)
       case Choice(qs @ _*) => qs.foreach(q => query(start, q))
       //the set of paths related to start by making steps according to qs
