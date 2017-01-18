@@ -44,12 +44,30 @@ case class Language(lang : String, src : SourceRef) extends LispExp {
     override def toString() : String = { return "(language " + lang + ")"}
 }
 
+case class Constructor(const : String, src : SourceRef) extends LispExp {
+    override def toString() : String = { return "(constructor " + const + ")" }
+}
+
 case class Sort(sort : String, src : SourceRef) extends LispExp {
     override def toString() : String = { return "(sort " + sort + ")" }
 }
 
 case class Witness(witness : String, src : SourceRef) extends LispExp {
     override def toString() : String = { return "(witness " + witness + ")"}
+}
+
+case class Accessors(accs : List[String], src : SourceRef) extends LispExp {
+    override def toString() : String =
+    {
+        var str : String = "(accessors "
+        str = str + accs.head
+        for (a <- accs.tail)
+        {
+            str = str + " " + a
+        }
+        str = str + ")"
+        return str
+    }
 }
 
 case class Usages(usgs : List[String], src : SourceRef) extends LispExp {
@@ -107,6 +125,33 @@ case class AtomicSort(sortName        : String,          /* Positional Argument,
         str = str + "\n  " + theory.toString
         if (!(usages.isEmpty)) { str = str + "\n  " + usages.get.toString}
         if (!(witness.isEmpty)) { str = str + "\n  " + witness.get.toString}
+        str = str + ")"
+        return str
+    }
+}
+
+/* def-cartesian-product
+ * Documentation: IMPS manual pg. 166 */
+case class CartesianProduct(name      : String,               /* Keyword Argument, Required */
+                            sortNames : List[String],         /* Keyword Argument, Required */
+                            thy       : Theory,               /* Keyword Argument, Required */
+                            const     : Option[Constructor],  /* Keyword Argument, Optional */
+                            accs      : Option[Accessors],    /* Keyword Argument, Optional */
+                            src       : SourceRef)            /* SourceRef for MMT */
+                            extends LispExp
+{
+	override def toString() : String =
+    {
+        var str : String = "(def-cartesian-product " + name
+        str = str + "\n  (" + sortNames.head 
+        for (sn <- sortNames.tail)
+        {
+            str = str + " " + sn
+        }
+        str = str + ")\n  " + thy.toString
+        
+        if (!(const.isEmpty)) { str = str + "\n  " + const.get.toString}
+        if (!(accs.isEmpty))  { str = str + "\n  " + accs.get.toString}
         str = str + ")"
         return str
     }
@@ -315,6 +360,9 @@ class LispParser
                                             
                 case Str("def-quasi-constructor") => var qc : Option[LispExp] = parseQuasiConstructor(e)
                                                      if (!(qc.isEmpty)) { return qc }
+                                                     
+                case Str("def-cartesian-product") => var cp : Option[LispExp] = parseCartesianProduct(e)
+                                                     if (!(cp.isEmpty)) { return cp }
 
                 /* Catchall case */
                 case _                      => println("DBG: unrecognised structure, not parsed!")
@@ -465,6 +513,64 @@ class LispParser
 
         } else { return None }
     }
+    
+    /* Parser for IMPS special form def-cartesian-product
+     * Documentation: IMPS manual pg. 166 */
+    private def parseCartesianProduct (e : Exp) : Option[LispExp] =
+    {
+        // Required arguments
+        var name      : Option[String]       = None
+        var sortNames : Option[List[String]] = None
+        var thy       : Option[Theory]       = None
+
+        // Optional arguments
+        var accs  : Option[Accessors]   = None
+        var const : Option[Constructor] = None
+
+        val cs : Int = e.children.length
+
+        /* Three arguments minimum because three req. arguments */
+        if (cs >= 3)
+        {
+            /* Parse positional arguments */
+            e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
+            
+            var tmplst : List[String] = List.empty
+            
+            e.children(2) match {
+				case Exp(cs, sc) => for (c <- cs) {
+					c match {
+						case Exp(List(Str(s)),_) => tmplst = tmplst ::: List(s)
+						case _                   => ()
+					}
+				}
+				case _ => println("DBG: MISMATCH") ; return None
+			}
+			if (tmplst != List.empty) { sortNames = Some(tmplst) } else { println("DBG: EMPTYLISt") ; return None }
+
+            /* Parse keyword arguments, these can come in any order */
+            var i : Int = 3
+            while (cs - i > 0)
+            {
+                e.children(i) match {
+                    case Exp(ds,src) => ds.head match
+                    {
+                        case Exp(List(Str("constructor")),_) => const = parseConstructor(Exp(ds,src))
+                        case Exp(List(Str("accessors")),_)   => accs  = parseAccessors(Exp(ds,src))
+                        case Exp(List(Str("theory")),_)      => thy   = parseTheory(Exp(ds,src))
+                        case _                               => ()
+                    }
+                    case _ => ()
+                }
+                i += 1
+            }
+
+            /* check for required arguments */
+            if (name.isEmpty || sortNames.isEmpty || thy.isEmpty) { return None }
+            else { return Some(CartesianProduct(name.get, sortNames.get, thy.get, const, accs, e.src)) }
+
+        } else { return None }
+    }
 
     /* ######### Tiny parsers, mostly arguments to def-forms ######### */
 
@@ -482,6 +588,19 @@ class LispParser
     }
 
     /* Parser for IMPS herald objects
+     * used in: def-cartesian-product */
+    private def parseConstructor(e : Exp) : Option[Constructor] =
+    {
+        if (e.children.length == 2)
+        {
+            e.children(1) match {
+                case Exp(List(Str(x)),_) => return Some(Constructor(x, e.src))
+                case _                   => return None
+            }
+        } else { return None }
+    }
+    
+    /* Parser for IMPS constructor argument
      * used in: toplevel module declaration */
     private def parseHeralding (e : Exp) : Option[Heralding] =
     {
@@ -588,6 +707,31 @@ class LispParser
             }
             if (fixed != List.empty)
             { return Some(FixedTheories(fixed, e.src)) } else { return None }
+
+        } else { return None }
+    }
+    
+    /* Parser for IMPS fixed theories objects
+     * used in: def-quasi-constructor */
+    private def parseAccessors(e : Exp) : Option[Accessors] =
+    {
+        /* Can contain one or multiple usages */
+        var accs : List[String] = List.empty
+
+        if (e.children.length >= 2)
+        {
+            var i : Int = 1
+            while (i < e.children.length)
+            {
+                e.children(i) match
+                {
+                    case Exp(List(Str(x)),_) => accs = accs ::: List(x)
+                    case _                   => return None
+                }
+                i += 1;
+            }
+            if (accs != List.empty)
+            { return Some(Accessors(accs, e.src)) } else { return None }
 
         } else { return None }
     }
