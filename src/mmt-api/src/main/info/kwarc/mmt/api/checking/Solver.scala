@@ -592,6 +592,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
            }
    }
 
+  // TODO hacky, but needed to recurse for pi-irrelevance (see lf/TermIrrelevanceRule)
+  def isTermIrrelevant(tp : Term) : Boolean =
+    rules.get(classOf[TermIrrelevanceRule]).exists(_.recapplicable(this)(tp))
+
    /**
     * @return true if unsolved variables can be filled in by prover
     */
@@ -607,8 +611,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               case None =>
                 error("unsolved unknown " + x) 
               case Some(tp) =>
-                val rO = rules.get(classOf[TermIrrelevanceRule]).find(r => r.applicable(tp))
-                if (rO.isDefined) {
+                // val rO = rules.get(classOf[TermIrrelevanceRule]).find(r => r.applicable(tp))
+                if (isTermIrrelevant(tp)) {
                   history += "proving open goal of term-irrelevant type"
                   prove(constantContext++cont,tp)(history) match {
                      case Some(p) =>

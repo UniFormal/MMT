@@ -334,7 +334,7 @@ trait ActionHandling {self: Controller =>
     report("user", "trying to clone " + p)
     val lc = oaf.clone(p) getOrElse {
       logError("cloning failed, trying to download")
-      oaf.download(p) 
+      oaf.download(p)
     }.getOrElse {
       logError("downloading failed, giving up")
       return

@@ -13,3 +13,11 @@ object TermIrrelevanceRule extends ParametricRule {
     }
   }
 }
+// @FLorian debatable, but needed when e.g. a) the proof is itself pi-bound and
+// b) is not the first argument. Then the solver will try to prove I : {<previous_args>}|-<prop>
+// and fail, because pi
+object PiIrrelevance extends TermIrrelevanceRule(Nil,Pi.path) {
+  override def recapplicable(solver : Solver)(tp: Term): Boolean = tp match {
+    case Pi(_,_,itp) => solver.isTermIrrelevant(itp)
+  }
+}
