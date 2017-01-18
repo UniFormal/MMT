@@ -19,5 +19,6 @@ object TermIrrelevanceRule extends ParametricRule {
 object PiIrrelevance extends TermIrrelevanceRule(Nil,Pi.path) {
   override def recapplicable(solver : Solver)(tp: Term): Boolean = tp match {
     case Pi(_,_,itp) => solver.isTermIrrelevant(itp)
+    case _ => false
   }
 }
