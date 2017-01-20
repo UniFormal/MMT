@@ -56,6 +56,10 @@ case class Witness(witness : String, src : SourceRef) extends LispExp {
     override def toString() : String = { return "(witness " + witness + ")"}
 }
 
+case class SourceTheory(srcthy : String, src : SourceRef) extends LispExp {
+    override def toString() : String = { return "(source-theory " + srcthy + ")"}
+}
+
 case class Accessors(accs : List[String], src : SourceRef) extends LispExp {
     override def toString() : String =
     {
@@ -88,6 +92,20 @@ case class FixedTheories(thrs : List[String], src : SourceRef) extends LispExp {
 	override def toString() : String =
     {
         var str : String = "(fixed-theories "
+        str = str + thrs.head
+        for (t <- thrs.tail)
+        {
+            str = str + " " + t
+        }
+        str = str + ")"
+        return str
+    }
+}
+
+case class SourceTheories(thrs : List[String], src : SourceRef) extends LispExp {
+	override def toString() : String =
+    {
+        var str : String = "(source-theories "
         str = str + thrs.head
         for (t <- thrs.tail)
         {
@@ -179,9 +197,27 @@ case class Constant(constantName : String,         /* Positional Argument, Requi
     }
 }
 
+/* def-imported-rewrite-rules
+ * Documentation: IMPS manual pg. 169*/
+case class ImportedRewriteRules(theoryName  : String,                 /* Positional Argument, Required */
+                                srcTheory   : Option[SourceTheory],   /* Keyword Argument, Optional */
+                                srcTheories : Option[SourceTheories], /* Keyword Argument, Optional */
+                                src         : SourceRef)              /* SourceRef for MMT */
+                                extends LispExp
+{
+	override def toString() : String = 
+	{
+		var str : String = "(def-imported-rewrite-rules " + theoryName
+		if (!(srcTheory.isEmpty)) { str = str + "\n  " + srcTheory.get.toString}
+		if (!(srcTheories.isEmpty)) { str = str + "\n  " + srcTheories.get.toString}
+		str = str + ")"
+		return str
+	}
+}
+
 /* def-quasi-constructor
  * Documentation: IMPS manual pgs. 176, 177 */
-case class QuasiConstructor(name             : String,               /* Positional Argument, Required */
+case class QuasiConstructor(name            : String,                /* Positional Argument, Required */
                            lambdaExprString : String,                /* Positional Argument, Required */
                            language         : Language,              /* Keyword Argument, Required */
                            fixedTheories    : Option[FixedTheories], /* Keyword Argument, Optional */
@@ -363,6 +399,9 @@ class LispParser
                                                      
                 case Str("def-cartesian-product") => var cp : Option[LispExp] = parseCartesianProduct(e)
                                                      if (!(cp.isEmpty)) { return cp }
+                                                     
+                case Str("def-imported-rewrite-rules") => var irr : Option[LispExp] = parseImportedRewriteRules(e)
+                                                          if (!(irr.isEmpty)) { return irr } 
 
                 /* Catchall case */
                 case _                      => println("DBG: unrecognised structure, not parsed!")
@@ -514,6 +553,47 @@ class LispParser
         } else { return None }
     }
     
+    /* Parser for IMPS special form def-imported-rewrite-rules
+     * Documentation: IMPS manual pg. 169 */
+    private def parseImportedRewriteRules (e : Exp) : Option[LispExp] =
+    {
+        // Required arguments
+        var name   : Option[String]   = None
+
+        // Optional arguments
+        var srcTheory   : Option[SourceTheory]   = None
+        var srcTheories : Option[SourceTheories] = None
+
+        val cs : Int = e.children.length
+
+        if (cs >= 2)
+        {
+            /* Parse positional arguments */
+            e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
+
+            /* Parse keyword arguments, these can come in any order */
+            var i : Int = 2
+            while (cs - i > 0)
+            {
+                e.children(i) match {
+                    case Exp(ds,src) => ds.head match
+                    {
+                        case Exp(List(Str("src-theory")),_)   => srcTheory   = parseSourceTheory(Exp(ds,src))
+                        case Exp(List(Str("src-theories")),_) => srcTheories = parseSourceTheories(Exp(ds,src))
+                        case _                                => ()
+                    }
+                    case _ => ()
+                }
+                i += 1
+            }
+
+            /* check for required arguments */
+            if (name.isEmpty || (srcTheory.isEmpty && srcTheories.isEmpty)) { return None }
+            else { return Some(ImportedRewriteRules(name.get, srcTheory, srcTheories, e.src)) }
+
+        } else { return None }
+    }
+    
     /* Parser for IMPS special form def-cartesian-product
      * Documentation: IMPS manual pg. 166 */
     private def parseCartesianProduct (e : Exp) : Option[LispExp] =
@@ -624,6 +704,18 @@ class LispParser
             }
         } else { return None }
     }
+    
+    /* Parser for IMPS source-theory argument objects
+     * used in: def-imported-rewrite-rules... */
+    private def parseSourceTheory (e : Exp) : Option[SourceTheory] =
+    {
+        if (e.children.length == 2) {
+            e.children(1) match {
+                case Exp(List(Str(x)),_) => return Some(SourceTheory(x, e.src))
+                case _                   => return None
+            }
+        } else { return None }
+    }
 
     /* Parser for IMPS witness argument objects
      * used in: def-atomic-sort, ... */
@@ -707,6 +799,31 @@ class LispParser
             }
             if (fixed != List.empty)
             { return Some(FixedTheories(fixed, e.src)) } else { return None }
+
+        } else { return None }
+    }
+    
+    /* Parser for IMPS source theories objects
+     * used in: def-imported-rewrite-rules */
+    private def parseSourceTheories (e : Exp) : Option[SourceTheories] =
+    {
+        /* Can contain one or multiple usages */
+        var source : List[String] = List.empty
+
+        if (e.children.length >= 2)
+        {
+            var i : Int = 1
+            while (i < e.children.length)
+            {
+                e.children(i) match
+                {
+                    case Exp(List(Str(x)),_) => source = source ::: List(x)
+                    case _                   => return None
+                }
+                i += 1;
+            }
+            if (source.length >= 1)
+            { return Some(SourceTheories(source, e.src)) } else { return None }
 
         } else { return None }
     }
