@@ -235,6 +235,28 @@ case class QuasiConstructor(name            : String,                /* Position
     }
 }
 
+/* def-schematic-macete
+ * Decomentation: IMPS manual pgs. 180, 181 */
+case class SchematicMacete(name                 : String,    /* Positional Argument, Required */
+                           formula              : String,    /* Positional Argument, Required */
+                           thy                  : Theory,    /* Keyword Argument, Required */
+                           nullPresent          : Boolean,   /* Keyword Argument, Optional */
+                           transportablePresent : Boolean,   /* Keyword Argument, Optional */
+                           src                  : SourceRef) /* SourceRef for MMT */
+                           extends LispExp
+{
+	override def toString() : String = 
+	{
+		var str : String = "(def-schematic-macete " + name
+		str = str + "\n  " + formula
+		if (nullPresent) { str = str + "\n  null" }
+		if (transportablePresent) { str = str + "\n  transportable"}
+		str = str + "\n  " + thy.toString
+		str = str + ")"
+		return str
+	}
+}
+
 /* ######### PARSER ######### */
 
 class LispParser
@@ -402,6 +424,9 @@ class LispParser
                                                      
                 case Str("def-imported-rewrite-rules") => var irr : Option[LispExp] = parseImportedRewriteRules(e)
                                                           if (!(irr.isEmpty)) { return irr } 
+                                                          
+                case Str("def-schematic-macete") => var sm : Option[LispExp] = parseSchematicMacete(e)
+                                                    if (!(sm.isEmpty)) { return sm } 
 
                 /* Catchall case */
                 case _                      => println("DBG: unrecognised structure, not parsed!")
@@ -648,6 +673,55 @@ class LispParser
             /* check for required arguments */
             if (name.isEmpty || sortNames.isEmpty || thy.isEmpty) { return None }
             else { return Some(CartesianProduct(name.get, sortNames.get, thy.get, const, accs, e.src)) }
+
+        } else { return None }
+    }
+    
+    /* Parser for IMPS special form def-schematic-macete
+     * Documentation: IMPS manual pgs. 180, 181 */
+    private def parseSchematicMacete (e : Exp) : Option[LispExp] =
+    {
+		println(e)
+		
+        // Required arguments
+        var name    : Option[String] = None
+        var formula : Option[String] = None
+        var thy     : Option[Theory] = None
+
+        // Optional arguments
+        var nullarg  : Boolean = false
+        var transarg : Boolean = false
+
+        val cs : Int = e.children.length
+
+        /* Three arguments minimum because three req. arguments */
+        if (cs >= 3)
+        {
+            /* Parse positional arguments */
+            e.children(1) match { case Exp(List(Str(x)), _) => name    = Some(x) }
+            e.children(2) match { case Exp(List(Str(y)), _) => formula = Some(y) }
+
+            /* Parse keyword arguments, these can come in any order */
+            var i : Int = 3
+            while (cs - i > 0)
+            {
+                e.children(i) match
+                {
+                    case Exp(ds,src) => ds.head match
+                    {	
+                        case Exp(List(Str("theory")),_) => thy = parseTheory(Exp(ds,src))
+                        case (Str("null"))              => nullarg  = true
+                        case (Str("transportable"))     => transarg = true
+                        case _                          => ()
+                    }
+                    case _ => ()
+                }
+                i += 1
+            }
+
+            /* check for required arguments */
+            if (name.isEmpty || formula.isEmpty || thy.isEmpty) { return None }
+            else { return Some(SchematicMacete(name.get, formula.get, thy.get, nullarg, transarg, e.src)) }
 
         } else { return None }
     }
