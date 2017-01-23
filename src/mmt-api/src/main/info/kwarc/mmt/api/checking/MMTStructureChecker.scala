@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.checking
 
-import info.kwarc.mmt.api._
 
+import info.kwarc.mmt.api._
 import documents._
 import modules._
 import symbols._
@@ -10,8 +10,9 @@ import ontology._
 import parser._
 import frontend._
 import opaque._
-
 import objects.Conversions._
+
+
 
 /** variant of CheckingEnvironment that carries around more structure */
 class ExtendedCheckingEnvironment(val ce: CheckingEnvironment, val objectChecker: ObjectChecker, val rules: RuleSet, p: Path) {
@@ -43,6 +44,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   def apply(e: StructuralElement)(implicit ce: CheckingEnvironment) {
     val cont = getContext(e)
     check(cont, e)
+  }
+  def timeoutCheck(e: StructuralElement, t : Int)(implicit ce: CheckingEnvironment) {
+    val cont = getContext(e)
+    check(cont, e,t)
   }
 
   /** computes the context in which an element must be checked
@@ -81,7 +86,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @param context all variables and theories that may be used in e (including the theory in which is declared)
     * @param e       the element to check
     */
-  private def check(context: Context, e: StructuralElement)(implicit ce: CheckingEnvironment) {
+  private def check(context: Context, e: StructuralElement, timeout : Int = 0)(implicit ce: CheckingEnvironment) {
     val rules = RuleSet.collectRules(controller, context)
     implicit val env = new ExtendedCheckingEnvironment(ce, objectChecker, rules, e.path)
     val path = e.path
@@ -101,7 +106,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         // check each child and mark it as checked (independent of whether there are errors)
         logGroup {
           tDecls foreach { d =>
-            check(contextI, d)
+            check(contextI, d, timeout)
             UncheckedElement.erase(d)
           }
         }
@@ -111,7 +116,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         val contextI = context ++ getExtraInnerContext(c)
         logGroup {
           c.getPrimitiveDeclarations foreach {
-            i => check(contextI, i)
+            i => check(contextI, i,timeout)
           }
         }
         checkElementEnd(c, context)
@@ -123,7 +128,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
       //TODO check all declarations, components? currently done in each OpaqueChecker
       case r: NRef =>
-        check(context, controller.get(r.target))
+        check(context, controller.get(r.target),timeout)
       case dd: DerivedDeclaration =>
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         sfOpt match {
@@ -135,11 +140,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               // not using tpR here because source references are gone
             }
             val conInner = sf.getInnerContext(dd)
-            check(context ++ conInner, dd.module)
+            check(context ++ conInner, dd.module,timeout)
             sf.check(dd)
         }
       case nm: NestedModule =>
-        check(context, nm.module)
+        check(context, nm.module,timeout)
       case t: DefinedTheory =>
         val dfR = checkTheory(context, t.df)
         t.dfC.analyzed = dfR
@@ -188,7 +193,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                env.errorCont(e)
              }
           } else {
-             env.errorCont(InvalidElement(rc, "type of rule constant not fully checked"))
+            env.errorCont(InvalidElement(rc, "type of rule constant not fully checked"))
           }
         }
       case c: Constant =>
@@ -216,73 +221,114 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           val (tR, valid) = checkTermTop(context ++ pr.unknown ++ pr.free, pr.term)
           (ParseResult(pr.unknown, pr.free, tR), valid)
         }
-        // = checking the type =
-        // check that the type of c (if given) is in a universe
-        getTermToCheck(c.tpC, "type") foreach { t =>
-          val (pr, valid) = prepareTerm(t)
-          if (valid) {
-            val j = Inhabitable(Stack(pr.free), pr.term)
-            objectChecker(CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j), env.rules)
-          }
-        }
-        // == additional check in a link ==
-        // translate the type of cOrg
-        linkInfo foreach {
-          case (_, Some(expType), _) => c.tp match {
-            case Some(tp) =>
-            // c already has a type: keep it, but check compatibility
-            //val j = Subtype(Stack(scope, parR), tp, expType)
-            //objectChecker(ValidationUnit(c.path $ TypeComponent, Context(), j))
-            case None =>
-              // c has no type: use the translated type
-              c.tpC.analyzed = expType
-          }
-          case _ => // cOrg has no type, nothing to do
-        }
-        // = checking the definiens =
-        // check that the definiens of c (if given) type-checks against the type of c (if given)
-        val tpVar = CheckingUnit.unknownType
-        getTermToCheck(c.dfC, "definiens") foreach { d =>
-          val (pr, valid) = prepareTerm(d)
-          if (valid) {
-            val cp = c.path $ DefComponent
-            var performCheck = true
-            val (unknowns, expTp, inferType) = c.tp match {
-              case Some(t) =>
-                (pr.unknown, t, false)
-              case None =>
-                if (d.isInstanceOf[OMID])
-                // no need to check atomic definiens without expected type
-                // slightly hacky trick to allow atomic definitions in the absence of a type system
-                   performCheck = false
-                (pr.unknown ++ VarDecl(tpVar, None, None, None), OMV(tpVar), true)
+
+        def checknow = {
+          // = checking the type =
+          // check that the type of c (if given) is in a universe
+          getTermToCheck(c.tpC, "type") foreach { t =>
+            val (pr, valid) = prepareTerm(t)
+            if (valid) {
+              val j = Inhabitable(Stack(pr.free), pr.term)
+              objectChecker(CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j), env.rules)
             }
-            val j = Typing(Stack(pr.free), pr.term, expTp, None)
-            if (performCheck) {
-              val cr = objectChecker(CheckingUnit(Some(cp), context, unknowns, j), env.rules)
-              if (inferType && cr.solved) {
-                // if no expected type was known but the type could be inferred, add it
-                cr.solution.foreach { sol =>
-                  val tp = sol(tpVar).df
-                  c.tpC.analyzed = tp
+          }
+          // == additional check in a link ==
+          // translate the type of cOrg
+          linkInfo foreach {
+            case (_, Some(expType), _) => c.tp match {
+              case Some(tp) =>
+              // c already has a type: keep it, but check compatibility
+              //val j = Subtype(Stack(scope, parR), tp, expType)
+              //objectChecker(ValidationUnit(c.path $ TypeComponent, Context(), j))
+              case None =>
+                // c has no type: use the translated type
+                c.tpC.analyzed = expType
+            }
+            case _ => // cOrg has no type, nothing to do
+          }
+          // = checking the definiens =
+          // check that the definiens of c (if given) type-checks against the type of c (if given)
+          val tpVar = CheckingUnit.unknownType
+          getTermToCheck(c.dfC, "definiens") foreach { d =>
+            val (pr, valid) = prepareTerm(d)
+            if (valid) {
+              val cp = c.path $ DefComponent
+              var performCheck = true
+              val (unknowns, expTp, inferType) = c.tp match {
+                case Some(t) =>
+                  (pr.unknown, t, false)
+                case None =>
+                  if (d.isInstanceOf[OMID])
+                  // no need to check atomic definiens without expected type
+                  // slightly hacky trick to allow atomic definitions in the absence of a type system
+                    performCheck = false
+                  (pr.unknown ++ VarDecl(tpVar, None, None, None), OMV(tpVar), true)
+              }
+              val j = Typing(Stack(pr.free), pr.term, expTp, None)
+              if (performCheck) {
+                val cr = objectChecker(CheckingUnit(Some(cp), context, unknowns, j), env.rules)
+                if (inferType && cr.solved) {
+                  // if no expected type was known but the type could be inferred, add it
+                  cr.solution.foreach { sol =>
+                    val tp = sol(tpVar).df
+                    c.tpC.analyzed = tp
+                  }
                 }
               }
             }
           }
-        }
-        // == additional check in a link ==
-        // translate the definiens of cOrg
-        linkInfo foreach {
-          case (_, _, Some(expDef)) => c.df match {
-            case Some(df) =>
-            // c already has a definiens: keep it, but check equality
-            //val j = Equality(Stack(scope, parR), df, expDef, None)
-            //objectChecker(ValidationUnit(c.path $ DefComponent, Context(), j))
-            case None =>
-              // c has no definiens: use the translated definiens
-              c.dfC.analyzed = expDef
+          // == additional check in a link ==
+          // translate the definiens of cOrg
+          linkInfo foreach {
+            case (_, _, Some(expDef)) => c.df match {
+              case Some(df) =>
+              // c already has a definiens: keep it, but check equality
+              //val j = Equality(Stack(scope, parR), df, expDef, None)
+              //objectChecker(ValidationUnit(c.path $ DefComponent, Context(), j))
+              case None =>
+                // c has no definiens: use the translated definiens
+                c.dfC.analyzed = expDef
+            }
+            case _ => // cOrg has no definiens, nothing to do
           }
-          case _ => // cOrg has no definiens, nothing to do
+        }
+        if (timeout == 0) checknow else {
+          import scala.concurrent.duration._
+          import java.util.concurrent.TimeoutException
+          import scala.concurrent.{Await, Future, ExecutionContext}
+          object Execcont extends AnyRef with ExecutionContext {
+            @volatile var lastThread: Option[Thread] = None
+
+            override def execute(runnable: Runnable): Unit = ExecutionContext.Implicits.global.execute(new Runnable() {
+              override def run(): Unit = {
+                lastThread = Some(Thread.currentThread)
+                runnable.run()
+              }
+            })
+
+            def kill = try {
+              lastThread.foreach(_.stop)
+            } catch {
+              case e: java.lang.ThreadDeath => log("killed!")
+            }
+
+            override def reportFailure(cause: Throwable): Unit = {
+              log(cause.getCause.toString)
+            }
+          }
+          try {
+            Await.result(Future {
+              checknow
+            }(Execcont), timeout seconds)
+          } catch {
+            case e: TimeoutException =>
+              log("Timed out: " + c)
+              try {
+                Execcont.kill
+              } catch {
+                case e: java.lang.ThreadDeath => log("Thread killed!")
+              }
+          }
         }
       case _ =>
         //succeed for everything else but signal error
@@ -585,7 +631,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         val synType = l.rt.synType
         checkTerm(context, synType)
         val rts = env.rules.get(classOf[uom.RealizedType])
-        if (!(rts.exists(_ == l.rt)))
+        if (!rts.exists(_ == l.rt))
           env.errorCont(InvalidObject(s, "literal not in scope: " + l.toString))
         l
       // resolve type and parse unknown literal, return OMLIT
@@ -609,9 +655,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     *         if context is valid, then this succeeds iff context ++ con is valid
     */
   private def checkContext(context: Context, con: Context)(implicit env: ExtendedCheckingEnvironment): Context = {
-    con.mapVarDecls {case (sofar, vd) =>
-      val currentContext = context ++ sofar
-      vd match {
+    var ret = Context.empty
+    def currentContext = context ++ ret
+    con.foreach {vd =>
+      val r = vd match {
         case dv @ DerivedVarDecl(name,feat,_,args) =>
           val sfOpt = extman.get(classOf[StructuralFeature], feat)
           if (sfOpt.isDefined) {
@@ -640,7 +687,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           vdR.copyFrom(vd)
           List(vdR)
       }
-    }.flatten
+      ret = ret ++ r
+    }
+    ret
   }
 
   /** Checks structural well-formedness of a substitution relative to a home theory.

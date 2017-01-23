@@ -290,8 +290,12 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
   private def applyParams(body : DeclaredTheory,toTerm : LocalName => Term)(vars : Context) = new StatelessTraverser {
     val varsNames = vars.map(_.name)
     def traverse(t: Term)(implicit con: Context, state: State) : Term = t match {
-      case OMS(p) if p.module == body.path => //dd.module.path =>
+      case OMS(p) if p.module == body.path && p.name.steps.head.isInstanceOf[SimpleStep] => //dd.module.path =>
         vars.foldLeft[Term](toTerm(LocalName(body.path) / p.name))((tm,v) => OMA(OMS(applys),List(tm,OMV(v.name))))
+      case OMS(p) if p.module == body.path =>
+        toTerm(p.name)
+      case OMV(ln @ LocalName(ComplexStep(mp) :: rest)) =>
+        toTerm(ln)
       case OMBINDC(bind, bvars, scps) =>
         // rename all bound variables that are among the parameters to avoid capture
         val (bvarsR, bvarsSub) = Context.makeFresh(bvars, varsNames ::: con.domain)
@@ -306,31 +310,47 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
   }
 
   def elaborateInContext(context: Context, dv: VarDecl): Context = dv match {
-    case DerivedVarDecl(LocalName(ComplexStep(dom) :: Nil), `id`,`mpath`, List(OMMOD(q))) if dom == q =>
+    case DerivedVarDecl(LocalName(ComplexStep(dom) :: Nil), `id`,`mpath`, List(OMMOD(q))) if dom == q && !context.contains(dv) =>
       val body = controller.simplifier.getBody(context, OMMOD(dom)) match {
         case t : DeclaredTheory => t
         case _ => throw GetError("Not a declared theory: " + dom)
       }
       controller.simplifier.apply(body)
-      implicit val vars = body.parameters
-      val translator = mkTranslator(body,n => OMV(n))
+      implicit val vars = body.parameters.filter({
+        case DerivedVarDecl(_,_,_,_) => false
+        case StructureVarDecl(_,_,_) => false
+        case _ => true
+      })
+      val translator = mkTranslator(body,n => OMV(n))(vars)
       val prefix = ComplexStep(dom)
-      body.getDeclarationsElaborated.flatMap {
+      val pdecs = body.getDerivedDeclarations(feature)
+      val fin = body.parameters.flatMap{
+        case ndv @ DerivedVarDecl(_,_,_,_) => ndv :: elaborateInContext(context,ndv)
+        case _ => Nil
+      } ::: body.getDerivedDeclarations(feature).flatMap {
         case d : DerivedDeclaration if d.feature == feature =>
-          if (!body.getDerivedDeclarations(feature).map(_.name).contains(d.name)) {
+          val nd = DerivedVarDecl(d.name,id,mpath,d.tpC.get.toList)//(dd.home,d.name,feature,d.tpC,d.notC)
+          nd :: elaborateInContext(context,nd)
+      } ::: body.getDeclarationsElaborated.flatMap {
+        case d : DerivedDeclaration if d.feature == feature => Nil
+          /*
             val nd = DerivedVarDecl(d.name,id,mpath,d.tpC.get.toList)//(dd.home,d.name,feature,d.tpC,d.notC)
             nd :: elaborateInContext(context,nd)
-          }
-          else Nil
+            */
+        case d if pdecs.exists(i => d.getOrigin == ElaborationOf(i.path)) => Nil
         case d : FinalConstant =>
           val ret = VarDecl(prefix / d.name,d.tp.map(translator.applyType(context,_)),
             d.df.map(translator.applyDef(context,_)),d.not)//d.translate(parent.toTerm, prefix, translator)
           List(ret)
       }
+      fin.indices.collect{
+        case i if !(fin.take(i) contains fin(i)) => fin(i)
+      }.toList
     case _ => Context.empty
   }
 
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) : Elaboration = {
+    // println("Elaborating " + dd.name + " in " + parent.name)
     val dom = getDomain(dd)
     val context = parent.getInnerContext
     val body = controller.simplifier.getBody(context, dom) match {
@@ -338,25 +358,74 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
       case _ => throw GetError("Not a declared theory: " + dom)
     }
     controller.simplifier.apply(body)
-    implicit val vars = body.parameters
-    /*
+    implicit val vars = body.parameters.filter({
+      case DerivedVarDecl(_,_,_,_) => false
+      case StructureVarDecl(_,_,_) => false
+      case _ => true
+    })
+/*
     if (vars.isEmpty) return new Elaboration {
-      val includes = PlainInclude(parent.path,body.path) :: body.getIncludes.map(PlainInclude(parent.path,_))
-      def domain = includes.map(_.name)
-      def getO(name: LocalName): Option[Declaration] = includes.find(_.name == name)
+      def domain = LocalName(body.path) :: Nil
+      def getO(name : LocalName) : Option[Declaration] =
+        if (name == LocalName(body.path)) Some(PlainInclude(parent.path,body.path)) else None
     }
-    */
-    val translator = mkTranslator(body,n => OMS(dd.parent ? n))
+*/
 
     val prefix = dd.name
+    val parth = parent.asInstanceOf[DeclaredTheory] // TODO
+    val pvars = parth.parameters.collect{
+      case DerivedVarDecl(LocalName(ComplexStep(n) :: rest2),`feature`,_,_) => n
+    }
+    def toTerm(ln : LocalName) = ln match {
+      case LocalName(ComplexStep(cs) :: rest) if pvars contains cs =>
+        OMV(ln)
+      case _ => OMS(dd.parent ? ln)
+    }
+
+    val translator = mkTranslator(body,n => toTerm(n))(vars)
+
     val elab = new Elaboration {
-      val decls = body.getDeclarationsElaborated.flatMap {
-        case d : DerivedDeclaration if d.feature == feature =>
-          if (!body.getDerivedDeclarations(feature).map(_.name).contains(d.name)) {
-            val nd = new DerivedDeclaration(dd.home,d.name,feature,d.tpC,d.notC)
-            nd :: elaborate(parent,nd).getDeclarations
+      var ndecs : List[DerivedDeclaration] = Nil
+      def pdecs = parth.getDerivedDeclarations(feature) ::: ndecs
+      val alldecls = body.parameters.flatMap{
+        case DerivedVarDecl(mp,`feature`,_,args) =>
+          val old = pdecs.find(_.name == mp)
+          if (old.isEmpty) {
+            val nd = new DerivedDeclaration(dd.home,mp,feature,TermContainer(args.head),NotationContainer(None))
+            ndecs ::= nd
+            val ret = elaborate(parent,nd).getDeclarations
+            ElaboratedElement.set(nd)
+            ndecs = ndecs ::: ret collect {
+              case in : DerivedDeclaration if in.feature == feature => in
+            }
+            nd :: ret
+          } else {
+            controller.simplifier.apply(old.get)
+            Nil
           }
-          else Nil
+        case _ => Nil
+      } ::: body.getDerivedDeclarations(feature).flatMap(d => {
+        val old = pdecs.find(_.name == d.name)
+        if (old.isEmpty) {
+          val nd = new DerivedDeclaration(dd.home,d.name,feature,d.tpC,d.notC)
+          ndecs ::= nd
+          // elaborate(parent,nd)
+          val ret = elaborate(parent,nd).getDeclarations
+          ElaboratedElement.set(nd)
+          ndecs = ndecs ::: ret collect {
+            case in : DerivedDeclaration if in.feature == feature => in
+          }
+          nd :: ret
+        }
+        else {
+          // elaborate(parent,old.get)
+          controller.simplifier.apply(old.get)
+          Nil
+        }
+      }) ::: body.getDeclarationsElaborated.flatMap {
+        case d : DerivedDeclaration if d.feature == feature =>
+          Nil // case can probably be eliminated
+        case d if body.getDerivedDeclarations(feature).exists(i => d.getOrigin == ElaborationOf(i.path)) => Nil
         case d =>
           // println(controller.presenter.asString(d))
           val ret = d.translate(parent.toTerm, prefix, translator)
@@ -377,6 +446,10 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
         case decl => throw LocalError("TODO: BoundTheoryParameters/Elaboration Declaration case " + decl.getClass)
       */
       }
+      val decls = alldecls.indices.collect{
+        case i if !alldecls.take(i).exists(d => d.name == alldecls(i).name) &&
+          !parth.getDeclarationsElaborated.exists(d => d.name == alldecls(i).name) => alldecls(i)
+      }.toList
       //body
       def domain: List[LocalName] = decls.map(_.name)
       def getO(name: LocalName): Option[Declaration] = decls.find(_.name == name)

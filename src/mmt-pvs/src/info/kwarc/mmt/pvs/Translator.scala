@@ -13,7 +13,7 @@ import info.kwarc.mmt.api.objects._
 import utils._
 import archives._
 import info.kwarc.mmt.LFX.Subtyping.subtypeJudg
-import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, RelationHandler}
+import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureChecker, RelationHandler}
 
 class TheoryState(val parent : DPath, val name : LocalName, val meta : MPath) {
   val path : MPath = parent ? name
@@ -129,6 +129,14 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         case e : Exception => throw Dependency(deps.head)
       }
       log("Translated: " + state.th.name)
+
+      val ex = controller.getO(modsM.head.path) match {
+        case Some(dt : DeclaredTheory) =>
+          log("Already done")
+          return BuildResult.empty
+        case _ => None
+      }
+
       val doc = new Document(bt.narrationDPath, true)
       val ths = modsM map (m => {
         val theory = new DeclaredTheory(m.parent,m.name,Some(m.meta))//,m.parameters)
@@ -148,8 +156,8 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       logGroup {
         val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
           throw GeneralError(s"no checker $id found")
-        }
-        ths foreach (p => checker.apply(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore)))
+        }.asInstanceOf[MMTStructureChecker]
+        ths foreach (p => checker.timeoutCheck(p,300)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore)))
       }
       index(doc)
       BuildSuccess(deps.map(LogicalDependency),modsM.map(m => LogicalDependency(m.path)))
@@ -269,7 +277,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       case formal_subtype_decl(ChainedDecl(NamedDecl(id,_,_),_,_),nonempty,sup,pred) =>
         val name = newName(id)
         state.unknowns = 0
-        val actsup = doType(sup)
+        val actsup = doType(sup._declared)
         val v = VarDecl(name,Some(state.bindUnknowns(PVSTheory.powertp(actsup))),None,None)
         state.th.parameters = state.th.parameters ++ v
         state.inFormals = false

@@ -61,3 +61,16 @@ abstract class DennisTest(prefixes : String*) extends Test(
   true,
   Some("/home/jazzpirate/work/mmtlog.html")
 )
+
+abstract class TomTest(prefixes : String*) extends Test(
+  "/home/twiesing/Projects/KWARC/MathHub/localmh/MathHub",
+  prefixes.toList,
+  "",
+  Some(8080),
+  true,
+  None
+)
+
+object RunTom extends TomTest {
+  def run : Unit = Unit
+}
