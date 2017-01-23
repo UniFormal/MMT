@@ -134,6 +134,9 @@ class NotationBasedParser extends ObjectParser {
    * @param pu the parsing unit
    */
   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): ParseResult = {
+    if (pu.isKilled) {
+      return DefaultObjectParser(pu)
+    }
     implicit val puI = pu
     //gathering notations and lexer extensions in scope
     val (parsing, lexing, _) = getRules(pu.context)
@@ -158,7 +161,9 @@ class NotationBasedParser extends ObjectParser {
         // scanner initially scans with top rule, now scan with all notations in increasing order of precedence
         // TODO does it make sense to sort by meta-theory-level first, then by precedence?
         notations foreach {
-          case (priority, nots) => sc.scan(nots)
+          case (priority, nots) =>
+            if (!pu.isKilled)
+               sc.scan(nots)
         }
         val scanned = sc.tl.getTokens match {
           case hd :: Nil => hd

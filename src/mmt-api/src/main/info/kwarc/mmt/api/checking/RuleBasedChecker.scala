@@ -17,6 +17,19 @@ class RuleBasedChecker extends ObjectChecker {
    override val logPrefix = "object-checker"
 
    def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) = {
+      val con = cu.judgement.context
+      val tm = cu.judgement.wfo
+      val prOrg = ParseResult(cu.unknowns, con, tm)
+      
+      def fail(msg: String) = {
+        env.errorCont(InvalidUnit(cu, NoHistory, msg))
+        val tm = ParseResult
+        CheckingResult(false, None, prOrg.toTerm)
+      }
+      if (cu.isKilled) {
+        fail("not checked")
+      }
+      
       log("checking unit " + cu.component.getOrElse("without URI") + ": " + cu.judgement.present(o => controller.presenter.asString(o)))
       // if a component is given, we perform side effects on it
       val updateComponent = cu.component map {comp =>
@@ -37,9 +50,7 @@ class RuleBasedChecker extends ObjectChecker {
       val psol = solver.getPartialSolution
       val remUnknowns = solver.getUnsolvedVariables 
       val subs = psol.toPartialSubstitution
-      val con = cu.judgement.context
-      val tm = cu.judgement.wfo
-      val contm = ParseResult(Context.empty, con, tm).toTerm //bundle them to make substitution easier
+      val contm = prOrg.copy(unknown = Context.empty).toTerm
       val contmI = contm ^? subs //fill in inferred values
       val contmIS = SimplifyInferred(contmI, rules, cu.context ++ remUnknowns) //substitution may have created simplifiable terms
       TermProperty.eraseAll(contmIS) // reset term properties (whether a term is, e.g., simplified, depends on where it is used)

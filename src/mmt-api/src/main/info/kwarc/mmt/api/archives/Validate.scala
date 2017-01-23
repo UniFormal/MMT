@@ -8,6 +8,8 @@ import utils._
 
 import scala.collection._
 
+class ValidationTask extends MMTTask 
+
 /** This trait adds validation operations to Archive's */
 trait Validate {self: Archive =>
   /** checks modules in content structurally and generates term-level dependency relation in .occ files */
@@ -24,7 +26,7 @@ trait Validate {self: Archive =>
     traverse(content, in, Archive.traverseIf("omdoc")) { case Current(_, inPath) =>
       rels.clear
       val mpath = Archive.ContentPathToMMTPath(inPath)
-      checker(mpath)(new CheckingEnvironment(new ErrorLogger(report), relHandler))
+      checker(mpath)(new CheckingEnvironment(new ErrorLogger(report), relHandler, new ValidationTask))
       val relFile = (this / relational / inPath).setExtension("occ")
       val relFileHandle = File.Writer(relFile)
       rels foreach { r => relFileHandle.write(r.toPath + "\n") }
@@ -36,7 +38,7 @@ trait Validate {self: Archive =>
   def validate(in: FilePath = EmptyPath, controller: Controller) {
     traverse(content, in, Archive.traverseIf("omdoc")) { case Current(_, inPath) =>
       val mpath = Archive.ContentPathToMMTPath(inPath)
-      controller.checkAction(mpath, "mmt")
+      controller.checkAction(mpath, "mmt")(new ValidationTask)
     }
   }
 }

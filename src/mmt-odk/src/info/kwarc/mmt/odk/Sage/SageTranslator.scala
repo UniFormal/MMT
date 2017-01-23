@@ -149,7 +149,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
       throw GeneralError(s"no mmt checker found")
     }
     //println(axth)
-    (axth :: structh :: theories.values.toList) foreach (th => checker(th)(new CheckingEnvironment(new ErrorLogger(controller.report), RelationHandler.ignore)))
+    (axth :: structh :: theories.values.toList) foreach (th => checker(th)(new CheckingEnvironment(new ErrorLogger(controller.report), RelationHandler.ignore, MMTTask.generic)))
     //println(axth)
     //index(doc)
     //index(catdoc)

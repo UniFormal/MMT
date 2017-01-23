@@ -13,7 +13,7 @@ class RuleBasedProver extends Prover {
     */
    def apply(pu: ProvingUnit, rules: RuleSet, levels: Int) = {
       val gl = new Goal(pu.context, pu.tp)
-      val searcher = new Searcher(controller, gl, rules, pu.logPrefix)
+      val searcher = new Searcher(controller, gl, rules, pu)
       val found = searcher(levels)
       val proof = if (found) Some(gl.proof) else None
       (found, proof)
@@ -26,7 +26,7 @@ class RuleBasedProver extends Prover {
     */
    def interactive(pu: ProvingUnit, rules: RuleSet, levels: Int): List[Term] = {
       val gl = new Goal(pu.context, pu.tp)
-      val searcher = new Searcher(controller, gl, rules, pu.logPrefix)
+      val searcher = new Searcher(controller, gl, rules, pu)
       searcher.interactive(levels)
    }
 }

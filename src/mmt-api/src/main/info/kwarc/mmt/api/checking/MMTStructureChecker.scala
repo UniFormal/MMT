@@ -89,6 +89,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   private def check(context: Context, e: StructuralElement, timeout : Int = 0)(implicit ce: CheckingEnvironment) {
     val rules = RuleSet.collectRules(controller, context)
     implicit val env = new ExtendedCheckingEnvironment(ce, objectChecker, rules, e.path)
+    implicit val task = ce.task
     val path = e.path
     log("checking " + path + " using the following rules: " + rules.toString)
     e match {
@@ -229,7 +230,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             val (pr, valid) = prepareTerm(t)
             if (valid) {
               val j = Inhabitable(Stack(pr.free), pr.term)
-              objectChecker(CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j), env.rules)
+              objectChecker(CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j).diesWith, env.rules)
             }
           }
           // == additional check in a link ==
@@ -266,7 +267,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               }
               val j = Typing(Stack(pr.free), pr.term, expTp, None)
               if (performCheck) {
-                val cr = objectChecker(CheckingUnit(Some(cp), context, unknowns, j), env.rules)
+                val cr = objectChecker(CheckingUnit(Some(cp), context, unknowns, j).diesWith, env.rules)
                 if (inferType && cr.solved) {
                   // if no expected type was known but the type could be inferred, add it
                   cr.solution.foreach { sol =>
@@ -292,6 +293,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             case _ => // cOrg has no definiens, nothing to do
           }
         }
+        //TODO the code below has to go; if at all, it should use CancellableTask, but the low-level stuff never belongs here
         if (timeout == 0) checknow else {
           import scala.concurrent.duration._
           import java.util.concurrent.TimeoutException

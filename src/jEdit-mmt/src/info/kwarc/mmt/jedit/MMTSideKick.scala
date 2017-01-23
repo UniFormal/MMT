@@ -44,7 +44,8 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
                   // run theorem prover to find options to fill the hole
                   val g = new proving.Goal(a.context, t)
                   val rules = RuleSet.collectRules(controller, a.context) //TODO should be cached
-                  val prover = new proving.Searcher(controller, g, rules, logPrefix)
+                  val pu = proving.ProvingUnit(None, g.context, g.conc, logPrefix)
+                  val prover = new proving.Searcher(controller, g, rules, pu)
                   log(g.present(2)(prover.presentObj, None,None))
                   val options = prover.interactive(3)
                   val comp = new ProverCompletion(view, controller, a.region, options)
@@ -111,29 +112,11 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          val tree = new SideKickParsedData(path.toJava.getName)
          val root = tree.root
          // read the document in a task that can be cancelled by the stop method
-         val task = new CancellableTask(controller.read(ps, true, true)(errorCont) match {
+         val doc = controller.read(ps, true, true)(errorCont) match {
             case d: Document => d
             case _ => throw ImplementationError("document expected")
-         })
-         currentTask = Some(task)
-         // inspect the result of reading, fall back to loading whatever document is in memory
-         val doc = task.result match {
-           case Success(d) => d
-           case Failure(TaskCancelled) =>
-             val expectedPath = ps.parentInfo match {
-               case IsRootDoc(dp) => dp
-               case _ => throw ImplementationError("non document path")
-             }
-             val dOpt = controller.localLookup.getO(expectedPath)
-             controller.clear // try to restore consistent state
-             dOpt match {
-               case Some(d: Document) =>
-                 errorCont(new ParseError("reading was interrupted, returning partial result"))
-                 d
-               case _ => throw ImplementationError("non document")
-             }
-           case Failure(e) => throw e
          }
+         currentTask = Some(ps)
          // add narrative structure of doc to outline tree
          buildTreeDoc(root, doc)
          tree
@@ -146,12 +129,12 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       }
    }
 
-   /** stores the current parse task so that it can be stopped by the stop methpd */
-   private var currentTask: Option[CancellableTask[Document]] = None
+   /** stores the current parse task so that it can be stopped by the stop method */
+   private var currentTask: Option[MMTTask] = None
    // this is called from another tread and should interrupt parsing
    override def stop {
       // this may cause an inconsistent state but calling clear in parse method should fix most problems  
-      currentTask.foreach {_.cancel}
+      currentTask.foreach {_.kill}
    }
 
    private def getRegion(e: metadata.HasMetaData) : Option[SourceRegion] = SourceRef.get(e).map(_.region)

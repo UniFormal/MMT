@@ -24,7 +24,7 @@ import parser._
  * The variable context is the context that arises from traversing binders during checking.
  * It changes during checking and is therefore stored within the judgement.
  */
-case class CheckingUnit(component: Option[CPath], context: Context, unknowns: Context, judgement: WFJudgement) {
+case class CheckingUnit(component: Option[CPath], context: Context, unknowns: Context, judgement: WFJudgement) extends MMTTask {
   /** a toString method that may call a continuation on its objects
    */
   def present(implicit cont: Obj => String) = component.map(_.toString + ": ").getOrElse("") + judgement.present

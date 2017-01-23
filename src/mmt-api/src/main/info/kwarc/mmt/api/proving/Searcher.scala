@@ -18,9 +18,9 @@ import utils._
  * A prover greedily applies invertible tactics to each new goal (called the expansion phase).
  * Then forward and backward breadth-first searches are performed in parallel.
  */
-class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogPrefix: String) extends Logger {
+class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUnit: ProvingUnit) extends Logger {
    val report = controller.report
-   def logPrefix = outerLogPrefix + "#prover"
+   def logPrefix = provingUnit.logPrefix + "#prover"
    
    implicit val presentObj: Obj => String = o => controller.presenter.asString(o)
    
@@ -29,7 +29,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogP
    private val searchBackward     = rules.getOrdered(classOf[BackwardSearch])
    private val searchForward      = rules.getOrdered(classOf[ForwardSearch])
    
-   implicit val facts = new Facts(this, 2, outerLogPrefix)
+   implicit val facts = new Facts(this, 2, provingUnit.logPrefix)
 
    private def doTheory(p : MPath) = controller.globalLookup.getO(p) match {
       case Some(t: modules.DeclaredTheory) =>
@@ -97,6 +97,9 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogP
    }
    
    private def search(levels: Int) {
+      if (provingUnit.isKilled) {
+        return
+      }
       if (levels == 0) return
       backwardSearch(goal)
       // forward search at all goals

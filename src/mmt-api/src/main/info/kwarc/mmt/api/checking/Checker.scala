@@ -17,7 +17,7 @@ object RelationHandler {
    def ignore = new RelationHandler {def apply(r: RelationalElement) {}}
 }
 
-class CheckingEnvironment(val errorCont: ErrorHandler, val reCont: RelationHandler)
+class CheckingEnvironment(val errorCont: ErrorHandler, val reCont: RelationHandler, val task: MMTTask)
 
 
 /**

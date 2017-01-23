@@ -663,6 +663,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * @return like apply
     */
    def check(j: Judgement)(implicit history: History): Boolean = {
+      if (checkingUnit.isKilled) {
+        return error("checking was cancelled by external signal")
+      }
       history += j
       log("checking: " + j.presentSucceedent)
       logGroup {
@@ -1441,7 +1444,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
       log(msg)
       history += msg
-      val pu = ProvingUnit(checkingUnit.component, context, conc, logPrefix)
+      val pu = ProvingUnit(checkingUnit.component, context, conc, logPrefix).diesWith(checkingUnit)
       controller.extman.get(classOf[Prover]) foreach {prover =>
          val (found, proof) = prover.apply(pu, rules, 8) //Set the timeout on the prover
          if (found) {

@@ -36,6 +36,7 @@ trait ActionHandling {self: Controller =>
 
   /** executes an Action */
   def handle(act: Action, showLog: Boolean = true) {
+    implicit val task = act
     state.currentActionDefinition match {
       case Some(Defined(file, name, acts)) if act != EndDefine =>
         state.currentActionDefinition = Some(Defined(file, name, acts ::: List(act)))
@@ -368,11 +369,11 @@ trait ActionHandling {self: Controller =>
     }
   }
 
-  def checkAction(p: Path, id: String) {
+  def checkAction(p: Path, id: String)(implicit task: MMTTask) {
     val checker = extman.get(classOf[Checker], id).getOrElse {
       throw GeneralError(s"no checker $id found")
     }
-    checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
+    checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore, task))
   }
 
 

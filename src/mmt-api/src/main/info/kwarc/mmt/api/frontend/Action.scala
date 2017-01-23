@@ -207,7 +207,7 @@ object Action extends RegexParsers {
   * TYPE* for whitespace-separated lists of arguments
   * If such a type is listed as id:TYPE, then id is the name of the constructor argument of the Action, into which the concrete argument is parsed.
   */
-sealed abstract class Action
+sealed abstract class Action extends MMTTask
 
 case class Compare(p: Path, r: Int) extends Action {
   override def toString = "diff " + p.toPath + ":" + r.toString

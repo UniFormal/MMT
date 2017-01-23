@@ -237,7 +237,7 @@ abstract class BuildTarget extends FormatBasedExtension {
   * @param errorCont BuildTargets should report errors here (instead of directly writing to errFile)
   */
 class BuildTask(val key: String, val archive: Archive, val inFile: File, val children: Option[List[BuildTask]],
-                val inPath: FilePath, val outFile: File, val errorCont: OpenCloseHandler) {
+                val inPath: FilePath, val outFile: File, val errorCont: OpenCloseHandler) extends MMTTask {
   /** build targets should set this to true if they skipped the file so that it is not passed on to the parent directory */
   var skipped = false
   /** the narration-base of the containing archive */

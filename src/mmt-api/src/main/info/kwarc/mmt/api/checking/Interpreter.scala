@@ -30,7 +30,7 @@ abstract class Interpreter extends Importer {
     val inPathOMDoc = bf.inPath.toFile.setExtension("omdoc").toFilePath
     val dPath = DPath(bf.archive.narrationBase / inPathOMDoc.segments) // bf.narrationDPath except for extension
     val nsMap = controller.getNamespaceMap ++ bf.archive.namespaceMap
-    val ps = new ParsingStream(bf.base / bf.inPath.segments, IsRootDoc(dPath), nsMap, format, File.Reader(bf.inFile))
+    val ps = new ParsingStream(bf.base / bf.inPath.segments, IsRootDoc(dPath), nsMap, format, File.Reader(bf.inFile)).diesWith(bf)
     (dPath,ps)
   }
 
@@ -66,7 +66,7 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Inter
 
   /** parses a [[ParsingStream]] and checks the result */
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement = {
-    val ce = new CheckingEnvironment(errorCont, RelationHandler.ignore)
+    val ce = new CheckingEnvironment(errorCont, RelationHandler.ignore, ps)
     try {
       val cont = new StructureParserContinuations(errorCont) {
         override def onElement(se: StructuralElement) {
@@ -86,9 +86,9 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Inter
 
   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term = {
     val pr = parser(pu)
-    val cu = CheckingUnit.byInference(None, pu.context, pr)
+    val cu = CheckingUnit.byInference(None, pu.context, pr).diesWith(pu)
     val rules = RuleSet.collectRules(controller, pu.context)
-    val cr = checker(cu, rules)(new CheckingEnvironment(errorCont, RelationHandler.ignore))
+    val cr = checker(cu, rules)(new CheckingEnvironment(errorCont, RelationHandler.ignore, cu))
     cr.term
   }
 }

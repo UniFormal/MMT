@@ -11,7 +11,7 @@ import frontend._
  * @param context the left-hand side/antecedent
  * @param tp the type to be inhabited, i.e., the right-hand side/succedent
  */
-case class ProvingUnit(component: Option[CPath], context: Context, tp: Term, logPrefix: String)
+case class ProvingUnit(component: Option[CPath], context: Context, tp: Term, logPrefix: String) extends MMTTask
 
 /**
  * A prover conducts the proof search. A new instance is created for each proof obligation.

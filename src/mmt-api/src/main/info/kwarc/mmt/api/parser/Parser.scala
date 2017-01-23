@@ -20,7 +20,7 @@ import scala.language.implicitConversions
   * @param term the term to parse
   * @param top an optional notation that the whole input must match;
   */
-case class ParsingUnit(source: SourceRef, context: Context, term: String, nsMap: NamespaceMap, top: Option[ParsingRule] = None)
+case class ParsingUnit(source: SourceRef, context: Context, term: String, nsMap: NamespaceMap, top: Option[ParsingRule] = None) extends MMTTask
 // TODO top should be Option[GlobalName]
 
 /** encapsulates the output of an [[ObjectParser]]
@@ -100,7 +100,7 @@ case class IsMod(modParent: MPath, relDocParent: LocalName) extends HasParentInf
   * @param format the format of the stream
   * @param stream the stream to parse
   */
-case class ParsingStream(source: URI, parentInfo: ParentInfo, nsMap: NamespaceMap, format: String, stream: java.io.BufferedReader) {
+case class ParsingStream(source: URI, parentInfo: ParentInfo, nsMap: NamespaceMap, format: String, stream: java.io.BufferedReader) extends MMTTask {
   /** @return the whole stream as a string */
   def fullString = Stream.continually(stream.readLine()).takeWhile(_ != null).mkString("\n")
 }
