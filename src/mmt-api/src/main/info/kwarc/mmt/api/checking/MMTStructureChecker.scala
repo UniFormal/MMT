@@ -49,6 +49,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val cont = getContext(e)
     check(cont, e,t)
   }
+  def elabContext(th : DeclaredTheory)(implicit ce: CheckingEnvironment): Context = {
+    //val con = getContext(th)
+    val rules = RuleSet.collectRules(controller,Context.empty)
+    implicit val env = new ExtendedCheckingEnvironment(ce, objectChecker, rules, th.path)
+    implicit val task = ce.task
+    checkContext(Context.empty, getExtraInnerContext(th))
+  }
 
   /** computes the context in which an element must be checked
    *  during top-down traversal, this method allows checking to start in the middle
@@ -230,7 +237,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             val (pr, valid) = prepareTerm(t)
             if (valid) {
               val j = Inhabitable(Stack(pr.free), pr.term)
-              objectChecker(CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j).diesWith, env.rules)
+              val cu = if (timeout == 0) CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j).diesWith
+              else CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j).newKillButton
+              if (timeout != 0) cu.setTimeout(timeout)((Unit) => log("Timed out!"))
+              objectChecker(cu, env.rules)
             }
           }
           // == additional check in a link ==
@@ -267,7 +277,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               }
               val j = Typing(Stack(pr.free), pr.term, expTp, None)
               if (performCheck) {
-                val cr = objectChecker(CheckingUnit(Some(cp), context, unknowns, j).diesWith, env.rules)
+                val cu = if (timeout == 0) CheckingUnit(Some(cp), context, unknowns, j).diesWith
+                  else CheckingUnit(Some(cp), context, unknowns, j).newKillButton
+                if (timeout != 0) cu.setTimeout(timeout)((Unit) => log("Timed out!"))
+                val cr = objectChecker(cu, env.rules)
                 if (inferType && cr.solved) {
                   // if no expected type was known but the type could be inferred, add it
                   cr.solution.foreach { sol =>
@@ -293,7 +306,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             case _ => // cOrg has no definiens, nothing to do
           }
         }
-        //TODO the code below has to go; if at all, it should use CancellableTask, but the low-level stuff never belongs here
+        checknow
+        /*
         if (timeout == 0) checknow else {
           import scala.concurrent.duration._
           import java.util.concurrent.TimeoutException
@@ -332,6 +346,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               }
           }
         }
+        */
       case _ =>
         //succeed for everything else but signal error
         logError("unchecked " + path)

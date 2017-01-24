@@ -60,11 +60,11 @@ class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermCont
       extends Structure with DeclaredLink {
    def getComponents = List(DomComponent(tpC))
 
-   def translate(newHome: Term, prefix: LocalName, translator: Translator): DeclaredStructure = {
+   def translate(newHome: Term, prefix: LocalName, translator: Translator,context : Context): DeclaredStructure = {
      def tl(m: Term)= translator.applyModule(Context.empty, m)
      val res = new DeclaredStructure(home, prefix/name, tpC map tl, isImplicit)
      getDeclarations foreach {d =>
-       res.add(d.translate(res.toTerm, LocalName.empty, translator))
+       res.add(d.translate(res.toTerm, LocalName.empty, translator,context))
      }
      res
    }
@@ -104,8 +104,8 @@ class DefinedStructure(val home : Term, val name : LocalName,
       extends Structure with DefinedLink {
    def getComponents = List(DomComponent(tpC), DefComponent(dfC))
    
-   def translate(newHome: Term, prefix: LocalName, translator: Translator): DefinedStructure = {
-     def tl(m: Term)= translator.applyModule(Context.empty, m)
+   def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): DefinedStructure = {
+     def tl(m: Term)= translator.applyModule(context, m)
      new DefinedStructure(home, prefix/name, tpC map tl, dfC map tl, isImplicit)
    }
    def merge(that: Declaration): DefinedStructure = {

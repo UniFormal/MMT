@@ -16,7 +16,7 @@ abstract class Module(val parent : DPath, val name : LocalName) extends ContentE
    // sharper type
    def getDeclarations: List[Declaration]
    //def parameters : Context
-   def translate(newNS: DPath, prefix: LocalName, translator: Translator): Module 
+   def translate(newNS: DPath, prefix: LocalName, translator: Translator, context : Context): Module
 }
 
 /**
@@ -26,14 +26,14 @@ trait DeclaredModule extends Module with Body {
    /** the meta-theory, domain, and codomain are not part of the term components because it is just a Path */
    def getInnerContext: Context
    def asDocument: documents.Document
-   def translate(newNS: DPath, prefix: LocalName, translator: Translator): DeclaredModule 
+   def translate(newNS: DPath, prefix: LocalName, translator: Translator, context : Context): DeclaredModule
 }
 
 /**
  * Module given by existing modules/morphisms
  */
 trait DefinedModule extends Module with ModuleDefiniens {
-   def translate(newNS: DPath, prefix: LocalName, translator: Translator): DefinedModule
+   def translate(newNS: DPath, prefix: LocalName, translator: Translator, context : Context): DefinedModule
 }
 
 /**

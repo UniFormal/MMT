@@ -84,10 +84,11 @@ class DeclaredTheory(doc : DPath, name : LocalName, mt : Option[MPath], val para
       streamInnerNodes(rh)
       rh << "</theory>"
    }
-   def translate(newNS: DPath, newName: LocalName, translator: Translator): DeclaredTheory = {
+   def translate(newNS: DPath, newName: LocalName, translator: Translator, context : Context): DeclaredTheory = {
      val res = new DeclaredTheory(newNS, newName, mt)
+     val ncont = context ++ parameters
      getDeclarations foreach {d =>
-       res.add(d.translate(res.toTerm, LocalName.empty, translator))
+       res.add(d.translate(res.toTerm, LocalName.empty, translator,ncont))
      }
      res
    }
@@ -102,8 +103,8 @@ class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) exte
     <theory name={name.last.toPath} base={doc.toPath}>
         {innerNodes}
     </theory>
-   def translate(newNS: DPath, newName: LocalName, translator: Translator): DefinedTheory = {
-     new DefinedTheory(newNS, newName, dfC.map(translator.applyModule(Context.empty, _)))
+   def translate(newNS: DPath, newName: LocalName, translator: Translator, context : Context): DefinedTheory = {
+     new DefinedTheory(newNS, newName, dfC.map(translator.applyModule(context, _)))
    }
 }
 

@@ -11,13 +11,19 @@ import java.lang.Thread
  */
 
 class KillButton {
-  private var killed: Boolean = false
+  @volatile private var killed: Boolean = false
+  @volatile private var action: Option[Unit => Any] = None
 
-  def press {
+  def press[A](f : Unit => A) {
     killed = true
+    action = Some(f)
   }
   
   def isPressed = killed
+  def doAction : Any = {
+    action.foreach(f => f.apply())
+    action = None
+  }
   
 }
 
@@ -32,12 +38,13 @@ trait Killable {
   private var killButton: Option[KillButton] = None
   
   /** signals aborting of processing */
-  def kill {
-    killButton.foreach(_.press)
+  def kill[A](f : Unit => A) {
+    killButton.foreach(_.press(f))
   }
   
   /** processing should be aborted gracefully if true */
-  def isKilled = killButton.map(_.isPressed).getOrElse(false)
+  def isKilled = killButton.exists(_.isPressed)
+  def killact = killButton.foreach(_.doAction)
   
   /**
    * gives a killable object the same kill button as one that is already around
@@ -48,12 +55,17 @@ trait Killable {
     this.killButton = that.killButton
     this
   }
+
+  def newKillButton: this.type = {
+    this.killButton = Some(new KillButton)
+    this
+  }
   
   /** presses the kill button after the specified number of milli seconds */
-  def setTimeout(millisec: Int) {
+  def setTimeout[A](millisec: Int)(f : Unit => Unit) {
     Future {
       Thread.sleep(millisec)
-      killButton.foreach(_.press)
+      killButton.foreach(_.press(f))
     }
   }
   

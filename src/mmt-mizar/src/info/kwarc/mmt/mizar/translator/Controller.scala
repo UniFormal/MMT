@@ -94,7 +94,7 @@ object TranslationController {
      org.omdoc.latin.foundations.mizar.IntroductionRule.allRules.foreach {rules.declares(_)}
      val complifier = controller.complifier(rules).toTranslator
      try {
-       d.translate(complifier)
+       d.translate(complifier,Context.empty)
      } catch {case e: Exception =>
        println("error while complifying instance " + d.path)
        d

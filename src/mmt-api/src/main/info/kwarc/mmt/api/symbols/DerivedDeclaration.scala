@@ -56,9 +56,9 @@ class DerivedDeclaration(h: Term, name: LocalName, override val feature: String,
     feature + s1 + tpC.get.map(" " + _.toString).getOrElse("") + s2
   }
 
-  override def translate(newHome: Term, prefix: LocalName, translator: Translator): DerivedDeclaration = {
+  override def translate(newHome: Term, prefix: LocalName, translator: Translator,context : Context): DerivedDeclaration = {
      // translate this as a [[NestedModue]], then extend the result to a DerivedDeclaration
-     val superT = super.translate(newHome, prefix, translator) // temporary, will be used to build result
+     val superT = super.translate(newHome, prefix, translator,context) // temporary, will be used to build result
      val tpT = tpC.get map {tp => translator.applyType(Context.empty, tp)}
      // splice super in to res
      val res = new DerivedDeclaration(superT.home, superT.name, feature, TermContainer(tpT), notC)
@@ -261,7 +261,7 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
             val rest = name.drop(dd.name.steps.length)
             body.getO(rest) map {
               case d: Declaration =>
-                val dT = d.translate(parent.toTerm, dd.name, translator)
+                val dT = d.translate(parent.toTerm, dd.name, translator,Context.empty)
                 val dTM = dd.module.getO(rest) match {
                   case None => dT
                   case Some(a) => dT merge a
@@ -428,7 +428,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
         case d if body.getDerivedDeclarations(feature).exists(i => d.getOrigin == ElaborationOf(i.path)) => Nil
         case d =>
           // println(controller.presenter.asString(d))
-          val ret = d.translate(parent.toTerm, prefix, translator)
+          val ret = d.translate(parent.toTerm, prefix, translator,Context.empty)
           // println(controller.presenter.asString(ret))
           List(ret)//d.translate(parent.toTerm, prefix, translator))
       /*  DM's old code

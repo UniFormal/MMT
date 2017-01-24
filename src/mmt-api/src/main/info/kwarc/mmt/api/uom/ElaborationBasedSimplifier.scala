@@ -2,13 +2,14 @@ package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api._
 import frontend._
+import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureChecker, RelationHandler}
 import modules._
 import symbols._
 import patterns._
 import objects._
-
 import utils.MyList.fromList
-import collection.immutable.{HashSet, HashMap}
+
+import collection.immutable.{HashMap, HashSet}
 
 /** used by [[MMTStructureSimplifier]] */
 case class ByStructureSimplifier(home: Term, view: Term) extends Origin
@@ -128,10 +129,14 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               val elab = sf.elaborate(parent, dd)
               dd.module.setOrigin(GeneratedBy(dd.path))
               val simp = oS.toTranslator(rules)
-              elab.getDeclarations/*.map {d =>
-                val dS = d.translate(simp)
+             val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
+               throw GeneralError(s"no mmt checker found")
+             }.asInstanceOf[MMTStructureChecker]
+             val cont = checker.elabContext(parent)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore,new MMTTask{}))
+              elab.getDeclarations.map {d =>
+                val dS = d.translate(simp,cont)
                 dS
-              }*/
+              }
          }
       case _ =>
         Nil

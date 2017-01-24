@@ -664,6 +664,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    def check(j: Judgement)(implicit history: History): Boolean = {
       if (checkingUnit.isKilled) {
+        checkingUnit.killact
         return error("checking was cancelled by external signal")
       }
       history += j

@@ -23,8 +23,8 @@ class RuleConstant(val home : Term, val name : LocalName, val tp: Term, var df: 
    def getDeclarations = Nil
    type ThisType = RuleConstant
    /** translated rule must still be created from translated type */
-   def translate(newHome: Term, prefix: LocalName, translator: Translator) = {
-     new RuleConstant(newHome, prefix/name, translator.applyType(Context.empty, tp), None)
+   def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context) = {
+     new RuleConstant(newHome, prefix/name, translator.applyType(context, tp), None)
    }
    def merge(that: Declaration) = mergeError(that)
 }

@@ -67,9 +67,9 @@ abstract class Declaration extends ContentElement {
     *  @param newHome the home theory of the result
     *  @param prefix the prefix used to form the name of the new declaration
     */
-   def translate(newHome: Term, prefix: LocalName, translator: Translator): ThisType
+   def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): ThisType
    /** a recursively translated copy of this declaration */
-   def translate(translator: Translator): ThisType = translate(home, LocalName.empty, translator)
+   def translate(translator: Translator, context : Context): ThisType = translate(home, LocalName.empty, translator, context)
    /** a new declaration with the same path obtained by replacing fields in 'this' with corresponding fields of 'that'
     *  Unfortunately, this must take any declaration and throw an error if 'not (that : ThisType)' 
     */
@@ -97,8 +97,8 @@ class NestedModule(val home: Term, val name: LocalName, mod: Module) extends Dec
    def module = mod
    //val home = OMMOD(module.parent ? module.name.init)
    //val name = LocalName(module.name.last)
-   def translate(newHome: Term, prefix: LocalName, translator: Translator): NestedModule = {
-     val modT = mod.translate(utils.mmt.mmtbase, LocalName(newHome.toMPath/prefix)/name, translator)
+   def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): NestedModule = {
+     val modT = mod.translate(utils.mmt.mmtbase, LocalName(newHome.toMPath/prefix)/name, translator,context)
      new NestedModule(newHome, prefix/name, modT)
    }
    //TODO this is where patterns (seen as defined theories) can be mapped to larger theories
