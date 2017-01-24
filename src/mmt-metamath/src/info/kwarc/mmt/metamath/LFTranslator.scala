@@ -4,6 +4,7 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.Stack
 import scala.collection.mutable.TreeSet
 import org.metamath.scala._
+import info.kwarc.mmt.metamath.Metamath
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.BuildTask
 import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, RelationHandler}
@@ -16,7 +17,7 @@ import info.kwarc.mmt.api.opaque.OpaqueText
 import info.kwarc.mmt.api.opaque.StringFragment
 import info.kwarc.mmt.lf._
 
-class LFTranslator(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger {
+class LFTranslator(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger with MMTTask {
   def logPrefix = "mm-omdoc"
   protected def report = controller.report
 
@@ -65,7 +66,7 @@ class LFTranslator(val controller: Controller, bt: BuildTask, index: Document =>
     val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
       throw GeneralError(s"no MMT checker found")
     }
-    checker(theory)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
+    checker(theory)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore,this))
     doc
   }
 }
@@ -85,6 +86,8 @@ class LFDBTranslator(implicit db: Database) {
   val WCEQ = db.asserts("wceq")
   val CAB = db.asserts("cab")
 
+  // TODO need clean up
+  /*
   boundVars += (
     (WN, Array(None)),
     (WI, Array(None, None)),
@@ -93,6 +96,8 @@ class LFDBTranslator(implicit db: Database) {
     (CV, Array(Some(Array(2)))),
     (WCEQ, Array(None, None)),
     (CAB, Array(None, Some(Array(1, 0)))))
+    */
+
 /*
   alignments += (
     (WN, Metamath.not),

@@ -1,24 +1,20 @@
 package info.kwarc.mmt.tps
 
-import java.io.{FileWriter, PrintWriter}
-
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.symbols.{Constant, PlainInclude, ContextContainer}
-import syntax._
+import info.kwarc.mmt.api.symbols.{Constant, ContextContainer, PlainInclude}
+import info.kwarc.mmt.tps.syntax._
 import info.kwarc.mmt.api._
 import documents._
 import modules._
-import parser._
-import objects._
 import utils._
 import archives._
 import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, RelationHandler}
+import info.kwarc.mmt.api.objects.{Context, Term, VarDecl}
 import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.lf._
 
-class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Unit) {
+class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Unit) extends MMTTask {
    var path : DPath = bt.narrationDPath
    var imports : List[String] = List("simpletypes")
    var symbols : List[(String,Term)] = Nil
@@ -37,7 +33,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
       val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
          throw GeneralError(s"no MMT checker found")
       }
-      modsM foreach (t => checker(t)(new CheckingEnvironment(new ErrorLogger(controller.report), RelationHandler.ignore)))
+      modsM foreach (t => checker(t)(new CheckingEnvironment(new ErrorLogger(controller.report), RelationHandler.ignore,this)))
       index(doc)
       BuildResult.empty
    }
@@ -78,7 +74,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
       else NewName(s, start + 1)
    }
 
-   def doModule(d:DPath)(m: syntax.Module): modules.Module = m match {
+   def doModule(d:DPath)(m: info.kwarc.mmt.tps.syntax.Module): modules.Module = m match {
       case t: theory =>
          val cont = Nil // (t.theory_formals map doFormalPars) collect {case Some(v) => v}
       implicit val th = new DeclaredTheory(path,doName(t.id),Some(TPSTheory.thpath),ContextContainer(cont))

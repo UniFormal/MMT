@@ -1,7 +1,6 @@
 package info.kwarc.mmt.metamath
 
 import info.kwarc.mmt.api.objects.OMS
-import info.kwarc.mmt.api.{NamespaceMap, Path}
 import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api.utils.URI
 

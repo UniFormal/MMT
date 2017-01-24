@@ -108,7 +108,7 @@ abstract class ImportState(t:PVSImportTask) {
 case class Dependency(p : MPath) extends Exception
 //case class _adt(p : MPath) extends Exception
 
-class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger {
+class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger with MMTTask {
   def logPrefix = "pvs-omdoc"
   protected def report = controller.report
 
@@ -157,7 +157,8 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
           throw GeneralError(s"no checker $id found")
         }.asInstanceOf[MMTStructureChecker]
-        ths foreach (p => checker.timeoutCheck(p,300)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore)))
+        ths foreach (p => checker.timeoutCheck(p,180)(
+          new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore,this)))
       }
       index(doc)
       BuildSuccess(deps.map(LogicalDependency),modsM.map(m => LogicalDependency(m.path)))

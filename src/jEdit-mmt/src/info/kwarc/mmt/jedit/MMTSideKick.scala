@@ -2,8 +2,6 @@ package info.kwarc.mmt.jedit
 
 import javax.swing.tree.DefaultMutableTreeNode
 
-import scala.util.{Try,Success,Failure}
-
 import org.gjt.sp.jedit._
 import sidekick._
 import errorlist._

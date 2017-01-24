@@ -1,6 +1,5 @@
 package info.kwarc.mmt.jedit
 
-import errorlist._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.utils.File._

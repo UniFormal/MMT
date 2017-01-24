@@ -128,10 +128,10 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               val elab = sf.elaborate(parent, dd)
               dd.module.setOrigin(GeneratedBy(dd.path))
               val simp = oS.toTranslator(rules)
-              elab.getDeclarations.map {d =>
+              elab.getDeclarations/*.map {d =>
                 val dS = d.translate(simp)
                 dS
-              }
+              }*/
          }
       case _ =>
         Nil

@@ -79,7 +79,7 @@ class FrameViewer extends Extension {
    }
 }
 
-class FrameitPlugin extends ServerExtension("frameit") with Logger {
+class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask {
 
   override val logPrefix = "frameit"
   val test : Class[FrameViewer] = classOf[FrameViewer]
@@ -203,7 +203,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
     controller.extman.addExtension(ret)
     ret
   }
-  implicit val ce : CheckingEnvironment = new CheckingEnvironment(ErrorThrower,RelationHandler.ignore)
+  implicit val ce : CheckingEnvironment = new CheckingEnvironment(ErrorThrower,RelationHandler.ignore, this)
 
   val dpath = DPath(URI.http colon "cds.omdoc.org") / "FrameIT"
   val sitpath = dpath ? "situation_theory"
@@ -352,7 +352,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
 
     val checker = new MMTStructureChecker(new RuleBasedChecker)
     controller.extman.addExtension(checker)
-    implicit val ce : CheckingEnvironment = new CheckingEnvironment(ErrorThrower,RelationHandler.ignore)
+    implicit val ce : CheckingEnvironment = new CheckingEnvironment(ErrorThrower,RelationHandler.ignore, this)
     controller.simplifier(view)
     controller.simplifier(sol)
     controller.simplifier(dom)
