@@ -32,7 +32,6 @@ class PVSImporter extends Importer {
          case m: syntax.Module =>
             conv.doDocument(pvs_file(List(m)))
       }
-
       //BuildResult.empty
    }
 }

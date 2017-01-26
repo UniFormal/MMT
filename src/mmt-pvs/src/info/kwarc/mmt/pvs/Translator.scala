@@ -750,6 +750,11 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
     }
 
     val mpath = doMPath(theory_name("",thid,library_id,mappings,opttarget,allactuals,Nil))
+    if (state.th.name.toString == "empty_bv") {
+      println(mpath)
+      println(thid)
+      println(library_id)
+    }
 
     if(mappings.nonEmpty) {
       println("Found mappings in doPath")
