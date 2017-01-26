@@ -228,21 +228,3 @@ class LispParser
         } else { return None }
     }
 }
-
-// this might eventually subclass archives.Importer
-class IMPSImporter extends ShellExtension("imps")
-{
-    def helpText = ""
-
-    def run(shell: Shell, args: List[String]) =
-    {
-        /* Read first argument as filepath, load and parse file */
-        println("Scanning file " + args(0))
-        val fileContents = Source.fromFile(args(0)).getLines.mkString
-
-        var lspprsr = new LispParser()
-        val foo = lspprsr.parse(fileContents)
-
-        true
-    }
-}
