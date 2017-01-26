@@ -1,11 +1,5 @@
 package info.kwarc.mmt.imps
 
-/* IMPORTS */
-
-import info.kwarc.mmt.api.parser.SourceRef
-import info.kwarc.mmt.api.parser.SourceRegion
-import info.kwarc.mmt.api.parser.SourcePosition
-
 package object argParsers
 {
 	/* Parser for IMPS usages objects
