@@ -17,8 +17,6 @@ import info.kwarc.mmt.api._
 import frontend._
 import utils._
 
-import info.kwarc.mmt.imps.LispExp
-
 /* ######### PARSER ######### */
 
 class LispParser
@@ -233,9 +231,9 @@ class LispParser
                 e.children(i) match {
                     case Exp(ds,src) => ds.head match
                     {
-                        case Exp(List(Str("theory")),_) => thy    = parseTheory(Exp(ds,src))
-                        case Exp(List(Str("usages")),_) => usages = parseUsages(Exp(ds,src))
-                        case Exp(List(Str("sort")),_)   => sort   = parseSort(Exp(ds,src))
+                        case Exp(List(Str("theory")),_) => thy    = argParsers.parseTheory(Exp(ds,src))
+                        case Exp(List(Str("usages")),_) => usages = argParsers.parseUsages(Exp(ds,src))
+                        case Exp(List(Str("sort")),_)   => sort   = argParsers.parseSort(Exp(ds,src))
                         case _                           => ()
                     }
                     case _ => ()
@@ -279,9 +277,9 @@ class LispParser
                 e.children(i) match {
                     case Exp(ds,src) => ds.head match
                     {
-                        case Exp(List(Str("theory")),_)  => thy     = parseTheory(Exp(ds,src))
-                        case Exp(List(Str("usages")),_)  => usages  = parseUsages(Exp(ds,src))
-                        case Exp(List(Str("witness")),_) => witness = parseWitness(Exp(ds,src))
+                        case Exp(List(Str("theory")),_)  => thy     = argParsers.parseTheory(Exp(ds,src))
+                        case Exp(List(Str("usages")),_)  => usages  = argParsers.parseUsages(Exp(ds,src))
+                        case Exp(List(Str("witness")),_) => witness = argParsers.parseWitness(Exp(ds,src))
                         case _                           => ()
                     }
                     case _ => ()
@@ -324,8 +322,8 @@ class LispParser
                 e.children(i) match {
                     case Exp(ds,src) => ds.head match
                     {
-                        case Exp(List(Str("language")),_)       => lang  = parseLanguage(Exp(ds,src))
-                        case Exp(List(Str("fixed-theories")),_) => fixed = parseFixedTheories(Exp(ds,src))
+                        case Exp(List(Str("language")),_)       => lang  = argParsers.parseLanguage(Exp(ds,src))
+                        case Exp(List(Str("fixed-theories")),_) => fixed = argParsers.parseFixedTheories(Exp(ds,src))
                         case _                           => ()
                     }
                     case _ => ()
@@ -365,8 +363,8 @@ class LispParser
                 e.children(i) match {
                     case Exp(ds,src) => ds.head match
                     {
-                        case Exp(List(Str("src-theory")),_)   => srcTheory   = parseSourceTheory(Exp(ds,src))
-                        case Exp(List(Str("src-theories")),_) => srcTheories = parseSourceTheories(Exp(ds,src))
+                        case Exp(List(Str("src-theory")),_)   => srcTheory   = argParsers.parseSourceTheory(Exp(ds,src))
+                        case Exp(List(Str("src-theories")),_) => srcTheories = argParsers.parseSourceTheories(Exp(ds,src))
                         case _                                => ()
                     }
                     case _ => ()
@@ -422,9 +420,9 @@ class LispParser
                 e.children(i) match {
                     case Exp(ds,src) => ds.head match
                     {
-                        case Exp(List(Str("constructor")),_) => const = parseConstructor(Exp(ds,src))
-                        case Exp(List(Str("accessors")),_)   => accs  = parseAccessors(Exp(ds,src))
-                        case Exp(List(Str("theory")),_)      => thy   = parseTheory(Exp(ds,src))
+                        case Exp(List(Str("constructor")),_) => const = argParsers.parseConstructor(Exp(ds,src))
+                        case Exp(List(Str("accessors")),_)   => accs  = argParsers.parseAccessors(Exp(ds,src))
+                        case Exp(List(Str("theory")),_)      => thy   = argParsers.parseTheory(Exp(ds,src))
                         case _                               => ()
                     }
                     case _ => ()
@@ -471,7 +469,7 @@ class LispParser
                 {
                     case Exp(ds,src) => ds.head match
                     {	
-                        case Exp(List(Str("theory")),_) => thy = parseTheory(Exp(ds,src))
+                        case Exp(List(Str("theory")),_) => thy = argParsers.parseTheory(Exp(ds,src))
                         case (Str("null"))              => nullarg  = true
                         case (Str("transportable"))     => transarg = true
                         case _                          => ()
@@ -502,21 +500,8 @@ class LispParser
             }
         } else { return None }
     }
-
-    /* Parser for IMPS herald objects
-     * used in: def-cartesian-product */
-    private def parseConstructor(e : Exp) : Option[Constructor] =
-    {
-        if (e.children.length == 2)
-        {
-            e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(Constructor(x, e.src))
-                case _                   => return None
-            }
-        } else { return None }
-    }
     
-    /* Parser for IMPS constructor argument
+    /* Parser for IMPS heralding objects
      * used in: toplevel module declaration */
     private def parseHeralding (e : Exp) : Option[Heralding] =
     {
@@ -526,166 +511,6 @@ class LispParser
                 case Exp(List(Str(x)),_) => return Some(Heralding(x, e.src))
                 case _                   => return None
             }
-        } else { return None }
-    }
-
-    /* Parser for IMPS theory argument objects
-     * used in: def-atomic-sort... */
-    private def parseTheory (e : Exp) : Option[Theory] =
-    {
-        if (e.children.length == 2) {
-            e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(Theory(x, e.src))
-                case _                   => return None
-            }
-        } else { return None }
-    }
-    
-    /* Parser for IMPS source-theory argument objects
-     * used in: def-imported-rewrite-rules... */
-    private def parseSourceTheory (e : Exp) : Option[SourceTheory] =
-    {
-        if (e.children.length == 2) {
-            e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(SourceTheory(x, e.src))
-                case _                   => return None
-            }
-        } else { return None }
-    }
-
-    /* Parser for IMPS witness argument objects
-     * used in: def-atomic-sort, ... */
-    private def parseWitness (e : Exp) : Option[Witness] =
-    {
-        if (e.children.length == 2) {
-            e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(Witness(x, e.src))
-                case _                   => return None
-            }
-        } else { return None }
-    }
-    
-    /* Parser for IMPS language argument objects
-     * used in: def-quasi-constructor, ... */
-    private def parseLanguage (e : Exp) : Option[Language] =
-    {
-        if (e.children.length == 2) {
-            e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(Language(x, e.src))
-                case _                   => return None
-            }
-        } else { return None }
-    }
-
-    /* Parser for IMPS sort argument objects
-     * used in: def-constant, ... */
-    private def parseSort (e : Exp) : Option[Sort] =
-    {
-        if (e.children.length == 2) {
-            e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(Sort(x, e.src))
-                case _                   => return None
-            }
-        } else { return None }
-    }
-
-    /* Parser for IMPS usages objects
-     * used in: def-atomic-sort */
-    private def parseUsages (e : Exp) : Option[Usages] =
-    {
-        /* Can contain one or multiple usages */
-        var usgs : List[String] = List.empty
-
-        if (e.children.length >= 2)
-        {
-            var i : Int = 1
-            while (i < e.children.length)
-            {
-                e.children(i) match
-                {
-                    case Exp(List(Str(x)),_) => usgs = usgs ::: List(x)
-                    case _                   => return None
-                }
-                i += 1;
-            }
-            if (usgs != List.empty)
-            { return Some(Usages(usgs, e.src)) } else { return None }
-
-        } else { return None }
-    }
-    
-    /* Parser for IMPS fixed theories objects
-     * used in: def-quasi-constructor */
-    private def parseFixedTheories (e : Exp) : Option[FixedTheories] =
-    {
-        /* Can contain one or multiple usages */
-        var fixed : List[String] = List.empty
-
-        if (e.children.length >= 2)
-        {
-            var i : Int = 1
-            while (i < e.children.length)
-            {
-                e.children(i) match
-                {
-                    case Exp(List(Str(x)),_) => fixed = fixed ::: List(x)
-                    case _                   => return None
-                }
-                i += 1;
-            }
-            if (fixed != List.empty)
-            { return Some(FixedTheories(fixed, e.src)) } else { return None }
-
-        } else { return None }
-    }
-    
-    /* Parser for IMPS source theories objects
-     * used in: def-imported-rewrite-rules */
-    private def parseSourceTheories (e : Exp) : Option[SourceTheories] =
-    {
-        /* Can contain one or multiple usages */
-        var source : List[String] = List.empty
-
-        if (e.children.length >= 2)
-        {
-            var i : Int = 1
-            while (i < e.children.length)
-            {
-                e.children(i) match
-                {
-                    case Exp(List(Str(x)),_) => source = source ::: List(x)
-                    case _                   => return None
-                }
-                i += 1;
-            }
-            if (source.length >= 1)
-            { return Some(SourceTheories(source, e.src)) } else { return None }
-
-        } else { return None }
-    }
-    
-    /* Parser for IMPS fixed theories objects
-     * used in: def-quasi-constructor */
-    private def parseAccessors(e : Exp) : Option[Accessors] =
-    {
-        /* Can contain one or multiple usages */
-        var accs : List[String] = List.empty
-
-        if (e.children.length >= 2)
-        {
-            var i : Int = 1
-            while (i < e.children.length)
-            {
-                e.children(i) match
-                {
-                    case Exp(List(Str(x)),_) => accs = accs ::: List(x)
-                    case _                   => return None
-                }
-                i += 1;
-            }
-            if (accs != List.empty)
-            { return Some(Accessors(accs, e.src)) } else { return None }
-
         } else { return None }
     }
 }
