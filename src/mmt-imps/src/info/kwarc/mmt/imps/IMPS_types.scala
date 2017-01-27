@@ -19,6 +19,16 @@ case class Exp(children : List[LispExp], src : SourceRef) extends LispExp {
         return str
     }
 }
+
+/* TEMPORARY */
+case class Dummy(str : String) extends LispExp
+{
+	override def toString() : String =
+	{
+		return ("PLACEHOLDER: A " + str + " will appear here in the future!")
+	}
+}
+
 case class Str(str : String) extends LispExp {
     override def toString() : String = { return "Str(" + str + ")"}
 }

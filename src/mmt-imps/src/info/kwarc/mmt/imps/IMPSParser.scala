@@ -168,25 +168,83 @@ class LispParser
 
                 case Str("load-section") => var eprime : Option[LispExp] = parseLoadSection(e)
                                             if (!(eprime.isEmpty)) { return eprime }
+                                            
+                case Str("include-files") => return Some(Dummy("include-files"))
+                
+                case Str("view-expr") => return Some(Dummy("view-expr"))
 
                 /* Actual IMPS special forms */
+                case Str("def-algebraic-processor") => Some(Dummy("def-algebraic-processor"))
+                
                 case Str("def-atomic-sort") => var as : Option[LispExp] = defFormParsers.parseAtomicSort(e)
                                                if (!(as.isEmpty)) { return as }
+                                               
+                case Str("def-bnf") => Some(Dummy("def-bnf"))
+
+                case Str("def-cartesian-product") => var cp : Option[LispExp] = defFormParsers.parseCartesianProduct(e)
+                                                     if (!(cp.isEmpty)) { return cp }
+                                                     
+				case Str("def-compound-macete") => Some(Dummy("def-compund-macete"))
 
                 case Str("def-constant") => var c : Option[LispExp] = defFormParsers.parseConstant(e)
                                             if (!(c.isEmpty)) { return c }
                                             
+                case Str("def-imported-rewrite-rules") => var irr : Option[LispExp] = defFormParsers.parseImportedRewriteRules(e)
+                                                          if (!(irr.isEmpty)) { return irr }
+                                                          
+                case Str("def-inductor") => return Some(Dummy("def-inductor"))
+                
+                case Str("def-language") => return Some(Dummy("def-language"))
+                
+                case Str("def-order-processor") => return Some(Dummy("def-order-processor"))
+                
+                case Str("def-primitive-recursive-constant") => return Some(Dummy("def-primitive-recursive-constant"))
+                                            
                 case Str("def-quasi-constructor") => var qc : Option[LispExp] = defFormParsers.parseQuasiConstructor(e)
                                                      if (!(qc.isEmpty)) { return qc }
-                                                     
-                case Str("def-cartesian-product") => var cp : Option[LispExp] = defFormParsers.parseCartesianProduct(e)
-                                                     if (!(cp.isEmpty)) { return cp }
-                                                     
-                case Str("def-imported-rewrite-rules") => var irr : Option[LispExp] = defFormParsers.parseImportedRewriteRules(e)
-                                                          if (!(irr.isEmpty)) { return irr } 
+                
+                case Str("def-record-theory") => return Some(Dummy("def-record-theory"))
+                
+                case Str("def-recursive-constant") => return Some(Dummy("def-recursive-constant"))
+                
+                case Str("def-renamer") => return Some(Dummy("def-renamer"))
                                                           
                 case Str("def-schematic-macete") => var sm : Option[LispExp] = defFormParsers.parseSchematicMacete(e)
-                                                    if (!(sm.isEmpty)) { return sm } 
+                                                    if (!(sm.isEmpty)) { return sm }
+                                                    
+                case Str("def-script") => return Some(Dummy("def-script"))
+                
+                case Str("def-section") => return Some(Dummy("def-section"))
+                
+                case Str("def-sublanguage") => return Some(Dummy("def-sublanguage"))
+                
+                case Str("def-theorem") => return Some(Dummy("def-theorem"))
+                
+                case Str("def-theory") => return Some(Dummy("def-theory"))
+                
+                case Str("def-theory-ensemble") => return Some(Dummy("def-theory-ensemble"))
+                
+                case Str("def-theory-ensemble-instances") => return Some(Dummy("def-theory-ensemble-instances"))
+                
+                case Str("def-theory-ensemble-multiple") => return Some(Dummy("def-theory-ensemble-multiple"))
+                
+                case Str("def-theory-ensemble-overloadings") => return Some(Dummy("def-theory-ensemble-overloadings"))
+                
+                case Str("def-theory-instance") => return Some(Dummy("def-theory-instance"))
+                
+                case Str("def-theory-processors") => return Some(Dummy("def-theory-processors"))
+                
+                case Str("def-translation") => return Some(Dummy("def-translation"))
+                
+                case Str("def-transported-symbols") => return Some(Dummy("def-transported-symbols"))
+                
+                /* Syntax changers */
+                
+                case Str("def-overloading") => return Some(Dummy("def-overloading"))
+                
+                case Str("def-parse-syntax") => return Some(Dummy("def-parse-syntax"))
+                
+                case Str("def-print-syntax") => return Some(Dummy("def-print-syntax"))
 
                 /* Catchall case */
                 case _                      => println("DBG: unrecognised structure, not parsed!")

@@ -34,7 +34,7 @@ package object defFormParsers
                         case Exp(List(Str("theory")),_) => thy    = argParsers.parseTheory(Exp(ds,src))
                         case Exp(List(Str("usages")),_) => usages = argParsers.parseUsages(Exp(ds,src))
                         case Exp(List(Str("sort")),_)   => sort   = argParsers.parseSort(Exp(ds,src))
-                        case _                           => ()
+                        case _                          => ()
                     }
                     case _ => ()
                 }
