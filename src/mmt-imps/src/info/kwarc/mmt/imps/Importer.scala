@@ -13,6 +13,8 @@ class IMPSImporter extends Importer
 	
 	def inExts = List("omdoc")
 	
+	println("DBG: Importer")
+	
 	def importDocument(bf: BuildTask, index: Document => Unit): BuildResult =
 	{
 		log("Reading " + bf.inFile)
@@ -20,7 +22,7 @@ class IMPSImporter extends Importer
 		{
 			val fileContents = Source.fromFile(bf.inFile).getLines.mkString
 			val lp : LispParser = new LispParser()
-			lp.parse(fileContents)
+			lp.parse(fileContents, FileURI(bf.inFile))
 		} catch {
 			case e : ExtractError =>
 				log(e.getMessage)

@@ -12,6 +12,7 @@ import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.parser.SourceRegion
 import info.kwarc.mmt.api.parser.SourcePosition
 
+import info.kwarc.mmt.api.utils.FileURI
 import info.kwarc.mmt.api.utils.Unparsed
 import info.kwarc.mmt.api._
 import frontend._
@@ -21,11 +22,11 @@ import utils._
 
 class LispParser
 {
-    def parse(s: String): LispExp = parse(new Unparsed(s, msg => throw GeneralError(msg)))
+    def parse(s: String, uri : URI) : LispExp = parse(new Unparsed(s, msg => throw GeneralError(msg)), uri)
 
     /* Take an Unparsed object (info.kwarc.mmt.api.utils.Unparsed)
      * and parse the heck out of it */
-    private def parse(u : Unparsed) : LispExp =
+    private def parse(u : Unparsed, uri : URI) : LispExp =
     {
         /* Expression starts at the very beginning */
         val sr_start : SourcePosition = u.getSourcePosition
@@ -39,7 +40,7 @@ class LispParser
                 // Skip to next open brace
                 u.takeWhile(_ != '(')
                 u.next
-                val exp = parseExpAndSourceRef(u)
+                val exp = parseExpAndSourceRef(u, uri)
                 exprs = exprs ::: List(exp)
             }
         }
@@ -58,7 +59,7 @@ class LispParser
         /* Expression ends after parsing has finished. */
         val sr_end    : SourcePosition = u.getSourcePosition
         val sr_region : SourceRegion   = SourceRegion(sr_start, sr_end)
-        val sr        : SourceRef      = SourceRef(null, sr_region)
+        val sr        : SourceRef      = SourceRef(uri, sr_region)
 
         /* Actually parse Exps and filter for successes */
         val parsedExprs : List[LispExp] = exprs.map(parseExpression).filter(y => !(y.isEmpty)).map(z => z.get)
@@ -83,7 +84,7 @@ class LispParser
     /* Create an EXP expression from Unparsed object, until brackets
      * are balanced again. This way, it is extremely easy to parse the
      * correct amount of source. Yay Lisp. */
-    private def parseExpAndSourceRef (u : Unparsed) : Exp =
+    private def parseExpAndSourceRef (u : Unparsed, uri : URI) : Exp =
     {
         val sourceRef_start : SourcePosition = u.getSourcePosition
         var children : List[Exp] = List.empty
@@ -105,7 +106,7 @@ class LispParser
 
                 val sr_end    : SourcePosition = u.getSourcePosition
                 val sr_region : SourceRegion   = SourceRegion(sr_start, sr_end)
-                val sr        : SourceRef      = SourceRef(null, sr_region)
+                val sr        : SourceRef      = SourceRef(uri, sr_region)
 
                 children = children ::: List(Exp(List(new Str("\"" + str + "\"")), sr))
                 u.next
@@ -115,7 +116,7 @@ class LispParser
                 /* Some children are complete expressions in themselves
                  * necessitating a recursive call here */
                 u.next
-                val chld : Exp = parseExpAndSourceRef(u)
+                val chld : Exp = parseExpAndSourceRef(u, uri)
                 children = children ::: List(chld)
                 u.next
             }
@@ -139,7 +140,7 @@ class LispParser
 
                 val sr_end    : SourcePosition = u.getSourcePosition
                 val sr_region : SourceRegion   = SourceRegion(sr_start, sr_end)
-                val sr        : SourceRef      = SourceRef(null, sr_region)
+                val sr        : SourceRef      = SourceRef(uri, sr_region)
 
                 // TODO: Is this nesting overkill / overcommplicated?
                 children = children ::: List(Exp(List(new Str(str)), sr))
@@ -148,8 +149,7 @@ class LispParser
 
         val sourceRef_end    : SourcePosition = u.getSourcePosition
         val sourceRef_region : SourceRegion   = SourceRegion(sourceRef_start, sourceRef_end)
-        val sourceRef        : SourceRef      = SourceRef(null, sourceRef_region)
-        // TODO: Implement correct MMT-URI
+        val sourceRef        : SourceRef      = SourceRef(uri, sourceRef_region)
 
         return Exp(children, sourceRef)
     }
