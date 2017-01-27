@@ -209,9 +209,9 @@ package object defFormParsers
 						case _                   => ()
 					}
 				}
-				case _ => println("DBG: MISMATCH") ; return None
+				case _ => return None
 			}
-			if (tmplst != List.empty) { sortNames = Some(tmplst) } else { println("DBG: EMPTYLISt") ; return None }
+			if (tmplst != List.empty) { sortNames = Some(tmplst) } else { return None }
 
             /* Parse keyword arguments, these can come in any order */
             var i : Int = 3
@@ -240,9 +240,7 @@ package object defFormParsers
     /* Parser for IMPS special form def-schematic-macete
      * Documentation: IMPS manual pgs. 180, 181 */
     def parseSchematicMacete (e : Exp) : Option[LispExp] =
-    {
-		println(e)
-		
+    {	
         // Required arguments
         var name    : Option[String] = None
         var formula : Option[String] = None
