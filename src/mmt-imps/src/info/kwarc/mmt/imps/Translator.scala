@@ -13,8 +13,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 	def logPrefix = "imps-omdoc"
 	protected def report = controller.report
 	
-	def doDocument(d : LispExp) : BuildResult = {
-		println("DBG: foobar!")
-		return BuildResult.empty
+	def doDocument(d : LispExp) : BuildResult =
+	{
+		return BuildSuccess(Nil, Nil)
 	}
 }

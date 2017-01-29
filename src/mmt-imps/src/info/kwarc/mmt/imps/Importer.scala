@@ -6,23 +6,25 @@ import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents._
 
-
 class IMPSImporter extends Importer
 {
 	val key : String = "imps-omdoc"
 	
-	def inExts = List("omdoc")
-	
-	println("DBG: Importer")
+	def inExts = List("t")
 	
 	def importDocument(bf: BuildTask, index: Document => Unit): BuildResult =
 	{
 		log("Reading " + bf.inFile)
 		val e = try
 		{
-			val fileContents = Source.fromFile(bf.inFile).getLines.mkString
+			val fileLines = Source.fromFile(bf.inFile).getLines
+			var contents : String = ""
+			for (line <- fileLines)
+			{
+				contents = contents + line + "\n"
+			}
 			val lp : LispParser = new LispParser()
-			lp.parse(fileContents, FileURI(bf.inFile))
+			lp.parse(contents, FileURI(bf.inFile))
 		} catch {
 			case e : ExtractError =>
 				log(e.getMessage)
@@ -33,8 +35,8 @@ class IMPSImporter extends Importer
 		
 		e match
 		{
-			case (d : LispExp) => conv.doDocument(d) ; return BuildSuccess(Nil, Nil)
-			case _             => println("DBG: parsing did not return Exp") ; return BuildFailure(Nil, Nil)
+			case (d : LispExp) => conv.doDocument(d)
+			case _             => println("DBG: parsing did not return Exp") ; return BuildSuccess(Nil, Nil)
 		}
 	}
 }

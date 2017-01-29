@@ -20,6 +20,13 @@ case class Exp(children : List[LispExp], src : SourceRef) extends LispExp {
     }
 }
 
+case class Comment(content : String, src : SourceRef) extends LispExp {
+	override def toString() : String =
+	{
+		return ";" + content
+	}
+}
+
 /* TEMPORARY */
 case class Dummy(str : String) extends LispExp
 {
