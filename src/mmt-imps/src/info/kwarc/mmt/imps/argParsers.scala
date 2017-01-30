@@ -2,29 +2,29 @@ package info.kwarc.mmt.imps
 
 package object argParsers
 {
-	/* Parser for IMPS usages objects
-	 * used in: def-atomic-sort */
-	def parseUsages (e : Exp) : Option[Usages] =
-	{
-		/* Can contain one or multiple usages */
-		var usgs : List[String] = List.empty
+    /* Parser for IMPS usages objects
+     * used in: def-atomic-sort */
+    def parseUsages (e : Exp) : Option[Usages] =
+    {
+      /* Can contain one or multiple usages */
+      var usgs : List[String] = List.empty
 
-		if (e.children.length >= 2)
-		{
-			var i : Int = 1
-			while (i < e.children.length)
+      if (e.children.length >= 2)
+      {
+          var i : Int = 1
+          while (i < e.children.length)
 			{
 				e.children(i) match
 				{
 					case Exp(List(Str(x)),_) => usgs = usgs ::: List(x)
-					case _                   => return None
-				}
-				i += 1;
+					case _                   => None
+        }
+				i += 1
 			}
 			if (usgs != List.empty)
-			{ return Some(Usages(usgs, e.src)) } else { return None }
+			{ Some(Usages(usgs, e.src)) } else { None }
 
-		} else { return None }
+		} else { None }
 	}
 	
     /* Parser for IMPS constructor argument objects
@@ -34,10 +34,10 @@ package object argParsers
         if (e.children.length == 2)
         {
             e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(Constructor(x, e.src))
-                case _                   => return None
+                case Exp(List(Str(x)),_) => Some(Constructor(x, e.src))
+                case _                   => None
             }
-        } else { return None }
+        } else { None }
     }
 
     /* Parser for IMPS theory argument objects
@@ -46,10 +46,10 @@ package object argParsers
     {
         if (e.children.length == 2) {
             e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(Theory(x, e.src))
-                case _                   => return None
+                case Exp(List(Str(x)),_) => Some(Theory(x, e.src))
+                case _                   => None
             }
-        } else { return None }
+        } else { None }
     }
     
     /* Parser for IMPS source-theory argument objects
@@ -58,10 +58,10 @@ package object argParsers
     {
         if (e.children.length == 2) {
             e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(SourceTheory(x, e.src))
-                case _                   => return None
+                case Exp(List(Str(x)),_) => Some(SourceTheory(x, e.src))
+                case _                   => None
             }
-        } else { return None }
+        } else { None }
     }
 
     /* Parser for IMPS witness argument objects
@@ -70,10 +70,10 @@ package object argParsers
     {
         if (e.children.length == 2) {
             e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(Witness(x, e.src))
-                case _                   => return None
+                case Exp(List(Str(x)),_) => Some(Witness(x, e.src))
+                case _                   => None
             }
-        } else { return None }
+        } else { None }
     }
     
     /* Parser for IMPS language argument objects
@@ -82,10 +82,10 @@ package object argParsers
     {
         if (e.children.length == 2) {
             e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(Language(x, e.src))
-                case _                   => return None
+                case Exp(List(Str(x)),_) => Some(Language(x, e.src))
+                case _                   => None
             }
-        } else { return None }
+        } else { None }
     }
 
     /* Parser for IMPS sort argument objects
@@ -94,10 +94,10 @@ package object argParsers
     {
         if (e.children.length == 2) {
             e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(Sort(x, e.src))
-                case _                   => return None
+                case Exp(List(Str(x)),_) => Some(Sort(x, e.src))
+                case _                   => None
             }
-        } else { return None }
+        } else { None }
     }
     
     /* Parser for IMPS fixed theories objects
@@ -115,14 +115,14 @@ package object argParsers
                 e.children(i) match
                 {
                     case Exp(List(Str(x)),_) => fixed = fixed ::: List(x)
-                    case _                   => return None
+                    case _                   => None
                 }
-                i += 1;
+                i += 1
             }
             if (fixed != List.empty)
-            { return Some(FixedTheories(fixed, e.src)) } else { return None }
+            { Some(FixedTheories(fixed, e.src)) } else { None }
 
-        } else { return None }
+        } else { None }
     }
     
     /* Parser for IMPS source theories objects
@@ -140,14 +140,14 @@ package object argParsers
                 e.children(i) match
                 {
                     case Exp(List(Str(x)),_) => source = source ::: List(x)
-                    case _                   => return None
+                    case _                   => None
                 }
-                i += 1;
+                i += 1
             }
-            if (source.length >= 1)
-            { return Some(SourceTheories(source, e.src)) } else { return None }
+            if (source.nonEmpty)
+            { Some(SourceTheories(source, e.src)) } else { None }
 
-        } else { return None }
+        } else { None }
     }
     
     /* Parser for IMPS fixed theories objects
@@ -165,13 +165,13 @@ package object argParsers
                 e.children(i) match
                 {
                     case Exp(List(Str(x)),_) => accs = accs ::: List(x)
-                    case _                   => return None
+                    case _                   => None
                 }
-                i += 1;
+                i += 1
             }
             if (accs != List.empty)
-            { return Some(Accessors(accs, e.src)) } else { return None }
+            { Some(Accessors(accs, e.src)) } else { None }
 
-        } else { return None }
+        } else { None }
     }
 }

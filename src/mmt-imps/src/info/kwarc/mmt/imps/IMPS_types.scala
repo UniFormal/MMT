@@ -3,71 +3,68 @@ package info.kwarc.mmt.imps
 /* IMPORTS */
 
 import info.kwarc.mmt.api.parser.SourceRef
-import info.kwarc.mmt.api.parser.SourceRegion
-import info.kwarc.mmt.api.parser.SourcePosition
 
 /* Parser abstract class and case classes. */
 
 abstract class LispExp {
-    override def toString() : String = "<~ tokenized but unparsed expression ~>"
+    override def toString: String = "<~ tokenized but unparsed expression ~>"
 }
 
 case class Exp(children : List[LispExp], src : SourceRef) extends LispExp {
-    override def toString() : String =
+    override def toString : String =
     {
-        var str : String = "Exp(" + children.toString + ")"
-        return str
+        "Exp(" + children.toString + ")"
     }
 }
 
 case class Comment(content : String, src : SourceRef) extends LispExp {
-	override def toString() : String =
+	override def toString : String =
 	{
-		return ";" + content
+		";" + content
 	}
 }
 
 /* TEMPORARY */
 case class Dummy(str : String) extends LispExp
 {
-	override def toString() : String =
+	override def toString : String =
 	{
-		return ("PLACEHOLDER: A " + str + " will appear here in the future!")
+		"PLACEHOLDER: A " + str + " will appear here in the future!"
 	}
 }
 
 case class Str(str : String) extends LispExp {
-    override def toString() : String = { return "Str(" + str + ")"}
+    override def toString : String = { "Str(" + str + ")"}
 }
 
 /* IMPS SPECIAL FORM ARGUMENTS */
 
 case class Theory(thy : String, src : SourceRef) extends LispExp {
-    override def toString() : String = { return "(theory " + thy + ")"}
+    override def toString : String = { "(theory " + thy + ")"}
 }
 
 case class Language(lang : String, src : SourceRef) extends LispExp {
-    override def toString() : String = { return "(language " + lang + ")"}
+    override def toString : String = { "(language " + lang + ")"}
 }
 
 case class Constructor(const : String, src : SourceRef) extends LispExp {
-    override def toString() : String = { return "(constructor " + const + ")" }
+    override def toString : String = { "(constructor " + const + ")" }
 }
 
 case class Sort(sort : String, src : SourceRef) extends LispExp {
-    override def toString() : String = { return "(sort " + sort + ")" }
+    override def toString : String = { "(sort " + sort + ")" }
 }
 
 case class Witness(witness : String, src : SourceRef) extends LispExp {
-    override def toString() : String = { return "(witness " + witness + ")"}
+    override def toString : String = { "(witness " + witness + ")"}
 }
 
 case class SourceTheory(srcthy : String, src : SourceRef) extends LispExp {
-    override def toString() : String = { return "(source-theory " + srcthy + ")"}
+    override def toString : String = { "(source-theory " + srcthy + ")"}
 }
 
 case class Accessors(accs : List[String], src : SourceRef) extends LispExp {
-    override def toString() : String =
+    override def toString : String =
     {
         var str : String = "(accessors "
         str = str + accs.head
@@ -76,12 +73,12 @@ case class Accessors(accs : List[String], src : SourceRef) extends LispExp {
             str = str + " " + a
         }
         str = str + ")"
-        return str
+        str
     }
 }
 
 case class Usages(usgs : List[String], src : SourceRef) extends LispExp {
-    override def toString() : String =
+    override def toString : String =
     {
         var str : String = "(usages "
         str = str + usgs.head
@@ -90,12 +87,12 @@ case class Usages(usgs : List[String], src : SourceRef) extends LispExp {
             str = str + " " + u
         }
         str = str + ")"
-        return str
+        str
     }
 }
 
 case class FixedTheories(thrs : List[String], src : SourceRef) extends LispExp {
-	override def toString() : String =
+	override def toString : String =
     {
         var str : String = "(fixed-theories "
         str = str + thrs.head
@@ -104,12 +101,12 @@ case class FixedTheories(thrs : List[String], src : SourceRef) extends LispExp {
             str = str + " " + t
         }
         str = str + ")"
-        return str
+        str
     }
 }
 
 case class SourceTheories(thrs : List[String], src : SourceRef) extends LispExp {
-	override def toString() : String =
+	override def toString : String =
     {
         var str : String = "(source-theories "
         str = str + thrs.head
@@ -118,16 +115,16 @@ case class SourceTheories(thrs : List[String], src : SourceRef) extends LispExp 
             str = str + " " + t
         }
         str = str + ")"
-        return str
+        str
     }
 }
 
 case class Heralding(module : String, src : SourceRef) extends LispExp {
-    override def toString() : String = { return "(herald " + module + ")"}
+    override def toString : String = { "(herald " + module + ")"}
 }
 
 case class LoadSection(section : String, src : SourceRef) extends LispExp {
-    override def toString() : String = { return "(load-section " + section + ")"}
+    override def toString : String = { "(load-section " + section + ")"}
 }
 
 /* IMPS SPECIAL FORMS */
@@ -142,15 +139,15 @@ case class AtomicSort(sortName        : String,          /* Positional Argument,
                       src             : SourceRef)       /* SourceRef for MMT */
                       extends LispExp
 {
-    override def toString() : String =
+    override def toString : String =
     {
         var str : String = "(def-atomic-sort " + sortName
         str = str + "\n  " + quasiSortString
         str = str + "\n  " + theory.toString
-        if (!(usages.isEmpty)) { str = str + "\n  " + usages.get.toString}
-        if (!(witness.isEmpty)) { str = str + "\n  " + witness.get.toString}
+        if (usages.isDefined) str = str + "\n  " + usages.get.toString
+        if (witness.isDefined) str = str + "\n  " + witness.get.toString
         str = str + ")"
-        return str
+        str
     }
 }
 
@@ -164,20 +161,20 @@ case class CartesianProduct(name      : String,               /* Keyword Argumen
                             src       : SourceRef)            /* SourceRef for MMT */
                             extends LispExp
 {
-	override def toString() : String =
+	override def toString : String =
     {
         var str : String = "(def-cartesian-product " + name
-        str = str + "\n  (" + sortNames.head 
+        str = str + "\n  (" + sortNames.head
         for (sn <- sortNames.tail)
         {
             str = str + " " + sn
         }
         str = str + ")\n  " + thy.toString
         
-        if (!(const.isEmpty)) { str = str + "\n  " + const.get.toString}
-        if (!(accs.isEmpty))  { str = str + "\n  " + accs.get.toString}
+        if (const.isDefined) { str = str + "\n  " + const.get.toString}
+        if (accs.isDefined)  { str = str + "\n  " + accs.get.toString}
         str = str + ")"
-        return str
+        str
     }
 }
 
@@ -191,15 +188,15 @@ case class Constant(constantName : String,         /* Positional Argument, Requi
                     src          : SourceRef)      /* SourceRef for MMT */
                     extends LispExp
 {
-    override def toString() : String =
+    override def toString : String =
     {
         var str : String = "(def-constant " + constantName
         str = str + "\n  " + defExpString
         str = str + "\n  " + theory.toString
-        if (!(usages.isEmpty)) { str = str + "\n  " + usages.get.toString}
-        if (!(sort.isEmpty)) { str = str + "\n  " + sort.get.toString}
+        if (usages.isDefined) { str = str + "\n  " + usages.get.toString}
+        if (sort.isDefined) { str = str + "\n  " + sort.get.toString}
         str = str + ")"
-        return str
+        str
     }
 }
 
@@ -211,13 +208,13 @@ case class ImportedRewriteRules(theoryName  : String,                 /* Positio
                                 src         : SourceRef)              /* SourceRef for MMT */
                                 extends LispExp
 {
-	override def toString() : String = 
+	override def toString : String =
 	{
 		var str : String = "(def-imported-rewrite-rules " + theoryName
-		if (!(srcTheory.isEmpty)) { str = str + "\n  " + srcTheory.get.toString}
-		if (!(srcTheories.isEmpty)) { str = str + "\n  " + srcTheories.get.toString}
+		if (srcTheory.isDefined) { str = str + "\n  " + srcTheory.get.toString}
+		if (srcTheories.isDefined) { str = str + "\n  " + srcTheories.get.toString}
 		str = str + ")"
-		return str
+		str
 	}
 }
 
@@ -230,14 +227,14 @@ case class QuasiConstructor(name            : String,                /* Position
                            src              : SourceRef)             /* SourceRef for MMT */
                            extends LispExp
 {
-    override def toString() : String =
+    override def toString : String =
     {
         var str : String = "(def-quasi-contructor " + name
         str = str + "\n  " + lambdaExprString
         str = str + "\n  " + language.toString
-        if (!(fixedTheories.isEmpty)) { str = str + "\n  " + fixedTheories.get.toString}
+        if (fixedTheories.isDefined) { str = str + "\n  " + fixedTheories.get.toString}
         str = str + ")"
-        return str
+        str
     }
 }
 
@@ -251,7 +248,7 @@ case class SchematicMacete(name                 : String,    /* Positional Argum
                            src                  : SourceRef) /* SourceRef for MMT */
                            extends LispExp
 {
-	override def toString() : String = 
+	override def toString : String =
 	{
 		var str : String = "(def-schematic-macete " + name
 		str = str + "\n  " + formula
@@ -259,6 +256,6 @@ case class SchematicMacete(name                 : String,    /* Positional Argum
 		if (transportablePresent) { str = str + "\n  transportable"}
 		str = str + "\n  " + thy.toString
 		str = str + ")"
-		return str
+		str
 	}
 }

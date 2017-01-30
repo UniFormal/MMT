@@ -1,7 +1,6 @@
 package info.kwarc.mmt.imps
 
 /* Scala Imports */
-import scala.io.Source
 import Character.isWhitespace
 
 /* Scala KWARC Imports */
@@ -9,15 +8,13 @@ import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.parser.SourceRegion
 import info.kwarc.mmt.api.parser.SourcePosition
 
-import info.kwarc.mmt.api.utils.FileURI
 import info.kwarc.mmt.api.utils.Unparsed
 import info.kwarc.mmt.api._
-import frontend._
 import utils._
 
 /* ######### PARSER ######### */
 
-class LispParser
+class IMPSParser
 {
     def parse(s: String, uri : URI) : LispExp = parse(new Unparsed(s, msg => throw GeneralError(msg)), uri)
 
@@ -35,10 +32,10 @@ class LispParser
             while (true)
             {
                 // Skip to next open brace or next comment
-                u.takeWhile(c => ((c != '(') && (c != ';')))
+                u.takeWhile(c => (c != '(') && (c != ';'))
                 if (u.head == '(')
                 {
-                    u.next
+                    u.next()
                     val exp = parseExpAndSourceRef(u, uri)
                     exprs = exprs ::: List(exp)
                 }
@@ -47,7 +44,7 @@ class LispParser
                 {
                     val sref_start : SourcePosition = u.getSourcePosition
 
-                    u.next
+                    u.next()
                     var str : String = ""
                     while (u.getnext(1).charAt(0) != '\n') { str = str + u.next }
 
@@ -64,11 +61,7 @@ class LispParser
             // TODO: Re-work this into something else other than
             //       an ugly try-catch block
 
-            case ex : StringIndexOutOfBoundsException =>
-            {
-                // Some printouts for manual inspection, to be removed later
-                println("\n#### Summary for " + uri.toString + ": " + exprs.length + " expressions parsed")
-            }
+            case _: StringIndexOutOfBoundsException =>
         }
 
         /* Expression ends after parsing has finished. */
@@ -77,13 +70,16 @@ class LispParser
         val sr        : SourceRef      = SourceRef(uri, sr_region)
 
         /* Actually parse Exps and filter for successes */
-        val parsedExprs : List[LispExp] = exprs.map(parseExpression).filter(y => !(y.isEmpty)).map(z => z.get)
+        val parsedExprs : List[LispExp] = exprs.map(parseExpression).filter(y => y.isDefined).map(z => z.get)
+
+        // Some printouts for manual inspection, to be removed later
+        println("\n#### Summary for " + uri.toString + ": " + parsedExprs.length + " expressions parsed")
 
         /* Print parsed expressions for diff */
         for (p <- parsedExprs) { println("\n" + p.toString) }
 
         /* Return one expression with all the smaller expressions as children */
-        return Exp(parsedExprs, sr)
+        Exp(parsedExprs, sr)
     }
 
     /* Create an EXP expression from Unparsed object, until brackets
@@ -94,11 +90,10 @@ class LispParser
         val sourceRef_start : SourcePosition = u.getSourcePosition
         var children : List[Exp] = List.empty
 
-        var open   : Int = 1 /* we started with an open bracket */
-        var closed : Int = 0
+        var closed : Boolean = false
 
         /* While expression is still ongoing, keep parsing */
-        while (open - closed != 0)
+        while (!closed)
         {
             // TODO: Casematch here more beautiful?
             if (u.head == '"')
@@ -106,34 +101,34 @@ class LispParser
                 /* String literal parsing (defStrings etc.) */
                 val sr_start : SourcePosition = u.getSourcePosition
 
-                u.next
-                var str : String = u.takeWhile(_ != '"')
+                u.next()
+                val str : String = u.takeWhile(_ != '"')
 
                 val sr_end    : SourcePosition = u.getSourcePosition
                 val sr_region : SourceRegion   = SourceRegion(sr_start, sr_end)
                 val sr        : SourceRef      = SourceRef(uri, sr_region)
 
-                children = children ::: List(Exp(List(new Str("\"" + str + "\"")), sr))
-                u.next
+                children = children ::: List(Exp(List(Str("\"" + str + "\"")), sr))
+                u.next()
             }
             else if (u.head == '(')
             {
                 /* Some children are complete expressions in themselves
                  * necessitating a recursive call here */
-                u.next
+                u.next()
                 val chld : Exp = parseExpAndSourceRef(u, uri)
                 children = children ::: List(chld)
-                u.next
+                u.next()
             }
             else if (u.head == ')')
             {
-                /* Don't forget to count closed brackets */
-                closed += 1
+                /* end parsing when matching closed bracket was found */
+                closed = true
             }
             else if (isWhitespace(u.head))
             {
                 /* Skip through whitespace */
-                u.next
+                u.next()
             }
             else
             {
@@ -141,14 +136,14 @@ class LispParser
                  * names, are just blank strings */
                 val sr_start : SourcePosition = u.getSourcePosition
 
-                val str : String = u.takeWhile(c => !(isWhitespace(c)) && c != ')')
+                val str : String = u.takeWhile(c => !isWhitespace(c) && c != ')')
 
                 val sr_end    : SourcePosition = u.getSourcePosition
                 val sr_region : SourceRegion   = SourceRegion(sr_start, sr_end)
                 val sr        : SourceRef      = SourceRef(uri, sr_region)
 
                 // TODO: Is this nesting overkill / overcommplicated?
-                children = children ::: List(Exp(List(new Str(str)), sr))
+                children = children ::: List(Exp(List(Str(str)), sr))
             }
         }
 
@@ -156,7 +151,7 @@ class LispParser
         val sourceRef_region : SourceRegion   = SourceRegion(sourceRef_start, sourceRef_end)
         val sourceRef        : SourceRef      = SourceRef(uri, sourceRef_region)
 
-        return Exp(children, sourceRef)
+        Exp(children, sourceRef)
     }
 
     /* Parse a single EXP expression into a special form or similar (if possible) */
@@ -165,106 +160,98 @@ class LispParser
         /* Patter matching down/through to appropriate level */
         e.children.head match
         {
-            case Exp(cs,s) => cs.head match
+            case Exp(cs,_) => cs.head match
             {
                 /* toplevel stuff */
-                case Str("herald") => var eprime : Option[LispExp] = parseHeralding(e)
-                                      if (!(eprime.isEmpty)) { return eprime }
+                case Str("herald") => parseHeralding(e)
 
-                case Str("load-section") => var eprime : Option[LispExp] = parseLoadSection(e)
-                                            if (!(eprime.isEmpty)) { return eprime }
+                case Str("load-section") => parseLoadSection(e)
 
-                case Str("include-files") => return Some(Dummy("include-files"))
+                case Str("include-files") => Some(Dummy("include-files"))
 
-                case Str("view-expr") => return Some(Dummy("view-expr"))
+                case Str("view-expr") => Some(Dummy("view-expr"))
 
                 /* Actual IMPS special forms */
 
                 case Str("def-algebraic-processor") => Some(Dummy("def-algebraic-processor"))
 
-                case Str("def-atomic-sort") => var as : Option[LispExp] = defFormParsers.parseAtomicSort(e)
-                                               if (!(as.isEmpty)) { return as }
+                case Str("def-atomic-sort") => defFormParsers.parseAtomicSort(e)
 
                 case Str("def-bnf") => Some(Dummy("def-bnf"))
 
-                case Str("def-cartesian-product") => var cp : Option[LispExp] = defFormParsers.parseCartesianProduct(e)
-                                                     if (!(cp.isEmpty)) { return cp }
+                case Str("def-cartesian-product") => defFormParsers.parseCartesianProduct(e)
 
                 case Str("def-compound-macete") => Some(Dummy("def-compund-macete"))
 
-                case Str("def-constant") => var c : Option[LispExp] = defFormParsers.parseConstant(e)
-                                            if (!(c.isEmpty)) { return c }
+                case Str("def-constant") => defFormParsers.parseConstant(e)
 
-                case Str("def-imported-rewrite-rules") => var irr : Option[LispExp] = defFormParsers.parseImportedRewriteRules(e)
-                                                          if (!(irr.isEmpty)) { return irr }
+                case Str("def-imported-rewrite-rules") => defFormParsers.parseImportedRewriteRules(e)
 
-                case Str("def-inductor") => return Some(Dummy("def-inductor"))
+                case Str("def-inductor") => Some(Dummy("def-inductor"))
 
-                case Str("def-language") => return Some(Dummy("def-language"))
+                case Str("def-language") => Some(Dummy("def-language"))
 
-                case Str("def-order-processor") => return Some(Dummy("def-order-processor"))
+                case Str("def-order-processor") => Some(Dummy("def-order-processor"))
 
-                case Str("def-primitive-recursive-constant") => return Some(Dummy("def-primitive-recursive-constant"))
+                case Str("def-primitive-recursive-constant") => Some(Dummy("def-primitive-recursive-constant"))
 
-                case Str("def-quasi-constructor") => var qc : Option[LispExp] = defFormParsers.parseQuasiConstructor(e)
-                                                     if (!(qc.isEmpty)) { return qc }
+                case Str("def-quasi-constructor") => defFormParsers.parseQuasiConstructor(e)
 
-                case Str("def-record-theory") => return Some(Dummy("def-record-theory"))
+                case Str("def-record-theory") => Some(Dummy("def-record-theory"))
 
-                case Str("def-recursive-constant") => return Some(Dummy("def-recursive-constant"))
+                case Str("def-recursive-constant") => Some(Dummy("def-recursive-constant"))
 
-                case Str("def-renamer") => return Some(Dummy("def-renamer"))
+                case Str("def-renamer") => Some(Dummy("def-renamer"))
 
-                case Str("def-schematic-macete") => var sm : Option[LispExp] = defFormParsers.parseSchematicMacete(e)
-                                                    if (!(sm.isEmpty)) { return sm }
+                case Str("def-schematic-macete") => defFormParsers.parseSchematicMacete(e)
 
-                case Str("def-script") => return Some(Dummy("def-script"))
+                case Str("def-script") => Some(Dummy("def-script"))
 
-                case Str("def-section") => return Some(Dummy("def-section"))
+                case Str("def-section") => Some(Dummy("def-section"))
 
-                case Str("def-sublanguage") => return Some(Dummy("def-sublanguage"))
+                case Str("def-sublanguage") => Some(Dummy("def-sublanguage"))
 
-                case Str("def-theorem") => return Some(Dummy("def-theorem"))
+                case Str("def-theorem") => Some(Dummy("def-theorem"))
 
-                case Str("def-theory") => return Some(Dummy("def-theory"))
+                case Str("def-theory") => Some(Dummy("def-theory"))
 
-                case Str("def-theory-ensemble") => return Some(Dummy("def-theory-ensemble"))
+                case Str("def-theory-ensemble") => Some(Dummy("def-theory-ensemble"))
 
-                case Str("def-theory-ensemble-instances") => return Some(Dummy("def-theory-ensemble-instances"))
+                case Str("def-theory-ensemble-instances") => Some(Dummy("def-theory-ensemble-instances"))
 
-                case Str("def-theory-ensemble-multiple") => return Some(Dummy("def-theory-ensemble-multiple"))
+                case Str("def-theory-ensemble-multiple") => Some(Dummy("def-theory-ensemble-multiple"))
 
-                case Str("def-theory-ensemble-overloadings") => return Some(Dummy("def-theory-ensemble-overloadings"))
+                case Str("def-theory-ensemble-overloadings") => Some(Dummy("def-theory-ensemble-overloadings"))
 
-                case Str("def-theory-instance") => return Some(Dummy("def-theory-instance"))
+                case Str("def-theory-instance") => Some(Dummy("def-theory-instance"))
 
-                case Str("def-theory-processors") => return Some(Dummy("def-theory-processors"))
+                case Str("def-theory-processors") => Some(Dummy("def-theory-processors"))
 
-                case Str("def-translation") => return Some(Dummy("def-translation"))
+                case Str("def-translation") => Some(Dummy("def-translation"))
 
-                case Str("def-transported-symbols") => return Some(Dummy("def-transported-symbols"))
+                case Str("def-transported-symbols") => Some(Dummy("def-transported-symbols"))
 
                 /* Syntax changers */
 
-                case Str("def-overloading") => return Some(Dummy("def-overloading"))
+                case Str("def-overloading") => Some(Dummy("def-overloading"))
 
-                case Str("def-parse-syntax") => return Some(Dummy("def-parse-syntax"))
+                case Str("def-parse-syntax") => Some(Dummy("def-parse-syntax"))
 
-                case Str("def-print-syntax") => return Some(Dummy("def-print-syntax"))
+                case Str("def-print-syntax") => Some(Dummy("def-print-syntax"))
 
                 /* Catchall cases */
                 case Str(x) => println("DBG: unrecognised structure not parsed --> " + x)
                 case foo => println("DBG: faulty structure? " + foo.toString)
             }
             
-            case Comment(c, _) =>  /* No action for comment lines. */
+            case Comment(_, _) =>  /* No action for comment lines. */
 
             case q  => println("DBG: Couldn't parse:\n~~~")
                        println(q.toString + "\n~~~")
         }
 
         /* Return None if nothing could be parsed */
-        return None
+        None
     }
 
     /* ######### Tiny parsers ######### */
@@ -276,10 +263,10 @@ class LispParser
         if (e.children.length == 2)
         {
             e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(LoadSection(x, e.src))
-                case _                   => return None
+                case Exp(List(Str(x)),_) => Some(LoadSection(x, e.src))
+                case _                   => None
             }
-        } else { return None }
+        } else { None }
     }
 
     /* Parser for IMPS heralding objects
@@ -289,9 +276,9 @@ class LispParser
         if (e.children.length == 2)
         {
             e.children(1) match {
-                case Exp(List(Str(x)),_) => return Some(Heralding(x, e.src))
-                case _                   => return None
+                case Exp(List(Str(x)),_) => Some(Heralding(x, e.src))
+                case _                   => None
             }
-        } else { return None }
+        } else { None }
     }
 }

@@ -23,7 +23,7 @@ class IMPSImporter extends Importer
 			{
 				contents = contents + line + "\n"
 			}
-			val lp : LispParser = new LispParser()
+			val lp : IMPSParser = new IMPSParser()
 			lp.parse(contents, FileURI(bf.inFile))
 		} catch {
 			case e : ExtractError =>
@@ -36,7 +36,7 @@ class IMPSImporter extends Importer
 		e match
 		{
 			case (d : LispExp) => conv.doDocument(d)
-			case _             => println("DBG: parsing did not return Exp") ; return BuildSuccess(Nil, Nil)
+			case _             => println("DBG: parsing did not return Exp") ; BuildResult.empty
 		}
 	}
 }

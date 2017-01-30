@@ -42,10 +42,10 @@ package object defFormParsers
             }
 
             /* check for required arguments */
-            if (name.isEmpty || defstring.isEmpty || thy.isEmpty) { return None }
-            else { return Some(Constant(name.get, defstring.get, thy.get, sort, usages, e.src)) }
+            if (name.isEmpty || defstring.isEmpty || thy.isEmpty) None
+            else { Some(Constant(name.get, defstring.get, thy.get, sort, usages, e.src)) }
 
-        } else { return None }
+        } else { None }
     }
 
     /* Parser for IMPS special form def-atomic sort
@@ -88,10 +88,10 @@ package object defFormParsers
             }
 
             /* check for required arguments */
-            if (name.isEmpty || qss.isEmpty || thy.isEmpty) { return None }
-            else { return Some(AtomicSort(name.get, qss.get, thy.get, usages, witness, e.src)) }
+            if (name.isEmpty || qss.isEmpty || thy.isEmpty) None
+            else { Some(AtomicSort(name.get, qss.get, thy.get, usages, witness, e.src)) }
 
-        } else { return None }
+        } else { None }
     }
     
     /* Parser for IMPS special form def-quasi-constructor
@@ -132,10 +132,10 @@ package object defFormParsers
             }
 
             /* check for required arguments */
-            if (name.isEmpty || expstr.isEmpty || lang.isEmpty) { return None }
-            else { return Some(QuasiConstructor(name.get, expstr.get, lang.get, fixed, e.src)) }
+            if (name.isEmpty || expstr.isEmpty || lang.isEmpty) None
+            else { Some(QuasiConstructor(name.get, expstr.get, lang.get, fixed, e.src)) }
 
-        } else { return None }
+        } else { None }
     }
     
     /* Parser for IMPS special form def-imported-rewrite-rules
@@ -173,10 +173,10 @@ package object defFormParsers
             }
 
             /* check for required arguments */
-            if (name.isEmpty || (srcTheory.isEmpty && srcTheories.isEmpty)) { return None }
-            else { return Some(ImportedRewriteRules(name.get, srcTheory, srcTheories, e.src)) }
+            if (name.isEmpty || (srcTheory.isEmpty && srcTheories.isEmpty)) None
+            else { Some(ImportedRewriteRules(name.get, srcTheory, srcTheories, e.src)) }
 
-        } else { return None }
+        } else { None }
     }
     
     /* Parser for IMPS special form def-cartesian-product
@@ -203,15 +203,15 @@ package object defFormParsers
             var tmplst : List[String] = List.empty
             
             e.children(2) match {
-				case Exp(cs, sc) => for (c <- cs) {
+				case Exp(czs, _) => for (c <- czs) {
 					c match {
-						case Exp(List(Str(s)),_) => tmplst = tmplst ::: List(s)
+						case Exp(List(Str(k)),_) => tmplst = tmplst ::: List(k)
 						case _                   => ()
 					}
 				}
-				case _ => return None
+				case _ => None
 			}
-			if (tmplst != List.empty) { sortNames = Some(tmplst) } else { return None }
+			if (tmplst != List.empty) { sortNames = Some(tmplst) } else { None }
 
             /* Parse keyword arguments, these can come in any order */
             var i : Int = 3
@@ -231,16 +231,16 @@ package object defFormParsers
             }
 
             /* check for required arguments */
-            if (name.isEmpty || sortNames.isEmpty || thy.isEmpty) { return None }
-            else { return Some(CartesianProduct(name.get, sortNames.get, thy.get, const, accs, e.src)) }
+            if (name.isEmpty || sortNames.isEmpty || thy.isEmpty) None
+            else { Some(CartesianProduct(name.get, sortNames.get, thy.get, const, accs, e.src)) }
 
-        } else { return None }
+        } else { None }
     }
     
     /* Parser for IMPS special form def-schematic-macete
      * Documentation: IMPS manual pgs. 180, 181 */
     def parseSchematicMacete (e : Exp) : Option[LispExp] =
-    {	
+    {
         // Required arguments
         var name    : Option[String] = None
         var formula : Option[String] = None
@@ -266,7 +266,7 @@ package object defFormParsers
                 e.children(i) match
                 {
                     case Exp(ds,src) => ds.head match
-                    {	
+                    {
                         case Exp(List(Str("theory")),_) => thy = argParsers.parseTheory(Exp(ds,src))
                         case (Str("null"))              => nullarg  = true
                         case (Str("transportable"))     => transarg = true
@@ -278,9 +278,9 @@ package object defFormParsers
             }
 
             /* check for required arguments */
-            if (name.isEmpty || formula.isEmpty || thy.isEmpty) { return None }
-            else { return Some(SchematicMacete(name.get, formula.get, thy.get, nullarg, transarg, e.src)) }
+            if (name.isEmpty || formula.isEmpty || thy.isEmpty) None
+            else { Some(SchematicMacete(name.get, formula.get, thy.get, nullarg, transarg, e.src)) }
 
-        } else { return None }
+        } else { None }
     }
 }
