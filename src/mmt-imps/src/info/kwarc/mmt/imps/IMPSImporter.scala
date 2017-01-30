@@ -9,9 +9,9 @@ import info.kwarc.mmt.api.documents._
 class IMPSImporter extends Importer
 {
 	val key : String = "imps-omdoc"
-	
+
 	def inExts = List("t")
-	
+
 	def importDocument(bf: BuildTask, index: Document => Unit): BuildResult =
 	{
 		log("Reading " + bf.inFile)
@@ -32,7 +32,7 @@ class IMPSImporter extends Importer
 		}
 
 		val conv = new IMPSImportTask(controller, bf, index)
-		
+
 		e match
 		{
 			case (d : LispExp) => conv.doDocument(d)

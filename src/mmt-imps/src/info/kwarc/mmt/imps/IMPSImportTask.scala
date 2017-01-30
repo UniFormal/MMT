@@ -9,7 +9,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 {
 	def logPrefix = "imps-omdoc"
 	protected def report: Report = controller.report
-	
+
 	def doDocument(d : LispExp) : BuildResult =
 	{
 		BuildResult.empty

@@ -2,285 +2,285 @@ package info.kwarc.mmt.imps
 
 package object defFormParsers
 {
-	/* Parser for IMPS special form def-constants
-     * Documentation: IMPS manual pgs. 168, 169 */
-    def parseConstant (e : Exp) : Option[LispExp] =
+  /* Parser for IMPS special form def-constants
+   * Documentation: IMPS manual pgs. 168, 169 */
+  def parseConstant (e : Exp) : Option[LispExp] =
+  {
+    // Required arguments
+    var name       : Option[String] = None
+    var defstring  : Option[String] = None
+    var thy        : Option[Theory] = None
+
+    // Optional arguments
+    var usages : Option[Usages] = None
+    var sort   : Option[Sort]   = None
+
+    val cs : Int = e.children.length
+
+    /* Three arguments minimum because three req. arguments */
+    if (cs >= 3)
     {
-        // Required arguments
-        var name       : Option[String] = None
-        var defstring  : Option[String] = None
-        var thy        : Option[Theory] = None
+      /* Parse positional arguments */
+      e.children(1) match { case Exp(List(Str(x)), _) => name      = Some(x) }
+      e.children(2) match { case Exp(List(Str(y)), _) => defstring = Some(y) }
 
-        // Optional arguments
-        var usages : Option[Usages] = None
-        var sort   : Option[Sort]   = None
+      /* Parse keyword arguments, these can come in any order */
+      var i : Int = 3
+      while (cs - i > 0)
+      {
+        e.children(i) match {
+          case Exp(ds,src) => ds.head match
+          {
+            case Exp(List(Str("theory")),_) => thy    = argParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("usages")),_) => usages = argParsers.parseUsages(Exp(ds,src))
+            case Exp(List(Str("sort")),_)   => sort   = argParsers.parseSort(Exp(ds,src))
+            case _                          => ()
+          }
+          case _ => ()
+        }
+        i += 1
+      }
 
-        val cs : Int = e.children.length
+      /* check for required arguments */
+      if (name.isEmpty || defstring.isEmpty || thy.isEmpty) None
+      else { Some(Constant(name.get, defstring.get, thy.get, sort, usages, e.src)) }
 
-        /* Three arguments minimum because three req. arguments */
-        if (cs >= 3)
-        {
-            /* Parse positional arguments */
-            e.children(1) match { case Exp(List(Str(x)), _) => name      = Some(x) }
-            e.children(2) match { case Exp(List(Str(y)), _) => defstring = Some(y) }
+    } else { None }
+  }
 
-            /* Parse keyword arguments, these can come in any order */
-            var i : Int = 3
-            while (cs - i > 0)
-            {
-                e.children(i) match {
-                    case Exp(ds,src) => ds.head match
-                    {
-                        case Exp(List(Str("theory")),_) => thy    = argParsers.parseTheory(Exp(ds,src))
-                        case Exp(List(Str("usages")),_) => usages = argParsers.parseUsages(Exp(ds,src))
-                        case Exp(List(Str("sort")),_)   => sort   = argParsers.parseSort(Exp(ds,src))
-                        case _                          => ()
-                    }
-                    case _ => ()
-                }
-                i += 1
-            }
+  /* Parser for IMPS special form def-atomic sort
+   * Documentation: IMPS manual pgs. 158, 159 */
+  def parseAtomicSort (e : Exp) : Option[LispExp] =
+  {
+    // Required arguments
+    var name : Option[String] = None
+    var qss  : Option[String] = None
+    var thy  : Option[Theory] = None
 
-            /* check for required arguments */
-            if (name.isEmpty || defstring.isEmpty || thy.isEmpty) None
-            else { Some(Constant(name.get, defstring.get, thy.get, sort, usages, e.src)) }
+    // Optional arguments
+    var usages  : Option[Usages]  = None
+    var witness : Option[Witness] = None
 
-        } else { None }
-    }
+    val cs : Int = e.children.length
 
-    /* Parser for IMPS special form def-atomic sort
-     * Documentation: IMPS manual pgs. 158, 159 */
-    def parseAtomicSort (e : Exp) : Option[LispExp] =
+    /* Three arguments minimum because three req. arguments */
+    if (cs >= 3)
     {
-        // Required arguments
-        var name : Option[String] = None
-        var qss  : Option[String] = None
-        var thy  : Option[Theory] = None
+      /* Parse positional arguments */
+      e.children(1) match { case Exp(List(Str(x)), _) => name = Some(x) }
+      e.children(2) match { case Exp(List(Str(y)), _) => qss  = Some(y) }
 
-        // Optional arguments
-        var usages  : Option[Usages]  = None
-        var witness : Option[Witness] = None
+      /* Parse keyword arguments, these can come in any order */
+      var i : Int = 3
+      while (cs - i > 0)
+      {
+        e.children(i) match {
+          case Exp(ds,src) => ds.head match
+          {
+            case Exp(List(Str("theory")),_)  => thy     = argParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("usages")),_)  => usages  = argParsers.parseUsages(Exp(ds,src))
+            case Exp(List(Str("witness")),_) => witness = argParsers.parseWitness(Exp(ds,src))
+            case _                           => ()
+          }
+          case _ => ()
+        }
+        i += 1
+      }
 
-        val cs : Int = e.children.length
+      /* check for required arguments */
+      if (name.isEmpty || qss.isEmpty || thy.isEmpty) None
+      else { Some(AtomicSort(name.get, qss.get, thy.get, usages, witness, e.src)) }
 
-        /* Three arguments minimum because three req. arguments */
-        if (cs >= 3)
-        {
-            /* Parse positional arguments */
-            e.children(1) match { case Exp(List(Str(x)), _) => name = Some(x) }
-            e.children(2) match { case Exp(List(Str(y)), _) => qss  = Some(y) }
+    } else { None }
+  }
 
-            /* Parse keyword arguments, these can come in any order */
-            var i : Int = 3
-            while (cs - i > 0)
-            {
-                e.children(i) match {
-                    case Exp(ds,src) => ds.head match
-                    {
-                        case Exp(List(Str("theory")),_)  => thy     = argParsers.parseTheory(Exp(ds,src))
-                        case Exp(List(Str("usages")),_)  => usages  = argParsers.parseUsages(Exp(ds,src))
-                        case Exp(List(Str("witness")),_) => witness = argParsers.parseWitness(Exp(ds,src))
-                        case _                           => ()
-                    }
-                    case _ => ()
-                }
-                i += 1
-            }
+  /* Parser for IMPS special form def-quasi-constructor
+   * Documentation: IMPS manual pgs. 177, 178 */
+  def parseQuasiConstructor (e : Exp) : Option[LispExp] =
+  {
+    // Required arguments
+    var name   : Option[String]   = None
+    var expstr : Option[String]   = None
+    var lang   : Option[Language] = None
 
-            /* check for required arguments */
-            if (name.isEmpty || qss.isEmpty || thy.isEmpty) None
-            else { Some(AtomicSort(name.get, qss.get, thy.get, usages, witness, e.src)) }
+    // Optional arguments
+    var fixed  : Option[FixedTheories] = None
 
-        } else { None }
-    }
-    
-    /* Parser for IMPS special form def-quasi-constructor
-     * Documentation: IMPS manual pgs. 177, 178 */
-    def parseQuasiConstructor (e : Exp) : Option[LispExp] =
+    val cs : Int = e.children.length
+
+    /* Three arguments minimum because three req. arguments */
+    if (cs >= 3)
     {
-        // Required arguments
-        var name   : Option[String]   = None
-        var expstr : Option[String]   = None
-        var lang   : Option[Language] = None
+      /* Parse positional arguments */
+      e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
+      e.children(2) match { case Exp(List(Str(y)), _) => expstr = Some(y) }
 
-        // Optional arguments
-        var fixed  : Option[FixedTheories] = None
+      /* Parse keyword arguments, these can come in any order */
+      var i : Int = 3
+      while (cs - i > 0)
+      {
+        e.children(i) match {
+          case Exp(ds,src) => ds.head match
+          {
+            case Exp(List(Str("language")),_)       => lang  = argParsers.parseLanguage(Exp(ds,src))
+            case Exp(List(Str("fixed-theories")),_) => fixed = argParsers.parseFixedTheories(Exp(ds,src))
+            case _                           => ()
+          }
+          case _ => ()
+        }
+        i += 1
+      }
 
-        val cs : Int = e.children.length
+      /* check for required arguments */
+      if (name.isEmpty || expstr.isEmpty || lang.isEmpty) None
+      else { Some(QuasiConstructor(name.get, expstr.get, lang.get, fixed, e.src)) }
 
-        /* Three arguments minimum because three req. arguments */
-        if (cs >= 3)
-        {
-            /* Parse positional arguments */
-            e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
-            e.children(2) match { case Exp(List(Str(y)), _) => expstr = Some(y) }
+    } else { None }
+  }
 
-            /* Parse keyword arguments, these can come in any order */
-            var i : Int = 3
-            while (cs - i > 0)
-            {
-                e.children(i) match {
-                    case Exp(ds,src) => ds.head match
-                    {
-                        case Exp(List(Str("language")),_)       => lang  = argParsers.parseLanguage(Exp(ds,src))
-                        case Exp(List(Str("fixed-theories")),_) => fixed = argParsers.parseFixedTheories(Exp(ds,src))
-                        case _                           => ()
-                    }
-                    case _ => ()
-                }
-                i += 1
-            }
+  /* Parser for IMPS special form def-imported-rewrite-rules
+   * Documentation: IMPS manual pg. 169 */
+  def parseImportedRewriteRules (e : Exp) : Option[LispExp] =
+  {
+    // Required arguments
+    var name   : Option[String]   = None
 
-            /* check for required arguments */
-            if (name.isEmpty || expstr.isEmpty || lang.isEmpty) None
-            else { Some(QuasiConstructor(name.get, expstr.get, lang.get, fixed, e.src)) }
+    // Optional arguments
+    var srcTheory   : Option[SourceTheory]   = None
+    var srcTheories : Option[SourceTheories] = None
 
-        } else { None }
-    }
-    
-    /* Parser for IMPS special form def-imported-rewrite-rules
-     * Documentation: IMPS manual pg. 169 */
-    def parseImportedRewriteRules (e : Exp) : Option[LispExp] =
+    val cs : Int = e.children.length
+
+    if (cs >= 2)
     {
-        // Required arguments
-        var name   : Option[String]   = None
+      /* Parse positional arguments */
+      e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
 
-        // Optional arguments
-        var srcTheory   : Option[SourceTheory]   = None
-        var srcTheories : Option[SourceTheories] = None
+      /* Parse keyword arguments, these can come in any order */
+      var i : Int = 2
+      while (cs - i > 0)
+      {
+        e.children(i) match {
+          case Exp(ds,src) => ds.head match
+          {
+            case Exp(List(Str("src-theory")),_)   => srcTheory   = argParsers.parseSourceTheory(Exp(ds,src))
+            case Exp(List(Str("src-theories")),_) => srcTheories = argParsers.parseSourceTheories(Exp(ds,src))
+            case _                                => ()
+          }
+          case _ => ()
+        }
+        i += 1
+      }
 
-        val cs : Int = e.children.length
+      /* check for required arguments */
+      if (name.isEmpty || (srcTheory.isEmpty && srcTheories.isEmpty)) None
+      else { Some(ImportedRewriteRules(name.get, srcTheory, srcTheories, e.src)) }
 
-        if (cs >= 2)
-        {
-            /* Parse positional arguments */
-            e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
+    } else { None }
+  }
 
-            /* Parse keyword arguments, these can come in any order */
-            var i : Int = 2
-            while (cs - i > 0)
-            {
-                e.children(i) match {
-                    case Exp(ds,src) => ds.head match
-                    {
-                        case Exp(List(Str("src-theory")),_)   => srcTheory   = argParsers.parseSourceTheory(Exp(ds,src))
-                        case Exp(List(Str("src-theories")),_) => srcTheories = argParsers.parseSourceTheories(Exp(ds,src))
-                        case _                                => ()
-                    }
-                    case _ => ()
-                }
-                i += 1
-            }
+  /* Parser for IMPS special form def-cartesian-product
+   * Documentation: IMPS manual pg. 166 */
+  def parseCartesianProduct (e : Exp) : Option[LispExp] =
+  {
+    // Required arguments
+    var name      : Option[String]       = None
+    var sortNames : Option[List[String]] = None
+    var thy       : Option[Theory]       = None
 
-            /* check for required arguments */
-            if (name.isEmpty || (srcTheory.isEmpty && srcTheories.isEmpty)) None
-            else { Some(ImportedRewriteRules(name.get, srcTheory, srcTheories, e.src)) }
+    // Optional arguments
+    var accs  : Option[Accessors]   = None
+    var const : Option[Constructor] = None
 
-        } else { None }
-    }
-    
-    /* Parser for IMPS special form def-cartesian-product
-     * Documentation: IMPS manual pg. 166 */
-    def parseCartesianProduct (e : Exp) : Option[LispExp] =
+    val cs : Int = e.children.length
+
+    /* Three arguments minimum because three req. arguments */
+    if (cs >= 3)
     {
-        // Required arguments
-        var name      : Option[String]       = None
-        var sortNames : Option[List[String]] = None
-        var thy       : Option[Theory]       = None
+      /* Parse positional arguments */
+      e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
 
-        // Optional arguments
-        var accs  : Option[Accessors]   = None
-        var const : Option[Constructor] = None
+      var tmplst : List[String] = List.empty
 
-        val cs : Int = e.children.length
+      e.children(2) match {
+        case Exp(czs, _) => for (c <- czs) {
+          c match {
+            case Exp(List(Str(k)),_) => tmplst = tmplst ::: List(k)
+            case _                   => ()
+          }
+        }
+        case _ => None
+      }
+      if (tmplst != List.empty) { sortNames = Some(tmplst) } else { None }
 
-        /* Three arguments minimum because three req. arguments */
-        if (cs >= 3)
-        {
-            /* Parse positional arguments */
-            e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
-            
-            var tmplst : List[String] = List.empty
-            
-            e.children(2) match {
-				case Exp(czs, _) => for (c <- czs) {
-					c match {
-						case Exp(List(Str(k)),_) => tmplst = tmplst ::: List(k)
-						case _                   => ()
-					}
-				}
-				case _ => None
-			}
-			if (tmplst != List.empty) { sortNames = Some(tmplst) } else { None }
+      /* Parse keyword arguments, these can come in any order */
+      var i : Int = 3
+      while (cs - i > 0)
+      {
+        e.children(i) match {
+          case Exp(ds,src) => ds.head match
+          {
+            case Exp(List(Str("constructor")),_) => const = argParsers.parseConstructor(Exp(ds,src))
+            case Exp(List(Str("accessors")),_)   => accs  = argParsers.parseAccessors(Exp(ds,src))
+            case Exp(List(Str("theory")),_)      => thy   = argParsers.parseTheory(Exp(ds,src))
+            case _                               => ()
+          }
+          case _ => ()
+        }
+        i += 1
+      }
 
-            /* Parse keyword arguments, these can come in any order */
-            var i : Int = 3
-            while (cs - i > 0)
-            {
-                e.children(i) match {
-                    case Exp(ds,src) => ds.head match
-                    {
-                        case Exp(List(Str("constructor")),_) => const = argParsers.parseConstructor(Exp(ds,src))
-                        case Exp(List(Str("accessors")),_)   => accs  = argParsers.parseAccessors(Exp(ds,src))
-                        case Exp(List(Str("theory")),_)      => thy   = argParsers.parseTheory(Exp(ds,src))
-                        case _                               => ()
-                    }
-                    case _ => ()
-                }
-                i += 1
-            }
+      /* check for required arguments */
+      if (name.isEmpty || sortNames.isEmpty || thy.isEmpty) None
+      else { Some(CartesianProduct(name.get, sortNames.get, thy.get, const, accs, e.src)) }
 
-            /* check for required arguments */
-            if (name.isEmpty || sortNames.isEmpty || thy.isEmpty) None
-            else { Some(CartesianProduct(name.get, sortNames.get, thy.get, const, accs, e.src)) }
+    } else { None }
+  }
 
-        } else { None }
-    }
-    
-    /* Parser for IMPS special form def-schematic-macete
-     * Documentation: IMPS manual pgs. 180, 181 */
-    def parseSchematicMacete (e : Exp) : Option[LispExp] =
+  /* Parser for IMPS special form def-schematic-macete
+   * Documentation: IMPS manual pgs. 180, 181 */
+  def parseSchematicMacete (e : Exp) : Option[LispExp] =
+  {
+    // Required arguments
+    var name    : Option[String] = None
+    var formula : Option[String] = None
+    var thy     : Option[Theory] = None
+
+    // Optional arguments
+    var nullarg  : Boolean = false
+    var transarg : Boolean = false
+
+    val cs : Int = e.children.length
+
+    /* Three arguments minimum because three req. arguments */
+    if (cs >= 3)
     {
-        // Required arguments
-        var name    : Option[String] = None
-        var formula : Option[String] = None
-        var thy     : Option[Theory] = None
+      /* Parse positional arguments */
+      e.children(1) match { case Exp(List(Str(x)), _) => name    = Some(x) }
+      e.children(2) match { case Exp(List(Str(y)), _) => formula = Some(y) }
 
-        // Optional arguments
-        var nullarg  : Boolean = false
-        var transarg : Boolean = false
-
-        val cs : Int = e.children.length
-
-        /* Three arguments minimum because three req. arguments */
-        if (cs >= 3)
+      /* Parse keyword arguments, these can come in any order */
+      var i : Int = 3
+      while (cs - i > 0)
+      {
+        e.children(i) match
         {
-            /* Parse positional arguments */
-            e.children(1) match { case Exp(List(Str(x)), _) => name    = Some(x) }
-            e.children(2) match { case Exp(List(Str(y)), _) => formula = Some(y) }
+          case Exp(ds,src) => ds.head match
+          {
+            case Exp(List(Str("theory")),_) => thy = argParsers.parseTheory(Exp(ds,src))
+            case (Str("null"))              => nullarg  = true
+            case (Str("transportable"))     => transarg = true
+            case _                          => ()
+          }
+          case _ => ()
+        }
+        i += 1
+      }
 
-            /* Parse keyword arguments, these can come in any order */
-            var i : Int = 3
-            while (cs - i > 0)
-            {
-                e.children(i) match
-                {
-                    case Exp(ds,src) => ds.head match
-                    {
-                        case Exp(List(Str("theory")),_) => thy = argParsers.parseTheory(Exp(ds,src))
-                        case (Str("null"))              => nullarg  = true
-                        case (Str("transportable"))     => transarg = true
-                        case _                          => ()
-                    }
-                    case _ => ()
-                }
-                i += 1
-            }
+      /* check for required arguments */
+      if (name.isEmpty || formula.isEmpty || thy.isEmpty) None
+      else { Some(SchematicMacete(name.get, formula.get, thy.get, nullarg, transarg, e.src)) }
 
-            /* check for required arguments */
-            if (name.isEmpty || formula.isEmpty || thy.isEmpty) None
-            else { Some(SchematicMacete(name.get, formula.get, thy.get, nullarg, transarg, e.src)) }
-
-        } else { None }
-    }
+    } else { None }
+  }
 }
