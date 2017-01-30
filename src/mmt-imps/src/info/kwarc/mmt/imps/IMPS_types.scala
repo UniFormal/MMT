@@ -24,6 +24,10 @@ case class Comment(content : String, src : SourceRef) extends LispExp {
 	}
 }
 
+case class Str(str : String) extends LispExp {
+  override def toString : String = { "Str(" + str + ")"}
+}
+
 /* TEMPORARY */
 case class Dummy(str : String) extends LispExp
 {
@@ -33,8 +37,10 @@ case class Dummy(str : String) extends LispExp
 	}
 }
 
-case class Str(str : String) extends LispExp {
-    override def toString : String = { "Str(" + str + ")"}
+case class ParseFailure(str : String) extends LispExp {
+  override def toString: String = {
+    "Could not parse structure: " + str
+  }
 }
 
 /* IMPS SPECIAL FORM ARGUMENTS */

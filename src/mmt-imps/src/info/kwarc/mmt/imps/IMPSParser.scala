@@ -72,11 +72,25 @@ class IMPSParser
         /* Actually parse Exps and filter for successes */
         val parsedExprs : List[LispExp] = exprs.map(parseExpression).filter(y => y.isDefined).map(z => z.get)
 
+        var successes : Int = 0
+        var failures  : Int = 0
+        var dummies   : Int = 0
+
+        for (ex <- parsedExprs)
+        {
+            ex match {
+                case Dummy(_) => dummies += 1
+                case ParseFailure(_) => failures += 1
+                case _ => successes += 1
+            }
+        }
+
         // Some printouts for manual inspection, to be removed later
         println("\n#### Summary for " + uri.toString + ": " + parsedExprs.length + " expressions parsed")
+        println("#### Successes: " + successes + ", Failures: " + failures + ", Dummies: " + dummies)
 
         /* Print parsed expressions for diff */
-        for (p <- parsedExprs) { println("\n" + p.toString) }
+        // for (p <- parsedExprs) { println("\n" + p.toString) }
 
         /* Return one expression with all the smaller expressions as children */
         Exp(parsedExprs, sr)
@@ -157,97 +171,95 @@ class IMPSParser
     /* Parse a single EXP expression into a special form or similar (if possible) */
     private def parseExpression (e : Exp) : Option[LispExp] =
     {
-        /* Patter matching down/through to appropriate level */
-        e.children.head match
-        {
-            case Exp(cs,_) => cs.head match
-            {
-                /* toplevel stuff */
-                case Str("herald") => parseHeralding(e)
+      /* Patter matching down/through to appropriate level */
+      e.children.head match
+      {
+          case Exp(cs,_) => cs.head match
+          {
+              /* toplevel stuff */
+              case Str("herald") => return parseHeralding(e)
 
-                case Str("load-section") => parseLoadSection(e)
+              case Str("load-section") => return parseLoadSection(e)
 
-                case Str("include-files") => Some(Dummy("include-files"))
+              case Str("include-files") => return Some(Dummy("include-files"))
 
-                case Str("view-expr") => Some(Dummy("view-expr"))
+                case Str("view-expr") => return Some(Dummy("view-expr"))
 
                 /* Actual IMPS special forms */
 
-                case Str("def-algebraic-processor") => Some(Dummy("def-algebraic-processor"))
+                case Str("def-algebraic-processor") => return Some(Dummy("def-algebraic-processor"))
 
-                case Str("def-atomic-sort") => defFormParsers.parseAtomicSort(e)
+                case Str("def-atomic-sort") => return defFormParsers.parseAtomicSort(e)
 
-                case Str("def-bnf") => Some(Dummy("def-bnf"))
+                case Str("def-bnf") => return Some(Dummy("def-bnf"))
 
-                case Str("def-cartesian-product") => defFormParsers.parseCartesianProduct(e)
+                case Str("def-cartesian-product") => return defFormParsers.parseCartesianProduct(e)
 
-                case Str("def-compound-macete") => Some(Dummy("def-compund-macete"))
+                case Str("def-compound-macete") => return Some(Dummy("def-compund-macete"))
 
-                case Str("def-constant") => defFormParsers.parseConstant(e)
+                case Str("def-constant") => return defFormParsers.parseConstant(e)
 
-                case Str("def-imported-rewrite-rules") => defFormParsers.parseImportedRewriteRules(e)
+                case Str("def-imported-rewrite-rules") => return defFormParsers.parseImportedRewriteRules(e)
 
-                case Str("def-inductor") => Some(Dummy("def-inductor"))
+                case Str("def-inductor") => return Some(Dummy("def-inductor"))
 
-                case Str("def-language") => Some(Dummy("def-language"))
+                case Str("def-language") => return Some(Dummy("def-language"))
 
-                case Str("def-order-processor") => Some(Dummy("def-order-processor"))
+                case Str("def-order-processor") => return Some(Dummy("def-order-processor"))
 
-                case Str("def-primitive-recursive-constant") => Some(Dummy("def-primitive-recursive-constant"))
+                case Str("def-primitive-recursive-constant") => return Some(Dummy("def-primitive-recursive-constant"))
 
-                case Str("def-quasi-constructor") => defFormParsers.parseQuasiConstructor(e)
+                case Str("def-quasi-constructor") => return defFormParsers.parseQuasiConstructor(e)
 
-                case Str("def-record-theory") => Some(Dummy("def-record-theory"))
+                case Str("def-record-theory") => return Some(Dummy("def-record-theory"))
 
-                case Str("def-recursive-constant") => Some(Dummy("def-recursive-constant"))
+                case Str("def-recursive-constant") => return Some(Dummy("def-recursive-constant"))
 
-                case Str("def-renamer") => Some(Dummy("def-renamer"))
+                case Str("def-renamer") => return Some(Dummy("def-renamer"))
 
-                case Str("def-schematic-macete") => defFormParsers.parseSchematicMacete(e)
+                case Str("def-schematic-macete") => return defFormParsers.parseSchematicMacete(e)
 
-                case Str("def-script") => Some(Dummy("def-script"))
+                case Str("def-script") => return Some(Dummy("def-script"))
 
-                case Str("def-section") => Some(Dummy("def-section"))
+                case Str("def-section") => return Some(Dummy("def-section"))
 
-                case Str("def-sublanguage") => Some(Dummy("def-sublanguage"))
+                case Str("def-sublanguage") => return Some(Dummy("def-sublanguage"))
 
-                case Str("def-theorem") => Some(Dummy("def-theorem"))
+                case Str("def-theorem") => return Some(Dummy("def-theorem"))
 
-                case Str("def-theory") => Some(Dummy("def-theory"))
+                case Str("def-theory") => return Some(Dummy("def-theory"))
 
-                case Str("def-theory-ensemble") => Some(Dummy("def-theory-ensemble"))
+                case Str("def-theory-ensemble") => return Some(Dummy("def-theory-ensemble"))
 
-                case Str("def-theory-ensemble-instances") => Some(Dummy("def-theory-ensemble-instances"))
+                case Str("def-theory-ensemble-instances") => return Some(Dummy("def-theory-ensemble-instances"))
 
-                case Str("def-theory-ensemble-multiple") => Some(Dummy("def-theory-ensemble-multiple"))
+                case Str("def-theory-ensemble-multiple") => return Some(Dummy("def-theory-ensemble-multiple"))
 
-                case Str("def-theory-ensemble-overloadings") => Some(Dummy("def-theory-ensemble-overloadings"))
+                case Str("def-theory-ensemble-overloadings") => return Some(Dummy("def-theory-ensemble-overloadings"))
 
-                case Str("def-theory-instance") => Some(Dummy("def-theory-instance"))
+                case Str("def-theory-instance") => return Some(Dummy("def-theory-instance"))
 
-                case Str("def-theory-processors") => Some(Dummy("def-theory-processors"))
+                case Str("def-theory-processors") => return Some(Dummy("def-theory-processors"))
 
-                case Str("def-translation") => Some(Dummy("def-translation"))
+                case Str("def-translation") => return Some(Dummy("def-translation"))
 
-                case Str("def-transported-symbols") => Some(Dummy("def-transported-symbols"))
+                case Str("def-transported-symbols") => return Some(Dummy("def-transported-symbols"))
 
                 /* Syntax changers */
 
-                case Str("def-overloading") => Some(Dummy("def-overloading"))
+                case Str("def-overloading") => return Some(Dummy("def-overloading"))
 
-                case Str("def-parse-syntax") => Some(Dummy("def-parse-syntax"))
+                case Str("def-parse-syntax") => return Some(Dummy("def-parse-syntax"))
 
-                case Str("def-print-syntax") => Some(Dummy("def-print-syntax"))
+                case Str("def-print-syntax") => return Some(Dummy("def-print-syntax"))
 
                 /* Catchall cases */
-                case Str(x) => println("DBG: unrecognised structure not parsed --> " + x)
+                case Str(x) => return Some(ParseFailure(x))
                 case foo => println("DBG: faulty structure? " + foo.toString)
             }
             
-            case Comment(_, _) =>  /* No action for comment lines. */
-
-            case q  => println("DBG: Couldn't parse:\n~~~")
-                       println(q.toString + "\n~~~")
+          case Comment(_, _) =>  /* No action for comment lines. */
+          case q  => println("DBG: Couldn't parse:\n~~~") ; println(q.toString + "\n~~~")
         }
 
         /* Return None if nothing could be parsed */
