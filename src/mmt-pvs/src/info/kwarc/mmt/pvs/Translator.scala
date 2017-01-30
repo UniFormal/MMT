@@ -147,7 +147,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         case _ => None
       }
 
-      
+
       val doc = new Document(bt.narrationDPath, true)
       val ths = modsM map (m => {
         val theory = new DeclaredTheory(m.parent,m.name,Some(m.meta))//,m.parameters)
@@ -176,7 +176,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore,this)))
       }
       index(doc)
-
+      
 
       BuildSuccess(deps.map(LogicalDependency),modsM.map(m => LogicalDependency(m.path)))
     } catch {
@@ -508,8 +508,8 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
 
       case theory_decl(ChainedDecl(NamedDecl(id, _, _), _, _), domain) =>
         val p = doMPath(domain, false)
-        //TODO
-        ???
+        state.addinclude(p)
+        //TODO : this should be named etc.
 
       case e@expr_judgement(optNamed, bindings, expr, tp) =>
         val name = newName(optNamed.id.getOrElse("Name_Judgment"))
@@ -710,8 +710,9 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
               PVSTheory.recupdate(id,asstm,realargs)
             case List(proj_assign(_,i)) =>
               PVSTheory.tupleupdate(i,asstm)
-            case List(e:Expr) =>
-              PVSTheory.funupdate(doExpr(e)._1,asstm)
+            case ls : List[Expr] if ls.forall(_.isInstanceOf[Expr])/*(e:Expr)*/ =>
+              val expr = PVSTheory.tuple_expr(ls.map(doExpr))
+              PVSTheory.funupdate(expr._1,asstm)
             case x =>
               println("TODO update_expr assignment arg of type " + x.head.getClass)
               println("Update " + ex)
