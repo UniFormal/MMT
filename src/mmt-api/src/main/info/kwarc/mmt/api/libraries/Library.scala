@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.libraries
 import info.kwarc.mmt.api._
 import frontend._
 import documents._
+import info.kwarc.mmt.api.uom.ElaboratedElement
 import modules._
 import objects._
 import symbols._
@@ -385,6 +386,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
       val sf = extman.get(classOf[StructuralFeature], dd.feature) getOrElse {
         error("structural feature " + dd.feature + " not known")
       }
+      if (ElaboratedElement.is(dd)) error("already elaborated")
       val elaboration = sf.elaborate(parent, dd)
       elaboration.getMostSpecific(name) match {
         case Some((d: DerivedDeclaration, ln)) =>

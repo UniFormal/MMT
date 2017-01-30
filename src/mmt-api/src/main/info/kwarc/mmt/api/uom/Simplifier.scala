@@ -29,6 +29,8 @@ trait StructureSimplifier extends Extension {
    def materialize(context: Context, exp: Term, expandDefs: Boolean, pathOpt: Option[MPath]): Module
    
    def getBody(context: Context, moduleExp: Term): ElementContainer[NamedElement]
+
+   def elaborateContext(outer: Context, con: Context) : Context
 }
 
 /**

@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.utils.Killable
 import symbols._
 import objects._
 import objects.Conversions._
@@ -9,12 +10,16 @@ import objects.Conversions._
  *
  * does not expand in contexts and scopes at the moment  
  */ 
-class DefinitionExpander(controller: frontend.Controller) extends StatelessTraverser {
+class DefinitionExpander(controller: frontend.Controller) extends StatelessTraverser with Killable {
    private def expSym(p: GlobalName): Option[Term] = controller.globalLookup.getO(p) match {
       case Some(c: Constant) => c.df
       case _ => None
    }
    def traverse(t: Term)(implicit con : Context, init: Unit): Term = {
+      if (isKilled) {
+         return t
+      }
+      //println(t)
       t match {
          case DefinitionsExpanded(tE) if tE.freeVars.forall(v => con(v).df.isEmpty) =>
             // term was already expanded previously and none of its free variables has acquired a definition since then
