@@ -26,12 +26,52 @@ class PVSImporter extends Importer {
       }
 
       val conv = new PVSImportTask(controller, bf, index)
-      e match {
+      val ret = e match {
          case d: pvs_file =>
             conv.doDocument(d)
          case m: syntax.Module =>
             conv.doDocument(pvs_file(List(m)))
       }
-      //BuildResult.empty
+      try {
+         ret match {
+            case BuildSuccess(used, pr) => Sorter.add(pr.head.asInstanceOf[LogicalDependency].mpath, used.map(
+               _.asInstanceOf[LogicalDependency].mpath))
+            case MissingDependency(used, pr) => Sorter.add(pr.head.asInstanceOf[LogicalDependency].mpath, used.map(
+               _.asInstanceOf[LogicalDependency].mpath))
+         }
+      } catch {
+         case e : Throwable =>
+          e.printStackTrace()
+          throw e
+      }
+      BuildResult.empty
+   }
+}
+
+object Sorter {
+   private val initstr = "http://shemesh.larc.nasa.gov/fm/ftp/larc/PVS-library/"
+   private var ls : List[(String,Set[String])] = Nil
+
+   private def mkString(mp : MPath) : String = {
+      //println(mp.toString.drop(initstr.length))
+      val ar = mp.toString.drop(initstr.length).split('?').toList
+      //println(ar)
+      ar.head + "/pvsxml/" + ar.tail.head + ".xml"
+   }
+
+   def add(n : MPath, deps : List[MPath]) = {
+      val fname = mkString(n)
+      if (!ls.exists(p => p._1 == fname)) {
+         ls ::= ((fname,(deps.filter(_.toString.startsWith(initstr)) map mkString).toSet))
+         sort()
+         ls foreach {p => println("controller.handleLine(\"build PVS/NASA mmt-omdoc " + p._1 + "\")")}
+      }
+   }
+   private def sort(i : Int = 0): Unit = {
+      if (i == ls.length -1) return
+      else if (ls.drop(i + 1).exists(p => p._2 contains ls(i)._1)) {
+         ls = ls.take(i) ::: ls.drop(i+1) ::: ls(i) :: Nil
+         sort(i)
+      } else sort(i+1)
    }
 }

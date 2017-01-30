@@ -63,10 +63,13 @@ object CurryingEqualityRule extends TermBasedEqualityRule {
 
   def apply(check: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])
            (implicit stack: Stack, history: History): Option[Continue[Boolean]] = (tm1, tm2) match {
-    case (pvspi(v1, pvssigma(v2, a, Lambda(_, _, b)), Lambda(_, _, target)), pvspi(v12, a2, Lambda(_, _, pvspi(v22, b2, Lambda(_, _, target2))))) =>
-      val ret = check.check(Equality(stack, a, a2, None)) &&
-        check.check(Equality(stack ++ v2 % a, b, b2 ^? (v22 / OMV(v2)), None)) &&
-        check.check(Equality(stack, target, target2, None))
+    case (pvspi(v1, sig @ pvssigma(v2, a, Lambda(_, _, b)), Lambda(_, _, target)),
+          pvspi(v12, a2, Lambda(_, _, pvspi(v22, b2, Lambda(_, _, target2))))) =>
+      val ret = {
+        check.check(Equality(stack, a, a2, None)) &&
+        check.check(Equality(stack ++ v2 % a, b, b2 ^? (v12 / OMV(v2)), None)) &&
+        check.check(Equality(stack ++ v2 % a ++ v1 % sig ++ v22 % b, target, target2 ^? (v12 / OMV(v2)), None))
+      }
       Some(Continue(ret))
     case (pvspi(v12, a2, Lambda(_, _, pvspi(v22, b2, target2))), pvspi(v1, pvssigma(v2, a, b), target)) =>
       apply(check)(tm2, tm1, tp)

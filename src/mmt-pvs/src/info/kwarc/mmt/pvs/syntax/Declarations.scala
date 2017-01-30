@@ -63,7 +63,8 @@ sealed trait FormalParameter
 // not in rnc
 case class formal_type_decl(named: ChainedDecl, ne: NonEmptiness) extends FormalParameter
 /** type with given supertype -- a TYPE FROM A for a type A */
-case class formal_subtype_decl(named: ChainedDecl, ne: NonEmptiness, _sup: DeclaredType, _pred: const_decl) extends FormalParameter
+//case class formal_subtype_decl(named: ChainedDecl, ne: NonEmptiness, _sup: DeclaredType, _pred: const_decl) extends FormalParameter
+case class formal_subtype_decl(named: ChainedDecl, ne: NonEmptiness, _sup: Type, _pred: const_decl) extends FormalParameter
 /** typed constant -- c:A for a type A */
 case class formal_const_decl(named: ChainedDecl, tp: DeclaredType) extends FormalParameter
 /** model of a theory -- m: T for a theory T */
