@@ -147,7 +147,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         case _ => None
       }
 
-      /*
+      
       val doc = new Document(bt.narrationDPath, true)
       val ths = modsM map (m => {
         val theory = new DeclaredTheory(m.parent,m.name,Some(m.meta))//,m.parameters)
@@ -167,7 +167,6 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       println(controller.presenter.asString(ths.head))
       println(ths.head)
 
-
       log("Checking:")
       logGroup {
         val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
@@ -177,7 +176,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore,this)))
       }
       index(doc)
-      */
+
 
       BuildSuccess(deps.map(LogicalDependency),modsM.map(m => LogicalDependency(m.path)))
     } catch {

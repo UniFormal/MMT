@@ -7,7 +7,9 @@ import archives._
 
 class PVSImporter extends Importer {
    val key = "pvs-omdoc"
+
    def inExts = List("xml")
+
    //override def inDim = RedirectableDimension("pvsxml", Some(Dim("src","pvsxml")))
 
    private val parseXML = syntax.makeParser
@@ -15,14 +17,14 @@ class PVSImporter extends Importer {
    //private var startAt = "/home/raupi/lmh/localmh/MathHub/PVS/NASA/source/vect_analysis/pvsxml/cont_real_vect2.xml"
    // private var startAt = "/home/raupi/lmh/localmh/MathHub/PVS/Prelude/src/pvsxml/K_props.xml"
    def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
-   //   if (bf.inFile.toFilePath.toString < startAt) return BuildResult.empty
+      //   if (bf.inFile.toFilePath.toString < startAt) return BuildResult.empty
       log("Reading " + bf.inFile)
       val e = try {
          parseXML(bf.inFile)
       } catch {
-        case e: utils.ExtractError =>
-          log(e.getMessage)
-          sys.exit
+         case e: utils.ExtractError =>
+            log(e.getMessage)
+            sys.exit
       }
 
       val conv = new PVSImportTask(controller, bf, index)
@@ -32,6 +34,7 @@ class PVSImporter extends Importer {
          case m: syntax.Module =>
             conv.doDocument(pvs_file(List(m)))
       }
+      /*
       try {
          ret match {
             case BuildSuccess(used, pr) => Sorter.add(pr.head.asInstanceOf[LogicalDependency].mpath, used.map(
@@ -45,9 +48,11 @@ class PVSImporter extends Importer {
           throw e
       }
       BuildResult.empty
+      */
+      ret
    }
 }
-
+/*
 object Sorter {
    private val initstr = "http://shemesh.larc.nasa.gov/fm/ftp/larc/PVS-library/"
    private var ls : List[(String,Set[String])] = Nil
@@ -69,9 +74,10 @@ object Sorter {
    }
    private def sort(i : Int = 0): Unit = {
       if (i == ls.length -1) return
-      else if (ls.drop(i + 1).exists(p => p._2 contains ls(i)._1)) {
+      else if (ls.drop(i + 1).exists(p => ls(i)._2 contains p._1)) {
          ls = ls.take(i) ::: ls.drop(i+1) ::: ls(i) :: Nil
          sort(i)
       } else sort(i+1)
    }
 }
+*/
