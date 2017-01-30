@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
 import frontend._
+import info.kwarc.mmt.api.utils.Killable
 import modules._
 import objects.Conversions._
 import objects._
@@ -253,7 +254,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    /** the SubstitutionApplier to be used throughout */
    private implicit val sa = new MemoizedSubstitutionApplier
    /** a DefinitionExpander to be used throughout */
-   private val defExp = new uom.DefinitionExpander(controller)
+   private val defExp = new uom.DefinitionExpander(controller).diesWith(checkingUnit)
    /** used for rendering objects, should be used by rules if they want to log */
    implicit val presentObj : Obj => String = o => controller.presenter.asString(o)
 
@@ -1269,6 +1270,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             history += ("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
          tmE
       }
+     if (checkingUnit.isKilled) {
+       return tm
+     }
       tm.head match {
          case Some(h) =>
             // use first applicable rule

@@ -124,11 +124,7 @@ abstract class ArgumentChecker {
 /** default implementation: type-check against expected type if not covered; skip if covered */
 object StandardArgumentChecker extends ArgumentChecker {
    def apply(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History) =
-      covered || {
-        val ret = solver.check(Typing(stack, tm, tp))(history + "argument must have domain type")
-        print("")
-        ret
-      }
+      covered || solver.check(Typing(stack, tm, tp))(history + "argument must have domain type")
 }
 
 

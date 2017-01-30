@@ -52,7 +52,24 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      case _ =>
     }
   }
-    
+
+  def elaborateContext(outer: Context, con: Context) : Context = {
+    var ret = Context.empty
+    def currentContext = outer ++ ret
+    con.foreach {vd =>
+      val r = vd match {
+        case dv @ DerivedVarDecl(name,feat,_,args) =>
+          val sfOpt = controller.extman.get(classOf[StructuralFeature], feat)
+          if (sfOpt.isDefined) {
+            // sfOpt.get.checkInContext(currentContext,dv)
+            vd :: sfOpt.get.elaborateInContext(currentContext,dv)
+          } else List(vd)
+        case v => List(v)
+      }
+      ret = ret ++ r
+    }
+    ret
+  }
 
   /** flattens all declarations in a theory */
   private def flatten(m: DeclaredModule) {
@@ -126,14 +143,19 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
          controller.extman.get(classOf[StructuralFeature], dd.feature) match {
            case None => Nil
            case Some(sf) =>
+             ElaboratedElement.set(dOrig)
               val elab = sf.elaborate(parent, dd)
               dd.module.setOrigin(GeneratedBy(dd.path))
               val simp = oS.toTranslator(rules)
+             /*
              val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
                throw GeneralError(s"no mmt checker found")
              }.asInstanceOf[MMTStructureChecker]
-             val cont = checker.elabContext(parent)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore,new MMTTask{}))
+             var cont = checker.elabContext(parent)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore,new MMTTask{}))
+              */
+             val cont = elaborateContext(Context.empty,parent.getInnerContext)
               elab.getDeclarations.map {d =>
+                //println(d)
                 val dS = d.translate(simp,cont)
                 dS
               }
