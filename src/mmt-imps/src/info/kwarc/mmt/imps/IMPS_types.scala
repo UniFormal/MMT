@@ -265,3 +265,166 @@ case class SchematicMacete(name                 : String,    /* Positional Argum
     str
   }
 }
+
+/* IMPS MATH EXPRESSIONS */
+/* See page 64 etc. of the IMPS manual */
+
+abstract class IMPSMathExpr
+{
+  override def toString: String = "<~ unparsed IMPS math expression ~>"
+}
+
+case class IMPSTruth() extends IMPSMathExpr
+{
+  override def toString: String = "truth"
+}
+
+case class IMPSFalsehood() extends IMPSMathExpr
+{
+  override def toString: String = "falsehood"
+}
+
+case class IMPSNegation(p : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String = "not(" + p.toString + ")"
+}
+
+case class IMPSConjunction(ps : List[IMPSMathExpr]) extends IMPSMathExpr
+{
+  override def toString: String =
+  {
+    var str : String = ps.head.toString
+    for (p <- ps.tail)
+    {
+      str = str + " and " + p.toString
+    }
+    str
+  }
+}
+
+case class IMPSDisjuntion(ps : List[IMPSMathExpr]) extends IMPSMathExpr
+{
+  override def toString: String =
+  {
+    var str : String = ps.head.toString
+    for (p <- ps.tail)
+    {
+      str = str + " or " + p.toString
+    }
+    str
+  }
+}
+
+case class IMPSImplication(p : IMPSMathExpr, q : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String = p.toString + " implies " + q.toString
+}
+
+case class IMPSIff(p : IMPSMathExpr, q : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String = p.toString + " iff " + q.toString
+}
+
+case class IMPSIfForm(p : IMPSMathExpr, q : IMPSMathExpr, r : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String = "if_form(" + p.toString + "," + q.toString + "," + r.toString + ")"
+}
+
+case class IMPSForAll(vs : List[(IMPSMathExpr, Option[IMPSMathExpr])], p : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String =
+  {
+    var str : String = "forall("
+    for ((v, s) <- vs)
+    {
+      str = str + v.toString
+      if (s.isDefined) str = str + ":" + s.get.toString
+      str = str + ","
+    }
+    str = str + p.toString + ")"
+    str
+  }
+}
+
+case class IMPSForSome(vs : List[(IMPSMathExpr, Option[IMPSMathExpr])], p : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String =
+  {
+    var str : String = "forsome("
+    for ((v, s) <- vs)
+    {
+      str = str + v.toString
+      if (s.isDefined) str = str + ":" + s.get.toString
+      str = str + ","
+    }
+    str = str + p.toString + ")"
+    str
+  }
+}
+
+case class IMPSEquals(t1 : IMPSMathExpr, t2 : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String = t1.toString + "=" + t2.toString
+}
+
+/* TODO: Is this even correct? */
+case class IMPSApply(f : IMPSMathExpr, ts : List[IMPSMathExpr] extends IMPSMathExpr
+{
+  override def toString: String =
+  {
+    var str : String = f.toString
+    str = str + "(" + ts.head.toString
+    for (t <- ts.tail)
+    {
+      str = str + "," + t.toString
+    }
+    str = str + ")"
+    str
+  }
+}
+
+case class IMPSLambda(vs : List[(IMPSMathExpr, Option[IMPSMathExpr])], t : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String =
+  {
+    var str : String = "lambda("
+    for ((v, s) <- vs)
+    {
+      str = str + v.toString
+      if (s.isDefined) str = str + ":" + s.get.toString
+      str = str + ","
+    }
+    str = str + t.toString + ")"
+    str
+  }
+}
+
+case class IMPSIota(v1 : IMPSMathExpr, s1 : IMPSMathExpr, p : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String = "iota(" + v1.toString + ":" + s1.toString + "," + p.toString + ")"
+}
+
+case class IMPSIotaP(v1 : IMPSMathExpr, s1 : IMPSMathExpr, p : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String = "iota_p(" + v1.toString + ":" + s1.toString + "," + p.toString + ")"
+}
+
+case class IMPSIf(p : IMPSMathExpr, t1 : IMPSMathExpr, t2 : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String = "if(" + p.toString + "," + t1.toString + "," + t2.toString + ")"
+}
+
+case class IMPSIsDefined(t : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String = "#(" + t.toString + ")"
+}
+
+case class IMPSIsDefinedIn(t : IMPSMathExpr, s : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String = "#(" + t.toString + "," + s.toString + ")"
+}
+
+case class IMPSUndefined(s : IMPSMathExpr) extends IMPSMathExpr
+{
+  override def toString: String = "?" + s.toString
+}

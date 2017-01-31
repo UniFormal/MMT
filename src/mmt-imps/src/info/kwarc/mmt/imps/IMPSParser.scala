@@ -87,7 +87,7 @@ class IMPSParser
 
     // Some printouts for manual inspection, to be removed later
     println("\n#### Summary for " + uri.toString + ":")
-    println("#### " + parsedExprs.length + " expressions parsed; " + successes + " Successes " + failures + " Failures and " + dummies + " Dummies")
+    println("#### " + parsedExprs.length + " expressions parsed; " + successes + " Successes, " + failures + " Failures and " + dummies + " Dummies")
 
     /* Print parsed expressions for diff */
     // for (p <- parsedExprs) { println("\n" + p.toString) }

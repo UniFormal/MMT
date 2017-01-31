@@ -12,6 +12,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
 	def doDocument(d : LispExp) : BuildResult =
 	{
+    var successfulTransfers : Int = 0
+    println("#### " + successfulTransfers + " successfully transferred to MMT")
 		BuildResult.empty
 	}
 }
