@@ -16,10 +16,12 @@
   (theory h-o-real-arithmetic)
   (usages rewrite foobar))
 
+;-------------------------------------------
 (def-constant POWER%OF%TWO
   "lambda(x:zz,2^x)"
   (sort "[zz,zz]")
   (theory h-o-real-arithmetic))
+;-------------------------------------------
 
 (def-quasi-constructor PREDICATE-TO-INDICATOR
   "lambda(s:[uu,prop],

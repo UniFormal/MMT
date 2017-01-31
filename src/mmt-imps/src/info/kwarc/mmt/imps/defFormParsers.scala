@@ -41,9 +41,16 @@ package object defFormParsers
         i += 1
       }
 
+      // TODO: OMG UGLY?
+      val math_option : Option[IMPSMathExpr] = impsMathParser.parseIMPSMath(defstring.get)
+      if (math_option.isEmpty)
+      {
+        //println("DBG: Parsing failed on defstring: " + defstring.get)
+      }
+
       /* check for required arguments */
-      if (name.isEmpty || defstring.isEmpty || thy.isEmpty) None
-      else { Some(Constant(name.get, defstring.get, thy.get, sort, usages, e.src)) }
+      if (name.isEmpty || defstring.isEmpty || thy.isEmpty || math_option.isEmpty) None
+      else { Some(Constant(name.get, defstring.get, math_option.get, thy.get, sort, usages, e.src)) }
 
     } else { None }
   }

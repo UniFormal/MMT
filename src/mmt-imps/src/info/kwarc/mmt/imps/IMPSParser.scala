@@ -70,13 +70,13 @@ class IMPSParser
     val sr        : SourceRef      = SourceRef(uri, sr_region)
 
     /* Actually parse Exps and filter for successes */
-    val parsedExprs : List[LispExp] = exprs.map(parseExpression).filter(y => y.isDefined).map(z => z.get)
+    val definedExprs : List[LispExp]  = exprs.map(parseExpression).filter(y => y.isDefined).map(z => z.get)
 
     var successes : Int = 0
     var failures  : Int = 0
     var dummies   : Int = 0
 
-    for (ex <- parsedExprs)
+    for (ex <- definedExprs)
     {
       ex match {
         case Dummy(_) => dummies += 1
@@ -87,13 +87,13 @@ class IMPSParser
 
     // Some printouts for manual inspection, to be removed later
     println("\n#### Summary for " + uri.toString + ":")
-    println("#### " + parsedExprs.length + " expressions parsed; " + successes + " Successes, " + failures + " Failures and " + dummies + " Dummies")
+    println("#### " + definedExprs.length + " expressions parsed; " + successes + " Successes, " + failures + " Failures and " + dummies + " Dummies")
 
     /* Print parsed expressions for diff */
     // for (p <- parsedExprs) { println("\n" + p.toString) }
 
     /* Return one expression with all the smaller expressions as children */
-    Exp(parsedExprs, sr)
+    Exp(definedExprs, sr)
   }
 
   /* Create an EXP expression from Unparsed object, until brackets

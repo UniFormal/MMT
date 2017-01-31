@@ -188,6 +188,7 @@ case class CartesianProduct(name      : String,               /* Keyword Argumen
  * Ducomentation: IMPS manual pgs. 168,169 */
 case class Constant(constantName : String,         /* Positional Argument, Required */
                     defExpString : String,         /* Positional Argument, Required */
+                    math         : IMPSMathExpr,   /* inferred */
                     theory       : Theory,         /* Keyword Argument, Required */
                     sort         : Option[Sort],   /* Keyword Argument, Optional */
                     usages       : Option[Usages], /* Keyword Argument, Optional */
@@ -302,7 +303,7 @@ case class IMPSConjunction(ps : List[IMPSMathExpr]) extends IMPSMathExpr
   }
 }
 
-case class IMPSDisjuntion(ps : List[IMPSMathExpr]) extends IMPSMathExpr
+case class IMPSDisjunction(ps : List[IMPSMathExpr]) extends IMPSMathExpr
 {
   override def toString: String =
   {
@@ -368,7 +369,7 @@ case class IMPSEquals(t1 : IMPSMathExpr, t2 : IMPSMathExpr) extends IMPSMathExpr
 }
 
 /* TODO: Is this even correct? */
-case class IMPSApply(f : IMPSMathExpr, ts : List[IMPSMathExpr] extends IMPSMathExpr
+case class IMPSApply(f : IMPSMathExpr, ts : List[IMPSMathExpr]) extends IMPSMathExpr
 {
   override def toString: String =
   {
