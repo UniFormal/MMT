@@ -186,11 +186,11 @@ case class CartesianProduct(name      : String,               /* Keyword Argumen
 
 /* def-constant
  * Ducomentation: IMPS manual pgs. 168,169 */
-case class Constant(constantName : String,         /* Positional Argument, Required */
-                    defExpString : String,         /* Positional Argument, Required */
-                    math         : IMPSMathExpr,   /* inferred */
-                    theory       : Theory,         /* Keyword Argument, Required */
-                    sort         : Option[Sort],   /* Keyword Argument, Optional */
+case class Constant(constantName : String, /* Positional Argument, Required */
+                    defExpString : String, /* Positional Argument, Required */
+                    math         : IMPSMathExp, /* inferred */
+                    theory       : Theory, /* Keyword Argument, Required */
+                    sort         : Option[Sort], /* Keyword Argument, Optional */
                     usages       : Option[Usages], /* Keyword Argument, Optional */
                     src          : SourceRef)      /* SourceRef for MMT */
   extends LispExp
@@ -270,27 +270,30 @@ case class SchematicMacete(name                 : String,    /* Positional Argum
 /* IMPS MATH EXPRESSIONS */
 /* See page 64 etc. of the IMPS manual */
 
-abstract class IMPSMathExpr
+abstract class IMPSMathExp
 {
   override def toString: String = "<~ unparsed IMPS math expression ~>"
 }
 
-case class IMPSTruth() extends IMPSMathExpr
+case class IMPSVar(v : String) extends IMPSMathExp
+case class IMPSSort(s : String) extends IMPSMathExp
+
+case class IMPSTruth() extends IMPSMathExp
 {
   override def toString: String = "truth"
 }
 
-case class IMPSFalsehood() extends IMPSMathExpr
+case class IMPSFalsehood() extends IMPSMathExp
 {
   override def toString: String = "falsehood"
 }
 
-case class IMPSNegation(p : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSNegation(p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = "not(" + p.toString + ")"
 }
 
-case class IMPSConjunction(ps : List[IMPSMathExpr]) extends IMPSMathExpr
+case class IMPSConjunction(ps : List[IMPSMathExp]) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -303,7 +306,7 @@ case class IMPSConjunction(ps : List[IMPSMathExpr]) extends IMPSMathExpr
   }
 }
 
-case class IMPSDisjunction(ps : List[IMPSMathExpr]) extends IMPSMathExpr
+case class IMPSDisjunction(ps : List[IMPSMathExp]) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -316,22 +319,22 @@ case class IMPSDisjunction(ps : List[IMPSMathExpr]) extends IMPSMathExpr
   }
 }
 
-case class IMPSImplication(p : IMPSMathExpr, q : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSImplication(p : IMPSMathExp, q : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = p.toString + " implies " + q.toString
 }
 
-case class IMPSIff(p : IMPSMathExpr, q : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSIff(p : IMPSMathExp, q : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = p.toString + " iff " + q.toString
 }
 
-case class IMPSIfForm(p : IMPSMathExpr, q : IMPSMathExpr, r : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSIfForm(p : IMPSMathExp, q : IMPSMathExp, r : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = "if_form(" + p.toString + "," + q.toString + "," + r.toString + ")"
 }
 
-case class IMPSForAll(vs : List[(IMPSMathExpr, Option[IMPSMathExpr])], p : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSForAll(vs : List[(IMPSMathExp, Option[IMPSMathExp])], p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -347,7 +350,7 @@ case class IMPSForAll(vs : List[(IMPSMathExpr, Option[IMPSMathExpr])], p : IMPSM
   }
 }
 
-case class IMPSForSome(vs : List[(IMPSMathExpr, Option[IMPSMathExpr])], p : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSForSome(vs : List[(IMPSMathExp, Option[IMPSMathExp])], p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -363,13 +366,13 @@ case class IMPSForSome(vs : List[(IMPSMathExpr, Option[IMPSMathExpr])], p : IMPS
   }
 }
 
-case class IMPSEquals(t1 : IMPSMathExpr, t2 : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSEquals(t1 : IMPSMathExp, t2 : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = t1.toString + "=" + t2.toString
 }
 
 /* TODO: Is this even correct? */
-case class IMPSApply(f : IMPSMathExpr, ts : List[IMPSMathExpr]) extends IMPSMathExpr
+case class IMPSApply(f : IMPSMathExp, ts : List[IMPSMathExp]) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -384,7 +387,7 @@ case class IMPSApply(f : IMPSMathExpr, ts : List[IMPSMathExpr]) extends IMPSMath
   }
 }
 
-case class IMPSLambda(vs : List[(IMPSMathExpr, Option[IMPSMathExpr])], t : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSLambda(vs : List[(IMPSMathExp, Option[IMPSMathExp])], t : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -400,32 +403,32 @@ case class IMPSLambda(vs : List[(IMPSMathExpr, Option[IMPSMathExpr])], t : IMPSM
   }
 }
 
-case class IMPSIota(v1 : IMPSMathExpr, s1 : IMPSMathExpr, p : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSIota(v1 : IMPSMathExp, s1 : IMPSMathExp, p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = "iota(" + v1.toString + ":" + s1.toString + "," + p.toString + ")"
 }
 
-case class IMPSIotaP(v1 : IMPSMathExpr, s1 : IMPSMathExpr, p : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSIotaP(v1 : IMPSMathExp, s1 : IMPSMathExp, p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = "iota_p(" + v1.toString + ":" + s1.toString + "," + p.toString + ")"
 }
 
-case class IMPSIf(p : IMPSMathExpr, t1 : IMPSMathExpr, t2 : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSIf(p : IMPSMathExp, t1 : IMPSMathExp, t2 : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = "if(" + p.toString + "," + t1.toString + "," + t2.toString + ")"
 }
 
-case class IMPSIsDefined(t : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSIsDefined(t : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = "#(" + t.toString + ")"
 }
 
-case class IMPSIsDefinedIn(t : IMPSMathExpr, s : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSIsDefinedIn(t : IMPSMathExp, s : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = "#(" + t.toString + "," + s.toString + ")"
 }
 
-case class IMPSUndefined(s : IMPSMathExpr) extends IMPSMathExpr
+case class IMPSUndefined(s : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = "?" + s.toString
 }

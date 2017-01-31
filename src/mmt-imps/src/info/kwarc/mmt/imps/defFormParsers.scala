@@ -42,7 +42,7 @@ package object defFormParsers
       }
 
       // TODO: OMG UGLY?
-      val math_option : Option[IMPSMathExpr] = impsMathParser.parseIMPSMath(defstring.get)
+      val math_option : Option[IMPSMathExp] = impsMathParser.parseIMPSMath(defstring.get)
       if (math_option.isEmpty)
       {
         //println("DBG: Parsing failed on defstring: " + defstring.get)

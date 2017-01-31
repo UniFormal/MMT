@@ -27,12 +27,24 @@ object IMPSTheory
   {
     def apply(t:Term) = Apply(this.term,t)
   }
-
+/*
   object impsLambda extends Sym("lambda")
   {
     def apply(typeA : Term, typeB : Term, sortA : Term, sortB : Term, funAB : Term) =
     {
        ApplySpine(this.term, typeA, typeB, sortA, sortB, funAB)
+    }
+  }
+  */
+  object IMPSLambda extends Sym("lambda")
+  {
+    def apply(ls : List[(LocalName,Option[Term])], t : Term) = ls match {
+      case Nil => ()
+      case _ =>
+        val sort : Term = ??? /* p._2.getOrElse(doUnknown) */
+        ls.foldRight(t)((tm,p) => ApplySpine(this.term,doUnknown,doUnknown,sort,doUnknown,
+        Lambda()
+      ))
     }
   }
 }

@@ -35,8 +35,8 @@ class IMPSImporter extends Importer
 
 		e match
 		{
-			case (d : LispExp) => conv.doDocument(d)
-			case _             => println("DBG: parsing did not return Exp") ; BuildResult.empty
+			case (d : Exp) => conv.doDocument(d, FileURI(bf.inFile))
+			case _         => println("DBG: parsing did not return Exp") ; BuildResult.empty
 		}
 	}
 }
