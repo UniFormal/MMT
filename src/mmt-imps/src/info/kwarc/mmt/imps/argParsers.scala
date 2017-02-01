@@ -42,11 +42,11 @@ package object argParsers
 
   /* Parser for IMPS theory argument objects
    * used in: def-atomic-sort... */
-  def parseTheory (e : Exp) : Option[Theory] =
+  def parseTheory (e : Exp) : Option[ArgumentTheory] =
   {
     if (e.children.length == 2) {
       e.children(1) match {
-        case Exp(List(Str(x)),_) => Some(Theory(x, e.src))
+        case Exp(List(Str(x)),_) => Some(ArgumentTheory(x, e.src))
         case _                   => None
       }
     } else { None }
@@ -59,6 +59,42 @@ package object argParsers
     if (e.children.length == 2) {
       e.children(1) match {
         case Exp(List(Str(x)),_) => Some(SourceTheory(x, e.src))
+        case _                   => None
+      }
+    } else { None }
+  }
+
+  /* Parser for IMPS home-theory argument objects
+   * used in: def-theorem... */
+  def parseHomeTheory (e : Exp) : Option[HomeTheory] =
+  {
+    if (e.children.length == 2) {
+      e.children(1) match {
+        case Exp(List(Str(x)),_) => Some(HomeTheory(x, e.src))
+        case _                   => None
+      }
+    } else { None }
+  }
+
+  /* Parser for IMPS macete argument (!) objects
+  * used in: def-theorem... */
+  def parseMacete (e : Exp) : Option[Macete] =
+  {
+    if (e.children.length == 2) {
+      e.children(1) match {
+        case Exp(List(Str(x)),_) => Some(Macete(x, e.src))
+        case _                   => None
+      }
+    } else { None }
+  }
+
+  /* Parser for IMPS translation argument (!) objects
+  * used in: def-theorems... */
+  def parseTranslation (e : Exp) : Option[ArgumentTranslation] =
+  {
+    if (e.children.length == 2) {
+      e.children(1) match {
+        case Exp(List(Str(x)),_) => Some(ArgumentTranslation(x, e.src))
         case _                   => None
       }
     } else { None }
@@ -173,5 +209,22 @@ package object argParsers
       { Some(Accessors(accs, e.src)) } else { None }
 
     } else { None }
+  }
+
+  /**
+    * Parser for IMPS proof argument objects, used in def-theorem
+    * @param e The parsed LispExp (Exp, to be precise) from which to read the script.
+    * @return A Proof object, which is just a wrapper for String at this time.
+    */
+  def parseProofScript(e : Exp) : Option[Proof] =
+  {
+    var proof : String = "(proof "
+    for (c <- e.children)
+    {
+      proof = proof + "\n  " + c.toString
+
+    }
+    proof = proof + ")"
+    Some(Proof(proof, e.src))
   }
 }

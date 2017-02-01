@@ -11,10 +11,7 @@ abstract class LispExp {
 }
 
 case class Exp(children : List[LispExp], src : SourceRef) extends LispExp {
-  override def toString : String =
-  {
-    "Exp(" + children.toString + ")"
-  }
+  override def toString : String = children.toString
 }
 
 case class Comment(content : String, src : SourceRef) extends LispExp {
@@ -25,7 +22,7 @@ case class Comment(content : String, src : SourceRef) extends LispExp {
 }
 
 case class Str(str : String) extends LispExp {
-  override def toString : String = { "Str(" + str + ")"}
+  override def toString : String = { str }
 }
 
 /* TEMPORARY */
@@ -45,8 +42,12 @@ case class ParseFailure(str : String) extends LispExp {
 
 /* IMPS SPECIAL FORM ARGUMENTS */
 
-case class Theory(thy : String, src : SourceRef) extends LispExp {
+case class ArgumentTheory(thy : String, src : SourceRef) extends LispExp {
   override def toString : String = { "(theory " + thy + ")"}
+}
+
+case class HomeTheory(hmthy : String, src : SourceRef) extends LispExp {
+  override def toString : String = { "(home-theory " + hmthy + ")"}
 }
 
 case class Language(lang : String, src : SourceRef) extends LispExp {
@@ -55,6 +56,10 @@ case class Language(lang : String, src : SourceRef) extends LispExp {
 
 case class Constructor(const : String, src : SourceRef) extends LispExp {
   override def toString : String = { "(constructor " + const + ")" }
+}
+
+case class Macete(macete : String, src : SourceRef) extends LispExp {
+  override def toString : String = { "(macete " + macete + ")" }
 }
 
 case class Sort(sort : String, src : SourceRef) extends LispExp {
@@ -67,6 +72,15 @@ case class Witness(witness : String, src : SourceRef) extends LispExp {
 
 case class SourceTheory(srcthy : String, src : SourceRef) extends LispExp {
   override def toString : String = { "(source-theory " + srcthy + ")"}
+}
+
+case class ArgumentTranslation(trans : String, src : SourceRef) extends LispExp {
+  override def toString: String = { "(translation " + trans + ")" }
+}
+
+// Proof scripts ATM only saved as strings
+case class Proof(prf : String, src : SourceRef) extends LispExp {
+  override def toString : String = { prf }
 }
 
 case class Accessors(accs : List[String], src : SourceRef) extends LispExp {
@@ -137,10 +151,10 @@ case class LoadSection(section : String, src : SourceRef) extends LispExp {
 
 /* def-atomic-sort
  * Documentation: IMPS manual pgs. 158, 159 */
-case class AtomicSort(sortName        : String,          /* Positional Argument, Required */
-                      quasiSortString : String,          /* Positional Argument, Required */
-                      theory          : Theory,          /* Keyword Argument, Required */
-                      usages          : Option[Usages],  /* Keyword Argument, Optional */
+case class AtomicSort(sortName        : String, /* Positional Argument, Required */
+                      quasiSortString : String, /* Positional Argument, Required */
+                      theory          : ArgumentTheory, /* Keyword Argument, Required */
+                      usages          : Option[Usages], /* Keyword Argument, Optional */
                       witness         : Option[Witness], /* Keyword Argument, Optional */
                       src             : SourceRef)       /* SourceRef for MMT */
   extends LispExp
@@ -159,11 +173,11 @@ case class AtomicSort(sortName        : String,          /* Positional Argument,
 
 /* def-cartesian-product
  * Documentation: IMPS manual pg. 166 */
-case class CartesianProduct(name      : String,               /* Keyword Argument, Required */
-                            sortNames : List[String],         /* Keyword Argument, Required */
-                            thy       : Theory,               /* Keyword Argument, Required */
-                            const     : Option[Constructor],  /* Keyword Argument, Optional */
-                            accs      : Option[Accessors],    /* Keyword Argument, Optional */
+case class CartesianProduct(name      : String, /* Keyword Argument, Required */
+                            sortNames : List[String], /* Keyword Argument, Required */
+                            thy       : ArgumentTheory, /* Keyword Argument, Required */
+                            const     : Option[Constructor], /* Keyword Argument, Optional */
+                            accs      : Option[Accessors], /* Keyword Argument, Optional */
                             src       : SourceRef)            /* SourceRef for MMT */
   extends LispExp
 {
@@ -189,7 +203,7 @@ case class CartesianProduct(name      : String,               /* Keyword Argumen
 case class Constant(constantName : String, /* Positional Argument, Required */
                     defExpString : String, /* Positional Argument, Required */
                     math         : IMPSMathExp, /* inferred */
-                    theory       : Theory, /* Keyword Argument, Required */
+                    theory       : ArgumentTheory, /* Keyword Argument, Required */
                     sort         : Option[Sort], /* Keyword Argument, Optional */
                     usages       : Option[Usages], /* Keyword Argument, Optional */
                     src          : SourceRef)      /* SourceRef for MMT */
@@ -247,11 +261,11 @@ case class QuasiConstructor(name            : String,                /* Position
 
 /* def-schematic-macete
  * Decomentation: IMPS manual pgs. 180, 181 */
-case class SchematicMacete(name                 : String,    /* Positional Argument, Required */
-                           formula              : String,    /* Positional Argument, Required */
-                           thy                  : Theory,    /* Keyword Argument, Required */
-                           nullPresent          : Boolean,   /* Keyword Argument, Optional */
-                           transportablePresent : Boolean,   /* Keyword Argument, Optional */
+case class SchematicMacete(name                 : String, /* Positional Argument, Required */
+                           formula              : String, /* Positional Argument, Required */
+                           thy                  : ArgumentTheory, /* Keyword Argument, Required */
+                           nullPresent          : Boolean, /* Keyword Argument, Optional */
+                           transportablePresent : Boolean, /* Keyword Argument, Optional */
                            src                  : SourceRef) /* SourceRef for MMT */
   extends LispExp
 {
@@ -262,6 +276,36 @@ case class SchematicMacete(name                 : String,    /* Positional Argum
     if (nullPresent) { str = str + "\n  null" }
     if (transportablePresent) { str = str + "\n  transportable"}
     str = str + "\n  " + thy.toString
+    str = str + ")"
+    str
+  }
+}
+
+/* def-theorem
+ * Documentation: IMPS manual pgs. 184 ff. */
+case class Theorem(name    : String,              /* Positional argument. Required. */
+                   formula : IMPSMathExp,         /* Positional argument. Required. */
+                   lemma   : Boolean,             /* Modifier argument. Optional. */
+                   reverse : Boolean,             /* Modifier argument. Optional. */
+                   thy     : ArgumentTheory,      /* Keyword Argument, Required */
+                   usages  : Option[Usages],      /* Keyword Argument, Optional */
+                   trans   : Option[Translation], /* Keyword Argument, Optional */
+                   macete  : Option[Macete],      /* Keyword Argument, Optional */
+                   hmthy   : Option[HomeTheory],  /* Keyword Argument, Optional */
+                   prf     : Option[Proof],       /* Keyword Argument, Optional */
+                   src     : SourceRef)           /* SourceRef for MMT */
+                   extends LispExp
+{
+  override def toString: String =
+  {
+    var str : String = "(def-theorem " + name + "\n  " + formula.toString
+    if (lemma) { str = str + "\n  lemma"}
+    if (reverse) { str = str + "\n  reverse"}
+    str = str + "\n  " + thy.toString
+    if (usages.isDefined) { str = str + "\n  " + usages.get.toString }
+    if (macete.isDefined) { str = str + "\n  " + macete.get.toString }
+    if (hmthy.isDefined) { str = str + "\n  " + hmthy.get.toString }
+    if (prf.isDefined) { str = str + "\n  " + prf.get.toString }
     str = str + ")"
     str
   }

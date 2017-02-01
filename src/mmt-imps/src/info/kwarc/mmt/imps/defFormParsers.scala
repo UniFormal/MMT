@@ -9,7 +9,7 @@ package object defFormParsers
     // Required arguments
     var name       : Option[String] = None
     var defstring  : Option[String] = None
-    var thy        : Option[Theory] = None
+    var thy        : Option[ArgumentTheory] = None
 
     // Optional arguments
     var usages : Option[Usages] = None
@@ -62,7 +62,7 @@ package object defFormParsers
     // Required arguments
     var name : Option[String] = None
     var qss  : Option[String] = None
-    var thy  : Option[Theory] = None
+    var thy  : Option[ArgumentTheory] = None
 
     // Optional arguments
     var usages  : Option[Usages]  = None
@@ -193,7 +193,7 @@ package object defFormParsers
     // Required arguments
     var name      : Option[String]       = None
     var sortNames : Option[List[String]] = None
-    var thy       : Option[Theory]       = None
+    var thy       : Option[ArgumentTheory]       = None
 
     // Optional arguments
     var accs  : Option[Accessors]   = None
@@ -251,7 +251,7 @@ package object defFormParsers
     // Required arguments
     var name    : Option[String] = None
     var formula : Option[String] = None
-    var thy     : Option[Theory] = None
+    var thy     : Option[ArgumentTheory] = None
 
     // Optional arguments
     var nullarg  : Boolean = false
@@ -289,5 +289,65 @@ package object defFormParsers
       else { Some(SchematicMacete(name.get, formula.get, thy.get, nullarg, transarg, e.src)) }
 
     } else { None }
+  }
+
+  /* Parser for IMPS form def-theorem
+   * Documentation: IMPS manual pgs. 184 ff. */
+  def parseTheorem (e : Exp) : Option[LispExp] =
+  {
+    // Required arguments
+    var name    : Option[String]         = None
+    var formula : Option[IMPSMathExp]    = None
+    var theory  : Option[ArgumentTheory] = None
+
+    // Optional Arguments
+    var lemma   : Boolean = false
+    var reverse : Boolean = false
+
+    var usages : Option[Usages]              = None
+    var hmthy  : Option[HomeTheory]          = None
+    var trans  : Option[ArgumentTranslation] = None
+    var macete : Option[Macete]              = None
+    var prf    : Option[Proof]               = None
+
+    /* Three arguments minimum */
+    val csl : Int = e.children.length
+    if (csl >= 3)
+    {
+      /* Parse positional arguments, these must be in this order */
+      e.children(1) match { case Exp(List(Str(x)), _) => name = Some(x) }
+      e.children(2) match {
+        case Exp(List(Str(y)), _) => val form : Option[IMPSMathExp] = impsMathParser.parseIMPSMath(y)
+                                     if (form.isDefined) { formula = Some(form.get) }
+      }
+
+      /* Parse modifier and keyword arguments, these can come in any order */
+      var i : Int = 3
+      while (csl - i > 0)
+      {
+        e.children(i) match
+        {
+          case Exp(ds,src) => ds.head match
+          {
+            case Exp(List(Str("theory")),_)      => theory  = argParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("home-theory")),_) => hmthy   = argParsers.parseHomeTheory(Exp(ds,src))
+            case Exp(List(Str("usages")),_)      => usages  = argParsers.parseUsages(Exp(ds,src))
+            case Exp(List(Str("macete")),_)      => macete  = argParsers.parseMacete(Exp(ds,src))
+            case Exp(List(Str("translation")),_) => trans   = argParsers.parseTranslation(Exp(ds,src))
+            case Exp(List(Str("proof")),_)       => prf     = argParsers.parseProofScript(Exp(ds,src))
+            case (Str("lemma"))                  => reverse = true
+            case (Str("reverse"))                => lemma   = true
+            case _                               => () // other arguments get silently discarded. TODO: Maybe fail instead?
+          }
+          case _ => ()
+        }
+        i += 1
+      }
+
+      if (name.isEmpty || formula.isEmpty || theory.isEmpty) { None }
+      else { Some(Theorem(name.get, formula.get, lemma, reverse, theory.get, usages, trans, macete, hmthy, prf, e.src))}
+    } else { None }
+
+
   }
 }
