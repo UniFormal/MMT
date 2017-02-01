@@ -191,9 +191,9 @@ package object defFormParsers
   def parseCartesianProduct (e : Exp) : Option[LispExp] =
   {
     // Required arguments
-    var name      : Option[String]       = None
-    var sortNames : Option[List[String]] = None
-    var thy       : Option[ArgumentTheory]       = None
+    var name      : Option[String]         = None
+    var sortNames : Option[List[String]]   = None
+    var thy       : Option[ArgumentTheory] = None
 
     // Optional arguments
     var accs  : Option[Accessors]   = None
@@ -295,12 +295,12 @@ package object defFormParsers
    * Documentation: IMPS manual pgs. 184 ff. */
   def parseTheorem (e : Exp) : Option[LispExp] =
   {
-    // Required arguments
+    /* Required arguments */
     var name    : Option[String]         = None
     var formula : Option[IMPSMathExp]    = None
     var theory  : Option[ArgumentTheory] = None
 
-    // Optional Arguments
+    /* Optional Arguments */
     var lemma   : Boolean = false
     var reverse : Boolean = false
 
@@ -315,10 +315,14 @@ package object defFormParsers
     if (csl >= 3)
     {
       /* Parse positional arguments, these must be in this order */
-      e.children(1) match { case Exp(List(Str(x)), _) => name = Some(x) }
+      e.children(1) match
+      {
+        case Exp(List(Str(x)), _) => name = Some(x)
+        case Exp(List(),_)        => name = Some("()") // Theorems can have this name, according to documentation.
+                                                       // Turns out parsers get easily confused here.
+      }
       e.children(2) match {
-        case Exp(List(Str(y)), _) => val form : Option[IMPSMathExp] = impsMathParser.parseIMPSMath(y)
-                                     if (form.isDefined) { formula = Some(form.get) }
+        case Exp(List(Str(y)), _) => formula = impsMathParser.parseIMPSMath(y)
       }
 
       /* Parse modifier and keyword arguments, these can come in any order */

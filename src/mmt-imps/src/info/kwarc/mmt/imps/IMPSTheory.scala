@@ -35,7 +35,7 @@ object IMPSTheory
        ApplySpine(this.term, typeA, typeB, sortA, sortB, funAB)
     }
   }
-  */
+
   object IMPSLambda extends Sym("lambda")
   {
     def apply(ls : List[(LocalName,Option[Term])], t : Term) = ls match {
@@ -47,4 +47,5 @@ object IMPSTheory
       ))
     }
   }
+  */
 }

@@ -11,7 +11,10 @@ abstract class LispExp {
 }
 
 case class Exp(children : List[LispExp], src : SourceRef) extends LispExp {
-  override def toString : String = children.toString
+  override def toString : String =
+  {
+    "Exp(" + children.toString + ")"
+  }
 }
 
 case class Comment(content : String, src : SourceRef) extends LispExp {
@@ -22,7 +25,7 @@ case class Comment(content : String, src : SourceRef) extends LispExp {
 }
 
 case class Str(str : String) extends LispExp {
-  override def toString : String = { str }
+  override def toString : String = { "Str(" + str + ")" }
 }
 
 /* TEMPORARY */
@@ -283,18 +286,18 @@ case class SchematicMacete(name                 : String, /* Positional Argument
 
 /* def-theorem
  * Documentation: IMPS manual pgs. 184 ff. */
-case class Theorem(name    : String,              /* Positional argument. Required. */
-                   formula : IMPSMathExp,         /* Positional argument. Required. */
-                   lemma   : Boolean,             /* Modifier argument. Optional. */
-                   reverse : Boolean,             /* Modifier argument. Optional. */
-                   thy     : ArgumentTheory,      /* Keyword Argument, Required */
-                   usages  : Option[Usages],      /* Keyword Argument, Optional */
-                   trans   : Option[Translation], /* Keyword Argument, Optional */
-                   macete  : Option[Macete],      /* Keyword Argument, Optional */
-                   hmthy   : Option[HomeTheory],  /* Keyword Argument, Optional */
-                   prf     : Option[Proof],       /* Keyword Argument, Optional */
-                   src     : SourceRef)           /* SourceRef for MMT */
-                   extends LispExp
+case class Theorem(name    : String,                      /* Positional argument. Required. */
+                   formula : IMPSMathExp,                 /* Positional argument. Required. */
+                   lemma   : Boolean,                     /* Modifier argument. Optional. */
+                   reverse : Boolean,                     /* Modifier argument. Optional. */
+                   thy     : ArgumentTheory,              /* Keyword Argument, Required */
+                   usages  : Option[Usages],              /* Keyword Argument, Optional */
+                   trans   : Option[ArgumentTranslation], /* Keyword Argument, Optional */
+                   macete  : Option[Macete],              /* Keyword Argument, Optional */
+                   hmthy   : Option[HomeTheory],          /* Keyword Argument, Optional */
+                   prf     : Option[Proof],               /* Keyword Argument, Optional */
+                   src     : SourceRef)                   /* SourceRef for MMT */
+  extends LispExp
 {
   override def toString: String =
   {
