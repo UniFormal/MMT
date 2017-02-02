@@ -322,6 +322,8 @@ abstract class IMPSMathExp
   override def toString: String = "<~ unparsed IMPS math expression ~>"
 }
 
+case class IMPSMathSymbol(s : String) extends IMPSMathExp
+
 case class IMPSVar(v : String) extends IMPSMathExp
 case class IMPSSort(s : String) extends IMPSMathExp
 
