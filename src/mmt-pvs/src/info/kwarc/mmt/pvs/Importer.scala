@@ -35,7 +35,7 @@ class PVSImporter extends Importer {
             conv.doDocument(pvs_file(List(m)))
       }
 
-      /*
+/*
       try {
          ret match {
             case BuildSuccess(used, pr) => Sorter.add(pr.head.asInstanceOf[LogicalDependency].mpath, used.map(
@@ -49,7 +49,8 @@ class PVSImporter extends Importer {
           throw e
       }
       BuildResult.empty
-      */
+*/
+
       ret
    }
 }
@@ -77,7 +78,7 @@ object Sorter {
       if (i == ls.length -1) return
       else if (ls.drop(i + 1).exists(p => ls(i)._2 contains p._1)) {
          ls = ls.take(i) ::: ls.drop(i+1) ::: ls(i) :: Nil
-         sort(i)
+         sort()
       } else sort(i+1)
    }
 }

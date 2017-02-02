@@ -164,8 +164,8 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       })
       controller.add(doc)
 
-      println(controller.presenter.asString(ths.head))
-      println(ths.head)
+      // println(controller.presenter.asString(ths.head))
+      // println(ths.head)
 
       log("Checking:")
       logGroup {
@@ -176,7 +176,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore,this)))
       }
       index(doc)
-      
+
 
       BuildSuccess(deps.map(LogicalDependency),modsM.map(m => LogicalDependency(m.path)))
     } catch {
@@ -295,7 +295,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       case formal_subtype_decl(ChainedDecl(NamedDecl(id,_,_),_,_),nonempty,sup,pred) =>
         val name = newName(id)
         state.reset
-        val actsup = doType(sup/*._declared*/)
+        val actsup = doType(sup._declared)
         val v = VarDecl(name,Some(state.bind(PVSTheory.powertp(actsup))),None,None)
         state.th.parameters = state.th.parameters ++ v
         state.inFormals = false
