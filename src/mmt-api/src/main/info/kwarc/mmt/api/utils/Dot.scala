@@ -9,6 +9,7 @@ trait DotNode {
   def label : String
   /** must be alphanumeric, space-separeated */
   def cls: String
+  def toJSON : JSON = JSONObject(("id",JSONString(id.toString)),("label",JSONString(label)))
 }
 
 /** a node to be used in a [[DotGraph]] */
@@ -20,6 +21,15 @@ trait DotEdge {
   /** must be alphanumeric, space-separeated */
   def cls: String
   def weight = 1
+  def toJSON : JSON = JSONObject(
+    ("from",JSONString(from.id.toString)),
+    ("to",JSONString(to.id.toString)),
+    ("weight",JSONInt(weight)),
+    ("label",JSONString(label.getOrElse(""))),
+    ("id",JSONString(id.map(_.toString).getOrElse(""))),
+    ("arrows",JSONString("to"))
+  )
+  // TODO Stuff about different arrow types
 }
 
 /** a graph that can be converted to SVG by [[DotToSVG]] */
@@ -28,6 +38,9 @@ trait DotGraph {
    def nodes: Iterable[DotNode]
    def externalNodes: Option[Iterable[DotNode]]
    def edges: Iterable[DotEdge]
+
+  def JSONNodes : JSONArray = JSONArray(nodes.map(_.toJSON).toSeq:_*)
+  def JSONEdges : JSONArray = JSONArray(edges.map(_.toJSON).toSeq:_*)
 }
 
 /** thrown by [[DotToSVG]] */

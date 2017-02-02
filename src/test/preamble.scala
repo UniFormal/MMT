@@ -34,15 +34,17 @@ abstract class Test(archivepath : String,
   controller.handleLine("mathpath archive " + archivepath)
   controller.handleLine("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath)
 
+  def doFirst : Unit = {}
 
   def run : Unit
 
   def main(args: Array[String]): Unit = try {
-      run
+      doFirst
       if (serverport.isDefined) {
         //controller.handleLine("clear")
         controller.handleLine("server on " + serverport.get)
       }
+      run
       if (gotoshell) Run.main(Array())
     } catch {
       case e: api.Error => println(e.toStringLong)
