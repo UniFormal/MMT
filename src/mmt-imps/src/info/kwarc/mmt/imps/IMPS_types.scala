@@ -154,10 +154,10 @@ case class LoadSection(section : String, src : SourceRef) extends LispExp {
 
 /* def-atomic-sort
  * Documentation: IMPS manual pgs. 158, 159 */
-case class AtomicSort(sortName        : String, /* Positional Argument, Required */
-                      quasiSortString : String, /* Positional Argument, Required */
-                      theory          : ArgumentTheory, /* Keyword Argument, Required */
-                      usages          : Option[Usages], /* Keyword Argument, Optional */
+case class AtomicSort(sortName        : String,          /* Positional Argument, Required */
+                      quasiSortString : IMPSMathExp,     /* Positional Argument, Required */
+                      theory          : ArgumentTheory,  /* Keyword Argument, Required */
+                      usages          : Option[Usages],  /* Keyword Argument, Optional */
                       witness         : Option[Witness], /* Keyword Argument, Optional */
                       src             : SourceRef)       /* SourceRef for MMT */
   extends LispExp
@@ -165,7 +165,7 @@ case class AtomicSort(sortName        : String, /* Positional Argument, Required
   override def toString : String =
   {
     var str : String = "(def-atomic-sort " + sortName
-    str = str + "\n  " + quasiSortString
+    str = str + "\n  " + quasiSortString.toString
     str = str + "\n  " + theory.toString
     if (usages.isDefined) str = str + "\n  " + usages.get.toString
     if (witness.isDefined) str = str + "\n  " + witness.get.toString
@@ -203,11 +203,10 @@ case class CartesianProduct(name      : String, /* Keyword Argument, Required */
 
 /* def-constant
  * Ducomentation: IMPS manual pgs. 168,169 */
-case class Constant(constantName : String, /* Positional Argument, Required */
-                    defExpString : String, /* Positional Argument, Required */
-                    math         : IMPSMathExp, /* inferred */
+case class Constant(constantName : String,         /* Positional Argument, Required */
+                    math         : IMPSMathExp,    /* Positional Argument, Required */
                     theory       : ArgumentTheory, /* Keyword Argument, Required */
-                    sort         : Option[Sort], /* Keyword Argument, Optional */
+                    sort         : Option[Sort],   /* Keyword Argument, Optional */
                     usages       : Option[Usages], /* Keyword Argument, Optional */
                     src          : SourceRef)      /* SourceRef for MMT */
   extends LispExp
@@ -215,7 +214,7 @@ case class Constant(constantName : String, /* Positional Argument, Required */
   override def toString : String =
   {
     var str : String = "(def-constant " + constantName
-    str = str + "\n  " + defExpString
+    str = str + "\n  " + math.toString
     str = str + "\n  " + theory.toString
     if (usages.isDefined) { str = str + "\n  " + usages.get.toString}
     if (sort.isDefined) { str = str + "\n  " + sort.get.toString}

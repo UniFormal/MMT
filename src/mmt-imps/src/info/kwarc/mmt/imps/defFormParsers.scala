@@ -2,66 +2,13 @@ package info.kwarc.mmt.imps
 
 package object defFormParsers
 {
-  /* Parser for IMPS special form def-constants
-   * Documentation: IMPS manual pgs. 168, 169 */
-  def parseConstant (e : Exp) : Option[LispExp] =
-  {
-    // Required arguments
-    var name       : Option[String] = None
-    var defstring  : Option[String] = None
-    var thy        : Option[ArgumentTheory] = None
-
-    // Optional arguments
-    var usages : Option[Usages] = None
-    var sort   : Option[Sort]   = None
-
-    val cs : Int = e.children.length
-
-    /* Three arguments minimum because three req. arguments */
-    if (cs >= 3)
-    {
-      /* Parse positional arguments */
-      e.children(1) match { case Exp(List(Str(x)), _) => name      = Some(x) }
-      e.children(2) match { case Exp(List(Str(y)), _) => defstring = Some(y) }
-
-      /* Parse keyword arguments, these can come in any order */
-      var i : Int = 3
-      while (cs - i > 0)
-      {
-        e.children(i) match {
-          case Exp(ds,src) => ds.head match
-          {
-            case Exp(List(Str("theory")),_) => thy    = argParsers.parseTheory(Exp(ds,src))
-            case Exp(List(Str("usages")),_) => usages = argParsers.parseUsages(Exp(ds,src))
-            case Exp(List(Str("sort")),_)   => sort   = argParsers.parseSort(Exp(ds,src))
-            case _                          => ()
-          }
-          case _ => ()
-        }
-        i += 1
-      }
-
-      // TODO: OMG UGLY?
-      val math_option : Option[IMPSMathExp] = impsMathParser.parseIMPSMath(defstring.get)
-      if (math_option.isEmpty)
-      {
-        //println("DBG: Parsing failed on defstring: " + defstring.get)
-      }
-
-      /* check for required arguments */
-      if (name.isEmpty || defstring.isEmpty || thy.isEmpty || math_option.isEmpty) None
-      else { Some(Constant(name.get, defstring.get, math_option.get, thy.get, sort, usages, e.src)) }
-
-    } else { None }
-  }
-
   /* Parser for IMPS special form def-atomic sort
    * Documentation: IMPS manual pgs. 158, 159 */
   def parseAtomicSort (e : Exp) : Option[LispExp] =
   {
     // Required arguments
-    var name : Option[String] = None
-    var qss  : Option[String] = None
+    var name : Option[String]         = None
+    var qss  : Option[IMPSMathExp]    = None
     var thy  : Option[ArgumentTheory] = None
 
     // Optional arguments
@@ -75,7 +22,7 @@ package object defFormParsers
     {
       /* Parse positional arguments */
       e.children(1) match { case Exp(List(Str(x)), _) => name = Some(x) }
-      e.children(2) match { case Exp(List(Str(y)), _) => qss  = Some(y) }
+      e.children(2) match { case Exp(List(Str(y)), _) => qss  = impsMathParser.parseIMPSMath(y) }
 
       /* Parse keyword arguments, these can come in any order */
       var i : Int = 3
@@ -97,6 +44,52 @@ package object defFormParsers
       /* check for required arguments */
       if (name.isEmpty || qss.isEmpty || thy.isEmpty) None
       else { Some(AtomicSort(name.get, qss.get, thy.get, usages, witness, e.src)) }
+
+    } else { None }
+  }
+
+  /* Parser for IMPS special form def-constants
+   * Documentation: IMPS manual pgs. 168, 169 */
+  def parseConstant (e : Exp) : Option[LispExp] =
+  {
+    // Required arguments
+    var name   : Option[String]         = None
+    var defexp : Option[IMPSMathExp]    = None
+    var thy    : Option[ArgumentTheory] = None
+
+    // Optional arguments
+    var usages : Option[Usages] = None
+    var sort   : Option[Sort]   = None
+
+    val cs : Int = e.children.length
+
+    /* Three arguments minimum because three req. arguments */
+    if (cs >= 3)
+    {
+      /* Parse positional arguments */
+      e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
+      e.children(2) match { case Exp(List(Str(y)), _) => defexp = impsMathParser.parseIMPSMath(y) }
+
+      /* Parse keyword arguments, these can come in any order */
+      var i : Int = 3
+      while (cs - i > 0)
+      {
+        e.children(i) match {
+          case Exp(ds,src) => ds.head match
+          {
+            case Exp(List(Str("theory")),_) => thy    = argParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("usages")),_) => usages = argParsers.parseUsages(Exp(ds,src))
+            case Exp(List(Str("sort")),_)   => sort   = argParsers.parseSort(Exp(ds,src))
+            case _                          => ()
+          }
+          case _ => ()
+        }
+        i += 1
+      }
+
+      /* check for required arguments */
+      if (name.isEmpty || defexp.isEmpty || thy.isEmpty || defexp.isEmpty) None
+      else { Some(Constant(name.get, defexp.get, thy.get, sort, usages, e.src)) }
 
     } else { None }
   }
