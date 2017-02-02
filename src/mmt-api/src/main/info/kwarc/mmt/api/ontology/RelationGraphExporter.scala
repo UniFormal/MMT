@@ -42,6 +42,11 @@ abstract class RelationGraphExporter extends StructurePresenter {
     }
     rh(svg)
   }
+
+  def asJSON(se : StructuralElement): Unit = {
+    val dg = buildGraph(se)
+    JSONObject(("nodes",dg.JSONNodes),("edges",dg.JSONEdges))
+  }
 }
 
 /** builds a graph containing all nodes and edges of the types */
