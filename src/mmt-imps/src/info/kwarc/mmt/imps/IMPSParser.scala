@@ -24,7 +24,7 @@ class IMPSParser
   {
     /* Expression starts at the very beginning */
     val sr_start : SourcePosition = u.getSourcePosition
-    var exprs : List[Exp] = List.empty
+    var exprs : List[Exp] = Nil
 
     // Parse as much as possible
     try
@@ -182,6 +182,10 @@ class IMPSParser
         case Str("load-section") => return parseLoadSection(e)
 
         case Str("include-files") => return Some(Dummy("include-files"))
+          // val th = controller.get(theorypath : MPath) match { case th : DeclaredTheory => th case _ => throw something }
+          // th.getDeclarations, th.getConstants, th.getIncludes : List[MPath]
+          // th.getDeclarationsGenerated (unwahrscheinlich)
+          // th.getDeclarationsPrimitive (<- )
 
         case Str("view-expr") => return Some(Dummy("view-expr"))
 

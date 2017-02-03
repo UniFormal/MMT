@@ -17,7 +17,7 @@ object IMPSTheory
 
   class Sym(s: String)
   {
-    val path = thpath ? s
+    val path : GlobalName = thpath ? s
     val term = OMS(path)
   }
 
@@ -27,13 +27,24 @@ object IMPSTheory
   {
     def apply(t:Term) = Apply(this.term,t)
   }
-/*
+
   object impsLambda extends Sym("lambda")
   {
     def apply(typeA : Term, typeB : Term, sortA : Term, sortB : Term, funAB : Term) =
     {
        ApplySpine(this.term, typeA, typeB, sortA, sortB, funAB)
     }
+  }
+
+  object Or extends Sym("or") {
+    def apply(ls : List[Term]) : Term = {
+      assert (ls.nonEmpty)
+      ls.init.foldRight(ls.last)((t,r) => ApplySpine(this.term,t,r))
+    }
+  }
+
+  object Equals extends Sym("equals") {
+    ???
   }
 
   object IMPSLambda extends Sym("lambda")
@@ -47,5 +58,5 @@ object IMPSTheory
       ))
     }
   }
-  */
+
 }
