@@ -47,19 +47,27 @@ case class Comment(text: () => String) extends HistoryEntry {
  * 
  * @param the nodes of the branch, from leaf to root
  */
+case class IndentedHistoryEntry(e : HistoryEntry,s : String) extends HistoryEntry {
+   def present(implicit cont: Obj => String): String = s + e.present
+}
 class History(var steps: List[HistoryEntry]) {
    /** creates and returns a new branch with a child appended to the leaf */
-   def +(e: HistoryEntry) : History = new History(e::steps)
+   def +(e: HistoryEntry) : History = new History(IndentedHistoryEntry(e,doinc)::steps)
    /** shortcut for adding a Comment leaf */
-   def +(s: => String) : History = this + new Comment(() => s)
+   def +(s: => String) : History = this + new Comment(() => doinc + s)
    /** appends a child to the leaf */
-   def +=(e: HistoryEntry) {steps ::= e}
+   def +=(e: HistoryEntry) {steps ::= IndentedHistoryEntry(e,doinc)}
    /** appends a child to the leaf */
-   def +=(s: => String) {this += Comment(() => s)}
+   def +=(s: => String) {this += Comment(() => doinc + s)}
    /** creates a copy of the history that can be passed when branching */
    def branch = new History(steps)
    /** get the steps */
    def getSteps = steps
+
+   private var inc = 0
+   private def doinc : String = if (inc == 0) "" else { (1 to inc).map(_ => "-").mkString("") + " " }
+   def indinc = inc += 1
+   def inddec = inc -=1
    
    override def toString = steps.map(_.toString).mkString("\n")
    

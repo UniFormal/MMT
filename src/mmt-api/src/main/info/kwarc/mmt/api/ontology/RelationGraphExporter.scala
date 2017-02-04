@@ -43,7 +43,7 @@ abstract class RelationGraphExporter extends StructurePresenter {
     rh(svg)
   }
 
-  def asJSON(se : StructuralElement): Unit = {
+  def asJSON(se : StructuralElement): JSON = {
     val dg = buildGraph(se)
     JSONObject(("nodes",dg.JSONNodes),("edges",dg.JSONEdges))
   }
