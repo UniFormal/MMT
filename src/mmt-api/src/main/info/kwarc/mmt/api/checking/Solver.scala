@@ -414,6 +414,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    private def solveType(name: LocalName, value: Term)(implicit history: History) : Boolean = {
       log("solving type of " + name + " as " + value)
+     history += "solving type of " + name + " as " + value
       val valueS = simplify(value)(Stack.empty, history)
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.tp.isDefined)
@@ -669,8 +670,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         return error("checking was cancelled by external signal")
       }
       history += j
+      history.indinc
       log("checking: " + j.presentSucceedent)
-      logGroup {
+      val ret = logGroup {
          log("in context: " + j.presentAntecedent)
          j match {
             case j: Typing   => checkTyping(j)
@@ -683,6 +685,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             case j: EqualityContext => checkEqualityContext(j)
          }
       }
+     history.inddec
+     ret
    }
 
    def safecheck(j:Judgement)(implicit history : History): Option[Boolean] = state.immutably[Boolean](check(j)) match {
@@ -779,6 +783,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    override def inferType(tm: Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = {
      log("inference: " + presentObj(tm) + " : ?")
      history += "inferring type of " + presentObj(tm)
+     history.indinc
      // return previously inferred type, if any (previously unsolved variables are substituted)
      InferredType.get(tm) match {
         case Some((bp,tmI)) if getCurrentBranch.descendsFrom(bp) =>
@@ -846,6 +851,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         }
      }
      log("inferred: " + res.map(presentObj).getOrElse("failed"))
+     history.inddec
+     history += "inferred: " + res.map(presentObj).getOrElse("failed")
      //remember inferred type
      if (!isDryRun) {
        res foreach {r => InferredType.put(tm, (getCurrentBranch,r))}

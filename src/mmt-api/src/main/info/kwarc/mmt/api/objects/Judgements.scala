@@ -15,7 +15,7 @@ abstract class Judgement extends utils.HashEquality[Judgement] with checking.His
   
    /** a toString method that may call a continuation on its objects
     */
-  def present(implicit cont: Obj => String) = presentAntecedent + " |- " + presentSucceedent
+  def present(implicit cont: Obj => String) = "Checking Judgment: " + presentAntecedent + " |- " + presentSucceedent
   def presentSucceedent(implicit cont: Obj => String) = toString
   def presentAntecedent(implicit cont: Obj => String) = {
      cont(stack.context)

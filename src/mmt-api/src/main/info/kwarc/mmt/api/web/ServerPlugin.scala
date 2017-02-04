@@ -65,20 +65,25 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
    */
 
   def apply(httppath: List[String], query: String, body: Body, session: Session) = {
-    val path = Path.parse(query, controller.getNamespaceMap)
+    val (nquery,json) = if (query.startsWith("json:")) (query.drop(5),true) else (query,false)
+    val path = Path.parse(nquery, controller.getNamespaceMap)
     val key = httppath.headOption.getOrElse("svg")
-    val (exportFolder, relPath) = svgPath(path)
-    val svgFile = exportFolder / key / relPath
-    val node = if (svgFile.exists) {
-      utils.File.read(svgFile.setExtension("svg"))
-    } else {
-       val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
-         throw LocalError(s"svg file does not exist and exporter $key not available: $query")
-       }
-       val se = controller.get(path)
-       exp.asString(se)
+    lazy val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
+      throw LocalError(s"svg file does not exist and exporter $key not available: $query")
     }
-    TypedTextResponse(node, "image/svg+xml")
+    lazy val se = controller.get(path)
+    if (json) {
+      JsonResponse(exp.asJSON(se))
+    } else {
+      val (exportFolder, relPath) = svgPath(path)
+      val svgFile = exportFolder / key / relPath
+      val node = if (svgFile.exists) {
+        utils.File.read(svgFile.setExtension("svg"))
+      } else {
+        exp.asString(se)
+      }
+      TypedTextResponse(node, "image/svg+xml")
+    }
   }
   
   import Javascript._
