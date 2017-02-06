@@ -1,17 +1,21 @@
 package info.kwarc.mmt.metamath
 
+import scala.collection.mutable.{ HashMap, ListBuffer, Stack, MutableList, HashSet }
+
 import info.kwarc.mmt.api._
 import documents._
 import archives._
 import info.kwarc.mmt.api.parser.Reader
 import info.kwarc.mmt.api.utils.{ File, Unparsed }
-import scala.collection.mutable.{ HashMap, ListBuffer, Stack, MutableList, HashSet }
-import scala.util.parsing.combinator.Parsers
 import info.kwarc.mmt.api.objects._
-import Metamath._
 import info.kwarc.mmt.api.frontend.Controller
+
+import scala.util.parsing.combinator.Parsers
 import scala.util.parsing.combinator.RegexParsers
+
 import org.metamath.scala._
+import Metamath._
+
 import java.io.FileReader
 
 class Importer extends archives.Importer {

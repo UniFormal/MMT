@@ -24,7 +24,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 	}
 
   def doModule(es : Exp) : DeclaredModule = {
-    case ??? => new DeclaredTheory(???,???,Some(IMPSTheory.thpath))
+    case _ => new DeclaredTheory(???,???,Some(IMPSTheory.thpath))
 
   }
 
