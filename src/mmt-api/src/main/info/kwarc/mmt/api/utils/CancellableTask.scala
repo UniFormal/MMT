@@ -78,6 +78,7 @@ case object TaskCancelled extends java.lang.Throwable
  * 
  * @param c the code to execute asynchronously
  */
+@deprecated
 class CancdellableTask[A](c: => A) {
    /** the mutable computation result, which will later be either a value or an exception */ 
    private val p = Promise[A]()
