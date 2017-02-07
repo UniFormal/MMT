@@ -23,9 +23,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 		BuildResult.empty
 	}
 
-  def doModule(es : Exp) : DeclaredModule = {
-    case _ => new DeclaredTheory(???,???,Some(IMPSTheory.thpath))
-
+  def doModule(es : Exp) : DeclaredModule =
+  {
+    //case _ => new DeclaredTheory(???,???,Some(IMPSTheory.thpath))
+    ???
   }
 
   def doDecl(d : LispExp)(implicit parent: MPath) : Constant = {
@@ -58,9 +59,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSSymbolRef(gn) => OMS(gn)
       case IMPSEquals(a,b) =>   ???
       case IMPSDisjunction(ls) => (Or(ls map doExp),None)
-      case IMPSLambda(vs,t) => (IMPSTheory.IMPSLambda(vs.map(p => (LocalName(p._1.v),p._2 map doType)),doExp(t)),None)
+      //case IMPSLambda(vs,t) => (IMPSTheory.IMPSLambda(vs.map(p => (LocalName(p._1.v),p._2 map doType)),doExp(t)),None)
     }
-    if (srcrefopt.isDefined) doSourceRef(ret,srcrefopt.get)
+    //if (srcrefopt) doSourceRef(ret,srcrefopt.get)
+    ???
   }
 
   def doSourceRef(t : Term, s : SourceRef) = ???
