@@ -308,7 +308,7 @@ class NotationBasedParser extends ObjectParser {
     // but we cannot always prepend ? because the identifier could also be NS?THY
     // Therefore, we prepend ? using a heuristic
     segments match {
-      case fst :: _ :: Nil if !fst.contains(':') && Character.isUpperCase(fst.charAt(0)) =>
+      case fst :: _ :: Nil if !fst.contains(':') && fst != "" && Character.isUpperCase(fst.charAt(0)) =>
         word = "?" + word
       case _ =>
     }
