@@ -22,7 +22,7 @@ package object impsMathParser
       val p : IMPSMathExp = IMPSEquals(IMPSVar("n"), IMPSMathSymbol("[-1]"))
       val q : IMPSMathExp = IMPSEquals(IMPSVar("n"), IMPSMathSymbol("1"))
       val t : IMPSMathExp = IMPSDisjunction(List(p,q))
-      Some(IMPSLambda(vs, t))
+      ??? //Some(IMPSLambda(vs, t))
     }
     else if (s == "lambda(b:boole, b = true%val)")
     {
@@ -96,7 +96,7 @@ package object impsMathParser
 
       if (t_opt.isDefined)
       {
-        Some(IMPSLambda(vars, t_opt.get))
+        ??? //Some(IMPSLambda(vars, t_opt.get))
       } else { None }
     } else { None }
   }

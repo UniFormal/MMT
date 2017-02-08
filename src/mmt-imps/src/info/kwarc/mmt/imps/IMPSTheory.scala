@@ -46,6 +46,7 @@ object IMPSTheory
   object Equals extends Sym("equals") {
     ???
   }
+  /*
 
   object IMPSLambda extends Sym("lambda")
   {
@@ -57,6 +58,7 @@ object IMPSTheory
         Lambda()
       ))
     }
-  }
+
+  }*/
 
 }

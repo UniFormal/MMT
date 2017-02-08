@@ -244,6 +244,14 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             flattenDeclaration(t,s)
           case _ => {}
         }
+      case (dd : DerivedDeclaration, dec : Declaration) =>
+        controller.getO(dd.parent) match {
+          case Some(t : DeclaredTheory) =>
+            onDelete(dd)
+            ElaboratedElement.erase(dd)
+            flattenDeclaration(t,dd)
+          case _ => {}
+        }
       case _ => {}
     }
   }

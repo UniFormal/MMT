@@ -150,10 +150,6 @@ lazy val owl = (project in file("mmt-owl")).
     unmanagedJars in Compile += baseDirectory.value / "lib" / "owlapi-bin.jar"
   )
 
-lazy val lfs = (project in file("mmt-lfs")).
-  dependsOn(api, lf).
-  settings(mmtProjectsSettings("mmt-lfs"): _*)
-
 lazy val mizar = (project in file("mmt-mizar")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-mizar"): _*)
@@ -161,6 +157,10 @@ lazy val mizar = (project in file("mmt-mizar")).
 lazy val frameit = (project in file("frameit-mmt")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("frameit-mmt"): _*)
+
+lazy val mathscheme = (project in file("mmt-mathscheme")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-mathscheme"): _*)
 
 lazy val pvs = (project in file("mmt-pvs")).
   dependsOn(api, lf, lfx).
@@ -222,6 +222,8 @@ lazy val oeis = (project in file("mmt-oeis")).
   settings(
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar"
   )
+
+// experimental projects that are not part of any tests: marpa-mmt, hets-mmt 
 
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
