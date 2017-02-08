@@ -13,8 +13,9 @@ import scala.xml.Elem
 /** A [[DerivedDeclaration]] is a syntactically like a nested theory.
  *  Its semantics is defined by the corresponding [[StructuralFeature]]
  */
-class DerivedDeclaration(h: Term, name: LocalName, override val feature: String, val tpC: TermContainer, val notC: NotationContainer) extends {
-   private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name, None)
+class DerivedDeclaration(h: Term, name: LocalName, override val feature: String, val tpC: TermContainer,
+                         val notC: NotationContainer) extends {
+   private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name,None)
 } with NestedModule(h, name, t) with HasNotation {
    // overriding to make the type stricter
   override def module: DeclaredModule = t
@@ -89,6 +90,8 @@ case class StructuralFeatureRule(feature: String) extends Rule {
  */
 abstract class StructuralFeature(val feature: String) extends FormatBasedExtension {
    def isApplicable(s: String) = s == feature
+
+   val bodyDelim = "="
    
    lazy val mpath = SemanticObject.javaToMMT(getClass.getCanonicalName)
 

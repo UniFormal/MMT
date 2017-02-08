@@ -162,6 +162,10 @@ lazy val frameit = (project in file("frameit-mmt")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("frameit-mmt"): _*)
 
+lazy val mathscheme = (project in file("mmt-mathscheme")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-mathscheme"): _*)
+
 lazy val pvs = (project in file("mmt-pvs")).
   dependsOn(api, lf, lfx).
   settings(mmtProjectsSettings("mmt-pvs"): _*)
