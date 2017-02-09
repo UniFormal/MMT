@@ -3,7 +3,7 @@ package info.kwarc.mmt.mathscheme
 import info.kwarc.mmt.api.checking.ExtendedCheckingEnvironment
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.DeclaredModule
-import info.kwarc.mmt.api.notations.{Marker, SimpArg}
+import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 
@@ -79,6 +79,8 @@ class Plugin extends frontend.Plugin {
       val em = controller.extman
       // content enhancers
       em.addExtension(new Extends)
+      em.addExtension(new Renaming)
+      em.addExtension(new Combine)
    }
 }
 
@@ -118,4 +120,139 @@ class Extends extends StructuralFeature("extends") {
    def checkInContext(prev: Context, dv: VarDecl): Unit = {}
 
    def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
+}
+
+class Renaming extends StructuralFeature("RenamingOf") {
+   def getHeaderNotation: List[Marker] = List(SimpArg(1))
+
+   //override val bodyDelim: String = "by"
+
+   private def getDom(t : TermContainer) = t.get.get match {
+      case OMMOD(p) => p
+   }
+
+   override def getInnerContext(dd: DerivedDeclaration): Context = Context.empty ++ getDom(dd.tpC)
+
+   override def processHeader(header: Term) = header match {
+      case OMA(OMMOD(`mpath`), List(t @ OMPMOD(p,_))) => (LocalName("EXTENDS_" + p.name), t)
+   }
+   override def makeHeader(dd: DerivedDeclaration) = OMA(OMMOD(`mpath`), dd.tpC.get.get :: Nil)
+
+
+   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
+      val dom = getDom(dd.tpC)
+      dd.module.getDeclarations forall {
+         case c: FinalConstant if c.df.isDefined =>
+            c.df.get match {
+               case OMS(p) if p.module == dom => true
+               case _ =>
+                  env.errorCont(InvalidObject(c.df.get, "Not an assignment"))
+                  false
+            }
+         case d =>
+            env.errorCont(InvalidElement(d, " is not a constant"))
+            false
+      }
+   }
+
+
+   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration = {
+      val dom = getDom(dd.tpC)
+      val maps = dd.module.getDeclarations.map {
+         case c : FinalConstant => (c.tp.get.asInstanceOf[OMID].path.name, c.name,c.not)
+      }
+
+      def subln(n : LocalName) : LocalName = {
+         val sub = maps.find(p => p._1 == n)
+         sub.map(_._2).getOrElse(n)
+      }
+      def subnot(c : FinalConstant) : Option[TextNotation] = {
+         val sub = maps.find(p => p._1 == c.name)
+         if (sub.isDefined && sub.get._3.isDefined) sub.get._3 else c.not
+      }
+      def subgn(n : GlobalName) : GlobalName = {
+         parent.path ? subln(n.name)
+      }
+      val traverser = new StatelessTraverser {
+         def go(t : Term) = apply(t,Context())
+         def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+            case OMS(p) if p.module == dom => OMS(subgn(p))
+            case _ => Traverser(this,t)
+         }
+      }
+
+      new Elaboration {
+         val domain = parent.getDeclarationsElaborated.map {
+            case c : FinalConstant => subln(c.name)
+            case d => d.name
+         }
+         def getO(name: LocalName): Option[Declaration] = {
+            parent.getO(name).map{
+               case c : FinalConstant => Constant(parent.toTerm,subln(c.name),Nil,c.tp.map(traverser.go),c.df.map(traverser.go),None,NotationContainer(subnot(c)))
+               case PlainInclude(from,to) => PlainInclude(from,parent.path)
+               case _ => ???
+            }
+         }
+      }
+   }
+
+   def elaborateInContext(prev: Context, dv: VarDecl): Context = prev
+   def checkInContext(prev: Context, dv: VarDecl): Unit = {}
+}
+
+class Combine extends StructuralFeature("combine") {
+   def getHeaderNotation: List[Marker] = List(SimpArg(1),Delim("|"),SimpArg(2))
+
+   //override val bodyDelim: String = "by"
+
+   private def getDomCod(t : TermContainer) : (MPath,MPath) = t.get.get match {
+      case OMA(OMMOD(`mpath`),List(OMMOD(a),OMMOD(b))) => (a,b)
+   }
+
+   override def processHeader(header: Term): (LocalName,Term) = {
+      header match {
+         case OMA(OMMOD(`mpath`), args @ List(OMMOD(a),OMMOD(b))) =>
+            val tp = OMA(OMMOD(mpath), args)
+            (LocalName("Combine_" + a.name + "_" + b.name), tp)
+         case _ =>
+          println(header)
+          println(header.getClass)
+          println(header.head)
+          ???
+      }
+   }
+
+   override def makeHeader(dd: DerivedDeclaration) = ??? // OMA(OMMOD(`mpath`), dd.tpC.get.get :: Nil)
+
+/*
+   override def getInnerContext(dd: DerivedDeclaration): Context = Context.empty ++ getDom(dd.tpC)
+
+   override def processHeader(header: Term) = header match {
+      case OMA(OMMOD(`mpath`), List(t @ OMPMOD(p,_))) => (LocalName("EXTENDS_" + p.name), t)
+      case _ =>
+         println(header)
+       ???
+   }
+*/
+
+   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
+
+   }
+
+
+   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration = {
+      val (dom1, dom2) = getDomCod(dd.tpC)
+      new Elaboration {
+         val domain = List(LocalName(dom1), LocalName(dom2))
+
+         def getO(name: LocalName): Option[Declaration] = name match {
+            case LocalName(List(ComplexStep(`dom1`))) => Some(PlainInclude(dom1, parent.path))
+            case LocalName(List(ComplexStep(`dom2`))) => Some(PlainInclude(dom2, parent.path))
+         }
+      }
+   }
+
+   def elaborateInContext(prev: Context, dv: VarDecl): Context = prev
+   def checkInContext(prev: Context, dv: VarDecl): Unit = {}
+
 }
