@@ -1,5 +1,8 @@
 project/project
 
+# configuration files
+src/jedit-settings-folder
+
 # mmtrc --created by installed
 deploy/mmtrc
 
