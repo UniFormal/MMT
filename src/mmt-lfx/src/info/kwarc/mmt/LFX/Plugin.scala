@@ -50,9 +50,6 @@ object SubtypeDecl {
 }
 
 class SubtypeFeature extends StructuralFeature(SubtypeDecl.feature) {
-
-  def checkInContext(prev : Context, dv: VarDecl): Unit = {}
-  def elaborateInContext(prev: Context, dv: VarDecl): Context = Context.empty
   
   def getHeaderNotation = List(LabelArg(1,false,false), Delim("<:"), SimpArg(2))
 

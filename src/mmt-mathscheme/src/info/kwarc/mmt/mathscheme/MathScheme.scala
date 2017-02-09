@@ -116,9 +116,6 @@ class Extends extends StructuralFeature("extends") {
          }
       }
 
-   def elaborateInContext(prev: Context, dv: VarDecl): Context = prev
-   def checkInContext(prev: Context, dv: VarDecl): Unit = {}
-
    def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 }
 
@@ -196,8 +193,6 @@ class Renaming extends StructuralFeature("RenamingOf") {
       }
    }
 
-   def elaborateInContext(prev: Context, dv: VarDecl): Context = prev
-   def checkInContext(prev: Context, dv: VarDecl): Unit = {}
 }
 
 class Combine extends StructuralFeature("combine") {
@@ -224,17 +219,6 @@ class Combine extends StructuralFeature("combine") {
 
    override def makeHeader(dd: DerivedDeclaration) = ??? // OMA(OMMOD(`mpath`), dd.tpC.get.get :: Nil)
 
-/*
-   override def getInnerContext(dd: DerivedDeclaration): Context = Context.empty ++ getDom(dd.tpC)
-
-   override def processHeader(header: Term) = header match {
-      case OMA(OMMOD(`mpath`), List(t @ OMPMOD(p,_))) => (LocalName("EXTENDS_" + p.name), t)
-      case _ =>
-         println(header)
-       ???
-   }
-*/
-
    def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
 
    }
@@ -251,8 +235,5 @@ class Combine extends StructuralFeature("combine") {
          }
       }
    }
-
-   def elaborateInContext(prev: Context, dv: VarDecl): Context = prev
-   def checkInContext(prev: Context, dv: VarDecl): Unit = {}
 
 }

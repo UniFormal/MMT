@@ -11,9 +11,6 @@ import checking._
 /** patterns are derived declarations that are syntactically parametric theories */ 
 class PatternFeature extends StructuralFeature(Pattern.feature) with ParametricTheoryLike {
 
-  def checkInContext(prev : Context, dv: VarDecl): Unit = {}
-  def elaborateInContext(prev: Context, dv: VarDecl): Context = Context.empty
-
    def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = new Elaboration {
      def domain = Nil
      def getO(n: LocalName) = None
