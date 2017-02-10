@@ -232,6 +232,7 @@ class Combine extends StructuralFeature("combine") {
          def getO(name: LocalName): Option[Declaration] = name match {
             case LocalName(List(ComplexStep(`dom1`))) => Some(PlainInclude(dom1, parent.path))
             case LocalName(List(ComplexStep(`dom2`))) => Some(PlainInclude(dom2, parent.path))
+            case _ => None
          }
       }
    }
