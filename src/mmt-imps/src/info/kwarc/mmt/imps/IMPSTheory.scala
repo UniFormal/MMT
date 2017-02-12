@@ -2,11 +2,8 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.FinalConstant
-import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.lf.{Lambda, Apply, ApplySpine}
 import utils._
-import objects.Conversions._
 
 object IMPSTheory
 {
@@ -28,13 +25,8 @@ object IMPSTheory
     def apply(t:Term) = Apply(this.term,t)
   }
 
-  object impsLambda extends Sym("lambda")
-  {
-    def apply(typeA : Term, typeB : Term, sortA : Term, sortB : Term, funAB : Term) =
-    {
-       ApplySpine(this.term, typeA, typeB, sortA, sortB, funAB)
-    }
-  }
+  object Truth extends Sym("thetrue")
+  object Falsehood extends Sym("thefalse")
 
   object Or extends Sym("or") {
     def apply(ls : List[Term]) : Term = {
@@ -43,22 +35,38 @@ object IMPSTheory
     }
   }
 
-  object Equals extends Sym("equals") {
-    ???
+  object And extends Sym("and"){
+    def apply(ls : List[Term]) : Term = {
+      assert (ls.nonEmpty)
+      ls.init.foldRight(ls.last)((t,r) => ApplySpine(this.term,t,r))
+    }
   }
-  /*
+
+  object Equals extends Sym("equals") {
+    def apply(p : Term, q : Term) : Term = {
+      ApplySpine(this.term, p, q)
+    }
+  }
+
+  object Iff extends Sym("iff") {
+    def apply(p : Term, q : Term) : Term = {
+      ApplySpine(this.term, p, q)
+    }
+  }
+
+  object Implies extends Sym("implies") {
+    def apply(p : Term, q : Term) : Term = {
+      ApplySpine(this.term, p, q)
+    }
+  }
 
   object IMPSLambda extends Sym("lambda")
   {
-    def apply(ls : List[(LocalName,Option[Term])], t : Term) = ls match {
+    def apply(ls : List[(LocalName,Option[Term])], t : Term) = ls match
+    {
       case Nil => ()
-      case _ =>
-        val sort : Term = ??? /* p._2.getOrElse(doUnknown) */
-        ls.foldRight(t)((tm,p) => ApplySpine(this.term,doUnknown,doUnknown,sort,doUnknown,
-        Lambda()
-      ))
+      case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,Lambda(tm._1, tm._2.get, p)))
     }
-
-  }*/
+  }
 
 }

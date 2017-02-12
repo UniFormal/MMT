@@ -204,10 +204,10 @@ case class CartesianProduct(name      : String, /* Keyword Argument, Required */
 
 /* def-constant
  * Ducomentation: IMPS manual pgs. 168,169 */
-case class Constant(constantName : String,         /* Positional Argument, Required */
-                    math         : IMPSMathExp,    /* Positional Argument, Required */
+case class Constant(constantName : String, /* Positional Argument, Required */
+                    math         : IMPSMathExp, /* Positional Argument, Required */
                     theory       : ArgumentTheory, /* Keyword Argument, Required */
-                    sort         : Option[IMPSSort],   /* Keyword Argument, Optional */
+                    sort         : Option[IMPSSortRef], /* Keyword Argument, Optional */
                     usages       : Option[Usages], /* Keyword Argument, Optional */
                     src          : SourceRef)      /* SourceRef for MMT */
   extends LispExp
@@ -321,11 +321,12 @@ abstract class IMPSMathExp
 {
   override def toString: String = "<~ unparsed IMPS math expression ~>"
 }
+
 case class IMPSSymbolRef(gn : GlobalName) extends IMPSMathExp
 case class IMPSMathSymbol(s : String) extends IMPSMathExp
 
 case class IMPSVar(v : String) extends IMPSMathExp
-case class IMPSSort(s : String) extends IMPSMathExp
+case class IMPSSortRef(s : String) extends IMPSMathExp
 
 case class IMPSTruth() extends IMPSMathExp
 {
@@ -436,7 +437,7 @@ case class IMPSApply(f : IMPSMathExp, ts : List[IMPSMathExp]) extends IMPSMathEx
   }
 }
 
-case class IMPSLambda(vs : List[(IMPSVar, Option[IMPSSort])], t : IMPSMathExp) extends IMPSMathExp
+case class IMPSLambda(vs : List[(IMPSVar, Option[IMPSSortRef])], t : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String =
   {
