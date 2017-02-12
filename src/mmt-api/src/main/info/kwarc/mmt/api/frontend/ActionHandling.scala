@@ -79,13 +79,13 @@ trait ActionHandling {self: Controller =>
           case SetBase(b) =>
             state.nsMap = state.nsMap(b)
             report("response", "base: " + getBase)
-          case ServerOn(port) => server match {
-            case Some(serv) => logError("server already started on port " + serv.port)
+          case ServerOn(port, host) => server match {
+            case Some(serv) => logError("server already started on  " + serv.hostname + ":" + serv.port)
             case None if Util.isTaken(port) => logError("port " + port + " is taken, server not started.")
             case _ =>
-              val serv = new Server(port, this)
+              val serv = new Server(port, host, this)
               serv.start
-              log("Server started at http://localhost:" + port)
+              log("Server started at http://" + host + ":" + port)
               server = Some(serv)
           }
           case ServerOff => server match {

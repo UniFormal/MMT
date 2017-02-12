@@ -149,9 +149,10 @@ class Body(tk: HTalk) {
 import Server._
 
 /** An HTTP RESTful server. */
-class Server(val port: Int, controller: Controller) extends HServer with Logger {
+class Server(val port: Int, val host: String, controller: Controller) extends HServer with Logger {
 
   override def name = "MMT rest server"
+  override def hostname = host
  // override def writeBufSize = 16 * 1024
   override def tcpNoDelay = true // make this false if you have extremely frequent requests
   override def startStopListener = {} // prevents tiscaf from creating a "stop" listener
