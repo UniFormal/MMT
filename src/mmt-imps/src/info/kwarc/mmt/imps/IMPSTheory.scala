@@ -2,7 +2,7 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.lf.{Apply, ApplySpine}
+import info.kwarc.mmt.lf.{Lambda, Apply, ApplySpine}
 import utils._
 
 object IMPSTheory
@@ -57,6 +57,18 @@ object IMPSTheory
   }
 
   object Equals extends Sym("equals") {
+    def apply(p : Term, q : Term) : Term = {
+      ApplySpine(this.term, p, q)
+    }
+  }
+
+  object Iff extends Sym("iff") {
+    def apply(p : Term, q : Term) : Term = {
+      ApplySpine(this.term, p, q)
+    }
+  }
+
+  object Implies extends Sym("implies") {
     def apply(p : Term, q : Term) : Term = {
       ApplySpine(this.term, p, q)
     }
@@ -155,5 +167,4 @@ object IMPSTheory
       Apply(this.term, t)
     }
   }
-
 }
