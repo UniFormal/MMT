@@ -1,6 +1,9 @@
 /** *****************************************************************************
  *  This file is part of tiscaf.
  *
+ * Changed by twiesing on 12/Feb/17 to allow specification of a hostname to
+ * listen to
+ *
  *  tiscaf is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
@@ -45,6 +48,9 @@ trait HServer {
   /** The execution context for promises and futures */
   protected implicit def executionContext =
     ExecutionContext.Implicits.global
+
+  /** Returns the hostname (or IP adress) this server listens to. */
+  def hostname : String = "0.0.0.0"
 
   /** Returns the server name, used in response headers. */
   protected def name = "tiscaf"
@@ -119,7 +125,7 @@ trait HServer {
   def start: Unit = synchronized {
     if (isStopped.get) {
       plexer.start
-      ports.foreach { port => plexer.addListener(peerFactory, port) }
+      ports.foreach { port => plexer.addListener(peerFactory, port, hostname) }
       // listen to SSL ports if any configured
       val sslPorts = ssl.map { ssl =>
         plexer.addSslListener(peerFactory, ssl)
