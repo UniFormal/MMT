@@ -32,7 +32,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   def doDecl(d : LispExp)(implicit parent: MPath) : Constant = {
     val (ret,ref) = d match {
       case Constant(name,df,th,sort,usages,srcref) =>
-        (symbols.Constant(OMMOD(parent),LocalName(name),Nil,sort map doType,Some(doExp(df)),None),srcref)
+        (symbols.Constant(OMMOD(parent),LocalName(name),Nil,sort map doType,Some(doMathExp(df)),None),srcref)
     }
     doSourceRef(ret,ref)
   }
@@ -54,15 +54,28 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
    constant true%val <- http://imps.blubb?Booleans?true%val
    */
 
-  def doExp(d : IMPSMathExp) : Term = {
-    val (ret,srcrefopt) = d match {
+  def doLispExp(d : LispExp) : Term =
+  {
+    val ret = d match {
+      case AtomicSort(id,srt,argthy,usgs,wtns,src) => ()
+    }
+    ??? //ret
+  }
+
+  def doMathExp(d : IMPSMathExp) : Term =
+  {
+    val ret = d match
+    {
+      case IMPSTruth() => IMPSTheory.Truth
+      case IMPSFalsehood() => IMPSTheory.Falsehood
       case IMPSSymbolRef(gn) => OMS(gn)
-      case IMPSEquals(a,b) =>   ???
-      case IMPSDisjunction(ls) => (Or(ls map doExp),None)
-      //case IMPSLambda(vs,t) => (IMPSTheory.IMPSLambda(vs.map(p => (LocalName(p._1.v),p._2 map doType)),doExp(t)),None)
+      case IMPSEquals(a,b) => (IMPSTheory.Equals(doMathExp(a),doMathExp(b)))
+      case IMPSDisjunction(ls) => (IMPSTheory.Or(ls map doMathExp),None)
+      case IMPSConjunction(ls) => (IMPSTheory.And(ls map doMathExp), None)
+      case IMPSLambda(vs,t) => (IMPSTheory.IMPSLambda(vs.map(p => (LocalName(p._1.v),p._2 map doType)),doMathExp(t)),None)
     }
     //if (srcrefopt) doSourceRef(ret,srcrefopt.get)
-    ???
+    ??? //ret.term
   }
 
   def doSourceRef(t : Term, s : SourceRef) = ???
