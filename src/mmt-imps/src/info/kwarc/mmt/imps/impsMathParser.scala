@@ -18,21 +18,21 @@ package object impsMathParser
     }
     else if (s == "lambda(n:zz, n = [-1] or n = 1)")
     {
-      val vs : List[(IMPSMathExp, Option[IMPSMathExp])] = List((IMPSVar("n"), Some(IMPSSort("zz"))))
+      val vs : List[(IMPSVar, Option[IMPSSortRef])] = List((IMPSVar("n"), Some(IMPSSortRef("zz"))))
       val p : IMPSMathExp = IMPSEquals(IMPSVar("n"), IMPSMathSymbol("[-1]"))
       val q : IMPSMathExp = IMPSEquals(IMPSVar("n"), IMPSMathSymbol("1"))
       val t : IMPSMathExp = IMPSDisjunction(List(p,q))
-      ??? //Some(IMPSLambda(vs, t))
+      Some(IMPSLambda(vs, t))
     }
     else if (s == "lambda(b:boole, b = true%val)")
     {
-      val vs = List((IMPSVar("b"), Some(IMPSSort("boole"))))
+      val vs = List((IMPSVar("b"), Some(IMPSSortRef("boole"))))
       val t  = IMPSEquals(IMPSVar("b"), IMPSMathSymbol("true%val"))
       Some(IMPSLambda(vs, t))
     }
     else if (s == "lambda(b:boole, b = false%val)")
     {
-      val vs = List((IMPSVar("b"), Some(IMPSSort("boole"))))
+      val vs = List((IMPSVar("b"), Some(IMPSSortRef("boole"))))
       val t  = IMPSEquals(IMPSVar("b"), IMPSMathSymbol("false%val"))
       Some(IMPSLambda(vs, t))
     }
@@ -87,7 +87,7 @@ package object impsMathParser
         if (pp.contains(':'))
         {
           val var_and_sort : Array[String] = pp.split(':')
-          vars = vars ::: List((IMPSVar(var_and_sort(0)), Some(IMPSSort(var_and_sort(1)))))
+          vars = vars ::: List((IMPSVar(var_and_sort(0)), Some(IMPSSortRef(var_and_sort(1)))))
         }
         else { vars = vars ::: List((IMPSVar(pp), None)) }
       }

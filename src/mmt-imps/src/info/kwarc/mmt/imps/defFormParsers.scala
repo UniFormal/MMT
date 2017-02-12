@@ -88,7 +88,7 @@ package object defFormParsers
       }
 
       /* check for required arguments */
-      if (name.isEmpty || defexp.isEmpty || thy.isEmpty || defexp.isEmpty) None
+      if (name.isEmpty || defexp.isEmpty || thy.isEmpty) None
       else { Some(Constant(name.get, defexp.get, thy.get, ???, usages, e.src)) }
 
     } else { None }
