@@ -1,6 +1,9 @@
 /*******************************************************************************
  * This file is part of tiscaf.
- * 
+ *
+ * Changed by twiesing on 12/Feb/17 to allow specification of a hostname to
+ * listen to
+ *
  * tiscaf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +19,7 @@
  ******************************************************************************/
 package tiscaf
 
-import java.net.InetSocketAddress
+import java.net.InetSocketAddress, java.net.InetAddress
 import java.nio.channels.{
   SelectionKey,
   Selector,
@@ -55,12 +58,12 @@ private trait HPlexer {
     }
   }
 
-  final def addListener(peerFactory: (SelectionKey, Option[SSLEngine]) => HPeer, port: Int): Unit = Sync.spawnNamed("Acceptor-" + port) {
+  final def addListener(peerFactory: (SelectionKey, Option[SSLEngine]) => HPeer, port: Int, hostname : String): Unit = Sync.spawnNamed("Acceptor-" + port) {
     try {
       val serverChannel = ServerSocketChannel.open
       servers += serverChannel
       serverChannel.configureBlocking(true)
-      serverChannel.socket.bind(new InetSocketAddress(port))
+      serverChannel.socket.bind(new InetSocketAddress(InetAddress.getByName(hostname), port))
 
       while (isWorking.get) try {
         val socketCannel = serverChannel.accept

@@ -74,7 +74,10 @@ object Action extends RegexParsers {
   private def oafPush = "push" ^^ { _ => OAFPush }
 
   private def server = serveron | serveroff
-  private def serveron = "server" ~> "on" ~> int ^^ { i => ServerOn(i) }
+  private def serveron = "server" ~> "on" ~> (int ~ (str?)) ^^ {
+    case i ~ None => ServerOn(i)
+    case i ~ Some(s) => ServerOn(i, s)
+  }
   private def serveroff = "server" ~> "off" ^^ { _ => ServerOff }
 
   private def execfile = "file " ~> file ~ (str ?) ^^ { case f ~ s => ExecFile(f, s) }
@@ -438,15 +441,16 @@ case class MBT(file: File) extends Action {
 
 /** start up the HTTP server
   *
-  * concrete syntax: server on port:INT
+  * concrete syntax: server on port:INT [hostname:STRING]
   *
   * See info.kwarc.mmt.api.web.Server for the supported HTTP requests.
   * tiscaf.jar must be on the Java classpath before executing this Action.
   *
+  * @param hostname the hostname (i.e. ip) to listen to. Defaults to 0.0.0.0 (everything) for backwards compatibility.
   * @param port the port to listen to
   */
-case class ServerOn(port: Int) extends Action {
-  override def toString = "server on " + port
+case class ServerOn(port: Int, hostname : String = "0.0.0.0") extends Action {
+  override def toString = "server on " + port + (if(hostname == "0.0.0.0") "" else " " + hostname)
 }
 
 /** shut down the web server
