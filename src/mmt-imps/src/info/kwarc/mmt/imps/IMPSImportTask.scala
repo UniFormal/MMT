@@ -62,20 +62,25 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     ??? //ret
   }
 
+  /* Translate IMPS Math Expressions to Terms */
   def doMathExp(d : IMPSMathExp) : Term =
   {
     val ret = d match
     {
-      case IMPSTruth() => IMPSTheory.Truth
-      case IMPSFalsehood() => IMPSTheory.Falsehood
-      case IMPSSymbolRef(gn) => OMS(gn)
-      case IMPSEquals(a,b) => (IMPSTheory.Equals(doMathExp(a),doMathExp(b)))
+      case IMPSSymbolRef(gn)   => OMS(gn)
+      case IMPSTruth()         => IMPSTheory.Truth
+      case IMPSFalsehood()     => IMPSTheory.Falsehood
+      case IMPSNegation(p)     => IMPSTheory.Negation(doMathExp(p))
+      case IMPSIf(p,t1,t2)     => IMPSTheory.If(doMathExp(p), doMathExp(t1), doMathExp(t2))
+      case IMPSIff(p, q)       => IMPSTheory.Iff(doMathExp(p), doMathExp(q))
+      case IMPSIfForm(p,q,r)   => IMPSTheory.If_Form(doMathExp(p), doMathExp(q), doMathExp(r))
+      case IMPSEquals(a,b)     => (IMPSTheory.Equals(doMathExp(a),doMathExp(b)))
       case IMPSDisjunction(ls) => (IMPSTheory.Or(ls map doMathExp),None)
       case IMPSConjunction(ls) => (IMPSTheory.And(ls map doMathExp), None)
-      case IMPSLambda(vs,t) => (IMPSTheory.IMPSLambda(vs.map(p => (LocalName(p._1.v),p._2 map doType)),doMathExp(t)),None)
+      case IMPSLambda(vs,t)    => (IMPSTheory.Lambda(vs.map(p => (LocalName(p._1.v),p._2 map doType)),doMathExp(t)),None)
     }
     //if (srcrefopt) doSourceRef(ret,srcrefopt.get)
-    ??? //ret.term
+    ??? //ret
   }
 
   def doSourceRef(t : Term, s : SourceRef) = ???
