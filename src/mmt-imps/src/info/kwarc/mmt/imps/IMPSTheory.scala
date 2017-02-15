@@ -32,7 +32,7 @@ object IMPSTheory
   }
 
   /* LOGIC */
-
+  
   object Truth     extends Sym("thetrue")
   object Falsehood extends Sym("thefalse")
 
@@ -62,9 +62,21 @@ object IMPSTheory
     }
   }
 
+  object If extends Sym("if") {
+    def apply(p : Term, t1 : Term, t2 : Term) : Term = {
+      ApplySpine(this.term, p, t1, t2)
+    }
+  }
+
   object Iff extends Sym("iff") {
     def apply(p : Term, q : Term) : Term = {
       ApplySpine(this.term, p, q)
+    }
+  }
+
+  object If_Form extends Sym("ifform") {
+    def apply(p1 : Term, p2 : Term, p3 : Term) : Term = {
+      ApplySpine(this.term, p1, p2, p3)
     }
   }
 
@@ -74,6 +86,7 @@ object IMPSTheory
     }
   }
 
+<<<<<<< HEAD
   object If extends Sym("if") {
     def apply(p : Term, t1 : Term, t2 : Term) : Term = {
       ApplySpine(this.term, p, t1, t2)
@@ -116,10 +129,17 @@ object IMPSTheory
   }
 
   object Forall extends Sym("forall")
+=======
+  object Lambda extends Sym("lambda")
+>>>>>>> minimal changes, bla bla bla
   {
     def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = ls match
     {
+<<<<<<< HEAD
       case Nil => ???
+=======
+      case Nil => ()
+>>>>>>> minimal changes, bla bla bla
       case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
     }
   }
