@@ -2,7 +2,7 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.lf.{Lambda, Apply, ApplySpine}
+import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
 
 object IMPSTheory
@@ -86,7 +86,6 @@ object IMPSTheory
     }
   }
 
-<<<<<<< HEAD
   object If extends Sym("if") {
     def apply(p : Term, t1 : Term, t2 : Term) : Term = {
       ApplySpine(this.term, p, t1, t2)
@@ -129,17 +128,10 @@ object IMPSTheory
   }
 
   object Forall extends Sym("forall")
-=======
-  object Lambda extends Sym("lambda")
->>>>>>> minimal changes, bla bla bla
   {
     def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = ls match
     {
-<<<<<<< HEAD
-      case Nil => ???
-=======
       case Nil => ()
->>>>>>> minimal changes, bla bla bla
       case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
     }
   }
@@ -176,7 +168,7 @@ object IMPSTheory
 
   object IsDefinedIn extends Sym("definedin")
   {
-    def apply(t : Term, s : Term) : Term = {
+    def apply(t : Term, s : Term) = {
       ApplySpine(this.term, t, s)
     }
   }
