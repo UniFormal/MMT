@@ -2,7 +2,7 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.lf.{Lambda, Apply, ApplySpine}
+import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
 
 object IMPSTheory
@@ -84,6 +84,64 @@ object IMPSTheory
     {
       case Nil => ()
       case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
+    }
+  }
+
+  object IMPSApply extends Sym("apply")
+  {
+    ???
+  }
+
+  object Forall extends Sym("forall")
+  {
+    def apply(ls : List[(LocalName,Option[Term])], t : Term) = ls match
+    {
+      case Nil => ()
+      case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
+    }
+  }
+
+  object Forsome extends Sym("forsome")
+  {
+    def apply(ls : List[(LocalName,Option[Term])], t : Term) = ls match
+    {
+      case Nil => ()
+      case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
+    }
+  }
+
+  object Iota extends Sym("iota")
+  {
+    def apply(v1 : LocalName, s1 : Option[Term], p : Term) = {
+      ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(v1, s1.get, p))
+    }
+  }
+
+  object IotaP extends Sym("iota_p")
+  {
+    def apply(v1 : LocalName, s1 : Option[Term], p : Term) = {
+      ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(v1, s1.get, p))
+    }
+  }
+
+  object IsDefined extends Sym("isdefined")
+  {
+    def apply(t : Term) = {
+      Apply(this.term, t)
+    }
+  }
+
+  object IsDefinedIn extends Sym("definedin")
+  {
+    def apply(t : Term, s : Term) = {
+      ApplySpine(this.term, t, s)
+    }
+  }
+
+  object Undefined extends Sym("undefined")
+  {
+    def apply(t : Term) = {
+      Apply(this.term, t)
     }
   }
 
