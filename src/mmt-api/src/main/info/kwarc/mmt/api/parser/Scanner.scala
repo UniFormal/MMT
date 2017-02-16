@@ -15,7 +15,8 @@ import info.kwarc.mmt.api.parser.ActiveNotation._
   * @param tl the TokenList to scan
   *           matched notations are applied to tl, i.e., tl always holds the current TokenList
   */
-class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: frontend.Report) extends frontend.Logger {
+class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableInit: ParsingRuleTable,
+              val report: frontend.Report) extends frontend.Logger {
   val logPrefix = "scanner"
 
   private def logState() {
@@ -26,12 +27,20 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
     }
   }
 
-  /** the notations to scan for */
-  private var notations: List[ParsingRule] = Nil
+  /** the rules with which we still have to scan
+   */
+  private var ruleTable = ruleTableInit
+  def addRules(that: ParsingRuleTable) {
+    ruleTable = ruleTable.add(that)
+  }
+  
+  /** the notations to scan for in the current call to scan */
+  private def currentGroup: ParsingRuleGroup = ruleTable.groups.head // ruleTable.groups is nonempty during scanning
   /** the number of Token's currently in tl */
   private var numTokens = tl.length
 
-  def length: Int = numTokens
+  /** the current length of tl */
+  def length: Int = numTokens // TODO can this be private?
 
   /** the index of the first non-processed Token */
   private var currentIndex: Int = 0
@@ -84,7 +93,11 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
   }
 
   /** the currently open notations, inner-most first; initialized with the topRule or empty list */
-  private var active: List[ActiveNotation] = topRule.map(r => new ActiveNotation(this, List(r), ScannerBacktrackInfo(0,0))).toList
+  private var active: List[ActiveNotation] = {
+    parsingUnitOpt.flatMap(_.top).toList.map {topRule => 
+       new ActiveNotation(this, List(topRule), ScannerBacktrackInfo(0,0))
+    }
+  }
 
   /**
    * precondition: ans.length + closable == active.length
@@ -157,7 +170,7 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
     }
     active = active.tail
     log("closed current notation, found: " + an)
-    val (from, to) = tl.reduce(an)
+    val (from, to) = tl.reduce(an, ruleTable, report)
     val numReducedTokens = to - from
     // the closed notation reduces to 1 additional Token that is shifted in the surrounding group
     currentIndex -= numReducedTokens - 1
@@ -187,21 +200,6 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
       case hd :: _ => hd.numCurrentTokens += 1
     }
   }
-
-  private def scanRecursively(t: TokenListElem) {
-    t match {
-      case ml: MatchedList =>
-        ml.tokens foreach scanRecursively
-        ml.flatten()
-      case ul: UnmatchedList =>
-        if (ul.scanner == null) ul.scanner = new Scanner(ul.tl, None, report) //initialize scanner if necessary
-        ul.scanner.scan(notations)
-      case e: ExternalToken =>
-      case t: Token =>
-        // impossible in MatchedList produced by TokenList.reduce, not called for UnmatchedList or Token
-        throw ImplementationError("single Token in MatchedList")
-    }
-  }
   
   private def restoreBacktrackInfo(an: ActiveNotation) {
     val bti = an.backtrackInfo
@@ -217,10 +215,8 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
   private def next() {
     tl(currentIndex) match {
       case ml: MatchedList =>
-        scanRecursively(ml)
         advance()
       case ul: UnmatchedList =>
-        scanRecursively(ul)
         advance()
       case e: ExternalToken =>
         advance()
@@ -249,7 +245,7 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
             val futureTokens = availableFutureTokens
             //openable is the list of notations that can be opened, paired with the length of the delim they match
             //if multiple notations can be opened, we open the one with the longest first delim
-            val openable = notations flatMap { not =>
+            val openable = currentGroup.rules flatMap { not =>
               val delim = not.firstDelimString
               val m = delim.isDefined && ActiveNotation.matches(delim.get, currentToken.word, futureTokens)
               val openArgs = not.notation.openArgs(false)
@@ -329,13 +325,21 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
   /** scans for some notations and applies matches to tl
     * @param ns the notations to scan for
     */
-  def scan(ns: List[ParsingRule]) {
-    log("scanning " + tl + " with notations " + ns.mkString(","))
-    notations = ns
+  private def scan(group: ParsingRuleGroup) {
+    log("scanning " + tl + " with notations " + group.rules.mkString(","))
     currentIndex = 0
     numCurrentTokens = 0
     next()
     if (active != Nil) throw ImplementationError("active notation left after scanning")
+  }
+  
+  /** scan using all notations in the ruleTable */
+  def scan() {
+    ruleTable.groups foreach {g =>
+       if (!parsingUnitOpt.exists(_.isKilled))
+         scan(g)
+       ruleTable = ruleTable.tail
+    }
   }
 }
 
@@ -355,40 +359,44 @@ case class FoundDelim(pos: Int, delim: Delimiter) extends Found {
   def fromTo: Some[(Int, Int)] = Some((pos, pos + 1))
 }
 
+/** anything but a delimiter */
+sealed abstract class FoundContent extends Found {
+  /** the number of the corresponding [[Marker]] */
+  def number: Int
+}
+
 /** represents a [[notations.Arg]] that was found
   * @param slice the TokenSlice where it was found
   *              (as TokenList's are mutable, slice is not necessarily valid in the future)
   * @param n the number of the Arg
   */
-sealed abstract class FoundArg extends Found {
+sealed abstract class FoundArg extends FoundContent {
   val slice: TokenSlice
-  val n: Int
   override def toString: String = slice.toString
 
   def fromTo: Some[(Int, Int)] = Some((slice.start, slice.next))
 
 }
 
-case class FoundSimpArg(slice : TokenSlice, n : Int) extends FoundArg
+case class FoundSimpArg(slice : TokenSlice, number : Int) extends FoundArg
 
-case class FoundOML(slice : TokenSlice, n: Int, info: LabelInfo) extends FoundArg
+case class FoundOML(slice : TokenSlice, number: Int, info: LabelInfo) extends FoundArg
 
 /** represents an [[notations.SeqArg]] that was found
   * @param n the number of the SeqArg
   * @param args the arguments that were found
   */
-sealed abstract class FoundSeqArg extends Found {
-  val n: Int
+sealed abstract class FoundSeqArg extends FoundContent {
   val args: List[FoundArg]
-  override def toString: String = n.toString + args.map(_.toString).mkString(":(", " ", ")")
+  override def toString: String = number.toString + args.map(_.toString).mkString(":(", " ", ")")
 
   def fromTo: Option[(Int, Int)] = if (args.isEmpty) None else Some((args.head.slice.start, args.last.slice.next))
 
 }
 
-case class FoundSimpSeqArg(n : Int, args : List[FoundSimpArg]) extends FoundSeqArg
+case class FoundSimpSeqArg(number : Int, args : List[FoundSimpArg]) extends FoundSeqArg
 
-case class FoundSeqOML(n: Int, args: List[FoundOML], info: LabelInfo) extends FoundSeqArg
+case class FoundSeqOML(number: Int, args: List[FoundOML], info: LabelInfo) extends FoundSeqArg
 
 /** helper class for representing a single found variable
   * @param pos first Token
@@ -415,7 +423,8 @@ case class SingleFoundVar(pos: Int, name: Token, tp: Option[FoundArg]) {
   *
   * @param marker the Var marker found
   */
-class FoundVar(val marker: Var) extends Found {
+class FoundVar(val marker: Var) extends FoundContent {
+  def number = marker.number
   /** the found variables in reverse order */
   private var vrs: List[SingleFoundVar] = Nil
   /** the current state */

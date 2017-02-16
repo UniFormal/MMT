@@ -254,7 +254,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    /** the SubstitutionApplier to be used throughout */
    private implicit val sa = new MemoizedSubstitutionApplier
    /** a DefinitionExpander to be used throughout */
-   private val defExp = new uom.DefinitionExpander(controller).diesWith(checkingUnit)
+   private val defExp = new uom.DefinitionExpander(controller)
    /** used for rendering objects, should be used by rules if they want to log */
    implicit val presentObj : Obj => String = o => controller.presenter.asString(o)
 
@@ -265,9 +265,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private val computationRules = rules.getOrdered(classOf[ComputationRule])
    private val inferenceRules = rules.getOrdered(classOf[InferenceRule])
    private val subtypingRules = rules.getOrdered(classOf[SubtypingRule])
-   /* convenience function for going to the next rule after a has been tried */
+   /* convenience function for going to the next rule after one has been tried */
    private def dropTill[A](l: List[A], a: A) = l.dropWhile(_ != a).tail
-  private def dropJust[A](l: List[A], a:A) = {val i = l.indexOf(a); l.take(i) ::: l.drop(i+1)}
+   private def dropJust[A](l: List[A], a:A) = l.filter(_ != a)
 
    /**
     * logs a string representation of the current state
@@ -594,10 +594,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
            }
    }
 
-  // TODO hacky, but needed to recurse for pi-irrelevance (see lf/TermIrrelevanceRule)
-  def isTermIrrelevant(tp : Term) : Boolean =
-    rules.get(classOf[TermIrrelevanceRule]).exists(_.recapplicable(this)(tp))
-
    /**
     * @return true if unsolved variables can be filled in by prover
     */
@@ -611,10 +607,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             implicit val history = new History(Nil)
             tpOpt match {
               case None =>
-                error("unsolved unknown " + x) 
+                error("unsolved (untyped) unknown: " + x) 
               case Some(tp) =>
-                // val rO = rules.get(classOf[TermIrrelevanceRule]).find(r => r.applicable(tp))
-                if (isTermIrrelevant(tp)) {
+                val rO = rules.get(classOf[TermIrrelevanceRule]).find(r => r.applicable(tp))
+                if (rO.isDefined) {
                   history += "proving open goal of term-irrelevant type"
                   prove(constantContext++cont,tp)(history) match {
                      case Some(p) =>
@@ -623,7 +619,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                         error("unproved")
                   }
                 } else {
-                  error("unsolved unknown: " + x)
+                  error("unsolved (typed) unknown: " + x)
                 }
             }
       }

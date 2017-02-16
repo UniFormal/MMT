@@ -31,6 +31,7 @@ class RuleBasedChecker extends ObjectChecker {
       }
       
       log("checking unit " + cu.component.getOrElse("without URI") + ": " + cu.judgement.present(o => controller.presenter.asString(o)))
+      log("full form of term: " + cu.judgement.wfo.toString)
       // if a component is given, we perform side effects on it
       val updateComponent = cu.component map {comp =>
          controller.globalLookup.getComponent(comp) match {

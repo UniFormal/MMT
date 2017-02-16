@@ -13,9 +13,6 @@ object Common {
     *  in plain LF, this is only possible if U=type, i.e., if a:type
     *  other frameworks may want to reuse the LF typing rules with more options for U
     */
-   // TODO this thing explicitely excludes anything that is not a type, but is used by rules
-    // TODO that are a part of PLF!
-
    def isTypeLike(solver: Solver, a: Term)(implicit stack: Stack, history: History) = {
      val h = history + "checking the size of the type of the bound variable"
      val kind = OMS(Typed.kind)

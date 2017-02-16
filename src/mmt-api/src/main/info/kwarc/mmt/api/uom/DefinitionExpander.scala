@@ -10,15 +10,12 @@ import objects.Conversions._
  *
  * does not expand in contexts and scopes at the moment  
  */ 
-class DefinitionExpander(controller: frontend.Controller) extends StatelessTraverser with Killable {
+class DefinitionExpander(controller: frontend.Controller) extends StatelessTraverser {
    private def expSym(p: GlobalName): Option[Term] = controller.globalLookup.getO(p) match {
-      case Some(c: Constant) => c.df
+      case Some(c: Constant) => c.dfC.getAnalyzedIfFullyChecked
       case _ => None
    }
    def traverse(t: Term)(implicit con : Context, init: Unit): Term = {
-      if (isKilled) {
-         return t
-      }
       //println(t)
       t match {
          case DefinitionsExpanded(tE) if tE.freeVars.forall(v => con(v).df.isEmpty) =>
