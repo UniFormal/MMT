@@ -79,4 +79,10 @@ package object utils {
 
    /** slurps an entire stream into a string */
    def readFullStream(is: java.io.InputStream) = scala.io.Source.fromInputStream(is, "UTF-8").mkString
+   
+   /** a cast function that allows only casting into a subtype and returns None if the cast fails */  
+   def downcast[A, B<:A](cls: Class[B])(a: A): Option[B] = a match {
+     case b: B@unchecked if cls.isInstance(b) => Some(b)
+     case _ => None
+   }
 }

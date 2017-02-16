@@ -29,7 +29,7 @@ class AllPdf extends LaTeXDirTarget {
 
   override def cleanDir(a: Archive, curr: Current) {
     val dir = curr.file
-    if (dir.exists & dir.isDirectory) {
+    if (dir.exists && dir.isDirectory) {
       dir.list.filter(dirFileFilter).sorted.
         foreach { f =>
           val d = FileBuildDependency("pdflatex", a, curr.path / f)
@@ -110,7 +110,7 @@ class AllTeX extends LaTeXDirTarget {
 
   override def cleanDir(a: Archive, curr: Current) {
     val dir = curr.file
-    if (dir.exists & dir.isDirectory) {
+    if (dir.exists && dir.isDirectory) {
       dir.list.filter(dirFileFilter).sorted.
         map(f => dir / f).foreach(deleteWithLog)
     }
