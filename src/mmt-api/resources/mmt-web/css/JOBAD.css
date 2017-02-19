@@ -1,98 +1,172 @@
 /*
 	JOBAD.css
-	Contains JOBAD UI CSS Data
+	Contains JOBAD Core CSS Data
+	
+	Copyright (C) 2013-17 KWARC Group <kwarc.info>
+	
+	This file is part of JOBAD.
+	
+	JOBAD is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	JOBAD is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	
+	You should have received a copy of the GNU General Public License
+	along with JOBAD.  If not, see <http://www.gnu.org/licenses/>.
+
 */
 
-/* general */
-.JOBAD {
-	/* general JOBAD class applied to all JOBAD items */
-}
+/*
+	JOBAD Hover
+*/
 
-/* JOBAD Hover */
 .JOBAD.JOBAD_Hover {
 	position: fixed;
-	background-color: lightgray;
-	border-radius: 5px;
-	border: 1px solid #000000;
+	z-index: 101;
 }
 
-/* JOBAD ContextMenu */
+
+/* 
+	JOBAD ContextMenu
+*/
+
 .JOBAD.JOBAD_Contextmenu {
-	/* applied to the context menu */
-	width: 100%;
+		/* nothing here */
 }
 
-/* JOBAD Sidebar */
-.JOBAD.JOBAD_Sidebar {
-	/* applied to all sidebar elements (including parent) */
+.JOBAD.JOBAD_Contextmenu.JOBAD_ContextMenu_Radial.JOBAD_ContextMenu_RadialItem{
+	position: fixed;
+	overflow: hidden;
 }
 
+.JOBAD.JOBAD_InlineIcon{
+	position: static;
+	float: left;
+}
 
-.JOBAD.JOBAD_Sidebar.JOBAD_Sidebar_Group, .JOBAD.JOBAD_Sidebar.JOBAD_Sidebar_Single {
-	/* JOBAD Sidebar Group or single */
+/* 
+	JOBAD Sidebar 
+*/
+
+/* Sidebar groups */
+.JOBAD.JOBAD_Sidebar_right.JOBAD_Sidebar_Group, 
+.JOBAD.JOBAD_Sidebar_right.JOBAD_Sidebar_Single {
 	position: absolute;
 	right: 0px; 
 }
 
-.JOBAD.JOBAD_Sidebar.JOBAD_Sidebar_group_element {
+.JOBAD.JOBAD_Sidebar_left.JOBAD_Sidebar_Group,
+.JOBAD.JOBAD_Sidebar_left.JOBAD_Sidebar_Single {
+	position: absolute;
+	left: 0px; 
+}
+
+.JOBAD.JOBAD_Sidebar_left.JOBAD_Sidebar_group_element, 
+.JOBAD.JOBAD_Sidebar_right.JOBAD_Sidebar_group_element {
 	position: relative;
 }
 
-.JOBAD.JOBAD_Sidebar.JOBAD_Sidebar_Wrapper {
+.JOBAD.JOBAD_Sidebar_right.JOBAD_Sidebar_Wrapper {
 	/* wraps the element that has a sidebar */
 	width: 100%;
 	float: left;
-	overflow: hidden;	
 }
 
-.JOBAD.JOBAD_Sidebar.JOBAD_Sidebar_Container {
+.JOBAD.JOBAD_Sidebar_left.JOBAD_Sidebar_Wrapper {
+	/* wraps the element that has a sidebar */
+	width: 100%;
+	float: right;	
+}
+
+
+.JOBAD.JOBAD_Sidebar_right.JOBAD_Sidebar_Container {
 	/* Contains all sidebar elements */
 	height: 1px; /* something positive */
 	position: relative;
 	float: right;
 }
 
-.JOBAD.JOBAD_Sidebar.JOBAD_Sidebar_Notification {
+.JOBAD.JOBAD_Sidebar_left.JOBAD_Sidebar_Container {
+	/* Contains all sidebar elements */
+	height: 1px; /* something positive */
+	position: relative;
+	float: left;
+}
+
+
+.JOBAD.JOBAD_Sidebar_left.JOBAD_Sidebar_Notification,
+.JOBAD.JOBAD_Sidebar_right.JOBAD_Sidebar_Notification {
 	/* Sidebar Notifications */
 	-webkit-border-radius: 5;
 	-moz-border-radius: 5;
 	border-radius: 5;
 }
 
-.JOBAD_Sidebar_Hover {
+.JOBAD.JOBAD_Sidebar.JOBAD_Sidebar_Hover {
 	position: fixed;
 	-webkit-border-radius: 5;
 	-moz-border-radius: 5;
 	border-radius: 5;
 }
 
-.JOBAD.JOBAD_Sidebar.JOBAD_Notification_info {
-	/* Information */
-	background-color: #0033FF;
-	border: 1px solid #0000FF;
-}
-.JOBAD.JOBAD_Sidebar.JOBAD_Notification_warning {
-	/* Warning */
-	background-color: #FFFF00;
-	border: 1px solid #FFAA00;
-}
-.JOBAD.JOBAD_Sidebar.JOBAD_Notification_error {
-	/* Error */	
-	background-color: red;
-	border: 1px solid red;
-}
-
 /*
-	JOBAD jQuery UI CSS compatibility fixes
+	JOBAD Folding
 */
 
-/* fix for bad size */
-.ui-widget { font-size: 62.5%; }
-/* vertical tabs (for module manager) */
-.ui-tabs-vertical { width: 55em; }
-.ui-tabs-vertical .ui-tabs-nav { padding: .2em .1em .2em .2em; float: left; width: 12em; }
-.ui-tabs-vertical .ui-tabs-nav li { clear: left; width: 100%; border-bottom-width: 1px !important; border-right-width: 0 !important; margin: 0 -1px .2em 0; }
-.ui-tabs-vertical .ui-tabs-nav li a { display:block; }
-.ui-tabs-vertical .ui-tabs-nav li.ui-tabs-active { padding-bottom: 0; padding-right: .1em; border-right-width: 1px; border-right-width: 1px; }
-.ui-tabs-vertical .ui-tabs-panel { padding: 1em; float: right; width: 40em;}
+/* JOBAD Folding */
+.JOBAD.JOBAD_Folding_left, .JOBAD.JOBAD_Folding_right{
+	/* applied to all sidebar elements (including parent) */
+}
 
+.JOBAD.JOBAD_Folding_right.JOBAD_Folding_Wrapper {
+	/* wraps the element that has a sidebar */
+	width: 100%;
+	float: left;
+	margin-top: 2px;
+}
+
+.JOBAD.JOBAD_Folding_left.JOBAD_Folding_Wrapper {
+	/* wraps the element that has a sidebar */
+	width: 100%;
+	float: right;
+	margin-bottom: 2px;
+	display: inline;
+}
+
+
+.JOBAD.JOBAD_Folding_right.JOBAD_Folding_Container {
+	/* Folding bracket Right */
+	position: relative;
+	float: right;
+	margin-left: 5px;
+}
+
+.JOBAD.JOBAD_Folding_left.JOBAD_Folding_Container {
+	/* Folding bracket Left */
+	position: relative;
+	float: left;
+	margin-right: 5px;
+}
+
+.JOBAD.JOBAD_Folding_left.JOBAD_Folding_Spacing, 
+.JOBAD.JOBAD_Folding_right.JOBAD_Folding_Spacing {
+	/* add some spacing after me */
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	display: block;
+}
+
+.modal.large {
+    width: 80%; /* respsonsive width */
+    margin-left:-40%; /* width/2) */
+}
+
+.wide {
+	width: 150px !important;
+}
