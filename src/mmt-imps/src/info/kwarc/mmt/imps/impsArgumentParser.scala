@@ -1,6 +1,6 @@
 package info.kwarc.mmt.imps
 
-package object argParsers
+package object impsArgumentParsers
 {
   /* Parser for IMPS usages objects
    * used in: def-atomic-sort */
