@@ -1,6 +1,6 @@
 package info.kwarc.mmt.imps
 
-package object defFormParsers
+package object impsDefFormParsers
 {
   /* Parser for IMPS special form def-atomic sort
    * Documentation: IMPS manual pgs. 158, 159 */
@@ -31,9 +31,9 @@ package object defFormParsers
         e.children(i) match {
           case Exp(ds,src) => ds.head match
           {
-            case Exp(List(Str("theory")),_)  => thy     = argParsers.parseTheory(Exp(ds,src))
-            case Exp(List(Str("usages")),_)  => usages  = argParsers.parseUsages(Exp(ds,src))
-            case Exp(List(Str("witness")),_) => witness = argParsers.parseWitness(Exp(ds,src))
+            case Exp(List(Str("theory")),_)  => thy     = impsArgumentParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("usages")),_)  => usages  = impsArgumentParsers.parseUsages(Exp(ds,src))
+            case Exp(List(Str("witness")),_) => witness = impsArgumentParsers.parseWitness(Exp(ds,src))
             case _                           => ()
           }
           case _ => ()
@@ -77,9 +77,9 @@ package object defFormParsers
         e.children(i) match {
           case Exp(ds,src) => ds.head match
           {
-            case Exp(List(Str("theory")),_) => thy    = argParsers.parseTheory(Exp(ds,src))
-            case Exp(List(Str("usages")),_) => usages = argParsers.parseUsages(Exp(ds,src))
-            case Exp(List(Str("sort")),_)   => sort   = argParsers.parseSort(Exp(ds,src))
+            case Exp(List(Str("theory")),_) => thy    = impsArgumentParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("usages")),_) => usages = impsArgumentParsers.parseUsages(Exp(ds,src))
+            case Exp(List(Str("sort")),_)   => sort   = impsArgumentParsers.parseSort(Exp(ds,src))
             case _                          => ()
           }
           case _ => ()
@@ -122,8 +122,8 @@ package object defFormParsers
         e.children(i) match {
           case Exp(ds,src) => ds.head match
           {
-            case Exp(List(Str("language")),_)       => lang  = argParsers.parseLanguage(Exp(ds,src))
-            case Exp(List(Str("fixed-theories")),_) => fixed = argParsers.parseFixedTheories(Exp(ds,src))
+            case Exp(List(Str("language")),_)       => lang  = impsArgumentParsers.parseLanguage(Exp(ds,src))
+            case Exp(List(Str("fixed-theories")),_) => fixed = impsArgumentParsers.parseFixedTheories(Exp(ds,src))
             case _                           => ()
           }
           case _ => ()
@@ -163,8 +163,8 @@ package object defFormParsers
         e.children(i) match {
           case Exp(ds,src) => ds.head match
           {
-            case Exp(List(Str("src-theory")),_)   => srcTheory   = argParsers.parseSourceTheory(Exp(ds,src))
-            case Exp(List(Str("src-theories")),_) => srcTheories = argParsers.parseSourceTheories(Exp(ds,src))
+            case Exp(List(Str("src-theory")),_)   => srcTheory   = impsArgumentParsers.parseSourceTheory(Exp(ds,src))
+            case Exp(List(Str("src-theories")),_) => srcTheories = impsArgumentParsers.parseSourceTheories(Exp(ds,src))
             case _                                => ()
           }
           case _ => ()
@@ -220,9 +220,9 @@ package object defFormParsers
         e.children(i) match {
           case Exp(ds,src) => ds.head match
           {
-            case Exp(List(Str("constructor")),_) => const = argParsers.parseConstructor(Exp(ds,src))
-            case Exp(List(Str("accessors")),_)   => accs  = argParsers.parseAccessors(Exp(ds,src))
-            case Exp(List(Str("theory")),_)      => thy   = argParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("constructor")),_) => const = impsArgumentParsers.parseConstructor(Exp(ds,src))
+            case Exp(List(Str("accessors")),_)   => accs  = impsArgumentParsers.parseAccessors(Exp(ds,src))
+            case Exp(List(Str("theory")),_)      => thy   = impsArgumentParsers.parseTheory(Exp(ds,src))
             case _                               => ()
           }
           case _ => ()
@@ -267,7 +267,7 @@ package object defFormParsers
         {
           case Exp(ds,src) => ds.head match
           {
-            case Exp(List(Str("theory")),_) => thy = argParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("theory")),_) => thy = impsArgumentParsers.parseTheory(Exp(ds,src))
             case (Str("null"))              => nullarg  = true
             case (Str("transportable"))     => transarg = true
             case _                          => ()
@@ -326,12 +326,12 @@ package object defFormParsers
         {
           case Exp(ds,src) => ds.head match
           {
-            case Exp(List(Str("theory")),_)      => theory  = argParsers.parseTheory(Exp(ds,src))
-            case Exp(List(Str("home-theory")),_) => hmthy   = argParsers.parseHomeTheory(Exp(ds,src))
-            case Exp(List(Str("usages")),_)      => usages  = argParsers.parseUsages(Exp(ds,src))
-            case Exp(List(Str("macete")),_)      => macete  = argParsers.parseMacete(Exp(ds,src))
-            case Exp(List(Str("translation")),_) => trans   = argParsers.parseTranslation(Exp(ds,src))
-            case Exp(List(Str("proof")),_)       => prf     = argParsers.parseProofScript(Exp(ds,src))
+            case Exp(List(Str("theory")),_)      => theory  = impsArgumentParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("home-theory")),_) => hmthy   = impsArgumentParsers.parseHomeTheory(Exp(ds,src))
+            case Exp(List(Str("usages")),_)      => usages  = impsArgumentParsers.parseUsages(Exp(ds,src))
+            case Exp(List(Str("macete")),_)      => macete  = impsArgumentParsers.parseMacete(Exp(ds,src))
+            case Exp(List(Str("translation")),_) => trans   = impsArgumentParsers.parseTranslation(Exp(ds,src))
+            case Exp(List(Str("proof")),_)       => prf     = impsArgumentParsers.parseProofScript(Exp(ds,src))
             case (Str("lemma"))                  => reverse = true
             case (Str("reverse"))                => lemma   = true
             case _                               => () // other arguments get silently discarded. TODO: Maybe fail instead?
