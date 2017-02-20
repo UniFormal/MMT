@@ -87,9 +87,12 @@ object IMPSTheory
     }
   }
 
+  // TODO: Correct?
   object IMPSApply extends Sym("apply")
   {
-    ???
+    def apply(f : Term, as : List[Term]) = {
+      as.foldLeft(f)((zw, b) => ApplySpine(this.term, zw, b))
+    }
   }
 
   object Forall extends Sym("forall")
