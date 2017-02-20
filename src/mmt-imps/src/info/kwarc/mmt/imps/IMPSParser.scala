@@ -193,17 +193,17 @@ class IMPSParser
 
         case Str("def-algebraic-processor") => return Some(Dummy("def-algebraic-processor"))
 
-        case Str("def-atomic-sort") => return defFormParsers.parseAtomicSort(e)
+        case Str("def-atomic-sort") => return impsDefFormParsers.parseAtomicSort(e)
 
         case Str("def-bnf") => return Some(Dummy("def-bnf"))
 
-        case Str("def-cartesian-product") => return defFormParsers.parseCartesianProduct(e)
+        case Str("def-cartesian-product") => return impsDefFormParsers.parseCartesianProduct(e)
 
         case Str("def-compound-macete") => return Some(Dummy("def-compund-macete"))
 
-        case Str("def-constant") => return defFormParsers.parseConstant(e)
+        case Str("def-constant") => return impsDefFormParsers.parseConstant(e)
 
-        case Str("def-imported-rewrite-rules") => return defFormParsers.parseImportedRewriteRules(e)
+        case Str("def-imported-rewrite-rules") => return impsDefFormParsers.parseImportedRewriteRules(e)
 
         case Str("def-inductor") => return Some(Dummy("def-inductor"))
 
@@ -213,7 +213,7 @@ class IMPSParser
 
         case Str("def-primitive-recursive-constant") => return Some(Dummy("def-primitive-recursive-constant"))
 
-        case Str("def-quasi-constructor") => return defFormParsers.parseQuasiConstructor(e)
+        case Str("def-quasi-constructor") => return impsDefFormParsers.parseQuasiConstructor(e)
 
         case Str("def-record-theory") => return Some(Dummy("def-record-theory"))
 
@@ -221,7 +221,7 @@ class IMPSParser
 
         case Str("def-renamer") => return Some(Dummy("def-renamer"))
 
-        case Str("def-schematic-macete") => return defFormParsers.parseSchematicMacete(e)
+        case Str("def-schematic-macete") => return impsDefFormParsers.parseSchematicMacete(e)
 
         case Str("def-script") => return Some(Dummy("def-script"))
 
@@ -229,7 +229,7 @@ class IMPSParser
 
         case Str("def-sublanguage") => return Some(Dummy("def-sublanguage"))
 
-        case Str("def-theorem") => return defFormParsers.parseTheorem(e) //return Some(Dummy("def-theorem"))
+        case Str("def-theorem") => return impsDefFormParsers.parseTheorem(e) //return Some(Dummy("def-theorem"))
 
         case Str("def-theory") => return Some(Dummy("def-theory"))
 
