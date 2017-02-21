@@ -229,7 +229,6 @@ class TermIrrelevanceRule(under: List[GlobalName], head: GlobalName) extends Typ
     history += "all terms of this type are equal"
     Some(true)
   }
-  def recapplicable(solver : Solver)(tp : Term) : Boolean = true
 }
 
 /**

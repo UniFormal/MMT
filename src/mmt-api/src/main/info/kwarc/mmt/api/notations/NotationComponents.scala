@@ -77,7 +77,9 @@ case class SymbolName() extends PlaceholderDelimiter {
    }
 }
 
-sealed abstract class ArgumentMarker extends Marker with ArgumentComponent
+sealed abstract class ArgumentMarker extends Marker with ArgumentComponent {
+  def locallyUsesNotationsFrom: Option[SimpArg] = None
+}
 
 /** an argument
   *
@@ -93,7 +95,6 @@ sealed abstract class Arg extends ArgumentMarker {
    * @param s the delimiter
    */
   def by(s:String) : SeqArg = SimpSeqArg(number,Delim(s))
-
 }
 
 /** normal arguments */

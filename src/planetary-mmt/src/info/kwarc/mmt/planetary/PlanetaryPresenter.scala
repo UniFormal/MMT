@@ -487,7 +487,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    }
 
    def doRef(r : NRef) = r match {
-     case d: DRef if d.target.last == OMV.anonymous => //nested doc
+     case d: DRef if d.target.name == OMV.anonymous => //nested doc
        rh("<div class=\"group\">")
          controller.get(d.target) match {
            case d : Document => doDocument(d)

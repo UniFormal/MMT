@@ -65,7 +65,7 @@ class History(var steps: List[HistoryEntry]) {
    def getSteps = steps
 
    private var inc = 0
-   private def doinc : String = if (inc == 0) "" else { (1 to inc).map(_ => "-").mkString("") + " " }
+   private def doinc : String = if (inc == 0) "" else utils.repeatString("-", inc-1) + " "
    def indinc = inc += 1
    def inddec = inc -=1
    

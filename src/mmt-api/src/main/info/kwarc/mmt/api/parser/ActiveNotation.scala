@@ -22,7 +22,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
    override def toString = toShortString + " " + found.reverse.mkString("", " ", "")
    def toShortString = rules.map(_.name.last).mkString("/")
 
-   /** the markers that have been found in the token list */
+   /** the markers that have been found in the token list (in reverse concrete syntax order) */
    private var found : List[Found] = Nil
    /** all found tokens */
    def getFound = found.reverse
@@ -145,7 +145,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
     * and the remaining List[Marker]
     */
    private def splitOffArgs(ms: List[Marker], ns: List[(Int,Option[LabelInfo])] = Nil) : (List[(Int,Option[LabelInfo])], List[Marker]) = ms match {
-      case (la@LabelArg(n,_,_,_)) :: rest => splitOffArgs(rest, (n,Some(la.info)) :: ns)
+      case (la:LabelArg) :: rest => splitOffArgs(rest, (la.number,Some(la.info)) :: ns)
       case SimpArg(n, _) :: rest => splitOffArgs(rest, (n,None) :: ns)
       case Delim("%w") :: rest => splitOffArgs(rest, ns)
       case rest => (ns.reverse, rest)

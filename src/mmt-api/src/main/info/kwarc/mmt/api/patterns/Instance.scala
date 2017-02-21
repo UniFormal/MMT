@@ -10,8 +10,6 @@ import checking._
 
 class InstanceFeature extends StructuralFeature(Instance.feature) {
 
-  def checkInContext(prev : Context,dv: VarDecl): Unit = {}
-  def elaborateInContext(prev: Context, dv: VarDecl): Context = Context.empty
 
    /** a default notation in case the pattern is not known */
    def getHeaderNotation = List(LabelArg(1,false,false), Delim(":"), SimpArg(1))

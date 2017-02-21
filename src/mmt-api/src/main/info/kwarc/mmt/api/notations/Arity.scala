@@ -20,7 +20,7 @@ import objects._
 case class Arity(subargs: List[ArgumentComponent],
                  variables: List[VariableComponent],
                  arguments: List[ArgumentComponent], attribution: Boolean) {
-   def components = variables ::: arguments
+   def components = subargs ::: variables ::: arguments
    def length = components.length
    def isConstant    = (! attribution) && subargs.isEmpty && arguments.isEmpty && variables.isEmpty
    def isApplication = (! attribution) && subargs.isEmpty && variables.isEmpty && (! arguments.isEmpty)
@@ -57,15 +57,15 @@ case class Arity(subargs: List[ArgumentComponent],
    // distributes available components to numTotal normal/sequence components where the positions of the sequences are given by seqs
    // returns: number of arguments per sequence and cutoff below which sequences get one extra argument
    private def distribute(available: Int, numTotal: Int, seqs: List[Int]):(Int,Int) = {
-         val numSeqs = seqs.length
-         if (numSeqs == 0) return (0,0)
-         val numSingle = numTotal - numSeqs
-         val availableForSeqs = available - numSingle
-         //the number of arguments that every sequence argument gets
-         val perSeq = availableForSeqs / numSeqs
-         //the first sequence that does not get an extra argument
-         val cutoff = seqs.apply(availableForSeqs % numSeqs)
-         (perSeq,cutoff)
+     val numSeqs = seqs.length
+     if (numSeqs == 0) return (0,0)
+     val numSingle = numTotal - numSeqs
+     val availableForSeqs = available - numSingle
+     //the number of arguments that every sequence argument gets
+     val perSeq = availableForSeqs / numSeqs
+     //the first sequence that does not get an extra argument
+     val cutoff = seqs.apply(availableForSeqs % numSeqs)
+     (perSeq,cutoff)
    }
    /** 
     * distributes all arguments evenly to the sequence arguments

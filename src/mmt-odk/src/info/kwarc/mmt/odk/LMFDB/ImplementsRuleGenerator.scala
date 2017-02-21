@@ -20,7 +20,7 @@ class ImplementsRuleGenerator extends ChangeListener {
      p match {
         case p: GlobalName =>
            controller.globalLookup.getO(p / nameSuffix) match {
-              case Some(r: RuleConstant) => Some(r.df.asInstanceOf[ImplementsRule])
+              case Some(rc: RuleConstant) => rc.df flatMap downcast(classOf[ImplementsRule])
               case _ => None
            }
         case _ => None
