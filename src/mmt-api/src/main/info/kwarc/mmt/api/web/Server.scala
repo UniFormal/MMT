@@ -27,10 +27,16 @@ object Server {
   private def checkCORS(tk: HTalk): HTalk = tk.req.header("Origin") match {
     case None => tk
     case Some(s) => CORS_AllowOrigin(s) match {
-      case true => tk.setHeader("Access-Control-Allow-Origin", s)
+      case true => addCORS(tk, s)
       case false => tk
     }
   }
+
+  private def addCORS(tk : HTalk, origin: String): HTalk = tk
+    .setHeader("Access-Control-Allow-Origin", origin)
+    .setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+    .setHeader("Access-Control-Max-Age", "1000")
+    .setHeader("Access-Control-Allow-Headers", "origin, x-csrf-token, content-type, content-length, accept")
 
   /**
     * A text response that the server sends back to the browser
@@ -83,7 +89,7 @@ object Server {
     *
     * @param json the message that is sent in the HTTP body
     */
-  def JsonResponse(json: JSON) : HLet = JsonResponse(json, HStatus.OK)
+  def JsonResponse(json: JSON): HLet = JsonResponse(json, HStatus.OK)
 
   /**
     * A json response
@@ -91,7 +97,7 @@ object Server {
     * @param json   the message that is sent in the HTTP body
     * @param status the status to return
     */
-  def JsonResponse(json: JSON, status: HStatus.Value) : HLet = TypedTextResponse(json.toString, "application/json", status)
+  def JsonResponse(json: JSON, status: HStatus.Value): HLet = TypedTextResponse(json.toString, "application/json", status)
 
   /**
     * An XML response that the server sends back to the browser
@@ -117,7 +123,7 @@ object Server {
   def errorResponse(error: Error): HLet = htmlErrorResponse(error)
 
   /** builds an error response from an error */
-  def errorResponse(error: Error, req: HReqData) : HLet = {
+  def errorResponse(error: Error, req: HReqData): HLet = {
     // we have three modes of error responses: text/html, text/xml, text/plain
     // first we parse everything the server accepts (ignoring priorities)
     val accepts = req.header("Accept").getOrElse("").split(",").map(_.split(";").head.trim)
@@ -131,11 +137,11 @@ object Server {
     if (plainPosition > -1 && (xmlPosition == -1 || plainPosition < xmlPosition) && (htmlPosition == -1 || plainPosition < htmlPosition)) {
       plainErrorResponse(error)
 
-    // check if xml is the smallest content type
+      // check if xml is the smallest content type
     } else if (xmlPosition > -1 && (plainPosition == -1 || xmlPosition < plainPosition) && (htmlPosition == -1 || xmlPosition < htmlPosition)) {
       xmlErrorResponse(error)
 
-    // finally fall back to an html error response
+      // finally fall back to an html error response
     } else {
       htmlErrorResponse(error)
     }
@@ -143,16 +149,16 @@ object Server {
   }
 
   /** builds a smart error message from an error */
-  def errorResponse(msg: String, talk: HTalk) : HLet = errorResponse(ServerError(msg), talk.req)
+  def errorResponse(msg: String, talk: HTalk): HLet = errorResponse(ServerError(msg), talk.req)
 
   /** an error response in plain text format */
-  def plainErrorResponse(error: Error) : HLet = TextResponse(error.toStringLong, status = HStatus.InternalServerError)
+  def plainErrorResponse(error: Error): HLet = TextResponse(error.toStringLong, status = HStatus.InternalServerError)
 
   /** an error response in html format */
-  def htmlErrorResponse(error: Error) : HLet = TextResponse(s"""<div xmlns="${xml.namespace("html")}"><div>""" + error.toHTML + "</div></div>", "html", HStatus.InternalServerError)
+  def htmlErrorResponse(error: Error): HLet = TextResponse(s"""<div xmlns="${xml.namespace("html")}"><div>""" + error.toHTML + "</div></div>", "html", HStatus.InternalServerError)
 
   /** an error response in xml format */
-  def xmlErrorResponse(error : Error) : HLet = XMLResponse(error.toNode, HStatus.InternalServerError)
+  def xmlErrorResponse(error: Error): HLet = XMLResponse(error.toNode, HStatus.InternalServerError)
 }
 
 /** straightforward abstraction for web style key-value queries; no encoding, no duplicate keys */
@@ -288,35 +294,42 @@ class Server(val port: Int, val host: String, controller: Controller) extends HS
     override def sidKey = "MMT_SESSIONID"
 
     def resolve(req: HReqData): Option[HLet] = {
-      lazy val reqString = "/" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query
-      log("request for " + reqString)
-      req.uriPath.split("/").toList match {
-        case ":change" :: _ => Some(ChangeResponse)
-        case ":mws" :: _ => Some(MwsResponse)
-        case hd :: tl if hd.startsWith(":") =>
-          val pl = controller.extman.getOrAddExtension(classOf[ServerExtension], hd.substring(1)) getOrElse {
-            return Some(errorResponse("no plugin registered for context " + hd))
-          }
-          val hlet = new HLet {
-            def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
-              log("handling request via plugin " + pl.logPrefix)
-              val hl = try {
-                pl(tl, req.query, new Body(tk), Session(tk.ses.id))
-              } catch {
-                case e: Error =>
-                  errorResponse(e, req)
-                case e: Exception =>
-                  val le = pl.LocalError("unknown error while serving " + reqString).setCausedBy(e)
-                  errorResponse(le, req)
-              }
-              hl.aact(tk)
+
+      if (req.method == HReqType.Options) {
+        Some(new HSimpleLet {
+          def act(tk: HTalk) = checkCORS(tk)
+        })
+      } else {
+        lazy val reqString = "/" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query
+        log("request for " + reqString)
+        req.uriPath.split("/").toList match {
+          case ":change" :: _ => Some(ChangeResponse)
+          case ":mws" :: _ => Some(MwsResponse)
+          case hd :: tl if hd.startsWith(":") =>
+            val pl = controller.extman.getOrAddExtension(classOf[ServerExtension], hd.substring(1)) getOrElse {
+              return Some(errorResponse("no plugin registered for context " + hd))
             }
-          }
-          Some(hlet)
-        // empty path 
-        case List("") | Nil => Some(resourceResponse("browse.html"))
-        // other resources
-        case _ => Some(resourceResponse(req.uriPath))
+            val hlet = new HLet {
+              def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
+                log("handling request via plugin " + pl.logPrefix)
+                val hl = try {
+                  pl(tl, req.query, new Body(tk), Session(tk.ses.id))
+                } catch {
+                  case e: Error =>
+                    errorResponse(e, req)
+                  case e: Exception =>
+                    val le = pl.LocalError("unknown error while serving " + reqString).setCausedBy(e)
+                    errorResponse(le, req)
+                }
+                hl.aact(tk)
+              }
+            }
+            Some(hlet)
+          // empty path
+          case List("") | Nil => Some(resourceResponse("browse.html"))
+          // other resources
+          case _ => Some(resourceResponse(req.uriPath))
+        }
       }
     }
   }
