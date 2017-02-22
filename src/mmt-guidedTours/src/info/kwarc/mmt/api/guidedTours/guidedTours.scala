@@ -25,7 +25,7 @@ class GuidedToursPlugin extends ServerExtension("guidedTours") {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       val reqBody = new Body(tk)
       val pathS = reqBody.asString
-      val dpath = Path.parseD(pathS, NamespaceMap.empty)
+      val dpath = Path.parseD(pathS)
       val doc = controller.getDocument(dpath)
       
       val myPath = dpath / "guidedTour"

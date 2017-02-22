@@ -27,7 +27,7 @@ object Lmfdbtest {
     println(c)
     println(d)
 
-    val p = Path.parseM("http://www.lmfdb.org/schema/elliptic_curves?curves", NamespaceMap.empty)
+    val p = Path.parseM("http://www.lmfdb.org/schema/elliptic_curves?curves")
 
 
     val cond = controller.get(Path.parse("http://www.lmfdb.org/schema/elliptic_curves?curves?conductor")).asInstanceOf[FinalConstant]

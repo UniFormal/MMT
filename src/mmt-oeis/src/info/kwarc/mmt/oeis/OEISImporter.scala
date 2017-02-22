@@ -201,7 +201,7 @@ class OEISImporter extends Importer {
   def resolveSPath(baseO: Option[String], tnameSO: Option[String], snameS: String, container: MPath, tsref: SourceRef)(implicit errorCont: ErrorHandler): GlobalName = {
     val tNameDef = tnameSO.map(LocalName(_)).getOrElse(container.name)
     val sNameDef = LocalName(snameS)
-    val docDef = baseO.map(b => Path.parseD(b, NamespaceMap.empty)).getOrElse(container.doc)
+    val docDef = baseO.map(b => Path.parseD(b)).getOrElse(container.doc)
     val defaultPath = docDef ? tNameDef ? sNameDef
     val tpaths = controller.globalLookup.visible(OMMOD(container)) //includes container
     //filter those that match tname
