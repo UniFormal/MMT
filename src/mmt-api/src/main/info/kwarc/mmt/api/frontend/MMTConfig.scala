@@ -209,7 +209,7 @@ object MMTConfig {
         }
         case "semantics" => split(line) match {
           case thy :: cls :: args =>
-            val thyP = Path.parseM(thy, NamespaceMap.empty)
+            val thyP = Path.parseM(thy)
             config.addEntry(SemanticsConf(thyP, cls, args))
           case _ => fail
         }

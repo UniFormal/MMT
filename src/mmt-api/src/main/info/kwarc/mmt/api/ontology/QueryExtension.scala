@@ -43,7 +43,7 @@ abstract class QueryExtension(val name: String) extends Extension {
   */
 abstract class QueryFunctionExtension(override val name: String, val in: QueryType, val out: QueryType) extends QueryExtension(name) {
   protected def mpath(params: List[String]): MPath = params match {
-    case p :: Nil => Path.parseM(p, NamespaceMap.empty)
+    case p :: Nil => Path.parseM(p)
     case Nil => throw ParseError("paramater expected")
     case _ => throw ParseError("exactly one paramater expected")
   }

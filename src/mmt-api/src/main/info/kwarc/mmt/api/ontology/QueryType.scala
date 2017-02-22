@@ -42,7 +42,7 @@ object QueryBaseType {
     case h :: t => OMA(OMID(`cons`), generate(h) :: generate(t) :: Nil)
   }
 
-  private val theoryPath = Path.parseM("http://cds.omdoc.org/urtheories?BaseTypes", NamespaceMap.empty)
+  private val theoryPath = Path.parseM("http://cds.omdoc.org/urtheories?BaseTypes")
 
   val pth: GlobalName = theoryPath ? "Path"
   val obj: GlobalName = theoryPath ? "Object"
@@ -107,7 +107,7 @@ object QueryType {
     case SetTupleQuery(l) => OMA(OMID(setTuple), QueryBaseType.generate(l) :: Nil)
   }
 
-  private val theoryPath = Path.parseM("http://cds.omdoc.org/urtheories?QueryTypes", NamespaceMap.empty)
+  private val theoryPath = Path.parseM("http://cds.omdoc.org/urtheories?QueryTypes")
 
   val tuple: GlobalName = theoryPath ? "TupleQuery"
   val element: GlobalName = theoryPath ? "ElementQuery"

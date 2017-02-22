@@ -58,7 +58,7 @@ class RuleType(be: Backend) extends Atomic[Rule] {
    override def toString(u: Any) = unapply(u).get.mpath.toString
 
    def fromString(s: String): Rule = {
-     val mp = Path.parseM(s, NamespaceMap.empty)
+     val mp = Path.parseM(s)
      be.loadObjectO(mp) match {
        case Some(r: Rule) => r
        case Some(_) => throw ParseError("object exists but is not a rule")

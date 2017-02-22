@@ -14,6 +14,7 @@ class Plugin extends frontend.Plugin {
     controller.extman.addExtension(new LMFDB.Plugin)
     controller.extman.addExtension(new GAP.Plugin)
     controller.extman.addExtension(new Sage.Plugin)
+    controller.extman.addExtension(new activecomp.Plugin)
   }
 }
 
