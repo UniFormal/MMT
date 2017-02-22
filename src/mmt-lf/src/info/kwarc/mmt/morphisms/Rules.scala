@@ -52,6 +52,56 @@ object MorphTypeInhabitable extends InhabitableRule(ModExp.morphtype) {
 /**
  * C Context  --->  {{C}} : theory
  */
+// TODO get rid of LF dependency here? (OfType)
+object ComplexTheoryInfer extends TheoryExpRule(ModExp.complextheory,OfType.path) {
+   override def apply(tm: Term, covered: Boolean)(implicit solver: Solver, stack: Stack, history: History): Boolean = tm match {
+      case ComplexTheory(con) =>
+         // if (covered) return Some(TheoryType(Nil))
+         con.mapVarDecls {case (c, vd) =>
+            val currentStack = stack ++ c
+            val mayhold = vd match {
+               // an import from another theory
+               case StructureVarDecl(name, tp, df) =>
+                  // type must be a theory
+                  solver.check(IsTheory(currentStack, tp)) &&
+                    // if given, definiens must be a morphism
+                    (df match {
+                       case Some(d) =>
+                          solver.check(IsRealization(currentStack, d, tp))
+                       case None => true
+                    })
+               case VarDecl(n,tpOpt,dfOpt,_) =>
+                  tpOpt match {
+                     case Some(tp) =>
+                        solver.check(Inhabitable(currentStack, tp))(history + ("type of " + n + " must be inhabitable"))
+                        dfOpt match {
+                           case Some(df) =>
+                              solver.check(Typing(currentStack, tp, df))(history + ("definiens of " + n + " must type check"))
+                           case None => true
+                        }
+                     case None =>
+                        dfOpt match {
+                           case Some(df) =>
+                              solver.error("type may not be omitted")
+                           case None => true
+                        }
+                  }
+            }
+            if (!mayhold)
+               return false
+         }
+         true
+      case _ =>
+         solver.error("illegal use of " + ModExp.complextheory)
+         false
+   }
+
+   def elaborate(prev: Context, df: Term)(implicit elab: (Context, Term) => Context): Context = df match {
+      case ComplexTheory(con) => con
+      case _ => Nil
+   }
+}
+/*
 object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
       case ComplexTheory(con) =>
@@ -95,6 +145,7 @@ object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.pat
          None
    }
 }
+*/
 
 /**
  * m : a => b
