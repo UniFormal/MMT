@@ -54,7 +54,7 @@ class PVSImporter extends Importer {
       ret
    }
 }
-/*
+
 object Sorter {
    private val initstr = "http://shemesh.larc.nasa.gov/fm/ftp/larc/PVS-library/"
    private var ls : List[(String,Set[String])] = Nil
@@ -70,8 +70,8 @@ object Sorter {
       val fname = mkString(n)
       if (!ls.exists(p => p._1 == fname)) {
          ls ::= ((fname,(deps.filter(_.toString.startsWith(initstr)) map mkString).toSet))
-         sort()
-         ls foreach {p => println("controller.handleLine(\"build PVS/NASA mmt-omdoc " + p._1 + "\")")}
+         // sort()
+         // ls foreach {p => println("controller.handleLine(\"build PVS/NASA mmt-omdoc " + p._1 + "\")")}
       }
    }
    private def sort(i : Int = 0): Unit = {
@@ -81,5 +81,8 @@ object Sorter {
          sort()
       } else sort(i+1)
    }
+   def printsorted = {
+      sort()
+      ls foreach {p => println("controller.handleLine(\"build PVS/NASA pvs-omdoc " + p._1 + "\")")}
+   }
 }
-*/

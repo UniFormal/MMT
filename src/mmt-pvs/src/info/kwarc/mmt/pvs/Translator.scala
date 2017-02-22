@@ -149,6 +149,9 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       }
       */
 
+      //val declsfile = File("/home/jazzpirate/work/pvsnasa.txt")
+      //var savestring : List[String] = Nil
+
       val doc = new Document(bt.narrationDPath, true)
       val ths = modsM map (m => {
         val theory = new DeclaredTheory(m.parent,m.name,Some(m.meta))//,m.parameters)
@@ -157,7 +160,10 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           theory.paramC.set(m.parameters)
         }
         controller add theory
-        m.getDeclarations foreach { controller.add(_) }
+        m.getDeclarations foreach { d =>
+          controller.add(d)
+          // savestring ::= d.path.toString
+        }
         //println(theory)
         controller simplifier theory
         doc add MRef(bt.narrationDPath, theory.path)
@@ -165,8 +171,8 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       })
       controller.add(doc)
 
-      // println(controller.presenter.asString(ths.head))
-      // println(ths.head)
+     //  File.append(declsfile,savestring.reverse.mkString("\n")+"\n")
+
 
       log("Checking:")
       logGroup {
@@ -177,6 +183,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore,this)))
       }
       index(doc)
+
 
 
       BuildSuccess(deps.map(LogicalDependency),modsM.map(m => LogicalDependency(m.path)))
@@ -326,6 +333,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         state.th.parameters = state.th.parameters ++ v
         state.inFormals = false
       // case d : Decl => doDecl(d)(true)
+      case importing(_,_) =>
       case _ =>
         println("TODO Formal: " + f.getClass + ": " + f)
         sys.exit
@@ -433,17 +441,6 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           Some(if (neb) state.bind(PVSTheory.nonempty.tps) else state.bind(tp)), Some(state.bind(defi)),
           if (isAss) Some("Assumption") else None)
         state.th add c
-        /*
-        if (neb && exprOpt.isDefined) {
-          state.th.add(Constant(state.th.toTerm, newName("INTERNAL_Judgment"), Nil, Some(
-            state.bind(PVSTheory.is_nonempty(c.toTerm, doExprAs(exprOpt.get, defi)))),
-            None, if (isAss) Some("Assumption") else None))
-        } else if (neb) {
-          state.th.add(Constant(state.th.toTerm, newName("INTERNAL_Judgment"), Nil, Some(
-            PVSTheory.nonempty(c.toTerm)),
-            None, if (isAss) Some("Assumption") else None))
-        }
-        */
 
       case axiom_decl(ChainedDecl(NamedDecl(id, _, _), _, _), Assertion(kind, form)) =>
         state.reset
@@ -501,7 +498,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           Some(PVSTheory.enumtype(enum_elts.map(_._id))), None)
 
       case importing(_, namedec) =>
-        state.addinclude(doMPath(namedec, true))
+        state.addinclude(doMPath(namedec, true)) // TODO fix
 
       case inline_datatype(InlineDatatypeBody(NamedDecl(id, _, _), arg_formals, constructors)) =>
         // TODO check if right
@@ -814,7 +811,9 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
   def doMPath(thname : theory_name, isimport : Boolean = false) : MPath = {
     var (thid,library_id,mappings,opttarget,allactuals) =
       (thname.id,thname.library_id,thname.mappings,thname.target,thname.actuals ::: thname.dactuals)
-
+    if (thid == "indexed_sets") {
+      print("")
+    }
     val doc =
       if (library_id=="") {
         if (thid == state.th.name.toString) path
