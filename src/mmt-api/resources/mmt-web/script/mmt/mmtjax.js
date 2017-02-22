@@ -6,7 +6,7 @@
 var mmtjax = {
    
    /* like jax but takes the input from a <script> element */
-   jaxElement(server, elem, cont) {
+   jaxElement: function(server, elem, cont) {
 	  var thy = $(elem).attr(mmtattr.theory);
 	  if (thy != null) {
 		 var inFormat = $(elem).attr(mmtattr.inFormat);
