@@ -296,7 +296,7 @@ class NotationBasedParser extends ObjectParser {
           newUnknown(newExplicitUnknown, boundVars)
         } else if (word.count(_ == '?') > 0) {
           // ... or qualified identifiers
-          makeIdentifier(te).map(OMID(_)).getOrElse(unparsed)
+          makeIdentifier(te).map(OMID).getOrElse(unparsed)
         } else if (mayBeFree(word)) {
            newFreeVariable(word)
         } else {
@@ -499,7 +499,7 @@ class NotationBasedParser extends ObjectParser {
              //calling this on a non-type-checked t may or may not find all relevant notations
              val localNotations = tableNotations(getRules(t)._1)
              uls.foreach {ul =>
-               ul.scanner.addRules(localNotations)
+               ul.addRules(localNotations)
              }
            }
            doFoundContent(fc, uls)
@@ -649,7 +649,7 @@ class NotationBasedParser extends ObjectParser {
     t match {
       case OMLTypeDef(name, tpOpt, dfOpt) if !boundVars.contains(name) && getFreeVars.contains(name) =>
          removeFreeVariable(name)
-         val tp = tpOpt orElse {if (info.typed) Some(newUnknown(newExplicitUnknown, boundVars)) else None} 
+         val tp = tpOpt orElse {if (info.typed) Some(newUnknown(newExplicitUnknown, boundVars)) else None}
          val df = dfOpt orElse {if (info.defined) Some(newUnknown(newExplicitUnknown, boundVars)) else None}
          val l = OML(name,tp,df)
          l

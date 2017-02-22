@@ -69,8 +69,8 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
             val s = DeclaredStructure(home, name, from, false)
             //TODO add body
             s
-         case Some(df) =>
-            DefinedStructure(home, name, from, df, false)
+         case Some(idf) =>
+            DefinedStructure(home, name, from, idf, false)
       }
       case _ => Constant(home, name, Nil, tp, df, None, NotationContainer(not))
    }
@@ -291,6 +291,16 @@ case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDe
    def toCMLQVars(implicit qvars: Context) = 
      <apply>{this.map(v => v.toCMLQVars)}</apply>
    def head = None
+
+   def asDeclarations(home : Term) : List[Declaration] = {
+      var sub = Substitution()
+      this.map{
+         case VarDecl(name,tp,df,not) =>
+          val d = VarDecl(name, tp.map(_ ^? sub),df.map(_ ^? sub),not).toDeclaration(home)
+          sub ++ name/d.toTerm
+          d
+      }
+   }
 }
 
 /** a case in a substitution */		

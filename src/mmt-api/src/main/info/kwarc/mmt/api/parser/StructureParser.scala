@@ -653,7 +653,14 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         Some((m,r))
       } else
         None
-      val meta = metaReg.map(_._1)
+      val meta = /* metaReg.map(_._1) */ (metaReg,parent) match {
+        case (Some((p,_)),_) => Some(p)
+        case (None,IsMod(mp,_)) => controller.getO(mp) match {
+          case Some(dm : DeclaredTheory) => dm.meta
+          case _ => None
+        }
+        case _ => None
+      }
       val contextMeta = meta match {
         case Some(p) => context ++ p
         case _ => context
@@ -668,7 +675,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       metaReg foreach {case (_,r) => SourceRef.update(t.metaC.get.get, r)} //awkward, same problem for structure domains
       moduleCont(t, parent)
       if (delim._1 == "=") {
-        val features = meta.map(getFeatures(_)).getOrElse(noFeatures)
+        val features = getFeatures(contextMeta)
         logGroup {
           readInModule(t, context ++ t.getInnerContext, features)
         }
@@ -728,7 +735,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     controller.extman.getParserExtension(se, key)
 
   /** holds the structural features and patterns that are available during parsing */
-  protected class Features(val features: List[(String,StructuralFeature)], val patterns: List[(LocalName,(StructuralFeature,DerivedDeclaration))])
+  protected class Features(val features: List[(String,StructuralFeature)], val patterns: List[(LocalName,(StructuralFeature,DerivedDeclaration))]) {
+    def +(f : Features) = new Features((features ::: f.features).distinct,(patterns ::: f.patterns).distinct)
+  }
   protected val noFeatures = new Features(Nil,Nil)
   
   /** auxiliary function to collect all structural feature rules in a given context */
@@ -757,6 +766,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     new Features(fs, ps)
   }
+  protected def getFeatures(cont : Context) : Features = cont.collect({
+    case IncludeVarDecl(mp) => getFeatures(mp._1)
+  }).foldLeft(noFeatures)((a,b) => a+b)
 
   /** auxiliary method for reading declarations that reads a list of components
    *  @param context the current context

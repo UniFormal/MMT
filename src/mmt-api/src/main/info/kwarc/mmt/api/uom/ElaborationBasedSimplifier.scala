@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import frontend._
 import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureChecker, RelationHandler}
+import info.kwarc.mmt.api.utils.Killable
 import modules._
 import symbols._
 import patterns._
@@ -10,6 +11,7 @@ import objects._
 import utils.MyList.fromList
 
 import collection.immutable.{HashMap, HashSet}
+import scala.util.{Success, Try}
 
 /** used by [[MMTStructureSimplifier]] */
 case class ByStructureSimplifier(home: Term, view: Term) extends Origin
@@ -42,7 +44,21 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     log("simplifying " + s.path)
     s match {
      case m: DeclaredModule => flatten(m)
-     case d: DefinedModule => // TODO materialize
+     case t: DefinedTheory =>
+       t.getBody match {
+         case Some(dt : DeclaredTheory) =>
+         case None =>
+           val context = if (t.name.steps.length > 1) Context(t.parent ? t.name.dropRight(1)) else Context.empty
+           val body = Try(materialize(context,t.df,expandDefs = false,Some(t.path)))
+           body match {
+             case Success(db : DeclaredTheory) =>
+               db.getIncludes.foreach(p => controller.library.addImplicit(OMMOD(p),t.toTerm,OMIDENT(t.toTerm)))
+               t.elaborateAs(db)
+             case _ =>
+           }
+       }
+      // TODO materialize
+     case d : DefinedModule =>
      case d: Declaration => d.home match {
        case OMMOD(p) =>
          val mod = controller.globalLookup.getAs(classOf[DeclaredModule], p)
@@ -266,7 +282,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     *
     *  @param exp the theory expression
    *  @param expandDefs materialize all DefinedTheory's and return a DeclaredTheory
-   *  @param path the path to use if a new theory has to be created
+   *  @param pathOpt the path to use if a new theory has to be created
    */
   def materialize(context: Context, exp: Term, expandDefs: Boolean, pathOpt: Option[MPath]): Theory = {
     exp match {
@@ -279,13 +295,10 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
          new InstantiatedTheory(t, args) */
       case _ => // create a new theory and return it
         val path = pathOpt.getOrElse(newName)
-        val ComplexTheory(cont) = exp
-        val meta = TheoryExp.metas(exp, all = false)(lup).headOption
-        val thy = new DeclaredTheory(path.parent, path.name, meta)
-        cont.foreach { vd =>
-          val d = vd.toDeclaration(exp)
-          thy.add(d)
-        }
+        val cont : Context = objectLevel.elaborateModuleExpr(exp,context)
+        val thy = new DeclaredTheory(path.parent, path.name,None)
+        val home = pathOpt.map(OMMOD(_)).getOrElse(exp)
+        cont.asDeclarations(home).foreach(thy.add(_,None))
         thy.setOrigin(Materialized(exp))
         thy
     }

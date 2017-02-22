@@ -78,7 +78,9 @@ case class SymbolName() extends PlaceholderDelimiter {
 }
 
 sealed abstract class ArgumentMarker extends Marker with ArgumentComponent {
-  def locallyUsesNotationsFrom: Option[SimpArg] = None
+  private var localNotations : Option[SimpArg] = None
+  def locallyUsesNotationsFrom: Option[SimpArg] = localNotations
+  def setLocalNotation(sa : SimpArg) = localNotations = Some(sa)
 }
 
 /** an argument
@@ -519,7 +521,7 @@ sealed trait VariableComponent extends ArityComponent
 //sealed trait ScopeComponent extends ArityComponent
 
 object Marker {
-   def parse(s: String) = s match {
+   def parse(s: String) : Marker = s match {
          case "%i" => InstanceName()
          case "%n" => SymbolName()
          case "%a" => AttributedObject
@@ -593,6 +595,16 @@ object Marker {
             val rem = s.substring(i,s.length-1)
             SimpSeqArg(n, Delim(rem))
          case "" => throw ParseError("not a valid marker")
+         case s : String if s.startsWith("%L") && s(2).isDigit =>
+           var i = 2
+           while (s(i).isDigit) {i+=1}
+           val n1 = s.substring(2, i).toInt
+           if (s(i) != '_') throw ParseError("not a valid marker " + s.toString)
+           parse(s.drop(i + 1)) match {
+             case am : ArgumentMarker => am.setLocalNotation(SimpArg(n1))
+               am
+             case _ => throw ParseError("not an argument marker " + s.toString)
+           }
          case s:String =>
             try {
                val n = s.toInt

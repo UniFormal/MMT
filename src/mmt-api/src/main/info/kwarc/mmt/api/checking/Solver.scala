@@ -72,6 +72,8 @@ class Branchpoint(val parent: Option[Branchpoint], val delayed: List[DelayedCons
 class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: RuleSet)
       extends CheckingCallback with Logger {
 
+  def elaborateModuleExpr(tm : Term,context : Context) : Context = controller.simplifier.objectLevel.elaborateModuleExpr(tm,context)
+
    val constantContext = checkingUnit.context
    val initUnknowns = checkingUnit.unknowns
   

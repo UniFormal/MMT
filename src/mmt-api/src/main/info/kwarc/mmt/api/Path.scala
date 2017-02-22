@@ -449,7 +449,7 @@ object ? {
  */
 object ?? {
    def unapply(p : Path) : Option[(MPath,LocalName)] = p match {
-      case GlobalName(p, n) => Some((p,n))
+      case GlobalName(mp, n) => Some((mp,n))
       case _ => None
    }
 }

@@ -121,7 +121,8 @@ abstract class Lookup {self =>
       val dom = l.from match {
          case OMMOD(t) => getAs(classOf[Theory],t) match {
            case t: DeclaredTheory => t
-           case _ => throw GetError("domain of declared link is not a declared theory")
+           case t : DefinedTheory =>
+             t.getBody.getOrElse(throw GetError("unsimplified defined theory"))
          }
          case _ => throw GetError("domain of declared link is not a declared theory")
       }
@@ -140,7 +141,7 @@ abstract class Lookup {self =>
       } orElse {
          val incls = visible(home).toList
          val es = incls mapPartial {i => getO(i, name)}
-         if (es.length == 1) Some(es(0)) else None  // uniquely resolvable symbol in an included theory
+         if (es.length == 1) Some(es.head) else None  // uniquely resolvable symbol in an included theory
       }
    }
 
@@ -151,10 +152,10 @@ abstract class Lookup {self =>
    object ExpandDefinitions extends Traverser[ContentPath => Boolean] {
       def traverse(t: Term)(implicit con: Context, expand: ContentPath => Boolean) = t match {
          case OMID(p: GlobalName) if expand(p) => getAs(classOf[Constant],p).df match {
-            case Some(t) => traverse(t)
+            case Some(tm) => traverse(tm)
             case None => OMID(p)
          }
-         case t => Traverser(this, t)
+         case _ => Traverser(this, t)
       }
    }
    

@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.libraries
 import info.kwarc.mmt.api._
 import frontend._
 import documents._
-import info.kwarc.mmt.api.uom.ElaboratedElement
+import info.kwarc.mmt.api.uom.{ElaboratedElement, Simplifier}
 import modules._
 import objects._
 import symbols._
@@ -11,7 +11,6 @@ import utils.MyList._
 
 import scala.collection._
 import scala.ref.SoftReference
-import scala.xml.NodeSeq
 
 /** auxiliary class of [[Library]] to optimize storage
   *
@@ -68,6 +67,8 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
 
   // ************************ stateful data structures and basic accessors
 
+  lazy private val simplifier = extman.get(classOf[Simplifier]).headOption.getOrElse(throw GeneralError("Simplifier missing"))
+
   /** all known root documents except for those induced by modules */
   private val documents = new scala.collection.mutable.HashMap[DPath,Document]
   /** all known root modules (which also induce root documents) */
@@ -118,7 +119,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
      p match {
         case d: DPath => getNarrative(d, error)
         case p: MPath => getContent(p, error)
-        case p ?? n => getDeclarationInTerm(OMMOD(p), n, error)
+        case mp ?? n => getDeclarationInTerm(OMMOD(mp), n, error)
         case c: CPath => throw GetError("retrieval of components not possible")
      }
   }
@@ -193,7 +194,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
         case dd: DerivedDeclaration => dd
         // at this level, NestedModules are artifacts, so we unwrap the module if it's not a derived declaration
         case nm: NestedModule => nm.module
-        case ce => ce
+        case _ => ce
      }
   }
   /** tries to interpret a content element as a module
@@ -241,6 +242,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
            error("containing declaration not found: " + p)
        }
     // complex cases: lookup in module expressions
+      // TODO use simplifier instead
     case ComplexTheory(cont) =>
       cont.mapVarDecls { case (before, vd) =>
         val vdDecl = vd.toDeclaration(ComplexTheory(before))
@@ -308,9 +310,14 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
     // now the actual lookup
     mod match {
       case t: DefinedTheory =>
-        val d = getDeclarationInTerm(t.df, name, error)
-        instantiate(d, t.parameters, args)
+        simplifier(t)
+        t.getBody match {
+          case Some(dt: DeclaredTheory) => getInTheory(dt, args, name, error)
+          case None =>
+            ??? // TODO
+        }
       case v: DefinedView =>
+        // TODO
         getDeclarationInTerm(v.df, name, error)
       case s: DefinedStructure =>
         getDeclarationInTerm(s.df, name, error)
@@ -435,6 +442,9 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
               getO(from) match {
                 case Some(d: DeclaredTheory) =>
                   d.meta
+                case Some(d: DefinedTheory) =>
+                  if (d.name.steps.length > 1)
+                    Some(d.parent ? d.name.dropRight(1)) else None
                 case _ => None //TODO
               }
             case _ => None //TODO
@@ -575,7 +585,15 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
             case OMCOMP(Nil) => d.getDeclarations
             case _ => Nil //TODO d.translate(mod, ???, ApplyMorphism(via))
           }
-        case _ => Nil //TODO materialize?
+        case t : DefinedTheory =>
+          simplifier(t)
+          (t.getBody,via) match {
+            case (Some(body),OMCOMP(Nil)) => body.getDeclarations
+            case _ => Nil //TODO d.translate(mod, ???, ApplyMorphism(via))
+          }
+        case _ =>
+          Nil
+          // TODO materialize
       }
     }
   }
@@ -596,8 +614,27 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
     */
   private def visibleVia(to: Term): mutable.HashSet[(Term, Term)] = {
     val hs = implicitGraph.into(to)
-    TheoryExp.getSupport(to) foreach {p => hs add(OMMOD(p), OMCOMP())}
+    val supp = getSupport(to).distinct
+    getSupport(to) foreach {p => hs add(OMMOD(p), OMCOMP())}
     hs
+  }
+
+  private def getSupport(to : Term): List[MPath] = to match {
+    case OMMOD(p) => get(p) match {
+      case th : DeclaredTheory => p :: th.getIncludes
+      case th : DefinedTheory =>
+        p :: {
+          simplifier(th)
+          th.getBody match {
+            case Some(th : DeclaredTheory) =>
+              th.getIncludes.flatMap(p => getSupport(OMMOD(p)))
+            case _ => Nil
+          }
+        }
+    }
+    case ComplexTheory(icont) => icont.getIncludes
+    case _ =>
+      Nil
   }
 
   /** as visibleVia but dropping the implicit morphisms */

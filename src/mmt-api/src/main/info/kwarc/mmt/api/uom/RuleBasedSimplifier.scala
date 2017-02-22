@@ -87,8 +87,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {
            log("structure-shared term was already simplified")
            tS
          // apply morphisms TODO should become computation rule once module expressions are handled properly
-         case OMM(t, mor) =>
-            val tM = controller.globalLookup.ApplyMorphs(t, mor)
+         case OMM(tt, mor) =>
+            val tM = controller.globalLookup.ApplyMorphs(tt, mor)
             traverse(tM)
          // the main case
          case ComplexTerm(_,_,_,_) =>
@@ -307,6 +307,20 @@ class RuleBasedSimplifier extends ObjectSimplifier {
       }
       NoChange
    }
+
+  def elaborateModuleExpr(tm : Term, context : Context) : Context = {
+    val theoryrules = RuleSet.collectRules(controller,context).get(classOf[TheoryExpRule])
+
+    def continue(cont : Context, t : Term) : Context = t match {
+      case OMMOD(mp) => IncludeVarDecl(mp,Nil) //TODO arguments
+      case _ =>
+        val rule = theoryrules.find(_.applicable(t))
+        // TODO try all?
+        if (rule.isDefined) rule.get.elaborate(cont,t)(continue) else
+          throw GeneralError("error while simplifying " + controller.presenter.asString(t) + " in " + controller.presenter.asString(tm) + "\nNo applicable rule found")
+    }
+    continue(context,tm)
+  }
 }
 
 object RuleBasedSimplifier {

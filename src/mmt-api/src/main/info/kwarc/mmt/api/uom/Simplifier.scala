@@ -15,6 +15,8 @@ trait ObjectSimplifier extends Extension {self =>
    def toTranslator(rules: RuleSet) = new UniformTranslator {
      def apply(c: Context, t: Term) = self.apply(t, c, rules) 
    }
+      // TODO
+   def elaborateModuleExpr(tm : Term, context : Context) : Context
 }
 
 /** simplifies/elaborates structural elements */

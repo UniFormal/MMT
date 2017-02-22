@@ -106,6 +106,13 @@ class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) exte
    def translate(newNS: DPath, newName: LocalName, translator: Translator, context : Context): DefinedTheory = {
      new DefinedTheory(newNS, newName, dfC.map(translator.applyModule(context, _)))
    }
+
+  private var declared : Option[DeclaredTheory] = None
+  def getBody = declared
+  def elaborateAs(elaborated : DeclaredTheory) = {
+    require(elaborated.path == path && declared.isEmpty)
+    declared = Some(elaborated)
+  }
 }
 
 object DefinedTheory {
