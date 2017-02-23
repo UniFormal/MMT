@@ -48,7 +48,13 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
        t.getBody match {
          case Some(dt : DeclaredTheory) =>
          case None =>
-           val context = if (t.name.steps.length > 1) Context(t.parent ? t.name.dropRight(1)) else Context.empty
+           val context = t.superModule match {
+             case None => Context.empty
+             case Some(smP) => controller.get(smP) match {
+               case sm: DeclaredModule => sm.getInnerContext
+               case sm: DefinedModule => Context.empty // should never occur
+             }
+           }
            val body = Try(materialize(context,t.df,expandDefs = false,Some(t.path)))
            body match {
              case Success(db : DeclaredTheory) =>

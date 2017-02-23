@@ -443,8 +443,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
                 case Some(d: DeclaredTheory) =>
                   d.meta
                 case Some(d: DefinedTheory) =>
-                  if (d.name.steps.length > 1)
-                    Some(d.parent ? d.name.dropRight(1)) else None
+                  d.superModule
                 case _ => None //TODO
               }
             case _ => None //TODO

@@ -154,9 +154,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case nm: NestedModule =>
         check(context, nm.module, timeout)
       case t: DefinedTheory =>
-        val dfR = checkTheory(context, t.df)
-        t.dfC.analyzed = dfR
-        controller.simplifier(t)
+        if (t.getBody.isEmpty) {
+          val dfR = checkTheory(context, t.df)
+          t.dfC.analyzed = dfR
+          controller.simplifier(t)
+        }
       case v: DefinedView =>
         checkTheory(context, v.from)
         checkTheory(context, v.to)
