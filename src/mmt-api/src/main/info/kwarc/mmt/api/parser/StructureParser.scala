@@ -109,6 +109,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     state.cont.onElementEnd(s)
     log("end " + s.path)
   }
+
+  protected def check(se : StructuralElement): Unit = {
+    controller.checkAction(se.path,"mmt") // TODO replace by ?
+      // needs to be done to resolve implicit arguments in theory expressions in order to
+      // elaborate and collect notations.
+  }
   /** the region from the start of the current structural element to the current position */
   protected def currentSourceRegion(implicit state: ParserState) =
     SourceRegion(state.startPosition, state.reader.getSourcePosition)
@@ -646,6 +652,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       val (_, _, pr) = readParsedObject(context)
       val thy = DefinedTheory(ns, name, pr.toTerm)
       moduleCont(thy, parent)
+      check(thy)
+      //end(thy)
     } else {
       val metaReg = if (delim._1 == ":") {
         val (r,m) = readMPath(tpath)

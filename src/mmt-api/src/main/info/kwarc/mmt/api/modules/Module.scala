@@ -12,7 +12,7 @@ import objects._
 abstract class Module(val parent : DPath, val name : LocalName) extends ContentElement {
    def path: MPath = parent ? name
    def toTerm = OMMOD(path)
-   def superModule: Option[MPath] = if (name.length > 1) Some(parent ? name.tail) else None
+   def superModule: Option[MPath] = if (name.length > 1) Some(parent ? name.init) else None
    // sharper type
    def getDeclarations: List[Declaration]
    //def parameters : Context
