@@ -44,6 +44,7 @@ object Extends extends {
 } with TheoryExpRule(extend.path,OfType.path) {
   def apply(tm: Term, covered: Boolean)(implicit solver : Solver, stack: Stack, history: History): Boolean = tm match {
     case extend(th,ls) =>
+      solver.check(IsTheory(stack,th))
       val thcont : Context = solver.elaborateModuleExpr(th,stack.context)
       ls.foldLeft((stack.context ++ thcont,true))((p,oml) => {
         val checks = oml.tp.forall(tp => solver.check(Inhabitable(Stack(p._1),tp))) && oml.df.forall(df => {
@@ -63,16 +64,26 @@ object Extends extends {
 
 
 object Renaming extends {
-  val rename = new appsym("renaming")
+  val rename = new sym("renaming") {
+    def unapply(t : Term) : Option[(Term,List[OML])] = t match {
+      case OMA(`tm`,th :: args) if args.forall(_.isInstanceOf[OML]) => Some((th,args.map(_.asInstanceOf[OML])))
+      case _ => None
+    }
+  }
 } with TheoryExpRule(rename.path,OfType.path) {
   def apply(tm: Term, covered: Boolean)(implicit solver : Solver, stack: Stack, history: History): Boolean = tm match {
-    case rename(List(th1,ComplexTheory(body))) =>
-      ???
+    case rename(th,ls) =>
+      solver.check(IsTheory(stack,th))
+      ls forall {
+        case OML(name,toOpt,Some(OMS(p))) => true // TODO
+        case _ =>
+          false
+      }
     case _ => false
   }
 
   def elaborate(prev : Context, df : Term)(implicit elab : (Context,Term) => Context) : Context = df match {
-    case rename(List(th1,ComplexTheory(body))) => ???
+    case rename(th,ls) => ???
     // case _ => Nil
   }
 }
@@ -83,7 +94,7 @@ object Combine extends {
 } with TheoryExpRule(combine.path,OfType.path) {
   def apply(tm: Term, covered: Boolean)(implicit solver : Solver, stack: Stack, history: History): Boolean = tm match {
     case combine(ls) =>
-      ls.forall(p => solver.check(Typing(stack,p,OMS(ModExp.theorytype))))
+      ls.forall(p => solver.check(IsTheory(stack,p)))
     case _ => false
   }
 

@@ -302,3 +302,18 @@ object CompositionInfer extends InferenceRule(ModExp.composition, OfType.path) {
       }
    }
 }
+
+object ApplyMorph extends TheoryExpRule(ModExp.morphismapplication,OfType.path) {
+   override def apply(tm: Term, covered: Boolean)(implicit solver: Solver, stack: Stack, history: History): Boolean = tm match {
+      case OMM(th,morph) =>
+       solver.check(IsTheory(stack,th))
+       // TODO solver.check(IsMorphism(morph))
+       true
+   }
+
+   override def elaborate(prev: Context, df: Term)(implicit elab: (Context, Term) => Context): Context = df match {
+      case OMM(thy,morph) =>
+       val th = elab(prev,thy)
+         th.foldLeft(Context.empty)((con,v) => ApplyMorphism(morph)(prev ++ con,v)) //ApplyMorphism(morph)()
+   }
+}

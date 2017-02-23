@@ -51,11 +51,11 @@ object ParseResult {
    val free = utils.mmt.mmtcd ? "free"
    def fromTerm(uft: Term) = {
       val (u,ft) = uft match {
-         case OMBIND(OMS(this.unknown), u, ft) => (u, ft)
+         case OMBIND(OMS(this.unknown), un, ftm) => (un, ftm)
          case _ => (Context.empty, uft)
       }
       val (f,t) = ft match {
-         case OMBIND(OMS(this.free), f, t) => (f,t)
+         case OMBIND(OMS(this.free), fr, tm) => (Context(fr.filter({case IncludeVarDecl(_,_) => false case _ => true}):_*),tm)
          case _ => (Context.empty, ft)
       }
       ParseResult(u,f,t)

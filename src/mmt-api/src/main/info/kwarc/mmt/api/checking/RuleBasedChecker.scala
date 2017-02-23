@@ -61,7 +61,7 @@ class RuleBasedChecker extends ObjectChecker {
       val success = solver.checkSucceeded
       if (success) {
         // free variables may remain but their types are solved
-        if (pr.free.exists({case IncludeVarDecl(_) => false case _ => true})) {
+        if (pr.free.nonEmpty) {
           env.errorCont(InvalidUnit(cu, NoHistory, "check succeeded, but free variables remained"))
         }
       }

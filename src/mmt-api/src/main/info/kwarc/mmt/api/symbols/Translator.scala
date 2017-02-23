@@ -53,6 +53,7 @@ abstract class UniformTranslator extends Translator {
 /** a translator that applies a morphism (lazily) */
 case class ApplyMorphism(morph: Term) extends UniformTranslator {
    def apply(context: Context, tm: Term) = tm * morph
+  def apply(context: Context,vd : VarDecl) = VarDecl(vd.name,vd.tp.map(_ * morph),vd.df.map(_ * morph),vd.not)
 }
 
 /** a translator that renames local names of a module */
