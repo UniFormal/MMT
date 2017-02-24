@@ -384,7 +384,7 @@ case class IMPSIfForm(p : IMPSMathExp, q : IMPSMathExp, r : IMPSMathExp) extends
   override def toString: String = "if_form(" + p.toString + "," + q.toString + "," + r.toString + ")"
 }
 
-case class IMPSForAll(vs : List[(IMPSMathExp, Option[IMPSMathExp])], p : IMPSMathExp) extends IMPSMathExp
+case class IMPSForAll(vs : List[(IMPSVar, Option[IMPSSortRef])], p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -400,7 +400,7 @@ case class IMPSForAll(vs : List[(IMPSMathExp, Option[IMPSMathExp])], p : IMPSMat
   }
 }
 
-case class IMPSForSome(vs : List[(IMPSMathExp, Option[IMPSMathExp])], p : IMPSMathExp) extends IMPSMathExp
+case class IMPSForSome(vs : List[(IMPSVar, Option[IMPSSortRef])], p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -453,12 +453,12 @@ case class IMPSLambda(vs : List[(IMPSVar, Option[IMPSSortRef])], t : IMPSMathExp
   }
 }
 
-case class IMPSIota(v1 : IMPSMathExp, s1 : IMPSMathExp, p : IMPSMathExp) extends IMPSMathExp
+case class IMPSIota(v1 : IMPSVar, s1 : IMPSSortRef, p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = "iota(" + v1.toString + ":" + s1.toString + "," + p.toString + ")"
 }
 
-case class IMPSIotaP(v1 : IMPSMathExp, s1 : IMPSMathExp, p : IMPSMathExp) extends IMPSMathExp
+case class IMPSIotaP(v1 : IMPSVar, s1 : IMPSSortRef, p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = "iota_p(" + v1.toString + ":" + s1.toString + "," + p.toString + ")"
 }

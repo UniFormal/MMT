@@ -2,7 +2,7 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.{LocalName, _}
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
 import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
@@ -38,7 +38,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   }
 
 
-  def doType(d : IMPSMathExp) : Term = {
+  def doType(d : IMPSMathExp) : Term =
+  {
     ???
   }
 
@@ -54,33 +55,50 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
    constant true%val <- http://imps.blubb?Booleans?true%val
    */
 
-  def doLispExp(d : LispExp) : Term =
+  /* Opting for a List because one def-form can generate multiple terms */
+  def doDefForm(d : LispExp) : List[Term] =
   {
-    val ret = d match {
-      case AtomicSort(id,srt,argthy,usgs,wtns,src) => ()
+    val ret : List[Term] = d match
+    {
+      case AtomicSort(id,srt,argthy,usgs,wtns,src)                  => Nil // TODO
+      case Constant(id,mth,thy,srt,usgs,src)                        => Nil // TODO
+      case Theorem(id,frml,lm,rev,thy,usgs,trans,mac,hmthy,prf,src) => Nil // TODO
+      case ImportedRewriteRules(thynm, srcthy, srcths, src)         => Nil // TODO
+      case SchematicMacete(id,frml,thy,nlp,transpp,src)             => Nil // TODO
+      case CartesianProduct(id,srts,thy,const,accs,src)             => Nil // TODO
+      case QuasiConstructor(id,lmbd,lng,fxt,src)                    => Nil // TODO
+      case _                                                        => Nil // this stays
     }
-    ??? //ret
+    ret
   }
 
   /* Translate IMPS Math Expressions to Terms */
   def doMathExp(d : IMPSMathExp) : Term =
   {
-    val ret = d match
+    val ret : Term = d match
     {
-      case IMPSSymbolRef(gn)   => OMS(gn)
-      case IMPSTruth()         => IMPSTheory.Truth
-      case IMPSFalsehood()     => IMPSTheory.Falsehood
-      case IMPSNegation(p)     => IMPSTheory.Negation(doMathExp(p))
-      case IMPSIf(p,t1,t2)     => IMPSTheory.If(doMathExp(p), doMathExp(t1), doMathExp(t2))
-      case IMPSIff(p, q)       => IMPSTheory.Iff(doMathExp(p), doMathExp(q))
-      case IMPSIfForm(p,q,r)   => IMPSTheory.If_Form(doMathExp(p), doMathExp(q), doMathExp(r))
-      case IMPSEquals(a,b)     => (IMPSTheory.Equals(doMathExp(a),doMathExp(b)))
-      case IMPSDisjunction(ls) => (IMPSTheory.Or(ls map doMathExp),None)
-      case IMPSConjunction(ls) => (IMPSTheory.And(ls map doMathExp), None)
-      case IMPSLambda(vs,t)    => (IMPSTheory.Lambda(vs.map(p => (LocalName(p._1.v),p._2 map doType)),doMathExp(t)),None)
+      case IMPSSymbolRef(gn)    => OMS(gn)
+      case IMPSTruth()          => OMS(IMPSTheory.thpath ? "thetrue")
+      case IMPSFalsehood()      => OMS(IMPSTheory.thpath ? "thefalse")
+      case IMPSNegation(p)      => IMPSTheory.Negation(doMathExp(p))
+      case IMPSIf(p,t1,t2)      => IMPSTheory.If(doMathExp(p), doMathExp(t1), doMathExp(t2))
+      case IMPSIff(p, q)        => IMPSTheory.Iff(doMathExp(p), doMathExp(q))
+      case IMPSIfForm(p,q,r)    => IMPSTheory.If_Form(doMathExp(p), doMathExp(q), doMathExp(r))
+      case IMPSEquals(a,b)      => IMPSTheory.Equals(doMathExp(a),doMathExp(b))
+      case IMPSDisjunction(ls)  => IMPSTheory.Or(ls map doMathExp)
+      case IMPSConjunction(ls)  => IMPSTheory.And(ls map doMathExp)
+      case IMPSLambda(vs,t)     => IMPSTheory Lambda(vs map (p => (LocalName(p._1.v), p._2 map doType)), doMathExp(t))
+      case IMPSForAll(vs,t)     => IMPSTheory.Forall(vs map (p => (LocalName(p._1.v), p._2 map doType)), doMathExp(t))
+      case IMPSForSome(vs, t)   => IMPSTheory.Forsome(vs map (p => (LocalName(p._1.v), p._2 map doType)), doMathExp(t))
+      case IMPSImplication(p,q) => IMPSTheory.Equals(doMathExp(p), doMathExp(q))
+      case IMPSApply(f,ts)      => IMPSTheory.IMPSApply(doMathExp(f), ts map doMathExp)
+      case IMPSIota(v1,s1,p)    => IMPSTheory.Iota(LocalName(v1.v), doType(s1), doMathExp(p))
+      case IMPSIotaP(v1,s1,p)   => IMPSTheory.IotaP(LocalName(v1.v), doType(s1), doMathExp(p))
+      case IMPSIsDefined(t)     => IMPSTheory.IsDefined(doMathExp(t))
+      case IMPSIsDefinedIn(t,s) => IMPSTheory.IsDefinedIn(doMathExp(t), doType(s))
+      case IMPSUndefined(s)     => IMPSTheory.Undefined(doMathExp(s))
     }
-    //if (srcrefopt) doSourceRef(ret,srcrefopt.get)
-    ??? //ret
+    ret
   }
 
   def doSourceRef(t : Term, s : SourceRef) = ???
