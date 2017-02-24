@@ -147,7 +147,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case SchematicMacete(id,frml,thy,nlp,transpp,src)             => Nil // TODO
       case CartesianProduct(id,srts,thy,const,accs,src)             => Nil // TODO
       case QuasiConstructor(id,lmbd,lng,fxt,src)                    => Nil // TODO
-      // etc...
       case _                                                        => Nil // this stays
     }
     ret

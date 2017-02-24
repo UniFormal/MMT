@@ -131,7 +131,7 @@ object IMPSTheory
   {
     def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = ls match
     {
-      case Nil => ()
+      case Nil => ???
       case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
     }
   }
@@ -168,7 +168,7 @@ object IMPSTheory
 
   object IsDefinedIn extends Sym("definedin")
   {
-    def apply(t : Term, s : Term) = {
+    def apply(t : Term, s : Term) : Term = {
       ApplySpine(this.term, t, s)
     }
   }
