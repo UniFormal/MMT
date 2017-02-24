@@ -80,9 +80,9 @@ object IMPSTheory
 
   object Lambda extends Sym("lambda")
   {
-    def apply(ls : List[(LocalName,Option[Term])], t : Term) = ls match
+    def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = ls match
     {
-      case Nil => ()
+      case Nil => ???
       case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
     }
   }
@@ -97,46 +97,46 @@ object IMPSTheory
 
   object Forall extends Sym("forall")
   {
-    def apply(ls : List[(LocalName,Option[Term])], t : Term) = ls match
+    def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = ls match
     {
-      case Nil => ()
+      case Nil => ???
       case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
     }
   }
 
   object Forsome extends Sym("forsome")
   {
-    def apply(ls : List[(LocalName,Option[Term])], t : Term) = ls match
+    def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = ls match
     {
-      case Nil => ()
+      case Nil => ???
       case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
     }
   }
 
   object Iota extends Sym("iota")
   {
-    def apply(v1 : LocalName, s1 : Option[Term], p : Term) = {
-      ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(v1, s1.get, p))
+    def apply(v1 : LocalName, s1 : Term, p : Term) : Term = {
+      ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(v1, s1, p))
     }
   }
 
   object IotaP extends Sym("iota_p")
   {
-    def apply(v1 : LocalName, s1 : Option[Term], p : Term) = {
-      ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(v1, s1.get, p))
+    def apply(v1 : LocalName, s1 : Term, p : Term) : Term = {
+      ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(v1, s1, p))
     }
   }
 
   object IsDefined extends Sym("isdefined")
   {
-    def apply(t : Term) = {
+    def apply(t : Term) : Term = {
       Apply(this.term, t)
     }
   }
 
   object IsDefinedIn extends Sym("definedin")
   {
-    def apply(t : Term, s : Term) = {
+    def apply(t : Term, s : Term) : Term = {
       ApplySpine(this.term, t, s)
     }
   }
