@@ -36,7 +36,7 @@ lazy val apidoc =
 
 apidoc := postProcessApi.value
 
-apidoc <<= apidoc.dependsOn(cleandoc, unidoc in Compile)
+apidoc := apidoc.dependsOn(cleandoc, unidoc in Compile).value
 
 // definition of our custom, project-specific targets
 
@@ -75,8 +75,8 @@ def commonSettings(nameStr: String) = Seq(
 )
 // settings to be reused for MMT projects -- currently includes everything except tiscaf and lfcatalog
 def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
-  deploy <<= deployPackage("main/" + nameStr + ".jar"),
-  deployFull <<= deployPackage("main/" + nameStr + ".jar")
+  deploy := deployPackage("main/" + nameStr + ".jar").value,
+  deployFull := deployPackage("main/" + nameStr + ".jar").value
 )
 
 // individual projects
@@ -91,7 +91,7 @@ lazy val tiscaf = (project in file("tiscaf")).
         "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
         "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     ),
-    deployFull <<= deployPackage("lib/tiscaf.jar")
+    deployFull := deployPackage("lib/tiscaf.jar").value
   )
 
 lazy val lfcatalog = (project in file("lfcatalog")).
@@ -99,7 +99,7 @@ lazy val lfcatalog = (project in file("lfcatalog")).
   settings(
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "tiscaf.jar",
   	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar",
-    deployFull <<= deployPackage("lfcatalog/lfcatalog.jar")
+    deployFull := deployPackage("lfcatalog/lfcatalog.jar").value
   )
 
 lazy val api = (project in file("mmt-api")).
@@ -115,7 +115,7 @@ lazy val api = (project in file("mmt-api")).
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar"
   )
-  
+
 
 lazy val lf = (project in file("mmt-lf")).
   dependsOn(api).
@@ -223,7 +223,7 @@ lazy val oeis = (project in file("mmt-oeis")).
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar"
   )
 
-// experimental projects that are not part of any tests: marpa-mmt, hets-mmt 
+// experimental projects that are not part of any tests: marpa-mmt, hets-mmt
 
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
@@ -233,7 +233,7 @@ lazy val mmt = (project in file("fatjar")).
   settings(
     exportJars := false,
     publish := {},
-    deploy <<= assembly in Compile map deployTo("mmt.jar"),
+    deploy := {assembly in Compile map deployTo("mmt.jar")}.value,
     mainClass in assembly := Some("info.kwarc.mmt.api.frontend.Run"),
     assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
@@ -262,7 +262,7 @@ lazy val jedit = (project in file("jEdit-mmt")).
   settings(
     resourceDirectory in Compile := baseDirectory.value / "src/resources",
     unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" / _),
-    deploy <<= deployPackage("main/MMTPlugin.jar"),
-    deployFull <<= deployPackage("main/MMTPlugin.jar"),
+    deploy := deployPackage("main/MMTPlugin.jar").value,
+    deployFull := deployPackage("main/MMTPlugin.jar").value,
     install := Utils.installJEditJars
   )
