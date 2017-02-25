@@ -24,13 +24,15 @@ object Server {
   private def CORS_AllowOrigin(origin: String) = true
 
   //for now
-  private def checkCORS(tk: HTalk): HTalk = tk.req.header("Origin") match {
-    case None => tk
-    case Some(s) => CORS_AllowOrigin(s) match {
-      case true => addCORS(tk, s)
-      case false => tk
+  private def checkCORS(tk: HTalk): HTalk = {
+    val origin = tk.req.header("Origin").getOrElse("*")
+    if(CORS_AllowOrigin(origin)){
+      addCORS(tk, origin)
+    } else {
+      tk
     }
   }
+
 
   private def addCORS(tk : HTalk, origin: String): HTalk = tk
     .setHeader("Access-Control-Allow-Origin", origin)
