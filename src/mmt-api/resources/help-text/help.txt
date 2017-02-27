@@ -31,4 +31,7 @@ with the following arguments.
                             (no MMT shell will be started.)
   -w, --noshell             same as --keepalive (for backwards compatibility)
 
+By default, MMT will terminate with status code 0. If parsing of arguments fails, MMT will terminate prematurely with
+status code 1. If an uncaught exception occurs in the main thread, MMT will exit with status code 2.
+
 note: for long options arguments can also be given using "=", i.e. --file=FILENAME.

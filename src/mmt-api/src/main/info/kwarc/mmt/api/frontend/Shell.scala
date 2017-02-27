@@ -4,10 +4,10 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.{BuildQueue, BuildManager}
 import utils._
 
-/** mixes in helper functions for interactive shells */ 
+/** mixes in helper functions for interactive shells */
 trait StandardIOHelper {
   lazy val input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
-  
+
     /** read either 'yes' or 'no' from standard input */
   def getYesNo(default: Boolean) = {
      val answer = input.readLine().toLowerCase
@@ -19,7 +19,7 @@ trait StandardIOHelper {
        !default
      }
   }
-  
+
   def getFile(msg: String, default: Option[File]) = {
      val defMsg = default.map(d => " (" + d + "): ").getOrElse("")
      println(msg + defMsg)
@@ -52,11 +52,14 @@ class Shell extends StandardIOHelper {
   def main(a: Array[String]) {
     try {
        mainRaw(a)
+       sys.exit(Shell.EXIT_CODE_OK)
     } catch {
       case e: Error =>
         controller.report(e)
         controller.cleanup
-        throw(e)
+        // We do not re-throw the exception here
+        // but instead simply exit with a non-zero code
+        sys.exit(Shell.EXIT_CODE_FAIL_EXCEPTION)
     }
   }
 
@@ -70,7 +73,7 @@ class Shell extends StandardIOHelper {
         controller.execFileAction(msl, None)
      }
   }
-  
+
   /** run a ShellExtension */
   private def deferToExtension(key: String, args: List[String]) {
      controller.extman.getOrAddExtension(classOf[ShellExtension], key) match {
@@ -119,7 +122,7 @@ class Shell extends StandardIOHelper {
          }
        }
      }
-     
+
      // check for "mmt :command ARGS" and delegate to ShellExtensions
      a.toList match {
        case ccom::args if ccom.startsWith(":") =>
@@ -132,7 +135,7 @@ class Shell extends StandardIOHelper {
     // parse command line arguments
     val args = ShellArguments.parse(a.toList).getOrElse {
       printHelpText("usage")
-      sys.exit(1)
+      sys.exit(Shell.EXIT_CODE_FAIL_ARGUMENT)
     }
 
     // display some help text
@@ -141,17 +144,17 @@ class Shell extends StandardIOHelper {
         val optHelp = getHelpText(s)
         if (optHelp.isDefined) {
           println(optHelp.get)
-          sys.exit(0)
+          sys.exit(Shell.EXIT_CODE_OK)
         }
       }
       printHelpText("help")
-      sys.exit(0)
+      sys.exit(Shell.EXIT_CODE_OK)
     }
 
     // display some about text
     if (args.about) {
       printHelpText("about")
-      sys.exit(0)
+      sys.exit(Shell.EXIT_CODE_OK)
     }
 
     // configure logging
@@ -180,7 +183,7 @@ class Shell extends StandardIOHelper {
     // if we want a shell, prompt and handle input
     if (args.prompt) {
         printHelpText("shelltitle")
-        
+
         // switch on console reports for wrong user inputs
         controller.report.addHandler(ConsoleHandler)
         // handle commands as long as we get input.
@@ -190,7 +193,7 @@ class Shell extends StandardIOHelper {
           command = Option(input.readLine)
         }
     }
-    input.close
+    input.close()
 
     // cleanup if we want to exit
     if (args.runCleanup) {
@@ -198,6 +201,15 @@ class Shell extends StandardIOHelper {
        controller.cleanup
     }
   }
+}
+
+object Shell {
+  /** exit code for when everything is OK */
+  final val EXIT_CODE_OK : Int = 0
+  /** exit code for when parsing arguments fails */
+  final val EXIT_CODE_FAIL_ARGUMENT : Int = 1
+  /** exit code for when an unexpected exception occurs */
+  final val EXIT_CODE_FAIL_EXCEPTION : Int = 2
 }
 
 /** A shell, the default way to run MMT as an application */
