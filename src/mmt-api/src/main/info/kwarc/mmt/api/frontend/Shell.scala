@@ -87,6 +87,19 @@ class Shell extends StandardIOHelper {
     }
   }
 
+  /** the MMT repl */
+  lazy val repl = new jLineREPL {
+    def eval(line : String) : Boolean = {
+      controller.handleLine(line)
+      false
+    }
+
+    def suggestions(line: String) : List[String] = Nil
+
+    def promptLeft : Option[String] = Some("mmt>")
+    def promptRight : Option[String] = None
+  }
+
   /** main method without exception handling */
   private def mainRaw(a: Array[String]) {
      val deployFolder = runStyle match {
@@ -186,14 +199,9 @@ class Shell extends StandardIOHelper {
 
         // switch on console reports for wrong user inputs
         controller.report.addHandler(ConsoleHandler)
-        // handle commands as long as we get input.
-        var command = Option(input.readLine)
-        while (command.isDefined) {
-          controller.handleLine(command.get, showLog = true)
-          command = Option(input.readLine)
-        }
+        // and go into the repl
+        repl.run()
     }
-    input.close()
 
     // cleanup if we want to exit
     if (args.runCleanup) {
