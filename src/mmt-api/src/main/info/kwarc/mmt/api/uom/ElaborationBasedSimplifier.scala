@@ -126,8 +126,15 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     val dElab: List[Declaration] = dOrig match {
       // plain includes: copy (only) includes
       case Include(h, from, Nil) =>
-        val dom = lup.getAs(classOf[DeclaredTheory], from)
-        flatten(dom)
+        val idom = lup.getAs(classOf[Theory], from)
+        val dom = idom match {
+          case th : DeclaredTheory =>
+            flatten(th)
+            th
+          case th : DefinedTheory =>
+            apply(th)
+            th.getBody.getOrElse(return)
+        }
         dom.getDeclarations.flatMap {
           case Include(_, p, args) =>
             if (alreadyIncluded.contains(p)) {

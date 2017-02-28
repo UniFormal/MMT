@@ -202,6 +202,9 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
    */
   // TODO Once structures are nested modules, this can return Module instead of ContentElement
   private def seeAsMod(ce: ContentElement, error: String => Nothing): ContentElement = ce match {
+    case dm : DefinedTheory =>
+      simplifier(dm)
+      dm.getBody.getOrElse(throw GetError("Error while trying to elaborate DefinedTheory " + dm))
      case m: Module => m
      case nm: NestedModule => nm.module
      case s: Structure => s
