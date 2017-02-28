@@ -31,6 +31,18 @@ class OMMMTCoding(default : URI) extends OMCoding[Term] {
     case OMBindVariables(vars,id) => ???
   }
 
+  protected def relativize(om : OMExpression) : OMExpression = {
+    om.mapComponents {
+      case OMSymbol(name, cd, id, cdbase) => {
+        cd.startsWith(default.toString + "?") match {
+          case true => OMSymbol(name, cd.substring(default.toString.length + 1), id, cdbase)
+          case false => OMSymbol(name, cd, id, cdbase)
+        }
+      }
+      case ob => ob
+    }
+  }
+
   def decodeAnyVal(t : Term) : OMAnyVal = t match {
     case OMI(i) => OMInteger(i,None)
     case OMF(r) => OMFloat(r,None)
@@ -40,20 +52,10 @@ class OMMMTCoding(default : URI) extends OMCoding[Term] {
     case OMA(f,args) => OMApplication(decexpr(f),args map decexpr,None,None)
   }
   private def decexpr(t : Term) = decode(t) match {
-    case expr: OMExpression => expr
+    case expr: OMExpression => relativize(expr)
     case _ => throw new Exception("Does not yield OMExpression:" + t)
   }
-  def decode(t : Term) : OMAny = ??? // should probably recurse into the above
+  def decode(t : Term) : OMAny = decodeAnyVal(t) // should probably recurse into the above
 }
 
-object GAPEncoding extends OMMMTCoding(URI("http://www.gap-system.org")) {
-  override def encode(om : OMAny) : Term = actencode(om.mapComponents {
-    case OMSymbol(name, cd, id, cdbase) => cd match {
-      case "pcgroup1" => ???
-      case "permgp1" => ???
-      case _ => throw new Exception("cd not yet implemented: " + cd)
-    }
-    case ob => ob
-  }
-  )
-}
+object GAPEncoding extends OMMMTCoding(URI("http://www.gap-system.org"))
