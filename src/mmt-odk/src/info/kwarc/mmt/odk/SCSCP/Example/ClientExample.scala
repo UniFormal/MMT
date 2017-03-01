@@ -1,51 +1,50 @@
 package info.kwarc.mmt.odk.SCSCP.Example
 
-import info.kwarc.mmt.odk.OpenMath.Coding.GAPEncoding
-import info.kwarc.mmt.odk.OpenMath._
-import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
 
-/**
-  * An example SCSCPClient case
-  *
-  * Computes 1 + 1 on chrystal.mcs.st-andrews.ac.uk
-  */
 object ClientExample {
   def main(args: Array[String]): Unit = {
 
-    // create a new client to the SCSCP protocol
-    val client = SCSCPClient("chrystal.mcs.st-andrews.ac.uk")
+    // import the SCSCPClient and OpenMath libraries
+    import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
+    import info.kwarc.mmt.odk.OpenMath._
 
-    // get the allowed symbol names
-    val heads = client.getAllowedHeads
-    println(heads)
+    // establish a connection
+    val client = SCSCPClient("scscp.gap-system.org")
 
-    // this should have the addition symbol
-    var additionSymbol = OMSymbol("addition", "scscp_transient_1", None, None)
-    println("Can the server do addition? "+heads.contains(additionSymbol))
+    // get a list of supported symbols
+    /**
+      * List(OMSymbol(Size,scscp_transient_1,None,None),
+      * OMSymbol(Length,scscp_transient_1,None,None),
+      * OMSymbol(LatticeSubgroups,scscp_transient_1,None,None),
+      * OMSymbol(NrConjugacyClasses,scscp_transient_1,None,None),
+      * OMSymbol(AutomorphismGroup,scscp_transient_1,None,None),
+      * OMSymbol(Multiplication,scscp_transient_1,None,None),
+      * OMSymbol(Addition,scscp_transient_1,None,None),
+      * OMSymbol(IdGroup,scscp_transient_1,None,None),
+      * ...,
+      * OMSymbol(NextUnknownGnu,scscp_transient_1,None,None))
+      */
+    println(client.getAllowedHeads)
 
-    // method 1 of computating : Make an actual expression and call the client with it
-    val expression = OMApplication(additionSymbol, OMInteger(1, None) :: OMInteger(1, None) :: Nil, None, None)
-    val oneplusonecomputation = client(expression)
 
-    // wait while we have results
-    while(oneplusonecomputation.get().isEmpty){
-      // result is empty
-      println("No results yet, waiting another few milliseconds")
-      Thread.sleep(100)
-    }
-    println(GAPEncoding.encode(oneplusonecomputation.get().get.get))
+    // We make a simple example: Apply the identity function to an integer 1
+    val identitySymbol = OMSymbol("Identity","scscp_transient_1", None, None)
+    val identityExpression = OMApplication(identitySymbol, List(OMInteger(1, None)), None, None)
+    /**
+      * OMInteger(1,None)
+      */
+    println(client(identityExpression).fetch().get)
 
-    // once we have it, turn it into an integer
-    println("1 + 1 = "+oneplusonecomputation.get().get.get.asInteger.int)
+    // We also try to compute 1 + 1
+    val additionSymbol = OMSymbol("Addition", "scscp_transient_1", None, None)
+    val additionExpression = OMApplication(additionSymbol, OMInteger(1, None) :: OMInteger(1, None) :: Nil, None, None)
 
-    // method two: we give arguments directly
-    val zeropluszerocomputation = client(additionSymbol, OMInteger(0, None), OMInteger(0, None))
+    /**
+      * OMInteger(2,None)
+      */
+    println(client(additionExpression).fetch().get)
 
-    // and we can fetch it (i.e. wait for it to arrive)
-    val result = zeropluszerocomputation.fetch().get.asInteger.int
-    println("0 + 0 = "+result)
-
-    // and finally quit the server
-    client.quit(Some("Goodbye and thanks for all the fish"))
+    // and close the connection
+    client.quit()
   }
 }
