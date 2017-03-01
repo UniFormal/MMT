@@ -96,7 +96,10 @@ class Shell extends StandardIOHelper {
 
     def suggestions(line: String) : List[String] = Nil
 
-    def promptLeft : Option[String] = Some("mmt>")
+    def promptLeft : Option[String] = Some(controller.currentActionDefinition match {
+      case Some(name : String) => s"mmt [define $name]>"
+      case None => "mmt>"
+    })
     def promptRight : Option[String] = None
   }
 

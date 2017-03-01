@@ -34,6 +34,9 @@ trait ActionHandling {self: Controller =>
     report.flush
   }
 
+  /** the name of the current action definition (if any) */
+  def currentActionDefinition : Option[String] = state.currentActionDefinition.map(_.name)
+
   /** executes an Action */
   def handle(act: Action, showLog: Boolean = true) {
     implicit val task = act
