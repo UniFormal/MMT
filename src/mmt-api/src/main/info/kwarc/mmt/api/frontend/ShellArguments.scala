@@ -16,6 +16,7 @@ import java.nio.file.{Files, Paths}
   * @param shell      interactive mode requested (show shell, terminate manually)
   * @param noshell    batch mode unrequested (no shell, terminate immediately)
   * @param keepalive  server mode requested (after shell (if at all) terminate only when processes finished)
+  * @param verbosity  <0: no output, >=0: console output, >10: console output including debug
   */
 case class ShellArguments(
    help: Boolean,
@@ -27,7 +28,8 @@ case class ShellArguments(
    shell: Boolean,
    noshell: Boolean,
    keepalive: Boolean,
-   useQueue: Boolean
+   useQueue: Boolean,
+   verbosity: Int
  ) {
    /** decides whether to run in interactive/server or batch/server mode
     *  default behavior: interactive if nothing else is happening
@@ -39,6 +41,11 @@ case class ShellArguments(
      * default behavior: batch
      */
    def runCleanup = ! keepalive && ! prompt
+   
+   /** automatically log to console */
+   def consoleLog = verbosity >= 0
+   /** automatically log debug output */
+   def debugOutput = verbosity > 10
 }
 
 import AnaArgs._
@@ -53,7 +60,8 @@ object ShellArguments {
     OptionDescr("mbt", "", StringListArg, "mbt input file "),
     OptionDescr("file", "", StringListArg, "msl input file"),
     OptionDescr("cfg", "", StringListArg, "config input file"),
-    OptionDescr("noqueue", "", NoArg, "do not start a build queue")
+    OptionDescr("noqueue", "", NoArg, "do not start a build queue"),
+    OptionDescr("verbosity", "v", IntArg, "set verbosity level")
   )
 
   def parse(arguments: List[String]): Option[ShellArguments] = {
@@ -68,7 +76,8 @@ object ShellArguments {
       shell = m.get("shell").isDefined,
       noshell = m.get("noshell").isDefined,
       keepalive = m.get("keepalive").isDefined,
-      useQueue = m.get("noqueue").isEmpty
+      useQueue = m.get("noqueue").isEmpty,
+      verbosity = m.get("verbosity").map(_.getIntVal).getOrElse(-1)
     )
     val fs = sa.mmtFiles ++ sa.scalaFiles ++ sa.cfgFiles
     if (sa.help && sa.about) {

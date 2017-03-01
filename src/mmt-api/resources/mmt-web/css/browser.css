@@ -187,7 +187,7 @@ span.name {
    margin-top: 3px;
    margin-bottom: 3px;
    background-color: whitesmoke;
-	padding: 5px;
+   padding: 5px;
 }
 
 .constant-header {
@@ -198,16 +198,29 @@ table.constant-body {
 
 /* one toggle button and one row for each component
    the button toggles the corresponding row */
-button.component-toggle {
+button.component-toggle, button.generated-toggle {
    font-size: small;
    color: white;
-   background-color: blue;
    border-radius: 10px;
    border: solid 1px black;
    margin-left: 2px;
    float: right;
 }
-button.component-toggle:hover {
+
+button.component-toggle {
+   background-color: blue;
+}
+
+button.generated-toggle, div.constant.generated {
+   background-color: beige;
+   color: black;
+}
+
+div.constant.generated {
+  display: none;
+}
+
+button.component-toggle:hover, , button.generated-toggle:hover {
    background-color: darkblue;
 }
 
@@ -219,7 +232,7 @@ tr.component-parsing-notation, tr.component-presentation-notation {
   display: none;
 }
 
-tr.tags, tr.metadata, tr.used-by {
+tr.tags, tr.metadata, tr.used-by, tr.aliases {
   display: none;
 }
 
@@ -235,12 +248,13 @@ tr.tags, tr.metadata, tr.used-by {
     margin-right: 5px;
 }
 
-/*
-div.flat-container {
-    border-style: dotted;
-    border-width: thin;
-    padding: 2px;
-}*/
+div.inner-body {
+  border-left-style: solid;
+  border-width: 3px;
+  margin-left: 10px;
+  padding-left: 5px;
+}
+
 
 /* interpreter widget */
 

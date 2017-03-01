@@ -154,6 +154,14 @@ class Shell extends StandardIOHelper {
       sys.exit(0)
     }
 
+    // configure logging
+    if (args.consoleLog) {
+      controller.report.addHandler(ConsoleHandler)
+    }
+    if (args.debugOutput) {
+      controller.report.groups += "debug"
+    }
+
     // load additional config files as given by arguments
     args.cfgFiles.map(File(_)) foreach loadConfig
 

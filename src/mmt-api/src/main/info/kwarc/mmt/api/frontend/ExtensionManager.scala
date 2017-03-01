@@ -150,12 +150,14 @@ class ExtensionManager(controller: Controller) extends Logger {
     */
   def getOrAddExtension[E <: FormatBasedExtension](cls: Class[E], format: String, args: List[String] = Nil): Option[E] = {
     get(cls, format) orElse {
-      controller.getConfig.getEntry(classOf[ExtensionConf], format) map {tc =>
-         val ext = addExtension(tc.cls, tc.args ::: args)
-         ext match {
-           case e: E@unchecked if cls.isInstance(e) => e
-           case _ => throw RegistrationError(s"extension for $format exists but has unexpected type")
-         }
+      val (className, extraArgs) = controller.getConfig.getEntry(classOf[ExtensionConf], format) match {
+        case Some(tc) => (tc.cls, tc.args)
+        case None => (format,Nil) // fallback: treat format as class name
+      }
+      val ext = addExtension(className, extraArgs ::: args)
+      ext match {
+        case e: E@unchecked if cls.isInstance(e) => Some(e)
+        case _ => throw RegistrationError(s"extension for $format exists but has unexpected type")
       }
     }
   }
