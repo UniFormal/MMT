@@ -426,7 +426,7 @@ class LaTeXML extends LaTeXBuildTarget {
         val (mFs, pTs, hasErrs) = readLogFile(bt, logFile)
         failure = failure || hasErrs
         missingFiles = mFs.map(s => PhysicalDependency(File(s)))
-        providedTheories = pTs.map(s => LogicalDependency(Path.parseM("https://mathhub.info/" + s)))
+        providedTheories = pTs.map(s => LogicalDependency(Path.parseM("https://mathhub.info/" + s, NamespaceMap.empty)))
         if (pipeOutput) File.ReadLineWise(logFile)(println)
       }
       if (pipeOutput) print(output.toString)

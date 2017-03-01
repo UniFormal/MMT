@@ -127,7 +127,7 @@ class ConceptServer extends ServerExtension("concepts") {
         if (alignments.getConceptAlignments(con).map(_.toString.replace("http://", "").replace("https://", "")).contains(uri)) {
           return Server.TextResponse("URI " + uri + " already aligned with \"" + con + "\"!")
         }
-        val ref = Try(LogicalReference(Path.parseMS(uri))).getOrElse(PhysicalReference(URI(uri)))
+        val ref = Try(LogicalReference(Path.parseMS(uri, NamespaceMap.empty))).getOrElse(PhysicalReference(URI(uri)))
         val alig = ConceptAlignment(ref, con)
         alignments.addNew(alig)
         if (!conlist.contains(con)) {

@@ -31,7 +31,7 @@ class OEISSearchServer extends TEMASearchServer("oeis") {
     qp.parse(query) flatMap {exp =>
       val elem = preProcessQVars(exp.toNode("A00")) //TODO theory name shouldn't matter
       val narrObj = <div><CMP><OMOBJ>{elem}</OMOBJ></CMP> </div>
-      val dpath = Path.parseD("http://mathhub.info/smglom/mv/defeq.omdoc")
+      val dpath = Path.parseD("http://mathhub.info/smglom/mv/defeq.omdoc", NamespaceMap.empty)
       val mpath = dpath ? "defeq"
       val errorCont = new ErrorLogger(controller.report)
       val defSRef = OMDoc.getDefaultSRef(narrObj.toString, dpath)

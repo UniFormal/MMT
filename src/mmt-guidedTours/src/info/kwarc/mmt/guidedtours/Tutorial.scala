@@ -99,7 +99,7 @@ class Tutorial(controllerArgument: Controller, endTopicArgument: Path, userIdArg
   }
    
    private def getKarma() : Map[Path, Double] = {
-    Map(Path.parseM("http://mathhub.info/MiKoMH/GenCS/machines/en/VMP-call.omdoc?VMP-call") -> 70.0)
+    Map(Path.parseM("http://mathhub.info/MiKoMH/GenCS/machines/en/VMP-call.omdoc?VMP-call", NamespaceMap.empty) -> 70.0)
     
   }
   

@@ -105,7 +105,7 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
         val topicName = tk.req.param("topic").getOrElse(throw ServerError("No topic name found")).toString
         val uid = tk.req.param("uid")getOrElse(throw ServerError("No user id found")).toString
         val length = tk.req.param("length").getOrElse("20").toString
-        val path = Path.parseM(topicName)
+        val path = Path.parseM(topicName, NamespaceMap.empty)
         
         val tutorial = new Tutorial(controller, path, uid.toInt)
         Server.TextResponse(tutorial.getContent(length.toInt)).aact(tk) 
@@ -126,7 +126,7 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
       //  throw ServerError("No user was found")
       //}
       
-      val path = Path.parseM(topicName)
+      val path = Path.parseM(topicName, NamespaceMap.empty)
       //val sorted = controller.depstore.getInds(ontology.IsTheory).toList;
       //val sorted = tour(userKarma, getAllChildren(path, 3))
       
@@ -173,7 +173,7 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
    
    private def path(name: String) : Path = {
      try{
-      Path.parseM(name)
+      Path.parseM(name, NamespaceMap.empty)
      }
      catch {
        case e : Exception => {

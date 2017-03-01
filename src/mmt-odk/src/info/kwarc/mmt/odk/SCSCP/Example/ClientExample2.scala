@@ -1,5 +1,7 @@
 package info.kwarc.mmt.odk.SCSCP.Example
 
+import info.kwarc.mmt.api.NamespaceMap
+
 object ClientExample2 {
   def main(args: Array[String]): Unit = {
 
@@ -10,7 +12,7 @@ object ClientExample2 {
 
     // create a group inside of MMT
     val mmt_term = OMA(
-      OMS(Path.parseS("http://www.gap-system.org?pcgroup1?pcgroup_by_pcgscode")),
+      OMS(Path.parseS("http://www.gap-system.org?pcgroup1?pcgroup_by_pcgscode", NamespaceMap.empty)),
       List(
         OMI(BigInt("11440848857153616162393958740184979285302778717")),
         OMI(512)

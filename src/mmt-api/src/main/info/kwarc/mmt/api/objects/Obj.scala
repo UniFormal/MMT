@@ -461,7 +461,7 @@ object Obj {
    }
    
    /** parses a term relative to a base address
-    *  @param N node to parse (may not contain metadata)
+    *  @param Nmd node to parse (may not contain metadata) 
     *  @param nm namespace Map to resolve relative URIs
     *  @return the parsed term
     */

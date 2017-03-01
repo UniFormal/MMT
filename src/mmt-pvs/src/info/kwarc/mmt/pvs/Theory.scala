@@ -250,7 +250,7 @@ object PVSTheory {
 
    object pred {
       val predpaths = List("pred","PRED","predicate","PREDICATE","setof","SETOF").map(s =>
-         Path.parseS("http://pvs.csl.sri.com/Prelude?defined_types?"+s))
+         Path.parseS("http://pvs.csl.sri.com/Prelude?defined_types?"+s,NamespaceMap.empty))
       def unapply(t:Term) : Option[Term] = t match {
          case Apply(OMS(p),a) if predpaths contains p => Some(a)
          case pvspi(_,a,bool.term) => Some(a)

@@ -104,7 +104,7 @@ object StructureVarDecl {
 }
 
 object DerivedVarDecl {
-   val path = Path.parseS("http://cds.omdoc.org/mmt?mmt?StructuralFeature")
+   val path = Path.parseS("http://cds.omdoc.org/mmt?mmt?StructuralFeature", NamespaceMap.empty)
    def maketerm(feat : String, tp : Term) =
       OMA(OMS(path), List(OML(LocalName(feat)),tp))
       

@@ -37,7 +37,7 @@ class MathWebSearch(val url: java.net.URL) extends frontend.Extension {
          case <mws:answset>{answs @_*}</mws:answset> =>
             answs.toList.map {
                case n @ <mws:answ>{_*}</mws:answ> =>
-                  val p = Path.parseC(utils.xml.attr(n, "uri"))
+                  val p = Path.parseC(utils.xml.attr(n, "uri"), NamespaceMap.empty)
                   val xpS = utils.xml.attr(n, "xpath")
                   // xpath has format "/*[Int].../*[Int]
                   val xp = xpS.substring(3, xpS.length-1).split("\\]/\\*\\[").toList.map(_.toInt - 1).tail

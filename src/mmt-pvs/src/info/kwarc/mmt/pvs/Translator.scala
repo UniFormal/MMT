@@ -57,7 +57,7 @@ abstract class ImportState(t:PVSImportTask) {
         List(VarDecl(LocalName("""/I/""" + i.get),Some(OMS(Typed.ktype)),None,None),VarDecl(n, Some(OMV("""/I/""" + i.get)), None, None))
       else throw GeneralError("No unknown " + n)
     })
-    if (unknowns > 0 && cont.nonEmpty) OMBIND(OMS(Path.parseS("http://cds.omdoc.org/mmt?mmt?unknown")),
+    if (unknowns > 0 && cont.nonEmpty) OMBIND(OMS(Path.parseS("http://cds.omdoc.org/mmt?mmt?unknown", NamespaceMap.empty)),
       cont,
       t)
     else t

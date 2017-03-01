@@ -408,30 +408,30 @@ object Path {
       (comp(0), comp(1), comp(2), comp(3))
    }
    /** as parse but fails if the result is not a component level URI */
-   def parseC(s : String, nsMap : NamespaceMap = NamespaceMap.empty) : CPath = parse(s,nsMap) match {
+   def parseC(s : String, nsMap : NamespaceMap) : CPath = parse(s,nsMap) match {
       case p : CPath => p
       case p => throw ParseError("component path expected: " + p) 
    }
    /** as parse but fails if the result is not a symbol level URI */
-   def parseS(s : String, nsMap : NamespaceMap = NamespaceMap.empty) : GlobalName = parse(s,nsMap) match {
+   def parseS(s : String, nsMap : NamespaceMap) : GlobalName = parse(s,nsMap) match {
       case p : GlobalName => p
       case p => throw ParseError("symbol path expected: " + p) 
    }
    /** as parse but fails if the result is not a module level URI */
-   def parseM(s : String, nsMap : NamespaceMap = NamespaceMap.empty) : MPath = parse(s,nsMap) match {
+   def parseM(s : String, nsMap : NamespaceMap) : MPath = parse(s,nsMap) match {
       case p : MPath => p
       case p => throw ParseError("module path expected: " + p) 
    }
    /** as parse but fails if the result is not a document level URI */
-   def parseD(s : String, nsMap : NamespaceMap = NamespaceMap.empty) : DPath = parse(s,nsMap) match {
+   def parseD(s : String, nsMap : NamespaceMap) : DPath = parse(s,nsMap) match {
       case p : DPath => p
       case p => throw ParseError("document path expected: " + p) 
    }
-   def parseMS(s : String, nsMap : NamespaceMap = NamespaceMap.empty) : ContentPath = parse(s,nsMap) match {
+   def parseMS(s : String, nsMap : NamespaceMap) : ContentPath = parse(s,nsMap) match {
       case p : ContentPath => p
       case p => throw ParseError("document path expected: " + p)
    }
-   def fromURI(s : URI, nsMap : NamespaceMap = NamespaceMap.empty) : Path = parse(s.toString,nsMap) // TODO properly
+   def fromURI(s : URI,nsmap : NamespaceMap) : Path = parse(s.toString,nsmap) // TODO properly
 }
 
 /** 

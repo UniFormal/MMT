@@ -28,7 +28,7 @@ class ImplementsRuleGenerator extends ChangeListener {
   }
   
   private def getImplemented(c: Constant): Option[GlobalName] =
-    c.metadata.getLinks(implKey).headOption.map(Path.fromURI(_)).flatMap {
+    c.metadata.getLinks(implKey).headOption.map(Path.fromURI(_, NamespaceMap.empty)).flatMap {
       case n: GlobalName => Some(n)
       case _ => None
     }

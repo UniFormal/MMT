@@ -21,9 +21,9 @@ object activeComputation {
 }
 
 object EMEPaths {
-  val E : GlobalName = Path.parseS("http://mathhub.info/ODK/ActiveComputationDemo?Energy?Energy")
-  val m : GlobalName = Path.parseS("http://mathhub.info/ODK/ActiveComputationDemo?Mass?mass")
-  val c : GlobalName = Path.parseS("http://mathhub.info/ODK/ActiveComputationDemo?Lightspeed?cDef")
+  val E : GlobalName = Path.parseS("http://mathhub.info/ODK/ActiveComputationDemo?Energy?Energy", NamespaceMap.empty)
+  val m : GlobalName = Path.parseS("http://mathhub.info/ODK/ActiveComputationDemo?Mass?mass", NamespaceMap.empty)
+  val c : GlobalName = Path.parseS("http://mathhub.info/ODK/ActiveComputationDemo?Lightspeed?cDef", NamespaceMap.empty)
 }
 
 /** An evaluation combination */
@@ -58,7 +58,7 @@ case class ACContext(values: Map[GlobalName, String]) {
 object ACContext {
   /* Creates a JSON context from a string */
   def fromJSON (json : JSON) : ACContext = {
-    val values = json.asInstanceOf[JSONObject].map.map(e => (Path.parseS(e._1.value), e._2.asInstanceOf[JSONString].value)).toMap
+    val values = json.asInstanceOf[JSONObject].map.map(e => (Path.parseS(e._1.value, NamespaceMap.empty), e._2.asInstanceOf[JSONString].value)).toMap
     ACContext(values)
   }
 }
