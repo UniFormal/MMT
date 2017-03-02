@@ -25,6 +25,14 @@ object IMPSTheory
     def apply(t:Term) = Apply(this.term,t)
   }
 
+  object Sort extends Sym("sort") {
+    def apply(t : Term) : Term = {
+      Apply(this.term, t)
+    }
+  }
+
+  /* LOGIC */
+
   object Truth     extends Sym("thetrue")
   object Falsehood extends Sym("thefalse")
 
@@ -90,7 +98,7 @@ object IMPSTheory
   // TODO: Correct?
   object IMPSApply extends Sym("apply")
   {
-    def apply(f : Term, as : List[Term]) = {
+    def apply(f : Term, as : List[Term]) : Term = {
       as.foldLeft(f)((zw, b) => ApplySpine(this.term, zw, b))
     }
   }
@@ -143,7 +151,7 @@ object IMPSTheory
 
   object Undefined extends Sym("undefined")
   {
-    def apply(t : Term) = {
+    def apply(t : Term) : Term = {
       Apply(this.term, t)
     }
   }
