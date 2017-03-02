@@ -40,7 +40,12 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
   def doType(d : IMPSMathExp) : Term =
   {
-    ???
+    val ret : Term = d match
+    {
+      case IMPSSortRef(srt) =>
+        IMPSTheory.Sort(OMS(IMPSTheory.thpath ? LocalName(srt)))
+    }
+    ret
   }
 
   /*
@@ -67,6 +72,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case SchematicMacete(id,frml,thy,nlp,transpp,src)             => Nil // TODO
       case CartesianProduct(id,srts,thy,const,accs,src)             => Nil // TODO
       case QuasiConstructor(id,lmbd,lng,fxt,src)                    => Nil // TODO
+      // etc...
       case _                                                        => Nil // this stays
     }
     ret
@@ -105,4 +111,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   def doSourceRef(d : Declaration, s : SourceRef) = ???
 
   def doUnknown(d : LispExp) : Term = {???}
+
+  def doName(s:String) : LocalName = LocalName(s)
 }
