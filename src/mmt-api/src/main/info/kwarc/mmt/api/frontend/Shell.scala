@@ -87,20 +87,13 @@ class Shell extends StandardIOHelper {
     }
   }
 
-  /** the MMT repl */
-  lazy val repl = new jLineREPL {
-    def eval(line : String) : Boolean = {
-      controller.handleLine(line)
-      false
+  lazy val repl : REPLExtension = {
+    // TODO: throw a warning if there is more than one REPL
+    // or have a mechanism to get a specific REPL
+    controller.extman.get(classOf[REPLExtension]).headOption.getOrElse {
+      controller.extman.addExtension(StandardREPL)
+      StandardREPL
     }
-
-    def suggestions(line: String) : List[String] = Nil
-
-    def promptLeft : Option[String] = Some(controller.currentActionDefinition match {
-      case Some(name : String) => s"mmt [define $name]>"
-      case None => "mmt>"
-    })
-    def promptRight : Option[String] = None
   }
 
   /** main method without exception handling */
@@ -198,12 +191,14 @@ class Shell extends StandardIOHelper {
 
     // if we want a shell, prompt and handle input
     if (args.prompt) {
-        printHelpText("shelltitle")
+        repl.enter(args)
 
-        // switch on console reports for wrong user inputs
-        controller.report.addHandler(ConsoleHandler)
-        // and go into the repl
-        repl.run()
+        // run the repl and cleanup
+        try {
+          repl.run()
+        } finally {
+          repl.exit()
+        }
     }
 
     // cleanup if we want to exit
@@ -212,6 +207,48 @@ class Shell extends StandardIOHelper {
        controller.cleanup
     }
   }
+}
+
+/**
+  * An extension that provides REPL functionality to MMT.
+  */
+trait REPLExtension extends Extension {
+
+  /** Banner of the REPL to be printed when (before even entering it) */
+  protected val banner : String = MMTSystem.getResourceAsString("/help-text/shelltitle.txt")
+
+  /* A report handler to be added to the console automatically when needed */
+  protected val handler : ReportHandler = ConsoleHandler
+
+  /** Called when entering (i.e. starting up) the REPL */
+  def enter(args : ShellArguments) : Unit = {
+    //print the banner
+    println(banner)
+
+    // switch on console reports for wrong user inputs
+    controller.report.addHandler(ConsoleHandler)
+  }
+
+  /** Called when running the REPL */
+  def run() : Unit
+
+  /** Called up leaving the REPL to clean up */
+  def exit() : Unit
+}
+
+/** The standard, bare-bones implementation of the REPL */
+object StandardREPL extends REPLExtension {
+  private lazy val input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
+
+  def run() : Unit =  {
+    var command = Option(input.readLine)
+    while (command.isDefined) {
+      controller.handleLine(command.get, showLog = true)
+      command = Option(input.readLine)
+    }
+  }
+
+  def exit() : Unit = {input.close()}
 }
 
 object Shell {

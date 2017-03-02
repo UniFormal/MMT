@@ -201,6 +201,7 @@ lazy val guidedTours = (project in file("mmt-guidedTours")).
   settings(mmtProjectsSettings("mmt-guidedTours"): _*)
 */
 
+
 lazy val webEdit = (project in file("mmt-webEdit")).
   dependsOn(stex).
   settings(mmtProjectsSettings("mmt-webEdit"): _*)
@@ -224,12 +225,21 @@ lazy val oeis = (project in file("mmt-oeis")).
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar"
   )
 
+lazy val repl = (project in file("mmt-repl")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("mmt-repl")).
+  settings(
+    libraryDependencies ++= Seq(
+      "org.jline" % "jline" % "3.1.2"
+    )
+  )
+
 // experimental projects that are not part of any tests: marpa-mmt, hets-mmt
 
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
 lazy val mmt = (project in file("fatjar")).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl).
   settings(mmtProjectsSettings("fatjar"): _*).
   settings(
     exportJars := false,

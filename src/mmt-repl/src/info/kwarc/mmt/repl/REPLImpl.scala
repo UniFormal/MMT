@@ -1,4 +1,7 @@
-package info.kwarc.mmt.api.utils
+package info.kwarc.mmt.repl
+
+import info.kwarc.mmt.api.frontend.ShellArguments
+import info.kwarc.mmt.api.frontend.REPLExtension
 
 import java.util
 import java.util.logging.{Level, Logger}
@@ -17,7 +20,7 @@ import scala.util.Try
   *
   * @param historyItems List of items that are considered part of the history of this REPL
   */
-abstract class jLineREPL(historyItems: List[String] = Nil) {
+abstract class REPLImpl(historyItems: List[String] = Nil) {
 
   //========================================
   // Functions to be implemented by subclass
@@ -57,13 +60,11 @@ abstract class jLineREPL(historyItems: List[String] = Nil) {
     Logger.getLogger("org.jline").setLevel(Level.OFF) // turns of logging
 
     // create a new terminal
-    // TODO: Check if we need the system here or if that will autodetect
     val terminal = TerminalBuilder.builder.system(true).build()
 
     // we use a trivial parser for now, that is one which doesn't parse at all
     // it is required to have the entire line as one 'word', otherwise the completer
     // below will not work as expected
-    // TODO: Do we want to allow custom implementations here?
     val parser = new Parser {
       def parse(content: String, index: Int, context: Parser.ParseContext): ParsedLine = {
         new ParsedLine {
@@ -124,3 +125,4 @@ abstract class jLineREPL(historyItems: List[String] = Nil) {
     }
   }
 }
+
