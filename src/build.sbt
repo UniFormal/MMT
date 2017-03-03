@@ -106,8 +106,7 @@ lazy val api = (project in file("mmt-api")).
   settings(mmtProjectsSettings("mmt-api"): _*).
   settings(
     libraryDependencies ++= Seq(
-        "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2",
-        "org.jline" % "jline" % "3.1.2"
+        "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
     ),
     scalaSource in Compile := baseDirectory.value / "src" / "main",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "tiscaf.jar",
