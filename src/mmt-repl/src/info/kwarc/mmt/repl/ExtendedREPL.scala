@@ -9,7 +9,9 @@ class ExtendedREPL extends REPLImpl with REPLExtension  {
     false
   }
 
-  def suggestions(line: String) : List[String] = Nil
+  def suggestions(line: String) : List[String] = {
+    ActionGrammar.action(line)
+  }
 
   def promptLeft : Option[String] = Some(controller.currentActionDefinition match {
     case Some(name : String) => s"mmt [define $name]>"
