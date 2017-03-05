@@ -107,7 +107,7 @@ class GAPDocImporter extends Importer {
         add(doc)
         val tname = LocalName("thy")
         count += 1
-        val thy = new DeclaredTheory(dpath, tname, None)
+        val thy = Theory.empty(dpath, tname, Theory.noMeta)
         val ref = MRef(dpath, thy.path)
         add(ref)
         add(thy)

@@ -23,7 +23,6 @@ abstract class Module(val parent : DPath, val name : LocalName) extends ContentE
  * Module given by a set of statements
  */
 trait DeclaredModule extends Module with Body {
-   /** the meta-theory, domain, and codomain are not part of the term components because it is just a Path */
    def getInnerContext: Context
    def asDocument: documents.Document
    def translate(newNS: DPath, prefix: LocalName, translator: Translator, context : Context): DeclaredModule

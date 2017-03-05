@@ -51,11 +51,11 @@ object ParseResult {
    val free = utils.mmt.mmtcd ? "free"
    def fromTerm(uft: Term) = {
       val (u,ft) = uft match {
-         case OMBIND(OMS(this.unknown), un, ftm) => (un, ftm)
+         case OMBIND(OMS(this.unknown), u, ft) => (u, ft)
          case _ => (Context.empty, uft)
       }
       val (f,t) = ft match {
-         case OMBIND(OMS(this.free), fr, tm) => (Context(fr.filter({case IncludeVarDecl(_,_) => false case _ => true}):_*),tm)
+         case OMBIND(OMS(this.free), f, t) => (f,t)
          case _ => (Context.empty, ft)
       }
       ParseResult(u,f,t)
@@ -198,7 +198,7 @@ object DefaultObjectParser extends ObjectParser {
 
 /**
   * continuations that may be called by [[StructureParser]]s
-  * @param errorCont
+  * @param errorCont called on errors
   */
 class StructureParserContinuations(val errorCont: ErrorHandler) {
   /** to be called after parsing an element (but before parsing its body if any) */
@@ -215,7 +215,7 @@ trait StructureParser extends FormatBasedExtension {
   /** the main interface function: parses a stream and registers all elements (usually a single document) in it
     *
     * @param ps the encapsulated input stream
-    * @param cont continuations for errors ans parsed elements
+    * @param cont continuations for errors and parsed elements
     * @return the element into which the stream was parsed (of the type corresponding to ps.parentInfo)
     */
   def apply(ps: ParsingStream)(implicit cont: StructureParserContinuations): StructuralElement

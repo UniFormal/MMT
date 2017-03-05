@@ -21,7 +21,7 @@ object Sequences {
       def apply(to: Term, index: LocalName, body: Term): Term =
          OMBIND(OMS(path), OMV(index) % to, body)
       def unapply(t: Term): Option[(Term, LocalName, Term)] = t match {
-         case OMBIND(OMS(this.path), Context(VarDecl(index, Some(to), None, _)), body) =>
+         case OMBIND(OMS(this.path), Context(VarDecl(index, None, Some(to), None, _)), body) =>
            Some((to, index, body))
          case _ => None
       }

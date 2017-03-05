@@ -38,14 +38,22 @@ trait ObjectChecker extends Extension {
  * checks structural elements
  * 
  * see also [[Checker]]
- */
+ *
+ * INVARIANTS: apply(se) must be equivalent to
+ * - for ContainerElement's: applyElementBegin(se) + se.getPrimitiveDeclarations.foreach(apply) + applyElementEnd(se)
+ * - for other elements: apply(se) must be equivalent to applyElementBegin(se)
+ * 
+ * That way all calls to the [[StructureParserContinuations]] together check the entire element. 
+ */ 
 trait StructureChecker extends FormatBasedExtension {
-   /**
-    * checks a StructuralElement
-    * @param e the element to check
-    */
+   /** checks the entire StructuralElement */
    def apply(e : StructuralElement)(implicit env: CheckingEnvironment)
-   /** checks a StructuralElement, given by its URI */
+   /** checks the header of a StructuralElement, i.e., everything except for its body */
+   def applyElementBegin(e : StructuralElement)(implicit ce: CheckingEnvironment): Unit
+   /** checks the end of a StructuralElement (e.g., global conditions like totality of a view) */
+   def applyElementEnd(e: ContainerElement[_])(implicit ce: CheckingEnvironment): Unit
+
+  /** checks a StructuralElement, given by its URI */
    def apply(p: Path)(implicit env: CheckingEnvironment) {
       apply(controller.get(p))
    }
@@ -62,8 +70,8 @@ object NullChecker {
       override def init(c: Controller){super.init(c); objectLevel.init(c)}
       val id = "null"
       def apply(e : StructuralElement)(implicit env: CheckingEnvironment) {}
-      def checkElement(e : StructuralElement, cont : Option[Context] = None)(implicit ce: CheckingEnvironment) {}
-      def checkElementEnd(e: ContainerElement[_], cont : Option[Context] = None)(implicit ce: CheckingEnvironment) {}
+      def applyElementBegin(e : StructuralElement)(implicit ce: CheckingEnvironment) {}
+      def applyElementEnd(e: ContainerElement[_])(implicit ce: CheckingEnvironment) {}
    }
 }
 
@@ -76,8 +84,5 @@ abstract class Checker(val objectLevel: ObjectChecker) extends StructureChecker 
   /** relegates to objectChecker */
   def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) =
      objectLevel(cu, rules)
-  //TODO these may have to be added here eventually, currently not needed
-  //def checkElement(e : StructuralElement, cont : Option[Context] = None)(implicit ce: CheckingEnvironment): Unit
-  //def checkElementEnd(e: ContainerElement[_], cont : Option[Context] = None)(implicit ce: CheckingEnvironment): Unit
 }
 

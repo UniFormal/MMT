@@ -39,7 +39,7 @@ object CheckingUnit {
    
    def byInference(cpath: Option[CPath], context: Context, pr: ParseResult): CheckingUnit = {
       val j = Typing(Stack(pr.free), pr.term, OMV(unknownType))
-      CheckingUnit(cpath, context, pr.unknown ++ VarDecl(unknownType,None,None,None), j)
+      CheckingUnit(cpath, context, pr.unknown ++ VarDecl(unknownType,None,None,None,None), j)
    }
 }
 

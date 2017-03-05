@@ -3,7 +3,6 @@ package info.kwarc.mmt.api.libraries
 import info.kwarc.mmt.api._
 import frontend._
 import documents._
-import info.kwarc.mmt.api.uom.{ElaboratedElement, Simplifier}
 import modules._
 import objects._
 import symbols._
@@ -66,8 +65,6 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
   val logPrefix = "library"
 
   // ************************ stateful data structures and basic accessors
-
-  lazy private val simplifier = extman.get(classOf[Simplifier]).headOption.getOrElse(throw GeneralError("Simplifier missing"))
 
   /** all known root documents except for those induced by modules */
   private val documents = new scala.collection.mutable.HashMap[DPath,Document]
@@ -202,9 +199,6 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
    */
   // TODO Once structures are nested modules, this can return Module instead of ContentElement
   private def seeAsMod(ce: ContentElement, error: String => Nothing): ContentElement = ce match {
-    case dm : DefinedTheory =>
-      simplifier(dm)
-      dm.getBody.getOrElse(throw GetError("Error while trying to elaborate DefinedTheory " + dm))
      case m: Module => m
      case nm: NestedModule => nm.module
      case s: Structure => s
@@ -250,7 +244,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
       cont.mapVarDecls { case (before, vd) =>
         val vdDecl = vd.toDeclaration(ComplexTheory(before))
         vd match {
-          case IncludeVarDecl(p, args) =>
+          case IncludeVarDecl(_, OMPMOD(p, args), _) =>
             name.head match {
               case ComplexStep(q) =>
                 getImplicit(q, p).foreach { m =>
@@ -269,9 +263,9 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
                 return symT
               case _ =>
             }
-          case VarDecl(n, _, _, _) =>
+          case vd: VarDecl =>
             name.head match {
-              case n2@SimpleStep(_) if n == LocalName(n2) =>
+              case n2@SimpleStep(_) if vd.name == LocalName(n2) =>
                 val c = vdDecl.asInstanceOf[Constant]
                 return c
               case _ =>
@@ -313,14 +307,9 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
     // now the actual lookup
     mod match {
       case t: DefinedTheory =>
-        simplifier(t)
-        t.getBody match {
-          case Some(dt: DeclaredTheory) => getInTheory(dt, args, name, error)
-          case None =>
-            ??? // TODO
-        }
+        val d = getDeclarationInTerm(t.df, name, error)
+        instantiate(d, t.parameters, args)
       case v: DefinedView =>
-        // TODO
         getDeclarationInTerm(v.df, name, error)
       case s: DefinedStructure =>
         getDeclarationInTerm(s.df, name, error)
@@ -396,7 +385,6 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
       val sf = extman.get(classOf[StructuralFeature], dd.feature) getOrElse {
         error("structural feature " + dd.feature + " not known")
       }
-      if (ElaboratedElement.is(dd)) error("already elaborated")
       val elaboration = sf.elaborate(parent, dd)
       elaboration.getMostSpecific(name) match {
         case Some((d: DerivedDeclaration, ln)) =>
@@ -445,8 +433,6 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
               getO(from) match {
                 case Some(d: DeclaredTheory) =>
                   d.meta
-                case Some(d: DefinedTheory) =>
-                  d.superModule
                 case _ => None //TODO
               }
             case _ => None //TODO
@@ -587,15 +573,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
             case OMCOMP(Nil) => d.getDeclarations
             case _ => Nil //TODO d.translate(mod, ???, ApplyMorphism(via))
           }
-        case t : DefinedTheory =>
-          simplifier(t)
-          (t.getBody,via) match {
-            case (Some(body),OMCOMP(Nil)) => body.getDeclarations
-            case _ => Nil //TODO d.translate(mod, ???, ApplyMorphism(via))
-          }
-        case _ =>
-          Nil
-          // TODO materialize
+        case _ => Nil //TODO materialize?
       }
     }
   }
@@ -616,28 +594,10 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
     */
   private def visibleVia(to: Term): mutable.HashSet[(Term, Term)] = {
     val hs = implicitGraph.into(to)
-    val supp = getSupport(to).distinct
-    getSupport(to) foreach {p => hs add(OMMOD(p), OMCOMP())}
+    TheoryExp.getSupport(to) foreach {p => hs add(OMMOD(p), OMCOMP())}
     hs
   }
 
-  private def getSupport(to : Term): List[MPath] = to match {
-    case OMMOD(p) => get(p) match {
-      case th : DeclaredTheory => p :: th.getIncludes
-      case th : DefinedTheory =>
-        p :: {
-          simplifier(th)
-          th.getBody match {
-            case Some(th : DeclaredTheory) =>
-              th.getIncludes.flatMap(p => getSupport(OMMOD(p)))
-            case _ => Nil
-          }
-        }
-    }
-    case ComplexTheory(icont) => icont.getIncludes
-    case _ =>
-      Nil
-  }
 
   /** as visibleVia but dropping the implicit morphisms */
   def visible(to: Term): mutable.HashSet[Term] = visibleVia(to).map(_._1)
@@ -710,7 +670,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
    * @param e the added declaration
    */
   def add(e: StructuralElement, afterOpt: Option[LocalName]) {
-    log("adding " + e.path + " (which has Scala type " + e.getClass.getName + ")")
+    log("adding " + e.path + " (which is a " + e.feature + ")")
     val adder = new Adder(e, afterOpt)
     e match {
        case doc: Document if doc.root =>

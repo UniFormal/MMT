@@ -127,7 +127,7 @@ object PVSTheory {
          case ApplySpine(this.term,List(boundtp,Lambda(bound,expr(boundtp2),rettp))) =>
             Some(bound,boundtp,rettp)
          case fun_type(a,b) =>
-            val x = Context.pickFresh(t.freeVars.map(VarDecl(_,None,None,None)),LocalName("__"))._1
+            val x = Context.pickFresh(t.freeVars.map(VarDecl(_)),LocalName("__"))._1
             Some((x,a,b))
          case _ => None
       }
@@ -160,7 +160,7 @@ object PVSTheory {
       def unapply(t:Term) : Option[(LocalName,Term,Term)] = t match {
          case ApplySpine(this.term,List(boundtp,Lambda(bound,boundtp2,rettp))) =>
             Some(bound,boundtp,rettp)
-         case tuple_type(l) => Some((Context.pickFresh(t.freeVars.map(VarDecl(_,None,None,None)),LocalName("__"))._1,
+         case tuple_type(l) => Some((Context.pickFresh(t.freeVars.map(VarDecl(_)),LocalName("__"))._1,
            l.head,tuple_type(l.tail)))
          case _ => None
       }
@@ -225,7 +225,7 @@ object PVSTheory {
    object selection extends sym("selection") {
       def apply(cons : Term, vars : Context, body : Term, constp : Term) =
          ApplySpine(this.term,constp,cons,if (vars.nonEmpty) OMBIND(new sym("selbind").term,
-            vars.map(v => VarDecl(v.name,v.tp.map(expr(_)),v.df,v.not)),body) else body)
+            vars.map(v => v.copy(tp = v.tp.map(expr(_)))),body) else body)
    }
 
    object pvsmatch extends sym("match") {

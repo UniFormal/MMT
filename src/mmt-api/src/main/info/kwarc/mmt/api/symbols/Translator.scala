@@ -19,8 +19,11 @@ abstract class Translator {self =>
     */
    def applyType(context: Context, tm: Term): Term
    
-   def applyContext(con: Context): Context = con.mapVarDecls {case (c, VarDecl(n,tp,df,nt)) =>
-     VarDecl(n, tp map {t => applyType(c,t)}, df map {t => applyDef(c,t)}, nt)
+   def applyVarDecl(context: Context, vd: VarDecl) = vd.copy(tp = vd.tp map {t => applyType(context,t)}, df = vd.df map {t => applyDef(context,t)})
+   
+   def applyContext(context: Context, con: Context): Context = con.mapVarDecls {case (c, vd) =>
+     val nc = context ++ c
+     applyVarDecl(nc, vd)
    }
    
    def applyModule(context: Context, tm: Term): Term = applyDef(context, tm)
@@ -37,8 +40,8 @@ abstract class Translator {self =>
    
    /** diagrammatic composition (first this, then that) */
    def compose(that: Translator) = new Translator {
-     def applyDef(con: Context, tm: Term) = that.applyDef(self.applyContext(con), self.applyDef(con, tm))
-     def applyType(con: Context, tm: Term) = that.applyType(self.applyContext(con), self.applyType(con, tm))
+     def applyDef(con: Context, tm: Term) = that.applyDef(self.applyContext(Context.empty, con), self.applyDef(con, tm))
+     def applyType(con: Context, tm: Term) = that.applyType(self.applyContext(Context.empty, con), self.applyType(con, tm))
    }
 }
 
@@ -53,7 +56,6 @@ abstract class UniformTranslator extends Translator {
 /** a translator that applies a morphism (lazily) */
 case class ApplyMorphism(morph: Term) extends UniformTranslator {
    def apply(context: Context, tm: Term) = tm * morph
-  def apply(context: Context,vd : VarDecl) = VarDecl(vd.name,vd.tp.map(_ * morph),vd.df.map(_ * morph),vd.not)
 }
 
 /** a translator that renames local names of a module */

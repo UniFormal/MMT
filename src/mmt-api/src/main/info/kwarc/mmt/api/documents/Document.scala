@@ -19,6 +19,7 @@ import scala.xml.Elem
  */
 class Document(val path: DPath, val root: Boolean = false, val contentAncestor: Option[Body] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty)
      extends NarrativeElement with ContainerElement[NarrativeElement] {
+  val feature = "document"
   /** the containing document if root == false; otherwise, the URI without path */ 
   def parentOpt = if (root) None else Some(parent)
   val parent: DPath = if (root) path ^^ else path ^

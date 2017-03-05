@@ -72,8 +72,6 @@ class Branchpoint(val parent: Option[Branchpoint], val delayed: List[DelayedCons
 class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: RuleSet)
       extends CheckingCallback with Logger {
 
-  def elaborateModuleExpr(tm : Term,context : Context) : Context = controller.simplifier.objectLevel.elaborateModuleExpr(tm,context)
-
    val constantContext = checkingUnit.context
    val initUnknowns = checkingUnit.unknowns
   
@@ -601,27 +599,27 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    private def noActivatableConstraint: Boolean = {
       solution.declsInContext.forall {
-         case (_, VarDecl(_, _, Some(_), _)) =>
+         case (_, vd) if vd.df.isDefined =>
            // solved
            true 
-         case (cont, VarDecl(x, tpOpt, None,_)) =>
+         case (cont, vd) if vd.df.isEmpty =>
             // unsolved, maybe use prover based on needed type
             implicit val history = new History(Nil)
-            tpOpt match {
+            vd.tp match {
               case None =>
-                error("unsolved (untyped) unknown: " + x) 
+                error("unsolved (untyped) unknown: " + vd.name) 
               case Some(tp) =>
                 val rO = rules.get(classOf[TermIrrelevanceRule]).find(r => r.applicable(tp))
                 if (rO.isDefined) {
                   history += "proving open goal of term-irrelevant type"
                   prove(constantContext++cont,tp)(history) match {
                      case Some(p) =>
-                        solve(x, p)
+                        solve(vd.name, p)
                      case None =>
                         error("unproved")
                   }
                 } else {
-                  error("unsolved (typed) unknown: " + x)
+                  error("unsolved (typed) unknown: " + vd.name)
                 }
             }
       }
@@ -1471,20 +1469,25 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    }
 
 
-   /** applies all ForwardSolutionRules of the given priority
- *
-    * @param priority exactly the rules with this Priority are applied */
+   /**
+    * applies all ForwardSolutionRules of the given priority
+    *
+    * @param priority exactly the rules with this Priority are applied
+    */
    //TODO call this method at appropriate times
    private def forwardRules(priority: ForwardSolutionRule.Priority)(implicit stack: Stack, history: History): Boolean = {
       val results = solution.zipWithIndex map {
-         case (vd @ VarDecl(x, Some(tp), None, _), i) =>
-            implicit val con : Context = solution.take(i)
-            limitedSimplify(tp, rules.get(classOf[ForwardSolutionRule])) match {
-               case (tpS, Some(rule)) if rule.priority == priority =>
-                 history += "Applying ForwardSolutionRule " + rule.toString
-                 rule(this)(vd)
-               case _ => false
-            }
+         case (vd, i) => vd.tp match {
+           case Some(tp) =>
+              implicit val con : Context = solution.take(i)
+              limitedSimplify(tp, rules.get(classOf[ForwardSolutionRule])) match {
+                 case (tpS, Some(rule)) if rule.priority == priority =>
+                   history += "Applying ForwardSolutionRule " + rule.toString
+                   rule(this)(vd)
+                 case _ => false
+              }
+           case None => false
+         }
          case _ => false
       }
       results.contains(true)
@@ -1497,7 +1500,7 @@ object Solver {
       val ParseResult(unknowns,free,tmU) = ParseResult.fromTerm(tm)
       val etp = LocalName("expected_type")
       val j = Typing(stack, tmU, OMV(etp), None)
-      val cu = CheckingUnit(None, stack.context, unknowns ++ VarDecl(etp, None, None, None), j)
+      val cu = CheckingUnit(None, stack.context, unknowns ++ VarDecl(etp), j)
       val rules = RuleSet.collectRules(controller, stack.context)
       val solver = new Solver(controller, cu, rules)
       solver.applyMain

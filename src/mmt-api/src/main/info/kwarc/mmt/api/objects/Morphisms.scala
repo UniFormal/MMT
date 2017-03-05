@@ -194,7 +194,7 @@ object ModExp extends uom.TheoryScala {
   val composition = _path ? "composition"
   val morphismapplication = _path ? "morphismapplication"
 
-  //TODO deprecate (still used by Twelf)
+  @deprecated("(still used by Twelf)")
   val tunion = _path ? "theory-union"
 }
 
@@ -248,7 +248,7 @@ object ComplexTheory {
   val path = ModExp.complextheory
 
   def apply(body: Context) = body match {
-    case Context(IncludeVarDecl(p, args)) => OMPMOD(p, args)
+    case Context(IncludeVarDecl(_, tp, None)) => tp
     case _ => OMBINDC(OMID(this.path), body, Nil)
   }
 

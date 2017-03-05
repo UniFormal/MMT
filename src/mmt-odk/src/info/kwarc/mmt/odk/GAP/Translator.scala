@@ -1,15 +1,16 @@
 package info.kwarc.mmt.odk.GAP
 
-import info.kwarc.mmt.api.{LocalName, _}
-import info.kwarc.mmt.api.archives.BuildTask
-import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, RelationHandler}
-import info.kwarc.mmt.api.documents.{Document, MRef}
-import info.kwarc.mmt.api.frontend.{Controller, Logger}
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.checking._
+import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.ontology.{CustomBinary, CustomUnary}
-import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, PlainInclude}
-import info.kwarc.mmt.lf.{ApplySpine, Arrow, Pi}
+import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.api.symbols._
+
+import info.kwarc.mmt.lf._
 
 import scala.collection.mutable
 
@@ -46,7 +47,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
   }
 
   private def typeax(f : GAPObject, inputs : List[List[GAPObject]], retob : GAPObject) : Term = {
-    val con = Context((1 to inputs.length).map(i => LocalName("x" + i)).map(n => VarDecl(n,Some(GAP.obj),None,None)) :_*)
+    val con = Context((1 to inputs.length).map(i => LocalName("x" + i)).map(n => VarDecl(n,GAP.obj)) :_*)
     val rettp = GAP.dotp(ApplySpine(f.toTerm,con.map(vd => OMV(vd.name)) :_*), retob)
     val realtm = inputs.indices.foldRight[Term](rettp)((i,t) => inputs(i).foldRight[Term](t)((o,tm) =>
       Arrow(GAP.dotp(OMV(LocalName("x" + {i+1})),o),tm)))
@@ -179,7 +180,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
   }
 
   private def addTheory(mp : MPath) =  if (theories.get(mp).isEmpty) {
-    val th = new DeclaredTheory(mp.parent,mp.name,Some(GAP.theory))
+    val th = Theory.empty(mp.parent,mp.name,Some(GAP.theory))
     theories += ((th.path,th))
     controller add th
     addtoDoc(mp)

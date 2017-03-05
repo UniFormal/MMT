@@ -41,7 +41,7 @@ object Integrator {
        case "Term" => Scala.symbol("Term")
        case "List[Term]" => OMA(Scala.symbol("List"), List(Scala.symbol("Term")))
      } 
-     VarDecl(LocalName(nt(0)), Some(tp), None, None)
+     VarDecl(LocalName(nt(0)), tp)
    }
    
    def mkLambda(code: String) : Term = {

@@ -166,8 +166,8 @@ class ThinGeneratedCategory {
          // TODO remove unions or handle their interaction with ComplexTheory
          case (ComplexTheory(fromC), _) =>
             val fromCMors = fromC.map {
-               case IncludeVarDecl(p,args) =>
-                  apply(OMPMOD(p,args), to)
+               case IncludeVarDecl(_, tp,_) =>
+                  apply(tp, to)
                case vd => to match {
                   case ComplexTheory(toC) => Some(OMCOMP())
                   case _ => None

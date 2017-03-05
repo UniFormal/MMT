@@ -435,7 +435,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      }
      val arity = not.arity
      val sub = Substitution(arity.subargs.map(sa => Sub(OMV.anonymous, OMV(getVarName(sa.number - 1)))) :_*)
-     val con = Context(arity.variables.map(v => VarDecl(LocalName(getVarName(v.number - 1)), None, None, None)) :_*)
+     val con = Context(arity.variables.map(v => VarDecl(LocalName(getVarName(v.number - 1)))) :_*)
      val args = arity.arguments flatMap {
        case s : SeqArg =>
          val baseName = getVarName(s.number - 1)

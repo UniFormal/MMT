@@ -22,8 +22,8 @@ class OMMMTCoding(default : URI) extends OMCoding[Term] {
     case OMForeign(any,encoding,id,cdbase) => ???
     case OMApplication(f,args,id,cdbase) => OMA(encode(f),args map encode)
     case OMAttribution(OMAttributionPairs(pairslist,inner_id,inner_cdbase),expr,id,cdbase) => ???
-    case OMBinding(binder,OMBindVariables(vars,inner_id),expr,id,cdbase) => OMBIND(encode(binder),vars map (v =>
-      VarDecl(LocalName(v.name),None,None,None)),encode(expr))
+    case OMBinding(binder,OMBindVariables(vars,inner_id),expr,id,cdbase) =>
+      OMBIND(encode(binder), vars map (v => VarDecl(LocalName(v.name))), encode(expr))
     case OMVarVar(omvar) => OMV(omvar.name)
     case v @ OMAttVar(OMAttributionPairs(pairslist,inner_id,inner_cdbase),va,id) => OMV(v.name)
     case OMError(sym,params,id,cdbase) => OMSTR("Error: " + sym.cd + "?" + sym.name) // TODO

@@ -71,12 +71,7 @@ class FrameViewer extends Extension {
      case _ => t
    }
    
-   private def pushout(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
-     val vars = con.variables map {
-       case VarDecl(n, tp, df, not) => VarDecl(n, tp.map(pushout), df.map(pushout), not)
-     }
-     Context(vars : _*)
-   }
+   private def pushout(con : Context)(implicit rules : HashMap[Path, Term]) : Context = con map (_ map pushout)
 }
 
 class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask {

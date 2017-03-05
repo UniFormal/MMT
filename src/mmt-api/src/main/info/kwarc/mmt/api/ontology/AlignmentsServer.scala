@@ -298,7 +298,7 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
   /** translation along alignments */
-  private class AlignQuery extends QueryFunctionExtension("align", ElementQuery(PathType), SetElementQuery(StringType)) {
+  private class AlignQuery extends QueryFunctionExtension("align", ElementQuery(PathType), SetQuery(StringType)) {
     def evaluate(argument: BaseType, params: List[String]) = {
       log("Evaluating align query")
       log(argument.toString)

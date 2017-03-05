@@ -12,7 +12,7 @@ case class ParsingRule(name: ContentPath, alias: List[LocalName], notation: Text
   def firstDelimString: Option[String] = notation.parsingMarkers collectFirst {
     case d: Delimiter => d.expand(name, alias).text
     case SimpSeqArg(_, Delim(s), _) => s
-    case LabelSeqArg(_,Delim(s),_,_,_,_) => s
+    case LabelSeqArg(_,Delim(s),_,_) => s
   }
 }
 
@@ -104,7 +104,7 @@ class NotationBasedParser extends ObjectParser {
      def getVariables(implicit pu: ParsingUnit): (Context,Context) = {
         val fvDecls = freevars map {n =>
            val tp = newUnknown(newType(n), Nil) // types of free variables must be closed; alternative: allow any other free variable
-           VarDecl(n, Some(tp), None, None)
+           VarDecl(n,tp)
         }
         (unknowns, fvDecls)
      }
@@ -135,7 +135,7 @@ class NotationBasedParser extends ObjectParser {
 
      /** generates a new unknown variable, constructed by applying a fresh name to all bound variables */
      def newUnknown(name: LocalName, bvars: List[LocalName])(implicit pu: ParsingUnit) = {
-       unknowns ::= VarDecl(name, None, None, None)
+       unknowns ::= VarDecl(name)
        if (bvars.isEmpty)
          OMV(name)
        else {
@@ -149,7 +149,7 @@ class NotationBasedParser extends ObjectParser {
       */
      def newAmbiguity = {
        val name = LocalName("") / "A" / next
-       unknowns ::= VarDecl(name, None, None, None)
+       unknowns ::= VarDecl(name)
        OMV(name)
      }
 
@@ -519,13 +519,13 @@ class NotationBasedParser extends ObjectParser {
      val finalSubs: List[Term] = arity.subargs.flatMap {
         case ImplicitArg(_, _) =>
           List(newUnknown(newArgument, boundVars))
-        case LabelArg(n,_,_,_) =>
+        case LabelArg(n,_,_) =>
           val a = subs.find(_._1 == n).get
           List(a._2)
         case SimpArg(n, _) =>
           val a = subs.find(_._1 == n).get // must exist if notation matched
           List(a._2)
-        case LabelSeqArg(n,_,_,_,_,_) =>
+        case LabelSeqArg(n,_,_,_) =>
           val as = subs.filter(_._1 == n)
           as.map(_._2)
         case SimpSeqArg(n, _, _) =>
@@ -537,13 +537,13 @@ class NotationBasedParser extends ObjectParser {
      val finalArgs: List[Term] = arity.arguments.flatMap {
         case ImplicitArg(_, _) =>
           List(newUnknown(newArgument, boundVars ::: newBVarNames))
-        case LabelArg(n, _,_,_) =>
+        case LabelArg(n, _,_) =>
           val a = args.find(_._1 == n).get // must exist if notation matched
           List(a._2)
         case SimpArg(n, _) =>
           val a = args.find(_._1 == n).get // must exist if notation matched
           List(a._2)
-        case LabelSeqArg(n, _, _,_,_,_) =>
+        case LabelSeqArg(n, _, _,_) =>
           val as = args.filter(_._1 == n)
           as.map(_._2)
         case SimpSeqArg(n, _, _) =>
@@ -565,7 +565,7 @@ class NotationBasedParser extends ObjectParser {
               val t = newUnknown(newType(vname), governingBVars)
               (Some(t), true)
           }
-          val vd = VarDecl(vname, finalTp, None, None)
+          val vd = VarDecl(vname).copy(tp = finalTp)
           if (unknown)
             metadata.TagInferredType.set(vd)
           SourceRef.update(vd, pu.source.copy(region = reg))

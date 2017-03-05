@@ -122,7 +122,7 @@ abstract class Lookup {self =>
          case OMMOD(t) => getAs(classOf[Theory],t) match {
            case t: DeclaredTheory => t
            case t : DefinedTheory =>
-             t.getBody.getOrElse(throw GetError("unsimplified defined theory"))
+             throw GetError("unsimplified defined theory")
          }
          case _ => throw GetError("domain of declared link is not a declared theory")
       }
@@ -155,7 +155,7 @@ abstract class Lookup {self =>
             case Some(tm) => traverse(tm)
             case None => OMID(p)
          }
-         case _ => Traverser(this, t)
+         case t => Traverser(this, t)
       }
    }
    

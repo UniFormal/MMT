@@ -160,8 +160,8 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term]
 }
 
-abstract class TheoryExpRule(head : GlobalName, oftype : GlobalName)
-  extends InferenceRule(head,oftype) {
+@deprecated("must be reimplemented cleanly")
+abstract class TheoryExpRule(head : GlobalName, oftype : GlobalName) extends InferenceRule(head,oftype) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
     val checks = apply(tm, covered)(solver,stack,history)
     if (checks) Some(OMS(ModExp.theorytype)) else None
@@ -175,12 +175,12 @@ abstract class TheoryExpRule(head : GlobalName, oftype : GlobalName)
     case _ => false
   }
 
-  def elaborate(prev : Context, df : Term)(implicit elab : (Context,Term) => Context) : Context
+  def elaborate(prev : Context, df : Term)(implicit elab : (Context,Term) => Context): Context
 }
 
-abstract class FormationRule(val headx: GlobalName, val typOpx : GlobalName) extends InferenceRule(headx,typOpx)
-abstract class IntroductionRule(val headx: GlobalName, val typOpx : GlobalName) extends InferenceRule(headx,typOpx)
-abstract class EliminationRule(val headx: GlobalName, val typOpx : GlobalName) extends InferenceRule(headx,typOpx)
+abstract class FormationRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t)
+abstract class IntroductionRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t)
+abstract class EliminationRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t)
 
 /** A ComputationRule simplifies an expression operating at the toplevel of the term.
  *  But it may recursively simplify the components if that makes the rule applicable.

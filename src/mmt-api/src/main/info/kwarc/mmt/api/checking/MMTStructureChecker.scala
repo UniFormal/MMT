@@ -15,7 +15,7 @@ import objects.Conversions._
 
 
 /** variant of CheckingEnvironment that carries around more structure */
-class ExtendedCheckingEnvironment(val ce: CheckingEnvironment, val objectChecker: ObjectChecker, val rules: RuleSet, p: Path) {
+class ExtendedCheckingEnvironment(val ce: CheckingEnvironment, val objectChecker: ObjectChecker, val rules: RuleSet, p: Path, var timeout: Int = 0) {
   def pCont(q: Path) {
     ce.reCont(RefersTo(q, p))
   }
@@ -36,19 +36,30 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   private implicit lazy val content = controller.globalLookup
   override val logPrefix = "structure-checker"
 
-  /**
-    * checks a StructuralElement
-    *
-    * @param e the element to check
-    */
   def apply(e: StructuralElement)(implicit ce: CheckingEnvironment) {
-    val cont = getContext(e)
-    check(cont, e)
+    val (context,env) = prepareCheck(e)
+    check(context, e)(env)
   }
-  def timeoutCheck(e: StructuralElement, t : Int)(implicit ce: CheckingEnvironment) {
-    val cont = getContext(e)
-    check(cont, e,t)
+  
+  def applyElementBegin(e: StructuralElement)(implicit ce: CheckingEnvironment) {
+    val (context,env) = prepareCheck(e)
+    e match {
+      case ce: ContainerElement[_] => checkElementBegin(context, ce)(env)
+      case e => check(context, e)(env)
+    }
   }
+  
+  def applyElementEnd(e: ContainerElement[_])(implicit ce: CheckingEnvironment) {
+    val (context,env) = prepareCheck(e)
+    checkElementEnd(context, e)(env)
+  }
+  
+  def applyWithTimeout(e: StructuralElement, t : Int)(implicit ce: CheckingEnvironment) {
+    val (context,env) = prepareCheck(e)
+    env.timeout = t
+    check(context, e)(env)
+  }
+  
   def elabContext(th : DeclaredTheory)(implicit ce: CheckingEnvironment): Context = {
     //val con = getContext(th)
     val rules = RuleSet.collectRules(controller,Context.empty)
@@ -57,6 +68,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     checkContext(Context.empty, getExtraInnerContext(th))
   }
 
+  private def prepareCheck(e: StructuralElement)(implicit ce: CheckingEnvironment): (Context, ExtendedCheckingEnvironment) = {
+    val context = getContext(e)
+    val rules = RuleSet.collectRules(controller, context)
+    val env = new ExtendedCheckingEnvironment(ce, objectChecker, rules, e.path)
+    (context, env)
+  }
+  
   /** computes the context in which an element must be checked
    *  during top-down traversal, this method allows checking to start in the middle
    */
@@ -89,54 +107,43 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   /** auxiliary method of getContext, returns the context in which the body of ContainerElement is checked */
   private def getContextWithInner(e: ContainerElement[_]) = getContext(e) ++ getExtraInnerContext(e)
   
+  
   /**
     * @param context all variables and theories that may be used in e (including the theory in which is declared)
     * @param e       the element to check
     */
-  private def check(context: Context, e: StructuralElement, timeout : Int = 0)(implicit ce: CheckingEnvironment) {
-    val rules = RuleSet.collectRules(controller, context)
-    implicit val env = new ExtendedCheckingEnvironment(ce, objectChecker, rules, e.path)
-    implicit val task = ce.task
+  // e will be marked as checked (independent of whether there are errors)
+  private def check(context: Context, e: StructuralElement)(implicit env: ExtendedCheckingEnvironment) {
+    implicit val ce = env.ce
     val path = e.path
-    log("checking " + path + " using the following rules: " + rules.toString)
+    log("checking " + path + " using the following rules: " + env.rules.toString)
     e match {
       //TODO merge this case with the generic case for ContainerElements
       //the extended treatment is probably needed for all ContainerElements anyway
-      case t: DeclaredTheory =>
-        checkElementBegin(t, context)
-        val contextI = context ++ checkContext(context, getExtraInnerContext(t))
-        // content structure
-        val tDecls = t.getPrimitiveDeclarations
+      case c: ContainerElement[_] =>
+        checkElementBegin(context, c)
+        val contextI = context ++ checkContext(context, getExtraInnerContext(c))
         // mark all children as unchecked
+        val tDecls = c.getPrimitiveDeclarations
         tDecls foreach { d =>
           UncheckedElement.set(d)
         }
-        // check each child and mark it as checked (independent of whether there are errors)
+        // check children
         logGroup {
           tDecls foreach { d =>
-            check(contextI, d, timeout)
-            UncheckedElement.erase(d)
+            check(contextI, d)
           }
         }
-        checkElementEnd(t, context)
-      case c: ContainerElement[_] =>
-        checkElementBegin(c, context)
-        val contextI = context ++ getExtraInnerContext(c)
-        logGroup {
-          c.getPrimitiveDeclarations foreach {
-            i => check(contextI, i, timeout)
-          }
-        }
-        checkElementEnd(c, context)
+        checkElementEnd(context, c)
       case oe: OpaqueElement =>
         controller.extman.get(classOf[OpaqueChecker], oe.format) match {
           case None => env.errorCont(InvalidElement(oe, "no checker found for format " + oe.format))
           case Some(oc) =>
-            oc.check(objectChecker, context, rules, oe)
+            oc.check(objectChecker, context, env.rules, oe)
         }
       //TODO check all declarations, components? currently done in each OpaqueChecker
       case r: NRef =>
-        check(context, controller.get(r.target), timeout)
+        check(context, controller.get(r.target))
       case dd: DerivedDeclaration =>
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         sfOpt match {
@@ -148,17 +155,14 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               // not using tpR here because source references are gone
             }
             val conInner = sf.getInnerContext(dd)
-            check(context ++ conInner, dd.module, timeout)
+            check(context ++ conInner, dd.module)
             sf.check(dd)
         }
       case nm: NestedModule =>
-        check(context, nm.module, timeout)
+        check(context, nm.module)
       case t: DefinedTheory =>
-        if (t.getBody.isEmpty) {
           val dfR = checkTheory(context, t.df)
           t.dfC.analyzed = dfR
-          controller.simplifier(t)
-        }
       case v: DefinedView =>
         checkTheory(context, v.from)
         checkTheory(context, v.to)
@@ -239,9 +243,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           val (pr, valid) = prepareTerm(t)
           if (valid) {
             val j = Inhabitable(Stack(pr.free), pr.term)
-            val cu = if (timeout == 0) CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j).diesWith
-            else CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j).newKillButton
-            if (timeout != 0) cu.setTimeout(timeout)((Unit) => log("Timed out!"))
+            val cu = CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j).diesWith(env.ce.task)
+            if (env.timeout != 0)
+               cu.setTimeout(env.timeout)(_ => log("Timed out!"))
             objectChecker(cu, env.rules)
           }
         }
@@ -275,13 +279,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                 // no need to check atomic definiens without expected type
                 // slightly hacky trick to allow atomic definitions in the absence of a type system
                   performCheck = false
-                (pr.unknown ++ VarDecl(tpVar, None, None, None), OMV(tpVar), true)
+                (pr.unknown ++ VarDecl(tpVar, None, None, None, None), OMV(tpVar), true)
             }
             val j = Typing(Stack(pr.free), pr.term, expTp, None)
             if (performCheck) {
-              val cu = if (timeout == 0) CheckingUnit(Some(cp), context, unknowns, j).diesWith
-              else CheckingUnit(Some(cp), context, unknowns, j).newKillButton
-              if (timeout != 0) cu.setTimeout(timeout)((Unit) => log("Timed out!"))
+              val cu = CheckingUnit(Some(cp), context, unknowns, j).diesWith(env.ce.task)
+              if (env.timeout != 0) 
+                cu.setTimeout(env.timeout)(_ => log("Timed out!"))
               val cr = objectChecker(cu, env.rules)
               if (inferType && cr.solved) {
                 // if no expected type was known but the type could be inferred, add it
@@ -311,6 +315,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         //succeed for everything else but signal error
         logError("unchecked " + path)
     }
+    UncheckedElement.erase(e)
     new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
   }
 
@@ -344,7 +349,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   }
   
   /** auxiliary method of check */
-  private def checkElementBegin(e : ContainerElement[_], context : Context)(implicit env: ExtendedCheckingEnvironment) {
+  private def checkElementBegin(context : Context, e : ContainerElement[_<: StructuralElement])(implicit env: ExtendedCheckingEnvironment) {
     val rules = env.rules
     implicit val ce = env.ce
     val path = e.path
@@ -357,6 +362,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           contextMeta = contextMeta ++ mt
         }
         checkContext(contextMeta, t.parameters)
+        t.df map {d => checkTheory(contextMeta++t.parameters, d)}
+        // this is redundant on a clean check because e is empty then; 
+        e.getPrimitiveDeclarations foreach {d => UncheckedElement.set(d)}
       case v: DeclaredView =>
         checkTheory(context, v.from)
         checkTheory(context, v.to)
@@ -369,7 +377,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   }
 
   /** auxiliary method of check */
-  private def checkElementEnd(e: ContainerElement[_], context: Context)(implicit env: ExtendedCheckingEnvironment) {
+  private def checkElementEnd(context: Context, e: ContainerElement[_])(implicit env: ExtendedCheckingEnvironment) {
     val rules = env.rules
     implicit val ce = env.ce
     val path = e.path
@@ -635,35 +643,37 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     */
   private def checkContext(context: Context, con: Context)(implicit env: ExtendedCheckingEnvironment): Context = {
     var ret = Context.empty
-    def currentContext = context ++ ret
     con.foreach {vd =>
-      val r = vd match {
-        case dv @ DerivedVarDecl(name,feat,_,args) =>
-          val sfOpt = extman.get(classOf[StructuralFeature], feat)
-          if (sfOpt.isDefined) {
-            sfOpt.get.checkInContext(currentContext,dv)
-            vd :: sfOpt.get.elaborateInContext(currentContext,dv)
-          } else List(vd)
-        case StructureVarDecl(name, tp, dfOpt) =>
+      val currentContext = context ++ ret
+      val r = vd.feature match {
+        case Some(StructureVarDecl.feature) =>
           // a variable that imports another theory
           // type must be a theory
-          checkTheory(currentContext, tp)
+          val tpR = vd.tp match {
+            case Some(tp) => Some(checkTheory(currentContext, tp))
+            case None =>
+              env.errorCont(InvalidObject(vd, "type of structure variable must be given"))
+              None
+          }
           // definiens must be a partial substitution
-          val dfR = dfOpt map {df => (tp, df) match {
-            case (ComplexTheory(tpCon), ComplexMorphism(dfSubs)) =>
+          val dfR = (vd.tp, vd.df) match {
+            case (Some(ComplexTheory(tpCon)), Some(ComplexMorphism(dfSubs))) =>
               val subsR = checkSubstitution(currentContext, dfSubs, tpCon, Context.empty, true)
-              ComplexMorphism(subsR)
+              Some(ComplexMorphism(subsR))
             case _ =>
-              env.errorCont(InvalidObject(vd, "definiens of theory-level variable must be a partial substitution, found " + df))
-              df
-          }}
-          List(StructureVarDecl(name, tp, dfR))
-        case VarDecl(name, tp, df, not) =>
-          // a normal variable
-          val tpR = tp.map(x => checkTerm(currentContext, x))
-          val dfR = df.map(x => checkTerm(currentContext, x))
-          val vdR = VarDecl(name, tpR, dfR, not)
-          vdR.copyFrom(vd)
+              env.errorCont(InvalidObject(vd, "definiens of theory-level variable must be a partial substitution, found " + vd.df))
+              vd.df
+          }
+          List(vd.copy(tp = tpR, df = dfR))
+        case Some(feat) =>
+          //TODO DM elaboration at this point breaks overall design
+          val sfOpt = extman.get(classOf[StructuralFeature], feat)
+          if (sfOpt.isDefined) {
+            sfOpt.get.checkInContext(currentContext,vd)
+            vd :: sfOpt.get.elaborateInContext(currentContext,vd)
+          } else List(vd)
+        case None =>
+          val vdR = vd map {x => checkTerm(currentContext, x)}
           List(vdR)
       }
       ret = ret ++ r

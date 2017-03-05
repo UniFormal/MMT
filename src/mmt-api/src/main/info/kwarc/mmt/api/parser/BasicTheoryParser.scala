@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import documents._
 import modules._
 import utils._
+import Theory._
 
 /**
  * parses input streams as theory bodies, i.e., without MMT style module system
@@ -21,7 +22,7 @@ abstract class BasicTheoryParser(objectParser: ObjectParser, meta: Option[MPath]
       val ns = DPath(uri.copy(path = uri.path.init))
       val name = LocalName(FilePath(uri.path).stripExtension.name)
       val mpath = parseHeader(ns?name)(unp)
-      val thy = new DeclaredTheory(mpath.doc, mpath.name, meta)
+      val thy = Theory.empty(mpath.doc, mpath.name, meta)
       val doc = new Document(ns, root = true, inititems = List(MRef(ns, thy.path)))
       controller.add(doc)
       controller.add(thy)

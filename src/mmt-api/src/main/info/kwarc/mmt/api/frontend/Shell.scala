@@ -193,9 +193,8 @@ class Shell extends StandardIOHelper {
     if (args.prompt) {
         // try to load the extended repl by default
         controller.extman.addExtensionO("info.kwarc.mmt.repl.ExtendedREPL", List())
-
+        
         repl.enter(args)
-
         // run the repl and cleanup
         try {
           repl.run()
@@ -203,6 +202,7 @@ class Shell extends StandardIOHelper {
           repl.exit()
         }
     }
+    input.close
 
     // cleanup if we want to exit
     if (args.runCleanup) {

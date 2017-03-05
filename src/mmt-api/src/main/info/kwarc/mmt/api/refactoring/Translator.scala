@@ -432,7 +432,7 @@ class AcrossLibraryTranslator(controller : Controller,
       stateVar = Changed(New)
     }
 
-    private def updateVar(vd: VarDecl): VarDecl = VarDecl(vd.name, vd.tp.map(t => TermClass(t).update), vd.df.map(t => TermClass(t).update), vd.not)
+    private def updateVar(vd: VarDecl) = vd.map(t => TermClass(t).update)
 
     private def updateContext(con: Context): Context = con.variables.map(updateVar).toList
 

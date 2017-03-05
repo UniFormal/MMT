@@ -372,7 +372,7 @@ trait ActionHandling {self: Controller =>
     }
   }
 
-  def checkAction(p: Path, id: String)(implicit task: MMTTask = MMTTask.generic) {
+  def checkAction(p: Path, id: String)(implicit task: MMTTask) {
     val checker = extman.get(classOf[Checker], id).getOrElse {
       throw GeneralError(s"no checker $id found")
     }

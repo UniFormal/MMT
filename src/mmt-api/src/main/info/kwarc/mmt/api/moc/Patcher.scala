@@ -57,11 +57,11 @@ object Patcher {
   def updateComponent(d : ContentElement, comp : ComponentKey,  old : Option[Obj], nw : Option[Obj]) : ContentElement = (d, comp, nw) match {
     /** Theories */
     case (t : DeclaredTheory, DomComponent, Some(OMMOD(p))) =>
-       val tN = new DeclaredTheory(t.parent, t.name, Some(p))
+       val tN = new DeclaredTheory(t.parent, t.name, Some(p), t.paramC, t.dfC)
        copyDecls(t, tN)
        tN
     case (t : DeclaredTheory, DomComponent, None) =>
-       val tN = new DeclaredTheory(t.parent, t.name, None)
+       val tN = new DeclaredTheory(t.parent, t.name, None, t.paramC, t.dfC)
        copyDecls(t, tN)
        tN
     case (t : DefinedTheory,  DefComponent, Some(df : Term)) =>

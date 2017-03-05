@@ -14,7 +14,7 @@ object Terms extends TheoryScala {
     val name = "formation"
     def apply(p: MPath, t: Term) = OMBINDC(OMID(this.path), Context(p), List(t))
     def unapply(t: Term): Option[(MPath, Term)] = t match {
-      case OMBINDC(OMID(this.path), Context(IncludeVarDecl(p, Nil)), List(t)) => Some((p, t))
+      case OMBINDC(OMID(this.path), Context(IncludeVarDecl(_, OMMOD(p),_)), List(t)) => Some((p, t))
       case _ => None
     }
   }
@@ -24,7 +24,7 @@ object Terms extends TheoryScala {
     val name = "refl"
     def apply(p: MPath, t: Term) = OMBINDC(OMID(this.path), Context(p), List(t))
     def unapply(t: Term): Option[(MPath, Term)] = t match {
-      case OMBINDC(OMID(this.path), Context(IncludeVarDecl(p, Nil)), List(t)) => Some((p, t))
+      case OMBINDC(OMID(this.path), Context(IncludeVarDecl(_, OMMOD(p),_)), List(t)) => Some((p, t))
       case _ => None
     }
   }

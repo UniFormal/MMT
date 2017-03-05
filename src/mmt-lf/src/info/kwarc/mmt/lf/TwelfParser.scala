@@ -969,7 +969,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
       val endsAt = expectNext(i, ".")
 
       // create the VarDecl object
-      val varDecl = new VarDecl(LocalName(name), varType, varDef, None)
+      val varDecl = VarDecl(LocalName(name), None, varType, varDef, None)
       addSourceRef(varDecl, start, endsAt)
       addSemanticComment(varDecl, oldComment)
 
@@ -1181,7 +1181,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
        // It's a DeclaredTheory
        i = expectNext(i, "{")
        // add the (empty, for now) theory to the controller
-       val declTheory = new DeclaredTheory(tpath.parent, tpath.name, meta)
+       val declTheory = Theory.empty(tpath.parent, tpath.name, meta)
        theory = declTheory
        add(theory)
        // read the theory body
@@ -1420,7 +1420,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     i = expectNext(i, "{")
     // <-----------  how to manage specs in controller?
     // add the (empty, for now) theory to the controller
-    val theory = new DeclaredTheory(tpath.parent, tpath.name, meta)
+    val theory = Theory.empty(tpath.parent, tpath.name, meta)
     add(theory)
     //        read the theory body
     i = crawlSpecBody(i, theory)

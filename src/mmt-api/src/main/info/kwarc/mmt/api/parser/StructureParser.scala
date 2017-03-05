@@ -2,12 +2,12 @@ package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
 import documents._
-import info.kwarc.mmt.api.archives.{BuildResult, BuildSuccess, BuildTask, LogicalDependency}
-import info.kwarc.mmt.api.checking.Interpreter
-import info.kwarc.mmt.api.frontend.Controller
+import archives.{BuildResult, BuildSuccess, BuildTask, LogicalDependency}
+import checking.Interpreter
+import frontend.Controller
 import modules._
 import notations._
-import objects.{Context, _}
+import objects._
 import opaque._
 import patterns._
 import symbols._
@@ -110,11 +110,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     log("end " + s.path)
   }
 
-  protected def check(se : StructuralElement): Unit = {
-    controller.checkAction(se.path,"mmt") // TODO replace by ?
-      // needs to be done to resolve implicit arguments in theory expressions in order to
-      // elaborate and collect notations.
-  }
   /** the region from the start of the current structural element to the current position */
   protected def currentSourceRegion(implicit state: ParserState) =
     SourceRegion(state.startPosition, state.reader.getSourcePosition)
@@ -648,49 +643,49 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     val tpath = ns ? name
     var delim = state.reader.readToken
-    if (delim._1 == "abbrev") {
-      val (_, _, pr) = readParsedObject(context)
-      val thy = DefinedTheory(ns, name, pr.toTerm)
-      moduleCont(thy, parent)
-      check(thy)
-      //end(thy)
-    } else {
-      val metaReg = if (delim._1 == ":") {
-        val (r,m) = readMPath(tpath)
-        delim = state.reader.readToken
-        Some((m,r))
-      } else
-        None
-      val meta = /* metaReg.map(_._1) */ (metaReg,parent) match {
-        case (Some((p,_)),_) => Some(p)
-        case (None,IsMod(mp,_)) => controller.getO(mp) match {
-          case Some(dm : DeclaredTheory) => dm.meta
-          case _ => None
-        }
+    val metaReg = if (delim._1 == ":") {
+      val (r,m) = readMPath(tpath)
+      delim = state.reader.readToken
+      Some((m,r))
+    } else
+      None
+    val meta = (metaReg,parent) match {
+      case (Some((p,_)),_) => Some(p)
+      case (None,IsMod(mp,_)) => controller.getO(mp) match {
+        case Some(dm : DeclaredTheory) => dm.meta
         case _ => None
       }
-      val contextMeta = meta match {
-        case Some(p) => context ++ p
-        case _ => context
+      case _ => None
+    }
+    val contextMeta = meta match {
+      case Some(p) => context ++ p
+      case _ => context
+    }
+    val paramC = new ContextContainer
+    if (delim._1 == ">") {
+      doContextComponent(paramC, contextMeta)
+      delim = state.reader.readToken
+    }
+    val contextMetaParams = paramC.get match {
+      case None => contextMeta
+      case Some(params) => contextMeta ++ params
+    }
+    val dfC = new TermContainer
+    if (delim._1 == "abbrev" || delim._1 == "extends") {
+      doComponent(DefComponent,  dfC, contextMetaParams)
+      delim = state.reader.readToken
+    }
+    val t = new DeclaredTheory(ns, name, meta, paramC, dfC)
+    metaReg foreach {case (_,r) => SourceRef.update(t.metaC.get.get, r)} //awkward, but needed attach a region to the meta-theory; same problem for structure domains
+    moduleCont(t, parent)
+    if (delim._1 == "=") {
+      val features = getFeatures(contextMeta)
+      logGroup {
+        readInModule(t, context ++ t.getInnerContext, features)
       }
-
-      val paramC = new ContextContainer
-      if (delim._1 == ">") {
-        doContextComponent(paramC, contextMeta)
-        delim = state.reader.readToken
-      }
-      val t = new DeclaredTheory(ns, name, meta, paramC)
-      metaReg foreach {case (_,r) => SourceRef.update(t.metaC.get.get, r)} //awkward, same problem for structure domains
-      moduleCont(t, parent)
-      if (delim._1 == "=") {
-        val features = getFeatures(contextMeta)
-        logGroup {
-          readInModule(t, context ++ t.getInnerContext, features)
-        }
-        end(t)
-      } else {
-        throw makeError(delim._2, "':' or '=' or 'abbrev' expected")
-      }
+      end(t)
+    } else {
+      throw makeError(delim._2, "':' or '=' or 'abbrev' expected")
     }
   }
 
@@ -775,7 +770,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     new Features(fs, ps)
   }
   protected def getFeatures(cont : Context) : Features = cont.collect({
-    case IncludeVarDecl(mp) => getFeatures(mp._1)
+    case IncludeVarDecl(_,OMPMOD(mp,_),_) => getFeatures(mp)
   }).foldLeft(noFeatures)((a,b) => a+b)
 
   /** auxiliary method for reading declarations that reads a list of components
@@ -951,9 +946,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     dd.setDocumentHome(parentInfo.relDocParent)
     seCont(dd)
     if (equalFound) {
-       val innerContext = controller.simplifier.elaborateContext(context,feature.getInnerContext(dd))
+       //TODO calling the simplifier here is a hack that is not allowed 
+       //val innerContext = controller.simplifier.elaborateContext(context,feature.getInnerContext(dd))
        val features = getFeatures(parent)
-       readInModule(dd.module, context++innerContext, features)
+       readInModule(dd.module, context, features)
     }
     end(dd.module) //TODO is this correct?
   }

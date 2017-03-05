@@ -58,7 +58,7 @@ abstract class Structure extends Declaration with Link {
  */
 class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermContainer, val isImplicit : Boolean)
       extends Structure with DeclaredLink {
-   def getComponents = List(DomComponent(tpC))
+   def getComponents = List(TypeComponent(tpC))
 
    def translate(newHome: Term, prefix: LocalName, translator: Translator,context : Context): DeclaredStructure = {
      def tl(m: Term)= translator.applyModule(Context.empty, m)
@@ -102,7 +102,7 @@ class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermCont
 class DefinedStructure(val home : Term, val name : LocalName,
                        val tpC: TermContainer, val dfC : TermContainer, val isImplicit : Boolean)
       extends Structure with DefinedLink {
-   def getComponents = List(DomComponent(tpC), DefComponent(dfC))
+   def getComponents = List(TypeComponent(tpC), DefComponent(dfC))
    
    def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): DefinedStructure = {
      def tl(m: Term)= translator.applyModule(context, m)

@@ -51,7 +51,7 @@ object SubtypeDecl {
 
 class SubtypeFeature extends StructuralFeature(SubtypeDecl.feature) {
   
-  def getHeaderNotation = List(LabelArg(1,false,false), Delim("<:"), SimpArg(2))
+  def getHeaderNotation = List(LabelArg(1,LabelInfo.none), Delim("<:"), SimpArg(2))
 
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) : Elaboration = {
     val suptp = dd.getComponent(TypeComponent) getOrElse {

@@ -219,7 +219,7 @@ case class OMV(name : LocalName) extends Term {
    def /(s : Term) = Sub(name, s)
    def ->(s: Term) = Sub(name, s)
    /** the declaration this:tp */
-   def %(tp : Term) = VarDecl(name, Some(tp), None, None)
+   def %(tp : Term) = VarDecl(name,tp)
    def toNode = <om:OMV name={name.toPath}>{mdNode}</om:OMV>
    override def toString = name.toString
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = 
@@ -382,7 +382,7 @@ object OMSemiFormal {
  * These could be used for the typed/defined fields in a record type/value or the selection function. 
  */
 case class OML(name: LocalName, tp: Option[Term], df: Option[Term]) extends Term {
-    def vd = VarDecl(name, tp, df, None)
+    def vd = VarDecl(name, None, tp, df, None)
     private[objects] def freeVars_ = vd.freeVars
     def head = None
     def subobjects = subobjectsNoContext(vd.tp.toList ::: vd.df.toList)

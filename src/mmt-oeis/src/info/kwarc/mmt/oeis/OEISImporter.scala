@@ -134,7 +134,7 @@ class OEISImporter extends Importer {
       n.label match {
         case "theory" => //create theory
           val name = LocalName((n \ "@name").text)
-          val thy = new DeclaredTheory(doc.path, name, None)
+          val thy = Theory.empty(doc.path, name, None)
           val ref = MRef(doc.path, thy.path)
           controller.add(ref)
           controller.add(thy)

@@ -1,15 +1,16 @@
 package info.kwarc.mmt.odk.Sage
 
-import info.kwarc.mmt.api.{LocalName, _}
-import info.kwarc.mmt.api.archives.BuildTask
-import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, RelationHandler}
-import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.DeclaredTheory
-import info.kwarc.mmt.api.objects.{OMS, Term}
-import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
-import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
-import info.kwarc.mmt.api.utils.JSONObject
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.checking._
+import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.opaque._
+import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.utils._
+
 import info.kwarc.mmt.lf.Arrow
 
 import scala.collection.mutable
@@ -34,8 +35,8 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
   }) */
 
   val topdoc = new Document(DPath({Sage._base / "inheritable"}.uri.setExtension("omdoc")),root = true)
-  val axth = new DeclaredTheory(Sage._base,LocalName("Axioms"),Some(Sage.theory))
-  val structh = new DeclaredTheory(Sage._base,LocalName("Structures"),Some(Sage.theory))
+  val axth = Theory.empty(Sage._base, LocalName("Axioms"), Some(Sage.theory))
+  val structh = Theory.empty(Sage._base,LocalName("Structures"), Some(Sage.theory))
   controller add topdoc
   controller add axth
   controller add structh
@@ -45,7 +46,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
 
   private def doCategory(cat : ParsedCategory): Unit =
   theories.getOrElse(cat.name, {
-    val th = new DeclaredTheory(cat.path.parent, cat.path.name, Some(Sage.theory))
+    val th = Theory.empty(cat.path.parent, cat.path.name, Some(Sage.theory))
     controller add th
 
     val doc = docs.getOrElse(th.parent,{

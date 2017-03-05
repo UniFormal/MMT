@@ -16,11 +16,9 @@ abstract class Traverser[A] {
    def apply(t: Term, init : State, con : Context = Context()) : Term = traverse(t)(con, init)
    def traverse(t: Term)(implicit con : Context, state : State) : Term
    def traverseContext(cont: Context)(implicit con : Context, state : State): Context = {
-      cont.mapVarDecls {case (before, vd @ VarDecl(n, t, d, _)) =>
+      cont.mapVarDecls {case (before, vd) =>
          val curentContext = con ++ before
-         val newt = t.map(traverse(_)(curentContext, state))
-         val newd = d.map(traverse(_)(curentContext, state))
-         vd.copy(tp = newt, df = newd)
+         vd map {t => traverse(t)(curentContext, state)}
       }
    }
    
@@ -62,11 +60,9 @@ object Traverser {
    def apply[State](trav : Traverser[State], t : Term)(implicit con : Context, state : State) : Term = {
       def rec(t: Term)(implicit con : Context, state : State) = trav.traverse(t)(con, state)
       def recCon(c: Context)(implicit con : Context, state : State) : Context =
-         c.mapVarDecls {case (before, vd @ VarDecl(n, t, d, _)) =>
-               val curentContext = con ++ before
-               val newt = t.map(rec(_)(curentContext, state))
-               val newd = d.map(rec(_)(curentContext, state))
-               vd.copy(tp = newt, df = newd)
+         c.mapVarDecls {case (before, vd) =>
+            val curentContext = con ++ before
+            vd.map(t => rec(t)(curentContext, state))
          }
 	   t match {
 	     case OMA(f, args) => 
