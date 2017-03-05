@@ -1,4 +1,4 @@
-package info.kwarc.mmt.morphisms
+package info.kwarc.mmt.moduleexpressions
 
 import info.kwarc.mmt.api._
 import symbols._
