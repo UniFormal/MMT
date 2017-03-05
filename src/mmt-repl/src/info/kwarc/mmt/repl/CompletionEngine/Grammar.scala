@@ -33,9 +33,11 @@ sealed abstract class Grammar {
   }
 
   def + (right : Grammar): Grammar
-  def * : Grammar
 
-  def ? : Grammar = OrG(List(this, Empty()))
+  def * : Grammar = RepG(this, Empty())
+  def + : Grammar = this + this.*
+
+  def ? : Grammar = OptionalG(this)
 
   def | (right : Grammar) : OrG = right match {
     case OrG(b) => OrG(this :: b)
@@ -45,44 +47,53 @@ sealed abstract class Grammar {
   def ! : Grammar = this
 }
 
-sealed abstract class LinearGrammar extends Grammar {
-  override def ! : Grammar = this
-}
-
-object LinearGrammar {
-  def fromList(list : List[Node]): LinearGrammar = list match {
+object Grammar {
+  def fromList(list : List[Node]): Grammar = list match {
     case h :: t => SeqG(h, fromList(t))
     case Nil => Empty()
   }
 }
 
 /** A sequential grammar */
-case class SeqG(head : Node, tail : Grammar) extends LinearGrammar {
-  def gobble(token : Token) : Option[(Token, Grammar)] = head match {
-    case RepeatingNode(node : Node) => gobbleNormal(token) match {
-      case Some((t, g)) => Some((t, SeqG(OptionalNode(head), tail)))
-      case None => None
-    }
-    case OptionalNode(node : Node) => gobbleNormal(token) match {
-      case Some((t, g)) => Some(t, g)
-      case None => tail.gobble(token)
-    }
-    case node : Node => gobbleNormal(token)
-  }
-
-  def + (right : Grammar): Grammar = SeqG(head, tail + right)
-  def * : Grammar = SeqG(RepeatingNode(head), tail)
-
-  private def gobbleNormal(token : Token) : Option[(Token, Grammar)] = head.applicable(token) match {
+case class SeqG(head : Node, tail : Grammar) extends Grammar {
+  def gobble(token : Token) : Option[(Token, Grammar)] = head.applicable(token) match {
     case true => Some((token, tail))
     case false => None
   }
+
+  def + (right : Grammar): Grammar = SeqG(head, tail + right)
 
   def complete(token : Token = Token("")) : List[Token] = head.suggest(token)
 
   override def ! : Grammar = SeqG(head, tail.!)
 }
 
+object OptionalG {
+  def apply(tail : Grammar): OrG = {
+    OrG(List(tail, Empty()))
+  }
+}
+
+case class RepG(head : Grammar, tail : Grammar) extends Grammar {
+  def gobble(token : Token) : Option[(Token, Grammar)] = {
+    println("gobble", this)
+    head.gobble(token) match {
+      case Some((t, g)) => Some((t, g + this))
+      case None => tail.gobble(token)
+    }
+  }
+  def complete(token : Token) : List[Token] = {
+    println("complete", this)
+    head.complete(token) ::: tail.complete(token)
+  }
+
+  def +(right : Grammar) : Grammar = RepG(head, tail + right)
+
+  override def ! : Grammar = head.! match {
+    case Empty() => tail.!
+    case h => RepG(h, tail.!)
+  }
+}
 
 
 /** a branching grammar */
@@ -94,7 +105,6 @@ case class OrG(branches : List[Grammar]) extends Grammar {
   }
 
   def + (right : Grammar): Grammar = OrG(branches.map(_ + right))
-  def * : Grammar = OrG(branches.map(_*))
 
   def complete(token : Token = Token("")) : List[Token] = branches.flatMap(_.complete(token)).distinct
 
@@ -107,12 +117,12 @@ case class OrG(branches : List[Grammar]) extends Grammar {
 }
 
 /** the empty grammar */
-case class Empty() extends LinearGrammar {
+case class Empty() extends Grammar {
   def gobble(token : Token) : Option[(Token, Grammar)] = None
   def complete(token : Token = Token("")) = Nil
 
   def + (right : Grammar): Grammar = right
-  def * : Grammar = Empty()
+  override def * : Grammar = Empty()
 
   override def ! : Empty = this
 }

@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.frontend.{REPLExtension, ShellArguments}
 
 
 class ExtendedREPL extends REPLImpl with REPLExtension  {
+  val completionGrammar = new ActionGrammar()
 
   override def enter(args: ShellArguments): Unit = {
     super.enter(args)
@@ -37,7 +38,8 @@ class ExtendedREPL extends REPLImpl with REPLExtension  {
   }
 
   def suggestions(line: String) : List[String] = {
-    ActionGrammar.action(line)
+    completionGrammar.controller = controller
+    completionGrammar.action(line)
   }
 
   def promptLeft : Option[String] = Some(controller.currentActionDefinition match {

@@ -16,14 +16,10 @@ sealed abstract class Node {
   }
 }
 
-trait SpecialNode extends Node {
-  val node : Node
-  def applicable(token : Token) : Boolean = node.applicable(token)
-  def suggest(token : Token) : List[Token] = node.suggest(token)
+trait DynamicSuggestions {
+  protected def suggestions : List[Token]
+  def suggest(token : Token) : List[Token] = suggestions.filter(tk => tk.word.startsWith(token.word))
 }
-
-case class RepeatingNode(node : Node) extends SpecialNode
-case class OptionalNode(node : Node) extends SpecialNode
 
 trait StaticSuggestions {
   protected val suggestions : List[Token]
@@ -35,11 +31,15 @@ case class StringValue(examples : List[String]) extends Node with StaticSuggesti
   def applicable(token : Token) : Boolean = token.word.length > 0
 }
 
+case class ContextualStringValue(context : Unit => List[String]) extends Node with DynamicSuggestions {
+  def suggestions : List[Token] = context().map(Token)
+  def applicable(token : Token) = token.word.length > 0
+}
+
 case class IntegerValue(examples : List[Int]) extends Node with StaticSuggestions {
   protected val suggestions : List[Token] = examples.map(ex => Token(ex.toString))
   def applicable(token : Token) : Boolean = token.word.forall(_.isDigit)
 }
-
 
 case class WhiteSpaceNode() extends Node {
   def applicable(token : Token) : Boolean  = token.isWhiteSpace
