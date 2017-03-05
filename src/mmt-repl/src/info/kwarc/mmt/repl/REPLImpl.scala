@@ -1,14 +1,12 @@
 package info.kwarc.mmt.repl
 
-import info.kwarc.mmt.api.frontend.ShellArguments
-import info.kwarc.mmt.api.frontend.REPLExtension
-
 import java.util
 import java.util.logging.{Level, Logger}
 
 import org.jline.reader._
 import org.jline.reader.impl.history.DefaultHistory
 import org.jline.terminal.TerminalBuilder
+import org.jline.terminal.impl.DumbTerminal
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -108,6 +106,11 @@ abstract class REPLImpl(historyItems: List[String] = Nil) {
 
   /** prompts the user for a single input */
   private def prompt(): Option[String] = Try(reader.readLine(promptLeft.orNull, promptRight.orNull, null, "")).toOption
+
+  /** checks if this Terminal is dumb */
+  protected def isDumb() : Boolean = {
+    reader.getTerminal().isInstanceOf[DumbTerminal]
+  }
 
   //========================================
   // Public Methods
