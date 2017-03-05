@@ -118,7 +118,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case ComplexTheory(cont) =>
               cont.asDeclarations(mod.toTerm).foreach {d =>
                 d.setOrigin(ElaborationOfDefinition)
-                mod.add(d,None)
+                mod.add(d,None) //TODO add at beginning
               }
             case dfS => t.dfC.set(dfS)
           }

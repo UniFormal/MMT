@@ -39,19 +39,19 @@ object BackwardPiElimination extends BackwardSearch {
 
    private object UnnamedArgument {
       def unapply(vd: VarDecl) = vd match {
-         case VarDecl(OMV.anonymous, Some(t),_,_) => Some(t)
+         case VarDecl(OMV.anonymous, _,Some(t),_,_) => Some(t)
          case _ => None
       }
    }
    private object SolvedParameter {
       def unapply(vd: VarDecl) = vd match {
-         case VarDecl(x, _,Some(d),_) => Some((x,d))
+         case VarDecl(x,_, _,Some(d),_) => Some((x,d))
          case _ => None
       }
    }
    private object UnsolvedParameter {
       def unapply(vd: VarDecl) = vd match {
-         case VarDecl(x, Some(tp), None,_) if x != OMV.anonymous => Some((x,tp))
+         case VarDecl(x, _, Some(tp), None,_) if x != OMV.anonymous => Some((x,tp))
          case _ => None
       }
    }
@@ -96,9 +96,9 @@ object BackwardPiElimination extends BackwardSearch {
          b match {
             case (Some(x), xtp) =>
                val xFresh = (x ^ rename).asInstanceOf[OMV].name // rename is a renaming
-               result ++= VarDecl(xFresh, Some(xtp ^? renameResult), solution(xFresh), None)
+               result ++= VarDecl(xFresh, None, Some(xtp ^? renameResult), solution(xFresh), None)
             case (None, anontp) =>
-               result ++= VarDecl(OMV.anonymous, Some(anontp ^? renameResult), None, None)
+               result ++= VarDecl(OMV.anonymous, anontp ^? renameResult)
          }
        }
        Some(result)
@@ -153,7 +153,7 @@ object BackwardPiElimination extends BackwardSearch {
                           val argDecls2 = argDecls.map {
                              case vd if vd == uA =>
                                 // the matched goal is already solved by p
-                                VarDecl(OMV.anonymous, None, Some(p), None)
+                                VarDecl(OMV.anonymous, df=p)
                              case vd @ UnsolvedParameter(x,_) =>
                                 // the remaining parameters can now be solved
                                 vd.copy(df = subs(x))
@@ -179,7 +179,7 @@ object BackwardPiElimination extends BackwardSearch {
                           blackboard.facts.termsOfTypeAtGoal(g, Context(), xtp) flatMap {case (_, p) =>
                              val argDecls2 = argDecls.map {
                                 case vd if vd == uP =>
-                                   VarDecl(x, None, Some(p), None)
+                                   VarDecl(x, df = p)
                                 case vd @ SolvedParameter(_,_) =>
                                    vd
                                 case vd @ UnnamedArgument(t) =>
