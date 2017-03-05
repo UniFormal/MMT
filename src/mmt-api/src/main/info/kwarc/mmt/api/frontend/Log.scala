@@ -47,6 +47,9 @@ class Report extends Logger {
     * the categories "user" (for user input), "error" are output by default, and "temp" (for temporary logging during debugging) */
   private[api] val groups = scala.collection.mutable.Set[String]("user", "error", "temp")
 
+  /** gets a list of active groups */
+  def active : List[String] = groups.toList
+
   /** logs a message if logging is switched on for the group */
   def apply(prefix: => String, msg: => String) {
     lazy val caller = {
