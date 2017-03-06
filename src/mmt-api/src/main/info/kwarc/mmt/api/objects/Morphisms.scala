@@ -239,6 +239,28 @@ object TUnion {
   }
 }
 
+class AnonymousTheory(mt: Option[MPath], decls: List[OML]) extends ElementContainer[OML] with DefaultLookup[OML] {
+  def getDeclarations = decls
+  
+  def toTerm = AnonymousTheory(mt, decls)
+}
+
+object AnonymousTheory {
+  val path = ModExp.complextheory
+
+  def apply(mt: Option[MPath], decls: List[OML]) = OMA(OMS(path), mt.map(OMMOD(_)).toList:::decls)
+  def unapply(t: Term): Option[(Option[MPath],List[OML])] = t match {
+    // awkward casting here, but this way the list is not copied; thus, converting back and forth between Term and AnonymousTheory is cheap
+    case OMA(OMS(this.path), OMMOD(mt)::args) if args.forall(_.isInstanceOf[OML]) =>
+      Some((Some(mt), args.asInstanceOf[List[OML]]))
+    case OMA(OMS(this.path), args) if args.forall(_.isInstanceOf[OML]) =>
+      Some((None, args.asInstanceOf[List[OML]]))
+    case _ => None
+  }
+
+  def fromTerm(t: Term) = unapply(t).map {case (m,ds) => new AnonymousTheory(m, ds)}
+}
+
 /** the normal form of a theory expression is a context
  *
  * the apply/unapply functions convert between them

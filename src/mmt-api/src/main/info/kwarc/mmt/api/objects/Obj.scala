@@ -381,7 +381,7 @@ object OMSemiFormal {
  * 
  * These could be used for the typed/defined fields in a record type/value or the selection function. 
  */
-case class OML(name: LocalName, tp: Option[Term], df: Option[Term]) extends Term {
+case class OML(name: LocalName, tp: Option[Term], df: Option[Term]) extends Term with NamedElement {
     def vd = VarDecl(name, None, tp, df, None)
     private[objects] def freeVars_ = vd.freeVars
     def head = None
