@@ -239,9 +239,16 @@ object TUnion {
   }
 }
 
-class AnonymousTheory(mt: Option[MPath], decls: List[OML]) extends ElementContainer[OML] with DefaultLookup[OML] {
+// TODO this should inherti from MutableElementContainer
+class AnonymousTheory(mt: Option[MPath], var decls: List[OML]) extends ElementContainer[OML] with DefaultLookup[OML] {
   def getDeclarations = decls
   
+  def add(oml: OML, after: Option[LocalName] = None) {
+    // TODO
+  }
+  def rename(old: LocalName, nw: LocalName) {
+    //TODO
+  }
   def toTerm = AnonymousTheory(mt, decls)
 }
 
@@ -250,15 +257,24 @@ object AnonymousTheory {
 
   def apply(mt: Option[MPath], decls: List[OML]) = OMA(OMS(path), mt.map(OMMOD(_)).toList:::decls)
   def unapply(t: Term): Option[(Option[MPath],List[OML])] = t match {
-    // awkward casting here, but this way the list is not copied; thus, converting back and forth between Term and AnonymousTheory is cheap
-    case OMA(OMS(this.path), OMMOD(mt)::args) if args.forall(_.isInstanceOf[OML]) =>
-      Some((Some(mt), args.asInstanceOf[List[OML]]))
-    case OMA(OMS(this.path), args) if args.forall(_.isInstanceOf[OML]) =>
-      Some((None, args.asInstanceOf[List[OML]]))
+    case OMA(OMS(this.path), OMMOD(mt)::OMLList(omls)) =>
+      Some((Some(mt), omls))
+    case OMA(OMS(this.path), OMLList(omls)) =>
+      Some((None, omls))
     case _ => None
   }
 
   def fromTerm(t: Term) = unapply(t).map {case (m,ds) => new AnonymousTheory(m, ds)}
+}
+
+object OMLList {
+  // awkward casting here, but this way the list is not copied; thus, converting back and forth between Term and AnonymousTheory is cheap
+  def unapply(ts: List[Term]): Option[List[OML]] = {
+    if (ts.forall(_.isInstanceOf[OML]))
+      Some(ts.asInstanceOf[List[OML]])
+    else
+      None
+  }
 }
 
 /** the normal form of a theory expression is a context
