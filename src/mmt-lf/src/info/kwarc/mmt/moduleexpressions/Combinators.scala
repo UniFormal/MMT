@@ -86,7 +86,7 @@ object ComputeRename extends ComputationRule(Rename.path) {
  * Expand(m,T): T -> Translate(m,T)
  * inclusion from B to Translate(m,T)
  */
- object Translate extends BinaryConstantScala(Combinators._path, "translate")
+object Translate extends BinaryConstantScala(Combinators._path, "translate")
 
 object ComputeTranslate extends ComputationRule(Translate.path) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
