@@ -5,7 +5,7 @@ import frontend._
 
 class Plugin extends frontend.Plugin {
    val theory = LF.theoryPath
-   val dependencies = List("info.kwarc.mmt.morphisms.MorphismPlugin")
+   val dependencies = List("info.kwarc.mmt.moduleexpressions.MorphismPlugin")
    override def start(args: List[String]) {
       val em = controller.extman
       // content enhancers

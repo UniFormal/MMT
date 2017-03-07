@@ -45,7 +45,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val (context,env) = prepareCheck(e)
     e match {
       case ce: ContainerElement[_] => checkElementBegin(context, ce)(env)
-      case e => check(context, e)(env)
+      case mr : MRef =>
+      case _ => check(context, e)(env)
     }
   }
   
