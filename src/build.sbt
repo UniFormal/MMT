@@ -6,6 +6,8 @@ publish := {}
 
 scalaVersion := "2.11.7"
 
+scalacOptions := Seq("-deprecation")
+
 // = genration of API documentation
 
 // configuration of unidoc, used by our apidoc target
