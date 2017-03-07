@@ -30,7 +30,7 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
   
   def error(msg : String) : HLet = {
     log("ERROR: " + msg)
-    Server.errorResponse(msg)
+    Server.errorResponse(msg, req)
   }
   
   def apply(uriComps: List[String], query: String, body : Body): HLet = {
@@ -43,7 +43,7 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
     } catch {
       case e : Error => 
         log(e.shortMsg) 
-        Server.errorResponse(e.shortMsg)
+        Server.errorResponse(e.shortMsg, req)
       case e : Exception => 
         error("Exception occured : " + e.getStackTrace())
     }

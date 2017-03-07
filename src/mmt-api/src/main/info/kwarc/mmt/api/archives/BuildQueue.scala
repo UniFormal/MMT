@@ -4,6 +4,7 @@ import java.util.concurrent.ConcurrentLinkedDeque
 
 import info.kwarc.mmt.api._
 import frontend._
+import tiscaf.{HLet, HReqData}
 import utils._
 import web._
 
@@ -474,7 +475,7 @@ class BuildQueue extends BuildManager {
 
   /** serves lists of [[Error]]s */
   private val serve = new ServerExtension("queue") {
-    def apply(path: List[String], query: String, body: Body, session: Session) = path match {
+    def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = path match {
       case List("clear") =>
         finishedBuilt = Queue.empty
         blocked = Nil

@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import ontology._
 import documents._
 import Server._
+import tiscaf.{HLet, HReqData}
 
 /**
  * serves a tree-based navigation component for an HTML page
@@ -34,7 +35,7 @@ class TreeView extends ServerExtension("tree") {
          }
       }}</root>
    }
-   def apply(path: List[String], query: String, body: Body, session: Session) = {
+   def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
        val q = query
        val node = if (q.startsWith(":root")) {
          val prefix = utils.stringToList(q, "/").tail
@@ -81,7 +82,7 @@ class TreeView extends ServerExtension("tree") {
  * serves a bread crumbs-style navigation component for an HTML page
  */
 class BreadcrumbsServer extends ServerExtension("breadcrumbs") {
-   def apply(path: List[String], query: String, body: Body, session: Session) = {
+   def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
       val mmtpath = Path.parse(query, controller.getNamespaceMap)
       val ancs = mmtpath.ancestors.reverse
       var mpathfound = false

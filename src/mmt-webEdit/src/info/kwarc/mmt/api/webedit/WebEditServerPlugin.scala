@@ -16,9 +16,9 @@ import scala.concurrent._
 class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   private lazy val editingService = new EditingServicePlugin(controller)
 
-  def error(msg: String): HLet = {
+  def error(msg: String, req : HReqData): HLet = {
     log("ERROR: " + msg)
-    Server.errorResponse(msg)
+    Server.errorResponse(msg, req)
   }
 
   def bodyAsJSON(b : Body) = {
@@ -29,7 +29,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
     }
   }
 
-  def apply(uriComps: List[String], query: String, body: Body, session : Session): HLet = {
+  def apply(uriComps: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
     try {
       uriComps match {
         case "autocomplete" :: _ => getAutocompleteResponse
@@ -39,14 +39,14 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
         //case "termInference" :: _ => getTermInference
         case "constantCorrection" :: _ => getConstantCorrection
         case "includeCorrection" :: _ => getIncludeCorrection
-        case _ => error("Invalid request: " + uriComps.mkString("/"))
+        case _ => error("Invalid request: " + uriComps.mkString("/"), req)
       }
     } catch {
       case e: Error =>
         log(e.shortMsg)
-        Server.errorResponse(e.shortMsg)
+        Server.errorResponse(e.shortMsg, req)
       case e: Exception =>
-        error("Exception occured : " + e.getStackTrace())
+        error("Exception occured : " + e.getStackTrace(), req)
     }
   }
 

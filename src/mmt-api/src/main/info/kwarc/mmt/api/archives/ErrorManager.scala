@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.web._
-import tiscaf.HLet
+import tiscaf.{HLet, HReqData}
 
 import scala.collection.mutable
 import scala.xml._
@@ -312,7 +312,7 @@ class ErrorManager extends Extension with Logger {
   private val serve = new ServerExtension("errors") {
     override def logPrefix = self.logPrefix
 
-    def apply(path: List[String], query: String, body: Body, session: Session) = path match {
+    def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = path match {
       case List("file") =>
         val wq = WebQuery.parse(query)
         getErrorAnswer(wq.int("child"), wq.string("file"))
