@@ -1,17 +1,20 @@
 package info.kwarc.mmt.repl
 
-import info.kwarc.mmt.api.frontend.{Controller, Extension, Logger}
-import info.kwarc.mmt.repl.CompletionEngine.{Builder, ContextualStringValue, IntegerValue, StringValue}
-import info.kwarc.mmt.repl.CompletionEngine.BuilderConversions._ // for implicit conversions
+import info.kwarc.mmt.api.frontend.{Controller, Extension}
+import info.kwarc.mmt.repl.CompletionEngine.{Builder, IntegerValue, StringValue}
+import info.kwarc.mmt.repl.CompletionEngine.BuilderConversions._
+
+import scala.language.implicitConversions
+import scala.language.postfixOps
 
 sealed class ActionGrammar() {
 
   private[repl] var controller : Controller = null
 
-  val action = (log | mathpath | archive | oaf | extension | mws | server |
+  val action : Builder = log | mathpath | archive | oaf | extension | mws | server |
     windowaction | execfile | defactions | scala | mbt |
     setbase | read | interpret | check | checkTerm | navigate |
-    printall | printallxml | printConfig | diff | clear | exit | getaction).! // getaction must be at end for default get
+    printall | printallxml | printConfig | diff | clear | exit | getaction // getaction must be at end for default get
 
   private def log = logfilets | logfile | loghtml | logconsole | logon | logoff
   private def logfile = "log file" ~ filepath
@@ -88,7 +91,7 @@ sealed class ActionGrammar() {
 
   private def extension = "extension" ~ extensionName ~ (strMaybeQuoted *)
   private def extensionName = (u:Unit) => {
-    extensions.map(_.getClass.getCanonicalName)
+    extensions.flatMap(ext => Option(ext.getClass.getCanonicalName))
   }
 
   private def mws = "mws" ~ uri

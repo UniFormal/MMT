@@ -38,8 +38,12 @@ class ExtendedREPL extends REPLImpl with REPLExtension  {
   }
 
   def suggestions(line: String) : List[String] = {
-    completionGrammar.controller = controller
-    completionGrammar.action(line)
+    try {
+      completionGrammar.controller = controller
+      completionGrammar.action(line)
+    } catch {
+      case np:NullPointerException => Nil // TODO: Warning
+    }
   }
 
   def promptLeft : Option[String] = Some(controller.currentActionDefinition match {
