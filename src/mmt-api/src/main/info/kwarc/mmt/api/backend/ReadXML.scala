@@ -351,7 +351,7 @@ object ReadXML {
   def makeTermAttributeOrChild(t: Term, key: String): (String,Seq[Node]) = { 
      t match {
         case OMMOD(fromPath) => (fromPath.toPath, Nil)
-        case _ => (null, Elem(null, key, Null, TopScope, t.toNode))
+        case _ => (null, Elem(null, key, Null, TopScope, false, t.toNode))
      }
   }
 }

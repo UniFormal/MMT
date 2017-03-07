@@ -205,7 +205,7 @@ trait ActionHandling {self: Controller =>
     OptionDescr("help-command", "", NoArg, "help about the build target"))
   
   /** handles [[MakeAction]] */
-  @deprecated //TODO this is now handled by the :make shell extension; some code may still have to be migrated there
+  @deprecated("now handled by the :make shell extension") // TODO: Migrate remaining code
   def makeAction(key: String, allArgs: List[String]) {
     report.addHandler(ConsoleHandler)
     val optPair = BuildTargetModifier.splitArgs(allArgs, s => logError(s))

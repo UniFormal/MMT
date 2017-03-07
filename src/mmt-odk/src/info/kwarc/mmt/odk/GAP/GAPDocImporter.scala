@@ -11,7 +11,9 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
-import scala.xml.{Node}
+
+import scala.compat.Platform.EOL
+import scala.xml.Node
 
 class GAPDocError(msg: String, extraMsg: Option[String], severity: Option[Level.Level]) extends Error(msg) {
   override val extraMessage = extraMsg.getOrElse("")
@@ -94,7 +96,7 @@ class GAPDocImporter extends Importer {
     } catch {
       case e : Exception => 
         println(e.getMessage)
-        println(e.getStackTraceString)
+        println(e.getStackTrace().mkString("", EOL, EOL))
         bt.errorCont(GAPDocError.from(e, "Unknown error in importDocument"))
         BuildFailure(Nil, Nil)
     }
