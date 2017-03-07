@@ -793,6 +793,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           case OMV(x) =>
              history += "lookup in context"
              getVar(x).tp
+          case OML(n,Some(tp),_) => Some(tp)
+          case OML(n,_,Some(df)) =>
+            inferType(df,covered)
           case OMS(p) =>
              history += "lookup in theory"
              getType(p) orElse {
@@ -969,6 +972,11 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       implicit val stack = j.stack
       val tm1S = simplify(tm1)
       val tm2S = simplify(tm2)
+     (tm1,tm2) match {
+       case (_,OML(_,_,Some(df))) => return checkEquality(Equality(stack,tm1,df,tpOpt))
+       case (OML(_,_,Some(df)),_) => return checkEquality(Equality(stack,df,tm2,tpOpt))
+       case _ =>
+     }
       // 1) base cases, e.g., identical terms, solving unknowns
       // identical terms
       if (tm1S hasheq tm2S) return true

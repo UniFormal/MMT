@@ -647,14 +647,14 @@ class NotationBasedParser extends ObjectParser {
                       (implicit pu: ParsingUnit, errorCont: ErrorHandler): Term = {
     val t = makeTerm(te,boundVars)
     t match {
-      case OMLTypeDef(name, tpOpt, dfOpt) if !boundVars.contains(name) && getFreeVars.contains(name) =>
+      case OMLTypeDef(name, tpOpt, dfOpt) /* if !boundVars.contains(name) && getFreeVars.contains(name) */ =>
          removeFreeVariable(name)
          val tp = tpOpt orElse {if (info.typed) Some(newUnknown(newExplicitUnknown, boundVars)) else None}
          val df = dfOpt orElse {if (info.defined) Some(newUnknown(newExplicitUnknown, boundVars)) else None}
          val l = OML(name,tp,df)
          l
       case _ =>
-        makeError("expected label, found other term", te.region)
+        makeError("expected label, found other term: " + t, te.region)
         t
     }
   }

@@ -619,12 +619,12 @@ object Marker {
              defined = true
            }
            if (d.endsWith("…")) {
-             val sep = d.dropRight(1)
              var dependent = false
              if (d.startsWith("d")) {
                d = d.substring(1)
                dependent = true
              }
+             val sep = d.dropRight(1)
              val li = LabelInfo(typed,defined,dependent)
              LabelSeqArg(n,Delim(sep),li,noProps)
            } else {
