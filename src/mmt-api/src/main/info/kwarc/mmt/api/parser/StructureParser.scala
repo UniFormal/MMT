@@ -679,7 +679,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val t = new DeclaredTheory(ns, name, meta, paramC, dfC)
     metaReg foreach {case (_,r) => SourceRef.update(t.metaC.get.get, r)} //awkward, but needed attach a region to the meta-theory; same problem for structure domains
     moduleCont(t, parent)
-    if (delim._1 == "=") {
+    if (delim._1 == "") {
+      end(t)
+    } else if (delim._1 == "=") {
       val features = getFeatures(contextMeta)
       logGroup {
         readInModule(t, context ++ t.getInnerContext, features)

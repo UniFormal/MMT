@@ -348,16 +348,16 @@ class NotationBasedParser extends ObjectParser {
     val segments = utils.stringToList(word, "\\?")
     // recognizing identifiers ?THY?SYM is awkward because it would require always lexing initial ? as identifiers
     // but we cannot always prepend ? because the identifier could also be NS?THY
-    // Therefore, we prepend ? using a heuristic
+    // Therefore, we turn word into ?word using a heuristic
     segments match {
       case fst :: _ :: Nil if !fst.contains(':') && fst != "" && Character.isUpperCase(fst.charAt(0)) =>
         word = "?" + word
       case _ =>
     }
     // recognizing prefix:REST is awkward because : is usually used in notations
-    // therefore, we insert : if prefix is a known namespace prefix
+    // therefore, we turn prefix/REST into prefix:/REST if prefix is a known namespace prefix
     // this introduces the (less awkward problem) that relative paths may not start with a namespace prefix
-    val beforeFirstSlash = segments.head.takeWhile(_ != '/')
+    val beforeFirstSlash = segments.headOption.getOrElse(word).takeWhile(_ != '/')
     if (!beforeFirstSlash.contains(':') && pu.nsMap.get(beforeFirstSlash).isDefined) {
       word = beforeFirstSlash + ":" + word.substring(beforeFirstSlash.length)
     }

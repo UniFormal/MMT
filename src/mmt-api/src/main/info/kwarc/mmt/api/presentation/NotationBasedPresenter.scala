@@ -421,7 +421,7 @@ class NotationBasedPresenter extends ObjectPresenter {
       case o:OML =>
          doDefault(o.vd)
       case VarDecl(n,f,tp,df, not) =>
-         f.foreach {f => doOperator(f)}
+         f.foreach {f => doOperator(f); doSpace(1)}
          val named = n match {
            case LocalName(ComplexStep(_)::Nil) => false
            case _ => true
