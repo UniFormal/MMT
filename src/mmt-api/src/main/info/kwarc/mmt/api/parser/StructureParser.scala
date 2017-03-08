@@ -636,6 +636,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       case IsDoc(doc) =>
         val ns = DPath(state.namespaces.default)
         val mref = MRef(doc, ns ? rname)
+        mref.setOrigin(GeneratedMRef)
         seCont(mref)
         (ns, rname)
       case IsMod(mod,_) =>
@@ -701,6 +702,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       case IsDoc(doc) =>
         val ns = DPath(state.namespaces.default)
         val mref = MRef(doc, ns ? rname)
+        mref.setOrigin(GeneratedMRef)
         seCont(mref)
         (ns, rname)
       case IsMod(mod,_) =>
@@ -724,7 +726,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         val v = new DeclaredView(ns, name, from, to, isImplicit) // TODO add metamorph?
         moduleCont(v, parent)
         logGroup {
-          readInModule(v, context ++ v.codomainAsContext, noFeatures)
+          readInModule(v, context ++ v.getInnerContext, noFeatures)
         }
         end(v)
     }
@@ -948,8 +950,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     if (equalFound) {
        //TODO calling the simplifier here is a hack that is not allowed 
        //val innerContext = controller.simplifier.elaborateContext(context,feature.getInnerContext(dd))
+       val innerContext = feature.getInnerContext(dd)
        val features = getFeatures(parent)
-       readInModule(dd.module, context, features)
+       readInModule(dd.module, context ++ innerContext, features)
     }
     end(dd.module) //TODO is this correct?
   }

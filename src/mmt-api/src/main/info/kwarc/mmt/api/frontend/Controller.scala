@@ -306,16 +306,15 @@ class Controller extends ROController with ActionHandling with Logger {
   // ******************************* lookup of MMT URIs
 
   /** a lookup that uses only the current memory data structures */
-  val localLookup = new LookupWithNotFoundHandler(library) {
-    protected def handler[A](code: => A): A = try {
-      code
-    } catch {
-      case NotFound(p, _) =>
-        throw GetError(p.toPath + " not known")
-    }
-
+  val localLookup = new LookupWithNotFoundHandler(library) with FailingNotFoundHandler {
     def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod)
   }
+  
+  /** a lookup that uses the previous in-memory version (ignoring the current one) */
+  val previousLocalLookup = new LookupWithNotFoundHandler(memory.previousContent) with FailingNotFoundHandler {
+    def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod) 
+  }
+  
   /** a lookup that loads missing modules dynamically */
   val globalLookup = new LookupWithNotFoundHandler(library) {
     protected def handler[A](code: => A): A = iterate {
@@ -448,12 +447,13 @@ class Controller extends ROController with ActionHandling with Logger {
                 // delete the deactivated old one, and add the new one
                 log("overwriting deactivated " + old.path)
                 memory.content.update(nw)
-                //if (old.getOrigin != DefaultAssignment) notifyListeners.onDelete(old) // an old hack that should not be necessary anymore
                 notifyListeners.onUpdate(old, nw)
               }
               memory.content.reorder(nw.path)
-            //case Some(_) => // in this case, we could already report an error; but the None case reports it anyway
-            case _ =>
+            case Some(old) =>
+              memory.content.update(nw)
+              notifyListeners.onUpdate(old, nw)
+            case None =>
               // the normal case
               memory.content.add(nw, afterOpt)
               // load extension providing semantics for a Module

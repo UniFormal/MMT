@@ -15,7 +15,7 @@ import objects.Conversions._
 
 
 /** variant of CheckingEnvironment that carries around more structure */
-class ExtendedCheckingEnvironment(val ce: CheckingEnvironment, val objectChecker: ObjectChecker, val rules: RuleSet, p: Path, var timeout: Int = 0) {
+case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: ObjectChecker, rules: RuleSet, p: Path, var timeout: Int = 0) {
   def pCont(q: Path) {
     ce.reCont(RefersTo(q, p))
   }
@@ -37,30 +37,35 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   override val logPrefix = "structure-checker"
 
   def apply(e: StructuralElement)(implicit ce: CheckingEnvironment) {
-    val (context,env) = prepareCheck(e)
-    check(context, e)(env)
+    applyWithTimeout(e, None)
+  }
+  /** generalization of apply to allow for a timeout for generated type checking tasks */
+  def applyWithTimeout(e: StructuralElement, t : Option[Int])(implicit ce: CheckingEnvironment) {
+    if (! e.isGenerated) {
+      val (context,env) = prepareCheck(e)
+      t.foreach {env.timeout = _}
+      check(context, e, streamed = false)(env)
+    }
   }
   
   def applyElementBegin(e: StructuralElement)(implicit ce: CheckingEnvironment) {
-    val (context,env) = prepareCheck(e)
-    e match {
-      case ce: ContainerElement[_] => checkElementBegin(context, ce)(env)
-      case mr : MRef =>
-      case _ => check(context, e)(env)
+    if (! e.isGenerated) {
+      val (context,env) = prepareCheck(e)
+      e match {
+        case ce: ContainerElement[_] => checkElementBegin(context, ce)(env)
+        case _ => check(context, e, streamed = true)(env)
+      }
     }
   }
   
   def applyElementEnd(e: ContainerElement[_])(implicit ce: CheckingEnvironment) {
-    val (context,env) = prepareCheck(e)
-    checkElementEnd(context, e)(env)
+    if (! e.isGenerated) {
+      val (context,env) = prepareCheck(e)
+      checkElementEnd(context, e)(env)
+    }
   }
   
-  def applyWithTimeout(e: StructuralElement, t : Int)(implicit ce: CheckingEnvironment) {
-    val (context,env) = prepareCheck(e)
-    env.timeout = t
-    check(context, e)(env)
-  }
-  
+  @deprecated("unclear what happens here")
   def elabContext(th : DeclaredTheory)(implicit ce: CheckingEnvironment): Context = {
     //val con = getContext(th)
     val rules = RuleSet.collectRules(controller,Context.empty)
@@ -99,10 +104,16 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           case sm: DefinedModule => getContext(m) // should never occur
         }
       }
-      case d: Declaration => parent match {
-        case m: DeclaredModule => getContextWithInner(m)
-        case m: DefinedModule => getContext(m) // should never occur
-      }
+      case d: Declaration =>
+        parent match {
+          case ce: ContainerElement[_] => getContextWithInner(ce)
+          case dd: DerivedDeclaration =>
+             val contOpt = extman.get(classOf[StructuralFeature], dd.feature).map(_.getInnerContext(dd))
+             getContext(dd) ++ contOpt.getOrElse(Context.empty)
+          case nm: NestedModule => nm.module match {
+            case ce: ContainerElement[_] => getContextWithInner(ce)
+          }
+        }
     }
   }
   /** auxiliary method of getContext, returns the context in which the body of ContainerElement is checked */
@@ -112,9 +123,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   /**
     * @param context all variables and theories that may be used in e (including the theory in which is declared)
     * @param e       the element to check
+    * @param streamed true if a later call of applyElementEnd on the parent of e is expected; so checks performed in applyElementEnd should be skipped
     */
   // e will be marked as checked (independent of whether there are errors)
-  private def check(context: Context, e: StructuralElement)(implicit env: ExtendedCheckingEnvironment) {
+  private def check(context: Context, e: StructuralElement, streamed: Boolean)(implicit env: ExtendedCheckingEnvironment) {
     implicit val ce = env.ce
     val path = e.path
     log("checking " + path + " using the following rules: " + env.rules.toString)
@@ -126,41 +138,47 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         val contextI = context ++ checkContext(context, getExtraInnerContext(c))
         // mark all children as unchecked
         val tDecls = c.getPrimitiveDeclarations
-        tDecls foreach { d =>
+        tDecls foreach {d =>
           UncheckedElement.set(d)
         }
         // check children
         logGroup {
-          tDecls foreach { d =>
-            check(contextI, d)
+          tDecls foreach {d =>
+            check(contextI, d, streamed)
           }
         }
         checkElementEnd(context, c)
       case oe: OpaqueElement =>
-        controller.extman.get(classOf[OpaqueChecker], oe.format) match {
-          case None => env.errorCont(InvalidElement(oe, "no checker found for format " + oe.format))
-          case Some(oc) =>
-            oc.check(objectChecker, context, env.rules, oe)
+        if (!streamed) {
+          controller.extman.get(classOf[OpaqueChecker], oe.format) match {
+            case None => env.errorCont(InvalidElement(oe, "no checker found for format " + oe.format))
+            case Some(oc) =>
+              oc.check(objectChecker, context, env.rules, oe)
+          }
         }
-      //TODO check all declarations, components? currently done in each OpaqueChecker
+        //TODO check all declarations, components? currently done in each OpaqueChecker
       case r: NRef =>
-        check(context, controller.get(r.target))
+        val target = controller.getO(r.target).getOrElse {
+          env.errorCont(InvalidElement(r, "reference to unknown element"))
+        }
+        //TODO decide what to do here; usually, checking is redundant and may even fail here if the context is not fully elaborated and loaded
+        //apply(target)
       case dd: DerivedDeclaration =>
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         sfOpt match {
           case None =>
             env.errorCont(InvalidElement(dd, s"structural feature '${dd.feature}' not registered"))
           case Some(sf) =>
-            dd.tpC.get foreach { tp =>
+            dd.tpC.get foreach {tp =>
               val tpR = checkTerm(context, tp)
               // not using tpR here because source references are gone
             }
             val conInner = sf.getInnerContext(dd)
-            check(context ++ conInner, dd.module)
-            sf.check(dd)
+            check(context ++ conInner, dd.module, streamed)
+            sf.check(dd) //TODO this should happened at ElementEnd only
         }
       case nm: NestedModule =>
-        check(context, nm.module)
+        check(context, nm.module, streamed)
       case t: DefinedTheory =>
           val dfR = checkTheory(context, t.df)
           t.dfC.analyzed = dfR
@@ -379,28 +397,30 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
 
   /** auxiliary method of check */
   private def checkElementEnd(context: Context, e: ContainerElement[_])(implicit env: ExtendedCheckingEnvironment) {
-    val rules = env.rules
-    implicit val ce = env.ce
-    val path = e.path
     e match {
       case d: Document =>
       case t: DeclaredTheory =>
-        val contextI = context ++ getExtraInnerContext(t)
+        val additionalContext = getExtraInnerContext(t)
+        val contextI = context ++ additionalContext
+        val rulesI = RuleSet.collectAdditionalRules(controller, Some(env.rules), additionalContext)
+        val envI = env.copy(rules = rulesI)
         // check all the narrative structure (at the end to allow forward references)
         //TODO currently this is called on a NestedModule before the rest of the parent is checked
         def doDoc(ne: NarrativeElement) {
           ne match {
             case doc: Document => doc.getDeclarations foreach doDoc
             case r: NRef =>
-            case oe: OpaqueElement => check(contextI, oe)
+            case oe: OpaqueElement =>
+              check(contextI, oe, false)(envI)
           }
         }
         doDoc(t.asDocument)
       case v: DeclaredView =>
+        //TODO totality check
       case s: DeclaredStructure =>
       case _ =>
         //succeed for everything else but signal error
-        logError("unchecked " + path)
+        logError("unchecked " + e.path)
     }
   }
 

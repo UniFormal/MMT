@@ -59,13 +59,14 @@ trait Killable {
   }
   
   /** presses the kill button after the specified number of milli seconds */
-  def setTimeout[A](millisec: Int)(f : Unit => Unit) {
+  def setTimeout[A](millisec: Int)(f : Unit => Unit): this.type = {
     val killButton = new KillButton
     killButtons ::= killButton
     Future {
       Thread.sleep(millisec)
       killButton.press(f)
     }
+    this
   }
   
 }

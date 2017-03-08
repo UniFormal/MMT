@@ -200,3 +200,13 @@ abstract class LookupWithNotFoundHandler(lup: Lookup) extends Lookup {
     def getImplicit(from: Term, to: Term) = handler {lup.getImplicit(from, to)}
     def preImage(p: GlobalName) = handler {lup.preImage(p)}
 }
+
+/** to be mixed into LookupWithNotFoundHandler for failing on NotFound */
+trait FailingNotFoundHandler {
+    protected def handler[A](code: => A): A = try {
+      code
+    } catch {
+      case frontend.NotFound(p, _) =>
+        throw GetError(p.toPath + " not known")
+    }
+}

@@ -206,7 +206,7 @@ class Shell extends StandardIOHelper {
 
     // cleanup if we want to exit
     if (args.runCleanup) {
-       controller.extman.get(classOf[BuildManager]).foreach(_.waitToEnd)
+       controller.extman.extensions.foreach(_.waitUntilRemainingTasksFinished)
        controller.cleanup
     }
   }

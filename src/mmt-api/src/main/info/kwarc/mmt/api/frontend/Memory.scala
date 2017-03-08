@@ -15,8 +15,10 @@ class Memory(extman: ExtensionManager, val report: Report) extends ROMemory {
 
   /** maintains the ontology */
   val ontology = new RelStore(report)
+  /** maintains all previous versions (if any) of content elements */
+  val previousContent = new Library(extman, report, None)
   /** maintains all content elements */
-  val content = new Library(extman, report)
+  val content = new Library(extman, report, Some(previousContent))
 
   /** forgets everything */
   def clear {

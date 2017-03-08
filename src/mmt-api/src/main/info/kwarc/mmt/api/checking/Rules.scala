@@ -32,7 +32,7 @@ trait CheckingCallback {
    /** type inference, fails by default */
    def inferType(t : Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = None
    /** runs code and succeeds by default */
-   def dryRun[A](code: => A): DryRunResult = Success(code)
+   def dryRun[A](commitOnSucces: Boolean)(code: => A): DryRunResult = Success(code)
 
    /** flag an error */
    def error(message: => String)(implicit history: History): Boolean = false

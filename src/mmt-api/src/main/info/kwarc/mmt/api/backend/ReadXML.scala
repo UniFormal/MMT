@@ -36,7 +36,11 @@ class XMLReader(controller: Controller) extends Logger {
    }
    private def addModule(m: Module, md: Option[MetaData], docOpt: Option[Document])(implicit cont: StructuralElement => Unit) {
       add(m, md)
-      docOpt foreach (d => add(new MRef(d.path, LocalName(m.path), m.path)))
+      docOpt foreach {d =>
+        val mref = new MRef(d.path, LocalName(m.path), m.path)
+        mref.setOrigin(GeneratedMRef)
+        add(mref)
+      }
    }
    
    /**

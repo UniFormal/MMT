@@ -101,9 +101,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
       // adder methods for the stateful lists
 
-      /** registers a constraint */
+      /** registers a solution */
       def addNewSolution(n: LocalName) {
-         if (mutable) _newsolutions ::= n
+         _newsolutions ::= n
       }
       /** registers a constraint */
       def addConstraint(d: DelayedConstraint) {
@@ -121,21 +121,20 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
       /** registers a dependency */
       def addDependency(p: CPath) {
-         if (mutable) _dependencies ::= p
+         _dependencies ::= p
       }
 
-      // setter methods for the above
-
+      // more complex mutator methods for the stateful lists
+      
       def removeConstraint(dc: DelayedConstraint) {
          if (mutable) _delayed = _delayed filterNot (_ == dc)
          else throw MightFail
       }
       def clearNewSolutions {
-         if (mutable) _newsolutions = Nil
-         else throw MightFail
+         _newsolutions = Nil
       }
       def solution_=(newSol: Context) {
-         _solution = newSol
+           _solution = newSol
       }
 
       // instead of full backtracking, we allow exploratory runs that do not have side effects
@@ -145,25 +144,39 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        */
       private def mutable = pushedStates.isEmpty
       /** the state that is stored here for backtracking */
-      private type StateData = Context
-      /** a stack of states for backtracking */
+      private case class StateData(solutions: Context, newsolutions: List[LocalName], dependencies: List[CPath])
+      /** a stack of states for dry runs */
       private var pushedStates: List[StateData] = Nil
       
-      def isDryRun = pushedStates.nonEmpty
+      /** true if we are currently in a dry run */
+      def isDryRun = !mutable
 
-      /** evaluates its arguments without applying its side effects on the state
- *
-       *  @return if Some(v), then normal evaluation is guaranteed to return v without errors
+      /**
+       * evaluates its arguments without generating new constraints
+       * 
+       * all state changes are rolled back unless evaluation is successful and commitOnSuccess is true
        */
-      def immutably[A](a: => A): DryRunResult = {
-         pushedStates ::= solution
-         try {Success(a)}
-         catch {
-            case e: DryRunResult => e
-         }
-         finally {
-            _solution = pushedStates.head
+      def immutably[A](commitOnSuccess: Boolean)(a: => A): DryRunResult = {
+         pushedStates ::= StateData(solution, newsolutions, dependencies)
+         def rollback {
+            val oldState = pushedStates.head
             pushedStates = pushedStates.tail
+            _solution = oldState.solutions
+            _newsolutions = oldState.newsolutions
+            _dependencies = oldState.dependencies 
+         }
+         try {
+           val aR = a
+           if (!commitOnSuccess) {
+             rollback
+           } else {
+             pushedStates = pushedStates.tail
+           }
+           Success(aR)
+         } catch {
+            case e: DryRunResult =>
+              rollback
+              e
          }
       }
       
@@ -331,8 +344,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    def getType(p: GlobalName): Option[Term] = {
       val c = controller.globalLookup.getConstant(p)
-      if (c.tpC.analyzed.isDefined) addDependency(p $ TypeComponent)
-      c.tpC.getAnalyzedIfFullyChecked
+      val t = c.tpC.getAnalyzedIfFullyChecked
+      if (t.isDefined)
+        addDependency(p $ TypeComponent)
+      t
    }
    /** retrieves the definiens of a constant and registers the dependency
     *
@@ -340,8 +355,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    def getDef(p: GlobalName) : Option[Term] = {
       val c = controller.globalLookup.getConstant(p)
-      if (c.dfC.analyzed.isDefined) addDependency(p $ DefComponent)
-      c.dfC.getAnalyzedIfFullyChecked
+      val t = c.dfC.getAnalyzedIfFullyChecked
+      if (t.isDefined)
+        addDependency(p $ DefComponent)
+      t
    }
    def getModule(p: MPath) : Option[Module] = {
       controller.globalLookup.getO(p) match {
@@ -626,11 +643,27 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    }
 
    /**
-    * tries to evaluate an expression without any effect on the state
- *
-    * @return Some(v) if evaluation successful
+    * tries to evaluate an expression without any generating new constraints
+    *
+    * @param a the expression
+    * @param commitOnSuccess do not roll back state changes if successful
     */
-   override def dryRun[A](a: => A): DryRunResult = immutably(a)
+   override def dryRun[A](commitOnSuccess: Boolean)(a: => A): DryRunResult = immutably(commitOnSuccess)(a)
+   
+   /**
+    * tries to check a judgment without delaying constraints
+    * 
+    * if this returns None, the check is inconclusive at this point, and no state changes were applied
+    * if this returns Some(true), j has been derived and all state changes are applied 
+    * if this returns Some(false), no state changes are applied and the caller still has to generate an error message, possibly by calling check(j)
+    */
+   def tryToCheckWithoutDelay(j:Judgement): Option[Boolean] = dryRun(true) {check(j)(NoHistory)} match {
+      case Success(s:Boolean) => Some(s)
+      case Success(_) => throw ImplementationError("illegal success value")
+      case WouldFail => Some(false)
+      case MightFail => None
+   }
+
 
    /**
     * performs a type inference and calls a continuation function on the inferred type
@@ -683,13 +716,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
      history.inddec
      ret
-   }
-
-   def safecheck(j:Judgement)(implicit history : History): Option[Boolean] = state.immutably[Boolean](check(j)) match {
-      case Success(s:Boolean) => Some(s)
-      case Success(_) => throw ImplementationError("illegal success value")
-      case WouldFail => Some(false)
-      case MightFail => None
    }
 
    /** proves a Typing Judgement by bidirectional type checking
@@ -872,8 +898,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       // TODO this fully expands definitions if no rule is applicable
       // better: use an expansion algorithm that stops expanding if it is know that no rule will become applicable
 
-     // Redundant, but timesaving and makes errors go away:
-     if (safecheck(Equality(j.stack,j.tp1,j.tp2,None)) contains true) {
+     // first see if equality can be established 
+     if (tryToCheckWithoutDelay(Equality(j.stack,j.tp1,j.tp2,None)) contains true) {
        return check(Equality(j.stack,j.tp1,j.tp2,None))
      }
 
@@ -1204,7 +1230,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             case Some((rs, m)) =>
                rs.head(j) match {
                   case Some((j2, msg)) =>
-                    history += "Using Solution rule " + rs.head.getClass.toString
+                    history += "Using solution rule " + rs.head.toString
                     solveEquality(j2)(j2.stack, (history + msg).branch)
                   case None => false
                }

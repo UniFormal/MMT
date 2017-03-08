@@ -61,7 +61,7 @@ class ModuleHashMap {
   *
   * @param report parameter for logging.
   */
-class Library(extman: ExtensionManager, val report: Report) extends Lookup with Logger {
+class Library(extman: ExtensionManager, val report: Report, previous: Option[Library]) extends Lookup with Logger {
   val logPrefix = "library"
 
   // ************************ stateful data structures and basic accessors
@@ -116,7 +116,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
      p match {
         case d: DPath => getNarrative(d, error)
         case p: MPath => getContent(p, error)
-        case mp ?? n => getDeclarationInTerm(OMMOD(mp), n, error)
+        case GlobalName(mp, n) => getDeclarationInTerm(OMMOD(mp), n, error)
         case c: CPath => throw GetError("retrieval of components not possible")
      }
   }
@@ -710,7 +710,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
   /** the bureaucracy of adding 'se' */
   private class Adder(se: StructuralElement, afterOpt: Option[LocalName]) extends ChangeProcessor {
      def errorFun(msg: String) = throw AddError(msg)
-     def wrongType(exp: String) {errorFun("expected a " + exp)}
+     def wrongType(exp: String) {errorFun("expected a " + exp + ", found " + se.feature + " " + se.path)}
      def checkNoAfter {
        if (afterOpt.isDefined)
          errorFun("adding after a declaration only allowed in containers")
@@ -739,6 +739,9 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
         checkNoAfter
         se match {
            case mod: Module =>
+              modules.get(mp).foreach {m =>
+                previous.foreach {_.modules(mp) = m}
+              }
               modules(mp) = mod
            case _ =>
               wrongType("module")
@@ -787,6 +790,9 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
         doc.delete(ln)
      }
      def primitiveModule(mp: MPath) = {
+        modules.get(mp).foreach {m =>
+          previous.foreach {_.modules(mp) = m}
+        }
         modules -= mp
         //if (mp.name.length > 1) delete(mp.toGlobalName)
      }

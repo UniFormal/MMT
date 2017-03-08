@@ -178,8 +178,10 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
           throw GeneralError(s"no checker $id found")
         }.asInstanceOf[MMTStructureChecker]
-        ths foreach (p => checker.applyWithTimeout(p,30000)(
-          new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore,this)))
+        ths foreach {p =>
+          val ce = new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore, this)
+          checker.applyWithTimeout(p,Some(30000))(ce)
+        }
       }
       index(doc)
 
