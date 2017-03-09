@@ -677,7 +677,7 @@ class NotationBasedParser extends ObjectParser {
   }
   /** matches v:T where : is constant with role OMLType */
   private object OMLtype {
-    def unapply(t : Term) : Option[(Term,Term)] = t match {
+    def unapply(t : Term) : Option[(Term,Term)] = controller.pragmatic.mostPragmatic(t) match {
       case OMA(OMS(f),List(a,b)) =>
         controller.get(f) match {
           case c:Constant if c.rl contains "OMLType" => Some((a,b))
@@ -688,7 +688,7 @@ class NotationBasedParser extends ObjectParser {
   }
   /** matches v=T where = is constant with role OMLDef */
   private object OMLdef {
-    def unapply(t : Term) : Option[(Term,Term)] = t match {
+    def unapply(t : Term) : Option[(Term,Term)] = controller.pragmatic.mostPragmatic(t) match {
       case OMA(OMS(f),List(a,b)) =>
         controller.get(f) match {
           case c:Constant if c.rl contains "OMLDef" => Some((a,b))

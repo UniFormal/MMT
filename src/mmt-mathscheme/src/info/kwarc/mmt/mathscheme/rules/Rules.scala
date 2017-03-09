@@ -45,7 +45,7 @@ object Extends extends {
   def apply(tm: Term, covered: Boolean)(implicit solver : Solver, stack: Stack, history: History): Boolean = tm match {
     case extend(th,ls) =>
       solver.check(IsTheory(stack,th))
-      val thcont : Context = ???//solver.elaborateModuleExpr(th,stack.context)
+      val thcont : Context = ??? // solver.elaborateModuleExpr(th,stack.context)
       ls.foldLeft((stack.context ++ thcont,true))((p,oml) => {
         val checks = oml.tp.forall(tp => solver.check(Inhabitable(Stack(p._1),tp))) && oml.df.forall(df => {
           if (oml.tp.isDefined) solver.check(Typing(Stack(p._1),df,oml.tp.get)) else true

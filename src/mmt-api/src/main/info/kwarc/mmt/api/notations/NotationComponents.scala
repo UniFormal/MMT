@@ -560,10 +560,11 @@ object Marker {
    }
   
    def parse(s: String) : Marker = s match {
-         case s : String if s.contains("%L") =>
-           val i = s.indexOf("%L")
-           val n = stringToInt(s.substring(i+2)).getOrElse(throw ParseError("not a valid marker " + s.toString))
-           parse(s.substring(0,i)) match {
+         case s : String if s.startsWith("%L") =>
+           var i = 2
+           while (charAt(s, i, _.isDigit)) {i+=1}
+           val n = s.substring(2,i).toInt
+           parse(s.substring(i+1)) match {
              case am: ArgumentMarker => am.withLocalNotationsFrom(n)
              case _ => throw ParseError("only argument markers can use local notations" + s.toString)
            }
@@ -573,7 +574,7 @@ object Marker {
          case s: String if s.startsWith("%D") =>
             // Ds ---> delimiter s (used to escape special delimiters)
             if (s.length == 2)
-               throw ParseError("not a valid marker " + s) 
+               throw ParseError("not a valid marker " + s)
             else
                Delim(s.substring(2))
          case s: String if s.startsWith("%I") =>
