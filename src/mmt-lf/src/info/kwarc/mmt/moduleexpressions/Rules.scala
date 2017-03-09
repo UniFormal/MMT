@@ -91,6 +91,7 @@ object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.pat
               return None
          }
          Some(TheoryType(Nil))
+      case AnonymousTheory(mt,decls) => Some(TheoryType(Nil)) // TODO?
       case _ =>
          solver.error("illegal use of " + ModExp.complextheory)
          None

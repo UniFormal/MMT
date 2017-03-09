@@ -8,7 +8,7 @@ import uom._
 import info.kwarc.mmt.lf._
 
 object Combinators {
-  val _path = ModExp._path
+  val _path = ModExp._base ? "Combinators"
 }
 
 /* The rules below compute the results of theory combinators.
@@ -27,6 +27,11 @@ object ComputeExtends extends ComputationRule(Extends.path) {
         case AnonymousTheory(mt, decls) =>
           wth match {
             case OMLList(omls) => Some(AnonymousTheory(mt, decls ::: omls))
+            case _ => None
+          }
+        case OMMOD(th) =>
+          wth match {
+            case OMLList(omls) => Some(AnonymousTheory(Some(th),omls))
             case _ => None
           }
         case _ => None
