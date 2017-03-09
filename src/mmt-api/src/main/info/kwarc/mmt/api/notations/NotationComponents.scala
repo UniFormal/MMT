@@ -86,6 +86,7 @@ import CommonMarkerProperties._
 case class CommonMarkerProperties(precedence: Option[Precedence], localNotations: Option[Int]) {
   def wlnf(n: Int) = copy(localNotations = Some(n))
   def *(remap: Int => Int) = copy(localNotations = localNotations.map(remap))
+  def asStringPrefix = localNotations.map(i => "%L" + i + "_").getOrElse("")
 }
 
 
@@ -137,7 +138,7 @@ sealed abstract class Arg extends ArgumentMarker {
 sealed abstract class SeqArg extends ArgumentMarker {
   val sep: Delim
   def makeCorrespondingArg(n: Int, remap: Int => Int): Arg
-  override def toString = number.toString + sep + "…"
+  override def toString = properties.asStringPrefix + number.toString + sep + "…"
   override def isSequence = true
 }
 
@@ -152,7 +153,7 @@ case class SimpArg(number : Int, properties: CommonMarkerProperties = noProps) e
  * usually these are not mentioned in the notation, but occasionally they have to be, e.g., when an implicit argument is the last argument
  */
 case class ImplicitArg(number: Int, properties: CommonMarkerProperties = noProps) extends ArgumentMarker {
-   override def toString = "%I" + number
+   override def toString = properties.asStringPrefix + "%I" + number
    def *(remap: Int => Int): ImplicitArg = copy(number = remap(number), properties = properties * remap)
 }
 
@@ -180,7 +181,7 @@ object LabelInfo {
 /** OML arguments, possibly with required type/definiens
  */
 case class LabelArg(number : Int, info: LabelInfo, properties: CommonMarkerProperties = noProps) extends Arg {
-  override def toString = "L" + number.toString + (if (info.typed) "T" else "") + (if (info.defined) "D" else "")
+  override def toString = properties.asStringPrefix + "L" + number.toString + (if (info.typed) "T" else "") + (if (info.defined) "D" else "")
   def by(s:String): LabelSeqArg = LabelSeqArg(number, Delim(s), info, properties)
 }
 
@@ -189,7 +190,7 @@ case class LabelArg(number : Int, info: LabelInfo, properties: CommonMarkerPrope
  * @param dependent elements in the sequence may refer to previous names
  */
 case class LabelSeqArg(number: Int, sep: Delim, info: LabelInfo, properties: CommonMarkerProperties) extends SeqArg {
-  override def toString = "L" + number.toString + (if (info.typed) "T" else "") + (if (info.defined) "D" else "") + sep + "…"
+  override def toString = properties.asStringPrefix + "L" + number.toString + (if (info.typed) "T" else "") + (if (info.defined) "D" else "") + sep + "…"
   def makeCorrespondingArg(n: Int, remap: Int => Int) = LabelArg(n, info, properties*remap)
 }
 
@@ -202,14 +203,14 @@ case class LabelSeqArg(number: Int, sep: Delim, info: LabelInfo, properties: Com
  */
 case class Var(number: Int, typed: Boolean, sep: Option[Delim], properties: CommonMarkerProperties = noProps) extends Marker with VariableComponent {
    def precedence = properties.precedence
-   override def toString = "V" + number.toString + (if (typed) "T" else "") + (sep.map(_.toString + "…").getOrElse(""))
+   override def toString = properties.asStringPrefix + "V" + number.toString + (if (typed) "T" else "") + (sep.map(_.toString + "…").getOrElse(""))
    override def isSequence = sep.isDefined
    def makeCorrespondingSingleVar(n: Int, remap: Int => Int) = Var(n, typed, None, properties*remap)
    def *(remap: Int => Int): Var = copy(number = remap(number), properties = properties * remap)
 }
 
 case object AttributedObject extends Marker {
-   override def toString = "%a" 
+   override def toString = "%a"
 }
 
 /** Verbalization markers occur in verbalization notations
@@ -219,7 +220,7 @@ sealed abstract class VerbalizationMarker extends Marker {
 }
 
 case class WordMarker(word : String) extends VerbalizationMarker {
-  override def toString = word 
+  override def toString = word
   def toParsing = Delim(word) :: Nil
 }
 
