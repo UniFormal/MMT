@@ -258,6 +258,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      if (! ElaboratedElement.is(old))
        return
      onDelete(old)
+    if (!nw.parent.isInstanceOf[ContentPath]) return
      (controller.getO(nw.parent), nw) match {
        case (Some(thy: DeclaredTheory), nw: Declaration) =>
          flattenDeclaration(thy, nw)
