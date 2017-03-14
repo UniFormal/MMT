@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.web
+package info.kwarc.mmt.concepts
 
 import info.kwarc.mmt.api.presentation.HTMLPresenter
 import info.kwarc.mmt.api._
@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.presentation.{HTMLRenderingHandler, Presenter, RenderingResult}
 import info.kwarc.mmt.api.refactoring.ArchiveStore
 import info.kwarc.mmt.api.utils.{File, _}
+import info.kwarc.mmt.api.web.{Body, Server, ServerExtension, Session}
 import tiscaf.{HLet, HReqData}
 
 import scala.collection.immutable.List

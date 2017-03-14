@@ -107,9 +107,6 @@ lazy val lfcatalog = (project in file("lfcatalog")).
 lazy val api = (project in file("mmt-api")).
   settings(mmtProjectsSettings("mmt-api"): _*).
   settings(
-    libraryDependencies ++= Seq(
-        "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
-    ),
     scalaSource in Compile := baseDirectory.value / "src" / "main",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "tiscaf.jar",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-compiler.jar",
@@ -136,6 +133,17 @@ lazy val leo = (project in file("mmt-leo")).
     scalaSource in Test := baseDirectory.value / "test",
     libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
     libraryDependencies += "com.assembla.scala-incubator" %% "graph-core" % "1.9.4"
+  )
+
+lazy val concepts = (project in file("concept-browser")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("concept-browser"): _*).
+  settings(
+    libraryDependencies ++= Seq(
+        "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
+    ),
+    unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "tiscaf.jar",
+    unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar"
   )
 
 lazy val tptp = (project in file("mmt-tptp")).
@@ -240,7 +248,7 @@ lazy val repl = (project in file("mmt-repl")).
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
 lazy val mmt = (project in file("fatjar")).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts).
   settings(mmtProjectsSettings("fatjar"): _*).
   settings(
     exportJars := false,
