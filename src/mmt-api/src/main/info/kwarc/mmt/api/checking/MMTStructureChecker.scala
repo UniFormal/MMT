@@ -81,6 +81,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     (context, env)
   }
   
+  private def prepareCheckExtendContext(context: Context, env: ExtendedCheckingEnvironment, additionalContext: Context): (Context, ExtendedCheckingEnvironment) = {
+     val contextI = context ++ additionalContext
+     val rulesI = RuleSet.collectAdditionalRules(controller, Some(env.rules), additionalContext)
+     val envI = env.copy(rules = rulesI)
+     (contextI, envI)
+  }
+  
   /** computes the context in which an element must be checked
    *  during top-down traversal, this method allows checking to start in the middle
    */
@@ -135,16 +142,17 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       //the extended treatment is probably needed for all ContainerElements anyway
       case c: ContainerElement[_] =>
         checkElementBegin(context, c)
-        val contextI = context ++ checkContext(context, getExtraInnerContext(c))
         // mark all children as unchecked
         val tDecls = c.getPrimitiveDeclarations
         tDecls foreach {d =>
           UncheckedElement.set(d)
         }
         // check children
+        val additionalContext = checkContext(context, getExtraInnerContext(c))
+        val (contextI, envI) = prepareCheckExtendContext(context, env, additionalContext)
         logGroup {
           tDecls foreach {d =>
-            check(contextI, d, streamed)
+            check(contextI, d, streamed)(envI)
           }
         }
         checkElementEnd(context, c)
@@ -400,10 +408,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     e match {
       case d: Document =>
       case t: DeclaredTheory =>
-        val additionalContext = getExtraInnerContext(t)
-        val contextI = context ++ additionalContext
-        val rulesI = RuleSet.collectAdditionalRules(controller, Some(env.rules), additionalContext)
-        val envI = env.copy(rules = rulesI)
+        val (contextI, envI) = prepareCheckExtendContext(context, env, getExtraInnerContext(t))
         // check all the narrative structure (at the end to allow forward references)
         //TODO currently this is called on a NestedModule before the rest of the parent is checked
         def doDoc(ne: NarrativeElement) {
