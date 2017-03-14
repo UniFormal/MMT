@@ -2,12 +2,13 @@ package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
 import utils._
-import utils.xml.addAttrOrChild 
+import utils.xml.addAttrOrChild
 import libraries._
 import modules._
 import metadata._
 import presentation._
 import Conversions._
+import info.kwarc.mmt.api.notations.TextNotation
 
 import scala.xml.{Node,Elem,Utility}
 
@@ -381,12 +382,12 @@ object OMSemiFormal {
  * 
  * These could be used for the typed/defined fields in a record type/value or the selection function. 
  */
-case class OML(name: LocalName, tp: Option[Term], df: Option[Term]) extends Term with NamedElement {
-    def vd = VarDecl(name, None, tp, df, None)
+case class OML(name: LocalName, tp: Option[Term], df: Option[Term], nt: Option[TextNotation] = None, featureOpt : Option[String] = None) extends Term with NamedElement {
+    def vd = VarDecl(name, featureOpt, tp, df, nt)
     private[objects] def freeVars_ = vd.freeVars
     def head = None
     def subobjects = subobjectsNoContext(vd.tp.toList ::: vd.df.toList)
-    def substitute(sub: Substitution)(implicit sa: SubstitutionApplier) = OML(name, tp map (_ ^^ sub), df map (_ ^^ sub))
+    def substitute(sub: Substitution)(implicit sa: SubstitutionApplier) = OML(name, tp map (_ ^^ sub), df map (_ ^^ sub),nt,featureOpt)
     def toCMLQVars(implicit qvars: Context) = <label>{vd.toCMLQVars}</label>
     def toNode = vd.toNode.copy(label = "OML")
 }
@@ -394,6 +395,41 @@ case class OML(name: LocalName, tp: Option[Term], df: Option[Term]) extends Term
 case object OML {
   def apply(name: LocalName): OML = OML(name, None, None)
 }
+
+// TODO Mirrors VarDecl
+
+class DerivedOMLFeature(val feature: String) {
+   val path = Path.parseS("http://cds.omdoc.org/mmt?mmt?StructuralFeature", NamespaceMap.empty)
+   def maketerm(feat : String, tp : Term) =
+      OMA(OMS(path), List(OML(LocalName(feat)),tp))
+
+   def apply(name: LocalName, tp: Term, df: Option[Term] = None, nt: Option[TextNotation] = None) =
+      OML(name, Some(tp), df, nt, Some(feature))
+
+   def unapply(o : OML): Option[(LocalName, Term, Option[Term])] = {
+      if (o.featureOpt contains feature) {
+         o match {
+            case OML(n, Some(tp), df, None, _) => Some((n,tp,df))
+            case _ => throw ImplementationError("unsupported properties of derived variable declaration")
+         }
+      } else
+         None
+   }
+}
+
+object DerivedOMLFeature {
+   def apply(name: LocalName, feat: String, tp: Term, df: Option[Term] = None) = OML(name, Some(tp), df, None, Some(feat))
+   def unapply(o:OML): Option[(LocalName, String, Term, Option[Term])] = o match {
+      case OML(n, Some(tp), df,_, Some(f)) => Some((n,f,tp,df))
+      case _ => None
+   }
+}
+
+object IncludeOML extends DerivedOMLFeature("include") {
+   def apply(p: MPath, args: List[Term]): OML = apply(LocalName(p), OMPMOD(p, args))
+}
+
+object StructureOML extends DerivedOMLFeature("structure")
 
 /**
  * ComplexTerm provides apply/unapply methods to unify OMA and OMBINDC as well as named arguments and complex binders
@@ -597,7 +633,7 @@ object Obj {
             var found : List[String] = Nil
             var level = 0
             var current: List[String] = Nil
-            while (! left.isEmpty) {
+            while (left.nonEmpty) {
                val head = left.head
                left = left.tail
                current ::= head

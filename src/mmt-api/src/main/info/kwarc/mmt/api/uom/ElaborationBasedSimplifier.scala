@@ -92,12 +92,12 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      log("flattening " + m.path)
      try {
         val rules = RuleSet.collectRules(controller, m.getInnerContext)
+        flattenDefinition(m, Some(rules))
         m match {
           case t: DeclaredTheory =>
             t.meta foreach apply
           case _ =>
         }
-        flattenDefinition(m, Some(rules))
         m.getDeclarations.foreach {d => flattenDeclaration(m, d, Some(rules))}
      } finally {// if something goes wrong, don't try again
       ElaboratedElement.set(m)
@@ -118,7 +118,27 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case ComplexTheory(cont) =>
               cont.asDeclarations(mod.toTerm).foreach {d =>
                 d.setOrigin(ElaborationOfDefinition)
-                mod.add(d,None) //TODO add at beginning
+                controller add d// mod.add(d,None) //TODO add at beginning
+              }
+            case AnonymousTheory(mt,omls) =>
+              if (mt.isDefined) { // TODO should probably become meta theory somehow, but can't be overwritten
+                val inc = PlainInclude(mt.get,t.path)
+                inc.setOrigin(ElaborationOfDefinition)
+                apply(mt.get)
+                if (!t.metaC.isDefined) {
+                   t.metaC.set(OMMOD(mt.get))
+                }
+                controller add inc
+              }
+              omls foreach {
+                case IncludeOML(_, OMPMOD(mp, Nil), _) =>
+                  val i = PlainInclude(mp,t.path)
+                  i.setOrigin(ElaborationOfDefinition)
+                  controller add i
+                case o =>
+                  val d = Constant(t.toTerm, o.name, Nil, o.tp, o.df, None)
+                  d.setOrigin(ElaborationOfDefinition)
+                  controller add d
               }
             case dfS => t.dfC.set(dfS)
           }

@@ -16,7 +16,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
   
    override def processHeader(header: Term): (LocalName,Term) = {
      header match {
-       case OMA(OMMOD(pat), OML(name, None, None) :: args) =>
+       case OMA(OMMOD(pat), OML(name, None, None,_,_) :: args) =>
          val tp = OMA(OMMOD(pat), args)
          (name, tp)
      }

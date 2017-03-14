@@ -50,6 +50,8 @@ object ComputeCombine extends ComputationRule(Combine.path) {
         case AnonymousTheory(mtO, ds) =>
           mtO.foreach {mts ::= _}
           decls = decls ::: ds
+        case OMMOD(mp) =>
+          decls = decls ::: IncludeOML(mp,Nil) :: Nil
         case _ =>
           return None
       }
@@ -72,7 +74,7 @@ object ComputeRename extends ComputationRule(Rename.path) {
         case AnonymousTheory(mt, ds) =>
           val at = new AnonymousTheory(mt, ds)
           rens.foreach {
-            case OML(nw, None, Some(OML(old, None,None))) =>
+            case OML(nw, None, Some(OML(old, None,None,_,_)),_,_) =>
               at.rename(old,nw)
             case r => solver.error("not a renaming " + r)
           }
@@ -100,7 +102,7 @@ object ComputeTranslate extends ComputationRule(Translate.path) {
         case AnonymousTheory(mt, ds) =>
           val res = new AnonymousTheory(mt, Nil)
           // add include of codomain of mor
-          ds.foreach {case OML(n,t,d) =>
+          ds.foreach {case OML(n,t,d,_,_) =>
             // skip all includes of theories that are already include in domain of mor
             // check for name clashes: n may not be defined in the codomain of mor
             val tT = t map {OMM(_, mor)}
@@ -125,7 +127,7 @@ object ComputeExpand extends ComputationRule(Translate.path) {
         case AnonymousTheory(mt, ds) =>
           val res = new AnonymousTheory(mt, Nil) //TODO this should be an AnonymousMorphism; same as AnonymousTheory but no dependency
           // add include of mor
-          ds.foreach {case OML(n,t,d) =>
+          ds.foreach {case OML(n,t,d,_,_) =>
             // skip all includes of theories that are already include in domain of mor
             val ass = OML(n,None,Some(OML(n,None,None)))
             res.add(ass)

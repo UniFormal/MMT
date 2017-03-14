@@ -75,7 +75,7 @@ object Renaming extends {
     case rename(th,ls) =>
       solver.check(IsTheory(stack,th))
       ls forall {
-        case OML(name,toOpt,Some(OMS(p))) => true // TODO
+        case OML(name,toOpt,Some(OMS(p)),_,_) => true // TODO
         case _ =>
           false
       }

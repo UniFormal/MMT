@@ -32,7 +32,7 @@ case class ParsingRuleTable(groups: List[ParsingRuleGroup]) {
     var nw: List[ParsingRuleGroup] = Nil
     var old1 = groups
     var old2 = t.groups
-    while (old1.nonEmpty || old2.nonEmpty) {
+    while (old1.nonEmpty && old2.nonEmpty) {
       if (old1.head.precedence < old2.head.precedence) {
         nw ::= old1.head
         old1 = old1.tail

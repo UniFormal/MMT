@@ -606,7 +606,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         env.pCont(path)
         //wrap in implicit morphism?
         s
-      case OML(name, tp, df) => OML(name, tp.map(checkTerm(context, _)), df.map(checkTerm(context, _)))
+      case OML(name, tp, df,_,_) => OML(name, tp.map(checkTerm(context, _)), df.map(checkTerm(context, _)))
       case OMV(name) =>
         if (!context.isDeclared(name))
           env.errorCont(InvalidObject(s, "variable is not declared"))

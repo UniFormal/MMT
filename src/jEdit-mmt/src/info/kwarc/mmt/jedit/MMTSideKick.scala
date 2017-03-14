@@ -265,7 +265,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case OMV(n) => n.toString
          case OMID(p) => p.name.toString
          case l: OMLITTrait => l.toString
-         case OML(nm,_,_) => nm.toString
+         case OML(nm,_,_,_,_) => nm.toString
          case OMSemiFormal(_) => "unparsed: " + tP.toString
          case ComplexTerm(op, _,_,_) => op.last.toString
          case OMA(OMID(p),_) => p.name.last.toString
@@ -274,7 +274,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val child = new DefaultMutableTreeNode(new MMTObjAsset(t, tP, context, parent, label+extraLabel, reg))
       node.add(child)
       tP match {
-         case OML(_,tp,df) =>
+         case OML(_,tp,df,_,_) =>
             (tp.toList:::df.toList) foreach {t =>
                buildTreeTerm(child, parent, t, context, reg)
             }

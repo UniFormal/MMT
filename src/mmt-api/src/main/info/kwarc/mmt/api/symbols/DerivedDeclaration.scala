@@ -109,7 +109,7 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
     */
    def processHeader(header: Term): (LocalName,Term) = {
      header match {
-       case OMA(OMMOD(`mpath`), OML(name, None, None)::args) =>
+       case OMA(OMMOD(`mpath`), OML(name, None, None,_,_)::args) =>
          val tp = OMA(OMMOD(mpath), args)
          (name, tp)
      }
@@ -207,7 +207,7 @@ trait ParametricTheoryLike {self: StructuralFeature =>
    override def getInnerContext(dd: DerivedDeclaration) = Type.getParameters(dd)
    
    override def processHeader(header: Term) = header match {
-     case OMBIND(OMMOD(`mpath`), cont, OML(name,None,None)) => (name, Type(cont))
+     case OMBIND(OMMOD(`mpath`), cont, OML(name,None,None,_,_)) => (name, Type(cont))
    }
    override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
      case Some(Type(cont)) => OMBIND(OMMOD(mpath), cont, OML(dd.name, None,None))
