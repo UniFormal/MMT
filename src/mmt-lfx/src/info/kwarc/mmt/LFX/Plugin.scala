@@ -80,7 +80,7 @@ class SubtypeFeature extends StructuralFeature(SubtypeDecl.feature) {
     if (!d.name.toString.startsWith("_")) throw GetError("Name of Subtype Declaration must start with '_'!")
   }
 }
-
+/*
 class WInductive extends NamedInductiveTypes {
   val tpsym = Typed.ktype
   val arrow = info.kwarc.mmt.lf.Arrow.path
@@ -97,7 +97,7 @@ class WInductive extends NamedInductiveTypes {
 
   override def doConstructor(tpname: LocalName)(implicit dd: InductiveType): FinalConstant = ???
 }
-
+*/
 class RecordFromTheory extends StructuralFeature("FromTheory") with IncludeLike {
 
   private def substitute(tm : Term,cont : List[OML]) = {
