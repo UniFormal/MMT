@@ -50,7 +50,6 @@ abstract class NamedInductiveTypes extends StructuralFeature("inductive") with P
       case c @ const(doms,cod) => (c.name :: c.alias,doms,cod)
     }
 
-
      new Elaboration {
        def domain = {
          dd.module.domain
