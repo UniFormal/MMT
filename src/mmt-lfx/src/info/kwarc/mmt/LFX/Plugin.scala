@@ -1,7 +1,7 @@
 package info.kwarc.mmt.LFX
 
 import info.kwarc.mmt.api._
-import objects.{Context, OMS, Term, VarDecl}
+import objects._
 import modules.{DeclaredModule, DeclaredTheory, Module}
 import symbols._
 import checking._
@@ -9,6 +9,7 @@ import parser.{KeywordBasedParser, ParserExtension, ParserState, SourceRef}
 import utils.URI
 import notations._
 import Subtyping._
+import info.kwarc.mmt.LFX.Records.Rectype
 import info.kwarc.mmt.lf.{Arrow, Typed}
 
 object LFX {
@@ -37,9 +38,10 @@ class Plugin extends frontend.Plugin {
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
     val em = controller.extman
+    em addExtension new RecordFromTheory
     // content enhancers
     //em.addExtension(new SubTypeParserExt)
-    em.addExtension(new SubtypeFeature)
+    // em.addExtension(new SubtypeFeature)
   }
 }
 
@@ -78,3 +80,77 @@ class SubtypeFeature extends StructuralFeature(SubtypeDecl.feature) {
     if (!d.name.toString.startsWith("_")) throw GetError("Name of Subtype Declaration must start with '_'!")
   }
 }
+
+class WInductive extends NamedInductiveTypes {
+  val tpsym = Typed.ktype
+  val arrow = info.kwarc.mmt.lf.Arrow.path
+
+  override def doType(tpname: LocalName)(implicit dd: InductiveType): FinalConstant = {
+    val consts = dd.constructornames.filter(_._3.name == tpname)
+    val tps = consts map {
+      case (_,Nil,_) => FiniteTypes.Unit.term
+      case (_,tpls,_) => Coproducts.Coprod(tpls:_*)
+    }
+    val tp = WTypes.WType
+    ???
+  }
+
+  override def doConstructor(tpname: LocalName)(implicit dd: InductiveType): FinalConstant = ???
+}
+
+class RecordFromTheory extends StructuralFeature("FromTheory") with IncludeLike {
+
+  private def substitute(tm : Term,cont : List[OML]) = {
+    val trav = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+        case OMS(mp) =>
+          val opt = cont.find(_.name == mp.name)
+          if (opt.isDefined) opt.get else Traverser(this,t)
+        case _ => Traverser(this,t)
+      }
+    }
+    trav(tm,Context.empty)
+  }
+
+  private def fromTheory(th : DeclaredTheory,start : List[OML] = Nil) : List[OML] = {
+    var cont : List[OML] = start
+    th.getDeclarations foreach {
+      case PlainInclude(from,path) if path == th.path =>
+        cont = fromTheory(termtoTheory(OMMOD(from),from),cont).reverse ::: cont
+      case c : Constant if c.df.isEmpty =>
+        cont ::= OML(c.name,c.tp.map(substitute(_,cont)),None,c.not,None)
+      case _ => ???
+    }
+    cont.reverse
+  }
+
+  private def termtoTheory(tm : Term, parent : MPath) : DeclaredTheory = tm match {
+    case OMMOD(mp) => controller.get(mp) match {
+      case t : DeclaredTheory => t
+      case _ => ???
+    }
+    case t => controller.simplifier.materialize(Context(parent),t,false,None) match {
+      case t : DeclaredTheory => t
+      case _ => ???
+    }
+  }
+
+  def elaborate(parent: DeclaredModule, dd:  DerivedDeclaration) : Elaboration = {
+    val dom = termtoTheory(getDomain(dd),dd.parent)
+    val tp = Rectype(fromTheory(dom):_*)
+    new Elaboration {
+      def domain: List[LocalName] = List(dom.name)
+      def getO(name: LocalName): Option[Declaration] = {
+
+        if (name == dom.name) Some(Constant(dd.home,name,Nil,Some(OMID(Typed.ktype)),Some(tp),None))
+        else None
+      }
+    }
+  }
+
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
+
+  }
+}
+
+object FromTheoryRule extends StructuralFeatureRule("FromTheory")
