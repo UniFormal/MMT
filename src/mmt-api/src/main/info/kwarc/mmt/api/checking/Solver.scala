@@ -747,6 +747,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        //it's unclear which one works better
        
        // the foundation-independent cases
+       case OML(_,Some(tpA),_,_,_) =>
+         check(Subtyping(stack,tpA,tp))
+       case OML(_,None,Some(df),_,_) => check(Typing(stack,df,tp,j.tpSymb))
        case OMV(x) => getVar(x).tp match {
          case None =>
             if (solution.isDeclared(x))
@@ -869,6 +872,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                     }
                  case None =>
                     history += "no applicable rule"
+                   // Seems to be necessary if e.g. a computation rule reduces a term to a typed OML
+                   if (tmS != tm) return inferType(tmS,true) else
                     ret = None
               }
            }
