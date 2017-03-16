@@ -9,8 +9,9 @@ import parser.{KeywordBasedParser, ParserExtension, ParserState, SourceRef}
 import utils.URI
 import notations._
 import Subtyping._
+import info.kwarc.mmt.LFX.Coproducts.Addfunc
 import info.kwarc.mmt.LFX.Records.Rectype
-import info.kwarc.mmt.lf.{Arrow, Typed}
+import info.kwarc.mmt.lf.{Apply, Arrow, Typed}
 
 object LFX {
   val ns = DPath(URI.http colon "gl.mathhub.info") / "MMT" / "LFX"
@@ -85,20 +86,32 @@ class WInductive extends NamedInductiveTypes {
   val tpsym = Typed.ktype
   val arrow = info.kwarc.mmt.lf.Arrow.path
 
-  override def doType(tpname: LocalName)(implicit dd: InductiveType): FinalConstant = {
-    val consts = dd.constructornames.filter(_._3.name == tpname)
+  override def doConstants(implicit dd: InductiveType) = dd.typenames foreach (tpname => {
+    val consts = dd.constructornames.filter(_._3.name == tpname.name)
     val tps = consts map {
-      case (_,Nil,_) => FiniteTypes.Unit.term
-      case (_,tpls,_) => Coproducts.Coprod(tpls:_*)
+      case (_,Nil,_) => (FiniteTypes.Unit.term,FiniteTypes.EmptyType.term)
+      case (_,tpls,_) => //Coproducts.Coprod(tpls:_*)
+        var tpinit : List[Term] = Nil
+        var arity = 0
+        tpls foreach {
+          case OMS(pth) if pth.name == tpname.name =>
+            arity += 1
+          case t => tpinit ::=t
+        }
+        tpinit = tpinit.reverse
+        (Coproducts.Coprod(tpinit:_*),FiniteTypes.Finite(arity))
     }
-    val tp = WTypes.WType
-    ???
-  }
+    val wdom = Coproducts.Coprod(tps.view.map(_._1):_*)
+    val fun = Addfunc(tps.map{
+      case (fr,to) => Arrow(fr,to)
+    }:_*)
+    val df = WTypes.WType(LocalName("x"),wdom,Apply(fun,OMV("x")))
+    dd.types ::= Constant(OMMOD(dd.dd.parent),tpname.name,Nil,Some(OMS(Typed.ktype)),Some(df),None)
+  })
 
-  override def doConstructor(tpname: LocalName)(implicit dd: InductiveType): FinalConstant = ???
 }
 */
-class RecordFromTheory extends StructuralFeature("FromTheory") with IncludeLike {
+class RecordFromTheory extends StructuralFeature("FromTheory") {
 
   private def substitute(tm : Term,cont : List[OML]) = {
     val trav = new StatelessTraverser {
@@ -119,7 +132,9 @@ class RecordFromTheory extends StructuralFeature("FromTheory") with IncludeLike 
         cont = fromTheory(termtoTheory(OMMOD(from),from),cont).reverse ::: cont
       case c : Constant if c.df.isEmpty =>
         cont ::= OML(c.name,c.tp.map(substitute(_,cont)),None,c.not,None)
-      case _ => ???
+      case o =>
+        println(o)
+        ???
     }
     cont.reverse
   }
@@ -135,14 +150,20 @@ class RecordFromTheory extends StructuralFeature("FromTheory") with IncludeLike 
     }
   }
 
+  def getDomain(dd: DerivedDeclaration): Term = dd.tpC.get.get.asInstanceOf[OML].tp.get
+
   def elaborate(parent: DeclaredModule, dd:  DerivedDeclaration) : Elaboration = {
     val dom = termtoTheory(getDomain(dd),dd.parent)
-    val tp = Rectype(fromTheory(dom):_*)
+    val tp = Rectype(fromTheory(dom).distinct:_*)
+    val tpname = dd.tpC.get match {
+      case Some(OML(name,_,_,_,_)) => name
+      case _ => ???
+    }
     new Elaboration {
-      def domain: List[LocalName] = List(dom.name)
+      def domain: List[LocalName] = List(tpname)
       def getO(name: LocalName): Option[Declaration] = {
 
-        if (name == dom.name) Some(Constant(dd.home,name,Nil,Some(OMID(Typed.ktype)),Some(tp),None))
+        if (name == tpname) Some(Constant(dd.home,name,Nil,Some(OMID(Typed.ktype)),Some(tp),None))
         else None
       }
     }
@@ -150,6 +171,17 @@ class RecordFromTheory extends StructuralFeature("FromTheory") with IncludeLike 
 
   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
 
+  }
+
+  def getHeaderNotation = List(LabelArg(1,LabelInfo.none),Delim(":"),SimpArg(2))//List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), Delim(")"))
+
+  override def getInnerContext(dd: DerivedDeclaration) = Context.empty// Type.getParameters(dd)
+
+  override def processHeader(header: Term) = header match {
+    case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_),t @ OMMOD(path))) => (LocalName(path),OML(name,Some(t),None,None,None))// (name, Type(cont))
+  }
+  override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
+    case Some(OML(name,Some(OMMOD(path)),_,_,_)) => OMA(OMMOD(mpath), List(OML(name,None,None),OMMOD(path)))
   }
 }
 

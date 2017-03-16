@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.api._
 import modules._
 import checking._
-import info.kwarc.mmt.api.objects.{Context, VarDecl}
+import info.kwarc.mmt.api.objects._
 
 class NamedInductiveTypes extends StructuralFeature("inductive") with ParametricTheoryLike {
 
@@ -37,7 +37,7 @@ abstract class NamedInductiveTypes extends StructuralFeature("inductive") with P
     }
   }
 
-  protected class InductiveType(dd : DerivedDeclaration) {
+  protected class InductiveType(val dd : DerivedDeclaration) {
     val constants = dd.module.getDeclarations.collect {
       case c : Constant => c
     }
@@ -62,11 +62,12 @@ abstract class NamedInductiveTypes extends StructuralFeature("inductive") with P
     val constructornames = dd.module.getDeclarations.collect {
       case c @ constructor(doms,cod) => (c.name :: c.alias,doms,cod)
     }
+
+    var types : List[FinalConstant] = Nil
+    var constructors : List[FinalConstant] = Nil
   }
 
-  protected def doType(tpname : LocalName)(implicit dd : InductiveType) : FinalConstant
-
-  protected def doConstructor(tpname : LocalName)(implicit dd : InductiveType) : FinalConstant
+  protected def doConstants(implicit dd : InductiveType)
 
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
      implicit val id = new InductiveType(dd)
@@ -75,14 +76,11 @@ abstract class NamedInductiveTypes extends StructuralFeature("inductive") with P
          dd.module.domain
        }
        def getO(name: LocalName) = {
-         if (id.typenames contains dd.parent ? name) Some(doType(name))
-         else if (id.constructornames exists (t => t._1 contains name)) Some(doConstructor(name))
-         else None
+         if (id.typenames contains dd.parent ? name) id.types.find(_.name == name)
+         else id.constructors.find(_.name == name)
        }
      }
 
   }
 }
-
-
- */
+*/
