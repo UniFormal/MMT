@@ -49,7 +49,7 @@ class RuleBasedChecker extends ObjectChecker {
       }
       // if solved, we can substitute all unknowns; if not, we still substitute partially
       val psol = solver.getPartialSolution
-      val remUnknowns = solver.getUnsolvedVariables 
+      val remUnknowns = solver.getUnsolvedVariables
       val subs = psol.toPartialSubstitution
       val contm = prOrg.copy(unknown = Context.empty).toTerm
       val contmI = contm ^? subs //fill in inferred values

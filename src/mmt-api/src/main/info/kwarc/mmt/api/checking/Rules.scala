@@ -242,7 +242,7 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
 }
 
 /** always succeeds, e.g., as needed to implement proof irrelevance */
-class TermIrrelevanceRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
+@deprecated class TermIrrelevanceRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
   final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     history += "all terms of this type are equal"
     Some(true)
@@ -390,4 +390,16 @@ abstract class TypeSolutionRule(val head: GlobalName) extends CheckingRule {
     *    (by calling an appropriate callback method such as delay or checkTyping)
     */
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean
+}
+
+abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under,head) {
+
+  def solve(solver : Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
+
+  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = if (applicable(tp)) {
+    history += "all terms of this type are equal"
+    Some(true)
+  } else None
+
+  // def applicable(tm : Term) : Boolean
 }

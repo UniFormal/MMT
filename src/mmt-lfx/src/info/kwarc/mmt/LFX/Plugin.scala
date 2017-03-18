@@ -113,30 +113,53 @@ class WInductive extends NamedInductiveTypes {
 */
 class RecordFromTheory extends StructuralFeature("FromTheory") {
 
-  private def substitute(tm : Term,cont : List[OML]) = {
+  private def substitute(tm : Term,cont : List[(GlobalName,Term)]) = {
     val trav = new StatelessTraverser {
       override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
         case OMS(mp) =>
-          val opt = cont.find(_.name == mp.name)
-          if (opt.isDefined) opt.get else Traverser(this,t)
+          val opt = cont.find(_._1 == mp)
+          if (opt.isDefined) opt.get._2 else Traverser(this,t)
         case _ => Traverser(this,t)
       }
     }
     trav(tm,Context.empty)
   }
 
-  private def fromTheory(th : DeclaredTheory,start : List[OML] = Nil) : List[OML] = {
-    var cont : List[OML] = start
-    th.getDeclarations foreach {
-      case PlainInclude(from,path) if path == th.path =>
-        cont = fromTheory(termtoTheory(OMMOD(from),from),cont).reverse ::: cont
+  private class State(start : List[(GlobalName,OML)]) {
+    var covered : List[MPath] = Nil
+    var cont : List[(GlobalName,OML)] = Nil
+    var subst : List[(GlobalName,Term)] = Nil
+    def all = cont ::: subst
+  }
+
+  private def fromTheory(th : DeclaredTheory,state : State = new State(Nil)) : List[(GlobalName,OML)] = {
+    state.covered ::= th.path
+    th.getIncludesWithoutMeta foreach {from =>
+        if (!state.covered.contains(from)) state.cont = fromTheory(termtoTheory(OMMOD(from),from),state).reverse ::: state.cont
+    }
+    th.getDeclarationsElaborated.filter(_.path.module == th.path) foreach {
+      case PlainInclude(_,_) =>
       case c : Constant if c.df.isEmpty =>
-        cont ::= OML(c.name,c.tp.map(substitute(_,cont)),None,c.not,None)
+        val name = if (c.name.steps.length == 1) c.name
+        else {
+          val opt = c.alias.find(_.steps.length == 1)
+          opt match {
+            case Some(n) => n
+            case None => ???
+          }
+        }
+        state.cont ::= (c.path,OML(name,c.tp.map(substitute(_,state.all)),None,c.not,None))
+      case c : Constant if c.df.isDefined =>
+        c.df match {
+          case Some(tm) => state.subst ::= (c.path,substitute(tm,state.all))
+          case _ =>
+        }
       case o =>
         println(o)
+        println(o.path)
         ???
     }
-    cont.reverse
+    state.cont.reverse
   }
 
   private def termtoTheory(tm : Term, parent : MPath) : DeclaredTheory = tm match {
@@ -154,7 +177,7 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
 
   def elaborate(parent: DeclaredModule, dd:  DerivedDeclaration) : Elaboration = {
     val dom = termtoTheory(getDomain(dd),dd.parent)
-    val tp = Rectype(fromTheory(dom).distinct:_*)
+    val tp = Rectype(fromTheory(dom).distinct.map(_._2):_*)
     val tpname = dd.tpC.get match {
       case Some(OML(name,_,_,_,_)) => name
       case _ => ???

@@ -626,10 +626,22 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               case None =>
                 error("unsolved (untyped) unknown: " + vd.name) 
               case Some(tp) =>
-                val rO = rules.get(classOf[TermIrrelevanceRule]).find(r => r.applicable(tp))
+                val rO = rules.get(classOf[TypeBasedSolutionRule]).find(r => r.applicable(tp))//rules.get(classOf[TermIrrelevanceRule]).find(r => r.applicable(tp))
+                rO match {
+                  case Some(rule) =>
+                    history += "calling Type-based solution rule " + rule.getClass + " on " + vd.name + ": " + presentObj(tp)
+                    implicit val stack = Stack(cont)
+                    rule.solve(this)(tp) match {
+                      case Some(p) =>
+                        solve(vd.name, p)
+                      case None =>
+                        error("no solution found")
+                    }
+                  case _ => error("unsolved (typed) unknown: " + vd.name)
+                }
+                /*
                 if (rO.isDefined) {
-                  history += "proving open goal of term-irrelevant type"
-                  prove(constantContext++cont,tp)(history) match {
+                  //prove(constantContext++cont,tp)(history) match {
                      case Some(p) =>
                         solve(vd.name, p)
                      case None =>
@@ -637,7 +649,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                   }
                 } else {
                   error("unsolved (typed) unknown: " + vd.name)
-                }
+                } */
             }
       }
    }
@@ -729,6 +741,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private def checkTyping(j: Typing)(implicit history: History) : Boolean = {
      val tm = j.tm
      val tp = j.tp
+     if (j.tm.toString contains """http://gl.mathhub.info/MMT/LFX/Records?Symbols?Recexp OML(universe,None,Some(http://mathhub.info/MitM/smglom/arithmetics?realnumbers?Realnumbers),None,None)""")
+       {
+         print("")
+       }
      implicit val stack = j.stack
      // try to solve the type of an unknown
      val solved = solveTyping(tm, tp)
@@ -1510,11 +1526,15 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       prove(constantContext ++ solution ++ stack.context, conc)
    }
 
+  def proveWithoutSolution(conc: Term)(implicit stack: Stack, history: History): Option[Term] = {
+    prove(constantContext ++ stack.context, conc)
+  }
+
    private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {
       val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
       log(msg)
       history += msg
-      val pu = ProvingUnit(checkingUnit.component, context, conc, logPrefix).diesWith(checkingUnit)
+      val pu = ProvingUnit(checkingUnit.component, simplify(context)(Stack(context),history).asInstanceOf[Context], conc, logPrefix).diesWith(checkingUnit)
       controller.extman.get(classOf[Prover]) foreach {prover =>
          val (found, proof) = prover.apply(pu, rules, 8) //Set the timeout on the prover
          if (found) {
