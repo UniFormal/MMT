@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.api._
 import modules._
 import checking._
+import info.kwarc.mmt.api.notations.{NotationContainer, TextNotation}
 import info.kwarc.mmt.api.objects._
 
 class NamedInductiveTypes extends StructuralFeature("inductive") with ParametricTheoryLike {
@@ -37,34 +38,52 @@ abstract class NamedInductiveTypes extends StructuralFeature("inductive") with P
     }
   }
 
+  protected case class Type(c : Constant) {// (path : GlobalName, notation : Option[TextNotation]) {
+    val path = c.path
+    val notation = c.not
+    def notC = c.notC
+  }
+
+  protected class Constructor(val c : Constant, val domains : List[Term], val target : Type) {
+    val names = c.name :: c.alias
+    val notation = c.not
+    val notC = c.notC
+  }
+
   protected class InductiveType(val dd : DerivedDeclaration) {
     val constants = dd.module.getDeclarations.collect {
       case c : Constant => c
     }
-    val typenames = constants.collect{
-      case c if c.tp.contains(OMS(tpsym)) => dd.parent ? c.name
-    }
 
-    object constructor {
-      def tmunapply(tm: Term): Option[(List[Term], GlobalName)] = tm match {
-        case Arrow(tpA, OMS(tpB)) if typenames contains tpB => Some((List(tpA), tpB))
+    object Constructor {
+      def tmunapply(tm: Term): Option[(List[Term], Type)] = tm match {
+        case Arrow(tpA, OMS(tpB)) if types.exists(_.path == tpB) =>
+          val tp = types.find(_.path == tpB)
+          tp.map(g => (List(tpA), g))
         case Arrow(tpA, subtm) =>
           val rec = tmunapply(subtm)
           if (rec.isDefined) Some((tpA :: rec.get._1, rec.get._2)) else None
-        case OMS(tpA) if typenames contains tpA => Some((Nil, tpA))
+        case OMS(tpA) if types.exists(_.path == tpA) =>
+          val tp = types.find(_.path == tpA)
+          tp.map(g => (Nil, g))
       }
-      def unapply(c : Constant): Option[(List[Term], GlobalName)] = c.tp match {
-        case Some(tp) => tmunapply(tp)
+      def unapply(c : Constant): Option[Constructor] = c.tp match {
+        case Some(tp) => tmunapply(tp).map(tr => new Constructor(c,tr._1,tr._2))
         case _ => None
       }
     }
 
-    val constructornames = dd.module.getDeclarations.collect {
-      case c @ constructor(doms,cod) => (c.name :: c.alias,doms,cod)
+    val types = constants.collect{
+      case c if c.tp.contains(OMS(tpsym)) => Type(c)
     }
 
-    var types : List[FinalConstant] = Nil
-    var constructors : List[FinalConstant] = Nil
+    val constructors = dd.module.getDeclarations.collect {
+      case Constructor(con) =>
+        con
+    }
+
+    var typeconsts : List[FinalConstant] = Nil
+    var constructorconsts : List[FinalConstant] = Nil
   }
 
   protected def doConstants(implicit dd : InductiveType)
@@ -73,11 +92,11 @@ abstract class NamedInductiveTypes extends StructuralFeature("inductive") with P
      implicit val id = new InductiveType(dd)
      new Elaboration {
        def domain = {
-         dd.module.domain
+         (id.typeconsts ::: id.constructorconsts).map(_.name)
        }
        def getO(name: LocalName) = {
-         if (id.typenames contains dd.parent ? name) id.types.find(_.name == name)
-         else id.constructors.find(_.name == name)
+         if (id.types.exists(t => t.path.name == name)) id.typeconsts.find(_.name == name)
+         else id.constructorconsts.find(_.name == name)
        }
      }
 

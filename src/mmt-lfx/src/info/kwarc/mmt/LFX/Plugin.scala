@@ -86,28 +86,32 @@ class WInductive extends NamedInductiveTypes {
   val tpsym = Typed.ktype
   val arrow = info.kwarc.mmt.lf.Arrow.path
 
-  override def doConstants(implicit dd: InductiveType) = dd.typenames foreach (tpname => {
-    val consts = dd.constructornames.filter(_._3.name == tpname.name)
-    val tps = consts map {
-      case (_,Nil,_) => (FiniteTypes.Unit.term,FiniteTypes.EmptyType.term)
-      case (_,tpls,_) => //Coproducts.Coprod(tpls:_*)
-        var tpinit : List[Term] = Nil
-        var arity = 0
-        tpls foreach {
-          case OMS(pth) if pth.name == tpname.name =>
-            arity += 1
-          case t => tpinit ::=t
-        }
-        tpinit = tpinit.reverse
-        (Coproducts.Coprod(tpinit:_*),FiniteTypes.Finite(arity))
-    }
-    val wdom = Coproducts.Coprod(tps.view.map(_._1):_*)
-    val fun = Addfunc(tps.map{
-      case (fr,to) => Arrow(fr,to)
-    }:_*)
-    val df = WTypes.WType(LocalName("x"),wdom,Apply(fun,OMV("x")))
-    dd.types ::= Constant(OMMOD(dd.dd.parent),tpname.name,Nil,Some(OMS(Typed.ktype)),Some(df),None)
-  })
+  override def doConstants(implicit dd: InductiveType) = {
+    dd.types foreach (tp => {
+      val consts = dd.constructors.filter(_.target == tp)
+      val tps = consts.indices map(i => consts(i) match {
+        case c : Constructor if c.domains.isEmpty =>
+          (FiniteTypes.Unit.term,FiniteTypes.EmptyType.term)
+        case c => //Coproducts.Coprod(tpls:_*)
+          var tpinit : List[Term] = Nil
+          var arity = 0
+          c.domains foreach {
+            case OMS(pth) if pth.name == tp.path.name =>
+              arity += 1
+            case t => tpinit ::=t
+          }
+          tpinit = tpinit.reverse
+          (Coproducts.Coprod(tpinit:_*),FiniteTypes.Finite(arity))
+      })
+      val wdom = Coproducts.Coprod(tps.view.map(_._1):_*)
+      val fun = Addfunc(tps.map{
+        case (fr,to) => Arrow(fr,to)
+      }:_*)
+      val df = WTypes.WType(LocalName("x"),wdom,Apply(fun,OMV("x")))
+      dd.typeconsts ::= Constant(OMMOD(dd.dd.parent),tp.path.name,Nil,Some(OMS(Typed.ktype)),Some(df),None,tp.notC)
+    })
+    dd.typeconsts = dd.typeconsts.reverse
+  }
 
 }
 */
