@@ -420,19 +420,22 @@ class NotationBasedPresenter extends ObjectPresenter {
          1
       case o:OML =>
          doDefault(o.vd)
-      case VarDecl(n,tp,df, not) =>
-         n match {
-            case LocalName(List(ComplexStep(_))) => doOperator("include")
-            case _ => doVariable(n)
+      case VarDecl(n,f,tp,df, not) =>
+         f.foreach {f => doOperator(f); doSpace(1)}
+         val named = n match {
+           case LocalName(ComplexStep(_)::Nil) => false
+           case _ => true
          }
+         if (named)
+           doVariable(n)
          tp foreach {t =>
             if (metadata.TagInferredType.get(o)) {
                doInferredType {
-                  doOperator(":")
+                  if (named) doOperator(":")
                   recurse(t, noBrackets)(pc.child(1))
                }
             } else {
-               doOperator(":")
+               if (named) doOperator(":")
                recurse(t, noBrackets)(pc.child(1))
             }
          }

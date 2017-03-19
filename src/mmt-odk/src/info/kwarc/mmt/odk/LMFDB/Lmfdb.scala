@@ -191,7 +191,7 @@ object LMFDBStore extends Storage with LMFDBBackend {
        case Some(thy: DeclaredTheory) => thy 
        case Some(_) => throw BackendError("unexpected type", db.dbTheory)
        case None =>
-          val t = new DeclaredTheory(db.dbTheory.parent, db.dbTheory.name, schema.meta)
+          val t = Theory.empty(db.dbTheory.parent, db.dbTheory.name, schema.meta)
           controller add t
           t
     }

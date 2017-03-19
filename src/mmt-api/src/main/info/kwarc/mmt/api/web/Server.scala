@@ -24,13 +24,15 @@ object Server {
   private def CORS_AllowOrigin(origin: String) = true
 
   //for now
-  private def checkCORS(tk: HTalk): HTalk = tk.req.header("Origin") match {
-    case None => tk
-    case Some(s) => CORS_AllowOrigin(s) match {
-      case true => addCORS(tk, s)
-      case false => tk
+  private def checkCORS(tk: HTalk): HTalk = {
+    val origin = tk.req.header("Origin").getOrElse("*")
+    if(CORS_AllowOrigin(origin)){
+      addCORS(tk, origin)
+    } else {
+      tk
     }
   }
+
 
   private def addCORS(tk : HTalk, origin: String): HTalk = tk
     .setHeader("Access-Control-Allow-Origin", origin)
@@ -114,14 +116,6 @@ object Server {
     */
   def XMLResponse(node: scala.xml.Node, status: HStatus.Value): HLet = TextResponse(node.toString, "xml")
 
-  /** a response that sends an HTML error message to the browser */
-  @deprecated("this method is for backwards compatibility only, use with request object where possible")
-  def errorResponse(msg: String): HLet = errorResponse(ServerError(msg))
-
-  /** a response that sends an HTML error message to the browser */
-  @deprecated("this method is for backwards compatibility only, use with request object where possible")
-  def errorResponse(error: Error): HLet = htmlErrorResponse(error)
-
   /** builds an error response from an error */
   def errorResponse(error: Error, req: HReqData): HLet = {
     // we have three modes of error responses: text/html, text/xml, text/plain
@@ -149,7 +143,10 @@ object Server {
   }
 
   /** builds a smart error message from an error */
-  def errorResponse(msg: String, talk: HTalk): HLet = errorResponse(ServerError(msg), talk.req)
+  def errorResponse(msg: String, req: HReqData): HLet = errorResponse(ServerError(msg), req)
+
+  /** builds a smart error message from an error */
+  def errorResponse(msg: String, talk: HTalk): HLet = errorResponse(msg, talk.req)
 
   /** an error response in plain text format */
   def plainErrorResponse(error: Error): HLet = TextResponse(error.toStringLong, status = HStatus.InternalServerError)
@@ -159,6 +156,7 @@ object Server {
 
   /** an error response in xml format */
   def xmlErrorResponse(error: Error): HLet = XMLResponse(error.toNode, HStatus.InternalServerError)
+
 }
 
 /** straightforward abstraction for web style key-value queries; no encoding, no duplicate keys */
@@ -307,13 +305,13 @@ class Server(val port: Int, val host: String, controller: Controller) extends HS
           case ":mws" :: _ => Some(MwsResponse)
           case hd :: tl if hd.startsWith(":") =>
             val pl = controller.extman.getOrAddExtension(classOf[ServerExtension], hd.substring(1)) getOrElse {
-              return Some(errorResponse("no plugin registered for context " + hd))
+              return Some(errorResponse("no plugin registered for context " + hd, req))
             }
             val hlet = new HLet {
               def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
                 log("handling request via plugin " + pl.logPrefix)
                 val hl = try {
-                  pl(tl, req.query, new Body(tk), Session(tk.ses.id))
+                  pl(tl, req.query, new Body(tk), Session(tk.ses.id), req)
                 } catch {
                   case e: Error =>
                     errorResponse(e, req)

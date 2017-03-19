@@ -401,6 +401,7 @@ class FormulaParser(val dictionary : Set[String]) extends JavaTokenParsers with 
       case (no )~(expr : Expression)~Some(expr1 : Expression) => Mul(Num(no.toDouble)::expr::expr1::Nil)
       case (no )~(expr : Expression)~None => Mul(Num(no.toDouble)::expr::Nil)
     } |*/
+    //TODO the type erasure warnings here are bugs and may not be ignored
     unsigned_factor~rep(multiply | lazy_multiply) ^^ {
       case (fctr : Expression)~(divs) if divs.nonEmpty =>
         applyFunctionsInOrder(fctr :: divs.collect({

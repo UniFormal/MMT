@@ -72,6 +72,13 @@ class Reader(val jr: java.io.BufferedReader) {
       jr.reset
       s
    }
+   
+   /** checks if the remainder starts with a certain String */
+   def startsWith(s: String): Boolean = {
+     val r = lookAhead(s.length)
+     r == s
+   }
+   
    /** read one character
     * \n, \r, and \r\n are read as \n
     */
@@ -96,6 +103,7 @@ class Reader(val jr: java.io.BufferedReader) {
        offset += 1
        c
    }
+   
    /** as read but skips initial whitespace */
    private def readSkipWS: Int = {
       var c:Int = 0

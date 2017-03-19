@@ -20,7 +20,7 @@ object Unlock extends UnaryConstantScala(External._path, "unlock")
 object Key extends TernaryConstantScala(External._path, "key") {
   def makeKeyDecl(k: Term)(implicit stack: Stack) = {
     val (keyN, _) = Context.pickFresh(stack.context, LocalName("key"))
-    VarDecl(keyN, Some(k), None, None)
+    VarDecl(keyN, k)
   }
 }
 
@@ -64,11 +64,13 @@ object InferUnlock extends InferenceRule(Unlock.path, OfType.path) {
      solver.inferType(l, covered) flatMap {
        case LockType(p,n,s,t) =>
          if (!covered) {
-           val isKnown = stack.context.exists {
-             case VarDecl(_, Some(k @ Key(pC, nC, sC)), _, _) =>
-               // must be dry run
-               solver.check(Equality(stack, k, Key(p, n, s), None))
-             case _ => false
+           val isKnown = stack.context.exists {vd =>
+             vd.tp match {
+               case Some(k @ Key(pC, nC, sC)) =>
+                 // must be dry run
+                 solver.check(Equality(stack, k, Key(p, n, s), None))
+               case _ => false
+             }
            }
            if (!isKnown) {
              p match {

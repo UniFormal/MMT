@@ -20,6 +20,7 @@ class KillButton {
   }
   
   def isPressed = killed
+  
   def doAction : Any = {
     action.foreach(f => f.apply())
     action = None
@@ -27,7 +28,7 @@ class KillButton {
   
 }
 
-/** killable objects have a kill button that can be pressed to abort processing
+/** killable objects have a list of kill button any of which can be pressed to abort processing
  *  
  *  objects working with killable objects must regularly check the state of the kill button and abort gracefully if pressed
  *  
@@ -35,16 +36,17 @@ class KillButton {
  *  when creating a new killable object, it is often necessary to pass along an existing kill button
  */
 trait Killable {
-  private var killButton: Option[KillButton] = None
+  private var killButtons: List[KillButton] = Nil
   
   /** signals aborting of processing */
   def kill[A](f : Unit => A) {
-    killButton.foreach(_.press(f))
+    killButtons.foreach(_.press(f))
   }
   
   /** processing should be aborted gracefully if true */
-  def isKilled = killButton.exists(_.isPressed)
-  def killact = killButton.foreach(_.doAction)
+  def isKilled = killButtons.exists(_.isPressed)
+  
+  def killact = killButtons.foreach(_.doAction)
   
   /**
    * gives a killable object the same kill button as one that is already around
@@ -52,21 +54,19 @@ trait Killable {
    * This must be called on every newly-created killable object so that pressing the existing kill button also kills the new object 
    */
   def diesWith(implicit that: Killable): this.type = {
-    this.killButton = that.killButton
-    this
-  }
-
-  def newKillButton: this.type = {
-    this.killButton = Some(new KillButton)
+    this.killButtons :::= that.killButtons
     this
   }
   
   /** presses the kill button after the specified number of milli seconds */
-  def setTimeout[A](millisec: Int)(f : Unit => Unit) {
+  def setTimeout[A](millisec: Int)(f : Unit => Unit): this.type = {
+    val killButton = new KillButton
+    killButtons ::= killButton
     Future {
       Thread.sleep(millisec)
-      killButton.foreach(_.press(f))
+      killButton.press(f)
     }
+    this
   }
   
 }
@@ -79,7 +79,7 @@ case object TaskCancelled extends java.lang.Throwable
  * @param c the code to execute asynchronously
  */
 @deprecated
-class CancdellableTask[A](c: => A) {
+class CancellableTask[A](c: => A) {
    /** the mutable computation result, which will later be either a value or an exception */ 
    private val p = Promise[A]()
    /** the future result of the computation (immutable) */

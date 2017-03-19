@@ -22,13 +22,25 @@ class OMMMTCoding(default : URI) extends OMCoding[Term] {
     case OMForeign(any,encoding,id,cdbase) => ???
     case OMApplication(f,args,id,cdbase) => OMA(encode(f),args map encode)
     case OMAttribution(OMAttributionPairs(pairslist,inner_id,inner_cdbase),expr,id,cdbase) => ???
-    case OMBinding(binder,OMBindVariables(vars,inner_id),expr,id,cdbase) => OMBIND(encode(binder),vars map (v =>
-      VarDecl(LocalName(v.name),None,None,None)),encode(expr))
+    case OMBinding(binder,OMBindVariables(vars,inner_id),expr,id,cdbase) =>
+      OMBIND(encode(binder), vars map (v => VarDecl(LocalName(v.name))), encode(expr))
     case OMVarVar(omvar) => OMV(omvar.name)
     case v @ OMAttVar(OMAttributionPairs(pairslist,inner_id,inner_cdbase),va,id) => OMV(v.name)
     case OMError(sym,params,id,cdbase) => OMSTR("Error: " + sym.cd + "?" + sym.name) // TODO
     case OMAttributionPairs(pairs,id,cdbase) => ???
     case OMBindVariables(vars,id) => ???
+  }
+
+  protected def relativize(om : OMExpression) : OMExpression = {
+    om.mapComponents {
+      case OMSymbol(name, cd, id, cdbase) => {
+        cd.startsWith(default.toString + "?") match {
+          case true => OMSymbol(name, cd.substring(default.toString.length + 1), id, cdbase)
+          case false => OMSymbol(name, cd, id, cdbase)
+        }
+      }
+      case ob => ob
+    }
   }
 
   def decodeAnyVal(t : Term) : OMAnyVal = t match {
@@ -40,20 +52,10 @@ class OMMMTCoding(default : URI) extends OMCoding[Term] {
     case OMA(f,args) => OMApplication(decexpr(f),args map decexpr,None,None)
   }
   private def decexpr(t : Term) = decode(t) match {
-    case expr: OMExpression => expr
+    case expr: OMExpression => relativize(expr)
     case _ => throw new Exception("Does not yield OMExpression:" + t)
   }
-  def decode(t : Term) : OMAny = ??? // should probably recurse into the above
+  def decode(t : Term) : OMAny = decodeAnyVal(t) // should probably recurse into the above
 }
 
-object GAPEncoding extends OMMMTCoding(URI("http://www.gap-system.org")) {
-  override def encode(om : OMAny) : Term = actencode(om.mapComponents {
-    case OMSymbol(name, cd, id, cdbase) => cd match {
-      case "pcgroup1" => ???
-      case "permgp1" => ???
-      case _ => throw new Exception("cd not yet implemented: " + cd)
-    }
-    case ob => ob
-  }
-  )
-}
+object GAPEncoding extends OMMMTCoding(URI("http://www.gap-system.org"))

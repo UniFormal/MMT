@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.symbols
 
-import info.kwarc.mmt.api.{LocalName, _}
+import info.kwarc.mmt.api._
 import modules._
 import frontend._
 import checking._
@@ -10,12 +10,15 @@ import notations._
 
 import scala.xml.Elem
 
+import Theory._
+
+
 /** A [[DerivedDeclaration]] is a syntactically like a nested theory.
  *  Its semantics is defined by the corresponding [[StructuralFeature]]
  */
 class DerivedDeclaration(h: Term, name: LocalName, override val feature: String, val tpC: TermContainer,
                          val notC: NotationContainer) extends {
-   private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name,None)
+   private val t = Theory.empty(h.toMPath.parent, h.toMPath.name/name, noMeta)
 } with NestedModule(h, name, t) with HasNotation {
    // overriding to make the type stricter
   override def module: DeclaredModule = t
@@ -106,7 +109,7 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
     */
    def processHeader(header: Term): (LocalName,Term) = {
      header match {
-       case OMA(OMMOD(`mpath`), OML(name, None, None)::args) =>
+       case OMA(OMMOD(`mpath`), OML(name, None, None,_,_)::args) =>
          val tp = OMA(OMMOD(mpath), args)
          (name, tp)
      }
@@ -148,6 +151,9 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
    
    /** returns the rule constant for using this feature in a theory */
    def getRule = StructuralFeatureRule(feature)
+   
+   /** for creating/matching variable declarations of this feature */
+   object VarDeclFeature extends DerivedVarDeclFeature(feature)
 }
 
 /**
@@ -196,12 +202,12 @@ trait IncludeLike {self: StructuralFeature =>
 trait ParametricTheoryLike {self: StructuralFeature =>
    val Type = ParametricTheoryLike.Type(getClass)
    
-   def getHeaderNotation = List(LabelArg(2, false, false), Delim("("), Var(1, true, Some(Delim(","))), Delim(")")) 
+   def getHeaderNotation = List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), Delim(")")) 
 
    override def getInnerContext(dd: DerivedDeclaration) = Type.getParameters(dd)
    
    override def processHeader(header: Term) = header match {
-     case OMBIND(OMMOD(`mpath`), cont, OML(name,None,None)) => (name, Type(cont))
+     case OMBIND(OMMOD(`mpath`), cont, OML(name,None,None,_,_)) => (name, Type(cont))
    }
    override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
      case Some(Type(cont)) => OMBIND(OMMOD(mpath), cont, OML(dd.name, None,None))
@@ -280,7 +286,7 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
 // Binds theory parameters using Lambda/Pi in an include-like structure
 class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, applys : GlobalName) extends StructuralFeature(id) with IncludeLike {
   override def checkInContext(prev : Context, dv: VarDecl): Unit = dv match {
-    case DerivedVarDecl(LocalName(ComplexStep(p) :: Nil),`id`,`mpath`,List(OMMOD(q))) if p == q => checkpath(p)
+    case VarDeclFeature(LocalName(ComplexStep(p) :: Nil), OMMOD(q), None) if p == q => checkpath(p)
     case _ =>
   }
 
@@ -311,37 +317,33 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
   }
 
   override def elaborateInContext(context: Context, dv: VarDecl): Context = dv match {
-    case DerivedVarDecl(LocalName(ComplexStep(dom) :: Nil), `id`,`mpath`, List(OMMOD(q))) if dom == q && !context.contains(dv) =>
-      val body = controller.simplifier.getBody(context, OMMOD(dom)) match {
+    case VarDeclFeature(LocalName(ComplexStep(dom) :: Nil), OMMOD(q), None) if dom == q && !context.contains(dv) =>
+      val thy = controller.simplifier.getBody(context, OMMOD(dom)) match {
         case t : DeclaredTheory => t
         case _ => throw GetError("Not a declared theory: " + dom)
       }
-      controller.simplifier.apply(body)
-      implicit val vars = body.parameters.filter({
-        case DerivedVarDecl(_,_,_,_) => false
-        case StructureVarDecl(_,_,_) => false
-        case _ => true
-      })
-      val translator = mkTranslator(body,n => OMV(n))(vars)
+      controller.simplifier.apply(thy)
+      implicit val vars = thy.parameters.filter(_.feature.isEmpty)
+      val translator = mkTranslator(thy,n => OMV(n))(vars)
       val prefix = ComplexStep(dom)
-      val pdecs = body.getDerivedDeclarations(feature)
-      val fin = body.parameters.flatMap{
-        case ndv @ DerivedVarDecl(_,_,_,_) => ndv :: elaborateInContext(context,ndv)
+      val pdecs = thy.getDerivedDeclarations(feature)
+      val fin = thy.parameters.flatMap {
+        case ndv @ DerivedVarDeclFeature(_,_,_,_) => ndv :: elaborateInContext(context,ndv)
         case _ => Nil
-      } ::: body.getDerivedDeclarations(feature).flatMap {
+      } ::: thy.getDerivedDeclarations(feature).flatMap {
         case d : DerivedDeclaration if d.feature == feature =>
-          val nd = DerivedVarDecl(d.name,id,mpath,d.tpC.get.toList)//(dd.home,d.name,feature,d.tpC,d.notC)
+          val nd = VarDeclFeature(d.name, d.tpC.get.get, None)//(dd.home,d.name,feature,d.tpC,d.notC)
           nd :: elaborateInContext(context,nd)
-      } ::: body.getDeclarationsElaborated.flatMap {
+      } ::: thy.getDeclarationsElaborated.flatMap {
         case d : DerivedDeclaration if d.feature == feature => Nil
           /*
             val nd = DerivedVarDecl(d.name,id,mpath,d.tpC.get.toList)//(dd.home,d.name,feature,d.tpC,d.notC)
             nd :: elaborateInContext(context,nd)
             */
         case d if pdecs.exists(i => d.getOrigin == ElaborationOf(i.path)) => Nil
-        case d : FinalConstant =>
-          val ret = VarDecl(prefix / d.name,d.tp.map(translator.applyType(context,_)),
-            d.df.map(translator.applyDef(context,_)),d.not)//d.translate(parent.toTerm, prefix, translator)
+        case d : Constant =>
+          val ret = VarDecl(prefix / d.name, None, d.tp.map {translator.applyType(context,_)},
+                                                   d.df.map {translator.applyDef(context,_)}, d.not)//d.translate(parent.toTerm, prefix, translator)
           List(ret)
       }
       fin.indices.collect{
@@ -363,7 +365,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     }
     controller.simplifier.apply(body)
     val parentContextIncludes = context.collect{
-      case DerivedVarDecl(LocalName(ComplexStep(n) :: rest2),`feature`,_,_) => n
+      case VarDeclFeature(LocalName(ComplexStep(n) :: rest2),_,_) => n
     }
     /*
     val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
@@ -378,7 +380,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
       case i if ElaboratedElement.is(parentDerDecls(i)) => parentDeclIncludes(i)
     }
     def doFirsts = (body.getDerivedDeclarations(feature).map(s => getDomain(s).toMPath) ::: bodycont.collect{
-      case DerivedVarDecl(LocalName(ComplexStep(n) :: rest2),`feature`,_,_) => n
+      case DerivedVarDeclFeature(LocalName(ComplexStep(n) :: rest2),`feature`,_,_) => n
     }).filterNot(s => parentContextIncludes.contains(s) || dones.contains(s)).headOption
     var doFirst = doFirsts
     while (doFirst.isDefined) {
@@ -406,16 +408,10 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
         OMV(ln)
       case _ => OMS(dd.parent ? ln)
     }
-    implicit val vars = body.parameters.filter({
-      case DerivedVarDecl(_,_,_,_) => false
-      case StructureVarDecl(_,_,_) => false
-      case _ => true
-    }).map{
-      case VarDecl(nm,tpOpt,dfOpt,not) =>
-        val tr = mkTranslator(body,toTerm)(Context.empty)
-        VarDecl(nm,tpOpt.map(tr.applyType(Context.empty,_)),dfOpt.map(tr.applyDef(Context.empty,_)),not)
+    val tr = mkTranslator(body,toTerm)(Context.empty)
+    implicit val vars = body.parameters.filter(_.feature.isEmpty).map {vd =>
+        tr.applyVarDecl(Context.empty,vd)
     }
-
 
     val translator = mkTranslator(body,n => toTerm(n))(vars)
 

@@ -29,7 +29,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
    private var constantContext: Context = Context.empty
    private var querySolution : Context = Context.empty
    def getUnsolvedVariables : List[LocalName] = querySolution collect {
-      case VarDecl(x,_,None,_) => x
+      case vd if vd.df.isEmpty => vd.name
    }
    /**
     * @return the solution if a match was found
@@ -186,7 +186,8 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
       if (goal.length != query.length) return None
       var rename = Substitution()
       (goal.declsInContext.toList zip query) foreach {
-         case ((goalBound, VarDecl(x1,tp1,df1, _)), VarDecl(x2,tp2, df2, _)) =>
+         case ((goalBound, VarDecl(x1,f1,tp1,df1, _)), VarDecl(x2,f2,tp2, df2, _)) =>
+            if (f1 != f2) return None
             List((tp1,tp2), (df1,df2)) foreach {
                case (None,None) => true
                case (Some(t1), Some(t2)) =>

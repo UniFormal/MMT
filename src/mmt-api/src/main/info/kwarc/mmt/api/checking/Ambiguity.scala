@@ -35,7 +35,7 @@ object InferAmbiguous extends InferenceRule(ObjectParser.oneOf,ObjectParser.oneO
             // try type inference on every alternative
             val results = alternatives.zipWithIndex.map {case (a,i) =>
                history += s"trying number $i"
-               val res = checker.dryRun {
+               val res = checker.dryRun(false) {
                   checker.inferType(a, covered)(stack, new History(Nil))
                }
                history += res.toString

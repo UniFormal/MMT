@@ -77,8 +77,34 @@ case class SymbolName() extends PlaceholderDelimiter {
    }
 }
 
+object CommonMarkerProperties {
+  def noProps = CommonMarkerProperties(None,None)
+}
+import CommonMarkerProperties._
+
+/** bundles minor properties of markers to make the interfaces more robust */
+case class CommonMarkerProperties(precedence: Option[Precedence], localNotations: Option[Int]) {
+  def wlnf(n: Int) = copy(localNotations = Some(n))
+  def *(remap: Int => Int) = copy(localNotations = localNotations.map(remap))
+  def asStringPrefix = localNotations.map(i => "%L" + i + "_").getOrElse("")
+}
+
+
 sealed abstract class ArgumentMarker extends Marker with ArgumentComponent {
-  def locallyUsesNotationsFrom: Option[SimpArg] = None
+  val number: Int
+  
+  val properties: CommonMarkerProperties
+  def locallyUsesNotationsFrom: Option[SimpArg] = properties.localNotations.map(SimpArg(_,noProps))
+  def precedence = properties.precedence
+  
+  /** a copy of this marker with the field properties.localNotations set */
+  def withLocalNotationsFrom(n: Int): ArgumentMarker = this match {
+    case am: SimpArg     => am.copy(properties = properties.wlnf(n))
+    case am: SimpSeqArg  => am.copy(properties = properties.wlnf(n))
+    case am: LabelArg    => am.copy(properties = properties.wlnf(n))
+    case am: LabelSeqArg => am.copy(properties = properties.wlnf(n))
+    case am: ImplicitArg => am.copy(properties = properties.wlnf(n))
+  }
 }
 
 /** an argument
@@ -86,7 +112,6 @@ sealed abstract class ArgumentMarker extends Marker with ArgumentComponent {
   * @param n absolute value is the argument position, negative iff it is in the binding scope
   */
 sealed abstract class Arg extends ArgumentMarker {
-  val number: Int
   /* this may come in handy some time but is not used at the moment */ 
   //val precedence : Option[Precedence]
   override def toString = number.toString
@@ -94,19 +119,15 @@ sealed abstract class Arg extends ArgumentMarker {
    * @return the corresponding sequence
    * @param s the delimiter
    */
-  def by(s:String) : SeqArg = SimpSeqArg(number,Delim(s))
-}
-
-/** normal arguments */
-case class SimpArg(number : Int, precedence : Option[Precedence] = None) extends Arg
-
-/**
- * an implicit argument
- * 
- * usually these are not mentioned in the notation, but occasionally they have to be, e.g., when an implicit argument is the last argument
- */
-case class ImplicitArg(number: Int, precedence : Option[Precedence] = None) extends ArgumentMarker {
-   override def toString = "%I" + number
+  def by(s:String) : SeqArg
+  
+  /** renumbers the markers, used for arity flattening of sequences */
+  def *(remap: Int => Int): Arg = {
+    this match {
+      case am: SimpArg  => am.copy(number = remap(am.number), properties = am.properties*remap)
+      case am: LabelArg => am.copy(number = remap(am.number), properties = am.properties*remap)
+    }
+  }
 }
 
 /** a sequence argument
@@ -115,12 +136,25 @@ case class ImplicitArg(number: Int, precedence : Option[Precedence] = None) exte
  * @param sep the delimiter between elements of the sequence 
  */
 sealed abstract class SeqArg extends ArgumentMarker {
-  val number: Int
   val sep: Delim
-  def makeCorrespondingArg(n: Int): Arg
-  val precedence : Option[Precedence]
-  override def toString = number.toString + sep + "…"
+  def makeCorrespondingArg(n: Int, remap: Int => Int): Arg
+  override def toString = properties.asStringPrefix + number.toString + sep + "…"
   override def isSequence = true
+}
+
+/** normal arguments */
+case class SimpArg(number : Int, properties: CommonMarkerProperties = noProps) extends Arg {
+    def by(s:String): SimpSeqArg = SimpSeqArg(number,Delim(s), properties)
+}
+
+/**
+ * an implicit argument
+ * 
+ * usually these are not mentioned in the notation, but occasionally they have to be, e.g., when an implicit argument is the last argument
+ */
+case class ImplicitArg(number: Int, properties: CommonMarkerProperties = noProps) extends ArgumentMarker {
+   override def toString = properties.asStringPrefix + "%I" + number
+   def *(remap: Int => Int): ImplicitArg = copy(number = remap(number), properties = properties * remap)
 }
 
 /**
@@ -128,8 +162,8 @@ sealed abstract class SeqArg extends ArgumentMarker {
  * @param sep the separator
  */
 
-case class SimpSeqArg(number : Int, sep : Delim, precedence : Option[Precedence] = None) extends SeqArg {
-  def makeCorrespondingArg(n: Int) = SimpArg(n, precedence)
+case class SimpSeqArg(number: Int, sep: Delim, properties: CommonMarkerProperties) extends SeqArg {
+  def makeCorrespondingArg(n: Int, remap: Int => Int) = SimpArg(n, properties * remap)
 }
 
 
@@ -140,26 +174,24 @@ case class SimpSeqArg(number : Int, sep : Delim, precedence : Option[Precedence]
  */
 case class LabelInfo(typed: Boolean, defined: Boolean, dependent: Boolean)
 
+object LabelInfo {
+  def none = LabelInfo(false,false,false)
+}
+
 /** OML arguments, possibly with required type/definiens
  */
-case class LabelArg(number : Int, typed: Boolean, defined: Boolean, precedence : Option[Precedence] = None) extends Arg {
-  def info = LabelInfo(typed, defined, false)
-  override def toString = "L" + number.toString + (if (typed) "T" else "") + (if (defined) "D" else "")
-  /**
-   * @return the corresponding (dependent) sequence
-   * @param s the delimiter
-   */
-  override def by(s:String) = LabelSeqArg(number,Delim(s),typed,defined,true)
+case class LabelArg(number : Int, info: LabelInfo, properties: CommonMarkerProperties = noProps) extends Arg {
+  override def toString = properties.asStringPrefix + "L" + number.toString + (if (info.typed) "T" else "") + (if (info.defined) "D" else "")
+  def by(s:String): LabelSeqArg = LabelSeqArg(number, Delim(s), info, properties)
 }
 
 /**
  * sequence of [[LabelArg]]
  * @param dependent elements in the sequence may refer to previous names
  */
-case class LabelSeqArg(number: Int, sep: Delim, typed : Boolean, defined : Boolean, dependent: Boolean, precedence : Option[Precedence] = None) extends SeqArg {
-  def info = LabelInfo(typed, defined, dependent)
-  override def toString = "L" + number.toString + (if (typed) "T" else "") + (if (defined) "D" else "") + sep + "…"
-  def makeCorrespondingArg(n: Int) = LabelArg(n, typed, defined, precedence)
+case class LabelSeqArg(number: Int, sep: Delim, info: LabelInfo, properties: CommonMarkerProperties) extends SeqArg {
+  override def toString = properties.asStringPrefix + "L" + number.toString + (if (info.typed) "T" else "") + (if (info.defined) "D" else "") + sep + "…"
+  def makeCorrespondingArg(n: Int, remap: Int => Int) = LabelArg(n, info, properties*remap)
 }
 
 /** a variable binding
@@ -169,13 +201,16 @@ case class LabelSeqArg(number: Int, sep: Delim, typed : Boolean, defined : Boole
  * @param sep if given, this is a variable sequence with this separator;
  *   for typed variables with the same type, only the last one needs a type 
  */
-case class Var(number: Int, typed: Boolean, sep: Option[Delim], precedence : Option[Precedence] = None) extends Marker with VariableComponent {
-   override def toString = "V" + number.toString + (if (typed) "T" else "") + (sep.map(_.toString + "…").getOrElse(""))
+case class Var(number: Int, typed: Boolean, sep: Option[Delim], properties: CommonMarkerProperties = noProps) extends Marker with VariableComponent {
+   def precedence = properties.precedence
+   override def toString = properties.asStringPrefix + "V" + number.toString + (if (typed) "T" else "") + (sep.map(_.toString + "…").getOrElse(""))
    override def isSequence = sep.isDefined
+   def makeCorrespondingSingleVar(n: Int, remap: Int => Int) = Var(n, typed, None, properties*remap)
+   def *(remap: Int => Int): Var = copy(number = remap(number), properties = properties * remap)
 }
 
 case object AttributedObject extends Marker {
-   override def toString = "%a" 
+   override def toString = "%a"
 }
 
 /** Verbalization markers occur in verbalization notations
@@ -185,7 +220,7 @@ sealed abstract class VerbalizationMarker extends Marker {
 }
 
 case class WordMarker(word : String) extends VerbalizationMarker {
-  override def toString = word 
+  override def toString = word
   def toParsing = Delim(word) :: Nil
 }
 
@@ -512,54 +547,64 @@ object PresentationMarker {
 sealed trait ArityComponent {
    val number: Int
    def isSequence: Boolean = false
-   val precedence: Option[Precedence] //=None
+   def precedence: Option[Precedence] //=None
 }
 sealed trait ArgumentComponent extends ArityComponent
 sealed trait VariableComponent extends ArityComponent
 //sealed trait ScopeComponent extends ArityComponent
 
 object Marker {
-   def parse(s: String) = s match {
+   /** checks if s(i) exists and satisfies p; negative i counts from end */ 
+   private def charAt(s: String, i: Int, p: Char => Boolean) = {
+     val iA = if (i < 0) i + s.length else i
+     iA < s.length && p(s(iA)) 
+   }
+  
+   def parse(s: String) : Marker = s match {
+         case s : String if s.startsWith("%L") =>
+           var i = 2
+           while (charAt(s, i, _.isDigit)) {i+=1}
+           val n = s.substring(2,i).toInt
+           parse(s.substring(i+1)) match {
+             case am: ArgumentMarker => am.withLocalNotationsFrom(n)
+             case _ => throw ParseError("only argument markers can use local notations" + s.toString)
+           }
          case "%i" => InstanceName()
          case "%n" => SymbolName()
          case "%a" => AttributedObject
          case s: String if s.startsWith("%D") =>
             // Ds ---> delimiter s (used to escape special delimiters)
             if (s.length == 2)
-               throw ParseError("not a valid marker " + s) 
+               throw ParseError("not a valid marker " + s)
             else
                Delim(s.substring(2))
          case s: String if s.startsWith("%I") =>
             // In or Gn ---> implicit argument or implicit guard
-            try {
-               val n = s.substring(2).toInt
-               ImplicitArg(n)
-            } catch {
-               case e: Throwable => throw ParseError("not a valid marker " + s) 
-            }
-         case s: String if s.startsWith("V") && s(1).isDigit =>
+            val n = stringToInt(s.substring(2)).getOrElse(throw ParseError("not a valid marker " + s))
+            ImplicitArg(n,noProps)
+         case s: String if s.startsWith("V") && charAt(s, 1, _.isDigit) =>
             //Vn ---> variable
             var i = 1
-            while (i < s.length && s(i).isDigit) {i+=1}
+            while (charAt(s, i, _.isDigit)) {i+=1}
             val n = s.substring(1,i).toInt
             val d = s.substring(i)
             if (d == "")
                //Vn ---> untyped, no sequence
-               Var(n, false, None)
+               Var(n, false, None, noProps)
             else if (d == "T")
                //VnT ---> typed, no sequence
-               Var(n, true, None)
+               Var(n, true, None, noProps)
             else if (d.startsWith("T") && d.endsWith("…")) {
                //VnTsep… ---> typed, sequence
                val sep = d.substring(1,d.length-1)
-               Var(n, true, Some(Delim(sep)))
+               Var(n, true, Some(Delim(sep)),noProps)
             } else if (d.endsWith("…")) {
                //Vnsep… ---> untyped, sequence
                val sep = d.substring(0,d.length-1)
-               Var(n, false, Some(Delim(sep)))
+               Var(n, false, Some(Delim(sep)),noProps)
             } else
                throw ParseError("not a valid marker " + s)
-         case s: String if s.startsWith("L") && s(1).isDigit =>
+         case s: String if s.startsWith("L") && charAt(s,1,_.isDigit) =>
            //Ln ---> OML
            var i = 1
            while (i < s.length && s(i).isDigit) {i+=1}
@@ -576,28 +621,31 @@ object Marker {
              defined = true
            }
            if (d.endsWith("…")) {
-             val sep = d.dropRight(1)
              var dependent = false
              if (d.startsWith("d")) {
                d = d.substring(1)
                dependent = true
              }
-             LabelSeqArg(n,Delim(sep),typed,defined,dependent)
-           } else
-             LabelArg(n,typed,defined)
-         case s: String if s.endsWith("…") && s(0).isDigit =>
+             val sep = d.dropRight(1)
+             val li = LabelInfo(typed,defined,dependent)
+             LabelSeqArg(n,Delim(sep),li,noProps)
+           } else {
+             val li = LabelInfo(typed,defined,false)
+             LabelArg(n,li,noProps)
+           }
+         case s: String if s.endsWith("…") && charAt(s,0,_.isDigit) =>
             //nsep… ---> sequence argument/scope
             var i = 0
-            while (s(i).isDigit) {i+=1}
+            while (charAt(s,i,_.isDigit)) {i+=1}
             val n = s.substring(0, i).toInt
             val rem = s.substring(i,s.length-1)
-            SimpSeqArg(n, Delim(rem))
+            SimpSeqArg(n, Delim(rem),noProps)
          case "" => throw ParseError("not a valid marker")
          case s:String =>
             try {
                val n = s.toInt
                //n ---> arguments, no sequence
-               SimpArg(n.abs) //TODO deprecate negative positions
+               SimpArg(n.abs,noProps) //TODO deprecate negative positions
             } catch {case e: Throwable =>
                //other string ---> delimiter
                Delim(s)

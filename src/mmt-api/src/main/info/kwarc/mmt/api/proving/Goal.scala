@@ -77,10 +77,8 @@ class Goal(val context: Context, private var concVar: Term) {
    lazy val fullContext: Context = parent.map(_.fullContext).getOrElse(Context()) ++ context
    /** the local context of this goal seen as a list of atomic facts that rules can make use of */
    lazy val varAtoms: List[Atom] = context.flatMap {
-      case IncludeVarDecl(_,_) => Nil
-      case StructureVarDecl(_,_,_) => Nil
-      case VarDecl(n,Some(t),_,_) => List(Atom(OMV(n), t, None))
-      case VarDecl(_, None,_,_) => Nil
+      case VarDecl(n,None, Some(t),_,_) => List(Atom(OMV(n), t, None))
+      case _ => Nil
    }
    /** the complete context of this goal seen as a list of atomic facts that rules can make use of */
    lazy val fullVarAtoms: List[Atom] = parent.map(_.fullVarAtoms).getOrElse(Nil) ::: varAtoms

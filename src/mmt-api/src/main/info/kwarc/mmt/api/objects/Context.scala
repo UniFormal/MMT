@@ -16,21 +16,19 @@ import scala.xml.Node
  * @param df optional definiens
  * @param ats OpenMath-style attributions
  */
-case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: Option[TextNotation]) extends Obj with NamedElement {
+case class VarDecl(name : LocalName, feature: Option[String], tp : Option[Term], df : Option[Term], not: Option[TextNotation]) extends Obj with NamedElement {
    type ThisType = VarDecl
-   /** self-written copy method to copy metadata */
-   def copy(name : LocalName = this.name, tp : Option[Term] = this.tp, df : Option[Term] = this.df,
-                                          not: Option[TextNotation] = this.not) = {
-      val vd = VarDecl(name, tp, df, not)
-      vd.copyFrom(this)
-      vd
-   }
    def toTerm = OMV(name)
-   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = {
-      val vd = VarDecl(name, tp.map(_ ^^ sub), df.map(_ ^^ sub), not)
+   /** self-written copy method to copy metadata */
+   def copy(name : LocalName = this.name, feature: Option[String] = this.feature, tp : Option[Term] = this.tp, df : Option[Term] = this.df,
+                                          not: Option[TextNotation] = this.not) = {
+      val vd = VarDecl(name, feature, tp, df, not)
       vd.copyFrom(this)
       vd
    }
+   /** applies a function to type and definition */
+   def map(f: Term => Term) = copy(tp = tp map f, df = df map f) 
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = map(_ ^^ sub)
    private[objects] def freeVars_ = (tp map {_.freeVars_}).getOrElse(Nil) ::: (df map {_.freeVars_}).getOrElse(Nil)
    def subobjects = subobjectsNoContext(tp.toList ::: df.toList)
    /** converts to an OpenMath-style attributed variable using two special keys */
@@ -53,71 +51,61 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
    def toCMLQVars(implicit qvars: Context) = <bvar><ci>{name.toPath}</ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</bvar>
    def head = tp.flatMap(_.head)
    override def toString = this match {
-      case IncludeVarDecl(p, args) => p.toString + args.mkString(" ")
+      case IncludeVarDecl(_,OMPMOD(p,args), df) => p.toString + args.mkString(" ")
       case _ => name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")
    }
    private def tpN = tp.map(t => <type>{t.toNode}</type>).getOrElse(Nil)
    private def dfN = df.map(t => <definition>{t.toNode}</definition>).getOrElse(Nil)
    
-   def toDeclaration(home: Term): Declaration = this match {
-      case IncludeVarDecl(p,args) =>
-         Include(home, p, args)
-      case StructureVarDecl(n, from, dfOpt) => dfOpt match {
-         case None =>
-            DeclaredStructure(home, name, from, false)
-         case Some(ComplexMorphism(subs)) =>
-            val s = DeclaredStructure(home, name, from, false)
-            //TODO add body
-            s
-         case Some(df) =>
-            DefinedStructure(home, name, from, df, false)
-      }
-      case _ => Constant(home, name, Nil, tp, df, None, NotationContainer(not))
+   def toDeclaration(home: Term): Declaration = feature match {
+     case None =>
+       Constant(home, name, Nil, tp, df, None, NotationContainer(not))
+     case Some(f) => this match {
+       case IncludeVarDecl(_,OMPMOD(p,args),_) =>
+          Include(home, p, args) //TODO defined include
+       case StructureVarDecl(n, from, dfO) => dfO match {
+         case None => DeclaredStructure(home, name, from, false)
+         case Some(df) => DefinedStructure(home, name, from, df, false)
+       }
+       case DerivedVarDeclFeature(n,f,tp,None) =>
+          new DerivedDeclaration(home, n, f, TermContainer(tp), NotationContainer(not))
+     }
    }
 }
 
-object IncludeVarDecl {
-   def apply(p: MPath, args: List[Term]) = VarDecl(LocalName(ComplexStep(p)), Some(OMPMOD(p, args)), None, None)
-   def unapply(vd: VarDecl): Option[(MPath, List[Term])] = vd match {
-      case VarDecl(LocalName(List(ComplexStep(p))), Some(OMPMOD(q, args)), None, _) if p == q => Some((p,args))
-      case _ => None
-   }
-}
-
-/**
- * apply/unapply methods for variable declarations that correspond to [[Structure]]s
- */
-object StructureVarDecl {
-   /**
-    * @param n the name 
-    * @param from the domain, must be OMMOD or OMPMOD
-    * @param df optional definiens, must be total morphism expresion or partial ComplexMorphism
-    */
-   def apply(n: LocalName, from: Term, df: Option[Term]) =
-      VarDecl(n, Some(from), df, None)
-   def unapply(vd: VarDecl) : Option[(LocalName, Term, Option[Term])] =
-      vd.tp match {
-         case Some(from @ OMPMOD(p, args)) =>
-            Some((vd.name, from, vd.df))
-         case _ => None
-   }
-}
-
-object DerivedVarDecl {
+/** use this to create apply/unapply functions for variable declarations for a specific feature */
+class DerivedVarDeclFeature(val feature: String) {
    val path = Path.parseS("http://cds.omdoc.org/mmt?mmt?StructuralFeature", NamespaceMap.empty)
    def maketerm(feat : String, tp : Term) =
       OMA(OMS(path), List(OML(LocalName(feat)),tp))
       
-   def apply(name : LocalName, feat : String, mp : MPath, args : List[Term]) =
-      VarDecl(name, Some(maketerm(feat, OMPMOD(mp,args))),None,None)
+   def apply(name: LocalName, tp: Term, df: Option[Term] = None, nt: Option[TextNotation] = None) =
+      VarDecl(name, Some(feature), Some(tp), df, nt)
       
-   def unapply(vd : VarDecl): Option[(LocalName, String, MPath, List[Term])] = vd.tp match {
-      case Some(OMA(OMS(`path`), OML(feat,None,None) :: OMPMOD(mp,args) :: Nil))
-         if mp.doc.uri.scheme.contains("scala") =>
-           Some((vd.name,feat.toString,mp,args))
-      case _ => None
+   def unapply(vd : VarDecl): Option[(LocalName, Term, Option[Term])] = {
+     if (vd.feature contains feature) {
+       vd match {
+         case VarDecl(n, _, Some(tp), df, None) => Some((n,tp,df))
+         case _ => throw ImplementationError("unsupported properties of derived variable declaration")
+       }
+     } else
+       None
    }
 }
+
+object DerivedVarDeclFeature {
+   def apply(name: LocalName, feat: String, tp: Term, df: Option[Term] = None) = VarDecl(name, Some(feat), Some(tp), df, None)
+   def unapply(vd: VarDecl): Option[(LocalName, String, Term, Option[Term])] = vd match {
+     case VarDecl(n, Some(f), Some(tp), df,_) => Some((n,f,tp,df))
+     case _ => None
+   }
+}
+
+object IncludeVarDecl extends DerivedVarDeclFeature("include") {
+   def apply(p: MPath, args: List[Term]): VarDecl = apply(LocalName(p), OMPMOD(p, args))
+}
+
+object StructureVarDecl extends DerivedVarDeclFeature("structure")
 
 /** represents an MMT context as a list of variable declarations */
 case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDecl] with DefaultLookup[VarDecl] {
@@ -181,20 +169,20 @@ case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDe
                   (true, Nil) // second component is irrelevant
             }
             des ::= DomainElement(name, total, Some((tp, definedAt)))
-         case VarDecl(n, _, df, _) =>
+         case VarDecl(n, _, _, df, _) =>
             des ::= DomainElement(n, df.isDefined, None)
       }
       des.reverse
    }
    /** all theories directly included into this context */
    def getIncludes: List[MPath] = variables.toList flatMap {
-      case IncludeVarDecl(p, args) => List(p)
+      case IncludeVarDecl(_, OMPMOD(p,args),_) => List(p)
       case _ => Nil
    }
    
    /** the identity substitution of this context */
    def id : Substitution = this map {
-	   case VarDecl(n, _, _, _) => Sub(n,OMV(n))
+	   vd => Sub(vd.name,OMV(vd.name))
    }
    /**
     * @return substitution that maps variables according to args, None if lengths do not match
@@ -210,9 +198,9 @@ case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDe
     * @return the resulting context
     */
    def mapTerms(f: (Context,Term) => Term): Context = {
-      val newvars = variables.zipWithIndex map {case (VarDecl(n,tp,df, not), i) =>
+      val newvars = variables.zipWithIndex map {case (vd, i) =>
          val con = Context(variables.take(i) : _*)
-         VarDecl(n, tp map {f(con,_)}, df map {f(con,_)}, not) 
+         vd map {f(con,_)} 
       }
       Context(newvars : _*)
    }
@@ -276,7 +264,7 @@ case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDe
    /** returns this as a substitutions using those variables that have a definiens */
    def toPartialSubstitution : Substitution = {
      variables.toList mapPartial {
-        case VarDecl(n,_,Some(df), _) => Some(Sub(n,df))
+        case VarDecl(n,_,_,Some(df), _) => Some(Sub(n,df))
         case _ => None
      }
    }
@@ -291,6 +279,15 @@ case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDe
    def toCMLQVars(implicit qvars: Context) = 
      <apply>{this.map(v => v.toCMLQVars)}</apply>
    def head = None
+
+   def asDeclarations(home : Term) : List[Declaration] = {
+      var sub = Substitution()
+      this.map {vd =>
+          val d = (vd ^? sub).toDeclaration(home)
+          sub ++ vd.name/d.toTerm
+          d
+      }
+   }
 }
 
 /** a case in a substitution */		
@@ -351,7 +348,7 @@ case class Substitution(subs : Sub*) extends Obj {
     */
    def asContext = {
       val decls = subs map {
-    	  case Sub(n, t) => VarDecl(n, None, Some(t), None)
+    	  case Sub(n, t) => VarDecl(n, None, None, Some(t), None)
       }
       Context(decls : _*)
    }
@@ -409,14 +406,14 @@ object Context {
    	    // optimization in case there is nothing to do
 	      return (con, con.id)
 	   var sub = Substitution()
-	   val conN = con map {case vd @ VarDecl(x,tp,df, _) =>
-	      var xn = x
+	   val conN = con map {vd =>
+	      var xn = vd.name
 	      while (forbidden contains xn) {xn = rename(xn)}
-	      val vdn = if (x == xn && sub.isIdentity)
+	      val vdn = if (vd.name == xn && sub.isIdentity)
 	         vd
 	      else
-            vd.copy(name = xn, tp = tp map {_ ^? sub}, df = df map {_ ^? sub})
-	      sub = sub ++ OMV(x) / OMV(xn)
+            (vd ^? sub).copy(name = xn)
+	      sub = sub ++ OMV(vd.name) / OMV(xn)
 	      vdn
 	   }
 	   (conN, sub)
@@ -425,6 +422,8 @@ object Context {
 
 /** helper object */
 object VarDecl {
+   def apply(n: LocalName, tp: Term = null, df: Term = null): VarDecl = VarDecl(n, None, Option(tp), Option(df), None)
+   
    private def parseComponents(N: Seq[Node], nsMap: NamespaceMap) : (Option[Term], Option[Term], Option[TextNotation]) = {
       var tp : Option[Term] = None
       var df : Option[Term] = None
@@ -442,14 +441,17 @@ object VarDecl {
       xml.trimOneLevel(n) match {      
          case <OMV>{body @ _*}</OMV> =>
             val name = LocalName.parse(xml.attr(n, "name"))
+            val featureAtt = xml.attr(n, "feature")
+            val feature = if (featureAtt == "") None else Some(featureAtt)
             val (tp, df, not) = parseComponents(body, nsMap)
-            val vd = VarDecl(name, tp, df, not)
+            val vd = VarDecl(name, feature, tp, df, not)
             mdOpt.foreach {md => vd.metadata = md}
             vd
          case _ => throw ParseError("not a well-formed variable declaration: " + n.toString)
       }
    }
 }
+
 /** helper object */
 object Substitution {
    /** implicit conversion between a substitution and a list of maps */

@@ -78,13 +78,13 @@ object SCSCPResult {
     * Parses an SCSCPResult from an OpenMath object
     */
   def apply(om: OMObject): SCSCPResult = om.omel match {
-    /* computation completed and returned */
-    case OMAttribution(pairs, OMApplication(`SYMBOL_COMPLETION`, (ome: OMExpression) :: Nil, _, _), _, _) =>
-      SCSCPObjectReturned(ome, pairs)
-
     /* computation completed, but we stored it on the server side only */
     case OMAttribution(pairs, OMApplication(`SYMBOL_COMPLETION`, (omr: OMReference) :: Nil, _, _), _, _) =>
       SCSCPObjectStored(omr, pairs)
+
+    /* computation completed and returned */
+    case OMAttribution(pairs, OMApplication(`SYMBOL_COMPLETION`, (ome: OMExpression) :: Nil, _, _), _, _) =>
+      SCSCPObjectReturned(ome, pairs)
 
     /* not completed, something went wrong */
     case OMAttribution(pairs, OMApplication(`SYMBOL_TERMINATION`, (ome: OMError) :: Nil, _, _), _, _) =>

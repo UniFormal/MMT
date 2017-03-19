@@ -101,9 +101,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
       // adder methods for the stateful lists
 
-      /** registers a constraint */
+      /** registers a solution */
       def addNewSolution(n: LocalName) {
-         if (mutable) _newsolutions ::= n
+         _newsolutions ::= n
       }
       /** registers a constraint */
       def addConstraint(d: DelayedConstraint) {
@@ -121,21 +121,20 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
       /** registers a dependency */
       def addDependency(p: CPath) {
-         if (mutable) _dependencies ::= p
+         _dependencies ::= p
       }
 
-      // setter methods for the above
-
+      // more complex mutator methods for the stateful lists
+      
       def removeConstraint(dc: DelayedConstraint) {
          if (mutable) _delayed = _delayed filterNot (_ == dc)
          else throw MightFail
       }
       def clearNewSolutions {
-         if (mutable) _newsolutions = Nil
-         else throw MightFail
+         _newsolutions = Nil
       }
       def solution_=(newSol: Context) {
-         _solution = newSol
+           _solution = newSol
       }
 
       // instead of full backtracking, we allow exploratory runs that do not have side effects
@@ -145,25 +144,39 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        */
       private def mutable = pushedStates.isEmpty
       /** the state that is stored here for backtracking */
-      private type StateData = Context
-      /** a stack of states for backtracking */
+      private case class StateData(solutions: Context, newsolutions: List[LocalName], dependencies: List[CPath])
+      /** a stack of states for dry runs */
       private var pushedStates: List[StateData] = Nil
       
-      def isDryRun = pushedStates.nonEmpty
+      /** true if we are currently in a dry run */
+      def isDryRun = !mutable
 
-      /** evaluates its arguments without applying its side effects on the state
- *
-       *  @return if Some(v), then normal evaluation is guaranteed to return v without errors
+      /**
+       * evaluates its arguments without generating new constraints
+       * 
+       * all state changes are rolled back unless evaluation is successful and commitOnSuccess is true
        */
-      def immutably[A](a: => A): DryRunResult = {
-         pushedStates ::= solution
-         try {Success(a)}
-         catch {
-            case e: DryRunResult => e
-         }
-         finally {
-            _solution = pushedStates.head
+      def immutably[A](commitOnSuccess: Boolean)(a: => A): DryRunResult = {
+         pushedStates ::= StateData(solution, newsolutions, dependencies)
+         def rollback {
+            val oldState = pushedStates.head
             pushedStates = pushedStates.tail
+            _solution = oldState.solutions
+            _newsolutions = oldState.newsolutions
+            _dependencies = oldState.dependencies 
+         }
+         try {
+           val aR = a
+           if (!commitOnSuccess) {
+             rollback
+           } else {
+             pushedStates = pushedStates.tail
+           }
+           Success(aR)
+         } catch {
+            case e: DryRunResult =>
+              rollback
+              e
          }
       }
       
@@ -331,8 +344,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    def getType(p: GlobalName): Option[Term] = {
       val c = controller.globalLookup.getConstant(p)
-      if (c.tpC.analyzed.isDefined) addDependency(p $ TypeComponent)
-      c.tpC.getAnalyzedIfFullyChecked
+      val t = c.tpC.getAnalyzedIfFullyChecked
+      if (t.isDefined)
+        addDependency(p $ TypeComponent)
+      t
    }
    /** retrieves the definiens of a constant and registers the dependency
     *
@@ -340,8 +355,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    def getDef(p: GlobalName) : Option[Term] = {
       val c = controller.globalLookup.getConstant(p)
-      if (c.dfC.analyzed.isDefined) addDependency(p $ DefComponent)
-      c.dfC.getAnalyzedIfFullyChecked
+      val t = c.dfC.getAnalyzedIfFullyChecked
+      if (t.isDefined)
+        addDependency(p $ DefComponent)
+      t
    }
    def getModule(p: MPath) : Option[Module] = {
       controller.globalLookup.getO(p) match {
@@ -599,38 +616,66 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    private def noActivatableConstraint: Boolean = {
       solution.declsInContext.forall {
-         case (_, VarDecl(_, _, Some(_), _)) =>
+         case (_, vd) if vd.df.isDefined =>
            // solved
            true 
-         case (cont, VarDecl(x, tpOpt, None,_)) =>
+         case (cont, vd) if vd.df.isEmpty =>
             // unsolved, maybe use prover based on needed type
             implicit val history = new History(Nil)
-            tpOpt match {
+            vd.tp match {
               case None =>
-                error("unsolved (untyped) unknown: " + x) 
+                error("unsolved (untyped) unknown: " + vd.name) 
               case Some(tp) =>
-                val rO = rules.get(classOf[TermIrrelevanceRule]).find(r => r.applicable(tp))
+                val rO = rules.get(classOf[TypeBasedSolutionRule]).find(r => r.applicable(tp))//rules.get(classOf[TermIrrelevanceRule]).find(r => r.applicable(tp))
+                rO match {
+                  case Some(rule) =>
+                    history += "calling Type-based solution rule " + rule.getClass + " on " + vd.name + ": " + presentObj(tp)
+                    implicit val stack = Stack(cont)
+                    rule.solve(this)(tp) match {
+                      case Some(p) =>
+                        solve(vd.name, p)
+                      case None =>
+                        error("no solution found")
+                    }
+                  case _ => error("unsolved (typed) unknown: " + vd.name)
+                }
+                /*
                 if (rO.isDefined) {
-                  history += "proving open goal of term-irrelevant type"
-                  prove(constantContext++cont,tp)(history) match {
+                  //prove(constantContext++cont,tp)(history) match {
                      case Some(p) =>
-                        solve(x, p)
+                        solve(vd.name, p)
                      case None =>
                         error("unproved")
                   }
                 } else {
-                  error("unsolved (typed) unknown: " + x)
-                }
+                  error("unsolved (typed) unknown: " + vd.name)
+                } */
             }
       }
    }
 
    /**
-    * tries to evaluate an expression without any effect on the state
- *
-    * @return Some(v) if evaluation successful
+    * tries to evaluate an expression without any generating new constraints
+    *
+    * @param a the expression
+    * @param commitOnSuccess do not roll back state changes if successful
     */
-   override def dryRun[A](a: => A): DryRunResult = immutably(a)
+   override def dryRun[A](commitOnSuccess: Boolean)(a: => A): DryRunResult = immutably(commitOnSuccess)(a)
+   
+   /**
+    * tries to check a judgment without delaying constraints
+    * 
+    * if this returns None, the check is inconclusive at this point, and no state changes were applied
+    * if this returns Some(true), j has been derived and all state changes are applied 
+    * if this returns Some(false), no state changes are applied and the caller still has to generate an error message, possibly by calling check(j)
+    */
+   def tryToCheckWithoutDelay(j:Judgement): Option[Boolean] = dryRun(true) {check(j)(NoHistory)} match {
+      case Success(s:Boolean) => Some(s)
+      case Success(_) => throw ImplementationError("illegal success value")
+      case WouldFail => Some(false)
+      case MightFail => None
+   }
+
 
    /**
     * performs a type inference and calls a continuation function on the inferred type
@@ -685,13 +730,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      ret
    }
 
-   def safecheck(j:Judgement)(implicit history : History): Option[Boolean] = state.immutably[Boolean](check(j)) match {
-      case Success(s:Boolean) => Some(s)
-      case Success(_) => throw ImplementationError("illegal success value")
-      case WouldFail => Some(false)
-      case MightFail => None
-   }
-
    /** proves a Typing Judgement by bidirectional type checking
     *
     * In particular, uses TypingRule's to branch and InferenceRule's followed by Equality check as fallback.
@@ -703,6 +741,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private def checkTyping(j: Typing)(implicit history: History) : Boolean = {
      val tm = j.tm
      val tp = j.tp
+     if (j.tm.toString contains """http://gl.mathhub.info/MMT/LFX/Records?Symbols?Recexp OML(universe,None,Some(http://mathhub.info/MitM/smglom/arithmetics?realnumbers?Realnumbers),None,None)""")
+       {
+         print("")
+       }
      implicit val stack = j.stack
      // try to solve the type of an unknown
      val solved = solveTyping(tm, tp)
@@ -721,6 +763,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        //it's unclear which one works better
        
        // the foundation-independent cases
+       case OML(_,Some(tpA),_,_,_) =>
+         check(Subtyping(stack,tpA,tp))
+       case OML(_,None,Some(df),_,_) => check(Typing(stack,df,tp,j.tpSymb))
        case OMV(x) => getVar(x).tp match {
          case None =>
             if (solution.isDeclared(x))
@@ -793,6 +838,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           case OMV(x) =>
              history += "lookup in context"
              getVar(x).tp
+          case OML(n,Some(tp),_,_,_) => Some(tp)
+          case OML(n,_,Some(df),_,_) =>
+            inferType(df,covered)
           case OMS(p) =>
              history += "lookup in theory"
              getType(p) orElse {
@@ -840,6 +888,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                     }
                  case None =>
                     history += "no applicable rule"
+                   // Seems to be necessary if e.g. a computation rule reduces a term to a typed OML
+                   if (tmS != tm) return inferType(tmS,true) else
                     ret = None
               }
            }
@@ -869,8 +919,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       // TODO this fully expands definitions if no rule is applicable
       // better: use an expansion algorithm that stops expanding if it is know that no rule will become applicable
 
-     // Redundant, but timesaving and makes errors go away:
-     if (safecheck(Equality(j.stack,j.tp1,j.tp2,None)) contains true) {
+     // first see if equality can be established 
+     if (tryToCheckWithoutDelay(Equality(j.stack,j.tp1,j.tp2,None)) contains true) {
        return check(Equality(j.stack,j.tp1,j.tp2,None))
      }
 
@@ -969,6 +1019,12 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       implicit val stack = j.stack
       val tm1S = simplify(tm1)
       val tm2S = simplify(tm2)
+     (tm1,tm2) match {
+       case (o1:OML,o2:OML) if o1.name == o2.name => return mergeOMLs(o1,o2).isDefined
+       case (_,OML(_,_,Some(df),_,_)) => return checkEquality(Equality(stack,tm1,df,tpOpt))
+       case (OML(_,_,Some(df),_,_),_) => return checkEquality(Equality(stack,df,tm2,tpOpt))
+       case _ =>
+     }
       // 1) base cases, e.g., identical terms, solving unknowns
       // identical terms
       if (tm1S hasheq tm2S) return true
@@ -1035,6 +1091,28 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    }
 
    /* ********************** auxiliary methods of checkEquality ***************************/
+
+  private def mergeOMLs(o1 : OML, o2 : OML)(implicit stack : Stack, history: History) : Option[OML] = {
+    require(o1.name == o2.name)
+    var (oS1,oS2) = (o1,o2)
+    // check if types match
+    (oS1,oS2) match {
+      case (OML(_,Some(tp1),_,_,_),OML(_,None,_,_,_)) => oS2 = oS2.copy(tp = oS1.tp)
+      case (OML(_,None,_,_,_),OML(_,Some(tp2),_,_,_)) => oS1 = oS1.copy(tp = oS2.tp)
+      case (OML(_,None,_,_,_),OML(_,None,_,_,_)) =>
+      case (OML(_,Some(tp1),_,_,_),OML(_,Some(tp2),_,_,_)) =>
+        if (!check(Equality(stack,tp1,tp2,None))) return None
+    }
+    (oS1,oS2) match {
+      case (OML(_,_,Some(df1),_,_),OML(_,_,None,_,_)) => oS2 = oS2.copy(df = oS1.df)
+      case (OML(_,_,None,_,_),OML(_,_,Some(df2),_,_)) => oS1 = oS1.copy(df = oS2.df)
+      case (OML(_,_,None,_,_),OML(_,_,None,_,_)) =>
+      case (OML(_,_,Some(df1),_,_),OML(_,_,Some(df2),_,_)) =>
+        if (!check(Equality(stack,df1,df2,None))) return None
+    }
+    if (oS1.tp.isDefined && oS1.df.isDefined && !check(Typing(stack,oS1.df.get,oS1.tp.get))) None
+    else Some(oS1)
+  }
 
    /**
     * finds a TermBasedEqualityRule that applies to t1 and any of the terms in t2
@@ -1196,7 +1274,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             case Some((rs, m)) =>
                rs.head(j) match {
                   case Some((j2, msg)) =>
-                    history += "Using Solution rule " + rs.head.getClass.toString
+                    history += "Using solution rule " + rs.head.toString
                     solveEquality(j2)(j2.stack, (history + msg).branch)
                   case None => false
                }
@@ -1448,11 +1526,15 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       prove(constantContext ++ solution ++ stack.context, conc)
    }
 
+  def proveWithoutSolution(conc: Term)(implicit stack: Stack, history: History): Option[Term] = {
+    prove(constantContext ++ stack.context, conc)
+  }
+
    private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {
       val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
       log(msg)
       history += msg
-      val pu = ProvingUnit(checkingUnit.component, context, conc, logPrefix).diesWith(checkingUnit)
+      val pu = ProvingUnit(checkingUnit.component, simplify(context)(Stack(context),history).asInstanceOf[Context], conc, logPrefix).diesWith(checkingUnit)
       controller.extman.get(classOf[Prover]) foreach {prover =>
          val (found, proof) = prover.apply(pu, rules, 8) //Set the timeout on the prover
          if (found) {
@@ -1469,20 +1551,25 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    }
 
 
-   /** applies all ForwardSolutionRules of the given priority
- *
-    * @param priority exactly the rules with this Priority are applied */
+   /**
+    * applies all ForwardSolutionRules of the given priority
+    *
+    * @param priority exactly the rules with this Priority are applied
+    */
    //TODO call this method at appropriate times
    private def forwardRules(priority: ForwardSolutionRule.Priority)(implicit stack: Stack, history: History): Boolean = {
       val results = solution.zipWithIndex map {
-         case (vd @ VarDecl(x, Some(tp), None, _), i) =>
-            implicit val con : Context = solution.take(i)
-            limitedSimplify(tp, rules.get(classOf[ForwardSolutionRule])) match {
-               case (tpS, Some(rule)) if rule.priority == priority =>
-                 history += "Applying ForwardSolutionRule " + rule.toString
-                 rule(this)(vd)
-               case _ => false
-            }
+         case (vd, i) => vd.tp match {
+           case Some(tp) =>
+              implicit val con : Context = solution.take(i)
+              limitedSimplify(tp, rules.get(classOf[ForwardSolutionRule])) match {
+                 case (tpS, Some(rule)) if rule.priority == priority =>
+                   history += "Applying ForwardSolutionRule " + rule.toString
+                   rule(this)(vd)
+                 case _ => false
+              }
+           case None => false
+         }
          case _ => false
       }
       results.contains(true)
@@ -1495,7 +1582,7 @@ object Solver {
       val ParseResult(unknowns,free,tmU) = ParseResult.fromTerm(tm)
       val etp = LocalName("expected_type")
       val j = Typing(stack, tmU, OMV(etp), None)
-      val cu = CheckingUnit(None, stack.context, unknowns ++ VarDecl(etp, None, None, None), j)
+      val cu = CheckingUnit(None, stack.context, unknowns ++ VarDecl(etp), j)
       val rules = RuleSet.collectRules(controller, stack.context)
       val solver = new Solver(controller, cu, rules)
       solver.applyMain

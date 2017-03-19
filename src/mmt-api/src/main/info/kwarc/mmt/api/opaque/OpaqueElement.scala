@@ -12,6 +12,7 @@ import scala.xml._
  * and an implementation of [[OpaqueElementInterpreter]][C]
  */
 abstract class OpaqueElement extends NarrativeElement {
+   val feature = "opaque-element"
    def parent: DPath
    /** the format of the element */
    def format: String

@@ -23,7 +23,7 @@ object QueryChecker {
 
       /** the query has to be a single element */
       case IsA(e: Query, tp: Unary) => infer(e) match {
-        case TupleQuery(_) =>
+        case ElementQuery(_) =>
         case _ => throw ParseError("illegal proposition: " + p + "\nExpected TupleQuery() as argument to IsA()")
       }
 
@@ -35,19 +35,19 @@ object QueryChecker {
       /** elem has to be an element and tp has to be a set of said type */
       case IsIn(elem, tp) =>
         (infer(elem), infer(tp)) match {
-          case (TupleQuery(s), SetTupleQuery(t)) if s == t =>
+          case (ElementQuery(s), SetQuery(t)) if s == t =>
           case _ => throw ParseError("illegal proposition: " + p + "\nExpected an TupleQuery() and SetTupleQuery() as arguments to IsIn()")
         }
 
       /** isEmpty can only check sets */
       case IsEmpty(r) => infer(r) match {
-        case SetTupleQuery(_) =>
+        case SetQuery(_) =>
         case _ => throw ParseError("illegal proposition: " + p + "\nExpected SetTuple() as argument to IsEmpty()")
       }
 
       /** Equal needs to be elements of the same type */
       case Equal(left, right) => (infer(left), infer(right)) match {
-        case (TupleQuery(s), TupleQuery(t)) if s == t =>
+        case (ElementQuery(s), ElementQuery(t)) if s == t =>
         case _ => throw ParseError("illegal proposition: " + p + "\nExpected elements of same type as arguments to Equal()")
       }
 
@@ -56,7 +56,7 @@ object QueryChecker {
 
       /** exists has to be a set and the scope has to match */
       case Exists(domain, vn, scope) => infer(domain) match {
-        case SetTupleQuery(t) => check(scope)(context ++ VarDecl(vn, Some(QueryType.generate(TupleQuery(t))), None, None))
+        case SetQuery(t) => check(scope)(context ++ VarDecl(vn, QueryType.toTerm(ElementQuery(t))))
         case _ => throw ParseError("illegal proposition: " + p + "\nExpected SetTupleQuery() as domain of Forall()")
       }
 
@@ -68,13 +68,13 @@ object QueryChecker {
 
       /** forall has to be a set and the scope has to match */
       case Forall(domain, vn, scope) => infer(domain) match {
-        case SetTupleQuery(t) => check(scope)(context ++ VarDecl(vn, Some(QueryType.generate(TupleQuery(t))), None, None))
+        case SetQuery(t) => check(scope)(context ++ VarDecl(vn, QueryType.toTerm(ElementQuery(t))))
         case _ => throw ParseError("illegal proposition: " + p + "\nExpected SetTupleQuery() as domain of Forall()")
       }
 
       /** a judgement has to hold about a single object.  */
       case Holds(about, varname, j) => infer(about) match {
-        case ElementQuery(ObjType) =>
+        case ElementQuery1(ObjType) =>
         case _ => throw ParseError("illegal proposition: " + p + "\nExpected ElementQuery() as argument to Holds()")
       }
     }
@@ -90,15 +90,13 @@ object QueryChecker {
     */
   private def checkCompatibility(l: Query, r: Query)(implicit context: Context): QueryType = {
     val ltp :: rtp :: Nil = List(infer(l), infer(r)).map({
-      case SetTupleQuery(tp) => tp
-      case TupleQuery(tp) => tp
+      case SetQuery(tp) => tp
+      case ElementQuery(tp) => tp
     })
-
     if (ltp != rtp) {
       throw ParseError("illegal queries. Expected identical BaseTypes, got " + ltp + " and " + rtp)
     }
-
-    SetTupleQuery(ltp)
+    SetQuery(ltp)
   }
 
   /**
@@ -121,7 +119,7 @@ object QueryChecker {
     case ElementQuery(`tp`) => ElementQuery(result)
 
     // a set of base types
-    case SetElementQuery(`tp`) => SetElementQuery(result)
+    case SetQuery(`tp`) => SetQuery(result)
 
     // did not get the right type
     case _ => throw ParseError("illegal Query: " + q + "\nExpected type: ElementQuery(" + tp + ") or SetElementQuery(" + tp + ")")
@@ -173,9 +171,9 @@ object QueryChecker {
     case I(qq, h) =>
       infer(qq)
 
-    /** infer the type of the bound variable from the context */
+    /** lookup type of bound variable in context */
     case Bound(vn) =>
-      QueryType.parse(context(vn).tp.get)
+      QueryType.fromTerm(context(vn).tp.get)
 
     /** component of paths */
     case Component(of, _) =>
@@ -189,11 +187,10 @@ object QueryChecker {
     case Related(to, by) =>
       // need a valid proposition
       check(by)
-
       // check that we have a basic Path type
       infer(to) match {
-        case ElementQuery(PathType) => SetElementQuery(PathType)
-        case SetElementQuery(PathType) => SetElementQuery(PathType)
+        case ElementQuery1(PathType) => ElementQuery1(PathType)
+        case SetQuery1(PathType) => SetQuery1(PathType)
         case t => throw ParseError("illegal query: " + q + "\nExpected a set of paths inside Related()")
       }
 
@@ -203,37 +200,35 @@ object QueryChecker {
 
     /** a list of literals is a literal for a tuple */
     case Literals(bs@_*) =>
-      SetTupleQuery(bs.map(infer).toList)
+      SetQuery(bs.map(infer).toList)
 
     /** infer the sub-query and check that the type still works */
     case Let(vn: LocalName, v: Query, in: Query) =>
-
       val vI = infer(v) match {
-        case TupleQuery(s) => TupleQuery(s)
+        case ElementQuery(s) => ElementQuery(s)
         case _ => throw ParseError("illegal query: " + q + "\nExpected a TupleQuery() inside of Let()")
       }
-
-      infer(in)(context ++ VarDecl(vn, Some(QueryType.generate(vI)), None, None))
+      infer(in)(context ++ VarDecl(vn, QueryType.toTerm(vI)))
 
     /** turns a single element into a set containing just that element */
     case Singleton(e: Query) =>
       infer(e) match {
-        case TupleQuery(t) => SetTupleQuery(t)
+        case ElementQuery(t) => SetQuery(t)
         case _ => throw ParseError("illegal query: " + q + "\nExpected a single element inside of Singleton()")
       }
 
     /** a set of paths */
     case Paths(_) =>
-      SetElementQuery(PathType)
+      SetQuery(PathType)
 
     /** a set of objects */
     case Unifies(_) =>
-      SetElementQuery(ObjType)
+      SetQuery(ObjType)
 
     /** closure of a single path */
     case Closure(of) =>
       expectQueryType(of, ElementQuery(PathType))
-      SetElementQuery(PathType)
+      SetQuery(PathType)
 
     /** Union queries should be of the same type */
     case Union(l, r) =>
@@ -241,8 +236,8 @@ object QueryChecker {
 
     /** Big Union: domain must be a set, inner union must be also be a set */
     case BigUnion(d, vn, of) => infer(d) match {
-      case SetTupleQuery(s) => infer(of)(context ++ VarDecl(vn, Some(QueryType.generate(TupleQuery(s))), None, None)) match {
-        case SetTupleQuery(t) => SetTupleQuery(t)
+      case SetQuery(s) => infer(of)(context ++ VarDecl(vn, QueryType.toTerm(SetQuery(s)))) match {
+        case SetQuery(t) => SetQuery(t)
         case _ => throw ParseError("illegal query: " + q + "\nExpected SetTupleQuery() for argument of BigUnion()")
       }
       case _ => throw ParseError("illegal query: " + q + "\nExpected SetTupleQuery() for domain of BigUnion()")
@@ -259,9 +254,9 @@ object QueryChecker {
     /** Comprehensions need a set an a valid predicate as argument */
     case Comprehension(d, vn, p) =>
       infer(d) match {
-        case SetTupleQuery(t) =>
-          check(p)(context ++ VarDecl(vn, Some(QueryType.generate(TupleQuery(t))), None, None))
-          SetTupleQuery(t)
+        case SetQuery(t) =>
+          check(p)(context ++ VarDecl(vn, QueryType.toTerm(SetQuery(t))))
+          SetQuery(t)
         case _ => throw ParseError("illegal query: " + q + "\nExpected a SetTupleQuery() as argument of Comprehension()")
       }
 
@@ -269,14 +264,14 @@ object QueryChecker {
     case Tuple(qs) =>
       val ts = qs map infer
       val bts = ts map {
-        case ElementQuery(b) => b
+        case ElementQuery1(b) => b
         case _ => throw ParseError("illegal query: " + q + "\nExpected ElementQuery() as arguments to Tuple()")
       }
-      TupleQuery(bts)
+      ElementQuery(bts)
 
     /** for a projection we need to have enough elements */
     case Projection(p, i) => infer(p) match {
-      case TupleQuery(s) =>
+      case ElementQuery(s) =>
         if (0 < i && i <= s.length) {
           ElementQuery(s(i - 1))
         } else {
@@ -292,8 +287,8 @@ object QueryChecker {
         fun.out
       else (fun.in, fun.out) match {
         // lifting simple functions to set-arguments
-        case (TupleQuery(in), TupleQuery(out)) if argType == SetTupleQuery(in) =>
-          SetTupleQuery(out)
+        case (ElementQuery(in), ElementQuery(out)) if argType == SetQuery(in) =>
+          SetQuery(out)
         case _ => throw ParseError("illegal query: " + q + "\nWrong argument type for QueryFunctionApply()")
       }
   }

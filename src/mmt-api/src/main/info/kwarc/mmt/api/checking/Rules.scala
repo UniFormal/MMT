@@ -32,7 +32,7 @@ trait CheckingCallback {
    /** type inference, fails by default */
    def inferType(t : Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = None
    /** runs code and succeeds by default */
-   def dryRun[A](code: => A): DryRunResult = Success(code)
+   def dryRun[A](commitOnSucces: Boolean)(code: => A): DryRunResult = Success(code)
 
    /** flag an error */
    def error(message: => String)(implicit history: History): Boolean = false
@@ -160,9 +160,27 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term]
 }
 
-abstract class FormationRule(val headx: GlobalName, val typOpx : GlobalName) extends InferenceRule(headx,typOpx)
-abstract class IntroductionRule(val headx: GlobalName, val typOpx : GlobalName) extends InferenceRule(headx,typOpx)
-abstract class EliminationRule(val headx: GlobalName, val typOpx : GlobalName) extends InferenceRule(headx,typOpx)
+@deprecated("must be reimplemented cleanly")
+abstract class TheoryExpRule(head : GlobalName, oftype : GlobalName) extends InferenceRule(head,oftype) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+    val checks = apply(tm, covered)(solver,stack,history)
+    if (checks) Some(OMS(ModExp.theorytype)) else None
+  }
+
+  protected def apply(tm : Term, covered: Boolean)(implicit solver : Solver, stack : Stack, history : History) : Boolean
+
+  def applicable(tm : Term) : Boolean = tm match {
+    case OMS(`head`) => true
+    case OMA(OMS(`head`), args) => true
+    case _ => false
+  }
+
+  def elaborate(prev : Context, df : Term)(implicit elab : (Context,Term) => Context): Context
+}
+
+abstract class FormationRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t)
+abstract class IntroductionRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t)
+abstract class EliminationRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t)
 
 /** A ComputationRule simplifies an expression operating at the toplevel of the term.
  *  But it may recursively simplify the components if that makes the rule applicable.
@@ -224,7 +242,7 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
 }
 
 /** always succeeds, e.g., as needed to implement proof irrelevance */
-class TermIrrelevanceRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
+@deprecated class TermIrrelevanceRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
   final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     history += "all terms of this type are equal"
     Some(true)
@@ -372,4 +390,16 @@ abstract class TypeSolutionRule(val head: GlobalName) extends CheckingRule {
     *    (by calling an appropriate callback method such as delay or checkTyping)
     */
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean
+}
+
+abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under,head) {
+
+  def solve(solver : Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
+
+  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = if (applicable(tp)) {
+    history += "all terms of this type are equal"
+    Some(true)
+  } else None
+
+  // def applicable(tm : Term) : Boolean
 }

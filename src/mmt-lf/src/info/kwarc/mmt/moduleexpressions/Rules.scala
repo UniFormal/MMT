@@ -1,4 +1,4 @@
-package info.kwarc.mmt.morphisms
+package info.kwarc.mmt.moduleexpressions
 
 import info.kwarc.mmt.api._
 import uom._
@@ -52,6 +52,7 @@ object MorphTypeInhabitable extends InhabitableRule(ModExp.morphtype) {
 /**
  * C Context  --->  {{C}} : theory
  */
+// TODO get rid of LF dependency here? (OfType)
 object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
       case ComplexTheory(con) =>
@@ -69,7 +70,7 @@ object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.pat
                        solver.check(IsRealization(currentStack, d, tp))
                     case None => true
                  })
-              case VarDecl(n,tpOpt,dfOpt,_) =>
+              case VarDecl(n,None,tpOpt,dfOpt,_) =>
                  tpOpt match {
                     case Some(tp) =>
                        solver.check(Inhabitable(currentStack, tp))(history + ("type of " + n + " must be inhabitable"))
@@ -90,6 +91,7 @@ object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.pat
               return None
          }
          Some(TheoryType(Nil))
+      case AnonymousTheory(mt,decls) => Some(TheoryType(Nil)) // TODO?
       case _ =>
          solver.error("illegal use of " + ModExp.complextheory)
          None

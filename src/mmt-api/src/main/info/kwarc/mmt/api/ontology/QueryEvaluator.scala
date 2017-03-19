@@ -52,8 +52,8 @@ class QueryEvaluator(controller: Controller) {
   def apply(q: Query): QueryResult = {
     log(q.toString)
     QueryChecker.infer(q)(Context.empty) match {
-      case TupleQuery(_) => ElemResult(evalElem(q)(Nil))
-      case SetTupleQuery(_) => SetResult(evalSet(q)(Nil).map(ElemResult))
+      case ElementQuery(_) => ElemResult(evalElem(q)(Nil))
+      case SetQuery(_) => SetResult(evalSet(q)(Nil).map(ElemResult))
     }
   }
 

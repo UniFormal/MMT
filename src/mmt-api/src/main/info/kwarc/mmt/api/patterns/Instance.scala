@@ -12,11 +12,11 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
 
 
    /** a default notation in case the pattern is not known */
-   def getHeaderNotation = List(LabelArg(1,false,false), Delim(":"), SimpArg(1))
+   def getHeaderNotation = List(LabelArg(1, LabelInfo.none), Delim(":"), SimpArg(1))
   
    override def processHeader(header: Term): (LocalName,Term) = {
      header match {
-       case OMA(OMMOD(pat), OML(name, None, None) :: args) =>
+       case OMA(OMMOD(pat), OML(name, None, None,_,_) :: args) =>
          val tp = OMA(OMMOD(pat), args)
          (name, tp)
      }

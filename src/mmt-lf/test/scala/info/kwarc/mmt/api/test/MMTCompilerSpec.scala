@@ -59,7 +59,6 @@ class MMTCompilerSpec extends FlatSpec with Matchers {
     controller.handleLine("build urtheories mmt-omdoc")
     controller.handleLine("build test mmt-omdoc")
     controller.handleLine("build test mmt-omdoc")
-    controller.extman.get(classOf[BuildManager]).foreach(_.waitToEnd)
   }
   it should "allow access to documents from narration" in {
     controller.memory.clear

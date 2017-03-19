@@ -198,7 +198,7 @@ object DefaultObjectParser extends ObjectParser {
 
 /**
   * continuations that may be called by [[StructureParser]]s
-  * @param errorCont
+  * @param errorCont called on errors
   */
 class StructureParserContinuations(val errorCont: ErrorHandler) {
   /** to be called after parsing an element (but before parsing its body if any) */
@@ -215,7 +215,7 @@ trait StructureParser extends FormatBasedExtension {
   /** the main interface function: parses a stream and registers all elements (usually a single document) in it
     *
     * @param ps the encapsulated input stream
-    * @param cont continuations for errors ans parsed elements
+    * @param cont continuations for errors and parsed elements
     * @return the element into which the stream was parsed (of the type corresponding to ps.parentInfo)
     */
   def apply(ps: ParsingStream)(implicit cont: StructureParserContinuations): StructuralElement

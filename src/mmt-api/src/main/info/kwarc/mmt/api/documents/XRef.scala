@@ -8,6 +8,7 @@ import info.kwarc.mmt.api._
  * An NRef is semantically equivalent to copy-pasting the referenced module.
  */
 abstract class NRef extends NarrativeElement {
+   val feature = "reference"
    val parent : DPath
    def parentOpt = Some(parent)
    val target : Path

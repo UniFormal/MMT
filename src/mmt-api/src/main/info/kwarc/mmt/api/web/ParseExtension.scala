@@ -3,11 +3,11 @@ package info.kwarc.mmt.api.web
 import info.kwarc.mmt.api._
 import utils._
 import parser._
-
 import Server._
+import tiscaf.{HLet, HReqData}
 
 class ParseServer extends ServerExtension(":parse") {
-    def apply(path: List[String], query: String, body: Body, session: Session) = {
+    def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
       val wq = WebQuery.parse(query)
       val text = wq.string("text", throw LocalError("found no text to parse"))
       val save = wq.boolean("save", false) //if save parameter is "true" then save otherwise don't

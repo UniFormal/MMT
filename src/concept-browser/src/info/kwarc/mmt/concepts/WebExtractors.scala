@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.web
+package info.kwarc.mmt.concepts
 
 import info.kwarc.mmt.api._
 import utils._
@@ -6,7 +6,7 @@ import utils._
 import scala.collection.immutable.List
 import scala.util.Try
 import scala.xml.{Elem, Node, XML}
-//import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
+import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
 
 //TODO FR@DM Using external libraries is not allowed by default.
 
@@ -29,7 +29,7 @@ abstract class WebExtractor {
         try {
           val byteArray = Stream.continually(input.read).takeWhile(_ != -1).map(_.toByte).toArray
           output.write(byteArray)
-          ???//XML.withSAXParser(new SAXFactoryImpl().newSAXParser()).loadString(output.toString)
+          XML.withSAXParser(new SAXFactoryImpl().newSAXParser()).loadString(output.toString)
         } catch {
           case e : Exception =>
             <html></html>

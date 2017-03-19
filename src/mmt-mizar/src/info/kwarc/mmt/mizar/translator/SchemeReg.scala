@@ -8,7 +8,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.morphisms._
 
 object SchemeRegTranslator {
 	

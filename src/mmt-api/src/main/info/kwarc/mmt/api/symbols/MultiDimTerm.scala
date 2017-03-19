@@ -205,6 +205,11 @@ class ContextContainer extends AbstractObjectContainer with ObjContainer[Context
    type ThisType = ContextContainer
    protected def newEmpty = new ContextContainer
    protected def hasSameType(oc: ObjContainer[_]) = oc.isInstanceOf[ContextContainer]
+
+   /** applies a function to the contained Context and returns a new ContextContainer */
+   def map(f: Context => Context) = {
+     get.map(c => ContextContainer(f(c))).getOrElse(newEmpty)
+   }
 }
 
 object ContextContainer {

@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.objects._
 
+import Theory._
 
 class DiffReader(controller : Controller) {
   private val xmlReader = new XMLReader(controller)
@@ -37,7 +38,7 @@ class DiffReader(controller : Controller) {
           val path = Path.parseS((n \ "@path").text, nsMap)
           // TODO xmlReader.readInModule uses side-effects for a few minor features that we do not care about yet
           // so we pass a dummy arguments that absorbs the side effects
-          val dummy = new DeclaredTheory(path.doc, path.module.name, None)
+          val dummy = Theory.empty(path.doc, path.module.name, noMeta)
           n.child foreach {c => xmlReader.readInModule(path.module, NamespaceMap(base), dummy, c)(cont)}
       }
       changes = changes.reverse

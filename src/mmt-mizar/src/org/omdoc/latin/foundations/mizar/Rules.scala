@@ -13,7 +13,7 @@ import Mizar._
 
 object IntroductionRule {
   val metaVarBase = LocalName("")
-  def context(n: Int) = List("x","y","z").take(n).map {s => VarDecl(LocalName(metaVarBase / s),None,None,None)}
+  def context(n: Int) = List("x","y","z").take(n).map {s => VarDecl(LocalName(metaVarBase / s))}
   val X = OMV(metaVarBase / "x")
   val Y = OMV(metaVarBase / "y")
   

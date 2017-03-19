@@ -49,7 +49,7 @@ object Common {
            val mSol = Pi(mV.name, ApplyGeneral(mD, args), ApplyGeneral(mC, args ::: List(mV)))
            // if we have not done the variable transformation before, add the new unknowns
            if (! solver.getPartialSolution.isDeclared(mD.name)) {
-              val newVars = Context(VarDecl(mD.name, None, None, None), VarDecl(mC.name, None, None, None))
+              val newVars = Context(VarDecl(mD.name), VarDecl(mC.name))
               solver.addUnknowns(newVars, Some(m))
            }
            history += ("trying to solve "+m+" as "+solver.presentObj(mSol))
@@ -442,8 +442,8 @@ object Solve extends SolutionRule(Apply.path) {
              if (j.tm2.freeVars.exists(dropped.filterNot(_ == x) contains _))
                 return None
              // get the type of x and abstract over it
-             j.stack.context.variables(i) match {
-                case VarDecl(_, Some(a), _, _) => 
+             j.stack.context.variables(i).tp match {
+                case Some(a) => 
                    val newStack = j.stack.copy(context = newCon)
                    Some((Equality(newStack, t, Lambda(x, a, j.tm2), j.tpOpt map {tp => Pi(x,a,tp)}), "binding x"))
                 case _ => None
@@ -481,8 +481,8 @@ object SolveType extends TypeSolutionRule(Apply.path) {
              if (tp.freeVars.exists(dropped.filterNot(_ == x) contains _))
                 return false
              // get the type of x and abstract over it
-             stack.context.variables(i) match {
-                case VarDecl(_, Some(a), _, _) => 
+             stack.context.variables(i).tp match {
+                case Some(a) => 
                    val newStack = stack.copy(context = newCon)
                    solver.solveTyping(t, Pi(x, a, tp))(newStack, history + ("solving by binding " + x))
                 case _ => false

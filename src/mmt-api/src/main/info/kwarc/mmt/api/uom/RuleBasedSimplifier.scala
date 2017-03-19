@@ -87,8 +87,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {
            log("structure-shared term was already simplified")
            tS
          // apply morphisms TODO should become computation rule once module expressions are handled properly
-         case OMM(t, mor) =>
-            val tM = controller.globalLookup.ApplyMorphs(t, mor)
+         case OMM(tt, mor) =>
+            val tM = controller.globalLookup.ApplyMorphs(tt, mor)
             traverse(tM)
          // the main case
          case ComplexTerm(_,_,_,_) =>

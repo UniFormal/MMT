@@ -9,6 +9,7 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.refactoring.{ArchiveStore, FullArchive}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.{URI, _}
+import tiscaf.{HLet, HReqData}
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.List
@@ -143,7 +144,7 @@ class AlignmentsServer extends ServerExtension("align") {
     save(a)
   }
 
-  def apply(path: List[String], query: String, body: Body, session: Session) = {
+  def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
     path match {
       case "from" :: _ ⇒
         val path = Path.parseS(query, nsMap)
@@ -298,7 +299,7 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
   /** translation along alignments */
-  private class AlignQuery extends QueryFunctionExtension("align", ElementQuery(PathType), SetElementQuery(StringType)) {
+  private class AlignQuery extends QueryFunctionExtension("align", ElementQuery(PathType), SetQuery(StringType)) {
     def evaluate(argument: BaseType, params: List[String]) = {
       log("Evaluating align query")
       log(argument.toString)

@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api._
 import frontend._
+import tiscaf.{HLet, HReqData}
 import utils._
 
 case class ContextMenuEntry(label: String, function: Javascript.Expression)
@@ -11,7 +12,7 @@ trait ContextMenuProvider extends Extension {
 }
 
 class ContextMenuAggregator extends ServerExtension("menu") {
-  def apply(httppath: List[String], query: String, body: Body, session: Session) = {
+  def apply(httppath: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
      val path = Path.parse(query)
      val entries = controller.extman.get(classOf[ContextMenuProvider]).flatMap(_.getEntries(path))
      val json = JSONObject(entries.map(e => (JSONString(e.label), JSONString(e.function.toJS))))

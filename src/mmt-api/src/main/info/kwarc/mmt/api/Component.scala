@@ -79,7 +79,7 @@ case object CodComponent  extends TermComponentKey("codomain")
 @deprecated("replace with TypeComponent")
 case object ParamsComponent extends ObjComponentKey("params")
 
-/** custom component, e.g., in a [[DerivedDeclaration]] */
+/** custom component, e.g., in a [[info.kwarc.mmt.api.symbols.DerivedDeclaration]] */
 case class OtherComponent(s: String) extends ComponentKey(s)
 
 /** components that are notations */

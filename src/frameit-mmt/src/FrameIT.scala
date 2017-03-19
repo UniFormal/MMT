@@ -2,7 +2,7 @@ package info.kwarc.mmt.frameit
 
 import info.kwarc.mmt.api._
 import uom._
-import web._
+import web.{Body, _}
 import frontend._
 import info.kwarc.mmt.api.backend.XMLReader
 import info.kwarc.mmt.api.checking._
@@ -14,6 +14,7 @@ import modules._
 import scala.collection._
 import scala.collection.immutable._
 import tiscaf._
+
 
 case class FrameitError(text : String) extends Error(text)
 
@@ -71,12 +72,7 @@ class FrameViewer extends Extension {
      case _ => t
    }
    
-   private def pushout(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
-     val vars = con.variables map {
-       case VarDecl(n, tp, df, not) => VarDecl(n, tp.map(pushout), df.map(pushout), not)
-     }
-     Context(vars : _*)
-   }
+   private def pushout(con : Context)(implicit rules : HashMap[Path, Term]) : Context = con map (_ map pushout)
 }
 
 class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask {
@@ -237,12 +233,12 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
 
   implicit val unifun : StructuralElement => Unit = x => controller.add(x)
 
-  def apply(uriComps: List[String], query : String, body : web.Body, session : Session): HLet = uriComps match {
+  def apply(uriComps: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = uriComps match {
     case "init" :: rest => try {
       controller.handleLine("build FrameIT mmt-omdoc")
       Server.TextResponse("Success")
     } catch {
-      case e : Exception => Server.errorResponse("Error initializing: " + e.getMessage)
+      case e : Exception => Server.errorResponse("Error initializing: " + e.getMessage, req)
     }
     case "pushout" :: rest => if (query.trim.startsWith("theory=")) {
       try {
@@ -263,9 +259,9 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
         }).map(_.toNode)
         Server.XmlResponse(<theory>{nodes}</theory>)
       } catch {
-        case e : Exception => Server.errorResponse(e.getMessage)
+        case e : Exception => Server.errorResponse(e.getMessage, req)
       }
-    } else Server.errorResponse("Malformed query")
+    } else Server.errorResponse("Malformed query", req)
     case "add" :: rest =>
       try {
         body.asXML match {
@@ -307,9 +303,9 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
           case _ => throw new FrameitError("Malformed FrameIT request : not of form <content><THEORY><VIEW></content>")
         }
       } catch {
-        case e : Exception => Server.errorResponse(e.getMessage)
+        case e : Exception => Server.errorResponse(e.getMessage, req)
       }
-    case _ => Server.errorResponse("Neither \"add\" nor \"pushout\"")
+    case _ => Server.errorResponse("Neither \"add\" nor \"pushout\"", req)
   }
 
   def run(solthS : String, vpathS : String) : String = {

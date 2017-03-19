@@ -4,10 +4,10 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.{BuildQueue, BuildManager}
 import utils._
 
-/** mixes in helper functions for interactive shells */ 
+/** mixes in helper functions for interactive shells */
 trait StandardIOHelper {
   lazy val input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
-  
+
     /** read either 'yes' or 'no' from standard input */
   def getYesNo(default: Boolean) = {
      val answer = input.readLine().toLowerCase
@@ -19,7 +19,7 @@ trait StandardIOHelper {
        !default
      }
   }
-  
+
   def getFile(msg: String, default: Option[File]) = {
      val defMsg = default.map(d => " (" + d + "): ").getOrElse("")
      println(msg + defMsg)
@@ -52,11 +52,14 @@ class Shell extends StandardIOHelper {
   def main(a: Array[String]) {
     try {
        mainRaw(a)
+       sys.exit(Shell.EXIT_CODE_OK)
     } catch {
       case e: Error =>
         controller.report(e)
         controller.cleanup
-        throw(e)
+        // We do not re-throw the exception here
+        // but instead simply exit with a non-zero code
+        sys.exit(Shell.EXIT_CODE_FAIL_EXCEPTION)
     }
   }
 
@@ -70,7 +73,7 @@ class Shell extends StandardIOHelper {
         controller.execFileAction(msl, None)
      }
   }
-  
+
   /** run a ShellExtension */
   private def deferToExtension(key: String, args: List[String]) {
      controller.extman.getOrAddExtension(classOf[ShellExtension], key) match {
@@ -81,6 +84,15 @@ class Shell extends StandardIOHelper {
           }
        case None =>
           println("no shell extension found for " + key)
+    }
+  }
+
+  lazy val repl : REPLExtension = {
+    // TODO: throw a warning if there is more than one REPL
+    // or have a mechanism to get a specific REPL
+    controller.extman.get(classOf[REPLExtension]).headOption.getOrElse {
+      controller.extman.addExtension(StandardREPL)
+      StandardREPL
     }
   }
 
@@ -119,7 +131,7 @@ class Shell extends StandardIOHelper {
          }
        }
      }
-     
+
      // check for "mmt :command ARGS" and delegate to ShellExtensions
      a.toList match {
        case ccom::args if ccom.startsWith(":") =>
@@ -132,7 +144,7 @@ class Shell extends StandardIOHelper {
     // parse command line arguments
     val args = ShellArguments.parse(a.toList).getOrElse {
       printHelpText("usage")
-      sys.exit(1)
+      sys.exit(Shell.EXIT_CODE_FAIL_ARGUMENT)
     }
 
     // display some help text
@@ -141,17 +153,25 @@ class Shell extends StandardIOHelper {
         val optHelp = getHelpText(s)
         if (optHelp.isDefined) {
           println(optHelp.get)
-          sys.exit(0)
+          sys.exit(Shell.EXIT_CODE_OK)
         }
       }
       printHelpText("help")
-      sys.exit(0)
+      sys.exit(Shell.EXIT_CODE_OK)
     }
 
     // display some about text
     if (args.about) {
       printHelpText("about")
-      sys.exit(0)
+      sys.exit(Shell.EXIT_CODE_OK)
+    }
+
+    // configure logging
+    if (args.consoleLog) {
+      controller.report.addHandler(ConsoleHandler)
+    }
+    if (args.debugOutput) {
+      controller.report.groups += "debug"
     }
 
     // load additional config files as given by arguments
@@ -171,25 +191,76 @@ class Shell extends StandardIOHelper {
 
     // if we want a shell, prompt and handle input
     if (args.prompt) {
-        printHelpText("shelltitle")
+        // try to load the extended repl by default
+        controller.extman.addExtensionO("info.kwarc.mmt.repl.ExtendedREPL", List())
         
-        // switch on console reports for wrong user inputs
-        controller.report.addHandler(ConsoleHandler)
-        // handle commands as long as we get input.
-        var command = Option(input.readLine)
-        while (command.isDefined) {
-          controller.handleLine(command.get, showLog = true)
-          command = Option(input.readLine)
+        repl.enter(args)
+        // run the repl and cleanup
+        try {
+          repl.run()
+        } finally {
+          repl.exit()
         }
     }
     input.close
 
     // cleanup if we want to exit
     if (args.runCleanup) {
-       controller.extman.get(classOf[BuildManager]).foreach(_.waitToEnd)
+       controller.extman.extensions.foreach(_.waitUntilRemainingTasksFinished)
        controller.cleanup
     }
   }
+}
+
+/**
+  * An extension that provides REPL functionality to MMT.
+  */
+trait REPLExtension extends Extension {
+
+  /** Banner of the REPL to be printed when (before even entering it) */
+  protected val banner : String = MMTSystem.getResourceAsString("/help-text/shelltitle.txt")
+
+  /* A report handler to be added to the console automatically when needed */
+  protected val handler : ReportHandler = ConsoleHandler
+
+  /** Called when entering (i.e. starting up) the REPL */
+  def enter(args : ShellArguments) : Unit = {
+    //print the banner
+    println(banner)
+
+    // switch on console reports for wrong user inputs
+    controller.report.addHandler(ConsoleHandler)
+  }
+
+  /** Called when running the REPL */
+  def run() : Unit
+
+  /** Called up leaving the REPL to clean up */
+  def exit() : Unit
+}
+
+/** The standard, bare-bones implementation of the REPL */
+object StandardREPL extends REPLExtension {
+  private lazy val input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
+
+  def run() : Unit =  {
+    var command = Option(input.readLine)
+    while (command.isDefined) {
+      controller.handleLine(command.get, showLog = true)
+      command = Option(input.readLine)
+    }
+  }
+
+  def exit() : Unit = {input.close()}
+}
+
+object Shell {
+  /** exit code for when everything is OK */
+  final val EXIT_CODE_OK : Int = 0
+  /** exit code for when parsing arguments fails */
+  final val EXIT_CODE_FAIL_ARGUMENT : Int = 1
+  /** exit code for when an unexpected exception occurs */
+  final val EXIT_CODE_FAIL_EXCEPTION : Int = 2
 }
 
 /** A shell, the default way to run MMT as an application */

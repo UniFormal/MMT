@@ -242,7 +242,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                  PickAllSeq(n,None)
                  addPrepickedDelims(Delim(s), currentToken)
               }
-         case (Nil, (lsa @ LabelSeqArg(n,Delimiter(s),_,_,_,_)) :: _) if matches(s) =>
+         case (Nil, (lsa @ LabelSeqArg(n,Delimiter(s),_,_)) :: _) if matches(s) =>
             onApply {
                PickAllSeq(n,Some(lsa.info))
                addPrepickedDelims(Delim(s),currentToken)
@@ -264,7 +264,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                  }
               } else
                  NotApplicable //abort?
-         case (Nil, (lsa @ LabelSeqArg(n,Delimiter(t),_,_,_,_)) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
+         case (Nil, (lsa @ LabelSeqArg(n,Delimiter(t),_,_)) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
             if (numCurrentTokens > 0) {
                //picks the last element of the sequence (possibly the only one)
                onApplyI {currentIndex =>

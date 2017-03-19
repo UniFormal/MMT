@@ -3,7 +3,6 @@ package info.kwarc.mmt.api.libraries
 import info.kwarc.mmt.api._
 import frontend._
 import documents._
-import info.kwarc.mmt.api.uom.ElaboratedElement
 import modules._
 import objects._
 import symbols._
@@ -11,7 +10,6 @@ import utils.MyList._
 
 import scala.collection._
 import scala.ref.SoftReference
-import scala.xml.NodeSeq
 
 /** auxiliary class of [[Library]] to optimize storage
   *
@@ -63,7 +61,7 @@ class ModuleHashMap {
   *
   * @param report parameter for logging.
   */
-class Library(extman: ExtensionManager, val report: Report) extends Lookup with Logger {
+class Library(extman: ExtensionManager, val report: Report, previous: Option[Library]) extends Lookup with Logger {
   val logPrefix = "library"
 
   // ************************ stateful data structures and basic accessors
@@ -118,7 +116,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
      p match {
         case d: DPath => getNarrative(d, error)
         case p: MPath => getContent(p, error)
-        case p ?? n => getDeclarationInTerm(OMMOD(p), n, error)
+        case GlobalName(mp, n) => getDeclarationInTerm(OMMOD(mp), n, error)
         case c: CPath => throw GetError("retrieval of components not possible")
      }
   }
@@ -193,7 +191,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
         case dd: DerivedDeclaration => dd
         // at this level, NestedModules are artifacts, so we unwrap the module if it's not a derived declaration
         case nm: NestedModule => nm.module
-        case ce => ce
+        case _ => ce
      }
   }
   /** tries to interpret a content element as a module
@@ -241,11 +239,12 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
            error("containing declaration not found: " + p)
        }
     // complex cases: lookup in module expressions
+      // TODO use simplifier instead
     case ComplexTheory(cont) =>
       cont.mapVarDecls { case (before, vd) =>
         val vdDecl = vd.toDeclaration(ComplexTheory(before))
         vd match {
-          case IncludeVarDecl(p, args) =>
+          case IncludeVarDecl(_, OMPMOD(p, args), _) =>
             name.head match {
               case ComplexStep(q) =>
                 getImplicit(q, p).foreach { m =>
@@ -264,9 +263,9 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
                 return symT
               case _ =>
             }
-          case VarDecl(n, _, _, _) =>
+          case vd: VarDecl =>
             name.head match {
-              case n2@SimpleStep(_) if n == LocalName(n2) =>
+              case n2@SimpleStep(_) if vd.name == LocalName(n2) =>
                 val c = vdDecl.asInstanceOf[Constant]
                 return c
               case _ =>
@@ -386,7 +385,6 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
       val sf = extman.get(classOf[StructuralFeature], dd.feature) getOrElse {
         error("structural feature " + dd.feature + " not known")
       }
-      if (ElaboratedElement.is(dd)) error("already elaborated")
       val elaboration = sf.elaborate(parent, dd)
       elaboration.getMostSpecific(name) match {
         case Some((d: DerivedDeclaration, ln)) =>
@@ -600,6 +598,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
     hs
   }
 
+
   /** as visibleVia but dropping the implicit morphisms */
   def visible(to: Term): mutable.HashSet[Term] = visibleVia(to).map(_._1)
 
@@ -671,7 +670,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
    * @param e the added declaration
    */
   def add(e: StructuralElement, afterOpt: Option[LocalName]) {
-    log("adding " + e.path + " (which has Scala type " + e.getClass.getName + ")")
+    log("adding " + e.path + " (which is a " + e.feature + ")")
     val adder = new Adder(e, afterOpt)
     e match {
        case doc: Document if doc.root =>
@@ -711,7 +710,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
   /** the bureaucracy of adding 'se' */
   private class Adder(se: StructuralElement, afterOpt: Option[LocalName]) extends ChangeProcessor {
      def errorFun(msg: String) = throw AddError(msg)
-     def wrongType(exp: String) {errorFun("expected a " + exp)}
+     def wrongType(exp: String) {errorFun("expected a " + exp + ", found " + se.feature + " " + se.path)}
      def checkNoAfter {
        if (afterOpt.isDefined)
          errorFun("adding after a declaration only allowed in containers")
@@ -740,6 +739,9 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
         checkNoAfter
         se match {
            case mod: Module =>
+              modules.get(mp).foreach {m =>
+                previous.foreach {_.modules(mp) = m}
+              }
               modules(mp) = mod
            case _ =>
               wrongType("module")
@@ -788,6 +790,9 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
         doc.delete(ln)
      }
      def primitiveModule(mp: MPath) = {
+        modules.get(mp).foreach {m =>
+          previous.foreach {_.modules(mp) = m}
+        }
         modules -= mp
         //if (mp.name.length > 1) delete(mp.toGlobalName)
      }

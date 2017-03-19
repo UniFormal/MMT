@@ -104,23 +104,21 @@ sealed abstract class OMAnyVal extends OMAny {
   def absolutize(uri : URI) : OMAnyVal
   def mapComponents(f : OMAny => OMAny) : OMAnyVal
 
-  private def as[T <: OMAnyVal] : T = this match {case t: T => t}
-
-  def asExpression : OMExpression = as
-  def asReference: OMReference = as
-  def asInteger : OMInteger = as
-  def asFloat : OMFloat = as
-  def asString : OMString = as
-  def asBytes : OMBytes = as
-  def asVariable : OMVariable = as
-  def asSymbol : OMSymbol = as
-  def asDerived : OMDerivedElement = as
-  def asForeign : OMForeign = as
-  def asCompound : OMCompoundElement = as
-  def asApplication : OMApplication = as
-  def asAttribution : OMAttribution = as
-  def asBinding : OMBinding = as
-  def asError : OMError = as
+  def asExpression : OMExpression = asInstanceOf[OMExpression]
+  def asReference: OMReference = asInstanceOf[OMReference]
+  def asInteger : OMInteger = asInstanceOf[OMInteger]
+  def asFloat : OMFloat = asInstanceOf[OMFloat]
+  def asString : OMString = asInstanceOf[OMString]
+  def asBytes : OMBytes = asInstanceOf[OMBytes]
+  def asVariable : OMVariable = asInstanceOf[OMVariable]
+  def asSymbol : OMSymbol = asInstanceOf[OMSymbol]
+  def asDerived : OMDerivedElement = asInstanceOf[OMDerivedElement]
+  def asForeign : OMForeign = asInstanceOf[OMForeign]
+  def asCompound : OMCompoundElement = asInstanceOf[OMCompoundElement]
+  def asApplication : OMApplication = asInstanceOf[OMApplication]
+  def asAttribution : OMAttribution = asInstanceOf[OMAttribution]
+  def asBinding : OMBinding = asInstanceOf[OMBinding]
+  def asError : OMError = asInstanceOf[OMError]
 }
 
 /**

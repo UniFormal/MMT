@@ -97,7 +97,7 @@ class ThinGeneratedCategory {
    /** adds an implicit morphism
     * @param from domain
     * @param to codomain
-    * @param the morphism
+    * @param morph the morphism
     * throws [[AlreadyDefined]] if an implicit morphism m between the same theories already exists
     */
    def update(from: Term, to: Term, morph: Term) {
@@ -124,6 +124,7 @@ class ThinGeneratedCategory {
          case ComplexTheory(cont) =>
             cont.getIncludes.foreach {i => update(OMMOD(i), to, morph)}
          case TUnion(ts) => ts.foreach {t => update(t, to, morph)}
+         case _ =>
       }
    }
    
@@ -165,8 +166,8 @@ class ThinGeneratedCategory {
          // TODO remove unions or handle their interaction with ComplexTheory
          case (ComplexTheory(fromC), _) =>
             val fromCMors = fromC.map {
-               case IncludeVarDecl(p,args) =>
-                  apply(OMPMOD(p,args), to)
+               case IncludeVarDecl(_, tp,_) =>
+                  apply(tp, to)
                case vd => to match {
                   case ComplexTheory(toC) => Some(OMCOMP())
                   case _ => None

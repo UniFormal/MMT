@@ -120,12 +120,20 @@ class MutableRuleSet extends RuleSet {
 object RuleSet {
    /** collects all rules visible to a context, based on what is currently loaded into memory */
    def collectRules(controller: Controller, context: Context): MutableRuleSet = {
+      collectAdditionalRules(controller, None, context)
+   }
+   
+   /**
+    * incremental collection of rules: collectAdditionalRules(c, collectRules(c, con1), con2) = collectRules(c, con1++con2)
+    */
+   def collectAdditionalRules(controller: Controller, addTo: Option[RuleSet], context: Context): MutableRuleSet = {
       val support = context.getIncludes
       val decls = support.flatMap {p =>
         controller.globalLookup.getDeclarationsInScope(OMMOD(p))
       }.distinct
-      val rs = new MutableRuleSet
       var shadowed: List[Rule] = Nil
+      val rs = new MutableRuleSet
+      addTo.foreach {a => rs.imports(a)}
       decls.foreach {
          case rc: RuleConstant =>
             rc.df foreach {r =>
@@ -136,5 +144,5 @@ object RuleSet {
       }
       rs.shadow(shadowed:_*)
       rs
-   }
+   }   
 }

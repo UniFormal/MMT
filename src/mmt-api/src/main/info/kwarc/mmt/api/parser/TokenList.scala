@@ -277,6 +277,10 @@ class MatchedList(val tokens: List[(FoundContent,List[UnmatchedList])], val an: 
     "{" + an.toShortString + "}"
   else
     tokens.map(_._2.toString).mkString("{" + an.toShortString + " ", " ", " " + an.toShortString + "}")
+
+  private[parser] def addRules(rules : ParsingRuleTable) : Unit = tokens foreach {
+    case (_,ul) => ul.foreach(_.addRules(rules))
+  }
 }
 
 /**
@@ -293,6 +297,14 @@ class UnmatchedList(val tl: TokenList) extends TokenListElem {
   val lastPosition = tl(tl.length - 1).lastPosition
   private[parser] var scanner: Scanner = null
   private[parser] var localNotations: Option[ParsingRuleTable] = None
+  def addRules(rules : ParsingRuleTable) : Unit = {
+    scanner.addRules(rules)
+    tl.getTokens.foreach {
+      case ul : UnmatchedList => ul.addRules(rules)
+      case ml : MatchedList => ml.addRules(rules)
+      case _ =>
+    }
+  }
 
   override def toString: String = if (tl.length == 1) tl(0).toString else "{unmatched " + tl.toString + " unmatched}"
 }

@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.web
+package info.kwarc.mmt.concepts
 
 import info.kwarc.mmt.api.presentation.HTMLPresenter
 import info.kwarc.mmt.api._
@@ -6,7 +6,8 @@ import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.presentation.{HTMLRenderingHandler, Presenter, RenderingResult}
 import info.kwarc.mmt.api.refactoring.ArchiveStore
 import info.kwarc.mmt.api.utils.{File, _}
-import tiscaf.HLet
+import info.kwarc.mmt.api.web.{Body, Server, ServerExtension, Session}
+import tiscaf.{HLet, HReqData}
 
 import scala.collection.immutable.List
 import scala.util.Try
@@ -118,7 +119,7 @@ class ConceptServer extends ServerExtension("concepts") {
     }
   })
 
-  def apply(path: List[String], query: String, body: Body, session: Session) : HLet =
+  def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet =
     if (path == List("add") && query != "") {
       log("Query: " + query)
       if (!query.startsWith("URI=") || !query.contains("&concept=")) Server.TextResponse("Malformed Query")
@@ -144,7 +145,7 @@ class ConceptServer extends ServerExtension("concepts") {
       val nsm = NamespaceMap.empty
       val from = qs.find(_.startsWith("from=")).getOrElse(???).drop(5)
       val to = qs.find(_.startsWith("to=")).getOrElse(???).drop(3)
-      if (from == to) Server.errorResponse("Alignments must be between two different URIs!") else {
+      if (from == to) Server.errorResponse("Alignments must be between two different URIs!", req) else {
         val invertible = qs.exists(_.startsWith("invertible="))
         val parstring = qs.find(_.startsWith("attributes=")).map(s => URLEscaping.unapply(s.drop(11)).trim)
         var rest = parstring.getOrElse("")
@@ -154,7 +155,7 @@ class ConceptServer extends ServerExtension("concepts") {
           case param(key, value, r) ⇒
             pars ::= (key, value)
             rest = r.trim
-          case _ ⇒ Server.errorResponse("Malformed alignment: " + rest)
+          case _ ⇒ Server.errorResponse("Malformed alignment: " + rest, req)
         }
         val al = alignments.makeAlignment(from,to,pars)
         alignments.addNew(al)

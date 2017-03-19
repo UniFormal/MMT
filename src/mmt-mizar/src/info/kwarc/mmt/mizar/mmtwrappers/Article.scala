@@ -11,8 +11,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
 import objects.Conversions._
 
-import info.kwarc.mmt.morphisms._
-
 import info.kwarc.mmt.mizar.objects._
 import MizSeq._
 import info.kwarc.mmt.mizar.translator._
@@ -21,25 +19,25 @@ object artPatterns {
   /* Notations */
   val SynonymicNotation = MizPattern(LocalName("SynonymicNotation"),
     Context(
-      VarDecl("nr", None, None, None),
-      VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None, None),
-      VarDecl("ref", Some(Mizar.constant("prop")), None, None)
+      VarDecl("nr"),
+      VarDecl("args", Rep(Mizar.constant("tp"),OMV("nr"))),
+      VarDecl("ref", Mizar.constant("prop"))
       ),
-    Context(VarDecl("notation",Some(OMV("ref")), None, None))
+    Context(VarDecl("notation", OMV("ref")))
   )
   
   val AntonymicNotation = MizPattern(LocalName("AntonymicNotation"),
     Context(
-      VarDecl("nr", None, None, None),
-      VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None, None),
-      VarDecl("ref", Some(Mizar.constant("prop")), None, None)
+      VarDecl("nr"),
+      VarDecl("args", Rep(Mizar.constant("tp"),OMV("nr"))),
+      VarDecl("ref", Mizar.constant("prop"))
       ),
-    Context(VarDecl("notation", Some(Mizar.apply(Mizar.constant("not"),OMV("ref"))), None, None))
+    Context(VarDecl("notation", Mizar.apply(Mizar.constant("not"),OMV("ref"))))
   )
   
   
   val Lemma = MizPattern(LocalName("Lemma"),
-    Context(VarDecl("prop", Some(Mizar.constant("prop")),None, None)),
-    Context(VarDecl("lemma", Some(Mizar.apply(Mizar.constant("proof"), OMV("prop"))), None, None)))
+    Context(VarDecl("prop", Mizar.constant("prop"))),
+    Context(VarDecl("lemma", Mizar.apply(Mizar.constant("proof"), OMV("prop")))))
 }
 

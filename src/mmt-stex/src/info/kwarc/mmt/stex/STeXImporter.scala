@@ -181,7 +181,7 @@ class STeXImporter extends Importer {
       }
     } catch {
       case e: GetError =>
-        val anonthy = new DeclaredTheory(anonpath.doc, anonpath.name, None) //no meta for now
+        val anonthy = Theory.empty(anonpath.doc, anonpath.name, Theory.noMeta) //no meta for now
         val ref = MRef(dpath, anonthy.path)
         controller.add(anonthy)
         controller.add(ref)
@@ -212,7 +212,7 @@ class STeXImporter extends Importer {
       n.label match {
         case "theory" => //create theory
           val name = getName(n, doc)
-          val thy = new DeclaredTheory(doc.path, name, None)
+          val thy = Theory.empty(doc.path, name, Theory.noMeta)
           val ref = MRef(doc.path, thy.path)
           add(ref)
           add(thy)
@@ -731,16 +731,18 @@ class STeXImporter extends Importer {
     case "mtable" => makeDelim("[[") :: n.child.toList.flatMap(parseRenderingMarkers(_, argMap)) ::: makeDelim("]]") :: Nil
     case "render" =>
       val argName = (n \ "@name").text
+      import CommonMarkerProperties.noProps
       argMap(argName) match {
-        case ProtoArg(nr) => SimpArg(nr, None) :: Nil //TODO add precedence back and fix printing and parsing of Args with precedence Some(getPrecedence(n))
-        case ProtoVar(nr) => Var(nr, typed = false, None, None) :: Nil //TODO Some(getPrecedence(n)
-        case ProtoSub(nr) => SimpArg(nr, None) :: Nil //Some(getPrecedence(n))
+        case ProtoArg(nr) => SimpArg(nr, noProps) :: Nil //TODO add precedence back and fix printing and parsing of Args with precedence Some(getPrecedence(n))
+        case ProtoVar(nr) => Var(nr, typed = false, None, noProps) :: Nil //TODO Some(getPrecedence(n)
+        case ProtoSub(nr) => SimpArg(nr, noProps) :: Nil //Some(getPrecedence(n))
       }
     case "iterate" =>
       val argName = (n \ "@name").text
       val argNr = argMap(argName)
       val precO = None //Some(getPrecedence(n))
-    val delim = n.child.find(_.label == "separator") match {
+      val props = CommonMarkerProperties(precO,None)
+      val delim = n.child.find(_.label == "separator") match {
         case None => makeDelim(",")
         case Some(sep) =>
           sep.child.toList match {
@@ -751,8 +753,8 @@ class STeXImporter extends Importer {
           }
       }
       argMap(argName) match {
-        case ProtoArg(nr) => SimpSeqArg(nr, delim, precO) :: Nil
-        case ProtoVar(nr) => Var(nr, typed = false, Some(delim), precO) :: Nil
+        case ProtoArg(nr) => SimpSeqArg(nr, delim, props) :: Nil
+        case ProtoVar(nr) => Var(nr, typed = false, Some(delim), props) :: Nil
         case ProtoSub(nr) => throw new STeXParseError("Cannot have sequence sub as argument in notation rendering", None, None, None)
       }
     case "mstyle" => n.child.toList.flatMap(parseRenderingMarkers(_, argMap))

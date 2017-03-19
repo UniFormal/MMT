@@ -74,7 +74,7 @@ object ReasoningTranslator {
     l.types.zipWithIndex map {p =>
       val tm = TypeTranslator.translateTyp(p._1)
       val name = TranslationController.addLocalConst(l.nr + p._2)
-      context ++= VarDecl(name, Some(tm), None, None)
+      context ++= VarDecl(name, tm)
     }
     //TODO more precise encoding 
     Mizar.apply(Mizar.constant("forI"), Lambda(context, translateProofSteps(rest)))
@@ -90,7 +90,7 @@ object ReasoningTranslator {
     val decls = a.props map {p => 
       val t = PropositionTranslator.translateProposition(p)
       val name : LocalName = TranslationController.addLocalProp(p.nr)
-      VarDecl(name, Some(Mizar.proof(t)), None, None)
+      VarDecl(name, Mizar.proof(t))
     }
     
     Mizar.apply(Mizar.constant("impI"), Lambda(Context(decls :_*) , translateProofSteps(rest)))
@@ -103,17 +103,17 @@ object ReasoningTranslator {
       val (tp, i) = p
       val tm = TypeTranslator.translateTyp(tp)
       val name = TranslationController.addLocalConst(g.nr + i)
-      VarDecl(name, Some(tm), None, None)
+      VarDecl(name, tm)
     }
     
     val propDecls = g.props map {p => 
       val tm = PropositionTranslator.translateProposition(p)
       val name = TranslationController.addLocalProp(p.nr)
-      VarDecl(name, Some(Mizar.proof(tm)), None, None)
+      VarDecl(name, Mizar.proof(tm))
     }
     
     val varName = LocalName("g0")
-    val con = Context(VarDecl(varName, Some(Mizar.proof(exProp)), None, None))
+    val con = Context(VarDecl(varName, Mizar.proof(exProp)))
     val exE = Mizar.apply(Mizar.constant("exE"),
         OMV(varName), 
         Lambda(Context(tpDecls ++ propDecls : _*), translateProofSteps(rest)))
@@ -132,7 +132,7 @@ object ReasoningTranslator {
     val tp = TypeTranslator.translateTyp(t.typ)
     
     val name = TranslationController.addLocalConst(t.nr)
-    val con = Context(VarDecl(name, Some(tp), None, None))
+    val con = Context(VarDecl(name, tp))
     val exI = Mizar.apply(Mizar.constant("ExI"), OMV(name), translateProofSteps(rest))
     Mizar.apply(Mizar.constant("decl"), tm, Lambda(con, exI))
   }
@@ -156,7 +156,7 @@ object ReasoningTranslator {
   def translateNow(n : MizNow, rest : List[MizProofItem]) : Term = {
     val name = TranslationController.addLocalProp(n.nr)
     val pf = translateReasoning(n.reasoning)
-    Pi(Context(VarDecl(name, None, None, None)), Mizar.apply(Mizar.constant("inf"), pf, translateProofSteps(rest)))
+    Pi(Context(VarDecl(name)), Mizar.apply(Mizar.constant("inf"), pf, translateProofSteps(rest)))
   }
   
   def translateIterEquality(i : MizIterEquality, rest : List[MizProofItem]) : Term = {
@@ -170,7 +170,7 @@ object ReasoningTranslator {
       )
     }
     val name = TranslationController.addLocalProp(i.nr)
-    val con = Context(VarDecl(name, None, None, None))
+    val con = Context(VarDecl(name))
     val by = Mizar.apply(Mizar.constant("by"), (eqs :+ translateProofSteps(rest)) :_*)
     Mizar.apply(Mizar.constant("inf"), Pi(con, by))
   }
@@ -191,13 +191,13 @@ object ReasoningTranslator {
 	val decls = c.typs.zipWithIndex map { p =>
       val tp = TypeTranslator.translateTyp(p._1)
       val name = TranslationController.addLocalConst(c.nr + p._2)
-      VarDecl(name, Some(tp), None, None)
+      VarDecl(name,tp)
     }
     
     val props = c.props map { p => 
       val prop = PropositionTranslator.translateProposition(p)
       val name = TranslationController.addLocalProp(p.nr)
-      VarDecl(name, Some(Mizar.proof(prop)), None, None)
+      VarDecl(name, Mizar.proof(prop))
     }
     
     val cont = Lambda(Context(decls : _*), Lambda(Context(props :_ *), translateProofSteps(rest)))
@@ -218,7 +218,7 @@ object ReasoningTranslator {
       val tm = TypeTranslator.translateTerm(mtm)
       val tp = TypeTranslator.translateTyp(mtp)
       val name = TranslationController.addLocalConst(r.nr + i)
-      VarDecl(name, Some(tp), Some(tm), None)
+      VarDecl(name, tp, tm)
     }
     
     val prop = PropositionTranslator.translateProposition(r.prop)

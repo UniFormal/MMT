@@ -43,7 +43,7 @@ class MMTInterpolator(controller: frontend.Controller) {
          while(strings.hasNext) {
             val name = LocalName("$_" + i.toString)
             val arg = args.next
-            cont = cont ++ VarDecl(name, None, Some(arg), None)
+            cont = cont ++ VarDecl(name, None, None, Some(arg), None)
             buf.append(name)
             buf.append(strings.next)
             i += 1
