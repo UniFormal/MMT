@@ -799,7 +799,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    private def checkTyping(j: Typing)(implicit history: History) : Boolean = {
      val tm = j.tm
-     val tp = j.tp
+     val tp = expandomldefs(j.tp)
      implicit val stack = j.stack
      // try to solve the type of an unknown
      val solved = solveTyping(tm, tp)
@@ -983,8 +983,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         implicit val stack = j.stack
         var activerules = subtypingRules
         var done = false
-        var tp1S = expandomldefs(j.tp1,())
-        var tp2S = expandomldefs(j.tp2,())
+        var tp1S = expandomldefs(j.tp1)
+        var tp2S = expandomldefs(j.tp2)
         while (!done) {
           val (tmp1, tmp2, rOpt) = safeSimplifyUntil(tp1S, tp2S) {case (a1,a2) =>
             activerules.find(_.applicable(a1,a2))
@@ -1025,7 +1025,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    // TODO this should be removed; instead LF should use low-priority InhabitableRules that apply to any term
    private def checkUniverse(j : Universe)(implicit history: History): Boolean = {
      implicit val stack = j.stack
-     limitedSimplify(j.univ, universeRules) match {
+     limitedSimplify(expandomldefs(j.univ), universeRules) match {
         case (uS, Some(rule)) =>
           history += "Applying UniverseRule " + rule.toString
           rule(this)(uS)
@@ -1044,7 +1044,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    private def checkInhabitable(j : Inhabitable)(implicit history: History): Boolean = {
      implicit val stack = j.stack
-     limitedSimplify(j.wfo, inhabitableRules) match {
+     limitedSimplify(expandomldefs(j.wfo), inhabitableRules) match {
         case (uS, Some(rule)) =>
           history += "Applying InhabitableRule " + rule.toString
           rule(this)(uS)
@@ -1067,16 +1067,14 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     *
     * post: equality is covered
     */
-   private val expandomldefs = new StatelessTraverser {
-    override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-      case OML(_,_,Some(df),_,_) => Traverser(this,df)
-      case _ => Traverser(this,t)
-    }
-  }
+   private def expandomldefs(t : Term) = t match {
+     case OML(_,_,Some(df),_,_) => df
+     case _ => t
+   }
 
    private def checkEquality(j: Equality)(implicit history: History): Boolean = {
-      val tm1 = expandomldefs(j.tm1,())
-      val tm2 = expandomldefs(j.tm2,())
+      val tm1 = expandomldefs(j.tm1)
+      val tm2 = expandomldefs(j.tm2)
       val tpOpt = j.tpOpt
       implicit val stack = j.stack
       val tm1S = simplify(tm1)
