@@ -1147,28 +1147,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
    /* ********************** auxiliary methods of checkEquality ***************************/
 
-  private def mergeOMLs(o1 : OML, o2 : OML)(implicit stack : Stack, history: History) : Option[OML] = {
-    require(o1.name == o2.name)
-    var (oS1,oS2) = (o1,o2)
-    // check if types match
-    (oS1,oS2) match {
-      case (OML(_,Some(tp1),_,_,_),OML(_,None,_,_,_)) => oS2 = oS2.copy(tp = oS1.tp)
-      case (OML(_,None,_,_,_),OML(_,Some(tp2),_,_,_)) => oS1 = oS1.copy(tp = oS2.tp)
-      case (OML(_,None,_,_,_),OML(_,None,_,_,_)) =>
-      case (OML(_,Some(tp1),_,_,_),OML(_,Some(tp2),_,_,_)) =>
-        if (!check(Equality(stack,tp1,tp2,None))) return None
-    }
-    (oS1,oS2) match {
-      case (OML(_,_,Some(df1),_,_),OML(_,_,None,_,_)) => oS2 = oS2.copy(df = oS1.df)
-      case (OML(_,_,None,_,_),OML(_,_,Some(df2),_,_)) => oS1 = oS1.copy(df = oS2.df)
-      case (OML(_,_,None,_,_),OML(_,_,None,_,_)) =>
-      case (OML(_,_,Some(df1),_,_),OML(_,_,Some(df2),_,_)) =>
-        if (!check(Equality(stack,df1,df2,None))) return None
-    }
-    if (oS1.tp.isDefined && oS1.df.isDefined && !check(Typing(stack,oS1.df.get,oS1.tp.get))) None
-    else Some(oS1)
-  }
-
    /**
     * finds a TermBasedEqualityRule that applies to t1 and any of the terms in t2
     * first found rule is returned
