@@ -9,6 +9,7 @@ import objects._
 import proving._
 import parser.ParseResult
 
+import scala.collection
 import scala.collection.mutable.HashSet
 import scala.util.{Failure, Try}
 
@@ -275,9 +276,18 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    def outerContext = constantContext ++ solution
    
    /** precomputes relevant rule sets, ordered by priority */
-   private val computationRules = rules.getOrdered(classOf[ComputationRule])
-   private val inferenceRules = rules.getOrdered(classOf[InferenceRule])
-   private val subtypingRules = rules.getOrdered(classOf[SubtypingRule])
+   private lazy val computationRules = rules.getOrdered(classOf[ComputationRule])
+   private lazy val inferenceRules = rules.getOrdered(classOf[InferenceRule])
+   private lazy val subtypingRules = rules.getOrdered(classOf[SubtypingRule])
+   private lazy val typebasedsolutionRules = rules.get(classOf[TypeBasedSolutionRule])
+   private lazy val typingRules = rules.get(classOf[TypingRule])
+   private lazy val universeRules = rules.get(classOf[UniverseRule])
+   private lazy val inhabitableRules = rules.get(classOf[InhabitableRule])
+   private lazy val termBasedEqualityRules = rules.get(classOf[TermBasedEqualityRule])
+   private lazy val termHeadBasedEqualityRules = rules.get(classOf[TermHeadBasedEqualityRule])
+   private lazy val typeBasedEqualityRules = rules.get(classOf[TypeBasedEqualityRule])
+   private lazy val solutionRules = rules.get(classOf[SolutionRule])
+   private lazy val forwardSolutionRules = rules.get(classOf[ForwardSolutionRule])
    /* convenience function for going to the next rule after one has been tried */
    private def dropTill[A](l: List[A], a: A) = l.dropWhile(_ != a).tail
    private def dropJust[A](l: List[A], a:A) = l.filter(_ != a)
@@ -626,7 +636,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               case None =>
                 error("unsolved (untyped) unknown: " + vd.name) 
               case Some(tp) =>
-                val rO = rules.get(classOf[TypeBasedSolutionRule]).find(r => r.applicable(tp))//rules.get(classOf[TermIrrelevanceRule]).find(r => r.applicable(tp))
+                val rO = typebasedsolutionRules.find(r => r.applicable(tp))//rules.get(classOf[TermIrrelevanceRule]).find(r => r.applicable(tp))
                 rO match {
                   case Some(rule) =>
                     history += "calling Type-based solution rule " + rule.getClass + " on " + vd.name + ": " + presentObj(tp)
@@ -710,12 +720,13 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         checkingUnit.killact
         return error("checking was cancelled by external signal")
       }
-      history += j
-      history.indinc
-      log("checking: " + j.presentSucceedent)
-      val ret = logGroup {
-         log("in context: " + j.presentAntecedent)
-         j match {
+      // JudgementStore.getOrElse(j,{
+        history += j
+        history.indinc
+        log("checking: " + j.presentSucceedent)
+        val ret = logGroup {
+          log("in context: " + j.presentAntecedent)
+          j match {
             case j: Typing   => checkTyping(j)
             case j: Subtyping => checkSubtyping(j)
             case j: Equality => checkEquality(j)
@@ -724,11 +735,59 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             case j: Inhabited => checkInhabited(j)
             case j: IsContext => checkContext(j)
             case j: EqualityContext => checkEqualityContext(j)
-         }
-      }
-     history.inddec
-     ret
+          }
+        }
+        history.inddec
+        ret
+     // })
    }
+
+  object JudgementStore {
+    private val store : scala.collection.mutable.HashMap[Judgement,Boolean] = collection.mutable.HashMap.empty
+    def getOrElse(j : Judgement, f : => Boolean) : Boolean = {
+      val ret : Option[Judgement] = j match {
+        case Typing(stack,tm1,tm2,_) => store.keys.find{
+          case Typing(stack2,`tm1`,`tm2`,_) => stack.context.forall(stack2.context.toList.contains)
+          case _ => false
+        }
+        case Subtyping(stack,tp1,tp2) => store.keys.find{
+          case Subtyping(stack2,`tp1`,`tp2`) => stack.context.forall(stack2.context.toList.contains)
+          case _ => false
+        }
+        case Equality(stack,tm1,tm2,_) => store.keys.find{
+          case Equality(stack2,`tm1`,`tm2`,_) => stack.context.forall(stack2.context.toList.contains)
+          case _ => false
+        }
+        case Universe(stack,tm) => store.keys.find{
+          case Universe(stack2,`tm`) => stack.context.forall(stack2.context.toList.contains)
+          case _ => false
+        }
+        case Inhabitable(stack,tm) => store.keys.find{
+          case Inhabitable(stack2,`tm`) => stack.context.forall(stack2.context.toList.contains)
+          case _ => false
+        }
+        case Inhabited(stack,tm )=> store.keys.find{
+          case Inhabited(stack2,`tm`) => stack.context.forall(stack2.context.toList.contains)
+          case _ => false
+        }
+        case IsContext(stack,con) => store.keys.find{
+          case IsContext(stack2,`con`) => stack.context.forall(stack2.context.toList.contains)
+          case _ => false
+        }
+        case EqualityContext(stack,con1,con2,uptoa) => store.keys.find{
+          case EqualityContext(stack2,`con1`,`con2`,`uptoa`) => stack.context.forall(stack2.context.toList.contains)
+          case _ => false
+        }
+      }
+      ret match {
+        case Some(j2) => store.getOrElse(j2,???)
+        case None =>
+          val nret = f
+          store(j) = nret
+          nret
+      }
+    }
+  }
 
    /** proves a Typing Judgement by bidirectional type checking
     *
@@ -740,11 +799,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    private def checkTyping(j: Typing)(implicit history: History) : Boolean = {
      val tm = j.tm
-     val tp = j.tp
-     if (j.tm.toString contains """http://gl.mathhub.info/MMT/LFX/Records?Symbols?Recexp OML(universe,None,Some(http://mathhub.info/MitM/smglom/arithmetics?realnumbers?Realnumbers),None,None)""")
-       {
-         print("")
-       }
+     val tp = expandomldefs(j.tp)
      implicit val stack = j.stack
      // try to solve the type of an unknown
      val solved = solveTyping(tm, tp)
@@ -789,7 +844,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        // the foundation-dependent cases
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
-         limitedSimplify(tp,rules.get(classOf[TypingRule])) match {
+         limitedSimplify(tp,typingRules) match {
            case (tpS, Some(rule)) =>
              try {
                 history += "Applying TypingRule " + rule.toString
@@ -928,8 +983,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         implicit val stack = j.stack
         var activerules = subtypingRules
         var done = false
-        var tp1S = j.tp1
-        var tp2S = j.tp2
+        var tp1S = expandomldefs(j.tp1)
+        var tp2S = expandomldefs(j.tp2)
         while (!done) {
           val (tmp1, tmp2, rOpt) = safeSimplifyUntil(tp1S, tp2S) {case (a1,a2) =>
             activerules.find(_.applicable(a1,a2))
@@ -970,7 +1025,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    // TODO this should be removed; instead LF should use low-priority InhabitableRules that apply to any term
    private def checkUniverse(j : Universe)(implicit history: History): Boolean = {
      implicit val stack = j.stack
-     limitedSimplify(j.univ, rules.get(classOf[UniverseRule])) match {
+     limitedSimplify(expandomldefs(j.univ), universeRules) match {
         case (uS, Some(rule)) =>
           history += "Applying UniverseRule " + rule.toString
           rule(this)(uS)
@@ -989,7 +1044,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    private def checkInhabitable(j : Inhabitable)(implicit history: History): Boolean = {
      implicit val stack = j.stack
-     limitedSimplify(j.wfo, rules.get(classOf[InhabitableRule])) match {
+     limitedSimplify(expandomldefs(j.wfo), inhabitableRules) match {
         case (uS, Some(rule)) =>
           history += "Applying InhabitableRule " + rule.toString
           rule(this)(uS)
@@ -1012,19 +1067,18 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     *
     * post: equality is covered
     */
+   private def expandomldefs(t : Term) = t match {
+     case OML(_,_,Some(df),_,_) => df
+     case _ => t
+   }
+
    private def checkEquality(j: Equality)(implicit history: History): Boolean = {
-      val tm1 = j.tm1
-      val tm2 = j.tm2
+      val tm1 = expandomldefs(j.tm1)
+      val tm2 = expandomldefs(j.tm2)
       val tpOpt = j.tpOpt
       implicit val stack = j.stack
       val tm1S = simplify(tm1)
       val tm2S = simplify(tm2)
-     (tm1,tm2) match {
-       case (o1:OML,o2:OML) if o1.name == o2.name => return mergeOMLs(o1,o2).isDefined
-       case (_,OML(_,_,Some(df),_,_)) => return checkEquality(Equality(stack,tm1,df,tpOpt))
-       case (OML(_,_,Some(df),_,_),_) => return checkEquality(Equality(stack,df,tm2,tpOpt))
-       case _ =>
-     }
       // 1) base cases, e.g., identical terms, solving unknowns
       // identical terms
       if (tm1S hasheq tm2S) return true
@@ -1046,7 +1100,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       if (solved) return true
 
       // 2) find a TermBasedEqualityRule
-      rules.get(classOf[TermBasedEqualityRule]).filter(r => r.applicable(tm1S,tm2S)) foreach {rule =>
+      termBasedEqualityRules.filter(r => r.applicable(tm1S,tm2S)) foreach {rule =>
          // we apply the first applicable rule
          history += "trying term-based equality rule " + rule.toString
          val contOpt = rule(this)(tm1S,tm2S,tpOpt)
@@ -1069,7 +1123,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
            itp.getOrElse(return delay(Equality(stack, tm1S, tm2S, None)))
       }
       // try to simplify the type until an equality rule is applicable
-      val tbEqRules = rules.get(classOf[TypeBasedEqualityRule])
+      val tbEqRules = typeBasedEqualityRules
       safeSimplifyUntil(tp)(t => tbEqRules.find(_.applicable(t))) match {
          case (tpS, Some(rule)) =>
             history += "applying type-based equality rule " + rule.toString
@@ -1119,7 +1173,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * first found rule is returned
     */
    private def findEqRule(t1: Term, others: List[Term])(implicit stack : Stack, history: History, tp: Term) : Option[Continue[Boolean]] = {
-      val eqRules = rules.get(classOf[TermBasedEqualityRule])
+      val eqRules = termBasedEqualityRules
       others foreach {t2 =>
          eqRules foreach {r =>
             if (r.applicable(t1,t2)) {
@@ -1270,7 +1324,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             }
          //apply a foundation-dependent solving rule selected by the head of tm1
          case _ =>
-            Solver.findSolvableVariable(rules.get(classOf[SolutionRule]), solution, j.tm1) match {
+            Solver.findSolvableVariable(solutionRules, solution, j.tm1) match {
             case Some((rs, m)) =>
                rs.head(j) match {
                   case Some((j2, msg)) =>
@@ -1562,7 +1616,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          case (vd, i) => vd.tp match {
            case Some(tp) =>
               implicit val con : Context = solution.take(i)
-              limitedSimplify(tp, rules.get(classOf[ForwardSolutionRule])) match {
+              limitedSimplify(tp, forwardSolutionRules) match {
                  case (tpS, Some(rule)) if rule.priority == priority =>
                    history += "Applying ForwardSolutionRule " + rule.toString
                    rule(this)(vd)
