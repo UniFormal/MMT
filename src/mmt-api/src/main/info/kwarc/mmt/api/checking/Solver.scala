@@ -908,6 +908,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
              history += "lookup in literal"
              // structurally well-formed literals carry their type
              Some(l.rt.synType) // no need to use InferredType.put on literals
+          case l : UnknownOMLIT => Some(l.synType)
           case OMMOD(p) =>
              // types of theories and views are formed using meta-level operators
              history += "lookup in library"
