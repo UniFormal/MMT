@@ -11,7 +11,7 @@ import notations._
 import Subtyping._
 import info.kwarc.mmt.LFX.Coproducts.Addfunc
 import info.kwarc.mmt.LFX.Records.Rectype
-import info.kwarc.mmt.lf.{Apply, Arrow, Typed}
+import info.kwarc.mmt.lf._
 
 object LFX {
   val ns = DPath(URI.http colon "gl.mathhub.info") / "MMT" / "LFX"
@@ -134,12 +134,14 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
     var cont : List[(GlobalName,OML)] = Nil
     var subst : List[(GlobalName,Term)] = Nil
     def all = cont ::: subst
+    var globalcont : Context = Nil
+    def get = (globalcont,cont.reverse)
   }
 
-  private def fromTheory(th : DeclaredTheory,state : State = new State(Nil)) : List[(GlobalName,OML)] = {
+  private def fromTheory(th : DeclaredTheory,state : State = new State(Nil)) : (Context,List[(GlobalName,OML)]) = {
     state.covered ::= th.path
     th.getIncludesWithoutMeta foreach {from =>
-        if (!state.covered.contains(from)) state.cont = fromTheory(termtoTheory(OMMOD(from),from),state).reverse ::: state.cont
+        if (!state.covered.contains(from)) state.cont = fromTheory(termtoTheory(OMMOD(from),from),state)._2.reverse ::: state.cont
     }
     th.getDeclarationsElaborated.filter(_.path.module == th.path) foreach {
       case PlainInclude(_,_) =>
@@ -163,7 +165,8 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
         println(o.path)
         ???
     }
-    state.cont.reverse
+    state.globalcont = state.globalcont ++ th.parameters
+    state.get
   }
 
   private def termtoTheory(tm : Term, parent : MPath) : DeclaredTheory = tm match {
@@ -181,7 +184,9 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
 
   def elaborate(parent: DeclaredModule, dd:  DerivedDeclaration) : Elaboration = {
     val dom = termtoTheory(getDomain(dd),dd.parent)
-    val tp = Rectype(fromTheory(dom).distinct.map(_._2):_*)
+    val (cont,omls) = fromTheory(dom)
+    val tp1 = Rectype(omls.distinct.map(_._2):_*)
+    val (tp,df) = if (cont.isEmpty) (OMS(Typed.ktype),tp1) else (Pi(cont,OMS(Typed.ktype)),Lambda(cont,tp1))
     val tpname = dd.tpC.get match {
       case Some(OML(name,_,_,_,_)) => name
       case _ => ???
@@ -190,7 +195,7 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
       def domain: List[LocalName] = List(tpname)
       def getO(name: LocalName): Option[Declaration] = {
 
-        if (name == tpname) Some(Constant(dd.home,name,Nil,Some(OMID(Typed.ktype)),Some(tp),None))
+        if (name == tpname) Some(Constant(dd.home,name,Nil,Some(tp),Some(df),None))
         else None
       }
     }
