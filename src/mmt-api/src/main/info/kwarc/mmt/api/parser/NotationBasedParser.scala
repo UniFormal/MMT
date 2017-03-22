@@ -661,17 +661,25 @@ class NotationBasedParser extends ObjectParser {
 
   /** matches v[:T][=D] */
   private object OMLTypeDef {
+    private object Name {
+      def unapply(t : Term) : Option[LocalName] = t match {
+        case OMV(n) => Some(n)
+        case OML(n,_,_,_,_) => Some(n)
+        case OMS(p) => Some(p.name)
+        case _ => None
+      }
+    }
     def unapply(t : Term) : Option[(LocalName,Option[Term],Option[Term])] = t match {
-      case OMLtype(OMLdef(OMV(n),df),tp) =>
+      case OMLtype(OMLdef(Name(n),df),tp) =>
         Some((n,Some(tp),Some(df)))
-      case OMLtype(OMV(n),OMLdef(tp,df)) =>
+      case OMLtype(Name(n),OMLdef(tp,df)) =>
         Some((n,Some(tp),Some(df)))
-      case OMLtype(OMV(n),tp) =>
+      case OMLtype(Name(n),tp) =>
         Some((n,Some(tp),None))
-      case OMLdef(OMLtype(OMV(n),tp),df) => Some((n,Some(tp),Some(df)))
-      case OMLdef(OMV(n),OMLtype(df,tp)) => Some((n,Some(tp),Some(df)))
-      case OMLdef(OMV(n),df) => Some((n,None,Some(df)))
-      case OMV(n) => Some((n,None,None))
+      case OMLdef(OMLtype(Name(n),tp),df) => Some((n,Some(tp),Some(df)))
+      case OMLdef(Name(n),OMLtype(df,tp)) => Some((n,Some(tp),Some(df)))
+      case OMLdef(Name(n),df) => Some((n,None,Some(df)))
+      case Name(n) => Some((n,None,None))
       case _ => None
     }
   }

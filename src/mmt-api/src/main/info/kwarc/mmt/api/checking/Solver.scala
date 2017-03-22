@@ -720,7 +720,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         checkingUnit.killact
         return error("checking was cancelled by external signal")
       }
-      // JudgementStore.getOrElse(j,{
+      JudgementStore.getOrElse(j,{
         history += j
         history.indinc
         log("checking: " + j.presentSucceedent)
@@ -739,9 +739,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         }
         history.inddec
         ret
-     // })
+     })
    }
-
+  // This can yield a speed up of (in one case) a factor of >4
   object JudgementStore {
     private val store : scala.collection.mutable.HashMap[Judgement,Boolean] = collection.mutable.HashMap.empty
     def getOrElse(j : Judgement, f : => Boolean) : Boolean = {
