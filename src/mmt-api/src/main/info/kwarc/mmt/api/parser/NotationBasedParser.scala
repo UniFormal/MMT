@@ -661,10 +661,11 @@ class NotationBasedParser extends ObjectParser {
 
   /** matches v[:T][=D] */
   private object OMLTypeDef {
+    //TODO this is a bad hack to work around an unsolved parsing problem: the intended name an OML is assumed to remain as a free variable
+    // but that does not happen if there happens to be a notation is applicable to that token
     private object Name {
       def unapply(t : Term) : Option[LocalName] = t match {
         case OMV(n) => Some(n)
-        case OML(n,_,_,_,_) => Some(n)
         case OMS(p) => Some(p.name)
         case _ => None
       }
