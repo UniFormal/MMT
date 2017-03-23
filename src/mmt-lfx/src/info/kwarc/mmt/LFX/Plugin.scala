@@ -151,7 +151,8 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
           val opt = c.alias.find(_.steps.length == 1)
           opt match {
             case Some(n) => n
-            case None => ???
+            case None =>
+              throw GeneralError("FromTheory Error: can not generate unique name for " + c.name)
           }
         }
         state.cont ::= (c.path,OML(name,c.tp.map(substitute(_,state.all)),None,c.not,None))
@@ -161,9 +162,7 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
           case _ =>
         }
       case o =>
-        println(o)
-        println(o.path)
-        ???
+        throw GeneralError("FromTheory Error: can not handle Declarations of type " + o.getClass + ": " + o.path)
     }
     state.globalcont = state.globalcont ++ th.parameters
     state.get
