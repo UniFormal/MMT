@@ -1,61 +1,40 @@
+<h1>Alignment-based Concept Dictionary</h1>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-   <head>
-      <meta charset="UTF-8" />
-<!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> -->
-      <title>MMT Web Server</title>
-      <script type="text/javascript" src="script/jquery/jquery.js"></script>
-      <link rel="stylesheet" type="text/css" href="css/bootstrap-jobad/css/bootstrap.less.css"></link>
-      <link rel="stylesheet" type="text/css" href="css/mmt.css" />
-      <link rel="stylesheet" type="text/css" href="css/concepts.css" />
-      <link rel="stylesheet" type="text/css" href="css/JOBAD.css" />
-      <link rel="stylesheet" type="text/css" href="css/jquery/jquery-ui.css" />
-<!-- <link rel="stylesheet" type="text/css" href="/css/jquery/ui.base.css"/> -->
-      <link rel="shortcut icon" href="mmt2.png" />
-      <!--
-      <script src="script/codemirror2/lib/codemirror.js"></script>
-      <link rel="stylesheet" href="script/codemirror2/lib/codemirror.css" />
-      <script src="script/codemirror2/mode/lf/lf.js"></script>
-      -->
-      <script type="text/javascript" src="script/jquery/jquery-ui.js"></script>
-      <script type="text/javascript" src="script/tree/jquery.hotkeys.js"></script><!-- used by  stree -->
-      <script type="text/javascript" src="script/tree/jquery.jstree.js"></script>
+<p>This Dictionary is an attempt to connect formal and informal resources for mathematical content, such as theorem prover libraries (on the formal side) or online dictionaries (on the informal), via <b>alignments</b> and make them browsable and presentable by connecting them to the <i>mathematical concept they represent</i> or talk about.</p>
 
-      <!-- incremental search by Kazuhisa Nakasho
-      <script type="text/javascript" src="script/incsearch/incsearch.js"></script> -->
-      <script type="text/javascript" src="script/incsearch/treeview.js"></script>
-      <link rel='stylesheet' href='css/incsearch/jstree.css'>
-      <link rel='stylesheet' href='css/incsearch/index.css'>
-      <link rel='stylesheet' href='css/incsearch/incsearch.css'>
-      <link rel='stylesheet' href='css/incsearch/treeview.css'>
+<p>A thorough description of alignments can be found <a href="insert actual link to paper here">here</a>.</p>
 
-<!-- Core JS API for MMT interaction -->
-      <script type="text/javascript" src="script/mmt/mmt-js-api.js"></script>
-<!-- JOBAD Deps -->
-      <script type="text/javascript" src="script/jobad/deps/underscore-min.js"></script>
-      <script type="text/javascript" src="script/bootstrap2/bootstrap.js"></script>
-<!-- JOBAD -->
-      <script type="text/javascript" src="script/jobad/JOBAD.js"></script>
-<!-- JOBAD Services -->
-      <script type="text/javascript" src="script/jobad/modules/hovering.js"></script>
-      <script type="text/javascript" src="script/jobad/modules/interactive-viewing.js"></script>
-<!-- browser-specific JS -->
-      <script type="text/javascript" src="script/mmt/concepts.js"></script>
-   </head>
-   <body>
-<!-- header area -->
-      <div id="header">
-      Bla
-      </div>
-  		<!-- main page content -->
-      <div id="middle">
-               <div id="main"><div id="center"><span/></div></div>
-</div>
+<h3>A Brief Explanation of Alignments</h3>
 
-<!-- widgets -->
+<p>Mathematical concepts can and are being described or formalized both formally and informally in various different ways, using different systems and physical/logical locations. We assign each of those different representations globally unique <b>MMT URIs</b> (for details, see the linked paper above) and call two such representations <b>aligned</b> if they represent the <i>same abstract mathematical concept</i>.</p>
 
+<p><b>Example:</b> The concept of a <a href="/:concepts?con=Cartesian%20Product"><i>cartesian product</i></a> is implemented e.g. in the theorem prover libraries of Mizar and Isabelle/ZFC. Furthermore, e.g. Wikipedia and Wolfram MathWorld have entries on the cartesian product. We firmly believe that there is value in connecting all these "occurences" of cartesian product in the publicly available realm of knowledge, thus opening up a potentially huge number of features in various systems and knowledge management services and applications (such as <i>this dictionary</i>).</p>
 
-<!-- footer -->
-<div id="footer"></div>
-</body>
-</html>
+<p>To do so, we first assign MMT URIs to these. In the case of purely informal online resources as Wikipedia, we simply take the actual URL of the entry; for formal systems we use certain conventions (described in the paper above). For cartesian products, we get exemplary:</p>
+<ul>
+<li><b>Wikipedia:</b> https://en.wikipedia.org/wiki/Cartesian_product</li>
+<li><b>Wolfram Mathworld:</b> http://mathworld.wolfram.com/CartesianProduct.html</li>
+<li><b>Isabelle/ZFC:</b> http://isabelle.in.tum.de/?ZF/ZF?cart_prod</li>
+</ul>
+
+<h3>This Concept Dictionary</h3>
+The goal of this concept dictionary is threefold:
+<ol>
+<li>To offer an exemplary service opened up by alignments,</li>
+<li>to give a platform to browse and inspect known (to us) alignments, and</li>
+<li>to provide a convenient way to submit new alignments by hand.</li>
+</ol>
+If you want to mass-submit (e.g. software generated) alignments, please refer to the paper above for ways to do so - we are thankful for each submission or suggestion.
+
+<p>Each entry in the concept dictionary shows</p>
+<ol>
+<li>The name of the concept</li>
+<li>Equivalent concepts (for some notion of equivalence)</li>
+<li>For alignments to a select number of informal online resources: The first couple of paragraphs of the corresponding entry and a link to the original source</li>
+<li>The remaining alignments to informal resources</li>
+<li>For alignments to formal resources that are available on MathHub: The corresponding formal properties (type, definition) of the associated symbol, notations etc.</li>
+<li>The remaining alignments to formal resources</li>
+</ol>
+<p>For the purposes of this dictionary we consider the alignment relation to be an equivalence relation; in particular, the concept dictionaries works with the transitive closures of the available alignments.</p>
+
+<img source="/mmt-web/images/concepts/mathhub1.jpg">The beginning of the entry for cartesian products, showing a snippet of the corresponding Wikipedia article

@@ -39,10 +39,10 @@ class ConceptServer extends ServerExtension("concepts") {
   private def makeMenu(h : HTML) = {
     import h._
     log("Constructing menu...")
-    val list = alphabet collect {
+    val list = (alphabet collect {
       case '!' if conlist.exists(c => !alphabet.init.contains(c.toLowerCase.head)) => "!"
       case a if conlist.exists(c => c.toLowerCase.head == a) => a.toString.toUpperCase
-    }
+    }) ::: List("About")
     ul { list.foreach(s => li { a(":concepts?page=" + s) { text {s} } }) }
     log("Done.")
   }
@@ -75,7 +75,10 @@ class ConceptServer extends ServerExtension("concepts") {
 
   def doIndexPage(h : HTML, l : String) = {
     import h._
-    if (!(l.length==1)) text { "Unknown index: " + l }
+    if (l == "about") {
+      val ret = MMTSystem.getResourceAsString("mmt-web/concepts.html")
+      literal(ret)
+    } else if (!(l.length==1)) text { "Unknown index: " + l }
     else {
       h1 { text { l } }
       val ls = if (l=="!") conlist.filter(c => !alphabet.init.exists(ch => c.toLowerCase.startsWith(ch.toString)))
@@ -164,6 +167,8 @@ class ConceptServer extends ServerExtension("concepts") {
     } else if (path.isEmpty && query == "conlist") {
       log("Query for conlist")
       Server.TextResponse("[" + conlist.map(s => "\"" + s + "\"").mkString(",") + "]")
+    } else if (path.isEmpty && query.startsWith("page=About")) {
+      Server.TypedTextResponse(doFullPage(List("About")),"html")
     } else if (path.isEmpty && query.startsWith("page=")) {
       val index = query(5).toLower
       log("Query for page " + index)
