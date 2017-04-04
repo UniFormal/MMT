@@ -26,33 +26,38 @@ import PVSTheory._
 // Notation Extension
 
 object PVSNotation extends NotationExtension {
+  override val priority = 3
   def isApplicable(t: Term): Boolean = t match {
-    case pvsapply(fun,tuple_expr(List(a,b)),_) => true
+    case ComplexTerm(Apply.path,sub,con,List(pvsapply.term,_,_,OMS(fun),tuple_expr(List(a,b)))) =>
+      true
+    case ComplexTerm(Apply.path,sub,con,List(pvsapply.term,_,_,Apply(OMS(fun),ls),tuple_expr(List(a,b)))) =>
+      true // implicit type arguments
     case _ => false
   }
   /** called to construct a term after a notation produced by this was used for parsing */
   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
                    (implicit unknown: () => Term): Term = {
-    println("constructTerm1")
-    println(op)
-    println(subs)
-    println(con)
-    println(args)
-    println(attrib)
-    println(not)
-    OMA(OMS(op),args)
+    require(args.length == 2)
+    ???
   }
-  def constructTerm(fun: Term, args: List[Term]): Term = {
-    println("constructTerm2")
-    println(fun)
-    println(args)
-    OMA(fun,args)
+  def constructTerm(fun: Term, args: List[Term]): Term = fun match {
+    case OMS(gn) => ???
+    case _ => ???
   }
   /** called to deconstruct a term before presentation */
   def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = {
-    println("destructTerm")
-    println(t)
-    ???
+    val (fun,sub,con,a,b) = t match {
+      case ComplexTerm(Apply.path,sub2,con2,List(pvsapply.term,_,_,OMS(fun2),tuple_expr(List((a2,_),(b2,_))))) => (fun2,sub2,con2,a2,b2)
+      case ComplexTerm(Apply.path,sub2,con2,List(pvsapply.term,_,_,Apply(OMS(fun2),ls),tuple_expr(List((a2,_),(b2,_))))) => (fun2,sub2,con2,a2,b2)
+      case _ => return None
+    }
+    val delim = Delim(fun.name match {
+      case ComplexStep(p) / s => p.name + "?" + s
+      case _ => fun.name.toString
+    })
+    val fixity = Mixfix(List(SimpArg(1),Delim("%w"),delim,Delim("%w"),SimpArg(2)))
+    val notation = TextNotation(fixity,Precedence.integer(0),None)
+    Some(PragmaticTerm(fun,sub,con,List(a,b),false,notation,Position.positions(OMA(OMS(fun),List(a,b)))))
   }
 }
 
