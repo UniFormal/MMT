@@ -334,6 +334,7 @@ class Controller extends ROController with ActionHandling with Logger {
     Some(get(path))
   } catch {
     case _: GetError => None
+    case _: BackendError => None
   }
 
   // ******************************* transparent loading during global lookup
