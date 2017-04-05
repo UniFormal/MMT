@@ -28,6 +28,7 @@ abstract class Test(archivepath : String,
   if (logfile.isDefined) controller.handleLine("log html " + logfile.get)// /home/raupi/lmh/mmtlog.txt")
   logprefixes foreach (s => controller.handleLine("log+ " + s))
   controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
+  controller.handleLine("extension info.kwarc.mmt.LFX.Plugin")
   controller.handleLine("extension info.kwarc.mmt.odk.Plugin")
   controller.handleLine("extension info.kwarc.mmt.pvs.Plugin")
   // controller.handleLine("extension info.kwarc.mmt.metamath.Plugin")

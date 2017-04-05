@@ -158,7 +158,7 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
       (arity.numNormalSubs == subs || (arity.numNormalSubs < subs && arity.numSeqSubs >= 1)) &&
       (arity.numNormalVars == vars || (arity.numNormalVars < vars && arity.numSeqVars >= 1)) &&
       (arity.numNormalArgs == args || (arity.numNormalArgs < args && arity.numSeqArgs >= 1)) &&
-      (hasDelimiter || args > arity.numNormalArgs + arity.numSeqArgs) && // this hacky case precludes confusion when flexary operators would disappear in the presentation 
+      (hasDelimiter || arity.numSeqArgs == 0 || args > arity.numNormalArgs + arity.numSeqArgs) && // this hacky case precludes confusion when flexary operators would disappear in the presentation
       (! att || arity.attribution)
    }   
 }

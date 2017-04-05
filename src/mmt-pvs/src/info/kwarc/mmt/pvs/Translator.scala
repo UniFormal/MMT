@@ -11,10 +11,10 @@ import parser._
 import info.kwarc.mmt.api.objects._
 import utils._
 import archives._
-
 import syntax._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.LFX.Subtyping.subtypeJudg
+import info.kwarc.mmt.api.uom.StandardRat
 
 class TheoryState(val parent : DPath, val name : LocalName, val meta : MPath) {
   val path : MPath = parent ? name
@@ -130,13 +130,13 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
     try {
       val modsM = d._modules map doModule
        //.add(m) ; MRef(bt.narrationDPath, m.path)})
-      try {
-        deps.distinct foreach {
-          controller.get(_).asInstanceOf[DeclaredTheory]
-        }
-      } catch {
-        case e : Exception => throw Dependency(deps.head)
-      }
+        deps.distinct.foreach(d => try {
+          controller.get(d).asInstanceOf[DeclaredTheory]
+        } catch {
+        case e : Exception =>
+          log("Unresolved dependency: " + d + " in " +modsM.head.path)
+          throw Dependency(deps.head)
+      })
       log("Translated: " + state.th.name)
 
       /*
@@ -164,7 +164,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           // savestring ::= d.path.toString
         }
         //println(theory)
-        controller simplifier theory
+        // controller simplifier theory
         doc add MRef(bt.narrationDPath, theory.path)
         theory
       })
@@ -180,7 +180,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         }.asInstanceOf[MMTStructureChecker]
         ths foreach {p =>
           val ce = new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore, this)
-          checker.applyWithTimeout(p,Some(30000))(ce)
+          // checker.applyWithTimeout(p,Some(30000))(ce)
         }
       }
       index(doc)
@@ -332,7 +332,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         state.th.parameters = state.th.parameters ++ v
         state.inFormals = false
       // case d : Decl => doDecl(d)(true)
-      case importing(_,_) =>
+      case importing(un,n) =>
       case _ =>
         println("TODO Formal: " + f.getClass + ": " + f)
         sys.exit
@@ -496,8 +496,9 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         state.th add Constant(state.th.toTerm, newName(id), Nil, Some(PVSTheory.tp.term),
           Some(PVSTheory.enumtype(enum_elts.map(_._id))), None)
 
-      case importing(_, namedec) =>
-        state.addinclude(doMPath(namedec, true)) // TODO fix
+      case importing(un, namedec) =>
+        val path = doMPath(namedec, true)
+        if (!(DPath((URI.http colon "pvs.csl.sri.com") / "Prelude") <= path)) state.addinclude(path) // TODO fix
 
       case inline_datatype(InlineDatatypeBody(NamedDecl(id, _, _), arg_formals, constructors)) =>
         // TODO check if right
@@ -701,7 +702,9 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
 
       case number_expr(_,j) => (OMLIT(j,NatLiterals),NatLiterals.pvstp)
 
-      case rational_expr(_,s) => (OMLIT(s.replace(" ","/"),RationalLiterals),RationalLiterals.pvstp)
+      case rational_expr(_,s) =>
+        val rat = StandardRat.fromString(s.replace(" ","/"))// s.replace(" ","/")
+          (OMLIT(rat,RationalLiterals),RationalLiterals.pvstp)
 
       case proj_appl_expr(_,expr,i) =>
         val (tm,tp) = doExpr(expr)
@@ -810,13 +813,17 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
   def doMPath(thname : theory_name, isimport : Boolean = false) : MPath = {
     var (thid,library_id,mappings,opttarget,allactuals) =
       (thname.id,thname.library_id,thname.mappings,thname.target,thname.actuals ::: thname.dactuals)
-    if (thid == "indexed_sets") {
+    if (thid contains "min_nat") {
       print("")
     }
     val doc =
       if (library_id=="") {
         if (thid == state.th.name.toString) path
-        else if (isimport)  state.th.path.^^
+        else if (isimport) {
+          val prel = controller.getO(DPath((URI.http colon "pvs.csl.sri.com") / "Prelude") ? thid)
+          if (prel.isDefined) DPath((URI.http colon "pvs.csl.sri.com") / "Prelude")
+          else state.th.path.^^
+        }
         else {
           val optth = state.th.includes.find(p => p.^^ == state.th.path.^^ && p.name.toString == thid)
           if (optth.isDefined) optth.get.^^

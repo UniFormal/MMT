@@ -16,7 +16,6 @@ class DefinitionExpander(controller: frontend.Controller) extends StatelessTrave
       case _ => None
    }
    def traverse(t: Term)(implicit con : Context, init: Unit): Term = {
-      //println(t)
       t match {
          case DefinitionsExpanded(tE) if tE.freeVars.forall(v => con(v).df.isEmpty) =>
             // term was already expanded previously and none of its free variables has acquired a definition since then
@@ -43,7 +42,6 @@ class DefinitionExpander(controller: frontend.Controller) extends StatelessTrave
               tE.from(t)
             case None => DefinitionsExpanded(OMV(n))
          }
-         // case o@OML(_,_,Some(df),_,_) => df.from(o)
          case _ => Traverser(this, t)
       }
    }

@@ -67,12 +67,12 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
   }
   def getAsInt(s : String) : Int = apply(s).getOrElse(throw new ParseError("Field \"" + s + "\" not defined in JSONObject " + this)) match {
     case j: JSONInt => j.value
-    case _ => throw new ParseError("Field \"" + s + "\" is not a JSONInt in " + this)
+    case _ => throw ParseError("Field \"" + s + "\" is not a JSONInt in " + this)
   }
   def getAsList[A](cls: Class[A],s : String) : List[A] = {
-    val ret = apply(s).getOrElse(throw new ParseError("Field \"" + s + "\" not defined in JSONObject " + this)) match {
+    val ret = apply(s).getOrElse(throw ParseError("Field \"" + s + "\" not defined in JSONObject " + this)) match {
       case j : JSONArray => j.values.toList
-      case _ => throw new ParseError("Field \"" + s + "\" not da JSONArray " + this)
+      case _ => throw ParseError("Field \"" + s + "\" not da JSONArray " + this)
     }
     ret map {
       case j : JSONValue if cls.isInstance(j.value) => j.value match {
@@ -80,7 +80,7 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
         case _ => throw new Exception("Impossible")
       }
       case j : A@unchecked if cls.isInstance(j) => j
-      case _ => throw new ParseError("getAs Error: A=" + A.toString + ", j:" + ret.getClass)
+      case _ => throw ParseError("getAs Error: A=" + A.toString + ", j:" + ret.getClass)
     }
   }
 }
