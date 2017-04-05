@@ -128,12 +128,20 @@ class JsonGraphExporter extends ServerExtension("jsongraph") {
       throw LocalError(s"svg file does not exist and exporter $key not available: $query")
     }
     lazy val se = controller.get(path)
+    def makecolor(s : String) = s match {
+      case "grey" => JSONObject(("color",JSONString("#cccccc")),("highlight",JSONString("#cccccc")),("hover",JSONString("#cccccc")))
+      case "black" => JSONObject(("color",JSONString("#000000")),("highlight",JSONString("#000000")),("hover",JSONString("#000000")))
+      case _ => JSONObject()
+    }
     def makelink(s : Path) = ("url",JSONString("https://mathhub.info/mh/mmt/?" + s.toString))
     val add : DotObject => List[(String,JSON)] = {
       case n : DotNode => List(makelink(n.id))
-      case n : DotEdge if n.cls == "graphview" && n.id.isDefined => List(makelink(n.id.get))
-      case n : DotEdge if n.cls == "graphstructure" && n.id.isDefined => List(makelink(n.id.get))
-      case n : DotEdge if n.cls == "graphinclude" => List(makelink(n.from.id))
+      case n : DotEdge if n.cls == "graphview" && n.id.isDefined =>
+        List(makelink(n.id.get),("arrows",JSONString("true")),("color",makecolor("black")))
+      case n : DotEdge if n.cls == "graphstructure" && n.id.isDefined =>
+        List(makelink(n.id.get),("arrows",JSONString("true")),("color",makecolor("grey")),("dashes",JSONBoolean(true)))
+      case n : DotEdge if n.cls == "graphinclude" =>
+        List(makelink(n.from.id),("arrows",JSONString("true")),("color",makecolor("grey")))
       case _ => Nil
     }
     Server.JsonResponse(exp.asJSON(se)(add))
