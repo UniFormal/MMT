@@ -2,18 +2,21 @@ package info.kwarc.mmt.api.utils
 import info.kwarc.mmt.api._
 
 // note graphviz does not like some characters (including -) in the tooltip attributes, which we use for classes
-
+sealed trait DotObject
 /** a node to be used in a [[DotGraph]] */
-trait DotNode {
+trait DotNode extends DotObject {
   def id: Path
   def label : String
   /** must be alphanumeric, space-separeated */
   def cls: String
-  def toJSON : JSON = JSONObject(("id",JSONString(id.toString)),("label",JSONString(label)))
+  def toJSON(add : DotNode => List[(String,JSON)] ) : JSON = {
+    val ls = ("id",JSONString(id.toString)) :: ("label",JSONString(label)) :: add(this)
+    JSONObject(ls:_*)
+  }
 }
 
 /** a node to be used in a [[DotGraph]] */
-trait DotEdge {
+trait DotEdge extends DotObject {
   def from: DotNode
   def to: DotNode
   def id: Option[Path]
@@ -21,14 +24,15 @@ trait DotEdge {
   /** must be alphanumeric, space-separeated */
   def cls: String
   def weight = 1
-  def toJSON : JSON = JSONObject(
-    ("from",JSONString(from.id.toString)),
-    ("to",JSONString(to.id.toString)),
-    ("weight",JSONInt(weight)),
-    ("label",JSONString(label.getOrElse(""))),
-    ("id",JSONString(id.map(_.toString).getOrElse(""))),
-    ("arrows",JSONString("to"))
-  )
+  def toJSON(add : DotEdge => List[(String,JSON)] ) : JSON = {
+    val ls = ("from",JSONString(from.id.toString)) ::
+      ("to",JSONString(to.id.toString)) ::
+      ("weight",JSONInt(weight)) ::
+      ("label",JSONString(label.getOrElse(""))) ::
+      ("id",JSONString(id.map(_.toString).getOrElse(""))) ::
+      add(this)
+    JSONObject(ls:_*)
+  }
   // TODO Stuff about different arrow types
 }
 
@@ -39,8 +43,8 @@ trait DotGraph {
    def externalNodes: Option[Iterable[DotNode]]
    def edges: Iterable[DotEdge]
 
-  def JSONNodes : JSONArray = JSONArray(nodes.map(_.toJSON).toSeq:_*)
-  def JSONEdges : JSONArray = JSONArray(edges.map(_.toJSON).toSeq:_*)
+  def JSONNodes(add : DotNode => List[(String,JSON)] ) : JSONArray = JSONArray(nodes.map(_.toJSON(add)).toSeq:_*)
+  def JSONEdges(add : DotEdge => List[(String,JSON)] ) : JSONArray = JSONArray(edges.map(_.toJSON(add)).toSeq:_*)
 }
 
 /** thrown by [[DotToSVG]] */

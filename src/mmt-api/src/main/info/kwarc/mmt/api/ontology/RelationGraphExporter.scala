@@ -5,8 +5,10 @@ import documents._
 import modules._
 import archives._
 import info.kwarc.mmt.api.symbols.Declaration
+import info.kwarc.mmt.api.web.{Server, ServerExtension, Session}
 import utils._
 import presentation._
+import tiscaf.{HLet, HReqData}
 
 /**
  * builds a graph from relational and then calls dot to produce an svg file
@@ -43,9 +45,9 @@ abstract class RelationGraphExporter extends StructurePresenter {
     rh(svg)
   }
 
-  def asJSON(se : StructuralElement): JSON = {
+  def asJSON(se : StructuralElement)(add : DotObject => List[(String,JSON)] ): JSON = {
     val dg = buildGraph(se)
-    JSONObject(("nodes",dg.JSONNodes),("edges",dg.JSONEdges))
+    JSONObject(("nodes",dg.JSONNodes(add)),("edges",dg.JSONEdges(add)))
   }
 }
 
@@ -111,4 +113,30 @@ class TheoryGraphExporter extends RelationGraphExporter {
     val tgf = new ontology.TheoryGraphFragment(theories, views, tg)
     tgf.toDot
   }
+}
+
+class JsonGraphExporter extends ServerExtension("jsongraph") {
+
+  override def start(args: List[String]): Unit = {
+
+  }
+
+  def apply(httppath: List[String], query: String, body: web.Body, session: Session, req: HReqData): HLet = {
+    val path = Path.parse(query, controller.getNamespaceMap)
+    val key = httppath.headOption.getOrElse("svg")
+    lazy val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
+      throw LocalError(s"svg file does not exist and exporter $key not available: $query")
+    }
+    lazy val se = controller.get(path)
+    def makelink(s : Path) = ("url",JSONString("https://mathhub.info/mh/mmt/?" + s.toString))
+    val add : DotObject => List[(String,JSON)] = {
+      case n : DotNode => List(makelink(n.id))
+      case n : DotEdge if n.cls == "graphview" && n.id.isDefined => List(makelink(n.id.get))
+      case n : DotEdge if n.cls == "graphstructure" && n.id.isDefined => List(makelink(n.id.get))
+      case n : DotEdge if n.cls == "graphinclude" => List(makelink(n.from.id))
+      case _ => Nil
+    }
+    Server.JsonResponse(exp.asJSON(se)(add))
+  }
+
 }
