@@ -21,7 +21,7 @@ case class Exp(children : List[LispExp], src : SourceRef) extends LispExp {
 case class Comment(content : String, src : SourceRef) extends LispExp {
   override def toString : String =
   {
-    ";" + content
+    "; " + content
   }
 }
 
@@ -54,7 +54,7 @@ case class HomeTheory(hmthy : String, src : SourceRef) extends LispExp {
   override def toString : String = { "(home-theory " + hmthy + ")"}
 }
 
-case class Language(lang : String, src : SourceRef) extends LispExp {
+case class ArgumentLanguage(lang : String, src : SourceRef) extends LispExp {
   override def toString : String = { "(language " + lang + ")"}
 }
 
@@ -80,6 +80,147 @@ case class SourceTheory(srcthy : String, src : SourceRef) extends LispExp {
 
 case class ArgumentTranslation(trans : String, src : SourceRef) extends LispExp {
   override def toString: String = { "(translation " + trans + ")" }
+}
+
+case class EmbeddedLanguage(name : String, src : SourceRef) extends LispExp {
+  override def toString: String = { "(embedded-language " + name + ")" }
+}
+
+case class EmbeddedLanguages(names : List[String], src : SourceRef) extends LispExp {
+  override def toString: String = {
+    var str : String = "(embedded-languages " + names.head
+    for (n <- names.tail)
+    {
+      str = str + " " + n
+    }
+    str = str + ")"
+    str
+  }
+}
+
+case class DistinctConstants(lst : List[List[String]], src : SourceRef) extends LispExp
+{
+  override def toString: String =
+  {
+    var str : String = "(distinct-constants "
+    for (dst <- lst)
+    {
+      str = str + "("
+      for (nm <- dst)
+      {
+        str = str + nm + " "
+      }
+      str = str.trim
+      str = str + ")"
+    }
+    str = str + ")"
+    str
+  }
+}
+
+case class LangBaseTypes(tps : List[IMPSMathExp], src : SourceRef) extends LispExp {
+  override def toString: String = {
+    var str = "(base-types " + tps.head.toString
+    for (t <- tps.tail)
+    {
+      str = str + " " + t.toString
+    }
+    str = str + ")"
+    str
+  }
+}
+
+case class ComponentTheories(lst : List[String], src : SourceRef) extends LispExp
+{
+  override def toString: String =
+  {
+    assert(!lst.isEmpty)
+    var str : String = "(component-theories"
+    for (t <- lst)
+    {
+      str = str + " " + t
+    }
+    str = str + ")"
+    str
+  }
+}
+
+case class TypeSortAList(lst : List[(String, String)], src : SourceRef) extends LispExp
+{
+  override def toString: String = {
+    var str : String = ""
+    for (p <- lst)
+    {
+      str = str + "(" + p._1 + " " + p._2 + ") "
+    }
+    str = str.trim
+    str
+  }
+}
+
+case class SortSpecifications(lst : List[(String, String)], src : SourceRef) extends LispExp
+{
+  override def toString: String = {
+    var str : String = ""
+    for (p <- lst)
+    {
+      str = str + "(" + p._1 + " " + p._2 + ") "
+    }
+    str = str.trim
+    str
+  }
+}
+
+case class ConstantSpecifications(lst : List[(String, String)], src : SourceRef) extends LispExp
+{
+  override def toString: String = {
+    var str : String = ""
+    for (p <- lst)
+    {
+      str = str + "(" + p._1 + " " + p._2 + ") "
+    }
+    str = str.trim
+    str
+  }
+}
+
+case class AxiomSpecification(formula : IMPSMathExp,
+                              name    : Option[String],
+                              usgs    : Option[List[String]],
+                              src     : SourceRef)
+  extends LispExp
+{
+  override def toString: String =
+  {
+    var str : String = "("
+    if (name.isDefined) { str = str + name + " " }
+    str = str + "\"" + formula.toString + "\""
+    if (usgs.isDefined)
+    {
+      assert(!usgs.get.isEmpty)
+      for (u <- usgs.get)
+      {
+        str = str + " " + u
+      }
+    }
+    str = str + ")"
+    str
+  }
+}
+
+case class TheoryAxioms(axs : List[AxiomSpecification], src : SourceRef) extends LispExp
+{
+  override def toString: String =
+  {
+    var str : String = "(axioms "
+    assert(!axs.isEmpty)
+    for (a <- axs)
+    {
+      str = str + " " + a.toString
+    }
+    str = str + ")"
+    str
+  }
 }
 
 // Proof scripts ATM only saved as strings
@@ -309,6 +450,54 @@ case class Theorem(name    : String,                      /* Positional argument
     if (macete.isDefined) { str = str + "\n  " + macete.get.toString }
     if (hmthy.isDefined) { str = str + "\n  " + hmthy.get.toString }
     if (prf.isDefined) { str = str + "\n  " + prf.get.toString }
+    str = str + ")"
+    str
+  }
+}
+
+/* def-language
+ * Documentation: IMPS manual pgs. 172 ff. */
+case class Language(name       : String,
+                    embedlang  : Option[EmbeddedLanguage],
+                    embedlangs : Option[EmbeddedLanguages],
+                    bstps      : Option[LangBaseTypes],
+                    extens     : Option[TypeSortAList],
+                    srts       : Option[SortSpecifications],
+                    cnstnts    : Option[ConstantSpecifications],
+                    src        : SourceRef)
+  extends LispExp
+{
+  override def toString: String =
+  {
+    var str : String = "(def-language " + name
+    if (embedlang.isDefined)  { str = str + "\n  " + embedlang.get.toString }
+    if (embedlangs.isDefined) { str = str + "\n  " + embedlangs.get.toString }
+    if (bstps.isDefined) { str = str + "\n  " + bstps.get.toString }
+    if (extens.isDefined) { str = str + "\n  " + bstps.get.toString }
+    if (srts.isDefined) { str = str + "\n  " + srts.get.toString }
+    if (cnstnts.isDefined) { str = str + "\n  " + cnstnts.get.toString }
+    str = str + ")"
+    str
+  }
+}
+
+/* def-theory
+ * Documentation: IMPS manual pgs. 186 ff. */
+case class Theory(name      : String,
+                  lang      : Option[ArgumentLanguage],
+                  cmpntthrs : Option[ComponentTheories],
+                  axioms    : Option[TheoryAxioms],
+                  dstnct    : Option[DistinctConstants],
+                  src       : SourceRef)
+  extends LispExp
+{
+  override def toString: String =
+  {
+    var str : String = "(def-theory " + name
+    if (lang.isDefined) { str = str + "\n  " + lang.get.toString }
+    if (cmpntthrs.isDefined) { str = str + "\n  " + cmpntthrs.get.toString }
+    if (axioms.isDefined) { str = str + "\n  " + axioms.get.toString }
+    if (dstnct.isDefined) { str = str + "\n  " + dstnct.get.toString }
     str = str + ")"
     str
   }
