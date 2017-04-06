@@ -1,0 +1,7 @@
+This folder contains the extended MMT REPL which is (c) Tom Wiesing 2017.
+
+This content is dual-licensed under the MMT license as well as GPL, version 3.0.
+You should have received a copy of both licenses within the folder this file is located in.
+
+Note that the MMT license does not permit any modifications to be distributed (not even within the MMT repository).
+Thus in order to make any moditications, it is required to make them available under the terms of the GPL license.
