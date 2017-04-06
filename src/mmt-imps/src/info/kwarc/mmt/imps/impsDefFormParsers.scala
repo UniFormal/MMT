@@ -2,6 +2,9 @@ package info.kwarc.mmt.imps
 
 package object impsDefFormParsers
 {
+
+  def parseLanguage ( e : Exp ) : Option[]
+
   /* Parser for IMPS special form def-atomic sort
    * Documentation: IMPS manual pgs. 158, 159 */
   def parseAtomicSort (e : Exp) : Option[LispExp] =
