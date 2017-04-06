@@ -20,6 +20,19 @@ object PVSTheory {
       val term = OMS(path)
    }
 
+  object parambind {
+    val path: GlobalName = PVSTheory.rootdpath ? "BoundInclude" ? "parameter_binder"
+    val term = OMS(path)
+    def apply(sym : Term,pars : List[Term]) = sym match {
+      case OMS(s) if pars.nonEmpty => OMA(this.term,OMS(s) :: pars)
+      case _ => sym
+    }
+    def unapply(t : Term) : Option[(GlobalName,List[Term])] = t match {
+      case OMA(this.term,OMS(sym) :: rest) => Some((sym,rest))
+      case _ => None
+    }
+  }
+
    object tp extends sym("tp")
    //object unknown extends sym("unknown_type")
 

@@ -137,11 +137,11 @@ class JsonGraphExporter extends ServerExtension("jsongraph") {
     val add : DotObject => List[(String,JSON)] = {
       case n : DotNode => List(makelink(n.id))
       case n : DotEdge if n.cls == "graphview" && n.id.isDefined =>
-        List(makelink(n.id.get),("arrows",JSONString("true")),("color",makecolor("black")))
+        List(makelink(n.id.get),("arrows",JSONString("to")),("color",makecolor("black")))
       case n : DotEdge if n.cls == "graphstructure" && n.id.isDefined =>
-        List(makelink(n.id.get),("arrows",JSONString("true")),("color",makecolor("grey")),("dashes",JSONBoolean(true)))
+        List(makelink(n.id.get),("arrows",JSONString("to")),("color",makecolor("grey")),("dashes",JSONBoolean(true)))
       case n : DotEdge if n.cls == "graphinclude" =>
-        List(makelink(n.from.id),("arrows",JSONString("true")),("color",makecolor("grey")))
+        List(makelink(n.from.id),("arrows",JSONString("to")),("color",makecolor("grey")))
       case _ => Nil
     }
     Server.JsonResponse(exp.asJSON(se)(add))

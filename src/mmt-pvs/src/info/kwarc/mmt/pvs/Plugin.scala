@@ -2,12 +2,13 @@ package info.kwarc.mmt.pvs
 
 import info.kwarc.mmt.api._
 import checking._
+import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardNat, StandardRat, StandardString}
 import notations.{HOAS, NestedHOASNotation}
 import objects._
 import objects.Conversions._
 import notations._
-import symbols.{BoundTheoryParameters, DerivedDeclaration, StructuralFeatureRule, TermContainer}
+import symbols._
 import info.kwarc.mmt.lf._
 
 class Plugin extends frontend.Plugin {
@@ -32,6 +33,8 @@ object PVSNotation extends NotationExtension {
       true
     case ComplexTerm(Apply.path,sub,con,List(pvsapply.term,_,_,Apply(OMS(fun),ls),tuple_expr(List(a,b)))) =>
       true // implicit type arguments
+    case ComplexTerm(Apply.path,sub,con,List(pvsapply.term,_,_,parambind(fun,ls),tuple_expr(List(a,b)))) =>
+      true // implicit type arguments
     case _ => false
   }
   /** called to construct a term after a notation produced by this was used for parsing */
@@ -49,6 +52,8 @@ object PVSNotation extends NotationExtension {
     val (fun,sub,con,a,b) = t match {
       case ComplexTerm(Apply.path,sub2,con2,List(pvsapply.term,_,_,OMS(fun2),tuple_expr(List((a2,_),(b2,_))))) => (fun2,sub2,con2,a2,b2)
       case ComplexTerm(Apply.path,sub2,con2,List(pvsapply.term,_,_,Apply(OMS(fun2),ls),tuple_expr(List((a2,_),(b2,_))))) => (fun2,sub2,con2,a2,b2)
+      case ComplexTerm(Apply.path,sub2,con2,List(pvsapply.term,_,_,parambind(fun2,ls),tuple_expr(List((a2,_),(b2,_))))) =>
+        (fun2,sub2,con2,a2,b2) // implicit type arguments
       case _ => return None
     }
     val delim = Delim(fun.name match {
@@ -63,7 +68,30 @@ object PVSNotation extends NotationExtension {
 
 // Structural Features
 
-class LambdaPiInclude extends BoundTheoryParameters(BoundInclude.feature,Pi.path,Lambda.path,Apply.path)
+class LambdaPiInclude extends StructuralFeature("BoundInclude") with IncludeLike {
+  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration = {
+    val dom = getDomain(dd)
+    val body = controller.simplifier.getBody(Context.empty, dom) match {
+      case t : DeclaredTheory => t.path
+      case _ => throw GetError("Not a declared theory: " + dom)
+    }
+    new Elaboration {
+      override def domain: List[LocalName] = List(LocalName(body))
+
+      override def getO(name: LocalName): Option[Declaration] = name match {
+        case n if n == LocalName(body) => Some(PlainInclude(body,dd.parent))
+      }
+    }
+  }
+
+  override def processHeader(header: Term) = header match {
+    case OMA(OMMOD(`mpath`), (t @ OMPMOD(p,_))::Nil) => (LocalName("Param_" + p.name), t)
+  }
+
+  override def makeHeader(dd: DerivedDeclaration) = OMA(OMMOD(`mpath`), dd.tpC.get.get :: Nil)
+
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
+}//BoundTheoryParameters(BoundInclude.feature,Pi.path,Lambda.path,Apply.path)
 
 object BoundInclude {
   val mpath = SemanticObject.javaToMMT("info.kwarc.mmt.pvs.LambdaPiInclude")
