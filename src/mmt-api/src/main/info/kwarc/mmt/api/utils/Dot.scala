@@ -9,8 +9,9 @@ trait DotNode extends DotObject {
   def label : String
   /** must be alphanumeric, space-separeated */
   def cls: String
-  def toJSON(add : DotNode => List[(String,JSON)] ) : JSON = {
-    val ls = ("id",JSONString(id.toString)) :: ("label",JSONString(label)) :: add(this)
+  def toJSON : JSON = {
+    val ls = ("id",JSONString(id.toString)) :: ("label",JSONString(label)) :: ("style",JSONString(cls)) ::
+      ("url",JSONString("/?" + id)) :: Nil
     JSONObject(ls:_*)
   }
 }
@@ -24,13 +25,14 @@ trait DotEdge extends DotObject {
   /** must be alphanumeric, space-separeated */
   def cls: String
   def weight = 1
-  def toJSON(add : DotEdge => List[(String,JSON)] ) : JSON = {
+  def toJSON : JSON = {
     val ls = ("from",JSONString(from.id.toString)) ::
       ("to",JSONString(to.id.toString)) ::
       ("weight",JSONInt(weight)) ::
       ("label",JSONString(label.getOrElse(""))) ::
       ("id",JSONString(id.map(_.toString).getOrElse(""))) ::
-      add(this)
+      ("style",JSONString(cls)) ::
+      {if (id.isDefined) ("url",JSONString("/?" + id.get)) :: Nil else Nil}
     JSONObject(ls:_*)
   }
   // TODO Stuff about different arrow types
@@ -43,8 +45,8 @@ trait DotGraph {
    def externalNodes: Option[Iterable[DotNode]]
    def edges: Iterable[DotEdge]
 
-  def JSONNodes(add : DotNode => List[(String,JSON)] ) : JSONArray = JSONArray(nodes.map(_.toJSON(add)).toSeq:_*)
-  def JSONEdges(add : DotEdge => List[(String,JSON)] ) : JSONArray = JSONArray(edges.map(_.toJSON(add)).toSeq:_*)
+  def JSONNodes : JSONArray = JSONArray(nodes.map(_.toJSON).toSeq:_*)
+  def JSONEdges : JSONArray = JSONArray(edges.map(_.toJSON).toSeq:_*)
 }
 
 /** thrown by [[DotToSVG]] */

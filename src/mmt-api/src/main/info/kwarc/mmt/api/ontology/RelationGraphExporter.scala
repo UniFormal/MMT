@@ -45,9 +45,9 @@ abstract class RelationGraphExporter extends StructurePresenter {
     rh(svg)
   }
 
-  def asJSON(se : StructuralElement)(add : DotObject => List[(String,JSON)] ): JSON = {
+  def asJSON(se : StructuralElement): JSON = {
     val dg = buildGraph(se)
-    JSONObject(("nodes",dg.JSONNodes(add)),("edges",dg.JSONEdges(add)))
+    JSONObject(("nodes",dg.JSONNodes),("edges",dg.JSONEdges))
   }
 }
 
@@ -115,36 +115,28 @@ class TheoryGraphExporter extends RelationGraphExporter {
   }
 }
 
-class JsonGraphExporter extends ServerExtension("jsongraph") {
+class JsonGraphExporter extends ServerExtension("fancygraph") {
+ override val logPrefix = "fancygraph"
+//  log("init")
 
-  override def start(args: List[String]): Unit = {
-
+  def doJSON(path : Path, exp : RelationGraphExporter) : HLet = {
+    lazy val se = controller.get(path)
+    Server.JsonResponse(exp.asJSON(se))
   }
 
   def apply(httppath: List[String], query: String, body: web.Body, session: Session, req: HReqData): HLet = {
+    log("Paths: " + httppath)
+    log("Query: " + query)
     val path = Path.parse(query, controller.getNamespaceMap)
-    val key = httppath.headOption.getOrElse("svg")
+    val (json,key) = if (httppath.headOption == Some("json")) (true,httppath.tail.headOption.getOrElse("svg"))
+      else (false,httppath.headOption.getOrElse("svg"))
     lazy val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
       throw LocalError(s"svg file does not exist and exporter $key not available: $query")
     }
-    lazy val se = controller.get(path)
-    def makecolor(s : String) = s match {
-      case "grey" => JSONObject(("color",JSONString("#cccccc")),("highlight",JSONString("#cccccc")),("hover",JSONString("#cccccc")))
-      case "black" => JSONObject(("color",JSONString("#000000")),("highlight",JSONString("#000000")),("hover",JSONString("#000000")))
-      case _ => JSONObject()
-    }
-    def makelink(s : Path) = ("url",JSONString("https://mathhub.info/mh/mmt/?" + s.toString))
-    val add : DotObject => List[(String,JSON)] = {
-      case n : DotNode => List(makelink(n.id))
-      case n : DotEdge if n.cls == "graphview" && n.id.isDefined =>
-        List(makelink(n.id.get),("arrows",JSONString("to")),("color",makecolor("black")))
-      case n : DotEdge if n.cls == "graphstructure" && n.id.isDefined =>
-        List(makelink(n.id.get),("arrows",JSONString("to")),("color",makecolor("grey")),("dashes",JSONBoolean(true)))
-      case n : DotEdge if n.cls == "graphinclude" =>
-        List(makelink(n.from.id),("arrows",JSONString("to")),("color",makecolor("grey")))
-      case _ => Nil
-    }
-    Server.JsonResponse(exp.asJSON(se)(add))
+    log("Returning " + {if (json) "json" else "fail"} + " for " + path)
+    val ret = doJSON(path,exp)
+    log("Output: " + ret)
+    if (json) doJSON(path,exp) else ???
   }
 
 }
