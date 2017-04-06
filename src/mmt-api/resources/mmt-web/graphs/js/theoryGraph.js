@@ -27,10 +27,10 @@ function TheoryGraph()
 	{
 		for(var i=0;i<originalEdges.length;i++)
 		{
-			if(originalEdges[i].style!=undefined)
+			if(originalEdges[i].style!=undefined && ARROW_STYLES[originalEdges[i].style]!=undefined)
 			{
-				var styleInfos=originalEdges[i].style;
-				originalEdges[i].arrows.to.enabled=styleInfos.directed;
+				var styleInfos=ARROW_STYLES[originalEdges[i].style];
+				originalEdges[i].arrows = {to:{enabled:styleInfos.directed}};
 				
 				if(styleInfos.circle==true)
 				{
@@ -42,9 +42,7 @@ function TheoryGraph()
 				}
 
 				originalEdges[i].dashes=styleInfos.dashes;
-				originalEdges[i].color.color=styleInfos.color;
-				originalEdges[i].color.highlight=styleInfos.colorHighlight;
-				originalEdges[i].color.hover=styleInfos.colorHover;
+				originalEdges[i].color={color:styleInfos.color, highlight:styleInfos.colorHighlight, hover:styleInfos.colorHover};
 			}
 		}
 	}

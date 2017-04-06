@@ -765,9 +765,6 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
   def doMPath(thname : theory_name, isimport : Boolean = false) : MPath = {
     var (thid,library_id,mappings,opttarget,allactuals) =
       (thname.id,thname.library_id,thname.mappings,thname.target,thname.actuals ::: thname.dactuals)
-    if (thid contains "min_nat") {
-      print("")
-    }
     val doc =
       if (library_id=="") {
         if (thid == state.th.name.toString) path

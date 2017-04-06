@@ -118,12 +118,13 @@ class TheoryGraphExporter extends RelationGraphExporter {
 class JsonGraphExporter extends ServerExtension("fancygraph") {
  override val logPrefix = "fancygraph"
 //  log("init")
-
   def doJSON(path : Path, exp : RelationGraphExporter) : HLet = {
-    lazy val se = controller.get(path)
-    Server.JsonResponse(exp.asJSON(se))
+    (controller.getO(path),path) match {
+      case (Some(s),_) => Server.JsonResponse(exp.asJSON(s))
+      case (None, dpath : DPath) => Server.JsonResponse(exp.asJSON(new Document(dpath)))
+      case _ => Server.plainErrorResponse(GetError(path.toString))
+    }
   }
-
   def apply(httppath: List[String], query: String, body: web.Body, session: Session, req: HReqData): HLet = {
     log("Paths: " + httppath)
     log("Query: " + query)
@@ -135,8 +136,7 @@ class JsonGraphExporter extends ServerExtension("fancygraph") {
     }
     log("Returning " + {if (json) "json" else "fail"} + " for " + path)
     val ret = doJSON(path,exp)
-    log("Output: " + ret)
+    log("Output: " + ret.toString)
     if (json) doJSON(path,exp) else ???
   }
-
 }

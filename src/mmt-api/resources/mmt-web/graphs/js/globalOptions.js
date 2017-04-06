@@ -34,7 +34,7 @@ var THEORY_GRAPH_OPTIONS =
 
 var ARROW_STYLES=
 {
-	"include":
+	"graphinclude":
 	{
 		color:"#cccccc",
 		colorHighlight:"#cccccc",
@@ -43,7 +43,7 @@ var ARROW_STYLES=
 		circle:false,
 		directed: true
 	},
-	"theory":
+	"graphtheory":
 	{
 		color:"red",
 		colorHighlight:"red",
@@ -52,7 +52,7 @@ var ARROW_STYLES=
 		circle:false,
 		directed: true
 	},
-	"view":
+	"graphview":
 	{
 		color:"black",
 		colorHighlight:"black",
@@ -61,7 +61,7 @@ var ARROW_STYLES=
 		circle:false,
 		directed: true
 	},
-	"structure":
+	"graphstructure":
 	{
 		color:"#cccccc",
 		colorHighlight:"#cccccc",
