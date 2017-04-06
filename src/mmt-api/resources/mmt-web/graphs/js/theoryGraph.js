@@ -195,7 +195,7 @@ function TheoryGraph()
 			{
 				physics: 
 				{
-					//enabled: false
+					enabled: false
 				}
 			};
 			network.setOptions(options);
