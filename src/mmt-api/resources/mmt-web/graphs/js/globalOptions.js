@@ -2,34 +2,27 @@ var THEORY_GRAPH_OPTIONS =
 {
 	physics: 
 	{	
-		enabled: false,
-		solver: 'forceAtlas2Based',			
-		forceAtlas2Based: 
+		//enabled: false,
+		solver: 'barnesHut',			
+		"barnesHut": 
 		{
-			gravitationalConstant: -25,
-			centralGravity: 0.01,
-			springConstant: 0.08,
-			springLength: 200,
-			damping: 0.4,
-			avoidOverlap: 1.0
+			"avoidOverlap": 0.1
 		},
 		stabilization: 
 		{
 			enabled: true,
-			iterations: 10, // maximum number of iteration to stabilize
-			updateInterval: 10,
-			onlyDynamicEdges: false,
+			iterations: 10 // maximum number of iteration to stabilize
 		}
 	},
-	edges: {smooth: false},
-	layout: 
+	edges: {smooth: true}
+	/*layout: 
 	{
 		hierarchical: 
 		{
 			sortMethod: "directed",
 			direction: "LR"
 		}
-	}
+	}*/
 };
 
 var ARROW_STYLES=

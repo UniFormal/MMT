@@ -67,6 +67,10 @@ function TheoryGraph()
 	// Called when the Visualization API is loaded.
 	function startRendering() 
 	{
+		var opti=new Optimizer(originalNodes,originalEdges);
+		opti.GenerateRandomSolution();
+		opti.SolveUsingForces(1000);
+		
 		var nodes = new vis.DataSet(originalNodes);
 		var edges = new vis.DataSet(originalEdges);
 		
@@ -191,7 +195,7 @@ function TheoryGraph()
 			{
 				physics: 
 				{
-					enabled: false
+					//enabled: false
 				}
 			};
 			network.setOptions(options);
