@@ -454,12 +454,14 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       thy match {
         case thy: Theory =>
           val pars = thy.parameters
-          env.pCont(p)
-          val subs = (pars / args).getOrElse {
-            env.errorCont(InvalidObject(t, "bad number of arguments, expected " + pars.length))
-            context.id
+          if (pars.nonEmpty && args.nonEmpty) {
+            env.pCont(p)
+            val subs = (pars / args).getOrElse {
+              env.errorCont(InvalidObject(t, "bad number of arguments, expected " + pars.length))
+              context.id
+            }
+            checkSubstitution(context, subs, pars, Context(), false)
           }
-          checkSubstitution(context, subs, pars, Context(), false)
         case _ =>
           env.errorCont(InvalidObject(t, "not a theory identifier: " + p.toPath))
       }

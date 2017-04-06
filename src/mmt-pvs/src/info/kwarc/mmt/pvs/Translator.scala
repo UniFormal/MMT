@@ -75,11 +75,11 @@ abstract class ImportState(t:PVSImportTask) {
 
   def addinclude(p : MPath) : Unit =
     if (inFormals && !th.includes.contains(p)) {
-      th.parameters = th.parameters ++ DerivedVarDeclFeature(LocalName(p), BoundInclude.feature, OMMOD(p))
+      th.parameters = th.parameters ++ IncludeVarDecl(p,Nil)//DerivedVarDeclFeature(LocalName(p), BoundInclude.feature, OMMOD(p))
       t.deps::=p
       th.includes ::= (p,true)
     } else if (!th.includes.contains(p)) {
-      th add BoundInclude(th.path,p)
+      th add PlainInclude(p,th.path)// th add BoundInclude(th.path,p)
       t.deps::=p
       th.includes ::= p
     }
