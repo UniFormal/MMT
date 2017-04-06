@@ -2,19 +2,23 @@ var THEORY_GRAPH_OPTIONS =
 {
 	physics: 
 	{	
-		//enabled: false,
+		stabilization: true,
 		solver: 'barnesHut',			
 		"barnesHut": 
 		{
-			"avoidOverlap": 0.1
+			"avoidOverlap": 1
 		},
 		stabilization: 
 		{
 			enabled: true,
-			iterations: 10 // maximum number of iteration to stabilize
+			iterations: 2 // maximum number of iteration to stabilize
 		}
 	},
-	edges: {smooth: true}
+	nodes: 
+	{
+		//physics:false,
+	},
+	edges: {smooth: true},
 	/*layout: 
 	{
 		hierarchical: 

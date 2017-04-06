@@ -15,9 +15,10 @@ function Optimizer(nodes, edges)
 	var overAllColision;
 	var myAllNodes=nodes;
 	var field=[];
-	var myWidth=1000;
-	var myHeight=1000;
+	var myWidth=12000;
+	var myHeight=12000;
 	var countNodesInGraph;
+	var edgesCount=edges.length;
 	
 	mapEdgesIntoNodes(edges);
 	identifySubgraphs();
@@ -279,7 +280,7 @@ function Optimizer(nodes, edges)
 		var success = 0;
 
 		var area = myWidth * myHeight;
-		var kVal =  Math.sqrt(  area / myAllNodes.length*countNodesInGraph.length ) * 0.3;
+		var kVal =   (myAllNodes.length+edgesCount)/2/countNodesInGraph.length * 0.4;
 		var kSquared = kVal * kVal;
 
 		for( var i = 0; i < iterations; i++ )
