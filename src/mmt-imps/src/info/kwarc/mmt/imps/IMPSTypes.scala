@@ -118,12 +118,12 @@ case class DistinctConstants(lst : List[List[String]], src : SourceRef) extends 
   }
 }
 
-case class LangBaseTypes(tps : List[IMPSMathExp], src : SourceRef) extends LispExp {
+case class LangBaseTypes(tps : List[String], src : SourceRef) extends LispExp {
   override def toString: String = {
-    var str = "(base-types " + tps.head.toString
+    var str = "(base-types " + tps.head
     for (t <- tps.tail)
     {
-      str = str + " " + t.toString
+      str = str + " " + t
     }
     str = str + ")"
     str
@@ -145,13 +145,18 @@ case class ComponentTheories(lst : List[String], src : SourceRef) extends LispEx
   }
 }
 
-case class TypeSortAList(lst : List[(String, String)], src : SourceRef) extends LispExp
+case class TypeSortAList(numericType : String, sort : String) extends LispExp
+{
+  override def toString: String = "(" + numericType + " " + sort + ")"
+}
+
+case class Extensible(lst : List[TypeSortAList], src : SourceRef) extends LispExp
 {
   override def toString: String = {
     var str : String = ""
     for (p <- lst)
     {
-      str = str + "(" + p._1 + " " + p._2 + ") "
+      str = str + p.toString + " "
     }
     str = str.trim
     str
@@ -461,7 +466,7 @@ case class Language(name       : String,
                     embedlang  : Option[EmbeddedLanguage],
                     embedlangs : Option[EmbeddedLanguages],
                     bstps      : Option[LangBaseTypes],
-                    extens     : Option[TypeSortAList],
+                    extens     : Option[Extensible],
                     srts       : Option[SortSpecifications],
                     cnstnts    : Option[ConstantSpecifications],
                     src        : SourceRef)
