@@ -2,6 +2,7 @@ var THEORY_GRAPH_OPTIONS =
 {
 	physics: 
 	{	
+		
 		stabilization: true,
 		solver: 'barnesHut',			
 		"barnesHut": 
@@ -11,14 +12,14 @@ var THEORY_GRAPH_OPTIONS =
 		stabilization: 
 		{
 			enabled: true,
-			iterations: 2 // maximum number of iteration to stabilize
+			iterations: 5 // maximum number of iteration to stabilize
 		}
 	},
 	nodes: 
 	{
 		//physics:false,
 	},
-	edges: {smooth: true},
+	edges: {smooth: true}
 	/*layout: 
 	{
 		hierarchical: 

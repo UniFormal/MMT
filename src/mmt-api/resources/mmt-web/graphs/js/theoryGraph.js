@@ -86,7 +86,7 @@ function TheoryGraph()
 		};
 		
 		network = new vis.Network(container, data, THEORY_GRAPH_OPTIONS);
-		network.startSimulation(10);
+		//network.startSimulation(10);
 		
 		if(THEORY_GRAPH_OPTIONS.physics.enabled==false)
 		{
