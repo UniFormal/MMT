@@ -67,9 +67,12 @@ function TheoryGraph()
 	// Called when the Visualization API is loaded.
 	function startRendering() 
 	{
-		var opti=new Optimizer(originalNodes,originalEdges);
-		opti.GenerateRandomSolution();
-		opti.SolveUsingForces(1000);
+		if(THEORY_GRAPH_OPTIONS.layout==undefined)
+		{
+			var opti=new Optimizer(originalNodes,originalEdges);
+			opti.GenerateRandomSolution();
+			opti.SolveUsingForces(1000);
+		}
 		
 		var nodes = new vis.DataSet(originalNodes);
 		var edges = new vis.DataSet(originalEdges);
@@ -83,6 +86,15 @@ function TheoryGraph()
 		};
 		
 		network = new vis.Network(container, data, THEORY_GRAPH_OPTIONS);
+		
+		var options = 
+		{
+			physics: 
+			{
+				enabled: true
+			}
+		};
+		network.setOptions(options);
 		
 		if(THEORY_GRAPH_OPTIONS.physics.enabled==false)
 		{
