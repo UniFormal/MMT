@@ -207,7 +207,7 @@ class IMPSParser
 
         case Str("def-inductor") => return Some(Dummy("def-inductor"))
 
-        case Str("def-language") => println(e.toString) ; return Some(Dummy("def-language"))
+        case Str("def-language") => return impsDefFormParsers.parseLanguage(e)
 
         case Str("def-order-processor") => return Some(Dummy("def-order-processor"))
 
@@ -231,7 +231,7 @@ class IMPSParser
 
         case Str("def-theorem") => return impsDefFormParsers.parseTheorem(e) //return Some(Dummy("def-theorem"))
 
-        case Str("def-theory") => println(e.toString) ; return Some(Dummy("def-theory"))
+        case Str("def-theory") => return impsDefFormParsers.parseTheory(e)
 
         case Str("def-theory-ensemble") => return Some(Dummy("def-theory-ensemble"))
 
