@@ -390,9 +390,9 @@ case class ImportedRewriteRules(theoryName  : String,                 /* Positio
 
 /* def-quasi-constructor
  * Documentation: IMPS manual pgs. 176, 177 */
-case class QuasiConstructor(name            : String,                /* Positional Argument, Required */
+case class QuasiConstructor(name            : String,                 /* Positional Argument, Required */
                             lambdaExprString : String,                /* Positional Argument, Required */
-                            language         : Language,              /* Keyword Argument, Required */
+                            language         : ArgumentLanguage,      /* Keyword Argument, Required */
                             fixedTheories    : Option[FixedTheories], /* Keyword Argument, Optional */
                             src              : SourceRef)             /* SourceRef for MMT */
   extends LispExp
