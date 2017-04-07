@@ -2,9 +2,6 @@ package info.kwarc.mmt.imps
 
 package object impsDefFormParsers
 {
-
-  def parseLanguage ( e : Exp ) : Option[]
-
   /* Parser for IMPS special form def-atomic sort
    * Documentation: IMPS manual pgs. 158, 159 */
   def parseAtomicSort (e : Exp) : Option[LispExp] =
@@ -34,7 +31,7 @@ package object impsDefFormParsers
         e.children(i) match {
           case Exp(ds,src) => ds.head match
           {
-            case Exp(List(Str("theory")),_)  => thy     = impsArgumentParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("theory")),_)  => thy     = impsArgumentParsers.parseArgumentTheory(Exp(ds,src))
             case Exp(List(Str("usages")),_)  => usages  = impsArgumentParsers.parseUsages(Exp(ds,src))
             case Exp(List(Str("witness")),_) => witness = impsArgumentParsers.parseWitness(Exp(ds,src))
             case _                           => ()
@@ -80,7 +77,7 @@ package object impsDefFormParsers
         e.children(i) match {
           case Exp(ds,src) => ds.head match
           {
-            case Exp(List(Str("theory")),_) => thy    = impsArgumentParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("theory")),_) => thy    = impsArgumentParsers.parseArgumentTheory(Exp(ds,src))
             case Exp(List(Str("usages")),_) => usages = impsArgumentParsers.parseUsages(Exp(ds,src))
             case Exp(List(Str("sort")),_)   => sort   = impsArgumentParsers.parseSort(Exp(ds,src))
             case _                          => ()
@@ -102,9 +99,9 @@ package object impsDefFormParsers
   def parseQuasiConstructor (e : Exp) : Option[LispExp] =
   {
     // Required arguments
-    var name   : Option[String]   = None
-    var expstr : Option[String]   = None
-    var lang   : Option[Language] = None
+    var name   : Option[String]           = None
+    var expstr : Option[String]           = None
+    var lang   : Option[ArgumentLanguage] = None
 
     // Optional arguments
     var fixed  : Option[FixedTheories] = None
@@ -125,7 +122,7 @@ package object impsDefFormParsers
         e.children(i) match {
           case Exp(ds,src) => ds.head match
           {
-            case Exp(List(Str("language")),_)       => lang  = impsArgumentParsers.parseLanguage(Exp(ds,src))
+            case Exp(List(Str("language")),_)       => lang  = impsArgumentParsers.parseArgumentLanguage(Exp(ds,src))
             case Exp(List(Str("fixed-theories")),_) => fixed = impsArgumentParsers.parseFixedTheories(Exp(ds,src))
             case _                           => ()
           }
@@ -225,7 +222,7 @@ package object impsDefFormParsers
           {
             case Exp(List(Str("constructor")),_) => const = impsArgumentParsers.parseConstructor(Exp(ds,src))
             case Exp(List(Str("accessors")),_)   => accs  = impsArgumentParsers.parseAccessors(Exp(ds,src))
-            case Exp(List(Str("theory")),_)      => thy   = impsArgumentParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("theory")),_)      => thy   = impsArgumentParsers.parseArgumentTheory(Exp(ds,src))
             case _                               => ()
           }
           case _ => ()
@@ -270,7 +267,7 @@ package object impsDefFormParsers
         {
           case Exp(ds,src) => ds.head match
           {
-            case Exp(List(Str("theory")),_) => thy = impsArgumentParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("theory")),_) => thy = impsArgumentParsers.parseArgumentTheory(Exp(ds,src))
             case (Str("null"))              => nullarg  = true
             case (Str("transportable"))     => transarg = true
             case _                          => ()
@@ -329,7 +326,7 @@ package object impsDefFormParsers
         {
           case Exp(ds,src) => ds.head match
           {
-            case Exp(List(Str("theory")),_)      => theory  = impsArgumentParsers.parseTheory(Exp(ds,src))
+            case Exp(List(Str("theory")),_)      => theory  = impsArgumentParsers.parseArgumentTheory(Exp(ds,src))
             case Exp(List(Str("home-theory")),_) => hmthy   = impsArgumentParsers.parseHomeTheory(Exp(ds,src))
             case Exp(List(Str("usages")),_)      => usages  = impsArgumentParsers.parseUsages(Exp(ds,src))
             case Exp(List(Str("macete")),_)      => macete  = impsArgumentParsers.parseMacete(Exp(ds,src))
@@ -353,7 +350,7 @@ package object impsDefFormParsers
 
   /* Parser for IMPS special form def-language
    * Documentation: IMPS manual pgs. 172 - 174 */
-  def parseLanguage (e : Exp) : Option[LispExp] =
+  def parseLanguage (e : Exp) : Option[Language] =
   {
     /* Required Arguments */
     var name : Option[String] = None
@@ -373,6 +370,7 @@ package object impsDefFormParsers
         case Exp(List(Str(x)), _) => name = Some(x)
       }
 
+      /* Parse keyword arguments. These can be in any order */
       for (c <- e.children.tail)
       {
         c match
@@ -394,6 +392,46 @@ package object impsDefFormParsers
 
       if (name.isEmpty) { None }
       else { Some(Language(name.get, embedlang, embedlangs, bstps, extens, srts, cnstnts, e.src)) }
+    } else { None }
+  }
+
+  /* Parser for IMPS special form def-language
+   * Documentation: IMPS manual pgs. 186-188 */
+  def parseTheory(e : Exp) : Option[Theory] =
+  {
+    /* Required Arguments */
+    var name : Option[String] = None
+
+    /* Optional Arguments */
+    var lang      : Option[ArgumentLanguage]  = None
+    var cmpntthrs : Option[ComponentTheories] = None
+    var axioms    : Option[TheoryAxioms]      = None
+    var dstnct    : Option[DistinctConstants] = None
+
+    if (e.children.nonEmpty)
+    {
+      /* Parse positional arguments, these must be in this order */
+      e.children(1) match {
+        case Exp(List(Str(x)), _) => name = Some(x)
+      }
+
+      /* Parse keyword arguments. These can be in any order */
+      for (c <- e.children.tail)
+      {
+        c match {
+          case Exp(ds, src) => ds.head match {
+            case Exp(List(Str("language")), _) => lang = impsArgumentParsers.parseArgumentLanguage(Exp(ds, src))
+            case Exp(List(Str("component-theories")), _) => cmpntthrs = impsArgumentParsers.parseComponentTheories(Exp(ds, src))
+            case Exp(List(Str("distinct-constants")), _) => dstnct = impsArgumentParsers.parseDistinctConstants(Exp(ds, src))
+            case Exp(List(Str("axioms")), _) => axioms = impsArgumentParsers.parseTheoryAxioms(Exp(ds,src))
+            case _ => ()
+          }
+          case _ => ()
+        }
+      }
+
+      if (name.isEmpty) { None }
+      else { Some(Theory(name.get, lang, cmpntthrs, axioms, dstnct, e.src)) }
     } else { None }
   }
 }

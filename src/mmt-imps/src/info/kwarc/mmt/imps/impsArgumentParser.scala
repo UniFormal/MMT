@@ -4,6 +4,72 @@ import info.kwarc.mmt.api.parser.SourceRef
 
 package object impsArgumentParsers
 {
+  /* Parser for IMPS axiom specifications argument
+   * used def-theory */
+  def parseAxiomSpecification(e : Exp) : Option[AxiomSpecification] =
+  {
+    assert(e.children.nonEmpty)
+
+    var name       : Option[String]       = None
+    var formula    : Option[IMPSMathExp]  = None
+    var usgs_prime : List[String]         = Nil
+
+    var foobarList : List[LispExp] = Nil
+
+    e.children(0) match
+    {
+      case Exp(List(Str(h)),_) => {
+        if (h.startsWith("\"")) {
+          formula = impsMathParser.parseIMPSMath(h)
+          foobarList = e.children.tail
+        } else {
+          name = Some(h)
+          e.children(1) match {
+            case Exp(List(Str(f)),_) => {
+              formula = impsMathParser.parseIMPSMath(f)
+              foobarList = e.children.tail.tail
+            }
+            case _ => ()
+          }
+        }
+      }
+      case _ => ()
+    }
+
+    // Parsing all usages
+    for (c <- foobarList)
+    {
+      c match {
+        case Exp(List(Str(x)),_) => usgs_prime = usgs_prime ::: List(x)
+        case _ => ()
+      }
+    }
+
+    val usgs : Option[List[String]] = if (usgs_prime.isEmpty) { None } else { Some(usgs_prime) }
+
+    if (formula.isDefined) { Some(AxiomSpecification(formula.get, name, usgs, e.src)) } else {None}
+  }
+
+  /* Parser for IMPS theory axioms argument
+   * used def-theory */
+  def parseTheoryAxioms(e : Exp) : Option[TheoryAxioms] =
+  {
+    assert(e.children.tail.nonEmpty)
+    var axms : List[AxiomSpecification] = Nil
+
+    for (aspec <- e.children.tail)
+    {
+        aspec match {
+          case Exp(ds,src) => parseAxiomSpecification(Exp(ds,src)) match {
+            case Some(as)  => axms = axms ::: List(as)
+            case None      => ()
+          }
+        }
+    }
+
+    if (axms.nonEmpty) { Some(TheoryAxioms(axms, e.src)) } else {None}
+  }
+
   /* Parser for IMPS usages objects
    * used in: def-atomic-sort */
   def parseUsages (e : Exp) : Option[Usages] =
@@ -29,6 +95,26 @@ package object impsArgumentParsers
     } else { None }
   }
 
+  /* Parser for IMPS component-theories arguments
+   * used in: def-theory */
+  def parseComponentTheories(e : Exp) : Option[ComponentTheories] =
+  {
+    // One component theory minimum
+    assert(e.children.tail.nonEmpty)
+
+    var lst : List[String] = Nil
+
+    for (ct <- e.children.tail)
+    {
+      ct match {
+        case Exp(List(Str(theory)),_) => lst = lst ::: List(theory)
+        case _ => ()
+      }
+    }
+
+    if (lst.nonEmpty) { Some(ComponentTheories(lst, e.src)) } else { None }
+  }
+
   /* Parser for IMPS constructor argument objects
    * used in: def-cartesian-product */
   def parseConstructor(e : Exp) : Option[Constructor] =
@@ -42,9 +128,42 @@ package object impsArgumentParsers
     } else { None }
   }
 
+  /* Parser for IMPS distinct constants argument
+   * used in: def-theory */
+  def parseDistinctConstants(e : Exp) : Option[DistinctConstants] =
+  {
+    assert(e.children.tail.nonEmpty)
+
+    var outerList : List[List[String]] = Nil
+
+    for (d <- e.children.tail)
+    {
+      d match {
+        case Exp(ds,_) =>
+        {
+          assert(ds.length >= 2)
+          var innerList : List[String] = Nil
+
+          for (c <- ds)
+          {
+              c match {
+                case Exp(List(Str(constant)),_) => innerList = innerList ::: List(constant)
+                case _ => ()
+              }
+          }
+
+          if (innerList.nonEmpty) { outerList = outerList ::: List(innerList) }
+        }
+        case _ => ()
+      }
+    }
+
+    if (outerList.nonEmpty) { Some(DistinctConstants(outerList,e.src)) } else { None }
+  }
+
   /* Parser for IMPS theory argument objects
    * used in: def-atomic-sort... */
-  def parseTheory (e : Exp) : Option[ArgumentTheory] =
+  def parseArgumentTheory(e : Exp) : Option[ArgumentTheory] =
   {
     if (e.children.length == 2) {
       e.children(1) match {
@@ -116,7 +235,7 @@ package object impsArgumentParsers
 
   /* Parser for IMPS language argument objects
    * used in: def-quasi-constructor, ... */
-  def parseLanguage (e : Exp) : Option[ArgumentLanguage] =
+  def parseArgumentLanguage(e : Exp) : Option[ArgumentLanguage] =
   {
     if (e.children.length == 2) {
       e.children(1) match {
@@ -194,7 +313,7 @@ package object impsArgumentParsers
   {
     assert(e.children.length == 2)
 
-    e.children(2) match {
+    e.children(1) match {
       case Exp(List(Str(x)),_) => Some(EmbeddedLanguage(x, e.src))
       case _                   => None
     }
@@ -260,7 +379,7 @@ package object impsArgumentParsers
   def parseTypeSortAList(e : Exp) : Option[TypeSortAList] =
   {
     e.children(1) match {
-      case Exp(List(Str(x)),_) => e.children(2) match {
+      case Exp(List(Str(x)),_) => e.children(1) match {
         case Exp(List(Str(y)),_) => Some(TypeSortAList(x,y))
         case _                   => None
       }
@@ -288,8 +407,8 @@ package object impsArgumentParsers
           // Constant specification has two elements
           assert(ss.length == 2)
 
-          ss(1) match {
-            case Exp(List(Str(name)),_) => ss(2) match {
+          ss(0) match {
+            case Exp(List(Str(name)),_) => ss(1) match {
               case Exp(js,_) =>
               {
                 var str : String = ""
@@ -335,8 +454,8 @@ package object impsArgumentParsers
           // each sort specification has two elements
           assert(ss.length == 2)
 
-          ss(1) match {
-            case Exp(List(Str(name)),_) => ss(2) match {
+          ss(0) match {
+            case Exp(List(Str(name)),_) => ss(1) match {
               case Exp(js,_) =>
               {
                 var str : String = ""
