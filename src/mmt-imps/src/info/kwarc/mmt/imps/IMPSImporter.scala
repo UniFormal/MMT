@@ -17,6 +17,7 @@ class IMPSImporter extends Importer
 		log("Reading " + bf.inFile)
 		val e = try
 		{
+			// TODO: Process comments at end of line
 			val fileLines = Source.fromFile(bf.inFile).getLines
 			var contents : String = ""
 			for (line <- fileLines)

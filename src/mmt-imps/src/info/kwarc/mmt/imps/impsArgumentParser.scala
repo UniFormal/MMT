@@ -378,7 +378,7 @@ package object impsArgumentParsers
    * used in: def-language (extensible, see parseExtensible) */
   def parseTypeSortAList(e : Exp) : Option[TypeSortAList] =
   {
-    e.children(1) match {
+    e.children(0) match {
       case Exp(List(Str(x)),_) => e.children(1) match {
         case Exp(List(Str(y)),_) => Some(TypeSortAList(x,y))
         case _                   => None
@@ -406,6 +406,7 @@ package object impsArgumentParsers
         {
           // Constant specification has two elements
           assert(ss.length == 2)
+          //if (!(ss.length == 2)) { println("ASSERTION FAIL: " + ss.toString()) }
 
           ss(0) match {
             case Exp(List(Str(name)),_) => ss(1) match {
