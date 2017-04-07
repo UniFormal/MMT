@@ -47,8 +47,9 @@ Layout Method:
 
     <script type="text/javascript">
 		
-		theoryGraph=new TheoryGraph();
-		
+		var theoryGraph=new TheoryGraph();
+		createNewGraph();
+	    
 		function changeMethode(idx)
 		{
 			document.body.style.cursor = 'wait';
@@ -60,17 +61,23 @@ Layout Method:
 			{
 				THEORY_GRAPH_OPTIONS.layout={hierarchical: {sortMethod: "directed",direction: "LR"}};
 			}
-			theoryGraph.getGraph(getParameterByName("uri"));
+			createNewGraph();
+			document.body.style.cursor = 'auto';
 		}
 		
+	    	function createNewGraph()
+	    	{
+		    theoryGraph.getGraph("/:fancygraph/json/" + getParameterByName("type") + "?" + getParameterByName("uri"));
+	    	}
+	    
 		$(document).bind("contextmenu", function (event) 
 		{
 			// Avoid the real menu
 			event.preventDefault();
 		});
 		
-		theoryGraph=new TheoryGraph();
-		theoryGraph.getGraph("/:fancygraph/json/" + getParameterByName("type") + "?" + getParameterByName("uri"));
+		
+		
     </script>
     
 
