@@ -35,7 +35,7 @@ class PVSImporter extends Importer {
             conv.doDocument(pvs_file(List(m)))
       }
 
-/*
+      /*
       try {
          ret match {
             case BuildSuccess(used, pr) => Sorter.add(pr.head.asInstanceOf[LogicalDependency].mpath, used.map(
@@ -49,14 +49,16 @@ class PVSImporter extends Importer {
           throw e
       }
       BuildResult.empty
-*/
+      */
 
       ret
+
    }
 }
 
 object Sorter {
-   private val initstr = "http://shemesh.larc.nasa.gov/fm/ftp/larc/PVS-library/"
+   // private val initstr = "http://shemesh.larc.nasa.gov/fm/ftp/larc/PVS-library/"
+   private val initstr = "http://pvs.csl.sri.com/"
    private var ls : List[(String,Set[String])] = Nil
 
    private def mkString(mp : MPath) : String = {
@@ -83,6 +85,6 @@ object Sorter {
    }
    def printsorted = {
       sort()
-      ls foreach {p => println("controller.handleLine(\"build PVS/NASA pvs-omdoc " + p._1 + "\")")}
+      ls foreach {p => println("controller.handleLine(\"build PVS/Prelude pvs-omdoc " + p._1 + "\")")}
    }
 }

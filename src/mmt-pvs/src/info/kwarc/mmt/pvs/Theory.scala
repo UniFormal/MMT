@@ -110,7 +110,7 @@ object PVSTheory {
 */
 
    object pvsapply extends sym("pvsapply") {
-      def apply(f : Term,t:Term,ftp : Term)(state:ImportState) : (Term,Term) = ftp match {
+      def apply(f : Term,t:Term,ftp : Term)(state:TranslationState) : (Term,Term) = ftp match {
          case pvspi(x,tpx,rettp) => (ApplySpine(this.term,tpx,Lambda(x,expr(tpx),rettp),f,t),rettp ^? x/t) //Apply(tpf,t))
          case _ if state != null => (ApplySpine(this.term,state.doUnknown,state.doUnknown,f,t),state.doUnknown)
          case _ => throw new Exception("Unknown types in pvsapply")
@@ -220,7 +220,7 @@ object PVSTheory {
    */
 
    object expr_as_type extends sym("expr_as_type") {
-      def apply(expr : Term, tp : Term)(state : ImportState) : Term = tp match {
+      def apply(expr : Term, tp : Term)(state : TranslationState) : Term = tp match {
         case pvspi(b,btp,PVSTheory.bool.term) => ApplySpine(this.term,tp,btp,expr)
         case _ =>
           ApplySpine(this.term,tp,state.doUnknown,expr)
@@ -300,7 +300,7 @@ object PVSTheory {
    }
 
    object projection extends sym("proj") {
-      def apply(tm:Term,tmtp:Term,i:Int)(state : ImportState) = {
+      def apply(tm:Term,tmtp:Term,i:Int)(state : TranslationState) = {
          val tp = tmtp match {
             case PVSTheory.tuple_type(l) if i<=l.length => l(i-1)
             case _ => state.doUnknown

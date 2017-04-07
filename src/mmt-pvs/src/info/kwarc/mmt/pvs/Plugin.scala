@@ -43,10 +43,7 @@ object PVSNotation extends NotationExtension {
     require(args.length == 2)
     ???
   }
-  def constructTerm(fun: Term, args: List[Term]): Term = fun match {
-    case OMS(gn) => ???
-    case _ => ???
-  }
+  def constructTerm(fun: Term, args: List[Term]): Term = ApplySpine(fun,args:_*)
   /** called to deconstruct a term before presentation */
   def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = {
     val (fun,sub,con,a,b) = t match {
