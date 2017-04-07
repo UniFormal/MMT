@@ -1,5 +1,7 @@
 package info.kwarc.mmt.imps
 
+import info.kwarc.mmt.api.parser.SourceRef
+
 package object impsArgumentParsers
 {
   /* Parser for IMPS usages objects
@@ -114,11 +116,11 @@ package object impsArgumentParsers
 
   /* Parser for IMPS language argument objects
    * used in: def-quasi-constructor, ... */
-  def parseLanguage (e : Exp) : Option[Language] =
+  def parseLanguage (e : Exp) : Option[ArgumentLanguage] =
   {
     if (e.children.length == 2) {
       e.children(1) match {
-        case Exp(List(Str(x)),_) => Some(Language(x, e.src))
+        case Exp(List(Str(x)),_) => Some(ArgumentLanguage(x, e.src))
         case _                   => None
       }
     } else { None }
@@ -184,6 +186,181 @@ package object impsArgumentParsers
       { Some(SourceTheories(source, e.src)) } else { None }
 
     } else { None }
+  }
+
+  /* Parser for IMPS embedded-lang arguments
+   * used in: def-language */
+  def parseEmbeddedLang(e : Exp) : Option[EmbeddedLanguage] =
+  {
+    assert(e.children.length == 2)
+
+    e.children(2) match {
+      case Exp(List(Str(x)),_) => Some(EmbeddedLanguage(x, e.src))
+      case _                   => None
+    }
+  }
+
+  /* Parser for IMPS embedded-langs arguments
+   * used in: def-language */
+  def parseEmbeddedLangs(e : Exp) : Option[EmbeddedLanguages] =
+  {
+    var lst : List[String] = Nil
+
+    for (k <- e.children.tail)
+    {
+      k match {
+        case Exp(List(Str(x)),_) => lst = lst ::: List(x)
+        case _                   => ()
+      }
+    }
+
+    if (lst.isEmpty) { None } else { Some(EmbeddedLanguages(lst, e.src)) }
+  }
+
+
+  /* Parser for IMPS base-types argument
+   * used in: def-language */
+  def parseLanguageBaseTypes(e : Exp) : Option[LangBaseTypes] =
+  {
+    var lst : List[String] = Nil
+
+    for (k <- e.children.tail)
+    {
+      k match {
+        case Exp(List(Str(x)),_) => lst = lst ::: List(x)
+        case _                   => ()
+      }
+    }
+
+    if (lst.isEmpty) { None } else { Some(LangBaseTypes(lst, e.src))}
+  }
+
+  /* Parser for IMPS extensible argument
+   * used in: def-language */
+  def parseExtensible(e : Exp) : Option[Extensible] =
+  {
+    var list : List[TypeSortAList] = Nil
+
+    for (l <- e.children)
+    {
+      val prs : Option[TypeSortAList] = l match {
+        case Exp(x,y) => parseTypeSortAList(Exp(x,y))
+        case _        => None
+      }
+
+      if (prs.isDefined) { list = list ::: List(prs.get) }
+    }
+
+    if (list.isEmpty) { None } else { Some(Extensible(list, e.src))}
+
+  }
+
+  /* Parser for IMPS typeSortALists
+   * used in: def-language (extensible, see parseExtensible) */
+  def parseTypeSortAList(e : Exp) : Option[TypeSortAList] =
+  {
+    e.children(1) match {
+      case Exp(List(Str(x)),_) => e.children(2) match {
+        case Exp(List(Str(y)),_) => Some(TypeSortAList(x,y))
+        case _                   => None
+      }
+      case _                   => None
+    }
+
+  }
+
+  /* Parser for IMPS constantsList argument
+   * used in: def-language */
+  def parseConstants(e : Exp) : Option[ConstantSpecifications] =
+  {
+    var lst : List[(String, String)] = Nil
+
+    // One constant notification minimum
+    assert(e.children.tail.nonEmpty)
+
+    // each c is one constant specification
+    for (c <- e.children.tail)
+    {
+      c match
+      {
+        case Exp(ss,_) =>
+        {
+          // Constant specification has two elements
+          assert(ss.length == 2)
+
+          ss(1) match {
+            case Exp(List(Str(name)),_) => ss(2) match {
+              case Exp(js,_) =>
+              {
+                var str : String = ""
+                if (js.length >= 2) {str = "("}
+                for (j <- js)
+                {
+                  j match {
+                    case Str(srt) => str = str + srt + " "
+                    case _ => ()
+                  }
+                }
+                str = str.trim
+                if (js.length >= 2) {str = str + ")"}
+                lst = lst ::: List((name, str))
+              }
+            }
+            case _ => ()
+          }
+        }
+        case _ => ()
+      }
+    }
+
+    if (lst.isEmpty) { None } else { Some(ConstantSpecifications(lst, e.src)) }
+  }
+
+  /* Parser for IMPS sorts argument
+   * used in: def-language */
+  def parseSortsArgument(e : Exp) : Option[SortSpecifications] =
+  {
+    var lst : List[(String, String)] = Nil
+
+    // One sort notification minimum
+    assert(e.children.tail.nonEmpty)
+
+    // each c is one sort specification
+    for (c <- e.children.tail)
+    {
+      c match
+      {
+        case Exp(ss,_) =>
+        {
+          // each sort specification has two elements
+          assert(ss.length == 2)
+
+          ss(1) match {
+            case Exp(List(Str(name)),_) => ss(2) match {
+              case Exp(js,_) =>
+              {
+                var str : String = ""
+                if (js.length >= 2) {str = "("}
+                for (j <- js)
+                {
+                  j match {
+                    case Str(srt) => str = str + srt + " "
+                    case _ => ()
+                  }
+                }
+                str = str.trim
+                if (js.length >= 2) {str = str + ")"}
+                lst = lst ::: List((name, str))
+              }
+            }
+            case _ => ()
+          }
+        }
+        case _ => ()
+      }
+    }
+
+    if (lst.isEmpty) { None } else { Some(SortSpecifications(lst, e.src)) }
   }
 
   /* Parser for IMPS fixed theories objects

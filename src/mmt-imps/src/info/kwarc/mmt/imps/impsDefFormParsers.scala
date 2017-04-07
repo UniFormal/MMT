@@ -350,4 +350,50 @@ package object impsDefFormParsers
 
 
   }
+
+  /* Parser for IMPS special form def-language
+   * Documentation: IMPS manual pgs. 172 - 174 */
+  def parseLanguage (e : Exp) : Option[LispExp] =
+  {
+    /* Required Arguments */
+    var name : Option[String] = None
+
+    /* Optional Arguments */
+    var embedlang  : Option[EmbeddedLanguage]       = None
+    var embedlangs : Option[EmbeddedLanguages]      = None
+    var bstps      : Option[LangBaseTypes]          = None
+    var extens     : Option[Extensible]             = None
+    var srts       : Option[SortSpecifications]     = None
+    var cnstnts    : Option[ConstantSpecifications] = None
+
+    if (e.children.nonEmpty)
+    {
+      /* Parse positional arguments, these must be in this order */
+      e.children(1) match {
+        case Exp(List(Str(x)), _) => name = Some(x)
+      }
+
+      for (c <- e.children.tail)
+      {
+        c match
+        {
+          case Exp(ds,src) => ds.head match
+          {
+            case Exp(List(Str("embedded-languages")),_) => embedlangs = impsArgumentParsers.parseEmbeddedLangs(Exp(ds,src))
+            case Exp(List(Str("embedded-language")),_)  => embedlang  = impsArgumentParsers.parseEmbeddedLang(Exp(ds,src))
+            case Exp(List(Str("base-types")),_)         => bstps      = impsArgumentParsers.parseLanguageBaseTypes(Exp(ds,src))
+            case Exp(List(Str("sorts")),_)              => srts       = impsArgumentParsers.parseSortsArgument(Exp(ds,src))
+            case Exp(List(Str("extensible")),_)         => extens     = impsArgumentParsers.parseExtensible(Exp(ds,src))
+            case Exp(List(Str("constants")),_)          => cnstnts    = impsArgumentParsers.parseConstants(Exp(ds,src))
+            case _                                      => ()
+          }
+          case _ => ()
+        }
+
+      }
+
+      if (name.isEmpty) { None }
+      else { Some(Language(name.get, embedlang, embedlangs, bstps, extens, srts, cnstnts, e.src)) }
+    } else { None }
+  }
 }
