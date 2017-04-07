@@ -17,7 +17,11 @@
 	
 </head>
 <body >
-
+Layout Method:
+<select name="methodCluster" onchange="changeMethode(this.selectedIndex);">
+    <option value="0">Standard</option>
+    <option value="1">Hierarchical</option> 
+</select>
 <p>
 </p>
 
@@ -42,12 +46,27 @@
 
     <script type="text/javascript">
 		
+		theoryGraph=new TheoryGraph();
+		
+		function changeMethode(idx)
+		{
+			document.body.style.cursor = 'wait';
+			if(idx==0)
+			{
+				THEORY_GRAPH_OPTIONS.layout=undefined;
+			}
+			else if(idx==1)
+			{
+				THEORY_GRAPH_OPTIONS.layout={hierarchical: {sortMethod: "directed",direction: "LR"}};
+			}
+			theoryGraph.getGraph(getParameterByName("uri"));
+		}
+		
 		$(document).bind("contextmenu", function (event) 
 		{
 			// Avoid the real menu
 			event.preventDefault();
 		});
-		
 		
 		theoryGraph=new TheoryGraph();
 		theoryGraph.getGraph("/:fancygraph/json/" + getParameterByName("type") + "?" + getParameterByName("uri"));
