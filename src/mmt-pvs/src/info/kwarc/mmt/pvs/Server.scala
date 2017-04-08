@@ -1,9 +1,9 @@
 package info.kwarc.mmt.pvs
 
 import info.kwarc.mmt.api.{DPath, LocalName, MPath, Path}
-import info.kwarc.mmt.api.objects.{OMV, Term}
-import info.kwarc.mmt.api.ontology.{MathWebSearch, MathWebSearchQuery}
-import info.kwarc.mmt.api.utils.{JSONArray, JSONString, URI}
+import info.kwarc.mmt.api.objects.{Context, OMV, Term}
+import info.kwarc.mmt.api.ontology.{MathWebSearch, MathWebSearchQuery, TermPattern}
+import info.kwarc.mmt.api.utils.{JSONArray, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.web._
 import info.kwarc.mmt.pvs.syntax.Object
 import tiscaf.{HLet, HReqData}
@@ -17,11 +17,19 @@ class PVSServer extends ServerExtension("pvs") {
 
   def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
     val tm = processXML(body.asXML)
-    val results = mws.apply(doWebQuery(tm)).map(_.cpath.toString) // TODO
-    Server.JsonResponse(JSONArray(results.map(JSONString):_*))
+    val mwsquery = doWebQuery(tm)
+    val results = mws(mwsquery).map(qr =>
+      JSONObject(("Path",JSONString(qr.cpath.toString))::
+        ("Position",JSONString(qr.pos.toString)) ::
+        {if (qr.term.isDefined) ("Term",JSONString(controller.presenter.asString(qr.term.get))) :: Nil else Nil}:_*
+      )) // TODO
+    Server.JsonResponse(JSONArray(results:_*))
   }
 
-  private def doWebQuery(tm : Term) : MathWebSearchQuery = ???
+  private def doWebQuery(tm : Term) : MathWebSearchQuery = {
+    val (newterm : Term, metavars : Context) = (tm,???)
+    MathWebSearchQuery(TermPattern(metavars,newterm))
+  }
 
   private lazy val mws = controller.extman.get(classOf[MathWebSearch]).headOption.getOrElse{
     val nmws = new MathWebSearch(URI("http://mathhub.info:8659").toJava.toURL)

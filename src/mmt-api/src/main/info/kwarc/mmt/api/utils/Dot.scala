@@ -9,7 +9,7 @@ trait DotNode extends DotObject {
   def label : String
   /** must be alphanumeric, space-separeated */
   def cls: String
-  def toJSON : JSON = {
+  def toJSON : JSONObject = {
     val ls = ("id",JSONString(id.toString)) :: ("label",JSONString(label)) :: ("style",JSONString(cls)) ::
       ("url",JSONString("/?" + id)) :: Nil
     JSONObject(ls:_*)
@@ -25,7 +25,9 @@ trait DotEdge extends DotObject {
   /** must be alphanumeric, space-separeated */
   def cls: String
   def weight = 1
-  def toJSON : JSON = {
+  def toJSON : JSONObject = {
+    //val dones = List("graphinclude","graphview","graphstructure","graphmeta")
+    //if (!dones.contains(cls)) println(cls)
     val ls = ("from",JSONString(from.id.toString)) ::
       ("to",JSONString(to.id.toString)) ::
       ("weight",JSONInt(weight)) ::
@@ -45,8 +47,8 @@ trait DotGraph {
    def externalNodes: Option[Iterable[DotNode]]
    def edges: Iterable[DotEdge]
 
-  def JSONNodes : JSONArray = JSONArray(nodes.map(_.toJSON).toSeq:_*)
-  def JSONEdges : JSONArray = JSONArray(edges.map(_.toJSON).toSeq:_*)
+  def JSONNodes : Iterable[JSONObject] = nodes.map(_.toJSON)
+  def JSONEdges : Iterable[JSONObject] = edges.map(_.toJSON)
 }
 
 /** thrown by [[DotToSVG]] */
@@ -122,7 +124,7 @@ class DotToSVG(dotPath: File) {
     }
 
     /**
-     * @param the graph to layout
+     * @param dg the graph to layout
      * @return the svg graph returned by dot
      */ 
     def apply(dg: DotGraph): String = {

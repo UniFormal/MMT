@@ -47,7 +47,9 @@ abstract class RelationGraphExporter extends StructurePresenter {
 
   def asJSON(se : StructuralElement): JSON = {
     val dg = buildGraph(se)
-    JSONObject(("nodes",dg.JSONNodes),("edges",dg.JSONEdges))
+    val nodes = dg.JSONNodes.toList
+    val edges = dg.JSONEdges.toList//.filter(o => nodes.exists(p => p("label") == o("from")) && nodes.exists(p => p("label") == o("to")))
+    JSONObject(("nodes",JSONArray(nodes:_*)),("edges",JSONArray(edges:_*)))
   }
 }
 

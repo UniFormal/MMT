@@ -34,11 +34,20 @@ var ARROW_STYLES=
 {
 	"graphinclude":
 	{
-		color:"#cccccc",
+		color:"#aaaaaa",
 		colorHighlight:"#cccccc",
 		colorHover:"#cccccc",
 		dashes: false,
 		circle:false,
+		directed: true
+	},
+	"graphmeta":
+	{
+		color:"green",
+		colorHighlight:"green",
+		colorHover:"green",
+		dashes: false,
+		circle:true,
 		directed: true
 	},
 	"graphtheory":
@@ -61,7 +70,7 @@ var ARROW_STYLES=
 	},
 	"graphstructure":
 	{
-		color:"#cccccc",
+		color:"#aaaaaa",
 		colorHighlight:"#cccccc",
 		colorHover:"#cccccc",
 		dashes: true,
