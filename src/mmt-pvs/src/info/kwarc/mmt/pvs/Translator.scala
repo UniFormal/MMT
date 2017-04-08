@@ -39,8 +39,8 @@ abstract class TranslationState {
   var vars : Context = Context.empty
   protected def doiName(i : Int, istp : Boolean) =LocalName("") / {if (istp) LocalName("I") else LocalName("i")} / i.toString
   def doUnknown = OMV(doiName({unknowns+=1;unknowns-1},false))
-  def newName(s:String,start:Int = 1,ln : Option[LocalName] = None) : LocalName
 
+  def newName(s:String,start:Int = 1,ln : Option[LocalName] = None) : LocalName
   val isPrelude : Boolean
   def doSourceRef(o: Object, oM: Term) : Unit
   val path : MPath
@@ -174,6 +174,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       case Dependency(p) =>
         state.th.deps = (p::state.th.deps).distinct
         log("FAIL: " + state.th.name + " depends on " + state.th.deps)
+        //sys.exit
         MissingDependency(state.th.deps.map(LogicalDependency),List(LogicalDependency(state.th.path)))
       case t : Exception =>
         log("Exception: " + t.getMessage)
@@ -480,7 +481,9 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
 
       case importing(un, namedec) =>
         val path = objectLevel.doMPath(namedec)
-        if (!(DPath((URI.http colon "pvs.csl.sri.com") / "Prelude") <= path)) state.addinclude(path) // TODO fix
+        if (!(DPath((URI.http colon "pvs.csl.sri.com") / "Prelude") <= path)) {
+          state.addinclude(path)
+        } // TODO fix
 
       case inline_datatype(InlineDatatypeBody(NamedDecl(id, _, _), arg_formals, constructors)) =>
         // TODO check if right
