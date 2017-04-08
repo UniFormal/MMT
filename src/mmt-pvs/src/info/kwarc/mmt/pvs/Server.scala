@@ -5,9 +5,11 @@ import info.kwarc.mmt.api.objects.{Context, OMV, Term}
 import info.kwarc.mmt.api.ontology.{MathWebSearch, MathWebSearchQuery, TermPattern}
 import info.kwarc.mmt.api.utils.{JSONArray, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.web._
+import info.kwarc.mmt.lf.Apply
 import info.kwarc.mmt.pvs.syntax.Object
 import tiscaf.{HLet, HReqData}
 
+import scala.util.Try
 import scala.xml.Node
 
 /**
@@ -15,8 +17,13 @@ import scala.xml.Node
   */
 class PVSServer extends ServerExtension("pvs") {
 
+  val testterm = PVSTheory.fun_type(OMV("A"),OMV("B"))
+
   def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-    val tm = processXML(body.asXML)
+    val tm = Try(processXML(body.asXML)) match {
+      case scala.util.Success(term) => term
+      case _ => testterm
+    }
     val mwsquery = doWebQuery(tm)
     val results = mws(mwsquery).map(qr =>
       JSONObject(("Path",JSONString(qr.cpath.toString))::
