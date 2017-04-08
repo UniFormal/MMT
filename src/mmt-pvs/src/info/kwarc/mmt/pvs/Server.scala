@@ -1,7 +1,7 @@
 package info.kwarc.mmt.pvs
 
 import info.kwarc.mmt.api.{DPath, LocalName, MPath, Path}
-import info.kwarc.mmt.api.objects.{Context, OMV, Term}
+import info.kwarc.mmt.api.objects.{Context, OMV, Term, VarDecl}
 import info.kwarc.mmt.api.ontology.{MathWebSearch, MathWebSearchQuery, TermPattern}
 import info.kwarc.mmt.api.utils.{JSONArray, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.web._
@@ -18,6 +18,7 @@ import scala.xml.Node
 class PVSServer extends ServerExtension("pvs") {
 
   val testterm = PVSTheory.fun_type(OMV("A"),OMV("B"))
+  val testcon = Context(VarDecl(LocalName("A")),VarDecl(LocalName("B")))
 
   def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
     val tm = Try(processXML(body.asXML)) match {
@@ -34,12 +35,12 @@ class PVSServer extends ServerExtension("pvs") {
   }
 
   private def doWebQuery(tm : Term) : MathWebSearchQuery = {
-    val (newterm : Term, metavars : Context) = (tm,???)
+    val (newterm : Term, metavars : Context) = (tm,if (tm == testterm) testcon else /* TODO */ Context.empty)
     MathWebSearchQuery(TermPattern(metavars,newterm))
   }
 
   private lazy val mws = controller.extman.get(classOf[MathWebSearch]).headOption.getOrElse{
-    val nmws = new MathWebSearch(URI("http://mathhub.info:8659").toJava.toURL)
+    val nmws = new MathWebSearch(URI("http://mathhub.info:24367").toJava.toURL)
     controller.extman.addExtension(nmws)
     nmws
   }
