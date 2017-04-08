@@ -11,6 +11,7 @@ import objects.Conversions._
 
 object PVSTheory {
    val rootdpath = DPath(URI.http colon "pvs.csl.sri.com")
+   val nasapath = DPath(URI.http colon "shemesh.larc.nasa.gov") / "fm" / "ftp" / "larc" / "PVS-library"
    val thname = "PVS"
    val thpath = rootdpath ? thname//Path.parseM("http://pvs.csl.sri.com/?PVS",NamespaceMap.empty) // rootdpath ? thname
    val preludepath = rootdpath ? "Prelude" //Path.parseM("http://pvs.csl.sri.com/?Prelude",NamespaceMap.empty) //rootdpath ? "Prelude"

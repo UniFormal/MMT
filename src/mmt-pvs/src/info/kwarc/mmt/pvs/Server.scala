@@ -1,8 +1,8 @@
 package info.kwarc.mmt.pvs
 
-import info.kwarc.mmt.api.{DPath, LocalName, MPath, Path}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects.{Context, OMV, Term, VarDecl}
-import info.kwarc.mmt.api.ontology.{MathWebSearch, MathWebSearchQuery, TermPattern}
+import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils.{JSONArray, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.web._
 import info.kwarc.mmt.lf.Apply
@@ -26,12 +26,25 @@ class PVSServer extends ServerExtension("pvs") {
       case _ => testterm
     }
     val mwsquery = doWebQuery(tm)
-    val results = mws(mwsquery).map(qr =>
-      JSONObject(("Path",JSONString(qr.cpath.toString))::
-        ("Position",JSONString(qr.pos.toString)) ::
-        {if (qr.term.isDefined) ("Term",JSONString(controller.presenter.asString(qr.term.get))) :: Nil else Nil}:_*
-      )) // TODO
+    val results = mws(mwsquery).map(makeReply) // TODO
     Server.JsonResponse(JSONArray(results:_*))
+  }
+
+  private def makeReply(qr : SearchResult) : JSONObject = {
+    val rootpath = PVSTheory.rootdpath
+    val prelpath = rootpath / "prelude"
+    val nasapath = PVSTheory.nasapath
+    val (libname,thname,symb,comp) = qr.cpath match {
+      case CPath((dpath ? thname2) ?? symb2,comp2) if dpath <= prelpath =>
+        (JSONString(""),JSONString(thname2.toString),JSONString(symb2.toString),JSONString(comp2.toString))
+      case CPath((dpath ? thname2) ?? symb2,comp2) if dpath <= rootpath && dpath != rootpath =>
+        (JSONString(dpath.last),JSONString(thname2.toString),JSONString(symb2.toString),JSONString(comp2.toString))
+      case CPath((dpath ? thname2) ?? symb2,comp2) if dpath <= nasapath && dpath != nasapath =>
+        (JSONString(dpath.last),JSONString(thname2.toString),JSONString(symb2.toString),JSONString(comp2.toString))
+      case _ => (JSONString(""),JSONString(""),JSONString("Unknown: " + qr.cpath.toString),JSONString(qr.cpath.component.toString))
+    }
+    val ls = List(("lib_name",libname),("theory_name",thname),("name",symb),("component",comp),("Position",JSONString(qr.pos.toString)))
+    JSONObject({if (qr.term.isDefined) ("Term",JSONString(controller.presenter.asString(qr.term.get))) :: ls else ls}:_*)
   }
 
   private def doWebQuery(tm : Term) : MathWebSearchQuery = {
