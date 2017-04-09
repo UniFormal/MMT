@@ -12,12 +12,16 @@ var THEORY_GRAPH_OPTIONS =
 		stabilization: 
 		{
 			enabled: true,
-			iterations: 5 // maximum number of iteration to stabilize
+			iterations: 5			// maximum number of iteration to stabilize
 		}
+	},
+	interaction:
+	{
+		multiselect: true
 	},
 	nodes: 
 	{
-		//physics:false,
+		physics:false
 	},
 	edges: {smooth: true}
 	/*layout: 
@@ -34,20 +38,11 @@ var ARROW_STYLES=
 {
 	"graphinclude":
 	{
-		color:"#aaaaaa",
+		color:"#cccccc",
 		colorHighlight:"#cccccc",
 		colorHover:"#cccccc",
 		dashes: false,
 		circle:false,
-		directed: true
-	},
-	"graphmeta":
-	{
-		color:"green",
-		colorHighlight:"green",
-		colorHover:"green",
-		dashes: false,
-		circle:true,
 		directed: true
 	},
 	"graphtheory":
@@ -70,7 +65,7 @@ var ARROW_STYLES=
 	},
 	"graphstructure":
 	{
-		color:"#aaaaaa",
+		color:"#cccccc",
 		colorHighlight:"#cccccc",
 		colorHover:"#cccccc",
 		dashes: true,

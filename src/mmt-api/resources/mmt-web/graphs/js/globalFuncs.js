@@ -11,3 +11,9 @@ function getParameterByName(name, url)
 	if (!results[2]) return '';
 	return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
+
+function getStartToEnd(start, theLen) 
+{
+    return theLen > 0 ? {start: start, end: start + theLen} : {start: start + theLen, end: start};
+}
+

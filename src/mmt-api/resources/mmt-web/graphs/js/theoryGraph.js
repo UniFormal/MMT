@@ -3,6 +3,108 @@ function TheoryGraph()
 	var originalNodes = null;
 	var originalEdges = null;
 	var network = null;
+	var clusterId=0;
+	var nodes;
+	var edges;
+	
+	this.downloadCanvasAsImage = function(button)
+	{
+		var minX=111110;
+		var minY=111110;
+		var maxX=-111110;
+		var maxY=-111110;
+		for (var i = 0; i < originalNodes.length; i++) 
+		{
+			var curNode = originalNodes[i];
+			var nodePosition = network.getPositions([curNode.id]);
+			
+			minX=Math.min(nodePosition[curNode.id].x,minX);
+			maxX=Math.max(nodePosition[curNode.id].x,maxX);
+			
+			minY=Math.min(nodePosition[curNode.id].y,minY);
+			maxY=Math.max(nodePosition[curNode.id].y,maxY);
+		}
+		
+		var originalWidth=network.canvas.frame.canvas.width;
+		var originalHeight=network.canvas.frame.canvas.height;
+		
+		network.setSize((maxX-minX)*1.2,(maxY-minY)*1.2);
+		
+		network.redraw();
+		network.fit();
+		
+		network.once("afterDrawing",function () 
+		{
+			//button.href = network.canvas.frame.canvas.toDataURL();
+			//button.download = "graph.png";
+			var image=network.canvas.frame.canvas.toDataURL("image/png"); //Convert image to 'octet-stream' (Just a download, really)
+			window.open(image);
+			network.setSize(originalWidth,originalHeight);
+			network.redraw();
+			network.fit();
+		});
+		
+		
+							
+
+
+	}
+	
+	this.selectNodesInRect = function(rect) 
+	{
+		var fromX;
+		var toX;
+		var fromY;
+		var toY;
+		var nodesIdInDrawing = [];
+		var xRange = getStartToEnd(rect.startX, rect.w);
+		var yRange = getStartToEnd(rect.startY, rect.h);
+
+		for (var i = 0; i < originalNodes.length; i++) 
+		{
+			var curNode = originalNodes[i];
+			var nodePosition = network.getPositions([curNode.id]);
+			var nodeXY = network.canvasToDOM({x: nodePosition[curNode.id].x, y: nodePosition[curNode.id].y});
+			if (xRange.start <= nodeXY.x && nodeXY.x <= xRange.end && yRange.start <= nodeXY.y && nodeXY.y <= yRange.end) 
+			{
+				nodesIdInDrawing.push(curNode.id);
+			}
+		}
+		network.selectNodes(nodesIdInDrawing);
+	}
+	
+	this.cluster = function(nodeIds)
+	{
+		if(nodeIds==undefined)
+		{
+			nodeIds=network.getSelectedNodes();
+		}
+		
+		if(network!=null)
+		{
+			var options = 
+			{
+				joinCondition:function(nodeOptions) 
+				{
+					return nodeIds.indexOf(nodeOptions.id) != -1;
+				},
+				processProperties: function (clusterOptions, childNodes, childEdges) 
+				{
+                  var totalMass = 0;
+                  for (var i = 0; i < childNodes.length; i++) 
+				  {
+                      totalMass += childNodes[i].mass;
+                  }
+                  clusterOptions.mass = totalMass;
+                  return clusterOptions;
+              },
+              clusterNodeProperties: {id: 'cluster_' +clusterId , borderWidth: 2, shape: 'database', color:"orange", label:'Cluster_' + clusterId}
+			}
+
+			network.clustering.cluster(options);
+			clusterId++;
+		}
+	}
 	
 	this.getGraph= function(jsonURL)
 	{
@@ -74,8 +176,8 @@ function TheoryGraph()
 			opti.SolveUsingForces(1000);
 		}
 		
-		var nodes = new vis.DataSet(originalNodes);
-		var edges = new vis.DataSet(originalEdges);
+		nodes = new vis.DataSet(originalNodes);
+		edges = new vis.DataSet(originalEdges);
 		
 		// create a network
 		var container = document.getElementById('mynetwork');
