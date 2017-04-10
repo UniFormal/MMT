@@ -234,7 +234,7 @@ class IMPSParser
 
         case Str("def-sublanguage") => return Some(Dummy("def-sublanguage"))
 
-        case Str("def-theorem") => return impsDefFormParsers.parseTheorem(e) //return Some(Dummy("def-theorem"))
+        case Str("def-theorem") => print(".") ; return impsDefFormParsers.parseTheorem(e) //return Some(Dummy("def-theorem"))
 
         case Str("def-theory") => return impsDefFormParsers.parseTheory(e)
 
