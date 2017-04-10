@@ -207,10 +207,19 @@ object WebQuery {
   * This class abstracts from tiscaf's HTalk internal.
   */
 class Body(tk: HTalk) {
+  
+  //def isPresent = tk.req.method == HReqType.Post
+  
   /** returns the body of a request as a string */
   def asString: String = {
     val bodyArray: Array[Byte] = tk.req.octets.getOrElse(throw ServerError("no body found"))
     new String(bodyArray, "UTF-8")
+  }
+  
+  /** body (if any) as a string */
+  def asStringO = asString match {
+    case "" => None
+    case s => Some(s)
   }
 
   /** returns the body of a request as XML */
@@ -241,35 +250,27 @@ import Server._
 /** An HTTP RESTful server. */
 class Server(val port: Int, val host: String, controller: Controller) extends HServer with Logger {
 
-  override def name = "MMT rest server"
-
+  override def name = "MMT HHTP server"
   override def hostname = host
-
   // override def writeBufSize = 16 * 1024
-  override def tcpNoDelay = true
-
   // make this false if you have extremely frequent requests
+  override def tcpNoDelay = true
+  // prevents tiscaf from creating a "stop" listener
   override def startStopListener = {}
 
-  // prevents tiscaf from creating a "stop" listener
   override def onMessage(s: String) {
     controller.report("tiscaf", s)
   }
-
   override def onError(e: Throwable) {
     logError("error in underlying server: " + e.getClass + ":" + e.getMessage + "\n" + e.getStackTrace.map(_.toString).mkString("", "\n", ""))
   }
 
   protected def ports = Set(port)
-
   // port to listen to
   protected def apps = List(new RequestHandler)
-
   // RequestHandler is defined below
   protected def talkPoolSize = 4
-
   protected def talkQueueSize = Int.MaxValue
-
   protected def selectorPoolSize = 2
 
   val logPrefix = "server"
@@ -278,21 +279,16 @@ class Server(val port: Int, val host: String, controller: Controller) extends HS
   protected class RequestHandler extends HApp {
     //override def buffered = true
     override def chunked = true
-
     // Content-Length is not set at the beginning of the response, so we can stream info while computing/reading from disk
     override def sessionTimeoutMinutes = 60
-
     // session tracking, access current session; alternatively use HTracking.Uri
     override def tracking = HTracking.Cookie
-
     // key used if session tracking via cookies
     override def cookieKey = "MMT_SESSIONID"
-
     // key used in query if session tracking via URL
     override def sidKey = "MMT_SESSIONID"
-
+    
     def resolve(req: HReqData): Option[HLet] = {
-
       if (req.method == HReqType.Options) {
         Some(new HSimpleLet {
           def act(tk: HTalk) = checkCORS(tk)
@@ -365,6 +361,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends HS
   }
 
   /** Response when the first path component is :search */
+  @deprecated("use SearchServer instead")
   private def MwsResponse: HLet = new HLet {
     def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
       val body = new Body(tk)
