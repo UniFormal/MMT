@@ -8,15 +8,15 @@ package object impsMathParser
   def parseIMPSMath(s : String) : Option[IMPSMathExp] =
   {
     /* CHEATING! TODO: REMOVE */
-    if (s == "[-1]")
+    if (s == "\"[-1]\"")
     {
       Some(IMPSMathSymbol(s))
     }
-    else if (s == "1")
+    else if (s == "\"1\"")
     {
       Some(IMPSMathSymbol(s))
     }
-    else if (s == "lambda(n:zz, n = [-1] or n = 1)")
+    else if (s == "\"lambda(n:zz, n = [-1] or n = 1)\"")
     {
       val vs : List[(IMPSVar, Option[IMPSSortRef])] = List((IMPSVar("n"), Some(IMPSSortRef("zz"))))
       val p : IMPSMathExp = IMPSEquals(IMPSVar("n"), IMPSMathSymbol("[-1]"))
@@ -24,40 +24,45 @@ package object impsMathParser
       val t : IMPSMathExp = IMPSDisjunction(List(p,q))
       Some(IMPSLambda(vs, t))
     }
-    else if (s == "lambda(b:boole, b = true%val)")
+    else if (s == "\"lambda(b:boole, b = true%val)\"")
     {
       val vs = List((IMPSVar("b"), Some(IMPSSortRef("boole"))))
       val t  = IMPSEquals(IMPSVar("b"), IMPSMathSymbol("true%val"))
       Some(IMPSLambda(vs, t))
     }
-    else if (s == "lambda(b:boole, b = false%val)")
+    else if (s == "\"lambda(b:boole, b = false%val)\"")
     {
       val vs = List((IMPSVar("b"), Some(IMPSSortRef("boole"))))
       val t  = IMPSEquals(IMPSVar("b"), IMPSMathSymbol("false%val"))
       Some(IMPSLambda(vs, t))
     }
-    else if (s == "is%true(true%val) iff truth")
+    else if (s == "\"is%true(true%val) iff truth\"")
     {
       val p : IMPSMathExp = IMPSApply(IMPSMathSymbol("is%true"), List(IMPSMathSymbol("true%val")))
       Some(IMPSIff(p, IMPSTruth()))
     }
-    else if (s == "is%true(false%val) iff falsehood")
+    else if (s == "\"is%true(false%val) iff falsehood\"")
     {
       val p : IMPSMathExp = IMPSApply(IMPSMathSymbol("is%true"), List(IMPSMathSymbol("false%val")))
       Some(IMPSIff(p, IMPSFalsehood()))
     }
-    else if (s == "is%false(true%val) iff falsehood")
+    else if (s == "\"is%false(true%val) iff falsehood\"")
     {
       val p : IMPSMathExp = IMPSApply(IMPSMathSymbol("is%false"), List(IMPSMathSymbol("true%val")))
       Some(IMPSIff(p, IMPSFalsehood()))
     }
-    else if (s == "is%false(false%val) iff truth")
+    else if (s == "\"is%false(false%val) iff truth\"")
     {
       val p : IMPSMathExp = IMPSApply(IMPSMathSymbol("is%false"), List(IMPSMathSymbol("false%val")))
       Some(IMPSIff(p, IMPSTruth()))
     }
+    else if (s == "\"falsehood implies truth\"")
+    {
+      Some(IMPSImplication(IMPSFalsehood(), IMPSTruth()))
+    }
     else
     {
+      println("<> " + s)
       /* SENSIBLE PARSING GOES HERE */
       None // Return None until parsing actually implemented
     }
