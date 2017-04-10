@@ -20,8 +20,8 @@ class PVSServer extends ServerExtension("pvs") {
   val testterm = PVSTheory.fun_type(OMV("A"),OMV("B"))//PVSTheory.fun_type(OMV("A"),OMV("B"))
   val testcon = Context(VarDecl(LocalName("A")),VarDecl(LocalName("B")))
 
-  def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-    val tm = Try(processXML(body.asXML)) match {
+  def apply(request: Request): HLet = {
+    val tm = Try(processXML(request.body.asXML)) match {
       case scala.util.Success(term) => term
       case _ => testterm
     }

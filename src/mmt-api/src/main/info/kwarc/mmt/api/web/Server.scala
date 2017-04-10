@@ -189,6 +189,17 @@ case class WebQuery(pairs: List[(String, String)]) {
 /** straightforward abstraction of the current session */
 case class Session(id: String)
 
+/**
+  * A request made to an extension
+  *
+  * @param path the PATH from above (excluding CONTEXT)
+  * @param query the QUERY from above
+  * @param body the body of the request
+  * @param headers Headers of the request sent to the server
+  * @param session Session Information
+  */
+case class Request(path: List[String], query: String, body: Body, session: Session, data: HReqData)
+
 object WebQuery {
   /** parses k1=v1&...&kn=vn */
   def parse(query: String): WebQuery = {
@@ -307,7 +318,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends HS
               def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
                 log("handling request via plugin " + pl.logPrefix)
                 val hl = try {
-                  pl(tl, req.query, new Body(tk), Session(tk.ses.id), req)
+                  pl(Request(tl, req.query, new Body(tk), Session(tk.ses.id), req))
                 } catch {
                   case e: Error =>
                     errorResponse(e, req)

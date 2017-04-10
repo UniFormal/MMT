@@ -29,9 +29,9 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
     }
   }
 
-  def apply(uriComps: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
+  def apply(request: Request): HLet = {
     try {
-      uriComps match {
+      request.path match {
         case "autocomplete" :: _ => getAutocompleteResponse
         case "resolve" :: _ => getResolveIncludesResponse
         case "minIncludes" :: _ => getMinIncludes
@@ -39,14 +39,14 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
         //case "termInference" :: _ => getTermInference
         case "constantCorrection" :: _ => getConstantCorrection
         case "includeCorrection" :: _ => getIncludeCorrection
-        case _ => error("Invalid request: " + uriComps.mkString("/"), req)
+        case _ => error("Invalid request: " + request.path.mkString("/"), request.data)
       }
     } catch {
       case e: Error =>
         log(e.shortMsg)
-        Server.errorResponse(e.shortMsg, req)
+        Server.errorResponse(e.shortMsg, request.data)
       case e: Exception =>
-        error("Exception occured : " + e.getStackTrace(), req)
+        error("Exception occured : " + e.getStackTrace(), request.data)
     }
   }
 

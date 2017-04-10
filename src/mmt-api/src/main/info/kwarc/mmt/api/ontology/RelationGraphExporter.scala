@@ -5,7 +5,7 @@ import documents._
 import modules._
 import archives._
 import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.api.web.{Server, ServerExtension, Session}
+import info.kwarc.mmt.api.web._
 import utils._
 import presentation._
 import tiscaf.{HLet, HReqData}
@@ -139,14 +139,14 @@ class JsonGraphExporter extends ServerExtension("fancygraph") {
       case _ => Server.plainErrorResponse(GetError(path.toString))
     }
   }
-  def apply(httppath: List[String], query: String, body: web.Body, session: Session, req: HReqData): HLet = {
-    log("Paths: " + httppath)
-    log("Query: " + query)
-    val path = Path.parse(query, controller.getNamespaceMap)
-    val (json,key) = if (httppath.headOption == Some("json")) (true,httppath.tail.headOption.getOrElse("svg"))
-      else (false,httppath.headOption.getOrElse("svg"))
+  def apply(request: Request): HLet = {
+    log("Paths: " + request.path)
+    log("Query: " + request.query)
+    val path = Path.parse(request.query, controller.getNamespaceMap)
+    val (json,key) = if (request.path.headOption == Some("json")) (true,request.path.tail.headOption.getOrElse("svg"))
+      else (false,request.path.headOption.getOrElse("svg"))
     lazy val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
-      throw LocalError(s"svg file does not exist and exporter $key not available: $query")
+      throw LocalError(s"svg file does not exist and exporter $key not available: ${request.path}")
     }
     log("Returning " + {if (json) "json" else "fail"} + " for " + path)
     val ret = doJSON(path,exp)

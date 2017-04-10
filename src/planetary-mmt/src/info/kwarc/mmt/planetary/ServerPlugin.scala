@@ -24,20 +24,20 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   
   override val logPrefix = "planetary"
      /** Server */   
-  def apply(uriComps: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-    lazy val json = body.asJSON match {
+  def apply(request: Request): HLet = {
+    lazy val json = request.body.asJSON match {
       case j: JSONObject => j
       case _ => throw ServerError("body must be json object")
     }
     try {
-      uriComps match {
+      request.path match {
         case "getPresentation" :: _ => getPresentationResponse(json)
 //        case "getCompiled" :: _ => getCompiledResponse
         case "getRelated" :: _ => getRelated(json)
         case "getNotations" :: _ => getNotations(json)
         case "getDefinitions" :: _ => getDefinitions(json)
         case "generateGlossary" :: _ => generateGlossary
-        case _ => errorResponse("Invalid request: " + uriComps.mkString("/"), List(new PlanetaryError("Invalid Request" + uriComps)))
+        case _ => errorResponse("Invalid request: " + request.path.mkString("/"), List(new PlanetaryError("Invalid Request" + request.path)))
        }
     } catch {
       case e : Error => 

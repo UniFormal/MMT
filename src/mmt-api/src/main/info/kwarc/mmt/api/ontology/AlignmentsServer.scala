@@ -144,17 +144,17 @@ class AlignmentsServer extends ServerExtension("align") {
     save(a)
   }
 
-  def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-    path match {
+  def apply(request: Request): HLet = {
+    request.path match {
       case "from" :: _ ⇒
-        val path = Path.parseS(query, nsMap)
-        val toS = if (query.contains("transitive=\"true\"")) alignments.get(LogicalReference(path), Some(_ => true)).map(_.to.toString)
+        val path = Path.parseS(request.query, nsMap)
+        val toS = if (request.query.contains("transitive=\"true\"")) alignments.get(LogicalReference(path), Some(_ => true)).map(_.to.toString)
         else alignments.get(LogicalReference(path)).map(_.to.toString)
-        log("Alignment query: " + query)
+        log("Alignment query: " + request.query)
         log("Alignments from " + path + ":\n" + toS.map(" - " + _).mkString("\n"))
         Server.TextResponse(toS.mkString("\n"))
       case "add" :: _ ⇒
-        val str = Try(body.asString).getOrElse("")
+        val str = Try(request.body.asString).getOrElse("")
         val formData : JSONObject = Try(JSON.parse(str).asInstanceOf[JSONObject]).getOrElse(JSONObject(List()))
         log(formData.toString)
         val regex = """\\/""".r
@@ -170,9 +170,9 @@ class AlignmentsServer extends ServerExtension("align") {
         }
         Server.TextResponse("Added " + addedAlignments + " alignments")
       case _ ⇒
-        log(path.toString) // List(from)
-        log(query.toString) // an actual symbol path
-        log(body.toString) //whatever
+        log(request.path.toString) // List(from)
+        log(request.query.toString) // an actual symbol path
+        log(request.body.toString) //whatever
         Server.TextResponse("")
     }
   }

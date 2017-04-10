@@ -5,6 +5,7 @@ import web._
 import utils._
 import ontology._
 import symbols._
+import tiscaf.HLet
 
 /*
  * load this extension: extension  info.kwarc.mmt.stex.editing.ConceptDefiner
@@ -19,7 +20,7 @@ class ConceptDefiner extends ServerExtension("define") {
     controller.handleLine("extension info.kwarc.mmt.api.ontology.RelationalReader")
   }
   
-  def apply(path: List[String], query: String, body: Body, session: Session, req: tiscaf.HReqData) = {
+  def apply(request: Request): HLet = {
      
      // get all archives and the constant names defined in them
      val nameLists = controller.backend.getArchives map {a =>

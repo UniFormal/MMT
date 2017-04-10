@@ -60,6 +60,7 @@ import info.kwarc.mmt.api.web.Body
 import info.kwarc.mmt.api.web.Server
 import info.kwarc.mmt.api.web.ServerError
 import info.kwarc.mmt.api.web.ServerExtension
+import info.kwarc.mmt.api.web.Request
 import info.kwarc.mmt.stex.STeXImporter
 import info.kwarc.mmt.stex.sTeX
 import tiscaf.HLet
@@ -78,7 +79,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
   var pairIndexNotation: List[((info.kwarc.mmt.api.GlobalName, info.kwarc.mmt.api.notations.TextNotation), Int)] = List();
   override val logPrefix = "marpa"
   /** Server */
-  def apply(uriComps: List[String], query: String, body: Body): HLet = {
+  def apply(request: Request): HLet = {
     try {
       uriComps match {
         //Here the post request is handled
@@ -88,14 +89,14 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
           SemanticTree.grammarGenerator = this
           SemanticTree.getSemanticTree
         }
-        case _ ⇒ errorResponse("Invalid request: " + uriComps.mkString("/"),
-          List(new PlanetaryError("Invalid Request" + uriComps)))
+        case _ ⇒ errorResponse("Invalid request: " + request.path.mkString("/"),
+          List(new PlanetaryError("Invalid Request" + request.path)))
       }
     } catch {
       case e: Error ⇒
         log(e.shortMsg)
         errorResponse(e.shortMsg, List(e))
-      case e: Exception ⇒
+      case e: Exception ⇒uriComps
         errorResponse("Exception occured : " + e.getStackTrace(), List(e))
     }
   }

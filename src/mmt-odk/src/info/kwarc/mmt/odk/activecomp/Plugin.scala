@@ -1,8 +1,8 @@
 package info.kwarc.mmt.odk.activecomp
 
 import info.kwarc.mmt.api.utils.{JSONObject, JSONString}
-import info.kwarc.mmt.api.web.{Body, Server, ServerExtension, Session}
-import tiscaf.{HLet, HReqData}
+import info.kwarc.mmt.api.web._
+import tiscaf.{HLet}
 
 import scala.collection.immutable.List
 
@@ -19,10 +19,10 @@ class Plugin extends ServerExtension("activecomp") {
     *
     *         Errors thrown by this method are caught and sent back to the browser.
     */
-  def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-    path match {
-      case List("actions") => handleActions(body)
-      case Nil => handleComputation(body)
+  def apply(request: Request): HLet = {
+    request.path match {
+      case List("actions") => handleActions(request.body)
+      case Nil => handleComputation(request.body)
     }
   }
 

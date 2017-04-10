@@ -10,9 +10,9 @@ import scala.concurrent._
 
 class GuidedToursPlugin extends ServerExtension("guidedTours") {
  
-  def apply(uriComps : List[String], query : String, body : web.Body) : HLet = {
+  def apply(request: Request) : HLet = {
     try {
-      uriComps match {
+      request.path match {
         case "getTour" :: _ => getTour
       }
     } catch {

@@ -7,8 +7,8 @@ import Server._
 import tiscaf.{HLet, HReqData}
 
 class ParseServer extends ServerExtension(":parse") {
-    def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-      val wq = WebQuery.parse(query)
+    def apply(request: Request): HLet = {
+      val wq = WebQuery.parse(request.query)
       val text = wq.string("text", throw LocalError("found no text to parse"))
       val save = wq.boolean("save", false) //if save parameter is "true" then save otherwise don't
       val format = wq.string("format", "elf")
@@ -80,7 +80,7 @@ class ParseServer extends ServerExtension(":parse") {
               response ::= "pres" -> JSONString(l.map(e => (<p>{e.getStackTrace().toString}</p>).toString).mkString(""))
               JsonResponse(JSONObject(response :_*))
           }
-        case _ => throw LocalError(s"invalid theory name in query : {$query}")
+        case _ => throw LocalError(s"invalid theory name in query : {$request.query}")
       }
     }
 }
