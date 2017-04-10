@@ -396,7 +396,7 @@ class Controller extends ROController with ActionHandling with Logger {
    *  @param afterOpt the name of the declaration after which it should be added (only inside modules, documents)
    */
   def add(nw: StructuralElement, afterOpt: Option[LocalName] = None) {
-    iterate {
+  //  iterate {
           localLookup.getO(nw.path) match {
             case Some(old) if InactiveElement.is(old) =>
               /* optimization for change management
@@ -470,7 +470,7 @@ class Controller extends ROController with ActionHandling with Logger {
               }
               notifyListeners.onAdd(nw)
           }
-    }
+  //  }
   }
 
   /**

@@ -26,8 +26,8 @@ trait DotEdge extends DotObject {
   def cls: String
   def weight = 1
   def toJSON : JSONObject = {
-    //val dones = List("graphinclude","graphview","graphstructure","graphmeta")
-    //if (!dones.contains(cls)) println(cls)
+    val dones = List("graphinclude","graphview","graphstructure","graphmeta")
+    if (!dones.contains(cls)) println(cls)
     val ls = ("from",JSONString(from.id.toString)) ::
       ("to",JSONString(to.id.toString)) ::
       ("weight",JSONInt(weight)) ::

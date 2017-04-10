@@ -45,10 +45,16 @@ abstract class RelationGraphExporter extends StructurePresenter {
     rh(svg)
   }
 
-  def asJSON(se : StructuralElement): JSON = {
+  def asJSON(se : StructuralElement): JSONObject = {
     val dg = buildGraph(se)
     val nodes = dg.JSONNodes.toList
     val edges = dg.JSONEdges.toList//.filter(o => nodes.exists(p => p("label") == o("from")) && nodes.exists(p => p("label") == o("to")))
+    JSONObject(("nodes",JSONArray(nodes:_*)),("edges",JSONArray(edges:_*)))
+  }
+  def asJSON(ls : List[StructuralElement]) : JSONObject = {
+    val dgs = ls.map(buildGraph)
+    val nodes = dgs.flatMap(_.JSONNodes).distinct
+    val edges = dgs.flatMap(_.JSONEdges).distinct
     JSONObject(("nodes",JSONArray(nodes:_*)),("edges",JSONArray(edges:_*)))
   }
 }
@@ -121,9 +127,15 @@ class JsonGraphExporter extends ServerExtension("fancygraph") {
  override val logPrefix = "fancygraph"
 //  log("init")
   def doJSON(path : Path, exp : RelationGraphExporter) : HLet = {
+    println("Try...")
     (controller.getO(path),path) match {
-      case (Some(s),_) => Server.JsonResponse(exp.asJSON(s))
-      case (None, dpath : DPath) => Server.JsonResponse(exp.asJSON(new Document(dpath)))
+      case (Some(s),_) =>
+        println("Doing " + s.path)
+        Server.JsonResponse(exp.asJSON(s))
+      case (None, dpath : DPath) =>
+        val d = new Document(dpath,root = true)
+        println("Doing new document " + dpath)
+        Server.JsonResponse(exp.asJSON(d))
       case _ => Server.plainErrorResponse(GetError(path.toString))
     }
   }

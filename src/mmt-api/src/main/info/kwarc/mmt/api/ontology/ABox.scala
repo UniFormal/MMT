@@ -45,9 +45,9 @@ class RelStore(report : frontend.Report) {
       synchronized {
          log(d.toString)
          d match {
-           case Relation(dep, subj, obj) =>                  
+           case Relation(dep, subj, obj) =>
               subjects += ((dep, obj), subj)
-              objects += ((subj, dep), obj)           
+              objects += ((subj, dep), obj)
               dependencies += ((subj, obj), dep)
            case Individual(p, tp) =>
               types(p) = tp
@@ -65,7 +65,7 @@ class RelStore(report : frontend.Report) {
    def deleteSubject(subj : Path) {
       synchronized {
         types -= subj
-        individuals.values.foreach {v => v -= subj} 
+        individuals.values.foreach {v => v -= subj}
         subjects.values.foreach {v => v -= subj}
         objects.keys.foreach {k =>
            if (k._1 == subj)
