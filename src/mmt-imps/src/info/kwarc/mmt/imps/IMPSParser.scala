@@ -87,7 +87,12 @@ class IMPSParser
 
     // Some printouts for manual inspection, to be removed later
     println("\n#### Summary for " + uri.toString + ":")
-    println("#### " + definedExprs.length + " expressions parsed; " + successes + " Successes, " + failures + " Failures and " + dummies + " Dummies")
+    println("#### " + exprs.length + " expressions and subexpressions parsed; " + successes + " Successes, " + failures + " explicit Failures and " + dummies + " Dummies")
+
+    for (ex <- definedExprs)
+    {
+      println(">>> " + ex.getClass.toString)
+    }
 
     /* Print parsed expressions for diff */
     // for (p <- parsedExprs) { println("\n" + p.toString) }
@@ -229,7 +234,7 @@ class IMPSParser
 
         case Str("def-sublanguage") => return Some(Dummy("def-sublanguage"))
 
-        case Str("def-theorem") => return impsDefFormParsers.parseTheorem(e) //return Some(Dummy("def-theorem"))
+        case Str("def-theorem") => print(".") ; return impsDefFormParsers.parseTheorem(e) //return Some(Dummy("def-theorem"))
 
         case Str("def-theory") => return impsDefFormParsers.parseTheory(e)
 
