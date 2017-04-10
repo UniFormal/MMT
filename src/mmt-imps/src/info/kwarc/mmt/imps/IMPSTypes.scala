@@ -489,6 +489,8 @@ case class Language(name       : String,
   {
     val nu_name : String = name + "_union_" + l.name
 
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     var lsHere  : List[String] = Nil
     var lsThere : List[String] = Nil
 
@@ -498,24 +500,39 @@ case class Language(name       : String,
     if (l.embedlang.isDefined)  { lsThere = lsThere ::: List(l.embedlang.get.name) }
     if (l.embedlangs.isDefined) { lsThere = lsThere ::: l.embedlangs.get.names }
 
-    val embls : List[String] = (lsHere ::: lsThere).distinct
+    val union_embedlangs : List[String] = (lsHere ::: lsThere).distinct
 
     var nu_embedlang  : Option[EmbeddedLanguage]  = None
     var nu_embedlangs : Option[EmbeddedLanguages] = None
 
-    if (embls.nonEmpty)
+    if (union_embedlangs.nonEmpty)
     {
-      if (embls.length == 1)
-      {
-        nu_embedlang = Some(EmbeddedLanguage(embls.head, ???))
-      }
-      else
-      {
-        nu_embedlangs = Some(EmbeddedLanguages(embls, ???))
-      }
+      if (union_embedlangs.length == 1) { nu_embedlang = Some(EmbeddedLanguage(union_embedlangs.head, ???)) }
+      else { nu_embedlangs = Some(EmbeddedLanguages(union_embedlangs, ???)) }
     }
 
-    Language(nu_name,nu_embedlang, nu_embedlangs, ???, ???,???,???, ???)
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    var nu_basetypes : Option[LangBaseTypes] = None
+
+    var bsHere  : List[String] = Nil
+    var bsThere : List[String] = Nil
+
+    if (bstps.isDefined)   { bsHere  = bstps.get.tps }
+    if (l.bstps.isDefined) { bsThere = l.bstps.get.tps }
+
+    val union_basetypes : List[String] = (bsHere ::: bsThere).distinct
+
+    if (union_basetypes.nonEmpty) { nu_basetypes = Some(LangBaseTypes(union_basetypes, ???)) }
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Language(nu_name, nu_embedlang, nu_embedlangs, ???, ???,???,???, ???)
   }
 }
 
