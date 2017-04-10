@@ -353,7 +353,7 @@ case class CartesianProduct(name      : String, /* Keyword Argument, Required */
 case class Constant(constantName : String, /* Positional Argument, Required */
                     math         : IMPSMathExp, /* Positional Argument, Required */
                     theory       : ArgumentTheory, /* Keyword Argument, Required */
-                    sort         : Option[IMPSSortRef], /* Keyword Argument, Optional */
+                    sort         : Option[Sort], /* Keyword Argument, Optional */
                     usages       : Option[Usages], /* Keyword Argument, Optional */
                     src          : SourceRef)      /* SourceRef for MMT */
   extends LispExp
@@ -483,6 +483,39 @@ case class Language(name       : String,
     if (cnstnts.isDefined) { str = str + "\n  " + cnstnts.get.toString }
     str = str + ")"
     str
+  }
+
+  def union(l : Language) : Language =
+  {
+    val nu_name : String = name + "_union_" + l.name
+
+    var lsHere  : List[String] = Nil
+    var lsThere : List[String] = Nil
+
+    if (embedlang.isDefined)  { lsHere = lsHere ::: List(embedlang.get.name) }
+    if (embedlangs.isDefined) { lsHere = lsHere ::: embedlangs.get.names }
+
+    if (l.embedlang.isDefined)  { lsThere = lsThere ::: List(l.embedlang.get.name) }
+    if (l.embedlangs.isDefined) { lsThere = lsThere ::: l.embedlangs.get.names }
+
+    val embls : List[String] = (lsHere ::: lsThere).distinct
+
+    var nu_embedlang  : Option[EmbeddedLanguage]  = None
+    var nu_embedlangs : Option[EmbeddedLanguages] = None
+
+    if (embls.nonEmpty)
+    {
+      if (embls.length == 1)
+      {
+        nu_embedlang = Some(EmbeddedLanguage(embls.head, ???))
+      }
+      else
+      {
+        nu_embedlangs = Some(EmbeddedLanguages(embls, ???))
+      }
+    }
+
+    Language(nu_name,nu_embedlang, nu_embedlangs, ???, ???,???,???, ???)
   }
 }
 

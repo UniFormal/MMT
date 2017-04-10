@@ -89,7 +89,7 @@ package object impsDefFormParsers
 
       /* check for required arguments */
       if (name.isEmpty || defexp.isEmpty || thy.isEmpty) None
-      else { Some(Constant(name.get, defexp.get, thy.get, ???, usages, e.src)) }
+      else { Some(Constant(name.get, defexp.get, thy.get, sort, usages, e.src)) }
 
     } else { None }
   }
