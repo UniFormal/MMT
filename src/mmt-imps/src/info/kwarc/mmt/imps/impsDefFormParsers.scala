@@ -4,7 +4,7 @@ package object impsDefFormParsers
 {
   /* Parser for IMPS special form def-atomic sort
    * Documentation: IMPS manual pgs. 158, 159 */
-  def parseAtomicSort (e : Exp) : Option[LispExp] =
+  def parseAtomicSort (e : Exp) : Option[AtomicSort] =
   {
     // Required arguments
     var name : Option[String]         = None
@@ -50,7 +50,7 @@ package object impsDefFormParsers
 
   /* Parser for IMPS special form def-constants
    * Documentation: IMPS manual pgs. 168, 169 */
-  def parseConstant (e : Exp) : Option[LispExp] =
+  def parseConstant (e : Exp) : Option[Constant] =
   {
     // Required arguments
     var name   : Option[String]         = None
@@ -96,7 +96,7 @@ package object impsDefFormParsers
 
   /* Parser for IMPS special form def-quasi-constructor
    * Documentation: IMPS manual pgs. 177, 178 */
-  def parseQuasiConstructor (e : Exp) : Option[LispExp] =
+  def parseQuasiConstructor (e : Exp) : Option[QuasiConstructor] =
   {
     // Required arguments
     var name   : Option[String]           = None
@@ -140,7 +140,7 @@ package object impsDefFormParsers
 
   /* Parser for IMPS special form def-imported-rewrite-rules
    * Documentation: IMPS manual pg. 169 */
-  def parseImportedRewriteRules (e : Exp) : Option[LispExp] =
+  def parseImportedRewriteRules (e : Exp) : Option[ImportedRewriteRules] =
   {
     // Required arguments
     var name   : Option[String]   = None
@@ -181,7 +181,7 @@ package object impsDefFormParsers
 
   /* Parser for IMPS special form def-cartesian-product
    * Documentation: IMPS manual pg. 166 */
-  def parseCartesianProduct (e : Exp) : Option[LispExp] =
+  def parseCartesianProduct (e : Exp) : Option[CartesianProduct] =
   {
     // Required arguments
     var name      : Option[String]         = None
@@ -239,7 +239,7 @@ package object impsDefFormParsers
 
   /* Parser for IMPS special form def-schematic-macete
    * Documentation: IMPS manual pgs. 180, 181 */
-  def parseSchematicMacete (e : Exp) : Option[LispExp] =
+  def parseSchematicMacete (e : Exp) : Option[SchematicMacete] =
   {
     // Required arguments
     var name    : Option[String] = None
@@ -286,7 +286,7 @@ package object impsDefFormParsers
 
   /* Parser for IMPS form def-theorem
    * Documentation: IMPS manual pgs. 184 ff. */
-  def parseTheorem (e : Exp) : Option[LispExp] =
+  def parseTheorem (e : Exp) : Option[Theorem] =
   {
     /* Required arguments */
     var name    : Option[String]         = None
