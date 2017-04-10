@@ -126,23 +126,32 @@ class TheoryGraphExporter extends RelationGraphExporter {
 class JsonGraphExporter extends ServerExtension("fancygraph") {
  override val logPrefix = "fancygraph"
 //  log("init")
-  def doJSON(path : Path, exp : RelationGraphExporter) : HLet = {
-    println("Try...")
-    (controller.getO(path),path) match {
-      case (Some(s),_) =>
-        println("Doing " + s.path)
-        Server.JsonResponse(exp.asJSON(s))
-      case (None, dpath : DPath) =>
-        val d = new Document(dpath,root = true)
-        println("Doing new document " + dpath)
-        Server.JsonResponse(exp.asJSON(d))
-      case _ => Server.plainErrorResponse(GetError(path.toString))
-    }
+  def doJSON(path : Path, exp : RelationGraphExporter) : HLet = path match {
+      /*
+    case d : DPath =>
+      val allTheories = controller.depstore.getInds(IsTheory).flatMap {
+          case mp : MPath if d <= mp =>
+            controller.getO(mp) match {
+              case Some(th : DeclaredTheory) => Some(th)
+              case _ => None
+            }
+          case _ => None
+        }
+      log("Theories: " + allTheories.map(_.name).mkString(", "))
+      Server.JsonResponse(exp.asJSON(allTheories.toList))
+      */
+    case _ =>
+      controller.getO(path) match {
+        case Some(s) =>
+          println("Doing " + s.path)
+          Server.JsonResponse(exp.asJSON(s))
+        case _ => Server.plainErrorResponse(GetError(path.toString))
+      }
   }
   def apply(request: Request): HLet = {
     log("Paths: " + request.path)
     log("Query: " + request.query)
-    val path = Path.parse(request.query, controller.getNamespaceMap)
+    val path = Path.parse(request.query.trim, controller.getNamespaceMap)
     val (json,key) = if (request.path.headOption == Some("json")) (true,request.path.tail.headOption.getOrElse("svg"))
       else (false,request.path.headOption.getOrElse("svg"))
     lazy val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
