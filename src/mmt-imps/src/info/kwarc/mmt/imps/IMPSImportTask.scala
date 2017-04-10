@@ -1,5 +1,6 @@
 package info.kwarc.mmt.imps
 
+import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.{LocalName, _}
@@ -11,30 +12,104 @@ import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.imps.IMPSTheory.Or
 import utils._
 
+class TheoryState(val parent : DPath, val name : LocalName, val meta : MPath)
+{
+  val path : MPath = parent ? name
+  protected var decls : List[Declaration] = Nil
+  def add(d : Declaration) = decls ::= d
+  def getDeclarations = decls.reverse
+  def toTerm = OMMOD(path)
+  def declares(n : LocalName) : Boolean = decls.exists(d => d.name == n)
+
+  object includes {
+    var stored : List[(MPath,Boolean)] = Nil
+    def contains(p : MPath) = stored.exists(a => a._1 == p)
+    def ::=(p : MPath, par : Boolean = false) = stored ::= (p,par)
+    def find(cond : MPath => Boolean) : Option[MPath] = stored.map(_._1).find(cond)
+    def inPars(p : MPath) : Option[Boolean] = stored.find(q => q._1 ==p).map(_._2)
+  }
+}
+
 class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger with MMTTask
 {
 	def logPrefix = "imps-omdoc"
 	protected def report: Report = controller.report
 
+  val rootdpath : DPath = DPath(URI.http colon "imps.mcmaster.ca")
+
 	def doDocument(es : Exp, uri : URI) : BuildResult =
 	{
-    var successfulTransfers : Int = 0
-    println("#### " + successfulTransfers + " successfully transferred to MMT")
-		BuildResult.empty
+    var transfers : Int                  = 0
+    var theories  : List[DeclaredTheory] = Nil
+
+    for (exp <- es.children)
+    {
+      exp match
+      {
+        /* Translating Theories to MMT */
+        case Theory(id,lang,components,axioms,distinct,src) =>
+        {
+          var nu_theory = new DeclaredTheory(rootdpath, LocalName(id), Some(IMPSTheory.thpath))
+          theories = theories ::: List(nu_theory)
+
+          controller.add(nu_theory, None)
+
+          /* Translate all axioms */
+          if (axioms.isDefined)
+          {
+            var axcount : Int = 0
+            for (ax <- axioms.get.axs)
+            {
+              controller.add(doDecl(ax)(nu_theory))
+            }
+          }
+
+
+          /* All constants here per distinction element are
+             axiomatically distinct from each other */
+          for (dist <- distinct)
+          { /*TODO: implement*/ }
+
+
+          transfers += 1
+        }
+        case _ => ()
+      }
+    }
+
+    val doc = new Document(bt.narrationDPath, true)
+    controller.add(doc)
+    index(doc)
+
+    println("#### " + transfers + " successfully transferred to MMT")
+		BuildSuccess(Nil,Nil)
 	}
 
   def doModule(es : Exp) : DeclaredModule =
   {
-    //case _ => new DeclaredTheory(???,???,Some(IMPSTheory.thpath))
     ???
   }
 
-  def doDecl(d : LispExp)(implicit parent: MPath) : Constant = {
-    val (ret,ref) = d match {
-      case Constant(name,df,th,sort,usages,srcref) =>
-        (symbols.Constant(OMMOD(parent),LocalName(name),Nil,sort map doType,Some(doMathExp(df)),None),srcref)
+  def doDecl(d : LispExp)(implicit parent: DeclaredTheory) : symbols.Constant = {
+    //val (ret,ref) = d match {
+      //case Constant(name,df,th,sort,usages,srcref) =>
+      //  (symbols.Constant(OMMOD(parent),LocalName(name),Nil,sort. map doType,Some(doMathExp(df)),None),srcref)
+    //}
+    //doSourceRef(ret,ref)
+
+    d match {
+      case Constant(name, definition, theory, sort,usages,src) => {
+        val srt : Option[Term] = ??? //if (sort.isDefined) { Some(doType(sort.get.sort)) } else { None }
+
+        symbols.Constant(???,???,???, srt, ???,???,???)
+      }
+      case AxiomSpecification(formula,name,usages, source) => {
+
+        val mth : Term = doMathExp(formula)
+        println(mth.toString)
+        symbols.Constant(parent.toTerm,LocalName(name.get),Nil,Some(mth),None,Some("Assumption"))
+      }
     }
-    doSourceRef(ret,ref)
   }
 
 
