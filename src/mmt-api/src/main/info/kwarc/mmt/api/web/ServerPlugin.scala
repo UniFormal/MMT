@@ -165,7 +165,7 @@ class SearchServer extends ServerExtension("search") {
     val mod = wq("module")
     val name = wq("name")
     val theory = wq("theory")
-    val pattern = wq("pattern")
+    val pattern = wq("pattern") orElse body.asStringO
     val format = wq.string("format", "mmt")
     val intype = wq.boolean("type")
     val indef = wq.boolean("definition")
