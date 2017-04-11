@@ -28,6 +28,8 @@ Layout Method:
 You can select more than one node by holding STRG and clicking on nodes to select! <br>
 You can also draw rectangles around nodes to select them by activating "Selection Mode".
 <br>
+<label for="clusternameInput">Clustername: </label>
+<input type="text" id="clusternameInput" name="clusternameInput">
 <button id="clusterButton" onClick="clusterSelectedNodes()">Cluster selected Nodes</button>
 <button id="selectionModeButton" onClick="switchSelectionMode()">Switch Selection Mode</button>
 <a id="downloadButton"><button onClick="downloadGraph()">Download Graph</button></a>
@@ -84,7 +86,7 @@ You can also draw rectangles around nodes to select them by activating "Selectio
 		
 		function clusterSelectedNodes()
 		{
-			theoryGraph.cluster();
+			theoryGraph.cluster(undefined, document.getElementById("clusternameInput").value);
 		}
 	    
 		function changeMethode(idx)
