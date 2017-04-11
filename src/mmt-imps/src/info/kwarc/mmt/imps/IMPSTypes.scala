@@ -507,8 +507,13 @@ case class Language(name       : String,
 
     if (union_embedlangs.nonEmpty)
     {
-      if (union_embedlangs.length == 1) { nu_embedlang = Some(EmbeddedLanguage(union_embedlangs.head, ???)) }
-      else { nu_embedlangs = Some(EmbeddedLanguages(union_embedlangs, ???)) }
+      val src_embedlang = if (embedlang.isDefined)    { embedlang.get.src }
+                     else if (embedlangs.isDefined)   { embedlangs.get.src }
+                     else if (l.embedlang.isDefined)  { l.embedlang.get.src }
+                     else                             { l.embedlangs.get.src }
+
+      if (union_embedlangs.length == 1) { nu_embedlang = Some(EmbeddedLanguage(union_embedlangs.head, src_embedlang)) }
+      else { nu_embedlangs = Some(EmbeddedLanguages(union_embedlangs, src_embedlang)) }
     }
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -523,16 +528,69 @@ case class Language(name       : String,
 
     val union_basetypes : List[String] = (bsHere ::: bsThere).distinct
 
-    if (union_basetypes.nonEmpty) { nu_basetypes = Some(LangBaseTypes(union_basetypes, ???)) }
+    if (union_basetypes.nonEmpty)
+    {
+      val src_basetypes = if (bstps.isDefined) { bstps.get.src } else { l.bstps.get.src }
+      nu_basetypes = Some(LangBaseTypes(union_basetypes, src_basetypes))
+    }
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    var nu_extensible : Option[Extensible] = None
+
+    var exHere  : List[TypeSortAList] = Nil
+    var exThere : List[TypeSortAList] = Nil
+
+    if (extens.isDefined)   { exHere = extens.get.lst }
+    if (l.extens.isDefined) { exThere = l.extens.get.lst }
+
+    val union_extens : List[TypeSortAList] = (exHere ::: exThere).distinct
+
+    if (union_extens.nonEmpty)
+    {
+      val src_extens = if (extens.isDefined) { extens.get.src } else { l.extens.get.src }
+      nu_extensible = Some(Extensible(union_extens, src_extens))
+    }
+
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    var nu_sorts : Option[SortSpecifications] = None
+
+    var srtHere  : List[(String, String)] = Nil
+    var srtThere : List[(String, String)] = Nil
+
+    if (srts.isDefined)   { srtHere = srts.get.lst }
+    if (l.srts.isDefined) { srtThere = l.srts.get.lst }
+
+    val union_srts : List[(String, String)] = (srtHere ::: srtThere).distinct
+
+    if (union_srts.nonEmpty)
+    {
+      val src_srts = if (srts.isDefined) { extens.get.src } else { l.srts.get.src }
+      nu_sorts = Some(SortSpecifications(union_srts, src_srts))
+    }
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Language(nu_name, nu_embedlang, nu_embedlangs, ???, ???,???,???, ???)
+    var nu_consts : Option[ConstantSpecifications] = None
+
+    var conHere  : List[(String, String)] = Nil
+    var conThere : List[(String, String)] = Nil
+
+    if (cnstnts.isDefined)   { conHere = cnstnts.get.lst }
+    if (l.cnstnts.isDefined) { conThere = l.cnstnts.get.lst }
+
+    val union_constants : List[(String, String)] = (conHere ::: conThere).distinct
+
+    if (union_constants.nonEmpty)
+    {
+      val src_constants = if (cnstnts.isDefined) { cnstnts.get.src } else { l.cnstnts.get.src }
+      nu_consts = Some(ConstantSpecifications(union_constants, src_constants))
+    }
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Language(nu_name, nu_embedlang, nu_embedlangs, nu_basetypes, nu_extensible, nu_sorts, nu_consts, src)
   }
 }
 

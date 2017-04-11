@@ -111,8 +111,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       }
     }
   }
-
-
+  
   def doType(d : IMPSMathExp) : Term =
   {
     val ret : Term = d match
