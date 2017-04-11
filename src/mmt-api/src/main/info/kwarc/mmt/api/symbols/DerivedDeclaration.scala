@@ -13,8 +13,9 @@ import scala.xml.Elem
 /** A [[DerivedDeclaration]] is a syntactically like a nested theory.
  *  Its semantics is defined by the corresponding [[StructuralFeature]]
  */
-class DerivedDeclaration(h: Term, name: LocalName, override val feature: String, val tpC: TermContainer, val notC: NotationContainer) extends {
-   private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name, None)
+class DerivedDeclaration(h: Term, name: LocalName, override val feature: String, val tpC: TermContainer,
+                         val notC: NotationContainer) extends {
+   private val t = new DeclaredTheory(h.toMPath.parent, h.toMPath.name/name,None)
 } with NestedModule(h, name, t) with HasNotation {
    // overriding to make the type stricter
   override def module: DeclaredModule = t
@@ -89,6 +90,8 @@ case class StructuralFeatureRule(feature: String) extends Rule {
  */
 abstract class StructuralFeature(val feature: String) extends FormatBasedExtension {
    def isApplicable(s: String) = s == feature
+
+   val bodyDelim = "="
    
    lazy val mpath = SemanticObject.javaToMMT(getClass.getCanonicalName)
 
@@ -128,7 +131,9 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
 
    /** called after checking components and inner declarations for additional feature-specific checks */
    def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit
-   def checkInContext(prev : Context, dv : VarDecl)
+
+  def elaborateInContext(prev: Context, dv: VarDecl): Context = prev
+  def checkInContext(prev: Context, dv: VarDecl): Unit = {}
 
    /**
     * defines the outer perspective of a derived declaration
@@ -137,7 +142,6 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
     * @param dd the derived declaration
     */
    def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration
-   def elaborateInContext(prev : Context, dv : VarDecl) : Context
 
    /** override as needed */
    def modules(dd: DerivedDeclaration): List[Module] = Nil
@@ -232,9 +236,6 @@ object ParametricTheoryLike {
  * called structures in original MMT
  */
 class GenerativePushout extends StructuralFeature("generative") with IncludeLike {
-
-  def checkInContext(prev : Context, dv: VarDecl): Unit = {}
-  def elaborateInContext(prev: Context, dv: VarDecl): Context = Context.empty
   
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
       val dom = getDomain(dd)
@@ -278,7 +279,7 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
 
 // Binds theory parameters using Lambda/Pi in an include-like structure
 class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, applys : GlobalName) extends StructuralFeature(id) with IncludeLike {
-  def checkInContext(prev : Context, dv: VarDecl): Unit = dv match {
+  override def checkInContext(prev : Context, dv: VarDecl): Unit = dv match {
     case DerivedVarDecl(LocalName(ComplexStep(p) :: Nil),`id`,`mpath`,List(OMMOD(q))) if p == q => checkpath(p)
     case _ =>
   }
@@ -309,7 +310,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     def applyDef(c: Context, t: Term) = bindLambda(applyPars(t, c))
   }
 
-  def elaborateInContext(context: Context, dv: VarDecl): Context = dv match {
+  override def elaborateInContext(context: Context, dv: VarDecl): Context = dv match {
     case DerivedVarDecl(LocalName(ComplexStep(dom) :: Nil), `id`,`mpath`, List(OMMOD(q))) if dom == q && !context.contains(dv) =>
       val body = controller.simplifier.getBody(context, OMMOD(dom)) match {
         case t : DeclaredTheory => t

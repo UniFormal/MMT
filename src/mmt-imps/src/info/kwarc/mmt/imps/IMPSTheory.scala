@@ -32,7 +32,6 @@ object IMPSTheory
   }
 
   /* LOGIC */
-  
   object Truth     extends Sym("thetrue")
   object Falsehood extends Sym("thefalse")
 

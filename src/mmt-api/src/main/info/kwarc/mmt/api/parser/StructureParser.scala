@@ -926,12 +926,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val tpC = TermContainer(header.copy(term = tp).toTerm)
     val notC = new NotationContainer
     val compSpecs = notationComponentSpec(notC)
-    val equalFound = readComponents(context, compSpecs, Some("="))
+    val equalFound = readComponents(context, compSpecs, Some(feature.bodyDelim))
     val dd = new DerivedDeclaration(OMID(parent), name, feature.feature, TermContainer(tp), notC)
     dd.setDocumentHome(parentInfo.relDocParent)
     seCont(dd)
     if (equalFound) {
-       val innerContext = feature.getInnerContext(dd)
+       val innerContext = controller.simplifier.elaborateContext(context,feature.getInnerContext(dd))
        val features = getFeatures(parent)
        readInModule(dd.module, context++innerContext, features)
     }
