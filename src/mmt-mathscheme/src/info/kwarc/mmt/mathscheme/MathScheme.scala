@@ -2,7 +2,6 @@ package info.kwarc.mmt.mathscheme
 
 import info.kwarc.mmt.api.checking.ExtendedCheckingEnvironment
 import info.kwarc.mmt.api._
-import frontend._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.backend._
 import utils.File
@@ -58,7 +57,6 @@ class MathScheme extends ExternalImporter {
       val proc = procBuilder.start()
    }
 }
-*/ */
 
 class Plugin extends frontend.Plugin {
    val theory = Path.parseM("http://test.org/mathscheme?Meta",NamespaceMap.empty)

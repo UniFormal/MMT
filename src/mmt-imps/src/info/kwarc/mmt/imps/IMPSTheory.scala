@@ -85,30 +85,6 @@ object IMPSTheory
     }
   }
 
-  object If extends Sym("if") {
-    def apply(p : Term, t1 : Term, t2 : Term) : Term = {
-      ApplySpine(this.term, p, t1, t2)
-    }
-  }
-
-  object Iff extends Sym("iff") {
-    def apply(p : Term, q : Term) : Term = {
-      ApplySpine(this.term, p, q)
-    }
-  }
-
-  object If_Form extends Sym("ifform") {
-    def apply(p1 : Term, p2 : Term, p3 : Term) : Term = {
-      ApplySpine(this.term, p1, p2, p3)
-    }
-  }
-
-  object Implies extends Sym("implies") {
-    def apply(p : Term, q : Term) : Term = {
-      ApplySpine(this.term, p, q)
-    }
-  }
-
   object Lambda extends Sym("lambda")
   {
     def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = ls match
