@@ -90,8 +90,10 @@ class MathMLPresenter extends NotationBasedPresenter {
          pc.html.mrow {
             pc.out(mo)
             implicits.foreach {i =>
-               doSpace(1)
-               doImplicit {i()}
+               doImplicit {
+                 doSpace(1)
+                 i()
+               }
             }
          }
       } else
