@@ -31,7 +31,15 @@ object IMPSTheory
     }
   }
 
+  object thm extends Sym("thm")
+  {
+    def apply(t : Term) : Term = {
+      Apply(this.term, t)
+    }
+  }
+
   /* LOGIC */
+
   object Truth     extends Sym("thetrue")
   object Falsehood extends Sym("thefalse")
 

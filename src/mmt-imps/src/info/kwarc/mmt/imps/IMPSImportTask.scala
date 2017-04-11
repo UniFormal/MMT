@@ -42,6 +42,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     var transfers : Int                  = 0
     var theories  : List[DeclaredTheory] = Nil
 
+    val doc = new Document(bt.narrationDPath, true)
+    controller.add(doc)
+
     for (exp <- es.children)
     {
       exp match
@@ -49,10 +52,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         /* Translating Theories to MMT */
         case Theory(id,lang,components,axioms,distinct,src) =>
         {
-          var nu_theory = new DeclaredTheory(rootdpath, LocalName(id), Some(IMPSTheory.thpath))
+          var nu_theory = new DeclaredTheory(bt.narrationDPath, LocalName(id), Some(IMPSTheory.thpath))
           theories = theories ::: List(nu_theory)
 
           controller.add(nu_theory, None)
+          controller.add(MRef(bt.narrationDPath,nu_theory.path))
 
           /* Translate all axioms */
           if (axioms.isDefined)
@@ -61,6 +65,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
             for (ax <- axioms.get.axs)
             {
               controller.add(doDecl(ax)(nu_theory))
+              transfers += 1
             }
           }
 
@@ -70,15 +75,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           for (dist <- distinct)
           { /*TODO: implement*/ }
 
-
-          transfers += 1
         }
         case _ => ()
       }
     }
 
-    val doc = new Document(bt.narrationDPath, true)
-    controller.add(doc)
     index(doc)
 
     println("#### " + transfers + " successfully transferred to MMT")
@@ -105,13 +106,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       }
       case AxiomSpecification(formula,name,usages, source) => {
 
-        val mth : Term = doMathExp(formula)
+        val mth : Term = IMPSTheory.thm(doMathExp(formula))
         println(mth.toString)
         symbols.Constant(parent.toTerm,LocalName(name.get),Nil,Some(mth),None,Some("Assumption"))
       }
     }
   }
-  
+
   def doType(d : IMPSMathExp) : Term =
   {
     val ret : Term = d match
