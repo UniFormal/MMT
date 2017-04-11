@@ -6,6 +6,10 @@ function TheoryGraph()
 	var clusterId=0;
 	var nodes;
 	var edges;
+	var lastClusterZoomLevel = 0;
+    var clusterFactor = 1;
+	var that=this;
+	var zoomClusters=[];
 	
 	this.downloadCanvasAsImage = function(button)
 	{
@@ -37,17 +41,56 @@ function TheoryGraph()
 		{
 			//button.href = network.canvas.frame.canvas.toDataURL();
 			//button.download = "graph.png";
-			var image=network.canvas.frame.canvas.toDataURL("image/png"); //Convert image to 'octet-stream' (Just a download, really)
+			var image=network.canvas.frame.canvas.toDataURL("image/png")
 			window.open(image);
 			network.setSize(originalWidth,originalHeight);
 			network.redraw();
 			network.fit();
 		});
-		
-		
-							
-
-
+	}
+	
+    function openOutlierClusters(scale) 
+	{
+        var newClusters = [];
+        var declustered = false;
+        for (var i = 0; i < zoomClusters.length; i++) 
+		{
+            if (zoomClusters[i].scale < scale) 
+			{
+                network.openCluster(zoomClusters[i].id);
+                lastClusterZoomLevel = scale;
+                declustered = true;
+            }
+            else 
+			{
+                newClusters.push(zoomClusters[i])
+            }
+        }
+        zoomClusters = newClusters;
+    }
+	
+	this.clusterOutliers=function(scale)
+	{
+		var clusterOptionsByData = 
+		{
+			processProperties: function (clusterOptions, childNodes) 
+			{
+				clusterId = clusterId + 1;
+				var childrenCount = 0;
+				for (var i = 0; i < childNodes.length; i++) 
+				{
+					childrenCount += childNodes[i].childrenCount || 1;
+				}
+				clusterOptions.childrenCount = childrenCount;
+				clusterOptions.label = "# " + childrenCount + "";
+				clusterOptions.font = {size: Math.min(childrenCount+20,40)}
+				clusterOptions.id = 'cluster_' + clusterId;
+				zoomClusters.push({id:'cluster_' + clusterId, scale:scale});
+				return clusterOptions;
+			},
+			clusterNodeProperties: {borderWidth: 2, shape: 'database', color:"orange"}
+		}
+		network.clusterOutliers(clusterOptionsByData);
 	}
 	
 	this.selectNodesInRect = function(rect) 
@@ -73,11 +116,16 @@ function TheoryGraph()
 		network.selectNodes(nodesIdInDrawing);
 	}
 	
-	this.cluster = function(nodeIds)
+	this.cluster = function(nodeIds,name)
 	{
 		if(nodeIds==undefined)
 		{
 			nodeIds=network.getSelectedNodes();
+		}
+		
+		if(name==undefined)
+		{
+			name='cluster_' +clusterId;
 		}
 		
 		if(network!=null)
@@ -98,7 +146,7 @@ function TheoryGraph()
                   clusterOptions.mass = totalMass;
                   return clusterOptions;
               },
-              clusterNodeProperties: {id: 'cluster_' +clusterId , borderWidth: 2, shape: 'database', color:"orange", label:'Cluster_' + clusterId}
+              clusterNodeProperties: {id: 'cluster_' +clusterId , borderWidth: 2, shape: 'database', color:"orange", label:name}
 			}
 
 			network.clustering.cluster(options);
@@ -306,6 +354,33 @@ function TheoryGraph()
 			};
 			network.setOptions(options);
 			document.body.style.cursor = 'auto';
+		});
+		
+		
+		// we use the zoom event for our clustering
+		/*network.on('zoom', function (params) 
+		{
+			console.log(params.direction+" "+params.scale+" < "+lastClusterZoomLevel*clusterFactor);
+			if (params.direction == '-') 
+			{
+				if (params.scale < lastClusterZoomLevel*clusterFactor) 
+				{
+					that.clusterOutliers(params.scale);
+					lastClusterZoomLevel = params.scale;
+				}
+			}
+			else 
+			{
+				openOutlierClusters(params.scale);
+			}
+		});*/
+		
+		network.once('initRedraw', function() 
+		{
+			if (lastClusterZoomLevel === 0) 
+			{
+				lastClusterZoomLevel = network.getScale();
+			}
 		});
 	}
 }
