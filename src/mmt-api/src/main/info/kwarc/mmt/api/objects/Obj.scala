@@ -126,7 +126,7 @@ case class OMID(path: ContentPath) extends Term {
       case doc ? mod ?? name => <om:OMS base={doc.toPath} module={mod.toPath} name={name.toPath}>{mdNode}</om:OMS>
       //case thy % name => <om:OMS name={name.toPath}>{mdNode}{thy.toNode}</om:OMS>
    }
-   def toCMLQVars(implicit qvars: Context) = <csymbol cd={path.module.toPath}>{path.name.toString}</csymbol>
+   def toCMLQVars(implicit qvars: Context) = <csymbol>{path.toPath}</csymbol>
 }
 
 object OMS {

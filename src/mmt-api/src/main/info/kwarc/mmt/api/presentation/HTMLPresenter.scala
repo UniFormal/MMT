@@ -135,7 +135,10 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       val generatedCss = if (d.isGenerated) " generated " else ""
       div(basicCss + generatedCss, attributes = List(toggleTarget -> "generated")) {
          div("constant-header") {
-           span {text(d.feature + " ")}
+           span {text({d match {
+             case Include(_,_,_) => "include"
+             case _ => d.feature
+           }} + " ")}
            span {doName(d)}
            def toggleComp(comp: ComponentKey) {
               toggle(compRow(comp), comp.toString.replace("-", " "))

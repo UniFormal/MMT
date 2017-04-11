@@ -1,11 +1,11 @@
 package info.kwarc.mmt.pvs
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects.{Context, OMV, Term, VarDecl}
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils.{JSONArray, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.web._
-import info.kwarc.mmt.lf.{Apply, Arrow}
+import info.kwarc.mmt.lf.{Apply, ApplySpine, Arrow}
 import info.kwarc.mmt.pvs.syntax.Object
 import tiscaf.{HLet, HReqData}
 
@@ -16,9 +16,11 @@ import scala.xml.Node
   * Created by jazzpirate on 08.04.17.
   */
 class PVSServer extends ServerExtension("pvs") {
+  private val eqclos = Path.parseS("http://pvs.csl.sri.com/prelude?EquivalenceClosure?EquivClos",NamespaceMap.empty)
+  val testterm = ApplySpine(PVSTheory.pvsapply.term,OMV("I1"),OMV("I2"),OMS(eqclos),OMV("A"))
 
-  val testterm = PVSTheory.fun_type(OMV("A"),OMV("B"))//PVSTheory.fun_type(OMV("A"),OMV("B"))
-  val testcon = Context(VarDecl(LocalName("A")),VarDecl(LocalName("B")))
+  //PVSTheory.(OMV("A"),OMV("B"))//PVSTheory.fun_type(OMV("A"),OMV("B"))
+  val testcon = Context(VarDecl(LocalName("I1")),VarDecl(LocalName("I2")),VarDecl(LocalName("A")))
 
   def apply(request: Request): HLet = {
     val tm = Try(processXML(request.body.asXML)) match {
@@ -26,6 +28,7 @@ class PVSServer extends ServerExtension("pvs") {
       case _ => testterm
     }
     val mwsquery = doWebQuery(tm)
+    println(mwsquery.toXML)
     val results = mws(mwsquery).map(makeReply) // TODO
     Server.JsonResponse(JSONArray(results:_*))
     // Server.XmlResponse(mwsquery.toXML)
