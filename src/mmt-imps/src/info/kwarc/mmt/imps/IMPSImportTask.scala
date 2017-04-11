@@ -1,16 +1,28 @@
 package info.kwarc.mmt.imps
 
-import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.{LocalName, _}
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
+import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.imps.IMPSTheory.Or
 import utils._
+
+/* REMINDER:
+
+DPath = Namespace
+LocalName(s : String)
+Dpath ? LocalName = MPath (theory/view)
+MPath ? LocalName = GlobalName (declarations)
+
+namespace http://imps.blubb
+
+theory Booleans =
+ constant true%val <- http://imps.blubb?Booleans?true%val
+ */
 
 class TheoryState(val parent : DPath, val name : LocalName, val meta : MPath)
 {
@@ -36,11 +48,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 	protected def report: Report = controller.report
 
   val rootdpath : DPath = DPath(URI.http colon "imps.mcmaster.ca")
+  var theories  : List[DeclaredTheory] = Nil
 
 	def doDocument(es : Exp, uri : URI) : BuildResult =
 	{
-    var transfers : Int                  = 0
-    var theories  : List[DeclaredTheory] = Nil
+    var transfers : Int = 0
 
     val doc = new Document(bt.narrationDPath, true)
     controller.add(doc)
@@ -52,23 +64,39 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         /* Translating Theories to MMT */
         case Theory(id,lang,components,axioms,distinct,src) =>
         {
-          var nu_theory = new DeclaredTheory(bt.narrationDPath, LocalName(id), Some(IMPSTheory.thpath))
+          val nu_theory = new DeclaredTheory(bt.narrationDPath, LocalName(id), Some(IMPSTheory.thpath))
           theories = theories ::: List(nu_theory)
 
           controller.add(nu_theory, None)
           controller.add(MRef(bt.narrationDPath,nu_theory.path))
 
+          /* Translate language of the theory */
+
           /* Translate all axioms */
           if (axioms.isDefined)
           {
-            var axcount : Int = 0
+            var axcount : Int = -1
             for (ax <- axioms.get.axs)
             {
-              controller.add(doDecl(ax)(nu_theory))
-              transfers += 1
+              ax match {
+                case AxiomSpecification(formula, aid, usages, src) =>
+                {
+                  val mth : Term = IMPSTheory.thm(doMathExp(formula))
+                  val name : String = if (aid.isDefined) { aid.get }
+                                      else { axcount += 1 ; id + "_unnamed_axiom" + axcount.toString }
+
+                  val assumption = symbols.Constant(nu_theory.toTerm,LocalName(name),Nil,Some(mth),None,Some("Assumption"))
+
+                  controller.add(assumption)
+
+                  //TODO: Handle usages
+
+                  transfers += 1
+                }
+                case _ => ()
+              }
             }
           }
-
 
           /* All constants here per distinction element are
              axiomatically distinct from each other */
@@ -76,6 +104,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           { /*TODO: implement*/ }
 
         }
+        // Languages are processed in context of theories using them, not by themselves
+        case Language(id,embedlang,embedlangs,bstps,extens,srts,cnstnts,src) => ()
+        // If it's none of these, fall back to doDeclaration
+        //case Constant(n,d,t,s,u,src) => doDecl(exp)
         case _ => ()
       }
     }
@@ -86,30 +118,51 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 		BuildSuccess(Nil,Nil)
 	}
 
-  def doModule(es : Exp) : DeclaredModule =
+  def doDecl(d : LispExp) : symbols.Constant =
   {
-    ???
-  }
-
-  def doDecl(d : LispExp)(implicit parent: DeclaredTheory) : symbols.Constant = {
-    //val (ret,ref) = d match {
-      //case Constant(name,df,th,sort,usages,srcref) =>
-      //  (symbols.Constant(OMMOD(parent),LocalName(name),Nil,sort. map doType,Some(doMathExp(df)),None),srcref)
-    //}
-    //doSourceRef(ret,ref)
-
-    d match {
-      case Constant(name, definition, theory, sort,usages,src) => {
-        val srt : Option[Term] = ??? //if (sort.isDefined) { Some(doType(sort.get.sort)) } else { None }
-
-        symbols.Constant(???,???,???, srt, ???,???,???)
+    d match
+    {
+      case AtomicSort(name, defstring, theory, usages, witness, src) =>
+      {
+        // TODO: IMPLEMENT
+        ???
       }
-      case AxiomSpecification(formula,name,usages, source) => {
+      case Constant(name, definition, theory, sort, usages, src) =>
+      {
+        val ln : LocalName = LocalName(theory.thy)
+        assert(theories.exists(t => t.name == ln))
+        val parent = theories(theories.indexWhere(dt => dt.name == ln))
 
-        val mth : Term = IMPSTheory.thm(doMathExp(formula))
-        println(mth.toString)
-        symbols.Constant(parent.toTerm,LocalName(name.get),Nil,Some(mth),None,Some("Assumption"))
+        /* look for sort in given theory. */
+        var srt : Option[Term] = None
+        if (sort.isDefined)
+        {
+          val ln : LocalName = LocalName(sort.get.sort)
+
+          assert(parent.getDeclarations.exists(b => b.name == ln))
+
+          for (decl <- parent.getDeclarations) {
+            if (decl.name == ln) { srt = Some(decl.toTerm) }
+          }
+        }
+        else
+        {
+          // TODO: infer sort of definition, see IMPS manual pg. 168/169
+          srt = Some(???)
+        }
+
+        // assert(srt.isDefined) <-- to be added again later
+
+        val nu_constant = symbols.Constant(parent.toTerm, LocalName(name), Nil, srt, None, Some("Constant"))
+        controller.add(nu_constant)
+        nu_constant
       }
+      case Theorem(name, formula, lemma, reverse, theory, usages, trans, macete, homeTheory, proof, src) =>
+      {
+        // TODO: IMPLEMENT
+        ???
+      }
+      case _ => log("Error: Unknown LispExp encountered, not translated!"); ???
     }
   }
 
@@ -119,36 +172,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       case IMPSSortRef(srt) =>
         IMPSTheory.Sort(OMS(IMPSTheory.thpath ? LocalName(srt)))
-    }
-    ret
-  }
-
-  /*
-  DPath = Namespace
-  LocalName(s : String)
-  Dpath ? LocalName = MPath (theory/view)
-  MPath ? LocalName = GlobalName (declarations)
-
-  namespace http://imps.blubb
-
-  theory Booleans =
-   constant true%val <- http://imps.blubb?Booleans?true%val
-   */
-
-  /* Opting for a List because one def-form can generate multiple terms */
-  def doDefForm(d : LispExp) : List[Term] =
-  {
-    val ret : List[Term] = d match
-    {
-      case AtomicSort(id,srt,argthy,usgs,wtns,src)                  => Nil // TODO
-      case Constant(id,mth,thy,srt,usgs,src)                        => Nil // TODO
-      case Theorem(id,frml,lm,rev,thy,usgs,trans,mac,hmthy,prf,src) => Nil // TODO
-      case ImportedRewriteRules(thynm, srcthy, srcths, src)         => Nil // TODO
-      case SchematicMacete(id,frml,thy,nlp,transpp,src)             => Nil // TODO
-      case CartesianProduct(id,srts,thy,const,accs,src)             => Nil // TODO
-      case QuasiConstructor(id,lmbd,lng,fxt,src)                    => Nil // TODO
-      // etc...
-      case _                                                        => Nil // this stays
     }
     ret
   }
@@ -182,9 +205,16 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     ret
   }
 
-  def doSourceRef(t : Term, s : SourceRef) = ???
-  def doSourceRef(d : Declaration, s : SourceRef) = ???
+  /* Source References. Methods exceedingly small, but look nicer */
+  def doSourceRef(t : Term, s : SourceRef) = {
+    SourceRef.update(t, s)
+  }
 
+  def doSourceRef(d : Declaration, s : SourceRef) = {
+    SourceRef.update(d, s)
+  }
+
+  /* Other stuff, stubs */
   def doUnknown(d : LispExp) : Term = {???}
 
   def doName(s:String) : LocalName = LocalName(s)
