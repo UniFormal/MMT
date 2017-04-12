@@ -116,6 +116,10 @@ object PVSTheory {
          case _ if state != null => (ApplySpine(this.term,state.doUnknown,state.doUnknown,f,t),state.doUnknown)
          case _ => throw new Exception("Unknown types in pvsapply")
       }
+     def apply(f : Term, t: Term,tpA : Term, tpB : Term) =
+       (ApplySpine(this.term,tpA,
+         Lambda(LocalName("I")/"x",expr(tpA),tpB),f,t),tpB)
+
       def unapply(t : Term) : Option[(Term,Term,Term)] = t match {
          case ApplySpine(this.term,List(tpx,Lambda(y,btp,rettp),f,t2)) =>
           Some(f,t2,rettp ^? y/t2)
@@ -298,6 +302,10 @@ object PVSTheory {
 
    object setsub extends sym("setsub") {
       def apply(tp:Term,expr:Term) = ApplySpine(this.term,tp,expr)
+     def unapply(t : Term) : Option[(Term,Term)] = t match {
+       case ApplySpine(this.term,List(tp,expr)) => Some((tp,expr))
+       case _ => None
+     }
    }
 
    object projection extends sym("proj") {

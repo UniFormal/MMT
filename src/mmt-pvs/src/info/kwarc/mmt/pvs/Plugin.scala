@@ -223,3 +223,15 @@ object NatLitSubtype extends SubtypingRule {
 
 
 object PVSHOAS extends NestedHOASNotation(HOAS(pvsapply.path,pvslambda.path,expr.path),LF.hoas)
+
+import PVSTheory._
+
+object SetsubRule extends ComputationRule(PVSTheory.expr.path) {
+  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
+    case expr(setsub(tp,prop)) => Some(info.kwarc.mmt.LFX.Subtyping.predsubtp(expr(tp),proof("internal_judgment",
+      Lambda(doName,expr(tp),pvsapply(prop,OMV(doName),expr(tp),bool.term)._1))))
+    case _ => None
+  }
+
+  def doName = Context.pickFresh(Context.empty,LocalName("Ipred")/"x")._1
+}

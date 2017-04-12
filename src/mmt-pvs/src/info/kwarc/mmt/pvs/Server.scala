@@ -17,10 +17,10 @@ import scala.xml.Node
   */
 class PVSServer extends ServerExtension("pvs") {
   private val eqclos = Path.parseS("http://pvs.csl.sri.com/prelude?EquivalenceClosure?EquivClos",NamespaceMap.empty)
-  val testterm = ApplySpine(PVSTheory.pvsapply.term,OMV("I1"),OMV("I2"),OMS(eqclos),OMV("A"))
+  val testterm = ApplySpine(PVSTheory.pvsapply.term,OMV("I1"),OMV("I2"),PVSTheory.parambind(OMS(eqclos),List(OMV("T"))),OMV("A"))
 
   //PVSTheory.(OMV("A"),OMV("B"))//PVSTheory.fun_type(OMV("A"),OMV("B"))
-  val testcon = Context(VarDecl(LocalName("I1")),VarDecl(LocalName("I2")),VarDecl(LocalName("A")))
+  val testcon = Context(VarDecl(LocalName("I1")),VarDecl(LocalName("I2")),VarDecl(LocalName("A")),VarDecl(LocalName("B")))
 
   def apply(request: Request): HLet = {
     val tm = Try(processXML(request.body.asXML)) match {

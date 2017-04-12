@@ -1,12 +1,14 @@
 package info.kwarc.mmt.odk.codecs
 
+import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api.objects.{OMS, Term}
+import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.api.valuebases.Coder
 import info.kwarc.mmt.lf.ApplySpine
-import info.kwarc.mmt.odk.ODK
 
 object Codecs {
-  val path = ODK.path ? "Codecs"
+  val odkpath = DPath(URI("http","www.opendreamkit.org"))
+  val path = odkpath ? "Codecs"
 
   val standardInt = path ? "standardInt"
   val standardNat = path ? "standardNat"

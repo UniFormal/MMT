@@ -173,6 +173,7 @@ case class ObjectLevelTranslator(state : TranslationState,controller : Controlle
         })
 
       case record_expr(_,asslist) =>
+        println("RECORD IN " + state.path)
         val list = asslist.map(a => {
           val (df,tp) = doExpr(a._expr)
           (a.assignment_args match {
