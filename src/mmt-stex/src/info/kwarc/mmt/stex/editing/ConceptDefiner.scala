@@ -20,7 +20,7 @@ class ConceptDefiner extends ServerExtension("define") {
     controller.handleLine("extension info.kwarc.mmt.api.ontology.RelationalReader")
   }
   
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
      
      // get all archives and the constant names defined in them
      val nameLists = controller.backend.getArchives map {a =>

@@ -7,10 +7,10 @@ import utils._
 import tiscaf._
 import tiscaf.let._
 
-import scala.collection.mutable
 import scala.xml._
 import scala.concurrent._
 
+import java.net.{URLDecoder, URLEncoder}
 
 case class ServerError(msg: String) extends Error(msg)
 
@@ -116,7 +116,7 @@ object Server {
   def XMLResponse(node: scala.xml.Node, status: HStatus.Value): HLet = TextResponse(node.toString, "xml")
 
   /** builds an error response from an error */
-  def errorResponse(error: Error, req: Request): HLet = {
+  def errorResponse(error: Error, req: ServerRequest): HLet = {
     // we have three modes of error responses: text/html, text/xml, text/plain
     // first we parse everything the server accepts (ignoring priorities)
     val accepts = req.headers.lift("Accept").getOrElse("").split(",").map(_.split(";").head.trim)
@@ -142,7 +142,7 @@ object Server {
   }
 
   /** builds a smart error message from an error */
-  def errorResponse(msg: String, req: Request): HLet = errorResponse(ServerError(msg), req)
+  def errorResponse(msg: String, req: ServerRequest): HLet = errorResponse(ServerError(msg), req)
 
   /** an error response in plain text format */
   def plainErrorResponse(error: Error): HLet = TextResponse(error.toStringLong, status = HStatus.InternalServerError)
@@ -155,7 +155,7 @@ object Server {
 
 }
 
-/** straightforward abstraction for web style key-value queries; no encoding, no duplicate keys */
+/** straightforward abstraction for web style key-value queries; assumes input is already decoded and duplicate-less */
 case class WebQuery(pairs: List[(String, String)]) {
   /** @return the value of the key, if present */
   def apply(key: String): Option[String] = pairs.find(_._1 == key).map(_._2)
@@ -180,149 +180,37 @@ case class WebQuery(pairs: List[(String, String)]) {
       case _: Exception => throw ParseError("integer expected: " + s)
     }
   }
+
+  /** @return a string encoded web queru object */
+  def asString : String = {
+    pairs.map(kv => {
+      URLEncoder.encode(kv._1, "UTF-8") + "=" + URLEncoder.encode(kv._2, "UTF-8")
+    }).mkString("&")
+  }
 }
 
 object WebQuery {
-  /** parses k1=v1&...&kn=vn */
+  /**
+    * Parses a QueryString into a WebQuery object.
+    *
+    * In general, these take the form of key=value&key=value2.
+    * This method takes care of URLDecoding the strings.
+    * In case of duplicate keys, the first item will take priority.
+    *
+    * @param query
+    * @return
+    */
   def parse(query: String): WebQuery = {
     val kvs = utils.stringToList(query, "&")
     val pairs = kvs map { s =>
       val i = s.indexOf("=")
-      if (i == -1 || i == s.length - 1) (s, "")
+
+      val (k, v) = if (i == -1 || i == s.length - 1) (s, "")
       else (s.substring(0, i), s.substring(i + 1))
+
+      (URLDecoder.decode(k, "UTF-8"), URLDecoder.decode(v, "UTF-8"))
     }
     WebQuery(pairs)
-  }
-}
-
-
-/** straightforward abstraction of the current session */
-case class Session(id: String)
-
-/**
-  * A request made to an extension
-  *
-  * @param path the PATH from above (excluding CONTEXT)
-  * @param query the QUERY from above
-  * @param body the body of the request
-  * @param headers Headers of the request sent to the server
-  * @param session Session Information
-  */
-case class Request(method: RequestMethod.Value, headers: Map[String, String], sessionID: Option[Session], pathStr: String, queryString: String, body: Body) {
-
-  /** components of the path */
-  lazy val pathComponents : List[String] = pathStr.split("/").toList
-
-  /** Name of the extension that should serve this request, if applicable */
-  lazy val extensionName : Option[String] = pathComponents match {
-    case h :: t if h.startsWith(":") => Some(h.substring(1))
-    case _ => None
-  }
-
-  /** path that is served by an extension if applicable, else Nil */
-  lazy val extensionPathComponents : List[String] = extensionName match {
-    case Some(ext) => pathComponents.tail
-    case None => Nil
-  }
-
-  /** the full path requested to this extension, excluding query string */
-  lazy val extensionPath : String = extensionPathComponents.mkString("/")
-
-  /** the full path requested from this server, including query string */
-  lazy val requestPath = "/" + pathStr + "?" + queryString
-
-  /** A parsed version of the query string */
-  lazy val parsedQuery : WebQuery = WebQuery.parse(queryString)
-
-  // FOR BACKWARDS COMPATIBILITY
-  // METHOD CALLS SHOULD USE OTHER METHODS INSTEAD
-  @deprecated("Use [[extensionPathComponents]] instead")
-  lazy val path = extensionPathComponents
-
-  @deprecated("Use [[queryString]] instead")
-  lazy val query : String = queryString
-
-  @deprecated("use [[sessionID]] instead")
-  lazy val session = sessionID.get
-}
-
-/** Request types that can be made */
-object RequestMethod extends Enumeration {
-  val Get = Value("GET")
-  val Post = Value("POST")
-  val Delete = Value("DELETE")
-  val Options = Value("OPTIONS")
-  val Head = Value("HEAD")
-
-  def apply(method: HReqType.Value): RequestMethod.Value = method match {
-    case HReqType.Get => Get
-    case HReqType.PostData => Post
-    case HReqType.PostMulti => Post
-    case HReqType.Delete => Delete
-    case HReqType.Options => Options
-    case HReqType.Head => Head
-  }
-}
-
-object Request {
-  /** creates a new request object from an internal Tiscaf HReqData object */
-  def apply(data : HReqData) : Request = {
-    val method = RequestMethod(data.method)
-    val headers = data.headerKeys.map(k => (k, data.header(k).get)).toMap[String, String]
-    val sessionID = None
-    val pathStr = data.uriPath
-    val queryStr = data.query
-    val bodyOpt = new Body(None)
-    Request(method, headers, sessionID, pathStr, queryStr, bodyOpt)
-  }
-  /** adds information from interal Tiscaf HTalk object into a request */
-  def apply(req : Request, tk: HTalk): Request = {
-    req.copy(body=new Body(tk.req.octets), sessionID=Some(Session(tk.ses.id)))
-  }
-  def apply(tk: HTalk): Request = {
-    apply(apply(tk.req), tk)
-  }
-}
-
-/** the body of an HTTP request
-  *
-  * This class abstracts from tiscaf's HTalk internal.
-  */
-class Body(octets: Option[Array[Byte]]) {
-  @deprecated("Pass octets directly")
-  def this(tk: HTalk) = this(tk.req.octets)
-
-  /** returns the body of a request as a string */
-  def asString: String = {
-    val bodyArray: Array[Byte] = octets.getOrElse(throw ServerError("no body found"))
-    new String(bodyArray, "UTF-8")
-  }
-  
-  /** body (if any) as a string */
-  def asStringO = asString match {
-    case "" => None
-    case s => Some(s)
-  }
-
-  /** returns the body of a request as XML */
-  def asXML: Node = {
-    val bodyString = asString
-    val bodyXML = try {
-      scala.xml.XML.loadString(bodyString).head
-    } catch {
-      case _: Exception => throw ServerError("invalid XML")
-    }
-    scala.xml.Utility.trim(bodyXML)
-  }
-
-  def asJSON = {
-    try {
-      JSON.parse(asString)
-    }
-    catch {
-      case e: JSON.JSONError =>
-        throw ServerError("error in json body").setCausedBy(e)
-    }
   }
 }
 
@@ -371,7 +259,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends HS
     override def sidKey = "MMT_SESSIONID"
     
     def resolve(req: HReqData): Option[HLet] = {
-      val mmtRequest = Request(req)
+      val mmtRequest = ServerRequest(req)
       if (req.method == HReqType.Options) {
         Some(new HSimpleLet {
           def act(tk: HTalk) = checkCORS(tk)
@@ -388,7 +276,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends HS
             }
             val hlet = new HLet {
               def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
-                val properMMTRequest = Request(mmtRequest, tk)
+                val properMMTRequest = ServerRequest(mmtRequest, tk)
                 log("handling request via plugin " + pl.logPrefix)
                 val hl = try {
                   pl(properMMTRequest)
@@ -536,7 +424,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends HS
         </mws:answset>
         XmlResponse(node)
       } catch {
-        case e: Error => errorResponse(e, Request(tk))
+        case e: Error => errorResponse(e, ServerRequest(tk))
       }
       resp.aact(tk)
     }
@@ -553,7 +441,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends HS
         moc.Patcher.patch(diff, controller)
         TextResponse("Success").aact(tk)
       } catch {
-        case e: Error => errorResponse(e, Request(tk)).aact(tk)
+        case e: Error => errorResponse(e, ServerRequest(tk)).aact(tk)
       }
     }
   }

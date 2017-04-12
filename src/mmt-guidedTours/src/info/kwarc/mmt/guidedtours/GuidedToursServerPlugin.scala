@@ -33,7 +33,7 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
     Server.errorResponse(msg, req)
   }
   
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
     try {
       uriComps match {
         case "getTutorial" :: _ => getTutorial

@@ -24,7 +24,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   
   override val logPrefix = "planetary"
      /** Server */   
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
     lazy val json = request.body.asJSON match {
       case j: JSONObject => j
       case _ => throw ServerError("body must be json object")

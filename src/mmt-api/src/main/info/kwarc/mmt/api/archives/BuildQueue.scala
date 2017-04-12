@@ -503,7 +503,7 @@ class BuildQueue extends BuildManager {
           "finished" -> JSONArray(fs: _*))
     }
 
-    def apply(request: Request): HLet = request.path match {
+    def apply(request: ServerRequest): HLet = request.path match {
       case List("clear") =>
         clear
         Server.JsonResponse(JSONNull)

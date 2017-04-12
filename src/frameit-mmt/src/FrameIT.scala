@@ -233,7 +233,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
 
   implicit val unifun : StructuralElement => Unit = x => controller.add(x)
 
-  def apply(request: Request): HLet = request.path match {
+  def apply(request: ServerRequest): HLet = request.path match {
     case "init" :: rest => try {
       controller.handleLine("build FrameIT mmt-omdoc")
       Server.TextResponse("Success")

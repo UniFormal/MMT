@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.presentation.{HTMLRenderingHandler, Presenter, RenderingResult}
 import info.kwarc.mmt.api.refactoring.ArchiveStore
 import info.kwarc.mmt.api.utils.{File, _}
-import info.kwarc.mmt.api.web.{Body, Server, ServerExtension, Session, Request}
+import info.kwarc.mmt.api.web.{Body, Server, ServerExtension, Session, ServerRequest$}
 import tiscaf.{HLet, HReqData}
 
 import scala.collection.immutable.List
@@ -122,7 +122,7 @@ class ConceptServer extends ServerExtension("concepts") {
     }
   })
 
-  def apply(request: Request): HLet =
+  def apply(request: ServerRequest): HLet =
     if (request.path == List("add") && request.query != "") {
       log("Query: " + request.query)
       // TODO: Proper query parsing please -- will do this

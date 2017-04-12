@@ -312,7 +312,7 @@ class ErrorManager extends Extension with Logger {
   private val serve = new ServerExtension("errors") {
     override def logPrefix = self.logPrefix
 
-    def apply(request: Request): HLet = request.path match {
+    def apply(request: ServerRequest): HLet = request.path match {
       case List("file") =>
         val wq = WebQuery.parse(request.query)
         getErrorAnswer(wq.int("child"), wq.string("file"))

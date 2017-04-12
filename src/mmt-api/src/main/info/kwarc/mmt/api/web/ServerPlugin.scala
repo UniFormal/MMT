@@ -34,14 +34,14 @@ abstract class ServerExtension(context: String) extends FormatBasedExtension {
    *
    *         Errors thrown by this method are caught and sent back to the browser.
    */
-  def apply(request: Request): HLet
+  def apply(request: ServerRequest): HLet
 }
 
 /**
  * interprets the body as MMT content
  */
 class PostServer extends ServerExtension("post") {
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
     val wq = WebQuery.parse(request.query)
     val content = wq.string("body", throw ServerError("found no body in post req"))
     val format = wq.string("format", "mmt")
@@ -62,7 +62,7 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
    * @param session ignored
    */
 
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
     // val (nquery,json) = if (query.startsWith("json:")) (query.drop(5),true) else (query,false)
     val path = Path.parse(request.query, controller.getNamespaceMap)
     val key = request.path.headOption.getOrElse("svg")
@@ -131,7 +131,7 @@ class QueryServer extends ServerExtension("query") {
    * @param httpquery ignored
    * @param body the query as XML
    */
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
     val mmtquery = request.body.asXML
     log("qmt query: " + mmtquery)
     val q = Query.parse(mmtquery)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
@@ -157,7 +157,7 @@ class SearchServer extends ServerExtension("search") {
    * @param httpquery search parameters
    * @param body ignored
    */
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
     val wq = WebQuery.parse(request.query)
     val base = wq("base")
     val mod = wq("module")
@@ -220,7 +220,7 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
 
   def getSettings(path : List[String], query : String, body : Body) : Map[String, String]
 
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
     val searchS = request.body.asString
     val settings = getSettings(request.path, request.query, request.body)
     val mathmlS = toHTML(process(searchS, settings))
@@ -254,7 +254,7 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
 
 /** interprets the query as an MMT [[frontend.GetAction]] and returns the result */
 class GetActionServer extends ServerExtension("mmt") {
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
     val action = Action.parseAct(request.query, controller.getBase, controller.getHome)
     val resp: String = action match {
       case GetAction(a: ToWindow) =>
@@ -271,7 +271,7 @@ class GetActionServer extends ServerExtension("mmt") {
 
 /** an HTTP interface for processing [[Message]]s */
 class MessageHandler extends ServerExtension("content") {
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
      if (request.path.length != 1)
        throw LocalError("path must have length 1")
      val wq = WebQuery.parse(request.query)
@@ -311,7 +311,7 @@ class ActionServer extends ServerExtension("action") {
     report.removeHandler(logPrefix)
   }
 
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
     val c = request.query.replace("%20", " ")
     val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
     if (act == Exit) {
@@ -351,7 +351,7 @@ class ActionServer extends ServerExtension("action") {
  * and store the comment as user+date into the discussions folder
  */
 class SubmitCommentServer extends ServerExtension("submit_comment") {
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
     val path = Path.parse(request.query, controller.getNamespaceMap)
     var s = request.body.asString
     val date = Calendar.getInstance().getTime.toString
@@ -450,7 +450,7 @@ class URIProducer extends BuildTarget {
  * serves all constant URIs in an archive or a group of archives
  */
 class URIServer extends ServerExtension("uris") {
-   def apply(request: Request): HLet = {
+   def apply(request: ServerRequest): HLet = {
      val archive = controller.backend.getArchive(request.query).getOrElse {
        throw LocalError("archive not found: " + request.query)
      }

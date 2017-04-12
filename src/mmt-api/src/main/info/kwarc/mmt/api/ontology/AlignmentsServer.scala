@@ -144,7 +144,7 @@ class AlignmentsServer extends ServerExtension("align") {
     save(a)
   }
 
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
     request.path match {
       case "from" :: _ ⇒
         val path = Path.parseS(request.query, nsMap)

@@ -7,8 +7,8 @@ import Server._
 import tiscaf.{HLet, HReqData}
 
 class ParseServer extends ServerExtension(":parse") {
-    def apply(request: Request): HLet = {
-      val wq = WebQuery.parse(request.query)
+    def apply(request: ServerRequest): HLet = {
+      val wq = request.parsedQuery
       val text = wq.string("text", throw LocalError("found no text to parse"))
       val save = wq.boolean("save", false) //if save parameter is "true" then save otherwise don't
       val format = wq.string("format", "elf")

@@ -10,7 +10,7 @@ import scala.concurrent._
 
 class GuidedToursPlugin extends ServerExtension("guidedTours") {
  
-  def apply(request: Request) : HLet = {
+  def apply(request: ServerRequest) : HLet = {
     try {
       request.path match {
         case "getTour" :: _ => getTour

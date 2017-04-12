@@ -201,7 +201,7 @@ class JsonGraphExporter extends ServerExtension("fancygraph") {
         case _ => throw CatchError(path.toString)// Server.plainErrorResponse(GetError(path.toString))
       }
   }
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
     log("Paths: " + request.path)
     log("Query: " + request.query)
     val path = Path.parse(request.query.trim, controller.getNamespaceMap)

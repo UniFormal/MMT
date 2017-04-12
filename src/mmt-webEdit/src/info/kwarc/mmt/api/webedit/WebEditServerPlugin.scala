@@ -16,7 +16,7 @@ import scala.concurrent._
 class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   private lazy val editingService = new EditingServicePlugin(controller)
 
-  def error(msg: String, req : Request): HLet = {
+  def error(msg: String, req : ServerRequest): HLet = {
     log("ERROR: " + msg)
     Server.errorResponse(msg, req)
   }
@@ -29,7 +29,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
     }
   }
 
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): HLet = {
     try {
       request.path match {
         case "autocomplete" :: _ => getAutocompleteResponse
