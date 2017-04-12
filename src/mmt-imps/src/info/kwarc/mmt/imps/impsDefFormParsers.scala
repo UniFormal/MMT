@@ -12,7 +12,7 @@ package object impsDefFormParsers
     var thy  : Option[ArgumentTheory] = None
 
     // Optional arguments
-    var usages  : Option[Usages]  = None
+    var usages  : Option[ArgumentUsages]  = None
     var witness : Option[Witness] = None
 
     val cs : Int = e.children.length
@@ -32,7 +32,7 @@ package object impsDefFormParsers
           case Exp(ds,src) => ds.head match
           {
             case Exp(List(Str("theory")),_)  => thy     = impsArgumentParsers.parseArgumentTheory(Exp(ds,src))
-            case Exp(List(Str("usages")),_)  => usages  = impsArgumentParsers.parseUsages(Exp(ds,src))
+            case Exp(List(Str("usages")),_)  => usages  = impsArgumentParsers.parseArgumentUsages(Exp(ds,src))
             case Exp(List(Str("witness")),_) => witness = impsArgumentParsers.parseWitness(Exp(ds,src))
             case _                           => ()
           }
@@ -58,7 +58,7 @@ package object impsDefFormParsers
     var thy    : Option[ArgumentTheory] = None
 
     // Optional arguments
-    var usages : Option[Usages] = None
+    var usages : Option[ArgumentUsages] = None
     var sort   : Option[Sort]   = None
 
     val cs : Int = e.children.length
@@ -78,7 +78,7 @@ package object impsDefFormParsers
           case Exp(ds,src) => ds.head match
           {
             case Exp(List(Str("theory")),_) => thy    = impsArgumentParsers.parseArgumentTheory(Exp(ds,src))
-            case Exp(List(Str("usages")),_) => usages = impsArgumentParsers.parseUsages(Exp(ds,src))
+            case Exp(List(Str("usages")),_) => usages = impsArgumentParsers.parseArgumentUsages(Exp(ds,src))
             case Exp(List(Str("sort")),_)   => sort   = impsArgumentParsers.parseSort(Exp(ds,src))
             case _                          => ()
           }
@@ -296,7 +296,7 @@ package object impsDefFormParsers
     var lemma   : Boolean = false
     var reverse : Boolean = false
 
-    var usages : Option[Usages]              = None
+    var usages : Option[ArgumentUsages]              = None
     var hmthy  : Option[HomeTheory]          = None
     var trans  : Option[ArgumentTranslation] = None
     var macete : Option[Macete]              = None
@@ -327,7 +327,7 @@ package object impsDefFormParsers
           {
             case Exp(List(Str("theory")),_)      => theory  = impsArgumentParsers.parseArgumentTheory(Exp(ds,src))
             case Exp(List(Str("home-theory")),_) => hmthy   = impsArgumentParsers.parseHomeTheory(Exp(ds,src))
-            case Exp(List(Str("usages")),_)      => usages  = impsArgumentParsers.parseUsages(Exp(ds,src))
+            case Exp(List(Str("usages")),_)      => usages  = impsArgumentParsers.parseArgumentUsages(Exp(ds,src))
             case Exp(List(Str("macete")),_)      => macete  = impsArgumentParsers.parseMacete(Exp(ds,src))
             case Exp(List(Str("translation")),_) => trans   = impsArgumentParsers.parseTranslation(Exp(ds,src))
             case Exp(List(Str("proof")),_)       => prf     = impsArgumentParsers.parseProofScript(Exp(ds,src))

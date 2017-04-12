@@ -1,6 +1,8 @@
 package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.imps.Usage.Usage
+
 
 package object impsArgumentParsers
 {
@@ -12,7 +14,7 @@ package object impsArgumentParsers
 
     var name       : Option[String]       = None
     var formula    : Option[IMPSMathExp]  = None
-    var usgs_prime : List[String]         = Nil
+    var usgs_prime : List[Usage]          = Nil
 
     var foobarList : List[LispExp] = Nil
 
@@ -39,13 +41,20 @@ package object impsArgumentParsers
     // Parsing all usages
     for (c <- foobarList)
     {
-      c match {
-        case Exp(List(Str(x)),_) => usgs_prime = usgs_prime ::: List(x)
+      c match
+      {
+        case Exp(List(Str("elementary-macete")),_)        => usgs_prime = usgs_prime ::: List(Usage.ELEMENTARYMACETE)
+        case Exp(List(Str("transportable-macete")),_)     => usgs_prime = usgs_prime ::: List(Usage.TRANSPORTABLEMACETE)
+        case Exp(List(Str("rewrite")),_)                  => usgs_prime = usgs_prime ::: List(Usage.REWRITE)
+        case Exp(List(Str("transportable-rewrite")),_)    => usgs_prime = usgs_prime ::: List(Usage.TRANSPORTABLEREWRITE)
+        case Exp(List(Str("simplify-logically-first")),_) => usgs_prime = usgs_prime ::: List(Usage.SIMPLIFYLOGICALLYFIRST)
+        case Exp(List(Str("d-r-convergence")),_)          => usgs_prime = usgs_prime ::: List(Usage.DRCONVERGENCE)
+        case Exp(List(Str("d-r-value")),_)                => usgs_prime = usgs_prime ::: List(Usage.DRVALUE)
         case _ => ()
       }
     }
 
-    val usgs : Option[List[String]] = if (usgs_prime.isEmpty) { None } else { Some(usgs_prime) }
+    val usgs : Option[List[Usage]] = if (usgs_prime.isEmpty) { None } else { Some(usgs_prime) }
 
     if (formula.isDefined) { Some(AxiomSpecification(formula.get, name, usgs, e.src)) } else {None}
   }
@@ -72,10 +81,10 @@ package object impsArgumentParsers
 
   /* Parser for IMPS usages objects
    * used in: def-atomic-sort */
-  def parseUsages (e : Exp) : Option[Usages] =
+  def parseArgumentUsages(e : Exp) : Option[ArgumentUsages] =
   {
     /* Can contain one or multiple usages */
-    var usgs : List[String] = List.empty
+    var usgs : List[Usage] = List.empty
 
     if (e.children.length >= 2)
     {
@@ -84,13 +93,19 @@ package object impsArgumentParsers
       {
         e.children(i) match
         {
-          case Exp(List(Str(x)),_) => usgs = usgs ::: List(x)
-          case _                   => None
+          case Exp(List(Str("elementary-macete")),_)        => usgs = usgs ::: List(Usage.ELEMENTARYMACETE)
+          case Exp(List(Str("transportable-macete")),_)     => usgs = usgs ::: List(Usage.TRANSPORTABLEMACETE)
+          case Exp(List(Str("rewrite")),_)                  => usgs = usgs ::: List(Usage.REWRITE)
+          case Exp(List(Str("transportable-rewrite")),_)    => usgs = usgs ::: List(Usage.TRANSPORTABLEREWRITE)
+          case Exp(List(Str("simplify-logically-first")),_) => usgs = usgs ::: List(Usage.SIMPLIFYLOGICALLYFIRST)
+          case Exp(List(Str("d-r-convergence")),_)          => usgs = usgs ::: List(Usage.DRCONVERGENCE)
+          case Exp(List(Str("d-r-value")),_)                => usgs = usgs ::: List(Usage.DRVALUE)
+          case _ => ()
         }
         i += 1
       }
       if (usgs != List.empty)
-      { Some(Usages(usgs, e.src)) } else { None }
+      { Some(ArgumentUsages(usgs, e.src)) } else { None }
 
     } else { None }
   }
@@ -251,7 +266,12 @@ package object impsArgumentParsers
   {
     if (e.children.length == 2) {
       e.children(1) match {
-        case Exp(List(Str(x)),_) => Some(Sort(x, e.src))
+        case Exp(List(Str(x)),_) => {
+          if (x.startsWith("\"") && x.endsWith("\""))
+            { Some(Sort(x.tail.init, e.src))} // drop first and last
+          else
+            { Some(Sort(x, e.src)) }
+        }
         case _                   => None
       }
     } else { None }

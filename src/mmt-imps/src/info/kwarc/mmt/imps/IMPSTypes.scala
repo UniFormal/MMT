@@ -4,6 +4,7 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.imps.Usage.Usage
 
 /* Parser abstract class and case classes. */
 
@@ -191,7 +192,7 @@ case class ConstantSpecifications(lst : List[(String, String)], src : SourceRef)
 
 case class AxiomSpecification(formula : IMPSMathExp,
                               name    : Option[String],
-                              usgs    : Option[List[String]],
+                              usgs    : Option[List[Usage]],
                               src     : SourceRef)
   extends LispExp
 {
@@ -247,14 +248,25 @@ case class Accessors(accs : List[String], src : SourceRef) extends LispExp {
   }
 }
 
-case class Usages(usgs : List[String], src : SourceRef) extends LispExp {
+object Usage extends Enumeration {
+  type Usage = Value
+  val ELEMENTARYMACETE = Value("elementary-macete")
+  val TRANSPORTABLEMACETE = Value("transportable-macete")
+  val REWRITE = Value("rewrite")
+  val TRANSPORTABLEREWRITE = Value("transportable-rewrite")
+  val SIMPLIFYLOGICALLYFIRST = Value("simplify-logically-first")
+  val DRCONVERGENCE = Value("d-r-convergence")
+  val DRVALUE = Value("d-r-value")
+}
+
+case class ArgumentUsages(usgs : List[Usage], src : SourceRef) extends LispExp {
   override def toString : String =
   {
     var str : String = "(usages "
-    str = str + usgs.head
+    str = str + usgs.head.toString
     for (u <- usgs.tail)
     {
-      str = str + " " + u
+      str = str + " " + u.toString
     }
     str = str + ")"
     str
@@ -301,10 +313,10 @@ case class LoadSection(section : String, src : SourceRef) extends LispExp {
 
 /* def-atomic-sort
  * Documentation: IMPS manual pgs. 158, 159 */
-case class AtomicSort(sortName        : String,          /* Positional Argument, Required */
-                      quasiSortString : IMPSMathExp,     /* Positional Argument, Required */
-                      theory          : ArgumentTheory,  /* Keyword Argument, Required */
-                      usages          : Option[Usages],  /* Keyword Argument, Optional */
+case class AtomicSort(sortName        : String, /* Positional Argument, Required */
+                      quasiSortString : IMPSMathExp, /* Positional Argument, Required */
+                      theory          : ArgumentTheory, /* Keyword Argument, Required */
+                      usages          : Option[ArgumentUsages], /* Keyword Argument, Optional */
                       witness         : Option[Witness], /* Keyword Argument, Optional */
                       src             : SourceRef)       /* SourceRef for MMT */
   extends LispExp
@@ -354,7 +366,7 @@ case class Constant(constantName : String, /* Positional Argument, Required */
                     math         : IMPSMathExp, /* Positional Argument, Required */
                     theory       : ArgumentTheory, /* Keyword Argument, Required */
                     sort         : Option[Sort], /* Keyword Argument, Optional */
-                    usages       : Option[Usages], /* Keyword Argument, Optional */
+                    usages       : Option[ArgumentUsages], /* Keyword Argument, Optional */
                     src          : SourceRef)      /* SourceRef for MMT */
   extends LispExp
 {
@@ -432,16 +444,16 @@ case class SchematicMacete(name                 : String, /* Positional Argument
 
 /* def-theorem
  * Documentation: IMPS manual pgs. 184 ff. */
-case class Theorem(name    : String,                      /* Positional argument. Required. */
-                   formula : IMPSMathExp,                 /* Positional argument. Required. */
-                   lemma   : Boolean,                     /* Modifier argument. Optional. */
-                   reverse : Boolean,                     /* Modifier argument. Optional. */
-                   thy     : ArgumentTheory,              /* Keyword Argument, Required */
-                   usages  : Option[Usages],              /* Keyword Argument, Optional */
+case class Theorem(name    : String, /* Positional argument. Required. */
+                   formula : IMPSMathExp, /* Positional argument. Required. */
+                   lemma   : Boolean, /* Modifier argument. Optional. */
+                   reverse : Boolean, /* Modifier argument. Optional. */
+                   thy     : ArgumentTheory, /* Keyword Argument, Required */
+                   usages  : Option[ArgumentUsages], /* Keyword Argument, Optional */
                    trans   : Option[ArgumentTranslation], /* Keyword Argument, Optional */
-                   macete  : Option[Macete],              /* Keyword Argument, Optional */
-                   hmthy   : Option[HomeTheory],          /* Keyword Argument, Optional */
-                   prf     : Option[Proof],               /* Keyword Argument, Optional */
+                   macete  : Option[Macete], /* Keyword Argument, Optional */
+                   hmthy   : Option[HomeTheory], /* Keyword Argument, Optional */
+                   prf     : Option[Proof], /* Keyword Argument, Optional */
                    src     : SourceRef)                   /* SourceRef for MMT */
   extends LispExp
 {
@@ -625,9 +637,15 @@ abstract class IMPSMathExp
 }
 
 case class IMPSSymbolRef(gn : GlobalName) extends IMPSMathExp
-case class IMPSMathSymbol(s : String) extends IMPSMathExp
 
-case class IMPSVar(v : String) extends IMPSMathExp
+case class IMPSMathSymbol(s : String) extends IMPSMathExp {
+  override def toString: String = s
+}
+
+case class IMPSVar(v : String) extends IMPSMathExp {
+  override def toString: String = v
+}
+
 case class IMPSSortRef(s : String) extends IMPSMathExp
 
 case class IMPSTruth() extends IMPSMathExp

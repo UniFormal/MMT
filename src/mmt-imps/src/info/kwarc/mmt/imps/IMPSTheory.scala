@@ -25,13 +25,14 @@ object IMPSTheory
     def apply(t:Term) = Apply(this.term,t)
   }
 
-  object Sort extends Sym("sort") {
+  object Sort extends Sym("sort")
+  {
     def apply(t : Term) : Term = {
       Apply(this.term, t)
     }
   }
 
-  object thm extends Sym("thm")
+  object Thm extends Sym("thm")
   {
     def apply(t : Term) : Term = {
       Apply(this.term, t)

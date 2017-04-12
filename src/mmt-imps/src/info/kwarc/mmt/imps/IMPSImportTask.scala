@@ -4,11 +4,12 @@ import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.{LocalName, _}
 import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
-import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
+import info.kwarc.mmt.api.metadata.MetaDatum
+import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Declaration
+import info.kwarc.mmt.imps.Usage.Usage
 import utils._
 
 /* REMINDER:
@@ -23,24 +24,6 @@ namespace http://imps.blubb
 theory Booleans =
  constant true%val <- http://imps.blubb?Booleans?true%val
  */
-
-class TheoryState(val parent : DPath, val name : LocalName, val meta : MPath)
-{
-  val path : MPath = parent ? name
-  protected var decls : List[Declaration] = Nil
-  def add(d : Declaration) = decls ::= d
-  def getDeclarations = decls.reverse
-  def toTerm = OMMOD(path)
-  def declares(n : LocalName) : Boolean = decls.exists(d => d.name == n)
-
-  object includes {
-    var stored : List[(MPath,Boolean)] = Nil
-    def contains(p : MPath) = stored.exists(a => a._1 == p)
-    def ::=(p : MPath, par : Boolean = false) = stored ::= (p,par)
-    def find(cond : MPath => Boolean) : Option[MPath] = stored.map(_._1).find(cond)
-    def inPars(p : MPath) : Option[Boolean] = stored.find(q => q._1 ==p).map(_._2)
-  }
-}
 
 class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger with MMTTask
 {
@@ -72,7 +55,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
           /* Translate language of the theory */
 
-          /* Translate all axioms */
+          /* Translate all axioms, if there are any */
           if (axioms.isDefined)
           {
             var axcount : Int = -1
@@ -81,17 +64,16 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
               ax match {
                 case AxiomSpecification(formula, aid, usages, src) =>
                 {
-                  val mth : Term = IMPSTheory.thm(doMathExp(formula))
+                  val mth : Term = IMPSTheory.Thm(doMathExp(formula))
                   val name : String = if (aid.isDefined) { aid.get }
                                       else { axcount += 1 ; id + "_unnamed_axiom" + axcount.toString }
 
                   val assumption = symbols.Constant(nu_theory.toTerm,LocalName(name),Nil,Some(mth),None,Some("Assumption"))
 
+                  doSourceRef(assumption,src)
                   controller.add(assumption)
 
                   //TODO: Handle usages
-
-                  transfers += 1
                 }
                 case _ => ()
               }
@@ -107,7 +89,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         // Languages are processed in context of theories using them, not by themselves
         case Language(id,embedlang,embedlangs,bstps,extens,srts,cnstnts,src) => ()
         // If it's none of these, fall back to doDeclaration
-        //case Constant(n,d,t,s,u,src) => doDecl(exp)
+        case Constant(n,d,t,s,u,src)   => { controller.add(doDecl(exp)) }
+        case AtomicSort(n,d,t,u,w,src) => { controller.add(doDecl(exp)) }
         case _ => ()
       }
     }
@@ -122,24 +105,39 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   {
     d match
     {
-      case AtomicSort(name, defstring, theory, usages, witness, src) =>
+      case AtomicSort(name, defstring, theory, usages, _, src) =>
       {
-        // TODO: IMPLEMENT
-        ???
+        val ln : LocalName = LocalName(theory.thy)
+        assert(theories.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
+        val parent = theories(theories.indexWhere(dt => dt.name == ln))
+
+        var definition : Term = IMPSTheory.Sort(doMathExp(defstring))
+
+        /* TODO: We currently forget about witnesses. Should this change? */
+
+        // instead of type None: Some(doUnknown(???))
+        val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, None, Some(definition), None)
+        if (usages.isDefined) { doUsages(nu_atomicSort, usages.get.usgs) }
+        doSourceRef(nu_atomicSort,src)
+        nu_atomicSort
       }
       case Constant(name, definition, theory, sort, usages, src) =>
       {
         val ln : LocalName = LocalName(theory.thy)
-        assert(theories.exists(t => t.name == ln))
+        assert(theories.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
         val parent = theories(theories.indexWhere(dt => dt.name == ln))
 
         /* look for sort in given theory. */
         var srt : Option[Term] = None
         if (sort.isDefined)
         {
-          val ln : LocalName = LocalName(sort.get.sort)
+          val ln_prime : LocalName = LocalName(sort.get.sort)
 
-          assert(parent.getDeclarations.exists(b => b.name == ln))
+          println("~~~> " + ln.toString)
+          for(d <- parent.getDeclarations)
+            { println("~~~+ " + d.name.toString) }
+
+          assert(parent.getDeclarations.exists(b => b.name == ln_prime))
 
           for (decl <- parent.getDeclarations) {
             if (decl.name == ln) { srt = Some(decl.toTerm) }
@@ -148,13 +146,12 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         else
         {
           // TODO: infer sort of definition, see IMPS manual pg. 168/169
-          srt = Some(???)
+          srt = None // Some(???)
         }
 
         // assert(srt.isDefined) <-- to be added again later
 
         val nu_constant = symbols.Constant(parent.toTerm, LocalName(name), Nil, srt, None, Some("Constant"))
-        controller.add(nu_constant)
         nu_constant
       }
       case Theorem(name, formula, lemma, reverse, theory, usages, trans, macete, homeTheory, proof, src) =>
@@ -181,7 +178,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   {
     val ret : Term = d match
     {
+      case IMPSVar(v)           => OMV(v)
       case IMPSSymbolRef(gn)    => OMS(gn)
+      case IMPSMathSymbol(s)    => OMS(IMPSTheory.thpath ? s) // TODO: Is this enough or should the theory also be here?
       case IMPSTruth()          => OMS(IMPSTheory.thpath ? "thetrue")
       case IMPSFalsehood()      => OMS(IMPSTheory.thpath ? "thefalse")
       case IMPSNegation(p)      => IMPSTheory.Negation(doMathExp(p))
@@ -205,17 +204,23 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     ret
   }
 
-  /* Source References. Methods exceedingly small, but look nicer */
-  def doSourceRef(t : Term, s : SourceRef) = {
-    SourceRef.update(t, s)
-  }
-
-  def doSourceRef(d : Declaration, s : SourceRef) = {
-    SourceRef.update(d, s)
-  }
+  /* Source References. Methods exceedingly small, but look nicer than doing this everywhere directly */
+  def doSourceRef(t : Term, s : SourceRef)        = { SourceRef.update(t, s) }
+  def doSourceRef(d : Declaration, s : SourceRef) = { SourceRef.update(d, s) }
 
   /* Other stuff, stubs */
-  def doUnknown(d : LispExp) : Term = {???}
 
+  def doUsages(d : Declaration, usages : List[Usage]) =
+  {
+    for (usage <- usages)
+    {
+      // using rootdpath and not IMPSTheory.rootdpath because this is IMPS, not LUTINS
+      val metadata_verb   : GlobalName = rootdpath ? d.name ? LocalName("usage")
+      val metadata_object : Obj        = OMS(rootdpath ? d.name ? usage.toString)
+      d.metadata.add(new MetaDatum(metadata_verb, metadata_object))
+    }
+  }
+
+  def doUnknown(d : LispExp) : Term = {???}
   def doName(s:String) : LocalName = LocalName(s)
 }
