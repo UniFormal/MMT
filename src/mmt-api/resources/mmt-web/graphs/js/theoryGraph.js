@@ -118,6 +118,30 @@ function TheoryGraph()
 		network.selectNodes(nodesIdInDrawing);
 	}
 	
+	this.colorizeNodes = function(nodeIds,color)
+	{
+		if(nodeIds==undefined)
+		{
+			nodeIds=network.getSelectedNodes();
+		}
+		
+		if(color==undefined)
+		{
+			color="blue";
+		}
+		
+		if(network!=null)
+		{
+			var toUpdate=[];
+			for (var i=0;i<nodeIds.length;i++) 
+			{
+				toUpdate.push({id: nodeIds[i], color:{background:color,highlight:{background:color}}});
+			}
+			nodes.update(toUpdate);
+			network.redraw();
+		}
+	}
+	
 	this.cluster = function(nodeIds,name)
 	{
 		if(nodeIds==undefined)
