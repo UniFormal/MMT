@@ -10,6 +10,8 @@ function TheoryGraph()
     var clusterFactor = 1;
 	var that=this;
 	var zoomClusters=[];
+	var clusterPositions=[];
+	
 	
 	this.downloadCanvasAsImage = function(button)
 	{
@@ -130,6 +132,9 @@ function TheoryGraph()
 		
 		if(network!=null)
 		{
+			clusterPositions['cluster_' +clusterId]=[];
+			clusterPositions['cluster_' +clusterId][0]=nodeIds;
+			clusterPositions['cluster_' +clusterId][1]=network.getPositions(nodeIds);
 			var options = 
 			{
 				joinCondition:function(nodeOptions) 
@@ -148,7 +153,6 @@ function TheoryGraph()
               },
               clusterNodeProperties: {id: 'cluster_' +clusterId , borderWidth: 2, shape: 'database', color:"orange", label:name}
 			}
-
 			network.clustering.cluster(options);
 			clusterId++;
 		}
@@ -214,6 +218,22 @@ function TheoryGraph()
 		}
 	}
 	
+	function openCluster(nodeId)
+	{
+		if (network.isCluster(nodeId) == true) 
+		{
+              network.openCluster(nodeId);
+			  var toUpdate=[];
+			  for (var i=0;i<clusterPositions[nodeId][0].length;i++) 
+			  {
+				  var id=clusterPositions[nodeId][0][i];
+				  toUpdate.push({id: id, x:clusterPositions[nodeId][1][id].x, y:clusterPositions[nodeId][1][id].y});
+			  }
+			  nodes.update(toUpdate);
+			  network.redraw();
+        }
+	}
+	
 	// Called when the Visualization API is loaded.
 	function startRendering() 
 	{
@@ -258,16 +278,25 @@ function TheoryGraph()
 		$(".custom-menu li").click(function()
 		{
 			var nodesFound=network.getSelectedNodes();
-			var selectedNode=undefined;
+			var selectedNode=network.body.nodes[nodesFound[0]];
 			
-			for(var i=0;i<originalNodes.length;i++)
+			if (selectedNode==undefined)
 			{
-				if(originalNodes[i]["id"]==nodesFound[0])
+				for(var i=0;i<originalNodes.length;i++)
 				{
-					selectedNode=originalNodes[i];
-					break;
+					if(originalNodes[i]["id"]==nodesFound[0])
+					{
+						selectedNode=originalNodes[i];
+						break;
+					}
 				}
 			}
+			else
+			{
+				selectedNode=selectedNode.options;
+			}
+			
+			
 			
 			var edgesFound=network.getSelectedEdges();
 			var selectedEdge=undefined;
@@ -292,14 +321,17 @@ function TheoryGraph()
 				selected=selectedNode;
 			}
 			
-			
 			if(selected!=undefined)
 			{
 				// This is the triggered action name
 				switch($(this).attr("data-action")) 
 				{
 					// A case for each action
-					case "first": window.open(selected["url"]); break;
+					case "openWindow": window.open(selected["url"]); break;
+					case "showURL": alert(selected["url"].replace("/?","")); break;
+					case "openCluster": openCluster(selected["id"]); break;
+					case "inferType": alert("Not implemented yet!"); break;
+					case "showDecl": alert("Not implemented yet!"); break;
 				}
 			}
 			
