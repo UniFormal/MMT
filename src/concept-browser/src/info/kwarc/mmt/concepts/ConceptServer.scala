@@ -149,7 +149,7 @@ class ConceptServer extends ServerExtension("concepts") {
       val nsm = NamespaceMap.empty
       val from = qs.find(_.startsWith("from=")).getOrElse(???).drop(5)
       val to = qs.find(_.startsWith("to=")).getOrElse(???).drop(3)
-      if (from == to) Server.errorResponse("Alignments must be between two different URIs!", request.data) else {
+      if (from == to) Server.errorResponse("Alignments must be between two different URIs!", request) else {
         val invertible = qs.exists(_.startsWith("invertible="))
         val parstring = qs.find(_.startsWith("attributes=")).map(s => URLEscaping.unapply(s.drop(11)).trim)
         var rest = parstring.getOrElse("")
@@ -159,7 +159,7 @@ class ConceptServer extends ServerExtension("concepts") {
           case param(key, value, r) ⇒
             pars ::= (key, value)
             rest = r.trim
-          case _ ⇒ Server.errorResponse("Malformed alignment: " + rest, request.data)
+          case _ ⇒ Server.errorResponse("Malformed alignment: " + rest, request)
         }
         val al = alignments.makeAlignment(from,to,pars)
         alignments.addNew(al)

@@ -16,7 +16,7 @@ import scala.concurrent._
 class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   private lazy val editingService = new EditingServicePlugin(controller)
 
-  def error(msg: String, req : HReqData): HLet = {
+  def error(msg: String, req : Request): HLet = {
     log("ERROR: " + msg)
     Server.errorResponse(msg, req)
   }
@@ -39,14 +39,14 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
         //case "termInference" :: _ => getTermInference
         case "constantCorrection" :: _ => getConstantCorrection
         case "includeCorrection" :: _ => getIncludeCorrection
-        case _ => error("Invalid request: " + request.path.mkString("/"), request.data)
+        case _ => error("Invalid request: " + request.path.mkString("/"), request)
       }
     } catch {
       case e: Error =>
         log(e.shortMsg)
-        Server.errorResponse(e.shortMsg, request.data)
+        Server.errorResponse(e.shortMsg, request)
       case e: Exception =>
-        error("Exception occured : " + e.getStackTrace(), request.data)
+        error("Exception occured : " + e.getStackTrace(), request)
     }
   }
 

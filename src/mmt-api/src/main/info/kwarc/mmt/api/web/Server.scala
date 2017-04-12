@@ -1,14 +1,13 @@
 package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api._
-
 import frontend._
 import backend._
 import utils._
-
 import tiscaf._
 import tiscaf.let._
 
+import scala.collection.mutable
 import scala.xml._
 import scala.concurrent._
 
@@ -117,10 +116,10 @@ object Server {
   def XMLResponse(node: scala.xml.Node, status: HStatus.Value): HLet = TextResponse(node.toString, "xml")
 
   /** builds an error response from an error */
-  def errorResponse(error: Error, req: HReqData): HLet = {
+  def errorResponse(error: Error, req: Request): HLet = {
     // we have three modes of error responses: text/html, text/xml, text/plain
     // first we parse everything the server accepts (ignoring priorities)
-    val accepts = req.header("Accept").getOrElse("").split(",").map(_.split(";").head.trim)
+    val accepts = req.headers.lift("Accept").getOrElse("").split(",").map(_.split(";").head.trim)
 
     // find the positions of all the indexes
     val htmlPosition = accepts.indexOf("text/html")
@@ -143,10 +142,7 @@ object Server {
   }
 
   /** builds a smart error message from an error */
-  def errorResponse(msg: String, req: HReqData): HLet = errorResponse(ServerError(msg), req)
-
-  /** builds a smart error message from an error */
-  def errorResponse(msg: String, talk: HTalk): HLet = errorResponse(msg, talk.req)
+  def errorResponse(msg: String, req: Request): HLet = errorResponse(ServerError(msg), req)
 
   /** an error response in plain text format */
   def plainErrorResponse(error: Error): HLet = TextResponse(error.toStringLong, status = HStatus.InternalServerError)
@@ -186,20 +182,6 @@ case class WebQuery(pairs: List[(String, String)]) {
   }
 }
 
-/** straightforward abstraction of the current session */
-case class Session(id: String)
-
-/**
-  * A request made to an extension
-  *
-  * @param path the PATH from above (excluding CONTEXT)
-  * @param query the QUERY from above
-  * @param body the body of the request
-  * @param headers Headers of the request sent to the server
-  * @param session Session Information
-  */
-case class Request(path: List[String], query: String, body: Body, session: Session, data: HReqData)
-
 object WebQuery {
   /** parses k1=v1&...&kn=vn */
   def parse(query: String): WebQuery = {
@@ -213,17 +195,106 @@ object WebQuery {
   }
 }
 
+
+/** straightforward abstraction of the current session */
+case class Session(id: String)
+
+/**
+  * A request made to an extension
+  *
+  * @param path the PATH from above (excluding CONTEXT)
+  * @param query the QUERY from above
+  * @param body the body of the request
+  * @param headers Headers of the request sent to the server
+  * @param session Session Information
+  */
+case class Request(method: RequestMethod.Value, headers: Map[String, String], sessionID: Option[Session], pathStr: String, queryString: String, body: Body) {
+
+  /** components of the path */
+  lazy val pathComponents : List[String] = pathStr.split("/").toList
+
+  /** Name of the extension that should serve this request, if applicable */
+  lazy val extensionName : Option[String] = pathComponents match {
+    case h :: t if h.startsWith(":") => Some(h.substring(1))
+    case _ => None
+  }
+
+  /** path that is served by an extension if applicable, else Nil */
+  lazy val extensionPathComponents : List[String] = extensionName match {
+    case Some(ext) => pathComponents.tail
+    case None => Nil
+  }
+
+  /** the full path requested to this extension, excluding query string */
+  lazy val extensionPath : String = extensionPathComponents.mkString("/")
+
+  /** the full path requested from this server, including query string */
+  lazy val requestPath = "/" + pathStr + "?" + queryString
+
+  /** A parsed version of the query string */
+  lazy val parsedQuery : WebQuery = WebQuery.parse(queryString)
+
+  // FOR BACKWARDS COMPATIBILITY
+  // METHOD CALLS SHOULD USE OTHER METHODS INSTEAD
+  @deprecated("Use [[extensionPathComponents]] instead")
+  lazy val path = extensionPathComponents
+
+  @deprecated("Use [[queryString]] instead")
+  lazy val query : String = queryString
+
+  @deprecated("use [[sessionID]] instead")
+  lazy val session = sessionID.get
+}
+
+/** Request types that can be made */
+object RequestMethod extends Enumeration {
+  val Get = Value("GET")
+  val Post = Value("POST")
+  val Delete = Value("DELETE")
+  val Options = Value("OPTIONS")
+  val Head = Value("HEAD")
+
+  def apply(method: HReqType.Value): RequestMethod.Value = method match {
+    case HReqType.Get => Get
+    case HReqType.PostData => Post
+    case HReqType.PostMulti => Post
+    case HReqType.Delete => Delete
+    case HReqType.Options => Options
+    case HReqType.Head => Head
+  }
+}
+
+object Request {
+  /** creates a new request object from an internal Tiscaf HReqData object */
+  def apply(data : HReqData) : Request = {
+    val method = RequestMethod(data.method)
+    val headers = data.headerKeys.map(k => (k, data.header(k).get)).toMap[String, String]
+    val sessionID = None
+    val pathStr = data.uriPath
+    val queryStr = data.query
+    val bodyOpt = new Body(None)
+    Request(method, headers, sessionID, pathStr, queryStr, bodyOpt)
+  }
+  /** adds information from interal Tiscaf HTalk object into a request */
+  def apply(req : Request, tk: HTalk): Request = {
+    req.copy(body=new Body(tk.req.octets), sessionID=Some(Session(tk.ses.id)))
+  }
+  def apply(tk: HTalk): Request = {
+    apply(apply(tk.req), tk)
+  }
+}
+
 /** the body of an HTTP request
   *
   * This class abstracts from tiscaf's HTalk internal.
   */
-class Body(tk: HTalk) {
-  
-  //def isPresent = tk.req.method == HReqType.Post
-  
+class Body(octets: Option[Array[Byte]]) {
+  @deprecated("Pass octets directly")
+  def this(tk: HTalk) = this(tk.req.octets)
+
   /** returns the body of a request as a string */
   def asString: String = {
-    val bodyArray: Array[Byte] = tk.req.octets.getOrElse(throw ServerError("no body found"))
+    val bodyArray: Array[Byte] = octets.getOrElse(throw ServerError("no body found"))
     new String(bodyArray, "UTF-8")
   }
   
@@ -261,7 +332,7 @@ import Server._
 /** An HTTP RESTful server. */
 class Server(val port: Int, val host: String, controller: Controller) extends HServer with Logger {
 
-  override def name = "MMT HHTP server"
+  override def name = "MMT HTTP server"
   override def hostname = host
   // override def writeBufSize = 16 * 1024
   // make this false if you have extremely frequent requests
@@ -300,31 +371,33 @@ class Server(val port: Int, val host: String, controller: Controller) extends HS
     override def sidKey = "MMT_SESSIONID"
     
     def resolve(req: HReqData): Option[HLet] = {
+      val mmtRequest = Request(req)
       if (req.method == HReqType.Options) {
         Some(new HSimpleLet {
           def act(tk: HTalk) = checkCORS(tk)
         })
       } else {
-        lazy val reqString = "/" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query
+        lazy val reqString = mmtRequest.requestPath
         log("request for " + reqString)
-        req.uriPath.split("/").toList match {
+        mmtRequest.pathComponents match {
           case ":change" :: _ => Some(ChangeResponse)
           case ":mws" :: _ => Some(MwsResponse)
           case hd :: tl if hd.startsWith(":") =>
             val pl = controller.extman.getOrAddExtension(classOf[ServerExtension], hd.substring(1)) getOrElse {
-              return Some(errorResponse("no plugin registered for context " + hd, req))
+              return Some(errorResponse("no plugin registered for context " + hd, mmtRequest))
             }
             val hlet = new HLet {
               def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
+                val properMMTRequest = Request(mmtRequest, tk)
                 log("handling request via plugin " + pl.logPrefix)
                 val hl = try {
-                  pl(Request(tl, req.query, new Body(tk), Session(tk.ses.id), req))
+                  pl(properMMTRequest)
                 } catch {
                   case e: Error =>
-                    errorResponse(e, req)
+                    errorResponse(e, properMMTRequest)
                   case e: Exception =>
                     val le = pl.LocalError("unknown error while serving " + reqString).setCausedBy(e)
-                    errorResponse(le, req)
+                    errorResponse(le, properMMTRequest)
                 }
                 hl.aact(tk)
               }
@@ -463,7 +536,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends HS
         </mws:answset>
         XmlResponse(node)
       } catch {
-        case e: Error => errorResponse(e, tk.req)
+        case e: Error => errorResponse(e, Request(tk))
       }
       resp.aact(tk)
     }
@@ -480,7 +553,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends HS
         moc.Patcher.patch(diff, controller)
         TextResponse("Success").aact(tk)
       } catch {
-        case e: Error => errorResponse(e, tk.req).aact(tk)
+        case e: Error => errorResponse(e, Request(tk)).aact(tk)
       }
     }
   }

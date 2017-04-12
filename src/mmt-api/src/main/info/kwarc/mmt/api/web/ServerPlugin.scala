@@ -293,8 +293,8 @@ class MessageHandler extends ServerExtension("content") {
      }
      controller.handle(message) match {
        case ObjectResponse(obj, tp) => TextResponse(obj, tp)
-       case StructureResponse(id) => errorResponse(id, request.data)
-       case ErrorResponse(msg) => errorResponse(msg, request.data)
+       case StructureResponse(id) => errorResponse(id, request)
+       case ErrorResponse(msg) => errorResponse(msg, request)
      }
   }
 }
