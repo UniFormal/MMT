@@ -108,7 +108,7 @@ object Server {
   def XmlResponse(node: scala.xml.Node): HLet = XMLResponse(node, HStatus.OK)
 
   /**
-    * An XML response that the server sends back to the browser
+    * An XML response that the server sends back to the browserTypedTextResponse
     *
     * @param node   the XML message that is sent in the HTTP body
     * @param status the status to return
@@ -153,65 +153,6 @@ object Server {
   /** an error response in xml format */
   def xmlErrorResponse(error: Error): HLet = XMLResponse(error.toNode, HStatus.InternalServerError)
 
-}
-
-/** straightforward abstraction for web style key-value queries; assumes input is already decoded and duplicate-less */
-case class WebQuery(pairs: List[(String, String)]) {
-  /** @return the value of the key, if present */
-  def apply(key: String): Option[String] = pairs.find(_._1 == key).map(_._2)
-
-  /** @return the string value of the key, default value if not present */
-  def string(key: String, default: => String = ""): String = apply(key).getOrElse(default)
-
-  /** @return the boolean value of the key, default value if not present */
-  def boolean(key: String, default: => Boolean = false) = apply(key).getOrElse(default.toString).toLowerCase match {
-    case "false" => false
-    case "" | "true" => true
-    case s => throw ParseError("boolean expected: " + s)
-  }
-
-  /** @return the integer value of the key, default value if not present */
-  def int(key: String, default: => Int = 0) = {
-    val s = apply(key).getOrElse(default.toString)
-    try {
-      s.toInt
-    }
-    catch {
-      case _: Exception => throw ParseError("integer expected: " + s)
-    }
-  }
-
-  /** @return a string encoded web queru object */
-  def asString : String = {
-    pairs.map(kv => {
-      URLEncoder.encode(kv._1, "UTF-8") + "=" + URLEncoder.encode(kv._2, "UTF-8")
-    }).mkString("&")
-  }
-}
-
-object WebQuery {
-  /**
-    * Parses a QueryString into a WebQuery object.
-    *
-    * In general, these take the form of key=value&key=value2.
-    * This method takes care of URLDecoding the strings.
-    * In case of duplicate keys, the first item will take priority.
-    *
-    * @param query
-    * @return
-    */
-  def parse(query: String): WebQuery = {
-    val kvs = utils.stringToList(query, "&")
-    val pairs = kvs map { s =>
-      val i = s.indexOf("=")
-
-      val (k, v) = if (i == -1 || i == s.length - 1) (s, "")
-      else (s.substring(0, i), s.substring(i + 1))
-
-      (URLDecoder.decode(k, "UTF-8"), URLDecoder.decode(v, "UTF-8"))
-    }
-    WebQuery(pairs)
-  }
 }
 
 
