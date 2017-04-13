@@ -146,8 +146,22 @@ class PathGraphExporter extends RelationGraphExporter with ChangeListener {
   }
   private var newtheories : List[MPath] = Nil
   private var newviews : List[MPath] = Nil
-  private def alltheories = oldtheories ::: newtheories
-  private def allviews = oldviews ::: newviews
+  private def alltheories = {
+    log("Loading theories...")
+    val ret = (controller.depstore.getInds(IsTheory) collect {
+      case mp: MPath => mp
+    }).toList
+    log("Done.")
+    ret
+  }
+  private def allviews = {
+    log("Loading views...")
+    val ret = (controller.depstore.getInds(IsView) collect {
+      case mp : MPath => mp
+    }).toList
+    log("Done.")
+    ret
+  }
 
   override def onAdd(c : StructuralElement) = c match {
     case th : Theory => newtheories ::= th.path
