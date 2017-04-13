@@ -636,7 +636,9 @@ abstract class IMPSMathExp
   override def toString: String = "<~ unparsed IMPS math expression ~>"
 }
 
-case class IMPSSymbolRef(gn : GlobalName) extends IMPSMathExp
+case class IMPSSymbolRef(gn : GlobalName) extends IMPSMathExp {
+  override def toString: String = gn.toString
+}
 
 case class IMPSMathSymbol(s : String) extends IMPSMathExp {
   override def toString: String = s
@@ -646,7 +648,9 @@ case class IMPSVar(v : String) extends IMPSMathExp {
   override def toString: String = v
 }
 
-case class IMPSSortRef(s : String) extends IMPSMathExp
+case class IMPSSortRef(s : String) extends IMPSMathExp {
+  override def toString: String = s
+}
 
 case class IMPSTruth() extends IMPSMathExp
 {

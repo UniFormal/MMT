@@ -103,6 +103,21 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
   def doDecl(d : LispExp) : symbols.Constant =
   {
+    // set this to true for helpful debug output
+    val debug : Boolean = false
+    if (debug)
+    {
+      println("\n>>>>> Call to doDecl for the following expression:\n")
+      println(d.toString)
+      for (thy <- theories)
+      {
+        println("\n<<<<< Theory " + thy.name + " contains the following declarations:")
+        for(d <- thy.getDeclarations)
+        { println("~~~ " + d.name.toString) }
+      }
+
+    }
+
     d match
     {
       case AtomicSort(name, defstring, theory, usages, _, src) =>
@@ -132,10 +147,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         if (sort.isDefined)
         {
           val ln_prime : LocalName = LocalName(sort.get.sort)
-
-          println("~~~> " + ln.toString)
-          for(d <- parent.getDeclarations)
-            { println("~~~+ " + d.name.toString) }
 
           assert(parent.getDeclarations.exists(b => b.name == ln_prime))
 
