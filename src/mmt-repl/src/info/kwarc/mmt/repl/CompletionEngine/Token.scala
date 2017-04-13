@@ -1,7 +1,5 @@
 package info.kwarc.mmt.repl.CompletionEngine
 
-import jdk.nashorn.internal.runtime.QuotedStringTokenizer
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
