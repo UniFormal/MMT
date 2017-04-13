@@ -1,0 +1,144 @@
+<? header("Access-Control-Allow-Origin: *"); ?>
+<!DOCTYPE html>
+<html><head>
+
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+  <title>Theory-Graph Viewer</title>
+
+  
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.css" rel="stylesheet" type="text/css">
+	<link href="css/styles.css" rel="stylesheet" type="text/css">
+  
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.js"></script>
+	<script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<script type="text/javascript" src="js/theoryGraph.js"></script>
+	<script type="text/javascript" src="js/globalFuncs.js"></script>
+	<script type="text/javascript" src="js/globalOptions.js"></script>
+	<script type="text/javascript" src="js/Optimizer.js"></script>
+	<script type="text/javascript" src="js/globalListener.js"></script>
+	
+</head>
+<body >
+Layout Method:
+<select name="methodCluster" onchange="changeMethode(this.selectedIndex);">
+    <option value="0">Standard</option>
+    <option value="1">Hierarchical</option> 
+</select>
+<br>
+You can select more than one node by holding STRG and clicking on nodes to select! <br>
+You can also draw rectangles around nodes to select them by activating "Selection Mode".
+<br>
+<label for="clusternameInput">Clustername: </label>
+<input type="text" id="clusternameInput" name="clusternameInput">
+<button id="clusterButton" onClick="clusterSelectedNodes()">Cluster selected Nodes</button>
+<button id="colorizeButton" onClick="colorizeSelectedNodes()">Colorize selected Nodes</button>
+    <select id="colorNodes" name="colorNodes">
+     	<option value="#FFCCCC">Red</option>
+     	<option value="#CCCCFF">Purple</option>
+     	<option value="#FFFFCC">Yellow</option>
+     	<option value="#FFCC99">Orange</option>
+      	<option value="#CCFFCC">Green</option>
+	<option value="#DDDDDD">Gray</option>
+    </select>
+<button id="selectionModeButton" onClick="switchSelectionMode()">Switch Selection Mode</button>
+<a id="downloadButton"><button onClick="downloadGraph()">Download Graph</button></a>
+<p>
+</p>
+
+	<ul class='custom-menu' style="z-index:100">
+		<li data-action="openWindow">Open in New Window</li>
+		<li data-action="showURL">Show URI</li>
+		<li data-action="inferType">Infer Type</li>
+		<li data-action="showDecl">Show Declaration</li>
+		<li data-action="openCluster">Open Cluster</li>
+	</ul>
+	
+
+	
+<div id="wholeNetwork">	
+<div id="mynetwork" style="top:0px;left:0px;position: absolute; -moz-user-select: none; width: 100%; height: 100%;">
+<canvas style="top:0px;left:0px;position: absolute; -moz-user-select: none; width: 100%; height: 100%;"></canvas>
+</div>
+<canvas id="toolCanvas" style="display:none;z-index:1000;top:0px;left:0px;position: absolute;" width="1200" height="600"></canvas>
+</div>
+<span id='string_span' style='font-size: 17px; diyplay:none;top:-1000px;left:-1000px;positon:absolute;'></span>
+		
+
+		
+		
+		
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.css" rel="stylesheet" type="text/css">
+	<script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+    <script type="text/javascript">
+		var selectionMode=false;
+		var theoryGraph=new TheoryGraph();
+		createNewGraph();
+	    
+	    	function downloadGraph()
+		{
+			theoryGraph.downloadCanvasAsImage(document.getElementById('downloadButton'));
+		}
+		
+		function switchSelectionMode()
+		{
+			if(selectionMode==false)
+			{
+				$("#toolCanvas").css("display","block");
+				selectionMode=true;
+				document.getElementById('toolCanvas').style.cursor = "crosshair";
+			}
+			else
+			{
+				$("#toolCanvas").css("display","none");
+				selectionMode=false;
+				document.getElementById('toolCanvas').style.cursor = "auto";
+			}
+		}
+		
+	    	function colorizeSelectedNodes()
+		{
+			theoryGraph.colorizeNodes(undefined, document.getElementById("colorNodes").value);
+		}
+		
+	    
+		function clusterSelectedNodes()
+		{
+			theoryGraph.cluster(undefined, document.getElementById("clusternameInput").value);
+		}
+	    
+		function changeMethode(idx)
+		{
+			document.body.style.cursor = 'wait';
+			if(idx==0)
+			{
+				THEORY_GRAPH_OPTIONS.layout=undefined;
+			}
+			else if(idx==1)
+			{
+				THEORY_GRAPH_OPTIONS.layout={hierarchical: {sortMethod: "directed",direction: "LR"}};
+			}
+			createNewGraph();
+			document.body.style.cursor = 'auto';
+		}
+		
+	    	function createNewGraph()
+	    	{
+		    theoryGraph.getGraph("https://mathhub.info/mh/mmt/:fancygraph/json/" + getParameterByName("type") + "?" + getParameterByName("uri"));
+	    	}
+	    
+		$(document).bind("contextmenu", function (event) 
+		{
+			// Avoid the real menu
+			event.preventDefault();
+		});
+		
+		
+		
+    </script>
+    
+
+
+
+</body></html>

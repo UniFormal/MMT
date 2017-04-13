@@ -15,6 +15,12 @@ import parser._
  * Instead, type-safety-supporting syntax is offered wherever reasonable, see also [[RSemanticType]].
  */
 abstract class SemanticType extends SemanticObject {
+  
+   /** string representation of this type (should be toString, but we want to force people to implement this) */
+   def asString: String
+   
+   override def toString = asString
+  
    /** the predicate on the semantic type used to obtain subtypes
     *  
     *  true by default

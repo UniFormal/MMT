@@ -5,8 +5,10 @@ import documents._
 import modules._
 import archives._
 import info.kwarc.mmt.api.symbols.Declaration
+import info.kwarc.mmt.api.web._
 import utils._
 import presentation._
+import tiscaf.{HLet, HReqData}
 
 /**
  * builds a graph from relational and then calls dot to produce an svg file
@@ -43,9 +45,17 @@ abstract class RelationGraphExporter extends StructurePresenter {
     rh(svg)
   }
 
-  def asJSON(se : StructuralElement): JSON = {
+  def asJSON(se : StructuralElement): JSONObject = {
     val dg = buildGraph(se)
-    JSONObject(("nodes",dg.JSONNodes),("edges",dg.JSONEdges))
+    val nodes = dg.JSONNodes.toList
+    val edges = dg.JSONEdges.toList//.filter(o => nodes.exists(p => p("label") == o("from")) && nodes.exists(p => p("label") == o("to")))
+    JSONObject(("nodes",JSONArray(nodes:_*)),("edges",JSONArray(edges:_*)))
+  }
+  def asJSON(ls : List[StructuralElement]) : JSONObject = {
+    val dgs = ls.map(buildGraph)
+    val nodes = dgs.flatMap(_.JSONNodes).distinct
+    val edges = dgs.flatMap(_.JSONEdges).distinct
+    JSONObject(("nodes",JSONArray(nodes:_*)),("edges",JSONArray(edges:_*)))
   }
 }
 
@@ -110,5 +120,46 @@ class TheoryGraphExporter extends RelationGraphExporter {
     }
     val tgf = new ontology.TheoryGraphFragment(theories, views, tg)
     tgf.toDot
+  }
+}
+
+class JsonGraphExporter extends ServerExtension("fancygraph") {
+ override val logPrefix = "fancygraph"
+//  log("init")
+  def doJSON(path : Path, exp : RelationGraphExporter) : HLet = path match {
+      /*
+    case d : DPath =>
+      val allTheories = controller.depstore.getInds(IsTheory).flatMap {
+          case mp : MPath if d <= mp =>
+            controller.getO(mp) match {
+              case Some(th : DeclaredTheory) => Some(th)
+              case _ => None
+            }
+          case _ => None
+        }
+      log("Theories: " + allTheories.map(_.name).mkString(", "))
+      Server.JsonResponse(exp.asJSON(allTheories.toList))
+      */
+    case _ =>
+      controller.getO(path) match {
+        case Some(s) =>
+          println("Doing " + s.path)
+          Server.JsonResponse(exp.asJSON(s))
+        case _ => Server.plainErrorResponse(GetError(path.toString))
+      }
+  }
+  def apply(request: Request): HLet = {
+    log("Paths: " + request.path)
+    log("Query: " + request.query)
+    val path = Path.parse(request.query.trim, controller.getNamespaceMap)
+    val (json,key) = if (request.path.headOption == Some("json")) (true,request.path.tail.headOption.getOrElse("svg"))
+      else (false,request.path.headOption.getOrElse("svg"))
+    lazy val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
+      throw LocalError(s"svg file does not exist and exporter $key not available: ${request.path}")
+    }
+    log("Returning " + {if (json) "json" else "fail"} + " for " + path)
+    val ret = doJSON(path,exp)
+    log("Output: " + ret.toString)
+    if (json) doJSON(path,exp) else ???
   }
 }

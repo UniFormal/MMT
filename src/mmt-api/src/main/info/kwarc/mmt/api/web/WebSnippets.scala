@@ -35,8 +35,8 @@ class TreeView extends ServerExtension("tree") {
          }
       }}</root>
    }
-   def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-       val q = query
+   def apply(request: Request): HLet = {
+       val q = request.query
        val node = if (q.startsWith(":root")) {
          val prefix = utils.stringToList(q, "/").tail
          archivesIn(prefix)
@@ -82,8 +82,8 @@ class TreeView extends ServerExtension("tree") {
  * serves a bread crumbs-style navigation component for an HTML page
  */
 class BreadcrumbsServer extends ServerExtension("breadcrumbs") {
-   def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-      val mmtpath = Path.parse(query, controller.getNamespaceMap)
+   def apply(request: Request): HLet = {
+      val mmtpath = Path.parse(request.query, controller.getNamespaceMap)
       val ancs = mmtpath.ancestors.reverse
       var mpathfound = false
       var spathfound = false

@@ -27,24 +27,22 @@ abstract class ServerExtension(context: String) extends FormatBasedExtension {
 
   /**
    * handles the HTTP request
-   * @param path the PATH from above (excluding CONTEXT)
-   * @param query the QUERY from above
-   * @param body the body of the request
+   * @param request The request sent to this ServerExtension
    * @return the HTTP response
    *
    *         Implementing classes can and should use Server.XmlResponse etc to construct responses conveniently.
    *
    *         Errors thrown by this method are caught and sent back to the browser.
    */
-  def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet
+  def apply(request: Request): HLet
 }
 
 /**
  * interprets the body as MMT content
  */
 class PostServer extends ServerExtension("post") {
-  def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-    val wq = WebQuery.parse(query)
+  def apply(request: Request): HLet = {
+    val wq = WebQuery.parse(request.query)
     val content = wq.string("body", throw ServerError("found no body in post req"))
     val format = wq.string("format", "mmt")
     val dpathS = wq.string("dpath", throw ServerError("expected dpath"))
@@ -64,17 +62,17 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
    * @param session ignored
    */
 
-  def apply(httppath: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-    val (nquery,json) = if (query.startsWith("json:")) (query.drop(5),true) else (query,false)
-    val path = Path.parse(nquery, controller.getNamespaceMap)
-    val key = httppath.headOption.getOrElse("svg")
+  def apply(request: Request): HLet = {
+    // val (nquery,json) = if (query.startsWith("json:")) (query.drop(5),true) else (query,false)
+    val path = Path.parse(request.query, controller.getNamespaceMap)
+    val key = request.path.headOption.getOrElse("svg")
     lazy val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
-      throw LocalError(s"svg file does not exist and exporter $key not available: $query")
+      throw LocalError(s"svg file does not exist and exporter $key not available: ${request.query}")
     }
     lazy val se = controller.get(path)
-    if (json) {
+    /* if (json) {
       JsonResponse(exp.asJSON(se))
-    } else {
+    } else { */
       val (exportFolder, relPath) = svgPath(path)
       val svgFile = exportFolder / key / relPath
       val node = if (svgFile.exists) {
@@ -83,7 +81,7 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
         exp.asString(se)
       }
       TypedTextResponse(node, "image/svg+xml")
-    }
+    // }
   }
   
   import Javascript._
@@ -133,8 +131,8 @@ class QueryServer extends ServerExtension("query") {
    * @param httpquery ignored
    * @param body the query as XML
    */
-  def apply(path: List[String], httpquery: String, body: Body, session: Session, req: HReqData): HLet = {
-    val mmtquery = body.asXML
+  def apply(request: Request): HLet = {
+    val mmtquery = request.body.asXML
     log("qmt query: " + mmtquery)
     val q = Query.parse(mmtquery)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
     //log("qmt query: " + q.toString)
@@ -159,13 +157,13 @@ class SearchServer extends ServerExtension("search") {
    * @param httpquery search parameters
    * @param body ignored
    */
-  def apply(path: List[String], httpquery: String, body: Body, session: Session, req: HReqData): HLet = {
-    val wq = WebQuery.parse(httpquery)
+  def apply(request: Request): HLet = {
+    val wq = WebQuery.parse(request.query)
     val base = wq("base")
     val mod = wq("module")
     val name = wq("name")
     val theory = wq("theory")
-    val pattern = wq("pattern")
+    val pattern = wq("pattern") orElse request.body.asStringO
     val format = wq.string("format", "mmt")
     val intype = wq.boolean("type")
     val indef = wq.boolean("definition")
@@ -222,9 +220,9 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
 
   def getSettings(path : List[String], query : String, body : Body) : Map[String, String]
 
-  def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-    val searchS = body.asString
-    val settings = getSettings(path, query, body)
+  def apply(request: Request): HLet = {
+    val searchS = request.body.asString
+    val settings = getSettings(request.path, request.query, request.body)
     val mathmlS = toHTML(process(searchS, settings))
     val mathml = scala.xml.XML.loadString(mathmlS)
     val resp = postProcessQVars(mathml)
@@ -256,8 +254,8 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
 
 /** interprets the query as an MMT [[frontend.GetAction]] and returns the result */
 class GetActionServer extends ServerExtension("mmt") {
-  def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-    val action = Action.parseAct(query, controller.getBase, controller.getHome)
+  def apply(request: Request): HLet = {
+    val action = Action.parseAct(request.query, controller.getBase, controller.getHome)
     val resp: String = action match {
       case GetAction(a: ToWindow) =>
         a.make(controller)
@@ -273,17 +271,17 @@ class GetActionServer extends ServerExtension("mmt") {
 
 /** an HTTP interface for processing [[Message]]s */
 class MessageHandler extends ServerExtension("content") {
-  def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-     if (path.length != 1)
+  def apply(request: Request): HLet = {
+     if (request.path.length != 1)
        throw LocalError("path must have length 1")
-     val wq = WebQuery.parse(query)
+     val wq = WebQuery.parse(request.query)
      lazy val inFormat = wq.string("inFormat")
      lazy val outFormat = wq.string("outFormat")
      lazy val theory = wq.string("theory")
      lazy val context = objects.Context(Path.parseM(theory, controller.getNamespaceMap))
      lazy val inURI = Path.parse(wq.string("uri"))
-     lazy val in = body.asString
-     val message: Message = path.head match {
+     lazy val in = request.body.asString
+     val message: Message = request.path.head match {
        case "get"    => GetMessage(inURI, outFormat)
        case "delete" => DeleteMessage(inURI)
        case "add"    => AddMessage(???, inFormat, in)
@@ -295,8 +293,8 @@ class MessageHandler extends ServerExtension("content") {
      }
      controller.handle(message) match {
        case ObjectResponse(obj, tp) => TextResponse(obj, tp)
-       case StructureResponse(id) => errorResponse(id, req)
-       case ErrorResponse(msg) => errorResponse(msg, req)
+       case StructureResponse(id) => errorResponse(id, request.data)
+       case ErrorResponse(msg) => errorResponse(msg, request.data)
      }
   }
 }
@@ -313,8 +311,8 @@ class ActionServer extends ServerExtension("action") {
     report.removeHandler(logPrefix)
   }
 
-  def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-    val c = query.replace("%20", " ")
+  def apply(request: Request): HLet = {
+    val c = request.query.replace("%20", " ")
     val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
     if (act == Exit) {
       // special case for sending a response when exiting
@@ -353,9 +351,9 @@ class ActionServer extends ServerExtension("action") {
  * and store the comment as user+date into the discussions folder
  */
 class SubmitCommentServer extends ServerExtension("submit_comment") {
-  def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-    val path = Path.parse(query, controller.getNamespaceMap)
-    var s = body.asString
+  def apply(request: Request): HLet = {
+    val path = Path.parse(request.query, controller.getNamespaceMap)
+    var s = request.body.asString
     val date = Calendar.getInstance().getTime.toString
     val end = date.replaceAll("\\s", "")
     //deprecated but will use this until better alternatives come along
@@ -372,7 +370,7 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
     }
     val resp = "<comment>" +
       "<metadata>" +
-      "<topic>" + query + "</topic>" +
+      "<topic>" + request.query + "</topic>" +
       "<user>" + user + "</user>" +
       "<date>" + date + "</date>" +
       "</metadata>" +
@@ -452,9 +450,9 @@ class URIProducer extends BuildTarget {
  * serves all constant URIs in an archive or a group of archives
  */
 class URIServer extends ServerExtension("uris") {
-   def apply(path: List[String], query: String, body: Body, session: Session, req: HReqData): HLet = {
-     val archive = controller.backend.getArchive(query).getOrElse {
-       throw LocalError("archive not found: " + query)
+   def apply(request: Request): HLet = {
+     val archive = controller.backend.getArchive(request.query).getOrElse {
+       throw LocalError("archive not found: " + request.query)
      }
      val f = archive / Dim("export") / "uris" / "uris.json"
      val json = File.read(f)

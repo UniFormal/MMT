@@ -138,8 +138,10 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   }
 
   def readRelational(in: FilePath, controller: Controller, kd: String): Unit = {
+    log("Reading archive " + id)
     if ((this / relational).exists) {
       traverse(relational, in, Archive.traverseIf(kd)) { case Current(inFile, inPath) =>
+        log("in file " + inFile.name)
         utils.File.ReadLineWise(inFile) { line =>
           try {
             val re = controller.relman.parse(line, NamespaceMap(DPath(narrationBase)))

@@ -163,12 +163,12 @@ trait LMFDBBackend {
 
   protected def getKey(schema : DeclaredTheory, err: String => Unit) : String = {
     // HACK HACK HACK; parse the ODK String
-    val spath = OMS(Path.parseS("http://www.opendreamkit.org/?Strings?string", NamespaceMap.empty))
+    val spath = OMS(Path.parseS("http://mathhub.info/MitM/Foundation?Strings?string", NamespaceMap.empty))
 
     schema.metadata.getValues(Metadata.key).headOption.getOrElse {
       err("metadata key 'key' not found in schema: " + schema.path); null
     } match {
-      // case StringLiterals(k) => k // This no longer works; we are using the HACK below
+      case StringLiterals(k : String) => k // This no longer works; we are using the HACK below
       case UnknownOMLIT(a, `spath`) => a.toString
       case s => println(s.getClass); err("metadata key 'key' is not a string in schema: " + schema.path); null
     }

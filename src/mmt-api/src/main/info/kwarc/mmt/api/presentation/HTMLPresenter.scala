@@ -13,9 +13,10 @@ import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.archives.BuildTask
 import info.kwarc.mmt.api.opaque.OpaqueHTMLPresenter
-
 import HTMLAttributes._
 import File.scala2Java
+import info.kwarc.mmt.api.parser.ParseResult
+
 import scala.Range
 
 abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
@@ -76,7 +77,10 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       }
    }
    private def doMath(t: Obj, owner: Option[CPath]) {
-        objectLevel(t, owner)(rh)
+        objectLevel(t match {
+          case tm : Term => ParseResult.fromTerm(tm).term
+          case o => o
+        }, owner)(rh)
    }
    
    private object cssClasses {
@@ -131,7 +135,10 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       val generatedCss = if (d.isGenerated) " generated " else ""
       div(basicCss + generatedCss, attributes = List(toggleTarget -> "generated")) {
          div("constant-header") {
-           span {text(d.feature + " ")}
+           span {text({d match {
+             case Include(_,_,_) => "include"
+             case _ => d.feature
+           }} + " ")}
            span {doName(d)}
            def toggleComp(comp: ComponentKey) {
               toggle(compRow(comp), comp.toString.replace("-", " "))

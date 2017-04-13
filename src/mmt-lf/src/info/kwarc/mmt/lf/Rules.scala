@@ -180,7 +180,8 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
                 iterate(fT, args)
               case None =>
                 history += "failed"
-                args.foreach {t => solver.inferType(t)(stack, history.branch)} // inference of the argument may solve some variables
+                //TODO commented out because it looks redundant, check if it's ever helpful
+                //args.foreach {t => solver.inferType(t)(stack, history.branch)} // inference of the argument may solve some variables
                 None
             }
          case _ =>

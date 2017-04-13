@@ -33,12 +33,12 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
     Server.errorResponse(msg, req)
   }
   
-  def apply(uriComps: List[String], query: String, body : Body): HLet = {
+  def apply(request: Request): HLet = {
     try {
       uriComps match {
         case "getTutorial" :: _ => getTutorial
         case "gethtml" :: _ => getHtmlResponse
-        case _ => error("Invalid request: " + uriComps.mkString("/"))
+        case _ => error("Invalid request: " + request.path.mkString("/"))
       }
     } catch {
       case e : Error => 

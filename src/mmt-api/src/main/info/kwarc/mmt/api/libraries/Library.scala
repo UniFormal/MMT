@@ -722,6 +722,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         checkNoAfter
         se match {
            case doc: Document =>
+             if (dp.^! == dp) documents(dp.^^) = doc
               documents(dp) = doc
            case _ =>
               wrongType("document")

@@ -20,6 +20,10 @@ object Combinators {
 
 object Extends extends FlexaryConstantScala(Combinators._path, "extends")
 
+// TODO all rules must preserve and reflect typing errors
+// name clashes can be checked at very end on flat theory
+// declaration merging can also happen at very end
+
 object ComputeExtends extends ComputationRule(Extends.path) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
       val Extends(thy,wth@_*) = tm
@@ -31,7 +35,7 @@ object ComputeExtends extends ComputationRule(Extends.path) {
           }
         case OMMOD(th) =>
           wth match {
-            case OMLList(omls) => Some(AnonymousTheory(Some(th),omls))
+            case OMLList(omls) => Some(AnonymousTheory(Some(th),omls)) //TODO should be IncludeOML
             case _ => None
           }
         case _ => None

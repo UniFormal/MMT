@@ -18,31 +18,32 @@ class Plugin extends frontend.Plugin {
   }
 }
 
-object ODK {
-   val path = DPath(URI("http","www.opendreamkit.org"))
+object MitM {
+   val path = DPath(URI("http","mathhub.info") / "MitM" / "Foundation")
 }
 
 object Math {
-  def tm(s : GlobalName) = Apply(OMS(tms),OMS(s))
-  val path = ODK.path ? "Math"
+  // def tm(s : GlobalName) = Apply(OMS(tms),OMS(s))
+  val path = MitM.path ? "Math"
 
-  val typesystem = ODK.path ? "Types"
-  val logic = ODK.path ? "Logic"
-  val natliterals = ODK.path ? "Nat"
-  val intliterals = ODK.path ? "Int"
-  val strings = ODK.path ? "Strings"
-  val lists = ODK.path ? "Lists"
-  val vectors = ODK.path ? "Vectors"
-  val matrices = ODK.path ? "Matrices"
+  // val typesystem = ODK.path ? "Logic"
+  val logic = MitM.path ? "Logic"
+  // val natliterals = ODK.path ? "Nat"
+  // val intliterals = ODK.path ? "Int"
+  val literals = MitM.path ? "Literals"
+  val strings = MitM.path ? "Strings"
+  val lists = MitM.path ? "Lists"
+  val vectors = MitM.path ? "Vectors"
+  val matrices = MitM.path ? "Matrices"
 
-  val tms = typesystem ? "tm"
+  // val tms = typesystem ? "tm"
   val bool = logic ? "bool"
   val tt = logic ? "true"
   val ff = logic ? "false"
-  val int = intliterals ? "int"
-  val nat = natliterals ? "nat"
-  val pos = natliterals ? "pos"
-  val succ = natliterals ? "nat_succ"
+  val int = literals ? "int_lit"
+  val nat = literals ? "nat_lit"
+  val pos = literals ? "pos_lit"
+  val succ = literals ? "nat_lit_succ"
   val string = strings ? "string"
   val list = lists ? "list"
   val nil = lists ? "nil"
@@ -53,8 +54,8 @@ object Math {
   val matrix = matrices ? "matrix"
   val matrixconst = matrices ? "matrix_const"
   
-  val n = tm(nat)
-  val z = tm(int)
+  val n = OMS(nat)
+  val z = OMS(int)
   val N = StandardNat
   val Z = StandardInt
 }
@@ -74,7 +75,7 @@ object NatSuccInverse extends InverseOperator(Math.succ) {
   }
 }
 
-object StringLiterals extends RealizedType(Math.tm(Math.string),StandardString)
+object StringLiterals extends RealizedType(OMS(Math.string),StandardString)
 
 object IntegerSubtype extends SubtypingRule {
   val head = Math.int
