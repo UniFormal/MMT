@@ -1,6 +1,7 @@
 package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureChecker, RelationHandler}
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.{LocalName, _}
 import info.kwarc.mmt.api.frontend._
@@ -27,48 +28,6 @@ theory Booleans =
  constant true%val <- http://imps.blubb?Booleans?true%val
  */
 
-// See also: This exact thing, but in PVS
-class TranslationState (bt : BuildTask)
-{
-            var vars     : Context              = Context.empty
-            var theories : List[DeclaredTheory] = Nil
-  protected var unknowns : Int                  = 0
-
-
-  protected def doiName(i : Int, isType : Boolean) : LocalName = {
-    LocalName("") / { if (isType) LocalName("I") else LocalName("i") } / i.toString
-  }
-
-  def doUnknown : Term = OMV(doiName({unknowns+=1;unknowns-1},false))
-
-  def bindUnknowns(t : Term) : Term =
-  {
-    val symbs = t.freeVars.collect {
-      case ln if ln.toString.startsWith("""/i/""") => ln
-    }
-
-    val cont = symbs.flatMap(n =>
-    {
-      val i = (0 until unknowns).find(j => n == doiName(j,false))
-      if (i.isDefined) {
-        val v1 = VarDecl(doiName(i.get,true), Some(OMS(Typed.ktype)), None, None)
-        val v2 = VarDecl(n, Some(OMV(doiName(i.get,true))), None, None)
-        List(v1,v2)
-      }
-      else throw GeneralError("No unknown " + n)
-    })
-
-    if (unknowns > 0 && cont.nonEmpty) {
-      OMBIND(OMS(Path.parseS("http://cds.omdoc.org/mmt?mmt?unknown", NamespaceMap.empty)), cont, t)
-    } else { t }
-  }
-
-  def reset = {
-    unknowns = 0
-    vars = Context.empty
-  }
-}
-
 class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger with MMTTask
 {
 	def logPrefix = "imps-omdoc"
@@ -93,10 +52,25 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         // Languages are processed in context of theories using them, not by themselves
         case Language(id,embedlang,embedlangs,bstps,extens,srts,cnstnts,src) => ()
         // If it's none of these, fall back to doDeclaration
-        case Constant(n,d,t,s,u,src)          => { doDecl(exp) ; transfers += 1 }
-        case AtomicSort(n,d,t,u,w,src)        => { doDecl(exp) ; transfers += 1 }
-        case SchematicMacete(n,f,t,nu,tr,src) => { doDecl(exp) ; transfers += 1 }
-        case _ => ()
+        case _ => { doDecl(exp) ; transfers += 1 }
+      }
+    }
+
+    // Run Checker (to resolve unknowns, etc)
+    // Set to true to run
+    val typecheck : Boolean = false
+    if (typecheck)
+    {
+      log("Checking:")
+      logGroup
+      {
+        val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
+          throw GeneralError("no checker found")
+        }.asInstanceOf[MMTStructureChecker]
+        trans.theories foreach {p =>
+          val ce = new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore, this)
+          (checker.apply(p)(ce))
+        }
       }
     }
 
@@ -157,25 +131,27 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         for(d <- thy.getDeclarations)
         { println("~~~ " + d.name.toString) }
       }
-
     }
 
     d match
     {
-      case AtomicSort(name, defstring, theory, usages, _, src) =>
+      case AtomicSort(name, defstring, theory, usages, witness, src) =>
       {
         val ln : LocalName = LocalName(theory.thy)
         assert(trans.theories.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
         val parent = trans.theories(trans.theories.indexWhere(dt => dt.name == ln))
 
-        var definition : Term = IMPSTheory.Sort(doMathExp(defstring))
+        val definition : Term = IMPSTheory.Sort(doMathExp(defstring))
+        val sorttype   : Term = trans.doUnknown
+        trans.bindUnknowns(sorttype)
 
-        /* TODO: We currently forget about witnesses. Should this change? */
+        val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, Some(sorttype), Some(definition), None)
 
-        // instead of type None: Some(doUnknown(???))
-        val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, None, Some(definition), None)
-        if (usages.isDefined) { doUsages(nu_atomicSort, usages.get.usgs) }
+        /* Add available MetaData */
+        if (witness.isDefined) { doMetaData(nu_atomicSort, "witness", witness.get.witness.toString) }
+        if (usages.isDefined)  { doUsages(nu_atomicSort, usages.get.usgs) }
         doSourceRef(nu_atomicSort,src)
+
         controller add nu_atomicSort
       }
       case Constant(name, definition, theory, sort, usages, src) =>
@@ -196,14 +172,18 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
             if (decl.name == ln_prime) { srt = Some(decl.toTerm) }
           }
         }
-        else { srt = Some(trans.doUnknown) }
+        else {
+          srt = Some(trans.doUnknown)
+        }
 
         assert(srt.isDefined)
         if (srt.isDefined) { trans.bindUnknowns(srt.get) }
 
+        /* Add available MetaData */
         val nu_constant = symbols.Constant(parent.toTerm, LocalName(name), Nil, srt, None, Some("Constant"))
         doSourceRef(nu_constant,src)
         if (usages.isDefined) { doUsages(nu_constant,usages.get.usgs) }
+
         controller add nu_constant
       }
       case Theorem(name, formula, lemma, reverse, theory, usages, transp, macete, homeTheory, proof, src) =>
@@ -212,15 +192,23 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         assert(trans.theories.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
         val parent : DeclaredTheory = trans.theories(trans.theories.indexWhere(dt => dt.name == ln))
 
-        // TODO: Currently forgets lemma, reverse, trans, macete, hometheory (and proof)
-        //       Those probably should be put into metadata.
+        // TODO: Currently still forgets about the proof
 
         val mth : Term = IMPSTheory.Thm(doMathExp(formula))
         val nu_theorem = symbols.Constant(parent.toTerm, doName(name), Nil, Some(mth), None, Some("Theorem"))
         //                                                                              ^-- proof goes here!
 
-        if (usages.isDefined) { doUsages(nu_theorem, usages.get.usgs) }
+        /* Add available MetaData */
+        if (usages.isDefined)     { doUsages(nu_theorem, usages.get.usgs) }
+        if (transp.isDefined)     { doMetaData(nu_theorem, "translation", transp.get.trans) }
+        if (macete.isDefined)     { doMetaData(nu_theorem, "macete", macete.get.macete) }
+        if (homeTheory.isDefined) { doMetaData(nu_theorem, "homeTheory", homeTheory.get.hmthy) }
+
+        if (lemma)   { doMetaData(nu_theorem,"lemma","present") }   else { doMetaData(nu_theorem,"lemma","absent") }
+        if (reverse) { doMetaData(nu_theorem,"reverse","present") } else { doMetaData(nu_theorem,"reverse","absent") }
+
         doSourceRef(nu_theorem, src)
+
         controller add nu_theorem
       }
       case SchematicMacete(name, formula, thy, nullPresent,transportablePresent,src) =>
@@ -298,5 +286,57 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     }
   }
 
+  /* Add more generic metadata, meant to be used for short strings, not proofs
+   * Might be rewritten, when we have cleverer solutions for MetaData */
+  def doMetaData(d : Declaration, metaVerb : String, metaObject : String) : Unit =
+  {
+    val mv : GlobalName = rootdpath ? d.name ? LocalName(metaVerb)
+    val mo : Obj        = OMS(rootdpath ? d.name ? metaObject)
+
+    d.metadata.add(new MetaDatum(mv,mo))
+  }
+
   def doName(s : String) : LocalName = LocalName(s)
+}
+
+// See also: This exact thing, but in PVS
+class TranslationState (bt : BuildTask)
+{
+  var vars     : Context              = Context.empty
+  var theories : List[DeclaredTheory] = Nil
+  protected var unknowns : Int                  = 0
+
+
+  protected def doiName(i : Int, isType : Boolean) : LocalName = {
+    LocalName("") / { if (isType) LocalName("I") else LocalName("i") } / i.toString
+  }
+
+  def doUnknown : Term = OMV(doiName({unknowns+=1;unknowns-1},false))
+
+  def bindUnknowns(t : Term) : Term =
+  {
+    val symbs = t.freeVars.collect {
+      case ln if ln.toString.startsWith("""/i/""") => ln
+    }
+
+    val cont = symbs.flatMap(n =>
+    {
+      val i = (0 until unknowns).find(j => n == doiName(j,false))
+      if (i.isDefined) {
+        val v1 = VarDecl(doiName(i.get,true), Some(OMS(Typed.ktype)), None, None)
+        val v2 = VarDecl(n, Some(OMV(doiName(i.get,true))), None, None)
+        List(v1,v2)
+      }
+      else throw GeneralError("No unknown " + n)
+    })
+
+    if (unknowns > 0 && cont.nonEmpty) {
+      OMBIND(OMS(Path.parseS("http://cds.omdoc.org/mmt?mmt?unknown", NamespaceMap.empty)), cont, t)
+    } else { t }
+  }
+
+  def reset = {
+    unknowns = 0
+    vars = Context.empty
+  }
 }
