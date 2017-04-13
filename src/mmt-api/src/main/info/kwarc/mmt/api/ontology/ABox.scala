@@ -52,11 +52,12 @@ class RelStore(report : frontend.Report) {
            case Individual(p, tp) =>
               types(p) = tp
               individuals += (tp, p)
+              /*
               p.ancestors match {
                  case `p` :: tail =>
                     tail.foldLeft(p)((q1,q2) => {objects += ((q2,Declares),q1) ; q2}) // seems to be necessary to add theories to their namespaces
                  case _ =>
-              }
+              } */
          }
       }
    }

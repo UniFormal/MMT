@@ -37,7 +37,7 @@ class TheoryState(val parent : DPath, val name : LocalName, val meta : MPath) {
 abstract class TranslationState {
   protected var unknowns = 0
   var vars : Context = Context.empty
-  protected def doiName(i : Int, istp : Boolean) =LocalName("") / {if (istp) LocalName("I") else LocalName("i")} / i.toString
+  protected def doiName(i : Int, istp : Boolean) = LocalName("") / {if (istp) LocalName("I") else LocalName("i")} / i.toString
   def doUnknown = OMV(doiName({unknowns+=1;unknowns-1},false))
 
   def newName(s:String,start:Int = 1,ln : Option[LocalName] = None) : LocalName

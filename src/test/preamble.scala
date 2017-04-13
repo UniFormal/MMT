@@ -1,5 +1,6 @@
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.frontend.Run
+import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, JsonGraphExporter, PathGraphExporter}
 
 /** An abstract class for test methods. Instantiates a controller, sets the mathpath for archives,
   * loads the AlignmentsServer (so you can run a Server without getting an error message.
@@ -35,11 +36,17 @@ abstract class Test(archivepath : String,
   controller.handleLine("mathpath archive " + archivepath)
   controller.handleLine("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath)
 
+
   def doFirst : Unit = {}
 
   def run : Unit
 
   def main(args: Array[String]): Unit = try {
+
+    controller.extman.addExtension(new DependencyGraphExporter)
+    controller.extman.addExtension(new DeclarationTreeExporter)
+    controller.extman.addExtension(new JsonGraphExporter)
+    controller.extman.addExtension(new PathGraphExporter)
       doFirst
       if (serverport.isDefined) {
         //controller.handleLine("clear")

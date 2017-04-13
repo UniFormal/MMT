@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import documents._
 import modules._
 import archives._
+import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.web._
 import utils._
@@ -123,29 +124,67 @@ class TheoryGraphExporter extends RelationGraphExporter {
   }
 }
 
+class PathGraphExporter extends RelationGraphExporter with ChangeListener {
+  val key = "pathgraph"
+  override val logPrefix = "pathgraph"
+
+  lazy val oldtheories = {
+    log("Loading theories...")
+    val ret = (controller.depstore.getInds(IsTheory) collect {
+      case mp: MPath => mp
+    }).toList
+    log("Done.")
+    ret
+  }
+  lazy val oldviews = {
+    log("Loading views...")
+    val ret = (controller.depstore.getInds(IsView) collect {
+      case mp : MPath => mp
+    }).toList
+    log("Done.")
+    ret
+  }
+  private var newtheories : List[MPath] = Nil
+  private var newviews : List[MPath] = Nil
+  private def alltheories = oldtheories ::: newtheories
+  private def allviews = oldviews ::: newviews
+
+  override def onAdd(c : StructuralElement) = c match {
+    case th : Theory => newtheories ::= th.path
+    case v : View => newviews ::= v.path
+    case _ =>
+  }
+  private lazy val tg: ontology.TheoryGraph = new ontology.TheoryGraph(controller.depstore)
+
+  def buildGraph(se: StructuralElement) : DotGraph = {
+    val dpath = se match {
+      case d: Document => d.path
+      case mp : Module => mp.parent
+      case d : Declaration => d.parent.parent
+      case _ => ???
+    }
+    log("Doing " + dpath)
+    val (theories,views) = (alltheories.filter(dpath <= _),allviews.filter(dpath <= _))
+
+    val tgf = new ontology.TheoryGraphFragment(theories, views, tg)
+    log("Done.")
+    tgf.toDot
+  }
+
+}
+
 class JsonGraphExporter extends ServerExtension("fancygraph") {
  override val logPrefix = "fancygraph"
+  private case class CatchError(s : String) extends Throwable
 //  log("init")
-  def doJSON(path : Path, exp : RelationGraphExporter) : HLet = path match {
-      /*
-    case d : DPath =>
-      val allTheories = controller.depstore.getInds(IsTheory).flatMap {
-          case mp : MPath if d <= mp =>
-            controller.getO(mp) match {
-              case Some(th : DeclaredTheory) => Some(th)
-              case _ => None
-            }
-          case _ => None
-        }
-      log("Theories: " + allTheories.map(_.name).mkString(", "))
-      Server.JsonResponse(exp.asJSON(allTheories.toList))
-      */
-    case _ =>
+  def doJSON(path : Path, exp : RelationGraphExporter) : JSONObject = {
       controller.getO(path) match {
         case Some(s) =>
           println("Doing " + s.path)
-          Server.JsonResponse(exp.asJSON(s))
-        case _ => Server.plainErrorResponse(GetError(path.toString))
+          exp.asJSON(s)
+        case None if path.isInstanceOf[DPath] =>
+          exp.asJSON(new Document(path.asInstanceOf[DPath],true))
+        case _ => throw CatchError(path.toString)// Server.plainErrorResponse(GetError(path.toString))
       }
   }
   def apply(request: Request): HLet = {
@@ -159,7 +198,13 @@ class JsonGraphExporter extends ServerExtension("fancygraph") {
     }
     log("Returning " + {if (json) "json" else "fail"} + " for " + path)
     val ret = doJSON(path,exp)
-    log("Output: " + ret.toString)
-    if (json) doJSON(path,exp) else ???
+    log("Output: " + ret.getAsList(classOf[JSON],"nodes").length + " nodes, " + ret.getAsList(classOf[JSON],"edges").length + " edges.")
+    if (json) try {
+      Server.JsonResponse(doJSON(path,exp))
+    } catch {
+      case CatchError(s) =>
+        log("Fail: " + s)
+        Server.plainErrorResponse(GetError(s))
+    } else ???
   }
 }
