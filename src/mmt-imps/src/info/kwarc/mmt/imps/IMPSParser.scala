@@ -89,9 +89,11 @@ class IMPSParser
     println("\n#### Summary for " + uri.toString + ":")
     println("#### " + exprs.length + " expressions and subexpressions parsed; " + successes + " Successes, " + failures + " explicit Failures and " + dummies + " Dummies")
 
-    for (ex <- definedExprs)
+    // Set to true for pretty helpful debug output
+    val debug : Boolean = false
+    if (debug)
     {
-      println(">>> " + ex.getClass.toString)
+      for (ex <- definedExprs) { println(">>> " + ex.getClass.toString) }
     }
 
     /* Print parsed expressions for diff */
