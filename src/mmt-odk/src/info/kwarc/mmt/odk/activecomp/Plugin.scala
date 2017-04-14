@@ -2,7 +2,6 @@ package info.kwarc.mmt.odk.activecomp
 
 import info.kwarc.mmt.api.utils.{JSONObject, JSONString}
 import info.kwarc.mmt.api.web._
-import tiscaf.{HLet}
 
 import scala.collection.immutable.List
 
@@ -19,7 +18,7 @@ class Plugin extends ServerExtension("activecomp") {
     *
     *         Errors thrown by this method are caught and sent back to the browser.
     */
-  def apply(request: ServerRequest): HLet = {
+  def apply(request: ServerRequest): ServerResponse = {
     request.path match {
       case List("actions") => handleActions(request.body)
       case Nil => handleComputation(request.body)
@@ -27,12 +26,12 @@ class Plugin extends ServerExtension("activecomp") {
   }
 
   /* handles listing all active computations */
-  def handleActions(body : Body): HLet = {
-    Server.JsonResponse(JSONObject.fromList(activeComputation.all.map(ac => (JSONString(ac.key), JSONString(ac.desc)))))
+  def handleActions(body : Body): ServerResponse = {
+    ServerResponse.JsonResponse(JSONObject.fromList(activeComputation.all.map(ac => (JSONString(ac.key), JSONString(ac.desc)))))
   }
 
   /** handles an active computation */
-  def handleComputation(body: Body): HLet = {
+  def handleComputation(body: Body): ServerResponse = {
     // read the objective and the context
     val objective = body.asJSON.asInstanceOf[JSONObject]
 
@@ -50,6 +49,6 @@ class Plugin extends ServerExtension("activecomp") {
     val response = action(math, values)
 
     // and return some json
-    Server.JsonResponse(response.toJSON)
+    ServerResponse.JsonResponse(response.toJSON)
   }
 }

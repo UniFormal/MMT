@@ -1,22 +1,48 @@
 package info.kwarc.mmt.api.web
 
+import java.io.InputStream
+
 import info.kwarc.mmt.api.Error
 import info.kwarc.mmt.api.utils.{JSON, xml}
-import tiscaf.{HLet, HSimpleLet, HStatus, HTalk}
 
 import scala.collection.mutable
 
 /** represents a response sent by the server */
-class ServerResponse(var statusCode: ResponseStatusCode, val headers : mutable.Map[String, String], var body : Array[Byte]) {
+class ServerResponse {
+
+  /** headers to be sent in the response */
+  var headers : mutable.Map[String, String] = new mutable.HashMap()
+
+  /** the statusCode of the response */
+  var statusCode : ResponseStatusCode = OK
+
+  /** the content type of the response */
+  def contentType : String = headers.getOrElse("Content-Type", "").split(";").head
 
   /** sets the content type of this serverResponse */
-  def setContentType(tp : String): Unit =  {
+  def contentType_=(tp : String): Unit =  {
     headers("Content-Type") = s"$tp; charset=utf8"
   }
 
-  /** sets the response text of this ServerResponse */
-  def setText(text : String): Unit = {
-    body = text.getBytes("utf-8")
+
+  private var outputStream : Either[Array[Byte], InputStream] = Left(Array.empty)
+
+  /** the ouput is either an array or read directly from an input stream */
+  def output : Either[Array[Byte], InputStream] = outputStream
+
+  /** sets the output to an array of bytes */
+  def output_= (ary : Array[Byte]): Unit = {
+    outputStream = Left(ary)
+  }
+
+  /** sets the output to text */
+  def output_=(txt : String) : Unit = {
+    outputStream = Left(txt.getBytes("utf-8"))
+  }
+
+  /** sets the output to an InputStream */
+  def output_=(io: InputStream) : Unit = {
+    outputStream = Right(io)
   }
 
   /** sets a CORS header matching to a request */
@@ -31,9 +57,6 @@ class ServerResponse(var statusCode: ResponseStatusCode, val headers : mutable.M
 
 object ServerResponse {
 
-  /** creates a new (empty) server Response */
-  def empty() : ServerResponse = new ServerResponse(OK, new mutable.HashMap(), new Array(0))
-
   /**
     * A textual response that contains a status code and other things
     * @param text the message that is sent in the HTTP body
@@ -41,10 +64,40 @@ object ServerResponse {
     * @param statusCode the statusCode of the response
     */
   def apply(text : String, tp : String, statusCode : ResponseStatusCode) : ServerResponse = {
-    val resp = empty()
+    val resp = new ServerResponse
     resp.statusCode = statusCode
-    resp.setContentType(tp)
-    resp.setText(text)
+    resp.contentType = tp
+    resp.output = text
+    resp
+  }
+
+  def resource(path: String) : ServerResponse = {
+    //TODO: Make sure that the path is cleaned up
+    // as we do not want .. in it
+    val properPath = path.replace("//", "/")
+    val io = Util.loadResource(properPath)
+
+    if(io == null){
+      return TextResponse(s"Path $path not found", statusCode = NotFound)
+    }
+
+    val fileExtension = {
+      val i = path.lastIndexOf(".")
+      if (i > 0) path.substring(i + 1)
+      else ""
+    }
+
+
+    // start with an empty response
+    val resp = new ServerResponse
+
+    // set the content type
+    resp.contentType = ResponseContentType(fileExtension.toLowerCase())
+
+    // and buffer the output
+    resp.output = io
+
+    // and return it
     resp
   }
 
@@ -61,7 +114,6 @@ object ServerResponse {
     * @param tp The content type of the response
     * @param statusCode the statusCode of the response
     */
-
   def TextResponse(text: String, tp: String = "plain", statusCode: ResponseStatusCode = OK): ServerResponse = apply(text, "text/" + tp, statusCode)
 
   /**
@@ -110,6 +162,7 @@ object ServerResponse {
 
   /** builds an error response from an error */
   def errorResponse(error: Error, req: ServerRequest): ServerResponse = {
+    // TODO: Check in a smart way if we should display it in a human readable form
     val responseType = req.accept(List("text/plain", "text/xml", "text/html"))
 
     if (responseType == "text/html") {
@@ -135,15 +188,40 @@ object ServerResponse {
   /** an error response in xml format */
   def xmlErrorResponse(error: Error): ServerResponse = XMLResponse(error.toNode, InternalServerError)
 
-  /** makes a ServerResonse act on a tiscaf server */
-  def actOnTiscaf(response : ServerResponse, tk: HTalk) : HLet = {
-    var tiscafRef = tk
-      .setStatus(ResponseStatusCode.toTiscaf(response.statusCode))
-      .setContentLength(response.body.size)
-    response.headers.foreach(fv => {
-      tiscafRef = tiscafRef.setHeader(fv._1, fv._2)
-    })
-    tiscafRef.write(response.body)
+  // LEGACY method
+  // for backwards compatibility only
+
+  /** creates a new (empty) server Response */
+  @deprecated("use new ServerResponse instead")
+  def empty() : ServerResponse = new ServerResponse
+}
+
+object ResponseContentType {
+  def apply(extension : String) : String = extension match {
+    case "html" => "text/html"
+    case "htm" => "text/html"
+    case "js" => "application/x-javascript"
+    case "css" => "text/css "
+    case "gif" => "image/gif"
+    case "ico" => "image/x-icon"
+    case "jpeg" => "image/jpeg "
+    case "jpg" => "image/jpeg "
+    case "json" => "application/json"
+    case "png" => "image/png"
+    case "pdf" => "application/pdf"
+    case "zip" => "application/zip"
+    case "xhtml" => "application/xhtml+xml"
+    case "svg" => "image/svg+xml"
+    case "tiff" => "image/tiff"
+    case "tif" => "image/tiff"
+    case "txt" => "text/plain"
+    case "scala" => "text/plain"
+    case "xml" => "application/xml"
+    case "xsl" => "application/xml"
+    case "tgz" => "application/x-gtar"
+    case "jar" => "application/java-archive"
+
+    case _ => "text/plain"
   }
 }
 
@@ -165,17 +243,6 @@ object ResponseStatusCode {
 
   /** returns the statusCode coressponding to a given int or a customCode */
   def apply(code : Int, description: String = "") : ResponseStatusCode  = all.find(_.code == code).getOrElse(CustomCode(code, description))
-
-  /** turns an internal tiscaf response into a ResponseStatusCode */
-  def apply(status : HStatus.Value) = {
-    val (code, desc) = HStatus.strings(status)
-    apply(code.toInt, desc)
-  }
-
-  /** turns this statusCode into a TISCAF Status Code */
-  def toTiscaf(code : ResponseStatusCode) : HStatus.Value = {
-    HStatus.strings.find(_._2._1 == code.code.toString()).map(_._1).get
-  }
 }
 
 case object Continue extends ResponseStatusCode(100, "Continue")

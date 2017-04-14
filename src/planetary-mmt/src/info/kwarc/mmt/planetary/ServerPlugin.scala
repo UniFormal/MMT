@@ -14,7 +14,6 @@ import symbols.{Constant}
 
 import utils._
 //import scala.util.parsing.json._
-import tiscaf._
 import scala.concurrent._
 
 case class PlanetaryError(val text : String) extends Error(text)
@@ -24,7 +23,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   
   override val logPrefix = "planetary"
      /** Server */   
-  def apply(request: ServerRequest): HLet = {
+  def apply(request: ServerRequest): ServerResponse = {
     lazy val json = request.body.asJSON match {
       case j: JSONObject => j
       case _ => throw ServerError("body must be json object")
@@ -68,7 +67,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
             case None => notations
             case Some(lang) => notations.filter(_.scope.languages.contains(lang))
           }
-          Server.JsonResponse(JSONArray(notations.map(n => JSONArray(toStringMarkers(n).map(s => JSONString(s)) : _*)).toSeq :_*))
+          ServerResponse.JsonResponse(JSONArray(notations.map(n => JSONArray(toStringMarkers(n).map(s => JSONString(s)) : _*)).toSeq :_*))
         case x => throw ServerError("Expected path pointing to constant, found :" + x.getClass())
       }
   }
@@ -105,7 +104,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
           case _ => None
         }
       }
-      Server.JsonResponse(JSONArray(resultNodes.map(s => JSONString(s)).toSeq :_*))
+      ServerResponse.JsonResponse(JSONArray(resultNodes.map(s => JSONString(s)).toSeq :_*))
   }
   
   private def getRelated(params: JSONObject) = {
@@ -143,7 +142,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       val response = sb.get
       
       log("Sending Response: " + response)
-      Server.XmlResponse(response)
+      ServerResponse.XmlResponse(response)
   }
   
   /*
@@ -191,9 +190,9 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       val location = utils.File("/var/data/localmh/MathHub/glossary.html")
       val glossary = GlossaryGenerator.generate(controller)
       utils.File.write(location, glossary)
-      Server.TextResponse("Success")
+      ServerResponse.TextResponse("Success")
     } catch {
-      case e : Exception => Server.TextResponse(e.getMessage() + "\n" + e.getStackTrace.mkString("\n"))
+      case e : Exception => ServerResponse.TextResponse(e.getMessage() + "\n" + e.getStackTrace.mkString("\n"))
     }
   }
   
@@ -231,11 +230,11 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   }
   
   //utils
-  private def errorResponse(text : String, errors : List[Throwable]) : HLet = {
+  private def errorResponse(text : String, errors : List[Throwable]) : ServerResponse = {
     JsonResponse("", s"MMT Error in Planetary extension: $text ", errors)
   }
   
-  private def JsonResponse(content : String, info : String, errors : List[Throwable]) : HLet = {
+  private def JsonResponse(content : String, info : String, errors : List[Throwable]) : ServerResponse = {
     val response = new collection.mutable.HashMap[String, JSON]()
     response("content") = JSONString(content)
     if (errors == Nil) { //no errors
@@ -281,6 +280,6 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       response("status") = JSONObject(status.toSeq : _*)
     }
       log("Sending Response: " + response)
-      Server.JsonResponse(JSONObject(response.toSeq : _*))     
+    ServerResponse.JsonResponse(JSONObject(response.toSeq : _*))
   }
 }

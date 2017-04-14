@@ -9,7 +9,6 @@ import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.web._
 import utils._
 import presentation._
-import tiscaf.{HLet, HReqData}
 
 /**
  * builds a graph from relational and then calls dot to produce an svg file
@@ -201,7 +200,7 @@ class JsonGraphExporter extends ServerExtension("fancygraph") {
         case _ => throw CatchError(path.toString)// Server.plainErrorResponse(GetError(path.toString))
       }
   }
-  def apply(request: ServerRequest): HLet = {
+  def apply(request: ServerRequest): ServerResponse = {
     log("Paths: " + request.path)
     log("Query: " + request.query)
     val path = Path.parse(request.query.trim, controller.getNamespaceMap)
@@ -214,11 +213,11 @@ class JsonGraphExporter extends ServerExtension("fancygraph") {
     val ret = doJSON(path,exp)
     log("Output: " + ret.getAsList(classOf[JSON],"nodes").length + " nodes, " + ret.getAsList(classOf[JSON],"edges").length + " edges.")
     if (json) try {
-      Server.JsonResponse(doJSON(path,exp))
+      ServerResponse.JsonResponse(doJSON(path,exp))
     } catch {
       case CatchError(s) =>
         log("Fail: " + s)
-        Server.plainErrorResponse(GetError(s))
+        ServerResponse.plainErrorResponse(GetError(s))
     } else ???
   }
 }

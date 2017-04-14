@@ -4,7 +4,6 @@ import java.util.concurrent.ConcurrentLinkedDeque
 
 import info.kwarc.mmt.api._
 import frontend._
-import tiscaf.{HLet, HReqData}
 import utils._
 import web._
 
@@ -503,25 +502,25 @@ class BuildQueue extends BuildManager {
           "finished" -> JSONArray(fs: _*))
     }
 
-    def apply(request: ServerRequest): HLet = request.path match {
+    def apply(request: ServerRequest): ServerResponse = request.path match {
       case List("clear") =>
         clear
-        Server.JsonResponse(JSONNull)
+        ServerResponse.JsonResponse(JSONNull)
       case List("pause") =>
         // toggles pausing
         pauseBeforeEachTask = !pauseBeforeEachTask
-        Server.JsonResponse(JSONBoolean(pauseBeforeEachTask))
+        ServerResponse.JsonResponse(JSONBoolean(pauseBeforeEachTask))
       case List("targets") =>
         // list all targets
         val targets =  "mmt-omdoc" :: controller.getConfig.getEntries(classOf[ExtensionConf]).collect {
            case ExtensionConf(key, cls, args) if classOf[BuildTarget].isAssignableFrom(Class.forName(cls)) => key
         }
-        Server.JsonResponse(JSONArray(targets.map(JSONString): _*))
+        ServerResponse.JsonResponse(JSONArray(targets.map(JSONString): _*))
       case List("archives") =>
         val as = controller.backend.getArchives.map(a => a.archString)
-        Server.JsonResponse(JSONArray(as.map(JSONString): _*))
+        ServerResponse.JsonResponse(JSONArray(as.map(JSONString): _*))
       case _ =>
-        Server.JsonResponse(getQueueInfo)
+        ServerResponse.JsonResponse(getQueueInfo)
     }
   }
 }

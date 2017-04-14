@@ -6,8 +6,7 @@ import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.presentation.{HTMLRenderingHandler, Presenter, RenderingResult}
 import info.kwarc.mmt.api.refactoring.ArchiveStore
 import info.kwarc.mmt.api.utils.{File, _}
-import info.kwarc.mmt.api.web.{Body, Server, ServerExtension, Session, ServerRequest$}
-import tiscaf.{HLet, HReqData}
+import info.kwarc.mmt.api.web.{Body, Server, ServerExtension, Session, ServerRequest, ServerResponse}
 
 import scala.collection.immutable.List
 import scala.util.Try
@@ -122,15 +121,15 @@ class ConceptServer extends ServerExtension("concepts") {
     }
   })
 
-  def apply(request: ServerRequest): HLet =
+  def apply(request: ServerRequest): ServerResponse =
     if (request.path == List("add") && request.query != "") {
       log("Query: " + request.query)
       // TODO: Proper query parsing please -- will do this
-      if (!request.query.startsWith("URI=") || !request.query.contains("&concept=")) Server.TextResponse("Malformed Query")
+      if (!request.query.startsWith("URI=") || !request.query.contains("&concept=")) ServerResponse.TextResponse("Malformed Query")
       else {
         val (uri, con) = (request.query.split('&').head.drop(4).trim, request.query.split('&')(1).replace("concept=", "").trim)
         if (alignments.getConceptAlignments(con).map(_.toString.replace("http://", "").replace("https://", "")).contains(uri)) {
-          return Server.TextResponse("URI " + uri + " already aligned with \"" + con + "\"!")
+          return ServerResponse.TextResponse("URI " + uri + " already aligned with \"" + con + "\"!")
         }
         val ref = Try(LogicalReference(Path.parseMS(uri, NamespaceMap.empty))).getOrElse(PhysicalReference(URI(uri)))
         val alig = ConceptAlignment(ref, con)
@@ -141,7 +140,7 @@ class ConceptServer extends ServerExtension("concepts") {
           // saveIndex(con.head.toLower)
         }
         log("Added URI " + ref + " to concept: " + con)
-        Server.TextResponse("Added URI " + ref + " to concept: " + con + "\nTHANK YOU FOR CONTRIBUTING!")
+        ServerResponse.TextResponse("Added URI " + ref + " to concept: " + con + "\nTHANK YOU FOR CONTRIBUTING!")
       }
     } else if (request.path == List("addFormal") && request.query != "") {
       println(request.query)
@@ -149,7 +148,7 @@ class ConceptServer extends ServerExtension("concepts") {
       val nsm = NamespaceMap.empty
       val from = qs.find(_.startsWith("from=")).getOrElse(???).drop(5)
       val to = qs.find(_.startsWith("to=")).getOrElse(???).drop(3)
-      if (from == to) Server.errorResponse("Alignments must be between two different URIs!", request) else {
+      if (from == to) ServerResponse.errorResponse("Alignments must be between two different URIs!", request) else {
         val invertible = qs.exists(_.startsWith("invertible="))
         val parstring = qs.find(_.startsWith("attributes=")).map(s => URLEscaping.unapply(s.drop(11)).trim)
         var rest = parstring.getOrElse("")
@@ -159,26 +158,26 @@ class ConceptServer extends ServerExtension("concepts") {
           case param(key, value, r) ⇒
             pars ::= (key, value)
             rest = r.trim
-          case _ ⇒ Server.errorResponse("Malformed alignment: " + rest, request)
+          case _ ⇒ ServerResponse.errorResponse("Malformed alignment: " + rest, request)
         }
         val al = alignments.makeAlignment(from,to,pars)
         alignments.addNew(al)
-        Server.TextResponse("New Alignment added: " + al.toString + "\nThank you!")
+        ServerResponse.TextResponse("New Alignment added: " + al.toString + "\nThank you!")
       }
     } else if (request.path.isEmpty && request.query == "conlist") {
       log("Query for conlist")
-      Server.TextResponse("[" + conlist.map(s => "\"" + s + "\"").mkString(",") + "]")
+      ServerResponse.TextResponse("[" + conlist.map(s => "\"" + s + "\"").mkString(",") + "]")
     } else if (request.path.isEmpty && request.query.startsWith("page=About")) {
-      Server.TypedTextResponse(doFullPage(List("About")),"html")
+      ServerResponse.TypedTextResponse(doFullPage(List("About")),"html")
     } else if (request.path.isEmpty && request.query.startsWith("page=")) {
       val index = request.query(5).toLower
       log("Query for page " + index)
-      Server.TypedTextResponse(doFullPage(List(index.toString)),"html")
+      ServerResponse.TypedTextResponse(doFullPage(List(index.toString)),"html")
     } else if (request.path.isEmpty && request.query.startsWith("con=")) {
       val con = URLEscaping.unapply(request.query.drop(4))
       log("CALL constructing concept " + con)
-      Server.TypedTextResponse(doFullPage(List("con",con)),"html")
-    } else Server.TypedTextResponse(doFullPage(List("a")),"html")
+      ServerResponse.TypedTextResponse(doFullPage(List("con",con)),"html")
+    } else ServerResponse.TypedTextResponse(doFullPage(List("a")),"html")
 
   lazy val presenter = controller.extman.get(classOf[Presenter],"html").get.asInstanceOf[HTMLPresenter]
 

@@ -42,9 +42,7 @@ import info.kwarc.mmt.api.web.ServerError
 import info.kwarc.mmt.api.web.ServerExtension
 import info.kwarc.mmt.stex.STeXImporter
 import info.kwarc.mmt.stex.sTeX
-import tiscaf.HLet
 import info.kwarc.mmt.api._
-import tiscaf.HTalk
 import info.kwarc.mmt.api.objects._
 
 abstract class GenericRule

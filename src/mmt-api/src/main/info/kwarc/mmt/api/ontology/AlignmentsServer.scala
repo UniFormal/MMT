@@ -9,7 +9,6 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.refactoring.{ArchiveStore, FullArchive}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.{URI, _}
-import tiscaf.{HLet, HReqData}
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.List
@@ -144,15 +143,15 @@ class AlignmentsServer extends ServerExtension("align") {
     save(a)
   }
 
-  def apply(request: ServerRequest): HLet = {
-    request.path match {
+  def apply(request: ServerRequest): ServerResponse = {
+    request.extensionPathComponents match {
       case "from" :: _ ⇒
-        val path = Path.parseS(request.query, nsMap)
-        val toS = if (request.query.contains("transitive=\"true\"")) alignments.get(LogicalReference(path), Some(_ => true)).map(_.to.toString)
+        val path = Path.parseS(request.queryString, nsMap)
+        val toS = if (request.queryString.contains("transitive=\"true\"")) alignments.get(LogicalReference(path), Some(_ => true)).map(_.to.toString)
         else alignments.get(LogicalReference(path)).map(_.to.toString)
-        log("Alignment query: " + request.query)
+        log("Alignment query: " + request.queryString)
         log("Alignments from " + path + ":\n" + toS.map(" - " + _).mkString("\n"))
-        Server.TextResponse(toS.mkString("\n"))
+        ServerResponse.TextResponse(toS.mkString("\n"))
       case "add" :: _ ⇒
         val str = Try(request.body.asString).getOrElse("")
         val formData : JSONObject = Try(JSON.parse(str).asInstanceOf[JSONObject]).getOrElse(JSONObject(List()))
@@ -168,12 +167,12 @@ class AlignmentsServer extends ServerExtension("align") {
         } else {
           0
         }
-        Server.TextResponse("Added " + addedAlignments + " alignments")
+        ServerResponse.TextResponse("Added " + addedAlignments + " alignments")
       case _ ⇒
-        log(request.path.toString) // List(from)
-        log(request.query.toString) // an actual symbol path
+        log(request.extensionPathComponents.toString) // List(from)
+        log(request.queryString.toString) // an actual symbol path
         log(request.body.toString) //whatever
-        Server.TextResponse("")
+        ServerResponse.TextResponse("")
     }
   }
 

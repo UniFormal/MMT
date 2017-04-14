@@ -4,7 +4,6 @@ import java.net.{URLDecoder, URLEncoder}
 
 import info.kwarc.mmt.api.{ParseError, utils}
 import info.kwarc.mmt.api.utils.JSON
-import tiscaf.{HReqData, HReqType, HTalk}
 
 import scala.xml.Node
 
@@ -58,38 +57,21 @@ case class ServerRequest(method: RequestMethod.Value, headers: Map[String, Strin
   lazy val decodedQuery : String = URLDecoder.decode(queryString, "UTF-8")
 
   /** a parsed version of the query string */
-  lazy val parsedQuery : WebQuery = WebQuery.parse(queryString)
+  lazy val parsedQuery : WebQuery = WebQuery(queryString)
 
   // FOR BACKWARDS COMPATIBILITY
   // METHOD CALLS SHOULD USE OTHER METHODS INSTEAD
-  @deprecated("Use [[extensionPathComponents]] instead")
+  @deprecated("Use [[pathComponents.tail]] instead")
   lazy val path = extensionPathComponents
 
-  @deprecated("Use [[queryString]] instead")
+  @deprecated("to be safe, use [[decodedQueryString]], otherwise use [[queryString]]")
   lazy val query : String = queryString
 
   @deprecated("use [[sessionID]] instead")
   lazy val session = sessionID.get
-}
 
-object ServerRequest {
-  /** creates a new request object from an internal Tiscaf HReqData object */
-  def apply(data : HReqData) : ServerRequest = {
-    val method = RequestMethod(data.method)
-    val headers = data.headerKeys.map(k => (k, data.header(k).get)).toMap[String, String]
-    val sessionID = None
-    val pathStr = data.uriPath
-    val queryStr = data.query
-    val body = new Body(None)
-    ServerRequest(method, headers, sessionID, pathStr, queryStr, body)
-  }
-  /** adds information from interal Tiscaf HTalk object into a request */
-  def apply(req : ServerRequest, tk: HTalk): ServerRequest = {
-    req.copy(body=new Body(tk.req.octets), sessionID=Some(Session(tk.ses.id)))
-  }
-  def apply(tk: HTalk): ServerRequest = {
-    apply(apply(tk.req), tk)
-  }
+  @deprecated("use [[headers.lift]] instead")
+  def header(key : String) : Option[String] = headers.lift(key)
 }
 
 /** Request types that can be made */
@@ -100,13 +82,12 @@ object RequestMethod extends Enumeration {
   val Options = Value("OPTIONS")
   val Head = Value("HEAD")
 
-  def apply(method: HReqType.Value): RequestMethod.Value = method match {
-    case HReqType.Get => Get
-    case HReqType.PostData => Post
-    case HReqType.PostMulti => Post
-    case HReqType.Delete => Delete
-    case HReqType.Options => Options
-    case HReqType.Head => Head
+  def toString(method : RequestMethod.Value) : String = method match {
+    case Get => "GET"
+    case Post => "POST"
+    case Delete => "DELETE"
+    case Options => "OPTIONS"
+    case Head => "HEAD"
   }
 }
 
@@ -116,11 +97,8 @@ case class Session(id: String)
 
 /** the body of an HTTP request
   *
-  * This class abstracts from tiscaf's HTalk internal.
   */
 class Body(octets: Option[Array[Byte]]) {
-  @deprecated("Pass octets directly")
-  def this(tk: HTalk) = this(tk.req.octets)
 
   /** returns the body of a request as a string */
   def asString: String = {
@@ -183,7 +161,7 @@ case class WebQuery(pairs: List[(String, String)]) {
     }
   }
 
-  /** @return a string encoded web queru object */
+  /** @return a string encoded web query object */
   def asString : String = {
     pairs.map(kv => {
       URLEncoder.encode(kv._1, "UTF-8") + "=" + URLEncoder.encode(kv._2, "UTF-8")
@@ -193,7 +171,7 @@ case class WebQuery(pairs: List[(String, String)]) {
 
 object WebQuery {
   /**
-    * Parses a QueryString into a WebQuery object.
+    * Turns a query string into a WebQuery
     *
     * In general, these take the form of key=value&key=value2.
     * This method takes care of URLDecoding the strings.
@@ -202,7 +180,7 @@ object WebQuery {
     * @param query
     * @return
     */
-  def parse(query: String): WebQuery = {
+  def apply(query: String): WebQuery = {
     val kvs = utils.stringToList(query, "&")
     val pairs = kvs map { s =>
       val i = s.indexOf("=")
@@ -214,4 +192,8 @@ object WebQuery {
     }
     WebQuery(pairs)
   }
+
+  /** same as WebQuery.apply, for backwards compatibility */
+  @deprecated("you should probably use [[ServerRequest.parsedQuery]], if you still need to parse manually use [[WebQuery.apply]]")
+  def parse(query: String) : WebQuery = apply(query)
 }

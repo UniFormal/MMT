@@ -7,7 +7,6 @@ import info.kwarc.mmt.api.utils.{JSONArray, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.web._
 import info.kwarc.mmt.lf.{Apply, ApplySpine, Arrow}
 import info.kwarc.mmt.pvs.syntax.Object
-import tiscaf.{HLet, HReqData}
 
 import scala.util.Try
 import scala.xml.Node
@@ -22,7 +21,7 @@ class PVSServer extends ServerExtension("pvs") {
   //PVSTheory.(OMV("A"),OMV("B"))//PVSTheory.fun_type(OMV("A"),OMV("B"))
   val testcon = Context(VarDecl(LocalName("I1")),VarDecl(LocalName("I2")),VarDecl(LocalName("A")),VarDecl(LocalName("B")))
 
-  def apply(request: ServerRequest): HLet = {
+  def apply(request: ServerRequest): ServerResponse = {
     val tm = Try(processXML(request.body.asXML)) match {
       case scala.util.Success(term) => term
       case _ => testterm
@@ -30,8 +29,8 @@ class PVSServer extends ServerExtension("pvs") {
     val mwsquery = doWebQuery(tm)
     println(mwsquery.toXML)
     val results = mws(mwsquery).map(makeReply) // TODO
-    Server.JsonResponse(JSONArray(results:_*))
-    // Server.XmlResponse(mwsquery.toXML)
+    ServerResponse.JsonResponse(JSONArray(results:_*))
+    // ServerResponse.XmlResponse(mwsquery.toXML)
   }
 
   private def makeReply(qr : SearchResult) : JSONObject = {

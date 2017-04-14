@@ -56,21 +56,18 @@ import info.kwarc.mmt.api.presentation.StringBuilder
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils
-import info.kwarc.mmt.api.web.Body
-import info.kwarc.mmt.api.web.Server
-import info.kwarc.mmt.api.web.ServerError
-import info.kwarc.mmt.api.web.ServerExtension
-import info.kwarc.mmt.api.web.ServerRequest$
+import info.kwarc.mmt.api.web._
 import info.kwarc.mmt.stex.STeXImporter
 import info.kwarc.mmt.stex.sTeX
-import tiscaf.HLet
 import info.kwarc.mmt.api._
-import tiscaf.HTalk
 import info.kwarc.mmt.api.objects._
+
 import scala.collection.mutable.HashMap
 import scala.collection.Map
 import java.net.URLDecoder
+
 import info.kwarc.mmt.api.utils._
+
 import scala.collection.mutable.ListBuffer
 
 case class PlanetaryError(val text: String) extends Error(text)
@@ -79,57 +76,55 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
   var pairIndexNotation: List[((info.kwarc.mmt.api.GlobalName, info.kwarc.mmt.api.notations.TextNotation), Int)] = List();
   override val logPrefix = "marpa"
   /** Server */
-  def apply(request: ServerRequest): HLet = {
+  def apply(request: ServerRequest): ServerResponse = {
     try {
       uriComps match {
         //Here the post request is handled
-        case "getGrammar" :: _       ⇒ getGrammarResponse
-        case "getContentMathML" :: _ ⇒ getContentMathML
+        case "getGrammar" :: _       ⇒ getGrammarResponse(request)
+        case "getContentMathML" :: _ ⇒ getContentMathML(request)
         case "getSemanticTree" :: _ ⇒ {
           SemanticTree.grammarGenerator = this
-          SemanticTree.getSemanticTree
+          SemanticTree.getSemanticTree(request)
         }
-        case _ ⇒ errorResponse("Invalid request: " + request.path.mkString("/"),
+        case _ ⇒ ServerResponse.errorResponse("Invalid request: " + request.path.mkString("/"),
           List(new PlanetaryError("Invalid Request" + request.path)))
       }
     } catch {
       case e: Error ⇒
         log(e.shortMsg)
-        errorResponse(e.shortMsg, List(e))
+        ServerResponse.errorResponse(e.shortMsg, List(e))
       case e: Exception ⇒uriComps
-        errorResponse("Exception occured : " + e.getStackTrace(), List(e))
+        ServerResponse.errorResponse("Exception occured : " + e.getStackTrace(), List(e))
     }
   }
 
   //The post request response is defined here 
-  def getGrammarResponse: HLet = new HLet {
-    def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
-      val reqBody = new Body(tk)
-      val notations = controller.library.getModules flatMap {
-        case t: DeclaredTheory //if t.path.toPath == "http://mathhub.info/smglom/calculus/onesidedlimit.omdoc?onesidedlimit?leftsided-limit" 
-        ⇒
-          val not = t.getDeclarations collect {
-            case c: Constant ⇒ c.notC.presentationDim.notations.values.flatten.map(not ⇒ c.path -> not) //produces (name, notation) pairs
-          }
-          not.flatten
-        case _ ⇒ Nil
-      } //notations is now an iterable of (name, notation) pairs
+  def getGrammarResponse(request: ServerRequest): ServerResponse =
+    val reqBody = request.body
+    val notations = controller.library.getModules flatMap {
+      case t: DeclaredTheory //if t.path.toPath == "http://mathhub.info/smglom/calculus/onesidedlimit.omdoc?onesidedlimit?leftsided-limit"
+      ⇒
+        val not = t.getDeclarations collect {
+          case c: Constant ⇒ c.notC.presentationDim.notations.values.flatten.map(not ⇒ c.path -> not) //produces (name, notation) pairs
+        }
+        not.flatten
+      case _ ⇒ Nil
+    } //notations is now an iterable of (name, notation) pairs
 
-      pairIndexNotation = notations.toList.zipWithIndex
-      pairIndexNotation.foreach(x ⇒
-        if (x._1._2.presentationMarkers != Nil) {
-          val path = x._1._1.toPath
-          val ruleNumber = x._2.toString
-          val markers = x._1._2.presentationMarkers
-          val prec = x._1._2.precedence
-          Grammar.addTopRule(path, ruleNumber, markers, prec) //adding rules to the grammar
-        })
+    pairIndexNotation = notations.toList.zipWithIndex
+    pairIndexNotation.foreach(x ⇒
+      if (x._1._2.presentationMarkers != Nil) {
+        val path = x._1._1.toPath
+        val ruleNumber = x._2.toString
+        val markers = x._1._2.presentationMarkers
+        val prec = x._1._2.precedence
+        Grammar.addTopRule(path, ruleNumber, markers, prec) //adding rules to the grammar
+      })
 
-      val grammarAsStringList = Grammar.getMarpaGrammar.map(x ⇒ info.kwarc.mmt.api.utils.JSONString(x))
-      val resp = info.kwarc.mmt.api.utils.JSONArray(grammarAsStringList: _*)
-      //		val params = reqBody.asJSON
-      Server.JsonResponse(resp).aact(tk)
-    }
+    val grammarAsStringList = Grammar.getMarpaGrammar.map(x ⇒ info.kwarc.mmt.api.utils.JSONString(x))
+    val resp = info.kwarc.mmt.api.utils.JSONArray(grammarAsStringList: _*)
+    //		val params = reqBody.asJSON
+    ServerResponse.JsonResponse(resp)
   }
 
   def unescape(text: String): String = {
@@ -149,10 +144,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
     recUnescape(text.toList, "", false)
   }
 
-  def getContentMathML: HLet = new HLet {
-    def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
+  def getContentMathML(request: ServerRequest): ServerResponse = {
       println("In getConentMathML")
-      val reqBody = new Body(tk)
+      val reqBody = request.body
       val paramsJSON: scala.util.parsing.json.JSONObject = bodyAsJSON(reqBody)
 
       val params = paramsJSON.obj
@@ -274,8 +268,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
       val dataJSONString: Map[String, JSONString] = data.map(pair ⇒ (pair._1 -> JSONString(pair._2.toString)))
       val resp = info.kwarc.mmt.api.utils.JSONObject(dataJSONString.toSeq: _*)
       println("Sending Content Math ML response = " + resp.toString())
-      tk.setHeader("Access-Control-Allow-Origin", "*")
-      Server.JsonResponse(resp).aact(tk)
+      ServerResponse.JsonResponse(resp).aact(tk)
     }
   }
 
