@@ -51,7 +51,7 @@ case class ServerRequest(method: RequestMethod.Value, headers: Map[String, Strin
   lazy val extensionPath : String = extensionPathComponents.mkString("/")
 
   /** the full path requested from this server, including query string */
-  lazy val requestPath = "/" + pathStr + "?" + queryString
+  lazy val requestPath : String = "/" + pathStr + "?" + queryString
 
   /** a decoded version of the query string */
   lazy val decodedQuery : String = URLDecoder.decode(queryString, "UTF-8")
@@ -144,14 +144,14 @@ case class WebQuery(pairs: List[(String, String)]) {
   def string(key: String, default: => String = ""): String = apply(key).getOrElse(default)
 
   /** @return the boolean value of the key, default value if not present */
-  def boolean(key: String, default: => Boolean = false) = apply(key).getOrElse(default.toString).toLowerCase match {
+  def boolean(key: String, default: => Boolean = false): Boolean = apply(key).getOrElse(default.toString).toLowerCase match {
     case "false" => false
     case "" | "true" => true
     case s => throw ParseError("boolean expected: " + s)
   }
 
   /** @return the integer value of the key, default value if not present */
-  def int(key: String, default: => Int = 0) = {
+  def int(key: String, default: => Int = 0) : Int = {
     val s = apply(key).getOrElse(default.toString)
     try {
       s.toInt
@@ -160,6 +160,9 @@ case class WebQuery(pairs: List[(String, String)]) {
       case _: Exception => throw ParseError("integer expected: " + s)
     }
   }
+
+  /** checks if this WebQuery contains a specific query */
+  def contains(key : String) : Boolean = pairs.exists(_._1 == key)
 
   /** @return a string encoded web query object */
   def asString : String = {

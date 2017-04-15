@@ -76,7 +76,7 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
       } else {
         exp.asString(se)
       }
-      TypedTextResponse(node, "image/svg+xml")
+      ServerResponse(node, "image/svg+xml")
     // }
   }
   
@@ -442,8 +442,7 @@ class URIServer extends ServerExtension("uris") {
      }
      val f = archive / Dim("export") / "uris" / "uris.json"
      val json = File.read(f)
-     TypedTextResponse(json, "application/json")
-     // TODO: Possibly turn this direcly into json
-     // or use a resourceResponse
+     // TODO: Check if we want to use a ServerResponse.resource
+     ServerResponse(json, "application/json")
    }
 }

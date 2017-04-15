@@ -80,7 +80,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
     log(s"${RequestMethod.toString(request.method)} /${request.pathStr} ${response.statusCode.code}")
 
     //set cors headers and return
-    response.setMatchingCORS(request)
+    response.setCORSFor(request)
     response
   }
 
@@ -188,7 +188,6 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
 
   /** handles a single response */
   def resolveExt(name : String, request : ServerRequest) : ServerResponse = {
-
     // TODO: Check if we want access control
 
     // retrieve the extension that should handle the context
@@ -216,8 +215,8 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
     log(s"handling resource request /${request.pathStr}")
 
     request.pathComponents match {
-      case Nil | List("") => resource("browse.html")
-      case _ => resource(request.pathStr)
+      case Nil | List("") => resource("browse.html", request)
+      case _ => resource(request.pathStr, request)
     }
   }
 }
