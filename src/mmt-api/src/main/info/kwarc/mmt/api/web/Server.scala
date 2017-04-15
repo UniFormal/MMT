@@ -77,7 +77,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
     }
 
     // log the response being made
-    log(s"${RequestMethod.toString(request.method)} /${request.pathStr} ${response.statusCode.code}")
+    log(s"${RequestMethod.toString(request.method)} /${request.pathStr} ${response.statusCode}")
 
     //set cors headers and return
     response.setCORSFor(request)

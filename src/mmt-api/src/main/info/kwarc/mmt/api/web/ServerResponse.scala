@@ -97,14 +97,14 @@ object ServerResponse {
     * @param contentType Textual content type, will be returned as text/_ in the header
     * @param statusCode statusCode of the message
     */
-  def text(content : String, contentType : String = "plain", statusCode : Int = statusCodeOK) : ServerResponse = apply(content, s"text/$contentType", statusCode)
+  def fromText(content : String, contentType : String = "plain", statusCode : Int = statusCodeOK) : ServerResponse = apply(content, s"text/$contentType", statusCode)
 
   /**
     * Convenience method to send application/xml back to the client
     * @param content XML object to send back to the user
     * @param statusCode statusCode of the message
     */
-  def xml(content: scala.xml.Node, statusCode : Int = statusCodeOK) : ServerResponse = apply(content.toString, "application/xml", statusCode)
+  def fromXML(content: scala.xml.Node, statusCode : Int = statusCodeOK) : ServerResponse = apply(content.toString, "application/xml", statusCode)
 
 
   /**
@@ -119,7 +119,7 @@ object ServerResponse {
     val io = Util.loadResource(properPath)
 
     if(io == null){
-      return text(s"Path $path not found", statusCode = statusCodeNotFound)
+      return fromText(s"Path $path not found", statusCode = statusCodeNotFound)
     }
 
     // attempt to get the file extension
@@ -147,7 +147,7 @@ object ServerResponse {
     * @param content JSON object to send back to the user
     * @param statusCode statusCode of the message
     */
-  def json(content : JSON, statusCode : Int = statusCodeOK) : ServerResponse = apply(content.toString, "application/json", statusCode)
+  def fromJSON(content : JSON, statusCode : Int = statusCodeOK) : ServerResponse = apply(content.toString, "application/json", statusCode)
 
 
   /** builds an error response from an error */
@@ -170,10 +170,10 @@ object ServerResponse {
   def errorResponse(msg: String, req: ServerRequest): ServerResponse = errorResponse(ServerError(msg), req)
 
   /** an error response in plain text format */
-  def plainErrorResponse(error: Error): ServerResponse = text(error.toStringLong, statusCode=statusCodeInternalServerError)
+  def plainErrorResponse(error: Error): ServerResponse = fromText(error.toStringLong, statusCode=statusCodeInternalServerError)
 
   /** an error response in html format */
-  def htmlErrorResponse(error: Error): ServerResponse = text(s"""<div xmlns="${utils.xml.namespace("html")}"><div>""" + error.toHTML + "</div></div>", "html", statusCodeInternalServerError)
+  def htmlErrorResponse(error: Error): ServerResponse = fromText(s"""<div xmlns="${utils.xml.namespace("html")}"><div>""" + error.toHTML + "</div></div>", "html", statusCodeInternalServerError)
 
   /** an error response in xml format */
   def xmlErrorResponse(error: Error): ServerResponse = XMLResponse(error.toNode, statusCodeInternalServerError)
@@ -291,24 +291,24 @@ object ServerResponse {
   @deprecated("use [[apply]] instead")
   def TypedTextResponse(text: String, tp: String): ServerResponse = apply(text, tp)
 
-  @deprecated("use [[text]] instead")
+  @deprecated("use [[fromText]] instead")
   def TextResponse(text: String, tp: String = "plain", statusCode: Int = statusCodeOK): ServerResponse = apply(text, "text/" + tp, statusCode)
 
-  @deprecated("for a textual xml response, use text(s, 'xml', statusCode) instead ")
-  def XmlResponse(s: String, statusCode: Int): ServerResponse = text(s, "xml", statusCode)
+  @deprecated("for a textual xml response, use fromText(s, 'xml', statusCode) instead ")
+  def XmlResponse(s: String, statusCode: Int): ServerResponse = fromText(s, "xml", statusCode)
 
-  @deprecated("for a textual xml response, use text(s, 'xml') instead ")
-  def XmlResponse(s: String): ServerResponse = text(s, "xml")
+  @deprecated("for a textual xml response, use fromText(s, 'xml') instead ")
+  def XmlResponse(s: String): ServerResponse = fromText(s, "xml")
 
-  @deprecated("use [[xml]] instead")
-  def XMLResponse(node: scala.xml.Node, statusCode: Int): ServerResponse = xml(node, statusCode)
+  @deprecated("use [[fromXML]] instead")
+  def XMLResponse(node: scala.xml.Node, statusCode: Int): ServerResponse = fromXML(node, statusCode)
 
-  @deprecated("use [[xml]] instead")
-  def XmlResponse(node: scala.xml.Node): ServerResponse = xml(node)
+  @deprecated("use [[fromXML]] instead")
+  def XmlResponse(node: scala.xml.Node): ServerResponse = fromXML(node)
 
-  @deprecated("use [[json]] instead")
-  def JsonResponse(content: JSON): ServerResponse = json(content)
+  @deprecated("use [[fromJSON]] instead")
+  def JsonResponse(content: JSON): ServerResponse = fromJSON(content)
 
-  @deprecated("use [[json]] instead")
-  def JsonResponse(content: JSON, statusCode: Int): ServerResponse = json(content, statusCode)
+  @deprecated("use [[fromJSON]] instead")
+  def JsonResponse(content: JSON, statusCode: Int): ServerResponse = fromJSON(content, statusCode)
 }

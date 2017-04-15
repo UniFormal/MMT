@@ -120,9 +120,9 @@ object ServerTiscafAdapter {
     tiscaf2Request(tk.req).copy(body = body, sessionID = sessionID)
   }
 
-  /** turns this statusCode into a TISCAF Status Code */
-  def code2Tiscaf(code : ResponseStatusCode) : HStatus.Value = {
-    HStatus.strings.find(_._2._1 == code.code.toString()).map(_._1).get
+  /** turns a statusCode into a Tiscaf StatusCode */
+  def code2Tiscaf(code : Int) : HStatus.Value = {
+    HStatus.strings.find(_._2._1 == code.toString).map(_._1).get
   }
 }
 
