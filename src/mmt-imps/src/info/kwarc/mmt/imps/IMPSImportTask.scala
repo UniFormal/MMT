@@ -33,7 +33,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 	def logPrefix = "imps-omdoc"
 	protected def report: Report = controller.report
 
-  val rootdpath : DPath                = DPath(URI.http colon "imps.mcmaster.ca")
+  val rootdpath : DPath                = DPath(URI.http colon "imps.mcmaster.ca") /* arbitrary, but seemed fitting */
   var trans     : TranslationState     = new TranslationState(bt)
 
 	def doDocument(es : Exp, uri : URI) : BuildResult =
@@ -46,11 +46,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       exp match
       {
         /* Translating Theories to MMT */
-        case t@(Theory(id,l,c,a,d,src))       => { doTheory(t) }
+        case t@(Theory(_,_,_,_,_,_)) => doTheory(t)
         // Languages are processed in context of theories using them, not by themselves
-        case l@(Language(id,e,es,b,ex,srts,cns,src)) => { trans.languages = trans.languages ::: List(l) }
+        case l@(Language(_,_,_,_,_,_,_,_)) => trans.languages = trans.languages ::: List(l)
         // If it's none of these, fall back to doDeclaration
-        case _ => { doDecl(exp) }
+        case _ => doDeclaration(exp)
       }
     }
 
@@ -67,7 +67,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         }.asInstanceOf[MMTStructureChecker]
         trans.theories_decl foreach { p =>
           val ce = new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore, this)
-          (checker.apply(p)(ce))
+          checker.apply(p)(ce)
         }
       }
     }
@@ -91,7 +91,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     // Build correct union of languages
     if (t.lang.isDefined) {
       assert(trans.languages.exists(la => la.name == t.lang.get.lang))
-      l = Some(trans.languages(trans.languages.indexWhere(la => la.name == t.lang.get.lang)))
+      l = trans.languages.find(la => la.name == t.lang.get.lang)
     }
 
     if (t.cmpntthrs.isDefined)
@@ -100,12 +100,12 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       for (comp_theory <- t.cmpntthrs.get.lst)
       {
         assert(trans.theories_raw.exists(thy => thy.name == comp_theory))
-        val t_index : Theory = trans.theories_raw(trans.theories_raw.indexWhere(thy => thy.name == comp_theory))
+        val t_index : Theory = trans.theories_raw.find(thy => thy.name == comp_theory).get
 
         if (t_index.lang.isDefined)
         {
           assert(trans.languages.exists(la => la.name == t_index.lang.get.lang))
-          val l_prime: Language = trans.languages(trans.languages.indexWhere(la => la.name == t_index.lang.get.lang))
+          val l_prime: Language = trans.languages.find(la => la.name == t_index.lang.get.lang).get
 
           if (l.isDefined) {
             l = Some(l.get.union(l_prime))
@@ -140,30 +140,34 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     /* All constants here per distinction element are
        axiomatically distinct from each other */
-
-    var dist_count : Int = 0
-
-    for (dist <- t.dstnct)
+    if (t.dstnct.isDefined)
     {
-      for (c1 <- dist.lst)
+      var dist_count : Int = 0
+
+      for (dist : List[String] <- t.dstnct.get.lst) /* Reminder: t.dstnct.get.lst : List[List[String]] */
       {
-        for (c2 <- dist.lst.filter(e => e != c1))
+        for (c1 : String <- dist)
         {
-          /* Assert the two constansts to be distinct exist in the theory */
-          assert(nu_theory.getDeclarations.exists(d => d.name == c1))
-          assert(nu_theory.getDeclarations.exists(d => d.name == c2))
+          for (c2 : String <- dist.filter(e => e != c1))
+          {
+            /* Assert the two constants to be distinct exist in the theory */
+            assert(nu_theory.getDeclarations.exists(d => d.name == LocalName(c1)))
+            assert(nu_theory.getDeclarations.exists(d => d.name == LocalName(c2)))
 
-          /* add axiom that they are indeed distinct */
-          val g1 : GlobalName = nu_theory.getDeclarations(nu_theory.getDeclarations.indexWhere(d => d.name == c1)).path
-          val g2 : GlobalName = nu_theory.getDeclarations(nu_theory.getDeclarations.indexWhere(d => d.name == c2)).path
+            /* add axiom that they are indeed distinct */
+            val g1 : GlobalName = nu_theory.getDeclarations.find(d => d.name == LocalName(c1)).get.path
+            val g2 : GlobalName = nu_theory.getDeclarations.find(d => d.name == LocalName(c2)).get.path
 
-          val dist_formula : IMPSMathExp = IMPSNegation(IMPSEquals(IMPSSymbolRef(g1), IMPSSymbolRef(g2)))
-          val mth          : Term = IMPSTheory.Thm(doMathExp(dist_formula))
-          val name         : String = t.name + "_distinction_axiom_" + dist_count.toString
+            val dist_formula : IMPSMathExp = IMPSNegation(IMPSEquals(IMPSSymbolRef(g1), IMPSSymbolRef(g2)))
+            val mth          : Term = IMPSTheory.Thm(doMathExp(dist_formula))
+            val name         : String = t.name + "_distinction_axiom_" + dist_count.toString
 
-          val dist_assumption = symbols.Constant(nu_theory.toTerm,doName(name),Nil,Some(mth),None,Some("Assumption"))
-          doSourceRef(dist_assumption, dist.src)
-          controller.add(dist_assumption)
+            dist_count += 1
+
+            val dist_assumption = symbols.Constant(nu_theory.toTerm,doName(name),Nil,Some(mth),None,Some("Assumption"))
+            doSourceRef(dist_assumption, t.dstnct.get.src)
+            controller.add(dist_assumption)
+          }
         }
       }
     }
@@ -174,7 +178,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     // TODO: Implement
   }
 
-  def doDecl(d : LispExp) : Unit =
+  def doDeclaration (d : LispExp) : Unit =
   {
     // set this to true for helpful debug output
     val debug : Boolean = false
@@ -193,16 +197,16 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     d match
     {
       case AtomicSort(name, defstring, theory, usages, witness, src) =>
-      {
+
         val ln : LocalName = LocalName(theory.thy)
         assert(trans.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
-        val parent = trans.theories_decl(trans.theories_decl.indexWhere(dt => dt.name == ln))
+        val parent : DeclaredTheory = trans.theories_decl.find(dt => dt.name == ln).get
 
         val definition : Term = IMPSTheory.Sort(doMathExp(defstring))
-        val sorttype   : Term = trans.doUnknown
-        trans.bindUnknowns(sorttype)
+        val sort_type  : Term = trans.doUnknown
+        trans.bindUnknowns(sort_type)
 
-        val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, Some(sorttype), Some(definition), None)
+        val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, Some(sort_type), Some(definition), None)
 
         /* Add available MetaData */
         if (witness.isDefined) { doMetaData(nu_atomicSort, "witness", witness.get.witness.toString) }
@@ -210,12 +214,12 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         doSourceRef(nu_atomicSort,src)
 
         controller add nu_atomicSort
-      }
+
       case Constant(name, definition, theory, sort, usages, src) =>
-      {
+
         val ln : LocalName = LocalName(theory.thy)
         assert(trans.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
-        val parent = trans.theories_decl(trans.theories_decl.indexWhere(dt => dt.name == ln))
+        val parent : DeclaredTheory = trans.theories_decl.find(dt => dt.name == ln).get
 
         /* look for sort in given theory. */
         var srt : Option[Term] = None
@@ -236,20 +240,21 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         assert(srt.isDefined)
         if (srt.isDefined) { trans.bindUnknowns(srt.get) }
 
+        val mth : Term = doMathExp(definition)
+        val nu_constant = symbols.Constant(parent.toTerm, LocalName(name), Nil, srt, Some(mth), Some("Constant"))
+
         /* Add available MetaData */
-        val nu_constant = symbols.Constant(parent.toTerm, LocalName(name), Nil, srt, None, Some("Constant"))
         doSourceRef(nu_constant,src)
         if (usages.isDefined) { doUsages(nu_constant,usages.get.usgs) }
-
         controller add nu_constant
-      }
-      case Theorem(name, formula, lemma, reverse, theory, usages, transp, macete, homeTheory, proof, src) =>
-      {
-        val ln : LocalName = doName(theory.thy)
-        assert(trans.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
-        val parent : DeclaredTheory = trans.theories_decl(trans.theories_decl.indexWhere(dt => dt.name == ln))
+
+      case Theorem(name, formula, lemma, reverse, theory, usages, transport, macete, homeTheory, _, src) =>
 
         // TODO: Currently still forgets about the proof
+
+        val ln : LocalName = doName(theory.thy)
+        assert(trans.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
+        val parent : DeclaredTheory = trans.theories_decl.find(dt => dt.name == ln).get
 
         val mth : Term = IMPSTheory.Thm(doMathExp(formula))
         val nu_theorem = symbols.Constant(parent.toTerm, doName(name), Nil, Some(mth), None, Some("Theorem"))
@@ -257,7 +262,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         /* Add available MetaData */
         if (usages.isDefined)     { doUsages(nu_theorem, usages.get.usgs) }
-        if (transp.isDefined)     { doMetaData(nu_theorem, "translation", transp.get.trans) }
+        if (transport.isDefined)  { doMetaData(nu_theorem, "translation", transport.get.trans) }
         if (macete.isDefined)     { doMetaData(nu_theorem, "macete", macete.get.macete) }
         if (homeTheory.isDefined) { doMetaData(nu_theorem, "homeTheory", homeTheory.get.hmthy) }
 
@@ -265,14 +270,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         if (reverse) { doMetaData(nu_theorem,"reverse","present") } else { doMetaData(nu_theorem,"reverse","absent") }
 
         doSourceRef(nu_theorem, src)
-
         controller add nu_theorem
-      }
-      case SchematicMacete(name, formula, thy, nullPresent,transportablePresent,src) =>
-      {
+
+      case SchematicMacete(_, _, thy, _, _, _) =>
+
         val ln : LocalName = LocalName(thy.thy)
         assert(trans.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
-        val parent : DeclaredTheory = trans.theories_decl(trans.theories_decl.indexWhere(dt => dt.name == ln))
+        val parent : DeclaredTheory = trans.theories_decl.find(dt => dt.name == ln).get
 
         // Macetes are added as opaque (for now?)
         val opaque = new OpaqueText(parent.path.toDPath, List(StringFragment(d.toString)))
@@ -280,8 +284,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         /* Opaque Text doesn't have metadata, apparently, so we don't add the src */
 
         controller add opaque
-      }
-      case _ => log("Error: Unknown LispExp encountered, not translated!"); ???
+
+      case _ => log("Error: Unknown LispExp encountered, not translated!")
     }
   }
 
@@ -305,7 +309,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       case IMPSVar(v)           => OMV(v)
       case IMPSSymbolRef(gn)    => OMS(gn)
-      case IMPSMathSymbol(s)    => OMS(IMPSTheory.thpath ? s) // TODO: Is this enough or should the theory also be here?
+      case IMPSMathSymbol(s)    => OMS(IMPSTheory.thpath ? s)
       case IMPSTruth()          => OMS(IMPSTheory.thpath ? "thetrue")
       case IMPSFalsehood()      => OMS(IMPSTheory.thpath ? "thefalse")
       case IMPSNegation(p)      => IMPSTheory.Negation(doMathExp(p))
@@ -329,10 +333,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   }
 
   /* Source References. Methods exceedingly small, but look nicer than doing this everywhere directly */
-  def doSourceRef(t : Term, s : SourceRef)        = { SourceRef.update(t, s) }
-  def doSourceRef(d : Declaration, s : SourceRef) = { SourceRef.update(d, s) }
+  def doSourceRef(t : Term, s : SourceRef)        : Unit = { SourceRef.update(t, s) }
+  def doSourceRef(d : Declaration, s : SourceRef) : Unit = { SourceRef.update(d, s) }
 
-  def doUsages(d : Declaration, usages : List[Usage]) =
+  /* Add metadata from usages element */
+  def doUsages(d : Declaration, usages : List[Usage]) : Unit =
   {
     for (usage <- usages)
     {
@@ -347,7 +352,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
    * Might be rewritten, when we have cleverer solutions for MetaData */
   def doMetaData(d : Declaration, metaVerb : String, metaObject : String) : Unit =
   {
-    val mv : GlobalName = rootdpath ? d.name ? LocalName(metaVerb)
+    val mv : GlobalName =     rootdpath ? d.name ? LocalName(metaVerb)
     val mo : Obj        = OMS(rootdpath ? d.name ? metaObject)
 
     d.metadata.add(new MetaDatum(mv,mo))
@@ -356,14 +361,15 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   def doName(s : String) : LocalName = LocalName(s)
 }
 
-// See also: This exact thing, but in PVS
+/* Some things are convenient to carry around in state.
+   See also: This exact thing, but in PVS */
 class TranslationState (bt : BuildTask)
 {
-  var vars           : Context              = Context.empty
-  var theories_decl  : List[DeclaredTheory] = Nil
-  var theories_raw   : List[Theory]         = Nil
-  var languages      : List[Language]       = Nil
-  protected var unknowns : Int         = 0
+            var vars           : Context              = Context.empty
+            var theories_decl  : List[DeclaredTheory] = Nil
+            var theories_raw   : List[Theory]         = Nil
+            var languages      : List[Language]       = Nil
+  protected var unknowns       : Int                  = 0
 
   protected def doiName(i : Int, isType : Boolean) : LocalName = {
     LocalName("") / { if (isType) LocalName("I") else LocalName("i") } / i.toString
@@ -373,11 +379,11 @@ class TranslationState (bt : BuildTask)
 
   def bindUnknowns(t : Term) : Term =
   {
-    val symbs = t.freeVars.collect {
+    val symbols = t.freeVars.collect {
       case ln if ln.toString.startsWith("""/i/""") => ln
     }
 
-    val cont = symbs.flatMap(n =>
+    val cont = symbols.flatMap(n =>
     {
       val i = (0 until unknowns).find(j => n == doiName(j,false))
       if (i.isDefined) {
@@ -393,7 +399,8 @@ class TranslationState (bt : BuildTask)
     } else { t }
   }
 
-  def reset = {
+  def reset : Unit =
+  {
     unknowns = 0
     vars = Context.empty
   }
