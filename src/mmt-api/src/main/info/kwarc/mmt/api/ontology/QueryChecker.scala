@@ -73,7 +73,7 @@ object QueryChecker {
       }
 
       /** a judgement has to hold about a single object.  */
-      case Holds(about, varname, j) => infer(about) match {
+      case Holds(about, j) => infer(about) match {
         case ElementQuery1(PathType) =>
         case _ => throw ParseError("illegal proposition: " + p + "\nExpected ElementQuery(Path) as argument to Holds()")
       }
