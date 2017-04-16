@@ -303,8 +303,15 @@ class QueryEvaluator(controller: Controller) {
       evalSet(dom) forall { e => evalProp(sc)((vn, e.head) :: subst) }
 
     /** check that a judgement holds for a given item */
-    case Holds(about, varname, j) =>
-      // TODO: Implement this
+    case Holds(about, j) =>
+      // fetch the item we are talking about
+      val pth = evalSinglePath(about) match {
+        case gn: GlobalName => gn
+        case _ => throw ImplementationError("precondition failed: Argument to Holds() has to return GlobalName")
+      }
+
+      val properJudgement = j.toJudgement(pth)
+      // @dennis: need to evaluate 'properJudgement' and return a boolean
       throw ImplementationError("Holds() predecate not implemented")
   }
 }
