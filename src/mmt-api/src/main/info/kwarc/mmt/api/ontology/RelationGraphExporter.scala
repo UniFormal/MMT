@@ -128,24 +128,6 @@ class PathGraphExporter extends RelationGraphExporter with ChangeListener {
   val key = "pathgraph"
   override val logPrefix = "pathgraph"
 
-  lazy val oldtheories = {
-    log("Loading theories...")
-    val ret = (controller.depstore.getInds(IsTheory) collect {
-      case mp: MPath => mp
-    }).toList
-    log("Done.")
-    ret
-  }
-  lazy val oldviews = {
-    log("Loading views...")
-    val ret = (controller.depstore.getInds(IsView) collect {
-      case mp : MPath => mp
-    }).toList
-    log("Done.")
-    ret
-  }
-  private var newtheories : List[MPath] = Nil
-  private var newviews : List[MPath] = Nil
   private def alltheories = {
     log("Loading theories...")
     val ret = (controller.depstore.getInds(IsTheory) collect {
@@ -161,12 +143,6 @@ class PathGraphExporter extends RelationGraphExporter with ChangeListener {
     }).toList
     log("Done.")
     ret
-  }
-
-  override def onAdd(c : StructuralElement) = c match {
-    case th : Theory => newtheories ::= th.path
-    case v : View => newviews ::= v.path
-    case _ =>
   }
   private lazy val tg: ontology.TheoryGraph = new ontology.TheoryGraph(controller.depstore)
 
