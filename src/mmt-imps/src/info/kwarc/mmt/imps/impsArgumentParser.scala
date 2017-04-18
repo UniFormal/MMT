@@ -1,8 +1,7 @@
 package info.kwarc.mmt.imps
 
-import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.imps.Usage.Usage
-
+import info.kwarc.mmt.imps.NumericalType.NumericalType
 
 package object impsArgumentParsers
 {
@@ -398,12 +397,26 @@ package object impsArgumentParsers
    * used in: def-language (extensible, see parseExtensible) */
   def parseTypeSortAList(e : Exp) : Option[TypeSortAList] =
   {
-    e.children(0) match {
-      case Exp(List(Str(x)),_) => e.children(1) match {
-        case Exp(List(Str(y)),_) => Some(TypeSortAList(x,y))
+    val ntp : Option[NumericalType] = e.children(0) match {
+      case Exp(List(Str("*integer-type*")),_)  => Some(NumericalType.INTEGERTYPE)
+      case Exp(List(Str("*rational-type*")),_) => Some(NumericalType.RATIONALTYPE)
+      case Exp(List(Str("*octet-type*")),_)    => Some(NumericalType.OCTETTYPE)
+      case _                                   => None
+    }
+
+    var srt : Option[String] = None
+    if (ntp.isDefined)
+    {
+      srt = e.children(1) match {
+        case Exp(List(Str(y)),_) => Some(y)
         case _                   => None
       }
-      case _                   => None
+    }
+
+    if (ntp.isDefined && srt.isDefined) {
+      Some(TypeSortAList(ntp.get,srt.get))
+    } else {
+      None
     }
 
   }
@@ -426,7 +439,6 @@ package object impsArgumentParsers
         {
           // Constant specification has two elements
           assert(ss.length == 2)
-          //if (!(ss.length == 2)) { println("ASSERTION FAIL: " + ss.toString()) }
 
           ss(0) match {
             case Exp(List(Str(name)),_) => ss(1) match {
@@ -437,7 +449,7 @@ package object impsArgumentParsers
                 for (j <- js)
                 {
                   j match {
-                    case Str(srt) => str = str + srt + " "
+                    case Exp(List(Str(srt)),_) => str = str + srt + " "
                     case _ => ()
                   }
                 }

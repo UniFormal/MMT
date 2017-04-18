@@ -4,6 +4,7 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.Usage.Usage
 
 /* Parser abstract class and case classes. */
@@ -146,9 +147,17 @@ case class ComponentTheories(lst : List[String], src : SourceRef) extends LispEx
   }
 }
 
-case class TypeSortAList(numericType : String, sort : String) extends LispExp
+object NumericalType extends Enumeration
 {
-  override def toString: String = "(" + numericType + " " + sort + ")"
+  type NumericalType = Value
+  val INTEGERTYPE = Value("*integer-type*")
+  val RATIONALTYPE = Value("*rational-type*")
+  val OCTETTYPE = Value("*octet-type*")
+}
+
+case class TypeSortAList(numericType : NumericalType, sort : String) extends LispExp
+{
+  override def toString: String = "(" + numericType.toString + " " + sort + ")"
 }
 
 case class Extensible(lst : List[TypeSortAList], src : SourceRef) extends LispExp

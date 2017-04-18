@@ -175,8 +175,47 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
   def doLanguage(l : Language, t : DeclaredTheory) : Unit =
   {
-    // TODO: Embedded Languages and Theories
-    // TODO: Basetypes
+    def doLanguageOrTheory(target : String, t : DeclaredTheory) : Unit =
+    {
+      val exists_theory   : Boolean = tState.theories_raw.exists(p => p.name == target)
+      val exists_language : Boolean = tState.languages.exists(p => p.name == target)
+      assert(exists_language || exists_theory)
+
+      if (exists_language)
+      {
+        doLanguage(tState.languages.find(p => p.name == target).get, t)
+      }
+      else if (exists_theory)
+      {
+        val argt : ArgumentLanguage = tState.theories_raw.find(p => p.name == target).get.lang.get
+        assert(tState.languages.exists(p => p.name == argt.lang))
+        doLanguage(tState.languages.find(p => p.name == argt.lang).get, t)
+      }
+    }
+
+    if (l.embedlang.isDefined) {
+      doLanguageOrTheory(l.embedlang.get.name,t)
+    }
+
+    if (l.embedlangs.isDefined)
+    {
+      for (l_embed <- l.embedlangs.get.names) {
+        doLanguageOrTheory(l_embed, t)
+      }
+    }
+
+    if (l.bstps.isDefined)
+    {
+      for (baseType : String <- l.bstps.get.tps)
+      {
+        val sort_type : Term = tState.addUnknown()
+        tState.bindUnknowns(sort_type)
+
+        val basetype = symbols.Constant(t.toTerm, doName(baseType), Nil, Some(sort_type), None, Some("BaseType"))
+        doSourceRef(basetype, l.bstps.get.src)
+        controller add basetype
+      }
+    }
 
     if (l.srts.isDefined)
     {
@@ -184,23 +223,30 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       {
         val mth : Term = doType(IMPSSortRef(spec._2))
         val nu_sort = symbols.Constant(t.toTerm, doName(spec._1), Nil, Some(mth), None, None)
-
         doSourceRef(nu_sort, l.srts.get.src)
         controller.add(nu_sort)
       }
     }
 
-    // TODO: Extensible
+    if (l.extens.isDefined)
+    {
+      for (tal : TypeSortAList <- l.extens.get.lst)
+      {
+        // TODO: Can this be translated into something non-opaque?
+        //       See IMPS manual, pgs. 172, 173
+        val opaque = new OpaqueText(t.path.toDPath, List(StringFragment(tal.toString)))
+        controller.add(opaque)
+      }
+    }
 
     if (l.cnstnts.isDefined)
     {
       for (pair : (String, String) <- l.cnstnts.get.lst)
       {
-        val mth_tp : Term = doTypeFromString(pair._2, t)
-
-        val l_const = symbols.Constant(t.toTerm,doName(pair._2),Nil,Some(mth_tp),None,Some("Constant"))
+        val mth_tp : Term = doType(IMPSSortRef(pair._2))
+        val l_const = symbols.Constant(t.toTerm,doName(pair._1),Nil,Some(mth_tp),None,Some("Constant"))
         doSourceRef(l_const,l.cnstnts.get.src)
-        controller.add(l_const)
+        controller add l_const
       }
     }
   }
