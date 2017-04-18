@@ -311,6 +311,7 @@ class QueryEvaluator(controller: Controller) {
       }
 
       val properJudgement = j.toJudgement(pth)
+      // TODO
       // @dennis: need to evaluate 'properJudgement' and return a boolean
       throw ImplementationError("Holds() predecate not implemented")
   }

@@ -126,7 +126,7 @@ class ConceptServer extends ServerExtension("concepts") {
     case List("add") =>
       // if we are missing parameters, return a 404
       if (!request.parsedQuery.contains("URI") || !request.parsedQuery.contains("concept")) {
-        return ServerResponse.text("Malformed Query", statusCode = ServerResponse.statusCodeNotFound)
+        return ServerResponse.fromText("Malformed Query", statusCode = ServerResponse.statusCodeNotFound)
       }
 
       // extract parameters from the queryString
@@ -134,7 +134,7 @@ class ConceptServer extends ServerExtension("concepts") {
 
       // whatever this code was doing before
       if (alignments.getConceptAlignments(con).map(_.toString.replace("http://", "").replace("https://", "")).contains(uri)) {
-        return ServerResponse.text("URI " + uri + " already aligned with \"" + con + "\"!")
+        return ServerResponse.fromText("URI " + uri + " already aligned with \"" + con + "\"!")
       }
 
       val ref = Try(LogicalReference(Path.parseMS(uri, NamespaceMap.empty))).getOrElse(PhysicalReference(URI(uri)))
@@ -147,7 +147,7 @@ class ConceptServer extends ServerExtension("concepts") {
       }
 
       log("Added URI " + ref + " to concept: " + con)
-      ServerResponse.text("Added URI " + ref + " to concept: " + con + "\nTHANK YOU FOR CONTRIBUTING!")
+      ServerResponse.fromText("Added URI " + ref + " to concept: " + con + "\nTHANK YOU FOR CONTRIBUTING!")
 
     // adding a new formal concept
     case List("addFormal") =>
@@ -155,7 +155,7 @@ class ConceptServer extends ServerExtension("concepts") {
 
       // if we are missing parameters, return a 404
       if (!request.parsedQuery.contains("to") || !request.parsedQuery.contains("from")) {
-        return ServerResponse.text("Malformed Query", statusCode = ServerResponse.statusCodeNotFound)
+        return ServerResponse.fromText("Malformed Query", statusCode = ServerResponse.statusCodeNotFound)
       }
 
       // read the parameters from the query
@@ -166,7 +166,7 @@ class ConceptServer extends ServerExtension("concepts") {
       if (from == to) ServerResponse.errorResponse("Alignments must be between two different URIs!", request) else {
 
         // parse parameters and check if they are empty
-        val invertible = request.parsedQuery.contains("invertible") // TODO: Consider using a bool
+        val invertible = request.parsedQuery.contains("invertible")
         var pars: List[(String, String)] = List(("direction", if (invertible) "both" else "forward"))
 
         // and parse the parameters manually
@@ -183,13 +183,13 @@ class ConceptServer extends ServerExtension("concepts") {
 
         val al = alignments.makeAlignment(from, to, pars)
         alignments.addNew(al)
-        ServerResponse.text("New Alignment added: " + al.toString + "\nThank you!")
+        ServerResponse.fromText("New Alignment added: " + al.toString + "\nThank you!")
       }
 
     // conlist
     case Nil if request.queryString == "conlist" =>
       log("Query for conlist")
-      ServerResponse.text("[" + conlist.map(s => "\"" + s + "\"").mkString(",") + "]")
+      ServerResponse.fromText("[" + conlist.map(s => "\"" + s + "\"").mkString(",") + "]")
 
     // shows a specific page
     // there was a seperate case for about, but this has been inlined
