@@ -515,10 +515,10 @@ case class Language(name       : String,
     var lsHere  : List[String] = Nil
     var lsThere : List[String] = Nil
 
-    if (embedlang.isDefined)  { lsHere = lsHere ::: List(embedlang.get.name) }
+    if (embedlang.isDefined)  { lsHere = lsHere :+  embedlang.get.name }
     if (embedlangs.isDefined) { lsHere = lsHere ::: embedlangs.get.names }
 
-    if (l.embedlang.isDefined)  { lsThere = lsThere ::: List(l.embedlang.get.name) }
+    if (l.embedlang.isDefined)  { lsThere = lsThere :+  l.embedlang.get.name }
     if (l.embedlangs.isDefined) { lsThere = lsThere ::: l.embedlangs.get.names }
 
     val union_embedlangs : List[String] = (lsHere ::: lsThere).distinct

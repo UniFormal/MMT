@@ -42,13 +42,13 @@ package object impsArgumentParsers
     {
       c match
       {
-        case Exp(List(Str("elementary-macete")),_)        => usgs_prime = usgs_prime ::: List(Usage.ELEMENTARYMACETE)
-        case Exp(List(Str("transportable-macete")),_)     => usgs_prime = usgs_prime ::: List(Usage.TRANSPORTABLEMACETE)
-        case Exp(List(Str("rewrite")),_)                  => usgs_prime = usgs_prime ::: List(Usage.REWRITE)
-        case Exp(List(Str("transportable-rewrite")),_)    => usgs_prime = usgs_prime ::: List(Usage.TRANSPORTABLEREWRITE)
-        case Exp(List(Str("simplify-logically-first")),_) => usgs_prime = usgs_prime ::: List(Usage.SIMPLIFYLOGICALLYFIRST)
-        case Exp(List(Str("d-r-convergence")),_)          => usgs_prime = usgs_prime ::: List(Usage.DRCONVERGENCE)
-        case Exp(List(Str("d-r-value")),_)                => usgs_prime = usgs_prime ::: List(Usage.DRVALUE)
+        case Exp(List(Str("elementary-macete")),_)        => usgs_prime = usgs_prime :+ Usage.ELEMENTARYMACETE
+        case Exp(List(Str("transportable-macete")),_)     => usgs_prime = usgs_prime :+ Usage.TRANSPORTABLEMACETE
+        case Exp(List(Str("rewrite")),_)                  => usgs_prime = usgs_prime :+ Usage.REWRITE
+        case Exp(List(Str("transportable-rewrite")),_)    => usgs_prime = usgs_prime :+ Usage.TRANSPORTABLEREWRITE
+        case Exp(List(Str("simplify-logically-first")),_) => usgs_prime = usgs_prime :+ Usage.SIMPLIFYLOGICALLYFIRST
+        case Exp(List(Str("d-r-convergence")),_)          => usgs_prime = usgs_prime :+ Usage.DRCONVERGENCE
+        case Exp(List(Str("d-r-value")),_)                => usgs_prime = usgs_prime :+ Usage.DRVALUE
         case _ => ()
       }
     }
@@ -69,7 +69,7 @@ package object impsArgumentParsers
     {
         aspec match {
           case Exp(ds,src) => parseAxiomSpecification(Exp(ds,src)) match {
-            case Some(as)  => axms = axms ::: List(as)
+            case Some(as)  => axms = axms :+ as
             case None      => ()
           }
         }
@@ -92,13 +92,13 @@ package object impsArgumentParsers
       {
         e.children(i) match
         {
-          case Exp(List(Str("elementary-macete")),_)        => usgs = usgs ::: List(Usage.ELEMENTARYMACETE)
-          case Exp(List(Str("transportable-macete")),_)     => usgs = usgs ::: List(Usage.TRANSPORTABLEMACETE)
-          case Exp(List(Str("rewrite")),_)                  => usgs = usgs ::: List(Usage.REWRITE)
-          case Exp(List(Str("transportable-rewrite")),_)    => usgs = usgs ::: List(Usage.TRANSPORTABLEREWRITE)
-          case Exp(List(Str("simplify-logically-first")),_) => usgs = usgs ::: List(Usage.SIMPLIFYLOGICALLYFIRST)
-          case Exp(List(Str("d-r-convergence")),_)          => usgs = usgs ::: List(Usage.DRCONVERGENCE)
-          case Exp(List(Str("d-r-value")),_)                => usgs = usgs ::: List(Usage.DRVALUE)
+          case Exp(List(Str("elementary-macete")),_)        => usgs = usgs :+ Usage.ELEMENTARYMACETE
+          case Exp(List(Str("transportable-macete")),_)     => usgs = usgs :+ Usage.TRANSPORTABLEMACETE
+          case Exp(List(Str("rewrite")),_)                  => usgs = usgs :+ Usage.REWRITE
+          case Exp(List(Str("transportable-rewrite")),_)    => usgs = usgs :+ Usage.TRANSPORTABLEREWRITE
+          case Exp(List(Str("simplify-logically-first")),_) => usgs = usgs :+ Usage.SIMPLIFYLOGICALLYFIRST
+          case Exp(List(Str("d-r-convergence")),_)          => usgs = usgs :+ Usage.DRCONVERGENCE
+          case Exp(List(Str("d-r-value")),_)                => usgs = usgs :+ Usage.DRVALUE
           case _ => ()
         }
         i += 1
@@ -121,7 +121,7 @@ package object impsArgumentParsers
     for (ct <- e.children.tail)
     {
       ct match {
-        case Exp(List(Str(theory)),_) => lst = lst ::: List(theory)
+        case Exp(List(Str(theory)),_) => lst = lst :+ theory
         case _ => ()
       }
     }
@@ -161,12 +161,12 @@ package object impsArgumentParsers
           for (c <- ds)
           {
               c match {
-                case Exp(List(Str(constant)),_) => innerList = innerList ::: List(constant)
+                case Exp(List(Str(constant)),_) => innerList = innerList :+ constant
                 case _ => ()
               }
           }
 
-          if (innerList.nonEmpty) { outerList = outerList ::: List(innerList) }
+          if (innerList.nonEmpty) { outerList = outerList :+ innerList }
         }
         case _ => ()
       }
@@ -290,7 +290,7 @@ package object impsArgumentParsers
       {
         e.children(i) match
         {
-          case Exp(List(Str(x)),_) => fixed = fixed ::: List(x)
+          case Exp(List(Str(x)),_) => fixed = fixed :+ x
           case _                   => None
         }
         i += 1
@@ -315,7 +315,7 @@ package object impsArgumentParsers
       {
         e.children(i) match
         {
-          case Exp(List(Str(x)),_) => source = source ::: List(x)
+          case Exp(List(Str(x)),_) => source = source :+ x
           case _                   => None
         }
         i += 1
@@ -347,7 +347,7 @@ package object impsArgumentParsers
     for (k <- e.children.tail)
     {
       k match {
-        case Exp(List(Str(x)),_) => lst = lst ::: List(x)
+        case Exp(List(Str(x)),_) => lst = lst :+ x
         case _                   => ()
       }
     }
@@ -365,7 +365,7 @@ package object impsArgumentParsers
     for (k <- e.children.tail)
     {
       k match {
-        case Exp(List(Str(x)),_) => lst = lst ::: List(x)
+        case Exp(List(Str(x)),_) => lst = lst :+ x
         case _                   => ()
       }
     }
@@ -386,7 +386,7 @@ package object impsArgumentParsers
         case _        => None
       }
 
-      if (prs.isDefined) { list = list ::: List(prs.get) }
+      if (prs.isDefined) { list = list :+ prs.get }
     }
 
     if (list.isEmpty) { None } else { Some(Extensible(list, e.src))}
@@ -455,7 +455,7 @@ package object impsArgumentParsers
                 }
                 str = str.trim
                 if (js.length >= 2) {str = str + ")"}
-                lst = lst ::: List((name, str))
+                lst = lst :+ (name, str)
               }
             }
             case _ => ()
@@ -502,7 +502,7 @@ package object impsArgumentParsers
                 }
                 str = str.trim
                 if (js.length >= 2) {str = str + ")"}
-                lst = lst ::: List((name, str))
+                lst = lst :+ (name, str)
               }
             }
             case _ => ()
@@ -529,7 +529,7 @@ package object impsArgumentParsers
       {
         e.children(i) match
         {
-          case Exp(List(Str(x)),_) => accs = accs ::: List(x)
+          case Exp(List(Str(x)),_) => accs = accs :+ x
           case _                   => None
         }
         i += 1

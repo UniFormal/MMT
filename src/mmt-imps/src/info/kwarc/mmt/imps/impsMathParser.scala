@@ -92,9 +92,9 @@ package object impsMathParser
         if (pp.contains(':'))
         {
           val var_and_sort : Array[String] = pp.split(':')
-          vars = vars ::: List((IMPSVar(var_and_sort(0)), Some(IMPSSortRef(var_and_sort(1)))))
+          vars = vars :+ (IMPSVar(var_and_sort(0)), Some(IMPSSortRef(var_and_sort(1))))
         }
-        else { vars = vars ::: List((IMPSVar(pp), None)) }
+        else { vars = vars :+ (IMPSVar(pp), None) }
       }
 
       val t_opt : Option[IMPSMathExp] = parseIMPSMath(p)

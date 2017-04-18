@@ -37,7 +37,7 @@ class IMPSParser
         {
           u.next()
           val exp = parseExpAndSourceRef(u, uri)
-          exprs = exprs ::: List(exp)
+          exprs = exprs :+ exp
         }
         else
         if (u.head == ';')
@@ -52,7 +52,7 @@ class IMPSParser
           val sref_region : SourceRegion   = SourceRegion(sref_start, sref_end)
           val sref        : SourceRef      = SourceRef(uri, sref_region)
 
-          exprs = exprs ::: List(Exp(List(Comment(str,sref)), sref))
+          exprs = exprs :+ Exp(List(Comment(str,sref)), sref)
         }
       }
     }
@@ -129,7 +129,7 @@ class IMPSParser
         val sr_region : SourceRegion   = SourceRegion(sr_start, sr_end)
         val sr        : SourceRef      = SourceRef(uri, sr_region)
 
-        children = children ::: List(Exp(List(Str("\"" + str + "\"")), sr))
+        children = children :+ Exp(List(Str("\"" + str + "\"")), sr)
         u.next()
       }
       else if (u.head == '(')
@@ -138,7 +138,7 @@ class IMPSParser
          * necessitating a recursive call here */
         u.next()
         val chld : Exp = parseExpAndSourceRef(u, uri)
-        children = children ::: List(chld)
+        children = children :+ chld
         u.next()
       }
       else if (u.head == ')')
@@ -164,7 +164,7 @@ class IMPSParser
         val sr        : SourceRef      = SourceRef(uri, sr_region)
 
         // TODO: Is this nesting overkill / overcommplicated?
-        children = children ::: List(Exp(List(Str(str)), sr))
+        children = children :+ Exp(List(Str(str)), sr)
       }
     }
 

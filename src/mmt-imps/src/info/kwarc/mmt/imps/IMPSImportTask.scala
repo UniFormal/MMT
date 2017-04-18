@@ -48,7 +48,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         /* Translating Theories to MMT */
         case t@(Theory(_,_,_,_,_,_)) => doTheory(t)
         // Languages are processed in context of theories using them, not by themselves
-        case l@(Language(_,_,_,_,_,_,_,_)) => tState.languages = tState.languages ::: List(l)
+        case l@(Language(_,_,_,_,_,_,_,_)) => tState.languages = tState.languages :+ l
         // If it's none of these, fall back to doDeclaration
         case _ => doDeclaration(exp)
       }
@@ -79,8 +79,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   def doTheory (t : Theory) : Unit =
   {
     val nu_theory = new DeclaredTheory(bt.narrationDPath, LocalName(t.name), Some(IMPSTheory.thpath))
-    tState.theories_decl = tState.theories_decl ::: List(nu_theory)
-    tState.theories_raw  = tState.theories_raw  ::: List(t)
+    tState.theories_decl = tState.theories_decl :+ nu_theory
+    tState.theories_raw  = tState.theories_raw  :+ t
 
     controller.add(nu_theory, None)
     controller.add(MRef(bt.narrationDPath,nu_theory.path))

@@ -204,7 +204,7 @@ package object impsDefFormParsers
       e.children(2) match {
         case Exp(czs, _) => for (c <- czs) {
           c match {
-            case Exp(List(Str(k)),_) => tmplst = tmplst ::: List(k)
+            case Exp(List(Str(k)),_) => tmplst = tmplst :+ k
             case _                   => ()
           }
         }
