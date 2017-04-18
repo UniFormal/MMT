@@ -46,11 +46,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       exp match
       {
         /* Translating Theories to MMT */
-        case t@(Theory(_,_,_,_,_,_)) => doTheory(t)
+        case t@(Theory(_,_,_,_,_,_))       => doTheory(t)
         // Languages are processed in context of theories using them, not by themselves
         case l@(Language(_,_,_,_,_,_,_,_)) => tState.languages = tState.languages :+ l
         // If it's none of these, fall back to doDeclaration
-        case _ => doDeclaration(exp)
+        case _                             => doDeclaration(exp)
       }
     }
 
@@ -367,22 +367,16 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     // TODO: Check if type is already in theory(?)
     // Reference if yes, introduce if no?
 
-    val ret : Term = d match
-    {
-      case IMPSSortRef(srt) =>
-        IMPSTheory.Sort(OMS(IMPSTheory.thpath ? LocalName(srt)))
-    }
-    ret
-  }
-
-  def doTypeFromString(s : String, t : DeclaredTheory) : Term =
-  {
     /* See IMPS Manual pg. 172?
     – It occurs in a previous sort specification.
     – It is a sort in one of the embedded languages.
     – It is a compound sort which can be built up from sorts of the preceding kinds. */
 
-    ???
+    val ret : Term = d match
+    {
+      case IMPSSortRef(srt) => IMPSTheory.Sort(OMS(IMPSTheory.thpath ? LocalName(srt)))
+    }
+    ret
   }
 
   /* Translate IMPS Math Expressions to Terms */
