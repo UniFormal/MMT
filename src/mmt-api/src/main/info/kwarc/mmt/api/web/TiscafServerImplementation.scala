@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.web
 
 import java.io.InputStream
+import java.net.Authenticator.RequestorType
 
 import tiscaf._
 
@@ -44,7 +45,7 @@ trait TiscafServerImplementation extends HServer with ServerImplementation {
     def resolve(req: HReqData): Option[HLet] = {
       Some(new HSimpleLet {
         def act(tk: HTalk) = {
-          val response = handleRequest(ServerTiscafAdapter.tiscaf2Request(req))
+          val response = handleRequest(ServerTiscafAdapter.tiscaf2Request(tk))
 
           // set the status code
           var tiscafRef = tk.setStatus(ServerTiscafAdapter.code2Tiscaf(response.statusCode))
@@ -95,10 +96,12 @@ object ServerTiscafAdapter {
   def tiscaf2Method(method: HReqType.Value): RequestMethod.Value = method match {
     case HReqType.Get => RequestMethod.Get
     case HReqType.PostData => RequestMethod.Post
+    case HReqType.PostOctets => RequestMethod.Post
     case HReqType.PostMulti => RequestMethod.Post
     case HReqType.Delete => RequestMethod.Delete
     case HReqType.Options => RequestMethod.Options
     case HReqType.Head => RequestMethod.Head
+    case HReqType.Invalid => RequestMethod.Head
   }
 
   /** creates a new request object from an internal Tiscaf HReqData object */
@@ -114,7 +117,7 @@ object ServerTiscafAdapter {
 
   /** creates a new request object from a tiscaf HTalk */
   def tiscaf2Request(tk: HTalk): ServerRequest = {
-    val body = new Body(None)
+    val body = tiscaf2Body(tk)
     val sessionID = Some(Session(tk.ses.id))
 
     tiscaf2Request(tk.req).copy(body = body, sessionID = sessionID)
