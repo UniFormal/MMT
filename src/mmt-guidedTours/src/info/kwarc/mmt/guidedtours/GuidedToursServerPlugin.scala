@@ -15,7 +15,6 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
 import objects._
 import libraries._
 import scala.concurrent._
-import tiscaf._
 import scala.collection.mutable.HashMap._
 import info.kwarc.mmt.api.web._
 import scala.util.parsing.json._
@@ -28,24 +27,24 @@ import java.util.Calendar
 
 class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logger with utils.sqlite {
   
-  def error(msg : String) : HLet = {
+  def error(msg : String, request: ServerRequest) : HLet = {
     log("ERROR: " + msg)
     Server.errorResponse(msg, req)
   }
   
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): ServerResponse = {
     try {
       uriComps match {
-        case "getTutorial" :: _ => getTutorial
-        case "gethtml" :: _ => getHtmlResponse
-        case _ => error("Invalid request: " + request.path.mkString("/"))
+        case "getTutorial" :: _ => getTutorial(request)
+        case "gethtml" :: _ => getHtmlResponse(request)
+        case _ => error("Invalid request: " + request.path.mkString("/"), request)
       }
     } catch {
       case e : Error => 
         log(e.shortMsg) 
-        Server.errorResponse(e.shortMsg, req)
+        ServerResponse.errorResponse(e.shortMsg, request)
       case e : Exception => 
-        error("Exception occured : " + e.getStackTrace())
+        error("Exception occured : " + e.getStackTrace(), request)
     }
   }
 
@@ -100,73 +99,70 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
     }
   }
   
-    private def getTutorial : HLet = new HLet {
-      def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-        val topicName = tk.req.param("topic").getOrElse(throw ServerError("No topic name found")).toString
-        val uid = tk.req.param("uid")getOrElse(throw ServerError("No user id found")).toString
-        val length = tk.req.param("length").getOrElse("20").toString
+    private def getTutorial(request: ServerRequest) : ServerResponse = try {
+        val topicName = request.parsedQuery("topic").getOrElse(throw ServerError("No topic name found")).toString
+        val uid = request.parsedQuery("uid")getOrElse(throw ServerError("No user id found")).toString
+        val length = request.parsedQuery("length").getOrElse("20").toString
         val path = Path.parseM(topicName, NamespaceMap.empty)
         
         val tutorial = new Tutorial(controller, path, uid.toInt)
-        Server.TextResponse(tutorial.getContent(length.toInt)).aact(tk) 
+        ServerResponse.TextResponse(tutorial.getContent(length.toInt)).aact(tk)
       }
       catch {
-        case e : Error => error(e.getMessage + "\n" + e.extraMessage).aact(tk)
-        case e : Exception => error(e.getMessage).aact(tk)
+        case e : Error => error(e.getMessage + "\n" + e.extraMessage, request)
+        case e : Exception => error(e.getMessage, request)
       }
-    }
   
-   private def getHtmlResponse : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val topicName = tk.req.param("topic").getOrElse(throw ServerError("No topic name found")).toString
-      //val token = tk.req.param("token").getOrElse(throw ServerError("No token was provided. Unauthorized")).toString
-      
-      //val userKarma = new UserKarmaTemp(token)
-      //if(userKarma == null) {
-      //  throw ServerError("No user was found")
-      //}
-      
-      val path = Path.parseM(topicName, NamespaceMap.empty)
-      //val sorted = controller.depstore.getInds(ontology.IsTheory).toList;
-      //val sorted = tour(userKarma, getAllChildren(path, 3))
-      
-      //val response = sorted.length.toString + "\n" + sorted.mkString("(",",",")")// + "\n\n\n\n\n\n\n\n\n" + examples.mkString("(",",",")")
-      
-      println("Before everything")
-      
-      val tut = new Tutorial(controller, path, 0)
-      
-      //
-      /*val sb = new presentation.StringBuilder()
-      val presenter = controller.extman.getPresenter("planetary").getOrElse{
-        println("defaulting to default presenter")
-        controller.presenter
-      }
-      presenter.apply(controller.get(sorted(0)), false)(sb)
-      val out = sb.get*/
-      //
-      
-      //var response = ""
-      println("Somehow here")
-      
-      /*val tmp = utils.Utilities.parseGraph("/home/filipbitola/Downloads/parsed_graph.txt")
-      
-      val matrix  = utils.Utilities.getMatrixFromGraph(tmp._1, tmp._2)
-      println("Before paths")
-      val paths = pathify(tmp._1)
-      println("Paths")
-      println(paths.mkString)
-      val clusters = new utils.MarkovClusterer().cluster(matrix, paths)
-      println(clusters.deep)
-      
-      val response = clusters.deep.mkString("(", ",", ")")*/
+   private def getHtmlResponse(request: ServerRequest) : ServerResponse = try {
+    val topicName = request.parsedQuery("topic").getOrElse(throw ServerError("No topic name found")).toString
+    //val token = tk.req.param("token").getOrElse(throw ServerError("No token was provided. Unauthorized")).toString
 
-      Server.TextResponse(tut.getContent(20)).aact(tk)
-    } catch {
-      case e : Error => error(e.getMessage + "\n" + e.extraMessage).aact(tk)
-      case e : Exception => error(e.getMessage).aact(tk)
+    //val userKarma = new UserKarmaTemp(token)
+    //if(userKarma == null) {
+    //  throw ServerError("No user was found")
+    //}
+
+    val path = Path.parseM(topicName, NamespaceMap.empty)
+    //val sorted = controller.depstore.getInds(ontology.IsTheory).toList;
+    //val sorted = tour(userKarma, getAllChildren(path, 3))
+
+    //val response = sorted.length.toString + "\n" + sorted.mkString("(",",",")")// + "\n\n\n\n\n\n\n\n\n" + examples.mkString("(",",",")")
+
+    println("Before everything")
+
+    val tut = new Tutorial(controller, path, 0)
+
+    //
+    /*val sb = new presentation.StringBuilder()
+    val presenter = controller.extman.getPresenter("planetary").getOrElse{
+      println("defaulting to default presenter")
+      controller.presenter
     }
+    presenter.apply(controller.get(sorted(0)), false)(sb)
+    val out = sb.get*/
+    //
+
+    //var response = ""
+    println("Somehow here")
+
+    /*val tmp = utils.Utilities.parseGraph("/home/filipbitola/Downloads/parsed_graph.txt")
+
+    val matrix  = utils.Utilities.getMatrixFromGraph(tmp._1, tmp._2)
+    println("Before paths")
+    val paths = pathify(tmp._1)
+    println("Paths")
+    println(paths.mkString)
+    val clusters = new utils.MarkovClusterer().cluster(matrix, paths)
+    println(clusters.deep)
+
+    val response = clusters.deep.mkString("(", ",", ")")*/
+
+    ServerResponse.TextResponse(tut.getContent(20))
+  } catch {
+    case e : Error => error(e.getMessage + "\n" + e.extraMessage, request)
+    case e : Exception => error(e.getMessage, request)
   }
+
    private def pathify(topics: List[String]) : List[Path] = {
      topics.map{x => path(x)}
    }

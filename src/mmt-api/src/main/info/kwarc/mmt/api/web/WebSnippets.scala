@@ -3,9 +3,7 @@ package info.kwarc.mmt.api.web
 import info.kwarc.mmt.api._
 import ontology._
 import documents._
-import Server._
-import tiscaf.{HLet, HReqData}
-
+import ServerResponse._
 /**
  * serves a tree-based navigation component for an HTML page
  */
@@ -35,7 +33,7 @@ class TreeView extends ServerExtension("tree") {
          }
       }}</root>
    }
-   def apply(request: Request): HLet = {
+   def apply(request: ServerRequest): ServerResponse = {
        val q = request.query
        val node = if (q.startsWith(":root")) {
          val prefix = utils.stringToList(q, "/").tail
@@ -82,7 +80,7 @@ class TreeView extends ServerExtension("tree") {
  * serves a bread crumbs-style navigation component for an HTML page
  */
 class BreadcrumbsServer extends ServerExtension("breadcrumbs") {
-   def apply(request: Request): HLet = {
+   def apply(request: ServerRequest): ServerResponse = {
       val mmtpath = Path.parse(request.query, controller.getNamespaceMap)
       val ancs = mmtpath.ancestors.reverse
       var mpathfound = false
@@ -104,6 +102,6 @@ class BreadcrumbsServer extends ServerExtension("breadcrumbs") {
             }
          }
       }
-      Server.XmlResponse(res)
+     XmlResponse(res)
    }
 }
