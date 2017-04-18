@@ -30,11 +30,11 @@ theory Booleans =
 
 class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger with MMTTask
 {
-	def logPrefix = "imps-omdoc"
-	protected def report: Report = controller.report
+	          def logPrefix : String = "imps-omdoc"
+	protected def report    : Report = controller.report
 
   val rootdpath : DPath                = DPath(URI.http colon "imps.mcmaster.ca") /* arbitrary, but seemed fitting */
-  var trans     : TranslationState     = new TranslationState(bt)
+  var tState    : TranslationState     = new TranslationState(bt)
 
 	def doDocument(es : Exp, uri : URI) : BuildResult =
 	{
@@ -48,7 +48,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         /* Translating Theories to MMT */
         case t@(Theory(_,_,_,_,_,_)) => doTheory(t)
         // Languages are processed in context of theories using them, not by themselves
-        case l@(Language(_,_,_,_,_,_,_,_)) => trans.languages = trans.languages ::: List(l)
+        case l@(Language(_,_,_,_,_,_,_,_)) => tState.languages = tState.languages ::: List(l)
         // If it's none of these, fall back to doDeclaration
         case _ => doDeclaration(exp)
       }
@@ -65,7 +65,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
           throw GeneralError("no checker found")
         }.asInstanceOf[MMTStructureChecker]
-        trans.theories_decl foreach { p =>
+        tState.theories_decl foreach { p =>
           val ce = new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore, this)
           checker.apply(p)(ce)
         }
@@ -79,8 +79,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   def doTheory (t : Theory) : Unit =
   {
     val nu_theory = new DeclaredTheory(bt.narrationDPath, LocalName(t.name), Some(IMPSTheory.thpath))
-    trans.theories_decl = trans.theories_decl ::: List(nu_theory)
-    trans.theories_raw  = trans.theories_raw  ::: List(t)
+    tState.theories_decl = tState.theories_decl ::: List(nu_theory)
+    tState.theories_raw  = tState.theories_raw  ::: List(t)
 
     controller.add(nu_theory, None)
     controller.add(MRef(bt.narrationDPath,nu_theory.path))
@@ -90,8 +90,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     // Build correct union of languages
     if (t.lang.isDefined) {
-      assert(trans.languages.exists(la => la.name == t.lang.get.lang))
-      l = trans.languages.find(la => la.name == t.lang.get.lang)
+      assert(tState.languages.exists(la => la.name == t.lang.get.lang))
+      l = tState.languages.find(la => la.name == t.lang.get.lang)
     }
 
     if (t.cmpntthrs.isDefined)
@@ -99,13 +99,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       /* For each component theory, take its language (if there is one) */
       for (comp_theory <- t.cmpntthrs.get.lst)
       {
-        assert(trans.theories_raw.exists(thy => thy.name == comp_theory))
-        val t_index : Theory = trans.theories_raw.find(thy => thy.name == comp_theory).get
+        assert(tState.theories_raw.exists(thy => thy.name == comp_theory))
+        val t_index : Theory = tState.theories_raw.find(thy => thy.name == comp_theory).get
 
         if (t_index.lang.isDefined)
         {
-          assert(trans.languages.exists(la => la.name == t_index.lang.get.lang))
-          val l_prime: Language = trans.languages.find(la => la.name == t_index.lang.get.lang).get
+          assert(tState.languages.exists(la => la.name == t_index.lang.get.lang))
+          val l_prime: Language = tState.languages.find(la => la.name == t_index.lang.get.lang).get
 
           if (l.isDefined) {
             l = Some(l.get.union(l_prime))
@@ -175,7 +175,34 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
   def doLanguage(l : Language, t : DeclaredTheory) : Unit =
   {
-    // TODO: Implement
+    // TODO: Embedded Languages and Theories
+    // TODO: Basetypes
+
+    if (l.srts.isDefined)
+    {
+      for (spec : (String, String) <- l.srts.get.lst)
+      {
+        val mth : Term = doType(IMPSSortRef(spec._2))
+        val nu_sort = symbols.Constant(t.toTerm, doName(spec._1), Nil, Some(mth), None, None)
+
+        doSourceRef(nu_sort, l.srts.get.src)
+        controller.add(nu_sort)
+      }
+    }
+
+    // TODO: Extensible
+
+    if (l.cnstnts.isDefined)
+    {
+      for (pair : (String, String) <- l.cnstnts.get.lst)
+      {
+        val mth_tp : Term = doTypeFromString(pair._2, t)
+
+        val l_const = symbols.Constant(t.toTerm,doName(pair._2),Nil,Some(mth_tp),None,Some("Constant"))
+        doSourceRef(l_const,l.cnstnts.get.src)
+        controller.add(l_const)
+      }
+    }
   }
 
   def doDeclaration (d : LispExp) : Unit =
@@ -186,7 +213,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       println("\n>>>>> Call to doDecl for the following expression:\n")
       println(d.toString)
-      for (thy <- trans.theories_decl)
+      for (thy <- tState.theories_decl)
       {
         println("\n<<<<< Theory " + thy.name + " contains the following declarations:")
         for(d <- thy.getDeclarations)
@@ -199,14 +226,14 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case AtomicSort(name, defstring, theory, usages, witness, src) =>
 
         val ln : LocalName = LocalName(theory.thy)
-        assert(trans.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
-        val parent : DeclaredTheory = trans.theories_decl.find(dt => dt.name == ln).get
+        assert(tState.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
+        val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
         val definition : Term = IMPSTheory.Sort(doMathExp(defstring))
-        val sort_type  : Term = trans.doUnknown
-        trans.bindUnknowns(sort_type)
+        val sort_type  : Term = tState.addUnknown()
+        tState.bindUnknowns(sort_type)
 
-        val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, Some(sort_type), Some(definition), None)
+        val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, Some(sort_type), Some(definition), Some("AtomicSort"))
 
         /* Add available MetaData */
         if (witness.isDefined) { doMetaData(nu_atomicSort, "witness", witness.get.witness.toString) }
@@ -218,8 +245,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case Constant(name, definition, theory, sort, usages, src) =>
 
         val ln : LocalName = LocalName(theory.thy)
-        assert(trans.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
-        val parent : DeclaredTheory = trans.theories_decl.find(dt => dt.name == ln).get
+        assert(tState.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
+        val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
         /* look for sort in given theory. */
         var srt : Option[Term] = None
@@ -234,11 +261,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           }
         }
         else {
-          srt = Some(trans.doUnknown)
+          srt = Some(tState.addUnknown())
         }
 
         assert(srt.isDefined)
-        if (srt.isDefined) { trans.bindUnknowns(srt.get) }
+        if (srt.isDefined) { tState.bindUnknowns(srt.get) }
 
         val mth : Term = doMathExp(definition)
         val nu_constant = symbols.Constant(parent.toTerm, LocalName(name), Nil, srt, Some(mth), Some("Constant"))
@@ -253,8 +280,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         // TODO: Currently still forgets about the proof
 
         val ln : LocalName = doName(theory.thy)
-        assert(trans.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
-        val parent : DeclaredTheory = trans.theories_decl.find(dt => dt.name == ln).get
+        assert(tState.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
+        val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
         val mth : Term = IMPSTheory.Thm(doMathExp(formula))
         val nu_theorem = symbols.Constant(parent.toTerm, doName(name), Nil, Some(mth), None, Some("Theorem"))
@@ -275,8 +302,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case SchematicMacete(_, _, thy, _, _, _) =>
 
         val ln : LocalName = LocalName(thy.thy)
-        assert(trans.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
-        val parent : DeclaredTheory = trans.theories_decl.find(dt => dt.name == ln).get
+        assert(tState.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
+        val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
         // Macetes are added as opaque (for now?)
         val opaque = new OpaqueText(parent.path.toDPath, List(StringFragment(d.toString)))
@@ -300,6 +327,16 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         IMPSTheory.Sort(OMS(IMPSTheory.thpath ? LocalName(srt)))
     }
     ret
+  }
+
+  def doTypeFromString(s : String, t : DeclaredTheory) : Term =
+  {
+    /* See IMPS Manual pg. 172?
+    – It occurs in a previous sort specification.
+    – It is a sort in one of the embedded languages.
+    – It is a compound sort which can be built up from sorts of the preceding kinds. */
+
+    ???
   }
 
   /* Translate IMPS Math Expressions to Terms */
@@ -375,7 +412,7 @@ class TranslationState (bt : BuildTask)
     LocalName("") / { if (isType) LocalName("I") else LocalName("i") } / i.toString
   }
 
-  def doUnknown : Term = OMV(doiName({unknowns+=1;unknowns-1},false))
+  def addUnknown() : Term = OMV(doiName({unknowns+=1;unknowns-1},false))
 
   def bindUnknowns(t : Term) : Term =
   {
@@ -399,7 +436,7 @@ class TranslationState (bt : BuildTask)
     } else { t }
   }
 
-  def reset : Unit =
+  def resetUnknowns() : Unit =
   {
     unknowns = 0
     vars = Context.empty
