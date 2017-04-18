@@ -1,5 +1,7 @@
 package info.kwarc.mmt.odk.LMFDB
 
+import java.net.URLEncoder
+
 import info.kwarc.mmt.api._
 import backend._
 import frontend._
@@ -7,6 +9,7 @@ import ontology._
 import info.kwarc.mmt.api.metadata.{Linker, MetaData}
 import info.kwarc.mmt.LFX.Records.Recexp
 import info.kwarc.mmt.api.ontology.{BaseType, Query, QueryEvaluator, QueryExtension}
+import info.kwarc.mmt.api.web.WebQuery
 import info.kwarc.mmt.odk.codecs.{LMFDBCoder, TMInt, TMList, TMString}
 import modules.{DeclaredTheory, _}
 import objects._
@@ -137,9 +140,18 @@ trait LMFDBBackend {
     }
   }
 
+  /** runs a mongo style lmfdb query */
+  protected def lmfdbquery(db: String, query: JSONObject) : List[JSON] = {
+    val queryParams = query.map.map(kv => {
+      (kv._1.value, s"py${kv._1.toString}")
+    })
+    lmfdbquery(db, "&"+WebQuery.encode(queryParams))
+  }
+
+  /** runs a simple lmfdb query */
   protected def lmfdbquery(db:String, query:String) : List[JSON] = {
     // get the url
-    val url = URI("http://www.lmfdb.org/api/" + db + "?_format=json" + query)
+    val url = URI(s"http://www.lmfdb.org/api/$db?_format=json$query")
 
     // get all the data items
     get_json_withnext(url).flatMap(
@@ -245,6 +257,11 @@ object LMFDBEvaluator extends QueryExtension("lmfdb") with LMFDBBackend {
   }
 
   private def getAll(db : DB) : List[GlobalName] = {
+    getSubjectTo(db, JSONObject())
+  }
+
+  /** retrieves a set of urls from a database that are subject to a given condition */
+  private def getSubjectTo(db: DB, query : JSONObject) : List[GlobalName] = {
     // get the schema theory, this is a DeclaredTheory by precondition
     val schema = controller.get(db.schemaTheory) match {
       case dt:DeclaredTheory => dt
@@ -254,8 +271,11 @@ object LMFDBEvaluator extends QueryExtension("lmfdb") with LMFDBBackend {
     // get the key needed
     val key = getKey(schema, error)
 
+    // build the query
+    val queryJS = JSONObject(query.map :+ (JSONString("_fields"), JSONString(key)))
+
     // get a list of data items returned
-    val datas : List[JSON] = lmfdbquery(db.dbpath, "&_fields=" + key)
+    val datas : List[JSON] = lmfdbquery(db.dbpath, queryJS)
 
     // and now get a list of names
     val labels = datas.map({
@@ -270,18 +290,22 @@ object LMFDBEvaluator extends QueryExtension("lmfdb") with LMFDBBackend {
       case s : JSONString => db.dbTheory ? s.value
       case _ => error("Ill-formed JSON returned from database")
     }
-
   }
 
-
   /**
-    * Evaluates a Query using the lmfdb api
-    * @param q           Query to evaluate
-    * @param e           A QueryEvaluator to use for recursive queries
-    * @param substiution Substiution (Context) to apply QueryEvaluation in
+    * attempts to translate a query to an lmfdb query.
+    *
+    * This function does a partial evaluation, in the sense that every Related(..., ToObject(Declares)) query is evaluated.
+    *
+    * May throw an [[ImplementationError]] if the query can not be evaluated using lmfdb.
+    *
+    *
+    * @param q
+    * @param e
+    * @param substiution
     * @return
     */
-  def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = q match {
+  private def translateQuery(q: Query, e:QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): (DB, JSONObject) = q match {
     case Related(to: Query, ToObject(Declares)) =>
 
       // get the db instance from the path
@@ -295,9 +319,44 @@ object LMFDBEvaluator extends QueryExtension("lmfdb") with LMFDBBackend {
         error("Unable to assign lmfdb database. ")
       }
 
-      // create a new result set
-      ResultSet.fromElementList(getAll(db))
+      (db, JSONObject())
+    case Comprehension(domain: Query, varname: LocalName, pred: Prop) =>
+      val (db, q) = translateQuery(domain, e)
+      (db, translateProp(varname, pred))
     case _ =>
-      throw ImplementationError("LMFDB QueryEvaluator() does not support query " + q)
+      error("Unable to translate query into an lmfdb query, evaluation failed")
+  }
+
+  /** translates a proposition (about a given variable assumed to be an lmfdb query) into an lmfdb query */
+  private def translateProp(varname: LocalName, p : Prop) : JSONObject = p match {
+    case Holds(Bound(`varname`), Equals(q, l, r)) =>
+      // TODO: Translate @(implemented, q) == const
+      // TODO: Translate const == @(implemented, q)
+      // into implemented -> const as a JSONObject
+      ???
+    case And(left, right) =>
+      // and => we just join the query and all fields will need to be evaluated
+      val lMap = translateProp(varname, left)
+      val rMap = translateProp(varname, right)
+
+      // quiet assumption: no double keys
+      JSONObject.fromList(lMap.map ::: rMap.map)
+    case _ =>
+      error("Unable to translate predicate into an lmfdb query, evaluation failed")
+  }
+
+  // translate a literal object into a json object
+  private def term2JSON(tm : Term) : JSON = ???
+
+  /**
+    * Evaluates a Query using the lmfdb api
+    * @param q           Query to evaluate
+    * @param e           A QueryEvaluator to use for recursive queries
+    * @param substiution Substiution (Context) to apply QueryEvaluation in
+    * @return
+    */
+  def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = {
+    val (db, query) = translateQuery(q, e)
+    ResultSet.fromElementList(getSubjectTo(db, query))
   }
 }

@@ -154,7 +154,8 @@ object Query {
         throw ParseError("illegal function: " + name)
       }
       QueryFunctionApply(fun, arg, params)
+
     case _ =>
-      throw throw ParseError("illegal query expression: " + n)
+      throw ParseError("illegal query expression: " + n)
   }
 }
