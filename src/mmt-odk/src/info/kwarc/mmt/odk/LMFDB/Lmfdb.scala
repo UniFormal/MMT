@@ -18,6 +18,8 @@ import utils._
 import valuebases._
 import info.kwarc.mmt.odk._
 
+import info.kwarc.mmt.lf.Apply
+
 import scala.collection.mutable
 import scala.collection.mutable.HashSet
 import scala.util.Try
@@ -330,10 +332,28 @@ object LMFDBEvaluator extends QueryExtension("lmfdb") with LMFDBBackend {
   /** translates a proposition (about a given variable assumed to be an lmfdb query) into an lmfdb query */
   private def translateProp(varname: LocalName, p : Prop) : JSONObject = p match {
     case Holds(Bound(`varname`), Equals(q, l, r)) =>
-      // TODO: Translate @(implemented, q) == const
-      // TODO: Translate const == @(implemented, q)
-      // into implemented -> const as a JSONObject
-      ???
+
+      // match the symbol that is being applied
+      val symbol = l match {
+        case Apply(OMID(s : GlobalName), OMV(`varname`)) => s
+        case _ =>
+          error("Unable to translate predicate into an lmfdb query, evaluation failed")
+      }
+
+      // the name of the field to look for
+      val field = symbol.name.toPath
+
+      // find the codec we are using for the value
+      val codec = controller.library.getConstant(symbol).metadata.getValues(Metadata.codec).headOption.map {
+        case codecExp: Term =>
+          LMFDBCoder.buildCodec(codecExp)
+      }.getOrElse(error(s"unable to find codec for $symbol, evaluation failed. "))
+
+      // encode the actual value
+      val value = codec.encode(r)
+
+      // and make it a JSONObject
+      JSONObject((field, value))
     case And(left, right) =>
       // and => we just join the query and all fields will need to be evaluated
       val lMap = translateProp(varname, left)
