@@ -9,6 +9,7 @@ import ontology._
 import info.kwarc.mmt.api.metadata.{Linker, MetaData}
 import info.kwarc.mmt.LFX.Records.Recexp
 import info.kwarc.mmt.api.ontology.{BaseType, Query, QueryEvaluator, QueryExtension}
+import info.kwarc.mmt.api.uom.URILiteral
 import info.kwarc.mmt.api.web.WebQuery
 import info.kwarc.mmt.odk.codecs.{LMFDBCoder, TMInt, TMList, TMString}
 import modules.{DeclaredTheory, _}
@@ -178,6 +179,16 @@ trait LMFDBBackend {
     case _ => err("metadata key 'implements'  found in schema: " + schema.path); null
   }
 
+  protected def findImplementor(schema : DeclaredTheory, forSymbol: GlobalName, err : String => Unit) : GlobalName = schema.getDeclarations.filter(d => {
+    d.metadata.getValues(Metadata.implements).collect{
+      case OMLIT(uri: URI, _) => uri
+      // case UnknownOMLIT(uri : String,_) => URI(uri)
+    }.contains(URI(forSymbol.toString))
+  }).map(_.path).headOption.getOrElse({
+    err(s"no implementor found for $forSymbol in ${schema.path}"); null
+  })
+
+
   protected def getConstructor(schema : DeclaredTheory, err: String => Unit) : Term = schema.metadata.getValues(Metadata.constructor).headOption.getOrElse {
     err("metadata key 'constructor' not found in schema: " + schema.path)
   } match {
@@ -338,41 +349,43 @@ object LMFDBEvaluator extends QueryExtension("lmfdb") with LMFDBBackend {
       (db, JSONObject())
     case Comprehension(domain: Query, varname: LocalName, pred: Prop) =>
       val (db, q) = translateQuery(domain, e)
-      (db, translateProp(varname, pred))
+      (db, translateProp(varname, pred, db))
     case _ =>
       error("Unable to translate query into an lmfdb query, evaluation failed")
   }
 
   /** translates a proposition (about a given variable assumed to be an lmfdb query) into an lmfdb query */
-  private def translateProp(varname: LocalName, p : Prop) : JSONObject = p match {
+  private def translateProp(varname: LocalName, p : Prop, db:DB) : JSONObject = p match {
     case Holds(Bound(`varname`), Equals(q, l, r)) =>
 
       // match the symbol that is being applied
       val symbol = l match {
         case Apply(OMS(s), OMV(`q`)) => s
         case o@_ =>
-          error(s"Unable to translate predicated into an lmfdb field selector. Expected LF Application, got $o. ")
+          error(s"Unable to translate predicated into an lmfdb field selector. Expected LF Application, on the left hand side $o. ")
       }
 
+      // find tyhe symbol that is implemented by the operation
+      val implementedSymbol = findImplementor(controller.getTheory(db.schemaTheory), symbol, error)
+
       // the name of the field to look for
-      val field = symbol.name.toPath
+      val field = implementedSymbol.name.toPath
 
       // find the codec we are using for the value
-      val codec = controller.getConstant(symbol).metadata.getValues(Metadata.codec).headOption.map {
+      val codec = controller.getConstant(implementedSymbol).metadata.getValues(Metadata.codec).headOption.map {
         case codecExp: Term =>
           LMFDBCoder.buildCodec(codecExp)
       }.getOrElse(error(s"unable to find codec for $symbol, evaluation failed. "))
 
       // encode the actual value
       val value = codec.encode(r)
-      println(r)
 
       // and make it a JSONObject
       JSONObject((field, value))
     case And(left, right) =>
       // and => we just join the query and all fields will need to be evaluated
-      val lMap = translateProp(varname, left)
-      val rMap = translateProp(varname, right)
+      val lMap = translateProp(varname, left, db)
+      val rMap = translateProp(varname, right, db)
 
       // quiet assumption: no double keys
       JSONObject.fromList(lMap.map ::: rMap.map)
