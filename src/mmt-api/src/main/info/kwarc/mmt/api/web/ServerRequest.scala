@@ -5,6 +5,7 @@ import java.net.{URLDecoder, URLEncoder}
 import info.kwarc.mmt.api.{ParseError, utils}
 import info.kwarc.mmt.api.utils.JSON
 
+import scala.collection.immutable.TreeMap
 import scala.xml.Node
 
 /**
@@ -17,10 +18,11 @@ import scala.xml.Node
   * @param queryString The query portion of th estruing
   * @param body
   */
-case class ServerRequest(method: RequestMethod.Value, headers: Map[String, String], sessionID: Option[Session], pathStr: String, queryString : String, body: Body) {
+case class ServerRequest(method: RequestMethod.Value, private val headerData: Map[String, String], sessionID: Option[Session], pathStr: String, queryString : String, body: Body) {
+  lazy val headers : TreeMap[String, String] = new TreeMap[String, String]()(Ordering.by(_.toLowerCase)) ++ headerData
 
   /** a set of accepted content types */
-  lazy val acceptedTypes = headers.getOrElse("Accept", "").split(",").map(_.split(";").head.trim)
+  lazy val acceptedTypes = headers.getOrElse("Accept", "").split(",").map(_.split(";").head.trim).toList
 
   /** checks if the server accepts a specific content type */
   def accepts(content: String) : Boolean = {

@@ -107,7 +107,7 @@ object ServerTiscafAdapter {
   /** creates a new request object from an internal Tiscaf HReqData object */
   def tiscaf2Request(data: HReqData): ServerRequest = {
     val method = tiscaf2Method(data.method)
-    val headers = data.headerKeys.map(k => (k, data.header(k).get)).toMap[String, String]
+    val headers = data.headerKeys.map(k => (k, data.header(k).get)).toMap
     val sessionID = None
     val pathStr = data.uriPath.toString
     val queryStr = data.query
