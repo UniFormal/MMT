@@ -87,6 +87,8 @@ object DB {
   */
 trait LMFDBBackend {
 
+  def debug(s : String) : Unit
+
   protected def toOML(json: JSONObject, db: DB, fields: List[DBField])(implicit controller: Controller): List[OML] = {
     fields map {case DBField(key, codec) =>
       val dfJ = json(key).getOrElse {
@@ -107,7 +109,6 @@ trait LMFDBBackend {
     * @return
     */
   private def get_json(url: URI) : Option[JSON] = {
-    println(s"LMFDB: Reading from $url") // TO SEE SOME PROGRESS
     val attempt = Try(io.Source.fromURL(url.toString))
     if (attempt.isFailure) None else Some(attempt.get.toBuffer.mkString).map(JSON.parse)
   }
@@ -149,7 +150,7 @@ trait LMFDBBackend {
       val value = if(key.startsWith("_")){
         kv._2.asInstanceOf[JSONString].value
       } else {
-        s"py${key.toString}"
+        s"py${kv._2.toString}"
       }
 
       (key, value)
@@ -161,6 +162,8 @@ trait LMFDBBackend {
   protected def lmfdbquery(db:String, query:String) : List[JSON] = {
     // get the url
     val url = URI(s"http://www.lmfdb.org/api/$db?_format=json$query")
+
+    debug(s"attempting to retrieve json from $url")
 
     // get all the data items
     get_json_withnext(url).flatMap(
@@ -199,6 +202,8 @@ trait LMFDBBackend {
 
 
 object LMFDBStore extends Storage with LMFDBBackend {
+
+  def debug(s : String): Unit = {}
 
   def load(path: Path)(implicit controller: Controller) {
 
@@ -260,6 +265,8 @@ object LMFDBStore extends Storage with LMFDBBackend {
 }
 
 object LMFDBEvaluator extends QueryExtension("lmfdb") with LMFDBBackend {
+
+  def debug(s : String): Unit = log(s)
 
   private def error(msg: String) = {
     throw ImplementationError("LMFDB QueryEvaluator() failed to evaluate query. " + msg)
@@ -351,15 +358,14 @@ object LMFDBEvaluator extends QueryExtension("lmfdb") with LMFDBBackend {
       val field = symbol.name.toPath
 
       // find the codec we are using for the value
-      val codec = (controller.getO(symbol) match {
-        case Some(c : Constant) => c
-      }).metadata.getValues(Metadata.codec).headOption.map {
+      val codec = controller.getConstant(symbol).metadata.getValues(Metadata.codec).headOption.map {
         case codecExp: Term =>
           LMFDBCoder.buildCodec(codecExp)
       }.getOrElse(error(s"unable to find codec for $symbol, evaluation failed. "))
 
       // encode the actual value
       val value = codec.encode(r)
+      println(r)
 
       // and make it a JSONObject
       JSONObject((field, value))
@@ -371,7 +377,7 @@ object LMFDBEvaluator extends QueryExtension("lmfdb") with LMFDBBackend {
       // quiet assumption: no double keys
       JSONObject.fromList(lMap.map ::: rMap.map)
     case o@_ =>
-      error(s"Unable to translate predicate int<o an lmfdb query, unsupported predicated $o. ")
+      error(s"Unable to translate predicate into an lmfdb query, unsupported predicated $o. ")
   }
 
   // translate a literal object into a json object

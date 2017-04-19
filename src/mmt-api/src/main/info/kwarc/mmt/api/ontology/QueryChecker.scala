@@ -24,7 +24,7 @@ object QueryChecker {
       /** the query has to be a single element */
       case IsA(e: Query, tp: Unary) => infer(e) match {
         case ElementQuery(_) =>
-        case _ => throw ParseError("illegal proposition: " + p + "\nExpected TupleQuery() as argument to IsA()")
+        case o@_ => throw ParseError(s"illegal proposition: $p\nExpected TupleQuery() as argument to IsA() but got $o")
       }
 
       /** PrefixOf expects to PathType queries */
@@ -36,19 +36,19 @@ object QueryChecker {
       case IsIn(elem, tp) =>
         (infer(elem), infer(tp)) match {
           case (ElementQuery(s), SetQuery(t)) if s == t =>
-          case _ => throw ParseError("illegal proposition: " + p + "\nExpected an TupleQuery() and SetTupleQuery() as arguments to IsIn()")
+          case o@_ => throw ParseError(s"illegal proposition: $p\nExpected an TupleQuery() and SetTupleQuery() as arguments to IsIn() but got $o")
         }
 
       /** isEmpty can only check sets */
       case IsEmpty(r) => infer(r) match {
         case SetQuery(_) =>
-        case _ => throw ParseError("illegal proposition: " + p + "\nExpected SetTuple() as argument to IsEmpty()")
+        case o@_ => throw ParseError(s"illegal proposition: $p\nExpected SetTuple() as argument to IsEmpty() but got $o")
       }
 
       /** Equal needs to be elements of the same type */
       case Equal(left, right) => (infer(left), infer(right)) match {
         case (ElementQuery(s), ElementQuery(t)) if s == t =>
-        case _ => throw ParseError("illegal proposition: " + p + "\nExpected elements of same type as arguments to Equal()")
+        case o@_ => throw ParseError(s"illegal proposition: $p\nExpected elements of same type as arguments to Equal() but got $o")
       }
 
       /** takes any two valid props */
@@ -57,7 +57,7 @@ object QueryChecker {
       /** exists has to be a set and the scope has to match */
       case Exists(domain, vn, scope) => infer(domain) match {
         case SetQuery(t) => check(scope)(context ++ VarDecl(vn, QueryType.toTerm(ElementQuery(t))))
-        case _ => throw ParseError("illegal proposition: " + p + "\nExpected SetTupleQuery() as domain of Forall()")
+        case o@_ => throw ParseError(s"illegal proposition: $p\nExpected SetTupleQuery() as domain of Forall() but got $o")
       }
 
       /** Not can take any valid prop */
@@ -69,13 +69,13 @@ object QueryChecker {
       /** forall has to be a set and the scope has to match */
       case Forall(domain, vn, scope) => infer(domain) match {
         case SetQuery(t) => check(scope)(context ++ VarDecl(vn, QueryType.toTerm(ElementQuery(t))))
-        case _ => throw ParseError("illegal proposition: " + p + "\nExpected SetTupleQuery() as domain of Forall()")
+        case o@_ => throw ParseError(s"illegal proposition: $p\nExpected SetTupleQuery() as domain of Forall() but got $o")
       }
 
       /** a judgement has to hold about a single object.  */
       case Holds(about, j) => infer(about) match {
         case ElementQuery1(PathType) =>
-        case _ => throw ParseError("illegal proposition: " + p + "\nExpected ElementQuery(Path) as argument to Holds()")
+        case o@_ => throw ParseError(s"illegal proposition: $p\nExpected ElementQuery(Path) as argument to Holds() but got $o")
       }
     }
   }
@@ -189,7 +189,7 @@ object QueryChecker {
       check(by)
       // check that we have a basic Path type
       infer(to) match {
-        case ElementQuery1(PathType) => ElementQuery1(PathType)
+        case ElementQuery1(PathType) => SetQuery1(PathType)
         case SetQuery1(PathType) => SetQuery1(PathType)
         case t => throw ParseError("illegal query: " + q + "\nExpected a set of paths inside Related()")
       }
@@ -255,7 +255,7 @@ object QueryChecker {
     case Comprehension(d, vn, p) =>
       infer(d) match {
         case SetQuery(t) =>
-          check(p)(context ++ VarDecl(vn, QueryType.toTerm(SetQuery(t))))
+          check(p)(context ++ VarDecl(vn, QueryType.toTerm(ElementQuery(t))))
           SetQuery(t)
         case _ => throw ParseError("illegal query: " + q + "\nExpected a SetTupleQuery() as argument of Comprehension()")
       }

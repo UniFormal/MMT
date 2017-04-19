@@ -24,13 +24,13 @@ object QueryJudgement {
       Equals(
         xml.attrL(n, "varname"),
         Obj.parseTerm(l, NamespaceMap.empty),
-        Obj.parseTerm(l, NamespaceMap.empty)
+        Obj.parseTerm(r, NamespaceMap.empty)
       )
     case <Types>{l}{r}</Types> =>
       Types(
         xml.attrL(n, "varname"),
         Obj.parseTerm(l, NamespaceMap.empty),
-        Obj.parseTerm(l, NamespaceMap.empty)
+        Obj.parseTerm(r, NamespaceMap.empty)
       )
   }
 }

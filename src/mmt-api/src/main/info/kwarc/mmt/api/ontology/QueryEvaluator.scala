@@ -112,7 +112,7 @@ class QueryEvaluator(controller: Controller) {
 
   /**
     * Evaluates a SetTuple[_] query
-    *
+    *c
     * @param q Query to evaluate
     * @param subst Substiution (Context) to evaluate query in
     * @return
@@ -121,7 +121,7 @@ class QueryEvaluator(controller: Controller) {
     /** evaluate a query with a hint */
     case I(qq, Some(h)) =>
       val matching = evaluators.filter(_.name == h)
-      if(matching.length != 1){
+      if(matching.length == 0){
         throw ImplementationError("ill-typed query: Missing extenstion for QueryHint. ")
       }
       matching.head.evaluate(qq, this)
