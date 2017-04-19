@@ -22,7 +22,7 @@ object Utils {
    val jEditPluginRelease = deploy/"jedit-plugin"/"plugin"/"jars"
    /** These methods are used by the target jedit/install to copy files to the local jEdit installation */
    /** jars in deploy/main */
-   val jEditJars = List("mmt-api.jar", "mmt-lf.jar", "MMTPlugin.jar", "mmt-specware.jar", "mmt-mizar.jar", "mmt-pvs.jar", "mmt-odk.jar")
+   val jEditJars = List("mmt-api.jar", "mmt-lf.jar", "mmt-lfx.jar", "MMTPlugin.jar", "mmt-specware.jar", "mmt-mizar.jar", "mmt-pvs.jar", "mmt-odk.jar")
    /** jars in deploy/lib */
    val jEditDeps = List("scala-library.jar","scala-parser-combinators.jar","scala-reflect.jar","scala-xml.jar",
          "tiscaf.jar")
