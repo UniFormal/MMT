@@ -119,10 +119,10 @@ object QueryChecker {
     case ElementQuery(`tp`) => ElementQuery(result)
 
     // a set of base types
-    case SetQuery(`tp`) => SetQuery(result)
+    case SetQuery1(`tp`) => SetQuery1(result)
 
     // did not get the right type
-    case _ => throw ParseError("illegal Query: " + q + "\nExpected type: ElementQuery(" + tp + ") or SetElementQuery(" + tp + ")")
+    case o@_ => throw ParseError(s"illegal Query: $q\nExpected type: ElementQuery($tp) or SetElementQuery($tp) but got $o")
 
   }
 
