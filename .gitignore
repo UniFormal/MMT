@@ -1,5 +1,8 @@
 project/project
 
+# Do not accidentally commit test files
+test/*.scala
+
 # configuration files
 src/jedit-settings-folder
 

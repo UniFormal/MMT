@@ -58,6 +58,8 @@ abstract class Test(archivepath : String,
       case e: api.Error => println(e.toStringLong)
         sys.exit
     }
+
+  def hl(s : String) = controller.handleLine(s)
 }
 
 /**
@@ -71,7 +73,6 @@ abstract class DennisTest(prefixes : String*) extends Test(
   true,
   Some("/home/jazzpirate/work/mmtlog.html")
 ) {
-  def hl(s : String) = controller.handleLine(s)
 }
 
 abstract class TomTest(prefixes : String*) extends Test(
@@ -82,7 +83,3 @@ abstract class TomTest(prefixes : String*) extends Test(
   true,
   None
 )
-
-object RunTom extends TomTest {
-  def run : Unit = Unit
-}
