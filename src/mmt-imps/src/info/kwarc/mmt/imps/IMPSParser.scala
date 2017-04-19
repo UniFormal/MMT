@@ -86,8 +86,8 @@ class IMPSParser
     }
 
     // Some printouts for manual inspection, to be removed later
-    println("\n#### Summary for " + uri.toString + ":")
-    println("#### " + exprs.length + " expressions and subexpressions parsed; " + successes + " Successes, " + failures + " explicit Failures and " + dummies + " Dummies")
+    //println("\n#### Summary for " + uri.toString + ":")
+    //println("#### " + exprs.length + " expressions and subexpressions parsed; " + successes + " Successes, " + failures + " explicit Failures and " + dummies + " Dummies")
 
     // Set to true for pretty helpful debug output
     val debug : Boolean = false
@@ -236,7 +236,7 @@ class IMPSParser
 
         case Str("def-sublanguage") => return Some(Dummy("def-sublanguage"))
 
-        case Str("def-theorem") => print(".") ; return impsDefFormParsers.parseTheorem(e) //return Some(Dummy("def-theorem"))
+        case Str("def-theorem") => return impsDefFormParsers.parseTheorem(e)
 
         case Str("def-theory") => return impsDefFormParsers.parseTheory(e)
 

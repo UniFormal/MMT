@@ -28,13 +28,13 @@ theory Booleans =
  constant true%val <- http://imps.blubb?Booleans?true%val
  */
 
-class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger with MMTTask
+class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document => Unit, tState : TranslationState)
+  extends Logger with MMTTask
 {
 	          def logPrefix : String = "imps-omdoc"
 	protected def report    : Report = controller.report
 
   val rootdpath : DPath                = DPath(URI.http colon "imps.mcmaster.ca") /* arbitrary, but seemed fitting */
-  var tState    : TranslationState     = new TranslationState(bt)
 
 	def doDocument(es : Exp, uri : URI) : BuildResult =
 	{
@@ -347,10 +347,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         {
           /* opaque proofs are beetter than no proofs */
           val proof_name : StringFragment = StringFragment("Opaque proof of theorem " + name)
-          val proof_text : StringFragment = StringFragment(maybeProof.get.toString)
+          val proof_text : StringFragment = StringFragment(maybeProof.get.prf.toString)
 
           val opaque = new OpaqueText(parent.path.toDPath, List(proof_name, proof_text))
-          controller.add(opaque)
+          controller add opaque
         }
 
       case SchematicMacete(_, _, thy, _, _, _) =>
@@ -444,49 +444,4 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   }
 
   def doName(s : String) : LocalName = LocalName(s)
-}
-
-/* Some things are convenient to carry around in state.
-   See also: This exact thing, but in PVS */
-class TranslationState (bt : BuildTask)
-{
-            var vars           : Context              = Context.empty
-            var theories_decl  : List[DeclaredTheory] = Nil
-            var theories_raw   : List[Theory]         = Nil
-            var languages      : List[Language]       = Nil
-  protected var unknowns       : Int                  = 0
-
-  protected def doiName(i : Int, isType : Boolean) : LocalName = {
-    LocalName("") / { if (isType) LocalName("I") else LocalName("i") } / i.toString
-  }
-
-  def addUnknown() : Term = OMV(doiName({unknowns+=1;unknowns-1},false))
-
-  def bindUnknowns(t : Term) : Term =
-  {
-    val symbols = t.freeVars.collect {
-      case ln if ln.toString.startsWith("""/i/""") => ln
-    }
-
-    val cont = symbols.flatMap(n =>
-    {
-      val i = (0 until unknowns).find(j => n == doiName(j,false))
-      if (i.isDefined) {
-        val v1 = VarDecl(doiName(i.get,true), Some(OMS(Typed.ktype)), None, None)
-        val v2 = VarDecl(n, Some(OMV(doiName(i.get,true))), None, None)
-        List(v1,v2)
-      }
-      else throw GeneralError("No unknown " + n)
-    })
-
-    if (unknowns > 0 && cont.nonEmpty) {
-      OMBIND(OMS(Path.parseS("http://cds.omdoc.org/mmt?mmt?unknown", NamespaceMap.empty)), cont, t)
-    } else { t }
-  }
-
-  def resetUnknowns() : Unit =
-  {
-    unknowns = 0
-    vars = Context.empty
-  }
 }

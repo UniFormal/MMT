@@ -547,11 +547,11 @@ package object impsArgumentParsers
     */
   def parseProofScript(e : Exp) : Option[Proof] =
   {
-    var proof : String = "(proof "
-    for (c <- e.children)
-    {
-      proof = proof + "\n  " + c.toString
+    // TODO: This shit is whack, yo!
 
+    var proof : String = "(proof "
+    for (c <- e.children.tail) {
+      proof = proof + "\n  " + c.toString
     }
     proof = proof + ")"
     Some(Proof(proof, e.src))

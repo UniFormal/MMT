@@ -343,8 +343,6 @@ package object impsDefFormParsers
       if (name.isEmpty || formula.isEmpty || theory.isEmpty) { None }
       else { Some(Theorem(name.get, formula.get, lemma, reverse, theory.get, usages, trans, macete, hmthy, prf, e.src))}
     } else { None }
-
-
   }
 
   /* Parser for IMPS special form def-language
