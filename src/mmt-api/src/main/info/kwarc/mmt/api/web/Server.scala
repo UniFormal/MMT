@@ -92,6 +92,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
       new ServerResponse
     } else {
       request.extensionName match {
+        case Some("debug") => resolveDebug(request)
         case Some("change") => resolveChange(request)
         case Some("mws") => resolveMWS(request)
         case Some(ext) => resolveExt(ext, request)
@@ -110,6 +111,25 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
     val diff = reader(bodyXML)
     moc.Patcher.patch(diff, controller)
     TextResponse("Success")
+  }
+
+  /** prints web-server debug info */
+  private def resolveDebug(request : ServerRequest) : ServerResponse = {
+    // TODO: Make this a small extension
+    val bodyString = List(
+      "MMT WebServer DEBUG / TESTING PAGE",
+      "==================================",
+      "",
+      "",
+      s"HTTP Request Method: ${request.method}",
+      s"HTTP Request Path:   ${request.requestPath}",
+      s"HTTP Query String:   ${request.queryString}",
+      "",
+      "HTTP Header fields:",
+      request.headers.map(kv => s"${kv._1}: ${kv._2}").mkString("\n")
+    ).mkString("\n")
+
+    ServerResponse.fromText(bodyString)
   }
 
   @deprecated("use SearchServer instead")
