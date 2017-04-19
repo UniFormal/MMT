@@ -17,11 +17,11 @@ import symbols._
 import utils._
 import valuebases._
 import info.kwarc.mmt.odk._
-
 import info.kwarc.mmt.lf.Apply
 
 import scala.collection.mutable
 import scala.collection.mutable.HashSet
+import scala.runtime.ScalaRunTime
 import scala.util.Try
 
 class Plugin extends frontend.Plugin {
@@ -107,7 +107,7 @@ trait LMFDBBackend {
     * @return
     */
   private def get_json(url: URI) : Option[JSON] = {
-    // println("Trying: "+url) // TO SEE SOME PROGRESS
+    println(s"LMFDB: Reading from $url") // TO SEE SOME PROGRESS
     val attempt = Try(io.Source.fromURL(url.toString))
     if (attempt.isFailure) None else Some(attempt.get.toBuffer.mkString).map(JSON.parse)
   }
@@ -145,7 +145,14 @@ trait LMFDBBackend {
   /** runs a mongo style lmfdb query */
   protected def lmfdbquery(db: String, query: JSONObject) : List[JSON] = {
     val queryParams = query.map.map(kv => {
-      (kv._1.value, s"py${kv._1.toString}")
+      val key = kv._1.value
+      val value = if(key.startsWith("_")){
+        kv._2.asInstanceOf[JSONString].value
+      } else {
+        s"py${key.toString}"
+      }
+
+      (key, value)
     })
     lmfdbquery(db, "&"+WebQuery.encode(queryParams))
   }
@@ -184,7 +191,7 @@ trait LMFDBBackend {
     } match {
       case StringLiterals(k : String) => k // This no longer works; we are using the HACK below
       case UnknownOMLIT(a, `spath`) => a.toString
-      case s => println(s.getClass); err("metadata key 'key' is not a string in schema: " + schema.path); null
+      case s => err("metadata key 'key' is not a string in schema: " + schema.path); null
     }
   }
 }
@@ -282,15 +289,15 @@ object LMFDBEvaluator extends QueryExtension("lmfdb") with LMFDBBackend {
     // and now get a list of names
     val labels = datas.map({
       case o : JSONObject => o(key).getOrElse {
-        error("Ill-formed JSON returned from database")
+        error(s"Ill-formed JSON returned from database: Expected $key to be in returned objects, but only found ${o.map.map(_._1)}")
       }
-      case _ => error("Ill-formed JSON returned from database")
+      case u@_ => error(s"Ill-formed JSON returned from database: Expected return value to be an object, got $u")
     })
 
     // and return a list of globalnames in the db theory
     labels.map {
       case s : JSONString => db.dbTheory ? s.value
-      case _ => error("Ill-formed JSON returned from database")
+      case _ => error("Ill-formed JSON returned from database: Expected labels to be a list of strings. ")
     }
   }
 
@@ -335,16 +342,18 @@ object LMFDBEvaluator extends QueryExtension("lmfdb") with LMFDBBackend {
 
       // match the symbol that is being applied
       val symbol = l match {
-        case Apply(OMID(s : GlobalName), OMV(`varname`)) => s
-        case _ =>
-          error("Unable to translate predicate into an lmfdb query, evaluation failed")
+        case Apply(OMS(s), OMV(`q`)) => s
+        case o@_ =>
+          error(s"Unable to translate predicated into an lmfdb field selector. Expected LF Application, got $o. ")
       }
 
       // the name of the field to look for
       val field = symbol.name.toPath
 
       // find the codec we are using for the value
-      val codec = controller.library.getConstant(symbol).metadata.getValues(Metadata.codec).headOption.map {
+      val codec = (controller.getO(symbol) match {
+        case Some(c : Constant) => c
+      }).metadata.getValues(Metadata.codec).headOption.map {
         case codecExp: Term =>
           LMFDBCoder.buildCodec(codecExp)
       }.getOrElse(error(s"unable to find codec for $symbol, evaluation failed. "))
@@ -361,8 +370,8 @@ object LMFDBEvaluator extends QueryExtension("lmfdb") with LMFDBBackend {
 
       // quiet assumption: no double keys
       JSONObject.fromList(lMap.map ::: rMap.map)
-    case _ =>
-      error("Unable to translate predicate into an lmfdb query, evaluation failed")
+    case o@_ =>
+      error(s"Unable to translate predicate int<o an lmfdb query, unsupported predicated $o. ")
   }
 
   // translate a literal object into a json object

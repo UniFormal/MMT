@@ -155,7 +155,7 @@ object ServerResponse {
     // TODO: Check in a smart way if we should display it in a human readable form
     val responseType = req.accept(List("text/plain", "text/xml", "text/html"))
 
-    if (responseType == "text/html") {
+    if (responseType == "text/plain") {
       plainErrorResponse(error)
     } else if (responseType == "text/xml") {
       xmlErrorResponse(error)
