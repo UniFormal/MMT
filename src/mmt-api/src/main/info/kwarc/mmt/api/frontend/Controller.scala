@@ -337,6 +337,15 @@ class Controller extends ROController with ActionHandling with Logger {
     case _: BackendError => None
   }
 
+  def getAs[E <: StructuralElement](cls : Class[E], path: Path): E = getO(path) match {
+    case Some(e : E) => e
+    case Some(r) => throw GetError("Element exists but is not a " + cls + ": " + path + " is " + r.getClass)
+    case None => throw GetError("Element doesn't exist: " + path)
+  }
+
+  def getConstant(path : GlobalName) = getAs(classOf[Constant],path)
+  def getTheory(path : MPath) = getAs(classOf[DeclaredTheory],path)
+
   // ******************************* transparent loading during global lookup
 
   /** wrapping an expression in this method, evaluates the expression dynamically loading missing content
