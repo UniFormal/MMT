@@ -321,9 +321,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         if (usages.isDefined) { doUsages(nu_constant,usages.get.usgs) }
         controller add nu_constant
 
-      case Theorem(name, formula, lemma, reverse, theory, usages, transport, macete, homeTheory, _, src) =>
-
-        // TODO: Currently still forgets about the proof
+      case Theorem(name, formula, lemma, reverse, theory, usages, transport, macete, homeTheory, maybeProof, src) =>
 
         val ln : LocalName = doName(theory.thy)
         assert(tState.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
@@ -344,6 +342,16 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         doSourceRef(nu_theorem, src)
         controller add nu_theorem
+
+        if (maybeProof.isDefined)
+        {
+          /* opaque proofs are beetter than no proofs */
+          val proof_name : StringFragment = StringFragment("Opaque proof of theorem " + name)
+          val proof_text : StringFragment = StringFragment(maybeProof.get.toString)
+
+          val opaque = new OpaqueText(parent.path.toDPath, List(proof_name, proof_text))
+          controller.add(opaque)
+        }
 
       case SchematicMacete(_, _, thy, _, _, _) =>
 
