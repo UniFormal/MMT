@@ -70,7 +70,9 @@ abstract class DennisTest(prefixes : String*) extends Test(
   Some(8080),
   true,
   Some("/home/jazzpirate/work/mmtlog.html")
-)
+) {
+  def hl(s : String) = controller.handleLine(s)
+}
 
 abstract class TomTest(prefixes : String*) extends Test(
   "/home/twiesing/Projects/KWARC/MathHub/localmh/MathHub",

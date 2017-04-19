@@ -38,8 +38,8 @@ object Math {
 
   // val tms = typesystem ? "tm"
   val bool = logic ? "bool"
-  val tt = logic ? "true"
-  val ff = logic ? "false"
+  val tt = OMLIT(true,RealizedType(OMS(Math.bool),uom.StandardBool))
+  val ff = OMLIT(false,RealizedType(OMS(Math.bool),uom.StandardBool))
   val int = literals ? "int_lit"
   val nat = literals ? "nat_lit"
   val pos = literals ? "pos_lit"
