@@ -129,8 +129,8 @@ class QueryServer extends ServerExtension("query") {
     //log("qmt query: " + q.toString)
     QueryChecker.infer(q)(Context.empty) // type checking
     val res = controller.evaluator(q)
-    val resp = res.toNode
-    XmlResponse(resp)
+
+    ServerResponse.fromXML(res.toNode)
   }
 }
 
