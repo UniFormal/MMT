@@ -121,7 +121,7 @@ class QueryEvaluator(controller: Controller) {
     /** evaluate a query with a hint */
     case I(qq, Some(h)) =>
       val matching = evaluators.filter(_.name == h)
-      if(matching.length == 0){
+      if(matching.isEmpty){
         throw ImplementationError("ill-typed query: Missing extenstion for QueryHint. ")
       }
       matching.head.evaluate(qq, this)
@@ -130,6 +130,28 @@ class QueryEvaluator(controller: Controller) {
     case I(qq, None) =>
       log("Found I() with an empty hint, ignoring ... ")
       evalSet(qq)
+
+    case Slice(qq, from, to) =>
+      // we make the subquery
+      val sub = evalSet(qq).toList
+
+      // find out startIndex
+      val startIndex = from.map(f => {
+        if(f < 0) Math.max(0, sub.length - f) else Math.min(f, sub.length - 1)
+      }).getOrElse(0)
+
+      // find out endIndex
+      val endIndex = to.map(t => {
+        if(t < 0) Math.min(sub.length - 1, sub.length - t) else Math.max(0, t)
+      }).getOrElse(sub.length - 1)
+
+      // and return the appropriate list
+      ResultSet.fromTupleList(sub.slice(startIndex, endIndex))
+
+    /** pick a specific element from a set */
+    case Element(qq, at) =>
+      val sub = evalSet(qq).toList(at)
+      ResultSet.fromTupleList(List(sub))
 
     /** bound variable => lookup in the substitution */
     case Bound(vn) =>
@@ -199,11 +221,6 @@ class QueryEvaluator(controller: Controller) {
     /** get a set of paths to objects */
     case Paths(c) =>
       ResultSet.fromElementList(rs.getInds(c).toSeq)
-
-    /** all objects that unify with a certain object */
-    case Unifies(_) =>
-      // TODO: Implement this
-      throw ImplementationError("Unifies() query not implemented")
 
     /** close of a set of paths */
     case ontology.Closure(of) =>

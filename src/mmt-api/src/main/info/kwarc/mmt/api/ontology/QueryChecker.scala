@@ -116,7 +116,7 @@ object QueryChecker {
 
   private def expectLiftableQueryBaseType(q: Query, tp: QueryBaseType, result: QueryBaseType)(implicit context: Context): QueryType = infer(q) match {
     // single element of the base type
-    case ElementQuery(`tp`) => ElementQuery(result)
+    case ElementQuery1(`tp`) => ElementQuery1(result)
 
     // a set of base types
     case SetQuery1(`tp`) => SetQuery1(result)
@@ -171,6 +171,20 @@ object QueryChecker {
     case I(qq, h) =>
       infer(qq)
 
+    /** Slice() needs to slice a QuerySet */
+    case Slice(qq, from, to) =>
+      infer(qq) match {
+        case SetQuery(st) => SetQuery(st)
+        case o@_ => throw ParseError(s"illegal query: $q\nExpected a set of paths inside Slice(), but got $o")
+      }
+
+    /** Element picks a single element from a query returning a set */
+    case Element(qq, idx) =>
+      infer(qq) match {
+        case SetQuery(st) => ElementQuery(st)
+        case o@_ => throw ParseError(s"illegal query: $q\nExpected a set of paths inside Element(), but got $o")
+      }
+
     /** lookup type of bound variable in context */
     case Bound(vn) =>
       QueryType.fromTerm(context(vn).tp.get)
@@ -220,10 +234,6 @@ object QueryChecker {
     /** a set of paths */
     case Paths(_) =>
       SetQuery(PathType)
-
-    /** a set of objects */
-    case Unifies(_) =>
-      SetQuery(ObjType)
 
     /** closure of a single path */
     case Closure(of) =>

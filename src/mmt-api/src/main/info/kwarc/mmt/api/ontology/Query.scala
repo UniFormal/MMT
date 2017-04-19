@@ -13,6 +13,12 @@ sealed abstract class Query
 /** isolated sub-query of a query. Carries an optional hint on how to evaluate the query */
 case class I(q: Query, hint: Option[String]) extends Query
 
+/** take a subset of the query */
+case class Slice(q : Query, from: Option[Int], to: Option[Int]) extends Query
+
+/** takes a specific element from a querySet (negative indexes work also) */
+case class Element(q : Query, index: Int) extends Query
+
 /** bound variable represented by a [[info.kwarc.mmt.api.LocalName]] */
 case class Bound(varname: LocalName) extends Query
 
@@ -39,9 +45,6 @@ case class Singleton(e: Query) extends Query
 
 /** the set of all URIs of a certain concept in the MMT ontology */
 case class Paths(tp: Unary) extends Query
-
-/** unification query; returns all objects in the database that unify with a certain object and the respective substitutions */
-case class Unifies(wth: Obj) extends Query
 
 /** dependency closure of a path */
 case class Closure(of: Query) extends Query
@@ -86,6 +89,16 @@ object Query {
       val h = xml.attr(n, "hint", "")
       I(parse(q), if(h != "") Some(h) else None)
 
+    /** slicing a query result */
+    case <slice>{q}</slice> =>
+      val from = Option(xml.attr(n, "from", "").toInt)
+      val to = Option(xml.attr(n, "to", "").toInt)
+      Slice(parse(q), from, to)
+
+    /** picking a specific element form a Query */
+    case <element>{q}</element> =>
+      Element(parse(q), xml.attr(n, "index").toInt)
+
     /** we have the "index" for backward compatibility */
     case <bound/> =>
       Bound(xml.attrL(n, "index"))
@@ -113,9 +126,6 @@ object Query {
 
     case <uris/> =>
       Paths(relManager.parseUnary(xml.attr(n, "concept")))
-
-    case <unifies>{wth}</unifies> =>
-      Unifies(Obj.parseTerm(wth, NamespaceMap.empty))
 
     case <closure>{of}</closure> =>
       Closure(parse(of))
