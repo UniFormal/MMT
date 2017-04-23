@@ -54,6 +54,15 @@ var ARROW_STYLES=
 		circle: true,
 		directed: true
 	},
+	"alignment":
+	{
+		color:"red",
+		colorHighlight:"red",
+		colorHover:"red",
+		dashes: true,
+		circle: false,
+		directed: false
+	},
 	"graphtheory":
 	{
 		color:"red",

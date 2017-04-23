@@ -125,7 +125,7 @@ You can also draw rectangles around nodes to select them by activating "Selectio
 		
 	    	function createNewGraph()
 	    	{
-		    theoryGraph.getGraph("https://mathhub.info/mh/mmt/:fancygraph/json/" + getParameterByName("type") + "?" + getParameterByName("uri"));
+		    theoryGraph.getGraph("https://mathhub.info/mh/mmt/:fancygraph/json/" + getParameterByName("type") + "?uri=" + getParameterByName("uri"));
 	    	}
 	    
 		$(document).bind("contextmenu", function (event) 
