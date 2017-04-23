@@ -4,11 +4,13 @@ var rectTools;
 var dragTools=false;
 var containerTools;
 
+
 $(document).bind("contextmenu", function (event) 
 {
 	// Avoid the real menu
 	event.preventDefault();
 });
+
 
 $(document).ready(function() 
 {
