@@ -4,11 +4,13 @@ import info.kwarc.mmt.api.objects.{OMS, Term}
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.DeclaredModule
+import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.{RealizedType, StandardBool, StandardDouble, StandardInt}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
-import info.kwarc.mmt.odk.Math
+import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
+import info.kwarc.mmt.odk.{AlignmentBasedMitMTranslation, Math, UsesSCSCP, VRESystem}
 
 import scala.collection.mutable
 
@@ -69,9 +71,17 @@ class Plugin extends frontend.Plugin {
     controller.extman.addExtension(new GAPJSONImporter)
     controller.extman.addExtension(FilterRelations)
     controller.extman.addExtension(GAPGraphExporter)
+    controller.extman.addExtension(GAPSystem)
   }
 }
 
 object Booleans extends RealizedType(OMS(GAP.theory ? "booleans"),StandardBool)
 object Integers extends RealizedType(OMS(GAP.theory ? "integers"),StandardInt)
 object Floats extends RealizedType(OMS(GAP.theory ? "floats"),StandardDouble)
+
+object GAPSystem extends VRESystem("GAP") with AlignmentBasedMitMTranslation with UsesSCSCP {
+  val serverurl = "neptune.eecs.jacobs-university.de"
+  val namespace = GAP._base
+
+  def evaluate(q: Query, e: QueryEvaluator)(implicit substitution: QuerySubstitution): mutable.HashSet[List[BaseType]] = ???
+}

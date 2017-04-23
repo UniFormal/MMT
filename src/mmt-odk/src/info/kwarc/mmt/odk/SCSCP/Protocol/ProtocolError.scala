@@ -15,4 +15,4 @@ class VersionEchoExpected extends ProtocolError("Server did not echo back the SC
 
 class UnknownProcessingInstruction extends ProtocolError("Unknown Processing Instruction")
 
-class OpenMathError extends ProtocolError("Unable to parse OpenMath")
+case class OpenMathError(s : String) extends ProtocolError("Unable to parse OpenMath: " + s)

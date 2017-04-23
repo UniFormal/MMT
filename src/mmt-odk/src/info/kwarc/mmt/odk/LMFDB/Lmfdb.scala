@@ -31,7 +31,7 @@ class Plugin extends frontend.Plugin {
   override def start(args: List[String]) {
     controller.backend.addStore(LMFDBStore)
     controller.extman.addExtension(new ImplementsRuleGenerator)
-    controller.extman.addExtension(LMFDBEvaluator)
+    controller.extman.addExtension(LMFDBSystem)
   }
 }
 
@@ -275,7 +275,8 @@ object LMFDBStore extends Storage with LMFDBBackend {
   }
 }
 
-object LMFDBEvaluator extends QueryExtension("lmfdb") with LMFDBBackend {
+object LMFDBSystem extends VRESystem("lmfdb") with LMFDBBackend {//QueryExtension("lmfdb") with LMFDBBackend {
+  val namespace = LMFDB.path
 
   def debug(s : String): Unit = log(s)
 

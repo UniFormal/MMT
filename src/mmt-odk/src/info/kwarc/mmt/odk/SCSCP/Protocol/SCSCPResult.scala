@@ -95,7 +95,7 @@ object SCSCPResult {
     case OMAttribution(pairs, OMApplication(`SYMBOL_TERMINATION`, Nil, _, _), _, _) => SCSCPNothingReturned(pairs)
 
     /* else we couldn't parse it*/
-    case _ => throw new OpenMathError()
+    case _ => throw new OpenMathError("")
   }
 }
 
