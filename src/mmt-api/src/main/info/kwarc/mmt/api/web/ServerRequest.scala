@@ -66,7 +66,7 @@ case class ServerRequest(method: RequestMethod.Value, private val headerData: Ma
   @deprecated("Use [[pathComponents.tail]] instead")
   lazy val path = extensionPathComponents
 
-  @deprecated("to be safe, use [[decodedQueryString]], otherwise use [[queryString]]")
+  @deprecated("to be safe, use [[decodedQuery]], otherwise use [[queryString]]")
   lazy val query : String = queryString
 
   @deprecated("use [[sessionID]] instead")
