@@ -1,7 +1,8 @@
 package info.kwarc.mmt.odk
 
+import info.kwarc.mmt.LFX.Records.{Recexp, Records}
 import info.kwarc.mmt.api.backend.Storage
-import info.kwarc.mmt.api.{DPath, GeneralError, GlobalName}
+import info.kwarc.mmt.api.{DPath, GeneralError, GlobalName, LocalName}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.{AlignmentsServer, QueryExtension}
@@ -10,6 +11,8 @@ import info.kwarc.mmt.lf.{Apply, ApplySpine, LF}
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
 import info.kwarc.mmt.odk.SCSCP.Protocol.{OpenMathError, SCSCPCall, SCSCPCallArguments, SCSCPReturnObject}
+
+import scala.util.Try
 
 /**
   * Created by jazzpirate on 21.04.17.
@@ -35,8 +38,15 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
     a
   }
 
+  val trgract = (DPath(URI.http colon "mathhub.info") / "MitM" / "smglom" / "algebra" / "permutationgroup") ? "transitive_group_action"
+  val transitivegrouprec =  trgract ? "from_record"
+  val transitivegropucons = trgract ? "transitive_group"
+
   private val mitmToSystem = new StatelessTraverser {
     override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+      case Apply(OMS(`transitivegrouprec`),Recexp(ls)) => // TODO implement in general
+        val tr = Try(Traverser(this,ApplySpine(OMS(transitivegropucons),ls.find(_.name == LocalName("n")).get.df.get,ls.find(_.name == LocalName("t")).get.df.get)))
+        tr.getOrElse(t)
       case ApplySpine(fun,args) => Traverser(this,OMA(fun,args))
       case OMS(pth) if VRESystem.MitM <= pth =>
         val trg = alignmentserver.getFormalAlignments(pth).filter(_.props contains (("type","VRE"))).collect{
