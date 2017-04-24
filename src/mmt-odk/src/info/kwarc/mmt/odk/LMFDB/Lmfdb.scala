@@ -270,7 +270,7 @@ object LMFDBStore extends Storage with LMFDBBackend {
 
      val df = Recexp(omls : _*)
 
-     val c = Constant(OMMOD(db.dbTheory), path.name, Nil, Some(tp), Some(constructor(df)), None)
+     val c = Constant(OMMOD(db.dbTheory), path.name, Nil, Some(tp), Some(Apply(constructor,df)), None)
      controller.add(c)
   }
 }

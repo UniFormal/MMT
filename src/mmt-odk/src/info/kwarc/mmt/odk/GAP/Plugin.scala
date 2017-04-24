@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.uom.{RealizedType, StandardBool, StandardDouble, Stand
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
-import info.kwarc.mmt.odk.{AlignmentBasedMitMTranslation, Math, UsesSCSCP, VRESystem}
+import info.kwarc.mmt.odk._
 
 import scala.collection.mutable
 
@@ -79,9 +79,4 @@ object Booleans extends RealizedType(OMS(GAP.theory ? "booleans"),StandardBool)
 object Integers extends RealizedType(OMS(GAP.theory ? "integers"),StandardInt)
 object Floats extends RealizedType(OMS(GAP.theory ? "floats"),StandardDouble)
 
-object GAPSystem extends VRESystem("GAP") with AlignmentBasedMitMTranslation with UsesSCSCP {
-  val serverurl = "neptune.eecs.jacobs-university.de"
-  val namespace = GAP._base
-
-  def evaluate(q: Query, e: QueryEvaluator)(implicit substitution: QuerySubstitution): mutable.HashSet[List[BaseType]] = ???
-}
+object GAPSystem extends VREWithAlignmentAndSCSCP("GAP",GAP._base,"neptune.eecs.jacobs-university.de")

@@ -5,7 +5,8 @@ import info.kwarc.mmt.api.backend.Storage
 import info.kwarc.mmt.api.{DPath, GeneralError, GlobalName, LocalName}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.ontology.{AlignmentsServer, QueryExtension}
+import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
+import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{Apply, ApplySpine, LF}
 import info.kwarc.mmt.odk.OpenMath._
@@ -26,6 +27,11 @@ abstract class VRESystem(val id : String) extends QueryExtension(id) {
   val namespace : DPath
 }
 
+class VREWithAlignmentAndSCSCP(id : String, val namespace : DPath, val serverurl : String) extends VRESystem(id) with AlignmentBasedMitMTranslation with UsesSCSCP {
+  def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QuerySubstitution): scala.collection.mutable.HashSet[List[BaseType]] = ???
+  def call(t : Term) = translateToMitM(scscpcall(translateToSystem(t)))
+}
+
 object VRESystem {
   val MitM = DPath(URI.http colon "mathhub.info") / "MitM"
 }
@@ -40,12 +46,12 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
 
   val trgract = (DPath(URI.http colon "mathhub.info") / "MitM" / "smglom" / "algebra" / "permutationgroup") ? "transitive_group_action"
   val transitivegrouprec =  trgract ? "from_record"
-  val transitivegropucons = trgract ? "transitive_group"
+  val transitivegroupcons = trgract ? "transitive_group"
 
   private val mitmToSystem = new StatelessTraverser {
     override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-      case Apply(OMS(`transitivegrouprec`),Recexp(ls)) => // TODO implement in general
-        val tr = Try(Traverser(this,ApplySpine(OMS(transitivegropucons),ls.find(_.name == LocalName("n")).get.df.get,ls.find(_.name == LocalName("t")).get.df.get)))
+      case ApplySpine(OMS(`transitivegrouprec`),List(Recexp(ls))) => // TODO implement in general
+        val tr = Try(Traverser(this,OMA(OMS(transitivegroupcons),List(ls.find(_.name == LocalName("n")).get.df.get,ls.find(_.name == LocalName("t")).get.df.get))))
         tr.getOrElse(t)
       case ApplySpine(fun,args) => Traverser(this,OMA(fun,args))
       case OMS(pth) if VRESystem.MitM <= pth =>
@@ -54,7 +60,7 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
         }
         trg.headOption match {
           case Some(gn : GlobalName) => OMS(gn)
-          case _ => throw GeneralError("No alignment to")
+          case _ => throw GeneralError("No alignment to " + t)
         }
       case _ => Traverser(this,t)
     }
