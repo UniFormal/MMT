@@ -2,9 +2,9 @@ package info.kwarc.mmt.moduleexpressions
 
 import info.kwarc.mmt.api._
 import checking._
+import info.kwarc.mmt.api.modules.DeclaredTheory
 import objects._
 import uom._
-
 import info.kwarc.mmt.lf._
 
 object Combinators {
@@ -34,8 +34,12 @@ object ComputeExtends extends ComputationRule(Extends.path) {
             case _ => None
           }
         case OMMOD(th) =>
+          val meta = solver.lookup(th) match {
+            case Some(th : DeclaredTheory) => th.meta
+            case _ => None
+          }
           wth match {
-            case OMLList(omls) => Some(AnonymousTheory(Some(th),omls)) //TODO should be IncludeOML
+            case OMLList(omls) => Some(AnonymousTheory(meta,omls)) //TODO should be IncludeOML
             case _ => None
           }
         case _ => None
@@ -55,6 +59,11 @@ object ComputeCombine extends ComputationRule(Combine.path) {
           mtO.foreach {mts ::= _}
           decls = decls ::: ds
         case OMMOD(mp) =>
+          val mtO = solver.lookup(mp) match {
+            case Some(th : DeclaredTheory) => th.meta
+            case _ => None
+          }
+          mtO foreach {mts ::= _}
           decls = decls ::: IncludeOML(mp,Nil) :: Nil
         case _ =>
           return None

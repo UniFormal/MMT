@@ -21,6 +21,8 @@ object Continue {
 trait CheckingCallback {
    /** a fixed context prefix that is not part of the contexts passed to the other methods */ 
    def outerContext : Context
+
+   def lookup(p : Path) : Option[StructuralElement]
    
    //def getType(p: GlobalName): Option[Term]
    //def getDef(p: GlobalName): Option[Term]

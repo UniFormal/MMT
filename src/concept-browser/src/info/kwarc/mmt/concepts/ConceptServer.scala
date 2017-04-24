@@ -171,7 +171,21 @@ class ConceptServer extends ServerExtension("concepts") {
 
         // and parse the parameters manually
         var rest = request.parsedQuery.string("attributes").trim
-        val param = """(.+)\s*=\s*\"(.+)\"\s*(.*)""".r
+        object param {
+          def unapply(s : String) : Option[(String,String,String)] = {
+            var rest = s.trim
+            var eqindex = rest.indexOf("=\"")
+            if (eqindex == -1) return None
+            val key = rest.substring(0,eqindex)
+            rest = rest.substring(eqindex + 2)
+
+            eqindex = rest.indexOf("\"")
+            if (eqindex == -1) return None
+            val value = rest.substring(0,eqindex)
+            rest = rest.substring(eqindex + 1)
+            Some((key,value,rest))
+          }
+        }
 
         while (rest != "") rest match {
           case param(key, value, r) =>

@@ -123,7 +123,7 @@ class TheoryGraphExporter extends RelationGraphExporter {
   }
 }
 
-class PathGraphExporter extends RelationGraphExporter with ChangeListener {
+class PathGraphExporter extends RelationGraphExporter {
   val key = "pathgraph"
   override val logPrefix = "pathgraph"
 
@@ -159,7 +159,6 @@ class PathGraphExporter extends RelationGraphExporter with ChangeListener {
     log("Done.")
     tgf.toDot
   }
-
 }
 
 class JsonGraphExporter extends ServerExtension("fancygraph") {
@@ -172,28 +171,35 @@ class JsonGraphExporter extends ServerExtension("fancygraph") {
           println("Doing " + s.path)
           exp.asJSON(s)
         case None if path.isInstanceOf[DPath] =>
+          println("Doing " + path)
           exp.asJSON(new Document(path.asInstanceOf[DPath],true))
         case _ => throw CatchError(path.toString)// Server.plainErrorResponse(GetError(path.toString))
       }
   }
   def apply(request: ServerRequest): ServerResponse = {
-    log("Paths: " + request.path)
-    log("Query: " + request.query)
-    val path = Path.parse(request.query.trim, controller.getNamespaceMap)
-    val (json,key) = if (request.path.headOption == Some("json")) (true,request.path.tail.headOption.getOrElse("svg"))
-      else (false,request.path.headOption.getOrElse("svg"))
-    lazy val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
-      throw LocalError(s"svg file does not exist and exporter $key not available: ${request.path}")
-    }
-    log("Returning " + {if (json) "json" else "fail"} + " for " + path)
-    val ret = doJSON(path,exp)
-    log("Output: " + ret.getAsList(classOf[JSON],"nodes").length + " nodes, " + ret.getAsList(classOf[JSON],"edges").length + " edges.")
-    if (json) try {
-      ServerResponse.JsonResponse(doJSON(path,exp))
+    log("Paths: " + request.extensionPathComponents)
+    log("Query: " + request.queryString)
+    log("Path: " + request.parsedQuery("uri"))
+    val path = Path.parse(request.parsedQuery("uri").getOrElse(return ServerResponse.plainErrorResponse(GetError("Not a URI"))), controller.getNamespaceMap)
+    val (json,key) = if (request.extensionPathComponents.headOption == Some("json")) (true,request.extensionPathComponents.tail.headOption.getOrElse("svg"))
+      else (false,request.extensionPathComponents.headOption.getOrElse("svg"))
+    try {
+      val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
+        throw CatchError(s"exporter $key not available: ${request.path}")
+      }
+      log("Returning " + {
+        if (json) "json" else "fail"
+      } + " for " + path + " as " + key)
+      val ret = doJSON(path, exp)
+      log("Output: " + ret.map.length)
+      log("Output: " + ret.getAsList(classOf[JSON], "nodes").length + " nodes, " + ret.getAsList(classOf[JSON], "edges").length + " edges.")
+      if (json)
+        ServerResponse.fromJSON(doJSON(path, exp))
+      else ??? //.JsonResponse(doJSON(path,exp))
     } catch {
       case CatchError(s) =>
         log("Fail: " + s)
         ServerResponse.plainErrorResponse(GetError(s))
-    } else ???
+    }
   }
 }

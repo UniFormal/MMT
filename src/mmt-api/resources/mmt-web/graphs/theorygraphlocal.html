@@ -28,21 +28,40 @@ Layout Method:
 You can select more than one node by holding STRG and clicking on nodes to select! <br>
 You can also draw rectangles around nodes to select them by activating "Selection Mode".
 <br>
+<label for="clusternameInput">Clustername: </label>
+<input type="text" id="clusternameInput" name="clusternameInput">
 <button id="clusterButton" onClick="clusterSelectedNodes()">Cluster selected Nodes</button>
+<button id="colorizeButton" onClick="colorizeSelectedNodes()">Colorize selected Nodes</button>
+    <select id="colorNodes" name="colorNodes">
+     	<option value="#FFCCCC">Red</option>
+     	<option value="#CCCCFF">Purple</option>
+     	<option value="#FFFFCC">Yellow</option>
+     	<option value="#FFCC99">Orange</option>
+      	<option value="#CCFFCC">Green</option>
+	<option value="#DDDDDD">Gray</option>
+    </select>
 <button id="selectionModeButton" onClick="switchSelectionMode()">Switch Selection Mode</button>
 <a id="downloadButton"><button onClick="downloadGraph()">Download Graph</button></a>
+<br>
+<br>
+<input type="text" id="selectById" name="selectById"></input>
+<button id="selectNodes" onClick="selectNodes()">Select Nodes</button>
 <p>
 </p>
 
 	<ul class='custom-menu' style="z-index:100">
-		<li data-action="first">Open in new window</li>
+		<li data-action="openWindow">Open in New Window</li>
+		<li data-action="showURL">Show URI</li>
+		<li data-action="inferType">Infer Type</li>
+		<li data-action="showDecl">Show Declaration</li>
+		<li data-action="openCluster">Open Cluster</li>
 	</ul>
 	
 
 	
 <div id="wholeNetwork">	
 <div id="mynetwork" style="top:0px;left:0px;position: absolute; -moz-user-select: none; width: 100%; height: 100%;">
-<canvas style="top:0px;left:0px;position: absolute; -moz-user-select: none; width: 100%; height: 100%;"></canvas>
+
 </div>
 <canvas id="toolCanvas" style="display:none;z-index:1000;top:0px;left:0px;position: absolute;" width="1200" height="600"></canvas>
 </div>
@@ -58,8 +77,27 @@ You can also draw rectangles around nodes to select them by activating "Selectio
 
     <script type="text/javascript">
 		var selectionMode=false;
+	    
+	    	var htmlCanvas = document.getElementById('toolCanvas');
+		htmlCanvas.width = (window.innerWidth*0.99)|0;
+      		htmlCanvas.height = (window.innerHeight*0.80)|0;
+		htmlCanvas.style.width=htmlCanvas.width+"px";
+		htmlCanvas.style.height=htmlCanvas.height+"px";
+		
+		htmlCanvas = document.getElementById('wholeNetwork');
+		htmlCanvas.width = (window.innerWidth*0.99)|0;
+        	htmlCanvas.height = (window.innerHeight*0.80)|0;
+		htmlCanvas.style.width=htmlCanvas.width+"px";
+		htmlCanvas.style.height=htmlCanvas.height+"px";
+	    
 		var theoryGraph=new TheoryGraph();
 		createNewGraph();
+	    
+	    	function selectNodes()
+		{
+			theoryGraph.selectNodesWithIdLike(document.getElementById("selectById").value);
+		}
+		
 	    
 	    	function downloadGraph()
 		{
@@ -82,9 +120,15 @@ You can also draw rectangles around nodes to select them by activating "Selectio
 			}
 		}
 		
+	    	function colorizeSelectedNodes()
+		{
+			theoryGraph.colorizeNodes(undefined, document.getElementById("colorNodes").value);
+		}
+		
+	    
 		function clusterSelectedNodes()
 		{
-			theoryGraph.cluster();
+			theoryGraph.cluster(undefined, document.getElementById("clusternameInput").value);
 		}
 	    
 		function changeMethode(idx)

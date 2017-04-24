@@ -290,6 +290,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {
             apply(j.context1, j.context, state.rules) == apply(j.context2, j.context, state.rules)
          case _ => false
       }
+
+     override def lookup(p: Path): Option[StructuralElement] = controller.getO(p)
       def simplify(t: Obj)(implicit stack: Stack, history: History) =
          apply(t, stack.context, state.rules)
       def outerContext = Context.empty

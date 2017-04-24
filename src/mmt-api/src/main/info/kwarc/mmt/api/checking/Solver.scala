@@ -366,6 +366,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         addDependency(p $ TypeComponent)
       t
    }
+
+  def lookup(p : Path) : Option[StructuralElement] = controller.getO(p)
    /** retrieves the definiens of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed

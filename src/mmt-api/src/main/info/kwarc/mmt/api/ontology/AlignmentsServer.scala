@@ -241,7 +241,22 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
   private def processString(s: String): Int = {
-    val param = """(.+)\s*=\s*\"(.+)\"\s*(.*)""".r
+    // val param = """(.+)\s*=\s*\"(.+)\"\s*(.*)""".r
+    object param {
+      def unapply(s : String) : Option[(String,String,String)] = {
+        var rest = s.trim
+        var eqindex = rest.indexOf("=\"")
+        if (eqindex == -1) return None
+        val key = rest.substring(0,eqindex)
+        rest = rest.substring(eqindex + 2)
+
+        eqindex = rest.indexOf("\"")
+        if (eqindex == -1) return None
+        val value = rest.substring(0,eqindex)
+        rest = rest.substring(eqindex + 1)
+        Some((key,value,rest))
+      }
+    }
     var alignmentsCount: Int = 0
     var rest = s
     if (rest.startsWith("namespace")) {

@@ -68,6 +68,8 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
          case j: EqualityContext => auxCon(j.context, j.context1, j.context2).isDefined
          case _ => false
       }
+
+      override def lookup(p: Path): Option[StructuralElement] = controller.getO(p)
       def simplify(t: Obj)(implicit stack: Stack, history: History) =
          controller.simplifier(t, stack.context, rules)
       def outerContext = constantContext ++ querySolution
