@@ -1,9 +1,11 @@
 package info.kwarc.mmt.api.ontology
 
 
-import info.kwarc.mmt.api.objects.{Obj, Position, Term}
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.objects.{Context, Obj, Position, Term}
+import info.kwarc.mmt.api.parser.{ParsingUnit, SourceRef}
 import info.kwarc.mmt.api.utils.{stringToList, xml}
-import info.kwarc.mmt.api.{ComponentKey, LocalName, NamespaceMap, ParseError}
+import info.kwarc.mmt.api._
 
 import scala.xml.Node
 
@@ -78,6 +80,28 @@ case class Projection(of: Query, index: Int) extends Query
 case class QueryFunctionApply(function: QueryFunctionExtension, argument: Query, params: List[String]) extends Query
 
 object Query {
+  /**
+    * parses a query from a string
+    * @param s
+    * @param controller
+    */
+  def parse(s : String, controller: Controller): Query = {
+    val mp : MPath = ??? // TOOD: Path to theory
+    val pu = ParsingUnit(SourceRef.anonymous(s), Context(mp), s, NamespaceMap.empty)
+    parse(controller.objectParser(pu)(ErrorThrower).toTerm)
+  }
+
+  /**
+    * Parses a Term representing a Query into a Query object
+    * @param t Term representing the query
+    * @param queryFunctions List of query functions to parse
+    * @param relManager
+    * @return
+    */
+  def parse(t : Term)(implicit queryFunctions: List[QueryFunctionExtension], relManager: RelationalManager) : Query = {
+    ???
+  }
+
   /**
     * parses a query; infer must be called to sure well-formedness
     * @param n Node to parse
