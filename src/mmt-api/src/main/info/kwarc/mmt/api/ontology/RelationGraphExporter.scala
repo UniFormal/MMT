@@ -168,10 +168,10 @@ class JsonGraphExporter extends ServerExtension("fancygraph") {
   def doJSON(path : Path, exp : RelationGraphExporter) : JSONObject = {
       controller.getO(path) match {
         case Some(s) =>
-          println("Doing " + s.path)
+          log("Doing " + s.path)
           exp.asJSON(s)
         case None if path.isInstanceOf[DPath] =>
-          println("Doing " + path)
+          log("Doing " + path)
           exp.asJSON(new Document(path.asInstanceOf[DPath],true))
         case _ => throw CatchError(path.toString)// Server.plainErrorResponse(GetError(path.toString))
       }
