@@ -55,23 +55,23 @@ var ARROW_STYLES=
 		directed: true
 	},
 	"graphmeta":
--	{
--		color:"green",
--		colorHighlight:"green",
--		colorHover:"green",
--		dashes: true,
--		circle: true,
--		directed: true
--	},
--	"alignment":
--	{
--		color:"red",
--		colorHighlight:"red",
--		colorHover:"red",
--		dashes: true,
--		circle: false,
--		directed: false
--	},
+	{
+		color:"green",
+		colorHighlight:"green",
+		colorHover:"green",
+		dashes: true,
+		circle: true,
+		directed: true
+	},
+	"alignment":
+	{
+		color:"red",
+		colorHighlight:"red",
+		colorHover:"red",
+		dashes: true,
+		circle: false,
+		directed: false
+	},
 	"graphview":
 	{
 		color:"black",
