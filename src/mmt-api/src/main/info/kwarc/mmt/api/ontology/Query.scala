@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.ontology
 
 
-import info.kwarc.mmt.api.objects.{Obj, Position}
+import info.kwarc.mmt.api.objects.{Obj, Position, Term}
 import info.kwarc.mmt.api.utils.{stringToList, xml}
 import info.kwarc.mmt.api.{ComponentKey, LocalName, NamespaceMap, ParseError}
 
@@ -54,6 +54,9 @@ case class Union(left: Query, right: Query) extends Query
 
 /** union of a collection of sets indexed by a set */
 case class BigUnion(domain: Query, varname: LocalName, of: Query) extends Query
+
+/** apply a term to an existing set */
+case class Mapping(domain : Query, varname: LocalName, function : Term) extends Query
 
 /** intersection of sets */
 case class Intersection(left: Query, right: Query) extends Query
@@ -139,6 +142,10 @@ object Query {
         case "object" => parse(d)
       }
       BigUnion(dom, xml.attrL(n, "name"), parse(s))
+
+    case <mapping>{d}{s}</mapping> =>
+      val dom = parse(d)
+      Mapping(dom, xml.attrL(n, "name"), Obj.parseTerm(s, NamespaceMap.empty))
 
     case <intersection>{l}{r}</intersection> =>
       Intersection(parse(l), parse(r))

@@ -78,7 +78,7 @@ abstract class DennisTest(prefixes : String*) extends Test(
 abstract class TomTest(prefixes : String*) extends Test(
   "/home/twiesing/Projects/KWARC/MathHub/localmh/MathHub",
   prefixes.toList,
-  "",
+  "/home/twiesing/Projects/KWARC/MathHub/localmh/MathHub/alignments/Public",
   Some(8080),
   true,
   None

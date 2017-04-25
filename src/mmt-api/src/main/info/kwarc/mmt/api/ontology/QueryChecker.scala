@@ -253,6 +253,12 @@ object QueryChecker {
       case _ => throw ParseError("illegal query: " + q + "\nExpected SetTupleQuery() for domain of BigUnion()")
     }
 
+    /** Mapping: domain must be a set or element of terms */
+    case Mapping(d, vn, fn) => infer(d) match {
+      case SetQuery1(ObjType) => SetQuery1(ObjType)
+      case ElementQuery1(ObjType) => ElementQuery1(ObjType)
+    }
+
     /** Intersections should be of the same type */
     case Intersection(l, r) =>
       checkCompatibility(l, r)

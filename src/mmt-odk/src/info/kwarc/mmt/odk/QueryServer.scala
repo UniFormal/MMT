@@ -2,7 +2,7 @@ package info.kwarc.mmt.odk
 
 import info.kwarc.mmt.LFX.Records.{Recexp, Records}
 import info.kwarc.mmt.api.backend.Storage
-import info.kwarc.mmt.api.{DPath, GeneralError, GlobalName, LocalName}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
@@ -28,7 +28,16 @@ abstract class VRESystem(val id : String) extends QueryExtension(id) {
 }
 
 class VREWithAlignmentAndSCSCP(id : String, val namespace : DPath, val serverurl : String) extends VRESystem(id) with AlignmentBasedMitMTranslation with UsesSCSCP {
-  def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QuerySubstitution): scala.collection.mutable.HashSet[List[BaseType]] = ???
+  def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QuerySubstitution): scala.collection.mutable.HashSet[List[BaseType]] = {
+    // evaluate the qiery normally
+    val result = e.evalSet(q)
+
+    // and return the map
+    result.map({
+      case List(t: Term) => List(call(t))
+      case _ => throw ImplementationError("Failed to evaluate Query with VRE")
+    })
+  }
   def call(t : Term) = translateToMitM(scscpcall(translateToSystem(t)))
 }
 

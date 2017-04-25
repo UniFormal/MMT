@@ -2,7 +2,8 @@ package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api._
 import frontend._
-import info.kwarc.mmt.api.objects._
+import objects._
+import objects.Conversions._
 
 import scala.collection.mutable.HashSet
 
@@ -245,6 +246,20 @@ class QueryEvaluator(controller: Controller) {
         e => evalSet(s)((vn, e.head) :: subst) foreach { x => res += x }
       }
       res
+
+    /** a map over a domain */
+    case Mapping(dom, vn, fn) =>
+      evalSet(dom).map(x => {
+
+        // create a substiution
+        val sub = vn / (x match {
+          case List(t:Term) => t
+          case _ => throw ImplementationError("precondition failed: Argument must be a term")
+        })
+
+        // and apply it
+        List(fn ^? sub)
+      })
 
     /** intersection of sets */
     case Intersection(s, t) =>
