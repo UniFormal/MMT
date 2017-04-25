@@ -1,16 +1,16 @@
 package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api._
-
 import frontend._
 import backend._
+import sun.misc.IOUtils
 import utils._
-
 import tiscaf._
 import tiscaf.let._
 
 import scala.xml._
 import scala.concurrent._
+import scala.util.parsing.json.JSONFormat
 
 case class ServerError(msg: String) extends Error(msg)
 case class ServerProcessingError(request : ServerRequest, exception : Exception) extends Error(s"unknown error while processing ${request.pathStr}") {
@@ -66,8 +66,6 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
     // log the request that was being made
     log(s"${RequestMethod.toString(request.method)} /${request.pathStr}")
 
-
-
     // build a response
     val response = try {
       resolve(request)
@@ -86,10 +84,11 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
 
   /** resolves a specific request -- may throw exceptions */
   private def resolve(request: ServerRequest) : ServerResponse = {
-
     // check if our request method is OPTIONS, if so, do nothing
     if(request.method == RequestMethod.Options){
       new ServerResponse
+    } else if(request.queryString == "MMT_base_url.js") {
+      handleMMTBase(request)
     } else {
       request.extensionName match {
         case Some("debug") => resolveDebug(request)
@@ -101,6 +100,45 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
     }
   }
 
+  private def handleMMTBase(request : ServerRequest) : ServerResponse = {
+    val content =
+      s"""
+         var MMT_base_url = (function(){
+
+            // function to check if a string ends with another string
+            var endsWith = function(subjectString, searchString) {
+              var lastIndex = subjectString.lastIndexOf(searchString);
+              return lastIndex !== -1 && lastIndex === subjectString.length - searchString.length;
+            };
+
+            // cleaning up a url
+            var cleanURL = function(url){
+              return url.replace(/\\/+$$/, '');
+            }
+
+
+            // the current pathname requested on the server
+            var serverRequestPath = cleanURL("${JSONFormat.quoteString(request.pathStr)}");
+
+            // the actual pathname requested on the server
+            var actualRequestPath = cleanURL(window.location.pathname);
+
+            var basePath;
+
+            // if the path ends with our path
+            if(endsWith(actualRequestPath, serverRequestPath)){
+              basePath = actualRequestPath.substring(0, actualRequestPath.length - serverRequestPath.length);
+            } else {
+              basePath = '/';
+            }
+
+            basePath = window.location.protocol + '//' + window.location.host + basePath;
+            return basePath;
+         })();
+      """
+    ServerResponse(content, "application/javascript")
+  }
+
   /** handles a response to the :change url */
   private def resolveChange(request : ServerRequest) : ServerResponse = {
     // TODO: Make this a very basic extension
@@ -110,7 +148,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
     val reader = new moc.DiffReader(controller)
     val diff = reader(bodyXML)
     moc.Patcher.patch(diff, controller)
-    TextResponse("Success")
+    ServerResponse.fromText("Success")
   }
 
   /** prints web-server debug info */

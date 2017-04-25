@@ -13,6 +13,9 @@
         <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
         
+        <!-- Load the magic path -->
+        <script type="text/javascript" src="?MMT_base_url.js"></script>
+        
         <!-- load all the local javascript -->
         <script type="text/javascript" src="js/theoryGraph.js"></script>
         <script type="text/javascript" src="js/globalFuncs.js"></script>
@@ -73,7 +76,6 @@
         <span id='string_span' style='font-size: 17px; diyplay:none;top:-1000px;left:-1000px;positon:absolute;'></span>
 
         <script type="text/javascript">
-            var mmtBaseURI = location.href + '../';
             var selectionMode = false;
             var theoryGraph = new TheoryGraph();
             
@@ -138,7 +140,7 @@
             }
 
             function createNewGraph() {
-                theoryGraph.getGraph(mmtBaseURI+"/:fancygraph/json/" + getParameterByName("type") + "?uri=" + getParameterByName("uri"));
+                theoryGraph.getGraph(MMT_base_url+":fancygraph/json/" + getParameterByName("type") + "?uri=" + getParameterByName("uri"));
             }
 
             $(document).bind("contextmenu", function(event) {
