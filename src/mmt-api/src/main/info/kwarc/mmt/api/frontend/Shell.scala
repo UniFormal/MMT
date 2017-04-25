@@ -51,11 +51,8 @@ class Shell extends StandardIOHelper {
   /** creates controller, loads configurations/startup files, processes arguments, possibly drops into shell or terminates */
   def main(a: Array[String]) {
     try {
-       val keepalive = mainRaw(a)
-
-       if(!keepalive){
-         sys.exit(Shell.EXIT_CODE_OK)
-       }
+       mainRaw(a)
+       sys.exit(Shell.EXIT_CODE_OK)
     } catch {
       case e: Error =>
         controller.report(e)
@@ -99,12 +96,8 @@ class Shell extends StandardIOHelper {
     }
   }
 
-  /**
-    * main method without exception handling
-    *
-    * returns a boolean indicating if the process should stay alive
-    */
-  private def mainRaw(a: Array[String]) : Boolean = {
+  /** main method without exception handling */
+  private def mainRaw(a: Array[String]) {
      val deployFolder = runStyle match {
        case rs: MMTSystem.DeployRunStyle => Some(rs.deploy)
        case _ => None
@@ -125,7 +118,7 @@ class Shell extends StandardIOHelper {
        )
        if (getYesNo(true)) {
          deferToExtension("setup", Nil)
-         return false
+         return
        } else {
          println("\n\n")
          defRc.foreach {rc =>
@@ -144,7 +137,7 @@ class Shell extends StandardIOHelper {
        case ccom::args if ccom.startsWith(":") =>
           val com = ccom.substring(1)
           deferToExtension(com, args)
-          return false
+          return
        case _ =>
     }
 
@@ -216,9 +209,6 @@ class Shell extends StandardIOHelper {
        controller.extman.extensions.foreach(_.waitUntilRemainingTasksFinished)
        controller.cleanup
     }
-
-    // and check if we should stay alive
-    args.keepalive
   }
 }
 
