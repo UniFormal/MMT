@@ -452,6 +452,7 @@ function TheoryGraph()
 			{
 				lastClusterZoomLevel = network.getScale();
 			}
+			document.body.style.cursor = 'auto';
 		});
 	}
 }
