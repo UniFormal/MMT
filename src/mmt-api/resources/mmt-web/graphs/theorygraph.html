@@ -1,4 +1,3 @@
-<? header("Access-Control-Allow-Origin: *"); ?>
 <!DOCTYPE html>
 <html><head>
 
@@ -6,11 +5,13 @@
   <title>Theory-Graph Viewer</title>
 
   
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.css" rel="stylesheet" type="text/css">
+    <link href="http://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.css" rel="stylesheet" type="text/css">
+	<link href="http://code.jquery.com/ui/1.12.1/themes/cupertino/jquery-ui.css" rel="stylesheet" type="text/css">
 	<link href="css/styles.css" rel="stylesheet" type="text/css">
-  
-	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.js"></script>
-	<script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	
+	<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.js"></script>
+	<script src="http://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+	<script src="http://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
 	<script type="text/javascript" src="js/theoryGraph.js"></script>
 	<script type="text/javascript" src="js/globalFuncs.js"></script>
 	<script type="text/javascript" src="js/globalOptions.js"></script>
@@ -18,39 +19,40 @@
 	<script type="text/javascript" src="js/globalListener.js"></script>
 	
 </head>
-<body >
-Layout Method:
-<select name="methodCluster" onchange="changeMethode(this.selectedIndex);">
-    <option value="0">Standard</option>
-    <option value="1">Hierarchical</option> 
-</select>
-<br>
-You can select more than one node by holding STRG and clicking on nodes to select! <br>
+<body class="ui-form">
+
+<div class="toolSelector">
+	<div id="generalMenu" name="generalMenu">
+		<button onClick="changeMethod(0);" title="Standard Layout" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="standardIcon"></div></button>
+		<button onClick="changeMethod(1);" title="Hierarchical Layout"  class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="hierarchicalIcon"></div></button>
+		
+		<button id="selectionModeButton" onClick="switchSelectionMode();" title="Switch Selection Mode" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="crosshairIcon"></div></button>
+		
+		<label for="clusternameInput">Clustername: </label>
+		<input type="text" id="clusternameInput" name="clusternameInput"></input>
+		<button id="clusterButton" onClick="clusterSelectedNodes()" class="myButton">Cluster selected Nodes</button>
+
+		<a id="downloadButton"><button onClick="downloadGraph()" class="myButton">Download Graph</button></a>
+		<button id="selectNodes" onClick="selectNodes()" class="myButton">Select Nodes By Pathname</button>
+		<input type="text" id="selectById" name="selectById"></input>
+		<button id="helpButton"  class="myButton">Help</button>
+	</div>
+	
+	<div id="colorPicker" name="colorPicker"> 
+		
+	</div>
+</div>
+
+<div id="helpDialog" title="Help">
+  <p>You can select more than one node by holding CTRL and clicking on nodes to select! <br>
 You can also draw rectangles around nodes to select them by activating "Selection Mode".
-<br>
-<label for="clusternameInput">Clustername: </label>
-<input type="text" id="clusternameInput" name="clusternameInput">
-<button id="clusterButton" onClick="clusterSelectedNodes()">Cluster selected Nodes</button>
-<button id="colorizeButton" onClick="colorizeSelectedNodes()">Colorize selected Nodes</button>
-    <select id="colorNodes" name="colorNodes">
-     	<option value="#FFCCCC">Red</option>
-     	<option value="#CCCCFF">Purple</option>
-     	<option value="#FFFFCC">Yellow</option>
-     	<option value="#FFCC99">Orange</option>
-      	<option value="#CCFFCC">Green</option>
-	<option value="#DDDDDD">Gray</option>
-    </select>
-<button id="selectionModeButton" onClick="switchSelectionMode()">Switch Selection Mode</button>
-<a id="downloadButton"><button onClick="downloadGraph()">Download Graph</button></a>
-<br>
-<br>
-<input type="text" id="selectById" name="selectById"></input>
-<button id="selectNodes" onClick="selectNodes()">Select Nodes</button>
+</p>
+</div>
 <p>
 </p>
 
 	<ul class='custom-menu' style="z-index:100">
-		<li data-action="openWindow">Open in New Window</li>
+		<li data-action="openWindow">Open Theory</li>
 		<li data-action="showURL">Show URI</li>
 		<li data-action="inferType">Infer Type</li>
 		<li data-action="showDecl">Show Declaration</li>
@@ -58,48 +60,43 @@ You can also draw rectangles around nodes to select them by activating "Selectio
 	</ul>
 	
 
-	
 <div id="wholeNetwork">	
 <div id="mynetwork" style="top:0px;left:0px;position: absolute; -moz-user-select: none; width: 100%; height: 100%;">
 
 </div>
 <canvas id="toolCanvas" style="display:none;z-index:1000;top:0px;left:0px;position: absolute;" width="1200" height="600"></canvas>
 </div>
-<span id='string_span' style='font-size: 17px; diyplay:none;top:-1000px;left:-1000px;positon:absolute;'></span>
-		
 
-		
-		
-		
-  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.js"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.css" rel="stylesheet" type="text/css">
-	<script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<span id='string_span' style='font-size: 17px; diyplay:none;top:-1000px;left:-1000px;positon:absolute;'></span>
 
     <script type="text/javascript">
 		var selectionMode=false;
-	    
-	    	var htmlCanvas = document.getElementById('toolCanvas');
-		htmlCanvas.width = (window.innerWidth*0.99)|0;
-      		htmlCanvas.height = (window.innerHeight*0.80)|0;
-		htmlCanvas.style.width=htmlCanvas.width+"px";
-		htmlCanvas.style.height=htmlCanvas.height+"px";
-		
-		htmlCanvas = document.getElementById('wholeNetwork');
-		htmlCanvas.width = (window.innerWidth*0.99)|0;
-        	htmlCanvas.height = (window.innerHeight*0.80)|0;
-		htmlCanvas.style.width=htmlCanvas.width+"px";
-		htmlCanvas.style.height=htmlCanvas.height+"px";
-	    
 		var theoryGraph=new TheoryGraph();
-		createNewGraph();
-	    
-	    	function selectNodes()
+		$( "#helpDialog" ).dialog({autoOpen: false});
+		
+		$( "#helpButton" ).on( "click", function() 
+		{
+			$( "#helpDialog" ).dialog( "open" );
+		});
+		
+		
+		function addColors()
+		{
+			var colorArray=["#CCCCFF","#FFFFCC","#FFCC99","#CCFFCC","#DDDDDD","#FFCCCC"];
+			var html="";
+			for(var i=0;i<colorArray.length;i++)
+			{
+				html+='<div title="Colorize all selected nodes" class="colorRect" onClick="colorizeSelectedNodes(\''+colorArray[i]+'\')" style="background-color:'+colorArray[i]+'">  </div>';
+			}
+			document.getElementById("colorPicker").innerHTML=html;
+		}
+		
+		function selectNodes()
 		{
 			theoryGraph.selectNodesWithIdLike(document.getElementById("selectById").value);
 		}
 		
-	    
-	    	function downloadGraph()
+		function downloadGraph()
 		{
 			theoryGraph.downloadCanvasAsImage(document.getElementById('downloadButton'));
 		}
@@ -120,20 +117,18 @@ You can also draw rectangles around nodes to select them by activating "Selectio
 			}
 		}
 		
-	    	function colorizeSelectedNodes()
-		{
-			theoryGraph.colorizeNodes(undefined, document.getElementById("colorNodes").value);
-		}
-		
-	    
 		function clusterSelectedNodes()
 		{
 			theoryGraph.cluster(undefined, document.getElementById("clusternameInput").value);
 		}
+		
+		function colorizeSelectedNodes(color)
+		{
+			theoryGraph.colorizeNodes(undefined, color);
+		}
 	    
 		function changeMethode(idx)
 		{
-			document.body.style.cursor = 'wait';
 			if(idx==0)
 			{
 				THEORY_GRAPH_OPTIONS.layout=undefined;
@@ -143,7 +138,6 @@ You can also draw rectangles around nodes to select them by activating "Selectio
 				THEORY_GRAPH_OPTIONS.layout={hierarchical: {sortMethod: "directed",direction: "LR"}};
 			}
 			createNewGraph();
-			document.body.style.cursor = 'auto';
 		}
 		
 	    	function createNewGraph()
@@ -157,8 +151,20 @@ You can also draw rectangles around nodes to select them by activating "Selectio
 			event.preventDefault();
 		});
 		
+				var htmlCanvas = document.getElementById('toolCanvas');
+		htmlCanvas.width = (window.innerWidth*0.99)|0;
+        	htmlCanvas.height = (window.innerHeight*0.80)|0;
+		htmlCanvas.style.width=htmlCanvas.width+"px";
+		htmlCanvas.style.height=htmlCanvas.height+"px";
 		
+		htmlCanvas = document.getElementById('wholeNetwork');
+		htmlCanvas.width = (window.innerWidth*0.99)|0;
+       		htmlCanvas.height = (window.innerHeight*0.80)|0;
+		htmlCanvas.style.width=htmlCanvas.width+"px";
+		htmlCanvas.style.height=htmlCanvas.height+"px";
 		
+		addColors();
+		createNewGraph();
     </script>
     
 
