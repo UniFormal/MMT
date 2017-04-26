@@ -4,7 +4,7 @@ package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.{Context, Obj, Position, Term}
 import info.kwarc.mmt.api.parser.{ParsingUnit, SourceRef}
-import info.kwarc.mmt.api.utils.{stringToList, xml}
+import info.kwarc.mmt.api.utils.{URI, stringToList, xml}
 import info.kwarc.mmt.api._
 
 import scala.xml.Node
@@ -80,15 +80,17 @@ case class Projection(of: Query, index: Int) extends Query
 case class QueryFunctionApply(function: QueryFunctionExtension, argument: Query, params: List[String]) extends Query
 
 object Query {
+
+  val qmttheory = (DPath(URI.http colon "cds.omdoc.org") / "mmt") ? "QMT"
+
   /**
     * parses a query from a string
     * @param s
     * @param controller
     */
-  def parse(s : String, controller: Controller): Query = {
-    val mp : MPath = ??? // TOOD: Path to theory
-    val pu = ParsingUnit(SourceRef.anonymous(s), Context(mp), s, NamespaceMap.empty)
-    parse(controller.objectParser(pu)(ErrorThrower).toTerm)
+  def parse(s : String, context: Context, controller: Controller): Query = {
+    val pu = ParsingUnit(SourceRef.anonymous(s), context ++ Context(qmttheory), s, NamespaceMap.empty)
+    parse(controller.objectParser(pu)(ErrorThrower).toTerm)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
   }
 
   /**
