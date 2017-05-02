@@ -121,15 +121,15 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 controller add d// mod.add(d,None) //TODO add at beginning
               }
             case AnonymousTheory(mt,omls) =>
-              if (mt.isDefined) { // TODO should probably become meta theory somehow, but can't be overwritten
-                val inc = PlainInclude(mt.get,t.path)
+              if (mt.isDefined) t.addMeta(mt.get) /* { // TODO should probably become meta theory somehow, but can't be overwritten
+                val inc = PlainInclude(mt.get,t.path) // TODO it can now!
                 inc.setOrigin(ElaborationOfDefinition)
                 apply(mt.get)
                 if (!t.metaC.isDefined) {
                    t.metaC.set(OMMOD(mt.get))
                 }
                 controller add inc
-              }
+              } */
               omls foreach {
                 case IncludeOML(_, OMPMOD(mp, Nil), _) =>
                   val i = PlainInclude(mp,t.path)

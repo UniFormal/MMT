@@ -27,7 +27,10 @@ class TheoryState(val parent : DPath, val name : LocalName, val meta : MPath) {
   object includes {
     var stored : List[(MPath,Boolean)] = Nil
     def contains(p : MPath) = stored.exists(a => a._1 == p)
-    def ::=(p : MPath, par : Boolean = false) = stored ::= (p,par)
+    def ::=(p : MPath, par : Boolean = false) = {
+      deps ::= p
+      stored ::= (p,par)
+    }
     def find(cond : MPath => Boolean) : Option[MPath] = stored.map(_._1).find(cond)
     def inPars(p : MPath) : Option[Boolean] = stored.find(q => q._1 ==p).map(_._2)
   }
@@ -107,11 +110,9 @@ class ImportState(bt:BuildTask, val th : TheoryState, val isPrelude : Boolean) e
   def addinclude(p : MPath) : Unit =
     if (inFormals && !th.includes.contains(p)) {
       th.parameters = th.parameters ++ IncludeVarDecl(p,Nil)//DerivedVarDeclFeature(LocalName(p), BoundInclude.feature, OMMOD(p))
-      th.deps::=p
       th.includes ::= (p,true)
     } else if (!th.includes.contains(p)) {
       th add PlainInclude(p,th.path)// th add BoundInclude(th.path,p)
-      th.deps::=p
       th.includes ::= p
     }
 
@@ -129,13 +130,14 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
   def doDocument(d: pvs_file) : BuildResult = {
     try {
       val modsM = d._modules map doModule
-        modsM.flatMap(_.deps).distinct.foreach(d => try {
-          controller.get(d).asInstanceOf[DeclaredTheory]
-        } catch {
-        case e : Exception =>
-          log("Unresolved dependency: " + d + " in " +modsM.head.path)
-          throw Dependency(modsM.head.deps.head)
-      })
+        modsM.flatMap(_.deps).distinct.foreach(d => {
+          controller.getO(d) match {
+            case Some(th : DeclaredTheory) =>
+            case _ =>
+              log("Unresolved dependency: " + d + " in " +modsM.head.path)
+              throw Dependency(modsM.head.deps.head)
+          }//.asInstanceOf[DeclaredTheory]
+        })
       log("Translated: " + state.th.name)
 
       val doc = new Document(bt.narrationDPath, true)
@@ -154,7 +156,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         theory
       })
       controller.add(doc)
-
+      log("Dependencies: " + state.th.deps.mkString(", "))
       log("Checking:")
       logGroup {
         val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
@@ -166,9 +168,6 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         }
       }
       index(doc)
-
-
-
       BuildSuccess(modsM.flatMap(_.deps).map(LogicalDependency),modsM.map(m => LogicalDependency(m.path)))
     } catch {
       case Dependency(p) =>
@@ -186,9 +185,8 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
   def doModule(m: syntax.Module): TheoryState = m match {
     case theory(named, theory_formals, assuming, exporting, decls) =>
       val path = bt.narrationDPath.^!.^!
-      val isPrel = path.toString == "http://pvs.csl.sri.com/prelude"
+      val isPrel = DPath(URI.http colon "pvs.csl.sri.com") / "prelude" <= path //path.toString == "http://pvs.csl.sri.com/prelude"
       val meta = if (isPrel) PVSTheory.thpath else PVSTheory.preludepath
-
       val theory = new TheoryState(path, LocalName(named.id), meta)
       state = new ImportState(bt,theory,isPrel) /* {
         val isPrelude = isPrel
@@ -481,7 +479,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
 
       case importing(un, namedec) =>
         val path = objectLevel.doMPath(namedec)
-        if (!(DPath((URI.http colon "pvs.csl.sri.com") / "Prelude") <= path)) {
+        if (!(DPath((URI.http colon "pvs.csl.sri.com") / "prelude") <= path)) {
           state.addinclude(path)
         } // TODO fix
 

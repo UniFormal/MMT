@@ -3,6 +3,7 @@ package info.kwarc.mmt.moduleexpressions
 import info.kwarc.mmt.api._
 import checking._
 import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
 import objects._
 import uom._
 import info.kwarc.mmt.lf._
@@ -39,7 +40,8 @@ object ComputeExtends extends ComputationRule(Extends.path) {
             case _ => None
           }
           wth match {
-            case OMLList(omls) => Some(AnonymousTheory(meta,omls)) //TODO should be IncludeOML
+            case OMLList(omls) =>
+              Some(AnonymousTheory(meta,IncludeOML(th,Nil) :: omls)) //TODO should be IncludeOML
             case _ => None
           }
         case _ => None
@@ -83,18 +85,15 @@ object Rename extends FlexaryConstantScala(Combinators._path, "rename")
 object ComputeRename extends ComputationRule(Rename.path) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
       val Rename(thy,rens@_*) = tm
-      thy match {
-        case AnonymousTheory(mt, ds) =>
-          val at = new AnonymousTheory(mt, ds)
-          rens.foreach {
-            case OML(nw, None, Some(OML(old, None,None,_,_)),_,_) =>
-              at.rename(old,nw)
-            case r => solver.error("not a renaming " + r)
-          }
-          Some(at.toTerm)
-        case _ =>
-          return None
-      }
+      val at = solver.getTheory(thy).getOrElse(return None)
+     rens.foreach {
+       case OML(nw, None, Some(OML(old, None,None,_,_)),_,_) =>
+         at.rename(old,nw)
+       case OML(nw,None,Some(OMS(old)),_,_) =>
+         at.rename(old.name,nw)
+       case r => solver.error("not a renaming " + r)
+     }
+     Some(at.toTerm)
    }
 }
 
@@ -109,24 +108,23 @@ object ComputeRename extends ComputationRule(Rename.path) {
 object Translate extends BinaryConstantScala(Combinators._path, "translate")
 
 object ComputeTranslate extends ComputationRule(Translate.path) {
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
-      val Translate(mor, thy) = tm
-      thy match {
-        case AnonymousTheory(mt, ds) =>
-          val res = new AnonymousTheory(mt, Nil)
-          // add include of codomain of mor
-          ds.foreach {case OML(n,t,d,_,_) =>
-            // skip all includes of theories that are already include in domain of mor
-            // check for name clashes: n may not be defined in the codomain of mor
-            val tT = t map {OMM(_, mor)}
-            val dT = d map {OMM(_, mor)}
-            val declT = OML(n,tT,dT)
-            res.add(declT)
-          }
-          Some(res.toTerm)
-        case _ => None
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+    val Translate(mor, thy) = tm
+    val res = solver.getTheory(thy).getOrElse(return None)
+    res.decls.foreach { case OML(n, t, d, _, _) =>
+      // skip all includes of theories that are already include in domain of mor
+      // check for name clashes: n may not be defined in the codomain of mor
+      val tT = t map {
+        OMM(_, mor)
       }
-   }
+      val dT = d map {
+        OMM(_, mor)
+      }
+      val declT = OML(n, tT, dT)
+      res.add(declT)
+    }
+    Some(res.toTerm)
+  }
 }
 
 // TODO better name

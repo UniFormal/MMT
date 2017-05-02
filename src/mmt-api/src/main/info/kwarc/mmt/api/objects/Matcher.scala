@@ -3,6 +3,10 @@ import info.kwarc.mmt.api._
 import frontend._
 import checking._
 import Conversions._
+import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
+
+import scala.util.Try
 
 /** matches a goal term against a template term and computes the unifying substitution if possible
  *  i.e., we try to find solution such that template ^ solution == goal
@@ -73,6 +77,27 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
       def simplify(t: Obj)(implicit stack: Stack, history: History) =
          controller.simplifier(t, stack.context, rules)
       def outerContext = constantContext ++ querySolution
+
+      def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = simplify(tm) match {
+         case AnonymousTheory(mt, ds) =>
+            Some(new AnonymousTheory(mt, Nil))
+         // add include of codomain of mor
+         case OMMOD(mp) =>
+            val th = Try(controller.globalLookup.getTheory(mp)).toOption match {
+               case Some(th2: DeclaredTheory) => th2
+               case _ => return None
+            }
+            val ds = th.getDeclarationsElaborated.map({
+               case c: Constant =>
+                  OML(c.name, c.tp, c.df, c.not)
+               case PlainInclude(from, to) =>
+                  IncludeOML(from, Nil)
+               case _ => ???
+            })
+            Some(new AnonymousTheory(th.meta, ds))
+         case _ =>
+            return None
+      }
    }
 
    /**

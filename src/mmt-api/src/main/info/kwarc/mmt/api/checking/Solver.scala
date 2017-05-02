@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
 import frontend._
+import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
 import info.kwarc.mmt.api.utils.Killable
 import modules._
 import objects.Conversions._
@@ -10,6 +11,7 @@ import proving._
 import parser.ParseResult
 
 import scala.collection.mutable.HashSet
+import scala.util.Try
 
 /* ideas
  * inferType should guarantee well-formedness (what about LambdaTerm?)
@@ -368,6 +370,27 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    }
 
   def lookup(p : Path) : Option[StructuralElement] = controller.getO(p)
+
+  def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = safeSimplify(tm) match {
+    case AnonymousTheory(mt, ds) =>
+      Some(new AnonymousTheory(mt, Nil))
+    // add include of codomain of mor
+    case OMMOD(mp) =>
+      val th = Try(controller.globalLookup.getTheory(mp)).toOption match {
+        case Some(th2: DeclaredTheory) => th2
+        case _ => return None
+      }
+      val ds = th.getDeclarationsElaborated.map({
+        case c: Constant =>
+          OML(c.name, c.tp, c.df, c.not)
+        case PlainInclude(from, to) =>
+          IncludeOML(from, Nil)
+        case _ => ???
+      })
+      Some(new AnonymousTheory(th.meta, ds))
+    case _ =>
+      return None
+  }
    /** retrieves the definiens of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed

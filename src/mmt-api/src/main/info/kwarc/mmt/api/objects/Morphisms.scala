@@ -240,7 +240,7 @@ object TUnion {
 }
 
 // TODO this should inherti from MutableElementContainer
-class AnonymousTheory(mt: Option[MPath], var decls: List[OML]) extends ElementContainer[OML] with DefaultLookup[OML] {
+class AnonymousTheory(val mt: Option[MPath], var decls: List[OML]) extends ElementContainer[OML] with DefaultLookup[OML] {
   def getDeclarations = decls
   
   def add(oml: OML, after: Option[LocalName] = None) {

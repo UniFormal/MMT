@@ -258,7 +258,7 @@ class NotationBasedParser extends ObjectParser {
   
   /* like getRules but for a theory expression (currently only called for local notations) */
   private def getRules(thy: Term): RuleLists = {
-    thy match {
+    controller.simplifier.apply(thy,Context.empty) match {
       case OMPMOD(mp,_) => getRules(Context(mp))
       case _ => (Nil,Nil,Nil) // TODO not implemented
     }

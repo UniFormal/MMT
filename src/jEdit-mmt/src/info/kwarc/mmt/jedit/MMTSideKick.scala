@@ -270,6 +270,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case ComplexTerm(op, _,_,_) => op.last.toString
          case OMA(OMID(p),_) => p.name.last.toString
          case OMBINDC(OMID(p),_,_) => p.name.last.toString
+         case OMA(ct,args) => "OMA" // TODO probably shouldn't occur, but throws errors!
       }
       val child = new DefaultMutableTreeNode(new MMTObjAsset(t, tP, context, parent, label+extraLabel, reg))
       node.add(child)
