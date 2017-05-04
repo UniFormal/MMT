@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<omdoc base="http://docs.omdoc.org/test/examples/numbers.mmt">
-  <mref target="http://cds.omdoc.org/examples?Numbers"/>
-  <mref target="http://cds.omdoc.org/examples?Rules"/>
-  <mref target="http://cds.omdoc.org/examples?Sums"/>
-</omdoc>

@@ -1,8 +1,0 @@
-theory http://cds.omdoc.org/examples?Bool
-HasMeta http://cds.omdoc.org/examples?Bool http://cds.omdoc.org/urtheories?LF
-Declares http://cds.omdoc.org/examples?Bool http://cds.omdoc.org/examples?Bool?bool
-constant http://cds.omdoc.org/examples?Bool?bool
-Declares http://cds.omdoc.org/examples?Bool http://cds.omdoc.org/examples?Bool?true
-constant http://cds.omdoc.org/examples?Bool?true
-Declares http://cds.omdoc.org/examples?Bool http://cds.omdoc.org/examples?Bool?false
-constant http://cds.omdoc.org/examples?Bool?false

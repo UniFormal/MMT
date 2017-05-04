@@ -1,3 +1,0 @@
-id: test
-narration-base: http://docs.omdoc.org/test
-

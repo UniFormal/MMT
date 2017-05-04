@@ -56,7 +56,9 @@ def commonSettings(nameStr: String) = Seq(
   scalaVersion := "2.11.7",
   name := nameStr,
   sourcesInBase := false,
+  libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
   scalaSource in Compile := baseDirectory.value / "src",
+  scalaSource in Test := baseDirectory.value / "test" / "scala",
   resourceDirectory in Compile := baseDirectory.value / "resources",
   unmanagedBase := baseDirectory.value / "jars",
   isSnapshot := true,
@@ -89,7 +91,7 @@ lazy val tiscaf = (project in file("tiscaf")).
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
     scalaSource in Test := baseDirectory.value / "src/main/scala",
     libraryDependencies ++= Seq(
-        "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
+        "org.scalatest" %% "scalatest" % "2.2.5" % "test",
         "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
         "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     ),
@@ -112,7 +114,12 @@ lazy val api = (project in file("mmt-api")).
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-compiler.jar",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-reflect.jar",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
-    unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar"
+    unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "tiscaf.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-compiler.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-reflect.jar",
+    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.11.0-M4" % "test",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-xml.jar"
   )
 
 
@@ -121,17 +128,14 @@ lazy val lf = (project in file("mmt-lf")).
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
     unmanagedJars in Compile += Utils.deploy.toJava / "lfcatalog" / "lfcatalog.jar",
-    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
-    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "tiscaf.jar",
-    libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
+    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.11.0-M4" % "test",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "tiscaf.jar"
   )
 
 lazy val leo = (project in file("mmt-leo")).
   dependsOn(lf, api).
   settings(mmtProjectsSettings("mmt-leo"): _*).
   settings(
-    scalaSource in Test := baseDirectory.value / "test",
-    libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
     libraryDependencies += "com.assembla.scala-incubator" %% "graph-core" % "1.9.4"
   )
 

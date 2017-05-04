@@ -1,5 +1,0 @@
-theory http://cds.omdoc.org/examples?Logic
-HasMeta http://cds.omdoc.org/examples?Logic http://cds.omdoc.org/urtheories?LF
-Includes http://cds.omdoc.org/examples?Logic http://cds.omdoc.org/examples?Bool
-Declares http://cds.omdoc.org/examples?Logic http://cds.omdoc.org/examples?Logic?ded
-constant http://cds.omdoc.org/examples?Logic?ded

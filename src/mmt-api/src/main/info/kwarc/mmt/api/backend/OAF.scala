@@ -38,7 +38,7 @@ abstract class ArchiveHub {
    def localPath(id: String) = {
      val ret = (root / id).canonical
      // make sure dots in id do not cause trouble 
-     if (!(root <= ret)) throw GeneralError("local path escapes root path: " + ret) 
+     if (!(root <= ret)) throw GeneralError("local path escapes root path: " + ret)
      ret
    }
    /** create a new archive */

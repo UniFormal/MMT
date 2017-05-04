@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<omdoc base="http://docs.omdoc.org/test/examples/nat.mmt">
-  <mref target="http://cds.omdoc.org/examples?Bool"/>
-  <mref target="http://cds.omdoc.org/examples?Logic"/>
-  <mref target="http://cds.omdoc.org/examples?Nat"/>
-  <mref target="http://cds.omdoc.org/examples?NatRules"/>
-  <mref target="http://cds.omdoc.org/examples?NatMinus"/>
-</omdoc>

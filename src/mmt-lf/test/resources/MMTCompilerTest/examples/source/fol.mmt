@@ -1,35 +1,0 @@
-namespace http://cds.omdoc.org/examples
-
-//   intuitionistic first-order logic with natural deduction rules and a few example proofs 
-
-theory FOL : http://cds.omdoc.org/urtheories?LF =
-  include ?PL
-  term  : type
-  forall : (term → prop) → prop# ∀ 1 ## ∀ V1 2
-  exists : (term → prop) → prop# ∃ 1 ## ∃ V1 2
-
-
-theory FOLNatDed : http://cds.omdoc.org/urtheories?LF =
-  include ?FOL
-  include ?PLNatDed  
-  forallI  : {A} ({x} ded (A x)) → ded ∀ [x] (A x) 
-  forallE  : {A} ded (∀ [x] A x) → {x} ded (A x)
-
-  existsI  : {A} {x} ded (A x) → ded ∃ [x] (A x) # existsI 2 3
-  existsE  : {A,C} ded (∃ [x] A x) → ({x} ded (A x) → ded C) → ded C
-
-  
-theory FOLEQ : http://cds.omdoc.org/urtheories?LF =
-  include ?FOL
-  equal  : term → term → prop# 1 ≐ 2 prec 30
-
-
-theory FOLEQNatDed : http://cds.omdoc.org/urtheories?LF =
-  include ?FOLEQ
-  include ?FOLNatDed  
-  refl     : {x} ded x ≐ x
-  congT    : {T}{x,y} ded x ≐ y → ded (T x) ≐ (T y)
-  congF    : {F}{x,y} ded x ≐ y → ded (F x) → ded (F y)
-  sym      : {x,y} ded x ≐ y → ded y ≐ x
-  trans    : {x,y,z} ded x ≐ y → ded y ≐ z → ded x ≐ z
-

@@ -1,3 +1,0 @@
-id: urtheories
-narration-base: http://docs.omdoc.org/urtheories
-

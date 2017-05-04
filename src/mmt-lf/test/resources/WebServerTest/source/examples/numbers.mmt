@@ -1,89 +1,0 @@
-namespace http://cds.omdoc.org/examples
-
-//   An abstraction over the rational numbers and the arithmetic operations.
-
-theory Numbers : http://cds.omdoc.org/urtheories?LF =
-  sort : type 
-  tm   : sort → type 
-  
-  prop  : type 
-  equal : {S} tm S → tm S → prop      # 2 = 3  ## 2 = _ 1 3   role Eq
-  forall : {S} (tm S → prop) → prop   # ∀ V2T . -3 prec -10   ## ∀ _ V2T -3 prec -10 
-
-  ded   : prop → type   # ded 1 prec -1   role Judgment
-
-  rat   : sort  
-  tmrat : type   = tm rat  # ℚ 
-
-  zero : ℚ      # _0  ## %D0
-  succ : ℚ → ℚ  # 1 ' prec 170 
-  one  : ℚ      # _1  = _0 ' ## %D1
-  two  : ℚ      # _2  = _1 ' ## %D2
-
-  add  : ℚ → ℚ → ℚ   # 1 + 2 prec 150 
-  sub  : ℚ → ℚ → ℚ   # 1 - 2 prec 150 
-  neg  : ℚ → ℚ       # - 1   prec 170 
-
-  mult : ℚ → ℚ → ℚ   # 1 · 2 prec 155 
-  div  : ℚ → ℚ → ℚ   # 1 / 2 prec 155 
-
-  exp  : ℚ → ℚ → ℚ   # 1 ^ 2 prec 160 
-
-  power_example : ded ∀x.∀y.∀z.x^(y+z)=x^y·x^z 
-
-
-theory Rules : http://cds.omdoc.org/urtheories?LF =
-  // Simplification rules for the rational numbers.  
-  include ?Numbers
-  
-  // addition 
-  add_zero_L : {x} ded _0 + x = x  role Simplify
-  add_zero_R : {x} ded x + _0 = x  role Simplify
-  add_succ_L : {x,y} ded x ' + y = (x+y)' role Simplify 
-  add_succ_R : {x,y} ded x + y' = (x+y)' role Simplify
-
-  // subtraction  
-  sub_add : {x,y,z} ded x-(y+z) = x-y-z   role Simplify 
-  sub_zero : {x} ded x - _0 = x   role Simplify 
-  
-  // negation   
-  neg_neg  : {x} ded -(-x) = x  role Simplify 
-  neg_add  : {x,y} ded -(x+y) = -x + (-y)  role Simplify  
-  neg_zero : ded - _0 = _0  role Simplify 
-  
-  // multiplication 
-  mult_zero_L : {x} ded _0 · x = _0 role Simplify
-  mult_zero_R : {x} ded x · _0 = _0 role Simplify
-  mult_one_L  : {x} ded _1 · x = x role Simplify
-  mult_one_R  : {x} ded x · _1 = x role Simplify
-  mult_succ_L : {x,y} ded x'·y = x + x · yrole Simplify
-  mult_succ_R : {x,y} ded x·y' = x·y+yrole Simplify
-  mult_add_L  : {x,y,z} ded (x+y)·z = x·z+y·zrole Simplify
-  mult_add_R  : {x,y,z} ded x·(y+z) = x·y+x·zrole Simplify
-  mult_sub_L  : {x,y,z} ded (x-y)·z = x·y-y·zrole Simplify
-  mult_sub_R  : {x,y,z} ded x·(y-z) = x·y-x·zrole Simplify
-  mult_neg_L  : {x,y} ded (-x)·y = -(x·y)role Simplify
-  mult_neg_R  : {x,y} ded x·(-y) = -(x·y)role Simplify
-  
-  // exponentiation 
-  exp_zero : {x} ded x ^ _0 = _1 role Simplify
-  exp_one  : {x} ded x ^ _1 = x role Simplify
-  exp_add  : {x,y,z} ded x^(y+z) = x^y·x^z   role Simplify
-  exp_exp  : {x,y,z} ded x^(y^z) = x^(y·z)   role Simplify
-  one_exp  : {x} ded _1 ^ x = _1  role Simplify
-  exp_mult : {x,y,z} ded (x·y)^z = x^z·y^z   role Simplify 
-
-
-//   A sort of natural numbers and a big sum operator with notations for parsing and presentation.
-theory Sums : http://cds.omdoc.org/urtheories?LF =
-  include ?Numbers
-
-  nat   : sort  
-  tmnat : type  = tm nat  # ℕ  
-  incl  : ℕ → ℚ  # $ 1 prec 170 ## 1 prec 100000000
-
-  sum  : ℕ → ℕ → (ℕ → ℚ) → ℚ  
-       # Σ 1 to 2 3  prec 155
-      ## Σ __ 1 ^^ 2 3 prec 155
-  sum_example   : ded ∀m.∀n. Σ m to n ([i]$i)=($m·($m+ _1)-$n·($n+ _1))/ _2 
-
