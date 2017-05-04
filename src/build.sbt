@@ -42,6 +42,8 @@ apidoc := apidoc.dependsOn(cleandoc, unidoc in Compile).value
 
 // definition of our custom, project-specific targets
 
+parallelExecution in ThisBuild := false
+
 val deploy =
   TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
 
@@ -124,7 +126,7 @@ lazy val api = (project in file("mmt-api")).
 
 
 lazy val lf = (project in file("mmt-lf")).
-  dependsOn(api).
+  dependsOn(api % "compile -> compile; test -> test").
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
     unmanagedJars in Compile += Utils.deploy.toJava / "lfcatalog" / "lfcatalog.jar",
