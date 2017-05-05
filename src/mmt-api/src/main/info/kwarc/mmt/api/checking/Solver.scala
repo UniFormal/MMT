@@ -976,8 +976,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
            ret
         }
      }
-     log("inferred: " + res.map(presentObj).getOrElse("failed"))
-     history += "inferred: " + res.map(presentObj).getOrElse("failed")
+     log("inferred: " + presentObj(tm) + " : " + res.map(presentObj).getOrElse("failed"))
+     history += "inferred: " + presentObj(tm) + " : " + res.map(presentObj).getOrElse("failed")
      //remember inferred type
      if (!isDryRun) {
        res foreach {r => InferredType.put(tm, (getCurrentBranch,r))}
