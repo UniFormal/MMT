@@ -17,7 +17,7 @@ abstract class MMTTest(archives : String*)(extensions : String*) extends FlatSpe
       "info.kwarc.mmt.api.ontology.PathGraphExporter"
   )
   lazy val content = File("test/resources/content").canonical
-  lazy val mathhub = new MathHub(MathHub.defaultURL,content,controller.report)
+  lazy val mathhub = new MathHub(MathHub.defaultURL,content,controller.report,https=true)
   def hl(s : String) = controller.handleLine(s)
 
   behavior of "MMT"

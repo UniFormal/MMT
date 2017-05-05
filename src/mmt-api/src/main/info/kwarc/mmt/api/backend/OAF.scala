@@ -78,7 +78,7 @@ abstract class ArchiveHub {
  * @param root the directory in which clones are created
  * @param report for logging
  */
-class MathHub(val uri: URI, val root: File, val report: Report) extends ArchiveHub with Logger {
+class MathHub(val uri: URI, val root: File, val report: Report,https : Boolean = false) extends ArchiveHub with Logger {
    val logPrefix = "oaf"
    /** choose UnixGit or WindowsGit depending on OS */
    private val gitCommand = OS.detect match {case Windows => new WindowsGit() case _ => UnixGit}
@@ -94,8 +94,10 @@ class MathHub(val uri: URI, val root: File, val report: Report) extends ArchiveH
             true
       }
    }
+   def giturl(pathS: String) = if (https) httpsurl(pathS) else sshurl(pathS)
    /** @return the ssh of the remote git manager - git@authority: */
-   def ssh(pathS: String) = "git@" + uri.authority.getOrElse("") + ":" + pathS + ".git"
+   def sshurl(pathS: String) = "git@" + uri.authority.getOrElse("") + ":" + pathS + ".git"
+   def httpsurl(pathS: String) = "https://" + uri.authority.getOrElse("") + "/" + pathS + ".git"
    /** initializes a repository */
    def init(pathS: String) {
       val path = utils.stringToList(pathS, "/")
@@ -109,7 +111,7 @@ class MathHub(val uri: URI, val root: File, val report: Report) extends ArchiveH
       File.WriteLineWise(repos / mf, List(s"id: $pathS", s"narration-base: http://mathhub.info/$pathS"))
       git(repos, "add", mf)
       git(repos, "commit", "-m", "\"automatically created by MMT\"")
-      git(repos, "remote", "add", "origin", ssh(pathS))
+      git(repos, "remote", "add", "origin", giturl(pathS))
       git(repos, "push", "origin", "master")
    }
    /** clones a repository */
@@ -118,7 +120,7 @@ class MathHub(val uri: URI, val root: File, val report: Report) extends ArchiveH
       if (lp.exists) {
          log("target directory exists, skipping")
       } else {
-         val success = git(root, "clone", ssh(path), path)
+         val success = git(root, "clone", giturl(path), path)
          if (!success) {
            if (lp.exists) {
               log("git failed, deleting " + lp)
