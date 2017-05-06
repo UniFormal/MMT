@@ -752,7 +752,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         checkingUnit.killact
         return error("checking was cancelled by external signal")
       }
-      JudgementStore.getOrElse(j,{
+   //   JudgementStore.getOrElse(j,{
       history += j
         log("checking: " + j.presentSucceedent)
         logAndHistoryGroup {
@@ -768,7 +768,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             case j: EqualityContext => checkEqualityContext(j)
           }
         }
-     })
+    // })
    }
   // This can yield a speed up of (in one case) a factor of >4
   // TODO check subtleties, e.g., shadowing of variable names

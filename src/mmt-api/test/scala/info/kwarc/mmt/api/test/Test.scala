@@ -19,10 +19,9 @@ abstract class MMTTest(archives : String*)(extensions : String*) extends FlatSpe
   lazy val content = File("test/resources/content").canonical
   lazy val mathhub = new MathHub(MathHub.defaultURL,content,controller.report,https=true)
   def hl(s : String) = controller.handleLine(s)
+  def shouldhl(s : String) = it should s in hl(s)
 
   behavior of "MMT"
-
-  // hl("log console")
 
   if (!content.toJava.exists()) it should "create content folder" in content.toJava.mkdirs()
   ("MMT/urtheories" :: archives.toList) foreach (a =>
@@ -35,6 +34,7 @@ abstract class MMTTest(archives : String*)(extensions : String*) extends FlatSpe
 
   val ret = it should "add archives" in {
     hl("mathpath archive " + content.toJava.getAbsolutePath)
+    hl("log console")
   }
 
   // override protected def afterAll(): Unit = content.deleteDir

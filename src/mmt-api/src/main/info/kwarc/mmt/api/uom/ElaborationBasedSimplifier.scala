@@ -255,15 +255,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   }
   /** reelaborates if old element was */
   override def onUpdate(old: StructuralElement, nw: StructuralElement) {
-     if (! ElaboratedElement.is(old))
-       return
-     onDelete(old)
-    if (!nw.parent.isInstanceOf[ContentPath]) return
-     (controller.getO(nw.parent), nw) match {
-       case (Some(thy: DeclaredTheory), nw: Declaration) =>
-         flattenDeclaration(thy, nw)
-       case _ =>
-     }
+    onDelete(old)
+    onAdd(nw)
   }
 
   override def onAdd(c: StructuralElement) {
@@ -299,8 +292,6 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
 
     if (!ElaboratedElement.is(parent)) return
     (parent,c) match {
-      case (t : DeclaredTheory, dec : Declaration) =>
-        flattenDeclaration(t,dec)
       case (s : DeclaredStructure, dec : Declaration) =>
         controller.getO(s.parent) match {
           case Some(t : DeclaredTheory) =>
@@ -309,6 +300,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             flattenDeclaration(t,s)
           case _ =>
         }
+      case (t : DeclaredTheory, dec : Declaration) =>
+        flattenDeclaration(t,dec)
       case (dd : DerivedDeclaration, dec : Declaration) =>
         controller.getO(dd.parent) match {
           case Some(t : DeclaredTheory) =>

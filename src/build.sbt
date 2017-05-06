@@ -91,9 +91,7 @@ lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
   settings(
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
-    scalaSource in Test := baseDirectory.value / "src/main/scala",
     libraryDependencies ++= Seq(
-        "org.scalatest" %% "scalatest" % "2.2.5" % "test",
         "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
         "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     ),
@@ -117,11 +115,9 @@ lazy val api = (project in file("mmt-api")).
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-reflect.jar",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar",
-    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "tiscaf.jar",
-    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-compiler.jar",
-    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-reflect.jar",
     libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.11.0-M4" % "test",
-    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-xml.jar"
+    libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.11.0-M4" % "test",
+    libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.11.0-M4" % "test"
   )
 
 
