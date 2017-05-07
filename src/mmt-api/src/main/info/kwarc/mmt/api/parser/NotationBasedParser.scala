@@ -645,7 +645,8 @@ class NotationBasedParser extends ObjectParser {
   /** like makeTerm but interprets OMA(:,OMA(=,v)) as an OML */
   private def makeOML(te: TokenListElem, boundVars: List[LocalName], info: LabelInfo, attrib: Boolean = false)
                       (implicit pu: ParsingUnit, errorCont: ErrorHandler): Term = {
-    val t = makeTerm(te,boundVars)
+    val t = if (te.toString.contains(" ")) makeTerm(te,boundVars) else OMV(LocalName(te.toString.split('/'):_*))
+    // TODO hacky to allow OML names with slashes
     t match {
       case OMLTypeDef(name, tpOpt, dfOpt) /* if !boundVars.contains(name) && getFreeVars.contains(name) */ =>
          removeFreeVariable(name)

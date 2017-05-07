@@ -186,13 +186,37 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         }
       // any other import (including includes of complex theories): copy and translate all declarations
       case s: Structure =>
-         val dom = materialize(Context(parent.path), s.from, true, None).asInstanceOf[DeclaredTheory]
-         flatten(dom)
+         //val dom = materialize(Context(parent.path), s.from, true, None).asInstanceOf[DeclaredTheory]
+         //flatten(dom)
+          var dones : List[MPath] = Nil // List(s.from.toMPath)
+          def doDom(src : Term, prefix : Option[MPath] = None) : List[Declaration] = if (dones contains src.toMPath) Nil else {
+            dones ::= src.toMPath
+            val dom = materialize(Context(parent.path),src,true,None).asInstanceOf[DeclaredTheory]
+            flatten(dom)
+            dom.getDeclarations.flatMap(d => {
+              d match {
+                case PlainInclude(i,_) =>
+                  val dF = lup.getAs(classOf[Declaration], parent.path ? s.name /  d.name)
+                  dF :: doDom(OMMOD(i),Some(i))
+                case id : Declaration =>
+                  val name = prefix match {
+                    case Some(i) => s.name / ComplexStep(i) / id.name
+                    case _ => s.name / id.name
+                  }
+                  val dF = lup.getAs(classOf[Declaration], parent.path ? name)
+                  List(dF)
+              }
+            })
+          }
+        doDom(s.from).reverse
+        /*
          dom.getDeclarations.flatMap(d => {
            val dF = lup.getAs(classOf[Declaration], parent.path ? s.name / d.name)
            d match {
              case PlainInclude(i,_) =>
-               dF :: lup.get(i).getDeclarations.flatMap {
+               val idom = lup.get(i)
+               apply(idom)
+               dF :: idom.getDeclarations.flatMap {
                  case PlainInclude(_,_) =>
                    Nil
                  case id: Declaration =>
@@ -201,7 +225,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                }
              case d => List(dF)
            }
-         })
+         }).reverse
+         */
       // derived declarations: elaborate
       case dd: DerivedDeclaration =>
          controller.extman.get(classOf[StructuralFeature], dd.feature) match {

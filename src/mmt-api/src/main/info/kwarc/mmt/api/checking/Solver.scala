@@ -1255,7 +1255,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
              val similarApp = head1 == head2 && args1.length == args2.length
              if (! similarApp) {
                 if (noFreeVars)
-                   error("terms have different shape, thus they cannot be equal")
+                   error("terms have different shape, thus they cannot be equal: " + t1 + " and " + t2)
                 else
                    delay(j)
              } else {
@@ -1268,7 +1268,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          }
       } else {
          if (noFreeVars)
-            error("terms have different shape, thus they cannot be equal")
+            error("terms have different shape, thus they cannot be equal: " + t1 + " and " + t2)
          else
             //TODO can we fail if there are free variables but only in the context?
             delay(j)

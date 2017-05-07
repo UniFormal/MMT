@@ -121,8 +121,12 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
     val trav = new StatelessTraverser {
       override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
         case OMS(mp) =>
-          val opt = cont.find(_._1 == mp)
-          if (opt.isDefined) opt.get._2 else Traverser(this,t)
+          val opt = cont.find(_._1 == makepath(mp))
+          if (opt.isDefined) {
+            opt.get._2
+          } else {
+            Traverser(this,t)
+          }
         case _ => Traverser(this,t)
       }
     }
@@ -138,8 +142,12 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
     def get = (globalcont,cont.reverse)
   }
 
+  private def makename(ln : LocalName) = LocalName(ln.steps.filterNot(_.isInstanceOf[ComplexStep]))
+  private def makepath(gn : GlobalName) = gn.module ? makename(gn.name)
+
   private def fromTheory(th : DeclaredTheory,state : State = new State(Nil)) : (Context,List[(GlobalName,OML)]) = {
     state.covered ::= th.path
+    controller.simplifier(th)
     th.getIncludesWithoutMeta foreach {from =>
         if (!state.covered.contains(from)) state.cont = fromTheory(termtoTheory(OMMOD(from),from),state)._2.reverse ::: state.cont
     }
@@ -152,17 +160,19 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
           opt match {
             case Some(n) => n
             case None =>
-              throw GeneralError("FromTheory Error: can not generate unique name for " + c.name)
+              makename(c.name)
           }
         }
-        state.cont ::= (c.path,OML(name,c.tp.map(substitute(_,state.all)),None,c.not,None))
+        state.cont ::= (makepath(c.path),OML(name,c.tp.map(substitute(_,state.all)),None,c.not,None))
       case c : Constant if c.df.isDefined =>
         c.df match {
-          case Some(tm) => state.subst ::= (c.path,substitute(tm,state.all))
+          case Some(tm) =>
+            state.subst ::= (makepath(c.path),substitute(tm,state.all))
           case _ =>
         }
+      case s : Structure =>
       case o =>
-        throw GeneralError("FromTheory Error: can not handle Declarations of type " + o.getClass + ": " + o.path)
+        throw ParseError("FromTheory Error: can not handle Declarations of type " + o.getClass + ": " + o.path)
     }
     state.globalcont = state.globalcont ++ th.parameters
     state.get
