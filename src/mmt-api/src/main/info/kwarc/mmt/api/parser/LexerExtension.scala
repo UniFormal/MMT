@@ -3,6 +3,8 @@ import info.kwarc.mmt.api._
 import objects._
 import utils.MyList._
 
+import scala.util.Try
+
 /**
  * An EscapeManager handles escaping between languages during tokenization
  * 
@@ -142,13 +144,16 @@ abstract class ParseFunction {
 
    /** unapply(apply(s)) = s */
    def unapply(t: Term): String
+
+  /** just for overriding **/
+  def applicable(s : String) = true
 }
 
 /**
  * A LexParseExtension is a LexerExtension with a lex and a parse component.
  */
 class LexParseExtension(lc: LexFunction, pc: ParseFunction) extends LexerExtension {
-   def applicable(s: String, i: Int) = lc.applicable(s, i) 
+   def applicable(s: String, i: Int) = lc.applicable(s, i) && pc.applicable(lc.apply(s,i)._1)
    def apply(s: String, i: Int, firstPosition: SourcePosition): CFExternalToken = {
       val (text,eaten) = lc(s, i)
       val t = pc(text)
@@ -302,6 +307,12 @@ class LiteralParser(rt: uom.RealizedType) extends ParseFunction {
      case l: OMLITTrait => l.toString
      case _ => throw ImplementationError("not a literal")
    }
+
+  /** just for overriding **/
+  override def applicable(s: String): Boolean = Try(apply(s)) match {
+    case scala.util.Success(v : OMLIT) => super.applicable(s)
+    case _ => false
+  }
 }
 
 class SemiFormalParser(formatOpt: Option[String]) extends ParseFunction {
