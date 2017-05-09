@@ -278,6 +278,27 @@ class XMLReader(controller: Controller) extends Logger {
                   readIn(nsMap, t, n)
                }
             }
+         case m @ <view>{_*}</view> =>
+            val parent = home.parent
+            val vname = home.name / name
+            log("view " + name + " found")
+            val (m2, from) = ReadXML.getTermFromAttributeOrChild(m, "from", nsMap)
+            val (m3, to) = ReadXML.getTermFromAttributeOrChild(m2, "to", nsMap)
+            val isImplicit = parseImplicit(m)
+            m3.child match {
+               case <definition>{d}</definition> :: Nil =>
+                  val df = Obj.parseTerm(d, nsMap)
+                  val v = DefinedView(parent, vname, from, to, df, isImplicit)
+                  addDeclaration(new NestedModule(OMMOD(home),name,v))
+               case assignments =>
+                  val v = new DeclaredView(parent, name, from, to, isImplicit) // TODO add metamorph?
+                  addDeclaration(new NestedModule(OMMOD(home), name, v))
+                  logGroup {
+                     assignments.foreach {d =>
+                        readIn(nsMap, v, d)
+                     }
+                  }
+            }
          case <ruleconstant><type>{tpN}</type></ruleconstant> =>
             log("found rule constant " + name + ", trying RuleConstantInterpreter")
             val tp = Obj.parseTerm(tpN, nsMap)

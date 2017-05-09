@@ -246,8 +246,10 @@ class AnonymousTheory(val mt: Option[MPath], var decls: List[OML]) extends Eleme
   def add(oml: OML, after: Option[LocalName] = None) {
     // TODO
   }
-  def rename(old: LocalName, nw: LocalName) {
-    //TODO
+  def rename(old: LocalName, nw: LocalName) = {
+    val i = decls.indexWhere(_.name == old)
+    val ooml = decls(i)
+    decls = decls.take(i) ::: OML(nw,ooml.tp,ooml.df,ooml.nt,ooml.featureOpt) :: decls.drop(i+1)
   }
   def toTerm = AnonymousTheory(mt, decls)
 }

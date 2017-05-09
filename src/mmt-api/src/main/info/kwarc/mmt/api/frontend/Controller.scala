@@ -327,7 +327,11 @@ class Controller extends ROController with ActionHandling with Logger {
   }
 
   /** convenience for global lookup */
-  def get(path: Path): StructuralElement = globalLookup.get(path)
+  def get(path: Path): StructuralElement = {
+    val get = globalLookup.get(path)
+    simplifier(get)
+    get
+  }
 
   /** like get */
   def getO(path: Path) = try {
