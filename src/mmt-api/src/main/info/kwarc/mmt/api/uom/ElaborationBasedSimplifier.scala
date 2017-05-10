@@ -288,7 +288,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     // this makes sure there are no cycles, i.e., elaboration triggering itself
     // not sure if this is needed or even reasonable
     c.getOrigin match {
-      case ElaborationOf(_) => return
+      case ElaborationOf(_) | ElaborationOfDefinition => return
       case _ =>
     }
     
@@ -399,7 +399,6 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
    */
   def enrich(t : DeclaredTheory) : DeclaredTheory =  {
     loadAll
-    println("Flattening: " + t.path)
     val tbar = new DeclaredTheory(t.parent, t.name, t.meta, t.paramC, t.dfC)
     t.getDeclarations foreach {d =>
       tbar.add(d)
@@ -429,7 +428,6 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           }
       }
     }
-    println(t.path + ": " + t.getDeclarations.length + " ->  " + tbar.getDeclarations.length)
     tbar
   }
   //Flattens by generating a new theory for every view, used for flatsearch

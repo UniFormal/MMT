@@ -100,7 +100,7 @@ class RuleConstantParser extends ParserExtension {
       val thy = se.asInstanceOf[DeclaredTheory].path
       if (!pr.isPlainTerm)
         throw ParseError("can only interpret plain terms as rules, found: " + pr.toTerm)
-      val rc = rci(thy, pr.term, false)
+      val rc = rci(thy, pr.term, true)
       controller add rc
    }
 }

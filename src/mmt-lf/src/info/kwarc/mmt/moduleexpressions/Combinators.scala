@@ -131,7 +131,7 @@ object ComputeTranslate extends ComputationRule(Translate.path) {
 /** see [[Translate]] */
 object Expand extends BinaryConstantScala(Combinators._path, "expand")
 
-object ComputeExpand extends ComputationRule(Translate.path) {
+object ComputeExpand extends ComputationRule(Expand.path) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
       val Expand(mor, thy) = tm
       thy match {

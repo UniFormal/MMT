@@ -6,10 +6,6 @@ class LFTest extends MMTTest("MMT/LFX","MitM/Foundation","MMT/examples")("info.k
   behavior of "LF"
   //shouldhl("build MMT/urtheories scala-bin")
   shouldhl("build MMT/urtheories mmt-omdoc")
-  //shouldhl("build MMT/LFX scala-bin")
-  shouldhl("build MMT/LFX mmt-omdoc")
-  //shouldhl("build MitM/Foundation scala-bin")
-  shouldhl("build MitM/Foundation mmt-omdoc")
   //shouldhl("build MMT/examples scala-bin")
   shouldhl("build MMT/examples mmt-omdoc")
 }

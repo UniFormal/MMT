@@ -43,6 +43,8 @@ apidoc := apidoc.dependsOn(cleandoc, unidoc in Compile).value
 // definition of our custom, project-specific targets
 
 parallelExecution in ThisBuild := false
+javaOptions in ThisBuild ++= Seq("-Xmx1g")
+fork in Test := true
 
 val deploy =
   TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
@@ -183,7 +185,7 @@ lazy val metamath = (project in file("mmt-metamath")).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
 
 lazy val lfx = (project in file("mmt-lfx")).
-  dependsOn(api, lf).
+  dependsOn(api % "compile -> compile; test -> test", lf % "compile -> compile; test -> test").
   settings(mmtProjectsSettings("mmt-lfx"): _*)
 
 lazy val tps = (project in file("mmt-tps")).

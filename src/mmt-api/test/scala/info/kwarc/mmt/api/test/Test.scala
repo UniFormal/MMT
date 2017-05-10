@@ -29,7 +29,7 @@ abstract class MMTTest(archives : String*)(extensions : String*) extends FlatSpe
     else it should "git pull " + a in mathhub.pull(a)
   )
   (standardextensions ::: extensions.toList) foreach (e =>
-    it should "add Extension " + e.split(' ').head.split('.').last in hl("extension " + e)
+    it should "add Extension " + e in hl("extension " + e)
     )
 
   val ret = it should "add archives" in {
