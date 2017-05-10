@@ -1,5 +1,0 @@
-theory http://cds.omdoc.org/examples?FOLEQ
-HasMeta http://cds.omdoc.org/examples?FOLEQ http://cds.omdoc.org/urtheories?LF
-Includes http://cds.omdoc.org/examples?FOLEQ http://cds.omdoc.org/examples?FOL
-Declares http://cds.omdoc.org/examples?FOLEQ http://cds.omdoc.org/examples?FOLEQ?equal
-constant http://cds.omdoc.org/examples?FOLEQ?equal

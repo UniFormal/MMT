@@ -1,6 +1,7 @@
 package info.kwarc.mmt.odk.codecs
 
-import info.kwarc.mmt.api.objects.{OMS, Term}
+import info.kwarc.mmt.api.objects.{OMLIT, OMS, Term, UnknownOMLIT}
+import info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api.uom.{RealizedType, StandardInt, StandardNat, StandardString}
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.valuebases._
@@ -61,23 +62,29 @@ object TMString extends AtomicCodec[String,JSON](Codecs.standardString, OMS(Math
 
 object BoolAsInt extends Codec[JSON](OMS(Codecs.boolAsInt), OMS(Math.bool)) {
   def encode(t: Term) = t match {
-    case OMS(Math.tt) => JSONInt(1)
-    case OMS(Math.ff) => JSONInt(0)
+    // case OMS(Math.tt) => JSONInt(1)
+    // case OMS(Math.ff) => JSONInt(0)
+    case Math.tt => JSONInt(1)
+    case UnknownOMLIT("true",OMS(Math.bool)) => JSONInt(1)
+    case Math.ff => JSONInt(0)
+    case UnknownOMLIT("false",OMS(Math.bool)) => JSONInt(0)
   }
   def decode(j: JSON) = j match {
-    case JSONInt(1) => OMS(Math.tt)
-    case JSONInt(0) => OMS(Math.ff)
+    case JSONInt(1) => Math.tt
+    case JSONInt(0) => Math.ff
     case _ => throw CodecNotApplicable
   }
 }
 
 object StandardBool extends Codec[JSON](OMS(Codecs.standardBool), OMS(Math.bool)) {
   def encode(t: Term) = t match {
-    case OMS(Math.tt) => JSONBoolean(true)
-    case OMS(Math.ff) => JSONBoolean(false)
+    case Math.tt => JSONBoolean(true)
+    case Math.ff => JSONBoolean(false)
+    case UnknownOMLIT("true",OMS(Math.bool)) => JSONBoolean(true)
+    case UnknownOMLIT("false",OMS(Math.bool)) => JSONBoolean(false)
   }
   def decode(j: JSON) = j match {
-    case JSONBoolean(b) => if (b) OMS(Math.tt) else OMS(Math.ff)
+    case JSONBoolean(b) => if (b) Math.tt else Math.ff
     case _ => throw CodecNotApplicable
   }
 }

@@ -11,7 +11,7 @@ function TheoryGraph()
 	var that=this;
 	var zoomClusters=[];
 	var clusterPositions=[];
-	
+	var BASE_QUERY_URL="http://mathhub.info/mh/mmt";
 	
 	this.downloadCanvasAsImage = function(button)
 	{
@@ -34,7 +34,7 @@ function TheoryGraph()
 		var originalWidth=network.canvas.frame.canvas.width;
 		var originalHeight=network.canvas.frame.canvas.height;
 		
-		network.setSize((maxX-minX)*1.2,(maxY-minY)*1.2);
+		network.setSize(Math.min((maxX-minX)*1.2,3500),Math.min((maxY-minY)*1.2,3500));
 		
 		network.redraw();
 		network.fit();
@@ -70,6 +70,21 @@ function TheoryGraph()
         }
         zoomClusters = newClusters;
     }
+	
+	this.selectNodesWithIdLike=function(searchId)
+	{
+		var nodeIds = [];
+		for (var i = 0; i < originalNodes.length; i++) 
+		{
+			var curNode = originalNodes[i];
+			if(curNode.id.indexOf(searchId)>-1)
+			{
+				nodeIds.push(curNode.id);
+			}
+			
+		}
+		network.selectNodes(nodeIds);
+	}
 	
 	this.clusterOutliers=function(scale)
 	{
@@ -351,8 +366,8 @@ function TheoryGraph()
 				switch($(this).attr("data-action")) 
 				{
 					// A case for each action
-					case "openWindow": window.open(selected["url"]); break;
-					case "showURL": alert(selected["url"].replace("/?","")); break;
+					case "openWindow": window.open(BASE_QUERY_URL+selected["url"]); break;
+					case "showURL": alert(BASE_QUERY_URL+selected["url"]); break;
 					case "openCluster": openCluster(selected["id"]); break;
 					case "inferType": alert("Not implemented yet!"); break;
 					case "showDecl": alert("Not implemented yet!"); break;
@@ -437,6 +452,7 @@ function TheoryGraph()
 			{
 				lastClusterZoomLevel = network.getScale();
 			}
+			document.body.style.cursor = 'auto';
 		});
 	}
 }

@@ -4,9 +4,9 @@ import info.kwarc.mmt.api._
 import uom._
 import symbols._
 import checking._
+import info.kwarc.mmt.api.modules.DeclaredTheory
 import objects._
 import objects.Conversions._
-
 import info.kwarc.mmt.lf._
 
 /**
@@ -251,5 +251,18 @@ object CompositionInfer extends InferenceRule(ModExp.composition, OfType.path) {
               case _ => None
            }
       }
+   }
+}
+
+object ComputeMorphism extends ComputationRule(ModExp.morphismapplication) {
+   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+      val OMM(t,m) = tm
+      val res = solver.getTheory(t).getOrElse(return None)
+      val translator = ApplyMorphism(m)
+      def tr(opt : Option[Term]) = opt.map(s => translator(Context.empty,s))
+      Some(AnonymousTheory(res.mt,res.decls.map{
+         case OML(name,tp,df,nt,feature) =>
+          OML(name,tr(tp),tr(df),nt,feature)
+      }))
    }
 }

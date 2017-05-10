@@ -144,7 +144,7 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
        loadXML(uri, path.doc, reader)
     } else if (target.isDirectory) {
        loadFromFolder(uri, suffix)
-    } else throw BackendError("file/folder " + target + " not found or not accessible", path)
+    } else throw NotApplicable("file/folder " + target + " not found or not accessible: " + path)
   }
 }
 

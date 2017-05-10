@@ -258,7 +258,7 @@ class NotationBasedParser extends ObjectParser {
   
   /* like getRules but for a theory expression (currently only called for local notations) */
   private def getRules(thy: Term): RuleLists = {
-    thy match {
+    controller.simplifier.apply(thy,Context.empty) match {
       case OMPMOD(mp,_) => getRules(Context(mp))
       case _ => (Nil,Nil,Nil) // TODO not implemented
     }
@@ -645,7 +645,12 @@ class NotationBasedParser extends ObjectParser {
   /** like makeTerm but interprets OMA(:,OMA(=,v)) as an OML */
   private def makeOML(te: TokenListElem, boundVars: List[LocalName], info: LabelInfo, attrib: Boolean = false)
                       (implicit pu: ParsingUnit, errorCont: ErrorHandler): Term = {
-    val t = makeTerm(te,boundVars)
+    val filter : Error => Boolean = {
+      case SourceError(_,_,msg,_,_) if msg startsWith "unbound token:" => false
+      case _ => true
+    }
+    val t = makeTerm(te,boundVars)(pu,new FilteringErrorHandler(errorCont,filter))
+    // TODO hacky to allow OML names with slashes
     t match {
       case OMLTypeDef(name, tpOpt, dfOpt) /* if !boundVars.contains(name) && getFreeVars.contains(name) */ =>
          removeFreeVariable(name)
@@ -667,7 +672,10 @@ class NotationBasedParser extends ObjectParser {
       def unapply(t : Term) : Option[LocalName] = t match {
         case OMV(n) => Some(n)
         case OMS(p) => Some(p.name)
-        case _ => None
+        case OMSemiFormal(List(Text(_,s))) =>
+          Some(LocalName.parse(s))
+        case _ =>
+          None
       }
     }
     def unapply(t : Term) : Option[(LocalName,Option[Term],Option[Term])] = t match {
@@ -681,7 +689,8 @@ class NotationBasedParser extends ObjectParser {
       case OMLdef(Name(n),OMLtype(df,tp)) => Some((n,Some(tp),Some(df)))
       case OMLdef(Name(n),df) => Some((n,None,Some(df)))
       case Name(n) => Some((n,None,None))
-      case _ => None
+      case _ =>
+        None
     }
   }
   /** matches v:T where : is constant with role OMLType */

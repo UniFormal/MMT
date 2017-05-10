@@ -13,7 +13,6 @@ import modules._
 
 import scala.collection._
 import scala.collection.immutable._
-import tiscaf._
 
 
 case class FrameitError(text : String) extends Error(text)
@@ -233,12 +232,12 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
 
   implicit val unifun : StructuralElement => Unit = x => controller.add(x)
 
-  def apply(request: Request): HLet = request.path match {
+  def apply(request: ServerRequest): ServerResponse = request.path match {
     case "init" :: rest => try {
       controller.handleLine("build FrameIT mmt-omdoc")
-      Server.TextResponse("Success")
+      ServerResponse.TextResponse("Success")
     } catch {
-      case e : Exception => Server.errorResponse("Error initializing: " + e.getMessage, request.data)
+      case e : Exception => ServerResponse.errorResponse("Error initializing: " + e.getMessage, request)
     }
     case "pushout" :: rest => if (request.query.trim.startsWith("theory=")) {
       try {
@@ -257,11 +256,11 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
           val df = c.df.map(x => simplify(fv.pushout(c.path $ DefComponent, viewpath), view.to.toMPath))
           Constant(c.home,c.name,Nil,tp,df,None)
         }).map(_.toNode)
-        Server.XmlResponse(<theory>{nodes}</theory>)
+        ServerResponse.XmlResponse(<theory>{nodes}</theory>)
       } catch {
-        case e : Exception => Server.errorResponse(e.getMessage, request.data)
+        case e : Exception => ServerResponse.errorResponse(e.getMessage, request)
       }
-    } else Server.errorResponse("Malformed query", request.data)
+    } else ServerResponse.errorResponse("Malformed query", request)
     case "add" :: rest =>
       try {
         request.body.asXML match {
@@ -299,13 +298,13 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
               view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name)
             })
             if(!istotal) throw FrameitError("View not total")
-            Server.TextResponse("Okay")
+            ServerResponse.TextResponse("Okay")
           case _ => throw new FrameitError("Malformed FrameIT request : not of form <content><THEORY><VIEW></content>")
         }
       } catch {
-        case e : Exception => Server.errorResponse(e.getMessage, request.data)
+        case e : Exception => ServerResponse.errorResponse(e.getMessage, request)
       }
-    case _ => Server.errorResponse("Neither \"add\" nor \"pushout\"", request.data)
+    case _ => ServerResponse.errorResponse("Neither \"add\" nor \"pushout\"", request)
   }
 
   def run(solthS : String, vpathS : String) : String = {

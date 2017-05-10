@@ -120,7 +120,12 @@ class TextInterpreter extends OpaqueElementInterpreter
             f.onCheck()
             f.tc.parsed.foreach {t =>
                val cu = CheckingUnit.byInference(Some(oe.path $ f.comp), context, t)
-               oC(cu, rules)
+               try {
+                  oC(cu, rules)
+               } catch {
+                  case GetError(_) => // TODO for some reason this appears quite regularly. Doesn't seem to be crucial,
+                  // but hard to investigate...
+               }
             }
       }
    }

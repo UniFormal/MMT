@@ -42,6 +42,10 @@ apidoc := apidoc.dependsOn(cleandoc, unidoc in Compile).value
 
 // definition of our custom, project-specific targets
 
+parallelExecution in ThisBuild := false
+javaOptions in ThisBuild ++= Seq("-Xmx1g")
+fork in Test := true
+
 val deploy =
   TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
 
@@ -56,7 +60,9 @@ def commonSettings(nameStr: String) = Seq(
   scalaVersion := "2.11.7",
   name := nameStr,
   sourcesInBase := false,
+  libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
   scalaSource in Compile := baseDirectory.value / "src",
+  scalaSource in Test := baseDirectory.value / "test" / "scala",
   resourceDirectory in Compile := baseDirectory.value / "resources",
   unmanagedBase := baseDirectory.value / "jars",
   isSnapshot := true,
@@ -87,9 +93,7 @@ lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
   settings(
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
-    scalaSource in Test := baseDirectory.value / "src/main/scala",
     libraryDependencies ++= Seq(
-        "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
         "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
         "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     ),
@@ -112,26 +116,26 @@ lazy val api = (project in file("mmt-api")).
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-compiler.jar",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-reflect.jar",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
-    unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar"
+    unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar",
+    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.11.0-M4" % "test",
+    libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.11.0-M4" % "test",
+    libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.11.0-M4" % "test"
   )
 
 
 lazy val lf = (project in file("mmt-lf")).
-  dependsOn(api).
+  dependsOn(api % "compile -> compile; test -> test").
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
     unmanagedJars in Compile += Utils.deploy.toJava / "lfcatalog" / "lfcatalog.jar",
-    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
-    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "tiscaf.jar",
-    libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
+    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.11.0-M4" % "test",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "tiscaf.jar"
   )
 
 lazy val leo = (project in file("mmt-leo")).
   dependsOn(lf, api).
   settings(mmtProjectsSettings("mmt-leo"): _*).
   settings(
-    scalaSource in Test := baseDirectory.value / "test",
-    libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
     libraryDependencies += "com.assembla.scala-incubator" %% "graph-core" % "1.9.4"
   )
 
@@ -181,7 +185,7 @@ lazy val metamath = (project in file("mmt-metamath")).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
 
 lazy val lfx = (project in file("mmt-lfx")).
-  dependsOn(api, lf).
+  dependsOn(api % "compile -> compile; test -> test", lf % "compile -> compile; test -> test").
   settings(mmtProjectsSettings("mmt-lfx"): _*)
 
 lazy val tps = (project in file("mmt-tps")).
@@ -248,7 +252,7 @@ lazy val repl = (project in file("mmt-repl")).
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
 lazy val mmt = (project in file("fatjar")).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, lfx).
   settings(mmtProjectsSettings("fatjar"): _*).
   settings(
     exportJars := false,

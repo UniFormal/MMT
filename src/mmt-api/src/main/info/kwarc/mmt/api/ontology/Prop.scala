@@ -52,8 +52,7 @@ object Exists {
 }
 
 /** judgement that holds for a single element */
-case class Holds(about: Query, varname : LocalName, j: Judgement) extends Prop
-
+case class Holds(about: Query, j: QueryJudgement) extends Prop
 
 object Prop {
   /**
@@ -93,6 +92,9 @@ object Prop {
 
     case <exists>{d}{f}</exists> =>
       Forall(Query.parse(d), xml.attrL(n, "name"), parse(f))
+
+    case <holds>{a}{j}</holds> =>
+      Holds(Query.parse(a), QueryJudgement.parse(j))
 
     // TODO: Parse Holds somehow
     case _ => throw ParseError("illegal proposition: " + n)

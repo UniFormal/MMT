@@ -1,9 +1,0 @@
-document http://docs.omdoc.org/test/examples
-Declares http://docs.omdoc.org/test/examples http://docs.omdoc.org/test/examples/hott.omdoc
-Declares http://docs.omdoc.org/test/examples http://docs.omdoc.org/test/examples/pl.omdoc
-Declares http://docs.omdoc.org/test/examples http://docs.omdoc.org/test/examples/numbers.omdoc
-Declares http://docs.omdoc.org/test/examples http://docs.omdoc.org/test/examples/int.omdoc
-Declares http://docs.omdoc.org/test/examples http://docs.omdoc.org/test/examples/fol.omdoc
-Declares http://docs.omdoc.org/test/examples http://docs.omdoc.org/test/examples/literalnat.omdoc
-Declares http://docs.omdoc.org/test/examples http://docs.omdoc.org/test/examples/nat.omdoc
-Declares http://docs.omdoc.org/test/examples http://docs.omdoc.org/test/examples/set.omdoc

@@ -45,6 +45,15 @@ var ARROW_STYLES=
 		circle:false,
 		directed: true
 	},
+	"graphtheory":
+	{
+		color:"red",
+		colorHighlight:"red",
+		colorHover:"red",
+		dashes: false,
+		circle:false,
+		directed: true
+	},
 	"graphmeta":
 	{
 		color:"green",
@@ -54,14 +63,14 @@ var ARROW_STYLES=
 		circle: true,
 		directed: true
 	},
-	"graphtheory":
+	"alignment":
 	{
 		color:"red",
 		colorHighlight:"red",
 		colorHover:"red",
-		dashes: false,
-		circle:false,
-		directed: true
+		dashes: true,
+		circle: false,
+		directed: false
 	},
 	"graphview":
 	{

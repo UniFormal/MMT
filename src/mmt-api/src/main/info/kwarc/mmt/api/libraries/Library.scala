@@ -697,6 +697,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case dd: DerivedDeclaration =>
         case e: NestedModule =>
           add(e.module, None)
+          //TODO this makes every declaration in a theory T visible to any theory S contained in T, regardless of
+          //  whether the declaration comes before or after S!
           implicitGraph(e.home, e.module.toTerm) = OMIDENT(e.home)
         case _ =>
         //TODO add equational axioms

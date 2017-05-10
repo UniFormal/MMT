@@ -126,7 +126,7 @@ class SCSCPClient(socket: Socket, encoding: String = "UTF-8") {
     val result = try {
       SCSCPResult(obj)
     } catch {
-      case e: Exception => throw new OpenMathError() // Unable to parse OpenMath
+      case e: Exception => throw new OpenMathError("") // Unable to parse OpenMath
     }
 
     // store it in the result map

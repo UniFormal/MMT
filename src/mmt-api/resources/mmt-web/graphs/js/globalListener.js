@@ -4,14 +4,25 @@ var rectTools;
 var dragTools=false;
 var containerTools;
 
+
 $(document).bind("contextmenu", function (event) 
 {
 	// Avoid the real menu
 	event.preventDefault();
 });
 
+
 $(document).ready(function() 
 {
+	//$('button').button();
+	// Accordion
+	$(".accordion").accordion({ header: "h3" });
+	// Tabs
+	$('#tabs').tabs();
+	// Button Set
+	$("#radio1").buttonset();
+	$( "#methodCluster" ).selectmenu();
+		
 	canvasTools=document.getElementById('toolCanvas');
 	ctxTools=canvasTools.getContext('2d');
 	rectTools = {};
@@ -60,6 +71,7 @@ $(document).ready(function()
             dragTools = false;
             theoryGraph.selectNodesInRect(rectTools);
 			ctxTools.clearRect(0, 0, canvasTools.width, canvasTools.height);
+			switchSelectionMode();
         }
     });
 

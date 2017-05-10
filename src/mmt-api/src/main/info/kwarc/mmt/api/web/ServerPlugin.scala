@@ -7,8 +7,7 @@ import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
-import tiscaf._
-import Server._
+import ServerResponse._
 import info.kwarc.mmt.api.objects.Context
 
 /**
@@ -26,23 +25,23 @@ abstract class ServerExtension(context: String) extends FormatBasedExtension {
   def isApplicable(cont: String): Boolean = cont == context
 
   /**
-   * handles the HTTP request
+   * handles a request for this ServerExtension
+   *
+   * for implementation, the ServerResponse._ methods should be used
+   * all errors are caught and displayed to the user when possible
+   *
    * @param request The request sent to this ServerExtension
-   * @return the HTTP response
-   *
-   *         Implementing classes can and should use Server.XmlResponse etc to construct responses conveniently.
-   *
-   *         Errors thrown by this method are caught and sent back to the browser.
+   * @return a response for this request
    */
-  def apply(request: Request): HLet
+  def apply(request: ServerRequest): ServerResponse
 }
 
 /**
  * interprets the body as MMT content
  */
 class PostServer extends ServerExtension("post") {
-  def apply(request: Request): HLet = {
-    val wq = WebQuery.parse(request.query)
+  def apply(request: ServerRequest): ServerResponse = {
+    val wq = request.parsedQuery
     val content = wq.string("body", throw ServerError("found no body in post req"))
     val format = wq.string("format", "mmt")
     val dpathS = wq.string("dpath", throw ServerError("expected dpath"))
@@ -56,13 +55,10 @@ class PostServer extends ServerExtension("post") {
 /** interprets the query as an MMT document URI and returns the SVG representation of the theory graph */
 class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
   /**
-   * @param httppath the export dimension from which to take the graph, "svg" by if empty
-   * @param query the [[Path]] for which to retrieve a graph
-   * @param body ignored
-   * @param session ignored
+   * request.path the export dimension from which to take the graph, "svg" by if empty
+   * request.query the [[Path]] for which to retrieve a graph
    */
-
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): ServerResponse = {
     // val (nquery,json) = if (query.startsWith("json:")) (query.drop(5),true) else (query,false)
     val path = Path.parse(request.query, controller.getNamespaceMap)
     val key = request.path.headOption.getOrElse("svg")
@@ -80,7 +76,7 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
       } else {
         exp.asString(se)
       }
-      TypedTextResponse(node, "image/svg+xml")
+      ServerResponse(node, "image/svg+xml")
     // }
   }
   
@@ -126,20 +122,15 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
 
 /** interprets the body as a QMT [[ontology.Query]] and evaluates it */
 class QueryServer extends ServerExtension("query") {
-  /**
-   * @param path ignored
-   * @param httpquery ignored
-   * @param body the query as XML
-   */
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): ServerResponse = {
     val mmtquery = request.body.asXML
     log("qmt query: " + mmtquery)
     val q = Query.parse(mmtquery)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
     //log("qmt query: " + q.toString)
     QueryChecker.infer(q)(Context.empty) // type checking
     val res = controller.evaluator(q)
-    val resp = res.toNode
-    XmlResponse(resp)
+
+    ServerResponse.fromXML(res.toNode)
   }
 }
 
@@ -152,12 +143,7 @@ class SearchServer extends ServerExtension("search") {
     mmlpres.init(controller)
   }
 
-  /**
-   * @param path ignored
-   * @param httpquery search parameters
-   * @param body ignored
-   */
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): ServerResponse = {
     val wq = WebQuery.parse(request.query)
     val base = wq("base")
     val mod = wq("module")
@@ -220,13 +206,13 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
 
   def getSettings(path : List[String], query : String, body : Body) : Map[String, String]
 
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): ServerResponse = {
     val searchS = request.body.asString
     val settings = getSettings(request.path, request.query, request.body)
     val mathmlS = toHTML(process(searchS, settings))
     val mathml = scala.xml.XML.loadString(mathmlS)
     val resp = postProcessQVars(mathml)
-    Server.TextResponse(resp.toString, "html")
+    TextResponse(resp.toString, "html")
   }
 
   def preProcessQVars(n : scala.xml.Node) : scala.xml.Node = n match {
@@ -254,8 +240,8 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
 
 /** interprets the query as an MMT [[frontend.GetAction]] and returns the result */
 class GetActionServer extends ServerExtension("mmt") {
-  def apply(request: Request): HLet = {
-    val action = Action.parseAct(request.query, controller.getBase, controller.getHome)
+  def apply(request: ServerRequest): ServerResponse = {
+    val action = Action.parseAct(request.queryString, controller.getBase, controller.getHome)
     val resp: String = action match {
       case GetAction(a: ToWindow) =>
         a.make(controller)
@@ -271,7 +257,7 @@ class GetActionServer extends ServerExtension("mmt") {
 
 /** an HTTP interface for processing [[Message]]s */
 class MessageHandler extends ServerExtension("content") {
-  def apply(request: Request): HLet = {
+  def apply(request: ServerRequest): ServerResponse = {
      if (request.path.length != 1)
        throw LocalError("path must have length 1")
      val wq = WebQuery.parse(request.query)
@@ -293,8 +279,8 @@ class MessageHandler extends ServerExtension("content") {
      }
      controller.handle(message) match {
        case ObjectResponse(obj, tp) => TextResponse(obj, tp)
-       case StructureResponse(id) => errorResponse(id, request.data)
-       case ErrorResponse(msg) => errorResponse(msg, request.data)
+       case StructureResponse(id) => errorResponse(id, request)
+       case ErrorResponse(msg) => errorResponse(msg, request)
      }
   }
 }
@@ -311,8 +297,8 @@ class ActionServer extends ServerExtension("action") {
     report.removeHandler(logPrefix)
   }
 
-  def apply(request: Request): HLet = {
-    val c = request.query.replace("%20", " ")
+  def apply(request: ServerRequest): ServerResponse = {
+    val c = request.decodedQuery
     val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
     if (act == Exit) {
       // special case for sending a response when exiting
@@ -322,7 +308,7 @@ class ActionServer extends ServerExtension("action") {
           controller.handle(act)
         }
       }.start
-      return Server.XmlResponse(<exited/>)
+      return XmlResponse(<exited/>)
     }
     logCache.record
     controller.handle(act)
@@ -351,8 +337,8 @@ class ActionServer extends ServerExtension("action") {
  * and store the comment as user+date into the discussions folder
  */
 class SubmitCommentServer extends ServerExtension("submit_comment") {
-  def apply(request: Request): HLet = {
-    val path = Path.parse(request.query, controller.getNamespaceMap)
+  def apply(request: ServerRequest): ServerResponse = {
+    val path = Path.parse(request.queryString, controller.getNamespaceMap)
     var s = request.body.asString
     val date = Calendar.getInstance().getTime.toString
     val end = date.replaceAll("\\s", "")
@@ -450,12 +436,13 @@ class URIProducer extends BuildTarget {
  * serves all constant URIs in an archive or a group of archives
  */
 class URIServer extends ServerExtension("uris") {
-   def apply(request: Request): HLet = {
+   def apply(request: ServerRequest): ServerResponse = {
      val archive = controller.backend.getArchive(request.query).getOrElse {
        throw LocalError("archive not found: " + request.query)
      }
      val f = archive / Dim("export") / "uris" / "uris.json"
      val json = File.read(f)
-     TypedTextResponse(json, "application/json")
+     // TODO: Check if we want to use a ServerResponse.resource
+     ServerResponse(json, "application/json")
    }
 }

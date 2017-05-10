@@ -240,14 +240,18 @@ object TUnion {
 }
 
 // TODO this should inherti from MutableElementContainer
-class AnonymousTheory(mt: Option[MPath], var decls: List[OML]) extends ElementContainer[OML] with DefaultLookup[OML] {
+class AnonymousTheory(val mt: Option[MPath], var decls: List[OML]) extends ElementContainer[OML] with DefaultLookup[OML] {
   def getDeclarations = decls
   
   def add(oml: OML, after: Option[LocalName] = None) {
     // TODO
   }
-  def rename(old: LocalName, nw: LocalName) {
-    //TODO
+  def rename(old: LocalName, nw: LocalName) = {
+    val i = decls.indexWhere(_.name == old)
+    if (i != -1) {
+      val ooml = decls(i)
+      decls = decls.take(i) ::: OML(nw, ooml.tp, ooml.df, ooml.nt, ooml.featureOpt) :: decls.drop(i + 1)
+    }
   }
   def toTerm = AnonymousTheory(mt, decls)
 }

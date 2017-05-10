@@ -136,7 +136,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   private def check(context: Context, e: StructuralElement, streamed: Boolean)(implicit env: ExtendedCheckingEnvironment) {
     implicit val ce = env.ce
     val path = e.path
-    log("checking " + path + " using the following rules: " + env.rules.toString)
+    log("checking " + path )//+ " using the following rules: " + env.rules.toString)
     e match {
       //TODO merge this case with the generic case for ContainerElements
       //the extended treatment is probably needed for all ContainerElements anyway

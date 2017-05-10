@@ -41,7 +41,7 @@ object PillarFeature extends StructuralFeature("Pillar") {
          return
      }
      
-     if (dd.getDeclarations.size > 0) {
+     if (dd.getDeclarations.nonEmpty) {
         env.errorCont(InvalidElement(dd, "pillars should have no declarations, only type"))
         return
      }

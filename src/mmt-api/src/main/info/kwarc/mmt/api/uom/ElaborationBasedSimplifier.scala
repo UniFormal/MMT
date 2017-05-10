@@ -121,15 +121,15 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 controller add d// mod.add(d,None) //TODO add at beginning
               }
             case AnonymousTheory(mt,omls) =>
-              if (mt.isDefined) { // TODO should probably become meta theory somehow, but can't be overwritten
-                val inc = PlainInclude(mt.get,t.path)
+              if (mt.isDefined) t.addMeta(mt.get) /* { // TODO should probably become meta theory somehow, but can't be overwritten
+                val inc = PlainInclude(mt.get,t.path) // TODO it can now!
                 inc.setOrigin(ElaborationOfDefinition)
                 apply(mt.get)
                 if (!t.metaC.isDefined) {
                    t.metaC.set(OMMOD(mt.get))
                 }
                 controller add inc
-              }
+              } */
               omls foreach {
                 case IncludeOML(_, OMPMOD(mp, Nil), _) =>
                   val i = PlainInclude(mp,t.path)
@@ -186,13 +186,37 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         }
       // any other import (including includes of complex theories): copy and translate all declarations
       case s: Structure =>
-         val dom = materialize(Context(parent.path), s.from, true, None).asInstanceOf[DeclaredTheory]
-         flatten(dom)
+         //val dom = materialize(Context(parent.path), s.from, true, None).asInstanceOf[DeclaredTheory]
+         //flatten(dom)
+          var dones : List[MPath] = Nil // List(s.from.toMPath)
+          def doDom(src : Term, prefix : Option[MPath] = None) : List[Declaration] = if (dones contains src.toMPath) Nil else {
+            dones ::= src.toMPath
+            val dom = materialize(Context(parent.path),src,true,None).asInstanceOf[DeclaredTheory]
+            flatten(dom)
+            dom.getDeclarations.flatMap(d => {
+              d match {
+                case PlainInclude(i,_) =>
+                  val dF = lup.getAs(classOf[Declaration], parent.path ? s.name /  d.name)
+                  dF :: doDom(OMMOD(i),Some(i))
+                case id : Declaration =>
+                  val name = prefix match {
+                    case Some(i) => s.name / ComplexStep(i) / id.name
+                    case _ => s.name / id.name
+                  }
+                  val dF = lup.getAs(classOf[Declaration], parent.path ? name)
+                  List(dF)
+              }
+            })
+          }
+        doDom(s.from).reverse
+        /*
          dom.getDeclarations.flatMap(d => {
            val dF = lup.getAs(classOf[Declaration], parent.path ? s.name / d.name)
            d match {
              case PlainInclude(i,_) =>
-               dF :: lup.get(i).getDeclarations.flatMap {
+               val idom = lup.get(i)
+               apply(idom)
+               dF :: idom.getDeclarations.flatMap {
                  case PlainInclude(_,_) =>
                    Nil
                  case id: Declaration =>
@@ -201,7 +225,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                }
              case d => List(dF)
            }
-         })
+         }).reverse
+         */
       // derived declarations: elaborate
       case dd: DerivedDeclaration =>
          controller.extman.get(classOf[StructuralFeature], dd.feature) match {
@@ -255,22 +280,15 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   }
   /** reelaborates if old element was */
   override def onUpdate(old: StructuralElement, nw: StructuralElement) {
-     if (! ElaboratedElement.is(old))
-       return
-     onDelete(old)
-    if (!nw.parent.isInstanceOf[ContentPath]) return
-     (controller.getO(nw.parent), nw) match {
-       case (Some(thy: DeclaredTheory), nw: Declaration) =>
-         flattenDeclaration(thy, nw)
-       case _ =>
-     }
+    onDelete(old)
+    onAdd(nw)
   }
 
   override def onAdd(c: StructuralElement) {
     // this makes sure there are no cycles, i.e., elaboration triggering itself
     // not sure if this is needed or even reasonable
     c.getOrigin match {
-      case ElaborationOf(_) => return
+      case ElaborationOf(_) | ElaborationOfDefinition => return
       case _ =>
     }
     
@@ -299,8 +317,6 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
 
     if (!ElaboratedElement.is(parent)) return
     (parent,c) match {
-      case (t : DeclaredTheory, dec : Declaration) =>
-        flattenDeclaration(t,dec)
       case (s : DeclaredStructure, dec : Declaration) =>
         controller.getO(s.parent) match {
           case Some(t : DeclaredTheory) =>
@@ -309,6 +325,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             flattenDeclaration(t,s)
           case _ =>
         }
+      case (t : DeclaredTheory, dec : Declaration) =>
+        flattenDeclaration(t,dec)
       case (dd : DerivedDeclaration, dec : Declaration) =>
         controller.getO(dd.parent) match {
           case Some(t : DeclaredTheory) =>
@@ -381,7 +399,6 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
    */
   def enrich(t : DeclaredTheory) : DeclaredTheory =  {
     loadAll
-    println("Flattening: " + t.path)
     val tbar = new DeclaredTheory(t.parent, t.name, t.meta, t.paramC, t.dfC)
     t.getDeclarations foreach {d =>
       tbar.add(d)
@@ -411,7 +428,6 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           }
       }
     }
-    println(t.path + ": " + t.getDeclarations.length + " ->  " + tbar.getDeclarations.length)
     tbar
   }
   //Flattens by generating a new theory for every view, used for flatsearch

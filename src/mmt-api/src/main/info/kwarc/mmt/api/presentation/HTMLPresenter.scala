@@ -127,8 +127,12 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
 
    def doDeclaration(d: Declaration) {
       val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
-      val alignmentsServer: Option[AlignmentsServer] = controller.extman.getOrAddExtension(classOf[AlignmentsServer],"align")
-      val alignments = alignmentsServer.map(_.getAlignments(d.path)).getOrElse(Nil)
+      val alignmentsServer: AlignmentsServer = controller.extman.get(classOf[AlignmentsServer]).headOption.getOrElse {
+        val a = new AlignmentsServer
+        controller.extman.addExtension(a)
+        a
+      }
+      val alignments = alignmentsServer.getAlignments(d.path)
       val (_,aliases) = d.primaryNameAndAliases
 
       val basicCss = "constant toggle-root inlineBoxSibling"

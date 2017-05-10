@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
 import frontend._
+import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
 import info.kwarc.mmt.api.utils.Killable
 import modules._
 import objects.Conversions._
@@ -10,6 +11,7 @@ import proving._
 import parser.ParseResult
 
 import scala.collection.mutable.HashSet
+import scala.util.Try
 
 /* ideas
  * inferType should guarantee well-formedness (what about LambdaTerm?)
@@ -366,6 +368,29 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         addDependency(p $ TypeComponent)
       t
    }
+
+  def lookup(p : Path) : Option[StructuralElement] = controller.getO(p)
+
+  def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = safeSimplify(tm) match {
+    case AnonymousTheory(mt, ds) =>
+      Some(new AnonymousTheory(mt, Nil))
+    // add include of codomain of mor
+    case OMMOD(mp) =>
+      val th = Try(controller.globalLookup.getTheory(mp)).toOption match {
+        case Some(th2: DeclaredTheory) => th2
+        case _ => return None
+      }
+      val ds = th.getDeclarationsElaborated.map({
+        case c: Constant =>
+          OML(c.name, c.tp, c.df, c.not)
+        case PlainInclude(from, to) =>
+          IncludeOML(from, Nil)
+        case _ => ???
+      })
+      Some(new AnonymousTheory(th.meta, ds))
+    case _ =>
+      return None
+  }
    /** retrieves the definiens of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed
@@ -727,7 +752,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         checkingUnit.killact
         return error("checking was cancelled by external signal")
       }
-      JudgementStore.getOrElse(j,{
+   //   JudgementStore.getOrElse(j,{
       history += j
         log("checking: " + j.presentSucceedent)
         logAndHistoryGroup {
@@ -743,7 +768,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             case j: EqualityContext => checkEqualityContext(j)
           }
         }
-     })
+    // })
    }
   // This can yield a speed up of (in one case) a factor of >4
   // TODO check subtleties, e.g., shadowing of variable names
@@ -951,8 +976,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
            ret
         }
      }
-     log("inferred: " + res.map(presentObj).getOrElse("failed"))
-     history += "inferred: " + res.map(presentObj).getOrElse("failed")
+     log("inferred: " + presentObj(tm) + " : " + res.map(presentObj).getOrElse("failed"))
+     history += "inferred: " + presentObj(tm) + " : " + res.map(presentObj).getOrElse("failed")
      //remember inferred type
      if (!isDryRun) {
        res foreach {r => InferredType.put(tm, (getCurrentBranch,r))}
@@ -1230,7 +1255,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
              val similarApp = head1 == head2 && args1.length == args2.length
              if (! similarApp) {
                 if (noFreeVars)
-                   error("terms have different shape, thus they cannot be equal")
+                   error("terms have different shape, thus they cannot be equal: " + t1 + " and " + t2)
                 else
                    delay(j)
              } else {
@@ -1243,7 +1268,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          }
       } else {
          if (noFreeVars)
-            error("terms have different shape, thus they cannot be equal")
+            error("terms have different shape, thus they cannot be equal: " + t1 + " and " + t2)
          else
             //TODO can we fail if there are free variables but only in the context?
             delay(j)

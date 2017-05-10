@@ -1,7 +1,0 @@
-theory http://cds.omdoc.org/examples?NatLiterals
-HasMeta http://cds.omdoc.org/examples?NatLiterals http://cds.omdoc.org/urtheories?LF
-Includes http://cds.omdoc.org/examples?NatLiterals http://cds.omdoc.org/examples?NatRules
-Includes http://cds.omdoc.org/examples?NatLiterals http://real.omdoc.org/?Bool
-Includes http://cds.omdoc.org/examples?NatLiterals http://real.omdoc.org/?StandardNat
-Declares http://cds.omdoc.org/examples?NatLiterals http://cds.omdoc.org/examples?NatLiterals?test
-constant http://cds.omdoc.org/examples?NatLiterals?test

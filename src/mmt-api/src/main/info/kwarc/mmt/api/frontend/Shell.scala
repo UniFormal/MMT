@@ -52,7 +52,6 @@ class Shell extends StandardIOHelper {
   def main(a: Array[String]) {
     try {
        mainRaw(a)
-       sys.exit(Shell.EXIT_CODE_OK)
     } catch {
       case e: Error =>
         controller.report(e)

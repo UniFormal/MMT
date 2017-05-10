@@ -307,7 +307,7 @@ object StandardBool extends Atomic[java.lang.Boolean] {
 import utils.URI
 /** URI literals, concrete syntax is uri"..." */
 object URILiteral extends Atomic[URI] {
-   def asString = "uri" 
+   def asString = "uri"
    val cls = classOf[URI]
    def fromString(s: String) = URI(s)
    override def lex = quotedLiteral("uri")

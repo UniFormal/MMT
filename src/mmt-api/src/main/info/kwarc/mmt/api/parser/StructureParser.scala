@@ -652,10 +652,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       None
     val meta = (metaReg,parent) match {
       case (Some((p,_)),_) => Some(p)
-      case (None,IsMod(mp,_)) => controller.getO(mp) match {
-        case Some(dm : DeclaredTheory) => dm.meta
-        case _ => None
-      }
       case _ => None
     }
     val contextMeta = meta match {

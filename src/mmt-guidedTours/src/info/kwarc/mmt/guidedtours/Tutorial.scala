@@ -16,7 +16,6 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
 import objects._
 import libraries._
 import scala.concurrent._
-import tiscaf._
 import scala.collection.mutable.HashMap._
 import info.kwarc.mmt.api.web._
 import scala.util.parsing.json._

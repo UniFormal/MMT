@@ -1,9 +1,11 @@
 package info.kwarc.mmt.api.ontology
 
 
-import info.kwarc.mmt.api.objects.{Obj, Position}
-import info.kwarc.mmt.api.utils.{stringToList, xml}
-import info.kwarc.mmt.api.{ComponentKey, LocalName, NamespaceMap, ParseError}
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.objects.{Context, Obj, Position, Term}
+import info.kwarc.mmt.api.parser.{ParsingUnit, SourceRef}
+import info.kwarc.mmt.api.utils.{URI, stringToList, xml}
+import info.kwarc.mmt.api._
 
 import scala.xml.Node
 
@@ -12,6 +14,12 @@ sealed abstract class Query
 
 /** isolated sub-query of a query. Carries an optional hint on how to evaluate the query */
 case class I(q: Query, hint: Option[String]) extends Query
+
+/** take a subset of the query */
+case class Slice(q : Query, from: Option[Int], to: Option[Int]) extends Query
+
+/** takes a specific element from a querySet (negative indexes work also) */
+case class Element(q : Query, index: Int) extends Query
 
 /** bound variable represented by a [[info.kwarc.mmt.api.LocalName]] */
 case class Bound(varname: LocalName) extends Query
@@ -40,9 +48,6 @@ case class Singleton(e: Query) extends Query
 /** the set of all URIs of a certain concept in the MMT ontology */
 case class Paths(tp: Unary) extends Query
 
-/** unification query; returns all objects in the database that unify with a certain object and the respective substitutions */
-case class Unifies(wth: Obj) extends Query
-
 /** dependency closure of a path */
 case class Closure(of: Query) extends Query
 
@@ -51,6 +56,9 @@ case class Union(left: Query, right: Query) extends Query
 
 /** union of a collection of sets indexed by a set */
 case class BigUnion(domain: Query, varname: LocalName, of: Query) extends Query
+
+/** apply a term to an existing set */
+case class Mapping(domain : Query, varname: LocalName, function : Term) extends Query
 
 /** intersection of sets */
 case class Intersection(left: Query, right: Query) extends Query
@@ -72,6 +80,30 @@ case class Projection(of: Query, index: Int) extends Query
 case class QueryFunctionApply(function: QueryFunctionExtension, argument: Query, params: List[String]) extends Query
 
 object Query {
+
+  val qmttheory = (DPath(URI.http colon "cds.omdoc.org") / "mmt") ? "QMT"
+
+  /**
+    * parses a query from a string
+    * @param s
+    * @param controller
+    */
+  def parse(s : String, context: Context, controller: Controller): Query = {
+    val pu = ParsingUnit(SourceRef.anonymous(s), context ++ Context(qmttheory), s, NamespaceMap.empty)
+    parse(controller.objectParser(pu)(ErrorThrower).toTerm)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
+  }
+
+  /**
+    * Parses a Term representing a Query into a Query object
+    * @param t Term representing the query
+    * @param queryFunctions List of query functions to parse
+    * @param relManager
+    * @return
+    */
+  def parse(t : Term)(implicit queryFunctions: List[QueryFunctionExtension], relManager: RelationalManager) : Query = {
+    ???
+  }
+
   /**
     * parses a query; infer must be called to sure well-formedness
     * @param n Node to parse
@@ -85,6 +117,16 @@ object Query {
     case <i>{q}</i> =>
       val h = xml.attr(n, "hint", "")
       I(parse(q), if(h != "") Some(h) else None)
+
+    /** slicing a query result */
+    case <slice>{q}</slice> =>
+      val from = Option(xml.attr(n, "from", "").toInt)
+      val to = Option(xml.attr(n, "to", "").toInt)
+      Slice(parse(q), from, to)
+
+    /** picking a specific element form a Query */
+    case <element>{q}</element> =>
+      Element(parse(q), xml.attr(n, "index").toInt)
 
     /** we have the "index" for backward compatibility */
     case <bound/> =>
@@ -114,9 +156,6 @@ object Query {
     case <uris/> =>
       Paths(relManager.parseUnary(xml.attr(n, "concept")))
 
-    case <unifies>{wth}</unifies> =>
-      Unifies(Obj.parseTerm(wth, NamespaceMap.empty))
-
     case <closure>{of}</closure> =>
       Closure(parse(of))
 
@@ -129,6 +168,10 @@ object Query {
         case "object" => parse(d)
       }
       BigUnion(dom, xml.attrL(n, "name"), parse(s))
+
+    case <mapping>{d}{s}</mapping> =>
+      val dom = parse(d)
+      Mapping(dom, xml.attrL(n, "name"), Obj.parseTerm(s, NamespaceMap.empty))
 
     case <intersection>{l}{r}</intersection> =>
       Intersection(parse(l), parse(r))
@@ -154,7 +197,8 @@ object Query {
         throw ParseError("illegal function: " + name)
       }
       QueryFunctionApply(fun, arg, params)
+
     case _ =>
-      throw throw ParseError("illegal query expression: " + n)
+      throw ParseError("illegal query expression: " + n)
   }
 }
