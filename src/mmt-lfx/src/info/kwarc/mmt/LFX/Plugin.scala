@@ -137,7 +137,7 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
     var covered : List[MPath] = Nil
     var cont : List[(GlobalName,OML)] = Nil
     var subst : List[(GlobalName,Term)] = Nil
-    def all = cont ::: subst
+    def all = cont.map(p => (p._1,OML(p._2.name))) ::: subst
     var globalcont : Context = Nil
     def get = (globalcont,cont.reverse)
   }

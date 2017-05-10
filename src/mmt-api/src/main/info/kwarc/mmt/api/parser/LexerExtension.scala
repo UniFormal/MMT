@@ -308,7 +308,6 @@ class LiteralParser(rt: uom.RealizedType) extends ParseFunction {
      case _ => throw ImplementationError("not a literal")
    }
 
-  /** just for overriding **/
   override def applicable(s: String): Boolean = Try(apply(s)) match {
     case scala.util.Success(v : OMLIT) => super.applicable(s)
     case _ => false
