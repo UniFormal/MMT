@@ -11,5 +11,6 @@ class LFXTest extends MMTTest("MMT/LFX","MitM/Foundation","MitM/smglom")("info.k
   //shouldhl("build MitM/Foundation scala-bin")
   shouldhl("build MitM/Foundation mmt-omdoc")
   //shouldhl("build MMT/examples scala-bin")
+  shouldhl("log+ structure-checker")
   shouldhl("build MitM/smglom mmt-omdoc")
 }
