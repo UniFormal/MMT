@@ -5,6 +5,8 @@ import java.net.Authenticator.RequestorType
 
 import tiscaf._
 
+import scala.collection.mutable
+
 /** Implements an HTTP Server using Tiscaf */
 trait TiscafServerImplementation extends HServer with ServerImplementation {
 
@@ -104,12 +106,42 @@ object ServerTiscafAdapter {
     case HReqType.Invalid => RequestMethod.Head
   }
 
+  /** cleans up a url */
+  private def cleanupURL(url : String) : String = {
+    // a stack of path components
+    val stack = mutable.Stack[String]()
+
+    // iterate over the components
+    url.split("/").foreach {
+
+      case ".." =>
+
+        // one directory up => remove last element from the stack
+        if(stack.nonEmpty){
+          stack.pop()
+        }
+
+      // empty path or current path => do nothing
+      case "." | "" =>
+
+      // everything else => add path
+      case s =>
+          stack.push(s)
+    }
+
+    // add all the components back
+    val cleanPath = stack.elems.reverse.mkString("/")
+
+    // and add back a final slash if needed
+    if(url.endsWith("/")) cleanPath + "/" else cleanPath
+  }
+
   /** creates a new request object from an internal Tiscaf HReqData object */
   def tiscaf2Request(data: HReqData): ServerRequest = {
     val method = tiscaf2Method(data.method)
     val headers = data.headerKeys.map(k => (k, data.header(k).get)).toMap
     val sessionID = None
-    val pathStr = data.uriPath.toString
+    val pathStr = cleanupURL(data.uriPath.toString)
     val queryStr = data.query
     val body = new Body(None)
     ServerRequest(method, headers, sessionID, pathStr, queryStr, body)
