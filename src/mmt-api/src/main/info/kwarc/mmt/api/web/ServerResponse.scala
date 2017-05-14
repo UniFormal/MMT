@@ -106,13 +106,14 @@ object ServerResponse {
     */
   def fromXML(content: scala.xml.Node, statusCode : Int = statusCodeOK) : ServerResponse = apply(content.toString, "application/xml", statusCode)
 
-
   /**
-    * Convenience method to construct an MMT-internal resource response being sent back to the client
+    * Convenience method to construct an MMT-internal resource response. Additionally applies a map to the resource to
+    * be returned.
     * @param path path of File to be sent back
+    * @param map function to apply to the InputStream
     * @param request Original request sent by the client
     */
-  def resource(path: String, request: ServerRequest) : ServerResponse = {
+  def resource(path: String, map: InputStream => Either[Array[Byte], InputStream], request: ServerRequest) : ServerResponse = {
     //TODO: Make sure that the path is cleaned up
 
     val properPath = path.replace("//", "/")
@@ -135,11 +136,25 @@ object ServerResponse {
     // set the content type
     resp.contentType = contentTypes.getOrElse(fileExtension.toLowerCase(), "text/plain")
 
-    // and buffer the output
-    resp.output = io
+    // and get the output
+    map(io) match {
+      case Left(ary) =>
+          resp.output = ary
+      case Right(stream) =>
+          resp.output = stream
+    }
 
     // and return it
     resp
+  }
+
+  /**
+    * Convenience method to construct an MMT-internal resource response being sent back to the client
+    * @param path path of File to be sent back
+    * @param request Original request sent by the client
+    */
+  def resource(path: String, request: ServerRequest) : ServerResponse = {
+    resource(path, Right(_), request)
   }
 
   /**

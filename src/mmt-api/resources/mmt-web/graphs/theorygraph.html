@@ -14,7 +14,7 @@
         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
         
         <!-- Load the magic path -->
-        <script type="text/javascript" src="?MMT_base_url.js"></script>
+        <script type="text/javascript" src="?do=mmt_resource&path=/script/mmt/mmt-url.js"></script>
         
         <!-- load all the local javascript -->
         <script type="text/javascript" src="js/theoryGraph.js"></script>
@@ -140,7 +140,7 @@
             }
 
             function createNewGraph() {
-                theoryGraph.getGraph(MMT_base_url+":fancygraph/json/" + getParameterByName("type") + "?uri=" + getParameterByName("uri"));
+                theoryGraph.getGraph(mmtUrl+":fancygraph/json/" + getParameterByName("type") + "?uri=" + getParameterByName("uri"));
             }
 
             $(document).bind("contextmenu", function(event) {
