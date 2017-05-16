@@ -12,9 +12,9 @@ import scala.xml.Node
   * Represents a request made to the MMT Server.
   *
   * @param method Method used to make request
-  * @param headers Request headers that were sent along with the request
+  * @param headerData Request headers that were sent along with the request
   * @param sessionID sessionID that was
-  * @param pathStr
+  * @param pathStr Path string requested on the server without trailing /s
   * @param queryString The query portion of th estruing
   * @param body
   */
