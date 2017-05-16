@@ -122,6 +122,41 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
 
 /** interprets the body as a QMT [[ontology.Query]] and evaluates it */
 class QueryServer extends ServerExtension("query") {
+
+  /**
+    * Represents an error that occured because the context could not be properly parsed
+    * @param candidate Candidate Path that could not be parsed
+    * @param t Internal exception causing this error
+    */
+  class ContextParsingError(candidate : String, t: Throwable) extends Error(s"Unable to use context: '$candidate' is not a valid MPath. ") {
+    setCausedBy(t)
+  }
+
+  /**
+    * Represents an error that occured because an item in the context could not be retrieved
+    * @param item path to item that could not be retrieved
+    * @param t Internal exception causing this error
+    */
+  class ContextRetrievalError(item: MPath, t: Throwable) extends Error(s"Unable to use context: '${item.toPath}' could not be retrieved. Make sure the path exists. ") {
+    setCausedBy(t)
+  }
+
+  /**
+    * Represents ane error that occured because the query could not be properly parsed.
+    * @param se Internal source error that caused this error
+    */
+  class QuerySourceParsingError(val se: SourceError) extends Error(s"Unable to parse query: Source error in Line ${se.ref.region.start.line}, Column ${se.ref.region.start.column} - Line ${se.ref.region.end.line}, Column ${se.ref.region.end.column}. Make sure your syntax is correct. ") {
+    setCausedBy(se)
+  }
+
+  /**
+    * Represents an error that occured because the query could not be properly translated.
+    * @param t Cause of the error
+    */
+  class QueryTranslationParsingError(val t: Throwable) extends Error(s"Unable to parse query: ${t.getMessage}. Make sure your syntax is correct. ") {
+    setCausedBy(t)
+  }
+
   def apply(request: ServerRequest): ServerResponse = {
     request.extensionPathComponents match {
       case List("text") =>
@@ -140,14 +175,35 @@ class QueryServer extends ServerExtension("query") {
           case Some(ja: JSONArray) =>
             ja.values
                .map(_.asInstanceOf[JSONString].value)
-               .map(pth => Context(Path.parseM(pth, NamespaceMap.empty)))
+               .map(pth => {
+                 val mpath = try {
+                   Path.parseM(pth, NamespaceMap.empty)
+                 } catch {
+                   case pe: ParseError =>
+                     throw new ContextParsingError(pth, pe)
+                 }
+                 try {
+                   controller.get(mpath)
+                   Context(mpath)
+                 } catch {
+                   case ge: GetError =>
+                     throw new ContextRetrievalError(mpath, ge)
+                 }
+               })
                .reduce(_ ++ _)
         }
 
 
         // and parse it
         log(s"parsing query from text $query $context")
-        val q = Query.parse(query, context, controller)
+        val q = try {
+         Query.parse(query, context, controller)
+        } catch {
+          case se: SourceError =>
+            throw new QuerySourceParsingError(se)
+          case err: Exception =>
+            throw new QueryTranslationParsingError(err)
+        }
 
         // now run the query
         run(q, request)
