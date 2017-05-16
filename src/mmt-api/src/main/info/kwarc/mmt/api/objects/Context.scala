@@ -71,6 +71,13 @@ case class VarDecl(name : LocalName, feature: Option[String], tp : Option[Term],
           new DerivedDeclaration(home, n, f, TermContainer(tp), NotationContainer(not))
      }
    }
+
+   def toSourceString: String = s"VarDecl(" +
+      s"${Sourceable(name)}, " +
+      s"${Sourceable(feature)}, " +
+      s"${Sourceable(tp)}, " +
+      s"${Sourceable(df)}, " +
+      s"${Sourceable(not)})"
 }
 
 /** use this to create apply/unapply functions for variable declarations for a specific feature */
@@ -288,6 +295,8 @@ case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDe
           d
       }
    }
+
+   def toSourceString: String = s"Context(${variables.map(v => Sourceable(v)).mkString(", ")})"
 }
 
 /** a case in a substitution */		
@@ -304,6 +313,7 @@ case class Sub(name : LocalName, target : Term) extends Obj {
    def toCMLQVars(implicit qvars: Context) : Node = <mi name={name.toPath}>{target.toCMLQVars}</mi>
    override def toString = name + ":=" + target.toString
    def head = None
+   def toSourceString: String = s"Context(${Sourceable(name)}, ${Sourceable(target)})"
 }
 
 object IncludeSub {
@@ -362,6 +372,7 @@ case class Substitution(subs : Sub*) extends Obj {
    def toCMLQVars(implicit qvars: Context) = asContext.toCMLQVars
    def head = None
    def isEmpty = subs.isEmpty
+   def toSourceString: String = s"Substitution(${subs.map(s => Sourceable(s)).mkString(", ")}})"
 }
 
 /** helper object */
