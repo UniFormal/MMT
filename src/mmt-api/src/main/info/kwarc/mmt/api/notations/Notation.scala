@@ -16,9 +16,14 @@ case class InvalidNotation(msg: String) extends java.lang.Throwable
  * languages : the languages where this notation is applicable (e.g. tex, mmt, lf, mathml)
  * priority : the priority of this notation when looking for a default notation
  */
-case class NotationScope(variant : Option[String], languages : List[String], priority : Int) {
+case class NotationScope(variant : Option[String], languages : List[String], priority : Int) extends Sourceable {
   def toNode =  <scope variant={variant.getOrElse(null)} 
     languages={languages.mkString(" ")} priority={priority.toString}/>
+  def toSourceString: String = s"NotationScope(" +
+     s"${Sourceable(variant)}, " +
+     s"${Sourceable(languages)}, " +
+     s"${Sourceable(languages)}, " +
+     s"${Sourceable(priority)})"
 }
 
 object NotationScope {
@@ -39,7 +44,7 @@ object NotationScope {
  * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves 
  */
 case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPath],
-                        scope : NotationScope = NotationScope.default) extends metadata.HasMetaData {
+                        scope : NotationScope = NotationScope.default) extends metadata.HasMetaData with Sourceable {
    /** @return the list of markers used for parsing/presenting with this notations */
    lazy val markers: List[Marker] = fixity.markers
    /** @return the arity of this notation */
@@ -160,7 +165,13 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
       (arity.numNormalArgs == args || (arity.numNormalArgs < args && arity.numSeqArgs >= 1)) &&
       (hasDelimiter || arity.numSeqArgs == 0 || args > arity.numNormalArgs + arity.numSeqArgs) && // this hacky case precludes confusion when flexary operators would disappear in the presentation
       (! att || arity.attribution)
-   }   
+   }
+
+   def toSourceString: String = s"TextNotation(" +
+      s"${Sourceable(fixity)}, " +
+      s"${Sourceable(precedence)}, " +
+      s"${Sourceable(meta)}, " +
+      s"${Sourceable(scope)})"
 }
 
 object TextNotation {

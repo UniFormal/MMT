@@ -2,18 +2,21 @@ package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api.{NamespaceMap, ParseError, Path}
 import info.kwarc.mmt.api.objects.Obj
-import info.kwarc.mmt.api.utils.xml
+import info.kwarc.mmt.api.utils.{Sourceable, SafeSourceableType, xml}
 
 import scala.collection.mutable.HashSet
 import scala.xml.Node
-
 import scala.language.implicitConversions
 
 
 /** a trait for all concrete data types that can be returned by queries; atomic types are paths and objects */
-trait BaseType
-case class XMLValue(node: scala.xml.Node) extends BaseType
-case class StringValue(string: String) extends BaseType
+trait BaseType extends Sourceable
+case class XMLValue(node: scala.xml.Node) extends BaseType {
+  def toSourceString: String = s"XMLValue(${Sourceable(node)})"
+}
+case class StringValue(string: String) extends BaseType {
+  def toSourceString: String = s"StringValue(${Sourceable(string)})"
+}
 
 object BaseType {
   /**
