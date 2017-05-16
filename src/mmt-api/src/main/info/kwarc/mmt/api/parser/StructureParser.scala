@@ -104,7 +104,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   protected def end(s: ContainerElement[_])(implicit state: ParserState) {
     //extend source reference until end of element
     SourceRef.get(s) foreach { r =>
-      SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getSourcePosition)))
+      SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getSourcePosition - 2)))
+      // the -2 seems to be necessary at the end of files (to avoid sourceref errors)
     }
     state.cont.onElementEnd(s)
     log("end " + s.path)

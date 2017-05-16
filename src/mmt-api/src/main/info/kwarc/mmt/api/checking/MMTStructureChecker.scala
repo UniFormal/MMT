@@ -421,12 +421,34 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
         doDoc(t.asDocument)
       case v: DeclaredView =>
-        //TODO totality check
+        val istotal = isTotal(context,v)
+        if (!(v.istotal contains false) && istotal.nonEmpty) {
+          v.istotal = Some(false)
+          env.errorCont(
+            SourceError(v.name.toString, SourceRef.get(v).get, "View is not total!",istotal.map(_.toString), Level.Warning)
+          )
+        } else if (v.istotal.isEmpty) v.istotal = Some(true)
+        // TODO totality check
       case s: DeclaredStructure =>
       case _ =>
         //succeed for everything else but signal error
         logError("unchecked " + e.path)
     }
+  }
+
+  private def isTotal(context : Context, view : DeclaredView, currentincl : Option[Term] = None) : List[GlobalName] = {
+    val dom = controller.simplifier.materialize(context,currentincl.getOrElse(view.from),true,None).asInstanceOf[DeclaredTheory]
+    controller.simplifier(dom)
+    val consts = dom.getConstants.collect{
+      case c : Constant if !view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name) => c.path
+    }
+    val incls = dom.getIncludesWithoutMeta.view.filterNot(from =>
+      view.getDeclarations.exists(d => d.name == LocalName(from))).filterNot(from =>
+      controller.library.getImplicit(OMMOD(from),view.to).isDefined).flatMap{
+      case from =>
+        isTotal(context,view,Some(OMMOD(from)))
+    }
+    (consts ::: incls.toList).distinct
   }
 
   // *****
