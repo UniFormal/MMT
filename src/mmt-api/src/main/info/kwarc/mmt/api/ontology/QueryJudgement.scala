@@ -1,10 +1,9 @@
 package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api._
-import frontend.Controller
+import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils.xml
-import objects._
-import objects.Conversions._
 
 import scala.xml.Node
 
@@ -32,6 +31,13 @@ object QueryJudgement {
         Obj.parseTerm(l, NamespaceMap.empty),
         Obj.parseTerm(r, NamespaceMap.empty)
       )
+  }
+
+  def parse(t : Term)(implicit queryFunctions: List[QueryFunctionExtension], relManager: RelationalManager): QueryJudgement = t match {
+    case OMBINDC(QMTJudgements.Equals,Context(VarDecl(vname,_,_,_,_)),List(tm1, tm2)) =>
+      Equals(vname, tm1, tm2)
+    case OMBINDC(QMTJudgements.Types,Context(VarDecl(vname,_,_,_,_)),List(tm1, tm2)) =>
+      Equals(vname, tm1, tm2)
   }
 }
 

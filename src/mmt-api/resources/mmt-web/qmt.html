@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=windows-1252">
+    <title>MMT QMT page</title>
+
+    <link rel="stylesheet" href="?do=mmt_resource&path=/css/bootstrap3/css/bootstrap.min.css"/>
+</head>
+
+<body>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>MMT QMT page</h1>
+            </div>
+        </div>
+
+        <form>
+            <div class="row">
+                <div class="col-md-8">
+                    <!-- Main form with input -->
+                    <div class="input-group">
+                        <span class="input-group-addon">Context</span>
+                        <input type="text" class="form-control" name="context" id="context" placeholder="Context" value="http://cds.omdoc.org/examples?PL">
+                    </div>
+
+                    <div class="form-group">
+                        <textarea class="form-control" id="query" name="query" rows="15">related to ( literal `http://cds.omdoc.org/examples?PL ) by (object declares)</textarea>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div id="tabs">
+
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li role="presentation" class="active"><a href="#overview" aria-controls="overview" role="tab" data-toggle="tab">Overview</a></li>
+                            <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Examples</a></li>
+                        </ul>
+
+                        <!-- Tab panes -->
+                        <div class="tab-content">
+                            <div role="tabpanel" class="tab-pane active" id="overview">
+                                <p>
+                                    This page allows you to send <i>QMT</i> queries to MMT.
+                                    For this you can use the human-readable surface syntax.
+                                    Such queries require two parameters:
+                                </p>
+
+                                <ul>
+                                    <li>
+                                        The <b>context</b>, i.e. a set of theories with respect to which the queries should be parsed.
+                                        The theories can be entered in the <i>Context</i> text box, separated by commas.
+                                    </li>
+
+                                    <li>
+                                        The <b>query</b>, the actual request to be sent to MMT.
+                                        To have a look at examples, use the <i>Examples</i> tab.
+                                        You can also look at more detailed descriptions of individual queries by using the other tabs.
+                                        This can be entered into the <i>textarea</i> on the left.
+                                    </li>
+                                </ul>
+
+                                <p>
+                                    To submit a query, the <i>Query</i> button can be used.
+                                    Results will then show up under the results heading below.
+                                </p>
+                            </div>
+                            <div role="tabpanel" class="tab-pane" id="profile">...</div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input type="submit" class="btn btn-primary btn-lg" value="Query"/>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Results</h2>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12" id="result">
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- jQuery, bootstrap -->
+    <script type="text/javascript" src="?do=mmt_resource&path=/script/jquery/jquery.js"></script>
+    <script type="text/javascript" src="?do=mmt_resource&path=/script/bootstrap3/bootstrap.min.js"></script>
+
+    <!-- MMT and QMT libraries -->
+    <script type="text/javascript" src="?do=mmt_resource&path=/script/mmt/mmt-url.js"></script>
+    <script type="text/javascript" src="?do=mmt_resource&path=/script/mmt/qmt.js"></script>
+
+    <!-- Custom script for this page -->
+    <script type="text/javascript">
+
+        // all the html elements that we will be using
+        var $form, $context, $query, $result, $tabs;
+
+        /**
+         * Starts a query and sends it to MMT.
+         * @param query
+         * @param context
+         * @param callback function(success, result) to be called when finished
+         */
+        function runQMT(context, query, callback){
+            $.ajax(mmtUrl + '/:query/text', {
+                'method': 'POST',
+                data: JSON.stringify({
+                    'context': context,
+                    'query': query
+                }),
+                contentType:"application/json; charset=utf-8",
+                'success': function(result, state, data){
+                    var results = QMTResults.fromXML(jQuery.parseXML(data.responseText).childNodes[0]);
+                    callback(true, results);
+                },
+                'error': function(data){
+                    callback(false, data.responseText);
+                }
+            });
+
+        }
+
+        /**
+         * Renders a result of a query into the DOM.
+         * To be passed to runQMT as a callback parameter.
+         * @param success
+         * @param data
+         */
+        function renderResults(success, data){
+            // success => write out the html into the div
+            if(success){
+                $result.empty().append(
+                    $("<div>").attr({
+                        "class": "alert alert-success",
+                        "role": "alert"
+                    }).text("Query returned "+data.length+" result(s). ")
+                ).append(
+                    $("<div>").html(data.html())
+                );
+
+            // failure => write out the error message
+            } else {
+                $result.empty().append(
+                    $("<div>").attr({
+                        "class": "alert alert-danger",
+                        "role": "alert"
+                    }).text("Query has failed. ")
+                ).append(
+                    $("<div>").html(data)
+                );
+            }
+        }
+
+
+
+        /**
+         * Handles the submission of the query form
+         * @param e
+         */
+        function handleQuerySubmission (e){
+
+            // prevent form submission
+            e.preventDefault();
+
+            // read context and query from the page
+            var context = $context.val().split(',');
+            var query = $query.val();
+
+            // store the hash
+            setHash(context, query);
+
+            // setup a waiting text
+            $result.empty().append(
+                $("<div>").attr({
+                    "class": "alert alert-info",
+                    "role": "alert"
+                }).text("Querying MMT, please wait ...")
+            );
+
+            // and make the request
+            runQMT(context, query, renderResults);
+        }
+
+        /**
+         * Sets up an example
+         */
+        function setupExample(context, query){
+            $query.val(query);
+            $context.val(context.join(','));
+        }
+
+        /**
+         * sets the hash to a specific query
+         */
+        function setHash(context, query){
+            location.hash = encodeURI('context='+ encodeURIComponent(context.join(',')) + '&query=' + encodeURIComponent(query));
+        }
+
+        function getHash(){
+            // read the hash
+            var hashParts = decodeURI(location.hash.substring(1)).split('&');
+
+            var context, query;
+
+            // read the context
+            if(hashParts.length > 0 && hashParts[0].substring(0, "context=".length) == 'context='){
+                context = decodeURIComponent(hashParts[0].substring("context=".length))
+            }
+
+            // read the query
+            if(hashParts.length > 1 && hashParts[1].substring(0, "query=".length) == 'query='){
+                query = decodeURIComponent(hashParts[1].substring("query=".length))
+            }
+
+            if(typeof context == 'string' && typeof query == 'string'){
+                setupExample(context.split(','), query);
+            }
+        }
+
+
+        $(function(){
+
+            // read all the elements from the page
+            $form = $("form");
+            $context = $("#context");
+            $query = $("#query");
+            $result = $("#result");
+            $tabs = $("#tabs");
+
+            // try to read example from the hash
+            getHash();
+
+            // setup submit handler
+            $form.on('submit', handleQuerySubmission);
+        })
+    </script>
+
+</body>
+</html>

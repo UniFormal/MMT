@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import utils._
 import info.kwarc.mmt.api.moc._
+import info.kwarc.mmt.api.objects.{OMS, Term}
 
 
 /**
@@ -42,6 +43,19 @@ sealed abstract class Binary(val desc : String, val backwardsDesc: String) {
 
 object Binary {
   implicit def toRelation(b: Binary) = +b
+
+   def parse(t : Term) : Binary = t match {
+      case OMS(QMTBinaries.DependsOn) => DependsOn
+      case OMS(QMTBinaries.HasMeta) => HasMeta
+      case OMS(QMTBinaries.Includes) => Includes
+      case OMS(QMTBinaries.HasDomain) => HasDomain
+      case OMS(QMTBinaries.HasCodomain) => HasCodomain
+      case OMS(QMTBinaries.IsInstanceOf) => IsInstanceOf
+      case OMS(QMTBinaries.RefersTo) => RefersTo
+      case OMS(QMTBinaries.Declares) => Declares
+      case OMS(QMTBinaries.IsAliasFor) => IsAliasFor
+      case OMS(QMTBinaries.IsAlignedWith) => IsAlignedWith
+   }
 }
 
 // module - module, component - component

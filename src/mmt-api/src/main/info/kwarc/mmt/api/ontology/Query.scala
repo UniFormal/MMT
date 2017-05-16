@@ -2,9 +2,9 @@ package info.kwarc.mmt.api.ontology
 
 
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.objects.{Context, Obj, Position, Term}
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.parser.{ParsingUnit, SourceRef}
-import info.kwarc.mmt.api.utils.{URI, stringToList, xml}
+import info.kwarc.mmt.api.utils.{Sourceable, URI, mmt, stringToList, xml}
 import info.kwarc.mmt.api._
 
 import scala.xml.Node
@@ -80,17 +80,15 @@ case class Projection(of: Query, index: Int) extends Query
 case class QueryFunctionApply(function: QueryFunctionExtension, argument: Query, params: List[String]) extends Query
 
 object Query {
-
-  val qmttheory = (DPath(URI.http colon "cds.omdoc.org") / "mmt") ? "QMT"
-
   /**
     * parses a query from a string
     * @param s
     * @param controller
     */
   def parse(s : String, context: Context, controller: Controller): Query = {
-    val pu = ParsingUnit(SourceRef.anonymous(s), context ++ Context(qmttheory), s, NamespaceMap.empty)
-    parse(controller.objectParser(pu)(ErrorThrower).toTerm)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
+    val pu = ParsingUnit(SourceRef.anonymous(s), context ++ Context(QMTPaths.QMT), s, NamespaceMap.empty)
+    val term = controller.objectParser(pu)(ErrorThrower).toTerm
+    parse(term)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
   }
 
   /**
@@ -100,8 +98,117 @@ object Query {
     * @param relManager
     * @return
     */
-  def parse(t : Term)(implicit queryFunctions: List[QueryFunctionExtension], relManager: RelationalManager) : Query = {
-    ???
+  def parse(t : Term)(implicit queryFunctions: List[QueryFunctionExtension], relManager: RelationalManager) : Query = t match {
+    /** the isolated query with an optional hint */
+    // TODO: String Literals
+    case OMA(OMID(QMTQuery.I), OML(name, _, _, _, _) :: q :: Nil) =>
+      I(parse(q), Some(name.toPath))
+
+    /** slicing a query result */
+    // TODO: Integer literals
+    case OMA(OMID(QMTQuery.Slice), OML(s, _, _, _, _) :: OML(e, _, _, _, _) :: q :: Nil) =>
+      Slice(parse(q), Some(s.toPath.toInt), Some(e.toPath.toInt))
+    case OMA(OMID(QMTQuery.SliceFrom), OML(s, _, _, _, _) :: q :: Nil) =>
+      Slice(parse(q), Some(s.toPath.toInt), None)
+    case OMA(OMID(QMTQuery.SliceUntil), OML(e, _, _, _, _) :: q :: Nil) =>
+      Slice(parse(q), None, Some(e.toPath.toInt))
+
+    /** picking a specific element form a Query */
+    // TODO: Integer literals
+    case OMA(OMID(QMTQuery.Element), OML(s, _, _, _, _) :: q :: Nil) =>
+      Element(parse(q), s.toPath.toInt)
+
+    /** a bound variable */
+    case OMV(name) =>
+      Bound(name)
+
+    /** a component of a given query */
+    // TODO: No Labels?
+    case OMA(OMID(QMTQuery.Component), OML(n, _, _, _, _) :: q :: Nil) =>
+      Component(parse(q), ComponentKey.parse(n.toPath))
+
+    /** a subobject at a given position */
+    // TODO: No Labels?
+    case OMA(OMID(QMTQuery.SubObject), OML(p, _, _, _,_) :: q :: Nil) =>
+        SubObject(parse(q), Position.parse(p.toPath))
+
+    /** related to a specific query by a given relation */
+    case OMA(OMID(QMTQuery.Related), q :: by :: Nil) =>
+      Related(parse(q), RelationExp.parse(by))
+
+    /** a single literal */
+    // TODO: Other kinds of literals
+    case OMA(OMID(QMTQuery.Literal), OMID(pth) :: Nil) =>
+        Literal(pth)
+
+    /** a set of literals */
+    case OMA(OMID(QMTQuery.Literals), lst) =>
+      Literals(lst.map(_.asInstanceOf[OMID].path) : _*)
+
+    /** let binder */
+    case OMBINDC( OMID(QMTQuery.Let), Context(VarDecl(name, _, _, _, _)), List(bound, query)) =>
+        Let(name, parse(bound), parse(query))
+
+    /** a single object */
+    case OMA(OMID(QMTQuery.Singleton), q :: Nil) =>
+        Singleton(parse(q))
+
+    /** a unary path */
+    // TODO: No Labels?
+    case OMA(OMID(QMTQuery.Paths), OML(unary, _, _, _, _) :: Nil) =>
+      Paths(relManager.parseUnary(unary.toPath))
+
+    /** closure */
+    case OMA(OMID(QMTQuery.Closure), of :: Nil) =>
+      Closure(parse(of))
+
+    /** Union */
+    case OMA(OMID(QMTQuery.Union), l :: r :: Nil) =>
+        Union(parse(l), parse(r))
+
+    /** Intersection */
+    case OMA(OMID(QMTQuery.Intersection), l :: r :: Nil) =>
+      Intersection(parse(l), parse(r))
+
+    /** Difference */
+    case OMA(OMID(QMTQuery.Difference), l :: r :: Nil) =>
+      Difference(parse(l), parse(r))
+
+  /*
+
+    case <bigunion>{d}{s}</bigunion> =>
+      val dom = xml.attr(n, "type") match {
+        case "path" => parse(d)
+        case "object" => parse(d)
+      }
+      BigUnion(dom, xml.attrL(n, "name"), parse(s))
+
+    case <mapping>{d}{s}</mapping> =>
+      val dom = parse(d)
+      Mapping(dom, xml.attrL(n, "name"), Obj.parseTerm(s, NamespaceMap.empty))
+
+    case <comprehension>{d}{f}</comprehension> =>
+      Comprehension(parse(d), xml.attrL(n, "name"), Prop.parse(f))
+
+    case <tuple>{t@_*}</tuple> =>
+      Tuple(t.toList.map(parse))
+
+    case <projection>{t}</projection> =>
+      val i = xml.attrInt(n, "index", ParseError)
+      Projection(parse(t), i)
+
+    case <function>{a}</function> =>
+      val name = xml.attr(n, "name")
+      val params = stringToList(xml.attr(n, "param"))
+      val arg = parse(a)
+      val fun = queryFunctions.find(_.name == name).getOrElse {
+        throw ParseError("illegal function: " + name)
+      }
+      QueryFunctionApply(fun, arg, params)
+
+    case _ =>
+      throw ParseError("illegal query expression: " + n)
+        */
   }
 
   /**

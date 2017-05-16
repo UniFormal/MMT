@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api.ParseError
+import info.kwarc.mmt.api.objects.{OMA, OMS, Term}
 import info.kwarc.mmt.api.utils.xml
 
 import scala.xml.Node
@@ -138,6 +139,33 @@ object RelationExp {
 
     case _ => throw ParseError("illegal relation expression: " + n)
   }
+
+  def parse(t : Term) : RelationExp = t match {
+    case OMA(OMS(QMTRelationExp.ToObject), st :: Nil) =>
+      ToObject(Binary.parse(st))
+
+    case OMA(OMS(QMTRelationExp.ToSubject), st :: Nil) =>
+      ToSubject(Binary.parse(st))
+
+    case OMA(OMS(QMTRelationExp.Transitive), st :: Nil) =>
+      Transitive(parse(st))
+
+    case OMA(OMS(QMTRelationExp.Symmetric), st :: Nil) =>
+      Symmetric(parse(st))
+
+    case OMA(OMS(QMTRelationExp.Choice), lst) =>
+      Choice(lst.map(parse) :_*)
+
+    case OMA(OMS(QMTRelationExp.Sequence), lst) =>
+      Sequence(lst.map(parse) :_*)
+
+    case OMS(QMTRelationExp.Reflexive) =>
+      Reflexive
+
+    // TODO: Parse HasType
+    case _ => throw new Exception(s"Expected a relational expression, got instead: $t")
+  }
+
 }
 
 /*

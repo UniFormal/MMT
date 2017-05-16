@@ -123,15 +123,71 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
 /** interprets the body as a QMT [[ontology.Query]] and evaluates it */
 class QueryServer extends ServerExtension("query") {
   def apply(request: ServerRequest): ServerResponse = {
-    val mmtquery = request.body.asXML
-    log("qmt query: " + mmtquery)
-    val q = Query.parse(mmtquery)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
-    //log("qmt query: " + q.toString)
-    QueryChecker.infer(q)(Context.empty) // type checking
-    val res = controller.evaluator(q)
+    request.extensionPathComponents match {
+      case List("text") =>
+        // find the parameters in the body
+        val queryparams = request.body.asJSON match {
+          case jo: JSONObject => jo
+        }
 
+        // and extract them
+        val query = queryparams("query") match {
+          case Some(js: JSONString) =>
+            js.value
+        }
+
+        val context = queryparams("context") match {
+          case Some(ja: JSONArray) =>
+            ja.values
+               .map(_.asInstanceOf[JSONString].value)
+               .map(pth => Context(Path.parseM(pth, NamespaceMap.empty)))
+               .reduce(_ ++ _)
+        }
+
+
+        // and parse it
+        log(s"parsing query from text $query $context")
+        val q = Query.parse(query, context, controller)
+
+        // now run the query
+        run(q, request)
+
+
+      // POST to / => parse xml (for backward compatibility)
+      case Nil | List("") if request.method == RequestMethod.Post =>
+        // read xml from the body
+        val queryxml = request.body.asXML
+
+        // and parse it
+        log(s"parsing query from xml $queryxml")
+        val q = Query.parse(queryxml)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
+
+        // now run the query
+        run(q, request)
+
+      // GET to / => show the query page (for humans)
+      case Nil | List("") if request.method == RequestMethod.Get =>
+        resource("qmt.html", request)
+
+      // anything else => Error
+      case _ =>
+          ServerResponse.fromText("Not found", statusCode = ServerResponse.statusCodeNotFound)
+    }
+  }
+
+  def run(query : Query, request: ServerRequest) : ServerResponse = {
+
+    // check that the query is correct
+    // TODO: Throw a proper error if this fails
+    log(s"checking query $query")
+    QueryChecker.infer(query)(Context.empty)
+
+    // run the actual query
+    log(s"running query $query")
+    val res = controller.evaluator(query)
     ServerResponse.fromXML(res.toNode)
   }
+
 }
 
 /** HTTP frontend to the [[Search]] class */
