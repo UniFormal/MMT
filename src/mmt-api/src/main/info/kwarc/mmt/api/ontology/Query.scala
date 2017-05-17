@@ -155,8 +155,8 @@ object Query {
 
     /** a unary path */
     // TODO: No Labels?
-    case OMA(OMID(QMTQuery.Paths), OML(unary, _, _, _, _) :: Nil) =>
-      Paths(relManager.parseUnary(unary.toPath))
+    case OMA(OMID(QMTQuery.Paths), unary :: Nil) =>
+      Paths(Unary.parse(unary))
 
     /** closure */
     case OMA(OMID(QMTQuery.Closure), of :: Nil) =>
@@ -174,41 +174,37 @@ object Query {
     case OMA(OMID(QMTQuery.Difference), l :: r :: Nil) =>
       Difference(parse(l), parse(r))
 
-  /*
+    /** BigUnion binder */
+    case OMBINDC( OMID(QMTQuery.BigUnion), Context(VarDecl(name, _, _, _, _)), List(domain, query)) =>
+      BigUnion(parse(domain), name, parse(query))
 
-    case <bigunion>{d}{s}</bigunion> =>
-      val dom = xml.attr(n, "type") match {
-        case "path" => parse(d)
-        case "object" => parse(d)
-      }
-      BigUnion(dom, xml.attrL(n, "name"), parse(s))
+    /** Mapping binder */
+    case OMBINDC( OMID(QMTQuery.Mapping), Context(VarDecl(name, _, _, _, _)), List(domain, function)) =>
+      Mapping(parse(domain), name, function)
 
-    case <mapping>{d}{s}</mapping> =>
-      val dom = parse(d)
-      Mapping(dom, xml.attrL(n, "name"), Obj.parseTerm(s, NamespaceMap.empty))
+    /** Comprehension binder */
+    case OMBINDC( OMID(QMTQuery.Mapping), Context(VarDecl(name, _, _, _, _)), List(domain, pred)) =>
+      Comprehension(parse(domain), name, Prop.parse(pred))
 
-    case <comprehension>{d}{f}</comprehension> =>
-      Comprehension(parse(d), xml.attrL(n, "name"), Prop.parse(f))
+    /** Tuple */
+    case OMA(OMID(QMTQuery.Tuple), components) =>
+      Tuple(components.map(c => parse(c)))
 
-    case <tuple>{t@_*}</tuple> =>
-      Tuple(t.toList.map(parse))
+    /** Projection */
+    //TODO: Integer literals
+    case OMA(OMID(QMTQuery.Projection), OML(s, _, _, _, _) :: q :: Nil) =>
+      Projection(parse(q), s.toPath.toInt)
 
-    case <projection>{t}</projection> =>
-      val i = xml.attrInt(n, "index", ParseError)
-      Projection(parse(t), i)
-
-    case <function>{a}</function> =>
-      val name = xml.attr(n, "name")
-      val params = stringToList(xml.attr(n, "param"))
-      val arg = parse(a)
-      val fun = queryFunctions.find(_.name == name).getOrElse {
+    /** QueryFunction */
+    // TODO: Parameters
+    case OMA(OMID(QMTQuery.QueryFunctionApply), OML(name, _, _, _, _) :: q :: args) =>
+      val fun = queryFunctions.find(_.name == name.toPath).getOrElse {
         throw ParseError("illegal function: " + name)
       }
-      QueryFunctionApply(fun, arg, params)
+      QueryFunctionApply(fun, parse(q), Nil)
 
     case _ =>
-      throw ParseError("illegal query expression: " + n)
-        */
+      throw ParseError("illegal query expression: " + t.toSourceString)
   }
 
   /**

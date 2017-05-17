@@ -28,6 +28,23 @@ case object IsNotation extends Unary("notation")
 case class CustomUnary(name : String) extends Unary(name)
 
 
+object Unary {
+   def parse(t : Term) : Unary = t match {
+      case OMS(QMTUnaries.IsDocument) => IsDocument
+      case OMS(QMTUnaries.IsTheory) => IsTheory
+      case OMS(QMTUnaries.IsView) => IsView
+      case OMS(QMTUnaries.IsStructure) => IsStructure
+      case OMS(QMTUnaries.IsConstant) => IsConstant
+      case OMS(QMTUnaries.IsPattern) => IsPattern
+      case OMS(QMTUnaries.IsInstance) => IsInstance
+      case OMS(QMTUnaries.IsDerivedDeclaration) => IsDerivedDeclaration
+      case OMS(QMTUnaries.IsConAss) => IsConAss
+      case OMS(QMTUnaries.IsStrAss) => IsStrAss
+      case OMS(QMTUnaries.IsNotation) => IsNotation
+      // TODO: Custom unary
+   }
+}
+
 /**
  * An object of type Binary represents a binary predicate between MMT paths in the MMT ontology.
  * The semantics of these objects is given by their name
@@ -55,6 +72,7 @@ object Binary {
       case OMS(QMTBinaries.Declares) => Declares
       case OMS(QMTBinaries.IsAliasFor) => IsAliasFor
       case OMS(QMTBinaries.IsAlignedWith) => IsAlignedWith
+      // TODO: Custom binary
    }
 }
 
