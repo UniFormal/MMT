@@ -12,7 +12,7 @@ case class URI(scheme: Option[String],
                path: List[String] = Nil,
                private val abs: Boolean = false,
                query: Option[String] = None,
-               fragment: Option[String] = None) extends Sourceable {
+               fragment: Option[String] = None) {
   private def isIllegal = (!abs && path.nonEmpty && authority.isDefined) || (!abs && path.startsWith(List("")))
   if (isIllegal) throw ImplementationError("illegal URI: " + this)
   /** true if the path is absolute; automatically set to true if scheme or authority are present */
@@ -129,14 +129,6 @@ case class URI(scheme: Option[String],
 
   private def mkS(p: String, s: Option[String]) = s.map(p+_).getOrElse("")
   override def toString: String = scheme.map(_+":").getOrElse("") + mkS("//", authority) + pathAsString + mkS("?",query) + mkS("#",fragment)
-
-  def toSourceString: String = "URI(" +
-    s"${Sourceable(scheme)}, " +
-    s"${Sourceable(authority)}, " +
-    s"${Sourceable(path)}, " +
-    s"${Sourceable(abs)}, " +
-    s"${Sourceable(query)}, " +
-    s"${Sourceable(fragment)})"
 }
 
 object URI {

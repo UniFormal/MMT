@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import utils._
 
 /** Objects of type Marker make up the pattern of a Notation */
-sealed abstract class Marker extends Sourceable {
+sealed abstract class Marker {
    override def toString : String
 }
 
@@ -42,7 +42,6 @@ case class Delim(s: String) extends Delimiter {
       }
    }
    def text = if (s == "%w") " " else s
-   def toSourceString: String = s"Delim(${Sourceable(s)})"
 }
 
 /**
@@ -53,8 +52,6 @@ case class Delim(s: String) extends Delimiter {
 abstract class PlaceholderDelimiter extends Delimiter {
    /** empty to make them useless for parsing unless expanded */
    def text = ""
-
-   def toSourceString: String = s"${getClass.getName}()"
 }
 
 /**
@@ -86,11 +83,10 @@ object CommonMarkerProperties {
 import CommonMarkerProperties._
 
 /** bundles minor properties of markers to make the interfaces more robust */
-case class CommonMarkerProperties(precedence: Option[Precedence], localNotations: Option[Int]) extends Sourceable {
+case class CommonMarkerProperties(precedence: Option[Precedence], localNotations: Option[Int]) {
   def wlnf(n: Int) = copy(localNotations = Some(n))
   def *(remap: Int => Int) = copy(localNotations = localNotations.map(remap))
   def asStringPrefix = localNotations.map(i => "%L" + i + "_").getOrElse("")
-  def toSourceString: String = s"CommonMarkerProperties(${Sourceable(precedence)}, ${Sourceable(localNotations)})"
 }
 
 
@@ -149,7 +145,6 @@ sealed abstract class SeqArg extends ArgumentMarker {
 /** normal arguments */
 case class SimpArg(number : Int, properties: CommonMarkerProperties = noProps) extends Arg {
     def by(s:String): SimpSeqArg = SimpSeqArg(number,Delim(s), properties)
-    def toSourceString: String = s"SimpArg(${Sourceable(number)}, )"
 }
 
 /**
@@ -160,7 +155,6 @@ case class SimpArg(number : Int, properties: CommonMarkerProperties = noProps) e
 case class ImplicitArg(number: Int, properties: CommonMarkerProperties = noProps) extends ArgumentMarker {
    override def toString = properties.asStringPrefix + "%I" + number
    def *(remap: Int => Int): ImplicitArg = copy(number = remap(number), properties = properties * remap)
-   def toSourceString: String = s"ImplicitArg(${Sourceable(number)}, ${Sourceable(properties)})"
 }
 
 /**
@@ -170,7 +164,6 @@ case class ImplicitArg(number: Int, properties: CommonMarkerProperties = noProps
 
 case class SimpSeqArg(number: Int, sep: Delim, properties: CommonMarkerProperties) extends SeqArg {
   def makeCorrespondingArg(n: Int, remap: Int => Int) = SimpArg(n, properties * remap)
-  def toSourceString: String = s"SimpSeqArg(${Sourceable(number)}, ${Sourceable(sep)}, ${Sourceable(properties)})"
 }
 
 
@@ -179,9 +172,7 @@ case class SimpSeqArg(number: Int, sep: Delim, properties: CommonMarkerPropertie
  * @param defined definitions are required
  * @param dependent definitions are required
  */
-case class LabelInfo(typed: Boolean, defined: Boolean, dependent: Boolean) extends Sourceable {
-   def toSourceString: String = s"LabelInfo(${Sourceable(typed)}, ${Sourceable(defined)}, ${Sourceable(dependent)})"
-}
+case class LabelInfo(typed: Boolean, defined: Boolean, dependent: Boolean)
 
 object LabelInfo {
   def none = LabelInfo(false,false,false)
@@ -192,7 +183,6 @@ object LabelInfo {
 case class LabelArg(number : Int, info: LabelInfo, properties: CommonMarkerProperties = noProps) extends Arg {
   override def toString = properties.asStringPrefix + "L" + number.toString + (if (info.typed) "T" else "") + (if (info.defined) "D" else "")
   def by(s:String): LabelSeqArg = LabelSeqArg(number, Delim(s), info, properties)
-  def toSourceString: String = s"LabelArg(${Sourceable(number)}, ${Sourceable(info)}, ${Sourceable(properties)})"
 }
 
 /**
@@ -202,7 +192,6 @@ case class LabelArg(number : Int, info: LabelInfo, properties: CommonMarkerPrope
 case class LabelSeqArg(number: Int, sep: Delim, info: LabelInfo, properties: CommonMarkerProperties) extends SeqArg {
   override def toString = properties.asStringPrefix + "L" + number.toString + (if (info.typed) "T" else "") + (if (info.defined) "D" else "") + sep + "…"
   def makeCorrespondingArg(n: Int, remap: Int => Int) = LabelArg(n, info, properties*remap)
-  def toSourceString: String = s"LabelSeqArg(${Sourceable(number)}, ${Sourceable(sep)}, ${Sourceable(info)}, ${Sourceable(properties)})"
 }
 
 /** a variable binding
@@ -218,12 +207,10 @@ case class Var(number: Int, typed: Boolean, sep: Option[Delim], properties: Comm
    override def isSequence = sep.isDefined
    def makeCorrespondingSingleVar(n: Int, remap: Int => Int) = Var(n, typed, None, properties*remap)
    def *(remap: Int => Int): Var = copy(number = remap(number), properties = properties * remap)
-   def toSourceString: String = s"Var(${Sourceable(number)}, ${Sourceable(typed)}, ${Sourceable(sep)}, ${Sourceable(properties)})"
 }
 
 case object AttributedObject extends Marker {
    override def toString = "%a"
-   def toSourceString: String = "AttributedObject"
 }
 
 /** Verbalization markers occur in verbalization notations
@@ -235,7 +222,6 @@ sealed abstract class VerbalizationMarker extends Marker {
 case class WordMarker(word : String) extends VerbalizationMarker {
   override def toString = word
   def toParsing = Delim(word) :: Nil
-  def toSourceString: String = s"WordMarker(${Sourceable(word)})"
 }
 
 // TODO add toString method in presentation markers
@@ -251,7 +237,6 @@ sealed abstract class PresentationMarker extends Marker {
 /** groups a list of markers into a single marker */
 case class GroupMarker(elements: List[Marker]) extends PresentationMarker {
    def flatMap(f: Marker => List[Marker]) = GroupMarker(elements flatMap f)
-   def toSourceString: String = s"GroupMarker(${Sourceable(elements)})"
 }
 /** decorates a marker with various scripts */
 case class ScriptMarker(main: Marker, sup: Option[Marker], sub: Option[Marker],
@@ -262,48 +247,37 @@ case class ScriptMarker(main: Marker, sup: Option[Marker], sub: Option[Marker],
    }
    def flatMap(f: Marker => List[Marker]) =
       ScriptMarker(gMap(f)(main), sup map gMap(f), sub map gMap(f), over map gMap(f), under map gMap(f))
-   def toSourceString: String = s"ScriptMarker(" +
-      s"${Sourceable(main)}, " +
-      s"${Sourceable(sup)}, " +
-      s"${Sourceable(sub)}, "
-      s"${Sourceable(over)}, " +
-      s"${Sourceable(under)})"
 }
 /** a marker for fractions */
 case class FractionMarker(above: List[Marker], below: List[Marker], line: Boolean) extends PresentationMarker {
    def flatMap(f: Marker => List[Marker]) = {
       FractionMarker(above.flatMap(f), below.flatMap(f), line)
    }
-   def toSourceString: String = s"FractionMarker(${Sourceable(above)}, ${Sourceable(below)}, ${Sourceable(line)})"
 }
 /** a marker based on mathml mtd elements, representing table cells */
 case class TdMarker(content : List[Marker]) extends PresentationMarker {
    def flatMap(f : Marker => List[Marker]) = {
      TdMarker(content.flatMap(f))
-   }
-   def toSourceString: String = s"TdMarker(${Sourceable(content)})"
+   } 
 }
 /** a marker based on mathml mtd elements, representing table rows */
 case class TrMarker(content : List[Marker]) extends PresentationMarker {
    def flatMap(f : Marker => List[Marker]) = {
      TdMarker(content.flatMap(f))
-   }
-   def toSourceString: String = s"TrMarker(${Sourceable(content)})"
+   } 
 }
 /** a marker based on mathml mtd elements, representing tables */
 case class TableMarker(content : List[Marker]) extends PresentationMarker {
    def flatMap(f : Marker => List[Marker]) = {
      TdMarker(content.flatMap(f))
-   }
-   def toSourceString: String = s"TableMarker(${Sourceable(content)})"
+   } 
 }
 
 /**a marker representing the nth(index) root in mathml*/
 case class RootMarker(content : List[Marker], index : List[Marker] = Nil) extends PresentationMarker {
   def flatMap(f : Marker => List[Marker]) = {
     RootMarker(content.flatMap(f),index)
-  }
-  def toSourceString: String = s"RootMarker(${Sourceable(content)}, ${Sourceable(index)})"
+  } 
 }
 
 /**a maker based on mathml label*/
@@ -311,23 +285,20 @@ case class LabelMarker(content: List[Marker], label : String) extends Presentati
   def flatMap(f : Marker => List[Marker]) = {
     LabelMarker(content.flatMap(f),label)
   }
-  def toSourceString: String = s"LabelMarker(${Sourceable(content)}, ${Sourceable(label)})"
 }
 
 /** a marker for a fixed numeric value */
 case class NumberMarker(value : Delim) extends PresentationMarker {
   def flatMap(f : Marker => List[Marker]) = {
     NumberMarker(value)
-  }
-  def toSourceString: String = s"NumberMarker(${Sourceable(value)})"
+  } 
 }
 
 /**Marker for Identifier in MathML -*/
 case class IdenMarker(value: Delim) extends PresentationMarker {
   def flatMap(f : Marker => List[Marker]) = {
     IdenMarker(value)
-  }
-  def toSourceString: String = s"IdenMarker(${Sourceable(value)})"
+  } 
 }
 
 /**Marker for error elements in MathML*/
@@ -335,7 +306,6 @@ case class ErrorMarker(content: List[Marker]) extends PresentationMarker{
   def flatMap(f: Marker => List[Marker]) = {
     ErrorMarker(content)
   }
-  def toSourceString: String = s"ErrorMarker(${Sourceable(content)})"
 }
 
 /**Marker for phantom elements in MathML*/
@@ -343,7 +313,6 @@ case class PhantomMarker(content : List[Marker]) extends PresentationMarker{
   def flatMap(f: Marker => List[Marker]) = {
     PhantomMarker(content.flatMap(f))
   }
-  def toSourceString: String = s"PhantomMarker(${Sourceable(content)})"
 }
 /** a marker for mglyph, to load non-standard symbols
   *
@@ -354,20 +323,17 @@ case class GlyphMarker( src : Delim, alt: String = "Failed Loading") extends Pre
   def flatMap(f: Marker => List[Marker]) = {
     GlyphMarker(src)
   }
-  def toSourceString: String = s"GlyphMarker(${Sourceable(src)}, ${Sourceable(alt)})"
 }
 
 case class TextMarker(text : Delim) extends PresentationMarker {
   def flatMap(f:Marker => List[Marker]) = {
     TextMarker(text)
   }
-  def toSourceString: String = s"TextMarker(${Sourceable(text)})"
 }
 
 /** a marker for type of the presented object */
 case object InferenceMarker extends PresentationMarker {
    def flatMap(f: Marker => List[Marker]) = InferenceMarker
-   def toSourceString: String = "InferenceMarker"
 }
 
 object PresentationMarker {

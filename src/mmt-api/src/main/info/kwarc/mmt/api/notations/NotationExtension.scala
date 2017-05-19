@@ -10,7 +10,7 @@ import Conversions._
  *
  * A Fixity is a high-level construct that elaborates into a list of [[Marker]]s. Parser and present only use the latter.
  */
-abstract class Fixity extends Sourceable {
+abstract class Fixity {
    /** the elaboration into markers */
    def markers: List[Marker]
    /** the string representation to use when serializing notations
@@ -24,7 +24,6 @@ abstract class Fixity extends Sourceable {
  */
 case class Mixfix(markers: List[Marker]) extends Fixity {
    def asString = ("mixfix", markers.mkString(" "))
-   def toSourceString: String = s"Mixfix(${Sourceable(markers)})"
 }
 
 /**
@@ -61,7 +60,6 @@ abstract class SimpleFixity extends Fixity {
 case class Prefix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity {
    lazy val markers = if (expl != 0) argsWithOp(0) else argsWithOp(0) ::: implArgs
    def asString = ("prefix", simpleArgs)
-   def toSourceString: String = s"Prefix(${Sourceable(delim)}, ${Sourceable(impl)}, ${Sourceable(expl)})"
 }
 /**
  * delimiter after the first (explicit) argument
@@ -82,14 +80,12 @@ case class Infix(delim: Delimiter, impl: Int, expl: Int, assoc: Option[Boolean])
       }
       ("infix"+assocString, simpleArgs)
    }
-   def toSourceString: String = s"Infix(${Sourceable(delim)}, ${Sourceable(impl)}, ${Sourceable(expl)}, ${Sourceable(assoc)})"
 }
 
 /** delimiter after the (explicit) arguments */
 case class Postfix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity {
    lazy val markers = argsWithOp(expl)
    def asString = ("postfix", simpleArgs)
-   def toSourceString: String = s"Postfix(${Sourceable(delim)}, ${Sourceable(impl)}, ${Sourceable(expl)})"
 }
 
 /** delimiter followed by first and second (explicit) argument with . in between
@@ -104,7 +100,6 @@ case class Bindfix(delim: Delimiter, impl: Int, expl: Int, assoc: Boolean) exten
       val assocString = if (assoc) "-assoc" else ""
       ("bindfix"+assocString, simpleArgs)
    }
-   def toSourceString: String = s"Bindfix(${Sourceable(delim)}, ${Sourceable(impl)}, ${Sourceable(expl)}, ${Sourceable(assoc)})"
 }
 
 /**

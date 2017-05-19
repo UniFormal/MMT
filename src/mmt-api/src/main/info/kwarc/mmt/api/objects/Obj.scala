@@ -127,7 +127,6 @@ case class OMID(path: ContentPath) extends Term {
       //case thy % name => <om:OMS name={name.toPath}>{mdNode}{thy.toNode}</om:OMS>
    }
    def toCMLQVars(implicit qvars: Context) = <csymbol>{path.toPath}</csymbol>
-   def toSourceString: String = s"OMID(${Sourceable(path)})"
 }
 
 object OMS {
@@ -166,7 +165,6 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
      (Context(), binder) :: context.subobjects ::: scopes.map(s => (context, s))
    }
    def toCMLQVars(implicit qvars: Context) = <apply>{binder.toCMLQVars}{context.map(_.toCMLQVars)}{scopes.map(_.toCMLQVars)}</apply>
-   def toSourceString: String = s"OMBINDC(${Sourceable(binder)}, ${Sourceable(context)}, ${Sourceable(scopes)})"
 }
 
 /**
@@ -197,7 +195,6 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
    private[objects] lazy val freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
    def subobjects = ComplexTerm.subobjects(this) getOrElse subobjectsNoContext(fun :: args)
    def toCMLQVars(implicit qvars: Context) = <apply>{fun.toCMLQVars}{args.map(_.toCMLQVars)}</apply>
-   def toSourceString: String = s"OMA(${Sourceable(fun)}, ${Sourceable(args)})"
 }
 
 /**
@@ -243,7 +240,6 @@ case class OMV(name : LocalName) extends Term {
    def toCMLQVars(implicit qvars: Context) =
       if (qvars.isDeclared(name)) <mws:qvar xmlns:mws="http://www.mathweb.org/mws/ns">{name.toPath}</mws:qvar>
       else <ci>{name.toPath}</ci>
-   def toSourceString: String = s"OMV(${Sourceable(name)})"
 }
 
 /** helper object */
@@ -272,7 +268,6 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    def subobjects = List(arg, key, value).map(s => (Context(), s))
    private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars_
    def toCMLQVars(implicit qvars: Context) = <apply><csymbol>OMATTR</csymbol>{arg.toCMLQVars}{key.toCMLQVars}{value.toCMLQVars}</apply>
-   def toSourceString: String = s"OMATTR(${Sourceable(arg)}, ${Sourceable(key)}, ${Sourceable(value)})"
 }
 
 /** apply/unapply methods for a list of attributions */
@@ -308,8 +303,7 @@ sealed trait OMLITTrait extends Term {
          (l.synType == m.synType) && l == l.rt.parse(m.value) 
       case (l: UnknownOMLIT, m: OMLIT) => m == l
       case _ => false
-   }
-
+   } 
 }
 
 /**
@@ -323,8 +317,6 @@ sealed trait OMLITTrait extends Term {
 case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait {
    def synType = rt.synType
    override def toString = rt.semType.toString(value)
-   def toSourceString: String = s"UnknownOMLIT(${Sourceable(toString)}, ${Sourceable(synType)})" +
-      s"/*OMLIT(${Sourceable(value.toString)}, ${Sourceable(rt.getClass.getCanonicalName)}(${Sourceable(rt.toString)}))/*"
 }
 
 /** degenerate case of OMLIT when no RealizedType was known to parse a literal
@@ -343,8 +335,6 @@ case class UnknownOMLIT(value: String, synType: Term) extends Term with OMLITTra
        rule.parse(value).from(this)
      }
    }
-
-   def toSourceString: String = s"UnknownOMLIT(${Sourceable(toString)}, ${Sourceable(synType)})"
 }
 
 /**
@@ -358,7 +348,6 @@ case class OMFOREIGN(node : Node) extends Term {
    private[objects] def freeVars_ = Nil
    def subobjects = Nil
    def toCMLQVars(implicit qvars: Context) = <apply><csymbol>OMFOREIGN</csymbol>{Node}</apply>
-   def toSourceString: String = s"OMFOREIGN(${Sourceable(node)})"
 }
 
 
@@ -382,7 +371,6 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFo
       subobjectsNoContext(terms)
    }
    def toCMLQVars(implicit qvars: Context) = <apply><csymbol>OMSemiFormal</csymbol>{tokens.map(_.toCMLQVars)}</apply>
-   def toSourceString: String = s"OMSemiFormal(${Sourceable(tokens)})"
 }
 
 object OMSemiFormal {
@@ -402,7 +390,6 @@ case class OML(name: LocalName, tp: Option[Term], df: Option[Term], nt: Option[T
     def substitute(sub: Substitution)(implicit sa: SubstitutionApplier) = OML(name, tp map (_ ^^ sub), df map (_ ^^ sub),nt,featureOpt)
     def toCMLQVars(implicit qvars: Context) = <label>{vd.toCMLQVars}</label>
     def toNode = vd.toNode.copy(label = "OML")
-    def toSourceString: String = s"OML(${Sourceable(name)}, ${Sourceable(tp)}, ${Sourceable(df)}, ${Sourceable(nt)}, ${Sourceable(featureOpt)})"
 }
 
 case object OML {

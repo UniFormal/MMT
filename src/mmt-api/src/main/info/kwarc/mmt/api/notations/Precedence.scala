@@ -1,12 +1,11 @@
 package info.kwarc.mmt.api.notations
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.utils.Sourceable
 
 /**
  * InfInt: integers with positive and negative infinity
 */
-sealed abstract class InfInt(s: String) extends scala.math.Ordered[InfInt] with Sourceable {
+sealed abstract class InfInt(s: String) extends scala.math.Ordered[InfInt] {
 
    /**
     * sum
@@ -50,17 +49,14 @@ case class Finite(ones : Int) extends InfInt(ones.toString) {
       case Infinite => -1
       case _ => 1
    }
-   def toSourceString: String = s"InfInt(${Sourceable(ones)})"
 }
 /** positively infinite InfInt */
 case object Infinite extends InfInt("infinity") {
   def compare(that: InfInt) = if (that == Infinite) 0 else 1
-  def toSourceString: String = "Infinite"
 }
 /** positively infinite InfInt */
 case object NegInfinite extends InfInt("-infinity") {
   def compare(that: InfInt) = if (that == NegInfinite) 0 else -1
-  def toSourceString: String = "NegInfinite"
 }
 /** helper object for InfInts */
 object InfInt {
@@ -79,7 +75,7 @@ object InfInt {
  * @param p the precedence, smaller precedence means weaker binding
  * @param loseTie tie-breaking flag for comparisons
 */
-sealed case class Precedence(prec : InfInt, loseTie : Boolean) extends scala.math.Ordered[Precedence] with Sourceable {
+sealed case class Precedence(prec : InfInt, loseTie : Boolean) extends scala.math.Ordered[Precedence] {
    def weaken = Precedence(prec, true)
    /**
     * irreflexive comparison
@@ -91,7 +87,6 @@ sealed case class Precedence(prec : InfInt, loseTie : Boolean) extends scala.mat
       else 1
    def +(i: Int) = Precedence(prec+i, loseTie)
    override def toString = prec.toString + (if (loseTie) "*" else "")
-   def toSourceString: String = s"Precedence(${Sourceable(prec)}, ${Sourceable(loseTie)})"
 }
 
 /** helper object for precedences */

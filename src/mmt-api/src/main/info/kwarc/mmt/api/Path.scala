@@ -106,7 +106,6 @@ case class DPath(uri : URI) extends Path with ComponentParent with SlashFunction
    }   
    /** if this.name != Nil then this.toMPath.toDPath == this */
    def toMPath = ^ ? LocalName(name.last)
-   def toSourceString: String = s"DPath(${uri.toSourceString})"
 }
 
 /** A path to a module or symbol */
@@ -149,7 +148,6 @@ case class MPath(parent : DPath, name : LocalName) extends ContentPath with Slas
    /** if this.name != Nil then this.toGlobalName.toMPath == this */
    def toGlobalName = ^ ? LocalName(name.last)
    def module = this
-   def toSourceString: String = s"MPath(${parent.toSourceString}, ${name.toSourceString})"
 }
 
 /**
@@ -171,7 +169,6 @@ case class GlobalName(module: MPath, name: LocalName) extends ContentPath with S
    def toMPath = module / name
    /** turns module into [[ComplexStep]] */
    def toLocalName = ComplexStep(module) / name
-   def toSourceString: String = s"GlobalName(${module.toSourceString}, ${name.toSourceString})"
 }
 
 object LocalName {
@@ -190,7 +187,7 @@ object LocalName {
  * A LocalName represents a local MMT symbol-level declarations (relative to a module).
  * @param steps the list of (in MMT: slash-separated) components
  */
-case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] with Sourceable {
+case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    def /(n: LocalName) : LocalName = LocalName(steps ::: n.steps)
    def init = LocalName(steps.init)
    /**
@@ -219,12 +216,10 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] with
    def toPath : String = steps.map(_.toPath).mkString("", "/", "")
   /** human-oriented string representation of this name, no encoding, possibly shortened */
    override def toString : String = steps.map(_.toString).mkString("", "/", "")
-
-   def toSourceString: String = s"LocalName(${Sourceable(steps)})"
 }
 
 /** a step in a LocalName */
-abstract class LNStep extends Sourceable {
+abstract class LNStep {
    def toPath : String
    def unary_! = LocalName(this)
    def /(n: LocalName) = LocalName(this) / n
@@ -245,20 +240,17 @@ object LNStep {
 case class SimpleStep(name: String) extends LNStep {
    def toPath = xml.encodeURI(name)
    override def toString = name
-   def toSourceString: String = s"SimpleStep(${Sourceable(name)})"
 }
 /** an include declaration; ComplexStep(fromPath) acts as the name of an unnamed structure */
 case class ComplexStep(path: MPath) extends LNStep {
    def toPath = "[" + path.toPath + "]"
    override def toString = "[" + path.toString + "]"
-   def toSourceString: String = s"ComplexStep(${path.toSourceString})"
 }
 
 case class CPath(parent: ComponentParent, component: ComponentKey) extends Path {
    def doc = parent.doc
    def ^! = parent
    def last = component.toString
-   def toSourceString: String = s"CPath(${parent.toSourceString}, ${component.toSourceString})"
 }
 
 /*
@@ -276,13 +268,12 @@ object LNEmpty {
  * @param segments the list of (slash-separated) components
  * @param absolute a flag whether the reference is absolute (i.e., starts with a slash)
  */
-case class LocalRef(segments : List[String], absolute : Boolean) extends Sourceable {
+case class LocalRef(segments : List[String], absolute : Boolean) {
    def toLocalName(nsMap : NamespaceMap) = {
       val steps = segments map {s => LNStep.parse(s, nsMap)}
       LocalName(steps)
    }
    override def toString = segments.mkString(if (absolute) "/" else "","/","")
-   def toSourceString: String = s"LocalRef(${Sourceable(segments)}, ${Sourceable(absolute)})"
 }
 
 object LocalRef {

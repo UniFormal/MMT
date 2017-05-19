@@ -1,7 +1,6 @@
 package info.kwarc.mmt.api
 
 import objects._
-import utils.Sourceable
 
 /** A component of a declaration, e.g., the type of a [[Constant]] (akin to XML attributes) */
 case class DeclarationComponent(key: ComponentKey, value: ComponentContainer) extends NamedElement {
@@ -40,9 +39,8 @@ class FinalTermContainer(t: Term) extends AbstractTermContainer {
 }
 
 /** A ComponentKey identifies a [[DeclarationComponent]]. */
-abstract class ComponentKey(s : String) extends Sourceable {
+abstract class ComponentKey(s : String) {
    override def toString = s
-   def toSourceString: String = s"${this.getClass.getName}"
    def apply(cont: ComponentContainer) = DeclarationComponent(this, cont)
 }
 
@@ -82,9 +80,7 @@ case object CodComponent  extends TermComponentKey("codomain")
 case object ParamsComponent extends ObjComponentKey("params")
 
 /** custom component, e.g., in a [[info.kwarc.mmt.api.symbols.DerivedDeclaration]] */
-case class OtherComponent(s: String) extends ComponentKey(s) {
-  override def toSourceString: String = s"OtherComponent(${Sourceable(s)})"
-}
+case class OtherComponent(s: String) extends ComponentKey(s)
 
 /** components that are notations */
 abstract class NotationComponentKey(s: String) extends ComponentKey(s)
