@@ -91,3 +91,15 @@ var ARROW_STYLES=
 		directed: true
 	}
 };
+
+var NODE_STYLES =
+{
+	"theory":
+	{
+		shape: "square"
+	},
+	"smallTheory":
+	{
+		shape: "circle"
+	}
+};
