@@ -12,7 +12,7 @@ function TheoryGraph()
 	var zoomClusters=[];
 	var clusterPositions=[];
 	var BASE_QUERY_URL="http://mathhub.info/mh/mmt";
-	
+
 	this.downloadCanvasAsImage = function(button)
 	{
 		var minX=111110;
@@ -213,7 +213,7 @@ function TheoryGraph()
 		
 		postprocessEdges();
 		
-		startRendering();
+		startConstruction();
 	}
 	
 	function postprocessEdges()
@@ -236,6 +236,33 @@ function TheoryGraph()
 
 				originalEdges[i].dashes=styleInfos.dashes;
 				originalEdges[i].color={color:styleInfos.color, highlight:styleInfos.colorHighlight, hover:styleInfos.colorHover};
+			}
+		}
+
+		for(var i=0;i<originalNodes.length;i++)
+		{
+			if(originalNodes[i].style!=undefined && NODE_STYLES[originalNodes[i].style]!=undefined)
+			{
+				var styleInfos=NODE_STYLES[originalNodes[i].style];
+
+				if(styleInfos.shape=="ellipse" || styleInfos.shape=="circle")
+				{
+					if(originalNodes[i].mathml!=undefined)
+						originalNodes[i].shape="circularImage";
+					else
+						originalNodes[i].shape="ellipse";
+				}
+				else if(styleInfos.shape=="square")
+				{
+					if(originalNodes[i].mathml!=undefined)
+						originalNodes[i].shape="Image";
+					else
+						originalNodes[i].shape="square";
+				}
+				else
+				{
+					originalNodes[i].shape=styleInfos.shape;
+				}
 			}
 		}
 	}
@@ -271,6 +298,91 @@ function TheoryGraph()
 			  nodes.update(toUpdate);
 			  network.redraw();
         }
+	}
+	
+	function estimateExtraSVGHeight(expression)
+	{
+		if(expression.indexOf("frac") == -1 && expression.indexOf("under") == -1  && expression.indexOf("over") == -1)
+		{
+			return 0;
+		}
+		else
+		{
+			return 16;
+		}
+	}
+	
+	function nodeToSVGMath(node)
+	{
+		$('#string_span').html(node["mathml"]);
+		var width=$('#string_span').width();
+		var height=$('#string_span').height();
+		$('#string_span').html("");
+		var svg;
+		
+		if(node["shape"]=="image")
+		{
+			svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(30*1+width)+'px" height="'+(30*1+height+estimateExtraSVGHeight(node["mathml"]))+'px" preserveAspectRatio="none">' +
+			'<rect x="0" y="0" width="90%" height="90%" fill="#97C2FC"></rect>' +
+			'<foreignObject x="15" y="15" width="100%" height="100%">' +
+			node["mathml"] +
+			'</foreignObject>' +
+			'</svg>';
+		}
+		else
+		{
+			svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(30*1+width)+'px" height="'+(30*1+height+estimateExtraSVGHeight(node["mathml"]))+'px" preserveAspectRatio="none">' +
+			//' <circle cx="0" cy="0" r="40" fill="light-gray" />' +
+			'<foreignObject x="15" y="13" width="100%" height="100%">' +
+			node["mathml"] +
+			'</foreignObject>' +
+			'</svg>';
+		}
+		node["image"]="data:image/svg+xml;charset=utf-8,"+ encodeURIComponent(svg);
+	}
+	
+	function startConstruction()
+	{
+		var processedNodes=0;
+		var nodesCount=0;
+		
+		for(var i=0;i<originalNodes.length;i++)
+		{
+			if(originalNodes[i]["image"]!="" && originalNodes[i]["image"]!=undefined)
+			{
+				nodesCount++;
+			}
+		}
+
+		for(var i=0;i<originalNodes.length;i++)
+		{
+			if(originalNodes[i]["image"]!="" && originalNodes[i]["image"]!=undefined)
+			{
+				function callback(node,data, status)
+				{
+					node["mathml"]=data;
+					nodeToSVGMath(node);
+					processedNodes++;
+					if(processedNodes==nodesCount)
+					{
+						startRendering();
+					}
+				}
+
+				var callback2=callback.bind(null,originalNodes[i]);
+
+				$.get(originalNodes[i]["image"], callback2);
+			}
+			else if(originalNodes[i]["mathml"]!="" && originalNodes[i]["mathml"]!=undefined)
+			{
+				nodeToSVGMath(originalNodes[i]);
+			}
+		}
+		
+		if(nodesCount==0)
+		{
+			startRendering();
+		}
 	}
 	
 	// Called when the Visualization API is loaded.
