@@ -93,7 +93,7 @@ class ErrorListForwarder(errorSource: MMTErrorSource, controller: Controller, ma
            new MMTError(mainFile, errorSource, tp, file, line, column, column + reg.length, s.mainMessage)
          } catch {
            case t : Exception =>
-             return addError(GeneralError("error while registering error in jedit (error locations invalid?)").setCausedBy(t))
+             return addError(GeneralError("error while registering error in jedit (error locations invalid? " + s.ref + ")").setCausedBy(t))
          }
          s.extraMessages foreach {m => error.addExtraMessage(m)}
          errorSource.addError(error)

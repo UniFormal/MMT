@@ -5,6 +5,7 @@ import objects._
 import symbols._
 import modules._
 import frontend._
+import info.kwarc.mmt.api.Level.Level
 import parser._
 
 /**
@@ -62,7 +63,9 @@ class RuleBasedChecker extends ObjectChecker {
       if (success) {
         // free variables may remain but their types are solved
         if (pr.free.exists({case IncludeVarDecl(_) => false case _ => true})) {
-          env.errorCont(InvalidUnit(cu, NoHistory, "check succeeded, but free variables remained: " + pr.free.map(_.name).mkString(", ")))
+          env.errorCont(new InvalidUnit(cu, NoHistory, "check succeeded, but free variables remained: " + pr.free.map(_.name).mkString(", ")){
+             override val level: Level = Level.Warning
+          })
         }
       }
       // ** logging and error reporting **

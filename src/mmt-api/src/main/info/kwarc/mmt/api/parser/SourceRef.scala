@@ -13,8 +13,8 @@ case class SourceRegion(start: SourcePosition, end: SourcePosition) {
   /** l.c-l.c*/
   def twoDimString = start.twoDimString + ":" + end.twoDimString
   /** number of characters in this region */
-  def length = end.offset - start.offset + 1
-  def contains(that: SourceRegion) = start <= that.start && that.end <= end 
+  def length = end.offset - start.offset // +1 - why +1? Throws errors!
+  def contains(that: SourceRegion) = start <= that.start && that.end <= end
 }
 
 /** helper object */

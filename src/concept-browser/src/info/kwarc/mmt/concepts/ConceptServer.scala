@@ -75,7 +75,7 @@ class ConceptServer extends ServerExtension("concepts") {
   def doIndexPage(h : HTML, l : String) = {
     import h._
     if (l == "about") {
-      val ret = MMTSystem.getResourceAsString("mmt-web/concepts.html")
+      val ret = MMTSystem.getResourceAsString("/mmt-web/concepts.html")
       literal(ret)
     } else if (!(l.length==1)) text { "Unknown index: " + l }
     else {
