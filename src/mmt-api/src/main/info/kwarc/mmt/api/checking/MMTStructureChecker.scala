@@ -53,6 +53,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       val (context,env) = prepareCheck(e)
       e match {
         case ce: ContainerElement[_] => checkElementBegin(context, ce)(env)
+        case ne: NestedModule => applyElementBegin(ne.module)
         case _ => check(context, e, streamed = true)(env)
       }
     }
