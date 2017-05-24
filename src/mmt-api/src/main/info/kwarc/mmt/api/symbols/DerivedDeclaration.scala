@@ -218,6 +218,34 @@ trait ParametricTheoryLike {self: StructuralFeature =>
    }
 }
 
+trait TypedConstantLike {self: StructuralFeature =>
+  def getHeaderNotation: List[Marker] = List(LabelArg(1,LabelInfo.none),Delim(":"),SimpArg(2))
+  override def processHeader(header: Term) = header match {
+    case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_),t)) => (LocalName(name),t)// (name, Type(cont))
+  }
+  override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
+    case Some(t) => OMA(OMMOD(mpath), List(OML(dd.name,None,None),t))
+  }
+  def getType(dd: DerivedDeclaration): Term = dd.tpC.get.get
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
+    // TODO env.objectChecker(CheckingUnit())
+  }
+}
+
+trait TheoryLike {self: StructuralFeature =>
+  def getHeaderNotation: List[Marker] = List(LabelArg(1,LabelInfo.none))
+  override def processHeader(header: Term) = header match {
+    case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_))) => (LocalName(name),None)// (name, Type(cont))
+  }
+  override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
+    case Some(t) => OMA(OMMOD(mpath), List(OML(dd.name,None,None)))
+  }
+  def getType(dd: DerivedDeclaration): Term = dd.tpC.get.get
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
+    // TODO env.objectChecker(CheckingUnit())
+  }
+}
+
 /** helper object */
 object ParametricTheoryLike {
    /** official apply/unapply methods for the type of a ParametricTheoryLike derived declaration */ 

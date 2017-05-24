@@ -32,9 +32,9 @@ mmt-graphdockable-show.label=Show Theory Graph
 mmt-dockable-show.label=Show Dockable
 mmt-build.label=Build current buffer
 mmt-buildopen.label=Build open buffers
-mmt-insert-US.label=Insert Object Terminator (US)
-mmt-insert-RS.label=Insert Declaration Terminator (RS)
-mmt-insert-GS.label=Insert Module Terminator (GS)
+mmt-insert-US.label=Insert Object Delimiter (OD)
+mmt-insert-RS.label=Insert Declaration Delimiter (DD)
+mmt-insert-GS.label=Insert Module Delimiter (MD)
 
 # labels for actions defined in browser.actions.xml
 mmt-browser-build.label=Build

@@ -369,7 +369,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           }
           end(d)
           //TODO awkward hack, avoid the FS delimiter of d to make the end-of-document check doc succeed as well
-          state.reader.forceLastDelimiter(Reader.GS)
+          state.reader.forceLastDelimiter(Reader.GS.toChar.toInt)
         case "ref" =>
           val (_,path) = readMPath(DPath(state.namespaces.default))
           seCont(MRef(doc.path,path))

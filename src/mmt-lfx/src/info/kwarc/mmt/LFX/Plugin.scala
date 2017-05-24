@@ -227,3 +227,23 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
 }
 
 object FromTheoryRule extends StructuralFeatureRule("FromTheory")
+/*
+class Quantity extends StructuralFeature("Quantity") with TypedConstantLike {
+  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration = ???
+
+}
+
+object QuantityRule extends StructuralFeatureRule("Quantity")
+
+class Law extends StructuralFeature("Law") with TypedConstantLike {
+
+}
+
+object LawRule extends StructuralFeatureRule("Law")
+
+class Model extends StructuralFeature("Model") {
+
+}
+
+object ModelRule extends StructuralFeatureRule("Model")
+*/
