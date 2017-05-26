@@ -19,8 +19,6 @@ abstract class QueryExtension(val name: String) extends Extension {
 
   protected lazy val lup: LookupWithNotFoundHandler = controller.globalLookup
 
-  /** Evaluates a single Query */
-
   /**
     * Evaluates a single Query
     *

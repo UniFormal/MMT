@@ -2,8 +2,12 @@ package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api._
 import checking._
+import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
 import objects._
 import objects.Conversions._
+
+import scala.util.Try
 
 case class UOMState(t : Term, context: Context, rules: RuleSet, path : List[Int]) {
   def enter(i : Int) : UOMState = new UOMState(t, context, rules, i :: path)
@@ -87,8 +91,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {
            log("structure-shared term was already simplified")
            tS
          // apply morphisms TODO should become computation rule once module expressions are handled properly
-         case OMM(t, mor) =>
-            val tM = controller.globalLookup.ApplyMorphs(t, mor)
+         case OMM(tt, mor) =>
+            val tM = controller.globalLookup.ApplyMorphs(tt, mor)
             traverse(tM)
          // the main case
          case ComplexTerm(_,_,_,_) =>
@@ -290,9 +294,31 @@ class RuleBasedSimplifier extends ObjectSimplifier {
             apply(j.context1, j.context, state.rules) == apply(j.context2, j.context, state.rules)
          case _ => false
       }
+
+     override def lookup(p: Path): Option[StructuralElement] = controller.getO(p)
       def simplify(t: Obj)(implicit stack: Stack, history: History) =
          apply(t, stack.context, state.rules)
       def outerContext = Context.empty
+     def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = simplify(tm) match {
+       case AnonymousTheory(mt, ds) =>
+         Some(new AnonymousTheory(mt, Nil))
+       // add include of codomain of mor
+       case OMMOD(mp) =>
+         val th = Try(controller.globalLookup.getTheory(mp)).toOption match {
+           case Some(th2: DeclaredTheory) => th2
+           case _ => return None
+         }
+         val ds = th.getDeclarationsElaborated.map({
+           case c: Constant =>
+             OML(c.name, c.tp, c.df, c.not)
+           case PlainInclude(from, to) =>
+             IncludeOML(from, Nil)
+           case _ => ???
+         })
+         Some(new AnonymousTheory(th.meta, ds))
+       case _ =>
+         return None
+     }
    }
 
    /** applies all computation rules */

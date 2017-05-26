@@ -143,17 +143,17 @@ class AlignmentsServer extends ServerExtension("align") {
     save(a)
   }
 
-  def apply(path: List[String], query: String, body: Body, session: Session) = {
-    path match {
+  def apply(request: ServerRequest): ServerResponse = {
+    request.extensionPathComponents match {
       case "from" :: _ ⇒
-        val path = Path.parseS(query, nsMap)
-        val toS = if (query.contains("transitive=\"true\"")) alignments.get(LogicalReference(path), Some(_ => true)).map(_.to.toString)
+        val path = Path.parseS(request.queryString, nsMap)
+        val toS = if (request.queryString.contains("transitive=\"true\"")) alignments.get(LogicalReference(path), Some(_ => true)).map(_.to.toString)
         else alignments.get(LogicalReference(path)).map(_.to.toString)
-        log("Alignment query: " + query)
+        log("Alignment query: " + request.queryString)
         log("Alignments from " + path + ":\n" + toS.map(" - " + _).mkString("\n"))
-        Server.TextResponse(toS.mkString("\n"))
+        ServerResponse.TextResponse(toS.mkString("\n"))
       case "add" :: _ ⇒
-        val str = Try(body.asString).getOrElse("")
+        val str = Try(request.body.asString).getOrElse("")
         val formData : JSONObject = Try(JSON.parse(str).asInstanceOf[JSONObject]).getOrElse(JSONObject(List()))
         log(formData.toString)
         val regex = """\\/""".r
@@ -167,12 +167,12 @@ class AlignmentsServer extends ServerExtension("align") {
         } else {
           0
         }
-        Server.TextResponse("Added " + addedAlignments + " alignments")
+        ServerResponse.TextResponse("Added " + addedAlignments + " alignments")
       case _ ⇒
-        log(path.toString) // List(from)
-        log(query.toString) // an actual symbol path
-        log(body.toString) //whatever
-        Server.TextResponse("")
+        log(request.extensionPathComponents.toString) // List(from)
+        log(request.queryString.toString) // an actual symbol path
+        log(request.body.toString) //whatever
+        ServerResponse.TextResponse("")
     }
   }
 
@@ -241,7 +241,22 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
   private def processString(s: String): Int = {
-    val param = """(.+)\s*=\s*\"(.+)\"\s*(.*)""".r
+    // val param = """(.+)\s*=\s*\"(.+)\"\s*(.*)""".r
+    object param {
+      def unapply(s : String) : Option[(String,String,String)] = {
+        var rest = s.trim
+        var eqindex = rest.indexOf("=\"")
+        if (eqindex == -1) return None
+        val key = rest.substring(0,eqindex)
+        rest = rest.substring(eqindex + 2)
+
+        eqindex = rest.indexOf("\"")
+        if (eqindex == -1) return None
+        val value = rest.substring(0,eqindex)
+        rest = rest.substring(eqindex + 1)
+        Some((key,value,rest))
+      }
+    }
     var alignmentsCount: Int = 0
     var rest = s
     if (rest.startsWith("namespace")) {
@@ -298,7 +313,7 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
   /** translation along alignments */
-  private class AlignQuery extends QueryFunctionExtension("align", ElementQuery(PathType), SetElementQuery(StringType)) {
+  private class AlignQuery extends QueryFunctionExtension("align", ElementQuery(PathType), SetQuery(StringType)) {
     def evaluate(argument: BaseType, params: List[String]) = {
       log("Evaluating align query")
       log(argument.toString)

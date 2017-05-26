@@ -8,7 +8,9 @@ import objects._
 
 import java.lang.ref.WeakReference
 
-class Heap(id: Int, controller: Controller) extends DeclaredTheory(utils.mmt.mmtbase / "heap", LocalName(id.toString), None) {
+import Theory._
+
+class Heap(id: Int, controller: Controller) extends DeclaredTheory(utils.mmt.mmtbase / "heap", LocalName(id.toString), noMeta, noParams, noBase) {
    private var instanceId = 0
    
    def newInstance(context: Context, ofTerm: Term): Instance = {

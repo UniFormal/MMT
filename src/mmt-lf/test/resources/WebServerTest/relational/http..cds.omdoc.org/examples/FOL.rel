@@ -1,9 +1,0 @@
-theory http://cds.omdoc.org/examples?FOL
-HasMeta http://cds.omdoc.org/examples?FOL http://cds.omdoc.org/urtheories?LF
-Includes http://cds.omdoc.org/examples?FOL http://cds.omdoc.org/examples?PL
-Declares http://cds.omdoc.org/examples?FOL http://cds.omdoc.org/examples?FOL?term
-constant http://cds.omdoc.org/examples?FOL?term
-Declares http://cds.omdoc.org/examples?FOL http://cds.omdoc.org/examples?FOL?forall
-constant http://cds.omdoc.org/examples?FOL?forall
-Declares http://cds.omdoc.org/examples?FOL http://cds.omdoc.org/examples?FOL?exists
-constant http://cds.omdoc.org/examples?FOL?exists

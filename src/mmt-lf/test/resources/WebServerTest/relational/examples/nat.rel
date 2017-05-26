@@ -1,6 +1,0 @@
-document http://docs.omdoc.org/test/examples/nat.mmt
-Declares http://docs.omdoc.org/test/examples/nat.mmt http://cds.omdoc.org/examples?Bool
-Declares http://docs.omdoc.org/test/examples/nat.mmt http://cds.omdoc.org/examples?Logic
-Declares http://docs.omdoc.org/test/examples/nat.mmt http://cds.omdoc.org/examples?Nat
-Declares http://docs.omdoc.org/test/examples/nat.mmt http://cds.omdoc.org/examples?NatRules
-Declares http://docs.omdoc.org/test/examples/nat.mmt http://cds.omdoc.org/examples?NatMinus

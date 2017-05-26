@@ -306,16 +306,15 @@ class Controller extends ROController with ActionHandling with Logger {
   // ******************************* lookup of MMT URIs
 
   /** a lookup that uses only the current memory data structures */
-  val localLookup = new LookupWithNotFoundHandler(library) {
-    protected def handler[A](code: => A): A = try {
-      code
-    } catch {
-      case NotFound(p, _) =>
-        throw GetError(p.toPath + " not known")
-    }
-
+  val localLookup = new LookupWithNotFoundHandler(library) with FailingNotFoundHandler {
     def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod)
   }
+
+  /** a lookup that uses the previous in-memory version (ignoring the current one) */
+  val previousLocalLookup = new LookupWithNotFoundHandler(memory.previousContent) with FailingNotFoundHandler {
+    def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod)
+  }
+
   /** a lookup that loads missing modules dynamically */
   val globalLookup = new LookupWithNotFoundHandler(library) {
     protected def handler[A](code: => A): A = iterate {
@@ -328,14 +327,28 @@ class Controller extends ROController with ActionHandling with Logger {
   }
 
   /** convenience for global lookup */
-  def get(path: Path): StructuralElement = globalLookup.get(path)
+  def get(path: Path): StructuralElement = {
+    val get = globalLookup.get(path)
+    simplifier(get)
+    get
+  }
 
   /** like get */
   def getO(path: Path) = try {
     Some(get(path))
   } catch {
     case _: GetError => None
+    case _: BackendError => None
   }
+
+  def getAs[E <: StructuralElement](cls : Class[E], path: Path): E = getO(path) match {
+    case Some(e : E) => e
+    case Some(r) => throw GetError("Element exists but is not a " + cls + ": " + path + " is " + r.getClass)
+    case None => throw GetError("Element doesn't exist: " + path)
+  }
+
+  def getConstant(path : GlobalName) = getAs(classOf[Constant],path)
+  def getTheory(path : MPath) = getAs(classOf[DeclaredTheory],path)
 
   // ******************************* transparent loading during global lookup
 
@@ -397,78 +410,79 @@ class Controller extends ROController with ActionHandling with Logger {
    */
   def add(nw: StructuralElement, afterOpt: Option[LocalName] = None) {
     iterate {
-          localLookup.getO(nw.path) match {
-            case Some(old) if InactiveElement.is(old) =>
-              /* optimization for change management
-               * If an inactive element with the same path already exists, we try to reuse it.
-               * That way, already-performed computations and checks do not have to be redone;
-               *  this applies in particular to object-level parsing and checking.
-               *  (Incidentally, Java pointers to the elements stay valid.)
-               * Reuse is only possible if the elements are compatible;
-               *  intuitively, that means they have to agree in all fields except possibly for components and children.
-               * In that case, they new components replace the old ones (if different);
-               *   and the new child declarations are recursively added or merged into the old ones later on.
-               * Otherwise, the new element is added as usual.
-               * When adding elements to Body, the order is irrelevant because the children are stored as a set;
-               *  but when adding to a Document (including Body.asDocument), the order matters.
-               *  Therefore, we call reorder after every add/update.
-               */
-              if (old.compatible(nw)) {
-                log("reusing deactivated " + old.path)
-                // update everything but components and children
-                old.merge(nw)
-                var hasChanged = false // will be true if a component changed
-                var deletedKeys = old.getComponents.map(_.key).toSet // will contain the list of no-longer-present components
-                // update/add components
-                nw.getComponents.foreach {case DeclarationComponent(comp, cont) =>
-                  deletedKeys -= comp
-                  old.getComponent(comp).foreach {oldCont =>
-                    val ch = oldCont.update(cont)
-                    if (ch) {
-                       log(comp.toString + " changed or added")
-                       hasChanged = true
-                    }
-                  }
-                }
-                // delete components
-                if (deletedKeys.nonEmpty)
+      localLookup.getO(nw.path) match {
+        case Some(old) if InactiveElement.is(old) =>
+          /* optimization for change management
+           * If an inactive element with the same path already exists, we try to reuse it.
+           * That way, already-performed computations and checks do not have to be redone;
+           *  this applies in particular to object-level parsing and checking.
+           *  (Incidentally, Java pointers to the elements stay valid.)
+           * Reuse is only possible if the elements are compatible;
+           *  intuitively, that means they have to agree in all fields except possibly for components and children.
+           * In that case, they new components replace the old ones (if different);
+           *   and the new child declarations are recursively added or merged into the old ones later on.
+           * Otherwise, the new element is added as usual.
+           * When adding elements to Body, the order is irrelevant because the children are stored as a set;
+           *  but when adding to a Document (including Body.asDocument), the order matters.
+           *  Therefore, we call reorder after every add/update.
+           */
+          if (old.compatible(nw)) {
+            log("reusing deactivated " + old.path)
+            // update everything but components and children
+            old.merge(nw)
+            var hasChanged = false // will be true if a component changed
+            var deletedKeys = old.getComponents.map(_.key).toSet // will contain the list of no-longer-present components
+            // update/add components
+            nw.getComponents.foreach { case DeclarationComponent(comp, cont) =>
+              deletedKeys -= comp
+              old.getComponent(comp).foreach { oldCont =>
+                val ch = oldCont.update(cont)
+                if (ch) {
+                  log(comp.toString + " changed or added")
                   hasChanged = true
-                deletedKeys foreach {comp =>
-                  old.getComponent(comp).foreach {
-                    log(comp.toString + " deleted")
-                    _.delete
-                  }
                 }
-                // activate the old one
-                InactiveElement.erase(old)
-                // notify listeners if a component changed
-                if (hasChanged)
-                   notifyListeners.onUpdate(old, nw)
-              } else {
-                // delete the deactivated old one, and add the new one
-                log("overwriting deactivated " + old.path)
-                memory.content.update(nw)
-                //if (old.getOrigin != DefaultAssignment) notifyListeners.onDelete(old) // an old hack that should not be necessary anymore
-                notifyListeners.onUpdate(old, nw)
               }
-              memory.content.reorder(nw.path)
-            //case Some(_) => // in this case, we could already report an error; but the None case reports it anyway
-            case _ =>
-              // the normal case
-              memory.content.add(nw, afterOpt)
-              // load extension providing semantics for a Module
-              nw match {
-                case m: Module =>
-                  if (!extman.get(classOf[Plugin]).exists(_.theory == m.path)) {
-                    getConfig.getEntries(classOf[SemanticsConf]).find(_.theory == m.path).foreach {sc =>
-                      log("loading semantic extension for " + m.path)
-                      extman.addExtension(sc.cls, sc.args)
-                    }
-                  }
-                case _ =>
+            }
+            // delete components
+            if (deletedKeys.nonEmpty)
+              hasChanged = true
+            deletedKeys foreach { comp =>
+              old.getComponent(comp).foreach {
+                log(comp.toString + " deleted")
+                _.delete
               }
-              notifyListeners.onAdd(nw)
+            }
+            // activate the old one
+            InactiveElement.erase(old)
+            // notify listeners if a component changed
+            if (hasChanged)
+              notifyListeners.onUpdate(old, nw)
+          } else {
+            // delete the deactivated old one, and add the new one
+            log("overwriting deactivated " + old.path)
+            memory.content.update(nw)
+            notifyListeners.onUpdate(old, nw)
           }
+          memory.content.reorder(nw.path)
+        case Some(old) =>
+          memory.content.update(nw)
+          notifyListeners.onUpdate(old, nw)
+        case None =>
+          // the normal case
+          memory.content.add(nw, afterOpt)
+          // load extension providing semantics for a Module
+          nw match {
+            case m: Module =>
+              if (!extman.get(classOf[Plugin]).exists(_.theory == m.path)) {
+                getConfig.getEntries(classOf[SemanticsConf]).find(_.theory == m.path).foreach { sc =>
+                  log("loading semantic extension for " + m.path)
+                  extman.addExtension(sc.cls, sc.args)
+                }
+              }
+            case _ =>
+          }
+          notifyListeners.onAdd(nw)
+      }
     }
   }
 

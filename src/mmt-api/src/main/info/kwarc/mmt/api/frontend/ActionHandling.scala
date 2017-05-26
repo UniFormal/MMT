@@ -34,6 +34,9 @@ trait ActionHandling {self: Controller =>
     report.flush
   }
 
+  /** the name of the current action definition (if any) */
+  def currentActionDefinition : Option[String] = state.currentActionDefinition.map(_.name)
+
   /** executes an Action */
   def handle(act: Action, showLog: Boolean = true) {
     implicit val task = act
@@ -202,7 +205,7 @@ trait ActionHandling {self: Controller =>
     OptionDescr("help-command", "", NoArg, "help about the build target"))
   
   /** handles [[MakeAction]] */
-  @deprecated //TODO this is now handled by the :make shell extension; some code may still have to be migrated there
+  @deprecated("now handled by the :make shell extension") // TODO: Migrate remaining code
   def makeAction(key: String, allArgs: List[String]) {
     report.addHandler(ConsoleHandler)
     val optPair = BuildTargetModifier.splitArgs(allArgs, s => logError(s))

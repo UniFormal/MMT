@@ -13,6 +13,8 @@ import scala.xml.Node
   * The structural elements are subdivided according to their dimension: content, presentation, or narration.
   */
 trait StructuralElement extends Content with NamedElement {
+  /** the kind of declaration, e.g., "constant" */
+  val feature: String
   /** the MMT URI of the element */
   def path: ComponentParent
 

@@ -5,7 +5,9 @@ import objects._
 
 class BranchInfo(val history: History, val backtrack: Branchpoint)
 
-/** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
+/** A wrapper around a Judgement to maintain meta-information while a constraint is delayed
+ *  @param incomplete pursuing this constraint is an incomplete reasoning step
+ */
 abstract class DelayedConstraint(val incomplete: Boolean) {
   protected val freeVars: scala.collection.Set[LocalName]
   val branchInfo: BranchInfo
@@ -31,6 +33,7 @@ class DelayedInference(val stack: Stack, val branchInfo: BranchInfo, val tm: Ter
 trait HistoryEntry {
    /** for user-facing rendering */
    def present(implicit cont: Obj => String): String
+   def indentation(level: Int) = if (level == 0) "" else utils.repeatString("-", level-1) + " "
 }
 
 /** a HistoryEntry that consists of a string, meant as a log or error message */
@@ -47,29 +50,40 @@ case class Comment(text: () => String) extends HistoryEntry {
  * 
  * @param the nodes of the branch, from leaf to root
  */
-case class IndentedHistoryEntry(e : HistoryEntry,s : String) extends HistoryEntry {
-   def present(implicit cont: Obj => String): String = s + e.present
+case class IndentedHistoryEntry(e : HistoryEntry, level: Int) extends HistoryEntry {
+   def present(implicit cont: Obj => String): String = indentation(level) + e.present
 }
 class History(var steps: List[HistoryEntry]) {
    /** creates and returns a new branch with a child appended to the leaf */
-   def +(e: HistoryEntry) : History = new History(IndentedHistoryEntry(e,doinc)::steps)
+   def +(e: HistoryEntry) : History = {
+     new History(IndentedHistoryEntry(e,inc)::steps)
+   }
    /** shortcut for adding a Comment leaf */
-   def +(s: => String) : History = this + new Comment(() => doinc + s)
+   def +(s: => String) : History = this + new Comment(() => s)
    /** appends a child to the leaf */
-   def +=(e: HistoryEntry) {steps ::= IndentedHistoryEntry(e,doinc)}
+   def +=(e: HistoryEntry) {steps ::= IndentedHistoryEntry(e,inc)}
+   /** appends another history to the leaf */
+   def +=(h: History) {steps :::= h.steps.map(e => IndentedHistoryEntry(e, inc))}
    /** appends a child to the leaf */
-   def +=(s: => String) {this += Comment(() => doinc + s)}
+   def +=(s: => String) {this += Comment(() => s)}
    /** creates a copy of the history that can be passed when branching */
    def branch = new History(steps)
    /** get the steps */
    def getSteps = steps
 
    private var inc = 0
-   private def doinc : String = if (inc == 0) "" else { (1 to inc).map(_ => "-").mkString("") + " " }
-   def indinc = inc += 1
-   def inddec = inc -=1
+   def indented[A](body: => A) = {
+     inc += 1
+     try {
+       body
+     } finally {
+       inc -=1
+     }
+   }
    
    override def toString = steps.map(_.toString).mkString("\n")
+   
+   
    
    /**
     * A History produced by the ObjectChecker starts with the ValidationUnit, but the error is only encountered along the way.

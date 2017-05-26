@@ -78,7 +78,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
     val document = new Document(docDPath) // phys
     controller.add(document)
 
-    val theory = new DeclaredTheory(ontoDPath, LocalName("_"), Some(OWL2OMS.path ? "OWL2")) //log. base, name, meta //it was OWL2Full
+    val theory = Theory.empty(ontoDPath, LocalName("_"), Some(OWL2OMS.path ? "OWL2")) //log. base, name, meta //it was OWL2Full
     controller.add(theory)
     currThy = theory.path
     controller.add(MRef(docDPath, currThy)) // phys, log

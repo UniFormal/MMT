@@ -3,8 +3,7 @@ package info.kwarc.mmt.api.web
 import info.kwarc.mmt.api._
 import ontology._
 import documents._
-import Server._
-
+import ServerResponse._
 /**
  * serves a tree-based navigation component for an HTML page
  */
@@ -34,46 +33,49 @@ class TreeView extends ServerExtension("tree") {
          }
       }}</root>
    }
-   def apply(path: List[String], query: String, body: Body, session: Session) = {
-       val q = query
-       val node = if (q.startsWith(":root")) {
-         val prefix = utils.stringToList(q, "/").tail
-         archivesIn(prefix)
-       } else {
-         val path = Path.parse(q, controller.getNamespaceMap)
-         val role = controller.depstore.getType(path)
-         path match {
-           case p: DPath =>
-             val doc = controller.getDocument(p)
-             val docitems = doc.getDeclarations.collect {
-                case r: NRef => r.target
-                case doc: Document => doc.path
-             }
-             <root>{ docitems.map { i => item(i, "closed") } }</root>
-           case p: MPath =>
-             val rels: List[(String, RelationExp)] = role match {
-               case Some(ontology.IsTheory) =>
-                 List(("meta for", -HasMeta), ("included into", -Includes),
-                   ("instantiated in", -RelationExp.HasStructureFrom),
-                   ("views out of", -HasDomain * HasType(IsView)), ("views into", -HasCodomain * HasType(IsView)))
-               case Some(IsView) => List(("included into", -Includes), ("domain", +HasDomain), ("codomain", +HasCodomain))
-               case _ => Nil // should be impossible
-             }
-             val results = rels map { case (desc, rel) => (desc, controller.depstore.queryList(path, rel)) }
-             val resultsNonNil = results.filterNot(_._2.isEmpty)
-             <root>{
-               resultsNonNil map {
-                 case (desc, res) =>
-                   <item state="closed">
+  def apply(q : String) = {
+    if (q.startsWith(":root")) {
+      val prefix = utils.stringToList(q, "/").tail
+      archivesIn(prefix)
+    } else {
+      val path = Path.parse(q, controller.getNamespaceMap)
+      val role = controller.depstore.getType(path)
+      path match {
+        case p: DPath =>
+          val doc = controller.getDocument(p)
+          val docitems = doc.getDeclarations.collect {
+            case r: NRef => r.target
+            case doc: Document => doc.path
+          }
+          <root>{ docitems.map { i => item(i, "closed") } }</root>
+        case p: MPath =>
+          val rels: List[(String, RelationExp)] = role match {
+            case Some(ontology.IsTheory) =>
+              List(("meta for", -HasMeta), ("included into", -Includes),
+                ("instantiated in", -RelationExp.HasStructureFrom),
+                ("views out of", -HasDomain * HasType(IsView)), ("views into", -HasCodomain * HasType(IsView)))
+            case Some(IsView) => List(("included into", -Includes), ("domain", +HasDomain), ("codomain", +HasCodomain))
+            case _ => Nil // should be impossible
+          }
+          val results = rels map { case (desc, rel) => (desc, controller.depstore.queryList(path, rel)) }
+          val resultsNonNil = results.filterNot(_._2.isEmpty)
+          <root>{
+            resultsNonNil map {
+              case (desc, res) =>
+                <item state="closed">
                   <content><name class="treerelation">{ desc }</name></content>
                   { res.map(item(_, "closed")) }
                 </item>
-               }
-             }</root>
-           case _ => throw ImplementationError("only children of documents and modules can be taken")
-         }
-       }
-       XmlResponse(node)
+            }
+            }</root>
+        case _ => throw ImplementationError("only children of documents and modules can be taken")
+      }
+    }
+  }
+   def apply(request: ServerRequest): ServerResponse = {
+       val q = request.query
+
+       XmlResponse(apply(q))
    }
 }
 
@@ -81,8 +83,8 @@ class TreeView extends ServerExtension("tree") {
  * serves a bread crumbs-style navigation component for an HTML page
  */
 class BreadcrumbsServer extends ServerExtension("breadcrumbs") {
-   def apply(path: List[String], query: String, body: Body, session: Session) = {
-      val mmtpath = Path.parse(query, controller.getNamespaceMap)
+   def apply(request: ServerRequest): ServerResponse = {
+      val mmtpath = Path.parse(request.query, controller.getNamespaceMap)
       val ancs = mmtpath.ancestors.reverse
       var mpathfound = false
       var spathfound = false
@@ -103,6 +105,6 @@ class BreadcrumbsServer extends ServerExtension("breadcrumbs") {
             }
          }
       }
-      Server.XmlResponse(res)
+     XmlResponse(res)
    }
 }

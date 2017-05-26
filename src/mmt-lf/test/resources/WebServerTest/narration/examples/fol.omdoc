@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<omdoc base="http://docs.omdoc.org/test/examples/fol.mmt">
-  <mref target="http://cds.omdoc.org/examples?FOL"/>
-  <mref target="http://cds.omdoc.org/examples?FOLNatDed"/>
-  <mref target="http://cds.omdoc.org/examples?FOLEQ"/>
-  <mref target="http://cds.omdoc.org/examples?FOLEQNatDed"/>
-</omdoc>

@@ -11,4 +11,4 @@ import Inhabitation._
 /**
  * P:!A, Q:!A |- P = Q
  */
-object ProofIrrelevance extends TermIrrelevanceRule(List(Apply.path), Inh.path)
+object ProofIrrelevance extends SimpleIrrelevanceRule(Inh.path) //TermIrrelevanceRule(List(Apply.path), Inh.path)

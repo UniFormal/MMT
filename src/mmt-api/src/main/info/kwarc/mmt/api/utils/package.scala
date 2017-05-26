@@ -15,6 +15,19 @@ package object utils {
       case l => l
    }
    
+   /** string index modulo string length */
+   def moduloLength(s:String, i: Int) = {
+     val m = i % s.length
+     // fix falsely negative results
+     if (m >= 0) i else i+s.length
+   }
+   /** substring of a string given by begin and end, negative indices allowed */
+   def substringFromTo(s: String, from: Int, to: Int) = {
+     s.substring(moduloLength(s,from), moduloLength(s,to))
+   }
+   /** substring of a string given by begin and length, negative index allowed */
+   def substringFrom(s: String, from: Int, length: Int) = substringFromTo(s, from, from+length)
+   
    /** splits a string at whitespace, quoted segments may contain whitespace, \" for quote, ignores leading/trailing whitespace */
    def splitAtWhitespace(s: String): List[String] = {
       var segments : List[String] = Nil
@@ -79,4 +92,10 @@ package object utils {
 
    /** slurps an entire stream into a string */
    def readFullStream(is: java.io.InputStream) = scala.io.Source.fromInputStream(is, "UTF-8").mkString
+   
+   /** a cast function that allows only casting into a subtype and returns None if the cast fails */  
+   def downcast[A, B<:A](cls: Class[B])(a: A): Option[B] = a match {
+     case b: B@unchecked if cls.isInstance(b) => Some(b)
+     case _ => None
+   }
 }

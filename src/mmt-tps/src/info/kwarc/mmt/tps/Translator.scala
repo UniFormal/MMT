@@ -77,7 +77,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
    def doModule(d:DPath)(m: info.kwarc.mmt.tps.syntax.Module): modules.Module = m match {
       case t: theory =>
          val cont = Nil // (t.theory_formals map doFormalPars) collect {case Some(v) => v}
-      implicit val th = new DeclaredTheory(path,doName(t.id),Some(TPSTheory.thpath),ContextContainer(cont))
+      implicit val th = new DeclaredTheory(path,doName(t.id),Some(TPSTheory.thpath),ContextContainer(cont), Theory.noBase)
          // TODO: assuming, exporting_, possibly named stuff?
          // TODO theory context
          controller add th
@@ -147,11 +147,11 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             case syntax.OMV(name) =>
                val realname = doName(name)
                // boundvars::=realname
-               VarDecl(realname,None,None,None)
+               VarDecl(realname)
             case syntax.OMATTR(atp,v) =>
                val realname = doName(v.name)
                // boundvars::=realname
-               VarDecl(realname,Some(Apply(TPSTheory.tm.term,doObject(atp._par))),None,None)
+               VarDecl(realname, Apply(TPSTheory.tm.term,doObject(atp._par)))
          })
          Apply(doObject(s),Lambda(con,doObject(pars)))
          /*

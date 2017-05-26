@@ -171,7 +171,7 @@ object OMDoc {
     case "OME" => //OME(args) -> OMA(Informal.error -> args)
       val pre = OMS(Informal.constant("error")).toNode
       val newChild = node.child.map(n => rewriteCMP(n, tsref))
-      new Elem(node.prefix, "OMA", node.attributes, node.scope, (pre +: newChild) : _*)
+      new Elem(node.prefix, "OMA", node.attributes, node.scope, false, (pre +: newChild) : _*)
     case "OMR" =>
       val baseO =  xml.attr(node, "base") match {
         case "" => None

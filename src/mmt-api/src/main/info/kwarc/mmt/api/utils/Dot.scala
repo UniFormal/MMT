@@ -2,18 +2,22 @@ package info.kwarc.mmt.api.utils
 import info.kwarc.mmt.api._
 
 // note graphviz does not like some characters (including -) in the tooltip attributes, which we use for classes
-
+sealed trait DotObject
 /** a node to be used in a [[DotGraph]] */
-trait DotNode {
+trait DotNode extends DotObject {
   def id: Path
   def label : String
   /** must be alphanumeric, space-separeated */
   def cls: String
-  def toJSON : JSON = JSONObject(("id",JSONString(id.toString)),("label",JSONString(label)))
+  def toJSON : JSONObject = {
+    val ls = ("id",JSONString(id.toString)) :: ("label",JSONString(label)) :: ("style",JSONString(cls)) ::
+      ("url",JSONString("/?" + id)) :: Nil
+    JSONObject(ls:_*)
+  }
 }
 
 /** a node to be used in a [[DotGraph]] */
-trait DotEdge {
+trait DotEdge extends DotObject {
   def from: DotNode
   def to: DotNode
   def id: Option[Path]
@@ -21,14 +25,18 @@ trait DotEdge {
   /** must be alphanumeric, space-separeated */
   def cls: String
   def weight = 1
-  def toJSON : JSON = JSONObject(
-    ("from",JSONString(from.id.toString)),
-    ("to",JSONString(to.id.toString)),
-    ("weight",JSONInt(weight)),
-    ("label",JSONString(label.getOrElse(""))),
-    ("id",JSONString(id.map(_.toString).getOrElse(""))),
-    ("arrows",JSONString("to"))
-  )
+  def toJSON : JSONObject = {
+    val dones = List("graphinclude","graphview","graphstructure","graphmeta","alignment")
+    if (!dones.contains(cls)) println(cls)
+    val ls = ("from",JSONString(from.id.toString)) ::
+      ("to",JSONString(to.id.toString)) ::
+      ("weight",JSONInt(weight)) ::
+      ("label",JSONString(label.getOrElse(""))) ::
+      ("id",JSONString(id.map(_.toString).getOrElse(""))) ::
+      ("style",JSONString(cls)) ::
+      {if (id.isDefined) ("url",JSONString("/?" + id.get)) :: Nil else Nil}
+    JSONObject(ls:_*)
+  }
   // TODO Stuff about different arrow types
 }
 
@@ -39,8 +47,8 @@ trait DotGraph {
    def externalNodes: Option[Iterable[DotNode]]
    def edges: Iterable[DotEdge]
 
-  def JSONNodes : JSONArray = JSONArray(nodes.map(_.toJSON).toSeq:_*)
-  def JSONEdges : JSONArray = JSONArray(edges.map(_.toJSON).toSeq:_*)
+  def JSONNodes : Iterable[JSONObject] = nodes.map(_.toJSON)
+  def JSONEdges : Iterable[JSONObject] = edges.map(_.toJSON)
 }
 
 /** thrown by [[DotToSVG]] */
@@ -116,7 +124,7 @@ class DotToSVG(dotPath: File) {
     }
 
     /**
-     * @param the graph to layout
+     * @param dg the graph to layout
      * @return the svg graph returned by dot
      */ 
     def apply(dg: DotGraph): String = {

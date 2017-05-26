@@ -22,9 +22,9 @@ object Index {
 
 object SeqMap {
 	def apply (seq : Term, index : LocalName, to : Term) : Term = 
-	  OMBIND(OMA(OMS(LFS.seqmap),List(to)),Context(VarDecl(index,None,None,None)),seq)
+	  OMBIND(OMA(OMS(LFS.seqmap),List(to)),Context(VarDecl(index,None,None,None,None)),seq)
 	def unapply(t : Term) : Option[(Term,LocalName,Term)] = t match {
-		case OMBIND(OMA(OMS(LFS.seqmap),List(to)),Context(VarDecl(index,_,_,_)),seq) => Some((seq,index,to))
+		case OMBIND(OMA(OMS(LFS.seqmap),List(to)),Context(VarDecl(index,_,_,_,_)),seq) => Some((seq,index,to))
 		case _ => None
 	}
 }
@@ -149,26 +149,26 @@ object SeqNormalize {
     cont match {
       case _ if cont.nonEmpty =>
         val con = cont.init
-        val VarDecl(x,tpO,dfO,nt) = cont.last
+        val VarDecl(x,None,tpO,dfO,nt) = cont.last
         val (conN, sub) = normalize(con)
         val tpN = tpO map {tp => normalize(tp ^ sub)}
         val dfN = dfO map {df => normalize(df ^ sub)}                
         val (vds,t) = (tpN,dfN) match {
           case (Some(Sequence(tps)),None) => 
             val lpair = tps.zipWithIndex map {
-              case (tp,i) => (VarDecl(x / i.toString,Some(tp),None,None),OMV(x / i.toString))
+              case (tp,i) => (VarDecl(x / i.toString,None,Some(tp),None,None),OMV(x / i.toString))
             }
             val (vds,vs) = lpair.unzip
             (vds,Sequence(vs :_*))          
           case (None,Some(Sequence(dfs))) => 
             val lpair = dfs.zipWithIndex map {
-              case (df,i) => (VarDecl(x / i.toString,None,Some(df),None),OMV(x / i.toString))
+              case (df,i) => (VarDecl(x / i.toString,None,None,Some(df),None),OMV(x / i.toString))
             }
             val (vds,vs) = lpair.unzip
             (vds,Sequence(vs :_*))
-          case (None,None) => (List(VarDecl(x,None,None,None)),OMV(x))
-          case (Some(Sequence(tps)),Some(Sequence(dfs))) => (List(VarDecl(x,tpN,dfN,None)),OMV(x)) //TODO Fix this case.
-          case (_,_) => (List(VarDecl(x,tpN,dfN,nt)),OMV(x))
+          case (None,None) => (List(VarDecl(x,None,None,None,None)),OMV(x))
+          case (Some(Sequence(tps)),Some(Sequence(dfs))) => (List(VarDecl(x,None,tpN,dfN,None)),OMV(x)) //TODO Fix this case.
+          case (_,_) => (List(VarDecl(x,None,tpN,dfN,nt)),OMV(x))
         }        
         (conN ++ vds, sub ++ OMV(x) / t)
       case Context() => (Context(),Substitution())

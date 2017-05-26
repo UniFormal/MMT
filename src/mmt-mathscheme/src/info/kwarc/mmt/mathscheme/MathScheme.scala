@@ -64,12 +64,12 @@ class Plugin extends frontend.Plugin {
    override def start(args: List[String]) {
       val em = controller.extman
       // content enhancers
-      em.addExtension(new Extends)
-      em.addExtension(new Renaming)
-      em.addExtension(new Combine)
+      // em.addExtension(new Extends)
+      // em.addExtension(new Renaming)
+      // em.addExtension(new Combine)
    }
 }
-
+/*
 class Extends extends StructuralFeature("extends") {
    def getHeaderNotation: List[Marker] = List(SimpArg(1))
 
@@ -98,7 +98,6 @@ class Extends extends StructuralFeature("extends") {
                   case Some(_) => ???
                   case None => None
                }
-
          }
       }
 
@@ -108,7 +107,7 @@ class Extends extends StructuralFeature("extends") {
 class Renaming extends StructuralFeature("RenamingOf") {
    def getHeaderNotation: List[Marker] = List(SimpArg(1))
 
-   //override val bodyDelim: String = "by"
+   override val bodyDelim: String = "by"
 
    private def getDom(t : TermContainer) = t.get.get match {
       case OMMOD(p) => p
@@ -195,11 +194,7 @@ class Combine extends StructuralFeature("combine") {
          case OMA(OMMOD(`mpath`), args @ List(OMMOD(a),OMMOD(b))) =>
             val tp = OMA(OMMOD(mpath), args)
             (LocalName("Combine_" + a.name + "_" + b.name), tp)
-         case _ =>
-          println(header)
-          println(header.getClass)
-          println(header.head)
-          ???
+         case _ => ???
       }
    }
 
@@ -224,3 +219,4 @@ class Combine extends StructuralFeature("combine") {
    }
 
 }
+*/

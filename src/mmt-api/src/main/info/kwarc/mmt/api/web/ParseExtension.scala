@@ -3,12 +3,11 @@ package info.kwarc.mmt.api.web
 import info.kwarc.mmt.api._
 import utils._
 import parser._
-
-import Server._
+import ServerResponse._
 
 class ParseServer extends ServerExtension(":parse") {
-    def apply(path: List[String], query: String, body: Body, session: Session) = {
-      val wq = WebQuery.parse(query)
+    def apply(request: ServerRequest): ServerResponse = {
+      val wq = request.parsedQuery
       val text = wq.string("text", throw LocalError("found no text to parse"))
       val save = wq.boolean("save", false) //if save parameter is "true" then save otherwise don't
       val format = wq.string("format", "elf")
@@ -33,11 +32,11 @@ class ParseServer extends ServerExtension(":parse") {
                 } else {
                   mod
                 }
-                val presenter = new info.kwarc.mmt.api.presentation.HTMLExporter() 
+                val presenter = new info.kwarc.mmt.api.presentation.HTMLExporter()
                 presenter(module)(rb)
                 val thyString = rb.get
                 var response: List[(String,JSON)] = Nil
-                response ::= "success" -> JSONBoolean(true)                                      
+                response ::= "success" -> JSONBoolean(true)
                 val sdiff = controller.detectChanges(List(mod))
                 save match {
                   case false => //just detecting refinements
@@ -45,27 +44,27 @@ class ParseServer extends ServerExtension(":parse") {
                     response ::= "info" -> JSONArray(refs.map(JSONString(_)):_*)
                     response ::= "pres" -> JSONString(thyString)
                   case true => //updating and returning list of done updates
-                    val pchanges = stringToList(wq.string("pchanges"), "\n")       
+                    val pchanges = stringToList(wq.string("pchanges"), "\n")
                     val boxedPaths = controller.update(sdiff, pchanges)
 
                     def invPaths(p : Path, parents : Set[Path] = Nil.toSet) : Set[Path] = {
-                       println("calling for path " + p + " with parents " + parents.mkString(", "))  
+                       println("calling for path " + p + " with parents " + parents.mkString(", "))
                        p match {
-                         case d : DPath => 
+                         case d : DPath =>
                            controller.getDocument(d).getDeclarations.flatMap {
                               case r: documents.NRef => invPaths(r.target, parents + d)
                               case doc: documents.Document => invPaths(doc.path, parents + d)
                               case _ => Nil
                            }.toSet
-                         case m : MPath => 
+                         case m : MPath =>
                            val affected = boxedPaths exists {cp => cp.parent match {
                              case gn : GlobalName => gn.module == m
-                             case mp : MPath => mp == p 
+                             case mp : MPath => mp == p
                              case _ => false
                            }}
                            if (affected)
                              parents + p
-                           else 
+                           else
                              Nil.toSet
                          case _ => Nil.toSet
                        }
@@ -73,14 +72,14 @@ class ParseServer extends ServerExtension(":parse") {
                     response ::= "pres" -> JSONArray(invPaths(controller.getBase).toList.map(x => JSONString(x.toString)) :_*)
                 }
                 JsonResponse(JSONObject(response :_*))
-            case l => //parsing failed -> returning errors 
+            case l => //parsing failed -> returning errors
               var response: List[(String, JSON)] = Nil
               response ::= "success" -> JSONBoolean(false)
               response ::= "info" -> JSONArray()
               response ::= "pres" -> JSONString(l.map(e => (<p>{e.getStackTrace().toString}</p>).toString).mkString(""))
               JsonResponse(JSONObject(response :_*))
           }
-        case _ => throw LocalError(s"invalid theory name in query : {$query}")
+        case _ => throw LocalError(s"invalid theory name in query : {$request.query}")
       }
     }
 }

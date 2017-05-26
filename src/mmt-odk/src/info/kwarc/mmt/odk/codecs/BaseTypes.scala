@@ -1,13 +1,14 @@
 package info.kwarc.mmt.odk.codecs
 
-import info.kwarc.mmt.api.objects.{OMS, Term}
+import info.kwarc.mmt.api.objects.{OMLIT, OMS, Term, UnknownOMLIT}
+import info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api.uom.{RealizedType, StandardInt, StandardNat, StandardString}
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.valuebases._
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import info.kwarc.mmt.odk._
 
-object TMInt extends AtomicCodec[BigInt,JSON](Codecs.standardInt, Math.tm(Math.int), StandardInt) {
+object TMInt extends AtomicCodec[BigInt,JSON](Codecs.standardInt, OMS(Math.int), StandardInt) {
   def encodeRep(i: BigInt): JSON = {
     if (i.isValidInt)
       JSONInt(i.toInt)
@@ -21,7 +22,7 @@ object TMInt extends AtomicCodec[BigInt,JSON](Codecs.standardInt, Math.tm(Math.i
   }
 }
 
-object TMNat extends AtomicCodec[BigInt,JSON](Codecs.standardNat, Math.tm(Math.nat), StandardNat) {
+object TMNat extends AtomicCodec[BigInt,JSON](Codecs.standardNat, OMS(Math.nat), StandardNat) {
   def encodeRep(i: BigInt): JSON = {
     require(i>=0)
     if (i.isValidInt)
@@ -36,7 +37,7 @@ object TMNat extends AtomicCodec[BigInt,JSON](Codecs.standardNat, Math.tm(Math.n
   }
 }
 
-object TMPos extends AtomicCodec[BigInt,JSON](Codecs.standardPos, Math.tm(Math.pos), StandardNat) {
+object TMPos extends AtomicCodec[BigInt,JSON](Codecs.standardPos, OMS(Math.pos), StandardNat) {
   def encodeRep(i: BigInt): JSON = {
     require(i>0)
     if (i.isValidInt)
@@ -51,7 +52,7 @@ object TMPos extends AtomicCodec[BigInt,JSON](Codecs.standardPos, Math.tm(Math.p
   }
 }
 
-object TMString extends AtomicCodec[String,JSON](Codecs.standardString, Math.tm(Math.string), StandardString) {
+object TMString extends AtomicCodec[String,JSON](Codecs.standardString, OMS(Math.string), StandardString) {
   def encodeRep(s: String) = JSONString(s)
   def decodeRep(j: JSON) = j match {
     case JSONString(s) => s
@@ -59,25 +60,31 @@ object TMString extends AtomicCodec[String,JSON](Codecs.standardString, Math.tm(
   }
 }
 
-object BoolAsInt extends Codec[JSON](OMS(Codecs.boolAsInt), Math.tm(Math.bool)) {
+object BoolAsInt extends Codec[JSON](OMS(Codecs.boolAsInt), OMS(Math.bool)) {
   def encode(t: Term) = t match {
-    case OMS(Math.tt) => JSONInt(1)
-    case OMS(Math.ff) => JSONInt(0)
+    // case OMS(Math.tt) => JSONInt(1)
+    // case OMS(Math.ff) => JSONInt(0)
+    case Math.tt => JSONInt(1)
+    case UnknownOMLIT("true",OMS(Math.bool)) => JSONInt(1)
+    case Math.ff => JSONInt(0)
+    case UnknownOMLIT("false",OMS(Math.bool)) => JSONInt(0)
   }
   def decode(j: JSON) = j match {
-    case JSONInt(1) => OMS(Math.tt)
-    case JSONInt(0) => OMS(Math.ff)
+    case JSONInt(1) => Math.tt
+    case JSONInt(0) => Math.ff
     case _ => throw CodecNotApplicable
   }
 }
 
-object StandardBool extends Codec[JSON](OMS(Codecs.standardBool), Math.tm(Math.bool)) {
+object StandardBool extends Codec[JSON](OMS(Codecs.standardBool), OMS(Math.bool)) {
   def encode(t: Term) = t match {
-    case OMS(Math.tt) => JSONBoolean(true)
-    case OMS(Math.ff) => JSONBoolean(false)
+    case Math.tt => JSONBoolean(true)
+    case Math.ff => JSONBoolean(false)
+    case UnknownOMLIT("true",OMS(Math.bool)) => JSONBoolean(true)
+    case UnknownOMLIT("false",OMS(Math.bool)) => JSONBoolean(false)
   }
   def decode(j: JSON) = j match {
-    case JSONBoolean(b) => if (b) OMS(Math.tt) else OMS(Math.ff)
+    case JSONBoolean(b) => if (b) Math.tt else Math.ff
     case _ => throw CodecNotApplicable
   }
 }

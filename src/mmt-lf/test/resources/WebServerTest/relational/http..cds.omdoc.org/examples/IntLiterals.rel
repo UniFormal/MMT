@@ -1,7 +1,0 @@
-theory http://cds.omdoc.org/examples?IntLiterals
-HasMeta http://cds.omdoc.org/examples?IntLiterals http://cds.omdoc.org/urtheories?LF
-Includes http://cds.omdoc.org/examples?IntLiterals http://cds.omdoc.org/examples?IntRules
-Includes http://cds.omdoc.org/examples?IntLiterals http://real.omdoc.org/?Bool
-Includes http://cds.omdoc.org/examples?IntLiterals http://real.omdoc.org/?StandardInt
-Declares http://cds.omdoc.org/examples?IntLiterals http://cds.omdoc.org/examples?IntLiterals?test
-constant http://cds.omdoc.org/examples?IntLiterals?test

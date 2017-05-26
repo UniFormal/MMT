@@ -13,9 +13,6 @@ object Common {
     *  in plain LF, this is only possible if U=type, i.e., if a:type
     *  other frameworks may want to reuse the LF typing rules with more options for U
     */
-   // TODO this thing explicitely excludes anything that is not a type, but is used by rules
-    // TODO that are a part of PLF!
-
    def isTypeLike(solver: Solver, a: Term)(implicit stack: Stack, history: History) = {
      val h = history + "checking the size of the type of the bound variable"
      val kind = OMS(Typed.kind)
@@ -52,7 +49,7 @@ object Common {
            val mSol = Pi(mV.name, ApplyGeneral(mD, args), ApplyGeneral(mC, args ::: List(mV)))
            // if we have not done the variable transformation before, add the new unknowns
            if (! solver.getPartialSolution.isDeclared(mD.name)) {
-              val newVars = Context(VarDecl(mD.name, None, None, None), VarDecl(mC.name, None, None, None))
+              val newVars = Context(VarDecl(mD.name), VarDecl(mC.name))
               solver.addUnknowns(newVars, Some(m))
            }
            history += ("trying to solve "+m+" as "+solver.presentObj(mSol))
@@ -183,7 +180,8 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
                 iterate(fT, args)
               case None =>
                 history += "failed"
-                args.foreach {t => solver.inferType(t)(stack, history.branch)} // inference of the argument may solve some variables
+                //TODO commented out because it looks redundant, check if it's ever helpful
+                //args.foreach {t => solver.inferType(t)(stack, history.branch)} // inference of the argument may solve some variables
                 None
             }
          case _ =>
@@ -445,8 +443,8 @@ object Solve extends SolutionRule(Apply.path) {
              if (j.tm2.freeVars.exists(dropped.filterNot(_ == x) contains _))
                 return None
              // get the type of x and abstract over it
-             j.stack.context.variables(i) match {
-                case VarDecl(_, Some(a), _, _) => 
+             j.stack.context.variables(i).tp match {
+                case Some(a) => 
                    val newStack = j.stack.copy(context = newCon)
                    Some((Equality(newStack, t, Lambda(x, a, j.tm2), j.tpOpt map {tp => Pi(x,a,tp)}), "binding x"))
                 case _ => None
@@ -484,8 +482,8 @@ object SolveType extends TypeSolutionRule(Apply.path) {
              if (tp.freeVars.exists(dropped.filterNot(_ == x) contains _))
                 return false
              // get the type of x and abstract over it
-             stack.context.variables(i) match {
-                case VarDecl(_, Some(a), _, _) => 
+             stack.context.variables(i).tp match {
+                case Some(a) => 
                    val newStack = stack.copy(context = newCon)
                    solver.solveTyping(t, Pi(x, a, tp))(newStack, history + ("solving by binding " + x))
                 case _ => false

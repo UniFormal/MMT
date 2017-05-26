@@ -36,7 +36,11 @@ class XMLReader(controller: Controller) extends Logger {
    }
    private def addModule(m: Module, md: Option[MetaData], docOpt: Option[Document])(implicit cont: StructuralElement => Unit) {
       add(m, md)
-      docOpt foreach (d => add(new MRef(d.path, LocalName(m.path), m.path)))
+      docOpt foreach {d =>
+        val mref = new MRef(d.path, LocalName(m.path), m.path)
+        mref.setOrigin(GeneratedMRef)
+        add(mref)
+      }
    }
    
    /**
@@ -120,30 +124,23 @@ class XMLReader(controller: Controller) extends Logger {
            val namespace = Path.parseD(xml.attr(m,"base"), nsMap)
            val name = LocalName.parse(xml.attr(m,"name"), nsMap(namespace))
            xml.trimOneLevel(m) match {
-	         case <theory>{seq @ _*}</theory> =>
+	         case <theory>{_*}</theory> =>
 		         log("theory " + name + " found")
 		         val tpath = namespace ? name
-		         seq match {
-                case <definition>
-                  {d}
-                  </definition> =>
-                   val df = Obj.parseTerm(d, nsMap(tpath))
-                   val t = DefinedTheory(namespace, name, df)
-                   addModule(t, md, docOpt)
-                case symbols =>
-                   val meta = xml.attr(m, "meta") match {
-                      case "" => None
-                      case mt =>
-                         log("meta-theory " + mt + " found")
-                         Some(Path.parseM(mt, nsMap(namespace)))
-                   }
-                   val t = new DeclaredTheory(namespace, name, meta)
-                   addModule(t, md, docOpt)
-                   logGroup {
-                      symbols.foreach { d =>
-                         readIn(nsMap, t, d)
-                      }
-                   }
+             val meta = xml.attr(m, "meta") match {
+                case "" => None
+                case mt =>
+                   log("meta-theory " + mt + " found")
+                   Some(Path.parseM(mt, nsMap(namespace)))
+             }
+		         // parameters and definition are parsed later by readIn (necessary to allow for streaming)
+             val bodyNodes = m.child
+             val t = Theory.empty(namespace, name, meta)
+             addModule(t, md, docOpt)
+             logGroup {
+                bodyNodes.foreach { d =>
+                   readIn(nsMap, t, d)
+                }
              }
 	         case <view>{_*}</view> =>
 	            log("view " + name + " found")
@@ -268,23 +265,37 @@ class XMLReader(controller: Controller) extends Logger {
          case <theory>{body @_*}</theory> =>
             val parent = home.parent
             val tname = home.name / name
-            body.map(xml.trimOneLevel) match {
-               case <definition>{d}</definition> =>
+            val meta = xml.attr(symbol, "meta") match {
+               case "" => None
+               case mt =>
+                  log("meta-theory " + mt + " found")
+                  Some(Path.parseM(mt, nsMap))
+            }
+            val t = Theory.empty(parent, tname, meta) //definition and parameters are parsed by readIn
+            addDeclaration(new NestedModule(OMMOD(home), name, t))
+            body.foreach {n => 
+               logGroup {
+                  readIn(nsMap, t, n)
+               }
+            }
+         case m @ <view>{_*}</view> =>
+            val parent = home.parent
+            val vname = home.name / name
+            log("view " + name + " found")
+            val (m2, from) = ReadXML.getTermFromAttributeOrChild(m, "from", nsMap)
+            val (m3, to) = ReadXML.getTermFromAttributeOrChild(m2, "to", nsMap)
+            val isImplicit = parseImplicit(m)
+            m3.child match {
+               case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, nsMap)
-                  val t = DefinedTheory(parent, tname, df)
-                  addDeclaration(new NestedModule(OMMOD(home), name, t))
-               case symbols =>
-                  val meta = xml.attr(symbol, "meta") match {
-                     case "" => None
-                     case mt =>
-                        log("meta-theory " + mt + " found")
-                        Some(Path.parseM(mt, nsMap))
-                  }
-                  val t = new DeclaredTheory(parent, tname, meta)
-                  addDeclaration(new NestedModule(OMMOD(home), name, t))
-                  symbols.foreach {d => 
-                     logGroup {
-                        readIn(nsMap, t, d)
+                  val v = DefinedView(parent, vname, from, to, df, isImplicit)
+                  addDeclaration(new NestedModule(OMMOD(home),name,v))
+               case assignments =>
+                  val v = new DeclaredView(parent, name, from, to, isImplicit) // TODO add metamorph?
+                  addDeclaration(new NestedModule(OMMOD(home), name, v))
+                  logGroup {
+                     assignments.foreach {d =>
+                        readIn(nsMap, v, d)
                      }
                   }
             }
@@ -301,12 +312,6 @@ class XMLReader(controller: Controller) extends Logger {
                 throw ParseError("error while reading rule " + name + ": ").setCausedBy(b)
             }
             
-         case <parameters>{parN}</parameters> =>
-            val par = Context.parse(parN, nsMap)
-            body match {
-               case d: DeclaredTheory => d.paramC.set(par)
-               case _ => throw ParseError("parameters outside declared theory")
-            }
          case ddN @ <derived>{body @_*}</derived> =>
             val feature = xml.attr(symbol, "feature")
             val (body2,tp) = ReadXML.getTermFromAttributeOrChild(ddN, "type", nsMap)
@@ -323,6 +328,21 @@ class XMLReader(controller: Controller) extends Logger {
                   readInModule(home / name, nsMap, dd.module, d)
                }
             }
+
+         // parameters and definition should be parsed much earlier; but when streaming the XML, they are found only now
+         case <parameters>{parN}</parameters> =>
+            val par = Context.parse(parN, nsMap)
+            body match {
+               case d: DeclaredTheory => d.paramC.set(par)
+               case _ => throw ParseError("parameters outside declared theory")
+            }
+         case <definition>{dfN}</definition> =>
+            val df = Obj.parseTerm(dfN, nsMap)
+            body match {
+               case d: DeclaredTheory => d.dfC.set(df)
+               case _ => throw ParseError("definition outside declared theory")
+            }
+           
          case scala.xml.Comment(_) =>
          case n if Utility.trimProper(n).isEmpty => //whitespace node => nothing to do 
          case _ => throw ParseError("symbol level element expected: " + symbol)
@@ -356,7 +376,7 @@ object ReadXML {
   def makeTermAttributeOrChild(t: Term, key: String): (String,Seq[Node]) = { 
      t match {
         case OMMOD(fromPath) => (fromPath.toPath, Nil)
-        case _ => (null, Elem(null, key, Null, TopScope, t.toNode))
+        case _ => (null, Elem(null, key, Null, TopScope, false, t.toNode))
      }
   }
 }

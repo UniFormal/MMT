@@ -1,157 +1,0 @@
-namespace http://cds.omdoc.org/examples
-
-//   A representation of homotopy type theory (HOTT) in MMT instantiated with LF-modulo.
-     This is a Martin-Löf-style type theory with the univalence axiom.
-     Simplification rules are used to offset artefacts produced by the representation.
-     The representation follows the HOTT book (The Univalent Foundations Program, Institute for Advanced Study, Princeton, April 2013).
-
-theory HOTT : http://cds.omdoc.org/urtheories?LF =
-  // The levels of the universe hierarchy (essentially the natural numbers). 
-  level : type 
-  first : level 
-  next  : level → level 
-  
-  // The syntactic categories: LF-types for the HOTT types and terms at each level. 
-  
-  // tp L represents the types at level L. 
-  tp    : level → type 
-  // univ L is the universe containing the types at level L. 
-  univ  : {L} tp (next L) 
-  // if A:tp L, then tm A represents the terms of type A 
-  tm    : {L} tp L → type  # tm 2 prec -5
-
-  // Equality judgments for types (at the same level) and terms (of the same type).
-     These are registered as equality judgements by "role Eq", which permits registering equality rules later. 
-  
-  tp_equal : {L} tp L → tp L → type                   role Eq
-  equal : {L, A:tp L} tm A → tm A → type  # 3 ≡ 4   role Eq
-
-  // The above encoding is not quite adequate
-     (a) the cumulativity of the type hierarchy is not represented
-     (b) the fact that every type at level L is also a term of type univ L is not captured. 
-  
-  // Up and up take care of (a): they move types and terms up in the hierarchy.  
-  Up      : {L} tp L → tp (next L)  # Up 2
-  up      : {L,A:tp L} tm A → tm (Up A)  # up 3
-
-  // shift and unshift take care of (b): they convert between types and terms. 
-  shift   : {L} tp L → tm (univ L)  # shift 2
-  unshift : {L} tm (univ L) → tp L  # unshift 2
-  
-  // Two equality axioms that make shift and unshift bijections.
-     By registering them as simplification rules, the type checker becomes aware of the bijection. 
-  shift_unshift : {L,A: tp L} tp_equal L (unshift (shift A)) A   role Simplify
-  unshift_shift : {L,A: tm univ L} (shift (unshift A)) ≡ A       role Simplify
-  
-  // The usual rules for equality. Some rules are omitted (congruence and equality of types) 
-  refl  : {L, A:tp L, X:tm A} X ≡ X                              # %%rule 2 1
-  sym   : {L, A:tp L, X:tm A, Y: tm A} X ≡ Y → Y ≡ X             # %%rule 4 1
-  trans : {L, A:tp L, X:tm A, Y: tm A, Z: tm A} X ≡ Y → Y ≡ Z → X ≡ Z   # %%rule 5 2
-
-  // The development of HOTT type theory is now straightforward.
-     The following follows A.2 in the HOTT book.
-     Only the constructors and rules needed to state the univalence axiom are given.
-  
-  Pi     : {L, A:tp L} (tm A → tp L) → tp L                                  # Π 3 
-  lambda : {L, A:tp L, B: tm A → tp L} ({x:tm A} tm (B x)) → tm Π [x] B x    # λ 4 
-  apply  : {L, A:tp L, B: tm A → tp L} tm (Π [x: tm A] B x) → {x} tm (B x)   # 4 @ 5 prec 10 
-  arrow  : {L} tp L → tp L → tp L 
-         = [L,A,B] Π [x: tm A] B   
-         # 2 ⇒ 3 prec 3
-  id     : {L, A: tp L} tm A ⇒ A   
-         = [L,A] λ [x] x  
-         # id 2 prec 10
-  comp   : {L, A: tp L, B: tp L, C: tp L} tm A ⇒ B → tm B ⇒ C → tm A ⇒ C  
-         = [L,A,B,C] [f,g] λ [x:tm A] g @ (f @ x)  
-         # 6 ∘ 5 prec 10
-  // Registering beta as a simplification rule has the effect that computation in HOTT is automated by MMT. 
-  beta   : {L, A: tp L, B: tm A → tp L, F: {x: tm A} tm (B x), X: tm A} (λ F) @ X ≡ (F X) 
-         # %%rule 5    role Simplify
-  eta    : {L, A:tp L, B: tm A → tp L, F: tm (Π [x: tm A] B x)} F ≡ λ [x: tm A] F @ x  
-         # %%rule 4
-         
-  Sigma  : {L, A:tp L} (tm A → tp L) → tp L                                     # Σ 3 
-  pair   : {L, A:tp L, B: tm A → tp L} {x:tm A} tm (B x) → tm Σ [x] B x         # pair 4 5
-  pi1    : {L, A:tp L, B: tm A → tp L} tm (Σ [x: tm A] B x) → tm A              # pi1 4 
-  pi2    : {L, A:tp L, B: tm A → tp L} {u:tm (Σ [x: tm A] B x)} tm (B (pi1 u))  # pi2 4 
-  prod   : {L} tp L → tp L → tp L 
-         = [L,A,B] Σ [x: tm A] B   
-         # 2 × 3 prec 3
-  conv_pair : {L, A: tp L, B: tm A → tp L, u: tm Σ [x] B x} u ≡ pair (pi1 u) (pi2 u) 
-            # %%rule 4
-  // conv_pi1 and conv_pi2 are registered as simplification rules in the same way as beta. 
-  conv_pi1  : {L, A: tp L, B: tm A → tp L, X: tm A, Y: tm (B X)} pi1 (pair L A B X Y) ≡ X  
-            //  We have to give the implicit arguments of pair here to aid type reconstruction. 
-                (A better solution might be Twelf's abstraction behavior that adds the {B} binder.)
-            # %%rule 5   role Simplify 
-  // Note that conv_pi2 only type-checks because conv_pi1 is used as a simplification rule.   
-  conv_pi2  : {L, A: tp L, B: tm A → tp L, X: tm A, Y: tm (B X)} pi2 (pair L A B X Y) ≡ Y  
-            # %%rule 5   role Simplify
-
-  // We omit the type constructors +, empty, unit, and nat. 
-  
-  ident  : {L, A:tp L} tm A → tm A → tp L   # 3 = 4 prec 7
-  idrefl : {L, A:tp L, x:tm A, y: tm A} x ≡ y → tm x = y   # idrefl 5  
-         // The assumption x ≡ y is omitted in the HOTT book - mistake?
-  idelim : {L, A: tp L}
-           {C: {x: tm A, y: tm A, p: tm x = y} tp L}
-           {c: {z: tm A} tm (C z z (idrefl (refl z)))}
-           {a: tm A} {b: tm A} {p: tm a = b}
-           tm (C a b p) 
-         # idelim 3 4 5 6 7 
-  idcomp : {L, A: tp L}
-           {C: {x: tm A, y: tm A, p: tm x = y} tp L} 
-           {c: {z: tm A} tm (C z z (idrefl (refl z)))}
-           {a: tm A}
-           tm (idelim C c a a (idrefl (refl a))) = (c a) 
-
-  // An abbreviation for the identity type of two types (which requires converting the types to terms first). 
-  tident : {L, A:tp L, B: tp L} tp (next L)   
-         = [L,A,B] (shift A) = (shift B) 
-         # 2 == 3 prec 5
-
-  // Now the definitions of homotopy that lead to the univalence axiom. 
-         
-  // Definition 2.4.1 
-  homotopy    : {L, A: tp L, B} tm A ⇒ B → tm A ⇒ B → tp L 
-              = [L,A,B,f,g] Π [x: tm A] f @ x = g @ x  
-              # 4 ∼ 5 prec 5
-              
-  // 2.4.10
-  isequiv     : {L, A: tp L, B: tp L} tm A ⇒ B → tp L 
-              = [L,A,B,f] (Σ [g: tm B ⇒ A] f ∘ g ∼ id B) × (Σ [h: tm B ⇒ A] h ∘ f ∼ id A) 
-              # isequiv 4
-              
-  // 2.4.11
-  equivalence : {L} tp L → tp L → tp L   
-              = [L,A,B] Σ [f: tm A ⇒ B] isequiv f   
-              # 2 ≃ 3 prec 5
-
-  // We will need the reflexivity of homotopy below. 
-  // Note that without beta as a simplification rule, this proof would have to use
-     (trans (trans beta (trans beta beta)) (sym beta))
-     instead of (refl x).
-  ≃_refl_aux  : {L, A: tp L} tm (id A) ∘ (id A) ∼ (id A)  
-              = [L,A] λ [x: tm A] idrefl (refl x)
-  ≃_refl      : {L, A: tp L} tm A ≃ A   
-              = [L,A] pair (id A) (pair  
-                   (pair (id A) (≃_refl_aux L A))
-                   (pair (id A) (≃_refl_aux L A))
-                 )
-
-  // Lemma 2.10.1 
-  // This only type-checks because unshift_shift is used as a simplification rule. 
-  idtoeqv     : {L, A: tp L, B: tp L} tm A == B ⇒ (Up (A ≃ B)) 
-              = [L,A,B] λ [P] idelim
-                  ([a: tm univ L, b: tm univ L, p: tm a = b] Up ((unshift a) ≃ (unshift b)))
-                  ([z: tm univ L] up (≃_refl L (unshift z)))
-                  (shift A) (shift B) P
-                  
-
-  // Axiom 2.10.3 (univalence) 
-  // Intuitively, this says (A == B) ≃ (A ≃ B) 
-  univalence  : {L,A: tp L, B} tm (isequiv (idtoeqv L A B)) 
-  
-  // This is a consequence of univalence; proof to be added. 
-  ≃_cong      : {L, M, P: tp L → tp M, A: tp L, B: tp L} tm (A ≃ B) → tm ((P A) ≃ (P B)) 
-

@@ -13,6 +13,7 @@ object Sage {
   val category = theory ? "category"
   val prop = theory ? "prop"
   val catdoc = docpath / "categories"
+  val clssdoc = docpath / "classes"
   val structure = theory ? "structural"
   def structof(tm : String) = Apply(OMS(theory ? "structureof"),OMS(Sage._base ? "Structures" ? tm))
   def ded(tm : Term) = Apply(OMS(theory ? "ded"),tm)

@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
 import notations._
 import frontend._
+import symbols._
 import objects._
 
 import utils.xml._
@@ -31,7 +32,7 @@ class MathMLPresenter extends NotationBasedPresenter {
          recurse(o)
       }
    }
-
+   
    protected def jobadattribs(implicit pc: PresentationContext) = {
       var ret = List(position -> pc.pos.toString)
       pc.source.foreach {r =>
@@ -43,8 +44,18 @@ class MathMLPresenter extends NotationBasedPresenter {
       ret
    }
    override def doIdentifier(p: ContentPath)(implicit pc : PresentationContext) {
+      val primaryName = controller.getO(p) match {
+         case Some(d: Declaration) =>
+           val (pn,_) = d.primaryNameAndAliases
+           pn
+         case _ => p.name
+      }
       pc.html.mo(attributes = (symref -> p.toPath) :: jobadattribs) {
-        super.doIdentifier(p)
+        val parts = primaryName.simplify.map {
+          case ComplexStep(t) => t.name.toString
+          case SimpleStep(s) => s
+        }
+        pc.html.text(parts.mkString("/"))
       }
    }
    override def doVariable(n: LocalName)(implicit pc : PresentationContext) {
@@ -79,8 +90,10 @@ class MathMLPresenter extends NotationBasedPresenter {
          pc.html.mrow {
             pc.out(mo)
             implicits.foreach {i =>
-               doSpace(1)
-               doImplicit {i()}
+               doImplicit {
+                 doSpace(1)
+                 i()
+               }
             }
          }
       } else

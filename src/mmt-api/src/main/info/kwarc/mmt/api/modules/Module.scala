@@ -12,7 +12,7 @@ import objects._
 abstract class Module(val parent : DPath, val name : LocalName) extends ContentElement {
    def path: MPath = parent ? name
    def toTerm = OMMOD(path)
-   def superModule: Option[MPath] = if (name.length > 1) Some(parent ? name.tail) else None
+   def superModule: Option[MPath] = if (name.length > 1) Some(parent ? name.init) else None
    // sharper type
    def getDeclarations: List[Declaration]
    //def parameters : Context
@@ -23,7 +23,6 @@ abstract class Module(val parent : DPath, val name : LocalName) extends ContentE
  * Module given by a set of statements
  */
 trait DeclaredModule extends Module with Body {
-   /** the meta-theory, domain, and codomain are not part of the term components because it is just a Path */
    def getInnerContext: Context
    def asDocument: documents.Document
    def translate(newNS: DPath, prefix: LocalName, translator: Translator, context : Context): DeclaredModule

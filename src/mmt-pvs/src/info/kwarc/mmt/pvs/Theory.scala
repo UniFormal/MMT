@@ -11,6 +11,7 @@ import objects.Conversions._
 
 object PVSTheory {
    val rootdpath = DPath(URI.http colon "pvs.csl.sri.com")
+   val nasapath = DPath(URI.http colon "shemesh.larc.nasa.gov") / "fm" / "ftp" / "larc" / "PVS-library"
    val thname = "PVS"
    val thpath = rootdpath ? thname//Path.parseM("http://pvs.csl.sri.com/?PVS",NamespaceMap.empty) // rootdpath ? thname
    val preludepath = rootdpath ? "Prelude" //Path.parseM("http://pvs.csl.sri.com/?Prelude",NamespaceMap.empty) //rootdpath ? "Prelude"
@@ -19,6 +20,19 @@ object PVSTheory {
       val path = thpath ? s
       val term = OMS(path)
    }
+
+  object parambind {
+    val path: GlobalName = PVSTheory.rootdpath ? "BoundInclude" ? "parameter_binder"
+    val term = OMS(path)
+    def apply(sym : Term,pars : List[Term]) = sym match {
+      case OMS(s) if pars.nonEmpty => OMA(this.term,OMS(s) :: pars)
+      case _ => sym
+    }
+    def unapply(t : Term) : Option[(GlobalName,List[Term])] = t match {
+      case OMA(this.term,OMS(sym) :: rest) => Some((sym,rest))
+      case _ => None
+    }
+  }
 
    object tp extends sym("tp")
    //object unknown extends sym("unknown_type")
@@ -97,11 +111,15 @@ object PVSTheory {
 */
 
    object pvsapply extends sym("pvsapply") {
-      def apply(f : Term,t:Term,ftp : Term)(state:ImportState) : (Term,Term) = ftp match {
+      def apply(f : Term,t:Term,ftp : Term)(state:TranslationState) : (Term,Term) = ftp match {
          case pvspi(x,tpx,rettp) => (ApplySpine(this.term,tpx,Lambda(x,expr(tpx),rettp),f,t),rettp ^? x/t) //Apply(tpf,t))
          case _ if state != null => (ApplySpine(this.term,state.doUnknown,state.doUnknown,f,t),state.doUnknown)
          case _ => throw new Exception("Unknown types in pvsapply")
       }
+     def apply(f : Term, t: Term,tpA : Term, tpB : Term) =
+       (ApplySpine(this.term,tpA,
+         Lambda(LocalName("I")/"x",expr(tpA),tpB),f,t),tpB)
+
       def unapply(t : Term) : Option[(Term,Term,Term)] = t match {
          case ApplySpine(this.term,List(tpx,Lambda(y,btp,rettp),f,t2)) =>
           Some(f,t2,rettp ^? y/t2)
@@ -127,7 +145,7 @@ object PVSTheory {
          case ApplySpine(this.term,List(boundtp,Lambda(bound,expr(boundtp2),rettp))) =>
             Some(bound,boundtp,rettp)
          case fun_type(a,b) =>
-            val x = Context.pickFresh(t.freeVars.map(VarDecl(_,None,None,None)),LocalName("__"))._1
+            val x = Context.pickFresh(t.freeVars.map(VarDecl(_)),LocalName("__"))._1
             Some((x,a,b))
          case _ => None
       }
@@ -160,7 +178,7 @@ object PVSTheory {
       def unapply(t:Term) : Option[(LocalName,Term,Term)] = t match {
          case ApplySpine(this.term,List(boundtp,Lambda(bound,boundtp2,rettp))) =>
             Some(bound,boundtp,rettp)
-         case tuple_type(l) => Some((Context.pickFresh(t.freeVars.map(VarDecl(_,None,None,None)),LocalName("__"))._1,
+         case tuple_type(l) => Some((Context.pickFresh(t.freeVars.map(VarDecl(_)),LocalName("__"))._1,
            l.head,tuple_type(l.tail)))
          case _ => None
       }
@@ -207,7 +225,7 @@ object PVSTheory {
    */
 
    object expr_as_type extends sym("expr_as_type") {
-      def apply(expr : Term, tp : Term)(state : ImportState) : Term = tp match {
+      def apply(expr : Term, tp : Term)(state : TranslationState) : Term = tp match {
         case pvspi(b,btp,PVSTheory.bool.term) => ApplySpine(this.term,tp,btp,expr)
         case _ =>
           ApplySpine(this.term,tp,state.doUnknown,expr)
@@ -225,7 +243,7 @@ object PVSTheory {
    object selection extends sym("selection") {
       def apply(cons : Term, vars : Context, body : Term, constp : Term) =
          ApplySpine(this.term,constp,cons,if (vars.nonEmpty) OMBIND(new sym("selbind").term,
-            vars.map(v => VarDecl(v.name,v.tp.map(expr(_)),v.df,v.not)),body) else body)
+            vars.map(v => v.copy(tp = v.tp.map(expr(_)))),body) else body)
    }
 
    object pvsmatch extends sym("match") {
@@ -275,7 +293,7 @@ object PVSTheory {
          ApplySpine(this.term,Recexp(nametp.map(t => OML(t._1,Some(tp.term),Some(t._2))):_*))
       def unapply(t:Term) : Option[List[(String,Term)]] = t match {
          case ApplySpine(this.term,List(Recexp(l))) => Some(l.map({
-            case OML(name,Some(tp.term),Some(df)) => (name.toString,df)
+            case OML(name,Some(tp.term),Some(df),_,_) => (name.toString,df)
             case tm @ _ => throw new Exception("Invalid Record type element: " + tm)
          }))
          case _ => None
@@ -284,10 +302,14 @@ object PVSTheory {
 
    object setsub extends sym("setsub") {
       def apply(tp:Term,expr:Term) = ApplySpine(this.term,tp,expr)
+     def unapply(t : Term) : Option[(Term,Term)] = t match {
+       case ApplySpine(this.term,List(tp,expr)) => Some((tp,expr))
+       case _ => None
+     }
    }
 
    object projection extends sym("proj") {
-      def apply(tm:Term,tmtp:Term,i:Int)(state : ImportState) = {
+      def apply(tm:Term,tmtp:Term,i:Int)(state : TranslationState) = {
          val tp = tmtp match {
             case PVSTheory.tuple_type(l) if i<=l.length => l(i-1)
             case _ => state.doUnknown

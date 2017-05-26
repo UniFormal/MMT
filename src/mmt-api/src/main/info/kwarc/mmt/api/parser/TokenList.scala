@@ -129,7 +129,7 @@ object TokenList {
   *
   */
 class TokenList(private var tokens: List[TokenListElem]) {
-  /** should be guaranteed by invariance, but needed for subtle otherwise hard-to-find implementation errors */
+  /** supposed to be guaranteed by invariants, but checked redundantly to detect subtle otherwise hard-to-find implementation errors */
   private def checkIndex(n: Int, msg: String = "") {
     if (n >= tokens.length || n < 0)
       throw ImplementationError("token index " + n + " out of range in token list of length " + tokens.length + " (message: " + msg + "): " + tokens.toString)
@@ -151,29 +151,33 @@ class TokenList(private var tokens: List[TokenListElem]) {
    * @param an the notation to reduce
    * @return the slice reduced into 1 Token
    */
-  def reduce(an: ActiveNotation): (Int, Int) = {
+  def reduce(an: ActiveNotation, rt: ParsingRuleTable, rep: frontend.Report): (Int, Int) = {
     val found = an.getFound
-    var newTokens: List[TokenListElem] = Nil
-    def doFoundArg(fa: FoundArg) {
+    def doFoundArg(fa: FoundArg): UnmatchedList = {
       fa match {
-        case fa :FoundArg =>
-          if (fa.slice.length == 1 && tokens(fa.slice.start).isInstanceOf[MatchedList])
-            newTokens ::= tokens(fa.slice.start)
-          else
-            newTokens ::= new UnmatchedList(new TokenList(fa.slice.toList))
+        case fa: FoundArg =>
+          // fa.slice might be a single token, but that is harmless
+          val ul = new UnmatchedList(new TokenList(fa.slice.toList))
+          ul.scanner = new Scanner(ul.tl, None, rt, rep)
+          ul
       }
     }
+    var newTokens: List[(FoundContent, List[UnmatchedList])] = Nil
     found foreach {
       case _: FoundDelim =>
       case fa: FoundArg =>
-        doFoundArg(fa)
+        newTokens ::= (fa, List(doFoundArg(fa)))
       case fsa : FoundSeqArg =>
-        fsa.args foreach doFoundArg
+        newTokens ::= (fsa, fsa.args map doFoundArg)
       case fv: FoundVar =>
-        fv.getVars foreach {
+        val toks = fv.getVars flatMap {
           case SingleFoundVar(_, _, tpOpt) =>
-            tpOpt foreach doFoundArg
+            tpOpt match {
+              case Some(fa) => List(doFoundArg(fa))
+              case None => Nil
+            }
         }
+        newTokens ::= (fv, toks)
     }
     val (from, to) = an.fromTo
     checkIndex(from, "active notation is " + an.toString)
@@ -257,45 +261,50 @@ case class CFExternalToken(text: String, firstPosition: SourcePosition, term: Te
   def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: ObjectParser): Term = term
 }
 
-/** A MatchedList is a TokenListElem resulting by reducing a sublist using a notation
+/** A MatchedList is a SubTermToken resulting by reducing a sublist using a notation
   *
   * invariant: every FoundArg (including nested ones) found when traversing an.getFound
   * corresponds to one TokenListElem in tokens
   *
   * TokenSlice's in an.getFound are invalid.
   *
-  * @param tokens the TokenListElem's that were reduced, excluding delimiters
+  * @param tokens the TokenListElem's that were reduced (in concrete syntax order, excluding delimiters)
   * @param an the notation used for reduction (which stores the information about how the notation matched the tokens)
   */
-class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation,
+class MatchedList(val tokens: List[(FoundContent,List[UnmatchedList])], val an: ActiveNotation,
                   val firstPosition: SourcePosition, val lastPosition: SourcePosition) extends TokenListElem {
   override def toString: String = if (tokens.isEmpty)
     "{" + an.toShortString + "}"
   else
-    tokens.map(_.toString).mkString("{" + an.toShortString + " ", " ", " " + an.toShortString + "}")
+    tokens.map(_._2.toString).mkString("{" + an.toShortString + " ", " ", " " + an.toShortString + "}")
 
-  /** removes the redundant UnmatchedList wrapper around a single MatchedList in this list */
-  def flatten() {
-    tokens = tokens map {
-      case ul: UnmatchedList if ul.tl.length == 1 && ul.tl(0).isInstanceOf[MatchedList] =>
-        ul.scanner.tl(0)
-      case t => t
-    }
+  private[parser] def addRules(rules : ParsingRuleTable) : Unit = tokens foreach {
+    case (_,ul) => ul.foreach(_.addRules(rules))
   }
 }
 
 /**
- * An UnmatchedList is a TokenListElem resulting by reducing a sublist without using a notation
+ * An UnmatchedList is a SubTermToken resulting by reducing a sublist without using a notation
  *
  * Other notations have determined that this sublist must be parsed into a subtree, but it is
  * not known (yet) which notation should be used.
  *
  * @param tl the TokenList that is to be reduced
+ * @param localNotations notations that should additionally be used for this subterm
  */
 class UnmatchedList(val tl: TokenList) extends TokenListElem {
   val firstPosition = tl(0).firstPosition
   val lastPosition = tl(tl.length - 1).lastPosition
-  var scanner: Scanner = null
+  private[parser] var scanner: Scanner = null
+  private[parser] var localNotations: Option[ParsingRuleTable] = None
+  def addRules(rules : ParsingRuleTable) : Unit = {
+    scanner.addRules(rules)
+    tl.getTokens.foreach {
+      case ul : UnmatchedList => ul.addRules(rules)
+      case ml : MatchedList => ml.addRules(rules)
+      case _ =>
+    }
+  }
 
-  override def toString: String = "{unmatched " + tl.toString + " unmatched}"
+  override def toString: String = if (tl.length == 1) tl(0).toString else "{unmatched " + tl.toString + " unmatched}"
 }

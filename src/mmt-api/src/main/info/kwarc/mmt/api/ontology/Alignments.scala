@@ -127,6 +127,7 @@ case class SimpleAlignment(from: LogicalReference, to: LogicalReference, inverti
   def reverse = {
     val ret = if (invertible) SimpleAlignment(to, from, true) else InformalAlignment(to, from)
     ret.isGenerated = true
+    ret.props = props
     ret
   }
 

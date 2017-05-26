@@ -1,17 +1,0 @@
-namespace http://cds.omdoc.org/examples
-
-theory Int : http://cds.omdoc.org/urtheories?LF =
-  include ?Nat
-  int   : type = nat
-  pred  : nat → nat        # pred 1 prec 20
-  uminus: nat → nat        # - 1 prec 20 
-  minus : nat → nat → nat  # 1 - 2 prec 10 
-
-
-theory IntRules : http://cds.omdoc.org/urtheories?LF =
-  include ?Int 
-  include ?NatRules
-
-  times_mono    : {X:nat,Y:nat,Z:nat} ⊦ O ≤ Z → ⊦ X ≤ Y → ⊦ X * Z ≤ Y * Z
-  times_invmono : {X,Y,Z} ⊦ O ≤ Z → ⊦ X * Z ≤ Y * Z → ⊦ X ≤ Y  
-

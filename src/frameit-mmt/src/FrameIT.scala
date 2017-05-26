@@ -2,7 +2,7 @@ package info.kwarc.mmt.frameit
 
 import info.kwarc.mmt.api._
 import uom._
-import web._
+import web.{Body, _}
 import frontend._
 import info.kwarc.mmt.api.backend.XMLReader
 import info.kwarc.mmt.api.checking._
@@ -13,7 +13,7 @@ import modules._
 
 import scala.collection._
 import scala.collection.immutable._
-import tiscaf._
+
 
 case class FrameitError(text : String) extends Error(text)
 
@@ -71,12 +71,7 @@ class FrameViewer extends Extension {
      case _ => t
    }
    
-   private def pushout(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
-     val vars = con.variables map {
-       case VarDecl(n, tp, df, not) => VarDecl(n, tp.map(pushout), df.map(pushout), not)
-     }
-     Context(vars : _*)
-   }
+   private def pushout(con : Context)(implicit rules : HashMap[Path, Term]) : Context = con map (_ map pushout)
 }
 
 class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask {
@@ -237,21 +232,21 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
 
   implicit val unifun : StructuralElement => Unit = x => controller.add(x)
 
-  def apply(uriComps: List[String], query : String, body : web.Body, session : Session): HLet = uriComps match {
+  def apply(request: ServerRequest): ServerResponse = request.path match {
     case "init" :: rest => try {
       controller.handleLine("build FrameIT mmt-omdoc")
-      Server.TextResponse("Success")
+      ServerResponse.TextResponse("Success")
     } catch {
-      case e : Exception => Server.errorResponse("Error initializing: " + e.getMessage)
+      case e : Exception => ServerResponse.errorResponse("Error initializing: " + e.getMessage, request)
     }
-    case "pushout" :: rest => if (query.trim.startsWith("theory=")) {
+    case "pushout" :: rest => if (request.query.trim.startsWith("theory=")) {
       try {
-        val sol = Path.parse(query.trim.drop(7)) match {
+        val sol = Path.parse(request.query.trim.drop(7)) match {
           case m : MPath => controller.get(m) match {
             case t : DeclaredTheory => t
             case _ => throw FrameitError("Solution theory not a DeclaredTheory")
           }
-          case _ => throw FrameitError(query.trim.drop(7) + " not an MPath")
+          case _ => throw FrameitError(request.query.trim.drop(7) + " not an MPath")
         }
         controller.simplifier(sol)
         try { checker.apply(sol) } catch {case e : Exception =>
@@ -261,14 +256,14 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
           val df = c.df.map(x => simplify(fv.pushout(c.path $ DefComponent, viewpath), view.to.toMPath))
           Constant(c.home,c.name,Nil,tp,df,None)
         }).map(_.toNode)
-        Server.XmlResponse(<theory>{nodes}</theory>)
+        ServerResponse.XmlResponse(<theory>{nodes}</theory>)
       } catch {
-        case e : Exception => Server.errorResponse(e.getMessage)
+        case e : Exception => ServerResponse.errorResponse(e.getMessage, request)
       }
-    } else Server.errorResponse("Malformed query")
+    } else ServerResponse.errorResponse("Malformed query", request)
     case "add" :: rest =>
       try {
-        body.asXML match {
+        request.body.asXML match {
           case <content>{seq @ _*}</content> =>
             val sitth = seq.head
             val viewxml = seq.tail.head
@@ -303,13 +298,13 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
               view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name)
             })
             if(!istotal) throw FrameitError("View not total")
-            Server.TextResponse("Okay")
+            ServerResponse.TextResponse("Okay")
           case _ => throw new FrameitError("Malformed FrameIT request : not of form <content><THEORY><VIEW></content>")
         }
       } catch {
-        case e : Exception => Server.errorResponse(e.getMessage)
+        case e : Exception => ServerResponse.errorResponse(e.getMessage, request)
       }
-    case _ => Server.errorResponse("Neither \"add\" nor \"pushout\"")
+    case _ => ServerResponse.errorResponse("Neither \"add\" nor \"pushout\"", request)
   }
 
   def run(solthS : String, vpathS : String) : String = {

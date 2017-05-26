@@ -1,8 +1,0 @@
-theory http://cds.omdoc.org/examples?IntRules
-HasMeta http://cds.omdoc.org/examples?IntRules http://cds.omdoc.org/urtheories?LF
-Includes http://cds.omdoc.org/examples?IntRules http://cds.omdoc.org/examples?Int
-Includes http://cds.omdoc.org/examples?IntRules http://cds.omdoc.org/examples?NatRules
-Declares http://cds.omdoc.org/examples?IntRules http://cds.omdoc.org/examples?IntRules?times_mono
-constant http://cds.omdoc.org/examples?IntRules?times_mono
-Declares http://cds.omdoc.org/examples?IntRules http://cds.omdoc.org/examples?IntRules?times_invmono
-constant http://cds.omdoc.org/examples?IntRules?times_invmono

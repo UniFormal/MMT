@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api.{LocalName, ParseError}
-import info.kwarc.mmt.api.objects.Judgement
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils.xml
 
 import scala.xml.Node
@@ -52,14 +52,56 @@ object Exists {
 }
 
 /** judgement that holds for a single element */
-case class Holds(about: Query, varname : LocalName, j: Judgement) extends Prop
-
+case class Holds(about: Query, j: QueryJudgement) extends Prop
 
 object Prop {
+
+  /**
+    * parses a Term representing a Proposition
+    * @param t Term to parse
+    * @param queryFunctions List of [[QueryFunctionExtension]] to use
+    * @param relManager RelationalManager to use
+    * @return
+    */
+  def parse(t: Term)(implicit queryFunctions: List[QueryFunctionExtension], relManager: RelationalManager) : Prop = t match {
+    case OMA(OMID(QMTProp.IsA), q :: concept :: Nil) =>
+        IsA(Query.parse(q), Unary.parse(q))
+
+    case OMA(OMID(QMTProp.PrefixOf), l :: r :: Nil) =>
+      PrefixOf(Query.parse(l), Query.parse(r))
+
+    case OMA(OMID(QMTProp.IsIn), e :: f :: Nil) =>
+      IsIn(Query.parse(e), Query.parse(f))
+
+    case OMA(OMID(QMTProp.IsEmpty), e :: Nil) =>
+      IsEmpty(Query.parse(e))
+
+    case OMA(OMID(QMTProp.Equal), l :: r :: Nil) =>
+      Equal(Query.parse(l), Query.parse(r))
+
+    case OMA(OMID(QMTProp.And), f :: g :: Nil) =>
+      And(parse(f), parse(g))
+
+    case OMA(OMID(QMTProp.Or), f :: g :: Nil) =>
+      Or(parse(f), parse(g))
+
+    case OMA(OMID(QMTProp.Not), f :: Nil) =>
+      Not(parse(f))
+
+    case OMBINDC( OMID(QMTProp.Forall), Context(VarDecl(name, _, _, _, _)), List(d, f)) =>
+      Forall(Query.parse(d), name, parse(f))
+
+    case OMBINDC( OMID(QMTProp.Forall), Context(VarDecl(name, _, _, _, _)), List(d, f)) =>
+      Exists(Query.parse(d), name, parse(f))
+
+    case OMA(OMID(QMTProp.Holds), a :: j :: Nil) =>
+      Holds(Query.parse(a), QueryJudgement.parse(j))
+  }
+
   /**
     * Parses an XML node representing a Proposition into an actual Proposition
     * @param n Node to parse
-    * @param queryFunctions List of QueryFunctions to use
+    * @param queryFunctions List of [[QueryFunctionExtension]] to use
     * @param relManager RelationalManager to use
     * @return
     */
@@ -92,9 +134,11 @@ object Prop {
       Forall(Query.parse(d), xml.attrL(n, "name"), parse(f))
 
     case <exists>{d}{f}</exists> =>
-      Forall(Query.parse(d), xml.attrL(n, "name"), parse(f))
+      Exists(Query.parse(d), xml.attrL(n, "name"), parse(f))
 
-    // TODO: Parse Holds somehow
+    case <holds>{a}{j}</holds> =>
+      Holds(Query.parse(a), QueryJudgement.parse(j))
+
     case _ => throw ParseError("illegal proposition: " + n)
   }
 }

@@ -168,6 +168,7 @@ object TheoryExp {
   }
 
   /** all inherently included named theories */
+  // TODO properly
   def getSupport(t: Term): List[MPath] = t match {
     case OMMOD(p) => List(p)
     case ComplexTheory(cont) => cont.getIncludes
@@ -193,7 +194,7 @@ object ModExp extends uom.TheoryScala {
   val composition = _path ? "composition"
   val morphismapplication = _path ? "morphismapplication"
 
-  //TODO deprecate (still used by Twelf)
+  @deprecated("(still used by Twelf)")
   val tunion = _path ? "theory-union"
 }
 
@@ -238,6 +239,48 @@ object TUnion {
   }
 }
 
+// TODO this should inherti from MutableElementContainer
+class AnonymousTheory(val mt: Option[MPath], var decls: List[OML]) extends ElementContainer[OML] with DefaultLookup[OML] {
+  def getDeclarations = decls
+  
+  def add(oml: OML, after: Option[LocalName] = None) {
+    // TODO
+  }
+  def rename(old: LocalName, nw: LocalName) = {
+    val i = decls.indexWhere(_.name == old)
+    if (i != -1) {
+      val ooml = decls(i)
+      decls = decls.take(i) ::: OML(nw, ooml.tp, ooml.df, ooml.nt, ooml.featureOpt) :: decls.drop(i + 1)
+    }
+  }
+  def toTerm = AnonymousTheory(mt, decls)
+}
+
+object AnonymousTheory {
+  val path = ModExp.complextheory
+
+  def apply(mt: Option[MPath], decls: List[OML]) = OMA(OMS(path), mt.map(OMMOD(_)).toList:::decls)
+  def unapply(t: Term): Option[(Option[MPath],List[OML])] = t match {
+    case OMA(OMS(this.path), OMMOD(mt)::OMLList(omls)) =>
+      Some((Some(mt), omls))
+    case OMA(OMS(this.path), OMLList(omls)) =>
+      Some((None, omls))
+    case _ => None
+  }
+
+  def fromTerm(t: Term) = unapply(t).map {case (m,ds) => new AnonymousTheory(m, ds)}
+}
+
+object OMLList {
+  // awkward casting here, but this way the list is not copied; thus, converting back and forth between Term and AnonymousTheory is cheap
+  def unapply(ts: List[Term]): Option[List[OML]] = {
+    if (ts.forall(_.isInstanceOf[OML]))
+      Some(ts.asInstanceOf[List[OML]])
+    else
+      None
+  }
+}
+
 /** the normal form of a theory expression is a context
  *
  * the apply/unapply functions convert between them
@@ -247,7 +290,7 @@ object ComplexTheory {
   val path = ModExp.complextheory
 
   def apply(body: Context) = body match {
-    case Context(IncludeVarDecl(p, args)) => OMPMOD(p, args)
+    case Context(IncludeVarDecl(_, tp, None)) => tp
     case _ => OMBINDC(OMID(this.path), body, Nil)
   }
 

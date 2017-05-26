@@ -15,12 +15,10 @@ object IntersectionTypeRule extends InferenceRule(TypeIntersection.path, OfType.
         val tp2 = solver.inferType(t2,covered)
         if (tp1.isEmpty || tp2.isEmpty) None
         else if (tp1==tp2) tp1
-        else if (solver.safecheck(Subtyping(stack,tp1.get,tp2.get)).getOrElse(false)){
-          solver.check(Subtyping(stack,tp1.get,tp2.get))
+        else if (solver.tryToCheckWithoutDelay(Subtyping(stack,tp1.get,tp2.get)) contains true){
           tp2
         }
-        else if (solver.safecheck(Subtyping(stack,tp2.get,tp1.get)).getOrElse(false)) {
-          solver.check(Subtyping(stack,tp2.get,tp1.get))
+        else if (solver.tryToCheckWithoutDelay(Subtyping(stack,tp2.get,tp1.get)) contains true) {
           tp1
         }
         else None
@@ -37,8 +35,9 @@ object IntersectionSubtypeRule extends SubtypingRule {
   def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History) : Option[Boolean] =
     tp1 match {
       case TypeIntersection(t1,t2) =>
-        if (solver.safecheck(Subtyping(stack,t1,tp2)).getOrElse(false))
-          Some(solver.check(Subtyping(stack,t1,tp2)))
+        //TODO the if is redundant - this is either a bug or can be optimized
+        if (solver.tryToCheckWithoutDelay(Subtyping(stack,t1,tp2)) contains true)
+             Some(solver.check(Subtyping(stack,t1,tp2)))
         else Some(solver.check(Subtyping(stack,t2,tp2)))
       case _ => throw Backtrack("not a type intersection")
     }
@@ -55,8 +54,7 @@ object ApplyIntersectionHelper {
         }
         Common.makePi(solver, fTa) match {
           case Pi(x, a1, a2) =>
-            if (solver.safecheck(Subtyping(stack, ttp, a1)).getOrElse(false)) {
-              solver.check(Subtyping(stack, ttp, a1))
+            if (solver.tryToCheckWithoutDelay(Subtyping(stack, ttp, a1)) contains true) {
               history += "type of " + solver.presentObj(t) + " matches " + solver.presentObj(fTa)
               return Some(a2 ^? OMV(x) / t)
             }
@@ -69,8 +67,7 @@ object ApplyIntersectionHelper {
             history += "couldn't infer type of " + solver.presentObj(t)
             return None
           }
-          if (solver.safecheck(Subtyping(stack, ttp, a1)).getOrElse(false)) {
-            solver.check(Subtyping(stack, ttp, a1))
+          if (solver.tryToCheckWithoutDelay(Subtyping(stack, ttp, a1)) contains false) {
             history += "type of " + solver.presentObj(t) + " matches " + solver.presentObj(fT)
             return Some(a2 ^? OMV(x) / t)
           } else None

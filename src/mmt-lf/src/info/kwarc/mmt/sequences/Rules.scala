@@ -322,7 +322,7 @@ object ExpandEllipsis {
       val newCon = con.mapVarDecls {case (conPrefix, vd) =>
         val vdS = vd ^? subs
         vdS match {
-          case VarDecl(name, Some(t), dfs, _) =>
+          case VarDecl(name, _, Some(t), dfs, _) =>
             t match {
                case Sequences.rep(tp, NatLit(n)) =>
                   val types = (BigInt(0) until n).toList.map(_ => tp)
@@ -361,7 +361,7 @@ object ExpandEllipsis {
    private def seqVarToList(x: LocalName, tps: List[Term], df: Option[Term]): (List[VarDecl],Sub) = {
       val vds = (BigInt(0) until tps.length).toList.map {i =>
          val name = x / i.toString
-         VarDecl(name, Some(tps(i.toInt)), None, None)
+         VarDecl(name, tps(i.toInt))
       }
       val vars = flatseq(vds.map(vd => OMV(vd.name)):_*) 
       (vds, x -> vars)
@@ -391,7 +391,7 @@ object LengthAwareArgumentChecker extends ArgumentChecker {
       // try equating the lengths
       (tmLO, tpLO) match {
         case (Some(tmL),Some(tpL)) =>
-          val r = solver.dryRun(solver.check(Equality(stack,tmL,tpL,Some(OMS(Nat.nat))))(history + "checking equality of lengths"))
+          val r = solver.dryRun(true)(solver.check(Equality(stack,tmL,tpL,Some(OMS(Nat.nat))))(history + "checking equality of lengths"))
           r match {
             case Success(true) =>
               return sameLength
@@ -399,7 +399,7 @@ object LengthAwareArgumentChecker extends ArgumentChecker {
           }
         case _ =>
       }
-      solver.dryRun(solver.check(Typing(stack, tm, tp))(history + "cannot tell if lengths equal; trying type-checking")) match {
+      solver.dryRun(true)(solver.check(Typing(stack, tm, tp))(history + "cannot tell if lengths equal; trying type-checking")) match {
         case Success(true) =>
           sameLength
         case _ => false

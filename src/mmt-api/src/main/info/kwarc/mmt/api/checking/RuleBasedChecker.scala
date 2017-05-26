@@ -5,6 +5,7 @@ import objects._
 import symbols._
 import modules._
 import frontend._
+import info.kwarc.mmt.api.Level.Level
 import parser._
 
 /**
@@ -31,6 +32,7 @@ class RuleBasedChecker extends ObjectChecker {
       }
       
       log("checking unit " + cu.component.getOrElse("without URI") + ": " + cu.judgement.present(o => controller.presenter.asString(o)))
+      log("full form of term: " + cu.judgement.wfo.toString)
       // if a component is given, we perform side effects on it
       val updateComponent = cu.component map {comp =>
          controller.globalLookup.getComponent(comp) match {
@@ -48,7 +50,7 @@ class RuleBasedChecker extends ObjectChecker {
       }
       // if solved, we can substitute all unknowns; if not, we still substitute partially
       val psol = solver.getPartialSolution
-      val remUnknowns = solver.getUnsolvedVariables 
+      val remUnknowns = solver.getUnsolvedVariables
       val subs = psol.toPartialSubstitution
       val contm = prOrg.copy(unknown = Context.empty).toTerm
       val contmI = contm ^? subs //fill in inferred values
@@ -60,8 +62,10 @@ class RuleBasedChecker extends ObjectChecker {
       val success = solver.checkSucceeded
       if (success) {
         // free variables may remain but their types are solved
-        if (pr.free.nonEmpty) {
-          env.errorCont(InvalidUnit(cu, NoHistory, "check succeeded, but free variables remained"))
+        if (pr.free.exists({case IncludeVarDecl(_) => false case _ => true})) {
+          env.errorCont(new InvalidUnit(cu, NoHistory, "check succeeded, but free variables remained: " + pr.free.map(_.name).mkString(", ")){
+             override val level: Level = Level.Warning
+          })
         }
       }
       // ** logging and error reporting **
@@ -91,17 +95,34 @@ class RuleBasedChecker extends ObjectChecker {
       }
       // ** change management **
       updateComponent foreach {case (comp, tc) =>
-         val changed = Some(result) != tc.analyzed
+         // hadValue: true if a previous successful analysis result was known
+         // changed: true if hadValue and the new analysis result differs from the previous one
+         val (hadValue, changed) = tc.getAnalyzedIfFullyChecked match {
+           case Some(r) =>
+             // new value differs from old value
+             (true, r != result)
+           case None =>
+             // this happens in particular when checking a document from scratch
+             // in that case, we compare to the previously-loaded version (if any) that is still remembered by the library
+             controller.previousLocalLookup.getO(comp.parent).flatMap(_.getComponent(comp.component)) match {
+               case None => (false, false)
+               case Some(tcP: TermContainer) =>
+                 val p = tcP.getAnalyzedIfFullyChecked
+                 (p.isDefined, !p.contains(result))
+               case Some(_) => (true,false) // impossible
+             }
+         }
          tc.analyzed = result // set it even if unchanged so that dirty flag gets cleared
          if (! success)
             tc.setAnalyzedDirty // revisit failed declarations
          if (changed) {
             log("changed")
-            //TODO building removes the original from memory; thus, we always detect a change here even if the rebuilding did not change anything
-            //solution: before building, instead of deleting a document, move it to quarantine; run a diff afterwards
             controller.memory.content.notifyUpdated(comp) //TODO: this could be cleaner if taken care of by the onCheck method
          } else {
-            log("not changed")
+            if (hadValue)
+              log("not changed")
+            else
+              log("new value")
          }
       }
       CheckingResult(success, Some(psol), result)

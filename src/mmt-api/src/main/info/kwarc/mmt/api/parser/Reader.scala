@@ -25,19 +25,19 @@ class Reader(val jr: java.io.BufferedReader) {
    /**
     * true if the last read operation hit the end of the current document
     */
-   def endOfDocument = lastDelimiter <= FS
+   def endOfDocument = (FS.andabove contains lastDelimiter) || (lastDelimiter <= FS.chars.head)
    /**
     * true if the last read operation hit the end of the current module
     */
-   def endOfModule = lastDelimiter <= GS
+   def endOfModule = (GS.andabove contains lastDelimiter) || (lastDelimiter <= GS.chars.head)
    /**
     * true if the last read operation hit the end of the current declaration
     */
-   def endOfDeclaration = lastDelimiter <= RS
+   def endOfDeclaration = (RS.andabove contains lastDelimiter) || (lastDelimiter <= RS.chars.head)
    /**
     * true if the last read operation hit the end of the current object
     */
-   def endOfObject = lastDelimiter <= US 
+   def endOfObject = (US.andabove contains lastDelimiter) || (lastDelimiter <= US.chars.head)
 
    //current position (offset counts \r\n as 1 character)
    private var line : Int = 0
@@ -72,6 +72,13 @@ class Reader(val jr: java.io.BufferedReader) {
       jr.reset
       s
    }
+   
+   /** checks if the remainder starts with a certain String */
+   def startsWith(s: String): Boolean = {
+     val r = lookAhead(s.length)
+     r == s
+   }
+   
    /** read one character
     * \n, \r, and \r\n are read as \n
     */
@@ -96,6 +103,7 @@ class Reader(val jr: java.io.BufferedReader) {
        offset += 1
        c
    }
+   
    /** as read but skips initial whitespace */
    private def readSkipWS: Int = {
       var c:Int = 0
@@ -143,19 +151,19 @@ class Reader(val jr: java.io.BufferedReader) {
    }
    /** reads until end of current document, terminated by the ASCII character FS (decimal 28)
     */
-   def readDocument = readUntil(FS)
+   def readDocument = readUntil(FS.andabove:_*)
    /** reads until end of current module, terminated by the ASCII characters GS or FS (decimal 28-29)
     */
-   def readModule = readUntil(GS,FS)
+   def readModule = readUntil(GS.andabove:_*)
    /** reads until end of current declaration, terminated by the ASCII character RS, GS, or FS (decimal 28-30)
     */
-   def readDeclaration = readUntil(RS,GS,FS)
+   def readDeclaration = readUntil(RS.andabove:_*)
    /** reads until end of current object, terminated by the ASCII character RS, GS, FS, or US (decimal 28-31)
     */
-   def readObject = readUntil(US,RS,GS,FS)
+   def readObject = readUntil(US.andabove:_*)
    /** reads until end of current Token, terminated by whitespace
     */
-   def readToSpace = readUntil(32,US,RS,GS,FS)
+   def readToSpace = readUntil(32::US.andabove:_*)
 
    /** reads until end of current Token, terminated by whitespace or by switch from letter-like to symbol-like characters 
     */
@@ -164,7 +172,7 @@ class Reader(val jr: java.io.BufferedReader) {
       var i = readSkipWS
       val start = sourcePosition
       var stop = false
-      if (List(-1,FS,RS,GS,US).contains(i)) {
+      if ((-1 :: Reader.delims.map(_.toInt)).contains(i)) {
          stop = true
          lastDelimiter = i
       }
@@ -201,17 +209,35 @@ object Reader {
    def apply(file: File) = new Reader(File.Reader(file))
    def apply(s: String) = new Reader(new java.io.BufferedReader(new java.io.StringReader(s)))
    //Note: 28-31 have isWhitespace == true
-   def whitespace(c:Int) = ! List(-1,US,RS,GS,FS,escape,unescape).contains(c) && c.toChar.isWhitespace
+   def whitespace(c:Int) = ! (delims ::: List(-1,escape,unescape)).contains(c) && c.toChar.isWhitespace
+   abstract class MMTDelim {
+      def chars : List[Int]
+      def is(a : Int) = chars contains a
+      def andabove : List[Int]
+      def toChar = chars.last.toChar
+   }
    /** the ASCII character FS (decimal 28) ends MMT documents */
-   val FS = 28
+   object FS extends MMTDelim {
+      val chars = List(28)
+      def andabove = chars
+   }
    /** the ASCII character GS (decimal 29) ends MMT modules */
-   val GS = 29
+   object GS extends MMTDelim {
+      val chars = List(29,'\u275A'.toInt)
+      def andabove = chars ::: FS.chars
+   }
    /** the ASCII character GS (decimal 30) ends MMT declaration within modules */
-   val RS = 30
+   object RS extends MMTDelim {
+      val chars = List(30,'\u2759'.toInt)
+      def andabove = chars ::: GS.andabove
+   }
    /** the ASCII character GS (decimal 31) ends MMT objects */
-   val US = 31
+   object US extends MMTDelim {
+      val chars = List(31,'\u2758'.toInt)
+      def andabove = chars ::: RS.andabove
+   }
    /** the special delimiters */
-   def delims: List[Char] = List(FS,GS,RS,US).map(_.toChar)
+   def delims: List[Char] = US.andabove.map(_.toChar)
    /** the ASCII character ESC (decimal 27) begins escaped parts */
    val escape = 27
    val escapeChar = '\u001b'

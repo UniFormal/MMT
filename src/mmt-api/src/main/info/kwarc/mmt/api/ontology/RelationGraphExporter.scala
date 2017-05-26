@@ -4,7 +4,9 @@ import info.kwarc.mmt.api._
 import documents._
 import modules._
 import archives._
+import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.symbols.Declaration
+import info.kwarc.mmt.api.web._
 import utils._
 import presentation._
 
@@ -43,9 +45,17 @@ abstract class RelationGraphExporter extends StructurePresenter {
     rh(svg)
   }
 
-  def asJSON(se : StructuralElement): JSON = {
+  def asJSON(se : StructuralElement): JSONObject = {
     val dg = buildGraph(se)
-    JSONObject(("nodes",dg.JSONNodes),("edges",dg.JSONEdges))
+    val nodes = dg.JSONNodes.toList
+    val edges = dg.JSONEdges.toList//.filter(o => nodes.exists(p => p("label") == o("from")) && nodes.exists(p => p("label") == o("to")))
+    JSONObject(("nodes",JSONArray(nodes:_*)),("edges",JSONArray(edges:_*)))
+  }
+  def asJSON(ls : List[StructuralElement]) : JSONObject = {
+    val dgs = ls.map(buildGraph)
+    val nodes = dgs.flatMap(_.JSONNodes).distinct
+    val edges = dgs.flatMap(_.JSONEdges).distinct
+    JSONObject(("nodes",JSONArray(nodes:_*)),("edges",JSONArray(edges:_*)))
   }
 }
 
@@ -110,5 +120,86 @@ class TheoryGraphExporter extends RelationGraphExporter {
     }
     val tgf = new ontology.TheoryGraphFragment(theories, views, tg)
     tgf.toDot
+  }
+}
+
+class PathGraphExporter extends RelationGraphExporter {
+  val key = "pathgraph"
+  override val logPrefix = "pathgraph"
+
+  private def alltheories = {
+    log("Loading theories...")
+    val ret = (controller.depstore.getInds(IsTheory) collect {
+      case mp: MPath => mp
+    }).toList
+    log("Done.")
+    ret
+  }
+  private def allviews = {
+    log("Loading views...")
+    val ret = (controller.depstore.getInds(IsView) collect {
+      case mp : MPath => mp
+    }).toList
+    log("Done.")
+    ret
+  }
+  private lazy val tg: ontology.TheoryGraph = new ontology.TheoryGraph(controller.depstore)
+
+  def buildGraph(se: StructuralElement) : DotGraph = {
+    val dpath = se match {
+      case d: Document => d.path
+      case mp : Module => mp.parent
+      case d : Declaration => d.parent.parent
+      case _ => ???
+    }
+    log("Doing " + dpath)
+    val (theories,views) = (alltheories.filter(dpath <= _),allviews.filter(dpath <= _))
+
+    val tgf = new ontology.TheoryGraphFragment(theories, views, tg)
+    log("Done.")
+    tgf.toDot
+  }
+}
+
+class JsonGraphExporter extends ServerExtension("fancygraph") {
+ override val logPrefix = "fancygraph"
+  private case class CatchError(s : String) extends Throwable
+//  log("init")
+  def doJSON(path : Path, exp : RelationGraphExporter) : JSONObject = {
+      controller.getO(path) match {
+        case Some(s) =>
+          log("Doing " + s.path)
+          exp.asJSON(s)
+        case None if path.isInstanceOf[DPath] =>
+          log("Doing " + path)
+          exp.asJSON(new Document(path.asInstanceOf[DPath],true))
+        case _ => throw CatchError(path.toString)// Server.plainErrorResponse(GetError(path.toString))
+      }
+  }
+  def apply(request: ServerRequest): ServerResponse = {
+    log("Paths: " + request.extensionPathComponents)
+    log("Query: " + request.queryString)
+    log("Path: " + request.parsedQuery("uri"))
+    val path = Path.parse(request.parsedQuery("uri").getOrElse(return ServerResponse.plainErrorResponse(GetError("Not a URI"))), controller.getNamespaceMap)
+    val (json,key) = if (request.extensionPathComponents.headOption == Some("json")) (true,request.extensionPathComponents.tail.headOption.getOrElse("svg"))
+      else (false,request.extensionPathComponents.headOption.getOrElse("svg"))
+    try {
+      val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
+        throw CatchError(s"exporter $key not available: ${request.path}")
+      }
+      log("Returning " + {
+        if (json) "json" else "fail"
+      } + " for " + path + " as " + key)
+      val ret = doJSON(path, exp)
+      log("Output: " + ret.map.length)
+      log("Output: " + ret.getAsList(classOf[JSON], "nodes").length + " nodes, " + ret.getAsList(classOf[JSON], "edges").length + " edges.")
+      if (json)
+        ServerResponse.fromJSON(doJSON(path, exp))
+      else ??? //.JsonResponse(doJSON(path,exp))
+    } catch {
+      case CatchError(s) =>
+        log("Fail: " + s)
+        ServerResponse.plainErrorResponse(GetError(s))
+    }
   }
 }

@@ -144,7 +144,7 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
        loadXML(uri, path.doc, reader)
     } else if (target.isDirectory) {
        loadFromFolder(uri, suffix)
-    } else throw BackendError("file/folder " + target + " not found or not accessible", path)
+    } else throw NotApplicable("file/folder " + target + " not found or not accessible: " + path)
   }
 }
 
@@ -173,7 +173,7 @@ class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase
       val oe = descOpt.map {case (desc,format) =>
          s"""<opaque format="$format">$desc</opaque>"""
       }
-      val es = entries.map(n => <dref name="" target={prefix + n}/>).mkString("\n")
+      val es = entries.map(n => <dref name={n + ".ref"} target={prefix + n}/>).mkString("\n")
       val docS = s"""<omdoc>$oe$es</omdoc>"""
       val reader = new BufferedReader(new java.io.StringReader(docS))
       loadXML(uri, DPath(uri), reader)

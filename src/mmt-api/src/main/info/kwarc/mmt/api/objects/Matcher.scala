@@ -3,6 +3,10 @@ import info.kwarc.mmt.api._
 import frontend._
 import checking._
 import Conversions._
+import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
+
+import scala.util.Try
 
 /** matches a goal term against a template term and computes the unifying substitution if possible
  *  i.e., we try to find solution such that template ^ solution == goal
@@ -29,7 +33,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
    private var constantContext: Context = Context.empty
    private var querySolution : Context = Context.empty
    def getUnsolvedVariables : List[LocalName] = querySolution collect {
-      case VarDecl(x,_,None,_) => x
+      case vd if vd.df.isEmpty => vd.name
    }
    /**
     * @return the solution if a match was found
@@ -68,9 +72,32 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
          case j: EqualityContext => auxCon(j.context, j.context1, j.context2).isDefined
          case _ => false
       }
+
+      override def lookup(p: Path): Option[StructuralElement] = controller.getO(p)
       def simplify(t: Obj)(implicit stack: Stack, history: History) =
          controller.simplifier(t, stack.context, rules)
       def outerContext = constantContext ++ querySolution
+
+      def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = simplify(tm) match {
+         case AnonymousTheory(mt, ds) =>
+            Some(new AnonymousTheory(mt, Nil))
+         // add include of codomain of mor
+         case OMMOD(mp) =>
+            val th = Try(controller.globalLookup.getTheory(mp)).toOption match {
+               case Some(th2: DeclaredTheory) => th2
+               case _ => return None
+            }
+            val ds = th.getDeclarationsElaborated.map({
+               case c: Constant =>
+                  OML(c.name, c.tp, c.df, c.not)
+               case PlainInclude(from, to) =>
+                  IncludeOML(from, Nil)
+               case _ => ???
+            })
+            Some(new AnonymousTheory(th.meta, ds))
+         case _ =>
+            return None
+      }
    }
 
    /**
@@ -186,7 +213,8 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
       if (goal.length != query.length) return None
       var rename = Substitution()
       (goal.declsInContext.toList zip query) foreach {
-         case ((goalBound, VarDecl(x1,tp1,df1, _)), VarDecl(x2,tp2, df2, _)) =>
+         case ((goalBound, VarDecl(x1,f1,tp1,df1, _)), VarDecl(x2,f2,tp2, df2, _)) =>
+            if (f1 != f2) return None
             List((tp1,tp2), (df1,df2)) foreach {
                case (None,None) => true
                case (Some(t1), Some(t2)) =>

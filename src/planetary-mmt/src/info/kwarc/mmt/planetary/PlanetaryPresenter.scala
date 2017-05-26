@@ -435,7 +435,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      }
      val arity = not.arity
      val sub = Substitution(arity.subargs.map(sa => Sub(OMV.anonymous, OMV(getVarName(sa.number - 1)))) :_*)
-     val con = Context(arity.variables.map(v => VarDecl(LocalName(getVarName(v.number - 1)), None, None, None)) :_*)
+     val con = Context(arity.variables.map(v => VarDecl(LocalName(getVarName(v.number - 1)))) :_*)
      val args = arity.arguments flatMap {
        case s : SeqArg =>
          val baseName = getVarName(s.number - 1)
@@ -487,7 +487,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    }
 
    def doRef(r : NRef) = r match {
-     case d: DRef if d.target.last == OMV.anonymous => //nested doc
+     case d: DRef if d.target.name == OMV.anonymous => //nested doc
        rh("<div class=\"group\">")
          controller.get(d.target) match {
            case d : Document => doDocument(d)

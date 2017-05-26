@@ -22,7 +22,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
    override def toString = toShortString + " " + found.reverse.mkString("", " ", "")
    def toShortString = rules.map(_.name.last).mkString("/")
 
-   /** the markers that have been found in the token list */
+   /** the markers that have been found in the token list (in reverse concrete syntax order) */
    private var found : List[Found] = Nil
    /** all found tokens */
    def getFound = found.reverse
@@ -145,7 +145,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
     * and the remaining List[Marker]
     */
    private def splitOffArgs(ms: List[Marker], ns: List[(Int,Option[LabelInfo])] = Nil) : (List[(Int,Option[LabelInfo])], List[Marker]) = ms match {
-      case (la@LabelArg(n,_,_,_)) :: rest => splitOffArgs(rest, (n,Some(la.info)) :: ns)
+      case (la:LabelArg) :: rest => splitOffArgs(rest, (la.number,Some(la.info)) :: ns)
       case SimpArg(n, _) :: rest => splitOffArgs(rest, (n,None) :: ns)
       case Delim("%w") :: rest => splitOffArgs(rest, ns)
       case rest => (ns.reverse, rest)
@@ -242,7 +242,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                  PickAllSeq(n,None)
                  addPrepickedDelims(Delim(s), currentToken)
               }
-         case (Nil, (lsa @ LabelSeqArg(n,Delimiter(s),_,_,_,_)) :: _) if matches(s) =>
+         case (Nil, (lsa @ LabelSeqArg(n,Delimiter(s),_,_)) :: _) if matches(s) =>
             onApply {
                PickAllSeq(n,Some(lsa.info))
                addPrepickedDelims(Delim(s),currentToken)
@@ -264,7 +264,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                  }
               } else
                  NotApplicable //abort?
-         case (Nil, (lsa @ LabelSeqArg(n,Delimiter(t),_,_,_,_)) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
+         case (Nil, (lsa @ LabelSeqArg(n,Delimiter(t),_,_)) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
             if (numCurrentTokens > 0) {
                //picks the last element of the sequence (possibly the only one)
                onApplyI {currentIndex =>

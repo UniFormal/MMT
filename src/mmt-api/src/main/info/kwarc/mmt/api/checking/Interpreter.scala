@@ -70,14 +70,14 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Inter
     try {
       val cont = new StructureParserContinuations(errorCont) {
         override def onElement(se: StructuralElement) {
-          //checker.checknewElement(se)(ce)
+          checker.applyElementBegin(se)(ce)
         }
         override def onElementEnd(se: ContainerElement[_]) {
-          //checker.checkElementEnd(se)(ce)
+          checker.applyElementEnd(se)(ce)
         }
       }
       val se = parser(ps)(cont)
-      checker(se)(ce)
+      //checker(se)(ce) // only needed for double-checking or if the parser ignores the StructureParserContinuations
       se
     } finally {
       ps.stream.close

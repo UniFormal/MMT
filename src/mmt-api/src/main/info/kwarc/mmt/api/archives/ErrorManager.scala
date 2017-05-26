@@ -9,7 +9,6 @@ import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.web._
-import tiscaf.HLet
 
 import scala.collection.mutable
 import scala.xml._
@@ -296,15 +295,15 @@ class ErrorManager extends Extension with Logger {
     }
   }
 
-  def getErrorAnswer(child: Int, fileName: String): HLet = {
+  def getErrorAnswer(child: Int, fileName: String): ServerResponse = {
     val file = File(fileName)
     try {
       val node = xml.readFile(file)
       val err = node.child(child)
-      Server.XmlResponse(err)
+      ServerResponse.XmlResponse(err)
     } catch {
       case e: Exception =>
-        Server.TextResponse("could not extract " + (child + 1) + ". error from " + fileName + "\n" + e.getMessage)
+        ServerResponse.TextResponse("could not extract " + (child + 1) + ". error from " + fileName + "\n" + e.getMessage)
     }
   }
 
@@ -312,15 +311,15 @@ class ErrorManager extends Extension with Logger {
   private val serve = new ServerExtension("errors") {
     override def logPrefix = self.logPrefix
 
-    def apply(path: List[String], query: String, body: Body, session: Session) = path match {
+    def apply(request: ServerRequest): ServerResponse = request.path match {
       case List("file") =>
-        val wq = WebQuery.parse(query)
+        val wq = request.parsedQuery
         getErrorAnswer(wq.int("child"), wq.string("file"))
       case List("source") =>
-        val source = scala.io.Source.fromFile(query)
+        val source = scala.io.Source.fromFile(request.query)
         val lines = try source.mkString finally source.close()
-        Server.TextResponse(lines)
-      case _ => Server.JsonResponse(serveJson(path, query))
+        ServerResponse.TextResponse(lines)
+      case _ => ServerResponse.JsonResponse(serveJson(request.path, request.query))
     }
   }
 }

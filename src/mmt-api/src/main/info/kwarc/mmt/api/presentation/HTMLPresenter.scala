@@ -13,9 +13,10 @@ import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.archives.BuildTask
 import info.kwarc.mmt.api.opaque.OpaqueHTMLPresenter
-
 import HTMLAttributes._
 import File.scala2Java
+import info.kwarc.mmt.api.parser.ParseResult
+
 import scala.Range
 
 abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
@@ -40,12 +41,28 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
    protected val htmlRh = utils.HTML(s => rh(s))
    import htmlRh._
 
-   private def doName(p: ContentPath) {
-      val (name, path) = p.name match {
-         case LocalName(ComplexStep(t)::Nil) => (t.name.toString, t) // hardcoding the import case of includes
-         case n => (n.toString, p)
+   private def doNameAsSpanList(n: LocalName) {
+     val l = n.length - 1
+     n.zipWithIndex.foreach {case (step,i) =>
+       step match {
+         case SimpleStep(s) =>
+           span {text(s)}
+         case ComplexStep(p) =>
+           doPath(p)
+       }
+       if (i < l) text("/")
+     }
+   }
+   
+   private def doName(d: Declaration) {
+      val (name,_) = d.primaryNameAndAliases
+      val (adaptedName, path) = name match {
+         case LocalName(ComplexStep(t)::Nil) => (t.name, t) // hardcoding the important case of includes
+         case n => (n.simplify, d.path)
       }
-      span("name", attributes=List(href -> path.toPath)) {text(name)}
+      span("name", attributes=List(href -> d.path.toPath)) {
+        doNameAsSpanList(adaptedName)
+      }
    }
    /** renders a MMT URI outside a math object */
    private def doPath(p: Path) {
@@ -60,7 +77,10 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       }
    }
    private def doMath(t: Obj, owner: Option[CPath]) {
-        objectLevel(t, owner)(rh)
+        objectLevel(t match {
+          case tm : Term => ParseResult.fromTerm(tm).term
+          case o => o
+        }, owner)(rh)
    }
    
    private object cssClasses {
@@ -107,30 +127,45 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
 
    def doDeclaration(d: Declaration) {
       val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
-      val alignmentsServer: Option[AlignmentsServer] = controller.extman.getOrAddExtension(classOf[AlignmentsServer],"align")
-      val alignments = alignmentsServer.map(_.getAlignments(d.path)).getOrElse(Nil)
+      val alignmentsServer: AlignmentsServer = controller.extman.get(classOf[AlignmentsServer]).headOption.getOrElse {
+        val a = new AlignmentsServer
+        controller.extman.addExtension(a)
+        a
+      }
+      val alignments = alignmentsServer.getAlignments(d.path)
+      val (_,aliases) = d.primaryNameAndAliases
 
-      div("constant toggle-root inlineBoxSibling") {
+      val basicCss = "constant toggle-root inlineBoxSibling"
+      val generatedCss = if (d.isGenerated) " generated " else ""
+      div(basicCss + generatedCss, attributes = List(toggleTarget -> "generated")) {
          div("constant-header") {
-           span {text(d.feature + " ")}
-           span {doName(d.path)}
+           span {text({d match {
+             case Include(_,_,_) => "include"
+             case _ => d.feature
+           }} + " ")}
+           span {doName(d)}
            def toggleComp(comp: ComponentKey) {
               toggle(compRow(comp), comp.toString.replace("-", " "))
            }
            def toggle(key: String, label: String) {
               button(compToggle, attributes = List(toggleTarget -> key)) {text(label)}
            }
-           if (! usedby.isEmpty)
+           if (aliases.nonEmpty)
+              toggle("aliases", "aliases")
+           if (d.getDeclarations.nonEmpty) {
+              toggle("inner-body", "body")
+           }
+           if (usedby.nonEmpty)
               toggle("used-by", "used by")
-           if (! d.metadata.getTags.isEmpty)
+           if (d.metadata.getTags.nonEmpty)
               toggle("tags", "tags")
-           if (! d.metadata.getAll.isEmpty)
+           if (d.metadata.getAll.nonEmpty)
               toggle("metadata", "metadata")
            d.getComponents.reverseMap {case DeclarationComponent(comp, tc) =>
               if (tc.isDefined)
                 toggleComp(comp)
            }
-           if (!alignments.isEmpty) {
+           if (alignments.nonEmpty) {
               toggle("alignments", "alignments")
            }
          }
@@ -149,13 +184,19 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                       }
                   }
             }
-            if (! usedby.isEmpty) {
+            if (aliases.nonEmpty) {
+              tr("aliases") {
+                td {span(compLabel) {text{"aliases"}}}
+                td {aliases foreach doNameAsSpanList}
+              }
+            }
+            if (usedby.nonEmpty) {
                tr("used-by") {
                   td {span(compLabel) {text{"used by"}}}
                   td {usedby foreach doPath}
                }
             }
-            if (! d.metadata.getTags.isEmpty) { 
+            if (d.metadata.getTags.nonEmpty) { 
                tr("tags") {
                td {span(compLabel){text{" ---tags"}}}
                td {d.metadata.getTags.foreach {
@@ -187,9 +228,15 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                  }}
                }
             }
-            d.getDeclarations foreach {b =>
+            if (d.getDeclarations.nonEmpty) {
               tr {
-                td(attributes = List("colspan" -> "2")) {doDeclaration(b)}
+                td(attributes = List("colspan" -> "2")) {
+                   div("inner-body") {
+                      d.getDeclarations foreach {b =>
+                        doDeclaration(b)
+                      }
+                   }
+                }
               }
             }
          }
@@ -304,7 +351,8 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
              NarrativeMetadata.title.get(doc).foreach {t =>
                 text(": ")
                 text(t)
-             } 
+             }
+             button("generated-toggle", attributes = List(toggleTarget -> "generated")) {text("generated declarations")}
           }
           div("document-body") {
              doc.getDeclarations foreach recurse

@@ -19,24 +19,21 @@ abstract class OMCoding[T] {
   /** decodes an OMNode object **/
   def decodeAnyVal(t : T) : OMAnyVal
 
-  //TODO this does not work this way, check with Florian
-  private def decodeAsVal[V <: OMAnyVal](t : T) : V = decodeAnyVal(t) match { case v : V => v}
-
-  def decodeExpression(t : T): OMExpression = decodeAsVal(t)
-  def decodeReference(t : T) : OMReference = decodeAsVal(t)
-  def decodeInteger(t : T) : OMInteger = decodeAsVal(t)
-  def decodeFloat(t : T) : OMFloat = decodeAsVal(t)
-  def decodeString(t : T) : OMString = decodeAsVal(t)
-  def decodeBytes(t : T) : OMBytes = decodeAsVal(t)
-  def decodeVariable(t : T) : OMVariable = decodeAsVal(t)
-  def decodeSymbol(t : T) : OMSymbol = decodeAsVal(t)
-  def decodeDerived(t : T) : OMDerivedElement = decodeAsVal(t)
-  def decodeForeign(t : T) : OMForeign = decodeAsVal(t)
-  def decodeCompound(t : T) : OMCompoundElement = decodeAsVal(t)
-  def decodeApplication(t : T) : OMApplication = decodeAsVal(t)
-  def decodeAttribution(t : T) : OMAttribution = decodeAsVal(t)
-  def decodeBinding(t : T) : OMBinding = decodeAsVal(t)
-  def decodeError (t : T) : OMError = decodeAsVal(t)
+  def decodeExpression(t : T): OMExpression = decodeAnyVal(t).asInstanceOf[OMExpression]
+  def decodeReference(t : T) : OMReference = decodeAnyVal(t).asInstanceOf[OMReference]
+  def decodeInteger(t : T) : OMInteger = decodeAnyVal(t).asInstanceOf[OMInteger]
+  def decodeFloat(t : T) : OMFloat = decodeAnyVal(t).asInstanceOf[OMFloat]
+  def decodeString(t : T) : OMString = decodeAnyVal(t).asInstanceOf[OMString]
+  def decodeBytes(t : T) : OMBytes = decodeAnyVal(t).asInstanceOf[OMBytes]
+  def decodeVariable(t : T) : OMVariable = decodeAnyVal(t).asInstanceOf[OMVariable]
+  def decodeSymbol(t : T) : OMSymbol = decodeAnyVal(t).asInstanceOf[OMSymbol]
+  def decodeDerived(t : T) : OMDerivedElement = decodeAnyVal(t).asInstanceOf[OMDerivedElement]
+  def decodeForeign(t : T) : OMForeign = decodeAnyVal(t).asInstanceOf[OMForeign]
+  def decodeCompound(t : T) : OMCompoundElement = decodeAnyVal(t).asInstanceOf[OMCompoundElement]
+  def decodeApplication(t : T) : OMApplication = decodeAnyVal(t).asInstanceOf[OMApplication]
+  def decodeAttribution(t : T) : OMAttribution = decodeAnyVal(t).asInstanceOf[OMAttribution]
+  def decodeBinding(t : T) : OMBinding = decodeAnyVal(t).asInstanceOf[OMBinding]
+  def decodeError (t : T) : OMError = decodeAnyVal(t).asInstanceOf[OMError]
 
 
   /**
@@ -48,7 +45,7 @@ abstract class OMCoding[T] {
   def encode(om : OMAny) : T
 
   def apply(om : OMAny) = encode(om)
-  def apply[S <: OMAny ](t : T) : S = decode(t) match { case s : S => s}
+  def apply[S <: OMAny](t : T) : S = decode(t).asInstanceOf[S]
 }
 
 object OMCoding {

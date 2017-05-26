@@ -85,10 +85,19 @@ trait Extension extends Logger {
 
   /** extension-specific cleanup (override as needed, empty by default)
     *
-    * Extensions may create persistent data structures and processes,
+    * Extensions may create persistent data structures and threads,
     * but they must clean up after themselves in this method
     */
   def destroy {}
+  
+  /** extensions that process tasks in separate thread should override this and wait until those threads are done */
+  def waitUntilRemainingTasksFinished {}
+  
+  /** convenience for calling waitUntilRemainingTasksFinished and then destroy */ 
+  def destroyWhenRemainingTasksFinished {
+    waitUntilRemainingTasksFinished
+    destroy
+  }
 }
 
 /** extensions classes that can be tested for applicability based on a format string */
@@ -150,12 +159,14 @@ class ExtensionManager(controller: Controller) extends Logger {
     */
   def getOrAddExtension[E <: FormatBasedExtension](cls: Class[E], format: String, args: List[String] = Nil): Option[E] = {
     get(cls, format) orElse {
-      controller.getConfig.getEntry(classOf[ExtensionConf], format) map {tc =>
-         val ext = addExtension(tc.cls, tc.args ::: args)
-         ext match {
-           case e: E@unchecked if cls.isInstance(e) => e
-           case _ => throw RegistrationError(s"extension for $format exists but has unexpected type")
-         }
+      val (className, extraArgs) = controller.getConfig.getEntry(classOf[ExtensionConf], format) match {
+        case Some(tc) => (tc.cls, tc.args)
+        case None => (format,Nil) // fallback: treat format as class name
+      }
+      val ext = addExtension(className, extraArgs ::: args)
+      ext match {
+        case e: E@unchecked if cls.isInstance(e) => Some(e)
+        case _ => throw RegistrationError(s"extension for $format exists but has unexpected type")
       }
     }
   }

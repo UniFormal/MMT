@@ -89,10 +89,13 @@ class NotationContainer extends ComponentContainer {
    }
    /** a copy of this NotationContainer with some other notations merged in */ 
    def merge(that: NotationContainer) = {
+      def add1(notOpt : Option[TextNotation]) : Option[TextNotation] = notOpt.map(not => {
+         not.copy(precedence = not.precedence + 1)
+      })
       val ntC = new NotationContainer()
       val comps = List(ParsingNotationComponent,PresentationNotationComponent,VerbalizationNotationComponent)
       comps.foreach {c =>
-        (this.apply(c) orElse that.apply(c)).foreach {not =>
+        (this.apply(c) orElse add1(that.apply(c))).foreach {not =>
           ntC(c) = not
         }
       }

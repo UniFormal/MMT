@@ -38,9 +38,7 @@ import info.kwarc.mmt.api.web.ServerError
 import info.kwarc.mmt.api.web.ServerExtension
 import info.kwarc.mmt.stex.STeXImporter
 import info.kwarc.mmt.stex.sTeX
-import tiscaf.HLet
 import info.kwarc.mmt.api._
-import tiscaf.HTalk
 import info.kwarc.mmt.api.objects._
 import scala.collection.mutable.HashMap
 import scala.collection.Map
@@ -114,12 +112,11 @@ object SemanticTree {
     return parse(str)
   }
 
-  def getSemanticTree: HLet = new HLet {
-    def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
+  def getSemanticTree(request: ServerRequest) : ServerResponse =  {
       // clear up after previous request
       resetTermSharingState
       println("-->getSemanticTree")
-      val reqBody = new Body(tk)
+      val reqBody = request.body
       val inputJSON: JValue = bodyToJson(reqBody)
       println(inputJSON)
       val input: String = (inputJSON \ "input").asInstanceOf[JString].values
@@ -155,9 +152,7 @@ object SemanticTree {
       }
       val CMLlistJSON = CMLlist map info.kwarc.mmt.api.utils.JSONString
       val resp = info.kwarc.mmt.api.utils.JSONArray(CMLlistJSON: _*)
-      tk.setHeader("Access-Control-Allow-Origin", "*")
-      Server.JsonResponse(resp).aact(tk)
-    }
+      ServerResponse.JsonResponse(resp)
   }
 
   var termSharing = false // Sharing is turned off by default

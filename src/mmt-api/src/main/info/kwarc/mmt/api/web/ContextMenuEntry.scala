@@ -11,11 +11,11 @@ trait ContextMenuProvider extends Extension {
 }
 
 class ContextMenuAggregator extends ServerExtension("menu") {
-  def apply(httppath: List[String], query: String, body: Body, session: Session) = {
-     val path = Path.parse(query)
+  def apply(request: ServerRequest): ServerResponse = {
+     val path = Path.parse(request.query)
      val entries = controller.extman.get(classOf[ContextMenuProvider]).flatMap(_.getEntries(path))
      val json = JSONObject(entries.map(e => (JSONString(e.label), JSONString(e.function.toJS))))
-     Server.JsonResponse(json)
+    ServerResponse.JsonResponse(json)
   }
 }
 

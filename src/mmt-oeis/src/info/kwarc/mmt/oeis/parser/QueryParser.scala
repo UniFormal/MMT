@@ -363,6 +363,7 @@ class QueryParser extends JavaTokenParsers with PackratParsers {
       case (no )~(expr : Expression)~Some(expr1 : Expression) => Mul(Num(no.toDouble)::expr::expr1::Nil)
       case (no )~(expr : Expression)~None => Mul(Num(no.toDouble)::expr::Nil)
     } |*/
+    //TODO the type erasure warnings here are bugs and may not be ignored
     unsigned_factor~rep(multiply | lazy_multiply) ^^ {
       case (fctr : Expression)~(divs) if divs.length != 0 =>
         applyFunctionsInOrder(fctr :: divs.collect({

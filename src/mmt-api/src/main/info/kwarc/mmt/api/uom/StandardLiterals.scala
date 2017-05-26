@@ -15,6 +15,7 @@ object Product {
    }
 }
 class Product(val left: SemanticType, val right: SemanticType) extends SemanticType {
+   def asString = "(" + left.asString + "*" + right.asString + ")" 
    override def valid(u: Any) = u match {
       case (l,r) => left.valid(l) && right.valid(r)
       case _ => false
@@ -88,6 +89,7 @@ object ListType {
    val matcher = new utils.StringMatcher2Sep("[",",","]")
 }
 class ListType(val over: SemanticType) extends SemanticType {
+   def asString = "List[" + over.asString + "]" 
    override def valid(u: Any) = u match {
       case us: List[_] => us.forall(over.valid)
       case _ => false
@@ -111,6 +113,7 @@ object TupleType {
    val matcher = new utils.StringMatcher2Sep("(",",",")")
 }
 class TupleType(val over: SemanticType, val dim: Int) extends SemanticType {
+   def asString = "(" + over.asString + "^" + dim + ")" 
    override def valid(u: Any) = u match {
       case us: List[_] if us.length == dim => us.forall(over.valid)
       case _ => false
@@ -131,6 +134,7 @@ class RTuple[U](o: RSemanticType[U], d: Int) extends TupleType(o,d) with RSemant
 }
 
 abstract class Subtype(val of: SemanticType) extends SemanticType {
+   def asString = "(a subtype of " + of.asString + ")" 
    def by(u: Any): Boolean
    override def valid(u: Any) = of.valid(u) && by(u)
    override def normalform(u: Any) = of.normalform(u)
@@ -150,6 +154,7 @@ abstract class RSubtype[U](of: RSemanticType[U]) extends Subtype(of) with RSeman
 }
 
 abstract class Quotient(val of: SemanticType) extends SemanticType {
+   def asString = "(a quotient of " + of.asString + ")" 
    def by(u: Any): Any
    override def valid(u: Any) = of.valid(u)
    override def normalform(u: Any) = by(of.normalform(u))
@@ -208,6 +213,7 @@ abstract class IntegerLiteral extends Atomic[BigInt] with IntegerRepresented {
 
 /** standard integer numbers */
 object StandardInt extends IntegerLiteral {
+  def asString = "int" 
   /** embedding into the rationals */
   override def embed(into: SemanticType) = super.embed(into) orElse {
     if (into == StandardRat)
@@ -219,6 +225,7 @@ object StandardInt extends IntegerLiteral {
 
 /** standard natural numbers */
 object StandardNat extends RSubtype(StandardInt) {
+   override def asString = "nat" 
    def by(u: Any) = StandardInt.unapply(u).get >= 0
 }
 
@@ -236,6 +243,7 @@ class IntModulo(modulus: Int) extends RQuotient(StandardInt) {
 
 /** standard rational numbers */
 object StandardRat extends RQuotient(new RProduct(StandardInt,StandardPositive)) {
+   override def asString = "rat" 
    def by(u: Any): (BigInt,BigInt) = {
       val (e:BigInt,d:BigInt) = u
       val gcd = e gcd d
@@ -249,7 +257,7 @@ object StandardRat extends RQuotient(new RProduct(StandardInt,StandardPositive))
    private val matcher = utils.StringMatcher("","/","")
    override def fromString(s: String) = s match {
       case this.matcher(e,d) => (StandardInt.fromString(e), StandardNat.fromString(d))
-      case s => (StandardInt.fromString(s.trim),1)
+      case s => (StandardInt.fromString(s.trim),BigInt(1))
    }
    override def lex = Some(new parser.NumberLiteralLexer(false,true))
    
@@ -271,6 +279,7 @@ object ComplexRat extends RProduct(StandardRat, StandardRat) {
 // switched to java.lang.Double, because that's what .toDouble returns and
 // java.lang.Double =/= scala.Double (problem in RepresentationType.unapply)
 object StandardDouble extends Atomic[java.lang.Double] {
+   def asString = "double" 
    val cls = classOf[java.lang.Double]
    val key = "OMF"
    def fromString(s: String) = s.toDouble //s.toDouble
@@ -278,12 +287,14 @@ object StandardDouble extends Atomic[java.lang.Double] {
 }
 
 object StandardString extends Atomic[String] {
+   def asString = "string" 
    val cls = classOf[String]
    def fromString(s: String) = s
    override def lex = quotedLiteral("")
 }
 
 object StandardBool extends Atomic[java.lang.Boolean] {
+   def asString = "bool" 
    val cls = classOf[java.lang.Boolean]
    def fromString(s: String) = s match {
      case "true" => true
@@ -296,6 +307,7 @@ object StandardBool extends Atomic[java.lang.Boolean] {
 import utils.URI
 /** URI literals, concrete syntax is uri"..." */
 object URILiteral extends Atomic[URI] {
+   def asString = "uri"
    val cls = classOf[URI]
    def fromString(s: String) = URI(s)
    override def lex = quotedLiteral("uri")

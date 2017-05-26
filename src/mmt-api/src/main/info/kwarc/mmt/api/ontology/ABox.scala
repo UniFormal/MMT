@@ -45,14 +45,19 @@ class RelStore(report : frontend.Report) {
       synchronized {
          log(d.toString)
          d match {
-           case Relation(dep, subj, obj) =>                  
+           case Relation(dep, subj, obj) =>
               subjects += ((dep, obj), subj)
-              objects += ((subj, dep), obj)           
+              objects += ((subj, dep), obj)
               dependencies += ((subj, obj), dep)
            case Individual(p, tp) =>
               types(p) = tp
               individuals += (tp, p)
-              objects += ((p.^!,Declares),p) // seems to be necessary to add theories to their namespaces
+              /*
+              p.ancestors match {
+                 case `p` :: tail =>
+                    tail.foldLeft(p)((q1,q2) => {objects += ((q2,Declares),q1) ; q2}) // seems to be necessary to add theories to their namespaces
+                 case _ =>
+              } */
          }
       }
    }
@@ -61,7 +66,7 @@ class RelStore(report : frontend.Report) {
    def deleteSubject(subj : Path) {
       synchronized {
         types -= subj
-        individuals.values.foreach {v => v -= subj} 
+        individuals.values.foreach {v => v -= subj}
         subjects.values.foreach {v => v -= subj}
         objects.keys.foreach {k =>
            if (k._1 == subj)

@@ -50,7 +50,7 @@ object Lambda extends LFSym ("lambda") {
    def apply(name : LocalName, tp : Term, body : Term) = OMBIND(this.term, OMV(name) % tp, body)
    def apply(con: Context, body : Term) = OMBIND(this.term, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(OMS(this.path), Context(VarDecl(n,Some(a),None, _), rest @_*), s) =>
+	   case OMBIND(OMS(this.path), Context(VarDecl(n,None,Some(a),None, _), rest @_*), s) =>
 	      val newScope = if (rest.isEmpty)
 	         s
 	      else
@@ -70,7 +70,7 @@ object Pi extends LFSym ("Pi") {
    def apply(name : LocalName, tp : Term, body : Term) = OMBIND(this.term, OMV(name) % tp, body)
    def apply(con: Context, body : Term) = OMBIND(this.term, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(OMS(this.path), Context(VarDecl(n,Some(a),None,_), rest @ _*), s) =>
+	   case OMBIND(OMS(this.path), Context(VarDecl(n,None,Some(a),None,_), rest @ _*), s) =>
          val newScope = if (rest.isEmpty)
             s
          else
@@ -155,8 +155,8 @@ object FunType {
   }
   
   def argsAsContext(args: List[(Option[LocalName], Term)]): Context = args.map {
-     case (Some(n), t) => VarDecl(n, Some(t), None, None)
-     case (None, t) => VarDecl(OMV.anonymous, Some(t), None, None)
+     case (Some(n), t) => VarDecl(n, t)
+     case (None, t) => VarDecl(OMV.anonymous, t)
   } 
 }
 
@@ -195,7 +195,7 @@ object Binder {
   }
   def apply(binder: GlobalName, context: Context, body: Term): Term = {
     context.foldRight(body) {case (next, sofar) =>
-      val VarDecl(name, Some(tp), None, _) = next
+      val VarDecl(name, None, Some(tp), None, _) = next
       apply(binder, name, tp, sofar)
     }
   }

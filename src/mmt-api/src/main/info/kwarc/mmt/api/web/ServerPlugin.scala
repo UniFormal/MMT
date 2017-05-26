@@ -7,8 +7,7 @@ import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
-import tiscaf._
-import Server._
+import ServerResponse._
 import info.kwarc.mmt.api.objects.Context
 
 /**
@@ -26,25 +25,23 @@ abstract class ServerExtension(context: String) extends FormatBasedExtension {
   def isApplicable(cont: String): Boolean = cont == context
 
   /**
-   * handles the HTTP request
-   * @param path the PATH from above (excluding CONTEXT)
-   * @param query the QUERY from above
-   * @param body the body of the request
-   * @return the HTTP response
+   * handles a request for this ServerExtension
    *
-   *         Implementing classes can and should use Server.XmlResponse etc to construct responses conveniently.
+   * for implementation, the ServerResponse._ methods should be used
+   * all errors are caught and displayed to the user when possible
    *
-   *         Errors thrown by this method are caught and sent back to the browser.
+   * @param request The request sent to this ServerExtension
+   * @return a response for this request
    */
-  def apply(path: List[String], query: String, body: Body, session: Session): HLet
+  def apply(request: ServerRequest): ServerResponse
 }
 
 /**
  * interprets the body as MMT content
  */
 class PostServer extends ServerExtension("post") {
-  def apply(path: List[String], query: String, body: Body, session: Session) = {
-    val wq = WebQuery.parse(query)
+  def apply(request: ServerRequest): ServerResponse = {
+    val wq = request.parsedQuery
     val content = wq.string("body", throw ServerError("found no body in post req"))
     val format = wq.string("format", "mmt")
     val dpathS = wq.string("dpath", throw ServerError("expected dpath"))
@@ -58,23 +55,20 @@ class PostServer extends ServerExtension("post") {
 /** interprets the query as an MMT document URI and returns the SVG representation of the theory graph */
 class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
   /**
-   * @param httppath the export dimension from which to take the graph, "svg" by if empty
-   * @param query the [[Path]] for which to retrieve a graph
-   * @param body ignored
-   * @param session ignored
+   * request.path the export dimension from which to take the graph, "svg" by if empty
+   * request.query the [[Path]] for which to retrieve a graph
    */
-
-  def apply(httppath: List[String], query: String, body: Body, session: Session) = {
-    val (nquery,json) = if (query.startsWith("json:")) (query.drop(5),true) else (query,false)
-    val path = Path.parse(nquery, controller.getNamespaceMap)
-    val key = httppath.headOption.getOrElse("svg")
+  def apply(request: ServerRequest): ServerResponse = {
+    // val (nquery,json) = if (query.startsWith("json:")) (query.drop(5),true) else (query,false)
+    val path = Path.parse(request.query, controller.getNamespaceMap)
+    val key = request.path.headOption.getOrElse("svg")
     lazy val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
-      throw LocalError(s"svg file does not exist and exporter $key not available: $query")
+      throw LocalError(s"svg file does not exist and exporter $key not available: ${request.query}")
     }
     lazy val se = controller.get(path)
-    if (json) {
+    /* if (json) {
       JsonResponse(exp.asJSON(se))
-    } else {
+    } else { */
       val (exportFolder, relPath) = svgPath(path)
       val svgFile = exportFolder / key / relPath
       val node = if (svgFile.exists) {
@@ -82,8 +76,8 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
       } else {
         exp.asString(se)
       }
-      TypedTextResponse(node, "image/svg+xml")
-    }
+      ServerResponse(node, "image/svg+xml")
+    // }
   }
   
   import Javascript._
@@ -128,21 +122,128 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
 
 /** interprets the body as a QMT [[ontology.Query]] and evaluates it */
 class QueryServer extends ServerExtension("query") {
+
   /**
-   * @param path ignored
-   * @param httpquery ignored
-   * @param body the query as XML
-   */
-  def apply(path: List[String], httpquery: String, body: Body, session: Session) = {
-    val mmtquery = body.asXML
-    log("qmt query: " + mmtquery)
-    val q = Query.parse(mmtquery)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
-    //log("qmt query: " + q.toString)
-    QueryChecker.infer(q)(Context.empty) // type checking
-    val res = controller.evaluator(q)
-    val resp = res.toNode
-    XmlResponse(resp)
+    * Represents an error that occured because the context could not be properly parsed
+    * @param candidate Candidate Path that could not be parsed
+    * @param t Internal exception causing this error
+    */
+  class ContextParsingError(candidate : String, t: Throwable) extends Error(s"Unable to use context: '$candidate' is not a valid MPath. ") {
+    setCausedBy(t)
   }
+
+  /**
+    * Represents an error that occured because an item in the context could not be retrieved
+    * @param item path to item that could not be retrieved
+    * @param t Internal exception causing this error
+    */
+  class ContextRetrievalError(item: MPath, t: Throwable) extends Error(s"Unable to use context: '${item.toPath}' could not be retrieved. Make sure the path exists. ") {
+    setCausedBy(t)
+  }
+
+  /**
+    * Represents ane error that occured because the query could not be properly parsed.
+    * @param se Internal source error that caused this error
+    */
+  class QuerySourceParsingError(val se: SourceError) extends Error(s"Unable to parse query: Source error in Line ${se.ref.region.start.line}, Column ${se.ref.region.start.column} - Line ${se.ref.region.end.line}, Column ${se.ref.region.end.column}. Make sure your syntax is correct. ") {
+    setCausedBy(se)
+  }
+
+  /**
+    * Represents an error that occured because the query could not be properly translated.
+    * @param t Cause of the error
+    */
+  class QueryTranslationParsingError(val t: Throwable) extends Error(s"Unable to parse query: ${t.getMessage}. Make sure your syntax is correct. ") {
+    setCausedBy(t)
+  }
+
+  def apply(request: ServerRequest): ServerResponse = {
+    request.extensionPathComponents match {
+      case List("text") =>
+        // find the parameters in the body
+        val queryparams = request.body.asJSON match {
+          case jo: JSONObject => jo
+        }
+
+        // and extract them
+        val query = queryparams("query") match {
+          case Some(js: JSONString) =>
+            js.value
+        }
+
+        val context = queryparams("context") match {
+          case Some(ja: JSONArray) =>
+            ja.values
+               .map(_.asInstanceOf[JSONString].value)
+               .map(pth => {
+                 val mpath = try {
+                   Path.parseM(pth, NamespaceMap.empty)
+                 } catch {
+                   case pe: ParseError =>
+                     throw new ContextParsingError(pth, pe)
+                 }
+                 try {
+                   controller.get(mpath)
+                   Context(mpath)
+                 } catch {
+                   case ge: GetError =>
+                     throw new ContextRetrievalError(mpath, ge)
+                 }
+               })
+               .reduce(_ ++ _)
+        }
+
+
+        // and parse it
+        log(s"parsing query from text $query $context")
+        val q = try {
+         Query.parse(query, context, controller)
+        } catch {
+          case se: SourceError =>
+            throw new QuerySourceParsingError(se)
+          case err: Exception =>
+            throw new QueryTranslationParsingError(err)
+        }
+
+        // now run the query
+        run(q, request)
+
+
+      // POST to / => parse xml (for backward compatibility)
+      case Nil | List("") if request.method == RequestMethod.Post =>
+        // read xml from the body
+        val queryxml = request.body.asXML
+
+        // and parse it
+        log(s"parsing query from xml $queryxml")
+        val q = Query.parse(queryxml)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
+
+        // now run the query
+        run(q, request)
+
+      // GET to / => show the query page (for humans)
+      case Nil | List("") if request.method == RequestMethod.Get =>
+        resource("qmt.html", request)
+
+      // anything else => Error
+      case _ =>
+          ServerResponse.fromText("Not found", statusCode = ServerResponse.statusCodeNotFound)
+    }
+  }
+
+  def run(query : Query, request: ServerRequest) : ServerResponse = {
+
+    // check that the query is correct
+    // TODO: Throw a proper error if this fails
+    log(s"checking query $query")
+    QueryChecker.infer(query)(Context.empty)
+
+    // run the actual query
+    log(s"running query $query")
+    val res = controller.evaluator(query)
+    ServerResponse.fromXML(res.toNode)
+  }
+
 }
 
 /** HTTP frontend to the [[Search]] class */
@@ -154,18 +255,13 @@ class SearchServer extends ServerExtension("search") {
     mmlpres.init(controller)
   }
 
-  /**
-   * @param path ignored
-   * @param httpquery search parameters
-   * @param body ignored
-   */
-  def apply(path: List[String], httpquery: String, body: Body, session: Session) = {
-    val wq = WebQuery.parse(httpquery)
+  def apply(request: ServerRequest): ServerResponse = {
+    val wq = WebQuery.parse(request.query)
     val base = wq("base")
     val mod = wq("module")
     val name = wq("name")
     val theory = wq("theory")
-    val pattern = wq("pattern")
+    val pattern = wq("pattern") orElse request.body.asStringO
     val format = wq.string("format", "mmt")
     val intype = wq.boolean("type")
     val indef = wq.boolean("definition")
@@ -222,13 +318,13 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
 
   def getSettings(path : List[String], query : String, body : Body) : Map[String, String]
 
-  def apply(path : List[String], query : String, body: Body, session: Session) = {
-    val searchS = body.asString
-    val settings = getSettings(path, query, body)
+  def apply(request: ServerRequest): ServerResponse = {
+    val searchS = request.body.asString
+    val settings = getSettings(request.path, request.query, request.body)
     val mathmlS = toHTML(process(searchS, settings))
     val mathml = scala.xml.XML.loadString(mathmlS)
     val resp = postProcessQVars(mathml)
-    Server.TextResponse(resp.toString, "html")
+    TextResponse(resp.toString, "html")
   }
 
   def preProcessQVars(n : scala.xml.Node) : scala.xml.Node = n match {
@@ -256,8 +352,8 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
 
 /** interprets the query as an MMT [[frontend.GetAction]] and returns the result */
 class GetActionServer extends ServerExtension("mmt") {
-  def apply(path: List[String], query: String, body: Body, session: Session) = {
-    val action = Action.parseAct(query, controller.getBase, controller.getHome)
+  def apply(request: ServerRequest): ServerResponse = {
+    val action = Action.parseAct(request.queryString, controller.getBase, controller.getHome)
     val resp: String = action match {
       case GetAction(a: ToWindow) =>
         a.make(controller)
@@ -273,17 +369,17 @@ class GetActionServer extends ServerExtension("mmt") {
 
 /** an HTTP interface for processing [[Message]]s */
 class MessageHandler extends ServerExtension("content") {
-  def apply(path: List[String], query: String, body: Body, session: Session) = {
-     if (path.length != 1)
+  def apply(request: ServerRequest): ServerResponse = {
+     if (request.path.length != 1)
        throw LocalError("path must have length 1")
-     val wq = WebQuery.parse(query)
+     val wq = WebQuery.parse(request.query)
      lazy val inFormat = wq.string("inFormat")
      lazy val outFormat = wq.string("outFormat")
      lazy val theory = wq.string("theory")
      lazy val context = objects.Context(Path.parseM(theory, controller.getNamespaceMap))
      lazy val inURI = Path.parse(wq.string("uri"))
-     lazy val in = body.asString
-     val message: Message = path.head match {
+     lazy val in = request.body.asString
+     val message: Message = request.path.head match {
        case "get"    => GetMessage(inURI, outFormat)
        case "delete" => DeleteMessage(inURI)
        case "add"    => AddMessage(???, inFormat, in)
@@ -295,8 +391,8 @@ class MessageHandler extends ServerExtension("content") {
      }
      controller.handle(message) match {
        case ObjectResponse(obj, tp) => TextResponse(obj, tp)
-       case StructureResponse(id) => errorResponse(id)
-       case ErrorResponse(msg) => errorResponse(msg)
+       case StructureResponse(id) => errorResponse(id, request)
+       case ErrorResponse(msg) => errorResponse(msg, request)
      }
   }
 }
@@ -313,8 +409,8 @@ class ActionServer extends ServerExtension("action") {
     report.removeHandler(logPrefix)
   }
 
-  def apply(path: List[String], query: String, body: Body, session: Session): HLet = {
-    val c = query.replace("%20", " ")
+  def apply(request: ServerRequest): ServerResponse = {
+    val c = request.decodedQuery
     val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
     if (act == Exit) {
       // special case for sending a response when exiting
@@ -324,7 +420,7 @@ class ActionServer extends ServerExtension("action") {
           controller.handle(act)
         }
       }.start
-      return Server.XmlResponse(<exited/>)
+      return XmlResponse(<exited/>)
     }
     logCache.record
     controller.handle(act)
@@ -353,9 +449,9 @@ class ActionServer extends ServerExtension("action") {
  * and store the comment as user+date into the discussions folder
  */
 class SubmitCommentServer extends ServerExtension("submit_comment") {
-  def apply(path: List[String], query: String, body: Body, session: Session) = {
-    val path = Path.parse(query, controller.getNamespaceMap)
-    var s = body.asString
+  def apply(request: ServerRequest): ServerResponse = {
+    val path = Path.parse(request.queryString, controller.getNamespaceMap)
+    var s = request.body.asString
     val date = Calendar.getInstance().getTime.toString
     val end = date.replaceAll("\\s", "")
     //deprecated but will use this until better alternatives come along
@@ -372,7 +468,7 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
     }
     val resp = "<comment>" +
       "<metadata>" +
-      "<topic>" + query + "</topic>" +
+      "<topic>" + request.query + "</topic>" +
       "<user>" + user + "</user>" +
       "<date>" + date + "</date>" +
       "</metadata>" +
@@ -452,12 +548,13 @@ class URIProducer extends BuildTarget {
  * serves all constant URIs in an archive or a group of archives
  */
 class URIServer extends ServerExtension("uris") {
-   def apply(path: List[String], query: String, body: Body, session: Session) = {
-     val archive = controller.backend.getArchive(query).getOrElse {
-       throw LocalError("archive not found: " + query)
+   def apply(request: ServerRequest): ServerResponse = {
+     val archive = controller.backend.getArchive(request.query).getOrElse {
+       throw LocalError("archive not found: " + request.query)
      }
      val f = archive / Dim("export") / "uris" / "uris.json"
      val json = File.read(f)
-     TypedTextResponse(json, "application/json")
+     // TODO: Check if we want to use a ServerResponse.resource
+     ServerResponse(json, "application/json")
    }
 }

@@ -242,10 +242,10 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
 
    /** build the sidekick outline tree: context node (each VarDecl is added individually) */
    private def buildTreeCont(node: DefaultMutableTreeNode, parent: CPath, con: Context, context: Context, defaultReg: SourceRegion) {
-      con mapVarDecls {case (previous, vd @ VarDecl(n, tp, df, _)) =>
+      con mapVarDecls {case (previous, vd @ VarDecl(n, f, tp, df, _)) =>
          val reg = getRegion(vd) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
          val currentContext = context ++ previous
-         val child = new DefaultMutableTreeNode(new MMTObjAsset(vd, vd, currentContext, parent, n.toString, reg))
+         val child = new DefaultMutableTreeNode(new MMTObjAsset(vd, vd, currentContext, parent, f.map(_+" ").getOrElse("") + n.toString, reg))
          node.add(child)
          (tp.toList:::df.toList) foreach {t =>
             buildTreeTerm(child, parent, t, currentContext, reg)
@@ -265,16 +265,17 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case OMV(n) => n.toString
          case OMID(p) => p.name.toString
          case l: OMLITTrait => l.toString
-         case OML(nm,_,_) => nm.toString
+         case OML(nm,_,_,_,_) => nm.toString
          case OMSemiFormal(_) => "unparsed: " + tP.toString
          case ComplexTerm(op, _,_,_) => op.last.toString
          case OMA(OMID(p),_) => p.name.last.toString
          case OMBINDC(OMID(p),_,_) => p.name.last.toString
+         case OMA(ct,args) => "OMA" // TODO probably shouldn't occur, but throws errors!
       }
       val child = new DefaultMutableTreeNode(new MMTObjAsset(t, tP, context, parent, label+extraLabel, reg))
       node.add(child)
       tP match {
-         case OML(_,tp,df) =>
+         case OML(_,tp,df,_,_) =>
             (tp.toList:::df.toList) foreach {t =>
                buildTreeTerm(child, parent, t, context, reg)
             }

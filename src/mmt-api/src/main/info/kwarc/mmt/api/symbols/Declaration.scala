@@ -53,6 +53,13 @@ abstract class Declaration extends ContentElement {
     *  None by default; overridden in particular by Constant
     */
    def alternativeNames: List[LocalName] = Nil
+   
+   /** @return the shortest name and all other names */
+   def primaryNameAndAliases = {
+     val names = (name :: alternativeNames).sortBy(_.length)
+     (names.head, names.tail)
+   }
+   
    /** the full MMT URI, parent ? name */
    def path = GlobalName(parent, name)
    /** the OMS referencing this declaration */

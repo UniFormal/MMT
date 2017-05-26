@@ -26,6 +26,10 @@ object InferAmbiguous extends InferenceRule(ObjectParser.oneOf,ObjectParser.oneO
    def apply(checker: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
       val OMA(OMS(ObjectParser.oneOf), choice::alternatives) = tm
       def choose(i: BigInt) = checker.inferType(alternatives(i.toInt), covered)
+      /* TODO do this differently: OMA(ambiguous, unknown, option*, arg*)
+       * options are pairs of GlobalName and number of leading implicit arguments, args are the explicit arguments
+       * now infer the explicit arguments for real, then try to check in dryRuns
+       */
       choice match {
          case OMI(i) =>
             history += "already disambiguated"
@@ -35,8 +39,8 @@ object InferAmbiguous extends InferenceRule(ObjectParser.oneOf,ObjectParser.oneO
             // try type inference on every alternative
             val results = alternatives.zipWithIndex.map {case (a,i) =>
                history += s"trying number $i"
-               val res = checker.dryRun {
-                  checker.inferType(a, covered)(stack, new History(Nil))
+               val res = checker.dryRun(false) {
+                  checker.inferType(a, covered)(stack, NoHistory)
                }
                history += res.toString
                (res,i)
@@ -47,13 +51,13 @@ object InferAmbiguous extends InferenceRule(ObjectParser.oneOf,ObjectParser.oneO
                val theOne = nonFailures.head._2.toInt
                checker.check(Equality(stack, choice, OMI(BigInt(theOne)), None))(history + "disambiguated")
                // after solving the next application of inferType will succeed
-               // but we can return the right result immediatel
+               // but we can return the right result immediately
                choose(theOne)
             } else if (nonFailures.length == alternatives.length) {
                history += "unable to disambiguate"
                // we learned nothing new
                None
-            } else if (nonFailures.count(_._1 != MightFail) > 1) {
+            } else if (nonFailures.count(_._1.isInstanceOf[Success[_]]) > 1) {
               checker.error("ambiguous: more than one alternative is well-typed")
               None
             } else {

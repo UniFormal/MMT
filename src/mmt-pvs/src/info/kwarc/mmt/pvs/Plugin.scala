@@ -2,12 +2,13 @@ package info.kwarc.mmt.pvs
 
 import info.kwarc.mmt.api._
 import checking._
+import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardNat, StandardRat, StandardString}
 import notations.{HOAS, NestedHOASNotation}
 import objects._
 import objects.Conversions._
 import notations._
-import symbols.{BoundTheoryParameters, DerivedDeclaration, StructuralFeatureRule, TermContainer}
+import symbols._
 import info.kwarc.mmt.lf._
 
 class Plugin extends frontend.Plugin {
@@ -18,6 +19,7 @@ class Plugin extends frontend.Plugin {
     // content enhancers
     em.addExtension(new LambdaPiInclude)
     em.addExtension(new PVSImporter)
+    em.addExtension(new PVSServer)
   }
 }
 
@@ -26,39 +28,68 @@ import PVSTheory._
 // Notation Extension
 
 object PVSNotation extends NotationExtension {
+  override val priority = 3
   def isApplicable(t: Term): Boolean = t match {
-    case pvsapply(fun,tuple_expr(List(a,b)),_) => true
+    case ComplexTerm(Apply.path,sub,con,List(pvsapply.term,_,_,OMS(fun),tuple_expr(List(a,b)))) =>
+      true
+    case ComplexTerm(Apply.path,sub,con,List(pvsapply.term,_,_,Apply(OMS(fun),ls),tuple_expr(List(a,b)))) =>
+      true // implicit type arguments
+    case ComplexTerm(Apply.path,sub,con,List(pvsapply.term,_,_,parambind(fun,ls),tuple_expr(List(a,b)))) =>
+      true // implicit type arguments
     case _ => false
   }
   /** called to construct a term after a notation produced by this was used for parsing */
   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
                    (implicit unknown: () => Term): Term = {
-    println("constructTerm1")
-    println(op)
-    println(subs)
-    println(con)
-    println(args)
-    println(attrib)
-    println(not)
-    OMA(OMS(op),args)
+    require(args.length == 2)
+    ???
   }
-  def constructTerm(fun: Term, args: List[Term]): Term = {
-    println("constructTerm2")
-    println(fun)
-    println(args)
-    OMA(fun,args)
-  }
+  def constructTerm(fun: Term, args: List[Term]): Term = ApplySpine(fun,args:_*)
   /** called to deconstruct a term before presentation */
   def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = {
-    println("destructTerm")
-    println(t)
-    ???
+    val (fun,sub,con,a,b) = t match {
+      case ComplexTerm(Apply.path,sub2,con2,List(pvsapply.term,_,_,OMS(fun2),tuple_expr(List((a2,_),(b2,_))))) => (fun2,sub2,con2,a2,b2)
+      case ComplexTerm(Apply.path,sub2,con2,List(pvsapply.term,_,_,Apply(OMS(fun2),ls),tuple_expr(List((a2,_),(b2,_))))) => (fun2,sub2,con2,a2,b2)
+      case ComplexTerm(Apply.path,sub2,con2,List(pvsapply.term,_,_,parambind(fun2,ls),tuple_expr(List((a2,_),(b2,_))))) =>
+        (fun2,sub2,con2,a2,b2) // implicit type arguments
+      case _ => return None
+    }
+    val delim = Delim(fun.name match {
+      case ComplexStep(p) / s => p.name + "?" + s
+      case _ => fun.name.toString
+    })
+    val fixity = Mixfix(List(SimpArg(1),Delim("%w"),delim,Delim("%w"),SimpArg(2)))
+    val notation = TextNotation(fixity,Precedence.integer(0),None)
+    Some(PragmaticTerm(fun,sub,con,List(a,b),false,notation,Position.positions(OMA(OMS(fun),List(a,b)))))
   }
 }
 
 // Structural Features
 
-class LambdaPiInclude extends BoundTheoryParameters(BoundInclude.feature,Pi.path,Lambda.path,Apply.path)
+class LambdaPiInclude extends StructuralFeature("BoundInclude") with IncludeLike {
+  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration = {
+    val dom = getDomain(dd)
+    val body = controller.simplifier.getBody(Context.empty, dom) match {
+      case t : DeclaredTheory => t.path
+      case _ => throw GetError("Not a declared theory: " + dom)
+    }
+    new Elaboration {
+      override def domain: List[LocalName] = List(LocalName(body))
+
+      override def getO(name: LocalName): Option[Declaration] = name match {
+        case n if n == LocalName(body) => Some(PlainInclude(body,dd.parent))
+      }
+    }
+  }
+
+  override def processHeader(header: Term) = header match {
+    case OMA(OMMOD(`mpath`), (t @ OMPMOD(p,_))::Nil) => (LocalName("Param_" + p.name), t)
+  }
+
+  override def makeHeader(dd: DerivedDeclaration) = OMA(OMMOD(`mpath`), dd.tpC.get.get :: Nil)
+
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
+}//BoundTheoryParameters(BoundInclude.feature,Pi.path,Lambda.path,Apply.path)
 
 object BoundInclude {
   val mpath = SemanticObject.javaToMMT("info.kwarc.mmt.pvs.LambdaPiInclude")
@@ -192,3 +223,15 @@ object NatLitSubtype extends SubtypingRule {
 
 
 object PVSHOAS extends NestedHOASNotation(HOAS(pvsapply.path,pvslambda.path,expr.path),LF.hoas)
+
+import PVSTheory._
+
+object SetsubRule extends ComputationRule(PVSTheory.expr.path) {
+  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
+    case expr(setsub(tp,prop)) => Some(info.kwarc.mmt.LFX.Subtyping.predsubtp(expr(tp),proof("internal_judgment",
+      Lambda(doName,expr(tp),pvsapply(prop,OMV(doName),expr(tp),bool.term)._1))))
+    case _ => None
+  }
+
+  def doName = Context.pickFresh(Context.empty,LocalName("Ipred")/"x")._1
+}

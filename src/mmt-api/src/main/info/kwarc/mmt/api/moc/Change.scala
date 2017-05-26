@@ -127,9 +127,9 @@ object pragmaticAlphaRename extends PragmaticChangeType {
         if (con.length == con2.length) {
           var newcon = context
           var holds = con.zip(con2) forall {
-            case (VarDecl(n, tp, df, _), VarDecl(n2, tp2, df2, _)) => 
+            case (VarDecl(n, f, tp, df, _), VarDecl(n2, f2, tp2, df2, _)) => 
               newcon += ((n.toPath, n2.toPath))
-              isAlpha(tp, tp2) && isAlpha(df, df2)              
+              f == f2 && isAlpha(tp, tp2) && isAlpha(df, df2)              
           }
           holds && isAlpha(body, body2)(newcon)
         } else {
@@ -184,10 +184,7 @@ object pragmaticRename extends PragmaticChangeType {
       case OMID(p) => if (p == old) OMID(nw) else t
       case OMA(f, args) => OMA(prop(f), args.map(prop))
       case OMBIND(binder, con, body) =>
-        val newCon = Context(con.map(v =>
-          VarDecl(v.name, v.tp.map(prop), v.df.map(prop), v.not)
-        ) :_ *)
-        
+        val newCon = con mapTerms {(_,t) => prop(t)}
         OMBIND(prop(binder), newCon, prop(body))
       case _ => t
     }

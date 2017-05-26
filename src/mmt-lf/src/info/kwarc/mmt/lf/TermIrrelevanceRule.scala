@@ -5,20 +5,37 @@ import objects._
 import frontend._
 import checking._
 
+class SimpleIrrelevanceRule(p : GlobalName) extends TypeBasedSolutionRule(List(Apply.path), p) {
+  def solve(solver: Solver)(tp: Term)(implicit stack: Stack, history: History): Option[Term] = {
+    val ret = solver.proveWithoutSolution(tp)
+      ret
+  }
+}
+
 object TermIrrelevanceRule extends ParametricRule {
   def apply(controller: Controller, home: Term, args: List[Term]) = {
     args match {
-      case List(OMS(p)) => new TermIrrelevanceRule(List(Apply.path), p)
-      case _ => throw ParseError("exactly one identiifer expected")
+      case List(OMS(p)) => new SimpleIrrelevanceRule(p)//new TermIrrelevanceRule(List(Apply.path), p)
+      case _ => throw ParseError("exactly one identifier expected")
     }
   }
 }
-// @FLorian debatable, but needed when e.g. a) the proof is itself pi-bound and
-// b) is not the first argument. Then the solver will try to prove I : {<previous_args>}|-<prop>
-// and fail, because pi
-object PiIrrelevance extends TermIrrelevanceRule(Nil,Pi.path) {
-  override def recapplicable(solver : Solver)(tp: Term): Boolean = tp match {
-    case Pi(_,_,itp) => solver.isTermIrrelevant(itp)
+
+object PiIrrelevanceRule extends TypeBasedSolutionRule(List(Apply.path), Pi.path) {
+  def solve(solver: Solver)(tp: Term)(implicit stack: Stack, history: History): Option[Term] = tp match {
+    case Pi(v,dom,cod) =>
+      solver.rules.get(classOf[TypeBasedSolutionRule]).find(r => r.applicable(cod)) match {
+        case Some(rule) =>
+          val ret = rule.solve(solver)(cod)(stack ++ VarDecl(v,dom),history)
+            ret.map(Lambda(v,dom,_))
+        case _ => None
+      }
+    case _ => None
+  }
+
+  override def applicable(tm: Term): Boolean = tm match {
+    case Pi(_,dom,cod) => true
+    case Arrow(_,_) => true
     case _ => false
   }
 }

@@ -1,67 +1,0 @@
-namespace http://cds.omdoc.org/examples
-
-//   a simple language for set theory
-     This primarily exemplifies advanced notations for parsing and presentation. 
-
-theory Sets : http://cds.omdoc.org/urtheories?LF =
-  set   : type
-  prop  : type
-  in    : set → set → prop # 1 ‍∈ 2 prec 75
-  equal : set → set → prop
-  // No printable characters are reserved. Here = is used as a delimiter.  # 1 = 2 prec 50
-  ded   : prop → type      # ded 1 prec 0
-
-  // Elem A yields a for elements of the set A.
-     Its notation is chosen such that variable attributions can be parsed and presented as x ‍∈ A instead of x : Elem A.
-  Elem : set → type       # ∈ 1 prec 70
-
-  // The following declaration lifts equal to the types Elem A.
-     For parsing (#) it needs a different notation (==); for presentation (##) we can reuse =.
-  elemequal : {A} Elem A → Elem A → prop   # 2 == 3 prec 50  
-                                          //  This notation for presentation is 2-dimensional: _ yields a subscript and %I marks an implicit (hidable) argument. 
-                                          ## 2 = _ %I1 3 prec 50
-
-  // A universal quantifier over all elements of a given set.
-     Using Elem A, the relativization can be expressed in the type system.
-  forall : {A} (Elem A → prop) → prop 
-         //  The notation uses V2T for an attributed variable (x ‍∈ A) and -3 for the scope.
-             Thus, forall is a binder as far as the MMT notation system is concerned.
-             The type system considers it as a higher-order constant of LF. The LF plugin for MMT configures the conversion between the two. 
-         # ∀ V2T . -3 prec -1
-
-  empty     : set        # ∅ 
-         
-  // Several set operators use {}-based notations and are binders.
-     MMT can handle that.
-     However, we have to use ; instead of : for replacement because the delimiter scheme { : } is already used for the Pi symbol of LF.
-     Because the notations are left- and right-closed, we can give them very low precedences, which has the effect that they act like brackets.
-  compr : {A} (Elem A → prop) → set       # { V2T | -3 } prec -100004
-  repl  : {A}{B} (Elem A → Elem B) → set  # { -4 ; V3T } prec -100006
-
-  union    : set → set → set          # 1 ∪ 2 prec 120
-  inter    : set → set → set          # 1 ∩ 2 prec 120
-  // The big operators for union and intersection are binders with 2-dimensional notations.
-     In the __ produces underscripts.
-  bigunion : {A} (Elem A → set) → set # ⋃ V2T . -3 prec 60   ## ⋃ __ V2T -3 prec 5
-  biginter : {A} (Elem A → set) → set # ⋂ V2T . -3 prec 60   ## ⋂ __ V2T -3 prec 5
-  
-  fun  : set → set → set # 1 ⇒ 2 prec 120  //  ^ produces superscripts.  ## 2 ^ 1 
-  lam  : {A}{B} (Elem A → Elem B) → Elem (fun A B)        # λ 3
-  app  : {A}{B} Elem (fun A B) → Elem A → Elem B          # 3 @ 4 prec 120
-  
-  prod : set → set → set # 1 × 2 prec 120
-  pair : {A}{B} Elem A → Elem B → Elem (A × B)
-       //  We can use () in notations as well. But the precedence has to below the precedence of the built-in notation for bracketed expressions.  
-       # ( 3 , 4 ) prec -1000000001
-  // The two projection use, e.g., ._1 for parsing and subscripts for presentation. %D1 yields 1 as a delimiter (instead of an argument marker). 
-  pi1  : {A}{B} Elem (A × B) → Elem A # 3 ._1 prec 200  ## 3 _ %D1 prec 200
-  pi2  : {A}{B} Elem (A × B) → Elem B # 3 ._2 prec 201  ## 3 _ %D2 prec 200
-
-  cardinality : set → set   # | 1 | prec -100000 
-  
-  // Some example expressions that use the notations. 
-  
-  distributive : {A}{F: Elem A → set} ded A ∩ ⋃ x ∈ A. (F x) = ⋃ x. A ∩ (F x)
-  pairs        : {A} ded {x ∈ A × A | x._1 == x._2} = {(x,x) ; x ∈ A} 
-  sizes        : {A} (ded |{f∈A⇒A|∀x∈A.f@x==x}|=|∅⇒∅|)
-

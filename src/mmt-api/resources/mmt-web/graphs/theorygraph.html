@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=windows-1252">
+        <title>Theory-Graph Viewer</title>
+        
+        <!-- External CSS -->
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.css" rel="stylesheet" type="text/css">
+        <link href="https://code.jquery.com/ui/1.12.1/themes/cupertino/jquery-ui.css" rel="stylesheet" type="text/css">
+        <link href="css/styles.css" rel="stylesheet" type="text/css">
+
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.js"></script>
+        <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+        
+        <!-- Load the magic path -->
+        <script type="text/javascript" src="?do=mmt_resource&path=/script/mmt/mmt-url.js"></script>
+        
+        <!-- load all the local javascript -->
+        <script type="text/javascript" src="js/theoryGraph.js"></script>
+        <script type="text/javascript" src="js/globalFuncs.js"></script>
+        <script type="text/javascript" src="js/globalOptions.js"></script>
+        <script type="text/javascript" src="js/Optimizer.js"></script>
+        <script type="text/javascript" src="js/globalListener.js"></script>
+    </head>
+
+    <body class="ui-form">
+
+        <div class="toolSelector">
+            
+            <div id="generalMenu" name="generalMenu">
+                <button onClick="changeMethod(0);" title="Standard Layout" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="standardIcon"></div></button>
+                <button onClick="changeMethod(1);" title="Hierarchical Layout" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="hierarchicalIcon"></div></button>
+
+                <button id="selectionModeButton" onClick="switchSelectionMode();" title="Switch Selection Mode" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="crosshairIcon"></div></button>
+
+                <label for="clusternameInput">Clustername: </label>
+                <input type="text" id="clusternameInput" name="clusternameInput"></input>
+                <button id="clusterButton" onClick="clusterSelectedNodes()" class="myButton">Cluster selected Nodes</button>
+                
+                <a id="downloadButton"><button onClick="downloadGraph()" class="myButton">Download Graph</button></a>
+                <button id="selectNodes" onClick="selectNodes()" class="myButton">Select Nodes By Pathname</button>
+                <input type="text" id="selectById" name="selectById"></input>
+                <button id="helpButton" class="myButton">Help</button>
+            </div>
+
+            <div id="colorPicker" name="colorPicker">
+
+            </div>
+        </div>
+
+        <div id="helpDialog" title="Help">
+            <p>
+                You can select more than one node by holding CTRL and clicking on nodes to select! <br> You can also draw rectangles around nodes to select them by activating "Selection Mode".
+            </p>
+        </div>
+        
+        <p></p>
+
+        <ul class='custom-menu' style="z-index:100">
+            <li data-action="openWindow">Open Theory</li>
+            <li data-action="showURL">Show URI</li>
+            <li data-action="inferType">Infer Type</li>
+            <li data-action="showDecl">Show Declaration</li>
+            <li data-action="openCluster">Open Cluster</li>
+        </ul>
+
+
+        <div id="wholeNetwork">
+            <div id="mynetwork" style="top:0px;left:0px;position: absolute; -moz-user-select: none; width: 100%; height: 100%;">
+
+            </div>
+            <canvas id="toolCanvas" style="display:none;z-index:1000;top:0px;left:0px;position: absolute;" width="1200" height="600"></canvas>
+        </div>
+
+        <span id='string_span' style='font-size: 17px; diyplay:none;top:-1000px;left:-1000px;positon:absolute;'></span>
+
+        <script type="text/javascript">
+            var selectionMode = false;
+            var theoryGraph = new TheoryGraph();
+            
+            $("#helpDialog").dialog({
+                autoOpen: false
+            });
+
+            $("#helpButton").on("click", function() {
+                $("#helpDialog").dialog("open");
+            });
+
+
+            function addColors() {
+                var colorArray = ["#CCCCFF", "#FFFFCC", "#FFCC99", "#CCFFCC", "#DDDDDD", "#FFCCCC"];
+                var html = "";
+                for (var i = 0; i < colorArray.length; i++) {
+                    html += '<div title="Colorize all selected nodes" class="colorRect" onClick="colorizeSelectedNodes(\'' + colorArray[i] + '\')" style="background-color:' + colorArray[i] + '">  </div>';
+                }
+                document.getElementById("colorPicker").innerHTML = html;
+            }
+
+            function selectNodes() {
+                theoryGraph.selectNodesWithIdLike(document.getElementById("selectById").value);
+            }
+
+            function downloadGraph() {
+                theoryGraph.downloadCanvasAsImage(document.getElementById('downloadButton'));
+            }
+
+            function switchSelectionMode() {
+                if (selectionMode == false) {
+                    $("#toolCanvas").css("display", "block");
+                    selectionMode = true;
+                    document.getElementById('toolCanvas').style.cursor = "crosshair";
+                } else {
+                    $("#toolCanvas").css("display", "none");
+                    selectionMode = false;
+                    document.getElementById('toolCanvas').style.cursor = "auto";
+                }
+            }
+
+            function clusterSelectedNodes() {
+                theoryGraph.cluster(undefined, document.getElementById("clusternameInput").value);
+            }
+
+            function colorizeSelectedNodes(color) {
+                theoryGraph.colorizeNodes(undefined, color);
+            }
+
+            function changeMethode(idx) {
+                if (idx == 0) {
+                    THEORY_GRAPH_OPTIONS.layout = undefined;
+                } else if (idx == 1) {
+                    THEORY_GRAPH_OPTIONS.layout = {
+                        hierarchical: {
+                            sortMethod: "directed",
+                            direction: "LR"
+                        }
+                    };
+                }
+                createNewGraph();
+            }
+
+            function createNewGraph() {
+                theoryGraph.getGraph(mmtUrl+":fancygraph/json/" + getParameterByName("type") + "?uri=" + getParameterByName("uri"));
+            }
+
+            $(document).bind("contextmenu", function(event) {
+                // Avoid the real menu
+                event.preventDefault();
+            });
+
+            var htmlCanvas = document.getElementById('toolCanvas');
+            htmlCanvas.width = (window.innerWidth * 0.99) | 0;
+            htmlCanvas.height = (window.innerHeight * 0.80) | 0;
+            htmlCanvas.style.width = htmlCanvas.width + "px";
+            htmlCanvas.style.height = htmlCanvas.height + "px";
+
+            htmlCanvas = document.getElementById('wholeNetwork');
+            htmlCanvas.width = (window.innerWidth * 0.99) | 0;
+            htmlCanvas.height = (window.innerHeight * 0.80) | 0;
+            htmlCanvas.style.width = htmlCanvas.width + "px";
+            htmlCanvas.style.height = htmlCanvas.height + "px";
+
+            addColors();
+            createNewGraph();
+        </script>
+
+    </body>
+</html>

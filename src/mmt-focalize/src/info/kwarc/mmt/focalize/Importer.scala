@@ -93,7 +93,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
      m match {
        case species(nam, pars, decls) =>
          try {
-           val thy = new DeclaredTheory(currentNamespace, LocalName(nam.foc_name), Some(Focalize._path))
+           val thy = Theory.empty(currentNamespace, LocalName(nam.foc_name), Some(Focalize._path))
            controller.add(thy)
            controller.add(MRef(doc.path, thy.path))
            val parsM = pars.map {case parameter(kind, tp, n) =>
@@ -104,7 +104,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
                 applyCollSpec(tp)
               }
               modInfos ::= SpeciesParameter(nM)
-              VarDecl(nM, Some(tpM), None, None)
+              VarDecl(nM, tpM)
            }
            thy.paramC.set(parsM)
            decls foreach {d =>
@@ -131,7 +131,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
    
    def applyTop(doc: Document, d: ToplevelDeclaration) {
      // TODO declarations must be added to doc itself, not to a dummy theory in it
-     val thy: DeclaredTheory = new DeclaredTheory(currentNamespace, LocalName("global"), Some(Focalize._path))
+     val thy: DeclaredTheory = Theory.empty(currentNamespace, LocalName("global"), Some(Focalize._path))
      controller add thy
      def add(c: Declaration) {
        controller add c
@@ -155,7 +155,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
          val (_, Some(dM)) = applyDec(thy, definition(NamedDecl(n, None, None), tp, df))
          addTypeConst(dM)
        case concrete_type(n, pars, df) =>
-         val cont = pars map {case param(tvar(n)) => VarDecl(LocalName(n), Some(OMS(Focalize.tp)), None, None)}
+         val cont = pars map {case param(tvar(n)) => VarDecl(LocalName(n), OMS(Focalize.tp))}
          def parTp(t: Term) = Pi(cont, t)
          val tpM = parTp(OMS(Focalize.tp))
          def tpConst(df: Option[Term], rl: String) = Constant(thy.toTerm, LocalName(n), Nil, Some(tpM), df, Some(rl))
@@ -234,7 +234,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
        case property(n, prop) =>
          Constant(mod.toTerm, LocalName(n.foc_name), Nil, Some(applyPropLifted(prop)), None, Some("property"))         
        case letprop(n, pars, p) =>
-         val cont = pars map {case param_prop(n,tp) => VarDecl(LocalName(n), Some(applyTypeLifted(tp)), None, None)}
+         val cont = pars map {case param_prop(n,tp) => VarDecl(LocalName(n), applyTypeLifted(tp))}
          val tp = Pi(cont, OMS(Focalize.prop))
          val df = Lambda(cont, applyProp(p)(c++cont))
          Constant(mod.toTerm, LocalName(n.foc_name), Nil, Some(tp), Some(df), Some("letprop"))
@@ -305,7 +305,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
    private def propAux(op: GlobalName, args: Proposition*)(implicit c: Context) = ApplySpine(OMS(op), args map applyProp:_*)
    /** auxiliary function for translating quantified formulas */
    private def quanAux(op: GlobalName, v: foc_name, tp: TypeExpr, bd: Proposition)(implicit c: Context) = {
-     val cont = Context(VarDecl(applyName(v), Some(applyTypeLifted(tp)), None, None))
+     val cont = Context(VarDecl(applyName(v), applyTypeLifted(tp)))
      Apply(OMS(op), Lambda(cont, applyProp(bd)(c++cont)))
    }
      
@@ -341,7 +341,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
         case symbol(math, id) => applyExpr(id)
         case if_expr(i, t, e) => exprAux(Focalize.if_expr, List(i), t, e)
         case fun(varnames, bd) =>
-          val cont = varnames map {case foc_name(_,n) => VarDecl(LocalName(n), ???, None, None)}
+          val cont = varnames map {case foc_name(_,n) => VarDecl(LocalName(n), ???)}
           Apply(OMS(Focalize.fun), Lambda(cont, applyExpr(bd)(c++cont)))
         case application(fun, args) => exprAux(Focalize.app, Nil, fun :: args:_*)          
         case tuple_expr(args) => exprAux(Focalize.tuple, Nil, args:_*)

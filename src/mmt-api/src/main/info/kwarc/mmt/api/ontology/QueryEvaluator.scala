@@ -2,7 +2,8 @@ package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api._
 import frontend._
-import info.kwarc.mmt.api.objects._
+import objects._
+import objects.Conversions._
 
 import scala.collection.mutable.HashSet
 
@@ -52,8 +53,8 @@ class QueryEvaluator(controller: Controller) {
   def apply(q: Query): QueryResult = {
     log(q.toString)
     QueryChecker.infer(q)(Context.empty) match {
-      case TupleQuery(_) => ElemResult(evalElem(q)(Nil))
-      case SetTupleQuery(_) => SetResult(evalSet(q)(Nil).map(ElemResult))
+      case ElementQuery(_) => ElemResult(evalElem(q)(Nil))
+      case SetQuery(_) => SetResult(evalSet(q)(Nil).map(ElemResult))
     }
   }
 
@@ -112,7 +113,7 @@ class QueryEvaluator(controller: Controller) {
 
   /**
     * Evaluates a SetTuple[_] query
-    *
+    *c
     * @param q Query to evaluate
     * @param subst Substiution (Context) to evaluate query in
     * @return
@@ -121,7 +122,7 @@ class QueryEvaluator(controller: Controller) {
     /** evaluate a query with a hint */
     case I(qq, Some(h)) =>
       val matching = evaluators.filter(_.name == h)
-      if(matching.length != 1){
+      if(matching.isEmpty){
         throw ImplementationError("ill-typed query: Missing extenstion for QueryHint. ")
       }
       matching.head.evaluate(qq, this)
@@ -130,6 +131,28 @@ class QueryEvaluator(controller: Controller) {
     case I(qq, None) =>
       log("Found I() with an empty hint, ignoring ... ")
       evalSet(qq)
+
+    case Slice(qq, from, to) =>
+      // we make the subquery
+      val sub = evalSet(qq).toList
+
+      // find out startIndex
+      val startIndex = from.map(f => {
+        if(f < 0) Math.max(0, sub.length - f) else Math.min(f, sub.length - 1)
+      }).getOrElse(0)
+
+      // find out endIndex
+      val endIndex = to.map(t => {
+        if(t < 0) Math.min(sub.length - 1, sub.length - t) else Math.max(0, t)
+      }).getOrElse(sub.length - 1)
+
+      // and return the appropriate list
+      ResultSet.fromTupleList(sub.slice(startIndex, endIndex))
+
+    /** pick a specific element from a set */
+    case Element(qq, at) =>
+      val sub = evalSet(qq).toList(at)
+      ResultSet.fromTupleList(List(sub))
 
     /** bound variable => lookup in the substitution */
     case Bound(vn) =>
@@ -200,11 +223,6 @@ class QueryEvaluator(controller: Controller) {
     case Paths(c) =>
       ResultSet.fromElementList(rs.getInds(c).toSeq)
 
-    /** all objects that unify with a certain object */
-    case Unifies(_) =>
-      // TODO: Implement this
-      throw ImplementationError("Unifies() query not implemented")
-
     /** close of a set of paths */
     case ontology.Closure(of) =>
       evalSinglePath(of) match {
@@ -228,6 +246,20 @@ class QueryEvaluator(controller: Controller) {
         e => evalSet(s)((vn, e.head) :: subst) foreach { x => res += x }
       }
       res
+
+    /** a map over a domain */
+    case Mapping(dom, vn, fn) =>
+      evalSet(dom).map(x => {
+
+        // create a substiution
+        val sub = vn / (x match {
+          case List(t:Term) => t
+          case _ => throw ImplementationError("precondition failed: Argument must be a term")
+        })
+
+        // and apply it
+        List(fn ^? sub)
+      })
 
     /** intersection of sets */
     case Intersection(s, t) =>
@@ -303,8 +335,16 @@ class QueryEvaluator(controller: Controller) {
       evalSet(dom) forall { e => evalProp(sc)((vn, e.head) :: subst) }
 
     /** check that a judgement holds for a given item */
-    case Holds(about, varname, j) =>
-      // TODO: Implement this
+    case Holds(about, j) =>
+      // fetch the item we are talking about
+      val pth = evalSinglePath(about) match {
+        case gn: GlobalName => gn
+        case _ => throw ImplementationError("precondition failed: Argument to Holds() has to return GlobalName")
+      }
+
+      val properJudgement = j.toJudgement(pth)
+      // TODO
+      // @dennis: need to evaluate 'properJudgement' and return a boolean
       throw ImplementationError("Holds() predecate not implemented")
   }
 }

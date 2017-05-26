@@ -1,20 +1,18 @@
 package info.kwarc.mmt.metamath
 
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.Stack
-import scala.collection.mutable.TreeSet
+import scala.collection.mutable.{HashMap,Stack,TreeSet}
+
 import org.metamath.scala._
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.BuildTask
+import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, RelationHandler}
-import info.kwarc.mmt.api.documents.{Document, MRef}
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.frontend.Logger
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.opaque.OpaqueText
-import info.kwarc.mmt.api.opaque.StringFragment
-import info.kwarc.mmt.api.utils.Killable
+import info.kwarc.mmt.api.opaque._
+import info.kwarc.mmt.api.opaque._
+import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.lf._
 
 class LFTranslator(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger with MMTTask with Killable {
@@ -49,7 +47,7 @@ class LFTranslator(val controller: Controller, bt: BuildTask, index: Document =>
     val mod = Metamath.setmm
     val doc = new Document(path, root = true)
     controller add doc
-    val theory = new DeclaredTheory(mod.doc, mod.name, Some(Metamath.prelude))
+    val theory = Theory.empty(mod.doc, mod.name, Some(Metamath.prelude))
     controller add theory
     controller add MRef(doc.path, theory.path)
     val tr = new LFDBTranslator()(db)

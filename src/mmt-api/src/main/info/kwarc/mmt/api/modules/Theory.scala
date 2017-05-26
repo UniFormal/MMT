@@ -10,29 +10,49 @@ abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name) {
    val feature = "theory"
    def parameters: Context
 }
+
+/** convenience functions for explicitly omitting constructor arguments (default arguments tend to mask implementation errors) */
+object Theory {
+   def noMeta: Option[MPath] = None
+   def noBase = new TermContainer
+   def noParams = new ContextContainer
+   
+   def empty(doc: DPath, n: LocalName, mt: Option[MPath]) = new DeclaredTheory(doc, n, mt, noParams, noBase)
+}
+
 /**
- * A Theory represents an MMT theory.<p>
+ * A Theory represents an MMT theory.
  * 
  * Theories are constructed empty. Body is derived to hold a set of named symbols.
  * 
  * @param doc the URI of the parent document
  * @param name the name of the theory
  * @param mt the optional meta-theory
- * @param parameters the interface/parameters/arguments of the theory
+ * @param paramC the interface/parameters/arguments of this theory
+ * @param dfC the definiens/base theory of this theory
  */
-class DeclaredTheory(doc : DPath, name : LocalName, mt : Option[MPath], val paramC: ContextContainer = new ContextContainer)
+class DeclaredTheory(doc : DPath, name : LocalName, private var mt : Option[MPath], val paramC: ContextContainer, val dfC: TermContainer)
       extends Theory(doc, name) with DeclaredModule {
    /** the container of the meta-theory */
-   val metaC = TermContainer(mt.map(OMMOD(_)))
+   def metaC = TermContainer(mt.map(OMMOD(_)))
    /** the meta-theory */
    def meta = metaC.get map {case OMMOD(mt) => mt}
-   /** @return the parameters */
+   /** the parameters */
    def parameters = paramC.get getOrElse Context.empty
+   /** the base theory */
+   def df = dfC.get
+
+  def addMeta(mp : MPath) = mt match {
+    case Some(mti) if mti != mp =>
+      throw GeneralError("Theory " + path + " already has meta theory " + mti)
+    case _ => mt = Some(mp)
+  }
 
    def getComponents = {
      val mtComp = if (metaC.isDefined) List(DeclarationComponent(TypeComponent, metaC)) else Nil
+     val dfComp = if (dfC.isDefined) List(DeclarationComponent(DefComponent, dfC)) else Nil
      val prComp = if (paramC.isDefined) List(DeclarationComponent(ParamsComponent, paramC)) else Nil
-     mtComp ::: prComp
+     mtComp ::: dfComp ::: prComp
    }
    
    /** the context governing the body: meta-theory, parameters, and this theory */
@@ -59,6 +79,7 @@ class DeclaredTheory(doc : DPath, name : LocalName, mt : Option[MPath], val para
       case s: Structure if ! s.isInclude => List(s)
       case _ => Nil
    }
+   
    /** convenience method to obtain all derived declarations for a given feature */
    def getDerivedDeclarations(f: String) = getDeclarations.collect {
      case dd: DerivedDeclaration if dd.feature == f => dd
@@ -69,11 +90,13 @@ class DeclaredTheory(doc : DPath, name : LocalName, mt : Option[MPath], val para
    def toNode =
       <theory name={name.last.toPath} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
         {if (parameters.isEmpty) Nil else <parameters>{parameters.toNode}</parameters>}
+        {if (df.isEmpty) Nil else <definition>{df.get.toNode}</definition>}
         {innerNodes}
       </theory>
    def toNodeElab = 
     <theory name={name.last.toPath} base={doc.toPath}>
         {getMetaDataNode}
+        {if (parameters.isEmpty) Nil else <parameters>{parameters.toNode}</parameters>}
         {innerNodesElab}
     </theory>
    override def toNode(rh: presentation.RenderingHandler) {
@@ -81,19 +104,23 @@ class DeclaredTheory(doc : DPath, name : LocalName, mt : Option[MPath], val para
       rh << s"""<theory name="${name.last.toPath}" base="${doc.toPath}"$metaS>"""
       if (parameters.nonEmpty)
          rh(<parameters>{parameters.toNode}</parameters>)
+      df.foreach {d => rh(<definition>{d.toNode}</definition>)}
       streamInnerNodes(rh)
       rh << "</theory>"
    }
    def translate(newNS: DPath, newName: LocalName, translator: Translator, context : Context): DeclaredTheory = {
-     val res = new DeclaredTheory(newNS, newName, mt)
-     val ncont = context ++ parameters
+     val npar = paramC map {c => translator.applyContext(context, c)}
+     val icont = getInnerContext
+     val ndf = dfC map {df => translator.applyModule(icont, df)}
+     val res = new DeclaredTheory(newNS, newName, mt, npar, ndf)
      getDeclarations foreach {d =>
-       res.add(d.translate(res.toTerm, LocalName.empty, translator,ncont))
+       res.add(d.translate(res.toTerm, LocalName.empty, translator,icont))
      }
      res
    }
 }
 
+@deprecated("use dfC in DeclaredTheory")
 class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) extends Theory(doc, name) with DefinedModule {
    val parameters = Context()
    def getComponents = List(DefComponent(dfC))
@@ -106,6 +133,7 @@ class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) exte
    def translate(newNS: DPath, newName: LocalName, translator: Translator, context : Context): DefinedTheory = {
      new DefinedTheory(newNS, newName, dfC.map(translator.applyModule(context, _)))
    }
+
 }
 
 object DefinedTheory {

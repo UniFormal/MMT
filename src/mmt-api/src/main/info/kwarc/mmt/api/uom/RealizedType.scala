@@ -18,8 +18,10 @@ case class RealizedType(synType: Term, semType: SemanticType) extends uom.UOMRul
     *  a type-safe apply method is added in [[RepresentedRealizedType]])
     */
    def of(u: Any) = {
-      if (!semType.valid(u))
-         throw ParseError("invalid literal value for type " + synType + ": " + u)
+      if (!semType.valid(u)) {
+         semType.valid(u)
+         throw ParseError("invalid literal value for type " + synType + " realized as " + semType.asString + ": " + u)
+      }
       val vN = semType.normalform(u)
       OMLIT(vN, this)
    }

@@ -1,23 +1,0 @@
-namespace http://cds.omdoc.org/mmt
-
-theory Errors =
-   missing   # ≪ 1 ≫        prec -99500
-   illtyped  # ≪ 1 :: 2 ≫   prec -100000   
-
-   
-theory mmt = 
-   context
-
-   
-theory QMT =
-  query  
-  prop   
-  basetp 
-  tp     
-    
-  tuple  # ( 1…* ) 
-  set    # { 1…* } 
-  
-  singleton # { 1 }  
-   
-  
