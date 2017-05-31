@@ -78,7 +78,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
   def doTheory (t : Theory) : Unit =
   {
-    val nu_theory = new DeclaredTheory(bt.narrationDPath, LocalName(t.name), Some(IMPSTheory.thpath))
+    val nu_theory = new DeclaredTheory(bt.narrationDPath,
+                                       LocalName(t.name),
+                                       Some(IMPSTheory.thpath),
+                                       modules.Theory.noParams,
+                                       modules.Theory.noBase)
+
+
     tState.theories_decl = tState.theories_decl :+ nu_theory
     tState.theories_raw  = tState.theories_raw  :+ t
 

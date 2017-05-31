@@ -73,26 +73,22 @@ class TranslationState ()
 
   def addUnknown() : Term = OMV(doiName({unknowns+=1;unknowns-1},false))
 
-  def bindUnknowns(t : Term) : Term =
-  {
-    val symbols = t.freeVars.collect {
+  def bindUnknowns(t : Term) = {
+    val symbs = t.freeVars.collect{
       case ln if ln.toString.startsWith("""/i/""") => ln
     }
-
-    val cont = symbols.flatMap(n =>
-    {
-      val i = (0 until unknowns).find(j => n == doiName(j,false))
-      if (i.isDefined) {
-        val v1 = VarDecl(doiName(i.get,true), Some(OMS(Typed.ktype)), None, None)
-        val v2 = VarDecl(n, Some(OMV(doiName(i.get,true))), None, None)
-        List(v1,v2)
-      }
+    val cont = symbs.flatMap(n => {
+      val i = (0 until unknowns).find(j => n == doiName(j,false))/*.getOrElse(
+          throw new Exception("Wrong free Variable: " + n + " in " + t)
+        )*/
+      if (i.isDefined)
+        List(VarDecl(doiName(i.get,true), OMS(Typed.ktype)), VarDecl(n, OMV(doiName(i.get,true))))
       else throw GeneralError("No unknown " + n)
     })
-
-    if (unknowns > 0 && cont.nonEmpty) {
-      OMBIND(OMS(Path.parseS("http://cds.omdoc.org/mmt?mmt?unknown", NamespaceMap.empty)), cont, t)
-    } else { t }
+    if (unknowns > 0 && cont.nonEmpty) OMBIND(OMS(Path.parseS("http://cds.omdoc.org/mmt?mmt?unknown", NamespaceMap.empty)),
+      cont,
+      t)
+    else t
   }
 
   def resetUnknowns() : Unit =
