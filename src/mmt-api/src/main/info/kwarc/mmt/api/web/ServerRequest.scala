@@ -186,7 +186,7 @@ object WebQuery {
     * @return
     */
   def apply(query: String): WebQuery = {
-    val kvs = utils.stringToList(query, "&")
+    val kvs = utils.stringToList(query, """&""")
     val pairs = kvs map { s =>
       val i = s.indexOf("=")
 

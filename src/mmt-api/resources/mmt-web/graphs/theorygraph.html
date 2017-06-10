@@ -14,7 +14,7 @@
         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
         
         <!-- Load the magic path -->
-        <script type="text/javascript" src="?do=mmt_resource&path=/script/mmt/mmt-url.js"></script>
+        <!-- Something does not work this way: <script type="text/javascript" src="?MMT_base_url.js"> </script> -->
         
         <!-- load all the local javascript -->
         <script type="text/javascript" src="js/theoryGraph.js"></script>
@@ -76,6 +76,10 @@
         <span id='string_span' style='font-size: 17px; diyplay:none;top:-1000px;left:-1000px;positon:absolute;'></span>
 
         <script type="text/javascript">
+            var mmtUrl = (typeof MMT_base_url=="undefined") ? ((window.location.protocol=='file:')? "/" : "/mh/mmt/") : MMT_base_url;
+			if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "")
+				mmtUrl="/";
+				
             var selectionMode = false;
             var theoryGraph = new TheoryGraph();
             
@@ -140,7 +144,7 @@
             }
 
             function createNewGraph() {
-                theoryGraph.getGraph(mmtUrl+":fancygraph/json/" + getParameterByName("type") + "?uri=" + getParameterByName("uri"));
+                theoryGraph.getGraph(mmtUrl+":jgraph/json?key=" + getParameterByName("type") + "&uri=" + getParameterByName("graphdata"));
             }
 
             $(document).bind("contextmenu", function(event) {

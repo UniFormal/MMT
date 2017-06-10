@@ -224,7 +224,7 @@ class AlignmentsServer extends ServerExtension("align") {
       } else {
         val ret = if (direction.get._2 == "forward")
           SimpleAlignment(Path.parseMS(p1, nsMap), Path.parseMS(p2, nsMap), false, pars)
-        else if (direction.get._1 == "backward")
+        else if (direction.get._2 == "backward")
           SimpleAlignment(Path.parseMS(p2, nsMap), Path.parseMS(p1, nsMap), false, pars)
         else if (direction.get._2 == "both")
           SimpleAlignment(Path.parseMS(p1, nsMap), Path.parseMS(p2, nsMap), true, pars)

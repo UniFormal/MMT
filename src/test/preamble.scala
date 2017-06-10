@@ -1,6 +1,7 @@
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.frontend.Run
-import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, JsonGraphExporter, PathGraphExporter}
+import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
+import info.kwarc.mmt.api.web.JSONBasedGraphServer
 
 /** An abstract class for test methods. Instantiates a controller, sets the mathpath for archives,
   * loads the AlignmentsServer (so you can run a Server without getting an error message.
@@ -45,7 +46,7 @@ abstract class Test(archivepath : String,
 
     controller.extman.addExtension(new DependencyGraphExporter)
     controller.extman.addExtension(new DeclarationTreeExporter)
-    controller.extman.addExtension(new JsonGraphExporter)
+    controller.extman.addExtension(new JSONBasedGraphServer)
     controller.extman.addExtension(new PathGraphExporter)
       doFirst
       if (serverport.isDefined) {

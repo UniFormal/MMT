@@ -40,6 +40,7 @@ class Plugin extends frontend.Plugin {
   override def start(args: List[String]) {
     val em = controller.extman
     em addExtension new RecordFromTheory
+    em addExtension new Model
     // content enhancers
     //em.addExtension(new SubTypeParserExt)
     // em.addExtension(new SubtypeFeature)
@@ -227,23 +228,23 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
 }
 
 object FromTheoryRule extends StructuralFeatureRule("FromTheory")
-/*
-class Quantity extends StructuralFeature("Quantity") with TypedConstantLike {
-  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration = ???
 
-}
+class Model extends StructuralFeature("Model") with Untyped {
+  override def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration = {
+    // TODO wait, why does this take a declaredModule?
+    val incls = dd.getDeclarations collect {
+      case PlainInclude(from,_) => from
+    }
+    val others = parent.asInstanceOf[DeclaredTheory].getIncludesWithoutMeta
+    val actuals = incls.filterNot(others.contains)
 
-object QuantityRule extends StructuralFeatureRule("Quantity")
+    new Elaboration {override def domain: List[LocalName] = actuals.map(LocalName(_))
 
-class Law extends StructuralFeature("Law") with TypedConstantLike {
-
-}
-
-object LawRule extends StructuralFeatureRule("Law")
-
-class Model extends StructuralFeature("Model") {
+      override def getO(name: LocalName): Option[Declaration] =
+        actuals.find(p => LocalName(p) == name).map(mp => PlainInclude(mp,parent.path))
+    }
+  }
 
 }
 
 object ModelRule extends StructuralFeatureRule("Model")
-*/

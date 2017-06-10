@@ -218,6 +218,41 @@ trait ParametricTheoryLike {self: StructuralFeature =>
    }
 }
 
+trait Untyped {self : StructuralFeature =>
+  def getHeaderNotation: List[Marker] = List(LabelArg(1,LabelInfo.none))
+  override def processHeader(header: Term) = header match {
+    case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_))) => (LocalName(name),OMMOD(mpath))
+    // Type is completely useless here, but for some reason it nees to return SOME term...
+  }
+  override def makeHeader(dd: DerivedDeclaration) = OMA(OMMOD(mpath), List(OML(dd.name,None,None)))
+  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration = {
+    new Elaboration {
+      def domain: List[LocalName] = dd.getDeclarations.map(_.name)
+      def getO(nm: LocalName): Option[Declaration] = dd.getDeclarations.find(_.name == nm).map {
+        case c: Constant => Constant(parent.toTerm,c.name,c.alias,c.tp,c.df,Some(self.feature.toString),c.notC)
+      }
+    }
+  }
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
+}
+
+trait UnnamedUntyped {self : StructuralFeature =>
+  def getHeaderNotation: List[Marker] = Nil
+  override def processHeader(header: Term) = (LocalName(self.feature),OMMOD(mpath))
+    // Type is completely useless here, but for some reason it nees to return SOME term...
+  override def makeHeader(dd: DerivedDeclaration) = OMMOD(mpath)
+
+  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration = {
+    new Elaboration {
+      def domain: List[LocalName] = dd.getDeclarations.map(_.name)
+      def getO(nm: LocalName): Option[Declaration] = dd.getDeclarations.find(_.name == nm).map {
+        case c: Constant => Constant(parent.toTerm,c.name,c.alias,c.tp,c.df,Some(self.feature.toString),c.notC)
+      }
+    }
+  }
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
+}
+
 trait TypedConstantLike {self: StructuralFeature =>
   def getHeaderNotation: List[Marker] = List(LabelArg(1,LabelInfo.none),Delim(":"),SimpArg(2))
   override def processHeader(header: Term) = header match {

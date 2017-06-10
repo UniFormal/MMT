@@ -58,6 +58,18 @@
 		  text-align: center;
 	  }
 	  
+html, body {
+    height:100%;
+}
+	  
+	.theoryTreeClass
+	{
+	    overflow: auto;
+	    box-shadow: 0 0 5px #ccc;
+	    padding: 10px;
+	    border-radius: 5px;
+	}
+
 	  /* The whole context menu */
 	  .custom-menu 
 	  {

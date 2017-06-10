@@ -19,6 +19,8 @@ import uom._
 import utils._
 import web._
 
+import scala.util.Try
+
 /** An exception that is thrown when a needed knowledge item is not available
   *
   * A Controller catches it and retrieves the item dynamically.
@@ -51,8 +53,8 @@ abstract class ROController {
 
   def get(path: Path): StructuralElement
 
-  def getDocument(path: DPath, msg: Path => String = p => "no document found at " + p): Document = get(path) match {
-    case d: Document => d
+  def getDocument(path: DPath, msg: Path => String = p => "no document found at " + p): Document = Try(get(path)) match {
+    case scala.util.Success(d: Document) => d
     case _ => throw GetError(msg(path))
   }
 }
