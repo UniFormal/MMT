@@ -85,7 +85,7 @@ class JGraphSideBar extends Extension {
     }
   }
 
-  def getJSON(id : String, full : Boolean = false) = if (id == "top") JSONArray(archs.map(doArchive).sortBy(_.str).distinct.map(t =>
+  def getJSON(id : String, full : Boolean = false) = if (id == "top") JSONArray(archs.sortBy(_.str).distinct.map(t =>
     if (full) t.fullJSON else t.toJSON):_*)
     else if (full) Tree(id).fullJSON else Tree(id).toJSON
 
@@ -107,13 +107,13 @@ class JGraphSideBar extends Extension {
   private def doCont(p : Path,suffix : String = "") : Tree = p match {
     case mp : MPath =>
       val ret = doCont(mp.parent,suffix)
-      Tree(trimpath(mp.parent) + "-cont" + "-" + suffix).add(Tree(trimpath(mp) + "-cont" + "-" + suffix,"?" + mp.name.toString,trimpath(mp),"thgraph"))
+      Tree(trimpath(mp.parent) + "-cont-" + suffix).add(Tree(trimpath(mp) + "-cont-" + suffix,"?" + mp.name.toString,trimpath(mp),"thgraph"))
       ret
     case dp : DPath =>
-      if (dp.ancestors.length == 1) Tree(trimpath(dp) + "-cont" + "-" + suffix,trimpath(dp),"pgraph")
+      if (dp.ancestors.length == 1) Tree(trimpath(dp) + "-cont-" + suffix,trimpath(dp),"pgraph")
       else {
-        val ret = doCont(dp.^^)
-        ret.add(Tree(trimpath(dp) + "-cont" + "-" + suffix,dp.last,trimpath(dp),"pgraph"))
+        val ret = doCont(dp.^^,suffix)
+        ret.add(Tree(trimpath(dp) + "-cont-" + suffix,dp.last,trimpath(dp),"pgraph"))
         ret
       }
   }
@@ -134,7 +134,12 @@ class JGraphSideBar extends Extension {
       Tree(trimpath(mp) + "-narr","?" + mp.name.toString,trimpath(mp),"thgraph")
   }
 
-  lazy private val archs = controller.backend.getArchives.sortBy(_.id)
+  lazy private val archs = controller.backend.getArchives.sortBy(_.id).map(doArchive)
+
+  override def start(args: List[String]): Unit = {
+    super.start(args)
+    log(archs.length + " Archives")
+  }
   // lazy private val top = archs.map(doArchive).sortBy(_._1).distinct.map(p => (p._1,p._2.toJSON))
 
 }
