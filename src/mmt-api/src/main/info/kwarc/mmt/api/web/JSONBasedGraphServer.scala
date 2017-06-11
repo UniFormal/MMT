@@ -40,7 +40,8 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
     if (request.extensionPathComponents.headOption == Some("menu")) {
       val id = request.parsedQuery("id").getOrElse("top")
       log("Returing menu for " + id)
-      ServerResponse.fromJSON(sidebar.getJSON(id))
+      if (id == "full") ServerResponse.fromJSON(sidebar.getJSON("top",true))
+      else ServerResponse.fromJSON(sidebar.getJSON(id))
     } else if (request.extensionPathComponents.headOption == Some("json")) {
       val uri = request.parsedQuery("uri").getOrElse(return ServerResponse.plainErrorResponse(GetError("Not a URI")))
       val key = request.parsedQuery("key").getOrElse("pgraph")
@@ -56,19 +57,22 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
 class JGraphSideBar extends Extension {
   private class Tree(val id : String, val str : String, val uri : String, val tp : String) {
     var children : List[Tree] = Nil
-    def add(ch : Tree) = {
+    def add(ch : Tree) = if (!children.contains(ch)) {
       children ::= ch
     }
-    def toJSON : (String,JSON) = (str,JSONObject(
+    def toJSON : JSON = JSONObject(
+      ("menuText",JSONString(str)),
       ("id",JSONString(id)),
       ("uri",JSONString(uri)),
       ("type",JSONString(tp)),
-      ("children",JSONObject(children.map(c => (c.str,JSONString(c.id))).sortBy(_._1):_*))))
-    def fullJSON : (String,JSON) = (str,JSONObject(
+      ("children",JSONArray(children.map(c => (c.str,c.id)).sortBy(_._1).distinct.map(p =>
+        JSONObject(("menuText",JSONString(p._1)),("id",JSONString(p._2)))):_*)))
+    def fullJSON : JSON = JSONObject(
+      ("menuText",JSONString(str)),
       ("id",JSONString(id)),
       ("uri",JSONString(uri)),
       ("type",JSONString(tp)),
-      ("children",JSONObject(children.map(_.fullJSON).sortBy(_._1):_*))))
+      ("children",JSONArray(children.sortBy(_.str).map(_.fullJSON).distinct:_*)))
   }
   private object Tree {
     private val hm = scala.collection.mutable.HashMap.empty[String,Tree]
@@ -81,34 +85,35 @@ class JGraphSideBar extends Extension {
     }
   }
 
-  def getJSON(id : String) = if (id == "top") JSONObject(archs.map(doArchive).sortBy(_.str).distinct.map(_.toJSON):_*)
-    else Tree(id).toJSON._2
+  def getJSON(id : String, full : Boolean = false) = if (id == "top") JSONArray(archs.map(doArchive).sortBy(_.str).distinct.map(t =>
+    if (full) t.fullJSON else t.toJSON):_*)
+    else if (full) Tree(id).fullJSON else Tree(id).toJSON
 
   private def trimpath(p : Path) = if (p.toString.trim.last == '/') p.toString.trim.init else p.toString.trim
 
   private def doArchive(a : Archive) : Tree = {
     val ret = if (a.id contains "/") {
       val List(pre,post) = utils.stringToList(a.id,"/")
-      Tree(pre).add(Tree(a.id,post,a.id,"archivegraph"))
+      Tree(pre,pre,pre,"archivegraph").add(Tree(a.id,post,a.id,"archivegraph"))
       Tree(pre)
     } else Tree(a.id,a.id,a.id,"archivegraph")
     Tree(a.id).add(Tree(a.id + "-narr","Narration",a.narrationBase.toString,"thgraph"))
     Tree(a.id).add(Tree(a.id + "-cont","Content",a.id,"archivegraph"))
     doNarr(DPath(a.narrationBase)).children.foreach(Tree(a.id + "-narr").add)
     val mods = a.allContent()
-    mods.map(doCont).distinct.foreach(Tree(a.id + "-cont").add)
+    mods.map(p => doCont(p,a.id)).distinct.foreach(Tree(a.id + "-cont" +  "-" + a.id).add)
     ret
   }
-  private def doCont(p : Path) : Tree = p match {
+  private def doCont(p : Path,suffix : String = "") : Tree = p match {
     case mp : MPath =>
-      val ret = doCont(mp.parent)
-      Tree(trimpath(mp.parent) + "-cont").add(Tree(trimpath(mp) + "-cont","?" + mp.name.toString,trimpath(mp),"thgraph"))
+      val ret = doCont(mp.parent,suffix)
+      Tree(trimpath(mp.parent) + "-cont" + "-" + suffix).add(Tree(trimpath(mp) + "-cont" + "-" + suffix,"?" + mp.name.toString,trimpath(mp),"thgraph"))
       ret
     case dp : DPath =>
-      if (dp.ancestors.length == 1) Tree(trimpath(dp) + "-cont",trimpath(dp),"pgraph")
+      if (dp.ancestors.length == 1) Tree(trimpath(dp) + "-cont" + "-" + suffix,trimpath(dp),"pgraph")
       else {
         val ret = doCont(dp.^^)
-        ret.add(Tree(trimpath(dp) + "-cont",dp.last,trimpath(dp),"pgraph"))
+        ret.add(Tree(trimpath(dp) + "-cont" + "-" + suffix,dp.last,trimpath(dp),"pgraph"))
         ret
       }
   }
