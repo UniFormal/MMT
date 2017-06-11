@@ -101,7 +101,7 @@ class JGraphSideBar extends Extension {
     Tree(a.id).add(Tree(a.id + "-cont","Content",a.id,"archivegraph"))
     doNarr(DPath(a.narrationBase)).children.foreach(Tree(a.id + "-narr").add)
     val mods = a.allContent()
-    mods.map(p => doCont(p,a.id)).distinct.foreach(Tree(a.id + "-cont" +  "-" + a.id).add)
+    mods.map(p => doCont(p,a.id)).distinct.foreach(Tree(a.id + "-cont").add)
     ret
   }
   private def doCont(p : Path,suffix : String = "") : Tree = p match {
