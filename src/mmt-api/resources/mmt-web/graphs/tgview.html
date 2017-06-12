@@ -8,11 +8,13 @@
         <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.css" rel="stylesheet" type="text/css">
         <link href="https://code.jquery.com/ui/1.12.1/themes/cupertino/jquery-ui.css" rel="stylesheet" type="text/css">
         <link href="css/styles.css" rel="stylesheet" type="text/css">
-
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+		
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.js"></script>
         <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
-        
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.4/jstree.min.js"></script>
+		
         <!-- Load the magic path -->
         <!-- Something does not work this way: <script type="text/javascript" src="?MMT_base_url.js"> </script> -->
         
@@ -24,56 +26,59 @@
         <script type="text/javascript" src="js/globalListener.js"></script>
     </head>
 
-    <body class="ui-form">
-
-        <div class="toolSelector">
-            
-            <div id="generalMenu" name="generalMenu">
-                <button onClick="changeMethod(0);" title="Standard Layout" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="standardIcon"></div></button>
-                <button onClick="changeMethod(1);" title="Hierarchical Layout" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="hierarchicalIcon"></div></button>
-
-                <button id="selectionModeButton" onClick="switchSelectionMode();" title="Switch Selection Mode" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="crosshairIcon"></div></button>
-
-                <label for="clusternameInput">Clustername: </label>
-                <input type="text" id="clusternameInput" name="clusternameInput"></input>
-                <button id="clusterButton" onClick="clusterSelectedNodes()" class="myButton">Cluster selected Nodes</button>
-                
-                <a id="downloadButton"><button onClick="downloadGraph()" class="myButton">Download Graph</button></a>
-                <button id="selectNodes" onClick="selectNodes()" class="myButton">Select Nodes By Pathname</button>
-                <input type="text" id="selectById" name="selectById"></input>
-                <button id="helpButton" class="myButton">Help</button>
-            </div>
-
-            <div id="colorPicker" name="colorPicker">
-
-            </div>
-        </div>
-
-        <div id="helpDialog" title="Help">
-            <p>
-                You can select more than one node by holding CTRL and clicking on nodes to select! <br> You can also draw rectangles around nodes to select them by activating "Selection Mode".
-            </p>
-        </div>
-        
-        <p></p>
-
-        <ul class='custom-menu' style="z-index:100">
-            <li data-action="openWindow">Open Theory</li>
-            <li data-action="showURL">Show URI</li>
-            <li data-action="inferType">Infer Type</li>
-            <li data-action="showDecl">Show Declaration</li>
-            <li data-action="openCluster">Open Cluster</li>
-        </ul>
-
-
-        <div id="wholeNetwork">
-            <div id="mynetwork" style="top:0px;left:0px;position: absolute; -moz-user-select: none; width: 100%; height: 100%;">
-
-            </div>
-            <canvas id="toolCanvas" style="display:none;z-index:1000;top:0px;left:0px;position: absolute;" width="1200" height="600"></canvas>
-        </div>
-
-        <span id='string_span' style='font-size: 17px; diyplay:none;top:-1000px;left:-1000px;positon:absolute;'></span>
+	
+	<body class="ui-form">
+		
+		<div  class="theoryTreeClass"  style="float:left;height:82%;width:15%;">
+			<div id="theory_tree" ></div>
+		</div>
+		
+		<div id="mainbox" style="float:left;height:100%;width:80%; padding-left:10px; ">
+			
+			<div class="toolSelector">
+				<div id="generalMenu" name="generalMenu">
+					<button onClick="changeMethod(0);" title="Standard Layout" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="standardIcon"></div></button>
+					<button onClick="changeMethod(1);" title="Hierarchical Layout"  class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="hierarchicalIcon"></div></button>
+					
+					<button id="selectionModeButton" onClick="switchSelectionMode();" title="Switch Selection Mode" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="crosshairIcon"></div></button>
+					
+					<button id="clusterButton" onClick="clusterSelectedNodes()" class="myButton">Cluster selected Nodes</button>
+					
+					<a id="downloadButton"><button onClick="downloadGraph()" class="myButton">Download Graph</button></a>
+					<button id="selectNodes" onClick="selectNodes()" class="myButton">Select Nodes By Pathname</button>
+					<button id="helpButton"  class="myButton">Help</button>
+				</div>
+				
+				<div id="colorPicker" name="colorPicker"> 
+					
+				</div>
+			</div>
+			<div id="wholeNetwork">	
+				<div id="mynetwork" style="top:0px;left:0px;position: absolute; -moz-user-select: none; width: 100%; height: 100%;">
+					
+				</div>
+				<canvas id="toolCanvas" style="display:none;z-index:1000;top:0px;left:0px;position: absolute;" width="1200" height="600"></canvas>
+			</div>
+		</div>
+		
+		<div id="helpDialog" title="Help">
+			<p>You can select more than one node by holding CTRL and clicking on nodes to select! <br>
+				You can also draw rectangles around nodes to select them by activating "Selection Mode".
+			</p>
+		</div>
+		<p>
+		</p>
+		<span id='string_span' style='float:left;font-size: 17px; diyplay:none'></span>
+		
+		
+		<ul class='custom-menu' style="z-index:100">
+			<li data-action="openWindow">Open Theory</li>
+			<li data-action="showURL">Show URI</li>
+			<li data-action="inferType">Infer Type</li>
+			<li data-action="showDecl">Show Declaration</li>
+			<li data-action="openCluster">Open Cluster</li>
+		</ul>
+		
 
         <script type="text/javascript">
             var mmtUrl = (typeof MMT_base_url=="undefined") ? ((window.location.protocol=='file:')? "/" : "/mh/mmt/") : MMT_base_url;
@@ -129,7 +134,7 @@
                 theoryGraph.colorizeNodes(undefined, color);
             }
 
-            function changeMethode(idx) {
+            function changeMethod(idx) {
                 if (idx == 0) {
                     THEORY_GRAPH_OPTIONS.layout = undefined;
                 } else if (idx == 1) {
@@ -141,10 +146,6 @@
                     };
                 }
                 createNewGraph();
-            }
-
-            function createNewGraph() {
-                theoryGraph.getGraph(mmtUrl+":jgraph/json?key=" + getParameterByName("type") + "&uri=" + getParameterByName("graphdata"));
             }
 
             $(document).bind("contextmenu", function(event) {
@@ -165,7 +166,7 @@
             htmlCanvas.style.height = htmlCanvas.height + "px";
 
             addColors();
-            createNewGraph();
+            createNewGraph(getParameterByName("type"),getParameterByName("graphdata"));
         </script>
 
     </body>

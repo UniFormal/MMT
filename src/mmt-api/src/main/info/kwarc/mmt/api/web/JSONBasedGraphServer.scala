@@ -65,8 +65,7 @@ class JGraphSideBar extends Extension {
       ("id",JSONString(id)),
       ("uri",JSONString(uri)),
       ("type",JSONString(tp)),
-      ("children",JSONArray(children.map(c => (c.str,c.id)).sortBy(_._1).distinct.map(p =>
-        JSONObject(("menuText",JSONString(p._1)),("id",JSONString(p._2)))):_*)))
+      ("hasChildren",JSONBoolean(children.nonEmpty)))
     def fullJSON : JSON = JSONObject(
       ("menuText",JSONString(str)),
       ("id",JSONString(id)),
@@ -87,7 +86,7 @@ class JGraphSideBar extends Extension {
 
   def getJSON(id : String, full : Boolean = false) = if (id == "top") JSONArray(archs.sortBy(_.str).distinct.map(t =>
     if (full) t.fullJSON else t.toJSON):_*)
-    else if (full) Tree(id).fullJSON else Tree(id).toJSON
+    else if (full) JSONArray(Tree(id).children.map(_.fullJSON):_*) else JSONArray(Tree(id).children.map(_.toJSON):_*)
 
   private def trimpath(p : Path) = if (p.toString.trim.last == '/') p.toString.trim.init else p.toString.trim
 
@@ -100,7 +99,7 @@ class JGraphSideBar extends Extension {
     Tree(a.id).add(Tree(a.id + "-narr","Narration",a.narrationBase.toString,"thgraph"))
     Tree(a.id).add(Tree(a.id + "-cont","Content",a.id,"archivegraph"))
     doNarr(DPath(a.narrationBase)).children.foreach(Tree(a.id + "-narr").add)
-    val mods = a.allContent()
+    val mods = a.allContent
     mods.map(p => doCont(p,a.id)).distinct.foreach(Tree(a.id + "-cont").add)
     ret
   }
@@ -110,7 +109,7 @@ class JGraphSideBar extends Extension {
       Tree(trimpath(mp.parent) + "-cont-" + suffix).add(Tree(trimpath(mp) + "-cont-" + suffix,"?" + mp.name.toString,trimpath(mp),"thgraph"))
       ret
     case dp : DPath =>
-      if (dp.ancestors.length == 1) Tree(trimpath(dp) + "-cont-" + suffix,trimpath(dp),"pgraph")
+      if (dp.ancestors.length == 1) Tree(trimpath(dp) + "-cont-" + suffix,trimpath(dp),trimpath(dp),"pgraph")
       else {
         val ret = doCont(dp.^^,suffix)
         ret.add(Tree(trimpath(dp) + "-cont-" + suffix,dp.last,trimpath(dp),"pgraph"))
@@ -138,7 +137,7 @@ class JGraphSideBar extends Extension {
 
   override def start(args: List[String]): Unit = {
     super.start(args)
-    log(archs.length + " Archives")
+    println(archs.length + " Archives")
   }
   // lazy private val top = archs.map(doArchive).sortBy(_._1).distinct.map(p => (p._1,p._2.toJSON))
 
@@ -246,12 +245,12 @@ class JPgraph extends SimpleJGraphExporter("pgraph") {
   }
 }
 class JArchiveGraph extends SimpleJGraphExporter("archivegraph") {
-  val builder = GraphBuilder.AlignmentBuilder(false)
+  val builder = GraphBuilder.AlignmentBuilder(true)
   val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
       val a = controller.backend.getArchives.filter(_.id.startsWith(s.trim))
       var (theories,views) : (List[DeclaredTheory],List[View]) = (Nil,Nil)
-      a.flatMap(_.allContent()).map(controller.getO) foreach {
+      a.flatMap(_.allContent).map(c => Try(controller.get(c)).toOption) foreach {
         case Some(th : DeclaredTheory) => theories ::= th
         case Some(v : View) => views ::= v
         case _ =>
