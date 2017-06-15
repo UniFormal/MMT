@@ -306,7 +306,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     }
     */
 
-    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover, rbe).foreach {e => addExtension(e)}
+    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover, rbe, new JSONBasedGraphServer).foreach {e => addExtension(e)}
     // build manager
     addExtension(new TrivialBuildManager)
     // pragmatic-strict converter

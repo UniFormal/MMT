@@ -280,7 +280,7 @@ function Optimizer(nodes, edges)
 		var success = 0;
 
 		var area = myWidth * myHeight;
-		var kVal =  Math.max(Math.min((myAllNodes.length*4+edgesCount/2.5)/2 * 0.5,280),80);
+		var kVal =  Math.max(Math.min((myAllNodes.length*4+edgesCount/2.5)/2 * 0.5,280),100);
 		var kSquared = kVal * kVal;
 
 		for( var i = 0; i < iterations; i++ )

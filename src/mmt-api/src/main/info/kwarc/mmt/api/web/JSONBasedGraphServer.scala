@@ -133,14 +133,12 @@ class JGraphSideBar extends Extension {
       Tree(trimpath(mp) + "-narr","?" + mp.name.toString,trimpath(mp),"thgraph")
   }
 
-  lazy private val archs = controller.backend.getArchives.sortBy(_.id).map(doArchive)
+  private def archs = controller.backend.getArchives.sortBy(_.id).map(doArchive)
 
   override def start(args: List[String]): Unit = {
     super.start(args)
-    println(archs.length + " Archives")
+    // lazy private val top = archs.map(doArchive).sortBy(_._1).distinct.map(p => (p._1,p._2.toJSON))
   }
-  // lazy private val top = archs.map(doArchive).sortBy(_._1).distinct.map(p => (p._1,p._2.toJSON))
-
 }
 
 abstract class JGraphExporter(val key : String) extends FormatBasedExtension {
