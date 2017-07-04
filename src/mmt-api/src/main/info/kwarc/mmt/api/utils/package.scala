@@ -69,7 +69,7 @@ package object utils {
       segments.reverse
    }
    
-   /** turns a list into a string  by inserting a separator */
+   /** turns a list into a string by inserting a separator */
    def listToString[A](l: List[A], sep: String) = l.map(_.toString).mkString(sep)
    
    /** repeats a strings a number of times, optionally with a separator */
@@ -81,7 +81,7 @@ package object utils {
    /** applies a list of pairs seen as a map */
    def listmap[A,B](l: List[(A,B)], a: A): Option[B] = l.find(_._1 == a).map(_._2)
    
-   /** disjointness of two lists */
+   /** disjointness of two lists (fast if first argument is empty) */
    def disjoint[A](l: List[A], m: List[A]) = l.forall(a => ! m.contains(a))
    
    /** variant of fold such that associate(List(a), unit)(comp) = a instead of comp(unit, a) */

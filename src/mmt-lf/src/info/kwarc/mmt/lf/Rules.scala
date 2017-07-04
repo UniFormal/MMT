@@ -120,8 +120,11 @@ abstract class ArgumentChecker {
 
 /** default implementation: type-check against expected type if not covered; skip if covered */
 object StandardArgumentChecker extends ArgumentChecker {
-   def apply(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History) =
-      covered || solver.check(Typing(stack, tm, tp))(history + "argument must have domain type")
+   def apply(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
+     history.indented {
+      covered || solver.check(Typing(stack, tm, tp))
+     }
+   }
 }
 
 
@@ -137,12 +140,14 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
       
       // auxiliary function that handles one argument at a time
       def iterate(fT: Term, args: List[Term]): Option[Term] = {
-         history += "function type is: " + solver.presentObj(fT)
          (fT,args) match {
-           case (`fT`, Nil) => Some(fT)
+           case (_, Nil) =>
+             history += "no arguments, type is: " + solver.presentObj(fT)
+             Some(fT)
            case (Pi(x,a,b), t::rest) =>
+              history += "function type is: " + solver.presentObj(fT)
               history += "argument is: " + solver.presentObj(t)
-              if (conforms(solver)(t, a, covered)) {
+              if (conforms(solver)(t, a, covered)(stack, history)) { //TEMP  + "checking argument"
                  history += "substituting argument in return type"
                  // substitute for x and newly-solved unknowns (as solved by conforms) and simplify
                  val bS = solver.substituteSolved(b ^? (x/t), true)
@@ -411,12 +416,12 @@ object SolveMultiple extends SolutionRule(Apply.path) {
    }
 }
 
-/** solution: This rule tries to solve for an unkown by applying lambda-abstraction on both sides and eta-reduction on the left.
+/** solution: This rule tries to solve for an unknown by applying lambda-abstraction on both sides and eta-reduction on the left.
  *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable. 
  */
 object Solve extends SolutionRule(Apply.path) {
    def applicable(t: Term) = t match {
-      case Apply(_, _) => Some(0)
+      case Apply(_, _) => Some(0)  // do not match for OMV(_) here: unknowns in function position belong to this rule even if the rule can't do anything
       case _ => None
    }
    def apply(j: Equality): Option[(Equality, String)] = {

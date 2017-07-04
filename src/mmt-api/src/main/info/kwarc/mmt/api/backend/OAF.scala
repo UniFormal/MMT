@@ -77,8 +77,12 @@ abstract class ArchiveHub {
  *
  * @param root the directory in which clones are created
  * @param report for logging
+ * @param https toggle between https and ssh for remote URLs (see below) 
+ * 
+ * https URLs are good for anonymous cloning. ssh URLs are good for key-based authentication when pushing.
+ * Fresh users should use https first and typically want to switch to ssh eventually.
  */
-class MathHub(val uri: URI, val root: File, val report: Report,https : Boolean = false) extends ArchiveHub with Logger {
+class MathHub(val uri: URI, val root: File, https : Boolean, val report: Report) extends ArchiveHub with Logger {
    val logPrefix = "oaf"
    /** choose UnixGit or WindowsGit depending on OS */
    private val gitCommand = OS.detect match {case Windows => new WindowsGit() case _ => UnixGit}
@@ -94,10 +98,13 @@ class MathHub(val uri: URI, val root: File, val report: Report,https : Boolean =
             true
       }
    }
-   def giturl(pathS: String) = if (https) httpsurl(pathS) else sshurl(pathS)
-   /** @return the ssh of the remote git manager - git@authority: */
-   def sshurl(pathS: String) = "git@" + uri.authority.getOrElse("") + ":" + pathS + ".git"
-   def httpsurl(pathS: String) = "https://" + uri.authority.getOrElse("") + "/" + pathS + ".git"
+   /** the remote URL of the repository to be used for init and clone */
+   private object Remote {
+      private def sshurl(pathS: String) = "git@" + uri.authority.getOrElse("") + ":" + pathS + ".git"
+      private def httpsurl(pathS: String) = "https://" + uri.authority.getOrElse("") + "/" + pathS + ".git"
+      def url(pathS: String) = if (https) httpsurl(pathS) else sshurl(pathS)
+   }
+   
    /** initializes a repository */
    def init(pathS: String) {
       val path = utils.stringToList(pathS, "/")
@@ -111,7 +118,7 @@ class MathHub(val uri: URI, val root: File, val report: Report,https : Boolean =
       File.WriteLineWise(repos / mf, List(s"id: $pathS", s"narration-base: http://mathhub.info/$pathS"))
       git(repos, "add", mf)
       git(repos, "commit", "-m", "\"automatically created by MMT\"")
-      git(repos, "remote", "add", "origin", giturl(pathS))
+      git(repos, "remote", "add", "origin", Remote.url(pathS))
       git(repos, "push", "origin", "master")
    }
    /** clones a repository */
@@ -120,7 +127,7 @@ class MathHub(val uri: URI, val root: File, val report: Report,https : Boolean =
       if (lp.exists) {
          log("target directory exists, skipping")
       } else {
-         val success = git(root, "clone", giturl(path), path)
+         val success = git(root, "clone", Remote.url(path), path)
          if (!success) {
            if (lp.exists) {
               log("git failed, deleting " + lp)
@@ -131,6 +138,12 @@ class MathHub(val uri: URI, val root: File, val report: Report,https : Boolean =
       }
       Some(lp)
    }
+   /** set all remote URL (practical to switch to upgrade from https to ssh) */
+   def setRemoteURL {
+     localArchiveIDs map {id =>
+       git(localPath(id), "remote", "set-url", "origin", Remote.url(id))
+     }
+   }
    def localArchiveIDs = root.subdirs.flatMap {g => g.subdirs.map(r => g.name + "/" + r.name)}
    def pull(id: String) {
      git(localPath(id), "pull", "origin", "master")
@@ -139,7 +152,7 @@ class MathHub(val uri: URI, val root: File, val report: Report,https : Boolean =
      git(localPath(id), "push")
    }
    def download(id: String) = {
-     TrustAllX509TrustManager.trustAll // gitlab uses certificate from startssl.com, which is not recognized by Java
+     TrustAllX509TrustManager.trustAll // awkward, but gitlab uses certificate from startssl.com, which is not recognized by Java
      val downloadURI = (uri / id / "repository" / "archive.zip") ? "ref=master"
      val target = root/id
      val zip = target.addExtension("zip")

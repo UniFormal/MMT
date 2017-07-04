@@ -31,6 +31,16 @@ case class VarDecl(name : LocalName, feature: Option[String], tp : Option[Term],
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = map(_ ^^ sub)
    private[objects] def freeVars_ = (tp map {_.freeVars_}).getOrElse(Nil) ::: (df map {_.freeVars_}).getOrElse(Nil)
    def subobjects = subobjectsNoContext(tp.toList ::: df.toList)
+   def head = tp.flatMap(_.head)
+
+   def toStr(implicit shortURIs: Boolean) = this match {
+      case IncludeVarDecl(_,OMPMOD(p,args), df) => p.toString + args.map(_.toStr).mkString(" ")
+      case _ => name.toString + tp.map(" : " + _.toStr).getOrElse("") + df.map(" = " + _.toStr).getOrElse("")
+   }
+   def toNode = <om:OMV name={name.toPath}>{mdNode}{tpN}{dfN}</om:OMV> 
+   def toCMLQVars(implicit qvars: Context) = <bvar><ci>{name.toPath}</ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</bvar>
+   private def tpN = tp.map(t => <type>{t.toNode}</type>).getOrElse(Nil)
+   private def dfN = df.map(t => <definition>{t.toNode}</definition>).getOrElse(Nil)
    /** converts to an OpenMath-style attributed variable using two special keys */
    def toOpenMath : Term = {
 	   val varToOMATTR = OMV(name)
@@ -47,15 +57,6 @@ case class VarDecl(name : LocalName, feature: Option[String], tp : Option[Term],
      symbols.Constant(OMMOD(mp), name, Nil, tp map(_^? sub), df map(_^? sub), None)
    }
    def toOML = OML(name, tp, df)
-   def toNode = <om:OMV name={name.toPath}>{mdNode}{tpN}{dfN}</om:OMV> 
-   def toCMLQVars(implicit qvars: Context) = <bvar><ci>{name.toPath}</ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</bvar>
-   def head = tp.flatMap(_.head)
-   override def toString = this match {
-      case IncludeVarDecl(_,OMPMOD(p,args), df) => p.toString + args.mkString(" ")
-      case _ => name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")
-   }
-   private def tpN = tp.map(t => <type>{t.toNode}</type>).getOrElse(Nil)
-   private def dfN = df.map(t => <definition>{t.toNode}</definition>).getOrElse(Nil)
    
    def toDeclaration(home: Term): Declaration = feature match {
      case None =>
@@ -144,6 +145,23 @@ case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDe
          case None => Context.empty 
          case Some(i) => Context(variables.drop(variables.length-i):_*)
       }
+   }
+   
+   /** the subcontext whose variables occur (transitively closed) in the given variables
+    * 
+    * if context |- t, then also context.minimalSubContext(t.freeVars) |- t 
+    */
+   def minimalSubContext(req: List[LocalName]): Context = {
+     if (req.isEmpty) return Context.empty // optimization
+     var required = req
+     val vds = variables.reverse.filter {vd =>
+       if (required contains vd.name) {
+         required = (required diff List(vd.name)) ::: vd.freeVars
+         true
+       } else
+         false
+     }
+     Context(vds.reverse :_*)
    }
    
    /**
@@ -273,7 +291,7 @@ case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDe
      val subs = toPartialSubstitution
      if (subs.length == this.length) Some(subs) else None
    }
-   override def toString = this.map(_.toString).mkString("",", ","")
+   def toStr(implicit shortURIs: Boolean) = this.map(_.toStr).mkString("",", ","")
    def toNode =
      <om:OMBVAR>{mdNode}{this.zipWithIndex.map({case (v,i) => v.toNode})}</om:OMBVAR>
    def toCMLQVars(implicit qvars: Context) = 
@@ -302,7 +320,7 @@ case class Sub(name : LocalName, target : Term) extends Obj {
    def subobjects = subobjectsNoContext(List(target))
    def toNode: Node = <om:OMV name={name.toString}>{mdNode}{target.toNode}</om:OMV>
    def toCMLQVars(implicit qvars: Context) : Node = <mi name={name.toPath}>{target.toCMLQVars}</mi>
-   override def toString = name + ":=" + target.toString
+   def toStr(implicit shortURIs: Boolean) = name + ":=" + target.toStr
    def head = None
 }
 
@@ -356,7 +374,7 @@ case class Substitution(subs : Sub*) extends Obj {
       Sub(s.name, f(s.target))
    }
 
-   override def toString = this.map(_.toString).mkString("",", ","")
+   def toStr(implicit shortURIs: Boolean) = this.map(_.toStr).mkString("",", ","")
    def toNode =
       <om:OMBVAR>{mdNode}{subs.zipWithIndex.map(x => x._1.toNode)}</om:OMBVAR>
    def toCMLQVars(implicit qvars: Context) = asContext.toCMLQVars
@@ -385,12 +403,7 @@ object Context {
 	}
 	/** generate new variable name similar to x */
    private def rename(x: LocalName) = {
-      if (x.length == 1)
-         x / "0"
-      else x.last match {
-         case SimpleStep(n) if n.matches("[0-9]+") => x.init / ((n.toInt+1).toString)
-         case _ => x / "0"
-      }
+      x / "r"
    }
    /** picks a variable name that is fresh for context, preferably x1 */
    def pickFresh(context: Context, x1: LocalName): (LocalName,Substitution) = {

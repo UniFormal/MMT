@@ -173,14 +173,15 @@ object xml {
    }
 
    def post(url: java.net.URL, input: Node) : Node = {
-      val conn = url.openConnection()// returns java.net.HttpURLConnection if url is http
-      conn.setDoOutput(true);
-      val wr = new java.io.OutputStreamWriter(conn.getOutputStream())
+      val conn = url.openConnection// returns java.net.HttpURLConnection if url is http
+      conn.setDoOutput(true)
+      conn.setRequestProperty("content-type", "text/xml")
+      val wr = new java.io.OutputStreamWriter(conn.getOutputStream)
       wr.write(input.toString)   // this automatically sets the request method to POST
-      wr.flush()
-      val src = scala.io.Source.fromInputStream(conn.getInputStream(), "UTF-8")
+      wr.flush
+      val src = scala.io.Source.fromInputStream(conn.getInputStream, "UTF-8") // always a BufferedSource
       val output = scala.xml.parsing.ConstructingParser.fromSource(src, false).document()
-      wr.close()
+      wr.close
       src.asInstanceOf[scala.io.BufferedSource].close
       output(0)
    }

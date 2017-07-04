@@ -458,7 +458,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
           NotationContainer(None)
         )
         nd.setOrigin(ElaborationOf(dd.path))
-        controller.add(nd,Some(dd.name))
+        controller.add(nd,After(dd.name))
         controller.simplifier.apply(nd)
         // Thread.sleep(1000)
       }

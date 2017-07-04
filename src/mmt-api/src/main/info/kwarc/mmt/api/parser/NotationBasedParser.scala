@@ -284,7 +284,7 @@ class NotationBasedParser extends ObjectParser {
    */
   private def makeTerm(te: TokenListElem, boundVars: List[LocalName], attrib: Boolean = false)(implicit pu: ParsingUnit, errorCont: ErrorHandler): Term = {
     // cases may return multiple options in case of ambiguity
-    val alternatives: List[Term] = te match {
+    val term = te match {
       case te @ Token(word, _, _, _) =>
         lazy val unparsed = OMSemiFormal(objects.Text("unknown", word)) // fallback option
         val name = LocalName.parse(word)
@@ -304,9 +304,9 @@ class NotationBasedParser extends ObjectParser {
           makeError("unbound token: " + word, te.region)
           unparsed
         }
-        List(term)
+        term
       case e: ExternalToken =>
-        List(e.parse(pu, boundVars, this))
+        e.parse(pu, boundVars, this)
       case ml: MatchedList =>
         makeTermFromMatchedList(ml, boundVars, attrib)
       case ul: UnmatchedList =>
@@ -327,17 +327,10 @@ class NotationBasedParser extends ObjectParser {
           val terms = ul.tl.getTokens.map(makeTerm(_, boundVars))
           prag.defaultApplication(pu.context.getIncludes.lastOption, terms.head, terms.tail)
         }
-        List(term)
+        term
     }
-    alternatives foreach {term => SourceRef.update(term, pu.source.copy(region = te.region))}
-    // if more than one alternative, wrap them in oneOf
-    alternatives match {
-        case hd :: Nil =>
-           hd
-        case l =>
-           val av = newAmbiguity
-           ObjectParser.oneOf(av::l)
-     }
+    SourceRef.update(term, pu.source.copy(region = te.region))
+    term
   }
   
   /** auxiliary method of makeTerm
@@ -378,7 +371,7 @@ class NotationBasedParser extends ObjectParser {
   
 
   /** auxiliary method of makeTerm */
-  private def makeTermFromMatchedList(ml: MatchedList, boundVars: List[LocalName], attrib: Boolean)(implicit pu: ParsingUnit, errorCont: ErrorHandler): List[Term] = {
+  private def makeTermFromMatchedList(ml: MatchedList, boundVars: List[LocalName], attrib: Boolean)(implicit pu: ParsingUnit, errorCont: ErrorHandler): Term = {
      val notation = ml.an.rules.head.notation // all notations must agree
      val arity = notation.arity
      val firstVar = arity.firstVarNumberIfAny
@@ -507,12 +500,14 @@ class NotationBasedParser extends ObjectParser {
      }
      
      val cons = ml.an.rules.map(_.name)
+     
      // hard-coded special case for a bracketed subterm
      if (cons == List(utils.mmt.brackets) || cons == List(utils.mmt.andrewsDot)) {
        //TODO add metadata for keeping track of brackets
        // source ref of the returned term will be overridden with the source ref of the bracketed term
-       return List(args.head._2)
+       return args.head._2
      }
+     
      // process subs, vars, and args, which are needed to build the term
      // this includes sorting args and vars according to the abstract syntax
      // add implicit arguments before the variables
@@ -533,6 +528,7 @@ class NotationBasedParser extends ObjectParser {
           as.map(_._2)
      }
      val finalSub = Substitution(finalSubs.map(a => Sub(OMV.anonymous, a)): _*)
+     
      // add implicit arguments behind the variables (same as above except for using newBVarNames)
      val finalArgs: List[Term] = arity.arguments.flatMap {
         case ImplicitArg(_, _) =>
@@ -550,6 +546,7 @@ class NotationBasedParser extends ObjectParser {
           val as = args.filter(_._1 == n)
           as.map(_._2)
      }
+     
      // compute the variables
      val finalVars = vars.sortBy(_._1.number).map {
         case (vm, reg, vname, tp) =>
@@ -571,6 +568,7 @@ class NotationBasedParser extends ObjectParser {
           SourceRef.update(vd, pu.source.copy(region = reg))
           vd
      }
+     
      /* construct each possible alternative terms
         all alternatives must use the same notation; therefore, they will ask for the same unknown variables
         we cache those in UnknownCacher to make sure we only generate one set of unknown variables
@@ -580,7 +578,6 @@ class NotationBasedParser extends ObjectParser {
       * on the first run, delegates to NotationBasedParser.newUnknown and caches the results
       *
       * on subsequent runs, uses the cached results
-      *
       */
      object UnknownCacher {
         /** true iff this is the first run */
@@ -608,8 +605,8 @@ class NotationBasedParser extends ObjectParser {
         }
      }
      /** constructs one alternative terms */
-     def makeAlternative(con: ContentPath): Term = {
-        if (arity.isConstant && args == Nil && vars == Nil && !attrib) {
+     def makeAlternative(con: ContentPath, adaptedFinalArgs: List[Term]): Term = {
+        if (arity.isConstant && subs.isEmpty && args.isEmpty && vars.isEmpty && !attrib) {
           //no args, vars, scopes --> OMID
           return OMID(con)
         }
@@ -625,20 +622,41 @@ class NotationBasedParser extends ObjectParser {
              if (finalSubs.nonEmpty)
                makeError("no substitution allowed in module application", ml.region)
              if (finalVars.isEmpty)
-               OMPMOD(con, finalArgs)
+               OMPMOD(con, adaptedFinalArgs)
              else
-               OMBINDC(OMMOD(con), finalVars, finalArgs)
+               OMBINDC(OMMOD(con), finalVars, adaptedFinalArgs)
            case con: GlobalName =>
-             prag.makeStrict(level, con, finalSub, Context(finalVars: _*), finalArgs, attrib, notation)(
+             prag.makeStrict(level, con, finalSub, finalVars, adaptedFinalArgs, attrib, notation)(
                 () => UnknownCacher.getNext
              )
         }
      }
      // construct the alternative terms
-     cons map {con =>
-        val a = makeAlternative(con)
-        UnknownCacher.prepareNextRun
-        a
+     if (cons.length > 1 && finalSub.isEmpty && finalVars.isEmpty && finalArgs.nonEmpty) {
+        val (argCont,argNames) = finalArgs.zipWithIndex.map {case (a,i) =>
+          val n = LocalName("") / "AP" / i.toString
+          (VarDecl(n, df = a), OMV(n))
+        }.unzip
+        val av = newAmbiguity
+        val alternatives = cons map {con =>
+           val a = makeAlternative(con, argNames)
+           UnknownCacher.prepareNextRun
+           a
+        }
+        OMBINDC(OMS(ObjectParser.oneOf), argCont, av::alternatives)
+     } else {
+       val alternatives = cons map {con =>
+          val a = makeAlternative(con, finalArgs)
+          UnknownCacher.prepareNextRun
+          a
+       }
+       alternatives match {
+          case hd :: Nil =>
+             hd
+          case l =>
+             val av = newAmbiguity
+             ObjectParser.oneOf(av::l)
+       }
      }
   }
   

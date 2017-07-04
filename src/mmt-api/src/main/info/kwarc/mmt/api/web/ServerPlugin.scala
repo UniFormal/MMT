@@ -164,13 +164,11 @@ class QueryServer extends ServerExtension("query") {
         val queryparams = request.body.asJSON match {
           case jo: JSONObject => jo
         }
-
         // and extract them
         val query = queryparams("query") match {
           case Some(js: JSONString) =>
             js.value
         }
-
         val context = queryparams("context") match {
           case Some(ja: JSONArray) =>
             ja.values
@@ -353,7 +351,7 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
 /** interprets the query as an MMT [[frontend.GetAction]] and returns the result */
 class GetActionServer extends ServerExtension("mmt") {
   def apply(request: ServerRequest): ServerResponse = {
-    val action = Action.parseAct(request.queryString, controller.getBase, controller.getHome)
+    val action = Action.parseAct(request.query, controller.getBase, controller.getHome)
     val resp: String = action match {
       case GetAction(a: ToWindow) =>
         a.make(controller)
@@ -450,7 +448,7 @@ class ActionServer extends ServerExtension("action") {
  */
 class SubmitCommentServer extends ServerExtension("submit_comment") {
   def apply(request: ServerRequest): ServerResponse = {
-    val path = Path.parse(request.queryString, controller.getNamespaceMap)
+    val path = Path.parse(request.query, controller.getNamespaceMap)
     var s = request.body.asString
     val date = Calendar.getInstance().getTime.toString
     val end = date.replaceAll("\\s", "")

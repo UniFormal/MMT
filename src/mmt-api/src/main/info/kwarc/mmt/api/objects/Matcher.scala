@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import frontend._
 import checking._
 import Conversions._
+
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
 
@@ -104,6 +105,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     *  the matching function
     *  @param goalContext the global context
     *  @param goal the term to be matched, relative to goalContext
+    *  @param queryVars the variables to solve
     *  @param query the term to match against, this term may contain the queryVars and the context variables freely
     *  @return true if the terms match
     */ 
@@ -168,35 +170,24 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
       }
       // check if a query variable can be isolated and do so
       Solver.findSolvableVariable(solutionRules, querySolution, queryOrg) foreach {case (rs, x) => applyRules(rs)}
-      val (goal, query, bound) = (j.tm2, j.tm1, j.context)
       // 4) default: congruence
-      (goal, query) match {
-         case (_,OMV(x)) if constantContext.isDeclared(x) || bound.isDeclared(x) =>
-            // these variables are treated like constants
-            // this case must come first because the bound variables might shadow query variables 
-            goal == query
-         case (_,OMV(x)) if querySolution.isDeclared(x) =>
-            // if goal does not contain bound variables, solve for x
-            if (goal.freeVars.forall(v => !bound.isDeclared(v)))
-               solve(x, goal)
-            else
-               false
-         // recurse into components
-         case (OMA(f1, args1), OMA(f2,args2)) =>
-            ((f1 :: args1) zip (f2 :: args2)) forall {
-               case (x,y) => aux(bound, x,y)
-            }
-         // recurse into components, keeping track of variables
-         case (OMBINDC(b1, bound1, sc1), OMBINDC(b2, bound2, sc2)) =>
-            val bM  = aux(bound, b1, b2)
-            if (!bM) return false
-            val rename = auxCon(bound, bound1, bound2).getOrElse(return false)
-            (sc1 zip sc2) forall {
-               case (s1, s2) => aux(bound ++ bound1, s1, s2 ^? rename)
-            }
-         case (l1: OMLIT, l2: OMLIT) => l1.value == l2.value
-         // this case works for constants (true if equal), and all asymmetric combinations (always false) 
-         case (t1,t2) => t1 hasheq t2 // TODO: other cases
+      CongruenceClosure(j) forall {eq =>
+        val bound = eq.context
+        val goal = eq.tm1
+        val query = eq.tm2
+        (goal, query) match { 
+           case (_,OMV(x)) if constantContext.isDeclared(x) || bound.isDeclared(x) =>
+              // these variables are treated like constants
+              // this case must come first because the bound variables might shadow query variables 
+              goal == query
+           case (_,OMV(x)) if querySolution.isDeclared(x) =>
+              // if goal does not contain bound variables, solve for x
+              if (goal.freeVars.forall(v => !bound.isDeclared(v)))
+                 solve(x, goal)
+              else
+                 false
+           case (t1,t2) => t1 hasheq t2
+        }
       }
    }
    
@@ -229,6 +220,11 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
 
 /** returned by the [[Matcher]] */
 abstract class MatchResult
+/**
+ * @param solution the substitution for the query variables
+ */
 case class MatchSuccess(solution: Substitution) extends MatchResult
+/** definitely not equal */
 case object MatchFail extends MatchResult
+/** no match found but terms might match if more sophisticated methods are used */
 case object MatchInconclusive extends MatchResult

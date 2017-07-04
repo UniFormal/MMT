@@ -64,8 +64,7 @@ trait Extension extends Logger {
      e.init(controller)
   }
 
-  protected def getFromFirstArgOrEnvvar(args: List[String], name: String,
-                                        default: String = ""): String = {
+  protected def getFromFirstArgOrEnvvar(args: List[String], name: String, default: String = ""): String = {
     AnaArgs.splitOptions(args)._2 match {
       case Nil => controller.getEnvVar(name).getOrElse({
         log("environment variable " + name + " is not set" +
@@ -90,7 +89,7 @@ trait Extension extends Logger {
     */
   def destroy {}
   
-  /** extensions that process tasks in separate thread should override this and wait until those threads are done */
+  /** extensions that process tasks in separate threads should override this and wait until those threads are done */
   def waitUntilRemainingTasksFinished {}
   
   /** convenience for calling waitUntilRemainingTasksFinished and then destroy */ 

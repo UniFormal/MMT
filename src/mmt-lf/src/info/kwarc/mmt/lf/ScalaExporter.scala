@@ -123,6 +123,19 @@ class ScalaExporter extends GenericScalaExporter {
          } catch {case IllFormed => "// skipping ill-formed " + c.name} 
       }
    }
+   override protected def companionObjectFields(c: Constant): List[String] = {
+     lazy val default = super.companionObjectFields(c)
+     // compute number of arguments
+     val tp = c.tp getOrElse {return default}
+     val tp2 = parser.ParseResult.fromTerm(tp).term
+     val FunType(lfArgs, _) = tp2
+     val numArgs = lfArgs.length
+     // x1:Term,...,xn:Term
+     val scalaArgs = Range(0,numArgs).toList map {i => Argument("x" + i.toString, "Term")}
+     val mmtTerm = (as: List[String]) => "ApplyGeneral(OMS(this.path)" + as.map(", " + _).mkString
+     val op = Operator(scalaArgs, mmtTerm)
+     op.methods
+   }
 }
 
 import checking._

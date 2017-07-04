@@ -67,6 +67,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     }
   }
 
+  @deprecated("needs to be reviewed")
   def elaborateContext(outer: Context, con: Context) : Context = {
     var ret = Context.empty
     def currentContext = outer ++ ret
@@ -98,6 +99,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             t.meta foreach apply
           case _ =>
         }
+        // TODO flattenContext(m.parameters)
         m.getDeclarations.foreach {d => flattenDeclaration(m, d, Some(rules))}
      } finally {// if something goes wrong, don't try again
       ElaboratedElement.set(m)
@@ -112,13 +114,15 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     mod match {
       case v: DeclaredView => return //TODO
       case t: DeclaredTheory =>
+        val at = t.getDeclarations.headOption.map(d => After(d.name)).getOrElse(AtEnd)
+        var previous: Option[LocalName] = None
         t.df.foreach {df =>
           //TODO mod.getInnerContext is too small for nested theories
           objectLevel(df, mod.getInnerContext, rules) match {
             case ComplexTheory(cont) =>
               cont.asDeclarations(mod.toTerm).foreach {d =>
                 d.setOrigin(ElaborationOfDefinition)
-                controller add d// mod.add(d,None) //TODO add at beginning
+                controller.add(d, at)// mod.add(d,None) //TODO add at beginning
               }
             case AnonymousTheory(mt,omls) =>
               if (mt.isDefined) t.addMeta(mt.get) /* { // TODO should probably become meta theory somehow, but can't be overwritten
@@ -128,17 +132,17 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 if (!t.metaC.isDefined) {
                    t.metaC.set(OMMOD(mt.get))
                 }
-                controller add inc
+                controller.add(inc, at)
               } */
               omls foreach {
                 case IncludeOML(_, OMPMOD(mp, Nil), _) =>
                   val i = PlainInclude(mp,t.path)
                   i.setOrigin(ElaborationOfDefinition)
-                  controller add i
+                  controller.add(i, at)
                 case o =>
                   val d = Constant(t.toTerm, o.name, Nil, o.tp, o.df, None)
                   d.setOrigin(ElaborationOfDefinition)
-                  controller add d
+                  controller.add(d, at)
               }
             case dfS => t.dfC.set(dfS)
           }
@@ -255,7 +259,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     dElab.reverseMap {e =>
        e.setOrigin(ElaborationOf(dOrig.path))
        log("flattening yields " + e.path)
-       controller.add(e, Some(dOrig.name))
+       controller.add(e, After(dOrig.name))
     }
     if (dElab.isEmpty) ElaboratedElement.set(dOrig) else ElaboratedElement.setProperly(dOrig)
   }

@@ -39,7 +39,7 @@ object VarTypeRule extends TypingRule(VarType.path) {
     case (_,VarType(alpha)) =>
       val v = stack.context.find {w =>
         w.df.isDefined &&
-        solver.dryRun(false)(solver.check(Equality(stack,w.df.get,tm,None))(NoHistory)) == Success(true)
+        solver.dryRun(false, false)(solver.check(Equality(stack,w.df.get,tm,None))(NoHistory)) == Success(true)
       }.getOrElse(return false)
       solver.check(Typing(stack,v.toTerm,alpha))
     case _ => false

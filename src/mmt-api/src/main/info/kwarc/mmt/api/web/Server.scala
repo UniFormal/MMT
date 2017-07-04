@@ -10,7 +10,7 @@ import scala.util.parsing.json.JSONFormat
 import scala.xml._
 
 case class ServerError(msg: String) extends Error(msg)
-case class ServerProcessingError(request : ServerRequest, exception : Exception) extends Error(s"unknown error while processing ${request.pathStr}") {
+case class ServerProcessingError(request : ServerRequest, exception : Exception) extends Error(s"unknown error while processing ${request.toStringShort}") {
   setCausedBy(exception)
 }
 
@@ -40,17 +40,14 @@ trait ServerImplementation {
 
 /** An HTTP RESTful server. */
 class Server(val port: Int, val host: String, controller: Controller) extends TiscafServerImplementation with Logger {
-
   val serverName : String = "MMT HTTP Server"
-
   val listenAddress : String = host
   val listenPort : Int = port
 
-  def handleMessage(s: String): Unit = {
+  def handleMessage(s: String) {
     controller.report("tiscaf", s)
   }
-
-  def handleError(e: Throwable): Unit = {
+  def handleError(e: Throwable) {
     logError("error in underlying server: " + e.getClass + ":" + e.getMessage + "\n" + e.getStackTrace.map(_.toString).mkString("", "\n", ""))
   }
 
@@ -59,21 +56,18 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
 
   /** handle a single request in a safe way */
   def handleRequest(request: ServerRequest): ServerResponse = {
-
     // log the request that was being made
-    log(s"${RequestMethod.toString(request.method)} /${request.pathStr}")
-
+    log(request.toStringShort)
     // build a response
     val response = try {
+      //log(request.body.asString)
       resolve(request)
     } catch {
       case err: Error => errorResponse(err, request)
       case e : Exception => errorResponse(ServerProcessingError(request, e), request)
     }
-
     // log the response being made
-    log(s"${RequestMethod.toString(request.method)} /${request.pathStr} ${response.statusCode}")
-
+    //log(response.toString)
     //set cors headers and return
     response.setCORSFor(request)
     response
@@ -81,7 +75,6 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
 
   /** resolves a specific request -- may throw exceptions */
   private def resolve(request: ServerRequest) : ServerResponse = {
-
     // magically requesting a resource via ?do=mmt_resource&path=...
     val resourcePath = try{
       if(request.parsedQuery.string("do") == "mmt_resource"){
@@ -92,15 +85,12 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
     } catch {
       case e: Exception => None
     }
-
     // check if our request method is OPTIONS, if so, do nothing
     if(request.method == RequestMethod.Options) {
       new ServerResponse
-
     // magic resource requests
     } else if(resourcePath.isDefined) {
       handleResource(resourcePath.get, request)
-
     // everything else
     } else {
       request.extensionName match {
@@ -108,13 +98,11 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
         case Some("change") => resolveChange(request)
         case Some("mws") => resolveMWS(request)
         case Some(ext) => resolveExt(ext, request)
-
         case None =>
-          val path = request.pathComponents match {
+          val path = request.path match {
             case Nil | List("") => "browse.html"
-            case _ => request.pathStr
+            case _ => request.pathString
           }
-
           handleResource(path, request)
       }
     }
@@ -126,11 +114,9 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
         resource(path, io => {
           // read it as a string
           val str = StreamUtils.toString(io, "utf-8")
-
           Left(
             // and place in the request
-            str.format(JSONFormat.quoteString(request.pathStr))
-               .getBytes("utf-8")
+            str.format(JSONFormat.quoteString(request.pathString)).getBytes("utf-8")
           )
         }, request)
 
@@ -152,16 +138,16 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
   }
 
   /** prints web-server debug info */
-  private def resolveDebug(request : ServerRequest) : ServerResponse = {
+  private def resolveDebug(request: ServerRequest) : ServerResponse = {
     // TODO: Make this a small extension
     val bodyString = List(
       "MMT WebServer DEBUG / TESTING PAGE",
       "==================================",
       "",
       "",
-      s"HTTP Request Method: ${request.method}",
-      s"HTTP Request Path:   ${request.requestPath}",
-      s"HTTP Query String:   ${request.queryString}",
+      s"HTTP Request Method: ${RequestMethod.toString(request.method)}",
+      s"HTTP Request Path:   ${request.pathString}",
+      s"HTTP Query String:   ${request.query}",
       "",
       "HTTP Header fields:",
       request.headers.map(kv => s"${kv._1}: ${kv._2}").mkString("\n")
@@ -175,9 +161,9 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
   private def resolveMWS(request : ServerRequest) : ServerResponse = {
     val body = request.body
 
-    val offset = try request.headers("Offset").toInt catch {case _:Throwable => 0}
-    val size = try request.headers("Size").toInt catch {case _:Throwable => 30}
-    val query = request.queryString
+    val offset = try request.headers("Offset").toInt catch {case _:Exception => 0}
+    val size = try request.headers("Size").toInt catch {case _:Exception => 30}
+    val query = request.query
     val qt = controller.extman.get(classOf[QueryTransformer], query).getOrElse(TrivialQueryTransformer)
     val (mwsquery, params) = query match {
       case "mizar" =>
@@ -263,7 +249,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
       case e: Error =>
         throw e
       case e: Exception =>
-        throw extension.LocalError(s"unknown error while serving ${request.pathStr}").setCausedBy(e)
+        throw extension.LocalError(s"unknown error while serving ${request.pathString}").setCausedBy(e)
     }
   }
 }

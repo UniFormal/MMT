@@ -33,13 +33,13 @@ object OS {
   
   /** the default location of the jEdit settings folder, as specified by the jEdit documentation */
   def jEditSettingsFolder = {
-
+    lazy val uh = File(System.getProperty("user.home"))
     (OS.detect match {
       case Windows => List(File(System.getenv("APPDATA")) / "jEdit")
-      case MacOS => List(File(System.getProperty("user.home")) / "Library" / "jEdit")
+      case MacOS => List(uh / "Library" / "jEdit")
       case os: Unix => List(
-        File(System.getProperty("user.home")) / ".jEdit",
-        File(System.getProperty("user.home")) / ".jedit"
+        uh / ".jEdit",
+        uh / ".jedit"
       )
     }).find(_.isDirectory)
   }

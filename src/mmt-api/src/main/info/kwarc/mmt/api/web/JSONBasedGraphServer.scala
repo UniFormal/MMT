@@ -35,7 +35,7 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
 
   def apply(request: ServerRequest): ServerResponse = {
     log("Paths: " + request.extensionPathComponents)
-    log("Query: " + request.queryString)
+    log("Query: " + request.query)
     log("Path: " + request.parsedQuery("uri"))
     if (request.extensionPathComponents.headOption == Some("menu")) {
       val id = request.parsedQuery("id").getOrElse("top")
@@ -43,7 +43,7 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
       if (id == "full") ServerResponse.fromJSON(sidebar.getJSON("top",true))
       else ServerResponse.fromJSON(sidebar.getJSON(id))
     } else if (request.extensionPathComponents.headOption == Some("json")) {
-      val uri = request.parsedQuery("uri").getOrElse(return ServerResponse.plainErrorResponse(GetError("Not a URI")))
+      val uri = request.parsedQuery("uri").getOrElse(return ServerResponse.errorResponse(GetError("Not a URI"), request))
       val key = request.parsedQuery("key").getOrElse("pgraph")
       val exp = controller.extman.getOrAddExtension(classOf[JGraphExporter], key).getOrElse {
         throw CatchError(s"exporter $key not available")

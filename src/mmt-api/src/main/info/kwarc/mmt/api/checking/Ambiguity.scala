@@ -11,9 +11,11 @@ import OMLiteral.OMI
  */
 object Disambiguation extends ComputationRule(ObjectParser.oneOf) {
    def apply(checker: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
-      val OMA(OMS(ObjectParser.oneOf), choice::alternatives) = tm
+      val ComplexTerm(ObjectParser.oneOf, _, namedParts, choice::alternatives) = tm
       choice match {
-         case OMI(i) => Some(alternatives(i.toInt))
+         case OMI(i) =>
+           val subs = namedParts.toPartialSubstitution
+           Some(alternatives(i.toInt) ^? subs)
          case _ => None
       }
    }
@@ -24,42 +26,57 @@ object Disambiguation extends ComputationRule(ObjectParser.oneOf) {
  */
 object InferAmbiguous extends InferenceRule(ObjectParser.oneOf,ObjectParser.oneOf) {
    def apply(checker: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
-      val OMA(OMS(ObjectParser.oneOf), choice::alternatives) = tm
-      def choose(i: BigInt) = checker.inferType(alternatives(i.toInt), covered)
-      /* TODO do this differently: OMA(ambiguous, unknown, option*, arg*)
-       * options are pairs of GlobalName and number of leading implicit arguments, args are the explicit arguments
-       * now infer the explicit arguments for real, then try to check in dryRuns
-       */
+      val ComplexTerm(ObjectParser.oneOf, _, namedParts, choice::alternatives) = tm
+      val subs = namedParts.toPartialSubstitution // always total if the term comes from NotationBasedParser
+      def choose(i: BigInt) = {
+        checker.inferType(alternatives(i.toInt) ^? subs, covered)
+      }
       choice match {
          case OMI(i) =>
             history += "already disambiguated"
             choose(i)
          case OMV(n) =>
+            // first (try to) infer the types of the shared terms, that can solve unknowns that are needed for disambiguation
+            val namedPartsI = subs map {sub =>
+               history += "infering type of the named part " + checker.presentObj(sub.target)
+               val tp = checker.inferType(sub.target)(stack, history.branch)
+               tp match {
+                 case Some(t) => history += checker.presentObj(t)
+                 case None => history += "failed"
+               }
+               VarDecl(sub.name, None, tp, Some(sub.target), None)
+            }
             history += "trying to disambiguate: inferring type of all alternatives" 
-            // try type inference on every alternative
+            // now try dryRun type inference on every alternative
             val results = alternatives.zipWithIndex.map {case (a,i) =>
                history += s"trying number $i"
-               val res = checker.dryRun(false) {
-                  checker.inferType(a, covered)(stack, NoHistory)
+               val res = checker.dryRun(true, false) {
+                  history.indented {
+                    checker.inferType(a, covered)(stack ++ namedPartsI, history)
+                  }
                }
                history += res.toString
                (res,i)
             }
             val nonFailures = results.filter(_._1!=WouldFail)
-            if (nonFailures.length == 1) {
+            if (nonFailures.length == 0) {
+              checker.error("all alternatives ill-typed")
+              None
+            } else if (nonFailures.length == 1) {
                // we can solve for OMV(n) if type inference failed for all but one alternative
                val theOne = nonFailures.head._2.toInt
+               // resolve the ambiguous term
                checker.check(Equality(stack, choice, OMI(BigInt(theOne)), None))(history + "disambiguated")
                // after solving the next application of inferType will succeed
                // but we can return the right result immediately
                choose(theOne)
+            } else if (nonFailures.count(_._1.isInstanceOf[Success[_]]) > 1) {
+              history += "more than one alternative could be well-typed at this point"
+              None
             } else if (nonFailures.length == alternatives.length) {
                history += "unable to disambiguate"
                // we learned nothing new
                None
-            } else if (nonFailures.count(_._1.isInstanceOf[Success[_]]) > 1) {
-              checker.error("ambiguous: more than one alternative is well-typed")
-              None
             } else {
                history += "unable to disambiguate"
                None

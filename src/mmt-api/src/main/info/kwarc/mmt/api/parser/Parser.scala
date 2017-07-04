@@ -49,6 +49,7 @@ case class ParseResult(unknown: Context, free: Context, term: Term) {
 object ParseResult {
    val unknown = utils.mmt.mmtcd ? "unknown"
    val free = utils.mmt.mmtcd ? "free"
+   val substitute = utils.mmt.mmtcd ? "substitute"
    def fromTerm(uft: Term) = {
       val (u,ft) = uft match {
          case OMBIND(OMS(this.unknown), u, ft) => (u, ft)
