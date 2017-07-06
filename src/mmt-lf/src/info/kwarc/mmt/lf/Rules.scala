@@ -147,7 +147,7 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
            case (Pi(x,a,b), t::rest) =>
               history += "function type is: " + solver.presentObj(fT)
               history += "argument is: " + solver.presentObj(t)
-              if (conforms(solver)(t, a, covered)(stack, history)) { //TEMP  + "checking argument"
+              if (conforms(solver)(t, a, covered)(stack, history + "checking argument")) { 
                  history += "substituting argument in return type"
                  // substitute for x and newly-solved unknowns (as solved by conforms) and simplify
                  val bS = solver.substituteSolved(b ^? (x/t), true)

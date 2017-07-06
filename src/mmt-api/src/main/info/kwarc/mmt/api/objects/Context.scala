@@ -33,6 +33,13 @@ case class VarDecl(name : LocalName, feature: Option[String], tp : Option[Term],
    def subobjects = subobjectsNoContext(tp.toList ::: df.toList)
    def head = tp.flatMap(_.head)
 
+   /** true if this is stronger than that */
+   def subsumes(that: VarDecl): Boolean = this.name == that.name && this.feature == that.feature && List((this.tp,that.tp),(this.df,that.df)).forall {
+     case (_,None) => true
+     case (None,Some(_)) => false
+     case (Some(t1),Some(t2)) => t1 == t2
+   }
+   
    def toStr(implicit shortURIs: Boolean) = this match {
       case IncludeVarDecl(_,OMPMOD(p,args), df) => p.toString + args.map(_.toStr).mkString(" ")
       case _ => name.toString + tp.map(" : " + _.toStr).getOrElse("") + df.map(" = " + _.toStr).getOrElse("")
@@ -109,7 +116,7 @@ object IncludeVarDecl extends DerivedVarDeclFeature("include") {
 object StructureVarDecl extends DerivedVarDeclFeature("structure")
 
 /** represents an MMT context as a list of variable declarations */
-case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDecl] with DefaultLookup[VarDecl] {
+case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDecl] with DefaultLookup[VarDecl] {
    type ThisType = Context
    def getDeclarations = variables.toList
    
@@ -164,13 +171,30 @@ case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDe
      Context(vds.reverse :_*)
    }
    
+   /** true if that is a subcontext (inclusion substitution) of this one */
+   // TODO too conservative: may return false too often
+   def subsumes(that: Context): Boolean = {
+      val thisNames = this.variables.toList.map(_.name)
+      val thatNames = that.variables.toList.map(_.name)
+      if (hasDuplicates(thisNames) || hasDuplicates(thatNames))
+        return false // this is too conservative, but shadowing is tricky
+      if (thisNames.filter(thatNames.contains) != thatNames)
+        return false // this is too conservative: some reordering can be allowed, but it is tricky when shadowing declarations from a common outer context
+      this.forall {vd1 =>
+        that.find(_.name == vd1.name) match {
+          case None => true
+          case Some(vd2) => vd1 subsumes vd2
+        }
+      }
+   }
+   
    /**
     * @return domain of this context, flattening nested ComplexTheories and ComplexMorphisms
     *
     * Due to ComplexMorphism's, names may erroneously be defined but not declared.
     */
    def getDomain: List[DomainElement] = {
-      var des : List[DomainElement] = Nil
+      var des: List[DomainElement] = Nil
       variables foreach {
          case StructureVarDecl(name, tp, df) =>
             val (total, definedAt) : (Boolean, List[LocalName]) = df match {

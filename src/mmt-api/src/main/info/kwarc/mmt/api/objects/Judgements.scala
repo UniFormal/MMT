@@ -15,7 +15,7 @@ abstract class Judgement extends utils.HashEquality[Judgement] with checking.His
   
   /** true if that is guaranteed if this holds */
   def implies(that: Judgement): Boolean = this == that
-  //TODO maybe also true if this == that except for possible that.context being bigger than this.context; Context.minimalSubContext might help with that
+  //TODO also true that.context.subsumes(this.context)
   
   /** a toString method that may call a continuation on its objects */
   def present(implicit cont: Obj => String) = "Judgment " + presentAntecedent + " |- " + presentSucceedent

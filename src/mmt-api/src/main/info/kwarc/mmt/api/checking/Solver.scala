@@ -578,7 +578,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    def apply(j: Judgement): Boolean = {
       val h = new History(Nil)
       val bi = new BranchInfo(h, getCurrentBranch)
-      addConstraint(new DelayedJudgement(j, bi, true))(h)
+      addConstraint(new DelayedJudgement(j, bi, true, None))(h)
       activateRepeatedly
       if (errors.nonEmpty) {
         // definitely disproved
@@ -598,7 +598,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * @param j the Judgement to be delayed
     * @return true (i.e., delayed Judgment's always return success)
     */
-   private def delay(j: Judgement, incomplete: Boolean = false)(implicit history: History): Boolean = {
+   private def delay(j: Judgement, onActivation: Option[() => Boolean] = None)(implicit history: History): Boolean = {
       // testing if the same judgement has been delayed already
       if (delayed.exists {
          case d: DelayedJudgement => d.constraint hasheq j
@@ -609,9 +609,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          log("delaying: " + j.present)
          history += "(delayed)"
          val bi = new BranchInfo(history, getCurrentBranch)
-         val dc = new DelayedJudgement(j, bi, incomplete)
+         val dc = new DelayedJudgement(j, bi, onActivation.isDefined, onActivation)
          addConstraint(dc)
-      }
+    }
       true
    }
 
@@ -661,21 +661,24 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                  def prepare(t: Term, covered: Boolean = false) = {
                     substituteSolved(t, covered)
                  }
-                 //logState() // noticably slows down type-checking, only use for debugging
+                 //logState() // noticeably slows down type-checking, only use for debugging
                  log("activating: " + j.present)
-                 j match {
-                    case Typing(stack, tm, tp, typS) =>
-                       check(Typing(prepareS(stack), prepare(tm), prepare(tp, true), typS))
-                    case Subtyping(stack, tp1, tp2) =>
-                       check(Subtyping(prepareS(stack), prepare(tp1), prepare(tp2)))
-                    case Equality(stack, tm1, tm2, tp) =>
-                       check(Equality(prepareS(stack), prepare(tm1, true), prepare(tm2, true), tp.map {x => prepare(x, true)}))
-                    case Universe(stack, tm) =>
-                       check(Universe(prepareS(stack), prepare(tm)))
-                    case Inhabitable(stack, tp) =>
-                       check(Inhabitable(prepareS(stack), prepare(tp)))
-                    case Inhabited(stack, tp) =>
-                       check(Inhabited(prepareS(stack), prepare(tp, true)))
+                 dj.onActivation match {
+                   case Some(f) if ! dc.isActivatable(solved) => f()
+                   case _ => j match {
+                      case Typing(stack, tm, tp, typS) =>
+                         check(Typing(prepareS(stack), prepare(tm), prepare(tp, true), typS))
+                      case Subtyping(stack, tp1, tp2) =>
+                         check(Subtyping(prepareS(stack), prepare(tp1), prepare(tp2)))
+                      case Equality(stack, tm1, tm2, tp) =>
+                         check(Equality(prepareS(stack), prepare(tm1, true), prepare(tm2, true), tp.map {x => prepare(x, true)}))
+                      case Universe(stack, tm) =>
+                         check(Universe(prepareS(stack), prepare(tm)))
+                      case Inhabitable(stack, tp) =>
+                         check(Inhabitable(prepareS(stack), prepare(tp)))
+                      case Inhabited(stack, tp) =>
+                         check(Inhabited(prepareS(stack), prepare(tp, true)))
+                   }
                  }
               case di: DelayedInference =>
                   implicit val history = di.history
@@ -796,8 +799,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         return error("checking was cancelled by external signal")
       }
       //JudgementStore.getOrElse(j) {
-        history += j
-        log("checking: " + j.presentSucceedent)
+      history += j
+      log("checking: " + j.presentSucceedent)
+      JudgementStore.getOrElseUpdate(j) {
         logAndHistoryGroup {
           log("in context: " + j.presentAntecedent)
           j match {
@@ -811,22 +815,25 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             case j: EqualityContext => checkEqualityContext(j)
           }
         }
-     //}
+     }
    }
-
+   
+   /** caches the results of judgements to avoid duplicating work */
+   // judgements are not cached if we are in a dry run to make sure they are run again later to solve unknowns
    private object JudgementStore {
-    private val store : scala.collection.mutable.HashMap[Judgement,Boolean] = collection.mutable.HashMap.empty
-    def getOrElse(j : Judgement)(f: => Boolean) : Boolean = {
-      store.find {case (k,_) => k implies j} match {
-        case Some((_,r)) =>
-          r
-        case None =>
-          val r = f
-          if (!isDryRun) {
-            store(j) = r
-          }
-          r
-      }
+     private val store = new scala.collection.mutable.HashMap[Judgement,Boolean]
+     /** lookup up result for j; if not known, run f to define it */
+     def getOrElseUpdate(j : Judgement)(f: => Boolean): Boolean = {
+       store.find {case (k,_) => k implies j} match {
+         case Some((_,r)) =>
+           r
+         case None =>
+           val r = f
+           if (!isDryRun) {
+             store(j) = r
+           }
+           r
+       }
     }
   }
 
@@ -846,7 +853,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      val solved = solveTyping(tm, tp)
      if (solved) return true
      def checkByInference(tpS: Term): Boolean = {
-         val hisbranch = history// TEMP .branch
+         val hisbranch = history.branch
          inferType(tm)(stack, hisbranch) match {
             case Some(itp) =>
                check(Subtyping(stack, itp, tpS))(history + ("inferred type must conform to expected type; the term is: " + presentObj(tm)))
@@ -1017,7 +1024,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       // better: use an expansion algorithm that stops expanding if it is know that no rule will become applicable
 
      // first see if equality can be established
-     history += solution.toStr(true)
      val CC = makeCongClos
      val obviouslyEqual = tryToCheckWithoutDelay(CC(Equality(j.stack,j.tp1,j.tp2,None)) :_*) contains true
      if (obviouslyEqual) {
@@ -1259,6 +1265,15 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
              val minCont = stack.context.minimalSubContext(s12Vars)
              val j = Equality(Stack(minCont), s1, s2, Some(tp))
              val unknownsLeft = j.freeVars.toList intersect solution.map(_.name)
+             
+             // only incomplete congruence reasoning is left, we delay it if there is any hope to avoid it 
+             val nextStep = () => checkEqualityCongruence(TorsoForm.fromHeadForm(s1), TorsoForm.fromHeadForm(s2), unknownsLeft.nonEmpty)
+             if (unknownsLeft.nonEmpty) {
+               delay(j, Some(nextStep))
+             } else {
+               nextStep()
+             }
+             /* old code, experimentally replaced by above
              /* delay if there are unknowns left in this judgment that
               * - are already solved, or
               * - might be solved by activating other judgments
@@ -1271,7 +1286,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
              } else {
                 // last resort: try congruence
                 checkEqualityCongruence(TorsoForm.fromHeadForm(s1), TorsoForm.fromHeadForm(s2), unknownsLeft.nonEmpty)
-             }
+             }*/
        }
    }
 
@@ -1288,7 +1303,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        * Therefore, a congruence rule for binders is currently not necessary.
        */
       def notSimilar = {
-         // j is delayed with incomplete = false; so we try all incomplete judgments once; if none makes progress, the last one throws an error
+         // j is delayed without a special treatment; if anything else is left to try, delay; else throw error
          if (unknownsLeft && existsActivatable(allowIncomplete = true))
             delay(j)
          else {
