@@ -176,9 +176,9 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
                   ta.obj match {
                      case t: Term =>
                         val thy = ta.getScope.getOrElse(return null)
-                        val found = controller.extman.getFoundation(thy).getOrElse(return "no foundation")
-                        val tp = try {found.inference(t, ta.context)(controller.globalLookup)}
-                        catch {case e : Exception => return e.getMessage}
+                        val tp = try {
+                          checking.Solver.infer(controller, Context(thy) ++ ta.context, t, None).getOrElse {throw GetError("error during type inference")}
+                        } catch {case e : Exception => return e.getMessage}
                         asString(tp)
                      case _ => return null
                   }

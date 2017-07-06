@@ -22,6 +22,10 @@ scalacOptions in(ScalaUnidoc, unidoc) ++=
 target in(ScalaUnidoc, unidoc) := file("../apidoc")
 
 // our targets
+// Targets should not use the 'libraryDependencies' setting to register external dependencies to be managed via sbt.
+// (Using library dependencies that are only needed for Test targets is acceptable.)
+// Instead, they should create a lib folder, place the necessary jars there, and configure them using the 'unmanagedJars' setting.
+
 
 lazy val postProcessApi =
   taskKey[Unit]("post process generated api documentation wrt to source links.")

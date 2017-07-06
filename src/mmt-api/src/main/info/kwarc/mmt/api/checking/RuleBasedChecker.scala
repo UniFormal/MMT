@@ -113,8 +113,6 @@ class RuleBasedChecker extends ObjectChecker {
              }
          }
          tc.analyzed = result // set it even if unchanged so that dirty flag gets cleared
-         if (! success)
-            tc.setAnalyzedDirty // revisit failed declarations
          if (changed) {
             log("changed")
             controller.memory.content.notifyUpdated(comp) //TODO: this could be cleaner if taken care of by the onCheck method

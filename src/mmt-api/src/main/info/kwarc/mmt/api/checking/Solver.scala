@@ -698,7 +698,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * @return true if unsolved variables can be filled in by prover
     */
    private def solveRemainingUnknowns: Boolean = {
-      solution.declsInContext.forall {
+      solution.declsInContext.map {
          case (_, vd) if vd.df.isDefined =>
            // solved
            true 
@@ -734,7 +734,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                   error("unsolved (typed) unknown: " + vd.name)
                 } */
             }
-      }
+      }.forall(_ == true)
    }
 
    /**
@@ -798,10 +798,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         checkingUnit.killact
         return error("checking was cancelled by external signal")
       }
-      //JudgementStore.getOrElse(j) {
-      history += j
-      log("checking: " + j.presentSucceedent)
       JudgementStore.getOrElseUpdate(j) {
+        history += j
+        log("checking: " + j.presentSucceedent)
         logAndHistoryGroup {
           log("in context: " + j.presentAntecedent)
           j match {

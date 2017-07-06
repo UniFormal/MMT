@@ -136,7 +136,7 @@ class ExtensionManager(controller: Controller) extends Logger {
 
   private[api] var extensions: List[Extension] = Nil
   private val knownExtensionTypes = List(
-    classOf[Plugin], classOf[Foundation], classOf[ParserExtension], classOf[QueryTransformer],
+    classOf[Plugin], classOf[ParserExtension], classOf[QueryTransformer],
     classOf[ontology.QueryFunctionExtension],
     classOf[ChangeListener], classOf[ServerExtension],
     classOf[Parser], classOf[Checker], classOf[Prover], classOf[Interpreter], classOf[Simplifier], classOf[Presenter],
@@ -256,17 +256,6 @@ class ExtensionManager(controller: Controller) extends Logger {
     get(classOf[ParserExtension]) find {
       _.isApplicable(se, keyword)
     }
-
-  /** retrieves the closest Foundation that covers a theory, if any */
-  def getFoundation(p: MPath): Option[Foundation] = get(classOf[Foundation]) find {
-    _.foundTheory == p
-  } orElse {
-    val mt = objects.TheoryExp.metas(objects.OMMOD(p))(controller.globalLookup)
-    mt mapFind getFoundation
-  }
-
-  def getFoundation(thy: objects.Term): Option[Foundation] =
-    objects.TheoryExp.metas(thy)(controller.globalLookup) mapFind getFoundation
 
   def stringDescription: String = {
     knownExtensionTypes.map {cls =>

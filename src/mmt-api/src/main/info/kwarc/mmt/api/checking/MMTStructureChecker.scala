@@ -350,11 +350,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   /** determines which dimension of a term (parsed, analyzed, or neither) is checked */
   private def getTermToCheck(tc: TermContainer, dim: String) = {
     if (tc.parsed.isDefined && tc.analyzed.isDefined) {
-      if (tc.isAnalyzedDirty) {
-        log(s"re-checking dirty $dim")
+      if (tc.checkNeeded) {
+        log(s"re-checking dirty or ill-formed $dim")
         tc.parsed
       } else {
-        log(s"skipping $dim (not dirty)")
+        log(s"skipping $dim (uptodate and well-formed)")
         None
       }
     } else {
