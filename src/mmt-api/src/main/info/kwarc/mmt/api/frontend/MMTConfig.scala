@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import archives._
 import utils._
 
-/** an entry in an MMT configuration file (.cfg) */
+/** an entry in an MMT configuration file (see [[MMTConfig]]) */
 abstract class ConfEntry {
    /** archive id, build target key, etc. */
    val id : String

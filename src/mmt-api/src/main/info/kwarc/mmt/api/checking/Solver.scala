@@ -1541,7 +1541,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      }
    }
 
-  /** checks equality of context */
+  /** checks equality of contexts (up to either alpha-renaming or reordering) */
    private def checkEqualityContext(j: EqualityContext)(implicit history: History): Boolean = {
      implicit val stack = j.stack
      if (j.context1.length != j.context2.length) {
@@ -1550,25 +1550,45 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      val c1 = simplify(j.context1)
      val c2 = simplify(j.context2)
      var sub = Substitution.empty
-     def checkOptTerm(tO1: Option[Term], tO2: Option[Term]) = (tO1,tO2) match {
+     def checkOptTerm(c: Context, tO1: Option[Term], tO2: Option[Term]) = (tO1,tO2) match {
        case (None,None) =>
          true
        case (Some(t1),Some(t2)) =>
-         check(Equality(j.stack, t1, t2 ^? sub, None))(history + "component-wise equality of contexts")
+         check(Equality(j.stack ++ c, t1, t2 ^? sub, None))(history + "component-wise equality of contexts")
        case _ =>
          error("contexts do not have the same shape")
      }
-     (c1 zip c2) forall {case (vd1, vd2) =>
-       val names = if (j.uptoAlpha) {
-         sub = sub ++ (vd2.name -> OMV(vd1.name))
-         true
-       } else {
-         if (vd1.name != vd2.name)
-           error("contexts do not declare the same variables")
-         else
-           true
+     val c2R = if (j.uptoAlpha) {
+       c2
+     } else {
+       // c2New is the reordering of c2 such that corresponding variables have the same name
+       // invariant: c2New ++ c2Rest == c2  up to reordering
+       var c2Rest = c2
+       var c2New = Context.empty
+       c1.foreach {vd1 =>
+         val (skip, vd2rest) = c2Rest.span(_.name != vd1.name)
+         if (vd2rest.isEmpty) {
+           return error("contexts do not declare the same names")
+         }
+         val vd2 :: rest = vd2rest
+         // c2Rest == skip ++ vd2 ++ rest  and  vd1.name == vd2.name
+         // TODO vd2 may refer to skipped variables if they have a definition, in which case we should substitute the definition
+         if (! utils.disjoint(skip.map(_.name), vd2.freeVars)) {
+           return error("cannot reorder contexts to make them declare the same variables names equal")
+         }
+         c2Rest = skip ::: rest
+         c2New = c2New ++ vd2
        }
-       names && checkOptTerm(vd1.tp, vd2.tp) && checkOptTerm(vd1.df, vd2.df)
+       c2New
+     }
+     
+     (c1.declsInContext.toList zip c2.zipWithIndex) forall {case ((c, vd1), (vd2,i)) =>
+       if (j.uptoAlpha) {
+         sub = sub ++ (vd2.name -> OMV(vd1.name))
+       } else {
+         //if (vd1.name != vd2.name) return error("contexts do not declare the same variables") else // redundant now
+       }
+       checkOptTerm(c, vd1.tp, vd2.tp) && checkOptTerm(c, vd1.df, vd2.df)
      }
    }
 

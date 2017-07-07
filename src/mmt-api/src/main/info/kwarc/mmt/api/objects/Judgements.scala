@@ -138,6 +138,8 @@ case class IsContext(stack: Stack, con: Context) extends UnaryObjJudgement(stack
 
 /** represents an equality judgement between contexts
  * context |- context1 = context2
+ * 
+ * @param uptoAlphy true: alpha-renaming allowed, false: reordering allowed
  */
 case class EqualityContext(stack: Stack, context1: Context, context2: Context, uptoAlpha: Boolean) extends Judgement {
    lazy val freeVars = {

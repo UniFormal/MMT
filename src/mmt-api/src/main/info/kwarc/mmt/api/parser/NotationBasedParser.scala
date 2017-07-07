@@ -139,6 +139,7 @@ class NotationBasedParser extends ObjectParser {
        if (bvars.isEmpty)
          OMV(name)
        else {
+         //TODO in case of shadowing (duplicates in bvars), one variable must be renamed
          //apply meta-variable to all bound variables in whose scope it occurs
          prag.defaultApplication(Some(pu.context.getIncludes.last), OMV(name), bvars.map(OMV(_)))
        }

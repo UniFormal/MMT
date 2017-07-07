@@ -147,7 +147,8 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
            case (Pi(x,a,b), t::rest) =>
               history += "function type is: " + solver.presentObj(fT)
               history += "argument is: " + solver.presentObj(t)
-              if (conforms(solver)(t, a, covered)(stack, history + "checking argument")) { 
+              val check = conforms(solver)(t, a, covered)(stack, history + "checking argument")
+              if (check) { 
                  history += "substituting argument in return type"
                  // substitute for x and newly-solved unknowns (as solved by conforms) and simplify
                  val bS = solver.substituteSolved(b ^? (x/t), true)
@@ -179,7 +180,7 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
       tm match {
          case ApplySpine(f,args) =>
             history += "inferring type of function " + solver.presentObj(f)
-            val fTOpt = solver.inferType(f)(stack, history.branch)
+            val fTOpt = solver.inferType(f, covered)(stack, history.branch)
             fTOpt match {
               case Some(fT) =>
                 iterate(fT, args)
@@ -199,10 +200,13 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
 object ApplyTerm extends GenericApplyTerm(StandardArgumentChecker)
 
 /** type-checking: the type checking rule x:A|-f x:B  --->  f : Pi x:A.B */
+// TODO all typing rules of this style are in danger of accepting an expression if all eliminations are well-formed but the term itself is not
+//  e.g., [x:Int]sqrt(x) : Nat->Real  would check
 object PiType extends TypingRule(Pi.path) with PiOrArrowRule {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = {
       (tm,tp) match {
          case (Lambda(x1,a1,t),Pi(x2,a2,b)) =>
+            // this case is somewhat redundant, but allows reusing the variable name
             solver.check(Equality(stack,a1,a2,None))(history+"domains must be equal")
             val (xn,sub1) = Common.pickFresh(solver, x1)
             val sub2 = x2 / OMV(xn)
