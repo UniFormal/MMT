@@ -5,7 +5,7 @@ import frontend._
 import objects._
 import symbols._
 import checking._
-import info.kwarc.mmt.LFX.Records.{Getfield, Recexp}
+import info.kwarc.mmt.LFX.Records._
 import uom._
 import utils._
 import info.kwarc.mmt.lf._
@@ -69,7 +69,7 @@ class ImplementsRuleGenerator extends ChangeListener {
  * @param rhs the right hand side
  */
 // TODO Needs to be reimplemented
-class ImplementsRule(val from: Constant, recordType: Term, impl: GlobalName) extends DepthRule(impl, Recexp.path) {
+class ImplementsRule(val from: Constant, recordType: Term, impl: GlobalName) extends DepthRule(impl, RecExp.path) {
     override def toString = s"$impl(record) ~~> ${from.name}(record)"
     
     def apply : Rewrite = {(bef,inn,aft) => /*

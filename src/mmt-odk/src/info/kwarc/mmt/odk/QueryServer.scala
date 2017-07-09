@@ -1,6 +1,6 @@
 package info.kwarc.mmt.odk
 
-import info.kwarc.mmt.LFX.Records.{Recexp, Records}
+import info.kwarc.mmt.LFX.Records._
 import info.kwarc.mmt.api.backend.Storage
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
@@ -59,8 +59,8 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
 
   private val mitmToSystem = new StatelessTraverser {
     override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-      case ApplySpine(OMS(`transitivegrouprec`),List(Recexp(ls))) => // TODO implement in general
-        val tr = Try(Traverser(this,OMA(OMS(transitivegroupcons),List(ls.find(_.name == LocalName("n")).get.df.get,ls.find(_.name == LocalName("t")).get.df.get))))
+      case ApplySpine(OMS(`transitivegrouprec`),List(RecExp(ls))) => // TODO implement in general
+        val tr = Try(Traverser(this,OMA(OMS(transitivegroupcons),List(ls.fields.find(_.name == LocalName("n")).get.df.get,ls.fields.find(_.name == LocalName("t")).get.df.get))))
         tr.getOrElse(t)
       case ApplySpine(fun,args) => Traverser(this,OMA(fun,args))
       case OMS(pth) if VRESystem.MitM <= pth =>

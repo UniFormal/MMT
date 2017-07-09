@@ -7,7 +7,7 @@ import backend._
 import frontend._
 import ontology._
 import info.kwarc.mmt.api.metadata.{Linker, MetaData}
-import info.kwarc.mmt.LFX.Records.Recexp
+import info.kwarc.mmt.LFX.Records._
 import info.kwarc.mmt.api.ontology.{BaseType, Query, QueryEvaluator, QueryExtension}
 import info.kwarc.mmt.api.uom.URILiteral
 import info.kwarc.mmt.api.web.WebQuery
@@ -268,7 +268,7 @@ object LMFDBStore extends Storage with LMFDBBackend {
       })
      val omls = toOML(json, db, fields)
 
-     val df = Recexp(omls : _*)
+     val df = RecExp(omls : _*)
 
      val c = Constant(OMMOD(db.dbTheory), path.name, Nil, Some(tp), Some(Apply(constructor,df)), None)
      controller.add(c)
