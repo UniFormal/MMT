@@ -1,6 +1,6 @@
 package info.kwarc.mmt.pvs
 
-import info.kwarc.mmt.LFX.Records.Recexp
+import info.kwarc.mmt.LFX.Records.RecExp
 import info.kwarc.mmt.LFX.Subtyping.predsubtp
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.metadata.MetaDatum
@@ -282,17 +282,17 @@ object PVSTheory {
 
    object recordexpr extends sym("recordexpr") {
       def apply(nametpdf : (LocalName,Term,Term)*) = {
-         val rtp = Recexp(nametpdf map (t => OML(t._1, Some(tp.term), Some(t._2))): _*)
-         val rdf = Recexp(nametpdf map (t => OML(t._1, Some(expr(t._2)), Some(t._3))): _*)
+         val rtp = RecExp(nametpdf map (t => OML(t._1, Some(tp.term), Some(t._2))): _*)
+         val rdf = RecExp(nametpdf map (t => OML(t._1, Some(expr(t._2)), Some(t._3))): _*)
          ApplySpine(this.term, rtp,rdf)
       }
    }
 
    object recordtp extends sym("rectp") {
       def apply(nametp : (LocalName,Term)*) =
-         ApplySpine(this.term,Recexp(nametp.map(t => OML(t._1,Some(tp.term),Some(t._2))):_*))
+         ApplySpine(this.term,RecExp(nametp.map(t => OML(t._1,Some(tp.term),Some(t._2))):_*))
       def unapply(t:Term) : Option[List[(String,Term)]] = t match {
-         case ApplySpine(this.term,List(Recexp(l))) => Some(l.map({
+         case ApplySpine(this.term,List(RecExp(l))) => Some(l.fields.map({
             case OML(name,Some(tp.term),Some(df),_,_) => (name.toString,df)
             case tm @ _ => throw new Exception("Invalid Record type element: " + tm)
          }))

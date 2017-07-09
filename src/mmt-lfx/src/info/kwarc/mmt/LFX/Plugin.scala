@@ -10,7 +10,7 @@ import utils.URI
 import notations._
 import Subtyping._
 import info.kwarc.mmt.LFX.Coproducts.Addfunc
-import info.kwarc.mmt.LFX.Records.Rectype
+import info.kwarc.mmt.LFX.Records.RecType
 import info.kwarc.mmt.lf._
 
 object LFX {
@@ -195,7 +195,7 @@ class RecordFromTheory extends StructuralFeature("FromTheory") {
   def elaborate(parent: DeclaredModule, dd:  DerivedDeclaration) : Elaboration = {
     val dom = termtoTheory(getDomain(dd),dd.parent)
     val (cont,omls) = fromTheory(dom)
-    val tp1 = Rectype(omls.distinct.map(_._2):_*)
+    val tp1 = RecType(omls.distinct.map(_._2):_*)
     val (tp,df) = if (cont.isEmpty) (OMS(Typed.ktype),tp1) else (Pi(cont,OMS(Typed.ktype)),Lambda(cont,tp1))
     val tpname = dd.tpC.get match {
       case Some(OML(name,_,_,_,_)) => name
