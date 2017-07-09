@@ -167,7 +167,7 @@ class LexParseExtension(lc: LexFunction, pc: ParseFunction) extends LexerExtensi
 /**
  * A LexerExtension that lexes undelimited number literals
  * 
- * always accepts digit* after nonLetter
+ * always accepts digit* after non-(letter or connector)
  * 
  * @param floatAllowed if true, accepts digit* [. digit+ [e [-] digit+]] after nonLetter
  * @param fractionAllowed if true, accepts digit* / digit* after nonLetter
@@ -196,10 +196,10 @@ class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean) extend
      scanDigits
      if (floatAllowed) {
        if (startsWithCharAndDigit('.')) {
-          i += 2
+          i += 1
           scanDigits
           if (startsWithCharAndDigit('e')) {
-             i += 2
+             i += 1
              scanDigits
           } else if (startsWithCharsAndDigit('e', '-')) {
              i += 2
@@ -208,7 +208,7 @@ class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean) extend
        }
      } else if (fractionAllowed) {
         if (startsWithCharAndDigit('/')) {
-           i+=2
+           i+=1
            scanDigits
         }
      }
