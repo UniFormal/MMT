@@ -172,7 +172,9 @@ case class SimpSeqArg(number: Int, sep: Delim, properties: CommonMarkerPropertie
  * @param defined definitions are required
  * @param dependent definitions are required
  */
-case class LabelInfo(typed: Boolean, defined: Boolean, dependent: Boolean)
+case class LabelInfo(typed: Boolean, defined: Boolean, dependent: Boolean) {
+  override def toString = (if (typed) "T" else "") + (if (defined) "D" else "") + (if (dependent) "d" else "")
+}
 
 object LabelInfo {
   def none = LabelInfo(false,false,false)
@@ -190,7 +192,7 @@ case class LabelArg(number : Int, info: LabelInfo, properties: CommonMarkerPrope
  * @param dependent elements in the sequence may refer to previous names
  */
 case class LabelSeqArg(number: Int, sep: Delim, info: LabelInfo, properties: CommonMarkerProperties) extends SeqArg {
-  override def toString = properties.asStringPrefix + "L" + number.toString + (if (info.typed) "T" else "") + (if (info.defined) "D" else "") + sep + "…"
+  override def toString = properties.asStringPrefix + "L" + number.toString + info.toString + sep + "…"
   def makeCorrespondingArg(n: Int, remap: Int => Int) = LabelArg(n, info, properties*remap)
 }
 
