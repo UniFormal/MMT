@@ -19,12 +19,14 @@ function Optimizer(nodes, edges)
 	var myHeight=12000;
 	var countNodesInGraph;
 	var edgesCount=edges.length;
+	var that=this;
 	
 	mapEdgesIntoNodes(edges);
 	identifySubgraphs();
 	
 	function identifySubgraphs()
 	{
+		setStatusText("Identify Subgraphs...");
 		for(var i=0;i< myAllNodes.length;i++ )
 		{
 			myAllNodes[i].graphNumber=-1;
@@ -64,6 +66,7 @@ function Optimizer(nodes, edges)
 	
 	function mapEdgesIntoNodes(edges)
 	{
+		setStatusText("Mapping Edges to Nodes...");
 		var mappedNodes=[];
 		for(var i=0;i< myAllNodes.length;i++ )
 		{
@@ -113,7 +116,7 @@ function Optimizer(nodes, edges)
 		field[ y * myWidth + x ] = value;
 	}
 	
-	function InsertNodeAtGoodPosition(n, lines, iterations = 20 )
+	function InsertNodeAtGoodPosition(n, lines, iterations = 5 )
 	{
 		var xOffset = Constants.DependencyWidth / 2;
 		var yOffset = Constants.DependencyHeight / 2;
@@ -273,68 +276,318 @@ function Optimizer(nodes, edges)
 		return colision;
 	}
 
-	this.SolveUsingForces = function(iterations, usingMinMax = false, currTemperature = 0.9, initialStep = 30.0 )
+	
+	function findRandomPath(startNode)
 	{
+		var nodesToprocess=[startNode];
+		var currentPath=[];
+		while(nodesToprocess.length>0)
+		{
+			var n=nodesToprocess.pop();
+			n.overallLength+=currentPath.length;
+			n.overallVisited+=1;
+			currentPath.push(n);
+			var nextNode=Math.floor(Math.random() * n.connectedNodes.length);
+			
+			var maxNode=undefined;
+			if(Math.floor(Math.random() * 100)>20)
+			{
+				for(var i=0;i<n.connectedNodes.length;i++)
+				{
+					if(n.connectedNodes[i].connectedNodes!=undefined && maxNode!=undefined && n.connectedNodes[i].connectedNodes.length>maxNode.connectedNodes.length && n.connectedNodes[i].visited!=true)
+					{
+						maxNode=n.connectedNodes[i];
+						nextNode=i;
+					}
+				}
+			}
+			
+			var i=0;
+			if(n.connectedNodes.length==0)
+			{
+				return currentPath;
+			}
+			
+			while(n.connectedNodes[nextNode].visited==true || n.connectedNodes[nextNode].connectedNodes==undefined || n.connectedNodes[nextNode].connectedNodes.length==0)
+			{
+				nextNode=i;
+				i++;
+				if(i>=n.connectedNodes.length)
+				{
+					return currentPath;
+				}
+			}
+			n.connectedNodes[nextNode].visited=true;
+			nodesToprocess.push(n.connectedNodes[nextNode]);
+		}
+		
+		for( var j = 0; j < startNode.connectedNodes.length; j++ )
+		{
+			var n=startNode.connectedNodes[j];
+		}
+		return currentPath;
+	}
+	
+	
+	this.weaklyHierarchicalLayout = function(iterations, spacingValue, usingMinMax = false, currTemperature = 0.9, initialStep = 30.0 )
+	{
+		for( var j = 0; j < myAllNodes.length; j++ )
+		{
+			var n=myAllNodes[j];
+			n.overallLength=0;
+			n.overallVisited=0;
+		}
+		
+		var distClusterCenter=40*spacingValue;
+		var distNodes=40*spacingValue;
+		
+		var nodesOrderedByEdges=[];
+		var maxEdgesDif=0;
+		var maxNode=myAllNodes[0];
+		for( var j = 0; j < myAllNodes.length; j++ )
+		{
+			var n=myAllNodes[j];
+			n.forcesFixed=false;
+			var edgesDif=Math.abs(n.toConnected.length-n.fromConnected.length);
+			if(typeof nodesOrderedByEdges[edgesDif]==='undefined')
+			{
+				nodesOrderedByEdges[edgesDif]=[];
+			}
+			nodesOrderedByEdges[edgesDif].push(n);
+			
+			if(edgesDif>maxEdgesDif)
+			{
+				maxEdgesDif=edgesDif;
+			}
+			
+			if(maxNode.toConnected < n.toConnected)
+			{
+				maxNode=n;
+			}
+		}
+		
+		var longPath=[];
+		for(var i=0;i<iterations*10;i++)
+		{
+			if(i%50==0)
+			{
+				setStatusText("Beautify Layout: Iteration "+i+" of "+(iterations*2)+"...");
+			}
+			
+			for( var j = 0; j < myAllNodes.length; j++ )
+			{
+				myAllNodes[j].visited=false;
+			}
+			
+			var tempPath=findRandomPath(maxNode);
+			
+			if(tempPath.length>longPath.length)
+			{
+				longPath=tempPath.slice();
+			}
+		}
+		
+		for( var j = 0; j < myAllNodes.length; j++ )
+		{
+			if(myAllNodes[j].overallLength==undefined || myAllNodes[j].overallVisited==0)
+			{
+				if(myAllNodes[j].connectedNodes.length!=0)
+				{
+					for(var i=0;i<myAllNodes[j].connectedNodes.length;i++)
+					{
+						myAllNodes[j].overallLength+=myAllNodes[j].connectedNodes[i].overallLength;
+					}
+				}
+				
+				if(myAllNodes[j].overallLength==0 || myAllNodes[j].connectedNodes.length==0)
+				{
+					myAllNodes[j].overallLength=Math.floor(Math.random() * 20);
+				}
+				else
+				{
+					myAllNodes[j].overallLength=Math.floor(myAllNodes[j].overallLength/myAllNodes[j].connectedNodes.length);
+				}
+			}
+			else
+			{
+				myAllNodes[j].overallLength=Math.floor(myAllNodes[j].overallLength/myAllNodes[j].overallVisited);
+			}
+		}
+		
+		var xUsed=[];
+		var yUsed=[];
+		
+		for( var j = 0; j < myAllNodes.length*2+20; j++ )
+		{
+			xUsed[j]=0;
+			yUsed[j]=0;
+		}
+		
+		var maxLevel=0; 
+		for(var i=0;i<myAllNodes.length;i++)
+		{
+			var level=myAllNodes[i].overallLength;
+			if(level>maxLevel)
+			{
+				maxLevel=level;
+			}
+		}
+		
+		maxLevel+=1;
+		var lengthMapping=[];
+		for(var i=0;i<myAllNodes.length;i++)
+		{
+			if(myAllNodes[i].overallLength>=0)
+			{
+				lengthMapping[myAllNodes[i].overallLength]=myAllNodes[i].overallLength;
+			}
+		}
+		
+		lengthMapping[maxLevel]=maxLevel;
+		var sub=0;
+		for(var i=0;i<=maxLevel+1;i++)
+		{
+			if(typeof lengthMapping[i] === 'undefined' || lengthMapping[i]<0)
+			{
+				sub+=1;
+			}
+			else
+			{
+				lengthMapping[i]-=sub;
+			}
+		}
+		
+		var upDown=true;
+		
+		for(var i=0;i<myAllNodes.length;i++)
+		{
+			if(myAllNodes[i].toConnected==undefined || myAllNodes[i].toConnected.length==0 || (myAllNodes[i].fromConnected.length-myAllNodes[i].toConnected.length)>myAllNodes.length/3)
+			{
+				myAllNodes[i].overallLength=maxLevel;
+			}
+
+			var level=lengthMapping[myAllNodes[i].overallLength];
+			var currX=xUsed[level];
+			var currY=yUsed[level];
+			if(upDown==false)
+			{
+				yUsed[level]+=distNodes;
+				myAllNodes[i].y=yUsed[level];
+				myAllNodes[i].x=level*distClusterCenter;
+			}
+			else
+			{
+				xUsed[level]+=distNodes;
+				myAllNodes[i].x=xUsed[level];
+				myAllNodes[i].y=level*distClusterCenter;
+			}
+			
+			console.log("Level["+level+"; real:"+myAllNodes[i].overallLength+"]: "+myAllNodes[i].x+" "+myAllNodes[i].y);
+			
+		}
+		
+		for(var i=0;i<myAllNodes.length;i++)
+		{
+			if(myAllNodes[i].connectedNodes.length>1)
+			{
+				myAllNodes[i].forcesFixed=true;
+			}
+			
+			var level=lengthMapping[myAllNodes[i].overallLength];
+			if(upDown==false)
+			{
+				myAllNodes[i].y-=yUsed[level]/2;
+			}
+			else
+			{
+				myAllNodes[i].x-=xUsed[level]/2;
+			}
+		}
+		that.SolveUsingForces(iterations*2, spacingValue, false , usingMinMax, currTemperature , initialStep);
+		that.SolveUsingForces(5, spacingValue, true, usingMinMax, currTemperature , 3);
+	}
+	
+	this.SolveUsingForces = function(iterations, spacingValue, resetForcesFixed=true, usingMinMax = false, currTemperature = 0.9, initialStep = 30.0 )
+	{
+		if(resetForcesFixed==true)
+		{
+			for( var j = 0; j < myAllNodes.length; j++ )
+			{
+				var n=myAllNodes[j];
+				n.forcesFixed=false;
+			}
+		}
+		
 		var energy = 1000000;
 		var step = initialStep;
 		var success = 0;
 
 		var area = myWidth * myHeight;
-		var kVal =  Math.max(Math.min((myAllNodes.length*4+edgesCount/2.5)/2 * 0.5,280),100);
+		var kVal =  Math.max(Math.min((myAllNodes.length*4+edgesCount/2.5)/2 * 0.5*spacingValue/7.0,300),70);
 		var kSquared = kVal * kVal;
 
+		
 		for( var i = 0; i < iterations; i++ )
 		{
+			if(i%100==0)
+			{
+				setStatusText("Beautify Layout: Iteration "+i+" of "+iterations+"...");
+			}
+			
 			var energyBefore = energy;
 			energy = 0;
 			for( var j = 0; j < myAllNodes.length; j++ )
 			{
 				var n=myAllNodes[j];
-				n.dispX = 0;
-				n.dispY = 0;
-				// calculate global (repulsive) forces
-				for( var k = 0; k < myAllNodes.length; k++ )
+				if(n.forcesFixed===false)
 				{
-					var u=myAllNodes[k];
-					if(u.graphNumber==n.graphNumber && n != u && u.connectedNodes != undefined && u.connectedNodes.length > 0 )
+					n.dispX = 0;
+					n.dispY = 0;
+					// calculate global (repulsive) forces
+					for( var k = 0; k < myAllNodes.length; k++ )
 					{
+						var u=myAllNodes[k];
+						if(u.graphNumber==n.graphNumber && n != u && u.connectedNodes != undefined && u.connectedNodes.length > 0 )
+						{
+							var differenceNodesX = u.x - n.x;
+							var differenceNodesY = u.y - n.y;
+							
+							var lengthDiff =  Math.sqrt( differenceNodesX * differenceNodesX + differenceNodesY * differenceNodesY ) + 0.001;
+							var repulsiveForce = - (kSquared / lengthDiff);
+
+							n.dispX += (differenceNodesX / lengthDiff) * repulsiveForce;
+							n.dispY += (differenceNodesY / lengthDiff) * repulsiveForce;
+						}
+					}
+					
+					// calculate local (spring) forces
+					for( var k = 0; k < n.connectedNodes.length; k++ )
+					{
+						var u=n.connectedNodes[k];
 						var differenceNodesX = u.x - n.x;
 						var differenceNodesY = u.y - n.y;
 						
 						var lengthDiff =  Math.sqrt( differenceNodesX * differenceNodesX + differenceNodesY * differenceNodesY ) + 0.001;
-						var repulsiveForce = - (kSquared / lengthDiff);
+						var attractiveForce = (lengthDiff * lengthDiff / kVal);
 
-						n.dispX += (differenceNodesX / lengthDiff) * repulsiveForce;
-						n.dispY += (differenceNodesY / lengthDiff) * repulsiveForce;
+						n.dispX += (differenceNodesX / lengthDiff) * attractiveForce;
+						n.dispY += (differenceNodesY / lengthDiff) * attractiveForce;
 					}
-				}
-				
-				// calculate local (spring) forces
-				for( var k = 0; k < n.connectedNodes.length; k++ )
-				{
-					var u=n.connectedNodes[k];
-					var differenceNodesX = u.x - n.x;
-					var differenceNodesY = u.y - n.y;
+
 					
-					var lengthDiff =  Math.sqrt( differenceNodesX * differenceNodesX + differenceNodesY * differenceNodesY ) + 0.001;
-					var attractiveForce = (lengthDiff * lengthDiff / kVal);
+					// Limit max displacement to temperature currTemperature
+					var dispLength =  Math.sqrt( n.dispX * n.dispX + n.dispY * n.dispY ) + 0.001;
+					n.x=(  (n.x + (n.dispX / dispLength) * step) );
+					n.y=(  (n.y + (n.dispY / dispLength) * step) );
 
-					n.dispX += (differenceNodesX / lengthDiff) * attractiveForce;
-					n.dispY += (differenceNodesY / lengthDiff) * attractiveForce;
+					// Prevent from displacement outside of frame
+					if( usingMinMax == true )
+					{
+						n.x=( Math.max( 48, Math.min( n.x, myWidth - 48 ) ) );
+						n.y=( Math.max( 8, Math.min( n.y, myHeight - 32 ) ) );
+					}
+					energy += dispLength * dispLength;
 				}
-
-				// Limit max displacement to temperature currTemperature
-				var dispLength =  Math.sqrt( n.dispX * n.dispX + n.dispY * n.dispY ) + 0.001;
-				n.x=(  (n.x + (n.dispX / dispLength) * step) );
-				n.y=(  (n.y + (n.dispY / dispLength) * step) );
-
-				// Prevent from displacement outside of frame
-				if( usingMinMax == true )
-				{
-					n.x=( Math.max( 48, Math.min( n.x, myWidth - 48 ) ) );
-					n.y=( Math.max( 8, Math.min( n.y, myHeight - 32 ) ) );
-				}
-				energy += dispLength * dispLength;
 			}
 			// Reduce the temperature as the layout approaches a better configuration
 

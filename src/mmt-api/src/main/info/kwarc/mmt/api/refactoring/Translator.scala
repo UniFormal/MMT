@@ -5,13 +5,14 @@ import info.kwarc.mmt.api.{GlobalName, LocalName}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{DeclaredLink, DeclaredTheory}
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.ontology.{ArgumentAlignment, FormalAlignment}
+import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
+import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure, UniformTranslator}
 
 import scala.collection.mutable
 import scala.util.{Success, Try}
 
-/*
+
 abstract class Application {
   val symbol: Option[GlobalName]
 
@@ -56,25 +57,25 @@ case class SymbolApplication(s: GlobalName, app: Application) extends Applicatio
 
 object Application {
   var controller : Controller = null
-  def apply(f: Term, args: List[Term], ls: List[GlobalName]) = OMApplication(f, args, ls)
+  def apply(ls: List[GlobalName], f: GlobalName, args: List[Term]) = OMApplication(OMS(f), args, ls)
 
-  def unapply(t: Term): Option[(Term, List[Term], List[GlobalName])] = smartunapply(t, OMApplication)
+  def unapply(t: Term): Option[(List[GlobalName],GlobalName, List[Term])] = smartunapply(t, OMApplication)
 
-  private def smartunapply(t: Term, app: Application): Option[(Term, List[Term], List[GlobalName])] = t match {
+  private def smartunapply(t: Term, app: Application): Option[(List[GlobalName],GlobalName, List[Term])] = t match {
     case app(OMS(f), args) =>
       controller.get(f) match {
         case c: Constant if c.rl contains "apply" =>
           val napp = SymbolApplication(f, app)
-          smartunapply(t, napp).map(r => (r._1, r._2, f :: r._3))
+          smartunapply(t, napp).map(r => (f :: r._1, r._2, r._3))
         case _ =>
-          Some((OMS(f), args, Nil))
+          Some((Nil,f, args))
       }
-    case app(f, args) =>
-      Some((f, args, Nil))
+    case app(OMS(f), args) =>
+      Some((Nil, f, args))
     case _ => None
   }
 }
-*/
+
 
 abstract class AcrossLibraryTranslation extends UniformTranslator {
   def applicable(tm : Term) : Boolean
@@ -112,7 +113,10 @@ case class AlignmentTranslation(alignment : FormalAlignment)(implicit controller
   }
   */
 
-  private val appl = controller.pragmatic.StrictOMA
+  private val appl = if(Application.controller == null) {
+    Application.controller = controller
+    Application
+  } else Application //controller.pragmatic.StrictOMA
 
   def apply(tm : Term) = //traverser(tm,())
     (alignment,tm) match {
@@ -124,7 +128,7 @@ case class AlignmentTranslation(alignment : FormalAlignment)(implicit controller
           (1 to max).map(i => {
             val ni = align.arguments.find(p => p._2 == i).map(_._1)
             if (ni.isEmpty) OMV(LocalName("_")) // TODO implicit arguments
-            else ts(ni.get)
+            else ts(ni.get - 1)
           }).toList
         }
         appl(ls,align.to.mmturi match {
@@ -132,7 +136,6 @@ case class AlignmentTranslation(alignment : FormalAlignment)(implicit controller
         },reorder(args))
     }
 
-  // TODO use pragmatic instead
   def applicable(tm : Term) = (alignment,tm) match {
     case (_,OMID(alignment.from.mmturi)) => true
     case (ArgumentAlignment(_,_,_,_),appl(_,alignment.from.mmturi, args)) => true
@@ -504,5 +507,17 @@ class AcrossLibraryTranslator(controller : Controller,
       ths.flatMap(_.getDeclarations.map(_.path)) contains path
     }
     // TODO --------------------------------------------------------------------------------------------------------------
+  }
+}
+
+
+
+import scala.language.implicitConversions
+import QueryResultConversion._
+import QueryTypeConversion._
+
+class Translate extends QueryFunctionExtension("translate", StringType, ObjType) {
+  def evaluate(argument: BaseType, params: List[String]) = {
+    ???
   }
 }

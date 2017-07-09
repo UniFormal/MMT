@@ -2,7 +2,7 @@ var THEORY_GRAPH_OPTIONS =
 {
 	physics: 
 	{	
-		
+		enabled: false,
 		stabilization: true,
 		solver: 'barnesHut',			
 		"barnesHut": 

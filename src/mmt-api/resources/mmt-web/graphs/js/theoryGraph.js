@@ -13,6 +13,20 @@ function TheoryGraph()
 	var clusterPositions=[];
 	var BASE_QUERY_URL="http://mathhub.info/mh/mmt";
 
+	this.hideEdges=function(type, hideEdge)
+	{
+		var edgesToHide=[];
+		for(var i=0;i<originalEdges.length;i++)
+		{
+			console.log(type+""+originalEdges[i]["style"]);
+			if(type==originalEdges[i]["style"] || ("graph"+type)==originalEdges[i]["style"] )
+			{
+				edgesToHide.push({id: originalEdges[i]["id"], hidden: hideEdge});
+			}
+		}
+		edges.update(edgesToHide);
+	}
+	
 	this.downloadCanvasAsImage = function(button)
 	{
 		var minX=111110;
@@ -41,6 +55,7 @@ function TheoryGraph()
 		
 		network.once("afterDrawing",function () 
 		{
+			
 			//button.href = network.canvas.frame.canvas.toDataURL();
 			//button.download = "graph.png";
 			var image=network.canvas.frame.canvas.toDataURL("image/png")
@@ -48,6 +63,7 @@ function TheoryGraph()
 			network.setSize(originalWidth,originalHeight);
 			network.redraw();
 			network.fit();
+			setStatusText("");
 		});
 	}
 	
@@ -199,15 +215,58 @@ function TheoryGraph()
 	
 	this.getGraph= function(jsonURL)
 	{
+		setStatusText("Downloading graph...");
 		document.body.style.cursor = 'wait';
+		
+		$.ajaxSetup(
+		{
+            error: function(x, e) 
+			{
+                if (x.status == 0) 
+				{
+					setStatusText('<font color="red">Downloading graph failed (Check Your Network)</font>');
+					document.body.style.cursor = 'auto';
+                } 
+                else if (x.status == 404) 
+				{
+					setStatusText('<font color="red">Downloading graph failed (Requested URL not found)</font>');
+					document.body.style.cursor = 'auto';
+                } 
+				else if (x.status == 500) 
+				{
+					setStatusText('<font color="red">Downloading graph failed (Internel Server Error)</font>');
+                    document.body.style.cursor = 'auto';
+                }  
+				else 
+				{
+					setStatusText('<font color="red">Downloading graph failed (HTTP-Error-Code: '+x.status+')</font>');
+					document.body.style.cursor = 'auto';
+                }
+            }
+        });
+		
 		$.get(jsonURL, drawGraph);
 	}
 
 	function drawGraph(data, status)
 	{
+		if(status!=200 && status!="success")
+		{
+			setStatusText('<font color="red">Downloading graph failed (HTTP-Error-Code: '+status+')</font>');
+			document.body.style.cursor = 'auto';
+			return;
+		}
+	
+		if(typeof data["nodes"] == 'undefined' || data.length<20)
+		{
+			setStatusText('<font color="red">Graph-File is empty</font>');
+			document.body.style.cursor = 'auto';
+			return;
+		}
+		
 		originalNodes=data["nodes"];
 		originalEdges=data["edges"];
-		
+
 		ensureUniqueIds(originalNodes);
 		ensureUniqueIds(originalEdges);
 		
@@ -343,6 +402,7 @@ function TheoryGraph()
 	
 	function startConstruction()
 	{
+		setStatusText("Constructing graph...");
 		var processedNodes=0;
 		var nodesCount=0;
 		
@@ -388,11 +448,39 @@ function TheoryGraph()
 	// Called when the Visualization API is loaded.
 	function startRendering() 
 	{
-		if(THEORY_GRAPH_OPTIONS.layout==undefined)
+		setStatusText("Rendering graph...");
+		if(typeof THEORY_GRAPH_OPTIONS.layout === 'undefined' || typeof THEORY_GRAPH_OPTIONS.layout.ownLayoutIdx === 'undefined' || THEORY_GRAPH_OPTIONS.layout.ownLayoutIdx==1)
+		{
+			var opti=new Optimizer(originalNodes,originalEdges);
+			if(originalNodes.length+originalEdges.length>3000)
+			{
+				opti.weaklyHierarchicalLayout(500,document.getElementById('nodeSpacingBox').value);
+			}
+			else if(originalNodes.length+originalEdges.length>2000)
+			{
+				opti.weaklyHierarchicalLayout(700,document.getElementById('nodeSpacingBox').value);
+			}
+			else
+			{
+				opti.weaklyHierarchicalLayout(1000,document.getElementById('nodeSpacingBox').value);
+			}
+		}
+		else if(THEORY_GRAPH_OPTIONS.layout.ownLayoutIdx==2)
 		{
 			var opti=new Optimizer(originalNodes,originalEdges);
 			opti.GenerateRandomSolution();
-			opti.SolveUsingForces(1000);
+			if(originalNodes.length+originalEdges.length>3000)
+			{
+				opti.SolveUsingForces(200,document.getElementById('nodeSpacingBox').value);
+			}
+			else if(originalNodes.length+originalEdges.length>2000)
+			{
+				opti.SolveUsingForces(400,document.getElementById('nodeSpacingBox').value);
+			}
+			else
+			{
+				opti.SolveUsingForces(600,document.getElementById('nodeSpacingBox').value);
+			}
 		}
 		
 		nodes = new vis.DataSet(originalNodes);
@@ -412,6 +500,7 @@ function TheoryGraph()
 		if(THEORY_GRAPH_OPTIONS.physics.enabled==false)
 		{
 			document.body.style.cursor = 'auto';
+			setStatusText('<font color="green">Received '+originalNodes.length+' nodes</font>');
 		}
 		
 		// If the document is clicked somewhere
@@ -537,6 +626,7 @@ function TheoryGraph()
 			};
 			network.setOptions(options);
 			document.body.style.cursor = 'auto';
+			setStatusText('<font color="green">Received '+originalNodes.length+' nodes</font>');
 		});
 		
 		

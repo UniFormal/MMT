@@ -37,8 +37,25 @@
 			
 			<div class="toolSelector">
 				<div id="generalMenu" name="generalMenu">
-					<button onClick="changeMethod(0);" title="Standard Layout" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="standardIcon"></div></button>
-					<button onClick="changeMethod(1);" title="Hierarchical Layout"  class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="hierarchicalIcon"></div></button>
+				
+					<input type="checkbox" id="metaEdgesCheckbox" checked onChange="hideEdges('meta', !this.checked)">
+					<label for="metaEdgesCheckbox">Show Meta-Edges</label>
+					
+					<select name="nodeSpacingBox" id="nodeSpacingBox" onChange="changeMethod();" >
+						<option value="0.66">Tiny Node-Spacing</option>
+						<option value="1.5">Small Node-Spacing</option>
+						<option value="3">Smaller Node-Spacing</option>
+						<option value="4" selected>Normal Node-Spacing</option>
+						<option value="5">Bigger Node-Spacing</option>
+						<option value="7">Big Node-Spacing</option>
+						<option value="10">Huge Node-Spacing</option>
+					</select>
+					
+					<select name="layoutBox" id="layoutBox" onChange="changeMethod(this.value);" >
+						<option value="0">Strictly Hierarchical Layout</option>
+						<option value="1" selected>Semi Hierarchical Layout</option>
+						<option value="2">Forces Driven Layout</option>
+					</select>
 					
 					<button id="selectionModeButton" onClick="switchSelectionMode();" title="Switch Selection Mode" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="crosshairIcon"></div></button>
 					
@@ -58,6 +75,9 @@
 					
 				</div>
 				<canvas id="toolCanvas" style="display:none;z-index:1000;top:0px;left:0px;position: absolute;" width="1200" height="600"></canvas>
+				<div id="statusBar" style="z-index:1001;top:8px;left:8px;position: absolute;">	
+					...
+				</div>
 			</div>
 		</div>
 		
@@ -81,7 +101,9 @@
 		
 
         <script type="text/javascript">
-            var mmtUrl = (typeof MMT_base_url=="undefined") ? ((window.location.protocol=='file:')? "/" : "/mh/mmt/") : MMT_base_url;
+            lastGraphTypeUsed=getParameterByName("type");
+		lastGraphDataUsed=getParameterByName("graphdata");
+		var mmtUrl = (typeof MMT_base_url=="undefined") ? ((window.location.protocol=='file:')? "/" : "/mh/mmt/") : MMT_base_url;
 			if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "")
 				mmtUrl="/";
 				
@@ -96,6 +118,10 @@
                 $("#helpDialog").dialog("open");
             });
 
+			function hideEdges(type, hide)
+			{
+				theoryGraph.hideEdges(type, hide);
+			}
 
             function addColors() {
                 var colorArray = ["#CCCCFF", "#FFFFCC", "#FFCC99", "#CCFFCC", "#DDDDDD", "#FFCCCC"];
@@ -107,10 +133,11 @@
             }
 
             function selectNodes() {
-                theoryGraph.selectNodesWithIdLike(document.getElementById("selectById").value);
+                theoryGraph.selectNodesWithIdLike(prompt("Please enter a name which should be searched for!", "node_name"));
             }
 
             function downloadGraph() {
+				setStatusText("Downloading Image...");
                 theoryGraph.downloadCanvasAsImage(document.getElementById('downloadButton'));
             }
 
@@ -127,24 +154,28 @@
             }
 
             function clusterSelectedNodes() {
-                theoryGraph.cluster(undefined, document.getElementById("clusternameInput").value);
+				setStatusText("Clustering Nodes...");
+                theoryGraph.cluster(undefined, prompt("Please choose a name for the cluster", ""));
             }
 
             function colorizeSelectedNodes(color) {
                 theoryGraph.colorizeNodes(undefined, color);
             }
 
-            function changeMethod(idx) {
-                if (idx == 0) {
-                    THEORY_GRAPH_OPTIONS.layout = undefined;
-                } else if (idx == 1) {
-                    THEORY_GRAPH_OPTIONS.layout = {
-                        hierarchical: {
-                            sortMethod: "directed",
-                            direction: "LR"
-                        }
-                    };
-                }
+            function changeMethod(idx) 
+			{
+				setStatusText("Relayouting graph...");
+				if(typeof idx !=='undefined')
+				{
+					if(idx==1 || idx==2)
+					{
+						THEORY_GRAPH_OPTIONS.layout={ownLayoutIdx:idx};
+					}
+					else if(idx==0)
+					{
+						THEORY_GRAPH_OPTIONS.layout={ownLayoutIdx:0, hierarchical: {sortMethod: "directed",direction: "LR"}};
+					}
+				}
                 createNewGraph();
             }
 
