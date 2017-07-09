@@ -1,3 +1,0 @@
-// adapt this file to have jEdit jars copied to jEdit when using "sbt jedit/install"
-// this file is read by src/project/Utils.installJEditJars, which is called by build.sbt 
-/PATH/TO/JEDIT/SETTINGS/FOLDER

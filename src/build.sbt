@@ -65,12 +65,7 @@ def commonSettings(nameStr: String) = Seq(
   name := nameStr,
   sourcesInBase := false,
   libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
-  scalaSource in Compile := baseDirectory.value / "src",
-  scalaSource in Test := baseDirectory.value / "test" / "scala",
-  resourceDirectory in Compile := baseDirectory.value / "resources",
-  unmanagedBase := baseDirectory.value / "jars",
   isSnapshot := true,
-  publishTo := Some(Resolver.file("file", Utils.deploy.toJava/"main")),
   exportJars := true,
   autoAPIMappings := true,
   connectInput in run := true,
@@ -85,11 +80,33 @@ def commonSettings(nameStr: String) = Seq(
       oldStrategy(x)*/
   }
 )
-// settings to be reused for MMT projects -- currently includes everything except tiscaf and lfcatalog
-def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
+
+// settings to be reused for projects in this repository
+def localProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
+  scalaSource in Compile := baseDirectory.value / "src",
+  scalaSource in Test := baseDirectory.value / "test" / "scala",
+  resourceDirectory in Compile := baseDirectory.value / "resources",
+  unmanagedBase := baseDirectory.value / "jars",
+  publishTo := Some(Resolver.file("file", Utils.deploy.toJava/"main"))
+)
+
+// settings to be reused for MMT projects (= local projects except tiscaf and lfcatalog)
+def mmtProjectsSettings(nameStr: String) = localProjectsSettings(nameStr) ++ Seq(
   deploy := deployPackage("main/" + nameStr + ".jar").value,
   deployFull := deployPackage("main/" + nameStr + ".jar").value
 )
+
+// settings to be reused for MathHub projects
+def mathhubProjectsSettings(group: String, name: String) = {
+    val nameStr = group + "-" + name
+    val folder = Utils.mathhubFolder / group / name
+    val jar = (folder / (name + ".jar")).toString
+	commonSettings(nameStr) ++ Seq(
+	  scalaSource in Compile := folder / "scala" / "info" / "kwarc" / "mmt" / "LFX" / "Records",
+	  deploy := deployPackage(jar).value,
+	  deployFull := deployPackage(jar).value
+    )
+}
 
 // individual projects
 
@@ -189,7 +206,7 @@ lazy val metamath = (project in file("mmt-metamath")).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
 
 lazy val lfx = (project in file("mmt-lfx")).
-  dependsOn(api % "compile -> compile; test -> test", lf % "compile -> compile; test -> test").
+  dependsOn(api,lf).
   settings(mmtProjectsSettings("mmt-lfx"): _*)
 
 lazy val tps = (project in file("mmt-tps")).
@@ -294,3 +311,9 @@ lazy val jedit = (project in file("jEdit-mmt")).
     deployFull := deployPackage("main/MMTPlugin.jar").value,
     install := Utils.installJEditJars
   )
+
+// ************************************************** MathHub projects
+
+lazy val MMTLFX = (project in file("mathhub")).
+  dependsOn(api,lf,lfx).
+  settings(mathhubProjectsSettings("MMT","LFX"):_*)
