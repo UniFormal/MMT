@@ -19,20 +19,35 @@ object Utils {
    /** executes a shell command (in the src folder) */
    def runscript(command: String) = sys.process.Process(Seq(command), src.getAbsoluteFile).!!
    
-   /** copy a file */
-   def copy(from: File, to: File) {
-      println(s"copying $from to $to")
-      if (!from.exists) {
-         println("error: file to copy not found")
-      } else if (!to.exists || from.lastModified > to.lastModified) {
-         Files.copy(from.toPath, to.toPath, REPLACE_EXISTING)
-      } else {
-         println("skipped (up-to-date)")
-      }
-      println("\n")
-   }
-   
-   private val mathhub = "mathhub-folder"
+  // ************************************************** deploy-specific code (see also the TaskKey's deploy and deployFull)
+
+ /**
+   * pacakges the compiled binaries and copies to deploy 
+   */
+  import sbt.Keys.packageBin
+  import sbt._
+  def deployPackage(name: String): Def.Initialize[Task[Unit]] =
+    packageBin in Compile map {jar => deployTo(Utils.deploy / name)(jar)}
+
+ /**
+   * pacakges the compiled binaries and copies to deploy 
+   */
+  def deployMathHub(target: File): Def.Initialize[Task[Unit]] =
+    packageBin in Compile map {jar => deployTo(target)(jar)}
+
+  /*
+   * copies files to deploy folder
+   */
+  def deployTo(target: File)(jar: sbt.File): Unit = {
+    Files.copy(jar.toPath, target.toPath, REPLACE_EXISTING)
+    println("copied file: " + jar)
+    println("to file: " + target)
+  }
+
+
+  // ************************************************** MathHub-specific code
+  
+  private val mathhub = "mathhub-folder"
    lazy val mathhubFolder: File = {
      settings.get(mathhub) match {
        case None =>
@@ -43,7 +58,7 @@ object Utils {
      }
    }
    
-   // jEdit-specific utilities
+   // ************************************************** jEdit-specific code
    
    // keys for build settings
    val jeditSettingsFolder = "jedit-settings-folder"
@@ -80,4 +95,37 @@ object Utils {
       jEditDeps.foreach {f => copy(deploy/"lib"/f, to/f)}
       copy(deploy/"lfcatalog"/"lfcatalog.jar", to/"lfcatalog.jar")
    }
+
+
+  // ************************************************** file system utilities
+  
+   /** copy a file */
+   def copy(from: File, to: File) {
+      println(s"copying $from to $to")
+      if (!from.exists) {
+         println("error: file to copy not found")
+      } else if (!to.exists || from.lastModified > to.lastModified) {
+         Files.copy(from.toPath, to.toPath, REPLACE_EXISTING)
+      } else {
+         println("skipped (up-to-date)")
+      }
+      println("\n")
+   }
+   
+  def delRecursive(log: Logger, path: File): Unit = {
+    def delRecursive(path: File): Unit = {
+      path.listFiles foreach { f =>
+        if (f.isDirectory) delRecursive(f)
+        else {
+          f.delete()
+          log.debug("deleted file: " + path)
+        }
+      }
+      path.delete()
+      log.debug("deleted directory: " + path)
+    }
+    if (path.exists && path.isDirectory) delRecursive(path)
+    else log.warn("ignoring missing directory: " + path)
+  }
+
 }

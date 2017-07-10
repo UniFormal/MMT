@@ -35,7 +35,7 @@ postProcessApi := postProcess(streams.value.log)
 lazy val cleandoc =
   taskKey[Unit]("remove api documentation.")
 
-cleandoc := delRecursive(streams.value.log, file("../apidoc"))
+cleandoc := Utils.delRecursive(streams.value.log, file("../apidoc"))
 
 lazy val apidoc =
   taskKey[Unit]("generate post processed api documentation.")
@@ -50,6 +50,7 @@ parallelExecution in ThisBuild := false
 javaOptions in ThisBuild ++= Seq("-Xmx1g")
 fork in Test := true
 
+// task keys can be used PROJECTNAME/KEY to execute custom tasks as defined in the corresponding setting
 val deploy =
   TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
 
@@ -92,19 +93,19 @@ def localProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
 
 // settings to be reused for MMT projects (= local projects except tiscaf and lfcatalog)
 def mmtProjectsSettings(nameStr: String) = localProjectsSettings(nameStr) ++ Seq(
-  deploy := deployPackage("main/" + nameStr + ".jar").value,
-  deployFull := deployPackage("main/" + nameStr + ".jar").value
+  deploy := Utils.deployPackage("main/" + nameStr + ".jar").value,
+  deployFull := Utils.deployPackage("main/" + nameStr + ".jar").value
 )
 
 // settings to be reused for MathHub projects
 def mathhubProjectsSettings(group: String, name: String) = {
     val nameStr = group + "-" + name
     val folder = Utils.mathhubFolder / group / name
-    val jar = (folder / (name + ".jar")).toString
+    val jar = folder / (name + ".jar")
 	commonSettings(nameStr) ++ Seq(
-	  scalaSource in Compile := folder / "scala" / "info" / "kwarc" / "mmt" / "LFX" / "Records",
-	  deploy := deployPackage(jar).value,
-	  deployFull := deployPackage(jar).value
+	  scalaSource in Compile := folder / "scala",
+	  deploy := Utils.deployMathHub(jar).value,
+	  deployFull := Utils.deployMathHub(jar).value
     )
 }
 
@@ -118,7 +119,7 @@ lazy val tiscaf = (project in file("tiscaf")).
         "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
         "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     ),
-    deployFull := deployPackage("lib/tiscaf.jar").value
+    deployFull := Utils.deployPackage("lib/tiscaf.jar").value
   )
 
 lazy val lfcatalog = (project in file("lfcatalog")).
@@ -126,7 +127,7 @@ lazy val lfcatalog = (project in file("lfcatalog")).
   settings(
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "tiscaf.jar",
   	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar",
-    deployFull := deployPackage("lfcatalog/lfcatalog.jar").value
+    deployFull := Utils.deployPackage("lfcatalog/lfcatalog.jar").value
   )
 
 lazy val api = (project in file("mmt-api")).
@@ -278,7 +279,7 @@ lazy val mmt = (project in file("fatjar")).
   settings(
     exportJars := false,
     publish := {},
-    deploy := {assembly in Compile map deployTo("mmt.jar")}.value,
+    deploy := {assembly in Compile map Utils.deployTo(Utils.deploy / "mmt.jar")}.value,
     mainClass in assembly := Some("info.kwarc.mmt.api.frontend.Run"),
     assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
@@ -307,13 +308,14 @@ lazy val jedit = (project in file("jEdit-mmt")).
   settings(
     resourceDirectory in Compile := baseDirectory.value / "src/resources",
     unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" / _),
-    deploy := deployPackage("main/MMTPlugin.jar").value,
-    deployFull := deployPackage("main/MMTPlugin.jar").value,
+    deploy := Utils.deployPackage("main/MMTPlugin.jar").value,
+    deployFull := Utils.deployPackage("main/MMTPlugin.jar").value,
     install := Utils.installJEditJars
   )
 
 // ************************************************** MathHub projects
 
+// this works in principle but sbt complains about a cyclic dependency involving lfx
 lazy val MMTLFX = (project in file("mathhub")).
   dependsOn(api,lf,lfx).
   settings(mathhubProjectsSettings("MMT","LFX"):_*)
