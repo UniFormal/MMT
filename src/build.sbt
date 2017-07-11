@@ -103,9 +103,9 @@ def mathhubProjectsSettings(group: String, name: String) = {
     val folder = Utils.mathhubFolder / group / name
     val jar = folder / (name + ".jar")
 	commonSettings(nameStr) ++ Seq(
-	  scalaSource in Compile := folder / "scala",
-	  deploy := Utils.deployMathHub(jar).value,
-	  deployFull := Utils.deployMathHub(jar).value
+	  scalaSource in Compile := folder / "scala"
+	  //deploy := Utils.deployMathHub(jar).value,
+	  //deployFull := Utils.deployMathHub(jar).value
     )
 }
 
