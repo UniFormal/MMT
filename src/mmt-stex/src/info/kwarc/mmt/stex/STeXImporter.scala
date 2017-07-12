@@ -254,7 +254,7 @@ class STeXImporter extends Importer {
     val sref = parseSourceRef(n, doc.path)
     try {
       n.label match {
-        case "imports" => //omdoc import -> mmt (plain) include
+        case "imports" | "uses" => //omdoc import -> mmt (plain) include
           val fromS = (n \ "@from").text
           val from = parseMPath(fromS, doc.path)
           if (from != mpath) {
