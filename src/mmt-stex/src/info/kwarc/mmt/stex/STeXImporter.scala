@@ -105,7 +105,7 @@ class STeXImporter extends Importer {
         val mpath = dpath ? tname
         val deps = n.child flatMap {i =>
           i.label match {
-            case "imports" =>
+            case "imports" | "uses" =>
               val fromS = (i \ "@from").text.split("#")(0)
               val (group, repo, frags) = parseStexPath(fromS, dpath)
               val archive = controller.backend.getArchive(s"$group/$repo").get
