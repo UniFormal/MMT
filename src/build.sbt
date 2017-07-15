@@ -317,6 +317,8 @@ lazy val jedit = (project in file("jEdit-mmt")).
 
 // this works in principle but sbt complains about a cyclic dependency involving lfx
 // sbt cannot handle project folder outside the root directory, but external source folders are fine; so we use a dummy folder here
+/*
 lazy val MMTLFX = (project in file("mathhub")).
   dependsOn(api,lf,lfx).
   settings(mathhubProjectsSettings("MMT","LFX"):_*)
+*/
