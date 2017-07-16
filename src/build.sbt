@@ -199,16 +199,12 @@ lazy val mathscheme = (project in file("mmt-mathscheme")).
   settings(mmtProjectsSettings("mmt-mathscheme"): _*)
 
 lazy val pvs = (project in file("mmt-pvs")).
-  dependsOn(api, lf, lfx).
+  dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-pvs"): _*)
 
 lazy val metamath = (project in file("mmt-metamath")).
   dependsOn(api, lf, SourceDeps.mmScala).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
-
-lazy val lfx = (project in file("mmt-lfx")).
-  dependsOn(api,lf).
-  settings(mmtProjectsSettings("mmt-lfx"): _*)
 
 lazy val tps = (project in file("mmt-tps")).
   dependsOn(api,lf).
@@ -219,7 +215,7 @@ lazy val imps = (project in file("mmt-imps")).
   settings(mmtProjectsSettings("mmt-imps"): _*)
 
 lazy val odk = (project in file("mmt-odk")).
-  dependsOn(api, lf, lfx).
+  dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-odk"): _*)
 
 lazy val specware = (project in file("mmt-specware")).
@@ -274,7 +270,7 @@ lazy val repl = (project in file("mmt-repl")).
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
 lazy val mmt = (project in file("fatjar")).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, lfx).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts).
   settings(mmtProjectsSettings("fatjar"): _*).
   settings(
     exportJars := false,
@@ -319,6 +315,6 @@ lazy val jedit = (project in file("jEdit-mmt")).
 // sbt cannot handle project folder outside the root directory, but external source folders are fine; so we use a dummy folder here
 /*
 lazy val MMTLFX = (project in file("mathhub")).
-  dependsOn(api,lf,lfx).
+  dependsOn(api,lf).
   settings(mathhubProjectsSettings("MMT","LFX"):_*)
 */
