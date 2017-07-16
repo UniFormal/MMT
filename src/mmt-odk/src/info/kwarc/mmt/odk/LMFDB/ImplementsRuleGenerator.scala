@@ -2,13 +2,11 @@ package info.kwarc.mmt.odk.LMFDB
 
 import info.kwarc.mmt.api._
 import frontend._
+import info.kwarc.mmt.odk.LFX
 import objects._
 import symbols._
-import checking._
-import info.kwarc.mmt.LFX.Records._
 import uom._
 import utils._
-import info.kwarc.mmt.lf._
 
 class ImplementsRuleGenerator extends ChangeListener {
   override val logPrefix = "impl-rule-gen"
@@ -69,7 +67,7 @@ class ImplementsRuleGenerator extends ChangeListener {
  * @param rhs the right hand side
  */
 // TODO Needs to be reimplemented
-class ImplementsRule(val from: Constant, recordType: Term, impl: GlobalName) extends DepthRule(impl, RecExp.path) {
+class ImplementsRule(val from: Constant, recordType: Term, impl: GlobalName) extends DepthRule(impl, LFX.RecExp.path) {
     override def toString = s"$impl(record) ~~> ${from.name}(record)"
     
     def apply : Rewrite = {(bef,inn,aft) => /*

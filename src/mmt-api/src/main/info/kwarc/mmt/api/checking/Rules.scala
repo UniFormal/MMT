@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.modules.{DeclaredTheory, Module}
 import libraries._
 import objects._
 import objects.Conversions._
@@ -40,6 +41,7 @@ trait CheckingCallback {
 
   def lookup(p: Path): Option[StructuralElement]
   def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory]
+  def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) : Module
 }
 
 /**

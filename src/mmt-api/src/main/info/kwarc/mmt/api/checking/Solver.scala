@@ -436,6 +436,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     case _ =>
       return None
   }
+  @deprecated("Used in LFX, but could probably be done better")
+  def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) = controller.simplifier.materialize(cont,tm,expandDefs,parent)
    
    /**
     * looks up a variable in the appropriate context

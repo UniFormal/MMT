@@ -1,7 +1,5 @@
 package info.kwarc.mmt.pvs
 
-import info.kwarc.mmt.LFX.Records.RecExp
-import info.kwarc.mmt.LFX.Subtyping.predsubtp
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.objects._
@@ -51,7 +49,7 @@ object PVSTheory {
 
    object nonempty extends sym("nonempty") {
       def apply(t:Term) = proof("internal_judgment",Apply(this.term,t))
-      def tps = predsubtp(tp.term,Lambda(LocalName("x"),tp.term,apply(OMV("x"))))
+      def tps = LFX.predsubtp(tp.term,Lambda(LocalName("x"),tp.term,apply(OMV("x"))))
    }
 /*
    object is_nonempty extends sym("is_nonempty") {
@@ -282,17 +280,17 @@ object PVSTheory {
 
    object recordexpr extends sym("recordexpr") {
       def apply(nametpdf : (LocalName,Term,Term)*) = {
-         val rtp = RecExp(nametpdf map (t => OML(t._1, Some(tp.term), Some(t._2))): _*)
-         val rdf = RecExp(nametpdf map (t => OML(t._1, Some(expr(t._2)), Some(t._3))): _*)
+         val rtp = LFX.RecExp(nametpdf map (t => OML(t._1, Some(tp.term), Some(t._2))): _*)
+         val rdf = LFX.RecExp(nametpdf map (t => OML(t._1, Some(expr(t._2)), Some(t._3))): _*)
          ApplySpine(this.term, rtp,rdf)
       }
    }
 
    object recordtp extends sym("rectp") {
       def apply(nametp : (LocalName,Term)*) =
-         ApplySpine(this.term,RecExp(nametp.map(t => OML(t._1,Some(tp.term),Some(t._2))):_*))
+         ApplySpine(this.term,LFX.RecExp(nametp.map(t => OML(t._1,Some(tp.term),Some(t._2))):_*))
       def unapply(t:Term) : Option[List[(String,Term)]] = t match {
-         case ApplySpine(this.term,List(RecExp(l))) => Some(l.fields.map({
+         case ApplySpine(this.term,List(LFX.RecExp(l))) => Some(l.fields.map({
             case OML(name,Some(tp.term),Some(df),_,_) => (name.toString,df)
             case tm @ _ => throw new Exception("Invalid Record type element: " + tm)
          }))
@@ -367,4 +365,63 @@ object PVSTheory {
    }
    */
 
+}
+
+object LFX {
+  class LFRecSymbol(name:String) {
+    val path = (DPath(URI.http colon "gl.mathhub.info") / "MMT" / "LFX" / "Records") ? "Symbols" ? name
+    val term = OMS(path)
+  }
+  class LFPredSubSymbol(name:String) {
+    val path = (DPath(URI.http colon "gl.mathhub.info") / "MMT" / "LFX" / "Subtyping") ? "PredSubSymbols" ? name
+    val term = OMS(path)
+  }
+  class LFSubJudgSymbol(name:String) {
+    val path = (DPath(URI.http colon "gl.mathhub.info") / "MMT" / "LFX" / "Subtyping") ? "JudgmentSymbol" ? name
+    val term = OMS(path)
+  }
+
+  case class RecordBody(self: Option[LocalName], fields: List[OML]) {
+    /** names of all fields */
+    def names = fields.map(_.name)
+    /** checks for duplicate names */
+    def hasDuplicates = utils.hasDuplicates(names)
+    /** retrieve a field for a given name */
+    def get(l: LocalName) = fields.find(_.name == l)
+  }
+
+  /** unifies record terms and types; the empty record is OMA(this.term,Nil), not this.term */
+  class RecordLike(n: String) extends LFRecSymbol(n) {
+    // there may not be an apply method that takes a context instead of a List[OML]
+    def apply(v:OML*): Term = apply(None, v.toList)
+    def apply(self: Option[LocalName], fields: List[OML]): Term = {
+      self match {
+        case None => OMA(this.term, fields)
+        case Some(l) => OMBINDC(this.term, Context(VarDecl(l)), fields)
+      }
+    }
+    def unapply(t : Term) : Option[RecordBody] = t match {
+      case OMA(this.term, OMLList(fs)) => Some(RecordBody(None, fs))
+      case OMBINDC(this.term, Context(VarDecl(n, None, None, None, _), rest@_*), OMLList(fs)) if rest.isEmpty => Some(RecordBody(Some(n), fs))
+      case _ => None
+    }
+  }
+
+  object RecExp extends RecordLike("Recexp")
+
+  object predsubtp extends LFPredSubSymbol("predsubtp") {
+    def apply(tp : Term, pred:Term) = OMA(this.term,List(tp,pred))
+    def unapply(t : Term) : Option[(Term,Term)] = t match {
+      case OMA(this.term,a :: b :: Nil) => Some((a,b))
+      case _ => None
+    }
+  }
+
+  object subtypeJudg extends LFSubJudgSymbol("subtypeJudge") {
+    def apply(t1 : Term, t2 : Term) = OMA(term,List(t1,t2))
+    def unapply(t : Term) : Option[(Term,Term)] = t match {
+      case OMA(this.term,List(t1,t2)) => Some(t1,t2)
+      case _ => None
+    }
+  }
 }
