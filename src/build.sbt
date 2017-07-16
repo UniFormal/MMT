@@ -8,7 +8,7 @@ scalaVersion := "2.11.8"
 
 scalacOptions := Seq("-deprecation")
 
-// = genration of API documentation
+// = generation of API documentation
 
 // configuration of unidoc, used by our apidoc target
 
@@ -82,17 +82,13 @@ def commonSettings(nameStr: String) = Seq(
   }
 )
 
-// settings to be reused for projects in this repository
-def localProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
+// settings to be reused for MMT projects (= local projects except tiscaf and lfcatalog)
+def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
   scalaSource in Compile := baseDirectory.value / "src",
   scalaSource in Test := baseDirectory.value / "test" / "scala",
   resourceDirectory in Compile := baseDirectory.value / "resources",
   unmanagedBase := baseDirectory.value / "jars",
-  publishTo := Some(Resolver.file("file", Utils.deploy.toJava/"main"))
-)
-
-// settings to be reused for MMT projects (= local projects except tiscaf and lfcatalog)
-def mmtProjectsSettings(nameStr: String) = localProjectsSettings(nameStr) ++ Seq(
+  publishTo := Some(Resolver.file("file", Utils.deploy.toJava/"main")),
   deploy := Utils.deployPackage("main/" + nameStr + ".jar").value,
   deployFull := Utils.deployPackage("main/" + nameStr + ".jar").value
 )
@@ -111,6 +107,8 @@ def mathhubProjectsSettings(group: String, name: String) = {
 
 // individual projects
 
+// projects that do not depend on mmt-api
+
 lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
   settings(
@@ -125,10 +123,14 @@ lazy val tiscaf = (project in file("tiscaf")).
 lazy val lfcatalog = (project in file("lfcatalog")).
   settings(commonSettings("lfcatalog") ++ oneJarSettings: _*).
   settings(
+    scalaSource in Compile := baseDirectory.value / "src",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "tiscaf.jar",
   	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar",
     deployFull := Utils.deployPackage("lfcatalog/lfcatalog.jar").value
   )
+
+  
+// mmt-api and the projects dependencing on it
 
 lazy val api = (project in file("mmt-api")).
   settings(mmtProjectsSettings("mmt-api"): _*).
