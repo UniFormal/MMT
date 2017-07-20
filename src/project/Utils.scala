@@ -77,6 +77,7 @@ object Utils {
    /** copy all jars to jEdit settings directory */
    def installJEditJars {
       settings.get(killJEdit).foreach {x => runscript(x)}
+	  Thread.sleep(100)
       val fname = settings.get(jeditSettingsFolder).getOrElse {
         println(s"cannot copy jars because there is no setting '$jeditSettingsFolder' in $settingsFile")
         return
