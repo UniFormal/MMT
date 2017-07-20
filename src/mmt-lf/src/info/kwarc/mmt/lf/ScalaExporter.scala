@@ -10,10 +10,27 @@ import GenericScalaExporter._
 
 //TODO translate LF definitions to Scala definitions  
 
+/** for LF terms using Apply and Lambda */
+class LFOperator(p: ContentPath, f: ArgumentList, s: ArgumentList) extends Operator(f,s) {
+  private def omid = "OMID(this.path)"
+  def f(as: List[String]) = as.mkString(",")
+  def mmtTerm(a1: List[String], a2: List[String]): String = {
+    if (a1.isEmpty)
+      s"ApplyGeneral($omid, List(${f(a2)}))"
+    else
+      s"Apply($omid, Lambda(${f(a1)}, ${f(a2)}))"
+  }
+}
+
 class ScalaExporter extends GenericScalaExporter {
    override val key = "lf-scala"
    override val packageSep = List("lf")
     
+   override def outputHeader(dp: DPath) {
+     super.outputHeader(dp)
+     rh.writeln("import info.kwarc.mmt.lf._")
+   }
+   
    private object IllFormed extends Throwable
    private def typeEras(t: Term): (List[GlobalName],GlobalName) = t match {
       case OMS(a) => (Nil, a)
@@ -120,9 +137,12 @@ class ScalaExporter extends GenericScalaExporter {
                */
             }
             decl +"\n" + ini + "\n"
-         } catch {case IllFormed => "// skipping ill-formed " + c.name} 
+         } catch {case IllFormed =>
+           "// skipping ill-formed " + c.name
+         } 
       }
    }
+   
    override protected def companionObjectFields(c: Constant): List[String] = {
      lazy val default = super.companionObjectFields(c)
      // compute number of arguments
@@ -131,9 +151,8 @@ class ScalaExporter extends GenericScalaExporter {
      val FunType(lfArgs, _) = tp2
      val numArgs = lfArgs.length
      // x1:Term,...,xn:Term
-     val scalaArgs = Range(0,numArgs).toList map {i => Argument("x" + i.toString, "Term")}
-     val mmtTerm = (as: List[String]) => "ApplyGeneral(OMS(this.path)" + as.map(", " + _).mkString
-     val op = Operator(scalaArgs, mmtTerm)
+     val scalaArgs = Range(0,numArgs).toList map {i => Argument("x" + i.toString, "Term", false)}
+     val op = new LFOperator(c.path, ArgumentList(Nil), ArgumentList(scalaArgs)) // TODO try to extract context
      op.methods
    }
 }

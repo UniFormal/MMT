@@ -79,13 +79,18 @@ class BooleanOption(val key: String, val label: String) extends MMTOption[Boolea
   def toGUIComponent(b: Boolean) = guiComponent.setState(b)
 }
 
-/** contains the various MMT options */
+/** contains the various MMT options
+ *
+ *  to create a new option, just create it here and add it to the list of all options
+ */
 object MMTOptions {
   val startup = new StringOption("startup", "custom startup msl file")
   val config = new StringOption("config", "custom configuration file")
   val archives = new StringOption("archives", "custom folder that contains archives")
+  val lowAsciiDelims = new BooleanOption("lowAsciiDelims", "use ASCII 28-31 as delimiters")
   val semantichighlighting = new BooleanOption("SemanticHighlighting","Semantic Highlighting")
-  val all = List(startup, config, archives, semantichighlighting)
+  /** the list of all options */
+  val all = List(startup, config, archives, lowAsciiDelims, semantichighlighting)
 }
 
 /** the MMT plugin options pane using the options defined in the companion object */

@@ -128,14 +128,15 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
          val res = textArea.offsetToXY(physicalLine, localOffset, startPoint)
          // if res != null: XY-coordinates of global offset assigned to startPoint (relative to the upper left corner of text area)
          // if res == null, point not visible (which sometimes happens)
+         import parser.Reader._
          if (res != null) segment.charAt(localOffset).toInt match {
-           case 28 =>
+           case c if FS.chars.contains(c) =>
              paintDelim(startPoint, new Color(high, high, low), "S")
-           case 29 =>
+           case c if GS is c =>
              paintDelim(startPoint, new Color(high, low, low), "M")
-           case 30 =>
+           case c if RS is c =>
              paintDelim(startPoint, new Color(low, high, low), "D")
-           case 31 =>
+           case c if US is c =>
              paintDelim(startPoint, new Color(low, low, high), "O")
            case 32 =>
            case c =>

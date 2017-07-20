@@ -1239,7 +1239,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        val t1ES = simplify(t1EL)
        val changed = t1ES hashneq t1
        if (changed) {
-          log("left term rewritten to " + t1ES)
+          log("left term rewritten to " + t1ES.toStr(true))
           // check if it is identical to one of the terms known to be equal to t2
           if (terms2.exists(_ hasheq t1ES)) {
              log("success by identity")
