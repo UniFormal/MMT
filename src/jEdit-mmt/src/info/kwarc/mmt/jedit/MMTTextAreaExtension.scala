@@ -75,7 +75,12 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
        /* We have to erase the text painted by jEdit. We can only do that by painting a rectangle over it.
         * To avoid undoing an intended background color and because we cannot look up the color of a pixel,
         * we have to reimplement some low level functionality of the TextAreaPainter.
-        * Specifically, fixedBgColor returns the selection or lineHighlight color (if any). We are currently not using the collapsedFold color.  
+        * Specifically, fixedBgColor returns the selection or lineHighlight color (if any). We are currently not using the collapsedFold color.
+        * Even so, this does not work well, e.g., any change that does not trigger MMT parsing messes up everything.
+        * Alternatively, we could call removeExtension on paintText and paintTextBackground and then add our own variants.
+        * But those extension do variuos additional things that would have to be reimplemented;
+        * this is difficult because some of those things happen in private methods or even private classes.
+        * Even keeping the background and repainting the text in background color is difficult because the style that was used is private.  
         */
        val bgColor = fixedBgColor(offset) orElse Option(style.getBackgroundColor) getOrElse painter.getBackground
        gfx.setColor(bgColor)
@@ -140,11 +145,13 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
              paintDelim(startPoint, new Color(low, low, high), "O")
            case 32 =>
            case c =>
-             // repaint c if semanticHighlighting returns a result
-             val globalOffset = segment.offset + localOffset 
-             val styleOpt = semanticHighlighting(globalOffset)
-             styleOpt foreach {style =>
-                if (MMTOptions.semantichighlighting.get.getOrElse(false)) paintChar(globalOffset, startPoint, style, c.toChar)
+             if (MMTOptions.semantichighlighting.get.getOrElse(false)) {
+               // repaint c if semanticHighlighting returns a result
+               val globalOffset = segment.offset + localOffset 
+               val styleOpt = semanticHighlighting(globalOffset)
+               styleOpt foreach {style =>
+                   paintChar(globalOffset, startPoint, style, c.toChar)
+               }
              }
          }
        }

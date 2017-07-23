@@ -247,10 +247,10 @@ abstract class ExternalToken(text: String) extends PrimitiveTokenListElem(text) 
   /** a continuation function called by the parser when parsing this Token
     *
     * @param outer the ParsingUnit during which this ExternalToken was encountered
-    * @param boundVars the context
+    * @param BoundName the context
     * @param parser the parser calling this function
     */
-  def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: ObjectParser): Term
+  def parse(outer: ParsingUnit, boundVars: List[BoundName], parser: ObjectParser): Term
 }
 
 /** A convenience class for an ExternalToken whose parsing is context-free so that it can be parsed immediately
@@ -258,7 +258,7 @@ abstract class ExternalToken(text: String) extends PrimitiveTokenListElem(text) 
   */
 case class CFExternalToken(text: String, firstPosition: SourcePosition, term: Term) extends ExternalToken(text) {
   /** returns simply term */
-  def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: ObjectParser): Term = term
+  def parse(outer: ParsingUnit, boundVars: List[BoundName], parser: ObjectParser): Term = term
 }
 
 /** A MatchedList is a SubTermToken resulting by reducing a sublist using a notation

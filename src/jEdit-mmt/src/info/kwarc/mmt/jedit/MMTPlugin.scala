@@ -1,4 +1,4 @@
-package info.kwarc.mmt.jedit
+    package info.kwarc.mmt.jedit
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
@@ -114,9 +114,11 @@ class MMTPlugin extends EBPlugin with Logger {
   private def customizeEditPane(editPane: EditPane) {
     val ta = editPane.getTextArea
     val painter = ta.getPainter
-    val sc = new StyleChanger(editPane, "mmt")
-    val taExt = new MMTTextAreaExtension(controller, editPane)
-    painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
+    if (!painter.getExtensions.exists(_.isInstanceOf[MMTTextAreaExtension])) {
+      val taExt = new MMTTextAreaExtension(controller, editPane)
+      painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
+    }
+    //val sc = new StyleChanger(editPane, "mmt")
     //painter.addExtension(TextAreaPainter.DEFAULT_LAYER, sc)
     val ma = new MMTMouseAdapter(editPane)
     painter.addMouseListener(ma)

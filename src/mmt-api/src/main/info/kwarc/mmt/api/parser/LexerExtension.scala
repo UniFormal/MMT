@@ -392,7 +392,7 @@ class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExt
      val text = s.substring(index,i)
      new ExternalToken(text) {
         val firstPosition = fp
-        def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: ObjectParser) = {
+        def parse(outer: ParsingUnit, boundNames: List[BoundName], parser: ObjectParser) = {
            var current = fp.after(bQ) //invariant: first character of current part
            val parsed: List[Term] = parts map {
               case QuotePart(q) =>
@@ -401,6 +401,7 @@ class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExt
                  SourceRef.update(t, outer.source.copy(region = SourceRegion(current, current.after(q))))
                  t
               case EvalPart(e) =>
+                 val boundVars = BoundName.getVars(boundNames)
                  val cont = outer.context ++ Context(boundVars.map(VarDecl(_,None,None,None,None)) :_*)
                  val ref = outer.source.copy(region = SourceRegion(current, current.after(e)))
                  current = current.after(e + eE) 

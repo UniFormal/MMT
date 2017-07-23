@@ -92,12 +92,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     try {
       controller.add(se)
       state.cont.onElement(se)
-    }
-    catch {
-      case e: Error =>
-        val se = makeError(reg, "after parsing: " + e.getMessage)
-        se.setCausedBy(e)
-        errorCont(se)
+    } catch {case e: Error =>
+      val se = makeError(reg, "error while adding successfully parsed element", Some(e))
+      errorCont(se)
     }
   }
   /** called at the end of a document or module, does common bureaucracy */
@@ -143,8 +140,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       objectParser(pu)(state.errorCont)
     } catch {
       case e: Error =>
-        val se = makeError(pu.source.region, "during parsing: " + e.getMessage)
-        se.setCausedBy(e)
+        val se = makeError(pu.source.region, "error in object, recovered by using default parser", Some(e))
         state.errorCont(se)
         DefaultObjectParser(pu)(state.errorCont)
     }
@@ -157,8 +153,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     state.errorCont(e)
   }
   /** convenience function to create SourceError's */
-  protected def makeError(reg: SourceRegion, s: String)(implicit state: ParserState) =
-    SourceError("structure-parser", state.makeSourceRef(reg), s)
+  protected def makeError(reg: SourceRegion, s: String, causedBy: Option[Exception] = None)(implicit state: ParserState) = {
+    val msg = s + causedBy.map(": " + _.getMessage).getOrElse("")
+    val e = SourceError("structure-parser", state.makeSourceRef(reg), msg)
+    causedBy.foreach {c => e.setCausedBy(c)}
+    e
+  }
 
 
   // ******************************* the entry points
@@ -222,7 +222,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     catch {
       case e: ParseError =>
-        throw makeError(reg, "invalid identifier: " + e.getMessage).setCausedBy(e)
+        throw makeError(reg, "invalid identifier: " + e.getMessage)
     }
   }
 
@@ -238,7 +238,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     catch {
       case e: ParseError =>
-        throw makeError(reg, "invalid identifier: " + e.getMessage).setCausedBy(e)
+        throw makeError(reg, "invalid identifier: " + e.getMessage)
     }
     val ref = state.makeSourceRef(reg)
     (ref, mp)
@@ -256,7 +256,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     catch {
       case e: ParseError =>
-        throw makeError(reg, "invalid identifier: " + e.getMessage).setCausedBy(e)
+        throw makeError(reg, "invalid identifier: " + e.getMessage)
     }
   }
 
@@ -417,7 +417,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       case e: Error =>
         val se = e match {
           case e: SourceError => e
-          case e => makeError(currentSourceRegion, "error while parsing: " + e.getMessage).setCausedBy(e)
+          case e => makeError(currentSourceRegion, "error in module", Some(e))
         }
         errorCont(se)
         if (!state.reader.endOfModule)
@@ -627,7 +627,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         // wrap in source error if not source error already
         val se: SourceError = e match {
           case se: SourceError => se
-          case _ => makeError(currentSourceRegion, "error while parsing: " + e.getMessage).setCausedBy(e)
+          case _ => makeError(currentSourceRegion, "error in declaration", Some(e))
         }
         errorCont(se)
         if (!state.reader.endOfDeclaration)
@@ -878,7 +878,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               reader.setSourcePosition(reg.start)
               val pea = new ParserExtensionArguments(this, state.copy(reader), cons, k, context) 
               val tO = parser(pea)
-              if (tO.isDefined) throw makeError(reg, "parser extension in constant may not return anything")
+              tO foreach {
+                case d => throw makeError(reg, "parser extension in constant may not return anything")
+              }
             case None =>
               if (!state.reader.endOfDeclaration) {
                 errorCont(makeError(treg, "expected " + keyString + ", found " + k))
@@ -890,8 +892,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           }
         }
       } catch {
-        case e: Exception => 
-          errorCont(makeError(treg, "error in object").setCausedBy(e))
+        case e: Exception =>
+          errorCont(makeError(treg, " error in object", Some(e)))
           if (!state.reader.endOfObject)
              state.reader.readObject
       }
