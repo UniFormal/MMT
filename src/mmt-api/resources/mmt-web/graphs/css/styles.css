@@ -86,6 +86,20 @@ html, body {
 		  padding: 0;
 	  }
 	  
+	 .custom-tooltip
+	  {
+		  display: none;
+		  z-index: 1000;
+		  position: absolute;
+		  overflow: hidden;
+		  border: 1px solid #CCC;
+		  font-family: sans-serif;
+		  background: #FFF;
+		  color: #333;
+		  border-radius: 5px;
+		  padding: 4px;
+	  }
+	  
 	  /* Each of the context menu items in the list */
 	  .custom-menu li 
 	  {

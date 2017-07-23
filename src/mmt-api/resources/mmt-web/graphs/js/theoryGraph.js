@@ -506,6 +506,7 @@ function TheoryGraph()
 		// If the document is clicked somewhere
 		network.on("click", function (e) 
 		{
+			$("#tooltip-container").hide(10);
 			// If the clicked element is not the menu
 			if (!$(e.target).parents(".custom-menu").length > 0) 
 			{
@@ -581,6 +582,9 @@ function TheoryGraph()
 		
 		network.on("oncontext", function (params) 
 		{
+			$("#tooltip-container").hide(10);
+			$(".custom-menu").hide(10);
+			
 			var node=network.getNodeAt({x: params["pointer"]["DOM"]["x"],y: params["pointer"]["DOM"]["y"]});
 			
 			if(node!=undefined)
@@ -602,14 +606,28 @@ function TheoryGraph()
 			if(edge!=undefined)
 			{
 				network.selectEdges([edge]);
-				// Show contextmenu
-				$(".custom-menu").finish().show(10).
 				
-				// In the right position (the mouse)
-				css({
-					top: params["pointer"]["DOM"]["y"]*1+20 + "px",
-					left: params["pointer"]["DOM"]["x"]*1+16 + "px"
-				});
+				var selectedEdge=undefined;
+				for(var i=0;i<originalEdges.length;i++)
+				{
+					if(originalEdges[i]["id"]==edge)
+					{
+						selectedEdge=originalEdges[i];
+						break;
+					}
+				}
+					
+				if (typeof selectedEdge.clickText != "undefined")
+				{
+					// Show contextmenu
+					$("#tooltip-container").finish().show(10).
+					html(selectedEdge.clickText ).
+					// In the right position (the mouse)
+					css({
+						top: params["pointer"]["DOM"]["y"]*1+20 + "px",
+						left: params["pointer"]["DOM"]["x"]*1+16+document.getElementById("mainbox").offsetLeft + "px"
+					});
+				}
 			}
 			
 		});

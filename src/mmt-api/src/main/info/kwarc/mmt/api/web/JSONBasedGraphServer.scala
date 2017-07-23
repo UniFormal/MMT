@@ -131,6 +131,7 @@ class JGraphSideBar extends Extension {
       Tree(trimpath(dp) + "-narr",s2,trimpath(dp),"docgraph")
     case mp: MPath =>
       Tree(trimpath(mp) + "-narr","?" + mp.name.toString,trimpath(mp),"thgraph")
+    case _ => Tree("")
   }
 
   private def archs = controller.backend.getArchives.sortBy(_.id).map(doArchive)
@@ -160,7 +161,7 @@ abstract class SimpleJGraphExporter(key : String)
 }
 
 class JDocgraph extends SimpleJGraphExporter("docgraph"){
-  val builder = GraphBuilder.PlainBuilder(false)
+  val builder = GraphBuilder.PlainBuilder
   val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
       val se = Try(controller.get(Path.parse(s))) match {
@@ -188,7 +189,7 @@ class JDocgraph extends SimpleJGraphExporter("docgraph"){
   }
 }
 class JThgraph extends SimpleJGraphExporter("thgraph") {
-  val builder = GraphBuilder.AlignmentBuilder(true)
+  val builder = GraphBuilder.AlignmentBuilder
   val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
       val th = Try(controller.get(Path.parse(s))) match {
@@ -208,7 +209,7 @@ class JThgraph extends SimpleJGraphExporter("thgraph") {
   }
 }
 class JPgraph extends SimpleJGraphExporter("pgraph") {
-  val builder = GraphBuilder.AlignmentBuilder(true)
+  val builder = GraphBuilder.AlignmentBuilder
   val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
       val dpath = Try(Path.parse(s)) match {
@@ -243,10 +244,11 @@ class JPgraph extends SimpleJGraphExporter("pgraph") {
   }
 }
 class JArchiveGraph extends SimpleJGraphExporter("archivegraph") {
-  val builder = GraphBuilder.AlignmentBuilder(true)
+  val builder = GraphBuilder.AlignmentBuilder
   val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
-      val a = controller.backend.getArchives.filter(_.id.startsWith(s.trim))
+      val as = s.toString.split(""" """).map(_.trim).filter(_ != "")
+      val a = controller.backend.getArchives.filter(a => as.exists(a.id.startsWith))
       var (theories,views) : (List[DeclaredTheory],List[View]) = (Nil,Nil)
       a.flatMap(_.allContent).map(c => Try(controller.get(c)).toOption) foreach {
         case Some(th : DeclaredTheory) => theories ::= th
@@ -313,14 +315,14 @@ abstract class StandardBuilder extends JGraphBuilder {
 }
 
 object GraphBuilder {
-  def standardTheory(th : DeclaredTheory,doMeta : Boolean = true) = {
+  def standardTheory(th : DeclaredTheory) = {
     val thnode = List(new JGraphNode {
       val id = th.path.toString
       val style = "theory"
       val label = Some(th.name.toString)
       val uri = Some(th.path.toString)
     })
-    val metaedge = if (doMeta && th.meta.isDefined) List(new JGraphEdge {
+    val metaedge = if (th.meta.isDefined) List(new JGraphEdge {
       val id = th.path + "?Meta"
       val style = "meta"
       val from = th.meta.get.toString
@@ -366,25 +368,29 @@ object GraphBuilder {
     }))
   }
 
-  case class PlainBuilder(doMeta : Boolean) extends StandardBuilder {
+  case object PlainBuilder extends StandardBuilder {
     def doView(v: View)(implicit controller : Controller) = standardView(v)
-    def doTheory(th: DeclaredTheory)(implicit controller : Controller) = standardTheory(th,doMeta)
+    def doTheory(th: DeclaredTheory)(implicit controller : Controller) = standardTheory(th)
   }
 
-  case class AlignmentBuilder(doMeta : Boolean) extends StandardBuilder {
+  case object AlignmentBuilder extends StandardBuilder {
     def doView(v: View)(implicit controller : Controller) = standardView(v)
     def doTheory(th: DeclaredTheory)(implicit controller : Controller) : (List[JGraphNode],List[JGraphEdge]) = {
-      val (ths,views) = standardTheory(th,doMeta)
+      val (ths,views) = standardTheory(th)
       val alserver = controller.extman.get(classOf[AlignmentsServer]).headOption.getOrElse(return (ths,views))
-      val als = th.getConstants.flatMap(c => alserver.getFormalAlignments(c.path))
-      val es = als.map(al => new JGraphEdge {
+      val als = th.getConstants.flatMap(c => alserver.getFormalAlignments(c.path)).view
+      val als2 = als.map(a => (a.from.mmturi.module.toString,a.to.mmturi.module.toString,a))
+      val algroups = als2.map(t => (t._1,t._2)).distinct.map(p => (p._1,p._2,als2.filter(t => t._1==p._1 && t._2==p._2).map(_._3)))
+      val es = algroups.map(al => new JGraphEdge {
         override val uri: Option[String] = None
-        override val from: String = al.from.mmturi.module.toString
-        override val to: String = al.to.mmturi.module.toString
+        override val from: String = al._1
+        override val to: String = al._2
         override val label: Option[String] = None
         override val id: String = "alignment_" + from + "_" + to
-        override val style: String = "alignments"
-      })
+        override val style: String = "alignment"
+        val clickText = al._3.map(_.toString).mkString("""<br>""")
+        override val others = List(("clickText",clickText))
+      }).toList
       (ths,views ::: es)
     }
   }
