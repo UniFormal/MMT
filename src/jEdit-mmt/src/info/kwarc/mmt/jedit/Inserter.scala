@@ -9,7 +9,7 @@ object Inserter {
    private def getChar(d: Reader.MMTDelim) = {
      val chars = d.chars
      val c = if (MMTOptions.lowAsciiDelims.get.getOrElse(false)) chars.last else chars.head
-     c.toString
+     c.toChar.toString
    }
   
    private def insert(ta: TextArea, ifmmt: String, ifother: String) {
