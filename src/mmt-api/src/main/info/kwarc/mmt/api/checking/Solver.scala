@@ -1431,6 +1431,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           safeSimplify(vd.tp.get)
         case _ => tm
       }
+      case o: OML => o
       case ComplexTerm(op, subs, cont, args) =>
          computationRules foreach {rule =>
             if (rule.head == op) {
