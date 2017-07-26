@@ -3,6 +3,7 @@ package info.kwarc.mmt.odk.SCSCP.Server
 import java.io.InterruptedIOException
 import java.net.{InetAddress, ServerSocket, Socket}
 
+import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
 import info.kwarc.mmt.odk.SCSCP.CD.scscp2
 import info.kwarc.mmt.odk.SCSCP.Protocol.ProtocolError
@@ -168,3 +169,15 @@ object SCSCPServer {
 
 
 
+class SCSCPExtension extends Extension {
+  var server : SCSCPServer = null
+  override def start(args: List[String]): Unit = {
+    server = SCSCPServer("MMTSCSCP", "1.0", "MMTSCSCP")
+
+    // register the add function to it
+    // server.register(OMSymbol("addition", "scscp_transient_1", None, None), new AdditionHandler())
+
+    // and serve it forever
+    server.processForever()
+  }
+}
