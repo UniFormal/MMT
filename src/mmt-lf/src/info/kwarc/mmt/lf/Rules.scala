@@ -16,11 +16,13 @@ object Common {
    def isTypeLike(solver: Solver, a: Term)(implicit stack: Stack, history: History) = {
      val h = history + "checking the size of the type of the bound variable"
      val kind = OMS(Typed.kind)
+     val tp = OMS(Typed.ktype)
      solver.inferTypeAndThen(a)(stack, h) {aT =>
         if (aT == kind) {
           solver.error("type of bound variable is too big: " + solver.presentObj(aT))
         } else {
-          solver.check(Typing(stack, aT, kind, Some(OfType.path)))(h)
+          val iskind = solver.dryRun(false,true)(solver.check(Typing(stack, aT, kind, Some(OfType.path)))(h))
+          if (iskind.get contains true) true else solver.check(Subtyping(stack,aT,tp))
         }
      }
    }
@@ -82,7 +84,7 @@ object PiTerm extends FormationRule(Pi.path, OfType.path) with PiOrArrowRule {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Pi(x,a,b) =>
-           if (!covered) solver.inferType(a)//isTypeLike(solver,a)
+           isTypeLike(solver,a)
            val (xn,sub) = Common.pickFresh(solver, x)
            solver.inferType(b ^? sub)(stack ++ xn % a, history) flatMap {bT =>
               if (bT.freeVars contains xn) {
