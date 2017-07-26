@@ -9,6 +9,7 @@ import info.kwarc.mmt.odk.SCSCP.CD.scscp2
 import info.kwarc.mmt.odk.SCSCP.Protocol.ProtocolError
 
 import scala.collection.mutable
+import scala.concurrent.Future
 
 /**
   * A (single threaded) implementation of the SCSCP protocol, version 1.3
@@ -173,11 +174,14 @@ class SCSCPExtension extends Extension {
   var server : SCSCPServer = null
   override def start(args: List[String]): Unit = {
     server = SCSCPServer("MMTSCSCP", "1.0", "MMTSCSCP")
+    implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
 
     // register the add function to it
     // server.register(OMSymbol("addition", "scscp_transient_1", None, None), new AdditionHandler())
 
     // and serve it forever
-    server.processForever()
+    Future {
+      server.processForever()
+    }
   }
 }
