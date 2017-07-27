@@ -239,7 +239,9 @@ object ForwardPiElimination extends ForwardSearch {
        * @param neededArgs the arguments still needed (initially all arguments other than parameters)
        */
       def apply(g: Goal, parameters: Context, foundArgs: List[(Option[LocalName],Term)],
-                                             neededArgs: List[(Option[LocalName],Term)]) {
+                                             neededArgs: List[(Option[LocalName],Term)]) { /*
+         TODO: This part of the rule is horribly unstable, runs into GC overhead limits
+            TODO needs to be reworked or be provided with some kind of search limit or something :-/
          // the values of the found named arguments as a substitution
          val foundSubs = foundArgs.collect {case (Some(x),a) => x/a}
          neededArgs match {
@@ -278,7 +280,7 @@ object ForwardPiElimination extends ForwardSearch {
                   // we recurse to find the remaining arguments
                   apply(newGoal, newParameters, newFoundArgs, rest)
                }
-         }
+         } */
       }
    }
 }
