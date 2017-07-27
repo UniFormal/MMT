@@ -1381,12 +1381,21 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          //apply a foundation-dependent solving rule selected by the head of tm1
          case _ => Solver.findSolvableVariable(solutionRules, solution, j.tm1) match {
             case Some((rs, m)) =>
+              rs.foreach(sr => sr(j) match {
+                case Some((j2,msg)) =>
+                  history += "Using solution rule " + rs.head.toString
+                  return solveEquality(j2)(j2.stack, (history + msg).branch)
+                case _ =>
+              })
+              false
+              /*
                rs.head(j) match {
                   case Some((j2, msg)) =>
                     history += "Using solution rule " + rs.head.toString
                     solveEquality(j2)(j2.stack, (history + msg).branch)
                   case None => false
                }
+               */
             case _ => false
          }
          /*case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tm2.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
