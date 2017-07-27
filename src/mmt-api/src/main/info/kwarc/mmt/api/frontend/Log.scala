@@ -225,9 +225,9 @@ class HtmlFileHandler(filename: File) extends FileHandler(filename) {
     val jqfile = filename.up / "logaux" / "jquery.js"
     val cssfile = filename.up / "logaux" / "style.css"
 
-    if (!scrfile.exists) File.write(scrfile,MMTSystem.getResourceAsString("log-html/script.js"))
-    if (!jqfile.exists) File.write(jqfile,MMTSystem.getResourceAsString("mmt-web/script/jquery/jquery.js"))
-    if (!cssfile.exists) File.write(cssfile,MMTSystem.getResourceAsString("log-html/style.css"))
+    if (!scrfile.exists) File.write(scrfile,MMTSystem.getResourceAsString("/log-html/script.js"))
+    if (!jqfile.exists) File.write(jqfile,MMTSystem.getResourceAsString("/mmt-web/script/jquery/jquery.js"))
+    if (!cssfile.exists) File.write(cssfile,MMTSystem.getResourceAsString("/log-html/style.css"))
 
     val script = """<script type="text/javascript" src="logaux/script.js"></script>"""
     val jquery = "<script type=\"text/javascript\" src=" +
