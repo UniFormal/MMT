@@ -339,7 +339,7 @@ class OMXMLCoding extends OMCoding[Node] {
     // match a top level object in here
     case OMObject(omel, version, id, cdbase) =>
       setAttr(
-        <OMOBJ>
+        <OMOBJ xmlns="http://www.openmath.org/OpenMath" version="2.0">
           {encodeNode(omel)}
         </OMOBJ>,
 

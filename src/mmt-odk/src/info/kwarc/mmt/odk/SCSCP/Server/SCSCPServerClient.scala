@@ -42,10 +42,10 @@ class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = 
 
   // Initial connection
   writer.write(SCSCPPi(None, Map(
-    (SCSCPAttributes.SERVICE_NAME, server.service_name),
-    (SCSCPAttributes.SERVICE_VERSION, server.service_version),
+    (SCSCPAttributes.SCSCP_VERSIONS, SCSCPConstants.VERSIONS.mkString(" ")),
     (SCSCPAttributes.SERVICE_ID, server.service_identifier),
-    (SCSCPAttributes.SCSCP_VERSIONS, SCSCPConstants.VERSIONS.mkString(" "))
+    (SCSCPAttributes.SERVICE_VERSION, server.service_version),
+    (SCSCPAttributes.SERVICE_NAME, server.service_name)
   )))
 
   // Version negotiation
