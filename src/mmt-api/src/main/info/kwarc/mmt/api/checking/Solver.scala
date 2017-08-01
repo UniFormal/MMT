@@ -166,7 +166,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        * 
        * all state changes are rolled back unless evaluation is successful and commitOnSuccess is true
        */
-      def immutably[A](allowDelay: Boolean, commitOnSuccess: Boolean)(a: => A): DryRunResult = {
+      def immutably[A](allowDelay: Boolean, commitOnSuccess: A => Boolean)(a: => A): DryRunResult = {
          val tempState = StateData(solution, newsolutions, dependencies, _delayed, allowDelay)
          pushedStates ::= tempState
          def rollback {
@@ -185,10 +185,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                  throw MightFail(h.history)
               }
            }
-           if (!commitOnSuccess) {
-             rollback
-           } else {
+           if (commitOnSuccess(aR)) {
              pushedStates = pushedStates.tail
+           } else {
+             rollback
            }
            Success(aR)
          } catch {
@@ -568,7 +568,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    
    /** applies this Solver to one Judgement
     *  This method can be called multiple times to solve a system of constraints.
- *
+    *
     *  @param j the Judgement
     *  @return if false, j is disproved; if true, j holds relative to all delayed judgements
     *
@@ -576,7 +576,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     *
     *  If this returns false, an error must have been registered.
     */
-
    def apply(j: Judgement): Boolean = {
       val h = new History(Nil)
       val bi = new BranchInfo(h, getCurrentBranch)
@@ -745,28 +744,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * @param a the expression
     * @param commitOnSuccess do not roll back state changes if successful
     */
-   override def dryRun[A](allowDelay: Boolean, commitOnSuccess: Boolean)(a: => A): DryRunResult = immutably(allowDelay, commitOnSuccess)(a)
+   override def dryRun[A](allowDelay: Boolean, commitOnSuccess: A => Boolean)(a: => A): DryRunResult = immutably(allowDelay, commitOnSuccess)(a)
    
-   /**
-    * tries to check some judgments without delaying constraints
-    * 
-    * if this returns None, the check is inconclusive at this point, and no state changes were applied
-    * if this returns Some(true), all judgments have been derived and all state changes are applied 
-    * if this returns Some(false), no state changes are applied and the caller still has to generate an error message, possibly by calling check(j)
-    */
-   def tryToCheckWithoutDelay(js:Judgement*): Option[Boolean] = {
-     val dr = dryRun(false, true) {
-       js forall {j => check(j)(NoHistory)}
-     }
-     dr match {
-      case Success(s:Boolean) => Some(s)
-      case Success(_) => throw ImplementationError("illegal success value")
-      case WouldFail => Some(false)
-      case _:MightFail => None
-     }
-   }
-
-
    /**
     * performs a type inference and calls a continuation function on the inferred type
     *
@@ -1030,7 +1009,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      if (obviouslyEqual) {
        return true
      }
-
+     history += "not obviously equal, trying subtyping"
      if (subtypingRules.nonEmpty) {
         implicit val stack = j.stack
         var activerules = subtypingRules
@@ -1062,6 +1041,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
       // otherwise, we default to checking equality
       // in the absence of subtyping rules, this is the needed behavior anyway
+      history += "can't establish subtype relation, falling back to checking equality"
       check(Equality(j.stack, j.tp1, j.tp2, None))
    }
 

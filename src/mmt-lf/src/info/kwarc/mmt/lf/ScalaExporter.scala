@@ -43,6 +43,7 @@ class ScalaExporter extends GenericScalaExporter {
    }
    
    private def typeToScala(t: Term) : String = t match {
+      case Univ(1) => "SemanticType.AllTypes"
       case OMS(a) => nameToScalaQ(a) + ".univ"
       case ApplySpine(OMS(a), _) => typeToScala(OMS(a))
       case FunType(args, ret) if ! args.isEmpty =>
@@ -53,6 +54,7 @@ class ScalaExporter extends GenericScalaExporter {
    }
       
    override def outputTrait(t: DeclaredTheory) {
+     return
       val includes = t.getIncludesWithoutMeta.filter {i =>
          controller.globalLookup.getO(i) match {
             case Some(r: RealizationInScala) =>
