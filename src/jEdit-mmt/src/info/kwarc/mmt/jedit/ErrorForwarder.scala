@@ -105,11 +105,11 @@ class ErrorListForwarder(errorSource: MMTErrorSource, controller: Controller, ma
             case e: InvalidObject => Some(e.obj)
             case e: InvalidElement => Some(e.elem)
             case e: InvalidUnit =>
-               val steps = e.history.getSteps.reverse
+               val steps = e.history.getSteps
                extraMessages = steps.map(_.present(o => controller.presenter.asString(o)))
                val declOpt = e.unit.component.map(p => controller.localLookup.get(p.parent))
                // WFJudgement must exist because we always start with it
-               // find first WFJudegment whose region is within the failed checking unit
+               // find first WFJudgement whose region is within the failed checking unit
                // but maybe lastWFJ.wfo has lost its region through simplification?
                declOpt flatMap {decl =>
                   SourceRef.get(decl).flatMap {bigRef =>

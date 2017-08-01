@@ -13,7 +13,8 @@ case class SourceRegion(start: SourcePosition, end: SourcePosition) {
   /** l.c-l.c*/
   def twoDimString = start.twoDimString + ":" + end.twoDimString
   /** number of characters in this region */
-  def length = end.offset - start.offset // +1 - why +1? Throws errors!
+  def length = end.offset - start.offset + 1
+  /* whether that a subregion of this */
   def contains(that: SourceRegion) = start <= that.start && that.end <= end
 }
 
@@ -39,7 +40,7 @@ case class SourcePosition(offset: Int, line: Int, column: Int) {
   /** inverse of SourcePosition.parse */
   override def toString = offset + "." + line + "." + column
   def twoDimString = line + "." + column
-  /** same as twoDimString but colums and rows are counted from 1, not 0 */
+  /** same as twoDimString but columns and rows are counted from 1, not 0 */
   def twoDimStringFromOne = (line+1) + "." + (column+1)
   /** the position that is i places later in the same line */
   def +(i: Int) = SourcePosition(offset + i, line, column + i)
@@ -94,6 +95,7 @@ object SourcePosition {
 case class SourceRef(container: URI, region: SourceRegion) {
    def toURI = container ## region.toString
    override def toString = toURI.toString
+   /** whether that is a subregion of this */
    def contains(that: SourceRef) = container == that.container && (region contains that.region) 
 }
 
