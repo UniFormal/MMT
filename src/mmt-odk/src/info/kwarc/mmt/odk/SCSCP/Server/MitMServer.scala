@@ -3,7 +3,7 @@ package info.kwarc.mmt.odk.SCSCP.Server
 import info.kwarc.mmt.odk.OpenMath.{OMApplication, OMExpression, OMString, OMSymbol}
 import info.kwarc.mmt.odk.SCSCP.CD.SymbolSet
 import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
-import info.kwarc.mmt.odk.SCSCP.Protocol.SCSCPCallArguments
+import info.kwarc.mmt.odk.SCSCP.Protocol.{SCSCPCall, SCSCPCallArguments, SCSCPReturnObject}
 
 /**
   * SCSCP server that implements the MitM protocol.
@@ -11,7 +11,7 @@ import info.kwarc.mmt.odk.SCSCP.Protocol.SCSCPCallArguments
 object MitMServer {
   val server = SCSCPServer("MitMServer", "1.0", "MitMServer")
 
-  def main(args: Array[String]): Unit = {
+  def run(): Unit = {
     // connect the handlers for registerServer and removeServer
     server.register(OMSymbol("registerServer", "mitm_transient", None, None), new RegisterServerHandler());
     server.register(OMSymbol("removeServer", "mitm_transient", None, None), new RemoveServerHandler());
@@ -85,5 +85,5 @@ class RemoteCallHandler(CAS: SCSCPClient, symbol: OMSymbol) extends SCSCPHandler
   override val signature: OMExpression = SymbolSet(Nil) // TODO:
 
   override def handle(client: SCSCPServerClient, arguments: SCSCPCallArguments, parameters: OMExpression*): OMExpression =
-    OMApplication(symbol, parameters.toList, None, None)
+    CAS(new SCSCPCall(symbol, SCSCPCallArguments(CAS.newCallId, Some(SCSCPReturnObject), null), parameters: _*)).fetch().get
 }

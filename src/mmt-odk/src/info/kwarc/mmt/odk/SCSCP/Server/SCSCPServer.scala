@@ -171,17 +171,8 @@ object SCSCPServer {
 
 
 class SCSCPExtension extends Extension {
-  var server : SCSCPServer = null
   override def start(args: List[String]): Unit = {
-    server = SCSCPServer("MMTSCSCP", "1.0", "MMTSCSCP")
+    MitMServer.run()
     implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
-
-    // register the add function to it
-    // server.register(OMSymbol("addition", "scscp_transient_1", None, None), new AdditionHandler())
-
-    // and serve it forever
-    Future {
-      server.processForever()
-    }
   }
 }

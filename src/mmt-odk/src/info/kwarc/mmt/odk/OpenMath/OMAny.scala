@@ -255,6 +255,7 @@ case class OMString(text : String, id : Option[String]) extends OMBasicElement w
     f(this).asInstanceOf[OMExpression]
   }
 
+  override def toString: String = text
 }
 
 /**
