@@ -173,7 +173,7 @@ object SCSCPServer {
 
 class SCSCPExtension extends Extension {
   override def start(args: List[String]): Unit = {
-//    MitMServer.run()
+    MitMServer.run()
     implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
   }
 }

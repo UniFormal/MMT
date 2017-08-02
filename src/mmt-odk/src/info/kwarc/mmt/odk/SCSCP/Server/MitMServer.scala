@@ -11,7 +11,7 @@ import info.kwarc.mmt.odk.SCSCP.Protocol.{SCSCPCall, SCSCPCallArguments, SCSCPRe
 object MitMServer {
   val server = SCSCPServer("MitMServer", "1.0", "MitMServer")
 
-  def main(args: Array[String]): Unit = {
+  def run(): Unit = {
     // connect the handlers for registerServer and removeServer
     server.register(OMSymbol("registerServer", "mitm_transient", None, None), new RegisterServerHandler())
     server.register(OMSymbol("removeServer", "mitm_transient", None, None), new RemoveServerHandler())
