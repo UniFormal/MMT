@@ -51,6 +51,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   // register the default handlers
   // TODO: Add more
   register(scscp2(scscp2.getAllowedHeads), new GetAllowedHeads(this))
+  register(scscp2(scscp2.getSignature), new  GetSignature(this))
 
   /**
     * Gets the handler for a given symbol
@@ -171,17 +172,8 @@ object SCSCPServer {
 
 
 class SCSCPExtension extends Extension {
-  var server : SCSCPServer = null
   override def start(args: List[String]): Unit = {
-    server = SCSCPServer("MMTSCSCP", "1.0", "MMTSCSCP")
+    MitMServer.run()
     implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
-
-    // register the add function to it
-    // server.register(OMSymbol("addition", "scscp_transient_1", None, None), new AdditionHandler())
-
-    // and serve it forever
-    Future {
-      server.processForever()
-    }
   }
 }
