@@ -36,4 +36,5 @@ object scscp1 {
   final val errorMemory = "error_memory"
   final val errorRuntime = "error_runtime"
   final val errorSystemSpecific = "error_system_specific"
+  final val errorIncorrectSignature = "error_incorrect_signature"
 }

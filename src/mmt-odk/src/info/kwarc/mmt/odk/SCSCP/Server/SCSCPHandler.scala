@@ -1,7 +1,7 @@
 package info.kwarc.mmt.odk.SCSCP.Server
 
-import info.kwarc.mmt.odk.OpenMath.{OMAny, OMExpression, OMObject, OMSymbol}
-import info.kwarc.mmt.odk.SCSCP.CD.{SymbolSet, scscp1, scscp2}
+import info.kwarc.mmt.odk.OpenMath.{OMExpression, OMSymbol}
+import info.kwarc.mmt.odk.SCSCP.CD.SymbolSet
 import info.kwarc.mmt.odk.SCSCP.Protocol.SCSCPCallArguments
 
 /** A handler for SCSCP based functions */
@@ -33,4 +33,29 @@ class GetAllowedHeads(server : SCSCPServer) extends SCSCPHandler {
   val signature = SymbolSet(Nil)
   def handle(client: SCSCPServerClient, arguments : SCSCPCallArguments, parameters: OMExpression* ) : OMExpression =
     SymbolSet(server.getHandlerNames)
+}
+
+/**
+  * Implements the get_signature standard procedure specified by the SCSCP spec.
+  * @param server the server of the procedure.
+  */
+class GetSignature(server : SCSCPServer) extends SCSCPHandler {
+  override val min: Int = 1
+  override val max: Int = 1
+  override val signature: OMExpression = SymbolSet(server.getHandlerNames)
+
+  override def handle(client: SCSCPServerClient, arguments: SCSCPCallArguments, parameters: OMExpression*): OMExpression = {
+    val symbol = parameters.toList.head
+    symbol match {
+      case symbol : OMSymbol =>
+        server.getHandler(symbol).signature
+      case _ =>
+        throw new SignatureMismatchException(signature, parameters)
+    }
+  }
+}
+
+class SignatureMismatchException(expected: OMExpression, actual: OMExpression) extends Exception {
+  def getExpected = expected
+  def getActual = actual
 }

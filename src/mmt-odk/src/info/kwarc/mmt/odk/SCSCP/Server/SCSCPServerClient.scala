@@ -175,8 +175,11 @@ class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = 
           SCSCPNothingReturned(returnparams)
       }
     } catch {
+      case e :SignatureMismatchException =>
+        SCSCPTerminated(OMError(scscp1(scscp1.errorIncorrectSignature),
+          OMString("expected signature: " + e.getExpected + ", actual: " + e.getActual, None) :: Nil, None, None), returnparams)
       case e: Exception =>
-        SCSCPTerminated(OMError(scscp1(scscp1.errorSystemSpecific), OMString(e.getClass.getCanonicalName, None) :: Nil, None, None), returnparams)
+          SCSCPTerminated(OMError(scscp1(scscp1.errorSystemSpecific), OMString(e.getClass.getCanonicalName, None) :: Nil, None, None), returnparams)
     }
 
     // and write the result
