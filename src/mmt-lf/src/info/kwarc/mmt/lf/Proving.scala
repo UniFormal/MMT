@@ -243,7 +243,7 @@ object ForwardPiElimination extends ForwardSearch {
          TODO: This part of the rule is horribly unstable, runs into GC overhead limits
             TODO needs to be reworked or be provided with some kind of search limit or something :-/ */
          // the values of the found named arguments as a substitution
-         if (limit > 10) return
+         if (limit > 1) return
          val foundSubs = foundArgs.collect {case (Some(x),a) => x/a}
          neededArgs match {
             case Nil =>

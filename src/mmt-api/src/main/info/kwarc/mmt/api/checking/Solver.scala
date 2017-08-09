@@ -180,9 +180,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          try {
            val aR = a
            if (tempState.delayedInThisRun.nonEmpty) {
-              activateRepeatedly
+              // activateRepeatedly
               tempState.delayedInThisRun.headOption.foreach {h =>
-                 throw MightFail(h.history)
+                 rollback
+                 return MightFail(h.history)
               }
            }
            if (commitOnSuccess(aR)) {
@@ -1004,9 +1005,11 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       // better: use an expansion algorithm that stops expanding if it is know that no rule will become applicable
 
      // first see if equality can be established
+     log("Check if obviously equal: " + presentObj(j.tp1) + " and " + presentObj(j.tp2))
      val CC = makeCongClos
      val obviouslyEqual = tryToCheckWithoutDelay(CC(Equality(j.stack,j.tp1,j.tp2,None)) :_*) contains true
      if (obviouslyEqual) {
+       log("Obviously equal: " + presentObj(j.tp1) + " and " + presentObj(j.tp2))
        return true
      }
      history += "not obviously equal, trying subtyping"

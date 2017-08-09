@@ -43,7 +43,7 @@ trait CheckingCallback {
     * if this returns Some(false), no state changes are applied and the caller still has to generate an error message, possibly by calling check(j)
     */
    def tryToCheckWithoutDelay(js:Judgement*): Option[Boolean] = {
-     val dr = dryRun(false, (x:Boolean) => x == true) {
+     val dr = dryRun(false, (x:Boolean) => x) {
        js forall {j => check(j)(NoHistory)}
      }
      dr match {
@@ -421,10 +421,13 @@ abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) 
 
   def solve(solver : Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
 
-  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = if (applicable(tp)) {
-    history += "all terms of this type are equal"
-    Some(true)
-  } else None
+  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+    val ret = solve(solver)(tp)
+    if (ret.isDefined) {
+      history += "all terms of this type are equal"
+      Some(true)
+    } else None
+  }
 
   // def applicable(tm : Term) : Boolean
 }
