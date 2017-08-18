@@ -81,12 +81,13 @@ package object impsMathParser {
     }
   }
 
+  /* PackratParsers because those can be left-recursive */
   class IMPSMathParser extends RegexParsers with PackratParsers
   {
     lazy val parseMath  : PackratParser[IMPSMathExp] =
     {
       /* Binding hierarchies taken from IMPS manual pg. 150*/
-      parseDisjunction | parseConjunction | parseImplies | parseNot | parseTruth | parseFalse
+      parseDisjunction | parseConjunction | parseLambda | parseForAll | parseForSome | parseEquals | parseIff | parseImplies | parseNot | parseTruth | parseFalse
     }
 
     lazy val parseTruth : PackratParser[IMPSTruth]     = { "truth"     ^^ {_ => IMPSTruth()     } }
@@ -121,21 +122,20 @@ package object impsMathParser {
     }
 
     lazy val parseLambda : PackratParser[IMPSLambda] = {
-      (("lambda(" ~> rep1sep(parseVal,",")) ~ (parseMath <~ ")")) ^^ { case (vrs ~ p) => IMPSLambda(vrs,p) }
+      (("lambda(" ~> rep1sep(parseVal,",") <~ ",") ~ (parseMath <~ ")")) ^^ { case (vrs ~ p) => IMPSLambda(vrs,p) }
     }
 
     lazy val parseForAll : PackratParser[IMPSForAll] = {
-      (("forall(" ~> rep1sep(parseVal,",")) ~ (parseMath <~ ")")) ^^ { case (vrs ~ p) => IMPSForAll(vrs,p) }
+      (("forall(" ~> rep1sep(parseVal,",") <~ ",") ~ (parseMath <~ ")")) ^^ { case (vrs ~ p) => IMPSForAll(vrs,p) }
     }
 
     lazy val parseForSome : PackratParser[IMPSForSome] = {
-      (("forsome(" ~> rep1sep(parseVal,",")) ~ (parseMath <~ ")")) ^^ { case (vrs ~ p) => IMPSForSome(vrs,p) }
+      (("forsome(" ~> rep1sep(parseVal,",") <~ ",") ~ (parseMath <~ ")")) ^^ { case (vrs ~ p) => IMPSForSome(vrs,p) }
     }
 
     lazy val parseVal : PackratParser[(IMPSVar, Option[IMPSSortRef])] = {
-      (("[^,:]*".r) ~ (":" ~> "[^,]*".r).?) ^^ { case (name ~ sort) => (IMPSVar(name),sort.map(x => IMPSSortRef(x)))}
+      (("[^,:]+".r) <~ ":") ~ ("[^,]+".r.?) ^^ { case (name ~ sort) => (IMPSVar(name),sort.map(x => IMPSSortRef(x)))}
     }
-
 
   }
 
