@@ -40,9 +40,11 @@ object SCSCPPi {
     * @return
     */
   def apply(data : String): SCSCPPi = {
-
     // match the regular expression to the data
-    val data_match = regex_parse.findFirstMatchIn(data).get
+    val data_match = regex_parse.findFirstMatchIn(data) match {
+      case Some(thing) => thing
+      case None => return SCSCPPi(Map.empty[String,String])
+    }
 
     // extract the key
     val key = data_match.group(1) match {

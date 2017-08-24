@@ -1,0 +1,13 @@
+// This file contains mmt-specific configuration options for working with sbt.
+// Copy this file to 'mmt-sbt-settings' and comment in and adapt the settings that you need.
+
+// the following setting is needed only to build the scala part of MathHub projects via sbt
+// mathhub-folder: PATH/TO/MATHHUB/FOLDER
+
+// the following settings are only needed for the sbt target jedit/install, which copies the mmt jars into the jEdit installation
+
+// jedit-settings-folder: PATH/TO/JEDIT/SETTINGS/FOLDER
+
+// shell commands for killing and restarting jEdit, use these if jedit/install can only run if jEdit is quit in between
+// kill-jedit: kill jedit
+// start-jedit: jedit

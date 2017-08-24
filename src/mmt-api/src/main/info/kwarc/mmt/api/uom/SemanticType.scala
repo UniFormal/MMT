@@ -75,3 +75,15 @@ trait RSemanticType[V] extends SemanticType {
       case _ => None
    }
 }
+
+object SemanticType {
+  /** the type of types (experimental) */
+  object AllTypes extends RSemanticType[SemanticType] {
+    def asString = "TypeOfTypes"
+    val cls = classOf[SemanticType]
+    def toString(u: Any) = u match {
+      case u: SemanticType => u.asString
+    }
+    def fromString(s: String) = throw ParseError("cannot parse semantic types")
+  }
+}

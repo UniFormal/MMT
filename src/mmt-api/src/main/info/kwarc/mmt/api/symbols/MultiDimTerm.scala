@@ -169,6 +169,8 @@ class TermContainer extends AbstractTermContainer with ObjContainer[Term] {
          None
      }
    }
+   /** true if the analyzed part is dirty or a previous check did not succeed */
+   def checkNeeded = getAnalyzedIfFullyChecked.isDefined
 }
 
 /** helper object */

@@ -151,7 +151,7 @@ class ConceptServer extends ServerExtension("concepts") {
 
     // adding a new formal concept
     case List("addFormal") =>
-      log("Query: " + request.queryString)
+      log("Query: " + request.query)
 
       // if we are missing parameters, return a 404
       if (!request.parsedQuery.contains("to") || !request.parsedQuery.contains("from")) {
@@ -201,19 +201,19 @@ class ConceptServer extends ServerExtension("concepts") {
       }
 
     // conlist
-    case Nil if request.queryString == "conlist" =>
+    case Nil if request.query == "conlist" =>
       log("Query for conlist")
       ServerResponse.fromText("[" + conlist.map(s => "\"" + s + "\"").mkString(",") + "]")
 
     // shows a specific page
     // there was a seperate case for about, but this has been inlined
-    case Nil if request.queryString.startsWith("page=") =>
+    case Nil if request.query.startsWith("page=") =>
       val index = request.parsedQuery.string("page")
       log("Query for page " + index)
       ServerResponse(doFullPage(List(if (index != "About") index.toLowerCase else index)), "html")
 
     // getting a concept
-    case Nil if request.queryString.startsWith("con=") =>
+    case Nil if request.query.startsWith("con=") =>
       val con = request.parsedQuery.string("con")
       log("CALL constructing concept " + con)
       ServerResponse(doFullPage(List("con", con)), "html")

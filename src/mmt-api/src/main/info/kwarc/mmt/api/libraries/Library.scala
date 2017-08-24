@@ -543,6 +543,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             val newAlias = a.alias ::: c.alias.map(l.namePrefix / _)
             val newTp = a.tp orElse c.tp.map(mapTerm)
             val newDef = a.df orElse c.df.map(mapTerm)
+            if (a.path.toString.contains("comp") && a.path.toString.contains("add"))
+              true
             val newNotC = a.notC merge c.notC
             val newRole = a.rl orElse c.rl 
             Constant(l.to, newName, newAlias, newTp, newDef, newRole, newNotC)
@@ -669,9 +671,9 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
    * adds a declaration
    * @param e the added declaration
    */
-  def add(e: StructuralElement, afterOpt: Option[LocalName]) {
+  def add(e: StructuralElement, at: AddPosition = AtEnd) {
     log("adding " + e.path + " (which is a " + e.feature + ")")
-    val adder = new Adder(e, afterOpt)
+    val adder = new Adder(e, at)
     e match {
        case doc: Document if doc.root =>
           // special treatment for root documents, this case can't be detected by ChangeProcessor
@@ -696,7 +698,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
           implicitGraph(t.df, t.toTerm) = OMIDENT(t.toTerm)
         case dd: DerivedDeclaration =>
         case e: NestedModule =>
-          add(e.module, None)
+          add(e.module, at)
           //TODO this makes every declaration in a theory T visible to any theory S contained in T, regardless of
           //  whether the declaration comes before or after S!
           implicitGraph(e.home, e.module.toTerm) = OMIDENT(e.home)
@@ -710,11 +712,11 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
   /** the bureaucracy of adding 'se' */
-  private class Adder(se: StructuralElement, afterOpt: Option[LocalName]) extends ChangeProcessor {
+  private class Adder(se: StructuralElement, at: AddPosition) extends ChangeProcessor {
      def errorFun(msg: String) = throw AddError(msg)
      def wrongType(exp: String) {errorFun("expected a " + exp + ", found " + se.feature + " " + se.path)}
      def checkNoAfter {
-       if (afterOpt.isDefined)
+       if (at != AtEnd)
          errorFun("adding after a declaration only allowed in containers")
      }
      def run {
@@ -733,7 +735,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
      def otherNarrativeElement(doc: Document, ln: LocalName) = {
         se match {
            case ne: NarrativeElement =>
-              doc.add(ne, afterOpt)
+              doc.add(ne, at)
            case _ =>
               wrongType("narrative element")
         }
@@ -753,7 +755,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
      def otherContentElement(body: Body, ln: LocalName) = {
         se match {
            case d: Declaration =>
-              body.add(d, afterOpt)
+              body.add(d, at)
            case _ =>
               wrongType("declaration")
         }
@@ -820,8 +822,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     new Updater(e).run
   }
 
-  /** almost the same as Adder; the only overrides are replacing "add" and "Add" with "update" and "Update" */
-  private class Updater(se: StructuralElement) extends Adder(se, None) {
+  /** almost the same as Adder; the only overrides are replacing "add" and "Add" with "update" and "Update"
+   * AddPosition is irrelevant
+   */
+  private class Updater(se: StructuralElement) extends Adder(se, AtEnd) {
      override def errorFun(msg: String) = throw UpdateError(msg)
      override def otherNarrativeElement(doc: Document, ln: LocalName) = {
         se match {

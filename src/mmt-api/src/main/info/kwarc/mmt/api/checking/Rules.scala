@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.modules.{DeclaredTheory, Module}
 import libraries._
 import objects._
 import objects.Conversions._
@@ -33,13 +34,32 @@ trait CheckingCallback {
    /** type inference, fails by default */
    def inferType(t : Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = None
    /** runs code and succeeds by default */
-   def dryRun[A](commitOnSucces: Boolean)(code: => A): DryRunResult = Success(code)
+   def dryRun[A](allowDelay: Boolean, commitOnSucces: A => Boolean)(code: => A): DryRunResult = Success(code)
+   /**
+    * tries to check some judgments without delaying constraints
+    * 
+    * if this returns None, the check is inconclusive at this point, and no state changes were applied
+    * if this returns Some(true), all judgments have been derived and all state changes are applied 
+    * if this returns Some(false), no state changes are applied and the caller still has to generate an error message, possibly by calling check(j)
+    */
+   def tryToCheckWithoutDelay(js:Judgement*): Option[Boolean] = {
+     val dr = dryRun(false, (x:Boolean) => x) {
+       js forall {j => check(j)(NoHistory)}
+     }
+     dr match {
+      case Success(s:Boolean) => Some(s)
+      case Success(_) => throw ImplementationError("illegal success value")
+      case WouldFail => Some(false)
+      case _:MightFail => None
+     }
+   }
 
    /** flag an error */
    def error(message: => String)(implicit history: History): Boolean = false
 
   def lookup(p: Path): Option[StructuralElement]
   def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory]
+  def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) : Module
 }
 
 /**
@@ -371,6 +391,7 @@ abstract class SolutionRule(val head: GlobalName) extends CheckingRule {
    /**
     * @return Some(i) if the rule is applicable to t1 in the judgment t1=t2,
     *   in that case, i is the position of the argument of t1 (starting from 0) that the rule will try to isolate
+    *   this is about spotting unknowns, not predicting whether the isolation will succeed
     */
    def applicable(t: Term) : Option[Int]
    /**
@@ -380,8 +401,8 @@ abstract class SolutionRule(val head: GlobalName) extends CheckingRule {
    def apply(j: Equality): Option[(Equality,String)]
 }
 
-/** A TypeSolutionRule tries to solve for an unknown that occurs in a non-solved position.
- * It may also be partial, e.g., by inverting the toplevel operation of a Term without completely isolating an unknown occurring in it.
+/**
+ * A TypeSolutionRule tries to solve for the type of an unknown.
  */
 abstract class TypeSolutionRule(val head: GlobalName) extends CheckingRule {
    /** 
@@ -400,10 +421,13 @@ abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) 
 
   def solve(solver : Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
 
-  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = if (applicable(tp)) {
-    history += "all terms of this type are equal"
-    Some(true)
-  } else None
+  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+    val ret = solve(solver)(tp)
+    if (ret.isDefined) {
+      history += "all terms of this type are equal"
+      Some(true)
+    } else None
+  }
 
   // def applicable(tm : Term) : Boolean
 }

@@ -39,7 +39,11 @@ object Length {
     }
   }
   /** convenience */
-  def infer(solver: CheckingCallback, tm: Term)(implicit stack: Stack): Option[Term] = infer(solver.outerContext++stack.context, tm)
+  def infer(solver: CheckingCallback, tm: Term)(implicit stack: Stack, history : History): Option[Term] = {
+    val ret = infer(solver.outerContext++stack.context, tm)
+    history += "Inferred length " + ret + " of term " + tm
+    ret
+  }
   
   /** true if length is known to be 1 */
   def isIndividual(context: Context, t: Term) = infer(context, t) == ONE

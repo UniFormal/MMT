@@ -14,19 +14,22 @@ object MetadataParser extends ParserExtension {
    private val keywords = List("tag", "link", "meta")
    private val extraKeywords = documents.NarrativeMetadata.allKeys.map("@_"+_)
    def isApplicable(se: StructuralElement, kw: String) = (keywords:::extraKeywords) contains kw 
-   def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, k: String, con:Context = Context.empty) {
+   def apply(pea: ParserExtensionArguments) = {
+      val k = pea.keyword
+      val s = pea.state
+      val se = pea.se
       if (extraKeywords contains k) {
          val key = k.substring(2)
          log("found " + key)
          val (value,_) = s.reader.readObject
          (new documents.NarrativeMetadata(key)).update(se, value)
       } else {
-         val key = sp.readSPath(s.namespaces.base)(s)
+         val key = pea.parser.readSPath(s.namespaces.base)(s)
          val md = k match {
             case "tag" =>
                Tag(key)
             case "meta" =>
-               val (_,_,value) = sp.readParsedObject(con)(s)
+               val (_,_,value) = pea.parser.readParsedObject(pea.context)(s)
                new MetaDatum(key,value.toTerm)
             case "link" =>
                val (u,reg) = s.reader.readAll
@@ -35,5 +38,6 @@ object MetadataParser extends ParserExtension {
          }
          se.metadata.add(md)
       }
+      None
    }
 }

@@ -319,6 +319,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
        case _ =>
          return None
      }
+     def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) = controller.simplifier.materialize(cont,tm,expandDefs,parent)
    }
 
    /** applies all computation rules */

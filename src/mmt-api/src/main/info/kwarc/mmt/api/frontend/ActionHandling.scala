@@ -79,6 +79,8 @@ trait ActionHandling {self: Controller =>
             getOAFOrError.pullAll
           case OAFPush =>
             getOAFOrError.pushAll
+          case OAFSetRemote =>
+            getOAFOrError.setRemoteURL
           case SetBase(b) =>
             state.nsMap = state.nsMap(b)
             report("response", "base: " + getBase)
@@ -162,6 +164,11 @@ trait ActionHandling {self: Controller =>
             case "on" => winman.openBrowser
             case "off" => winman.closeBrowser
           }
+          case ra: RemoteAction =>
+            extman.get(classOf[RemoteAdminServer]).headOption match {
+              case None => report("error", "no admin server loaded")
+              case Some(ras) => ras(ra)
+            }
           case Exit =>
             cleanup
             sys.exit()

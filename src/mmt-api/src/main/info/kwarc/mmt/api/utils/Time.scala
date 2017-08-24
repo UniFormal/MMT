@@ -1,5 +1,9 @@
 package info.kwarc.mmt.api.utils.time
 
+/*
+ 
+// temporary code for measuring time, should be redone without dependency on Java 8, possibly by using scala's Duration class
+
 import java.time.temporal.ChronoUnit
 import java.time.{LocalDate, LocalDateTime, Period, ZoneId}
 
@@ -118,6 +122,8 @@ object Month {
   val November = Month(java.time.Month.NOVEMBER)
   val December = Month(java.time.Month.DECEMBER)
 }
+
+*/
 
 /*
 sealed class Month(int : Int) {

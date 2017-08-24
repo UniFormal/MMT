@@ -3,7 +3,65 @@ var ctxTools;
 var rectTools;
 var dragTools=false;
 var containerTools;
+var mmtUrl = (typeof MMT_base_url=="undefined") ? ((window.location.protocol=='file:')? "/" : "/mh/mmt/") : MMT_base_url;
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "")
+	mmtUrl="/";
 
+
+$(function () 
+{ 
+	$('#theory_tree').jstree(
+	{
+		'core' : 
+		{
+			"check_callback" : true,
+			"themes" : { "stripes" : false,"icons":false },
+		},	
+		"types" : 
+		{
+			"default" : 
+			{
+			  "valid_children" : ["default","file"]
+			}
+		 },
+
+		"plugins" : 
+		[
+			"contextmenu", "dnd", "search",
+			"state", "types", "wholerow"
+		]
+	}); 
+	 
+	//var jsonURL="http://neuralocean.de/graph/test/menu.json";
+	var jsonURL=mmtUrl+":jgraph/menu?id=";
+	lazyParent="#";
+	$.get(jsonURL, addTreeNodes);
+
+	$("#theory_tree").on("select_node.jstree",
+		function(evt, data)
+		{
+			console.log(data.node);
+			createNewGraph(data.node.original.typeGraph,data.node.original.graphdata);
+		}
+	);
+	
+	
+	$("#theory_tree").on("open_node.jstree",
+		function(evt, data)
+		{
+			lazyParent=data.node.id;
+			data.node.children=[];
+			if(alreadyAdded[lazyParent]!=true)
+			{
+				console.log(lazyParent+" added: "+alreadyAdded[lazyParent]);
+				var jsonURL=mmtUrl+":jgraph/menu?id="+data.node.id;
+				//var jsonURL="http://neuralocean.de/graph/test/menu.json";
+				alreadyAdded[lazyParent]=true;
+				$.get(jsonURL, addTreeNodes);
+			}
+		}
+	);
+});
 
 $(document).bind("contextmenu", function (event) 
 {

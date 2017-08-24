@@ -18,7 +18,8 @@ abstract class DelayedConstraint(val incomplete: Boolean) {
 }
 
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
-class DelayedJudgement(val constraint: Judgement, val branchInfo: BranchInfo, incomplete: Boolean) extends DelayedConstraint(incomplete) {
+class DelayedJudgement(val constraint: Judgement, val branchInfo: BranchInfo,
+                       incomplete: Boolean, val onActivation: Option[() => Boolean]) extends DelayedConstraint(incomplete) {
   protected val freeVars = constraint.freeVars
   override def toString = constraint.toString
 }
@@ -82,8 +83,6 @@ class History(var steps: List[HistoryEntry]) {
    }
    
    override def toString = steps.map(_.toString).mkString("\n")
-   
-   
    
    /**
     * A History produced by the ObjectChecker starts with the ValidationUnit, but the error is only encountered along the way.

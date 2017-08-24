@@ -25,7 +25,7 @@ trait StandardIOHelper {
      println(msg + defMsg)
      val answer = input.readLine
      default match {
-       case Some(d) => d / answer
+       case Some(d) => d.resolve(answer)//d / answer
        case None => File(answer)
      }
   }

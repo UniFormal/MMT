@@ -16,11 +16,13 @@ object Common {
    def isTypeLike(solver: Solver, a: Term)(implicit stack: Stack, history: History) = {
      val h = history + "checking the size of the type of the bound variable"
      val kind = OMS(Typed.kind)
+     val tp = OMS(Typed.ktype)
      solver.inferTypeAndThen(a)(stack, h) {aT =>
         if (aT == kind) {
           solver.error("type of bound variable is too big: " + solver.presentObj(aT))
         } else {
-          solver.check(Typing(stack, aT, kind, Some(OfType.path)))(h)
+          val iskind = solver.tryToCheckWithoutDelay(Typing(stack, aT, kind, Some(OfType.path)))
+          if (iskind contains true) true else solver.check(Subtyping(stack,aT,tp))
         }
      }
    }
@@ -82,7 +84,7 @@ object PiTerm extends FormationRule(Pi.path, OfType.path) with PiOrArrowRule {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Pi(x,a,b) =>
-           if (!covered) solver.inferType(a)//isTypeLike(solver,a)
+           isTypeLike(solver,a)
            val (xn,sub) = Common.pickFresh(solver, x)
            solver.inferType(b ^? sub)(stack ++ xn % a, history) flatMap {bT =>
               if (bT.freeVars contains xn) {
@@ -120,8 +122,11 @@ abstract class ArgumentChecker {
 
 /** default implementation: type-check against expected type if not covered; skip if covered */
 object StandardArgumentChecker extends ArgumentChecker {
-   def apply(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History) =
-      covered || solver.check(Typing(stack, tm, tp))(history + "argument must have domain type")
+   def apply(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
+     history.indented {
+      covered || solver.check(Typing(stack, tm, tp))
+     }
+   }
 }
 
 
@@ -137,12 +142,15 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
       
       // auxiliary function that handles one argument at a time
       def iterate(fT: Term, args: List[Term]): Option[Term] = {
-         history += "function type is: " + solver.presentObj(fT)
          (fT,args) match {
-           case (`fT`, Nil) => Some(fT)
+           case (_, Nil) =>
+             history += "no arguments, type is: " + solver.presentObj(fT)
+             Some(fT)
            case (Pi(x,a,b), t::rest) =>
+              history += "function type is: " + solver.presentObj(fT)
               history += "argument is: " + solver.presentObj(t)
-              if (conforms(solver)(t, a, covered)) {
+              val check = conforms(solver)(t, a, covered)(stack, history + "checking argument")
+              if (check) { 
                  history += "substituting argument in return type"
                  // substitute for x and newly-solved unknowns (as solved by conforms) and simplify
                  val bS = solver.substituteSolved(b ^? (x/t), true)
@@ -174,7 +182,7 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
       tm match {
          case ApplySpine(f,args) =>
             history += "inferring type of function " + solver.presentObj(f)
-            val fTOpt = solver.inferType(f)(stack, history.branch)
+            val fTOpt = solver.inferType(f, covered)(stack, history.branch)
             fTOpt match {
               case Some(fT) =>
                 iterate(fT, args)
@@ -194,10 +202,13 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
 object ApplyTerm extends GenericApplyTerm(StandardArgumentChecker)
 
 /** type-checking: the type checking rule x:A|-f x:B  --->  f : Pi x:A.B */
+// TODO all typing rules of this style are in danger of accepting an expression if all eliminations are well-formed but the term itself is not
+//  e.g., [x:Int]sqrt(x) : Nat->Real  would check
 object PiType extends TypingRule(Pi.path) with PiOrArrowRule {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = {
       (tm,tp) match {
          case (Lambda(x1,a1,t),Pi(x2,a2,b)) =>
+            // this case is somewhat redundant, but allows reusing the variable name
             solver.check(Equality(stack,a1,a2,None))(history+"domains must be equal")
             val (xn,sub1) = Common.pickFresh(solver, x1)
             val sub2 = x2 / OMV(xn)
@@ -411,12 +422,12 @@ object SolveMultiple extends SolutionRule(Apply.path) {
    }
 }
 
-/** solution: This rule tries to solve for an unkown by applying lambda-abstraction on both sides and eta-reduction on the left.
+/** solution: This rule tries to solve for an unknown by applying lambda-abstraction on both sides and eta-reduction on the left.
  *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable. 
  */
 object Solve extends SolutionRule(Apply.path) {
    def applicable(t: Term) = t match {
-      case Apply(_, _) => Some(0)
+      case Apply(_, _) => Some(0)  // do not match for OMV(_) here: unknowns in function position belong to this rule even if the rule can't do anything
       case _ => None
    }
    def apply(j: Equality): Option[(Equality, String)] = {

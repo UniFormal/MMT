@@ -13,8 +13,11 @@ abstract class Judgement extends utils.HashEquality[Judgement] with checking.His
   val stack: Stack
   def context = stack.context
   
-   /** a toString method that may call a continuation on its objects
-    */
+  /** true if that is guaranteed if this holds */
+  def implies(that: Judgement): Boolean = this == that
+  //TODO also true that.context.subsumes(this.context)
+  
+  /** a toString method that may call a continuation on its objects */
   def present(implicit cont: Obj => String) = "Judgment " + presentAntecedent + " |- " + presentSucceedent
   def presentSucceedent(implicit cont: Obj => String) = toString
   def presentAntecedent(implicit cont: Obj => String) = {
@@ -135,6 +138,8 @@ case class IsContext(stack: Stack, con: Context) extends UnaryObjJudgement(stack
 
 /** represents an equality judgement between contexts
  * context |- context1 = context2
+ * 
+ * @param uptoAlphy true: alpha-renaming allowed, false: reordering allowed
  */
 case class EqualityContext(stack: Stack, context1: Context, context2: Context, uptoAlpha: Boolean) extends Judgement {
    lazy val freeVars = {

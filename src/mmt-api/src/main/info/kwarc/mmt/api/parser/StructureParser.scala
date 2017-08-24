@@ -92,12 +92,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     try {
       controller.add(se)
       state.cont.onElement(se)
-    }
-    catch {
-      case e: Error =>
-        val se = makeError(reg, "after parsing: " + e.getMessage)
-        se.setCausedBy(e)
-        errorCont(se)
+    } catch {case e: Error =>
+      val se = makeError(reg, "error while adding successfully parsed element", Some(e))
+      errorCont(se)
     }
   }
   /** called at the end of a document or module, does common bureaucracy */
@@ -143,8 +140,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       objectParser(pu)(state.errorCont)
     } catch {
       case e: Error =>
-        val se = makeError(pu.source.region, "during parsing: " + e.getMessage)
-        se.setCausedBy(e)
+        val se = makeError(pu.source.region, "error in object, recovered by using default parser", Some(e))
         state.errorCont(se)
         DefaultObjectParser(pu)(state.errorCont)
     }
@@ -157,8 +153,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     state.errorCont(e)
   }
   /** convenience function to create SourceError's */
-  protected def makeError(reg: SourceRegion, s: String)(implicit state: ParserState) =
-    SourceError("structure-parser", state.makeSourceRef(reg), s)
+  protected def makeError(reg: SourceRegion, s: String, causedBy: Option[Exception] = None)(implicit state: ParserState) = {
+    val msg = s + causedBy.map(": " + _.getMessage).getOrElse("")
+    val e = SourceError("structure-parser", state.makeSourceRef(reg), msg)
+    causedBy.foreach {c => e.setCausedBy(c)}
+    e
+  }
 
 
   // ******************************* the entry points
@@ -222,7 +222,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     catch {
       case e: ParseError =>
-        throw makeError(reg, "invalid identifier: " + e.getMessage).setCausedBy(e)
+        throw makeError(reg, "invalid identifier: " + e.getMessage)
     }
   }
 
@@ -238,7 +238,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     catch {
       case e: ParseError =>
-        throw makeError(reg, "invalid identifier: " + e.getMessage).setCausedBy(e)
+        throw makeError(reg, "invalid identifier: " + e.getMessage)
     }
     val ref = state.makeSourceRef(reg)
     (ref, mp)
@@ -256,7 +256,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     catch {
       case e: ParseError =>
-        throw makeError(reg, "invalid identifier: " + e.getMessage).setCausedBy(e)
+        throw makeError(reg, "invalid identifier: " + e.getMessage)
     }
   }
 
@@ -344,7 +344,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   // *************** the two major methods for reading in documents and modules
 
   /** the main loop for reading declarations that can occur in documents
- *
+    *
     * @param doc the containing Document (must be in the controller already)
     */
   private def readInDocument(doc: Document)(implicit state: ParserState) {
@@ -401,7 +401,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           val (mod, mreg) = state.reader.readModule
           val reader = Reader(mod)
           reader.setSourcePosition(mreg.start)
-          extParser(this, state.copy(reader), doc, k)
+          val pea = new ParserExtensionArguments(this, state.copy(reader), doc, k)
+          extParser(pea) foreach {
+            case m: Module => moduleCont(m, parentInfo)
+            case _ => throw makeError(reg, "parser extension returned non-module")
+          }
       }
       // check that the reader is at the end of a module level declaration, throws error otherwise
       if (!state.reader.endOfModule) {
@@ -413,7 +417,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       case e: Error =>
         val se = e match {
           case e: SourceError => e
-          case e => makeError(currentSourceRegion, "error while parsing: " + e.getMessage).setCausedBy(e)
+          case e => makeError(currentSourceRegion, "error in module", Some(e))
         }
         errorCont(se)
         if (!state.reader.endOfModule)
@@ -450,8 +454,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     lazy val parentInfo = IsMod(mpath, currentSection)
     /* declarations must only be added through this method */
     def addDeclaration(d: Declaration) {
-         d.setDocumentHome(currentSection)
-         seCont(d)
+       d.setDocumentHome(currentSection)
+       seCont(d)
     }
     // to be set if the section changes
     var nextSection = currentSection
@@ -538,8 +542,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                   val pos = nameTitle.indexWhere(_.isWhitespace)
                   (nameTitle.substring(1,pos),nameTitle.substring(pos).trim)
                } else {
-                  val name = mod.asDocument.getLocally(currentSection) match {
-                     case Some(d) => (d.getDeclarations.length+1).toString
+                  // at this point, nextSection is the current section, i.e., the parent of the one to be opened
+                  val name = mod.asDocument.getLocally(nextSection) match {
+                     case Some(d) => "section_" + (d.getDeclarations.length+1)
                      case _ => throw ImplementationError("section not found")
                   }
                   (name, nameTitle)
@@ -597,7 +602,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                     else mod.asDocument.getLocally(currentSection).getOrElse {
                       throw ImplementationError("section not found in module")
                     }
-                    parsOpt.get.apply(this, state.copy(reader), se, k,context)
+                    val pea = new ParserExtensionArguments(this, state.copy(reader), se, k, context)
+                    val dO = parsOpt.get.apply(pea)
+                    dO foreach {
+                      case d: Declaration => addDeclaration(d)
+                      case _ => throw makeError(reg, "parser extension returned non-declaration")
+                    }
                   } else {
                     // 3) a constant with name k
                     val name = LocalName.parse(k)
@@ -617,7 +627,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         // wrap in source error if not source error already
         val se: SourceError = e match {
           case se: SourceError => se
-          case _ => makeError(currentSourceRegion, "error while parsing: " + e.getMessage).setCausedBy(e)
+          case _ => makeError(currentSourceRegion, "error in declaration", Some(e))
         }
         errorCont(se)
         if (!state.reader.endOfDeclaration)
@@ -866,7 +876,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               val (obj, reg) = state.reader.readObject
               val reader = Reader(obj)
               reader.setSourcePosition(reg.start)
-              parser(this, state.copy(reader), cons, k, context)
+              val pea = new ParserExtensionArguments(this, state.copy(reader), cons, k, context) 
+              val tO = parser(pea)
+              tO foreach {
+                case d => throw makeError(reg, "parser extension in constant may not return anything")
+              }
             case None =>
               if (!state.reader.endOfDeclaration) {
                 errorCont(makeError(treg, "expected " + keyString + ", found " + k))
@@ -878,8 +892,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           }
         }
       } catch {
-        case e: Exception => 
-          errorCont(makeError(treg, "error in object").setCausedBy(e))
+        case e: Exception =>
+          errorCont(makeError(treg, " error in object", Some(e)))
           if (!state.reader.endOfObject)
              state.reader.readObject
       }

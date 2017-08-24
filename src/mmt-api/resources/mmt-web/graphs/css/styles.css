@@ -58,6 +58,18 @@
 		  text-align: center;
 	  }
 	  
+html, body {
+    height:100%;
+}
+	  
+	.theoryTreeClass
+	{
+	    overflow: auto;
+	    box-shadow: 0 0 5px #ccc;
+	    padding: 10px;
+	    border-radius: 5px;
+	}
+
 	  /* The whole context menu */
 	  .custom-menu 
 	  {
@@ -72,6 +84,20 @@
 		  color: #333;
 		  border-radius: 5px;
 		  padding: 0;
+	  }
+	  
+	 .custom-tooltip
+	  {
+		  display: none;
+		  z-index: 1000;
+		  position: absolute;
+		  overflow: hidden;
+		  border: 1px solid #CCC;
+		  font-family: sans-serif;
+		  background: #FFF;
+		  color: #333;
+		  border-radius: 5px;
+		  padding: 4px;
 	  }
 	  
 	  /* Each of the context menu items in the list */

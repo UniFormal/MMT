@@ -391,16 +391,16 @@ object LengthAwareArgumentChecker extends ArgumentChecker {
       // try equating the lengths
       (tmLO, tpLO) match {
         case (Some(tmL),Some(tpL)) =>
-          val r = solver.dryRun(true)(solver.check(Equality(stack,tmL,tpL,Some(OMS(Nat.nat))))(history + "checking equality of lengths"))
+          val r = solver.tryToCheckWithoutDelay(Equality(stack,tmL,tpL,Some(OMS(Nat.nat))))
           r match {
-            case Success(true) =>
+            case Some(true) =>
               return sameLength
             case _ =>
           }
         case _ =>
       }
-      solver.dryRun(true)(solver.check(Typing(stack, tm, tp))(history + "cannot tell if lengths equal; trying type-checking")) match {
-        case Success(true) =>
+      solver.tryToCheckWithoutDelay(Typing(stack, tm, tp)) match {
+        case Some(true) =>
           sameLength
         case _ => false
       }

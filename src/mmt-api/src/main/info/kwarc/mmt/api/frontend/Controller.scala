@@ -19,6 +19,8 @@ import uom._
 import utils._
 import web._
 
+import scala.util.Try
+
 /** An exception that is thrown when a needed knowledge item is not available
   *
   * A Controller catches it and retrieves the item dynamically.
@@ -51,8 +53,8 @@ abstract class ROController {
 
   def get(path: Path): StructuralElement
 
-  def getDocument(path: DPath, msg: Path => String = p => "no document found at " + p): Document = get(path) match {
-    case d: Document => d
+  def getDocument(path: DPath, msg: Path => String = p => "no document found at " + p): Document = Try(get(path)) match {
+    case scala.util.Success(d: Document) => d
     case _ => throw GetError(msg(path))
   }
 }
@@ -153,7 +155,7 @@ class Controller extends ROController with ActionHandling with Logger {
     ocO map {oc =>
       if (!oc.local.isDirectory)
         throw GeneralError(oc.local + " is not a directory")
-      new MathHub(oc.remote.getOrElse(MathHub.defaultURL), oc.local, report)
+      new MathHub(oc.remote.getOrElse(MathHub.defaultURL), oc.local, oc.https, report)
     }
   }
 
@@ -309,12 +311,12 @@ class Controller extends ROController with ActionHandling with Logger {
   val localLookup = new LookupWithNotFoundHandler(library) with FailingNotFoundHandler {
     def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod)
   }
-
+  
   /** a lookup that uses the previous in-memory version (ignoring the current one) */
   val previousLocalLookup = new LookupWithNotFoundHandler(memory.previousContent) with FailingNotFoundHandler {
-    def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod)
+    def getDeclarationsInScope(mod: Term) = memory.previousContent.getDeclarationsInScope(mod) 
   }
-
+  
   /** a lookup that loads missing modules dynamically */
   val globalLookup = new LookupWithNotFoundHandler(library) {
     protected def handler[A](code: => A): A = iterate {
@@ -342,7 +344,7 @@ class Controller extends ROController with ActionHandling with Logger {
   }
 
   def getAs[E <: StructuralElement](cls : Class[E], path: Path): E = getO(path) match {
-    case Some(e : E) => e
+    case Some(e : E@unchecked) if cls.isInstance(e) => e
     case Some(r) => throw GetError("Element exists but is not a " + cls + ": " + path + " is " + r.getClass)
     case None => throw GetError("Element doesn't exist: " + path)
   }
@@ -407,82 +409,83 @@ class Controller extends ROController with ActionHandling with Logger {
 
   /** adds a knowledge item
    *  @param afterOpt the name of the declaration after which it should be added (only inside modules, documents)
+   *  None adds at beginning, null (default) at end
    */
-  def add(nw: StructuralElement, afterOpt: Option[LocalName] = None) {
+  def add(nw: StructuralElement, at: AddPosition = AtEnd) {
     iterate {
-      localLookup.getO(nw.path) match {
-        case Some(old) if InactiveElement.is(old) =>
-          /* optimization for change management
-           * If an inactive element with the same path already exists, we try to reuse it.
-           * That way, already-performed computations and checks do not have to be redone;
-           *  this applies in particular to object-level parsing and checking.
-           *  (Incidentally, Java pointers to the elements stay valid.)
-           * Reuse is only possible if the elements are compatible;
-           *  intuitively, that means they have to agree in all fields except possibly for components and children.
-           * In that case, they new components replace the old ones (if different);
-           *   and the new child declarations are recursively added or merged into the old ones later on.
-           * Otherwise, the new element is added as usual.
-           * When adding elements to Body, the order is irrelevant because the children are stored as a set;
-           *  but when adding to a Document (including Body.asDocument), the order matters.
-           *  Therefore, we call reorder after every add/update.
-           */
-          if (old.compatible(nw)) {
-            log("reusing deactivated " + old.path)
-            // update everything but components and children
-            old.merge(nw)
-            var hasChanged = false // will be true if a component changed
-            var deletedKeys = old.getComponents.map(_.key).toSet // will contain the list of no-longer-present components
-            // update/add components
-            nw.getComponents.foreach { case DeclarationComponent(comp, cont) =>
-              deletedKeys -= comp
-              old.getComponent(comp).foreach { oldCont =>
-                val ch = oldCont.update(cont)
-                if (ch) {
-                  log(comp.toString + " changed or added")
+          localLookup.getO(nw.path) match {
+            case Some(old) if InactiveElement.is(old) =>
+              /* optimization for change management
+               * If an inactive element with the same path already exists, we try to reuse it.
+               * That way, already-performed computations and checks do not have to be redone;
+               *  this applies in particular to object-level parsing and checking.
+               *  (Incidentally, Java pointers to the elements stay valid.)
+               * Reuse is only possible if the elements are compatible;
+               *  intuitively, that means they have to agree in all fields except possibly for components and children.
+               * In that case, they new components replace the old ones (if different);
+               *   and the new child declarations are recursively added or merged into the old ones later on.
+               * Otherwise, the new element is added as usual.
+               * When adding elements to Body, the order is irrelevant because the children are stored as a set;
+               *  but when adding to a Document (including Body.asDocument), the order matters.
+               *  Therefore, we call reorder after every add/update.
+               */
+              if (old.compatible(nw)) {
+                log("reusing deactivated " + old.path)
+                // update everything but components and children
+                old.merge(nw)
+                var hasChanged = false // will be true if a component changed
+                var deletedKeys = old.getComponents.map(_.key).toSet // will contain the list of no-longer-present components
+                // update/add components
+                nw.getComponents.foreach {case DeclarationComponent(comp, cont) =>
+                  deletedKeys -= comp
+                  old.getComponent(comp).foreach {oldCont =>
+                    val ch = oldCont.update(cont)
+                    if (ch) {
+                       log(comp.toString + " changed or added")
+                       hasChanged = true
+                    }
+                  }
+                }
+                // delete components
+                if (deletedKeys.nonEmpty)
                   hasChanged = true
+                deletedKeys foreach {comp =>
+                  old.getComponent(comp).foreach {
+                    log(comp.toString + " deleted")
+                    _.delete
+                  }
                 }
+                // activate the old one
+                InactiveElement.erase(old)
+                // notify listeners if a component changed
+                if (hasChanged)
+                   notifyListeners.onUpdate(old, nw)
+              } else {
+                // delete the deactivated old one, and add the new one
+                log("overwriting deactivated " + old.path)
+                memory.content.update(nw)
+                notifyListeners.onUpdate(old, nw)
               }
-            }
-            // delete components
-            if (deletedKeys.nonEmpty)
-              hasChanged = true
-            deletedKeys foreach { comp =>
-              old.getComponent(comp).foreach {
-                log(comp.toString + " deleted")
-                _.delete
-              }
-            }
-            // activate the old one
-            InactiveElement.erase(old)
-            // notify listeners if a component changed
-            if (hasChanged)
+              memory.content.reorder(nw.path)
+            case Some(old) =>
+              memory.content.update(nw)
               notifyListeners.onUpdate(old, nw)
-          } else {
-            // delete the deactivated old one, and add the new one
-            log("overwriting deactivated " + old.path)
-            memory.content.update(nw)
-            notifyListeners.onUpdate(old, nw)
-          }
-          memory.content.reorder(nw.path)
-        case Some(old) =>
-          memory.content.update(nw)
-          notifyListeners.onUpdate(old, nw)
-        case None =>
-          // the normal case
-          memory.content.add(nw, afterOpt)
-          // load extension providing semantics for a Module
-          nw match {
-            case m: Module =>
-              if (!extman.get(classOf[Plugin]).exists(_.theory == m.path)) {
-                getConfig.getEntries(classOf[SemanticsConf]).find(_.theory == m.path).foreach { sc =>
-                  log("loading semantic extension for " + m.path)
-                  extman.addExtension(sc.cls, sc.args)
-                }
+            case None =>
+              // the normal case
+              memory.content.add(nw, at)
+              // load extension providing semantics for a Module
+              nw match {
+                case m: Module =>
+                  if (!extman.get(classOf[Plugin]).exists(_.theory == m.path)) {
+                    getConfig.getEntries(classOf[SemanticsConf]).find(_.theory == m.path).foreach {sc =>
+                      log("loading semantic extension for " + m.path)
+                      extman.addExtension(sc.cls, sc.args)
+                    }
+                  }
+                case _ =>
               }
-            case _ =>
+              notifyListeners.onAdd(nw)
           }
-          notifyListeners.onAdd(nw)
-      }
     }
   }
 

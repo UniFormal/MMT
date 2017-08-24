@@ -167,7 +167,7 @@ class LexParseExtension(lc: LexFunction, pc: ParseFunction) extends LexerExtensi
 /**
  * A LexerExtension that lexes undelimited number literals
  * 
- * always accepts digit* after nonLetter
+ * always accepts digit* after non-(letter or connector)
  * 
  * @param floatAllowed if true, accepts digit* [. digit+ [e [-] digit+]] after nonLetter
  * @param fractionAllowed if true, accepts digit* / digit* after nonLetter
@@ -196,10 +196,10 @@ class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean) extend
      scanDigits
      if (floatAllowed) {
        if (startsWithCharAndDigit('.')) {
-          i += 2
+          i += 1
           scanDigits
           if (startsWithCharAndDigit('e')) {
-             i += 2
+             i += 1
              scanDigits
           } else if (startsWithCharsAndDigit('e', '-')) {
              i += 2
@@ -208,7 +208,7 @@ class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean) extend
        }
      } else if (fractionAllowed) {
         if (startsWithCharAndDigit('/')) {
-           i+=2
+           i+=1
            scanDigits
         }
      }
@@ -392,7 +392,7 @@ class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExt
      val text = s.substring(index,i)
      new ExternalToken(text) {
         val firstPosition = fp
-        def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: ObjectParser) = {
+        def parse(outer: ParsingUnit, boundNames: List[BoundName], parser: ObjectParser) = {
            var current = fp.after(bQ) //invariant: first character of current part
            val parsed: List[Term] = parts map {
               case QuotePart(q) =>
@@ -401,6 +401,7 @@ class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExt
                  SourceRef.update(t, outer.source.copy(region = SourceRegion(current, current.after(q))))
                  t
               case EvalPart(e) =>
+                 val boundVars = BoundName.getVars(boundNames)
                  val cont = outer.context ++ Context(boundVars.map(VarDecl(_,None,None,None,None)) :_*)
                  val ref = outer.source.copy(region = SourceRegion(current, current.after(e)))
                  current = current.after(e + eE) 

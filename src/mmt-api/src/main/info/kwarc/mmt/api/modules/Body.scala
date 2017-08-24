@@ -71,15 +71,15 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
     *  @param d declaration to add  
     *  @param afterOpt the name of the [[Declaration]] after which to add; if omitted, add at end
     */
-   def add(d : Declaration, afterOpt: Option[LocalName] = None) {
+   def add(d : Declaration, at: AddPosition = AtEnd) {
       addDecl(d)
-      addRef(d, afterOpt map {n => After(n, false)})
+      addRef(d, at, false)
    }
    
    /** like add, but treats the second argument as the name of a [[NarrativeElement]] */
    def addAfterNarrative(d: Declaration, after: LocalName) {
       addDecl(d)
-      addRef(d, Some(After(after, true)))
+      addRef(d, After(after), true)
    }
    
    /** add a declaration to the content hash map only */
@@ -104,10 +104,11 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
       }
    }
 
-   /** name of the declaration after which to add a declaration */ 
-   private case class After(name: LocalName, isNarrativeName: Boolean)
-   /* adding/deleting the entry in the document */
-   private def addRef(s: Declaration, afterOpt: Option[After]) {
+   /* adding/deleting the entry in the document
+    * 
+    * @param afterNarrative if at==After(n), whether n is a narrative name
+    */
+   private def addRef(s: Declaration, at: AddPosition = AtEnd, afterNarrative: Boolean = true) {
       val inDoc = s.relativeDocumentHome
       val doc = asDocument.getLocally(inDoc) match {
          case Some(d: Document) => d
@@ -115,9 +116,12 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
          case _ => throw AddError(s"document $inDoc does not exist in theory $path")
       }
       val ref = SRef(doc.path, s.path)
-      val afterSRef = afterOpt map {a =>
-        if (a.isNarrativeName) a.name
-        else SRef(doc.path, path.toMPath ? a.name).name // name of SRef to afterOpt
+      val afterSRef = at match {
+        case After(a) =>
+          val aN = if (afterNarrative) a
+             else SRef(doc.path, path.toMPath ? a).name // name of SRef to afterOpt
+          After(aN)
+        case at => at
       }
       doc.add(ref, afterSRef)
    }
@@ -159,7 +163,7 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
       statements.get(ln) match {
          case Some(s) =>
             deleteRef(ln)
-            addRef(s, None)
+            addRef(s)
             // now reorder all SRefs to declarations ln/X
             traverse {case (doc, r) =>
                val rln = r.target.name
@@ -167,7 +171,7 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
                   val rs = statements(rln)
                   rs.setDocumentHome(s.relativeDocumentHome)
                   deleteRef(ln)
-                  addRef(s, None)
+                  addRef(s)
                }
             }
          case None => throw ImplementationError("declaration does not exist") 

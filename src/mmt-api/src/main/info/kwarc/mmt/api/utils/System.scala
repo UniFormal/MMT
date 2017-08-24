@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.utils
 
-import info.kwarc.mmt.api.utils
+import info.kwarc.mmt.api._
 
 object MMTSystem {
   /** information about how MMT was run, needed to access resources */
@@ -80,5 +80,8 @@ object MMTSystem {
              null
       }
    }
-   def getResourceAsString(path: String): String = utils.readFullStream(getResource(path))
+   def getResourceAsString(path: String): String = Option(getResource(path)) match {
+     case Some(r) => utils.readFullStream(r)
+     case None => throw GeneralError(s"cannot find resource $path (run style is $runStyle)")
+   }
 }

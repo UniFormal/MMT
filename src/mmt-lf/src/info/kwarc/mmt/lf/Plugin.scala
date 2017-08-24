@@ -15,8 +15,6 @@ class Plugin extends frontend.Plugin {
       em.addExtension(new ScalaExporter)
       // Twelf parser
       em.addExtension(new TwelfParser)
-      // foundation
-      em.addExtension(new LFF)
    }
 }
 

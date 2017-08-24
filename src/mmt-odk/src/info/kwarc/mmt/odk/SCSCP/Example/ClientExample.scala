@@ -9,7 +9,7 @@ object ClientExample {
     import info.kwarc.mmt.odk.OpenMath._
 
     // establish a connection
-    val client = SCSCPClient("scscp.gap-system.org")
+    val client = SCSCPClient("localhost")
 
     // get a list of supported symbols
     /**

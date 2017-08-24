@@ -7,6 +7,8 @@ import frontend._
 
 import scala.collection.mutable.HashSet
 
+/*
+
 abstract class FoundationLookup {
    val lup : Lookup
    def getType(p: GlobalName) : Option[Term]
@@ -72,3 +74,4 @@ class DefaultFoundation extends Foundation {
       tm1 == tm2
    def inference(tm: Term, context: Context)(implicit lib: Lookup) : Term = tm //TODO: questionable choice here, better introduce a special untyped foundation
 }
+*/

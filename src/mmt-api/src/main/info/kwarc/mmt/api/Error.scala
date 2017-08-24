@@ -103,6 +103,14 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
   }
 }
 
+object Error {
+  /** converts java exception to MMT error */
+  def apply(e: Exception): Error = e match {
+    case e: Error => e
+    case e: Exception => GeneralError("unknown error").setCausedBy(e)
+  }
+}
+
 /** auxiliary functions for handling Java stack traces */
 object Stacktrace {
   def asStringList(e: Throwable): List[String] = e.getStackTrace.map(_.toString).toList

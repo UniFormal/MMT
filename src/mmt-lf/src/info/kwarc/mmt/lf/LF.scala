@@ -205,6 +205,8 @@ object Binder {
   }
 }
 
+/*
+
 /** The LF foundation. Implements type checking and equality */
 class LFF extends Foundation {
    override val logPrefix = "lf"
@@ -366,3 +368,5 @@ class LFF extends Foundation {
 	 	}
    }
 }
+
+*/

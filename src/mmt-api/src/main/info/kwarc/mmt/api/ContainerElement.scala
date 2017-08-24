@@ -37,13 +37,19 @@ trait DefaultLookup[S <: NamedElement] {self: ElementContainer[S] =>
   }
 }
 
+/** see add methods of [[MutableElementContainer]], [[Controller]], [[Library]] */
+sealed abstract class AddPosition
+case object AtBegin extends AddPosition
+case object AtEnd extends AddPosition
+case class After(name: LocalName) extends AddPosition
+case class Before(name: LocalName) extends AddPosition
 
 trait MutableElementContainer[S <: NamedElement] extends ElementContainer[S] {
-  def add(s: S, after: Option[LocalName] = None): Unit
+  def add(s: S, at: AddPosition = AtEnd): Unit
   def update(s: S): Unit
   def delete(name: LocalName): Option[S]
   /** replaces an element with the renamed version and renames all references */
-  //def rename(old: LocalName, nw: LocalName): Unit // TODO: implement in Document and Body
+  //def rename(oldNews: List[(LocalNameLocalName)]): Unit // TODO: implement in Document and Body
   /** moves the named declaration to the beginning, thus calling reorder in the new order reorders the container */
   def reorder(name: LocalName): Unit
 }

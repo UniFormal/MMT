@@ -69,25 +69,37 @@ package object utils {
       segments.reverse
    }
    
-   /** turns a list into a string  by inserting a separator */
-   def listToString[A](l: List[A], sep: String) = l.map(_.toString).mkString(sep)
+   /** turns a list into a string by inserting a separator */
+   def listToString[A](l: Iterable[A], sep: String) = l.map(_.toString).mkString(sep)
    
    /** repeats a strings a number of times, optionally with a separator */
    def repeatString(s: String, n: Int, sep: String = "") = Range(0,n).map(_ => s).mkString(sep)
 
    /** inserts a separator element in between all elements of a list */
-   def insertSep[A](l: List[A], sep: A) = if (l.isEmpty) Nil else l.flatMap(a => List(sep,a)).tail
+   def insertSep[A](l: List[A], sep: A): List[A] = if (l.isEmpty) Nil else l.flatMap(a => List(sep,a)).tail
    
    /** applies a list of pairs seen as a map */
-   def listmap[A,B](l: List[(A,B)], a: A): Option[B] = l.find(_._1 == a).map(_._2)
+   def listmap[A,B](l: Iterable[(A,B)], a: A): Option[B] = l.find(_._1 == a).map(_._2)
    
-   /** disjointness of two lists */
-   def disjoint[A](l: List[A], m: List[A]) = l.forall(a => ! m.contains(a))
+   /** disjointness of two lists (fast if first argument is empty) */
+   def disjoint[A](l: Seq[A], m: Seq[A]) = l.forall(a => ! m.contains(a))
    
    /** variant of fold such that associate(List(a), unit)(comp) = a instead of comp(unit, a) */
    def associate[A](l: List[A], unit: A)(comp: (A,A) => A): A = l match {
      case Nil => unit
      case hd::tl => tl.fold(hd)(comp)
+   }
+   
+   /** checks if a list has duplicates */
+   def hasDuplicates[A](l: Iterable[A]): Boolean = {
+     val seen = new scala.collection.mutable.HashSet[A]
+     l.foreach {a =>
+       if (seen contains a)
+         return true
+       else
+         seen += a
+     }
+     false
    }
 
    /** slurps an entire stream into a string */
