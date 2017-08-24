@@ -650,15 +650,29 @@ case class IMPSSymbolRef(gn : GlobalName) extends IMPSMathExp {
 }
 
 case class IMPSMathSymbol(s : String) extends IMPSMathExp {
-  override def toString: String = "<" + s + "<"
+  override def toString: String = "<" + s + ">"
 }
 
 case class IMPSVar(v : String) extends IMPSMathExp {
   override def toString: String = v
 }
 
-case class IMPSSortRef(s : String) extends IMPSMathExp {
+abstract class IMPSSortRef extends IMPSMathExp
+
+case class IMPSAtomSort(s : String) extends IMPSSortRef {
   override def toString: String = s
+}
+
+case class IMPSFunSort(ss : List[IMPSSortRef]) extends IMPSSortRef {
+  override def toString: String = {
+    var str : String = "[" + ss.head.toString
+
+    for (s <- ss.tail)
+      { str = str + "," + s.toString }
+
+    str = str + "]"
+    str
+  }
 }
 
 case class IMPSTruth() extends IMPSMathExp

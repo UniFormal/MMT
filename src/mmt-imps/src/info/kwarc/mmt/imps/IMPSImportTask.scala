@@ -227,7 +227,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       for (spec : (String, String) <- l.srts.get.lst)
       {
-        val mth : Term = doType(IMPSSortRef(spec._2))
+        val mth : Term = doType(???) // used to be: IMPSSort(spec._2)
         val nu_sort = symbols.Constant(t.toTerm, doName(spec._1), Nil, Some(mth), None, None)
         doSourceRef(nu_sort, l.srts.get.src)
         controller.add(nu_sort)
@@ -249,7 +249,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       for (pair : (String, String) <- l.cnstnts.get.lst)
       {
-        val mth_tp : Term = doType(IMPSSortRef(pair._2))
+        val mth_tp : Term = doType(???) // used to be: IMPSSortRef(pair._2)
         val l_const = symbols.Constant(t.toTerm,doName(pair._1),Nil,Some(mth_tp),None,Some("Constant"))
         doSourceRef(l_const,l.cnstnts.get.src)
         controller add l_const
@@ -388,7 +388,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     val ret : Term = d match
     {
-      case IMPSSortRef(srt) => IMPSTheory.Sort(OMS(IMPSTheory.thpath ? LocalName(srt)))
+      case IMPSAtomSort(srt)  => IMPSTheory.Sort(OMS(IMPSTheory.thpath ? LocalName(srt)))
+      case IMPSFunSort(sorts) => ???
     }
     ret
   }
