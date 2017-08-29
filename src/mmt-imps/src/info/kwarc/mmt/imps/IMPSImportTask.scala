@@ -91,7 +91,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     tState.theories_decl = tState.theories_decl :+ nu_theory
     tState.theories_raw  = tState.theories_raw  :+ t
 
-    controller.add(nu_theory, None)
+    controller.add(nu_theory)
     controller.add(MRef(bt.narrationDPath,nu_theory.path))
 
     /* Translate language of the theory */
@@ -382,7 +382,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   def doTypeString(s : String) : Term =
   {
     val k = new IMPSMathParser()
-    doType(k.parseAll(k.parseMath, s).get)
+    doType(k.parseAll(k.parseSort, s).get)
   }
 
   def doType(d : IMPSMathExp) : Term =
