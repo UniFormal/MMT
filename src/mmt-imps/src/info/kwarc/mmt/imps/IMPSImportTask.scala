@@ -12,6 +12,9 @@ import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.imps.Usage.Usage
+import info.kwarc.mmt.imps.impsMathParser.IMPSMathParser
+import scala.util.parsing.combinator._
+import scala.util.parsing.combinator.PackratParsers
 import info.kwarc.mmt.lf.Typed
 import utils._
 
@@ -227,7 +230,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       for (spec : (String, String) <- l.srts.get.lst)
       {
-        val mth : Term = doType(???) // used to be: IMPSSort(spec._2)
+        val mth : Term = doTypeString(spec._2)
         val nu_sort = symbols.Constant(t.toTerm, doName(spec._1), Nil, Some(mth), None, None)
         doSourceRef(nu_sort, l.srts.get.src)
         controller.add(nu_sort)
@@ -249,7 +252,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       for (pair : (String, String) <- l.cnstnts.get.lst)
       {
-        val mth_tp : Term = doType(???) // used to be: IMPSSortRef(pair._2)
+        val mth_tp : Term = doTypeString(pair._2)
         val l_const = symbols.Constant(t.toTerm,doName(pair._1),Nil,Some(mth_tp),None,Some("Constant"))
         doSourceRef(l_const,l.cnstnts.get.src)
         controller add l_const
@@ -376,6 +379,12 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     }
   }
 
+  def doTypeString(s : String) : Term =
+  {
+    val k = new IMPSMathParser()
+    doType(k.parseAll(k.parseMath, s).get)
+  }
+
   def doType(d : IMPSMathExp) : Term =
   {
     // TODO: Check if type is already in theory(?)
@@ -389,7 +398,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     val ret : Term = d match
     {
       case IMPSAtomSort(srt)  => IMPSTheory.Sort(OMS(IMPSTheory.thpath ? LocalName(srt)))
-      case IMPSFunSort(sorts) => ???
+      case IMPSFunSort(sorts) => IMPSTheory.Sort(???)
     }
     ret
   }
