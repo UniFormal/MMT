@@ -4,80 +4,31 @@ import scala.util.parsing.combinator._
 import scala.util.parsing.combinator.PackratParsers
 
 package object impsMathParser {
-  def parseIMPSMath(s: String): Option[IMPSMathExp] = {
-    val cheating = false
+  def parseIMPSMath(s: String): Option[IMPSMathExp] =
+  {
+    // "lambda(v:[zz,sets[ind_1]],a:sets[ind_1],forsome(m:zz,forall(x:ind_1,x in a implies forsome(n:zz,-m<=n and n<=m and x in v(n)))))"
 
-    if (cheating) {
-      /* CHEATING! TODO: REMOVE */
-      if (s == "\"[-1]\"") {
-        Some(IMPSMathSymbol(s))
-      }
-      else if (s == "\"1\"") {
-        Some(IMPSMathSymbol(s))
-      }
-      else if (s == "\"lambda(n:zz, n = [-1] or n = 1)\"") {
-        val vs: List[(IMPSVar, Option[IMPSSortRef])] = List((IMPSVar("n"), Some(IMPSAtomSort("zz"))))
-        val p: IMPSMathExp = IMPSEquals(IMPSVar("n"), IMPSMathSymbol("[-1]"))
-        val q: IMPSMathExp = IMPSEquals(IMPSVar("n"), IMPSMathSymbol("1"))
-        val t: IMPSMathExp = IMPSDisjunction(List(p, q))
-        Some(IMPSLambda(vs, t))
-      }
-      else if (s == "\"lambda(b:boole, b = true%val)\"") {
-        val vs = List((IMPSVar("b"), Some(IMPSAtomSort("boole"))))
-        val t = IMPSEquals(IMPSVar("b"), IMPSMathSymbol("true%val"))
-        Some(IMPSLambda(vs, t))
-      }
-      else if (s == "\"lambda(b:boole, b = false%val)\"") {
-        val vs = List((IMPSVar("b"), Some(IMPSAtomSort("boole"))))
-        val t = IMPSEquals(IMPSVar("b"), IMPSMathSymbol("false%val"))
-        Some(IMPSLambda(vs, t))
-      }
-      else if (s == "\"is%true(true%val) iff truth\"") {
-        val p: IMPSMathExp = IMPSApply(IMPSMathSymbol("is%true"), List(IMPSMathSymbol("true%val")))
-        Some(IMPSIff(p, IMPSTruth()))
-      }
-      else if (s == "\"is%true(false%val) iff falsehood\"") {
-        val p: IMPSMathExp = IMPSApply(IMPSMathSymbol("is%true"), List(IMPSMathSymbol("false%val")))
-        Some(IMPSIff(p, IMPSFalsehood()))
-      }
-      else if (s == "\"is%false(true%val) iff falsehood\"") {
-        val p: IMPSMathExp = IMPSApply(IMPSMathSymbol("is%false"), List(IMPSMathSymbol("true%val")))
-        Some(IMPSIff(p, IMPSFalsehood()))
-      }
-      else if (s == "\"is%false(false%val) iff truth\"") {
-        val p: IMPSMathExp = IMPSApply(IMPSMathSymbol("is%false"), List(IMPSMathSymbol("false%val")))
-        Some(IMPSIff(p, IMPSTruth()))
-      }
-      else if (s == "\"falsehood implies truth\"") {
-        Some(IMPSImplication(IMPSFalsehood(), IMPSTruth()))
-      }
-      None
+    var store: Option[IMPSMathExp] = None
+    var input: String = s
+
+    input = input.trim
+    if (input.startsWith("\"")) {
+      input = input.drop(1)
     }
-    else {
-      // "lambda(v:[zz,sets[ind_1]],a:sets[ind_1],forsome(m:zz,forall(x:ind_1,x in a implies forsome(n:zz,-m<=n and n<=m and x in v(n)))))"
+    if (input.endsWith("\"")) {
+      input = input.dropRight(1)
+    }
+    input = input.trim
 
-      var store: Option[IMPSMathExp] = None
-      var input: String = s
-
-      input = input.trim
-      if (input.startsWith("\"")) {
-        input = input.drop(1)
-      }
-      if (input.endsWith("\"")) {
-        input = input.dropRight(1)
-      }
-      input = input.trim
-
-      /* This takes as reference the IMPS Manual pg. 65 */
-      val k = new IMPSMathParser()
-      val j = k.parseAll(k.parseMath, input)
-      if (j.isEmpty) {
-        println("COULD NOT PARSE: " + s)
-        None
-      } else {
-        println("PARSED:          " + j.get.toString )
-        Some(j.get)
-      }
+    /* This takes as reference the IMPS Manual pg. 65 */
+    val k = new IMPSMathParser()
+    val j = k.parseAll(k.parseMath, input)
+    if (j.isEmpty) {
+      println("COULD NOT PARSE: " + s)
+      None
+    } else {
+      println("PARSED:          " + j.get.toString)
+      Some(j.get)
     }
   }
 
