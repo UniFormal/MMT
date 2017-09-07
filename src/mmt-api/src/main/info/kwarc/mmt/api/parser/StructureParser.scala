@@ -752,7 +752,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   protected class Features(val features: List[(String,StructuralFeature)], val patterns: List[(LocalName,(StructuralFeature,DerivedDeclaration))]) {
     def +(f : Features) = new Features((features ::: f.features).distinct,(patterns ::: f.patterns).distinct)
   }
-  protected val noFeatures = new Features(Nil,Nil)
+  val noFeatures = new Features(Nil,Nil)
   
   /** auxiliary function to collect all structural feature rules in a given context */
   protected def getFeatures(mp: MPath): Features = {
