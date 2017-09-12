@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.modules.{DeclaredLink, DeclaredTheory}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
 import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.api.parser.ParseResult
 import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure, UniformTranslator}
 
 import scala.collection.mutable
@@ -83,8 +84,24 @@ abstract class AcrossLibraryTranslation extends UniformTranslator {
   def apply(context: Context, tm: Term) : Term = apply(tm)
 }
 
-case class AlignmentTranslation(alignment : FormalAlignment)(implicit controller : Controller) extends AcrossLibraryTranslation {
+object AlignmentTranslation {
+  def apply(alignment : FormalAlignment)(implicit controller : Controller) = {
+    val (from,to) = (Try(controller.get(alignment.from.mmturi)),Try(controller.get(alignment.to.mmturi)))
+    if (from.toOption.isDefined && to.toOption.isDefined) new AlignmentTranslation(alignment)
+    else None
+  }
+  object None extends AlignmentTranslation(SimpleAlignment(ParseResult.free,ParseResult.free,false))(null) {
+    override def applicable(tm: Term): Boolean = false
+  }
+}
+
+class AlignmentTranslation(val alignment : FormalAlignment)(implicit controller : Controller) extends AcrossLibraryTranslation {
   override def toString: String = "Alignment " + alignment.toString
+
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case that : AlignmentTranslation if that.alignment == this.alignment => true
+    case _ => false
+  }
   /*
   lazy val traverser = alignment match {
     case SimpleAlignment(from,to,_) => new StatelessTraverser {
@@ -138,7 +155,7 @@ case class AlignmentTranslation(alignment : FormalAlignment)(implicit controller
 
   def applicable(tm : Term) = (alignment,tm) match {
     case (_,OMID(alignment.from.mmturi)) => true
-    case (ArgumentAlignment(_,_,_,_),appl(_,alignment.from.mmturi, args)) => true
+    case (ArgumentAlignment(_,_,_,_),appl(_,alignment.from.mmturi, args)) if Try(controller.get(alignment.to.mmturi)).isSuccess => true
     case _ => false
   }
 }

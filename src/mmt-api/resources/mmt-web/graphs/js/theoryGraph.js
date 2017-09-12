@@ -11,7 +11,6 @@ function TheoryGraph()
 	var that=this;
 	var zoomClusters=[];
 	var clusterPositions=[];
-	var BASE_QUERY_URL="http://mathhub.info/mh/mmt";
 
 	this.hideEdges=function(type, hideEdge)
 	{
@@ -568,8 +567,8 @@ function TheoryGraph()
 				switch($(this).attr("data-action")) 
 				{
 					// A case for each action
-					case "openWindow": window.open(BASE_QUERY_URL+selected["url"]); break;
-					case "showURL": alert(BASE_QUERY_URL+selected["url"]); break;
+					case "openWindow": window.open(serverUrl+selected["url"]); break;
+					case "showURL": alert(serverUrl+selected["url"]); break;
 					case "openCluster": openCluster(selected["id"]); break;
 					case "inferType": alert("Not implemented yet!"); break;
 					case "showDecl": alert("Not implemented yet!"); break;

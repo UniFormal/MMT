@@ -1,3 +1,21 @@
+var serverBaseURL = undefined;
+var serverUrl = (typeof serverBaseURL == "undefined" || serverBaseURL==undefined) ? ((window.location.protocol=='file:')? "/" : "/mh/mmt/") : serverBaseURL;
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "")
+	serverUrl="/";
+
+// URL for getting menu-entries in side-menu
+var menuEntriesURL=serverUrl+":jgraph/menu?id=";
+
+// URL parts for getting graphdata, construction looks like:
+// graphDataURL + graphDataURLTypeParameterName + concreteTypeValue + "&" + graphDataURLDataParameterName + concreteGraphdataValue
+var graphDataURL=serverUrl+":jgraph/json?";
+var graphDataURLTypeParameterName = "key=";
+var graphDataURLDataParameterName = "uri=";
+
+// Colors to select for colorizing nodes in graph 
+var colorizingNodesArray = ["#CCCCFF", "#FFFFCC", "#FFCC99", "#CCFFCC", "#DDDDDD", "#FFCCCC"];
+
+
 var THEORY_GRAPH_OPTIONS = 
 {
 	physics: 
@@ -44,6 +62,15 @@ var ARROW_STYLES=
 		dashes: false,
 		circle:false,
 		directed: true
+	},
+	"modelinclude":
+	{
+		color:"#cccccc",
+		colorHighlight:"#cccccc",
+		colorHover:"#cccccc",
+		dashes: false,
+		circle:false,
+		directed: false
 	},
 	"meta":
 	{
@@ -94,3 +121,34 @@ var NODE_STYLES =
 		shape: "circle"
 	}
 };
+
+
+var GRAPH_TYPES =
+[
+	{
+		id: "thgraph",
+		menuText: "Th. Graph",
+		tooltip: ""
+	},
+	{
+		id: "pgraph",
+		menuText: "P Graph",
+		tooltip: ""
+	},
+	{
+		id: "docgraph",
+		menuText: "Doc Graph",
+		tooltip: ""
+	},
+	{
+		id: "archivegraph",
+		menuText: "Archive Graph",
+		tooltip: ""
+	},
+	{
+		id: "mpd",
+		menuText: "MPD Graph",
+		tooltip: "MPD Graph-Viewer"
+	}
+];
+

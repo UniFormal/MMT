@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.ontology.Declares._
 import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.presentation.StructurePresenter
+import info.kwarc.mmt.api.presentation.{MathMLPresenter, StructurePresenter}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
 
@@ -147,8 +147,7 @@ abstract class JGraphExporter(val key : String) extends FormatBasedExtension {
   def buildGraph(s : String) : JSON
 }
 
-abstract class SimpleJGraphExporter(key : String)
-  extends JGraphExporter(key) {
+abstract class SimpleJGraphExporter(key : String) extends JGraphExporter(key) {
 
   val builder : JGraphBuilder
   val selector : JGraphSelector
@@ -259,7 +258,62 @@ class JArchiveGraph extends SimpleJGraphExporter("archivegraph") {
     }
   }
 }
-// TODO archivegraph
+class JMPDGraph extends SimpleJGraphExporter("mpd") {
+  override val logPrefix = "mpd"
+  lazy val mathpres = new MathMLPresenter
+  val builder = new StandardBuilder {
+    def doView(v: View)(implicit controller : Controller) = (Nil,Nil)
+    def doTheory(th: DeclaredTheory)(implicit controller : Controller) : (List[JGraphNode],List[JGraphEdge]) = {
+      log("Doing theory " + th.path)
+      val sb = new info.kwarc.mmt.api.presentation.StringBuilder
+      val ostyle : String = th.getConstants.find(c => (c.rl contains "Law") || (c.rl contains "Quantity")).map(c => {
+        mathpres.apply(c.tp.get,None)(sb)
+        c.rl.get match {case "Law" => "model" case _ => "theory"}
+      }).getOrElse("theory")
+      val thnode = List(new JGraphNode {
+        val id = th.path.toString
+        val style = ostyle
+        val label = Some(th.name.toString)
+        val mathml = sb.get
+        val uri = Some(th.path.toString)
+        override val others = List(("mathml",mathml))
+      })
+      val structedges = th.getPrimitiveDeclarations.collect {
+        case s: Structure => new JGraphEdge {
+          override val uri: Option[String] = Some(s.path.toString)
+          override val from: String = s.from.toMPath.toString
+          override val to: String = th.path.toString
+          override val label: Option[String] = s.name.steps match {
+            case List(ComplexStep(_)) => None
+            case _ => Some(s.name.toString)
+          }
+          override val id: String = s.path.toString
+          override val style: String = "modelinclude"
+        }
+      }
+      (thnode, structedges)
+    }
+  }
+
+  val selector = new JGraphSelector {
+    def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
+      val th = Try(controller.get(Path.parse(s))) match {
+        case scala.util.Success(t: DeclaredTheory) => t
+        case _ => return (Nil, Nil)
+      }
+      var (theories, views): (List[DeclaredTheory], List[View]) = (Nil, Nil)
+      val insouts = controller.depstore.querySet(th.path, Includes | Declares | HasDomain | HasCodomain | RefersTo).toList :::
+        th.getIncludes ::: th.getDeclarations.filter(_.isInstanceOf[NestedModule]).map(_.path)
+      insouts.map(controller.getO).distinct.foreach {
+        case Some(t: DeclaredTheory) => theories ::= t
+        case Some(v: View) => views ::= v
+        case _ =>
+      }
+      log("Selecting " + (th.path :: theories.map(_.path)).mkString(", "))
+      (th :: theories, views)
+    }
+  }
+}
 
 abstract class JGraphNode {
   val id : String
@@ -315,7 +369,7 @@ abstract class StandardBuilder extends JGraphBuilder {
 }
 
 object GraphBuilder {
-  def standardTheory(th : DeclaredTheory) = {
+  def standardTheory(th: DeclaredTheory) = {
     val thnode = List(new JGraphNode {
       val id = th.path.toString
       val style = "theory"
@@ -331,7 +385,7 @@ object GraphBuilder {
       val uri = None
     }) else Nil
     val structedges = th.getPrimitiveDeclarations.collect {
-      case s : Structure => new JGraphEdge {
+      case s: Structure => new JGraphEdge {
         override val uri: Option[String] = Some(s.path.toString)
         override val from: String = s.from.toMPath.toString
         override val to: String = th.path.toString
@@ -341,24 +395,24 @@ object GraphBuilder {
         }
         override val id: String = s.path.toString
         override val style: String = s match {
-          case inc @ PlainInclude(_,_) => "include"
+          case inc@PlainInclude(_, _) => "include"
           case _ => "structure"
         }
       }
     }
-    (thnode,metaedge ::: structedges)
+    (thnode, metaedge ::: structedges)
   }
 
-  def standardView(v : View) : (List[JGraphNode],List[JGraphEdge]) = {
+  def standardView(v: View): (List[JGraphNode], List[JGraphEdge]) = {
     val fr = v.from match {
       case OMMOD(mp) => mp.toString
-      case _ => return (Nil,Nil)
+      case _ => return (Nil, Nil)
     }
     val t = v.to match {
       case OMMOD(mp) => mp.toString
-      case _ => return (Nil,Nil)
+      case _ => return (Nil, Nil)
     }
-    (Nil,List(new JGraphEdge {
+    (Nil, List(new JGraphEdge {
       val id = v.path.toString
       val style = "view"
       val from = fr
@@ -369,18 +423,20 @@ object GraphBuilder {
   }
 
   case object PlainBuilder extends StandardBuilder {
-    def doView(v: View)(implicit controller : Controller) = standardView(v)
-    def doTheory(th: DeclaredTheory)(implicit controller : Controller) = standardTheory(th)
+    def doView(v: View)(implicit controller: Controller) = standardView(v)
+
+    def doTheory(th: DeclaredTheory)(implicit controller: Controller) = standardTheory(th)
   }
 
   case object AlignmentBuilder extends StandardBuilder {
-    def doView(v: View)(implicit controller : Controller) = standardView(v)
-    def doTheory(th: DeclaredTheory)(implicit controller : Controller) : (List[JGraphNode],List[JGraphEdge]) = {
-      val (ths,views) = standardTheory(th)
-      val alserver = controller.extman.get(classOf[AlignmentsServer]).headOption.getOrElse(return (ths,views))
+    def doView(v: View)(implicit controller: Controller) = standardView(v)
+
+    def doTheory(th: DeclaredTheory)(implicit controller: Controller): (List[JGraphNode], List[JGraphEdge]) = {
+      val (ths, views) = standardTheory(th)
+      val alserver = controller.extman.get(classOf[AlignmentsServer]).headOption.getOrElse(return (ths, views))
       val als = th.getConstants.flatMap(c => alserver.getFormalAlignments(c.path)).view
-      val als2 = als.map(a => (a.from.mmturi.module.toString,a.to.mmturi.module.toString,a))
-      val algroups = als2.map(t => (t._1,t._2)).distinct.map(p => (p._1,p._2,als2.filter(t => t._1==p._1 && t._2==p._2).map(_._3)))
+      val als2 = als.map(a => (a.from.mmturi.module.toString, a.to.mmturi.module.toString, a))
+      val algroups = als2.map(t => (t._1, t._2)).distinct.map(p => (p._1, p._2, als2.filter(t => t._1 == p._1 && t._2 == p._2).map(_._3)))
       val es = algroups.map(al => new JGraphEdge {
         override val uri: Option[String] = None
         override val from: String = al._1
@@ -389,9 +445,9 @@ object GraphBuilder {
         override val id: String = "alignment_" + from + "_" + to
         override val style: String = "alignment"
         val clickText = al._3.map(_.toString).mkString("""<br>""")
-        override val others = List(("clickText",clickText))
+        override val others = List(("clickText", clickText))
       }).toList
-      (ths,views ::: es)
+      (ths, views ::: es)
     }
   }
 }

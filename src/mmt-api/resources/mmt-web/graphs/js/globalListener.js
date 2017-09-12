@@ -3,10 +3,6 @@ var ctxTools;
 var rectTools;
 var dragTools=false;
 var containerTools;
-var mmtUrl = (typeof MMT_base_url=="undefined") ? ((window.location.protocol=='file:')? "/" : "/mh/mmt/") : MMT_base_url;
-if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "")
-	mmtUrl="/";
-
 
 $(function () 
 { 
@@ -33,29 +29,51 @@ $(function ()
 	}); 
 	 
 	//var jsonURL="http://neuralocean.de/graph/test/menu.json";
-	var jsonURL=mmtUrl+":jgraph/menu?id=";
+	var jsonURL=menuEntriesURL;
 	lazyParent="#";
 	$.get(jsonURL, addTreeNodes);
 
 	$("#theory_tree").on("select_node.jstree",
 		function(evt, data)
 		{
-			console.log(data.node);
-			createNewGraph(data.node.original.typeGraph,data.node.original.graphdata);
+			var $node = $("#" + data.node.id);
+			var y = $node.position().top + 30;
+            var x = $node.position().left+96;
+
+			$(".custom-menu-side").finish().show(10).
+			// In the right position (the mouse)
+			css({
+				top: y + "px",
+				left: x + "px",
+			});
 		}
 	);
 	
+	// If the menu element is clicked
+	$(".custom-menu-side li").click(function()
+	{
+		var type=$(this).attr("data-action");
+		
+		if(type!="close")
+		{
+			createNewGraph(type,data.node.original.graphdata);
+		}
+			
+		// Hide it AFTER the action was triggered
+		$(".custom-menu-side").hide(10);
+	});
+
 	
 	$("#theory_tree").on("open_node.jstree",
 		function(evt, data)
 		{
+			$(".custom-menu-side").hide(10);
 			lazyParent=data.node.id;
 			data.node.children=[];
 			if(alreadyAdded[lazyParent]!=true)
 			{
 				console.log(lazyParent+" added: "+alreadyAdded[lazyParent]);
-				var jsonURL=mmtUrl+":jgraph/menu?id="+data.node.id;
-				//var jsonURL="http://neuralocean.de/graph/test/menu.json";
+				var jsonURL=menuEntriesURL+data.node.id;
 				alreadyAdded[lazyParent]=true;
 				$.get(jsonURL, addTreeNodes);
 			}
@@ -132,5 +150,43 @@ $(document).ready(function()
 			switchSelectionMode();
         }
     });
-
 });
+
+// Resize Section //
+var divW = 0;
+jQuery(document).ready(function()
+{
+	checkResize();
+});
+
+function checkResize()
+{
+	var w = jQuery("#theory_tree_div").width();
+	if (w != divW) 
+	{
+		divW = w;
+		
+		var treeDiv = jQuery('#theory_tree_div');
+		
+		var htmlCanvas = document.getElementById('toolCanvas');
+		htmlCanvas.width = (window.innerWidth*0.90-divW)|0;
+		htmlCanvas.height = (window.innerHeight*0.80)|0;
+		htmlCanvas.style.width=htmlCanvas.width+"px";
+		htmlCanvas.style.height=htmlCanvas.height+"px";
+		
+		
+		htmlCanvas = document.getElementById('mainbox');
+		htmlCanvas.width = (window.innerWidth*0.90-divW)|0;
+		htmlCanvas.style.width=htmlCanvas.width+"px";
+		
+		htmlCanvas = document.getElementById('wholeNetwork');
+		htmlCanvas.width = (window.innerWidth*0.90-divW)|0;
+		htmlCanvas.height = (window.innerHeight*0.80)|0;
+		htmlCanvas.style.width=htmlCanvas.width+"px";
+		htmlCanvas.style.height=htmlCanvas.height+"px";
+	}
+}
+jQuery(window).resize(checkResize);
+var timer = setInterval(checkResize, 250);
+
+
