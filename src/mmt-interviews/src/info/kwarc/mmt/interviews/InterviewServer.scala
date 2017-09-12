@@ -9,30 +9,31 @@ import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 
 class InterviewServer extends ServerExtension("interview") {
+  override def logPrefix: String = "interview"
   override def apply(request: ServerRequest): ServerResponse = {
-    val (path,query,body) = (request.path,request.parsedQuery,request.body)
+    val (path,query,body) = (request.path.tail,request.parsedQuery,request.body)
+    log("Path: " + path.mkString("/"))
+    log("Query: " + query)
     path match {
-      case "new" :: Nil =>
-        query("theory") match {
-          case Some(name) =>
+      case List("new") =>
+        if (query("theory").isDefined) {
+            val name = query("theory").get
             val meta = query("meta").map(Path.parseM(_,NamespaceMap.empty))
             val mp = Path.parseM(name,NamespaceMap.empty)
             val th = Theory.empty(mp.parent,mp.name,meta)
             controller add th
             return ServerResponse.TextResponse("OK")
-          case _ =>
         }
-        (query("view"),query("from"),query("to")) match {
-          case (Some(name),Some(froms),Some(tos)) =>
+        if (query("view").isDefined && query("from").isDefined && query("to").isDefined) {
+            val (name,froms,tos) = (query("view").get,query("from").get,query("to").get)
             val mp = Path.parseM(name,NamespaceMap.empty)
             val (from,to) = (Path.parseM(froms,NamespaceMap.empty),Path.parseM(tos,NamespaceMap.empty))
             val v = new DeclaredView(mp.parent,mp.name,OMMOD(from),OMMOD(to),false)
             controller add v
             return ServerResponse.TextResponse("OK")
-          case _ =>
         }
-        (query("decl"),query("cont")) match {
-          case (Some(_),Some(mps)) =>
+        if (query("decl").isDefined && query("cont").isDefined) {
+            val mps = query("cont").get
             val th = controller.get(Path.parseM(mps,NamespaceMap.empty)) match {
               case ths : DeclaredTheory => ths
               case _ => return ServerResponse.errorResponse("Theory " + mps + " doesn't exit",request)
@@ -41,7 +42,6 @@ class InterviewServer extends ServerExtension("interview") {
             return if(errs.nonEmpty) ServerResponse.errorResponse(errs.head,request) else {
               ServerResponse.TextResponse("OK")
             }
-          case _ =>
         }
       case _ =>
     }

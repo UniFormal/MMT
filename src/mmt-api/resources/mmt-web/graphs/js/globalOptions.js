@@ -63,15 +63,6 @@ var ARROW_STYLES=
 		circle:false,
 		directed: true
 	},
-	"modelinclude":
-	{
-		color:"#cccccc",
-		colorHighlight:"#cccccc",
-		colorHover:"#cccccc",
-		dashes: false,
-		circle:false,
-		directed: false
-	},
 	"meta":
 	{
 		color:"green",

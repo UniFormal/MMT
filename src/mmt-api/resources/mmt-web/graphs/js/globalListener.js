@@ -36,6 +36,7 @@ $(function ()
 	$("#theory_tree").on("select_node.jstree",
 		function(evt, data)
 		{
+			lastGraphDataUsed=data.node.original.graphdata;
 			var $node = $("#" + data.node.id);
 			var y = $node.position().top + 30;
             var x = $node.position().left+96;
@@ -56,7 +57,7 @@ $(function ()
 		
 		if(type!="close")
 		{
-			createNewGraph(type,data.node.original.graphdata);
+			createNewGraph(type, lastGraphDataUsed);
 		}
 			
 		// Hide it AFTER the action was triggered
