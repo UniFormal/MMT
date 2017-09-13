@@ -5,10 +5,10 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents.{Document, NRef}
 import info.kwarc.mmt.api.frontend.{Controller, Extension, FormatBasedExtension}
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects.OMMOD
+import info.kwarc.mmt.api.objects.{OMID, OMMOD, OMS}
 import info.kwarc.mmt.api.ontology.Declares._
 import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.presentation.{MathMLPresenter, StructurePresenter}
+import info.kwarc.mmt.api.presentation.{HTMLPresenter, MMTDocExporter, MathMLPresenter, StructurePresenter}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
 
@@ -27,6 +27,7 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
     controller.extman.addExtension(new JThgraph)
     controller.extman.addExtension(new JPgraph)
     controller.extman.addExtension(new JArchiveGraph)
+    controller.extman.addExtension(new JMPDGraph)
     super.start(args)
   }
 
@@ -260,16 +261,29 @@ class JArchiveGraph extends SimpleJGraphExporter("archivegraph") {
 }
 class JMPDGraph extends SimpleJGraphExporter("mpd") {
   override val logPrefix = "mpd"
-  lazy val mathpres = new MathMLPresenter
+  lazy val mathpres = controller.extman.get(classOf[MMTDocExporter]).headOption.getOrElse{
+    val pr = new MMTDocExporter
+    controller.extman.addExtension(pr)
+    pr
+  }
   val builder = new StandardBuilder {
     def doView(v: View)(implicit controller : Controller) = (Nil,Nil)
     def doTheory(th: DeclaredTheory)(implicit controller : Controller) : (List[JGraphNode],List[JGraphEdge]) = {
       log("Doing theory " + th.path)
       val sb = new info.kwarc.mmt.api.presentation.StringBuilder
-      val ostyle : String = th.getConstants.find(c => (c.rl contains "Law") || (c.rl contains "Quantity")).map(c => {
-        mathpres.apply(c.tp.get,None)(sb)
+      val const = th.getPrimitiveDeclarations.collect{case c : Constant => c}.find(_.rl contains "Law") match {
+        case Some(c) => Some(c)
+        case _ => th.getPrimitiveDeclarations.collect{case c : Constant => c}.find(_.rl contains "Quantity")
+      }
+      val ostyle : String = const.map(c => {
         c.rl.get match {case "Law" => "model" case _ => "theory"}
       }).getOrElse("theory")
+      ostyle match {
+        case "model" => const.foreach(c => mathpres(c.tp.get,None)(sb))
+        case _ => const.foreach(c => mathpres(OMS(c.path),None)(sb))
+      }
+      log("Const: " + const)
+      log("Style: " + ostyle)
       val thnode = List(new JGraphNode {
         val id = th.path.toString
         val style = ostyle
@@ -302,15 +316,17 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
         case _ => return (Nil, Nil)
       }
       var (theories, views): (List[DeclaredTheory], List[View]) = (Nil, Nil)
-      val insouts = controller.depstore.querySet(th.path, Includes | Declares | HasDomain | HasCodomain | RefersTo).toList :::
-        th.getIncludes ::: th.getDeclarations.filter(_.isInstanceOf[NestedModule]).map(_.path)
-      insouts.map(controller.getO).distinct.foreach {
-        case Some(t: DeclaredTheory) => theories ::= t
+      val ins = th.getIncludesWithoutMeta ::: th.getNamedStructures.collect{
+        case st if st.from.isInstanceOf[OMID] => st.from.toMPath
+      }
+      ins.map(controller.getO).distinct.foreach {
+        case Some(t: DeclaredTheory) =>
+          theories :::= select(t.path.toString)._1
         case Some(v: View) => views ::= v
         case _ =>
       }
       log("Selecting " + (th.path :: theories.map(_.path)).mkString(", "))
-      (th :: theories, views)
+      ((th :: theories).distinct, views)
     }
   }
 }

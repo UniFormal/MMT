@@ -305,15 +305,15 @@ function TheoryGraph()
 
 				if(styleInfos.shape=="ellipse" || styleInfos.shape=="circle")
 				{
-					if(originalNodes[i].mathml!=undefined)
+					if(originalNodes[i].mathml!=undefined && originalNodes[i].mathml!="" && originalNodes[i].mathml.length>10)
 						originalNodes[i].shape="circularImage";
 					else
 						originalNodes[i].shape="ellipse";
 				}
 				else if(styleInfos.shape=="square")
 				{
-					if(originalNodes[i].mathml!=undefined)
-						originalNodes[i].shape="Image";
+					if(originalNodes[i].mathml!=undefined && originalNodes[i].mathml!="" && originalNodes[i].mathml.length>10)
+						originalNodes[i].shape="image";
 					else
 						originalNodes[i].shape="square";
 				}
@@ -432,7 +432,7 @@ function TheoryGraph()
 
 				$.get(originalNodes[i]["image"], callback2);
 			}
-			else if(originalNodes[i]["mathml"]!="" && originalNodes[i]["mathml"]!=undefined)
+			else if(originalNodes[i]["mathml"]!=undefined && originalNodes[i]["mathml"].length>10 && originalNodes[i]["mathml"]!="")
 			{
 				nodeToSVGMath(originalNodes[i]);
 			}
@@ -481,6 +481,8 @@ function TheoryGraph()
 				opti.SolveUsingForces(600,document.getElementById('nodeSpacingBox').value);
 			}
 		}
+		
+		console.log(originalNodes);
 		
 		nodes = new vis.DataSet(originalNodes);
 		edges = new vis.DataSet(originalEdges);
