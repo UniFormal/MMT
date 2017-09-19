@@ -399,6 +399,7 @@ case class Substitution(subs : Sub*) extends Obj {
    }
 
    def toStr(implicit shortURIs: Boolean) = this.map(_.toStr).mkString("",", ","")
+   // TODO this should not be OMBVAR
    def toNode =
       <om:OMBVAR>{mdNode}{subs.zipWithIndex.map(x => x._1.toNode)}</om:OMBVAR>
    def toCMLQVars(implicit qvars: Context) = asContext.toCMLQVars
@@ -425,6 +426,18 @@ object Context {
       mdOpt.foreach {md => c.metadata = md}
       c
 	}
+  private val sym = utils.mmt.context
+  /** a typical notation for context: ,-separated bindings */
+  val parsingRule = parser.ParsingRule(sym, Nil, TextNotation.fromMarkers(Precedence.integer(0), None)(Var(1, true, Some(Delim(",")))))
+  /** helper functions to temporarily turn a context into a term, e.g., for checking contexts */
+  object AsTerm {
+    def apply(c: Context) = OMBINDC(OMS(sym), c, Nil)
+    def unapply(t: Term) = t match {
+      case OMBINDC(OMS(Context.sym), c, Nil) => Some(c)
+      case _ => None
+    }
+  }
+   
 	/** generate new variable name similar to x */
    private def rename(x: LocalName) = {
       x / "r"

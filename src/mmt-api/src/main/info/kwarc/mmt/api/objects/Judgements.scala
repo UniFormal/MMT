@@ -31,7 +31,7 @@ abstract class Judgement extends utils.HashEquality[Judgement] with checking.His
 
 /** A WFJudgment defines well-formed objects */
 trait WFJudgement extends Judgement {
-   val wfo: Term
+   val wfo: Obj
 }
 
 /** represents an equality judgement, optionally at a type
@@ -134,7 +134,7 @@ object IsRealization {
 }
 
 /** well-formedness of contexts */
-case class IsContext(stack: Stack, con: Context) extends UnaryObjJudgement(stack, con, "Context")
+case class IsContext(stack: Stack, wfo: Context) extends UnaryObjJudgement(stack, wfo, "Context") with WFJudgement
 
 /** represents an equality judgement between contexts
  * context |- context1 = context2

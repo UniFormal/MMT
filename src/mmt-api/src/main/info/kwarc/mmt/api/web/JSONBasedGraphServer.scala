@@ -35,23 +35,23 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
 
 
   def apply(request: ServerRequest): ServerResponse = {
-    log("Paths: " + request.extensionPathComponents)
+    log("Paths: " + request.pathForExtension)
     log("Query: " + request.query)
     log("Path: " + request.parsedQuery("uri"))
-    if (request.extensionPathComponents.headOption == Some("menu")) {
+    if (request.pathForExtension.headOption == Some("menu")) {
       val id = request.parsedQuery("id").getOrElse("top")
       log("Returing menu for " + id)
       if (id == "full") ServerResponse.fromJSON(sidebar.getJSON("top",true))
       else ServerResponse.fromJSON(sidebar.getJSON(id))
-    } else if (request.extensionPathComponents.headOption == Some("json")) {
-      val uri = request.parsedQuery("uri").getOrElse(return ServerResponse.errorResponse(GetError("Not a URI"), request))
+    } else if (request.pathForExtension.headOption == Some("json")) {
+      val uri = request.parsedQuery("uri").getOrElse(return ServerResponse.errorResponse(GetError("Not a URI"), "json"))
       val key = request.parsedQuery("key").getOrElse("pgraph")
       val exp = controller.extman.getOrAddExtension(classOf[JGraphExporter], key).getOrElse {
         throw CatchError(s"exporter $key not available")
       }
       log("Returning " + key + " for " + uri)
       ServerResponse.fromJSON(exp.buildGraph(uri))
-    } else ServerResponse.errorResponse("Invalid path",request)
+    } else ServerResponse.errorResponse("Invalid path", "json")
   }
 }
 

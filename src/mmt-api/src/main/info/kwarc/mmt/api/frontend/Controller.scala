@@ -329,11 +329,7 @@ class Controller extends ROController with ActionHandling with Logger {
   }
 
   /** convenience for global lookup */
-  def get(path: Path): StructuralElement = {
-    val get = globalLookup.get(path)
-    simplifier(get)
-    get
-  }
+  def get(path: Path): StructuralElement = globalLookup.get(path)
 
   /** like get */
   def getO(path: Path) = try {
@@ -352,6 +348,55 @@ class Controller extends ROController with ActionHandling with Logger {
   def getConstant(path : GlobalName) = getAs(classOf[Constant],path)
   def getTheory(path : MPath) = getAs(classOf[DeclaredTheory],path)
 
+
+  // ******************* determine context of elements
+  
+  /** computes the context of an element, e.g., as needed for checking
+   *  this methods allows processing individual elements without doing a top-down traversal to carry the context
+   */
+  def getContext(e: StructuralElement): Context = {
+    lazy val parent = get(e.parent)
+    e match {
+      case d: NarrativeElement => d.parentOpt match {
+        case None => d match {
+          case d: Document => d.contentAncestor match {
+            case None => Context.empty
+            case Some(m) => getContextWithInner(m)
+          }
+          case _ => Context.empty
+        }
+        case Some(p) => getContext(parent)
+      }
+      case m: Module => m.superModule match {
+        case None => Context.empty
+        case Some(smP) => get(smP) match {
+          case sm: DeclaredModule => getContextWithInner(sm)
+          case sm: DefinedModule => getContext(m) // should never occur
+        }
+      }
+      case d: Declaration =>
+        parent match {
+          case ce: ContainerElement[_] => getContextWithInner(ce)
+          case dd: DerivedDeclaration =>
+             val contOpt = extman.get(classOf[StructuralFeature], dd.feature).map(_.getInnerContext(dd))
+             getContext(dd) ++ contOpt.getOrElse(Context.empty)
+          case nm: NestedModule => nm.module match {
+            case ce: ContainerElement[_] => getContextWithInner(ce)
+          }
+        }
+    }
+  }
+  
+  /** auxiliary method of getContext, returns the context in which the body of ContainerElement is checked */
+  private def getContextWithInner(e: ContainerElement[_]) = getContext(e) ++ getExtraInnerContext(e) 
+  
+  /** additional context for checking the body of ContainerElement */
+  def getExtraInnerContext(e: ContainerElement[_]) = e match {
+    case d: Document => Context.empty
+    case m: DeclaredModule => m.getInnerContext
+    case s: DeclaredStructure => Context.empty
+  }
+  
   // ******************************* transparent loading during global lookup
 
   /** wrapping an expression in this method, evaluates the expression dynamically loading missing content

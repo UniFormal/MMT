@@ -41,3 +41,22 @@ object MyList {
 
   implicit def toList[A](m: MyList[A]): List[A] = m.l
 }
+
+/** adds convenience methods to a class that wraps around a list */
+abstract class ListWrapper[A, W <: ListWrapper[A,W]](private[utils] val _as: List[A]) {
+  /** this should return the companion object of the implementing case class */
+  def companion: ListWrapperCompanion[A,W]
+  def +(that: W):W = companion.apply(_as ::: that._as)
+  def +(that: List[A]):W = this+companion.apply(that)
+  def +(that: A*): W = this+that.toList
+}
+
+/** should be mixed into the companion object of a [[ListWrapper]] subclass */
+trait ListWrapperCompanion[A, W <: ListWrapper[A,W]] {
+  def apply(as: List[A]): W
+  def apply(a: A*): W = apply(a.toList)
+  val empty = apply()
+  implicit def fromList(as: List[A]) = apply(as)
+  implicit def toList(w: ListWrapper[A,W]) = w._as
+  implicit def toMyList(w: ListWrapper[A,W]) = MyList(w._as)
+}

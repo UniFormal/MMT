@@ -58,7 +58,7 @@ class LFTranslator(val controller: Controller, bt: BuildTask, index: Document =>
         controller add symbols.Constant(theory.toTerm, LocalName(a.label), Nil,
           Some(doTerm(tr.translateAssert(a))), tr.translateProof(a).map(doTerm), None)
       case c: Comment =>
-        controller add new OpaqueText(theory.asDocument.path, List(StringFragment(c.text)))
+        controller add new OpaqueText(theory.asDocument.path, OpaqueText.defaultFormat, StringFragment(c.text))
       case _ =>
     }
     val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {

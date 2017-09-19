@@ -19,7 +19,11 @@ class RuleBasedChecker extends ObjectChecker {
 
    def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) = {
       val con = cu.judgement.context
-      val tm = cu.judgement.wfo
+      val tm = cu.judgement.wfo match {
+        case t: Term => t
+        case c: Context => Context.AsTerm(c)
+        case _ => throw ImplementationError("cannot check this object")
+      }
       val prOrg = ParseResult(cu.unknowns, con, tm)
       
       def fail(msg: String) = {
@@ -39,6 +43,9 @@ class RuleBasedChecker extends ObjectChecker {
             case tc: TermContainer =>
                tc.dependsOn.clear
                (comp,tc)
+            case cc: ContextContainer =>
+               cc.dependsOn.clear
+               (comp,cc)
             case _ => throw ImplementationError("not a TermContainer")
          }
       }
@@ -57,7 +64,6 @@ class RuleBasedChecker extends ObjectChecker {
       val contmIS = SimplifyInferred(contmI, rules, cu.context ++ remUnknowns) //substitution may have created simplifiable terms
       TermProperty.eraseAll(contmIS) // reset term properties (whether a term is, e.g., simplified, depends on where it is used)
       val pr = ParseResult.fromTerm(contmIS).copy(unknown = remUnknowns)
-      val result = pr.toTerm
       //now report results, dependencies, errors
       val success = solver.checkSucceeded
       if (success) {
@@ -93,26 +99,37 @@ class RuleBasedChecker extends ObjectChecker {
             }
          }
       }
+      val resultTerm = pr.toTerm
+      val resultObj = resultTerm match {
+        case Context.AsTerm(cont) => cont
+        case t => t
+      }
       // ** change management **
-      updateComponent foreach {case (comp, tc) =>
+      updateComponent foreach {case (comp, container) =>
          // hadValue: true if a previous successful analysis result was known
          // changed: true if hadValue and the new analysis result differs from the previous one
-         val (hadValue, changed) = tc.getAnalyzedIfFullyChecked match {
+         val (hadValue, changed) = container.getAnalyzedIfFullyChecked match {
            case Some(r) =>
              // new value differs from old value
-             (true, r != result)
+             (true, r != resultObj)
            case None =>
              // this happens in particular when checking a document from scratch
              // in that case, we compare to the previously-loaded version (if any) that is still remembered by the library
              controller.previousLocalLookup.getO(comp.parent).flatMap(_.getComponent(comp.component)) match {
                case None => (false, false)
-               case Some(tcP: TermContainer) =>
-                 val p = tcP.getAnalyzedIfFullyChecked
-                 (p.isDefined, !p.contains(result))
+               case Some(ccP: ObjContainer[_]) =>
+                 val p = ccP.getAnalyzedIfFullyChecked
+                 (p.isDefined, !p.contains(resultObj))
                case Some(_) => (true,false) // impossible
              }
          }
-         tc.analyzed = result // set it even if unchanged so that dirty flag gets cleared
+         container match {
+           case tc: TermContainer => tc.analyzed = resultTerm // set it even if unchanged so that dirty flag gets cleared
+           case cc: ContextContainer => resultObj match {
+             case c: Context => cc.analyzed = c
+             case _ => throw ImplementationError("not a context")
+           }
+         }
          if (changed) {
             log("changed")
             controller.memory.content.notifyUpdated(comp) //TODO: this could be cleaner if taken care of by the onCheck method
@@ -123,7 +140,7 @@ class RuleBasedChecker extends ObjectChecker {
               log("new value")
          }
       }
-      CheckingResult(success, Some(psol), result)
+      CheckingResult(success, Some(psol), resultTerm)
    }
    /**
     * A Traverser that reduces all redexes introduced by solving unknowns.

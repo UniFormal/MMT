@@ -81,6 +81,7 @@ case class SemanticsConf(theory: MPath, cls: String, args: List[String]) extends
   val id = theory.toPath
 }
 
+/** ignored by MMT but available to plugins */
 case class ForeignConf(section: String, key: String, values: List[String]) extends ConfEntry {
    val id = section + "_" + key
 }

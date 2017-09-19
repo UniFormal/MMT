@@ -144,7 +144,7 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
   def apply(request: ServerRequest): ServerResponse = {
-    request.extensionPathComponents match {
+    request.pathForExtension match {
       case "from" :: _ ⇒
         val path = Path.parseS(request.query, nsMap)
         val toS = if (request.query.contains("transitive=\"true\"")) alignments.get(LogicalReference(path), Some(_ => true)).map(_.to.toString)
@@ -169,7 +169,7 @@ class AlignmentsServer extends ServerExtension("align") {
         }
         ServerResponse.TextResponse("Added " + addedAlignments + " alignments")
       case _ ⇒
-        log(request.extensionPathComponents.toString) // List(from)
+        log(request.pathForExtension.toString) // List(from)
         log(request.query) // an actual symbol path
         log(request.body.toString) //whatever
         ServerResponse.TextResponse("")

@@ -41,6 +41,8 @@ object CheckingUnit {
       val j = Typing(Stack(pr.free), pr.term, OMV(unknownType))
       CheckingUnit(cpath, context, pr.unknown ++ VarDecl(unknownType,None,None,None,None), j)
    }
+   
+   def forContext(cpath: Option[CPath], context: Context, pr: ParseResult) = ???
 }
 
 /**

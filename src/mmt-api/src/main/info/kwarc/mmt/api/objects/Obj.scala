@@ -69,7 +69,7 @@ abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj]
    def subobjects: List[(Context,Obj)]
    /** auxiliary function for subobjects in the absence of binding */
    protected def subobjectsNoContext(os: List[Obj]) = os.map(s => (Context(),s))
-   /** returns the subobject at a given position and its context; first index of pos used to be always 0 but not anymore */
+   /** returns the subobject at a given position and its context */
    def subobject(pos: Position) : (Context, Obj) =
      pos.indices.foldLeft((Context(),this)) {
          case ((con,obj), i) =>
@@ -92,10 +92,12 @@ abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj]
    }
 }
 
+trait ThisTypeTrait
+
 /**
  * A Term represents an MMT term.
  */
-sealed abstract class Term extends Obj {
+sealed abstract class Term extends Obj with ThisTypeTrait {
    final type ThisType = Term
    def strip : Term = this
    /** morphism application (written postfix), maps OMHID to OMHID */
@@ -506,12 +508,21 @@ object Obj {
       case Right(c) => parseTerm(c, nm)
    }
    
+   /** parses an object (term or context) relative to a base address (a single OMV is always parsed as a Term, never as a VarDecl) */
+   def parse(n: Node, nsMap: NamespaceMap): Obj = {
+     n.label match {
+       case "OMOBJ" => parse(n.child.head, nsMap)
+       case "OMBVAR" => Context.parse(n, nsMap)
+       case _ => parseTerm(n, nsMap)
+     }
+   }
+   
    /** parses a term relative to a base address
     *  @param Nmd node to parse (may not contain metadata) 
     *  @param nm namespace Map to resolve relative URIs
     *  @return the parsed term
     */
-   def parseTerm(N : Node, nm: NamespaceMap) : Term = {
+   def parseTerm(N : Node, nm: NamespaceMap): Term = {
       implicit val nsMap = nm
       xml.trimOneLevel(N) match {
          case <OMOBJ>{o}</OMOBJ> => parseTermRec(o)

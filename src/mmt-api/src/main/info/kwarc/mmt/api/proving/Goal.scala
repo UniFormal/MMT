@@ -7,24 +7,24 @@ import objects._
 import objects.Conversions._
 
 /**
- * Each [[Goal]] stores a list of alternatives each of which stores a list of subgoals
- * 
- * A goal can be closed if all subgoals of one alternative can be closed
+ * Alternatives are conjunctive goals: an alternative is solved if all its subgoals are.
  * 
  * @param subgoals the conjuncts of this alternative 
- * @param proof the proof term
+ * @param proof returns the proof term (to be called only if `isSolved == true`)
  * 
- * Owners may call `proof()` only if `isSolved == true`.
- * When creating instances, it is safe to call [[Goal#proof]] to compute the proof term.
+ * When instantiating this class, proof may call the corresponding method of each subgoal.
  */
 case class Alternative(subgoals: List[Goal], proof: () => Term) {
    /** true if all subgoals are solved */
    def isSolved: Boolean = subgoals.forall(_.isSolved)
+   
+   /** smart string representation */
    def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]) = {
       val gS = subgoals.map {g => Searcher.indent(depth) + g.present(depth+1)}
       gS.mkString("\n")
    }
 
+   /** HTML representation */
    def presentHtml(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]) = {
       val gS = subgoals.map {g => Searcher.indent(depth) + g.presentHtml(depth+1, firstTime=false)}
       HTML.build { h => import h._
@@ -40,33 +40,32 @@ case class Alternative(subgoals: List[Goal], proof: () => Term) {
 }
 
 /**
- * a single-conclusion sequent - the basic node in a proof tree
+ * A Goal is a single-conclusion sequent - the basic node in a proof tree.
+ * A goal nodes knows its parent (except for the root goal) and children (the alternatives and their subgoals).
  * 
- * The root goal is stored and the whole proof tree is acted on by the [[Prover]].  
+ * Each [[Goal]] stores a partial proof: a list of alternatives each of which stores a list of subgoals.
+ * Goals are disjunctive: a goal can be closed if all subgoals of one alternative can be closed.
  * 
- * A goal nodes knows its parent (except for the root goal) and children (the subgoals).
- * In fact, a goal is also a node in the backwards proof search: A goal stores not simply a list of subgoals,
- * but a list of [[Alternative]] ways to prove it each of which stores a list of subgoals.
- * 
- * Moreover, a goal stores the explored part of a the forward proof search space:
- * a set of facts implied by the goals premises, updated externally.
+ * The conclusion, the proof alternatives, and the proof term are stored statefully and are set by this class or other prover components.  
  * 
  * The prover expands new goals greedily by applying invertible rules,
  * and each goal stores those invertible rules that have not been applied yet.
  * 
  * @param context the premises added to the sequent by this goal;
  *                the full antecedent arises by prepending the one of the parent goal
- * @param tp the conclusion of the sequent     
+ * @param concVar the conclusion of the sequent     
  */
 
 class Goal(val context: Context, private var concVar: Term) {
    /** the parent node, None only for the root */
    private[proving] var parent: Option[Goal] = None
 
+   /** the path from this goal up to the root of the proof tree */
    def path: List[Goal] = this :: parent.map(_.path).getOrElse(Nil)
+   /** true if that is an ancestor (reflexive, transitive) of this goal */
    def below(that: Goal): Boolean = this == that || parent.map(_ below that).getOrElse(false)
 
-   /** getter for the conclusion (may have been simplified since Goal creation) */
+   /** the conclusion (may have been simplified since Goal creation) */
    def conc = concVar
    /** sets a new goal, can be used by the prover to simplify goals in place */
    private[proving] def setConc(newConc: Term)(implicit facts: Facts) {

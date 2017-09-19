@@ -17,7 +17,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
 
   def error(msg: String, req : ServerRequest): ServerResponse = {
     log("ERROR: " + msg)
-    ServerResponse.errorResponse(msg, req)
+    ServerResponse.errorResponse(msg)
   }
 
   def bodyAsJSON(b : Body) = {
@@ -43,7 +43,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
     } catch {
       case e: Error =>
         log(e.shortMsg)
-        ServerResponse.errorResponse(e.shortMsg, request)
+        ServerResponse.errorResponse(e.shortMsg)
       case e: Exception =>
         error("Exception occured : " + e.getStackTrace(), request)
     }

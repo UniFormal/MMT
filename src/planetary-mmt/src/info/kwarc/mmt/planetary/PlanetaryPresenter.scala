@@ -69,7 +69,7 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
    }
    
   override def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
-     implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, None)
+     implicit val pc = preparePresentation(o, origin)
      doInfToplevel(o) {
         recurse(o)
      }
