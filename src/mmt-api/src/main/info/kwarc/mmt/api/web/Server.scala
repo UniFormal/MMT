@@ -75,22 +75,9 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
 
   /** resolves a specific request -- may throw exceptions */
   private def resolve(request: ServerRequest) : ServerResponse = {
-    // magically requesting a resource via ?do=mmt_resource&path=...
-    val resourcePath = try{
-      if(request.parsedQuery.string("do") == "mmt_resource"){
-        Some(request.parsedQuery.string("path"))
-      } else {
-        None
-      }
-    } catch {
-      case e: Exception => None
-    }
     // check if our request method is OPTIONS, if so, do nothing
     if(request.method == RequestMethod.Options) {
       new ServerResponse
-    // magic resource requests
-    } else if(resourcePath.isDefined) {
-      handleResource(resourcePath.get, request)
     // everything else
     } else {
       request.extensionName match {
@@ -103,25 +90,8 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
             case Nil | List("") => "browse.html"
             case _ => request.pathString
           }
-          handleResource(path, request)
+          resource(path, request)
       }
-    }
-  }
-
-  private def handleResource(path : String, request: ServerRequest): ServerResponse = {
-    path.stripPrefix("/") match {
-      case "script/mmt/mmt-url.js" =>
-        resource(path, io => {
-          // read it as a string
-          val str = StreamUtils.toString(io, "utf-8")
-          Left(
-            // and place in the request
-            str.format(JSONFormat.quoteString(request.pathString)).getBytes("utf-8")
-          )
-        }, request)
-
-      case _ =>
-        resource(path, request)
     }
   }
 

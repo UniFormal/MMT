@@ -4,7 +4,7 @@
     <meta http-equiv="content-type" content="text/html; charset=windows-1252">
     <title>MMT QMT page</title>
 
-    <link rel="stylesheet" href="?do=mmt_resource&path=/css/bootstrap3/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/css/bootstrap3/css/bootstrap.min.css"/>
 </head>
 
 <body>
@@ -98,15 +98,17 @@
 
 
     <!-- jQuery, bootstrap -->
-    <script type="text/javascript" src="?do=mmt_resource&path=/script/jquery/jquery.js"></script>
-    <script type="text/javascript" src="?do=mmt_resource&path=/script/bootstrap3/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/script/jquery/jquery.js"></script>
+    <script type="text/javascript" src="/script/bootstrap3/bootstrap.min.js"></script>
 
     <!-- MMT and QMT libraries -->
-    <script type="text/javascript" src="?do=mmt_resource&path=/script/mmt/mmt-url.js"></script>
-    <script type="text/javascript" src="?do=mmt_resource&path=/script/mmt/qmt.js"></script>
+    <script type="text/javascript" src="/script/mmt/qmt.js"></script>
 
     <!-- Custom script for this page -->
     <script type="text/javascript">
+
+        // the MMT URL
+        var mmtUrl = window.location.protocol + '//' + window.location.host + '/';
 
         // all the html elements that we will be using
         var $form, $context, $query, $result, $tabs;
