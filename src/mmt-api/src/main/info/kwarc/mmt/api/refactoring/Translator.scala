@@ -298,7 +298,7 @@ class AcrossLibraryTranslator(controller : Controller,
 
   var origs: List[Term] = Nil
 
-  def translate(tm: Term): (Term, Boolean) = {
+  def translate(tm: Term): (Term,List[GlobalName]) = {
     log("Translating " + controller.presenter.asString(tm))
     implicit val target = to
     val tc = TermClass(tm)
@@ -312,11 +312,12 @@ class AcrossLibraryTranslator(controller : Controller,
         tc.update
         if (tc.state == Failed) throw Fail
       }
-      (tc.currentTerm, true)
+      (tc.currentTerm,Nil)
     } catch {
       case Fail =>
+        val t = tc.revertPartially
         //TermClass.getAll.foreach(println)
-        (tc.revertPartially, false)
+        (t,AcrossLibraryTranslator.getSymbols(t).filterNot(tc.inArchive(_,target)).distinct)
     }
   }
 

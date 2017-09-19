@@ -36,10 +36,10 @@ class InterviewServer extends ServerExtension("interview") {
             val mps = query("cont").get
             val th = controller.get(Path.parseM(mps,NamespaceMap.empty)) match {
               case ths : DeclaredTheory => ths
-              case _ => return ServerResponse.errorResponse("Theory " + mps + " doesn't exit",request)
+              case _ => return ServerResponse.errorResponse("Theory " + mps + " doesn't exit")
             }
             val errs = parseDecl(body.asString,th)
-            return if(errs.nonEmpty) ServerResponse.errorResponse(errs.head,request) else {
+            return if(errs.nonEmpty) ServerResponse.errorResponse(errs.head,"html") else {
               ServerResponse.TextResponse("OK")
             }
         }
@@ -49,15 +49,15 @@ class InterviewServer extends ServerExtension("interview") {
       case (Some(_),Some(mps)) =>
         val th = controller.get(Path.parseM(mps,NamespaceMap.empty)) match {
           case ths : DeclaredTheory => ths
-          case _ => return ServerResponse.errorResponse("Theory " + mps + " doesn't exit",request)
+          case _ => return ServerResponse.errorResponse("Theory " + mps + " doesn't exit")
         }
         val (tm,errs) = parseTerm(body.asString,th.path)
-        return if(errs.nonEmpty) ServerResponse.errorResponse(errs.head,request) else {
+        return if(errs.nonEmpty) ServerResponse.errorResponse(errs.head,"html") else {
           ServerResponse.XmlResponse(tm.toTerm.toNode)
         }
       case _ =>
     }
-    ServerResponse.errorResponse("Invalid request",request)
+    ServerResponse.errorResponse("Invalid request")
   }
 
   private lazy val twostep = controller.extman.getOrAddExtension(classOf[TwoStepInterpreter],"mmt").get
