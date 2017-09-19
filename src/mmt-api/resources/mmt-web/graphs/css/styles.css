@@ -249,6 +249,16 @@ html, body {
 	background-repeat:no-repeat;
 }
 
+.undoIcon
+{
+	cursor:pointer;
+	background-image: url("../img/undo.png");
+	width:24px;
+	height:24px;
+	background-size: 18px 18px;
+	background-repeat:no-repeat;
+}
+
 .myButton {
 	-moz-box-shadow:inset 0px 1px 0px 0px #dcecfb;
 	-webkit-box-shadow:inset 0px 1px 0px 0px #dcecfb;

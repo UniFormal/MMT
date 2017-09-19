@@ -316,17 +316,22 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
         case _ => return (Nil, Nil)
       }
       var (theories, views): (List[DeclaredTheory], List[View]) = (Nil, Nil)
-      val ins = th.getIncludesWithoutMeta ::: th.getNamedStructures.collect{
-        case st if st.from.isInstanceOf[OMID] => st.from.toMPath
+      def recurse(ith : DeclaredTheory) : Unit = {
+        log("Select: " + s)
+        theories ::= ith
+        val ins = ith.getIncludesWithoutMeta ::: ith.getNamedStructures.collect{
+          case st if st.from.isInstanceOf[OMID] => st.from.toMPath
+        }
+        ins.map(controller.getO).distinct.foreach {
+          case Some(t: DeclaredTheory) if !theories.contains(t) =>
+            recurse(t)
+          case Some(v: View) => views ::= v
+          case _ =>
+        }
       }
-      ins.map(controller.getO).distinct.foreach {
-        case Some(t: DeclaredTheory) =>
-          theories :::= select(t.path.toString)._1
-        case Some(v: View) => views ::= v
-        case _ =>
-      }
-      log("Selecting " + (th.path :: theories.map(_.path)).mkString(", "))
-      ((th :: theories).distinct, views)
+      recurse(th)
+      //log("Selecting " + (th.path :: theories.map(_.path)).mkString(", "))
+      (theories.distinct, views)
     }
   }
 }

@@ -3,6 +3,8 @@ import info.kwarc.mmt.api.frontend.Run
 import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
 import info.kwarc.mmt.api.web.JSONBasedGraphServer
 
+import scala.concurrent.Future
+
 /** An abstract class for test methods. Instantiates a controller, sets the mathpath for archives,
   * loads the AlignmentsServer (so you can run a Server without getting an error message.
   *
@@ -28,7 +30,7 @@ abstract class Test(archivepath : String,
 
   controller.handleLine("log console")
   if (logfile.isDefined) controller.handleLine("log html " + logfile.get)// /home/raupi/lmh/mmtlog.txt")
-  logprefixes foreach (s => controller.handleLine("log+ " + s))
+  ("test" :: logprefixes) foreach (s => controller.handleLine("log+ " + s))
   controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
   controller.handleLine("extension info.kwarc.mmt.odk.Plugin")
   controller.handleLine("extension info.kwarc.mmt.pvs.Plugin")
@@ -41,6 +43,11 @@ abstract class Test(archivepath : String,
 
   def run : Unit
 
+  def log(s : String) = {
+    controller.report("test",s)
+    controller.report.flush
+  }
+
   def main(args: Array[String]): Unit = try {
 
     controller.extman.addExtension(new DependencyGraphExporter)
@@ -52,8 +59,11 @@ abstract class Test(archivepath : String,
         //controller.handleLine("clear")
         controller.handleLine("server on " + serverport.get)
       }
+      if (gotoshell) {
+        Future {Run.main(Array())}(scala.concurrent.ExecutionContext.global)
+        Thread.sleep(1000)
+      }
       run
-      if (gotoshell) Run.main(Array())
     } catch {
       case e: api.Error => println(e.toStringLong)
         sys.exit

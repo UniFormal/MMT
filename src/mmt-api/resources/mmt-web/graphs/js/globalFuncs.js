@@ -2,6 +2,7 @@ var alreadyAdded={};
 var lazyParent="#";
 var lastGraphTypeUsed;
 var lastGraphDataUsed;
+var historyStates=[];
 
 function setLocation(curLoc)
 {
@@ -55,13 +56,15 @@ function addTreeNodes(data)
 		var node=
 		{ 
 			"text" : childNodes[i].menuText, 
-			"id" : childNodes[i].id,
+			"id": "js_tree_node_"+currentMenuNodeId,
+			"serverId" : childNodes[i].id,
 			"graphdata": childNodes[i].uri, 
 			"typeGraph": childNodes[i].type, 
 			"children": child,
 			"state" : {"opened": !childNodes[i].hasChildren}
 		};
 		$('#theory_tree').jstree().create_node(lazyParent, node, 'last',function() {});
+		currentMenuNodeId++;
 	}
 }		
 
@@ -84,4 +87,30 @@ function getStartToEnd(start, theLen)
     return theLen > 0 ? {start: start, end: start + theLen} : {start: start + theLen, end: start};
 }
 
+function addToStateHistory(func, parameterArray)
+{
+	historyStates.push({"func":func, "param": parameterArray});
+}
 
+function undoLastAction()
+{
+	var lastState = historyStates.pop();
+	
+	if(lastState.func=="cluster")
+	{
+		theoryGraph.openCluster(lastState.param.clusterId);
+	}
+	else if(lastState.func=="uncluster")
+	{
+		theoryGraph.cluster(lastState.param.nodes,lastState.param.name,lastState.param.clusterId);
+	}
+	else if(lastState.func=="select")
+	{
+		theoryGraph.selectNodes([]);
+	}
+	else if(lastState.func=="unselect")
+	{
+		theoryGraph.selectNodes(lastState.param.nodes);
+	}
+	historyStates.pop();
+}

@@ -58,10 +58,12 @@
 						<option value="2">Forces Driven Layout</option>
 					</select>
 					
-					<button id="selectionModeButton" onClick="switchSelectionMode();" title="Switch Selection Mode" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="crosshairIcon"></div>
-					<button id="downloadButton" onClick="downloadGraph();" title="Download Graph" class="myButton" style="width:32px;height:26px;margin-left:4px;margin-right:4px;"><div style="margin-top:2px" class="downloadIcon"></div>
+					
+					<button id="selectionModeButton" onClick="switchSelectionMode();" title="Switch Selection Mode" class="myButton" style="width:32px;height:26px;"><div style="margin-top:2px" class="crosshairIcon"></div>
+					<button id="downloadButton" onClick="downloadGraph();" title="Download Graph" class="myButton" style="width:32px;height:26px;margin-left:4px;"><div style="margin-top:2px" class="downloadIcon"></div>
+					<button id="undoButton" onClick="undoLastAction();" title="Undo last Action" class="myButton" style="width:32px;height:26px;margin-left:4px;margin-right:4px;"><div style="margin-top:2px" class="undoIcon"></div>
+					
 					<button id="clusterButton" onClick="clusterSelectedNodes()" class="myButton">Cluster Nodes</button>
-			
 					<button id="selectNodes" onClick="selectNodes()" class="myButton">Select Nodes By Pathname</button>
 					<button id="helpButton"  class="myButton">Help</button>
 				</div>
@@ -88,7 +90,7 @@
 		</div>
 		<p>
 		</p>
-		<span id='string_span' style='float:left;font-size: 17px; diyplay:none'></span>
+		<span id='string_span' style='float:left;font-size: 14px; diyplay:none'></span>
 		
 		
 		<ul class='custom-menu' style="z-index:100">

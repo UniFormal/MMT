@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.{GlobalName, LocalName}
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.frontend.{Controller, Logger}
 import info.kwarc.mmt.api.modules.{DeclaredLink, DeclaredTheory}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
@@ -207,9 +207,10 @@ object AcrossLibraryTranslator {
 class AcrossLibraryTranslator(controller : Controller,
                               translations : List[AcrossLibraryTranslation],
                               groups: List[TranslationGroup],
-                              to : Archive) /* extends ServerExtension("translate") */ {
-  /* override def logPrefix = "Translator"
-
+                              to : Archive) extends Logger/* extends ServerExtension("translate") */ {
+  val report = controller.report
+  override def logPrefix = "translator"
+/*
   override def start(args: List[String]) = {
 
   }
@@ -298,6 +299,7 @@ class AcrossLibraryTranslator(controller : Controller,
   var origs: List[Term] = Nil
 
   def translate(tm: Term): (Term, Boolean) = {
+    log("Translating " + controller.presenter.asString(tm))
     implicit val target = to
     val tc = TermClass(tm)
     def st(tm: TermClass): List[Term] = tm.currentTerm :: tm.immediateSubterms.flatMap(st)
@@ -414,7 +416,7 @@ class AcrossLibraryTranslator(controller : Controller,
     state
 
     def backtrack : Boolean = {
-      // println("Backtracking " + currentTerm)
+      log("Backtracking " + currentTerm)
       if ( /* usedTranslations.nonEmpty */ steps.head._1.isDefined && steps.length > 1) {
         usedTranslations ::= steps.head._1.get
         steps = steps.tail
@@ -430,7 +432,7 @@ class AcrossLibraryTranslator(controller : Controller,
     var storedResult: (Term, AcrossLibraryTranslation, Term) = null
 
     def applicable(tr: AcrossLibraryTranslation) = !(stateVar == Finished) &&
-      //!usedTranslations.contains(tr) &&
+      !usedTranslations.contains(tr) &&
       tr.applicable(currentTerm) && {
       val res = tr(currentTerm)
       if (!steps.map(_._2).contains(res)) {
@@ -445,7 +447,7 @@ class AcrossLibraryTranslator(controller : Controller,
         case _ => (Some(tr), tr(currentTerm))
       })
       backtrackstack ::= ((steps.head._1.get, this))
-      // println("Applying " + tr.toString + "to:\n" + termtostr(steps(1)._2))
+      log("Applying " + tr.toString + "to:\n" + termtostr(steps(1)._2))
       // println(this)
       //usedTranslations ::= tr
       TermClass.register(currentTerm, this)
@@ -485,7 +487,7 @@ class AcrossLibraryTranslator(controller : Controller,
     def revertPartially: Term = if (state == Finished) currentTerm
     else original match {
       case OMS(p) =>
-        // println("Reverting: " + p + " -> " + termtostr(original))
+        log("Reverting: " + p + " -> " + termtostr(original))
         steps = List((None, original))
         original
       case _ =>

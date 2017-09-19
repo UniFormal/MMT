@@ -1,7 +1,5 @@
 var serverBaseURL = undefined;
-var serverUrl = (typeof serverBaseURL == "undefined" || serverBaseURL==undefined) ? ((window.location.protocol=='file:')? "/" : "/mh/mmt/") : serverBaseURL;
-if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "")
-	serverUrl="/";
+var serverUrl = "/";
 
 // URL for getting menu-entries in side-menu
 var menuEntriesURL=serverUrl+":jgraph/menu?id=";
@@ -20,6 +18,8 @@ var graphDataURLDataParameterNameTGView = "graphdata=";
 var colorizingNodesArray = ["#CCCCFF", "#FFFFCC", "#FFCC99", "#CCFFCC", "#DDDDDD", "#FFCCCC"];
 
 
+// shapeProperties.useImageSize true
+// shapeProperties.useBorderWithImage true
 var THEORY_GRAPH_OPTIONS = 
 {
 	physics: 
@@ -43,9 +43,22 @@ var THEORY_GRAPH_OPTIONS =
 	},
 	nodes: 
 	{
-		physics:false
+		physics:false,
+		shapeProperties: 
+		{
+			useImageSize: true,  // only for image and circularImage shapes
+			useBorderWithImage: true  // only for image shape
+		}
 	},
-	edges: {smooth: true}
+	edges: 
+	{
+		smooth: 
+		{
+			enabled: true,
+			type: "straightCross",
+			roundness: 0.3
+		}
+	}
 	/*layout: 
 	{
 		hierarchical: 
@@ -65,7 +78,8 @@ var ARROW_STYLES=
 		colorHover:"#cccccc",
 		dashes: false,
 		circle:false,
-		directed: true
+		directed: true,
+		smoothEdge: true
 	},
 	"modelinclude":
 	{
@@ -74,7 +88,8 @@ var ARROW_STYLES=
 		colorHover:"black",
 		dashes: false,
 		circle:false,
-		directed: false
+		directed: false,
+		smoothEdge: false
 	},
 	"meta":
 	{
@@ -83,7 +98,8 @@ var ARROW_STYLES=
 		colorHover:"green",
 		dashes: true,
 		circle: true,
-		directed: true
+		directed: true,
+		smoothEdge: true
 	},
 	"alignment":
 	{
@@ -92,7 +108,8 @@ var ARROW_STYLES=
 		colorHover:"red",
 		dashes: true,
 		circle: false,
-		directed: false
+		directed: false,
+		smoothEdge: true
 	},
 	"view":
 	{
@@ -101,7 +118,8 @@ var ARROW_STYLES=
 		colorHover:"black",
 		dashes: false,
 		circle:false,
-		directed: true
+		directed: true,
+		smoothEdge: true
 	},
 	"structure":
 	{
@@ -110,19 +128,32 @@ var ARROW_STYLES=
 		colorHover:"#cccccc",
 		dashes: true,
 		circle:false,
-		directed: true
+		directed: true,
+		smoothEdge: true
 	}
 };
+
+
 
 var NODE_STYLES =
 {
 	"model":
 	{
-		shape: "square"
+		shape: "square",
+		color: "#DDDDDD",
+		colorBorder: "#222222",
+		colorHighlightBorder: "#444444",
+		colorHighlight: "#EEEEEE",
+		dashes: false
 	},
 	"theory":
 	{
-		shape: "circle"
+		shape: "circle",
+		color: "#D2E5FF",
+		colorBorder: "#2B7CE9",
+		colorHighlightBorder: "#2B7CE9",
+		colorHighlight: "#D2E5FF",
+		dashes: false
 	}
 };
 
@@ -131,12 +162,12 @@ var GRAPH_TYPES =
 [
 	{
 		id: "thgraph",
-		menuText: "Th. Graph",
+		menuText: "Theory Graph",
 		tooltip: ""
 	},
 	{
 		id: "pgraph",
-		menuText: "P Graph",
+		menuText: "Path Graph",
 		tooltip: ""
 	},
 	{
@@ -151,7 +182,7 @@ var GRAPH_TYPES =
 	},
 	{
 		id: "mpd",
-		menuText: "MPD Graph",
+		menuText: "Model Pathway Diagram",
 		tooltip: "MPD Graph-Viewer"
 	}
 ];

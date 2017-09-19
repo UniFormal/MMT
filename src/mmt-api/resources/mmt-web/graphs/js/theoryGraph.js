@@ -86,6 +86,12 @@ function TheoryGraph()
         zoomClusters = newClusters;
     }
 	
+	this.selectNodes = function(nodeIds)
+	{
+		network.selectNodes(nodeIds);
+		addToStateHistory("select", {"nodes": nodeIds});
+	}
+	
 	this.selectNodesWithIdLike=function(searchId)
 	{
 		var nodeIds = [];
@@ -98,6 +104,7 @@ function TheoryGraph()
 			}
 			
 		}
+		addToStateHistory("select", {"nodes": nodeIds});
 		network.selectNodes(nodeIds);
 	}
 	
@@ -145,6 +152,7 @@ function TheoryGraph()
 				nodesIdInDrawing.push(curNode.id);
 			}
 		}
+		addToStateHistory("select", {"nodes": nodesIdInDrawing});
 		network.selectNodes(nodesIdInDrawing);
 	}
 	
@@ -172,8 +180,13 @@ function TheoryGraph()
 		}
 	}
 	
-	this.cluster = function(nodeIds,name)
+	this.cluster = function(nodeIds,name,givenClusterId)
 	{
+		if(typeof givenClusterId ==="undefined")
+		{
+			givenClusterId=clusterId;
+		}
+		
 		if(nodeIds==undefined)
 		{
 			nodeIds=network.getSelectedNodes();
@@ -181,14 +194,14 @@ function TheoryGraph()
 		
 		if(name==undefined)
 		{
-			name='cluster_' +clusterId;
+			name='cluster_' +givenClusterId;
 		}
 		
 		if(network!=null)
 		{
-			clusterPositions['cluster_' +clusterId]=[];
-			clusterPositions['cluster_' +clusterId][0]=nodeIds;
-			clusterPositions['cluster_' +clusterId][1]=network.getPositions(nodeIds);
+			clusterPositions['cluster_' +givenClusterId]=[];
+			clusterPositions['cluster_' +givenClusterId][0]=nodeIds;
+			clusterPositions['cluster_' +givenClusterId][1]=network.getPositions(nodeIds);
 			var options = 
 			{
 				joinCondition:function(nodeOptions) 
@@ -205,9 +218,10 @@ function TheoryGraph()
                   clusterOptions.mass = totalMass;
                   return clusterOptions;
               },
-              clusterNodeProperties: {id: 'cluster_' +clusterId , borderWidth: 2, shape: 'database', color:"orange", label:name}
+              clusterNodeProperties: {id: 'cluster_' +givenClusterId , borderWidth: 2, shape: 'database', color:"orange", label:name}
 			}
 			network.clustering.cluster(options);
+			addToStateHistory("cluster", {"clusterId": 'cluster_' +givenClusterId, "name": name, "nodes": nodeIds});
 			clusterId++;
 		}
 	}
@@ -292,6 +306,11 @@ function TheoryGraph()
 					originalEdges[i].arrows.to.type="arrow";
 				}
 
+				if(styleInfos.smoothEdge==false)
+				{
+					originalEdges[i].smooth={enabled: false};
+				}
+				
 				originalEdges[i].dashes=styleInfos.dashes;
 				originalEdges[i].color={color:styleInfos.color, highlight:styleInfos.colorHighlight, hover:styleInfos.colorHover};
 			}
@@ -321,6 +340,38 @@ function TheoryGraph()
 				{
 					originalNodes[i].shape=styleInfos.shape;
 				}
+				
+				if(typeof originalNodes[i].color=="undefined")
+				{
+					originalNodes[i].color={highlight:{}};
+				}
+				
+				if(typeof originalNodes[i].shapeProperties=="undefined")
+				{
+					originalNodes[i].shapeProperties={};
+				}
+				
+				if (typeof styleInfos.color!="undefined" && styleInfos.color!="") 
+				{
+					originalNodes[i].color.background=styleInfos.color;
+				}
+				if (typeof styleInfos.colorBorder!="undefined" && styleInfos.colorBorder!="") 
+				{
+					originalNodes[i].color.border=styleInfos.colorBorder;
+				}
+				if (typeof styleInfos.colorHighlightBorder!="undefined" && styleInfos.colorHighlightBorder!="") 
+				{
+					originalNodes[i].color.highlight.border=styleInfos.colorHighlightBorder;
+				}
+				if (typeof styleInfos.colorHighlight!="undefined" && styleInfos.colorHighlight!="") 
+				{
+					originalNodes[i].color.highlight.background=styleInfos.colorHighlight;
+				}
+				if (typeof styleInfos.dashes!="undefined" && styleInfos.dashes==true) 
+				{
+					originalNodes[i].shapeProperties.borderDashes=[5,5];
+				}
+
 			}
 		}
 	}
@@ -342,7 +393,7 @@ function TheoryGraph()
 		}
 	}
 	
-	function openCluster(nodeId)
+	this.openCluster = function(nodeId)
 	{
 		if (network.isCluster(nodeId) == true) 
 		{
@@ -353,6 +404,7 @@ function TheoryGraph()
 				  var id=clusterPositions[nodeId][0][i];
 				  toUpdate.push({id: id, x:clusterPositions[nodeId][1][id].x, y:clusterPositions[nodeId][1][id].y});
 			  }
+			  addToStateHistory("uncluster", {"clusterId": nodeId, "nodes": toUpdate});
 			  nodes.update(toUpdate);
 			  network.redraw();
         }
@@ -380,9 +432,10 @@ function TheoryGraph()
 		
 		if(node["shape"]=="image")
 		{
-			svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(30*1+width)+'px" height="'+(30*1+height+estimateExtraSVGHeight(node["mathml"]))+'px" preserveAspectRatio="none">' +
-			'<rect x="0" y="0" width="90%" height="90%" fill="#97C2FC"></rect>' +
-			'<foreignObject x="15" y="15" width="100%" height="100%">' +
+			var overallheight=height+estimateExtraSVGHeight(node["mathml"]);
+			svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+(width+45*1)+' '+(30*1+overallheight)+'" width="'+(width+45*1)+'px" height="'+(30*1+height+estimateExtraSVGHeight(node["mathml"]))+'px" preserveAspectRatio="none">' +
+			//svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMinYMin">' +
+			'<foreignObject x="18" y="15" width="'+(width+15)+'" height="'+overallheight+'">' +
 			node["mathml"] +
 			'</foreignObject>' +
 			'</svg>';
@@ -390,7 +443,6 @@ function TheoryGraph()
 		else
 		{
 			svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(30*1+width)+'px" height="'+(30*1+height+estimateExtraSVGHeight(node["mathml"]))+'px" preserveAspectRatio="none">' +
-			//' <circle cx="0" cy="0" r="40" fill="light-gray" />' +
 			'<foreignObject x="15" y="13" width="100%" height="100%">' +
 			node["mathml"] +
 			'</foreignObject>' +
@@ -571,7 +623,7 @@ function TheoryGraph()
 					// A case for each action
 					case "openWindow": window.open(serverUrl+selected["url"]); break;
 					case "showURL": alert(serverUrl+selected["url"]); break;
-					case "openCluster": openCluster(selected["id"]); break;
+					case "openCluster": that.openCluster(selected["id"]); break;
 					case "inferType": alert("Not implemented yet!"); break;
 					case "showDecl": alert("Not implemented yet!"); break;
 				}
