@@ -1,5 +1,5 @@
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.frontend.Run
+import info.kwarc.mmt.api.frontend.{Logger, Run}
 import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
 import info.kwarc.mmt.api.web.JSONBasedGraphServer
 
@@ -23,8 +23,10 @@ abstract class Test(archivepath : String,
                     alignmentspath : String = "",
                     serverport : Option[Int] = None,
                     gotoshell : Boolean = true,
-                    logfile : Option[String] = None) {
+                    logfile : Option[String] = None) extends Logger {
   val controller = Run.controller
+  def logPrefix = "user"
+  def report = controller.report
 
   // If you want to log additional stuff, just put it in this list
 
@@ -43,10 +45,12 @@ abstract class Test(archivepath : String,
 
   def run : Unit
 
+  /*
   def log(s : String) = {
-    controller.report("test",s)
+    controller.report("user",s)
     controller.report.flush
   }
+  */
 
   def main(args: Array[String]): Unit = try {
 

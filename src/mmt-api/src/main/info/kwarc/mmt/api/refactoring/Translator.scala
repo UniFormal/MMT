@@ -243,10 +243,24 @@ class AcrossLibraryTranslator(controller : Controller,
   private var backtrackstack: List[(AcrossLibraryTranslation, TermClass)] = Nil
 
   private def innerTranslate(tc: TermClass): Boolean = tc.state match {
-    case Finished => false
-    case Failed => false
+    case Finished =>
+      log("Finished: " + (tc.currentTerm match {
+        case OMS(p) => p
+        case t => controller.presenter.asString(t)
+      }))
+      false
+    case Failed =>
+      log("Failed: " + (tc.currentTerm match {
+        case OMS(p) => p
+        case t => controller.presenter.asString(t)
+      }))
+      false
     // case Changed(_) =>
     case _ =>
+      log("Trying: " + (tc.currentTerm match {
+        case OMS(p) => p
+        case t => controller.presenter.asString(t)
+      }))
       val tr = findTranslations(tc.currentTerm).find(t => tc.applicable(t))
       if (tr.isDefined) {
         tc.applyTranslation(tr.get)
@@ -261,7 +275,10 @@ class AcrossLibraryTranslator(controller : Controller,
           changed = changed || ret
         })
         if (!changed) {
-          // println("No change: " + tc)
+          log("No change: " + (tc.currentTerm match {
+            case OMS(p) => p
+            case t => controller.presenter.asString(t)
+          }))
           tc.backtrack
         } else true
       }
@@ -312,12 +329,19 @@ class AcrossLibraryTranslator(controller : Controller,
         tc.update
         if (tc.state == Failed) throw Fail
       }
+      tc.update
+      log("-------------- DONE ---------------")
       (tc.currentTerm,Nil)
     } catch {
       case Fail =>
         val t = tc.revertPartially
         //TermClass.getAll.foreach(println)
-        (t,AcrossLibraryTranslator.getSymbols(t).filterNot(tc.inArchive(_,target)).distinct)
+        val symbols = AcrossLibraryTranslator.getSymbols(t).filterNot(tc.inArchive(_,target)).distinct
+        val missings = symbols /*.collect {
+          case s if translate(OMS(s))._2.nonEmpty => s
+        } */
+        log("-------------- DONE ---------------")
+        (t,missings)
     }
   }
 
@@ -404,7 +428,10 @@ class AcrossLibraryTranslator(controller : Controller,
           case OMS(_) => stateVar
           case _ =>
             val states = immediateSubterms.map(_.state)
-            if (states.forall(_ == Finished)) Finished
+            if (states.forall(_ == Finished)) {
+              "break point"
+              Finished
+            }
             else if (states contains Changed(New)) Changed(New)
             else if (states contains Changed(Backtracked)) Changed(Backtracked)
             else Todo
@@ -417,13 +444,21 @@ class AcrossLibraryTranslator(controller : Controller,
     state
 
     def backtrack : Boolean = {
-      log("Backtracking " + currentTerm)
+      log("Backtracking " + (currentTerm match {
+        case OMS(p) => p
+        case t => controller.presenter.asString(t)
+      }))
       if ( /* usedTranslations.nonEmpty */ steps.head._1.isDefined && steps.length > 1) {
         usedTranslations ::= steps.head._1.get
         steps = steps.tail
         stateVar = Changed(Backtracked)
+        log("New term: " + (currentTerm match {
+          case OMS(p) => p
+          case t => controller.presenter.asString(t)
+        }))
         true
       } else {
+        log("Not possible")
         stateVar = Failed
         false
       }
@@ -448,7 +483,7 @@ class AcrossLibraryTranslator(controller : Controller,
         case _ => (Some(tr), tr(currentTerm))
       })
       backtrackstack ::= ((steps.head._1.get, this))
-      log("Applying " + tr.toString + "to:\n" + termtostr(steps(1)._2))
+      log("Applying " + tr.toString + "to: " + termtostr(steps(1)._2))
       // println(this)
       //usedTranslations ::= tr
       TermClass.register(currentTerm, this)
