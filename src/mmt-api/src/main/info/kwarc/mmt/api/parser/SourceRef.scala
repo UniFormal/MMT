@@ -35,6 +35,11 @@ object SourceRegion {
  * @param line vertical two-dimensional coordinate
  * @param column horizontal two-dimensional coordinate
  * all coordinates start from 0
+ * 
+ * Unicode code points above FFFF count as 2 characters.
+ * Arguably that is wrong.
+ * But it corresponds to the implementation in Java Strings (see http://docs.oracle.com/javase/6/docs/api/java/lang/Character.html#unicode).
+ * Therefore, the current source references work better with, e.g., jEdit.
  */
 case class SourcePosition(offset: Int, line: Int, column: Int) {
   /** inverse of SourcePosition.parse */
