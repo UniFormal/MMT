@@ -98,6 +98,9 @@ object TokenList {
             case _ if isConnector(c) =>
               current += c
               connect = true
+            case _ if '\uD800' < c && c < '\uD8FF' =>
+              current += c
+              connect = true
             // everything else:
             case _ =>
               // end previous Token, if any
