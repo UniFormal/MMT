@@ -7,7 +7,7 @@ import utils._
 
 object IMPSTheory
 {
-  val rootdpath = DPath(URI.http colon "latin.omdoc.org/foundations/lutins")
+  val rootdpath = DPath(URI.http colon "latin.omdoc.org") / "foundations" / "lutins"
   val thname = "Lutins"
 
   val thpath = rootdpath ? thname
@@ -28,7 +28,15 @@ object IMPSTheory
   object Sort extends Sym("sort")
   {
     def apply(t : Term) : Term = {
-      Apply(this.term, t)
+      t //Apply(this.term, t)
+    }
+  }
+
+  object FunSort extends Sym("fun")
+  {
+    def apply(tps : List[Term]) : Term = {
+      assert(tps.nonEmpty)
+      tps.init.foldRight(tps.last)((t,r) => ApplySpine(this.term,t,r))
     }
   }
 

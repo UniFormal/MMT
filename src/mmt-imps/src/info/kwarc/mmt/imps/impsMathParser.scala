@@ -97,14 +97,18 @@ package object impsMathParser {
 
     lazy val parseSortDecl : PackratParser[IMPSSortRef] = { (":" ~ parseSort) ^^ {case (semi ~ sort) => sort} }
 
-    lazy val parseSort : PackratParser[IMPSSortRef] = { parseFunSort | parseAtomicSort }
+    lazy val parseSort : PackratParser[IMPSSortRef] = { parseFunSort | parseFunSort2 | parseAtomicSort }
 
     lazy val parseAtomicSort : PackratParser[IMPSAtomSort] = {
-      ("[^,:\\s]+".r) ^^ {case (sort) => IMPSAtomSort(sort)}
+      ("[^,\\]):\\s]+".r) ^^ {case (sort) => IMPSAtomSort(sort)}
     }
 
     lazy val parseFunSort : PackratParser[IMPSFunSort] = {
-      "[" ~> rep1sep(parseSort,",") <~ "]" ^^ {case (ss) => IMPSFunSort(ss)}
+      "[" ~> rep1sep(parseSort,",") <~ "]" ^^ {case (sorts) => IMPSFunSort(sorts)}
+    }
+
+    lazy val parseFunSort2 : PackratParser[IMPSFunSort] = {
+      "(" ~> rep1(parseSort) <~ ")" ^^ {case (sorts) => IMPSFunSort(sorts)}
     }
 
     lazy val parseApply : PackratParser[IMPSApply] = {

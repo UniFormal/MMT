@@ -59,7 +59,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     // Run Checker (to resolve unknowns, etc)
     // Set to true to run
-    val typecheck : Boolean = false
+    val typecheck : Boolean = true
     if (typecheck)
     {
       log("Checking:")
@@ -134,7 +134,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       var axiom_count : Int = -1
       for (ax <- t.axioms.get.axs)
       {
-        val mth : Term = IMPSTheory.Thm(doMathExp(ax.formula))
+        val mth : Term = IMPSTheory.Thm(doMathExp(ax.formula, nu_theory))
 
         val name : String = if (ax.name.isDefined) { ax.name.get }
         else { axiom_count += 1 ; t.name + "_unnamed_axiom" + axiom_count.toString }
@@ -168,7 +168,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
             val g2 : GlobalName = nu_theory.getDeclarations.find(d => d.name == LocalName(c2)).get.path
 
             val dist_formula : IMPSMathExp = IMPSNegation(IMPSEquals(IMPSSymbolRef(g1), IMPSSymbolRef(g2)))
-            val mth          : Term = IMPSTheory.Thm(doMathExp(dist_formula))
+            val mth          : Term = IMPSTheory.Thm(doMathExp(dist_formula, nu_theory))
             val name         : String = t.name + "_distinction_axiom_" + dist_count.toString
 
             dist_count += 1
@@ -230,7 +230,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       for (spec : (String, String) <- l.srts.get.lst)
       {
-        val mth : Term = doTypeString(spec._2)
+        val mth : Term = doTypeString(spec._2, t)
         val nu_sort = symbols.Constant(t.toTerm, doName(spec._1), Nil, Some(mth), None, None)
         doSourceRef(nu_sort, l.srts.get.src)
         controller.add(nu_sort)
@@ -252,7 +252,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       for (pair : (String, String) <- l.cnstnts.get.lst)
       {
-        val mth_tp : Term = doTypeString(pair._2)
+        val mth_tp : Term = doTypeString(pair._2, t)
         val l_const = symbols.Constant(t.toTerm,doName(pair._1),Nil,Some(mth_tp),None,Some("Constant"))
         doSourceRef(l_const,l.cnstnts.get.src)
         controller add l_const
@@ -284,7 +284,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         assert(tState.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
         val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
-        val definition : Term = IMPSTheory.Sort(doMathExp(defstring))
+        val definition : Term = IMPSTheory.Sort(doMathExp(defstring, parent))
         val sort_type  : Term = tState.addUnknown()
         tState.bindUnknowns(sort_type)
 
@@ -316,13 +316,15 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           }
         }
         else {
-          srt = Some(tState.addUnknown())
+          val sortx : Term = tState.addUnknown()
+          srt = Some(sortx)
+          tState.bindUnknowns(sortx)
         }
 
         assert(srt.isDefined)
         if (srt.isDefined) { tState.bindUnknowns(srt.get) }
 
-        val mth : Term = doMathExp(definition)
+        val mth : Term = doMathExp(definition, parent)
         val nu_constant = symbols.Constant(parent.toTerm, LocalName(name), Nil, srt, Some(mth), Some("Constant"))
 
         /* Add available MetaData */
@@ -336,7 +338,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         assert(tState.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
         val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
-        val mth : Term = IMPSTheory.Thm(doMathExp(formula))
+        val mth : Term = IMPSTheory.Thm(doMathExp(formula, parent))
         val nu_theorem = symbols.Constant(parent.toTerm, doName(name), Nil, Some(mth), None, Some("Theorem"))
         //                                                                              ^-- proof goes here!
 
@@ -379,13 +381,16 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     }
   }
 
-  def doTypeString(s : String) : Term =
+  def doTypeString(s : String, t : DeclaredTheory) : Term =
   {
     val k = new IMPSMathParser()
-    doType(k.parseAll(k.parseSort, s).get)
+    val j = k.parseAll(k.parseSort, s)
+
+    assert(!(j.isEmpty))
+    doType(j.get, t)
   }
 
-  def doType(d : IMPSMathExp) : Term =
+  def doType(d : IMPSMathExp, t : DeclaredTheory) : Term =
   {
     // TODO: Check if type is already in theory(?)
     // Reference if yes, introduce if no?
@@ -397,14 +402,15 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     val ret : Term = d match
     {
-      case IMPSAtomSort(srt)  => IMPSTheory.Sort(OMS(IMPSTheory.thpath ? LocalName(srt)))
-      case IMPSFunSort(sorts) => IMPSTheory.Sort(???)
+      case IMPSAtomSort("ind") => IMPSTheory.Sort(OMS(IMPSTheory.thpath ? LocalName("ind")))
+      case IMPSAtomSort(srt)   => IMPSTheory.Sort(OMS(t.path ? srt.toString))
+      case IMPSFunSort(sorts)  => IMPSTheory.FunSort(sorts map (x => doType(x,t)))
     }
     ret
   }
 
   /* Translate IMPS Math Expressions to Terms */
-  def doMathExp(d : IMPSMathExp) : Term =
+  def doMathExp(d : IMPSMathExp, t : DeclaredTheory) : Term =
   {
     d match
     {
@@ -413,23 +419,26 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSMathSymbol(s)    => OMS(IMPSTheory.thpath ? s)
       case IMPSTruth()          => OMS(IMPSTheory.thpath ? "thetrue")
       case IMPSFalsehood()      => OMS(IMPSTheory.thpath ? "thefalse")
-      case IMPSNegation(p)      => IMPSTheory.Negation(doMathExp(p))
-      case IMPSIf(p,t1,t2)      => IMPSTheory.If(doMathExp(p), doMathExp(t1), doMathExp(t2))
-      case IMPSIff(p, q)        => IMPSTheory.Iff(doMathExp(p), doMathExp(q))
-      case IMPSIfForm(p,q,r)    => IMPSTheory.If_Form(doMathExp(p), doMathExp(q), doMathExp(r))
-      case IMPSEquals(a,b)      => IMPSTheory.Equals(doMathExp(a),doMathExp(b))
-      case IMPSDisjunction(ls)  => IMPSTheory.Or(ls map doMathExp)
-      case IMPSConjunction(ls)  => IMPSTheory.And(ls map doMathExp)
-      case IMPSLambda(vs,t)     => IMPSTheory Lambda(vs map (p => (LocalName(p._1.v), p._2 map doType)), doMathExp(t))
-      case IMPSForAll(vs,t)     => IMPSTheory.Forall(vs map (p => (LocalName(p._1.v), p._2 map doType)), doMathExp(t))
-      case IMPSForSome(vs, t)   => IMPSTheory.Forsome(vs map (p => (LocalName(p._1.v), p._2 map doType)), doMathExp(t))
-      case IMPSImplication(p,q) => IMPSTheory.Implies(doMathExp(p), doMathExp(q))
-      case IMPSApply(f,ts)      => IMPSTheory.IMPSApply(doMathExp(f), ts map doMathExp)
-      case IMPSIota(v1,s1,p)    => IMPSTheory.Iota(LocalName(v1.v), doType(s1), doMathExp(p))
-      case IMPSIotaP(v1,s1,p)   => IMPSTheory.IotaP(LocalName(v1.v), doType(s1), doMathExp(p))
-      case IMPSIsDefined(t)     => IMPSTheory.IsDefined(doMathExp(t))
-      case IMPSIsDefinedIn(t,s) => IMPSTheory.IsDefinedIn(doMathExp(t), doType(s))
-      case IMPSUndefined(s)     => IMPSTheory.Undefined(doMathExp(s))
+      case IMPSNegation(p)      => IMPSTheory.Negation(doMathExp(p,t))
+      case IMPSIf(p,t1,t2)      => IMPSTheory.If(doMathExp(p,t), doMathExp(t1,t), doMathExp(t2,t))
+      case IMPSIff(p, q)        => IMPSTheory.Iff(doMathExp(p,t), doMathExp(q,t))
+      case IMPSIfForm(p,q,r)    => IMPSTheory.If_Form(doMathExp(p,t), doMathExp(q,t), doMathExp(r,t))
+      case IMPSEquals(a,b)      => IMPSTheory.Equals(doMathExp(a,t),doMathExp(b,t))
+      case IMPSDisjunction(ls)  => IMPSTheory.Or(ls map (x => doMathExp(x,t)))
+      case IMPSConjunction(ls)  => IMPSTheory.And(ls map (x => doMathExp(x,t)))
+      case IMPSLambda(vs,r)     => IMPSTheory Lambda(vs map (p => (LocalName(p._1.v), p._2 map (x => doMathExp(x,t)))), doMathExp(r,t))
+      case IMPSForAll(vs,r)     => IMPSTheory.Forall(vs map (p => (LocalName(p._1.v), p._2 map (x => doMathExp(x,t)))), doMathExp(r,t))
+      case IMPSForSome(vs, r)   => IMPSTheory.Forsome(vs map (p => (LocalName(p._1.v), p._2 map (x => doMathExp(x,t)))), doMathExp(r,t))
+      case IMPSImplication(p,q) => IMPSTheory.Implies(doMathExp(p,t), doMathExp(q,t))
+      case IMPSApply(f,ts)      => IMPSTheory.IMPSApply(doMathExp(f,t), ts map (x => doMathExp(x,t)))
+      case IMPSIota(v1,s1,p)    => IMPSTheory.Iota(LocalName(v1.v), doType(s1,t), doMathExp(p,t))
+      case IMPSIotaP(v1,s1,p)   => IMPSTheory.IotaP(LocalName(v1.v), doType(s1,t), doMathExp(p,t))
+      case IMPSIsDefined(r)     => IMPSTheory.IsDefined(doMathExp(r,t))
+      case IMPSIsDefinedIn(r,s) => IMPSTheory.IsDefinedIn(doMathExp(r,t), doType(s,t))
+      case IMPSUndefined(s)     => IMPSTheory.Undefined(doMathExp(s,t))
+      case IMPSAtomSort(s)      => IMPSTheory.Sort(doTypeString(s,t))
+      case IMPSFunSort(ss)      => IMPSTheory.FunSort(ss map (x => doMathExp(x,t)))
+
     }
   }
 
