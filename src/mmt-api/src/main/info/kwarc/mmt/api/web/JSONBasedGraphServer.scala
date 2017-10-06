@@ -49,8 +49,10 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
       val exp = controller.extman.getOrAddExtension(classOf[JGraphExporter], key).getOrElse {
         throw CatchError(s"exporter $key not available")
       }
-      log("Returning " + key + " for " + uri)
-      ServerResponse.fromJSON(exp.buildGraph(uri))
+      log("Computing " + key + " for " + uri + "... ")
+      val ret = ServerResponse.fromJSON(exp.buildGraph(uri))
+      log("Done")
+      ret
     } else ServerResponse.errorResponse("Invalid path", "json")
   }
 }
@@ -149,13 +151,16 @@ abstract class JGraphExporter(val key : String) extends FormatBasedExtension {
 }
 
 abstract class SimpleJGraphExporter(key : String) extends JGraphExporter(key) {
-
+  override def logPrefix: String = key
   val builder : JGraphBuilder
   val selector : JGraphSelector
 
   def buildGraph(s : String) : JSON = {
     val (ths,vs) = selector.select(s)(controller)
-    builder.build(ths,vs)(controller)
+    log("building...")
+    val res = builder.build(ths,vs)(controller)
+    log("Done.")
+    res
   }
 
 }
@@ -189,7 +194,7 @@ class JDocgraph extends SimpleJGraphExporter("docgraph"){
   }
 }
 class JThgraph extends SimpleJGraphExporter("thgraph") {
-  val builder = GraphBuilder.AlignmentBuilder
+  val builder = GraphBuilder.AlignmentBuilder(log(_,None))
   val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
       val th = Try(controller.get(Path.parse(s))) match {
@@ -209,7 +214,7 @@ class JThgraph extends SimpleJGraphExporter("thgraph") {
   }
 }
 class JPgraph extends SimpleJGraphExporter("pgraph") {
-  val builder = GraphBuilder.AlignmentBuilder
+  val builder = GraphBuilder.AlignmentBuilder(log(_,None))
   val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
       val dpath = Try(Path.parse(s)) match {
@@ -244,17 +249,19 @@ class JPgraph extends SimpleJGraphExporter("pgraph") {
   }
 }
 class JArchiveGraph extends SimpleJGraphExporter("archivegraph") {
-  val builder = GraphBuilder.AlignmentBuilder
+  val builder = GraphBuilder.AlignmentBuilder(log(_,None))
   val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
       val as = s.toString.split(""" """).map(_.trim).filter(_ != "")
       val a = controller.backend.getArchives.filter(a => as.exists(a.id.startsWith))
+      log("Archives: " + a.map(_.id).mkString(", "))
       var (theories,views) : (List[DeclaredTheory],List[View]) = (Nil,Nil)
       a.flatMap(_.allContent).map(c => Try(controller.get(c)).toOption) foreach {
         case Some(th : DeclaredTheory) => theories ::= th
         case Some(v : View) => views ::= v
         case _ =>
       }
+      log(theories.length + " selected")
       (theories,views)
     }
   }
@@ -365,6 +372,7 @@ abstract class JGraphSelector {
 }
 
 abstract class JGraphBuilder {
+  def log(s : String) : Unit = {}
   def build(theories : List[DeclaredTheory], views : List[View])(implicit controller : Controller) : JSON
 }
 abstract class StandardBuilder extends JGraphBuilder {
@@ -379,11 +387,14 @@ abstract class StandardBuilder extends JGraphBuilder {
         nodes = nodes ::: ns
         edges = edges ::: es
     })
-    theories foreach (th => doTheory(th) match {
-      case (ns,es) =>
-        nodes = nodes ::: ns
-        edges = edges ::: es
-    })
+    theories.indices foreach (th => {
+      log({th + 1} + "/" + theories.length)
+      doTheory(theories(th))
+    } match {
+        case (ns,es) =>
+          nodes = nodes ::: ns
+          edges = edges ::: es
+      })
 
     JSONObject(("nodes",JSONArray(nodes.map(_.toJSON):_*)),("edges",JSONArray(edges.map(_.toJSON):_*)))
   }
@@ -449,8 +460,10 @@ object GraphBuilder {
     def doTheory(th: DeclaredTheory)(implicit controller: Controller) = standardTheory(th)
   }
 
-  case object AlignmentBuilder extends StandardBuilder {
+  case class AlignmentBuilder(ilog : String => Unit) extends StandardBuilder {
     def doView(v: View)(implicit controller: Controller) = standardView(v)
+
+    override def log(s: String): Unit = ilog(s)
 
     def doTheory(th: DeclaredTheory)(implicit controller: Controller): (List[JGraphNode], List[JGraphEdge]) = {
       val (ths, views) = standardTheory(th)

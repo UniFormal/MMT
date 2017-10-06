@@ -427,6 +427,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       val thy = dec match {
         case t: Module => t
         case nm: NestedModule => nm.module
+        case _ =>
+          env.errorCont(InvalidObject(t, "not a module: " + controller.presenter.asString(t)))
       }
       thy match {
         case thy: Theory =>
