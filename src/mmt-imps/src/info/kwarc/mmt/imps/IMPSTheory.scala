@@ -27,8 +27,18 @@ object IMPSTheory
 
   object Sort extends Sym("sort")
   {
+    /* sort muss zu exp */
+
     def apply(t : Term) : Term = {
-      t //Apply(this.term, t)
+      Apply(this.term, t)
+    }
+  }
+
+  object SortRef extends Sym("exp")
+  {
+    def apply(t : Term) : Term = {
+      val foo : Term = OMS(thpath ? "indType")
+      ApplySpine(this.term,foo,t)
     }
   }
 
@@ -60,14 +70,14 @@ object IMPSTheory
 
   object Or extends Sym("or") {
     def apply(ls : List[Term]) : Term = {
-      assert (ls.nonEmpty)
+      assert (ls.length >= 2)
       ls.init.foldRight(ls.last)((t,r) => ApplySpine(this.term,t,r))
     }
   }
 
   object And extends Sym("and"){
     def apply(ls : List[Term]) : Term = {
-      assert (ls.nonEmpty)
+      assert (ls.length >= 2)
       ls.init.foldRight(ls.last)((t,r) => ApplySpine(this.term,t,r))
     }
   }
@@ -104,10 +114,11 @@ object IMPSTheory
 
   object Lambda extends Sym("lambda")
   {
-    def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = ls match
-    {
-      case Nil => ???
-      case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
+    def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = {
+      assert(ls.nonEmpty)
+      ls match {
+        case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
+      }
     }
   }
 

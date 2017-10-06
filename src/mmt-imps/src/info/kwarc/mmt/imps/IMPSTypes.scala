@@ -659,6 +659,10 @@ case class IMPSVar(v : String) extends IMPSMathExp {
 
 abstract class IMPSSortRef extends IMPSMathExp
 
+case class IMPSSortReference(s : String) extends IMPSSortRef {
+  override def toString: String = s
+}
+
 case class IMPSAtomSort(s : String) extends IMPSSortRef {
   override def toString: String = s
 }
