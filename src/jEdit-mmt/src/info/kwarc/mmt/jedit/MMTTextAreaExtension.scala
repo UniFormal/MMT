@@ -78,7 +78,7 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
         * Specifically, fixedBgColor returns the selection or lineHighlight color (if any). We are currently not using the collapsedFold color.
         * Even so, this does not work well, e.g., any change that does not trigger MMT parsing messes up everything.
         * Alternatively, we could call removeExtension on paintText and paintTextBackground and then add our own variants.
-        * But those extension do variuos additional things that would have to be reimplemented;
+        * But those extension do various additional things that would have to be reimplemented;
         * this is difficult because some of those things happen in private methods or even private classes.
         * Even keeping the background and repainting the text in background color is difficult because the style that was used is private.  
         */
