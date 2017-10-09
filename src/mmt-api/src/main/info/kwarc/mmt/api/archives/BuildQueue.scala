@@ -79,6 +79,8 @@ object BuildResult {
     }
     BuildSuccess(Nil, provs)
   }
+
+  case class MissingDependency(paths : List[MPath]) extends Throwable
 }
 
 case class BuildEmpty(str: String) extends BuildResult {
@@ -100,13 +102,11 @@ case class BuildFailure(used: List[Dependency], provided: List[ResourceDependenc
 }
 
 /** recoverable failure: build should be retried after building a missing dependency */
-case class MissingDependency(needed: List[Dependency], provided: List[ResourceDependency]) extends BuildResult {
-  def used = Nil
+case class MissingDependency(needed: List[Dependency], provided: List[ResourceDependency], used : List[Dependency]) extends BuildResult {
 
   def toJson: JSON = JSONObject(("result", JSONString("failed")) ::
     ("needed", JSONArray(needed.map(_.toJson): _*)) :: toJsonPart.tail: _*)
 }
-
 
 /** dependency of a [[QueuedTask]] */
 sealed abstract class Dependency {
@@ -184,7 +184,7 @@ class TrivialBuildManager extends BuildManager {
 
 /** uses a queue of build tasks for multi-threaded execution, includes dependency management */
 class BuildQueue extends ServerExtension("queue") with BuildManager {
-
+  override def logPrefix: String = "queue"
   // ******************* state
 
   /** the queue */
@@ -348,9 +348,13 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
   }
 
   /** unblock previously blocked tasks whose dependencies have now been provided */
-  private def unblockTasks(res: BuildResult) {
-    blocked.foreach { bt =>
-      bt.missingDeps = bt.missingDeps diff res.provided
+  private def unblockTasks(res: BuildResult,qt : QueuedTask) {
+    res match {
+      case MissingDependency(_,_,_) if blocked.contains(qt) =>
+      case _ =>
+        blocked.foreach { bt =>
+          bt.missingDeps = bt.missingDeps diff res.provided
+        }
     }
     val (unblocked, stillBlocked) = blocked.partition(_.missingDeps.isEmpty)
     blocked = stillBlocked
@@ -417,6 +421,14 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
       case BuildSuccess(u, Nil) =>
         log("Success: " + qt.willProvide.mkString(", "))
         BuildSuccess(u, qt.willProvide)
+      case bf@BuildFailure(use,pr) =>
+        val newmissings = (queued.toArray(Nil.asInstanceOf[List[QueuedTask]].toArray).toList :::
+          blocked).flatMap(_.willProvide).filter(use.contains)
+        if (newmissings.nonEmpty) MissingDependency(newmissings,pr,use) else bf
+      case MissingDependency(nd,pr,use) =>
+        val newmissings = (queued.toArray(Nil.asInstanceOf[List[QueuedTask]].toArray).toList :::
+          blocked).flatMap(_.willProvide).filter(use.contains) ::: nd
+        MissingDependency(nd.distinct,pr,use)
       case _ => res1
     }
     val qtDep = qt.task.asDependency
@@ -425,7 +437,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
       /* add two dummy results into the finished queue to show what happened to a blocked task */
       if (qt.forceRun.nonEmpty) {
         recentlyBuilt ::= (qtDep, BuildEmpty("was blocked"))
-        recentlyBuilt ::= (qtDep, MissingDependency(qt.forceRun, qt.willProvide))
+        recentlyBuilt ::= (qtDep, MissingDependency(qt.forceRun, qt.willProvide,qt.missingDeps))
       }
       recentlyBuilt ::= (qtDep, res)
     if (recentlyBuilt.length > 200) {
@@ -441,16 +453,21 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
         log(res.getClass.getCanonicalName + ": " + qt.task.inFile)
       // TODO write file errors/.../file.deps
       // XML file containing used, provided, had errors
-      case MissingDependency(missing, provided) =>
+      case MissingDependency(missing, provided, used) =>
         // register missing dependencies and requeue
+        /*
         qt.missingDeps = missing collect {
           case ld @ LogicalDependency(mp) if controller.getO(mp).isEmpty => ld
           case pd : PhysicalDependency => pd
         }
+        */
         log("Missing Deps: " + qt.missingDeps.mkString(", "))
-        if (!processingBlockedTasks) blocked = blocked ::: List(qt)
+        if (!processingBlockedTasks) {
+          // qt.missingDeps = missing
+          blocked = blocked ::: List(qt)
+        }
     }
-    unblockTasks(res)
+    unblockTasks(res,qt)
   }
 
   
@@ -464,6 +481,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
             case Some(qt) =>
               log("Doing " + qt.task.inFile)
               // TODO run this in a Future and track dependencies
+              qt.task.errorCont.reset
               val res1 = qt.target.checkOrRunBuildTask(qt.neededDeps.toSet, qt.task, qt.updatePolicy)
               doBuildResult(res1,qt)
             case None =>

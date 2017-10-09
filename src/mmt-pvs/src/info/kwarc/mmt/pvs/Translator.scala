@@ -173,7 +173,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         state.th.deps = (p::state.th.deps).distinct
         log("FAIL: " + state.th.name + " depends on " + state.th.deps)
         //sys.exit
-        MissingDependency(state.th.deps.map(LogicalDependency),List(LogicalDependency(state.th.path)))
+        MissingDependency(state.th.deps.map(LogicalDependency),List(LogicalDependency(state.th.path)),state.th.deps.map(LogicalDependency))
       case t : Exception =>
         log("Exception: " + t.getMessage)
         t.printStackTrace()
