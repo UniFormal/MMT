@@ -90,7 +90,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     // Run Checker (to resolve unknowns, etc)
     // Set to true to run
-    val typecheck : Boolean = false
+    val typecheck : Boolean = true
     if (typecheck)
     {
       log("Checking:")
@@ -446,7 +446,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     val foo       : Term = OMS(thy.path ? subname)
     val bar       : Term = OMS(thy.path ? supname)
 
-    val jdgmttp   : Option[Term] = Some(OMA(OMS(IMPSTheory.lutinsPath ? LocalName("sort")),List(foo,bar)))
+    val jdgmttp   : Option[Term] = Some(OMA(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")),List(foo,bar)))
 
     /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -466,6 +466,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     d match
     {
       case IMPSVar(v)             => OMV(v)
+
+      case IMPSMathSymbol(s)      => OMS(thy.path ? LocalName(s))
 
       case q@IMPSTruth()          => OMS(IMPSTheory.lutinsPath ? "thetrue")
       case q@IMPSFalsehood()      => OMS(IMPSTheory.lutinsPath ? "thefalse")
@@ -518,7 +520,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   {
     assert(lambda.vs.nonEmpty)
     val target : Term = doMathExp(lambda.t,thy)
-    var foo = ??? //IMPSTheory.Lambda(vs map (p => (LocalName(p._1.v), p._2 map (x => doType(x,t)))), target)
+    var foo = IMPSTheory.Lambda(lambda.vs map (p => (LocalName(p._1.v), p._2 map (x => doSort(x,thy)))), target)
     tState.bindUnknowns(foo)
     foo
   }
@@ -527,7 +529,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   {
     assert(forall.vs.nonEmpty)
     val target : Term = doMathExp(forall.p,thy)
-    val foo = ???
+    val foo = IMPSTheory.Forall(forall.vs map (p => (LocalName(p._1.v), p._2 map (x => doSort(x,thy)))), target)
     foo
   }
 }
