@@ -91,13 +91,13 @@ package object impsMathParser {
       ("if_form(" ~> parseMath <~ ",") ~ (parseMath <~ ",") ~ (parseMath <~ ")") ^^ { case (p ~ q ~ f) => IMPSIfForm(p,q,f)}
     }
 
-    lazy val parseVal : PackratParser[(IMPSVar, Option[IMPSSortRef])] = {
+    lazy val parseVal : PackratParser[(IMPSVar, Option[IMPSSort])] = {
       ("[^,:\\s]+".r ~ parseSortDecl) ^^ { case (name ~ sort) => (IMPSVar(name), Some(sort))}
     }
 
-    lazy val parseSortDecl : PackratParser[IMPSSortRef] = { (":" ~ parseSort) ^^ {case (semi ~ sort) => sort} }
+    lazy val parseSortDecl : PackratParser[IMPSSort] = { (":" ~ parseSort) ^^ {case (semi ~ sort) => sort} }
 
-    lazy val parseSort : PackratParser[IMPSSortRef] = { parseFunSort | parseFunSort2 | parseAtomicSort }
+    lazy val parseSort : PackratParser[IMPSSort] = { parseFunSort | parseFunSort2 | parseAtomicSort }
 
     lazy val parseAtomicSort : PackratParser[IMPSAtomSort] = {
       ("[^,\\]):\\s]+".r) ^^ {case (sort) => IMPSAtomSort(sort)}

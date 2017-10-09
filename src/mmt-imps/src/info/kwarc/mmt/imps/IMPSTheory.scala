@@ -7,14 +7,15 @@ import utils._
 
 object IMPSTheory
 {
-  val rootdpath = DPath(URI.http colon "latin.omdoc.org") / "foundations" / "lutins"
-  val thname = "Lutins"
+  val rootdpath  = DPath(URI.http colon "latin.omdoc.org") / "foundations" / "lutins"
+  val lutinsPath = rootdpath ? "Lutins"
 
-  val thpath = rootdpath ? thname
+  val lutinsPropType = lutinsPath ? "boolType"
+  val lutinsIndType  = lutinsPath ? "indType"
 
   class Sym(s: String)
   {
-    val path : GlobalName = thpath ? s
+    val path : GlobalName = lutinsPath ? s
     val term = OMS(path)
   }
 
@@ -36,9 +37,11 @@ object IMPSTheory
 
   object SortRef extends Sym("exp")
   {
+    /* "But Pawpaw!", you say, "This can't be correct!" */
     def apply(t : Term) : Term = {
-      val foo : Term = OMS(thpath ? "indType")
-      ApplySpine(this.term,foo,t)
+      val foo : Term = OMS(lutinsPath ? "indType")
+      val bar : Term = OMS(lutinsPath ? "ind")
+      ApplySpine(this.term,foo,bar)
     }
   }
 
@@ -132,19 +135,23 @@ object IMPSTheory
 
   object Forall extends Sym("forall")
   {
-    def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = ls match
-    {
-      case Nil => ???
-      case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
+    def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = {
+      assert(ls.nonEmpty)
+      ls match
+      {
+        case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
+      }
     }
   }
 
   object Forsome extends Sym("forsome")
   {
-    def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = ls match
-    {
-      case Nil => ???
-      case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
+    def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = {
+      assert(ls.nonEmpty)
+      ls match
+      {
+        case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
+      }
     }
   }
 

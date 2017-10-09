@@ -68,7 +68,7 @@ case class Macete(macete : String, src : SourceRef) extends LispExp {
   override def toString : String = { "(macete " + macete + ")" }
 }
 
-case class Sort(sort : String, src : SourceRef) extends LispExp {
+case class Sort(sort : IMPSSort, src : SourceRef) extends LispExp {
   override def toString : String = { "(sort " + sort + ")" }
 }
 
@@ -257,15 +257,19 @@ case class Accessors(accs : List[String], src : SourceRef) extends LispExp {
   }
 }
 
-object Usage extends Enumeration {
+/* These are all seven usages of (for example) theorems.
+ * See page 77 of IMPS manual. */
+object Usage extends Enumeration
+{
   type Usage = Value
-  val ELEMENTARYMACETE = Value("elementary-macete")
-  val TRANSPORTABLEMACETE = Value("transportable-macete")
-  val REWRITE = Value("rewrite")
-  val TRANSPORTABLEREWRITE = Value("transportable-rewrite")
+
+  val ELEMENTARYMACETE       = Value("elementary-macete")
+  val TRANSPORTABLEMACETE    = Value("transportable-macete")
+  val REWRITE                = Value("rewrite")
+  val TRANSPORTABLEREWRITE   = Value("transportable-rewrite")
   val SIMPLIFYLOGICALLYFIRST = Value("simplify-logically-first")
-  val DRCONVERGENCE = Value("d-r-convergence")
-  val DRVALUE = Value("d-r-value")
+  val DRCONVERGENCE          = Value("d-r-convergence")
+  val DRVALUE                = Value("d-r-value")
 }
 
 case class ArgumentUsages(usgs : List[Usage], src : SourceRef) extends LispExp {
@@ -344,21 +348,21 @@ case class AtomicSort(sortName        : String, /* Positional Argument, Required
 
 /* def-cartesian-product
  * Documentation: IMPS manual pg. 166 */
-case class CartesianProduct(name      : String, /* Keyword Argument, Required */
-                            sortNames : List[String], /* Keyword Argument, Required */
-                            thy       : ArgumentTheory, /* Keyword Argument, Required */
-                            const     : Option[Constructor], /* Keyword Argument, Optional */
-                            accs      : Option[Accessors], /* Keyword Argument, Optional */
-                            src       : SourceRef)            /* SourceRef for MMT */
+case class CartesianProduct(name  : String, /* Keyword Argument, Required */
+                            sorts : List[IMPSSort], /* Keyword Argument, Required */
+                            thy   : ArgumentTheory, /* Keyword Argument, Required */
+                            const : Option[Constructor], /* Keyword Argument, Optional */
+                            accs  : Option[Accessors], /* Keyword Argument, Optional */
+                            src   : SourceRef)            /* SourceRef for MMT */
   extends LispExp
 {
   override def toString : String =
   {
     var str : String = "(def-cartesian-product " + name
-    str = str + "\n  (" + sortNames.head
-    for (sn <- sortNames.tail)
+    str = str + "\n  (" + sorts.head
+    for (sn <- sorts.tail)
     {
-      str = str + " " + sn
+      str = str + " " + sn.toString
     }
     str = str + ")\n  " + thy.toString
 
@@ -637,6 +641,33 @@ case class Theory(name      : String,
   }
 }
 
+/* IMPS SORTS ETC */
+
+abstract class IMPSSort
+
+/* The atomic sorts */
+case class IMPSAtomSort(s : String) extends IMPSSort
+{
+  override def toString: String = s
+}
+
+/* Function sorts */
+case class IMPSFunSort(ss : List[IMPSSort]) extends IMPSSort
+{
+  /* Example: What would be "qq -> qq -> qq" in Haskell
+              is "[qq,qq,qq]" in IMPS. */
+  override def toString: String =
+  {
+    var str : String = "[" + ss.head.toString
+
+    for (s <- ss.tail)
+    { str = str + "," + s.toString }
+
+    str = str + "]"
+    str
+  }
+}
+
 /* IMPS MATH EXPRESSIONS */
 /* See page 64 etc. of the IMPS manual */
 
@@ -655,28 +686,6 @@ case class IMPSMathSymbol(s : String) extends IMPSMathExp {
 
 case class IMPSVar(v : String) extends IMPSMathExp {
   override def toString: String = v
-}
-
-abstract class IMPSSortRef extends IMPSMathExp
-
-case class IMPSSortReference(s : String) extends IMPSSortRef {
-  override def toString: String = s
-}
-
-case class IMPSAtomSort(s : String) extends IMPSSortRef {
-  override def toString: String = s
-}
-
-case class IMPSFunSort(ss : List[IMPSSortRef]) extends IMPSSortRef {
-  override def toString: String = {
-    var str : String = "[" + ss.head.toString
-
-    for (s <- ss.tail)
-      { str = str + "," + s.toString }
-
-    str = str + "]"
-    str
-  }
 }
 
 case class IMPSTruth() extends IMPSMathExp
@@ -735,7 +744,7 @@ case class IMPSIfForm(p : IMPSMathExp, q : IMPSMathExp, r : IMPSMathExp) extends
   override def toString: String = "if_form(" + p.toString + "," + q.toString + "," + r.toString + ")"
 }
 
-case class IMPSForAll(vs : List[(IMPSVar, Option[IMPSSortRef])], p : IMPSMathExp) extends IMPSMathExp
+case class IMPSForAll(vs : List[(IMPSVar, Option[IMPSSort])], p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -751,7 +760,7 @@ case class IMPSForAll(vs : List[(IMPSVar, Option[IMPSSortRef])], p : IMPSMathExp
   }
 }
 
-case class IMPSForSome(vs : List[(IMPSVar, Option[IMPSSortRef])], p : IMPSMathExp) extends IMPSMathExp
+case class IMPSForSome(vs : List[(IMPSVar, Option[IMPSSort])], p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -788,7 +797,7 @@ case class IMPSApply(f : IMPSMathExp, ts : List[IMPSMathExp]) extends IMPSMathEx
   }
 }
 
-case class IMPSLambda(vs : List[(IMPSVar, Option[IMPSSortRef])], t : IMPSMathExp) extends IMPSMathExp
+case class IMPSLambda(vs : List[(IMPSVar, Option[IMPSSort])], t : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -804,12 +813,12 @@ case class IMPSLambda(vs : List[(IMPSVar, Option[IMPSSortRef])], t : IMPSMathExp
   }
 }
 
-case class IMPSIota(v1 : IMPSVar, s1 : IMPSSortRef, p : IMPSMathExp) extends IMPSMathExp
+case class IMPSIota(v1 : IMPSVar, s1 : IMPSSort, p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = "iota(" + v1.toString + ":" + s1.toString + "," + p.toString + ")"
 }
 
-case class IMPSIotaP(v1 : IMPSVar, s1 : IMPSSortRef, p : IMPSMathExp) extends IMPSMathExp
+case class IMPSIotaP(v1 : IMPSVar, s1 : IMPSSort, p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String = "iota_p(" + v1.toString + ":" + s1.toString + "," + p.toString + ")"
 }
@@ -824,7 +833,7 @@ case class IMPSIsDefined(t : IMPSMathExp) extends IMPSMathExp
   override def toString: String = "#(" + t.toString + ")"
 }
 
-case class IMPSIsDefinedIn(t : IMPSMathExp, s : IMPSMathExp) extends IMPSMathExp
+case class IMPSIsDefinedIn(t : IMPSMathExp, s : IMPSSort) extends IMPSMathExp
 {
   override def toString: String = "#(" + t.toString + "," + s.toString + ")"
 }
