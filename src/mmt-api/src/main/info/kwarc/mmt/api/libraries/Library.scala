@@ -420,7 +420,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
           case a: Constant =>
             error("local name " + ln + " left after resolving to constant assignment")
           case a: DefinedLink =>
-            getDeclarationInTerm(a.df, ln, error) //TODO should be domain(a.df)/ln
+            val dom = a.from.toMPath
+            getDeclarationInTerm(a.df,ComplexStep(dom) / ln, error)
         }
         case None =>
           val (theo, tname) = nameS.steps match {

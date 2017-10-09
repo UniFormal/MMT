@@ -314,7 +314,7 @@ class Controller extends ROController with ActionHandling with Logger {
   
   /** a lookup that uses the previous in-memory version (ignoring the current one) */
   val previousLocalLookup = new LookupWithNotFoundHandler(memory.previousContent) with FailingNotFoundHandler {
-    def getDeclarationsInScope(mod: Term) = memory.previousContent.getDeclarationsInScope(mod) 
+    def getDeclarationsInScope(mod: Term) = memory.previousContent.getDeclarationsInScope(mod)
   }
   
   /** a lookup that loads missing modules dynamically */

@@ -157,8 +157,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     lazy val rules = rulesOpt.getOrElse {
       RuleSet.collectRules(controller, mod.getInnerContext)
     }
-    val parent = mod match {
+    val parent : DeclaredModule = mod match {
       case t: DeclaredTheory => t
+      case v: DeclaredView => v
       case _ => return //TODO
     }
     lazy val alreadyIncluded = parent.getIncludes
@@ -278,6 +279,11 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                if (e.getOrigin == ElaborationOf(d.path))
                  thy.delete(e.name)
              }
+           case v: DeclaredView =>
+             v.getDeclarations.foreach {e =>
+               if (e.getOrigin == ElaborationOf(d.path))
+                 v.delete(e.name)
+             }
          }
        case _ =>
      }
@@ -312,6 +318,10 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 onDelete(dd)
                 ElaboratedElement.erase(dd)
                 flattenDeclaration(th,dd)
+              case Some(v : DeclaredView) =>
+                onDelete(dd)
+                ElaboratedElement.erase(dd)
+                flattenDeclaration(v,dd)
               case _ =>
             }
           case _ =>
@@ -331,6 +341,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         }
       case (t : DeclaredTheory, dec : Declaration) =>
         flattenDeclaration(t,dec)
+      case (v : DeclaredView, dec : Declaration) =>
+        flattenDeclaration(v, dec)
       case (dd : DerivedDeclaration, dec : Declaration) =>
         controller.getO(dd.parent) match {
           case Some(t : DeclaredTheory) =>
