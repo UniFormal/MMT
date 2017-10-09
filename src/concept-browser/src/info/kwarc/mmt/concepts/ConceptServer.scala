@@ -121,7 +121,7 @@ class ConceptServer extends ServerExtension("concepts") {
     }
   })
 
-  def apply(request: ServerRequest): ServerResponse = request.extensionPathComponents match {
+  def apply(request: ServerRequest): ServerResponse = request.pathForExtension match {
     // add
     case List("add") =>
       // if we are missing parameters, return a 404
@@ -163,7 +163,7 @@ class ConceptServer extends ServerExtension("concepts") {
 
       val nsm = NamespaceMap.empty
 
-      if (from == to) ServerResponse.errorResponse("Alignments must be between two different URIs!", request) else {
+      if (from == to) ServerResponse.errorResponse("Alignments must be between two different URIs!") else {
 
         // parse parameters and check if they are empty
         val invertible = request.parsedQuery.contains("invertible")
@@ -192,7 +192,7 @@ class ConceptServer extends ServerExtension("concepts") {
             pars ::= (key, value)
             rest = r.trim
           case _ =>
-            ServerResponse.errorResponse("Malformed alignment: " + rest, request)
+            ServerResponse.errorResponse("Malformed alignment: " + rest)
         }
 
         val al = alignments.makeAlignment(from, to, pars)

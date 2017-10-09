@@ -9,14 +9,17 @@ import objects.Conversions._
 import utils._
 
 /**
- * A prover conducts the proof search. A new instance is created for each proof obligation.
+ * Conducts proof search, e.g., as used by the [[RuleBasedProver]].
+ * A new instance must be created for each proof obligation.
  * 
+ * @param controller the MMT controller to use for lookups, etc.
  * @param goal the goal to prove
- * @param intros the backward tactics to use
- * @param elims  the forward  tactics to use
+ * @param rules the rules to use
+ * @param provingUnit the proof task
  * 
- * A prover greedily applies invertible tactics to each new goal (called the expansion phase).
- * Then forward and backward breadth-first searches are performed in parallel.
+ * The Searcher works in two modes:
+ *  first, it greedily applies invertible tactics to each new goal (called the expansion phase)
+ *  second, forward and backward breadth-first searches are performed in parallel
  */
 class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUnit: ProvingUnit) extends Logger {
    val report = controller.report

@@ -660,7 +660,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                  val j = dj.constraint
                  implicit val history = dj.history
                  implicit val stack = j.stack
-                 def prepare(t: Term, covered: Boolean = false) = {
+                 def prepare(t: Obj, covered: Boolean = false): t.ThisType = {
                     substituteSolved(t, covered)
                  }
                  //logState() // noticeably slows down type-checking, only use for debugging
@@ -680,6 +680,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                          check(Inhabitable(prepareS(stack), prepare(tp)))
                       case Inhabited(stack, tp) =>
                          check(Inhabited(prepareS(stack), prepare(tp, true)))
+                      case IsContext(stack, cont) =>
+                         check(IsContext(prepareS(stack), prepare(cont)))
+                      case EqualityContext(stack, c1, c2, a) =>
+                         check(EqualityContext(prepareS(stack), prepare(c1, true), prepare(c2, true), a))
                    }
                  }
               case di: DelayedInference =>
@@ -1396,7 +1400,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * unsafe via ObjectSimplifier
     * this subsumes substituting for solved unknowns before simplifier expands defined variables
     */
-   def simplify(t : Obj)(implicit stack: Stack, history: History) = {
+   def simplify(t : Obj)(implicit stack: Stack, history: History): t.ThisType = {
       val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context, rules)
       if (tS != t)
          history += ("simplified: " + presentObj(t) + " ~~> " + presentObj(tS))
@@ -1406,12 +1410,12 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    /** substitutes solved unknowns, then possibly calls simplification
     *  (simplification alone does not necessary substitute solved unknowns because simpleness is cached)
     */
-   def substituteSolved(t: Term, covered: Boolean)(implicit stack: Stack, history: History): Term = {
+   def substituteSolved(t: Obj, covered: Boolean)(implicit stack: Stack, history: History): t.ThisType = {
       val subs = solution.toPartialSubstitution
       val tS = t ^^ subs
-      if (covered) simplify(tS) else tS
+      val tSS = if (covered) simplify(tS) else tS
+      tSS.asInstanceOf[t.ThisType] // always succeeds but Scala doesn't know that
    }
-
 
    /** simplifies safely one step along each branches, well-formedness is preserved+reflected */
    //TODO merge with limitedSimplify; offer simplification strategies

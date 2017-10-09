@@ -167,7 +167,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
   )
 
   private def addOpaque(text : String,th : DeclaredTheory, sec : Option[String] = None) =
-    controller add new OpaqueText(if (sec.isDefined) th.path.toDPath / sec.get else th.path.toDPath,List(StringFragment(text)))
+    controller add new OpaqueText(if (sec.isDefined) th.path.toDPath / sec.get else th.path.toDPath, OpaqueText.defaultFormat, StringFragment(text))
 
   private def doArity(ar : Int) : Term = if (ar == 0) OMS(Sage.obj) else Arrow(OMS(Sage.obj),doArity(ar-1))
 

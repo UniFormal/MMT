@@ -703,6 +703,13 @@ class NotationBasedParser extends ObjectParser {
       def unapply(t : Term) : Option[LocalName] = t match {
         case OMV(n) => Some(n)
         case OMS(p) => Some(p.name)
+        case OMA(OMS(ObjectParser.oneOf),ls)=>
+          val rs = ls collect {case OMS(p) => p.name}
+          rs.headOption match {
+            case Some(name) if rs.forall(_ == name) => Some(name)
+            case _ => None
+          }
+        case l : OML => Some(l.name)
         case OMSemiFormal(List(Text(_,s))) =>
           Some(LocalName.parse(s))
         case _ =>

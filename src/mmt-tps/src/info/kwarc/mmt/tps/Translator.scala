@@ -112,7 +112,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          symbols::=(name,newtp)
          boundvars = Nil
          val descr = meta._metas collect {case description(s) => s}
-         if (descr.nonEmpty) controller add new OpaqueText(th.path.toDPath,List(StringFragment(descr.head)))
+         if (descr.nonEmpty) controller add new OpaqueText(th.path.toDPath,OpaqueText.defaultFormat, StringFragment(descr.head))
 
       case definition(tp,id,for_,obj) =>
          val dfterm = doObject(obj._obj)
@@ -134,7 +134,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          }
          val tpterm = vars.distinct.foldLeft[Term](Apply(TPSTheory.ded.term,doObject(fmp._obj)))((t,s)
             => Pi(s,TPSTheory.tp.term,t))
-         controller add new OpaqueText(th.path.toDPath,List(StringFragment(cmp)))
+         controller add new OpaqueText(th.path.toDPath, OpaqueText.defaultFormat, StringFragment(cmp))
          symbols ::= ((id,tpterm))
          boundvars = Nil
       case _ => println("TODO Decl: "+d.getClass.getSimpleName + "\n" + d)

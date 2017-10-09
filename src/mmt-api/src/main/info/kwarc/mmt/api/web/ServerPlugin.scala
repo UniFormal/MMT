@@ -17,12 +17,12 @@ import info.kwarc.mmt.api.objects.Context
  *
  * @param context the CONTEXT
  */
-abstract class ServerExtension(context: String) extends FormatBasedExtension {
+abstract class ServerExtension(val pathPrefix: String) extends FormatBasedExtension {
   /**
    * @param cont the context of the request
    * @return true if cont is equal to this.context
    */
-  def isApplicable(cont: String): Boolean = cont == context
+  def isApplicable(cont: String): Boolean = cont == pathPrefix
 
   /**
    * handles a request for this ServerExtension
@@ -34,6 +34,44 @@ abstract class ServerExtension(context: String) extends FormatBasedExtension {
    * @return a response for this request
    */
   def apply(request: ServerRequest): ServerResponse
+}
+
+/** an example server extension that acts as a simple static web server
+ *  
+ *  see also [[FileServerHere]]
+ */
+class FileServer extends ServerExtension("files") {
+  private var rootO: Option[File] = None
+  /** expects one argument - the root directory from which to serve files */
+  override def start(args: List[String]) {
+    args.headOption.map {h => rootO = Some(File(controller.getHome resolve h))}
+  }
+  def apply(request: ServerRequest): ServerResponse = {
+    val root = rootO orElse controller.getOAF.map(_.root) getOrElse {
+      throw LocalError("no root defined")
+    }
+    val path = request.pathForExtension
+    val show = root / path
+    if (!show.exists) {
+      throw LocalError("file not found")
+    } else if (show.isDirectory) {
+      val html = HTML.build {h =>
+        import h._
+        h.html {h.body {h.ul {
+          show.children foreach {c =>
+            h.li {
+              h.a("/:" + pathPrefix + "/" + path.map(_ + "/").mkString + c.name) {
+               text(c.name)
+              }
+            }
+          }
+        }}}
+      }
+      HTMLResponse(html)
+    } else {
+      FileResponse(show)
+    }
+  }
 }
 
 /**
@@ -122,33 +160,29 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
 
 /** interprets the body as a QMT [[ontology.Query]] and evaluates it */
 class QueryServer extends ServerExtension("query") {
-
   /**
     * Represents an error that occured because the context could not be properly parsed
     * @param candidate Candidate Path that could not be parsed
     * @param t Internal exception causing this error
     */
-  class ContextParsingError(candidate : String, t: Throwable) extends Error(s"Unable to use context: '$candidate' is not a valid MPath. ") {
+  class ContextParsingError(candidate : String, t: Throwable) extends LocalError(s"Unable to use context: '$candidate' is not a valid MPath. ") {
     setCausedBy(t)
   }
-
   /**
     * Represents an error that occured because an item in the context could not be retrieved
     * @param item path to item that could not be retrieved
     * @param t Internal exception causing this error
     */
-  class ContextRetrievalError(item: MPath, t: Throwable) extends Error(s"Unable to use context: '${item.toPath}' could not be retrieved. Make sure the path exists. ") {
+  class ContextRetrievalError(item: MPath, t: Throwable) extends LocalError(s"Unable to use context: '${item.toPath}' could not be retrieved. Make sure the path exists. ") {
     setCausedBy(t)
   }
-
   /**
     * Represents ane error that occured because the query could not be properly parsed.
     * @param se Internal source error that caused this error
     */
-  class QuerySourceParsingError(val se: SourceError) extends Error(s"Unable to parse query: Source error in Line ${se.ref.region.start.line}, Column ${se.ref.region.start.column} - Line ${se.ref.region.end.line}, Column ${se.ref.region.end.column}. Make sure your syntax is correct. ") {
+  class QuerySourceParsingError(val se: SourceError) extends LocalError(s"Unable to parse query: Source error in Line ${se.ref.region.start.line}, Column ${se.ref.region.start.column} - Line ${se.ref.region.end.line}, Column ${se.ref.region.end.column}. Make sure your syntax is correct. ") {
     setCausedBy(se)
   }
-
   /**
     * Represents an error that occured because the query could not be properly translated.
     * @param t Cause of the error
@@ -156,18 +190,19 @@ class QueryServer extends ServerExtension("query") {
   class QueryTranslationParsingError(val t: Throwable) extends Error(s"Unable to parse query: ${t.getMessage}. Make sure your syntax is correct. ") {
     setCausedBy(t)
   }
-
   def apply(request: ServerRequest): ServerResponse = {
-    request.extensionPathComponents match {
+    request.pathForExtension match {
       case List("text") =>
         // find the parameters in the body
         val queryparams = request.body.asJSON match {
           case jo: JSONObject => jo
+          case _ => throw LocalError("body must be JSON object")
         }
         // and extract them
         val query = queryparams("query") match {
           case Some(js: JSONString) =>
             js.value
+          case _ => ""
         }
         val context = queryparams("context") match {
           case Some(ja: JSONArray) =>
@@ -189,9 +224,8 @@ class QueryServer extends ServerExtension("query") {
                  }
                })
                .reduce(_ ++ _)
+          case _ => throw LocalError("no context (which must be a JSONArray) found")
         }
-
-
         // and parse it
         log(s"parsing query from text $query $context")
         val q = try {
@@ -205,43 +239,34 @@ class QueryServer extends ServerExtension("query") {
 
         // now run the query
         run(q, request)
-
-
       // POST to / => parse xml (for backward compatibility)
       case Nil | List("") if request.method == RequestMethod.Post =>
         // read xml from the body
         val queryxml = request.body.asXML
-
         // and parse it
         log(s"parsing query from xml $queryxml")
         val q = Query.parse(queryxml)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
-
         // now run the query
         run(q, request)
-
       // GET to / => show the query page (for humans)
       case Nil | List("") if request.method == RequestMethod.Get =>
-        resource("qmt.html", request)
-
-      // anything else => Error
+        ResourceResponse("qmt.html")
+        // anything else => Error
       case _ =>
-          ServerResponse.fromText("Not found", statusCode = ServerResponse.statusCodeNotFound)
+        TextResponse("Not found")
     }
   }
-
+  
   def run(query : Query, request: ServerRequest) : ServerResponse = {
-
     // check that the query is correct
     // TODO: Throw a proper error if this fails
     log(s"checking query $query")
     QueryChecker.infer(query)(Context.empty)
-
     // run the actual query
     log(s"running query $query")
     val res = controller.evaluator(query)
     ServerResponse.fromXML(res.toNode)
   }
-
 }
 
 /** HTTP frontend to the [[Search]] class */
@@ -389,8 +414,8 @@ class MessageHandler extends ServerExtension("content") {
      }
      controller.handle(message) match {
        case ObjectResponse(obj, tp) => TextResponse(obj, tp)
-       case StructureResponse(id) => errorResponse(id, request)
-       case ErrorResponse(msg) => errorResponse(msg, request)
+       case StructureResponse(id) => TextResponse(id)
+       case ErrorResponse(msg) => throw LocalError(msg)
      }
   }
 }

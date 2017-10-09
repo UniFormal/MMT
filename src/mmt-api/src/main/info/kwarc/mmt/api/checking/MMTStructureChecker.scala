@@ -72,11 +72,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val rules = RuleSet.collectRules(controller,Context.empty)
     implicit val env = new ExtendedCheckingEnvironment(ce, objectChecker, rules, th.path)
     implicit val task = ce.task
-    checkContext(Context.empty, getExtraInnerContext(th))
+    checkContext(Context.empty, controller.getExtraInnerContext(th))
   }
 
   private def prepareCheck(e: StructuralElement)(implicit ce: CheckingEnvironment): (Context, ExtendedCheckingEnvironment) = {
-    val context = getContext(e)
+    val context = controller.getContext(e)
     val rules = RuleSet.collectRules(controller, context)
     val env = new ExtendedCheckingEnvironment(ce, objectChecker, rules, e.path)
     (context, env)
@@ -88,46 +88,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
      val envI = env.copy(rules = rulesI)
      (contextI, envI)
   }
-  
-  /** computes the context in which an element must be checked
-   *  during top-down traversal, this method allows checking to start in the middle
-   */
-  private def getContext(e: StructuralElement): Context = {
-    lazy val parent = controller.get(e.parent)
-    e match {
-      case d: NarrativeElement => d.parentOpt match {
-        case None => d match {
-          case d: Document => d.contentAncestor match {
-            case None => Context.empty
-            case Some(m) => getContextWithInner(m)
-          }
-          case _ => Context.empty
-        }
-        case Some(p) => getContext(parent)
-      }
-      case m: Module => m.superModule match {
-        case None => Context.empty
-        case Some(smP) => controller.get(smP) match {
-          case sm: DeclaredModule => getContextWithInner(sm)
-          case sm: DefinedModule => getContext(m) // should never occur
-        }
-      }
-      case d: Declaration =>
-        parent match {
-          case ce: ContainerElement[_] => getContextWithInner(ce)
-          case dd: DerivedDeclaration =>
-             val contOpt = extman.get(classOf[StructuralFeature], dd.feature).map(_.getInnerContext(dd))
-             getContext(dd) ++ contOpt.getOrElse(Context.empty)
-          case nm: NestedModule => nm.module match {
-            case ce: ContainerElement[_] => getContextWithInner(ce)
-          }
-        }
-    }
-  }
-  /** auxiliary method of getContext, returns the context in which the body of ContainerElement is checked */
-  private def getContextWithInner(e: ContainerElement[_]) = getContext(e) ++ getExtraInnerContext(e)
-  
-  
+ 
   /**
     * @param context all variables and theories that may be used in e (including the theory in which is declared)
     * @param e       the element to check
@@ -149,7 +110,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           UncheckedElement.set(d)
         }
         // check children
-        val additionalContext = checkContext(context, getExtraInnerContext(c))
+        val additionalContext = checkContext(context, controller.getExtraInnerContext(c))
         val (contextI, envI) = prepareCheckExtendContext(context, env, additionalContext)
         logGroup {
           tDecls foreach {d =>
@@ -369,13 +330,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
 
   // ***** ContainerElements *****
   
-  /** additional context for checking the body of ContainerElement */
-  private def getExtraInnerContext(e: ContainerElement[_]) = e match {
-    case d: Document => Context.empty
-    case m: DeclaredModule => m.getInnerContext
-    case s: DeclaredStructure => Context.empty
-  }
-  
   /** auxiliary method of check */
   private def checkElementBegin(context : Context, e : ContainerElement[_<: StructuralElement])(implicit env: ExtendedCheckingEnvironment) {
     val rules = env.rules
@@ -409,7 +363,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     e match {
       case d: Document =>
       case t: DeclaredTheory =>
-        val (contextI, envI) = prepareCheckExtendContext(context, env, getExtraInnerContext(t))
+        val (contextI, envI) = prepareCheckExtendContext(context, env, controller.getExtraInnerContext(t))
         // check all the narrative structure (at the end to allow forward references)
         //TODO currently this is called on a NestedModule before the rest of the parent is checked
         def doDoc(ne: NarrativeElement) {
@@ -473,6 +427,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       val thy = dec match {
         case t: Module => t
         case nm: NestedModule => nm.module
+        case _ =>
+          env.errorCont(InvalidObject(t, "not a module: " + controller.presenter.asString(t)))
       }
       thy match {
         case thy: Theory =>

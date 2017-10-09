@@ -243,6 +243,10 @@ lazy val planetary = (project in file("planetary-mmt")).
   dependsOn(stex).
   settings(mmtProjectsSettings("planetary-mmt"): _*)
 
+lazy val interviews = (project in file("mmt-interviews")).
+  dependsOn(api,lf).
+  settings(mmtProjectsSettings("mmt-interviews"): _*)
+
 lazy val latex = (project in file("latex-mmt")).
   dependsOn(stex).
   settings(mmtProjectsSettings("latex-mmt"): _*)
@@ -272,7 +276,7 @@ lazy val repl = (project in file("mmt-repl")).
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
 lazy val mmt = (project in file("fatjar")).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, interviews).
   settings(mmtProjectsSettings("fatjar"): _*).
   settings(
     exportJars := false,

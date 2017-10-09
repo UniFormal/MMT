@@ -10,85 +10,33 @@ import utils.xml.attr
 
 import scala.xml._
 
-object OpaqueHTML {
-   object MMTNode {
-      def apply(format: String, s: String) = <script type={"mmt/"+format}>{s}</script>
-      def unapply(n: Node) = n match {
-         case n: Elem if n.label == "script" && attr(n, "type").startsWith("mmt/") =>
-            val format = attr(n, "type").substring(4)
-            Some((format,n.text))
-         case _ => None
-      }
-   }
-   object MMTIndex {
-      def apply(i: Int) = <mmt index={i.toString}/>
-      def unapply(n: Node) = n match {
-         case n @ <mmt/> => Some(attr(n, "index").toInt)
-         case _ => None
-      }
-   }
-   def mapMMTNodes(n: Node)(f: Node => Node): Node = n match {
-      case MMTNode(_,_) => f(n)
-      case MMTIndex(_) => f(n)
-      case n: Elem => n.copy(child = n.child.map(c => mapMMTNodes(c)(f)))
-      case n => n
-   }
-}
+import OpaqueXML._
 
-import OpaqueHTML._
-
-case class TermFragmentInHTML(index: Int, format: String, tc: TermContainer) {
-   def comp = OtherComponent("ext-"+index.toString)
-   def rawString = tc.read.getOrElse("")
-}
-
-/** html intermixed with [[Obj]]ects
- *
- * MMT objects are initially provided using <script type="mmt">OBJ</script>.
- * For storage in 'node' they are replaced with <mmt index="i"/> where i is the index of OBJ in 'terms'.  
+/**
+ * MMT objects are read from <script type="mmt">OBJ</script> tags in XHTML
+ * 
+ * very rough proof of concept, should be refined a lot
  */
-class OpaqueHTML(val parent: DPath, val node: Node, val terms: List[TermFragmentInHTML]) extends OpaqueElement {
-   def format = "html"
-   def raw: NodeSeq = mapMMTNodes(node) {case MMTIndex(i) =>
-      val tf = terms(i)
-      MMTNode(tf.format, tf.rawString)
-   }
-   override def toString = node.toString
-   
-   override def getComponents = terms map {tf =>
-      DeclarationComponent(tf.comp, tf.tc)
-   }
-   
-   def compatibilityKey = node
-   
-   override def compatible(that: StructuralElement) = that match {
-      case that: OpaqueHTML =>
-         this.compatibilityKey == that.compatibilityKey
-      case _ => false
-   }
-}
-
-/** very rough proof of concept, should be refined a lot */
 class HTMLInterpreter extends OpaqueElementInterpreter
                          with OpaqueChecker with OpaqueHTMLPresenter {
-   type OE = OpaqueHTML
+   type OE = OpaqueXML
    override def logPrefix = "opaque_html"
    
    def format = "html"
    override def isApplicable(f: String) = super.isApplicable(f) || f == "H"
    
-   def fromNode(parent: DPath, nsMap: NamespaceMap, nodes: NodeSeq): OpaqueHTML = {
+   def fromNode(parent: DPath, nsMap: NamespaceMap, nodes: NodeSeq): OpaqueXML = {
       val node = if (nodes.length == 1) nodes.head else <div>{nodes}</div>
-      var terms: List[TermFragmentInHTML] = Nil
+      var terms: List[TermFragmentInXML] = Nil
       var i = -1
       val nodeM = mapMMTNodes(node) {case MMTNode(format, s) =>
          i += 1
          val tc = TermContainer(s)
-         val tf = new TermFragmentInHTML(i, format, tc)
+         val tf = new TermFragmentInXML(i, format, tc)
          terms ::= tf
          MMTIndex(i)
       }
-      new OpaqueHTML(parent, nodeM, terms.reverse)
+      new OpaqueXML(parent, format, nodeM, terms.reverse)
    }
   
    def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment) {

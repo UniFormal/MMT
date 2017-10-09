@@ -3,17 +3,10 @@ package info.kwarc.mmt.api.web
 import info.kwarc.mmt.api._
 import frontend._
 import backend._
-import info.kwarc.mmt.api.utils.StreamUtils
-import info.kwarc.mmt.api.web.ServerResponse.resource
 
-import scala.util.parsing.json.JSONFormat
 import scala.xml._
 
 case class ServerError(msg: String) extends Error(msg)
-case class ServerProcessingError(request : ServerRequest, exception : Exception) extends Error(s"unknown error while processing ${request.toStringShort}") {
-  setCausedBy(exception)
-}
-
 
 import ServerResponse._
 
@@ -21,19 +14,14 @@ import ServerResponse._
 trait ServerImplementation {
   /** the name of this server */
   val serverName : String
-
   /** the address this server should listen to */
   val listenAddress : String
-
   /** the port this server should listen to */
   val listenPort : Int
-
   /** handle a request sent to the server */
   def handleRequest(request : ServerRequest) : ServerResponse
-
   /** handle a log message by the underlying server */
   def handleMessage(s : String) : Unit
-
   /** handle a fatal error in the underlying implementation */
   def handleError(e: Throwable) : Unit
 }
@@ -47,8 +35,9 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
   def handleMessage(s: String) {
     controller.report("tiscaf", s)
   }
-  def handleError(e: Throwable) {
-    logError("error in underlying server: " + e.getClass + ":" + e.getMessage + "\n" + e.getStackTrace.map(_.toString).mkString("", "\n", ""))
+  def handleError(t: Throwable) {
+    val e = GeneralError("error in underlying server").setCausedBy(t)
+    log(e)
   }
 
   val logPrefix = "server"
@@ -63,8 +52,8 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
       //log(request.body.asString)
       resolve(request)
     } catch {
-      case err: Error => errorResponse(err, request)
-      case e : Exception => errorResponse(ServerProcessingError(request, e), request)
+      case err: Error => return errorResponse(err, "html")
+      case e : Exception => return errorResponse(ServerError("unknown error").setCausedBy(e), "html")
     }
     // log the response being made
     //log(response.toString)
@@ -75,53 +64,40 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
 
   /** resolves a specific request -- may throw exceptions */
   private def resolve(request: ServerRequest) : ServerResponse = {
-    // magically requesting a resource via ?do=mmt_resource&path=...
-    val resourcePath = try{
-      if(request.parsedQuery.string("do") == "mmt_resource"){
-        Some(request.parsedQuery.string("path"))
-      } else {
-        None
-      }
-    } catch {
-      case e: Exception => None
-    }
     // check if our request method is OPTIONS, if so, do nothing
-    if(request.method == RequestMethod.Options) {
+    if (request.method == RequestMethod.Options) {
       new ServerResponse
-    // magic resource requests
-    } else if(resourcePath.isDefined) {
-      handleResource(resourcePath.get, request)
     // everything else
     } else {
       request.extensionName match {
         case Some("debug") => resolveDebug(request)
         case Some("change") => resolveChange(request)
         case Some("mws") => resolveMWS(request)
-        case Some(ext) => resolveExt(ext, request)
+        case Some(ext) => resolveExtension(ext, request)
         case None =>
           val path = request.path match {
             case Nil | List("") => "browse.html"
             case _ => request.pathString
           }
-          handleResource(path, request)
+          ResourceResponse(path)
       }
     }
   }
 
-  private def handleResource(path : String, request: ServerRequest): ServerResponse = {
-    path.stripPrefix("/") match {
-      case "script/mmt/mmt-url.js" =>
-        resource(path, io => {
-          // read it as a string
-          val str = StreamUtils.toString(io, "utf-8")
-          Left(
-            // and place in the request
-            str.format(JSONFormat.quoteString(request.pathString)).getBytes("utf-8")
-          )
-        }, request)
-
-      case _ =>
-        resource(path, request)
+  /** use a ServerExtension */
+  private def resolveExtension(name : String, request : ServerRequest) : ServerResponse = {
+    // retrieve the extension that should handle the context
+    val extension = controller.extman.getOrAddExtension(classOf[ServerExtension], name) getOrElse {
+      throw RegistrationError(s"no plugin registered for context $name")
+    }
+    log(s"handling request via plugin ${extension.logPrefix}")
+    try {
+      extension(request)
+    } catch {
+      case e: Error =>
+        throw e
+      case e: Exception =>
+        throw extension.LocalError(s"unknown error while serving ${request.pathString}").setCausedBy(e)
     }
   }
 
@@ -228,28 +204,5 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
       {answrs}
     </mws:answset>
     XmlResponse(node)
-  }
-
-  /** handles a single response */
-  def resolveExt(name : String, request : ServerRequest) : ServerResponse = {
-    // TODO: Check if we want access control
-
-    // retrieve the extension that should handle the context
-    val extension = controller.extman.getOrAddExtension(classOf[ServerExtension], name) getOrElse {
-      return errorResponse(s"no plugin registered for context $name", request)
-    }
-
-    // log that we are handling an extension request
-    log(s"handling request via plugin ${extension.logPrefix}")
-
-    // and try to handle
-    try {
-      extension(request).asInstanceOf[ServerResponse]
-    } catch {
-      case e: Error =>
-        throw e
-      case e: Exception =>
-        throw extension.LocalError(s"unknown error while serving ${request.pathString}").setCausedBy(e)
-    }
   }
 }

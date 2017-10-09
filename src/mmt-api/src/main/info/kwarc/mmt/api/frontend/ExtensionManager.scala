@@ -192,7 +192,9 @@ class ExtensionManager(controller: Controller) extends Logger {
     val clsJ = try {
        Class.forName(cls)
     } catch {
-      case e: Exception => throw RegistrationError("error while trying to load class " + cls).setCausedBy(e)
+      case e: Throwable =>
+        // need to catch all Exceptions and Errors here because NoClassDefFoundError is not an Exception
+        throw RegistrationError("error while trying to load class " + cls).setCausedBy(e)
     }
     extensions.find(e => e.getClass == clsJ).foreach {e =>
        log("... already loaded, skipping")
@@ -283,8 +285,8 @@ class ExtensionManager(controller: Controller) extends Logger {
     val mmtextr = ontology.MMTExtractor
 
     val rbp = new RuleBasedProver
-    var prover: Extension = rbp
-    //TODO temporary hack to replace old prover with Mark's AgentProver if the latter is on the classpath
+    val prover: Extension = rbp
+    //quick hack to replace old prover with Mark's AgentProver if the latter is on the classpath
     /*
     val className = "info.kwarc.mmt.leo.provers.AgentProver"
     try {

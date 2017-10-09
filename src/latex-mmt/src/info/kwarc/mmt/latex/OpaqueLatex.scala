@@ -5,8 +5,8 @@ import opaque._
 
 import scala.xml._
 
-class LatexInterpreter extends DefaultOpaqueElementInterpreter {
+class LatexInterpreter extends TextInterpreter {
    override def logPrefix = "opaque_latex"
-   override def format = "latex"
-   override def isApplicable(f: String) = super.isApplicable(f) || f == "L"
+   override val format = "latex"
+   override val formatAlias = List("L")
 }

@@ -8,6 +8,10 @@ import utils._
 package object utils {
    /** converts a string to an integer, returns None on format exception */
    def stringToInt(s: String) = try {Some(s.toInt)} catch {case _: Exception => None}
+   /** matches a string as an integer */
+   object NumericString {
+     def unapply(s: String) = stringToInt(s)
+   }
   
    /** splits a string at a separator (returns Nil for the empty string) */
    def stringToList(s: String, sep: String = "\\s") = s.split(sep).toList match {

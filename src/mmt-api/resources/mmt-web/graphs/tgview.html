@@ -29,7 +29,8 @@
 	
 	<body class="ui-form">
 		
-		<div  class="theoryTreeClass"  style="float:left;height:82%;width:15%;">
+		<div  class="theoryTreeClass" id="theory_tree_div" style="float:left;height:82%;width:15%;">
+			<span style="font-weight: bold; font-size: 110%;"> MathHub Archives </span>
 			<div id="theory_tree" ></div>
 		</div>
 		
@@ -57,11 +58,12 @@
 						<option value="2">Forces Driven Layout</option>
 					</select>
 					
-					<button id="selectionModeButton" onClick="switchSelectionMode();" title="Switch Selection Mode" class="myButton" style="width:32px;height:26px"><div style="margin-top:2px" class="crosshairIcon"></div></button>
 					
-					<button id="clusterButton" onClick="clusterSelectedNodes()" class="myButton">Cluster selected Nodes</button>
+					<button id="selectionModeButton" onClick="switchSelectionMode();" title="Switch Selection Mode" class="myButton" style="width:32px;height:26px;"><div style="margin-top:2px" class="crosshairIcon"></div>
+					<button id="downloadButton" onClick="downloadGraph();" title="Download Graph" class="myButton" style="width:32px;height:26px;margin-left:4px;"><div style="margin-top:2px" class="downloadIcon"></div>
+					<button id="undoButton" onClick="undoLastAction();" title="Undo last Action" class="myButton" style="width:32px;height:26px;margin-left:4px;margin-right:4px;"><div style="margin-top:2px" class="undoIcon"></div>
 					
-					<a id="downloadButton"><button onClick="downloadGraph()" class="myButton">Download Graph</button></a>
+					<button id="clusterButton" onClick="clusterSelectedNodes()" class="myButton">Cluster Nodes</button>
 					<button id="selectNodes" onClick="selectNodes()" class="myButton">Select Nodes By Pathname</button>
 					<button id="helpButton"  class="myButton">Help</button>
 				</div>
@@ -88,7 +90,7 @@
 		</div>
 		<p>
 		</p>
-		<span id='string_span' style='float:left;font-size: 17px; diyplay:none'></span>
+		<span id='string_span' style='float:left;font-size: 14px; diyplay:none'></span>
 		
 		
 		<ul class='custom-menu' style="z-index:100">
@@ -99,14 +101,14 @@
 			<li data-action="openCluster">Open Cluster</li>
 		</ul>
 		
+		<ul class='custom-menu-side' id="side-menu" style="z-index:100">
+		</ul>
+		
 		<div id="tooltip-container" class="custom-tooltip" style="z-index:101"></div>
 
         <script type="text/javascript">
-            lastGraphTypeUsed=getParameterByName("type");
-		lastGraphDataUsed=getParameterByName("graphdata");
-		var mmtUrl = (typeof MMT_base_url=="undefined") ? ((window.location.protocol=='file:')? "/" : "/mh/mmt/") : MMT_base_url;
-			if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "")
-				mmtUrl="/";
+			lastGraphTypeUsed=getParameterByName("type");
+			lastGraphDataUsed=getParameterByName("graphdata");
 				
             var selectionMode = false;
             var theoryGraph = new TheoryGraph();
@@ -124,11 +126,11 @@
 				theoryGraph.hideEdges(type, hide);
 			}
 
-            function addColors() {
-                var colorArray = ["#CCCCFF", "#FFFFCC", "#FFCC99", "#CCFFCC", "#DDDDDD", "#FFCCCC"];
+            function addColors() 
+			{
                 var html = "";
-                for (var i = 0; i < colorArray.length; i++) {
-                    html += '<div title="Colorize all selected nodes" class="colorRect" onClick="colorizeSelectedNodes(\'' + colorArray[i] + '\')" style="background-color:' + colorArray[i] + '">  </div>';
+                for (var i = 0; i < colorizingNodesArray.length; i++) {
+                    html += '<div title="Colorize all selected nodes" class="colorRect" onClick="colorizeSelectedNodes(\'' + colorizingNodesArray[i] + '\')" style="background-color:' + colorizingNodesArray[i] + '">  </div>';
                 }
                 document.getElementById("colorPicker").innerHTML = html;
             }
@@ -198,8 +200,9 @@
             htmlCanvas.style.height = htmlCanvas.height + "px";
 
             addColors();
+			generateCustomSideMenu();	
+		
             createNewGraph(getParameterByName("type"),getParameterByName("graphdata"));
         </script>
-
     </body>
 </html>

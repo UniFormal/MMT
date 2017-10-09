@@ -32,7 +32,7 @@ object TrivRule extends ExternalKeyRule(External._base ? "TrivialKey" ? "triv") 
   //val f = utils.File("C:\\incoming\\test.txt")
   def apply(solver: Solver)(context: Context, tm: Term, tp: Term): Boolean = {
      //utils.File.write(f, utils.File.read(f) + "\n" + solver.presentObj(tm))
-     true
+     false
   }
 }
 

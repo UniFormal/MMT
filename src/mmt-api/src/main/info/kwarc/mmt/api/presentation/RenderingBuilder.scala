@@ -22,6 +22,13 @@ abstract class RenderingHandler {
    /** output a string with line ending */
    def writeln(s: String) {apply(s + "\n")}
  
+   /** wraps output in a pair of brackets */
+   def wrap(before: String, after: String)(body: => Unit) {
+      apply(before)
+      body
+      apply(after)
+   }
+   
    /*
    // Convenience methods for rendering XML
    /** begins an XML element, use empty prefix for unprefixed elements, content is provided by succeeding calls */ 
