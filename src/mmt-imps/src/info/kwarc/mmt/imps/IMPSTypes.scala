@@ -173,13 +173,13 @@ case class Extensible(lst : List[TypeSortAList], src : SourceRef) extends LispEx
   }
 }
 
-case class SortSpecifications(lst : List[(String, String)], src : SourceRef) extends LispExp
+case class SortSpecifications(lst : List[(IMPSSort, IMPSSort)], src : SourceRef) extends LispExp
 {
   override def toString: String = {
     var str : String = ""
     for (p <- lst)
     {
-      str = str + "(" + p._1 + " " + p._2 + ") "
+      str = str + "(" + p._1.toString + " " + p._2.toString + ") "
     }
     str = str.trim
     str
@@ -581,13 +581,13 @@ case class Language(name       : String,
 
     var nu_sorts : Option[SortSpecifications] = None
 
-    var srtHere  : List[(String, String)] = Nil
-    var srtThere : List[(String, String)] = Nil
+    var srtHere  : List[(IMPSSort, IMPSSort)] = Nil
+    var srtThere : List[(IMPSSort, IMPSSort)] = Nil
 
     if (srts.isDefined)   { srtHere = srts.get.lst }
     if (l.srts.isDefined) { srtThere = l.srts.get.lst }
 
-    val union_srts : List[(String, String)] = (srtHere ::: srtThere).distinct
+    val union_srts : List[(IMPSSort, IMPSSort)] = (srtHere ::: srtThere).distinct
 
     if (union_srts.nonEmpty)
     {

@@ -2,6 +2,7 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.imps.Usage.Usage
 import info.kwarc.mmt.imps.NumericalType.NumericalType
+import info.kwarc.mmt.imps.impsMathParser.IMPSMathParser
 
 package object impsArgumentParsers
 {
@@ -266,10 +267,14 @@ package object impsArgumentParsers
     if (e.children.length == 2) {
       e.children(1) match {
         case Exp(List(Str(x)),_) => {
-          if (x.startsWith("\"") && x.endsWith("\""))
-            { Some(Sort(x.tail.init, e.src))} // drop first and last
-          else
-            { Some(Sort(x, e.src)) }
+          var toBeParsed : String = if (x.startsWith("\"") && x.endsWith("\""))
+            { x.tail.init } else { x }
+
+          val k = new IMPSMathParser()
+          val j = k.parseAll(k.parseSort, x)
+
+          assert(!(j.isEmpty))
+          return Some(Sort(j.get, e.src))
         }
         case _                   => None
       }
@@ -512,7 +517,24 @@ package object impsArgumentParsers
       }
     }
 
-    if (lst.isEmpty) { None } else { Some(SortSpecifications(lst, e.src)) }
+    if (lst.isEmpty) { None } else
+    {
+      val mp : IMPSMathParser = new IMPSMathParser()
+      var srtlst : List[(IMPSSort, IMPSSort)] = Nil
+      assert(srtlst.length == 0)
+
+      for (pr <- lst)
+      {
+        val sub = mp.parseAll(mp.parseSort,pr._1)
+        val sup = mp.parseAll(mp.parseSort,pr._2)
+        assert(!(sub.isEmpty))
+        assert(!(sup.isEmpty))
+        srtlst = srtlst ::: List((sub.get,sup.get))
+        assert(srtlst.length >= 1)
+      }
+
+      Some(SortSpecifications(srtlst, e.src))
+    }
   }
 
   /* Parser for IMPS fixed theories objects

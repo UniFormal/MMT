@@ -259,14 +259,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     if (l.srts.isDefined)
     {
-      for (spec : (String, String) <- l.srts.get.lst)
-      {
-        val mth : Term = tState.bindUnknowns(doTypeString(spec._2, t))
-        val nu_sort = symbols.Constant(t.toTerm, doName(spec._1), Nil, Some(mth), None, None)
-        doSourceRef(nu_sort, l.srts.get.src)
-        println("adding sort from language: " + spec._1)
-        controller.add(nu_sort)
-      }
+      /* introduce all sorts with their respective enclosing sorts */
+      for (spec : (IMPSSort, IMPSSort) <- l.srts.get.lst)
+        { doSubsort(spec._1, spec._2, t, l.srts.get.src) }
     }
 
     if (l.extens.isDefined)
@@ -340,13 +335,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         var srt : Option[Term] = None
         if (sort.isDefined)
         {
-          val ln_prime : LocalName = LocalName(sort.get.sort)
+          /* Theory not in scope, so we find it by hand */
+          val theTheory : Option[DeclaredTheory] = tState.theories_decl.find(x => x.name == LocalName(theory.thy))
+          assert(theTheory.isDefined)
 
-          assert(parent.getDeclarations.exists(b => b.name == ln_prime))
-
-          for (decl <- parent.getDeclarations) {
-            if (decl.name == ln_prime) { srt = Some(decl.toTerm) }
-          }
+          srt = Some(doSort(sort.get.sort, theTheory.get))
         }
         else {
           val sortx : Term = tState.addUnknown()
@@ -420,19 +413,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     val j = k.parseAll(k.parseSort, s)
 
     assert(!(j.isEmpty))
-    doType(j.get, thy)
+    doSort(j.get, thy)
   }
 
-  def doType(d : IMPSSort, t : DeclaredTheory) : Term =
+  def doSort(d : IMPSSort, t : DeclaredTheory) : Term =
   {
-    // TODO: Check if type is already in theory(?)
-    // Reference if yes, introduce if no?
-
-    /* See IMPS Manual pg. 172?
-    – It occurs in a previous sort specification.
-    – It is a sort in one of the embedded languages.
-    – It is a compound sort which can be built up from sorts of the preceding kinds. */
-
     val ret : Term = d match
     {
       case IMPSAtomSort("ind")  => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPath ? LocalName("indType")))
@@ -441,15 +426,19 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSAtomSort(srt)    => val expr = OMS(IMPSTheory.lutinsPath ? LocalName("exp"))
                                    val sort = OMS(t.path ? srt)
                                    OMA(expr, List(tState.addUnknown(),sort))
-      case IMPSFunSort(sorts)   => IMPSTheory.FunSort(sorts map (x => doType(x,t)))
+      case IMPSFunSort(sorts)   => IMPSTheory.FunSort(sorts map (x => doSort(x,t)))
     }
     ret
   }
 
+  /* Introduces a sort to a theory and also assigns the enclosing sort to it. */
   def doSubsort(subsort : IMPSSort, supersort : IMPSSort, thy : DeclaredTheory, src : SourceRef) : Unit =
   {
     val subname   : LocalName  = LocalName(subsort.toString)
     val supname   : LocalName  = LocalName(supersort.toString)
+
+    /* enclosing sort should already be defined */
+    println("Adding sort: " + subsort.toString + ", enclosed by " + supersort.toString)
 
     val opt_ind   : Option[Term] = Some(OMS(IMPSTheory.lutinsIndType))
     val jdgmtname : LocalName    = LocalName(subsort.toString + "_sub_" + supersort.toString)
@@ -491,13 +480,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSConjunction(ls)    => IMPSTheory.And(ls map (x => doMathExp(x,thy)))
       case q@IMPSLambda(_,_)      => doIMPSLambda(q, thy)
       case q@IMPSForAll(_,_)      => doIMPSForall(q, thy)
-      case IMPSForSome(vs, r)     => IMPSTheory.Forsome(vs map (p => (LocalName(p._1.v), p._2 map (x => doType(x,thy)))), doMathExp(r,thy))
+      case IMPSForSome(vs, r)     => IMPSTheory.Forsome(vs map (p => (LocalName(p._1.v), p._2 map (x => doSort(x,thy)))), doMathExp(r,thy))
       case IMPSImplication(p,q)   => IMPSTheory.Implies(doMathExp(p,thy), doMathExp(q,thy))
       case IMPSApply(f,ts)        => IMPSTheory.IMPSApply(doMathExp(f,thy), ts map (x => doMathExp(x,thy)))
-      case IMPSIota(v1,s1,p)      => IMPSTheory.Iota(LocalName(v1.v), doType(s1,thy), doMathExp(p,thy))
-      case IMPSIotaP(v1,s1,p)     => IMPSTheory.IotaP(LocalName(v1.v), doType(s1,thy), doMathExp(p,thy))
+      case IMPSIota(v1,s1,p)      => IMPSTheory.Iota(LocalName(v1.v), doSort(s1,thy), doMathExp(p,thy))
+      case IMPSIotaP(v1,s1,p)     => IMPSTheory.IotaP(LocalName(v1.v), doSort(s1,thy), doMathExp(p,thy))
       case IMPSIsDefined(r)       => IMPSTheory.IsDefined(doMathExp(r,thy))
-      case IMPSIsDefinedIn(r,s)   => IMPSTheory.IsDefinedIn(doMathExp(r,thy), doType(s,thy))
+      case IMPSIsDefinedIn(r,s)   => IMPSTheory.IsDefinedIn(doMathExp(r,thy), doSort(s,thy))
       case IMPSUndefined(s)       => IMPSTheory.Undefined(doMathExp(s,thy))
     }
   }

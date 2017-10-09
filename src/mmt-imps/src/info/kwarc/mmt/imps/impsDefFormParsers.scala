@@ -1,5 +1,7 @@
 package info.kwarc.mmt.imps
 
+import info.kwarc.mmt.imps.impsMathParser.IMPSMathParser
+
 package object impsDefFormParsers
 {
   /* Parser for IMPS special form def-atomic sort
@@ -184,7 +186,7 @@ package object impsDefFormParsers
   {
     // Required arguments
     var name      : Option[String]         = None
-    var sortNames : Option[List[String]]   = None
+    var sortNames : Option[List[IMPSSort]] = None
     var thy       : Option[ArgumentTheory] = None
 
     // Optional arguments
@@ -210,7 +212,23 @@ package object impsDefFormParsers
         }
         case _ => None
       }
-      if (tmplst != List.empty) { sortNames = Some(tmplst) } else { None }
+      if (tmplst != List.empty)
+      {
+        /* Parse sorts from names */
+        val k = new IMPSMathParser()
+        var srtlst : List[IMPSSort] = Nil
+        assert(srtlst.length == 0)
+
+        for (e <- tmplst)
+        {
+          val j = k.parseAll(k.parseSort, e)
+          assert(!(j.isEmpty))
+          srtlst = srtlst ::: List(j.get)
+          assert(srtlst.length >= 1)
+        }
+
+        sortNames = Some(srtlst)
+      } else { None }
 
       /* Parse keyword arguments, these can come in any order */
       var i : Int = 3
