@@ -271,7 +271,7 @@ package object impsArgumentParsers
             { x.tail.init } else { x }
 
           val k = new IMPSMathParser()
-          val j = k.parseAll(k.parseSort, x)
+          val j = k.parseAll(k.parseSort, toBeParsed)
 
           assert(!(j.isEmpty))
           return Some(Sort(j.get, e.src))

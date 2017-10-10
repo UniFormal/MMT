@@ -331,6 +331,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         var srt : Option[Term] = None
         if (sort.isDefined)
         {
+          println("Adding constant with clear sort: " + name)
           /* Theory not in scope, so we find it by hand */
           val theTheory : Option[DeclaredTheory] = tState.theories_decl.find(x => x.name == LocalName(theory.thy))
           assert(theTheory.isDefined)
@@ -338,6 +339,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           srt = Some(doSort(sort.get.sort, theTheory.get))
         }
         else {
+          println("Adding constant with inferred sort: " + name)
           val sortx : Term = tState.addUnknown()
           srt = Some(sortx)
           tState.bindUnknowns(sortx)
@@ -431,8 +433,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           val tpA  : Term = OMS(IMPSTheory.lutinsIndType)
           val tpB  : Term = OMS(IMPSTheory.lutinsIndType)
 
-          val sortA : Term = OMS(t.path ? LocalName(sorts(0).toString))
-          val sortB : Term = OMS(t.path ? LocalName(sorts(1).toString))
+          val sortA : Term = doSort(sorts(0),t)
+          val sortB : Term = doSort(sorts(1),t)
 
           val appl : Term = ApplySpine(funsort, tpA, tpB, sortA, sortB)
           appl
@@ -441,7 +443,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         {
           // TODO: This could also be prop, as above.
           val tp   : Term = OMS(IMPSTheory.lutinsIndType)
-          val srt  : Term = OMS(t.path ? LocalName(sorts.head.toString))
+          val srt  : Term = doSort(sorts.head,t)
 
           val appl : Term = ApplySpine(funsort, srt, doSort(IMPSFunSort(sorts.tail),t))
           appl
@@ -454,17 +456,14 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   /* Introduces a sort to a theory and also assigns the enclosing sort to it. */
   def doSubsort(subsort : IMPSSort, supersort : IMPSSort, thy : DeclaredTheory, src : SourceRef) : Unit =
   {
-    val subname   : LocalName  = LocalName(subsort.toString)
-    val supname   : LocalName  = LocalName(supersort.toString)
-
     /* enclosing sort should already be defined */
     println("Adding sort: " + subsort.toString + ", enclosed by " + supersort.toString)
 
     val opt_ind   : Option[Term] = Some(Apply(OMS(IMPSTheory.lutinsPath ? LocalName("sort")), OMS(IMPSTheory.lutinsIndType)))
     val jdgmtname : LocalName    = LocalName(subsort.toString + "_sub_" + supersort.toString)
 
-    val foo       : Term = OMS(thy.path ? subname)
-    val bar       : Term = OMS(thy.path ? supname)
+    val foo       : Term = doSort(subsort,thy)
+    val bar       : Term = doSort(supersort,thy)
     val baz       : Term = OMS(IMPSTheory.lutinsIndType)
 
     val subs      : Term = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), baz, foo, bar)
@@ -473,7 +472,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-    val typing    : Declaration  = symbols.Constant(thy.toTerm,subname,Nil,opt_ind,None,Some("Subsort_1"))
+    val typing    : Declaration  = symbols.Constant(thy.toTerm,LocalName(subsort.toString),Nil,opt_ind,None,Some("Subsort_1"))
     val judgement : Declaration  = symbols.Constant(thy.toTerm,jdgmtname,Nil,jdgmttp,None,Some("Subsort_2"))
 
     doSourceRef(typing,src)
