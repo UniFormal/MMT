@@ -61,11 +61,11 @@ class IMPSImporter extends Importer
    See also: This exact thing, but in PVS */
 class TranslationState ()
 {
-  var vars           : Context              = Context.empty
-  var theories_decl  : List[DeclaredTheory] = Nil
-  var theories_raw   : List[Theory]         = Nil
-  var languages      : List[Language]       = Nil
-  protected var unknowns       : Int                  = 0
+  var vars               : Context              = Context.empty
+  var theories_decl      : List[DeclaredTheory] = Nil
+  var theories_raw       : List[Theory]         = Nil
+  var languages          : List[Language]       = Nil
+  protected var unknowns : Int                  = 0
 
   protected def doiName(i : Int, isType : Boolean) : LocalName = {
     LocalName("") / { if (isType) LocalName("I") else LocalName("i") } / i.toString

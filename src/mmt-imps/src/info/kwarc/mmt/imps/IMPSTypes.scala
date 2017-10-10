@@ -186,13 +186,13 @@ case class SortSpecifications(lst : List[(IMPSSort, IMPSSort)], src : SourceRef)
   }
 }
 
-case class ConstantSpecifications(lst : List[(String, String)], src : SourceRef) extends LispExp
+case class ConstantSpecifications(lst : List[(String, IMPSSort)], src : SourceRef) extends LispExp
 {
   override def toString: String = {
     var str : String = ""
     for (p <- lst)
     {
-      str = str + "(" + p._1 + " " + p._2 + ") "
+      str = str + "(" + p._1 + " " + p._2.toString + ") "
     }
     str = str.trim
     str
@@ -599,13 +599,13 @@ case class Language(name       : String,
 
     var nu_consts : Option[ConstantSpecifications] = None
 
-    var conHere  : List[(String, String)] = Nil
-    var conThere : List[(String, String)] = Nil
+    var conHere  : List[(String, IMPSSort)] = Nil
+    var conThere : List[(String, IMPSSort)] = Nil
 
     if (cnstnts.isDefined)   { conHere = cnstnts.get.lst }
     if (l.cnstnts.isDefined) { conThere = l.cnstnts.get.lst }
 
-    val union_constants : List[(String, String)] = (conHere ::: conThere).distinct
+    val union_constants : List[(String, IMPSSort)] = (conHere ::: conThere).distinct
 
     if (union_constants.nonEmpty)
     {

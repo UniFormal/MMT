@@ -270,8 +270,8 @@ package object impsArgumentParsers
           var toBeParsed : String = if (x.startsWith("\"") && x.endsWith("\""))
             { x.tail.init } else { x }
 
-          val k = new IMPSMathParser()
-          val j = k.parseAll(k.parseSort, toBeParsed)
+          val mp = new IMPSMathParser()
+          val j  = mp.parseAll(mp.parseSort, toBeParsed)
 
           assert(!(j.isEmpty))
           return Some(Sort(j.get, e.src))
@@ -430,7 +430,7 @@ package object impsArgumentParsers
    * used in: def-language */
   def parseConstants(e : Exp) : Option[ConstantSpecifications] =
   {
-    var lst : List[(String, String)] = Nil
+    var lst : List[(String, IMPSSort)] = Nil
 
     // One constant notification minimum
     assert(e.children.tail.nonEmpty)
@@ -450,17 +450,30 @@ package object impsArgumentParsers
               case Exp(js,_) =>
               {
                 var str : String = ""
-                if (js.length >= 2) {str = "("}
+                if (js.length >= 2) {str = "["}
                 for (j <- js)
                 {
                   j match {
-                    case Exp(List(Str(srt)),_) => str = str + srt + " "
+                    case Exp(List(Str(sort)),_) => {
+                      if (str.length > 1)
+                      {
+                        str = str + "," + sort
+                      } else {
+                        str = str + sort
+                      }
+                    }
                     case _ => ()
                   }
                 }
                 str = str.trim
-                if (js.length >= 2) {str = str + ")"}
-                lst = lst :+ (name, str)
+                if (js.length >= 2) {str = str + "]"}
+
+                val mp     = new IMPSMathParser()
+                val parsed = mp.parseAll(mp.parseSort, str)
+
+                if (parsed.isEmpty) { ??? }
+
+                lst = lst :+ (name, parsed.get)
               }
             }
             case _ => ()

@@ -87,6 +87,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     // Run Checker (to resolve unknowns, etc)
     // Set to true to run
     val typecheck : Boolean = true
+
     if (typecheck)
     {
       log("Checking:")
@@ -273,9 +274,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     if (l.cnstnts.isDefined)
     {
-      for (pair : (String, String) <- l.cnstnts.get.lst)
+      for (pair : (String, IMPSSort) <- l.cnstnts.get.lst)
       {
-        val mth_tp : Term = tState.bindUnknowns(doTypeString(pair._2, t))
+        val mth_tp : Term = doSort(pair._2, t)
         val l_const = symbols.Constant(t.toTerm,doName(pair._1),Nil,Some(mth_tp),None,Some("Constant"))
         doSourceRef(l_const,l.cnstnts.get.src)
         controller add l_const
@@ -341,14 +342,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         else {
           println("Adding constant with inferred sort: " + name)
           val sortx : Term = tState.addUnknown()
-          srt = Some(sortx)
           tState.bindUnknowns(sortx)
+          srt = Some(sortx)
         }
 
-        assert(srt.isDefined)
-        if (srt.isDefined) { tState.bindUnknowns(srt.get) }
-
-        val mth : Term = tState.bindUnknowns(doMathExp(definition, parent))
+        val mth : Term = doMathExp(definition, parent)
         val nu_constant = symbols.Constant(parent.toTerm, LocalName(name), Nil, srt, Some(mth), Some("Constant"))
 
         /* Add available MetaData */
@@ -405,15 +403,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     }
   }
 
-  def doTypeString(s : String, thy : DeclaredTheory) : Term =
-  {
-    val k = new IMPSMathParser()
-    val j = k.parseAll(k.parseSort, s)
-
-    assert(!(j.isEmpty))
-    doSort(j.get, thy)
-  }
-
   def doSort(d : IMPSSort, t : DeclaredTheory) : Term =
   {
     val ret : Term = d match
@@ -429,14 +418,14 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         if (sorts.length == 2)
         {
-          // TODO: These could also be prop. Check for this and adapt!
+          // TODO: These could also be prop. Check for this (somehow) and adapt!
           val tpA  : Term = OMS(IMPSTheory.lutinsIndType)
           val tpB  : Term = OMS(IMPSTheory.lutinsIndType)
 
           val sortA : Term = doSort(sorts(0),t)
           val sortB : Term = doSort(sorts(1),t)
 
-          val appl : Term = ApplySpine(funsort, tpA, tpB, sortA, sortB)
+          val appl : Term = IMPSTheory.exp(ApplySpine(funsort, tpA, tpB, sortA, sortB))
           appl
         }
         else
@@ -445,7 +434,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           val tp   : Term = OMS(IMPSTheory.lutinsIndType)
           val srt  : Term = doSort(sorts.head,t)
 
-          val appl : Term = ApplySpine(funsort, srt, doSort(IMPSFunSort(sorts.tail),t))
+          // TODO: These are curried. Should it be this or does the recursio need to be outsourced?
+          val appl : Term = IMPSTheory.exp(ApplySpine(funsort, srt, doSort(IMPSFunSort(sorts.tail),t)))
           appl
         }
       }
@@ -543,7 +533,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     assert(lambda.vs.nonEmpty)
     val target : Term = doMathExp(lambda.t,thy)
     var foo = IMPSTheory.Lambda(lambda.vs map (p => (LocalName(p._1.v), p._2 map (x => doSort(x,thy)))), target)
-    tState.bindUnknowns(foo)
     foo
   }
 

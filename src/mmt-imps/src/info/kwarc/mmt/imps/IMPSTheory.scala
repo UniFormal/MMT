@@ -33,17 +33,6 @@ object IMPSTheory
     }
   }
 
-  object SortRef extends Sym("exp")
-  {
-    /* "But Pawpaw!", you say, "This can't be correct!" */
-    // Possible. TODO: Think this through again.
-    def apply(t : Term) : Term = {
-      val foo : Term = OMS(lutinsPath ? "indType")
-      val bar : Term = OMS(lutinsPath ? "ind")
-      ApplySpine(this.term,foo,bar)
-    }
-  }
-
   object FunSort extends Sym("fun")
   {
     def apply(tps : List[Term]) : Term = {
