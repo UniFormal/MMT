@@ -359,6 +359,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
     val (unblocked, stillBlocked) = blocked.partition(_.missingDeps.isEmpty)
     blocked = stillBlocked
     unblocked.foreach(u => log("Unblocked: " + u.task.inFile))
+    if (unblocked.nonEmpty) recentlyBuilt ::= ((qt.task.asDependency,BuildEmpty("unblocked: " + unblocked.map(_.task.inFile).mkString(", "))))
     unblocked.reverseMap(queued.add)
   }
 
@@ -425,30 +426,33 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
         val newmissings = (queued.toArray(Nil.asInstanceOf[List[QueuedTask]].toArray).toList :::
           blocked).flatMap(_.willProvide).filter(use.contains)
         if (newmissings.nonEmpty) MissingDependency(newmissings,pr,use) else bf
-      case MissingDependency(nd,pr,use) =>
+      case MissingDependency(md,pr,use) =>
         val newmissings = (queued.toArray(Nil.asInstanceOf[List[QueuedTask]].toArray).toList :::
-          blocked).flatMap(_.willProvide).filter(use.contains) ::: nd
-        MissingDependency(nd.distinct,pr,use)
+          blocked).flatMap(_.willProvide).filter(use.contains) ::: (md collect {
+          case ld @ LogicalDependency(mp) if controller.getO(mp).isEmpty => ld
+          case pd : PhysicalDependency => pd
+        })
+        MissingDependency(newmissings.distinct,pr,use)
       case _ => res1
     }
     val qtDep = qt.task.asDependency
     if (!qt.dependencyClosure) cycleCheck -= qtDep
       currentQueueTask = None
       /* add two dummy results into the finished queue to show what happened to a blocked task */
+    /*
       if (qt.forceRun.nonEmpty) {
         recentlyBuilt ::= (qtDep, BuildEmpty("was blocked"))
         recentlyBuilt ::= (qtDep, MissingDependency(qt.forceRun, qt.willProvide,qt.missingDeps))
       }
       recentlyBuilt ::= (qtDep, res)
-    if (recentlyBuilt.length > 200) {
-      recentlyBuilt = recentlyBuilt.take(200)
-    }
+      */ // incomprehensible to me
     res match {
       case _: BuildSuccess | _: BuildFailure | _: BuildEmpty =>
         // remember finished build
         if (!alreadyBuilt.isDefinedAt(qtDep)) {
           alreadyBuilt(qtDep) = res
         }
+        recentlyBuilt ::= (qtDep,res)
         res.provided.foreach(catalog(_) = qtDep)
         log(res.getClass.getCanonicalName + ": " + qt.task.inFile)
       // TODO write file errors/.../file.deps
@@ -461,13 +465,20 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
           case pd : PhysicalDependency => pd
         }
         */
+        qt.missingDeps = missing
         log("Missing Deps: " + qt.missingDeps.mkString(", "))
         if (!processingBlockedTasks) {
           // qt.missingDeps = missing
+          recentlyBuilt ::= (qtDep, BuildEmpty("was blocked"))
           blocked = blocked ::: List(qt)
+        } else {
+          recentlyBuilt ::= (qtDep, res)
         }
     }
     unblockTasks(res,qt)
+    if (recentlyBuilt.length > 200) {
+      recentlyBuilt = recentlyBuilt.take(200)
+    }
   }
 
   
