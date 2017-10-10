@@ -11,14 +11,10 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.imps.IMPSTheory.SortRef
 import info.kwarc.mmt.imps.Usage.Usage
 import info.kwarc.mmt.imps.impsMathParser.IMPSMathParser
-import info.kwarc.mmt.lf.TPTP.Decl
 
-import scala.util.parsing.combinator._
-import scala.util.parsing.combinator.PackratParsers
-import info.kwarc.mmt.lf.Typed
+import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
 
 /* REMINDER:
@@ -270,7 +266,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       {
         // TODO: Can this be translated into something non-opaque?
         //       See IMPS manual, pgs. 172, 173
-        val opaque = new OpaqueText(t.path.toDPath, List(StringFragment(tal.toString)))
+        val opaque = new OpaqueText(t.path.toDPath, OpaqueText.defaultFormat, StringFragment(tal.toString))
         controller.add(opaque)
       }
     }
@@ -386,7 +382,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           val proof_name : StringFragment = StringFragment("Opaque proof of theorem " + name)
           val proof_text : StringFragment = StringFragment(maybeProof.get.prf.toString)
 
-          val opaque = new OpaqueText(parent.path.toDPath, List(proof_name, proof_text))
+          val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(proof_name + "\n" + proof_text))
           controller add opaque
         }
 
@@ -397,7 +393,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
         // Macetes are added as opaque (for now?)
-        val opaque = new OpaqueText(parent.path.toDPath, List(StringFragment(d.toString)))
+        val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(d.toString))
 
         /* Opaque Text doesn't have metadata, apparently, so we don't add the src */
 
@@ -423,10 +419,34 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSAtomSort("ind")  => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPath ? LocalName("indType")))
       case IMPSAtomSort("prop") => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPath ? LocalName("boolType")))
       case IMPSAtomSort("bool") => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPath ? LocalName("boolType")))
-      case IMPSAtomSort(srt)    => val expr = OMS(IMPSTheory.lutinsPath ? LocalName("exp"))
-                                   val sort = OMS(t.path ? srt)
-                                   OMA(expr, List(tState.addUnknown(),sort))
-      case IMPSFunSort(sorts)   => IMPSTheory.FunSort(sorts map (x => doSort(x,t)))
+      case IMPSAtomSort(srt)    => OMS(t.path ? srt)
+      case IMPSFunSort(sorts)   =>
+      {
+        assert(sorts.length >= 2)
+        val funsort : Term = OMS(IMPSTheory.lutinsPath ? LocalName("fun"))
+
+        if (sorts.length == 2)
+        {
+          // TODO: These could also be prop. Check for this and adapt!
+          val tpA  : Term = OMS(IMPSTheory.lutinsIndType)
+          val tpB  : Term = OMS(IMPSTheory.lutinsIndType)
+
+          val sortA : Term = OMS(t.path ? LocalName(sorts(0).toString))
+          val sortB : Term = OMS(t.path ? LocalName(sorts(1).toString))
+
+          val appl : Term = ApplySpine(funsort, tpA, tpB, sortA, sortB)
+          appl
+        }
+        else
+        {
+          // TODO: This could also be prop, as above.
+          val tp   : Term = OMS(IMPSTheory.lutinsIndType)
+          val srt  : Term = OMS(t.path ? LocalName(sorts.head.toString))
+
+          val appl : Term = ApplySpine(funsort, srt, doSort(IMPSFunSort(sorts.tail),t))
+          appl
+        }
+      }
     }
     ret
   }
@@ -440,13 +460,16 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     /* enclosing sort should already be defined */
     println("Adding sort: " + subsort.toString + ", enclosed by " + supersort.toString)
 
-    val opt_ind   : Option[Term] = Some(OMS(IMPSTheory.lutinsIndType))
+    val opt_ind   : Option[Term] = Some(Apply(OMS(IMPSTheory.lutinsPath ? LocalName("sort")), OMS(IMPSTheory.lutinsIndType)))
     val jdgmtname : LocalName    = LocalName(subsort.toString + "_sub_" + supersort.toString)
 
     val foo       : Term = OMS(thy.path ? subname)
     val bar       : Term = OMS(thy.path ? supname)
+    val baz       : Term = OMS(IMPSTheory.lutinsIndType)
 
-    val jdgmttp   : Option[Term] = Some(OMA(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")),List(foo,bar)))
+    val subs      : Term = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), baz, foo, bar)
+
+    val jdgmttp   : Option[Term] = Some(Apply(OMS(IMPSTheory.lutinsPath ? LocalName("thm")), subs))
 
     /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

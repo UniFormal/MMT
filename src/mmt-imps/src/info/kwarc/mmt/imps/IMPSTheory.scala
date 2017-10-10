@@ -28,8 +28,6 @@ object IMPSTheory
 
   object Sort extends Sym("sort")
   {
-    /* sort muss zu exp */
-
     def apply(t : Term) : Term = {
       Apply(this.term, t)
     }
@@ -38,6 +36,7 @@ object IMPSTheory
   object SortRef extends Sym("exp")
   {
     /* "But Pawpaw!", you say, "This can't be correct!" */
+    // Possible. TODO: Think this through again.
     def apply(t : Term) : Term = {
       val foo : Term = OMS(lutinsPath ? "indType")
       val bar : Term = OMS(lutinsPath ? "ind")
