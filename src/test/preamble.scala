@@ -97,3 +97,12 @@ abstract class TomTest(prefixes : String*) extends Test(
   true,
   None
 )
+
+abstract class JonasTest(prefixes: String*) extends Test(
+  "/home/jbetzend/Development/content/",
+  prefixes.toList,
+  "",
+  None,
+  true,
+  None
+)
