@@ -21,6 +21,11 @@ object IMPSTheory
 
   object tp extends Sym("tp")
 
+  object FunType extends Sym("funType")
+  {
+    def apply(tp1 : Term, tp2 : Term) = ApplySpine(this.term,tp1,tp2)
+  }
+
   object exp extends Sym("exp")
   {
     def apply(t:Term) = Apply(this.term,t)
@@ -35,9 +40,9 @@ object IMPSTheory
 
   object FunSort extends Sym("fun")
   {
-    def apply(tps : List[Term]) : Term = {
-      assert(tps.nonEmpty)
-      tps.init.foldRight(tps.last)((t,r) => ApplySpine(this.term,t,r))
+    def apply(tpA : Term, tpB : Term, srtA : Term, srtB : Term) : Term =
+    {
+      ApplySpine(this.term, tpA, tpB, srtA, srtB)
     }
   }
 

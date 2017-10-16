@@ -12,7 +12,6 @@ import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.imps.Usage.Usage
-import info.kwarc.mmt.imps.impsMathParser.IMPSMathParser
 
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
@@ -403,44 +402,76 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     }
   }
 
+  def isProposition(m : IMPSMathExp) : Boolean =
+  {
+    m match
+    {
+      /* Look at that fancy fallthrough syntax */
+      case IMPSTruth()
+           | IMPSFalsehood()
+           | IMPSConjunction(_)
+           | IMPSDisjunction(_)
+           | IMPSImplication(_,_)
+           | IMPSIfForm(_,_,_)
+           | IMPSIotaP(_,_,_)   => true
+      case IMPSLambda(_,t)      => isProposition(t)
+      case IMPSForAll(_,t)      => isProposition(t)
+      case IMPSForSome(_,t)     => isProposition(t)
+      case _                    => false
+    }
+  }
+
+  def findType(s : IMPSSort) : Term =
+  {
+    s match {
+      case IMPSAtomSort("ind")      => OMS(IMPSTheory.lutinsIndType)
+      case IMPSAtomSort("prop")     => OMS(IMPSTheory.lutinsPropType)
+      case IMPSAtomSort("bool")     => OMS(IMPSTheory.lutinsPropType)
+      case IMPSAtomSort(_)          => OMS(IMPSTheory.lutinsIndType)
+      case IMPSBinaryFunSort(s1,s2) => IMPSTheory.FunType(findType(s1),findType(s2))
+      case _ => ??? // This should never happen, always call curry first!
+    }
+  }
+
   def doSort(d : IMPSSort, t : DeclaredTheory) : Term =
   {
-    val ret : Term = d match
+    /* Walks sort structure, currying all NaryFunSorts into BinaryFunSorts */
+    def curry(srt : IMPSSort) : IMPSSort =
     {
-      case IMPSAtomSort("ind")  => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPath ? LocalName("indType")))
-      case IMPSAtomSort("prop") => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPath ? LocalName("boolType")))
-      case IMPSAtomSort("bool") => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPath ? LocalName("boolType")))
-      case IMPSAtomSort(srt)    => OMS(t.path ? srt)
-      case IMPSFunSort(sorts)   =>
+      srt match
       {
-        assert(sorts.length >= 2)
-        val funsort : Term = OMS(IMPSTheory.lutinsPath ? LocalName("fun"))
-
-        if (sorts.length == 2)
-        {
-          // TODO: These could also be prop. Check for this (somehow) and adapt!
-          val tpA  : Term = OMS(IMPSTheory.lutinsIndType)
-          val tpB  : Term = OMS(IMPSTheory.lutinsIndType)
-
-          val sortA : Term = doSort(sorts(0),t)
-          val sortB : Term = doSort(sorts(1),t)
-
-          val appl : Term = IMPSTheory.exp(ApplySpine(funsort, tpA, tpB, sortA, sortB))
-          appl
-        }
-        else
-        {
-          // TODO: This could also be prop, as above.
-          val tp   : Term = OMS(IMPSTheory.lutinsIndType)
-          val srt  : Term = doSort(sorts.head,t)
-
-          // TODO: These are curried. Should it be this or does the recursio need to be outsourced?
-          val appl : Term = IMPSTheory.exp(ApplySpine(funsort, srt, doSort(IMPSFunSort(sorts.tail),t)))
-          appl
+        case IMPSAtomSort(_)                 => srt // don't change atomic sorts
+        case IMPSBinaryFunSort(sort1, sort2) => IMPSBinaryFunSort(curry(sort1),curry(sort2))
+        case IMPSNaryFunSort(sorts)          => {
+          if (sorts.length == 2) {
+            IMPSBinaryFunSort(curry(sorts(0)), curry(sorts(1)))
+          } else {
+            IMPSBinaryFunSort(curry(sorts(0)), curry(IMPSNaryFunSort(sorts.tail)))
+          }
         }
       }
     }
-    ret
+
+    def matchSort(e : IMPSSort, t : DeclaredTheory) : Term =
+    {
+      e match {
+        case IMPSAtomSort("ind")  => IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
+        case IMPSAtomSort("prop") => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPropType))
+        case IMPSAtomSort("bool") => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPropType))
+        case IMPSAtomSort(srt) => OMS(t.path ? srt)
+        case IMPSBinaryFunSort(s1, s2) => {
+          val tpA: Term = findType(s1)
+          val tpB: Term = findType(s2)
+
+          val sortA: Term = matchSort(s1, t)
+          val sortB: Term = matchSort(s2, t)
+
+          IMPSTheory.FunSort(tpA, tpB, sortA, sortB)
+        }
+      }
+    }
+
+    IMPSTheory.exp(matchSort(curry(d),t))
   }
 
   /* Introduces a sort to a theory and also assigns the enclosing sort to it. */
@@ -502,22 +533,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSIsDefined(r)       => IMPSTheory.IsDefined(doMathExp(r,thy))
       case IMPSIsDefinedIn(r,s)   => IMPSTheory.IsDefinedIn(doMathExp(r,thy), doSort(s,thy))
       case IMPSUndefined(s)       => IMPSTheory.Undefined(doMathExp(s,thy))
-    }
-  }
-
-  def isProposition(m : IMPSMathExp) : Boolean =
-  {
-    m match
-    {
-      /* Look at that fancy fallthrough syntax */
-      case IMPSTruth()
-           | IMPSFalsehood()
-           | IMPSConjunction(_)
-           | IMPSDisjunction(_)
-           | IMPSImplication(_,_)
-           | IMPSIfForm(_,_,_)
-           | IMPSIotaP(_,_,_)   => true
-      case _                    => false
     }
   }
 

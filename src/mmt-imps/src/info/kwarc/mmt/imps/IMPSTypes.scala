@@ -652,7 +652,7 @@ case class IMPSAtomSort(s : String) extends IMPSSort
 }
 
 /* Function sorts */
-case class IMPSFunSort(ss : List[IMPSSort]) extends IMPSSort
+case class IMPSNaryFunSort(ss : List[IMPSSort]) extends IMPSSort
 {
   /* Example: What would be "qq -> qq -> qq" in Haskell
               is "[qq,qq,qq]" in IMPS. */
@@ -666,6 +666,11 @@ case class IMPSFunSort(ss : List[IMPSSort]) extends IMPSSort
     str = str + "]"
     str
   }
+}
+
+case class IMPSBinaryFunSort(s1 : IMPSSort, s2 : IMPSSort) extends IMPSSort
+{
+  override def toString : String = "[" + s1.toString + "," + s2.toString + "]"
 }
 
 /* IMPS MATH EXPRESSIONS */
