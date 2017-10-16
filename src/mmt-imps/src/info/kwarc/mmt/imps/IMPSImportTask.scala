@@ -417,9 +417,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   def matchSort(e : IMPSSort, t : DeclaredTheory) : Term =
   {
     e match {
-      case IMPSAtomSort("ind")  => IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
-      case IMPSAtomSort("prop") => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPropType))
-      case IMPSAtomSort("bool") => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPropType))
+      case IMPSAtomSort("ind")  => OMS(IMPSTheory.lutinsPath ? "ind")
+      case IMPSAtomSort("prop") => OMS(IMPSTheory.lutinsPath ? "bool")
+      case IMPSAtomSort("bool") => OMS(IMPSTheory.lutinsPath ? "bool")
       case IMPSAtomSort(srt) => OMS(t.path ? srt)
       case IMPSBinaryFunSort(s1, s2) =>
       {
