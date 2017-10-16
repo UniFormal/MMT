@@ -19,7 +19,7 @@ class Plugin extends ServerExtension("activecomp") {
     *         Errors thrown by this method are caught and sent back to the browser.
     */
   def apply(request: ServerRequest): ServerResponse = {
-    request.path match {
+    request.pathForExtension match {
       case List("actions") => handleActions(request.body)
       case Nil => handleComputation(request.body)
     }
