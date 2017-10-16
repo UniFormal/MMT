@@ -28,7 +28,7 @@ object IMPSTheory
 
   object exp extends Sym("exp")
   {
-    def apply(t:Term) = Apply(this.term,t)
+    def apply(tp : Term, srt : Term) = ApplySpine(this.term, tp, srt)
   }
 
   object Sort extends Sym("sort")

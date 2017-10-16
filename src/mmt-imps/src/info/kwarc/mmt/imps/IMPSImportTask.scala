@@ -402,34 +402,35 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     }
   }
 
-  def isProposition(m : IMPSMathExp) : Boolean =
-  {
-    m match
-    {
-      /* Look at that fancy fallthrough syntax */
-      case IMPSTruth()
-           | IMPSFalsehood()
-           | IMPSConjunction(_)
-           | IMPSDisjunction(_)
-           | IMPSImplication(_,_)
-           | IMPSIfForm(_,_,_)
-           | IMPSIotaP(_,_,_)   => true
-      case IMPSLambda(_,t)      => isProposition(t)
-      case IMPSForAll(_,t)      => isProposition(t)
-      case IMPSForSome(_,t)     => isProposition(t)
-      case _                    => false
-    }
-  }
-
-  def findType(s : IMPSSort) : Term =
+  def findKind(s : IMPSSort) : Term =
   {
     s match {
       case IMPSAtomSort("ind")      => OMS(IMPSTheory.lutinsIndType)
       case IMPSAtomSort("prop")     => OMS(IMPSTheory.lutinsPropType)
       case IMPSAtomSort("bool")     => OMS(IMPSTheory.lutinsPropType)
       case IMPSAtomSort(_)          => OMS(IMPSTheory.lutinsIndType)
-      case IMPSBinaryFunSort(s1,s2) => IMPSTheory.FunType(findType(s1),findType(s2))
+      case IMPSBinaryFunSort(s1,s2) => IMPSTheory.FunType(findKind(s1),findKind(s2))
       case _ => ??? // This should never happen, always call curry first!
+    }
+  }
+
+  def matchSort(e : IMPSSort, t : DeclaredTheory) : Term =
+  {
+    e match {
+      case IMPSAtomSort("ind")  => IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
+      case IMPSAtomSort("prop") => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPropType))
+      case IMPSAtomSort("bool") => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPropType))
+      case IMPSAtomSort(srt) => OMS(t.path ? srt)
+      case IMPSBinaryFunSort(s1, s2) =>
+      {
+        val tpA: Term = findKind(s1)
+        val tpB: Term = findKind(s2)
+
+        val sortA: Term = matchSort(s1, t)
+        val sortB: Term = matchSort(s2, t)
+
+        IMPSTheory.FunSort(tpA, tpB, sortA, sortB)
+      }
     }
   }
 
@@ -452,26 +453,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       }
     }
 
-    def matchSort(e : IMPSSort, t : DeclaredTheory) : Term =
-    {
-      e match {
-        case IMPSAtomSort("ind")  => IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
-        case IMPSAtomSort("prop") => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPropType))
-        case IMPSAtomSort("bool") => IMPSTheory.Sort(OMS(IMPSTheory.lutinsPropType))
-        case IMPSAtomSort(srt) => OMS(t.path ? srt)
-        case IMPSBinaryFunSort(s1, s2) => {
-          val tpA: Term = findType(s1)
-          val tpB: Term = findType(s2)
+    val d_prime : IMPSSort = curry(d)
+    val tp      : Term     = findKind(d_prime)
 
-          val sortA: Term = matchSort(s1, t)
-          val sortB: Term = matchSort(s2, t)
-
-          IMPSTheory.FunSort(tpA, tpB, sortA, sortB)
-        }
-      }
-    }
-
-    IMPSTheory.exp(matchSort(curry(d),t))
+    IMPSTheory.exp(tp, matchSort(d_prime,t))
   }
 
   /* Introduces a sort to a theory and also assigns the enclosing sort to it. */
@@ -483,13 +468,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     val opt_ind   : Option[Term] = Some(Apply(OMS(IMPSTheory.lutinsPath ? LocalName("sort")), OMS(IMPSTheory.lutinsIndType)))
     val jdgmtname : LocalName    = LocalName(subsort.toString + "_sub_" + supersort.toString)
 
-    val foo       : Term = doSort(subsort,thy)
-    val bar       : Term = doSort(supersort,thy)
+    val foo       : Term = matchSort(subsort,thy)
+    val bar       : Term = matchSort(supersort,thy)
     val baz       : Term = OMS(IMPSTheory.lutinsIndType)
 
     val subs      : Term = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), baz, foo, bar)
 
-    val jdgmttp   : Option[Term] = Some(Apply(OMS(IMPSTheory.lutinsPath ? LocalName("thm")), subs))
+    val jdgmttp   : Option[Term] = Some(IMPSTheory.Thm(subs))
 
     /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
