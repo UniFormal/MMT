@@ -161,7 +161,7 @@ Non-commands are MMT code.
         }
 
         val mt = try{
-          controller.handle(SetBase(ct))
+          controller.handle(SetBase(ct)).throwErrorIfAny()
           controller.globalLookup.get(ct) match {
             case d: modules.DeclaredTheory =>
               d.meta.map(" : " + _.toPath).getOrElse("")
