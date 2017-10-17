@@ -1531,12 +1531,13 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      implicit val stack = j.stack
      val con = simplify(j.wfo)
 
-     con forall {vd =>
+     con.declsInContext.forall {i =>
+       val (pre, vd) = i
        (vd.tp,vd.df) match {
          case (None,None) => true
-         case (Some(tp),Some(df)) => check(Typing(j.stack, tp, df, None))(history + "defined declaration must be well-typed")
-         case (Some(tp), None) => check(Inhabitable(j.stack, tp))(history + "type in contexts must be inhabitable")
-         case (None, Some(df)) => inferTypeAndThen(df)(j.stack, history + "definiens in context must be well-formed") {_ => true}
+         case (Some(tp),Some(df)) => check(Typing(j.stack ++ pre, tp, df, None))(history + "defined declaration must be well-typed")
+         case (Some(tp), None) => check(Inhabitable(j.stack ++ pre, tp))(history + "type in contexts must be inhabitable")
+         case (None, Some(df)) => inferTypeAndThen(df)(j.stack ++ pre, history + "definiens in context must be well-formed") {_ => true}
        }
      }
    }
