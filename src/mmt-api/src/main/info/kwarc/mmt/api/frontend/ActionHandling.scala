@@ -11,6 +11,28 @@ import backend._
 import ontology._
 import objects._
 
+/** the result of parsing and/or evaluation an action */
+sealed abstract class ActionResult() {
+  val success : Boolean
+  /** iff an error occured, throw it; else do nothing */
+  def throwErrorIfAny(): Unit
+}
+case class ActionParsingError(pe: ParseError) extends ActionResult {
+  val success : Boolean = false
+  def throwErrorIfAny() {throw pe}
+}
+
+/** the result of evaluating an action */
+sealed abstract class ActionExecutionResult extends ActionResult
+case class ActionResultOK() extends ActionExecutionResult {
+  val success : Boolean = true
+  def throwErrorIfAny() {}
+}
+case class ActionResultError(e : Error) extends ActionExecutionResult {
+  val success : Boolean = true
+  def throwErrorIfAny() {throw e}
+}
+
 /** an auxiliary class to split the [[Controller]] class into multiple files */
 trait ActionHandling {self: Controller =>
 
@@ -23,22 +45,47 @@ trait ActionHandling {self: Controller =>
   // some actions are defined in separate methods below
 
   /** executes a string command */
-  def handleLine(l: String, showLog: Boolean = true) {
+  def handleLine(l: String, showLog: Boolean = true) : ActionResult = {
+
+    // parse and run the line
+    val result = handleLineInt(l, showLog)
+
+    // log any errors if applicable
+    result match {
+      case ActionResultError(e) => log(e)
+      case ActionParsingError(pe) => log(pe)
+      case _ =>
+    }
+
+    // and return
+    report.flush
+    result
+  }
+
+  private def handleLineInt(l: String, showLog: Boolean = true): ActionResult = {
     try {
       val act = Action.parseAct(l, getBase, getHome)
       handle(act, showLog)
     } catch {
-      case e: Error =>
-        log(e)
+      case pe: ParseError => ActionParsingError(pe)
     }
-    report.flush
   }
 
   /** the name of the current action definition (if any) */
   def currentActionDefinition : Option[String] = state.currentActionDefinition.map(_.name)
 
   /** executes an Action */
-  def handle(act: Action, showLog: Boolean = true) {
+  def handle(act : Action, showLog : Boolean = true) : ActionResult = {
+    try {
+      handleInt(act, showLog)
+      ActionResultOK()
+    } catch {
+      case e: Error => ActionResultError(e)
+    }
+  }
+
+  /** executes an Action and immediatly throws all exceptions */
+  private def handleInt(act: Action, showLog: Boolean = true) {
     implicit val task = act
     state.currentActionDefinition match {
       case Some(Defined(file, name, acts)) if act != EndDefine =>
@@ -373,7 +420,7 @@ trait ActionHandling {self: Controller =>
   def doAction(file: Option[File], name: String) {
     state.actionDefinitions.find { a => (file.isEmpty || a.file == file.get) && a.name == name } match {
       case Some(Defined(_, _, actions)) =>
-        actions foreach (f => handle(f))
+        actions foreach (f => handle(f).throwErrorIfAny())
       case None =>
         logError("not defined")
     }
