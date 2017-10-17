@@ -522,17 +522,68 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   }
 
   /* TRANSLATING SINGLE MATH EXPRESSIONS */
-  /* These need to return lists of terms because there might be additional statements,
-   * such as subtyping judgements. */
 
-  /* This, in turn, represents a breach of convention.
-   * This is excused by us not having to translate back to T, only to OMDOC. */
+  def replaceVars(vs : List[IMPSVar], t : IMPSMathExp) : IMPSMathExp =
+  {
+    t match {
+      case IMPSMathSymbol(s) =>
+      {
+        var n : IMPSMathExp = t
+        for (v <- vs) { if (v.v == s) {n = v} }
+        n
+      }
+      case IMPSVar(_)
+         | IMPSTruth()
+         | IMPSFalsehood()
+         | IMPSUndefined(_)     => t
+      case IMPSNegation(p)      => IMPSNegation(replaceVars(vs,t))
+      case IMPSIf(p,t1,t2)      => IMPSIf(replaceVars(vs,p),replaceVars(vs,t1),replaceVars(vs,t2))
+      case IMPSIff(p, q)        => IMPSIff(replaceVars(vs,p),replaceVars(vs,q))
+      case IMPSIfForm(p,q,r)    => IMPSIfForm(replaceVars(vs,p),replaceVars(vs,q),replaceVars(vs,r))
+      case IMPSEquals(a,b)      => IMPSEquals(replaceVars(vs,a),replaceVars(vs,b))
+      case IMPSDisjunction(ls)  => IMPSDisjunction(ls map (x => replaceVars(vs,x)))
+      case IMPSConjunction(ls)  => IMPSConjunction(ls map (x => replaceVars(vs,x)))
+      case IMPSLambda(ws,r)     => IMPSLambda(ws,replaceVars(vs,r))
+      case IMPSForAll(ws,r)     => IMPSForAll(ws,replaceVars(vs,r))
+      case IMPSForSome(ws, r)   => IMPSForSome(ws,replaceVars(vs,r))
+      case IMPSImplication(p,q) => IMPSImplication(replaceVars(vs,p), replaceVars(vs,q))
+      case IMPSApply(f,ts)      => IMPSApply(replaceVars(vs,f), ts map (x => replaceVars(vs,x)))
+      case IMPSIota(v1,s1,p)    => IMPSIota(v1,s1,replaceVars(vs,p))
+      case IMPSIotaP(v1,s1,p)   => IMPSIotaP(v1,s1,replaceVars(vs,p))
+      case IMPSIsDefined(r)     => IMPSIsDefined(replaceVars(vs,r))
+      case IMPSIsDefinedIn(r,s) => IMPSIsDefinedIn(replaceVars(vs,r),s)
+    }
+  }
 
   def doIMPSLambda(lambda : IMPSLambda, thy : DeclaredTheory) : Term =
   {
     assert(lambda.vs.nonEmpty)
-    val target : Term = doMathExp(lambda.t,thy)
-    var foo = IMPSTheory.Lambda(lambda.vs map (p => (LocalName(p._1.v), p._2 map (x => doSort(x,thy)))), target)
+
+    /* Filling implicit sorts in lambda variables, IMPS allows for these */
+    /* Example: lambda(x,y:zz,x+y) -> lambda(x:zz,y:zz,x+y) */
+    var filled_vs : List[(IMPSVar, IMPSSort)] = List.empty
+
+    /* Last variable sort must be defined */
+    assert(lambda.vs.last._2.isDefined)
+    var latersort : IMPSSort = lambda.vs.last._2.get
+
+    for (i <- ((lambda.vs.length-1) to 0 by -1))
+    {
+      val thisSort : IMPSSort = if (lambda.vs(i)._2.isDefined)
+      { lambda.vs(i)._2.get } else { latersort }
+      latersort = thisSort
+
+      val k = filled_vs.length
+      filled_vs = (lambda.vs(i)._1, thisSort) :: filled_vs
+      assert(filled_vs.length > k)
+    }
+
+    val final_vs : List[(LocalName, Term)] = filled_vs map (p => (LocalName(p._1.v),  matchSort(p._2,thy)))
+
+    /* */
+    val target : Term = doMathExp(replaceVars(filled_vs map (x => x._1),lambda.t),thy)
+
+    var foo = IMPSTheory.Lambda(final_vs, target)
     foo
   }
 

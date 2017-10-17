@@ -110,11 +110,9 @@ object IMPSTheory
 
   object Lambda extends Sym("lambda")
   {
-    def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = {
+    def apply(ls : List[(LocalName,Term)], t : Term) : Term = {
       assert(ls.nonEmpty)
-      ls match {
-        case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
-      }
+      ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2, p)))
     }
   }
 
