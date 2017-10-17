@@ -1529,7 +1529,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
   /** checks contexts */
    private def checkContext(j: IsContext)(implicit history: History): Boolean = {
      implicit val stack = j.stack
-     val con = simplify(j.context)
+     val con = simplify(j.wfo)
+
      con forall {vd =>
        (vd.tp,vd.df) match {
          case (None,None) => true
