@@ -10,8 +10,9 @@ general arguments:
       --help-command        currently identical to --usage
 
 commands and files to process:
-  COMMANDS                  Semicolon ( ; ) separated commands to be interpreted by MMT. Type "help" inside the shell
-                            for a list of commands or look at the documentation for available commands.
+  COMMANDS                  Semicolon ( ; ) separated commands to be interpreted by MMT. If a command fails, exit
+                            immediately with code 2. Type "help" inside the shell for a list of commands or look at the
+                            documentation for available commands.
       --send PORT           send COMMANDS to an already running MMT Instance listening at PORT and exit immediately
                             (even if a different termination behaviour is specified.)
       --file FILENAME       load mmt-style commands from FILE before interpreting COMMANDS.

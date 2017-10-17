@@ -66,7 +66,7 @@ class DummyBuildTarget extends TraversingBuildTarget {
       var err = "missing dependencies for " + bf.inPath + ": " + missingDeps.mkString(" ")
       logResult(err)
       bf.errorCont(FooError(err))
-      MissingDependency(missingDeps.map(PhysicalDependency), providedFiles.map(PhysicalDependency))
+      MissingDependency(missingDeps.map(PhysicalDependency), providedFiles.map(PhysicalDependency),used.map(PhysicalDependency))
     }
   }
 }

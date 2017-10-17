@@ -433,7 +433,7 @@ class LaTeXML extends LaTeXBuildTarget {
       if (failure) {
         logFailure(bt.outPath)
         if (missingFiles.isEmpty) BuildFailure(Nil, providedTheories)
-        else MissingDependency(missingFiles, providedTheories)
+        else MissingDependency(missingFiles, providedTheories,missingFiles)
       } else {
         logSuccess(bt.outPath)
         BuildSuccess(Nil, providedTheories)

@@ -446,7 +446,7 @@ class ActionServer extends ServerExtension("action") {
       return XmlResponse(<exited/>)
     }
     logCache.record
-    controller.handle(act)
+    controller.handle(act).throwErrorIfAny()
     val r = logCache.stop
     logCache.clear
     val html = utils.HTML.build { h =>
