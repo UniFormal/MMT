@@ -161,8 +161,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       var axiom_count : Int = -1
       for (ax <- t.axioms.get.axs)
       {
-        val mth : Term = IMPSTheory.Thm(doMathExp(ax.formula, nu_theory))
-
+        val mth : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(ax.formula, nu_theory)))
         val name : String = if (ax.name.isDefined) { ax.name.get }
         else { axiom_count += 1 ; t.name + "_unnamed_axiom" + axiom_count.toString }
 
@@ -195,7 +194,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
             val g2 : GlobalName = nu_theory.getDeclarations.find(d => d.name == LocalName(c2)).get.path
 
             val dist_formula : IMPSMathExp = IMPSNegation(IMPSEquals(IMPSSymbolRef(g1), IMPSSymbolRef(g2)))
-            val mth          : Term = IMPSTheory.Thm(doMathExp(dist_formula, nu_theory))
+            val mth          : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(dist_formula, nu_theory)))
             val name         : String = t.name + "_distinction_axiom_" + dist_count.toString
 
             dist_count += 1
@@ -244,10 +243,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       for (baseType : String <- l.bstps.get.tps)
       {
-        val sort_type : Term = tState.addUnknown()
-        tState.bindUnknowns(sort_type)
-
-        val basetype = symbols.Constant(t.toTerm, doName(baseType), Nil, Some(sort_type), None, Some("BaseType"))
+        val basetype = symbols.Constant(t.toTerm, doName(baseType), Nil, None, None, Some("BaseType"))
         doSourceRef(basetype, l.bstps.get.src)
         controller add basetype
       }
@@ -307,11 +303,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         assert(tState.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
         val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
-        val definition : Term = doMathExp(defstring, parent)
-        val sort_type  : Term = tState.addUnknown()
-        tState.bindUnknowns(sort_type)
-
-        val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, Some(sort_type), Some(definition), Some("AtomicSort"))
+        val definition : Term = tState.bindUnknowns(doMathExp(defstring, parent))
+        val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, None, Some(definition), Some("AtomicSort"))
 
         /* Add available MetaData */
         if (witness.isDefined) { doMetaData(nu_atomicSort, "witness", witness.get.witness.toString) }
@@ -339,13 +332,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           srt = Some(doSort(sort.get.sort, theTheory.get))
         }
         else {
-          println("Adding constant with inferred sort: " + name)
-          val sortx : Term = tState.addUnknown()
-          tState.bindUnknowns(sortx)
-          srt = Some(sortx)
+          println("Adding constant with unclear sort: " + name)
+          srt = None
         }
 
-        val mth : Term = doMathExp(definition, parent)
+        val mth : Term = tState.bindUnknowns(doMathExp(definition, parent))
         val nu_constant = symbols.Constant(parent.toTerm, LocalName(name), Nil, srt, Some(mth), Some("Constant"))
 
         /* Add available MetaData */
@@ -359,7 +350,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         assert(tState.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
         val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
-        val mth : Term = IMPSTheory.Thm(doMathExp(formula, parent))
+        val mth : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(formula, parent)))
         val nu_theorem = symbols.Constant(parent.toTerm, doName(name), Nil, Some(mth), None, Some("Theorem"))
         //                                                                              ^-- proof goes here!
 
@@ -505,7 +496,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSIf(p,t1,t2)        => IMPSTheory.If(doMathExp(p,thy), doMathExp(t1,thy), doMathExp(t2,thy))
       case IMPSIff(p, q)          => IMPSTheory.Iff(doMathExp(p,thy), doMathExp(q,thy))
       case IMPSIfForm(p,q,r)      => IMPSTheory.If_Form(doMathExp(p,thy), doMathExp(q,thy), doMathExp(r,thy))
-      case IMPSEquals(a,b)        => IMPSTheory.Equals(doMathExp(a,thy),doMathExp(b,thy))
+      case IMPSEquals(a,b)        => IMPSTheory.Equals(tState.addUnknown(),tState.addUnknown(),tState.addUnknown(),doMathExp(a,thy),doMathExp(b,thy))
       case IMPSDisjunction(ls)    => IMPSTheory.Or(ls map (x => doMathExp(x,thy)))
       case IMPSConjunction(ls)    => IMPSTheory.And(ls map (x => doMathExp(x,thy)))
       case q@IMPSLambda(_,_)      => doIMPSLambda(q, thy)

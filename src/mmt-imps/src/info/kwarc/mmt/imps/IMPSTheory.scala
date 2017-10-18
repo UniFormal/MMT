@@ -79,8 +79,8 @@ object IMPSTheory
   }
 
   object Equals extends Sym("equals") {
-    def apply(p : Term, q : Term) : Term = {
-      ApplySpine(this.term, p, q)
+    def apply(a : Term, alpha : Term, beta : Term, p : Term, q : Term) : Term = {
+      ApplySpine(this.term, a, alpha, beta, p, q)
     }
   }
 
