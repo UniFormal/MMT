@@ -503,7 +503,18 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case q@IMPSForAll(_,_)      => doIMPSForall(q, thy)
       case IMPSForSome(vs, r)     => IMPSTheory.Forsome(vs map (p => (LocalName(p._1.v), p._2 map (x => doSort(x,thy)))), doMathExp(r,thy))
       case IMPSImplication(p,q)   => IMPSTheory.Implies(doMathExp(p,thy), doMathExp(q,thy))
-      case IMPSApply(f,ts)        => IMPSTheory.IMPSApply(doMathExp(f,thy), ts map (x => doMathExp(x,thy)))
+      case IMPSApply(f,ts)        =>
+      {
+        assert(ts.nonEmpty)
+        // Wheee, manual currying!
+        if (ts.length == 1)
+          { IMPSTheory.IMPSApply(tState.addUnknown(),tState.addUnknown(),tState.addUnknown(),tState.addUnknown(),tState.addUnknown(),doMathExp(f,thy),doMathExp(ts.head,thy)) }
+        else
+        {
+          val inner = IMPSApply(f,List(ts.head))
+          doMathExp(IMPSApply(inner,ts.tail),thy)
+        }
+      }
       case IMPSIota(v1,s1,p)      => IMPSTheory.Iota(LocalName(v1.v), doSort(s1,thy), doMathExp(p,thy))
       case IMPSIotaP(v1,s1,p)     => IMPSTheory.IotaP(LocalName(v1.v), doSort(s1,thy), doMathExp(p,thy))
       case IMPSIsDefined(r)       => IMPSTheory.IsDefined(doMathExp(r,thy))
@@ -571,11 +582,26 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     val final_vs : List[(LocalName, Term)] = filled_vs map (p => (LocalName(p._1.v),  matchSort(p._2,thy)))
 
-    /* */
-    val target : Term = doMathExp(replaceVars(filled_vs map (x => x._1),lambda.t),thy)
+    /* Translate body */
+    val target   : Term = doMathExp(replaceVars(filled_vs map (x => x._1),lambda.t),thy)
 
-    var foo = IMPSTheory.Lambda(final_vs, target)
-    foo
+    /* Manual currying because MMT doesn't support flexary anything */
+    def curryLambda(vs : List[(LocalName, Term)], body : Term) : Term =
+    {
+      assert(vs.nonEmpty)
+      if (vs.length == 1)
+      {
+        val lflambda : Term = info.kwarc.mmt.lf.Lambda(vs.head._1,vs.head._2,body)
+        IMPSTheory.Lambda(tState.addUnknown(),tState.addUnknown(),vs.head._2,tState.addUnknown(),lflambda)
+      }
+      else
+      {
+        val inner   : Term = info.kwarc.mmt.lf.Lambda(vs.last._1,vs.last._2,body)
+        val newBody : Term = IMPSTheory.Lambda(tState.addUnknown(),tState.addUnknown(),vs.last._2,tState.addUnknown(),inner)
+        curryLambda(vs.init,newBody)
+      }
+    }
+    curryLambda(final_vs,target)
   }
 
   def doIMPSForall(forall : IMPSForAll, thy : DeclaredTheory) : Term =
