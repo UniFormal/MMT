@@ -1298,10 +1298,11 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        // j is delayed without a special treatment; if anything else is left to try, delay; else throw error
 
        // it *could* be that a torso is an application of an unknown, in which case equality should be checked
-       if (t1.apps.length == t2.apps.length && (hasUnknowns(t1.torso) || hasUnknowns(t2.torso)))
-         checkEquality(Equality(stack, t1.torso, t2.torso, None))
-       else if (unknownsLeft && existsActivatable(allowIncomplete = true))
+       if (unknownsLeft && existsActivatable(allowIncomplete = true))
          delay(j)
+       else if (t1.apps.length == t2.apps.length && (hasUnknowns(t1.torso) || hasUnknowns(t2.torso)))
+         checkEquality(Equality(stack, t1.torso, t2.torso, None))
+         //solveEquality(Equality(stack, t1.torso, t2.torso, None))
        else {
          error("terms have different shape, thus they cannot be equal")
        }
@@ -1460,32 +1461,32 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
    /** simplifies one step overall */
    private def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = {
-      def expandDefinition: Term = {
-         val tmE = defExp(tm,outerContext++stack.context)
-         if (tmE hashneq tm)
-            history += ("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
-         tmE
-      }
+     lazy val expandDefinition: Term = {
+       val tmE = defExp(tm, outerContext ++ stack.context)
+       if (tmE hashneq tm)
+         history += ("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
+       tmE
+     }
      if (checkingUnit.isKilled) {
        return tm
      }
-      tm.head match {
-         case Some(h) =>
-            // use first applicable rule
-            computationRules foreach {rule =>
-               if (rule.head == h) {
-                 val ret = rule(this)(tm, false)
-                 ret foreach {tmS =>
-                     history += "applying computation rule " + rule.toString
-                     history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
-                     return tmS
-                 }
-               }
-            }
-            // no applicable rule, expand a definition
-            expandDefinition
-         case None => expandDefinition
-      }
+     tm.head match {
+       case Some(h) =>
+         // use first applicable rule
+         computationRules foreach { rule =>
+           if (rule.head == h) {
+             val ret = rule(this)(tm, false)
+             ret foreach { tmS =>
+               history += "applying computation rule " + rule.toString
+               history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
+               return tmS
+             }
+           }
+         }
+         // no applicable rule, expand a definition
+         expandDefinition
+       case None => expandDefinition
+     }
    }
 
    /** special case of the version below where we simplify until an applicable rule is found
