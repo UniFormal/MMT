@@ -4,7 +4,7 @@ project/project
 test/*.scala
 
 # configuration files
-src/jedit-settings-folder
+src/mmt-sbt-system
 
 # mmtrc --created by installed
 deploy/mmtrc
