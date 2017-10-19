@@ -36,6 +36,7 @@ class InterviewServer extends ServerExtension("interview") {
             val mps = query("cont").get
             val th = controller.get(Path.parseM(mps,NamespaceMap.empty)) match {
               case ths : DeclaredTheory => ths
+              case v : DeclaredView => v
               case _ => return ServerResponse.errorResponse("Theory " + mps + " doesn't exit")
             }
             val errs = parseDecl(body.asString,th)
