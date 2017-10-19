@@ -319,6 +319,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
     // shell extensions
     List(new ShellSendCommand, new execution.ShellCommand, new Make).foreach(addExtension(_))
+
+    addExtension(new AbbreviationRuleGenerator)
   }
 
   def cleanup {

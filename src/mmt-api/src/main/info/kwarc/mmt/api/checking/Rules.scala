@@ -1,7 +1,9 @@
 package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.modules.{DeclaredTheory, Module}
+import info.kwarc.mmt.api.symbols.{Constant, RuleConstant}
 import libraries._
 import objects._
 import objects.Conversions._
@@ -430,4 +432,44 @@ abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) 
   }
 
   // def applicable(tm : Term) : Boolean
+}
+
+class AbbreviationRuleGenerator extends ChangeListener {
+  override val logPrefix = "abbrev-rule-gen"
+  protected val abbreviationTag = "abbreviation"
+  private def rulePath(r: GeneratedAbbreviationRule) = r.constant.path / abbreviationTag
+  private def present(t: Term) = controller.presenter.asString(t)
+
+  private def getGeneratedRule(p: Path): Option[GeneratedAbbreviationRule] = {
+    p match {
+      case p: GlobalName =>
+        controller.globalLookup.getO(p / abbreviationTag) match {
+          case Some(r: RuleConstant) => r.df.map(df => df.asInstanceOf[GeneratedAbbreviationRule])
+          case _ => None
+        }
+      case _ => None
+    }
+  }
+
+  override def onAdd(e: StructuralElement) {onCheck(e)}
+  override def onDelete(e: StructuralElement) {
+    getGeneratedRule(e.path).foreach {r => controller.delete(rulePath(r))}
+  }
+  override def onCheck(e: StructuralElement): Unit = e match {
+    case c : Constant if (c.rl contains abbreviationTag) && c.dfC.analyzed.isDefined =>
+      val rule = new GeneratedAbbreviationRule(c)
+      val ruleConst = new RuleConstant(c.home, c.name / abbreviationTag, OMS(c.path), Some(rule))
+      ruleConst.setOrigin(GeneratedBy(this))
+      log(c.name + " ~~> " + present(c.df.get))
+      controller add ruleConst
+    case _ =>
+  }
+
+}
+
+class GeneratedAbbreviationRule(val constant : Constant) extends ComputationRule(constant.path) {
+  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
+    case OMS(p) if p == constant.path => constant.df
+    case _ => None
+  }
 }
