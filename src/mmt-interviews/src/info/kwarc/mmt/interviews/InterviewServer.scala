@@ -3,7 +3,7 @@ package info.kwarc.mmt.interviews
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, MMTStructureChecker, RelationHandler, TwoStepInterpreter}
-import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView, Theory}
+import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory, DeclaredView, Theory}
 import info.kwarc.mmt.api.objects.{Context, OMMOD}
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
@@ -34,7 +34,7 @@ class InterviewServer extends ServerExtension("interview") {
         }
         if (query("decl").isDefined && query("cont").isDefined) {
             val mps = query("cont").get
-            val th = controller.get(Path.parseM(mps,NamespaceMap.empty)) match {
+            val th : DeclaredModule = controller.get(Path.parseM(mps,NamespaceMap.empty)) match {
               case ths : DeclaredTheory => ths
               case v : DeclaredView => v
               case _ => return ServerResponse.errorResponse("Theory " + mps + " doesn't exit")
@@ -71,7 +71,7 @@ class InterviewServer extends ServerExtension("interview") {
     (t,errorCont.getErrors)
   }
 
-  private def parseDecl(s : String, th : DeclaredTheory) = {
+  private def parseDecl(s : String, th : DeclaredModule) = {
     val pstream = ParsingStream.fromString(s,th.parent,"mmt")
     val errorCont = new ErrorContainer(None)
 
