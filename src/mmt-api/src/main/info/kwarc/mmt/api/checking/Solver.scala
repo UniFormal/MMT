@@ -1255,7 +1255,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
              val unknownsLeft = j.freeVars.toList intersect solution.map(_.name)
              
              // only incomplete congruence reasoning is left, we delay it if there is any hope to avoid it 
-             val nextStep = () => checkEqualityCongruence(TorsoForm.fromHeadForm(s1), TorsoForm.fromHeadForm(s2), unknownsLeft.nonEmpty)
+             val nextStep = () => checkEqualityCongruence(TorsoForm.fromHeadForm(s1,unknownsLeft), TorsoForm.fromHeadForm(s2,unknownsLeft), unknownsLeft.nonEmpty)
              if (unknownsLeft.nonEmpty) {
                delay(j, Some(nextStep))
              } else {
@@ -1283,38 +1283,47 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * torso and heads must be identical, checkEquality is called in remaining cases
     */
    private def checkEqualityCongruence(t1: TorsoForm, t2: TorsoForm, unknownsLeft: Boolean)(implicit stack : Stack, history: History, tp: Term): Boolean = {
-      lazy val j = Equality(stack, t1.toHeadForm, t2.toHeadForm, Some(tp))
-      /* The torso form focuses on sequences of elimination operators to the same torso.
+     lazy val j = Equality(stack, t1.toHeadForm, t2.toHeadForm, Some(tp))
+
+     /* The torso form focuses on sequences of elimination operators to the same torso.
        * If the heads of the terms are introduction operators h, the congruence rule can usually be applied greedily
        * because introduction is usually injective.
        * For that purpose, a TermBasedEqualityRule(h,h) should be provided.
        * Therefore, a congruence rule for binders is currently not necessary.
        */
-      def notSimilar = {
-         // j is delayed without a special treatment; if anything else is left to try, delay; else throw error
-         if (unknownsLeft && existsActivatable(allowIncomplete = true))
-            delay(j)
-         else {
-            error("terms have different shape, thus they cannot be equal")
+     def notSimilar = {
+
+       val unknownsL = j.freeVars.toList intersect solution.map(_.name)
+       def hasUnknowns(tm : Term) = (tm.freeVars intersect unknownsL).nonEmpty
+       // j is delayed without a special treatment; if anything else is left to try, delay; else throw error
+
+       // it *could* be that a torso is an application of an unknown, in which case equality should be checked
+       if (t1.apps.length == t2.apps.length && (hasUnknowns(t1.torso) || hasUnknowns(t2.torso)))
+         checkEquality(Equality(stack, t1.torso, t2.torso, None))
+       else if (unknownsLeft && existsActivatable(allowIncomplete = true))
+         delay(j)
+       else {
+         error("terms have different shape, thus they cannot be equal")
+       }
+     }
+
+     val similar = t1.torso == t2.torso && t1.apps.length == t2.apps.length // && checkEquality(Equality(stack,t1.torso,t2.torso,None))
+     if (similar) {
+       (t1.apps zip t2.apps).forall { case (Appendage(head1, args1), Appendage(head2, args2)) =>
+         val similarApp = head1 == head2 && args1.length == args2.length
+         if (!similarApp) {
+           notSimilar
+         } else {
+           log("equality (trying congruence)")
+           history += "applying congruence"
+           similarApp && (args1 zip args2).forall { case (a1, a2) =>
+             check(Equality(stack, a1, a2, None))(history + "comparing argument")
+           }
          }
-      }
-      val similar = t1.torso == t2.torso && t1.apps.length == t2.apps.length
-      if (similar) {
-         (t1.apps zip t2.apps).forall {case (Appendage(head1,args1),Appendage(head2,args2)) =>
-             val similarApp = head1 == head2 && args1.length == args2.length
-             if (!similarApp) {
-               notSimilar
-             } else {
-                log("equality (trying congruence)")
-                history += "applying congruence"
-                similarApp && (args1 zip args2).forall {case (a1, a2) =>
-                   check(Equality(stack, a1, a2, None))(history + "comparing argument")
-                }
-             }
-         }
-      } else {
-        notSimilar
-      }
+       }
+     } else {
+       notSimilar
+     }
    }
 
    /**
@@ -1597,6 +1606,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    
 
    def solveTyping(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
+     val unknownsLeft = tm.freeVars intersect solution.map(_.name)
+     val tnf = TorsoNormalForm(unknownsLeft)
       tm match {
          //foundation-independent case: direct solution of an unknown variable
          case OMV(m) =>
@@ -1616,7 +1627,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                // note: tm2 should be simplified - that may make a free variable disappear
             }
          //apply a foundation-dependent solving rule selected by the head of tm1
-         case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tp.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
+         case tnf(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tp.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
            val allrules = rules.getByHead(classOf[TypeSolutionRule], h)
            allrules.foreach{rule =>
              history += "Applying TypeSolutionRule " + rule.toString
