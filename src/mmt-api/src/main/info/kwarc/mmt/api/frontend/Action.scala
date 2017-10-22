@@ -16,7 +16,7 @@ import scala.util.parsing.combinator._
   * This object implements a combinator parser for Actions. It is used in particular by the [[Controller]]
   * It is straightforward to understand the grammar from the source code.
   */
-object Action extends RegexParsers {
+object Action extends CompRegexParsers {
   private var nsMap: NamespaceMap = NamespaceMap.empty
   private var home: File = File(System.getProperty("user.dir"))
 
@@ -183,7 +183,7 @@ object Action extends RegexParsers {
     home = h
     val p =
       try {
-        parseAll(commented, s)
+        parse(commented, s)
       }
       catch {
         case e: Exception =>
@@ -194,6 +194,7 @@ object Action extends RegexParsers {
       case e: NoSuccess => throw ParseError(s + "\n  error: " + e.msg)
     }
   }
+  def completeAct(s : String) : List[String] = complete(commented, s).results.map(_.mkString(""))
 }
 
 /** Objects of type Action represent commands that can be executed by a Controller.
