@@ -16,7 +16,7 @@ class ConceptDefiner extends ServerExtension("define") {
   
   // optional initialization
   override def start(args: List[String]) {
-    controller.handleLine("extension info.kwarc.mmt.api.ontology.RelationalReader")
+    controller.handleLine("extension info.kwarc.mmt.api.ontology.RelationalReader").throwErrorIfAny()
   }
   
   def apply(request: ServerRequest): ServerResponse = {

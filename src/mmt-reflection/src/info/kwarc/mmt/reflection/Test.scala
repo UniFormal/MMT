@@ -18,7 +18,7 @@ object Test {
 
     def main(args : Array[String]) {
       val controller = new Controller
-      controller.handleLine("file refl-test.mmt")// run what's written in this file first - add logs, archives etc.
+      controller.handleLine("file refl-test.mmt").throwErrorIfAny()// run what's written in this file first - add logs, archives etc.
       val rs = controller.extman.ruleStore
       rs.add(PiType,PiTerm,ApplyTerm,LambdaTerm,Beta,Extensionality,Initial,Solve,ExpandArrow,TermReflectionRule,TypeReflectionRule,ReflTermEvalRule,ElimReflectionRule,ComputationReflectionRule,SoundnessReflectionRule,CompletenessReflectionRule,ExtensionalityReflectionRule,SolveEvalReflectionRule,SolveReflReflectionRule,ReflTypingRule)
 

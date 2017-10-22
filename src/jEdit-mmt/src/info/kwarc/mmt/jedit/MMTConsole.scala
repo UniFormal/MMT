@@ -28,7 +28,7 @@ class MMTConsole extends console.Shell("mmt") {
       controller.report.addHandler(han)
       success = None
       try {
-         controller.handleLine(command)
+         controller.handleLine(command).throwErrorIfAny()
       } catch {
          case e: Exception => controller.report("error", e.getMessage)
       } finally {

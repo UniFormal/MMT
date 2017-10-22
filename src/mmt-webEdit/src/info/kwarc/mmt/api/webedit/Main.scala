@@ -9,7 +9,7 @@ object Main {
       var args = a.toList
       val commands = args.toList.mkString(" ").split(" ; ")
       try {
-         commands foreach (f => controller.handleLine(f))
+         commands foreach (f => controller.handleLine(f).throwErrorIfAny())
       } catch {
          case e: Error =>
            controller.report(e)

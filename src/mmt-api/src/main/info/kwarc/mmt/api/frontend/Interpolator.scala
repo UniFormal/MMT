@@ -21,7 +21,7 @@ class MMTInterpolator(controller: frontend.Controller) {
    
    /** a shortcut for running MMT shell commands while in the Scala interpreter */
    def shell(command: String) {
-     controller.handleLine(command)
+     controller.handleLine(command).throwErrorIfAny()
    }
    
    private def theory = controller.getBase match {

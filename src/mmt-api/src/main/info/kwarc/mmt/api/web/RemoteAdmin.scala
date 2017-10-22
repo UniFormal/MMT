@@ -45,7 +45,7 @@ class RemoteAdminClient extends Extension {
               case <action/> =>
                 val actS = xml.attr(actN, "value")
                 repHand.record
-                controller.handleLine(actS)
+                controller.handleLine(actS).throwErrorIfAny()
                 data = repHand.stop
                 repHand.clear
               case <quit/> =>

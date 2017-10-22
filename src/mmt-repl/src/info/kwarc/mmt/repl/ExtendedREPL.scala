@@ -24,7 +24,7 @@ class ExtendedREPL extends REPLImpl with REPLExtension  {
     if (line.startsWith("@")) {
       printSuggestions(line.substring(1))
     } else {
-      handleLine(line)
+      handleLine(line).throwErrorIfAny()
     }
     false
   }
@@ -34,7 +34,7 @@ class ExtendedREPL extends REPLImpl with REPLExtension  {
   }
 
   private def handleLine(line: String) = {
-    controller.handleLine(line)
+    controller.handleLine(line).throwErrorIfAny()
   }
 
   def suggestions(line: String) : List[String] = {

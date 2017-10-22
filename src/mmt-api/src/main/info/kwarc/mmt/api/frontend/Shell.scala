@@ -187,7 +187,7 @@ class Shell extends StandardIOHelper {
     val mbtCommands = args.scalaFiles map {s => MBT(File(s))}
     (mmtCommands ::: mbtCommands) foreach {a => controller.handle(a)}
     // run the remaining commands
-    args.commands.mkString(" ").split(" ; ") foreach {l => controller.handleLine(l, showLog = false)}
+    args.commands.mkString(" ").split(" ; ") foreach {l => controller.handleLine(l, showLog = false).throwErrorIfAny()}
 
     // if we want a shell, prompt and handle input
     if (args.prompt) {
@@ -236,7 +236,7 @@ class StandardREPL extends REPLExtension {
   def run {
     var command = Option(input.readLine)
     while (command.isDefined) {
-      controller.handleLine(command.get, showLog = true)
+      controller.handleLine(command.get, showLog = true).throwErrorIfAny()
       command = Option(input.readLine)
     }
   }

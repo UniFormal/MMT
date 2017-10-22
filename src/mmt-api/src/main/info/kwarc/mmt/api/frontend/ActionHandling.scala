@@ -14,23 +14,29 @@ import objects._
 /** the result of parsing and/or evaluation an action */
 sealed abstract class ActionResult() {
   val success : Boolean
+  def getError: Option[Error] = None
+
   /** iff an error occured, throw it; else do nothing */
-  def throwErrorIfAny(): Unit
+  @deprecated("Instead of throwing an error, inspect the [[ActionResult]] object o")
+  def throwErrorIfAny(): ActionResult = {
+    getError.foreach(e => throw e)
+    this
+  }
 }
 case class ActionParsingError(pe: ParseError) extends ActionResult {
   val success : Boolean = false
-  def throwErrorIfAny() {throw pe}
+
+  override def getError: Option[Error] = Some(pe)
 }
 
 /** the result of evaluating an action */
 sealed abstract class ActionExecutionResult extends ActionResult
 case class ActionResultOK() extends ActionExecutionResult {
   val success : Boolean = true
-  def throwErrorIfAny() {}
 }
 case class ActionResultError(e : Error) extends ActionExecutionResult {
   val success : Boolean = true
-  def throwErrorIfAny() {throw e}
+  override def getError: Option[Error] = Some(e)
 }
 
 /** an auxiliary class to split the [[Controller]] class into multiple files */

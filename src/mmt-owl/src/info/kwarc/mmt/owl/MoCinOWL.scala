@@ -37,8 +37,8 @@ object MoCinOWL {
     //currentVersion should not be in the source folder; elsewhere
 
     //transates older and the current OWL documents to MMT
-    controllerOld.handleLine("file build-test.mmt")
-    controllerCurr.handleLine("file build-testCurrent.mmt")
+    controllerOld.handleLine("file build-test.mmt").throwErrorIfAny()
+    controllerCurr.handleLine("file build-testCurrent.mmt").throwErrorIfAny()
 
 
     //read mmt documents
