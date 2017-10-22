@@ -12,10 +12,7 @@ abstract class MMTTest(archives : String*)(extensions : String*) extends FlatSpe
   val standardextensions =
     List(
       "info.kwarc.mmt.api.ontology.AlignmentsServer",
-      "info.kwarc.mmt.api.ontology.DependencyGraphExporter",
-      "info.kwarc.mmt.api.ontology.DeclarationTreeExporter",
-      "info.kwarc.mmt.api.ontology.JsonGraphExporter",
-      "info.kwarc.mmt.api.ontology.PathGraphExporter"
+      "info.kwarc.mmt.api.web.JSONBasedGraphServer"
   )
   val setupFolder = File("test/resources").canonical
   val content = setupFolder / "content" 
