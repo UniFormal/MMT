@@ -1,7 +1,7 @@
 package info.kwarc.mmt.jedit
 import org.gjt.sp.jedit._
 import console._
-import info.kwarc.mmt.api.frontend.ReportHandler
+import info.kwarc.mmt.api.frontend.{Action, ReportHandler}
 
 class OutputAsReport(output: Output) extends ReportHandler("jEdit console") {
    def apply(ind: Int, caller: => String, group : String, msgParts : List[String]) {
@@ -22,6 +22,11 @@ class MMTConsole extends console.Shell("mmt") {
    
    //This method should block until the currently running command has completed, and return true if the command executed successfully, false otherwise. If no command is currently running, it should return the status of the most recently run command. 
    override def waitFor(console: Console) : Boolean = true
+
+   override def getCompletions(console: Console, command: String): Shell.CompletionInfo = new Shell.CompletionInfo {
+      offset = 0
+      completions = Action.completeAct(command).toArray
+   }
 
    def execute(console: Console, input: String, output: Output, error: Output, command: String) {
       val han = new OutputAsReport(output)
