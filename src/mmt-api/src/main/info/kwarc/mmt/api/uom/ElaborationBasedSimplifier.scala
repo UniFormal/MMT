@@ -158,13 +158,29 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       RuleSet.collectRules(controller, mod.getInnerContext)
     }
     val parent : DeclaredModule = mod match {
-      case t: DeclaredTheory => t
-      case v: DeclaredView => v
+      case t: DeclaredTheory =>
+        t
+      case v: DeclaredView =>
+        v
       case _ => return //TODO
     }
     lazy val alreadyIncluded = parent.getIncludes
     val dElab: List[Declaration] = dOrig match {
       // plain includes: copy (only) includes
+      case ds : DefinedStructure if parent.isInstanceOf[DeclaredView] =>
+        ds.df match {
+          case OMMOD(mp) =>
+            lup.getO(mp) match {
+              case Some(v : DeclaredView) =>
+                apply(v)
+                v.getDeclarations.filter(_.name match {
+                  case ComplexStep(_) / _ => true
+                  case _ => false
+                })
+              case _ => Nil
+            }
+          case _ => Nil
+        }
       case Include(h, from, Nil) =>
         val idom = lup.getAs(classOf[Theory], from)
         val dom = idom match {

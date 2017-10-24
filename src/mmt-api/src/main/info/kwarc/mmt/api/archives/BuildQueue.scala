@@ -360,7 +360,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
     blocked = stillBlocked
     unblocked.foreach(u => log("Unblocked: " + u.task.inFile))
     if (unblocked.nonEmpty) recentlyBuilt ::= ((qt.task.asDependency,BuildEmpty("unblocked: " + unblocked.map(_.task.inFile).mkString(", "))))
-    unblocked.reverseMap(queued.add)
+    unblocked.reverseMap(queued.addFirst)
   }
 
   // ******************* dependency handling

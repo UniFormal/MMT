@@ -350,6 +350,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case v: DeclaredView =>
         checkTheory(context, v.from)
         checkTheory(context, v.to)
+        controller.simplifier(v)
       case s: DeclaredStructure =>
         checkTheory(context, s.from)
       case _ =>

@@ -468,6 +468,7 @@ class AbbreviationRuleGenerator extends ChangeListener {
 }
 
 class GeneratedAbbreviationRule(val constant : Constant) extends ComputationRule(constant.path) {
+  override def priority: Int = super.priority + 3
   def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
     case OMS(p) if p == constant.path => constant.df
     case _ => None

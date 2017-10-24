@@ -29,19 +29,28 @@
 	
 	<body class="ui-form">
 		
-		<div  class="theoryTreeClass" id="theory_tree_div" style="float:left;height:82%;width:15%;">
-			<span style="font-weight: bold; font-size: 110%;"> MathHub Archives </span>
-			<div id="theory_tree" ></div>
-		</div>
+<div id="mySidenav" class="sidenav">
+  <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+	<div id="theory_tree_div" name="theory_tree_div" class="theoryTreeClass"  style="float:left;height:82%;">
+	<span style="font-weight: bold; font-size: 110%;"> MathHub Archives </span>
+	<div id="theory_tree" ></div>
+	</div>
+</div>
 		
-		<div id="mainbox" style="float:left;height:100%;width:80%; padding-left:10px; ">
-			
+		<div id="mainbox" style="float:left;height:100%;width:99%; padding-left:10px; ">
+			<button style="font-size:24px;cursor:pointer;margin:0px;" class="myButton" onclick="openNav()">&gt;</button>
+<button style="font-size:24px;cursor:pointer;right:16px;margin:0px;position:absolute" class="myButton" onclick="openNav2()">&lt;</button>
+
+<br /><br />
+<div id="mySidenav2" class="sidenav2">
+		<a href="javascript:void(0)" class="closebtn" onclick="closeNav2()">&times;</a>
 			<div class="toolSelector">
 				<div id="generalMenu" name="generalMenu">
 				
 					<input type="checkbox" id="metaEdgesCheckbox" checked onChange="hideEdges('meta', !this.checked)">
 					<label for="metaEdgesCheckbox">Show Meta-Edges</label>
-					
+					<br /><br />
+
 					<select name="nodeSpacingBox" id="nodeSpacingBox" onChange="changeMethod();" >
 						<option value="0.66">Tiny Node-Spacing</option>
 						<option value="1.5">Small Node-Spacing</option>
@@ -58,7 +67,13 @@
 						<option value="2">Forces Driven Layout</option>
 					</select>
 					
+<br /><br />					
+
+				
+				<div style="float:left" id="colorPicker" name="colorPicker"> 
 					
+				</div>
+<br /><br />
 					<button id="selectionModeButton" onClick="switchSelectionMode();" title="Switch Selection Mode" class="myButton" style="width:32px;height:26px;"><div style="margin-top:2px" class="crosshairIcon"></div>
 					<button id="downloadButton" onClick="downloadGraph();" title="Download Graph" class="myButton" style="width:32px;height:26px;margin-left:4px;"><div style="margin-top:2px" class="downloadIcon"></div>
 					<button id="undoButton" onClick="undoLastAction();" title="Undo last Action" class="myButton" style="width:32px;height:26px;margin-left:4px;margin-right:4px;"><div style="margin-top:2px" class="undoIcon"></div>
@@ -67,11 +82,9 @@
 					<button id="selectNodes" onClick="selectNodes()" class="myButton">Select Nodes By Pathname</button>
 					<button id="helpButton"  class="myButton">Help</button>
 				</div>
-				
-				<div id="colorPicker" name="colorPicker"> 
-					
-				</div>
+
 			</div>
+	</div>	
 			<div id="wholeNetwork">	
 				<div id="mynetwork" style="top:0px;left:0px;position: absolute; -moz-user-select: none; width: 100%; height: 100%;">
 					
@@ -109,7 +122,27 @@
         <script type="text/javascript">
 			lastGraphTypeUsed=getParameterByName("type");
 			lastGraphDataUsed=getParameterByName("graphdata");
-				
+			
+function openNav() 
+		{
+		    document.getElementById("mySidenav").style.width = "400px";
+		}
+
+		function closeNav() 
+		{
+		    document.getElementById("mySidenav").style.width = "0";
+		}
+
+		function openNav2() 
+		{
+		    document.getElementById("mySidenav2").style.width = "400px";
+		}
+
+		function closeNav2() 
+		{
+		    document.getElementById("mySidenav2").style.width = "0";
+		}
+	
             var selectionMode = false;
             var theoryGraph = new TheoryGraph();
             
