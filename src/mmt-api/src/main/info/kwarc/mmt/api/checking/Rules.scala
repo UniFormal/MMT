@@ -425,13 +425,23 @@ abstract class TypeSolutionRule(val head: GlobalName) extends CheckingRule {
  */
 abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under,head) {
 
+  /** if this type is proof-irrelevant, this returns the unique term of this type
+   *  
+   *  This method is already called during equality-checking. Therefore, it may not perform complex search operations.
+   */ 
   def solve(solver : Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
 
-  /** if used as an equality rule, this makes all terms of this type equal */
-  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = if (applicable(tp)) {
-    history += "all terms of this type are equal"
-    Some(true)
-  } else None
+  /** if used as an equality rule, this makes all terms of this type equal if solve succeeds */
+  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+    /* for atomic types, this method could immediately return Some(true),
+       but by calling solve, we allow for type constructors that are only proof-irrelevant if their components are */ 
+    solve(solver)(tp) match {
+      case Some(_) =>
+        history += "all terms of this type are equal"
+        Some(true)
+      case None => None
+    }
+  }
 }
 
 class AbbreviationRuleGenerator extends ChangeListener {
