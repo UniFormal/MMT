@@ -33,7 +33,7 @@ class MMTConsole extends console.Shell("mmt") {
       controller.report.addHandler(han)
       success = None
       try {
-         controller.handleLine(command).throwErrorIfAny()
+         controller.handleLine(command)
       } catch {
          case e: Exception => controller.report("error", e.getMessage)
       } finally {

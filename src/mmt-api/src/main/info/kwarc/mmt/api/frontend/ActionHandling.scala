@@ -12,32 +12,13 @@ import ontology._
 import objects._
 
 /** the result of parsing and/or evaluation an action */
-sealed abstract class ActionResult() {
-  val success : Boolean
-  def getError: Option[Error] = None
-
-  /** iff an error occured, throw it; else do nothing */
-  @deprecated("Instead of throwing an error, inspect the [[ActionResult]] object o")
-  def throwErrorIfAny(): ActionResult = {
-    getError.foreach(e => throw e)
-    this
-  }
+sealed abstract class ActionResult
+case class ActionResultOK() extends ActionResult
+sealed abstract class ActionResultError extends ActionResult {
+  def error: Error
 }
-case class ActionParsingError(pe: ParseError) extends ActionResult {
-  val success : Boolean = false
-
-  override def getError: Option[Error] = Some(pe)
-}
-
-/** the result of evaluating an action */
-sealed abstract class ActionExecutionResult extends ActionResult
-case class ActionResultOK() extends ActionExecutionResult {
-  val success : Boolean = true
-}
-case class ActionResultError(e : Error) extends ActionExecutionResult {
-  val success : Boolean = true
-  override def getError: Option[Error] = Some(e)
-}
+case class ActionParsingError(error: ParseError) extends ActionResultError
+case class ActionExecutionError(error : Error) extends ActionResultError
 
 /** an auxiliary class to split the [[Controller]] class into multiple files */
 trait ActionHandling {self: Controller =>
@@ -50,48 +31,17 @@ trait ActionHandling {self: Controller =>
 
   // some actions are defined in separate methods below
 
-  /** executes a string command */
-  def handleLine(l: String, showLog: Boolean = true) : ActionResult = {
-
-    // parse and run the line
-    val result = handleLineInt(l, showLog)
-
-    // log any errors if applicable
-    result match {
-      case ActionResultError(e) => log(e)
-      case ActionParsingError(pe) => log(pe)
-      case _ =>
-    }
-
-    // and return
-    report.flush
-    result
-  }
-
-  private def handleLineInt(l: String, showLog: Boolean = true): ActionResult = {
-    try {
-      val act = Action.parseAct(l, getBase, getHome)
-      handle(act, showLog)
-    } catch {
-      case pe: ParseError => ActionParsingError(pe)
-    }
-  }
-
   /** the name of the current action definition (if any) */
   def currentActionDefinition : Option[String] = state.currentActionDefinition.map(_.name)
 
-  /** executes an Action */
-  def handle(act : Action, showLog : Boolean = true) : ActionResult = {
-    try {
-      handleInt(act, showLog)
-      ActionResultOK()
-    } catch {
-      case e: Error => ActionResultError(e)
-    }
+  /** executes a string command */
+  def handleLine(l: String, showLog: Boolean = true) {
+    val act = Action.parseAct(l, getBase, getHome)
+    handle(act, showLog)
   }
 
-  /** executes an Action and immediatly throws all exceptions */
-  private def handleInt(act: Action, showLog: Boolean = true) {
+  /** executes an Action */
+  def handle(act: Action, showLog: Boolean = true) {
     implicit val task = act
     state.currentActionDefinition match {
       case Some(Defined(file, name, acts)) if act != EndDefine =>
@@ -256,6 +206,26 @@ trait ActionHandling {self: Controller =>
           if (targets.contains(exp) || foundChanged || targets.isEmpty) archiveBuildAction(List(a.id), exp, mod, EmptyPath)
         }
       }
+    }
+  }
+
+  /** executes an Action without throwing exceptions */
+  def tryHandleLine(l: String, showLog: Boolean = true): ActionResult = {
+    // parse and run the line
+    val act = try {
+      Action.parseAct(l, getBase, getHome)
+    } catch {
+      case pe: ParseError => return ActionParsingError(pe)
+    }
+    tryHandle(act, showLog)
+  }
+  /** executes an Action without throwing exceptions */
+  def tryHandle(act: Action, showLog: Boolean = true): ActionResult = {
+    try {
+      handle(act, showLog)
+      ActionResultOK()
+    } catch {
+      case e: Error => ActionExecutionError(e)
     }
   }
 
@@ -426,7 +396,7 @@ trait ActionHandling {self: Controller =>
   def doAction(file: Option[File], name: String) {
     state.actionDefinitions.find { a => (file.isEmpty || a.file == file.get) && a.name == name } match {
       case Some(Defined(_, _, actions)) =>
-        actions foreach (f => handle(f).throwErrorIfAny())
+        actions foreach (f => handle(f))
       case None =>
         logError("not defined")
     }

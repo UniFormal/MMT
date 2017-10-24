@@ -177,7 +177,6 @@ class Shell extends StandardIOHelper {
     // load additional config files as given by arguments
     args.cfgFiles.map(File(_)) foreach loadConfig
 
-
     if (args.useQueue) {
        controller.extman.addExtension(new BuildQueue)
     }
@@ -187,7 +186,7 @@ class Shell extends StandardIOHelper {
     val mbtCommands = args.scalaFiles map {s => MBT(File(s))}
     (mmtCommands ::: mbtCommands) foreach {a => controller.handle(a)}
     // run the remaining commands
-    args.commands.mkString(" ").split(" ; ") foreach {l => controller.handleLine(l, showLog = false).throwErrorIfAny()}
+    args.commands.mkString(" ").split(" ; ") foreach {l => controller.handleLine(l, showLog = false)}
 
     // if we want a shell, prompt and handle input
     if (args.prompt) {
@@ -236,7 +235,12 @@ class StandardREPL extends REPLExtension {
   def run {
     var command = Option(input.readLine)
     while (command.isDefined) {
-      controller.handleLine(command.get, showLog = true).throwErrorIfAny()
+      var res = controller.tryHandleLine(command.get, showLog = true)
+      res match {
+        case a: ActionResultError =>
+          log(a.error)
+        case _ =>
+      }
       command = Option(input.readLine)
     }
   }

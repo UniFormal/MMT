@@ -419,19 +419,19 @@ abstract class TypeSolutionRule(val head: GlobalName) extends CheckingRule {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean
 }
 
+/**
+ * A TypeBasedSolutionRule solves an unknown based on its type, by constructing a term of that type.
+ * This is legal if all terms of that type are equal. 
+ */
 abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under,head) {
 
   def solve(solver : Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
 
-  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
-    val ret = solve(solver)(tp)
-    if (ret.isDefined) {
-      history += "all terms of this type are equal"
-      Some(true)
-    } else None
-  }
-
-  // def applicable(tm : Term) : Boolean
+  /** if used as an equality rule, this makes all terms of this type equal */
+  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = if (applicable(tp)) {
+    history += "all terms of this type are equal"
+    Some(true)
+  } else None
 }
 
 class AbbreviationRuleGenerator extends ChangeListener {

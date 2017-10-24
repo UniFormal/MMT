@@ -160,7 +160,7 @@ class TreePane(controller: Controller) extends JPanel {
             case (MouseEvent.BUTTON1, 2) =>
                if (se != null) {
                   val act = Navigate(se.path)
-                  controller.handle(act).throwErrorIfAny()
+                  controller.handle(act)
                }
             case _ =>
          }

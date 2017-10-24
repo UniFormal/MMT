@@ -66,8 +66,8 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
 
    /**
     * tries to solve the goal
-     *
-     * @param levels the depth of the breadth-first searches
+    *
+    * @param levels the depth of the breadth-first searches
     * @return true if the goal was solved
     */
    def apply(levels: Int): Boolean = {

@@ -31,7 +31,6 @@ object Action extends CompRegexParsers {
     windowaction | execfile | defactions | scala | mbt |
     setbase | read | interpret | check | checkTerm | navigate |
     printall | printallxml | printConfig | diff | clear | remote | exit | getaction // getaction must be at end for default get
-
   private def log = logfilets | logfile | loghtml | logconsole | logon | logoff
   private def logfile = "log file" ~> file ^^ { f => AddReportHandler(new TextFileHandler(f, false)) }
   private def logfilets = "log filets" ~> file ^^ { f => AddReportHandler(new TextFileHandler(f, true)) }
