@@ -234,7 +234,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
 
   def apply(request: ServerRequest): ServerResponse = request.path match {
     case "init" :: rest => try {
-      controller.handleLine("build FrameIT mmt-omdoc").throwErrorIfAny()
+      controller.handleLine("build FrameIT mmt-omdoc")
       ServerResponse.TextResponse("Success")
     } catch {
       case e : Exception => ServerResponse.errorResponse("Error initializing: " + e.getMessage)
