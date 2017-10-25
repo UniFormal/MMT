@@ -17,7 +17,7 @@ abstract class MMTTest(archives : String*)(extensions : String*) extends FlatSpe
   val setupFolder = File("test/resources").canonical
   val content = setupFolder / "content" 
   lazy val mathhub = new MathHub(MathHub.defaultURL,content,report = controller.report,https=true)
-  def hl(s : String) = controller.handleLine(s).throwErrorIfAny()
+  def hl(s : String) = controller.handleLine(s)
   def shouldhl(s : String) = it should s in hl(s)
 
   behavior of "MMT"
