@@ -1,10 +1,11 @@
 package info.kwarc.mmt.repl
 
-import info.kwarc.mmt.api.frontend.{Action, REPLExtension, ShellArguments}
+import info.kwarc.mmt.api.frontend._
 
 
 class ExtendedREPL extends REPLImpl with REPLExtension  {
-  override def enter(args: ShellArguments): Unit = {
+  override def enter
+  (args: ShellArguments): Unit = {
     super.enter(args)
 
     if (isDumb()) {
@@ -30,9 +31,15 @@ class ExtendedREPL extends REPLImpl with REPLExtension  {
   private def printSuggestions(line: String) = {
     suggestions(line).foreach(println)
   }
-
   private def handleLine(line: String) = {
-    controller.handleLine(line)
+    controller.tryHandleLine(line) match {
+      case ActionResultOK() => true
+      case ActionParsingError(e) =>
+        println("\u001b[31;1m" + e + "\u001b[0m")
+      case ActionExecutionError(e) =>
+        println("\u001b[31;1m" + e + "\u001b[0m")
+    }
+    true
   }
 
   def suggestions(line: String) : List[String] = Action.completeAct(line)
