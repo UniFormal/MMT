@@ -428,10 +428,7 @@ class AcrossLibraryTranslator(controller : Controller,
           case OMS(_) => stateVar
           case _ =>
             val states = immediateSubterms.map(_.state)
-            if (states.forall(_ == Finished)) {
-              "break point"
-              Finished
-            }
+            if (states.forall(_ == Finished)) Finished
             else if (states contains Changed(New)) Changed(New)
             else if (states contains Changed(Backtracked)) Changed(Backtracked)
             else Todo

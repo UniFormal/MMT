@@ -33,12 +33,12 @@ abstract class Test(archivepath : String,
   controller.handleLine("log console")
   if (logfile.isDefined) controller.handleLine("log html " + logfile.get)// /home/raupi/lmh/mmtlog.txt")
   ("test" :: logprefixes) foreach (s => controller.handleLine("log+ " + s))
-  controller.handleLine("extension info.kwarc.mmt.lf.Plugin").throwErrorIfAny()
-  controller.handleLine("extension info.kwarc.mmt.odk.Plugin").throwErrorIfAny()
-  controller.handleLine("extension info.kwarc.mmt.pvs.Plugin").throwErrorIfAny()
+  controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
+  controller.handleLine("extension info.kwarc.mmt.odk.Plugin")
+  controller.handleLine("extension info.kwarc.mmt.pvs.Plugin")
   // controller.handleLine("extension info.kwarc.mmt.metamath.Plugin")
   controller.handleLine("mathpath archive " + archivepath)
-  controller.handleLine("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath).throwErrorIfAny()
+  controller.handleLine("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath)
 
 
   def doFirst : Unit = {}
