@@ -277,6 +277,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 dS
               }
          }
+      case nm: NestedModule =>
+        apply(nm.module)
+        Nil
       case _ =>
         Nil
     }
