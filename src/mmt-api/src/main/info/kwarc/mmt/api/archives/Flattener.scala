@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.proving
+package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
 import archives._ 
