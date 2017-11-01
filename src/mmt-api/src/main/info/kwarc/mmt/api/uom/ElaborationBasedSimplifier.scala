@@ -97,6 +97,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         m match {
           case t: DeclaredTheory =>
             t.meta foreach apply
+          case v : DeclaredView =>
+            apply(materialize(Context.empty,v.from,true,None))
+            apply(materialize(Context.empty,v.to,true,None))
           case _ =>
         }
         // TODO flattenContext(m.parameters)
@@ -166,21 +169,25 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     }
     lazy val alreadyIncluded = parent.getIncludes
     val dElab: List[Declaration] = dOrig match {
-      // plain includes: copy (only) includes
+        // includes in views TODO this is a first step, but should be implemented less hacky
       case ds : DefinedStructure if parent.isInstanceOf[DeclaredView] =>
         ds.df match {
           case OMMOD(mp) =>
             lup.getO(mp) match {
               case Some(v : DeclaredView) =>
+                // include!
                 apply(v)
-                v.getDeclarations.filter(_.name match {
-                  case ComplexStep(_) / _ => true
-                  case _ => false
-                })
+                v.getDeclarations.map {
+                  case s : DefinedStructure =>
+                    DefinedStructure(parent.toTerm,s.name,s.from,s.df,false)
+                  case c : Constant =>
+                    Constant(parent.toTerm,c.name,c.alias,c.tp,c.df,c.rl,c.notC)
+                }
               case _ => Nil
             }
           case _ => Nil
         }
+      // plain includes: copy (only) includes
       case Include(h, from, Nil) =>
         val idom = lup.getAs(classOf[Theory], from)
         val dom = idom match {
