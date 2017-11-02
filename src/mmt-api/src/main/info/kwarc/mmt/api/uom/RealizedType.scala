@@ -43,7 +43,11 @@ case class RealizedType(synType: Term, semType: SemanticType) extends uom.UOMRul
       of(sP)
    }
    /** @return the lexer extension to be used by the lexer, defined in terms of the LexFunction lex */
-   def lexerExtension = semType.lex map {case l => new LexParseExtension(l, new LiteralParser(this))} 
+   val prio = this.priority
+   def lexerExtension = semType.lex map {case l => new LexParseExtension(l, new LiteralParser(this)) {
+     override def toString = "rule LexParseExtension " + semType.toString
+     override val priority = prio
+   }}
 }
 
 class RepresentedRealizedType[V](synType: Term, override val semType: RSemanticType[V]) extends RealizedType(synType,semType) {

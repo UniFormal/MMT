@@ -200,7 +200,7 @@ class NotationBasedParser extends ObjectParser {
       log("parsing")
       notations.groups.foreach(n => log(n.toString))
       log("lexing")
-      lexing.foreach(r => log(r.toString))
+      lexing.foreach(r => log(r.toString + ": " + r.priority))
     }
     val escMan = new EscapeManager(lexing)
     val tl = TokenList(pu.term, escMan, pu.source.region.start)
@@ -267,6 +267,7 @@ class NotationBasedParser extends ObjectParser {
         nots ::= ParsingRule(nm.module.path, Nil, tn)
       case _ =>
     }
+    les = les.sortBy(_.priority).reverse
     (nots, les, notExts)
   }
   
