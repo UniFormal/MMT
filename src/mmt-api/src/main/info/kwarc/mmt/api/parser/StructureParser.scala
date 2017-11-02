@@ -485,9 +485,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             case link: DeclaredLink =>
               val (fromRef, from) = readMPath(link.path)
               readDelimiter("=")
-              val (inclRef, incl) = readMPath(link.path)
+              val (inclRef, inclp) = readMPath(link.path)
+              val incl = controller.getO(inclp) match {
+                case Some(th : DeclaredTheory) => link.to.toMPath ? LocalName(th.path)
+                case _ => inclp
+              }
               //readParsedObject(view.to)
-              val as = PlainViewInclude(link.toTerm, from, incl)
+              val as = ViewInclude(link.toTerm, from, OMID(incl))
               SourceRef.update(as.from, fromRef)
               SourceRef.update(as.df, inclRef)
               addDeclaration(as)
