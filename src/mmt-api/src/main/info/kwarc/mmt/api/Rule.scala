@@ -29,7 +29,7 @@ trait Rule extends SemanticObject {
    *  creating a new rule with higher priority can be used to effectively drop imported rules
    *  
    */
-   // TODO priority is used only in some situations so far, in particular for type inference or term-transformation
+   // TODO priority is used only in some situations so far, in particular for lexer extensions, type inference, or term-transformation
   def priority: Int = 0
   
 }

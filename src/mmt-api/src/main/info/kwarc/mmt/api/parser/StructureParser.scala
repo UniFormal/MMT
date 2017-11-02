@@ -483,15 +483,19 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               SourceRef.update(incl.from, fromRef) //TODO awkward, same problem for metatheory
               addDeclaration(incl)
             case link: DeclaredLink =>
+              //TODO this should parse an entire morphism expression (but we can't parse those yet)
+              //TODO the 'from' theory should be optional (but ViewInclude currently requires it)
               val (fromRef, from) = readMPath(link.path)
               readDelimiter("=")
               val (inclRef, inclp) = readMPath(link.path)
-              val incl = controller.getO(inclp) match {
-                case Some(th : DeclaredTheory) => link.to.toMPath ? LocalName(th.path)
-                case _ => inclp
+              val target = controller.getO(inclp) match {
+                case Some(th: DeclaredTheory) =>
+                  // theory id as shortcut for its identity morphism
+                  OMIDENT(OMMOD(th.path))
+                case _ =>
+                  OMMOD(inclp)
               }
-              //readParsedObject(view.to)
-              val as = ViewInclude(link.toTerm, from, OMID(incl))
+              val as = ViewInclude(link.toTerm, from, target)
               SourceRef.update(as.from, fromRef)
               SourceRef.update(as.df, inclRef)
               addDeclaration(as)

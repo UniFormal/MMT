@@ -267,7 +267,7 @@ class NotationBasedParser extends ObjectParser {
         nots ::= ParsingRule(nm.module.path, Nil, tn)
       case _ =>
     }
-    les = les.sortBy(_.priority).reverse
+    les = les.sortBy(- _.priority)
     (nots, les, notExts)
   }
   
