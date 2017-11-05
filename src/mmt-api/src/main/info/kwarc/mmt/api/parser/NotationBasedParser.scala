@@ -200,7 +200,7 @@ class NotationBasedParser extends ObjectParser {
       log("parsing")
       notations.groups.foreach(n => log(n.toString))
       log("lexing")
-      lexing.foreach(r => log(r.toString))
+      lexing.foreach(r => log(r.toString + ": " + r.priority))
     }
     val escMan = new EscapeManager(lexing)
     val tl = TokenList(pu.term, escMan, pu.source.region.start)
@@ -267,6 +267,7 @@ class NotationBasedParser extends ObjectParser {
         nots ::= ParsingRule(nm.module.path, Nil, tn)
       case _ =>
     }
+    les = les.sortBy(- _.priority)
     (nots, les, notExts)
   }
   
@@ -703,6 +704,13 @@ class NotationBasedParser extends ObjectParser {
       def unapply(t : Term) : Option[LocalName] = t match {
         case OMV(n) => Some(n)
         case OMS(p) => Some(p.name)
+        case OMA(OMS(ObjectParser.oneOf),ls)=>
+          val rs = ls collect {case OMS(p) => p.name}
+          rs.headOption match {
+            case Some(name) if rs.forall(_ == name) => Some(name)
+            case _ => None
+          }
+        case l : OML => Some(l.name)
         case OMSemiFormal(List(Text(_,s))) =>
           Some(LocalName.parse(s))
         case _ =>

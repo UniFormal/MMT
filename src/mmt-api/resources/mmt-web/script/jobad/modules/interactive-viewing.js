@@ -228,12 +228,7 @@ var interactiveViewing = {
      * typical wrappers: qmt.infer, qmt.simplify
      */
     showComputationResult: function(key, title, param) {
-        console.log("In show computation result");
         var q = qmt.SubObject(qmt.Component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition)
-        console.log(mmt.currentPosition);
-        console.log(mmt.currentElement);
-        console.log(mmt.currentComponent);
-        console.log(q);
         if (key == "i")
             q = qmt.infer(q, uris.lf)
         else if (key == "s")

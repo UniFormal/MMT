@@ -4,10 +4,13 @@ import info.kwarc.mmt.api._
 import archives._
 import documents._
 import frontend.Controller
+import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView, Theory}
 import ontology.{Declares, RelationExp}
 import parser._
 import utils._
 import objects._
+
+import scala.util.Try
 
 /** parses and returns a checked result */
 abstract class Interpreter extends Importer {
@@ -47,12 +50,20 @@ abstract class Interpreter extends Importer {
     val provided = doc.getModulesResolved(controller.globalLookup).map {m =>
        m.path
     } map LogicalDependency
-    val used = Nil //TODO how to get exact dependencies at this point?
-    //TODO how to return MissingDependency?
-    if (bf.errorCont.hasNewErrors)
-       BuildFailure(used, provided)
+    val used = doc.getModulesResolved(controller.globalLookup).flatMap {
+      case th : DeclaredTheory => th.meta.toList ::: th.getIncludes ::: th.getNamedStructures.map(_.from.toMPath)
+      case v : DeclaredView => v.from.toMPath :: v.to.toMPath :: v.getIncludes
+    }.distinct.map(LogicalDependency) // TODO this is an ugly hack and should be replaced by a precise method. Requires some planning though; in the
+      // TODO meantime it's better than nothing
+    val missing = used.collect {
+        case ld if Try(controller.getO(ld.mpath)).toOption.flatten.isEmpty => ld
+      }
+    if (missing.nonEmpty) {
+      MissingDependency(missing,provided,used)
+    } else if (bf.errorCont.hasNewErrors)
+      BuildFailure(used, provided)
     else
-       BuildSuccess(used, provided)
+      BuildSuccess(used, provided)
   }
 }
 

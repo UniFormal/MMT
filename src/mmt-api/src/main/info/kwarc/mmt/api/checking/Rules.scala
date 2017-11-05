@@ -1,7 +1,9 @@
 package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.modules.{DeclaredTheory, Module}
+import info.kwarc.mmt.api.symbols.{Constant, RuleConstant}
 import libraries._
 import objects._
 import objects.Conversions._
@@ -34,7 +36,25 @@ trait CheckingCallback {
    /** type inference, fails by default */
    def inferType(t : Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = None
    /** runs code and succeeds by default */
-   def dryRun[A](allowDelay: Boolean, commitOnSucces: Boolean)(code: => A): DryRunResult = Success(code)
+   def dryRun[A](allowDelay: Boolean, commitOnSucces: A => Boolean)(code: => A): DryRunResult = Success(code)
+   /**
+    * tries to check some judgments without delaying constraints
+    * 
+    * if this returns None, the check is inconclusive at this point, and no state changes were applied
+    * if this returns Some(true), all judgments have been derived and all state changes are applied 
+    * if this returns Some(false), no state changes are applied and the caller still has to generate an error message, possibly by calling check(j)
+    */
+   def tryToCheckWithoutDelay(js:Judgement*): Option[Boolean] = {
+     val dr = dryRun(false, (x:Boolean) => x) {
+       js forall {j => check(j)(NoHistory)}
+     }
+     dr match {
+      case Success(s:Boolean) => Some(s)
+      case Success(_) => throw ImplementationError("illegal success value")
+      case WouldFail => Some(false)
+      case _:MightFail => None
+     }
+   }
 
    /** flag an error */
    def error(message: => String)(implicit history: History): Boolean = false
@@ -399,14 +419,68 @@ abstract class TypeSolutionRule(val head: GlobalName) extends CheckingRule {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean
 }
 
+/**
+ * A TypeBasedSolutionRule solves an unknown based on its type, by constructing a term of that type.
+ * This is legal if all terms of that type are equal. 
+ */
 abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under,head) {
 
+  /** if this type is proof-irrelevant, this returns the unique term of this type
+   *  
+   *  This method is already called during equality-checking. Therefore, it may not perform complex search operations.
+   */ 
   def solve(solver : Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
 
-  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = if (applicable(tp)) {
-    history += "all terms of this type are equal"
-    Some(true)
-  } else None
+  /** if used as an equality rule, this makes all terms of this type equal if solve succeeds */
+  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+    /* for atomic types, this method could immediately return Some(true),
+       but by calling solve, we allow for type constructors that are only proof-irrelevant if their components are */ 
+    solve(solver)(tp) match {
+      case Some(_) =>
+        history += "all terms of this type are equal"
+        Some(true)
+      case None => None
+    }
+  }
+}
 
-  // def applicable(tm : Term) : Boolean
+class AbbreviationRuleGenerator extends ChangeListener {
+  override val logPrefix = "abbrev-rule-gen"
+  protected val abbreviationTag = "abbreviation"
+  private def rulePath(r: GeneratedAbbreviationRule) = r.constant.path / abbreviationTag
+  private def present(t: Term) = controller.presenter.asString(t)
+
+  private def getGeneratedRule(p: Path): Option[GeneratedAbbreviationRule] = {
+    p match {
+      case p: GlobalName =>
+        controller.globalLookup.getO(p / abbreviationTag) match {
+          case Some(r: RuleConstant) => r.df.map(df => df.asInstanceOf[GeneratedAbbreviationRule])
+          case _ => None
+        }
+      case _ => None
+    }
+  }
+
+  override def onAdd(e: StructuralElement) {onCheck(e)}
+  override def onDelete(e: StructuralElement) {
+    getGeneratedRule(e.path).foreach {r => controller.delete(rulePath(r))}
+  }
+  override def onCheck(e: StructuralElement): Unit = e match {
+    case c : Constant if (c.rl contains abbreviationTag) && c.dfC.analyzed.isDefined =>
+      val rule = new GeneratedAbbreviationRule(c)
+      val ruleConst = new RuleConstant(c.home, c.name / abbreviationTag, OMS(c.path), Some(rule))
+      ruleConst.setOrigin(GeneratedBy(this))
+      log(c.name + " ~~> " + present(c.df.get))
+      controller add ruleConst
+    case _ =>
+  }
+
+}
+
+class GeneratedAbbreviationRule(val constant : Constant) extends ComputationRule(constant.path) {
+  override def priority: Int = super.priority + 3
+  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
+    case OMS(p) if p == constant.path => constant.df
+    case _ => None
+  }
 }

@@ -171,9 +171,9 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
          }
          table("constant-body ") {
             d.getComponents.foreach {
-               case DeclarationComponent(comp, tc: AbstractTermContainer) =>
+               case DeclarationComponent(comp, cc: AbstractObjectContainer) =>
                   tr(compRow(comp)) {
-                     tc.get.foreach {t =>
+                     cc.get.foreach {t =>
                          doComponent(d.path $ comp, t)
                      }
                   }

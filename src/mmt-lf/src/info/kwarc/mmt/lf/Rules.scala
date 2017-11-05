@@ -21,8 +21,8 @@ object Common {
         if (aT == kind) {
           solver.error("type of bound variable is too big: " + solver.presentObj(aT))
         } else {
-          val iskind = solver.dryRun(false,true)(solver.check(Typing(stack, aT, kind, Some(OfType.path)))(h))
-          if (iskind.get contains true) true else solver.check(Subtyping(stack,aT,tp))
+          val iskind = solver.tryToCheckWithoutDelay(Typing(stack, aT, kind, Some(OfType.path)))
+          if (iskind contains true) true else solver.check(Subtyping(stack,aT,tp))
         }
      }
    }

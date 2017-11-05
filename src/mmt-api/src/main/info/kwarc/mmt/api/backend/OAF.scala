@@ -82,7 +82,7 @@ abstract class ArchiveHub {
  * https URLs are good for anonymous cloning. ssh URLs are good for key-based authentication when pushing.
  * Fresh users should use https first and typically want to switch to ssh eventually.
  */
-class MathHub(val uri: URI, val root: File, https : Boolean, val report: Report) extends ArchiveHub with Logger {
+class MathHub(val uri: URI, val root: File, https: Boolean, val report: Report) extends ArchiveHub with Logger {
    val logPrefix = "oaf"
    /** choose UnixGit or WindowsGit depending on OS */
    private val gitCommand = OS.detect match {case Windows => new WindowsGit() case _ => UnixGit}
@@ -119,7 +119,7 @@ class MathHub(val uri: URI, val root: File, https : Boolean, val report: Report)
       git(repos, "add", mf)
       git(repos, "commit", "-m", "\"automatically created by MMT\"")
       git(repos, "remote", "add", "origin", Remote.url(pathS))
-      git(repos, "push", "origin", "master")
+      // git(repos, "push", "origin", "master") // practical but fails for new users or if the remote repo doesn't exist
    }
    /** clones a repository */
    def clone(path: String): Option[File] = {

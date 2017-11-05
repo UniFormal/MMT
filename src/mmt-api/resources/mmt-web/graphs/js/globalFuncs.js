@@ -2,6 +2,32 @@ var alreadyAdded={};
 var lazyParent="#";
 var lastGraphTypeUsed;
 var lastGraphDataUsed;
+var historyStates=[];
+
+function setLocation(curLoc)
+{
+    try 
+	{
+        history.pushState(null, null, curLoc);
+        return false;
+    } 
+	catch(e) 
+	{
+		
+	}
+    location.hash = '#' + curLoc;
+}
+
+function generateCustomSideMenu()
+{
+	html="";
+	for(var i=0;i<GRAPH_TYPES.length;i++)
+	{
+		html+='<li data-action="'+GRAPH_TYPES[i].id+'" title="'+GRAPH_TYPES[i].tooltip+'">'+GRAPH_TYPES[i].menuText+'</li>';
+	}
+	html+='<li data-action="close" title="Hides this menu">Hide</li>';
+	document.getElementById('side-menu').innerHTML = html;
+}	
 
 function setStatusText(text)
 {
@@ -16,7 +42,9 @@ function createNewGraph(type,graphdata)
 	
 	lastGraphTypeUsed=type;
 	lastGraphDataUsed=graphdata;
-	theoryGraph.getGraph(mmtUrl+":jgraph/json?key=" + type + "&uri=" + graphdata);
+	theoryGraph.getGraph( graphDataURL+graphDataURLTypeParameterName+ type + "&" + graphDataURLDataParameterName + graphdata);
+	var newURL=location.protocol + '//' + location.host + location.pathname+"?"+graphDataURLTypeParameterNameTGView+ type + "&" + graphDataURLDataParameterNameTGView + graphdata;
+	setLocation(newURL);
 }	
 
 function addTreeNodes(data)
@@ -28,13 +56,15 @@ function addTreeNodes(data)
 		var node=
 		{ 
 			"text" : childNodes[i].menuText, 
-			"id" : childNodes[i].id,
+			"id": "js_tree_node_"+currentMenuNodeId,
+			"serverId" : childNodes[i].id,
 			"graphdata": childNodes[i].uri, 
 			"typeGraph": childNodes[i].type, 
 			"children": child,
 			"state" : {"opened": !childNodes[i].hasChildren}
 		};
-		$('#theory_tree').jstree().create_node(lazyParent, node, 'last',function() {console.log("Child created");});
+		$('#theory_tree').jstree().create_node(lazyParent, node, 'last',function() {});
+		currentMenuNodeId++;
 	}
 }		
 
@@ -57,4 +87,30 @@ function getStartToEnd(start, theLen)
     return theLen > 0 ? {start: start, end: start + theLen} : {start: start + theLen, end: start};
 }
 
+function addToStateHistory(func, parameterArray)
+{
+	historyStates.push({"func":func, "param": parameterArray});
+}
 
+function undoLastAction()
+{
+	var lastState = historyStates.pop();
+	
+	if(lastState.func=="cluster")
+	{
+		theoryGraph.openCluster(lastState.param.clusterId);
+	}
+	else if(lastState.func=="uncluster")
+	{
+		theoryGraph.cluster(lastState.param.nodes,lastState.param.name,lastState.param.clusterId);
+	}
+	else if(lastState.func=="select")
+	{
+		theoryGraph.selectNodes([]);
+	}
+	else if(lastState.func=="unselect")
+	{
+		theoryGraph.selectNodes(lastState.param.nodes);
+	}
+	historyStates.pop();
+}

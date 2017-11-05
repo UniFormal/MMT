@@ -84,8 +84,8 @@ object Rename extends FlexaryConstantScala(Combinators._path, "rename")
 
 object ComputeRename extends ComputationRule(Rename.path) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
-      val Rename(thy,rens@_*) = tm
-      val at = solver.getTheory(thy).getOrElse(return None)
+     val Rename(thy,rens@_*) = tm
+     val at = solver.getTheory(thy).getOrElse(return None)
      rens.foreach {
        case OML(nw, None, Some(OML(old, None,None,_,_)),_,_) =>
          at.rename(old,nw)

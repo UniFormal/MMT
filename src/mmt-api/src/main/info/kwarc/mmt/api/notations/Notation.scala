@@ -251,7 +251,7 @@ object TextNotation {
            Precedence.integer(-1000001)
        else
            Precedence.integer(0)
-       val (fixityString, arguments) = if (! tokens.isEmpty && tokens.head.startsWith("%%")) {
+       val (fixityString, arguments) = if (tokens.nonEmpty && tokens.head.startsWith("%%")) {
           val fix = tokens.head.substring(2)
           val args = tokens.tail
           (fix, args)

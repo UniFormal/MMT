@@ -53,7 +53,7 @@ object ComponentKey {
     case "params" => ParamsComponent
     case "pattern-body" => PatternBodyComponent
     case "metadata" => MetaDataComponent
-    case s if s.startsWith("ext-") => OtherComponent(s)
+    case s if s.startsWith("other-") => OtherComponent(s.substring(6))
     case s => throw ParseError("Invalid name of declaration component: " + s)
   }
 }
@@ -80,7 +80,9 @@ case object CodComponent  extends TermComponentKey("codomain")
 case object ParamsComponent extends ObjComponentKey("params")
 
 /** custom component, e.g., in a [[info.kwarc.mmt.api.symbols.DerivedDeclaration]] */
-case class OtherComponent(s: String) extends ComponentKey(s)
+case class OtherComponent(s: String) extends ComponentKey(s) {
+  override def toString = "other-" + s
+}
 
 /** components that are notations */
 abstract class NotationComponentKey(s: String) extends ComponentKey(s)

@@ -80,7 +80,7 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
         case _ => throw new Exception("Impossible")
       }
       case j : A@unchecked if cls.isInstance(j) => j
-      case _ => throw ParseError("getAs Error: A=" + A.toString + ", j:" + ret.getClass)
+      case j => throw ParseError("getAs Error: A=" + cls.toString + ", j:" + j.getClass + " = " + j)
     }
   }
 }

@@ -279,6 +279,8 @@ function Optimizer(nodes, edges)
 	
 	function findRandomPath(startNode)
 	{
+		if(startNode===undefined)
+			return undefined;
 		var nodesToprocess=[startNode];
 		var currentPath=[];
 		while(nodesToprocess.length>0)
@@ -381,7 +383,7 @@ function Optimizer(nodes, edges)
 			
 			var tempPath=findRandomPath(maxNode);
 			
-			if(tempPath.length>longPath.length)
+			if(tempPath!==undefined && tempPath.length>longPath.length)
 			{
 				longPath=tempPath.slice();
 			}

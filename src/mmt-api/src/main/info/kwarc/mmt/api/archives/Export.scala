@@ -48,13 +48,13 @@ trait Exporter extends BuildTarget {
   def canHandle(p: Path) = true
   
   /** applied to each document (i.e., narration-folders and .omdoc files) */
-  def exportDocument(doc: Document, bf: BuildTask)
+  def exportDocument(doc: Document, bf: BuildTask): Unit
 
   /** applied to each theory */
-  def exportTheory(thy: DeclaredTheory, bf: BuildTask)
+  def exportTheory(thy: DeclaredTheory, bf: BuildTask): Unit
 
   /** applied to each view */
-  def exportView(view: DeclaredView, bf: BuildTask)
+  def exportView(view: DeclaredView, bf: BuildTask): Unit
 
   /** applied to every namespace
  *
@@ -62,7 +62,7 @@ trait Exporter extends BuildTarget {
     * @param namespaces the sub-namespace in this namespace
     * @param modules the modules in this namespace
     */
-  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask])
+  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]): Unit
 
   def build(a: Archive, up: Update, in: FilePath) {
     contentExporter.build(a, up, in)

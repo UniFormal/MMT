@@ -28,10 +28,16 @@ case class TorsoForm(torso: Term, apps: List[Appendage]) extends utils.HashEqual
 //TODO there should be an analogous representation of introduction sequences
 
 object TorsoForm {
-   def fromHeadForm(tm: Term) : TorsoForm = tm match {
-      case OMA(OMS(head), torso :: extremities) => fromHeadForm(torso) match {
-         case TorsoForm(t, apps) => TorsoForm(t, Appendage(head, extremities) :: apps)
-      }
+   def fromHeadForm(tm: Term, unknowns : List[LocalName]) : TorsoForm = tm match {
+      case OMA(OMS(head), torso :: extremities) =>
+         torso match {
+            case OMV(name) if unknowns contains name => // changed
+               TorsoForm(tm, Nil)
+            case _ =>
+               fromHeadForm(torso, unknowns) match {
+                  case TorsoForm(t, apps) => TorsoForm(t, Appendage(head, extremities) :: apps)
+               }
+         }
       case _ => TorsoForm(tm, Nil)
    }
 }
@@ -39,9 +45,9 @@ object TorsoForm {
 /** In the torso normal form, the torso cannot be further decomposed anymore, typically it is a variable or constant.
  *  See TorsoForm for further explanations.
  */ 
-object TorsoNormalForm {
+case class TorsoNormalForm(unknowns:List[LocalName]) {
    def unapply(tm: Term): Option[(Term,List[Appendage])] = {
-      val TorsoForm(t,apps) = TorsoForm.fromHeadForm(tm)
+      val TorsoForm(t,apps) = TorsoForm.fromHeadForm(tm,unknowns)
       Some((t,apps))
    }
 }

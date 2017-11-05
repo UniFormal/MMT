@@ -14,8 +14,8 @@ import scala.xml.Node
   * @param method Method used to make request
   * @param headerData Request headers that were sent along with the request
   * @param sessionID sessionID that was
-  * @param pathStr Path string requested on the server without trailing /s
-  * @param queryString The query portion of th estruing
+  * @param path the full path of the request (use pathForExtension when accessing the path in a [[ServerExtension]])
+  * @param query the query portion of the URL
   * @param body
   */
 case class ServerRequest(method: RequestMethod.Value, val headers: Map[String, String], session: Option[Session],
@@ -29,7 +29,7 @@ case class ServerRequest(method: RequestMethod.Value, val headers: Map[String, S
     case ext :: _ if ext.startsWith(":") => Some(ext.substring(1))
     case _ => None
   }
-  def extensionPathComponents = path match {
+  def pathForExtension = path match {
     case ext :: tail if ext.startsWith(":") => tail
     case _ => path
   }

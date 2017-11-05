@@ -33,13 +33,22 @@ class LatexObjectPresenter extends NotationBasedPresenter {
       }
    }
    
-   private def wrap(before: String, after: String)(body: => Unit)(implicit pc: PresentationContext) {
-      pc.rh << before
-      body
-      pc.rh << after
-   }
-   private def group(body: => Unit)(implicit pc: PresentationContext) {wrap("{","}")(body)}
+   private def group(body: => Unit)(implicit pc: PresentationContext) {pc.rh.wrap("{","}")(body)}
    
+   override def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
+      val tooltip = pc.owner.flatMap {cp => controller.globalLookup.getComponent(cp) match {
+         case tc : TermContainer => tc.read
+         case _ => None
+      }}
+      tooltip match {
+         case Some(t) =>
+            pc.rh.wrap(s"\mmt@tooltip{$t}{","}") {
+              body
+            }
+         case None =>
+            body
+      }
+   }
    override def doIdentifier(p: ContentPath)(implicit pc: PresentationContext) {
       pc.rh << s"\\mmt@symref{${p.toPath}}{${p.last.toString}}"
    }
@@ -55,42 +64,28 @@ class LatexObjectPresenter extends NotationBasedPresenter {
       pc.rh << s"\\mmt@symref{${p.toPath}}{$sL}"
    }
    override def doDelimiter(n: LocalName, d: Delimiter)(implicit pc: PresentationContext) {
-      pc.rh << s"\\mmt@varref{${n.toPath}}{${d.text}}"
+      pc.rh << s"\\mmt@symref{${n.toPath}}{${d.text}}"
    }
    override def doSpace(level: Int)(implicit pc: PresentationContext) {
       Range(0,level).foreach {_ => pc.rh << "\\,"}
    }
-   override def doToplevel(body: => Unit)(implicit pc: PresentationContext) {
-      val tooltip = pc.owner.flatMap {cp => controller.globalLookup.getComponent(cp) match {
-         case tc : TermContainer => tc.read
-         case _ => None
-      }}
-      tooltip match {
-         case Some(t) =>
-            wrap(s"\mmt@tooltip{$t}{","}") {
-              body
-            }
-         case None =>
-            body
-      }
-   }
    override def doBracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
-      wrap("\\left(\\mmt@group{","}\\right)") {
+      pc.rh.wrap("\\left(\\mmt@group{","}\\right)") {
         body
       }
    }
    override def doUnbracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
-      wrap("\\mmt@group{","}") {
+      pc.rh.wrap("\\mmt@group{","}") {
         body
       }
    }
    override def doImplicit(body: => Unit)(implicit pc: PresentationContext) {
-      wrap("\\mmt@implicit{","}") {
+      pc.rh.wrap("\\mmt@implicit{","}") {
         body
       }
    }
    override def doInferredType(body: => Unit)(implicit pc: PresentationContext) {
-      wrap("\\mmt@inferred{","}") {
+      pc.rh.wrap("\\mmt@inferred{","}") {
         body
       }
    }
@@ -99,7 +94,7 @@ class LatexObjectPresenter extends NotationBasedPresenter {
       val overunder = over.isDefined || under.isDefined
       if (overunder)
          pc.rh << "\\stackrel{"
-      wrap("{", "}"){main}
+      pc.rh.wrap("{", "}"){main}
       sup.foreach {s =>
          pc.rh << "^"
          group{s()}

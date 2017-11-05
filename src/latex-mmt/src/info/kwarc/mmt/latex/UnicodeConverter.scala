@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.archives.latex
+package info.kwarc.mmt.latex
 
 object UnicodeConverter {
 val abbrevs =

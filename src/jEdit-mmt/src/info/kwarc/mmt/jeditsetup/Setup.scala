@@ -7,6 +7,8 @@ import utils.File._
 
 import MMTSystem._
 
+import info.kwarc.mmt.jedit._
+
 /** install methods for jEdit
   *
   * copies jars, modes, abbreviations etc. to jEdit settings directory
@@ -217,9 +219,9 @@ class Setup extends ShellExtension("jeditsetup") {
           println("deleting directory " + d)
         }
       }
-  
+      // add properties that depend on MMT installation folder
       val propsOld = if (propsFile.exists) File.read(propsFile) else ""
-      val archKey = "info.kwarc.mmt.jedit.MMTPlugin.archives="
+      val archKey = MMTOptions.archives.jeditKey + "="
       if (install) controller.getOAF.map { oaf =>
         val contentFolder = oaf.root
         println("adding property for content folder " + contentFolder)
@@ -237,8 +239,7 @@ class Setup extends ShellExtension("jeditsetup") {
     }
     
     
-    val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.1.0"), ("Console","5.1.4"),
-      ("BufferTabs","1.2.4"))
+    val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.1.0"), ("Console","5.1.4"), ("BufferTabs","1.2.4"))
     /** installs plugin dependencies and useful properties */
     def customize {
        // download jars from jEdit plugin central

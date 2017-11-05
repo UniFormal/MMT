@@ -47,3 +47,15 @@ class ShellSendCommand extends ShellExtension("send") {
       true
    }
 }
+
+/** example shell extension that starts a static HTTP server serving the current directory */
+class FileServerHere extends ShellExtension(":fileserver") {
+  def helpText = "runs an HTTP server for the current directory"
+  def run(shell: Shell, args: List[String]) = {
+    val serverArgs = if (args.isEmpty) List("") else args // "" yields current directory
+    controller.extman.addExtension(new web.FileServer, serverArgs)
+    controller.handleLine("server on 8080")
+    false // keep the server running
+  }
+}
+

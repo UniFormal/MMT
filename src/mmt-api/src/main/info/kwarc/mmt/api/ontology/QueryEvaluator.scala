@@ -162,12 +162,13 @@ class QueryEvaluator(controller: Controller) {
     case ontology.Component(of, comp) =>
       val res = empty
       evalSet(of) foreach {
-        case List(p: ContentPath) =>
-          lup.get(p).getComponent(comp) match {
-            case Some(tc: AbstractTermContainer) => tc.get foreach {
+        case List(p: ComponentParent) =>
+          val se = lup.get(p)
+          se.getComponent(comp) match {
+            case Some(tc: AbstractObjectContainer) => tc.get foreach {
               res += _
             }
-            case Some(_) => throw GetError("component exists but does not indicate an object: " + comp)
+            case Some(cc) => throw GetError(s"component $comp exists but it is not an object: $cc" )
             case _ => throw GetError("component does not exist: " + comp)
           }
         case _ => throw ImplementationError("ill-typed query")

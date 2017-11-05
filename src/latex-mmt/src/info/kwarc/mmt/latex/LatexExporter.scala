@@ -1,13 +1,14 @@
-package info.kwarc.mmt.api.archives.latex
+package info.kwarc.mmt.latex
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.archives.latex.LatexExporter._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols._
+import archives._
+import documents._
+import modules._
+import notations._
+import objects._
+import symbols._
+
+import LatexExporter._
 
 /** an unfinished exporter that generates latex presentations of modules */
 class LatexExporter extends Exporter {
@@ -145,15 +146,15 @@ class LatexExporter extends Exporter {
     styFile.close()
   }
 
-  def exportView(v: DeclaredView, bf: BuildTask): Unit = {
+  def exportView(v: DeclaredView, bf: BuildTask) {
     rh("%% view omitted")
   }
 
-  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]): Unit = {
+  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
     rh("%% namespace omitted")
   }
 
-  def exportDocument(doc: Document, bf: BuildTask): Unit = {}
+  def exportDocument(doc: Document, bf: BuildTask) {}
 
 }
 
@@ -167,8 +168,8 @@ object LatexExporter {
   }.mkString("")
 
   /** escapes of characters within latex commands */
-  private def commandEscapes = "\\_-1234567890".toList zip List("B", "U", "M", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Zero")
+  def commandEscapes = "\\_-1234567890".toList zip List("B", "U", "M", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Zero")
 
   /** escapes of characters within latex delimiters */
-  private def delimEscapes = '\\' -> "\\backslash " :: '~' -> "\\sim " :: "$#%&{}_^".toList.map(c => (c, "\\" + c))
+  def delimEscapes = '\\' -> "\\backslash " :: '~' -> "\\sim " :: "$#%&{}_^".toList.map(c => (c, "\\" + c))
 }

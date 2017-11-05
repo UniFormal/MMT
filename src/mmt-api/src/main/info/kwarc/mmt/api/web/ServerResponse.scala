@@ -2,10 +2,9 @@ package info.kwarc.mmt.api.web
 
 import java.io.InputStream
 
-import info.kwarc.mmt.api.{Error, utils}
-import info.kwarc.mmt.api.utils.{JSON, xml}
+import info.kwarc.mmt.api._
+import utils._
 
-import scala.collection.immutable.HashMap
 import scala.collection.mutable
 
 /**
@@ -51,9 +50,9 @@ class ServerResponse {
   }
 
   // OUTPUT
-  private var outputStream : Either[Array[Byte], InputStream] = Left(Array.empty)
+  private var outputStream : Union[Array[Byte], InputStream] = Left(Array.empty)
   /** the ouput is either an array or read directly from an input stream */
-  def output : Either[Array[Byte], InputStream] = outputStream
+  def output = outputStream
   /** sets the output to an array of bytes */
   def output_= (ary : Array[Byte]) {
     outputStream = Left(ary)
@@ -69,31 +68,58 @@ class ServerResponse {
 }
 
 /** 
- *  factory methods for typical resposes 
+ *  factory methods for typical responses 
  */
 object ServerResponse {
 
   // typical responses
   def TextResponse(text: String, tp: String = "plain"): ServerResponse = apply(text, "text/" + tp)
-  def XmlResponse(s: String): ServerResponse = fromText(s, "xml")
+  def HTMLResponse(text: String) = TextResponse(text, "html")
+  def XmlResponse(text: String) = TextResponse(text, "xml")
   def XmlResponse(node: scala.xml.Node): ServerResponse = fromXML(node)
   def JsonResponse(content: JSON): ServerResponse = fromJSON(content)
-
+  def FileResponse(file: utils.File) = {
+    val in = new java.io.FileInputStream(file)
+    anyDataResponse(in, file.getExtension)
+  }
   /** builds an error response from an error message */
-  def errorResponse(msg: String, req: ServerRequest): ServerResponse = errorResponse(ServerError(msg), req)
-  /** builds an error response from an error in xml (default), text, or html format depending on the content type requested by the client */
-  // error responses intentionally do not use HTTP error codes
-  def errorResponse(error: Error, req: ServerRequest): ServerResponse = {
-    val responseType = req.accept(List("text/plain", "text/xml", "text/html"), "text/xml")
-    if (responseType == "text/plain") {
-      fromText(error.toStringLong)
-    } else if (responseType == "text/xml") {
-      fromXML(error.toNode)
+  def errorResponse(msg: String, format: String = "html"): ServerResponse = errorResponse(ServerError(msg), format)
+  /** builds an error response from an error */
+  // error responses intentionally do not use HTTP error codes or accept headers
+  def errorResponse(error: Error, format: String): ServerResponse = {
+    if (format == "html") {
+      HTMLResponse(s"""<div xmlns="${utils.xml.namespace("html")}"><div>""" + error.toHTML + "</div></div>")
     } else {
-      fromText(s"""<div xmlns="${utils.xml.namespace("html")}"><div>""" + error.toHTML + "</div></div>", "html")
+      XmlResponse(error.toNode)
     }
   }
 
+  /** an MMT resource
+    * @param path path of File to be sent back
+    */
+  def ResourceResponse(path: String) : ServerResponse = {
+    val io = Util.loadResource(path)
+    if (io == null) {
+      errorResponse(s"Path $path not found")
+    } else {
+      anyDataResponse(io, utils.File(path).getExtension)
+    }
+  }
+  
+  /** creates a response from a file etc
+   *  @param extension file extension (only used to guess a content type)
+   */
+  def anyDataResponse(in: InputStream, extension: Option[String]): ServerResponse = {
+    // start with an empty response
+    val resp = new ServerResponse
+    // set the content type, possibly using the file extension
+    resp.contentType = extension.flatMap(e => contentTypes.get(e.toLowerCase)).getOrElse("text/plain")
+    // set the output and return
+    resp.output = in
+    resp
+  }
+
+  
   // ***************** more sophisticated methods added by Tom (?), probably not needed
   
   /**
@@ -131,57 +157,6 @@ object ServerResponse {
     * @param statusCode statusCode of the message
     */
   def fromJSON(content : JSON, statusCode : Int = statusCodeOK) : ServerResponse = apply(content.toString, "application/json", statusCode)
-  
- /**
-    * Convenience method to construct an MMT-internal resource response. Additionally applies a map to the resource to
-    * be returned.
-    * @param path path of File to be sent back
-    * @param map function to apply to the InputStream
-    * @param request Original request sent by the client
-    */
-  def resource(path: String, map: InputStream => Either[Array[Byte], InputStream], request: ServerRequest) : ServerResponse = {
-    //TODO: Make sure that the path is cleaned up
-
-    val properPath = path.replace("//", "/")
-    val io = Util.loadResource(properPath)
-
-    if(io == null){
-      return fromText(s"Path $path not found", statusCode = statusCodeNotFound)
-    }
-
-    // attempt to get the file extension
-    val fileExtension = {
-      val i = path.lastIndexOf(".")
-      if (i > 0) path.substring(i + 1)
-      else ""
-    }
-
-    // start with an empty response
-    val resp = new ServerResponse
-
-    // set the content type
-    resp.contentType = contentTypes.getOrElse(fileExtension.toLowerCase(), "text/plain")
-
-    // and get the output
-    map(io) match {
-      case Left(ary) =>
-          resp.output = ary
-      case Right(stream) =>
-          resp.output = stream
-    }
-
-    // and return it
-    resp
-  }
-
-  /**
-    * Convenience method to construct an MMT-internal resource response being sent back to the client
-    * @param path path of File to be sent back
-    * @param request Original request sent by the client
-    */
-  def resource(path: String, request: ServerRequest) : ServerResponse = {
-    resource(path, Right(_), request)
-  }
 
   // HELPERS
 

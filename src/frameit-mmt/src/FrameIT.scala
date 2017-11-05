@@ -237,7 +237,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
       controller.handleLine("build FrameIT mmt-omdoc")
       ServerResponse.TextResponse("Success")
     } catch {
-      case e : Exception => ServerResponse.errorResponse("Error initializing: " + e.getMessage, request)
+      case e : Exception => ServerResponse.errorResponse("Error initializing: " + e.getMessage)
     }
     case "pushout" :: rest => if (request.query.trim.startsWith("theory=")) {
       try {
@@ -258,9 +258,9 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
         }).map(_.toNode)
         ServerResponse.XmlResponse(<theory>{nodes}</theory>)
       } catch {
-        case e : Exception => ServerResponse.errorResponse(e.getMessage, request)
+        case e : Exception => ServerResponse.errorResponse(e.getMessage)
       }
-    } else ServerResponse.errorResponse("Malformed query", request)
+    } else ServerResponse.errorResponse("Malformed query")
     case "add" :: rest =>
       try {
         request.body.asXML match {
@@ -302,9 +302,9 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
           case _ => throw new FrameitError("Malformed FrameIT request : not of form <content><THEORY><VIEW></content>")
         }
       } catch {
-        case e : Exception => ServerResponse.errorResponse(e.getMessage, request)
+        case e : Exception => ServerResponse.errorResponse(e.getMessage)
       }
-    case _ => ServerResponse.errorResponse("Neither \"add\" nor \"pushout\"", request)
+    case _ => ServerResponse.errorResponse("Neither \"add\" nor \"pushout\"")
   }
 
   def run(solthS : String, vpathS : String) : String = {

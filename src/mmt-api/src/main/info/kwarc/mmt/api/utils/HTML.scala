@@ -177,10 +177,10 @@ abstract class HTML {
 
 /** collects HTML in a String */
 class HTMLBuilder extends HTML {
-   private var _result: String = ""
-   def out(s: String) {_result += s}  
-   def result = _result
-   def reset {_result = ""}
+   private var _result = new StringBuilder
+   def out(s: String) {_result append s}  
+   def result = _result.toString
+   def reset {_result.clear}
 }
 
 /** collects HTML in a file */
