@@ -1524,7 +1524,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        val newCon = stack ++ pre
        (vd.tp,vd.df) match {
          case (None,None) => true
-         case (Some(tp),Some(df)) => check(Typing(newCon, tp, df, None))(history + "defined declaration must be well-typed")
+         case (Some(tp),Some(df)) => check(Typing(newCon, df, tp, None))(history + "defined declaration must be well-typed")
          case (Some(tp), None) => check(Inhabitable(newCon, tp))(history + "type in contexts must be inhabitable")
          case (None, Some(df)) => inferTypeAndThen(df)(newCon, history + "definiens in context must be well-formed") {_ => true}
        }
