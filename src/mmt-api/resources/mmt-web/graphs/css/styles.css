@@ -1,7 +1,106 @@
  body, select 
-	  {
-		font: 10pt sans;
-	  }
+{
+	font: 10pt sans;
+}
+
+.sidenav 
+{
+	-moz-box-shadow:inset 0px 1px 0px 0px #ffffff;
+	-webkit-box-shadow:inset 0px 1px 0px 0px #ffffff;
+	box-shadow:inset 0px 1px 0px 0px #ffffff;
+	background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #ffffff), color-stop(1, #f6f6f6));
+	background:-moz-linear-gradient(top, #ffffff 5%, #f6f6f6 100%);
+	background:-webkit-linear-gradient(top, #ffffff 5%, #f6f6f6 100%);
+	background:-o-linear-gradient(top, #ffffff 5%, #f6f6f6 100%);
+	background:-ms-linear-gradient(top, #ffffff 5%, #f6f6f6 100%);
+	background:linear-gradient(to bottom, #ffffff 5%, #f6f6f6 100%);
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f6f6f6',GradientType=0);
+	background-color:#ffffff;
+	-moz-border-radius:6px;
+	-webkit-border-radius:6px;
+	border-radius:6px;
+	border:1px solid #dcdcdc;
+	display:inline-block;
+	color:#666666;
+	font-family:Arial;
+	font-size:12px;
+	font-weight:bold;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #ffffff;
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 1005;
+    top: 0;
+    left: 0;
+    overflow-x: hidden;
+    transition: 0.5s;
+    padding-top: 40px;
+}
+
+.sidenav .closebtn 
+{
+    position: absolute;
+    top: 0;
+    right: 16px;
+    font-size: 36px;
+    margin-left: 50px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #818181;
+    display: block;
+    transition: 0.3s;
+}
+
+.sidenav2 
+{
+	-moz-box-shadow:inset 0px 1px 0px 0px #ffffff;
+	-webkit-box-shadow:inset 0px 1px 0px 0px #ffffff;
+	box-shadow:inset 0px 1px 0px 0px #ffffff;
+	background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #ffffff), color-stop(1, #f6f6f6));
+	background:-moz-linear-gradient(top, #ffffff 5%, #f6f6f6 100%);
+	background:-webkit-linear-gradient(top, #ffffff 5%, #f6f6f6 100%);
+	background:-o-linear-gradient(top, #ffffff 5%, #f6f6f6 100%);
+	background:-ms-linear-gradient(top, #ffffff 5%, #f6f6f6 100%);
+	background:linear-gradient(to bottom, #ffffff 5%, #f6f6f6 100%);
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f6f6f6',GradientType=0);
+	background-color:#ffffff;
+	-moz-border-radius:6px;
+	-webkit-border-radius:6px;
+	border-radius:6px;
+	border:1px solid #dcdcdc;
+	display:inline-block;
+	color:#666666;
+	font-family:Arial;
+	font-size:12px;
+	font-weight:bold;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #ffffff;
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 1005;
+    top: 0;
+    right: 0;
+    overflow-x: hidden;
+    transition: 0.5s;
+    padding-top: 40px;
+}
+
+	.sidenav2 .closebtn 
+	{
+		position: absolute;
+		top: 0;
+		left: 16px;
+		font-size: 36px;
+		margin-right: 50px;
+		text-decoration: none;
+		font-size: 25px;
+		color: #818181;
+		display: block;
+		transition: 0.3s;
+	}
+
 	  #wholeNetwork
 	  {
 		  position:relative;
@@ -58,6 +157,20 @@
 		  text-align: center;
 	  }
 	  
+	html, body {
+		height:100%;
+	}
+	  
+	.theoryTreeClass
+	{
+	    overflow: auto;
+	    box-shadow: 0 0 5px #ccc;
+	    padding: 10px;
+		width:370px;
+	    border-radius: 5px;
+		resize: horizontal;
+	}
+
 	  /* The whole context menu */
 	  .custom-menu 
 	  {
@@ -74,6 +187,49 @@
 		  padding: 0;
 	  }
 	  
+	  /* The whole context menu */
+	  .custom-menu-side
+	  {
+		  display: none;
+		  z-index: 1000;
+		  position: absolute;
+		  overflow: hidden;
+		  border: 1px solid #CCC;
+		  white-space: nowrap;
+		  font-family: sans-serif;
+		  background: #FFF;
+		  color: #333;
+		  border-radius: 5px;
+		  padding: 0;
+	  }
+	  
+	 .custom-tooltip
+	  {
+		  display: none;
+		  z-index: 1000;
+		  position: absolute;
+		  overflow: hidden;
+		  border: 1px solid #CCC;
+		  font-family: sans-serif;
+		  background: #FFF;
+		  color: #333;
+		  border-radius: 5px;
+		  padding: 4px;
+	  }
+	  	  /* Each of the context menu items in the list */
+	  .custom-menu-side li 
+	  {
+		  padding: 8px 12px;
+		  cursor: pointer;
+		  list-style-type: none;
+		  transition: all .3s ease;
+	  }
+	  
+	.custom-menu-side li:hover 
+	{
+		background-color: #DEF;
+	}
+	
 	  /* Each of the context menu items in the list */
 	  .custom-menu li 
 	  {
@@ -88,7 +244,7 @@
 		background-color: #DEF;
 	}
 	
-	.dropdown-menu {
+.dropdown-menu {
     position: absolute;
     top: 100%;
     left: 0px;
@@ -114,15 +270,13 @@
 
 #generalMenu
 {
-	height:30px;
 	margin-top:2px;
 	float:left;
 }
 
 .toolSelector
 {
-	width: 96%;
-	height: 28px;
+	width: 370px;
 	top: 0px;
 	position: relative;
 	-moz-box-shadow:inset 0px 1px 0px 0px #ffffff;
@@ -155,7 +309,7 @@
 {
 	width:24px;
 	height:24px;
-	margin-left:4px;
+	margin-right:4px;
 	margin-top:2px;
 	background-color: gray;
 	float:left;
@@ -173,10 +327,10 @@
 	background-repeat:no-repeat
 }
 
-.hierarchicalIcon
+.downloadIcon
 {
 	cursor:pointer;
-	background-image: url("../img/hierarch.png");
+	background-image: url("../img/download.png");
 	width:24px;
 	height:24px;
 	background-size: 18px 18px;
@@ -187,6 +341,16 @@
 {
 	cursor:pointer;
 	background-image: url("../img/crosshair.png");
+	width:24px;
+	height:24px;
+	background-size: 18px 18px;
+	background-repeat:no-repeat;
+}
+
+.undoIcon
+{
+	cursor:pointer;
+	background-image: url("../img/undo.png");
 	width:24px;
 	height:24px;
 	background-size: 18px 18px;
@@ -215,6 +379,8 @@
 	font-size:15px;
 	text-decoration:none;
 	text-shadow:0px 1px 0px #528ecc;
+	
+	margin-top:18px;
 }
 .myButton:hover {
 	background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #80b5ea), color-stop(1, #bddbfa));
@@ -226,7 +392,4 @@
 	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#80b5ea', endColorstr='#bddbfa',GradientType=0);
 	background-color:#80b5ea;
 }
-.myButton:active {
-	position:relative;
-	top:1px;
-}
+

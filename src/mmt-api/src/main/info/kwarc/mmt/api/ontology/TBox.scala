@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import utils._
 import info.kwarc.mmt.api.moc._
+import info.kwarc.mmt.api.objects.{OMS, Term}
 
 
 /**
@@ -27,6 +28,23 @@ case object IsNotation extends Unary("notation")
 case class CustomUnary(name : String) extends Unary(name)
 
 
+object Unary {
+   def parse(t : Term) : Unary = t match {
+      case OMS(QMTUnaries.IsDocument) => IsDocument
+      case OMS(QMTUnaries.IsTheory) => IsTheory
+      case OMS(QMTUnaries.IsView) => IsView
+      case OMS(QMTUnaries.IsStructure) => IsStructure
+      case OMS(QMTUnaries.IsConstant) => IsConstant
+      case OMS(QMTUnaries.IsPattern) => IsPattern
+      case OMS(QMTUnaries.IsInstance) => IsInstance
+      case OMS(QMTUnaries.IsDerivedDeclaration) => IsDerivedDeclaration
+      case OMS(QMTUnaries.IsConAss) => IsConAss
+      case OMS(QMTUnaries.IsStrAss) => IsStrAss
+      case OMS(QMTUnaries.IsNotation) => IsNotation
+      // TODO: Custom unary
+   }
+}
+
 /**
  * An object of type Binary represents a binary predicate between MMT paths in the MMT ontology.
  * The semantics of these objects is given by their name
@@ -42,6 +60,20 @@ sealed abstract class Binary(val desc : String, val backwardsDesc: String) {
 
 object Binary {
   implicit def toRelation(b: Binary) = +b
+
+   def parse(t : Term) : Binary = t match {
+      case OMS(QMTBinaries.DependsOn) => DependsOn
+      case OMS(QMTBinaries.HasMeta) => HasMeta
+      case OMS(QMTBinaries.Includes) => Includes
+      case OMS(QMTBinaries.HasDomain) => HasDomain
+      case OMS(QMTBinaries.HasCodomain) => HasCodomain
+      case OMS(QMTBinaries.IsInstanceOf) => IsInstanceOf
+      case OMS(QMTBinaries.RefersTo) => RefersTo
+      case OMS(QMTBinaries.Declares) => Declares
+      case OMS(QMTBinaries.IsAliasFor) => IsAliasFor
+      case OMS(QMTBinaries.IsAlignedWith) => IsAlignedWith
+      // TODO: Custom binary
+   }
 }
 
 // module - module, component - component

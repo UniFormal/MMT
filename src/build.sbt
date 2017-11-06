@@ -8,7 +8,7 @@ scalaVersion := "2.11.8"
 
 scalacOptions := Seq("-deprecation")
 
-// = genration of API documentation
+// = generation of API documentation
 
 // configuration of unidoc, used by our apidoc target
 
@@ -22,6 +22,10 @@ scalacOptions in(ScalaUnidoc, unidoc) ++=
 target in(ScalaUnidoc, unidoc) := file("../apidoc")
 
 // our targets
+// Targets should not use the 'libraryDependencies' setting to register external dependencies to be managed via sbt.
+// (Using library dependencies that are only needed for Test targets is acceptable.)
+// Instead, they should create a lib folder, place the necessary jars there, and configure them using the 'unmanagedJars' setting.
+
 
 lazy val postProcessApi =
   taskKey[Unit]("post process generated api documentation wrt to source links.")
@@ -31,7 +35,7 @@ postProcessApi := postProcess(streams.value.log)
 lazy val cleandoc =
   taskKey[Unit]("remove api documentation.")
 
-cleandoc := delRecursive(streams.value.log, file("../apidoc"))
+cleandoc := Utils.delRecursive(streams.value.log, file("../apidoc"))
 
 lazy val apidoc =
   taskKey[Unit]("generate post processed api documentation.")
@@ -46,6 +50,7 @@ parallelExecution in ThisBuild := false
 javaOptions in ThisBuild ++= Seq("-Xmx1g")
 fork in Test := true
 
+// task keys can be used PROJECTNAME/KEY to execute custom tasks as defined in the corresponding setting
 val deploy =
   TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
 
@@ -61,12 +66,7 @@ def commonSettings(nameStr: String) = Seq(
   name := nameStr,
   sourcesInBase := false,
   libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
-  scalaSource in Compile := baseDirectory.value / "src",
-  scalaSource in Test := baseDirectory.value / "test" / "scala",
-  resourceDirectory in Compile := baseDirectory.value / "resources",
-  unmanagedBase := baseDirectory.value / "jars",
   isSnapshot := true,
-  publishTo := Some(Resolver.file("file", Utils.deploy.toJava/"main")),
   exportJars := true,
   autoAPIMappings := true,
   connectInput in run := true,
@@ -81,13 +81,33 @@ def commonSettings(nameStr: String) = Seq(
       oldStrategy(x)*/
   }
 )
-// settings to be reused for MMT projects -- currently includes everything except tiscaf and lfcatalog
+
+// settings to be reused for MMT projects (= local projects except tiscaf and lfcatalog)
 def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
-  deploy := deployPackage("main/" + nameStr + ".jar").value,
-  deployFull := deployPackage("main/" + nameStr + ".jar").value
+  scalaSource in Compile := baseDirectory.value / "src",
+  scalaSource in Test := baseDirectory.value / "test" / "scala",
+  resourceDirectory in Compile := baseDirectory.value / "resources",
+  unmanagedBase := baseDirectory.value / "jars",
+  publishTo := Some(Resolver.file("file", Utils.deploy.toJava/"main")),
+  deploy := Utils.deployPackage("main/" + nameStr + ".jar").value,
+  deployFull := Utils.deployPackage("main/" + nameStr + ".jar").value
 )
 
+// settings to be reused for MathHub projects
+def mathhubProjectsSettings(group: String, name: String) = {
+    val nameStr = group + "-" + name
+    val folder = Utils.mathhubFolder / group / name
+    val jar = folder / (name + ".jar")
+	commonSettings(nameStr) ++ Seq(
+	  scalaSource in Compile := folder / "scala"
+	  //deploy := Utils.deployMathHub(jar).value,
+	  //deployFull := Utils.deployMathHub(jar).value
+    )
+}
+
 // individual projects
+
+// projects that do not depend on mmt-api
 
 lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
@@ -97,16 +117,20 @@ lazy val tiscaf = (project in file("tiscaf")).
         "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
         "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     ),
-    deployFull := deployPackage("lib/tiscaf.jar").value
+    deployFull := Utils.deployPackage("lib/tiscaf.jar").value
   )
 
 lazy val lfcatalog = (project in file("lfcatalog")).
   settings(commonSettings("lfcatalog") ++ oneJarSettings: _*).
   settings(
+    scalaSource in Compile := baseDirectory.value / "src",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "tiscaf.jar",
   	unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar",
-    deployFull := deployPackage("lfcatalog/lfcatalog.jar").value
+    deployFull := Utils.deployPackage("lfcatalog/lfcatalog.jar").value
   )
+
+  
+// mmt-api and the projects dependencing on it
 
 lazy val api = (project in file("mmt-api")).
   settings(mmtProjectsSettings("mmt-api"): _*).
@@ -117,6 +141,11 @@ lazy val api = (project in file("mmt-api")).
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-reflect.jar",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "tiscaf.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-compiler.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-reflect.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-xml.jar",
     libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.11.0-M4" % "test",
     libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.11.0-M4" % "test",
     libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.11.0-M4" % "test"
@@ -177,16 +206,12 @@ lazy val mathscheme = (project in file("mmt-mathscheme")).
   settings(mmtProjectsSettings("mmt-mathscheme"): _*)
 
 lazy val pvs = (project in file("mmt-pvs")).
-  dependsOn(api, lf, lfx).
+  dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-pvs"): _*)
 
 lazy val metamath = (project in file("mmt-metamath")).
   dependsOn(api, lf, SourceDeps.mmScala).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
-
-lazy val lfx = (project in file("mmt-lfx")).
-  dependsOn(api % "compile -> compile; test -> test", lf % "compile -> compile; test -> test").
-  settings(mmtProjectsSettings("mmt-lfx"): _*)
 
 lazy val tps = (project in file("mmt-tps")).
   dependsOn(api,lf).
@@ -197,7 +222,7 @@ lazy val imps = (project in file("mmt-imps")).
   settings(mmtProjectsSettings("mmt-imps"): _*)
 
 lazy val odk = (project in file("mmt-odk")).
-  dependsOn(api, lf, lfx).
+  dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-odk"): _*)
 
 lazy val specware = (project in file("mmt-specware")).
@@ -222,6 +247,10 @@ lazy val webEdit = (project in file("mmt-webEdit")).
 lazy val planetary = (project in file("planetary-mmt")).
   dependsOn(stex).
   settings(mmtProjectsSettings("planetary-mmt"): _*)
+
+lazy val interviews = (project in file("mmt-interviews")).
+  dependsOn(api,lf).
+  settings(mmtProjectsSettings("mmt-interviews"): _*)
 
 lazy val latex = (project in file("latex-mmt")).
   dependsOn(stex).
@@ -252,12 +281,12 @@ lazy val repl = (project in file("mmt-repl")).
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
 lazy val mmt = (project in file("fatjar")).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, lfx).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, interviews).
   settings(mmtProjectsSettings("fatjar"): _*).
   settings(
     exportJars := false,
     publish := {},
-    deploy := {assembly in Compile map deployTo("mmt.jar")}.value,
+    deploy := {assembly in Compile map Utils.deployTo(Utils.deploy / "mmt.jar")}.value,
     mainClass in assembly := Some("info.kwarc.mmt.api.frontend.Run"),
     assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
@@ -284,9 +313,20 @@ lazy val jedit = (project in file("jEdit-mmt")).
   dependsOn(api,lf).
   settings(commonSettings("jEdit-mmt"): _*).
   settings(
+    scalaSource in Compile := baseDirectory.value / "src",
     resourceDirectory in Compile := baseDirectory.value / "src/resources",
     unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" / _),
-    deploy := deployPackage("main/MMTPlugin.jar").value,
-    deployFull := deployPackage("main/MMTPlugin.jar").value,
+    deploy := Utils.deployPackage("main/MMTPlugin.jar").value,
+    deployFull := Utils.deployPackage("main/MMTPlugin.jar").value,
     install := Utils.installJEditJars
   )
+
+// ************************************************** MathHub projects
+
+// this works in principle but sbt complains about a cyclic dependency involving lfx
+// sbt cannot handle project folder outside the root directory, but external source folders are fine; so we use a dummy folder here
+/*
+lazy val MMTLFX = (project in file("mathhub")).
+  dependsOn(api,lf).
+  settings(mathhubProjectsSettings("MMT","LFX"):_*)
+*/

@@ -78,18 +78,18 @@ class Parse extends QueryFunctionExtension("parse", StringType, ObjType) {
   }
 }
 
-/** type inference relative to a foundation */
+/** type inference relative to a theory */
 class Infer extends QueryFunctionExtension("infer", ObjType, ObjType) {
   def evaluate(argument: BaseType, params: List[String]): List[BaseType] = {
     val mp = mpath(params)
-    val found = extman.getFoundation(mp).getOrElse(throw GetError("no applicable type inference engine defined"))
-    argument match {
-      case OMBIND(QueryEvaluator.free, cont, obj) =>
-        found.inference(obj, cont)(lup)
-      case t: Term => found.inference(t, Context())(lup)
-      case o: Obj => throw GetError("object exists but is not a term: " + o)
+    val outerCon = Context(mp)
+    val (context, term) = argument match {
+      case OMBIND(QueryEvaluator.free, cont, obj) => (outerCon ++ cont, obj)
+      case t: Term => (outerCon, t)
+      case o: Obj => throw GetError("object has no type: " + o)
       case _ => throw ImplementationError("evaluation of ill-typed query")
     }
+    checking.Solver.infer(controller, context, term, None).getOrElse {throw GetError("error during type inference")}
   }
 }
 

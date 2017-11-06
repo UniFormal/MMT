@@ -1,17 +1,13 @@
 package info.kwarc.mmt.odk.LMFDB
 
-import java.net.URLEncoder
 
 import info.kwarc.mmt.api._
 import backend._
 import frontend._
 import ontology._
-import info.kwarc.mmt.api.metadata.{Linker, MetaData}
-import info.kwarc.mmt.LFX.Records.Recexp
-import info.kwarc.mmt.api.ontology.{BaseType, Query, QueryEvaluator, QueryExtension}
-import info.kwarc.mmt.api.uom.URILiteral
+import info.kwarc.mmt.api.ontology.{BaseType, Query, QueryEvaluator}
 import info.kwarc.mmt.api.web.WebQuery
-import info.kwarc.mmt.odk.codecs.{LMFDBCoder, TMInt, TMList, TMString}
+import info.kwarc.mmt.odk.codecs.LMFDBCoder
 import modules.{DeclaredTheory, _}
 import objects._
 import symbols._
@@ -20,9 +16,7 @@ import valuebases._
 import info.kwarc.mmt.odk._
 import info.kwarc.mmt.lf.Apply
 
-import scala.collection.mutable
 import scala.collection.mutable.HashSet
-import scala.runtime.ScalaRunTime
 import scala.util.Try
 
 class Plugin extends frontend.Plugin {
@@ -268,7 +262,7 @@ object LMFDBStore extends Storage with LMFDBBackend {
       })
      val omls = toOML(json, db, fields)
 
-     val df = Recexp(omls : _*)
+     val df = LFX.RecExp(omls : _*)
 
      val c = Constant(OMMOD(db.dbTheory), path.name, Nil, Some(tp), Some(Apply(constructor,df)), None)
      controller.add(c)

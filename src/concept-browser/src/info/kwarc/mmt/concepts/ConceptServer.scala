@@ -75,7 +75,7 @@ class ConceptServer extends ServerExtension("concepts") {
   def doIndexPage(h : HTML, l : String) = {
     import h._
     if (l == "about") {
-      val ret = MMTSystem.getResourceAsString("mmt-web/concepts.html")
+      val ret = MMTSystem.getResourceAsString("/mmt-web/concepts.html")
       literal(ret)
     } else if (!(l.length==1)) text { "Unknown index: " + l }
     else {
@@ -121,7 +121,7 @@ class ConceptServer extends ServerExtension("concepts") {
     }
   })
 
-  def apply(request: ServerRequest): ServerResponse = request.extensionPathComponents match {
+  def apply(request: ServerRequest): ServerResponse = request.pathForExtension match {
     // add
     case List("add") =>
       // if we are missing parameters, return a 404
@@ -151,7 +151,7 @@ class ConceptServer extends ServerExtension("concepts") {
 
     // adding a new formal concept
     case List("addFormal") =>
-      log("Query: " + request.queryString)
+      log("Query: " + request.query)
 
       // if we are missing parameters, return a 404
       if (!request.parsedQuery.contains("to") || !request.parsedQuery.contains("from")) {
@@ -163,7 +163,7 @@ class ConceptServer extends ServerExtension("concepts") {
 
       val nsm = NamespaceMap.empty
 
-      if (from == to) ServerResponse.errorResponse("Alignments must be between two different URIs!", request) else {
+      if (from == to) ServerResponse.errorResponse("Alignments must be between two different URIs!") else {
 
         // parse parameters and check if they are empty
         val invertible = request.parsedQuery.contains("invertible")
@@ -192,7 +192,7 @@ class ConceptServer extends ServerExtension("concepts") {
             pars ::= (key, value)
             rest = r.trim
           case _ =>
-            ServerResponse.errorResponse("Malformed alignment: " + rest, request)
+            ServerResponse.errorResponse("Malformed alignment: " + rest)
         }
 
         val al = alignments.makeAlignment(from, to, pars)
@@ -201,19 +201,19 @@ class ConceptServer extends ServerExtension("concepts") {
       }
 
     // conlist
-    case Nil if request.queryString == "conlist" =>
+    case Nil if request.query == "conlist" =>
       log("Query for conlist")
       ServerResponse.fromText("[" + conlist.map(s => "\"" + s + "\"").mkString(",") + "]")
 
     // shows a specific page
     // there was a seperate case for about, but this has been inlined
-    case Nil if request.queryString.startsWith("page=") =>
+    case Nil if request.query.startsWith("page=") =>
       val index = request.parsedQuery.string("page")
       log("Query for page " + index)
       ServerResponse(doFullPage(List(if (index != "About") index.toLowerCase else index)), "html")
 
     // getting a concept
-    case Nil if request.queryString.startsWith("con=") =>
+    case Nil if request.query.startsWith("con=") =>
       val con = request.parsedQuery.string("con")
       log("CALL constructing concept " + con)
       ServerResponse(doFullPage(List("con", con)), "html")

@@ -38,6 +38,7 @@ object Length {
       case OMBINDC(_,_,_) => ONE
     }
   }
+  
   /** convenience */
   def infer(solver: CheckingCallback, tm: Term)(implicit stack: Stack): Option[Term] = infer(solver.outerContext++stack.context, tm)
   

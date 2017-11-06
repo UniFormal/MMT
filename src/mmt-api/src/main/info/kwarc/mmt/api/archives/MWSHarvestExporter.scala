@@ -101,15 +101,7 @@ import presentation._
 import utils.xml._
 
 class IDMathMLPresenter extends MathMLPresenter {
-   /** generalized apply method that takes a callback function to determine the css class of a subterm */
-   override def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
-      implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, None)
-      doToplevel(o) {
-         recurse(o)
-      }
-   }
-   
-   def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
+   override def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
       val nsAtts = List("xmlns" -> namespace("mathml"), "xmlns:jobad" -> namespace("jobad"))
       val mmtAtts = pc.owner match {
          case None => Nil

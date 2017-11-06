@@ -16,7 +16,7 @@ import scala.util.parsing.combinator._
   * This object implements a combinator parser for Actions. It is used in particular by the [[Controller]]
   * It is straightforward to understand the grammar from the source code.
   */
-object Action extends RegexParsers {
+object Action extends CompRegexParsers {
   private var nsMap: NamespaceMap = NamespaceMap.empty
   private var home: File = File(System.getProperty("user.dir"))
 
@@ -27,11 +27,10 @@ object Action extends RegexParsers {
 
   private def comment = "//.*" r
 
-  private def action = log | mathpath | archive | oaf | extension | mws | server |
+  private def action: Parser[Action] = log | mathpath | archive | oaf | extension | mws | server |
     windowaction | execfile | defactions | scala | mbt |
     setbase | read | interpret | check | checkTerm | navigate |
-    printall | printallxml | printConfig | diff | clear | exit | getaction // getaction must be at end for default get
-
+    printall | printallxml | printConfig | diff | clear | remote | exit | getaction // getaction must be at end for default get
   private def log = logfilets | logfile | loghtml | logconsole | logon | logoff
   private def logfile = "log file" ~> file ^^ { f => AddReportHandler(new TextFileHandler(f, false)) }
   private def logfilets = "log filets" ~> file ^^ { f => AddReportHandler(new TextFileHandler(f, true)) }
@@ -67,11 +66,12 @@ object Action extends RegexParsers {
   private def dimension = "check" | "validate" | "relational" | "integrate" | "test" | "close"
   private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ { case id ~ trg => ArchiveMar(id, trg) }
 
-  private def oaf = "oaf" ~> (oafInit | oafClone | oafPull | oafPush)
+  private def oaf = "oaf" ~> (oafInit | oafClone | oafPull | oafPush | oafSetRemote)
   private def oafInit = "init" ~> str ^^ { case s => OAFInit(s) }
   private def oafClone = "clone" ~> str ^^ { case s => OAFClone(s) }
   private def oafPull = "pull" ^^ { _ => OAFPull }
   private def oafPush = "push" ^^ { _ => OAFPush }
+  private def oafSetRemote = "setremote" ^^ { _ => OAFSetRemote }
 
   private def server = serveron | serveroff
   private def serveron = "server" ~> "on" ~> (int ~ (str?)) ^^ {
@@ -105,7 +105,8 @@ object Action extends RegexParsers {
   private def setbase = "base" ~> path ^^ { p => SetBase(p) }
   private def clear = "clear" ^^ { case _ => Clear }
   private def exit = "exit" ^^ { case _ => Exit }
-
+  private def remote = "remote" ~> str ~ action ^^ {case id ~ act => RemoteAction(id, act)}
+  
   private def diff = path ~ ("diff" ~> int) ^^ { case p ~ i => Compare(p, i) }
 
   private def getaction = tofile | towindow | respond | print
@@ -181,7 +182,7 @@ object Action extends RegexParsers {
     home = h
     val p =
       try {
-        parseAll(commented, s)
+        parse(commented, s)
       }
       catch {
         case e: Exception =>
@@ -192,6 +193,7 @@ object Action extends RegexParsers {
       case e: NoSuccess => throw ParseError(s + "\n  error: " + e.msg)
     }
   }
+  def completeAct(s : String) : List[String] = complete(commented, s).results.map(_.mkString(""))
 }
 
 /** Objects of type Action represent commands that can be executed by a Controller.
@@ -376,6 +378,14 @@ case object OAFPush extends Action {
   override def toString = "oaf push"
 }
 
+/** pushes all repositories to remote OAF
+  *
+  * concrete syntax: oaf push
+  */
+case object OAFSetRemote extends Action {
+  override def toString = "oaf setremote"
+}
+
 /** registers a compiler
   *
   * concrete syntax: importer cls:CLASS args:STRING*
@@ -458,15 +468,25 @@ case class ServerOn(port: Int, hostname : String = "0.0.0.0") extends Action {
   * concrete syntax: server off
   */
 case object ServerOff extends Action {
-  override def toString: String = "server off"
+  override def toString = "server off"
 }
+
+/**
+ * run an action on a remotely administered client
+ * 
+ * concrete syntax: remote id:STRING ACTION
+ */
+case class RemoteAction(id: String, action: Action) extends Action {
+  override def toString = "remote " + id + " " + action.toString
+}
+
 
 /** clear the state
   *
   * concrete syntax: clear
   */
 case object Clear extends Action {
-  override def toString: String = "clear"
+  override def toString = "clear"
 }
 
 /** release all resources and exit
@@ -474,12 +494,12 @@ case object Clear extends Action {
   * concrete syntax: exit
   */
 case object Exit extends Action {
-  override def toString: String = "exit"
+  override def toString = "exit"
 }
 
 /** do nothing */
 case object NoAction extends Action {
-  override def toString: String = ""
+  override def toString = ""
 }
 
 /** close a window with a given ID
@@ -488,7 +508,7 @@ case object NoAction extends Action {
   * concrete syntax: window window:STRING close
   */
 case class WindowClose(window: String) extends Action {
-  override def toString: String = "window " + window + " close"
+  override def toString = "window " + window + " close"
 }
 
 /** position a window with a given ID
@@ -497,7 +517,7 @@ case class WindowClose(window: String) extends Action {
   * concrete syntax: window window:STRING position x:INT y:INT
   */
 case class WindowPosition(window: String, x: Int, y: Int) extends Action {
-  override def toString: String = "window " + window + " position " + x + " " + y
+  override def toString = "window " + window + " position " + x + " " + y
 }
 
 /** send a browser command
@@ -505,7 +525,7 @@ case class WindowPosition(window: String, x: Int, y: Int) extends Action {
   * @param command on or off
   */
 case class BrowserAction(command: String) extends Action {
-  override def toString: String = "gui " + command
+  override def toString = "gui " + command
 }
 
 /** Objects of type GetAction represent commands
@@ -529,7 +549,7 @@ case class GetAction(o: Output) extends Action {
   /** implement the Action using the provided Controller */
   def make(controller: Controller): Unit = o.make(controller)
 
-  override def toString: String = o.toString
+  override def toString = o.toString
 }
 
 /** represent retrieval operations that return content elements
@@ -547,7 +567,7 @@ case class Get(p: Path) extends MakeAbstract {
     controller.get(p)
   }
 
-  override def toString: String = p.toString
+  override def toString = p.toString
 }
 
 /** retrieves a component of a knowledge item */
@@ -576,7 +596,7 @@ case class Closure(p: Path) extends MakeAbstract {
       new Document(doc, root = true, inititems = clp)
   }
 
-  override def toString: String = p + " closure"
+  override def toString = p + " closure"
 }
 
 /** retrieves the elaboration of an instance */

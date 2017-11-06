@@ -137,6 +137,44 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     else None
   }
 
+  /**
+    * Kinda hacky; can be used to get all Modules residing in this archive somewhat quickly
+    * TODO do properly
+    * @return
+    */
+  lazy val allContent : List[MPath] = {
+    log("Reading Content " + id)
+    var ret : List[MPath] = Nil
+    if ((this / content).exists) {
+      traverse(content, FilePath(""), Archive.traverseIf("omdoc")) { case Current(inFile, inPath) =>
+        log("in file " + inFile.name)
+        /*
+          utils.xml.readFile(inFile) match {
+            case <omdoc>{mods @ _*}</omdoc> => mods.foreach(m => {
+              val namespace = Path.parseD(xml.attr(m, "base"), NamespaceMap.empty)
+              val name = LocalName.parse(xml.attr(m, "name"), NamespaceMap.empty)
+              ret ::= namespace ? name
+            })
+          }
+          */
+        val thexp = "name=\"([^\"]+)\" base=\"([^\"]+)\"".r
+        def getLine = {
+          val reader = File.Reader(inFile)
+          val str = reader.readLine()
+          reader.close()
+          if (str == null) "" else str
+        }
+        def mods(s : String) : Option[String] = Some(StringMatcher("<theory",">").findFirstIn(s).getOrElse(StringMatcher("<view",">").findFirstIn(s).getOrElse(return None)))
+        thexp.findAllIn(getLine).toList foreach {
+          case thexp(name, base) =>
+            //println(base + "?" + name)
+            ret ::= Path.parseD(base, NamespaceMap.empty) ? name
+        }
+      }
+    }
+    ret.distinct
+  }
+
   def readRelational(in: FilePath, controller: Controller, kd: String): Unit = {
     log("Reading archive " + id)
     if ((this / relational).exists) {

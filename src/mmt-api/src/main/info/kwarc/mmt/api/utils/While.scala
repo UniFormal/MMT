@@ -19,4 +19,14 @@ object While {
       apply(b)(body)
     }
   }
+  
+  /** like while (a.isEmpty) {body} but eventually returns the value of a */
+  def undefined[A](a: => Option[A])(body: => Unit): A = {
+    var x: Option[A] = a
+    while (x.isEmpty) {
+      body
+      x = a
+    }
+    x.get
+  }
 }

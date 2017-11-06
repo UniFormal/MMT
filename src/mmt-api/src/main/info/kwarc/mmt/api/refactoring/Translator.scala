@@ -2,16 +2,18 @@ package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.{GlobalName, LocalName}
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.frontend.{Controller, Logger}
 import info.kwarc.mmt.api.modules.{DeclaredLink, DeclaredTheory}
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.ontology.{ArgumentAlignment, FormalAlignment}
+import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
+import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.api.parser.ParseResult
 import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure, UniformTranslator}
 
 import scala.collection.mutable
 import scala.util.{Success, Try}
 
-/*
+
 abstract class Application {
   val symbol: Option[GlobalName]
 
@@ -56,25 +58,25 @@ case class SymbolApplication(s: GlobalName, app: Application) extends Applicatio
 
 object Application {
   var controller : Controller = null
-  def apply(f: Term, args: List[Term], ls: List[GlobalName]) = OMApplication(f, args, ls)
+  def apply(ls: List[GlobalName], f: GlobalName, args: List[Term]) = OMApplication(OMS(f), args, ls)
 
-  def unapply(t: Term): Option[(Term, List[Term], List[GlobalName])] = smartunapply(t, OMApplication)
+  def unapply(t: Term): Option[(List[GlobalName],GlobalName, List[Term])] = smartunapply(t, OMApplication)
 
-  private def smartunapply(t: Term, app: Application): Option[(Term, List[Term], List[GlobalName])] = t match {
+  private def smartunapply(t: Term, app: Application): Option[(List[GlobalName],GlobalName, List[Term])] = t match {
     case app(OMS(f), args) =>
       controller.get(f) match {
         case c: Constant if c.rl contains "apply" =>
           val napp = SymbolApplication(f, app)
-          smartunapply(t, napp).map(r => (r._1, r._2, f :: r._3))
+          smartunapply(t, napp).map(r => (f :: r._1, r._2, r._3))
         case _ =>
-          Some((OMS(f), args, Nil))
+          Some((Nil,f, args))
       }
-    case app(f, args) =>
-      Some((f, args, Nil))
+    case app(OMS(f), args) =>
+      Some((Nil, f, args))
     case _ => None
   }
 }
-*/
+
 
 abstract class AcrossLibraryTranslation extends UniformTranslator {
   def applicable(tm : Term) : Boolean
@@ -82,8 +84,24 @@ abstract class AcrossLibraryTranslation extends UniformTranslator {
   def apply(context: Context, tm: Term) : Term = apply(tm)
 }
 
-case class AlignmentTranslation(alignment : FormalAlignment)(implicit controller : Controller) extends AcrossLibraryTranslation {
+object AlignmentTranslation {
+  def apply(alignment : FormalAlignment)(implicit controller : Controller) = {
+    val (from,to) = (Try(controller.get(alignment.from.mmturi)),Try(controller.get(alignment.to.mmturi)))
+    if (from.toOption.isDefined && to.toOption.isDefined) new AlignmentTranslation(alignment)
+    else None
+  }
+  object None extends AlignmentTranslation(SimpleAlignment(ParseResult.free,ParseResult.free,false))(null) {
+    override def applicable(tm: Term): Boolean = false
+  }
+}
+
+class AlignmentTranslation(val alignment : FormalAlignment)(implicit controller : Controller) extends AcrossLibraryTranslation {
   override def toString: String = "Alignment " + alignment.toString
+
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case that : AlignmentTranslation if that.alignment == this.alignment => true
+    case _ => false
+  }
   /*
   lazy val traverser = alignment match {
     case SimpleAlignment(from,to,_) => new StatelessTraverser {
@@ -112,7 +130,10 @@ case class AlignmentTranslation(alignment : FormalAlignment)(implicit controller
   }
   */
 
-  private val appl = controller.pragmatic.StrictOMA
+  private val appl = if(Application.controller == null) {
+    Application.controller = controller
+    Application
+  } else Application //controller.pragmatic.StrictOMA
 
   def apply(tm : Term) = //traverser(tm,())
     (alignment,tm) match {
@@ -124,7 +145,7 @@ case class AlignmentTranslation(alignment : FormalAlignment)(implicit controller
           (1 to max).map(i => {
             val ni = align.arguments.find(p => p._2 == i).map(_._1)
             if (ni.isEmpty) OMV(LocalName("_")) // TODO implicit arguments
-            else ts(ni.get)
+            else ts(ni.get - 1)
           }).toList
         }
         appl(ls,align.to.mmturi match {
@@ -132,10 +153,9 @@ case class AlignmentTranslation(alignment : FormalAlignment)(implicit controller
         },reorder(args))
     }
 
-  // TODO use pragmatic instead
   def applicable(tm : Term) = (alignment,tm) match {
     case (_,OMID(alignment.from.mmturi)) => true
-    case (ArgumentAlignment(_,_,_,_),appl(_,alignment.from.mmturi, args)) => true
+    case (ArgumentAlignment(_,_,_,_),appl(_,alignment.from.mmturi, args)) if Try(controller.get(alignment.to.mmturi)).isSuccess => true
     case _ => false
   }
 }
@@ -187,9 +207,10 @@ object AcrossLibraryTranslator {
 class AcrossLibraryTranslator(controller : Controller,
                               translations : List[AcrossLibraryTranslation],
                               groups: List[TranslationGroup],
-                              to : Archive) /* extends ServerExtension("translate") */ {
-  /* override def logPrefix = "Translator"
-
+                              to : Archive) extends Logger/* extends ServerExtension("translate") */ {
+  val report = controller.report
+  override def logPrefix = "translator"
+/*
   override def start(args: List[String]) = {
 
   }
@@ -222,10 +243,24 @@ class AcrossLibraryTranslator(controller : Controller,
   private var backtrackstack: List[(AcrossLibraryTranslation, TermClass)] = Nil
 
   private def innerTranslate(tc: TermClass): Boolean = tc.state match {
-    case Finished => false
-    case Failed => false
+    case Finished =>
+      log("Finished: " + (tc.currentTerm match {
+        case OMS(p) => p
+        case t => controller.presenter.asString(t)
+      }))
+      false
+    case Failed =>
+      log("Failed: " + (tc.currentTerm match {
+        case OMS(p) => p
+        case t => controller.presenter.asString(t)
+      }))
+      false
     // case Changed(_) =>
     case _ =>
+      log("Trying: " + (tc.currentTerm match {
+        case OMS(p) => p
+        case t => controller.presenter.asString(t)
+      }))
       val tr = findTranslations(tc.currentTerm).find(t => tc.applicable(t))
       if (tr.isDefined) {
         tc.applyTranslation(tr.get)
@@ -240,7 +275,10 @@ class AcrossLibraryTranslator(controller : Controller,
           changed = changed || ret
         })
         if (!changed) {
-          // println("No change: " + tc)
+          log("No change: " + (tc.currentTerm match {
+            case OMS(p) => p
+            case t => controller.presenter.asString(t)
+          }))
           tc.backtrack
         } else true
       }
@@ -277,7 +315,8 @@ class AcrossLibraryTranslator(controller : Controller,
 
   var origs: List[Term] = Nil
 
-  def translate(tm: Term): (Term, Boolean) = {
+  def translate(tm: Term): (Term,List[GlobalName]) = {
+    log("Translating " + controller.presenter.asString(tm))
     implicit val target = to
     val tc = TermClass(tm)
     def st(tm: TermClass): List[Term] = tm.currentTerm :: tm.immediateSubterms.flatMap(st)
@@ -290,11 +329,19 @@ class AcrossLibraryTranslator(controller : Controller,
         tc.update
         if (tc.state == Failed) throw Fail
       }
-      (tc.currentTerm, true)
+      tc.update
+      log("-------------- DONE ---------------")
+      (tc.currentTerm,Nil)
     } catch {
       case Fail =>
+        val t = tc.revertPartially
         //TermClass.getAll.foreach(println)
-        (tc.revertPartially, false)
+        val symbols = AcrossLibraryTranslator.getSymbols(t).filterNot(tc.inArchive(_,target)).distinct
+        val missings = symbols /*.collect {
+          case s if translate(OMS(s))._2.nonEmpty => s
+        } */
+        log("-------------- DONE ---------------")
+        (t,missings)
     }
   }
 
@@ -394,13 +441,21 @@ class AcrossLibraryTranslator(controller : Controller,
     state
 
     def backtrack : Boolean = {
-      // println("Backtracking " + currentTerm)
+      log("Backtracking " + (currentTerm match {
+        case OMS(p) => p
+        case t => controller.presenter.asString(t)
+      }))
       if ( /* usedTranslations.nonEmpty */ steps.head._1.isDefined && steps.length > 1) {
         usedTranslations ::= steps.head._1.get
         steps = steps.tail
         stateVar = Changed(Backtracked)
+        log("New term: " + (currentTerm match {
+          case OMS(p) => p
+          case t => controller.presenter.asString(t)
+        }))
         true
       } else {
+        log("Not possible")
         stateVar = Failed
         false
       }
@@ -410,7 +465,7 @@ class AcrossLibraryTranslator(controller : Controller,
     var storedResult: (Term, AcrossLibraryTranslation, Term) = null
 
     def applicable(tr: AcrossLibraryTranslation) = !(stateVar == Finished) &&
-      //!usedTranslations.contains(tr) &&
+      !usedTranslations.contains(tr) &&
       tr.applicable(currentTerm) && {
       val res = tr(currentTerm)
       if (!steps.map(_._2).contains(res)) {
@@ -425,7 +480,7 @@ class AcrossLibraryTranslator(controller : Controller,
         case _ => (Some(tr), tr(currentTerm))
       })
       backtrackstack ::= ((steps.head._1.get, this))
-      // println("Applying " + tr.toString + "to:\n" + termtostr(steps(1)._2))
+      log("Applying " + tr.toString + "to: " + termtostr(steps(1)._2))
       // println(this)
       //usedTranslations ::= tr
       TermClass.register(currentTerm, this)
@@ -465,7 +520,7 @@ class AcrossLibraryTranslator(controller : Controller,
     def revertPartially: Term = if (state == Finished) currentTerm
     else original match {
       case OMS(p) =>
-        // println("Reverting: " + p + " -> " + termtostr(original))
+        log("Reverting: " + p + " -> " + termtostr(original))
         steps = List((None, original))
         original
       case _ =>
@@ -504,5 +559,17 @@ class AcrossLibraryTranslator(controller : Controller,
       ths.flatMap(_.getDeclarations.map(_.path)) contains path
     }
     // TODO --------------------------------------------------------------------------------------------------------------
+  }
+}
+
+
+
+import scala.language.implicitConversions
+import QueryResultConversion._
+import QueryTypeConversion._
+
+class Translate extends QueryFunctionExtension("translate", StringType, ObjType) {
+  def evaluate(argument: BaseType, params: List[String]) = {
+    ???
   }
 }

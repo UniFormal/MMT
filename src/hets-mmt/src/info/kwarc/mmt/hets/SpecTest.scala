@@ -43,7 +43,7 @@ object SpecTest {
      try {      
     	 val argl = args.toList
     	 val controller = new frontend.Controller
-         controller.handleLine("file startup.msl")
+         controller.handleLine("file startup.msl").throwErrorIfAny()
 //    	 if ( argl.length == 1) {
 //           controller.handleLine(argl.head)
 //         }

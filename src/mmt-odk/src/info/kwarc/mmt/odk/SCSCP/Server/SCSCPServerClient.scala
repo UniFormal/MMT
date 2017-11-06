@@ -42,10 +42,10 @@ class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = 
 
   // Initial connection
   writer.write(SCSCPPi(None, Map(
-    (SCSCPAttributes.SERVICE_NAME, server.service_name),
-    (SCSCPAttributes.SERVICE_VERSION, server.service_version),
+    (SCSCPAttributes.SCSCP_VERSIONS, SCSCPConstants.VERSIONS.mkString(" ")),
     (SCSCPAttributes.SERVICE_ID, server.service_identifier),
-    (SCSCPAttributes.SCSCP_VERSIONS, SCSCPConstants.VERSIONS.mkString(" "))
+    (SCSCPAttributes.SERVICE_VERSION, server.service_version),
+    (SCSCPAttributes.SERVICE_NAME, server.service_name)
   )))
 
   // Version negotiation
@@ -175,6 +175,9 @@ class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = 
           SCSCPNothingReturned(returnparams)
       }
     } catch {
+      case e :SignatureMismatchException =>
+        SCSCPTerminated(OMError(scscp1(scscp1.errorSystemSpecific),
+          OMString("expected signature: " + e.getExpected + ", actual: " + e.getActual, None) :: Nil, None, None), returnparams)
       case e: Exception =>
         SCSCPTerminated(OMError(scscp1(scscp1.errorSystemSpecific), OMString(e.getClass.getCanonicalName, None) :: Nil, None, None), returnparams)
     }

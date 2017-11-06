@@ -2,41 +2,9 @@ import java.io.{BufferedWriter,FileWriter}
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption._
 
-import sbt.Keys.packageBin
 import sbt._
 
 object PostProcessApi {
-  /**
-   * pacakges the compiled binaries and copies to deploy 
-   */
-  def deployPackage(name: String): Def.Initialize[Task[Unit]] =
-    packageBin in Compile map {jar => deployTo(name)(jar)}
-
-  /*
-   * copies files to deploy folder
-   */
-  def deployTo(name: String)(jar: sbt.File): Unit = {
-    val tar = Utils.deploy / name
-    Files.copy(jar.toPath, tar.toPath, REPLACE_EXISTING)
-    println("copied file: " + jar)
-    println("to file: " + tar)
-  }
-
-  def delRecursive(log: Logger, path: File): Unit = {
-    def delRecursive(path: File): Unit = {
-      path.listFiles foreach { f =>
-        if (f.isDirectory) delRecursive(f)
-        else {
-          f.delete()
-          log.debug("deleted file: " + path)
-        }
-      }
-      path.delete()
-      log.debug("deleted directory: " + path)
-    }
-    if (path.exists && path.isDirectory) delRecursive(path)
-    else log.warn("ignoring missing directory: " + path)
-  }
 
   def postProcess(log: Logger) = {
     val mmtFolder = File(System.getProperty("user.dir")).getParentFile

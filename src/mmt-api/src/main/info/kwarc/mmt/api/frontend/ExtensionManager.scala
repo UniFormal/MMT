@@ -64,8 +64,7 @@ trait Extension extends Logger {
      e.init(controller)
   }
 
-  protected def getFromFirstArgOrEnvvar(args: List[String], name: String,
-                                        default: String = ""): String = {
+  protected def getFromFirstArgOrEnvvar(args: List[String], name: String, default: String = ""): String = {
     AnaArgs.splitOptions(args)._2 match {
       case Nil => controller.getEnvVar(name).getOrElse({
         log("environment variable " + name + " is not set" +
@@ -90,7 +89,7 @@ trait Extension extends Logger {
     */
   def destroy {}
   
-  /** extensions that process tasks in separate thread should override this and wait until those threads are done */
+  /** extensions that process tasks in separate threads should override this and wait until those threads are done */
   def waitUntilRemainingTasksFinished {}
   
   /** convenience for calling waitUntilRemainingTasksFinished and then destroy */ 
@@ -137,7 +136,7 @@ class ExtensionManager(controller: Controller) extends Logger {
 
   private[api] var extensions: List[Extension] = Nil
   private val knownExtensionTypes = List(
-    classOf[Plugin], classOf[Foundation], classOf[ParserExtension], classOf[QueryTransformer],
+    classOf[Plugin], classOf[ParserExtension], classOf[QueryTransformer],
     classOf[ontology.QueryFunctionExtension],
     classOf[ChangeListener], classOf[ServerExtension],
     classOf[Parser], classOf[Checker], classOf[Prover], classOf[Interpreter], classOf[Simplifier], classOf[Presenter],
@@ -193,7 +192,9 @@ class ExtensionManager(controller: Controller) extends Logger {
     val clsJ = try {
        Class.forName(cls)
     } catch {
-      case e: Exception => throw RegistrationError("error while trying to load class " + cls).setCausedBy(e)
+      case e: Throwable =>
+        // need to catch all Exceptions and Errors here because NoClassDefFoundError is not an Exception
+        throw RegistrationError("error while trying to load class " + cls).setCausedBy(e)
     }
     extensions.find(e => e.getClass == clsJ).foreach {e =>
        log("... already loaded, skipping")
@@ -258,17 +259,6 @@ class ExtensionManager(controller: Controller) extends Logger {
       _.isApplicable(se, keyword)
     }
 
-  /** retrieves the closest Foundation that covers a theory, if any */
-  def getFoundation(p: MPath): Option[Foundation] = get(classOf[Foundation]) find {
-    _.foundTheory == p
-  } orElse {
-    val mt = objects.TheoryExp.metas(objects.OMMOD(p))(controller.globalLookup)
-    mt mapFind getFoundation
-  }
-
-  def getFoundation(thy: objects.Term): Option[Foundation] =
-    objects.TheoryExp.metas(thy)(controller.globalLookup) mapFind getFoundation
-
   def stringDescription: String = {
     knownExtensionTypes.map {cls =>
       val es = get(cls)
@@ -295,8 +285,8 @@ class ExtensionManager(controller: Controller) extends Logger {
     val mmtextr = ontology.MMTExtractor
 
     val rbp = new RuleBasedProver
-    var prover: Extension = rbp
-    //TODO temporary hack to replace old prover with Mark's AgentProver if the latter is on the classpath
+    val prover: Extension = rbp
+    //quick hack to replace old prover with Mark's AgentProver if the latter is on the classpath
     /*
     val className = "info.kwarc.mmt.leo.provers.AgentProver"
     try {
@@ -306,7 +296,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     }
     */
 
-    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover, rbe).foreach {e => addExtension(e)}
+    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover, rbe, new JSONBasedGraphServer).foreach {e => addExtension(e)}
     // build manager
     addExtension(new TrivialBuildManager)
     // pragmatic-strict converter
@@ -329,6 +319,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
     // shell extensions
     List(new ShellSendCommand, new execution.ShellCommand, new Make).foreach(addExtension(_))
+
+    addExtension(new AbbreviationRuleGenerator)
   }
 
   def cleanup {

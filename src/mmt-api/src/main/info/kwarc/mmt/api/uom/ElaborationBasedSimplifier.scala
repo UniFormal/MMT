@@ -67,6 +67,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     }
   }
 
+  @deprecated("needs to be reviewed")
   def elaborateContext(outer: Context, con: Context) : Context = {
     var ret = Context.empty
     def currentContext = outer ++ ret
@@ -96,8 +97,12 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         m match {
           case t: DeclaredTheory =>
             t.meta foreach apply
+          case v: DeclaredView =>
+            apply(materialize(Context.empty,v.from,true,None))
+            apply(materialize(Context.empty,v.to,true,None))
           case _ =>
         }
+        // TODO flattenContext(m.parameters)
         m.getDeclarations.foreach {d => flattenDeclaration(m, d, Some(rules))}
      } finally {// if something goes wrong, don't try again
       ElaboratedElement.set(m)
@@ -112,13 +117,15 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     mod match {
       case v: DeclaredView => return //TODO
       case t: DeclaredTheory =>
+        val at = t.getDeclarations.headOption.map(d => After(d.name)).getOrElse(AtEnd)
+        var previous: Option[LocalName] = None
         t.df.foreach {df =>
           //TODO mod.getInnerContext is too small for nested theories
           objectLevel(df, mod.getInnerContext, rules) match {
             case ComplexTheory(cont) =>
               cont.asDeclarations(mod.toTerm).foreach {d =>
                 d.setOrigin(ElaborationOfDefinition)
-                controller add d// mod.add(d,None) //TODO add at beginning
+                controller.add(d, at)// mod.add(d,None) //TODO add at beginning
               }
             case AnonymousTheory(mt,omls) =>
               if (mt.isDefined) t.addMeta(mt.get) /* { // TODO should probably become meta theory somehow, but can't be overwritten
@@ -128,17 +135,17 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 if (!t.metaC.isDefined) {
                    t.metaC.set(OMMOD(mt.get))
                 }
-                controller add inc
+                controller.add(inc, at)
               } */
               omls foreach {
                 case IncludeOML(_, OMPMOD(mp, Nil), _) =>
                   val i = PlainInclude(mp,t.path)
                   i.setOrigin(ElaborationOfDefinition)
-                  controller add i
+                  controller.add(i, at)
                 case o =>
                   val d = Constant(t.toTerm, o.name, Nil, o.tp, o.df, None)
                   d.setOrigin(ElaborationOfDefinition)
-                  controller add d
+                  controller.add(d, at)
               }
             case dfS => t.dfC.set(dfS)
           }
@@ -153,12 +160,40 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     lazy val rules = rulesOpt.getOrElse {
       RuleSet.collectRules(controller, mod.getInnerContext)
     }
-    val parent = mod match {
-      case t: DeclaredTheory => t
+    val parent : DeclaredModule = mod match {
+      case t: DeclaredTheory =>
+        t
+      case v: DeclaredView =>
+        v
       case _ => return //TODO
     }
     lazy val alreadyIncluded = parent.getIncludes
     val dElab: List[Declaration] = dOrig match {
+      /* includes in views TODO this is a first step that only covers the case where the target of the assignment is another DeclaredView
+         more generally, ds is of the form 'n : FROM = TARGET', and its elaboration is the list of assignments
+          'n = OMM(n,TARGET)' for all constants n
+          's = OMCOMP(s, TARGET)' for all structures s
+         in the domain of FROM
+         
+         The treatment of derived declarations and nested modules in FROM has not been specified yet. 
+      */
+      case ds : DefinedStructure if parent.isInstanceOf[DeclaredView] =>
+        ds.df match {
+          case OMMOD(mp) =>
+            lup.getO(mp) match {
+              case Some(v : DeclaredView) =>
+                // include!
+                apply(v)
+                v.getDeclarations.map {
+                  case s : DefinedStructure =>
+                    DefinedStructure(parent.toTerm,s.name,s.from,s.df,false)
+                  case c : Constant =>
+                    Constant(parent.toTerm,c.name,c.alias,c.tp,c.df,c.rl,c.notC)
+                }
+              case _ => Nil
+            }
+          case _ => Nil
+        }
       // plain includes: copy (only) includes
       case Include(h, from, Nil) =>
         val idom = lup.getAs(classOf[Theory], from)
@@ -249,13 +284,16 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 dS
               }
          }
+      case nm: NestedModule =>
+        apply(nm.module)
+        Nil
       case _ =>
         Nil
     }
     dElab.reverseMap {e =>
        e.setOrigin(ElaborationOf(dOrig.path))
        log("flattening yields " + e.path)
-       controller.add(e, Some(dOrig.name))
+       controller.add(e, After(dOrig.name))
     }
     if (dElab.isEmpty) ElaboratedElement.set(dOrig) else ElaboratedElement.setProperly(dOrig)
   }
@@ -273,6 +311,11 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
              thy.getDeclarations.foreach {e =>
                if (e.getOrigin == ElaborationOf(d.path))
                  thy.delete(e.name)
+             }
+           case v: DeclaredView =>
+             v.getDeclarations.foreach {e =>
+               if (e.getOrigin == ElaborationOf(d.path))
+                 v.delete(e.name)
              }
          }
        case _ =>
@@ -308,6 +351,10 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 onDelete(dd)
                 ElaboratedElement.erase(dd)
                 flattenDeclaration(th,dd)
+              case Some(v : DeclaredView) =>
+                onDelete(dd)
+                ElaboratedElement.erase(dd)
+                flattenDeclaration(v,dd)
               case _ =>
             }
           case _ =>
@@ -327,6 +374,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         }
       case (t : DeclaredTheory, dec : Declaration) =>
         flattenDeclaration(t,dec)
+      case (v : DeclaredView, dec : Declaration) =>
+        flattenDeclaration(v, dec)
       case (dd : DerivedDeclaration, dec : Declaration) =>
         controller.getO(dd.parent) match {
           case Some(t : DeclaredTheory) =>

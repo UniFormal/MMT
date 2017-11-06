@@ -3,11 +3,13 @@ package info.kwarc.mmt.odk.SCSCP.Server
 import java.io.InterruptedIOException
 import java.net.{InetAddress, ServerSocket, Socket}
 
+import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
 import info.kwarc.mmt.odk.SCSCP.CD.scscp2
 import info.kwarc.mmt.odk.SCSCP.Protocol.ProtocolError
 
 import scala.collection.mutable
+import scala.concurrent.Future
 
 /**
   * A (single threaded) implementation of the SCSCP protocol, version 1.3
@@ -49,6 +51,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   // register the default handlers
   // TODO: Add more
   register(scscp2(scscp2.getAllowedHeads), new GetAllowedHeads(this))
+  register(scscp2(scscp2.getSignature), new  GetSignature(this))
 
   /**
     * Gets the handler for a given symbol
@@ -168,3 +171,9 @@ object SCSCPServer {
 
 
 
+class SCSCPExtension extends Extension {
+  override def start(args: List[String]): Unit = {
+    MitMServer.run()
+    implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
+  }
+}

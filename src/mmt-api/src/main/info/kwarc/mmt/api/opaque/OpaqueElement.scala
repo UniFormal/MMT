@@ -23,7 +23,8 @@ abstract class OpaqueElement extends NarrativeElement {
 
    def toNode = <opaque format={format}>{getMetaDataNode}{raw}</opaque>
    override def toString = raw.toString
-   lazy val name = LocalName("") / "opaque" / raw.hashCode.toString //TODO this is not always unique  
+   // reserved name prefix opaque_ is awkward, but multi-step-name not allowed for narrative elements
+   lazy val name = LocalName("opaque_" + raw.hashCode.toString) //TODO this is not always unique  
    def path = parent / name
    def parentOpt: Some[DPath] = Some(parent)
    def getDeclarations = Nil
@@ -49,7 +50,10 @@ abstract class OpaqueElementInterpreter extends FormatBasedExtension {
       
    /** the format of [[OpaqueElement]]s this can interpret */
    def format : String
-   def isApplicable(f: String) = f == format
+   /** aliases for the format that can be used in concrete syntax, override as needed */
+   def formatAlias: List[String] = Nil
+   
+   def isApplicable(f: String) = (format::formatAlias) contains f
    
    /**
     * Casts an opaque element to type OE.

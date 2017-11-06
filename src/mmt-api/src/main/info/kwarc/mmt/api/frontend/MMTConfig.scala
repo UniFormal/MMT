@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import archives._
 import utils._
 
-/** an entry in an MMT configuration file (.cfg) */
+/** an entry in an MMT configuration file (see [[MMTConfig]]) */
 abstract class ConfEntry {
    /** archive id, build target key, etc. */
    val id : String
@@ -54,7 +54,7 @@ case class DatabaseConf(url: URI, uri: URI) extends BackendConf {
 /**
  * registers a set of OAF working copies
  */
-case class OAFConf(local: File, remote: Option[URI]) extends BackendConf {
+case class OAFConf(local: File, https: Boolean, remote: Option[URI]) extends BackendConf {
    val id = remote.toString
 }
 
@@ -81,6 +81,7 @@ case class SemanticsConf(theory: MPath, cls: String, args: List[String]) extends
   val id = theory.toPath
 }
 
+/** ignored by MMT but available to plugins */
 case class ForeignConf(section: String, key: String, values: List[String]) extends ConfEntry {
    val id = section + "_" + key
 }
@@ -214,9 +215,14 @@ object MMTConfig {
           case _ => fail
         }
         case "backends" => split(line) match {
-           case "oaf" :: local :: args if args.length <= 1 =>
+           case "oaf" :: local :: args if args.length <= 2 =>
+              val (https, argsRest) = args match {
+                case "ssh" :: tl => (false, tl)
+                case "https" :: tl => (true, tl)
+                case _ => (true, args)
+              }
               val remote = args.headOption.map(URI(_))
-              config.addEntry(OAFConf(relFile(local), remote))
+              config.addEntry(OAFConf(relFile(local), https, remote))
            case "mathpath" :: local :: Nil =>
               config.addEntry(MathPathConf(File(local)))
            case _ => fail

@@ -95,12 +95,21 @@ class RuleConstantParser extends ParserExtension {
    def isApplicable(se: StructuralElement, keyword: String) = {
       se.isInstanceOf[DeclaredTheory] && keyword == "rule"
    }
-   def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, keyword: String, con:Context = Context.empty) = {
-      val (_,_,pr) = sp.readParsedObject(con, None)(s)
-      val thy = se.asInstanceOf[DeclaredTheory].path
+   def apply(pea: ParserExtensionArguments) = {
+      val (_,_,pr) = pea.parser.readParsedObject(pea.context, None)(pea.state)
+      val thy = pea.se match {
+        case t: DeclaredTheory => t.path
+        case d: documents.Document =>
+          d.contentAncestor match {
+            case Some(t: DeclaredTheory) => t.path
+            case _ => throw ParseError("rules only allowed in theories")
+          }
+        case _ => throw ParseError("rules only allowed in theories")
+      }
       if (!pr.isPlainTerm)
         throw ParseError("can only interpret plain terms as rules, found: " + pr.toTerm)
       val rc = rci(thy, pr.term, true)
-      controller add rc
+      // TODO set document home of rc
+      Some(rc)
    }
 }

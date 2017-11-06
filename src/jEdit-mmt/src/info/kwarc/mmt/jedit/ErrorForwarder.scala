@@ -64,9 +64,10 @@ class ErrorListForwarder(errorSource: MMTErrorSource, controller: Controller, ma
     * remove all errors whose mainFile is src
     */
    private var errors : Array[ErrorSource.Error] = Array()
-   def reset {
+   override def reset {
       errorSource.removeFileErrors(mainFile)
       errors = Array()
+     super.reset
    }
    protected def addError(e: Error) : Unit = e match {
       case s: SourceError =>
@@ -93,7 +94,7 @@ class ErrorListForwarder(errorSource: MMTErrorSource, controller: Controller, ma
            new MMTError(mainFile, errorSource, tp, file, line, column, column + reg.length, s.mainMessage)
          } catch {
            case t : Exception =>
-             return addError(GeneralError("error while registering error in jedit (error locations invalid?)").setCausedBy(e))
+             return addError(GeneralError("error while registering error in jedit (error locations invalid? " + s.ref + ")").setCausedBy(t))
          }
          s.extraMessages foreach {m => error.addExtraMessage(m)}
          errorSource.addError(error)
@@ -105,11 +106,11 @@ class ErrorListForwarder(errorSource: MMTErrorSource, controller: Controller, ma
             case e: InvalidObject => Some(e.obj)
             case e: InvalidElement => Some(e.elem)
             case e: InvalidUnit =>
-               val steps = e.history.getSteps.reverse
+               val steps = e.history.getSteps
                extraMessages = steps.map(_.present(o => controller.presenter.asString(o)))
                val declOpt = e.unit.component.map(p => controller.localLookup.get(p.parent))
                // WFJudgement must exist because we always start with it
-               // find first WFJudegment whose region is within the failed checking unit
+               // find first WFJudgement whose region is within the failed checking unit
                // but maybe lastWFJ.wfo has lost its region through simplification?
                declOpt flatMap {decl =>
                   SourceRef.get(decl).flatMap {bigRef =>

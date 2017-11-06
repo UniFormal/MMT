@@ -55,6 +55,6 @@ object MizarPatterns extends uom.RealizedTheory(Some(info.kwarc.mmt.sequences.LF
   // lazily build the body of the theory
   declare {
     add(PlainInclude(Mizar.HiddenTh, path))
-    patterns foreach {add(_,None)}
+    patterns foreach {add(_)}
   }
 }

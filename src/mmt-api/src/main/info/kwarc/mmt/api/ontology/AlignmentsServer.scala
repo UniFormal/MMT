@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.objects._
 import web._
 
@@ -13,6 +14,50 @@ import info.kwarc.mmt.api.utils.{URI, _}
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.List
 import scala.util.{Success, Try}
+
+class AddAlignments extends Extension {
+  override def logPrefix: String = "checkalign"
+  lazy val align = controller.extman.get(classOf[AlignmentsServer]).headOption.getOrElse {
+    val a = new AlignmentsServer
+    controller.extman.addExtension(a)
+    a
+  }
+
+  override def start(args: List[String]): Unit = {
+    var errors : List[String] = Nil
+    def wrap(f : File) : List[(Alignment,String)] = try {
+      align.readFile(f).map((_,f.toString))
+    } catch {
+      case e : Exception =>
+        errors::=e.getMessage + " (in File: " + f.toString + ")"
+        Nil
+    }
+    args.headOption.foreach(a ⇒ {
+      val filebase = File(a)
+      val fs = FilePath.getall(filebase)
+      val afiles = fs.filter(f => f.getExtension.contains("align"))
+      log("Files: " + afiles)
+      val als = afiles flatMap wrap
+      log(als.filterNot(_._1.isGenerated).length + " Alignments read")
+      log(if (errors.nonEmpty) "Errors:\n" + errors.mkString("\n") else "No errors :)")
+      log("Checking for missing symbols...")
+      val syms = als.collect{
+        case (fa : FormalAlignment,s) => List((fa.from.mmturi,s),(fa.to.mmturi,s))
+      }.flatten
+      errors = Nil
+      syms foreach {s =>
+        try {
+          if(controller.getO(s._1).isEmpty) errors ::= s._1.toString + " (in File: " + s._2 + ")"
+        } catch {
+          case e : Exception => errors ::= s._1.toString + " (in File: " + s._2 + ")"
+        }
+      }
+      log(if (errors.nonEmpty) "Missing symbols:\n" + errors.mkString("\n") else "No missing symbols :)")
+    })
+    controller.extman.removeExtension(this)
+  }
+
+}
 
 class AlignmentsServer extends ServerExtension("align") {
 
@@ -144,12 +189,12 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
   def apply(request: ServerRequest): ServerResponse = {
-    request.extensionPathComponents match {
+    request.pathForExtension match {
       case "from" :: _ ⇒
-        val path = Path.parseS(request.queryString, nsMap)
-        val toS = if (request.queryString.contains("transitive=\"true\"")) alignments.get(LogicalReference(path), Some(_ => true)).map(_.to.toString)
+        val path = Path.parseS(request.query, nsMap)
+        val toS = if (request.query.contains("transitive=\"true\"")) alignments.get(LogicalReference(path), Some(_ => true)).map(_.to.toString)
         else alignments.get(LogicalReference(path)).map(_.to.toString)
-        log("Alignment query: " + request.queryString)
+        log("Alignment query: " + request.query)
         log("Alignments from " + path + ":\n" + toS.map(" - " + _).mkString("\n"))
         ServerResponse.TextResponse(toS.mkString("\n"))
       case "add" :: _ ⇒
@@ -169,8 +214,8 @@ class AlignmentsServer extends ServerExtension("align") {
         }
         ServerResponse.TextResponse("Added " + addedAlignments + " alignments")
       case _ ⇒
-        log(request.extensionPathComponents.toString) // List(from)
-        log(request.queryString.toString) // an actual symbol path
+        log(request.pathForExtension.toString) // List(from)
+        log(request.query) // an actual symbol path
         log(request.body.toString) //whatever
         ServerResponse.TextResponse("")
     }
@@ -224,7 +269,7 @@ class AlignmentsServer extends ServerExtension("align") {
       } else {
         val ret = if (direction.get._2 == "forward")
           SimpleAlignment(Path.parseMS(p1, nsMap), Path.parseMS(p2, nsMap), false, pars)
-        else if (direction.get._1 == "backward")
+        else if (direction.get._2 == "backward")
           SimpleAlignment(Path.parseMS(p2, nsMap), Path.parseMS(p1, nsMap), false, pars)
         else if (direction.get._2 == "both")
           SimpleAlignment(Path.parseMS(p1, nsMap), Path.parseMS(p2, nsMap), true, pars)
@@ -240,8 +285,9 @@ class AlignmentsServer extends ServerExtension("align") {
     }
   }
 
-  private def processString(s: String): Int = {
+  private def processString(s: String): List[Alignment] = {
     // val param = """(.+)\s*=\s*\"(.+)\"\s*(.*)""".r
+    var dones : List[Alignment] = Nil
     object param {
       def unapply(s : String) : Option[(String,String,String)] = {
         var rest = s.trim
@@ -257,7 +303,6 @@ class AlignmentsServer extends ServerExtension("align") {
         Some((key,value,rest))
       }
     }
-    var alignmentsCount: Int = 0
     var rest = s
     if (rest.startsWith("namespace")) {
       val (abbr, path) = {
@@ -270,13 +315,11 @@ class AlignmentsServer extends ServerExtension("align") {
       if (p.length == 2) {
         val Array(con, uri) = p
         val ref = Try(LogicalReference(Path.parseMS(uri, nsMap))).getOrElse(PhysicalReference(URI(uri)))
-        alignments += ConceptAlignment(ref,con)
-        alignmentsCount += 1
+        dones ::= ConceptAlignment(ref,con)
       }
     } else if (s.nonEmpty && s.startsWith("<")) {
       val p = s.trim.drop(1).dropRight(1).split('|').map(_.trim)
-      alignments += ConceptPair(p.head,p.tail.head)
-      alignmentsCount += 1
+      dones ::= ConceptPair(p.head,p.tail.head)
     } else if (s.nonEmpty && !s.startsWith("//")) {
       val (p1, p2) = {
         val s = rest.split("""\s""").map(_.trim).filter(_.nonEmpty)
@@ -290,17 +333,18 @@ class AlignmentsServer extends ServerExtension("align") {
           rest = r.trim
         case _ ⇒ throw new Exception("Malformed alignment: " + s)
       }
-      alignments += makeAlignment(p1, p2, pars)
-      alignmentsCount += 1
+      dones ::= makeAlignment(p1, p2, pars)
     }
-    alignmentsCount
+    dones foreach alignments.+=
+    dones
   }
 
-  private def readFile(file: File) {
+  def readFile(file: File) = {
     val cmds = File.read(file).split("\n").map(_.trim).filter(_.nonEmpty)
-    val tmp = cmds map processString
-    val alignmentsCount = tmp.sum
+    val tmp = cmds flatMap processString
+    val alignmentsCount = tmp.length
     log(alignmentsCount + " alignments read from " + file.toString)
+    tmp.toList
   }
 
   def writeToFile(file: File) = File.write(file, getAsString)

@@ -171,9 +171,9 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
          }
          table("constant-body ") {
             d.getComponents.foreach {
-               case DeclarationComponent(comp, tc: AbstractTermContainer) =>
+               case DeclarationComponent(comp, cc: AbstractObjectContainer) =>
                   tr(compRow(comp)) {
-                     tc.get.foreach {t =>
+                     cc.get.foreach {t =>
                          doComponent(d.path $ comp, t)
                      }
                   }
@@ -345,12 +345,13 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
         div("document toggle-root inlineBoxSibling") {
           div("document-header", attributes=List(toggleTarget -> "document-body")) {
              val name = doc.path.last
-             span("name") {
-                text(name)
-             }
-             NarrativeMetadata.title.get(doc).foreach {t =>
-                text(": ")
-                text(t)
+             NarrativeMetadata.title.get(doc) match {
+               case Some(t) =>
+                 text(t)
+               case None =>
+                 span("name") {
+                   text(name)
+                 }
              }
              button("generated-toggle", attributes = List(toggleTarget -> "generated")) {text("generated declarations")}
           }

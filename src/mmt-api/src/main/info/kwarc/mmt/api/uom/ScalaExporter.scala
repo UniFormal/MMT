@@ -9,16 +9,17 @@ import symbols._
 
 object GenericScalaExporter {
   /** reserved identifiers */
-  private val keywords = List("true", "false", "type", "val", "var", "def", "abstract", "implicit", "class", "trait", "object", "extends", "with", "while", "do", "for")
+  private val keywords = List("type", "val", "var", "def", "new", "class", "trait", "object", "extends", "with", "abstract", "implicit", 
+      "match", "case", "if", "else", "while", "do", "for")
   /** preused identifiers, i.e., declared in Object */
-  private val reserved = List("eq", "List", "Set", "String")
+  private val reserved = List("true", "false", "eq", "List", "Nil", "Set", "String", "Boolean", "Option", "None", "Some", "Term", "OML", "Context", "VarDecl")
 
   /** escapes strings to avoid clashes with Scala keywords */
   private def escape(s: String): String = {
     if (keywords.contains(s))
       "`" + s + "`"
     else if (reserved.contains(s))
-      "N" + s
+      "_" + s
     else escapeChars(s)
   }
 
@@ -31,7 +32,7 @@ object GenericScalaExporter {
     
   def nameToScalaQ(p: GlobalName) = (p.module.name.toPath + "_" + escapeChars(p.name.toPath)).replace(".", "__")
 
-  def nameInScala(p: GlobalName) = (p.module.name.toPath).replace(".", "__") + "." + escapeChars(p.name.toPath) + ".path"
+  def nameInScala(p: GlobalName) = (p.module.name.toPath).replace(".", "__") + "." + nameToScala(p.name) + ".path"
 
   def nameToScala(l: LocalName) = escape(l.toPath.replace("/", "."))
 
@@ -78,6 +79,60 @@ object GenericScalaExporter {
 
   def scalaType(name: GlobalName): String = "  type " + nameToScalaQ(name)
 
+  /** name and type of a Scala variable declarations */ 
+  case class Argument(name: String, tp: String, sequence: Boolean) {
+    def decl = name + ": " + tp
+  }
+  case class ArgumentList(args: List[Argument]) {
+    def +(that: ArgumentList) = ArgumentList(this.args ::: that.args)
+    def names = args.map(_.name)
+    def types = args.map(_.tp)
+    // x1: T1, ..., xn: Tn
+    val decls = args.map(_.decl)
+    // List(x1,...,xn)
+    def nameList = args.map {a => if (a.sequence) a else "List(" + a + ")"}.mkString(":::")
+    // (x1, ..., xn) or x1
+    def tuple = if (args.length == 1) names.head else names.mkString("(", ", ", ")")
+    def tupleType = if (args.length == 0) "Unit" else if (args.length == 1) types.head else types.mkString("(", ", ", ")") 
+  }
+  /** produces Scala source for apply/unapply methods
+   *  @param first the variables
+   *  @param second the arguments
+   */
+  abstract class Operator(first: ArgumentList, second: ArgumentList) {
+    /** maps a list l of argument names (l.length == args.length) to a term */
+    def mmtTerm(a1: List[String], a2: List[String]): String
+    
+    def combined = first+second
+    def term = mmtTerm(first.names, second.names)
+    def pattern = mmtTerm(first.decls, second.decls)
+    def tuple = combined.tuple
+    def tupleType = combined.tupleType
+    def context = combined.decls.mkString(",")
+    // def apply(x1,...,xn) : Term = term
+    def applyMethod = List(s"def apply($context): Term = $term")
+    def unapplyMethod = List(
+       s"def unapply(t: Term): Option[$tupleType] = t match {",
+       s"  case $pattern => Some($tuple)",
+       s"  case _ => None",
+       s"}"
+    )
+    def methods = applyMethod ::: unapplyMethod
+  }
+  
+  /** for MMT terms using OMS, OMA, and OMBIND */
+  class MMTOperator(p: ContentPath, f: ArgumentList, s: ArgumentList) extends Operator(f,s) {
+    private def omid = "OMID(this.path)"
+    def f(as: List[String]) = as.mkString(",")
+    def mmtTerm(a1: List[String], a2: List[String]): String = {
+      if (a1.isEmpty && a2.isEmpty)
+        omid
+      else if (a1.isEmpty)
+        s"OMA($omid, List(${f(a2)}))"
+      else
+        s"OMBINDC($omid, ${f(a1)}, ${f(a2)})"
+    }
+  }
 }
 
 import GenericScalaExporter._
@@ -91,13 +146,11 @@ class GenericScalaExporter extends Exporter {
   val packageSep: List[String] = Nil
 
   /* top level export methods */
-  
+
   def exportTheory(t: DeclaredTheory, bf: BuildTask) {
     outputHeader(t.parent.doc)
     outputTrait(t)
-    outputCompanionObject(t) { c =>
-      c.not.map(n => applyMethods(n.arity)).getOrElse("")
-    }
+    outputCompanionObject(t)
   }
 
   def exportView(v: DeclaredView, bf: BuildTask) {}
@@ -145,7 +198,7 @@ class GenericScalaExporter extends Exporter {
   /** generates a companion object with fields for the MMT URIs
     * @param extraFields fields appended to the object
     */
-  protected def outputCompanionObject(t: DeclaredTheory)(extraFields: Constant => String) {
+  protected def outputCompanionObject(t: DeclaredTheory) {
     val tpathS = t.path.toString
     val name = nameToScala(t.name)
     rh.writeln(s"/** Convenience functions for the MMT URIs of the declarations in the theory $tpathS\n" +
@@ -160,73 +213,47 @@ class GenericScalaExporter extends Exporter {
     rh.writeln("  val _name = LocalName(\"" + t.name + "\")")
     t.getPrimitiveDeclarations foreach {
       case c: Constant =>
-        var o = ""
-        o += s"\n  object ${nameToScala(c.name)} extends ConstantScala {\n"
-        o += s"    val parent = _path\n"
-        o += "    val name = \"" + c.name + "\"\n"
-        o += extraFields(c)
-        o += "  }"
-        rh.writeln(o)
+        val extraFields = companionObjectFields(c)
+        val lines = List(
+          s"",
+          s"object ${nameToScala(c.name)} extends ConstantScala {",
+          s"  val parent = _path\n",
+           "  val name = \"" + c.name + "\""
+        ) ::: extraFields.map("  " + _) ::: List(
+          s"}"
+        )
+        lines foreach {l => rh.writeln("  " + l)}
       case _ =>
     }
     rh.writeln("\n}")
   }
 
-  private def arityToScala(arity: Arity): List[(String, String)] = arity.components.map {
-    case SimpArg(n, _) => ("x" + n.abs, "Term")
-    case LabelArg(n,_,_) => ("x" + n.abs, "OML")
-    case ImplicitArg(n, _) => ("x" + n.abs, "Term")
-    case SimpSeqArg(n, _, _) => ("xs" + n.abs, "List[Term]")
-    case LabelSeqArg(n, _, _,_) => ("xs" + n.abs, "List[OML]")
-    case Var(n, _, None, _) => ("v" + n, "VarDecl")
-    case Var(n, _, Some(_), _) => ("vs" + n, "Context")
+  private def arityToScala(markers: List[ArityComponent]): ArgumentList = {
+    val as = markers.map {
+      case SimpArg(n, _) => ("x" + n.abs, "Term", false)
+      case LabelArg(n,_,_) => ("x" + n.abs, "OML", false)
+      case ImplicitArg(n, _) => ("x" + n.abs, "Term", false)
+      case SimpSeqArg(n, _, _) => ("xs" + n.abs, "List[Term]", true)
+      case LabelSeqArg(n, _, _,_) => ("xs" + n.abs, "List[OML]", true)
+      case Var(n, _, None, _) => ("v" + n, "VarDecl", false)
+      case Var(n, _, Some(_), _) => ("vs" + n, "Context", true)
+    }.map {x => Argument(x._1,x._2,x._3)}
+    ArgumentList(as)
   }
 
-  private def lastArgIsSeq(arity: Arity) = arity.arguments.nonEmpty && arity.arguments.last.isSequence
-
-  private def lastVarIsSeq(arity: Arity) = arity.variables.nonEmpty && arity.variables.last.isSequence
-
-  private def applyMethods(arity: Arity): String = {
-    val scalaArgs = arityToScala(arity)
-    // x1 :: ... :: xn :: Nil or x1 :: ... :: xsn
-    var argListString = scalaArgs.map(_._1).mkString(" :: ")
-    if (!lastArgIsSeq(arity))
-      argListString = argListString + ":: scala.Nil"
-    // (x1, ..., xn) or x1
-    var argTupleString = scalaArgs.map(_._1).mkString(", ")
-    if (scalaArgs.length > 1)
-      argTupleString = s"($argTupleString)"
-    // (T1, ..., Tn) or T1
-    var tpString = scalaArgs.map(_._2).mkString(", ")
-    if (scalaArgs.length > 1)
-      tpString = s"($tpString)"
-    // x1: T1, ..., xn: Tn
-    val argtpString = scalaArgs.map(p => p._1 + ": " + p._2).mkString(", ")
-    // def apply(...) : Term = ...
-    val app = if (arity.isApplication)
-      s"    def apply($argtpString) = OMA(OMID(this.path), $argListString)\n"
-    else if (arity.isPlainBinder)
-      s"    def apply(vs1: Context, s2: Term) = OMBIND(OMID(this.path), vs1, s2)\n"
-    else if (arity.isConstant)
-      ""
-    else
-      "  // no apply method generated for this arity\n"
-    // def unapply(t: Term): Option[...] = ...
-    val unapp = if (arity.isApplication)
-      s"    def unapply(t: Term): Option[$tpString] = t match {\n" +
-        s"      case OMA(OMID(this.path), $argListString) => Some($argTupleString)\n" +
-        s"      case _ => None\n" +
-        s"    }\n"
-    else if (arity.isPlainBinder)
-      s"    def unapply(t: Term): Option[(Context, Term)] = t match {\n" +
-        s"      case OMBIND(OMID(this.path), vs1, s2) => Some((vs1, s2))\n" +
-        s"      case _ => None\n" +
-        s"    }\n"
-    else if (arity.isConstant)
-      ""
-    else
-      "  // no unapply methods generated for this arity\n"
-
-    app + unapp
+  /** 1%w, */
+  private val defaultNotation = TextNotation(Mixfix(List(SimpSeqArg(1, Delim(" "), CommonMarkerProperties.noProps))), Precedence.integer(0), None)
+  /** additional lines (without indentation) to be added to the companion object, most importantly the apply/unapply methods */
+  protected def companionObjectFields(c: Constant): List[String] = {
+    val nt = c.not.getOrElse(defaultNotation)
+    val arity = nt.arity
+    if (arity.isApplication || arity.isPlainBinder || arity.isConstant) {
+       val bindings = arityToScala(arity.variables)
+       val args = arityToScala(arity.arguments)
+       val op = new MMTOperator(c.path, bindings, args)
+       op.methods
+    } else {
+      Nil
+    }
   }
 }

@@ -25,7 +25,7 @@ trait StandardIOHelper {
      println(msg + defMsg)
      val answer = input.readLine
      default match {
-       case Some(d) => d / answer
+       case Some(d) => d.resolve(answer)//d / answer
        case None => File(answer)
      }
   }
@@ -86,12 +86,13 @@ class Shell extends StandardIOHelper {
     }
   }
 
-  lazy val repl : REPLExtension = {
-    // TODO: throw a warning if there is more than one REPL
-    // or have a mechanism to get a specific REPL
+  lazy val repl: REPLExtension = {
+    // try to load the extended repl by default
+    controller.extman.addExtensionO("info.kwarc.mmt.repl.ExtendedREPL", Nil)
     controller.extman.get(classOf[REPLExtension]).headOption.getOrElse {
-      controller.extman.addExtension(StandardREPL)
-      StandardREPL
+      val re = new StandardREPL
+      controller.extman.addExtension(re)
+      re
     }
   }
 
@@ -152,17 +153,17 @@ class Shell extends StandardIOHelper {
         val optHelp = getHelpText(s)
         if (optHelp.isDefined) {
           println(optHelp.get)
-          sys.exit(Shell.EXIT_CODE_OK)
+          return
         }
       }
       printHelpText("help")
-      sys.exit(Shell.EXIT_CODE_OK)
+      return
     }
 
     // display some about text
     if (args.about) {
       printHelpText("about")
-      sys.exit(Shell.EXIT_CODE_OK)
+      return
     }
 
     // configure logging
@@ -175,7 +176,6 @@ class Shell extends StandardIOHelper {
 
     // load additional config files as given by arguments
     args.cfgFiles.map(File(_)) foreach loadConfig
-
 
     if (args.useQueue) {
        controller.extman.addExtension(new BuildQueue)
@@ -190,15 +190,12 @@ class Shell extends StandardIOHelper {
 
     // if we want a shell, prompt and handle input
     if (args.prompt) {
-        // try to load the extended repl by default
-        controller.extman.addExtensionO("info.kwarc.mmt.repl.ExtendedREPL", List())
-        
         repl.enter(args)
         // run the repl and cleanup
         try {
-          repl.run()
+          repl.run
         } finally {
-          repl.exit()
+          repl.exit
         }
     }
     input.close
@@ -215,42 +212,39 @@ class Shell extends StandardIOHelper {
   * An extension that provides REPL functionality to MMT.
   */
 trait REPLExtension extends Extension {
-
   /** Banner of the REPL to be printed when (before even entering it) */
   protected val banner : String = MMTSystem.getResourceAsString("/help-text/shelltitle.txt")
-
   /* A report handler to be added to the console automatically when needed */
   protected val handler : ReportHandler = ConsoleHandler
-
   /** Called when entering (i.e. starting up) the REPL */
-  def enter(args : ShellArguments) : Unit = {
+  def enter(args : ShellArguments) {
     //print the banner
     println(banner)
-
     // switch on console reports for wrong user inputs
     controller.report.addHandler(ConsoleHandler)
   }
-
   /** Called when running the REPL */
-  def run() : Unit
-
+  def run : Unit
   /** Called up leaving the REPL to clean up */
-  def exit() : Unit
+  def exit : Unit
 }
 
 /** The standard, bare-bones implementation of the REPL */
-object StandardREPL extends REPLExtension {
+class StandardREPL extends REPLExtension {
   private lazy val input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
-
-  def run() : Unit =  {
+  def run {
     var command = Option(input.readLine)
     while (command.isDefined) {
-      controller.handleLine(command.get, showLog = true)
+      var res = controller.tryHandleLine(command.get, showLog = true)
+      res match {
+        case a: ActionResultError =>
+          log(a.error)
+        case _ =>
+      }
       command = Option(input.readLine)
     }
   }
-
-  def exit() : Unit = {input.close()}
+  def exit {input.close()}
 }
 
 object Shell {

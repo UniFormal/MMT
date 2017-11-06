@@ -157,7 +157,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                case LocalChange(argsS) =>
                   // state (2)
                   log("simplifying arguments")
-                  val argsSS = logGroup {
+                  val argsSS : List[Term] = logGroup {
                     argsS.zipWithIndex map {
                      case (a,i) => traverse(a)(con, init.enter(i + 1)) // +1 adjusts for the f in OMA(f, args)
                     }
@@ -165,7 +165,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
                   val tS = StrictOMA(strictApps, outer, argsSS)
                   // if any argument changed globally, go back to state (1)
                   if (argsSS exists {
-                      case Changed(t) => Changed.erase(t); true
+                      case Changed(tm) => Changed.erase(tm.asInstanceOf[Term]); true
                       case _ => false
                    })
                       applyAux(tS, globalChange)
@@ -319,6 +319,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {
        case _ =>
          return None
      }
+     def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) = controller.simplifier.materialize(cont,tm,expandDefs,parent)
    }
 
    /** applies all computation rules */

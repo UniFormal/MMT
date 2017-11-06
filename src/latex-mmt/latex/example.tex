@@ -7,12 +7,34 @@
 
 \begin{document}
 
-\toMMT{
-theory test : ur:/?LF =
-include http://cds.omdoc.org/examples?FOLEQNatDed^^1e
-}
+\mmtnamespace{http://cds.omdoc.org/latex}
+\mmtimport{ur}{http://cds.omdoc.org/urtheories}
+\mmtimport{ex}{http://cds.omdoc.org/examples}
 
-![A] impI [p: ded A] andI p p!
+\begin{mmttheory}{test}{ur:/?LF}
+\mmtinclude{ex:?FOLEQNatDed}
 
+\mmtconstant{id}{o -> o}{[x] x}{id 1}
+
+"[A] impI [p: ded A] andI p p"
+
+\begin{mmtcontext}
+\mmtvar{x}{A}
+
+\mmtvar{y}{B}
+
+\begin{mmtcontext}
+\mmtvar{z}{C}
+\mmtvar{zz}{CC}
+"x imp y imp z imp zz"
+\end{mmtcontext}
+
+\mmtvar{yy}{BB}
+"x imp y imp z imp zz"
+
+\end{mmtcontext}
+"x imp y imp z imp zz"
+
+\end{mmttheory}
 
 \end{document}

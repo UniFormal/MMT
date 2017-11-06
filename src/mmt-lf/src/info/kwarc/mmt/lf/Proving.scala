@@ -241,6 +241,7 @@ object ForwardPiElimination extends ForwardSearch {
       def apply(g: Goal, parameters: Context, foundArgs: List[(Option[LocalName],Term)],
                                              neededArgs: List[(Option[LocalName],Term)]) {
          // the values of the found named arguments as a substitution
+         // TODO DM says this rule causes GC-related resource limit overruns
          val foundSubs = foundArgs.collect {case (Some(x),a) => x/a}
          neededArgs match {
             case Nil =>

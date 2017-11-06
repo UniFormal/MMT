@@ -52,9 +52,9 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
 
   def toHTML: String = HTML.build { h => import h._
     def trace(t: Throwable) {
-      div {
+      div("stacktrace") {
         Stacktrace.asStringList(t).foreach { s =>
-          div {
+          div("stacktraceline") {
             span {
               text {
                 s
@@ -66,9 +66,15 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
     }
     div("error") {
       div {
-        text(this.getClass.getName + " of level " + level.toString)
+        span("name") {
+          text(this.getClass.getName)
+        }
+        text(" of level ")
+        span("level") {
+          text(level.toString)
+        }
       }
-      div {
+      div("message") {
         text(shortMsg)
       }
       if (!extraMessage.isEmpty) div {
@@ -79,19 +85,29 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
       trace(this)
       causedBy.foreach {e =>
         div {text {"caused by"}}
-        e match {
-           case e: Error => div {
-             literal(e.toHTML)
-           }
-           case e: Throwable => div {
-             text {
-               e.getClass + " : " + e.getMessage
-             }
-             trace(e)
-           }
+        div("cause") {
+          e match {
+            case e: Error => div {
+              literal(e.toHTML)
+            }
+            case e: Throwable => div {
+              text {
+                e.getClass + " : " + e.getMessage
+              }
+              trace(e)
+            }
+          }
         }
       }
     }
+  }
+}
+
+object Error {
+  /** converts java exception to MMT error */
+  def apply(e: Exception): Error = e match {
+    case e: Error => e
+    case e: Exception => GeneralError("unknown error").setCausedBy(e)
   }
 }
 
@@ -225,7 +241,12 @@ abstract class ErrorHandler {
     assumeNoErrors = true
   }
 
-  /** true if errors occurred since creation */
+  def reset = {
+    newErrors = false
+    assumeNoErrors = true
+  }
+
+  /** true if errors occurred since ~creation~ last reset */
   def hasNewErrors: Boolean = newErrors
 
   /** true if no new errors occurred since the last call to mark */
@@ -236,8 +257,10 @@ abstract class ErrorHandler {
     * This should be called exactly once on every error, usually in the order in which they are found.
     */
   def apply(e: Error) {
-    newErrors = true
-    assumeNoErrors = false
+    if (e.level > 1) {
+      newErrors = true
+      assumeNoErrors = false
+    }
     addError(e)
   }
 
@@ -307,9 +330,11 @@ class ErrorContainer(report: Option[frontend.Report]) extends ErrorHandler {
 
   def isEmpty: Boolean = errors.isEmpty
 
-  def reset() {
+  override def reset() {
     errors = Nil
+    super.reset
   }
+
 
   def getErrors: List[Error] = errors.reverse
 }

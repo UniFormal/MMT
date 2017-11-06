@@ -23,6 +23,13 @@ abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj]
     */
    type ThisType >: this.type <: Obj
    protected def mdNode = metadata.toNode
+   
+   /** defaults to toStr(false) */
+   override def toString = toStr(false)
+   /** configurable string representation
+    *  @param shortURIs print OMS without namespace, theory 
+    */
+   def toStr(implicit shortURIs: Boolean): String
    /** prints to OpenMath */
    def toNode : scala.xml.Node
    /** prints to OpenMath (with OMOBJ wrapper) */
@@ -62,7 +69,7 @@ abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj]
    def subobjects: List[(Context,Obj)]
    /** auxiliary function for subobjects in the absence of binding */
    protected def subobjectsNoContext(os: List[Obj]) = os.map(s => (Context(),s))
-   /** returns the subobject at a given position and its context; first index of pos used to be always 0 but not anymore */
+   /** returns the subobject at a given position and its context */
    def subobject(pos: Position) : (Context, Obj) =
      pos.indices.foldLeft((Context(),this)) {
          case ((con,obj), i) =>
@@ -85,10 +92,12 @@ abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj]
    }
 }
 
+trait ThisTypeTrait
+
 /**
  * A Term represents an MMT term.
  */
-sealed abstract class Term extends Obj {
+sealed abstract class Term extends Obj with ThisTypeTrait {
    final type ThisType = Term
    def strip : Term = this
    /** morphism application (written postfix), maps OMHID to OMHID */
@@ -120,7 +129,7 @@ case class OMID(path: ContentPath) extends Term {
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def subobjects = Nil
-   override def toString = path.toString
+   override def toStr(implicit shortURIs: Boolean) = if (shortURIs) path.name.toString else path.toString
    def toNode = path match {
       case doc ? mod => <om:OMS base={doc.toPath} module={mod.toPath}>{mdNode}</om:OMS>
       case doc ? mod ?? name => <om:OMS base={doc.toPath} module={mod.toPath} name={name.toPath}>{mdNode}</om:OMS>
@@ -154,7 +163,7 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
                     case (s,i) => s.toNode
                  }}
       </om:OMBIND>
-   override def toString = "(" + binder + " [" + context + "] " + scopes.map(_.toString).mkString(" ") + ")"  
+   override def toStr(implicit shortURIs: Boolean) = "(" + binder.toStr + " [" + context.toStr + "] " + scopes.map(_.toStr).mkString(" ") + ")"  
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = {
       val (newCon, alpha) = Context.makeFresh(context, sub.freeVars)
       val subN = sub ++ alpha
@@ -185,7 +194,7 @@ object OMBIND {
  */
 case class OMA(fun : Term, args : List[Term]) extends Term {
    def head = fun.head
-   override def toString = (fun :: args).map(_.toString).mkString("(", " ", ")")
+   override def toStr(implicit shortURIs: Boolean) = (fun :: args).map(_.toStr).mkString("(", " ", ")")
    def toNode =
       <om:OMA>{mdNode}
               {fun.toNode}
@@ -222,7 +231,7 @@ case class OMV(name : LocalName) extends Term {
    /** the declaration this:tp */
    def %(tp : Term) = VarDecl(name,tp)
    def toNode = <om:OMV name={name.toPath}>{mdNode}</om:OMV>
-   override def toString = name.toString
+   override def toStr(implicit shortURIs: Boolean) = name.toString
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = 
 	   sub(name) match {
 	  	   case Some(t) => t match {
@@ -259,7 +268,7 @@ object OMV {
 case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    def head = key.head
    override def strip = arg.strip
-   override def toString = "{" + arg + " : " + key + " -> " + value + "}"
+   override def toStr(implicit shortURIs: Boolean) = "{" + arg.toStr + " : " + key.toStr + " -> " + value.toStr + "}"
    def toNode = 
       <om:OMATTR>{mdNode}<om:OMATP>{key.toNode}{value.toNode}</om:OMATP>
                  {arg.toNode}
@@ -316,7 +325,7 @@ sealed trait OMLITTrait extends Term {
  */
 case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait {
    def synType = rt.synType
-   override def toString = rt.semType.toString(value)
+   override def toStr(implicit shortURIs: Boolean) = rt.semType.toString(value)
 }
 
 /** degenerate case of OMLIT when no RealizedType was known to parse a literal
@@ -327,7 +336,7 @@ case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait 
  *  @param synType the type of the this literal
  */
 case class UnknownOMLIT(value: String, synType: Term) extends Term with OMLITTrait {
-   override def toString = value
+   override def toStr(implicit shortURIs: Boolean) = value
    
    /** convert to OMLIT by choosing an applicable rule */
    def recognize(rules: RuleSet) = {
@@ -343,6 +352,7 @@ case class UnknownOMLIT(value: String, synType: Term) extends Term with OMLITTra
  */
 case class OMFOREIGN(node : Node) extends Term {
    def head = None
+   def toStr(implicit shortURIs: Boolean) = toString
    def toNode = <om:OMFOREIGN>{node}</om:OMFOREIGN>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
@@ -355,6 +365,7 @@ case class OMFOREIGN(node : Node) extends Term {
 /** An OMSemiFormal represents a mathematical object that mixes formal and informal components */
 case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFormalObjectList {
    def head = None
+   def toStr(implicit shortURIs: Boolean) = toString
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = {
       val newtokens = tokens map {
          case Formal(t) => Formal(t ^^ sub)
@@ -383,6 +394,7 @@ object OMSemiFormal {
  * These could be used for the typed/defined fields in a record type/value or the selection function. 
  */
 case class OML(name: LocalName, tp: Option[Term], df: Option[Term], nt: Option[TextNotation] = None, featureOpt : Option[String] = None) extends Term with NamedElement {
+    def toStr(implicit shortURIs: Boolean) = vd.toStr  
     def vd = VarDecl(name, featureOpt, tp, df, nt)
     private[objects] def freeVars_ = vd.freeVars
     def head = None
@@ -392,7 +404,7 @@ case class OML(name: LocalName, tp: Option[Term], df: Option[Term], nt: Option[T
     def toNode = vd.toNode.copy(label = "OML")
 }
 
-case object OML {
+object OML {
   def apply(name: LocalName): OML = OML(name, None, None)
 }
 
@@ -496,12 +508,21 @@ object Obj {
       case Right(c) => parseTerm(c, nm)
    }
    
+   /** parses an object (term or context) relative to a base address (a single OMV is always parsed as a Term, never as a VarDecl) */
+   def parse(n: Node, nsMap: NamespaceMap): Obj = {
+     n.label match {
+       case "OMOBJ" => parse(n.child.head, nsMap)
+       case "OMBVAR" => Context.parse(n, nsMap)
+       case _ => parseTerm(n, nsMap)
+     }
+   }
+   
    /** parses a term relative to a base address
     *  @param Nmd node to parse (may not contain metadata) 
     *  @param nm namespace Map to resolve relative URIs
     *  @return the parsed term
     */
-   def parseTerm(N : Node, nm: NamespaceMap) : Term = {
+   def parseTerm(N : Node, nm: NamespaceMap): Term = {
       implicit val nsMap = nm
       xml.trimOneLevel(N) match {
          case <OMOBJ>{o}</OMOBJ> => parseTermRec(o)

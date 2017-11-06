@@ -13,22 +13,15 @@ import HTMLAttributes._
 /**
  * This overrides the appropriate methods present objects as MathML.
  * 
- * The MathML carries additional attributes
- * 
- * math: jobad:owner ([[ContentPath]]) and jobad:component ([[DeclarationComponent]])
- * 
- * mrow, mo, mi, mn: jobad:mmtsrc ([[parser.SourceRef]]) and jobad:mmtref ([[Position]])
- * 
- * mo (from OMS or delimiter): jobad:href ([[ContentPath]])
- * 
- * mi: jobad:varref ([[Position]]) pointing to its declaration 
+ * The MathML carries additional attributes as described in [[HTMLAttributes]] 
  */
 class MathMLPresenter extends NotationBasedPresenter {
    
    /** generalized apply method that takes a callback function to determine the css class of a subterm */
    def apply(o: Obj, origin: Option[CPath], style: PresentationContext => String)(implicit rh : RenderingHandler) {
-      implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, Some(style))
-      doToplevel {
+      val pc = preparePresentation(o, origin)
+      implicit val pcS = pc.copy(style = Some(style))
+      doToplevel(o) {
          recurse(o)
       }
    }
@@ -103,7 +96,7 @@ class MathMLPresenter extends NotationBasedPresenter {
       val ms = element("mspace", List(("width", "." + (2*level).toString + "em")), "")
       pc.out(ms)
    }
-   override def doToplevel(body: => Unit)(implicit pc: PresentationContext) {
+   override def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
       val nsAtts = List("xmlns" -> namespace("mathml"))
       val mmtAtts = pc.owner match {
          case None => Nil

@@ -1,6 +1,7 @@
 package scala.info.kwarc.mmt.api.test
 
 import info.kwarc.mmt.api.DPath
+import info.kwarc.mmt.doc.Setup
 import info.kwarc.mmt.api.backend.MathHub
 import info.kwarc.mmt.api.frontend.Run
 import info.kwarc.mmt.api.utils.{File, URI}
@@ -11,23 +12,24 @@ abstract class MMTTest(archives : String*)(extensions : String*) extends FlatSpe
   val standardextensions =
     List(
       "info.kwarc.mmt.api.ontology.AlignmentsServer",
-      "info.kwarc.mmt.api.ontology.DependencyGraphExporter",
-      "info.kwarc.mmt.api.ontology.DeclarationTreeExporter",
-      "info.kwarc.mmt.api.ontology.JsonGraphExporter",
-      "info.kwarc.mmt.api.ontology.PathGraphExporter"
+      "info.kwarc.mmt.api.web.JSONBasedGraphServer"
   )
-  lazy val content = File("test/resources/content").canonical
-  lazy val mathhub = new MathHub(MathHub.defaultURL,content,controller.report,https=true)
+  val setupFolder = File("test/resources").canonical
+  val content = setupFolder / "content"
+  lazy val mathhub = new MathHub(MathHub.defaultURL,content,report = controller.report,https=true)
   def hl(s : String) = controller.handleLine(s)
   def shouldhl(s : String) = it should s in hl(s)
 
   behavior of "MMT"
 
-  if (!content.toJava.exists()) it should "create content folder" in content.toJava.mkdirs()
-  ("MMT/urtheories" :: archives.toList) foreach (a =>
-    if (!(content / a).toJava.exists()) it should "git clone " + a in mathhub.clone(a)
-    else it should "git pull " + a in mathhub.pull(a)
+  val setup = new Setup
+  controller.extman.addExtension(setup)
+  setup.setup(setupFolder/"system", content, None)
+  (archives.toList) foreach (a =>
+      if (!(content / a).toJava.exists()) it should "git clone " + a in mathhub.clone(a)
+      else it should "git pull " + a in mathhub.pull(a)
   )
+
   (standardextensions ::: extensions.toList) foreach (e =>
     it should "add Extension " + e in hl("extension " + e)
     )
@@ -40,7 +42,7 @@ abstract class MMTTest(archives : String*)(extensions : String*) extends FlatSpe
   // override protected def afterAll(): Unit = content.deleteDir
 }
 
-class APITest extends MMTTest("MMT/examples")() {
+class APITest extends MMTTest()() {
   behavior of "APITest"
   lazy val brackets = (DPath(URI.http colon "cds.omdoc.org") / "mmt") ? "mmt" ? "brackets"
   it should "get a Constant: " in controller.getConstant(brackets)

@@ -2,49 +2,46 @@ package info.kwarc.mmt.api.web
 
 import java.io.InputStream
 
-import info.kwarc.mmt.api.{Error, utils}
-import info.kwarc.mmt.api.utils.{JSON, xml}
+import info.kwarc.mmt.api._
+import utils._
 
-import scala.collection.immutable.HashMap
 import scala.collection.mutable
 
 /**
   * Mutable class that represents a response sent from the Server to the Client
   */
 class ServerResponse {
-
+  
+  override def toString = outputStream match {
+    case Left(a) => a.mkString
+    case Right(s) => "(outputstream)"
+  }
+  
   /** status of the response */
   private var status : (Int, String) = (200, "OK")
-
   /** statusCode (HTTP response code) for this message */
   def statusCode : Int = status._1
-
   def statusCode_=(code : Int): Unit = {
     // set statusCode and matching text
     val newText = ServerResponse.statusCodes.getOrElse(code, "")
     status = (code, newText)
   }
-
   /** the status text (HTTP Status Text) for this response code */
-  def statusText : String = status._2
-
-  def statusText_=(txt : String) : Unit = {
+  def statusText: String = status._2
+  def statusText_=(txt : String) {
     status = (statusCode, txt)
   }
 
   /** headers to be sent in the response */
   var headers : mutable.Map[String, String] = new mutable.HashMap()
-
   /** the content type of the response */
   def contentType : String = headers.getOrElse("Content-Type", "").split(";").head
-
   /** sets the content type of this serverResponse */
   def contentType_=(tp : String): Unit =  {
     headers("Content-Type") = s"$tp; charset=utf8"
   }
-
   /** sets a CORS header matching to a request */
-  def setCORSFor(request : ServerRequest): Unit = {
+  def setCORSFor(request : ServerRequest) {
     val origin = request.headers.getOrElse("Origin", "*")
     headers("Access-Control-Allow-Origin") = origin
     headers("Access-Control-Allow-Methods") = "POST, GET, OPTIONS"
@@ -53,30 +50,78 @@ class ServerResponse {
   }
 
   // OUTPUT
-
-  private var outputStream : Either[Array[Byte], InputStream] = Left(Array.empty)
-
+  private var outputStream : Union[Array[Byte], InputStream] = Left(Array.empty)
   /** the ouput is either an array or read directly from an input stream */
-  def output : Either[Array[Byte], InputStream] = outputStream
-
+  def output = outputStream
   /** sets the output to an array of bytes */
-  def output_= (ary : Array[Byte]): Unit = {
+  def output_= (ary : Array[Byte]) {
     outputStream = Left(ary)
   }
-
   /** sets the output to text */
-  def output_=(txt : String) : Unit = {
+  def output_=(txt : String) {
     outputStream = Left(txt.getBytes("utf-8"))
   }
-
   /** sets the output to an InputStream */
-  def output_=(io: InputStream) : Unit = {
+  def output_=(io: InputStream) {
     outputStream = Right(io)
   }
 }
 
+/** 
+ *  factory methods for typical responses 
+ */
 object ServerResponse {
 
+  // typical responses
+  def TextResponse(text: String, tp: String = "plain"): ServerResponse = apply(text, "text/" + tp)
+  def HTMLResponse(text: String) = TextResponse(text, "html")
+  def XmlResponse(text: String) = TextResponse(text, "xml")
+  def XmlResponse(node: scala.xml.Node): ServerResponse = fromXML(node)
+  def JsonResponse(content: JSON): ServerResponse = fromJSON(content)
+  def FileResponse(file: utils.File) = {
+    val in = new java.io.FileInputStream(file)
+    anyDataResponse(in, file.getExtension)
+  }
+  /** builds an error response from an error message */
+  def errorResponse(msg: String, format: String = "html"): ServerResponse = errorResponse(ServerError(msg), format)
+  /** builds an error response from an error */
+  // error responses intentionally do not use HTTP error codes or accept headers
+  def errorResponse(error: Error, format: String): ServerResponse = {
+    if (format == "html") {
+      HTMLResponse(s"""<div xmlns="${utils.xml.namespace("html")}"><div>""" + error.toHTML + "</div></div>")
+    } else {
+      XmlResponse(error.toNode)
+    }
+  }
+
+  /** an MMT resource
+    * @param path path of File to be sent back
+    */
+  def ResourceResponse(path: String) : ServerResponse = {
+    val io = Util.loadResource(path)
+    if (io == null) {
+      errorResponse(s"Path $path not found")
+    } else {
+      anyDataResponse(io, utils.File(path).getExtension)
+    }
+  }
+  
+  /** creates a response from a file etc
+   *  @param extension file extension (only used to guess a content type)
+   */
+  def anyDataResponse(in: InputStream, extension: Option[String]): ServerResponse = {
+    // start with an empty response
+    val resp = new ServerResponse
+    // set the content type, possibly using the file extension
+    resp.contentType = extension.flatMap(e => contentTypes.get(e.toLowerCase)).getOrElse("text/plain")
+    // set the output and return
+    resp.output = in
+    resp
+  }
+
+  
+  // ***************** more sophisticated methods added by Tom (?), probably not needed
+  
   /**
     * Convenience method to construct a standard response
     * @param content Textual message to be sent in the HTTP body
@@ -106,77 +151,12 @@ object ServerResponse {
     */
   def fromXML(content: scala.xml.Node, statusCode : Int = statusCodeOK) : ServerResponse = apply(content.toString, "application/xml", statusCode)
 
-
-  /**
-    * Convenience method to construct an MMT-internal resource response being sent back to the client
-    * @param path path of File to be sent back
-    * @param request Original request sent by the client
-    */
-  def resource(path: String, request: ServerRequest) : ServerResponse = {
-    //TODO: Make sure that the path is cleaned up
-
-    val properPath = path.replace("//", "/")
-    val io = Util.loadResource(properPath)
-
-    if(io == null){
-      return fromText(s"Path $path not found", statusCode = statusCodeNotFound)
-    }
-
-    // attempt to get the file extension
-    val fileExtension = {
-      val i = path.lastIndexOf(".")
-      if (i > 0) path.substring(i + 1)
-      else ""
-    }
-
-    // start with an empty response
-    val resp = new ServerResponse
-
-    // set the content type
-    resp.contentType = contentTypes.getOrElse(fileExtension.toLowerCase(), "text/plain")
-
-    // and buffer the output
-    resp.output = io
-
-    // and return it
-    resp
-  }
-
-  /**
+   /**
     * Convenience method to send application/json back to the client
     * @param content JSON object to send back to the user
     * @param statusCode statusCode of the message
     */
   def fromJSON(content : JSON, statusCode : Int = statusCodeOK) : ServerResponse = apply(content.toString, "application/json", statusCode)
-
-
-  /** builds an error response from an error */
-  def errorResponse(error: Error, req: ServerRequest): ServerResponse = {
-    // TODO: Check in a smart way if we should display it in a human readable form
-    val responseType = req.accept(List("text/plain", "text/xml", "text/html"))
-
-    if (responseType == "text/plain") {
-      plainErrorResponse(error)
-    } else if (responseType == "text/xml") {
-      xmlErrorResponse(error)
-    // fall back to an html error response
-    } else {
-      htmlErrorResponse(error)
-    }
-
-  }
-
-  /** builds a smart error message from an error */
-  def errorResponse(msg: String, req: ServerRequest): ServerResponse = errorResponse(ServerError(msg), req)
-
-  /** an error response in plain text format */
-  def plainErrorResponse(error: Error): ServerResponse = fromText(error.toStringLong, statusCode=statusCodeInternalServerError)
-
-  /** an error response in html format */
-  def htmlErrorResponse(error: Error): ServerResponse = fromText(s"""<div xmlns="${utils.xml.namespace("html")}"><div>""" + error.toHTML + "</div></div>", "html", statusCodeInternalServerError)
-
-  /** an error response in xml format */
-  def xmlErrorResponse(error: Error): ServerResponse = XMLResponse(error.toNode, statusCodeInternalServerError)
 
   // HELPERS
 
@@ -279,36 +259,4 @@ object ServerResponse {
   val statusCodeNotImplemented : Int = 501
   val statusCodeBadGateway : Int = 502
   val statusCodeServiceUnavailable : Int = 503
-
-
-  // LEGACY methods
-  // for backwards compatibility only
-  // these will be removed soon(ish)
-
-  @deprecated("use new ServerResponse instead")
-  def empty() : ServerResponse = new ServerResponse
-
-  @deprecated("use [[apply]] instead")
-  def TypedTextResponse(text: String, tp: String): ServerResponse = apply(text, tp)
-
-  @deprecated("use [[fromText]] instead")
-  def TextResponse(text: String, tp: String = "plain", statusCode: Int = statusCodeOK): ServerResponse = apply(text, "text/" + tp, statusCode)
-
-  @deprecated("for a textual xml response, use fromText(s, 'xml', statusCode) instead ")
-  def XmlResponse(s: String, statusCode: Int): ServerResponse = fromText(s, "xml", statusCode)
-
-  @deprecated("for a textual xml response, use fromText(s, 'xml') instead ")
-  def XmlResponse(s: String): ServerResponse = fromText(s, "xml")
-
-  @deprecated("use [[fromXML]] instead")
-  def XMLResponse(node: scala.xml.Node, statusCode: Int): ServerResponse = fromXML(node, statusCode)
-
-  @deprecated("use [[fromXML]] instead")
-  def XmlResponse(node: scala.xml.Node): ServerResponse = fromXML(node)
-
-  @deprecated("use [[fromJSON]] instead")
-  def JsonResponse(content: JSON): ServerResponse = fromJSON(content)
-
-  @deprecated("use [[fromJSON]] instead")
-  def JsonResponse(content: JSON, statusCode: Int): ServerResponse = fromJSON(content, statusCode)
 }

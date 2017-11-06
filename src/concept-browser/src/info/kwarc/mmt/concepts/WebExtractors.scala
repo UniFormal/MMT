@@ -68,8 +68,12 @@ abstract class WebExtractor {
       }
       tr {
         td {
-          if (!dontpull) Try(content(pull(uri),uri,h)).getOrElse({text {"Error: " };a(scheme + "://" + uri) { text { scheme + "://" + uri } } })
-          else content(<html><body></body></html>,uri,h)
+          if (!dontpull) {
+            println (this.getClass + "...")
+            Try(content(pull(uri),uri,h)).getOrElse({text {"Error: " };a(scheme + "://" + uri) { text { scheme + "://" + uri } } })
+            println("Done.")
+          }
+          else literal("Not pulled")
         }
       }
     }
@@ -84,13 +88,14 @@ object WikiExtractor extends WebExtractor {
   def content(wiki : Elem, uri : String, h : HTML) = {
     wiki match {
       case ht @ <html>{hbd @ _*}</html> =>
-        val content = retrieve(ht,"body",("div","id","content"),("div","id","bodyContent"),("div","id","mw-content-text"))
+        val content = retrieve(ht,"body",("div","id","content"),("div","id","bodyContent"),("div","id","mw-content-text"),("div","class","mw-parser-output"))
         var ret : List[Node] = Nil
         var done = false
         content.child.foreach(n => if(!done) n match {
           case d @ <div>{s @ _*}</div> if (d \ "@class").text == "hatnote" =>
           case d @ <div>{s @ _*}</div> if (d \ "@class").text == "thumb tright" =>
           case d @ <div>{s @ _*}</div> if (d \ "@class").text == "NavContent" =>
+          case d @ <div>{s @ _*}</div> if (d \ "@role").text == "note" =>
           case d @ <h2>{s @ _*}</h2> => done = true
           case d @ <h3>{s @ _*}</h3> => done = true
           case d @ <table>{s @ _*}</table> if (d \ "@class").text contains "navbox" =>
@@ -98,7 +103,8 @@ object WikiExtractor extends WebExtractor {
           case d @ <table>{s @ _*}</table> if (d \ "@class").text contains "infobox" =>
           case d @ <table>{s @ _*}</table> if (d \ "@class").text contains "ambox-Refimprove" =>
           case d @ <div>{s @ _*}</div> if (d \ "@id").text == "toc" => done = true
-          case nod if nod.toString.trim != "" && nod.toString.trim != "\n" => ret ::= nod
+          case nod if nod.toString.trim != "" && nod.toString.trim != "\n" =>
+            ret ::= nod
           case _ =>
         })
         val nret = ret.reverse.map(_.toString.replaceAll(
@@ -111,6 +117,7 @@ object WikiExtractor extends WebExtractor {
 object PlanetMathExtractor extends WebExtractor {
   val key = "planetmath.org"
   val scheme = "http"
+  override val dontpull: Boolean = true
   def content(pm : Elem, uri : String, h : HTML) = {
     pm match {
       case ht @ <html>{hbd @ _*}</html> =>
@@ -140,7 +147,7 @@ object PlanetMathExtractor extends WebExtractor {
 object WolframExtractor extends WebExtractor {
   val key = "Wolfram MathWorld"
   val scheme = "http"
-  // override val dontpull = true
+  //override val dontpull = true
   def content(pm : Elem, uri : String, h : HTML) = {
     pm match {
       case ht @ <html>{hbd @ _*}</html> =>

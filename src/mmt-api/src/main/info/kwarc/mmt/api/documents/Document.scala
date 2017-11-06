@@ -79,22 +79,24 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
   /**
    * adds a child after a given child or at the end
    */
-  def add(i: NarrativeElement, afterOpt: Option[LocalName] = None) {
+  def add(i: NarrativeElement, at: AddPosition = AtEnd) {
      // default: insert at end
      def defaultPos = items.length
-     val pos = afterOpt match {
-        case Some(a) => items.indexWhere(_.name == a) match {
-           case -1 => defaultPos // maybe issue warning that afterOpt not found
+     val pos = at match {
+        case After(a) => items.indexWhere(_.name == a) match {
+           case -1 => defaultPos // maybe issue warning that a not found
+           case i => i+1
+        }
+        case Before(a) => items.indexWhere(_.name == a) match {
+           case -1 => defaultPos
            case i => i
         }
-        case None => defaultPos 
+        case AtBegin => 0
+        case AtEnd => items.length 
      }
      
      val (bef,aft) = items.splitAt(pos) // items(pos) == aft.head
-     items = bef ::: (aft match {
-       case Nil => i :: aft
-       case hd::tl => hd :: i :: tl
-     })
+     items = bef ::: i :: aft
   }
   
   /** updates or adds a child */

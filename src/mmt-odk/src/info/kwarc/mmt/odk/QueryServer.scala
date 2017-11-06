@@ -1,14 +1,11 @@
 package info.kwarc.mmt.odk
 
-import info.kwarc.mmt.LFX.Records.{Recexp, Records}
-import info.kwarc.mmt.api.backend.Storage
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.lf.{Apply, ApplySpine, LF}
+import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
 import info.kwarc.mmt.odk.SCSCP.Protocol.{OpenMathError, SCSCPCall, SCSCPCallArguments, SCSCPReturnObject}
@@ -59,8 +56,8 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
 
   private val mitmToSystem = new StatelessTraverser {
     override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-      case ApplySpine(OMS(`transitivegrouprec`),List(Recexp(ls))) => // TODO implement in general
-        val tr = Try(Traverser(this,OMA(OMS(transitivegroupcons),List(ls.find(_.name == LocalName("n")).get.df.get,ls.find(_.name == LocalName("t")).get.df.get))))
+      case ApplySpine(OMS(`transitivegrouprec`),List(LFX.RecExp(ls))) => // TODO implement in general
+        val tr = Try(Traverser(this,OMA(OMS(transitivegroupcons),List(ls.fields.find(_.name == LocalName("n")).get.df.get,ls.fields.find(_.name == LocalName("t")).get.df.get))))
         tr.getOrElse(t)
       case ApplySpine(fun,args) => Traverser(this,OMA(fun,args))
       case OMS(pth) if VRESystem.MitM <= pth =>

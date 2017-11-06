@@ -95,7 +95,7 @@ var mmt = {
    focusIsMath : false,
    // focus: true if focus is within an svg object
    focusIsSVG : false,
-   //jobad:href of the object clicked on (if any)
+   //mmtattr.href of the object clicked on (if any)
    currentURI : null,
    //URI of the OMDoc ContentElement that generated the math object clicked on
    currentElement : null,
@@ -115,7 +115,8 @@ var mmt = {
          this.focus = this.getSelectedParent(elem);
          this.currentElement = math.attr(mmtattr.owner);
          this.currentComponent = math.attr(mmtattr.component);
-         this.currentPosition = this.focus.getAttribute(mmtattr.position);
+		 var pos = this.focus.getAttribute(mmtattr.position);
+         this.currentPosition = pos == null ? "" : pos; // empty attributes are suppressed by HTML rendering
       } else {
          this.focus = elem
          this.currentElement = null;

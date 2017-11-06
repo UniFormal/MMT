@@ -6,7 +6,7 @@
 	<PROPS>
 		<PROPERTY NAME="commentStart" VALUE="/*" />
 		<PROPERTY NAME="commentEnd" VALUE="*/" />
-		<PROPERTY NAME="lineComment" VALUE="//" />
+		<!-- <PROPERTY NAME="lineComment" VALUE="//" /> -->
 		<PROPERTY NAME="wordBreakChars" VALUE=".:[]{}() " />
 		<PROPERTY NAME="tabSize" VALUE="2"/>
 		<PROPERTY NAME="indentSize" VALUE="2"/>
@@ -44,10 +44,10 @@
 		  <END>)_</END>
 		</SPAN>
 
-		<SPAN TYPE="COMMENT1">
-			<BEGIN>//   </BEGIN>
-			<END>&#x1d;</END>
-		</SPAN>
+		<SPAN_REGEXP TYPE="COMMENT1">
+			<BEGIN>//\s|/T\s</BEGIN>
+			<END REGEXP="TRUE">&#x1d;|&#x1f;|&#x1e;|&#10074;|&#10073;|&#10072;</END>
+		</SPAN_REGEXP> <!--
 		<SPAN TYPE="COMMENT1">
 			<BEGIN>//  </BEGIN>
 			<END>&#x1f;</END>
@@ -55,11 +55,11 @@
 		<SPAN TYPE="COMMENT1">
 			<BEGIN>// </BEGIN>
 			<END>&#x1e;</END>
-		</SPAN>
+		</SPAN> 
 		<SPAN TYPE="COMMENT1">
 			<BEGIN>/T   </BEGIN>
-			<END>&#x1d;</END>
-		</SPAN>
+			<END>&#x1d;|&#10074;</END>
+		</SPAN> 
 		<SPAN TYPE="COMMENT1">
 			<BEGIN>/T  </BEGIN>
 			<END>&#x1f;</END>
@@ -67,7 +67,7 @@
 		<SPAN TYPE="COMMENT1">
 			<BEGIN>/T </BEGIN>
 			<END>&#x1e;</END>
-		</SPAN>
+		</SPAN> -->
 
 		<!-- see comment on NESTED1 below -->
 		<SPAN TYPE="LITERAL1" DELEGATE="NESTED1">

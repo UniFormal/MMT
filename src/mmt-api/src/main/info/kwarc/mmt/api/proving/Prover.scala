@@ -8,34 +8,29 @@ import frontend._
 
 /**
  * represents a proof obligation
- * @param context the left-hand side/antecedent
- * @param tp the type to be inhabited, i.e., the right-hand side/succedent
+ * @param component the URI of the declaration component that triggered this proof obligation
+ * @param context the left-hand side/antecedent, i.e., the global (via [[IncludeVarDecl]]) and local (via [[VarDecl]]) assumptions
+ * @param tp the type to be inhabited, i.e., the right-hand side/succedent, i.e., the proof goal
+ * @param logPrefix the log prefix to use
  */
 case class ProvingUnit(component: Option[CPath], context: Context, tp: Term, logPrefix: String) extends MMTTask
 
 /**
- * A prover conducts the proof search. A new instance is created for each proof obligation.
- * 
- * @param goal the goal to prove
- * @param intros the backward tactics to use
- * @param elims  the forward  tactics to use
- * 
- * A prover greedily applies invertible tactics to each new goal (called the expansion phase).
- * Then forward and backward breadth-first searches are performed in parallel.
+ * A prover conducts the proof search.
  */
 abstract class Prover extends Extension {
-
    /**
-    * tries to prove a proof obligation
+    * tries to prove a proof obligation automatically
+    * @param rules the proof rules to use
     * @param levels the depth of the breadth-first searches
-    * @return true if the goal was solved
+    * @return true if the goal was solved and possibly a proof term
     */
    def apply(pu: ProvingUnit, rules: RuleSet, levels: Int): (Boolean, Option[Term])
    
    /**
-    * a list of possible steps to be used in an interactive proof
+    * primitive function for building interactive provers
     * @param levels the search depth for forward search 
-    * @return the list of possible steps (possibly with holes)
+    * @return the list of possible first steps (possibly with holes)
     */
    def interactive(pu: ProvingUnit, rules: RuleSet, levels: Int): List[Term]
 }

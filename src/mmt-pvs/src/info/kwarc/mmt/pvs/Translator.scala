@@ -13,7 +13,6 @@ import utils._
 import archives._
 import syntax._
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.LFX.Subtyping.subtypeJudg
 import info.kwarc.mmt.api.uom.StandardRat
 
 class TheoryState(val parent : DPath, val name : LocalName, val meta : MPath) {
@@ -174,7 +173,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         state.th.deps = (p::state.th.deps).distinct
         log("FAIL: " + state.th.name + " depends on " + state.th.deps)
         //sys.exit
-        MissingDependency(state.th.deps.map(LogicalDependency),List(LogicalDependency(state.th.path)))
+        MissingDependency(state.th.deps.map(LogicalDependency),List(LogicalDependency(state.th.path)),state.th.deps.map(LogicalDependency))
       case t : Exception =>
         log("Exception: " + t.getMessage)
         t.printStackTrace()
@@ -437,7 +436,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         ), None, None)
         state.th add c
         state.th add Constant(state.th.toTerm, state.newName(id.getOrElse("INTERNAL_Assumption")), Nil,
-          Some(state.bind(subtypeJudg(PVSTheory.expr(subtp), PVSTheory.expr(suptp)))),
+          Some(state.bind(LFX.subtypeJudg(PVSTheory.expr(subtp), PVSTheory.expr(suptp)))),
           Some(state.bind(PVSTheory.subtpissubtype(subtp, suptp, c.path))), Some("Assumption"))
 
       case type_from_decl(ChainedDecl(NamedDecl(id, _, _), _, _), nonempty, tp) =>
@@ -450,7 +449,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           Some(state.bind(PVSTheory.subtpjudg(OMS(c.path), realtp))), None, Some("Assumption"))
         state.th add d
         state.th add Constant(state.th.toTerm, state.newName("INTERNAL_Assumption"), Nil,
-          Some(state.bind(subtypeJudg(PVSTheory.expr(OMS(c.path)), PVSTheory.expr(realtp)))),
+          Some(state.bind(LFX.subtypeJudg(PVSTheory.expr(OMS(c.path)), PVSTheory.expr(realtp)))),
           Some(state.bind(PVSTheory.subtpissubtype(OMS(c.path), realtp, d.path))), Some("Assumption"))
         state.th add Constant(state.th.toTerm, state.newName(id + "_pred"), Nil,
           Some(state.bind(PVSTheory.expr(PVSTheory.fun_type(realtp, PVSTheory.bool.term)))), None, Some("Assumption"))

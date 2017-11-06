@@ -34,7 +34,7 @@ class ObjDimension[T] {
  * 
  * @tparam T the type of objects stored; the type bound is not actually needed, but it helps putting sharper bound on some return types  
  */
-trait ObjContainer[T <: Obj] {
+trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
    private var _read     : Option[String] = None
    private val _parsed   = new ObjDimension[T]
    private val _analyzed = new ObjDimension[T]
@@ -88,6 +88,7 @@ trait ObjContainer[T <: Obj] {
    def analyzed_=(t: T): Boolean = {
       analyzed_=(Some(t))
    }
+   def getAnalyzedIfFullyChecked: Option[T]
    /** sets an analyzed value */
    def set(t: T) {
      analyzed = t
@@ -151,7 +152,7 @@ trait ObjContainer[T <: Obj] {
 }
 
 /** container for mutable terms */ 
-class TermContainer extends AbstractTermContainer with ObjContainer[Term] {
+class TermContainer extends ObjContainer[Term] with AbstractTermContainer {
    type ThisType = TermContainer
    protected def newEmpty = new TermContainer
    protected def hasSameType(oc: ObjContainer[_]) = oc.isInstanceOf[TermContainer]
@@ -169,6 +170,8 @@ class TermContainer extends AbstractTermContainer with ObjContainer[Term] {
          None
      }
    }
+   /** true if the analyzed part is dirty or a previous check did not succeed */
+   def checkNeeded = getAnalyzedIfFullyChecked.isDefined
 }
 
 /** helper object */
@@ -197,10 +200,17 @@ object TermContainer {
    }
 }
 
-/** container for mutable contexts */ 
-class ContextContainer extends AbstractObjectContainer with ObjContainer[Context] {
+/** container for mutable contexts */
+// contrary to a TermContainer, a ContextContainer stores unknown and free variables separately
+class ContextContainer extends ObjContainer[Context] {
    var unknowns = Context.empty
    var free = Context.empty
+   def getAnalyzedIfFullyChecked = {
+     if (unknowns.isEmpty && free.isEmpty)
+       analyzed
+     else
+       None
+   }
 
    type ThisType = ContextContainer
    protected def newEmpty = new ContextContainer
@@ -218,6 +228,11 @@ object ContextContainer {
      val cc = new ContextContainer
      cc.analyzed = c
      cc
+   }
+   def apply(s: String): ContextContainer = {
+      val tc = new ContextContainer
+      tc.read = s
+      tc
    }
 
 }

@@ -53,6 +53,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       val (context,env) = prepareCheck(e)
       e match {
         case ce: ContainerElement[_] => checkElementBegin(context, ce)(env)
+        case ne: NestedModule => applyElementBegin(ne.module)
         case _ => check(context, e, streamed = true)(env)
       }
     }
@@ -71,11 +72,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val rules = RuleSet.collectRules(controller,Context.empty)
     implicit val env = new ExtendedCheckingEnvironment(ce, objectChecker, rules, th.path)
     implicit val task = ce.task
-    checkContext(Context.empty, getExtraInnerContext(th))
+    checkContext(Context.empty, controller.getExtraInnerContext(th))
   }
 
   private def prepareCheck(e: StructuralElement)(implicit ce: CheckingEnvironment): (Context, ExtendedCheckingEnvironment) = {
-    val context = getContext(e)
+    val context = controller.getContext(e)
     val rules = RuleSet.collectRules(controller, context)
     val env = new ExtendedCheckingEnvironment(ce, objectChecker, rules, e.path)
     (context, env)
@@ -87,46 +88,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
      val envI = env.copy(rules = rulesI)
      (contextI, envI)
   }
-  
-  /** computes the context in which an element must be checked
-   *  during top-down traversal, this method allows checking to start in the middle
-   */
-  private def getContext(e: StructuralElement): Context = {
-    lazy val parent = controller.get(e.parent)
-    e match {
-      case d: NarrativeElement => d.parentOpt match {
-        case None => d match {
-          case d: Document => d.contentAncestor match {
-            case None => Context.empty
-            case Some(m) => getContextWithInner(m)
-          }
-          case _ => Context.empty
-        }
-        case Some(p) => getContext(parent)
-      }
-      case m: Module => m.superModule match {
-        case None => Context.empty
-        case Some(smP) => controller.get(smP) match {
-          case sm: DeclaredModule => getContextWithInner(sm)
-          case sm: DefinedModule => getContext(m) // should never occur
-        }
-      }
-      case d: Declaration =>
-        parent match {
-          case ce: ContainerElement[_] => getContextWithInner(ce)
-          case dd: DerivedDeclaration =>
-             val contOpt = extman.get(classOf[StructuralFeature], dd.feature).map(_.getInnerContext(dd))
-             getContext(dd) ++ contOpt.getOrElse(Context.empty)
-          case nm: NestedModule => nm.module match {
-            case ce: ContainerElement[_] => getContextWithInner(ce)
-          }
-        }
-    }
-  }
-  /** auxiliary method of getContext, returns the context in which the body of ContainerElement is checked */
-  private def getContextWithInner(e: ContainerElement[_]) = getContext(e) ++ getExtraInnerContext(e)
-  
-  
+ 
   /**
     * @param context all variables and theories that may be used in e (including the theory in which is declared)
     * @param e       the element to check
@@ -148,7 +110,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           UncheckedElement.set(d)
         }
         // check children
-        val additionalContext = checkContext(context, getExtraInnerContext(c))
+        val additionalContext = checkContext(context, controller.getExtraInnerContext(c))
         val (contextI, envI) = prepareCheckExtendContext(context, env, additionalContext)
         logGroup {
           tDecls foreach {d =>
@@ -349,11 +311,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   /** determines which dimension of a term (parsed, analyzed, or neither) is checked */
   private def getTermToCheck(tc: TermContainer, dim: String) = {
     if (tc.parsed.isDefined && tc.analyzed.isDefined) {
-      if (tc.isAnalyzedDirty) {
-        log(s"re-checking dirty $dim")
+      if (tc.checkNeeded) {
+        log(s"re-checking dirty or ill-formed $dim")
         tc.parsed
       } else {
-        log(s"skipping $dim (not dirty)")
+        log(s"skipping $dim (uptodate and well-formed)")
         None
       }
     } else {
@@ -367,13 +329,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   }
 
   // ***** ContainerElements *****
-  
-  /** additional context for checking the body of ContainerElement */
-  private def getExtraInnerContext(e: ContainerElement[_]) = e match {
-    case d: Document => Context.empty
-    case m: DeclaredModule => m.getInnerContext
-    case s: DeclaredStructure => Context.empty
-  }
   
   /** auxiliary method of check */
   private def checkElementBegin(context : Context, e : ContainerElement[_<: StructuralElement])(implicit env: ExtendedCheckingEnvironment) {
@@ -395,6 +350,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case v: DeclaredView =>
         checkTheory(context, v.from)
         checkTheory(context, v.to)
+        controller.simplifier(v)
       case s: DeclaredStructure =>
         checkTheory(context, s.from)
       case _ =>
@@ -408,7 +364,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     e match {
       case d: Document =>
       case t: DeclaredTheory =>
-        val (contextI, envI) = prepareCheckExtendContext(context, env, getExtraInnerContext(t))
+        val (contextI, envI) = prepareCheckExtendContext(context, env, controller.getExtraInnerContext(t))
         // check all the narrative structure (at the end to allow forward references)
         //TODO currently this is called on a NestedModule before the rest of the parent is checked
         def doDoc(ne: NarrativeElement) {
@@ -421,12 +377,34 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
         doDoc(t.asDocument)
       case v: DeclaredView =>
-        //TODO totality check
+        val istotal = isTotal(context,v)
+        if (!(v.istotal contains false) && istotal.nonEmpty) {
+          v.istotal = Some(false)
+          env.errorCont(
+            SourceError(v.name.toString, SourceRef.get(v).get, "View is not total!",istotal.map(_.toString), Level.Warning)
+          )
+        } else if (v.istotal.isEmpty) v.istotal = Some(true)
+        // TODO totality check
       case s: DeclaredStructure =>
       case _ =>
         //succeed for everything else but signal error
         logError("unchecked " + e.path)
     }
+  }
+
+  private def isTotal(context : Context, view : DeclaredView, currentincl : Option[Term] = None) : List[GlobalName] = {
+    val dom = controller.simplifier.materialize(context,currentincl.getOrElse(view.from),true,None).asInstanceOf[DeclaredTheory]
+    controller.simplifier(dom)
+    val consts = dom.getConstants.collect{
+      case c : Constant if !view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name) => c.path
+    }
+    val incls = dom.getIncludesWithoutMeta.view.filterNot(from =>
+      view.getDeclarations.exists(d => d.name == LocalName(from))).filterNot(from =>
+      controller.library.getImplicit(OMMOD(from),view.to).isDefined).flatMap{
+      case from =>
+        isTotal(context,view,Some(OMMOD(from)))
+    }
+    (consts ::: incls.toList).distinct
   }
 
   // *****
@@ -450,6 +428,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       val thy = dec match {
         case t: Module => t
         case nm: NestedModule => nm.module
+        case _ =>
+          env.errorCont(InvalidObject(t, "not a module: " + controller.presenter.asString(t)))
       }
       thy match {
         case thy: Theory =>

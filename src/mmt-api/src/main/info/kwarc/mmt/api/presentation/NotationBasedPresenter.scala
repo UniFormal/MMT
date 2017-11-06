@@ -22,7 +22,7 @@ case class VarData(decl : VarDecl, binder : Option[GlobalName], declpos : Positi
 }
 
 case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: List[(String,String)],
-      source: Option[SourceRef], pos : Position, context : List[VarData], style: Option[PresentationContext => String]) {
+      source: Option[SourceRef], pos : Position, globalContext: Context, context : List[VarData], style: Option[PresentationContext => String]) {
    /** the output stream to print into */
    def out(s: String) {rh(s)}
    /** convenience method to change the position field */
@@ -31,11 +31,7 @@ case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: 
    def child(p: Position) = copy(pos = pos / p)
    /** the MMT context of the presented object */
    def getContext: Context = {
-      val ownerCon: Context = owner match {
-         case Some(CPath(cp: ContentPath,_)) => IncludeVarDecl(cp.module,Nil)
-         case _ => Nil
-      }
-      ownerCon ++ context.map(_.decl)
+      globalContext ++ context.map(_.decl)
    }
    /** convenience method to append to the context */
    def addCon(con: List[VarData]) = copy(context = context ::: con)
@@ -55,6 +51,41 @@ case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: 
  * The latter will confuse the NotationBasedParser, but rarely humans.
  */
 class NotationBasedPresenter extends ObjectPresenter {
+
+  def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) = {
+      implicit val pc = preparePresentation(o, origin)
+      doToplevel(o) {
+         recurse(o)
+      }
+  }
+
+  /** called once at the beginning of each presentation, override as needed */
+  protected def preparePresentation(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) = {
+      origin.map(_.parent).foreach {
+        case p: ContentPath => controller.simplifier(p.module)
+        case _ =>
+      }
+      val globalCont = origin match {
+        case None => Context.empty  
+        case Some(cp) => controller.getO(cp.parent) match {
+           case None =>
+             Context.empty
+           case Some(se) =>
+             val c1 = controller.getContext(se)
+             val c2 = se.getComponentContext(cp.component)
+             c1 ++ c2
+        }
+      }
+      PresentationContext(rh, origin, Nil, None, Position.Init, globalCont, Nil, None)
+  }
+  
+   /**
+    * called once at the toplevel of every object to be rendered
+    */
+   def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
+      body
+   }
+
    /**
     * called by doDefaultTerm to render symbols
     * 
@@ -118,11 +149,31 @@ class NotationBasedPresenter extends ObjectPresenter {
       Range(0,level).foreach {_ => pc.out(" ")}
    }
 
-   /**
-    * called once at the toplevel of every object to be rendered
-    */
-   def doToplevel(body: => Unit)(implicit pc: PresentationContext) {
-      body
+   /** default treatment of complex terms */
+   def doComplex(op: GlobalName, subs: Substitution, con: Context, args: List[Term])(implicit pc: PresentationContext) {
+       val vardata = con.map {v => VarData(v, Some(op), pc.pos)}
+       doBracketedGroup {
+          doIdentifier(op)
+          subs.zipWithIndex.foreach {case (s,i) =>
+             recurse(s)(pc.child(i+1))
+          }
+          doSpace(1)
+          if (! con.isEmpty) {
+             doOperator("[")
+             con.zipWithIndex.foreach {case (v,i) =>
+                recurse(v)(pc.child(subs.length+i+1).addCon(vardata.take(i)))
+                if (i < con.length-1) {
+                  doOperator(",")
+                  doSpace(1)
+                }
+             }
+             doOperator("]")
+          }
+          args.zipWithIndex.foreach {case (t,i) =>
+             doSpace(1)
+             recurse(t)(pc.child(subs.length+con.length+i+1).addCon(vardata))
+          }
+       }
    }
 
    /**
@@ -348,30 +399,8 @@ class NotationBasedPresenter extends ObjectPresenter {
          doLiteral(l)
          -1
       case ComplexTerm(op, subs, con, args) =>
-         val vardata = con.map {v => VarData(v, Some(op), pc.pos)}
-         doBracketedGroup {
-            doIdentifier(op)
-            subs.zipWithIndex.foreach {case (s,i) =>
-               recurse(s)(pc.child(i+1))
-            }
-            doSpace(1)
-            if (! con.isEmpty) {
-               doOperator("[")
-               con.zipWithIndex.foreach {case (v,i) =>
-                  recurse(v)(pc.child(subs.length+i+1).addCon(vardata.take(i)))
-                  if (i < con.length-1) {
-                    doOperator(",")
-                    doSpace(1)
-                  }
-               }
-               doOperator("]")
-            }
-            args.zipWithIndex.foreach {case (t,i) =>
-               doSpace(1)
-               recurse(t)(pc.child(subs.length+con.length+i+1).addCon(vardata))
-            }
-         }
-         1
+        doComplex(op, subs, con, args)
+        1
       case OMA(f,args) =>
          // only applies in unusual cases where f is not atomic
          doBracketedGroup {
@@ -429,23 +458,24 @@ class NotationBasedPresenter extends ObjectPresenter {
          if (named)
            doVariable(n)
          tp foreach {t =>
+            val doIt = () => {
+              if (named) doOperator(":")
+              recurse(t, noBrackets)(pc.child(0))
+            }
             if (metadata.TagInferredType.get(o)) {
-               doInferredType {
-                  if (named) doOperator(":")
-                  recurse(t, noBrackets)(pc.child(1))
-               }
+               doInferredType {doIt()}
             } else {
-               if (named) doOperator(":")
-               recurse(t, noBrackets)(pc.child(1))
+              doIt()
             }
          }
          df foreach {d =>
+            val index = if (tp.isDefined) 1 else 0
             doOperator("=")
-            recurse(d, noBrackets)(pc.child(2))
+            recurse(d, noBrackets)(pc.child(index))
          }
          not foreach {n =>
             doOperator("#")
-            doOperator(n.toString) //TODO make nicer
+            doOperator(n.toText) //TODO make nicer
          }
          -1
       case Sub(n,t) =>
@@ -453,39 +483,32 @@ class NotationBasedPresenter extends ObjectPresenter {
             doVariable(n)
             doOperator("=")
          }
-         recurse(t, noBrackets)
+         recurse(t, noBrackets)(pc.child(0))
          -1
       case c: Context =>
          if (! c.isEmpty) {
-            c.init.foreach {v =>
-               recurse(v, noBrackets)
+            val declInd = c.zipWithIndex
+            declInd.init.foreach {case (v,i) =>
+               recurse(v, noBrackets)(pc.child(i))
                doOperator(",")
                doSpace(1)
             }
-            recurse(c.last, noBrackets)
+            val (last, n) = declInd.last
+            recurse(last, noBrackets)(pc.child(n))
          }
          -1
       case s: Substitution =>
          if (! s.isEmpty) {
-            s.init.foreach {c =>
-               recurse(c, noBrackets)
+            val declInd = s.zipWithIndex
+            declInd.init.foreach {case (s,i) =>
+               recurse(s, noBrackets)(pc.child(i))
                doOperator(",")
                doSpace(1)
             }
-            recurse(s.last, noBrackets)
+            val (last, n) = declInd.last
+            recurse(last, noBrackets)(pc.child(n))
          }
          -1
-   }
-
-   def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
-      origin.map(_.parent).foreach {
-        case p: ContentPath => controller.simplifier(p.module)
-        case _ =>
-      }
-      implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, None)
-      doToplevel {
-         recurse(o)
-      }
    }
 
    /** abbreviation for not bracketing */
@@ -630,7 +653,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                         val compFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[ArgumentMarker]
                         //val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
                         current match {
-                           case c : Arg =>
+                           case c: Arg =>
                               val child = if (c.number < firstArgNumber) subargs(c.number-1) else args(c.number-firstArgNumber)
                               doChild(c, child, currentPosition)
                               if (compFollows) doSpace(1)

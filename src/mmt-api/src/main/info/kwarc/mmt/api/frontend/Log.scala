@@ -221,12 +221,20 @@ class TextFileHandler(filename: File, timestamps: Boolean) extends FileHandler(f
 class HtmlFileHandler(filename: File) extends FileHandler(filename) {
   override def init {
     super.init
-    val script = """<script type="text/javascript" src="script.js"></script>"""
+    val scrfile = filename.up / "logaux" / "script.js"
+    val jqfile = filename.up / "logaux" / "jquery.js"
+    val cssfile = filename.up / "logaux" / "style.css"
+
+    if (!scrfile.exists) File.write(scrfile,MMTSystem.getResourceAsString("/log-html/script.js"))
+    if (!jqfile.exists) File.write(jqfile,MMTSystem.getResourceAsString("/mmt-web/script/jquery/jquery.js"))
+    if (!cssfile.exists) File.write(cssfile,MMTSystem.getResourceAsString("/log-html/style.css"))
+
+    val script = """<script type="text/javascript" src="logaux/script.js"></script>"""
     val jquery = "<script type=\"text/javascript\" src=" +
-      "\"https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/jquery/jquery.js\"></script>"
-    val css = """<link rel="stylesheet" type="text/css" href="style.css"></link>"""
-    val pref = """<?xml version="1.0" encoding="UTF-8"?>"""
-    file.println(s"$pref\n<html>\n$jquery$script$css<body>\n")
+      "\"logaux/jquery.js\"></script>"
+    val css = """<link rel="stylesheet" type="text/css" href="logaux/style.css"></link>"""
+    val pref = """<!DOCTYPE html><html><head><meta charset="UTF-8">"""
+    file.println(s"$pref\n$jquery$script$css</head><body>\n")
   }
 
   def apply(ind: Int, caller: => String, group: String, msgParts: List[String]) {
