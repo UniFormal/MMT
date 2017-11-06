@@ -51,7 +51,7 @@ object TokenList {
     // lexing state
     var i = first // position of next Char in s
     var current = "" // previously read prefix of the current Token
-    var connect = false // current.last.getType == CONNECTOR_PUNCTUATION
+    var connect = false // true if the next character is definitely part of the current token
     var skipEscaped = 0 //number of characters to skip, normally 0
     var whitespace = true //there was a whitespace before the current Token
     var tokens: List[TokenListElem] = Nil // Token's found so far in reverse order
@@ -96,6 +96,11 @@ object TokenList {
               current += c
             // connectors are remembered
             case _ if isConnector(c) =>
+              current += c
+              connect = true
+            // Java stores unicode code points above FFFF as 2 characters, the first of which is in a certain range
+            // consequently, source references also count them as 2 characters
+            case _ if '\uD800' < c && c < '\uDBFF' =>
               current += c
               connect = true
             // everything else:

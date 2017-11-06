@@ -141,6 +141,11 @@ lazy val api = (project in file("mmt-api")).
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-reflect.jar",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
     unmanagedJars in Compile += Utils.deploy.toJava / "lib" / "scala-xml.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "tiscaf.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-compiler.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-reflect.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-parser-combinators.jar",
+    unmanagedJars in Test += Utils.deploy.toJava / "lib" / "scala-xml.jar",
     libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.11.0-M4" % "test",
     libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.11.0-M4" % "test",
     libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.11.0-M4" % "test"
@@ -243,6 +248,10 @@ lazy val planetary = (project in file("planetary-mmt")).
   dependsOn(stex).
   settings(mmtProjectsSettings("planetary-mmt"): _*)
 
+lazy val interviews = (project in file("mmt-interviews")).
+  dependsOn(api,lf).
+  settings(mmtProjectsSettings("mmt-interviews"): _*)
+
 lazy val latex = (project in file("latex-mmt")).
   dependsOn(stex).
   settings(mmtProjectsSettings("latex-mmt"): _*)
@@ -272,7 +281,7 @@ lazy val repl = (project in file("mmt-repl")).
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
 lazy val mmt = (project in file("fatjar")).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, interviews).
   settings(mmtProjectsSettings("fatjar"): _*).
   settings(
     exportJars := false,

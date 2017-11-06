@@ -1,9 +1,9 @@
 package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api._
+import utils._
 
 import java.io.InputStream
-import java.net.Authenticator.RequestorType
 
 import tiscaf._
 
@@ -14,38 +14,30 @@ trait TiscafServerImplementation extends HServer with ServerImplementation {
 
   override def name : String = serverName
   override def hostname : String = listenAddress
-
   override def onMessage(s: String): Unit = {
     handleMessage(s)
   }
-
   override def onError(e: Throwable) {
     handleError(e)
   }
-
   // override def writeBufSize = 16 * 1024
   // make this false if you have extremely frequent requests
   override def tcpNoDelay = true
-
   /* it seems tiscaf eagerly closes connections after 20 seconds of inactivity
    * so it can happen that the connections is already closed when we try to send the response
    * so we increase the timeout here 
    */
   override def connectionTimeoutSeconds = 300 
-  
   // prevents tiscaf from creating a "stop" listener
   override def startStopListener = {}
-
   // port to listen to
   protected def ports = Set(listenPort)
-
   // handlers to call
   protected def apps = List(new RequestHandler)
-
+  
   protected class RequestHandler extends HApp {
     //override def buffered = true
     override def chunked = true
-
     // Session tracking config
     override def sessionTimeoutMinutes = 60
     override def tracking = HTracking.Cookie

@@ -3,6 +3,7 @@ package info.kwarc.mmt.api
 import modules._
 import presentation._
 import symbols._
+import objects._
 import documents._
 import opaque._
 
@@ -30,6 +31,12 @@ trait StructuralElement extends Content with NamedElement {
 
   /** returns a specific component if present */
   def getComponent(k: ComponentKey) = getComponents find (_.key == k) map (_.value)
+  
+  /** like getComponent but returns the additional context (in addition to the context of the element) of the component,
+   *  empty by default, override as needed
+   *  unspecified if the component does not exist
+   */
+  def getComponentContext(k: ComponentKey) = Context.empty
 
   /** If a StructuralElement has been generated (as opposed to being physically present in the document),
     * this gives its origin.

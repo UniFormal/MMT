@@ -19,7 +19,7 @@ object GenericScalaExporter {
     if (keywords.contains(s))
       "`" + s + "`"
     else if (reserved.contains(s))
-      "N" + s
+      "_" + s
     else escapeChars(s)
   }
 
@@ -32,7 +32,7 @@ object GenericScalaExporter {
     
   def nameToScalaQ(p: GlobalName) = (p.module.name.toPath + "_" + escapeChars(p.name.toPath)).replace(".", "__")
 
-  def nameInScala(p: GlobalName) = (p.module.name.toPath).replace(".", "__") + "." + escapeChars(p.name.toPath) + ".path"
+  def nameInScala(p: GlobalName) = (p.module.name.toPath).replace(".", "__") + "." + nameToScala(p.name) + ".path"
 
   def nameToScala(l: LocalName) = escape(l.toPath.replace("/", "."))
 
@@ -96,10 +96,11 @@ object GenericScalaExporter {
     def tupleType = if (args.length == 0) "Unit" else if (args.length == 1) types.head else types.mkString("(", ", ", ")") 
   }
   /** produces Scala source for apply/unapply methods
-   *  @param args the arguments
-   *  @param mmtTerm maps a list l of argument names (l.length == args.length) to a term
+   *  @param first the variables
+   *  @param second the arguments
    */
   abstract class Operator(first: ArgumentList, second: ArgumentList) {
+    /** maps a list l of argument names (l.length == args.length) to a term */
     def mmtTerm(a1: List[String], a2: List[String]): String
     
     def combined = first+second

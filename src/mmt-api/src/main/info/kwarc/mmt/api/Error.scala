@@ -241,7 +241,12 @@ abstract class ErrorHandler {
     assumeNoErrors = true
   }
 
-  /** true if errors occurred since creation */
+  def reset = {
+    newErrors = false
+    assumeNoErrors = true
+  }
+
+  /** true if errors occurred since ~creation~ last reset */
   def hasNewErrors: Boolean = newErrors
 
   /** true if no new errors occurred since the last call to mark */
@@ -252,8 +257,10 @@ abstract class ErrorHandler {
     * This should be called exactly once on every error, usually in the order in which they are found.
     */
   def apply(e: Error) {
-    newErrors = true
-    assumeNoErrors = false
+    if (e.level > 1) {
+      newErrors = true
+      assumeNoErrors = false
+    }
     addError(e)
   }
 
@@ -323,9 +330,11 @@ class ErrorContainer(report: Option[frontend.Report]) extends ErrorHandler {
 
   def isEmpty: Boolean = errors.isEmpty
 
-  def reset() {
+  override def reset() {
     errors = Nil
+    super.reset
   }
+
 
   def getErrors: List[Error] = errors.reverse
 }

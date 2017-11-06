@@ -50,7 +50,10 @@ abstract class OpaqueElementInterpreter extends FormatBasedExtension {
       
    /** the format of [[OpaqueElement]]s this can interpret */
    def format : String
-   def isApplicable(f: String) = f == format
+   /** aliases for the format that can be used in concrete syntax, override as needed */
+   def formatAlias: List[String] = Nil
+   
+   def isApplicable(f: String) = (format::formatAlias) contains f
    
    /**
     * Casts an opaque element to type OE.

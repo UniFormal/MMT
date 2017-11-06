@@ -63,7 +63,12 @@ trait StructureChecker extends FormatBasedExtension {
 object NullChecker {
    class Objects extends ObjectChecker {
       def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) = {
-         CheckingResult(false, None, cu.judgement.wfo)
+        val tm = cu.judgement.wfo match {
+           case t: Term => t
+           case c: Context => Context.AsTerm(c)
+           case _ => throw ImplementationError("cannot check this object")
+        }
+        CheckingResult(false, None, tm)
       }
    }
    class Structure extends Checker(new Objects) {

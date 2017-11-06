@@ -11,6 +11,15 @@ import backend._
 import ontology._
 import objects._
 
+/** the result of parsing and/or evaluation an action */
+sealed abstract class ActionResult
+case class ActionResultOK() extends ActionResult
+sealed abstract class ActionResultError extends ActionResult {
+  def error: Error
+}
+case class ActionParsingError(error: ParseError) extends ActionResultError
+case class ActionExecutionError(error : Error) extends ActionResultError
+
 /** an auxiliary class to split the [[Controller]] class into multiple files */
 trait ActionHandling {self: Controller =>
 
@@ -22,20 +31,14 @@ trait ActionHandling {self: Controller =>
 
   // some actions are defined in separate methods below
 
-  /** executes a string command */
-  def handleLine(l: String, showLog: Boolean = true) {
-    try {
-      val act = Action.parseAct(l, getBase, getHome)
-      handle(act, showLog)
-    } catch {
-      case e: Error =>
-        log(e)
-    }
-    report.flush
-  }
-
   /** the name of the current action definition (if any) */
   def currentActionDefinition : Option[String] = state.currentActionDefinition.map(_.name)
+
+  /** executes a string command */
+  def handleLine(l: String, showLog: Boolean = true) {
+    val act = Action.parseAct(l, getBase, getHome)
+    handle(act, showLog)
+  }
 
   /** executes an Action */
   def handle(act: Action, showLog: Boolean = true) {
@@ -203,6 +206,26 @@ trait ActionHandling {self: Controller =>
           if (targets.contains(exp) || foundChanged || targets.isEmpty) archiveBuildAction(List(a.id), exp, mod, EmptyPath)
         }
       }
+    }
+  }
+
+  /** executes an Action without throwing exceptions */
+  def tryHandleLine(l: String, showLog: Boolean = true): ActionResult = {
+    // parse and run the line
+    val act = try {
+      Action.parseAct(l, getBase, getHome)
+    } catch {
+      case pe: ParseError => return ActionParsingError(pe)
+    }
+    tryHandle(act, showLog)
+  }
+  /** executes an Action without throwing exceptions */
+  def tryHandle(act: Action, showLog: Boolean = true): ActionResult = {
+    try {
+      handle(act, showLog)
+      ActionResultOK()
+    } catch {
+      case e: Error => ActionExecutionError(e)
     }
   }
 

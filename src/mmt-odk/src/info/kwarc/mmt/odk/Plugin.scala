@@ -6,14 +6,16 @@ import objects._
 import uom._
 import utils._
 import info.kwarc.mmt.lf._
+import info.kwarc.mmt.odk.Singular.SingularImporter
 
-class Plugin extends frontend.Plugin {
+class Plugin extends frontend.Extension {
   val theory = Math.path
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
     controller.extman.addExtension(new LMFDB.Plugin)
     controller.extman.addExtension(new GAP.Plugin)
     controller.extman.addExtension(new Sage.Plugin)
+    controller.extman.addExtension(new SingularImporter)
     controller.extman.addExtension(new activecomp.Plugin)
     controller.extman.addExtension(new ODKGraph)
   }

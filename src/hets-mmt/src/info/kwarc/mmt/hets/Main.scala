@@ -70,7 +70,7 @@ object Main {
 //         controller.handleLine("archive mmt source-structure")                 
 //         controller.handleLine("archive add /home/aivaras/TPTP/MMT/urtheories")
 //         controller.handleLine("archive add /home/aivaras/TPTP/MMT/test")
-         controller.handleLine("file /home/aivaras/TPTP/test/hets.msl")
+         controller.handleLine("file /home/aivaras/TPTP/test/hets.msl").throwErrorIfAny()
          
          val fl = File(new java.io.File(filename))
          if (!(new java.io.File(filename).exists())) {

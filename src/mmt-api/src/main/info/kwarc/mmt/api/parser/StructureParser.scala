@@ -293,13 +293,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     tc.parsed = pr.toTerm
   }
 
-  private val contextRule = ParsingRule(utils.mmt.context, Nil, TextNotation.fromMarkers(Precedence.integer(0), None)(Var(1, true, Some(Delim(",")))))
   /** like doComponent, but expects to find a context (using contextRule notation) */
   private def doContextComponent(cc: ContextContainer, context: Context)(implicit state: ParserState) {
-    val (obj, reg, pr) = readParsedObject(context, Some(contextRule))
+    val (obj, reg, pr) = readParsedObject(context, Some(Context.parsingRule))
     cc.read = obj
     val cont: Context = pr.term match {
-      case OMBINDC(OMS(utils.mmt.context), cont, Nil) =>
+      case Context.AsTerm(cont) =>
         cont
       case _ =>
         errorCont(makeError(reg, "not a context: " + controller.presenter.asString(pr.toTerm)))
@@ -484,11 +483,19 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               SourceRef.update(incl.from, fromRef) //TODO awkward, same problem for metatheory
               addDeclaration(incl)
             case link: DeclaredLink =>
+              //TODO this should parse an entire morphism expression (but we can't parse those yet)
+              //TODO the 'from' theory should be optional (but ViewInclude currently requires it)
               val (fromRef, from) = readMPath(link.path)
               readDelimiter("=")
-              val (inclRef, incl) = readMPath(link.path)
-              //readParsedObject(view.to)
-              val as = PlainViewInclude(link.toTerm, from, incl)
+              val (inclRef, inclp) = readMPath(link.path)
+              val target = controller.getO(inclp) match {
+                case Some(th: DeclaredTheory) =>
+                  // theory id as shortcut for its identity morphism
+                  OMIDENT(OMMOD(th.path))
+                case _ =>
+                  OMMOD(inclp)
+              }
+              val as = ViewInclude(link.toTerm, from, target)
               SourceRef.update(as.from, fromRef)
               SourceRef.update(as.df, inclRef)
               addDeclaration(as)
@@ -752,7 +759,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   protected class Features(val features: List[(String,StructuralFeature)], val patterns: List[(LocalName,(StructuralFeature,DerivedDeclaration))]) {
     def +(f : Features) = new Features((features ::: f.features).distinct,(patterns ::: f.patterns).distinct)
   }
-  protected val noFeatures = new Features(Nil,Nil)
+  val noFeatures = new Features(Nil,Nil)
   
   /** auxiliary function to collect all structural feature rules in a given context */
   protected def getFeatures(mp: MPath): Features = {

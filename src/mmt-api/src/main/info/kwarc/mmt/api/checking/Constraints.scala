@@ -84,8 +84,6 @@ class History(var steps: List[HistoryEntry]) {
    
    override def toString = steps.map(_.toString).mkString("\n")
    
-   
-   
    /**
     * A History produced by the ObjectChecker starts with the ValidationUnit, but the error is only encountered along the way.
     * 

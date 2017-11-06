@@ -7,7 +7,7 @@ import parser._
 /**
  * A RealizedType couples a syntactic type (a [[Term]]) with a semantic type (a PER on the universe of Scala values).
  */
-case class RealizedType(synType: Term, semType: SemanticType) extends uom.UOMRule {
+case class RealizedType(synType: Term, semType: SemanticType) extends uom.UOMRule {self =>
    def head = synType.head match {
       case Some(h: GlobalName) => h
       case _ => throw ImplementationError("syntactic type must have head")
@@ -43,7 +43,13 @@ case class RealizedType(synType: Term, semType: SemanticType) extends uom.UOMRul
       of(sP)
    }
    /** @return the lexer extension to be used by the lexer, defined in terms of the LexFunction lex */
-   def lexerExtension = semType.lex map {case l => new LexParseExtension(l, new LiteralParser(this))} 
+   def lexerExtension = semType.lex map {l =>
+     val p = new LiteralParser(self)
+     new LexParseExtension(l, p) {
+        override def toString = "rule LexParseExtension " + semType.toString
+        override val priority = self.priority // reusing priority of this rule for the associated lexing rule
+     }
+   }
 }
 
 class RepresentedRealizedType[V](synType: Term, override val semType: RSemanticType[V]) extends RealizedType(synType,semType) {
