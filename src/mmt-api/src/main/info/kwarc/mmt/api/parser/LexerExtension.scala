@@ -174,7 +174,8 @@ class LexParseExtension(lc: LexFunction, pc: ParseFunction) extends LexerExtensi
  * 
  * It's not allowed that both parameters are true.
  */
-class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean) extends LexFunction {
+class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean, floatRequired : Boolean = false) extends LexFunction {
+  /*
   def applicable(s: String, i: Int) = {
      val previousOK = if (i == 0)
         true
@@ -183,6 +184,28 @@ class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean) extend
         ! previous.isLetter && ! (previous.getType == java.lang.Character.CONNECTOR_PUNCTUATION)
      }
      s(i).isDigit && previousOK
+  }
+  */
+  def applicable(s: String, i: Int): Boolean = {
+    val previousOK = if (i == 0)
+      true
+    else {
+      val previous = s(i-1)
+      ! previous.isLetter && ! (previous.getType == java.lang.Character.CONNECTOR_PUNCTUATION)
+    }
+    val isnumber = s(i).isDigit && previousOK
+    if (isnumber && floatRequired) {
+      var j = i
+      var containsperiod = false
+      while(j < s.length && (s(j).isDigit || s(j) == '.')) {
+        if (s(j) == '.') {
+          containsperiod = true
+          j = s.length
+        }
+        j += 1
+      }
+      containsperiod
+    } else isnumber
   }
   def apply(s: String, index: Int) = {
      var i = index
