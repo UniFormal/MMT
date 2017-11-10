@@ -581,10 +581,11 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
           case d: DeclaredTheory =>
             d.getDeclarations
           case _ => Nil //TODO materialize?
-      case (OMMOD(from),OMINST(OMMOD(from2),args)) if from == from2 =>
+        }
+      case (OMMOD(from), OMINST(OMMOD(from2), args)) if from == from2 =>
         get(from) match {
           case d: DeclaredTheory =>
-            d.getDeclarations.map(c => getDeclarationInTerm(OMPMOD(from,args),c.name,s => throw GetError(s)))
+            d.getDeclarations.map(c => getDeclarationInTerm(OMPMOD(from, args), c.name, s => throw GetError(s)))
           case _ => Nil //TODO materialize?
         }
     }
