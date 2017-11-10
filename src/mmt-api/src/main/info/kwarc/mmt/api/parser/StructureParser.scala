@@ -13,6 +13,8 @@ import patterns._
 import symbols._
 import utils._
 
+import scala.util.Try
+
 /**
  * This class bundles all state that is maintained by a [[StructureParser]]
  *
@@ -308,6 +310,15 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     cc.unknowns = pr.unknown
     cc.free = pr.free
   }
+
+  private def doParameterComponent(context : Context)(implicit state: ParserState): List[Term] = {
+    val (obj,reg,pr) = readParsedObject(context,Some(Context.instanceParsingRule))
+    // TODO a) SourceRefs b) Free and unknown variables
+    pr.term match {
+      case Context.ParamsAsTerm(ls) => ls
+      case _ => Nil
+    }
+  }
 /*
     val cont = ParseResult.fromTerm(p) match {
 
@@ -335,8 +346,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         errorCont(makeError(currentSourceRegion, "not a declaration name of the right type: " + name))
         name
       case None =>
-        errorCont(makeError(currentSourceRegion, "unknown or ambiguous name: " + name))
-        name
+        // check whether it's a theory parameter
+        if (Try(controller.getAs(classOf[DeclaredTheory],home.toMPath).parameters).toOption.exists(_.isDeclared(name)))
+          name
+        else {
+          errorCont(makeError(currentSourceRegion, "unknown or ambiguous name: " + name))
+          name
+        }
     }
   }
 
@@ -479,7 +495,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           mod match {
             case thy: DeclaredTheory =>
               val (fromRef, from) = readMPath(thy.path)
-              val incl = PlainInclude(from, thy.path)
+              val incl = if (state.reader.startsWith("(")) {
+                Include(thy.toTerm,from,doParameterComponent(context))
+              } else PlainInclude(from, thy.path)
               SourceRef.update(incl.from, fromRef) //TODO awkward, same problem for metatheory
               addDeclaration(incl)
             case link: DeclaredLink =>

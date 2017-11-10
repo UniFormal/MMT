@@ -429,11 +429,21 @@ object Context {
   private val sym = utils.mmt.context
   /** a typical notation for context: ,-separated bindings */
   val parsingRule = parser.ParsingRule(sym, Nil, TextNotation.fromMarkers(Precedence.integer(0), None)(Var(1, true, Some(Delim(",")))))
+  val instanceParsingRule =
+    parser.ParsingRule(utils.mmt.context,Nil,TextNotation.fromMarkers(Precedence.integer(0),None)(
+      Delim("("),SimpSeqArg(1,Delim(","),CommonMarkerProperties.noProps),Delim(")")))
   /** helper functions to temporarily turn a context into a term, e.g., for checking contexts */
   object AsTerm {
     def apply(c: Context) = OMBINDC(OMS(sym), c, Nil)
     def unapply(t: Term) = t match {
       case OMBINDC(OMS(Context.sym), c, Nil) => Some(c)
+      case _ => None
+    }
+  }
+  object ParamsAsTerm {
+    def apply(t : Term*) = OMA(OMS(sym),t.toList)
+    def unapply(t : Term) = t match {
+      case OMA(OMS(`sym`),args) => Some(args)
       case _ => None
     }
   }

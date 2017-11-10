@@ -76,7 +76,12 @@ class UniqueGraph extends LabeledHashRelation[Term,Term] {
            else
               throw AlreadyDefined(from, to, current.get, morphN)
       }
-      super.update(fromN, toN, morphN)
+      (fromN,toN) match { // TODO experimental!!
+         case (OMPMOD(fr,args),OMMOD(t)) if args.nonEmpty =>
+            super.update(OMMOD(fr),toN,OMINST(OMMOD(fr),args:_*))
+         case _ =>
+            super.update(fromN, toN, morphN)
+      }
    }
 }
 

@@ -59,7 +59,7 @@ object Morph {
     val mS = OMCOMP(associateComposition(m))
     mS match {
       case OMMOD(p) => OMMOD(p)
-      case OMS(p) =>
+      case OMS(p) => // TODO dangerous assumption that [mpath] is always a PlainInclude!
         if (p.name.length == 1 && p.name.steps.head.isInstanceOf[ComplexStep])
           OMCOMP()
         else
@@ -193,6 +193,7 @@ object ModExp extends uom.TheoryScala {
   val identity = _path ? "identity"
   val composition = _path ? "composition"
   val morphismapplication = _path ? "morphismapplication"
+  val instantiation = _path ? "theoryinstantiate"
 
   @deprecated("(still used by Twelf)")
   val tunion = _path ? "theory-union"
@@ -386,6 +387,17 @@ object ComplexMorphism {
 
   def unapply(t: Term): Option[Substitution] = t match {
     case ComplexTerm(this.path, sub, Context(), Nil) => Some(sub)
+    case _ => None
+  }
+}
+
+/** An OMINST represents an instantiation of a parametric theory */
+object OMINST {
+  val path = ModExp.instantiation
+
+  def apply(th : Term, pars : Term*) = OMA(OMS(this.path),th :: pars.toList)
+  def unapply(morph : Term) : Option[(Term,List[Term])] = morph match {
+    case OMA(OMS(`path`),th :: args) => Some((th,args))
     case _ => None
   }
 }

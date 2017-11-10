@@ -11,8 +11,10 @@ import objects.Conversions._
  * does not expand in contexts and scopes at the moment  
  */ 
 class DefinitionExpander(controller: frontend.Controller) extends StatelessTraverser {
-   private def expSym(p: GlobalName): Option[Term] = controller.globalLookup.getO(p) match {
-      case Some(c: Constant) => c.dfC.getAnalyzedIfFullyChecked
+   private def expSym(p: GlobalName)(implicit con : Context): Option[Term] =
+      controller.library.get(ComplexTheory(con),LocalName(p.module) / p.name,s => return None) match {
+       // TODO make sure lookup goes through morphisms into the context here
+      case c: Constant => c.dfC.getAnalyzedIfFullyChecked
       case _ => None
    }
    def traverse(t: Term)(implicit con : Context, init: Unit): Term = {

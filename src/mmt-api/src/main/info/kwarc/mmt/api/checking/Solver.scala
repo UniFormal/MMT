@@ -388,19 +388,25 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * returns nothing if the type could not be reconstructed
     */
    def getType(p: GlobalName): Option[Term] = {
-      val c = controller.globalLookup.getConstant(p)
+      val c = getConstant(p)
       val t = c.tpC.getAnalyzedIfFullyChecked
       if (t.isDefined)
         addDependency(p $ TypeComponent)
       t
    }
 
+  private def getConstant(p : GlobalName) : Constant =
+    controller.library.get(ComplexTheory(simplify(constantContext)(Stack.empty,NoHistory)),LocalName(p.module) / p.name,s => throw GetError(s)) match {
+      case c : Constant => c
+      case d => throw GetError("Not a constant: " + d)
+    }
+
    /** retrieves the definiens of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed
     */
    def getDef(p: GlobalName) : Option[Term] = {
-      val c = controller.globalLookup.getConstant(p)
+      val c = getConstant(p)
       val t = c.dfC.getAnalyzedIfFullyChecked
       if (t.isDefined)
         addDependency(p $ DefComponent)
@@ -1018,7 +1024,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           tp2S = tmp2
           rOpt match {
             case Some(rule) =>
-              history += ("applying subtyping rule " + rule.toString)
+              history += ("applying subtyping rule " + rule.toString + " on " + presentObj(tp1S) + " <: " + presentObj(tp2S))
               try {
                 val b = rule(this)(tp1S,tp2S).getOrElse {throw rule.Backtrack("")}
                 return b
@@ -1028,6 +1034,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                   activerules = dropJust(activerules, rule)
               }
             case None =>
+              history += "No rules left; final terms are: " + presentObj(tp1S) + " and " + presentObj(tp2S)
               done = true
               // if (existsActivatable) return delay(Subtyping(stack, tp1S, tp2S), true)
           }

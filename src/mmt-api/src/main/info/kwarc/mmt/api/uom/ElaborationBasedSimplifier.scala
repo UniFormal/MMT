@@ -195,7 +195,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           case _ => Nil
         }
       // plain includes: copy (only) includes
-      case Include(h, from, Nil) =>
+      case Include(h, from, _) => // TODO ?
         val idom = lup.getAs(classOf[Theory], from)
         val dom = idom match {
           case th : DeclaredTheory =>
@@ -406,7 +406,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
          case d: DefinedTheory if expandDefs => materialize(context, d.df, expandDefs, None)
          case d => d
       }
-      /* case OMPMOD(p, args) =>
+      /* case OMPMOD(p, args) => TODO here
          val t = getTheory(p)
          new InstantiatedTheory(t, args) */
       case _ => // create a new theory and return it
