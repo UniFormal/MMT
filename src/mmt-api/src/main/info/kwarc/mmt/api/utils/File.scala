@@ -26,8 +26,8 @@ case class File(toJava: java.io.File) {
   /** makes a file relative to this one */
   def relativize(f: File): File = {
     val relURI = FileURI(this).relativize(FileURI(f))
-    val FileURI(rel) = relURI
-    rel
+    File(relURI.toString()) // java URIs need to be sbolute in Files. Previous variant as well as any other
+      //threw java errors
   }
 
   def canonical = File(toJava.getCanonicalFile)
@@ -159,11 +159,12 @@ object FileURI {
     URI(Some("file"), None, if (ss.headOption.contains("")) ss.tail else ss, f.isAbsolute)
   }
 
-  def unapply(u: URI): Option[File] =
+  def unapply(u: URI): Option[File] = {
     if ((u.scheme.isEmpty || u.scheme.contains("file")) && (u.authority.isEmpty || u.authority.contains("")))
       Some(File(new java.io.File(u.copy(scheme = Some("file"), authority = None))))
     // empty authority makes some Java versions throw error
     else None
+  }
 }
 
 /** MMT's default way to write to files; uses buffering, UTF-8, and \n */
