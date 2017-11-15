@@ -60,7 +60,7 @@ object FilterRelations extends RelationalExtractor {
   }
 }
 
-object GAPGraphExporter extends SimpleRelationGraphExporter("gapgraph", ((Includes | Declares | FilterRelations.Implies)^*) * HasType(IsConstant), List(DependsOn,FilterRelations.Implies)) {
+object GAPGraphExporter extends SimpleRelationGraphExporter("gapgraph", "Gap graph", ((Includes | Declares | FilterRelations.Implies)^*) * HasType(IsConstant), List(DependsOn,FilterRelations.Implies)) {
   override def canHandle(path: Path) = path.doc == GAP._base
 }
 

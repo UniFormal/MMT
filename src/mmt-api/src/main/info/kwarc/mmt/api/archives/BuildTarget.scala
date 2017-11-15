@@ -179,6 +179,8 @@ trait BuildTargetArguments {
 abstract class BuildTarget extends FormatBasedExtension {
   /** a string identifying this build target, used for parsing commands, logging, error messages */
   def key: String
+  
+  override def toString = super.toString + s" with key $key"
 
   def isApplicable(format: String): Boolean = format == key
 

@@ -317,7 +317,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     //queryExtensions
     import ontology._
     List(new Parse, new Infer, new Analyze, new Simplify, new Present, new PresentDecl).foreach(addExtension(_))
-    // graphs
+    // graphs: loading these here is practical even though they need the path to dot (which will be retrieved via getEnvvar) 
     List(new DeclarationTreeExporter, new DependencyGraphExporter, new TheoryGraphExporter).foreach(addExtension(_))
     // shell extensions
     List(new ShellSendCommand, new execution.ShellCommand, new Make).foreach(addExtension(_))

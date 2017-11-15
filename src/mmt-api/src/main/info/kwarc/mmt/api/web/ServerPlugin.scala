@@ -97,42 +97,52 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
    * request.query the [[Path]] for which to retrieve a graph
    */
   def apply(request: ServerRequest): ServerResponse = {
-    // val (nquery,json) = if (query.startsWith("json:")) (query.drop(5),true) else (query,false)
     val path = Path.parse(request.query, controller.getNamespaceMap)
-    val key = request.path.headOption.getOrElse("svg")
-    lazy val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
-      throw LocalError(s"svg file does not exist and exporter $key not available: ${request.query}")
+    val graphkey = request.pathForExtension.headOption.getOrElse("svg")
+    lazy val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], graphkey).getOrElse {
+      throw LocalError(s"svg file does not exist and exporter $graphkey not available: ${request.query}")
     }
-    lazy val se = controller.get(path)
-    /* if (json) {
-      JsonResponse(exp.asJSON(se))
-    } else { */
-      val (exportFolder, relPath) = svgPath(path)
-      val svgFile = exportFolder / key / relPath
-      val node = if (svgFile.exists) {
-        utils.File.read(svgFile.setExtension("svg"))
-      } else {
-        exp.asString(se)
-      }
-      ServerResponse(node, "image/svg+xml")
-    // }
+    val fromFile = path.dropComp match {
+      case _: MPath | _: DPath =>
+        svgPath(path) flatMap {case (exportFolder, relPath) => 
+          val svgFile = exportFolder / graphkey / relPath
+          if (svgFile.exists) {
+            val svg = utils.File.read(svgFile.setExtension("svg"))
+            Some(svg)
+          } else
+            None
+        }
+      case _ =>
+        None
+    }
+    val svg = fromFile getOrElse {
+      val se = controller.get(path)
+      exp.asString(se)
+    }
+    ServerResponse(svg, "image/svg+xml")
   }
   
   import Javascript._
   import MMTJavascript._
   def getEntries(path: Path) = {
-    val (exportFolder, relPath) = svgPath(path)
-    val existingKeys = exportFolder.children.collect {
-      case f if (f/relPath).exists => f.name
+    // all graphs we can build
+    val exporters = controller.extman.get(classOf[RelationGraphExporter]).filter(e => e.canHandle(path))
+    // all additional graphs that have been exported already
+    val existingFiles = svgPath(path) match {
+      case None => Nil
+      case Some((exportFolder, relPath)) =>
+        exportFolder.children.collect {
+          case f if !exporters.exists(e => e.isApplicable(f.name)) && (f/relPath).exists => f.name
+        }
     }
-    val exporterKeys = controller.extman.get(classOf[RelationGraphExporter]).filter(_.canHandle(path)).map(_.key)
-    (existingKeys ::: exporterKeys).distinct.map {key =>
-      ContextMenuEntry("show " + key + " graph", showGraph(key, path.toPath))  
+    val allGraphs = exporters.map(e => (e.key, e.description)) ::: existingFiles.map(k => (k,k)) 
+    allGraphs.map {case (key, description) =>
+      ContextMenuEntry("show " + description, showGraph(key, path.toPath))  
     }
   }
   
   /** @return (d,f) such that d/key/f is the path to the svg file for path exported by key */ 
-  private def svgPath(path: Path): (File, List[String]) = {
+  private def svgPath(path: Path): Option[(File, List[String])] = {
     val (inNarr, newPath) = path.dropComp match {
       // narrative
       case dp: DPath => (true, dp)
@@ -149,12 +159,13 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
     } else {
       val mp = newPath.asInstanceOf[MPath]
       val arch = controller.backend.findOwningArchive(mp).getOrElse {
-        throw LocalError("illegal path: " + path)
+        log("no archive known that contains " + path)
+        return None
       }
       val inPathFile = Archive.MMTPathToContentPath(mp)
       (arch, "content" :: inPathFile)
     }
-    (arch.root / "export", relPath)
+    Some((arch.root / "export", relPath))
   }
 }
 
