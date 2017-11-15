@@ -315,8 +315,10 @@ class ExtensionManager(controller: Controller) extends Logger {
       new web.TreeView, new web.BreadcrumbsServer, new web.ActionServer, new web.ContextMenuAggregator, new web.MessageHandler,
       new web.SubmitCommentServer).foreach(addExtension(_))
     //queryExtensions
-    List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
-      new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
+    import ontology._
+    List(new Parse, new Infer, new Analyze, new Simplify, new Present, new PresentDecl).foreach(addExtension(_))
+    // graphs
+    List(new DeclarationTreeExporter, new DependencyGraphExporter, new TheoryGraphExporter).foreach(addExtension(_))
     // shell extensions
     List(new ShellSendCommand, new execution.ShellCommand, new Make).foreach(addExtension(_))
 
