@@ -8,6 +8,7 @@ import info.kwarc.mmt.odk.SCSCP.Protocol.{SCSCPCall, SCSCPCallArguments, SCSCPRe
 /**
   * SCSCP server that implements the MitM protocol.
   */
+@deprecated("this has to refactored: state should not be stored in an object")
 object MitMServer {
   val server = SCSCPServer("MitMServer", "1.0", "MitMServer")
 
@@ -26,6 +27,7 @@ object MitMServer {
   * Database that stores and manages the function headers received from CAS clients.
   * Currently implemented in-memory, could in the long run be moved to the file system for extensibility.
   */
+@deprecated("this has to refactored: state should not be stored in an object")
 object MitMDatabase {
   var mapOfServersToFunctions : Map[String, List[OMSymbol]] = Map()
   var mapOfServerNamesToClients : Map[String, SCSCPClient] = Map()
