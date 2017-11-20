@@ -1010,40 +1010,53 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        return true
      }
      history += "not obviously equal, trying subtyping"
-     if (subtypingRules.nonEmpty) {
-        implicit val stack = j.stack
-        var activerules = subtypingRules
-        var done = false
-        var tp1S = j.tp1
-        var tp2S = j.tp2
-        while (!done) {
-          val (tmp1, tmp2, rOpt) = safeSimplifyUntil(tp1S, tp2S) {case (a1,a2) =>
-            activerules.find(_.applicable(a1,a2))
-          }
-          tp1S = tmp1
-          tp2S = tmp2
-          rOpt match {
-            case Some(rule) =>
-              history += ("applying subtyping rule " + rule.toString + " on " + presentObj(tp1S) + " <: " + presentObj(tp2S))
-              try {
-                val b = rule(this)(tp1S,tp2S).getOrElse {throw rule.Backtrack("")}
-                return b
-              } catch {
-                case t : MaytriggerBacktrack#Backtrack =>
-                  history += t.getMessage
-                  activerules = dropJust(activerules, rule)
-              }
-            case None =>
-              history += "No rules left; final terms are: " + presentObj(tp1S) + " and " + presentObj(tp2S)
-              done = true
-              // if (existsActivatable) return delay(Subtyping(stack, tp1S, tp2S), true)
-          }
-        }
+     def innerCheck(tp1 : Term, tp2 : Term) : Boolean = if (subtypingRules.nonEmpty) {
+       implicit val stack = j.stack
+       var activerules = subtypingRules
+       var done = false
+       var tp1S = tp1
+       var tp2S = tp2
+       while (!done) {
+         val (tmp1, tmp2, rOpt) = safeSimplifyUntil(tp1S, tp2S) { case (a1, a2) =>
+           activerules.find(_.applicable(a1, a2))
+         }
+         tp1S = tmp1
+         tp2S = tmp2
+         rOpt match {
+           case Some(rule) =>
+             history += ("applying subtyping rule " + rule.toString + " on " + presentObj(tp1S) + " <: " + presentObj(tp2S))
+             try {
+               val b = rule(this)(tp1S, tp2S).getOrElse {
+                 throw rule.Backtrack("")
+               }
+               return b
+             } catch {
+               case t: MaytriggerBacktrack#Backtrack =>
+                 history += t.getMessage
+                 activerules = dropJust(activerules, rule)
+             }
+           case None =>
+             // try unsafe (since the alternative is equality-checking, which does this anyway, this shouldn't break anything)
+             val tp1N = simplify(tp1S)
+             val tp2N = simplify(tp2S)
+             if (tp1S.hashneq(tp1N) || tp2S.hashneq(tp2N)) {
+               history += "Trying unsafe"
+               return innerCheck(tp1N, tp2N)
+             }
+
+             history += "No rules left; final terms are: " + presentObj(tp1S) + " and " + presentObj(tp2S)
+             done = true
+           // if (existsActivatable) return delay(Subtyping(stack, tp1S, tp2S), true)
+         }
+       }
+       false
+     } else false
+      if (innerCheck(j.tp1,j.tp2)) true else {
+        // otherwise, we default to checking equality
+        // in the absence of subtyping rules, this is the needed behavior anyway
+        history += "can't establish subtype relation, falling back to checking equality"
+        check(Equality(j.stack, j.tp1, j.tp2, None))
       }
-      // otherwise, we default to checking equality
-      // in the absence of subtyping rules, this is the needed behavior anyway
-      history += "can't establish subtype relation, falling back to checking equality"
-      check(Equality(j.stack, j.tp1, j.tp2, None))
    }
 
    /** proves a Universe Judgment

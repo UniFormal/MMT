@@ -406,13 +406,20 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
          case d: DefinedTheory if expandDefs => materialize(context, d.df, expandDefs, None)
          case d => d
       }
-      /* case OMPMOD(p, args) => TODO here
-         val t = getTheory(p)
-         new InstantiatedTheory(t, args) */
+      case OMPMOD(p, args) => // materialization of instances of parametric theories
+         val t = lup.getTheory(p).asInstanceOf[DeclaredTheory]
+         apply(t)
+         val con = Context(t.parameters.indices.map(i => t.parameters(i).copy(df = Some(args(i)))):_*)
+         //new InstantiatedTheory(t, args)
+         val ret = new DeclaredTheory(p.doc,p.name,t.meta,ContextContainer(con),TermContainer(exp))
+         t.getDeclarations.map(d => lup.get(exp,LocalName(d.parent) / d.name,s => throw GetError(s))).foreach(d => ret.add(d))
+         ret
       case _ => // create a new theory and return it
         val path = pathOpt.getOrElse(newName)
+        /*
         if (exp.freeVars.nonEmpty)
-          throw GeneralError("materialization of module with free variables not implemented yet")
+          throw GeneralError("materialization of module with free variables not implemented yet (" + exp.freeVars.mkString(", ") + ") in " +
+          controller.presenter.asString(exp)) */
         val thy = new DeclaredTheory(path.parent, path.name, noMeta, noParams, TermContainer(exp))
         flattenDefinition(thy)
         thy.setOrigin(Materialized(exp))
