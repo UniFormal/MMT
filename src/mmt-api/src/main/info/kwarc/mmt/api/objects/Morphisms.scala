@@ -65,6 +65,7 @@ object Morph {
         else
           OMS(p)
       case OMIDENT(t) => OMCOMP()
+      case OMINST(t,args) => if (args.isEmpty) OMCOMP() else m
       case OMCOMP(ms) =>
         val msS = (ms map simplify) filter {
           case OMIDENT(_) => false
