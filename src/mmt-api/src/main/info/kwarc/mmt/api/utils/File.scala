@@ -99,7 +99,13 @@ case class File(toJava: java.io.File) {
   }
 
   /** @return children of this directory */
-  def children: List[File] = if (toJava.isFile) Nil else toJava.list.toList.sorted.map(this / _)
+  def children: List[File] = {
+    if (toJava.isFile) Nil else {
+      val ls = toJava.list
+      if (ls == null) throw GeneralError("directory does not exist or is not accessible: " + toString)
+      ls.toList.sorted.map(this / _)
+    }
+  }
 
   /** @return subdirectories of this directory */
   def subdirs: List[File] = children.filter(_.toJava.isDirectory)

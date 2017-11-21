@@ -122,7 +122,6 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
     ServerResponse(svg, "image/svg+xml")
   }
   
-  import Javascript._
   import MMTJavascript._
   def getEntries(path: Path) = {
     // all graphs we can build
@@ -131,9 +130,9 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
     val existingFiles = svgPath(path) match {
       case None => Nil
       case Some((exportFolder, relPath)) =>
-        exportFolder.children.collect {
+        if (exportFolder.exists) exportFolder.children.collect {
           case f if !exporters.exists(e => e.isApplicable(f.name)) && (f/relPath).exists => f.name
-        }
+        } else Nil
     }
     val allGraphs = exporters.map(e => (e.key, e.description)) ::: existingFiles.map(k => (k,k)) 
     allGraphs.map {case (key, description) =>
