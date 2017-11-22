@@ -406,7 +406,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
          case d: DefinedTheory if expandDefs => materialize(context, d.df, expandDefs, None)
          case d => d
       }
-      case OMPMOD(p, args) => // materialization of instances of parametric theories
+      case OMPMOD(p, args) if args.nonEmpty => // materialization of instances of parametric theories
          val t = lup.getTheory(p).asInstanceOf[DeclaredTheory]
          apply(t)
          val con = Context(t.parameters.indices.map(i => t.parameters(i).copy(df = Some(args(i)))):_*)
@@ -423,6 +423,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         val thy = new DeclaredTheory(path.parent, path.name, noMeta, noParams, TermContainer(exp))
         flattenDefinition(thy)
         thy.setOrigin(Materialized(exp))
+        apply(thy)
         thy
     }
   }
