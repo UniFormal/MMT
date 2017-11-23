@@ -319,6 +319,14 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       case _ => Nil
     }
   }
+
+  private def readMPathWithParameters(newBase: Path, context : Context)(implicit state: ParserState) : (SourceRef,MPath,List[Term]) = {
+    val (fromRef, from) = readMPath(newBase)
+    val tms = if (state.reader.startsWith("(")) {
+      doParameterComponent(context)
+    } else Nil
+    (fromRef,from,tms)
+  }
 /*
     val cont = ParseResult.fromTerm(p) match {
 
@@ -494,10 +502,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case "include" =>
           mod match {
             case thy: DeclaredTheory =>
-              val (fromRef, from) = readMPath(thy.path)
-              val incl = if (state.reader.startsWith("(")) {
-                Include(thy.toTerm,from,doParameterComponent(context))
-              } else PlainInclude(from, thy.path)
+              val (fromRef, from, args) = readMPathWithParameters(thy.path,context)
+              val incl = Include(thy.toTerm,from,args)
               SourceRef.update(incl.from, fromRef) //TODO awkward, same problem for metatheory
               addDeclaration(incl)
             case link: DeclaredLink =>
@@ -744,12 +750,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     val vpath = ns ? name
     readDelimiter(":")
-    val (fromRef, fromPath) = readMPath(vpath)
-    val from = OMMOD(fromPath)
+    val (fromRef, fromPath, fromArgs) = readMPathWithParameters(vpath,context)
+    val from = OMPMOD(fromPath,fromArgs)
     SourceRef.update(from, fromRef)
     readDelimiter("->", "→")
-    val (toRef, toPath) = readMPath(vpath)
-    val to = OMMOD(toPath)
+    val (toRef, toPath,toArgs) = readMPathWithParameters(vpath,context)
+    val to = OMPMOD(toPath,toArgs)
     SourceRef.update(to, toRef)
     readDelimiter("abbrev", "=") match {
       case "abbrev" =>
