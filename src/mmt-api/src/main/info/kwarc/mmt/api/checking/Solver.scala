@@ -1607,7 +1607,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
    def solveTyping(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
      val unknownsLeft = tm.freeVars intersect solution.map(_.name)
-     val tnf = TorsoNormalForm(unknownsLeft)
+     val tnf = TorsoNormalForm(Nil)
       tm match {
          //foundation-independent case: direct solution of an unknown variable
          case OMV(m) =>
