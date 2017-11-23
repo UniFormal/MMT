@@ -31,7 +31,8 @@ object TorsoForm {
    def fromHeadForm(tm: Term, unknowns : List[LocalName]) : TorsoForm = tm match {
       case OMA(OMS(head), torso :: extremities) =>
          torso match {
-            case OMV(name) if unknowns contains name => // changed
+            case OMV(name) if unknowns contains name => // we want to avoid splitting applications of
+               // as-of-yet-unknown variables to allow for checkEqualityCongruence to solve them instead.
                TorsoForm(tm, Nil)
             case _ =>
                fromHeadForm(torso, unknowns) match {
