@@ -515,7 +515,7 @@ class Controller extends ROController with ActionHandling with Logger {
                 notifyListeners.onUpdate(old, nw)
               }
               memory.content.reorder(nw.path)
-            case Some(old) if get(old.parent).getDeclarations contains old => // This condition
+            case Some(old) if getO(old.parent).map(_.getDeclarations).getOrElse(Nil) contains old => // This condition
               // seems to be necessary in case loopup succeeds even though it's not
               // been added to the body yet - in which case the at-information gets lost.
               // Happens during elaboration of e.g. structures.
