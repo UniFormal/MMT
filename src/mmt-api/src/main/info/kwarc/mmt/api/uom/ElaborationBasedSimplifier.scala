@@ -243,7 +243,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               }
             })
           }
-        doDom(s.from).reverse
+        doDom(s.from)
         /*
          dom.getDeclarations.flatMap(d => {
            val dF = lup.getAs(classOf[Declaration], parent.path ? s.name / d.name)
