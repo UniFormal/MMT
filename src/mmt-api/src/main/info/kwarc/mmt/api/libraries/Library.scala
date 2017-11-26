@@ -252,7 +252,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             name.head match {
               case ComplexStep(q) =>
                 getImplicit(q, p).foreach { m =>
-                  val sym = get(OMPMOD(q, args), name.tail, sourceError)
+                  val sym = get(OMMOD(q), name.tail, sourceError)
                   val symT = translate(sym, m, error)
                   return symT
                 }
@@ -460,7 +460,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private def instantiate(decl: Declaration, params: Context, args: List[Term]): Declaration = {
     if (args.isEmpty) return decl // lookup from within parametric theory does not provide arguments
     val subs: Substitution = (params / args).getOrElse {
-        throw GetError("number of arguments does not match number of parameters")
+        throw GetError("number of arguments does not match number of parameters of " + decl.path + ": " + params.length + "(" + params.map(_.name).mkString(", ") + ") given: " + args)
       }
     if (subs.isIdentity) return decl // avoid creating new instance
     val newHome = decl.home match {
