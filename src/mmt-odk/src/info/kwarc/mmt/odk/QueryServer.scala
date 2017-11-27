@@ -24,7 +24,9 @@ abstract class VRESystem(val id : String) extends QueryExtension(id) {
   val namespace : DPath
 }
 
-class VREWithAlignmentAndSCSCP(id : String, val namespace : DPath, val serverurl : String) extends VRESystem(id) with AlignmentBasedMitMTranslation with UsesSCSCP {
+class VREWithAlignmentAndSCSCP(id : String, val namespace : DPath, val serverurl : String, override val port : Int = 26133)
+  extends VRESystem(id) with AlignmentBasedMitMTranslation with UsesSCSCP {
+
   def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QuerySubstitution): scala.collection.mutable.HashSet[List[BaseType]] = {
     // evaluate the qiery normally
     val result = e.evalSet(q)
@@ -91,9 +93,9 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
   def translateToMitM(t : Term) = systemToMitM(t,Context.empty)
 }
 
-trait UsesSCSCP{ this : VRESystem =>
+trait UsesSCSCP { this : VRESystem =>
   val serverurl : String
-  val port : Int = 26133
+  val port : Int // = 26133
 
   lazy val client = SCSCPClient(serverurl,port)
 

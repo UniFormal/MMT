@@ -168,11 +168,3 @@ object SCSCPServer {
   def apply(service_name: String, service_version: String, service_identifier: String, host: String = "0.0.0.0", port: Int = 26133, encoding: String = "UTF-8") =
     new SCSCPServer(service_name, service_version, service_identifier, new java.net.ServerSocket(port, 0, InetAddress.getByName(host)), encoding)
 }
-
-
-class SCSCPExtension extends Extension {
-  override def start(args: List[String]) {
-    MitMServer.run()
-    implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
-  }
-}

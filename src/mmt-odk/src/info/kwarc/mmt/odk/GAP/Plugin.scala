@@ -10,6 +10,7 @@ import info.kwarc.mmt.api.uom.{RealizedType, StandardBool, StandardDouble, Stand
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
+import info.kwarc.mmt.odk.Singular.Singular
 import info.kwarc.mmt.odk._
 
 import scala.collection.mutable
@@ -71,12 +72,10 @@ class Plugin extends frontend.Plugin {
     controller.extman.addExtension(new GAPJSONImporter)
     controller.extman.addExtension(FilterRelations)
     controller.extman.addExtension(GAPGraphExporter)
-    controller.extman.addExtension(GAPSystem)
+    controller.extman.addExtension(RemoteGAPSystem)
   }
 }
 
 object Booleans extends RealizedType(OMS(GAP.theory ? "booleans"),StandardBool)
 object Integers extends RealizedType(OMS(GAP.theory ? "integers"),StandardInt)
 object Floats extends RealizedType(OMS(GAP.theory ? "floats"),StandardDouble)
-
-object GAPSystem extends VREWithAlignmentAndSCSCP("GAP",GAP._base,"neptune.eecs.jacobs-university.de")
