@@ -1304,11 +1304,13 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        def hasUnknowns(tm : Term) = (tm.freeVars intersect unknownsL).nonEmpty
        // j is delayed without a special treatment; if anything else is left to try, delay; else throw error
 
-       // it *could* be that a torso is an application of an unknown, in which case equality should be checked?
        if (unknownsLeft && existsActivatable(allowIncomplete = true))
          delay(j)
-       else if (t1.apps.length == t2.apps.length && (hasUnknowns(t1.torso) || hasUnknowns(t2.torso)))
-         checkEquality(Equality(stack, t1.torso, t2.torso, None)) // this is new
+       else if // it *could* be that a torso is an application of an unknown, in which case equality should be checked?
+       (t1.apps.length == t2.apps.length &&
+         (hasUnknowns(t1.torso) || hasUnknowns(t2.torso)) &&
+         (t1.apps.nonEmpty || t2.apps.nonEmpty)) // this condition is rather hacky, but necessary to avoid infinite loops
+         checkEquality(Equality(stack, t1.torso, t2.torso, None))
        else {
          error("terms have different shape, thus they cannot be equal")
        }
