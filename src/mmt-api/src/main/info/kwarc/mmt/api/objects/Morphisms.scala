@@ -65,7 +65,11 @@ object Morph {
         else
           OMS(p)
       case OMIDENT(t) => OMCOMP()
-      case OMINST(t,args) => if (args.isEmpty) OMCOMP() else m
+      case OMINST(t,args) =>
+        if (args.isEmpty) OMCOMP() else m
+      case OMCOMP(head :: ms) if ms.exists(OMINST.unapply(_).isDefined) =>
+        // include/identity in a parametric theory is just include/identity again
+        simplify(OMCOMP(head :: ms.filter(OMINST.unapply(_).isEmpty)))
       case OMCOMP(ms) =>
         val msS = (ms map simplify) filter {
           case OMIDENT(_) => false
