@@ -253,7 +253,7 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
       private var todo  = variables
       def hasNext = !todo.isEmpty
       def next = {
-         val hd::tl = todo
+         val hd::tl = todo.toList
          val ret = (sofar,hd)
          sofar = sofar ++ hd
          todo = tl

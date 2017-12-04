@@ -1,6 +1,7 @@
 package info.kwarc.mmt.odk.SCSCP.Server
 
 import info.kwarc.mmt.api.frontend.Extension
+import info.kwarc.mmt.odk.{GAPSystem, SageSystem, SingularSystem}
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.odk.SCSCP.CD.{SymbolSet, scscp1, scscp2}
 import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
@@ -14,21 +15,28 @@ import scala.concurrent.Future
 class MitMServer extends Extension {
   override def logPrefix: String = "mitm"
 
-  lazy val server = SCSCPServer("MitMServer", "1.0", "MitMServer")
+  var server : SCSCPServer = null //
 
   implicit val ec = scala.concurrent.ExecutionContext.global
 
   override def start(args: List[String]): Unit = {
     // connect the handlers for registerServer and removeServer
-    server.register(OMSymbol("registerServer", "mitm_transient", None, None), RegisterServerHandler)
-    server.register(OMSymbol("removeServer", "mitm_transient", None, None), RemoveServerHandler)
-    server.register(OMSymbol("getAllServers", "mitm_transient", None, None), GetAllServersHandler)
 
     // and serve it forever
     // TODO should maybe be refactored to use ServerExtension instead, but I'm not sure how incompatible all of
     // TODO Tom's code is with that
     Future {
-      server.processForever()
+      try {
+        server = SCSCPServer("MitMServer", "1.0", "MitMServer")
+        server.register(OMSymbol("registerServer", "mitm_transient", None, None), RegisterServerHandler)
+        server.register(OMSymbol("removeServer", "mitm_transient", None, None), RemoveServerHandler)
+        server.register(OMSymbol("getAllServers", "mitm_transient", None, None), GetAllServersHandler)
+        server.processForever()
+      } catch {
+        case e : java.net.BindException =>
+          log("SCSCP Server already running")
+          controller.extman.removeExtension(this)
+      }
     }
   }
 
@@ -36,21 +44,16 @@ class MitMServer extends Extension {
     * Registers the server in the MitM proxy and returns the id of the server.
     */
   object RegisterServerHandler extends SCSCPHandler {
-    override val min : Int = 1
-    override val max : Int = 2
+    override val min: Int = 1
+    override val max: Int = 2
     // i.e. the signature is address: string, port: integer
     override val signature = SymbolSet(List(OMSymbol("string", "omtypes", None, None), OMSymbol("integer", "omptypes", None, None)))
 
-    def handle(client: SCSCPServerClient, arguments : SCSCPCallArguments, parameters: OMExpression* ) : OMExpression = {
+    def handle(client: SCSCPServerClient, arguments: SCSCPCallArguments, parameters: OMExpression*): OMExpression = {
       val listOfArgs = parameters.toList
       val address = getArgAsString(listOfArgs, 0)
-      if (listOfArgs.length > 1) {
-        val port = getArgAsInt(parameters.toList, 1)
-        MitMDatabase.addServer(address.text, port.int.toInt)
-      }
-      else {
-        MitMDatabase.addServer(address.text, 26133)
-      }
+      val port = if (listOfArgs.length > 1) getArgAsInt(listOfArgs, 1).int.toInt else 26133
+      MitMDatabase.addServer(address.text, port)
     }
   }
 
@@ -91,6 +94,7 @@ class MitMServer extends Extension {
     def addServer(serverAddress: String, port: Int): OMString = {
       val client : SCSCPClient = SCSCPClient(serverAddress, port)
       val serverID : String = client.service_id
+      val name = client.service_name
       val signatureReqSym = OMSymbol("get_signature", "scscp2", None, None)
       val signatureSym = OMSymbol("signature", "scscp2", None, None)
       val infinity = OMSymbol("infinity", "nums1", None, None)

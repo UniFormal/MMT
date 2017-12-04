@@ -12,12 +12,6 @@ import info.kwarc.mmt.odk.SCSCP.Protocol.{OpenMathError, SCSCPCall, SCSCPCallArg
 
 import scala.util.Try
 
-/**
-  * Created by jazzpirate on 21.04.17.
-  */
-class VREServer {
-
-}
 
 abstract class VRESystem(val id : String) extends QueryExtension(id) {
   override val logPrefix = id
