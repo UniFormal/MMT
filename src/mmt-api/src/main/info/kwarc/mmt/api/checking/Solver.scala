@@ -396,8 +396,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    }
 
   private def getConstant(p : GlobalName) : Constant =
-    controller.library.get(ComplexTheory(simplify(constantContext)(Stack.empty,NoHistory)),LocalName(p.module) / p.name,s => throw GetError(s)) match {
-      case c : Constant => c
+    controller.library.get(ComplexTheory(constantContext), LocalName(p.module) / p.name, s => throw GetError(s)) match {
+      case c: Constant => c
       case d => throw GetError("Not a constant: " + d)
     }
 
@@ -729,7 +729,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             implicit val history = new History(Nil)
             vd.tp match {
               case None =>
-                error("unsolved (untyped) unknown: " + vd.name) 
+                error("unsolved (untyped) unknown: " + vd.name)
               case Some(tp) =>
                 val rO = typebasedsolutionRules.find(r => r.applicable(tp))
                 rO match {
@@ -1719,7 +1719,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
       log(msg)
       history += msg
-      val pu = ProvingUnit(checkingUnit.component, simplify(context)(Stack(context),history).asInstanceOf[Context], conc, logPrefix).diesWith(checkingUnit)
+      val pu = ProvingUnit(checkingUnit.component, simplify(context)(Stack(context),history), conc, logPrefix).diesWith(checkingUnit)
       controller.extman.get(classOf[Prover]) foreach {prover =>
          val (found, proof) = prover.apply(pu, rules, 3) //Set the timeout on the prover
          if (found) {

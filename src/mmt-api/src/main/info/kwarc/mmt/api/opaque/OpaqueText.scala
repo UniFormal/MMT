@@ -91,6 +91,14 @@ object OpaqueText {
             } else {
               null // impossible
             }
+          } else if (escapes.unparsed.begin == c) {
+            u.next
+            var seen = ""
+            while (!u.empty && u.head != escapes.unparsed.end) {
+              seen += u.next
+            }
+            if (!u.empty) u.next
+            StringFragment(seen)
           } else {
             parseText
           }
@@ -143,7 +151,7 @@ object OpaqueText {
       def parseText: StringFragment = {
         var seen = ""
         while (true) {
-          if (!u.empty && !(escapes.scope.end::escapes.nonTextBegin).contains(u.head)) {
+          if (!u.empty && !(escapes.scope.end::escapes.unparsed.begin::escapes.nonTextBegin).contains(u.head)) {
             seen += u.next
           } else {
             return StringFragment(seen)

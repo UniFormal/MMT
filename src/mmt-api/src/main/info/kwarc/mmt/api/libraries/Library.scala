@@ -348,6 +348,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
      declLnOpt match {
        case Some((d, LocalName(Nil))) => d // perfect match
        case Some((d, ln)) => d match {
+         case PlainInclude(p,_) =>
+           getDeclarationInTerm(OMMOD(p),ln,error)
          // a prefix exists and resolves to d, a suffix ln is left
          case s: Structure =>
            val sym = getDeclarationInTerm(s.from, ln, sourceError) // resolve ln in the domain of s

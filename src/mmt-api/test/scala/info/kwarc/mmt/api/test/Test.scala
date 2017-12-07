@@ -23,6 +23,7 @@ abstract class MMTTest(archives : String*)(extensions : String*) extends FlatSpe
   )
   val setupFolder = File("test/resources").canonical
   val content = setupFolder / "content"
+  content.children foreach (_.deleteDir)
   lazy val mathhub = new MathHub(MathHub.defaultURL,content,report = controller.report,https=true)
 
   behavior of "MMT"
@@ -64,7 +65,7 @@ abstract class MMTTest(archives : String*)(extensions : String*) extends FlatSpe
         case _ => throw TestError("document expected")
       }
       val ret = errorCont.getAll
-      ret.foreach(p => println("Error in " + p._1 + ": " + p._2.shortMsg))
+      ret.foreach(p => println(Level.toString(p._2.level) + " in " + p._1 + ": " + p._2.shortMsg))
       ret
     } catch {case e: Exception =>
       val msg = e.getClass + ": " + e.getMessage
@@ -90,7 +91,7 @@ abstract class MMTTest(archives : String*)(extensions : String*) extends FlatSpe
       println("Did not fail: " + didntfail.mkString(", "))
       ???
     }
-    ret = ret.filterNot(p => mayfail contains p._1.toString)
+    ret = ret.filterNot(p => (mayfail contains p._1.toString) || p._2.level == Level.Warning)
     if (ret.nonEmpty) {
       println("There were errors!")
       ???
