@@ -513,8 +513,18 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      history += "solving type of " + name + " as " + value
       val valueS = simplify(value)(Stack.empty, history)
       val (left, solved :: right) = solution.span(_.name != name)
-      if (solved.tp.isDefined)
-         check(Equality(Stack.empty, valueS, solved.tp.get, None))(history + "solution for type must be equal to previously found solution")
+      if (solved.tp.isDefined) {
+        /* TODO this is a first attempt at what roughly should happen. Since WithoutDelay doesn't solve variables itself
+           TODO I'm calling checkEquality if subtyping fails. */
+        var checksOut = tryToCheckWithoutDelay(Subtyping(Stack.empty, valueS, solved.tp.get))
+        if (checksOut.contains(true)) true
+        else { // TODO in one of two cases the previous solution should probably be updated (probably to the supertype?)
+          checksOut = tryToCheckWithoutDelay(Subtyping(Stack.empty,solved.tp.get,valueS))
+            if (checksOut contains true) true else
+            check(Equality(Stack.empty, valueS, solved.tp.get, None))(history + "solution for type must be equal to previously found solution")
+        } /* TODO Alternatively one could keep track of all solutions and check which one (or combination) checks out, but that seems
+             TODO expensive. */
+      }
       else {
          val vd = solved.copy(tp = Some(valueS))
          solution = left ::: vd :: right
@@ -1471,7 +1481,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      }
      if (checkingUnit.isKilled) {
        return tm
-     }
+     } /*
      tm.head match {
        case Some(h) =>
          // use first applicable rule
@@ -1488,8 +1498,45 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          // no applicable rule, expand a definition
          expandDefinition
        case None => expandDefinition
-     }
+     } */
+     val traverser = new SimplifyTraverser(stack,history)
+     val (ret,done) = traverser.run(tm)
+     if (done) {
+       history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(ret))
+       ret
+     } else expandDefinition
    }
+
+  val thisSolver = this
+
+  private class SimplifyTraverser(stack : Stack,history : History) extends StatelessTraverser {
+    private var done = false
+    def run(t : Term) : (Term,Boolean) = {
+      val ret = traverse(t)(stack.context,())
+      (ret,done)
+    }
+    override def traverse(t: Term)(implicit con: Context, state: State): Term =
+      if (done || t.isInstanceOf[OML]) t else { // OMLs probably shouldn't be traversed, unless done explicitly by a rule
+      t.head match {
+        case Some(h) =>
+          // use first applicable rule
+          computationRules foreach {rule =>
+            if (rule.head == h) {
+              val ret = rule(thisSolver)(t, false)(Stack(con),history)
+              ret foreach {tmS =>
+                history += "applying computation rule " + rule.toString
+                done = true
+                return tmS
+              }
+            }
+          }
+          // no applicable rule, traverse
+          Traverser(this,t)
+        case None =>
+          Traverser(this,t)
+      }
+    }
+  }
 
    /** special case of the version below where we simplify until an applicable rule is found
  *
