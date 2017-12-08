@@ -6,6 +6,7 @@ import backend._
 import checking._
 import documents._
 import gui._
+import actions._
 import libraries._
 import moc._
 import modules._

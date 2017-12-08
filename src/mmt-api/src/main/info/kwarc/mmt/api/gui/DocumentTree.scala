@@ -8,13 +8,13 @@ import modules._
 import objects._
 import presentation._
 import utils.MyList._
-
 import javax.swing._
 import tree._
 import event._
-
 import java.awt.BorderLayout
-import java.awt.event.{MouseAdapter,MouseEvent}
+import java.awt.event.{MouseAdapter, MouseEvent}
+
+import info.kwarc.mmt.api.frontend.actions.Navigate
 
 abstract class MMTNode {
    def children: List[MMTNode]

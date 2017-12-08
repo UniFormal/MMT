@@ -1,6 +1,7 @@
 package info.kwarc.mmt.repl
 
 import info.kwarc.mmt.api.frontend._
+import actions._
 
 
 class ExtendedREPL extends REPLImpl with REPLExtension  {

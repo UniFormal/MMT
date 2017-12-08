@@ -16,8 +16,8 @@ object Main {
     val cnew = new Controller
 
 
-    cold.execFileAction(File("moc1-startup.mmt"), None)
-    cnew.execFileAction(File("moc2-startup.mmt"), None)
+    cold.runMSLFile(File("moc1-startup.mmt"), None)
+    cnew.runMSLFile(File("moc2-startup.mmt"), None)
 
     /*
     cold.backend.getArchives map {archive =>

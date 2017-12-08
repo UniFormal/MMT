@@ -622,7 +622,7 @@ class OWLCompiler extends archives.Importer {
     val target: File = bf.outFile.setExtension("omdoc")
 
     val controller = new Controller
-    controller.execFileAction(new java.io.File("startup.mmt"), None)
+    controller.runMSLFile(new java.io.File("startup.mmt"), None)
     val manager: OWLOntologyManager = OWLManager.createOWLOntologyManager()
     val importer = new Import(manager, controller)
 

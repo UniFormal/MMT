@@ -86,17 +86,17 @@ abstract class MMTScript extends Extension {
 
   def loadRelationalFor(select : ArchiveConf => Boolean) {
     val aids = config.getArchives.filter(select).map(_.id)
-    controller.archiveBuildAction(aids, "relational", Build, EmptyPath)
+    controller.buildArchive(aids, "relational", Build, EmptyPath)
   }
 
   def smartBuild(mod : String, profile : String, targets : List[String]) {
-    controller.confBuildAction(mod, targets, profile)
+    controller.configBuild(mod, targets, profile)
   }
 
-  def make(comp : String, files : List[String]) = controller.makeAction(comp, files)
+  def make(comp : String, files : List[String]) = controller.make(comp, files)
 
   def build(ids: List[String], target: String, modifier: archives.BuildTargetModifier, in: FilePath = EmptyPath) {
-    controller.archiveBuildAction(ids, target, modifier, in)
+    controller.buildArchive(ids, target, modifier, in)
   }
   /**
    * run the script; the content of the .mbt file will be used to implement this method

@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.frontend.actions._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.utils.URI.toJava
 

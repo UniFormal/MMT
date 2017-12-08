@@ -5,9 +5,11 @@ import java.util.Calendar
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.frontend.actions._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
 import ServerResponse._
+import info.kwarc.mmt.api.frontend.actions.{Action, GetAction}
 import info.kwarc.mmt.api.objects.Context
 
 /**
@@ -383,7 +385,7 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
   }
 }
 
-/** interprets the query as an MMT [[frontend.GetAction]] and returns the result */
+/** interprets the query as an MMT [[frontend.actions.GetAction]] and returns the result */
 class GetActionServer extends ServerExtension("mmt") {
   def apply(request: ServerRequest): ServerResponse = {
     val action = Action.parseAct(request.query, controller.getBase, controller.getHome)
@@ -430,7 +432,7 @@ class MessageHandler extends ServerExtension("content") {
   }
 }
 
-/** interprets the query as an MMT [[frontend.Action]] and returns the log output */
+/** interprets the query as an MMT [[frontend.actions.Action]] and returns the log output */
 class ActionServer extends ServerExtension("action") {
   private lazy val logCache = new RecordingHandler(logPrefix)
 
@@ -444,7 +446,7 @@ class ActionServer extends ServerExtension("action") {
 
   def apply(request: ServerRequest): ServerResponse = {
     val c = request.decodedQuery
-    val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
+    val act = frontend.actions.Action.parseAct(c, controller.getBase, controller.getHome)
     if (act == Exit) {
       // special case for sending a response when exiting
       new Thread {

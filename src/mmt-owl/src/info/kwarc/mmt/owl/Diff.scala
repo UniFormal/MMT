@@ -16,8 +16,8 @@ object Diff {
 
     val firstController = new Controller
     val secondController = new Controller
-    firstController.execFileAction(new java.io.File("startup.mmt"), None)
-    secondController.execFileAction(new java.io.File("startup.mmt"), None)
+    firstController.runMSLFile(new java.io.File("startup.mmt"), None)
+    secondController.runMSLFile(new java.io.File("startup.mmt"), None)
 
     var currentVersion: File = null
     var olderVersion: File = null

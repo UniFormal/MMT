@@ -2,7 +2,8 @@ package info.kwarc.mmt.jedit
 
 import console._
 import info.kwarc.mmt.api._
-import frontend.{MMTInterpolator, SetBase}
+import frontend.MMTInterpolator
+import frontend.actions.SetBase
 import objects._
 import org.gjt.sp.jedit._
 import org.gjt.sp.jedit.bufferset._

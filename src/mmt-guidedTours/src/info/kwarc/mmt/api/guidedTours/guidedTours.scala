@@ -20,7 +20,7 @@ class GuidedToursPlugin extends ServerExtension("guidedTours") {
   }
   
   
-  def getTour(request: ServerRequest) : ServerResponse =
+  def getTour(request: ServerRequest) : ServerResponse = {
     val reqBody = request.body
     val pathS = reqBody.asString
     val dpath = Path.parseD(pathS, NamespaceMap.empty)
@@ -36,7 +36,7 @@ class GuidedToursPlugin extends ServerExtension("guidedTours") {
     //val out = controller.presenter.apply(doc, false)(rh)
     //val resp = rh.get
     val resp = doc.toString
-    Server.TextResponse(resp)
+    ServerResponse.fromText(resp)
   }
   
 }

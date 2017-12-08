@@ -155,7 +155,7 @@ class Setup extends ShellExtension("setup") {
       contentFolder.mkdirs
       
       try {
-         controller.cloneRecursively("MMT/examples")
+         controller.handleLine("oaf clone MMT/examples")
       } catch {case e: Error =>
          p(e.toStringLong)
       }

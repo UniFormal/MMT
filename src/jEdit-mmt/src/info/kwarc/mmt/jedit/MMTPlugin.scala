@@ -45,7 +45,7 @@ class MMTPlugin extends EBPlugin with Logger {
       val startup = MMTOptions.startup.get.getOrElse("startup.msl")
       val file = home resolve startup
       if (file.exists)
-         controller.execFileAction(file, None)
+         controller.runMSLFile(file, None)
       
       val conf = MMTOptions.config.get.getOrElse("mmtrc")
       val confFile = home resolve conf

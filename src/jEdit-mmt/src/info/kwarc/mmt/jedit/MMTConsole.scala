@@ -1,7 +1,8 @@
 package info.kwarc.mmt.jedit
 import org.gjt.sp.jedit._
 import console._
-import info.kwarc.mmt.api.frontend.{Action, ReportHandler}
+import info.kwarc.mmt.api.frontend.ReportHandler
+import info.kwarc.mmt.api.frontend.actions.Action
 
 class OutputAsReport(output: Output) extends ReportHandler("jEdit console") {
    def apply(ind: Int, caller: => String, group : String, msgParts : List[String]) {

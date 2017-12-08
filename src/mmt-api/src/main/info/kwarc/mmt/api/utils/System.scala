@@ -1,5 +1,8 @@
 package info.kwarc.mmt.api.utils
 
+import java.net.URLDecoder
+import java.util.jar.JarFile
+
 import info.kwarc.mmt.api._
 
 object MMTSystem {
@@ -84,4 +87,27 @@ object MMTSystem {
      case Some(r) => utils.readFullStream(r)
      case None => throw GeneralError(s"cannot find resource $path (run style is $runStyle)")
    }
+
+  /** return a list of available resources at the given path */
+  def getResourceList(path: String) : List[String] = runStyle match {
+      // running from jar
+      case _:IsFat | _:ThinJars | OtherStyle =>
+
+        // find the path to the current jar
+        val classPath = getClass.getName.replace(".", "/") + ".class"
+        val myPath = getClass.getClassLoader.getResource(classPath)
+        val jarPath = myPath.getPath.substring(5, myPath.getPath.indexOf("!"))
+
+        // open the jar and find all files in it
+        import scala.collection.JavaConverters._
+        val entries = new JarFile(URLDecoder.decode(jarPath, "UTF-8")).entries.asScala.map(e => "/" + e.getName)
+
+        // find all the resources within the given path, then remove the prefix
+        entries.filter(e => e.startsWith(path) && !e.endsWith("/")).map(_.stripPrefix(path)).toList
+
+      // running from classes, list the source directory
+      case rs: Classes =>
+        val base = (rs.resources / path).toJava
+        base.listFiles.map(f => { File(base).relativize(f).toString }).toList
+    }
 }
