@@ -23,7 +23,7 @@ abstract class MMTTest(archives : String*)(extensions : String*) extends FlatSpe
   )
   val setupFolder = File("test/resources").canonical
   val content = setupFolder / "content"
-  content.children foreach (_.deleteDir)
+  if (content.exists()) content.children foreach (_.deleteDir)
   lazy val mathhub = new MathHub(MathHub.defaultURL,content,report = controller.report,https=true)
 
   behavior of "MMT"
