@@ -32,6 +32,7 @@ fork in Test := true
 
 val deploy = TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
 val deployFull = TaskKey[Unit]("deployFull", "copies all (including tiscaf and lfcatalog) packaged jars to deploy location.")
+val install = TaskKey[Unit]("install", "copies jedit jars to local jedit installation folder.")
 
 // =================================
 // DOCUMENTATION TASKS
@@ -85,16 +86,16 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
   unmanagedBase := baseDirectory.value  / "lib",
 
   publishTo := Some(Resolver.file("file", Utils.deploy.toJava / " main")),
-
+  
+  install := {}, 
   deploy := Utils.deployPackage("main/" + nameStr + ".jar").value,
   deployFull := Utils.deployPackage("main/" + nameStr + ".jar").value
 )
 
 // =================================
-// Main MMT Project
+// Main MMT Projects
 // =================================
-
-lazy val mmt = (project in file(".")).
+lazy val mmt = (project in file("mmt")).
   enablePlugins(ScalaUnidocPlugin).
   dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, interviews).
   settings(mmtProjectsSettings("mmt"): _*).
@@ -298,7 +299,6 @@ val jeditJars = Seq(
   "jsr.jar"
 )
 
-val install = TaskKey[Unit]("install", "copies jedit jars to local jedit installation folder.")
 lazy val jedit = (project in file("jEdit-mmt")).
   dependsOn(api, lf).
   settings(commonSettings("jEdit-mmt"): _*).
