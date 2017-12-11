@@ -7,7 +7,9 @@ object Utils {
    /** source folder */
    val src = root / "src"
    /** MMT deploy directory */
-   val deploy = root/"deploy"
+   val deploy = root / "deploy"
+   /** MMT deploy lib directory */
+   val lib = deploy / "lib"
 
    /**
     * settings syntax is: 1 instance of 'key: value' per line 
@@ -30,7 +32,7 @@ object Utils {
     packageBin in Compile map {jar => deployTo(Utils.deploy / name)(jar)}
 
  /**
-   * pacakges the compiled binaries and copies to deploy 
+   * pacakges the compiled binaries and copies to deploy
    */
   def deployMathHub(target: File): Def.Initialize[Task[Unit]] =
     packageBin in Compile map {jar => deployTo(target)(jar)}
@@ -112,7 +114,12 @@ object Utils {
       }
       println("\n")
    }
-   
+
+  /**
+    * Recursively deletes a given folder
+    * @param log
+    * @param path
+    */
   def delRecursive(log: Logger, path: File): Unit = {
     def delRecursive(path: File): Unit = {
       path.listFiles foreach { f =>
