@@ -13,7 +13,7 @@ organization in ThisBuild := "info.kwarc.mmt"
 // GLOBAL SETTINGS
 // =================================
 scalaVersion in Global := "2.11.8"
-scalacOptions in Global := Seq("-deprecation", "-Xmax-classfile-name", "128")
+scalacOptions in Global := Seq("-feature", "-deprecation", "-Xmax-classfile-name", "128")
 
 parallelExecution in ThisBuild := false
 javaOptions in ThisBuild ++= Seq("-Xmx1g")
@@ -21,7 +21,6 @@ javaOptions in ThisBuild ++= Seq("-Xmx1g")
 
 connectInput in run := true
 mainClass in Compile := Some("info.kwarc.mmt.api.frontend.Run")
-
 
 publish := {}
 fork in Test := true
@@ -42,7 +41,7 @@ scalacOptions in(ScalaUnidoc, unidoc) ++=
     Opts.doc.title("MMT") ++:
     Opts.doc.sourceUrl({
       val repo = System.getenv("TRAVIS_REPO_SLUG")
-      s"https://github.com/${if(!repo.isEmpty) repo else "UniFormal/MMT"}/blob/master€{FILE_PATH}.scala"
+      s"https://github.com/${if(repo != null) repo else "UniFormal/MMT"}/blob/master€{FILE_PATH}.scala"
     })
 target in(ScalaUnidoc, unidoc) := file("../apidoc")
 
@@ -51,7 +50,7 @@ cleandoc := Utils.delRecursive(streams.value.log, file("../apidoc"))
 
 lazy val apidoc = taskKey[Unit]("generate post processed api documentation.")
 apidoc := Unit
-apidoc := apidoc.dependsOn(cleandoc, unidoc in Compile in mmt).value
+apidoc := apidoc.dependsOn(cleandoc, unidoc in Compile in src).value
 
 // =================================
 // SHARED SETTINGS
@@ -86,8 +85,8 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
   unmanagedBase := baseDirectory.value  / "lib",
 
   publishTo := Some(Resolver.file("file", Utils.deploy.toJava / " main")),
-  
-  install := {}, 
+
+  install := {},
   deploy := Utils.deployPackage("main/" + nameStr + ".jar").value,
   deployFull := Utils.deployPackage("main/" + nameStr + ".jar").value
 )
@@ -95,6 +94,15 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
 // =================================
 // Main MMT Projects
 // =================================
+lazy val src = (project in file(".")).
+  enablePlugins(ScalaUnidocPlugin).
+  aggregate(
+    mmt, api,
+    leo, lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, odk, specware, stex, webEdit, planetary, interviews, latex, openmath, oeis, repl,
+    tiscaf, lfcatalog,
+    jedit
+)
+
 lazy val mmt = (project in file("mmt")).
   enablePlugins(ScalaUnidocPlugin).
   dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, interviews).
@@ -105,6 +113,7 @@ lazy val mmt = (project in file("mmt")).
     deploy := {
       assembly in Compile map Utils.deployTo(Utils.deploy / "mmt.jar")
     }.value,
+    deployFull := deployFull.dependsOn(deploy).value,
     mainClass in assembly := (mainClass in Compile).value,
     assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
