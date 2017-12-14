@@ -2,11 +2,16 @@ import PostProcessApi._
 import sbt.Keys._
 import sbtunidoc.Plugin.UnidocKeys.unidoc
 
+// global configuration options
+// shared amongst the basic target and all the other ones
+val genericScalaVersion = "2.11.8"
+val genericScalaCOptions = Seq("-deprecation", "-Xmax-classfile-name", "128")
+
+// setup scala options
 publish := {}
+scalaVersion := genericScalaVersion
+scalacOptions := genericScalaCOptions
 
-scalaVersion := "2.11.8"
-
-scalacOptions := Seq("-deprecation")
 
 // = generation of API documentation
 
@@ -62,7 +67,8 @@ val deployFull =
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
   version := "1.0.1",
-  scalaVersion := "2.11.7",
+  scalaVersion := genericScalaVersion,
+  scalacOptions:= genericScalaCOptions,
   name := nameStr,
   sourcesInBase := false,
   libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
