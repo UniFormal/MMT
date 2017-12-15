@@ -18,7 +18,6 @@ scalacOptions in Global := Seq("-feature", "-deprecation", "-Xmax-classfile-name
 parallelExecution in ThisBuild := false
 javaOptions in ThisBuild ++= Seq("-Xmx1g")
 
-
 connectInput in run := true
 mainClass in Compile := Some("info.kwarc.mmt.api.frontend.Run")
 
@@ -169,7 +168,7 @@ lazy val concepts = (project in file("concept-browser")).
   settings(mmtProjectsSettings("concept-browser"): _*).
   settings(
     libraryDependencies ++= Seq(
-      "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
+      "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2.1"
     ),
     unmanagedJars in Compile += Utils.lib.toJava / "tiscaf.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
