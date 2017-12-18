@@ -10,6 +10,7 @@ import scala.io.Source
 
 val travisConfig = taskKey[Config]("Generate travis.yml configuration")
 travisConfig := {
+
   // convenience wrapper to run an sbt task and an optional check
   // we need to hard-code scala 2.10.7 to work on JDK 7/8/9
   def sbt(task: String, check: Option[String] = None) = s"cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 $task)${check.map(" && cd .. && " +).getOrElse("")}"

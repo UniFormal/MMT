@@ -135,5 +135,4 @@ object Utils {
     if (path.exists && path.isDirectory) delRecursive(path)
     else log.warn("ignoring missing directory: " + path)
   }
-
 }
