@@ -1,6 +1,6 @@
 dist: trusty
 language: scala
-scala: 2.11.8
+scala: 2.11.12
 
 # define 'stages' of our build process
 stages:
