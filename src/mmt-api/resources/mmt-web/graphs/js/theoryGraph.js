@@ -1,17 +1,29 @@
 function TheoryGraph()
 {
+	// Array holding original nodes
 	var originalNodes = null;
+	// Array holding original edges
 	var originalEdges = null;
+	// Object of vis.Network class
 	var network = null;
+	// Next unique Id to use for cluster
 	var clusterId=0;
+	// Array holding (parsed) nodes
 	var nodes;
+	// Array holding (parsed) edges
 	var edges;
+	// Last used zoom level for clustering
 	var lastClusterZoomLevel = 0;
+	// Cluster factor when zooming
     var clusterFactor = 1;
-	var that=this;
+	// Clustered points when zooming
 	var zoomClusters=[];
+	// Positions of nodes before clustering
 	var clusterPositions=[];
 
+	var that=this;
+	
+	// Hides all edges with given type
 	this.hideEdges=function(type, hideEdge)
 	{
 		var edgesToHide=[];
@@ -26,6 +38,7 @@ function TheoryGraph()
 		edges.update(edgesToHide);
 	}
 	
+	// Downloads canvas as image
 	this.downloadCanvasAsImage = function(button)
 	{
 		var minX=111110;
@@ -57,8 +70,31 @@ function TheoryGraph()
 			
 			//button.href = network.canvas.frame.canvas.toDataURL();
 			//button.download = "graph.png";
-			var image=network.canvas.frame.canvas.toDataURL("image/png")
-			window.open(image);
+
+			var downloadLink      = document.createElement('a');
+			downloadLink.target   = '_blank';
+			downloadLink.download = 'graph.png';
+
+			var image=network.canvas.frame.canvas.toDataURL("image/png");
+
+			var URL = window.URL || window.webkitURL;
+			var downloadUrl = image;
+
+			// set object URL as the anchor's href
+			downloadLink.href = downloadUrl;
+
+			// append the anchor to document body
+			document.body.appendChild(downloadLink);
+
+			// fire a click event on the anchor
+			downloadLink.click();
+
+			// cleanup: remove element and revoke object URL
+			document.body.removeChild(downloadLink);
+			URL.revokeObjectURL(downloadUrl);
+						
+			
+			//window.open(image);
 			network.setSize(originalWidth,originalHeight);
 			network.redraw();
 			network.fit();
@@ -66,6 +102,7 @@ function TheoryGraph()
 		});
 	}
 	
+	// Opens all clusters which were clustered "clusterOutliers"
     function openOutlierClusters(scale) 
 	{
         var newClusters = [];
@@ -86,12 +123,14 @@ function TheoryGraph()
         zoomClusters = newClusters;
     }
 	
+	// Select all nodes with nodeid
 	this.selectNodes = function(nodeIds)
 	{
 		network.selectNodes(nodeIds);
 		addToStateHistory("select", {"nodes": nodeIds});
 	}
 	
+	// Select nodes which has an Id similar to searchId
 	this.selectNodesWithIdLike=function(searchId)
 	{
 		var nodeIds = [];
@@ -108,6 +147,7 @@ function TheoryGraph()
 		network.selectNodes(nodeIds);
 	}
 	
+	// Clusters all outliers
 	this.clusterOutliers=function(scale)
 	{
 		var clusterOptionsByData = 
@@ -132,6 +172,7 @@ function TheoryGraph()
 		network.clusterOutliers(clusterOptionsByData);
 	}
 	
+	// Selects all nodes in area of given rect
 	this.selectNodesInRect = function(rect) 
 	{
 		var fromX;
@@ -156,6 +197,7 @@ function TheoryGraph()
 		network.selectNodes(nodesIdInDrawing);
 	}
 	
+	// Colorizes nodes by id
 	this.colorizeNodes = function(nodeIds,color)
 	{
 		if(nodeIds==undefined)
@@ -180,6 +222,7 @@ function TheoryGraph()
 		}
 	}
 	
+	// Cluster given nodes 
 	this.cluster = function(nodeIds,name,givenClusterId)
 	{
 		if(typeof givenClusterId ==="undefined")
@@ -226,6 +269,7 @@ function TheoryGraph()
 		}
 	}
 	
+	// Get graph located at jsonURL, downlaod it and render it
 	this.getGraph= function(jsonURL)
 	{
 		setStatusText("Downloading graph...");
@@ -261,7 +305,14 @@ function TheoryGraph()
 		$.get(jsonURL, drawGraph);
 	}
 
-	function drawGraph(data, status)
+	// Loads graph using JSON
+	this.loadJSONGraph=function(data)
+	{
+		drawGraph(data);
+	}
+	
+	// Draws given data as graph
+	function drawGraph(data, status=200)
 	{
 		if(status!=200 && status!="success")
 		{
@@ -280,6 +331,8 @@ function TheoryGraph()
 		originalNodes=data["nodes"];
 		originalEdges=data["edges"];
 
+		addUsedButNotDefinedNodes();
+		
 		ensureUniqueIds(originalNodes);
 		ensureUniqueIds(originalEdges);
 		
@@ -288,6 +341,64 @@ function TheoryGraph()
 		startConstruction();
 	}
 	
+	// Adds nodes to node-array, which were referenced by edges but not specified in nodes-array
+	function addUsedButNotDefinedNodes()
+	{
+		setStatusText("Adding used but not defined nodes...");
+		var mappedNodes=[];
+		for(var i=0;i< originalNodes.length;i++ )
+		{
+			mappedNodes[originalNodes[i].id]=originalNodes[i];
+		}
+		
+		for(var i=0;i< originalEdges.length;i++ )
+		{
+			if(originalEdges[i].from != undefined && mappedNodes[originalEdges[i].from]==undefined)
+			{
+				var nodeLabel=originalEdges[i].from;
+				var exploded=originalEdges[i].from.split("?");
+				if(exploded[1]!=undefined)
+				{
+					nodeLabel=exploded[1];
+				}
+				
+				var addNode=
+				{
+					"id" : originalEdges[i].from,
+					"style" : "border",
+					"label" : nodeLabel,
+					"url" : originalEdges[i].from
+				};
+				
+				originalNodes.push(addNode);
+				mappedNodes[originalEdges[i].from]=addNode;
+				console.log("Border-Node: "+nodeLabel+" ("+originalEdges[i].from+")");
+			}
+			if(originalEdges[i].to!=undefined && mappedNodes[originalEdges[i].to]==undefined)
+			{
+				var nodeLabel=originalEdges[i].to;
+				var exploded=originalEdges[i].to.split("?");
+				if(exploded[1]!=undefined)
+				{
+					nodeLabel=exploded[1];
+				}
+				
+				var addNode=
+				{
+					"id" : originalEdges[i].to,
+					"style" : "border",
+					"label" : nodeLabel,
+					"url" : originalEdges[i].to
+				};
+				
+				originalNodes.push(addNode);
+				mappedNodes[originalEdges[i].to]=addNode;
+				console.log("Border-Node: "+nodeLabel+" ("+originalEdges[i].to+")");
+			}
+		}
+	}
+	
+	// Apply styles to nodes/edges
 	function postprocessEdges()
 	{
 		for(var i=0;i<originalEdges.length;i++)
@@ -312,6 +423,7 @@ function TheoryGraph()
 				}
 				
 				originalEdges[i].dashes=styleInfos.dashes;
+				originalEdges[i].width=styleInfos.width;
 				originalEdges[i].color={color:styleInfos.color, highlight:styleInfos.colorHighlight, hover:styleInfos.colorHover};
 			}
 		}
@@ -376,6 +488,7 @@ function TheoryGraph()
 		}
 	}
 	
+	// Make sure every node and edge has unique ids 
 	function ensureUniqueIds(arrays)
 	{
 		var idArray=[];
@@ -393,6 +506,7 @@ function TheoryGraph()
 		}
 	}
 	
+	// Opens given cluster by id
 	this.openCluster = function(nodeId)
 	{
 		if (network.isCluster(nodeId) == true) 
@@ -410,6 +524,7 @@ function TheoryGraph()
         }
 	}
 	
+	// Estimates extra height of MathML as SVG
 	function estimateExtraSVGHeight(expression)
 	{
 		if(expression.indexOf("frac") == -1 && expression.indexOf("under") == -1  && expression.indexOf("over") == -1)
@@ -418,10 +533,11 @@ function TheoryGraph()
 		}
 		else
 		{
-			return 16;
+			return 0;
 		}
 	}
 	
+	// Converts MathML node to SVG node
 	function nodeToSVGMath(node)
 	{
 		$('#string_span').html(node["mathml"]);
@@ -433,9 +549,9 @@ function TheoryGraph()
 		if(node["shape"]=="image")
 		{
 			var overallheight=height+estimateExtraSVGHeight(node["mathml"]);
-			svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+(width+45*1)+' '+(30*1+overallheight)+'" width="'+(width+45*1)+'px" height="'+(30*1+height+estimateExtraSVGHeight(node["mathml"]))+'px" preserveAspectRatio="none">' +
+			svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+(width+16*1)+' '+(16*1+overallheight)+'" width="'+(width+16*1)+'px" height="'+(16*1+overallheight)+'px" preserveAspectRatio="none">' +
 			//svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMinYMin">' +
-			'<foreignObject x="18" y="15" width="'+(width+15)+'" height="'+overallheight+'">' +
+			'<foreignObject x="8" y="8" width="'+(width+15)+'" height="'+overallheight+'">' +
 			node["mathml"] +
 			'</foreignObject>' +
 			'</svg>';
@@ -451,6 +567,7 @@ function TheoryGraph()
 		node["image"]="data:image/svg+xml;charset=utf-8,"+ encodeURIComponent(svg);
 	}
 	
+	// Start construction of graph
 	function startConstruction()
 	{
 		setStatusText("Constructing graph...");
@@ -533,8 +650,6 @@ function TheoryGraph()
 				opti.SolveUsingForces(600,document.getElementById('nodeSpacingBox').value);
 			}
 		}
-		
-		console.log(originalNodes);
 		
 		nodes = new vis.DataSet(originalNodes);
 		edges = new vis.DataSet(originalEdges);
@@ -716,7 +831,7 @@ function TheoryGraph()
 			else 
 			{
 				openOutlierClusters(params.scale);
-			}
+			} 
 		});*/
 		
 		network.once('initRedraw', function() 
