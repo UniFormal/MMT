@@ -91,19 +91,33 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
 )
 
 // =================================
+// EXCLUDED PROJECTS
+// =================================
+import VersionSpecificProject._
+lazy val excludedProjects = {
+  Exclusions(guidedTours, metamath)
+    .java7(repl, odk)
+    .java9(concepts)
+}
+
+// =================================
 // Main MMT Projects
 // =================================
 lazy val src = (project in file(".")).
   enablePlugins(ScalaUnidocPlugin).
+  exclusions(excludedProjects).
   aggregate(
-    mmt, api,
-    leo, lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, odk, specware, stex, webEdit, planetary, interviews, latex, openmath, oeis, repl,
-    tiscaf, lfcatalog,
-    jedit
-)
+      mmt, api,
+      leo, lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, odk, specware, stex, webEdit, planetary, interviews, latex, openmath, oeis, repl,
+      tiscaf, lfcatalog,
+      jedit
+  ).settings(
+    unidocProjectFilter in (ScalaUnidoc, unidoc) := excludedProjects.toFilter
+  )
+
 
 lazy val mmt = (project in file("mmt")).
-  enablePlugins(ScalaUnidocPlugin).
+  exclusions(excludedProjects).
   dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, interviews).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
@@ -168,7 +182,7 @@ lazy val concepts = (project in file("concept-browser")).
   settings(mmtProjectsSettings("concept-browser"): _*).
   settings(
     libraryDependencies ++= Seq(
-      "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2.1"
+      "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
     ),
     unmanagedJars in Compile += Utils.lib.toJava / "tiscaf.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
@@ -204,8 +218,9 @@ lazy val pvs = (project in file("mmt-pvs")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-pvs"): _*)
 
+lazy val mmscala = RootProject(uri("https://github.com/digama0/mm-scala.git#master"))
 lazy val metamath = (project in file("mmt-metamath")).
-  dependsOn(api, lf, RootProject(uri("https://github.com/digama0/mm-scala.git#master"))).
+  dependsOn(api, lf, mmscala).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
 
 lazy val tps = (project in file("mmt-tps")).
@@ -228,12 +243,9 @@ lazy val stex = (project in file("mmt-stex")).
   dependsOn(api).
   settings(mmtProjectsSettings("mmt-stex"): _*)
 
-/*
 lazy val guidedTours = (project in file("mmt-guidedTours")).
   dependsOn(api).
   settings(mmtProjectsSettings("mmt-guidedTours"): _*)
-*/
-
 
 lazy val webEdit = (project in file("mmt-webEdit")).
   dependsOn(stex).
