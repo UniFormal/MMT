@@ -132,8 +132,8 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
     ServerResponse.fromText(bodyString)
   }
 
-  @deprecated("use SearchServer instead")
-  /** handles a resolving an MWS resposne */
+  @deprecated("use SearchServer instead", "")
+  /** handles a resolving an MWS response */
   private def resolveMWS(request : ServerRequest) : ServerResponse = {
     val body = request.body
 

@@ -61,7 +61,6 @@ trait CheckingCallback {
    def error(message: => String)(implicit history: History): Boolean = false
 
   def lookup(p: Path): Option[StructuralElement]
-  def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory]
   def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) : Module
 }
 
@@ -187,7 +186,7 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term]
 }
 
-@deprecated("must be reimplemented cleanly")
+@deprecated("must be reimplemented cleanly","")
 abstract class TheoryExpRule(head : GlobalName, oftype : GlobalName) extends InferenceRule(head,oftype) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
     val checks = apply(tm, covered)(solver,stack,history)
@@ -269,7 +268,7 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
 }
 
 /** always succeeds, e.g., as needed to implement proof irrelevance */
-@deprecated class TermIrrelevanceRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
+class TermIrrelevanceRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
   final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     history += "all terms of this type are equal"
     Some(true)

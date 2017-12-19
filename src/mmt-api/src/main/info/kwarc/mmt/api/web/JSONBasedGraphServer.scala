@@ -118,6 +118,7 @@ class JGraphSideBar extends Extension {
         ret.add(Tree(trimpath(dp) + "-cont-" + suffix,dp.last,trimpath(dp),"pgraph"))
         ret
       }
+    case _ => throw ImplementationError("impossible case")
   }
   private def doNarr(p : Path) : Tree = p match {
     case dp: DPath =>

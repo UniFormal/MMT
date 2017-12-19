@@ -257,7 +257,7 @@ object CompositionInfer extends InferenceRule(ModExp.composition, OfType.path) {
 object ComputeMorphism extends ComputationRule(ModExp.morphismapplication) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
       val OMM(t,m) = tm
-      val res = solver.getTheory(t).getOrElse(return None)
+      val res = Common.asAnonymousTheory(solver, t).getOrElse(return None)
       val translator = ApplyMorphism(m)
       def tr(opt : Option[Term]) = opt.map(s => translator(Context.empty,s))
       Some(AnonymousTheory(res.mt,res.decls.map{

@@ -67,7 +67,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     }
   }
 
-  @deprecated("needs to be reviewed")
+  @deprecated("needs to be reviewed","")
   def elaborateContext(outer: Context, con: Context) : Context = {
     var ret = Context.empty
     def currentContext = outer ++ ret
@@ -116,10 +116,10 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     }
     mod match {
       case v: DeclaredView => return //TODO
-      case t: DeclaredTheory =>
-        val at = t.getDeclarations.headOption.map(d => After(d.name)).getOrElse(AtEnd)
+      case thy: DeclaredTheory =>
+        val at = thy.getDeclarations.headOption.map(d => After(d.name)).getOrElse(AtEnd)
         var previous: Option[LocalName] = None
-        t.df.foreach {df =>
+        thy.df.foreach {df =>
           //TODO mod.getInnerContext is too small for nested theories
           objectLevel(df, mod.getInnerContext, rules) match {
             case ComplexTheory(cont) =>
@@ -128,26 +128,25 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 controller.add(d, at)// mod.add(d,None) //TODO add at beginning
               }
             case AnonymousTheory(mt,omls) =>
-              if (mt.isDefined) t.addMeta(mt.get) /* { // TODO should probably become meta theory somehow, but can't be overwritten
-                val inc = PlainInclude(mt.get,t.path) // TODO it can now!
-                inc.setOrigin(ElaborationOfDefinition)
-                apply(mt.get)
-                if (!t.metaC.isDefined) {
-                   t.metaC.set(OMMOD(mt.get))
+              if (mt.isDefined) thy.addMeta(mt.get)
+              var translations = Substitution() // replace all OML's with corresponding OMS's
+              // TODO this replaces too many OML's if OML-shadowing occurs 
+              def translate(tm: Term) = (new OMLReplacer(translations)).apply(tm, Context.empty)
+              omls foreach {o =>
+                val d = o match {
+                  case IncludeOML(_, OMPMOD(mp, Nil), _) =>
+                    PlainInclude(mp,thy.path)
+                    // we assume all references to included symbols already use OMS, i.e., do not have to be translated
+                  case o =>
+                    val tpT = o.tp map translate
+                    val dfT = o.df map translate
+                    translations ++= Sub(o.name, OMS(thy.path ? o.name))
+                    Constant(thy.toTerm, o.name, Nil, tpT, dfT, None)
                 }
-                controller.add(inc, at)
-              } */
-              omls foreach {
-                case IncludeOML(_, OMPMOD(mp, Nil), _) =>
-                  val i = PlainInclude(mp,t.path)
-                  i.setOrigin(ElaborationOfDefinition)
-                  controller.add(i, at)
-                case o =>
-                  val d = Constant(t.toTerm, o.name, Nil, o.tp, o.df, None)
-                  d.setOrigin(ElaborationOfDefinition)
-                  controller.add(d, at)
+                d.setOrigin(ElaborationOfDefinition)
+                controller.add(d, at)                
               }
-            case dfS => t.dfC.set(dfS)
+            case dfS => thy.dfC.set(dfS)
           }
         }
     }

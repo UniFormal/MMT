@@ -1,10 +1,10 @@
+/*
 package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils.MyList.{fromList}
 import info.kwarc.mmt.api.utils._
 import scala.xml.{Null, Node, NodeSeq, UnprefixedAttribute}
 
-/*
 
 //TODO: merge with content import
 /** import between two styles */

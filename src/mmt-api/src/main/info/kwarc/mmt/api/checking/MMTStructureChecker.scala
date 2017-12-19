@@ -66,7 +66,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     }
   }
   
-  @deprecated("unclear what happens here")
+  @deprecated("unclear what happens here", "")
   def elabContext(th : DeclaredTheory)(implicit ce: CheckingEnvironment): Context = {
     //val con = getContext(th)
     val rules = RuleSet.collectRules(controller,Context.empty)
@@ -234,7 +234,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             val j = Inhabitable(Stack(pr.free), pr.term)
             val cu = CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j).diesWith(env.ce.task)
             if (env.timeout != 0)
-               cu.setTimeout(env.timeout)(_ => log("Timed out!"))
+               cu.setTimeout(env.timeout)(() => log("Timed out!"))
             objectChecker(cu, env.rules)
           }
         }
@@ -274,7 +274,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             if (performCheck) {
               val cu = CheckingUnit(Some(cp), context, unknowns, j).diesWith(env.ce.task)
               if (env.timeout != 0) 
-                cu.setTimeout(env.timeout)(_ => log("Timed out!"))
+                cu.setTimeout(env.timeout)(() => log("Timed out!"))
               val cr = objectChecker(cu, env.rules)
               if (inferType && cr.solved) {
                 // if no expected type was known but the type could be inferred, add it

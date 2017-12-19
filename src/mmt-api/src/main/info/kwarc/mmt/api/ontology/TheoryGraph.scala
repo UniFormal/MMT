@@ -6,7 +6,7 @@ import scala.xml.Node
 import scala.collection.mutable.{HashSet,HashMap}
 
 /** types of edges in a theory multigraph; edges may have an id; there may be at most one edge without id between two nodes */
-abstract class Edge
+sealed abstract class Edge
 /** inclusion edge */
 case object IncludeEdge extends Edge
 /** meta-theory edge */
@@ -251,7 +251,7 @@ class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: T
      // edges between external nodes
      extnds.foreach {from =>
         tg.edgesFrom(from.id) foreach {case (to, etos) =>
-           if (extnds.exists(_ == to)) etos foreach {eto => addEdgeIfNeeded(from.id, eto, true)}
+           if (extnds.exists(_.id == to)) etos foreach {eto => addEdgeIfNeeded(from.id, eto, true)}
         }
      }
      

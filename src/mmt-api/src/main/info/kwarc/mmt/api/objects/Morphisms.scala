@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
+import symbols._
 import info.kwarc.mmt.api.objects.Conversions._
 
 //TODO definition expansion everywhere
@@ -200,7 +201,7 @@ object ModExp extends uom.TheoryScala {
   val morphismapplication = _path ? "morphismapplication"
   val instantiation = _path ? "theoryinstantiate"
 
-  @deprecated("(still used by Twelf)")
+  @deprecated("not needed but still used by Twelf", "")
   val tunion = _path ? "theory-union"
 }
 
@@ -245,18 +246,19 @@ object TUnion {
   }
 }
 
-// TODO this should inherti from MutableElementContainer
-class AnonymousTheory(val mt: Option[MPath], var decls: List[OML]) extends ElementContainer[OML] with DefaultLookup[OML] {
+/** auxiliary class for storing lists of declarations statefully without giving it a global name */
+class AnonymousTheory(val mt: Option[MPath], var decls: List[OML]) extends MutableElementContainer[OML] with DefaultLookup[OML] with DefaultMutability[OML] {
   def getDeclarations = decls
-  
-  def add(oml: OML, after: Option[LocalName] = None) {
-    // TODO
+  def setDeclarations(ds: List[OML]) {
+    decls = ds
   }
+  
   def rename(old: LocalName, nw: LocalName) = {
     val i = decls.indexWhere(_.name == old)
     if (i != -1) {
       val ooml = decls(i)
-      decls = decls.take(i) ::: OML(nw, ooml.tp, ooml.df, ooml.nt, ooml.featureOpt) :: decls.drop(i + 1)
+      val translatedOMLs = decls.drop(i + 1)   //TODO this must actually replace all old names with the new name
+      decls = decls.take(i) ::: OML(nw, ooml.tp, ooml.df, ooml.nt, ooml.featureOpt) :: translatedOMLs
     }
   }
   def toTerm = AnonymousTheory(mt, decls)

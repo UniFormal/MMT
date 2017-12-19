@@ -132,7 +132,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    // this is called from another tread and should interrupt parsing
    override def stop {
       // this may cause an inconsistent state but calling clear in parse method should fix most problems  
-      currentTask.foreach {_.kill((Unit) => ())}
+      currentTask.foreach {_.kill(() => ())}
    }
 
    private def getRegion(e: metadata.HasMetaData) : Option[SourceRegion] = SourceRef.get(e).map(_.region)

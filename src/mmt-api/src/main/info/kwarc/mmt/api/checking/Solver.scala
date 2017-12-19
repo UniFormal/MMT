@@ -16,9 +16,15 @@ import scala.util.Try
 /* ideas
  * inferType should guarantee well-formedness (what about LambdaTerm?)
  *   but what if there are unknowns whose type cannot be inferred? Is that even possible?
+ * 
  * limitedSimplify must include computation, definition expansion, but can stop on GlobalChange; but safety is usually needed
+ * 
  * constants have equality rule: injectivity and implicit arguments used to obtain necessary/sufficient condition (not preserved by morphism); congruence if no rule applicable
+ * 
  * false should not be returned without generating an error
+ * 
+ * injectivity rules must smartly handle situations like op(t1)=op(t2)
+ * currently all definitions in t1 and t2 are expanded even though op is often injective, especially if op is a type operator
  */
 
 object InferredType extends TermProperty[(Branchpoint,Term)](utils.mmt.baseURI / "clientProperties" / "solver" / "inferred")
@@ -420,30 +426,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
    }
 
-  @deprecated("FR: This code does not look right.")
+  @deprecated("FR: This code does not look right.","")
   def lookup(p : Path) : Option[StructuralElement] = controller.getO(p)
-  @deprecated("FR: This code does not look right. At the very least its purpose and maturity status must be documented.")
-  def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = safeSimplify(tm) match {
-    case AnonymousTheory(mt, ds) =>
-      Some(new AnonymousTheory(mt, Nil))
-    // add include of codomain of mor
-    case OMMOD(mp) =>
-      val th = Try(controller.globalLookup.getTheory(mp)).toOption match {
-        case Some(th2: DeclaredTheory) => th2
-        case _ => return None
-      }
-      val ds = th.getDeclarationsElaborated.map({
-        case c: Constant =>
-          OML(c.name, c.tp, c.df, c.not)
-        case PlainInclude(from, to) =>
-          IncludeOML(from, Nil)
-        case _ => ???
-      })
-      Some(new AnonymousTheory(th.meta, ds))
-    case _ =>
-      return None
-  }
-  @deprecated("Used in LFX, but could probably be done better")
+  @deprecated("Used in LFX, but could probably be done better","")
   def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) = controller.simplifier.materialize(cont,tm,expandDefs,parent)
    
    /**

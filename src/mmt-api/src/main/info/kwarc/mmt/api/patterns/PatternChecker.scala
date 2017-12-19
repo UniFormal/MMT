@@ -1,3 +1,4 @@
+/*
 package info.kwarc.mmt.api.patterns
 
 import info.kwarc.mmt.api._
@@ -15,7 +16,6 @@ import utils.MyList._
 
 import scala.io.Source
 
-/*
 
 /** tries to turn constants into instances
  */

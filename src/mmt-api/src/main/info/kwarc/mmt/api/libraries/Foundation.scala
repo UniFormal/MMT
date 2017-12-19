@@ -1,3 +1,4 @@
+/*
 package info.kwarc.mmt.api.libraries
 import info.kwarc.mmt.api._
 import objects._
@@ -7,7 +8,6 @@ import frontend._
 
 import scala.collection.mutable.HashSet
 
-/*
 
 abstract class FoundationLookup {
    val lup : Lookup

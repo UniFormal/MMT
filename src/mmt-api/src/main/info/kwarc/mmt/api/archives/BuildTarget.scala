@@ -616,11 +616,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
     "depFirst" is currently only kept for comparison and testing purposes and may eventually be disposed off
   */
 
-  @deprecated 
+  @deprecated("needs review", "")
   private def getDeps(bt: BuildTask): Set[Dependency] = estimateResult(bt).used.toSet
 
   // TODO called by AllTeX target
-  @deprecated 
+  @deprecated("needs review", "")
   protected def getFilesRec(a: Archive, in: FilePath): Set[Dependency] = {
     val inFile = a / inDim / in
     if (inFile.isDirectory)
@@ -630,7 +630,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     else Set.empty
   }
 
-  @deprecated 
+  @deprecated("needs review", "")
   private def getAnyDeps(dep: FileBuildDependency): Set[Dependency] = {
     if (dep.key == key) {
       // we are within the current target
@@ -643,7 +643,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   // TODO called by AllTeX target
-  @deprecated 
+  @deprecated("needs review", "")
   protected def getDepsMap(args: Set[Dependency]): Map[Dependency, Set[Dependency]] = {
     var visited: Set[Dependency] = Set.empty
     var unknown = args
@@ -662,7 +662,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     deps
   }
 
-  @deprecated 
+  @deprecated("needs review", "")
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
     val requestedDeps = getFilesRec(a, in)
     val deps = getDepsMap(getFilesRec(a, in))
