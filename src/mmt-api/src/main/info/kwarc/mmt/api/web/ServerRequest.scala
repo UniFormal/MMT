@@ -175,7 +175,7 @@ object WebQuery {
   }
 
   /** same as WebQuery.apply, for backwards compatibility */
-  @deprecated("you should probably use [[ServerRequest.parsedQuery]], if you still need to parse manually use [[WebQuery.apply]]. Beware that the new method takes care of URLDecoding")
+  @deprecated("you should probably use [[ServerRequest.parsedQuery]], if you still need to parse manually use [[WebQuery.apply]]. Beware that the new method takes care of URLDecoding", "")
   def parse(query: String) : WebQuery = {
     val kvs = utils.stringToList(query, "&")
     val pairs = kvs map { s =>

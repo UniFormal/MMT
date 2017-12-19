@@ -140,7 +140,10 @@ case class MPath(parent : DPath, name : LocalName) extends ContentPath with Slas
    def ^ : MPath = parent ? name.init
    /** go up to containing document */
    def ^^ : DPath = parent
+   /** go up one level */
    def ^! = if (name.length <= 1) ^^ else ^
+   /** the largest module containing this one */
+   def mainModule: MPath = if (name.length <= 1) this else parent ? name.head
    /** if name.length == 1 then this.toDPath.toMPath == this */
    def toDPath = parent / name
    /** this.toMPath == this */

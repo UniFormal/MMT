@@ -227,7 +227,11 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     // base case: lookup in atomic modules
     case OMPMOD(p, args) =>
        val mod = seeAsMod(getContent(p, error), error)
-       getDeclarationInElement(mod, args, name, error)
+       val newName = name.steps match {
+         case ComplexStep(`p`) :: r => LocalName(r)
+         case _ => name
+       }
+       getDeclarationInElement(mod, args, newName, error)
     // base case: lookup in atomic declaration
     case OMS(p) =>
        getO(p) match {
@@ -248,7 +252,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             name.head match {
               case ComplexStep(q) =>
                 getImplicit(q, p).foreach { m =>
-                  val sym = get(OMPMOD(q, args), name.tail, sourceError)
+                  val sym = get(OMMOD(q), name.tail, sourceError)
                   val symT = translate(sym, m, error)
                   return symT
                 }
@@ -344,6 +348,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
      declLnOpt match {
        case Some((d, LocalName(Nil))) => d // perfect match
        case Some((d, ln)) => d match {
+         case PlainInclude(p,_) =>
+           getDeclarationInTerm(OMMOD(p),ln,error)
          // a prefix exists and resolves to d, a suffix ln is left
          case s: Structure =>
            val sym = getDeclarationInTerm(s.from, ln, sourceError) // resolve ln in the domain of s
@@ -456,7 +462,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private def instantiate(decl: Declaration, params: Context, args: List[Term]): Declaration = {
     if (args.isEmpty) return decl // lookup from within parametric theory does not provide arguments
     val subs: Substitution = (params / args).getOrElse {
-        throw GetError("number of arguments does not match number of parameters")
+        throw GetError("number of arguments does not match number of parameters of " + decl.path + ": " + params.length + "(" + params.map(_.name).mkString(", ") + ") given: " + args)
       }
     if (subs.isIdentity) return decl // avoid creating new instance
     val newHome = decl.home match {
@@ -482,6 +488,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** translate a Declaration along a morphism */
   private def translate(d: Declaration, morph: Term, error: String => Nothing): Declaration = {
     morph match {
+      case OMINST(OMMOD(p),args) =>
+        getDeclarationInTerm(OMPMOD(p,args),LocalName(d.path.module) / d.name,error)
       case OMMOD(v) =>
         val link = getView(v)
         translateByLink(d, link, error)
@@ -569,15 +577,19 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   //However, laziness breaks the NotFound handling in the Controller
   def getDeclarationsInScope(mod: Term): List[StructuralElement] = {
     val impls = visibleVia(mod).toList
-    impls.flatMap {case (from, via) =>
-      get(from.toMPath) match {
-        case d: DeclaredTheory =>
-          via match {
-            case OMCOMP(Nil) => d.getDeclarations
-            case _ => Nil //TODO d.translate(mod, ???, ApplyMorphism(via))
-          }
-        case _ => Nil //TODO materialize?
-      }
+    impls.flatMap {
+      case (OMMOD(from), OMCOMP(Nil)) =>
+        get(from) match {
+          case d: DeclaredTheory =>
+            d.getDeclarations
+          case _ => Nil //TODO materialize?
+        }
+      case (OMMOD(from), OMINST(OMMOD(from2), args)) if from == from2 =>
+        get(from) match {
+          case d: DeclaredTheory =>
+            d.getDeclarations.map(c => getDeclarationInTerm(OMPMOD(from, args), c.name, s => throw GetError(s)))
+          case _ => Nil //TODO materialize?
+        }
     }
   }
 

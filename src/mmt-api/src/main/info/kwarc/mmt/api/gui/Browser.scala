@@ -40,5 +40,8 @@ class GUIPanel(controller: Controller) extends JPanel {
    private val empane = new ExtManPane(controller.extman)
    tabbed.addTab("Extensions", null, empane, "registered extensions")
 
+   private val configpane = new ConfigPane(controller.getConfig)
+   tabbed.addTab("Configuration", null, configpane, "loaded configuration entries")
+   
    add(tabbed, BorderLayout.CENTER)
 }

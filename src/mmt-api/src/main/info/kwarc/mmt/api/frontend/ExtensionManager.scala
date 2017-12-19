@@ -296,7 +296,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     }
     */
 
-    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover, rbe, new JSONBasedGraphServer).foreach {e => addExtension(e)}
+    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover, rbe).foreach {e => addExtension(e)}
     // build manager
     addExtension(new TrivialBuildManager)
     // pragmatic-strict converter
@@ -313,10 +313,12 @@ class ExtensionManager(controller: Controller) extends Logger {
     //serverPlugins
     List(new web.GetActionServer, new web.SVGServer, new web.QueryServer, new web.SearchServer,
       new web.TreeView, new web.BreadcrumbsServer, new web.ActionServer, new web.ContextMenuAggregator, new web.MessageHandler,
-      new web.SubmitCommentServer).foreach(addExtension(_))
+      new web.SubmitCommentServer, new JSONBasedGraphServer).foreach(addExtension(_))
     //queryExtensions
-    List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
-      new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
+    import ontology._
+    List(new Parse, new Infer, new Analyze, new Simplify, new Present, new PresentDecl).foreach(addExtension(_))
+    // graphs: loading these here is practical even though they need the path to dot (which will be retrieved via getEnvvar) 
+    List(new DeclarationTreeExporter, new DependencyGraphExporter, new TheoryGraphExporter).foreach(addExtension(_))
     // shell extensions
     List(new ShellSendCommand, new execution.ShellCommand, new Make).foreach(addExtension(_))
 

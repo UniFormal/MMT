@@ -1,7 +1,5 @@
 package info.kwarc.mmt.odk.OpenMath
 
-import scala.xml.{Node, Text, TextBuffer, Elem, Attribute, Null}
-
 /**
   * Represents an OpenMath Coding
   * @tparam T Type this OpenMath Coding codes from / to
@@ -73,6 +71,6 @@ object OMCoding {
     java.lang.Double.longBitsToDouble(longHexInvertEndianess)
   }
 
-  def bytes2Hex(bytes : List[Byte]) : String = new sun.misc.BASE64Encoder().encode(bytes.toArray)
-  def hex2Bytes(hex : String) : List[Byte] = new sun.misc.BASE64Decoder().decodeBuffer(hex).toList
+  def bytes2Hex(bytes: List[Byte]): String = java.util.Base64.getEncoder.encodeToString(bytes.toArray)
+  def hex2Bytes(hex: String): List[Byte] = java.util.Base64.getDecoder.decode(hex).toList
 }

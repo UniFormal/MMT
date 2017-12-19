@@ -139,7 +139,7 @@ class MMTConfig {
 
 
 /** helper functions for configurations */
-object MMTConfig {
+object MMTConfig {  
   /** split at whitespace (allowing for quoted segments to contain whitespace) */
   private def split(line: String): List[String] = splitAtWhitespace(line)
   /**

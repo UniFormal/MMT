@@ -125,6 +125,6 @@ then
 else
  cd "$dir"
  cat "$preamble" "${theory}.tex" "$postamble" \
-  | xelatex -jobname ${theory} -interaction scrollmode
+  | xelatex -jobname ${theory} -interaction scrollmode -synctex=1
 # rm -f ${theory}.{aux,idx,log,out,thm}
 fi

@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
+import symbols._
 import info.kwarc.mmt.api.objects.Conversions._
 
 //TODO definition expansion everywhere
@@ -59,12 +60,17 @@ object Morph {
     val mS = OMCOMP(associateComposition(m))
     mS match {
       case OMMOD(p) => OMMOD(p)
-      case OMS(p) =>
+      case OMS(p) => // TODO dangerous assumption that [mpath] is always a PlainInclude!
         if (p.name.length == 1 && p.name.steps.head.isInstanceOf[ComplexStep])
           OMCOMP()
         else
           OMS(p)
       case OMIDENT(t) => OMCOMP()
+      case OMINST(t,args) =>
+        if (args.isEmpty) OMCOMP() else m
+      case OMCOMP(head :: ms) if ms.exists(OMINST.unapply(_).isDefined) =>
+        // include/identity in a parametric theory is just include/identity again
+        simplify(OMCOMP(head :: ms.filter(OMINST.unapply(_).isEmpty)))
       case OMCOMP(ms) =>
         val msS = (ms map simplify) filter {
           case OMIDENT(_) => false
@@ -193,8 +199,9 @@ object ModExp extends uom.TheoryScala {
   val identity = _path ? "identity"
   val composition = _path ? "composition"
   val morphismapplication = _path ? "morphismapplication"
+  val instantiation = _path ? "theoryinstantiate"
 
-  @deprecated("(still used by Twelf)")
+  @deprecated("not needed but still used by Twelf", "")
   val tunion = _path ? "theory-union"
 }
 
@@ -239,18 +246,19 @@ object TUnion {
   }
 }
 
-// TODO this should inherti from MutableElementContainer
-class AnonymousTheory(val mt: Option[MPath], var decls: List[OML]) extends ElementContainer[OML] with DefaultLookup[OML] {
+/** auxiliary class for storing lists of declarations statefully without giving it a global name */
+class AnonymousTheory(val mt: Option[MPath], var decls: List[OML]) extends MutableElementContainer[OML] with DefaultLookup[OML] with DefaultMutability[OML] {
   def getDeclarations = decls
-  
-  def add(oml: OML, after: Option[LocalName] = None) {
-    // TODO
+  def setDeclarations(ds: List[OML]) {
+    decls = ds
   }
+  
   def rename(old: LocalName, nw: LocalName) = {
     val i = decls.indexWhere(_.name == old)
     if (i != -1) {
       val ooml = decls(i)
-      decls = decls.take(i) ::: OML(nw, ooml.tp, ooml.df, ooml.nt, ooml.featureOpt) :: decls.drop(i + 1)
+      val translatedOMLs = decls.drop(i + 1)   //TODO this must actually replace all old names with the new name
+      decls = decls.take(i) ::: OML(nw, ooml.tp, ooml.df, ooml.nt, ooml.featureOpt) :: translatedOMLs
     }
   }
   def toTerm = AnonymousTheory(mt, decls)
@@ -386,6 +394,17 @@ object ComplexMorphism {
 
   def unapply(t: Term): Option[Substitution] = t match {
     case ComplexTerm(this.path, sub, Context(), Nil) => Some(sub)
+    case _ => None
+  }
+}
+
+/** An OMINST represents an instantiation of a parametric theory */
+object OMINST {
+  val path = ModExp.instantiation
+
+  def apply(th : Term, pars : Term*) = OMA(OMS(this.path),th :: pars.toList)
+  def unapply(morph : Term) : Option[(Term,List[Term])] = morph match {
+    case OMA(OMS(`path`),th :: args) => Some((th,args))
     case _ => None
   }
 }

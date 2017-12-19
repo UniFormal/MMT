@@ -2,18 +2,46 @@ package scala.info.kwarc.mmt.lf.test
 
 import scala.info.kwarc.mmt.api.test.MMTTest
 
-class LFTest extends MMTTest("MMT/LFX","MitM/Foundation","Test/General")("info.kwarc.mmt.lf.Plugin") {
+class LFTest extends MMTTest("MMT/LFX","MMT/examples","Test/General")("info.kwarc.mmt.lf.Plugin") {
   behavior of "LF"
   // shouldhl("build MMT/urtheories scala-bin")
   shouldhl("build MMT/urtheories mmt-omdoc")
   //shouldhl("build MMT/examples scala-bin")
   //shouldhl("build MMT/examples mmt-omdoc")
-  it should "fully build MMT/LFX: " in {
-    // hl("build MMT/LFX scala-bin")
-    hl("build MMT/LFX mmt-omdoc")
-  }
+  shouldhl("build MMT/LFX mmt-omdoc")
 
-  shouldhl("build Test/General mmt-omdoc hol.mmt")
-  shouldhl("build Test/General mmt-omdoc views.mmt")
-  shouldhl("build Test/General mmt-omdoc structures.mmt")
+  shouldcheck("Test/General",Orders.testgeneral:_*)(mayfail = List("http://test.kwarc.info/Structure?C?test2?definition"))
+}
+
+class MitMTest extends MMTTest("MMT/LFX","MitM/Foundation","MitM/smglom")("info.kwarc.mmt.lf.Plugin") {
+  behavior of "MitM"
+  // shouldhl("build MitM/Foundation mmt-omdoc")
+
+  // shouldcheck("MitM/smglom",Orders.mitmsmglom:_*)()
+}
+
+object Orders {
+  val mitmsmglom = List(
+    "arithmetics/naturals.mmt",
+    "arithmetics/integers.mmt",
+    "arithmetics/rationals.mmt",
+    "arithmetics/reals.mmt",
+    "typed_sets.mmt",
+    "functions.mmt",
+    "topology/basics.mmt",
+    "algebra/basics.mmt",
+    "algebra/ringsfields.mmt",
+    "algebra/numberspaces.mmt",
+    "algebra/modulsvectors.mmt",
+    "calculus/normedmetric.mmt",
+    "calculus/sequencesseries.mmt",
+    "calculus/limitsderivatives.mmt",
+    "calculus/domains.mmt"
+  )
+
+  val testgeneral = List(
+    "hol.mmt",
+    "logic/pl.mmt",
+    "logic/fol.mmt"
+  )
 }

@@ -38,7 +38,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     * @param symbol  Symbol to handle
     * @param handler Handler to register
     */
-  def register(symbol: OMSymbol, handler: SCSCPHandler): Unit = {
+  def register(symbol: OMSymbol, handler: SCSCPHandler) {
     // TODO: Figure out relative paths, etc.
 
     if (handlers.isDefinedAt(symbol)) {
@@ -75,7 +75,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     *
     * @param symbol Symbol to unregister
     */
-  def unregister(symbol: OMSymbol): Unit = {
+  def unregister(symbol: OMSymbol) {
 
     if (!handlers.isDefinedAt(symbol)) {
       throw new Exception("No handler defined for symbol: " + symbol)
@@ -85,7 +85,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   }
 
   /** Processes forever, blocking */
-  def processForever(): Unit = {
+  def processForever() {
 
     // process stuff forever
     while(true){
@@ -95,7 +95,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   }
 
   /** Represents one iteration of processing. Never blocks. */
-  def process(): Unit = {
+  def process() {
     addClients()
     processClients()
     cleanupClients()
@@ -103,7 +103,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
 
 
   /** Adds all the clients to the pool of connections */
-  private def addClients(): Unit = {
+  private def addClients() {
     // make sure to wait at most 500 ms for a new connection
     socket.setSoTimeout(500)
 
@@ -124,7 +124,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     *
     * @param socket Socket that represents the new client
     */
-  private def addClient(socket: Socket): Unit = {
+  private def addClient(socket: Socket) {
     try {
       val client = new SCSCPServerClient(socket, this, encoding)
       client_map(client.identifier) = client
@@ -134,7 +134,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   }
 
   /** removes all non-connected clients from this server */
-  private def cleanupClients(): Unit = {
+  private def cleanupClients() {
     clients.foreach(c => {
       // if the client is not connected, we can remove it
       if (!c.connected) {
@@ -146,19 +146,19 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   }
 
   /** Processes all of the clients */
-  private def processClients(): Unit = {
+  private def processClients() {
     cleanupClients()
     clients.foreach(_.process())
   }
 
   /** Sends an info message to all clients attached to this server */
-  def info(message: String): Unit = {
+  def info(message: String) {
     cleanupClients()
     clients.foreach(_.info(message))
   }
 
   /** Quits all clients attached to this server */
-  def quit(reason: Option[String]): Unit = {
+  def quit(reason: Option[String]) {
     cleanupClients()
     clients.foreach(_.quit(reason))
   }
@@ -167,13 +167,4 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
 object SCSCPServer {
   def apply(service_name: String, service_version: String, service_identifier: String, host: String = "0.0.0.0", port: Int = 26133, encoding: String = "UTF-8") =
     new SCSCPServer(service_name, service_version, service_identifier, new java.net.ServerSocket(port, 0, InetAddress.getByName(host)), encoding)
-}
-
-
-
-class SCSCPExtension extends Extension {
-  override def start(args: List[String]): Unit = {
-    MitMServer.run()
-    implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
-  }
 }

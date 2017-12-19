@@ -284,7 +284,7 @@ class NotationBasedPresenter extends ObjectPresenter {
      doOperator("]]")
    }
       //helper method only
-   def doSqrt(args : List[Cont])(implicit pc: PresentationContext) {
+   def doSqrt(args : List[Cont])(implicit pc: PresentationContext) = if (args.nonEmpty) {
      doOperator("√")
      doBracketedGroup {
        args.head
@@ -293,7 +293,7 @@ class NotationBasedPresenter extends ObjectPresenter {
          e()
        }
      }
-   }
+   } else {}
 
    def doRootMarker(base : List[Cont], root : List[Cont])(implicit pc: PresentationContext){
      if(root != Nil){

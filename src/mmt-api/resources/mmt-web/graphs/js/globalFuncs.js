@@ -1,9 +1,16 @@
+// Variable holding menu entries, which were already added
+// --> Redownloading is not neccessary
 var alreadyAdded={};
+// Parent to add downloaded menu entries to
 var lazyParent="#";
+// Last graph type used
 var lastGraphTypeUsed;
+// Last graph data used
 var lastGraphDataUsed;
+// Array of history actions (used for undo button)
 var historyStates=[];
 
+// Sets the URL to given location (without reloading page)
 function setLocation(curLoc)
 {
     try 
@@ -18,6 +25,7 @@ function setLocation(curLoc)
     location.hash = '#' + curLoc;
 }
 
+// Creates right-click menu for MMT menu (left side)
 function generateCustomSideMenu()
 {
 	html="";
@@ -29,12 +37,14 @@ function generateCustomSideMenu()
 	document.getElementById('side-menu').innerHTML = html;
 }	
 
+// Sets status text
 function setStatusText(text)
 {
 	statusbar = document.getElementById('statusBar');
 	statusBar.innerHTML=text;
 }
 
+// Creates a new graph using type and graphdata parameter (if empty lastGraphTypeUsed and lastGraphDataUsed will be used)
 function createNewGraph(type,graphdata) 
 {
 	var type=(typeof type =="undefined") ? lastGraphTypeUsed : type;
@@ -47,6 +57,7 @@ function createNewGraph(type,graphdata)
 	setLocation(newURL);
 }	
 
+// Adds (child-)nodes to the MMT menu
 function addTreeNodes(data)
 {
 	var childNodes=data;
@@ -68,6 +79,7 @@ function addTreeNodes(data)
 	}
 }		
 
+// Extracts parameter from url by name 
 function getParameterByName(name, url) 
 {
 	if (!url) 
@@ -92,6 +104,7 @@ function addToStateHistory(func, parameterArray)
 	historyStates.push({"func":func, "param": parameterArray});
 }
 
+// Undos the last action
 function undoLastAction()
 {
 	var lastState = historyStates.pop();
@@ -113,4 +126,24 @@ function undoLastAction()
 		theoryGraph.selectNodes(lastState.param.nodes);
 	}
 	historyStates.pop();
+	doLastAction();
+}
+
+// Redos the last action
+function doLastAction()
+{
+	if(historyStates.length==0)
+		return;
+	
+	var lastState = historyStates[historyStates.length-1];
+	if(lastState.func=="unselect")
+	{
+		theoryGraph.selectNodes([]);
+		historyStates.pop();
+	}
+	else if(lastState.func=="select")
+	{
+		theoryGraph.selectNodes(lastState.param.nodes);
+		historyStates.pop();
+	}
 }

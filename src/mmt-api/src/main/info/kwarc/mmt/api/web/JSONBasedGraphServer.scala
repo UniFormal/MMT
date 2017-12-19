@@ -118,6 +118,7 @@ class JGraphSideBar extends Extension {
         ret.add(Tree(trimpath(dp) + "-cont-" + suffix,dp.last,trimpath(dp),"pgraph"))
         ret
       }
+    case _ => throw ImplementationError("impossible case")
   }
   private def doNarr(p : Path) : Tree = p match {
     case dp: DPath =>
@@ -319,8 +320,18 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
   val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
       val th = Try(controller.get(Path.parse(s))) match {
-        case scala.util.Success(t: DeclaredTheory) => t
-        case _ => return (Nil, Nil)
+        case scala.util.Success(t: DeclaredTheory) => List(t)
+        case _ =>
+          val as = s.toString.split(""" """).map(_.trim).filter(_ != "")
+          val a = controller.backend.getArchives.filter(a => as.exists(a.id.startsWith))
+          log("Archives: " + a.map(_.id).mkString(", "))
+          var theories : List[DeclaredTheory] = Nil
+          a.flatMap(_.allContent).map(c => Try(controller.get(c)).toOption) foreach {
+            case Some(th : DeclaredTheory) => theories ::= th
+            case _ =>
+          }
+          log(theories.length + " selected")
+          theories
       }
       var (theories, views): (List[DeclaredTheory], List[View]) = (Nil, Nil)
       def recurse(ith : DeclaredTheory) : Unit = {
@@ -336,7 +347,7 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
           case _ =>
         }
       }
-      recurse(th)
+      th foreach recurse
       //log("Selecting " + (th.path :: theories.map(_.path)).mkString(", "))
       (theories.distinct, views)
     }

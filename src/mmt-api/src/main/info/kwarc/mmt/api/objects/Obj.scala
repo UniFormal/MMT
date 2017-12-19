@@ -108,6 +108,8 @@ sealed abstract class Term extends Obj with ThisTypeTrait {
      * If the term is module level, this is guaranteed to be correct. */
    def toMPath : MPath = this match {
      case OMMOD(p) => p
+     case OMPMOD(p,_) =>
+        p // TODO maybe?
      case OMS(p) => p.module / p.name 
      case _ => mmt.mmtbase ? Obj.toPathEncoding(this)
    }

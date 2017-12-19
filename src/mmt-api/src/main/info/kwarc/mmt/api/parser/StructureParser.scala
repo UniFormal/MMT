@@ -13,6 +13,8 @@ import patterns._
 import symbols._
 import utils._
 
+import scala.util.Try
+
 /**
  * This class bundles all state that is maintained by a [[StructureParser]]
  *
@@ -308,6 +310,23 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     cc.unknowns = pr.unknown
     cc.free = pr.free
   }
+
+  private def doParameterComponent(context : Context)(implicit state: ParserState): List[Term] = {
+    val (obj,reg,pr) = readParsedObject(context,Some(Context.instanceParsingRule))
+    // TODO a) SourceRefs b) Free and unknown variables
+    pr.term match {
+      case Context.ParamsAsTerm(ls) => ls
+      case _ => Nil
+    }
+  }
+
+  private def readMPathWithParameters(newBase: Path, context : Context)(implicit state: ParserState) : (SourceRef,MPath,List[Term]) = {
+    val (fromRef, from) = readMPath(newBase)
+    val tms = if (state.reader.startsWith("(")) {
+      doParameterComponent(context)
+    } else Nil
+    (fromRef,from,tms)
+  }
 /*
     val cont = ParseResult.fromTerm(p) match {
 
@@ -335,8 +354,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         errorCont(makeError(currentSourceRegion, "not a declaration name of the right type: " + name))
         name
       case None =>
-        errorCont(makeError(currentSourceRegion, "unknown or ambiguous name: " + name))
-        name
+        // check whether it's a theory parameter
+        if (Try(controller.getAs(classOf[DeclaredTheory],home.toMPath).parameters).toOption.exists(_.isDeclared(name)))
+          name
+        else {
+          errorCont(makeError(currentSourceRegion, "unknown or ambiguous name: " + name))
+          name
+        }
     }
   }
 
@@ -478,8 +502,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case "include" =>
           mod match {
             case thy: DeclaredTheory =>
-              val (fromRef, from) = readMPath(thy.path)
-              val incl = PlainInclude(from, thy.path)
+              val (fromRef, from, args) = readMPathWithParameters(thy.path,context)
+              val incl = Include(thy.toTerm,from,args)
               SourceRef.update(incl.from, fromRef) //TODO awkward, same problem for metatheory
               addDeclaration(incl)
             case link: DeclaredLink =>
@@ -726,12 +750,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     val vpath = ns ? name
     readDelimiter(":")
-    val (fromRef, fromPath) = readMPath(vpath)
-    val from = OMMOD(fromPath)
+    val (fromRef, fromPath, fromArgs) = readMPathWithParameters(vpath,context)
+    val from = OMPMOD(fromPath,fromArgs)
     SourceRef.update(from, fromRef)
     readDelimiter("->", "→")
-    val (toRef, toPath) = readMPath(vpath)
-    val to = OMMOD(toPath)
+    val (toRef, toPath,toArgs) = readMPathWithParameters(vpath,context)
+    val to = OMPMOD(toPath,toArgs)
     SourceRef.update(to, toRef)
     readDelimiter("abbrev", "=") match {
       case "abbrev" =>
