@@ -1,0 +1,146 @@
+default namespace omdoc = "http://omdoc.org/ns"
+namespace om = "http://www.openmath.org/OpenMath"
+datatypes xsd = "http://www.w3.org/2001/XMLSchema-datatypes"
+start = omdoc
+
+
+################################
+#document level
+
+omdoc = element omdoc {base.attrib &  doc & module} 
+docref = element dref {target.attrib}
+module = theory* & view* & style* & modref*
+doc =  document* &  docref* & opaque*
+document = element document {name.attrib &  metadata? & module* & doc*}
+thydoc = thydocument* &  docref* & opaque* & thy*
+thydocument = element document {name.attrib &  metadata? & module* & thydoc*}
+
+format.attrib = attribute format {string}
+opaque = element opaque {format.attrib & metadata & text & term*}
+
+################################
+#module level
+modref = element mref {target.attrib}
+
+thy = thyinclude* & symbol & theory* 
+theory.attribs = name.attrib &  base.attrib? &  attribute meta {MMTURI}?
+theory.model = metadata?  & thy* & thydoc*
+theory = element theory {theory.attribs & theory.model}
+
+symbol = constant* &  structure* & alias* & ruleconstant*
+
+view = element view {name.attrib, base.attrib?, from.attrib, to.attrib, 
+                     ((linkinclude | assignment)* | element definition {morph})}
+assignment = conass | strass
+
+style = element style {name.attrib?, base.attrib?, attribute for {MMTURI}?, 
+                attribute includeDefault {bool}?, (nsetinclude | notation)*
+              }
+
+thyinclude = element import {from.attrib & metadata}
+nsetinclude = element \include {from.attrib}
+
+target.attrib = attribute target {MMTURI}?
+base.attrib = attribute base {URI}?
+name.attrib = attribute name {xsd:string}
+from.attrib = attribute from {MMTURI}
+to.attrib = attribute to {MMTURI}
+
+################################
+#symbol level
+
+constant = element constant {
+   name.attrib & 
+   attribute role {universe}? &
+   attribute arguments {arguments}?&
+   metadata &    	     
+   element type {term}? &
+   element supertype {term}? &
+   element definition {term}? &
+   element notations {notation*}?
+}
+
+structure = element structure {
+   name.attrib, from.attrib,
+   ((linkinclude | assignment)* | element definition {morph})
+}
+
+alias = element alias {
+   name.attrib, attribute for {MMTURI}
+}
+
+ruleconstant = element ruleconstant {name.attrib}
+
+conass = element conass {name.attrib, term}
+strass = element strass {name.attrib, morph}
+
+notation = element notation {
+	 attribute dimension {xsd:string} &
+	 attribute fixity {xsd:string} & 
+	 attribute arguments {xsd:string} & 
+	 attribute precedence {xsd:int} &
+	 element scope {attribute languages {xsd:string} & attribute priority {xsd:string}}}
+
+################################
+#object level
+
+identity = element om:OMS {mmtcd, attribute name {"identity"}}
+composition = element om:OMS {mmtcd, attribute name {"composition"}}
+morphismapplication = element om:OMS {mmtcd, attribute name {"morphismapplication"}}
+mmtcd = attribute base {"http://cds.omdoc.org/omdoc/mmt.omdoc"},
+      	attribute module {"mmt"}
+
+##########
+#terms
+
+term = element om:OMOBJ {OM}
+OM =  OMS | OMV | OMA | OMBIND | OMATTR | OMLIT | OMSF |ommorpha
+
+OMS = element om:OMS {base.attrib? &
+    attribute module {xsd:string}? &
+    name.attrib? &
+    metadata?}
+OMV = element om:OMV {name.attrib & metadata?}
+OMA = element om:OMA {metadata?, OM+}
+OMBIND =  element om:OMBIND {metadata?, OM, element om:OMBVAR {attvar* & metadata?}, OM}
+OMATTR = element om:OMATTR {metadata?, element om:OMATP {OM, OM}*, OM}
+OMLIT = element om:OMLIT {attribute type {MMTURI} & attribute value {xsd:string}}
+OMSF = element om:OMSF {omtext}
+omtext = element om:text {format.attrib & text}
+
+ommorpha = element om:OMA {metadata?, morphismapplication, OM, mr} 
+attvar = element om:OMATTR {metadata?, element om:OMATP {OM, OM}*, attvar}
+           | element om:OMV {name.attrib & metadata? & element type {OM}}
+
+##########
+#morphisms
+
+morph = element OMMOR {mr}
+mr = OMS
+       | element om:OMA {identity, theo}
+       | element om:OMA {composition, mr*}
+
+##########
+#theories
+
+theo = element OMTHY {th}
+th   = OMS
+
+property.attrib = attribute property {MMTURI}
+metadata = element metadata {link* & tag* & meta*}
+link = element link {attribute rel {MMTURI}, attribute resource {URI}}  
+tag  = element tag {property.attrib & attribute resource {URI}?}
+meta = element meta {property.attrib & term}
+
+################################
+# datatypes
+
+MMTURI = URI
+URI = xsd:anyURI
+int = xsd:integer
+bool = xsd:boolean
+
+universe = xsd:string
+role = xsd:string
+arguments = int | "*"
+precedence = int | "infinity" | "-infinity"
