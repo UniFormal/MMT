@@ -12,7 +12,7 @@ organization in ThisBuild := "info.kwarc.mmt"
 // =================================
 // GLOBAL SETTINGS
 // =================================
-scalaVersion in Global := "2.11.8"
+scalaVersion in Global := "2.11.12"
 scalacOptions in Global := Seq("-feature", "-deprecation", "-Xmax-classfile-name", "128")
 
 parallelExecution in ThisBuild := false
