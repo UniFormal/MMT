@@ -54,6 +54,58 @@ trait MutableElementContainer[S <: NamedElement] extends ElementContainer[S] {
   def reorder(name: LocalName): Unit
 }
 
+/** straightforward update methods for classes that store their elements in a list-like variable */
+trait DefaultMutability[S <: NamedElement] extends {self: MutableElementContainer[S] =>
+   /** must be provided by the implementing class to update the declarations */
+   protected def setDeclarations(items: List[S]): Unit
+
+   def add(i: S, at: AddPosition = AtEnd) {
+     val items = getDeclarations
+     // default: insert at end
+     def defaultPos = items.length
+     val pos = at match {
+        case After(a) => items.indexWhere(_.name == a) match {
+           case -1 => defaultPos // maybe issue warning that a not found
+           case i => i+1
+        }
+        case Before(a) => items.indexWhere(_.name == a) match {
+           case -1 => defaultPos
+           case i => i
+        }
+        case AtBegin => 0
+        case AtEnd => items.length 
+     }
+     val (bef,aft) = items.splitAt(pos) // items(pos) == aft.head
+     setDeclarations(bef ::: i :: aft)
+  }
+  /** updates or adds a child */
+  def update(s: S) {
+     val items = getDeclarations
+     val i = items.indexWhere(_.name == s.name)
+     if (i != -1)
+       setDeclarations(items.take(i) ::: s :: items.drop(i+1))
+     else
+       add(s)
+  }
+  /** deletes a child */
+  def delete(n: LocalName) = {
+     val d = getO(n)
+     val items = getDeclarations
+     setDeclarations(items.filterNot(_.name == n))
+     d
+  }
+  /** moves ln to the end */
+  def reorder(ln: LocalName) {
+     val items = getDeclarations
+     items.find(_.name == ln) match {
+        case Some(i) => 
+          delete(ln)
+          setDeclarations(items ::: List(i))
+        case None => throw ImplementationError("element does not exist")
+     }
+  }
+}
+
 trait ContainerElement[S <: StructuralElement] extends StructuralElement with MutableElementContainer[S] {
    /** the list of declarations in the order of addition, excludes generated declarations */
    def getPrimitiveDeclarations = getDeclarations.filterNot(_.isGenerated)

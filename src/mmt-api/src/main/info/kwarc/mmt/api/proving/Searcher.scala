@@ -24,7 +24,7 @@ import utils._
 class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUnit: ProvingUnit) extends Logger {
    val report = controller.report
    def logPrefix = provingUnit.logPrefix + "#prover"
-   
+
    implicit val presentObj: Obj => String = o => controller.presenter.asString(o)
    
    private val invertibleBackward = rules.getOrdered(classOf[BackwardInvertible])
@@ -34,8 +34,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
    
    implicit val facts = new Facts(this, 2, provingUnit.logPrefix)
 
-   private def doTheory(p : MPath) = controller.globalLookup.getO(p) match {
-      case Some(t: modules.DeclaredTheory) =>
+   private def doTheory(t : modules.DeclaredTheory) =
          t.getDeclarations.foreach {
             case c: Constant if !UncheckedElement.is(c) => c.tp.foreach { tp =>
                val a = Atom(c.toTerm, tp, c.rl)
@@ -43,13 +42,24 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
             }
             case _ =>
          }
-      case _ =>
+   private def getTheory(tm : Term) = {
+      val mpath = provingUnit.component.flatMap(_.parent match {
+         case mp : MPath => Some(mp)
+         case gn : GlobalName => Some(gn.module)
+         case _ => None
+      })
+      controller.simplifier.materialize(provingUnit.context,tm,true,mpath) match {
+         case dt : modules.DeclaredTheory =>
+            Some(dt)
+         case _ =>
+            None
+      }
    }
    private def doTerm(t : Term) : Unit = t match {
-      case OMPMOD(p,_) =>
-         doTheory(p)
+      case tm@OMPMOD(p,_) =>
+         getTheory(tm).foreach(doTheory)
       case ComplexTheory(body) => body foreach (v => v.tp match {
-         case Some(OMPMOD(p,_)) => doTheory(p)
+         case Some(tm @ OMPMOD(p,_)) => getTheory(tm).foreach(doTheory)
          case Some(tm) => facts.addConstantAtom(Atom(v.toTerm,tm,None))
          case _ =>
       })
@@ -187,6 +197,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
       g.getNextExpansion match {
          case Some(at) =>
             // apply the next invertible tactic, if any
+            log(g.conc)
             val applicable = applyAndExpand(at, g)
             if (! applicable)
               // at not applicable, try next tactic

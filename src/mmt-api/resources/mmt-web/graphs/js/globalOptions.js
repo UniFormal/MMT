@@ -1,5 +1,7 @@
-var serverBaseURL = undefined;
-var serverUrl = "/";
+var serverBaseURL = "/";
+var serverUrl = (typeof serverBaseURL == "undefined" || serverBaseURL==undefined) ? ((window.location.protocol=='file:')? "/" : "/mh/mmt/") : serverBaseURL;
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "")
+	serverUrl="/";
 
 // URL for getting menu-entries in side-menu
 var menuEntriesURL=serverUrl+":jgraph/menu?id=";
@@ -18,8 +20,7 @@ var graphDataURLDataParameterNameTGView = "graphdata=";
 var colorizingNodesArray = ["#CCCCFF", "#FFFFCC", "#FFCC99", "#CCFFCC", "#DDDDDD", "#FFCCCC"];
 
 
-// shapeProperties.useImageSize true
-// shapeProperties.useBorderWithImage true
+// Options for theory-graph in general
 var THEORY_GRAPH_OPTIONS = 
 {
 	physics: 
@@ -69,6 +70,7 @@ var THEORY_GRAPH_OPTIONS =
 	}*/
 };
 
+// All available arrow styles
 var ARROW_STYLES=
 {
 	"include":
@@ -79,7 +81,8 @@ var ARROW_STYLES=
 		dashes: false,
 		circle:false,
 		directed: true,
-		smoothEdge: true
+		smoothEdge: true,
+		width: 1
 	},
 	"modelinclude":
 	{
@@ -89,7 +92,8 @@ var ARROW_STYLES=
 		dashes: false,
 		circle:false,
 		directed: false,
-		smoothEdge: false
+		smoothEdge: false,
+		width: 1
 	},
 	"meta":
 	{
@@ -99,7 +103,8 @@ var ARROW_STYLES=
 		dashes: true,
 		circle: true,
 		directed: true,
-		smoothEdge: true
+		smoothEdge: true,
+		width: 1
 	},
 	"alignment":
 	{
@@ -109,7 +114,8 @@ var ARROW_STYLES=
 		dashes: true,
 		circle: false,
 		directed: false,
-		smoothEdge: true
+		smoothEdge: true,
+		width: 1
 	},
 	"view":
 	{
@@ -119,7 +125,8 @@ var ARROW_STYLES=
 		dashes: false,
 		circle:false,
 		directed: true,
-		smoothEdge: true
+		smoothEdge: true,
+		width: 1
 	},
 	"structure":
 	{
@@ -129,12 +136,13 @@ var ARROW_STYLES=
 		dashes: true,
 		circle:false,
 		directed: true,
-		smoothEdge: true
+		smoothEdge: true,
+		width: 1
 	}
 };
 
 
-
+// All available node styles
 var NODE_STYLES =
 {
 	"model":
@@ -144,6 +152,15 @@ var NODE_STYLES =
 		colorBorder: "#222222",
 		colorHighlightBorder: "#444444",
 		colorHighlight: "#EEEEEE",
+		dashes: false
+	},
+	"border":
+	{
+		shape: "circle",
+		color: "#E8E8E8",
+		colorBorder: "#D8D8D8",
+		colorHighlightBorder: "#A8A8A8",
+		colorHighlight: "#D8D8D8",
 		dashes: false
 	},
 	"theory":
@@ -157,17 +174,17 @@ var NODE_STYLES =
 	}
 };
 
-
+// All available graph types (for MMT menu)
 var GRAPH_TYPES =
 [
 	{
 		id: "thgraph",
-		menuText: "Theory Graph",
+		menuText: "Th. Graph",
 		tooltip: ""
 	},
 	{
 		id: "pgraph",
-		menuText: "Path Graph",
+		menuText: "P Graph",
 		tooltip: ""
 	},
 	{
@@ -182,7 +199,7 @@ var GRAPH_TYPES =
 	},
 	{
 		id: "mpd",
-		menuText: "Model Pathway Diagram",
+		menuText: "MPD Graph",
 		tooltip: "MPD Graph-Viewer"
 	}
 ];

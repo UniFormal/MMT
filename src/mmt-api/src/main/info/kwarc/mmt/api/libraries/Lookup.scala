@@ -89,7 +89,7 @@ abstract class Lookup {self =>
    def getImplicit(from: MPath, to: MPath) : Option[Term] = getImplicit(OMMOD(from), OMMOD(to))
    def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined
 
-   //def getDeclarationsInScope(mod : Term) : List[Content]
+   def getDeclarationsInScope(mod: Term): List[StructuralElement]
    
    /** if p is imported by a structure, returns the preimage of the symbol under the outermost structure */
    def preImage(p : GlobalName) : Option[GlobalName]

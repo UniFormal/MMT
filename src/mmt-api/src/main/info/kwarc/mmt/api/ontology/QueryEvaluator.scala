@@ -42,7 +42,7 @@ object ResultSet {
 /** evaluates a query expression to a query result */
 class QueryEvaluator(controller: Controller) {
 
-  private lazy val evaluators : List[QueryExtension] = controller.extman.get(classOf[QueryExtension])
+  private def evaluators : List[QueryExtension] = controller.extman.get(classOf[QueryExtension])
 
   /**
     * Evaluates a Query in memory, expects all I()s to be resolved already

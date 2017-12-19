@@ -19,19 +19,21 @@ case class ParsedCategory(name : String, implied: List[String], axioms: List[Str
   override def toString = "Category " + name + "\n  Inherits: " + implied.mkString(",") + "\n  Axioms: " +
     axioms.mkString(",") + "\n  Structure: " + structure.mkString(",") + "\n  Doc: " + doc
 
-  private val steps = name.replaceAll("""sage.categories.""","").split("\\.")
-  private val dpath = steps.init.foldLeft(Sage.catdoc)((base,step) => base / step)
-  private val tname = LocalName(steps.last)
+  private val steps = name.replaceAll("""sage.categories.""","").replaceAll("sage.","").split("\\.")
+  private val dpath = Sage.catdoc / steps.head
+  private val tname = LocalName(steps.tail.mkString("."))
   val path = dpath ? tname
+  println(path)
   val includes = implied.distinct
 
   val isStructure = structure contains name
 }
 case class ParsedClass(name : String, doc : String, implied: List[String],methods : List[SageMethod]) extends SageObject {
-  private val steps = name.replaceAll("""sage.categories.""","").split("\\.")
-  private val dpath = steps.init.foldLeft(Sage.clssdoc)((base,step) => base / step)
-  private val tname = LocalName(steps.last)
+  private val steps = name.replaceAll("""sage.categories.""","").replaceAll("""sage.classes.""","").replaceAll("sage.","").replaceAll("_class","").split("\\.")
+  private val dpath = Sage.clssdoc / steps.head
+  private val tname = LocalName(steps.tail.mkString("."))
   val path = dpath ? tname
+  println(path)
   val includes = implied.distinct
 }
 
@@ -168,4 +170,3 @@ class SageImporter extends Importer {
     BuildResult.empty
   }
 }
-

@@ -1,7 +1,7 @@
-package info.kwarc.mmt.api.utils.time
-
 /*
  
+package info.kwarc.mmt.api.utils.time
+
 // temporary code for measuring time, should be redone without dependency on Java 8, possibly by using scala's Duration class
 
 import java.time.temporal.ChronoUnit

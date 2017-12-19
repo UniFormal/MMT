@@ -16,9 +16,15 @@ import scala.util.Try
 /* ideas
  * inferType should guarantee well-formedness (what about LambdaTerm?)
  *   but what if there are unknowns whose type cannot be inferred? Is that even possible?
+ * 
  * limitedSimplify must include computation, definition expansion, but can stop on GlobalChange; but safety is usually needed
+ * 
  * constants have equality rule: injectivity and implicit arguments used to obtain necessary/sufficient condition (not preserved by morphism); congruence if no rule applicable
+ * 
  * false should not be returned without generating an error
+ * 
+ * injectivity rules must smartly handle situations like op(t1)=op(t2)
+ * currently all definitions in t1 and t2 are expanded even though op is often injective, especially if op is a type operator
  */
 
 object InferredType extends TermProperty[(Branchpoint,Term)](utils.mmt.baseURI / "clientProperties" / "solver" / "inferred")
@@ -388,19 +394,25 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * returns nothing if the type could not be reconstructed
     */
    def getType(p: GlobalName): Option[Term] = {
-      val c = controller.globalLookup.getConstant(p)
+      val c = getConstant(p)
       val t = c.tpC.getAnalyzedIfFullyChecked
       if (t.isDefined)
         addDependency(p $ TypeComponent)
       t
    }
 
+  private def getConstant(p : GlobalName) : Constant =
+    controller.library.get(ComplexTheory(constantContext), LocalName(p.module) / p.name, s => throw GetError(s)) match {
+      case c: Constant => c
+      case d => throw GetError("Not a constant: " + d)
+    }
+
    /** retrieves the definiens of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed
     */
    def getDef(p: GlobalName) : Option[Term] = {
-      val c = controller.globalLookup.getConstant(p)
+      val c = getConstant(p)
       val t = c.dfC.getAnalyzedIfFullyChecked
       if (t.isDefined)
         addDependency(p $ DefComponent)
@@ -414,30 +426,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
    }
 
-  @deprecated("FR: This code does not look right.")
+  @deprecated("FR: This code does not look right.","")
   def lookup(p : Path) : Option[StructuralElement] = controller.getO(p)
-  @deprecated("FR: This code does not look right. At the very least its purpose and maturity status must be documented.")
-  def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = safeSimplify(tm) match {
-    case AnonymousTheory(mt, ds) =>
-      Some(new AnonymousTheory(mt, Nil))
-    // add include of codomain of mor
-    case OMMOD(mp) =>
-      val th = Try(controller.globalLookup.getTheory(mp)).toOption match {
-        case Some(th2: DeclaredTheory) => th2
-        case _ => return None
-      }
-      val ds = th.getDeclarationsElaborated.map({
-        case c: Constant =>
-          OML(c.name, c.tp, c.df, c.not)
-        case PlainInclude(from, to) =>
-          IncludeOML(from, Nil)
-        case _ => ???
-      })
-      Some(new AnonymousTheory(th.meta, ds))
-    case _ =>
-      return None
-  }
-  @deprecated("Used in LFX, but could probably be done better")
+  @deprecated("Used in LFX, but could probably be done better","")
   def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) = controller.simplifier.materialize(cont,tm,expandDefs,parent)
    
    /**
@@ -507,8 +498,18 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      history += "solving type of " + name + " as " + value
       val valueS = simplify(value)(Stack.empty, history)
       val (left, solved :: right) = solution.span(_.name != name)
-      if (solved.tp.isDefined)
-         check(Equality(Stack.empty, valueS, solved.tp.get, None))(history + "solution for type must be equal to previously found solution")
+      if (solved.tp.isDefined) {
+        /* TODO this is a first attempt at what roughly should happen. Since WithoutDelay doesn't solve variables itself
+           TODO I'm calling checkEquality if subtyping fails. */
+        var checksOut = tryToCheckWithoutDelay(Subtyping(Stack.empty, valueS, solved.tp.get))
+        if (checksOut.contains(true)) true
+        else { // TODO in one of two cases the previous solution should probably be updated (probably to the supertype?)
+          checksOut = tryToCheckWithoutDelay(Subtyping(Stack.empty,solved.tp.get,valueS))
+            if (checksOut contains true) true else
+            check(Equality(Stack.empty, valueS, solved.tp.get, None))(history + "solution for type must be equal to previously found solution")
+        } /* TODO Alternatively one could keep track of all solutions and check which one (or combination) checks out, but that seems
+             TODO expensive. */
+      }
       else {
          val vd = solved.copy(tp = Some(valueS))
          solution = left ::: vd :: right
@@ -713,7 +714,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             implicit val history = new History(Nil)
             vd.tp match {
               case None =>
-                error("unsolved (untyped) unknown: " + vd.name) 
+                error("unsolved (untyped) unknown: " + vd.name)
               case Some(tp) =>
                 val rO = typebasedsolutionRules.find(r => r.applicable(tp))
                 rO match {
@@ -1004,39 +1005,53 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        return true
      }
      history += "not obviously equal, trying subtyping"
-     if (subtypingRules.nonEmpty) {
-        implicit val stack = j.stack
-        var activerules = subtypingRules
-        var done = false
-        var tp1S = j.tp1
-        var tp2S = j.tp2
-        while (!done) {
-          val (tmp1, tmp2, rOpt) = safeSimplifyUntil(tp1S, tp2S) {case (a1,a2) =>
-            activerules.find(_.applicable(a1,a2))
-          }
-          tp1S = tmp1
-          tp2S = tmp2
-          rOpt match {
-            case Some(rule) =>
-              history += ("applying subtyping rule " + rule.toString)
-              try {
-                val b = rule(this)(tp1S,tp2S).getOrElse {throw rule.Backtrack("")}
-                return b
-              } catch {
-                case t : MaytriggerBacktrack#Backtrack =>
-                  history += t.getMessage
-                  activerules = dropJust(activerules, rule)
-              }
-            case None =>
-              done = true
-              // if (existsActivatable) return delay(Subtyping(stack, tp1S, tp2S), true)
-          }
-        }
+     def innerCheck(tp1 : Term, tp2 : Term) : Boolean = if (subtypingRules.nonEmpty) {
+       implicit val stack = j.stack
+       var activerules = subtypingRules
+       var done = false
+       var tp1S = tp1
+       var tp2S = tp2
+       while (!done) {
+         val (tmp1, tmp2, rOpt) = safeSimplifyUntil(tp1S, tp2S) { case (a1, a2) =>
+           activerules.find(_.applicable(a1, a2))
+         }
+         tp1S = tmp1
+         tp2S = tmp2
+         rOpt match {
+           case Some(rule) =>
+             history += ("applying subtyping rule " + rule.toString + " on " + presentObj(tp1S) + " <: " + presentObj(tp2S))
+             try {
+               val b = rule(this)(tp1S, tp2S).getOrElse {
+                 throw rule.Backtrack("")
+               }
+               return b
+             } catch {
+               case t: MaytriggerBacktrack#Backtrack =>
+                 history += t.getMessage
+                 activerules = dropJust(activerules, rule)
+             }
+           case None =>
+             // try unsafe (since the alternative is equality-checking, which does this anyway, this shouldn't break anything)
+             val tp1N = simplify(tp1S)
+             val tp2N = simplify(tp2S)
+             if (tp1S.hashneq(tp1N) || tp2S.hashneq(tp2N)) {
+               history += "Trying unsafe"
+               return innerCheck(tp1N, tp2N)
+             }
+
+             history += "No rules left; final terms are: " + presentObj(tp1S) + " and " + presentObj(tp2S)
+             done = true
+           // if (existsActivatable) return delay(Subtyping(stack, tp1S, tp2S), true)
+         }
+       }
+       false
+     } else false
+      if (innerCheck(j.tp1,j.tp2)) true else {
+        // otherwise, we default to checking equality
+        // in the absence of subtyping rules, this is the needed behavior anyway
+        history += "can't establish subtype relation, falling back to checking equality"
+        check(Equality(j.stack, j.tp1, j.tp2, None))
       }
-      // otherwise, we default to checking equality
-      // in the absence of subtyping rules, this is the needed behavior anyway
-      history += "can't establish subtype relation, falling back to checking equality"
-      check(Equality(j.stack, j.tp1, j.tp2, None))
    }
 
    /** proves a Universe Judgment
@@ -1284,11 +1299,13 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        def hasUnknowns(tm : Term) = (tm.freeVars intersect unknownsL).nonEmpty
        // j is delayed without a special treatment; if anything else is left to try, delay; else throw error
 
-       // it *could* be that a torso is an application of an unknown, in which case equality should be checked?
        if (unknownsLeft && existsActivatable(allowIncomplete = true))
          delay(j)
-       else if (t1.apps.length == t2.apps.length && (hasUnknowns(t1.torso) || hasUnknowns(t2.torso)))
-         checkEquality(Equality(stack, t1.torso, t2.torso, None)) // this is new
+       else if // it *could* be that a torso is an application of an unknown, in which case equality should be checked?
+       (t1.apps.length == t2.apps.length &&
+         (hasUnknowns(t1.torso) || hasUnknowns(t2.torso)) &&
+         (t1.apps.nonEmpty || t2.apps.nonEmpty)) // this condition is rather hacky, but necessary to avoid infinite loops
+         checkEquality(Equality(stack, t1.torso, t2.torso, None))
        else {
          error("terms have different shape, thus they cannot be equal")
        }
@@ -1449,7 +1466,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      }
      if (checkingUnit.isKilled) {
        return tm
-     }
+     } /*
      tm.head match {
        case Some(h) =>
          // use first applicable rule
@@ -1466,8 +1483,45 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          // no applicable rule, expand a definition
          expandDefinition
        case None => expandDefinition
-     }
+     } */
+     val traverser = new SimplifyTraverser(stack,history)
+     val (ret,done) = traverser.run(tm)
+     if (done) {
+       history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(ret))
+       ret
+     } else expandDefinition
    }
+
+  val thisSolver = this
+
+  private class SimplifyTraverser(stack : Stack,history : History) extends StatelessTraverser {
+    private var done = false
+    def run(t : Term) : (Term,Boolean) = {
+      val ret = traverse(t)(stack.context,())
+      (ret,done)
+    }
+    override def traverse(t: Term)(implicit con: Context, state: State): Term =
+      if (done || t.isInstanceOf[OML]) t else { // OMLs probably shouldn't be traversed, unless done explicitly by a rule
+      t.head match {
+        case Some(h) =>
+          // use first applicable rule
+          computationRules foreach {rule =>
+            if (rule.head == h) {
+              val ret = rule(thisSolver)(t, false)(Stack(con),history)
+              ret foreach {tmS =>
+                history += "applying computation rule " + rule.toString
+                done = true
+                return tmS
+              }
+            }
+          }
+          // no applicable rule, traverse
+          Traverser(this,t)
+        case None =>
+          Traverser(this,t)
+      }
+    }
+  }
 
    /** special case of the version below where we simplify until an applicable rule is found
  *
@@ -1587,7 +1641,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
    def solveTyping(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
      val unknownsLeft = tm.freeVars intersect solution.map(_.name)
-     val tnf = TorsoNormalForm(unknownsLeft)
+     val tnf = TorsoNormalForm(Nil)
       tm match {
          //foundation-independent case: direct solution of an unknown variable
          case OMV(m) =>
@@ -1650,7 +1704,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
       log(msg)
       history += msg
-      val pu = ProvingUnit(checkingUnit.component, simplify(context)(Stack(context),history).asInstanceOf[Context], conc, logPrefix).diesWith(checkingUnit)
+      val pu = ProvingUnit(checkingUnit.component, simplify(context)(Stack(context),history), conc, logPrefix).diesWith(checkingUnit)
       controller.extman.get(classOf[Prover]) foreach {prover =>
          val (found, proof) = prover.apply(pu, rules, 3) //Set the timeout on the prover
          if (found) {

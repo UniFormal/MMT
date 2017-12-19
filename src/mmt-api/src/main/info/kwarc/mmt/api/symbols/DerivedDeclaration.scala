@@ -284,7 +284,7 @@ trait TheoryLike {self: StructuralFeature =>
 /** helper object */
 object ParametricTheoryLike {
    /** official apply/unapply methods for the type of a ParametricTheoryLike derived declaration */ 
-   case class Type[A <: ParametricTheoryLike](cls: Class[A]) {
+   case class Type(cls: Class[_ <: ParametricTheoryLike]) {
      val mpath = SemanticObject.javaToMMT(cls.getCanonicalName)
      
      def apply(params: Context) = OMBINDC(OMMOD(mpath), params, Nil)

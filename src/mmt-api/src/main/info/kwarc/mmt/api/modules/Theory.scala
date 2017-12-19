@@ -42,7 +42,8 @@ class DeclaredTheory(doc : DPath, name : LocalName, private var mt : Option[MPat
    /** the base theory */
    def df = dfC.get
 
-  def addMeta(mp : MPath) = mt match {
+   @deprecated("awkward hack", "")
+   def addMeta(mp : MPath) = mt match {
     case Some(mti) if mti != mp =>
       throw GeneralError("Theory " + path + " already has meta theory " + mti)
     case _ => mt = Some(mp)
@@ -120,7 +121,7 @@ class DeclaredTheory(doc : DPath, name : LocalName, private var mt : Option[MPat
    }
 }
 
-@deprecated("use dfC in DeclaredTheory")
+@deprecated("use dfC in DeclaredTheory", "")
 class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) extends Theory(doc, name) with DefinedModule {
    val parameters = Context()
    def getComponents = List(DefComponent(dfC))

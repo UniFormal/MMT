@@ -1,7 +1,9 @@
+// Some constants
 var Constants=[];
 Constants.DependencyWidth = 30;
 Constants.DependencyHeight=30;
 
+// Class representing a line
 function HelperLine(xStart, yStart, xEnd, yEnd)
 {
 	this.xStart = xStart;
@@ -10,20 +12,30 @@ function HelperLine(xStart, yStart, xEnd, yEnd)
 	this.yEnd = yEnd;
 }
 
+// Optimizer CLass
 function Optimizer(nodes, edges)
 {
+	// Amount of line colisions in current solution
 	var overAllColision;
+	// Copy of all nodes
 	var myAllNodes=nodes;
+	// Array representing a colision matrix, to check for colisions quickly
 	var field=[];
+	// Max width of canvas/area to use
 	var myWidth=12000;
+	// Max height of canvas/area to use
 	var myHeight=12000;
+	// Amount of nodes in graph
 	var countNodesInGraph;
+	// Amount of edges in graph
 	var edgesCount=edges.length;
 	var that=this;
 	
 	mapEdgesIntoNodes(edges);
 	identifySubgraphs();
 	
+	// Find subgraphs and give each graph an unique number, which will be propagated to the nodes
+	// e.g. myAllNodes[i].graphNumber=1
 	function identifySubgraphs()
 	{
 		setStatusText("Identify Subgraphs...");
@@ -64,6 +76,8 @@ function Optimizer(nodes, edges)
 		}
 	}
 	
+	// Sets the connection between each node (so maps the edges-array directly to attributes of nodes)
+	// e.g. mappedNodes[edges[i].from].toConnected.push(mappedNodes[edges[i].to]);
 	function mapEdgesIntoNodes(edges)
 	{
 		setStatusText("Mapping Edges to Nodes...");
@@ -100,6 +114,7 @@ function Optimizer(nodes, edges)
 		}
 	}
 	
+	// Initializes the optimizer with a random but heurstically optimized solution
 	this.GenerateRandomSolution = function()
 	{
 		lines = [];
@@ -111,11 +126,13 @@ function Optimizer(nodes, edges)
 		}
 	}
 
+	// Sets x and y of colision field
 	function UpdateFieldColision( x,  y,  value = 1 )
 	{
 		field[ y * myWidth + x ] = value;
 	}
 	
+	// Finds heuristically a good node position to insert new node to
 	function InsertNodeAtGoodPosition(n, lines, iterations = 5 )
 	{
 		var xOffset = Constants.DependencyWidth / 2;
@@ -198,7 +215,7 @@ function Optimizer(nodes, edges)
 		}
 	}
 
-	
+	// Calculates fitness of current solution (the less overlapping lines the better is fitness)
 	function CalculateFitness()
 	{
 		if( OverAllColision != -1 )
@@ -245,6 +262,7 @@ function Optimizer(nodes, edges)
 		return (val > 0) ? 1 : 2; // clock or counterclock wise
 	}
 
+	// Gets amount of line colisions overall
 	function GetAllLineColision( lines )
 	{
 		var colision = 0;
@@ -276,7 +294,7 @@ function Optimizer(nodes, edges)
 		return colision;
 	}
 
-	
+	// Finds a random path from startNode to any node (until all nodes are visited or there is no other way)
 	function findRandomPath(startNode)
 	{
 		if(startNode===undefined)
@@ -291,8 +309,13 @@ function Optimizer(nodes, edges)
 			currentPath.push(n);
 			var nextNode=Math.floor(Math.random() * n.connectedNodes.length);
 			
-			var maxNode=undefined;
-			if(Math.floor(Math.random() * 100)>20)
+			if(n.connectedNodes.length==0)
+			{
+				return currentPath;
+			}
+			
+			var maxNode=n.connectedNodes[0];
+			if(Math.floor(Math.random() * 100)>66)
 			{
 				for(var i=0;i<n.connectedNodes.length;i++)
 				{
@@ -305,11 +328,6 @@ function Optimizer(nodes, edges)
 			}
 			
 			var i=0;
-			if(n.connectedNodes.length==0)
-			{
-				return currentPath;
-			}
-			
 			while(n.connectedNodes[nextNode].visited==true || n.connectedNodes[nextNode].connectedNodes==undefined || n.connectedNodes[nextNode].connectedNodes.length==0)
 			{
 				nextNode=i;
@@ -330,7 +348,7 @@ function Optimizer(nodes, edges)
 		return currentPath;
 	}
 	
-	
+	// Function to calculate weakly hierarchical layout of graph
 	this.weaklyHierarchicalLayout = function(iterations, spacingValue, usingMinMax = false, currTemperature = 0.9, initialStep = 30.0 )
 	{
 		for( var j = 0; j < myAllNodes.length; j++ )
@@ -362,14 +380,14 @@ function Optimizer(nodes, edges)
 				maxEdgesDif=edgesDif;
 			}
 			
-			if(maxNode.toConnected < n.toConnected)
+			if(maxNode.toConnected.length < n.toConnected.length)
 			{
 				maxNode=n;
 			}
 		}
 		
 		var longPath=[];
-		for(var i=0;i<iterations*10;i++)
+		for(var i=0;i<iterations*16;i++)
 		{
 			if(i%50==0)
 			{
@@ -509,6 +527,7 @@ function Optimizer(nodes, edges)
 		that.SolveUsingForces(5, spacingValue, true, usingMinMax, currTemperature , 3);
 	}
 	
+	// Function to calculate forces driven layout
 	this.SolveUsingForces = function(iterations, spacingValue, resetForcesFixed=true, usingMinMax = false, currTemperature = 0.9, initialStep = 30.0 )
 	{
 		if(resetForcesFixed==true)
@@ -611,6 +630,7 @@ function Optimizer(nodes, edges)
 		placeGraphs();
 	}
 
+	// Places all different graphs on canvas with no overlap
 	function placeGraphs()
 	{
 		var rows=(countNodesInGraph.length+1)>>1;
@@ -662,6 +682,7 @@ function Optimizer(nodes, edges)
 		}
 	}
 	
+	// Check if current line colides with any other line
 	function GetLineColision(currLine, lines)
 	{
 		var colision = 0;

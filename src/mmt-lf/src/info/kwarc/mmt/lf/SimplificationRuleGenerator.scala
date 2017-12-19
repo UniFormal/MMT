@@ -8,6 +8,9 @@ import uom._
 import utils._
 import notations.ImplicitArg
 
+/* idea: allow for custom typing rules that lift an object level typing relation in a way similar to quotientieng by an object level equality 
+ */
+
 /**
  * convenience class for storing the names of an OuterInnerTerm
  * 

@@ -17,8 +17,9 @@ import scala.xml.Elem
  * @param contentAncestor the closest container of this document that is a module (if any)
  * @param nsMap the namespaces declared in this document
  */
+//TODO check if we can mixin DefaultLookup 
 class Document(val path: DPath, val root: Boolean = false, val contentAncestor: Option[Body] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty)
-     extends NarrativeElement with ContainerElement[NarrativeElement] {
+     extends NarrativeElement with ContainerElement[NarrativeElement] with DefaultMutability[NarrativeElement] {
   val feature = "document"
   /** the containing document if root == false; otherwise, the URI without path */ 
   def parentOpt = if (root) None else Some(parent)
@@ -33,6 +34,11 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
 
   /** returns the list of children of the document (including narration) */
   def getDeclarations: List[NarrativeElement] = items
+  
+  /* used by DefaultMutability for add, delete, etc. */
+  protected def setDeclarations(nes: List[NarrativeElement]) {
+    items = nes
+  }
 
   /**
    * @return list of modules declared in this Document or its children (depth first)
@@ -75,54 +81,6 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
   }
   /** same as get */
   def getLocally(name: LocalName) = getO(name)
-  
-  /**
-   * adds a child after a given child or at the end
-   */
-  def add(i: NarrativeElement, at: AddPosition = AtEnd) {
-     // default: insert at end
-     def defaultPos = items.length
-     val pos = at match {
-        case After(a) => items.indexWhere(_.name == a) match {
-           case -1 => defaultPos // maybe issue warning that a not found
-           case i => i+1
-        }
-        case Before(a) => items.indexWhere(_.name == a) match {
-           case -1 => defaultPos
-           case i => i
-        }
-        case AtBegin => 0
-        case AtEnd => items.length 
-     }
-     
-     val (bef,aft) = items.splitAt(pos) // items(pos) == aft.head
-     items = bef ::: i :: aft
-  }
-  
-  /** updates or adds a child */
-  def update(ne: NarrativeElement) {
-     val i = items.indexWhere(_.name == ne.name)
-     if (i != -1)
-       items = items.take(i) ::: ne :: items.drop(i+1)
-     else
-       add(ne)
-  }
-  
-  /** deletes a child */
-  def delete(n: LocalName) = {
-     val d = getO(n)
-     items = items.filterNot(_.name == n)
-     d
-  }
-  /** moves ln to the end */
-  def reorder(ln: LocalName) {
-     items.find(_.name == ln) match {
-        case Some(i) => 
-          delete(ln)
-          items = items ::: List(i)
-        case None => throw ImplementationError("element does not exist")
-     }
-  }
 
   override def toString: String = "document " + path + items.map("\n  " + _.toString).mkString + "\n"
 

@@ -249,7 +249,8 @@ class XMLReader(controller: Controller) extends Logger {
             val (rest, from) = ReadXML.getTermFromAttributeOrChild(imp, "from", nsMap)
             val adjustedName = if (name.length > 0) name else from match {
                case OMMOD(p) => LocalName(p)
-               case _ => throw ParseError("domain of include must be atomic")
+               case OMPMOD(p,_) => LocalName(p)
+               case _ => throw ParseError("domain of include must be atomic: " + controller.presenter.asString(from) + " in " + home + " (omdoc)")
             }
             val isImplicit = parseImplicit(symbol) 
             rest.child.map(xml.trimOneLevel) match {

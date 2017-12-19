@@ -182,7 +182,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     * @return an archive defining it (the corresponding file exists in content dimension)
     */
   def findOwningArchive(p: MPath): Option[Archive] = {
-    val cp = Archive.MMTPathToContentPath(p)
+    val cp = Archive.MMTPathToContentPath(p.mainModule)
     getArchives find { a =>
       (a / content / cp).exists
     }

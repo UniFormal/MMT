@@ -12,9 +12,9 @@ import java.lang.Thread
 
 class KillButton {
   @volatile private var killed: Boolean = false
-  @volatile private var action: Option[Unit => Any] = None
+  @volatile private var action: Option[() => Any] = None
 
-  def press[A](f : Unit => A) {
+  def press[A](f : () => A) {
     killed = true
     action = Some(f)
   }
@@ -22,7 +22,7 @@ class KillButton {
   def isPressed = killed
   
   def doAction : Any = {
-    action.foreach(f => f.apply())
+    action.foreach(f => f())
     action = None
   }
   
@@ -39,7 +39,7 @@ trait Killable {
   private var killButtons: List[KillButton] = Nil
   
   /** signals aborting of processing */
-  def kill[A](f : Unit => A) {
+  def kill[A](f : () => A) {
     killButtons.foreach(_.press(f))
   }
   
@@ -59,7 +59,7 @@ trait Killable {
   }
   
   /** presses the kill button after the specified number of milli seconds */
-  def setTimeout[A](millisec: Int)(f : Unit => Unit): this.type = {
+  def setTimeout[A](millisec: Int)(f : () => Unit): this.type = {
     val killButton = new KillButton
     killButtons ::= killButton
     Future {
@@ -78,7 +78,7 @@ case object TaskCancelled extends java.lang.Throwable
  * 
  * @param c the code to execute asynchronously
  */
-@deprecated
+@deprecated("does not work well, should be deleted and MMTTask should be used instead", "")
 class CancellableTask[A](c: => A) {
    /** the mutable computation result, which will later be either a value or an exception */ 
    private val p = Promise[A]()

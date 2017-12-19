@@ -1,30 +1,30 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=windows-1252">
-        <title>Theory-Graph Viewer</title>
-        
-        <!-- External CSS -->
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.css" rel="stylesheet" type="text/css">
-        <link href="https://code.jquery.com/ui/1.12.1/themes/cupertino/jquery-ui.css" rel="stylesheet" type="text/css">
-        <link href="css/styles.css" rel="stylesheet" type="text/css">
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+		<title>Theory-Graph Viewer</title>
+		
+		<!-- External CSS -->
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.css" rel="stylesheet" type="text/css">
+		<link href="https://code.jquery.com/ui/1.12.1/themes/cupertino/jquery-ui.css" rel="stylesheet" type="text/css">
+		<link href="css/styles.css" rel="stylesheet" type="text/css">
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
 		
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.js"></script>
-        <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
-        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.4/jstree.min.js"></script>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.js"></script>
+		<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.4/jstree.min.js"></script>
 		
-        <!-- Load the magic path -->
-        <!-- Something does not work this way: <script type="text/javascript" src="?MMT_base_url.js"> </script> -->
-        
-        <!-- load all the local javascript -->
-        <script type="text/javascript" src="js/theoryGraph.js"></script>
-        <script type="text/javascript" src="js/globalFuncs.js"></script>
-        <script type="text/javascript" src="js/globalOptions.js"></script>
-        <script type="text/javascript" src="js/Optimizer.js"></script>
-        <script type="text/javascript" src="js/globalListener.js"></script>
-    </head>
+		<!-- Load the magic path -->
+		<!-- Something does not work this way: <script type="text/javascript" src="?MMT_base_url.js"> </script> -->
+		
+		<!-- load all the local javascript -->
+		<script type="text/javascript" src="js/theoryGraph.js"></script>
+		<script type="text/javascript" src="js/globalFuncs.js"></script>
+		<script type="text/javascript" src="js/globalOptions.js"></script>
+		<script type="text/javascript" src="js/Optimizer.js"></script>
+		<script type="text/javascript" src="js/globalListener.js"></script>
+	</head>
 
 	
 	<body class="ui-form">
@@ -38,10 +38,11 @@
 </div>
 		
 		<div id="mainbox" style="float:left;height:100%;width:99%; padding-left:10px; ">
-			<button style="font-size:24px;cursor:pointer;margin:0px;" class="myButton" onclick="openNav()">&gt;</button>
-<button style="font-size:24px;cursor:pointer;right:16px;margin:0px;position:absolute" class="myButton" onclick="openNav2()">&lt;</button>
+			<div id="menuButtonsDiv">
+<button style="font-size:24px;cursor:pointer;margin:0px;" id="leftMenuButton" class="myButton" onclick="openNav()">&gt;</button>
+<button style="font-size:24px;cursor:pointer;right:16px;margin:0px;position:absolute" id="rightMenuButton" class="myButton" onclick="openNav2()">&lt;</button>
 
-<br /><br />
+<br /><br /> </div>
 <div id="mySidenav2" class="sidenav2">
 		<a href="javascript:void(0)" class="closebtn" onclick="closeNav2()">&times;</a>
 			<div class="toolSelector">
@@ -81,7 +82,11 @@
 					<button id="clusterButton" onClick="clusterSelectedNodes()" class="myButton">Cluster Nodes</button>
 					<button id="selectNodes" onClick="selectNodes()" class="myButton">Select Nodes By Pathname</button>
 					<button id="helpButton"  class="myButton">Help</button>
-				</div>
+					<br />
+					<br />
+					Upload own JSON:
+					<input type="file" id="jsonLoader" name="jsonLoader"/>
+					</div>
 
 			</div>
 	</div>	
@@ -114,91 +119,126 @@
 			<li data-action="openCluster">Open Cluster</li>
 		</ul>
 		
-		<ul class='custom-menu-side' id="side-menu" style="z-index:100">
+		<ul class='custom-menu-side' id="side-menu" style="z-index:2000">
 		</ul>
 		
 		<div id="tooltip-container" class="custom-tooltip" style="z-index:101"></div>
 
-        <script type="text/javascript">
+		<script type="text/javascript">
+			var selectionMode=false;
+			var theoryGraph=new TheoryGraph();
+			
 			lastGraphTypeUsed=getParameterByName("type");
 			lastGraphDataUsed=getParameterByName("graphdata");
 			
-function openNav() 
-		{
-		    document.getElementById("mySidenav").style.width = "400px";
-		}
+			var jsonLoader = document.getElementById('jsonLoader');
+			jsonLoader.addEventListener('change', handleJson, false);
 
-		function closeNav() 
-		{
-		    document.getElementById("mySidenav").style.width = "0";
-		}
+			var viewOnlyMode=getParameterByName("viewOnlyMode");
+			if(typeof viewOnlyMode != "undefined" && viewOnlyMode=="true")
+			{
+				var menuButtonsDiv = document.getElementById('menuButtonsDiv');
+				menuButtonsDiv.style.display='none';
+			}
 
-		function openNav2() 
-		{
-		    document.getElementById("mySidenav2").style.width = "400px";
-		}
+			function handleJson(e)
+			{
+				var reader = new FileReader();
+				reader.onload = function(event)
+				{
+					theoryGraph.loadJSONGraph(JSON.parse(event.target.result));
+				}
+				reader.readAsText(e.target.files[0]);   		
+			}
+			
+			// Opens left menu
+			function openNav() 
+			{
+				document.getElementById("mySidenav").style.width = "400px";
+			}
 
-		function closeNav2() 
-		{
-		    document.getElementById("mySidenav2").style.width = "0";
-		}
+			// Closes left menu
+			function closeNav() 
+			{
+				document.getElementById("mySidenav").style.width = "0";
+			}
+
+			// Opens right menu
+			function openNav2() 
+			{
+				document.getElementById("mySidenav2").style.width = "400px";
+			}
+
+			// Closes left menu
+			function closeNav2() 
+			{
+				document.getElementById("mySidenav2").style.width = "0";
+			}
 	
-            var selectionMode = false;
-            var theoryGraph = new TheoryGraph();
-            
-            $("#helpDialog").dialog({
-                autoOpen: false
-            });
+			$("#helpDialog").dialog({
+				autoOpen: false
+			});
 
-            $("#helpButton").on("click", function() {
-                $("#helpDialog").dialog("open");
-            });
+			$("#helpButton").on("click", function() {
+				$("#helpDialog").dialog("open");
+			});
 
+			// Hides edges by given type
 			function hideEdges(type, hide)
 			{
 				theoryGraph.hideEdges(type, hide);
 			}
 
-            function addColors() 
+			// Creates the color-selection in UI
+			function addColors() 
 			{
-                var html = "";
-                for (var i = 0; i < colorizingNodesArray.length; i++) {
-                    html += '<div title="Colorize all selected nodes" class="colorRect" onClick="colorizeSelectedNodes(\'' + colorizingNodesArray[i] + '\')" style="background-color:' + colorizingNodesArray[i] + '">  </div>';
-                }
-                document.getElementById("colorPicker").innerHTML = html;
-            }
+				var html = "";
+				for (var i = 0; i < colorizingNodesArray.length; i++) {
+					html += '<div title="Colorize all selected nodes" class="colorRect" onClick="colorizeSelectedNodes(\'' + colorizingNodesArray[i] + '\')" style="background-color:' + colorizingNodesArray[i] + '">  </div>';
+				}
+				document.getElementById("colorPicker").innerHTML = html;
+			}
 
-            function selectNodes() {
-                theoryGraph.selectNodesWithIdLike(prompt("Please enter a name which should be searched for!", "node_name"));
-            }
+			// Select nodes by name
+			function selectNodes() {
+				theoryGraph.selectNodesWithIdLike(prompt("Please enter a name which should be searched for!", "node_name"));
+			}
 
-            function downloadGraph() {
+			// Download graph as image
+			function downloadGraph() {
 				setStatusText("Downloading Image...");
-                theoryGraph.downloadCanvasAsImage(document.getElementById('downloadButton'));
-            }
+				theoryGraph.downloadCanvasAsImage(document.getElementById('downloadButton'));
+			}
 
-            function switchSelectionMode() {
-                if (selectionMode == false) {
-                    $("#toolCanvas").css("display", "block");
-                    selectionMode = true;
-                    document.getElementById('toolCanvas').style.cursor = "crosshair";
-                } else {
-                    $("#toolCanvas").css("display", "none");
-                    selectionMode = false;
-                    document.getElementById('toolCanvas').style.cursor = "auto";
-                }
-            }
+			// Switch between "Selection" and "Viewing" mode
+			function switchSelectionMode() {
+				if (selectionMode == false) {
+					$("#toolCanvas").css("display", "block");
+					selectionMode = true;
+					document.getElementById('toolCanvas').style.cursor = "crosshair";
+				} else {
+					$("#toolCanvas").css("display", "none");
+					selectionMode = false;
+					document.getElementById('toolCanvas').style.cursor = "auto";
+				}
+			}
 
-            function clusterSelectedNodes() {
+			// Clusters the selected nodes
+			function clusterSelectedNodes() {
 				setStatusText("Clustering Nodes...");
-                theoryGraph.cluster(undefined, prompt("Please choose a name for the cluster", ""));
-            }
+				theoryGraph.cluster(undefined, prompt("Please choose a name for the cluster", ""));
+			}
 
-            function colorizeSelectedNodes(color) {
-                theoryGraph.colorizeNodes(undefined, color);
-            }
+			// Colorizes selected nodes
+			function colorizeSelectedNodes(color) {
+				theoryGraph.colorizeNodes(undefined, color);
+			}
 
-            function changeMethod(idx) 
+			// Changes method of layouting to
+			// idx=0 --> Strictly hierarchical
+			// idx=1 --> Semi hierarchical
+			// idx=2 --> Forces driven
+			function changeMethod(idx) 
 			{
 				setStatusText("Relayouting graph...");
 				if(typeof idx !=='undefined')
@@ -212,30 +252,32 @@ function openNav()
 						THEORY_GRAPH_OPTIONS.layout={ownLayoutIdx:0, hierarchical: {sortMethod: "directed",direction: "LR"}};
 					}
 				}
-                createNewGraph();
-            }
+				createNewGraph();
+			}
 
-            $(document).bind("contextmenu", function(event) {
-                // Avoid the real menu
-                event.preventDefault();
-            });
+			$(document).bind("contextmenu", function(event) {
+				// Avoid the real menu
+				event.preventDefault();
+			});
 
-            var htmlCanvas = document.getElementById('toolCanvas');
-            htmlCanvas.width = (window.innerWidth * 0.99) | 0;
-            htmlCanvas.height = (window.innerHeight * 0.80) | 0;
-            htmlCanvas.style.width = htmlCanvas.width + "px";
-            htmlCanvas.style.height = htmlCanvas.height + "px";
+			
+			var htmlCanvas = document.getElementById('toolCanvas');
+			htmlCanvas.width = (window.innerWidth * 0.99) | 0;
+			htmlCanvas.height = (window.innerHeight * 0.80) | 0;
+			htmlCanvas.style.width = htmlCanvas.width + "px";
+			htmlCanvas.style.height = htmlCanvas.height + "px";
 
-            htmlCanvas = document.getElementById('wholeNetwork');
-            htmlCanvas.width = (window.innerWidth * 0.99) | 0;
-            htmlCanvas.height = (window.innerHeight * 0.80) | 0;
-            htmlCanvas.style.width = htmlCanvas.width + "px";
-            htmlCanvas.style.height = htmlCanvas.height + "px";
+			htmlCanvas = document.getElementById('wholeNetwork');
+			htmlCanvas.width = (window.innerWidth * 0.99) | 0;
+			htmlCanvas.height = (window.innerHeight * 0.80) | 0;
+			htmlCanvas.style.width = htmlCanvas.width + "px";
+			htmlCanvas.style.height = htmlCanvas.height + "px";
 
-            addColors();
+			addColors();
 			generateCustomSideMenu();	
 		
-            createNewGraph(getParameterByName("type"),getParameterByName("graphdata"));
-        </script>
-    </body>
+			// Starts downloading, creating and rendering graph
+			createNewGraph(getParameterByName("type"),getParameterByName("graphdata"));
+		</script>
+	</body>
 </html>

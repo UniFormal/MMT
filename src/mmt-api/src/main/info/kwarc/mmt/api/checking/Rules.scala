@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.modules.{DeclaredTheory, Module}
 import info.kwarc.mmt.api.symbols.{Constant, RuleConstant}
+import info.kwarc.mmt.api.uom.AbbrevRule
 import libraries._
 import objects._
 import objects.Conversions._
@@ -60,7 +61,6 @@ trait CheckingCallback {
    def error(message: => String)(implicit history: History): Boolean = false
 
   def lookup(p: Path): Option[StructuralElement]
-  def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory]
   def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) : Module
 }
 
@@ -186,7 +186,7 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term]
 }
 
-@deprecated("must be reimplemented cleanly")
+@deprecated("must be reimplemented cleanly","")
 abstract class TheoryExpRule(head : GlobalName, oftype : GlobalName) extends InferenceRule(head,oftype) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
     val checks = apply(tm, covered)(solver,stack,history)
@@ -268,7 +268,7 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
 }
 
 /** always succeeds, e.g., as needed to implement proof irrelevance */
-@deprecated class TermIrrelevanceRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
+class TermIrrelevanceRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
   final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     history += "all terms of this type are equal"
     Some(true)
@@ -447,14 +447,14 @@ abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) 
 class AbbreviationRuleGenerator extends ChangeListener {
   override val logPrefix = "abbrev-rule-gen"
   protected val abbreviationTag = "abbreviation"
-  private def rulePath(r: GeneratedAbbreviationRule) = r.constant.path / abbreviationTag
+  private def rulePath(r: AbbrevRule) = r.head / abbreviationTag
   private def present(t: Term) = controller.presenter.asString(t)
 
-  private def getGeneratedRule(p: Path): Option[GeneratedAbbreviationRule] = {
+  private def getGeneratedRule(p: Path): Option[AbbrevRule] = {
     p match {
       case p: GlobalName =>
         controller.globalLookup.getO(p / abbreviationTag) match {
-          case Some(r: RuleConstant) => r.df.map(df => df.asInstanceOf[GeneratedAbbreviationRule])
+          case Some(r: RuleConstant) => r.df.map(df => df.asInstanceOf[AbbrevRule])
           case _ => None
         }
       case _ => None
@@ -467,7 +467,7 @@ class AbbreviationRuleGenerator extends ChangeListener {
   }
   override def onCheck(e: StructuralElement): Unit = e match {
     case c : Constant if (c.rl contains abbreviationTag) && c.dfC.analyzed.isDefined =>
-      val rule = new GeneratedAbbreviationRule(c)
+      val rule = new AbbrevRule(c.path,c.df.get)//GeneratedAbbreviationRule(c)
       val ruleConst = new RuleConstant(c.home, c.name / abbreviationTag, OMS(c.path), Some(rule))
       ruleConst.setOrigin(GeneratedBy(this))
       log(c.name + " ~~> " + present(c.df.get))
@@ -475,12 +475,4 @@ class AbbreviationRuleGenerator extends ChangeListener {
     case _ =>
   }
 
-}
-
-class GeneratedAbbreviationRule(val constant : Constant) extends ComputationRule(constant.path) {
-  override def priority: Int = super.priority + 3
-  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
-    case OMS(p) if p == constant.path => constant.df
-    case _ => None
-  }
 }

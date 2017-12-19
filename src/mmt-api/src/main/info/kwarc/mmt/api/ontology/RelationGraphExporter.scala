@@ -4,8 +4,8 @@ import info.kwarc.mmt.api._
 import documents._
 import modules._
 import archives._
-import info.kwarc.mmt.api.frontend.ChangeListener
-import info.kwarc.mmt.api.symbols.Declaration
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.web._
 import utils._
 import presentation._
@@ -16,14 +16,21 @@ import presentation._
 abstract class RelationGraphExporter extends StructurePresenter {
   
   override def outExt = "svg"
+  /** a short descriptive name to be used in labels, menus, etc. */
+  def description: String
+  
+  override def toString = super.toString + s" (path to dot: $graphviz)"
   
   /** path to graphviz (dot) binary */
-  private var graphviz: String = "dot"
+  private var graphviz: Option[String] = None
+  private def getGraphviz = graphviz orElse controller.getEnvVar("GraphViz") getOrElse("dot")
 
   /** expects one argument: the path to graphviz; alternatively set variable GraphViz */
   override def start(args: List[String]) {
     super.start(args)
-    graphviz = getFromFirstArgOrEnvvar(args, "GraphViz", graphviz)
+    val gv = getFromFirstArgOrEnvvar(args, "GraphViz")
+    if (gv.nonEmpty)
+      graphviz = Some(gv)
   }
 
   /** 
@@ -36,7 +43,7 @@ abstract class RelationGraphExporter extends StructurePresenter {
   /** contains at least all elements of the document */
   def apply(se: StructuralElement, standalone: Boolean = false)(implicit rh: RenderingHandler) {
     val dg = buildGraph(se)
-    val dot = new DotToSVG(File(graphviz))
+    val dot = new DotToSVG(File(getGraphviz))
     val svg = try {
       dot(dg)
     } catch {
@@ -60,7 +67,7 @@ abstract class RelationGraphExporter extends StructurePresenter {
 }
 
 /** builds a graph containing all nodes and edges of the types */
-class SimpleRelationGraphExporter(val key: String, nodeSet: RelationExp, edgeTypes: List[Binary]) extends RelationGraphExporter {
+class SimpleRelationGraphExporter(val key: String, val description: String, nodeSet: RelationExp, edgeTypes: List[Binary]) extends RelationGraphExporter {
    def buildGraph(se: StructuralElement) = new DotGraph {
      val title = "\"" + key + " for " + se.path.toString + "\""
      val nodes = {
@@ -92,9 +99,9 @@ class SimpleRelationGraphExporter(val key: String, nodeSet: RelationExp, edgeTyp
    }
 }
 
-class DeclarationTreeExporter extends SimpleRelationGraphExporter("decltree", ((Includes | Declares)^*) * HasType(IsConstant,IsTheory), List(Includes,Declares))
+class DeclarationTreeExporter extends SimpleRelationGraphExporter("decltree", "declaration tree", ((Includes | Declares)^*) * HasType(IsConstant,IsTheory), List(Includes,Declares))
 
-class DependencyGraphExporter extends SimpleRelationGraphExporter("depgraph", ((Includes | Declares)^*) * HasType(IsConstant), List(DependsOn))
+class DependencyGraphExporter extends SimpleRelationGraphExporter("depgraph", "dependency graph", ((Includes | Declares)^*) * HasType(IsConstant), List(DependsOn))
 
 
 /**
@@ -102,7 +109,8 @@ class DependencyGraphExporter extends SimpleRelationGraphExporter("depgraph", ((
  */
 class TheoryGraphExporter extends RelationGraphExporter {
   val key = "thygraph"
-
+  val description = "theory graph"
+  
   private lazy val tg: ontology.TheoryGraph = new ontology.TheoryGraph(controller.depstore)
 
   def buildGraph(se: StructuralElement) : DotGraph = {
@@ -116,7 +124,8 @@ class TheoryGraphExporter extends RelationGraphExporter {
         (List(view.from, view.to).flatMap(objects.TheoryExp.getSupport),
          List(view.path)
         )
-      case d: Declaration => return buildGraph(controller.get(d.parent.doc))
+      case nm: NestedModule => return buildGraph(nm.module)
+      case d: Declaration => return buildGraph(controller.get(d.parent))
     }
     val tgf = new ontology.TheoryGraphFragment(theories, views, tg)
     tgf.toDot
@@ -125,6 +134,7 @@ class TheoryGraphExporter extends RelationGraphExporter {
 
 class PathGraphExporter extends RelationGraphExporter {
   val key = "pathgraph"
+  val description = "path graph"
   override val logPrefix = "pathgraph"
 
   private def alltheories = {

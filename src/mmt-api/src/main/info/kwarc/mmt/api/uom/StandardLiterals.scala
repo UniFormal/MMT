@@ -283,7 +283,7 @@ object StandardDouble extends Atomic[java.lang.Double] {
    val cls = classOf[java.lang.Double]
    val key = "OMF"
    def fromString(s: String) = s.toDouble //s.toDouble
-   override def lex = Some(new parser.NumberLiteralLexer(true, false))
+   override def lex = Some(new parser.NumberLiteralLexer(true, false, true))
 }
 
 object StandardString extends Atomic[String] {

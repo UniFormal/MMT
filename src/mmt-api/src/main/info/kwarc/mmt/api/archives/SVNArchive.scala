@@ -1,6 +1,6 @@
+/*
 package info.kwarc.mmt.api.archives
 
-/*
  * From Controller.scala
  	      case AddMathPathSVN(uri, rev, user, pass) =>
 	         val repos = SVNRepositoryFactory.create(SVNURL.parseURIEncoded(uri.toString))
