@@ -3,8 +3,6 @@ package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 
-import scala.language.implicitConversions
-
 /** QueryBaseType = Path | Obj | XML | String */
 sealed abstract class QueryBaseType(val name: String, val path: GlobalName) {
   def toTerm = OMID(path)

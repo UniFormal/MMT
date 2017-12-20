@@ -564,7 +564,6 @@ class AcrossLibraryTranslator(controller : Controller,
 
 
 
-import scala.language.implicitConversions
 import QueryResultConversion._
 import QueryTypeConversion._
 

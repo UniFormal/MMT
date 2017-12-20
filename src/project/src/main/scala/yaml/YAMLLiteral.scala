@@ -1,7 +1,5 @@
 package src.main.scala.yaml
 
-import scala.language.implicitConversions
-
 /** represents any literal value */
 sealed abstract class YAMLLiteral(val value: String, val comment: Option[String]) extends YAMLImplementation {
   def serialize: String = if(comment.isDefined) s"$value ${YAML.serializeComment(comment.get, value + " ")}" else value

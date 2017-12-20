@@ -14,7 +14,7 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 // GLOBAL SETTINGS
 // =================================
 scalaVersion in Global := "2.11.12"
-scalacOptions in Global := Seq("-feature", "-deprecation", "-Xmax-classfile-name", "128")
+scalacOptions in Global := Seq("-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation", "-Xmax-classfile-name", "128")
 
 parallelExecution in ThisBuild := false
 javaOptions in ThisBuild ++= Seq("-Xmx1g")
@@ -145,6 +145,7 @@ lazy val mmt = (project in file("mmt")).
 lazy val api = (project in file("mmt-api")).
   settings(mmtProjectsSettings("mmt-api"): _*).
   settings(
+    scalacOptions in Compile ++= Seq("-language:existentials"),
     scalaSource in Compile := baseDirectory.value / "src" / "main",
     unmanagedJars in Compile += Utils.lib.toJava / "tiscaf.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-compiler.jar",
@@ -291,6 +292,7 @@ lazy val repl = (project in file("mmt-repl")).
 lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
   settings(
+    scalacOptions in Compile ++= Seq("-language:reflectiveCalls"),
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
     libraryDependencies ++= Seq(
       "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",

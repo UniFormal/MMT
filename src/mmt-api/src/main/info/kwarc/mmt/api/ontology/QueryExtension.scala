@@ -5,7 +5,6 @@ import frontend._
 import objects._
 import presentation.Presenter
 
-import scala.language.implicitConversions
 import QueryResultConversion._
 import QueryTypeConversion._
 import info.kwarc.mmt.api.libraries.LookupWithNotFoundHandler

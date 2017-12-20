@@ -1,7 +1,5 @@
 package src.main.scala.yaml
 
-import scala.language.postfixOps
-
 /** Implements a subset of YAML objects which can be easily serialized */
 sealed trait YAML {
   val comment: Option[String]

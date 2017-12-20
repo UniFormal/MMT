@@ -1,9 +1,6 @@
 import sbt._
 import sbt.Keys._
 
-import scala.language.implicitConversions
-import scala.language.postfixOps
-
 import src.main.scala.travis._
 
 import scala.io.Source
