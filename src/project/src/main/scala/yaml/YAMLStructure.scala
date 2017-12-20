@@ -2,9 +2,6 @@ package src.main.scala.yaml
 
 import scala.collection.mutable.ListBuffer
 
-import scala.language.implicitConversions
-import scala.language.postfixOps
-
 /** represents a key-value map of YAML Objects */
 case class YAMLStructure(map: Map[String, YAML], comment: Option[String]) extends YAMLImplementation {
   def setComment(comment : Option[String]) : YAMLStructure = copy(comment = comment)

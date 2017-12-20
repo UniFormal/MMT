@@ -6,7 +6,6 @@ import java.io._
 import java.util.zip._
 
 import scala.collection.mutable
-import scala.language.implicitConversions
 
 /** File wraps around java.io.File to extend it with convenience methods
   *

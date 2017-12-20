@@ -2,9 +2,6 @@ package src.main.scala.yaml
 
 import scala.collection.mutable.ListBuffer
 
-import scala.language.implicitConversions
-import scala.language.postfixOps
-
 /** Represents a sequence of YAML objects */
 case class YAMLSequence(items: Seq[YAML], comment: Option[String]) extends YAMLImplementation {
   def setComment(comment : Option[String]) : YAMLSequence = copy(comment = comment)

@@ -7,9 +7,6 @@ import info.kwarc.mmt.api.utils.xml
 import scala.collection.mutable.HashSet
 import scala.xml.Node
 
-import scala.language.implicitConversions
-
-
 /** a trait for all concrete data types that can be returned by queries; atomic types are paths and objects */
 trait BaseType
 case class XMLValue(node: scala.xml.Node) extends BaseType

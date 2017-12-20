@@ -1,2 +1,2 @@
 /* meta-build */
-scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation")
+scalacOptions in ThisBuild ++= Seq("-feature", "-language:implicitConversions", "-language:postfixOps", "-deprecation")

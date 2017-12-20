@@ -1,4 +1,3 @@
-import scala.language.implicitConversions
 import sbt._
 
 

@@ -9,8 +9,6 @@ import frontend._
 import objects._
 import utils._
 
-import scala.language.implicitConversions
-
 /** ParsingUnit encapsulates the input of an [[ObjectParser]]
   *
   * the top parameter can be used to parse a term that is known/required to have a certain form

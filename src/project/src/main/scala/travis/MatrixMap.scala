@@ -2,8 +2,6 @@ package src.main.scala.travis
 
 import src.main.scala.yaml.{YAML, YAMLSequence, YAMLStructure}
 
-import scala.language.implicitConversions
-
 /** Represents an assignment of [[MatrixKey]]s to actual assignment */
 case class MatrixMap(values: List[MatrixKey[YAML]]) {
   lazy val toMap : Map[String, YAML] = values.groupBy(_.name).map(kv=>(kv._1, kv._2.head.value))

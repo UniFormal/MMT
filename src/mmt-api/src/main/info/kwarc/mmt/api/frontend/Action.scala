@@ -8,7 +8,6 @@ import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
 
-import scala.language.postfixOps
 import scala.util.parsing.combinator._
 
 /** parser for Actions
