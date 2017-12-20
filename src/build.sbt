@@ -8,6 +8,7 @@ import sbt.Keys._
 version in ThisBuild := "1.0.1"
 isSnapshot in ThisBuild := true
 organization in ThisBuild := "info.kwarc.mmt"
+lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 
 // =================================
 // GLOBAL SETTINGS
@@ -19,7 +20,6 @@ parallelExecution in ThisBuild := false
 javaOptions in ThisBuild ++= Seq("-Xmx1g")
 
 connectInput in run := true
-mainClass in Compile := Some("info.kwarc.mmt.api.frontend.Run")
 
 publish := {}
 fork in Test := true
@@ -67,7 +67,7 @@ def commonSettings(nameStr: String) = Seq(
   assemblyMergeStrategy in assembly := {
     case
       PathList("rootdoc.txt") | // 2 versions from from scala jars
-      PathList("META-INF", "MANIFEST.MF") => // should never be merged anyway
+      PathList("META-INF", _*) => // should never be merged anyway
       MergeStrategy.discard
     // work around weird behavior of default strategy, which renames files for no apparent reason
     case _ => MergeStrategy.singleOrError
@@ -127,11 +127,12 @@ lazy val mmt = (project in file("mmt")).
       assembly in Compile map Utils.deployTo(Utils.deploy / "mmt.jar")
     }.value,
     deployFull := deployFull.dependsOn(deploy).value,
-    mainClass in assembly := (mainClass in Compile).value,
     assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
       cp filter { j => jeditJars.contains(j.data.getName) }
     },
+    mainClass in Compile := Some(mmtMainClass), 
+    mainClass in assembly := Some(mmtMainClass), 
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(
       prependShellScript = Some(Seq("#!/bin/bash", """exec /usr/bin/java -Xmx2048m -jar "$0" "$@"""")))
   )
