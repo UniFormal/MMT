@@ -108,7 +108,7 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregate(
       mmt, api,
-      leo, lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, odk, specware, stex, webEdit, planetary, interviews, latex, openmath, oeis, repl,
+      leo, lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, odk, specware, stex, webEdit, planetary, interviews, latex, openmath, oeis, repl, guidedTours,
       tiscaf, lfcatalog,
       jedit
   ).settings(
@@ -143,16 +143,15 @@ lazy val mmt = (project in file("mmt")).
 // =================================
 
 lazy val api = (project in file("mmt-api")).
+  dependsOn(tiscaf).
   settings(mmtProjectsSettings("mmt-api"): _*).
   settings(
     scalacOptions in Compile ++= Seq("-language:existentials"),
     scalaSource in Compile := baseDirectory.value / "src" / "main",
-    unmanagedJars in Compile += Utils.lib.toJava / "tiscaf.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-compiler.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-reflect.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-parser-combinators.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar",
-    unmanagedJars in Test += Utils.lib.toJava / "tiscaf.jar",
     unmanagedJars in Test += Utils.lib.toJava / "scala-compiler.jar",
     unmanagedJars in Test += Utils.lib.toJava / "scala-reflect.jar",
     unmanagedJars in Test += Utils.lib.toJava / "scala-parser-combinators.jar",
@@ -168,9 +167,7 @@ lazy val lf = (project in file("mmt-lf")).
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
     unmanagedJars in Compile += Utils.deploy.toJava / "lfcatalog" / "lfcatalog.jar",
-    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.11.0-M4" % "test",
-    unmanagedJars in Test += Utils.lib.toJava / "tiscaf.jar"
-  )
+    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.11.0-M4" % "test")
 
 lazy val leo = (project in file("mmt-leo")).
   dependsOn(lf, api).
@@ -186,7 +183,6 @@ lazy val concepts = (project in file("concept-browser")).
     libraryDependencies ++= Seq(
       "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
     ),
-    unmanagedJars in Compile += Utils.lib.toJava / "tiscaf.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
   )
 
@@ -297,15 +293,14 @@ lazy val tiscaf = (project in file("tiscaf")).
     libraryDependencies ++= Seq(
       "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
       "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
-    ),
-    deployFull := Utils.deployPackage("lib/tiscaf.jar").value
+    )
   )
 
 lazy val lfcatalog = (project in file("lfcatalog")).
+  dependsOn(tiscaf).
   settings(commonSettings("lfcatalog")).
   settings(
     scalaSource in Compile := baseDirectory.value / "src",
-    unmanagedJars in Compile += Utils.lib.toJava / "tiscaf.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar",
     deployFull := Utils.deployPackage("lfcatalog/lfcatalog.jar").value
   )
