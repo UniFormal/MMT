@@ -1,5 +1,7 @@
-project/project
+src/project/project
 src/project/build.properties
+
+# do not commit 
 
 # Do not accidentally commit test files
 test/*.scala
