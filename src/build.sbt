@@ -29,7 +29,7 @@ fork in Test := true
 // =================================
 
 val deploy = TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
-val deployFull = TaskKey[Unit]("deployFull", "copies all (including lfcatalog) packaged jars to deploy location.")
+val deployFull = TaskKey[Unit]("deployFull", "copies packaged jars to deploy location.")
 val install = TaskKey[Unit]("install", "copies jedit jars to local jedit installation folder.")
 
 // =================================
@@ -164,10 +164,9 @@ lazy val api = (project in file("mmt-api")).
 
 lazy val lf = (project in file("mmt-lf")).
   dependsOn(api % "compile -> compile; test -> test").
-  dependsOn(tiscaf).
+  dependsOn(tiscaf, lfcatalog).
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
-    unmanagedJars in Compile += Utils.deploy.toJava / "lfcatalog" / "lfcatalog.jar",
     libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.11.0-M4" % "test"
   )
 
@@ -304,8 +303,7 @@ lazy val lfcatalog = (project in file("lfcatalog")).
   dependsOn(tiscaf).
   settings(
     scalaSource in Compile := baseDirectory.value / "src",
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar",
-    deployFull := Utils.deployPackage("lfcatalog/lfcatalog.jar").value
+    unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
   )
 
 // experimental projects that are not part of any tests: marpa-mmt, hets-mmt
