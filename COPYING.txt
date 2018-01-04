@@ -6,7 +6,7 @@ See http://uniformal.github.io/doc/setup/license.html for the rationale behind t
 
 ----------------------------------------------------------------------------------------
 
-Copyright (c) 2016, Florian Rabe and contributors
+Copyright (c) 2016-18, Florian Rabe and contributors
 All rights reserved.
 
 By contributing to this repository, contributors make their contribution subject to
