@@ -112,16 +112,16 @@ abstract class HTML {
       body
       out("</a>")
    }
-   def form(action : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit): Unit = {
+   def form(action : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit) {
       new Element("form").apply(cls,id,title,onclick,("action",action) :: attributes) { body }
    }
    def select(name : String, cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit) = {
       new Element("select").apply(cls,id,title,onclick,("name",name) :: attributes) { body }
    }
-   def input(itype : String = "", name : String = "", value : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit): Unit = {
+   def input(itype : String = "", name : String = "", value : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit) {
       new Element("input").apply(cls,id,title,onclick,("type",itype) :: List(("name",name),("value",value)).filterNot(_._2 == "") ::: attributes) { body }
    }
-   def option(value : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit): Unit = {
+   def option(value : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit) {
       new Element("option").apply(cls,id,title,onclick,("value",value) :: attributes) { body }
    }
    /** object element */

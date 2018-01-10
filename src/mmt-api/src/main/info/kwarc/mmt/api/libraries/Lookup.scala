@@ -164,12 +164,12 @@ abstract class Lookup {self =>
     * apply(t,m) can be used to apply a morphism to a term.
     */
    object ApplyMorphs extends Traverser[Term] {
-     def error(s: String) = throw GetError("no assignment found: " + s)
      def traverse(t: Term)(implicit con: Context, morph: Term) : Term = {
        t match {
         case OMM(arg, via) =>
           traverse(arg)(con, OMCOMP(via, morph))
         case OMS(theo ?? ln) =>
+          def error(s: String) = throw GetError(s"no assignment for $ln found in $morph ($s)")
           val aOpt = getAs(classOf[Constant], morph, LocalName(theo) / ln, msg => error(msg)).df
           aOpt match {
              case Some(df) => df
@@ -179,7 +179,7 @@ abstract class Lookup {self =>
                 case Some(df) =>
                   traverse(df)
                 case None =>
-                  error((theo ? ln).toString)
+                  error("empty assignment")
              }
           }
         case t => Traverser(this,t)

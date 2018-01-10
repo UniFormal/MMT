@@ -31,23 +31,16 @@ object Theory {
  * @param paramC the interface/parameters/arguments of this theory
  * @param dfC the definiens/base theory of this theory
  */
-class DeclaredTheory(doc : DPath, name : LocalName, private var mt : Option[MPath], val paramC: ContextContainer, val dfC: TermContainer)
+class DeclaredTheory(doc: DPath, name: LocalName, private var mt: Option[MPath], val paramC: ContextContainer, val dfC: TermContainer)
       extends Theory(doc, name) with DeclaredModule {
    /** the container of the meta-theory */
-   def metaC = TermContainer(mt.map(OMMOD(_)))
+   val metaC = TermContainer(mt.map(OMMOD(_)))
    /** the meta-theory */
    def meta = metaC.get map {case OMMOD(mt) => mt}
    /** the parameters */
    def parameters = paramC.get getOrElse Context.empty
    /** the base theory */
    def df = dfC.get
-
-   @deprecated("awkward hack", "")
-   def addMeta(mp : MPath) = mt match {
-    case Some(mti) if mti != mp =>
-      throw GeneralError("Theory " + path + " already has meta theory " + mti)
-    case _ => mt = Some(mp)
-  }
 
    def getComponents = {
      val mtComp = if (metaC.isDefined) List(DeclarationComponent(TypeComponent, metaC)) else Nil

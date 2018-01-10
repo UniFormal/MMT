@@ -389,8 +389,12 @@ class Semigroup(op: GlobalName) extends MutableRuleSet {
    declares (
      new Association(op),
      collect
-     
    )
+  def associate(args: List[Term]): Term = args match {
+     case Nil => OMA(OMS(op),Nil) // should not happen
+     case hd::Nil => hd
+     case hd::tl => op(hd, associate(tl))
+  }
 }
 
 /** A Monoid packages the simplification rules that yield normalization in a monoid. */
@@ -399,6 +403,8 @@ class Monoid(op: GlobalName, unit: GlobalName) extends Semigroup(op) {
    declares (
       new Neutral(op, unit)
    )
+   
+  override def associate(args: List[Term]) = if (args.isEmpty) OMS(unit) else super.associate(args)
 }
 
 /** A Group packages the simplification rules that yield normalization in a group. */

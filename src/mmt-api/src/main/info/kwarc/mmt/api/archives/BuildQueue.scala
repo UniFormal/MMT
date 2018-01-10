@@ -44,7 +44,7 @@ class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask) {
 
   def toJson: JSONString = JSONString(toJString)
 
-  def merge(qt: QueuedTask): Unit = {
+  def merge(qt: QueuedTask) {
     updatePolicy = updatePolicy.merge(qt.updatePolicy)
     lowPriority = lowPriority && qt.lowPriority
     dependencyClosure = dependencyClosure && qt.dependencyClosure

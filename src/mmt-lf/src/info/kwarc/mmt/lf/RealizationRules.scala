@@ -29,7 +29,7 @@ object Realize extends ParametricRule {
      val List(syn,sem) = args
      val mp = sem match {
        case OMMOD(mp) => mp
-       case _ =>  throw ParseError("semantic elemetn must be identifier")
+       case _ =>  throw ParseError("semantic element must be identifier")
      }
      val obj = controller.backend.loadObjectO(mp).getOrElse {
        throw ParseError("semantic object not found")

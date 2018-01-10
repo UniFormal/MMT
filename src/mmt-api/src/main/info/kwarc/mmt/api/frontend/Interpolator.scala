@@ -108,7 +108,7 @@ class MMTInterpolator(controller: frontend.Controller) {
         controller.presenter.asString(t)
       }
       /** standard string interpolation that is executed immediately as an MMT action */
-      def act(ss: String*): Unit = {
+      def act(ss: String*) {
          shell(sc.s(ss))
       } 
    }

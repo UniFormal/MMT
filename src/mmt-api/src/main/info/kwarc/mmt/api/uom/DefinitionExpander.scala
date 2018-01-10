@@ -34,6 +34,7 @@ class DefinitionExpander(controller: frontend.Controller) extends StatelessTrave
                   return ComplexTerm(p, args, cont, scopes.take(i) ::: sE :: scopes.drop(i+1))
             }
             DefinitionsExpanded(t)
+         case o: OML => o // TODO traversal blocked because it would not recurse with the correct scope
          case OMS(p) => expSym(p) match {
             case Some(tE) => tE.from(t)
             case None => DefinitionsExpanded(t)

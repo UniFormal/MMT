@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api._
 import objects._
+import utils._
 import utils.MyList._
 
 import scala.util.Try
@@ -252,8 +253,9 @@ class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean, floatR
 class AsymmetricEscapeLexer(begin: String, end: String) extends LexFunction {
   def applicable(s: String, i: Int) = s.substring(i).startsWith(begin)
   def apply(s: String, index: Int) = {
+     val first = index+begin.length
+     var i = first
      var level = 1
-     var i = index+1
      while (i < s.length && level > 0) {
         if (s.substring(i).startsWith(begin)) {
            level += 1
@@ -264,7 +266,7 @@ class AsymmetricEscapeLexer(begin: String, end: String) extends LexFunction {
         } else 
            i += 1
      }
-     val text = s.substring(index+begin.length,i-end.length)
+     val text = if (level > 0) s.substring(first) else s.substring(first,i-end.length)
      (text, begin+text+end)
   }
 
@@ -371,68 +373,131 @@ object QuoteLexer extends LexParseExtension(
    new SymmetricEscapeLexer('\"', '\\'), new SemiFormalParser(Some("quoted"))
 )
 
-abstract class QuoteEvalPart
-case class QuotePart(text: String) extends QuoteEvalPart
-case class EvalPart(text: String) extends QuoteEvalPart
+/** auxiliary class for [[StringInterpolationToken]]: part of the interpolated string */
+abstract class StringInterpolationPart
+case class StringPart(text: String) extends StringInterpolationPart
+case class MMTPart(unparsed: String, var term: Term = null) extends StringInterpolationPart
+
+/** the result of a [[StringInterpolationLexer]], carrying the continuation for parsing */
+case class StringInterpolationToken(text: String, firstPosition: SourcePosition, parts: List[StringInterpolationPart], lexer: StringInterpolationLexer) extends ExternalToken(text) {
+    def parse(eti: ExternalTokenParsingInput) = {
+       var current = firstPosition.after(lexer.begin) //invariant: first character of current part
+       parts foreach {
+          case StringPart(q) =>
+             current = current.after(q + lexer.mmt.begin) 
+             //SourceRef.update(t, outer.source.copy(region = SourceRegion(current, current.after(q))))
+          case m: MMTPart =>
+             val e = m.unparsed
+             val boundVars = BoundName.getVars(eti.boundNames)
+             val cont = eti.outer.context ++ Context(boundVars.map(VarDecl(_,None,None,None,None)) :_*)
+             val ref = eti.outer.source.copy(region = SourceRegion(current, current.after(e)))
+             current = current.after(e + lexer.mmt.end) 
+             val pu = ParsingUnit(ref, cont, e, eti.outer.nsMap)
+             m.term = eti.parser(pu)(eti.errorCont).toTerm
+       }
+       lexer.makeTerm(this, eti)
+    }
+}
 
 /**
- * A LexerExtension that lexes nested formal/informal terms
+ * A LexerExtension for string interpolation.
  * 
- * @param bQ beginning of quoted (informal) part at toplevel or inside a formal part
- * @param eQ end of quoted (informal) part
- * @param bE beginning of evaluated (formal) part inside an informal part
- * @param eE end of evaluated (formal) part 
+ * @param trigger the first part of the opening  string before
+ * @param str string delimiters for 
+ * @param mmt delimiters for mmt terms inside the string
+ * 
+ * The opening bracket is split into two parts so that multiple instances with different triggers can coexist if they use the same str-bracket.
+ * The lexed string is of the form: trigger str.begin S(0) mmt.begin M(0) mmt.end S(1) ... str.end
+ * str.begin and str.end may occur inside M(i) if and only if they are part of another string interpolation (possibly with a different trigger).
+ * 
+ * We do not store this nesting structure here - that is handled when recursively parsing M(i) later. But we keep track of it to avoid stopping too early.
  */
-class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExtension {
-  def applicable(s: String, i: Int) = s.substring(i).startsWith(bQ)
+abstract class StringInterpolationLexer(trigger: String, str: Bracket, val mmt: Bracket) extends LexerExtension {
+  def begin = trigger + str.begin
+  def end = str.end
+  /**
+   * builds a term from the interpolated string
+   * pre: parts begins and ends with StringPart, part types alternate
+   */
+  def makeTerm(token: StringInterpolationToken, eti: ExternalTokenParsingInput): Term
+  
+  def applicable(s: String, i: Int) = s.substring(i).startsWith(begin)
   def apply(s: String, index: Int, fp: SourcePosition) = {
-     var level = 1
-     var i = index+1
-     var parts : List[QuoteEvalPart] = Nil
+     var level = 1 // nesting of string and mmt parts, odd: string part, even: mmt part, 0: end of token reached
+     var i = index+begin.length
+     var parts: List[StringInterpolationPart] = Nil // invariant: alternating types of parts, begins and ends with a string part 
      var current = ""
      while (i < s.length && level > 0) {
-        if (s.substring(i).startsWith(bQ) && level % 2 == 0) {
+        if (s.substring(i).startsWith(str.begin) && level % 2 == 0) {
            level += 1
-           i += bQ.length
-        } else if (s.substring(i).startsWith(eQ) && level % 2 == 1) {
+           current += str.begin
+           i += str.beginL
+        } else if (s.substring(i).startsWith(str.end) && level % 2 == 1) {
            level -= 1
-           i += eQ.length
-        } else if (s.substring(i).startsWith(bE) && level % 2 == 1) {
+           if (level != 0) current += str.end
+           i += mmt.endL
+        } else if (s.substring(i).startsWith(mmt.begin) && level % 2 == 1) {
+           if (level == 1) {
+             parts ::= StringPart(current)
+             current = ""
+           } else {
+             current += mmt.begin
+           }
            level += 1
-           i += bE.length
-           parts ::= QuotePart(current)
-           current = ""
-        } else if (s.substring(i).startsWith(eE) && level % 2 == 0) {
+           i += mmt.beginL
+        } else if (s.substring(i).startsWith(mmt.end) && level % 2 == 0) {
+           if (level == 2) {
+             parts ::= MMTPart(current)
+             current = ""
+           } else {
+             current += mmt.end
+           }
            level -= 1
-           i += eE.length
-           parts ::= EvalPart(current)
-           current = ""
+           i += str.endL
         } else {
            current += s(i)
            i += 1
         }
      }
-     val text = s.substring(index,i)
-     new ExternalToken(text) {
-        val firstPosition = fp
-        def parse(outer: ParsingUnit, boundNames: List[BoundName], parser: ObjectParser) = {
-           var current = fp.after(bQ) //invariant: first character of current part
-           val parsed: List[Term] = parts map {
-              case QuotePart(q) =>
-                 current = current.after(q + bE) 
-                 val t = uom.OMLiteral.OMSTR(q)
-                 SourceRef.update(t, outer.source.copy(region = SourceRegion(current, current.after(q))))
-                 t
-              case EvalPart(e) =>
-                 val boundVars = BoundName.getVars(boundNames)
-                 val cont = outer.context ++ Context(boundVars.map(VarDecl(_,None,None,None,None)) :_*)
-                 val ref = outer.source.copy(region = SourceRegion(current, current.after(e)))
-                 current = current.after(e + eE) 
-                 val pu = ParsingUnit(ref, cont, e, NamespaceMap.empty) //TODO better namespace map
-                 parser(pu)(ErrorThrower).toTerm
-           }
-           OMSemiFormal(parsed.map(Formal(_)))
-        }
+     // end of input reached without delimiter -> throw error
+     //if (i == s.length)
+     // we add the final part(s), we always end with a string part even if it's empty
+     if (level % 2 == 0) {
+       parts ::= StringPart(current)
+     } else {
+       parts ::= MMTPart(current)
+       parts ::= StringPart("")
      }
+     parts = parts.reverse
+     val text = s.substring(index,i)
+     new StringInterpolationToken(text, fp, parts, this)
+  }
+}
+
+/** quotation of MMT terms */
+class QuotationLexer(quoteType: GlobalName, quoteTerm: GlobalName) extends StringInterpolationLexer("q", Bracket("\"", "\""), Bracket("${","}")) {
+  private object QuotedTerm extends uom.RepresentedRealizedType(OMS(quoteType), uom.TermLiteral)
+  
+  def makeTerm(token: StringInterpolationToken, eti: ExternalTokenParsingInput) = {
+    var context = Context.empty
+    val strings = token.parts map {
+      case StringPart(s) => s
+      case m: MMTPart =>
+        val name = "SIP_" + context.length.toString
+        context ++= OMV(name) % m.term
+        " " + name + " "
+    }
+    val names = context.map(_.name)
+    val str = strings.mkString
+    val fullcontext = eti.outer.context ++ context //TODO not obvious which context should be used for the quoted term
+    val srcref = eti.outer.source.copy(region = token.region)
+    val pu = ParsingUnit(srcref, fullcontext, str, eti.outer.nsMap)
+    val t = eti.parser(pu)(eti.errorCont).toTerm
+    val freeVars = t.freeVars diff names
+    if (freeVars.nonEmpty) {
+      val e = SourceError("quotation lexer", srcref, "free variables in quoted term: " + names.mkString(", "))
+      eti.errorCont(e)
+    }
+    OMA(OMS(quoteTerm), QuotedTerm(t) :: context.map(_.toOML))
   }
 }

@@ -21,7 +21,7 @@ class ServerResponse {
   private var status : (Int, String) = (200, "OK")
   /** statusCode (HTTP response code) for this message */
   def statusCode : Int = status._1
-  def statusCode_=(code : Int): Unit = {
+  def statusCode_=(code : Int) {
     // set statusCode and matching text
     val newText = ServerResponse.statusCodes.getOrElse(code, "")
     status = (code, newText)

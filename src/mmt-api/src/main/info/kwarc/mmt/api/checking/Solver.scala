@@ -1492,33 +1492,34 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      } else expandDefinition
    }
 
-  val thisSolver = this
-
-  private class SimplifyTraverser(stack : Stack,history : History) extends StatelessTraverser {
+  private val thisSolver = this
+  /* a very naive simplifier that simplifies anywhere in a term */
+  // TODO this does not scale; it is unclear what heuristic to use for simplification
+  private class SimplifyTraverser(stack: Stack, history: History) extends StatelessTraverser {
     private var done = false
-    def run(t : Term) : (Term,Boolean) = {
-      val ret = traverse(t)(stack.context,())
+    def run(t : Term): (Term,Boolean) = {
+      val ret = apply(t, stack.context)
       (ret,done)
     }
-    override def traverse(t: Term)(implicit con: Context, state: State): Term =
-      if (done || t.isInstanceOf[OML]) t else { // OMLs probably shouldn't be traversed, unless done explicitly by a rule
-      t.head match {
-        case Some(h) =>
-          // use first applicable rule
-          computationRules foreach {rule =>
-            if (rule.head == h) {
-              val ret = rule(thisSolver)(t, false)(Stack(con),history)
-              ret foreach {tmS =>
-                history += "applying computation rule " + rule.toString
-                done = true
-                return tmS
+    def traverse(t: Term)(implicit con: Context, state: State): Term = {
+      if (done) return t
+      t match {
+        case ComplexTerm(op,_,_,_) =>
+            // use first applicable rule
+            computationRules foreach {rule =>
+              if (rule.head == op) {
+                val ret = rule(thisSolver)(t, false)(Stack(con),history)
+                ret foreach {tmS =>
+                  history += "applying computation rule " + rule.toString
+                  done = true
+                  return tmS
+                }
               }
             }
-          }
-          // no applicable rule, traverse
-          Traverser(this,t)
-        case None =>
-          Traverser(this,t)
+            // no applicable rule, traverse
+            Traverser(this,t)
+        case _ =>
+            Traverser(this,t)
       }
     }
   }

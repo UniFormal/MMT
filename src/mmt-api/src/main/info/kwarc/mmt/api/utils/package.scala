@@ -72,6 +72,13 @@ package object utils {
       done
       segments.reverse
    }
+
+  /** a pair of an open and a closing bracket */
+  case class Bracket(begin: String, end: String) {
+    def wrapAround(s: String) = begin + s + end
+    val beginL = begin.length
+    val endL = end.length
+  }
    
    /** turns a list into a string by inserting a separator */
    def listToString[A](l: Iterable[A], sep: String) = l.map(_.toString).mkString(sep)

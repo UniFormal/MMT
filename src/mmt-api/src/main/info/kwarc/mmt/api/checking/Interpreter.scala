@@ -69,10 +69,11 @@ abstract class Interpreter extends Importer {
 
 /** a combination of a Parser and a Checker
   *
-  * @param parser  the parser
-  * @param checker the checker
+  * @param parser  the first step: parsing
+  * @param checker the first part of the second step: checking
+  * @param simplifier the second part of the second step: elaboration/simplification
   */
-class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Interpreter {
+class TwoStepInterpreter(val parser: Parser, val checker: Checker, val simplifier: uom.Simplifier) extends Interpreter {
   def format = parser.format
 
   /** parses a [[ParsingStream]] and checks the result */
@@ -85,6 +86,7 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Inter
         }
         override def onElementEnd(se: ContainerElement[_]) {
           checker.applyElementEnd(se)(ce)
+          simplifier(se)
         }
       }
       val se = parser(ps)(cont)

@@ -87,3 +87,11 @@ object SemanticType {
     def fromString(s: String) = throw ParseError("cannot parse semantic types")
   }
 }
+
+/** a type that is equal to an existing Scala type */ 
+abstract class Atomic[V] extends RSemanticType[V] {
+   override def valid(u: Any) = unapply(u).isDefined
+   def toString(u: Any) = unapply(u).get.toString
+   /** narrower type */
+   def fromString(s: String): V
+}

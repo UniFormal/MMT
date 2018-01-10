@@ -136,7 +136,7 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
    def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit
 
   def elaborateInContext(prev: Context, dv: VarDecl): Context = prev
-  def checkInContext(prev: Context, dv: VarDecl): Unit = {}
+  def checkInContext(prev: Context, dv: VarDecl) {}
 
    /**
     * defines the outer perspective of a derived declaration
@@ -233,7 +233,7 @@ trait Untyped {self : StructuralFeature =>
       }
     }
   }
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 }
 
 trait UnnamedUntyped {self : StructuralFeature =>
@@ -250,19 +250,21 @@ trait UnnamedUntyped {self : StructuralFeature =>
       }
     }
   }
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 }
 
 trait TypedConstantLike {self: StructuralFeature =>
   def getHeaderNotation: List[Marker] = List(LabelArg(1,LabelInfo.none),Delim(":"),SimpArg(2))
   override def processHeader(header: Term) = header match {
     case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_),t)) => (LocalName(name),t)// (name, Type(cont))
+    case _ => throw ImplementationError("unexpected header")
   }
   override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
     case Some(t) => OMA(OMMOD(mpath), List(OML(dd.name,None,None),t))
+    case None => throw ImplementationError("no type present")
   }
   def getType(dd: DerivedDeclaration): Term = dd.tpC.get.get
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
     // TODO env.objectChecker(CheckingUnit())
   }
 }
@@ -271,12 +273,14 @@ trait TheoryLike {self: StructuralFeature =>
   def getHeaderNotation: List[Marker] = List(LabelArg(1,LabelInfo.none))
   override def processHeader(header: Term) = header match {
     case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_))) => (LocalName(name),None)// (name, Type(cont))
+    case _ => throw ImplementationError("unexpected header")
   }
   override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
     case Some(t) => OMA(OMMOD(mpath), List(OML(dd.name,None,None)))
+    case None => throw ImplementationError("no type present")
   }
   def getType(dd: DerivedDeclaration): Term = dd.tpC.get.get
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
     // TODO env.objectChecker(CheckingUnit())
   }
 }
@@ -567,5 +571,5 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
   }
   private def checkpath(mp : MPath) = controller.get(mp)
   // def modules(d: DerivedDeclaration): List[Module] = Nil
-  def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
+  def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 }

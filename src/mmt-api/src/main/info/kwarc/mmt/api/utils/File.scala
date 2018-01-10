@@ -176,7 +176,7 @@ object FileURI {
 class StandardPrintWriter(f: File) extends
 OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(f.toJava)),
   java.nio.charset.Charset.forName("UTF-8")) {
-  def println(s: String): Unit = {
+  def println(s: String) {
     write(s + "\n")
   }
 }

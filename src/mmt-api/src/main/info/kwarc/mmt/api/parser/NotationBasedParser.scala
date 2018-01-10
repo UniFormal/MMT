@@ -67,7 +67,7 @@ object BoundName {
  * A notation based parser
  */
 class NotationBasedParser extends ObjectParser {
-  override val logPrefix = "parser"
+  override val logPrefix = "object-parser"
 
   def isApplicable(format: String): Boolean = format == "mmt"
 
@@ -200,7 +200,7 @@ class NotationBasedParser extends ObjectParser {
       log("parsing")
       notations.groups.foreach(n => log(n.toString))
       log("lexing")
-      lexing.foreach(r => log(r.toString + ": " + r.priority))
+      lexing.foreach(r => log(r.toString + " (priority " + r.priority + ")"))
     }
     val escMan = new EscapeManager(lexing)
     val tl = TokenList(pu.term, escMan, pu.source.region.start)
@@ -275,7 +275,7 @@ class NotationBasedParser extends ObjectParser {
   private def getRules(thy: Term): RuleLists = {
     controller.simplifier.apply(thy,Context.empty) match {
       case OMPMOD(mp,_) => getRules(Context(mp))
-      case _ => (Nil,Nil,Nil) // TODO not implemented
+      case _ => (Nil,Nil,Nil) // TODO only named theories are implemented so far
     }
   }
 
@@ -324,16 +324,17 @@ class NotationBasedParser extends ObjectParser {
         }
         term
       case e: ExternalToken =>
-        e.parse(pu, boundNames, this)
+        val eti = new ExternalTokenParsingInput(pu, boundNames, this, errorCont)
+        e.parse(eti)
       case ml: MatchedList =>
         makeTermFromMatchedList(ml, boundNames, attrib)
       case ul: UnmatchedList =>
         // scanning is delayed until here in order to allow for collecting local notations first 
         ul.scanner.scan()
-        val term = if (ul.tl.length == 1)
+        val term = if (ul.tl.length == 1) {
         // process the single TokenListElement
           makeTerm(ul.tl(0), boundNames)
-        else {
+        } else {
           /* This case arises if
           - the Term is ill-formed
           - the matching TextNotation is missing
@@ -684,11 +685,11 @@ class NotationBasedParser extends ObjectParser {
     }
     val t = makeTerm(te,boundNames)(pu,new FilteringErrorHandler(errorCont,filter))
     t match {
-      case OMLTypeDef(name, tpOpt, dfOpt) /* if !boundVars.contains(name) && getFreeVars.contains(name) */ =>
+      case OMLTypeDefNot(name, tpOpt, dfOpt, ntOpt) /* if !boundVars.contains(name) && getFreeVars.contains(name) */ =>
          removeFreeVariable(name)
          val tp = tpOpt orElse {if (info.typed) Some(newUnknown(newExplicitUnknown, boundNames)) else None}
          val df = dfOpt orElse {if (info.defined) Some(newUnknown(newExplicitUnknown, boundNames)) else None}
-         val l = OML(name,tp,df)
+         val l = OML(name,tp,df,ntOpt)
          l
       case _ =>
         makeError("expected label, found other term: " + t, te.region)
@@ -696,10 +697,8 @@ class NotationBasedParser extends ObjectParser {
     }
   }
 
-  /** matches v[:T][=D] */
-  private object OMLTypeDef {
-    //TODO this is a bad hack to work around an unsolved parsing problem: the intended name an OML is assumed to remain as a free variable
-    // but that does not happen if there happens to be a notation is applicable to that token
+  /** matches v[:T][=D][#N] */
+  private object OMLTypeDefNot {
     private object Name {
       def unapply(t : Term) : Option[LocalName] = t match {
         case OMV(n) => Some(n)
@@ -717,41 +716,51 @@ class NotationBasedParser extends ObjectParser {
           None
       }
     }
-    def unapply(t : Term) : Option[(LocalName,Option[Term],Option[Term])] = t match {
-      case OMLtype(OMLdef(Name(n),df),tp) =>
-        Some((n,Some(tp),Some(df)))
-      case OMLtype(Name(n),OMLdef(tp,df)) =>
-        Some((n,Some(tp),Some(df)))
-      case OMLtype(Name(n),tp) =>
-        Some((n,Some(tp),None))
-      case OMLdef(OMLtype(Name(n),tp),df) => Some((n,Some(tp),Some(df)))
-      case OMLdef(Name(n),OMLtype(df,tp)) => Some((n,Some(tp),Some(df)))
-      case OMLdef(Name(n),df) => Some((n,None,Some(df)))
-      case Name(n) => Some((n,None,None))
-      case _ =>
-        None
+    def unapply(t : Term) : Option[(LocalName,Option[Term],Option[Term],Option[TextNotation])] = {
+      var tp: Option[Term] = None
+      var df: Option[Term] = None
+      var nt: Option[TextNotation] = None
+      // returns the name of this OML and stores the found attributions (any order, no duplicates) in the above variables
+      def matchTDN(left: Term): Option[LocalName] = left match {
+        case OMLtype(k, t) =>
+          if (tp.isDefined) {
+            None
+          } else {
+            tp = Some(t)
+            matchTDN(k)
+          }
+        case OMLdef(k, t) =>
+          if (df.isDefined) {
+            None
+          } else {
+            df = Some(t)
+            matchTDN(k)
+          }
+        case OMLnotation(k, NotationRealizedType(not)) =>
+          if (nt.isDefined) {
+            None
+          } else {
+            nt = Some(not)
+            matchTDN(k)
+          }
+        case Name(n) => Some(n)
+        case _ => None
+      }
+      matchTDN(t).map {n => (n, tp, df, nt)}
     }
   }
-  /** matches v:T where : is constant with role OMLType */
-  private object OMLtype {
+  /** matches v c T where c is a constant with role rl */
+  private case class OMLAnnotation(rl: String) {
     def unapply(t : Term) : Option[(Term,Term)] = controller.pragmatic.mostPragmatic(t) match {
       case OMA(OMS(f),List(a,b)) =>
         controller.get(f) match {
-          case c:Constant if c.rl contains "OMLType" => Some((a,b))
+          case c:Constant if c.rl contains rl => Some((a,b))
           case _ => None
         }
       case _ => None
     }
   }
-  /** matches v=T where = is constant with role OMLDef */
-  private object OMLdef {
-    def unapply(t : Term) : Option[(Term,Term)] = controller.pragmatic.mostPragmatic(t) match {
-      case OMA(OMS(f),List(a,b)) =>
-        controller.get(f) match {
-          case c:Constant if c.rl contains "OMLDef" => Some((a,b))
-          case _ => None
-        }
-      case _ => None
-    }
-  }
+  private object OMLtype extends OMLAnnotation("OMLType")
+  private object OMLdef extends OMLAnnotation("OMLDef")
+  private object OMLnotation extends OMLAnnotation("OMLNotation")
 }

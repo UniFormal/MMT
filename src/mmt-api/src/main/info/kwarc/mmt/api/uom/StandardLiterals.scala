@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api._
+import objects._
 import parser._
 
 import SemanticOperator._
@@ -179,13 +180,6 @@ abstract class RQuotient[V](of: RSemanticType[V]) extends Quotient(of) with RSem
   val cls = of.cls
 }
 
-/** a type that is equal to an existing Scala type */ 
-abstract class Atomic[V] extends RSemanticType[V] {
-   override def valid(u: Any) = unapply(u).isDefined
-   def toString(u: Any) = unapply(u).get.toString
-   /** narrower type */
-   def fromString(s: String): V
-}
 
 /** types whose underlying representation uses integers */
 trait IntegerRepresented extends RSemanticType[BigInt] {
@@ -287,10 +281,26 @@ object StandardDouble extends Atomic[java.lang.Double] {
 }
 
 object StandardString extends Atomic[String] {
-   def asString = "string" 
+   def asString = "string"
    val cls = classOf[String]
    def fromString(s: String) = s
    override def lex = quotedLiteral("")
+}
+
+object StringOperations {
+  import SemanticOperator._
+  private val S = StandardString
+  
+  object Empty extends Value(S)("")
+  
+  object Concat extends InvertibleBinary(S,S,S, {case (S(x),S(y)) => x+y}) {
+    def invertLeft(x:Any,r:Any) = (x,r) match {
+      case (S(x),S(r)) => if (r.startsWith(x)) Some(r.substring(x.length)) else None
+    }
+    def invertRight(r:Any,y:Any) = (r,y) match {
+      case (S(r),S(y)) => if (r.endsWith(y)) Some(r.substring(0,y.length)) else None
+    }
+  }
 }
 
 object StandardBool extends Atomic[java.lang.Boolean] {
@@ -311,6 +321,14 @@ object URILiteral extends Atomic[URI] {
    val cls = classOf[URI]
    def fromString(s: String) = URI(s)
    override def lex = quotedLiteral("uri")
+}
+
+/** MMT terms as a semantic type, e.g., for reflection, quotation */
+object TermLiteral extends Atomic[Term] {
+   def asString = "term"
+   val cls = classOf[Term]
+   /** MMT parser is not called here as it depends on context */
+   def fromString(s: String) = OMSemiFormal(Text("unparsed", s))
 }
 
 /** defines [[SemanticOperator]]s for the standard arithmetic operations */

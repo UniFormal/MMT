@@ -43,11 +43,14 @@ object Common {
         case _ => Nil
       }
     }
-    new AnonymousTheory(namedTheory.meta, omls)
+    val real = RealizeOML(namedTheory.path, None) // the theorem that the anonymous theory realizes namedTheory
+    new AnonymousTheory(namedTheory.meta, omls ::: List(real))
   }
   
+  /** provides the base case of the function that elaborates a theory expression (in the form of an [[AnonymousTheory]]) */
   def asAnonymousTheory(solver: CheckingCallback, thy: Term)(implicit stack: Stack, history: History): Option[AnonymousTheory] = {
     thy match {
+      // named theories
       case OMMOD(p) =>
         solver.lookup(p) match {
           case Some(th: DeclaredTheory) =>
@@ -69,6 +72,7 @@ object Common {
             solver.error("unknown name: " + p)
             None
         }
+      // explicit anonymous theories
       case AnonymousTheory(mt, OMLList(ds)) => Some(new AnonymousTheory(mt,ds))
       case _ => None
     }
@@ -93,7 +97,12 @@ object ComputeExtends extends ComputationRule(Extends.path) {
       val thyAnon = Common.asAnonymousTheory(solver, thy).getOrElse {return None}
       wth match {
         case OMLList(extDecls) =>
-          val extAnon = new AnonymousTheory(thyAnon.mt, thyAnon.decls ::: extDecls)
+          // replace OMS-references to declarations in thy with OML-references to declarations in thyAnon  
+          val trav = OMSReplacer {p =>
+            if (thyAnon isDeclared p.name) Some(OML(p.name)) else None
+          }
+          val extDeclsR = extDecls map {oml => trav(oml,stack.context).asInstanceOf[OML]}
+          val extAnon = new AnonymousTheory(thyAnon.mt, thyAnon.decls ::: extDeclsR)
           Some(extAnon.toTerm)
         case _ => return None
       }
@@ -103,7 +112,7 @@ object ComputeExtends extends ComputationRule(Extends.path) {
 object Combine extends FlexaryConstantScala(Combinators._path, "combine")
 
 object ComputeCombine extends ComputationRule(Combine.path) {
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
       val Combine(thys@_*) = tm
       val thysAnon = thys map {thy => Common.asAnonymousTheory(solver, thy).getOrElse(return None)}
       var mts: List[MPath] = Nil
@@ -119,24 +128,43 @@ object ComputeCombine extends ComputationRule(Combine.path) {
         case _ => return None
       }
       Some(AnonymousTheory(mt, declsD))
-   }
+  }
 }
 
 object Rename extends FlexaryConstantScala(Combinators._path, "rename")
 
 object ComputeRename extends ComputationRule(Rename.path) {
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
-     val Rename(thy,rens@_*) = tm
-     val thyAnon = Common.asAnonymousTheory(solver, thy).getOrElse {return None}
-     rens.foreach {
-       case OML(nw, None, Some(OML(old, None,None,_,_)),_,_) =>
-         thyAnon.rename(old,nw)
-       case OML(nw,None,Some(OMS(old)),_,_) =>
-         thyAnon.rename(old.name,nw)
-       case r => solver.error("not a renaming " + r)
-     }
-     Some(thyAnon.toTerm)
-   }
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+    val Rename(thy,rens@_*) = tm
+    val thyAnon = Common.asAnonymousTheory(solver, thy).getOrElse {return None}
+    // perform the renaming
+    val oldNew = rens.flatMap {
+      case OML(nw, None, Some(OML(old, None,None,_,_)),_,_) =>
+        List((old,nw))
+      case OML(nw,None,Some(OMS(old)),_,_) =>
+        List((old.name,nw))
+      case r =>
+        solver.error("not a renaming " + r)
+        Nil
+    }
+    thyAnon.rename(oldNew:_*)
+    // remove all invalidated realizations, i.e., all that realized a theory one of whose symbols was renamed
+    // TODO more generally, we could keep track of the renaming necessary for this realization, but then realizations cannot be implicit anymore
+    val removeReals = thyAnon.decls.flatMap {
+      case oml @ RealizeOML(p, _) =>
+        solver.lookup(p) match {
+          case Some(dt: DeclaredTheory) =>
+            if (oldNew.exists {case (old,nw) => dt.declares(old)})
+              List(oml)
+            else
+              Nil
+          case _ => Nil
+        }
+      case _ => Nil
+    }
+    thyAnon.decls = thyAnon.decls diff removeReals
+    Some(thyAnon.toTerm)
+  }
 }
 
 /**
@@ -149,23 +177,25 @@ object ComputeRename extends ComputationRule(Rename.path) {
  */
 object Translate extends BinaryConstantScala(Combinators._path, "translate")
 
+// TODO does not work yet
 object ComputeTranslate extends ComputationRule(Translate.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
     val Translate(mor, thy) = tm
-    val res = Common.asAnonymousTheory(solver, thy).getOrElse(return None)
-    res.decls.foreach { case OML(n, t, d, _, _) =>
-      // skip all includes of theories that are already include in domain of mor
-      // check for name clashes: n may not be defined in the codomain of mor
-      val tT = t map {
-        OMM(_, mor)
-      }
-      val dT = d map {
-        OMM(_, mor)
-      }
-      val declT = OML(n, tT, dT)
-      res.add(declT)
+    val dom = Morph.domain(mor)(???).getOrElse{return None}
+    val cod = Morph.codomain(mor)(???).getOrElse{return None}
+    val List(thyAnon,domAnon,codAnon) = List(thy,dom,cod).map {t => Common.asAnonymousTheory(solver, t).getOrElse(return None)}
+    // translate all declarations of thy that are not from dom via mor and add them to cod
+    def translate(t: Term): Term = ??? 
+    thyAnon.decls.foreach {
+      case RealizeOML(p,_) =>
+        // these may also be translatable, but they are optional anyway 
+      case oml =>
+        if (! domAnon.isDeclared(oml.name)) {
+          val omlT = translate(oml).asInstanceOf[OML]
+          codAnon.add(omlT)
+        }
     }
-    Some(res.toTerm)
+    Some(codAnon.toTerm)
   }
 }
 
@@ -173,6 +203,7 @@ object ComputeTranslate extends ComputationRule(Translate.path) {
 /** see [[Translate]] */
 object Expand extends BinaryConstantScala(Combinators._path, "expand")
 
+// TODO does not work yet
 object ComputeExpand extends ComputationRule(Expand.path) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
       val Expand(mor, thy) = tm

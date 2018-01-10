@@ -52,7 +52,9 @@ class LabeledHashRelation[N,E] {
  * thrown if the uniqueness condition of UniqueGraph is violated
  *  @param value the existing value
  */
-case class AlreadyDefined[E](from: Term, to: Term, old: E, nw: E) extends java.lang.Throwable
+case class AlreadyDefined[E](from: Term, to: Term, old: E, nw: E) extends java.lang.Throwable {
+  override def toString = s"implicit morphism $nw: $from -> $to already defined as $old"
+}
 
 /** A diagram of theories and morphisms.
  *  i.e., edges between two nodes must be equal. 

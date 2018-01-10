@@ -14,7 +14,7 @@ trait TiscafServerImplementation extends HServer with ServerImplementation {
 
   override def name : String = serverName
   override def hostname : String = listenAddress
-  override def onMessage(s: String): Unit = {
+  override def onMessage(s: String) {
     handleMessage(s)
   }
   override def onError(e: Throwable) {

@@ -21,7 +21,7 @@ class MMTRefactorDockable(jview: View, position: String) extends JPanel {
 }
 
 object Publisher {
-  def publish(jview:View)(s:List[DeclaredModule]): Unit = {
+  def publish(jview:View)(s:List[DeclaredModule]) {
     implicit val rh = new presentation.StringBuilder
     val presenter = new MMTSyntaxPresenter
     controller.extman.addExtension(presenter)

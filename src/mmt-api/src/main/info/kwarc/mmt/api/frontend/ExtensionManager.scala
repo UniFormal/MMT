@@ -272,13 +272,13 @@ class ExtensionManager(controller: Controller) extends Logger {
     val kwp = new KeywordBasedParser(nbp)
     val rbc = new RuleBasedChecker
     val msc = new MMTStructureChecker(rbc)
-    val mmtint = new TwoStepInterpreter(kwp, msc)// with MMTStructureEstimator
     val nbpr = new NotationBasedPresenter {
       override def twoDimensional = false
     }
     val msp = new MMTStructurePresenter(nbpr)
     val rbs = new RuleBasedSimplifier
     val mss = new ElaborationBasedSimplifier(rbs)
+    val mmtint = new TwoStepInterpreter(kwp, msc, mss)// with MMTStructureEstimator
     val rbe = new execution.RuleBasedExecutor
     //use this for identifying structure and thus dependencies
     //val mmtStructureOnly = new OneStepInterpreter(new KeywordBasedParser(DefaultObjectParser))

@@ -57,7 +57,7 @@ class RuleConstantInterpreter(controller: frontend.Controller) {
             case r: ParametricRule =>
               try {
                 r(controller, rc.home, rlArgs)
-              } catch {case e: Error =>
+              } catch {case e: Exception =>
                 throw InvalidObject(rl, "error while instantiating parametric rule").setCausedBy(e)
               }
             case _ => throw InvalidObject(rl, "semantic object exists but is not a rule: " + rl)

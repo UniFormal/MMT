@@ -255,15 +255,18 @@ abstract class ExternalToken(text: String) extends PrimitiveTokenListElem(text) 
     * @param BoundName the context
     * @param parser the parser calling this function
     */
-  def parse(outer: ParsingUnit, boundVars: List[BoundName], parser: ObjectParser): Term
+  def parse(input: ExternalTokenParsingInput): Term
 }
+
+/** bundles arguments passed into [[ExternalToken]] */
+case class ExternalTokenParsingInput(outer: ParsingUnit, boundNames: List[BoundName], parser: ObjectParser, errorCont: ErrorHandler)
 
 /** A convenience class for an ExternalToken whose parsing is context-free so that it can be parsed immediately
   * @param term the result of parsing
   */
 case class CFExternalToken(text: String, firstPosition: SourcePosition, term: Term) extends ExternalToken(text) {
   /** returns simply term */
-  def parse(outer: ParsingUnit, boundVars: List[BoundName], parser: ObjectParser): Term = term
+  def parse(input: ExternalTokenParsingInput): Term = term
 }
 
 /** A MatchedList is a SubTermToken resulting by reducing a sublist using a notation
@@ -283,9 +286,9 @@ class MatchedList(val tokens: List[(FoundContent,List[UnmatchedList])], val an: 
   else
     tokens.map(_._2.toString).mkString("{" + an.toShortString + " ", " ", " " + an.toShortString + "}")
 
-  private[parser] def addRules(rules : ParsingRuleTable) : Unit = tokens foreach {
+  private[parser] def addRules(rules : ParsingRuleTable) {tokens foreach {
     case (_,ul) => ul.foreach(_.addRules(rules))
-  }
+  }}
 }
 
 /**
@@ -302,7 +305,7 @@ class UnmatchedList(val tl: TokenList) extends TokenListElem {
   val lastPosition = tl(tl.length - 1).lastPosition
   private[parser] var scanner: Scanner = null
   private[parser] var localNotations: Option[ParsingRuleTable] = None
-  def addRules(rules : ParsingRuleTable) : Unit = {
+  def addRules(rules : ParsingRuleTable) {
     scanner.addRules(rules)
     tl.getTokens.foreach {
       case ul : UnmatchedList => ul.addRules(rules)
