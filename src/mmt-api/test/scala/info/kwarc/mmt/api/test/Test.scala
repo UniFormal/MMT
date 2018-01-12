@@ -1,4 +1,4 @@
-package scala.info.kwarc.mmt.api.test
+package info.kwarc.mmt.api.test
 
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives._

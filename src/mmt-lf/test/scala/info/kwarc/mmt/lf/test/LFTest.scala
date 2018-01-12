@@ -1,11 +1,11 @@
-package scala.info.kwarc.mmt.lf.test
+package info.kwarc.mmt.lf.test
 
-import scala.info.kwarc.mmt.api.test.MMTTest
+import info.kwarc.mmt.api.test.MMTTest
 
 class LFTest extends MMTTest("MMT/LFX","MMT/examples","Test/General")("info.kwarc.mmt.lf.Plugin") {
   behavior of "LF"
   // shouldhl("build MMT/urtheories scala-bin")
-  shouldhl("build MMT/urtheories mmt-omdoc")
+  // shouldhl("build MMT/urtheories mmt-omdoc")
   //shouldhl("build MMT/examples scala-bin")
   //shouldhl("build MMT/examples mmt-omdoc")
   shouldhl("build MMT/LFX mmt-omdoc")
@@ -37,6 +37,7 @@ object Orders {
     "calculus/sequencesseries.mmt",
     "calculus/limitsderivatives.mmt",
     "calculus/domains.mmt"
+    // "categories/basics.mmt"
   )
 
   val testgeneral = List(

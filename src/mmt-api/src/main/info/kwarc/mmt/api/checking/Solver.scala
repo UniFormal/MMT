@@ -1518,6 +1518,20 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             }
             // no applicable rule, traverse
             Traverser(this,t)
+        case OMS(op) =>
+          // use first applicable rule
+          computationRules foreach {rule =>
+            if (rule.head == op) {
+              val ret = rule(thisSolver)(t, false)(Stack(con),history)
+              ret foreach {tmS =>
+                history += "applying computation rule " + rule.toString
+                done = true
+                return tmS
+              }
+            }
+          }
+          // no applicable rule, traverse
+          Traverser(this,t)
         case _ =>
             Traverser(this,t)
       }
