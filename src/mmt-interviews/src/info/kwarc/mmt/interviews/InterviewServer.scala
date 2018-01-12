@@ -62,7 +62,7 @@ class InterviewServer extends ServerExtension("interview") {
         return if(errs.nonEmpty) ServerResponse.errorResponse(errs.head,"html") else {
           response(tm.toTerm)
         }
-      case List("inter") =>
+      case List("infer") =>
         val mps = query("cont").getOrElse(return ServerResponse.errorResponse("No context for term given"))
         val th = controller.get(Path.parseM(mps,NamespaceMap.empty)) match {
           case ths : DeclaredTheory => ths
