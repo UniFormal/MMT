@@ -2,23 +2,29 @@ package info.kwarc.mmt.lf.test
 
 import info.kwarc.mmt.api.test.MMTTest
 
-class LFTest extends MMTTest("MMT/LFX","MMT/examples","Test/General")("info.kwarc.mmt.lf.Plugin") {
-  behavior of "LF"
-  // shouldhl("build MMT/urtheories scala-bin")
-  // shouldhl("build MMT/urtheories mmt-omdoc")
-  //shouldhl("build MMT/examples scala-bin")
-  //shouldhl("build MMT/examples mmt-omdoc")
-  shouldhl("build MMT/LFX mmt-omdoc")
+class LFTest extends MMTTest(
+  "MMT/urtheories",
+  "MMT/LFX",
+  "MMT/examples",
+  "Test/General"
 
-  shouldcheck("Test/General",Orders.testgeneral:_*)(mayfail = List("http://test.kwarc.info/Structure?C?test2?definition"))
+)("info.kwarc.mmt.lf.Plugin") {
+  behavior of "LF"
+
+  // run all the building
+  shouldHandleLine("build MMT/LFX mmt-omdoc")
+
+  shouldCheck("Test/General", Orders.testgeneral:_*)(mayfail = List("http://test.kwarc.info/Structure?C?test2?definition"))
 }
 
+/*
 class MitMTest extends MMTTest("MMT/LFX","MitM/Foundation","MitM/smglom")("info.kwarc.mmt.lf.Plugin") {
   behavior of "MitM"
   // shouldhl("build MitM/Foundation mmt-omdoc")
 
   // shouldcheck("MitM/smglom",Orders.mitmsmglom:_*)()
 }
+*/
 
 object Orders {
   val mitmsmglom = List(
