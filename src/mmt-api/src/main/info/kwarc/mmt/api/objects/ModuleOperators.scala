@@ -142,6 +142,7 @@ object TheoryExp {
       val ms = ts map { t => metas(t) }
       if (ms.nonEmpty && ms.forall(m => m == ms.head)) ms.head
       else Nil
+    case _ => Nil
   }
 
   /**

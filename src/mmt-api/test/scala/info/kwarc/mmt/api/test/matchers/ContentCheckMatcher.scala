@@ -96,16 +96,18 @@ trait ContentCheckMatcher extends MMTMatcher {
   }
 
   /** check all .mmt files in the source of an archive and a set of normal files */
-  private def check(archive : Archive, files : String*): List[(Path, Error)] = {
+  private def check(archive : Archive, files : String*)(onlyfiles : Boolean = false): List[(Path, Error)] = {
     // check all the requested files
     var ret : ListBuffer[(Path,Error)] = new ListBuffer
     ret ++= files.flatMap(f => checkFile(archive, f))
 
-    // find all files in the root of the archive
-    val src = archive.root / archive.resolveDimension(RedirectableDimension("source")).toString
-    archive.traverse(RedirectableDimension("source"), FilePath(""), TraverseMode(f => File(f).getExtension.contains("mmt"), _ => true, false)){
-      case Current(inFile, _) =>
-        ret ++= checkFile(archive, src.relativize(inFile).toString)
+    if (!onlyfiles) {
+      // find all files in the root of the archive
+      val src = archive.root / archive.resolveDimension(RedirectableDimension("source")).toString
+      archive.traverse(RedirectableDimension("source"), FilePath(""), TraverseMode(f => File(f).getExtension.contains("mmt"), _ => true, false)) {
+        case Current(inFile, _) =>
+          ret ++= checkFile(archive, src.relativize(inFile).toString)
+      }
     }
 
     // and return all the errors
@@ -120,13 +122,13 @@ trait ContentCheckMatcher extends MMTMatcher {
     * @param mayfail a list of archives that are ignored in the return value of the error
     * @param mustfail a list of archives that may not file in the return value of the error
     */
-  def shouldCheck(archiveID : String, files : String*)(mayfail : List[String] = Nil, mustfail : List[String] = Nil): Unit =
+  def shouldCheck(archiveID : String, files : String*)(onlyfiles : Boolean = false,mayfail : List[String] = Nil, mustfail : List[String] = Nil): Unit =
     it should s"build $archiveID" in {
       // find the source folder of the archive
       val archive = getArchive(archiveID)
 
       // run the check
-      val ret = check(archive, files:_*)
+      val ret = check(archive, files:_*)(onlyfiles)
 
       // check all the files
       var testOK: Boolean = true
