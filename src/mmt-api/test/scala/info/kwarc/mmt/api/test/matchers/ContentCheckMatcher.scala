@@ -64,9 +64,13 @@ trait ContentCheckMatcher extends MMTMatcher {
   /** check that a given archive gets installed properly */
   def installArchive(id: String, version: Option[String] = None): Unit = {
     it should s"get archive $id" in {
+      // install the archive
+      // TODO: Use a specific version of the archive only
       handleLine(s"oaf clone $id")
-      // TODO: Install the given version of the archive
-      getArchive(id)
+
+      // explicitly set the mathpath, just to be sure
+      val mathPath = getArchive(id).rootString
+      handleLine(s"mathpath archive $mathPath")
     }
   }
 

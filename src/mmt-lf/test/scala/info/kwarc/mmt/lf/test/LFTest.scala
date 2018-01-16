@@ -11,7 +11,12 @@ class LFTest extends MMTTest(
 )("info.kwarc.mmt.lf.Plugin") {
   behavior of "LF"
 
-  // run all the building
+  it should "build the scala-bin target" in {
+    handleLine("log+ debug")
+    handleLine("build MMT/LFX scala-bin")
+    handleLine("log- debug")
+  }
+
   shouldHandleLine("build MMT/LFX mmt-omdoc")
 
   shouldCheck("MMT/examples",Orders.examples:_*)(onlyfiles = true)
