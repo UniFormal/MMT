@@ -34,6 +34,7 @@ trait MMTMatcher extends FlatSpec with Logger {
       handleLine("log+ test")
       handleLine("log+ test-warn")
       handleLine("log+ test-error")
+      handleLine("log+ backend")
   }
 
   // this Matcher has a logger that can be used to log extensions
