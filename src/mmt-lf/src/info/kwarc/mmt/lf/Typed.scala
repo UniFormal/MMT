@@ -60,6 +60,13 @@ object UnivTerm extends InferenceRule(Typed.ktype, OfType.path) {
    }
 }
 
+object TypeInhabitable extends InhabitableRule(Typed.ktype) {
+   def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Boolean = term match {
+      case OMS(Typed.ktype) => true
+      case _ => false
+   }
+}
+
 object KindInhabitable extends InhabitableRule(Typed.kind) {
    def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Boolean = term match {
       case OMS(Typed.kind) => true

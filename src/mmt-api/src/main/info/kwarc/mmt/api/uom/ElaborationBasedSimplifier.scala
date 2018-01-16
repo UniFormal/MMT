@@ -554,8 +554,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case x => //nothing to do
           }
         } catch {
-          case e : Error => println(e)//nothing to do
-          case e : Exception => println(e)//nothing to do
+          case e : Error => // println(e)//nothing to do
+          case e : Exception => // println(e)//nothing to do
         }
     }
     rules

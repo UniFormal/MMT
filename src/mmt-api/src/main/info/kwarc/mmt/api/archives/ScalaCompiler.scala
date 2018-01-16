@@ -79,7 +79,7 @@ class ScalaCompiler extends BuildTarget {
      report("debug", s"set 'scala-bin' classpath to $classPathS")
 
      // run the compiler: -verbose -nowarn
-     val args = (if(report.groups.contains("debug")) List("-verbose") else Nil) ::: ("-d" :: (a / ScalaOutDim).toString :: "-cp" :: classPathS :: files)
+     val args = (if(report.groups.contains("compiler")) List("-verbose") else Nil) ::: ("-d" :: (a / ScalaOutDim).toString :: "-cp" :: classPathS :: files)
 
      report("debug", s"scalac ${args.mkString(" ")}")
      scala.tools.nsc.Main.process(args.toArray)
