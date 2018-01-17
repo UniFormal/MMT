@@ -258,8 +258,10 @@ object ActionCompanion extends AccessibleCompanionCollection[Action, ActionCompa
   register(HelpActionCompanion)
 
   // OAFAction
+  register(OAFRootCompanion)
   register(OAFInitCompanion)
   register(OAFCloneCompanion)
+  register(OAFShowCompanion)
   register(OAFPullCompanion)
   register(OAFPushCompanion)
   register(OAFSetRemoteCompanion)

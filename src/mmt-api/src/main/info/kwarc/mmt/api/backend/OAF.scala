@@ -44,10 +44,12 @@ abstract class ArchiveHub {
    /** create a new archive */
    def init(id: String): Unit
    /** clones a repository */
-   def clone(id: String): Option[File]
+   def clone(id: String, version: Option[String] = None): Option[File]
+   /** get the local version of a repository */
+   def version(id: String): String
    /** @return all locally available repositories */
    def localArchiveIDs: List[String]
-   /** @return the directories of locally available repositories, i.e., grandchild directories of root */ 
+   /** @return the directories of locally available repositories, i.e., grandchild directories of root */
    def localPaths = localArchiveIDs map localPath
    /** @return all remotely available repositories (unimplemented) */
    def remoteArchiveIDs: List[String] = Nil //TODO
@@ -64,7 +66,7 @@ abstract class ArchiveHub {
      localArchiveIDs map push
    }
    /** downloads a remote repository as a zip file */
-   def download(id: String): Option[File]
+   def download(id: String, version: Option[String] = None): Option[File]
 }
 
 /**
@@ -77,8 +79,8 @@ abstract class ArchiveHub {
  *
  * @param root the directory in which clones are created
  * @param report for logging
- * @param https toggle between https and ssh for remote URLs (see below) 
- * 
+ * @param https toggle between https and ssh for remote URLs (see below)
+ *
  * https URLs are good for anonymous cloning. ssh URLs are good for key-based authentication when pushing.
  * Fresh users should use https first and typically want to switch to ssh eventually.
  */
@@ -86,16 +88,16 @@ class MathHub(val uri: URI, val root: File, https: Boolean, val report: Report) 
    val logPrefix = "oaf"
    /** choose UnixGit or WindowsGit depending on OS */
    private val gitCommand = OS.detect match {case Windows => new WindowsGit() case _ => UnixGit}
-   private def git(dir: File, args: String*): Boolean = {
+   private def git(dir: File, args: String*): (Option[String], Boolean) = {
       val command = gitCommand(args:_*)
       log(command.mkString(" ") + " in " + dir.toString)
-      val result = ShellCommand.runIn(dir, command :_*)
+      val (out, result) = ShellCommand.runAndBuffer(dir, command :_*)
       result match {
          case Some(m) =>
             logError(m)
-            false
+            (Some(out), false)
          case None =>
-            true
+           (Some(out), true)
       }
    }
    /** the remote URL of the repository to be used for init and clone */
@@ -104,7 +106,7 @@ class MathHub(val uri: URI, val root: File, https: Boolean, val report: Report) 
       private def httpsurl(pathS: String) = "https://" + uri.authority.getOrElse("") + "/" + pathS + ".git"
       def url(pathS: String) = if (https) httpsurl(pathS) else sshurl(pathS)
    }
-   
+
    /** initializes a repository */
    def init(pathS: String) {
       val path = utils.stringToList(pathS, "/")
@@ -122,12 +124,20 @@ class MathHub(val uri: URI, val root: File, https: Boolean, val report: Report) 
       // git(repos, "push", "origin", "master") // practical but fails for new users or if the remote repo doesn't exist
    }
    /** clones a repository */
-   def clone(path: String): Option[File] = {
+   def clone(path: String, version: Option[String] = None): Option[File] = {
       val lp = localPath(path)
+
+      // if the path exists, finish
       if (lp.exists) {
-         log("target directory exists, skipping")
+        if(version.isDefined){
+          log("target directory exists, skipping. Local version may differ from requested version. ")
+        } else {
+          log("target directory exists, skipping")
+        }
+
       } else {
-         val success = git(root, "clone", Remote.url(path), path)
+         // try to clone the repository or fail
+         val success = git(root, "clone", Remote.url(path), path)._2
          if (!success) {
            if (lp.exists) {
               log("git failed, deleting " + lp)
@@ -135,8 +145,33 @@ class MathHub(val uri: URI, val root: File, https: Boolean, val report: Report) 
            }
            return None
          }
+
+         // checkout specific version, fail with a simple log message
+         if(version.isDefined){
+           log(s"checking out ${version.get}")
+           val vSuccess = git(lp, "checkout", "-f", version.get)._2
+           if (!vSuccess) {
+             log("checkout failed, Local version may differ from requested version. ")
+           }
+         }
       }
       Some(lp)
+   }
+   /** get the local version of a repository */
+   def version(id: String): String = {
+
+     val lp = localPath(id)
+     if(!lp.exists){
+       throw GeneralError(s"$id is not installed, can not show version")
+     }
+
+     // run git rev-parse and have a look at the current HEAD
+     val (v, s) = git(lp, "rev-parse", "HEAD")
+     if(!s || v.isEmpty){
+       throw GeneralError(s"Unable to retrieve version of $id, is it installed using git?")
+     }
+
+     v.get.trim()
    }
    /** set all remote URL (practical to switch to upgrade from https to ssh) */
    def setRemoteURL {
@@ -151,9 +186,8 @@ class MathHub(val uri: URI, val root: File, https: Boolean, val report: Report) 
    def push(id: String) {
      git(localPath(id), "push")
    }
-   def download(id: String) = {
-     TrustAllX509TrustManager.trustAll // awkward, but gitlab uses certificate from startssl.com, which is not recognized by Java
-     val downloadURI = (uri / id / "repository" / "archive.zip") ? "ref=master"
+   def download(id: String, version: Option[String] = None) = {
+     val downloadURI = (uri / id / "repository" / "archive.zip") ? s"ref=${version.getOrElse("master")}"
      val target = root/id
      val zip = target.addExtension("zip")
      log("downloading from " + downloadURI)

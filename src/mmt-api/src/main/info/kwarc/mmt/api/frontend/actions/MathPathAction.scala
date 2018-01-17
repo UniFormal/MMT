@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.frontend.actions
 
+import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.{ErrorLogger, GeneralError}
 import info.kwarc.mmt.api.backend.{LocalCopy, LocalSystem}
 import info.kwarc.mmt.api.frontend.Controller
@@ -101,7 +102,7 @@ trait MathPathActionHandling {
   self: Controller =>
 
   /** add an archive plus its optional classpath and notify listeners, handling [[AddArchive]] */
-  def addArchive(root: File):  Unit =  {
+  def addArchive(root: File): List[Archive] =  {
     val archs = backend.openArchive(root)
     archs.foreach { a =>
       a.properties.get("classpath").foreach { cp =>
@@ -109,5 +110,6 @@ trait MathPathActionHandling {
       }
       notifyListeners.onArchiveOpen(a)
     }
+    archs
   }
 }

@@ -23,6 +23,7 @@ connectInput in run := true
 
 publish := {}
 fork in Test := true
+testOptions in Test += Tests.Argument("-oI")
 
 // =================================
 // DEPLOY TASKS
@@ -298,7 +299,9 @@ lazy val tiscaf = (project in file("tiscaf")).
       "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
       "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     ),
-    deployFull := Utils.deployPackage("lib/tiscaf.jar").value
+    deployFull := Utils.deployPackage("lib/tiscaf.jar").value,
+    // TODO: Re-enable tests
+    test := {}
   )
 
 lazy val lfcatalog = (project in file("lfcatalog")).

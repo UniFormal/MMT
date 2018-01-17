@@ -22,13 +22,11 @@ trait ArchiveTester extends BaseTester with ActionTester {
   /** check that a given archive gets installed properly */
   private def installArchive(archive: ArchiveSpec): Unit = {
     it should s"get archive ${archive.id}" in {
-      // install the archive
-      // TODO: Use a specific version of the archive only
-      handleLine(s"oaf clone ${archive.id}")
+      controller.report.groups += "oaf"
+      handleLine(archive.toAction.toParseString)
+      controller.report.groups -= "oaf"
 
-      // explicitly set the mathpath, just to be sure
-      val mathPath = getArchive(archive.id).rootString
-      handleLine(s"mathpath archive $mathPath")
+      assert(getArchive(archive.id) != null)
     }
   }
 

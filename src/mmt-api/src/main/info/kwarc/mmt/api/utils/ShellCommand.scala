@@ -56,4 +56,13 @@ object ShellCommand {
      println(command.mkString(" "))
      runInOpt(dir, command: _*){s => println(s)}
   }
+
+  /**
+    * like runIn but buffers output
+    */
+  def runAndBuffer(dir: File, command: String*): (String, Option[String]) = {
+    val buffer = new StringBuilder
+    val errorString = runInOpt(Some(dir), command: _*){s => buffer.append(s + "\n")}
+    (buffer.mkString, errorString)
+  }
 }

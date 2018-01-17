@@ -1,11 +1,32 @@
 package info.kwarc.mmt.api.frontend.actions
 
 import info.kwarc.mmt.api.GeneralError
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.utils.{URI, stringToList}
+import info.kwarc.mmt.api.frontend.{Controller, MMTConfig, OAFConf}
+import info.kwarc.mmt.api.utils.{File, URI, stringToList}
 
 /** Shared base class for Actions relating to OAF (lmh) */
 sealed abstract class OAFAction extends ActionImpl {}
+
+/** configure the oaf root
+  *
+  * concrete syntax: oaf close path:STRING
+  */
+case class OAFRoot(path: String, https: Boolean) extends OAFAction {
+  def apply(controller: Controller): Unit = {
+    val config = new MMTConfig
+    config.addEntry(OAFConf(File(path), https, None))
+    controller.loadConfig(config, true)
+  }
+  override def toParseString = s"oaf root $path ${if(https) "https" else "ssh"}"
+}
+object OAFRootCompanion extends ActionCompanionImpl[OAFRoot]("clone an archive from a remote OAF", "oaf root"){
+  import Action._
+  def parserActual(implicit state: ActionState) = str ~ (("ssh" | "https")?) ^^ {
+    case p ~ Some(https) => OAFRoot(p, https == "https")
+    case p ~ None => OAFRoot(p, true)
+  }
+}
+
 
 /** clone an archive from a remote OAF
   *
@@ -22,15 +43,30 @@ object OAFInitCompanion extends ActionCompanionImpl[OAFInit]("clone an archive f
 
 /** clone an archive from a remote OAF
   *
-  * concrete syntax: oaf close path:STRING
+  * concrete syntax: oaf close id:STRING [version:String]
   */
-case class OAFClone(path: String) extends OAFAction {
-  def apply(controller: Controller): Unit = controller.cloneOAFArchiveRecursively(path)
-  def toParseString = s"oaf clone $path"
+case class OAFClone(id: String, version: Option[String]) extends OAFAction {
+  def apply(controller: Controller): Unit = controller.cloneArchive(id, version)
+  def toParseString = s"oaf clone $id${version.map(" " + ).getOrElse("")}"
 }
 object OAFCloneCompanion extends ActionCompanionImpl[OAFClone]("clone an archive from a remote OAF", "oaf clone"){
   import Action._
-  def parserActual(implicit state: ActionState) = str ^^ OAFClone
+  def parserActual(implicit state: ActionState) = str ~ (str?) ^^ { case i ~ v => OAFClone(i, v)}
+}
+
+/** shows the current version of a locally installed archive
+  *
+  * concrete syntax: oaf show id:STRING
+  */
+case class OAFShow(id: String) extends OAFAction {
+  def apply(controller: Controller): Unit = {
+    controller.report.report("user", controller.getOAFOrError.version(id))
+  }
+  def toParseString = s"oaf show $id"
+}
+object OAFShowCompanion extends ActionCompanionImpl[OAFShow]("shows the current version of a locally installed archive", "oaf show"){
+  import Action._
+  def parserActual(implicit state: ActionState) = str ^^ OAFShow
 }
 
 /** pulls all repositories from remote OAF
@@ -63,7 +99,7 @@ case object OAFSetRemote extends OAFAction {
   def apply(controller: Controller) = controller.getOAFOrError.setRemoteURL
   def toParseString = "oaf setremote"
 }
-object OAFSetRemoteCompanion extends ActionObjectCompanionImpl[OAFSetRemote.type]("pushes all repositories to remote OAF", "oaf setremote")
+object OAFSetRemoteCompanion extends ActionObjectCompanionImpl[OAFSetRemote.type]("sets all remotes for the remote OAF", "oaf setremote")
 
 /** helper functions for [[OAFAction]]s */
 trait OAFActionHandling {
@@ -74,23 +110,32 @@ trait OAFActionHandling {
     throw GeneralError("no OAF configuration entry found")
   }
 
-  /** clone an OAF Archive Recursively (i.e. including dependencies) */
-  def cloneOAFArchiveRecursively(p: String) {
+  /**
+    * clones an OAF Archive (either a specific version, or the current one recursively)
+    * @param archive Name of archive to clone
+    * @param version If provided, clone the specific version of the archive. If not, clone it recursively
+    */
+  def cloneArchive(archive: String, version: Option[String] = None) {
     val oaf = getOAFOrError
-    report("user", "trying to clone " + p)
-    val lc = oaf.clone(p) getOrElse {
+    report("user", s"trying to clone $archive${version.map("@" +).getOrElse("")}")
+
+    val lc = oaf.clone(archive, version) getOrElse {
       logError("cloning failed, trying to download")
-      oaf.download(p)
+      oaf.download(archive, version)
     }.getOrElse {
       logError("downloading failed, giving up")
       return
     }
-    val archs = backend.openArchive(lc)
-    archs foreach {a =>
-      val depS = a.properties.getOrElse("dependencies", "")
-      // TODO lmh falsely uses , as separator instead of space
-      val deps = if (depS.contains(",")) stringToList(depS, ",").map(_.trim) else stringToList(depS)
-      deps foreach {d => cloneOAFArchiveRecursively(URI(d).pathAsString)}
+
+    val archs = addArchive(lc)
+
+    if(version.isEmpty){
+      archs foreach {a =>
+        val depS = a.properties.getOrElse("dependencies", "")
+        // TODO lmh falsely uses , as separator instead of space
+        val deps = if (depS.contains(",")) stringToList(depS, ",").map(_.trim) else stringToList(depS)
+        deps foreach {d => cloneArchive(URI(d).pathAsString)}
+      }
     }
   }
 }
