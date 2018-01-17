@@ -19,8 +19,6 @@ scalacOptions in Global := Seq("-feature", "-language:postfixOps", "-language:im
 parallelExecution in ThisBuild := false
 javaOptions in ThisBuild ++= Seq("-Xmx1g")
 
-connectInput in run := true
-
 publish := {}
 fork in Test := true
 testOptions in Test += Tests.Argument("-oI")
@@ -132,8 +130,9 @@ lazy val mmt = (project in file("mmt")).
       val cp = (fullClasspath in assembly).value
       cp filter { j => jeditJars.contains(j.data.getName) }
     },
-    mainClass in Compile := Some(mmtMainClass), 
-    mainClass in assembly := Some(mmtMainClass), 
+    mainClass in Compile := Some(mmtMainClass),
+    connectInput in run := true,
+    mainClass in assembly := Some(mmtMainClass),
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(
       prependShellScript = Some(Seq("#!/bin/bash", """exec /usr/bin/java -Xmx2048m -jar "$0" "$@"""")))
   )
