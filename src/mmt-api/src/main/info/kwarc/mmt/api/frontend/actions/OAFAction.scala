@@ -60,7 +60,9 @@ object OAFCloneCompanion extends ActionCompanionImpl[OAFClone]("clone an archive
   */
 case class OAFShow(id: String) extends OAFAction {
   def apply(controller: Controller): Unit = {
-    controller.report.report("user", controller.getOAFOrError.version(id))
+    val oaf = controller.getOAFOrError
+    val archiveRoot = controller.backend.getArchive(id).map(_.root).getOrElse { oaf.localPath(id) }
+    controller.report.report("user", controller.getOAFOrError.version(archiveRoot))
   }
   def toParseString = s"oaf show $id"
 }

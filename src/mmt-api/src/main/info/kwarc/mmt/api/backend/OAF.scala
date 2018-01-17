@@ -46,7 +46,7 @@ abstract class ArchiveHub {
    /** clones a repository */
    def clone(id: String, version: Option[String] = None): Option[File]
    /** get the local version of a repository */
-   def version(id: String): String
+   def version(path: File): String
    /** @return all locally available repositories */
    def localArchiveIDs: List[String]
    /** @return the directories of locally available repositories, i.e., grandchild directories of root */
@@ -158,17 +158,17 @@ class MathHub(val uri: URI, val root: File, https: Boolean, val report: Report) 
       Some(lp)
    }
    /** get the local version of a repository */
-   def version(id: String): String = {
+   def version(path: File): String = {
 
-     val lp = localPath(id)
-     if(!lp.exists){
-       throw GeneralError(s"$id is not installed, can not show version")
+     // TODO: Allow paths to other archives as well
+     if(!path.exists){
+       throw GeneralError(s"archive is not installed, can not show version")
      }
 
      // run git rev-parse and have a look at the current HEAD
-     val (v, s) = git(lp, "rev-parse", "HEAD")
+     val (v, s) = git(path, "rev-parse", "HEAD")
      if(!s || v.isEmpty){
-       throw GeneralError(s"Unable to retrieve version of $id, is it installed using git?")
+       throw GeneralError(s"Unable to retrieve version, is it installed using git?")
      }
 
      v.get.trim()
