@@ -43,7 +43,7 @@ abstract class MMTTest(neededArchives : ArchiveSpec*)(neededExtensions : Extensi
     val systemFolder = rootFolder / "system"
 
     // create a setup instance
-    val setup = new Setup
+    val setup = new Setup(Some(s => log(s.trim)))
     controller.extman.addExtension(setup)
 
     // wipe anything old
@@ -52,7 +52,7 @@ abstract class MMTTest(neededArchives : ArchiveSpec*)(neededExtensions : Extensi
     }
 
     // and run the setup
-    setup.setup(systemFolder, contentFolder, None, installContent = false, logger = Some(s => log(s.trim)))
+    setup.setup(systemFolder, contentFolder, None, installContent = false)
 
     // and print an overview
     log(s"Configured MMT Testing root in $rootFolder")
