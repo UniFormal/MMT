@@ -1,78 +1,18 @@
-package info.kwarc.mmt.api.test.matchers
+package info.kwarc.mmt.api.test.utils.testers
 
 import info.kwarc.mmt.api.Level.Level
-import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.archives.{Archive, Current, RedirectableDimension, TraverseMode}
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.ParsingStream
-import info.kwarc.mmt.api.{DPath, Error, ErrorHandler, Invalid, InvalidElement, InvalidObject, InvalidUnit, Level, Path, SourceError, archives, utils}
 import info.kwarc.mmt.api.utils.{File, FilePath, URI}
-import info.kwarc.mmt.doc.Setup
+import info.kwarc.mmt.api.{DPath, Error, ErrorHandler, Invalid, InvalidElement, InvalidObject, InvalidUnit, Level, Path, SourceError, archives, utils}
 
 import scala.collection.mutable.ListBuffer
 
-/** handling content check related archives */
-trait ContentCheckMatcher extends MMTMatcher {
-  /** a list of archives needed for this matcher to work properly */
-  val archives: List[String]
-
-  /** configures the controller for archives */
-  def configureArchives: Unit = {
-    // we do not use the [[BuildQueue]], even if it has been enabled
-    // TODO: Once the build server is re-done we no longer need this
-    controller.extman.get(classOf[BuildQueue]).foreach(controller.extman.removeExtension)
-
-    // configure the folders and prepare setup
-    val rootFolder = File("test/target").canonical
-    val contentFolder = rootFolder / "content"
-    val systemFolder = rootFolder / "system"
-
-    // create a setup instance
-    val setup = new Setup
-    controller.extman.addExtension(setup)
-
-    // wipe anything old
-    if (rootFolder.exists()){
-      rootFolder.children foreach (_.deleteDir)
-    }
-
-    // and run the setup
-    setup.setup(systemFolder, contentFolder, None, quiet = true)
-
-    // and print an overview
-    log(s"Configured MMT Testing root in $rootFolder")
-
-    // and flush the report please
-    report.flush
-  }
-
-  /** return an Archive instance or throw an Error */
-  private def getArchive(id: String) = {
-    if(!archives.contains(id)){
-      testWarn(s"Archive missing from test specification: $id is missing from Test")
-    }
-    controller.backend.getArchive(id).getOrElse(
-      throw testError(s"Archive missing from controller: $id")
-    )
-  }
-
-  /** check that all the archives get installed properly */
-  def shouldInstallArchives : Unit = {
-    archives.foreach(installArchive(_))
-  }
-
-  /** check that a given archive gets installed properly */
-  def installArchive(id: String, version: Option[String] = None): Unit = {
-    it should s"get archive $id" in {
-      // install the archive
-      // TODO: Use a specific version of the archive only
-      handleLine(s"oaf clone $id")
-
-      // explicitly set the mathpath, just to be sure
-      val mathPath = getArchive(id).rootString
-      handleLine(s"mathpath archive $mathPath")
-    }
-  }
+/** implements testing of individual files */
+trait CheckTester extends BaseTester {
+  this: ArchiveTester =>
 
   /** checks a single file */
   private def checkFile(archive : Archive, filename : String): List[(Path,Error)] = {
@@ -88,11 +28,7 @@ trait ContentCheckMatcher extends MMTMatcher {
         case _ => throw testError(s"Expected a document: $filename")
       }
 
-      // print a warning for all errors
-      val ret = errorBuffer.getAll
-      ret.foreach(p => testWarn(Level.toString(p._2.level) + " in " + p._1 + ": " + p._2.shortMsg))
-      ret
-
+      errorBuffer.getAll
     } catch {case e: Exception =>
       val msg = e.getClass + ": " + e.getMessage
       throw testError("Unknown Error occured: " + msg, Some(e))
@@ -123,70 +59,85 @@ trait ContentCheckMatcher extends MMTMatcher {
     *
     * @param archiveID ID of the archive that we should check files in
     * @param files Set of files to check in
+    * @param onlyfiles If set to true, only build those files expliticly
     * @param mayfail a list of archives that are ignored in the return value of the error
     * @param mustfail a list of archives that may not file in the return value of the error
     */
-  def shouldCheck(archiveID : String, files : String*)(onlyfiles : Boolean = false,mayfail : List[String] = Nil, mustfail : List[String] = Nil): Unit =
+  def shouldCheck(archiveID : String, files : String*)(onlyfiles : Boolean = false, mayfail : List[String] = Nil, mustfail : List[String] = Nil): Unit =
     it should s"build $archiveID" in {
       // find the source folder of the archive
-      val archive = getArchive(archiveID)
+      val archive = this.getArchive(archiveID)
 
       // run the check
       val ret = check(archive, files:_*)(onlyfiles)
 
       // check all the files
       var testOK: Boolean = true
+      var firstTestError: Option[Error] = None
+
       ret.map(_._1.toString).distinct.foreach( f => {
-        // find all errors for this file, default counting to zero
-        val errorCounts = ret.filter(_._1.toString == f).groupBy(_._2.level).mapValues(_.length).withDefault(_ => 0)
 
-        // count warning and above
-        val errorsAndAbove = errorCounts(Level.Error) + errorCounts(Level.Fatal)
-        val warningsAndAbove = errorCounts(Level.Warning) + errorsAndAbove
+        // find all messages for this file, with different potential levels
+        val messages = ret.filter(_._1.toString == f)
+        val messageCounts = messages.groupBy(_._2.level).mapValues(_.length).withDefault(_ => 0)
 
-        // a status message for this file
-        var statusMessage = new StringBuffer
+        // find all the different types of errors
+        val errorsAndAbove = messageCounts(Level.Error) + messageCounts(Level.Fatal)
+        val warningsAndAbove = messageCounts(Level.Warning) + errorsAndAbove
+
+        // prepare a prefix message
+        val messagePrefix = s"$archiveID ${archive.root.relativize(File(f))}"
+        val statusMessage = new StringBuffer
 
         // build an info message to show the user
-        val countMessage = errorCounts.map({
+        val countMessage = messageCounts.map({
           case (t: Level, 1) => s"1 ${Level.toString(t)}"
           case (t: Level, c) => s"$c ${Level.toString(t)}s"
-        }).mkString("(", ", ", ")")
-        statusMessage.append(s"$archiveID ${archive.root.relativize(File(f))}: $countMessage ")
+        }).mkString(", ")
+
+        statusMessage.append(s"$messagePrefix: $countMessage ")
 
         // in case a failure was expected
         if(mustfail.contains(f)){
           if(warningsAndAbove == 0){
-            statusMessage.append("[SUCCESS] -- [TEST NOT OK] -- expected a failure")
+            statusMessage.append("[READ SUCCESS] -- [TEST NOT OK] -- expected a failure")
             testOK = false
           } else {
-            statusMessage.append("[FAILURE] -- [TEST OK]     -- expected a failure")
+            statusMessage.append("[READ FAILURE] -- [TEST OK]     -- expected a failure")
           }
 
           // in case a failure was allowed
         } else if(mustfail.contains(f)) {
           if (errorsAndAbove == 0) {
-            statusMessage.append("[SUCCESS] -- [TEST OK]     -- failure allowed")
+            statusMessage.append("[READ SUCCESS] -- [TEST OK]     -- failure allowed")
           } else {
-            statusMessage.append("[FAILURE] -- [TEST OK]     -- failure allowed")
+            statusMessage.append("[READ FAILURE] -- [TEST OK]     -- failure allowed")
           }
 
           // in case we expected a success
         } else {
           if(errorsAndAbove == 0) {
-            statusMessage.append("[SUCCESS] -- [TEST OK]")
+            statusMessage.append("[READ SUCCESS] -- [TEST OK]")
           } else {
-            statusMessage.append("[FAILURE] -- [TEST NOT OK]")
+            statusMessage.append("[READ FAILURE] -- [TEST NOT OK]")
             testOK = false
+            if(firstTestError.isEmpty) {firstTestError = Some(messages.head._2)}
           }
         }
 
-        // and log the status message
+        // and then the status message
         log(statusMessage.toString)
+
+        logGroup {
+          // print all the error messages
+          messages.foreach(m =>
+            log(m._2.shortMsg)
+          )
+        }
       })
 
       if(!testOK){
-        throw testError(s"Archive $archiveID behaved unexpectedly")
+        throw testError(s"Archive $archiveID behaved unexpectedly", firstTestError)
       }
     }
 }

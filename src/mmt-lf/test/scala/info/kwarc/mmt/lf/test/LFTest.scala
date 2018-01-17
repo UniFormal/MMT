@@ -1,15 +1,21 @@
 package info.kwarc.mmt.lf.test
 
-import info.kwarc.mmt.api.test.MMTTest
+import info.kwarc.mmt.api.test.utils.testers._
+import info.kwarc.mmt.api.test.utils._
 
 class LFTest extends MMTTest(
-  "MMT/urtheories",
-  "MMT/LFX",
-  "MMT/examples",
-  "Test/General"
+  ArchiveSpec.MMT.urtheories,
+  ArchiveSpec.MMT.LFX,
+  ArchiveSpec.Test.General,
+  ArchiveSpec.MMT.examples
+)(
+  ExtensionSpec("info.kwarc.mmt.lf.Plugin")
+) {
 
-)("info.kwarc.mmt.lf.Plugin") {
-  behavior of "LF"
+  bootstrapTests()
+
+  shouldLoadExtensions()
+  shouldInstallArchives()
 
   it should "build the scala-bin target" in {
     handleLine("log+ debug")
