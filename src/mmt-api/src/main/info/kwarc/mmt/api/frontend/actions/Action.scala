@@ -287,6 +287,8 @@ object ActionCompanion extends AccessibleCompanionCollection[Action, ActionCompa
   register(ServerOffCompanion)
 
   // Printing
+  register(MMTInfoCompanion)
+  register(ClearConsoleCompanion)
   register(PrintAllCompanion)
   register(PrintAllXMLCompanion)
   register(PrintConfigCompanion)

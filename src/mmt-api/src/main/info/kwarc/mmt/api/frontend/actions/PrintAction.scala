@@ -1,8 +1,7 @@
 package info.kwarc.mmt.api.frontend.actions
 
-import info.kwarc.mmt.api.GeneralError
-import info.kwarc.mmt.api.frontend.{Controller, Report, actions}
-import info.kwarc.mmt.api.utils.MMTSystem
+import info.kwarc.mmt.api.frontend.{Controller, actions}
+import info.kwarc.mmt.api.utils.{MMTSystem, OS}
 
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
@@ -16,32 +15,65 @@ private[actions] trait ResponsiveAction extends ActionImpl {
 /** Shared base class for Actions for printing something */
 sealed abstract class PrintAction extends ResponsiveAction {}
 
+case object MMTInfo extends PrintAction {
+  def apply(implicit controller: Controller): Unit = {
+    logGroup {
+      respond(s"MMT Version     : ${MMTSystem.version.getOrElse("unversioned")}")
+      respond(s"Run Style       : ${MMTSystem.runStyle}")
+      respond(s"Operation System: ${OS.detect}")
+
+      respond("use 'show extensions' to show current extensions. ")
+      respond("use 'show archives' to show current archives. ")
+      respond("use 'show server' to show current server. ")
+    }
+  }
+  def toParseString = "show mmt"
+}
+object MMTInfoCompanion extends ActionObjectCompanionImpl[MMTInfo.type]("show system debug information", "show mmt")
+
+/** print all loaded knowledge items to STDOUT in text syntax */
+case object ClearConsole extends PrintAction {
+  def apply(implicit controller: Controller): Unit = {
+    System.out.print("\033[H\033[2J")
+    System.out.flush()
+  }
+  def toParseString = "clear console"
+}
+object ClearConsoleCompanion extends ActionObjectCompanionImpl[ClearConsole.type]("clears the console", "clear console")
+
+
 /** print all loaded knowledge items to STDOUT in text syntax */
 case object PrintAll extends PrintAction {
   def apply(implicit controller: Controller): Unit = {
-    respond("\n" + controller.library.toString)
+    logGroup {
+      respond("\n" + controller.library.toString)
+    }
   }
-  def toParseString = "printAll"
+  def toParseString = "show knowledge"
 }
-object PrintAllCompanion extends ActionObjectCompanionImpl[PrintAll.type]("print all loaded knowledge items to STDOUT in text syntax", "printAll")
+object PrintAllCompanion extends ActionObjectCompanionImpl[PrintAll.type]("print all loaded knowledge items to STDOUT in text syntax", "show knowledge")
 
 /** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends PrintAction {
   def apply(implicit controller: Controller): Unit = {
-    respond("\n" + controller.library.getModules.map(_.toNode).mkString("\n"))
+    logGroup {
+      respond("\n" + controller.library.getModules.map(_.toNode).mkString("\n"))
+    }
   }
-  def toParseString = "printXML"
+  def toParseString = "show xml"
 }
-object PrintAllXMLCompanion extends ActionObjectCompanionImpl[PrintAllXML.type]("print all loaded knowledge items to STDOUT in xml syntax", "printXML")
+object PrintAllXMLCompanion extends ActionObjectCompanionImpl[PrintAllXML.type]("print all loaded knowledge items to STDOUT in xml syntax", "show xml")
 
 /** print all configuration entries to STDOUT */
 case object PrintConfig extends PrintAction {
   def apply(implicit controller: Controller) : Unit = {
-    respond(controller.getConfigString())
+    logGroup {
+      respond(controller.getConfigString())
+    }
   }
-  def toParseString = "printConfig"
+  def toParseString = "show config"
 }
-object PrintConfigCompanion extends ActionObjectCompanionImpl[PrintConfig.type]("print all configuration to stdout", "printConfig")
+object PrintConfigCompanion extends ActionObjectCompanionImpl[PrintConfig.type]("print all configuration to stdout", "show config")
 
 case class HelpAction(topic: String) extends PrintAction {
   // list of all known help Topics
@@ -87,13 +119,13 @@ case class HelpAction(topic: String) extends PrintAction {
 
     // try and get a string that represents help
     getDynamicHelp(topicActual).getOrElse(getHelpText(topicActual).getOrElse(getActionHelp(topicActual).getOrElse(""))) match {
-      case "" => respond("No help on '" + topic + "' available")
+      case "" => respond(s"No help on '$topic' available")
       case s: String => respond(s)
     }
   }
-  def toParseString: String = "help " + topic
+  def toParseString: String = "show help " + topic
 }
-object HelpActionCompanion extends ActionCompanionImpl[HelpAction]("print help about a given topic", "help") {
+object HelpActionCompanion extends ActionCompanionImpl[HelpAction]("print help about a given topic", "show help", "help") {
   import Action._
   override def parserActual(implicit state: ActionState): actions.Action.Parser[HelpAction] = (strMaybeQuoted *) ^^ { s => HelpAction(s.mkString(" ")) }
 }

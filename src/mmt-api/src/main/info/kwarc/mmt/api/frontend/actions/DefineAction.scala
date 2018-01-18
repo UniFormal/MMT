@@ -33,7 +33,7 @@ case class InspectDefine(name: Option[String]) extends DefineAction with Respons
           respond(s"No definition $x defined. Use 'show definition' to show a list of current definition. ")
       }
   }
-  def toParseString: String = s"show definitions${name.map(" " +).getOrElse("")}"
+  def toParseString: String = s"show definition${name.map(" " +).getOrElse("")}"
 }
 object InspectDefineCompanion extends ActionCompanionImpl[InspectDefine]("inspect the set of defined actions", "show definition") {
   import Action._

@@ -61,6 +61,11 @@ object MMTSystem {
      }
    }
 
+  /** the version of MMT being used, if known */
+  lazy val version: Option[String] = {
+    Option(this.getClass.getPackage.getImplementationVersion)
+  }
+
    /** expected location of the user's mmtrc file */
    val userConfigFile = {
       OS.detect match {

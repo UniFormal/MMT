@@ -16,9 +16,9 @@ case object ListReportGroups extends LoggingAction with ResponsiveAction {
     respond("use 'log+ <group>' to add a log group. ")
     respond("use 'log- <group>' to remove a log group. ")
   }
-  def toParseString: String = "log"
+  def toParseString: String = "show log groups"
 }
-object ListReportGroupsCompanion extends ActionObjectCompanionImpl("list active log groups", "log")
+object ListReportGroupsCompanion extends ActionObjectCompanionImpl[ListReportGroups.type]("list active log groups", "show log groups")
 
 case class AddReportHandler(h: ReportHandler) extends LoggingAction {
   def apply(implicit controller: Controller): Unit = controller.report.addHandler(h)

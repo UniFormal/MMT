@@ -22,9 +22,9 @@ case object ListExtensions extends ExtensionAction with ResponsiveAction {
     respond("Use 'extension <name> <args...>' to add an extension. ")
     respond("Use 'unload <name>' to remove an extension. ")
   }
-  def toParseString = s"extensions"
+  def toParseString = s"show extensions"
 }
-object ListExtensionsCompanion extends ActionObjectCompanionImpl[ListExtensions.type]("list all extensions", "extensions")
+object ListExtensionsCompanion extends ActionObjectCompanionImpl[ListExtensions.type]("list all extensions", "show extensions")
 
 case class AddExtension(cls: String, args: List[String]) extends ExtensionAction {
   def apply(implicit controller: Controller) = extman.addExtension(cls, args)
