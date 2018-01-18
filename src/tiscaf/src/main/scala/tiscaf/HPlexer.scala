@@ -1,25 +1,22 @@
 /*******************************************************************************
  * This file is part of tiscaf.
  *
- * Changed by twiesing on 12/Feb/17 to allow specification of a hostname to
- * listen to
- *
  * tiscaf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Foobar is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 package tiscaf
 
-import java.net.InetSocketAddress, java.net.InetAddress
+import java.net.InetSocketAddress
 import java.nio.channels.{
   SelectionKey,
   Selector,
@@ -30,14 +27,16 @@ import java.nio.ByteBuffer
 import javax.net.ssl._
 
 import sync._
+import scala.concurrent.SyncVar
 
-private trait HPlexer {
+import scala.collection.JavaConverters._
+
+private trait HPlexer extends HLoggable {
 
   //---------------------- to implement ------------------------------
 
   def timeoutMillis: Long
   def tcpNoDelay: Boolean
-  def onError(e: Throwable): Unit
   def ssl: List[HSslContext]
 
   //---------------------- SPI ------------------------------------------
@@ -45,25 +44,32 @@ private trait HPlexer {
   final def start = synchronized {
     if (!isWorking.get) {
       isWorking.set(true)
-      Sync.spawnNamed("Plexer") { try { plex } catch { case e: Exception => onError(e) } }
+      Sync.spawnNamed("Plexer") {
+        try {
+          plex
+        } catch {
+          case e: Exception => error("An error occurred when starting the plexer", e)
+        }
+      }
     }
   }
 
-  final def stop: Unit = synchronized { // close once only 
+  final def stop: Unit = synchronized { // close once only
     if (isWorking.get) {
       isWorking.set(false)
       selector.close
-      servers.foreach(_.asInstanceOf[ServerSocketChannel].close)
+      for((socket, _) <- servers)
+        socket.asInstanceOf[ServerSocketChannel].close
       servers.clear
     }
   }
 
-  final def addListener(peerFactory: (SelectionKey, Option[SSLEngine]) => HPeer, port: Int, hostname : String): Unit = Sync.spawnNamed("Acceptor-" + port) {
+  final def addListener(peerFactory: (SelectionKey, Option[SSLEngine]) => HPeer, bindHost: String, port: Int): Unit = Sync.spawnNamed("Acceptor-" + port) {
     try {
       val serverChannel = ServerSocketChannel.open
-      servers += serverChannel
+      servers(serverChannel) = ()
       serverChannel.configureBlocking(true)
-      serverChannel.socket.bind(new InetSocketAddress(InetAddress.getByName(hostname), port))
+      serverChannel.socket.bind(new InetSocketAddress(bindHost, port))
 
       while (isWorking.get) try {
         val socketCannel = serverChannel.accept
@@ -77,7 +83,7 @@ private trait HPlexer {
         }
       } catch {
         case e: java.nio.channels.AsynchronousCloseException =>
-        case e: Exception => onError(e)
+        case e: Exception => error("Something wrong happened with acceptor on port " + port, e)
       }
     } catch {
       case e: java.nio.channels.AsynchronousCloseException =>
@@ -85,12 +91,12 @@ private trait HPlexer {
     }
   }
 
-  final def addSslListener(peerFactory: (SelectionKey, Option[SSLEngine]) => HPeer, sslData: HSslContext): Unit = Sync.spawnNamed("Acceptor-" + sslData.port) {
+  final def addSslListener(peerFactory: (SelectionKey, Option[SSLEngine]) => HPeer, bindHost: String, sslData: HSslContext): Unit = Sync.spawnNamed("Acceptor-" + sslData.port) {
     try {
       val serverChannel = ServerSocketChannel.open
-      servers += serverChannel
+      servers(serverChannel) = ()
       serverChannel.configureBlocking(true)
-      serverChannel.socket.bind(new InetSocketAddress(sslData.port))
+      serverChannel.socket.bind(new InetSocketAddress(bindHost, sslData.port))
 
       while (isWorking.get) try {
         val socketChannel = serverChannel.accept
@@ -112,7 +118,8 @@ private trait HPlexer {
         }
       } catch {
         case e: java.nio.channels.AsynchronousCloseException =>
-        case e: Exception => onError(e)
+        case e: Exception =>
+          error("Something wrong happened with acceptor on ssl port " + sslData.port, e)
       }
     } catch {
       case e: java.nio.channels.AsynchronousCloseException =>
@@ -127,14 +134,14 @@ private trait HPlexer {
   //------------------------- internals --------------------------------------
 
   private val isWorking = new SyncBool(false)
-  private val servers = new scala.collection.mutable.HashSet[ServerSocketChannel] with scala.collection.mutable.SynchronizedSet[ServerSocketChannel]
+  private val servers = new java.util.concurrent.ConcurrentHashMap[ServerSocketChannel, Unit].asScala
   private val selector = Selector.open
   //-- in accordance with Ron Hitchens (Ron, thanks for the trick!)
   private val keySetGuard = new AnyRef
 
   //-----------------------------------------------------------
 
-  type KeyWant = Pair[SelectionKey, PeerWant.Value]
+  type KeyWant = (SelectionKey, PeerWant.Value)
   private val wakeQu = new SyncQu[KeyWant]
 
   private def processWakeQu: Unit = {
@@ -154,8 +161,8 @@ private trait HPlexer {
 
   // check expired connections - not too often
   private val expireDelta = if (timeoutMillis > 10000L) 1000L else timeoutMillis / 10L
-  private val lastExpire = new SyncField[Long]
-  lastExpire.set(System.currentTimeMillis)
+  private val lastExpire = new SyncVar[Long]
+  lastExpire.put(System.currentTimeMillis)
 
   private def processExpiration: Unit = try {
     val now = System.currentTimeMillis
@@ -167,9 +174,14 @@ private trait HPlexer {
         val att = key.attachment
         if (att == null || att.asInstanceOf[HKeyData].stamp < timeX) key.channel.close
       }
-      lastExpire.set(now)
+      // discard the old value
+      lastExpire.take
+      // and put the new one
+      lastExpire.put(now)
     }
-  } catch { case e: Exception => onError(e) }
+  } catch {
+    case e: Exception => error("A problem occured while closing an expired connection", e)
+  }
 
   // main multiplexer loop
   private def plex: Unit = while (isWorking.get) try {
@@ -192,7 +204,9 @@ private trait HPlexer {
       }
     }
 
-  } catch { case e: Exception => onError(e) }
+  } catch {
+    case e: Exception => error("Something wrong happened in the main loop", e)
+  }
 
 }
 

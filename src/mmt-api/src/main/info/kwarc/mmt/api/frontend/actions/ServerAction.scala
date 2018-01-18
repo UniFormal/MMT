@@ -13,7 +13,7 @@ case object ServerInfoAction extends ServerAction with ResponsiveAction {
   def apply(implicit controller: Controller) = server match {
     case None => respond("no server active")
     case Some(s) => {
-      respond(s"Server listening on http://${s.hostname}:${s.port}")
+      respond(s"Server listening on http://${s.bindHost}:${s.port}")
       logGroup {
         controller.extman.get(classOf[ServerExtension]).foreach {se =>
           respond(s"/:${se.pathPrefix}/ => ${se.getClass.getName}")
@@ -25,17 +25,17 @@ case object ServerInfoAction extends ServerAction with ResponsiveAction {
 }
 object ServerInfoActionCompanion extends ActionObjectCompanionImpl[ServerInfoAction.type]("get information about the currently running server", "show server")
 
-case class ServerOn(port: Int, hostname : String = "0.0.0.0") extends ServerAction {
+case class ServerOn(port: Int, bindHost : String = "127.0.0.1") extends ServerAction {
   def apply(implicit controller: Controller) : Unit = server match {
-    case Some(serv) => logError("server already started on  " + serv.hostname + ":" + serv.port)
+    case Some(serv) => logError("server already started on  " + serv.bindHost + ":" + serv.port)
     case None if Util.isTaken(port) => logError("port " + port + " is taken, server not started.")
     case _ =>
-      val serv = new Server(port, hostname, controller)
+      val serv = new Server(port, bindHost, controller)
       serv.start
-      log("Server started at http://" + hostname + ":" + port)
+      log("Server started at http://" + bindHost + ":" + port)
       server = Some(serv)
   }
-  def toParseString = s"server on $port${if(hostname == "0.0.0.0") "" else " " + hostname}"
+  def toParseString = s"server on $port${if(bindHost == "127.0.0.1") "" else " " + bindHost}"
 }
 object ServerOnCompanion extends ActionCompanionImpl[ServerOn]("start up the HTTP server", "server on") {
   import Action._

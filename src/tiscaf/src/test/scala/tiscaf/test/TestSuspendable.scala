@@ -39,7 +39,9 @@ object Test extends App with HServer {
 
   class SuspendLet(path: String) extends HLet with HSuspendable {
 
-    def aact(talk: HTalk)(implicit executionContext: ExecutionContext) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+
+    def aact(talk: HTalk) = {
 
       println("path: " + path)
 

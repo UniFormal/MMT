@@ -1,0 +1,17 @@
+{
+  "organization" : "org.gnieh",
+  "name" : "tiscaf",
+  "version" : "0.9",
+  "description" : "Lightweight HTTP Server in and for Scala",
+  "site" : "https://github.com/gnieh/tiscaf/wiki",
+  "tags" : [ "http", "server" ],
+  "docs" : "",
+  "resolvers" : [ "https://oss.sonatype.org/content/repositories/releases" ],
+  "dependencies" : [ ],
+  "scalas" : [ "2.9.3", "2.10.4", "2.11.2" ],
+  "licenses" : [ {
+    "name" : "LGPL v3",
+    "url" : "http://www.gnu.org/licenses/lgpl-3.0.txt"
+  } ],
+  "sbt" : false
+}

@@ -33,7 +33,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
   val listenPort : Int = port
 
   def handleMessage(s: String) {
-    controller.report("tiscaf", s)
+    log(s)
   }
   def handleError(t: Throwable) {
     val e = GeneralError("error in underlying server").setCausedBy(t)

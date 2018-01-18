@@ -299,8 +299,7 @@ lazy val tiscaf = (project in file("tiscaf")).
       "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     ),
     deployFull := Utils.deployPackage("lib/tiscaf.jar").value,
-    // TODO: Re-enable tests
-    test := {}
+    test := {} // disable tests for tiscaf
   )
 
 lazy val lfcatalog = (project in file("lfcatalog")).

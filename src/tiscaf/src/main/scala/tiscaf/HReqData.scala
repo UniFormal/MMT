@@ -32,6 +32,7 @@ trait HReqData {
   def query : String
   def remoteIp : String
   def contentLength : Option[Long]
+  def contentEncoding : String
 
   // header
   def header(key : String) : Option[String]
@@ -53,7 +54,9 @@ trait HReqData {
   def asFloat(key : String) : Option[Float]
   def asDouble(key : String) : Option[Double]
 
-  // POST/application/octet-stream case
+  // POST/application/octet-stream
+  // PUT
+  // PATCH
   def octets : Option[Array[Byte]]
 }
 
@@ -69,6 +72,7 @@ object HReqData {
     def query : String = decode(data.header.query)
     def remoteIp : String = data.writer.remoteIp
     def contentLength : Option[Long] = data.header.contentLength
+    def contentEncoding : String = data.header.contentEncoding
 
     // header
     def header(key : String) : Option[String] = data.header.header(key)
@@ -81,7 +85,7 @@ object HReqData {
       case Seq(x, _*) => Some(x)
       case _          => None
     }
-    def softParam(key : String) : String = param(encode(key)).map(decode).getOrElse("")
+    def softParam(key : String) : String = param(key).getOrElse("")
 
     def asQuery(ignore : Set[String] = Set()) : String = {
       def paramQuery(key : String) = params(key).map(v => { encode(key) + "=" + encode(v) }).mkString("&")
@@ -96,7 +100,9 @@ object HReqData {
     def asFloat(key : String) : Option[Float] = try { Some(param(key).get.toFloat) } catch { case _: Exception => None }
     def asDouble(key : String) : Option[Double] = try { Some(param(key).get.toDouble) } catch { case _: Exception => None }
 
-    // POST/application/octet-stream case
+    // POST/application/octet-stream
+    // PUT
+    // PATCH
     def octets : Option[Array[Byte]] = data.octets
 
     private def encode(s : String) = try { java.net.URLEncoder.encode(s, data.app.encoding) } catch { case _: Exception => s }

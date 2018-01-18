@@ -31,7 +31,7 @@ trait HLet {
    *  This method is called asynchronously (hence the name `aact`)
    *  @see [[tiscaf.HTalk]]
    */
-  def aact(talk: HTalk)(implicit executionContext: ExecutionContext): Future[Unit]
+  def aact(talk: HTalk): Future[Any]
 
   //-------------------- to override ------------------------
 
@@ -119,7 +119,7 @@ trait HLet {
 }
 
 class Suspended[T] {
-  private[tiscaf] val p = promise[T]
+  private[tiscaf] val p = Promise[T]()
 
   /** Resumes the computation with the given value and returns immediately */
   def resume(value: T) {
@@ -152,7 +152,7 @@ trait HSuspendable {
 
   protected def suspend[T](resume: T => Unit)(implicit manifest: Manifest[T],
     executionContext: ExecutionContext): Future[Unit] = {
-      suspend[T] flatMap (v => future(resume(v)))
+      suspend[T] flatMap (v => Future(resume(v)))
   }
 
 }
@@ -162,7 +162,7 @@ trait HSuspendable {
  *  @author Lucas Satabin */
 trait HSimpleLet extends HLet {
 
-  final override def aact(talk: HTalk)(implicit executionContext: ExecutionContext) = future {
+  final override def aact(talk: HTalk) = Future.successful {
     act(talk)
   }
 

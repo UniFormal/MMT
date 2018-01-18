@@ -37,6 +37,7 @@ trait HReqHeaderData {
   def isPersistent : Boolean
 
   def contentLength : Option[Long]
+  def contentEncoding : String
   def boundary : Option[String]
 }
 
@@ -47,6 +48,8 @@ object HReqType extends Enumeration {
   val PostData = Value("POST/application/x-www-form-urlencoded")
   val PostOctets = Value("POST/application/octet-stream")
   val PostMulti = Value("POST/multipart/form-data")
+  val Put = Value("PUT")
+  val Patch = Value("PATCH")
   val Delete = Value("DELETE")
   val Options = Value("OPTIONS")
   val Head = Value("HEAD")
@@ -75,6 +78,16 @@ private class HReqHeader(streamStrings : Seq[String]) extends HReqHeaderData {
 
   lazy val contentLength : Option[Long] = try { Some(pairs("content-length").toLong) } catch { case _: Exception => None }
   lazy val boundary = parseBoundary
+  lazy val contentEncoding: String =
+    (for {
+      tpe <- pairs.get("content-type")
+      charset <- tpe.split(";").collectFirst {
+          case charsetRegex(charset) => charset
+      }
+    } yield charset).getOrElse("ISO-8859-1")
+
+
+  private lazy val charsetRegex = """\s*charset\s*=\s*(\S+)\s*""".r
 
   /*
   def toText : String = reqType match {
@@ -129,6 +142,8 @@ private class HReqHeader(streamStrings : Seq[String]) extends HReqHeaderData {
       parts(0).trim match {
         case "GET"     => HReqType.Get
         case "POST"    => parsePostMethod
+        case "PUT"     => parsePutMethod
+        case "PATCH"   => parsePatchMethod
         case "DELETE"  => HReqType.Delete
         case "OPTIONS" => HReqType.Options
         case "HEAD"    => HReqType.Head
@@ -138,7 +153,7 @@ private class HReqHeader(streamStrings : Seq[String]) extends HReqHeaderData {
   }
 
   private def parseAddress(s : String) : HAddress = {
-    val parts = s.split("\\?", 2)
+    val parts = s.split("\\?")
     val query = if (parts.length == 2) parts(1) else ""
     val uri = {
       val full = parts(0).replace('\\', '/')
@@ -151,7 +166,7 @@ private class HReqHeader(streamStrings : Seq[String]) extends HReqHeaderData {
       new HAddress(extParts(0), None, query)
   }
 
-  private def parsePostMethod : HReqType.Value = contentLength match {
+  private def parsePostMethod: HReqType.Value = contentLength match {
     case None => HReqType.Invalid
     case Some(le) => pairs.get("content-type") match {
       case None => HReqType.Invalid
@@ -171,6 +186,18 @@ private class HReqHeader(streamStrings : Seq[String]) extends HReqHeaderData {
     }
   }
 
+  private def parsePutMethod: HReqType.Value =
+    if(contentLength.isDefined && pairs.get("content-type").isDefined)
+      HReqType.Put
+    else
+      HReqType.Invalid
+
+  private def parsePatchMethod: HReqType.Value =
+    if(contentLength.isDefined && pairs.get("content-type").isDefined)
+      HReqType.Patch
+    else
+      HReqType.Invalid
+
   private def parseBoundary : Option[String] = reqType match {
     case HReqType.PostMulti => pairs.get("content-type") match {
       case None => None
@@ -187,8 +214,8 @@ private class HReqHeader(streamStrings : Seq[String]) extends HReqHeaderData {
     def step(acc : Map[String, String], from : Seq[String]) : Map[String, String] = if (from.isEmpty) acc else {
       val s = from.head
       val idx = s.indexOf(":")
-      if (idx < 0) step(acc + Pair(s.trim.toLowerCase, ""), from.tail)
-      else step(acc + Pair(s.substring(0, idx).trim.toLowerCase, s.substring(idx + 1).trim), from.tail)
+      if (idx < 0) step(acc + (s.trim.toLowerCase -> ""), from.tail)
+      else step(acc + (s.substring(0, idx).trim.toLowerCase -> s.substring(idx + 1).trim), from.tail)
     }
     step(Map(), strings.tail) // skip first HTTP string
   }
