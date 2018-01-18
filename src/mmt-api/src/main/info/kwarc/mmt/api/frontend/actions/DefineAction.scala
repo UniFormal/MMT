@@ -7,13 +7,41 @@ import info.kwarc.mmt.api.utils.File
 /** shared base class for actions defining and using procedures */
 sealed abstract class DefineAction extends ActionImpl {}
 
-/** bind all following commands to a name without executing them
-  *
-  * the folder of the containing msl file provides the namespace of this binding
-  * concrete syntax: define name:STRING
-  */
+case class InspectDefine(name: Option[String]) extends DefineAction with ResponsiveAction {
+  def apply(implicit controller: Controller) = name match {
+    case None =>
+      respond("The following definitions are known: ")
+
+      logGroup {
+        controller.getDefinitions.foreach { d =>
+          respond(s"${d.name} (in ${d.file})")
+        }
+      }
+
+      respond("use 'show definition <name>' to show more information about a definition. ")
+    case Some(x: String) =>
+      controller.getDefinition(x) match {
+        case Some(d) =>
+          respond(s"${d.name} (in ${d.file}): ")
+
+          logGroup {
+            d.body.foreach { a =>
+              respond(a.toParseString)
+            }
+          }
+        case None =>
+          respond(s"No definition $x defined. Use 'show definition' to show a list of current definition. ")
+      }
+  }
+  def toParseString: String = s"show definitions${name.map(" " +).getOrElse("")}"
+}
+object InspectDefineCompanion extends ActionCompanionImpl[InspectDefine]("inspect the set of defined actions", "show definition") {
+  import Action._
+  def parserActual(implicit state: ActionState) = (str?) ^^ InspectDefine
+}
+
 case class Define(name: String) extends DefineAction {
-  def apply(controller: Controller) = controller.enterDefine(name)
+  def apply(implicit controller: Controller) = controller.enterDefine(name)
   def toParseString = s"define $name"
 }
 object DefineCompanion extends ActionCompanionImpl[Define]("bind all following commands to a name without executing them", "define") {
@@ -21,23 +49,14 @@ object DefineCompanion extends ActionCompanionImpl[Define]("bind all following c
   def parserActual(implicit state: ActionState) = str ^^ { s => Define(s) }
 }
 
-/** ends a [[Define]]
-  *
-  * concrete syntax: end
-  */
 case object EndDefine extends DefineAction {
-  def apply(controller: Controller) = controller.endDefine()
+  def apply(implicit controller: Controller) = controller.endDefine()
   def toParseString = "end"
 }
 object EndDefineCompanion extends ActionObjectCompanionImpl[EndDefine.type]("ends binding commands using 'define'", "end")
 
-/** run a previously named list of commands
-  *
-  * concrete syntax: do [folder:FILE] name:STRING
-  * if folder is omitted, this refers to the most recently defined action with the right name
-  */
 case class Do(file: Option[File], name: String) extends DefineAction {
-  def apply(controller: Controller) = controller.runDefinition(file, name)
+  def apply(implicit controller: Controller) = controller.runDefinition(file, name)
   def toParseString = s"do ${file.getOrElse("")} $name"
 }
 object DoCompanion extends ActionCompanionImpl[Do]("run a previously named list of commands", "do"){
@@ -59,6 +78,12 @@ trait DefineActionHandling {
     case Some(_) =>
       throw ParseError("end of definition expected")
   }
+
+  /** returns all known action definitions */
+  def getDefinitions: List[Defined] = state.actionDefinitions
+  /** return the definition of a given name */
+  def getDefinition(name : String) : Option[Defined] = state.actionDefinitions.find(_.name == name)
+
 
   /** ends a definition */
   def endDefine(): Unit = state.currentActionDefinition match {

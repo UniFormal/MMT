@@ -49,7 +49,7 @@ class FileServer extends ServerExtension("files") {
     args.headOption.map {h => rootO = Some(File(controller.getHome resolve h))}
   }
   def apply(request: ServerRequest): ServerResponse = {
-    val root = rootO orElse controller.getOAF.map(_.root) getOrElse {
+    val root = rootO orElse controller.getOAF.map(_.local) getOrElse {
       throw LocalError("no root defined")
     }
     val path = request.pathForExtension

@@ -12,7 +12,7 @@ sealed abstract class ExecAction extends ActionImpl
   * concrete syntax: file file:FILE
   */
 case class ExecFile(file: File, name: Option[String]) extends ExecAction {
-  def apply(controller: Controller) : Unit = controller.runMSLFile(file, name)
+  def apply(implicit controller: Controller) : Unit = controller.runMSLFile(file, name)
   def toParseString = s"file $file ${name.map(" " + _).getOrElse("")}"
 }
 object ExecFileCompanion extends ActionCompanionImpl[ExecFile]("load a file containing commands and execute them", "file") {
@@ -22,7 +22,7 @@ object ExecFileCompanion extends ActionCompanionImpl[ExecFile]("load a file cont
 
 /** run a Scala interpreter or evaluate a Scala expression */
 case class Scala(init: Option[String]) extends ExecAction {
-  def apply(controller: Controller) : Unit = {
+  def apply(implicit controller: Controller) : Unit = {
     val interp = new MMTILoop(controller)
     interp.run(init)
   }
@@ -36,7 +36,7 @@ object ScalaCompanion extends ActionCompanionImpl[Scala]("run a Scala interprete
 
 /** run an .mbt file */
 case class MBT(file: File) extends ExecAction {
-  def apply(controller: Controller): Unit = {
+  def apply(implicit controller: Controller): Unit = {
     new MMTScriptEngine(controller).apply(file)
   }
   def toParseString = s"mbt $file"

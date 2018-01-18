@@ -227,7 +227,7 @@ class Setup(logger: Option[String => Unit] = None) extends ShellExtension("jedit
       val propsOld = if (propsFile.exists) File.read(propsFile) else ""
       val archKey = MMTOptions.archives.jeditKey + "="
       if (install) controller.getOAF.map { oaf =>
-        val contentFolder = oaf.root
+        val contentFolder = oaf.local
         log("adding property for content folder " + contentFolder)
         val encoded = contentFolder.toString.replace("\\", "\\\\").replace(":", "\\:").replace("=", "\\=")
         val newValues = archKey + encoded

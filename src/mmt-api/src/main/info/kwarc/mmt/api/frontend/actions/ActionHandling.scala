@@ -2,15 +2,8 @@ package info.kwarc.mmt.api.frontend.actions
 
 import info.kwarc.mmt.api._
 import frontend._
-import archives._
-import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
-import utils._
-import checking._
-import web._
 import parser._
-import backend._
 import frontend.actions._
-import ontology._
 import objects._
 
 /**

@@ -1,21 +1,25 @@
 package info.kwarc.mmt.api.frontend.actions
 
 import info.kwarc.mmt.api.GeneralError
-import info.kwarc.mmt.api.frontend.{Controller, actions}
+import info.kwarc.mmt.api.frontend.{Controller, Report, actions}
 import info.kwarc.mmt.api.utils.MMTSystem
 
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
-// TODO: Add a `help` action
+/** an action that responds to the user */
+private[actions] trait ResponsiveAction extends ActionImpl {
+  /** prints a response to the caller */
+  def respond(x: Any*)(implicit controller: Controller) = controller.report.apply("user", x.map(_.toString).mkString(", "))
+}
 
 /** Shared base class for Actions for printing something */
-sealed abstract class PrintAction extends ActionImpl {}
+sealed abstract class PrintAction extends ResponsiveAction {}
 
 /** print all loaded knowledge items to STDOUT in text syntax */
 case object PrintAll extends PrintAction {
-  def apply(controller: Controller): Unit = {
-    controller.report("response", "\n" + controller.library.toString)
+  def apply(implicit controller: Controller): Unit = {
+    respond("\n" + controller.library.toString)
   }
   def toParseString = "printAll"
 }
@@ -23,8 +27,8 @@ object PrintAllCompanion extends ActionObjectCompanionImpl[PrintAll.type]("print
 
 /** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends PrintAction {
-  def apply(controller: Controller): Unit = {
-    controller.report("response", "\n" + controller.library.getModules.map(_.toNode).mkString("\n"))
+  def apply(implicit controller: Controller): Unit = {
+    respond("\n" + controller.library.getModules.map(_.toNode).mkString("\n"))
   }
   def toParseString = "printXML"
 }
@@ -32,7 +36,9 @@ object PrintAllXMLCompanion extends ActionObjectCompanionImpl[PrintAllXML.type](
 
 /** print all configuration entries to STDOUT */
 case object PrintConfig extends PrintAction {
-  def apply(controller: Controller) : Unit = controller.report("response", controller.getConfigString())
+  def apply(implicit controller: Controller) : Unit = {
+    respond(controller.getConfigString())
+  }
   def toParseString = "printConfig"
 }
 object PrintConfigCompanion extends ActionObjectCompanionImpl[PrintConfig.type]("print all configuration to stdout", "printConfig")
@@ -76,13 +82,13 @@ case class HelpAction(topic: String) extends PrintAction {
   }
 
 
-  def apply(controller: Controller): Unit = {
+  def apply(implicit controller: Controller): Unit = {
     val topicActual = topic.trim
 
     // try and get a string that represents help
     getDynamicHelp(topicActual).getOrElse(getHelpText(topicActual).getOrElse(getActionHelp(topicActual).getOrElse(""))) match {
-      case "" => controller.report("response", "No help on '" + topic + "' available")
-      case s: String => controller.report("response", s)
+      case "" => respond("No help on '" + topic + "' available")
+      case s: String => respond(s)
     }
   }
   def toParseString: String = "help " + topic

@@ -17,7 +17,7 @@ sealed abstract class MathPathAction extends ActionImpl {}
   * concrete syntax: mathpath local
   */
 case object Local extends MathPathAction {
-  def apply(controller: Controller): Unit = {
+  def apply(implicit controller: Controller): Unit = {
     val currentDir = new java.io.File(".").getCanonicalFile
     val b = URI.fromJava(currentDir.toURI)
     controller.backend.addStore(LocalSystem(b))
@@ -28,7 +28,7 @@ object LocalCompanion extends ActionObjectCompanionImpl[Local.type]("add a catal
 
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder: java.io.File) extends MathPathAction {
-  def apply(controller: Controller): Unit = controller.addArchive(folder)
+  def apply(implicit controller: Controller): Unit = controller.addArchive(folder)
   def toParseString = s"mathpath archive $folder"
 }
 object AddArchiveCompanion extends ActionCompanionImpl[AddArchive]("add catalog entries for a set of local copies", "mathpath archive") {
@@ -37,17 +37,8 @@ object AddArchiveCompanion extends ActionCompanionImpl[AddArchive]("add catalog 
   def parserActual(implicit state: ActionState) = ("mathpath archive" | "archive add") ~> file ^^ { f => AddArchive(f) }
 }
 
-/** add catalog entry for a local directory
-  *
-  * All URIs of the form uri/SUFFIX are mapped to file/SUFFIX
-  *
-  * concrete syntax: mathpath fs uri:URI file:FILE
-  *
-  * @param uri  the logical identifier of the directory
-  * @param file the physical identifeir of the directory
-  */
 case class AddMathPathFS(uri: URI, file: File) extends MathPathAction {
-  def apply(controller: Controller) : Unit = {
+  def apply(implicit controller: Controller) : Unit = {
     val lc = new LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, file)
     controller.backend.addStore(lc)
   }
@@ -58,12 +49,8 @@ object AddMathPathFSCompanion extends ActionCompanionImpl[AddMathPathFS]("add ca
   def parserActual(implicit state: ActionState) = uri ~ file ^^ { case u ~ f => AddMathPathFS(u, f) }
 }
 
-/** add catalog entry for realizations in Java
-  *
-  * @param javapath the Java path entry, will be passed to [[java.net.URLClassLoader]]
-  */
 case class AddMathPathJava(javapath: File) extends MathPathAction {
-  def apply(controller: Controller) = controller.backend.openRealizationArchive(javapath)
+  def apply(implicit controller: Controller) = controller.backend.openRealizationArchive(javapath)
   def toParseString = "mathpath java " + javapath
 }
 object AddMathPathJavaCompanion extends ActionCompanionImpl[AddMathPathJava]("add catalog entry for realizations in Java", "mathpath java") {
@@ -71,20 +58,16 @@ object AddMathPathJavaCompanion extends ActionCompanionImpl[AddMathPathJava]("ad
   def parserActual(implicit state: ActionState) = file ^^ { f => AddMathPathJava(f) }
 }
 
-// TODO: This doesn't really belong here, but where else should it go?
-/** read a file containing MMT in OMDoc syntax
-  *
-  * concrete syntax: read file:FILE
-  */
 case class Read(file: File, interpret: Boolean) extends MathPathAction {
-  def apply(controller: Controller): Unit = {
+  def apply(implicit controller: Controller): Unit = {
+    import controller._
     if (!file.isFile)
       throw GeneralError("file not found: " + file)
-    val ps = controller.backend.resolvePhysical(file) match {
+    val ps = backend.resolvePhysical(file) match {
       case Some((arch, p)) => ParsingStream.fromSourceFile(arch, FilePath(p))
       case None => ParsingStream.fromFile(file)
     }
-    controller.read(ps, interpret, mayImport = true)(new ErrorLogger(controller.report))
+    read(ps, interpret, mayImport = true)(new ErrorLogger(controller.report))
     ps.stream.close
   }
   def toParseString = s"${if (interpret) "interpret" else "read"} $file"

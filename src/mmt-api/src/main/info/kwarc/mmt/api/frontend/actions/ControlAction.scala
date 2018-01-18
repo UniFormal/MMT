@@ -6,12 +6,10 @@ import info.kwarc.mmt.api.frontend.Controller
 /** shared base class for actions controlling the shell or other actions */
 sealed abstract class ControlAction extends ActionImpl
 
-/** clear the state
-  *
-  * concrete syntax: clear
-  */
 case object Clear extends ControlAction {
-  def apply(controller: Controller): Unit = controller.clear
+  def apply(implicit controller: Controller): Unit = {
+    controller.clear
+  }
   def toParseString = "clear"
 }
 object ClearCompanion extends ActionObjectCompanionImpl[Clear.type]("clear the current state of the controller", "clear")
@@ -21,22 +19,18 @@ object ClearCompanion extends ActionObjectCompanionImpl[Clear.type]("clear the c
   * concrete syntax: exit
   */
 case object Exit extends ControlAction {
-  def apply(controller: Controller): Unit = {
+  def apply(implicit controller: Controller): Unit = {
     controller.cleanup
     sys.exit()
   }
   def toParseString = "exit"
 }
-object ExitCompanion extends ActionObjectCompanionImpl[Exit.type]("release all resources and exit", "exit") {
+object ExitCompanion extends ActionObjectCompanionImpl[Exit.type]("release all resources and exit MMT", "exit") {
   def parse(implicit state: ActionState) = Exit
 }
 
-/** set the current base path
-  *
-  * concrete syntax: base base:URI
-  */
 case class SetBase(base: Path) extends ControlAction {
-  def apply(controller: Controller): Unit = controller.setBase(base)
+  def apply(implicit controller: Controller): Unit = controller.setBase(base)
   def toParseString = s"base $base"
 }
 object SetBaseCompanion extends ActionCompanionImpl[SetBase]("set the current base path", "base") {

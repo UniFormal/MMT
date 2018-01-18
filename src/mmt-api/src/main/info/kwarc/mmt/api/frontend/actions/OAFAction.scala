@@ -7,25 +7,37 @@ import info.kwarc.mmt.api.utils.{File, URI, stringToList}
 /** Shared base class for Actions relating to OAF (lmh) */
 sealed abstract class OAFAction extends ActionImpl {}
 
-/** configure the oaf root
+/** set the oaf root folder
   *
   * concrete syntax: oaf close path:STRING
   */
-case class OAFRoot(path: String, https: Boolean) extends OAFAction {
-  def apply(controller: Controller): Unit = {
+case class SetOAFRoot(path: String, https: Boolean) extends OAFAction {
+  def apply(implicit controller: Controller): Unit = {
     val config = new MMTConfig
     config.addEntry(OAFConf(File(path), https, None))
     controller.loadConfig(config, true)
   }
   override def toParseString = s"oaf root $path ${if(https) "https" else "ssh"}"
 }
-object OAFRootCompanion extends ActionCompanionImpl[OAFRoot]("clone an archive from a remote OAF", "oaf root"){
+object SetOAFRootCompanion extends ActionCompanionImpl[SetOAFRoot]("set the oaf root", "oaf root"){
   import Action._
   def parserActual(implicit state: ActionState) = str ~ (("ssh" | "https")?) ^^ {
-    case p ~ Some(https) => OAFRoot(p, https == "https")
-    case p ~ None => OAFRoot(p, true)
+    case p ~ Some(https) => SetOAFRoot(p, https == "https")
+    case p ~ None => SetOAFRoot(p, true)
   }
 }
+
+/** get the oaf root folder */
+case object GetOAFRoot extends OAFAction with ResponsiveAction {
+  override def toParseString: String = "oaf root"
+  def apply(implicit controller: Controller): Unit = {
+    controller.getOAF match {
+      case Some(mh) => respond(mh.local)
+      case None => respond("No oaf root configured")
+    }
+  }
+}
+object GetOAFRootCompanion extends ActionObjectCompanionImpl[GetOAFRoot.type]("get the oaf root folder", "oaf root")
 
 
 /** clone an archive from a remote OAF
@@ -33,7 +45,7 @@ object OAFRootCompanion extends ActionCompanionImpl[OAFRoot]("clone an archive f
   * concrete syntax: oaf close path:STRING
   */
 case class OAFInit(path: String) extends OAFAction {
-  def apply(controller: Controller): Unit = controller.getOAFOrError.init(path)
+  def apply(implicit controller: Controller): Unit = controller.getOAFOrError.createEntry(path)
   override def toParseString = s"oaf init $path"
 }
 object OAFInitCompanion extends ActionCompanionImpl[OAFInit]("clone an archive from a remote OAF", "oaf init"){
@@ -46,7 +58,7 @@ object OAFInitCompanion extends ActionCompanionImpl[OAFInit]("clone an archive f
   * concrete syntax: oaf close id:STRING [version:String]
   */
 case class OAFClone(id: String, version: Option[String]) extends OAFAction {
-  def apply(controller: Controller): Unit = controller.cloneArchive(id, version)
+  def apply(implicit controller: Controller): Unit = controller.getOAFOrError.installEntry(id, version, version.isEmpty)
   def toParseString = s"oaf clone $id${version.map(" " + ).getOrElse("")}"
 }
 object OAFCloneCompanion extends ActionCompanionImpl[OAFClone]("clone an archive from a remote OAF", "oaf clone"){
@@ -59,10 +71,14 @@ object OAFCloneCompanion extends ActionCompanionImpl[OAFClone]("clone an archive
   * concrete syntax: oaf show id:STRING
   */
 case class OAFShow(id: String) extends OAFAction {
-  def apply(controller: Controller): Unit = {
-    val oaf = controller.getOAFOrError
-    val archiveRoot = controller.backend.getArchive(id).map(_.root).getOrElse { oaf.localPath(id) }
-    controller.report.report("user", controller.getOAFOrError.version(archiveRoot))
+  def apply(implicit controller: Controller): Unit = {
+    val oaf = controller.getOAFOrError.getEntry(id) match {
+      case Some(entry) => entry.version match {
+        case Some(version) => controller.report("user", s"$id: $version")
+        case None => controller.report("user", s"$id: not versioned")
+      }
+      case None => controller.report("user", s"$id: not installed")
+    }
   }
   def toParseString = s"oaf show $id"
 }
@@ -76,7 +92,7 @@ object OAFShowCompanion extends ActionCompanionImpl[OAFShow]("shows the current 
   * concrete syntax: oaf pull
   */
 case object OAFPull extends OAFAction {
-  def apply(controller: Controller) : Unit = controller.getOAFOrError.pullAll
+  def apply(implicit controller: Controller) : Unit = controller.getOAFOrError.pull()
   def toParseString = "oaf pull"
 }
 object OAFPullCompanion extends ActionObjectCompanionImpl[OAFPull.type]("pulls all repositories from remote OAF", "oaf pull"){
@@ -88,7 +104,7 @@ object OAFPullCompanion extends ActionObjectCompanionImpl[OAFPull.type]("pulls a
   * concrete syntax: oaf push
   */
 case object OAFPush extends OAFAction {
-  def apply(controller: Controller) : Unit = controller.getOAFOrError.pushAll
+  def apply(implicit controller: Controller) : Unit = controller.getOAFOrError.push()
   def toParseString = "oaf push"
 }
 object OAFPushCompanion extends ActionObjectCompanionImpl[OAFPush.type]("pushes all repositories to remote OAF", "oaf push")
@@ -98,7 +114,7 @@ object OAFPushCompanion extends ActionObjectCompanionImpl[OAFPush.type]("pushes 
   * concrete syntax: oaf push
   */
 case object OAFSetRemote extends OAFAction {
-  def apply(controller: Controller) = controller.getOAFOrError.setRemoteURL
+  def apply(implicit controller: Controller) = controller.getOAFOrError.remote()
   def toParseString = "oaf setremote"
 }
 object OAFSetRemoteCompanion extends ActionObjectCompanionImpl[OAFSetRemote.type]("sets all remotes for the remote OAF", "oaf setremote")
@@ -110,34 +126,5 @@ trait OAFActionHandling {
   /** gets an [OAF] instance or throws an error */
   private[actions] def getOAFOrError = getOAF.getOrElse {
     throw GeneralError("no OAF configuration entry found")
-  }
-
-  /**
-    * clones an OAF Archive (either a specific version, or the current one recursively)
-    * @param archive Name of archive to clone
-    * @param version If provided, clone the specific version of the archive. If not, clone it recursively
-    */
-  def cloneArchive(archive: String, version: Option[String] = None) {
-    val oaf = getOAFOrError
-    report("user", s"trying to clone $archive${version.map("@" +).getOrElse("")}")
-
-    val lc = oaf.clone(archive, version) getOrElse {
-      logError("cloning failed, trying to download")
-      oaf.download(archive, version)
-    }.getOrElse {
-      logError("downloading failed, giving up")
-      return
-    }
-
-    val archs = addArchive(lc)
-
-    if(version.isEmpty){
-      archs foreach {a =>
-        val depS = a.properties.getOrElse("dependencies", "")
-        // TODO lmh falsely uses , as separator instead of space
-        val deps = if (depS.contains(",")) stringToList(depS, ",").map(_.trim) else stringToList(depS)
-        deps foreach {d => cloneArchive(URI(d).pathAsString)}
-      }
-    }
   }
 }

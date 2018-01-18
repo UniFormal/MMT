@@ -23,7 +23,7 @@ import info.kwarc.mmt.api.frontend._
   */
 case class GetAction(o: Output) extends ActionImpl {
   /** implement the Action using the provided Controller */
-  def apply(controller: Controller): Unit = o.make(controller)
+  def apply(implicit controller: Controller): Unit = o.make(controller)
 
   def toParseString = o.toString
 }

@@ -1,14 +1,11 @@
 package info.kwarc.mmt.api.frontend.actions
 
-import info.kwarc.mmt.api.{Level, MMTTask, NamespaceMap, ParseError, Path}
+import info.kwarc.mmt.api.{Error, Level, MMTTask, NamespaceMap, ParseError, Path}
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.archives.{Build, BuildDepsFirst, Clean, Update}
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.frontend.{Controller, Report}
 
 import scala.reflect.ClassTag
-
-
-// TODO: Add Context to the Execution of Actions
 
 /**
   * An instance of the [[Action]] class represents an atomic command that can be run by a
@@ -25,9 +22,11 @@ import scala.reflect.ClassTag
   * Together with each action, an [[ActionCompanion]] is needed to implement static methods of the class.
   * By convention, the companion belonging to a class named &lt;Action&gt; is called &lt;Action&gt;Companion.
   */
-sealed abstract class Action extends MMTTask {
+sealed abstract class Action extends MMTTask with ImplicitLogger {
+  val logPrefix: String = "user"
+
   /** executes this Action in the given [[ActionHandling]] instance */
-  def apply(controller: Controller): Unit
+  def apply(implicit controller: Controller): Unit
 
   /**
     * Gets the [[ActionCompanion]] corresponding to this action.
@@ -42,6 +41,39 @@ sealed abstract class Action extends MMTTask {
   def toParseString: String
 
   override def toString: String = toParseString
+}
+
+/** exactly like Logger, but takes an implicit controller as parameter */
+trait ImplicitLogger {
+  def logPrefix: String
+
+  /** the report being used implicitly */
+  protected def report(implicit controller: Controller) : Report = controller.report
+
+  /** logs a message with this logger's logprefix */
+  protected def log(s: => String, subgroup: Option[String] = None)(implicit controller: Controller) =
+    controller.report(logPrefix + subgroup.map("-" + _).getOrElse(""), s)
+
+  /** temporary logging - always logged */
+  // calls to this method are for debugging; if they are committed, they should be removed
+  protected def logTemp(s: => String)(implicit controller: Controller) =
+    controller.report("temp", s"($logPrefix) $s")
+
+  /** log as an error message */
+  protected def logError(s: => String)(implicit controller: Controller) = controller.report("error", s"($logPrefix) $s")
+
+  /** logs an error - always logged */
+  protected def log(e: Error)(implicit controller: Controller) = controller.report(e)
+
+  /** wraps around a group to create nested logging */
+  protected def logGroup[A](a: => A)(implicit controller: Controller): A = {
+    report.indent
+    try {
+      a
+    } finally {
+      report.unindent
+    }
+  }
 }
 
 /** Intermediate Class to limit the scope of [[Action]] to the actions namespace */
@@ -220,6 +252,7 @@ object ActionCompanion extends AccessibleCompanionCollection[Action, ActionCompa
   register(RemoteActionCompanion)
 
   // LoggingAction
+  register(ListReportGroupsCompanion)
   register(AddReportHandlerCompanion)
   register(LoggingOnCompanion)
   register(LoggingOffCompanion)
@@ -230,6 +263,7 @@ object ActionCompanion extends AccessibleCompanionCollection[Action, ActionCompa
   register(MBTCompanion)
 
   // DefineAction
+  register(InspectDefineCompanion)
   register(DefineCompanion)
   register(EndDefineCompanion)
   register(DoCompanion)
@@ -248,6 +282,7 @@ object ActionCompanion extends AccessibleCompanionCollection[Action, ActionCompa
   register(ReadCompanion)
 
   // ServerAction
+  register(ServerInfoActionCompanion)
   register(ServerOnCompanion)
   register(ServerOffCompanion)
 
@@ -258,7 +293,8 @@ object ActionCompanion extends AccessibleCompanionCollection[Action, ActionCompa
   register(HelpActionCompanion)
 
   // OAFAction
-  register(OAFRootCompanion)
+  register(SetOAFRootCompanion)
+  register(GetOAFRootCompanion)
   register(OAFInitCompanion)
   register(OAFCloneCompanion)
   register(OAFShowCompanion)
@@ -272,7 +308,9 @@ object ActionCompanion extends AccessibleCompanionCollection[Action, ActionCompa
   register(SetBaseCompanion)
 
   // Extension
+  register(ListExtensionsCompanion)
   register(AddExtensionCompanion)
+  register(RemoveExtensionCompanion)
   register(AddMWSCompanion)
 
   // WindowAction

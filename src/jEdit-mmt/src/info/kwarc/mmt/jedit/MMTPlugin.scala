@@ -54,7 +54,7 @@ class MMTPlugin extends EBPlugin with Logger {
 
       errorlist.ErrorSource.registerErrorSource(errorSource)
       val archives = MMTOptions.archives.get orElse
-        controller.getOAF.map(_.root.toString) getOrElse "mars"
+        controller.getOAF.map(_.local.toString) getOrElse "mars"
       controller.addArchive(home resolve archives)
       // status bar is not actually available yet at this point
       controller.report.addHandler(StatusBarLogger)

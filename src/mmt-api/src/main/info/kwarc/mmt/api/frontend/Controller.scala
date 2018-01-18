@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
 import archives._
+import info.kwarc.mmt.api.archives.lmh.MathHub._
 import backend._
 import checking._
 import documents._
@@ -159,7 +160,7 @@ class Controller extends ROController with ActionHandling with Logger {
     ocO map {oc =>
       if (!oc.local.isDirectory)
         throw GeneralError(oc.local + " is not a directory")
-      new MathHub(oc.remote.getOrElse(MathHub.defaultURL), oc.local, oc.https, report)
+      new MathHub(this, oc.local, oc.remote.getOrElse(MathHub.defaultURL), oc.https)
     }
   }
 
