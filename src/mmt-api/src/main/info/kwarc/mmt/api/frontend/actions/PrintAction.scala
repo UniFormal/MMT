@@ -23,13 +23,13 @@ case object MMTInfo extends PrintAction {
       respond(s"Operation System: ${OS.detect}")
 
       respond("use 'show extensions' to show current extensions. ")
-      respond("use 'show archives' to show current archives. ")
+      respond("use 'show mathpath' to show loaded content. ")
       respond("use 'show server' to show current server. ")
     }
   }
   def toParseString = "show mmt"
 }
-object MMTInfoCompanion extends ActionObjectCompanionImpl[MMTInfo.type]("show system debug information", "show mmt")
+object MMTInfoCompanion extends ActionObjectCompanionImpl[MMTInfo.type]("show mmt system information", "show mmt")
 
 /** print all loaded knowledge items to STDOUT in text syntax */
 case object ClearConsole extends PrintAction {
@@ -116,14 +116,15 @@ case class HelpAction(topic: String) extends PrintAction {
 
   def apply(implicit controller: Controller): Unit = {
     val topicActual = topic.trim
-
     // try and get a string that represents help
     getDynamicHelp(topicActual).getOrElse(getHelpText(topicActual).getOrElse(getActionHelp(topicActual).getOrElse(""))) match {
       case "" => respond(s"No help on '$topic' available")
-      case s: String => respond(s)
+      case s: String => logGroup {
+        respond(s)
+      }
     }
   }
-  def toParseString: String = "show help " + topic
+  def toParseString: String = s"show help $topic".trim
 }
 object HelpActionCompanion extends ActionCompanionImpl[HelpAction]("print help about a given topic", "show help", "help") {
   import Action._

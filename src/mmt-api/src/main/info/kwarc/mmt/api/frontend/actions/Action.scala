@@ -275,6 +275,7 @@ object ActionCompanion extends AccessibleCompanionCollection[Action, ActionCompa
   register(CompareCompanion)
 
   // MathPathAction
+  register(ShowArchivesCompanion)
   register(LocalCompanion)
   register(AddArchiveCompanion)
   register(AddMathPathFSCompanion)

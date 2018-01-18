@@ -10,12 +10,24 @@ import info.kwarc.mmt.api.utils.{File, FilePath, URI}
 /** Shared base class for Actions updating the mathpath */
 sealed abstract class MathPathAction extends ActionImpl {}
 
-/** add a catalog entry for the local file system
-  *
-  * All URIs of the form file:///SUFFIX are mapped to SUFFIX
-  *
-  * concrete syntax: mathpath local
-  */
+case object ShowArchives extends MathPathAction with ResponsiveAction {
+  def apply(implicit controller: Controller): Unit = {
+    println("The following archives are loaded: ")
+    logGroup {
+      controller.backend.getArchives.foreach({ a =>
+        respond(a.id)
+        logGroup {
+          respond(s"Root folder   : ${a.root}")
+          respond(s"Narration base: ${a.narrationBase}")
+          respond(s"Foundation    : ${a.foundation}")
+        }
+      })
+    }
+  }
+  def toParseString: String = "show archives"
+}
+object ShowArchivesCompanion extends ActionObjectCompanionImpl[ShowArchives.type]("show currently loaded archives", "show archives")
+
 case object Local extends MathPathAction {
   def apply(implicit controller: Controller): Unit = {
     val currentDir = new java.io.File(".").getCanonicalFile
@@ -26,7 +38,6 @@ case object Local extends MathPathAction {
 }
 object LocalCompanion extends ActionObjectCompanionImpl[Local.type]("add a catalog entry for the local file system", "mathpath local")
 
-/** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder: java.io.File) extends MathPathAction {
   def apply(implicit controller: Controller): Unit = controller.addArchive(folder)
   def toParseString = s"mathpath archive $folder"

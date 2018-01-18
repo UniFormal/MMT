@@ -1,6 +1,7 @@
 This is the MMT shell, you may enter actions to be evaluated.
-Type 'help' to see this message at any point, 'help topics' for a list of
-available help topics, and 'help actions' for a list of available actions.
+Type 'show help' to see this message at any point, 'show help topics' to get a
+list of available help topics and 'show mmt' for information about the version
+of the mmt system you have installed.
 For more details, you may refer to the online help available at:
 
 https://uniformal.github.io/doc/applications/shell.html
