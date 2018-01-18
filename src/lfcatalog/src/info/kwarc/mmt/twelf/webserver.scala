@@ -18,10 +18,12 @@ import scala.xml._
   * @param catalog the main controller and storage
   * @param port the port on which the server runs */
 class WebServer(catalog : Catalog, port : Int) extends HServer {
-  
-  override def onMessage(s: String) {
-     catalog.log(s)
-  }
+
+  // log all the things
+  override def error(msg: String, t: Throwable) = catalog.log(msg)
+  override def warning(msg: String) = catalog.log(msg)
+  override def info(msg: String) = catalog.log(msg)
+
   /** Administration page, read from jar://resources/admin.html */
   var adminHtml : Option[scala.xml.Elem] = None
   
