@@ -132,9 +132,7 @@ lazy val mmt = (project in file("mmt")).
     },
     mainClass in Compile := Some(mmtMainClass),
     connectInput in run := true,
-    mainClass in assembly := Some(mmtMainClass),
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(
-      prependShellScript = Some(Seq("#!/bin/bash", """exec /usr/bin/java -Xmx2048m -jar "$0" "$@"""")))
+    mainClass in assembly := Some(mmtMainClass)
   )
 
 
