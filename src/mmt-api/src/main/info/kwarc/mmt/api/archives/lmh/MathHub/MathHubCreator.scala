@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.archives.lmh.MathHub
 
-import info.kwarc.mmt.api.archives.lmh.ArchiveHubEntry
+import info.kwarc.mmt.api.archives.lmh.LMHHubEntry
 import info.kwarc.mmt.api.utils.File
 
 /** implements MathHub creation functionality */
@@ -8,11 +8,11 @@ trait MathHubCreator {
   self: MathHub =>
 
   /** creates a new repository of the given ID */
-  def createEntry(id: String): Option[ArchiveHubEntry] = {
+  def createEntry(id: String): Option[LMHHubEntry] = {
 
     // find the local root folder to create the repository in
     // and return nothing it nothing is created
-    val root  = local_(id)
+    val root  = localPath(id)
 
     if(root.exists){
       return None
@@ -37,7 +37,7 @@ trait MathHubCreator {
     git(root, "add", (root / "source" / "README.txt").toString)
 
     git(root, "commit", "-m", "\"automatically created by MMT\"")
-    git(root, "remote", "add", "origin", remote_(id))
+    git(root, "remote", "add", "origin", remoteURL(id))
 
     // and return the archive we just created
     Some(new MathHubEntry(root))

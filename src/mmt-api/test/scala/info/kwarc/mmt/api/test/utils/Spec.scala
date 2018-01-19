@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.test.utils
 
-import info.kwarc.mmt.api.frontend.actions.OAFClone
+import info.kwarc.mmt.api.frontend.actions.LMHClone
 
 /** shared trait for specs */
 trait Spec
@@ -10,7 +10,7 @@ case class ExtensionSpec(name: String, args: String*)
 
 /** an archive to be installed */
 case class ArchiveSpec(id: String, version: String) extends Spec {
-  def toAction: OAFClone = OAFClone(id, Some(version))
+  def toAction: LMHClone = LMHClone(id, Some(version))
 }
 
 /**

@@ -14,6 +14,7 @@ trait MathHubLister {
 
   /** tries to get some json form a given URL */
   private def get_json(url: URI) : Option[JSON] = {
+    log(s"fetching $url")
     val attempt = Try(io.Source.fromURL(url.toString))
     if (attempt.isFailure) None else Some(attempt.get.toBuffer.mkString).map(JSON.parse)
   }
@@ -25,7 +26,7 @@ trait MathHubLister {
   }
 
   /** return a list of available pages, at most 10 */
-  override def available : Option[List[String]] = Try({
+  protected def available_() : List[String] = Try({
     val buffer = new ListBuffer[String]
 
     var i = 1
@@ -39,6 +40,6 @@ trait MathHubLister {
       newEntries.nonEmpty
     }) {}
 
-    buffer.toList.distinct
-  }).toOption
+    buffer.toList.distinct.sorted
+  }).getOrElse(Nil)
 }

@@ -1,11 +1,15 @@
 package info.kwarc.mmt.api.frontend.actions
 
+import java.util.regex.MatchResult
+
 import info.kwarc.mmt.api.{Error, Level, MMTTask, NamespaceMap, ParseError, Path}
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.archives.{Build, BuildDepsFirst, Clean, Update}
+import info.kwarc.mmt.api.frontend.actions.LMHPushCompanion.keyRegEx
 import info.kwarc.mmt.api.frontend.{Controller, Report}
 
 import scala.reflect.ClassTag
+import scala.util.matching.Regex
 
 /**
   * An instance of the [[Action]] class represents an atomic command that can be run by a
@@ -123,6 +127,21 @@ object Action extends CompRegexParsers {
   /** regular expression for non-empty word without whitespace */
   private[actions] def str(implicit state: ActionState) = "\\S+" r
 
+
+  /** repeating strings with a prefix
+    * precondition: prefix should be a regex with a single  */
+  private[actions] def strs(prefix: String)(implicit state: ActionState) = {
+    val pat = s"$prefix((\\s+\\S+)*\\s*)".r
+    pat ^^ {s =>
+      val matcher = pat.pattern.matcher(s)
+      matcher.matches()
+      Option(matcher.group(2)).getOrElse("").trim match {
+        case "" => List()
+        case p => p.split("\\s+").toList
+      }
+    }
+  }
+
   /** regular expression for quoted string (that may contain whitespace) */
   private[actions] def quotedStr(implicit state: ActionState) = ("\".*\"" r) ^^ { s => s.substring(1, s.length - 1) }
 
@@ -197,8 +216,16 @@ sealed abstract class ActionCompanion[+T <: Action](val helpText: String, val ma
   import Action._
 
   /** parser for any of the keywords of this [[ActionCompanion]] */
-  lazy val keyWordParser: Action.Parser[String] = {
+  protected lazy val keyWordParser: Action.Parser[String] = {
     keywords.tail.foldLeft[Action.Parser[String]](keywords.head)(_ | _)
+  }
+
+  /** a regex representing any of the keywords */
+  protected lazy val keyRegEx: String = {
+    val regWords = keywords.map({kw =>
+      kw.split(" ").map(Regex.quote).mkString("\\s+")
+    })
+    regWords.tail.foldLeft(regWords.head)({case (a, b) => s"((?:$a)|(?:$b))"})
   }
 
   /**
@@ -296,14 +323,16 @@ object ActionCompanion extends AccessibleCompanionCollection[Action, ActionCompa
   register(HelpActionCompanion)
 
   // OAFAction
-  register(SetOAFRootCompanion)
-  register(GetOAFRootCompanion)
-  register(OAFInitCompanion)
-  register(OAFCloneCompanion)
-  register(OAFShowCompanion)
-  register(OAFPullCompanion)
-  register(OAFPushCompanion)
-  register(OAFSetRemoteCompanion)
+  register(SetLMHRootCompanion)
+  register(GetLMHRootCompanion)
+  register(LMHInitCompanion)
+  register(LMHCloneCompanion)
+  register(LMHInstallCompanion)
+  register(LMHListCompanion)
+  register(LMHPullCompanion)
+  register(LMHPushCompanion)
+  register(LMHSetRemoteCompanion)
+  register(LMHListRemoteCompanion)
 
   // ControlAction
   register(ClearCompanion)

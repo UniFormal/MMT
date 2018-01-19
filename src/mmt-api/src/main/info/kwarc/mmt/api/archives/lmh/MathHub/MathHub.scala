@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.utils.{File, OS, URI, Windows}
 
 class MathHub(val controller: Controller, val local: File, val remote: URI, val https: Boolean = true)
-  extends ArchiveHub with MathHubInstaller with MathHubCreator with MathHubLister
+  extends LMHHub with MathHubInstaller with MathHubCreator with MathHubLister
 {
   @deprecated("use local instead, to prevent compilation errors", "")
   val root: File = local
@@ -15,7 +15,7 @@ class MathHub(val controller: Controller, val local: File, val remote: URI, val 
 
   // PATHS
 
-  protected def remote_(id : String): String = if(https) {
+  def remoteURL(id : String): String = if(https) {
     "https://" + remote.authority.getOrElse("") + "/" + id + ".git"
   } else {
     "git@" + remote.authority.getOrElse("") + ":" + id + ".git"
@@ -26,7 +26,7 @@ class MathHub(val controller: Controller, val local: File, val remote: URI, val 
   protected def api_(page: Int): URI = {
     (remote / "api" / "v4" / "projects") ? s"per_page=100&page=$page"
   }
-  protected def local_(id : String) : File = {
+  def localPath(id : String) : File = {
     val ret = (local / id).canonical
     // make sure dots in id do not cause trouble
     if (!(local <= ret)) throw GeneralError("local path escapes root path: " + ret)
@@ -34,13 +34,13 @@ class MathHub(val controller: Controller, val local: File, val remote: URI, val 
   }
 
   /** represents a single entry of a MathHub controller */
-  class MathHubEntry(val root: File) extends ArchiveHubEntry {
+  class MathHubEntry(val root: File) extends LMHHubEntry {
     val hub: MathHub = MathHub.this
 
     def version: Option[String] = hub.git(root, "show-rev", "HEAD").successOption
     def pull: Boolean = hub.git(root, "pull").success
     def push: Boolean = hub.git(root, "push").success
-    def remote(remote : String) : Boolean = hub.git(root, "remote", "set-url", "origin", remote).success
+    def setRemote(remote : String) : Boolean = hub.git(root, "remote", "set-url", "origin", remote).success
   }
 
   /** gets a single entry from the MathHub root */
