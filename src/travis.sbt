@@ -1,7 +1,6 @@
 import sbt._
 import sbt.Keys._
-
-import src.main.scala.travis._
+import src.main.scala.travis.{Job, _}
 
 import scala.io.Source
 
@@ -23,8 +22,12 @@ travisConfig := {
     JDK(JDKVersion.OpenJDK8), JDK(JDKVersion.OracleJDK8),
     JDK(JDKVersion.OracleJDK9)
   )(
-    Stage("build.sbt", "check that build.sbt loads")(
+    Stage("build.sbt", "check that build.sbt loads and the travis tests have been run correctly")(
       Job("Check that build.sbt loads", sbt("exit"))()
+    ),
+
+    Stage("testSetup", "check that 'sbt genTravisYML' has been run")(
+      Job("Check that `sbt genTravisYML` has been run", sbt("genTravisYML", identical(".travis.yml")))(JDK(JDKVersion.OpenJDK8))
     ),
 
     Stage("CodeCheck", "check that the code conforms to standards")(
@@ -32,14 +35,13 @@ travisConfig := {
       Job("Print scalastyle violations", sbt("scalastyle"))()
     ),
 
-    Stage("DeployCheck", "check that the 'apidoc', 'deploy' 'genTravisYML' and 'deployFull' targets work")(
+    Stage("DeployCheck", "check that the 'apidoc', 'deploy' and 'deployFull' targets work")(
       Job("Check mmt.jar generation using `sbt deploy`", sbt("deploy", file("deploy/mmt.jar")))(),
       Job("Check mmt.jar generation using `sbt deployfull`", sbt("deployFull", file("deploy/mmt.jar")))(),
       Job("Check that apidoc generation works", sbt("apidoc", dir("apidoc")))(),
-      Job("Check that `sbt genTravisYML` has been run", sbt("genTravisYML", identical(".travis.yml")))()
     ),
 
-    Stage("test", "check that our own tests work")(
+    Stage("test", "check that our own tests run")(
       Job("Run MMT Tests", sbt("test"))()
     ),
 
