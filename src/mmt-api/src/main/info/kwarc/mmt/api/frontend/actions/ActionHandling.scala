@@ -45,9 +45,17 @@ trait ActionHandling extends
         state.currentActionDefinition = Some(Defined(file, name, acts ::: List(act)))
         if (showLog) report("user", "  " + name + ":  " + act.toString)
       case _ =>
-        if (act != NoAction && showLog) report("user", s"'$act'")
+        if (act != NoAction && showLog) {
+          report("user", s"'$act'")
+          report.indent
+        }
+
         act(self)
-        if (act != NoAction && showLog) report("user", s"'$act' finished")
+
+        if (act != NoAction && showLog) {
+          report.unindent
+          report("user", s"'$act' finished")
+        }
     }
   }
 

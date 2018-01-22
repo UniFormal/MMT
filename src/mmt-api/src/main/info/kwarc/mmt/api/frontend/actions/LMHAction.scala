@@ -19,22 +19,20 @@ case object GetLMH extends LMHAction with ResponsiveAction {
   def apply(implicit controller: Controller): Unit = {
     controller.getMathHub match {
       case Some(mh) => {
-        logGroup {
-          respond("Local LMH Root at: " + mh.local)
-          respond("Remote MathHub at: " + mh.remote)
+        respond("Local LMH Root at: " + mh.local)
+        respond("Remote MathHub at: " + mh.remote)
 
-          if(mh.versioning.all.nonEmpty) {
-            respond("The following archive versions are used: ")
-            logGroup {
-              mh.versioning.all.sortBy(_._1) foreach { p =>
-                log(s"${p._1} ${p._2}")
-              }
+        if(mh.versioning.all.nonEmpty) {
+          respond("The following archive versions are used: ")
+          logGroup {
+            mh.versioning.all.sortBy(_._1) foreach { p =>
+              log(s"${p._1} ${p._2}")
             }
-          } else {
-            respond("No archive version information found. ")
           }
-          respond("Use 'lmh versioning enable|disable' to toggle versioning of archives. ")
+        } else {
+          respond("No archive version information found. ")
         }
+        respond("Use 'lmh versioning enable|disable' to toggle versioning of archives. ")
       }
       case None => respond("No lmh configured, use 'lmh root <path> [ssh|https]' to set one. ")
     }
@@ -114,10 +112,8 @@ object LMHCloneCompanion extends ActionCompanionImpl[LMHClone]("clone specific v
 
 case class LMHInstall(spec: List[String]) extends LMHAction {
   def apply(implicit controller: Controller): Unit = {
-    logGroup {
-      val resolved = mathHub.available(spec: _*)
-      resolved.foreach {case (id, version) => mathHub.installEntry(id, version, true) }
-    }
+    val resolved = mathHub.available(spec: _*)
+    resolved.foreach {case (id, version) => mathHub.installEntry(id, version, true) }
   }
   def toParseString = s"lmh install ${spec.mkString(" ")}".trim
 }
@@ -128,12 +124,10 @@ object LMHInstallCompanion extends ActionCompanionImpl[LMHInstall]("install a se
 }
 
 case class LMHListRemote(spec: List[String]) extends LMHAction with ResponsiveAction {
-  def apply(implicit controller: Controller): Unit = logGroup {
-    mathHub.available(spec: _*).foreach { case (id, version) =>
-      mathHub.versioning(id, version) match {
-        case Some(v) => respond(s"$id (version $v)")
-        case None => respond(s"$id")
-      }
+  def apply(implicit controller: Controller): Unit = mathHub.available(spec: _*).foreach { case (id, version) =>
+    mathHub.versioning(id, version) match {
+      case Some(v) => respond(s"$id (version $v)")
+      case None => respond(s"$id")
     }
   }
   def toParseString = s"lmh search ${spec.mkString(" ")}".trim
@@ -156,7 +150,6 @@ sealed trait LocalAction extends LMHAction {
 
 
 case class LMHList(spec: List[String]) extends LMHAction with LocalAction with ResponsiveAction {
-  override def apply(implicit controller: Controller): Unit = logGroup { super.apply }
   protected def applyActual(archive: LMHHubEntry)(implicit controller: Controller): Unit = archive.version match {
     case Some(v) => respond(s"${archive.id}: $v")
     case None => respond(s"${archive.id}: not versioned")
