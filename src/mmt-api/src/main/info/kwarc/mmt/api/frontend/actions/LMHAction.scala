@@ -152,7 +152,7 @@ sealed trait LocalAction extends LMHAction {
 case class LMHList(spec: List[String]) extends LMHAction with LocalAction with ResponsiveAction {
   protected def applyActual(archive: LMHHubEntry)(implicit controller: Controller): Unit = archive.version match {
     case Some(v) => respond(s"${archive.id}: $v")
-    case None => respond(s"${archive.id}: not versioned")
+    case None => respond(s"${archive.id}: (unversioned)")
   }
   def toParseString = s"lmh ls ${spec.mkString(" ")}".trim
 }

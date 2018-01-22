@@ -47,9 +47,15 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
   class MathHubEntry(val root: File) extends LMHHubEntry {
     val hub: MathHub = MathHub.this
 
-    def version: Option[String] = hub.git(root, "show-rev", "HEAD").successOption
-    def pull: Boolean = hub.git(root, "pull").success
-    def push: Boolean = hub.git(root, "push").success
+    def version: Option[String] = hub.git(root, "show-ref", "HEAD").successOption.map(_.split(" ").head)
+    def pull: Boolean = {
+      log(s"pulling $id")
+      hub.git(root, "pull").success
+    }
+    def push: Boolean = {
+      log(s"pushing $id")
+      hub.git(root, "push").success
+    }
     def setRemote(remote : String) : Boolean = hub.git(root, "remote", "set-url", "origin", remote).success
   }
 
