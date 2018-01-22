@@ -17,7 +17,8 @@ trait ActionHandling extends
   DefineActionHandling with
   ExecActionHandling with
   MathPathActionHandling with
-  PrintActionHandling
+  PrintActionHandling with
+  LMHActionHandling
 {
   self: Controller =>
 

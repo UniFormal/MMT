@@ -13,6 +13,9 @@ abstract class LMHHub extends Logger {
   val logPrefix = "lmh"
   protected def report = controller.report
 
+  /** the versioning of archives */
+  def versioning : ArchiveVersioning
+
   /** find all locally installed repositories */
   protected def entries_ : List[LMHHubEntry]
 
@@ -77,8 +80,16 @@ abstract class LMHHub extends Logger {
   /** creates a new archive */
   def createEntry(id: String): Option[LMHHubEntry]
 
-  /** installs a new archive from the remote */
-  def installEntry(id: String, version: Option[String], recursive: Boolean = false, visited: List[LMHHubEntry] = Nil) : Option[LMHHubEntry]
+  /**
+    * Install a new archive from the remote
+    * @param id ID of archive to install
+    * @param version Optional version to be installed
+    * @param enforceVersion If set to true, disable automatic version resolving (see [[ArchiveVersioning]])
+    * @param recursive If set to false, do not install archive dependencies
+    * @param visited Internal parameter used to keep track of archives already installed
+    * @return the newly installed entry
+    */
+  def installEntry(id: String, version: Option[String], enforceVersion: Boolean = false, recursive: Boolean = false, visited: List[LMHHubEntry] = Nil) : Option[LMHHubEntry]
 
   /** get the default remote url for a repository with a given id */
   def remoteURL(id: String) : String
@@ -98,10 +109,16 @@ abstract class LMHHubEntry extends Logger {
 
   /** returns the [[Archive]] instance belonging to this local ArchiveHub entry */
   lazy val archive : Archive = {
+    load()
+    controller.backend.getArchive(root).get
+  }
+  /** loads this archive into the controller (if not done already) */
+  def load(): Unit = {
     controller.backend.getArchive(root).getOrElse {
-      controller.addArchive(root).head
+      controller.addArchive(root)
     }
   }
+
   /** get the id of this archive */
   lazy val id: String = archive.id
 

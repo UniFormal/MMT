@@ -1,7 +1,5 @@
 package info.kwarc.mmt.api.test.utils.testers
 
-import info.kwarc.mmt.api.test.utils.ExtensionSpec
-
 /** trait implementing testing for extensions */
 trait ExtensionTester extends BaseTester {
 
@@ -19,3 +17,6 @@ trait ExtensionTester extends BaseTester {
   /** checks that all extensions are loaded */
   def shouldLoadExtensions(): Unit = extensions.foreach(e => shouldAddExtension(e))
 }
+
+/** an extension to be tested */
+case class ExtensionSpec(name: String, args: String*)

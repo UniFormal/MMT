@@ -3,11 +3,11 @@ package info.kwarc.mmt.lf.test
 import info.kwarc.mmt.api.test.utils.testers._
 import info.kwarc.mmt.api.test.utils._
 
-class LFTest extends MMTTest(
-  ArchiveSpec.MMT.urtheories,
-  ArchiveSpec.MMT.LFX,
-  ArchiveSpec.Test.General,
-  ArchiveSpec.MMT.examples
+class LFTest extends MMTIntegrationTest(
+  "MMT/urtheories",
+  "MMT/LFX",
+  "Test/General",
+  "MMT/examples"
 )(
   ExtensionSpec("info.kwarc.mmt.lf.Plugin")
 ) {
@@ -25,8 +25,8 @@ class LFTest extends MMTTest(
 
   shouldHandleLine("build MMT/LFX mmt-omdoc")
 
-  shouldCheck("MMT/examples",Orders.examples:_*)(onlyfiles = true)
   shouldCheck("Test/General", Orders.testgeneral:_*)(mayfail = List("http://test.kwarc.info/Structure?C?test2?definition"))
+  shouldCheck("MMT/examples",Orders.examples:_*)(onlyfiles = true)
 }
 
 /*
