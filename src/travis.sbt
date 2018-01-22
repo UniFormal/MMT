@@ -38,7 +38,7 @@ travisConfig := {
     Stage("DeployCheck", "check that the 'apidoc', 'deploy' and 'deployFull' targets work")(
       Job("Check mmt.jar generation using `sbt deploy`", sbt("deploy", file("deploy/mmt.jar")))(),
       Job("Check mmt.jar generation using `sbt deployfull`", sbt("deployFull", file("deploy/mmt.jar")))(),
-      Job("Check that apidoc generation works", sbt("apidoc", dir("apidoc")))(),
+      Job("Check that apidoc generation works", sbt("apidoc", dir("apidoc")))()
     ),
 
     Stage("test", "check that our own tests run")(
