@@ -44,6 +44,7 @@ object Orders {
     ,"arithmetics/integers.mmt"
     ,"arithmetics/rationals.mmt"
     ,"arithmetics/reals.mmt"
+    ,"arithmetics/complex.mmt"
     ,"typed_sets.mmt"
     ,"functions.mmt"
     ,"topology/basics.mmt"
