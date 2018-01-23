@@ -191,7 +191,7 @@ Non-commands are MMT code.
           val parser = controller.extman.get(classOf[Parser], "mmt").get
           val t = parser(pu)(ErrorThrower).toTerm
           //Type checking
-	        val stack = Stack(Context(theory))
+           val stack = Stack(Context(theory))
           val solveout = checking.Solver.check(controller, stack, t)
 
           val (tR, tpR) = solveout match{

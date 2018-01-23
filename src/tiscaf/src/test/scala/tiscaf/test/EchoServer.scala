@@ -10,7 +10,7 @@ object EchoServer extends HServer with App {
   // the only HApp
   object theApp extends HApp {
 
-    def resolve(req: HReqData) = Some(echoLet) // the only handler 
+    def resolve(req: HReqData) = Some(echoLet) // the only handler
 
     object echoLet extends HSimpleLet {
       def act(talk: HTalk): Unit = {

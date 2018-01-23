@@ -6,7 +6,7 @@ import scala.collection._
 
 object Arithmetics {
   implicit def makeNotation(s : String) = TextNotation.parse(s, NamespaceMap.empty)
-  
+
   val constants = new mutable.HashMap[String, TextNotation]()
   constants("power") = "1 ^ 2 prec 100"
   constants("sqrt") = "√ 1 prec 1000"
@@ -24,10 +24,10 @@ object Arithmetics {
   constants("times") = "1×… prec 2"
   constants("interval") = "[1,2] prec 2"
   constants("factorial") = "1 ! prec 1002"
-  constants("set") = "⟮ 1,… ⟯  prec 2" 
+  constants("set") = "⟮ 1,… ⟯  prec 2"
   def getNotation(sym : String) : TextNotation = constants.get(sym).getOrElse {
     sym + "⟮ 1,… ⟯"
   }
   def contains(sym : String) = constants.isDefinedAt(sym)
-  
+
 }

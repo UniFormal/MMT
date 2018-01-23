@@ -84,14 +84,14 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
     controller.add(MRef(docDPath, currThy)) // phys, log
 
     //manager.method
-    //java.util.Set<OWLOntology> 	getImportsClosure(OWLOntology ontology)
+    //java.util.Set<OWLOntology>    getImportsClosure(OWLOntology ontology)
 
     //java.util.List<OWLOntology> getSortedImportsClosure(OWLOntology ontology)
     //A list that represents a topological ordering of the imports closure. The first element in the list will be the specified ontology.
 
     //ontology.method
-    //java.util.Set<OWLOntology> 	getDirectImports()
-    //java.util.Set<IRI> 	getDirectImportsDocuments()
+    //java.util.Set<OWLOntology>    getDirectImports()
+    //java.util.Set<IRI>    getDirectImportsDocuments()
     /*
       val imports = manager.getSortedImportsClosure(ontology) // var type is java.util.List[OWLOntology]
       imports.foreach {i =>  // first element is the ontology itself ?
@@ -352,7 +352,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
     // def axiomToLF(ax : OWLAxiom) : Constant = {} constant donduruyor mu kontrol et
     val (name, tp) =
       ax match {
-        /*	if(isAnnotated()) AnnotationToLF(ax) */
+        /*   if(isAnnotated()) AnnotationToLF(ax) */
         // DeclarationAxiom
         case ax: OWLDeclarationAxiom =>
           //println(ax.getAxiomType)
@@ -482,7 +482,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
           val tp = ApplySpine(OWL2OMS("OWL2SUB", "dataTypeDefinition"), dataRangeToLF(ax.getDatatype), dataRangeToLF(ax.getDataRange))
           (null, tp)
 
-        // HasKeyAxiom  	/*  case ax : OWLHasKeyAxiom =>  */
+        // HasKeyAxiom     /*  case ax : OWLHasKeyAxiom =>  */
         //each named instance of a class is uniquely identified by a (data or object) property or a set of properties
         //hasKey: class -> objectProperty(or dataProperty) -> type.
 
@@ -584,15 +584,15 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
     dpath ? "_" ? name //  global name = Dpath?String?String ,  base module name ,  rdfs_label
 
     /*
-      boolean 	containsAnnotationPropertyInSignature(IRI owlAnnotationPropertyIRI)
+      boolean    containsAnnotationPropertyInSignature(IRI owlAnnotationPropertyIRI)
           Determines if the signature of this ontology contains an OWLAnnotationProperty with the specified IRI.
-          boolean 	containsAnnotationPropertyInSignature(IRI owlAnnotationPropertyIRI, boolean includeImportsClosure)
+          boolean    containsAnnotationPropertyInSignature(IRI owlAnnotationPropertyIRI, boolean includeImportsClosure)
           Determines if the signature of this ontology, or possibly the signature of one of the ontologies in the imports closure of this ontology,
           contains an OWLAnnotationProperty that has the specified IRI
 
-          boolean 	isDeclared(OWLEntity owlEntity)
+          boolean    isDeclared(OWLEntity owlEntity)
           Determines if this ontology declares an entity i.e.
-          boolean 	isDeclared(OWLEntity owlEntity, boolean includeImportsClosure)
+          boolean    isDeclared(OWLEntity owlEntity, boolean includeImportsClosure)
           Determines if this ontology or its imports closure declares an entity i.e.
     */
   }
@@ -658,7 +658,7 @@ object Import {
     //val file : File = new File("examples\\ex2.owl");
 
 
-    /*		val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiom.owl")
+    /*      val source : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiom.owl")
         val target : File = new File("E:\\Fall10\\CompSem\\Project\\OWLMMT\\Test\\Axioms\\AssertionAxiom\\assertionAxiom.omdoc")
     */
 

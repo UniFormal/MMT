@@ -12,6 +12,6 @@ object MizSeq {
   val Ellipsis = Sequences.ellipsis
   val Sequence = Sequences.flatseq
   //def SeqMap(body: Term, index: LocalName, to: Term) = Sequences.ellipsis(to,index,body)
-  
+
   def OMI(i: Int) = NatRules.NatLit(i)
 }

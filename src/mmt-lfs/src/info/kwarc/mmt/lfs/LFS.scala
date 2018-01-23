@@ -12,10 +12,10 @@ object LFS {
    //val jokerbinder = lfssymbol("joker")
    //val ellipsis = lfssymbol("ellipsis")
    val index = lfssymbol("index")
-   val seqmap = lfssymbol("seqmap")   
+   val seqmap = lfssymbol("seqmap")
    val seq = lfssymbol("seq")
    val nat = lfssymbol("nat")
    val plus = lfssymbol("plus")
    val minus = lfssymbol("minus")
-   val times = lfssymbol("times")   
+   val times = lfssymbol("times")
 }

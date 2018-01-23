@@ -16,7 +16,7 @@ import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
  *  - All exceptions thrown by MMT API must subclass api.Error.
  *  - Retrieving children of XML elements is much simpler.
  *    Use \\ to find non-direct children.
- *    id attributes are globally unique - it's unnecessary and less robust to chain id-based retrievals 
+ *    id attributes are globally unique - it's unnecessary and less robust to chain id-based retrievals
  */
 abstract class WebExtractor {
   val scheme : String

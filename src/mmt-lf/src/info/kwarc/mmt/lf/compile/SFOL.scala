@@ -4,10 +4,10 @@ package info.kwarc.mmt.lf.compile
 object SFOL {
    val asort  = ConstantSymbol("sort", "s", Nil)
    val sorts  = Category("S", List(asort))
-   
+
    val funapp  = ConstantSymbol("fun", "f", List(CatRef("tm"), CatRef("tm")))
    val termvar = VariableSymbol
-   val terms   = Category("tm", List(funapp, termvar)) 
+   val terms   = Category("tm", List(funapp, termvar))
 
    val and     = Connective("AND", List(CatRef("o"), CatRef("o")))
    val forall  = Binder("FORALL", Some(CatRef("S")), CatRef("tm"), CatRef("o"))

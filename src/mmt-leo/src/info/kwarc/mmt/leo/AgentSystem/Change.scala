@@ -56,7 +56,7 @@ abstract class Task extends Message{
 
   /** Returns a set of all nodes, that will be written by the task. */
   def writeSet(s:Section): Set[s.ObjectType]
-  
+
   def execute():Boolean
 
   /**

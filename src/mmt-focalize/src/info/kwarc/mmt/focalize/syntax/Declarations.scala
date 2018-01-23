@@ -27,7 +27,7 @@ case class species(named: NamedMod, _parameters: List[parameter], _declarations:
  * instance of a concrete species
  * all fields in the implemented species must be defined, i.e., carrier, definition, letprop, or theorem
  * the collection can be used as a type (equal to the transparent carrier)
- * 
+ *
  * declarations are the same as in the species but with all definitions filtered
  * the carrier does not appear in the interface (currently falsely appears as a constant rep of type carrier)
  */
@@ -43,7 +43,7 @@ case class parameter(kind: String, XMLtype: CollectionOrSpeciesExpr, named: Name
 }
 object parameter {
   val collection = "collection"
-  val element = "entity"  
+  val element = "entity"
 }
 
 /** inductive type definition */
@@ -129,7 +129,7 @@ case class history(_initial: initial_apparition, _from: comes_from) {
 }
 /** the species defining the concept */
 case class initial_apparition(infile: String, _name: String) {
-  def toName = foc_name(infile, _name) 
+  def toName = foc_name(infile, _name)
 }
 /** the species from which this is directly imported (could be the same as initial apparition) */
 case class comes_from(infile: String, _name: String) {

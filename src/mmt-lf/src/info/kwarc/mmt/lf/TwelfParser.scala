@@ -16,14 +16,14 @@ import scala.collection.mutable._
 // TODO second phase should update from fields in structures, as well as all aliases with the correct references. Currently aliases point to originatingLink?name
 class TwelfParser extends Parser(new NotationBasedParser) {
   val format = "elf"
-  
+
   def apply(ps: ParsingStream)(implicit cont: StructureParserContinuations): Document = {
     init(ps)
     val (doc, errors) = readDocument()
     errors reverseMap {e => cont.errorCont(e)}
     doc
   }
-  
+
   // ------------------------------- private vars -------------------------------
 
   /** array containing all the lines in the file */
@@ -50,7 +50,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
   private var prefixes:  NamespaceMap = null
   private def currentNS = prefixes.default
 
- 
+
   private def init(ps: ParsingStream) {
     var line: String = null
     var lineList: List[String] = Nil
@@ -78,9 +78,9 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     }
 
   }
-  
+
   private var keyW : List[String] = Nil
-  
+
   /** errors that occur during parsing */
    object TextParseError {
      def apply(pos: SourcePosition, s : String) = SourceError("structure-parser", SourceRef(source, pos.toRegion), s)
@@ -112,11 +112,11 @@ class TwelfParser extends Parser(new NotationBasedParser) {
          addSemanticComment(doc, Some(comment))
          i = positionAfter
        }
-   
+
        // reset the last semantic comment stored and check whether there is a new semantic comment
        keepComment = None
        i = skipwscomments(i)
-   
+
        while (i < flat.length) {
          if (flat.startsWith("%namespace", i)){
            i = crawlNamespaceBlock(i)
@@ -137,7 +137,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
            i = skipAfterDot(i)
          else
            throw TextParseError(toPos(i), "unknown entity. Module, comment or namespace declaration expected")
-   
+
          keepComment = None          // reset the last semantic comment stored
          i = skipwscomments(i)       // check whether there is a new semantic comment
        }
@@ -296,7 +296,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
       else if (Character.isWhitespace(flat.charAt(i))) // skip over white space
         i += 1
       else if (isIdentifierPartCharacter(c)) { // identifier
-        val (id, posAfter) = crawlIdentifier(i) // also finds identifiers that contain . 
+        val (id, posAfter) = crawlIdentifier(i) // also finds identifiers that contain .
         if (delimiters contains id) // these end the term  if they occur anywhere outside a bracketed block and are not part of a larger identifier
           return computeReturnValue
         i = posAfter
@@ -315,7 +315,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
          errors ::= TextParseError(toPos(start), "object continuation caused error: " + e.getMessage)
          DefaultObjectParser(pu)(ErrorThrower)
       }
-      
+
       (pr.toTerm, i)
     }
 
@@ -378,8 +378,8 @@ class TwelfParser extends Parser(new NotationBasedParser) {
       throw TextParseError(toPos(start), "the string does not close")
     return (flat.substring(start + 1, endsAt), endsAt + 1)
   }
-  
-  
+
+
   /** reads an identifier.
     * @param start the position of the first character of the identifier
     * @return (identifier as a string, position after the last character of the identifier)
@@ -585,7 +585,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
   {
     val oldComment = keepComment
     val context = Context(parent.path)
-    
+
     var i = start
     if (flat.startsWith("%abbrev", i)) {
       i += "%abbrev".length
@@ -594,7 +594,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     val (cstName, positionAfter) = crawlIdentifier(i)  // read constant name
     i = positionAfter
     i = skipwscomments(i)
-    
+
     val cpath = parent.path ? cstName
 
     // read the optional type
@@ -730,7 +730,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
           // create the Include object
           val include = Include(parent.toTerm, from, Nil)
           if (flat.startsWith("%open", i))
-             i = crawlOpen(i, include)      
+             i = crawlOpen(i, include)
           // add metadata and source references
           addSemanticComment(include, oldComment)
           val endsAt = expectNext(i, ".")
@@ -787,7 +787,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     i = skipwscomments(i)
 
     val spath = parent.path ? name
-    
+
     // parse the optional domain
     if (flat.codePointAt(i) == ':') {
       i += 1
@@ -822,7 +822,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
         i = positionAfter
         domain match {
           case Some(dom) => structure = DefinedStructure(parent.toTerm, LocalName(name), OMMOD(dom), morphism, isImplicit)
-          //TODO: the domain should be obligatory so that this case goes away; but currently the Twelf parser expects it to be omitted 
+          //TODO: the domain should be obligatory so that this case goes away; but currently the Twelf parser expects it to be omitted
           case None => structure = DefinedStructure(parent.toTerm, LocalName(name), null, morphism, isImplicit)
         }
 
@@ -889,14 +889,14 @@ class TwelfParser extends Parser(new NotationBasedParser) {
      val (term, posAfter) = crawlTerm(i, List(']'), Nil, theory ? name $ TypeComponent, context ++ (theory ^))
      val vd = OMV(name) % term
      i = posAfter
-     
+
      // skip over ']'
      i = expectNext(i, "]")
      i += "]".length
      i = skipwscomments(i)
      (vd, i)
   }
-  
+
 
   /** Reads a pattern body
       * @param start the position of the opening {
@@ -987,8 +987,8 @@ class TwelfParser extends Parser(new NotationBasedParser) {
    private def assPath(l: Link, n: LocalName) = l match {
        case v: View => v.path ? n
        case s: Structure => s.path / n
-    } 
-   
+    }
+
   /** Reads a constant assignment.
     * @param start the position of the first character in the constant identifier
     * @param parent the parent link
@@ -1083,7 +1083,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
 
     // get the morphism
     val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, apath $ DefComponent, parent.codomainAsContext)
-    
+
     val endsAt = expectNext(positionAfter, ".")    // on the final dot
 
     // add the include assignment to the controller
@@ -1321,7 +1321,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
   }
 
   private def min(a: Int, b: Int) = if (a <= b) a else b
-  
+
   /** Convert a module name to its URI. Only namespace prefixes are checked.
     * @param start position of the first character of the module name (for error reporting)
     * @param moduleName the module name as a string
@@ -1349,7 +1349,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     }
   }
 
-  /** computes two- from one-dimensional coordinate 
+  /** computes two- from one-dimensional coordinate
   * @param index the one-dimensional coordinate
   * @return the the two-dimensional coordinate
   */
@@ -1357,9 +1357,9 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     val pair = try {
       lineStarts.filter(p => (p._1 <= index)).last
     } catch {
-      // this catches the degenerate case where .last fails; this happens iff the input file is empty 
+      // this catches the degenerate case where .last fails; this happens iff the input file is empty
       case _ : java.util.NoSuchElementException => (0,0)
-    } 
+    }
     SourcePosition(index, pair._2, index - pair._1)  // the column may be the bogus space character at the end of the line
   }
 
@@ -1384,7 +1384,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
 
   /** returns the top-level dpath of the current module */
   private def getCurrentDPath : DPath = DPath(prefixes.default)
-  
+
   //TODO
   /** Reads a logic specification.
     * @param start the position of the initial '%'
@@ -1403,7 +1403,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     i = skipwscomments(positionAfter)   // jump over identifier
     val tpath = getCurrentDPath ? specName
     var meta : Option[MPath] = None
-    
+
     // <-------- ':' ?
     if (flat.codePointAt(i) == ':') {
        i = expectNext(i, ":") + 1
@@ -1415,8 +1415,8 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     i = expectNext(i, "=")
     i += 1    // jump over "="
     i = skipws(i)
-    
-        
+
+
     i = expectNext(i, "{")
     // <-----------  how to manage specs in controller?
     // add the (empty, for now) theory to the controller
@@ -1435,7 +1435,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     add(MRef(dpath, theory.path))
     return endsAt + 1
   }
-  
+
    /** Reads a theory body
     * @param start the position of the opening {
     * @param parent the enclosing DeclaredTheory
@@ -1446,14 +1446,14 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     var i = start + 1       // jump over '{'
     keepComment = None          // reset the last semantic comment store/
     i = skipwscomments(i)       // check whether there is a new semantic comment
-     
-    
+
+
     // parent theorem
     var thm : Term = null
-    
+
     while (i < flat.length) {
       if (flat.startsWith("%include", i)) {
-        // read include declaration        
+        // read include declaration
 //        i = crawlIncludeDeclaration(i, parent)
         i = crawlKeyword(i, "%include")
         i = skipws(i)

@@ -31,7 +31,7 @@ class InteractiveSimplifier(controller : Controller, intp : tools.nsc.interprete
   }
 
   def render(t : Term) : String = {
-	controller.presenter.asString(t)
+   controller.presenter.asString(t)
   }
 
   def solve(t : Term) = {

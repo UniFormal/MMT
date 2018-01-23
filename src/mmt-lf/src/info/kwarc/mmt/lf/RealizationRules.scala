@@ -10,7 +10,7 @@ import uom._
 
 /** realize an LF-type/function as a [[SemanticType]] or [[SemanticOperator]] */
 object Realize extends ParametricRule {
-  
+
    /** finds the semantic type that was previously declared to realized a syntactic type */
    private def getSemanticType(controller: Controller, home: Term, synTp: Term): SemanticType = {
      controller.globalLookup.getDeclarationsInScope(home).foreach {
@@ -42,7 +42,7 @@ object Realize extends ParametricRule {
          }
          val synC = Solver.check(controller, Stack(cont), syn)
          synC match {
-           case Right(solver) => throw ParseError("type must be LF-type: " + syn) 
+           case Right(solver) => throw ParseError("type must be LF-type: " + syn)
            case Left((synR,_)) => RealizedType(synR, st)
          }
        case semOp: SemanticOperator =>

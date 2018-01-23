@@ -56,7 +56,7 @@ object GlossaryGenerator {
     }
     present(verbs.flatten.flatten.toList.distinct)
     rh.get
-  } 
+  }
 
   // easy-to-use HTML markup
   protected val htmlRh = utils.HTML(s => rh(s))
@@ -101,17 +101,17 @@ object GlossaryGenerator {
       }
     }
   }
-  
+
   private def getVerbalizations(path: MPath, lang: String) : List[TextNotation] = {
-    
+
     //getPrimarySym(path : MPath) : Option[GlobalName]
     val primarySyms = controller.depstore.getInds(IsPrimarySymbol)
-    val primarySymO = primarySyms.find { 
-      case p : GlobalName => p.module == path 
+    val primarySymO = primarySyms.find {
+      case p : GlobalName => p.module == path
       case _ => false
     }
-    
-    //getVerbs(spath : Option[GlobalName], lang : String) : List[TextNotation]     
+
+    //getVerbs(spath : Option[GlobalName], lang : String) : List[TextNotation]
     primarySymO.map(controller.get) match {
       case Some(c:Constant) => c.notC.verbalizationDim.get(lang=Some(lang))
       case _ => Nil
@@ -140,10 +140,10 @@ object GlossaryGenerator {
               case _ => None
             }
         }
-    
+
     val primarySym = controller.depstore.queryList(spath, HasType(IsPrimarySymbol))
     val hypernyms = if  (!primarySym.isEmpty) {
-      val mpath = spath.module 
+      val mpath = spath.module
       controller.depstore.queryList(mpath, ToObject(IsHypernymOf)) flatMap {
         case p: Path =>
           controller.getO(p) match {
@@ -159,9 +159,9 @@ object GlossaryGenerator {
           }
       }
     } else Nil
-    
+
     val hyponyms = if  (!primarySym.isEmpty) {
-      val mpath = spath.module 
+      val mpath = spath.module
       controller.depstore.queryList(mpath, ToSubject(IsHypernymOf)) flatMap {
         case p: Path =>
           controller.getO(p) match {
@@ -177,9 +177,9 @@ object GlossaryGenerator {
           }
       }
     } else Nil
-    
+
     val synonyms = constant.notC.verbalizationDim.get(lang=Some(lang)).filter(_ != not)
-    
+
     if (defs.isEmpty) {
       return;
     }
@@ -233,7 +233,7 @@ object GlossaryGenerator {
         }
         // Notations Table -- hidden by default, activated by notations trigger
         presenter.doNotationsTable(notations, notId)
-        
+
         // adding definition (as hidden for now)
         //("style" -> "display:none;")
         div(attributes = ("id" -> (defId)) :: ("style" -> "display:none;") :: Nil) {
@@ -241,7 +241,7 @@ object GlossaryGenerator {
             presenter.apply(fd)(rh)
           }
         }
-        
+
         // adding terminological relations
         presenter.doSynonymsList(synonyms, synId, lang)
         presenter.doHypernymsList(hypernyms, hypId, lang)

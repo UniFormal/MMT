@@ -11,9 +11,9 @@ import Nat._
 object Sequences {
    val _base = Typed._base
    val _path = _base ? "Sequences"
-   
+
    object rep extends BinaryConstantScala(_path, "rep")
-   
+
    object index extends BinaryConstantScala(_path, "index")
 
    object ellipsis {
@@ -26,13 +26,13 @@ object Sequences {
          case _ => None
       }
    }
-   
+
    object flatseq extends FlexaryConstantScala(_path, "flatseq")
-   
+
    object comp extends UnaryConstantScala(_path, "comp")
 
    def upBoundName(n: LocalName)  = n / "up"
-  
+
    /** generates a fresh name for an index variable, preferably the one use in a given ellipsis */
    def pickFreshIndexVar(solver: checking.Solver, ell: Term)(implicit stack: Stack) = {
      val prefer = ell match {

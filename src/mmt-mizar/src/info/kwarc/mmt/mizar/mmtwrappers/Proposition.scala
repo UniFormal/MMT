@@ -12,40 +12,40 @@ import info.kwarc.mmt.lf._
 
 
 object MMTNot {
-	def apply(form : Term) = Mizar.not(form)
+   def apply(form : Term) = Mizar.not(form)
 }
 
 object MMTAnd {
-	def apply(forms : List[Term]) = Mizar.and(forms) 
+   def apply(forms : List[Term]) = Mizar.and(forms)
 }
 
 object MMTFor {
-	def apply(vname : String, tp : Term, form : Term) = Mizar.forall(vname, tp, form)
+   def apply(vname : String, tp : Term, form : Term) = Mizar.forall(vname, tp, form)
 }
 
 //only for queries, so exists is allowed
 object MMTExists {
-	def apply(vname : String, tp : Term, form : Term) = Mizar.exists(vname, tp, form)
+   def apply(vname : String, tp : Term, form : Term) = Mizar.exists(vname, tp, form)
 }
 
 object MMTPred {
-	def apply(aid : String, absnr : Int, kind : String, vars : List[Term]) =  vars.length match {
-	  case 0 => MMTResolve(aid, kind, absnr)
-	  case _ => Mizar.apply(MMTResolve(aid, kind, absnr), vars : _*)
-	}
+   def apply(aid : String, absnr : Int, kind : String, vars : List[Term]) =  vars.length match {
+     case 0 => MMTResolve(aid, kind, absnr)
+     case _ => Mizar.apply(MMTResolve(aid, kind, absnr), vars : _*)
+   }
 }
 /*
 object MMTPrivPred {
-	def apply(vars : List[Term], form : Term) = 
+   def apply(vars : List[Term], form : Term) =
 }
 */
 object MMTIs {
-	def apply(tm : Term, tp : Term) = Mizar.is(tm, tp)
+   def apply(tm : Term, tp : Term) = Mizar.is(tm, tp)
 }
 
 object MMTVerum {
-	def apply() = Mizar.constant("true")
+   def apply() = Mizar.constant("true")
 }
 object MMTErrorFrm {
-	def apply() = Mizar.constant("err") //TODO
+   def apply() = Mizar.constant("err") //TODO
 }
