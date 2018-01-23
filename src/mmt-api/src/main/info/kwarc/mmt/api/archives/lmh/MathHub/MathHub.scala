@@ -3,15 +3,25 @@ package info.kwarc.mmt.api.archives.lmh.MathHub
 import info.kwarc.mmt.api.GeneralError
 import info.kwarc.mmt.api.archives.lmh._
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.utils.{File, OS, URI, Windows}
+import info.kwarc.mmt.api.utils._
 
-class MathHub(val controller: Controller, val local: File, val remote: URI, val https: Boolean = true)
+/**
+  * Represents a (mutable) MathHub instance
+  * @param controller the controller to use with this MathHub instance
+  * @param local the local path of the MathHub instance
+  * @param remote the remote URI of the MathHUb instance
+  * @param https should we use https or ssh for cloning?
+  */
+class MathHub(val controller: Controller, var local: File, var remote: URI, var https: Boolean = true)
   extends LMHHub with MathHubInstaller with MathHubCreator with MathHubLister
 {
-  @deprecated("use local instead, to prevent compilation errors", "")
-  val root: File = local
   /** implements git */
   protected val git: Git = OS.detect match {case Windows => new WindowsGit() case _ => UnixGit }
+
+
+  /** return the current archive versioning instance */
+  var versioning: ArchiveVersioning = StandardVersioning
+
 
   // PATHS
 
@@ -37,9 +47,15 @@ class MathHub(val controller: Controller, val local: File, val remote: URI, val 
   class MathHubEntry(val root: File) extends LMHHubEntry {
     val hub: MathHub = MathHub.this
 
-    def version: Option[String] = hub.git(root, "show-rev", "HEAD").successOption
-    def pull: Boolean = hub.git(root, "pull").success
-    def push: Boolean = hub.git(root, "push").success
+    def version: Option[String] = hub.git(root, "show-ref", "HEAD").successOption.map(_.split(" ").head)
+    def pull: Boolean = {
+      log(s"pulling $id")
+      hub.git(root, "pull").success
+    }
+    def push: Boolean = {
+      log(s"pushing $id")
+      hub.git(root, "push").success
+    }
     def setRemote(remote : String) : Boolean = hub.git(root, "remote", "set-url", "origin", remote).success
   }
 

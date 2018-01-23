@@ -5,8 +5,8 @@ import info.kwarc.mmt.api.test.utils._
 import info.kwarc.mmt.api.utils.URI
 
 
-class APITest extends MMTTest(
-  ArchiveSpec.MMT.urtheories
+class APITest extends MMTIntegrationTest(
+  "MMT/urtheories"
 )() {
   bootstrapTests()
 

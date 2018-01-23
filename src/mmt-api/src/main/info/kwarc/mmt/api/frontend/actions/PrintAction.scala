@@ -17,15 +17,13 @@ sealed abstract class PrintAction extends ResponsiveAction {}
 
 case object MMTInfo extends PrintAction {
   def apply(implicit controller: Controller): Unit = {
-    logGroup {
-      respond(s"MMT Version     : ${MMTSystem.version.getOrElse("unversioned")}")
-      respond(s"Run Style       : ${MMTSystem.runStyle}")
-      respond(s"Operation System: ${OS.detect}")
+    respond(s"MMT Version     : ${MMTSystem.version.getOrElse("unversioned")}")
+    respond(s"Run Style       : ${MMTSystem.runStyle}")
+    respond(s"Operation System: ${OS.detect}")
 
-      respond("use 'show extensions' to show current extensions. ")
-      respond("use 'show mathpath' to show loaded content. ")
-      respond("use 'show server' to show current server. ")
-    }
+    respond("use 'show extensions' to show current extensions. ")
+    respond("use 'show mathpath' to show loaded content. ")
+    respond("use 'show server' to show current server. ")
   }
   def toParseString = "show mmt"
 }
@@ -45,9 +43,7 @@ object ClearConsoleCompanion extends ActionObjectCompanionImpl[ClearConsole.type
 /** print all loaded knowledge items to STDOUT in text syntax */
 case object PrintAll extends PrintAction {
   def apply(implicit controller: Controller): Unit = {
-    logGroup {
-      respond("\n" + controller.library.toString)
-    }
+    respond("\n" + controller.library.toString)
   }
   def toParseString = "show knowledge"
 }
@@ -56,9 +52,7 @@ object PrintAllCompanion extends ActionObjectCompanionImpl[PrintAll.type]("print
 /** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends PrintAction {
   def apply(implicit controller: Controller): Unit = {
-    logGroup {
-      respond("\n" + controller.library.getModules.map(_.toNode).mkString("\n"))
-    }
+    respond("\n" + controller.library.getModules.map(_.toNode).mkString("\n"))
   }
   def toParseString = "show xml"
 }
@@ -67,9 +61,7 @@ object PrintAllXMLCompanion extends ActionObjectCompanionImpl[PrintAllXML.type](
 /** print all configuration entries to STDOUT */
 case object PrintConfig extends PrintAction {
   def apply(implicit controller: Controller) : Unit = {
-    logGroup {
-      respond(controller.getConfigString())
-    }
+    respond(controller.getConfigString())
   }
   def toParseString = "show config"
 }

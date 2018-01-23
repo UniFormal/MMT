@@ -26,6 +26,12 @@ language: scala
 git:
   depth: 1
 
+# if we are running on devel we need to use the newest
+# versions of the archives, instead of the ones with a
+# hard-coded version
+before_install:
+  - if [ "$TRAVIS_BRANCH" == "devel" ]; then export TEST_USE_ARCHIVE_HEAD=1; fi
+
 
 
 # everything below this line is automatically generated using the configuration in src/travis.sbt

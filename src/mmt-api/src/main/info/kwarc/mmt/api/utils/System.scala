@@ -77,6 +77,7 @@ object MMTSystem {
 
    /** retrieves a resource from the jar or the resource folder depending on the [[RunStyle]], may be null */ 
    def getResource(path: String): java.io.InputStream = {
+      if(!path.startsWith("/")){ return getResource("/" + path) } // make sure that the st
       runStyle match {
         case _:IsFat | _:ThinJars | OtherStyle =>
           getClass.getResourceAsStream(path) // the file inside the JAR

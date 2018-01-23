@@ -22,11 +22,18 @@ language: scala
 git:
   depth: 1
 
+# if we are running on devel we need to use the newest
+# versions of the archives, instead of the ones with a
+# hard-coded version
+before_install:
+  - if [ "$TRAVIS_BRANCH" == "devel" ]; then export TEST_USE_ARCHIVE_HEAD=1; fi
+
 
 
 # everything below this line is automatically generated using the configuration in src/travis.sbt
 stages: 
   - name: build.sbt
+  - name: testSetup
   - name: CodeCheck
   - name: DeployCheck
   - name: test
@@ -34,170 +41,241 @@ stages:
     if: branch = master
 jobs: 
   include: 
-    # check that build.sbt loads
+    # check that build.sbt loads and the travis tests have been run correctly
     - stage: build.sbt
       scala: 2.11.12
-      script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 exit)"
+      script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 exit)"
       jdk: openjdk7
       env: 
         - INFO='Check that build.sbt loads'
-    - script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 exit)"
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 exit)"
       scala: 2.11.12
       jdk: openjdk8
       env: 
         - INFO='Check that build.sbt loads'
-    - script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 exit)"
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 exit)"
       scala: 2.11.12
       jdk: oraclejdk8
       env: 
         - INFO='Check that build.sbt loads'
-    - script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 exit)"
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 exit)"
       scala: 2.11.12
       jdk: oraclejdk9
       env: 
         - INFO='Check that build.sbt loads'
+    # check that 'sbt genTravisYML' has been run
+    - stage: testSetup
+      scala: 2.11.12
+      script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 genTravisYML)"
+        - cd ..
+        - '(git diff --quiet --exit-code ".travis.yml")'
+      jdk: openjdk8
+      env: 
+        - INFO='Check that `sbt genTravisYML` has been run'
     # check that the code conforms to standards
     - stage: CodeCheck
       scala: 2.11.12
-      script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 compile)"
+      script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 compile)"
       jdk: openjdk7
       env: 
         - INFO='Check that the code compiles'
-    - script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 compile)"
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 compile)"
       scala: 2.11.12
       jdk: openjdk8
       env: 
         - INFO='Check that the code compiles'
-    - script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 compile)"
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 compile)"
       scala: 2.11.12
       jdk: oraclejdk8
       env: 
         - INFO='Check that the code compiles'
-    - script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 compile)"
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 compile)"
       scala: 2.11.12
       jdk: oraclejdk9
       env: 
         - INFO='Check that the code compiles'
-    - script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 scalastyle)"
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 scalastyle)"
       scala: 2.11.12
       jdk: openjdk7
       env: 
         - INFO='Print scalastyle violations'
-    - script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 scalastyle)"
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 scalastyle)"
       scala: 2.11.12
       jdk: openjdk8
       env: 
         - INFO='Print scalastyle violations'
-    - script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 scalastyle)"
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 scalastyle)"
       scala: 2.11.12
       jdk: oraclejdk8
       env: 
         - INFO='Print scalastyle violations'
-    - script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 scalastyle)"
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 scalastyle)"
       scala: 2.11.12
       jdk: oraclejdk9
       env: 
         - INFO='Print scalastyle violations'
-    # check that the 'apidoc', 'deploy' 'genTravisYML' and 'deployFull' targets work
+    # check that the 'apidoc', 'deploy' and 'deployFull' targets work
     - stage: DeployCheck
       scala: 2.11.12
-      script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deploy) && cd .. && [[ -f "deploy/mmt.jar" ]]'
+      script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deploy)"
+        - cd ..
+        - '[[ -f "deploy/mmt.jar" ]]'
       jdk: openjdk7
       env: 
         - INFO='Check mmt.jar generation using `sbt deploy`'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deploy) && cd .. && [[ -f "deploy/mmt.jar" ]]'
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deploy)"
+        - cd ..
+        - '[[ -f "deploy/mmt.jar" ]]'
       scala: 2.11.12
       jdk: openjdk8
       env: 
         - INFO='Check mmt.jar generation using `sbt deploy`'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deploy) && cd .. && [[ -f "deploy/mmt.jar" ]]'
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deploy)"
+        - cd ..
+        - '[[ -f "deploy/mmt.jar" ]]'
       scala: 2.11.12
       jdk: oraclejdk8
       env: 
         - INFO='Check mmt.jar generation using `sbt deploy`'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deploy) && cd .. && [[ -f "deploy/mmt.jar" ]]'
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deploy)"
+        - cd ..
+        - '[[ -f "deploy/mmt.jar" ]]'
       scala: 2.11.12
       jdk: oraclejdk9
       env: 
         - INFO='Check mmt.jar generation using `sbt deploy`'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deployFull) && cd .. && [[ -f "deploy/mmt.jar" ]]'
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deployFull)"
+        - cd ..
+        - '[[ -f "deploy/mmt.jar" ]]'
       scala: 2.11.12
       jdk: openjdk7
       env: 
         - INFO='Check mmt.jar generation using `sbt deployfull`'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deployFull) && cd .. && [[ -f "deploy/mmt.jar" ]]'
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deployFull)"
+        - cd ..
+        - '[[ -f "deploy/mmt.jar" ]]'
       scala: 2.11.12
       jdk: openjdk8
       env: 
         - INFO='Check mmt.jar generation using `sbt deployfull`'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deployFull) && cd .. && [[ -f "deploy/mmt.jar" ]]'
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deployFull)"
+        - cd ..
+        - '[[ -f "deploy/mmt.jar" ]]'
       scala: 2.11.12
       jdk: oraclejdk8
       env: 
         - INFO='Check mmt.jar generation using `sbt deployfull`'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deployFull) && cd .. && [[ -f "deploy/mmt.jar" ]]'
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 deployFull)"
+        - cd ..
+        - '[[ -f "deploy/mmt.jar" ]]'
       scala: 2.11.12
       jdk: oraclejdk9
       env: 
         - INFO='Check mmt.jar generation using `sbt deployfull`'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 apidoc) && cd .. && [[ -d "apidoc" ]]'
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 apidoc)"
+        - cd ..
+        - '[[ -d "apidoc" ]]'
       scala: 2.11.12
       jdk: openjdk7
       env: 
         - INFO='Check that apidoc generation works'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 apidoc) && cd .. && [[ -d "apidoc" ]]'
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 apidoc)"
+        - cd ..
+        - '[[ -d "apidoc" ]]'
       scala: 2.11.12
       jdk: openjdk8
       env: 
         - INFO='Check that apidoc generation works'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 apidoc) && cd .. && [[ -d "apidoc" ]]'
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 apidoc)"
+        - cd ..
+        - '[[ -d "apidoc" ]]'
       scala: 2.11.12
       jdk: oraclejdk8
       env: 
         - INFO='Check that apidoc generation works'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 apidoc) && cd .. && [[ -d "apidoc" ]]'
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 apidoc)"
+        - cd ..
+        - '[[ -d "apidoc" ]]'
       scala: 2.11.12
       jdk: oraclejdk9
       env: 
         - INFO='Check that apidoc generation works'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 genTravisYML) && cd .. && (git diff --quiet --exit-code ".travis.yml")'
-      scala: 2.11.12
-      jdk: openjdk7
-      env: 
-        - INFO='Check that `sbt genTravisYML` has been run'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 genTravisYML) && cd .. && (git diff --quiet --exit-code ".travis.yml")'
-      scala: 2.11.12
-      jdk: openjdk8
-      env: 
-        - INFO='Check that `sbt genTravisYML` has been run'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 genTravisYML) && cd .. && (git diff --quiet --exit-code ".travis.yml")'
-      scala: 2.11.12
-      jdk: oraclejdk8
-      env: 
-        - INFO='Check that `sbt genTravisYML` has been run'
-    - script: 'cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 genTravisYML) && cd .. && (git diff --quiet --exit-code ".travis.yml")'
-      scala: 2.11.12
-      jdk: oraclejdk9
-      env: 
-        - INFO='Check that `sbt genTravisYML` has been run'
-    # check that our own tests work
+    # check that our own tests run
     - stage: test
       scala: 2.11.12
-      script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test)"
+      script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test)"
       jdk: openjdk7
       env: 
         - INFO='Run MMT Tests'
-    - script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test)"
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test)"
       scala: 2.11.12
       jdk: openjdk8
       env: 
         - INFO='Run MMT Tests'
-    - script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test)"
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test)"
       scala: 2.11.12
       jdk: oraclejdk8
       env: 
         - INFO='Run MMT Tests'
-    - script: "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test)"
+    - script: 
+        - cd src
+        - "(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test)"
       scala: 2.11.12
       jdk: oraclejdk9
       env: 
@@ -205,7 +283,8 @@ jobs:
     # deploy the api documentation
     - stage: deploy
       scala: 2.11.12
-      script: bash scripts/travis/deploy_doc.sh
+      script: 
+        - bash scripts/travis/deploy_doc.sh
       jdk: openjdk8
       env: 
         - "INFO='Auto-deploy API documentation'"

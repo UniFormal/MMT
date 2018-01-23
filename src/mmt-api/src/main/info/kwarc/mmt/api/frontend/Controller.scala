@@ -154,25 +154,25 @@ class Controller extends ROController with ActionHandling with Logger {
     state.config.getEntry(classOf[EnvVarConf], name).map(_.value) orElse Option(System.getenv.get(name))
   }
 
-  /** @return the current OAF root */
-  def getOAF: Option[MathHub] = {
-    val ocO = state.config.getEntries(classOf[OAFConf]).headOption
-    ocO map {oc =>
-      if (!oc.local.isDirectory)
-        throw GeneralError(oc.local + " is not a directory")
-      new MathHub(this, oc.local, oc.remote.getOrElse(MathHub.defaultURL), oc.https)
-    }
-  }
-
   /** integrate a configuration into the current state */
   def loadConfig(conf: MMTConfig, loadEverything: Boolean) {
        state.config.add(conf)
+
+       // add entries to the namespace
        conf.getEntries(classOf[NamespaceConf]).foreach {case NamespaceConf(id,uri) =>
           state.nsMap = state.nsMap.add(id, uri)
        }
+
+       // add archives to the MathPath
        conf.getEntries(classOf[MathPathConf]).foreach {c =>
          addArchive(c.local)
        }
+
+       // update the lmh cache
+       conf.getEntries(classOf[OAFConf]).foreach {c =>
+         lmh = Some(new MathHub(this, c.local, c.remote.getOrElse(MathHub.defaultURL), c.https))
+       }
+
        if (loadEverything) {
          loadAllArchives(conf)
          loadAllNeededTargets(conf)

@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.frontend.ReportHandler
 
 /** implements the checking of Actions */
 trait ActionTester extends BaseTester {
+
   /** handle a single line in the controller */
   def handleLine(s : String, showLog: Boolean = true): Unit = controller.handleLine(s, showLog=showLog)
 

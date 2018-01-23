@@ -322,9 +322,10 @@ object ActionCompanion extends AccessibleCompanionCollection[Action, ActionCompa
   register(PrintConfigCompanion)
   register(HelpActionCompanion)
 
-  // OAFAction
+  // LMH Root
+  register(GetLMHCompanion)
   register(SetLMHRootCompanion)
-  register(GetLMHRootCompanion)
+  register(ToggleLMHVersioning)
   register(LMHInitCompanion)
   register(LMHCloneCompanion)
   register(LMHInstallCompanion)

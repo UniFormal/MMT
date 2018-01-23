@@ -8,8 +8,6 @@ trait MathHubInstaller {
   self: MathHub =>
 
   private def installGit(id : String, version: Option[String]) : Option[MathHubEntry] = {
-    log(s"trying to install $id (version $version) via git")
-
     val lp = localPath(id)
     val rp = remoteURL(id)
 
@@ -30,9 +28,13 @@ trait MathHubInstaller {
         if (lp.exists) {
           log("git failed, deleting " + lp)
           lp.deleteDir
+        } else {
+          log("git failed")
         }
         return None
       }
+
+      log("git clone successful")
 
       // checkout specific version, fail silently with a simple log message
       if(version.isDefined){
@@ -43,6 +45,7 @@ trait MathHubInstaller {
         }
       }
     }
+
     Some(new MathHubEntry(lp))
   }
   private def installGet(id: String, version: Option[String]) : Option[MathHubEntry] = {
@@ -68,22 +71,26 @@ trait MathHubInstaller {
     }
   }
 
-  private def installActual(id : String, version: Option[String]) : Option[LMHHubEntry] = {
+  private def installActual(id : String, version: Option[String], enforceVersion: Boolean) : Option[MathHubEntry] = {
+    // resolve the correct version of the archive, unless we enforce the current one
+    val actualVersion = if(enforceVersion) version else versioning(id, version)
+
+    log(s"Attempting to install archive $id (version=$version, actualVersion=$actualVersion)")
 
     // if the archive is already installed, we should not install it again
     // however we return it, so that we can scan dependencies again
     val entry = getEntry(id)
     if(entry.isDefined){
       log(s"$id has already been installed at ${entry.get.root}, re-scanning dependencies. ")
-      return entry
+      return entry.map({e => new MathHubEntry(e.root) })
     }
 
     // first try to install via git
-    val gitInstall = installGit(id, version)
+    val gitInstall = installGit(id, actualVersion)
 
     // if that has failed, try to download normally
     if(gitInstall.isEmpty) {
-      installGet(id, version)
+      installGet(id, actualVersion)
 
     // and if that has failed also, then return the repository
     } else {
@@ -91,7 +98,7 @@ trait MathHubInstaller {
     }
   }
 
-  def installEntry(id: String, version: Option[String], recursive: Boolean = false, visited: List[LMHHubEntry] = Nil): Option[LMHHubEntry] = {
+  def installEntry(id: String, version: Option[String], enforceVersion: Boolean = false, recursive: Boolean = false, visited: List[LMHHubEntry] = Nil): Option[LMHHubEntry] = {
 
     // if we visited this entry already, we do not want to re-install it
     // to prevent infinite recursion into this archive
@@ -100,8 +107,11 @@ trait MathHubInstaller {
       return None
     }
 
-    installActual(id, version) match {
+    installActual(id, version, enforceVersion = enforceVersion) match {
       case Some(entry: MathHubEntry) =>
+
+        // load the entry first
+        entry.load()
 
         if(recursive) {
           // Find the dependencies
@@ -114,7 +124,7 @@ trait MathHubInstaller {
           deps foreach {d =>
             logGroup {
               log(s"installing dependency ${deps.mkString("")} of $id")
-              installEntry(d, version = None, recursive = true, visited = entry :: visited)
+              installEntry(d, version = None, enforceVersion = enforceVersion, recursive = true, visited = entry :: visited)
             }
           }
         }

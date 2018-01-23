@@ -64,7 +64,7 @@ trait CheckTester extends BaseTester {
     * @param mustfail a list of archives that may not file in the return value of the error
     */
   def shouldCheck(archiveID : String, files : String*)(onlyfiles : Boolean = false, mayfail : List[String] = Nil, mustfail : List[String] = Nil): Unit =
-    it should s"build $archiveID" in {
+    it should s"check $archiveID" in {
       // find the source folder of the archive
       val archive = this.getArchive(archiveID)
 
