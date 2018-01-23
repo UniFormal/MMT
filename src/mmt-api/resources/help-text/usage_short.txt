@@ -1,0 +1,2 @@
+usage:
+    mmt [--help|--about|--version] [--shell|--keepalive|--noshell] [--file FILENAME] [--mbt FILENAME] [--send PORT] [COMMANDS]

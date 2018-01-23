@@ -48,7 +48,7 @@ class InstanceElaborator extends ChangeListener {
      case _ =>
         None
   }
-  
+
   /** uses expandTheory to turn the type of a [[symbols.Constant]] into ComplexTheory(cont) ^ subs1 ^ ... ^ subsn
    *  and uses that to generate one [[ElaboratedConstant]] for each variable in cont
    */
@@ -71,7 +71,7 @@ class InstanceElaborator extends ChangeListener {
 
 /**
  * produced and added by [[InstanceElaborator]]
- * 
+ *
  * @param instance the elaborated instance
  * @param vd the variable declaration giving rise to this Constant
  * @param subss the substitutions that have to be applied to the type/definiens of vd

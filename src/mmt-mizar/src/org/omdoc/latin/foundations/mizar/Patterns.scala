@@ -14,8 +14,8 @@ import translator._
 object MizarPatterns extends uom.RealizedTheory(Some(info.kwarc.mmt.sequences.LFS._path)) {
   // the path used to include this
   override lazy val mpath = Mizar.MizarPatternsTh
-  
-  val patterns : List[DerivedDeclaration] 
+
+  val patterns : List[DerivedDeclaration]
                = List(
                    DefPatterns.MizAttrIsCompleteDef,
                    DefPatterns.MizAttrIsPartialDef,

@@ -28,31 +28,31 @@ sealed abstract class EXP {
    def map(f: String) = MAP(this, ID(f))
    //def map(f: EXP => EXP) = MAP(this, f(ID(s)))
 
-   /** product types: A1 * ... * An */ 
+   /** product types: A1 * ... * An */
    def *(e: EXP) = this match {
       case PROD(l) => PROD(l ::: List(e))
       case t => PROD(List(t,e))
    }
-   /** tuples: a1 | ... | an */ 
+   /** tuples: a1 | ... | an */
    def |(e: EXP) = this match {
       case TUPLE(l) => TUPLE(l ::: List(e))
       case t => TUPLE(List(t, e))
    }
    /** projections: a __ n */
    def __(i: Int) = PROJ(this, i)
-   
+
    /** accessing fields of a record: r __ n */
    def __(f: ID) = SELECT(this,f.name)
-   
+
    /** variable declarations: n :: A */
    def ::(n: String) = ARG(n, this)
    /** field declarations: n ::: A */
    def :::(n: String) = FIELD(n, this)
    /** function types: return <-- (x1 :: A1, ... xn :: An) */
    def <--(args: ARG*) = FUNCTYPE(args.toList,this)
-   
+
    /** pattern matching: a Match (pattern1 |> case1, ..., patternN |> caseN) */
-   def Match(cases: CASE*) = MATCH(this, cases.toList) 
+   def Match(cases: CASE*) = MATCH(this, cases.toList)
 }
 /** identifiers
  * the empty identifier ID("") is reserved: it refers to the current declaration, which is useful in recursive ADT and FUNCTION definitions
@@ -263,7 +263,7 @@ object EXP {
    }
    def checkType(tp: EXP)(implicit context: Context) {tp match {
       case INTS =>
-      case BOOLS => 
+      case BOOLS =>
       case STRINGS =>
       case LIST(a) => checkType(a)
       case PROD(as) => as foreach checkType
@@ -282,7 +282,7 @@ object EXP {
       //all other cases
       infer(e) match {
          case BuiltinType(t) => if (t != tp) throw SyntaxError("ill-typed, found: " + t + ", expected: " + tp)
-         case _ => throw SyntaxError("not a typable term " + e) 
+         case _ => throw SyntaxError("not a typable term " + e)
       }
    }
 }
@@ -297,7 +297,7 @@ object EXPConversions {
    implicit def listToLIST(l: List[EXP]) : EXP = ALIST(l)
    /** pairs: as in Scala */
    implicit def tupleToTuple2(t: (EXP,EXP)) : EXP = TUPLE(List(t._1,t._2))
-   
+
    /** constructors in an ADT as "cons" of (args) */
    implicit def stringToCONSHEAD(n: String) : CONSHEAD = CONSHEAD(n)
    /** declarations as "name" keyword decl */

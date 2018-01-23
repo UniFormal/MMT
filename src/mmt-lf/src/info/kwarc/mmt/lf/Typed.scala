@@ -60,6 +60,13 @@ object UnivTerm extends InferenceRule(Typed.ktype, OfType.path) {
    }
 }
 
+object TypeInhabitable extends InhabitableRule(Typed.ktype) {
+   def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Boolean = term match {
+      case OMS(Typed.ktype) => true
+      case _ => false
+   }
+}
+
 object KindInhabitable extends InhabitableRule(Typed.kind) {
    def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Boolean = term match {
       case OMS(Typed.kind) => true
@@ -68,7 +75,7 @@ object KindInhabitable extends InhabitableRule(Typed.kind) {
 }
 
 /** the type inference rule |- A : X, |- B : Y, |- X = Y ---> |- (A = B) : kind for identity kinds
- * This rule goes beyond LF but it does not harm because it only adds kinds and thus do not affect types and terms   
+ * This rule goes beyond LF but it does not harm because it only adds kinds and thus do not affect types and terms
  */
 object EqualityTerm extends InferenceRule(LFEquality.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {

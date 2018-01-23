@@ -15,7 +15,7 @@ class Style(val parent : DPath, name : LocalName, val from : Path, val to : Path
    private val notations = new scala.collection.mutable.HashMap[NotationKey,StyleNotation]
    def path = parent ? name
    /**
-    * adds a notation element 
+    * adds a notation element
     */
    def add(n : StyleNotation) {notations(n.key) = n}
    def get(key : NotationKey) : Option[StyleNotation] = {notations.get(key)}

@@ -14,13 +14,13 @@ import presentation._
  * builds a graph from relational and then calls dot to produce an svg file
  */
 abstract class RelationGraphExporter extends StructurePresenter {
-  
+
   override def outExt = "svg"
   /** a short descriptive name to be used in labels, menus, etc. */
   def description: String
-  
+
   override def toString = super.toString + s" (path to dot: $graphviz)"
-  
+
   /** path to graphviz (dot) binary */
   private var graphviz: Option[String] = None
   private def getGraphviz = graphviz orElse controller.getEnvVar("GraphViz") getOrElse("dot")
@@ -33,13 +33,13 @@ abstract class RelationGraphExporter extends StructurePresenter {
       graphviz = Some(gv)
   }
 
-  /** 
+  /**
    * build the abstract graph to be visualized
    * @param startPoints the elements around which the graph should be built
    */
   def buildGraph(se: StructuralElement): DotGraph
   // controller.depstore.querySet(container, Transitive(+Declares) * HasType(???))
-  
+
   /** contains at least all elements of the document */
   def apply(se: StructuralElement, standalone: Boolean = false)(implicit rh: RenderingHandler) {
     val dg = buildGraph(se)
@@ -110,7 +110,7 @@ class DependencyGraphExporter extends SimpleRelationGraphExporter("depgraph", "d
 class TheoryGraphExporter extends RelationGraphExporter {
   val key = "thygraph"
   val description = "theory graph"
-  
+
   private lazy val tg: ontology.TheoryGraph = new ontology.TheoryGraph(controller.depstore)
 
   def buildGraph(se: StructuralElement) : DotGraph = {

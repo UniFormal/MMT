@@ -35,12 +35,12 @@ abstract class AtomicCodec[Rep,Code](id: GlobalName, tp: Term, semType: RSemanti
  */
 abstract class CodecOperator[Code](val id: GlobalName, val tp: GlobalName) {
 
-   /** positions in the argument list (starting from 1) in OMA(list, ...) that are type arguments */ 
+   /** positions in the argument list (starting from 1) in OMA(list, ...) that are type arguments */
    val typeParameterPositions : List[Int]
-   
+
    /**
     * @param cs one codec for each type parameter; pre: cs.length == this.typeParameterPositions.length
-    * @return a codec for OMA(OMS(tp), cs.map(_.tp)) 
+    * @return a codec for OMA(OMS(tp), cs.map(_.tp))
     */
    def apply(cs: Codec[Code]*) : Codec[Code]
 }
@@ -49,7 +49,7 @@ abstract class CodecOperator[Code](val id: GlobalName, val tp: GlobalName) {
 abstract class Embedding[From,To] {
    def embed(f: From): To
    def extract(t: To): Option[From]
-   
+
    def apply(c: Codec[From]): Codec[To] = new Codec[To](c.exp, c.tp) {
       def encode(t: Term) = embed(c.encode(t))
       def decode(rT: To) = extract(rT) match {

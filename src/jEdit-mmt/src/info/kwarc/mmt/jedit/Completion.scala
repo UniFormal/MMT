@@ -20,7 +20,7 @@ import scala.collection.JavaConversions.seqAsJavaList
 /**
  * @param view the current jEdit view
  * @param controller the current MMT controller
- * @param constants the MMT constants that are applicable here 
+ * @param constants the MMT constants that are applicable here
  * @param text the partial identifier that is completed
  * @param items the list of completion labels that is displayed
  */

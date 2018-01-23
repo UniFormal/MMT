@@ -26,6 +26,4 @@ language: scala
 git:
   depth: 1
 
-
-
 # everything below this line is automatically generated using the configuration in src/travis.sbt

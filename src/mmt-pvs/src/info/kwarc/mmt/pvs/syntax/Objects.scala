@@ -42,9 +42,9 @@ case class field_decl(named: NamedDecl, _type: Type)
 
 /**
  * A domain is a type, possibly binding a variable
- *  
+ *
  * Its two cases unify the simple and dependent cases of product and function types
- *  
+ *
  * The only way to create dependent types is via predicate subtypes (including declared ones).
  */
 sealed trait domain

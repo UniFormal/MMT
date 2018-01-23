@@ -19,8 +19,8 @@ object MoCinOWL {
     val controllerOld = new Controller
     val controllerCurr = new Controller
 
-    controllerOld.execFileAction(new java.io.File("startup.mmt"), None)
-    controllerCurr.execFileAction(new java.io.File("startupCurrent.mmt"), None)
+    controllerOld.runMSLFile(new java.io.File("startup.mmt"), None)
+    controllerCurr.runMSLFile(new java.io.File("startupCurrent.mmt"), None)
 
     //http://docs.omdoc.org/older.omdoc
     if (args.length < 1) {

@@ -19,12 +19,12 @@ case class BacktrackableExtractError(token: Int, msg: String) extends Exception(
 
 /**
  * This class uses Scala reflection to parse XML into user-defined case classes.
- * 
+ *
  * The effect is that the classes encode the XML grammar, and the parser picks the corresponding class for each XML tag.
- * This is kind of the opposite of generating a parser, where the grammar is fixed and the classes are generated.  
- * 
+ * This is kind of the opposite of generating a parser, where the grammar is fixed and the classes are generated.
+ *
  * @param pkg the full name of the package in which the case classes are declared
- * 
+ *
  * An XML node is parsed into a case class instance as follows
  *  * the case class whose name is the tag name is used except that
  *    * XML - is treated as Scala _
@@ -46,7 +46,7 @@ class XMLToScala(pkg: String) {
    private val m = runtimeMirror(getClass.getClassLoader)
 
    // definitions for giving names to reflected Scala types
-   
+
    /** It's non-trivial to construct Type programmatically. So we take them by reflecting Dummy */
    private case class Dummy(a: Int, b: Boolean, c: List[Int], d: Option[Int], e: Group, f: String, g:BigInt, h: scala.xml.Node)
    /** the argument types of Dummy */
@@ -74,9 +74,9 @@ class XMLToScala(pkg: String) {
    private object OptionType extends TypeRefMatcher(dummyTypes(3).asInstanceOf[TypeRef].sym)
    /** the Type of Group */
    private val GroupType = dummyTypes(4)
-   
+
    // functions for mapping between XML and Scala names
-   
+
    private val scalaReserved = List("var", "val", "def", "type", "class", "object")
    private val scalaEscapePrefix = "XML"
    /** convert Scala id names to xml tag/key names */
@@ -89,16 +89,16 @@ class XMLToScala(pkg: String) {
      val s2 = s.replace("-", "_")
      if (scalaReserved contains s2) scalaEscapePrefix + s2 else s2
    }
-   
+
    /** (non-recursively) remove comments and whitespace-only text nodes */
    private def cleanNodes(nodes: List[Node]) = nodes.filter {
       case _:Comment => false
       case Text(s) if s.trim == "" => false
       case _ => true
    }
-   
+
    // main functions
-   
+
    /** read and parse a file */
    def apply(file: File) : Any = apply(xml.readFile(file))
    /** parse a Node */
@@ -111,9 +111,9 @@ class XMLToScala(pkg: String) {
       val foundType = m.classSymbol(c).toType
       apply(node, foundType)
    }
-   
+
    // abstraction from Scala reflection
-   
+
    /** represents an argument of a reflected method
     *  @param scalaName Scala name of the argument
     *  @param xmlKey corresponding xml name, possibly with leading/trailing underscores
@@ -121,7 +121,7 @@ class XMLToScala(pkg: String) {
     */
    private case class Argument(scalaName: String, xmlKey: String, scalaType: Type)
 
-   /** 
+   /**
     *  abstracts away Scala's reflection boilerplate
     *  @param tp the case class to instantiate
     *  @param obtain computes the argument value for each argument declaration of that case class
@@ -146,7 +146,7 @@ class XMLToScala(pkg: String) {
          Argument(n, init+xmlName(n2)+term, arg.asTerm.info)
       }
       val values = arguments map obtain
-      // evaluate moduleSymbol (to a singleton class) and get its runtime instance 
+      // evaluate moduleSymbol (to a singleton class) and get its runtime instance
       val module = m.reflectModule(moduleSymbol).instance
       // evaluate the apply method of the instance
       val applyMethod = m.reflect(module).reflectMethod(applyMethodSymbol)
@@ -169,11 +169,11 @@ class XMLToScala(pkg: String) {
    }
 
    // the method doing the actual work
-   
-   /** a value that distinguishes different invocations of apply, used for backtracking */ 
+
+   /** a value that distinguishes different invocations of apply, used for backtracking */
    private var token = -1
    private def newToken = {token += 1; token}
-   
+
    /** parse a Node of expected Type expType */
    private def apply(node: Node, expType: Type, backtrackingToken: Int = -1): Any = {
       //println(node.toString+"\n - "+node.child.map(x => x.isInstanceOf[SpecialNode].toString+":"+x.toString).mkString("\n - "))
@@ -211,7 +211,7 @@ class XMLToScala(pkg: String) {
            throw e
         }
       }
-      
+
       /** finds the string V by looking at (i) key="V" (ii) <key>V</key> (iii) "" */
       def getAttributeOrChild(key: String): String = {
          // special case: _key yields the body of the node, which must be text
@@ -249,7 +249,7 @@ class XMLToScala(pkg: String) {
          else
             Some(cleanNodes(child.child.toList))
       }
-      
+
       /**
        * gets either the next child or the next group of children
        * if a group fails, the state is restored
@@ -265,7 +265,7 @@ class XMLToScala(pkg: String) {
           v
         }
       }
-      
+
       /** compute argument values one by one depending on the needed type */
       def getArgumentValue(arg: Argument): Any = arg match {
          // base type: use getAttributeOrChild
@@ -303,7 +303,7 @@ class XMLToScala(pkg: String) {
                   var vs: List[Any] = Nil
                   // take as many children as type-check
                   While (children.nonEmpty) {
-                	  try {
+                     try {
                       vs ::= getSingleOrGroupChild(elemType, token)
                     } catch {case e: BacktrackableExtractError if e.token == token =>
                       While.break

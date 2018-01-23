@@ -27,10 +27,10 @@ case class ComplexJudgement(parameters: Context, hypotheses: List[AtomicJudgemen
  */
 case class DeclarativeRule(parameters: Context, assumptions: List[ComplexJudgement], conclusion: AtomicJudgement)
 
-/** 
+/**
  *  defines pattern matchers on terms for [[InferenceRule]]s
  *  @param lup needed to lookup the roles of constants
- *  @param roles the roles that form atomic judgements 
+ *  @param roles the roles that form atomic judgements
  *  @param dedTag role of truth judgements
  */
 class RuleMatcher(lup: Lookup, roles: List[String], dedTag: String) {
@@ -47,7 +47,7 @@ class RuleMatcher(lup: Lookup, roles: List[String], dedTag: String) {
    object Atomic {
       def unapply(t: Term): Option[AtomicJudgement] = {
          val t2 = t match {
-            case Apply(OMS(ded), a) if checkRole(ded, List(dedTag)).isDefined => a 
+            case Apply(OMS(ded), a) if checkRole(ded, List(dedTag)).isDefined => a
             case _ => t
          }
          t2 match {
@@ -57,11 +57,11 @@ class RuleMatcher(lup: Lookup, roles: List[String], dedTag: String) {
          }
       }
    }
-   
+
    /** matches a ComplexJudgement */
    object Complex {
       def unapply(t: Term): Option[ComplexJudgement] = t match {
-         case FunType(args, Atomic(thesis)) => 
+         case FunType(args, Atomic(thesis)) =>
             val params = args.takeWhile(_._1.isDefined)
             val hyps = args.drop(params.length).map {
                case (None, Atomic(a)) => a
@@ -71,11 +71,11 @@ class RuleMatcher(lup: Lookup, roles: List[String], dedTag: String) {
          case _ => None
       }
    }
-   
+
    /** matches an InferenceRule */
    object Rule {
       def unapply(t: Term): Option[DeclarativeRule] = t match {
-         case FunType(args, Atomic(conc)) => 
+         case FunType(args, Atomic(conc)) =>
             val params = args.takeWhile(_._1.isDefined)
             val assumps = args.drop(params.length).map {
                case (None, Complex(c)) => c

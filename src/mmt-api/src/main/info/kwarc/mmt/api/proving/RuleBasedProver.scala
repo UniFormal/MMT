@@ -5,8 +5,8 @@ import checking._
 import objects._
 import frontend._
 
-/** 
-  * a simple prover 
+/**
+  * a simple prover
   */
 class RuleBasedProver extends Prover {
    def apply(pu: ProvingUnit, rules: RuleSet, levels: Int) = {
@@ -16,7 +16,7 @@ class RuleBasedProver extends Prover {
       val proof = if (found) Some(gl.proof) else None
       (found, proof)
    }
-   
+
    def interactive(pu: ProvingUnit, rules: RuleSet, levels: Int): List[Term] = {
       val gl = new Goal(pu.context, pu.tp)
       val searcher = new Searcher(controller, gl, rules, pu)

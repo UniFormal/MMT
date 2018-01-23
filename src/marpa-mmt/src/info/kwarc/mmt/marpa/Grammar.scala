@@ -98,15 +98,15 @@ object Grammar {
 
     val content: List[String] = markers.map(
       x ⇒ x match {
-        //	          NOTE: #seq_ is used to indicate whether the Delim is 
-        //	          inside a sequence argument, since if it is in one
-        //	          the text inside the Delim should never be empty
-        //	          to avoid infinite left recursion
+        //             NOTE: #seq_ is used to indicate whether the Delim is
+        //             inside a sequence argument, since if it is in one
+        //             the text inside the Delim should never be empty
+        //             to avoid infinite left recursion
         case Delim(text) ⇒ addRule(Delim("#seq_" + text))
         case _           ⇒ addRule(x)
       })
 
-    if (!(content.length == 1 && content(0).startsWith("argRule")) // do not include rules that only have one argRule (creates cycles)	   
+    if (!(content.length == 1 && content(0).startsWith("argRule")) // do not include rules that only have one argRule (creates cycles)
     ) {
       rules = rules | Set((Rule(uniqueName, "topLevel" :: content))) //uniqueness of top level notations is assumed
     } else {
@@ -114,7 +114,7 @@ object Grammar {
     }
     if (!isOmitted(uniqueName)) {
       eventList ::= "event '" + uniqueName + "' = completed " + uniqueName
-    } 
+    }
   }
 
   //returns the name of the rule, adds the rule to the Set[Rule] only if it is not already there
@@ -240,7 +240,7 @@ object Grammar {
         text = " "
       }
 
-      if (text == "⁢" //unicode 
+      if (text == "⁢" //unicode
         && flag == "") { //handling the invisible unicode char used for function application
         val v1 = createRule("empty" :: Nil)
         val v2 = createRule("mnB" :: text.toString :: "mnE" :: Nil)
@@ -394,9 +394,9 @@ object Grammar {
       }
 
       result
-    //	   case Subs(nr,precOp) =>  addRule(Arg(nr,precOp))
-    //		   case SqrtMarker(ml) => 
-    //		      createRule("msqrtB"::ml.map(addRule):::"msqrtE"::Nil)
+    //      case Subs(nr,precOp) =>  addRule(Arg(nr,precOp))
+    //         case SqrtMarker(ml) =>
+    //            createRule("msqrtB"::ml.map(addRule):::"msqrtE"::Nil)
     case _ ⇒
       println("ERROR: TODO Marker: " + marker.toString)
       "'TODO'"
@@ -485,7 +485,7 @@ object Grammar {
     }
   }
 
-  //creates the grammar as a List[String] by adding a manually written prefix that gives the Grammar 
+  //creates the grammar as a List[String] by adding a manually written prefix that gives the Grammar
   //an overall shape and also includes presentation MathML parsing
   //the actual grammar is assembled in Perl by inserting '\n' in between the elements of the List.
   def getMarpaGrammar: List[String] = {
@@ -626,7 +626,7 @@ object Grammar {
 
     val result = grammarCore ::: Notation ::: extractedRules //::: eventList
     println(omittedRulesCounter + " rules were omitted (would create cycles/other reasons)")
-    cleanup()    
+    cleanup()
     result
   }
 

@@ -17,7 +17,8 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
   /** the severity of the error, override as needed */
   def level: Level = Level.Error
 
-  private var causedBy: Option[Throwable] = None
+  // this field is transient as some throwables are not actually serialisable
+  @transient private var causedBy: Option[Throwable] = None
 
   /** get the error due to which this error was thrown */
   def setCausedBy(e: Throwable): this.type = {

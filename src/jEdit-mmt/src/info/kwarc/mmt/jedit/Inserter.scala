@@ -11,7 +11,7 @@ object Inserter {
      val c = if (MMTOptions.lowAsciiDelims.get.getOrElse(false)) chars.last else chars.head
      c.toChar.toString
    }
-  
+
    private def insert(ta: TextArea, ifmmt: String, ifother: String) {
       val insert = if (ta.getBuffer.getMode.getName == "mmt") ifmmt else ifother
       ta.replaceSelection(insert)

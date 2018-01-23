@@ -21,7 +21,7 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
   override val logPrefix = "jgraph"
   private case class CatchError(s : String) extends Throwable
 
-  override def start(args: List[String]): Unit = {
+  override def start(args: List[String]) {
     controller.extman.addExtension(new JGraphSideBar)
     controller.extman.addExtension(new JDocgraph)
     controller.extman.addExtension(new JThgraph)
@@ -140,7 +140,7 @@ class JGraphSideBar extends Extension {
 
   private def archs = controller.backend.getArchives.sortBy(_.id).map(doArchive)
 
-  override def start(args: List[String]): Unit = {
+  override def start(args: List[String]) {
     super.start(args)
     // lazy private val top = archs.map(doArchive).sortBy(_._1).distinct.map(p => (p._1,p._2.toJSON))
   }
@@ -334,7 +334,7 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
           theories
       }
       var (theories, views): (List[DeclaredTheory], List[View]) = (Nil, Nil)
-      def recurse(ith : DeclaredTheory) : Unit = {
+      def recurse(ith : DeclaredTheory) {
         log("Select: " + s)
         theories ::= ith
         val ins = ith.getIncludesWithoutMeta ::: ith.getNamedStructures.collect{
@@ -383,7 +383,7 @@ abstract class JGraphSelector {
 }
 
 abstract class JGraphBuilder {
-  def log(s : String) : Unit = {}
+  def log(s : String) {}
   def build(theories : List[DeclaredTheory], views : List[View])(implicit controller : Controller) : JSON
 }
 abstract class StandardBuilder extends JGraphBuilder {

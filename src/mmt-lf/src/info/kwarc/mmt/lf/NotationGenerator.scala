@@ -8,22 +8,22 @@ import notations._
 
 /**
  * A ChangeListerner that adds notations for constants that are inference rules and do not provide notations.
- * 
+ *
  * A constant is an inference rule if it takes some parameters (of non-judgment types) and some hypotheses (of judgment type)
  * and return a judgment types.
- * 
+ *
  * For parsing, it makes the parameters implicit.
- * 
- * For presentation, it renders a proof tree with the hypotheses above, the infered type below, and 
+ *
+ * For presentation, it renders a proof tree with the hypotheses above, the infered type below, and
  * the symbol name and the parameters to the left of the horizontal line.
- */ 
+ */
 class NotationGenerator extends ChangeListener {
    override val logPrefix = "notation-gen"
    /**
     * Determines whether a type is a judgment type
     * @param tp the argument type of a constant
     * @return true if tp is atomic and formed from a symbol with role "Judgment" or a function type returning such a judgment type
-    * 
+    *
     * Other extensions may want to override this to consider more types as judgment types
     * (e.g., Sigma types formed from judgment types).
     */

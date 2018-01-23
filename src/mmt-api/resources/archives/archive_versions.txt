@@ -1,0 +1,12 @@
+## This file contains versions of archives used with MMT
+## The syntax is simply:
+# <archive> <version>
+## on each line. Empty lines, and lines starting with '#' are ignored.
+
+# The MMT group
+MMT/urtheories  2dfd28b7ad17f129a8b377975ef508d0bde69eb2
+MMT/examples    43946da0909a5fd01d54d1838133e0fd0afe4377
+MMT/LFX         b909367802cd21ac267288fc2667f076c6a9524e
+
+# The testing group
+Test/General    fb07b504f6e0a9f7a58c353983953f0932166a00

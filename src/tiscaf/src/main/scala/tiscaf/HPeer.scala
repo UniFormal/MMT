@@ -1,16 +1,16 @@
 /*******************************************************************************
  * This file is part of tiscaf.
- * 
+ *
  * tiscaf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Foobar is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
@@ -22,7 +22,7 @@ import javax.net.ssl._
 
 import scala.concurrent.ExecutionContext
 
-private trait HPeer {
+private trait HPeer extends HLoggable {
 
   protected[this] val plexerBarrier = new java.util.concurrent.CyclicBarrier(1)
 
@@ -33,12 +33,10 @@ private trait HPeer {
 
   def bufferSize: Int
 
-  def onError(e: Throwable): Unit
-
   val acceptor: HAcceptor
-  def submit(toRun: Runnable): Unit
+  def submit(toRun: =>Unit): Unit
 
-  implicit def executionContext: ExecutionContext
+  implicit def talksExe: ExecutionContext
 
   //-------------------------------------------------------------------
 
@@ -68,6 +66,7 @@ private trait HPeer {
     @scala.annotation.tailrec
     def nextSelect: Boolean = if (buf.hasRemaining) {
       if (theKey.attachment.asInstanceOf[Long] + plexer.timeoutMillis < System.currentTimeMillis) {
+        warning("Connection timeout")
         tmpSelector.close
         false
       } else {
@@ -108,20 +107,20 @@ private trait HSimplePeer extends HPeer {
     theBuf.clear
     val wasRead = channel.read(theBuf)
     if (wasRead == -1) dispose // counterpart peer wants to write but writes nothing
-    else {
-      def toRun = new Runnable {
-        def run: Unit = {
-          acceptor.accept(theBuf.array.take(wasRead))
-          acceptor.in.reqState match {
-            case HReqState.IsReady   => acceptor.resolveAppLet; doTalkItself
-            case HReqState.IsInvalid => dispose
-            case _ /* WaitsForXxx */ => connRead
-          }
+    else
+      submit {
+        acceptor.accept(theBuf.array.take(wasRead))
+        acceptor.in.reqState match {
+          case HReqState.IsReady   => acceptor.resolveAppLet; doTalkItself
+          case HReqState.IsInvalid => dispose
+          case _ /* WaitsForXxx */ => connRead
         }
       }
-      submit(toRun)
-    }
-  } catch { case e: Exception => dispose; onError(e) }
+  } catch {
+    case e: Exception =>
+      error("A problem occurred while reading request data", e)
+      dispose
+  }
 
   // ByteBuffer.wrap(ar, offset, length) is slower in my tests rather direct array putting
   final def writeToChannel(ar: Array[Byte], offset: Int, length: Int) = {
@@ -173,7 +172,7 @@ private trait HSslPeer extends HPeer {
       case SSLEngineResult.Status.CLOSED =>
         netBuffer.flip
         channel.write(netBuffer)
-      case st => throw new RuntimeException("Invalid closing state: " + st)
+      case st => sys.error("Invalid closing state: " + st)
     }
     connClose
   }
@@ -195,38 +194,37 @@ private trait HSslPeer extends HPeer {
     val wasRead = channel.read(netBuffer)
     if (wasRead == -1) dispose // counterpart peer wants to write but writes nothing
     else {
-      def toRun = new Runnable {
-        def run: Unit = {
-
-          netBuffer.flip
-          var read = 0
-          var continue = true
-          while (continue && netBuffer.hasRemaining) {
-            val res = engine.unwrap(netBuffer, appBuffer)
-            read += res.bytesProduced
-            import SSLEngineResult.Status
-            if (res.getStatus == Status.BUFFER_UNDERFLOW) {
-              netBuffer.position(netBuffer.limit)
-              netBuffer.limit(netBuffer.capacity)
-              channel.read(netBuffer)
-              netBuffer.flip
-            } else if (res.getStatus == Status.CLOSED) {
-              continue = false
-            }
+      submit {
+        netBuffer.flip
+        var read = 0
+        var continue = true
+        while (continue && netBuffer.hasRemaining) {
+          val res = engine.unwrap(netBuffer, appBuffer)
+          read += res.bytesProduced
+          import SSLEngineResult.Status
+          if (res.getStatus == Status.BUFFER_UNDERFLOW) {
+            netBuffer.position(netBuffer.limit)
+            netBuffer.limit(netBuffer.capacity)
+            channel.read(netBuffer)
+            netBuffer.flip
+          } else if (res.getStatus == Status.CLOSED) {
+            continue = false
           }
+        }
 
-          acceptor.accept(appBuffer.array.take(read))
-          acceptor.in.reqState match {
-            case HReqState.IsReady   => acceptor.resolveAppLet; doTalkItself
-            case HReqState.IsInvalid => dispose
-            case _ /* WaitsForXxx */ => connRead
-          }
-
+        acceptor.accept(appBuffer.array.take(read))
+        acceptor.in.reqState match {
+          case HReqState.IsReady   => acceptor.resolveAppLet; doTalkItself
+          case HReqState.IsInvalid => dispose
+          case _ /* WaitsForXxx */ => connRead
         }
       }
-      submit(toRun)
     }
-  } catch { case e: Exception => dispose; onError(e) }
+  } catch {
+    case e: Exception =>
+      error("A problem occurred while readin ssl request data", e)
+      dispose
+  }
 
   // ByteBuffer.wrap(ar, offset, length) is slower in my tests rather direct array putting
   final def writeToChannel(ar: Array[Byte], offset: Int, length: Int) = {

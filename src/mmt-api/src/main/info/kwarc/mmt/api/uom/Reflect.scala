@@ -12,14 +12,14 @@ class Reflect {
    }
    private val tb = tbf.mkToolBox()
    import tb._
-   
+
    def parseTerm(s: String): Term = {
       val p = parse(s)
       val check = typecheck(p, pt = tb.u.typeOf[Term])
       val t = eval(p).asInstanceOf[Term]
       t
    }
- 
+
    /** an example for using context bounds and reflection */
    //def make[A: TypeTag](a: Any): A = process(a, implicitly[TypeTag[A]].tpe).asInstanceOf[A]
 }*/

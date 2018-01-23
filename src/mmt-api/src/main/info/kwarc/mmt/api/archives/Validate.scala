@@ -8,7 +8,7 @@ import utils._
 
 import scala.collection._
 
-class ValidationTask extends MMTTask 
+class ValidationTask extends MMTTask
 
 /** This trait adds validation operations to Archive's */
 trait Validate {self: Archive =>
@@ -38,7 +38,7 @@ trait Validate {self: Archive =>
   def validate(in: FilePath = EmptyPath, controller: Controller) {
     traverse(content, in, Archive.traverseIf("omdoc")) { case Current(_, inPath) =>
       val mpath = Archive.ContentPathToMMTPath(inPath)
-      controller.checkAction(mpath, "mmt")(new ValidationTask)
+      controller.checkPath(mpath, "mmt")(new ValidationTask)
     }
   }
 }

@@ -16,25 +16,25 @@ object Theory {
    def noMeta: Option[MPath] = None
    def noBase = new TermContainer
    def noParams = new ContextContainer
-   
+
    def empty(doc: DPath, n: LocalName, mt: Option[MPath]) = new DeclaredTheory(doc, n, mt, noParams, noBase)
 }
 
 /**
  * A Theory represents an MMT theory.
- * 
+ *
  * Theories are constructed empty. Body is derived to hold a set of named symbols.
- * 
+ *
  * @param doc the URI of the parent document
  * @param name the name of the theory
  * @param mt the optional meta-theory
  * @param paramC the interface/parameters/arguments of this theory
  * @param dfC the definiens/base theory of this theory
  */
-class DeclaredTheory(doc : DPath, name : LocalName, private var mt : Option[MPath], val paramC: ContextContainer, val dfC: TermContainer)
+class DeclaredTheory(doc: DPath, name: LocalName, private var mt: Option[MPath], val paramC: ContextContainer, val dfC: TermContainer)
       extends Theory(doc, name) with DeclaredModule {
    /** the container of the meta-theory */
-   def metaC = TermContainer(mt.map(OMMOD(_)))
+   val metaC = TermContainer(mt.map(OMMOD(_)))
    /** the meta-theory */
    def meta = metaC.get map {case OMMOD(mt) => mt}
    /** the parameters */
@@ -42,20 +42,13 @@ class DeclaredTheory(doc : DPath, name : LocalName, private var mt : Option[MPat
    /** the base theory */
    def df = dfC.get
 
-   @deprecated("awkward hack", "")
-   def addMeta(mp : MPath) = mt match {
-    case Some(mti) if mti != mp =>
-      throw GeneralError("Theory " + path + " already has meta theory " + mti)
-    case _ => mt = Some(mp)
-  }
-
    def getComponents = {
      val mtComp = if (metaC.isDefined) List(DeclarationComponent(TypeComponent, metaC)) else Nil
      val dfComp = if (dfC.isDefined) List(DeclarationComponent(DefComponent, dfC)) else Nil
      val prComp = if (paramC.isDefined) List(DeclarationComponent(ParamsComponent, paramC)) else Nil
      mtComp ::: dfComp ::: prComp
    }
-   
+
    /** the context governing the body: meta-theory, parameters, and this theory */
    def getInnerContext = {
       val self = IncludeVarDecl(path, parameters.id.map(_.target))
@@ -67,20 +60,20 @@ class DeclaredTheory(doc : DPath, name : LocalName, private var mt : Option[MPat
       case _ => Nil
    }
    /** convenience method to obtain all included theories (including a possible meta-theory) */
-   def getIncludes:List[MPath] = meta.toList ::: getIncludesWithoutMeta 
+   def getIncludes:List[MPath] = meta.toList ::: getIncludesWithoutMeta
    /** convenience method to obtain all included theories (without a possible meta-theory) */
    def getIncludesWithoutMeta:List[MPath] = {
     getDeclarations.flatMap {
         case PlainInclude(from, _) => List(from)
         case _ => Nil
      }
-   }   
+   }
    /** convenience method to obtain all named structures */
    def getNamedStructures:List[Structure] = getDeclarations.flatMap {
       case s: Structure if ! s.isInclude => List(s)
       case _ => Nil
    }
-   
+
    /** convenience method to obtain all derived declarations for a given feature */
    def getDerivedDeclarations(f: String) = getDeclarations.collect {
      case dd: DerivedDeclaration if dd.feature == f => dd
@@ -94,7 +87,7 @@ class DeclaredTheory(doc : DPath, name : LocalName, private var mt : Option[MPat
         {if (df.isEmpty) Nil else <definition>{df.get.toNode}</definition>}
         {innerNodes}
       </theory>
-   def toNodeElab = 
+   def toNodeElab =
     <theory name={name.last.toPath} base={doc.toPath}>
         {getMetaDataNode}
         {if (parameters.isEmpty) Nil else <parameters>{parameters.toNode}</parameters>}
@@ -127,7 +120,7 @@ class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) exte
    def getComponents = List(DefComponent(dfC))
    def df = dfC.get.getOrElse(TheoryExp.empty)
    override def toString = path + innerString
-   def toNode = 
+   def toNode =
     <theory name={name.last.toPath} base={doc.toPath}>
         {innerNodes}
     </theory>

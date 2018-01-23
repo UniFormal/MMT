@@ -8,12 +8,14 @@ import modules._
 import symbols._
 import patterns._
 import objects._
+import notations._
 
 import utils.MyList.fromList
 import Theory._
 
 import collection.immutable.{HashMap, HashSet}
 import scala.util.{Success, Try}
+import info.kwarc.mmt.api.libraries.AlreadyDefined
 
 /** used by [[MMTStructureSimplifier]] */
 case class ByStructureSimplifier(home: Term, view: Term) extends Origin
@@ -61,7 +63,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
        case OMMOD(p) =>
          val mod = controller.globalLookup.getAs(classOf[DeclaredModule], p)
          flattenDeclaration(mod, d, None)
-       case _ => // TODO materialize 
+       case _ => // TODO materialize
      }
      case _ =>
     }
@@ -109,7 +111,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      }
   }
 
-  /** elaborates the definition into a context and adds the corresponding declarations */ 
+  /** elaborates the definition into a context and adds the corresponding declarations */
   private def flattenDefinition(mod: DeclaredModule, rulesOpt: Option[RuleSet] = None) {
     lazy val rules = rulesOpt.getOrElse {
       RuleSet.collectRules(controller, mod.getInnerContext)
@@ -117,41 +119,59 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     mod match {
       case v: DeclaredView => return //TODO
       case thy: DeclaredTheory =>
-        val at = thy.getDeclarations.headOption.map(d => After(d.name)).getOrElse(AtEnd)
+        val at = new RepeatedAdd(AtBegin)
+        def add(d: Declaration) {
+          d.setOrigin(ElaborationOfDefinition)
+          controller.add(d, at.getNextFor(d))
+          log("flattening yields " + d.path)
+        }
         var previous: Option[LocalName] = None
         thy.df.foreach {df =>
           //TODO mod.getInnerContext is too small for nested theories
-          objectLevel(df, mod.getInnerContext, rules) match {
+          val dfS = objectLevel(df, mod.getInnerContext, rules)
+          thy.dfC.normalized = Some(dfS)
+          dfS match {
             case ComplexTheory(cont) =>
               cont.asDeclarations(mod.toTerm).foreach {d =>
-                d.setOrigin(ElaborationOfDefinition)
-                controller.add(d, at)// mod.add(d,None) //TODO add at beginning
+                add(d)
               }
             case AnonymousTheory(mt,omls) =>
-              if (mt.isDefined) thy.addMeta(mt.get)
+              if (mt.isDefined) {
+                val mtTerm = OMMOD(mt.get)
+                // awkward: library must be explicitly notified about update of meta-theory because changes to meta-theory cannot go through controller.add
+                thy.metaC.analyzed = Some(mtTerm)
+                controller.memory.content.addImplicit(mtTerm, thy.toTerm, OMIDENT(mtTerm))
+              }
               var translations = Substitution() // replace all OML's with corresponding OMS's
-              // TODO this replaces too many OML's if OML-shadowing occurs 
+              // TODO this replaces too many OML's if OML-shadowing occurs
               def translate(tm: Term) = (new OMLReplacer(translations)).apply(tm, Context.empty)
               omls foreach {o =>
-                val d = o match {
-                  case IncludeOML(_, OMPMOD(mp, Nil), _) =>
-                    PlainInclude(mp,thy.path)
+                o match {
+                  case IncludeOML(mp, _) =>
+                    val d = PlainInclude(mp,thy.path)
+                    add(d)
                     // we assume all references to included symbols already use OMS, i.e., do not have to be translated
+                  case RealizeOML(mp, _) =>
+                    try {
+                      controller.memory.content.addImplicit(OMMOD(mp), thy.toTerm, OMStructuralInclude(mp,thy.path))
+                    } catch {case ad @ AlreadyDefined(f,t,o,n) =>
+                      logError("skipping realization because " + ad.toString)
+                    }
                   case o =>
                     val tpT = o.tp map translate
                     val dfT = o.df map translate
+                    val ntT = NotationContainer(o.nt)
                     translations ++= Sub(o.name, OMS(thy.path ? o.name))
-                    Constant(thy.toTerm, o.name, Nil, tpT, dfT, None)
+                    val c = Constant(thy.toTerm, o.name, Nil, tpT, dfT, None, ntT)
+                    add(c)
                 }
-                d.setOrigin(ElaborationOfDefinition)
-                controller.add(d, at)                
               }
-            case dfS => thy.dfC.set(dfS)
+            case _ =>
           }
         }
     }
   }
-  
+
   /** adds elaboration of d to parent */
   private def flattenDeclaration(mod: DeclaredModule, dOrig: Declaration, rulesOpt: Option[RuleSet] = None) {
     if (ElaboratedElement.is(dOrig))
@@ -173,8 +193,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           'n = OMM(n,TARGET)' for all constants n
           's = OMCOMP(s, TARGET)' for all structures s
          in the domain of FROM
-         
-         The treatment of derived declarations and nested modules in FROM has not been specified yet. 
+
+         The treatment of derived declarations and nested modules in FROM has not been specified yet.
       */
       case ds : DefinedStructure if parent.isInstanceOf[DeclaredView] =>
         ds.df match {
@@ -333,7 +353,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       case ElaborationOf(_) | ElaborationOfDefinition => return
       case _ =>
     }
-    
+
     val parent = c.parent match {
       case cp : ContentPath => controller.get(cp)
       case _ => return
@@ -426,7 +446,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         thy
     }
   }
-  
+
   //TODO move to library if it's not doing anything else
   def getBody(context: Context, moduleExp: Term): ElementContainer[NamedElement] = moduleExp match {
      case OMMOD(p) => lup.getTheory(p) match {
@@ -534,8 +554,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case x => //nothing to do
           }
         } catch {
-          case e : Error => println(e)//nothing to do
-          case e : Exception => println(e)//nothing to do
+          case e : Error => // println(e)//nothing to do
+          case e : Exception => // println(e)//nothing to do
         }
     }
     rules

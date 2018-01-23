@@ -86,7 +86,7 @@ object SemanticTree {
 
   case class RawString(value: String) extends ParseTree {
     override def toCML: List[String] = {
-      List(value) 
+      List(value)
     }
   }
 
@@ -139,7 +139,7 @@ object SemanticTree {
                   list.foreach((variant) ⇒ println("        Variant = " + variant.toString))
               }
           }
-        case _ => 
+        case _ =>
       }
       println("END OF INPUT PARSES")
       val CMLlist = inputParses.toCML.toSet.toList map java.net.URLDecoder.decode// Get unique parses
@@ -231,7 +231,7 @@ object SemanticTree {
                 println("Invalid argument type: " + argType)
               }
             }
-        } // substringList foreach  
+        } // substringList foreach
     } // arguments foreach
     val term = grammarGenerator.doNotationTerm(
       grammarGenerator.pairIndexNotation(ruleNr)._1._1,
@@ -318,7 +318,7 @@ object SemanticTree {
     // Remove useless toplevel mrow
     if (input.startsWith("%3Cmrow%3E") && input.endsWith("%3C%2Fmrow%3E")) {
       return sendGetNotationPosRequest(input.substring(10, input.length - 13))
-    } 
+    }
     // Memoization
     val vals = sendGetNotationPosRequestMemo
     if (vals.contains(input)) {
@@ -336,12 +336,12 @@ object SemanticTree {
   // List(For each argument, for each argument part, one of the possible parses)
   // List(List(List(1,2),List(3)), List(List(4,5))) =>
   // ListArg(ListPart(ListParse(1,2),ListParse(3)), ListPart(ListParse(4,5))) =>
-  /* ListPossibilities(   
+  /* ListPossibilities(
       ListArg( ListPart(1,3), ListPart(4) )
       ListArg( ListPart(1,3), ListPart(5) )
       ListArg( ListPart(2,3), ListPart(4) )
       ListArg( ListPart(2,3), ListPart(5) )
-     )   
+     )
   */
   /* ListPossibilities( Nil )
   */

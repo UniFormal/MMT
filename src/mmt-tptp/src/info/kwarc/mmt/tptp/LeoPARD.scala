@@ -17,7 +17,7 @@ import scala.util._
 
 class TPTPObjectParser extends ObjectParser {
   def isApplicable(s: String) = s == "tptp"
-  
+
   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = {
      val formula = TPTPParsers.fofFormula | TPTPParsers.tffFormula | TPTPParsers.thfFormula
      val form = TPTPParsers.parse(pu.term, formula) match {
@@ -31,7 +31,7 @@ class TPTPObjectParser extends ObjectParser {
      }
      ???
   }
-  
+
   def translateFOF(f: fof.Formula): objects.Term = {
     ???
   }
@@ -45,10 +45,10 @@ class TPTPObjectParser extends ObjectParser {
 
 class TPTPParser extends Parser(new TPTPObjectParser) {
   val format = "tptp"
-  
+
   def apply(ps: ParsingStream)(implicit cont: StructureParserContinuations) = {
     val decls= TPTP.parseFile(ps.fullString) match {
-      case Left(s) => throw LocalError(s) 
+      case Left(s) => throw LocalError(s)
       case Right(t) => t
     }
     val declsT = decls.inputs.map {
@@ -57,15 +57,15 @@ class TPTPParser extends Parser(new TPTPObjectParser) {
     }
     ???
   }
-  
+
   def translateDecl(d: AnnotatedFormula): Constant = {
     ???
   }
-  
+
   def translateIncl(d: Include): Declaration = {
     ???
   }
-  
+
 }
 
 

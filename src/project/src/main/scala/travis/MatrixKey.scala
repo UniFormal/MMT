@@ -43,5 +43,5 @@ case class Scala[YAMLString](version: String) extends MatrixKey("scala", YAMLStr
 /** internal matrix keys */
 sealed abstract class InternalMatrixKey[+T <: YAML](override val name: String, override val value: T) extends MatrixKey[T](name, value, false)
 private[travis] case class StageKey(stage : String) extends InternalMatrixKey[YAMLString]("stage", stage)
-private[travis] case class ScriptKey(script : String) extends InternalMatrixKey[YAMLString]("script", script)
+private[travis] case class ScriptKey(script : List[String]) extends InternalMatrixKey[YAMLSequence]("script", script.map(YAMLString.fromString))
 private[travis] case class DescriptionKey(info : String) extends InternalMatrixKey[YAMLSequence]("env", YAMLSequence.from(YAMLString.fromString("INFO='" + info + "'")))

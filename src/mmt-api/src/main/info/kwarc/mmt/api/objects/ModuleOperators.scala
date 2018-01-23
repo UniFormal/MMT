@@ -15,6 +15,7 @@ object Morph {
   def domain(m: Term)(implicit lib: Lookup): Option[Term] = m match {
     case OMIDENT(t) => Some(t)
     case OMCOMP(n :: _) => domain(n)
+    case OMStructuralInclude(f,_) => Some(OMMOD(f))
     case OMMOD(path) => try {
       lib.get(path) match {
         case l: Link => Some(l.from)
@@ -35,6 +36,7 @@ object Morph {
   def codomain(m: Term)(implicit lib: Lookup): Option[Term] = m match {
     case OMIDENT(t) => Some(t)
     case OMCOMP(l) if l.nonEmpty => codomain(l.last)
+    case OMStructuralInclude(_,t) => Some(OMMOD(t))
     case OMMOD(path) => try {
       lib.get(path) match {
         case l: Link => Some(l.to)
@@ -66,6 +68,7 @@ object Morph {
         else
           OMS(p)
       case OMIDENT(t) => OMCOMP()
+      case OMStructuralInclude(f,t) => m
       case OMINST(t,args) =>
         if (args.isEmpty) OMCOMP() else m
       case OMCOMP(head :: ms) if ms.exists(OMINST.unapply(_).isDefined) =>
@@ -124,7 +127,7 @@ object TheoryExp {
 
   /** computes the meta-theories of a theory (non-reflexive), nearest one first
     *
-    * @param all if true, stop after the first meta-theory, false by default
+    * @param all if false, stop after the first meta-theory, true by default
     */
   def metas(thy: Term, all: Boolean = true)(implicit lib: Lookup): List[MPath] = thy match {
     case OMMOD(p) => lib.getTheory(p) match {
@@ -134,10 +137,12 @@ object TheoryExp {
       }
       case t: DefinedTheory => metas(t.df)
     }
+    case AnonymousTheory(mt,_) => mt.toList
     case TUnion(ts) =>
       val ms = ts map { t => metas(t) }
       if (ms.nonEmpty && ms.forall(m => m == ms.head)) ms.head
       else Nil
+    case _ => Nil
   }
 
   /**
@@ -189,18 +194,23 @@ object TheoryExp {
 }
 
 object ModExp extends uom.TheoryScala {
-  val _base = DPath(utils.URI("http", "cds.omdoc.org") / "mmt")
+  val _base = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories")
   val _name = LocalName("ModExp")
 
+  val anonymoustheory = _path ? "anonymoustheory"
+  val anonymousmorphism = _path ? "anonymousmorphism"
   val theorytype = _path ? "theory"
   val morphtype = _path ? "morphism"
-  val complextheory = _path ? "complextheory"
-  val complexmorphism = _path ? "complexmorphism"
   val identity = _path ? "identity"
   val composition = _path ? "composition"
+  val structuralinclude = _path ? "structuralinclude"
   val morphismapplication = _path ? "morphismapplication"
   val instantiation = _path ? "theoryinstantiate"
 
+  @deprecated("use anonymous theories", "")
+  val complextheory = _path ? "complextheory"
+  @deprecated("use anonymous morphisms", "")
+  val complexmorphism = _path ? "complexmorphism"
   @deprecated("not needed but still used by Twelf", "")
   val tunion = _path ? "theory-union"
 }
@@ -243,49 +253,6 @@ object TUnion {
   def associate(t: Term): List[Term] = t match {
     case TUnion(ts) => ts flatMap associate
     case _ => List(t)
-  }
-}
-
-/** auxiliary class for storing lists of declarations statefully without giving it a global name */
-class AnonymousTheory(val mt: Option[MPath], var decls: List[OML]) extends MutableElementContainer[OML] with DefaultLookup[OML] with DefaultMutability[OML] {
-  def getDeclarations = decls
-  def setDeclarations(ds: List[OML]) {
-    decls = ds
-  }
-  
-  def rename(old: LocalName, nw: LocalName) = {
-    val i = decls.indexWhere(_.name == old)
-    if (i != -1) {
-      val ooml = decls(i)
-      val translatedOMLs = decls.drop(i + 1)   //TODO this must actually replace all old names with the new name
-      decls = decls.take(i) ::: OML(nw, ooml.tp, ooml.df, ooml.nt, ooml.featureOpt) :: translatedOMLs
-    }
-  }
-  def toTerm = AnonymousTheory(mt, decls)
-}
-
-object AnonymousTheory {
-  val path = ModExp.complextheory
-
-  def apply(mt: Option[MPath], decls: List[OML]) = OMA(OMS(path), mt.map(OMMOD(_)).toList:::decls)
-  def unapply(t: Term): Option[(Option[MPath],List[OML])] = t match {
-    case OMA(OMS(this.path), OMMOD(mt)::OMLList(omls)) =>
-      Some((Some(mt), omls))
-    case OMA(OMS(this.path), OMLList(omls)) =>
-      Some((None, omls))
-    case _ => None
-  }
-
-  def fromTerm(t: Term) = unapply(t).map {case (m,ds) => new AnonymousTheory(m, ds)}
-}
-
-object OMLList {
-  // awkward casting here, but this way the list is not copied; thus, converting back and forth between Term and AnonymousTheory is cheap
-  def unapply(ts: List[Term]): Option[List[OML]] = {
-    if (ts.forall(_.isInstanceOf[OML]))
-      Some(ts.asInstanceOf[List[OML]])
-    else
-      None
   }
 }
 
@@ -387,6 +354,15 @@ object OMIDENT {
   }
 }
 
+object OMStructuralInclude {
+  val path = ModExp.structuralinclude
+  def apply(from: MPath,to: MPath) = OMA(OMID(this.path), List(OMMOD(from), OMMOD(to)))
+  def unapply(t: Term): Option[(MPath,MPath)] = t match {
+    case OMA(OMID(this.path), List(OMMOD(f),OMMOD(t))) => Some((f,t))
+    case _ => None
+  }
+}
+
 object ComplexMorphism {
   val path = ModExp.complexmorphism
 
@@ -399,6 +375,7 @@ object ComplexMorphism {
 }
 
 /** An OMINST represents an instantiation of a parametric theory */
+@deprecated("there is no such morphism because a parametric theory is not a theory", "")
 object OMINST {
   val path = ModExp.instantiation
 

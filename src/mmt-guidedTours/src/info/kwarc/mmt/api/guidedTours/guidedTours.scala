@@ -8,7 +8,7 @@ import web._
 import scala.concurrent._
 
 class GuidedToursPlugin extends ServerExtension("guidedTours") {
- 
+
   def apply(request: ServerRequest) : ServerResponse = {
     try {
       request.path match {
@@ -18,9 +18,9 @@ class GuidedToursPlugin extends ServerExtension("guidedTours") {
       case e : Exception => ServerResponse.TextResponse("Error: " + e.getMessage + e.getStackTraceString)
     }
   }
-  
-  
-  def getTour(request: ServerRequest) : ServerResponse =
+
+
+  def getTour(request: ServerRequest) : ServerResponse = {
     val reqBody = request.body
     val pathS = reqBody.asString
     val dpath = Path.parseD(pathS, NamespaceMap.empty)
@@ -36,7 +36,7 @@ class GuidedToursPlugin extends ServerExtension("guidedTours") {
     //val out = controller.presenter.apply(doc, false)(rh)
     //val resp = rh.get
     val resp = doc.toString
-    Server.TextResponse(resp)
+    ServerResponse.fromText(resp)
   }
-  
+
 }

@@ -35,12 +35,12 @@ abstract class BackendConf extends ConfEntry
 case class ArchiveConf(id : String, formats : List[String], readonly : Boolean) extends BackendConf
 
 /**
- * Registers a profile as a subset of active archives 
+ * Registers a profile as a subset of active archives
  */
 case class ProfileConf(id : String, archives : List[String]) extends BackendConf
 
 /**
- * declares an abbreviation (CURIE-style namespace prefix) for a URI 
+ * declares an abbreviation (CURIE-style namespace prefix) for a URI
  */
 case class NamespaceConf(id: String, uri: URI) extends ConfEntry
 
@@ -102,7 +102,7 @@ class MMTConfig {
     def setBase(b : String) {
       base = b
     }
-    
+
     def add(that: MMTConfig) {
        entries = that.getEntries ::: entries
        setBase(that.getBase)
@@ -117,20 +117,20 @@ class MMTConfig {
     def getEntry[E <: ConfEntry](cls: Class[E], id: String): Option[E] = getEntries(cls).find {e =>
        e.id == id
     }
-    
+
     def getArchive(aid : String) = getEntry(classOf[ArchiveConf], aid) getOrElse {
        throw ConfigurationError("archive not registered: " + aid)
     }
     def getArchives = getEntries(classOf[ArchiveConf])
-    def getWritableArchives = getEntries(classOf[ArchiveConf]).filter(_.readonly == false) 
-    
+    def getWritableArchives = getEntries(classOf[ArchiveConf]).filter(_.readonly == false)
+
     def getFormat(id: String) = getEntry(classOf[FormatConf], id) getOrElse {
        throw ConfigurationError("format not registered: " + id)
     }
     def getProfile(id : String) = getEntry(classOf[ProfileConf], id) getOrElse {
        throw ConfigurationError("profile not registered: " + id)
     }
-    
+
     def getImporters(format : String) = getFormat(format).importers
     def getExporters(format : String) = getFormat(format).exporters
     def getImportersForArchive(archive : String) = getArchive(archive).formats.flatMap(getImporters).distinct
@@ -139,7 +139,7 @@ class MMTConfig {
 
 
 /** helper functions for configurations */
-object MMTConfig {  
+object MMTConfig {
   /** split at whitespace (allowing for quoted segments to contain whitespace) */
   private def split(line: String): List[String] = splitAtWhitespace(line)
   /**
@@ -231,7 +231,7 @@ object MMTConfig {
           case name :: value :: Nil =>
             config.addEntry(EnvVarConf(name, value))
           case _ => fail
-        }        
+        }
         case "base" => config.setBase(line)
         case _ => split(line) match {
            case key::values =>

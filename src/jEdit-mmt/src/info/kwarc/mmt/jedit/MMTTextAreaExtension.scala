@@ -37,13 +37,13 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
 
   override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
     if (editPane.getBuffer.getMode.getName != "mmt") return
-    // the current default font 
+    // the current default font
     val font = painter.getFont
     val height = painter.getFontHeight
     val width = painter.getFontMetrics.getWidths()(29)
     /** the background color if we paint the current line and the current line is to be highlighted */
     val lineHighlightBgColor : Option[Color] = {
-      val caret = textArea.getCaretPosition 
+      val caret = textArea.getCaretPosition
       if (painter.isLineHighlightEnabled && startOffset <= caret && caret < endOffset) {
         Some(painter.getLineHighlightColor)
       } else
@@ -80,7 +80,7 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
         * Alternatively, we could call removeExtension on paintText and paintTextBackground and then add our own variants.
         * But those extension do various additional things that would have to be reimplemented;
         * this is difficult because some of those things happen in private methods or even private classes.
-        * Even keeping the background and repainting the text in background color is difficult because the style that was used is private.  
+        * Even keeping the background and repainting the text in background color is difficult because the style that was used is private.
         */
        val bgColor = fixedBgColor(offset) orElse Option(style.getBackgroundColor) getOrElse painter.getBackground
        gfx.setColor(bgColor)
@@ -100,7 +100,7 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
       // TODO: make this smarter (see jEdit's syntax highlighting preferences for the available token classes)
       /* TODO some objects are missing source references and are marked like their super-term, i.e., as a ComplexTerm
        * some OMV's, some OMID's, some top level lambdas in definitions (even though subobjects have source references)
-       * it's unclear why these objects lose or never acquire their source references  
+       * it's unclear why these objects lose or never acquire their source references
        */
       val tcOpt = as match {
         case Some(oa: MMTObjAsset) =>
@@ -147,7 +147,7 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
            case c =>
              if (MMTOptions.semantichighlighting.get.getOrElse(false)) {
                // repaint c if semanticHighlighting returns a result
-               val globalOffset = segment.offset + localOffset 
+               val globalOffset = segment.offset + localOffset
                val styleOpt = semanticHighlighting(globalOffset)
                styleOpt foreach {style =>
                    paintChar(globalOffset, startPoint, style, c.toChar)
@@ -163,7 +163,7 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
           // log(e.getClass.toString + ": " + e.getMessage)
     }
   }
-  
+
    private def asString(o: Obj) = controller.presenter.asString(o)
    private def onSelection(ta: TextArea, offset: Int): Option[(Int,Int)] = {
       if (textArea.getSelectionCount != 1) return None
@@ -192,7 +192,7 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
                   }
                case _ => return null
             }
-         case None => 
+         case None =>
             val as = MMTSideKick.getAssetAtOffset(view,offset)
             as match {
                case Some(ta: MMTObjAsset) =>
@@ -220,20 +220,20 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
 object StyleChanger {
    def hidden(style: SyntaxStyle) = {
       val newFont = style.getFont.deriveFont(0f)
-      new SyntaxStyle(style.getForegroundColor, style.getBackgroundColor, newFont) 
+      new SyntaxStyle(style.getForegroundColor, style.getBackgroundColor, newFont)
    }
    def subscript(style: SyntaxStyle) = {
       val attributes = new java.util.Hashtable[TextAttribute,Int]
       attributes.put(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUB)
       val newFont = style.getFont.deriveFont(attributes)
-      new SyntaxStyle(style.getForegroundColor, style.getBackgroundColor, newFont) 
+      new SyntaxStyle(style.getForegroundColor, style.getBackgroundColor, newFont)
    }
 }
 
 /** A TextAreaExtension that is added to a layer below TEXT_LAYER in order to change the painter's styles for a certain mode
  *  The painter's styles are set by the EditPane according to SyntaxUtilities.loadStyles.
  *  This class will override that setting.
- *  Tokens with type COMMENT3 and COMMENT4 will be subscripted resp. hidden, regardless of their style settings. 
+ *  Tokens with type COMMENT3 and COMMENT4 will be subscripted resp. hidden, regardless of their style settings.
  */
 class StyleChanger(editPane: EditPane, modeName: String) extends TextAreaExtension {
    private val textArea = editPane.getTextArea

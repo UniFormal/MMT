@@ -19,6 +19,10 @@ package tiscaf
 
 import scala.collection.{ mutable => mute }
 
+import sync.Sync
+
+import scala.collection.JavaConverters._
+
 // backend map is SynchronizedMap
 final private class HSess(data: HTalkData, resp: HResponse) extends mute.Map[Any, Any] {
 
@@ -44,7 +48,7 @@ final private class HSess(data: HTalkData, resp: HResponse) extends mute.Map[Any
 
   //-------------------- internals ---------------------------------------------
 
-  private lazy val sidMap: Pair[String, mute.Map[Any, Any]] = extractSid match {
+  private lazy val sidMap: (String, mute.Map[Any, Any]) = extractSid match {
     case None => HSessMonitor.create(data.app)
     case Some(aSid) => HSessMonitor.bag(aSid) match { // extracted sid may be invalidated already
       case None      => HSessMonitor.create(data.app)
@@ -80,9 +84,9 @@ final private class HSess(data: HTalkData, resp: HResponse) extends mute.Map[Any
 
 private object HSessMonitor {
 
-  def create(app: HApp): Pair[String, mute.Map[Any, Any]] = {
+  def create(app: HApp): (String, mute.Map[Any, Any]) = {
     val aSid = newSid
-    val newSess = Sess(now, app, new mute.HashMap[Any, Any] with mute.SynchronizedMap[Any, Any])
+    val newSess = Sess(now, app, new java.util.concurrent.ConcurrentHashMap[Any, Any].asScala)
     bags(aSid) = newSess
     count.inc(app)
     (aSid, newSess.bag)
@@ -99,7 +103,9 @@ private object HSessMonitor {
     case None =>
     case Some(sess) =>
       count.dec(sess.app)
-      sess.app.onSessionInvalidate(sid, sess.bag)
+      Sync.spawn {
+        sess.app.onSessionInvalidate(sid, sess.bag.toMap)
+      }
       bags -= sid
   }
 
@@ -121,7 +127,7 @@ private object HSessMonitor {
     def restamp = Sess(now, app, bag)
   }
 
-  private val bags = new mute.HashMap[String, Sess] with mute.SynchronizedMap[String, Sess]
+  private val bags = new java.util.concurrent.ConcurrentHashMap[String, Sess].asScala
 
   private val alpha = "abcdefghijklmnopqrstuvwxyz"
   private val symbols = alpha + alpha.toUpperCase + "0123456789"

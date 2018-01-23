@@ -25,7 +25,7 @@ object artPatterns {
       ),
     Context(VarDecl("notation", OMV("ref")))
   )
-  
+
   val AntonymicNotation = MizPattern(LocalName("AntonymicNotation"),
     Context(
       VarDecl("nr"),
@@ -34,8 +34,8 @@ object artPatterns {
       ),
     Context(VarDecl("notation", Mizar.apply(Mizar.constant("not"),OMV("ref"))))
   )
-  
-  
+
+
   val Lemma = MizPattern(LocalName("Lemma"),
     Context(VarDecl("prop", Mizar.constant("prop"))),
     Context(VarDecl("lemma", Mizar.apply(Mizar.constant("proof"), OMV("prop")))))

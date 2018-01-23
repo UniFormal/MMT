@@ -7,14 +7,14 @@ import parser._
 
 class ShellCommand extends ShellExtension("run") {
    def helpText = "mmt :run THEORY-URI PROGRAM-TERM"
-   
+
    def run(shell: Shell, args: List[String]) = {
      val exec = controller.extman.get(classOf[Executor]).headOption.getOrElse {
        throw LocalError("no executor found")
      }
      report.addHandler(ConsoleHandler)
      report.groups += logPrefix
-     report.groups += exec.logPrefix 
+     report.groups += exec.logPrefix
      if (args.isEmpty)
        throw LocalError("MMT URI of constant expected")
      val nsMap = controller.getNamespaceMap
@@ -26,7 +26,7 @@ class ShellCommand extends ShellExtension("run") {
      val pu = ParsingUnit(SourceRef.anonymous(progS), con, progS, nsMap)
      val parser = controller.extman.get(classOf[Parser], "mmt").get
      val progP = parser(pu)(makeErrorThrower("ill-formed program")).toTerm
- 	   val progC = checking.Solver.check(controller, Stack(con), progP) match {
+      val progC = checking.Solver.check(controller, Stack(con), progP) match {
        case Left((t,_)) => t
        case Right(s) =>
          log("invalid program; trying to execute unchecked program")

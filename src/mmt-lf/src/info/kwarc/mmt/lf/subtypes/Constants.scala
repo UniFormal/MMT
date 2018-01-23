@@ -8,7 +8,7 @@ import objects._
 object Subtyping {
    val _base = Typed._base
    val _path = _base ? "Subtyping"
-   
+
    object Sub {
       val path = _path ? "Sub"
       def apply(a: Term, b: Term) = ApplySpine(OMS(path), a, b)
@@ -22,7 +22,7 @@ object Subtyping {
 object PredicateSubtypes {
    val _base = Typed._base
    val _path = _base ? "PredicateSubtypes"
-   
+
    object Sub {
       val path = _path ? "Sub"
       def apply(a: Term, x: LocalName, p: Term) = ApplySpine(OMS(path), a, Lambda(x, OMS(Typed.ktype), p))

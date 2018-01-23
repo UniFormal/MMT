@@ -10,10 +10,10 @@ import utils._
 
 class ImplementsRuleGenerator extends ChangeListener {
   override val logPrefix = "impl-rule-gen"
-  /** the metadata key used to spot constants with implements annotations */ 
+  /** the metadata key used to spot constants with implements annotations */
   private val implKey = Metadata.implements
   private val nameSuffix = LocalName("implements")
-  
+
   private def getGeneratedRule(p: Path): Option[ImplementsRule] = {
      p match {
         case p: GlobalName =>
@@ -24,13 +24,13 @@ class ImplementsRuleGenerator extends ChangeListener {
         case _ => None
      }
   }
-  
+
   private def getImplemented(c: Constant): Option[GlobalName] =
     c.metadata.getLinks(implKey).headOption.map(Path.fromURI(_, NamespaceMap.empty)).flatMap {
       case n: GlobalName => Some(n)
       case _ => None
     }
-     
+
   def onUpdate(e: StructuralElement) {
      onAdd(e)
   }
@@ -69,7 +69,7 @@ class ImplementsRuleGenerator extends ChangeListener {
 // TODO Needs to be reimplemented
 class ImplementsRule(val from: Constant, recordType: Term, impl: GlobalName) extends DepthRule(impl, LFX.RecExp.path) {
     override def toString = s"$impl(record) ~~> ${from.name}(record)"
-    
+
     def apply : Rewrite = {(bef,inn,aft) => /*
        if (aft.nonEmpty)
           NoChange

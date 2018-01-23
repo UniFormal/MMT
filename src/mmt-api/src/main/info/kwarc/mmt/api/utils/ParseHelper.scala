@@ -28,9 +28,9 @@ case class BracketPair(open: String, close: String, ignore: Boolean)
 class Unparsed(input: String, error: String => Nothing) {
    private var current: Int = 0
    private val length = input.length
-   
+
    def empty = current == length
-   
+
    /** number of characters that have been eaten */
    private var offset: Int = 0
    private var line : Int = 0
@@ -52,7 +52,7 @@ class Unparsed(input: String, error: String => Nothing) {
    def getnext(n:Int) = StringSlice(input,current,current + n)
 
    def errorExpected(exp: String) = error("expected: " + exp + "; found " + remainder.subSequence(0,200))
-   
+
    def next() = {
       if (empty) error("expected character, found nothing")
       var c = head
@@ -84,7 +84,7 @@ class Unparsed(input: String, error: String => Nothing) {
    def takeWhile(test: Char => Boolean): String = {
       if (test(head)) next() + takeWhile(test) else ""
    }
-   
+
    /** drops a String if possible
     *  @return true if dropped
     */
@@ -95,7 +95,7 @@ class Unparsed(input: String, error: String => Nothing) {
      } else
        false
    }
-   
+
    import scala.util.matching.Regex
    /** matches at the beginning of the stream and returns the matched prefix */
    def takeRegex(regex: String): Regex.Match = {
@@ -112,19 +112,19 @@ class Unparsed(input: String, error: String => Nothing) {
       val mt = takeRegex("(.*)"+regex)
       mt.group(1)
    }
-   
+
    /**
     * returns all characters up to the next unescaped occurrence of 'until' (that occurrence is eaten but not returned)
     * @param until the delimiter to scan for
     * @param exceptAfter the an escape character
-    * @return the found string (excluding the until), and false iff end of input reached  
+    * @return the found string (excluding the until), and false iff end of input reached
     */
    def takeUntilChar(until: Char, exceptAfter: Char): (String,Boolean) = {
       var seen = ""
       while (!empty && head != until) {
          if (head == exceptAfter) {
             seen += head
-			      next
+               next
          }
          seen += head
          next
@@ -137,7 +137,7 @@ class Unparsed(input: String, error: String => Nothing) {
          (seen,true)
       }
    }
-   
+
    /** return all characters until a certain string is encountered outside well-nested brackets */
    def takeUntilString(until: String, brackets: List[BracketPair]): String = {
       var seen = ""

@@ -2,10 +2,12 @@ package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
 import archives._
+import info.kwarc.mmt.api.archives.lmh.MathHub._
 import backend._
 import checking._
 import documents._
 import gui._
+import actions._
 import libraries._
 import moc._
 import modules._
@@ -152,25 +154,25 @@ class Controller extends ROController with ActionHandling with Logger {
     state.config.getEntry(classOf[EnvVarConf], name).map(_.value) orElse Option(System.getenv.get(name))
   }
 
-  /** @return the current OAF root */
-  def getOAF: Option[MathHub] = {
-    val ocO = state.config.getEntries(classOf[OAFConf]).headOption
-    ocO map {oc =>
-      if (!oc.local.isDirectory)
-        throw GeneralError(oc.local + " is not a directory")
-      new MathHub(oc.remote.getOrElse(MathHub.defaultURL), oc.local, oc.https, report)
-    }
-  }
-
   /** integrate a configuration into the current state */
   def loadConfig(conf: MMTConfig, loadEverything: Boolean) {
        state.config.add(conf)
+
+       // add entries to the namespace
        conf.getEntries(classOf[NamespaceConf]).foreach {case NamespaceConf(id,uri) =>
           state.nsMap = state.nsMap.add(id, uri)
        }
+
+       // add archives to the MathPath
        conf.getEntries(classOf[MathPathConf]).foreach {c =>
          addArchive(c.local)
        }
+
+       // update the lmh cache
+       conf.getEntries(classOf[OAFConf]).foreach {c =>
+         lmh = Some(new MathHub(this, c.local, c.remote.getOrElse(MathHub.defaultURL), c.https))
+       }
+
        if (loadEverything) {
          loadAllArchives(conf)
          loadAllNeededTargets(conf)
@@ -314,12 +316,12 @@ class Controller extends ROController with ActionHandling with Logger {
   val localLookup = new LookupWithNotFoundHandler(library) with FailingNotFoundHandler {
     def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod)
   }
-  
+
   /** a lookup that uses the previous in-memory version (ignoring the current one) */
   val previousLocalLookup = new LookupWithNotFoundHandler(memory.previousContent) with FailingNotFoundHandler {
     def getDeclarationsInScope(mod: Term) = memory.previousContent.getDeclarationsInScope(mod)
   }
-  
+
   /** a lookup that loads missing modules dynamically */
   val globalLookup = new LookupWithNotFoundHandler(library) {
     protected def handler[A](code: => A): A = iterate {
@@ -353,7 +355,7 @@ class Controller extends ROController with ActionHandling with Logger {
 
 
   // ******************* determine context of elements
-  
+
   /** computes the context of an element, e.g., as needed for checking
    *  this methods allows processing individual elements without doing a top-down traversal to carry the context
    */
@@ -389,17 +391,17 @@ class Controller extends ROController with ActionHandling with Logger {
         }
     }
   }
-  
+
   /** auxiliary method of getContext, returns the context in which the body of ContainerElement is checked */
-  private def getContextWithInner(e: ContainerElement[_]) = getContext(e) ++ getExtraInnerContext(e) 
-  
+  private def getContextWithInner(e: ContainerElement[_]) = getContext(e) ++ getExtraInnerContext(e)
+
   /** additional context for checking the body of ContainerElement */
   def getExtraInnerContext(e: ContainerElement[_]) = e match {
     case d: Document => Context.empty
     case m: DeclaredModule => m.getInnerContext
     case s: DeclaredStructure => Context.empty
   }
-  
+
   // ******************************* transparent loading during global lookup
 
   /** wrapping an expression in this method, evaluates the expression dynamically loading missing content
@@ -515,10 +517,9 @@ class Controller extends ROController with ActionHandling with Logger {
                 notifyListeners.onUpdate(old, nw)
               }
               memory.content.reorder(nw.path)
-            case Some(old) if getO(old.parent).map(_.getDeclarations).getOrElse(Nil) contains old => // This condition
-              // seems to be necessary in case loopup succeeds even though it's not
-              // been added to the body yet - in which case the at-information gets lost.
-              // Happens during elaboration of e.g. structures.
+            case Some(old) if getO(old.parent).map(_.getDeclarations).getOrElse(Nil) contains old =>
+              // This condition is necessary in case lookup succeeds even though the element has not been added to the body yet.
+              // This happens, e.g., during elaboration or in links where elements are generated dynamically by the library.
               memory.content.update(nw)
               notifyListeners.onUpdate(old, nw)
             case _ =>
@@ -592,7 +593,7 @@ class Controller extends ROController with ActionHandling with Logger {
       case cp: CPath =>
          throw DeleteError("deletion of component paths not implemented")
       case p =>
-        val seOpt = localLookup.getO(p) 
+        val seOpt = localLookup.getO(p)
         seOpt foreach {se =>
           library.delete(p) // would throw NotFound if seOpt.isEmpty
           notifyListeners.onDelete(se)

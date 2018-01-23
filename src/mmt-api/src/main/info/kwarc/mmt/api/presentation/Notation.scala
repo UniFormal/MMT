@@ -30,7 +30,7 @@ abstract class Notation extends PresentationElement {
    def toNode : Node
 }
 
-/** an interface for notations that can be used to present complex objects */ 
+/** an interface for notations that can be used to present complex objects */
 trait ComplexNotation extends Notation {
    def precedence: Precedence
    def presentation(vars: Int, args: Int, attributten: Boolean): Presentation
@@ -97,7 +97,7 @@ case class Bindfix(impl : Int, oPrec: Precedence) extends NotationProperties {
 
 object NotationProperties {
    def apply(fix: Fixity, ass: Associativity, app: AppStyle, impl: Int, oPrec: Precedence) = fix match {
-      case Pre => Prefix(app, impl, oPrec) 
+      case Pre => Prefix(app, impl, oPrec)
       case Post => Postfix(app, impl, oPrec)
       case In(i) => Infix(i, impl, oPrec)
       case Inter => Interfix(ass, impl, oPrec)
@@ -107,7 +107,7 @@ object NotationProperties {
 }
 
 /**
- * Representation of a declarative notation where the presentation is computed from parameters 
+ * Representation of a declarative notation where the presentation is computed from parameters
  * @param nset the containing style
  * @param key notation key
  * @param fix fixity
@@ -193,11 +193,11 @@ object Notation {
         case Inter => ass = parseAss(tokens.next)
         case _ =>
       }
-      val imp = parseImp(tokens.next) 
+      val imp = parseImp(tokens.next)
       val prec = Precedence.parse(tokens.next)
       NotationProperties(fix, ass, app, imp, prec)
    }
-   def parseFix(s: String) = s match { 
+   def parseFix(s: String) = s match {
        case "" | "pre" => Pre
        case "post" => Post
        case "in" => In(1)

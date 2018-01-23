@@ -7,7 +7,7 @@ object MizXML {
 /**
  * Represents a reference to the .miz source file
  * @param line source line
- * @param col source column 
+ * @param col source column
  */
 case class SourceRef(line : Int, col : Int)
 
@@ -18,12 +18,12 @@ class Format(val kind : String, val nr : Int, val symbolnr : Int, val argnr : In
   private var _absnr : Int = -1
   private var _symbol : Symbol = null
   private var _rightsymbol : Option[Symbol] = None
-  
+
   def aid : Option[String] = _aid
   def absnr : Int = _absnr
   def symbol  : Symbol = _symbol
   def rightsymbol  = _rightsymbol
-  
+
   def setAid(aid : String) = _aid = Some(aid)
   def setAbsnr(i : Int) = _absnr = i
   def setSymbol(s : Symbol) = _symbol = s
@@ -37,19 +37,19 @@ class Symbol(val kind : String, val nr : Int, val name : String) {
 
 class Dictionary(var formats : List[Format]) {
   var symbols : List[Symbol] = Nil
-  
+
   def addFormat(f : Format) = {
     formats = f :: formats
   }
-  
+
   def getFormat(kind : String, formatnr : Int) : Option[Format] = {
     formats.find(f => f.kind == kind && f.nr == formatnr)
   }
-  
+
   def addAbsnr(kind : String, formatnr : Int, absnr : Int) {
-    getFormat(kind, formatnr).map(_.setAbsnr(absnr)) 
+    getFormat(kind, formatnr).map(_.setAbsnr(absnr))
   }
-  
+
   def addSymbol(s : Symbol) {
     def matches(f : Format) : Boolean = {
       //numbers must match
@@ -60,7 +60,7 @@ class Dictionary(var formats : List[Format]) {
       f.kind == s.kind
     }
     def matchesRight(f : Format) : Boolean = f.rightsymbolnr match {
-      case None => false 
+      case None => false
       case Some(rightsymbolnr) =>
         //numbers must match
         if (rightsymbolnr != s.nr) return false
@@ -69,10 +69,10 @@ class Dictionary(var formats : List[Format]) {
         //general rule
         f.kind == s.kind
     }
-    
+
     symbols ::= s
     formats.find(matches).map(_.setSymbol(s))
-    formats.find(matchesRight).map(_.setRightsymbol(s))     
+    formats.find(matchesRight).map(_.setRightsymbol(s))
   }
 
   def addPattern(kind : String, formatnr : Int, aid : String, absnr : Int) {
@@ -81,7 +81,7 @@ class Dictionary(var formats : List[Format]) {
       f.setAbsnr(absnr)
     }
   }
-  
+
 
   /*
   def getNameBySymbolnr(kind : String, symbolnr : Int) : Option[String] = {
@@ -90,34 +90,34 @@ class Dictionary(var formats : List[Format]) {
       case Some(s) => Some(s.name)
     }
   }
-  
+
   def getNameByFormatnr(kind : String, formatnr : Int) : Option[String] = {
-	  symbols.find(s => s.kind == kind && s.formatnr == formatnr) match {
-	 	  case None => None
-	 	  case Some(s) => Some(s.name)
-	  }
+     symbols.find(s => s.kind == kind && s.formatnr == formatnr) match {
+         case None => None
+         case Some(s) => Some(s.name)
+     }
   }
-  
+
   def getAidBySymbolnr(kind : String, symbolnr : Int) : Option[String] = {
-	  symbols.find(s => s.kind == kind && s.symbolnr == symbolnr) match {
-	 	  case None => None
-	 	  case Some(s) => s.aid
-	  }
+     symbols.find(s => s.kind == kind && s.symbolnr == symbolnr) match {
+         case None => None
+         case Some(s) => s.aid
+     }
   }
-  	
+
   def getNameByAbsnr(aid : String, kind : String, absnr : Int) : Option[String] = {
-	  symbols.find(s => s.kind == kind && s.absnr == absnr && s.aid == Some(aid)) match {
-	 	  case None => None
-	 	  case Some(s) => Some(s.name)
-	  }
+     symbols.find(s => s.kind == kind && s.absnr == absnr && s.aid == Some(aid)) match {
+         case None => None
+         case Some(s) => Some(s.name)
+     }
   }
   */
-  
-  
+
+
   def getFormatByAbsnr(aid : String, kind : String, absnr : Int) : Option[Format] = {
     formats.find(f => f.kind == kind && f.absnr == absnr && f.aid == Some(aid))
   }
-  
+
   /**
    * Returns a variable name that is free in any mizar formula by excluding all dictionary names
    * Is used when the translation adds new bindings to avoid clashes with mizar variable names.
@@ -130,10 +130,10 @@ class Dictionary(var formats : List[Format]) {
     }
     baseName + nr
   }
-  
+
   def clear() = {
     symbols = Nil
     formats = Nil
   }
-  
+
 }

@@ -56,9 +56,9 @@ case class DotError(m: String) extends Exception(m)
 
 /** converts a graph to SVG using the dot tool */
 class DotToSVG(dotPath: File) {
-  
+
   /** dot has a bug, which does not XML escape <>&" in the generated SVG
-   * Therefore, this method is used to put escaped values in the dot file to begin with. 
+   * Therefore, this method is used to put escaped values in the dot file to begin with.
    */
    private def esc(s: String) = XMLEscaping(s)
 
@@ -75,7 +75,7 @@ class DotToSVG(dotPath: File) {
       val refAtt = e.id.map(p => s"""href="${esc(p.toPath)}",""").getOrElse("")
       s""""${e.from.id.toPath}" -> "${e.to.id.toPath}" [${labelAtt}${refAtt}tooltip="${esc(e.cls)}",weight=${e.weight}];"""
    }
-   
+
    private def toDot(dg: DotGraph, f: File) {
        val file = File.Writer(f)
        def write(s: String) {file.println(s)}
@@ -90,7 +90,7 @@ class DotToSVG(dotPath: File) {
             nodesDone ::= n
           }
        }
-       
+
        write(s"digraph ${dg.title} {")
 
        // add the nodes, wrapped in a cluster if there any external nodes
@@ -100,18 +100,18 @@ class DotToSVG(dotPath: File) {
        if (dg.externalNodes.isDefined)
           write("}")
        dg.externalNodes map {ens => ens foreach addNode}
-       
+
        // add the edges
        dg.edges foreach {edge =>
           addNode(edge.from)
           addNode(edge.to)
           write(dotEdge(edge))
        }
-         
+
        write("}\n")
        file.close
     }
-     
+
     private def adaptSVG(svg: String) = {
        // we use the title attribute as a css class and remove the default style so that we can style with css
        val svgR = svg.replace("stroke=\"black\"", "").replace("<svg ", "<svg style=\"stroke:black\" ")
@@ -126,7 +126,7 @@ class DotToSVG(dotPath: File) {
     /**
      * @param dg the graph to layout
      * @return the svg graph returned by dot
-     */ 
+     */
     def apply(dg: DotGraph): String = {
       val outFile = File(System.getProperty("java.io.tmpdir")) / "graphviz.svg"
       val dotFile = outFile.setExtension("dot")

@@ -72,7 +72,7 @@ object File {
     }
     properties
   }
-  
+
   /** copies a file */
   def copy(from: File, to: File, replace: Boolean): Boolean = {
     if (!from.exists || (to.exists && !replace)) {

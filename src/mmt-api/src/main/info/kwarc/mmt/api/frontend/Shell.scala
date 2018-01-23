@@ -1,8 +1,12 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.{BuildQueue, BuildManager}
+import info.kwarc.mmt.api.frontend.actions.{ActionResultError, ExecFile, HelpAction, MBT}
+import info.kwarc.mmt.api.archives.{BuildManager, BuildQueue}
+import actions.HelpAction
 import utils._
+
+import scala.util.Try
 
 /** mixes in helper functions for interactive shells */
 trait StandardIOHelper {
@@ -39,15 +43,6 @@ class Shell extends StandardIOHelper {
   lazy val runStyle = MMTSystem.runStyle
   lazy val controller = new Controller
 
-  private def getHelpText(cmd: String): Option[String] = {
-     val s = MMTSystem.getResourceAsString("/help-text/" + cmd + ".txt")
-     Option(s)
-  }
-
-  private def printHelpText(cmd: String) {
-    getHelpText(cmd) foreach println
-  }
-
   /** creates controller, loads configurations/startup files, processes arguments, possibly drops into shell or terminates */
   def main(a: Array[String]) {
     try {
@@ -69,7 +64,7 @@ class Shell extends StandardIOHelper {
   }
   private def loadMsl(msl: File) {
      if (msl.exists) {
-        controller.execFileAction(msl, None)
+        controller.runMSLFile(msl, None)
      }
   }
 
@@ -143,26 +138,23 @@ class Shell extends StandardIOHelper {
 
     // parse command line arguments
     val args = ShellArguments.parse(a.toList).getOrElse {
-      printHelpText("usage")
+      controller.handle(HelpAction("usage_short"))
       sys.exit(Shell.EXIT_CODE_FAIL_ARGUMENT)
     }
 
     // display some help text
     if (args.help) {
-      args.commands.foreach { s =>
-        val optHelp = getHelpText(s)
-        if (optHelp.isDefined) {
-          println(optHelp.get)
-          return
-        }
-      }
-      printHelpText("help")
+      val commands = args.commands
+        if(commands.isEmpty)
+          controller.handle(HelpAction("usage"))
+        else
+          commands.foreach(t => controller.handle(HelpAction(t)))
       return
     }
 
     // display some about text
     if (args.about) {
-      printHelpText("about")
+      controller.handle(HelpAction("version"))
       return
     }
 
@@ -213,7 +205,7 @@ class Shell extends StandardIOHelper {
   */
 trait REPLExtension extends Extension {
   /** Banner of the REPL to be printed when (before even entering it) */
-  protected val banner : String = MMTSystem.getResourceAsString("/help-text/shelltitle.txt")
+  protected val banner : String = MMTSystem.getResourceAsString("/help-text/help.txt")
   /* A report handler to be added to the console automatically when needed */
   protected val handler : ReportHandler = ConsoleHandler
   /** Called when entering (i.e. starting up) the REPL */

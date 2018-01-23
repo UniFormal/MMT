@@ -19,10 +19,9 @@ scalacOptions in Global := Seq("-feature", "-language:postfixOps", "-language:im
 parallelExecution in ThisBuild := false
 javaOptions in ThisBuild ++= Seq("-Xmx1g")
 
-connectInput in run := true
-
 publish := {}
 fork in Test := true
+testOptions in Test += Tests.Argument("-oI")
 
 // =================================
 // DEPLOY TASKS
@@ -61,7 +60,7 @@ def commonSettings(nameStr: String) = Seq(
   sourcesInBase := false,
   autoAPIMappings := true,
   exportJars := true,
-  libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
+  libraryDependencies += "org.scalatest" % "scalatest_2.11" % "3.0.4" % "test",
   fork := true,
   test in assembly := {},
   assemblyMergeStrategy in assembly := {
@@ -131,10 +130,9 @@ lazy val mmt = (project in file("mmt")).
       val cp = (fullClasspath in assembly).value
       cp filter { j => jeditJars.contains(j.data.getName) }
     },
-    mainClass in Compile := Some(mmtMainClass), 
-    mainClass in assembly := Some(mmtMainClass), 
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(
-      prependShellScript = Some(Seq("#!/bin/bash", """exec /usr/bin/java -Xmx2048m -jar "$0" "$@"""")))
+    mainClass in Compile := Some(mmtMainClass),
+    connectInput in run := true,
+    mainClass in assembly := Some(mmtMainClass)
   )
 
 
@@ -298,7 +296,8 @@ lazy val tiscaf = (project in file("tiscaf")).
       "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
       "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     ),
-    deployFull := Utils.deployPackage("lib/tiscaf.jar").value
+    deployFull := Utils.deployPackage("lib/tiscaf.jar").value,
+    test := {} // disable tests for tiscaf
   )
 
 lazy val lfcatalog = (project in file("lfcatalog")).

@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
-import archives._ 
+import archives._
 import documents._
 import modules._
 import symbols._

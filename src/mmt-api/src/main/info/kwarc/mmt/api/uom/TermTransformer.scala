@@ -5,23 +5,23 @@ import objects._
 import frontend._
 
 /** exhaustively applies [[TermTransformationRule]]s
- *  
+ *
  *  will not traverse the same term multiple times if called multiple times
- *  
+ *
  *  preserves structure sharing
  */
 class TermTransformer(id: String, controller: Controller, rules: RuleSet, use: TermTransformationRule => Boolean)
    extends StatelessTraverser with Logger {
-  
+
    val logPrefix = id
    val report = controller.report
    private def presentObj(t: Term) = controller.presenter.asString(t)
-  
+
    private val matcher = new Matcher(controller, rules)
    private val transformRules = rules.getOrdered(classOf[TermTransformationRule]).filter(use)
-   
+
    /**
-    * used to remember that a Term is the result of transformation to avoid recursing into it again 
+    * used to remember that a Term is the result of transformation to avoid recursing into it again
     */
    private object CachedResult extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / id)
 
@@ -35,10 +35,10 @@ class TermTransformer(id: String, controller: Controller, rules: RuleSet, use: T
      }
      if (changed) Some(t) else None
    }
-  
+
    /** thrown to bubble up a change to the previous traversal level */
-   private case class TransformedTo(result: Term) extends Throwable 
-   
+   private case class TransformedTo(result: Term) extends Throwable
+
    def traverse(t: Term)(implicit con : Context, state: Unit) = {
      //log("traversing " + presentObj(t))
      t match {

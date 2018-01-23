@@ -28,7 +28,7 @@ class ContextMenuAggregator extends ServerExtension("menu") {
        val errorAction = JSSeq(Log(errorString), Alert(errorString))
        Some(ContextMenuEntry("show " + errors.length + " errors", errorAction))
      }
-       
+
      val json = JSONObject((entries:::errorEntry.toList).map(e => (JSONString(e.label), JSONString(e.function.toJS))))
     ServerResponse.JsonResponse(json)
   }

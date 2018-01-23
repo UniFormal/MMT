@@ -32,30 +32,30 @@ class Tutorial(controllerArgument: Controller, endTopicArgument: Path, userIdArg
   val topics = getTutorialTopics()
   val examples = getExamples()
   val karma = getKarma()
-  
+
   private def getTutorialTopics() : List[Path] = {
     val all = getAllChildren(endTopic)
     sort(all) :+ endTopic
   }
-  
+
   def getContent(length: Int) : String = {
     println("Here")
     val start = topics.takeRight(length)
     val ex = examples.takeRight(length)
-    
-     
+
+
     //println(start)
     //val tmp = utils.Utilities.parseGraph("/home/filipbitola/Downloads/parsed_graph.txt")
     val all = start.map { x => {
       try{
-        
+
         val sb = new presentation.StringBuilder()
-        
+
         val presenter = controller.extman.getPresenter("planetary").getOrElse{
           println("defaulting to default presenter")
           controller.presenter
         }
-        
+
         presenter.apply(controller.get(x), false)(sb)
         sb.get
       }
@@ -64,9 +64,9 @@ class Tutorial(controllerArgument: Controller, endTopicArgument: Path, userIdArg
         case e : Exception => ""
       }
     }}
-    
+
     println("Before examples")
-    
+
     val exa = examples.map { x => {
       try{
         val sb = new presentation.StringBuilder()
@@ -82,26 +82,26 @@ class Tutorial(controllerArgument: Controller, endTopicArgument: Path, userIdArg
         case e : Exception => ""
       }
     }}
-    
+
     println("Here3")
     val head = "<html><head><meta charset=\"UTF-8\"><script src=\"http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.11.2.min.js\"></script></head><body>"
     val rest = intersperse(all, exa).mkString("\n")
     val end = "</body></html>"
     //all.mkString
-    
+
     head + rest + end
   }
-  
+
   private def intersperse[A](a : List[A], b : List[A]): List[A] = a match {
     case first :: rest => first :: intersperse(b, rest)
     case _             => b
   }
-   
+
    private def getKarma() : Map[Path, Double] = {
     Map(Path.parseM("http://mathhub.info/MiKoMH/GenCS/machines/en/VMP-call.omdoc?VMP-call", NamespaceMap.empty) -> 70.0)
-    
+
   }
-  
+
   private def getExamples() : List[List[Example]] = {
     println("I was here")
     topics.map { x => {
@@ -117,33 +117,33 @@ class Tutorial(controllerArgument: Controller, endTopicArgument: Path, userIdArg
           val sortedEx = examples.sortBy(ex => (ex.getRating(x), ex.avgDifficulty))
           sortedEx.drop((sortedEx.length.toDouble * karma(x) / 100).toInt).take(3)
         }
-      }    
+      }
     }
   }
-  
+
   private def getImmediateChildren(path: Path) : List[Path] = {
     controller.depstore.queryList(path, ToObject(Includes))
   }
-  
+
   private def getAllChildren(name: Path) : List[Path] = {
     //val path = Path.parseM(name, mmt.mmtbase)
     //controller.depstore.queryList(path, Transitive(ToObject(Includes)))
     val children = getImmediateChildren(name)
     children ++ children.flatMap(x => getAllChildren(x))
   }
-  
+
   private def findExamples(path : Path) : List[Path] = {
     val examples = controller.depstore.getSubjects(ontology.HasDomain, flexiformal.FragPath(path))
     val ex2 = controller.depstore.getSubjects(ontology.isExemplifiedBy, flexiformal.FragPath(path))
     examples.toList ++ ex2.toList
   }
-  
+
   private def sort(all : List[Path]) : List[Path] = {
     @tailrec
     def sortWithResult(list1: List[Path], acc:List[Path]) : List[Path] = {
       list1 match{
         case Nil => acc
-        case head :: tail => 
+        case head :: tail =>
           val children = getImmediateChildren(head)
           val res = check(children, tail)
           if(res == null)
@@ -160,12 +160,12 @@ class Tutorial(controllerArgument: Controller, endTopicArgument: Path, userIdArg
     }
     sortWithResult(all, Nil)
   }
-  
+
    private def check(list1: List[Path], list2: List[Path]) : Path = {
     list1 match{
       case Nil => null
-      case head :: tail => 
-        if(list2.contains(head)) 
+      case head :: tail =>
+        if(list2.contains(head))
         {
           head
         }

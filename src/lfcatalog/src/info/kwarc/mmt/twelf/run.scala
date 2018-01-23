@@ -9,37 +9,37 @@ import scala.collection.mutable.HashSet
 /** Run the web server and console input */
 object Run {
   private val usage = """Usage: java -jar lfcatalog.jar (--port <port>)? (location|+inclusion|-exclusion)*
-  
+
   location === absolute path to a file or directory
   inclusion === name
   exclusion === name
   name === file or directory name pattern, without its path. Star is the only special character and matches any sequence of characters.
-  
+
   A folder is crawled iff it doesn't match any exclusion pattern.
   A file is crawled iff it matches at least one inclusion pattern, but no exclusion pattern. However, if no inclusion patterns are provided, only the second condition remains.
   The default port is 8080 on localhost."""
-  
+
   /** Port on which the server runs. Default value is 8080 */
   private var port = 8080
-  
+
   def main(args : Array[String]) {
-    
+
     // parse program arguments
     var patternsAndLocations : Array[String] = args
     val locations = new HashSet[String] ()
     val inclusions = new HashSet[String] ()
     val exclusions = new HashSet[String] ()
-    if (!args.isEmpty) {      
+    if (!args.isEmpty) {
       // read the optional --port argument
       if (args.head == "--port")
-        if (args.length < 2) { 
+        if (args.length < 2) {
           println("error: port number expected\n\n" + usage); sys.exit(1)
         }
         else {
           try { port = Integer.parseInt(args(1)) }
           catch { case _: Exception => println("error: port number expected\n\n" + usage); sys.exit(1) }
           patternsAndLocations = patternsAndLocations.drop(2)
-        }   
+        }
       // read the patterns and locations
       for (s <- patternsAndLocations)
         if (s.startsWith("-"))      // an exclusion pattern
@@ -48,14 +48,14 @@ object Run {
           inclusions += s.drop(1)
         else locations += s         // a location
     }
-    
+
     if (inclusions.isEmpty) inclusions += "*.elf"
     if (exclusions.isEmpty) exclusions += ".svn"
-    
+
     // the main storage and controller (this also starts background threads)
     var catalog = new Catalog(locations, inclusions, exclusions, port, true)
     port = catalog.init
-    
+
     // accept console input
     while (true) {
           val input = scala.io.StdIn.readLine.trim

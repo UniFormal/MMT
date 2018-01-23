@@ -33,7 +33,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
   def addRules(that: ParsingRuleTable) {
     ruleTable = ruleTable.add(that)
   }
-  
+
   /** the notations to scan for in the current call to scan */
   private def currentGroup: ParsingRuleGroup = ruleTable.groups.head // ruleTable.groups is nonempty during scanning
   /** the number of Token's currently in tl */
@@ -94,7 +94,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
 
   /** the currently open notations, inner-most first; initialized with the topRule or empty list */
   private var active: List[ActiveNotation] = {
-    parsingUnitOpt.flatMap(_.top).toList.map {topRule => 
+    parsingUnitOpt.flatMap(_.top).toList.map {topRule =>
        new ActiveNotation(this, List(topRule), ScannerBacktrackInfo(0,0))
     }
   }
@@ -200,7 +200,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
       case hd :: _ => hd.numCurrentTokens += 1
     }
   }
-  
+
   private def restoreBacktrackInfo(an: ActiveNotation) {
     val bti = an.backtrackInfo
     currentIndex = bti.currentIndex
@@ -263,13 +263,13 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
               else
                 Nil
             }
-	         // TODO add notations without firstDelimString
+           // TODO add notations without firstDelimString
             log("openable: " + openable.map(_._1).mkString(", "))
             //the longest firstDelim of an openable notation
             val longestDelim = if (openable.isEmpty) -1 else openable.maxBy(_._2)._2
             openable.collect {case o if o._2 == longestDelim => o._1} match {
               case hd :: others =>
-                // we allow for syntax overloading: if all alternatives have the same markers, we proceed  
+                // we allow for syntax overloading: if all alternatives have the same markers, we proceed
                 if (!others.forall(pr => TextNotation.agree(pr.notation, hd.notation))) {
                    throw Ambiguous(hd::others) //better ambiguity-handling could go here (maybe look for next delimiter)
                 }
@@ -332,7 +332,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
     next()
     if (active != Nil) throw ImplementationError("active notation left after scanning")
   }
-  
+
   /** scan using all notations in the ruleTable */
   def scan() {
     ruleTable.groups foreach {g =>
