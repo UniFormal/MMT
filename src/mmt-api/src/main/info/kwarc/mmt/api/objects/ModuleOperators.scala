@@ -360,7 +360,7 @@ object OMStructuralInclude {
   def unapply(t: Term): Option[(MPath,MPath)] = t match {
     case OMA(OMID(this.path), List(OMMOD(f),OMMOD(t))) => Some((f,t))
     case _ => None
-  }  
+  }
 }
 
 object ComplexMorphism {

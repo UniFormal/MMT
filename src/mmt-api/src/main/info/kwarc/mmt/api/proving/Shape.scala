@@ -6,8 +6,8 @@ import objects._
 import utils._
 
 /** an approximation of the syntax tree of a [[Term]] that replaces subtrees beyond a certain depth with special leaves
- *  
- *  Shapes can be used as keys when indexing sets of terms, as in [[Facts]] 
+ *
+ *  Shapes can be used as keys when indexing sets of terms, as in [[Facts]]
  */
 abstract class Shape
 
@@ -29,11 +29,11 @@ object Shape {
     * @param context variables which yield [[BoundShape]]
     * @param t the term whose shape to compute
     * @param level the height of the shape's syntax tree
-    * @return the shape that cuts all branches of the syntax tree at the given level 
+    * @return the shape that cuts all branches of the syntax tree at the given level
     */
    def apply(queryVars: Context, context: Context, t: Term, level: Int): Shape = t match {
       case ComplexTerm(op, subs, cont, args) => {
-         if (level == 0) return Wildcard 
+         if (level == 0) return Wildcard
          var children: List[Shape] = Nil
          val subsSh = subs.foreach {s => children ::= Shape(queryVars, context, s.target, level-1)}
          val contSh = cont.mapVarDecls {case (sofar,vd) =>
@@ -50,13 +50,13 @@ object Shape {
          else context.index(n) match {
             case None => AtomicShape(t)
             case Some(i) => BoundShape(i)
-         } 
+         }
       case t => AtomicShape(t)
    }
-   
+
    /** convenience for empty contexts; returns shapes without any wildcards */
    def apply(t: Term, levels: Int): Shape = apply(Context.empty, Context.empty, t, levels)
-   
+
    /** true if two shapes may represent the same term */
    def matches(s: Shape, t: Shape): Boolean = ((s,t) match {
       case (ComplexShape(op1, ch1), ComplexShape(op2, ch2)) =>

@@ -11,12 +11,12 @@ import scala.collection.mutable
   * Mutable class that represents a response sent from the Server to the Client
   */
 class ServerResponse {
-  
+
   override def toString = outputStream match {
     case Left(a) => a.mkString
     case Right(s) => "(outputstream)"
   }
-  
+
   /** status of the response */
   private var status : (Int, String) = (200, "OK")
   /** statusCode (HTTP response code) for this message */
@@ -67,8 +67,8 @@ class ServerResponse {
   }
 }
 
-/** 
- *  factory methods for typical responses 
+/**
+ *  factory methods for typical responses
  */
 object ServerResponse {
 
@@ -105,7 +105,7 @@ object ServerResponse {
       anyDataResponse(io, utils.File(path).getExtension)
     }
   }
-  
+
   /** creates a response from a file etc
    *  @param extension file extension (only used to guess a content type)
    */
@@ -119,9 +119,9 @@ object ServerResponse {
     resp
   }
 
-  
+
   // ***************** more sophisticated methods added by Tom (?), probably not needed
-  
+
   /**
     * Convenience method to construct a standard response
     * @param content Textual message to be sent in the HTTP body

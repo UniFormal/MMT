@@ -12,26 +12,26 @@ import scala.xml.{Node,NodeSeq,Text,Elem}
 
 /**
  * opaque contents using flat text structure intermixed with [[Obj]]ects
- * 
+ *
  * string representation: {...} for variable scopes, $...$ for MMT objects
  * XML representation: <scope> for variable scopes, <OMOBJ> or <unparsed> for MMT objects
  */
 class OpaqueText(val parent: DPath, val format: String, val text: TextFragment) extends OpaqueElement {
    def raw = text.raw
    override def toString = format + ": " + text.toString()
-   
+
    /** components are the objects in left-to-right order, they're numbered starting from 0 */
    override def getComponents = text.getComponents
-   
+
    override def getComponentContext(key: ComponentKey) = {
-     MyList(text.subobjects(Nil)) mapFind {case (opCon, frag) => 
+     MyList(text.subobjects(Nil)) mapFind {case (opCon, frag) =>
        if (frag.comp == key) Some(opCon.toContext) else None
      } getOrElse Context.empty
    }
-   
+
    /** used to check if a changed opaque element can be merged into tihs one */
    def compatibilityKey = text.removeTerms
-   
+
    override def compatible(that: StructuralElement) = that match {
       case that: OpaqueText =>
          this.compatibilityKey == that.compatibilityKey
@@ -46,10 +46,10 @@ object OpaqueText {
   case class Escapes(scope: Bracket, decl: Bracket, obj: Bracket, unparsed: Bracket) {
     def nonTextBegin = List(scope,decl,obj).map(_.begin)
   }
-  
+
   val defaultEscapes = Escapes(Bracket('{', '}'), Bracket('[',']'), Bracket('$', '$'), Bracket('"', '"'))
   val defaultFormat = "text"
-  
+
   def fromNode(nsMap: NamespaceMap, nodes: NodeSeq): List[TextFragment] = {
      var i = -1
      def doOneNode(n: Node): TextFragment = n match {
@@ -61,7 +61,7 @@ object OpaqueText {
             val t = Obj.parse(n, nsMap)
             val (decl, oc) = t match {
               case t: Term => (false, TermContainer(t))
-              case c: Context => (true, ContextContainer(c)) 
+              case c: Context => (true, ContextContainer(c))
             }
             i += 1
             new ObjFragment(i, decl, oc, _ => ())
@@ -69,7 +69,7 @@ object OpaqueText {
      }
      nodes.toList map doOneNode
   }
-  
+
   def fromString(oP: ObjectParser, pu: ParsingUnit, escapes: Escapes)(implicit eh: ErrorHandler): List[TextFragment] = {
       val errorFun = (msg: String) => throw ParseError(msg)
       def absPos(p: SourcePosition) = SourcePosition(pu.source.region.start.offset+p.offset, -1,-1)
@@ -117,12 +117,12 @@ object OpaqueText {
       }
       def parseObj(decl: Boolean): ObjFragment = {
         val begin = u.getSourcePosition
-        val bracket = if (decl) escapes.decl else escapes.obj 
+        val bracket = if (decl) escapes.decl else escapes.obj
         val (s,endFound) = u.takeUntilChar(bracket.end, '\\')
         if (!endFound) errorFun("unclosed object")
         val end = u.getSourcePosition
         val srcref = pu.source.copy(region = SourceRegion(absPos(begin), absPos(end)))
-        
+
         // we cannot parse at this point because opaque elements may have forward references
         val tc = if (decl) ContextContainer(s) else TermContainer(s)
         i += 1
@@ -159,7 +159,7 @@ object OpaqueText {
         }
         StringFragment("") // impossible
       }
-      
+
       val fs = parseList
       if (!u.empty) {
         errorFun("unexpected input: " + u.remainder)
@@ -206,7 +206,7 @@ abstract class TextFragment {
 
 /**
  * introduces a variable scope
- * 
+ *
  * Scoping rules: An ObjFragment f has access to all declaring ObjFragment's in
  * - proper ancestor scopes
  * - the current scope if they precede f in the following order: declaring left-to-right, then non-declaring left-to-right

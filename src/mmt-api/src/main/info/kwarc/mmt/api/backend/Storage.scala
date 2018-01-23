@@ -40,7 +40,7 @@ abstract class Storage {
     * a storage may add more/additional content than necessary, e.g., the containing file/theory or a dependency closure
     */
   def load(path: Path)(implicit controller: Controller)
-  
+
   /** dereferences a path to a fragment of an already loaded StructuralElement and adds only that fragment
    *  empty by default, storage that can retrieve individual fragments should override this
    */

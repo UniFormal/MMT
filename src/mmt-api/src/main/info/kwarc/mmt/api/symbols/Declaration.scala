@@ -7,13 +7,13 @@ import notations._
 
 /**
  * Declaration unifies MMT symbols and MMT assignments.
- * 
+ *
  * These are the named statements living in [[info.kwarc.mmt.api.modules.Module]]s
  */
 abstract class Declaration extends ContentElement {
    /** to allow for sharper types of fields, every subclass of Declaration defines this to be itself */
    type ThisType >: this.type <: Declaration
-  
+
    /** the containing module */
    lazy val parent = home.toMPath
 
@@ -34,7 +34,7 @@ abstract class Declaration extends ContentElement {
          case _ => throw ImplementationError("not a declaration")
       }
    }
-   
+
    /** the containing module
     *
     * this is almost always OMMOD(p:MPath),
@@ -42,34 +42,34 @@ abstract class Declaration extends ContentElement {
     */
    val home : Term
    /** the local name in the containing module
-    * 
+    *
     *  for symbols: the name of the symbols
-    *  
-    *  for assignments: the name of the symbols to which a value is assigned 
+    *
+    *  for assignments: the name of the symbols to which a value is assigned
     */
    val name : LocalName
    /** an alternative name
-    * 
+    *
     *  None by default; overridden in particular by Constant
     */
    def alternativeNames: List[LocalName] = Nil
-   
+
    /** @return the shortest name and all other names */
    def primaryNameAndAliases = {
      val names = (name :: alternativeNames).sortBy(_.length)
      (names.head, names.tail)
    }
-   
+
    /** the full MMT URI, parent ? name */
    def path = GlobalName(parent, name)
    /** the OMS referencing this declaration */
    def toTerm = OMS(path)
-   /** the component used to identify anonymous declarations, e.g., the from of an import, None by default but may be overridden */ 
+   /** the component used to identify anonymous declarations, e.g., the from of an import, None by default but may be overridden */
    def implicitKey : Option[MPath] = None
 
    // sharper type
    def getDeclarations: List[Declaration]
-   
+
    /** a recursively translated copy of this declaration with a URI
     *  @param newHome the home theory of the result
     *  @param prefix the prefix used to form the name of the new declaration
@@ -78,7 +78,7 @@ abstract class Declaration extends ContentElement {
    /** a recursively translated copy of this declaration */
    def translate(translator: Translator, context : Context): ThisType = translate(home, LocalName.empty, translator, context)
    /** a new declaration with the same path obtained by replacing fields in 'this' with corresponding fields of 'that'
-    *  Unfortunately, this must take any declaration and throw an error if 'not (that : ThisType)' 
+    *  Unfortunately, this must take any declaration and throw an error if 'not (that : ThisType)'
     */
    def merge(that: Declaration): ThisType
 

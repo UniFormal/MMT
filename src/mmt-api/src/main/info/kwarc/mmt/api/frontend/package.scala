@@ -7,8 +7,8 @@ import frontend._
   *  - [[frontend.Controller]]: the central class, which creates everything else
   *  - [[frontend.Extension]]: the extension/plugin interface
   *  - [[frontend.Logger]], [[Report]]: logging
-  *    
-  *    
+  *
+  *
   */
 package object frontend {
 }

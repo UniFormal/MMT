@@ -17,7 +17,7 @@ object StringToJSON extends Embedding[String,JSON] {
 }
 
 class BigIntSplitter(base: BigInt) {
-   /** the representation of b>=0 in base 'base' using positive Ints as digits (least to most) */ 
+   /** the representation of b>=0 in base 'base' using positive Ints as digits (least to most) */
    private def toDigits(b: BigInt): List[Int] = {
       if (b == 0) Nil
       else {
@@ -25,7 +25,7 @@ class BigIntSplitter(base: BigInt) {
          mod.toInt :: toDigits(div)
       }
    }
-   /** inverse of toDigits */ 
+   /** inverse of toDigits */
    private def fromDigits(ds: List[Int]): BigInt = {
       ds match {
          case Nil => 0
@@ -46,12 +46,12 @@ class BigIntSplitter(base: BigInt) {
 
 class BigIntCodec(id: GlobalName, synType: Term) extends AtomicCodec[BigInt,JSON](id, synType, StandardInt) {
    val splitter = new BigIntSplitter(BigInt(1) << 31) // 2^31
-   
+
    def encodeRep(i: BigInt) = {
-      val (sgn, abs) = splitter.split(i) // TODO sign currently ignored 
+      val (sgn, abs) = splitter.split(i) // TODO sign currently ignored
       JSONArray(JSONInt(abs.length) :: abs.map(JSONInt(_)) :_*)
    }
-   
+
    def decodeRep(j: JSON): BigInt = {
       j match {
          case JSONArray(_, jdigits @_*) =>

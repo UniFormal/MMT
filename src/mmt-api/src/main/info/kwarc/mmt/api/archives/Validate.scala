@@ -8,7 +8,7 @@ import utils._
 
 import scala.collection._
 
-class ValidationTask extends MMTTask 
+class ValidationTask extends MMTTask
 
 /** This trait adds validation operations to Archive's */
 trait Validate {self: Archive =>

@@ -31,7 +31,7 @@ trait StructuralElement extends Content with NamedElement {
 
   /** returns a specific component if present */
   def getComponent(k: ComponentKey) = getComponents find (_.key == k) map (_.value)
-  
+
   /** like getComponent but returns the additional context (in addition to the context of the element) of the component,
    *  empty by default, override as needed
    *  unspecified if the component does not exist
@@ -93,7 +93,7 @@ trait StructuralElement extends Content with NamedElement {
 trait ContentElement extends StructuralElement {
   /** the kind of declaration, e.g., "constant" */
   val feature: String
-   
+
   def path: ContentPath
 
   /** returns all children of this elements */

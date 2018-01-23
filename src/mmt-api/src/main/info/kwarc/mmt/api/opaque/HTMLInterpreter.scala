@@ -14,17 +14,17 @@ import OpaqueXML._
 
 /**
  * MMT objects are read from <script type="mmt">OBJ</script> tags in XHTML
- * 
+ *
  * very rough proof of concept, should be refined a lot
  */
 class HTMLInterpreter extends OpaqueElementInterpreter
                          with OpaqueChecker with OpaqueHTMLPresenter {
    type OE = OpaqueXML
    override def logPrefix = "opaque_html"
-   
+
    def format = "html"
    override def isApplicable(f: String) = super.isApplicable(f) || f == "H"
-   
+
    def fromNode(parent: DPath, nsMap: NamespaceMap, nodes: NodeSeq): OpaqueXML = {
       val node = if (nodes.length == 1) nodes.head else <div>{nodes}</div>
       var terms: List[TermFragmentInXML] = Nil
@@ -38,7 +38,7 @@ class HTMLInterpreter extends OpaqueElementInterpreter
       }
       new OpaqueXML(parent, format, nodeM, terms.reverse)
    }
-  
+
    def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment) {
       val oh = downcast(oe)
       oh.terms foreach {tf =>
@@ -48,7 +48,7 @@ class HTMLInterpreter extends OpaqueElementInterpreter
          }
       }
    }
-   
+
    def toHTML(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh : RenderingHandler) {
       val oh = downcast(oe)
       val nP = mapMMTNodes(oh.node) {case MMTIndex(i) =>

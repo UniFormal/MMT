@@ -23,10 +23,10 @@ object Continue {
  * passed to [[Rule]]s to permit callbacks to the Solver
  */
 trait CheckingCallback {
-   /** a fixed context prefix that is not part of the contexts passed to the other methods */ 
+   /** a fixed context prefix that is not part of the contexts passed to the other methods */
    def outerContext : Context
 
-   
+
    //def getType(p: GlobalName): Option[Term]
    //def getDef(p: GlobalName): Option[Term]
 
@@ -40,9 +40,9 @@ trait CheckingCallback {
    def dryRun[A](allowDelay: Boolean, commitOnSucces: A => Boolean)(code: => A): DryRunResult = Success(code)
    /**
     * tries to check some judgments without delaying constraints
-    * 
+    *
     * if this returns None, the check is inconclusive at this point, and no state changes were applied
-    * if this returns Some(true), all judgments have been derived and all state changes are applied 
+    * if this returns Some(true), all judgments have been derived and all state changes are applied
     * if this returns Some(false), no state changes are applied and the caller still has to generate an error message, possibly by calling check(j)
     */
    def tryToCheckWithoutDelay(js:Judgement*): Option[Boolean] = {
@@ -80,21 +80,21 @@ trait CheckingRule extends SyntaxDrivenRule {
   /** additional heads that can trigger the rule, e.g., arrow for a rule with head Pi */
   def alternativeHeads: List[GlobalName] = Nil
   def heads = head::alternativeHeads
-  
+
   /** may be thrown to indicate that the judgment that the rules was called on should be delayed */
   case class DelayJudgment(msg: String) extends Throwable
 }
 
 object TypingRule {
    /**
-    * may be thrown by a TypingRule to indicate that type of tm should be inferred and equated to tp 
+    * may be thrown by a TypingRule to indicate that type of tm should be inferred and equated to tp
     */
   case object SwitchToInference extends Throwable
 }
 
 /** An TypingRule checks a term against a type.
  *  It may recursively call other checks.
- *  @param head the head of the type to which this rule is applicable 
+ *  @param head the head of the type to which this rule is applicable
  */
 abstract class TypingRule(val head: GlobalName) extends CheckingRule {
    /**
@@ -103,7 +103,7 @@ abstract class TypingRule(val head: GlobalName) extends CheckingRule {
     *  @param tp the type
     *  @param stack its context
     *  @return true iff the typing judgment holds
-    *  
+    *
     *  may throw SwitchToInference
     */
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean
@@ -172,10 +172,10 @@ abstract class SupertypeRule(val head: GlobalName) extends CheckingRule {
 
 /** An InferenceRule infers the type of an expression
  *  It may recursively infer the types of components.
- *  @param head the head of the term whose type this rule infers 
+ *  @param head the head of the term whose type this rule infers
  */
 abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) extends CheckingRule with MaytriggerBacktrack {
-   /** 
+   /**
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm the term
     *  @param covered if true, well-formedness may be assumed
@@ -211,10 +211,10 @@ abstract class EliminationRule(h: GlobalName, t: GlobalName) extends InferenceRu
 /** A ComputationRule simplifies an expression operating at the toplevel of the term.
  *  But it may recursively simplify the components if that makes the rule applicable.
  *  The rule must preserve equality and well-typedness of the simplified term. If necessary, additional checks must be performed.
- *  @param head the head of the term this rule can simplify 
+ *  @param head the head of the term this rule can simplify
  */
 abstract class ComputationRule(val head: GlobalName) extends CheckingRule {
-   /** 
+   /**
     *  @param check provides callbacks to the currently solved system of judgments
     *  @param tm the term to simplify
     *  @param covered if true, term can be assumed to be well-formed
@@ -225,10 +225,10 @@ abstract class ComputationRule(val head: GlobalName) extends CheckingRule {
 }
 
 /** A UnaryTermRule checks a [[UnaryTermJudgement]]
- *  @param head the head of the term 
+ *  @param head the head of the term
  */
 abstract class UnaryTermRule(val head: GlobalName) extends CheckingRule {
-   /** 
+   /**
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param term the Term
     *  @param stack its context
@@ -253,10 +253,10 @@ trait ApplicableUnder extends CheckingRule {
 }
 
 /** A TypeBasedEqualityRule checks the equality of two terms based on the head of their type
- *  @param head the head of the type of the two terms 
+ *  @param head the head of the type of the two terms
  */
 abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: GlobalName) extends CheckingRule with ApplicableUnder {
-   /** 
+   /**
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm1 the first term
     *  @param tm2 the second term
@@ -279,10 +279,10 @@ class TermIrrelevanceRule(under: List[GlobalName], head: GlobalName) extends Typ
  * A TermBasedEqualityRule checks the equality of two terms without considering types
  */
 abstract class TermBasedEqualityRule extends CheckingRule {
-   /** 
+   /**
     *  @return true if the rule is applicable to tm1 == tm2
-    *  
-    *  This method should fail quickly if possible; the apply method may still fail even it this returned true. 
+    *
+    *  This method should fail quickly if possible; the apply method may still fail even it this returned true.
     */
    def applicable(tm1: Term, tm2: Term): Boolean
    /**
@@ -301,7 +301,7 @@ abstract class TermBasedEqualityRule extends CheckingRule {
 
 /** A TermBasedEqualityRule checks the equality of two terms with certain heads
  *  @param left the head of the first term
- *  @param right the head of the second term 
+ *  @param right the head of the second term
  */
 // TODO this currently ignores alternativeHeads, which is probably fine
 abstract class TermHeadBasedEqualityRule(val under: List[GlobalName], val left: GlobalName, val right: GlobalName) extends TermBasedEqualityRule {
@@ -310,7 +310,7 @@ abstract class TermHeadBasedEqualityRule(val under: List[GlobalName], val left: 
    private val opsRight = (under:::List(right)).map(p => OMS(p))
    def applicable(tm1: Term, tm2: Term) = (tm1,tm2) match {
       case (OMA(f1,a1),OMA(f2,a2)) => (f1::a1).startsWith(opsLeft) && (f2::a2).startsWith(opsRight)
-      case (ComplexTerm(c1,_,_,_), ComplexTerm(c2,_,_,_)) => under.isEmpty && c1 == left && c2 == right 
+      case (ComplexTerm(c1,_,_,_), ComplexTerm(c2,_,_,_)) => under.isEmpty && c1 == left && c2 == right
       case _ => false
    }
    def apply(check: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History): Option[Continue[Boolean]]
@@ -330,14 +330,14 @@ class CongruenceRule(head: GlobalName) extends TermHeadBasedEqualityRule(Nil, he
                   val args = (args1 zip args2) forall {case (Sub(l1,a1),Sub(l2,a2)) =>
                      l1 == l2 && checker.check(Equality(stack,a1,a2,None))(history + "checking equality of arguments")
                   }
-                  
+
                   val argsCont = args && checker.check(EqualityContext(stack, cont1, cont2, true))(history + "checking equality of contexts")
                   val alpha = (cont2 alpha cont1).get // defined because cont1.length == cont2.length
 
                   val argsContScps = argsCont && (scps1 zip scps2).forall {case (s1,s2) =>
                      checker.check(Equality(stack ++ cont1, s1, s2 ^ alpha, None))(history + "checking equality of arguments")
                   }
-                  
+
                   argsContScps
                } else {
                   checker.error("terms do not have the same number or arguments")
@@ -353,16 +353,16 @@ class CongruenceRule(head: GlobalName) extends TermHeadBasedEqualityRule(Nil, he
  * It can solve a variable directly (e.g., if it has unit type) or apply a variable transformation (e.g., X --> (X1,X2) if X has product type).
  * @param head the head of the type of the unknown to which this rule applies
  * @param priority rules with high priority are applied to a freshly activated constraint is activated;
- *   others when no activatable constraint exists 
+ *   others when no activatable constraint exists
  */
 abstract class ForwardSolutionRule(val head: GlobalName, p: ForwardSolutionRule.Priority) extends CheckingRule {
-   /** 
+   /**
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param decl the declaration of an unknown
     *  @return true iff it solved a variable
     */
    def apply(solver: Solver)(decl: VarDecl)(implicit stack: Stack, history: History): Boolean
-   
+
    override def priority = p
 }
 
@@ -378,13 +378,13 @@ object ForwardSolutionRule {
 
 /**
  * A SolutionRule tries to solve for an unknown that occurs in an equality judgement.
- * 
+ *
  * It may be partial by, e.g., by inverting the toplevel operation of a Term without completely isolating an unknown occurring in it.
- * 
+ *
  * f(t1) = t2   --->   t1 = g(t2), where t1 contains a target variable that we try to isolate
- * 
+ *
  * @param head the operator that the rule tries to invert
- * 
+ *
  * Because solution rules must be tried often and may fail, they do not have access to the Solver state
  * and instead transform one judgement into another.
  * This also allows reusing them in other situations, in particular when matching already-type-checked terms.
@@ -397,7 +397,7 @@ abstract class SolutionRule(val head: GlobalName) extends CheckingRule {
     */
    def applicable(t: Term) : Option[Int]
    /**
-    *  @param j the equality in which to isolate a variable on the left side 
+    *  @param j the equality in which to isolate a variable on the left side
     *  @return the transformed equality and a log message if a step towards isolation was possible
     */
    def apply(j: Equality): Option[(Equality,String)]
@@ -407,10 +407,10 @@ abstract class SolutionRule(val head: GlobalName) extends CheckingRule {
  * A TypeSolutionRule tries to solve for the type of an unknown.
  */
 abstract class TypeSolutionRule(val head: GlobalName) extends CheckingRule {
-   /** 
+   /**
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm the term that contains the unknown to be solved
-    *  @param tp its type 
+    *  @param tp its type
     *  @param stack the context
     *  @return false if this rule is not applicable;
     *    if this rule is applicable, it may return true only if the Typing Judgement is guaranteed
@@ -421,20 +421,20 @@ abstract class TypeSolutionRule(val head: GlobalName) extends CheckingRule {
 
 /**
  * A TypeBasedSolutionRule solves an unknown based on its type, by constructing a term of that type.
- * This is legal if all terms of that type are equal. 
+ * This is legal if all terms of that type are equal.
  */
 abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under,head) {
 
   /** if this type is proof-irrelevant, this returns the unique term of this type
-   *  
+   *
    *  This method is already called during equality-checking. Therefore, it may not perform complex search operations.
-   */ 
+   */
   def solve(solver : Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
 
   /** if used as an equality rule, this makes all terms of this type equal if solve succeeds */
   final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     /* for atomic types, this method could immediately return Some(true),
-       but by calling solve, we allow for type constructors that are only proof-irrelevant if their components are */ 
+       but by calling solve, we allow for type constructors that are only proof-irrelevant if their components are */
     solve(solver)(tp) match {
       case Some(_) =>
         history += "all terms of this type are equal"

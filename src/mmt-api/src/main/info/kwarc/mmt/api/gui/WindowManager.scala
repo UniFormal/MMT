@@ -10,7 +10,7 @@ class Window(val id: String, wm: WindowManager) extends JWindow() {
    private val textArea = new JTextArea()
    add(textArea)
    addWindowListener(new WindowAdapter {
-      override def windowClosed(e: WindowEvent) {wm.deleteWindow(id)} 
+      override def windowClosed(e: WindowEvent) {wm.deleteWindow(id)}
    })
    //setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
    setVisible(true)

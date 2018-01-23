@@ -8,10 +8,10 @@ import presentation._
 
 /**
  * A Structure represents an MMT structure.
- * 
+ *
  * Structures be declared (given by a list of assignments) or defined (given by an existing morphism).
  * These cases are distinguished by which subtrait of Link is mixed in.
- * 
+ *
  * @param parent the [[Path]] of the parent theory (also the codomain of the link)
  * @param name the name of the view
  * @param from the domain theory
@@ -27,7 +27,7 @@ abstract class Structure extends Declaration with Link {
    val to = home
    val isImplicit: Boolean
    def namePrefix = name
-   
+
    def isInclude = Include.unapply(this).isDefined
    private def nameOrKeyword = this match {
       case Include(_, fromPath, _) => "include "
@@ -43,14 +43,14 @@ abstract class Structure extends Declaration with Link {
    def toNode = {
       val nameAtt = if (isInclude) null else name.toPath
       val (fromAtt,fromNode) = backend.ReadXML.makeTermAttributeOrChild(from, "from")
-      val implAtt =if (isInclude) null else if (isImplicit) "true" else null 
+      val implAtt =if (isInclude) null else if (isImplicit) "true" else null
       <import name={nameAtt} from={fromAtt} implicit={implAtt}>{fromNode}{innerNodes}</import>
    }
 }
 
 /**
  * A DeclaredStructure represents an MMT structure given by a list of assignments.<p>
- * 
+ *
  * @param home the [[Term]] representing the parent theory
  * @param name the name of the structure
  * @param from the domain theory
@@ -92,7 +92,7 @@ class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermCont
 
  /**
   * A DefinedStructure represents an MMT structure given by an existing morphism.
-  * 
+  *
   * @param home the [[Term]] representing the parent theory
   * @param name the name of the structure
   * @param from the domain theory
@@ -103,7 +103,7 @@ class DefinedStructure(val home : Term, val name : LocalName,
                        val tpC: TermContainer, val dfC : TermContainer, val isImplicit : Boolean)
       extends Structure with DefinedLink {
    def getComponents = List(TypeComponent(tpC), DefComponent(dfC))
-   
+
    def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): DefinedStructure = {
      def tl(m: Term)= translator.applyModule(context, m)
      new DefinedStructure(home, prefix/name, tpC map tl, dfC map tl, isImplicit)
@@ -159,7 +159,7 @@ object SimpleStructure {
 
 /**
  * unnamed imports with automatic sharing are represented as special [[Structure]]s
- * 
+ *
  * they do not carry assignments
  * their name is LocalName(from)
  */

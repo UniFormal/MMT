@@ -79,7 +79,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
      }
      None
   }
-  
+
   private def manifestLocations(root: File) = List(root / "META-INF", root).map(_ / "MANIFEST.MF")
 
   private def manifestLocation(root: File): Option[File] =
@@ -231,7 +231,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     val ra = new RealizationArchive(file)
     addStore(ra)
   }
-  
+
   /** auxiliary function of openArchive */
   private def extractMar(file: File, newRoot: File) {
     log("unpacking archive " + file + " to " + newRoot)

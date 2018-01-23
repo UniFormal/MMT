@@ -30,7 +30,7 @@ case class File(toJava: java.io.File) {
   }
 
   def canonical = File(toJava.getCanonicalFile)
-  
+
   /** appends one path segment */
   def /(s: String): File = File(new java.io.File(toJava, s))
 
@@ -45,7 +45,7 @@ case class File(toJava: java.io.File) {
     val par = Option(toJava.getParentFile)
     if (par.isEmpty) this else File(par.get)
   }
-  
+
   def isRoot = up == this
 
   /** file name */
@@ -108,12 +108,12 @@ case class File(toJava: java.io.File) {
 
   /** @return subdirectories of this directory */
   def subdirs: List[File] = children.filter(_.toJava.isDirectory)
-  
+
   /** @return all files in this directory or any subdirectory */
   def descendants: List[File] = children.flatMap {c =>
     if (c.isDirectory) c.descendants else List(c)
   }
-  
+
   /** @return true if that begins with this */
   def <=(that: File) = that.segments.startsWith(segments)
 
@@ -139,7 +139,7 @@ case class FilePath(segments: List[String]) {
   def /(s: String): FilePath = FilePath(segments ::: List(s))
 
   override def toString: String = segments.mkString("/")
-  
+
   def getExtension = toFile.getExtension
   def setExtension(e: String) = toFile.setExtension(e).toFilePath
   def stripExtension = toFile.stripExtension.toFilePath
@@ -207,7 +207,7 @@ object File {
   def append(f : File, strings: String*) {
     scala.tools.nsc.io.File(f.toString).appendAll(strings:_*)
   }
-  
+
   /**
    * streams a list-like object to a file
    * @param f the file to write to
@@ -305,7 +305,7 @@ object File {
     }
     properties
   }
-  
+
   /** copies a file */
   def copy(from: File, to: File, replace: Boolean): Boolean = {
     if (!from.exists || (to.exists && !replace)) {

@@ -12,7 +12,7 @@ case object Pre extends Fixity("pre")
 /** prefix: operator after arguments */
 case object Post extends Fixity("post")
 /**
- * infix: operator after a certain number of arguments 
+ * infix: operator after a certain number of arguments
  * @param pos: the number of arguments before the operator
  */
 case class  In(pos: Int) extends Fixity(if (pos == 1) "in" else pos.toString)
@@ -49,7 +49,7 @@ case object Right extends Associativity("right")
 
 
 /**
- * Elidability is modelled by positive numbers. (Other values mean objects are required.)  
+ * Elidability is modelled by positive numbers. (Other values mean objects are required.)
  */
 sealed case class Elidability(level : Int) {
    /** true if positive elidability */

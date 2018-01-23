@@ -6,7 +6,7 @@ import scala.tools.nsc._
 import interpreter._
 
 /** a wrapper around the interactive Scala interpreter
- *  
+ *
  *  @param controller a controller that is used to initialize the Scala environment
  */
 class MMTILoop(controller: Controller) extends ILoop {

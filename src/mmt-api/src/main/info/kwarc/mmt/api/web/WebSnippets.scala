@@ -9,7 +9,7 @@ import ServerResponse._
  */
 class TreeView extends ServerExtension("tree") {
    /** item for a knowledge item (including archives) */
-   private def item(p : Path, state : String, label : Option[String] = None) = 
+   private def item(p : Path, state : String, label : Option[String] = None) =
       <item id={p.toPath} state={state}>
         <content><name href="#" onclick={"mmt.sideBarClick(event, '" + p.toPath + "')"}>{label.getOrElse(p.last)}</name></content>
       </item>

@@ -21,7 +21,7 @@ sealed abstract class InfInt(s: String) extends scala.math.Ordered[InfInt] {
         case (_,NegInfinite) => NegInfinite
         case (Finite(a), Finite(b)) => Finite(a+b)
       }
-   def +(i: Int): InfInt = this + Finite(i)  
+   def +(i: Int): InfInt = this + Finite(i)
    /**
     * difference
     * satisfies x - x = 0
@@ -40,7 +40,7 @@ sealed abstract class InfInt(s: String) extends scala.math.Ordered[InfInt] {
     * true if (non-zero and) positive
     */
    def positive : Boolean = this > Finite(0)
-   override def toString = s 
+   override def toString = s
 }
 /** integer */
 case class Finite(ones : Int) extends InfInt(ones.toString) {

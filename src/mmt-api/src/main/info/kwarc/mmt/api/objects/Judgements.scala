@@ -8,15 +8,15 @@ abstract class Judgement extends utils.HashEquality[Judgement] with checking.His
   /** @return the set of names of the meta-variables occurring in this judgment
    *    Constraints must come with a Context binding all object variables occurring freely in any expressions;
    *    therefore, the remaining free variables are meta-variables
-   */ 
+   */
   def freeVars : HashSet[LocalName]
   val stack: Stack
   def context = stack.context
-  
+
   /** true if that is guaranteed if this holds */
   def implies(that: Judgement): Boolean = this == that
   //TODO also true that.context.subsumes(this.context)
-  
+
   /** a toString method that may call a continuation on its objects */
   def present(implicit cont: Obj => String) = "Judgment " + presentAntecedent + " |- " + presentSucceedent
   def presentSucceedent(implicit cont: Obj => String) = toString
@@ -110,7 +110,7 @@ case class Inhabitable(stack: Stack, wfo: Term) extends UnaryObjJudgement(stack,
 /**
  *  A term tp is inhabited if it occurs on the right side of a Typing judgement.
  *  Via Curry-Howard, such terms can be thought of as provable propositions.
- *  Therefore, this judgement is usually undecidable. 
+ *  Therefore, this judgement is usually undecidable.
  */
 case class Inhabited(stack: Stack, tp: Term) extends UnaryObjJudgement(stack, tp, "INHABITED")
 
@@ -138,7 +138,7 @@ case class IsContext(stack: Stack, wfo: Context) extends UnaryObjJudgement(stack
 
 /** represents an equality judgement between contexts
  * context |- context1 = context2
- * 
+ *
  * @param uptoAlphy true: alpha-renaming allowed, false: reordering allowed
  */
 case class EqualityContext(stack: Stack, context1: Context, context2: Context, uptoAlpha: Boolean) extends Judgement {

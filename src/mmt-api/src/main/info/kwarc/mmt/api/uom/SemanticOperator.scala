@@ -5,22 +5,22 @@ import parser._
 
 /** a Scala-level function between [[SemanticType]]s to be used in a [[RealizedOperator]] */
 abstract class SemanticOperator(val tp: SemOpType) extends SemanticObject {
-  
+
   private var types = List(tp)
   def getTypes = types
-  
+
   lazy val arity = tp.arity
 
   protected def alsoHasType(t: SemOpType) {
       types ::= t
   }
-  
+
   /** basic type checking */
   override def init {
     if (types.exists(_.arity != arity))
       throw ImplementationError("types of semantic operator do not have the same arity")
   }
-  
+
   /**
    * the implementation of the operator
    * pre: args.length == arity
@@ -32,10 +32,10 @@ abstract class SemanticOperator(val tp: SemOpType) extends SemanticObject {
 trait Invertible {
   /**
    * the implementation of the inverse
-   * 
+   *
    * @param args eitthe unapply method receives
    * @return true if result == this(args) can be uniquely solved, and all unknown arguments were filled in; false if there is no solution; None if inconclusive
-   * 
+   *
    * pre: args.length == arity
    */
   def invert(args: List[UnapplyArg], result: Any): Option[Boolean]
@@ -85,7 +85,7 @@ object SemanticOperator {
       case None => Some(false)
     }
   }
-  
+
   /** abbreviation for binary operators */
   class Binary(val from1: SemanticType, val from2: SemanticType, val to: SemanticType, map: (Any,Any) => Any) extends SemanticOperator(from1 =>: from2 =>: to) {
     def apply(x: List[Any]) = map(x(0),x(1))
@@ -93,7 +93,7 @@ object SemanticOperator {
   object Binary {
     def apply(f1: SemanticType, f2: SemanticType, t: SemanticType)(m: (Any,Any) => Any): Binary = new Binary(f1,f2,t,m)
   }
-  abstract class InvertibleBinary(f1: SemanticType, f2: SemanticType, t: SemanticType, m: (Any,Any) => Any) extends Binary(f1,f2,t,m) with Invertible { 
+  abstract class InvertibleBinary(f1: SemanticType, f2: SemanticType, t: SemanticType, m: (Any,Any) => Any) extends Binary(f1,f2,t,m) with Invertible {
     def invertLeft(right: Any, res: Any): Option[Any]
     def invertRight(right: Any, res: Any): Option[Any]
     def invert(args: List[UnapplyArg], res: Any) = args match {

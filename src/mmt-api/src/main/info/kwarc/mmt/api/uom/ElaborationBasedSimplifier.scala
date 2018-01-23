@@ -63,7 +63,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
        case OMMOD(p) =>
          val mod = controller.globalLookup.getAs(classOf[DeclaredModule], p)
          flattenDeclaration(mod, d, None)
-       case _ => // TODO materialize 
+       case _ => // TODO materialize
      }
      case _ =>
     }
@@ -111,7 +111,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      }
   }
 
-  /** elaborates the definition into a context and adds the corresponding declarations */ 
+  /** elaborates the definition into a context and adds the corresponding declarations */
   private def flattenDefinition(mod: DeclaredModule, rulesOpt: Option[RuleSet] = None) {
     lazy val rules = rulesOpt.getOrElse {
       RuleSet.collectRules(controller, mod.getInnerContext)
@@ -143,7 +143,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 controller.memory.content.addImplicit(mtTerm, thy.toTerm, OMIDENT(mtTerm))
               }
               var translations = Substitution() // replace all OML's with corresponding OMS's
-              // TODO this replaces too many OML's if OML-shadowing occurs 
+              // TODO this replaces too many OML's if OML-shadowing occurs
               def translate(tm: Term) = (new OMLReplacer(translations)).apply(tm, Context.empty)
               omls foreach {o =>
                 o match {
@@ -171,7 +171,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         }
     }
   }
-  
+
   /** adds elaboration of d to parent */
   private def flattenDeclaration(mod: DeclaredModule, dOrig: Declaration, rulesOpt: Option[RuleSet] = None) {
     if (ElaboratedElement.is(dOrig))
@@ -193,8 +193,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           'n = OMM(n,TARGET)' for all constants n
           's = OMCOMP(s, TARGET)' for all structures s
          in the domain of FROM
-         
-         The treatment of derived declarations and nested modules in FROM has not been specified yet. 
+
+         The treatment of derived declarations and nested modules in FROM has not been specified yet.
       */
       case ds : DefinedStructure if parent.isInstanceOf[DeclaredView] =>
         ds.df match {
@@ -353,7 +353,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       case ElaborationOf(_) | ElaborationOfDefinition => return
       case _ =>
     }
-    
+
     val parent = c.parent match {
       case cp : ContentPath => controller.get(cp)
       case _ => return
@@ -446,7 +446,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         thy
     }
   }
-  
+
   //TODO move to library if it's not doing anything else
   def getBody(context: Context, moduleExp: Term): ElementContainer[NamedElement] = moduleExp match {
      case OMMOD(p) => lup.getTheory(p) match {

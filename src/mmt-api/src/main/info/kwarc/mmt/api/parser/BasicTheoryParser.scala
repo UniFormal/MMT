@@ -8,11 +8,11 @@ import Theory._
 
 /**
  * parses input streams as theory bodies, i.e., without MMT style module system
- * 
+ *
  * the stream is parsed into a single [[DeclaredTheory]]
  * the URI of the stream is split such that the last part (e.g., the file name) becomes the theory name,
  * the rest (e.g., the path to the folder) becomes the namespace
- * 
+ *
  * @param meta the meta-theory to be used when constructing an MMT theory
  */
 abstract class BasicTheoryParser(objectParser: ObjectParser, meta: Option[MPath]) extends Parser(objectParser) {
@@ -29,8 +29,8 @@ abstract class BasicTheoryParser(objectParser: ObjectParser, meta: Option[MPath]
       parseBody(thy.path)(thy, unp)
       doc
    }
-   
-   
+
+
    /* a regular expression marking the end of a declaration
     * default: . followed by whitespace
     */
@@ -38,11 +38,11 @@ abstract class BasicTheoryParser(objectParser: ObjectParser, meta: Option[MPath]
    /** read the next declaration, may be overridden; default: everything until (excluding but dropping) endOfDecl */
    def readDeclaration(implicit u: Unparsed): String = u.takeUntilRegex(endOfDecl)
    def parseDeclaration(s: String)(implicit thy: DeclaredTheory): Unit
-   
+
    def comments: List[BracketPair]
-   
+
    def parseHeader(default: MPath)(implicit u: Unparsed): MPath
-   
+
    def parseBody(t: MPath)(implicit thy: DeclaredTheory, u: Unparsed) {
       while ({u.trim; !u.empty}) {
         val r = u.remainder

@@ -29,14 +29,14 @@ class NotationStore(mem : ROMemory, val report : frontend.Report) extends Logger
    protected var visible = new HashMap[MPath, List[MPath]]
    def get(path : MPath) : Style = {
       try {sets(path)}
-      catch {case _ : Throwable => 
+      catch {case _ : Throwable =>
          log("retrieving notation set " + path)
          throw frontend.NotFound(path)
       }
    }
    /**
     * looks up a notation in a style by a key
-    * 
+    *
     * @param path the notation set to be looked in
     * @param key the key for which the notation is looked up
     * @return the applicable notation, see https://svn.kwarc.info/repos/kwarc/rabe/Scala/doc/mmt.pdf
@@ -60,23 +60,23 @@ class NotationStore(mem : ROMemory, val report : frontend.Report) extends Logger
            case None =>
               getDeep(key) match {
                  case Some(hn) => hn
-                 case None => 
+                 case None =>
                     throw GetError("no notation found for " + key + " in style " + path)
               }
            case Some(p) =>
               val r = key.role
               //to find the default notation highNot, we use keys without a path and try some roles in order
               val roles : List[Role] = r match {
-                 case Role_application(None) => 
+                 case Role_application(None) =>
                    mem.ontology.getType(p) match {
-                       case Some(ontology.IsConstant) => List(Role_application(None), r) // application of constants may differ depending on their role, if given 
+                       case Some(ontology.IsConstant) => List(Role_application(None), r) // application of constants may differ depending on their role, if given
                        case _ => List(r)
                     }
                  case Role_Constant(Some(s)) => List(r, Role_Constant(None))
                  case r => List(r)
               }
-              val highNot = roles mapFind {r => getDeep(NotationKey(None, r))} 
-              val lowNot = getDeep(key) 
+              val highNot = roles mapFind {r => getDeep(NotationKey(None, r))}
+              val lowNot = getDeep(key)
               (highNot, lowNot) match {
                  case (Some(hn), None) => hn
                  case (None, Some(ln)) => ln

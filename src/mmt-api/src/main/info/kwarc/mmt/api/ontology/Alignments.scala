@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.ontology
 
-import info.kwarc.mmt.api._ 
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.{ContentPath, GlobalName, MPath}
 import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
 import info.kwarc.mmt.api.utils._
@@ -189,7 +189,7 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, inver
         InformalAlignment(from,tto)
       case ArgumentAlignment(tfrom,tto,inv,args2) =>
         ArgumentAlignment(from,tto,invertible && inv,combine(args2))
-      case _ => throw ImplementationError("missing case") //TODO      
+      case _ => throw ImplementationError("missing case") //TODO
     }
     ret.isGenerated = true
     ret

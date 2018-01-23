@@ -10,13 +10,13 @@ import documents._
 
 /**
  * Body represents the content of modules, i.e., a set of declarations.
- * 
+ *
  * It is mixed into elements that contain declarations, e.g., declared theories.
- * 
+ *
  * It stores both the logical [[Declaration]]s as well as their narrative structure.
  * The former uses a hash from [[LocalName]] to [[Declaration]], which completely ignores narrative structure.
  * In particular, declaration names must be unique independent of the narrative grouping.
- * The latter is stored as a [[Document]], which holds [[SRef]] to the logical declarations.  
+ * The latter is stored as a [[Document]], which holds [[SRef]] to the logical declarations.
 */
 trait Body extends ContentElement with ContainerElement[Declaration] {self =>
    /** the set of named statements, indexed by name
@@ -43,19 +43,19 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
    }
    import narrativeStructure._
 
-   /** true iff a declaration for a name is present */ 
+   /** true iff a declaration for a name is present */
    def declares(name: LocalName) = statements.isDefinedAt(name)
    /** the list of names of all declarations */
    def domain: List[LocalName] = getDeclarations.map(_.name)
 
-   /** retrieve a declaration */ 
+   /** retrieve a declaration */
    def getO(name : LocalName) : Option[Declaration] = statements.get(name)
-   
-   def getMostSpecific(name: LocalName): Option[(Declaration, LocalName)] = getMostSpecific(name, LocalName(Nil)) 
-   
+
+   def getMostSpecific(name: LocalName): Option[(Declaration, LocalName)] = getMostSpecific(name, LocalName(Nil))
+
    /** retrieves the most specific applicable declaration
     * @param name the name of the declaration
-    * @param rest the suffix that has been split off so far; this argument should be omitted in calls from outside this class 
+    * @param rest the suffix that has been split off so far; this argument should be omitted in calls from outside this class
     * @return the most specific (longest prefix of name) known declaration (if any) and the remaining suffix
     */
    private def getMostSpecific(name: LocalName, rest : LocalName) : Option[(Declaration, LocalName)] =
@@ -68,20 +68,20 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
          }
       }
    /** adds a named declaration, throws exception if name already declared
-    *  @param d declaration to add  
+    *  @param d declaration to add
     *  @param afterOpt the name of the [[Declaration]] after which to add; if omitted, add at end
     */
    def add(d : Declaration, at: AddPosition = AtEnd) {
       addDecl(d)
       addRef(d, at, false)
    }
-   
+
    /** like add, but treats the second argument as the name of a [[NarrativeElement]] */
    def addAfterNarrative(d: Declaration, after: LocalName) {
       addDecl(d)
       addRef(d, After(after), true)
    }
-   
+
    /** add a declaration to the content hash map only */
    private def addDecl(s : Declaration) {
       val name = s.name
@@ -91,7 +91,7 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
       statements(name) = s
       addAlternativeNames(s)
    }
-   
+
    /** delete a named declaration (does not have to exist)
     *  @return the deleted declaration
     */
@@ -105,7 +105,7 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
    }
 
    /* adding/deleting the entry in the document
-    * 
+    *
     * @param afterNarrative if at==After(n), whether n is a narrative name
     */
    private def addRef(s: Declaration, at: AddPosition = AtEnd, afterNarrative: Boolean = true) {
@@ -131,9 +131,9 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
          if (r.target.name == name) parDoc.delete(r.name)
       }
    }
-   
+
    /* adding/deleting hashmap entry for the alias */
-   
+
    private def addAlternativeNames(s: Declaration) {
       s.alternativeNames foreach {a =>
          if (statements.isDefinedAt(a))
@@ -144,7 +144,7 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
    private def deleteAlternativeNames(s: Declaration) {
       s.alternativeNames foreach {a => statements -= a}
    }
-   
+
    /** updates a named declaration (preserving the order) */
    def update(s : Declaration) {
       statements.get(s.name) match {
@@ -157,8 +157,8 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
       }
    }
    /** moves a declaration to the end of its section (if the relDocHome of ln has changed, it is also moved to the new section)
-    *  also moves all subsequent ln/X declarations (and updates their relDocHome) 
-    */ 
+    *  also moves all subsequent ln/X declarations (and updates their relDocHome)
+    */
    def reorder(ln: LocalName) {
       statements.get(ln) match {
          case Some(s) =>
@@ -174,10 +174,10 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
                   addRef(s)
                }
             }
-         case None => throw ImplementationError("declaration does not exist") 
+         case None => throw ImplementationError("declaration does not exist")
       }
    }
-   
+
    /** true iff no declarations present */
    def isEmpty = statements.isEmpty
    /** the narrative structure */
@@ -198,7 +198,7 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
             case r: SRef =>
                val s = statements(r.target.name)
                if (!s.isGenerated) s.toNode else Nil
-            case oe: opaque.OpaqueElement => oe.toNode 
+            case oe: opaque.OpaqueElement => oe.toNode
             case d: Document =>
                <document name={d.name.last.toPath}>{makeNodes(d)}</document>
          }
@@ -215,7 +215,7 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
                if (!s.isGenerated)
                   s.toNode(rh)
             case oe: opaque.OpaqueElement =>
-               oe.toNode(rh) 
+               oe.toNode(rh)
             case d: Document =>
                rh << s"""<omdoc name="${d.name.last.toPath}">"""
                streamNodes(d)

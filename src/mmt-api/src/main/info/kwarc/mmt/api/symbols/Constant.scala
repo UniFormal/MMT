@@ -6,7 +6,7 @@ import modules._
 import moc._
 
 /**
- * the abstract interface to MMT constants with a few basic methods 
+ * the abstract interface to MMT constants with a few basic methods
  */
 abstract class Constant extends Declaration with HasNotation {
    val feature = "constant"
@@ -19,10 +19,10 @@ abstract class Constant extends Declaration with HasNotation {
 
   def tp = tpC.get
   def df = dfC.get
-  
+
   def getComponents = List(TypeComponent(tpC), DefComponent(dfC)) ::: notC.getComponents
   def getDeclarations = Nil
-  
+
   def toNode =
      <constant name={name.toPath} alias={if (alias.isEmpty) null else alias.map(_.toPath).mkString(" ")} role={rl.getOrElse(null)}>
        {getMetaDataNode}
@@ -34,7 +34,7 @@ abstract class Constant extends Declaration with HasNotation {
      tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("") + notC.toString
 
   type ThisType = Constant
-     
+
   // finalizes the Constant if it is not final
   def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): FinalConstant = {
      Constant(
@@ -59,7 +59,7 @@ abstract class Constant extends Declaration with HasNotation {
 
 /**
  * the main class for a concrete MMT constant
- * 
+ *
  * @param home the parent theory
  * @param name the name of the constant
  * @param alias an alternative (usually shorter) name
@@ -74,8 +74,8 @@ class FinalConstant(val home : Term, val name : LocalName, val alias: List[Local
 /** helper object */
 object Constant {
    /** factory that hides the TermContainer's
-    * 
-    * all arguments are as in the primary constructor, except the terms, which are wrapped in the 
+    *
+    * all arguments are as in the primary constructor, except the terms, which are wrapped in the
     * TermContainer factory
     */
    def apply(home : Term, name : LocalName, alias: List[LocalName], tp: Option[Term], df: Option[Term],

@@ -288,7 +288,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val pr = puCont(pu)
     (obj, reg, pr)
   }
-  
+
   private def doComponent(c: ComponentKey, tc: TermContainer, cont: Context)(implicit state: ParserState) {
     val (obj, _, pr) = readParsedObject(cont)
     tc.read = obj
@@ -331,9 +331,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val cont = ParseResult.fromTerm(p) match {
 
 */
-  
-  
-  
+
+
+
   private def doNotation(c: NotationComponentKey, nc: NotationContainer, treg: SourceRegion)(implicit state: ParserState) {
     val notString = state.reader.readObject._1
     if (nc(c).isDefined)
@@ -784,7 +784,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     def +(f : Features) = new Features((features ::: f.features).distinct,(patterns ::: f.patterns).distinct)
   }
   val noFeatures = new Features(Nil,Nil)
-  
+
   /** auxiliary function to collect all structural feature rules in a given context */
   protected def getFeatures(mp: MPath): Features = {
     controller.simplifier(mp)
@@ -851,7 +851,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
   /** auxiliary function to build input for readComponents for notation components */
   private def notationComponentSpec(nc: NotationContainer) =
-    List("#" -> ParsingNotationComponent, "##" -> PresentationNotationComponent).map{case (s,k) => s -> (k,nc)} 
+    List("#" -> ParsingNotationComponent, "##" -> PresentationNotationComponent).map{case (s,k) => s -> (k,nc)}
 
   /** reads the components of a [[Constant]]
  *
@@ -907,7 +907,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               val (obj, reg) = state.reader.readObject
               val reader = Reader(obj)
               reader.setSourcePosition(reg.start)
-              val pea = new ParserExtensionArguments(this, state.copy(reader), cons, k, context) 
+              val pea = new ParserExtensionArguments(this, state.copy(reader), cons, k, context)
               val tO = parser(pea)
               tO foreach {
                 case d => throw makeError(reg, "parser extension in constant may not return anything")
@@ -992,7 +992,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     dd.setDocumentHome(parentInfo.relDocParent)
     seCont(dd)
     if (equalFound) {
-       //TODO calling the simplifier here is a hack that is not allowed 
+       //TODO calling the simplifier here is a hack that is not allowed
        //val innerContext = controller.simplifier.elaborateContext(context,feature.getInnerContext(dd))
        val innerContext = feature.getInnerContext(dd)
        val features = getFeatures(parent)
@@ -1002,7 +1002,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   /** returns an instance of [[InstanceFeature]]
-   *  
+   *
    *  parses 'pattern(name, args) NOTATIONS' where name is a free variable for the name of the instance */
   private def readInstance(instFeatPattern: (StructuralFeature,DerivedDeclaration), tpath: MPath)(implicit state: ParserState): DerivedDeclaration = {
     val (instFeat, pattern) = instFeatPattern
@@ -1016,7 +1016,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     readComponents(context, notationComponentSpec(nc), None)
     Instance(OMMOD(tpath), name, tpC, nc)
   }
-  
+
   private def readOpaque(pi: HasParentInfo, context: Context)(implicit state: ParserState): OpaqueElement = {
       val (format, freg) = state.reader.readToken
       val oi = controller.extman.get(classOf[OpaqueTextParser], format).getOrElse {

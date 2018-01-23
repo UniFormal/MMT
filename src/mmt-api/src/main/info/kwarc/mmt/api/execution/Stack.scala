@@ -5,13 +5,13 @@ import objects._
 
 class Stack {
    private var frames = List(Context.empty)
-   
+
    def top = frames.head
-   
+
    private def setTop(con: Context) {
      frames = con :: frames.tail
    }
-   
+
    def newVariable(vd: VarDecl) {
       setTop(top ++ vd)
    }
@@ -23,7 +23,7 @@ class Stack {
    def removeVariables(n: Int) {
       setTop(top.take(top.length - n))
    }
-   
+
    def push {
      frames ::= Context.empty
    }

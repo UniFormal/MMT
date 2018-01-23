@@ -22,7 +22,7 @@ class CheckingEnvironment(val errorCont: ErrorHandler, val reCont: RelationHandl
 
 /**
  * checks objects
- * 
+ *
  * see also [[Checker]]
  */
 trait ObjectChecker extends Extension {
@@ -36,15 +36,15 @@ trait ObjectChecker extends Extension {
 
 /**
  * checks structural elements
- * 
+ *
  * see also [[Checker]]
  *
  * INVARIANTS: apply(se) must be equivalent to
  * - for ContainerElement's: applyElementBegin(se) + se.getPrimitiveDeclarations.foreach(apply) + applyElementEnd(se)
  * - for other elements: apply(se) must be equivalent to applyElementBegin(se)
- * 
- * That way all calls to the [[StructureParserContinuations]] together check the entire element. 
- */ 
+ *
+ * That way all calls to the [[StructureParserContinuations]] together check the entire element.
+ */
 trait StructureChecker extends FormatBasedExtension {
    /** checks the entire StructuralElement */
    def apply(e : StructuralElement)(implicit env: CheckingEnvironment)
