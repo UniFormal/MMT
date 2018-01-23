@@ -94,7 +94,7 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
 // =================================
 import VersionSpecificProject._
 lazy val excludedProjects = {
-  Exclusions(guidedTours, metamath)
+  Exclusions(guidedTours)
     .java7(repl, odk)
     .java9(concepts)
 }
@@ -218,7 +218,7 @@ lazy val pvs = (project in file("mmt-pvs")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-pvs"): _*)
 
-lazy val mmscala = RootProject(uri("https://github.com/digama0/mm-scala.git#master"))
+lazy val mmscala = RootProject(uri("https://github.com/UniFormal/mm-scala#master"))
 lazy val metamath = (project in file("mmt-metamath")).
   dependsOn(api, lf, mmscala).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
