@@ -9,7 +9,9 @@ travisConfig := {
 
   // convenience wrapper to run an sbt task and an optional check
   // we need to hard-code scala 2.10.7 to work on JDK 7/8/9
-  def sbt(task: String, check: Option[String] = None) = s"cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 $task)${check.map(" && cd .. && " +).getOrElse("")}"
+  def sbt(task: String, check: Option[String] = None) : List[String] = List(
+    s"cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 $task) && cd .."
+  ) ::: check.toList
 
   // convenience functions for checks
   def file(name: String) : Option[String] = Some("[[ -f \"" + name + "\" ]]")
@@ -17,22 +19,26 @@ travisConfig := {
   def dir(name: String) : Option[String] = Some("[[ -d \"" + name + "\" ]]")
 
   Config(
+    Map(
+      // on the install step, we run 'sbt update' to install all the dependencies.
+      // if this fails, we will get an errored test, instead of a failed one.
+      "install" -> sbt("update"),
+
+      // setup the test environment, so that the lmh versioning is ignored on devel.
+      "before_script" -> List("if [ \"$TRAVIS_BRANCH\" == \"devel\" ]; then export TEST_USE_ARCHIVE_HEAD=1; fi")
+    ),
     Scala(scalaVersion.value),
     JDK(JDKVersion.OpenJDK7),
     JDK(JDKVersion.OpenJDK8), JDK(JDKVersion.OracleJDK8),
     JDK(JDKVersion.OracleJDK9)
   )(
-    Stage("build.sbt", "check that build.sbt loads and the travis tests have been run correctly")(
-      Job("Check that build.sbt loads", sbt("exit"))()
-    ),
 
-    Stage("testSetup", "check that 'sbt genTravisYML' has been run")(
+    Stage("SelfCheck", "check that 'sbt genTravisYML' has been run")(
       Job("Check that `sbt genTravisYML` has been run", sbt("genTravisYML", identical(".travis.yml")))(JDK(JDKVersion.OpenJDK8))
     ),
 
-    Stage("CodeCheck", "check that the code conforms to standards")(
-      Job("Check that the code compiles", sbt("compile"))(),
-      Job("Print scalastyle violations", sbt("scalastyle"))()
+    Stage("CompileCheck", "check that the code complies and conforms to standarssa")(
+      Job("Check that the code compiles", sbt("scalastyle"), sbt("compile"))()
     ),
 
     Stage("DeployCheck", "check that the 'apidoc', 'deploy' and 'deployFull' targets work")(
@@ -46,7 +52,7 @@ travisConfig := {
     ),
 
     Stage("deploy", "deploy the api documentation", Some("branch = master"))(
-      Job("Auto-deploy API documentation", "bash scripts/travis/deploy_doc.sh")(JDK(JDKVersion.OpenJDK8))
+      Job("Auto-deploy API documentation", List("bash scripts/travis/deploy_doc.sh"))(JDK(JDKVersion.OpenJDK8))
     )
   )
 }
