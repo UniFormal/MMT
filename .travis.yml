@@ -15,6 +15,17 @@ env:
 # use java, and install sbt on OS X
 language: java
 
+
+# meta -- email notification for builds
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+    on_error: always
+    on_start: never
+    on_cancel: never
+
+
 # speed up cloning of the git repository
 # we only need a clone depth of '1'
 git:
