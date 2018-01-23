@@ -9,7 +9,10 @@ travisConfig := {
 
   // convenience wrapper to run an sbt task and an optional check
   // we need to hard-code scala 2.10.7 to work on JDK 7/8/9
-  def sbt(task: String, check: Option[String] = None) = s"cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 $task)${check.map(" && cd .. && " +).getOrElse("")}"
+  def sbt(task: String, check: Option[String] = None) : List[String] = List(
+    "cd src",
+    s"(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 $task)"
+  ) ::: (if(check.nonEmpty) List("cd ..", check.get) else Nil)
 
   // convenience functions for checks
   def file(name: String) : Option[String] = Some("[[ -f \"" + name + "\" ]]")
@@ -46,7 +49,7 @@ travisConfig := {
     ),
 
     Stage("deploy", "deploy the api documentation", Some("branch = master"))(
-      Job("Auto-deploy API documentation", "bash scripts/travis/deploy_doc.sh")(JDK(JDKVersion.OpenJDK8))
+      Job("Auto-deploy API documentation", List("bash scripts/travis/deploy_doc.sh"))(JDK(JDKVersion.OpenJDK8))
     )
   )
 }

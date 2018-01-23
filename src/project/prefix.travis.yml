@@ -30,7 +30,7 @@ git:
 # versions of the archives, instead of the ones with a
 # hard-coded version
 before_install:
-  - if [ "TRAVIS_BRANCH" == "devel" ]; then export TEST_USE_ARCHIVE_HEAD = 1; fi
+  - if [ "$TRAVIS_BRANCH" == "devel" ]; then export TEST_USE_ARCHIVE_HEAD=1; fi
 
 
 
