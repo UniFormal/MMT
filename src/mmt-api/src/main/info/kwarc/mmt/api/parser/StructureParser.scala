@@ -181,15 +181,15 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           end(doc)(state)
           (doc, state)
        case IsRootMod(mpath) => throw LocalError("unsupported")
-       case _ => throw LocalError("unsupported")
-       /*case IsDoc(dp) =>
+       // hack: we return the last element of the IsDoc/IsMod, assuming that's the only one that was parsed
+       case IsDoc(dp) =>
           val doc = controller.globalLookup.getAs(classOf[Document],dp)
           readInDocument(doc)(state)
-          (???,state)
+          (doc.getDeclarations.last,state)
        case IsMod(mp, rd) =>
           val mod = controller.globalLookup.getAs(classOf[DeclaredModule],mp)
-          readInModule(mod, mod.getInnerContext, Nil)(state)
-          (???, state)*/
+          readInModule(mod, mod.getInnerContext, new Features(Nil,Nil))(state)
+          (mod.getDeclarations.last, state)
     }
   }
 

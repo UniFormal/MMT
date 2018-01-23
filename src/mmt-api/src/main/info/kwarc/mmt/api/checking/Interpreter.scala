@@ -26,7 +26,7 @@ abstract class Interpreter extends Importer {
   /** structure interpretation */
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement
   /** object interpretation */
-  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term
+  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): CheckingResult
 
   /** converts the interface of [[Importer]] to the one of [[Parser]] */
   protected def buildTaskToParsingStream(bf: BuildTask): (DPath, ParsingStream) = {
@@ -97,12 +97,12 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker, val simplifie
     }
   }
 
-  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term = {
+  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = {
     val pr = parser(pu)
     val cu = CheckingUnit.byInference(None, pu.context, pr).diesWith(pu)
     val rules = RuleSet.collectRules(controller, pu.context)
     val cr = checker(cu, rules)(new CheckingEnvironment(errorCont, RelationHandler.ignore, cu))
-    cr.term
+    cr
   }
 }
 
@@ -113,5 +113,10 @@ class OneStepInterpreter(val parser: Parser) extends Interpreter {
       val cont = new StructureParserContinuations(errorCont)
       parser(ps)(cont)
     }
-    def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = parser(pu).toTerm
+    def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = {
+      val pr = parser(pu)
+      val unk = pr.unknown
+      val term = pr.copy(unknown = Context.empty).toTerm
+      CheckingResult(unk.isEmpty, Some(unk), term)
+    }
 }
