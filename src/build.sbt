@@ -16,8 +16,8 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 scalaVersion in Global := "2.11.12"
 scalacOptions in Global := Seq("-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation", "-Xmax-classfile-name", "128")
 
-parallelExecution in ThisBuild := false
-javaOptions in ThisBuild ++= Seq("-Xmx1g")
+parallelExecution in Global := false
+javaOptions in Global ++= Seq("-Xmx1g")
 
 publish := {}
 fork in Test := true
