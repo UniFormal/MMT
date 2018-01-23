@@ -25,9 +25,8 @@ git:
 # everything below this line is automatically generated using the configuration in src/travis.sbt
 stages: 
   - name: SelfCheck
-  - name: CompileCheck
+  - name: CompileAndCheck
   - name: DeployCheck
-  - name: test
   - name: deploy
     if: branch = master
 jobs: 
@@ -41,36 +40,36 @@ jobs:
       jdk: openjdk8
       env: 
         - INFO='Check that `sbt genTravisYML` has been run'
-    # check that the code complies and conforms to standarssa
-    - stage: CompileCheck
+    # Check that our tests run and the code compiles
+    - stage: CompileAndCheck
       scala: 2.11.12
       script: 
-        - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 scalastyle) && cd .."
         - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 compile) && cd .."
+        - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test) && cd .."
       jdk: openjdk7
       env: 
-        - INFO='Check that the code compiles'
+        - INFO='Compile and run MMT Tests'
     - script: 
-        - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 scalastyle) && cd .."
         - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 compile) && cd .."
+        - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test) && cd .."
       scala: 2.11.12
       jdk: openjdk8
       env: 
-        - INFO='Check that the code compiles'
+        - INFO='Compile and run MMT Tests'
     - script: 
-        - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 scalastyle) && cd .."
         - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 compile) && cd .."
+        - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test) && cd .."
       scala: 2.11.12
       jdk: oraclejdk8
       env: 
-        - INFO='Check that the code compiles'
+        - INFO='Compile and run MMT Tests'
     - script: 
-        - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 scalastyle) && cd .."
         - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 compile) && cd .."
+        - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test) && cd .."
       scala: 2.11.12
       jdk: oraclejdk9
       env: 
-        - INFO='Check that the code compiles'
+        - INFO='Compile and run MMT Tests'
     # check that the 'apidoc', 'deploy' and 'deployFull' targets work
     - stage: DeployCheck
       scala: 2.11.12
@@ -157,32 +156,6 @@ jobs:
       jdk: oraclejdk9
       env: 
         - INFO='Check that apidoc generation works'
-    # check that our own tests run
-    - stage: test
-      scala: 2.11.12
-      script: 
-        - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test) && cd .."
-      jdk: openjdk7
-      env: 
-        - INFO='Run MMT Tests'
-    - script: 
-        - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test) && cd .."
-      scala: 2.11.12
-      jdk: openjdk8
-      env: 
-        - INFO='Run MMT Tests'
-    - script: 
-        - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test) && cd .."
-      scala: 2.11.12
-      jdk: oraclejdk8
-      env: 
-        - INFO='Run MMT Tests'
-    - script: 
-        - "cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 test) && cd .."
-      scala: 2.11.12
-      jdk: oraclejdk9
-      env: 
-        - INFO='Run MMT Tests'
     # deploy the api documentation
     - stage: deploy
       scala: 2.11.12

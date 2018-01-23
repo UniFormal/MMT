@@ -6,7 +6,6 @@ import scala.io.Source
 
 val travisConfig = taskKey[Config]("Generate travis.yml configuration")
 travisConfig := {
-
   // convenience wrapper to run an sbt task and an optional check
   // we need to hard-code scala 2.10.7 to work on JDK 7/8/9
   def sbt(task: String, check: Option[String] = None) : List[String] = List(
@@ -37,18 +36,14 @@ travisConfig := {
       Job("Check that `sbt genTravisYML` has been run", sbt("genTravisYML", identical(".travis.yml")))(JDK(JDKVersion.OpenJDK8))
     ),
 
-    Stage("CompileCheck", "check that the code complies and conforms to standarssa")(
-      Job("Check that the code compiles", sbt("scalastyle"), sbt("compile"))()
+    Stage("CompileAndCheck", "Check that our tests run and the code compiles")(
+      Job("Compile and run MMT Tests", sbt("compile") ::: sbt("test"))()
     ),
 
     Stage("DeployCheck", "check that the 'apidoc', 'deploy' and 'deployFull' targets work")(
       Job("Check mmt.jar generation using `sbt deploy`", sbt("deploy", file("deploy/mmt.jar")))(),
       Job("Check mmt.jar generation using `sbt deployfull`", sbt("deployFull", file("deploy/mmt.jar")))(),
       Job("Check that apidoc generation works", sbt("apidoc", dir("apidoc")))()
-    ),
-
-    Stage("test", "check that our own tests run")(
-      Job("Run MMT Tests", sbt("test"))()
     ),
 
     Stage("deploy", "deploy the api documentation", Some("branch = master"))(
