@@ -94,7 +94,7 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
 // =================================
 import VersionSpecificProject._
 lazy val excludedProjects = {
-  Exclusions(guidedTours)
+  Exclusions()
     .java7(repl, odk)
     .java9(concepts)
 }
@@ -242,10 +242,6 @@ lazy val specware = (project in file("mmt-specware")).
 lazy val stex = (project in file("mmt-stex")).
   dependsOn(api).
   settings(mmtProjectsSettings("mmt-stex"): _*)
-
-lazy val guidedTours = (project in file("mmt-guidedTours")).
-  dependsOn(api).
-  settings(mmtProjectsSettings("mmt-guidedTours"): _*)
 
 lazy val webEdit = (project in file("mmt-webEdit")).
   dependsOn(stex).
