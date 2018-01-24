@@ -27,7 +27,7 @@ import scala.collection.mutable._
 class UserKarmaTemp(uniqueId: String) {
   val id = uniqueId
   val karma = new HashMap[Path, Double]() // The doubles are numbers between 0 and 100
-  
+
   def getKarma(topicName : Path) : Double = {
     if(karma.contains(topicName)) {
       karma(topicName)

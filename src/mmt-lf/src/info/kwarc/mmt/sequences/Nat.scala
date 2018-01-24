@@ -21,10 +21,10 @@ object Nat {
    val nat   = _path ? "NAT"
    val zero  = _path ? "zero"
    val one   = _path ? "one"
-   
+
    object succ  extends UnaryLFConstantScala(_path, "succ")
    object leq   extends BinaryLFConstantScala(_path, "LEQ")
-   
+
    /** a < b : type */
    def lessType(a: Term, b: Term) = Bool.ded(leq(succ(a),b))
 }

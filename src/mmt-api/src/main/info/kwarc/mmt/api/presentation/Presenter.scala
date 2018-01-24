@@ -11,7 +11,7 @@ import archives._
 
 /**
  * the type of presenters that can handle objects
- *  
+ *
  * see also [Presenter]]
  */
 trait ObjectPresenter extends Extension {
@@ -29,7 +29,7 @@ trait ObjectPresenter extends Extension {
 
 /**
  * the type of presenters that can handle structural elements
- *  
+ *
  * see also [[Presenter]]
  */
 trait StructurePresenter extends Exporter {
@@ -44,7 +44,7 @@ trait StructurePresenter extends Exporter {
       apply(e)(sb)
       sb.get
    }
-   
+
    def exportDocument(doc : documents.Document, bf: BuildTask) = apply(doc, true)(rh)
    def exportTheory(thy : DeclaredTheory, bf: BuildTask) = apply(thy, true)(rh)
    def exportView(view : DeclaredView, bf: BuildTask) = apply(view, true)(rh)
@@ -54,7 +54,7 @@ trait StructurePresenter extends Exporter {
 
 /**
  * the designated super class of all presenters
- * 
+ *
  * The format for which a Presenter is applicable is the same as the key used to run it as an exporter.
  */
 abstract class Presenter(val objectLevel: ObjectPresenter)
@@ -62,9 +62,9 @@ abstract class Presenter(val objectLevel: ObjectPresenter)
 
   /** relegates to objectPresenter */
   def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) = objectLevel(o, origin)
-   
+
   def outDim = Dim("export", "presentation", key)
-  
+
 }
 
 /** helper object */
@@ -89,7 +89,7 @@ object Presenter {
     *     - the right argument of a right-open notation into a left-closed notation
     *   these cases are handled below, but some heuristic fine-tuning is necessary
     * - when multiple arguments occur without delimiter, brackets are usually needed
-    * - generally, omitting brackets may screw up parsing 
+    * - generally, omitting brackets may screw up parsing
     */
    def bracket(outerPrecedence: Precedence, delimitation: Int, innerNotation: TextNotation) : Int = {
       val innerPrecedence = innerNotation.precedence
@@ -110,7 +110,7 @@ object Presenter {
          if (yes) 1 else 0
       }
    }
-   
+
    def getNotations(controller: frontend.Controller, p: ContentPath, twoDim: Boolean) : List[TextNotation] = {
       val notC = controller.globalLookup.getO(p) flatMap {
          case c: symbols.Constant => if (c.notC.isDefined) Some(c.notC) else None
@@ -124,7 +124,7 @@ object Presenter {
 
 /**
  * A Presenter that returns text based on the toString method
- * 
+ *
  * This Presenter can be used without initialization.
  */
 object ObjectTextPresenter extends ObjectPresenter {
@@ -135,7 +135,7 @@ object ObjectTextPresenter extends ObjectPresenter {
 
 /**
  * A Presenter that returns text based on the toString method
- * 
+ *
  * This Presenter can be used without initialization.
  */
 object TextPresenter extends Presenter(ObjectTextPresenter) {
@@ -149,7 +149,7 @@ object TextPresenter extends Presenter(ObjectTextPresenter) {
 
 /**
  * A Presenter that returns XML based on the toNode method, i.e., OpenMath
- * 
+ *
  * This Presenter can be used without initialization.
  */
 object OpenMathPresenter extends ObjectPresenter {
@@ -160,7 +160,7 @@ object OpenMathPresenter extends ObjectPresenter {
 
 /**
  * A Presenter that returns XML based on the toNode method, i.e., OMDoc
- * 
+ *
  * This Presenter can be used without initialization.
  */
 object OMDocPresenter extends Presenter(OpenMathPresenter) {

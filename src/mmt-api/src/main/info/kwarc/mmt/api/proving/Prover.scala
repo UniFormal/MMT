@@ -26,10 +26,10 @@ abstract class Prover extends Extension {
     * @return true if the goal was solved and possibly a proof term
     */
    def apply(pu: ProvingUnit, rules: RuleSet, levels: Int): (Boolean, Option[Term])
-   
+
    /**
     * primitive function for building interactive provers
-    * @param levels the search depth for forward search 
+    * @param levels the search depth for forward search
     * @return the list of possible first steps (possibly with holes)
     */
    def interactive(pu: ProvingUnit, rules: RuleSet, levels: Int): List[Term]

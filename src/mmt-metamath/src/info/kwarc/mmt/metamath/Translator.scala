@@ -19,7 +19,7 @@ class Translator(val controller: Controller, bt: BuildTask, index: Document => U
   protected def report = controller.report
 
   val path = bt.narrationDPath.^!.^!
-  
+
   def addDatabase(db: Database, mod: MPath) {
     val theory = new DeclaredTheory(path, mod.name, Some(Metamath.prelude), Context.empty)
     controller add theory

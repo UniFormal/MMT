@@ -5,10 +5,10 @@ import objects._
 
 /**
  * convenience to access the metadata for a specific key
- * 
+ *
  * @param key the key
- * 
- * instantiate with the key and then apply the methods to instances of HasMetaData   
+ *
+ * instantiate with the key and then apply the methods to instances of HasMetaData
  */
 abstract class Annotator[A](key: GlobalName) {
   /** convert from A into objects to allow ascription as metadata */

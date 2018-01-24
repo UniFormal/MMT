@@ -207,7 +207,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
 
   // ******************* declaration level retrieval
   private val sourceError = (s: String) => throw GetError("error while looking up source declaration: "+s)
-  
+
   /** dereferences a declaration level reference
    *
    * Retrieval starts in the given module 'home'.
@@ -217,7 +217,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
    * For plain URI dereferencing, the 'home' is simply an OMMOD.
    *
    * Defined modules are expanded, which allows referencing into their materialized body.
-   * 
+   *
    * @param home module expression that materializes into a [[Module]] or a [[NestedModule]]
    * @param name declaration name relative to that materialization
    * @param error error continuation
@@ -308,12 +308,12 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
       case _ => error("unknown module: " + home)
     }
   }
-  
+
   /** auxiliary method of get for lookups in a parent that has already been retrieved */
   private def getDeclarationInElement(mod: ContentElement, args: List[Term], name: LocalName, error: String => Nothing): Declaration = {
     // only theories may have parameters for now
     mod match {
-      case t: Theory => 
+      case t: Theory =>
       case d =>
           if (0 != args.length)
             throw GetError("number of arguments does not match number of parameters")
@@ -421,7 +421,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private def getInLink(l: DeclaredLink, name: LocalName, error: String => Nothing): Declaration = {
      def default = {
         val da = get(l.from, name, sourceError) match {
-          case c: Constant => Constant(l.toTerm, name, Nil, None, None, None) 
+          case c: Constant => Constant(l.toTerm, name, Nil, None, None, None)
           case d: Structure => new DefinedStructure(l.toTerm, name, d.tpC, TermContainer(None), false)
           case _ => throw ImplementationError("unimplemented default assignment")
         }
@@ -513,7 +513,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /**
    * @param name name valid (possibly included) in the domain of l
    * @param l a link
-   * @return [l] / name, but without name.head if simply refers to l.from 
+   * @return [l] / name, but without name.head if simply refers to l.from
    */
   private def translateNameByLink(name: LocalName, l: Link): LocalName = {
     // the prefix of the new constant
@@ -527,7 +527,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     }
     l.namePrefix / nameRest
   }
-  
+
   /** auxiliary method of translate to unify translation along structures and views */
   private def translateByLink(decl: Declaration, l: Link, error: String => Nothing): Declaration =
     l match {
@@ -557,7 +557,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             if (a.path.toString.contains("comp") && a.path.toString.contains("add"))
               true
             val newNotC = a.notC merge c.notC
-            val newRole = a.rl orElse c.rl 
+            val newRole = a.rl orElse c.rl
             Constant(l.to, newName, newAlias, newTp, newDef, newRole, newNotC)
           case r: Structure =>
             val a = assig match {

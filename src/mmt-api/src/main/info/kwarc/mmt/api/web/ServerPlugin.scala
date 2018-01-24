@@ -39,7 +39,7 @@ abstract class ServerExtension(val pathPrefix: String) extends FormatBasedExtens
 }
 
 /** an example server extension that acts as a simple static web server
- *  
+ *
  *  see also [[FileServerHere]]
  */
 class FileServer extends ServerExtension("files") {
@@ -106,7 +106,7 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
     }
     val fromFile = path.dropComp match {
       case _: MPath | _: DPath =>
-        svgPath(path) flatMap {case (exportFolder, relPath) => 
+        svgPath(path) flatMap {case (exportFolder, relPath) =>
           val svgFile = exportFolder / graphkey / relPath
           if (svgFile.exists) {
             val svg = utils.File.read(svgFile.setExtension("svg"))
@@ -123,7 +123,7 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
     }
     ServerResponse(svg, "image/svg+xml")
   }
-  
+
   import MMTJavascript._
   def getEntries(path: Path) = {
     // all graphs we can build
@@ -136,13 +136,13 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
           case f if !exporters.exists(e => e.isApplicable(f.name)) && (f/relPath).exists => f.name
         } else Nil
     }
-    val allGraphs = exporters.map(e => (e.key, e.description)) ::: existingFiles.map(k => (k,k)) 
+    val allGraphs = exporters.map(e => (e.key, e.description)) ::: existingFiles.map(k => (k,k))
     allGraphs.map {case (key, description) =>
-      ContextMenuEntry("show " + description, showGraph(key, path.toPath))  
+      ContextMenuEntry("show " + description, showGraph(key, path.toPath))
     }
   }
-  
-  /** @return (d,f) such that d/key/f is the path to the svg file for path exported by key */ 
+
+  /** @return (d,f) such that d/key/f is the path to the svg file for path exported by key */
   private def svgPath(path: Path): Option[(File, List[String])] = {
     val (inNarr, newPath) = path.dropComp match {
       // narrative
@@ -268,7 +268,7 @@ class QueryServer extends ServerExtension("query") {
         TextResponse("Not found")
     }
   }
-  
+
   def run(query : Query, request: ServerRequest) : ServerResponse = {
     // check that the query is correct
     // TODO: Throw a proper error if this fails
@@ -479,7 +479,7 @@ class ActionServer extends ServerExtension("action") {
 
 /**
  * experimental server for submitting comments
- *  
+ *
  * Handle the body of the POST request (json format)
  * and store the comment as user+date into the discussions folder
  */
@@ -542,9 +542,9 @@ import symbols._
 import modules._
 class URIProducer extends BuildTarget {
   def key = "uris"
-  
+
   private def jsonFile(a: Archive) = a / archives.export / key / "uris.json"
-  
+
   def build(a: Archive, up: Update, in: FilePath) {
      val thys = controller.depstore.querySet(DPath(a.narrationBase), Transitive(+Declares) * HasType(IsTheory))
      File.stream(jsonFile(a), "[\n", ",\n", "\n]") {out =>

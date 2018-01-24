@@ -46,7 +46,7 @@ object Time {
 
 
 /** For synchronization of update operations */
-object ConflictGuard 
+object ConflictGuard
 
 
 /** Checks if a port is used
@@ -73,13 +73,13 @@ object isTaken {
 
 
 /** Get a stream to a resource within the JAR file. If it's not found in the JAR, then it looks into the file system
-  * @param path to the resource, starting with a slash, e.g. /some-path/resource.txt. 
-  * If the resource is in the JAR, then the JAR must look like 
+  * @param path to the resource, starting with a slash, e.g. /some-path/resource.txt.
+  * If the resource is in the JAR, then the JAR must look like
   *       jar-name.jar/some-path/resource.txt
   * If the resource is a separate file and the code is run from outside any JAR, then the folder structure must look like
   *       compiled-folder
   *        |--top-level-package-name/../class-files
-  *        |--some-path/resource.txt 
+  *        |--some-path/resource.txt
   * @param encoding the encoding of the resource file
   * @return Some(stream to the resource) if found, None otherwise. **The caller must close the stream after reading!**
   * @throws EncodingException(message) if the file is not in the given encoding

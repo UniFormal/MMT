@@ -28,7 +28,7 @@ case class ElementQuery(tp: List[QueryBaseType]) extends QueryType {
 }
 
 object ElementQuery {
-   def apply(b: QueryBaseType): ElementQuery = ElementQuery(List(b)) 
+   def apply(b: QueryBaseType): ElementQuery = ElementQuery(List(b))
 }
 
 /** a set of tuples */
@@ -67,7 +67,7 @@ object QueryType {
   def parse(s: String): QueryBaseType = allBaseTypes.filter(_.name == s).head
 
   // the remainder converts between query types and MMT terms; ultimately all queries should be terms
-  
+
   private val theoryPath = utils.mmt.mmtbase ? "QMT"
   val pth: GlobalName = theoryPath ? "Path"
   val obj: GlobalName = theoryPath ? "Object"

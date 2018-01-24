@@ -7,7 +7,7 @@ import javax.swing._
 
 class ConfigPane(config: MMTConfig) extends {val ta = new JTextArea} with JScrollPane(ta) {
    def set = {
-      ta.setText(config.toString) 
+      ta.setText(config.toString)
    }
    set
 }

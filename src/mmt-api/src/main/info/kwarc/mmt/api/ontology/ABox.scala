@@ -7,11 +7,11 @@ import scala.collection.mutable.{HashSet,HashMap}
 
 /**
  * An ABoxStore stores the abox of the loaded elements with respect to the MMT ontology.
- * 
+ *
  * Triples (subject, binary, object) are hashed three ways so that for any two components
  * the set of third components can be retrieved efficiently.
- * 
- * Use [[TheoryGraph]] for theory graph-level querying 
+ *
+ * Use [[TheoryGraph]] for theory graph-level querying
  */
 class RelStore(report : frontend.Report) {
    private val individuals = new HashMapToSet[Unary, Path]
@@ -30,7 +30,7 @@ class RelStore(report : frontend.Report) {
    def getInds(tp: Unary) : Iterator[Path] = individuals(tp).iterator
    /** retrieves type of an individual */
    def getType(p: Path) : Option[Unary] = types.get(p)
-   /** checks if an individual has a given type */   
+   /** checks if an individual has a given type */
    def hasType(p: Path, tp: Unary) : Boolean = individuals(tp) contains p
    /** retrieves all Relation declarations */
    def getDeps : Iterator[Relation] = dependencies.pairs map {case ((p,q), d) => Relation(d,p,q)}
@@ -61,7 +61,7 @@ class RelStore(report : frontend.Report) {
          }
       }
    }
-   
+
    /** deletes all RelationalElements with a given subject */
    def deleteSubject(subj : Path) {
       synchronized {
@@ -70,11 +70,11 @@ class RelStore(report : frontend.Report) {
         subjects.values.foreach {v => v -= subj}
         objects.keys.foreach {k =>
            if (k._1 == subj)
-              objects -= k 
+              objects -= k
         }
         dependencies.keys.foreach {k =>
            if (k._1 == subj)
-              dependencies -= k 
+              dependencies -= k
         }
       }
    }
@@ -98,7 +98,7 @@ class RelStore(report : frontend.Report) {
     * @param add a continuation called on every element in the result set (in topological order, duplicate calls possible)
     */
    def query(start : Path, q : RelationExp)(implicit add : Path => Unit) {q match {
-      case ToObject(d) => objects(start, d).foreach(add)   //all paths related to start via d 
+      case ToObject(d) => objects(start, d).foreach(add)   //all paths related to start via d
       case ToSubject(d) => subjects(d, start).foreach(add) //all paths inversely related to start via d
       //only start itself
       case Reflexive => add(start)
@@ -131,8 +131,8 @@ class RelStore(report : frontend.Report) {
         if (inMust && notInMustNot)
           add(start)
    }}
-   
-   
+
+
    /**
     * Returns the set of theories a theory depends on
     */

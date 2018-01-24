@@ -5,17 +5,17 @@ abstract class Program {
    private var decls : List[DECL] = Nil
    /** stores the list of labels for Hets file structure */
    private var labels : List[String] = Nil
-   
-   def addTag(key : String) = { 
-     labels = labels map { x => x match { 
+
+   def addTag(key : String) = {
+     labels = labels map { x => x match {
        case "?" => key
        case q => q
-     } 
+     }
      }
    }
-   
+
    def getLabels() : List[String] = labels.reverse
-   
+
    /** adds a declaration
     *  merges consecutive ADT's and FUNCTION's into ADTRec and FUNCTIONRec
     */
@@ -28,18 +28,18 @@ abstract class Program {
          case _ => { labels = "?" :: labels; d :: decls}
       }
    }
-   
+
    /** returns the list of declarations in declaration-order
     *  consecutive ADT's and FUNCTION's are merged into ADTRec and FUNCTIONRec
     */
    def get : List[DECL] = decls.reverse
-   
+
    /** a helper object for conveniently adding declarations via
     *  val declare(names: Seq[ID]) = (d: DECL)
     *  This adds d to the list of declarations and binds names to the ID's declared by d.
     *  The length of names must be equal to the list of introduced names.
     *  Most declarations introduce exactly one name;
-    *  ADT and RECORD declarations introduce n+1 names: first the type name, then the list of constructors/fields.  
+    *  ADT and RECORD declarations introduce n+1 names: first the type name, then the list of constructors/fields.
     */
    protected object declare {
        def unapplySeq(d: DECL) : Option[Seq[ID]]= {

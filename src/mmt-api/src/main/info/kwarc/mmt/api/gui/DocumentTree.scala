@@ -146,12 +146,12 @@ class TreePane(controller: Controller) extends JPanel {
 
    buttons.add(presenterTextArea)
 
-   private val content = new JTextArea // FXPanel 
+   private val content = new JTextArea // FXPanel
    private val scrollContent = new JScrollPane(content)
 
    val ontologyPane = new JPanel
    ontologyPane.setLayout(new BoxLayout(ontologyPane, BoxLayout.PAGE_AXIS))
-   
+
    private val tree = new MMTTree(controller) {
       override def clickOn(se: StructuralElement, e: MouseEvent) {
          (e.getButton, e.getClickCount) match {
@@ -182,7 +182,7 @@ class TreePane(controller: Controller) extends JPanel {
       val presenter = controller.extman.get(classOf[Presenter], mode).get // defined due to check above
       val rb = new presentation.StringBuilder
       presenter(se)(rb)
-      content.setText(rb.get) 
+      content.setText(rb.get)
       val qsPanelWidth = ontologyPane.getSize().width
       ontologyPane.removeAll
       val p = se.path

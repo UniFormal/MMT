@@ -8,8 +8,8 @@ import objects.Conversions._
 /**
  * traverses the syntax tree (depth first, argument order) and expands (only) the first defined constant it encounters
  *
- * does not expand in contexts and scopes at the moment  
- */ 
+ * does not expand in contexts and scopes at the moment
+ */
 class DefinitionExpander(controller: frontend.Controller) extends StatelessTraverser {
    private def expSym(p: GlobalName)(implicit con : Context): Option[Term] =
       controller.library.get(ComplexTheory(con),LocalName(p.module) / p.name,s => return None) match {
@@ -51,6 +51,6 @@ class DefinitionExpander(controller: frontend.Controller) extends StatelessTrave
 }
 
 /**
- * UOM uses this to remember that all definitions inside a Term have been expanded to avoid recursing into it again 
+ * UOM uses this to remember that all definitions inside a Term have been expanded to avoid recursing into it again
  */
 object DefinitionsExpanded extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "expanded")

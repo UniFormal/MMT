@@ -3,7 +3,6 @@
 ## ===============================================================
 ## ===============================================================
 
-
 # +===============================================================+
 # |THIS FILE HAS BEEN AUTO-GENERATED USING `sbt genTravisYML`     |
 # |ANY CHANGES WILL BE OVERWRITTEN                                |
@@ -17,21 +16,26 @@ env:
   - ENCRYPTION_LABEL: "25a07036478c"
   - COMMIT_AUTHOR_EMAIL: "tkw01536@gmail.com"
 
-# using trusty and scala
-dist: trusty
-language: scala
+# use java, and install sbt on OS X
+language: java
+
+
+# meta -- email notification for builds
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+    on_error: always
+    on_start: never
+    on_cancel: never
+
 
 # speed up cloning of the git repository
 # we only need a clone depth of '1'
 git:
   depth: 1
 
-# if we are running on devel we need to use the newest
-# versions of the archives, instead of the ones with a
-# hard-coded version
-before_install:
-  - if [ "$TRAVIS_BRANCH" == "devel" ]; then export TEST_USE_ARCHIVE_HEAD=1; fi
-
-
-
-# everything below this line is automatically generated using the configuration in src/travis.sbt
+# +===============================================================+
+# |Anything below this line has been generated automatically      |
+# |from src/travis.sbt.                                           |
+# +===============================================================+

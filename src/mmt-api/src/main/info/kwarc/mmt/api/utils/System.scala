@@ -39,7 +39,7 @@ object MMTSystem {
    }
   /** run in unknown way, in particular as part of jedit */
   case object OtherStyle extends RunStyle
-  
+
   /** the [[RunStyle]] of the current run */
   lazy val runStyle = {
      val location = getClass.getProtectionDomain.getCodeSource.getLocation
@@ -75,7 +75,7 @@ object MMTSystem {
       }
    }
 
-   /** retrieves a resource from the jar or the resource folder depending on the [[RunStyle]], may be null */ 
+   /** retrieves a resource from the jar or the resource folder depending on the [[RunStyle]], may be null */
    def getResource(path: String): java.io.InputStream = {
       if(!path.startsWith("/")){ return getResource("/" + path) } // make sure that the st
       runStyle match {

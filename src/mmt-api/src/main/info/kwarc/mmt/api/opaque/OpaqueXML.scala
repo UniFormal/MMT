@@ -38,7 +38,7 @@ import OpaqueXML._
 /**
  * Opaque content stored in an XML-tree structure with intermixed with [[Obj]]ects
  *
- * MMT objects O are stored in 'node' using pointer <mmt index="i"/> where i is the index of O in 'terms'.  
+ * MMT objects O are stored in 'node' using pointer <mmt index="i"/> where i is the index of O in 'terms'.
  */
 class OpaqueXML(val parent: DPath, val format: String, val node: Node, val terms: List[TermFragmentInXML]) extends OpaqueElement {
    def raw: NodeSeq = mapMMTNodes(node) {case MMTIndex(i) =>
@@ -46,13 +46,13 @@ class OpaqueXML(val parent: DPath, val format: String, val node: Node, val terms
       MMTNode(tf.format, tf.rawString)
    }
    override def toString = node.toString
-   
+
    override def getComponents = terms map {tf =>
       DeclarationComponent(tf.comp, tf.tc)
    }
-   
+
    def compatibilityKey = node
-   
+
    override def compatible(that: StructuralElement) = that match {
       case that: OpaqueXML =>
          this.compatibilityKey == that.compatibilityKey

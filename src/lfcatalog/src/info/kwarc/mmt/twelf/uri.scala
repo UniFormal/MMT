@@ -9,23 +9,23 @@ case class URI(var uri : java.net.URI) {
       * @throws java.net.URISyntaxException if the URI violates RFC 2396 or RFC 3986
       */
     def this(s : String) = this(URI.encode(s))
-    
+
     /** Create an valid URI where the illegal or non-ascii character in path, query and fragment are quoted
       * @return a valid, %-encoded URI
-      * @throws java.net.URISyntaxException if both a scheme and a path are given but the path is relative, if the URI string constructed from the given components violates RFC 2396, or if the authority component of the string is present but cannot be parsed as a server-based authority 
+      * @throws java.net.URISyntaxException if both a scheme and a path are given but the path is relative, if the URI string constructed from the given components violates RFC 2396, or if the authority component of the string is present but cannot be parsed as a server-based authority
       */
     def this(scheme : String, authority : String, path : String, query : String) = this(new java.net.URI(scheme, authority, path, query, null))
-    
+
     /** Return the unencoded URI */
     override def toString = java.net.URLDecoder.decode(uri.toString.replace("+", "%2B"), "UTF-8")
-    
+
     private def up(s : String) : String = {
-      	 val p = s.lastIndexOf("/")
+          val p = s.lastIndexOf("/")
          if (p == -1) ""
          else if (p == 0) "/"
          else s.substring(0,p)
     }
-    
+
     def /(n : String) : URI = new URI(uri.toString + "/" + n)
     def ?(n : String) : URI = new URI(uri.toString + "?" + n)
     def ^ : URI = new URI(uri.getScheme, uri.getAuthority, up(uri.getPath), null)

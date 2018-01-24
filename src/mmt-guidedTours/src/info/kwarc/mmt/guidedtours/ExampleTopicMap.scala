@@ -30,19 +30,19 @@ class ExampleTopicMap(exampleName: Path, topicName: Path) {
   val difficulties = this.updateDifficulties()
   val ratings = this.updateRatings()
   val times = this.updateTimes()
-  
+
   private def updateDifficulties() : HashMap[UserKarmaTemp, List[(Double, Double)]] = { // Read from DB
     new HashMap[UserKarmaTemp, List[(Double, Double)]]()
   }
-  
+
   private def updateRatings() : HashMap[UserKarmaTemp,  List[(Double, Int)]] = { // Read from DB
     new HashMap[UserKarmaTemp,  List[(Double, Int)]]()
   }
-  
+
   private def updateTimes() : HashMap[UserKarmaTemp,  List[(Double, Int)]] = { // Read from DB
     new HashMap[UserKarmaTemp,  List[(Double, Int)]]()
   }
-  
+
   def newRating(fromUser : UserKarmaTemp, nRating : Int) {
     if(!ratings.contains(fromUser)) {
       val karma = fromUser.getKarma(this.topic)
@@ -56,30 +56,30 @@ class ExampleTopicMap(exampleName: Path, topicName: Path) {
     ratings(fromUser) = (ratingWeight, nRating) :: current
     this.save()
   }
-  
+
   def newDifficulty(fromUser : UserKarmaTemp, newDifficulty : Double) {
     if(!difficulties.contains(fromUser)) {
       difficulties(fromUser) = List((fromUser.getKarma(this.topic), newDifficulty))
       return
     }
-    
+
     val current = difficulties(fromUser)
     difficulties(fromUser) = (fromUser.getKarma(this.topic), newDifficulty) :: current
     this.save()
   }
-  
+
   def newTime(fromUser : UserKarmaTemp, newTime :  Int) {
     if(!times.contains(fromUser)) {
       times(fromUser) = List((fromUser.getKarma(this.topic), newTime))
       return
     }
-    
+
     val current = times(fromUser)
     times(fromUser) = (fromUser.getKarma(this.topic), newTime) :: current
     this.save()
   }
-  
+
   def save() { // Write to DB
-    
+
   }
 }

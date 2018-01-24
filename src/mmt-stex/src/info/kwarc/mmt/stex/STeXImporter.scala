@@ -571,8 +571,8 @@ class STeXImporter extends Importer {
               case "OMOBJ" =>
                 val err = new STeXParseError("Invalid Object", Some(s"more than one child"), sref, Some(Level.Warning))
                 errorCont(err)
-              case "meta" =>  
-              case _ => 
+              case "meta" =>
+              case _ =>
                 val words = c.text.split(" ").filterNot(_.isEmpty)
                 markers ++= words.map(Delim(_))
                 markersOp ++= words.map(Delim(_))

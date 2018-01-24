@@ -18,7 +18,7 @@ import scalax.collection.mutable.Graph
  */
 
 class TransitivityDB {
-  
+
   protected var graphs: List[RelationGraph] = Nil
 
   def getGraph(globalName: GlobalName) = {
@@ -74,10 +74,10 @@ abstract class RelationGraph(globalName: GlobalName) {
     val ty = TransitivityEntry(f.goal,y)
     add(tx,ty,f)
   }
-  
+
   def add(t1:TransitivityEntry,t2:TransitivityEntry,f:Fact):Unit = {
     if (t1==t2) return
-    
+
     if (directed) {
       graph += LDiEdge(t1, t2)(f)
     }else{

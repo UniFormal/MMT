@@ -11,8 +11,8 @@ import scala.collection.mutable
 
 
 /** an approximation of the syntax tree of a [[Term]] that replaces subtrees beyond a certain depth with special leaves
- *  
- *  Shapes can be used as keys when indexing sets of terms, as in [[Facts]] 
+ *
+ *  Shapes can be used as keys when indexing sets of terms, as in [[Facts]]
  */
 abstract class Shape
 /** a non-replaced node in the syntax/shape tree,
@@ -32,7 +32,7 @@ object Shape {
     * @param context variables which yield [[BoundShape]]
     * @param t the term whose shape to compute
     * @param level the height of the shape's syntax tree
-    * @return the approximation of the term that cuts all branches of the syntax tree at a certain depth 
+    * @return the approximation of the term that cuts all branches of the syntax tree at a certain depth
     */
    def apply(queryVars: Context, context: Context, t: Term, level: Int): Shape = t match {
       case ComplexTerm(op, subs, cont, args) =>
@@ -52,10 +52,10 @@ object Shape {
          else context.index(n) match {
             case None => AtomicShape(t)
             case Some(i) => BoundShape(i)
-         } 
+         }
       case f => AtomicShape(f)
    }
-   
+
    def matches(s: Shape, t: Shape): Boolean = (s, t) match {
      case (ComplexShape(op1, ch1), ComplexShape(op2, ch2)) =>
        op1 == op2 && (ch1 zip ch2).forall { case (x, y) => matches(x, y) }
@@ -73,7 +73,7 @@ object Shape {
  */
 case class Fact(goal: Goal, tm: Term, tp: Term) {
    override def toString = tp.toString + "\n     " + tm.toString
-   def present(presentObj: Obj => String) = { 
+   def present(presentObj: Obj => String) = {
       presentObj(tp) + " by " + presentObj(tm)
    }
 }
@@ -141,11 +141,11 @@ class Terms(blackboard: MMTBlackboard) extends Logger {
 
 /**
  * A database of facts obtained through forward proof search
- * 
+ *
  * For efficiency, each instance only searches for terms that are added when the context is enriched.
  * Therefore, each [[Goal]] g maintains one instance of Facts, which links to the instance of the g.parent.
  * Each instance knows the local context of its goal, and maintains only terms that use a local variable.
- * 
+ *
  * @param shapeDepth is the depth of the shape representation used to apprximate facts
  */
 class Facts(blackboard: MMTBlackboard, shapeDepth: Int) extends Logger {
@@ -171,12 +171,12 @@ class Facts(blackboard: MMTBlackboard, shapeDepth: Int) extends Logger {
 
    /** the facts added in the current iteration */
    private var futureFacts : List[Fact] = Nil
-   
+
    /**
     *  adds a fact to the database. The facts are not actually
     *  added immediately but queued for addition
-    *  see integrateFutureFacts 
-    *  
+    *  see integrateFutureFacts
+    *
     *  facts are ignored if their proof does not use a free variable
     */
    def add(f: Fact,section:Option[FactSection] ) = {
@@ -196,7 +196,7 @@ class Facts(blackboard: MMTBlackboard, shapeDepth: Int) extends Logger {
 
 
   /**
-    * adds all queued facts to the database 
+    * adds all queued facts to the database
     */
   private[leo] def integrateFutureFacts(section:Option[FactSection]) ={
     //val out = futureFacts.nonEmpty
@@ -209,13 +209,13 @@ class Facts(blackboard: MMTBlackboard, shapeDepth: Int) extends Logger {
     futureFacts = Nil
     //if (out && section.isDefined) {section.get.passiveAdd()}
   }
-   
+
    /**
     * applies a function to (at least) all facts that match a query
     * @param queryVars those free variables of query to instantiate when matching
     * @param query the term to match against all facts
     * @param fun the function to apply
-    * 
+    *
     * only approximate matching based on shapes is performed; fun must still perform a precise match
     */
    private def foreachFact(queryVars: Context, query: Term)(fun: Fact => Unit) {
@@ -231,18 +231,18 @@ class Facts(blackboard: MMTBlackboard, shapeDepth: Int) extends Logger {
          }
       }
    }
-   
+
    /**
     * matches a facts against a query
     * @param queryVars those free variables of query to instantiate when matching
     * @param query the term to match against the fact
     * @param f the fact to match against
     * @return the pair (s: queryVars -> f.goal.fullContext, t) such that query ^ s = fact.tp, if possible
-    * 
+    *
     * s is partial if queryVars contains variables that do not occur in query
     */
    private def matchFact(queryVars: Context, query: Term, f: Fact): Option[(Substitution,Term)] = {
-      val (queryFresh, freshSub) = Context.makeFresh(queryVars, f.goal.fullContext.map(_.name)) 
+      val (queryFresh, freshSub) = Context.makeFresh(queryVars, f.goal.fullContext.map(_.name))
       val matcher = blackboard.makeMatcher
       val matches = matcher(f.goal.fullContext, f.tp, queryFresh, query)
       matches match {
@@ -253,16 +253,16 @@ class Facts(blackboard: MMTBlackboard, shapeDepth: Int) extends Logger {
         case _ => None
       }
    }
-   
+
    /**
     * the set of facts whose type matches a given type and which are valid at a certain goal
-    *  
+    *
     *  @param goal goal where facts must be valid
     *  @param queryVars free variables in the needed type that are to be matched
     *  @param query the needed type
     *  @return the pairs (sub, t) such that Fact(goal, tm, query ^ sub)
-    *  
-    *  If not all queryVars occur in query, then sub will be partial.  
+    *
+    *  If not all queryVars occur in query, then sub will be partial.
     */
    def termsOfTypeAtGoal(goal: Goal, queryVars: Context, query: Term): List[(Substitution, Term)] = {
       var res: List[(Substitution, Term)] = Nil
@@ -273,9 +273,9 @@ class Facts(blackboard: MMTBlackboard, shapeDepth: Int) extends Logger {
       }
       res
    }
-   
+
    /**
-    * the set of terms of the type required by the goal 
+    * the set of terms of the type required by the goal
     */
    def solutionsOfGoal(goal: Goal): List[Term] = {
       var res: List[Term] = Nil
@@ -284,19 +284,19 @@ class Facts(blackboard: MMTBlackboard, shapeDepth: Int) extends Logger {
       }
       res
    }
-   
+
    /**
     * the set of facts whose type matches a given type and which are valid at a certain goal or some of its subgoals
-    *  
+    *
     * retrieving facts at subgoals is useful for forward search: facts are only needed at leave nodes,
     * but computing them as high as possible avoids duplication of facts //TODO How?
-    *  
+    *
     *  @param goal goal where facts must be valid
     *  @param queryVars free variables in the needed type that are to be matched
     *  @param query the needed type
-    *  @return the triples (sub, t, g) such that Fact(g, tm, query ^ sub) and (g below goal); g is None if (goal below g) 
-    *  
-    *  If not all queryVars occur in query, then sub will be partial.  
+    *  @return the triples (sub, t, g) such that Fact(g, tm, query ^ sub) and (g below goal); g is None if (goal below g)
+    *
+    *  If not all queryVars occur in query, then sub will be partial.
     */
    def termsOfTypeBelowGoal(goal: Goal, queryVars: Context, query: Term): List[(Substitution, Term, Option[Goal])] = {
       var res: List[(Substitution, Term, Option[Goal])] = Nil
@@ -309,14 +309,14 @@ class Facts(blackboard: MMTBlackboard, shapeDepth: Int) extends Logger {
       }
       res
    }
-   
+
    def has(g: Goal, tp: Term): Option[Term] = {
       foreachFact(Nil, tp) {f =>
          if ((g isBelow f.goal) && (f.tp hasheq tp)) return Some(f.tm)
       }
       None
    }
-   
+
    override def toString = {
       facts.toString
    }

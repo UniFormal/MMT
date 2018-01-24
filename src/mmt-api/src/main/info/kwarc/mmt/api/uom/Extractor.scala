@@ -23,7 +23,7 @@ object Scala {
    }
    object Lambda {
       val path = _path ? "Lambda"
-      def apply(con: Context, t: Term) = OMBIND(OMID(this.path), con, t) 
+      def apply(con: Context, t: Term) = OMBIND(OMID(this.path), con, t)
       def unapply(t: Term) : Option[(Context,Term)] = t match {
          case OMBIND(OMID(this.path), con, t) => Some((con,t))
          case t => Some((Context(),t))
@@ -42,7 +42,7 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
    val key = "om-scala"
    override val outExt = "scala"
    override protected val folderName = "NAMESPACE"
-   
+
    private val imports = "import info.kwarc.mmt.api._\n" + "import objects._\n" + "import uom._\n" +
     "import ConstantScala._\n"
 
@@ -57,7 +57,7 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
    }
    private def lastArgIsSeq(arity: Arity) = ! arity.arguments.isEmpty && arity.arguments.last.isSequence
    private def lastVarIsSeq(arity: Arity) = ! arity.variables.isEmpty && arity.variables.last.isSequence
-   
+
    private def termToScala(t: Term): String = t match {
       case OMA(f, args) =>
          val normalArgs = f match {
@@ -83,10 +83,10 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
    }
    // drops types, definiens
    private def contextToScala(c: Context): String = {
-      val vars = c.variables.map("VarDecl(\"" + _.name + "\n,None,None)").mkString(", ") 
+      val vars = c.variables.map("VarDecl(\"" + _.name + "\n,None,None)").mkString(", ")
       s"Context($vars)"
    }
-   
+
    private def applyMethods(arity: Arity) : String = {
      val scalaArgs = arityToScala(arity)
      // x1 :: ... :: xn :: Nil or x1 :: ... :: xsn
@@ -123,10 +123,10 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
          s"    }\n"
      else
          "  // no unapply methods generated for this arity\n"
-     
+
      app + unapp
    }
-   
+
    /** translates a theory T: OpenMath to a Scala trait */
    def exportCoveredTheory(t: DeclaredTheory) {
      val pack = dpathToScala(t.parent.doc)
@@ -151,41 +151,41 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
         case SimpleStructure(s, fromPath) if ! s.isInclude =>
              // unnamed structures have been handled above already
              rh.writeln("val " + nameToScalaQ(s.path) + ": " + mpathToScala(fromPath))
-        case _ => 
+        case _ =>
      }
      rh.writeln("}\n")
      // generating the auxiliary object
      rh.writeln(s"object ${nameToScala(t.name)} extends TheoryScala {")
      val baseUri = t.parent.uri
-     rh.writeln("  val _base = DPath(utils.URI(\"" + baseUri.scheme.getOrElse("") + 
-        "\", \""+ baseUri.authority.getOrElse("") +"\")" + 
+     rh.writeln("  val _base = DPath(utils.URI(\"" + baseUri.scheme.getOrElse("") +
+        "\", \""+ baseUri.authority.getOrElse("") +"\")" +
         baseUri.path.foldRight("")((a,b) => " / \""+ a + "\"" + b) +
         ")"
      )
      rh.writeln("  val _path = _base ? \"" + t.name + "\"")
      t.getDeclarations foreach {
-	     case c: Constant =>
-	         var o = ""
-	         o +=  s"\n  object ${nameToScala(c.name)} extends ConstantScala {\n"
-	         o +=  s"    val parent = _path\n"
-	         o +=   "    val name = \"" + c.name + "\"\n"
-	         c.not foreach {n =>
-	            val a = n.arity
-	            o += applyMethods(a)
-	         }
-	         o += "  }\n"
-	         rh.writeln(o)
-	      case _ => 
-	   }
+        case c: Constant =>
+            var o = ""
+            o +=  s"\n  object ${nameToScala(c.name)} extends ConstantScala {\n"
+            o +=  s"    val parent = _path\n"
+            o +=   "    val name = \"" + c.name + "\"\n"
+            c.not foreach {n =>
+               val a = n.arity
+               o += applyMethods(a)
+            }
+            o += "  }\n"
+            rh.writeln(o)
+         case _ =>
+      }
      rh.writeln("\n}\n")
    }
-   
+
    /** currently skipped */
    def exportFunctor(v: DeclaredView) {}
-   
+
    /** translates a view from (T: OpenMath) -> Scala to a Scala object implementing T */
    def exportRealization(v: DeclaredView) {
-     val from = controller.globalLookup.getDeclaredTheory(v.from.toMPath) 
+     val from = controller.globalLookup.getDeclaredTheory(v.from.toMPath)
      val pack = dpathToScala(v.parent.doc)
      rh.writeln("package " + pack)
      rh.writeln(imports)
@@ -245,7 +245,7 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
      rh.writeln("}\n")
      rh.writeln(s"object ${nameToScala(v.name)} extends ${nameToScala(v.name)}\n")
    }
-   
+
    def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
       val pack = dpathToScala(dpath)
       rh.writeln("//Source file generated MMT\n")

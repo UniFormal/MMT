@@ -46,7 +46,7 @@ class MMTPlugin extends EBPlugin with Logger {
       val file = home resolve startup
       if (file.exists)
          controller.runMSLFile(file, None)
-      
+
       val conf = MMTOptions.config.get.getOrElse("mmtrc")
       val confFile = home resolve conf
       if (confFile.exists)
@@ -106,7 +106,7 @@ class MMTPlugin extends EBPlugin with Logger {
         }
      )
   }
-  
+
   private def customizeView(view: View) {
      view.getEditPanes foreach customizeEditPane
      addMMTToolBar(view)
@@ -151,7 +151,7 @@ class MMTPlugin extends EBPlugin with Logger {
     val viewToolBar = view.getToolBar
     if (viewToolBar != null) {
       log("Number of components of this view: " + viewToolBar.getComponentCount.toString)
-      viewToolBar.getComponents foreach {comp => 
+      viewToolBar.getComponents foreach {comp =>
         if(comp.isInstanceOf[MMTToolBar]) {
           log("removing tool bar")
           viewToolBar.remove(comp)

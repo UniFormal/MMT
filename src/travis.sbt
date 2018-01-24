@@ -1,55 +1,74 @@
 import sbt._
 import sbt.Keys._
-import src.main.scala.travis.{Job, _}
+import travis.Matrix._
+import travis.Config._
 
 import scala.io.Source
 
-val travisConfig = taskKey[Config]("Generate travis.yml configuration")
+val travisConfig = taskKey[TravisConfig]("Generate travis.yml configuration")
 travisConfig := {
+  val ourScalaVersion: String = scalaVersion.value
 
   // convenience wrapper to run an sbt task and an optional check
   // we need to hard-code scala 2.10.7 to work on JDK 7/8/9
   def sbt(task: String, check: Option[String] = None) : List[String] = List(
-    "cd src",
-    s"(cat /dev/null | sbt -Dsbt.scala.version=2.10.7 $task)"
-  ) ::: (if(check.nonEmpty) List("cd ..", check.get) else Nil)
+    s"cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 ++$ourScalaVersion $task) && cd .."
+  ) ::: check.toList
 
   // convenience functions for checks
   def file(name: String) : Option[String] = Some("[[ -f \"" + name + "\" ]]")
   def identical(name: String) : Option[String] = Some("(git diff --quiet --exit-code \"" + name + "\")")
   def dir(name: String) : Option[String] = Some("[[ -d \"" + name + "\" ]]")
 
-  Config(
-    Scala(scalaVersion.value),
-    JDK(JDKVersion.OpenJDK7),
-    JDK(JDKVersion.OpenJDK8), JDK(JDKVersion.OracleJDK8),
-    JDK(JDKVersion.OracleJDK9)
-  )(
-    Stage("build.sbt", "check that build.sbt loads and the travis tests have been run correctly")(
-      Job("Check that build.sbt loads", sbt("exit"))()
+  val LinuxTesting = MatrixSet(
+    Trusty, Language("scala"), Env(Map(("SBT_VERSION_CMD", "\"^validate\""))),
+    OpenJDK7, OpenJDK8, OracleJDK8, OracleJDK9
+  )
+
+  // in principle we would test OS X as follows
+  // but this does not properly work, because Travis
+  // does not fully support OS X (yet?)
+  val OSXTesting = MatrixSet(
+    OSX, Language("java"), Env(Map(("SBT_VERSION_CMD", "\"^validate ^validateUniversal\""))),
+    XCode83
+  )
+
+  TravisConfig(
+    Map(
+      // before installation, we need to make sure that we have sbt
+      // on Mac OS X, this means we need to install it via 'brew install'
+      // hopefully this will be provided by Travis CI in the future
+      "before_install" -> List("if [[ \"$TRAVIS_OS_NAME\" = \"osx\" ]]; then brew update; brew install sbt; fi"),
+
+      // on the install step, we run 'sbt update' to install all the dependencies
+      // if this fails, we will get an errored test, instead of a failed one
+      "install" -> sbt("update"),
+
+      // setup the test environment, so that the lmh versioning is ignored on devel
+      "before_script" -> List("if [ \"$TRAVIS_BRANCH\" == \"devel\" ]; then export TEST_USE_ARCHIVE_HEAD=1; fi")
     ),
 
-    Stage("testSetup", "check that 'sbt genTravisYML' has been run")(
-      Job("Check that `sbt genTravisYML` has been run", sbt("genTravisYML", identical(".travis.yml")))(JDK(JDKVersion.OpenJDK8))
+    MatrixSet(
+      Scala(ourScalaVersion)
+    ) && LinuxTesting, /* (LinuxTesting && OSXTesting) if OS X testing is ever fixed )*/
+
+
+    TravisStage("SelfCheck", "check that 'sbt genTravisYML' has been run")(
+      TravisJob("Check that `sbt genTravisYML` has been run", sbt("genTravisYML", identical(".travis.yml")), MatrixSet(OpenJDK8), expansion = FirstExpansion)
     ),
 
-    Stage("CodeCheck", "check that the code conforms to standards")(
-      Job("Check that the code compiles", sbt("compile"))(),
-      Job("Print scalastyle violations", sbt("scalastyle"))()
+    TravisStage("CompileAndCheck", "Check that our tests run and the code compiles")(
+      TravisJob("Check that the code compiles and the test runs run and the code compiles", sbt("scalastyle") ::: sbt("compile") ::: sbt("test"))
     ),
 
-    Stage("DeployCheck", "check that the 'apidoc', 'deploy' and 'deployFull' targets work")(
-      Job("Check mmt.jar generation using `sbt deploy`", sbt("deploy", file("deploy/mmt.jar")))(),
-      Job("Check mmt.jar generation using `sbt deployfull`", sbt("deployFull", file("deploy/mmt.jar")))(),
-      Job("Check that apidoc generation works", sbt("apidoc", dir("apidoc")))()
+    TravisStage("DeployCheck", "check that the 'apidoc', 'deploy' and 'deployFull' targets work")(
+      TravisJob("Check mmt.jar generation using `sbt deploy`", sbt("deploy", file("deploy/mmt.jar"))),
+      TravisJob("Check mmt.jar generation using `sbt deployfull`", sbt("deployFull", file("deploy/mmt.jar"))),
+      TravisJob("Check that apidoc generation works", sbt("apidoc", dir("apidoc")))
     ),
 
-    Stage("test", "check that our own tests run")(
-      Job("Run MMT Tests", sbt("test"))()
-    ),
-
-    Stage("deploy", "deploy the api documentation", Some("branch = master"))(
-      Job("Auto-deploy API documentation", List("bash scripts/travis/deploy_doc.sh"))(JDK(JDKVersion.OpenJDK8))
+    TravisStage("deploy", "deploy the api documentation", Some("branch = master"))(
+      TravisJob("Auto-deploy API documentation", List("bash scripts/travis/deploy_doc.sh"), MatrixSet(OpenJDK8), expansion = FirstExpansion)
     )
   )
 }

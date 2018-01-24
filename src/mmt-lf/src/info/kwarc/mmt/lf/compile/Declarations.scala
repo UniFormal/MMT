@@ -26,7 +26,7 @@ case class TYPEDEF(name: String, df: EXP) extends DECL {
 case class FUNCTION(name: String)(val args: ARG*)(val ret: EXP)(val body: EXP) extends DECL
 /** a group of mutually recursive functions */
 case class FUNCTIONRec(funs: List[FUNCTION]) extends DECL
-/** record type declaration: RECORD(n) ^ c1 :: A1 ^ ... ^ cN :: AN  
+/** record type declaration: RECORD(n) ^ c1 :: A1 ^ ... ^ cN :: AN
  * anonymous record types are not permitted */
 case class RECORD(name: String, fields: List[FIELD] = Nil) extends DECL {
   var typeClasses : List[String] = List()
@@ -64,7 +64,7 @@ case class FUNCTYPE(args: List[ARG], ret: EXP) {
 object DECL {
    /** @param d the declaration to be checked
     *  @param context the previous declarations
-    *  @return the declarations introduced by this one 
+    *  @return the declarations introduced by this one
     */
    def check(d: DECL)(implicit context: Context): Context = {d match {
      case TYPEDEF(n,tp) =>
@@ -99,22 +99,22 @@ object DECL {
 /** auxiliary class for constructing DECL's as
  *    name keyword arguments
  *  @param name the name of the declaration
- *  works with EXPConversions.stringToDECLHEAD 
+ *  works with EXPConversions.stringToDECLHEAD
  */
 case class DECLHEAD(name: String) {
-   /** type definitions as 
+   /** type definitions as
     *  name typedef type
     */
    def typedef(e: EXP) = TYPEDEF(name, e)
-   /** adt definitions as 
+   /** adt definitions as
     *  name adt (constructors)
     */
    def adt(cs: CONS*) = ADT(name, cs.toList)
-   /** record type definitions as 
+   /** record type definitions as
     *  name record (fields)
     */
    def record(fs: FIELD*) = RECORD(name, fs.toList)
-   /** function definitions as 
+   /** function definitions as
     *  name function returntype <-- (arguments) == body
     *  uses FUNCTYPE and FUNCVALUE
     *  also possible:
@@ -122,7 +122,7 @@ case class DECLHEAD(name: String) {
     *  name function returntype <-- (arguments) =||= case (x,y) => body
     */
    def function(f: FUNCVALUE) = FUNCTION(name)(f.args : _*)(f.ret)(f.body)
-   /** exception declarations as 
+   /** exception declarations as
     *  name exception
     */
    def exception() = EXCEPTION(name)

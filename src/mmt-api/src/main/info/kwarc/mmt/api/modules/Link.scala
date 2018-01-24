@@ -16,13 +16,13 @@ trait Link extends ContentElement {
        case ComplexTheory(cont) => cont
        case _ => throw ImplementationError("codomain of link must be theory")
     }
-   
+
    def toTerm : Term
    val isImplicit : Boolean
-   
+
    /** the prefix used when translating declarations along this link */
    def namePrefix: LocalName
-   
+
    protected def innerNodes : Seq[scala.xml.Node]
    /** header as a string */
    protected def outerString : String

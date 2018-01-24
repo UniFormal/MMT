@@ -15,8 +15,8 @@ trait ElementContainer[+S <: NamedElement] {
    def getMostSpecific(name: LocalName): Option[(S,LocalName)]
 
    def isDeclared(name : LocalName) = getO(name).isDefined
-   
-   /** same as get(LocalName(name)) */ 
+
+   /** same as get(LocalName(name)) */
    def getO(name : String) : Option[S] = getO(LocalName(name))
    def get(name: LocalName): S = getO(name) getOrElse {
      throw ImplementationError("get called without checking that name exists")
@@ -82,7 +82,7 @@ trait DefaultMutability[S <: NamedElement] extends {self: MutableElementContaine
            case i => i
         }
         case AtBegin => 0
-        case AtEnd => items.length 
+        case AtEnd => items.length
      }
      val (bef,aft) = items.splitAt(pos) // items(pos) == aft.head
      setDeclarations(bef ::: i :: aft)
@@ -107,7 +107,7 @@ trait DefaultMutability[S <: NamedElement] extends {self: MutableElementContaine
   def reorder(ln: LocalName) {
      val items = getDeclarations
      items.find(_.name == ln) match {
-        case Some(i) => 
+        case Some(i) =>
           delete(ln)
           setDeclarations(items ::: List(i))
         case None => throw ImplementationError("element does not exist")
@@ -119,7 +119,7 @@ trait ContainerElement[S <: StructuralElement] extends StructuralElement with Mu
    /** the list of declarations in the order of addition, excludes generated declarations */
    def getPrimitiveDeclarations = getDeclarations.filterNot(_.isGenerated)
    /** the list of declarations using elaborated declarations where possible */
-   def getDeclarationsElaborated = getDeclarations.filterNot(uom.ElaboratedElement.isProperly)  
+   def getDeclarationsElaborated = getDeclarations.filterNot(uom.ElaboratedElement.isProperly)
 }
 
 class ListContainer[S <: NamedElement](items: List[S]) extends ElementContainer[S] with DefaultLookup[S] {

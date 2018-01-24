@@ -16,7 +16,7 @@ import utils._
 class TypingRuleGen extends ChangeListener {
   override val logPrefix = "rule-gen"
   case class TypingRuleGenErr(msg : String = "") extends java.lang.Throwable(msg)
-    
+
   def onCheck(ce : ContentElement) {c.tp match {
     case Some(tm) => {
       val ruleName : String = c.name.toString

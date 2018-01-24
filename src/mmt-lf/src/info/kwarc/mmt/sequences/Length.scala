@@ -13,7 +13,7 @@ import Nat._
 object Length {
   private val ONE = Some(OMS(one))
   /** fast (no recursion) computation of the length of an expression
-   *  
+   *
    *  assumes that expressions cannot be simplified into ellipsis or ntype
    *
    *  currently succeeds for all terms by assuming that unknown terms always have length 1
@@ -38,10 +38,10 @@ object Length {
       case OMBINDC(_,_,_) => ONE
     }
   }
-  
+
   /** convenience */
   def infer(solver: CheckingCallback, tm: Term)(implicit stack: Stack): Option[Term] = infer(solver.outerContext++stack.context, tm)
-  
+
   /** true if length is known to be 1 */
   def isIndividual(context: Context, t: Term) = infer(context, t) == ONE
 
@@ -55,7 +55,7 @@ object Length {
     val r = solver.check(Equality(stack, l1, l2, Some(OMS(nat))))(history.branch)
     Some(r)
   }
-  
+
   /** check t <= up for natural numbers */
   def checkBelow(solver: CheckingCallback)(t: Term, up: Term)(implicit stack: Stack, history: History): Boolean = {
       solver.check(Inhabited(stack, lessType(t, up)))(history.branch)

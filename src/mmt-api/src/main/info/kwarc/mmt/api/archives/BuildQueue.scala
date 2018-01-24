@@ -481,7 +481,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
     }
   }
 
-  
+
   /** the thread for building */
   private lazy val buildThread = new Thread {
     override def run {

@@ -221,7 +221,7 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
    def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = t match {
       case OMA(OMS(hoas.apply), OMS(op)::rest) =>
          val appPos = (0 until 1+rest.length).toList.map(i => Position(1+i))
-         val notations = getNotations(op) 
+         val notations = getNotations(op)
          MyList(notations) mapFind {not =>
              if (not.canHandle(0,0,rest.length, false)) {
                // OMA(apply, op, args)  <-->  OMA(op, args)

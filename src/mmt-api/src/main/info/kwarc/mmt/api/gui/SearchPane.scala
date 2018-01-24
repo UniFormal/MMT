@@ -27,13 +27,13 @@ class SearchPane(controller: Controller) extends JPanel {
    query.add(formatText)
    query.add(searchButton)
    add(query, BorderLayout.NORTH)
-   
+
    private val resultRoot = new DefaultMutableTreeNode("MathWebSearchResults")
    private val resultTree = new JTree(resultRoot)
    //resultTree.setRootVisible(false)
    //private val scrollResults = new JScrollPane(results)
    add(new JScrollPane(resultTree), BorderLayout.CENTER)
-   
+
    private def search {
       val mws = controller.extman.get(classOf[MathWebSearch]).headOption.getOrElse(throw ParseError("no mws defined"))
       val q = queryText.getText

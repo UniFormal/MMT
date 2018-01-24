@@ -5,7 +5,7 @@ import notations._
 import utils._
 
 /** auxiliary class for storing lists of declarations statefully without giving it a global name
- * 
+ *
  * anonymous modules are object that can be converted into these helper classes using the objects [[AnonymousTheory]] and [[AnonymousMorphism]]
  */
 trait AnonymousBody extends MutableElementContainer[OML] with DefaultLookup[OML] with DefaultMutability[OML] {
@@ -102,7 +102,7 @@ object DerivedOMLFeature {
         } else
            None
      }
-  }  
+  }
   /** for mixing into subclasses of the companion class */
   trait Unnamed {self: DerivedOMLFeature =>
     def apply(p: MPath, df: Option[Term]): OML = apply(LocalName(p), OMMOD(p), df)

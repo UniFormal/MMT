@@ -11,7 +11,7 @@ import checking._
 object PillarFeature extends StructuralFeature("Pillar") {
   /** default notation */
   def getHeaderNotation = List(LabelArg(1, LabelInfo.none), Delim(":"), SimpArg(1))
-  
+
   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
      if (!dd.tpC.isDefined) {
        env.errorCont(InvalidElement(dd, "pilllar definition requires a type: references to the theories"))
@@ -20,13 +20,13 @@ object PillarFeature extends StructuralFeature("Pillar") {
      val tp = dd.tpC.get.get
      val cu = CheckingUnit.byInference(None, Context(), tp)
      tp match {
-       case OMA(_, args) => 
+       case OMA(_, args) =>
          val checkResult = env.objectChecker.apply(cu, env.rules)(env.ce)
          if (!checkResult.solved) {
            env.errorCont(InvalidElement(dd, "invalid pillar type, check failed"))
            return
          }
-         // checking that reference all point to modules 
+         // checking that reference all point to modules
          val allMods = args.forall {
            case OMID(p : MPath) => true
            case _ => false
@@ -35,37 +35,37 @@ object PillarFeature extends StructuralFeature("Pillar") {
            env.errorCont(InvalidElement(dd, "invalid pillar type, all pillar components must be modules"))
            return
          }
-        
-       case _ => 
+
+       case _ =>
          env.errorCont(InvalidElement(dd, "invalid pillar type, expected references to modules"))
          return
      }
-     
+
      if (dd.getDeclarations.nonEmpty) {
         env.errorCont(InvalidElement(dd, "pillars should have no declarations, only type"))
         return
      }
    }
-   
+
    def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = new Elaboration {
      lazy val domain = {
        dd.getDeclarations.map {d =>
          dd.name / d.name
        }
      }
-     
+
      def getO(n: LocalName): Option[Declaration] = {
        dd.module.getO(n.tail)
      }
    }
-   
+
    // assumes checked instance of pillar
    def getTheories(dd : DerivedDeclaration) : List[DeclaredTheory] = {
      dd.tpC.get.get match {
-       case OMA(_, args) => 
+       case OMA(_, args) =>
          var thys : List[DeclaredTheory] = Nil
          args foreach {
-           case OMID(p : MPath) => 
+           case OMID(p : MPath) =>
              controller.globalLookup.getModule(p) match {
                case dt : DeclaredTheory => thys ::= dt
                case _ => //nothing to do
@@ -75,15 +75,15 @@ object PillarFeature extends StructuralFeature("Pillar") {
          thys
        case _ => Nil
      }
-     
+
    }
-  
+
 }
 
 object RealmFeature extends StructuralFeature("Realm") {
   /** default notation */
   def getHeaderNotation = List(LabelArg(1, LabelInfo.none), Delim(":"), SimpArg(1))
-  
+
   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
     if (!dd.tpC.isDefined) {
       env.errorCont(InvalidElement(dd, "realm definition requires a type: references to the views between pillars"))
@@ -92,13 +92,13 @@ object RealmFeature extends StructuralFeature("Realm") {
     val tp = dd.tpC.get.get
     val cu = CheckingUnit.byInference(None, Context(), tp)
     tp match {
-      case OMA(_, args) => 
+      case OMA(_, args) =>
         val checkResult = env.objectChecker.apply(cu, env.rules)(env.ce)
         if (!checkResult.solved) {
           env.errorCont(InvalidElement(dd, "invalid realm type, object check failed"))
           return
         }
-        // checking that reference all point to modules 
+        // checking that reference all point to modules
         val allMods = args.forall {
           case OMID(p : MPath) => true
           case _ => false
@@ -107,31 +107,31 @@ object RealmFeature extends StructuralFeature("Realm") {
           env.errorCont(InvalidElement(dd, "invalid realm type, all realm components must be modules"))
           return
         }
-        
-      case _ => 
+
+      case _ =>
         env.errorCont(InvalidElement(dd, "invalid realm type, expected references to modules"))
         return
     }
-     
+
      if (dd.getDeclarations.size == 0) {
         env.errorCont(InvalidElement(dd, "realms should have declarations: the pillars"))
         return
      }
      dd.getDeclarations.foreach {
        case s : DerivedDeclaration if s.feature == "Pillar" => // nothing to do
-       case _ => 
+       case _ =>
           env.errorCont(InvalidElement(dd, "realms can only have Pillar instances as declarations"))
           return
      }
    }
-  
+
    // assumes checked instance of realm
    def getViews(dd : DerivedDeclaration) : List[DeclaredView] = {
      dd.tpC.get.get match {
-       case OMA(_, args) => 
+       case OMA(_, args) =>
          var views : List[DeclaredView] = Nil
          args foreach {
-           case OMID(p : MPath) => 
+           case OMID(p : MPath) =>
              controller.globalLookup.getModule(p) match {
                case dv : DeclaredView => views ::= dv
                case _ => //nothing to do
@@ -140,41 +140,41 @@ object RealmFeature extends StructuralFeature("Realm") {
          }
          views
        case _ => Nil
-     }  
+     }
    }
-   
+
    def isEssential(symbol : GlobalName, views : List[DeclaredView]) : Boolean = {
      views.exists(v => v.from.toMPath == symbol.module && v.isDeclared(symbol.name))
    }
-      
-   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = new Elaboration {  
-   
+
+   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = new Elaboration {
+
      lazy val pillars : Map[LocalName, DerivedDeclaration] = dd.getDeclarations.collect {
        case s : DerivedDeclaration if s.feature == "Pillar" => (s.name, s)
      }.toMap
-     
+
      lazy val theories : Map[LocalName, List[DeclaredTheory]] = {
        pillars.map(p => (p._1, PillarFeature.getTheories(p._2))).toMap
      }
-     
+
      lazy val symbols : Map[LocalName, List[GlobalName]] = {
-       theories map { p => 
+       theories map { p =>
          p._1 -> p._2.flatMap { t =>
            t.getDeclarations.map(d => d.path)
          }
-       }   
+       }
      }
-     
+
      lazy val essentialSymbols : List[GlobalName] = {
        symbols.flatMap {ps => ps._2 flatMap { p =>
          if (isEssential(p, views)) {
            List(p)
          } else Nil
-       }}.toList 
+       }}.toList
      }
-     
+
      lazy val views = getViews(dd)
-     
+
      lazy val domain = {
        symbols.flatMap {p =>
          p._2 map { s =>
@@ -186,7 +186,7 @@ object RealmFeature extends StructuralFeature("Realm") {
          }
        }.toList
      }
-     
+
      def getO(n: LocalName): Option[Declaration] = {
        if (!theories.keys.toList.contains(LocalName(n.head))) { // essential symbol
          val thy = theories.values.flatten.find( t => t.isDeclared(n))

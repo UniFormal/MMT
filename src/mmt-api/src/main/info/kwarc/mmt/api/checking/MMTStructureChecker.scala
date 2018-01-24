@@ -47,7 +47,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       check(context, e, streamed = false)(env)
     }
   }
-  
+
   def applyElementBegin(e: StructuralElement)(implicit ce: CheckingEnvironment) {
     if (! e.isGenerated) {
       val (context,env) = prepareCheck(e)
@@ -58,14 +58,14 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       }
     }
   }
-  
+
   def applyElementEnd(e: ContainerElement[_])(implicit ce: CheckingEnvironment) {
     if (! e.isGenerated) {
       val (context,env) = prepareCheck(e)
       checkElementEnd(context, e)(env)
     }
   }
-  
+
   @deprecated("unclear what happens here", "")
   def elabContext(th : DeclaredTheory)(implicit ce: CheckingEnvironment): Context = {
     //val con = getContext(th)
@@ -81,14 +81,14 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val env = new ExtendedCheckingEnvironment(ce, objectChecker, rules, e.path)
     (context, env)
   }
-  
+
   private def prepareCheckExtendContext(context: Context, env: ExtendedCheckingEnvironment, additionalContext: Context): (Context, ExtendedCheckingEnvironment) = {
      val contextI = context ++ additionalContext
      val rulesI = RuleSet.collectAdditionalRules(controller, Some(env.rules), additionalContext)
      val envI = env.copy(rules = rulesI)
      (contextI, envI)
   }
- 
+
   /**
     * @param context all variables and theories that may be used in e (including the theory in which is declared)
     * @param e       the element to check
@@ -273,7 +273,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             val j = Typing(Stack(pr.free), pr.term, expTp, None)
             if (performCheck) {
               val cu = CheckingUnit(Some(cp), context, unknowns, j).diesWith(env.ce.task)
-              if (env.timeout != 0) 
+              if (env.timeout != 0)
                 cu.setTimeout(env.timeout)(() => log("Timed out!"))
               val cr = objectChecker(cu, env.rules)
               if (inferType && cr.solved) {
@@ -329,7 +329,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   }
 
   // ***** ContainerElements *****
-  
+
   /** auxiliary method of check */
   private def checkElementBegin(context : Context, e : ContainerElement[_<: StructuralElement])(implicit env: ExtendedCheckingEnvironment) {
     val rules = env.rules
@@ -345,7 +345,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
         checkContext(contextMeta, t.parameters)
         t.df map {d => checkTheory(contextMeta++t.parameters, d)}
-        // this is redundant on a clean check because e is empty then; 
+        // this is redundant on a clean check because e is empty then;
         e.getPrimitiveDeclarations foreach {d => UncheckedElement.set(d)}
       case v: DeclaredView =>
         checkTheory(context, v.from)
@@ -408,7 +408,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   }
 
   // *****
-  
+
   /** checks whether a theory object is well-formed
     *
     * @param context the context relative to which m is checked
@@ -561,7 +561,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     s match {
       case OMMOD(p) =>
         if (p.doc.uri.scheme contains "scala") {
-          // TODO Scala classes/objects will be loaded in different ways depending on function 
+          // TODO Scala classes/objects will be loaded in different ways depending on function
         } else {
           val mOpt = content.getO(p)
           if (mOpt.isEmpty) {

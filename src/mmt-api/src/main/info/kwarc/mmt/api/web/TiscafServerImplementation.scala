@@ -24,16 +24,16 @@ trait TiscafServerImplementation extends HServer with ServerImplementation {
   override def tcpNoDelay = true
   /* it seems tiscaf eagerly closes connections after 20 seconds of inactivity
    * so it can happen that the connections is already closed when we try to send the response
-   * so we increase the timeout here 
+   * so we increase the timeout here
    */
-  override def connectionTimeoutSeconds = 300 
+  override def connectionTimeoutSeconds = 300
   // prevents tiscaf from creating a "stop" listener
   override def startStopListener = {}
   // port to listen to
   protected def ports = Set(listenPort)
   // handlers to call
   protected def apps = List(new RequestHandler)
-  
+
   protected class RequestHandler extends HApp {
     //override def buffered = true
     override def chunked = true

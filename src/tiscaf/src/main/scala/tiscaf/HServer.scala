@@ -76,7 +76,7 @@ trait HServer extends HLoggable {
   // *and* in multiplexer to dispose dead selector's keys
 
   /** Returns the time a shutdown process let the HLets a chance to finish properly. */
-  def interruptTimeoutMillis: Int = 1000 // at shutdown process take HLets a chance to finish 
+  def interruptTimeoutMillis: Int = 1000 // at shutdown process take HLets a chance to finish
 
   /** The list of defaults headers that are set by the server for each request.
    *  Each let may override (or remove) them later */

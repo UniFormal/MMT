@@ -30,19 +30,19 @@ object Common {
    /** performs safe simplifications and variable transformation to force the argument to become a Pi
     * @param solver the Solver
     * @param tp the function type
-    * @return a type equal to tp that may have Pi shape  
+    * @return a type equal to tp that may have Pi shape
     */
    def makePi(solver: Solver, tp: Term)(implicit stack: Stack, history: History): Term = {
       val tpS = solver.safeSimplifyUntil(tp)(Pi.unapply)._1
       tpS match {
          case Pi(x,a,b) => tpS
          case ApplyGeneral(OMV(m), args) =>
-           // check that tp is unknown applied to variables 
+           // check that tp is unknown applied to variables
            if (! solver.getUnsolvedVariables.isDeclared(m)) {
               return tpS
            }
            args foreach {
-              case OMV(u) => 
+              case OMV(u) =>
               case _ => return tpS
            }
            val mD = OMV(m/"d")
@@ -58,12 +58,12 @@ object Common {
            // solve m in terms of newVars
            val success = solver.check(Equality(stack, tpS, mSol, Some(OMS(Typed.ktype)))) //TODO does this work for polymorphism?
            if (success) mSol else tpS
-         case _ => tpS 
+         case _ => tpS
       }
    }
    def pickFresh(solver: Solver, x: LocalName)(implicit stack: Stack) =
       Context.pickFresh(solver.constantContext ++ solver.getPartialSolution ++ stack.context, x)
-   
+
    /** true if a term is an unknown applied to arguments */
    def isUnknownTerm(solver: Solver, t: Term) = t match {
      case ApplyGeneral(OMV(u), _) => solver.getUnsolvedVariables.isDeclared(u)
@@ -88,7 +88,7 @@ object PiTerm extends FormationRule(Pi.path, OfType.path) with PiOrArrowRule {
            val (xn,sub) = Common.pickFresh(solver, x)
            solver.inferType(b ^? sub)(stack ++ xn % a, history) flatMap {bT =>
               if (bT.freeVars contains xn) {
-                 // usually an error, but xn may disappear later, especially when unknown in b are not solved yet 
+                 // usually an error, but xn may disappear later, especially when unknown in b are not solved yet
                  //solver.error("type of Pi-scope has been inferred, but contains free variable " + xn + ": " + solver.presentObj(bT))
                  None
               } else
@@ -115,7 +115,7 @@ object LambdaTerm extends IntroductionRule(Lambda.path, OfType.path) {
 }
 
 /** common code for rules regarding the elimination-form: inference and reduction */
-abstract class ArgumentChecker {  
+abstract class ArgumentChecker {
    /** checks if argument tm can be supplied for expected type tp */
    def apply(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History): Boolean
 }
@@ -133,13 +133,13 @@ object StandardArgumentChecker extends ArgumentChecker {
 /** Elimination: the type inference rule f : Pi x:A.B  ,  conforms(t,A)  --->  f t : B [x/t]
  *
  * This rule works for B:U for any universe U
- * 
- * This rule implements currying and all arguments at once 
+ *
+ * This rule implements currying and all arguments at once
  */
 class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
-      // calling Beta first could make this rule more reusable because it would avoid inferring the type of a possibly large lambda 
-      
+      // calling Beta first could make this rule more reusable because it would avoid inferring the type of a possibly large lambda
+
       // auxiliary function that handles one argument at a time
       def iterate(fT: Term, args: List[Term]): Option[Term] = {
          (fT,args) match {
@@ -150,7 +150,7 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
               history += "function type is: " + solver.presentObj(fT)
               history += "argument is: " + solver.presentObj(t)
               val check = conforms(solver)(t, a, covered)(stack, history + "checking argument")
-              if (check) { 
+              if (check) {
                  history += "substituting argument in return type"
                  // substitute for x and newly-solved unknowns (as solved by conforms) and simplify
                  val bS = solver.substituteSolved(b ^? (x/t), true)
@@ -228,7 +228,7 @@ object PiType extends TypingRule(Pi.path) with PiOrArrowRule {
 object Extensionality extends TypeBasedEqualityRule(Nil, Pi.path) with PiOrArrowRule {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
       val Pi(x, a, b) = tp
-      // pick fresh variable name, trying to reuse existing name 
+      // pick fresh variable name, trying to reuse existing name
       val xBase = (tm1, tm2) match {
          case (Lambda(x1, _, _), Lambda(x2,_,_)) if x1 == x2 => x1
          case _ => x
@@ -242,9 +242,9 @@ object Extensionality extends TypeBasedEqualityRule(Nil, Pi.path) with PiOrArrow
 }
 
 /** Congruence for Lambda
- *  
+ *
  *  We cannot use CongruenceRule here because we have to flatten nested lambdas in addition.
- *  
+ *
  *  This rule is a special case of Extensionality, but it does not make use of the type.
  */
 object LambdaCongruence extends TermHeadBasedEqualityRule(Nil, Lambda.path, Lambda.path) {
@@ -267,7 +267,7 @@ object LambdaCongruence extends TermHeadBasedEqualityRule(Nil, Lambda.path, Lamb
 }
 
 /** Congruence for Pi
- *  
+ *
  *  We cannot use HeadBasedEqualityRule here because we have to flatten nested Pis and consider -> in addition.
  */
 object PiCongruence extends TermBasedEqualityRule with PiOrArrowRule {
@@ -293,13 +293,13 @@ object PiCongruence extends TermBasedEqualityRule with PiOrArrowRule {
 
 /**
  * the beta-reduction rule reducible(s,A)  --->  (lambda x:A.t) s = t [x/s]
- * 
+ *
  * the reducibility judgment is left abstract, usually the typing judgment s:A
- * 
+ *
  * This rule also normalizes nested applications so that it implicitly implements the currying rule (f s) t = f(s,t).
  */
 class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path) {
-   
+
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       var reduced = false // remembers if there was a reduction
       // auxiliary recursive function to beta-reduce as often as possible
@@ -317,7 +317,7 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
             //all arguments were used, recurse in case f is again a redex
             //otherwise, return f (only possible if there was a reduction, so no need for 'if (reduced)')
             apply(solver)(f, covered) orElse Some(f)
-         case _ => 
+         case _ =>
             /*// simplify f recursively to see if it becomes a Lambda
             val fS = solver.simplify(f)
             if (f != fS) reduce(fS, args)
@@ -338,7 +338,7 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
 
 /**
  * the usual beta-reduction rule s : A  --->  (lambda x:A.t) s = t [x/s]
- */ 
+ */
 object Beta extends GenericBeta(StandardArgumentChecker)
 
 /*
@@ -347,17 +347,17 @@ object Beta extends GenericBeta(StandardArgumentChecker)
  */
 object UnsafeBeta extends BreadthRule(Apply.path){
    val apply = (args: List[Term]) => {
-      // collects the substitution that will be applied (thus, we only substitute once even if there are multiple nested redexes) 
+      // collects the substitution that will be applied (thus, we only substitute once even if there are multiple nested redexes)
       var sub = Substitution()
       // repeatedly checks for a redex and returns the reduced terms
       def reduce(f: Term, args: List[Term]): Change = (f,args) match {
-         case (Lambda(x,a,t), s :: rest) => 
+         case (Lambda(x,a,t), s :: rest) =>
             sub = sub ++ (x / s)
             reduce(t, rest)
          case (f, Nil) =>
             //all arguments were used (only possible if there was a reduction)
             GlobalChange(f ^? sub)
-         case _ => 
+         case _ =>
             if (sub.isEmpty)
               NoChange
             else
@@ -391,7 +391,7 @@ class Injectivity(val head: GlobalName) extends TermBasedEqualityRule {
    }
 }
 
-// experimental (requiring that torso is variable does not combine with other solution rules) 
+// experimental (requiring that torso is variable does not combine with other solution rules)
 object SolveMultiple extends SolutionRule(Apply.path) {
    def applicable(tm1: Term) = tm1 match {
       case ApplySpine(OMV(_),_) => Some(0)
@@ -408,7 +408,7 @@ object SolveMultiple extends SolutionRule(Apply.path) {
              }
              // split context into bind = x1, ..., xn and the rest
              val (bind, rest) = j.stack.context.variables.partition {case vd => bvarArgs contains vd.name}
-             // this guarantees that all xi are declared in stack.context and are distinct 
+             // this guarantees that all xi are declared in stack.context and are distinct
              if (bind.distinct.length != bvarArgs.length) return None
              //TODO check that no variable declaration in rest depends on an xi
              //TODO use rest instead of stack
@@ -423,7 +423,7 @@ object SolveMultiple extends SolutionRule(Apply.path) {
 }
 
 /** solution: This rule tries to solve for an unknown by applying lambda-abstraction on both sides and eta-reduction on the left.
- *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable. 
+ *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable.
  */
 object Solve extends SolutionRule(Apply.path) {
    def applicable(t: Term) = t match {
@@ -455,7 +455,7 @@ object Solve extends SolutionRule(Apply.path) {
                 return None
              // get the type of x and abstract over it
              j.stack.context.variables(i).tp match {
-                case Some(a) => 
+                case Some(a) =>
                    val newStack = j.stack.copy(context = newCon)
                    Some((Equality(newStack, t, Lambda(x, a, j.tm2), j.tpOpt map {tp => Pi(x,a,tp)}), "binding x"))
                 case _ => None
@@ -466,7 +466,7 @@ object Solve extends SolutionRule(Apply.path) {
 }
 
 /** This rule tries to solve for an unkown by applying lambda-abstraction on both sides and eta-reduction on the left.
- *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable. 
+ *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable.
  */
 object SolveType extends TypeSolutionRule(Apply.path) {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
@@ -494,7 +494,7 @@ object SolveType extends TypeSolutionRule(Apply.path) {
                 return false
              // get the type of x and abstract over it
              stack.context.variables(i).tp match {
-                case Some(a) => 
+                case Some(a) =>
                    val newStack = stack.copy(context = newCon)
                    solver.solveTyping(t, Pi(x, a, tp))(newStack, history + ("solving by binding " + x))
                 case _ => false

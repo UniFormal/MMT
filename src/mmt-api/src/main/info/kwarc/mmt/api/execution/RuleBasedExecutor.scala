@@ -26,7 +26,7 @@ class RuleBasedExecutor extends Executor {
 
 class Runtime(controller: Controller, env: RuntimeEnvironment, val logPrefix: String) extends ExecutionCallback with Logger {
    val report = controller.report
-   
+
    def execute(progOrg: Term): Term = {
       val context = env.stack.top
       val prog = controller.simplifier(progOrg, context)
@@ -67,7 +67,7 @@ class Runtime(controller: Controller, env: RuntimeEnvironment, val logPrefix: St
           executeChildren(prog)
       }
    }
-   
+
    private def executeChildren(prog: Term): Term = {
      prog match {
        case ComplexTerm(p, subs, cont, args) =>

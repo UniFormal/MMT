@@ -13,7 +13,7 @@ case class RealizedType(synType: Term, semType: SemanticType) extends uom.UOMRul
       case _ => throw ImplementationError("syntactic type must have head")
    }
    /** allows constructing OMLITs as this of u
-    *  
+    *
     *  this checks validity at run-time but does not check Scala typing at compile-time
     *  a type-safe apply method is added in [[RepresentedRealizedType]])
     */

@@ -3,11 +3,11 @@ import info.kwarc.mmt.api._
 
 /**
  * convenience to access the metadata for a specific key
- * 
+ *
  * @param A the type of objects to link to
  * @param key the key
- * 
- * instantiate with the key and then apply the methods to instances of HasMetaData   
+ *
+ * instantiate with the key and then apply the methods to instances of HasMetaData
  */
 abstract class Linker[A](key: GlobalName) {
   /** convert from A into URIs to allow ascription as metadata */

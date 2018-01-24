@@ -41,7 +41,7 @@ case class ShellArguments(
      * default behavior: batch
      */
    def runCleanup = ! keepalive && ! prompt
-   
+
    /** automatically log to console */
    def consoleLog = verbosity >= 0
    /** automatically log debug output */

@@ -31,36 +31,36 @@ import info.kwarc.mmt.lf._
  * Translates a Java structure representing parsed TPTP formula (parts) to OMDoc.
  */
 class TptpTranslator {
-  
+
   /** imports in this file */
   private var imports = new HashSet[MPath]()
   /** function and predicate constants (name -> object) */
   private var constants = new LinkedHashMap[String, Constant]()
   /** translated formulae */
   private var translated: List[StructuralElement] = Nil
-  
+
   /** errors encountered during translation */
   private var errors: List[SourceError] = Nil
-  
+
   private var file: File = null
   private var theoryDir: String = ""
   private var theory: String = ""
   private var theoryPath: MPath = null
   private var theoryFile: String = ""
-  
+
   /**
    * Translate TPTP file theory in the TPTP distribution dir theoryDir to OMDoc.
    */
   def translate(theoryDir: String, theory: String, file: File): Document = {
     log("Translating file: " + theory)
-    
+
     val dpath = new DPath(baseURI / theoryDir)
     try {
       TptpTranslator.controller.get(dpath ? theory)
       log("..." + theory + " already translated")
       return TptpTranslator.controller.getDocument(dpath)
     } catch {
-      case _: Exception => 
+      case _: Exception =>
     }
     // handle document
     val d = new Document(dpath)
@@ -70,13 +70,13 @@ class TptpTranslator {
     TptpTranslator.add(t)
     val mr = MRef(dpath, t.path)
     TptpTranslator.add(mr)
-    
+
     this.theoryPath = t.path
     this.theoryDir = theoryDir
     this.theory = theory
     this.file = file
     this.theoryFile = file.toJava.getPath
-    
+
     // axiom files of version > 0 implicitly import the axiom file of version 0
     if (theory.endsWith(".ax") && !TptpUtils.fileVersion(theory).equals("0")) {
       val newTheory = theory.replaceFirst("\\+\\d+", "+0")
@@ -87,7 +87,7 @@ class TptpTranslator {
       translator.translate(theoryDir, newTheory, File(targetPath))
       imports += d.path ? newTheory
     }
-    
+
     // parses the input file
     val parser = new TptpParser(file.toJava)
     var input: TptpParserOutput.TptpInput = parser.parseNext
@@ -99,7 +99,7 @@ class TptpTranslator {
       }
       input = parser.parseNext
     }
-    
+
     // add imports
     imports.foreach { x => TptpTranslator.add(PlainInclude(x, theoryPath)) }
     // add predicate/function constants
@@ -126,27 +126,27 @@ class TptpTranslator {
     }
     d
   }
-  
+
   /**
    * Translate a TPTP formula given as a string to OMDoc.
    */
   def translateFormula(tptpFormula: String): Option[Term] = {
     log("Translating formula: " + tptpFormula)
-    
+
     // handle document
     this.theoryDir = UNKNOWN
     this.theory = UNKNOWN
     val d = new Document(new DPath(baseURI / theoryDir))
     val t = new DeclaredTheory(d.path, LocalName(theory), Some(fofTh))
     this.theoryPath = t.path
-    
+
     val parser = new TptpParser(tptpFormula)
     val parsed = parser.parseString
     if (parsed == null) {
       println("Failed parsing " + tptpFormula)
       return None
     }
-    
+
     // call the right translating method, depending on the formula part
     parsed match {
       case x: Quantified => term(x)
@@ -199,7 +199,7 @@ class TptpTranslator {
     item.getFormula match {
       case f: Formula =>
         term(f) match {
-          case Some(x) => 
+          case Some(x) =>
             val tp = item.getRole match {
               case Axiom | Conjecture => OMA(TptpUtils.t, x::Nil)
               case _ => x
@@ -223,7 +223,7 @@ class TptpTranslator {
       case _ => None
     }
   }
-  
+
   def term(item: Atomic): Option[Term] = {
     log("Translating Atomic " + item.toString)
     var id: OMID = null
@@ -238,7 +238,7 @@ class TptpTranslator {
       id = TptpUtils.f
     } else
       id = omid(item.getPredicate)
-    
+
     if (item.getNumberOfArguments == 0) {
       Some(id)
     } else {
@@ -246,7 +246,7 @@ class TptpTranslator {
       var argTypes: List[Term] = Nil
       for (arg <- item.getArguments) {
         term(arg) match {
-          case Some(x) => 
+          case Some(x) =>
             args = x::args
             argTypes = TptpUtils.term::argTypes
           case None => error("Error translating argument", arg)
@@ -258,7 +258,7 @@ class TptpTranslator {
       Some(OMA(id, args.reverse))
     }
   }
-  
+
   def term(item: tptp.SimpleTptpParserOutput.Term): Option[Term] = {
     log("Translating Term " + item.toString)
     val sym = term(item.getTopSymbol)
@@ -272,7 +272,7 @@ class TptpTranslator {
       sym
     } else {
       sym match {
-        case Some(x) => 
+        case Some(x) =>
           var args: List[Term] = Nil
           var argTypes: List[Term] = Nil
           for (arg <- item.getArguments) {
@@ -289,7 +289,7 @@ class TptpTranslator {
       }
     }
   }
-  
+
   def term(item: tptp.SimpleTptpParserOutput.Symbol): Option[Term] = {
     log("Translating Symbol " + item.toString)
     if (item == null)
@@ -300,7 +300,7 @@ class TptpTranslator {
       Some(omid(item.getText))
     }
   }
-  
+
   /**
    * Adds a constant name to the global constants map
    */
@@ -354,12 +354,12 @@ class TptpTranslator {
                           )::errors
     None
   }
-  
+
   def omid(name: String) = OMID(theoryPath ? name)
 }
 
 object TptpTranslator {
-	
+
   val controller = {
     val con = new Controller
 //    con.setFileReport(File("tptp.log"))
@@ -369,11 +369,11 @@ object TptpTranslator {
     con.handleLine("archive add /home/dimitar/projects/oaff/tptp")
     con
   }
-  
+
   def add(e: StructuralElement) {
     controller.add(e)
   }
-  
+
   def main(args:Array[String]) = {
     val translator = new TptpTranslator()
 //    val res = translator.translateFormula("f(X,Y,$$z)")

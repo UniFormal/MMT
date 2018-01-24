@@ -1,11 +1,17 @@
-package src.main.scala.yaml
+package travis.yaml
 
 import scala.collection.mutable.ListBuffer
 
-/** Represents a sequence of YAML objects */
+/**
+  * A Sequence, i.e. a sequence of [[YAML]] objects
+  * @param items Items contained within this sequence
+  * @param comment Optional comment
+  */
 case class YAMLSequence(items: Seq[YAML], comment: Option[String]) extends YAMLImplementation {
-  def setComment(comment : Option[String]) : YAMLSequence = copy(comment = comment)
+  /** Creates a new [[YAMLSequence]] with the given comment */
+  protected def setComment(comment : Option[String]) : YAMLSequence = copy(comment = comment)
 
+  /** serialize this sequence into a string */
   def serialize: String = {
     // create a new array of lines for this string
     val structure = new ListBuffer[String]
@@ -22,8 +28,9 @@ case class YAMLSequence(items: Seq[YAML], comment: Option[String]) extends YAMLI
     structure.toList.mkString("\n")
   }
 
-  /** generates a new sequence by adding values at the end of this existing list */
+  /** generates a new sequence by adding values at the end of the existing sequence */
   def ++(s : Seq[YAML]) : YAMLSequence = YAMLSequence(items ++ s, comment)
+  /** generates a new sequence by adding a second sequence at the end of this sequence */
   def ++(s : YAMLSequence) : YAMLSequence = s.items.toList match {
     case Nil => this
     case h :: tail => ++(YAML.prefixComment(h, s.comment) :: tail)

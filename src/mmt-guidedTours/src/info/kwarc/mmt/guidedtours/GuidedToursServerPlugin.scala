@@ -26,12 +26,12 @@ import java.util.Calendar
 
 
 class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logger with utils.sqlite {
-  
+
   def error(msg : String, request: ServerRequest) : HLet = {
     log("ERROR: " + msg)
     Server.errorResponse(msg, req)
   }
-  
+
   def apply(request: ServerRequest): ServerResponse = {
     try {
       uriComps match {
@@ -40,25 +40,25 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
         case _ => error("Invalid request: " + request.path.mkString("/"), request)
       }
     } catch {
-      case e : Error => 
-        log(e.shortMsg) 
+      case e : Error =>
+        log(e.shortMsg)
         ServerResponse.errorResponse(e.shortMsg, request)
-      case e : Exception => 
+      case e : Exception =>
         error("Exception occured : " + e.getStackTrace(), request)
     }
   }
 
 
-  
+
   /*private def repeatEx(topic: Path, user: UserKarmaTemp, example : Example) : List[Example] = {
     val globalRating = example.getRating(topic) / 20
     val userRating = user.personalRating(example.getPath, topic)
     //val repeatPenalty = Calendar.getInstance().getTime() - example.lastUsed
     val overall = globalRating + userRating
-    
+
     List.fill(overall.toInt)(example)
   }*/
-  
+
   /*private def uniqueEx(allEx: List[ExampleRating], size: Int) : List[ExampleRating] = {
     @tailrec
     def helper(aE: List[ExampleRating], sz: Int, res: List[ExampleRating]) : List[ExampleRating] = {
@@ -77,18 +77,18 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
     }
     helper(allEx, size, Nil)
   }*/
-  
+
   /*private def chooseExamples(topic: Path, user: UserKarmaTemp, examples : List[ExampleRating]) : List[ExampleRating] = {
     val allEx = Random.shuffle(examples.flatMap(x => repeatEx(topic, user, x)))
-    
+
     uniqueEx(allEx, 4)
   }*/
-  
+
   private def check(list1: List[Path], list2: List[Path]) : Path = {
     list1 match{
       case Nil => null
-      case head :: tail => 
-        if(list2.contains(head)) 
+      case head :: tail =>
+        if(list2.contains(head))
         {
           head
         }
@@ -98,13 +98,13 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
         }
     }
   }
-  
+
     private def getTutorial(request: ServerRequest) : ServerResponse = try {
         val topicName = request.parsedQuery("topic").getOrElse(throw ServerError("No topic name found")).toString
         val uid = request.parsedQuery("uid")getOrElse(throw ServerError("No user id found")).toString
         val length = request.parsedQuery("length").getOrElse("20").toString
         val path = Path.parseM(topicName, NamespaceMap.empty)
-        
+
         val tutorial = new Tutorial(controller, path, uid.toInt)
         ServerResponse.TextResponse(tutorial.getContent(length.toInt)).aact(tk)
       }
@@ -112,7 +112,7 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
         case e : Error => error(e.getMessage + "\n" + e.extraMessage, request)
         case e : Exception => error(e.getMessage, request)
       }
-  
+
    private def getHtmlResponse(request: ServerRequest) : ServerResponse = try {
     val topicName = request.parsedQuery("topic").getOrElse(throw ServerError("No topic name found")).toString
     //val token = tk.req.param("token").getOrElse(throw ServerError("No token was provided. Unauthorized")).toString
@@ -166,7 +166,7 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
    private def pathify(topics: List[String]) : List[Path] = {
      topics.map{x => path(x)}
    }
-   
+
    private def path(name: String) : Path = {
      try{
       Path.parseM(name, NamespaceMap.empty)

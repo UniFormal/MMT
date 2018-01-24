@@ -49,7 +49,7 @@ class AddImpacts(memory: ROMemory) extends ImpactPropagator(memory) {
 
   }
 
-  /*	    var whichTerm : Term = null
+  /*       var whichTerm : Term = null
         path match {
            case  CPath(parent : GlobalName, comp) =>
                  val whichConstant = memory.content.getConstant(parent)

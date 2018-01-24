@@ -32,7 +32,7 @@ object Common {
     }
     def translate(tm: Term) = trav(tm, stack.context)
     // turn all constants into OML's
-    val omls = (includes:::List(namedTheory)).flatMap {th => 
+    val omls = (includes:::List(namedTheory)).flatMap {th =>
       th.getDeclarationsElaborated.flatMap {
         case c: Constant =>
           val cT = OML(c.name,  c.tp map translate, c.df map translate, c.not)
@@ -46,7 +46,7 @@ object Common {
     val real = RealizeOML(namedTheory.path, None) // the theorem that the anonymous theory realizes namedTheory
     new AnonymousTheory(namedTheory.meta, omls ::: List(real))
   }
-  
+
   /** provides the base case of the function that elaborates a theory expression (in the form of an [[AnonymousTheory]]) */
   def asAnonymousTheory(solver: CheckingCallback, thy: Term)(implicit stack: Stack, history: History): Option[AnonymousTheory] = {
     thy match {
@@ -54,7 +54,7 @@ object Common {
       case OMMOD(p) =>
         solver.lookup(p) match {
           case Some(th: DeclaredTheory) =>
-            lazy val default = anonymize(solver, th) 
+            lazy val default = anonymize(solver, th)
             val at = th.df match {
               case Some(df) =>
                 val dfS = solver.simplify(df)
@@ -81,7 +81,7 @@ object Common {
 
 /* The rules below compute the results of theory combinators.
  * Each rule is applicable if the arguments have been computed already.
- *   
+ *
  * The rules also throw typing errors if they encounter any.
  * Open question: Should they be required to find all errors? Maybe only all structural errors?
  */
@@ -97,7 +97,7 @@ object ComputeExtends extends ComputationRule(Extends.path) {
       val thyAnon = Common.asAnonymousTheory(solver, thy).getOrElse {return None}
       wth match {
         case OMLList(extDecls) =>
-          // replace OMS-references to declarations in thy with OML-references to declarations in thyAnon  
+          // replace OMS-references to declarations in thy with OML-references to declarations in thyAnon
           val trav = OMSReplacer {p =>
             if (thyAnon isDeclared p.name) Some(OML(p.name)) else None
           }
@@ -169,7 +169,7 @@ object ComputeRename extends ComputationRule(Rename.path) {
 
 /**
  * Translate(m,T) and Expand(m,T) form a pushout along an inclusion as follows:
- * 
+ *
  * m : A -> B
  * inclusion from A to T
  * Expand(m,T): T -> Translate(m,T)
@@ -185,10 +185,10 @@ object ComputeTranslate extends ComputationRule(Translate.path) {
     val cod = Morph.codomain(mor)(???).getOrElse{return None}
     val List(thyAnon,domAnon,codAnon) = List(thy,dom,cod).map {t => Common.asAnonymousTheory(solver, t).getOrElse(return None)}
     // translate all declarations of thy that are not from dom via mor and add them to cod
-    def translate(t: Term): Term = ??? 
+    def translate(t: Term): Term = ???
     thyAnon.decls.foreach {
       case RealizeOML(p,_) =>
-        // these may also be translatable, but they are optional anyway 
+        // these may also be translatable, but they are optional anyway
       case oml =>
         if (! domAnon.isDeclared(oml.name)) {
           val omlT = translate(oml).asInstanceOf[OML]

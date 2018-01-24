@@ -25,7 +25,7 @@ class DerivedDeclaration(h: Term, name: LocalName, override val feature: String,
   def modulePath = module.path
 
   override def getComponents = TypeComponent(tpC) :: notC.getComponents
-  
+
   private def tpAttNode = tpC.get.map {t => backend.ReadXML.makeTermAttributeOrChild(t, "type")}.getOrElse((null,Nil))
   override def toNode : Elem = {
     val (tpAtt, tpNode) = tpAttNode
@@ -86,24 +86,24 @@ case class StructuralFeatureRule(feature: String) extends Rule {
  *
  * The semantics consists of a set of declarations that are injected into the parent theory after the [[DerivedDeclaration]]
  * These are called the 'outer declarations'.
- * 
+ *
  * All methods that take a dd:DerivedDeclaration can assume
  * - dd.feature == this.feature
- * - dd.getComponents has the same components as this.expectedComponents and in the same order 
+ * - dd.getComponents has the same components as this.expectedComponents and in the same order
  */
 abstract class StructuralFeature(val feature: String) extends FormatBasedExtension {
    def isApplicable(s: String) = s == feature
 
    val bodyDelim = "="
-   
+
    lazy val mpath = SemanticObject.javaToMMT(getClass.getCanonicalName)
 
    /** the notation for the header */
    def getHeaderNotation: List[Marker]
-   
+
    /** the parse rule for the header */
    def getHeaderRule = parser.ParsingRule(mpath, Nil, TextNotation(Mixfix(getHeaderNotation), Precedence.integer(0), None))
-   
+
    /** parses the header term of a derived declaration into its name and type
     *  by default it is interpreted as OMA(mpath, name :: args) where OMA(mpath, args) is the type
     */
@@ -114,22 +114,22 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
          (name, tp)
      }
    }
-   
+
    /** inverse of processHeader */
    def makeHeader(dd: DerivedDeclaration): Term = {
      dd.tpC.get match {
        case Some(OMA(OMMOD(`mpath`), args)) => OMA(OMMOD(mpath), OML(dd.name, None, None) :: args)
      }
    }
-   
+
    /**
     * the term components that declarations of this feature must provide and strings for parsing/presenting them
-    * 
+    *
     * also defines the order of the components
     */
    def expectedComponents: List[(String,ObjComponentKey)] = Nil
-  
-   /** additional context relative to which to interpret the body of a derived declaration */ 
+
+   /** additional context relative to which to interpret the body of a derived declaration */
    def getInnerContext(dd: DerivedDeclaration): Context = Context.empty
 
    /** called after checking components and inner declarations for additional feature-specific checks */
@@ -148,10 +148,10 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
 
    /** override as needed */
    def modules(dd: DerivedDeclaration): List[Module] = Nil
-   
+
    /** returns the rule constant for using this feature in a theory */
    def getRule = StructuralFeatureRule(feature)
-   
+
    /** for creating/matching variable declarations of this feature */
    object VarDeclFeature extends DerivedVarDeclFeature(feature)
 }
@@ -161,7 +161,7 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
  */
 abstract class Elaboration extends ElementContainer[Declaration] {
     def domain: List[LocalName]
-    
+
     /**
      * default implementation in terms of the other methods
      * may be overridden for efficiency
@@ -185,15 +185,15 @@ trait IncludeLike {self: StructuralFeature =>
   private def error = {
     throw LocalError("no domain path found")
   }
-  
+
   def getHeaderNotation = List(SimpArg(1))
-  
+
   override def processHeader(header: Term) = header match {
     case OMA(OMMOD(`mpath`), (t @ OMPMOD(p,_))::Nil) => (LocalName(p), t)
   }
-  
+
   override def makeHeader(dd: DerivedDeclaration) = OMA(OMMOD(`mpath`), dd.tpC.get.get :: Nil)
-  
+
   /** the type (as a theory) */
   def getDomain(dd: DerivedDeclaration): Term = dd.tpC.get.get
 }
@@ -201,11 +201,11 @@ trait IncludeLike {self: StructuralFeature =>
 /** for structural features that are parametric theories with special meaning, e.g., patterns, inductive types */
 trait ParametricTheoryLike {self: StructuralFeature =>
    val Type = ParametricTheoryLike.Type(getClass)
-   
-   def getHeaderNotation = List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), Delim(")")) 
+
+   def getHeaderNotation = List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), Delim(")"))
 
    override def getInnerContext(dd: DerivedDeclaration) = Type.getParameters(dd)
-   
+
    override def processHeader(header: Term) = header match {
      case OMBIND(OMMOD(`mpath`), cont, OML(name,None,None,_,_)) => (name, Type(cont))
    }
@@ -287,16 +287,16 @@ trait TheoryLike {self: StructuralFeature =>
 
 /** helper object */
 object ParametricTheoryLike {
-   /** official apply/unapply methods for the type of a ParametricTheoryLike derived declaration */ 
+   /** official apply/unapply methods for the type of a ParametricTheoryLike derived declaration */
    case class Type(cls: Class[_ <: ParametricTheoryLike]) {
      val mpath = SemanticObject.javaToMMT(cls.getCanonicalName)
-     
+
      def apply(params: Context) = OMBINDC(OMMOD(mpath), params, Nil)
      def unapply(t: Term) = t match {
        case OMBINDC(OMMOD(this.mpath), params, Nil) => Some((params))
        case _ => None
      }
-     
+
      /** retrieves the parameters */
      def getParameters(dd: DerivedDeclaration) = {
        dd.tpC.get.flatMap(unapply).getOrElse(Context.empty)
@@ -309,7 +309,7 @@ object ParametricTheoryLike {
  * called structures in original MMT
  */
 class GenerativePushout extends StructuralFeature("generative") with IncludeLike {
-  
+
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
       val dom = getDomain(dd)
       val context = parent.getInnerContext
@@ -317,7 +317,7 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
         case m: DeclaredModule => m
         case m: DefinedModule => throw ImplementationError("materialization failed")
       }
-      
+
       new Elaboration {
         /** the morphism dd.dom -> parent of the pushout diagram: it maps every n to dd.name/n */
         private val morphism = new DeclaredView(parent.parent, parent.name/dd.name, dom, parent.toTerm, false)

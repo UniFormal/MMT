@@ -27,6 +27,6 @@ object Oracle extends EqualityRule(Nat.nat) {
       val n2: Int = normalize(tm2)
       n1 == n2
    }
-      
+
 }
 */

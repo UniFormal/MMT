@@ -59,7 +59,7 @@ object Main {
     */
 
     val docPath = "/home/mihnea/kwarc/moc-test/r3/set_theories/mizar/HIDDEN.omdoc"
-	val out = new java.io.FileWriter(docPath)
+    val out = new java.io.FileWriter(docPath)
     val docNode =  pp.format(doc.toNodeResolved(c.library))
 
     out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + docNode.toString)

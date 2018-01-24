@@ -26,20 +26,20 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
 
   /** Administration page, read from jar://resources/admin.html */
   var adminHtml : Option[scala.xml.Elem] = None
-  
+
   /** Error page returned by the server */
   val adminError = "<html><body>cannot find jar://server-resources/admin.html.</body></html>"
-  
+
   /** Readme page, read from jar://resources/readme.txt */
   var readmeText : Option[String] = None
-  
+
   /** Error page returned by the server */
   val readmeError = "cannot find jar://server-resources/readme.html."
-  
+
   // Read jar://resources/admin.html
   try {
     loadResource("/server-resources/admin.html", "UTF-8") match {
-      case Some(bufferedSource) => 
+      case Some(bufferedSource) =>
          try {
            adminHtml = Option(scala.xml.parsing.XhtmlParser(bufferedSource).head.asInstanceOf[scala.xml.Elem])
          } catch {
@@ -49,26 +49,26 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
          } finally {
               bufferedSource.close       // close the file, since scala.io.Source doesn't close it
          }
-      case None => catalog.log("warning: /server-resources/admin.html does not exist") 
+      case None => catalog.log("warning: /server-resources/admin.html does not exist")
     }
   }
   catch {
     case EncodingException(msg) => catalog.log(msg); sys.exit(1)
   }
-  
+
   // Read jar://resources/readme.txt
   try {
     loadResource("/server-resources/readme.txt", "UTF-8") match {
-      case Some(bufferedSource) => 
+      case Some(bufferedSource) =>
          readmeText = Option(bufferedSource.getLines.toArray.mkString("\n"))
          bufferedSource.close       // close the file, since scala.io.Source doesn't close it
-      case None => catalog.log("warning: /server-resources/readme.txt does not exist") 
+      case None => catalog.log("warning: /server-resources/readme.txt does not exist")
     }
   }
   catch {
     case EncodingException(msg) => catalog.log(msg); sys.exit(1)
   }
-  
+
   override def name = "lfserver"
   //override def writeBufSize = 16*1024
   override def tcpNoDelay = true      // make this false if you have extremely frequent requests
@@ -83,15 +83,15 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
   protected def talkPoolSize = 4
   protected def talkQueueSize = Int.MaxValue
   protected def selectorPoolSize = 2
-  
-  
+
+
   /** A recursive function that replaces:
     * 1. <locations/> with the bullet list of locations
-    * 2. <inclusions/> with the bullet list of inclusion patterns 
+    * 2. <inclusions/> with the bullet list of inclusion patterns
     * 3. <exclusions/> with the bullet list of exclusion patterns */
   private def updateLocations(node : Node) : Node = node match {
-     case <locations/> => {<ul>{ catalog.locations.flatMap(f => 
-                                    <li> 
+     case <locations/> => {<ul>{ catalog.locations.flatMap(f =>
+                                    <li>
                                         <form action="admin" method="get">
                                             <input type="hidden" name="deleteLocation" value={ Catalog.getPath(f) } />
                                             <input type="submit" value="Delete" />
@@ -103,15 +103,15 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
      case Elem(a, b, c, d, ch @_*) => Elem(a, b, c, d, true, ch.map(updateLocations) : _*)
      case other => other
   }
-  
-  
+
+
   /** Request handler */
   protected class RequestHandler extends HApp {
     //override def buffered = true
     def resolve(req : HReqData) : Option[HLet] = {
       if (req.uriPath != "favicon.ico")
         catalog.log(Time + "Query: " + req.uriPath + "?" + req.query + " ")
-        
+
       val response : Option[HLet] = req.uriPath match {
       case "favicon.ico" => Some(TextResponse("", None))  // ignore the browser's request for favicon.ico
       case "help" | "" => {
@@ -121,7 +121,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
         if (req.query == "") {
           Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }
-        else if (req.query.startsWith("addLocation=")) { ConflictGuard.synchronized { 
+        else if (req.query.startsWith("addLocation=")) { ConflictGuard.synchronized {
           try {
             catalog.addStringLocation(java.net.URLDecoder.decode(req.query.substring("addLocation=".length), "UTF-8"))
           } catch {
@@ -129,7 +129,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           }
           Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}
-        else if (req.query.startsWith("deleteLocation=")) { ConflictGuard.synchronized { 
+        else if (req.query.startsWith("deleteLocation=")) { ConflictGuard.synchronized {
           try {
             catalog.deleteStringLocation(java.net.URLDecoder.decode(req.query.substring("deleteLocation=".length), "UTF-8"))
           } catch {
@@ -137,17 +137,17 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           }
           Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}
-        else if (req.query.startsWith("addInclusion=")) { ConflictGuard.synchronized { 
+        else if (req.query.startsWith("addInclusion=")) { ConflictGuard.synchronized {
           catalog.addInclusion(java.net.URLDecoder.decode(req.query.substring("addInclusion=".length), "UTF-8"))
           Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}
-        else if (req.query.startsWith("addExclusion=")) { ConflictGuard.synchronized { 
+        else if (req.query.startsWith("addExclusion=")) { ConflictGuard.synchronized {
           catalog.addExclusion(java.net.URLDecoder.decode(req.query.substring("addExclusion=".length), "UTF-8"))
           Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}
         else Some(TextResponse("Invalid query: " + req.query, None))
       }
-      case "crawlAll"  => { ConflictGuard.synchronized { 
+      case "crawlAll"  => { ConflictGuard.synchronized {
         catalog.crawlAll
         Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
       }}
@@ -317,7 +317,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
     response
     }
   }
-  
+
   /** A text response that the server sends back to the browser
     * @param text the message that is sent in the HTTP body
     * @param header optionally, a custom header tag, given as Pair(tag, content) that is added to the HTTP header
@@ -342,7 +342,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
       tk.write(out)
     }
   }
-  
+
   /** An HTML response that the server sends back to the browser
     * @param text the HTML message that is sent in the HTTP body
     */

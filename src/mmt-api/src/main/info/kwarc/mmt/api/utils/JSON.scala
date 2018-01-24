@@ -1,3 +1,4 @@
+
 package info.kwarc.mmt.api.utils
 
 import info.kwarc.mmt.api.ParseError
@@ -99,9 +100,9 @@ object JSON {
         "bla" : "\\\\", "foo" : [{} ], "fooo": []} """)
       println(j)
    }*/
-      
+
    case class JSONError(s: String) extends java.lang.Exception(s)
-   
+
    def parse(s: String) : JSON = {
       val u = new Unparsed(s, msg => throw JSONError(msg))
       val j = parse(u)
@@ -110,7 +111,7 @@ object JSON {
          j
       else throw JSONError("additional characters after successful parse")
    }
-   
+
    def parse(s: Unparsed) : JSON = {
       val c = s.trim.head
       c match {
@@ -125,8 +126,8 @@ object JSON {
            throw JSONError("Illegal starting character for JSON: " + c + " in " + s.remainder.subSequence(0,200))
       }
    }
-   
-   
+
+
    def parseNull(s: Unparsed) = {
       s.drop("null")
       JSONNull
@@ -142,7 +143,7 @@ object JSON {
       }
       JSONBoolean(b)
    }
-   
+
    def parseNum(s: Unparsed): JSONNumber = {
      if (s.remainder.startsWith("Infinity")) {
        s.drop("Infinity")
@@ -158,22 +159,22 @@ object JSON {
          JSONFloat(mt.matched.toDouble)
       jn
    }
-   
+
    def parseString(s: Unparsed) = {
      s.drop("\"")
      val (p,closed) = s.takeUntilChar('"', '\\')
      if (!closed)
        throw JSONError("unclosed string")
-	   var escaped = p
-	   var unescaped = ""
-	   while (escaped.nonEmpty) {
-	     val first = escaped(0)
-	     val (next, length) = if (first != '\\') {
-		    (first.toString,1)
-	     } else {
-		      if (escaped.length <= 1)
-			      throw JSONError("unclosed escaped")
-			    val second = escaped(1)
+      var escaped = p
+      var unescaped = ""
+      while (escaped.nonEmpty) {
+        val first = escaped(0)
+        val (next, length) = if (first != '\\') {
+          (first.toString,1)
+        } else {
+            if (escaped.length <= 1)
+               throw JSONError("unclosed escaped")
+             val second = escaped(1)
           second match {
                case '"' | '\\' | '/' => (second.toString, 2)
                case 'b' => ("\b", 2)
@@ -186,11 +187,11 @@ object JSON {
                  val char = Integer.parseInt(hex, 16).toChar
                  (char, 6)
                case _ => throw JSONError("Illegal starting character for JSON string escape: " + escaped(1))
-		      }
-	     }
-		   unescaped += next
+            }
+        }
+         unescaped += next
        escaped = escaped.substring(length)
-	   }
+      }
      JSONString(unescaped)
    }
 
@@ -199,7 +200,7 @@ object JSON {
       s.drop("{")
       parseOpenObject(s,Nil)
    }
-   
+
    def parseOpenObject(s: Unparsed, seen: List[(JSONString,JSON)]): JSONObject = {
       s.trim
       if (s.head == '}') {
@@ -219,10 +220,10 @@ object JSON {
          }
          if (c != ',' && c != '}')
             throw JSONError("expected ',' or '}', found " + c + " ")
-		 parseOpenObject(s, first::seen)
+       parseOpenObject(s, first::seen)
       }
    }
-   
+
    def parseArray(s: Unparsed): JSONArray = {
       s.trim
       s.drop("[")
@@ -238,10 +239,10 @@ object JSON {
          s.trim
          val c = s.head
          if (c == ',') {
-		    s.next
-	     }
+          s.next
+        }
          if (c != ',' && c != ']')
-		    throw JSONError("expected ',' or ']', found " + c)
+          throw JSONError("expected ',' or ']', found " + c)
          parseOpenArray(s, first::seen)
       }
    }

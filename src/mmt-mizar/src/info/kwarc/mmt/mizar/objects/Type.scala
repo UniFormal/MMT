@@ -1,8 +1,8 @@
 package info.kwarc.mmt.mizar.objects
 /**
- * 	objects.Type
- * 	Contains classes for handling Mizar Types and Terms.	
- * 	@author Mihnea Iancu
+ *    objects.Type
+ *    Contains classes for handling Mizar Types and Terms.
+ *    @author Mihnea Iancu
  *  @version 09/03/2011
  */
 
@@ -46,18 +46,18 @@ class MizCluster(val adjs : List[MizAdjective])
  * Class for handling Mizar Types
  */
 class MizTyp(val aid : String, val kind : String, val absnr: Int, val vid : String, val clusters : List[MizCluster], val terms: List[MizTerm], var name : Option[String]) {
-	def setName(n : Option[String]) {
-		name = n
-	}
-	
-	def ==(that : MizTyp) = this.aid == that.aid && 
-					        this.kind == that.kind && 
-					        this.absnr == that.absnr && 
-					        this.vid == that.vid &&
-					        this.clusters.length == that.clusters.length &&
-					        this.terms.length == that.terms.length
-					        
-	def !=(that : MizTyp) = !(==(that))				        
+   def setName(n : Option[String]) {
+      name = n
+   }
+
+   def ==(that : MizTyp) = this.aid == that.aid &&
+                       this.kind == that.kind &&
+                       this.absnr == that.absnr &&
+                       this.vid == that.vid &&
+                       this.clusters.length == that.clusters.length &&
+                       this.terms.length == that.terms.length
+
+   def !=(that : MizTyp) = !(==(that))
 }
 
 

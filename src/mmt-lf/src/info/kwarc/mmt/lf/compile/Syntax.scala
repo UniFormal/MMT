@@ -1,6 +1,6 @@
 /**
  * concrete syntax
- * 
+ *
  * created by Florian Rabe
  */
 package info.kwarc.mmt.lf.compile
@@ -12,7 +12,7 @@ case class CatRef(target: String) {
    override def toString = target
 }
 
-/** constructor for a Category */ 
+/** constructor for a Category */
 abstract class Constructor
 /** a connective declared in a logic with some argument types
  * we assume that the LF types of all connectives are of the form a1 -> ... an -> c where ai, c are atomic
@@ -36,5 +36,5 @@ case class LogicSyntax(cats: List[Category], form: CatRef, decls: List[Declarati
 
 /** generates a LogicSyntax for a given LF theory */
 class CodeGenerator {
-  
+
 }

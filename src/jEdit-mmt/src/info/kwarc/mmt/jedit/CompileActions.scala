@@ -10,7 +10,7 @@ class BuildActions(mmtplugin: MMTPlugin) {
    private val errorSource = mmtplugin.errorSource
    private val controller = mmtplugin.controller
    private def log(msg: String) {controller.report("jedit-compile", msg)}
-   
+
    /** builds a file or directory */
    def build(f: String) {
       val file = File(f)
@@ -32,8 +32,9 @@ class BuildActions(mmtplugin: MMTPlugin) {
          buffer.save(view, null)
          io.VFSManager.waitForRequests // wait until buffer is saved
       }
-      build(buffer.getPath)   }
-   
+      build(buffer.getPath)
+   }
+
    /** saves and builds the current file of the current view */
    def buildCurrent(view: View) {
       val buffer = view.getBuffer

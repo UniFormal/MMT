@@ -17,7 +17,7 @@ sealed trait SpeciesExpr extends CollectionOrSpeciesExpr
 /** ground realization expression */
 sealed trait CollectionExpr extends CollectionOrSpeciesExpr
 
-/** instantiation of species parameters */ 
+/** instantiation of species parameters */
 case class app(_species: foc_name, _args: List[ty_param]) extends SpeciesExpr
 
 /** param_inst can be
@@ -26,7 +26,7 @@ case class app(_species: foc_name, _args: List[ty_param]) extends SpeciesExpr
  *  * collection name (collection expression, which is anyway atomic)
  *  * previous (entity or collection) parameter
  *  Note: A previous parameter is the only way to provide an entity parameter
- *  
+ *
  */
 case class ty_param(infile: String, _name: String)
 
@@ -61,9 +61,9 @@ case class sum_args(_components: List[TypeExpr]) extends TypeExpr
 
 
 /** typed expressions
- *  
+ *
  *  not every expression is a proposition, but those of type Bool can be used as propositions
- *  
+ *
  *  The special expression E_self is exported as a foc_name in the code but that does not actually occur.
  */
 sealed abstract class Expression extends Proposition
@@ -97,7 +97,7 @@ case class fun(varnames: List[foc_name], _body: Expression) extends Expression
 /** function application (curried just for convenience) */
 case class application(_fun: Expression, _args: List[Expression]) extends Expression
 
-/** 2n children: identifier, expression, identifier, ... */ 
+/** 2n children: identifier, expression, identifier, ... */
 case class record_expr(_fields: List[RecordField]) extends Expression
 case class RecordField(_name: identifier, _value: Expression) extends Group
 
@@ -123,9 +123,9 @@ case class XMLvar(_name: String)
 
 
 /** propositions
- *  
+ *
  *  equality is defined in basics.fcl in the standard library
- *  
+ *
  *  application of letprop-defined predicate symbols is special case of application.
  */
 sealed abstract class Proposition

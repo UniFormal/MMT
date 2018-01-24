@@ -8,14 +8,14 @@ import info.kwarc.mmt.api.utils.URI.toJava
 
 /**
  * client for remote administration
- * 
+ *
  * creates a separate thread which perpetually connects to a [[RemoteAdminServer]] to
  * - send the log output of the previous action
  * - retrieve the next action to execute
  */
 class RemoteAdminClient extends Extension {
    private val repHand = new RecordingHandler("remote")
-   
+
    override def start(args: List[String]) {
       val (id,urlS) = args match {
         case List(a,b) => (a,b)
@@ -25,7 +25,7 @@ class RemoteAdminClient extends Extension {
       val t = new ListenThread(URI(urlS).toURL, id)
       t.start
    }
-   
+
    override def destroy {
      synchronized {
        continue = false
@@ -34,7 +34,7 @@ class RemoteAdminClient extends Extension {
    }
 
    private var continue = true
-   
+
    private class ListenThread(url: java.net.URL, id: String) extends Thread {
       var data: List[String] = Nil
       override def run {
@@ -83,7 +83,7 @@ class RemoteAdminConnection(val client: String) {
 import ServerResponse._
 
 /** can be contacted by a [[RemoteAdminClient]] instances running on any machine to receive actions
- *  
+ *
  *  the protocol is as follows:
  *    client sends <ready> <data value=OUTPUTLINE/>* </ready>
  *    server sends <action value=ACTION/> and reports all OUTPUTLINEs
@@ -91,7 +91,7 @@ import ServerResponse._
  */
 class RemoteAdminServer extends ServerExtension("remote") {
    private var clients: List[RemoteAdminConnection] = Nil
-   
+
    def apply(request: ServerRequest): ServerResponse = {
       request.body.asXML match {
         case n @ <ready>{dataN @ _*}</ready> =>
@@ -112,7 +112,7 @@ class RemoteAdminServer extends ServerExtension("remote") {
           XmlResponse(<action value={act.action.toString}/>)
       }
    }
-   
+
    /** enqueue an action that is to be handled on a remote client */
    def apply(ra: RemoteAction) {
       val client = clients.find(_.client == ra.id).getOrElse {

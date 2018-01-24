@@ -37,7 +37,7 @@ class Setup(logger: Option[String => Unit] = None) extends ShellExtension("jedit
     val doIt = new DoIt(shell, jedit)
     if (args(0) == "customize") {
       doIt.customize
-    } else { 
+    } else {
       val (installOpt,fat) = args(0) match {
         case "install" => (Some(true),true)
         case "uninstall" => (Some(false), true)
@@ -59,14 +59,14 @@ class Setup(logger: Option[String => Unit] = None) extends ShellExtension("jedit
     true
   }
 
-  
+
   private class DoIt(shell: Shell, jedit: File) {
     val jarFolder = jedit / "jars"
     val propsFile = jedit / "properties"
     val keymapPath = List("keymaps", "imported_keys.props")
 
     val rl = shell.runStyle
-    
+
     def getResource(path: String): String = {
       rl match {
         case _: IsFat | OtherStyle => MMTSystem.getResourceAsString(path)
@@ -101,7 +101,7 @@ class Setup(logger: Option[String => Unit] = None) extends ShellExtension("jedit
        propsNew = propsNew ::: propsAdd.map(_._2)
        File.WriteLineWise(propsOldFile, propsNew)
     }
- 
+
     /** the actual install/uninstall process
       *
       * @param jedit   the jEdit settings folder
@@ -241,8 +241,8 @@ class Setup(logger: Option[String => Unit] = None) extends ShellExtension("jedit
         } else delete(propsFile)
       }
     }
-    
-    
+
+
     val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.1.0"), ("Console","5.1.4"), ("BufferTabs","1.2.4"))
     /** installs plugin dependencies and useful properties */
     def customize {
@@ -263,7 +263,7 @@ class Setup(logger: Option[String => Unit] = None) extends ShellExtension("jedit
            }
          }
        }
-       
+
        // add all properties and keymaps
        mergeProps(propsFile, List("properties"))
        mergeProps(jedit / keymapPath, keymapPath)

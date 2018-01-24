@@ -20,7 +20,7 @@ object TokenList {
     List(DECIMAL_DIGIT_NUMBER, LETTER_NUMBER) contains c.getType
 
   def isLetterOrNumber(c: Char) = isLetter(c) || isNumber(c)
-    
+
   /** @return true if c is considered a connector, i.e., a character that never breaks a word */
   def isConnector(c: Char): Boolean = c.getType == CONNECTOR_PUNCTUATION
 

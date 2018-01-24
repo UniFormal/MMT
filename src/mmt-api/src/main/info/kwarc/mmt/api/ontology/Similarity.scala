@@ -10,10 +10,10 @@ case class Measure(value: Int)
 
 class Similarity(controller: Controller) {
    def objects(a: Obj, b: Obj): Measure = ???
-   
+
    def declarations(a: Declaration, b: Declaration): Measure = {
       val aDecs  = a.getDeclarations
-      val aComps = a.getComponents      
+      val aComps = a.getComponents
       val bDec   = b.getDeclarations
       val bComps = b.getComponents
       ???

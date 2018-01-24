@@ -28,18 +28,18 @@ class TPSImporter extends Importer {
   val key : String = "tps-omdoc"
   override val logPrefix = "tpsimporter"
   def includeFile(name : String) : Boolean = name.endsWith(".omdoc") //generated omdoc
-  
+
   override def init(controller: Controller) {
     this.controller = controller
     report = controller.report
    }
-  
+
   def importDocument(bt : BuildTask, cont : Document => Unit) {
     try {
       val src = scala.io.Source.fromFile(bt.inFile.toString)
       val cp = scala.xml.parsing.ConstructingParser.fromSource(src, true)
       val node : Node = cp.document()(0)
-      src.close 
+      src.close
       val errors = translateDocument(node)(bt.narrationDPath)
       val doc = controller.getDocument(bt.narrationDPath)
       if (errors != Nil) {
@@ -50,20 +50,20 @@ class TPSImporter extends Importer {
       }
       cont(doc)
     } catch {
-      case e : Throwable => 
+      case e : Throwable =>
         log("WARNING: Skipping article due to error: " + e.toString() + " \n" + e.getStackTraceString) //skipping declaration
     }
   }
-  
+
   def add(s : StructuralElement) = {
     log("adding " + s.path.toPath)
     controller.add(s)
   }
-  
+
   val xmlNS = "http://www.w3.org/XML/1998/namespace"
   val omdocNS = "http://omdoc.org/ns"
   val mhBase = DPath(URI("http://mathhub.info/"))
-  
+
   def getName(n : Node, container : Content) : LocalName = {
     try {
       val nameS =  (n \ s"@{$xmlNS}id").text
@@ -72,7 +72,7 @@ class TPSImporter extends Importer {
       case e : Exception => LocalName("D" + container.children.length.toString)
     }
   }
-  
+
   /**
    * Translate a toplevel <omdoc> node
    */
@@ -80,7 +80,7 @@ class TPSImporter extends Importer {
     var errors : List[Error] = Nil
     try {
       n.label match {
-        case "omdoc" => 
+        case "omdoc" =>
           //creating document and implicit theory
           implicit val doc = new Document(dpath)
           controller.add(doc)
@@ -92,12 +92,12 @@ class TPSImporter extends Importer {
     }
     errors
   }
-  
+
   private def translateModule(n : Node)(implicit doc : Document) : List[Error] = {
     var errors : List[Error] = Nil
     try {
       n.label match {
-        case "theory" => 
+        case "theory" =>
           val name = getName(n, doc)
           val thy = new DeclaredTheory(doc.path, name, None)
           val ref = MRef(doc.path, thy.path, true)
@@ -111,9 +111,9 @@ class TPSImporter extends Importer {
     }
     errors
   }
-  
+
   private def translateDeclaration(n : Node)(implicit doc : Document, thy : DeclaredTheory) : List[Error] = {
-    var errors : List[Error] = Nil 
+    var errors : List[Error] = Nil
     val dpath = doc.path
     val mpath = thy.path
     try {
@@ -130,6 +130,6 @@ class TPSImporter extends Importer {
     errors
   }
 
-  
+
 }
 */

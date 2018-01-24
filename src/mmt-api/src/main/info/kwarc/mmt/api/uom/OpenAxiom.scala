@@ -117,7 +117,7 @@ object Integers extends Ring {
 
 class IntegersMod(n: Int) extends Ring {
    type % = Integers.%
-   override def equal(x: %, y: %) = (x - y) % n == 0  
+   override def equal(x: %, y: %) = (x - y) % n == 0
    val add = Integers.add
    val mult = Integers.mult
    val distrib = new Proof(null)

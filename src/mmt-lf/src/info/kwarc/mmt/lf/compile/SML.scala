@@ -15,7 +15,7 @@ object SML extends FuncLang[String] {
      case STRINGCONCAT(left, right) => "(" + exp(left) + " ^ " + exp(right) + ")"
      case ID(name) => if (name == "") current else name
      case APPLY(fun, args @ _*) => fun + args.map(exp).mkString("(", ",", ")")
-     case IF(cond, thn, els) => "(if " + exp(cond) + " then " + exp(thn) + " else " + exp(els) + ")"  
+     case IF(cond, thn, els) => "(if " + exp(cond) + " then " + exp(thn) + " else " + exp(els) + ")"
      case MATCH(arg, cases) => "case " + exp(arg) + "\n" + cases.map(cas).mkString("  of ", "\n   | ", "\n")
      case ERROR(e, msg) => "raise (" + e + " " + exp(msg) + ")"
      case LIST(tp) => "(" + exp(tp) + " list)"
@@ -28,10 +28,10 @@ object SML extends FuncLang[String] {
      case TUPLE(es) => es.map(exp).mkString("(", ", ", ")")
      case PROJ(e, i) => "(#" + i.toString + " (" + exp(e) + "))"
      case ARECORD(tp, fields) => tp + fields.map {case FIELD(n,v) => "#" + n + " = " + exp(v)}.mkString("{", ",", "}")
-     case SELECT(rec, field) => "(#" + field + " " + exp(rec) + ")"  
+     case SELECT(rec, field) => "(#" + field + " " + exp(rec) + ")"
    }
    def cons(c: CONS) = c.name + " of " + c.args.map(exp).mkString("", " * ", "")
-   def arg(a: ARG) = a.name + ": " + exp(a.tp) 
+   def arg(a: ARG) = a.name + ": " + exp(a.tp)
    private def ADTaux(a: ADT) = {
       current = a.name
       a.name + " = " + a.constructors.map(cons).mkString("", " | ", "\n")

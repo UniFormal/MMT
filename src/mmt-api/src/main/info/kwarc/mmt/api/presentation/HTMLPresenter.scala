@@ -53,7 +53,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
        if (i < l) text("/")
      }
    }
-   
+
    private def doName(d: Declaration) {
       val (name,_) = d.primaryNameAndAliases
       val (adaptedName, path) = name match {
@@ -82,10 +82,10 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
           case o => o
         }, owner)(rh)
    }
-   
+
    private object cssClasses {
       def compRow(c: ComponentKey) = {
-         "component-" + c.toString.toLowerCase 
+         "component-" + c.toString.toLowerCase
       }
       val compLabel = "constant-component-label"
       val compToggle = "component-toggle"
@@ -196,7 +196,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                   td {usedby foreach doPath}
                }
             }
-            if (d.metadata.getTags.nonEmpty) { 
+            if (d.metadata.getTags.nonEmpty) {
                tr("tags") {
                td {span(compLabel){text{" ---tags"}}}
                td {d.metadata.getTags.foreach {
@@ -336,7 +336,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
         }
      }
    }
-   
+
    // ********************** narrative elements
 
    /** captures common parts of narrative and content element rendering */

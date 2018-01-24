@@ -5,12 +5,12 @@ import objects._
 
 /**
  * the arity of a symbol describes what kind of objects can be formed from it
- * 
+ *
  * @param subargs arguments before the context
  * @param variables the variable positions in order
  * @param arguments arguments after the context
  * @param attribution true if it can attribute an object
- * 
+ *
  * special cases and analogs in the OpenMath role system for a symbol s:
  *  no arguments, variables: constant, s
  *  some arguments, no variables: application OMA(s, args)
@@ -67,11 +67,11 @@ case class Arity(subargs: List[ArgumentComponent],
      val cutoff = seqs.apply(availableForSeqs % numSeqs)
      (perSeq,cutoff)
    }
-   /** 
+   /**
     * distributes all arguments evenly to the sequence arguments
-    * 
+    *
     * @param numArgs the total number of arguments
-    * 
+    *
     * if there is more than 1 sequence arguments, the available arguments are evenly distributed over the sequences
     * remaining arguments are distributed in order of content position
     */
@@ -82,7 +82,7 @@ case class Arity(subargs: List[ArgumentComponent],
       }
       distribute(numArgs, arguments.length, seqArgPositions)
    }
-   /** 
+   /**
     * like distributeArgs but for the variables
     */
    private def distributeVars(numVars: Int): (Int, Int) = {
@@ -103,7 +103,7 @@ case class Arity(subargs: List[ArgumentComponent],
             case _ =>
          }
          variables foreach {
-            case Var(n,_,Some(_),_) if n < p => 
+            case Var(n,_,Some(_),_) if n < p =>
                i += perSeqVar - 1
                if (n < seqVarCutOff) i += 1
             case _ =>
@@ -143,7 +143,7 @@ case class Arity(subargs: List[ArgumentComponent],
       var result : List[Context] = Nil
       val (perSeq,cutoff) = distributeVars(remain.length)
       variables foreach {
-         case v: Var if ! v.isSequence => 
+         case v: Var if ! v.isSequence =>
             result ::= Context(remain.head)
             remain = remain.tail
          case v: Var if v.isSequence =>
@@ -155,18 +155,18 @@ case class Arity(subargs: List[ArgumentComponent],
    }
   /**
     * flattens all sequence arguments/variables of a notation according to a complex term
-    * 
+    *
     * @param markers the list of markers to flatten
     * @param subs number of arguments before variables
     * @param vars number of variables
     * @param args number of arguments after variables
-    * 
+    *
     * if there is more than 1 sequence arguments, the available arguments are evenly distributed over the sequences
     * remaining arguments are distributed in order of content position
-    * 
+    *
     * multiple sequence variables are treated accordingly
     * it is assumed there are no sequences in the scopes
-    * 
+    *
     * pre: canHandle(vars, args) == true
     */
    def flatten(markers: List[Marker], subs: Int, vars: Int, args: Int, attrib: Boolean) : List[Marker] = {
@@ -198,7 +198,7 @@ case class Arity(subargs: List[ArgumentComponent],
       }
       markers flatMap flattenOne
    }
-   /** 
+   /**
     *  @param args the number of total arguments
     *  @return the list of remapped implicit arguments
     */

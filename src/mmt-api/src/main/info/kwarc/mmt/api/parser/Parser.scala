@@ -39,7 +39,7 @@ case class ParseResult(unknown: Context, free: Context, term: Term) {
   }
    /** true if no unknowns/free variables found */
   def isPlainTerm = unknown.isEmpty && free.isEmpty
- 
+
   /** replaces the term */
   def map(f: Term => Term) = copy(term = f(term))
 }
@@ -61,9 +61,9 @@ object ParseResult {
    }
 }
 
-/** passed to [[Parser]]s and [[checking.Interpreter]]s to indicate the place inside a larger element the input is located */ 
+/** passed to [[Parser]]s and [[checking.Interpreter]]s to indicate the place inside a larger element the input is located */
 sealed abstract class ParentInfo
-/** abstraction to unify operations inside a root document or module */ 
+/** abstraction to unify operations inside a root document or module */
 sealed abstract class RootInfo extends ParentInfo {
    /** the path of this element */
    val path: Path
@@ -73,7 +73,7 @@ case class IsRootDoc(path: DPath) extends RootInfo
 /** the content is a root module */
 case class IsRootMod(path: MPath) extends RootInfo
 
-/** abstraction to unify operations inside a document and inside a module */ 
+/** abstraction to unify operations inside a document and inside a module */
 sealed abstract class HasParentInfo extends ParentInfo {
    def docParent: DPath
 }
@@ -88,8 +88,8 @@ case class IsDoc(docParent: DPath) extends HasParentInfo
 case class IsMod(modParent: MPath, relDocParent: LocalName) extends HasParentInfo {
    /** the parent document */
    def docParent = modParent.toDPath / relDocParent
-}  
-  
+}
+
 
 /** ParsingStream encapsulates the input of a [[StructureParser]]
   *
@@ -158,7 +158,7 @@ object ParsingStream {
     val base = a.narrationBase
     val dpath = DPath(base / inPathOMDoc) // bf.narrationDPath except for extension
     val stream = strOpt.getOrElse(File.Reader(a / source / inPath))
-    val nsMap = nsMapOpt.getOrElse(NamespaceMap.empty) ++ a.namespaceMap 
+    val nsMap = nsMapOpt.getOrElse(NamespaceMap.empty) ++ a.namespaceMap
     ParsingStream(base / inPath.segments, IsRootDoc(dpath), nsMap(dpath), inPath.toFile.getExtension.getOrElse(""), stream)
   }
 }
@@ -228,11 +228,11 @@ abstract class Parser(val objectLevel: ObjectParser) extends StructureParser wit
 
   /** relegates to objectParser */
   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = objectLevel.apply(pu)
-  
+
   /** an interpreter that does not check */
   def asInterpreter = {
      val int = new checking.OneStepInterpreter(this)
      initOther(int)
-     int     
+     int
   }
 }

@@ -5,15 +5,15 @@ import utils.URI
 import scala.collection.mutable.ListMap
 
 
-/** a trait to be mixed into declarations or objects 
+/** a trait to be mixed into declarations or objects
  * it provides a stateful key-value map for storing arbitrary information
  *
  * This trait introduces state into the stateless Obj case classes and should be used cautiously.
  * For example, x match {case x => x} preserves all client properties while
- * x match {case OMS(p) => OMS(p)} deletes all client properties. 
+ * x match {case OMS(p) => OMS(p)} deletes all client properties.
  * Software components should only access properties they put themselves or
  * that are explicitly guaranteed by other components.
- * 
+ *
  * While a bad idea in most situations, client properties are very useful occasionally.
  * Example applications:
  *   - UOM uses a property to remember whether a Term has been simplified already
@@ -78,7 +78,7 @@ object TermProperty {
         case OMA(f,as) => (f::as) foreach eraseAll
         case OMBINDC(b,cont,as) =>
           (b::as) foreach eraseAll
-          cont foreach {v => 
+          cont foreach {v =>
             v.tp foreach eraseAll
             v.df foreach eraseAll
           }

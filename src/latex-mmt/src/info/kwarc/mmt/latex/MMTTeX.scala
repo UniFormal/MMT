@@ -37,7 +37,7 @@ import MMTTeX._
  */
 class MMTTeX extends ShellExtension("mmttex") {
    def helpText: String = ""
-   
+
    def run(shell: Shell, args: List[String]) = {
      val tex = File(args(0))
      val base = DPath(FileURI(tex))
@@ -59,11 +59,11 @@ class MMTTeX extends ShellExtension("mmttex") {
      private val jobFile = new FileWriter(sty)
      private var modFiles: List[String] = Nil
      private val pres = new MacroBasedPresenter
-     
+
      def doDocument(doc: Document) {
        doc.getModulesResolved(controller.globalLookup) foreach doModule
      }
-     
+
      private def doModule(m: Module) {
         controller.simplifier(m)
         val modFileName = m.name.toPath
@@ -117,7 +117,7 @@ object MacroUsingObjectPresenter extends ObjectPresenter {
         val nL = n.toPath
         val tpL = tp match {
           case None => "{}"
-          case Some(t) => "{" + doObj(t) + "}" 
+          case Some(t) => "{" + doObj(t) + "}"
         }
         val dfL = df match {
           case None =>
@@ -137,7 +137,7 @@ object MacroUsingObjectPresenter extends ObjectPresenter {
 /** produces content of sty file for every theory */
 class MacroBasedPresenter extends Presenter(MacroUsingObjectPresenter) {
   def key = "mmt-latex"
-  
+
   def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
     e match {
       case t: DeclaredTheory => doTheory(t)
@@ -152,7 +152,7 @@ class MacroBasedPresenter extends Presenter(MacroUsingObjectPresenter) {
       case d => doDeclaration(d)
     }
   }
-  
+
   private def doDeclaration(d: Declaration)(implicit rh : RenderingHandler) {}
   /*
     d match {
@@ -167,10 +167,10 @@ class MacroBasedPresenter extends Presenter(MacroUsingObjectPresenter) {
             doMarkers(tn.presentationMarkers)
         }
         rh << s"\\newcommand{${doConstantName(c.path)}}$numArgs{$notBody}"
-      case _ => // generate RequirePackage for every include 
+      case _ => // generate RequirePackage for every include
     }
   }
-  
+
   private def requirePackage(p: MPath, bf: BuildTask): String = {
     controller.backend.findOwningArchive(p) match {
       case None => "% skipping import of unknown module " + p.toPath

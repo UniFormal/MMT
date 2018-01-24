@@ -316,12 +316,12 @@ class Controller extends ROController with ActionHandling with Logger {
   val localLookup = new LookupWithNotFoundHandler(library) with FailingNotFoundHandler {
     def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod)
   }
-  
+
   /** a lookup that uses the previous in-memory version (ignoring the current one) */
   val previousLocalLookup = new LookupWithNotFoundHandler(memory.previousContent) with FailingNotFoundHandler {
     def getDeclarationsInScope(mod: Term) = memory.previousContent.getDeclarationsInScope(mod)
   }
-  
+
   /** a lookup that loads missing modules dynamically */
   val globalLookup = new LookupWithNotFoundHandler(library) {
     protected def handler[A](code: => A): A = iterate {
@@ -355,7 +355,7 @@ class Controller extends ROController with ActionHandling with Logger {
 
 
   // ******************* determine context of elements
-  
+
   /** computes the context of an element, e.g., as needed for checking
    *  this methods allows processing individual elements without doing a top-down traversal to carry the context
    */
@@ -391,17 +391,17 @@ class Controller extends ROController with ActionHandling with Logger {
         }
     }
   }
-  
+
   /** auxiliary method of getContext, returns the context in which the body of ContainerElement is checked */
-  private def getContextWithInner(e: ContainerElement[_]) = getContext(e) ++ getExtraInnerContext(e) 
-  
+  private def getContextWithInner(e: ContainerElement[_]) = getContext(e) ++ getExtraInnerContext(e)
+
   /** additional context for checking the body of ContainerElement */
   def getExtraInnerContext(e: ContainerElement[_]) = e match {
     case d: Document => Context.empty
     case m: DeclaredModule => m.getInnerContext
     case s: DeclaredStructure => Context.empty
   }
-  
+
   // ******************************* transparent loading during global lookup
 
   /** wrapping an expression in this method, evaluates the expression dynamically loading missing content
@@ -593,7 +593,7 @@ class Controller extends ROController with ActionHandling with Logger {
       case cp: CPath =>
          throw DeleteError("deletion of component paths not implemented")
       case p =>
-        val seOpt = localLookup.getO(p) 
+        val seOpt = localLookup.getO(p)
         seOpt foreach {se =>
           library.delete(p) // would throw NotFound if seOpt.isEmpty
           notifyListeners.onDelete(se)

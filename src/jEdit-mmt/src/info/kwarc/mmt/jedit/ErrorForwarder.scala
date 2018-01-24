@@ -26,7 +26,7 @@ class MMTErrorSource extends DefaultErrorSource("MMT") {
         case _ => throw ImplementationError("illegal error")
       }
    }
-  
+
    /** remove errors produced when checking this file */
    def removeFileErrors(file: File) {
      val sets = errors.values.iterator
@@ -48,8 +48,8 @@ class MMTErrorSource extends DefaultErrorSource("MMT") {
          set.remove(e)
             gui.Swing.invokeLater {
               val msg = new ErrorSourceUpdate(this, ErrorSourceUpdate.ERROR_REMOVED, e)
-         		  org.gjt.sp.jedit.EditBus.send(msg)
-         	 }
+                 org.gjt.sp.jedit.EditBus.send(msg)
+             }
        }
      }
    }

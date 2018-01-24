@@ -24,7 +24,7 @@ abstract class Lookup {self =>
       else
          throw GetError("element at " + ce.path + " exists but has unexpected type " + ce.getClass + " (expected: " + cls + ")")
    }
-   
+
    private type ErrorCont = String => Nothing
    private val defError = (s:String) => throw GetError(s)
    /** for get methods with optional return value */
@@ -35,7 +35,7 @@ abstract class Lookup {self =>
    /** like get, but returns option */
    def getO(path: Path) = optional {_ => get(path)}
    /**
-    * like get but with restricted return type 
+    * like get but with restricted return type
     * example: getAs(classOf[Constant], path): Constant
     */
    def getAs[E <: StructuralElement](cls : Class[E], path: Path): E = as(cls) {get(path)}
@@ -51,9 +51,9 @@ abstract class Lookup {self =>
     * @return the declaration
     */
    def get(home: Term, name: LocalName, error: String => Nothing): Declaration
-   /** like get but returns optional */ 
+   /** like get but returns optional */
    def getO(home: Term, name: LocalName) = optional {e => get(home,name,e)}
-   /** like get but with restricted return type */ 
+   /** like get but with restricted return type */
    def getAs[E <: ContentElement](cls : Class[E], home: Term, name: LocalName, error: String => Nothing): E =
       as(cls){get(home, name, error)}
 
@@ -67,36 +67,36 @@ abstract class Lookup {self =>
    def getLink(path : ContentPath, msg : Path => String = defmsg) : Link =
      get(path) match {case e : Link => e case _ => throw GetError(msg(path))}
    def getSymbol(path : GlobalName, msg : Path => String = defmsg) : Declaration =
-     get(path) match {case e : Declaration => e case _ => throw GetError(msg(path))} 
+     get(path) match {case e : Declaration => e case _ => throw GetError(msg(path))}
    def getConstant(path : GlobalName, msg : Path => String = defmsg) : Constant =
-     get(path) match {case e : Constant => e case _ => throw GetError(msg(path))} 
+     get(path) match {case e : Constant => e case _ => throw GetError(msg(path))}
    def getStructure(path : GlobalName, msg : Path => String = defmsg) : Structure =
-     get(path) match {case e : Structure => e case _ => throw GetError(msg(path))} 
+     get(path) match {case e : Structure => e case _ => throw GetError(msg(path))}
 /*   def getPatternAssignment(path : GlobalName, msg : Path => String = defmsg) : PatternAssignment =
-     get(path) match {case e : PatternAssignment => e case _ => throw GetError(msg(path))} 
-   def getPattern(path : GlobalName, msg: Path => String = defmsg) : Pattern = 
+     get(path) match {case e : PatternAssignment => e case _ => throw GetError(msg(path))}
+   def getPattern(path : GlobalName, msg: Path => String = defmsg) : Pattern =
      get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}*/
-   
+
    def getComponent(path: CPath) : ComponentContainer = {
       val se = getO(path.parent).getOrElse(throw GetError("parent does not exist: " + path))
       se.getComponent(path.component) getOrElse {
          throw GetError("illegal component: " + path)
       }
    }
-   
+
    def visible(to: Term): HashSet[Term]
    def getImplicit(from: Term, to: Term) : Option[Term]
    def getImplicit(from: MPath, to: MPath) : Option[Term] = getImplicit(OMMOD(from), OMMOD(to))
    def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined
 
    def getDeclarationsInScope(mod: Term): List[StructuralElement]
-   
+
    /** if p is imported by a structure, returns the preimage of the symbol under the outermost structure */
    def preImage(p : GlobalName) : Option[GlobalName]
-   
+
   /**
     * gets the domain in which a Constant was declared
-    * 
+    *
     * This can be used to retrieve the source of an assignment declared in a DeclaredLink.
     * It is also the official way to test whether a Constant is an assignment.
     *
@@ -106,7 +106,7 @@ abstract class Lookup {self =>
    def getDomain(a: Declaration) : (DeclaredTheory,Option[DeclaredLink]) = {
       val p = a.home match {
          case OMMOD(p) => p
-         case OMS(p) => p 
+         case OMS(p) => p
          case _ => throw GetError("non-atomic link")
       }
       val l = get(p) match {
@@ -116,7 +116,7 @@ abstract class Lookup {self =>
            case l: DeclaredLink => l
          }
          case l: DeclaredLink => l
-         case _ => throw GetError("unknown home encountered while getting domain of " + a.path) 
+         case _ => throw GetError("unknown home encountered while getting domain of " + a.path)
       }
       val dom = l.from match {
          case OMMOD(t) => getAs(classOf[Theory],t) match {
@@ -128,7 +128,7 @@ abstract class Lookup {self =>
       }
       (dom,Some(l))
    }
-   
+
   /** resolves a LocalName in a theory or in any theory visible to it, returns None if ambiguous */
   def resolve(home: Term, name: LocalName) : Option[StructuralElement] = {
       {
@@ -147,7 +147,7 @@ abstract class Lookup {self =>
 
   /**
     * A Traverser that recursively expands definitions of Constants.
-    * It carries along a test function that is used to determine when a constant should be expanded. 
+    * It carries along a test function that is used to determine when a constant should be expanded.
     */
    object ExpandDefinitions extends Traverser[ContentPath => Boolean] {
       def traverse(t: Term)(implicit con: Context, expand: ContentPath => Boolean) = t match {
@@ -158,7 +158,7 @@ abstract class Lookup {self =>
          case t => Traverser(this, t)
       }
    }
-   
+
    /**
     * A Traverser that recursively eliminates all explicit morphism applications.
     * apply(t,m) can be used to apply a morphism to a term.

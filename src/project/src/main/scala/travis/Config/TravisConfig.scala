@@ -1,13 +1,15 @@
-package src.main.scala.travis
+package travis.Config
 
-import src.main.scala.yaml.{YAML, YAMLSequence, YAMLStructure}
+import travis.Matrix._
+import travis.yaml._
 
 /**
-  * Represenmts
+  * A single Travis CI build configuration
   * @param globals
   * @param stages
   */
-case class Config(globals: MatrixKey[YAML]*)(stages: Stage*) {
+case class TravisConfig(trueGlobals: Map[String, List[String]], globals: MatrixSet, stages: TravisStage*) {
+  private val trueGlobalsYAML : YAMLStructure = trueGlobals.mapValues(k => ScriptKey(k).value)
   def toYAML: YAMLStructure = {
     val stagesDesc : YAMLSequence = stages.map(_.toStageDesc).map(YAMLSequence.from(_)).foldLeft(YAMLSequence.empty)( _ ++ _)
     Map(
@@ -15,7 +17,7 @@ case class Config(globals: MatrixKey[YAML]*)(stages: Stage*) {
       "jobs" -> YAMLStructure(Map(
         "include" -> stages.map(_.toJobList(this)).foldLeft(YAMLSequence.empty)(_ ++ _)
       ), None)
-    )
+    ) ++ trueGlobalsYAML
   }
   def serialize : String = toYAML.serialize
 }
