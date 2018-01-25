@@ -106,7 +106,7 @@ object LambdaTerm extends IntroductionRule(Lambda.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Lambda(x,a,t) =>
-           if (!covered) solver.inferType(a)//isTypeLike(solver,a)
+           if (!covered) isTypeLike(solver,a) // this used to be solver.inferType(a), which is not correct
            val (xn,sub) = Common.pickFresh(solver, x)
            solver.inferType(t ^? sub)(stack ++ xn % a, history) map {b => Pi(xn,a,b)}
         case _ => None // should be impossible
