@@ -7,6 +7,15 @@ import info.kwarc.mmt.api.utils.URI
 
 class APITest extends MMTIntegrationTest(
   "MMT/urtheories"
+  ,"MMT/LATIN"
+  ,"MMT/LFX"
+  ,"MitM/smglom"
+  ,"MitM/interfaces"
+  ,"alignments/Public"
+  ,"Mizar/MML"
+  ,"HOLLight/Basic"
+  ,"PVS/Prelude"
+  ,"PVS/NASA"
 )() {
   bootstrapTests()
 
@@ -17,5 +26,9 @@ class APITest extends MMTIntegrationTest(
   it should "get a Constant" in {
     lazy val brackets = (DPath(URI.http colon "cds.omdoc.org") / "mmt") ? "mmt" ? "brackets"
     controller.getConstant(brackets)
+  }
+
+  it should "check all alignments" in {
+    handleLine("extension info.kwarc.mmt.api.ontology.AddAlignments " + (contentFolder / "alignments" / "Public").toString)
   }
 }

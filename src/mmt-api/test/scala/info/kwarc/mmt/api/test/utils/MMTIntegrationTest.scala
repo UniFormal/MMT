@@ -14,15 +14,16 @@ import scala.util.Try
 abstract class MMTIntegrationTest(neededArchives : String*)(neededExtensions : ExtensionSpec*) extends MMTUnitTest
   with ExtensionTester with ArchiveTester with CheckTester {
 
+  lazy val rootFolder = File(s"test/${this.getClass.getCanonicalName}/target").canonical
+  lazy val contentFolder = rootFolder / "content"
+  lazy val systemFolder = rootFolder / "system"
+
   /** runs the setup routine inside the MMT controller */
   private def runSetup(): Unit = {
 
     // configure folders we want to use for setup
     // this is put into .../mmt-subproject/test/<test-class>/target
     // and is automatically .gitignored
-    val rootFolder = File(s"test/${this.getClass.getCanonicalName}/target").canonical
-    val contentFolder = rootFolder / "content"
-    val systemFolder = rootFolder / "system"
 
     // create a setup instance
     val setup = new Setup(Some(s => report("setup", s.trim)))
