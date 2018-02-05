@@ -77,7 +77,7 @@ class InterviewServer extends ServerExtension("interview") {
       case _ =>
     }
 
-    ServerResponse.errorResponse("Invalid request")
+    ServerResponse.errorResponse("Invalid request:\nPath: " + path + "\nQuery: " + query)
   }
 
   private def parseTerm(s : String, mp : MPath, check : Boolean = true) = {
