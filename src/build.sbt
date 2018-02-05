@@ -14,7 +14,11 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 // GLOBAL SETTINGS
 // =================================
 scalaVersion in Global := "2.11.12"
-scalacOptions in Global := Seq("-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation", "-Xmax-classfile-name", "128")
+scalacOptions in Global := Seq(
+  "-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation", 
+  "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems
+  "-sourcepath", baseDirectory.value.getAbsolutePath // make sure that all scaladoc source paths are relative
+)
 
 parallelExecution in ThisBuild := false
 javaOptions in ThisBuild ++= Seq("-Xmx1g")
@@ -39,7 +43,7 @@ scalacOptions in(ScalaUnidoc, unidoc) ++=
     Opts.doc.title("MMT") ++:
     Opts.doc.sourceUrl({
       val repo = System.getenv("TRAVIS_REPO_SLUG")
-      s"https://github.com/${if(repo != null) repo else "UniFormal/MMT"}/blob/master€{FILE_PATH}.scala"
+      s"https://github.com/${if(repo != null) repo else "UniFormal/MMT"}/blob/master/src€{FILE_PATH}.scala"
     })
 target in(ScalaUnidoc, unidoc) := file("../apidoc")
 
