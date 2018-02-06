@@ -226,16 +226,21 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           val (tR, valid) = checkTermTop(context ++ pr.unknown ++ pr.free, pr.term)
           (ParseResult(pr.unknown, pr.free, tR), valid)
         }
-        // = checking the type =
-        // check that the type of c (if given) is in a universe
-        getTermToCheck(c.tpC, "type") foreach { t =>
-          val (pr, valid) = prepareTerm(t)
-          if (valid) {
+        /* shared code for checking a type */
+        def checkInhabitable(pr: ParseResult) {
             val j = Inhabitable(Stack(pr.free), pr.term)
             val cu = CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j).diesWith(env.ce.task)
             if (env.timeout != 0)
                cu.setTimeout(env.timeout)(() => log("Timed out!"))
             objectChecker(cu, env.rules)
+          
+        }
+        // = checking the type =
+        // check that the type of c (if given) is in a universe
+        getTermToCheck(c.tpC, "type") foreach { t =>
+          val (pr, valid) = prepareTerm(t)
+          if (valid) {
+            checkInhabitable(pr)
           }
         }
         // == additional check in a link ==
@@ -255,7 +260,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         // = checking the definiens =
         // check that the definiens of c (if given) type-checks against the type of c (if given)
         val tpVar = CheckingUnit.unknownType
-        getTermToCheck(c.dfC, "definiens") foreach { d =>
+        getTermToCheck(c.dfC, "definiens") foreach {d =>
           val (pr, valid) = prepareTerm(d)
           if (valid) {
             val cp = c.path $ DefComponent
@@ -263,7 +268,17 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               case Some(t) =>
                 (pr.unknown, t, false)
               case None =>
-                (pr.unknown ++ VarDecl(tpVar, None, None, None, None), OMV(tpVar), true)
+                // try to guess the type of d by inferring without checking
+                val dIO = Solver.infer(controller, context ++ pr.unknown ++ pr.free, d, Some(env.rules))
+                dIO match {
+                  // need to check for free variables in dI because unknowns might be left (but maybe this check is too strict?)
+                  case Some(dI) if dI.freeVars.isEmpty =>
+                    // dI was not computed by trusting d, so we need to check it as well; also this call sets c.tp 
+                    checkInhabitable(ParseResult(Context.empty,Context.empty, dI))
+                    (pr.unknown, dI, false)
+                  case None =>
+                    (pr.unknown ++ VarDecl(tpVar, None, None, None, None), OMV(tpVar), true)
+                }
             }
             val j = Typing(Stack(pr.free), pr.term, expTp, None)
             val cu = CheckingUnit(Some(cp), context, unknowns, j).diesWith(env.ce.task)
