@@ -316,6 +316,7 @@ object ActionCompanion extends AccessibleCompanionCollection[Action, ActionCompa
 
   // Printing
   register(MMTInfoCompanion)
+  register(MMTVersionCompanion)
   register(ClearConsoleCompanion)
   register(PrintAllCompanion)
   register(PrintAllXMLCompanion)

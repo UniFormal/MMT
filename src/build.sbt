@@ -1,12 +1,33 @@
-import java.io.{BufferedWriter, FileWriter}
+import scala.io.Source
 
 import sbt.Keys._
+
+import scala.sys.process.Process
+import scala.util.Try
 
 // =================================
 // META-DATA and Versioning
 // =================================
-version in ThisBuild := "1.0.1"
-isSnapshot in ThisBuild := true
+version in ThisBuild := {Source.fromFile("mmt-api/resources/versioning/system.txt").getLines.mkString.trim}
+isSnapshot in ThisBuild := Try(Process("git rev-parse HEAD").!!).isFailure
+
+lazy val gitVersion = {
+  val gitRef = Try(Process("git rev-parse HEAD").!!).toOption
+  val isClean = Try(Process("git status --porcelain").!!).map(_.trim.isEmpty).toOption.contains(true)
+  gitRef.getOrElse("") + (if(!isClean) "-localchanges" else "")
+}
+
+
+import java.util.Calendar
+import java.text.SimpleDateFormat
+
+packageOptions in (Compile, packageBin) ++= Seq(
+  Package.ManifestAttributes("Implementation-Version" -> (version.value + gitVersion)),
+  Package.ManifestAttributes("Build-Time" -> new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance)),
+  Package.ManifestAttributes("Git-Version" -> gitVersion)
+)
+
+
 organization in ThisBuild := "info.kwarc.mmt"
 lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 

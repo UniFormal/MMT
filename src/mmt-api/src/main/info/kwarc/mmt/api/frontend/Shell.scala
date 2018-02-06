@@ -1,9 +1,8 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.actions.{ActionResultError, ExecFile, HelpAction, MBT}
+import actions._
 import info.kwarc.mmt.api.archives.{BuildManager, BuildQueue}
-import actions.HelpAction
 import utils._
 
 import scala.util.Try
@@ -93,6 +92,7 @@ class Shell extends StandardIOHelper {
 
   /** main method without exception handling */
   private def mainRaw(a: Array[String]) {
+
      val deployFolder = runStyle match {
        case rs: MMTSystem.DeployRunStyle => Some(rs.deploy)
        case _ => None
@@ -142,28 +142,29 @@ class Shell extends StandardIOHelper {
       sys.exit(Shell.EXIT_CODE_FAIL_ARGUMENT)
     }
 
-    // display some help text
-    if (args.help) {
-      val commands = args.commands
-        if(commands.isEmpty)
-          controller.handle(HelpAction("usage"))
-        else
-          commands.foreach(t => controller.handle(HelpAction(t)))
-      return
-    }
-
-    // display some about text
-    if (args.about) {
-      controller.handle(HelpAction("version"))
-      return
-    }
-
     // configure logging
     if (args.consoleLog) {
       controller.report.addHandler(ConsoleHandler)
     }
     if (args.debugOutput) {
       controller.report.groups += "debug"
+    }
+
+    // display some help text
+    if (args.help) {
+      val commands = args.commands
+      if(commands.isEmpty)
+        controller.handle(HelpAction("usage"))
+      else
+        commands.foreach(t => controller.handle(HelpAction(t)))
+      controller.report.flush
+      return
+    }
+
+    // display some about text
+    if (args.about) {
+      println(MMTSystem.version)
+      return
     }
 
     // load additional config files as given by arguments
