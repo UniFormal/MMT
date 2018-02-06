@@ -7,17 +7,18 @@ import info.kwarc.mmt.api.utils.URI
 
 class APITest extends MMTIntegrationTest(
   "MMT/urtheories"
-  ,"MMT/LATIN"
-  ,"MMT/LFX"
-  ,"MitM/smglom"
-  ,"MitM/interfaces"
-  ,"Mizar/MML"
-  ,"HOLLight/basic"
-  ,"PVS/Prelude"
-  ,"PVS/NASA"
+//  ,"MMT/LATIN"
+//  ,"MMT/LFX"
+//  ,"MitM/smglom"
+//  ,"MitM/interfaces"
+//  ,"Mizar/MML"
+//  ,"HOLLight/basic"
+//  ,"PVS/Prelude"
+//  ,"PVS/NASA"
 )() {
   bootstrapTests()
 
+  handleLine("log+ lmh")
   // extensions should load
   shouldLoadExtensions()
   shouldInstallArchives()
@@ -27,10 +28,12 @@ class APITest extends MMTIntegrationTest(
     controller.getConstant(brackets)
   }
 
+  /*
   shouldHandleLine("lmh clone alignments/Public")
 
   it should "check all alignments" in {
     handleLine("log+ archive")
     handleLine("extension info.kwarc.mmt.api.ontology.AddAlignments " + (contentFolder / "alignments" / "Public").toString)
   }
+  */
 }
