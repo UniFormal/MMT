@@ -13,7 +13,7 @@ isSnapshot in ThisBuild := Try(Process("git rev-parse HEAD").!!).isFailure
 
 lazy val gitVersion = {
   val gitRef = Try(Process("git rev-parse HEAD").!!).toOption
-  val isClean = Try(Process("git status --porcelain").!!).map(_.trim.isEmpty).toOption.contains(true)
+  val isClean = Try(Process("git status --porcelain").!!).map(_.trim.isEmpty).toOption == Some(true)
   gitRef.getOrElse("") + (if(!isClean) "-localchanges" else "")
 }
 
