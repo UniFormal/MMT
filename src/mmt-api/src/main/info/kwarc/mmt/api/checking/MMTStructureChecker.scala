@@ -259,29 +259,22 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           val (pr, valid) = prepareTerm(d)
           if (valid) {
             val cp = c.path $ DefComponent
-            var performCheck = true
             val (unknowns, expTp, inferType) = c.tp match {
               case Some(t) =>
                 (pr.unknown, t, false)
               case None =>
-                if (d.isInstanceOf[OMID])
-                // no need to check atomic definiens without expected type
-                // slightly hacky trick to allow atomic definitions in the absence of a type system
-                  performCheck = false
                 (pr.unknown ++ VarDecl(tpVar, None, None, None, None), OMV(tpVar), true)
             }
             val j = Typing(Stack(pr.free), pr.term, expTp, None)
-            if (performCheck) {
-              val cu = CheckingUnit(Some(cp), context, unknowns, j).diesWith(env.ce.task)
-              if (env.timeout != 0)
-                cu.setTimeout(env.timeout)(() => log("Timed out!"))
-              val cr = objectChecker(cu, env.rules)
-              if (inferType && cr.solved) {
-                // if no expected type was known but the type could be inferred, add it
-                cr.solution.foreach { sol =>
-                  val tp = sol(tpVar).df
-                  c.tpC.analyzed = tp
-                }
+            val cu = CheckingUnit(Some(cp), context, unknowns, j).diesWith(env.ce.task)
+            if (env.timeout != 0)
+              cu.setTimeout(env.timeout)(() => log("Timed out!"))
+            val cr = objectChecker(cu, env.rules)
+            if (inferType && cr.solved) {
+              // if no expected type was known but the type could be inferred, add it
+              cr.solution.foreach { sol =>
+                val tp = sol(tpVar).df
+                c.tpC.analyzed = tp
               }
             }
           }

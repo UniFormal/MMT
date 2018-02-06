@@ -1090,7 +1090,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           history += "Applying InhabitableRule " + rule.toString
           rule(this)(uS)
         case (uS, None) =>
-           inferType(j.wfo)(stack, history + "inferring universe") match {
+           history += "inferring universe"
+           inferType(j.wfo)(stack, history) match {
              case None =>
                 delay(Inhabitable(stack, uS))
              case Some(univ) =>
