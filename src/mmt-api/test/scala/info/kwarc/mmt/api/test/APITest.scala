@@ -11,9 +11,8 @@ class APITest extends MMTIntegrationTest(
   ,"MMT/LFX"
   ,"MitM/smglom"
   ,"MitM/interfaces"
-  ,"alignments/Public"
   ,"Mizar/MML"
-  ,"HOLLight/Basic"
+  ,"HOLLight/basic"
   ,"PVS/Prelude"
   ,"PVS/NASA"
 )() {
@@ -28,7 +27,10 @@ class APITest extends MMTIntegrationTest(
     controller.getConstant(brackets)
   }
 
+  shouldHandleLine("lmh clone alignments/Public")
+
   it should "check all alignments" in {
+    handleLine("log+ archive")
     handleLine("extension info.kwarc.mmt.api.ontology.AddAlignments " + (contentFolder / "alignments" / "Public").toString)
   }
 }
