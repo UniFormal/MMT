@@ -61,9 +61,9 @@ object MMTSystem {
      }
    }
 
-  /** the version of MMT being used, if known */
-  lazy val version: Option[String] = {
-    Option(this.getClass.getPackage.getImplementationVersion)
+  /** the version of MMT being used */
+  lazy val version: String = {
+    Option(this.getClass.getPackage.getImplementationVersion).getOrElse(getResourceAsString("versioning/system.txt") + "--localchanges")
   }
 
    /** expected location of the user's mmtrc file */

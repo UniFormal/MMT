@@ -29,7 +29,7 @@ object StandardVersioning extends ArchiveVersioning {
   /** returns a list of all coded archive versions */
   val all: List[(String, String)] = {
     val buffer = new ListBuffer[(String, String)]
-    MMTSystem.getResourceAsString("/archives/archive_versions.txt").split("\n") foreach {l => lineRegex.findFirstMatchIn(l).foreach { m =>
+    MMTSystem.getResourceAsString("/versioning/archives.txt").split("\n") foreach { l => lineRegex.findFirstMatchIn(l).foreach { m =>
       buffer.append((m.group(1), m.group(2)))
     }}
     buffer.toList
