@@ -10,9 +10,8 @@ travisConfig := {
   val ourScalaVersion: String = scalaVersion.value
 
   // convenience wrapper to run an sbt task and an optional check
-  // we need to hard-code scala 2.10.7 to work on JDK 7/8/9
   def sbt(task: String, check: Option[String] = None) : List[String] = List(
-    s"cd src && (cat /dev/null | sbt -Dsbt.scala.version=2.10.7 ++$ourScalaVersion $task) && cd .."
+    s"cd src && (cat /dev/null | sbt ++$ourScalaVersion $task) && cd .."
   ) ::: check.toList
 
   // convenience functions for checks
