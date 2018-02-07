@@ -21,7 +21,7 @@ travisConfig := {
 
   val LinuxTesting = MatrixSet(
     Trusty, Language("scala"), Env(Map(("SBT_VERSION_CMD", "\"^validate\""))),
-    OpenJDK7, OpenJDK8, OracleJDK8, OracleJDK9
+    OpenJDK8, OracleJDK8, OracleJDK9
   )
 
   // in principle we would test OS X as follows
