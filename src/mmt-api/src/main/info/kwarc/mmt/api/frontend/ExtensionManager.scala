@@ -162,9 +162,9 @@ class ExtensionManager(controller: Controller) extends Logger {
         case Some(tc) => (tc.cls, tc.args)
         case None => (format,Nil) // fallback: treat format as class name
       }
-      val ext = addExtension(className, extraArgs ::: args)
-      ext match {
-        case e: E@unchecked if cls.isInstance(e) => Some(e)
+      val ext = addExtensionO(className, extraArgs ::: args)
+      ext map {
+        case e: E@unchecked if cls.isInstance(e) => e
         case _ => throw RegistrationError(s"extension for $format exists but has unexpected type")
       }
     }
