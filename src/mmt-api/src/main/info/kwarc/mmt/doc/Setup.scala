@@ -165,9 +165,6 @@ class Setup extends ShellExtension("setup") {
         log("done\n")
       }
 
-
-
-
       setupJEdit foreach {case (shell,jsf) =>
          controller.extman.getOrAddExtension(classOf[ShellExtension], "jeditsetup") match {
             case None =>

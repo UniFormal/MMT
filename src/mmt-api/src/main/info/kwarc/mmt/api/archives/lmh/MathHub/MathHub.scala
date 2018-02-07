@@ -20,7 +20,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
 
 
   /** return the current archive versioning instance */
-  var versioning: ArchiveVersioning = StandardVersioning
+  var versioning: ArchiveVersioning = EmptyVersioning // FR: versioning is misdesigned; changing to a dummy value to get rid of it 
 
 
   // PATHS

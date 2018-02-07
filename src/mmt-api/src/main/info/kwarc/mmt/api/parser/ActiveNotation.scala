@@ -7,6 +7,22 @@ import ActiveNotation._
 
 case class ScannerBacktrackInfo(currentIndex: Int, numCurrentTokens: Int)
 
+/** meant to replace ActiveNotation as a more general interface in Scanner and related classes
+ *  That would computational notations.
+ */
+abstract class ActiveParsingRule {
+  val rules: List[ParsingRule]
+  val backtrackInfo: ScannerBacktrackInfo  
+  
+  def applicable(currentToken: Token, futureTokens: String): Applicability
+  
+  def apply(currentIndex: Int): Boolean
+  
+  def closable: Applicability
+  
+  def close: Unit
+}
+
 /** An ActiveNotation is a notation whose firstDelimToken has been scanned
  *  An ActiveNotation maintains state about the found and still-expected markers
  *
@@ -16,7 +32,7 @@ case class ScannerBacktrackInfo(currentIndex: Int, numCurrentTokens: Int)
  *    if not a singleton, all [[TextNotation]]s must TextNotation.agree
  *  @param firstToken the index of the Token that caused this notation to be opened (i.e., the first delimiter token)
  */
-class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtrackInfo: ScannerBacktrackInfo) {
+class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtrackInfo: ScannerBacktrackInfo) extends ActiveParsingRule {
    // invariant: found.reverse (qua List[Marker]) ::: left == markers of each rule
 
    override def toString = toShortString + " " + found.reverse.mkString("", " ", "")

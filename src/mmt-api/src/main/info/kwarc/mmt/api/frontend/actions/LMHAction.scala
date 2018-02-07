@@ -94,13 +94,10 @@ object LMHInitCompanion extends ActionCompanionImpl[LMHInit]("create a new lmh a
   def parserActual(implicit state: ActionState) = str ~ (str?) ^^ {case p ~ t => LMHInit(p, t)}
 }
 
-
-
-
 case class LMHClone(id: String, version: Option[String]) extends LMHAction {
   def apply(implicit controller: Controller): Unit = {
     // install all the entries
-    mathHub.installEntry(id, version, enforceVersion=true, recursive=false)
+    mathHub.installEntry(id, version, enforceVersion=true, recursive=true)
   }
   def toParseString = s"lmh clone $id${version.map(" " + ).getOrElse("")}"
 }
@@ -113,7 +110,7 @@ object LMHCloneCompanion extends ActionCompanionImpl[LMHClone]("clone specific v
 case class LMHInstall(spec: List[String]) extends LMHAction {
   def apply(implicit controller: Controller): Unit = {
     val resolved = mathHub.available(spec: _*)
-    resolved.foreach {case (id, version) => mathHub.installEntry(id, version, true) }
+    resolved.foreach {case (id, version) => mathHub.installEntry(id, version, recursive=true) }
   }
   def toParseString = s"lmh install ${spec.mkString(" ")}".trim
 }

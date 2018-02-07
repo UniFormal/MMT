@@ -23,7 +23,7 @@ trait MathHubInstaller {
     } else {
       // try to clone the repository or fail
       log(s"trying to clone $id")
-      val success = git(local, "clone", rp, lp.toString).success
+      val success = git(local, "clone", rp, id).success
       if (!success) {
         if (lp.exists) {
           log("git failed, deleting " + lp)

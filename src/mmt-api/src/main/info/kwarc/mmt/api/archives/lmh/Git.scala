@@ -19,6 +19,9 @@ abstract class Git {
     */
   def apply(wd: File, args: String*) : ShellCommand = {
     val command = toArgs(args:_*)
+    // running shell commands is always brittle; better always print what we're trying to do 
+    println("running git command: " + command.mkString(" "))
+    println("in directory: " + wd.toString)
     new ShellCommand(Some(wd), command, Map("GIT_TERMINAL_PROMPT" -> "0", "GIT_ASKPASS" -> "/bin/false"))({_ =>})({_ => })
   }
 }
