@@ -9,22 +9,13 @@ import scala.util.Try
 // META-DATA and Versioning
 // =================================
 version in ThisBuild := {Source.fromFile("mmt-api/resources/versioning/system.txt").getLines.mkString.trim}
-isSnapshot in ThisBuild := Try(Process("git rev-parse HEAD").!!).isFailure
-
-lazy val gitVersion = {
-  val gitRef = Try(Process("git rev-parse HEAD").!!).toOption
-  val isClean = Try(Process("git status --porcelain").!!).map(_.trim.isEmpty).toOption == Some(true)
-  gitRef.getOrElse("") + (if(!isClean) "-localchanges" else "")
-}
-
 
 import java.util.Calendar
 import java.text.SimpleDateFormat
 
 packageOptions in (Compile, packageBin) ++= Seq(
-  Package.ManifestAttributes("Implementation-Version" -> (version.value + gitVersion)),
-  Package.ManifestAttributes("Build-Time" -> new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance)),
-  Package.ManifestAttributes("Git-Version" -> gitVersion)
+  Package.ManifestAttributes("Implementation-Version" -> (version.value)),
+  Package.ManifestAttributes("Build-Time" -> new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance))
 )
 
 
@@ -34,7 +25,7 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 // =================================
 // GLOBAL SETTINGS
 // =================================
-scalaVersion in Global := "2.11.12"
+scalaVersion in Global := "2.12.3"
 scalacOptions in Global := Seq("-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation", "-Xmax-classfile-name", "128")
 
 parallelExecution in Global := false
@@ -81,7 +72,7 @@ def commonSettings(nameStr: String) = Seq(
   sourcesInBase := false,
   autoAPIMappings := true,
   exportJars := true,
-  libraryDependencies += "org.scalatest" % "scalatest_2.11" % "3.0.4" % "test",
+  libraryDependencies += "org.scalatest" % "scalatest_2.12" % "3.0.4" % "test",
   fork := true,
   test in assembly := {},
   assemblyMergeStrategy in assembly := {
@@ -123,19 +114,20 @@ lazy val excludedProjects = {
 // =================================
 // Main MMT Projects
 // =================================
+
 lazy val src = (project in file(".")).
   enablePlugins(ScalaUnidocPlugin).
   exclusions(excludedProjects).
   aggregate(
       mmt, api,
-      leo, lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, odk, specware, stex, webEdit, planetary, interviews, latex, openmath, oeis, repl,
+      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, odk, specware, stex, webEdit, planetary, interviews, latex, openmath, oeis, repl,
       tiscaf, lfcatalog,
       jedit
   ).settings(
     unidocProjectFilter in (ScalaUnidoc, unidoc) := excludedProjects.toFilter
   )
 
-
+// This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
   dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, interviews).
@@ -161,6 +153,9 @@ lazy val mmt = (project in file("mmt")).
 // MMT Projects
 // =================================
 
+// MMT is split into multiple subprojects to that are managed independently.
+// api is the kernel upon which everything else depends. Some foundation-specific extensions are in the lf project.
+
 lazy val api = (project in file("mmt-api")).
   settings(mmtProjectsSettings("mmt-api"): _*).
   settings(
@@ -176,7 +171,7 @@ lazy val api = (project in file("mmt-api")).
     unmanagedJars in Test += Utils.lib.toJava / "scala-reflect.jar",
     unmanagedJars in Test += Utils.lib.toJava / "scala-parser-combinators.jar",
     unmanagedJars in Test += Utils.lib.toJava / "scala-xml.jar",
-    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.11.0-M4" % "test",
+//    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % scalaVersion.value % "test",
     libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % "test",
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
   )
@@ -187,15 +182,8 @@ lazy val lf = (project in file("mmt-lf")).
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
     unmanagedJars in Compile += Utils.deploy.toJava / "lfcatalog" / "lfcatalog.jar",
-    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.11.0-M4" % "test",
+//    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.12.3" % "test",
     unmanagedJars in Test += Utils.lib.toJava / "tiscaf.jar"
-  )
-
-lazy val leo = (project in file("mmt-leo")).
-  dependsOn(lf, api).
-  settings(mmtProjectsSettings("mmt-leo"): _*).
-  settings(
-    libraryDependencies += "com.assembla.scala-incubator" %% "graph-core" % "1.9.4"
   )
 
 lazy val concepts = (project in file("concept-browser")).
@@ -310,7 +298,7 @@ lazy val tiscaf = (project in file("tiscaf")).
     scalacOptions in Compile ++= Seq("-language:reflectiveCalls"),
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
     libraryDependencies ++= Seq(
-      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
+//      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
       "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     ),
     deployFull := Utils.deployPackage("lib/tiscaf.jar").value,
