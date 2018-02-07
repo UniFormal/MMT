@@ -16,11 +16,11 @@ import info.kwarc.mmt.jedit._
   *
   * @param logger Optional function to print interactive setup statements in. Defaults to println
   */
-class Setup(logger: Option[String => Unit] = None) extends ShellExtension("jeditsetup") {
+class Setup extends ShellExtension("jeditsetup") {
   def helpText = "needed arguments: (install | install-jars | uninstall) [JEDIT/SETTINGS/FOLDER]"
 
   /** a function tog log a message */
-  val log: String => Unit = logger.getOrElse(println)
+  val log: String => Unit = println
 
   /** run method as ShellExtension */
   def run(shell: Shell, args: List[String]): Boolean = {

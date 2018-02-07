@@ -29,7 +29,7 @@ scalaVersion in Global := "2.12.3"
 scalacOptions in Global := Seq("-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation", "-Xmax-classfile-name", "128")
 
 parallelExecution in Global := false
-javaOptions in Global ++= Seq("-Xmx1g")
+javaOptions in Global ++= Seq("-Xmx2g")
 
 publish := {}
 fork in Test := true

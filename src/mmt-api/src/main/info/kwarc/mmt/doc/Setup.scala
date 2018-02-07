@@ -198,6 +198,6 @@ class Setup extends ShellExtension("setup") {
 
      log("\n\n\nThat's it. If there are no error messages above, you're ready to go.")
      log("\nThe main jar to execute is " + deploy/"mmt.jar" + ".")
-     log("\n\nTo force rerunning setup or to update MMT, just run `mmt.jar :setup`.")
+     log("\n\nTo force rerunning setup or to update MMT, just run `java -jar mmt.jar :setup`.")
      }
 }
