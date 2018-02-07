@@ -19,11 +19,11 @@ import MMTSystem._
  *
  * @param logger Optional function to print interactive setup statements in. Defaults to println.
  */
-class Setup(logger: Option[String => Unit] = None) extends ShellExtension("setup") {
+class Setup extends ShellExtension("setup") {
    def helpText = "usage: setup [SYSTEM/FOLDER [CONTENT/FOLDER [JEDIT/SETTINGS/FOLDER]]]"
 
-   /** a function tog log a message */
-   val log: String => Unit = logger.getOrElse(println)
+   /** a function to log a message */
+   val log: String => Unit = println
 
    def run(shell: Shell, args: List[String]): Boolean = {
       log("\n\n\n\nThis is MMT's setup routine.\n" +
