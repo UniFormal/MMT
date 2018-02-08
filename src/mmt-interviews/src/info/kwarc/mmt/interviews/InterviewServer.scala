@@ -100,7 +100,7 @@ class InterviewServer extends ServerExtension("interview") {
     implicit val pstate = new ParserState(Reader(s),pstream,cont)
     val context = th.getInnerContext
     parser.readInModule(th,context,parser.noFeatures)
-    errorCont.getErrors
+    errorCont.getErrors.filter(_.level > Level.Warning)
   }
 
 
