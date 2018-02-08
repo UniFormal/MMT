@@ -389,7 +389,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         if (!(v.istotal contains false) && istotal.nonEmpty) {
           v.istotal = Some(false)
           env.errorCont(
-            SourceError(v.name.toString, SourceRef.get(v).get, "View is not total!",istotal.map(_.toString), Level.Warning)
+            SourceError(v.name.toString, SourceRef.get(v).getOrElse(SourceRef.anonymous("None")), "View is not total!",istotal.map(_.toString), Level.Warning)
           )
         } else if (v.istotal.isEmpty) v.istotal = Some(true)
         // TODO totality check
