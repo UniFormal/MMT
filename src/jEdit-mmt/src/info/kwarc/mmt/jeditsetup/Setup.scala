@@ -226,8 +226,8 @@ class Setup extends ShellExtension("jeditsetup") {
       // add properties that depend on MMT installation folder
       val propsOld = if (propsFile.exists) File.read(propsFile) else ""
       val archKey = MMTOptions.archives.jeditKey + "="
-      if (install) controller.getOAF.map { oaf =>
-        val contentFolder = oaf.local
+      if (install) controller.getMathHub.map {mh =>
+        val contentFolder = mh.local
         log("adding property for content folder " + contentFolder)
         val encoded = contentFolder.toString.replace("\\", "\\\\").replace(":", "\\:").replace("=", "\\=")
         val newValues = archKey + encoded

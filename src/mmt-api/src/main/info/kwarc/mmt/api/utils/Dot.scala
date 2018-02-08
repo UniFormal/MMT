@@ -1,4 +1,5 @@
 package info.kwarc.mmt.api.utils
+
 import info.kwarc.mmt.api._
 
 // note graphviz does not like some characters (including -) in the tooltip attributes, which we use for classes
@@ -52,7 +53,7 @@ trait DotGraph {
 }
 
 /** thrown by [[DotToSVG]] */
-case class DotError(m: String) extends Exception(m)
+case class DotError(m: String) extends Error(m)
 
 /** converts a graph to SVG using the dot tool */
 class DotToSVG(dotPath: File) {
@@ -132,7 +133,10 @@ class DotToSVG(dotPath: File) {
       val dotFile = outFile.setExtension("dot")
       toDot(dg, dotFile)
       val result = ShellCommand.run(dotPath.toString, "-Tsvg", "-o" + outFile, dotFile.toString)
-      result foreach {m => throw DotError(m)}
+      result match {
+        case ShellCommand.Abort(e) => throw DotError("error while running dot").setCausedBy(e)
+        case ShellCommand.Fail(m, _) => throw DotError(m)
+      }
       //dotFile.delete
       val svg = File.read(outFile)
       adaptSVG(svg)

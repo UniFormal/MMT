@@ -69,9 +69,7 @@ object ArchiveMarCompanion extends  ActionCompanionImpl[ArchiveMar]("builds a di
 }
 
 /** helper functions of [[ArchiveAction]]s */
-trait ArchiveActionHandling {
-  self: Controller =>
-
+trait ArchiveActionHandling {self: Controller =>
   /**
     * Builds a given target from an Archive, handling the [[ArchiveBuild]] Action
     *

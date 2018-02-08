@@ -324,9 +324,8 @@ object ActionCompanion extends AccessibleCompanionCollection[Action, ActionCompa
   register(HelpActionCompanion)
 
   // LMH Root
-  register(GetLMHCompanion)
+  register(ShowLMHCompanion)
   register(SetLMHRootCompanion)
-  register(ToggleLMHVersioning)
   register(LMHInitCompanion)
   register(LMHCloneCompanion)
   register(LMHInstallCompanion)

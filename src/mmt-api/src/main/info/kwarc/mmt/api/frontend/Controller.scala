@@ -22,6 +22,7 @@ import utils._
 import web._
 
 import scala.util.Try
+import info.kwarc.mmt.api.archives.lmh.MathHub
 
 /** An exception that is thrown when a needed knowledge item is not available
   *
