@@ -10,13 +10,13 @@ import info.kwarc.mmt.api.presentation.{HTMLPresenter, Presenter}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 
 class InterviewServer extends ServerExtension("interview") {
-  implicit val errorCont = new ErrorContainer(None)
   private lazy val twostep = controller.extman.getOrAddExtension(classOf[TwoStepInterpreter],"mmt").get
   private lazy val parser = twostep.parser.asInstanceOf[KeywordBasedParser]
   private lazy val checker = twostep.checker.asInstanceOf[MMTStructureChecker]
 
   override def logPrefix: String = "interview"
   override def apply(request: ServerRequest): ServerResponse = {
+    implicit val errorCont = new ErrorContainer(None)
     val (path,query,body) = (request.path.tail,request.parsedQuery,request.body)
     log("Path: " + path.mkString("/"))
     log("Query: " + query)
@@ -80,12 +80,12 @@ class InterviewServer extends ServerExtension("interview") {
     ServerResponse.errorResponse("Invalid request:\nPath: " + path + "\nQuery: " + query)
   }
 
-  private def parseTerm(s : String, mp : MPath, check : Boolean = true) = {
+  private def parseTerm(s : String, mp : MPath, check : Boolean = true)(implicit errorCont : ErrorContainer) = {
     val t = parser.apply(ParsingUnit(SourceRef.anonymous(""),Context(mp),s,NamespaceMap.empty))
-    (t,errorCont.getErrors)
+    (t,errorCont.getErrors.filter(_.level > Level.Warning))
   }
 
-  private def parseDecl(s : String, th : DeclaredModule) = {
+  private def parseDecl(s : String, th : DeclaredModule)(implicit errorCont : ErrorContainer) = {
     val pstream = ParsingStream.fromString(s,th.parent,"mmt")
 
     val cont = new StructureParserContinuations(errorCont) {
@@ -111,4 +111,5 @@ class InterviewServer extends ServerExtension("interview") {
   private def response(o : objects.Obj) = {
     ServerResponse.HTMLResponse(html.objectPresenter.asString(o,None))
   }
+
 }
