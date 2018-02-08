@@ -8,7 +8,6 @@ import objects._
 
 /**
   * An auxilary class to split the [[Controller]] into several files and implement the handling of [[Action]]s.
-  *
   */
 trait ActionHandling extends 
   ArchiveActionHandling with
