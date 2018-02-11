@@ -15,6 +15,7 @@ object Codecs {
   val standardPos = path ? "standardPos"
   val standardString = path ? "standardString"
   val standardBool = path ? "standardBool"
+  val boolAsString = path ? "boolAsString"
   val boolAsInt = path ? "boolAsInt"
   val standardList = path ? "standardList"
   val standardVector = path ? "standardVector"
