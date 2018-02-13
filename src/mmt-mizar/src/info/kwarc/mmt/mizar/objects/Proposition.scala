@@ -1,8 +1,8 @@
 package info.kwarc.mmt.mizar.objects
 /**
- * 	objects.Proposition
- * 	Contains classes for handling Mizar Propositions and Formulas	
- * 	@author Mihnea Iancu
+ *    objects.Proposition
+ *    Contains classes for handling Mizar Propositions and Formulas
+ *    @author Mihnea Iancu
  *  @version 10/03/2011
  */
 
@@ -18,7 +18,7 @@ class MizNot(val formula : MizFormula) extends MizFormula
 class MizAnd(val formulas : List[MizFormula]) extends MizFormula
 class MizFor(val varName : Option[String], val typ : MizTyp, val formula : MizFormula) extends MizFormula
 class MizExists(val varName : Option[String], val typ : MizTyp, val formula : MizFormula) extends MizFormula
-class MizPred(val aid : String, val kind : String, val absnr : Int, val terms : List[MizTerm]) extends MizFormula 
+class MizPred(val aid : String, val kind : String, val absnr : Int, val terms : List[MizTerm]) extends MizFormula
 class MizSchemePred(val aid : String, val kind : String, val nr : Int, val schemeNr : Int, val terms : List[MizTerm]) extends MizFormula
 class MizPrivPred(val nr : Int, val terms : List[MizTerm], val formula : MizFormula) extends MizFormula
 class MizIs(val term : MizTerm, val typ : MizTyp) extends MizFormula

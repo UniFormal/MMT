@@ -33,7 +33,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
   val listenPort : Int = port
 
   def handleMessage(s: String) {
-    controller.report("tiscaf", s)
+    log(s)
   }
   def handleError(t: Throwable) {
     val e = GeneralError("error in underlying server").setCausedBy(t)
@@ -124,6 +124,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
       s"HTTP Request Method: ${RequestMethod.toString(request.method)}",
       s"HTTP Request Path:   ${request.pathString}",
       s"HTTP Query String:   ${request.query}",
+      s"HTTP Parsed Query:   ${request.parsedQuery}",
       "",
       "HTTP Header fields:",
       request.headers.map(kv => s"${kv._1}: ${kv._2}").mkString("\n")
@@ -132,8 +133,8 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
     ServerResponse.fromText(bodyString)
   }
 
-  @deprecated("use SearchServer instead")
-  /** handles a resolving an MWS resposne */
+  @deprecated("use SearchServer instead", "")
+  /** handles a resolving an MWS response */
   private def resolveMWS(request : ServerRequest) : ServerResponse = {
     val body = request.body
 

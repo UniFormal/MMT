@@ -33,7 +33,7 @@ trait Speaker {
 
   /** sends a message to a listener*/
   def sendMessage(m:Message,a:Listener) = a.mailbox.enqueue(m)
-  
+
   /**sends messages to all subscribers*/
   def sendToSubscribers(m:Message,onlyInterested:Boolean=false) = {
     subscribers.foreach(s =>
@@ -93,13 +93,13 @@ abstract class Agent(blackboardParam: Blackboard) extends Communicator with Logg
   protected def readMail:Seq[Message] = mailbox.dequeueAll(m=>true)
 
   def respond(): Unit
-  
+
   /** @return number of tasks, the agent can currently work on */
   def numTasks: Int = taskQueue.size
 
   /** Removes all Tasks from the task queue */
   def clearTasks(): Unit = taskQueue.clear()
-  
+
   /** Queue holding the tasks to be bid on */
   var taskQueue: mutable.Queue[Task] = new mutable.Queue[Task]()
 
@@ -152,7 +152,7 @@ class AuctionAgent(blackboard: Blackboard) extends Agent(blackboard) {
   val name = "AuctionAgent"
 
   override val interests: List[String] = List("BID") //TODO implement agent sending bids
-  
+
   def wantToSubscribeTo:List[Speaker] = blackboard.agents
 
   //def updateSubscribers() = subscribers:::=blackboard.get.agents
@@ -160,7 +160,7 @@ class AuctionAgent(blackboard: Blackboard) extends Agent(blackboard) {
   lazy val executionAgent = blackboard.executionAgent.get
 
   val metaTaskQueue = new mutable.Queue[Task]()
-  
+
   /** @return A list of all of the registered proof agents*/
   def subAgents() = blackboard.agents.sortBy(-_.priority)
 
@@ -173,7 +173,7 @@ class AuctionAgent(blackboard: Blackboard) extends Agent(blackboard) {
       }
     }
   }
-  
+
   def consistencyCheck(tasks:List[Task]): Boolean ={
     val sections = blackboard.sections
     sections.forall({ s =>
@@ -223,7 +223,7 @@ class AuctionAgent(blackboard: Blackboard) extends Agent(blackboard) {
 
     sendMessage(new MetaTask(tasks,this),executionAgent)
   }
-  
+
 }
 
 

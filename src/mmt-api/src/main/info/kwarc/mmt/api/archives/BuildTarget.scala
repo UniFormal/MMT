@@ -180,6 +180,8 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** a string identifying this build target, used for parsing commands, logging, error messages */
   def key: String
 
+  override def toString = super.toString + s" with key $key"
+
   def isApplicable(format: String): Boolean = format == key
 
   /** defaults to the key */
@@ -274,9 +276,9 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
   * It is also possible to override the method buildDir to post process directory content.
   */
 abstract class TraversingBuildTarget extends BuildTarget {
-  
+
   // ***************** abstract or overridable methods for configuring basic properties such as file extensions
-  
+
   /** the input dimension/archive folder */
   def inDim: ArchiveDimension
 
@@ -320,7 +322,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
 
   // ***************** the essential abstract or overridable methods for building
-  
+
   /** estimate the [[BuildResult]] without building, e.g., to predict dependencies */
   def estimateResult(bf: BuildTask): BuildSuccess = BuildResult.empty
 
@@ -341,7 +343,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   def buildDir(bd: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult = BuildEmpty("nothing to be done")
 
   /// ***************** auxiliary methods for computing paths to output/error files etc.
-  
+
   protected def getOutFile(a: Archive, inPath: FilePath) = (a / outDim / inPath).setExtension(outExt)
 
   protected def getTestOutFile(a: Archive, inPath: FilePath) =
@@ -362,7 +364,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   // ***************** building (i.e., create build tasks and add them to build manager)
-  
+
   /** delegates to build */
   def build(a: Archive, up: Update, in: FilePath) {
     build(a, up, in, None)
@@ -431,11 +433,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
     else getErrorFile(a, inPath)
     new ErrorWriter(errFileName, Some(report))
   }
- 
+
   // ******************* Actual building (i.e., when the build manager calls a build task)
-  
+
   // TODO the methods in this section should be revised together with a revision of the BuildQueue
-  
+
   /** the entry point for build managers */
   def checkOrRunBuildTask(deps: Set[Dependency], bt: BuildTask, up: Update): BuildResult = {
     var res: BuildResult = BuildEmpty("up-to-date")
@@ -484,7 +486,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
       if (testFile.exists) {
         var diffLog: Option[String] = Some("") // assume a difference if no diff is run
         if (testMod.compareWithTest) {
-          diffLog = ShellCommand.run("diff", "-u", testFile.toString, outFile.toString)
+          ShellCommand.run("diff", "-u", testFile.toString, outFile.toString) match {
+            case ShellCommand.Success(op) => diffLog = Some(op)
+            case _ =>
+          }
           if (diffLog.isDefined) {
             File.write(diffFile, diffLog.get)
             logResult("wrote: " + diffFile)
@@ -507,7 +512,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       logResult("no output: " + outFile)
     }
   }
-  
+
   /** wraps around buildFile to add error handling, logging, etc.  */
   // TODO should be private, exposed only because it is overridden by LaTeXDirTarget
   protected def runBuildTask(bt: BuildTask, level: Level): BuildResult = {
@@ -545,7 +550,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   // ********************* functions for delete, update, change management etc.
-  
+
   /** additional method that implementations may provide: cleans one file
     *
     * deletes the output and error file by default, may be overridden to, e.g., delete auxiliary files
@@ -597,10 +602,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
 
   // *********** methods for the deprecated buildDepsFirst, which is still exposed in the interface and may or may not still be used
-  
+
   /*
    anything here needs complete revision
-   
+
    getFilesRec is similar to makeBuildTasks, both traverse the folders recursively
    - getFilesRec returns files to be built as dependencies (but no directories)
    - makeBuildTasks returns QueuedTasks (also for directories)
@@ -614,11 +619,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
     "depFirst" is currently only kept for comparison and testing purposes and may eventually be disposed off
   */
 
-  @deprecated 
+  @deprecated("needs review", "")
   private def getDeps(bt: BuildTask): Set[Dependency] = estimateResult(bt).used.toSet
 
   // TODO called by AllTeX target
-  @deprecated 
+  @deprecated("needs review", "")
   protected def getFilesRec(a: Archive, in: FilePath): Set[Dependency] = {
     val inFile = a / inDim / in
     if (inFile.isDirectory)
@@ -628,7 +633,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     else Set.empty
   }
 
-  @deprecated 
+  @deprecated("needs review", "")
   private def getAnyDeps(dep: FileBuildDependency): Set[Dependency] = {
     if (dep.key == key) {
       // we are within the current target
@@ -641,7 +646,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   // TODO called by AllTeX target
-  @deprecated 
+  @deprecated("needs review", "")
   protected def getDepsMap(args: Set[Dependency]): Map[Dependency, Set[Dependency]] = {
     var visited: Set[Dependency] = Set.empty
     var unknown = args
@@ -660,7 +665,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     deps
   }
 
-  @deprecated 
+  @deprecated("needs review", "")
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
     val requestedDeps = getFilesRec(a, in)
     val deps = getDepsMap(getFilesRec(a, in))

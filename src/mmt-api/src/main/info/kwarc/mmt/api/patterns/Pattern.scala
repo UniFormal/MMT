@@ -8,7 +8,7 @@ import symbols._
 import utils._
 import checking._
 
-/** patterns are derived declarations that are syntactically parametric theories */ 
+/** patterns are derived declarations that are syntactically parametric theories */
 class PatternFeature extends StructuralFeature(Pattern.feature) with ParametricTheoryLike {
 
    def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = new Elaboration {
@@ -19,9 +19,9 @@ class PatternFeature extends StructuralFeature(Pattern.feature) with ParametricT
 
 object Pattern {
   val feature = "pattern"
-  
+
   val Type = ParametricTheoryLike.Type(classOf[PatternFeature])
-  
+
   def apply(home: Term, name : LocalName, params: Context, body : Context, notC: NotationContainer) = {
     val tp = Type(params)
     val dd = new DerivedDeclaration(home, name, "pattern", TermContainer(tp), notC)
@@ -31,7 +31,7 @@ object Pattern {
     }
     dd
   }
-  
+
   def unapply(dd: DerivedDeclaration): Option[(Term, LocalName, Context, DeclaredTheory)] = {
     if (dd.feature != feature) return None
     val pars = Type.getParameters(dd)
@@ -39,9 +39,9 @@ object Pattern {
       case thy: DeclaredTheory => thy
       case _ => throw ImplementationError("pattern must contain theory")
     }
-    Some((dd.home,dd.name, pars, thy)) 
+    Some((dd.home,dd.name, pars, thy))
   }
-  
+
   /** pre: d.feature == "pattern" */
   def getParameters(d: DerivedDeclaration) = {
      d.getComponent(ParamsComponent).flatMap {

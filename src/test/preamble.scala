@@ -74,6 +74,7 @@ abstract class Test(archivepath : String,
     }
 
   def hl(s : String) = controller.handleLine(s)
+  def logp(s : String) = hl("log+ " + s)
 }
 
 /**

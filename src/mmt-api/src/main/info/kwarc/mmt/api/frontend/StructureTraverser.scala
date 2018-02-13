@@ -16,7 +16,7 @@ class StructureTrffaverser(controller: Controller) {
        case c: Constant =>
           f(c.path $ TypeComponent, c.tpC)
           f(c.path $ DefComponent, c.dfC)
-       case _ => 
+       case _ =>
        }
     }
 }

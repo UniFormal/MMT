@@ -16,13 +16,13 @@ case class MyPosition(offset : Int) extends javax.swing.text.Position {
 /** node in the sidekick outline tree: common ancestor class
  * @param name the label of the asset
  * @param region the source region of the asset
- */ 
+ */
 sealed abstract class MMTAsset(name: String, val region: SourceRegion)
   extends enhanced.SourceAsset(name, region.start.line, MyPosition(region.start.offset)) {
   setEnd(MyPosition(region.end.offset+1))
   /** the base URIto use in the context of this asset */
   def getScope : Option[MPath]
-  
+
   // this line is helpful for debugging: it shows the source regions in the sidekick tree
   // setShort(name + " [" + region.toString + "]")
 }
@@ -39,7 +39,7 @@ class MMTURIAsset(val path: Path, r: SourceRegion) extends MMTAsset(path.last, r
 
 /** node for structural elements
  * @param elem the node in the MMT syntax tree
- */ 
+ */
 class MMTElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
    //note: shortDescription == name, shown in tree
    setLongDescription(path.toPath)  // tool tip
@@ -60,7 +60,7 @@ class MMTElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion
  * @param term the node in the MMT syntax tree
  * @param parent the component containing the term
  * @param subobjectPosition the position in that term
- */ 
+ */
 class MMTObjAsset(val obj: Obj, val pragmatic: Obj, val context: Context, val parent: CPath, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
   obj.head map {case p =>
     setLongDescription(p.toPath)

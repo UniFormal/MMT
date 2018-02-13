@@ -15,8 +15,8 @@ object FirstTry {
     val firstController = new Controller
     val secondController = new Controller
 
-    firstController.execFileAction(new java.io.File("startup.mmt"), None)
-    secondController.execFileAction(new java.io.File("startup.mmt"), None)
+    firstController.runMSLFile(new java.io.File("startup.mmt"), None)
+    secondController.runMSLFile(new java.io.File("startup.mmt"), None)
 
     val older: File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\try.omdoc")
     val current: File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\try.omdoc")

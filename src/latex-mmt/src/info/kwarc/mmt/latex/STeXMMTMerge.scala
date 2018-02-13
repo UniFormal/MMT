@@ -26,18 +26,18 @@ import STeXMMTMerge._
  * the mmt content of the tex file is extracted into tex.mmt while running latex (or latexml), and the tex file is converted to omdoc via StexImporter
  * the tex content of tex.mmt file is extracted into tex.mmt.tex by running LatexPresenter, and the tex.mmt file is converted to omdoc by MMT
  * This is repeated until all nestings are processed, and the resulting omdoc files are merged.
- * 
+ *
  * This was written by Mihnea on relatively short notice. It is unclear if it ever worked well.
  */
 class STeXMMTMerge extends ShellExtension("stexmmt") {
    def helpText: String = ""
-   
+
    override def start(args : List[String]) {
      super.start(args)
      val li = new LatexInterpreter
      controller.extman.addExtension(li, Nil)
    }
-   
+
    def run(shell: Shell, args: List[String]) = args match {
      // generate a sty file for an mmt file
      case "sty" :: fileName :: Nil => genSty(fileName)
@@ -46,25 +46,25 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
      // merge the omdoc files produced from an mmt and (via stex importer) tex file
      case "merge" :: fileName :: Nil => mergeFiles(File(fileName).getAbsoluteFile)
      // chain the above
-     case "make" :: fileName :: Nil => 
+     case "make" :: fileName :: Nil =>
        val file = File(fileName).getAbsoluteFile
        genFiles(file)
        mergeFiles(file)
      case _ => throw LocalError("Invalid Arguments: " + args.mkString)
    }
-   
+
    def genFiles(srcFile : File) : Boolean = {
      val base : DPath = DPath(FileURI(srcFile))
      _genFiles(srcFile, base)
      true
    }
-   
+
    def _genFiles(srcFile : File, base : DPath) {
      val ext = srcFile.getExtension.getOrElse("tex") //default
      val altExt = if (ext == "tex") "mmt" else "tex"
      if (ext == "mmt") {
        genMMTFiles(srcFile, base)
-     } else {//.tex case 
+     } else {//.tex case
        //should call shell script for now do nothing
      }
      val altFile = srcFile.addExtension(altExt)
@@ -72,7 +72,7 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
        _genFiles(altFile, base)
      }
    }
-   
+
    def genMMTFiles(srcFile : File, base : DPath) {
      val ps = ParsingStream.fromFile(srcFile, formatOpt = Some("mmt"), dpathOpt = Some(base))
      val ec = new ErrorContainer(None)
@@ -80,7 +80,7 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
      //write tex
      val lp = new LatexPresenter(new LatexObjectPresenter)
      initOther(lp)
-     val outFile = srcFile.addExtension("tex") 
+     val outFile = srcFile.addExtension("tex")
      val rh = new presentation.StringBuilder
      lp.apply(doc, standalone = true)(rh)
      if (lp.counter > 1) File.write(srcFile.addExtension("tex"), rh.get)
@@ -88,7 +88,7 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
      val out = doc.toNodeResolved(controller.library, true).toString
      File.write(srcFile.addExtension("omdoc"), out)
    }
-   
+
    def mergeFiles(srcFile : File) : Boolean = {
      val base : DPath = DPath(FileURI(srcFile))
      val cont = new Controller()
@@ -97,7 +97,7 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
      File.write(srcFile.setExtension("omdoc"), newdoc.toString)
      true
    }
-   
+
    var counter = 1
 
    def _mergeFiles(srcFile : File, base : DPath, cont : Controller, cont_extra : Controller) {
@@ -113,7 +113,7 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
        importer.compileOne(src, base)
        cont.getDocument(base)
      }
-     
+
      val altExt = if (srcExt == "tex") "mmt" else "tex"
      val altFile = srcFile.addExtension(altExt)
      if (altFile.exists) {
@@ -122,9 +122,9 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
        traverse(mainDoc, base, cont, cont_extra)
      } //else nothing to do
    }
-   
+
    def traverse(s : StructuralElement, from : DPath, cont : Controller, cont_other : Controller) : Unit = s match {
-     case d : Document => 
+     case d : Document =>
        d.getDeclarations foreach {
           traverse(_, from, cont, cont_other)
        }
@@ -132,7 +132,7 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
      case t : DeclaredTheory =>
        var refNames : List[LocalName] = Nil
        t.asDocument.getDeclarations foreach {
-         case oe: UnknownOpaqueElement if (oe.format == "latex" || oe.format == "mmt") => 
+         case oe: UnknownOpaqueElement if (oe.format == "latex" || oe.format == "mmt") =>
            val refId = "mixref" + counter
            counter += 1
            val decls = cont_other.library.get(from / t.name / refId).getDeclarations flatMap {
@@ -140,7 +140,7 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
              case _ => Nil
            }
            decls.reverse foreach {
-             case c : Constant => 
+             case c : Constant =>
                c.setDocumentHome(c.relativeDocumentHome.init)
                t.addAfterNarrative(c, oe.name)
              case _ => //ignore for now
@@ -151,30 +151,30 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
        val tdoc = t.asDocument
        refNames foreach (tdoc.delete(_))
        t.getDeclarations foreach {
-         case c : Constant => 
+         case c : Constant =>
            val thy : DeclaredTheory = cont_other.get(t.path).asInstanceOf[DeclaredTheory]
            c.tp.map(t => c.tpC.update(TermContainer(tr(t, cont_other.library -> thy))))
            c.df.map(t => c.dfC.update(TermContainer(tr(t, cont_other.library -> thy))))
          case _ => //ignore
        }
-       
+
      case _ => //nothing to do
    }
-   
+
    object tr extends Traverser[(Library, DeclaredTheory)] {
      def traverse(t: Term)(implicit con : Context, p : (Library, DeclaredTheory)) : Term = t match {
-       case OMV(name) if name.toPath.startsWith("mixref") => 
+       case OMV(name) if name.toPath.startsWith("mixref") =>
          val tm = p._2.get(name) match {
            case c : Constant => c.df.get
          }
          tm
        case OMV(name) => name.toString.split("@",-1).toList match {
-         case tname :: sname :: sterm :: Nil => 
+         case tname :: sname :: sterm :: Nil =>
            try {
-             val decl = if (tname == "") p._2.get(LocalName(sname)) 
+             val decl = if (tname == "") p._2.get(LocalName(sname))
                         else  p._1.get(p._2.parent ? tname ? sname)
              decl match {
-               case c : Constant =>  
+               case c : Constant =>
                  if (sterm == "") {
                    OMS(c.path)
                  } else {
@@ -185,27 +185,27 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
                  }
              }
            } catch {
-             case e : Throwable => 
-               val path = if (tname == "") p._2.path ? sname 
+             case e : Throwable =>
+               val path = if (tname == "") p._2.path ? sname
                           else  p._2.parent ? tname ? sname
                OMS(path)
            }
-         case l => 
+         case l =>
            Traverser(this, t)
        }
        case t => Traverser(this,t)
      }
    }
-   
-   
-     
+
+
+
      /*
-       case c : Constant if (c.name.toPath.startsWith("mixref")) => 
+       case c : Constant if (c.name.toPath.startsWith("mixref")) =>
          val refId = c.name.toPath //.substring("mixref".length).toLowerCase()
          val decls = cont_other.library.get(from / t.name / refId).getDeclarations flatMap {
            case s : SRef => List(cont_other.get(s.target))
            case _ => Nil
-         } 
+         }
          decls.reverse foreach {
            case fc : Constant =>
              val newC = new FinalConstant(OMMOD(t.path), fc.name, fc.alias, fc.tpC, fc.dfC, fc.rl, fc.notC)
@@ -217,7 +217,7 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
        cont.library.update(t)
    }
 */
-   
+
    def genSty(fname : String) : Boolean = {
       var response = ""
       val f = File(fname)
@@ -230,7 +230,7 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
          controller.extman.addExtension(op) // make sure it's initialized
          op
       }
-      def doModule(m: ContentElement) { 
+      def doModule(m: ContentElement) {
          m.getDeclarations.foreach {
             case c: Constant =>
                val name = c.name.toPath

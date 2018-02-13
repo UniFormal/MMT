@@ -4,10 +4,10 @@ package info.kwarc.mmt.api.utils
 object While {
   private object Break extends Throwable
   def break {throw Break}
-  
+
   private object Continue extends Throwable
   def continue {throw Continue}
-  
+
   @scala.annotation.tailrec
   def apply(b: => Boolean)(body: => Unit) {
     if (b) {
@@ -19,7 +19,7 @@ object While {
       apply(b)(body)
     }
   }
-  
+
   /** like while (a.isEmpty) {body} but eventually returns the value of a */
   def undefined[A](a: => Option[A])(body: => Unit): A = {
     var x: Option[A] = a

@@ -1,5 +1,8 @@
 package info.kwarc.mmt.api.utils
 
+import java.net.URLDecoder
+import java.util.jar.JarFile
+
 import info.kwarc.mmt.api._
 
 object MMTSystem {
@@ -36,7 +39,7 @@ object MMTSystem {
    }
   /** run in unknown way, in particular as part of jedit */
   case object OtherStyle extends RunStyle
-  
+
   /** the [[RunStyle]] of the current run */
   lazy val runStyle = {
      val location = getClass.getProtectionDomain.getCodeSource.getLocation
@@ -58,6 +61,11 @@ object MMTSystem {
      }
    }
 
+  /** the version of MMT being used */
+  lazy val version: String = {
+    Option(this.getClass.getPackage.getImplementationVersion).getOrElse(getResourceAsString("versioning/system.txt") + "--localchanges")
+  }
+
    /** expected location of the user's mmtrc file */
    val userConfigFile = {
       OS.detect match {
@@ -67,8 +75,9 @@ object MMTSystem {
       }
    }
 
-   /** retrieves a resource from the jar or the resource folder depending on the [[RunStyle]], may be null */ 
+   /** retrieves a resource from the jar or the resource folder depending on the [[RunStyle]], may be null */
    def getResource(path: String): java.io.InputStream = {
+      if(!path.startsWith("/")){ return getResource("/" + path) } // make sure that the st
       runStyle match {
         case _:IsFat | _:ThinJars | OtherStyle =>
           getClass.getResourceAsStream(path) // the file inside the JAR
@@ -84,4 +93,27 @@ object MMTSystem {
      case Some(r) => utils.readFullStream(r)
      case None => throw GeneralError(s"cannot find resource $path (run style is $runStyle)")
    }
+
+  /** return a list of available resources at the given path */
+  def getResourceList(path: String) : List[String] = runStyle match {
+      // running from jar
+      case _:IsFat | _:ThinJars | OtherStyle =>
+
+        // find the path to the current jar
+        val classPath = getClass.getName.replace(".", "/") + ".class"
+        val myPath = getClass.getClassLoader.getResource(classPath)
+        val jarPath = myPath.getPath.substring(5, myPath.getPath.indexOf("!"))
+
+        // open the jar and find all files in it
+        import scala.collection.JavaConverters._
+        val entries = new JarFile(URLDecoder.decode(jarPath, "UTF-8")).entries.asScala.map(e => "/" + e.getName)
+
+        // find all the resources within the given path, then remove the prefix
+        entries.filter(e => e.startsWith(path) && !e.endsWith("/")).map(_.stripPrefix(path)).toList
+
+      // running from classes, list the source directory
+      case rs: Classes =>
+        val base = (rs.resources / path).toJava
+        base.listFiles.map(f => { File(base).relativize(f).toString }).toList
+    }
 }

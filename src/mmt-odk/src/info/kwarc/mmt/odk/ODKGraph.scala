@@ -11,6 +11,7 @@ import info.kwarc.mmt.api.utils.{DotEdge, DotGraph, DotNode, URI}
 class ODKGraph extends RelationGraphExporter {
   val key = "odkgraph"
   override val logPrefix = "odkgraph"
+  val description = "ODK graph"
 
   private lazy val tg: ontology.TheoryGraph = new ontology.TheoryGraph(controller.depstore)
 

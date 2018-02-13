@@ -2,7 +2,7 @@
  * Concrete syntax compiler
  * Takes an abstract syntax (LogicSyntax)
  * Produces concrete pseudo-code (a list of declarations)
- * 
+ *
  * created by Florian Rabe
  *
  * modifications: added a list of labels (strings) that is constructed along with the declarations
@@ -35,10 +35,10 @@ class Compiler(log: LogicSyntax) extends Program {
    def argsToStringWithID(args: List[CatRef]) = args.foldLeft(" of id")(_ + " * " + _)
 
    //auxiliary types for ids for better readability
-   val declare(id) = "id" typedef ID("string")  
+   val declare(id) = "id" typedef ID("string")
    val declare(vrb) = "var" typedef ID("int")
-   
-   
+
+
    // the categories
    val cats = log.cats map {case Category(c, cons) =>
       val cases = cons map {
@@ -52,7 +52,7 @@ class Compiler(log: LogicSyntax) extends Program {
       }
       val declare(_*) = (c adt (cases :_*)).derive(List("Show","Typeable","Eq"))
    }
-   
+
    // the declarations
    val decls = log.decls map {case Declaration(p, args) =>
      // datatype p = p of a1 ... an
@@ -66,16 +66,16 @@ class Compiler(log: LogicSyntax) extends Program {
    addTag("basic")
    // the type of signatures
    val declare(sigs) = ("sigs" typedef LIST(decl)).derive("Show","Typeable")
-   
+
    // the type of theories
    val declare(theo, sign, axioms) =
-     "theo" record ("sign" ::: sigs, "axioms" ::: LIST(log.form))  
+     "theo" record ("sign" ::: sigs, "axioms" ::: LIST(log.form))
    addTag("sig")
-   
+
    //FIXME no support for more complex expressions in ADT arguments
    // cannot declare, matching error
 //   val declare(basic_spec) = "basic_spec" adt List(LIST(decl))
-//   val declare(basic_spec) = "basic_spec" typedef LIST(decl) 
+//   val declare(basic_spec) = "basic_spec" typedef LIST(decl)
 //   addTag("basic")
    // declare morphism
    val declare(morphism,source,target) = "morphism" record ("source" ::: sigs, "target" ::: sigs)
@@ -83,11 +83,11 @@ class Compiler(log: LogicSyntax) extends Program {
    // symbols
    val declare(symb,sname) = ("symb" record ("sname" ::: id)).derive(List("Show","Typeable"))
    addTag("basic")
-     
+
    val declare(error) = "error" exception
-   
+
    addTag("basic")
-   
+
    // parse tree
    val declare(tree, varr, app, bind, tbind) = "tree" adt (
        CONS("variable",List(id)),
@@ -96,9 +96,9 @@ class Compiler(log: LogicSyntax) extends Program {
        CONS("tbind",List(id,id,ID(""),ID("")))
    )
    addTag("tree")
-   
+
    // the functions that map parse trees to expressions
-   
+
    def parse(c: CatRef, a: EXP) = APPLY("fromJust", APPLY(c.target + "_from_pt", a))
 //   def qualIDFirst(e: EXP) = APPLY("Generic.qualIDSplitFirst", e)   //parse.qualIDSplit("instance_name") = ("instance","name")
 //   def qualIDSecond(e: EXP) = APPLY("Generic.qualIDSplitSecond", e)
@@ -108,11 +108,11 @@ class Compiler(log: LogicSyntax) extends Program {
         case (rest, Connective(con,cats)) =>
           IF("n" === STRING(con),
              IF(ID("args").length === cats.length,
-               	SOME( // returns Some(exp)
-                				APPLY(upc(con), cats.zipWithIndex map {case (r, i) =>
-                				parse(r, AT("args", i))
-                				} : _*)
-               	),
+                  SOME( // returns Some(exp)
+                            APPLY(upc(con), cats.zipWithIndex map {case (r, i) =>
+                            parse(r, AT("args", i))
+                            } : _*)
+                  ),
 //                 ERROR("error", STRING("bad number of arguments, expected " + cats.length)) // returns None
                 NONE
                ),
@@ -126,9 +126,9 @@ class Compiler(log: LogicSyntax) extends Program {
            IF(AND("n" === STRING(con), "pat" === STRING(pat)),
              IF(ID("args").length === cats.length,
                  SOME(
-                		 APPLY(upc(pat) + "_" + con, ID("inst") :: (cats.zipWithIndex map {case (r, i) =>
-                		 parse(r, AT("args", i))
-                		 }) : _*)
+                       APPLY(upc(pat) + "_" + con, ID("inst") :: (cats.zipWithIndex map {case (r, i) =>
+                       parse(r, AT("args", i))
+                       }) : _*)
                  ),
 //                 ERROR("error", STRING("bad number of arguments, expected " + cats.length))
                    NONE
@@ -137,7 +137,7 @@ class Compiler(log: LogicSyntax) extends Program {
            )
         case (rest, _) => rest
       }
-      
+
       val bindcase = cons.foldLeft[EXP](ERROR("error", STRINGCONCAT(STRING("illegal identifier: "), ID("n")))) {
          case (rest, Binder(name, None, bound, scope)) =>
             IF("n" === STRING(name),
@@ -146,7 +146,7 @@ class Compiler(log: LogicSyntax) extends Program {
             )
          case (rest, _) => rest
       }
-      
+
       val tbindcase = cons.foldLeft[EXP](ERROR("error", STRINGCONCAT(STRING("illegal identifier: "), ID("n")))) {
             case (rest, Binder(name, Some(a), bound, scope)) =>
                IF("n" === STRING(name),
@@ -157,7 +157,7 @@ class Compiler(log: LogicSyntax) extends Program {
         }
       val varcase = if (cons.exists(_ == VariableSymbol)) APPLY(c + "_var", "n")
           else ERROR("error", STRING("variables not allowed here"))
-      
+
       // worst case - return None
 //      val errcase : EXP = NONE
 
@@ -172,7 +172,7 @@ class Compiler(log: LogicSyntax) extends Program {
         )
       }
    }
-   
+
    // a function that parses declarations
    val declfrompt = log.decls.foldLeft[EXP](ERROR("error", STRING("illegal pattern"))) {
       case (rest, Declaration(p, args)) =>
@@ -180,47 +180,47 @@ class Compiler(log: LogicSyntax) extends Program {
            IF(ID("args").length === args.length,
               SOME(ID(p + "_decl")(
                   APPLY(p,
-                		  ((ID("i") :: 
-                			  (args.zipWithIndex map {case (r, i) => parse(r, AT("args", i)) }) 
-                		   ) : _* )
+                        ((ID("i") ::
+                           (args.zipWithIndex map {case (r, i) => parse(r, AT("args", i)) })
+                         ) : _* )
                   )
                  )
               ),
               ERROR("error", STRING("bad number of arguments, expected " + args.length))
            ),
            rest
-        )      
+        )
    }
    val declare(decl_from_pt) = "decl_from_pt" function OPTION(decl) <-- ("d" :: "Generic.Decl") =|= {case d =>
        d Match (
           ID("Generic.Decl")("i", "p", "args") ==> declfrompt
        )
    }
-   
+
    // functions that parse signatures and theories
    val declare(sign_from_pt) = "sign_from_pt" function sigs <-- ("(Generic.Sign sg)" :: "Generic.Sign") =|= {case sg =>
       sigs(MAP(ID("sg"), ID("fromJust") o decl_from_pt ))
    }
-   
+
 //   val declare(sign_from_pt) = "sign_from_pt" function "Sigs" <-- ("sg" :: "Generic.Sign") =|= {case sg =>
 //     sg Match (
 //         ID("Generic.Sign")("sg") ==> ERROR("","")
 //     )
-//   } 
-   
-//   val declare(sign_from_pt) = 
-   
+//   }
+
+//   val declare(sign_from_pt) =
+
    val declare(axiom_from_pt) = "axiom_from_pt" function log.form <-- ("ax" :: "Generic.Tree") =|= {case ax =>
       parse(log.form, ax)
    }
-   val declare(theo_from_pt) = "theo_from_pt" function theo <-- ("th" :: "Generic.Theo") =|= {case th => 
+   val declare(theo_from_pt) = "theo_from_pt" function theo <-- ("th" :: "Generic.Theo") =|= {case th =>
        theo("sign" ::: sign_from_pt(th __ sign.prepend("Generic.")), "axioms" ::: MAP(th __ axioms.prepend("Generic."), axiom_from_pt))
    }
 /*
    def tolf(c: CatRef, e: EXP) = APPLY(c.target + "_to_lf", e)
    def varlist(args: List[CatRef]) : List[EXP] = (args.zipWithIndex map {case (c,i) => ID("x" + i)})
    def recvarlist(args: List[CatRef]) : List[EXP] = args.zipWithIndex map {case (c,i) => tolf(c, "x" + i)}
-   
+
    // the functions that map expressions to LF
    val tolffuncs = log.cats map {case Category(c, cons) =>
       val declare(_) =
@@ -238,31 +238,31 @@ class Compiler(log: LogicSyntax) extends Program {
             ID(c + "_var")("n") ==> lf.variable("n")
         }  :  _*) }
    }//TODO add case _ => error any new var name matched here
-   
+
    // a function that maps declarations to LF instance declarations
    val declare(decl_to_lf) =
      "decl_to_lf" function "LF.BASIC_ITEM" <-- ("d" :: decl) == {"d" Match (
         log.decls map {case Declaration(p, args) => {
-           ID(p + "_decl")("n", varlist(args)) ==> lf.instance(p, "n", recvarlist(args)) } 
+           ID(p + "_decl")("n", varlist(args)) ==> lf.instance(p, "n", recvarlist(args)) }
         } :_*
      )}
-   
+
 
    // functions that map signatures and theories to LF signatures
    val declare(sign_to_lf) = "sign_to_lf" function "LF.Sign" <-- ("sg" :: sigs) == {
-      MAP("sg", decl_to_lf) 
+      MAP("sg", decl_to_lf)
    }
    val declare(axiom_to_lf) = "axiom_to_lf" function "LF.BASIC_ITEM" <-- ("ax" :: log.form) == {
       lf.decl("_", tolf(log.form, "ax"))
    }
-   val declare(theo_to_lf) = "theo_to_lf" function "LF.Sign" <-- ("th" :: theo) =|= {case th => 
+   val declare(theo_to_lf) = "theo_to_lf" function "LF.Sign" <-- ("th" :: theo) =|= {case th =>
        sign_to_lf(th __ sign) ::: MAP(th __ axioms, axiom_to_lf)
    }
    */
    addTag("funs")
- 
+
    private def upc(string : String) : String = string.head.toUpper + string.substring(1)
-   
+
    private def getCons(ex : EXP) : EXP = {
      ID("")
    }

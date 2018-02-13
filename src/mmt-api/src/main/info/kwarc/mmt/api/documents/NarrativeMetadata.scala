@@ -7,10 +7,10 @@ import objects._
 
 object NarrativeMetadata {
    val keyBase = DPath(URI("http", "purl.org") / "dc" / "terms") ? "_"
-  
+
    def allKeys = List("creator", "created", "description", "abstract", "subject", "title")
    def allAnnotators = allKeys map {k => new NarrativeMetadata(k)}
-   
+
    val title = new NarrativeMetadata("title")
    val description = new NarrativeMetadata("description")
 }
@@ -20,10 +20,10 @@ class NarrativeMetadata(name: String) extends Annotator[String](NarrativeMetadat
   def keyword = "@" + name
   def fromObject(o: Obj) = {
       o match {
-         case OMSemiFormal(List(Text("", s))) => s 
+         case OMSemiFormal(List(Text("", s))) => s
          case _ => throw ImplementationError("not a string " + o)
       }
-      
+
    }
    def toObject(s: String) = OMSemiFormal(List(Text("", s)))
 }

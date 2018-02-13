@@ -10,12 +10,12 @@ import objects._
 trait Tactic extends SyntaxDrivenRule {
    /**
     * convenience function to create an ApplicableTactic
-    * 
+    *
     * to be used as in
-    * 
+    *
     * {{{
     * def apply(...) = {
-    *    // code for checking applicability 
+    *    // code for checking applicability
     *    onApply {
     *       // code to run when applying the rule
     *    }
@@ -33,13 +33,13 @@ trait Tactic extends SyntaxDrivenRule {
 
 /**
  * invertible tactics can be applied greedily without leading a proof into a dead end
- * 
- * this type includes both invertible forward (e.g., existential elimination) and backwards rules (e.g., universal introduction) 
+ *
+ * this type includes both invertible forward (e.g., existential elimination) and backwards rules (e.g., universal introduction)
  */
 trait InvertibleTactic extends Tactic {
    /**
     *  applies the tactic to a goal
-    *  
+    *
     *  @param prover the calling prover, used for callbacks
     *  @param g the goal
     *  @return a continuation that returns the new goal(s)
@@ -64,22 +64,22 @@ trait ForwardInvertible extends InvertibleTactic {
 
 /**
  * a backward tactic generates additional ways to reach the goal
- * 
- * This is used in backward proof search 
+ *
+ * This is used in backward proof search
  */
 trait BackwardSearch extends Tactic {
    /** applies the tactic to a goal
-    *  
+    *
     *  @param prover the calling prover, used for callbacks
     *  @param g the goal
-    *  @return a list of continuations each of which might solve the goal 
+    *  @return a list of continuations each of which might solve the goal
     */
    def apply(prover: Searcher, g: Goal): List[ApplicableTactic]
 }
 
 /**
  * a forward tactic generates additional facts that are implied by the assumptions
- * 
+ *
  * This is used in forward proof search
  */
 trait ForwardSearch extends Tactic {
@@ -91,7 +91,7 @@ trait ForwardSearch extends Tactic {
 
 /**
  * a continuation function returned by a [[Tactic]] to be run if the tactic is to be applied
- * 
+ *
  * A tactic may return multiple continuations if it is applicable in multiple different ways.
  * Low-priority tactics may move expensive computations into the continuation to avoid unnecessary work
  */

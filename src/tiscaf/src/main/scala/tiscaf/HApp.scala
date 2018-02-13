@@ -80,6 +80,6 @@ trait HApp {
    *  Override this to perform specific actions on invalidate.
    *  Does nothing by default.
    */
-  def onSessionInvalidate(sid: String, data: mute.Map[Any, Any]) {}
+  def onSessionInvalidate(sid: String, data: Map[Any, Any]): Unit = {}
 
 }

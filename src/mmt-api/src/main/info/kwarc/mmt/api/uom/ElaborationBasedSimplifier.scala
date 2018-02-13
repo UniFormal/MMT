@@ -8,12 +8,14 @@ import modules._
 import symbols._
 import patterns._
 import objects._
+import notations._
 
 import utils.MyList.fromList
 import Theory._
 
 import collection.immutable.{HashMap, HashSet}
 import scala.util.{Success, Try}
+import info.kwarc.mmt.api.libraries.AlreadyDefined
 
 /** used by [[MMTStructureSimplifier]] */
 case class ByStructureSimplifier(home: Term, view: Term) extends Origin
@@ -61,13 +63,13 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
        case OMMOD(p) =>
          val mod = controller.globalLookup.getAs(classOf[DeclaredModule], p)
          flattenDeclaration(mod, d, None)
-       case _ => // TODO materialize 
+       case _ => // TODO materialize
      }
      case _ =>
     }
   }
 
-  @deprecated("needs to be reviewed")
+  @deprecated("needs to be reviewed","")
   def elaborateContext(outer: Context, con: Context) : Context = {
     var ret = Context.empty
     def currentContext = outer ++ ret
@@ -97,6 +99,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         m match {
           case t: DeclaredTheory =>
             t.meta foreach apply
+          case v: DeclaredView =>
+            apply(materialize(Context.empty,v.from,true,None))
+            apply(materialize(Context.empty,v.to,true,None))
           case _ =>
         }
         // TODO flattenContext(m.parameters)
@@ -106,50 +111,67 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      }
   }
 
-  /** elaborates the definition into a context and adds the corresponding declarations */ 
+  /** elaborates the definition into a context and adds the corresponding declarations */
   private def flattenDefinition(mod: DeclaredModule, rulesOpt: Option[RuleSet] = None) {
     lazy val rules = rulesOpt.getOrElse {
       RuleSet.collectRules(controller, mod.getInnerContext)
     }
     mod match {
       case v: DeclaredView => return //TODO
-      case t: DeclaredTheory =>
-        val at = t.getDeclarations.headOption.map(d => After(d.name)).getOrElse(AtEnd)
+      case thy: DeclaredTheory =>
+        val at = new RepeatedAdd(AtBegin)
+        def add(d: Declaration) {
+          d.setOrigin(ElaborationOfDefinition)
+          controller.add(d, at.getNextFor(d))
+          log("flattening yields " + d.path)
+        }
         var previous: Option[LocalName] = None
-        t.df.foreach {df =>
+        thy.df.foreach {df =>
           //TODO mod.getInnerContext is too small for nested theories
-          objectLevel(df, mod.getInnerContext, rules) match {
+          val dfS = objectLevel(df, mod.getInnerContext, rules)
+          thy.dfC.normalized = Some(dfS)
+          dfS match {
             case ComplexTheory(cont) =>
               cont.asDeclarations(mod.toTerm).foreach {d =>
-                d.setOrigin(ElaborationOfDefinition)
-                controller.add(d, at)// mod.add(d,None) //TODO add at beginning
+                add(d)
               }
             case AnonymousTheory(mt,omls) =>
-              if (mt.isDefined) t.addMeta(mt.get) /* { // TODO should probably become meta theory somehow, but can't be overwritten
-                val inc = PlainInclude(mt.get,t.path) // TODO it can now!
-                inc.setOrigin(ElaborationOfDefinition)
-                apply(mt.get)
-                if (!t.metaC.isDefined) {
-                   t.metaC.set(OMMOD(mt.get))
-                }
-                controller.add(inc, at)
-              } */
-              omls foreach {
-                case IncludeOML(_, OMPMOD(mp, Nil), _) =>
-                  val i = PlainInclude(mp,t.path)
-                  i.setOrigin(ElaborationOfDefinition)
-                  controller.add(i, at)
-                case o =>
-                  val d = Constant(t.toTerm, o.name, Nil, o.tp, o.df, None)
-                  d.setOrigin(ElaborationOfDefinition)
-                  controller.add(d, at)
+              if (mt.isDefined) {
+                val mtTerm = OMMOD(mt.get)
+                // awkward: library must be explicitly notified about update of meta-theory because changes to meta-theory cannot go through controller.add
+                thy.metaC.analyzed = Some(mtTerm)
+                controller.memory.content.addImplicit(mtTerm, thy.toTerm, OMIDENT(mtTerm))
               }
-            case dfS => t.dfC.set(dfS)
+              var translations = Substitution() // replace all OML's with corresponding OMS's
+              // TODO this replaces too many OML's if OML-shadowing occurs
+              def translate(tm: Term) = (new OMLReplacer(translations)).apply(tm, Context.empty)
+              omls foreach {o =>
+                o match {
+                  case IncludeOML(mp, _) =>
+                    val d = PlainInclude(mp,thy.path)
+                    add(d)
+                    // we assume all references to included symbols already use OMS, i.e., do not have to be translated
+                  case RealizeOML(mp, _) =>
+                    try {
+                      controller.memory.content.addImplicit(OMMOD(mp), thy.toTerm, OMStructuralInclude(mp,thy.path))
+                    } catch {case ad @ AlreadyDefined(f,t,o,n) =>
+                      logError("skipping realization because " + ad.toString)
+                    }
+                  case o =>
+                    val tpT = o.tp map translate
+                    val dfT = o.df map translate
+                    val ntT = NotationContainer(o.nt)
+                    translations ++= Sub(o.name, OMS(thy.path ? o.name))
+                    val c = Constant(thy.toTerm, o.name, Nil, tpT, dfT, None, ntT)
+                    add(c)
+                }
+              }
+            case _ =>
           }
         }
     }
   }
-  
+
   /** adds elaboration of d to parent */
   private def flattenDeclaration(mod: DeclaredModule, dOrig: Declaration, rulesOpt: Option[RuleSet] = None) {
     if (ElaboratedElement.is(dOrig))
@@ -158,14 +180,41 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       RuleSet.collectRules(controller, mod.getInnerContext)
     }
     val parent : DeclaredModule = mod match {
-      case t: DeclaredTheory => t
-      case v: DeclaredView => v
+      case t: DeclaredTheory =>
+        t
+      case v: DeclaredView =>
+        v
       case _ => return //TODO
     }
     lazy val alreadyIncluded = parent.getIncludes
     val dElab: List[Declaration] = dOrig match {
+      /* includes in views TODO this is a first step that only covers the case where the target of the assignment is another DeclaredView
+         more generally, ds is of the form 'n : FROM = TARGET', and its elaboration is the list of assignments
+          'n = OMM(n,TARGET)' for all constants n
+          's = OMCOMP(s, TARGET)' for all structures s
+         in the domain of FROM
+
+         The treatment of derived declarations and nested modules in FROM has not been specified yet.
+      */
+      case ds : DefinedStructure if parent.isInstanceOf[DeclaredView] =>
+        ds.df match {
+          case OMMOD(mp) =>
+            lup.getO(mp) match {
+              case Some(v : DeclaredView) =>
+                // include!
+                apply(v)
+                v.getDeclarations.map {
+                  case s : DefinedStructure =>
+                    DefinedStructure(parent.toTerm,s.name,s.from,s.df,false)
+                  case c : Constant =>
+                    Constant(parent.toTerm,c.name,c.alias,c.tp,c.df,c.rl,c.notC)
+                }
+              case _ => Nil
+            }
+          case _ => Nil
+        }
       // plain includes: copy (only) includes
-      case Include(h, from, Nil) =>
+      case Include(h, from, _) => // TODO ?
         val idom = lup.getAs(classOf[Theory], from)
         val dom = idom match {
           case th : DeclaredTheory =>
@@ -213,7 +262,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               }
             })
           }
-        doDom(s.from).reverse
+        doDom(s.from)
         /*
          dom.getDeclarations.flatMap(d => {
            val dF = lup.getAs(classOf[Declaration], parent.path ? s.name / d.name)
@@ -254,6 +303,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 dS
               }
          }
+      case nm: NestedModule =>
+        apply(nm.module)
+        Nil
       case _ =>
         Nil
     }
@@ -301,7 +353,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       case ElaborationOf(_) | ElaborationOfDefinition => return
       case _ =>
     }
-    
+
     val parent = c.parent match {
       case cp : ContentPath => controller.get(cp)
       case _ => return
@@ -373,20 +425,28 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
          case d: DefinedTheory if expandDefs => materialize(context, d.df, expandDefs, None)
          case d => d
       }
-      /* case OMPMOD(p, args) =>
-         val t = getTheory(p)
-         new InstantiatedTheory(t, args) */
+      case OMPMOD(p, args) => // materialization of instances of parametric theories
+         val t = lup.getTheory(p).asInstanceOf[DeclaredTheory]
+         apply(t)
+         val con = Context(t.parameters.indices.map(i => t.parameters(i).copy(df = Some(args(i)))):_*)
+         //new InstantiatedTheory(t, args)
+         val ret = new DeclaredTheory(p.doc,p.name,t.meta,ContextContainer(con),TermContainer(exp))
+         t.getDeclarations.map(d => lup.get(exp,LocalName(d.parent) / d.name,s => throw GetError(s))).foreach(d => ret.add(d))
+         ret
       case _ => // create a new theory and return it
         val path = pathOpt.getOrElse(newName)
+        /*
         if (exp.freeVars.nonEmpty)
-          throw GeneralError("materialization of module with free variables not implemented yet")
+          throw GeneralError("materialization of module with free variables not implemented yet (" + exp.freeVars.mkString(", ") + ") in " +
+          controller.presenter.asString(exp)) */
         val thy = new DeclaredTheory(path.parent, path.name, noMeta, noParams, TermContainer(exp))
         flattenDefinition(thy)
         thy.setOrigin(Materialized(exp))
+        apply(thy)
         thy
     }
   }
-  
+
   //TODO move to library if it's not doing anything else
   def getBody(context: Context, moduleExp: Term): ElementContainer[NamedElement] = moduleExp match {
      case OMMOD(p) => lup.getTheory(p) match {
@@ -494,8 +554,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case x => //nothing to do
           }
         } catch {
-          case e : Error => println(e)//nothing to do
-          case e : Exception => println(e)//nothing to do
+          case e : Error => // println(e)//nothing to do
+          case e : Exception => // println(e)//nothing to do
         }
     }
     rules

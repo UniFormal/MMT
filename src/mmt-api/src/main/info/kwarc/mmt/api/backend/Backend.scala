@@ -79,7 +79,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
      }
      None
   }
-  
+
   private def manifestLocations(root: File) = List(root / "META-INF", root).map(_ / "MANIFEST.MF")
 
   private def manifestLocation(root: File): Option[File] =
@@ -182,7 +182,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     * @return an archive defining it (the corresponding file exists in content dimension)
     */
   def findOwningArchive(p: MPath): Option[Archive] = {
-    val cp = Archive.MMTPathToContentPath(p)
+    val cp = Archive.MMTPathToContentPath(p.mainModule)
     getArchives find { a =>
       (a / content / cp).exists
     }
@@ -227,25 +227,11 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
 
   /** creates and registers a RealizationArchive */
   def openRealizationArchive(file: File) {
-    val loader = try {
-      val optCl = Option(getClass.getClassLoader)
-      // the class loader that loaded this class, may be null for bootstrap class loader
-      optCl match {
-        case None =>
-          new java.net.URLClassLoader(Array(file.toURI.toURL)) // parent defaults to bootstrap class loader
-        case Some(cl) =>
-          // delegate to the class loader that loaded MMT - needed if classes to be loaded depend on MMT classes
-          new java.net.URLClassLoader(Array(file.toURI.toURL), cl)
-      }
-    } catch {
-      case _: Exception =>
-        logError("could not create class loader for " + file.toString)
-        return
-    }
-    val ra = new RealizationArchive(file, loader)
+    log("loading realization archive" + file)
+    val ra = new RealizationArchive(file)
     addStore(ra)
   }
-  
+
   /** auxiliary function of openArchive */
   private def extractMar(file: File, newRoot: File) {
     log("unpacking archive " + file + " to " + newRoot)

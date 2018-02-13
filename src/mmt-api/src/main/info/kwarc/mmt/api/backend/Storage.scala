@@ -40,7 +40,7 @@ abstract class Storage {
     * a storage may add more/additional content than necessary, e.g., the containing file/theory or a dependency closure
     */
   def load(path: Path)(implicit controller: Controller)
-  
+
   /** dereferences a path to a fragment of an already loaded StructuralElement and adds only that fragment
    *  empty by default, storage that can retrieve individual fragments should override this
    */
@@ -57,7 +57,7 @@ abstract class Storage {
 
 /** a variant of a [[Storage]] that loads Scala objects from the class path */
 trait RealizationStorage {
-  val loader: java.lang.ClassLoader
+  def loader: java.lang.ClassLoader
   /**
    * @param cls the class name
    * @param p the path to use in error messages
@@ -148,7 +148,7 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
   }
 }
 
-/**
+/**Ï
  * like [[LocalCopy]] but optimized for [[Archive]]s
  *
  * custom HTML snippets are spliced into folder-documents
@@ -181,8 +181,23 @@ class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase
 }
 
 /** loads a realization from a Java Class Loader and dynamically creates a [[uom.RealizationInScala]] for it */
-class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extends Storage with RealizationStorage {
+class RealizationArchive(file: File) extends Storage with RealizationStorage {
   override def toString = "RealizationArchive for " + file
+
+  def loader: ClassLoader = try {
+    val optCl = Option(getClass.getClassLoader)
+    // the class loader that loaded this class, may be null for bootstrap class loader
+    optCl match {
+      case None =>
+        new java.net.URLClassLoader(Array(file.toURI.toURL)) // parent defaults to bootstrap class loader
+      case Some(cl) =>
+        // delegate to the class loader that loaded MMT - needed if classes to be loaded depend on MMT classes
+        new java.net.URLClassLoader(Array(file.toURI.toURL), cl)
+    }
+  } catch {
+    case e: Exception =>
+      throw  GeneralError("could not create class loader for " + file.toString).setCausedBy(e)
+  }
 
   def load(path: Path)(implicit controller: Controller) {
     val mp = path match {
@@ -212,5 +227,5 @@ object DefaultRealizationLoader extends Storage with RealizationStorage {
   def load(path: Path)(implicit controller: Controller) {
     throw NotApplicable("can only load rules")
   }
-  val loader = this.getClass().getClassLoader()
+  def loader: ClassLoader = this.getClass.getClassLoader
 }

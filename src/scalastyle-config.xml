@@ -3,8 +3,8 @@
  <check level="warning" class="org.scalastyle.file.FileTabChecker" enabled="true" />
  <check level="warning" class="org.scalastyle.file.FileLengthChecker" enabled="false" />
  <check level="warning" class="org.scalastyle.file.HeaderMatchesChecker" enabled="false" />
- <check level="warning" class="org.scalastyle.scalariform.SpacesBeforePlusChecker" enabled="true" />
- <check level="warning" class="org.scalastyle.scalariform.SpacesAfterPlusChecker" enabled="true" />
+ <check level="warning" class="org.scalastyle.scalariform.SpacesBeforePlusChecker" enabled="false" />
+ <check level="warning" class="org.scalastyle.scalariform.SpacesAfterPlusChecker" enabled="false" />
  <check level="warning" class="org.scalastyle.file.WhitespaceEndOfLineChecker" enabled="true" />
  <check level="warning" class="org.scalastyle.file.FileLineLengthChecker" enabled="false" />
  <check level="warning" class="org.scalastyle.scalariform.ClassNamesChecker" enabled="true">
@@ -29,25 +29,25 @@
    <parameter name="maxParameters"><![CDATA[8]]></parameter>
   </parameters>
  </check>
- <check level="warning" class="org.scalastyle.scalariform.MagicNumberChecker" enabled="true">
+ <check level="warning" class="org.scalastyle.scalariform.MagicNumberChecker" enabled="false">
   <parameters>
    <parameter name="ignore"><![CDATA[-1,0,1,2,3,4,5]]></parameter>
   </parameters>
  </check>
  <check level="warning" class="org.scalastyle.scalariform.NoWhitespaceBeforeLeftBracketChecker" enabled="true" />
  <check level="warning" class="org.scalastyle.scalariform.NoWhitespaceAfterLeftBracketChecker" enabled="true" />
- <check level="warning" class="org.scalastyle.scalariform.ReturnChecker" enabled="true" />
- <check level="warning" class="org.scalastyle.scalariform.NullChecker" enabled="true" />
+ <check level="warning" class="org.scalastyle.scalariform.ReturnChecker" enabled="false" />
+ <check level="warning" class="org.scalastyle.scalariform.NullChecker" enabled="false" />
  <check level="warning" class="org.scalastyle.scalariform.NoCloneChecker" enabled="true" />
  <check level="warning" class="org.scalastyle.scalariform.NoFinalizeChecker" enabled="true" />
  <check level="warning" class="org.scalastyle.scalariform.CovariantEqualsChecker" enabled="true" />
  <check level="warning" class="org.scalastyle.scalariform.StructuralTypeChecker" enabled="true" />
- <check level="warning" class="org.scalastyle.file.RegexChecker" enabled="true">
+ <check level="warning" class="org.scalastyle.file.RegexChecker" enabled="false">
   <parameters>
    <parameter name="regex"><![CDATA[println]]></parameter>
   </parameters>
  </check>
- <check level="warning" class="org.scalastyle.scalariform.NumberOfTypesChecker" enabled="true">
+ <check level="warning" class="org.scalastyle.scalariform.NumberOfTypesChecker" enabled="false">
   <parameters>
    <parameter name="maxTypes"><![CDATA[30]]></parameter>
   </parameters>
@@ -64,7 +64,7 @@
  <check level="warning" class="org.scalastyle.scalariform.MethodNamesChecker" enabled="false" />
  <check level="warning" class="org.scalastyle.scalariform.NumberOfMethodsInTypeChecker" enabled="true">
   <parameters>
-   <parameter name="maxMethods"><![CDATA[60]]></parameter>
+   <parameter name="maxMethods"><![CDATA[120]]></parameter>
   </parameters>
  </check>
  <check level="warning" class="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" enabled="false" />

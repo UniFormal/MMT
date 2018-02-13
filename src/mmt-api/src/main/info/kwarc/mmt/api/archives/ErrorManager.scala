@@ -146,7 +146,7 @@ class ErrorManager extends Extension with Logger {
     *
     * @param a the archive
     */
-  def loadAllErrors(a: Archive, removeUnknowns: Boolean): Unit = {
+  def loadAllErrors(a: Archive, removeUnknowns: Boolean) {
     errorMaps ::= new ErrorMap(a)
     a.traverse[Unit](errors, EmptyPath, TraverseMode(_ => true, _ => true, parallel = false))({
       case Current(_, FilePath(target :: path)) =>
@@ -164,7 +164,7 @@ class ErrorManager extends Extension with Logger {
     * @param target the build target
     * @param fpath  the file
     */
-  def loadErrors(a: Archive, target: String, fpath: FilePath, source: Option[File]): Unit = {
+  def loadErrors(a: Archive, target: String, fpath: FilePath, source: Option[File]) {
     val f = a / errors / target / fpath
     val bes = ErrorReader.getBuildErrors(f, level, Some((s: String) => log(s))).
       map(e => BuildError(a, target, fpath.toFile.stripExtension.toFilePath, e.updateSource(source)))
@@ -172,7 +172,7 @@ class ErrorManager extends Extension with Logger {
     em.put((target, fpath.segments), bes)
   }
 
-  def loadErrors(a: Archive, target: String, fpath: FilePath, removeUnknowns: Boolean): Unit = {
+  def loadErrors(a: Archive, target: String, fpath: FilePath, removeUnknowns: Boolean) {
     val optBt = controller.extman.getOrAddExtensionOrExporter(classOf[TraversingBuildTarget], target)
     optBt match {
       case None =>
@@ -211,7 +211,7 @@ class ErrorManager extends Extension with Logger {
   }
 
   /** registers a [[ChangeListener]] and a [[ServerExtension]] */
-  override def start(args: List[String]): Unit = {
+  override def start(args: List[String]) {
     val opts = List(
       OptionDescr("level", "", IntArg, "error level to pick (0 means all)"),
       OptionDescr("clean-unknown-sources", "", NoArg, "clean output files of for missing sources"))
@@ -222,24 +222,24 @@ class ErrorManager extends Extension with Logger {
     controller.backend.getArchives.foreach { a => loadAllErrors(a, m.isDefinedAt("clean-unknown-sources")) }
   }
 
-  override def destroy: Unit = {
+  override def destroy {
     //TODO remove cl and serve
   }
 
   /** adds/deletes [[ErrorMap]]s for each opened/closed [[Archive]] */
   private val cl = new ChangeListener {
     /** creates an [[ErrorMap]] for the archive and asynchronously loads its errors */
-    override def onArchiveOpen(a: Archive): Unit = {
+    override def onArchiveOpen(a: Archive) {
       loadAllErrors(a, removeUnknowns = false)
     }
 
     /** deletes the [[ErrorMap]] */
-    override def onArchiveClose(a: Archive): Unit = {
+    override def onArchiveClose(a: Archive) {
       errorMaps = errorMaps.filter(_.archive != a)
     }
 
     /** reloads the errors */
-    override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath): Unit = {
+    override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath) {
       loadErrors(a, t.key, if ((a / t.inDim / p).isDirectory) p / ".err"
       else p.toFile.addExtension("err").toFilePath, Some(a / t.inDim / p))
     }

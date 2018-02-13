@@ -16,14 +16,14 @@ import info.kwarc.mmt.api.objects._
  * Utility stuff.
  */
 object TptpUtils {
-  
+
   val LOG = false
-  
+
   val baseURI = URI("http", "tptp.org")
-  
+
   // meta theories
-	val fofTh = DPath(URI("http", "latin.omdoc.org") / "logics" / "tptp") ? "FOF"
-  
+   val fofTh = DPath(URI("http", "latin.omdoc.org") / "logics" / "tptp") ? "FOF"
+
   val term = OMID(fofTh ? "$term")
   val form = OMID(fofTh ? "$form")
   val t = OMID(fofTh ? "$true")
@@ -33,7 +33,7 @@ object TptpUtils {
   val PARSE_DIRS = List("Axioms", "Problems")
   val PARSE_EXTS = List("ax", "p")
   val FORM = "+"; // fof
-  
+
   val OPERATORS = Map(
     And -> "&",
     Or -> "|",
@@ -64,10 +64,10 @@ object TptpUtils {
 
   def removeExtension(s: String) = s.substring(0, s.lastIndexOf("."))
 
-	def constant(name : String) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
-	def constant(name : BinaryConnective) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
-	def constant(name : Quantifier) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
-  
+   def constant(name : String) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
+   def constant(name : BinaryConnective) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
+   def constant(name : Quantifier) : OMID = OMID(fofTh ? OPERATORS.getOrElse(name, UNKNOWN))
+
   def log(s: String) {
     if (LOG)
       println(s)

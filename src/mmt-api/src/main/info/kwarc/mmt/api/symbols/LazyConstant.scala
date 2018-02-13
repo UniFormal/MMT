@@ -13,7 +13,7 @@ abstract class LazyConstant(val home : Term, val name : LocalName) extends Const
    protected var _df : Option[Term] = None
    protected var _rl : Option[String] = None
    protected var _not : Option[TextNotation] = None
-   
+
    private var tpAccessed: Boolean = false
    private var dfAccessed: Boolean = false
    private var otherAccessed: Boolean = false
@@ -26,28 +26,38 @@ abstract class LazyConstant(val home : Term, val name : LocalName) extends Const
    def onAccessOther: Unit
 
    def tpC = {
-      if (tpAccessed)
+      if (tpAccessed) {
          onAccessTp
+         tpAccessed = true
+      }
       TermContainer(_tp)
    }
    def dfC = {
-      if (dfAccessed)
+      if (dfAccessed) {
          onAccessDf
+         dfAccessed = true
+      }
       TermContainer(_df)
    }
    def alias = {
-      if (otherAccessed)
+      if (otherAccessed) {
          onAccessOther
+         otherAccessed = true
+      }
       _alias
    }
    def rl = {
-      if (otherAccessed)
+      if (otherAccessed) {
          onAccessOther
+         otherAccessed = true
+      }
       _rl
    }
    def notC = {
-      if (otherAccessed)
+      if (otherAccessed) {
          onAccessOther
+         otherAccessed = true
+      }
       NotationContainer(_not)
    }
 }

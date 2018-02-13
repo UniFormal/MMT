@@ -90,7 +90,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       }
       new IDCompletion(view, controller, Nil, "", Nil)
    }
-   
+
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {
       val path = File(buffer.getPath)
       val errorCont = new ErrorListForwarder(mmt.errorSource, controller, path)
@@ -131,8 +131,8 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    private var currentTask: Option[MMTTask] = None
    // this is called from another tread and should interrupt parsing
    override def stop {
-      // this may cause an inconsistent state but calling clear in parse method should fix most problems  
-      currentTask.foreach {_.kill((Unit) => ())}
+      // this may cause an inconsistent state but calling clear in parse method should fix most problems
+      currentTask.foreach {_.kill(() => ())}
    }
 
    private def getRegion(e: metadata.HasMetaData) : Option[SourceRegion] = SourceRef.get(e).map(_.region)
@@ -255,9 +255,9 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
 
    /** build the sidekick outline tree: (sub)term node */
    private def buildTreeTerm(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, _unused_defaultReg: SourceRegion) {
-      var extraLabel = "" 
+      var extraLabel = ""
       val reg = getRegion(t) getOrElse {
-        extraLabel = " [not in source]" // lack of source region indicates inferred subterms 
+        extraLabel = " [not in source]" // lack of source region indicates inferred subterms
         SourceRegion.none
       }
       val tP = controller.pragmatic.mostPragmatic(t)

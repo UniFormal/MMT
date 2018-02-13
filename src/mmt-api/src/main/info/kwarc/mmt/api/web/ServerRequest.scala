@@ -21,10 +21,10 @@ import scala.xml.Node
 case class ServerRequest(method: RequestMethod.Value, val headers: Map[String, String], session: Option[Session],
                          path: List[String], query: String, body: Body) {
   def toStringShort = RequestMethod.toString(method) + " " + pathString + "?" + query
-  
+
   def header(key : String) : Option[String] = headers.get(key)
   def pathString = path.mkString("/")
-  
+
   def extensionName = path match {
     case ext :: _ if ext.startsWith(":") => Some(ext.substring(1))
     case _ => None
@@ -33,7 +33,7 @@ case class ServerRequest(method: RequestMethod.Value, val headers: Map[String, S
     case ext :: tail if ext.startsWith(":") => tail
     case _ => path
   }
-  
+
   /** a decoded version of the query string */
   lazy val decodedQuery = URLDecoder.decode(query, "UTF-8")
   /** a parsed version of the query string */
@@ -175,7 +175,7 @@ object WebQuery {
   }
 
   /** same as WebQuery.apply, for backwards compatibility */
-  @deprecated("you should probably use [[ServerRequest.parsedQuery]], if you still need to parse manually use [[WebQuery.apply]]. Beware that the new method takes care of URLDecoding")
+  @deprecated("you should probably use [[ServerRequest.parsedQuery]], if you still need to parse manually use [[WebQuery.apply]]. Beware that the new method takes care of URLDecoding", "")
   def parse(query: String) : WebQuery = {
     val kvs = utils.stringToList(query, "&")
     val pairs = kvs map { s =>

@@ -85,7 +85,7 @@ class EditingServicePlugin(val controller: Controller) {
   //      //response: Term Complete if there are no Holes, No Rules if no rule is applicable otherwise return the rules
   //      holeContextList match {
   //        case Nil => val returnNoHoles = "Term Complete" :: Nil
-  //        			new MMTTermInferenceResponse(returnNoHoles)
+  //                 new MMTTermInferenceResponse(returnNoHoles)
   //        case _ =>
   //          val hole = holeContextList.head._1
   //          val context = holeContextList.head._2
@@ -93,9 +93,9 @@ class EditingServicePlugin(val controller: Controller) {
   //          val stack = new Stack(context)
   //          val rules = prover.applicable(hole)(stack, null)
   //          rules match{
-  //        			case Nil => val returnNoRules = "No Rules" :: Nil
-  //        						new MMTTermInferenceResponse(returnNoRules)
-  //        			case _ =>  new MMTTermInferenceResponse(rules.map(_.label.toString))
+  //                 case Nil => val returnNoRules = "No Rules" :: Nil
+  //                          new MMTTermInferenceResponse(returnNoRules)
+  //                 case _ =>  new MMTTermInferenceResponse(rules.map(_.label.toString))
   //
   //          }
   //      }

@@ -41,7 +41,7 @@ case class ShellArguments(
      * default behavior: batch
      */
    def runCleanup = ! keepalive && ! prompt
-   
+
    /** automatically log to console */
    def consoleLog = verbosity >= 0
    /** automatically log debug output */
@@ -54,6 +54,7 @@ object ShellArguments {
   val toplevelArgs: OptionDescrs = List(
     OptionDescr("help", "h", NoArg, "command line help"),
     OptionDescr("about", "a", NoArg, "about the program"),
+    OptionDescr("version", "v", NoArg, "version of program"),
     OptionDescr("shell", "i", NoArg, "force interactive mode (start shell)"),
     OptionDescr("noshell", "", NoArg, "force batch mode (execute command line arguments and terminate)"),
     OptionDescr("keepalive", "w", NoArg, "force server mode (wait for secondary processes to finish)"),
@@ -68,7 +69,7 @@ object ShellArguments {
     val (m, cs) = AnaArgs(toplevelArgs, arguments)
     val sa = ShellArguments(
       help = m.get("help").isDefined,
-      about = m.get("about").isDefined,
+      about = m.get("about").isDefined || m.get("version").isDefined,
       mmtFiles = getStringList(m, "file"),
       scalaFiles = getStringList(m, "mbt"),
       cfgFiles = getStringList(m, "cfg"),
@@ -81,7 +82,7 @@ object ShellArguments {
     )
     val fs = sa.mmtFiles ++ sa.scalaFiles ++ sa.cfgFiles
     if (sa.help && sa.about) {
-      println("atmost one of --help and --about arguments can be used.")
+      println("atmost one of --help and --about and --version arguments can be used.")
       None
     } else if (sa.shell && sa.noshell) {
       println("At most one of --shell and --noshell arguments can be used.")

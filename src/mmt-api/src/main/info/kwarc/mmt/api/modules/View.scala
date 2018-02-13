@@ -6,10 +6,10 @@ import utils.xml.addAttrOrChild
 
 /**
  * A View represents an MMT view.
- * 
+ *
  * Views may be declared (given by a list of assignments) or defined (given by an existing morphism).
  * These cases are distinguished by which subtrait of Link is mixed in.
- * 
+ *
  * @param doc the URI of the parent document
  * @param name the name of the view
  */
@@ -29,11 +29,11 @@ abstract class View(doc : DPath, name : LocalName) extends Module(doc, name) wit
 
  /**
   * A DeclaredView represents an MMT view given by a list of assignments.
-  * 
+  *
   * Assignments are [[Constant]]s, whose name is the qualified name (always starts with [[ComplexStep]])
   * of a domain Constant
   * and whose definiens is codomain [[Term]].
-  * 
+  *
   * @param doc the namespace/parent document
   * @param name the name of the view
   * @param from the domain theory
@@ -61,7 +61,7 @@ class DeclaredView(doc : DPath, name : LocalName, val from : Term, val to : Term
 
   /**
    * A DefinedView represents an MMT view given by an existing morphism.
-   * 
+   *
    * @param doc the URI of the parent document
    * @param name the name of the view
    * @param from the domain theory

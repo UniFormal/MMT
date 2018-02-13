@@ -1,0 +1,41 @@
+## Any content in this file will be prepended to .travis.yml
+## Any lines starting with '##' will be ignored
+## ===============================================================
+## ===============================================================
+
+# +===============================================================+
+# |THIS FILE HAS BEEN AUTO-GENERATED USING `sbt genTravisYML`     |
+# |ANY CHANGES WILL BE OVERWRITTEN                                |
+# +===============================================================+
+
+# these values were configured in src/project/prefix.travis.yml
+
+# configuration for deploy
+env:
+  global:
+  - ENCRYPTION_LABEL: "25a07036478c"
+  - COMMIT_AUTHOR_EMAIL: "tkw01536@gmail.com"
+
+# use java, and install sbt on OS X
+language: java
+
+
+# meta -- email notification for builds
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+    on_error: always
+    on_start: never
+    on_cancel: never
+
+
+# speed up cloning of the git repository
+# we only need a clone depth of '1'
+git:
+  depth: 1
+
+# +===============================================================+
+# |Anything below this line has been generated automatically      |
+# |from src/travis.sbt.                                           |
+# +===============================================================+

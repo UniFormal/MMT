@@ -3,14 +3,6 @@
 	<classpathentry exported="true" kind="lib" path="lfcatalog/lfcatalog.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/tiscaf.jar"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
-	<classpathentry kind="lib" path="main/mmt-api.jar"/>
-	<classpathentry kind="lib" path="main/mmt-lf.jar"/>
-	<classpathentry kind="lib" path="main/mmt-lfs.jar"/>
-	<classpathentry kind="lib" path="main/mmt-mizar.jar"/>
-	<classpathentry kind="lib" path="main/mmt-owl.jar"/>
-	<classpathentry kind="lib" path="main/mmt-stex.jar"/>
-	<classpathentry kind="lib" path="main/mmt-tptp.jar"/>
-	<classpathentry kind="lib" path="main/planetary-mmt.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/scala-parser-combinators.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/scala-xml.jar"/>
 	<classpathentry kind="output" path="bin"/>

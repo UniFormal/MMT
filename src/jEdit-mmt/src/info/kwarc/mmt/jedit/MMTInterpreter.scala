@@ -2,7 +2,8 @@ package info.kwarc.mmt.jedit
 
 import console._
 import info.kwarc.mmt.api._
-import frontend.{MMTInterpolator, SetBase}
+import frontend.MMTInterpolator
+import frontend.actions.SetBase
 import objects._
 import org.gjt.sp.jedit._
 import org.gjt.sp.jedit.bufferset._
@@ -161,7 +162,7 @@ Non-commands are MMT code.
         }
 
         val mt = try{
-          controller.handle(SetBase(ct)).throwErrorIfAny()
+          controller.handle(SetBase(ct))
           controller.globalLookup.get(ct) match {
             case d: modules.DeclaredTheory =>
               d.meta.map(" : " + _.toPath).getOrElse("")
@@ -190,7 +191,7 @@ Non-commands are MMT code.
           val parser = controller.extman.get(classOf[Parser], "mmt").get
           val t = parser(pu)(ErrorThrower).toTerm
           //Type checking
-	        val stack = Stack(Context(theory))
+           val stack = Stack(Context(theory))
           val solveout = checking.Solver.check(controller, stack, t)
 
           val (tR, tpR) = solveout match{

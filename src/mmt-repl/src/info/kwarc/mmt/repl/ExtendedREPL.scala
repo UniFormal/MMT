@@ -1,12 +1,12 @@
 package info.kwarc.mmt.repl
 
-import info.kwarc.mmt.api.frontend.{REPLExtension, ShellArguments}
+import info.kwarc.mmt.api.frontend._
+import actions._
 
 
 class ExtendedREPL extends REPLImpl with REPLExtension  {
-  val completionGrammar = new ActionGrammar()
-
-  override def enter(args: ShellArguments): Unit = {
+  override def enter
+  (args: ShellArguments): Unit = {
     super.enter(args)
 
     if (isDumb()) {
@@ -32,21 +32,20 @@ class ExtendedREPL extends REPLImpl with REPLExtension  {
   private def printSuggestions(line: String) = {
     suggestions(line).foreach(println)
   }
-
   private def handleLine(line: String) = {
-    controller.handleLine(line)
-  }
-
-  def suggestions(line: String) : List[String] = {
-    try {
-      completionGrammar.controller = controller
-      completionGrammar.action(line)
-    } catch {
-      case np:NullPointerException => Nil // TODO: Warning
+    controller.tryHandleLine(line) match {
+      case ActionResultOK() => true
+      case ActionParsingError(e) =>
+        println("\u001b[31;1m" + e + "\u001b[0m")
+      case ActionExecutionError(e) =>
+        println("\u001b[31;1m" + e + "\u001b[0m")
     }
+    true
   }
 
-  def promptLeft : Option[String] = Some(controller.currentActionDefinition match {
+  def suggestions(line: String) : List[String] = Action.completeAct(line)
+
+  def promptLeft : Option[String] = Some(controller.getCurrentActionDefinition match {
     case Some(name : String) => s"mmt [define $name]>"
     case None => "mmt>"
   })

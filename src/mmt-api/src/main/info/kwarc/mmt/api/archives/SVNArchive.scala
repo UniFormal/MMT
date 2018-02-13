@@ -1,16 +1,17 @@
-package info.kwarc.mmt.api.archives
 
 /*
+package info.kwarc.mmt.api.archives
+
  * From Controller.scala
- 	      case AddMathPathSVN(uri, rev, user, pass) =>
-	         val repos = SVNRepositoryFactory.create(SVNURL.parseURIEncoded(uri.toString))
+         case AddMathPathSVN(uri, rev, user, pass) =>
+           val repos = SVNRepositoryFactory.create(SVNURL.parseURIEncoded(uri.toString))
             user foreach {u =>
               val authManager = SVNWCUtil.createDefaultAuthenticationManager(u, pass.getOrElse(""))
               repos.setAuthenticationManager(authManager)
             }
             val s = SVNRepo(uri.schemeNull, uri.authorityNull, uri.pathAsString, repos, rev)
             backend.addStore(s)
-            
+
            case AddSVNArchive(url, rev) =>
            backend.openArchive(url, rev)
  */
@@ -19,19 +20,19 @@ package info.kwarc.mmt.api.archives
  * From Backend.scala
 /** a Storage that retrieves repository URIs over SVN connection */
 case class SVNRepo(scheme : String, authority : String, prefix : String, repository : SVNRepository, defaultRev : Int = -1) extends Storage  {
-   def localBase = URI(scheme + "://" + authority + prefix) 
-   
+   def localBase = URI(scheme + "://" + authority + prefix)
+
    def load(path : Path)(implicit controller: Controller) {load(path, defaultRev)}
    def load(path : Path, rev: Int)(implicit controller: Controller) {
       val uri = path.doc.uri
       val target = getSuffix(localBase, uri).mkString("/")
-      
+
       val revision = path.doc.version match {
         case None => rev
         case Some(s) => try {s.toInt} catch {case _ : Throwable => rev}
       }
       val N : scala.xml.Node = repository.checkPath(target, revision) match {
-        case SVNNodeKind.FILE => 
+        case SVNNodeKind.FILE =>
           var fileProperties : SVNProperties = new SVNProperties()
           val  baos : java.io.ByteArrayOutputStream = new java.io.ByteArrayOutputStream()
           repository.getFile(target, revision, null, baos)
@@ -110,9 +111,9 @@ import scala.collection.mutable._
 class SVNArchive(repository : SVNRepository, val properties : Map[String, String], val report : Report, defRev : Int = -1) extends ROArchive {
   val location = URI(repository.getLocation.toString)
   val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
-  
+
   val rootString = repository.getLocation.toString
-  
+
   private val scheme = URI(location).schemeNull
   private val authority = URI(location).authorityNull
   private val prefix = URI(location).pathAsString

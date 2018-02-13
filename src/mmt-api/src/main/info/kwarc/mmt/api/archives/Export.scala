@@ -46,7 +46,7 @@ trait Exporter extends BuildTarget {
    *  @param p the MMT URI of a content element to be exported
    */
   def canHandle(p: Path) = true
-  
+
   /** applied to each document (i.e., narration-folders and .omdoc files) */
   def exportDocument(doc: Document, bf: BuildTask): Unit
 

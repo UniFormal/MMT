@@ -1,8 +1,8 @@
+/* nice idea but did not work out well in practice
 package info.kwarc.mmt.jedit
 
 import org.gjt.sp.jedit._
 import textarea._
-/* nice idea but did not work out well in practice
 
 /** implements hiding-related functions */
 object Hider {

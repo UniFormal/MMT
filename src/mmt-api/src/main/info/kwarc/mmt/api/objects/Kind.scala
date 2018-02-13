@@ -1,8 +1,8 @@
+/*
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 
-/*
 sealed abstract class SynRole
 case object MathObject extends SynRole
 case class Binder(bvars : ArgList[BVar], keys : List[Obj], ret : SynRole) extends SynRole

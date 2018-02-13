@@ -21,7 +21,7 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
   override val logPrefix = "jgraph"
   private case class CatchError(s : String) extends Throwable
 
-  override def start(args: List[String]): Unit = {
+  override def start(args: List[String]) {
     controller.extman.addExtension(new JGraphSideBar)
     controller.extman.addExtension(new JDocgraph)
     controller.extman.addExtension(new JThgraph)
@@ -118,6 +118,7 @@ class JGraphSideBar extends Extension {
         ret.add(Tree(trimpath(dp) + "-cont-" + suffix,dp.last,trimpath(dp),"pgraph"))
         ret
       }
+    case _ => throw ImplementationError("impossible case")
   }
   private def doNarr(p : Path) : Tree = p match {
     case dp: DPath =>
@@ -139,7 +140,7 @@ class JGraphSideBar extends Extension {
 
   private def archs = controller.backend.getArchives.sortBy(_.id).map(doArchive)
 
-  override def start(args: List[String]): Unit = {
+  override def start(args: List[String]) {
     super.start(args)
     // lazy private val top = archs.map(doArchive).sortBy(_._1).distinct.map(p => (p._1,p._2.toJSON))
   }
@@ -319,11 +320,21 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
   val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
       val th = Try(controller.get(Path.parse(s))) match {
-        case scala.util.Success(t: DeclaredTheory) => t
-        case _ => return (Nil, Nil)
+        case scala.util.Success(t: DeclaredTheory) => List(t)
+        case _ =>
+          val as = s.toString.split(""" """).map(_.trim).filter(_ != "")
+          val a = controller.backend.getArchives.filter(a => as.exists(a.id.startsWith))
+          log("Archives: " + a.map(_.id).mkString(", "))
+          var theories : List[DeclaredTheory] = Nil
+          a.flatMap(_.allContent).map(c => Try(controller.get(c)).toOption) foreach {
+            case Some(th : DeclaredTheory) => theories ::= th
+            case _ =>
+          }
+          log(theories.length + " selected")
+          theories
       }
       var (theories, views): (List[DeclaredTheory], List[View]) = (Nil, Nil)
-      def recurse(ith : DeclaredTheory) : Unit = {
+      def recurse(ith : DeclaredTheory) {
         log("Select: " + s)
         theories ::= ith
         val ins = ith.getIncludesWithoutMeta ::: ith.getNamedStructures.collect{
@@ -336,7 +347,7 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
           case _ =>
         }
       }
-      recurse(th)
+      th foreach recurse
       //log("Selecting " + (th.path :: theories.map(_.path)).mkString(", "))
       (theories.distinct, views)
     }
@@ -372,7 +383,7 @@ abstract class JGraphSelector {
 }
 
 abstract class JGraphBuilder {
-  def log(s : String) : Unit = {}
+  def log(s : String) {}
   def build(theories : List[DeclaredTheory], views : List[View])(implicit controller : Controller) : JSON
 }
 abstract class StandardBuilder extends JGraphBuilder {

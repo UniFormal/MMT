@@ -8,15 +8,18 @@ import uom._
 import utils._
 import notations.ImplicitArg
 
+/* idea: allow for custom typing rules that lift an object level typing relation in a way similar to quotientieng by an object level equality
+ */
+
 /**
  * convenience class for storing the names of an OuterInnerTerm
- * 
+ *
  * @param implArgsOuter the positions of the implicit arguments of 'outer'
  * @param implArgsInner the positions of the implicit arguments of 'inner'
- * 
+ *
  * this represents a left hand side of the form
  *   outer(before,inner(inside),after)
- * where before, inside, after do not include the implicit arguments 
+ * where before, inside, after do not include the implicit arguments
  */
 case class OuterInnerNames(outer: GlobalName, inner: GlobalName,
                            before: List[LocalName], inside: List[LocalName], after: List[LocalName],
@@ -32,11 +35,11 @@ case class OuterInnerNames(outer: GlobalName, inner: GlobalName,
 
 class SimplificationRuleGenerator extends ChangeListener {
   override val logPrefix = "simp-rule-gen"
-  /** the Tag used to spot constants with name N from which to simplification rules with name N/SimplifyTag */ 
+  /** the Tag used to spot constants with name N from which to simplification rules with name N/SimplifyTag */
   protected val SimplifyTag = "Simplify"
   protected val SolutionTag = "Solve"
   private def rulePath(r: GeneratedDepthRule) = r.from.path / SimplifyTag
-  
+
   private def getGeneratedRule(p: Path): Option[GeneratedDepthRule] = {
      p match {
         case p: GlobalName =>
@@ -47,7 +50,7 @@ class SimplificationRuleGenerator extends ChangeListener {
         case _ => None
      }
   }
-     
+
   override def onAdd(e: StructuralElement) {onCheck(e)}
   override def onDelete(e: StructuralElement) {
      getGeneratedRule(e.path).foreach {r => controller.delete(rulePath(r))}
@@ -79,11 +82,11 @@ class SimplificationRuleGenerator extends ChangeListener {
           return
        }
        tm match {
-       	 case FunType(ctx, scp) => 
-       	    scp match {
-       	      case ApplySpine(OMS(eq), argls) if argls.length >= 2 =>
-       	          if (controller.globalLookup.getConstant(eq).rl == Some("Eq"))
-       	             generateRule(c, argls)
+           case FunType(ctx, scp) =>
+              scp match {
+                case ApplySpine(OMS(eq), argls) if argls.length >= 2 =>
+                    if (controller.globalLookup.getConstant(eq).rl == Some("Eq"))
+                       generateRule(c, argls)
                    else
                       error(e, "not of eq-args shape")
                case ApplySpine(OMS(ded), List(ApplySpine(OMS(eq), argls))) if argls.length >= 2 =>
@@ -94,7 +97,7 @@ class SimplificationRuleGenerator extends ChangeListener {
                       error(e, "not of ded-eq-args shape")
                case _ =>
                   error(e, "not a depth rule")
-       	    }
+              }
            case _ =>
               error(e, "not a depth rule")
        }
@@ -103,7 +106,7 @@ class SimplificationRuleGenerator extends ChangeListener {
      logError(e.path + ": " + msg)
   }
   private def present(t: Term) = controller.presenter.asString(t)
-  
+
   /** matcher for outer(..., inner(...), ...) */
   object OuterInnerTerm {
      def unapply(t: Term): Option[OuterInnerNames] = t match {
@@ -125,7 +128,7 @@ class SimplificationRuleGenerator extends ChangeListener {
            args.zipWithIndex.foreach {case (arg, i) =>
               // no need to match the implicit arguments, so skip them
               if (! implArgsOuter.contains(i)) {
-                 arg match {                       
+                 arg match {
                     case OMV(x) =>
                       if (isBefore)
                          bfr ::= x
@@ -176,14 +179,14 @@ class SimplificationRuleGenerator extends ChangeListener {
          val rule = new GeneratedDepthRule(c, desc, n, t2)
          val ruleConst = new RuleConstant(c.home, ruleName, OMS(c.path), Some(rule))
          ruleConst.setOrigin(GeneratedBy(this))
-   	   controller.add(ruleConst)
+         controller.add(ruleConst)
          log(desc)
          // check if we can also generate a SolutionRule
          generateSolutionRule(c, n, t2)
       case _ => error(c, "type does not match")
     }
   }
-  
+
   private def n2V(ns: List[LocalName]) = ns.map(OMV(_))
   /** check if we can also add a solution rule
      the idea is to apply
@@ -219,7 +222,7 @@ class SimplificationRuleGenerator extends ChangeListener {
            val desc = {
               val have = "|- " + present(ApplySpine(OMS(names.inner), n2V(names.inside) :_*)) + " = t"
               val infer = "|- " + v + " = " + present(ApplySpine(OMS(names.outer), n2V(names.before) ::: OMV("t") :: n2V(names.after) :_*))
-              s"$ruleName: $have <==> $infer" 
+              s"$ruleName: $have <==> $infer"
            }
            val rule = new GeneratedSolutionRule(c, desc, names, vPosition, bfrPositions, aftPositions)
            val rc = new RuleConstant(c.home, ruleName, OMS(c.path), Some(rule)) //TODO nicer type
@@ -243,8 +246,8 @@ class GeneratedDepthRule(val from: Constant, desc: String, names: OuterInnerName
     override def toString = desc
     /** timestamp to avoid regenerating this rule when 'from' has not changed */
     val validSince = from.tpC.lastChangeAnalyzed
-    
-    /** the groups of indices of equal elements in 'bfrNames ::: insNames ::: aftNames' */ 
+
+    /** the groups of indices of equal elements in 'bfrNames ::: insNames ::: aftNames' */
     private val nonlinearityConstraints: List[(LocalName,List[Int])] = {
        val all = (names.before ::: names.inside ::: names.after).zipWithIndex
        val grouped: List[(LocalName,List[(LocalName,Int)])] = all.groupBy(_._1).toList
@@ -252,16 +255,16 @@ class GeneratedDepthRule(val from: Constant, desc: String, names: OuterInnerName
           case (n,l) => (n, l.map(_._2))
        }
     }
-    
-    def apply : Rewrite = { 
-        // input term is outer(before, inner(inside), after) 
+
+    def apply : Rewrite = {
+        // input term is outer(before, inner(inside), after)
         (before : List[Term],inside : List[Term],after : List[Term]) => {
           // drop implicit arguments from before, inside, and after
           val (explBf, explAf) = names.explArgsOuter(before, after)
           val explIn = names.explArgsInner(inside)
           // match the remaining explicit arguments against bfrNames, insNames, aftNames
-          if (explBf.length != names.before.length || 
-              explAf.length != names.after.length || 
+          if (explBf.length != names.before.length ||
+              explAf.length != names.after.length ||
               explIn.length != names.inside.length) {
             // mismatch: inequal number
             NoChange
@@ -299,11 +302,11 @@ class GeneratedDepthRule(val from: Constant, desc: String, names: OuterInnerName
  * names.inside is such that all variables in names.before and names.after
  * as well as the right hand side (which must be a variable) occur in it
  * positions in names.inside are counted from 0
- * 
+ *
  * @param from the constant giving rise to the rule
  * @param desc string description of the rule
  * @param names structure of the left hand side of the corresponding simplification rule
- * @param vPosition the position of the right hand side in names.inside 
+ * @param vPosition the position of the right hand side in names.inside
  * @param bfrPositions the positions of the names.before in names.inside
  * @param aftPositions the positions of the names.after in names.inside
  */
@@ -325,7 +328,7 @@ class GeneratedSolutionRule(from: Constant, desc: String, names: OuterInnerNames
          val before = bfrPositions.map(i => explArgs(i))
          val after  = aftPositions.map(i => explArgs(i))
          val t      = explArgs(vPosition)
-         // TODO generate new unknowns for the implicit arguments of outer 
+         // TODO generate new unknowns for the implicit arguments of outer
          val inverted = ApplyGeneral(OMS(names.outer), before ::: j.tm2 :: after)
          Some((Equality(j.stack, inverted, t, None), "inverting " + names.inner.name))
    }

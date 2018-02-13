@@ -11,9 +11,9 @@ import modules._
 trait ObjectSimplifier extends Extension {self =>
    /** applies rules to simplify an object */
    def apply(obj: Obj, context: Context, rules: RuleSet): obj.ThisType
-   
+
    def toTranslator(rules: RuleSet) = new UniformTranslator {
-     def apply(c: Context, t: Term) = self.apply(t, c, rules) 
+     def apply(c: Context, t: Term) = self.apply(t, c, rules)
    }
 }
 
@@ -25,9 +25,9 @@ trait StructureSimplifier extends Extension {
    }
    /** flattens and elaborates the dependency closure of this element, typically called on a [[DeclaredTheory]] */
    def apply(se: StructuralElement): Unit
-   
+
    def materialize(context: Context, exp: Term, expandDefs: Boolean, pathOpt: Option[MPath]): Module
-   
+
    def getBody(context: Context, moduleExp: Term): ElementContainer[NamedElement]
 
    def elaborateContext(outer: Context, con: Context) : Context

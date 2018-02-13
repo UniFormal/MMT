@@ -1,2 +1,39 @@
 usage:
-    mmt [--help|--about] [--shell|--keepalive|--noshell] [--file FILENAME] [--mbt FILENAME] [--send PORT] [COMMANDS]
+    mmt [--help|--about|--version] [--shell|--keepalive|--noshell] [--file FILENAME] [--mbt FILENAME] [--send PORT] [COMMANDS]
+
+the MMT shell script
+
+general arguments:
+  -h, --help                show this help message and exit.
+  -a, --about               print some information about MMT.
+  -v, --version             alias of --about
+      --usage               show usage message for specific 'make' COMMANDS
+      --help-command        currently identical to --usage
+
+commands and files to process:
+  COMMANDS                  Semicolon ( ; ) separated commands to be interpreted by MMT. If a command fails, exit
+                            immediately with code 2. Type "help" inside the shell for a list of commands or look at the
+                            documentation for available commands.
+      --send PORT           send COMMANDS to an already running MMT Instance listening at PORT and exit immediately
+                            (even if a different termination behaviour is specified.)
+      --file FILENAME       load mmt-style commands from FILE before interpreting COMMANDS.
+                            (this option may be repeated multiple times.)
+      --mbt FILENAME        load scala-style commands from FILE before interpreting COMMANDS.
+                            (this option may be repeated multiple times.)
+
+termination behaviour:
+
+The default exit behaviour is to terminate immediately after COMMANDS have been executed. If no arguments are given to
+MMT, it will start an interactive shell for the user to enter commands. The default behaviour of MMT can be overwritten
+with the following arguments.
+
+  -i, --shell               execute COMMANDS and take further commands on the MMT shell.
+                            (this is the default if no arguments are provided.)
+  -w, --keepalive           execute COMMANDS and terminate only after all threads have finished.
+                            (no MMT shell will be started.)
+  -w, --noshell             same as --keepalive (for backwards compatibility)
+
+By default, MMT will terminate with status code 0. If parsing of arguments fails, MMT will terminate prematurely with
+status code 1. If an uncaught exception occurs in the main thread, MMT will exit with status code 2.
+
+note: for long options arguments can also be given using "=", i.e. --file=FILENAME.

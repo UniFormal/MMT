@@ -17,21 +17,21 @@ abstract class RenderingHandler {
    }
    /** output an XML node */
    def apply(N : NodeSeq) {apply(N.toString)}
-   
+
    // Convenience methods for rendering text
    /** output a string with line ending */
    def writeln(s: String) {apply(s + "\n")}
- 
+
    /** wraps output in a pair of brackets */
    def wrap(before: String, after: String)(body: => Unit) {
       apply(before)
       body
       apply(after)
    }
-   
+
    /*
    // Convenience methods for rendering XML
-   /** begins an XML element, use empty prefix for unprefixed elements, content is provided by succeeding calls */ 
+   /** begins an XML element, use empty prefix for unprefixed elements, content is provided by succeeding calls */
    def beginTag(prefix : String, label : String) {
      write("<" + getQualifiedName(prefix, label))
    }
@@ -51,7 +51,7 @@ abstract class RenderingHandler {
    def writeAttribute(prefix : String, name : String, value : String) {
      write(s""" ${getQualifiedName(prefix, name)}="$value"""")
    }*/
-   @deprecated
+   @deprecated("probably not needed anymore", "")
    /** write an XML start tag at once, including attributes and scope */
    def writeStartTag(prefix : String, label : String, attributes : MetaData, scope : NamespaceBinding) {
      write("<")
@@ -60,16 +60,16 @@ abstract class RenderingHandler {
      write(scope.toString) //starts with a space
      write(">")
    }
-   @deprecated
+   @deprecated("probably not needed anymore", "")
    /** write an XML end tag */
    def writeEndTag(prefix : String, label : String) {
      write(s"</${getQualifiedName(prefix, label)}>")
    }
-   @deprecated
+   @deprecated("probably not needed anymore", "")
    /** returns a qualified name from a prefix and a local part */
    private def getQualifiedName(prefix : String, name: String) =
      if (prefix == "" || prefix == null) name else (prefix + ":" + name)
-   
+
    /** write an XML element in a way that the XML nesting is reflected in the code (attribute values will be escaped) */
    def elem(tag: String, attributes: (String,String)*)(body: => Unit) {
      val attS = attributes.map {case (k,v) => s"""$k="${XMLEscaping(v)}""""}.mkString(" ", " ", "")
@@ -79,16 +79,16 @@ abstract class RenderingHandler {
      write(s"</$tag>")
      nl
    }
-   
+
    /** write text inside an xml element (will be escaped) */
    def xmltext(s: String) {
      write(XMLEscaping(s))
    }
-   
+
    /** releases all resources, empty by default */
    def done {}
 
-   // indentation management  
+   // indentation management
    private var indentLevel = 0
    val indentString = "  "
    protected var afterIndentationString = ""
@@ -116,7 +116,7 @@ trait RenderingResult[A] extends RenderingHandler {
    /** releases all resources and returns the result of building */
    def get: A
    /** releases all resources without returning a result */
-   override def done {get} 
+   override def done {get}
 }
 
 /** writes text output to the console */
@@ -127,9 +127,9 @@ object ConsoleWriter extends RenderingHandler {
 /** writes text output to a file */
 class FileWriter(val filename : File) extends RenderingHandler {
    private val file = utils.File.Writer(filename)
-	 def write(s : String) {
-	   file.write(s)
-	 }
+   def write(s : String) {
+     file.write(s)
+   }
    override def done {file.close}
 }
 

@@ -16,10 +16,10 @@ object IntroductionRule {
   def context(n: Int) = List("x","y","z").take(n).map {s => VarDecl(LocalName(metaVarBase / s))}
   val X = OMV(metaVarBase / "x")
   val Y = OMV(metaVarBase / "y")
-  
+
   val boundVar = "BOUND"
   def hasBoundVar(f: Term) = apply(f, OMV(boundVar))
-  
+
   val allRules = List(IntroduceImplication,IntroduceEquivalence,IntroduceExistential,ContractRep)
 }
 
@@ -36,8 +36,8 @@ object IntroduceEquivalence extends RewriteRule(constantName("iff"), context(2),
 /**
  * not and(X1,...,Xm, not Y1,...,not Yn) ---> and X implies or Y
  * not and (not Y1,..., not Yn) ---> or Y
- * 
- * this cannot easily be a rewrite rule because m and n can be arbitrary 
+ *
+ * this cannot easily be a rewrite rule because m and n can be arbitrary
  */
 object IntroduceImplication extends TermTransformationRule with ComplificationRule {
   val head = constantName("implies")
@@ -78,17 +78,17 @@ object IntroduceImplication extends TermTransformationRule with ComplificationRu
 
 /**
  * not forall x. not P(x) ---> exists x. P(x)
- * 
+ *
  * this cannot be a RewriteRule because HOAS matching cannot match for the name of the bound variable
  * so we use basic Scala matching instead
  */
 object IntroduceExistential extends TermTransformationRule with ComplificationRule {
    val head = constantName("exists")
-   
+
    // extract the names of the Mizar constants
    private val dummy = OMV("dummy")
    private val Apply(neg, ApplySpine(univ, List(_, Lambda(_, any, _)))) = not(forall(dummy.name.toString, dummy, dummy))
-   
+
    def apply(matcher: Matcher, goalContext: Context, goal: Term): Option[Term] = {
       goal match {
         case Mizar.not(Mizar.forall(n, x, Mizar.not(y))) => Some(Mizar.exists(n, x, y))

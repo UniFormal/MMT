@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.valuebases.{CodecNotApplicable, Codec, CodecOperator}
 import info.kwarc.mmt.lf.{ApplySpine, Apply}
 
 /**
-  * codes a list
+  * like the one in valuebases, but for LF-based lists
   */
 abstract class ListCodec[Code](id: GlobalName, list: GlobalName, nil: GlobalName, cons: GlobalName)
   extends CodecOperator[Code](id, list) {self =>

@@ -1,3 +1,5 @@
+/*
+
 package info.kwarc.mmt.api.patterns
 
 import info.kwarc.mmt.api._
@@ -10,11 +12,9 @@ import presentation._
 import frontend._
 import utils._
 
-/*
-
 class PatternAssignment(val home : Term, val name : LocalName, val target : PatternExpression) extends Declaration {
    def toNode = <pattern name={name.toPath}>{getMetaDataNode}{target.toOBJNode}</pattern>
-   override def toString = name + " |-> " + target.toString 
+   override def toString = name + " |-> " + target.toString
    def getComponents = Nil //TODO
    def getDeclarations = Nil
    type ThisType = PatternAssignment
@@ -23,7 +23,7 @@ class PatternAssignment(val home : Term, val name : LocalName, val target : Patt
 }
 
 object Functor {
-  def applyFunctor(view : View, theo : DeclaredTheory, controller : Controller): DeclaredTheory = {       
+  def applyFunctor(view : View, theo : DeclaredTheory, controller : Controller): DeclaredTheory = {
     val theoExp = OMA(OMS(ModExp.morphismapplication),List(OMMOD(view.path),OMMOD(theo.path)))
     val mp = theoExp.toMPath
     val outputTheory =  new DeclaredTheory(mp.parent,mp.name,None)
@@ -35,37 +35,37 @@ object Functor {
     decls.map {
     //case p : Pattern => TODO
     //case c : Constant => TODO
-    case inst : Instance => 
+    case inst : Instance =>
        val pat = controller.globalLookup.getPattern(inst.pattern)
        controller.globalLookup.getO(view.path ? pat.name) match {
          case Some(a : PatternAssignment) =>
            val subsT = inst.matches.map {
-             case t => OMM(t,OMMOD(view.path))            
+             case t => OMM(t,OMMOD(view.path))
            }
            a.target match {
-             case PatternSym(p) => 
+             case PatternSym(p) =>
                   //val iTE = new InstanceElaborator(controller)
-                  val pt = controller.globalLookup.getPattern(p)         
+                  val pt = controller.globalLookup.getPattern(p)
                   val lpair = pt.body.map {d => (d.name,d.name / OMID(inst.path / d.name))} //TODO Check c.c1
-        	       val names = lpair.unzip._1
-        	       val subs = lpair.unzip._2  
+                  val names = lpair.unzip._1
+                  val subs = lpair.unzip._2
                   def auxSub(x : Term): Term = {
-        		      x ^ (pt.getSubstitution(inst) ++ Substitution(subs : _*))  
+                    x ^ (pt.getSubstitution(inst) ++ Substitution(subs : _*))
                   }
-        	       pt.body.map {
-     		   case VarDecl(n,tp,df,_) =>
-        		   val nname = inst.name / n     			
-        		   val c = Constant(theoExp,nname,Nil,tp.map(auxSub),df.map(auxSub),None)
-        		   controller.add(c)     		   
-                  /*	
-        			c.setOrigin(InstanceElaboration(inst.path)) //TODO Check InstanceElaboration
-        			cont(c)
-        	        */
-        	
-     	       }        	       
-           }       
+                  pt.body.map {
+              case VarDecl(n,tp,df,_) =>
+                 val nname = inst.name / n
+                 val c = Constant(theoExp,nname,Nil,tp.map(auxSub),df.map(auxSub),None)
+                 controller.add(c)
+                  /*
+                 c.setOrigin(InstanceElaboration(inst.path)) //TODO Check InstanceElaboration
+                 cont(c)
+                   */
+
+               }
+           }
          //case Some(t) => null//TODO Error
-         //case None => null//TODO Error           
+         //case None => null//TODO Error
        }
     }
     outputTheory

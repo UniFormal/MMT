@@ -3,8 +3,8 @@ import info.kwarc.mmt.api._
 
 /**
  * convenience to access a certain tag
- * 
- * instantiate with the tag and then apply the methods to instances of HasMetaData   
+ *
+ * instantiate with the tag and then apply the methods to instances of HasMetaData
  */
 class Tagger(key: GlobalName) {
   def set(e: HasMetaData) {

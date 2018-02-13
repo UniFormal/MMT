@@ -14,23 +14,23 @@ import scala.util.Try
 
  *  this is matching not unification, i.e., only the template may contain substitution variables,
  *  goal may contain free variables though, which will then occur in the solution
- *  
+ *
  *  no equality relation is taken into account except alpha-conversion of bound variables and solution rules
- *  
+ *
  *  @param controller needed for lookups when type checking the matches
- *  @param queryVars the substitution variables in the template term 
+ *  @param queryVars the substitution variables in the template term
  *  @param context free Variables of goal and template, these must be treated in the same way as constants
- *  
+ *
  *  the class can be reused for multiple matches using the same RuleSet but is not thread-safe
  */
 class Matcher(controller: Controller, rules: RuleSet) extends Logger {
    def logPrefix = "matcher"
    def report = controller.report
    private def presentObj(o: Obj) = controller.presenter.asString(o)
-   
+
    private val solutionRules = rules.get(classOf[SolutionRule])
    private val equalityRules = rules.get(classOf[TermBasedEqualityRule])
-   
+
    private var constantContext: Context = Context.empty
    private var querySolution : Context = Context.empty
    def getUnsolvedVariables : List[LocalName] = querySolution collect {
@@ -44,8 +44,8 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
 
    /**
     * solves a template variable with the corresponding subterm of goal
-    * 
-    * @return false if the variable has been solved previously with a different term (no equality theory), otherwise true 
+    *
+    * @return false if the variable has been solved previously with a different term (no equality theory), otherwise true
     */
    private def solve(name: LocalName, value: Term) : Boolean = {
       val (left, solved :: right) = querySolution.span(_.name != name)
@@ -61,10 +61,10 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
       querySolution = left ::: solved.copy(df = Some(value)) :: right
       true
    }
-   
-   /** 
+
+   /**
     *  callbacks for checking rules
-    *  
+    *
     *  equality judgements are channeled back into matching; other judgements are false
     */
    private val callback = new CheckingCallback {
@@ -109,14 +109,14 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     *  @param queryVars the variables to solve
     *  @param query the term to match against, this term may contain the queryVars and the context variables freely
     *  @return true if the terms match
-    */ 
+    */
    def apply(goalContext: Context, goal: Term, queryVars: Context, query: Term): MatchResult = {
      apply(goalContext, queryVars) {eq => eq(goal, query)}
    }
 
    /**
     *  most general matching function that allows arbitrary checks
-    *  
+    *
     *  @param doit a function that takes an equality predicate (for matching) and returns true if the match is possible
     *  e.g., basic matching is obtained as apply(queryVars){eq => eq(goal, query)}
     */
@@ -136,13 +136,13 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
         MatchFail
       }
    }
-   
+
    /** tp level match function */
    private def matchTerms(goal: Term, query: Term) = {
      log(s"matching ${presentObj(querySolution)} such that |- ${presentObj(goal)} = ${presentObj(query)}")
      aux(Nil, goal, query)
    }
-   
+
    /**
     *  the main recursion function that tries to match context, queryVars, bound |- goal = query
     *  @param goalOrg the term to be matched
@@ -150,7 +150,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     *  @param queryOrg the term to match against
     *  @param boundOrg the bound variables that have been encountered during recursion
     *  @return true if the terms match
-    */ 
+    */
    private def aux(boundOrg: Context, goalOrg: Term, queryOrg: Term): Boolean = {
       // 1) reflexivity
       if (goalOrg hasheq queryOrg) return true
@@ -160,7 +160,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
            return cont()
          }
       }
-      // 3) try to isolate a query variable 
+      // 3) try to isolate a query variable
       // j is the equality judgment that we try to apply solution rules to
       var j = Equality(Stack(boundOrg), queryOrg, goalOrg, None)
       // applies all the rules found by findSolvableVariable
@@ -176,10 +176,10 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
         val bound = eq.context
         val goal = eq.tm1
         val query = eq.tm2
-        (goal, query) match { 
+        (goal, query) match {
            case (_,OMV(x)) if constantContext.isDeclared(x) || bound.isDeclared(x) =>
               // these variables are treated like constants
-              // this case must come first because the bound variables might shadow query variables 
+              // this case must come first because the bound variables might shadow query variables
               goal == query
            case (_,OMV(x)) if querySolution.isDeclared(x) =>
               // if goal does not contain bound variables, solve for x
@@ -191,14 +191,14 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
         }
       }
    }
-   
+
    /**
     * like aux but for contexts: We match for context, queryVars, bound |- goal = query : Ctx
     * @param goal a context
     * @param query a context with query variables to match against goal
     * @param context joint free variables of goal and query
     * @return if goal and query match up to alpha-renaming, the substitution query -> goal that performs the alpha-renaming
-    * 
+    *
     * terms occurring inside query are alpha-renamed accordingly
     */
    private def auxCon(bound: Context, goal: Context, query: Context): Option[Substitution] = {

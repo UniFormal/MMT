@@ -6,7 +6,7 @@ import scala.xml.Node
 import scala.collection.mutable.{HashSet,HashMap}
 
 /** types of edges in a theory multigraph; edges may have an id; there may be at most one edge without id between two nodes */
-abstract class Edge
+sealed abstract class Edge
 /** inclusion edge */
 case object IncludeEdge extends Edge
 /** meta-theory edge */
@@ -20,7 +20,7 @@ case class StructureEdge(id: Path) extends Edge
 case class EdgeTo(to: Path, edge: Edge, backwards: Boolean = false)
 
 
-/** This class adds advanced queries on top of a RelStore that expose the theory graph structure */ 
+/** This class adds advanced queries on top of a RelStore that expose the theory graph structure */
 class TheoryGraph(rs: RelStore) {
    /**
     * provides the nodes of the graph
@@ -46,7 +46,7 @@ class TheoryGraph(rs: RelStore) {
    }*/
    /**
     * returns all edges into or out of a theory
-    * @param from the theory 
+    * @param from the theory
     * @return all edges, backwards is set for incoming edges
     */
    def edgesFrom(from: Path) : List[(Path,List[EdgeTo])] = {
@@ -91,14 +91,14 @@ class TheoryGraph(rs: RelStore) {
    def codomain(link: Path) : Option[Path] = {
       rs.query(link, +HasCodomain)(p => return Some(p))
       return None
-   }  
+   }
 }
 
 /** This class provides functions for rendering a theory graph fragment in the gexf and dot graph formats.
  *  @param theories the minimal set of theories to include
  *  @param views the minimal set of views to include
  *  @param tg the theory graph from which further information is obtained
- */ 
+ */
 class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: TheoryGraph) {
    private def gexfNode(id:Path, tp: String) =
       <node id={id.toPath} label={id.last}><attvalues><attvalue for="type" value={tp}/></attvalues></node>
@@ -207,12 +207,12 @@ class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: T
      }
 
      // building the graph
-     
+
      // internal theories
      theories.foreach {node =>
         addNode(node, "theory", false)
      }
-          
+
      // minimal views
      views.foreach {view =>
         val fromO = tg.domain(view)
@@ -224,9 +224,9 @@ class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: T
               addEdge(Some(view), from, to, "view", false)
            case _ =>
               throw GeneralError("domain/codomain of view not known: " + view)
-        } 
+        }
      }
-     
+
      // all the links from/out of the minimal theories that aren't part of the minimal views
      theories.foreach {from =>
        tg.edgesFrom(from) foreach {case (to, etos) =>
@@ -247,14 +247,14 @@ class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: T
           if (externalNode) etos foreach {eto => addEdgeIfNeeded(from, eto, true)}
        }
      }
-     
+
      // edges between external nodes
      extnds.foreach {from =>
         tg.edgesFrom(from.id) foreach {case (to, etos) =>
-           if (extnds.exists(_ == to)) etos foreach {eto => addEdgeIfNeeded(from.id, eto, true)}
+           if (extnds.exists(_.id == to)) etos foreach {eto => addEdgeIfNeeded(from.id, eto, true)}
         }
      }
-     
+
      // build the final graph
      new DotGraph {
        val title = "MMT"

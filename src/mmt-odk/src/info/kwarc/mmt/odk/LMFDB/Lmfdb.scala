@@ -219,7 +219,7 @@ object LMFDBStore extends Storage with LMFDBBackend {
     val schema = controller.globalLookup.getAs(classOf[DeclaredTheory], db.schemaTheory)
 
     val th = controller.localLookup.getO(db.dbTheory) match {
-       case Some(thy: DeclaredTheory) => thy 
+       case Some(thy: DeclaredTheory) => thy
        case Some(_) => throw BackendError("unexpected type", db.dbTheory)
        case None =>
           val t = Theory.empty(db.dbTheory.parent, db.dbTheory.name, schema.meta)
@@ -231,7 +231,7 @@ object LMFDBStore extends Storage with LMFDBBackend {
        case _ =>
     }
   }
-  
+
   override def loadFragment(needed: Path, known: Path)(implicit controller: Controller) {
     load(needed)
   }
@@ -254,7 +254,7 @@ object LMFDBStore extends Storage with LMFDBBackend {
             DBField(c.name.toString, LMFDBCoder.buildCodec(codecExp))
        }
     }
-    
+
      val query = "&" + key + "=" + path.name.toString
      val json = JSONObject(lmfdbquery(db.dbpath, query).flatMap { // TODO this flattening looks wrong
         case a: JSONObject => a.map

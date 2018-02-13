@@ -16,7 +16,7 @@ object Integrator {
    private def getCode(in : BufferedReader) : String = {
      var line = in.readLine
      if (line == null)
-       throw new Exception("Synthesizer: No closing //UOM end tag found") 
+       throw new Exception("Synthesizer: No closing //UOM end tag found")
      if (line.startsWith(uomend)) {
        return ""
      }
@@ -34,16 +34,16 @@ object Integrator {
      }
      return getSnippets(in, base)
    }
-   
+
    def mkVarDecl(arg: String) : VarDecl = {
      var nt = arg.split(":")
      var tp = nt(1) match {
        case "Term" => Scala.symbol("Term")
        case "List[Term]" => OMA(Scala.symbol("List"), List(Scala.symbol("Term")))
-     } 
+     }
      VarDecl(LocalName(nt(0)), tp)
    }
-   
+
    def mkLambda(code: String) : Term = {
      val lp = code.indexOf("(") + 1
      val rp = code.indexOf(")")
@@ -59,18 +59,18 @@ object Integrator {
    }
 
    def doModule(controller: Controller, mod: Module, scalaFile: File) {
-	   val out = new BufferedReader(new FileReader(scalaFile))
-	   val snippets = getSnippets(out, mod.path)
+     val out = new BufferedReader(new FileReader(scalaFile))
+     val snippets = getSnippets(out, mod.path)
        out.close
-      
-	   snippets foreach {
-	  	 case (path,code) => 
-	  	   controller.globalLookup.get(path) match {
+
+     snippets foreach {
+      case (path,code) =>
+         controller.globalLookup.get(path) match {
            case c : Constant =>
               val cN = Constant(c.home, c.name, c.alias, c.tp, Some(mkLambda(code)), c.rl, c.notC)
               controller.library.update(cN)
            case _ =>
          }
-	   }
+      }
    }
 }

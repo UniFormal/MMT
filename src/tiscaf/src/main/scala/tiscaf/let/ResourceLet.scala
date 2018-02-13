@@ -1,16 +1,16 @@
 /*******************************************************************************
  * This file is part of tiscaf.
- * 
+ *
  * tiscaf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Foobar is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
@@ -39,7 +39,17 @@ trait ResourceLet extends HSimpleLet {
   protected def getResource(path: String): java.io.InputStream = {
     val url = this.getClass.getResource(path)
     if (url == null) null else url.getProtocol match {
-      case "jar"  => val is = url.openStream; try { is.available; is } catch { case _: Exception => null }
+      case "jar"  =>
+        val is = url.openStream
+        try {
+        is.available
+        is
+      } catch {
+        case _: Exception =>
+          if(is != null)
+            is.close
+          null
+      }
       case "file" => if (new java.io.File(url.toURI) isFile) url.openStream else null
       case _      => null
     }
@@ -75,7 +85,7 @@ trait ResourceLet extends HSimpleLet {
   private def resolvePath(tk: HTalk): String = {
     val pathRest = tk.req.uriPath.substring(theUriRoot.length)
     def path = theDirRoot + { if (pathRest.startsWith("/")) pathRest.substring(1) else pathRest }
-    new java.io.File(path).getCanonicalPath
+    java.net.URI.create(path).normalize.getPath
   }
 
   //------------------ HLet implemented --------------------

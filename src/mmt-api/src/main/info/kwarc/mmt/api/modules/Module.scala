@@ -41,7 +41,7 @@ trait DefinedModule extends Module with ModuleDefiniens {
  */
 trait ModuleWrapper extends ContentElement {
   def module : Module
-  def getComponents = module.getComponents 
+  def getComponents = module.getComponents
   def getDeclarations = module.getDeclarations
   // bend over metadata pointer
   this.metadata = module.metadata

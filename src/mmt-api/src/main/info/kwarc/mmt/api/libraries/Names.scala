@@ -7,14 +7,14 @@ import utils.MyList._
 
 /** a possible completion
  * @param parent theory from which the resolved symbol is imported
- * @param completion name of the completed symbol 
+ * @param completion name of the completed symbol
  */
 case class Completion(parent: MPath, completion: LocalName) {
    def path = parent ? completion
 }
 
 case class IncludeOption(from : MPath, to: MPath, name : LocalName) {
-  def spath = from ? name  
+  def spath = from ? name
 }
 
 /** Auxiliary methods for name lookup */
@@ -58,7 +58,7 @@ object Names {
 
    def resolveIncludes(home : Term, name : String)(implicit lib : Library) : Option[List[IncludeOption]] = {
       val incls = lib.visible(home).toList
-      val current = incls flatMap {i => 
+      val current = incls flatMap {i =>
         get(i) match {
          case None => Nil
          case Some(t) =>
@@ -66,13 +66,13 @@ object Names {
             names.filter(_.toString == name)
         }
       }
-      current match { 
-        case Nil => 
+      current match {
+        case Nil =>
           val allPaths = lib.getAllPaths.toList
           val options = allPaths flatMap {i =>
             get(OMMOD(i)) match {
               case None => Nil
-              case Some(t) => 
+              case Some(t) =>
                 val names = t.domain.toList
                 names.filter(_.toString == name).map(n => IncludeOption(i, home.toMPath, n))
             }

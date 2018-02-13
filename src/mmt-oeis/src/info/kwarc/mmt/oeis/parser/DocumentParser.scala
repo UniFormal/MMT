@@ -10,7 +10,7 @@ import scala.xml._
 class DocumentParser(val dictionary : Set[String]) {
   private val IDregex = "A\\d+".r
   val textParser = new TextParser(dictionary)
-  
+
   private def assertion(xclass : String, cmpval : String, lineNr : Int, offset : Int) : Elem ={
     val srcref = makeSrcRef(lineNr, offset, lineNr, offset + cmpval.length)
     <assertion class={xclass} stex:srcref={srcref}>
@@ -246,8 +246,8 @@ class DocumentParser(val dictionary : Set[String]) {
     val srefS = "#textrange" + trange
     srefS
   }
-  
-  
+
+
   def formulaWrap(line : String, theory : String, lineNr : Int, offset : Int) : Elem = {
     val srcref = makeSrcRef(lineNr, offset, lineNr, line.length + offset)
     <omdoc:p class="formula" stex:srcref={srcref}>

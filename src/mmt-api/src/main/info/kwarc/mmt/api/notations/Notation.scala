@@ -17,7 +17,7 @@ case class InvalidNotation(msg: String) extends java.lang.Throwable
  * priority : the priority of this notation when looking for a default notation
  */
 case class NotationScope(variant : Option[String], languages : List[String], priority : Int) {
-  def toNode =  <scope variant={variant.getOrElse(null)} 
+  def toNode =  <scope variant={variant.getOrElse(null)}
     languages={languages.mkString(" ")} priority={priority.toString}/>
 }
 
@@ -31,12 +31,12 @@ object NotationScope {
  * @param precendence the precedence, notations with lower precedence are tried first, thus grab larger subterms
  * @param meta the meta-theory of this notation if different from the current meta-theory
  * @param scope
- * 
+ *
  * a typed Var must be preceded by a Delim because Var.key does not trigger the notation
- * 
+ *
  * not all markers may be Arg because such notations cannot be parsed
- * 
- * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves 
+ *
+ * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves
  */
 case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPath],
                         scope : NotationScope = NotationScope.default) extends metadata.HasMetaData {
@@ -96,7 +96,7 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
       // add implicit arguments between subs and vars
       var lastSub = subs.lastOption.map(_.number).getOrElse(0)
       val implsBeforeVar = ((lastSub+1) until firstVar).toList.map {i => ImplicitArg(i)}
-      subs = subs ::: implsBeforeVar 
+      subs = subs ::: implsBeforeVar
       // the attribution
       val attribution = attrib > 0
       Arity(subs.distinct, vars.distinct, args.distinct, attribution)
@@ -110,7 +110,7 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
       case m => List(m)
    }
    lazy val presentationMarkers = PresentationMarker.introducePresentationMarkers(markers)
-  
+
    def toText = {
       val (fixityString, argumentString) = fixity.asString
       val metaStr = meta.map("meta " + _.toPath).getOrElse("")
@@ -118,14 +118,14 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
       val fixStr = if (fixityString == "mixfix") "" else " %%"+fixityString
       metaStr + fixStr + " " + argumentString + precStr
    }
-   override def toString = toText + " (markers are: " + markers.map(_.toString).mkString(" ") + ")" 
+   override def toString = toText + " (markers are: " + markers.map(_.toString).mkString(" ") + ")"
    def toNode = {
      val (fixityString, argumentString) = fixity.asString
      <notation precedence={precedence.toString}
-         meta={meta.map(_.toPath).getOrElse(null)} fixity={fixityString} 
+         meta={meta.map(_.toPath).getOrElse(null)} fixity={fixityString}
          arguments={argumentString}> {scope.toNode} </notation>
    }
-   
+
    /** number of arguments before the first delimiter */
    def openArgs(fromRight: Boolean) : Int = {
       var i = 0
@@ -146,13 +146,13 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
    def isLeftOpen = openArgs(false) > 0
    /** there are argumetns after the last delimiter */
    def isRightOpen = openArgs(true) > 0
-   
+
    /** true if there is definitely a delimiter (i.e., not just a sequence separator) */
    def hasDelimiter: Boolean = markers exists {
      case _: Delimiter => true
      case _ => false
    }
-   
+
    /** @return true if this arity can present ComplexTerm(name, subs, vars, args) and has an attribution if necessary */
    def canHandle(subs: Int, vars: Int, args: Int, att: Boolean) = {
       (arity.numNormalSubs == subs || (arity.numNormalSubs < subs && arity.numSeqSubs >= 1)) &&
@@ -160,7 +160,7 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
       (arity.numNormalArgs == args || (arity.numNormalArgs < args && arity.numSeqArgs >= 1)) &&
       (hasDelimiter || arity.numSeqArgs == 0 || args > arity.numNormalArgs + arity.numSeqArgs) && // this hacky case precludes confusion when flexary operators would disappear in the presentation
       (! att || arity.attribution)
-   }   
+   }
 }
 
 object TextNotation {
@@ -173,7 +173,7 @@ object TextNotation {
       }
       new TextNotation(Mixfix(markers), prec, meta, scope)
    }
-   
+
    def parseScope(n : scala.xml.Node) : NotationScope = {
        //parsing scope
       val variant = utils.xml.attr(n, "variant") match {
@@ -190,7 +190,7 @@ object TextNotation {
       }
       NotationScope(variant, languages, priority)
    }
-   
+
    /** XML parsing methods */
    def parse(n : scala.xml.Node, nsMap : NamespaceMap) : TextNotation = n.label match {
     case "notation" =>
@@ -206,7 +206,7 @@ object TextNotation {
         case None => NotationScope.default
         case Some(s) => parseScope(s)
       }
-      
+
       val (fixityString, arguments) = {
          val markers = utils.xml.attr(n, "markers")
          // default: markers given directly
@@ -223,7 +223,7 @@ object TextNotation {
       new TextNotation(fixity, precedence, meta, scope)
     case _ => throw ParseError("invalid notation:\n" + n)
   }
-  
+
    /**
     * String parsing method
     *
@@ -251,7 +251,7 @@ object TextNotation {
            Precedence.integer(-1000001)
        else
            Precedence.integer(0)
-       val (fixityString, arguments) = if (! tokens.isEmpty && tokens.head.startsWith("%%")) {
+       val (fixityString, arguments) = if (tokens.nonEmpty && tokens.head.startsWith("%%")) {
           val fix = tokens.head.substring(2)
           val args = tokens.tail
           (fix, args)
@@ -261,7 +261,7 @@ object TextNotation {
        val fixity = FixityParser.parse(fixityString, arguments)
        new TextNotation(fixity, prec, meta)
   }
-   
+
   /** true if both notations expect the exact same markers */
   def agree(left: TextNotation, right: TextNotation) = {
      left.parsingMarkers == right.parsingMarkers && left.parsingMarkers.forall {

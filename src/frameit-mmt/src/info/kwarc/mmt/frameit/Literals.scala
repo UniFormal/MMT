@@ -25,9 +25,9 @@ import SemanticOperator._
 // the corresponding .mmt files have to be adapted
 
 object DoubleFunctions {
-   
+
    val R = StandardDouble // realizes Apply(OMS(tm),OMS(path ? "reals")
-   
+
    object Negative extends Unary(R,R, {case R(x) => -x})
    object Addition extends Binary(R,R,R, {case (R(x),R(y)) => x+y})
    object Multiplication extends Binary(R,R,R, {case (R(x),R(y)) => x*y})

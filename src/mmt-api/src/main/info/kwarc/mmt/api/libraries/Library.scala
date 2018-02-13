@@ -217,89 +217,103 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
    * For plain URI dereferencing, the 'home' is simply an OMMOD.
    *
    * Defined modules are expanded, which allows referencing into their materialized body.
-   * 
+   *
    * @param home module expression that materializes into a [[Module]] or a [[NestedModule]]
    * @param name declaration name relative to that materialization
    * @param error error continuation
    */
-
-  private def getDeclarationInTerm(home: Term, name: LocalName, error: String => Nothing): Declaration = home match {
-    // base case: lookup in atomic modules
-    case OMPMOD(p, args) =>
-       val mod = seeAsMod(getContent(p, error), error)
-       getDeclarationInElement(mod, args, name, error)
-    // base case: lookup in atomic declaration
-    case OMS(p) =>
-       getO(p) match {
-         case Some(ce: ContentElement) =>
-           getDeclarationInElement(ce, Nil, name, error)
-         case Some(e) =>
-           error("element exists but cannot contain declarations: " + e.path)
-         case None =>
-           error("containing declaration not found: " + p)
-       }
-    // complex cases: lookup in module expressions
-      // TODO use simplifier instead
-    case ComplexTheory(cont) =>
-      cont.mapVarDecls { case (before, vd) =>
-        val vdDecl = vd.toDeclaration(ComplexTheory(before))
-        vd match {
-          case IncludeVarDecl(_, OMPMOD(p, args), _) =>
-            name.head match {
-              case ComplexStep(q) =>
-                getImplicit(q, p).foreach { m =>
-                  val sym = get(OMPMOD(q, args), name.tail, sourceError)
-                  val symT = translate(sym, m, error)
+  private def getDeclarationInTerm(home: Term, name: LocalName, error: String => Nothing): Declaration = {
+    /* convenience method for making an assignment that maps t?name to target; if target is omitted, this returns the identity assignment */
+    def makeAssignment(t: Term, name: LocalName, target: Option[Term]) = get(t, name, error) match {
+      case c: Constant => ConstantAssignment(home, name, Nil, Some(target getOrElse c.toTerm))
+      case l: Structure => DefLinkAssignment(home, name, l.from, target getOrElse l.toTerm)
+    }
+    home match {
+      // base case: lookup in atomic modules
+      case OMPMOD(p, args) =>
+         val mod = seeAsMod(getContent(p, error), error)
+         val newName = name.steps match {
+           case ComplexStep(`p`) :: r => LocalName(r)
+           case _ => name
+         }
+         getDeclarationInElement(mod, args, newName, error)
+      // base case: lookup in atomic declaration
+      case OMS(p) =>
+         getO(p) match {
+           case Some(ce: ContentElement) =>
+             getDeclarationInElement(ce, Nil, name, error)
+           case Some(e) =>
+             error("element exists but cannot contain declarations: " + e.path)
+           case None =>
+             error("containing declaration not found: " + p)
+         }
+      // complex cases: lookup in module expressions
+        // TODO use simplifier instead
+      case ComplexTheory(cont) =>
+        cont.mapVarDecls { case (before, vd) =>
+          val vdDecl = vd.toDeclaration(ComplexTheory(before))
+          vd match {
+            case IncludeVarDecl(_, OMPMOD(p, args), _) =>
+              name.head match {
+                case ComplexStep(q) =>
+                  getImplicit(q, p).foreach { m =>
+                    val sym = get(OMMOD(q), name.tail, sourceError)
+                    val symT = translate(sym, m, error)
+                    return symT
+                  }
+                case _ =>
+              }
+            case StructureVarDecl(s, OMPMOD(p, args), dfOpt) =>
+              name.head match {
+                case s2@SimpleStep(_) if s == LocalName(s2) =>
+                  val sym = getSymbol(p ? name.tail)
+                  val struc = vdDecl.asInstanceOf[Structure]
+                  val symT = translateByLink(sym, struc, error)
                   return symT
-                }
-              case _ =>
-            }
-          case StructureVarDecl(s, OMPMOD(p, args), dfOpt) =>
-            name.head match {
-              case s2@SimpleStep(_) if s == LocalName(s2) =>
-                val sym = getSymbol(p ? name.tail)
-                val struc = vdDecl.asInstanceOf[Structure]
-                val symT = translateByLink(sym, struc, error)
-                return symT
-              case _ =>
-            }
-          case vd: VarDecl =>
-            name.head match {
-              case n2@SimpleStep(_) if vd.name == LocalName(n2) =>
-                val c = vdDecl.asInstanceOf[Constant]
-                return c
-              case _ =>
-            }
+                case _ =>
+              }
+            case vd: VarDecl =>
+              name.head match {
+                case n2@SimpleStep(_) if vd.name == LocalName(n2) =>
+                  val c = vdDecl.asInstanceOf[Constant]
+                  return c
+                case _ =>
+              }
+          }
         }
+        throw GetError("name " + name + " not found in " + cont)
+      case TUnion(ts) => ts mapFind { t =>
+        getO(t,name)
+      } getOrElse {
+        error("union of theories has no declarations except includes")
       }
-      throw GetError("name " + name + " not found in " + cont)
-    case TUnion(ts) => ts mapFind { t =>
-      getO(t,name)
-    } getOrElse {
-      error("union of theories has no declarations except includes")
+      case OMCOMP(Nil) => throw GetError("cannot lookup in identity morphism without domain: " + home)
+      case OMCOMP(hd :: tl) =>
+        val a = get(hd, name, error)
+        if (tl.isEmpty)
+          a
+        else a match {
+          case a: Constant => ConstantAssignment(home, a.name, a.alias, a.df.map(_ * OMCOMP(tl)))
+          case a: DefinedStructure => DefLinkAssignment(home, a.name, a.from, OMCOMP(a.df :: tl))
+        }
+      case OMIDENT(t) => makeAssignment(t,name,None)
+      case OMStructuralInclude(f,t) =>
+        val target = name.steps match {
+          case ComplexStep(`f`) :: ln =>
+            Some(OMS(t ? name))
+          case _ => None
+        }
+        makeAssignment(OMMOD(f), name, target)
+      case Morph.empty => error("empty morphism has no assignments")
+      case _ => error("unknown module: " + home)
     }
-    case OMCOMP(Nil) => throw GetError("cannot lookup in identity morphism without domain: " + home)
-    case OMCOMP(hd :: tl) =>
-      val a = get(hd, name, error)
-      if (tl.isEmpty)
-        a
-      else a match {
-        case a: Constant => ConstantAssignment(home, a.name, a.alias, a.df.map(_ * OMCOMP(tl)))
-        case a: DefinedStructure => DefLinkAssignment(home, a.name, a.from, OMCOMP(a.df :: tl))
-      }
-    case OMIDENT(t) => get(t, name, error) match {
-      case c: Constant => ConstantAssignment(home, name, Nil, Some(c.toTerm))
-      case l: Structure => DefLinkAssignment(home, name, l.from, l.toTerm)
-    }
-    case Morph.empty => error("empty morphism has no assignments")
-    case _ => error("unknown module: " + home)
   }
 
   /** auxiliary method of get for lookups in a parent that has already been retrieved */
   private def getDeclarationInElement(mod: ContentElement, args: List[Term], name: LocalName, error: String => Nothing): Declaration = {
     // only theories may have parameters for now
     mod match {
-      case t: Theory => 
+      case t: Theory =>
       case d =>
           if (0 != args.length)
             throw GetError("number of arguments does not match number of parameters")
@@ -344,6 +358,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
      declLnOpt match {
        case Some((d, LocalName(Nil))) => d // perfect match
        case Some((d, ln)) => d match {
+         case PlainInclude(p,_) =>
+           getDeclarationInTerm(OMMOD(p),ln,error)
          // a prefix exists and resolves to d, a suffix ln is left
          case s: Structure =>
            val sym = getDeclarationInTerm(s.from, ln, sourceError) // resolve ln in the domain of s
@@ -405,7 +421,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private def getInLink(l: DeclaredLink, name: LocalName, error: String => Nothing): Declaration = {
      def default = {
         val da = get(l.from, name, sourceError) match {
-          case c: Constant => Constant(l.toTerm, name, Nil, None, None, None) 
+          case c: Constant => Constant(l.toTerm, name, Nil, None, None, None)
           case d: Structure => new DefinedStructure(l.toTerm, name, d.tpC, TermContainer(None), false)
           case _ => throw ImplementationError("unimplemented default assignment")
         }
@@ -429,15 +445,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             case _ => return default
           }
           // check if 'theo' is visible to the meta-theory of l.from; if so, use meta-morphism of l
-          val fromMeta = (l.from match {
-            case OMPMOD(from,_) =>
-              getO(from) match {
-                case Some(d: DeclaredTheory) =>
-                  d.meta
-                case _ => None //TODO
-              }
-            case _ => None //TODO
-          }).getOrElse {
+          val fromMeta = TheoryExp.metas(l.from, false)(this).headOption.getOrElse {
             return default
           }
           val vis = visible(OMMOD(fromMeta)) contains OMMOD(theo)
@@ -456,7 +464,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private def instantiate(decl: Declaration, params: Context, args: List[Term]): Declaration = {
     if (args.isEmpty) return decl // lookup from within parametric theory does not provide arguments
     val subs: Substitution = (params / args).getOrElse {
-        throw GetError("number of arguments does not match number of parameters")
+        throw GetError("number of arguments does not match number of parameters of " + decl.path + ": " + params.length + "(" + params.map(_.name).mkString(", ") + ") given: " + args)
       }
     if (subs.isIdentity) return decl // avoid creating new instance
     val newHome = decl.home match {
@@ -482,6 +490,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** translate a Declaration along a morphism */
   private def translate(d: Declaration, morph: Term, error: String => Nothing): Declaration = {
     morph match {
+      case OMINST(OMMOD(p),args) =>
+        getDeclarationInTerm(OMPMOD(p,args),LocalName(d.path.module) / d.name,error)
       case OMMOD(v) =>
         val link = getView(v)
         translateByLink(d, link, error)
@@ -503,7 +513,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /**
    * @param name name valid (possibly included) in the domain of l
    * @param l a link
-   * @return [l] / name, but without name.head if simply refers to l.from 
+   * @return [l] / name, but without name.head if simply refers to l.from
    */
   private def translateNameByLink(name: LocalName, l: Link): LocalName = {
     // the prefix of the new constant
@@ -517,7 +527,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     }
     l.namePrefix / nameRest
   }
-  
+
   /** auxiliary method of translate to unify translation along structures and views */
   private def translateByLink(decl: Declaration, l: Link, error: String => Nothing): Declaration =
     l match {
@@ -547,7 +557,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             if (a.path.toString.contains("comp") && a.path.toString.contains("add"))
               true
             val newNotC = a.notC merge c.notC
-            val newRole = a.rl orElse c.rl 
+            val newRole = a.rl orElse c.rl
             Constant(l.to, newName, newAlias, newTp, newDef, newRole, newNotC)
           case r: Structure =>
             val a = assig match {
@@ -569,15 +579,20 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   //However, laziness breaks the NotFound handling in the Controller
   def getDeclarationsInScope(mod: Term): List[StructuralElement] = {
     val impls = visibleVia(mod).toList
-    impls.flatMap {case (from, via) =>
-      get(from.toMPath) match {
-        case d: DeclaredTheory =>
-          via match {
-            case OMCOMP(Nil) => d.getDeclarations
-            case _ => Nil //TODO d.translate(mod, ???, ApplyMorphism(via))
-          }
-        case _ => Nil //TODO materialize?
-      }
+    impls.flatMap {
+      case (OMMOD(from), OMCOMP(Nil)) =>
+        get(from) match {
+          case d: DeclaredTheory =>
+            d.getDeclarations
+          case _ => Nil //TODO materialize?
+        }
+      case (OMMOD(from), OMINST(OMMOD(from2), args)) if from == from2 =>
+        get(from) match {
+          case d: DeclaredTheory =>
+            d.getDeclarations.map(c => getDeclarationInTerm(OMPMOD(from, args), c.name, s => throw GetError(s)))
+          case _ => Nil //TODO materialize?
+        }
+      case (OMMOD(_), _) => Nil //TODO
     }
   }
 

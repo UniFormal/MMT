@@ -1,9 +1,9 @@
 /**
  * Concrete syntax translator to a specific (Haskell) programming language
  * takes pseudo-language declarations, produces Haskell declarations
- * 
+ *
  * created by Florian Rabe
- * 
+ *
  * modified by Aivaras:
  * a.jakubauskas@jacobs-university.de
  */
@@ -14,7 +14,7 @@ case class Unsupported(msg: String) extends java.lang.Throwable
 /** Haskell as an implementation of a FuncLang */
 object Haskell extends FuncLang[String] {
    private var current : String = null
-   
+
    def exp(e: EXP) : String = e match {
      case EQUAL(left,right) => "(" + exp(left) + " == " + exp(right) + ")"
      case AND(left,right) => "(" + exp(left) + " && " + exp(right) + ")"
@@ -31,14 +31,14 @@ object Haskell extends FuncLang[String] {
          //TODO replace with fixConflict(current,fixMap)
          case Some((_,b)) => if (b) fix(upc(current)) else fix(current)
          case None => current
-       } 
-     } 
-     else { if (! name.contains(".")) 
-    	 ids.find(_._1 == name) match {
+       }
+     }
+     else { if (! name.contains("."))
+        ids.find(_._1 == name) match {
          case Some((_,b)) => if (b) fix(upc(name)) else fix(name)
          case None => name
-       } // ID must contain function composition 
-     	else {
+       } // ID must contain function composition
+        else {
          "(" + name + ")"
        }
      }
@@ -46,10 +46,10 @@ object Haskell extends FuncLang[String] {
        if (! args.isEmpty) args.map(exp).mkString(" ", " ", " ")
        else ""
      } + ")"
-     case IF(cond, thn, els) => "if " + exp(cond) + 
-    		 						idtrn + "then " + exp(thn) + 
-    		 						idtn + "else " + exp(els) +
-    		 					left
+     case IF(cond, thn, els) => "if " + exp(cond) +
+                             idtrn + "then " + exp(thn) +
+                             idtn + "else " + exp(els) +
+                          left
      case MATCH(arg, cases) => "case " + exp(arg) + " of" + idtrn + cases.map(cas).mkString(idt, idtrn, idtln + left)
 //     case ERROR(e, msg) => "error " + exp(STRINGCONCAT(STRING(e + ": "), msg))
      case ERROR(e, msg) => "Nothing"
@@ -69,10 +69,10 @@ object Haskell extends FuncLang[String] {
      case TUPLE(elems) => s"(${elems.map(exp).mkString(",")})"
      case PROJ(e, i) => s"${exp(e)}($i)"
      case ARECORD(tp, fields) => fix(upc(tp)) + fields.map {case FIELD(n,v) => n + " = " + exp(v)}.mkString("{", ",", "}")
-     case SELECT(rec, field) => "(" + field + " " + exp(rec) + ")"  
+     case SELECT(rec, field) => "(" + field + " " + exp(rec) + ")"
    }
    def cons(c: CONS) = fix(upc(c.name)) + " " + c.args.map(exp).mkString("", " ", "")
-   def arg(a: ARG) = a.name + ": " + exp(a.tp) 
+   def arg(a: ARG) = a.name + ": " + exp(a.tp)
    private def ADTaux(a: ADT) = {
       current = a.name
       fixNative(upc(a.name)) + " = " + a.constructors.map(cons).mkString("", " | ", "\n")
@@ -82,21 +82,21 @@ object Haskell extends FuncLang[String] {
       f.name + f.args.map(arg).mkString("(",",",")") + " : " + exp(f.ret) + " = " + exp(f.body) + "\n"
    }
    def decl(d: DECL) = d match {
-     case a : ADT => "data " + ADTaux(a) + { 
+     case a : ADT => "data " + ADTaux(a) + {
        if (!a.typeClasses.isEmpty) " deriving " + a.typeClasses.mkString("( ", ", ", ")\n") else ""
      }
      case ADTRec(adts) => adts.map(decl).mkString("", "", "")
-     case a : TYPEDEF => "type " + upc(a.name) + " = " + exp(a.df) + { 
+     case a : TYPEDEF => "type " + upc(a.name) + " = " + exp(a.df) + {
        if (!a.typeClasses.isEmpty) " deriving " + a.typeClasses.mkString("( ", ", ", ")") else ""
      } + "\n"
      case f: FUNCTION => {
 //       println(f.args.map(a => exp(a.tp) + f.ret))
-        f.name + " :: " + f.args.map(a => exp(a.tp)).mkString("", " -> ", " -> ") + 
-        	exp(f.ret) + "\n" +
+        f.name + " :: " + f.args.map(a => exp(a.tp)).mkString("", " -> ", " -> ") +
+           exp(f.ret) + "\n" +
         f.name + " " + f.args.map(_.name).mkString("", " ", " = ") + exp(f.body) + "\n"
      }
      case FUNCTIONRec(fs) => fs.map(decl).mkString("", "\n", "")
-     case a : RECORD => "data " + upc(a.name) + " = " + upc(a.name) + a.fields.map {case FIELD(n,v) => n + " :: " + exp(v)}.mkString("{", ",", "}") + { 
+     case a : RECORD => "data " + upc(a.name) + " = " + upc(a.name) + a.fields.map {case FIELD(n,v) => n + " :: " + exp(v)}.mkString("{", ",", "}") + {
        if (!a.typeClasses.isEmpty) " deriving " + a.typeClasses.mkString("( ", ", ", ")\n") else ""
      }
      case EXCEPTION(e) => ""
@@ -104,7 +104,7 @@ object Haskell extends FuncLang[String] {
    private var ids: List[(String,Boolean)] = Nil
    def reset {ids = Nil}
    override def prog(ds: List[DECL]) : List[String] = {
-//      val q = 
+//      val q =
         ds map {d =>
 //        reset
         ids :::= declName(d)
@@ -136,14 +136,14 @@ object Haskell extends FuncLang[String] {
      case d : ADT => true
      case _  => false
    }
-   private def upperORlower(s : String) : String = 
+   private def upperORlower(s : String) : String =
      if (s == "") {
        ids.find(_._1 == current) match {
          //TODO replace with fixConflict(current,fixMap)
          case Some((_,b)) => if (b) fixNative(upc(current)) else fixNative(current)
          case None => current
-       } 
-     } 
+       }
+     }
      else {
        ids.find(_._1 == s) match {
          case Some((_,b)) => if (b) fixNative(upc(s)) else fixNative(s)
@@ -160,7 +160,7 @@ object Haskell extends FuncLang[String] {
     *  if the key is not found, i.e. there is no conflict, it's just an identity map
     */
    private def fixConflict(s : String, m : scala.collection.mutable.HashMap[String,String]) : String = {
-	   m.applyOrElse(s, {x : String => x})
+      m.applyOrElse(s, {x : String => x})
    }
    def fix(s : String) : String = {
      fixNative(fixConflict(s,fixMap))

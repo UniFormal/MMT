@@ -13,29 +13,29 @@ object ServerOk extends HServer {
   protected def ports = Set(8910)
   protected lazy val apps = List(theApp)
 
-  override protected def tcpNoDelay = true // true for benchmarking only!!  
+  override protected def tcpNoDelay = true // true for benchmarking only!!
   override def interruptTimeoutMillis = 100
-  
-  override protected def onError(e: Throwable): Unit = filterSomeErrors(e)
+
+  override def error(msg: String, t: Throwable): Unit = filterSomeErrors(t)
 
   private def filterSomeErrors(err: Throwable): Unit = err.getMessage match {
     case "Broken pipe"              =>
     case "Connection reset by peer" =>
     case _                          => err match {
-      case _: java.nio.channels.ClosedSelectorException => 
+      case _: java.nio.channels.ClosedSelectorException =>
       case e                                            => e.printStackTrace
     }
   }
-  
+
   object theApp extends HApp {
     override def keepAlive = true
     override def chunked   = false
     override def buffered  = false
     override def gzip      = false
     override def tracking  = HTracking.NotAllowed
-    
+
     def resolve(req: HReqData) = Some(Let)
-  } 
+  }
 
   object Let extends HSimpleLet {
     private val bytes = "Ok".getBytes("UTF-8")

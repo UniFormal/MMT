@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import objects._
 
 /**
- * encodes/decodes terms using a set of [[Codec]]s and [[CodecOperator]]s 
+ * encodes/decodes terms using a set of [[Codec]]s and [[CodecOperator]]s
  */
 class Coder[Code](codecs: List[Codec[Code]], operators: List[CodecOperator[Code]]) {
 
@@ -16,7 +16,7 @@ class Coder[Code](codecs: List[Codec[Code]], operators: List[CodecOperator[Code]
    private object Matcher {
       def unapply(t: Term) = destruct(t)
    }
-   
+
    def buildCodec(codecExp: Term): Codec[Code] = codecExp match {
       case Matcher(op, pars) =>
          val cop = operators.find(_.id == op).getOrElse {

@@ -41,27 +41,27 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
    protected val htmlRh = utils.HTML(s => rh(s))
    import htmlRh._
 
-   private def doNameAsSpanList(n: LocalName) {
+   private def doNameAsSpanList(p: Path, n: LocalName) {
      val l = n.length - 1
      n.zipWithIndex.foreach {case (step,i) =>
        step match {
          case SimpleStep(s) =>
-           span {text(s)}
-         case ComplexStep(p) =>
-           doPath(p)
+           span(attributes=List(href -> p.toPath)) {text(s)}
+         case ComplexStep(mp) =>
+           doPath(mp)
        }
        if (i < l) text("/")
      }
    }
-   
+
    private def doName(d: Declaration) {
       val (name,_) = d.primaryNameAndAliases
       val (adaptedName, path) = name match {
          case LocalName(ComplexStep(t)::Nil) => (t.name, t) // hardcoding the important case of includes
          case n => (n.simplify, d.path)
       }
-      span("name", attributes=List(href -> d.path.toPath)) {
-        doNameAsSpanList(adaptedName)
+      span("name") {
+        doNameAsSpanList(d.path, adaptedName)
       }
    }
    /** renders a MMT URI outside a math object */
@@ -82,10 +82,10 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
           case o => o
         }, owner)(rh)
    }
-   
+
    private object cssClasses {
       def compRow(c: ComponentKey) = {
-         "component-" + c.toString.toLowerCase 
+         "component-" + c.toString.toLowerCase
       }
       val compLabel = "constant-component-label"
       val compToggle = "component-toggle"
@@ -143,7 +143,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
              case Include(_,_,_) => "include"
              case _ => d.feature
            }} + " ")}
-           span {doName(d)}
+           doName(d)
            def toggleComp(comp: ComponentKey) {
               toggle(compRow(comp), comp.toString.replace("-", " "))
            }
@@ -187,7 +187,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
             if (aliases.nonEmpty) {
               tr("aliases") {
                 td {span(compLabel) {text{"aliases"}}}
-                td {aliases foreach doNameAsSpanList}
+                td {aliases foreach {a => doNameAsSpanList(d.path, a)}}
               }
             }
             if (usedby.nonEmpty) {
@@ -196,7 +196,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                   td {usedby foreach doPath}
                }
             }
-            if (d.metadata.getTags.nonEmpty) { 
+            if (d.metadata.getTags.nonEmpty) {
                tr("tags") {
                td {span(compLabel){text{" ---tags"}}}
                td {d.metadata.getTags.foreach {
@@ -336,7 +336,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
         }
      }
    }
-   
+
    // ********************** narrative elements
 
    /** captures common parts of narrative and content element rendering */

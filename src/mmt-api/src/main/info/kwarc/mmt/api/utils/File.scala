@@ -6,7 +6,6 @@ import java.io._
 import java.util.zip._
 
 import scala.collection.mutable
-import scala.language.implicitConversions
 
 /** File wraps around java.io.File to extend it with convenience methods
   *
@@ -26,12 +25,12 @@ case class File(toJava: java.io.File) {
   /** makes a file relative to this one */
   def relativize(f: File): File = {
     val relURI = FileURI(this).relativize(FileURI(f))
-    val FileURI(rel) = relURI
-    rel
+    File(relURI.toString()) // java URIs need to be sbolute in Files. Previous variant as well as any other
+      //threw java errors
   }
 
   def canonical = File(toJava.getCanonicalFile)
-  
+
   /** appends one path segment */
   def /(s: String): File = File(new java.io.File(toJava, s))
 
@@ -46,7 +45,7 @@ case class File(toJava: java.io.File) {
     val par = Option(toJava.getParentFile)
     if (par.isEmpty) this else File(par.get)
   }
-  
+
   def isRoot = up == this
 
   /** file name */
@@ -99,16 +98,22 @@ case class File(toJava: java.io.File) {
   }
 
   /** @return children of this directory */
-  def children: List[File] = if (toJava.isFile) Nil else toJava.list.toList.sorted.map(this / _)
+  def children: List[File] = {
+    if (toJava.isFile) Nil else {
+      val ls = toJava.list
+      if (ls == null) throw GeneralError("directory does not exist or is not accessible: " + toString)
+      ls.toList.sorted.map(this / _)
+    }
+  }
 
   /** @return subdirectories of this directory */
   def subdirs: List[File] = children.filter(_.toJava.isDirectory)
-  
+
   /** @return all files in this directory or any subdirectory */
   def descendants: List[File] = children.flatMap {c =>
     if (c.isDirectory) c.descendants else List(c)
   }
-  
+
   /** @return true if that begins with this */
   def <=(that: File) = that.segments.startsWith(segments)
 
@@ -134,7 +139,7 @@ case class FilePath(segments: List[String]) {
   def /(s: String): FilePath = FilePath(segments ::: List(s))
 
   override def toString: String = segments.mkString("/")
-  
+
   def getExtension = toFile.getExtension
   def setExtension(e: String) = toFile.setExtension(e).toFilePath
   def stripExtension = toFile.stripExtension.toFilePath
@@ -159,18 +164,19 @@ object FileURI {
     URI(Some("file"), None, if (ss.headOption.contains("")) ss.tail else ss, f.isAbsolute)
   }
 
-  def unapply(u: URI): Option[File] =
+  def unapply(u: URI): Option[File] = {
     if ((u.scheme.isEmpty || u.scheme.contains("file")) && (u.authority.isEmpty || u.authority.contains("")))
       Some(File(new java.io.File(u.copy(scheme = Some("file"), authority = None))))
     // empty authority makes some Java versions throw error
     else None
+  }
 }
 
 /** MMT's default way to write to files; uses buffering, UTF-8, and \n */
 class StandardPrintWriter(f: File) extends
 OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(f.toJava)),
   java.nio.charset.Charset.forName("UTF-8")) {
-  def println(s: String): Unit = {
+  def println(s: String) {
     write(s + "\n")
   }
 }
@@ -201,7 +207,7 @@ object File {
   def append(f : File, strings: String*) {
     scala.tools.nsc.io.File(f.toString).appendAll(strings:_*)
   }
-  
+
   /**
    * streams a list-like object to a file
    * @param f the file to write to
@@ -299,7 +305,7 @@ object File {
     }
     properties
   }
-  
+
   /** copies a file */
   def copy(from: File, to: File, replace: Boolean): Boolean = {
     if (!from.exists || (to.exists && !replace)) {

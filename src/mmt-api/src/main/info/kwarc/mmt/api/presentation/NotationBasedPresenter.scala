@@ -66,7 +66,7 @@ class NotationBasedPresenter extends ObjectPresenter {
         case _ =>
       }
       val globalCont = origin match {
-        case None => Context.empty  
+        case None => Context.empty
         case Some(cp) => controller.getO(cp.parent) match {
            case None =>
              Context.empty
@@ -78,7 +78,7 @@ class NotationBasedPresenter extends ObjectPresenter {
       }
       PresentationContext(rh, origin, Nil, None, Position.Init, globalCont, Nil, None)
   }
-  
+
    /**
     * called once at the toplevel of every object to be rendered
     */
@@ -88,7 +88,7 @@ class NotationBasedPresenter extends ObjectPresenter {
 
    /**
     * called by doDefaultTerm to render symbols
-    * 
+    *
     * names are given in human-oriented form and not parsable if there are name clashes
     */
    def doIdentifier(p: ContentPath)(implicit pc: PresentationContext) {
@@ -284,7 +284,7 @@ class NotationBasedPresenter extends ObjectPresenter {
      doOperator("]]")
    }
       //helper method only
-   def doSqrt(args : List[Cont])(implicit pc: PresentationContext) {
+   def doSqrt(args : List[Cont])(implicit pc: PresentationContext) = if (args.nonEmpty) {
      doOperator("√")
      doBracketedGroup {
        args.head
@@ -293,7 +293,7 @@ class NotationBasedPresenter extends ObjectPresenter {
          e()
        }
      }
-   }
+   } else {}
 
    def doRootMarker(base : List[Cont], root : List[Cont])(implicit pc: PresentationContext){
      if(root != Nil){
@@ -554,7 +554,7 @@ class NotationBasedPresenter extends ObjectPresenter {
        doTable(ms map aux)
      case _ => doMarkers(List(m))
    }
-   
+
    /**
     *  @param bracket called to determine whether a non-atomic term rendered with a certain notation should be bracketed
     *  @return 1 if the term was bracketed
@@ -749,7 +749,7 @@ class NotationBasedPresenter extends ObjectPresenter {
               return default
          }
    }
-   /** auxiliary function of recurse: whether a marker acts as a delimiter for the purposes of bracket elimination */ 
+   /** auxiliary function of recurse: whether a marker acts as a delimiter for the purposes of bracket elimination */
    private def countsAsDelim(m: Marker): Boolean = m match {
      case d: Delimiter => true
      case s: ScriptMarker => countsAsDelim(s.main)

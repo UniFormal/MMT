@@ -30,10 +30,10 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
   }
 
    val arity = synTp.arity
-   
-   private val argTypes: List[RealizedType] = (synTp.args zip semTp.args) map {case (syn,sem) => RealizedType(syn,sem)} 
+
+   private val argTypes: List[RealizedType] = (synTp.args zip semTp.args) map {case (syn,sem) => RealizedType(syn,sem)}
    private val retType : RealizedType = RealizedType(synTp.ret, semTp.ret)
-   
+
    private def applicable(args: List[Term]): Boolean = {
       if (args.length != argTypes.length) return false
       (args zip argTypes).forall {
@@ -42,7 +42,7 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
          case _ => false
       }
    }
-   
+
    def apply(args: List[Term]): OMLIT = {
       if (args.length != arity)
         throw ImplementationError("illegal argument number")
@@ -51,16 +51,16 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
           throw ImplementationError("illegal argument type")
         }
       }
-      retType of semOp(argsV) 
+      retType of semOp(argsV)
    }
-   
+
    val apply: Rewrite = (args: List[Term]) => {
      if (applicable(args))
         GlobalChange(apply(args))
      else
         NoChange
    }
-   
+
    /** the solution rule if the semantic operator is invertible */
    //TODO pragmatic applications
    def getSolutionRule: Option[SolutionRule] = semOp match {
@@ -111,19 +111,19 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
        Some(sr)
      case _ => None
    }
-   
+
    override def providedRules = super.providedRules ::: getSolutionRule.toList
 }
 
 object RealizedOperator {
   /** checks if semOp is declared to have a type that realizes synTp */
   def check(lookup: Term => RealizedType)(semOp: SemanticOperator, synTp: SynOpType): Option[SemOpType] = {
-     val retS::argsS = (synTp.ret::synTp.args) map {a => lookup(a).semType} 
+     val retS::argsS = (synTp.ret::synTp.args) map {a => lookup(a).semType}
      semOp.getTypes.find {st => st.args == argsS && st.ret == retS}
   }
 }
 
-/** 
+/**
  *  counterpart to a [[RealizedOperator]] for the partial inverse
  */
 abstract class InverseOperator(val head: GlobalName) extends UOMRule {

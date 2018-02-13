@@ -110,13 +110,13 @@ object ApplicableTactic {
 
 /**
  * invertible tactics can be applied greedily without leading a proof into a dead end
- * 
- * this type includes both invertible forward (e.g., existential elimination) and backwards rules (e.g., universal introduction) 
+ *
+ * this type includes both invertible forward (e.g., existential elimination) and backwards rules (e.g., universal introduction)
  */
 trait InvertibleTactic extends Tactic {
    /**
     *  applies the tactic to a goal
-    *  
+    *
     *  @param blackboard used for callbacks
     *  @param g the goal
     *  @return a continuation that returns the new goal(s)
@@ -141,29 +141,29 @@ trait ForwardInvertible extends InvertibleTactic {
 
 /**
  * a backward tactic generates additional ways to reach the goal
- * 
- * This is used in backward proof search 
+ *
+ * This is used in backward proof search
  */
 trait BackwardSearch extends Tactic {
    /**
     * backward rules change the goal so that usually only one rule can be applied if multiple are applicable
-    * 
-    * higher-prioritiy is used to decide which rule to apply  
+    *
+    * higher-prioritiy is used to decide which rule to apply
     */
    def priority: Int
 
    /** applies the tactic to a goal
-    *  
+    *
     *  @param blackboard , used for callbacks
     *  @param g the goal
-    *  @return a list of continuations each of which might solve the goal 
+    *  @return a list of continuations each of which might solve the goal
     */
    def apply(blackboard: MMTBlackboard, g: Goal): List[ApplicableTactic]
 }
 
 /**
  * a forward tactic generates additional facts that are implied by the assumptions
- * 
+ *
  * This is used in forward proof search
  */
 trait ForwardSearch extends Tactic {

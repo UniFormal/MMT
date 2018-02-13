@@ -19,7 +19,7 @@ class FileLogger extends OeisParserLogger {
   val successFile = new PrintWriter(new File("../../mmt-oeis/suc.txt"))
   val failFile = new PrintWriter( new File("../../mmt-oeis/fail.txt"))
   val exceptionFile = new PrintWriter( new File("../../mmt-oeis/exception.txt"))
-  
+
   def logSuccess(s : String) = successFile.write(s)
   def logFail(s : String) = failFile.write(s)
   def logException(s : String) = exceptionFile.write(s)
@@ -28,13 +28,13 @@ class FileLogger extends OeisParserLogger {
 class ConsoleLogger extends OeisParserLogger {
   def logSuccess(s : String) = println("Success: " + s)
   def logFail(s : String) = println("Fail: " + s)
-  def logException(s : String) = println("Exception: " + s)  
+  def logException(s : String) = println("Exception: " + s)
 }
 
 class SilentLogger extends OeisParserLogger {
   def logSuccess(s : String) = {}
   def logFail(s : String) = {}
-  def logException(s : String) = {}  
+  def logException(s : String) = {}
 }
 
 class FormulaParser(val dictionary : Set[String]) extends JavaTokenParsers with PackratParsers {
@@ -42,7 +42,7 @@ class FormulaParser(val dictionary : Set[String]) extends JavaTokenParsers with 
   var succeded : BigInt = 0
   var exceptions : BigInt = 0
   //base is mmt-api/trunk
-  
+
   def logger = new SilentLogger() //switch to the other loggers when debugging
 
   def printToFile(f: java.io.File)(op: java.io.PrintWriter => Unit) {

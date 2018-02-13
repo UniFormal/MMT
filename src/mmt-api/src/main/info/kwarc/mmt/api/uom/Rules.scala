@@ -36,13 +36,13 @@ trait TermTransformationRule extends UOMRule {
 }
 
 /** a rule that should only be used during complification
- *  
+ *
  *  separating these rules is important to avoid cycles during simplification
  */
 trait ComplificationRule extends TermTransformationRule
 
 /** A DepthRule looks one level deep into the structure of one of the arguments of an operator
- * 
+ *
  * It is applicable to a term of the form
  * {{{
  * OMA(outer, before ::: OMA(inner, inside) :: after)
@@ -67,13 +67,13 @@ abstract class DepthRuleUnary(outer: GlobalName, inner: GlobalName) extends Dept
 }
 
 /** A BreadthRule looks at all arguments of an operator, but usually does not look inside them
- * 
+ *
  * It is applicable to a term of the form
  * {{{
  * OMA(op, args)
  * }}}
  * A LocalChange replaces args.
- */ 
+ */
 abstract class BreadthRule(val head: GlobalName) extends UOMRule {
    /** a Rewrite takes the arguments args and returns a simplification Result */
    type Rewrite = List[Term] => Change
@@ -81,7 +81,7 @@ abstract class BreadthRule(val head: GlobalName) extends UOMRule {
    val apply: Rewrite
 }
 
-/** An AbbrevRule expands a symbol into a term */ 
+/** An AbbrevRule expands a symbol into a term */
 class AbbrevRule(val head: GlobalName, val term: Term) extends UOMRule
 
 /** a transformation based on matching the input term
@@ -89,7 +89,7 @@ class AbbrevRule(val head: GlobalName, val term: Term) extends UOMRule
  *  @param template the left-hand side
  */
 abstract class MatchingRule(templateVars: Context, template: Term) extends TermTransformationRule {
-  /** 
+  /**
    *  @param goal the term that was matched
    *  @param templateSolution the substitution for the template variables
    *  @return the transformed term
@@ -109,6 +109,6 @@ abstract class MatchingRule(templateVars: Context, template: Term) extends TermT
  */
 class RewriteRule(val head: GlobalName, templateVars: Context, template: Term, val result: Term)
   extends MatchingRule(templateVars, template) {
-  
+
   def makeResult(goal: Term, sub: Substitution) = Some(result ^? sub)
 }

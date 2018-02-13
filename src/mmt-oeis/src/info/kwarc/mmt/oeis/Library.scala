@@ -13,9 +13,9 @@ import parser.{DocumentParser}
 object Library {
   //store everything, check before crawling
   //hardcoded for now
-  val dictionary = Source.fromFile("../../mmt-oeis/resources/dictionary").getLines().map(_.trim).toSet  
+  val dictionary = Source.fromFile("../../mmt-oeis/resources/dictionary").getLines().map(_.trim).toSet
   val docParser = new DocumentParser(dictionary)
-  
+
   private def getURL(entryID : String) : URL = new URL("""http://oeis.org/search?q=id:"""+entryID+"""&fmt=text""")
 
   //will just give id of number-th OEIS entry

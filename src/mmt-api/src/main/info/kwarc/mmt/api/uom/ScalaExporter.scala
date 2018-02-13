@@ -9,7 +9,7 @@ import symbols._
 
 object GenericScalaExporter {
   /** reserved identifiers */
-  private val keywords = List("type", "val", "var", "def", "new", "class", "trait", "object", "extends", "with", "abstract", "implicit", 
+  private val keywords = List("type", "val", "var", "def", "new", "class", "trait", "object", "extends", "with", "abstract", "implicit",
       "match", "case", "if", "else", "while", "do", "for")
   /** preused identifiers, i.e., declared in Object */
   private val reserved = List("true", "false", "eq", "List", "Nil", "Set", "String", "Boolean", "Option", "None", "Some", "Term", "OML", "Context", "VarDecl")
@@ -26,10 +26,10 @@ object GenericScalaExporter {
   // TODO: do this cleanly
   private def escapeChars(s: String) =
     s.replace("_","_underscore_").replace("≃","_cong_").replace("-","_minus_")
-  private def unescapeChars(s: String) = 
+  private def unescapeChars(s: String) =
     s.replace("_cong_","≃").replace("_minus_","-").replace("_underscore_", "_")
-    
-    
+
+
   def nameToScalaQ(p: GlobalName) = (p.module.name.toPath + "_" + escapeChars(p.name.toPath)).replace(".", "__")
 
   def nameInScala(p: GlobalName) = (p.module.name.toPath).replace(".", "__") + "." + nameToScala(p.name) + ".path"
@@ -79,7 +79,7 @@ object GenericScalaExporter {
 
   def scalaType(name: GlobalName): String = "  type " + nameToScalaQ(name)
 
-  /** name and type of a Scala variable declarations */ 
+  /** name and type of a Scala variable declarations */
   case class Argument(name: String, tp: String, sequence: Boolean) {
     def decl = name + ": " + tp
   }
@@ -93,7 +93,7 @@ object GenericScalaExporter {
     def nameList = args.map {a => if (a.sequence) a else "List(" + a + ")"}.mkString(":::")
     // (x1, ..., xn) or x1
     def tuple = if (args.length == 1) names.head else names.mkString("(", ", ", ")")
-    def tupleType = if (args.length == 0) "Unit" else if (args.length == 1) types.head else types.mkString("(", ", ", ")") 
+    def tupleType = if (args.length == 0) "Unit" else if (args.length == 1) types.head else types.mkString("(", ", ", ")")
   }
   /** produces Scala source for apply/unapply methods
    *  @param first the variables
@@ -102,7 +102,7 @@ object GenericScalaExporter {
   abstract class Operator(first: ArgumentList, second: ArgumentList) {
     /** maps a list l of argument names (l.length == args.length) to a term */
     def mmtTerm(a1: List[String], a2: List[String]): String
-    
+
     def combined = first+second
     def term = mmtTerm(first.names, second.names)
     def pattern = mmtTerm(first.decls, second.decls)
@@ -119,7 +119,7 @@ object GenericScalaExporter {
     )
     def methods = applyMethod ::: unapplyMethod
   }
-  
+
   /** for MMT terms using OMS, OMA, and OMBIND */
   class MMTOperator(p: ContentPath, f: ArgumentList, s: ArgumentList) extends Operator(f,s) {
     private def omid = "OMID(this.path)"
@@ -176,12 +176,12 @@ class GenericScalaExporter extends Exporter {
 
   /** command for a module to be added to the namespace object, override as needed */
   def outputModuleEntry(m: Module) : String = ""
-  
+
   /** do nothing by default */
   def exportDocument(doc: Document, bt: BuildTask) {}
 
   /* theories are exported as 3 parts: header, optional trait, object */
-  
+
   protected def outputHeader(dp: DPath) {
     val pack = dpathToScala(dp, packageSep)
     rh.writeln("package " + pack)
@@ -194,7 +194,7 @@ class GenericScalaExporter extends Exporter {
   protected def outputTrait(t: DeclaredTheory) {}
 
   /* the companion object */
-  
+
   /** generates a companion object with fields for the MMT URIs
     * @param extraFields fields appended to the object
     */

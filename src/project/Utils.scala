@@ -7,22 +7,24 @@ object Utils {
    /** source folder */
    val src = root / "src"
    /** MMT deploy directory */
-   val deploy = root/"deploy"
+   val deploy = root / "deploy"
+   /** MMT deploy lib directory */
+   val lib = deploy / "lib"
 
    /**
-    * settings syntax is: 1 instance of 'key: value' per line 
+    * settings syntax is: 1 instance of 'key: value' per line
     */
    val settingsFile = src / "mmt-sbt-settings"
    import collection.mutable.Map
    lazy val settings: Map[String,String] = if (settingsFile.exists) File.readProperties(settingsFile) else Map[String,String]()
-   
+
    /** executes a shell command (in the src folder) */
    def runscript(command: String) = sys.process.Process(Seq(command), src.getAbsoluteFile).!!
-   
+
   // ************************************************** deploy-specific code (see also the TaskKey's deploy and deployFull)
 
  /**
-   * pacakges the compiled binaries and copies to deploy 
+   * pacakges the compiled binaries and copies to deploy
    */
   import sbt.Keys.packageBin
   import sbt._
@@ -30,7 +32,7 @@ object Utils {
     packageBin in Compile map {jar => deployTo(Utils.deploy / name)(jar)}
 
  /**
-   * pacakges the compiled binaries and copies to deploy 
+   * pacakges the compiled binaries and copies to deploy
    */
   def deployMathHub(target: File): Def.Initialize[Task[Unit]] =
     packageBin in Compile map {jar => deployTo(target)(jar)}
@@ -46,7 +48,7 @@ object Utils {
 
 
   // ************************************************** MathHub-specific code
-  
+
   private val mathhub = "mathhub-folder"
    lazy val mathhubFolder: File = {
      settings.get(mathhub) match {
@@ -57,18 +59,18 @@ object Utils {
          File(s)
      }
    }
-   
+
    // ************************************************** jEdit-specific code
-   
+
    // keys for build settings
    val jeditSettingsFolder = "jedit-settings-folder"
    val startJEDit = "start-jedit"
    val killJEdit  = "kill-jedit"
-   
-   
+
+
    /** MMT jEditPlugin release jars directory */
    val jEditPluginRelease = deploy/"jedit-plugin"/"plugin"/"jars"
-   
+
    /** These methods are used by the target jedit/install to copy files to the local jEdit installation */
    /** jars in deploy/main */
    val jEditJars = List("mmt-api.jar", "mmt-lf.jar", "mmt-lfx.jar", "MMTPlugin.jar", "mmt-specware.jar", "mmt-mizar.jar", "mmt-pvs.jar", "mmt-odk.jar")
@@ -77,7 +79,7 @@ object Utils {
    /** copy all jars to jEdit settings directory */
    def installJEditJars {
       settings.get(killJEdit).foreach {x => runscript(x)}
-	  Thread.sleep(500)
+     Thread.sleep(500)
       val fname = settings.get(jeditSettingsFolder).getOrElse {
         println(s"cannot copy jars because there is no setting '$jeditSettingsFolder' in $settingsFile")
         return
@@ -99,7 +101,7 @@ object Utils {
 
 
   // ************************************************** file system utilities
-  
+
    /** copy a file */
    def copy(from: File, to: File) {
       println(s"copying $from to $to")
@@ -112,7 +114,12 @@ object Utils {
       }
       println("\n")
    }
-   
+
+  /**
+    * Recursively deletes a given folder
+    * @param log
+    * @param path
+    */
   def delRecursive(log: Logger, path: File): Unit = {
     def delRecursive(path: File): Unit = {
       path.listFiles foreach { f =>
@@ -128,5 +135,4 @@ object Utils {
     if (path.exists && path.isDirectory) delRecursive(path)
     else log.warn("ignoring missing directory: " + path)
   }
-
 }

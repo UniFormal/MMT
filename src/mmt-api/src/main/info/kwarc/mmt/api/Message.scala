@@ -5,20 +5,20 @@ import objects._
 
 /**
  * messages define the abstract syntax of a protocol for communicating between content processing systems
- * 
+ *
  * The classes use string arguments (as opposed to [[Declaration]] and [[Term]]) together with format strings.
- * 
+ *
  * It exposes the main content-related commands that can be sent to MMT.
  * In particular, messages can be passed to MMT via HTTP using [[web.MessageHandler]]
  */
 sealed abstract class Message {
-  
+
 }
 
 
 /** messages that result in structural changes to theories and are thus stateful */
 sealed abstract class StructureMessage extends Message {
-  
+
 }
 
 /** messages that call algorithms on MMT objects

@@ -12,11 +12,11 @@ import HTMLAttributes._
 
 /**
  * This overrides the appropriate methods present objects as MathML.
- * 
- * The MathML carries additional attributes as described in [[HTMLAttributes]] 
+ *
+ * The MathML carries additional attributes as described in [[HTMLAttributes]]
  */
 class MathMLPresenter extends NotationBasedPresenter {
-   
+
    /** generalized apply method that takes a callback function to determine the css class of a subterm */
    def apply(o: Obj, origin: Option[CPath], style: PresentationContext => String)(implicit rh : RenderingHandler) {
       val pc = preparePresentation(o, origin)
@@ -25,7 +25,7 @@ class MathMLPresenter extends NotationBasedPresenter {
          recurse(o)
       }
    }
-   
+
    protected def jobadattribs(implicit pc: PresentationContext) = {
       var ret = List(position -> pc.pos.toString)
       pc.source.foreach {r =>
@@ -141,11 +141,11 @@ class MathMLPresenter extends NotationBasedPresenter {
       doOptional("implicit-arg", body)
    }
    override def doInferredType(body: => Unit)(implicit pc: PresentationContext) {
-      doOptional("reconstructed", body)      
+      doOptional("reconstructed", body)
    }
 
    /** wraps continuations in mrow to make sure they produce a single element */
-   private def R(c: Cont)(implicit pc: PresentationContext) = pc.html.mrow {c()} 
+   private def R(c: Cont)(implicit pc: PresentationContext) = pc.html.mrow {c()}
    override def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext) {
       import pc.html._
       def underover(mbp: Cont) {
@@ -176,7 +176,7 @@ class MathMLPresenter extends NotationBasedPresenter {
          }
       }
    }
-   
+
    override def doTd(ms : List[Cont])(implicit pc: PresentationContext) {
      pc.html.td {
        pc.html.mrow {
@@ -184,13 +184,13 @@ class MathMLPresenter extends NotationBasedPresenter {
        }
      }
    }
-   
+
    override def doTr(ms : List[Cont])(implicit pc: PresentationContext) {
      pc.html.tr {
        ms foreach {a => a()}
      }
    }
-   
+
    override def doTable(ms : List[Cont])(implicit pc: PresentationContext) {
      pc.html.table {
        ms foreach {a => a()}
@@ -203,37 +203,37 @@ class MathMLPresenter extends NotationBasedPresenter {
        }
      }
    }
-   
+
    override def doRootMarker(base : List[Cont], root : List[Cont])(implicit pc: PresentationContext) {
      if(root != Nil){
        pc.html.mroot{
          pc.html.mrow {
-         base foreach(a => a())        
+         base foreach(a => a())
          }
-         doSqrt(base) 
+         doSqrt(base)
        }
      }
      else doSqrt(base)
    }
-   
+
    override def doNumberMarker(arg : Delim)(implicit pc: PresentationContext) {
      pc.html.mn {
        pc.out(arg.s)
      }
    }
-      
+
    override def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
      pc.html.mi {
        pc.out(arg.s)
      }
    }
-   
+
    override def doErrorMarker(args: List[Cont])(implicit pc: PresentationContext){
      pc.html.merror{
      args foreach{m => m()}
      }
    }
-   
+
    override def doPhantomMarker(args: List[Cont])(implicit pc: PresentationContext){
      pc.html.mphantom{
      args foreach {a => a()}
@@ -242,7 +242,7 @@ class MathMLPresenter extends NotationBasedPresenter {
    override def doGlyphMarker(arg : Delim, alt : String = "Failed to load")(implicit pc:PresentationContext){
       pc.html.mglyph(attributes = List("src" -> arg.s, "alt"->alt) ) {}
    }
-   
+
    override def doLabelMarker(args : List[Cont], label : String) (implicit pc:PresentationContext) {
      pc.html.mlabel{
        pc.html.mtext{
@@ -253,7 +253,7 @@ class MathMLPresenter extends NotationBasedPresenter {
        }
      }
    }
-   
+
    override def doTextMarker(text : Delim)(implicit pc: PresentationContext){
      pc.html.mtext{
        pc.out(text.s)

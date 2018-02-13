@@ -1,13 +1,14 @@
 package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api._
+import objects._
 import parser._
 
 import SemanticOperator._
 
 object Product {
    val matcher = new utils.StringMatcher2("(",",",")")
-   
+
    def tensor(left: Unary, right: Unary) = {
      val f = new Product(left.from, right.from)
      val t = new Product(left.to, right.to)
@@ -15,7 +16,7 @@ object Product {
    }
 }
 class Product(val left: SemanticType, val right: SemanticType) extends SemanticType {
-   def asString = "(" + left.asString + "*" + right.asString + ")" 
+   def asString = "(" + left.asString + "*" + right.asString + ")"
    override def valid(u: Any) = u match {
       case (l,r) => left.valid(l) && right.valid(r)
       case _ => false
@@ -62,17 +63,17 @@ class Product(val left: SemanticType, val right: SemanticType) extends SemanticT
      }
      Some(i)
    }
-   
+
    val toLeft = Unary(this, left){case (x,y) => x}
    val toRight = Unary(this, right){case (x,y) => y}
-   
+
    def pairOps(f1: Unary, f2: Unary): Unary = {
      if (f1.from == f2.from && f1.to == left && f2.to == right) {
        Unary(f1.from, this) {x => (f1.map(x), f2.map(x))}
      } else
        throw ImplementationError("ill-typed")
    }
-   
+
    override def embed(into: SemanticType) = into match {
      case p: Product => (left.embed(p.left), right.embed(p.right)) match {
        case (Some(eL), Some(eR)) => Some(Product.tensor(eL,eR))
@@ -89,7 +90,7 @@ object ListType {
    val matcher = new utils.StringMatcher2Sep("[",",","]")
 }
 class ListType(val over: SemanticType) extends SemanticType {
-   def asString = "List[" + over.asString + "]" 
+   def asString = "List[" + over.asString + "]"
    override def valid(u: Any) = u match {
       case us: List[_] => us.forall(over.valid)
       case _ => false
@@ -113,7 +114,7 @@ object TupleType {
    val matcher = new utils.StringMatcher2Sep("(",",",")")
 }
 class TupleType(val over: SemanticType, val dim: Int) extends SemanticType {
-   def asString = "(" + over.asString + "^" + dim + ")" 
+   def asString = "(" + over.asString + "^" + dim + ")"
    override def valid(u: Any) = u match {
       case us: List[_] if us.length == dim => us.forall(over.valid)
       case _ => false
@@ -134,19 +135,19 @@ class RTuple[U](o: RSemanticType[U], d: Int) extends TupleType(o,d) with RSemant
 }
 
 abstract class Subtype(val of: SemanticType) extends SemanticType {
-   def asString = "(a subtype of " + of.asString + ")" 
+   def asString = "(a subtype of " + of.asString + ")"
    def by(u: Any): Boolean
    override def valid(u: Any) = of.valid(u) && by(u)
    override def normalform(u: Any) = of.normalform(u)
    def fromString(s: String) = of.fromString(s)
    def toString(u: Any) = of.toString(u)
    override def lex = of.lex
-   /** for a finite subtype of an infinite type, hasNext will eventually run forever */ 
+   /** for a finite subtype of an infinite type, hasNext will eventually run forever */
    override def enumerate = of.enumerate.map(i => i filter by)
-   
+
    /** inclusion into the supertype */
    def incl = Unary(this, of){x => x}
-   
+
    override def embed(into: SemanticType) = super.embed(into) orElse {of.embed(into) map {e => incl compose e}}
 }
 abstract class RSubtype[U](of: RSemanticType[U]) extends Subtype(of) with RSemanticType[U] {
@@ -154,14 +155,14 @@ abstract class RSubtype[U](of: RSemanticType[U]) extends Subtype(of) with RSeman
 }
 
 abstract class Quotient(val of: SemanticType) extends SemanticType {
-   def asString = "(a quotient of " + of.asString + ")" 
+   def asString = "(a quotient of " + of.asString + ")"
    def by(u: Any): Any
    override def valid(u: Any) = of.valid(u)
    override def normalform(u: Any) = by(of.normalform(u))
    def fromString(s: String) = by(of.fromString(s))
    def toString(u: Any) = of.toString(by(u))
    override def lex = of.lex
-   /** for a finite quotient of an infinite type, hasNext will eventually run forever */ 
+   /** for a finite quotient of an infinite type, hasNext will eventually run forever */
    override def enumerate = of.enumerate.map {i =>
      var seen: List[Any] = Nil
      i filter {u =>
@@ -171,7 +172,7 @@ abstract class Quotient(val of: SemanticType) extends SemanticType {
        take
      }
    }
-   
+
    /** the projection of an element to its representative */
    def repr = Unary(of, this) {x => normalform(x)}
 }
@@ -179,13 +180,6 @@ abstract class RQuotient[V](of: RSemanticType[V]) extends Quotient(of) with RSem
   val cls = of.cls
 }
 
-/** a type that is equal to an existing Scala type */ 
-abstract class Atomic[V] extends RSemanticType[V] {
-   override def valid(u: Any) = unapply(u).isDefined
-   def toString(u: Any) = unapply(u).get.toString
-   /** narrower type */
-   def fromString(s: String): V
-}
 
 /** types whose underlying representation uses integers */
 trait IntegerRepresented extends RSemanticType[BigInt] {
@@ -213,7 +207,7 @@ abstract class IntegerLiteral extends Atomic[BigInt] with IntegerRepresented {
 
 /** standard integer numbers */
 object StandardInt extends IntegerLiteral {
-  def asString = "int" 
+  def asString = "int"
   /** embedding into the rationals */
   override def embed(into: SemanticType) = super.embed(into) orElse {
     if (into == StandardRat)
@@ -225,7 +219,7 @@ object StandardInt extends IntegerLiteral {
 
 /** standard natural numbers */
 object StandardNat extends RSubtype(StandardInt) {
-   override def asString = "nat" 
+   override def asString = "nat"
    def by(u: Any) = StandardInt.unapply(u).get >= 0
 }
 
@@ -243,7 +237,7 @@ class IntModulo(modulus: Int) extends RQuotient(StandardInt) {
 
 /** standard rational numbers */
 object StandardRat extends RQuotient(new RProduct(StandardInt,StandardPositive)) {
-   override def asString = "rat" 
+   override def asString = "rat"
    def by(u: Any): (BigInt,BigInt) = {
       val (e:BigInt,d:BigInt) = u
       val gcd = e gcd d
@@ -260,7 +254,7 @@ object StandardRat extends RQuotient(new RProduct(StandardInt,StandardPositive))
       case s => (StandardInt.fromString(s.trim),BigInt(1))
    }
    override def lex = Some(new parser.NumberLiteralLexer(false,true))
-   
+
   /** embedding into the complex numbers */
   override def embed(into: SemanticType) = super.embed(into) orElse {
     if (into == ComplexRat)
@@ -279,22 +273,38 @@ object ComplexRat extends RProduct(StandardRat, StandardRat) {
 // switched to java.lang.Double, because that's what .toDouble returns and
 // java.lang.Double =/= scala.Double (problem in RepresentationType.unapply)
 object StandardDouble extends Atomic[java.lang.Double] {
-   def asString = "double" 
+   def asString = "double"
    val cls = classOf[java.lang.Double]
    val key = "OMF"
    def fromString(s: String) = s.toDouble //s.toDouble
-   override def lex = Some(new parser.NumberLiteralLexer(true, false))
+   override def lex = Some(new parser.NumberLiteralLexer(true, false, true))
 }
 
 object StandardString extends Atomic[String] {
-   def asString = "string" 
+   def asString = "string"
    val cls = classOf[String]
    def fromString(s: String) = s
    override def lex = quotedLiteral("")
 }
 
+object StringOperations {
+  import SemanticOperator._
+  private val S = StandardString
+
+  object Empty extends Value(S)("")
+
+  object Concat extends InvertibleBinary(S,S,S, {case (S(x),S(y)) => x+y}) {
+    def invertLeft(x:Any,r:Any) = (x,r) match {
+      case (S(x),S(r)) => if (r.startsWith(x)) Some(r.substring(x.length)) else None
+    }
+    def invertRight(r:Any,y:Any) = (r,y) match {
+      case (S(r),S(y)) => if (r.endsWith(y)) Some(r.substring(0,y.length)) else None
+    }
+  }
+}
+
 object StandardBool extends Atomic[java.lang.Boolean] {
-   def asString = "bool" 
+   def asString = "bool"
    val cls = classOf[java.lang.Boolean]
    def fromString(s: String) = s match {
      case "true" => true
@@ -311,6 +321,14 @@ object URILiteral extends Atomic[URI] {
    val cls = classOf[URI]
    def fromString(s: String) = URI(s)
    override def lex = quotedLiteral("uri")
+}
+
+/** MMT terms as a semantic type, e.g., for reflection, quotation */
+object TermLiteral extends Atomic[Term] {
+   def asString = "term"
+   val cls = classOf[Term]
+   /** MMT parser is not called here as it depends on context */
+   def fromString(s: String) = OMSemiFormal(Text("unparsed", s))
 }
 
 /** defines [[SemanticOperator]]s for the standard arithmetic operations */
@@ -336,7 +354,7 @@ object Arithmetic {
     alsoHasType(N =>: N =>: N)
     def invertLeft(x:Any,r:Any) = (x,r) match {case (Z(x),Z(r)) => Some(r-x)}
   }
-  
+
   object Times extends InvertibleBinary(Z,Z,Z, {case (Z(x),Z(y)) => x*y}) with Commutative {
     alsoHasType(N =>: N =>: N)
     def invertLeft(x:Any,r:Any) = (x,r) match {case (Z(x),Z(r)) => if ((r mod x) == 0) Some(r/x) else None}

@@ -13,7 +13,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
 
    /** a default notation in case the pattern is not known */
    def getHeaderNotation = List(LabelArg(1, LabelInfo.none), Delim(":"), SimpArg(1))
-  
+
    override def processHeader(header: Term): (LocalName,Term) = {
      header match {
        case OMA(OMMOD(pat), OML(name, None, None,_,_) :: args) =>
@@ -21,7 +21,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
          (name, tp)
      }
    }
-   
+
    /** inverse of processHeader */
    override def makeHeader(dd: DerivedDeclaration): Term = {
      dd.tpC.get match {
@@ -42,7 +42,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
        case None => throw LocalError("instance has no type: " + inst.path)
      }
    }
-  
+
    def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
      val (pat, args) = getPattern(dd).getOrElse {
        env.errorCont(InvalidElement(dd, "no pattern found"))
@@ -61,7 +61,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
         }
      }*/
    }
-   
+
    def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = new Elaboration {
      private lazy val (pattern,args) = getPattern(dd).getOrElse {
        throw InvalidElement(dd, "ill-formed instance")
@@ -79,7 +79,8 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
          case _ => d
        }
        val subs = (params zip args) map {case (vd,a) => Sub(vd.name, a)}
-       val dT = dN.translate(dd.home, dd.name, ApplySubs(subs) compose Renamer.prefix(pattern.module.path, dd.path),Context.empty)
+       val tl = ApplySubs(subs) compose TraversingTranslator(Renamer.prefix(pattern.module.path, dd.path))
+       val dT = dN.translate(dd.home, dd.name, tl, Context.empty)
        Some(dT)
      }
    }
@@ -97,10 +98,10 @@ object Instance {
   }
 
   def apply(home : Term, name : LocalName, pattern: GlobalName, args: List[Term], notC: NotationContainer): DerivedDeclaration = {
-    val patExp = Type(pattern.toMPath, args) 
+    val patExp = Type(pattern.toMPath, args)
     apply(home, name, TermContainer(patExp), notC)
   }
-  
+
   def apply(home : Term, name : LocalName, tpC: TermContainer, notC: NotationContainer): DerivedDeclaration = {
     val dd = new DerivedDeclaration(home, name, feature, tpC, notC)
     dd

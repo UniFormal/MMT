@@ -10,7 +10,7 @@ object HomeServer extends HServer with App {
   // the only HApp
   object theApp extends HApp {
 
-    def resolve(req: HReqData) = Some(homeLet) // the only handler 
+    def resolve(req: HReqData) = Some(homeLet) // the only handler
 
     object homeLet extends let.FsLet {
       protected def dirRoot = System.getProperty("user.home")

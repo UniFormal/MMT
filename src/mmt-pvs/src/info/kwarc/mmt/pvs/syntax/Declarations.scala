@@ -34,7 +34,7 @@ case class exporting_names(name:List[name]) extends Group
 /**
  * an ADT-like datatype declared at toplevel, see also [[InlineDatatypeBody]]
  *
- * for historical reasons, imports can occur separately in addition to within formals although that is redundant  
+ * for historical reasons, imports can occur separately in addition to within formals although that is redundant
  */
 case class TopDatatypeBody(named: NamedDecl, theory_formals: List[FormalParameter], importings: List[importing],
                             _constructors: List[constructor]) extends Group
@@ -54,7 +54,7 @@ case class accessor(named: NamedDecl, _type: Type)
 
 /**
  * a declaration in the list of parameters of a theory declaration
- * 
+ *
  * This is essentially a subtype of Decl, but the Decl counterparts are general.
  */
 sealed trait FormalParameter
@@ -74,16 +74,16 @@ case class formal_theory_decl(named: ChainedDecl, _name: theory_name) extends Fo
 // ****************************************
 // ********** declarations in a theory
 
-/** 
+/**
  *  a declaration in the assumptions of a theory, essentially formal parameters of axiom flavor and some auxiliary declarations
- *  
+ *
  *  This is the same as [[Decl]] except for also allowing assumptions (= axioms).
  */
 sealed trait AssumingDecl
 /** a: F for a formula F (semantically, an axiom in the list of formal parameters, becomes tcc when instantiating the theory) */
 case class assumption(named: ChainedDecl, assertion: Assertion) extends AssumingDecl
 
-/** a declaration in the body of theory */ 
+/** a declaration in the body of theory */
 sealed trait Decl extends AssumingDecl
 
 // ********** basic declarations

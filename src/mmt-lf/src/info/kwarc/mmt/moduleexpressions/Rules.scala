@@ -45,7 +45,7 @@ object TheoryTypeUniverse extends UniverseRule(ModExp.theorytype) {
 object MorphTypeInhabitable extends InhabitableRule(ModExp.morphtype) {
    def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Boolean = {
       val MorphType(from,to) = tp
-      solver.check(IsTheory(stack, from)) && solver.check(IsTheory(stack, to)) 
+      solver.check(IsTheory(stack, from)) && solver.check(IsTheory(stack, to))
    }
 }
 
@@ -63,7 +63,7 @@ object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.pat
               // an import from another theory
               case StructureVarDecl(name, tp, df) =>
                  // type must be a theory
-                 solver.check(IsTheory(currentStack, tp)) && 
+                 solver.check(IsTheory(currentStack, tp)) &&
                  // if given, definiens must be a morphism
                  (df match {
                     case Some(d) =>
@@ -91,9 +91,18 @@ object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.pat
               return None
          }
          Some(TheoryType(Nil))
-      case AnonymousTheory(mt,decls) => Some(TheoryType(Nil)) // TODO?
+      case AnonymousTheory(mt,decls) => Some(TheoryType(Nil)) // TODO
       case _ =>
          solver.error("illegal use of " + ModExp.complextheory)
+         None
+   }
+}
+
+object AnonymousTheoryInfer extends InferenceRule(ModExp.anonymoustheory, OfType.path) {
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+      case AnonymousTheory(mt,decls) => Some(TheoryType(Nil)) // TODO
+      case _ =>
+         solver.error("illegal use of " + ModExp.anonymoustheory)
          None
    }
 }
@@ -113,14 +122,14 @@ object MorphCheck extends TypingRule(ModExp.morphtype) {
        *    in that case, we replace the name in fromDomain with its subdomain
        */
       // (1) clash analysis: for each elements of subsDomain, we remove the corresponding element of fromDomain
-      //       We flatten fromDomain as much as needed. 
+      //       We flatten fromDomain as much as needed.
       /* invariants:
        *   fromDomain contains the declaring DomainElements that must still be mapped
        *   subsDomain contains the mapping DomainElements that have not been considered yet
        */
       while (! subsDomain.isEmpty) {
          val currentSub = subsDomain.head
-         val currentSubName = currentSub.name 
+         val currentSubName = currentSub.name
          // all domain elements of from to which current applies
          val matchingDomElems = fromDomain.filter {case de => currentSubName.dropPrefix(de.name).isDefined}.toList
          matchingDomElems match {
@@ -144,7 +153,7 @@ object MorphCheck extends TypingRule(ModExp.morphtype) {
                               fromDomain ::= d.copy(name = p / d.name)
                            }
                            // the definitions of de are like fixed cases of subsDomain
-                           // they are assumed well-typed but must participate in flattening and clash+totality analysis 
+                           // they are assumed well-typed but must participate in flattening and clash+totality analysis
                            subsDomain :::= defs.map(ln => DomainElement(p / ln, true, None))
                            // TODO the above assumes all elements of defs to be fully defined;
                            // this does not cover the case where an import is mapped to a partial morphism
@@ -189,13 +198,13 @@ object MorphCheck extends TypingRule(ModExp.morphtype) {
                solver.error(n + " does not refer to mappable declaration in " + from)
          }
          if (! mayhold)
-            return false 
+            return false
          subsChecked = subsChecked ::: List(current)
          subsToCheck = subsToCheck.tail
       }
       true
    }
-   
+
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) = {
       val MorphType(from,to) = tp
       tm match {
@@ -234,7 +243,7 @@ object IdentityInfer extends InferenceRule(ModExp.identity, OfType.path) {
 
 /**
  * m1: a1 => b1 and m2: a2 => b2 and b1 <= a2  --->  m1;m2: a1 => b2
- * 
+ *
  * cannot infer type of empty composition
  */
 object CompositionInfer extends InferenceRule(ModExp.composition, OfType.path) {
@@ -257,7 +266,7 @@ object CompositionInfer extends InferenceRule(ModExp.composition, OfType.path) {
 object ComputeMorphism extends ComputationRule(ModExp.morphismapplication) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
       val OMM(t,m) = tm
-      val res = solver.getTheory(t).getOrElse(return None)
+      val res = Common.asAnonymousTheory(solver, t).getOrElse(return None)
       val translator = ApplyMorphism(m)
       def tr(opt : Option[Term]) = opt.map(s => translator(Context.empty,s))
       Some(AnonymousTheory(res.mt,res.decls.map{

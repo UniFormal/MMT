@@ -24,7 +24,7 @@ class Association(monoid: Boolean, semilattice: Boolean) extends ParametricRule 
     val (op,neutOpt) = args match {
       case OMS(o) :: Nil if !monoid => (o,None)
       case OMS(o) :: n :: Nil if monoid => (o,Some(n))
-      case _ => throw ParseError("arguments must be identifier and (if monoid) term") 
+      case _ => throw ParseError("arguments must be identifier and (if monoid) term")
     }
     // TODO check type of op
     new BreadthRule(op) {

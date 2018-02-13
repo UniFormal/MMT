@@ -18,8 +18,8 @@ import scala.xml.Node
 class MWSHarvestExporter extends Exporter {
   val key = "mws"
   override val outExt = "harvest"
-    
-  def exportTheory(t: DeclaredTheory, bf: BuildTask) { 
+
+  def exportTheory(t: DeclaredTheory, bf: BuildTask) {
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
     t.getDeclarations foreach {d =>
@@ -29,21 +29,21 @@ class MWSHarvestExporter extends Exporter {
                val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>
                rh(node.toString + "\n")
             }
-         case _ => 
+         case _ =>
       }
     }
     rh("</mws:harvest>\n")
   }
-  
-  def exportView(v: DeclaredView, bf: BuildTask) { 
+
+  def exportView(v: DeclaredView, bf: BuildTask) {
     //excluding expressions from views for now
   }
-  
-  
+
+
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
     //Nothing to do - MathML in namespaces
   }
-  
+
   def exportDocument(doc : Document, bt: BuildTask) {
     //Nothing to do - no MathML at document level
   }
@@ -68,20 +68,20 @@ class FlatteningMWSExporter extends Exporter {
                val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>
                rh(node.toString + "\n")
             }
-         case _ => 
+         case _ =>
       }
     }
     rh("</mws:harvest>\n")
-    
+
   }
-    def exportView(v: DeclaredView, bd: BuildTask) { 
+    def exportView(v: DeclaredView, bd: BuildTask) {
     //excluding expressions from views for now
   }
-  
+
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
     //Nothing to do - MathML in namespaces
   }
-  
+
   def exportDocument(doc : Document, bt: BuildTask) {
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
@@ -90,11 +90,11 @@ class FlatteningMWSExporter extends Exporter {
         case _ =>
       }
     } catch {
-      case e : GetError => //doc not found, can ignore 
-    }   
+      case e : GetError => //doc not found, can ignore
+    }
     rh("</mws:harvest>\n")
   }
-  
+
 }
 
 import presentation._
@@ -130,15 +130,15 @@ class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
   def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
     this._rh = rh
     val f = rh match {
-      case fw : FileWriter => fw.filename 
+      case fw : FileWriter => fw.filename
     }
     val folder = File(f.toJava.getParentFile())
-    s match { 
-      case doc : Document => 
+    s match {
+      case doc : Document =>
         wrapScope(standalone, doc.path)(doDocument(doc))
-      case thy : DeclaredTheory => 
+      case thy : DeclaredTheory =>
         val newThys = if (thy.path.toPath.contains("math")) mf.enrichFineGrained(thy) else List(thy)
-        newThys foreach { t => 
+        newThys foreach { t =>
           val out = (folder / t.name.toPath).setExtension("html")
           this.outputTo(out) {
             wrapScope(standalone, thy.path)(doTheory(t))
@@ -148,27 +148,27 @@ class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
         wrapScope(standalone, view.path)(doView(view))
       case _ => rh("TODO: Not implemented yet, presentation function for " + s.getClass().toString())
     }
-    //TODO? reset this._rh 
-  }  
+    //TODO? reset this._rh
+  }
   protected val htmlRh = utils.HTML(s => rh(s))
   import htmlRh._
-  
+
   def doDocument(doc : Document) {
     //nothing to do
   }
-  
+
   private def doTheory(thy : DeclaredTheory) {
     div ("theory") {
       thy.getDeclarations foreach {
-      case c : Constant => 
+      case c : Constant =>
         div ("constant") {
           div ("body") {
-            text(c.name.last.toPath) 
-            c.tp.foreach { o => 
+            text(c.name.last.toPath)
+            c.tp.foreach { o =>
               text(" : ")
               objectLevel(o, None)(rh)
             }
-            c.df.foreach { o => 
+            c.df.foreach { o =>
               text(" = ")
               objectLevel(o, None)(rh)
             }
@@ -195,24 +195,24 @@ class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
       }
     }
   }
-  
+
   def doView(view : View) {//nothing to do
-    
+
   }
-  
-  //utils  
+
+  //utils
   def mathhubPath(p : Path) : String = {
     val uri = p.doc.uri
     //URI(uri.scheme, uri.authority, uri.path.head :: uri.path.tail.head :: "source" :: uri.path.tail.tail, uri.absolute).toString
     uri.toString
   }
-  
-  
+
+
   def getTitle(uri : Path) : String = uri match {
     case m : MPath => m.name.toPath
     case _ => uri.last
   }
-  
+
   def wrapScope(standalone : Boolean, uri : Path)(content : => Unit) {
     if (standalone) {
       rh("<!DOCTYPE html>")

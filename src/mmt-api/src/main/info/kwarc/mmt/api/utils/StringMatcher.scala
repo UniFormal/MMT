@@ -24,7 +24,7 @@ class StringMatcher(before: String, after: String) {
 
 /**
  * matches S1, S2 in "before S1 middle S2 after"
- * 
+ *
  * first occurrence of 'middle' after 'before' is used if ambiguous
  */
 class StringMatcher2(before: String, middle: String, after: String) {

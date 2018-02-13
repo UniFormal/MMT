@@ -8,7 +8,7 @@ import objects._
 object Inhabitation {
    val _base = Typed._base
    val _path = _base ? "Inhabitation"
-   
+
    object Inh {
       val path = _path ? "Inh"
       def apply(a: Term) = Apply(OMS(path), a)

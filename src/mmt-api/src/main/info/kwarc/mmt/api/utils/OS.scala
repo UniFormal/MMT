@@ -20,7 +20,7 @@ object OS {
      else if (os.contains("BSD")) BSD
      else ProbablyUnix
   }
-  
+
   /** the most likely folder to store application-specific settings */
   def settingsFolder = {
      lazy val uh = File(System.getProperty("user.home"))
@@ -30,7 +30,7 @@ object OS {
         case os : Unix => uh
      }
   }
-  
+
   /** the default location of the jEdit settings folder, as specified by the jEdit documentation */
   def jEditSettingsFolder = {
     lazy val uh = File(System.getProperty("user.home"))

@@ -19,10 +19,10 @@ class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
   private val controller = mmtp.controller
 
   private def view = jEdit.getActiveView()
-  
+
   private def init {
     val insUS = Swing.Button("O", tooltip = "Inserts object delimiter (US)") {
-       Inserter.insertUSorTab(view.getTextArea())     
+       Inserter.insertUSorTab(view.getTextArea())
     }
     val insRS = Swing.Button("D", tooltip = "Inserts declaration delimiter (RS)") {
        Inserter.insertRSReturn(view.getTextArea())
@@ -30,7 +30,7 @@ class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
     val insGS = Swing.Button("M", tooltip = "Inserts module delimiter (GS)") {
        Inserter.insertGSReturn(view.getTextArea())
     }
-  
+
     val buildButton = Swing.Button("Build", tooltip = "Builds current file") {
       mmtp.buildActions.buildCurrent(view)
     }
@@ -45,7 +45,7 @@ class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
     val clrIMG = (new ImageIcon(this.getClass().getResource("/images/clear_button.png"))).getImage()
     val clrIMGs = clrIMG.getScaledInstance(16, 16, java.awt.Image.SCALE_SMOOTH )
     clrButton.setIcon(new ImageIcon(clrIMGs))
-    
+
     val clrFileButton = Swing.Button("Clear File", tooltip = "Clears current file from MMT memory") {
        val pd = sidekick.SideKickParsedData.getParsedData(view)
        pd.root.getUserObject match {
@@ -67,7 +67,7 @@ class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
     add(clrButton)
     add(clrFileButton)
   }
-  
+
   init
 }
 

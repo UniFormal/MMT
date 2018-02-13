@@ -21,10 +21,10 @@ class sTeXExtractor extends RelationalExtractor {
 
   def apply(e : StructuralElement)(implicit f: RelationalElement => Unit) = {
     e match {
-    case m : DeclaredTheory => 
+    case m : DeclaredTheory =>
       var foundPrimarySymbol = false
-      m.getDeclarations collect { 
-      case c : Constant => 
+      m.getDeclarations collect {
+      case c : Constant =>
       if (c.metadata.get(sTeXMetaData.rolePath).map(_.value).contains(OMSTR("primary"))) {
           foundPrimarySymbol = true
           f(IsPrimarySymbol(c.path))
@@ -33,7 +33,7 @@ class sTeXExtractor extends RelationalExtractor {
       if (foundPrimarySymbol) {
         f(IsMathStructure(m.path))
         m.getDeclarations collect {i => i match {
-          case PlainInclude(from,_) => 
+          case PlainInclude(from,_) =>
             if (!i.metadata.get(sTeXMetaData.rolePath).map(_.value).contains(OMSTR("conservative-extension"))) {
               f(IsHypernymOf(m.path, from))
             }

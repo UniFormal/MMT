@@ -44,7 +44,7 @@ class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask) {
 
   def toJson: JSONString = JSONString(toJString)
 
-  def merge(qt: QueuedTask): Unit = {
+  def merge(qt: QueuedTask) {
     updatePolicy = updatePolicy.merge(qt.updatePolicy)
     lowPriority = lowPriority && qt.lowPriority
     dependencyClosure = dependencyClosure && qt.dependencyClosure
@@ -360,7 +360,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
     blocked = stillBlocked
     unblocked.foreach(u => log("Unblocked: " + u.task.inFile))
     if (unblocked.nonEmpty) recentlyBuilt ::= ((qt.task.asDependency,BuildEmpty("unblocked: " + unblocked.map(_.task.inFile).mkString(", "))))
-    unblocked.reverseMap(queued.add)
+    unblocked.reverseMap(queued.addFirst)
   }
 
   // ******************* dependency handling
@@ -481,7 +481,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
     }
   }
 
-  
+
   /** the thread for building */
   private lazy val buildThread = new Thread {
     override def run {

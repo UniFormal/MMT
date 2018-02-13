@@ -61,13 +61,13 @@ class Pragmatics extends ChangeListener {
    /**
     * the default treatment for application-like constructions without a known operator
     * used for: apply meta-variables to its dependent bound variables; whitespace operator; application of MPath
-    * 
+    *
     * @return as dictated by notation extension, OMA by default
     */
    def defaultApplication(level: Option[MPath], fun: Term, args: List[Term]): Term = {
       fun match {
         case OMMOD(_) => OMA(fun, args)
-        case _ => applicableByLevel(level).constructTerm(fun, args) 
+        case _ => applicableByLevel(level).constructTerm(fun, args)
       }
    }
 

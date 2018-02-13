@@ -15,7 +15,7 @@ object Metamath {
    /** Application symbol for $e (essential) hypotheses */
    val ES = OMS(prelude ? "ES")
    /** Binding symbol for $f (floating) hypotheses. The statement
-    *  
+    *
     * <pre>
     * $d x y z $.  $d z w $.
     * vx $f A x $.
@@ -25,9 +25,9 @@ object Metamath {
     * thm.2 $e e2 y $.
     * thm $a stmt x z $.
     * </pre>
-    * 
+    *
     * is translated to the term
-    * 
+    *
     * <pre>
     * OMBINDC(FL,{x:A,y:B,z:B},OMA(ES,[e1,x],OMA(ES,[e2,y],[stmt,x,z])),
     *   OMA(DV,x,y,z),OMA(DV,z,w))
@@ -37,7 +37,7 @@ object Metamath {
    */
    def setconst(s: String) = OMS(setmm ? s)
    def prelconst(s : String) = prelude ? s
-   
+
    val set = prelconst("set")
    val _class = prelconst("class")
    val wff = prelconst("wff")

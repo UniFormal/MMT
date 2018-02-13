@@ -8,16 +8,16 @@ import objects.Conversions._
 
 /**
  * Alternatives are conjunctive goals: an alternative is solved if all its subgoals are.
- * 
- * @param subgoals the conjuncts of this alternative 
+ *
+ * @param subgoals the conjuncts of this alternative
  * @param proof returns the proof term (to be called only if `isSolved == true`)
- * 
+ *
  * When instantiating this class, proof may call the corresponding method of each subgoal.
  */
 case class Alternative(subgoals: List[Goal], proof: () => Term) {
    /** true if all subgoals are solved */
    def isSolved: Boolean = subgoals.forall(_.isSolved)
-   
+
    /** smart string representation */
    def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]) = {
       val gS = subgoals.map {g => Searcher.indent(depth) + g.present(depth+1)}
@@ -42,18 +42,18 @@ case class Alternative(subgoals: List[Goal], proof: () => Term) {
 /**
  * A Goal is a single-conclusion sequent - the basic node in a proof tree.
  * A goal nodes knows its parent (except for the root goal) and children (the alternatives and their subgoals).
- * 
+ *
  * Each [[Goal]] stores a partial proof: a list of alternatives each of which stores a list of subgoals.
  * Goals are disjunctive: a goal can be closed if all subgoals of one alternative can be closed.
- * 
- * The conclusion, the proof alternatives, and the proof term are stored statefully and are set by this class or other prover components.  
- * 
+ *
+ * The conclusion, the proof alternatives, and the proof term are stored statefully and are set by this class or other prover components.
+ *
  * The prover expands new goals greedily by applying invertible rules,
  * and each goal stores those invertible rules that have not been applied yet.
- * 
+ *
  * @param context the premises added to the sequent by this goal;
  *                the full antecedent arises by prepending the one of the parent goal
- * @param concVar the conclusion of the sequent     
+ * @param concVar the conclusion of the sequent
  */
 
 class Goal(val context: Context, private var concVar: Term) {
@@ -81,7 +81,7 @@ class Goal(val context: Context, private var concVar: Term) {
    }
    /** the complete context of this goal seen as a list of atomic facts that rules can make use of */
    lazy val fullVarAtoms: List[Atom] = parent.map(_.fullVarAtoms).getOrElse(Nil) ::: varAtoms
-   
+
    /** stores the list of alternatives */
    private var alternatives: List[Alternative] = Nil
    /** adds a new alternative in the backward search space */
@@ -99,7 +99,7 @@ class Goal(val context: Context, private var concVar: Term) {
 
    /** stores the finishedness status */
    private var finished = false
-   /** 
+   /**
     *  true if no further proving should be performed at this goal
     *  pointers to it should be abandoned as soon as the proof term is collected
     */
@@ -113,7 +113,7 @@ class Goal(val context: Context, private var concVar: Term) {
       alternatives.foreach {a => a.subgoals.foreach {sg => sg.removeAlternatives}}
       alternatives = Nil
    }
-   
+
    /** caches the result of isSolved */
    private var solved: Option[Boolean] = None
    /** stores the proof */
@@ -138,7 +138,7 @@ class Goal(val context: Context, private var concVar: Term) {
       solved = Some(true)
       removeAlternatives
    }
-   
+
    /** checks whether this can be closed using the axiom rule, i.e., whether the goal is in the database of facts */
    private def checkAxiomRule(implicit facts: Facts) {
       if (solved != Some(true)) {
@@ -150,8 +150,8 @@ class Goal(val context: Context, private var concVar: Term) {
    }
    /**
     * recursively checks if the goal can be closed by using the axiom rule
-    * 
-    * should be called iff there are new facts available (result is cached by isSolved) 
+    *
+    * should be called iff there are new facts available (result is cached by isSolved)
     */
    def newFacts(implicit facts: Facts) {
       checkAxiomRule
@@ -159,7 +159,7 @@ class Goal(val context: Context, private var concVar: Term) {
          a.subgoals.foreach {sg => sg.newFacts}
       }
    }
-   
+
    /** stores the invertible backward rules that have not been applied yet */
    private var backward : List[ApplicableTactic] = Nil
    /** stores the invertible forward rules that have not been applied yet */
@@ -171,12 +171,12 @@ class Goal(val context: Context, private var concVar: Term) {
       backward = parent match {
          case Some(g) if g.conc == conc => g.backward
          // TODO it can be redundant to check the applicability of all tactics
-         case _ => backw.flatMap {t => t.apply(prover, this)} 
+         case _ => backw.flatMap {t => t.apply(prover, this)}
       }
       val applForw = forw.flatMap {t => t.apply(prover, context)}
       forward = applForw ::: parent.map(_.forward).getOrElse(Nil)
    }
-   /** 
+   /**
     *  the invertible backward/forward tactics that have not been applied yet are stored here,
     *  but set and read by the [[Prover]]
     *  this method retrieves the next tactic to apply
@@ -207,7 +207,7 @@ class Goal(val context: Context, private var concVar: Term) {
             }
       }
    }
-   
+
    override def toString = conc.toString
    def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]): String = {
       val goalHighlight = if (Some(this) == current) "X " else "  "

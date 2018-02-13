@@ -20,32 +20,32 @@ class DefaultCustomization extends ArchiveCustomization {
 /** Customization for Mizar */
 class MML extends ArchiveCustomization {
   def mwsurl(p: Path) : String = p match {
-    case par ?? ln => 
+    case par ?? ln =>
       val thyName = par.name.toPath
       val symbolName = ln.head.toPath
       "http://www.mizar.org/version/current/html/" + thyName.toLowerCase() + ".html#" + symbolName
     case _ => throw ImplementationError("Module level references not implemented yet")
       // "http://www.mizar.org/version/current/html/" + "%m.html#o"
   }
-  
+
   def prepareQuery(t: Obj): scala.xml.Node = {
     makeHVars(removeLFApp(t.toCML), Nil, Nil, true)
   }
 
   private def removeLFApp(n : scala.xml.Node) : scala.xml.Node = n match {
-    case <apply><csymbol>{x}</csymbol>{s @ _*}</apply> => 
+    case <apply><csymbol>{x}</csymbol>{s @ _*}</apply> =>
       if (x.toString == "http://cds.omdoc.org/foundational?LF?@")
         <apply>{s.map(removeLFApp)}</apply>
-      else {        
+      else {
         new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(removeLFApp) : _*)
       }
-    case _ =>  
+    case _ =>
       if (n.child.length == 0)
         n
       else
         new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(removeLFApp(_)) : _*)
   }
-  
+
   private def makeHVars(n : scala.xml.Node, uvars : List[String], evars : List[String], negFlag : Boolean) : scala.xml.Node = n match {
     case <apply><csymbol>{s}</csymbol><bvar><apply>{zz}<ci>{v}</ci>{a}{b}</apply>{rest @ _*}</bvar>{body}</apply> =>
       if (s.toString == "http://cds.omdoc.org/foundational?LF?Pi") {//"http://cds.omdoc.org/foundations/lf/lf.omdoc?lf?Pi") {
@@ -53,15 +53,15 @@ class MML extends ArchiveCustomization {
         var bd = body
         if (rest.length > 0)
           bd = <apply><csymbol>{s}</csymbol><bvar>{rest}</bvar>{body}</apply>
-            
+
         makeHVars(bd, v.toString :: uvars, evars, negFlag)
       }
-      else {  
+      else {
         new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(makeHVars(_,uvars, evars, negFlag)) : _*)
       }
-        
-    case <apply><apply><csymbol>{s}</csymbol>{a1}</apply><bvar><apply>{zz}<ci>{v}</ci>{a}{b}</apply></bvar>{body}</apply> => 
-    	if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?for") {
+
+    case <apply><apply><csymbol>{s}</csymbol>{a1}</apply><bvar><apply>{zz}<ci>{v}</ci>{a}{b}</apply></bvar>{body}</apply> =>
+      if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?for") {
         var uv = uvars
         var ev = evars
         if (negFlag)
@@ -70,7 +70,7 @@ class MML extends ArchiveCustomization {
           ev = v.toString :: evars
         makeHVars(body, uv, ev, negFlag)
       } else {
-    	  new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(makeHVars(_,uvars, evars, negFlag)) : _*)
+        new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(makeHVars(_,uvars, evars, negFlag)) : _*)
       }
     case <apply><csymbol>{s}</csymbol>{a}</apply> =>
       if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?not") {
@@ -79,17 +79,17 @@ class MML extends ArchiveCustomization {
       } else
         new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(makeHVars(_,uvars, evars, negFlag)) : _*)
 
-    case <ci>{v}</ci> => 
+    case <ci>{v}</ci> =>
       if (uvars.contains(v.toString))
         <mws:uvar><ci>{v}</ci></mws:uvar>
       else if (evars.contains(v.toString))
         <mws:evar><ci>{v}</ci></mws:evar>
       else
         n
-    case <csymbol>{p}</csymbol> => 
+    case <csymbol>{p}</csymbol> =>
       val firstq = p.toString.indexOf('?')
       <csymbol>{p.toString.substring(firstq + 1)}</csymbol>
-      
+
     case _ =>
       if (n.child.length == 0)
         n
@@ -103,7 +103,7 @@ class MML extends ArchiveCustomization {
  */
 class TPTP extends ArchiveCustomization {
   def mwsurl(p: Path) : String = p.toPath
-  
+
   /**
    * Traverse the node, fixing symbol names and translating $$ terms to qvar
    */
@@ -129,7 +129,7 @@ class TPTP extends ArchiveCustomization {
         else
           new Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(process(_)) : _*)
   }
-  
+
   /**
    * Strips csymbol names to contain only the symbol name
    */
@@ -143,7 +143,7 @@ class TPTP extends ArchiveCustomization {
     }
     return ss
   }
-  
+
   /**
    * qvars start with $$ followed by lower case character
    */

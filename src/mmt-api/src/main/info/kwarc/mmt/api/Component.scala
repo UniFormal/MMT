@@ -27,7 +27,7 @@ trait AbstractTermContainer extends AbstractObjectContainer {
    def get: Option[Term]
 }
 
-/** a dummy container for a stateless term */ 
+/** a dummy container for a stateless term */
 class FinalTermContainer(t: Term) extends AbstractTermContainer {
    def update(nw: ComponentContainer) = nw match {
       case nw: FinalTermContainer => nw.get != Some(t)
@@ -35,7 +35,7 @@ class FinalTermContainer(t: Term) extends AbstractTermContainer {
    }
    def delete {}
    def isDefined = true
-   def get = Some(t) 
+   def get = Some(t)
 }
 
 /** A ComponentKey identifies a [[DeclarationComponent]]. */
@@ -69,14 +69,14 @@ case object TypeComponent extends TermComponentKey("type")
 /** definiens of [[symbols.Constant]], DefinedTheory, DefinedView, DefinedStructure */
 case object DefComponent  extends TermComponentKey("definition")
 /** domain of a [[modules.Link]], meta-theory of a theory */
-@deprecated("replace with TypeComponent")
+@deprecated("replace with TypeComponent", "")
 case object DomComponent  extends TermComponentKey("domain")
 /** codomain of a [[modules.Link]] */
-@deprecated("replace with TypeComponent")
+@deprecated("replace with TypeComponent", "")
 case object CodComponent  extends TermComponentKey("codomain")
 
 /** parameters */
-@deprecated("replace with TypeComponent")
+@deprecated("replace with TypeComponent", "")
 case object ParamsComponent extends ObjComponentKey("params")
 
 /** custom component, e.g., in a [[info.kwarc.mmt.api.symbols.DerivedDeclaration]] */

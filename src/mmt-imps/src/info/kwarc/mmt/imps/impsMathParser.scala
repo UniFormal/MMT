@@ -120,5 +120,4 @@ package object impsMathParser {
     }
 
   }
-
 }

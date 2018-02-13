@@ -14,18 +14,18 @@ class UnknownOpaqueElement(val parent: DPath, val format: String, val raw: NodeS
 /** a fallback/default parser for completely unknown elements  */
 class DefaultOpaqueElementInterpreter extends OpaqueElementInterpreter with OpaqueTextParser with OpaqueChecker with OpaqueHTMLPresenter {
    type OE = UnknownOpaqueElement
-   
+
    def format = "unknown"
 
    def fromNode(parent: DPath, nsMap: NamespaceMap, nodes: NodeSeq) = new UnknownOpaqueElement(parent, format, nodes)
-   
+
    def fromString(oP: ObjectParser, parent: DPath, pu: ParsingUnit)(implicit eh: ErrorHandler): OE = {
       val elem = scala.xml.Text(pu.term)
       new UnknownOpaqueElement(parent, format, elem)
    }
-   
+
    def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment) {}
-   
+
    def toHTML(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh : RenderingHandler) {
       rh(<pre>{oe.raw.text}</pre>)
    }

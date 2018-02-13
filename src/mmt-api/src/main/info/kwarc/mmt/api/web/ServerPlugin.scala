@@ -5,9 +5,11 @@ import java.util.Calendar
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.frontend.actions._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
 import ServerResponse._
+import info.kwarc.mmt.api.frontend.actions.{Action, GetAction}
 import info.kwarc.mmt.api.objects.Context
 
 /**
@@ -37,7 +39,7 @@ abstract class ServerExtension(val pathPrefix: String) extends FormatBasedExtens
 }
 
 /** an example server extension that acts as a simple static web server
- *  
+ *
  *  see also [[FileServerHere]]
  */
 class FileServer extends ServerExtension("files") {
@@ -47,7 +49,7 @@ class FileServer extends ServerExtension("files") {
     args.headOption.map {h => rootO = Some(File(controller.getHome resolve h))}
   }
   def apply(request: ServerRequest): ServerResponse = {
-    val root = rootO orElse controller.getOAF.map(_.root) getOrElse {
+    val root = rootO orElse controller.getMathHub.map(_.local) getOrElse {
       throw LocalError("no root defined")
     }
     val path = request.pathForExtension
@@ -97,42 +99,51 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
    * request.query the [[Path]] for which to retrieve a graph
    */
   def apply(request: ServerRequest): ServerResponse = {
-    // val (nquery,json) = if (query.startsWith("json:")) (query.drop(5),true) else (query,false)
     val path = Path.parse(request.query, controller.getNamespaceMap)
-    val key = request.path.headOption.getOrElse("svg")
-    lazy val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], key).getOrElse {
-      throw LocalError(s"svg file does not exist and exporter $key not available: ${request.query}")
+    val graphkey = request.pathForExtension.headOption.getOrElse("svg")
+    lazy val exp = controller.extman.getOrAddExtension(classOf[RelationGraphExporter], graphkey).getOrElse {
+      throw LocalError(s"svg file does not exist and exporter $graphkey not available: ${request.query}")
     }
-    lazy val se = controller.get(path)
-    /* if (json) {
-      JsonResponse(exp.asJSON(se))
-    } else { */
-      val (exportFolder, relPath) = svgPath(path)
-      val svgFile = exportFolder / key / relPath
-      val node = if (svgFile.exists) {
-        utils.File.read(svgFile.setExtension("svg"))
-      } else {
-        exp.asString(se)
-      }
-      ServerResponse(node, "image/svg+xml")
-    // }
+    val fromFile = path.dropComp match {
+      case _: MPath | _: DPath =>
+        svgPath(path) flatMap {case (exportFolder, relPath) =>
+          val svgFile = exportFolder / graphkey / relPath
+          if (svgFile.exists) {
+            val svg = utils.File.read(svgFile.setExtension("svg"))
+            Some(svg)
+          } else
+            None
+        }
+      case _ =>
+        None
+    }
+    val svg = fromFile getOrElse {
+      val se = controller.get(path)
+      exp.asString(se)
+    }
+    ServerResponse(svg, "image/svg+xml")
   }
-  
-  import Javascript._
+
   import MMTJavascript._
   def getEntries(path: Path) = {
-    val (exportFolder, relPath) = svgPath(path)
-    val existingKeys = exportFolder.children.collect {
-      case f if (f/relPath).exists => f.name
+    // all graphs we can build
+    val exporters = controller.extman.get(classOf[RelationGraphExporter]).filter(e => e.canHandle(path))
+    // all additional graphs that have been exported already
+    val existingFiles = svgPath(path) match {
+      case None => Nil
+      case Some((exportFolder, relPath)) =>
+        if (exportFolder.exists) exportFolder.children.collect {
+          case f if !exporters.exists(e => e.isApplicable(f.name)) && (f/relPath).exists => f.name
+        } else Nil
     }
-    val exporterKeys = controller.extman.get(classOf[RelationGraphExporter]).filter(_.canHandle(path)).map(_.key)
-    (existingKeys ::: exporterKeys).distinct.map {key =>
-      ContextMenuEntry("show " + key + " graph", showGraph(key, path.toPath))  
+    val allGraphs = exporters.map(e => (e.key, e.description)) ::: existingFiles.map(k => (k,k))
+    allGraphs.map {case (key, description) =>
+      ContextMenuEntry("show " + description, showGraph(key, path.toPath))
     }
   }
-  
-  /** @return (d,f) such that d/key/f is the path to the svg file for path exported by key */ 
-  private def svgPath(path: Path): (File, List[String]) = {
+
+  /** @return (d,f) such that d/key/f is the path to the svg file for path exported by key */
+  private def svgPath(path: Path): Option[(File, List[String])] = {
     val (inNarr, newPath) = path.dropComp match {
       // narrative
       case dp: DPath => (true, dp)
@@ -149,12 +160,13 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
     } else {
       val mp = newPath.asInstanceOf[MPath]
       val arch = controller.backend.findOwningArchive(mp).getOrElse {
-        throw LocalError("illegal path: " + path)
+        log("no archive known that contains " + path)
+        return None
       }
       val inPathFile = Archive.MMTPathToContentPath(mp)
       (arch, "content" :: inPathFile)
     }
-    (arch.root / "export", relPath)
+    Some((arch.root / "export", relPath))
   }
 }
 
@@ -256,7 +268,7 @@ class QueryServer extends ServerExtension("query") {
         TextResponse("Not found")
     }
   }
-  
+
   def run(query : Query, request: ServerRequest) : ServerResponse = {
     // check that the query is correct
     // TODO: Throw a proper error if this fails
@@ -373,7 +385,7 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
   }
 }
 
-/** interprets the query as an MMT [[frontend.GetAction]] and returns the result */
+/** interprets the query as an MMT [[frontend.actions.GetAction]] and returns the result */
 class GetActionServer extends ServerExtension("mmt") {
   def apply(request: ServerRequest): ServerResponse = {
     val action = Action.parseAct(request.query, controller.getBase, controller.getHome)
@@ -420,7 +432,7 @@ class MessageHandler extends ServerExtension("content") {
   }
 }
 
-/** interprets the query as an MMT [[frontend.Action]] and returns the log output */
+/** interprets the query as an MMT [[frontend.actions.Action]] and returns the log output */
 class ActionServer extends ServerExtension("action") {
   private lazy val logCache = new RecordingHandler(logPrefix)
 
@@ -434,7 +446,7 @@ class ActionServer extends ServerExtension("action") {
 
   def apply(request: ServerRequest): ServerResponse = {
     val c = request.decodedQuery
-    val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
+    val act = frontend.actions.Action.parseAct(c, controller.getBase, controller.getHome)
     if (act == Exit) {
       // special case for sending a response when exiting
       new Thread {
@@ -446,7 +458,7 @@ class ActionServer extends ServerExtension("action") {
       return XmlResponse(<exited/>)
     }
     logCache.record
-    controller.handle(act).throwErrorIfAny()
+    controller.handle(act)
     val r = logCache.stop
     logCache.clear
     val html = utils.HTML.build { h =>
@@ -467,7 +479,7 @@ class ActionServer extends ServerExtension("action") {
 
 /**
  * experimental server for submitting comments
- *  
+ *
  * Handle the body of the POST request (json format)
  * and store the comment as user+date into the discussions folder
  */
@@ -530,9 +542,9 @@ import symbols._
 import modules._
 class URIProducer extends BuildTarget {
   def key = "uris"
-  
+
   private def jsonFile(a: Archive) = a / archives.export / key / "uris.json"
-  
+
   def build(a: Archive, up: Update, in: FilePath) {
      val thys = controller.depstore.querySet(DPath(a.narrationBase), Transitive(+Declares) * HasType(IsTheory))
      File.stream(jsonFile(a), "[\n", ",\n", "\n]") {out =>
