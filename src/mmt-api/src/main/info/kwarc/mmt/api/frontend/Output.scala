@@ -75,7 +75,6 @@ case class Get(p: Path) extends MakeAbstract {
   def make(controller: Controller): StructuralElement = {
     controller.get(p)
   }
-
   override def toString = p.toString
 }
 
@@ -91,7 +90,6 @@ case class Component(p: Path, comp: ComponentKey) extends MakeAbstract {
       throw ParseError("component name " + comp + " illegal for element " + o)
     }
   }
-
   override def toString: String = p + " component " + comp
 }
 

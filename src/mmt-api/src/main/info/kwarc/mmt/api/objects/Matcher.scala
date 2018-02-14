@@ -74,7 +74,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
          case _ => false
       }
 
-      override def lookup(p: Path): Option[StructuralElement] = controller.getO(p)
+      def lookup = controller.globalLookup
       def simplify(t: Obj)(implicit stack: Stack, history: History) =
          controller.simplifier(t, stack.context, rules)
       def outerContext = constantContext ++ querySolution

@@ -42,7 +42,7 @@ abstract class Storage {
   def load(path: Path)(implicit controller: Controller)
 
   /** dereferences a path to a fragment of an already loaded StructuralElement and adds only that fragment
-   *  empty by default, storage that can retrieve individual fragments should override this
+   *  empty by default, storages that can retrieve individual fragments should override this
    */
   def loadFragment(neededPath: Path, existingPath: Path)(implicit controller: Controller) {
     throw NotApplicable("")
@@ -57,6 +57,11 @@ abstract class Storage {
 
 /** a variant of a [[Storage]] that loads Scala objects from the class path */
 trait RealizationStorage {
+  /** the class loaded used to load semantic objects
+   *
+   * By making this a 'def', every load may creates a fresh class loader.
+   * That can be helpful if new class files are produced at run time (e.g., with the [[ScalaCompiler]]).   
+   */
   def loader: java.lang.ClassLoader
   /**
    * @param cls the class name

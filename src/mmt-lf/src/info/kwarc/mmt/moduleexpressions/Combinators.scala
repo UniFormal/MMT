@@ -16,7 +16,7 @@ object Common {
   /** turns a declared theory into an anonymous one by dropping all global qualifiers (only defined if names are still unique afterwards) */
   def anonymize(solver: CheckingCallback, namedTheory: DeclaredTheory)(implicit stack: Stack, history: History): AnonymousTheory = {
     // collect included theories
-    val includes = namedTheory.getIncludesWithoutMeta.flatMap {i => solver.lookup(i) match {
+    val includes = namedTheory.getIncludesWithoutMeta.flatMap {i => solver.lookup.getO(i) match {
       case Some(dt: DeclaredTheory) =>
         List(dt)
       case Some(se) =>
@@ -52,13 +52,13 @@ object Common {
     thy match {
       // named theories
       case OMMOD(p) =>
-        solver.lookup(p) match {
+        solver.lookup.getO(p) match {
           case Some(th: DeclaredTheory) =>
             lazy val default = anonymize(solver, th)
-            val at = th.df match {
+            th.dfC.normalize(d => solver.simplify(d)) // make sure a normalization value is cached
+            val at = th.dfC.normalized match {
               case Some(df) =>
-                val dfS = solver.simplify(df)
-                dfS match {
+                df match {
                   case AnonymousTheory(mt, ds) => new AnonymousTheory(mt,ds)
                   case _ => default
                 }
@@ -76,6 +76,31 @@ object Common {
       case AnonymousTheory(mt, OMLList(ds)) => Some(new AnonymousTheory(mt,ds))
       case _ => None
     }
+  }
+  
+  /** like asAnonymousTheory but for morphisms */
+  def asAnonymousMorphism(solver: CheckingCallback, fromTerm: Term, from: AnonymousTheory,
+                                                    toTerm: Term, to: AnonymousTheory, mor: Term)(implicit stack: Stack, history: History): Option[AnonymousMorphism] = {
+    val fromPath = fromTerm match {
+      case OMMOD(p) => p
+      case _ => return None
+    }
+    val morAnon = new AnonymousMorphism(fromTerm,toTerm,Nil)
+    // replaces toTerm-OMS's in mor with to-OMLs 
+    val trav = OMSReplacer {p =>
+      if (to.isDeclared(p.name)) Some(OML(p.name)) else None
+    }
+    from.decls.foreach {oml =>
+      solver.lookup.getO(mor, ComplexStep(fromPath)/oml.name) foreach {
+        case c: Constant => c.df foreach {df =>
+          val dfT = trav(df, Context.empty)
+          morAnon add OML(oml.name, None, Some(dfT))
+        }
+        case se =>
+          solver.error("unknown assignment " + se.path)
+      }
+    }
+    Some(morAnon)
   }
 }
 
@@ -152,7 +177,7 @@ object ComputeRename extends ComputationRule(Rename.path) {
     // TODO more generally, we could keep track of the renaming necessary for this realization, but then realizations cannot be implicit anymore
     val removeReals = thyAnon.decls.flatMap {
       case oml @ RealizeOML(p, _) =>
-        solver.lookup(p) match {
+        solver.lookup.getO(p) match {
           case Some(dt: DeclaredTheory) =>
             if (oldNew.exists {case (old,nw) => dt.declares(old)})
               List(oml)
@@ -177,25 +202,31 @@ object ComputeRename extends ComputationRule(Rename.path) {
  */
 object Translate extends BinaryConstantScala(Combinators._path, "translate")
 
-// TODO does not work yet
 object ComputeTranslate extends ComputationRule(Translate.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
     val Translate(mor, thy) = tm
-    val dom = Morph.domain(mor)(???).getOrElse{return None}
-    val cod = Morph.codomain(mor)(???).getOrElse{return None}
+    val dom = Morph.domain(mor)(solver.lookup).getOrElse{return None}
+    val cod = Morph.codomain(mor)(solver.lookup).getOrElse{return None}
     val List(thyAnon,domAnon,codAnon) = List(thy,dom,cod).map {t => Common.asAnonymousTheory(solver, t).getOrElse(return None)}
+    val morAnon = Common.asAnonymousMorphism(solver, dom, domAnon, cod, codAnon, mor).getOrElse(return None)
     // translate all declarations of thy that are not from dom via mor and add them to cod
-    def translate(t: Term): Term = ???
+    val morAsSub = morAnon.decls.flatMap {oml => oml.df.toList.map {d => Sub(oml.name, d)}}
+    val translator = new OMLReplacer(morAsSub)
+    val pushout = codAnon
     thyAnon.decls.foreach {
       case RealizeOML(p,_) =>
         // these may also be translatable, but they are optional anyway
       case oml =>
         if (! domAnon.isDeclared(oml.name)) {
-          val omlT = translate(oml).asInstanceOf[OML]
-          codAnon.add(omlT)
+          if (codAnon.isDeclared(oml.name)) {
+            solver.error("pushout not defined because of name clash: " + oml.name)
+            return None
+          }
+          val omlT = translator(oml, stack.context).asInstanceOf[OML]
+          pushout.add(omlT)
         }
     }
-    Some(codAnon.toTerm)
+    Some(pushout.toTerm)
   }
 }
 
@@ -221,95 +252,3 @@ object ComputeExpand extends ComputationRule(Expand.path) {
       }
    }
 }
-
-
-/*
-  val extend = new sym("extends") {
-    def unapply(t : Term) : Option[(Term,List[OML])] = t match {
-      case OMA(`tm`,th :: args) if args.forall(_.isInstanceOf[OML]) => Some((th,args.map(_.asInstanceOf[OML])))
-      case _ => None
-    }
-  }
-} with TheoryExpRule {
-  def apply(tm: Term, covered: Boolean)(implicit solver : Solver, stack: Stack, history: History): Boolean = tm match {
-    case extend(th,ls) =>
-      solver.check(IsTheory(stack,th))
-      val thcont : Context = solver.elaborateModuleExpr(th,stack.context)
-      ls.foldLeft((stack.context ++ thcont,true))((p,oml) => {
-        val checks = oml.tp.forall(tp => solver.check(Inhabitable(Stack(p._1),tp))) && oml.df.forall(df => {
-          if (oml.tp.isDefined) solver.check(Typing(Stack(p._1),df,oml.tp.get)) else true
-        })
-        (p._1,p._2 && checks)
-      })._2
-    case _ => false
-  }
-
-  def elaborate(prev : Context, df : Term)(implicit elab : (Context,Term) => Context) : Context = df match {
-    case extend(th, ls) =>
-      elab(prev,th) ::: ls.map(_.vd)
-  }
-}
-
-
-
-object Renaming extends {
-  val rename = new sym("renaming") {
-    def unapply(t : Term) : Option[(Term,List[OML])] = t match {
-      case OMA(`tm`,th :: args) if args.forall(_.isInstanceOf[OML]) => Some((th,args.map(_.asInstanceOf[OML])))
-      case _ => None
-    }
-  }
-} with TheoryExpRule(rename.path,OfType.path) {
-  def apply(tm: Term, covered: Boolean)(implicit solver : Solver, stack: Stack, history: History): Boolean = tm match {
-    case rename(th,ls) =>
-      solver.check(IsTheory(stack,th))
-      ls forall {
-        case OML(name,toOpt,Some(OMS(p))) => true // TODO
-        case _ =>
-          false
-      }
-    case _ => false
-  }
-
-  def elaborate(prev : Context, df : Term)(implicit elab : (Context,Term) => Context) : Context = df match {
-    case rename(th,ls) => ???
-    // case _ => Nil
-  }
-}
-
-
-object Combine extends {
-  val combine = new appsym("combine")
-} with TheoryExpRule(combine.path,OfType.path) {
-  def apply(tm: Term, covered: Boolean)(implicit solver : Solver, stack: Stack, history: History): Boolean = tm match {
-    case combine(ls) =>
-      ls.forall(p => solver.check(IsTheory(stack,p)))
-    case _ => false
-  }
-
-  def elaborate(prev : Context, df : Term)(implicit elab : (Context,Term) => Context) : Context = df match {
-    case combine(ls) =>
-      ls.flatMap(elab(prev,_))
-    // case _ => Nil
-  }
-}
-
-object Labcont extends {
-  val compth = new appsym("LabCont")
-} with TheoryExpRule(compth.path,OfType.path) {
-  def apply(tm: Term, covered: Boolean)(implicit solver : Solver, stack: Stack, history: History): Boolean = tm match {
-    case compth(ls) =>
-      true
-    case _ => false
-  }
-
-  def elaborate(prev : Context, df : Term)(implicit elab : (Context,Term) => Context) : Context = df match {
-    case compth(ls) if ls.forall(_.isInstanceOf[OML]) => ls.map{
-      case OML(vname,vtp,vdf) =>
-        VarDecl(vname,vtp,vdf,None)
-    }
-    // case _ => Nil
-  }
-
-}
-*/

@@ -71,7 +71,7 @@ class RuleType(be: Backend) extends Atomic[Rule] {
 }
 
 /**
- * [[Rule]]s as literals (to be used as definies of constants that represent rules)
+ * [[Rule]]s as literals (to be used as definiens of constants that represent rules)
  */
 class RuleLiterals(be: backend.Backend) extends RepresentedRealizedType[Rule](OMS(utils.mmt.mmtcd ? "rule"), new RuleType(be))
 

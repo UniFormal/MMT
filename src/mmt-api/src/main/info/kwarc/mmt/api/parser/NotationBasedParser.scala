@@ -273,8 +273,12 @@ class NotationBasedParser extends ObjectParser {
 
   /* like getRules but for a theory expression (currently only called for local notations) */
   private def getRules(thy: Term): RuleLists = {
-    controller.simplifier.apply(thy,Context.empty) match {
+    // this used to simplify thy first, but that may be dangerous and/or inefficient
+    thy match {
       case OMPMOD(mp,_) => getRules(Context(mp))
+      case AnonymousTheory(metaO, decls) =>
+        //we could also collect all notations in decls, but we do not have parsing rules for OML's
+        metaO.map(m => getRules(Context(m))).getOrElse((Nil,Nil,Nil))
       case _ => (Nil,Nil,Nil) // TODO only named theories are implemented so far
     }
   }

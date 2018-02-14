@@ -164,10 +164,8 @@ object Action extends CompRegexParsers {
     val p =
       try {
         parse(commented(ActionState(NamespaceMap(b), h)), s)
-      }
-      catch {
-        case e: Exception =>
-          throw ParseError("unknown parse error: " + e.getMessage).setCausedBy(e)
+      } catch {case e: Exception =>
+        throw ParseError("unknown parse error: " + e.getMessage).setCausedBy(e)
       }
     p match {
       case Success(tree, _) => tree

@@ -285,9 +285,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {
       NoChange
    }
 
-   /** callback for calling checking rules, used in applyCompRules */
-   private def callback(state: UOMState) = new CheckingCallback {
-      def check(j: Judgement)(implicit history: History) = j match {
+  /** callback for calling checking rules, used in applyCompRules */
+  private def callback(state: UOMState) = new CheckingCallback {
+    def check(j: Judgement)(implicit history: History) = j match {
          case j: Equality =>
             apply(j.tm1, j.context, state.rules) == apply(j.tm2, j.context, state.rules)
          case j: EqualityContext =>
@@ -295,11 +295,11 @@ class RuleBasedSimplifier extends ObjectSimplifier {
          case _ => false
       }
 
-     override def lookup(p: Path): Option[StructuralElement] = controller.getO(p)
-      def simplify(t: Obj)(implicit stack: Stack, history: History) =
+    def lookup = controller.globalLookup
+    def simplify(t: Obj)(implicit stack: Stack, history: History) =
          apply(t, stack.context, state.rules)
-      def outerContext = Context.empty
-     def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = simplify(tm) match {
+    def outerContext = Context.empty
+    def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = simplify(tm) match {
        case AnonymousTheory(mt, ds) =>
          Some(new AnonymousTheory(mt, Nil))
        // add include of codomain of mor
@@ -318,9 +318,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {
          Some(new AnonymousTheory(th.meta, ds))
        case _ =>
          return None
-     }
-     def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) = controller.simplifier.materialize(cont,tm,expandDefs,parent)
-   }
+    }
+    def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) = controller.simplifier.materialize(cont,tm,expandDefs,parent)
+  }
 
    /** applies all computation rules */
    private def applyCompRules(tm: Term)(implicit context: Context, state: UOMState): Change = {

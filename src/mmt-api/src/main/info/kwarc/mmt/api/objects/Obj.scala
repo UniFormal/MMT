@@ -396,7 +396,7 @@ object OMSemiFormal {
  * These could be used for the typed/defined fields in a record type/value or the selection function.
  */
 case class OML(name: LocalName, tp: Option[Term], df: Option[Term], nt: Option[TextNotation] = None, featureOpt : Option[String] = None) extends Term with NamedElement {
-    def toStr(implicit shortURIs: Boolean) = "(" + vd.toStr + ")"
+    def toStr(implicit shortURIs: Boolean) = if (tp.isEmpty && df.isEmpty && nt.isEmpty && featureOpt.isEmpty) name.toString else "(" + vd.toStr + ")"
     def vd = VarDecl(name, featureOpt, tp, df, nt)
     private[objects] def freeVars_ = vd.freeVars
     def head = None
