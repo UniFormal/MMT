@@ -426,8 +426,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
    }
 
-  @deprecated("FR: This code does not look right.","")
-  def lookup(p : Path) : Option[StructuralElement] = controller.getO(p)
+  // TODO this should track lookups for dependency management
+  def lookup = controller.globalLookup
   @deprecated("Used in LFX, but could probably be done better","")
   def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) = controller.simplifier.materialize(cont,tm,expandDefs,parent)
 
@@ -1519,7 +1519,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             }
             // no applicable rule, traverse
             Traverser(this,t)
-        case OMS(op) =>
+       /* case OMS(op) => //FR commenting this out, awaiting answer from DM about whether it's needed; it currently causes match errors
           // use first applicable rule
           computationRules foreach {rule =>
             if (rule.head == op) {
@@ -1532,7 +1532,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             }
           }
           // no applicable rule, traverse
-          Traverser(this,t)
+          Traverser(this,t) */
         case _ =>
             Traverser(this,t)
       }

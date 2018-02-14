@@ -14,6 +14,7 @@ object Morph {
   /** pre: m is a well-structured morphism */
   def domain(m: Term)(implicit lib: Lookup): Option[Term] = m match {
     case OMIDENT(t) => Some(t)
+    case OMINST(p,args) => Some(OMMOD(p))
     case OMCOMP(n :: _) => domain(n)
     case OMStructuralInclude(f,_) => Some(OMMOD(f))
     case OMMOD(path) => try {
@@ -35,6 +36,7 @@ object Morph {
   /** pre: m is a well-structured morphism */
   def codomain(m: Term)(implicit lib: Lookup): Option[Term] = m match {
     case OMIDENT(t) => Some(t)
+    case OMINST(p,args) => None
     case OMCOMP(l) if l.nonEmpty => codomain(l.last)
     case OMStructuralInclude(_,t) => Some(OMMOD(t))
     case OMMOD(path) => try {
@@ -54,42 +56,126 @@ object Morph {
     case _ => List(m)
   }
 
-  /** pre: m is a valid morphism
-    * post: m and simplify(m) are equal
-    * inclusion and identity morphisms are simplified to OMCOMP()
+  /** pre: mor is a valid morphism and includes all implicit morphisms
+    * post: mor and simplify(m) are equal
+    * @param mor the morphism to simplify
+    * @param preserveType if true, identity morphisms that restrict the type domain are preserved if they cannot be reduced; otherwise, they become OMCOMP()
     */
-  def simplify(m: Term): Term = {
-    val mS = OMCOMP(associateComposition(m))
+  def simplify(mor: Term, preserveType: Boolean = false)(implicit lib: Lookup): Term = {
+    val mS = OMCOMP(associateComposition(mor))
     mS match {
-      case OMMOD(p) => OMMOD(p)
+      case OMMOD(p) => mS
       case OMS(p) => // TODO dangerous assumption that [mpath] is always a PlainInclude!
         if (p.name.length == 1 && p.name.steps.head.isInstanceOf[ComplexStep])
           OMCOMP()
         else
-          OMS(p)
-      case OMIDENT(t) => OMCOMP()
-      case OMStructuralInclude(f,t) => m
-      case OMINST(t,args) =>
-        if (args.isEmpty) OMCOMP() else m
-      case OMCOMP(head :: ms) if ms.exists(OMINST.unapply(_).isDefined) =>
-        // include/identity in a parametric theory is just include/identity again
-        simplify(OMCOMP(head :: ms.filter(OMINST.unapply(_).isEmpty)))
+          mS
+      case OMIDENT(t) => if (preserveType) mS else OMCOMP()
+      case OMINST(t,args) => mor
+      case OMStructuralInclude(f,t) => mor
       case OMCOMP(ms) =>
-        val msS = (ms map simplify) filter {
-          case OMIDENT(_) => false
-          case OMCOMP(Nil) => false
-          case _ => true
+        var left = ms map {m => simplify(m,true)} //TODO can we skip simplification? Nothing much happens because there are no nested compositions anymore
+        var result: List[Term] = Nil
+        // we go through all morphisms m in 'ms', building the simplification in 'result' (in reverse order)
+        // we put R = OMCOMP(result.reverse) for the morphism processed so far
+        // by default, we just prepend m to result, so that eventually R = mS
+        // but for some m, we inspect the previous morphism (e.g., result.head) to see if we can reduce
+        // in particular, we can reduce R ; m ---> R ; (m|_codomain(R)) whenever if codomain(R) is properly included into domain(m)
+        // for that reason, precomposition with identity is not redundant: id_t ; m ---> m|_t
+        while (left.nonEmpty) {
+          val m = left.head
+          left = left.tail
+          // the codomain of R
+          lazy val cod = result.headOption.flatMap(h => codomain(h))
+          // TODO OMINST(p,args);m ---> OMINST(p, args * m) 
+          m match {
+            case OMID(p) =>
+              cod match {
+                case Some(OMMOD(t)) =>
+                  val pt = p match {
+                    case p: MPath => p ? ComplexStep(t)
+                    case p: GlobalName => p / ComplexStep(t)
+                  }
+                  lib.getO(pt) match {
+                    case Some(l: DefinedStructure) =>
+                      // restrict l to t
+                      result ::= l.df
+                    case _ =>
+                      result ::= m
+                  }
+                case _ =>
+                  result ::= m
+              }
+            case OMIDENT(t) =>
+              // an identity is needed only at the beginning because it defines the codomain
+              if (result.nonEmpty) {
+                result ::= m
+              }
+            case OMStructuralInclude(from,to) =>
+              val mergeWithPreviousTo = result.headOption flatMap {
+                case OMStructuralInclude(from1,to1) =>
+                  if (to1 == from) {
+                    // merge two successive structural includes: StructuralInclude(a,b);StructuralInclude(b,c)=StructuralInclude(a,c)
+                    Some(OMStructuralInclude(from1,to))
+                  } else {
+                    // TODO some simplification is still possible here
+                    None
+                  }
+                case _ => None
+              }
+              mergeWithPreviousTo match {
+                case Some(n) =>
+                  result = n :: result.tail
+                case None => cod match {
+                  case Some(OMMOD(t)) =>
+                    TheoryExp.metas(OMMOD(from), false).headOption match {
+                      case Some(fromMeta) => lib.getImplicit(t,fromMeta) match {
+                        case Some(_) =>
+                          // t is visible to metaFrom: R ; m = R 
+                        case None =>
+                          // t is visible to from but not to metaFrom: R ; m = R ; StructuralInclude(cod,to) 
+                          result ::= OMStructuralInclude(t,to)
+                      }
+                      case None =>
+                        // from has no meta-theory: R ; m = R ; StructuralInclude(cod,to)
+                        result ::= OMStructuralInclude(t,to)
+                    }
+                  case _ =>
+                    result ::= m
+                }
+              }
+            case OMINST(_,args) =>
+              result ::= m
+            case OMCOMP(_) =>
+              throw ImplementationError("no nested compositions possible")
+            case _ =>
+              result ::= m
+          }
         }
-        msS match {
+        result = result.reverse
+        // remove identities if they are not needed to preserve the type
+        if (!preserveType) result = result.filter {
+          case OMIDENT(_) => false
+          case _ => true 
+        }
+        // aggregate to a morphism if necessary
+        result match {
           case Nil => OMCOMP()
           case h :: Nil => h
-          case _ => OMCOMP(msS)
+          case msS => OMCOMP(msS)
         }
     }
   }
 
-  /** checks equality of two morphisms using the simplify method; sound but not complete */
-  def equal(a: Term, b: Term): Boolean = simplify(a) == simplify(b)
+  /** checks equality of two morphisms using the simplify method; sound but not complete
+   *  pre: a and b are well-formed, include all implicit morphisms, and check against the same type
+   */
+  def equal(a: Term, b: Term)(implicit lib: Lookup): Boolean = {
+    if (a hasheq b) return true // optimization
+    val aS = simplify(a)
+    val bS = simplify(b)
+    aS == bS
+  }
 }
 
 /** an auxiliary class to store domains of [[Context]]s and theory expressions (see [[TheoryExp]])
@@ -354,6 +440,10 @@ object OMIDENT {
   }
 }
 
+/**
+ * OMStructuralInclude(f,t): f -> t is the identity on the meta-theory of f (if any) and renames every declaration f?c in f to t?c
+ * For now, f may not have includes.
+ */
 object OMStructuralInclude {
   val path = ModExp.structuralinclude
   def apply(from: MPath,to: MPath) = OMA(OMID(this.path), List(OMMOD(from), OMMOD(to)))
@@ -365,23 +455,25 @@ object OMStructuralInclude {
 
 object ComplexMorphism {
   val path = ModExp.complexmorphism
-
-  def apply(body: Substitution) = ComplexTerm(this.path, body, Context(), Nil)
-
+  def apply(body: Substitution) = ComplexTerm(this.path, body, Context.empty, Nil)
   def unapply(t: Term): Option[Substitution] = t match {
     case ComplexTerm(this.path, sub, Context(), Nil) => Some(sub)
     case _ => None
   }
 }
 
-/** An OMINST represents an instantiation of a parametric theory */
-@deprecated("there is no such morphism because a parametric theory is not a theory", "")
+/**
+ * an auxiliary morphism used only internally
+ * OMINST(S, args): S -> T iff OMPMOD(S,args) -include-> T
+ * The left side is well-typed if we think of the parameters of S as a part of S (which works if S is the domain of a morphism).
+ * invariant: args.nonEmpty (apply method allows it by using OMIDENT instead; unapply method does not match OMIDENT) 
+ */
 object OMINST {
   val path = ModExp.instantiation
-
-  def apply(th : Term, pars : Term*) = OMA(OMS(this.path),th :: pars.toList)
-  def unapply(morph : Term) : Option[(Term,List[Term])] = morph match {
-    case OMA(OMS(`path`),th :: args) => Some((th,args))
+  def apply(p: MPath, args: List[Term]) =
+    if (args.isEmpty) OMIDENT(OMMOD(p)) else OMA(OMS(this.path), OMMOD(p)::args)
+  def unapply(morph : Term) : Option[(MPath,List[Term])] = morph match {
+    case OMA(OMS(this.path), OMMOD(p) :: args) => Some((p,args))
     case _ => None
   }
 }

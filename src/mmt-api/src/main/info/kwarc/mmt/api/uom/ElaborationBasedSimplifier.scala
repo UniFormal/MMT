@@ -126,10 +126,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           log("flattening yields " + d.path)
         }
         var previous: Option[LocalName] = None
-        thy.df.foreach {df =>
+        thy.dfC.normalize {d => objectLevel(d, mod.getInnerContext, rules)}
+        thy.dfC.normalized.foreach {dfS =>
           //TODO mod.getInnerContext is too small for nested theories
-          val dfS = objectLevel(df, mod.getInnerContext, rules)
-          thy.dfC.normalized = Some(dfS)
           dfS match {
             case ComplexTheory(cont) =>
               cont.asDeclarations(mod.toTerm).foreach {d =>
@@ -153,7 +152,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                     // we assume all references to included symbols already use OMS, i.e., do not have to be translated
                   case RealizeOML(mp, _) =>
                     try {
-                      controller.memory.content.addImplicit(OMMOD(mp), thy.toTerm, OMStructuralInclude(mp,thy.path))
+                      //TODO this fails because meta-includes composed with structuralinclude do not properly reduce to identity
+                      //controller.memory.content.addImplicit(OMMOD(mp), thy.toTerm, OMStructuralInclude(mp,thy.path))
                     } catch {case ad @ AlreadyDefined(f,t,o,n) =>
                       logError("skipping realization because " + ad.toString)
                     }

@@ -71,7 +71,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** all known root modules (which also induce root documents) */
   private val modules = new ModuleHashMap
   /** the diagram of implicit morphisms */
-  private val implicitGraph = new ThinGeneratedCategory
+  private val implicitGraph = new ThinGeneratedCategory(this)
 
   override def toString = modules.values.map(_.toString).mkString("", "\n\n", "")
 
@@ -296,7 +296,11 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
           case a: Constant => ConstantAssignment(home, a.name, a.alias, a.df.map(_ * OMCOMP(tl)))
           case a: DefinedStructure => DefLinkAssignment(home, a.name, a.from, OMCOMP(a.df :: tl))
         }
-      case OMIDENT(t) => makeAssignment(t,name,None)
+      case OMIDENT(t) =>
+        makeAssignment(t,name,None)
+      case OMINST(p,_) =>
+        // arguments are only relevant when looking up a declaration in the target, because this represents an include 
+        makeAssignment(OMMOD(p),name,None)
       case OMStructuralInclude(f,t) =>
         val target = name.steps match {
           case ComplexStep(`f`) :: ln =>
@@ -490,22 +494,25 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** translate a Declaration along a morphism */
   private def translate(d: Declaration, morph: Term, error: String => Nothing): Declaration = {
     morph match {
-      case OMINST(OMMOD(p),args) =>
-        getDeclarationInTerm(OMPMOD(p,args),LocalName(d.path.module) / d.name,error)
       case OMMOD(v) =>
         val link = getView(v)
         translateByLink(d, link, error)
       case OMS(p) =>
         val link = getStructure(p)
         translateByLink(d, link, error)
-      case OMCOMP(Nil) => d
-      case OMCOMP(hd :: tl) => translate(translate(d, hd, error), OMCOMP(tl), error)
       case OMIDENT(t) =>
         val imp = implicitGraph(d.home, t) getOrElse {
           throw GetError("no implicit morphism from " + d.home + " to " + t)
         }
         //TODO better copy d and change home to t and name to d.home/d.name
         translate(d, imp, error)
+      case OMINST(p,args) =>
+        getDeclarationInTerm(OMPMOD(p,args), LocalName(d.path.module)/d.name, error)
+      case OMStructuralInclude(f,t) =>
+        val ren = Renamer(p => if (p.module == f) Some(t ? p.name) else None)
+        d.translate(TraversingTranslator(ren), Context.empty)
+      case OMCOMP(Nil) => d
+      case OMCOMP(hd :: tl) => translate(translate(d, hd, error), OMCOMP(tl), error)
       //TODO remaining cases
     }
   }
@@ -586,7 +593,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             d.getDeclarations
           case _ => Nil //TODO materialize?
         }
-      case (OMMOD(from), OMINST(OMMOD(from2), args)) if from == from2 =>
+      case (OMMOD(from), OMINST(from2, args)) if from == from2 =>
         get(from) match {
           case d: DeclaredTheory =>
             d.getDeclarations.map(c => getDeclarationInTerm(OMPMOD(from, args), c.name, s => throw GetError(s)))
@@ -702,13 +709,20 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
        case _ =>
           adder.run
     }
+    // shared code for adding an include
+    def addInclude(to: Term, p: MPath, args: List[Term]) {
+      // using OMINST for parametric includes (returns OMIDENT if  args.isEmpty)
+      implicitGraph(OMMOD(p), to) = OMINST(p,args)
+    }
     try {
       e match {
+        case Include(to, p, args) =>
+          addInclude(to, p, args)
         case l: Link if l.isImplicit =>
           implicitGraph(l.from, l.to) = l.toTerm
         case t: DeclaredTheory =>
-          t.getIncludes foreach {m =>
-            implicitGraph(OMMOD(m), t.toTerm) = OMIDENT(OMMOD(m))
+          t.getAllIncludes foreach {case (p,args) =>
+             addInclude(t.toTerm, p, args)
           }
         case t: DefinedTheory =>
           implicitGraph(t.df, t.toTerm) = OMIDENT(t.toTerm)
