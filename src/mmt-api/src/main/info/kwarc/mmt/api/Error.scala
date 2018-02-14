@@ -353,10 +353,7 @@ class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends OpenC
   private var file: StandardPrintWriter = null
 
   protected def addError(e: Error) {
-    e match {
-      case _: ContentError =>
-      case _ => report.foreach(_ (e))
-    }
+    report.foreach(_ (e))
     file.write(new PrettyPrinter(240, 2).format(e.toNode) + "\n")
   }
 
