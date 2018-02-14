@@ -26,7 +26,7 @@ abstract class MMTIntegrationTest(neededArchives : String*)(neededExtensions : E
     // and is automatically .gitignored
 
     // create a setup instance
-    val setup = new Setup(Some(s => report("setup", s.trim)))
+    val setup = new Setup// TODO (Some(s => report("setup", s.trim)))
     controller.extman.addExtension(setup)
 
     // wipe anything old
