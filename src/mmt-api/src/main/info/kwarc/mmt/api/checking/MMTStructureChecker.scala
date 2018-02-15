@@ -150,11 +150,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case nm: NestedModule =>
         check(context, nm.module, streamed)
       case t: DefinedTheory =>
-          val dfR = checkTheory(context, t.df)
-          t.dfC.analyzed = dfR
+          checkTheory(Some(CPath(t.path, DefComponent)), context, t.df)
       case v: DefinedView =>
-        checkTheory(context, v.from)
-        checkTheory(context, v.to)
+        checkTheory(Some(CPath(v.path, DomComponent)), context, v.from)
+        checkTheory(Some(CPath(v.path, CodComponent)), context, v.to)
         val (dfR, _, _) = checkMorphism(context, v.df, Some(v.from), Some(v.to))
         v.dfC.analyzed = dfR
       case s: DefinedStructure =>
@@ -162,7 +161,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         linkOpt match {
           case None =>
             // declaration in a theory
-            checkTheory(context, s.from)
+            checkTheory(Some(CPath(s.path, TypeComponent)), context, s.from)
             checkRealization(context, s.df, s.from)
           case Some(link) =>
             // assignment in a link
@@ -348,19 +347,18 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case t: DeclaredTheory =>
         var contextMeta = context
         t.meta foreach { mt =>
-          checkTheory(context, OMMOD(mt))
+          checkTheory(Some(CPath(t.path, TypeComponent)), context, OMMOD(mt))
           contextMeta = contextMeta ++ mt
         }
         checkContext(contextMeta, t.parameters)
-        t.df map {d => checkTheory(contextMeta++t.parameters, d)}
+        t.df map {d => checkTheory(Some(CPath(t.path, DefComponent)), contextMeta++t.parameters, d)}
         // this is redundant on a clean check because e is empty then;
         e.getPrimitiveDeclarations foreach {d => UncheckedElement.set(d)}
       case v: DeclaredView =>
-        checkTheory(context, v.from)
-        checkTheory(context, v.to)
-        controller.simplifier(v)
+        checkTheory(None, context, v.from) //TODO Some(CPath(v.path, DomComponent))
+        checkTheory(None, context, v.to) //TODO Some(CPath(v.path, DomComponent))
       case s: DeclaredStructure =>
-        checkTheory(context, s.from)
+        checkTheory(Some(CPath(s.path, TypeComponent)), context, s.from)
       case _ =>
         //succeed for everything else but signal error
         logError("unchecked " + path)
@@ -388,9 +386,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         val istotal = isTotal(context,v)
         if (!(v.istotal contains false) && istotal.nonEmpty) {
           v.istotal = Some(false)
-          env.errorCont(
-            SourceError(v.name.toString, SourceRef.get(v).getOrElse(SourceRef.anonymous("None")), "View is not total!",istotal.map(_.toString), Level.Warning)
-          )
+          val ie = new InvalidElement(v, "View is not total") {
+            override def level = Level.Warning
+            override def extraMessage = istotal.map(_.toString).mkString("\n")
+          }
+          env.errorCont(ie)
         } else if (v.istotal.isEmpty) v.istotal = Some(true)
         // TODO totality check
       case s: DeclaredStructure =>
@@ -417,13 +417,23 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
 
   // *****
 
+  /** auxiliary function for setting the analyzed dimension after checking a module expression */
+  private def setAnalyzed(cpath: CPath, t: Term) {
+    controller.globalLookup.getComponent(cpath) match {
+      case tc: TermContainer => tc.analyzed = t
+      case _ =>
+    }
+  }
+  
   /** checks whether a theory object is well-formed
     *
+    * @param cpath the component (if any) that is this theory, to be updated by the object checker
     * @param context the context relative to which m is checked
     * @param t       the theory
     * @return the reconstructed theory
     */
-  private def checkTheory(context: Context, t: Term)(implicit env: ExtendedCheckingEnvironment): Term = t match {
+  private def checkTheory(cpath: Option[CPath], context: Context, t: Term)(implicit env: ExtendedCheckingEnvironment): Term = t match {
+    // TODO these cases should become a rule of the object checker
     case OMPMOD(p, args) =>
       val dec = try {
         controller.globalLookup.get(p)
@@ -447,19 +457,22 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               env.errorCont(InvalidObject(t, "bad number of arguments, expected " + pars.length))
               context.id
             }
-            checkSubstitution(context, subs, pars, Context(), false)
+            checkSubstitution(context, subs, pars, Context.empty, false)
           }
         case _ =>
           env.errorCont(InvalidObject(t, "not a theory identifier: " + p.toPath))
       }
+      cpath foreach {cp => setAnalyzed(cp, t)} 
       t
     case ComplexTheory(body) =>
       val bodyR = checkContext(context, body)
-      ComplexTheory(bodyR)
+      val tR = ComplexTheory(bodyR)
+      cpath foreach {cp => setAnalyzed(cp, tR)}
+      tR
     case _ =>
       val prt = ParseResult.fromTerm(t)
-      val j = Typing(Stack(context ++ prt.free), prt.term, OMS(ModExp.theorytype))
-      val cu = CheckingUnit(None, context, prt.unknown, j)
+      val j = Typing(Stack(prt.free), prt.term, OMS(ModExp.theorytype))
+      val cu = CheckingUnit(cpath, context, prt.unknown, j)
       val result = objectChecker(cu, env.rules)(env.ce)
       result.term
   }
@@ -492,7 +505,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         env.pCont(p)
         (m, l.from, l.to)
       case OMS(p) =>
-        checkTheory(context, OMMOD(p.module))
+        checkTheory(None, context, OMMOD(p.module))
         content.get(p) match {
           case l: Structure =>
             env.pCont(l.path)
@@ -501,7 +514,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             throw InvalidObject(m, "invalid morphism")
         }
       case OMIDENT(t) =>
-        checkTheory(context, t)
+        checkTheory(None, context, t)
         (m, t, t)
       case OMCOMP(ms) => ms.filter(_ != OMCOMP()) match {
         case Nil => (m, dom, cod)
@@ -665,7 +678,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           // a variable that imports another theory
           // type must be a theory
           val tpR = vd.tp match {
-            case Some(tp) => Some(checkTheory(currentContext, tp))
+            case Some(tp) => Some(checkTheory(None, currentContext, tp))
             case None =>
               env.errorCont(InvalidObject(vd, "type of structure variable must be given"))
               None
