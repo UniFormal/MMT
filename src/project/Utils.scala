@@ -72,11 +72,7 @@ object Utils {
    val jEditPluginRelease = deploy/"jedit-plugin"/"plugin"/"jars"
 
    /** These methods are used by the target jedit/install to copy files to the local jEdit installation */
-   /** jars in deploy/main */
-   val jEditJars = List("mmt-api.jar", "mmt-lf.jar", "mmt-lfx.jar", "MMTPlugin.jar", "mmt-specware.jar", "mmt-mizar.jar", "mmt-pvs.jar", "mmt-odk.jar")
-   /** jars in deploy/lib */
-   val jEditDeps = List("scala-library.jar","scala-parser-combinators.jar","scala-reflect.jar","scala-xml.jar","tiscaf.jar")
-   /** copy all jars to jEdit settings directory */
+   /** copy MMT jar to jEdit settings directory */
    def installJEditJars {
       settings.get(killJEdit).foreach {x => runscript(x)}
      Thread.sleep(500)
@@ -94,9 +90,11 @@ object Utils {
    }
    /** copy all jEdit jars to a directory */
    def copyJEditJars(to: File) {
-      jEditJars.foreach {f => copy(deploy/"main"/f, to/f)}
-      jEditDeps.foreach {f => copy(deploy/"lib"/f, to/f)}
-      copy(deploy/"lfcatalog"/"lfcatalog.jar", to/"lfcatalog.jar")
+      copy(deploy/"mmt.jar", to/"MMTPlugin.jar")
+      // all other jars are bundled with the above
+      // val jEditDeps = List("scala-library.jar","scala-parser-combinators.jar","scala-reflect.jar","scala-xml.jar","tiscaf.jar")
+      // jEditDeps.foreach {f => copy(deploy/"lib"/f, to/f)}
+      // copy(deploy/"lfcatalog"/"lfcatalog.jar", to/"lfcatalog.jar")
    }
 
 
