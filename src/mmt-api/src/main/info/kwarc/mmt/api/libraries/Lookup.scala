@@ -174,7 +174,7 @@ abstract class Lookup {self =>
           aOpt match {
              case Some(df) => df
              case None =>
-               // TODO check if already included in codomain
+               // TODO what to do if already included in codomain? need to specify if views have to explicitly include identity
                getAs(classOf[Constant], theo ? ln).df match {
                 case Some(df) =>
                   traverse(df)
