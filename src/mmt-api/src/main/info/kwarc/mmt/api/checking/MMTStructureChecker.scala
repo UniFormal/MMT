@@ -384,15 +384,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         doDoc(t.asDocument)
       case v: DeclaredView =>
         val istotal = isTotal(context,v)
-        if (!(v.istotal contains false) && istotal.nonEmpty) {
-          v.istotal = Some(false)
+        if (istotal.nonEmpty) {
           val ie = new InvalidElement(v, "View is not total") {
             override def level = Level.Warning
             override def extraMessage = istotal.map(_.toString).mkString("\n")
           }
           env.errorCont(ie)
-        } else if (v.istotal.isEmpty) v.istotal = Some(true)
-        // TODO totality check
+        }
       case s: DeclaredStructure =>
       case _ =>
         //succeed for everything else but signal error
@@ -400,18 +398,21 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     }
   }
 
-  private def isTotal(context : Context, view : DeclaredView, currentincl : Option[Term] = None) : List[GlobalName] = {
+  /** checks if a view is total and returns the missing assignments */
+  @deprecated("needs review", "")
+  private def isTotal(context: Context, view: DeclaredView, currentincl: Option[Term] = None): List[GlobalName] = {
     val dom = controller.simplifier.materialize(context,currentincl.getOrElse(view.from),true,None).asInstanceOf[DeclaredTheory]
     controller.simplifier(dom)
-    val consts = dom.getConstants.collect{
-      case c : Constant if !view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name) => c.path
+    val consts = dom.getConstants collect {
+      case c : Constant if c.df.isEmpty && !view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name) => c.path
     }
-    val incls = dom.getIncludesWithoutMeta.view.filterNot(from =>
-      view.getDeclarations.exists(d => d.name == LocalName(from))).filterNot(from =>
-      controller.library.getImplicit(OMMOD(from),view.to).isDefined).flatMap{
-      case from =>
+    val incls = dom.getIncludesWithoutMeta.view.filterNot {from =>
+        view.getDeclarations.exists(d => d.name == LocalName(from))
+      }.filterNot {from =>
+        controller.library.getImplicit(OMMOD(from),view.to).isDefined
+      }.flatMap {case from =>
         isTotal(context,view,Some(OMMOD(from)))
-    }
+      }
     (consts ::: incls.toList).distinct
   }
 
