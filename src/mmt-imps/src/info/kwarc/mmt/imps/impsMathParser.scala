@@ -24,10 +24,10 @@ package object impsMathParser {
     val k = new IMPSMathParser()
     val j = k.parseAll(k.parseMath, input)
     if (j.isEmpty) {
-      println("COULD NOT PARSE: " + s)
+      //println("COULD NOT PARSE: " + s)
       None
     } else {
-      println("PARSED:          " + j.get.toString)
+      //println("PARSED:          " + j.get.toString)
       Some(j.get)
     }
   }

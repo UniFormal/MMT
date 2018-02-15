@@ -446,7 +446,7 @@ package object impsArgumentParsers
           assert(ss.length == 2)
 
           ss(0) match {
-            case Exp(List(Str(name)),_) => ss(1) match {
+            case Exp(List(Str(name)),sourceR) => ss(1) match {
               case Exp(js,_) =>
               {
                 var str : String = ""
@@ -471,7 +471,7 @@ package object impsArgumentParsers
                 val mp     = new IMPSMathParser()
                 val parsed = mp.parseAll(mp.parseSort, str)
 
-                if (parsed.isEmpty) { ??? }
+                if (parsed.isEmpty) { println("ERROR: Could not parse constant-sort: " + str) }
 
                 lst = lst :+ (name, parsed.get)
               }

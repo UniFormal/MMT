@@ -300,7 +300,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case AtomicSort(name, defstring, theory, usages, witness, src) =>
 
         val ln : LocalName = LocalName(theory.thy)
-        assert(tState.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
+
+        if (!tState.theories_decl.exists(t => t.name == ln)) { throw new IMPSDependencyException("required theory not found") }
         val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
         val definition : Term = tState.bindUnknowns(doMathExp(defstring, parent))
@@ -317,7 +318,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case Constant(name, definition, theory, sort, usages, src) =>
 
         val ln : LocalName = LocalName(theory.thy)
-        assert(tState.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
+        if (!tState.theories_decl.exists(t => t.name == ln)) { throw new IMPSDependencyException("required theory not found") }
         val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
         /* look for sort in given theory. */
@@ -347,7 +348,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case Theorem(name, formula, lemma, reverse, theory, usages, transport, macete, homeTheory, maybeProof, src) =>
 
         val ln : LocalName = doName(theory.thy)
-        assert(tState.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
+        if (!tState.theories_decl.exists(t => t.name == ln)) { throw new IMPSDependencyException("required theory not found") }
         val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
         val mth : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(formula, parent)))
@@ -379,7 +380,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case SchematicMacete(_, _, thy, _, _, _) =>
 
         val ln : LocalName = LocalName(thy.thy)
-        assert(tState.theories_decl.exists(t => t.name == ln)) // TODO: Translate to BuildFailure?
+        if (!tState.theories_decl.exists(t => t.name == ln)) { throw new IMPSDependencyException("required theory not found") }
         val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
         // Macetes are added as opaque (for now?)
@@ -612,3 +613,20 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     foo
   }
 }
+
+class IMPSDependencyException(message: String) extends Exception(message) {
+
+  def this(message: String, cause: Throwable) {
+    this(message)
+    initCause(cause)
+  }
+
+  def this(cause: Throwable) {
+    this(Option(cause).map(_.toString).orNull, cause)
+  }
+
+  def this() {
+    this(null: String)
+  }
+}
+

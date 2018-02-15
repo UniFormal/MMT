@@ -86,8 +86,8 @@ class IMPSParser
     }
 
     // Some printouts for manual inspection, to be removed later
-    println("\n#### Summary for " + uri.toString + ":")
-    println("#### " + exprs.length + " expressions and subexpressions parsed; " + successes + " Successes, " + failures + " explicit Failures and " + dummies + " Dummies")
+    println("#### Summary for " + uri.toString + ":")
+    println("#### " + exprs.length + " expressions and subexpressions parsed; " + successes + " Successes, " + failures + " explicit Failures and " + dummies + " Dummies\n")
 
     // Set to true for pretty helpful debug output
     val debug : Boolean = false
