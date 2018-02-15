@@ -144,8 +144,16 @@ object Morph {
                     result ::= m
                 }
               }
-            case OMINST(_,args) =>
-              result ::= m
+            case OMINST(p,args) =>
+              // R ; OMINST(p,args) = R  if the parameters do not occur in the image of R
+              // that is definitely the case if codomain(R) != p: in that case codomain(R) is properly included into p so that R cannot refer to the parameters of p
+              cod match {
+                case Some(OMMOD(t)) =>
+                  if (t == p)
+                    result ::= m
+                case _ =>
+                  result ::= m
+              }
             case OMCOMP(_) =>
               throw ImplementationError("no nested compositions possible")
             case _ =>
@@ -153,7 +161,7 @@ object Morph {
           }
         }
         result = result.reverse
-        // remove identities if they are not needed to preserve the type
+        // remove the leading identity if it is not needed to preserve the type
         if (!preserveType) result = result.filter {
           case OMIDENT(_) => false
           case _ => true 
@@ -168,12 +176,12 @@ object Morph {
   }
 
   /** checks equality of two morphisms using the simplify method; sound but not complete
-   *  pre: a and b are well-formed, include all implicit morphisms, and check against the same type
+   *  pre: a and b are well-formed, include all implicit morphisms, and have domain 'from'
    */
-  def equal(a: Term, b: Term)(implicit lib: Lookup): Boolean = {
+  def equal(a: Term, b: Term, from: Term)(implicit lib: Lookup): Boolean = {
     if (a hasheq b) return true // optimization
-    val aS = simplify(a)
-    val bS = simplify(b)
+    val aS = simplify(OMCOMP(OMIDENT(from),a))
+    val bS = simplify(OMCOMP(OMIDENT(from),a))
     aS == bS
   }
 }

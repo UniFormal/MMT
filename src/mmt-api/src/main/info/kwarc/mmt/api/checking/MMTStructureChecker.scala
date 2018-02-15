@@ -611,7 +611,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             env.errorCont(InvalidObject(s, path + " does not refer to constant"))
         }
         env.pCont(path)
-        //wrap in implicit morphism?
+        //TODO wrap in implicit morphism?
         s
       case OML(name, tp, df,_,_) => OML(name, tp.map(checkTerm(context, _)), df.map(checkTerm(context, _)))
       case OMV(name) =>
