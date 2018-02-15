@@ -177,7 +177,7 @@ class QueryServer extends ServerExtension("query") {
     * @param candidate Candidate Path that could not be parsed
     * @param t Internal exception causing this error
     */
-  class ContextParsingError(candidate : String, t: Throwable) extends LocalError(s"Unable to use context: '$candidate' is not a valid MPath. ") {
+  class ContextParsingError(candidate : String, t: Exception) extends LocalError(s"Unable to use context: '$candidate' is not a valid MPath. ") {
     setCausedBy(t)
   }
   /**
@@ -185,7 +185,7 @@ class QueryServer extends ServerExtension("query") {
     * @param item path to item that could not be retrieved
     * @param t Internal exception causing this error
     */
-  class ContextRetrievalError(item: MPath, t: Throwable) extends LocalError(s"Unable to use context: '${item.toPath}' could not be retrieved. Make sure the path exists. ") {
+  class ContextRetrievalError(item: MPath, t: Exception) extends LocalError(s"Unable to use context: '${item.toPath}' could not be retrieved. Make sure the path exists. ") {
     setCausedBy(t)
   }
   /**
@@ -199,7 +199,7 @@ class QueryServer extends ServerExtension("query") {
     * Represents an error that occured because the query could not be properly translated.
     * @param t Cause of the error
     */
-  class QueryTranslationParsingError(val t: Throwable) extends Error(s"Unable to parse query: ${t.getMessage}. Make sure your syntax is correct. ") {
+  class QueryTranslationParsingError(val t: Exception) extends Error(s"Unable to parse query: ${t.getMessage}. Make sure your syntax is correct. ") {
     setCausedBy(t)
   }
   def apply(request: ServerRequest): ServerResponse = {

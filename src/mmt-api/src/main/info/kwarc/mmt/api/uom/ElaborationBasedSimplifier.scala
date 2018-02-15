@@ -240,47 +240,33 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         }
       // any other import (including includes of complex theories): copy and translate all declarations
       case s: Structure =>
-         //val dom = materialize(Context(parent.path), s.from, true, None).asInstanceOf[DeclaredTheory]
-         //flatten(dom)
-          var dones : List[MPath] = Nil // List(s.from.toMPath)
-          def doDom(src : Term, prefix : Option[MPath] = None) : List[Declaration] = if (dones contains src.toMPath) Nil else {
-            dones ::= src.toMPath
-            val dom = materialize(Context(parent.path),src,true,None).asInstanceOf[DeclaredTheory]
-            flatten(dom)
-            dom.getDeclarations.flatMap(d => {
-              d match {
-                case PlainInclude(i,_) =>
-                  val dF = lup.getAs(classOf[Declaration], parent.path ? s.name /  d.name)
-                  dF :: doDom(OMMOD(i),Some(i))
-                case id : Declaration =>
-                  val name = prefix match {
-                    case Some(i) => s.name / ComplexStep(i) / id.name
-                    case _ => s.name / id.name
-                  }
-                  val dF = lup.getAs(classOf[Declaration], parent.path ? name)
-                  List(dF)
-              }
-            })
-          }
-        doDom(s.from)
-        /*
-         dom.getDeclarations.flatMap(d => {
-           val dF = lup.getAs(classOf[Declaration], parent.path ? s.name / d.name)
-           d match {
-             case PlainInclude(i,_) =>
-               val idom = lup.get(i)
-               apply(idom)
-               dF :: idom.getDeclarations.flatMap {
-                 case PlainInclude(_,_) =>
-                   Nil
-                 case id: Declaration =>
-                   val idF = lup.getAs(classOf[Declaration], parent.path ? (s.name / ComplexStep(i) / id.name))
-                   List(idF)
-               }
-             case d => List(dF)
-           }
-         }).reverse
+        /* @param incl a theory reflexive-transitively included into s.from
+         * @param prefix the prefix to use for declarations from that theory (None for s.from itself) 
          */
+        def doDeclsInIncludedTheory(incl: Term, prefix: Option[LocalName]): List[Declaration] = {
+            val dom = materialize(Context(parent.path),incl,true,None).asInstanceOf[DeclaredTheory]
+            flatten(dom)
+            dom.getDeclarations.flatMap {
+              case PlainInclude(i,_) =>
+                // because includes are already flattened transitively, we only have to recurse one level
+                if (prefix.isEmpty) {
+                  val si = lup.getAs(classOf[Declaration], parent.path ? s.name / ComplexStep(i))
+                  si :: doDeclsInIncludedTheory(OMMOD(i),Some(LocalName(i)))
+                } else
+                  Nil
+              case d: Declaration =>
+                val name = prefix match {
+                  case Some(p) => s.name / p / d.name
+                  case _ => s.name / d.name
+                }
+                val sd = lup.getAs(classOf[Declaration], parent.path ? name)
+                List(sd)
+            }
+        }
+        val sElab = doDeclsInIncludedTheory(s.from, None)
+        // because s.from and its includes were already flattened recursively, we must avoid recursively elaborating the declarations in sElab
+        sElab foreach {d => ElaboratedElement.set(d)}  
+        sElab
       // derived declarations: elaborate
       case dd: DerivedDeclaration =>
          controller.extman.get(classOf[StructuralFeature], dd.feature) match {
@@ -343,10 +329,10 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   /** reelaborates if old element was */
   override def onUpdate(old: StructuralElement, nw: StructuralElement) {
     onDelete(old)
-    onAdd(nw)
+    onCheck(nw)
   }
 
-  override def onAdd(c: StructuralElement) {
+  override def onCheck(c: StructuralElement) {
     // this makes sure there are no cycles, i.e., elaboration triggering itself
     // not sure if this is needed or even reasonable
     c.getOrigin match {

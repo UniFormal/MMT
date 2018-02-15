@@ -17,7 +17,7 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
   /** the severity of the error, override as needed */
   def level: Level = Level.Error
 
-  // this field is transient as some throwables are not actually serialisable
+  // this field is transient as some Throwables are not actually serialisable
   @transient private var causedBy: Option[Throwable] = None
 
   /** get the error due to which this error was thrown */
@@ -353,10 +353,7 @@ class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends OpenC
   private var file: StandardPrintWriter = null
 
   protected def addError(e: Error) {
-    e match {
-      case _: ContentError =>
-      case _ => report.foreach(_ (e))
-    }
+    report.foreach(_ (e))
     file.write(new PrettyPrinter(240, 2).format(e.toNode) + "\n")
   }
 

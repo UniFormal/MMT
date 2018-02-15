@@ -17,7 +17,7 @@ import info.kwarc.mmt.jedit._
   * @param logger Optional function to print interactive setup statements in. Defaults to println
   */
 class Setup extends ShellExtension("jeditsetup") {
-  def helpText = "needed arguments: (install | install-jars | uninstall) [JEDIT/SETTINGS/FOLDER]"
+  def helpText = "needed arguments: (install | uninstall) [JEDIT/SETTINGS/FOLDER]"
 
   /** a function tog log a message */
   val log: String => Unit = println
@@ -38,12 +38,10 @@ class Setup extends ShellExtension("jeditsetup") {
     if (args(0) == "customize") {
       doIt.customize
     } else {
-      val (installOpt,fat) = args(0) match {
-        case "install" => (Some(true),true)
-        case "uninstall" => (Some(false), true)
-        case "install-jars" => (Some(true), false)
-        case "uninstall-jars" => (Some(false), false)
-        case _ => (None, true)
+      val installOpt = args(0) match {
+        case "install" => Some(true)
+        case "uninstall" => Some(false)
+        case _ => None
       }
       val install = installOpt.getOrElse {
         log(helpText)
@@ -54,7 +52,7 @@ class Setup extends ShellExtension("jeditsetup") {
       } else {
         log("trying to uninstall from " + jedit)
       }
-      doIt.install(install, fat)
+      doIt.install(install)
     }
     true
   }
@@ -108,7 +106,7 @@ class Setup extends ShellExtension("jeditsetup") {
       * @param install true/false for install/uninstall
       * @param fat install fat jar
       */
-    def install(install: Boolean, fat: Boolean) {
+    def install(install: Boolean) {
       /** copies or deletes a file depending on install/uninstall, always overwrites existing files */
       def copyOrDeleteJar(dir: File, f: List[String], g: List[String]) {
         if (install) {
@@ -132,27 +130,19 @@ class Setup extends ShellExtension("jeditsetup") {
           delete(file)
         }
       }
-      // copy/delete the jars
-      // see src/project/Utils.scala for sbt
-      val mainJars = List("mmt-api.jar", "mmt-lf.jar", "MMTPlugin.jar", "mmt-specware.jar", "mmt-pvs.jar")
-      val libJars = List("scala-library.jar", "scala-parser-combinators.jar", "scala-reflect.jar", "scala-xml.jar",
-        "tiscaf.jar")
-      val allJars = List("lfcatalog", "lfcatalog.jar") :: mainJars.map(List("main", _)) ::: libJars.map(List("lib", _))
+      // copy/delete the jar
       jarFolder.mkdirs
       if (install) {
         rl match {
           case rs: IsFat =>
             copyOrDeleteJar(rs.jar, Nil, List("jars", "MMTPlugin.jar"))
           case nf: DeployRunStyle =>
-            if (fat)
-              copyOrDeleteJar(nf.deploy, List("mmt.jar"), List("jars", "MMTPlugin.jar"))
-            else
-              allJars.foreach(f => copyOrDeleteJar(nf.deploy, f, List("jars", f.last)))
+            copyOrDeleteJar(nf.deploy, List("mmt.jar"), List("jars", "MMTPlugin.jar"))
           case OtherStyle =>
             log("cannot find jar files to install")
         }
       } else {
-          allJars.foreach(f => delete(jedit / List("jars", f.last)))
+        delete(jedit / "jars" / "MMTPlugin.jar")
       }
       // modes
       // * copy/delete the mode files

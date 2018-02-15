@@ -448,12 +448,15 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             case ComplexStep(theo)::tname => (theo,tname)
             case _ => return default
           }
+          //TODO if theo is visible to the domain of one of the assignments in l, use that assignment
+
           // check if 'theo' is visible to the meta-theory of l.from; if so, use meta-morphism of l
           val fromMeta = TheoryExp.metas(l.from, false)(this).headOption.getOrElse {
             return default
           }
           val vis = visible(OMMOD(fromMeta)) contains OMMOD(theo)
           if (vis) {
+             //TODO precompose with implicit morphism via which it is visible
              val mtm = l.metamorph getOrElse OMIDENT(OMMOD(theo)) // meta-morphism defaults to identity
              getDeclarationInTerm(mtm, name, error)
           } else

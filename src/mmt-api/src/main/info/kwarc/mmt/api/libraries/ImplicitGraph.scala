@@ -72,7 +72,7 @@ class UniqueGraph(lib: Lookup) extends LabeledHashRelation[Term,Term] {
       val morphN = Morph.simplify(morph)(lib)
       val current = apply(fromN,toN)
       current foreach {c =>
-        if (Morph.equal(c, morphN)(lib))
+        if (Morph.equal(c, morphN, from)(lib))
           return
         else
           throw AlreadyDefined(from, to, c, morphN)
@@ -105,9 +105,9 @@ class ThinGeneratedCategory(lib: Lookup) {
    def update(from: Term, to: Term, morph: Term) {
       // TODO: decompose links into complex theories
       from match {
-         case OMPMOD(_, _) | OMMOD(_) =>
+         case OMPMOD(_, _) =>
             //TODO handle args
-            val existsAlready = impl(from ,to).isDefined
+            val existsAlready = impl(from,to).isDefined
             // if existsAlready == true, this will check equality and throw exception if inequal
             direct(from, to) = morph
             if (! existsAlready) {
@@ -132,13 +132,18 @@ class ThinGeneratedCategory(lib: Lookup) {
 
    def applyAtomic(from: MPath, to: MPath) = if (from == to) Some(OMCOMP()) else impl(OMMOD(from), OMMOD(to))
 
-   private def checkUnique(mors: List[Term]) =
+   private def checkUnique(mors: List[Term], from: Term) = {
       if (mors.isEmpty)
-         None
-      else if (mors.distinct.length == 1)
+        None
+      else {
+        val h = mors.head
+        if (mors.tail.forall(m => Morph.equal(h,m, from)(lib)))
          Some(mors.head)
-      else
+        else
          None
+      }
+   }
+
 
    /** retrieves the implicit morphism between two theories (if any)
     * @param from domain
@@ -152,10 +157,10 @@ class ThinGeneratedCategory(lib: Lookup) {
          case (OMMOD(f), OMPMOD(t,_)) => applyAtomic(f,t)
          case (OMMOD(f), TUnion(ts)) =>
             val tsMors = ts.flatMap {t => apply(from,t).toList}
-            checkUnique(tsMors)
+            checkUnique(tsMors, from)
          case (OMMOD(f), ComplexTheory(toCont)) =>
             val toMors = toCont.getIncludes.flatMap {t => applyAtomic(f,t).toList}
-            checkUnique(toMors)
+            checkUnique(toMors, from)
          // otherwise: case split on domain for arbitrary codomain
          case (OMPMOD(p, args), _) =>
             // TODO check agreement with args

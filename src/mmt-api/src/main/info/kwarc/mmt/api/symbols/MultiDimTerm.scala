@@ -29,7 +29,7 @@ class ObjDimension[T] {
  * TermContainer keeps track of different syntactic representations of the same semantic term.
  * It also stores additional status information.
  *
- * The representations are read < parsed < analyzed.
+ * The representations are read < parsed < analyzed < normalized.
  * Setting a representation marks the higher representations as dirty.
  *
  * @tparam T the type of objects stored; the type bound is not actually needed, but it helps putting sharper bound on some return types
@@ -39,7 +39,7 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
    private val _parsed     = new ObjDimension[T]
    private val _analyzed   = new ObjDimension[T]
    private val _normalized = new ObjDimension[T]
-   override def toString = "read: " + _read.toString + "\nparsed: " + _parsed.toString + "\nanalyzed: " + _analyzed.toString
+   override def toString = "read: " + _read.toString + "\nparsed: " + _parsed.toString + "\nanalyzed: " + _analyzed.toString +"\nnormalized: " + _normalized.toString
    /** the unparsed string representation */
    def read = _read
    /** the parsed representation without further analysis (if non-dirty) */

@@ -221,7 +221,7 @@ object MMTConfig {
                 case "https" :: tl => (true, tl)
                 case _ => (true, args)
               }
-              val remote = args.headOption.map(URI(_))
+              val remote = argsRest.headOption.map(URI(_))
               config.addEntry(OAFConf(relFile(local), https, remote))
            case "mathpath" :: local :: Nil =>
               config.addEntry(MathPathConf(File(local)))
