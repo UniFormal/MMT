@@ -100,7 +100,7 @@ abstract class TomTest(prefixes : String*) extends Test(
 )
 
 abstract class JonasTest(prefixes: String*) extends Test(
-  "/home/jbetzend/Development/content/",
+  "/home/jbetzend/Development/KWARC/content/",
   prefixes.toList,
   "",
   None,
