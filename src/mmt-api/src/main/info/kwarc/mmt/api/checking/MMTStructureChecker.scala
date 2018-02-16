@@ -648,7 +648,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         checkTerm(context, synType)
         val rts = env.rules.get(classOf[uom.RealizedType])
         if (!rts.exists(_ == l.rt))
-          env.errorCont(InvalidObject(s, "literal not in scope: " + l.toString + " of type " + l.rt.toString))
+          env.errorCont(InvalidObject(l, "literal not in scope: " + l.toString + " (of type: " + l.synType + ", realized as: " + l.rt.semType + ")"))
         l
       // resolve type and parse unknown literal, return OMLIT
       case u @ UnknownOMLIT(v, synType) =>

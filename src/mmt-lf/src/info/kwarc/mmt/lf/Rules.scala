@@ -391,6 +391,34 @@ class Injectivity(val head: GlobalName) extends TermBasedEqualityRule {
    }
 }
 
+/** |- t:A  --->  |- (t:A) : A */
+object TypeAttributionTerm extends InferenceRule(TypeAttribution.path, OfType.path) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+    val TypeAttribution(t,a) = tm
+    if (!covered) {
+      solver.inferTypeAndThen(a)(stack, history + "checking the attributed type") {aI =>
+        // nothing to do, we just have to make sure that the type is well-formed before checking the term against it 
+        true
+      } 
+      solver.check(Typing(stack, t, a))(history + "checking against attributed type")
+    }
+    Some(a)
+  }
+}
+
+/** |- (t:A) = t */
+object DropTypeAttribution extends ComputationRule(TypeAttribution.path) {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+    val TypeAttribution(t,a) = tm
+    if (!covered) {
+      // this will call TypeAttributionTerm once, which recursively triggers the necessary checks of the type before we throw it away  
+      solver.inferType(tm, covered)(stack, history + "checking the attributed type")
+    }
+    Some(t)
+  }
+}
+
+
 // experimental (requiring that torso is variable does not combine with other solution rules)
 object SolveMultiple extends SolutionRule(Apply.path) {
    def applicable(tm1: Term) = tm1 match {
