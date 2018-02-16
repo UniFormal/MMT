@@ -44,4 +44,9 @@
 		   info.kwarc.mmt.jedit.Inserter.insertGSReturn(textArea);
 		</CODE>
 	</ACTION>
+	<ACTION NAME="mmt-introduce-hole">
+		<CODE>
+		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).editActions().introduceHole(view);
+		</CODE>
+	</ACTION>
 </ACTIONS>

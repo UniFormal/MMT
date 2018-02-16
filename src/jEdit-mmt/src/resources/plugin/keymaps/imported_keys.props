@@ -1,2 +1,3 @@
 # useful key bindings for working with MMT
 sidekick-complete.shortcut=C+SPACE
+mmt-introduce-hole.shortcut=CS+SPACE

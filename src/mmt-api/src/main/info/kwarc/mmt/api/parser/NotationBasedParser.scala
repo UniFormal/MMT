@@ -134,16 +134,11 @@ class NotationBasedParser extends ObjectParser {
      }
 
      /** name of an omitted implicit argument */
-     def newArgument =
-       LocalName("") / "I" / next
-
+     def newArgument = ParseResult.VariablePrefixes.implicitArg / next
      /** name of the omitted type of a variable */
-     def newType(name: LocalName) =
-       LocalName("") / name / next
-
+     def newType(name: LocalName) = LocalName("") / name / next
      /** name of an explicitly omitted argument */
-     def newExplicitUnknown =
-       LocalName("") / "_" / next
+     def newExplicitUnknown = ParseResult.VariablePrefixes.explicitUnknown / next
 
      /** generates a new unknown variable, constructed by applying a fresh name to all bound variables */
      def newUnknown(name: LocalName, boundNames: List[BoundName])(implicit pu: ParsingUnit) = {

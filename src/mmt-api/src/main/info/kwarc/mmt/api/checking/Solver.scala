@@ -716,6 +716,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               case None =>
                 error("unsolved (untyped) unknown: " + vd.name)
               case Some(tp) =>
+                def tryAHole = if (vd.name.startsWith(ParseResult.VariablePrefixes.explicitUnknown)) {
+                  solve(vd.name, Hole(tp))
+                }
                 val rO = typebasedsolutionRules.find(r => r.applicable(tp))
                 rO match {
                   case Some(rule) =>
@@ -725,9 +728,12 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                       case Some(p) =>
                         solve(vd.name, p)
                       case None =>
+                        tryAHole
                         error("no solution found")
                     }
-                  case _ => error("unsolved (typed) unknown: " + vd.name)
+                  case _ =>
+                    tryAHole
+                    error("unsolved (typed) unknown: " + vd.name)
                 }
             }
       }

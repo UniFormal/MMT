@@ -59,6 +59,11 @@ object ParseResult {
       }
       ParseResult(u,f,t)
    }
+
+  object VariablePrefixes {
+    val implicitArg = LocalName("") / "I"
+    val explicitUnknown = LocalName("") / "_"
+  }
 }
 
 /** passed to [[Parser]]s and [[checking.Interpreter]]s to indicate the place inside a larger element the input is located */

@@ -69,6 +69,16 @@ class MMTObjAsset(val obj: Obj, val pragmatic: Obj, val context: Context, val pa
      case cp: ContentPath => Some(cp.module)
      case _ => None
   }
+  
+  /** tries to infer the type of this asset (may throw exceptions) */
+  def inferType(controller: frontend.Controller): Option[Term] = {
+    obj match {
+      case t: Term =>
+        val thy = getScope.getOrElse(return None)
+        checking.Solver.infer(controller, Context(thy) ++ context, t, None)
+      case _ => None
+    }
+  }
 }
 
 class MMTNotAsset(owner: ContentPath, label: String, not: TextNotation, reg: SourceRegion) extends MMTAsset(label, reg) {

@@ -19,6 +19,9 @@ case object MMTInfo extends PrintAction {
   def apply(implicit controller: Controller): Unit = {
     respond(s"MMT Version     : ${MMTSystem.version}")
     respond(s"Run Style       : ${MMTSystem.runStyle}")
+    MMTSystem.buildTime foreach {s =>
+    respond(s"Build time      : $s")
+    }
     respond(s"Operation System: ${OS.detect}")
 
     respond("use 'show extensions' to show current extensions. ")

@@ -34,6 +34,7 @@ mmt-buildopen.label=Build open buffers
 mmt-insert-US.label=Insert Object Delimiter (OD)
 mmt-insert-RS.label=Insert Declaration Delimiter (DD)
 mmt-insert-GS.label=Insert Module Delimiter (MD)
+mmt-introduce-hole.label=Introduce hole for expected type
 
 # labels for actions defined in browser.actions.xml
 mmt-browser-build.label=Build

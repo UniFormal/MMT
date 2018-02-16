@@ -285,9 +285,9 @@ object File {
     }
   }
 
-  def readProperties(manifest: File): mutable.Map[String, String] = {
+  def readPropertiesFromString(s: String): mutable.Map[String, String] = {
     val properties = new scala.collection.mutable.ListMap[String, String]
-    File.ReadLineWise(manifest) { case line =>
+    s.split("\n") foreach {line =>
       // usually continuation lines start with a space but we ignore those
       val tline = line.trim
       if (!tline.startsWith("//")) {
@@ -305,7 +305,8 @@ object File {
     }
     properties
   }
-
+  def readProperties(manifest: File) = readPropertiesFromString(File.read(manifest))
+  
   /** copies a file */
   def copy(from: File, to: File, replace: Boolean): Boolean = {
     if (!from.exists || (to.exists && !replace)) {
