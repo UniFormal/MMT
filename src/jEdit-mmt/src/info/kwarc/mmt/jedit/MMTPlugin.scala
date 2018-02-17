@@ -15,15 +15,18 @@ import javax.swing.SwingUtilities
  * the home directory is obtained from jEdit, e.g., settings/plugins/info.kwarc.mmt.jedit.MMTPlugin
  */
 class MMTPlugin extends EBPlugin with Logger {
-   val controller = new Controller
-   val report = controller.report
-   val logPrefix = "jedit"
-   val errorSource = new MMTErrorSource
+  val controller = new Controller
+  val report = controller.report
+  val logPrefix = "jedit"
+  val errorSource = new MMTErrorSource
 
-   /** these are not used in the code, but called by actions in actions.xml */
-   val buildActions = new BuildActions(this)
-   val editActions = new EditActions(this)
+  /** these are not used in the code, but called by actions in actions.xml */
+  val buildActions = new BuildActions(this)
+  val editActions = new EditActions(this)
 
+  /** convenience */
+  def asString(o: objects.Obj) = controller.presenter.asString(o)
+   
    /** implements onNavigate hook in terms of the methods of MMTHyperlink */
    val mmtListener = new ChangeListener {
       override def onNavigate(p: Path) {

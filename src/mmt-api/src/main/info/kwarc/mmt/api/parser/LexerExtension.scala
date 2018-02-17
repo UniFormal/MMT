@@ -427,7 +427,7 @@ abstract class StringInterpolationLexer(trigger: String, str: Bracket, val mmt: 
      // the current position, current part, and list of parts, and the methods to move the position and create parts
      var currentPos = fp
      var startPosOfCurrent = currentPos
-     var i = index+begin.length
+     var i = index
      var parts: List[StringInterpolationPart] = Nil // invariant: alternating types of parts, begins and ends with a string part
      var current = ""
      def advanceBy(a: String, addToCurrent: Boolean) {
@@ -435,37 +435,48 @@ abstract class StringInterpolationLexer(trigger: String, str: Bracket, val mmt: 
        i += a.length
        if (addToCurrent) current += a
      }
-     def newPart(stringPart: Boolean, delim: String) {
-       val reg = SourceRegion(startPosOfCurrent, currentPos)
+     def newPart(stringPart: Boolean, delim: String, includeDelimInPart: Boolean) {
+       val (endPosOfCurrent,startPosOfNext) = if (includeDelimInPart) {
+         advanceBy(delim.init, false)
+         val ep = currentPos
+         advanceBy(delim.last.toString, false)
+         (ep,currentPos)
+       } else {
+         val cp = currentPos
+         advanceBy(delim, false)
+         (cp,cp) // TODO actually first cp should be one lower
+       }
+       val reg = SourceRegion(startPosOfCurrent, endPosOfCurrent)
        val part = if (stringPart) StringPart(current, reg, null) else MMTPart(current, reg, null)
        parts ::= part
        current = ""
-       startPosOfCurrent = currentPos.after(delim)
-       advanceBy(delim, false)
+       startPosOfCurrent = startPosOfNext
      }
+     advanceBy(begin, false)
      // step through the string
      while (i < s.length && level > 0) {
-        if (s.substring(i).startsWith(str.begin) && level % 2 == 0) {
+        val si = StringSlice(s,i) // efficient substring
+        if (si.startsWith(str.begin) && level % 2 == 0) {
            level += 1
            advanceBy(str.begin, true)
-        } else if (s.substring(i).startsWith(str.end) && level % 2 == 1) {
+        } else if (si.startsWith(str.end) && level % 2 == 1) {
            level -= 1
            if (level == 0) {
              // the last string part, possibly empty
-             newPart(stringPart = true, str.end)
+             newPart(stringPart = true, str.end, true)
            } else {
              advanceBy(str.end, true)
            }
-        } else if (s.substring(i).startsWith(mmt.begin) && level % 2 == 1) {
+        } else if (si.startsWith(mmt.begin) && level % 2 == 1) {
            if (level == 1) {
-             newPart(stringPart = true, mmt.begin)
+             newPart(stringPart = true, mmt.begin, false)
            } else {
              advanceBy(mmt.begin, true)
            }
            level += 1
-        } else if (s.substring(i).startsWith(mmt.end) && level % 2 == 0) {
+        } else if (si.startsWith(mmt.end) && level % 2 == 0) {
            if (level == 2) {
-             newPart(stringPart = false, mmt.end)
+             newPart(stringPart = false, mmt.end, true)
            } else {
              advanceBy(mmt.end, true)
            }
@@ -474,14 +485,9 @@ abstract class StringInterpolationLexer(trigger: String, str: Bracket, val mmt: 
            advanceBy(s(i).toString, true)
         }
      }
-     if (i == s.length) {
-       // end of input reached, recover by adding final parts, we always end with a string part
-       if (level % 2 == 0) {
-         newPart(stringPart = true, "")
-       } else {
-         newPart(stringPart = false, "")
-         newPart(stringPart = true, "")
-       }
+     if (current.nonEmpty) {
+       // end of input reached, recover by adding a final part
+       newPart(stringPart = level == 1, " ", false)
      }
      parts = parts.reverse
      val text = s.substring(index,i)

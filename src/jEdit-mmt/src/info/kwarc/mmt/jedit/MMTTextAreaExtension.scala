@@ -173,44 +173,33 @@ class MMTToolTips(controller: Controller, editPane: EditPane) extends TextAreaEx
    private val view = editPane.getView
    
    private def asString(o: Obj) = controller.presenter.asString(o)
-   private def onSelection(ta: TextArea, offset: Int): Option[(Int,Int)] = {
-      if (textArea.getSelectionCount != 1) return None
-      val sel = textArea.getSelection(0)
-      if (sel.getStart <= offset && offset < sel.getEnd)
-         Some((sel.getStart, sel.getEnd))
-      else
-         None
-   }
-
+   
    override def getToolTipText(xCoord: Int, yCoord: Int): String = {
       val offset = textArea.xyToOffset(xCoord, yCoord, false)
       if (offset == -1) return null
-      onSelection(textArea,offset) match {
-         case Some((b,e)) =>
-            val as = try {MMTSideKick.getAssetAtRange(view, b, e)} catch {case ex: Exception => return ex.getClass.toString+ex.getMessage+" " + b + " " + e}
-            as match {
-               case ta: MMTObjAsset =>
-                  try {ta.inferType(controller).map(asString).getOrElse(null)}
-                  catch {case e: Exception => e.getMessage}
-               case _ => null
+      val (asset,selected) = MMTSideKick.getSelectedAssetAtOffset(view,offset) getOrElse{return null}
+      try {
+        asset match {
+          case ta: MMTObjAsset =>
+            if (selected) {
+              ta.inferType(controller).map(asString).getOrElse(null)
+            } else {
+              ta.obj match {
+                case OMV(n) =>
+                  asString(ta.context(n))
+                case vd : VarDecl =>
+                  asString(vd)
+                case OMA(OMID(p), args) =>
+                  val implicits = args.filter(a => parser.SourceRef.get(a).isEmpty)
+                  if (implicits.isEmpty) null
+                  else implicits.map(asString).mkString("   ")
+                case _ => null
+              }
             }
-         case None =>
-            val as = MMTSideKick.getAssetAtOffset(view,offset)
-            as match {
-               case Some(ta: MMTObjAsset) =>
-                  ta.obj match {
-                    case OMV(n) =>
-                      asString(ta.context(n))
-                    case vd : VarDecl =>
-                        asString(vd)
-                    case OMA(OMID(p), args) =>
-                        val implicits = args.filter(a => parser.SourceRef.get(a).isEmpty)
-                        if (implicits.isEmpty) null
-                        else implicits.map(asString).mkString("   ")
-                    case _ => null
-                  }
-               case _ => null
-            }
+          case _ => null
+        }
+      } catch {case e: Exception =>
+        e.getMessage
       }
    }
 }

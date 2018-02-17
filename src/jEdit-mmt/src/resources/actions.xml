@@ -49,4 +49,14 @@
 		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).editActions().introduceHole(view);
 		</CODE>
 	</ACTION>
+	<ACTION NAME="mmt-show-normalization">
+		<CODE>
+		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).editActions().showNormalization(view, false);
+		</CODE>
+	</ACTION>
+	<ACTION NAME="mmt-normalize-selection">
+		<CODE>
+		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).editActions().showNormalization(view, true);
+		</CODE>
+	</ACTION>
 </ACTIONS>

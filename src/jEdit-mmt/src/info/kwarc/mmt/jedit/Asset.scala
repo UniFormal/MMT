@@ -2,6 +2,8 @@ package info.kwarc.mmt.jedit
 
 import sidekick._
 
+import org.gjt.sp.jedit._
+
 import info.kwarc.mmt.api._
 import parser._
 import objects._
@@ -22,6 +24,9 @@ sealed abstract class MMTAsset(name: String, val region: SourceRegion)
   setEnd(MyPosition(region.end.offset+1))
   /** the base URIto use in the context of this asset */
   def getScope : Option[MPath]
+  
+  /** can be used with TextArea.setSelection to select this asset */
+  def toSelection = new textarea.Selection.Range(region.start.offset, region.end.offset+1)
 
   // this line is helpful for debugging: it shows the source regions in the sidekick tree
   // setShort(name + " [" + region.toString + "]")

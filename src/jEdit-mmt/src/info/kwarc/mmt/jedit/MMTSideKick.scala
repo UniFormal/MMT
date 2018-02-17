@@ -2,7 +2,8 @@ package info.kwarc.mmt.jedit
 
 import javax.swing.tree.DefaultMutableTreeNode
 
-import org.gjt.sp.jedit._
+import org.gjt.sp.jedit
+import jedit._
 import sidekick._
 import errorlist._
 
@@ -299,30 +300,67 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
 }
 
 object MMTSideKick {
-   /** @return the asset at the specified position */
-   def getAssetAtOffset(view: org.gjt.sp.jedit.View, caret: Int) = {
+  /** @return the asset at the specified position */
+  def getAssetAtOffset(view: jedit.View, offset: Int): Option[MMTAsset] = {
       val pd = SideKickParsedData.getParsedData(view)
-      pd.getAssetAtOffset(caret) match {
+      pd.getAssetAtOffset(offset) match {
          case ma : MMTAsset => Some(ma)
          case _ => None
       }
-   }
-   /** @return the smallest asset covering the specified range */
-   def getAssetAtRange(view: org.gjt.sp.jedit.View, begin: Int, end: Int) = {
+  }
+
+  /** @return the smallest asset covering the specified range (inclusive begin, exclusive end) */
+  def getAssetAtRange(view: jedit.View, begin: Int, end: Int): Option[MMTAsset] = {
       val pd = SideKickParsedData.getParsedData(view)
       var path = pd.getTreePathForPosition(begin)
-      var asset: MMTAsset = null
+      var asset: Option[MMTAsset] = None
       while ({
          val a = path.getLastPathComponent.asInstanceOf[DefaultMutableTreeNode].getUserObject
          a match {
             case m: MMTAsset =>
-               asset = m
-               m.getEnd.getOffset < end
+               asset = Some(m)
+               m.getEnd.getOffset+1 < end
             case _ => false
          }
       }) {
          path = path.getParentPath
       }
       asset
-   }
+  }
+  
+  /**
+   * return the smallest asset covering the first selection or (if no selection) the asset at the the cursor; boolean is true if the former case
+   * this is useful for button or key interaction, where a selection or cursor position must be used to determine an asset  
+   */
+  def getCurrentAsset(view: jedit.View): Option[(MMTAsset,Boolean)] = {
+    val ta = view.getTextArea
+    ta.getSelectionCount match {
+      case 0 =>
+        getAssetAtOffset(view, ta.getCaretPosition) map {x => (x,false)}
+      case _ =>
+        val sel = ta.getSelection(0)
+        getAssetAtRange(view, sel.getStart, sel.getEnd) map {x => (x,true)}
+    }
+  }
+
+  /**
+   * like getAssetAtOffset, but includes the surrounding selection, if any; the boolean if true if the area is selected
+   * this is useful for mouse interaction, where an offset can be computed from the mouse pointer position
+   */
+  def getSelectedAssetAtOffset(view: jedit.View, offset: Int): Option[(MMTAsset,Boolean)] = {
+     val rangeOpt = getSelectedRangeAroundOffset(view.getTextArea, offset)
+     rangeOpt match {
+       case Some((b,e)) => getAssetAtRange(view, b, e) map {x => (x,true)}
+       case None => getAssetAtOffset(view, offset) map {x => (x,false)}
+     }
+  }
+  /** the range of the selection at a position (selection inclusive begin, exclusive end) */
+  def getSelectedRangeAroundOffset(ta: textarea.TextArea, offset: Int): Option[(Int,Int)] = {
+    if (ta.getSelectionCount != 1) return None
+    val sel = ta.getSelection(0)
+    if (sel.getStart <= offset && offset < sel.getEnd)
+       Some((sel.getStart, sel.getEnd))
+    else
+       None
+  }
 }
