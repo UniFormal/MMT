@@ -40,8 +40,8 @@ class IMPSImporter extends Importer
         contents = contents + line + "\n"
       }
 
-      val e : JSON = JSON.parse(contents)
-      parsed_json = parsed_json.::(e)
+      val j : JSON = JSON.parse(contents)
+      parsed_json = parsed_json.::(j)
     }
 
     for (file <- tfiles)
@@ -81,7 +81,7 @@ class IMPSImporter extends Importer
 
     val importTask = new IMPSImportTask(controller, bf, index, tState)
 
-    var all_translations : List[((Exp, URI), Boolean)]
+    var all_translations : List[((Exp, URI), Boolean)] = parsed_t.map(e => (e,false))
     var i : Int = 0
 
     while (all_translations.map(_._2).contains(false))
@@ -93,6 +93,8 @@ class IMPSImporter extends Importer
       {
         importTask.doDocument(d._1, d._2)
         println(" > Success!\n")
+
+        all_translations = all_translations.updated(i,(d,true))
       }
       catch
       {
