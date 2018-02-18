@@ -473,8 +473,6 @@ package object impsArgumentParsers
 
                 if (parsed.isEmpty) { ??? }
 
-                println("Parsed constant sort: " + (name,parsed.get))
-
                 lst = lst :+ (name, parsed.get)
               }
             }
