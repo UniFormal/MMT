@@ -455,13 +455,13 @@ package object impsArgumentParsers
                 {
                   j match {
                     case Exp(List(Str(sort)),_) => {
-                      if (str.length > 1)
-                      {
+                      if (str.length > 1) {
                         str = str + "," + sort
                       } else {
                         str = str + sort
                       }
                     }
+                    case Str(snm) => str = str + snm
                     case _ => ()
                   }
                 }
@@ -471,7 +471,9 @@ package object impsArgumentParsers
                 val mp     = new IMPSMathParser()
                 val parsed = mp.parseAll(mp.parseSort, str)
 
-                if (parsed.isEmpty) { println("ERROR: Could not parse constant-sort: " + str) }
+                if (parsed.isEmpty) { ??? }
+
+                println("Parsed constant sort: " + (name,parsed.get))
 
                 lst = lst :+ (name, parsed.get)
               }
