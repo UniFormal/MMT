@@ -331,7 +331,8 @@ case class AtomicSort(sortName        : String, /* Positional Argument, Required
                       theory          : ArgumentTheory, /* Keyword Argument, Required */
                       usages          : Option[ArgumentUsages], /* Keyword Argument, Optional */
                       witness         : Option[Witness], /* Keyword Argument, Optional */
-                      src             : SourceRef)       /* SourceRef for MMT */
+                      src             : SourceRef,       /* SourceRef for MMT */
+                      encSort         : IMPSSort)
   extends LispExp
 {
   override def toString : String =

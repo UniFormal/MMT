@@ -22,13 +22,13 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
 
-    println("Reading index file: " + bf.inFile.getName)
+    println("\nReading index file: " + bf.inFile.getName + "\n")
 
     val tfiles    = bf.inFile.up.canonical.listFiles.filter(_.getName.endsWith(".t"))
     val jsonfiles = bf.inFile.up.canonical.listFiles.filter(_.getName.endsWith(".json"))
 
-    var parsed_json : List[JSON]        = Nil
-    var parsed_t    : List[(Exp, URI)]  = Nil
+    var parsed_json : List[JSONObject] = Nil
+    var parsed_t    : List[(Exp, URI)] = Nil
 
     for (file <- jsonfiles)
     {
@@ -40,9 +40,12 @@ class IMPSImporter extends Importer
         contents = contents + line + "\n"
       }
 
-      val j : JSON = JSON.parse(contents)
+      val j : JSONObject = JSON.parse(contents).asInstanceOf[JSONObject]
       parsed_json = parsed_json.::(j)
+
     }
+    tState.jsons = parsed_json
+    println(" ")
 
     for (file <- tfiles)
     {
@@ -61,7 +64,7 @@ class IMPSImporter extends Importer
         }
 
         val lp: IMPSParser = new IMPSParser()
-        lp.parse(contents, FileURI(file))
+        lp.parse(contents, FileURI(file), parsed_json)
 
       } catch {
         case e: ExtractError =>
@@ -86,20 +89,22 @@ class IMPSImporter extends Importer
 
     while (all_translations.map(_._2).contains(false))
     {
-      val d : (Exp, URI) = parsed_t(i)
-      println("#> Translating: " + d._2)
-
-      try
+      if (!all_translations(i)._2) // If not translated yet, translate
       {
-        importTask.doDocument(d._1, d._2)
-        println(" > Success!\n")
+        val d : (Exp, URI) = parsed_t(i)
+        println("#> Translating: " + d._2)
 
-        all_translations = all_translations.updated(i,(d,true))
-      }
-      catch
-      {
-        case e : IMPSDependencyException => {
-          println(" > Failure! Skipping for now, will retry next pass.\n")
+        try
+        {
+          importTask.doDocument(d._1, d._2)
+          println(" > Success!\n")
+
+          all_translations = all_translations.updated(i,(d,true))
+        }
+        catch {
+          case e : IMPSDependencyException => {
+            println(" > Failure, will retry next pass: " + e.getMessage + "\n")
+          }
         }
       }
 
@@ -120,7 +125,7 @@ class TranslationState ()
   var theories_raw       : List[Theory]         = Nil
   var languages          : List[Language]       = Nil
 
-  var json               : List[JSON]           = Nil
+  var jsons              : List[JSONObject]     = Nil
 
   protected var unknowns : Int                  = 0
 

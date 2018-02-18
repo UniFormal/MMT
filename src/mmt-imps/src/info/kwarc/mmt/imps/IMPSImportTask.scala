@@ -126,7 +126,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     // Build correct union of languages
     if (t.lang.isDefined) {
-      assert(tState.languages.exists(la => la.name == t.lang.get.lang))
+      if (!tState.languages.exists(la => la.name == t.lang.get.lang)) { throw new IMPSDependencyException("required language " + t.lang.get.lang + " not found") }
       l = tState.languages.find(la => la.name == t.lang.get.lang)
     }
 
@@ -135,7 +135,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       /* For each component theory, take its language (if there is one) */
       for (comp_theory <- t.cmpntthrs.get.lst)
       {
-        assert(tState.theories_raw.exists(thy => thy.name == comp_theory))
+        if (!tState.theories_raw.exists(t => t.name == comp_theory)) { throw new IMPSDependencyException("required co-theory " + comp_theory + " not found") }
         val t_index : Theory = tState.theories_raw.find(thy => thy.name == comp_theory).get
 
         if (t_index.lang.isDefined)
@@ -297,28 +297,29 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     d match
     {
-      case AtomicSort(name, defstring, theory, usages, witness, src) =>
+      case AtomicSort(name, defstring, theory, usages, witness, src, sort) =>
 
         val ln : LocalName = LocalName(theory.thy)
 
-        if (!tState.theories_decl.exists(t => t.name == ln)) { throw new IMPSDependencyException("required theory not found") }
+        if (!tState.theories_decl.exists(t => t.name == ln)) { throw new IMPSDependencyException("required theory " + ln + " not found") }
         val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
         val definition : Term = tState.bindUnknowns(doMathExp(defstring, parent))
-        val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, None, Some(definition), Some("AtomicSort"))
+        val enclosing  : Term = doSort(sort,parent)
+        val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, Some(enclosing), Some(definition), Some("AtomicSort"))
 
         /* Add available MetaData */
         if (witness.isDefined) { doMetaData(nu_atomicSort, "witness", witness.get.witness.toString) }
         if (usages.isDefined)  { doUsages(nu_atomicSort, usages.get.usgs) }
         doSourceRef(nu_atomicSort,src)
 
-        println("Adding atomic sort: " + name)
+        println("Adding atomic sort: " + name + " (enclosed by " + sort.toString + ")")
         controller add nu_atomicSort
 
       case Constant(name, definition, theory, sort, usages, src) =>
 
         val ln : LocalName = LocalName(theory.thy)
-        if (!tState.theories_decl.exists(t => t.name == ln)) { throw new IMPSDependencyException("required theory not found") }
+        if (!tState.theories_decl.exists(t => t.name == ln)) { throw new IMPSDependencyException("required theory " + ln + " not found") }
         val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
         /* look for sort in given theory. */
@@ -348,7 +349,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case Theorem(name, formula, lemma, reverse, theory, usages, transport, macete, homeTheory, maybeProof, src) =>
 
         val ln : LocalName = doName(theory.thy)
-        if (!tState.theories_decl.exists(t => t.name == ln)) { throw new IMPSDependencyException("required theory not found") }
+        if (!tState.theories_decl.exists(t => t.name == ln)) { throw new IMPSDependencyException("required theory " + ln + " not found") }
         val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
         val mth : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(formula, parent)))
@@ -380,7 +381,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case SchematicMacete(_, _, thy, _, _, _) =>
 
         val ln : LocalName = LocalName(thy.thy)
-        if (!tState.theories_decl.exists(t => t.name == ln)) { throw new IMPSDependencyException("required theory not found") }
+        if (!tState.theories_decl.exists(t => t.name == ln)) { throw new IMPSDependencyException("required theory " + ln + " not found") }
         val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name == ln).get
 
         // Macetes are added as opaque (for now?)

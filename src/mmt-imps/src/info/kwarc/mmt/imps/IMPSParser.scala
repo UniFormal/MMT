@@ -16,11 +16,11 @@ import utils._
 
 class IMPSParser
 {
-  def parse(s: String, uri : URI) : LispExp = parse(new Unparsed(s, msg => throw GeneralError(msg)), uri)
+  def parse(s: String, uri : URI, js : List[JSONObject]) : LispExp = parse(new Unparsed(s, msg => throw GeneralError(msg)), uri, js)
 
   /* Take an Unparsed object (info.kwarc.mmt.api.utils.Unparsed)
    * and parse the heck out of it */
-  private def parse(u : Unparsed, uri : URI) : LispExp =
+  private def parse(u : Unparsed, uri : URI, js : List[JSONObject]) : LispExp =
   {
     /* Expression starts at the very beginning */
     val sr_start : SourcePosition = u.getSourcePosition
@@ -70,7 +70,7 @@ class IMPSParser
     val sr        : SourceRef      = SourceRef(uri, sr_region)
 
     /* Actually parse Exps and filter for successes */
-    val definedExprs : List[LispExp]  = exprs.map(parseExpression).filter(y => y.isDefined).map(z => z.get)
+    val definedExprs : List[LispExp]  = exprs.map(e => parseExpression(e,js)).filter(y => y.isDefined).map(z => z.get)
 
     var successes : Int = 0
     var failures  : Int = 0
@@ -176,7 +176,7 @@ class IMPSParser
   }
 
   /* Parse a single EXP expression into a special form or similar (if possible) */
-  private def parseExpression (e : Exp) : Option[LispExp] =
+  private def parseExpression (e : Exp, js : List[JSONObject]) : Option[LispExp] =
   {
     /* Patter matching down/through to appropriate level */
     e.children.head match
@@ -200,7 +200,7 @@ class IMPSParser
 
         case Str("def-algebraic-processor") => return Some(Dummy("def-algebraic-processor"))
 
-        case Str("def-atomic-sort") => return impsDefFormParsers.parseAtomicSort(e)
+        case Str("def-atomic-sort") => return impsDefFormParsers.parseAtomicSort(e, js)
 
         case Str("def-bnf") => return Some(Dummy("def-bnf"))
 

@@ -1,12 +1,13 @@
 package info.kwarc.mmt.imps
 
+import info.kwarc.mmt.api.utils.JSONObject
 import info.kwarc.mmt.imps.impsMathParser.IMPSMathParser
 
 package object impsDefFormParsers
 {
   /* Parser for IMPS special form def-atomic sort
    * Documentation: IMPS manual pgs. 158, 159 */
-  def parseAtomicSort (e : Exp) : Option[AtomicSort] =
+  def parseAtomicSort (e : Exp, js : List[JSONObject]) : Option[AtomicSort] =
   {
     // Required arguments
     var name : Option[String]         = None
@@ -43,9 +44,22 @@ package object impsDefFormParsers
         i += 1
       }
 
+      val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thy.get.thy)
+      assert(json_theory.isDefined)
+      assert(json_theory.get.getAsString("type") == "imps-theory")
+      val defsorts : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"defsorts")
+      assert(defsorts.nonEmpty)
+      val thesort : Option[JSONObject] = defsorts.find(j => j.getAsString("name") == name.get)
+      assert(thesort.isDefined)
+      val supersort : String = thesort.get.getAsString("sort")
+      assert(supersort.endsWith(" prop)"))
+
+      val finalsort : IMPSSort = IMPSAtomSort(supersort.takeWhile(c => c != ' ').tail)
+      println("SORT INFERRED: " + name + " : " + finalsort.toString)
+
       /* check for required arguments */
       if (name.isEmpty || qss.isEmpty || thy.isEmpty) None
-      else { Some(AtomicSort(name.get, qss.get, thy.get, usages, witness, e.src)) }
+      else { Some(AtomicSort(name.get, qss.get, thy.get, usages, witness, e.src, finalsort)) }
 
     } else { None }
   }
