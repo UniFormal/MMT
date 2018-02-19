@@ -80,7 +80,7 @@ class IMPSImporter extends Importer
 
     }
 
-    println("\n== READING / PARSING COMPLETE ; BEGINNING TRANSLATION==\n")
+    println("== READING / PARSING COMPLETE ; BEGINNING TRANSLATION==\n")
 
     val importTask = new IMPSImportTask(controller, bf, index, tState)
 
