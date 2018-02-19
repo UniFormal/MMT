@@ -592,7 +592,7 @@ case class Language(name       : String,
 
     if (union_srts.nonEmpty)
     {
-      val src_srts = if (srts.isDefined) { extens.get.src } else { l.srts.get.src }
+      val src_srts = if (srts.isDefined) { srts.get.src } else { l.srts.get.src }
       nu_sorts = Some(SortSpecifications(union_srts, src_srts))
     }
 

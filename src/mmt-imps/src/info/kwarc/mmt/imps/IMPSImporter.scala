@@ -10,7 +10,6 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf.Typed
 import info.kwarc.mmt.api.utils.JSON
-import info.kwarc.mmt.api.utils.JSON.JSONError
 
 class IMPSImporter extends Importer
 {
@@ -97,18 +96,18 @@ class IMPSImporter extends Importer
         try
         {
           importTask.doDocument(d._1, d._2)
-          println(" > Success!\n")
-
+          println(" > Success!")
           all_translations = all_translations.updated(i,(d,true))
         }
         catch {
           case e : IMPSDependencyException => {
-            println(" > Failure, will retry next pass: " + e.getMessage + "\n")
+            println(" > Failure, will retry next pass: " + e.getMessage)
           }
         }
+        println(" > tState: " + tState.theories_raw.length + " raw theories, " + tState.theories_decl.length + " declared theories and " + tState.languages.length + " languages.\n")
       }
 
-      if (i == (all_translations.length - 1)) { i = 0 } else { i += 1 }
+      if (i == (all_translations.length - 1)) { i = 0 ; Thread.sleep(500) } else { i += 1 }
 
     }
 
