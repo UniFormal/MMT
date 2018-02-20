@@ -26,7 +26,9 @@ abstract class MMTIntegrationTest(neededArchives : String*)(neededExtensions : E
     // and is automatically .gitignored
 
     // create a setup instance
-    val setup = new Setup// TODO (Some(s => report("setup", s.trim)))
+    val setup = new Setup {
+      override val log: String => Unit = s => report("setup", s.trim)
+    }
     controller.extman.addExtension(setup)
 
     // wipe anything old
@@ -41,12 +43,16 @@ abstract class MMTIntegrationTest(neededArchives : String*)(neededExtensions : E
       report.groups -= "setup"
     }
 
+    /*
+    // Florian disable this, so for now we comment it out
+    // possible reactivate this when we have a proper co-versioning solution
     if(Try(sys.env("TEST_USE_ARCHIVE_HEAD")).toOption.contains("1")){
       log("TEST_USE_ARCHIVE_HEAD=1 was set, using newest archive versions")
       logGroup {
         handleLine("lmh versioning disable")
       }
     }
+    */
 
     // and show some information about MMT itself
     handleLine("show mmt", showLog = true)
