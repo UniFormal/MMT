@@ -1,4 +1,11 @@
 <ACTIONS>
+    <!-- To create a new action do the following
+         - write a method, typically in MMTPlugin (avoid putting it in an object), that carries out the action
+         - add an action element in this file with the code (in BeanShell syntax) to call your method (see below for examples)
+         - add a property NAME.label=TEXT in mmtplugin.props
+         - create a shortcut for the action in the jedit options, or add it to the MMTPlugin menu (which is defined in mmtplugin.props)   
+         - to automatically create a shortcut for users running MMT setup, add the shortcut to plugin.keymaps
+     -->
 	<ACTION NAME="mmt-dockable-show">
 		<CODE>
 		   wm.addDockableWindow("mmt-dockable");
