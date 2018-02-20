@@ -16,7 +16,7 @@ object NotationSemanticType extends Atomic[TextNotation] {
    def asString = "Notations"
    val cls = classOf[TextNotation]
    def fromString(s: String) = TextNotation.parse(s, NamespaceMap.empty)
-   override def toString(u: Any) = unapply(u).get.toText
+   override def atomicToString(u: TextNotation) = u.toText
    override def lex = Some(NotationLexFunction)
 }
 

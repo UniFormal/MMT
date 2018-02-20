@@ -495,7 +495,10 @@ abstract class StringInterpolationLexer(trigger: String, str: Bracket, val mmt: 
   }
 }
 
-/** quotation of MMT terms */
+/** quotation of MMT terms
+ *  @param quoteType the type of literals given by quoted terms
+ *  @param quoteTerm the constructor that takes a term literal and a substitution for its interpolation points
+ */
 class QuotationLexer(quoteType: GlobalName, quoteTerm: GlobalName) extends StringInterpolationLexer("q", Bracket("\"", "\""), Bracket("${","}")) {
   private object QuotedTerm extends uom.RepresentedRealizedType(OMS(quoteType), uom.TermLiteral)
 
@@ -504,8 +507,8 @@ class QuotationLexer(quoteType: GlobalName, quoteTerm: GlobalName) extends Strin
     val strings = token.parts map {
       case StringPart(s,_,_) => s
       case m: MMTPart =>
-        val name = "SIP_" + context.length.toString
-        context ++= OMV(name) % m.term
+        val name = LocalName("SIP_" + context.length.toString)
+        context ++= VarDecl(name, df = m.term)
         " " + name + " "
     }
     val names = context.map(_.name)

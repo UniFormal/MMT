@@ -325,10 +325,11 @@ object URILiteral extends Atomic[URI] {
 
 /** MMT terms as a semantic type, e.g., for reflection, quotation */
 object TermLiteral extends Atomic[Term] {
-   def asString = "term"
-   val cls = classOf[Term]
-   /** MMT parser is not called here as it depends on context */
-   def fromString(s: String) = OMSemiFormal(Text("unparsed", s))
+  def asString = "term"
+  val cls = classOf[Term]
+  /** MMT parser is not called here as it depends on context */
+  def fromString(s: String) = OMSemiFormal(Text("unparsed", s))
+  override def atomicToString(t: Term): String = t.toStr(true) 
 }
 
 /** defines [[SemanticOperator]]s for the standard arithmetic operations */
