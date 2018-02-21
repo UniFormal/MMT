@@ -546,7 +546,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSIotaP(v1,s1,p)     => IMPSTheory.IotaP(LocalName(v1.v), doSort(s1,thy), doMathExp(p,thy))
       case IMPSIsDefined(r)       => IMPSTheory.IsDefined(doMathExp(r,thy))
       case IMPSIsDefinedIn(r,s)   => IMPSTheory.IsDefinedIn(doMathExp(r,thy), doSort(s,thy))
-      case IMPSUndefined(s)       => IMPSTheory.Undefined(doMathExp(s,thy))
+      case IMPSUndefined(s)       => IMPSTheory.Undefined(doSort(s,thy))
     }
   }
 

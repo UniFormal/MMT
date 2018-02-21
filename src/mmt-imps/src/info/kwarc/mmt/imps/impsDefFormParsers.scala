@@ -55,7 +55,6 @@ package object impsDefFormParsers
       assert(supersort.endsWith(" prop)"))
 
       val finalsort : IMPSSort = IMPSAtomSort(supersort.takeWhile(c => c != ' ').tail)
-      println("SORT INFERRED: " + name + " : " + finalsort.toString)
 
       /* check for required arguments */
       if (name.isEmpty || qss.isEmpty || thy.isEmpty) None
@@ -105,8 +104,8 @@ package object impsDefFormParsers
 
       /* check for required arguments */
       if (name.isEmpty || defexp.isEmpty || thy.isEmpty) None
-      else { Some(Constant(name.get, defexp.get, thy.get, sort, usages, e.src)) }
-    } else { None }
+      else { println(" >> Success while trying to parse constant " + e.children(1)) ; Some(Constant(name.get, defexp.get, thy.get, sort, usages, e.src)) }
+    } else { println(" >> Failure while trying to parse constant " + e.children(1)) ; None }
   }
 
   /* Parser for IMPS special form def-quasi-constructor
@@ -317,7 +316,7 @@ package object impsDefFormParsers
 
   /* Parser for IMPS form def-theorem
    * Documentation: IMPS manual pgs. 184 ff. */
-  def parseTheorem (e : Exp) : Option[Theorem] =
+  def parseTheorem (e : Exp, js : List[JSONObject]) : Option[Theorem] =
   {
     /* Required arguments */
     var name    : Option[String]         = None
@@ -328,7 +327,7 @@ package object impsDefFormParsers
     var lemma   : Boolean = false
     var reverse : Boolean = false
 
-    var usages : Option[ArgumentUsages]              = None
+    var usages : Option[ArgumentUsages]      = None
     var hmthy  : Option[HomeTheory]          = None
     var trans  : Option[ArgumentTranslation] = None
     var macete : Option[Macete]              = None
@@ -346,7 +345,9 @@ package object impsDefFormParsers
                                                        // Turns out parsers get easily confused here.
       }
       e.children(2) match {
-        case Exp(List(Str(y)), _) => formula = impsMathParser.parseIMPSMath(y)
+        case Exp(List(Str(y)), _) => {
+          formula = impsMathParser.parseIMPSMath(y)
+        }
       }
 
       /* Parse modifier and keyword arguments, these can come in any order */
@@ -365,16 +366,45 @@ package object impsDefFormParsers
             case Exp(List(Str("proof")),_)       => prf     = impsArgumentParsers.parseProofScript(Exp(ds,src))
             case (Str("lemma"))                  => reverse = true
             case (Str("reverse"))                => lemma   = true
-            case _                               => () // other arguments get silently discarded. TODO: Maybe fail instead?
+            case zzz                             => println(" ~~~ argument to theorem not parsed: " + zzz.toString); ()
           }
           case _ => ()
         }
         i += 1
       }
 
-      if (name.isEmpty || formula.isEmpty || theory.isEmpty) { None }
-      else { Some(Theorem(name.get, formula.get, lemma, reverse, theory.get, usages, trans, macete, hmthy, prf, e.src))}
-    } else { None }
+      assert(name.nonEmpty)
+      assert(theory.nonEmpty)
+
+      val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == theory.get.thy.toLowerCase)
+      assert(json_theory.isDefined)
+      assert(json_theory.get.getAsString("type") == "imps-theory")
+      val theorems : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"theorems")
+      assert(theorems.nonEmpty)
+      val thetheorem : Option[JSONObject] = if (name.get != "()")
+      {
+        print(" > looking for theorem " + name.get + " in theory " + theory.get.thy + " ...")
+        theorems.find(j => j.getAsString("name") == name.get.toLowerCase)
+      } else {
+        ???
+      }
+      assert(thetheorem.isDefined)
+      println(" > found theorem")
+      val thesexp : String = thetheorem.get.getAsString("formula-sexp")
+      assert(thesexp.nonEmpty)
+
+      val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+      val lsp = sp.parseAll(sp.parseSEXP,thesexp)
+      assert(lsp.successful)
+      print(" > sexp parsing successful, ")
+
+      formula = Some(impsMathParser.parseSEXPFormula(lsp.get))
+      println("formula generation successful!")
+      println(" > " + formula.get.toString)
+
+      if (name.isEmpty || formula.isEmpty || theory.isEmpty) { println(" >> Failure in parsing Theorem " + name.get); None }
+      else { println(" >> Success in parsing Theorem " + name.get) ; Some(Theorem(name.get, formula.get, lemma, reverse, theory.get, usages, trans, macete, hmthy, prf, e.src))}
+    } else { println(" >> Failure in parsing Theorem " + name.get) ; None }
   }
 
   /* Parser for IMPS special form def-language

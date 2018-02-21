@@ -504,7 +504,7 @@ case class Language(name       : String,
     if (embedlang.isDefined)  { str = str + "\n  " + embedlang.get.toString }
     if (embedlangs.isDefined) { str = str + "\n  " + embedlangs.get.toString }
     if (bstps.isDefined) { str = str + "\n  " + bstps.get.toString }
-    if (extens.isDefined) { str = str + "\n  " + bstps.get.toString }
+    if (extens.isDefined) { str = str + "\n  " + extens.get.toString }
     if (srts.isDefined) { str = str + "\n  " + srts.get.toString }
     if (cnstnts.isDefined) { str = str + "\n  " + cnstnts.get.toString }
     str = str + ")"
@@ -758,7 +758,7 @@ case class IMPSForAll(vs : List[(IMPSVar, Option[IMPSSort])], p : IMPSMathExp) e
     for ((v, s) <- vs)
     {
       str = str + v.toString
-      if (s.isDefined) str = str + ":" + s.get.toString
+      if (s.isDefined) { str = str + ":" + s.get.toString }
       str = str + ","
     }
     str = str + p.toString + ")"
@@ -844,7 +844,15 @@ case class IMPSIsDefinedIn(t : IMPSMathExp, s : IMPSSort) extends IMPSMathExp
   override def toString: String = "#(" + t.toString + "," + s.toString + ")"
 }
 
-case class IMPSUndefined(s : IMPSMathExp) extends IMPSMathExp
+case class IMPSUndefined(s : IMPSSort) extends IMPSMathExp
 {
   override def toString: String = "?" + s.toString
 }
+
+//-----------
+
+abstract class SEXP
+
+case class SEXPAtom(s : String) extends SEXP
+
+case class SEXPNested(args : List[SEXP]) extends SEXP

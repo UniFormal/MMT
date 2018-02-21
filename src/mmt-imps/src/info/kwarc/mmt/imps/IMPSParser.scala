@@ -72,6 +72,8 @@ class IMPSParser
     /* Actually parse Exps and filter for successes */
     val definedExprs : List[LispExp]  = exprs.map(e => parseExpression(e,js)).filter(y => y.isDefined).map(z => z.get)
 
+    //println(definedExprs.toString())
+
     var successes : Int = 0
     var failures  : Int = 0
     var dummies   : Int = 0
@@ -178,6 +180,8 @@ class IMPSParser
   /* Parse a single EXP expression into a special form or similar (if possible) */
   private def parseExpression (e : Exp, js : List[JSONObject]) : Option[LispExp] =
   {
+    //println(" >>> parsing expression: " + e.children.head.toString)
+
     /* Patter matching down/through to appropriate level */
     e.children.head match
     {
@@ -236,7 +240,7 @@ class IMPSParser
 
         case Str("def-sublanguage") => return Some(Dummy("def-sublanguage"))
 
-        case Str("def-theorem") => return impsDefFormParsers.parseTheorem(e)
+        case Str("def-theorem") => return impsDefFormParsers.parseTheorem(e, js)
 
         case Str("def-theory") => return impsDefFormParsers.parseTheory(e)
 
@@ -264,14 +268,24 @@ class IMPSParser
 
         case Str("def-print-syntax") => return Some(Dummy("def-print-syntax"))
 
+        /* Other meta-commands etc. */
+
+        case Str("set")    => { println(" > Dropping (set ...)")    ; return None }
+        case Str("define") => { println(" > Dropping (define ...)") ; return None }
+
         /* Catchall cases */
-        case Str(x) => return Some(ParseFailure(x))
+        case Str(x) => {
+          println(" > PARSEFAILURE " + x)
+          return Some(ParseFailure(x))
+        }
         case foo => println("DBG: faulty structure? " + foo.toString)
       }
 
       case Comment(_, _) =>  /* No action for comment lines. */
       case q  => println("DBG: Couldn't parse:\n~~~") ; println(q.toString + "\n~~~")
     }
+
+    println(" > META-PARSEFAILURE " + e.toString)
 
     /* Return None if nothing could be parsed */
     None
