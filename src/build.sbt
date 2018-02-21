@@ -1,5 +1,4 @@
 import scala.io.Source
-
 import sbt.Keys._
 
 import scala.sys.process.Process
@@ -10,12 +9,22 @@ import scala.util.Try
 // =================================
 version in ThisBuild := {Source.fromFile("mmt-api/resources/versioning/system.txt").getLines.mkString.trim}
 
-import java.util.Calendar
-import java.text.SimpleDateFormat
+val now = {
+  import java.text.SimpleDateFormat
+  import java.util.Date
+  new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date())
+}
 
-packageOptions in (Compile, packageBin) ++= Seq(
-  Package.ManifestAttributes("Implementation-Version" -> (version.value)),
-  Package.ManifestAttributes("Build-Time" -> new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance))
+
+packageOptions in Global ++= Seq(
+  // Specification Version can be any string, and hence includes the build time
+  Package.ManifestAttributes("Implementation-Version" -> (version.value + s" (built $now)")),
+
+  // implementation version *has to be* ascii digits seperated by ascii periods
+  Package.ManifestAttributes("Specification-Version" -> version.value),
+
+  // custom build-time attribute
+  Package.ManifestAttributes("Build-Time" -> now)
 )
 
 
