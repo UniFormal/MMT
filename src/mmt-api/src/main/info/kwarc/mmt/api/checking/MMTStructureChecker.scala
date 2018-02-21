@@ -271,7 +271,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                 val dIO = Solver.infer(controller, context ++ pr.unknown ++ pr.free, d, Some(env.rules))
                 dIO match {
                   // need to check for free variables in dI because unknowns might be left (but maybe this check is too strict?)
-                  case Some(dI) if dI.freeVars.isEmpty =>
+                  case Some(dI) /* if dI.freeVars.isEmpty */ => // TODO this check is in conflict with parameters of
+                    // theories, which are treated as free variables
+
                     // dI was not computed by trusting d, so we need to check it as well; also this call sets c.tp 
                     checkInhabitable(ParseResult(Context.empty,Context.empty, dI))
                     (pr.unknown, dI, false)
