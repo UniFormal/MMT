@@ -52,7 +52,7 @@ abstract class Interpreter extends Importer {
     } map LogicalDependency
     val used = doc.getModulesResolved(controller.globalLookup).flatMap {
       case th : DeclaredTheory => th.meta.toList ::: th.getIncludes ::: th.getNamedStructures.map(_.from.toMPath)
-      case v : DeclaredView => v.from.toMPath :: v.to.toMPath :: v.getIncludes
+      case v : DeclaredView => v.from.toMPath :: v.to.toMPath :: v.getIncludes.map(_._1)
     }.distinct.map(LogicalDependency) // TODO this is an ugly hack and should be replaced by a precise method. Requires some planning though; in the
       // TODO meantime it's better than nothing
     val missing = used.collect {

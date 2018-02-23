@@ -30,24 +30,21 @@ object DefLinkAssignment {
       DefinedStructure(home, name, from, target, false)
 }
 
-object ViewInclude {
-   def apply(home: Term, from: MPath, included: Term) = DefLinkAssignment(home, LocalName(from), OMMOD(from), included)
-}
 
-/** apply/unapply methods for the special case where a view includes another view */
-object PlainViewInclude {
-   /** pre: included is  view with domain from */
-   def apply(home: Term, from: MPath, included: MPath) = ViewInclude(home, from, OMMOD(included))
-   def unapply(s: Declaration) : Option[(Term, MPath, MPath)] = {
-      s match {
-         case d : DefinedStructure => d.name match {
-            case LocalName(List(ComplexStep(from))) => d.df match {
-               case OMMOD(included) => Some((d.home, from, included))
-               case _ => None
-            }
-            case _ => None
-         }
-         case _ => None
+/** include of a morphism into a link */
+object LinkInclude {
+  /**
+   * @param home the link
+   * @param from the domain of the included morphism
+   * @param mor the morphism
+   */
+  def apply(home: Term, from: MPath, mor: Term) = DefLinkAssignment(home, LocalName(from), OMMOD(from), mor)
+  def unapply(d: ContentElement) = d match {
+    case d: DefinedStructure =>
+      d.from match {
+        case OMMOD(f) if d.name == LocalName(f) => Some((d.home, f, d.df))
+        case _ => None
       }
-   }
+    case _ => None
+  }
 }

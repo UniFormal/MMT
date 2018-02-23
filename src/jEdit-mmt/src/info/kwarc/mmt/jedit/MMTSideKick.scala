@@ -119,12 +119,13 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          // add narrative structure of doc to outline tree
          buildTreeDoc(root, doc)
          tree
-      } catch {case e: Exception =>
-         val msg = e.getClass + ": " + e.getMessage
-         val pe = ParseError("unknown error: " + msg).setCausedBy(e)
-         log(msg)
-         errorCont(pe)
-         SideKickParsedData.getParsedData(jEdit.getActiveView)
+      } catch {
+        case e: Throwable =>
+          val msg = e.getClass + ": " + e.getMessage
+          val pe = ParseError("unknown error: " + msg).setCausedBy(e)
+          log(msg)
+          try {errorCont(pe)} catch {case e: Exception => log(Error(e).toStringLong)}
+          SideKickParsedData.getParsedData(jEdit.getActiveView)
       }
    }
 
@@ -194,7 +195,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       }
       val label = dec match {
          case PlainInclude(from,_) => "include " + from.last
-         case PlainViewInclude(_,_,incl) => "include " + incl.last
+         case LinkInclude(_,_,OMMOD(incl)) => "include " + incl.last
          case r: RuleConstant => r.feature
          case d => d.feature + " " + d.name.toString
       }

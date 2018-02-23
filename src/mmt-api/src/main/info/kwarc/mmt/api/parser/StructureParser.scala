@@ -519,7 +519,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                 case _ =>
                   OMMOD(inclp)
               }
-              val as = ViewInclude(link.toTerm, from, target)
+              val as = LinkInclude(link.toTerm, from, target)
               SourceRef.update(as.from, fromRef)
               SourceRef.update(as.df, inclRef)
               addDeclaration(as)

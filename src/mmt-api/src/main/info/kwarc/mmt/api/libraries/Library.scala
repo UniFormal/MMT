@@ -448,19 +448,23 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             case ComplexStep(theo)::tname => (theo,tname)
             case _ => return default
           }
-          //TODO if theo is visible to the domain of one of the assignments in l, use that assignment
-
-          // check if 'theo' is visible to the meta-theory of l.from; if so, use meta-morphism of l
-          val fromMeta = TheoryExp.metas(l.from, false)(this).headOption.getOrElse {
-            return default
+          // for declarations of the meta-theory of l.from, we default to the identity if no other assignment is found
+          val defaultMetaMorph = TheoryExp.metas(l.from, false)(this).headOption.toList map {mt => 
+            (mt, OMIDENT(OMMOD(mt)))
           }
-          val vis = visible(OMMOD(fromMeta)) contains OMMOD(theo)
-          if (vis) {
-             //TODO precompose with implicit morphism via which it is visible
-             val mtm = l.metamorph getOrElse OMIDENT(OMMOD(theo)) // meta-morphism defaults to identity
-             getDeclarationInTerm(mtm, name, error)
-          } else
-             default
+          // we look for the first assignment in l for a domain that includes theo
+          // (there may be multiple, but they must be equal on theo if l well-formed)
+          (l.getIncludes ::: defaultMetaMorph) foreach {case (f,m) =>
+            val vis = visibleVia(OMMOD(f))
+            vis foreach {case (d,v) =>
+              if (d == OMMOD(theo)) {
+                // theo --v--> f --incl--> l.from --l--> l.to with l|_f == m; thus l|_theo == v;m
+                return getDeclarationInTerm(OMCOMP(v,m), name, error)
+              }
+            }
+          }
+          // otherwise, we use a default assignments
+          return default
      }
   }
 
@@ -633,8 +637,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** as visible but only those where the morphism is trivial (i.e., all includes) */
   def visibleDirect(to: Term): mutable.HashSet[Term] = {
     val via = visibleVia(to)
-    via.flatMap {case (from, via) =>
-      if (via == OMCOMP()) List(from) else Nil
+    via.flatMap {
+      case (from, OMCOMP(Nil)) => List(from)
+      case (from, OMIDENT(_)) => List(from)
+      case _ => Nil
     }
   }
 

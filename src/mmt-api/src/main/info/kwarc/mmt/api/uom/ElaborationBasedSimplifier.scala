@@ -173,73 +173,37 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   }
 
   /** adds elaboration of d to parent */
-  private def flattenDeclaration(mod: DeclaredModule, dOrig: Declaration, rulesOpt: Option[RuleSet] = None) {
+  private def flattenDeclaration(parent: DeclaredModule, dOrig: Declaration, rulesOpt: Option[RuleSet] = None) {
     if (ElaboratedElement.is(dOrig))
       return
     lazy val rules = rulesOpt.getOrElse {
-      RuleSet.collectRules(controller, mod.getInnerContext)
+      RuleSet.collectRules(controller, parent.getInnerContext)
     }
-    val parent : DeclaredModule = mod match {
-      case t: DeclaredTheory =>
-        t
-      case v: DeclaredView =>
-        v
-      case _ => return //TODO
-    }
-    lazy val alreadyIncluded = parent.getIncludes
-    val dElab: List[Declaration] = dOrig match {
-      /* includes in views TODO this is a first step that only covers the case where the target of the assignment is another DeclaredView
-         more generally, ds is of the form 'n : FROM = TARGET', and its elaboration is the list of assignments
-          'n = OMM(n,TARGET)' for all constants n
-          's = OMCOMP(s, TARGET)' for all structures s
-         in the domain of FROM
-
-         The treatment of derived declarations and nested modules in FROM has not been specified yet.
-      */
-      case ds : DefinedStructure if parent.isInstanceOf[DeclaredView] =>
-        ds.df match {
-          case OMMOD(mp) =>
-            lup.getO(mp) match {
-              case Some(v : DeclaredView) =>
-                // include!
-                apply(v)
-                v.getDeclarations.map {
-                  case s : DefinedStructure =>
-                    DefinedStructure(parent.toTerm,s.name,s.from,s.df,false)
-                  case c : Constant =>
-                    Constant(parent.toTerm,c.name,c.alias,c.tp,c.df,c.rl,c.notC)
+    val dElab: List[Declaration] = (parent, dOrig) match {
+      // plain includes: copy (only) includes (i.e., transitive closure of includes)
+      case (thy: DeclaredTheory, Include(_, from, fromArgs)) => // TODO ?
+        val alreadyIncluded = thy.getAllIncludes 
+        val fromThy = lup.getAs(classOf[Theory], from)
+        apply(fromThy)
+        fromThy match {
+          case d: DefinedTheory =>
+            Nil//TODO (deprecated anyway)
+          case fromThy: DeclaredTheory =>
+            fromThy.getAllIncludes.flatMap {
+              case (p, pArgs) =>
+                utils.listmap(alreadyIncluded, p) match {
+                  case Some(existingArgs) =>
+                    if (pArgs != existingArgs) {
+                      Nil //TODO check for equality of arguments, if inequal raise error 
+                    } else
+                      Nil
+                  case None =>
+                    List(Include(thy.toTerm, p, pArgs))
                 }
-              case _ => Nil
             }
-          case _ => Nil
-        }
-      // plain includes: copy (only) includes
-      case Include(h, from, _) => // TODO ?
-        val idom = lup.getAs(classOf[Theory], from)
-        val dom = idom match {
-          case th : DeclaredTheory =>
-            flatten(th)
-            th
-          case th : DefinedTheory =>
-            apply(th)
-            th
-        }
-        dom.getDeclarations.flatMap {
-          case Include(_, p, args) =>
-            if (alreadyIncluded.contains(p)) {
-               if (args != Nil) {
-                 //TODO check for equality of arguments, if inequal raise error
-               }
-               Nil
-            }
-            else {
-               List(Include(h, p, args))
-            }
-          case _ =>
-            Nil
         }
       // any other import (including includes of complex theories): copy and translate all declarations
-      case s: Structure =>
+      case (thy: DeclaredTheory, s: Structure) =>
         /* @param incl a theory reflexive-transitively included into s.from
          * @param prefix the prefix to use for declarations from that theory (None for s.from itself) 
          */
@@ -268,7 +232,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         sElab foreach {d => ElaboratedElement.set(d)}  
         sElab
       // derived declarations: elaborate
-      case dd: DerivedDeclaration =>
+      case (thy: DeclaredTheory, dd: DerivedDeclaration) =>
          controller.extman.get(classOf[StructuralFeature], dd.feature) match {
            case None => Nil
            case Some(sf) =>
@@ -289,7 +253,35 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 dS
               }
          }
-      case nm: NestedModule =>
+      /* includes in views TODO this is a first step that only covers the case where the target of the assignment is another DeclaredView
+         more generally, ds is of the form 'n : FROM = TARGET', and its elaboration is the list of assignments
+          'n = OMM(n,TARGET)' for all constants n
+          's = OMCOMP(s, TARGET)' for all structures s
+         in the domain of FROM
+         
+         Alternatively, all declarations d vw.from can simply be translated by looking up vw.path ? d.name.
+         But that would overlap with the existing declarations in vw.
+
+         The treatment of derived declarations and nested modules in FROM has not been specified yet.
+      */
+      case (vw: DeclaredView, ds : DefinedStructure) =>
+        ds.df match {
+          case OMMOD(mp) =>
+            lup.getO(mp) match {
+              case Some(v : DeclaredView) =>
+                // include!
+                apply(v)
+                v.getDeclarations.map {
+                  case s : DefinedStructure =>
+                    DefinedStructure(parent.toTerm,s.name,s.from,s.df,false)
+                  case c : Constant =>
+                    Constant(parent.toTerm,c.name,c.alias,c.tp,c.df,c.rl,c.notC)
+                }
+              case _ => Nil
+            }
+          case _ => Nil
+        }
+      case (_, nm: NestedModule) =>
         apply(nm.module)
         Nil
       case _ =>

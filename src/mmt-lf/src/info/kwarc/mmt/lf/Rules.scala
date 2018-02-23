@@ -64,11 +64,24 @@ object Common {
    def pickFresh(solver: Solver, x: LocalName)(implicit stack: Stack) =
       Context.pickFresh(solver.constantContext ++ solver.getPartialSolution ++ stack.context, x)
 
-   /** true if a term is an unknown applied to arguments */
-   def isUnknownTerm(solver: Solver, t: Term) = t match {
-     case ApplyGeneral(OMV(u), _) => solver.getUnsolvedVariables.isDeclared(u)
-     case _ => false
-   }
+  /** true if a term is an unknown applied to arguments */
+  def isUnknownTerm(solver: Solver, t: Term) = t match {
+    case ApplyGeneral(OMV(u), _) => solver.getUnsolvedVariables.isDeclared(u)
+    case _ => false
+  }
+}
+
+/** matches an unknown applied to a list of variables */
+case class UnknownMatcher(solver: Solver) {
+  def unapply(t: Term): Option[(LocalName,List[LocalName])] = t match {
+    case ApplyGeneral(OMV(u), args) =>
+      if (!solver.getPartialSolution.isDeclared(u)) return None
+       val bvars = args map {
+         case OMV(n) => n
+         case _ => return None
+      }
+      Some((u, bvars))
+  }
 }
 
 import Common._

@@ -35,12 +35,16 @@ trait Link extends ContentElement {
   * represents an MMT link given by a set of assignments.
   */
 trait DeclaredLink extends Link with Body {
-   val metamorph: Option[Term] = None
- }
+  /** like getIncludes but also with includes of parametric theories and their instantiations */
+  def getIncludes: List[(MPath,Term)] = getDeclarations.flatMap {
+    case LinkInclude(_, from, df) => List((from,df))
+    case _ => Nil
+  }
+}
 
-  /**
-   * represents an MMT link given by an existing morphism
-   */
+/**
+  * represents an MMT link given by an existing morphism
+  */
 trait DefinedLink extends Link with ModuleDefiniens {
    def df = dfC.get.getOrElse(Morph.empty)
 }

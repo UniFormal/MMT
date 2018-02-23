@@ -285,7 +285,7 @@ class NotationBasedParser extends ObjectParser {
    */
   private def mayBeFree(n: String) = {
      n != "" && n(0).isLetter &&
-     n.forall(c => c.isLetter || c.isDigit)
+     n.forall(c => c.isUpper || c.isDigit)
   }
 
  /**
