@@ -124,7 +124,7 @@ class DefinedStructure(val home : Term, val name : LocalName,
 /** apply/unapply functions for [[DeclaredStructure]]s whose domain is an MPath */
 object SimpleDeclaredStructure {
    def apply(home : Term, name : LocalName, tp: MPath, isImplicit : Boolean) =
-      new DeclaredStructure(home, name, TermContainer(OMMOD(tp)), isImplicit) // TODO add metamorph?
+      new DeclaredStructure(home, name, TermContainer(OMMOD(tp)), isImplicit)
    def unapply(ce: ContentElement) = ce match {
       case SimpleStructure(s: DeclaredStructure, p) => Some((s.home, s.name, p, s.isImplicit))
       case _ => None
@@ -134,7 +134,7 @@ object SimpleDeclaredStructure {
 /** auxiliary functions */
 object DeclaredStructure {
    def apply(home : Term, name : LocalName, from : Term, isImplicit : Boolean) =
-      new DeclaredStructure(home, name, TermContainer(from), isImplicit) // TODO add metamorph?
+      new DeclaredStructure(home, name, TermContainer(from), isImplicit)
 }
 
 /** auxiliary functions */

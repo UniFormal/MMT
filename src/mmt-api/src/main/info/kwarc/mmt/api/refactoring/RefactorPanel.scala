@@ -593,7 +593,7 @@ case class NewViewPanel(viewset:List[(FinalConstant,FinalConstant)],value:Double
   def actionPerformed(ae: ActionEvent) = {
     if(ae.getSource==intButton) intersectthis(None)
     if(ae.getSource==addButton) {
-      val view = new DeclaredView(from.parent,LocalName(nametext.getText),OMID(from.path),OMID(to.path),false) // TODO add metamorph?
+      val view = new DeclaredView(from.parent,LocalName(nametext.getText),OMID(from.path),OMID(to.path),false)
       Moduleadder(view,viewset.toSet)
       target.dumptoDocument(List(view))
     }

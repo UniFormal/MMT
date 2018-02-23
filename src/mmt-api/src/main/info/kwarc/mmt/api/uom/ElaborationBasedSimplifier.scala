@@ -198,7 +198,10 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                     } else
                       Nil
                   case None =>
-                    List(Include(thy.toTerm, p, pArgs))
+                    // p --pArgs--> fromThy --fromArgs--> parent
+                    val fromArgsSub = fromThy.parameters.zip(fromArgs).map {case (vd, a) => Sub(vd.name,a)}
+                    val pArgsS = pArgs map {a => a ^? fromArgsSub}
+                    List(Include(thy.toTerm, p, pArgsS))
                 }
             }
         }

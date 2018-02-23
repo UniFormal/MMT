@@ -763,7 +763,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         val v = DefinedView(ns, name, from, to, df.toTerm, isImplicit)
         moduleCont(v, parent)
       case "=" =>
-        val v = new DeclaredView(ns, name, from, to, isImplicit) // TODO add metamorph?
+        val v = new DeclaredView(ns, name, from, to, isImplicit)
         moduleCont(v, parent)
         logGroup {
           readInModule(v, context ++ v.getInnerContext, noFeatures)
@@ -950,7 +950,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     //doComponent(TypeComponent, tpC, context)
     val tp = OMMOD(readMPath(spath)._2)
     tpC.parsed = tp
-    val s = new DeclaredStructure(OMMOD(parentInfo.modParent), name, tpC, isImplicit) // TODO add metamorph?
+    val s = new DeclaredStructure(OMMOD(parentInfo.modParent), name, tpC, isImplicit)
     s.setDocumentHome(parentInfo.relDocParent)
     seCont(s)
     if (state.reader.endOfDeclaration) {
