@@ -180,12 +180,12 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       buildTreeComps(child, mod, context, reg)
       mod match {
          case m: DeclaredModule =>
-            m.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, d, context ++ m.getInnerContext, reg)}
+            m.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, m, d, context ++ m.getInnerContext, reg)}
          case m: DefinedModule =>
       }
    }
    /** build the sidekick outline tree: declaration (in a module) node */
-   private def buildTreeDecl(node: DefaultMutableTreeNode, dec: Declaration, context: Context, defaultReg: SourceRegion) {
+   private def buildTreeDecl(node: DefaultMutableTreeNode, parent: ContainerElement[_ <: Declaration], dec: Declaration, context: Context, defaultReg: SourceRegion) {
       val reg = getRegion(dec) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
       dec match {
          case nm: NestedModule if !nm.isInstanceOf[DerivedDeclaration] =>
@@ -194,19 +194,26 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case _ =>
       }
       val label = dec match {
-         case PlainInclude(from,_) => "include " + from.last
+         case Include(_, from,_) => "include " + from.last
          case LinkInclude(_,_,OMMOD(incl)) => "include " + incl.last
          case r: RuleConstant => r.feature
-         case d => d.feature + " " + d.name.toString
+         case d => d.feature + " " + d.name.toStr(true)
       }
       val child = new DefaultMutableTreeNode(new MMTElemAsset(dec, label, reg))
       node.add(child)
       buildTreeComps(child, dec, context, reg)
       dec match {
-        case dd: DerivedDeclaration =>
-          val sf = controller.extman.get(classOf[StructuralFeature], dd.feature).getOrElse {throw ImplementationError("unknown feature: " + dd.feature)}
-          dd.module.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, d, context ++ sf.getInnerContext(dd), reg)}
+        case ce: ContainerElement[Declaration]@unchecked => // declarations can only contain declarations
+          val contextInner = context ++ controller.getExtraInnerContext(ce)
+          dec.getDeclarations foreach {d => buildTreeDecl(child, ce, d, contextInner, reg)}
         case _ =>
+      }
+      // a child with all declarations elaborated from dec
+      val elab = parent.getDeclarations.filter(_.getOrigin == ElaborationOf(dec.path))
+      if (elab.nonEmpty) {
+        val elabChild = new DefaultMutableTreeNode(new enhanced.SourceAsset("-- elaboration --", -1, MyPosition(-1)))
+        child.add(elabChild)
+        elab foreach {e => buildTreeDecl(elabChild, parent, e, context, defaultReg)}
       }
    }
 
@@ -269,9 +276,9 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case l: OMLITTrait => l.toString
          case OML(nm,_,_,_,_) => nm.toString
          case OMSemiFormal(_) => "unparsed: " + tP.toString
-         case ComplexTerm(op, _,_,_) => op.last.toString
-         case OMA(OMID(p),_) => p.name.last.toString
-         case OMBINDC(OMID(p),_,_) => p.name.last.toString
+         case ComplexTerm(op, _,_,_) => op.name.last.toStr(true)
+         case OMA(OMID(p),_) => p.name.last.toStr(true)
+         case OMBINDC(OMID(p),_,_) => p.name.last.toStr(true)
          case OMA(ct,args) => "OMA" // TODO probably shouldn't occur, but throws errors!
       }
       val child = new DefaultMutableTreeNode(new MMTObjAsset(t, tP, context, parent, label+extraLabel, reg))

@@ -78,7 +78,7 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker, val simplifie
 
   /** parses a [[ParsingStream]] and checks the result */
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement = {
-    val ce = new CheckingEnvironment(errorCont, RelationHandler.ignore, ps)
+    val ce = new CheckingEnvironment(simplifier, errorCont, RelationHandler.ignore, ps)
     try {
       val cont = new StructureParserContinuations(errorCont) {
         override def onElement(se: StructuralElement) {
@@ -86,7 +86,6 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker, val simplifie
         }
         override def onElementEnd(se: ContainerElement[_]) {
           checker.applyElementEnd(se)(ce)
-          simplifier(se)
         }
       }
       val se = parser(ps)(cont)
@@ -101,7 +100,7 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker, val simplifie
     val pr = parser(pu)
     val cu = CheckingUnit.byInference(None, pu.context, pr).diesWith(pu)
     val rules = RuleSet.collectRules(controller, pu.context)
-    val cr = checker(cu, rules)(new CheckingEnvironment(errorCont, RelationHandler.ignore, cu))
+    val cr = checker(cu, rules)(new CheckingEnvironment(simplifier, errorCont, RelationHandler.ignore, cu))
     cr
   }
 }

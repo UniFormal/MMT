@@ -131,7 +131,7 @@ case class OMID(path: ContentPath) extends Term {
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def subobjects = Nil
-   override def toStr(implicit shortURIs: Boolean) = if (shortURIs) path.name.toString else path.toString
+   override def toStr(implicit shortURIs: Boolean) = if (shortURIs) path.name.toStr else path.toString
    def toNode = path match {
       case doc ? mod => <om:OMS base={doc.toPath} module={mod.toPath}>{mdNode}</om:OMS>
       case doc ? mod ?? name => <om:OMS base={doc.toPath} module={mod.toPath} name={name.toPath}>{mdNode}</om:OMS>

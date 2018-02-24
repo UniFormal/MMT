@@ -23,8 +23,16 @@ trait StructureSimplifier extends Extension {
    def apply(p: ContentPath) {
      apply(controller.get(p))
    }
-   /** flattens and elaborates the dependency closure of this element, typically called on a [[DeclaredTheory]] */
+   /** elaborates one element and relevant parts of its dependency closure
+    *  
+    *  This is typically used for assumed-correct content that is not checked, e.g., content loaded directly from OMDoc
+    *  For container elements that are checked incrementally, one may alternatively use applyElementBegin and applyElementEnd
+    */
    def apply(se: StructuralElement): Unit
+   /** like apply except that for container elements applyElementBegin + apply on every child + applyElementEnd = apply */ 
+   def applyElementBegin(se: StructuralElement): Unit
+   /** called in conjunction with applyElementBegin */ 
+   def applyElementEnd(ce: ContainerElement[_]): Unit
 
    def materialize(context: Context, exp: Term, expandDefs: Boolean, pathOpt: Option[MPath]): Module
 

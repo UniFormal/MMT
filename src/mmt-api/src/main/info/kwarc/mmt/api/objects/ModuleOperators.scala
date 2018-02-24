@@ -144,15 +144,30 @@ object Morph {
                     result ::= m
                 }
               }
-            case OMINST(p,args) =>
-              // R ; OMINST(p,args) = R  if the parameters do not occur in the image of R
-              // that is definitely the case if codomain(R) != p: in that case codomain(R) is properly included into p so that R cannot refer to the parameters of p
-              cod match {
-                case Some(OMMOD(t)) =>
-                  if (t == p)
-                    result ::= m
+            case OMINST(p,as) =>
+              val mergeWithPrevious = result.headOption flatMap {
+                case OMINST(q,bs) =>
+                  // merge two successive instantiations: OMINST(q,bs);OMINST(p,as) = OMINST(q, bs[as])
+                  val pThy = lib.getAs(classOf[Theory],p)
+                  (pThy.parameters / as) map {asub =>
+                     OMINST(q, bs map {b => b ^? asub})
+                  }
                 case _ =>
-                  result ::= m
+                  None
+              }
+              mergeWithPrevious match {
+                case Some(n) =>
+                  result = n :: result.tail
+                case None =>
+                  // R ; OMINST(p,args) = R  if the parameters do not occur in the image of R
+                  // that is definitely the case if codomain(R) != p: in that case codomain(R) is properly included into p so that R cannot refer to the parameters of p
+                  cod match {
+                    case Some(OMMOD(t)) =>
+                      if (t == p)
+                        result ::= m
+                    case _ =>
+                      result ::= m
+                  }
               }
             case OMCOMP(_) =>
               throw ImplementationError("no nested compositions possible")

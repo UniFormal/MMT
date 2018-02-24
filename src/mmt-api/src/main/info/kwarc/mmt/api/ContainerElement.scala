@@ -119,7 +119,21 @@ trait ContainerElement[S <: StructuralElement] extends StructuralElement with Mu
    /** the list of declarations in the order of addition, excludes generated declarations */
    def getPrimitiveDeclarations = getDeclarations.filterNot(_.isGenerated)
    /** the list of declarations using elaborated declarations where possible */
-   def getDeclarationsElaborated = getDeclarations.filterNot(uom.ElaboratedElement.isProperly)
+   def getDeclarationsElaborated = getDeclarations.filterNot(uom.ElaboratedElement.isFully)
+}
+
+/** delegates all methods to an existing container element; awkward auxiliary class needed because Scala doesn't let us delegate systematically
+ *  only used in DerivedDeclaration */
+trait DelegatingContainerElement[S <: StructuralElement] extends ContainerElement[S] {
+  protected val delegatee: ContainerElement[S]
+  def domain = delegatee.domain
+  def getDeclarations = delegatee.getDeclarations
+  def getO(name: LocalName) = delegatee.getO(name)
+  def getMostSpecific(name: LocalName) = delegatee.getMostSpecific(name)
+  def add(s: S, at: AddPosition = AtEnd) = delegatee.add(s, at)
+  def update(s: S) = delegatee.update(s)
+  def delete(name: LocalName) = delegatee.delete(name)
+  def reorder(name: LocalName) = delegatee.reorder(name)
 }
 
 class ListContainer[S <: NamedElement](items: List[S]) extends ElementContainer[S] with DefaultLookup[S] {

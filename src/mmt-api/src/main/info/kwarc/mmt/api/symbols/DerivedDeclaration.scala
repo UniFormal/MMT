@@ -19,11 +19,14 @@ import Theory._
 class DerivedDeclaration(h: Term, name: LocalName, override val feature: String, val tpC: TermContainer,
                          val notC: NotationContainer) extends {
    private val t = Theory.empty(h.toMPath.parent, h.toMPath.name/name, noMeta)
-} with NestedModule(h, name, t) with HasNotation {
-   // overriding to make the type stricter
+   protected val delegatee = t // inheriting the container element functions of t
+} with NestedModule(h, name, t) with DelegatingContainerElement[Declaration] with HasNotation {
+  
+  // overriding to make the type stricter
   override def module: DeclaredModule = t
   def modulePath = module.path
 
+  override def getDeclarations = module.getDeclarations
   override def getComponents = TypeComponent(tpC) :: notC.getComponents
 
   private def tpAttNode = tpC.get.map {t => backend.ReadXML.makeTermAttributeOrChild(t, "type")}.getOrElse((null,Nil))
@@ -444,7 +447,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     def parentDerDecls = parenth.getDerivedDeclarations(feature).filterNot(_ == dd)//
     def parentDeclIncludes = parentDerDecls.map(s => getDomain(s).toMPath)
     def dones = parentDerDecls.indices.collect{
-      case i if ElaboratedElement.is(parentDerDecls(i)) => parentDeclIncludes(i)
+      case i if ElaboratedElement.isPartially(parentDerDecls(i)) => parentDeclIncludes(i)
     }
     def doFirsts = (body.getDerivedDeclarations(feature).map(s => getDomain(s).toMPath) ::: bodycont.collect{
       case DerivedVarDeclFeature(LocalName(ComplexStep(n) :: rest2),`feature`,_,_) => n

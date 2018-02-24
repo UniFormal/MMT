@@ -84,8 +84,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /**
    * A continuation function called on every StructuralElement that was found
    *
-   * For grouping elements (documents, modules with body), this must be called on the empty element first
-   * and then on each child, finally end(se) must be called on the grouping element.
+   * For container elements (documents, modules with body), this must be called on the empty element first
+   * and then on each child, finally end(se) must be called on the container element.
+   * This holds accordingsly for nested declared modules. 
    */
   protected def seCont(se: StructuralElement)(implicit state: ParserState) {
     log(se.toString)
@@ -102,9 +103,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /** called at the end of a document or module, does common bureaucracy */
   protected def end(s: ContainerElement[_])(implicit state: ParserState) {
     //extend source reference until end of element
-    SourceRef.get(s) foreach { r =>
-      SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getSourcePosition - 2)))
-      // the -2 seems to be necessary at the end of files (to avoid sourceref errors)
+    SourceRef.get(s) foreach {r =>
+      SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getSourcePosition)))
     }
     state.cont.onElementEnd(s)
     log("end " + s.path)
@@ -113,7 +113,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /** the region from the start of the current structural element to the current position */
   protected def currentSourceRegion(implicit state: ParserState) =
     SourceRegion(state.startPosition, state.reader.getSourcePosition)
-
 
   /** like seCont but may wrap in NestedModule */
   private def moduleCont(m: Module, par: HasParentInfo)(implicit state: ParserState) {
@@ -426,7 +425,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           reader.setSourcePosition(mreg.start)
           val pea = new ParserExtensionArguments(this, state.copy(reader), doc, k)
           extParser(pea) foreach {
-            case m: Module => moduleCont(m, parentInfo)
+            case m: Module =>
+              moduleCont(m, parentInfo)
+              //TODO unclear if end(m) should be called; presumably yes if m is declared
             case _ => throw makeError(reg, "parser extension returned non-module")
           }
       }
@@ -479,6 +480,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     def addDeclaration(d: Declaration) {
        d.setDocumentHome(currentSection)
        seCont(d)
+       d match {
+         case ce: ContainerElement[_] =>
+           // if a container element is added in one go (e.g., includes, instances), we need to also call the end of element hook
+           state.cont.onElementEnd(ce)
+         case _ =>
+       }
     }
     // to be set if the section changes
     var nextSection = currentSection
@@ -978,7 +985,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   /** reads the header of a [[DerivedDeclaration]] */
-  private def readDerivedDeclaration(feature: StructuralFeature, parentInfo: IsMod, context: Context)(implicit state: ParserState) = {
+  private def readDerivedDeclaration(feature: StructuralFeature, parentInfo: IsMod, context: Context)(implicit state: ParserState) {
     val parent = parentInfo.modParent
     val pr = feature.getHeaderRule
     val (_, reg, header) = readParsedObject(context, Some(pr))
@@ -998,7 +1005,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
        val features = getFeatures(parent)
        readInModule(dd.module, context ++ innerContext, features)
     }
-    end(dd.module) //TODO is this correct?
+    end(dd)
   }
 
   /** returns an instance of [[InstanceFeature]]

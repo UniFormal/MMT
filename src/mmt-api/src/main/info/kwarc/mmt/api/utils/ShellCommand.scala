@@ -43,7 +43,7 @@ object ShellCommand {
     outputReader.close()
     val op = output.result()
     val ev = proc.exitValue
-    if (ev != 0) {
+    if (ev == 0) {
       Success(op)
     } else {
       Fail(op, ev)

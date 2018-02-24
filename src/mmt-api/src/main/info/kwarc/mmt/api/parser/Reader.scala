@@ -23,21 +23,25 @@ class Reader(val jr: java.io.BufferedReader) {
    @deprecated("needs review", "")
    def forceLastDelimiter(i : Int) = lastDelimiter = i
    /**
+    * true if the last read operation hit the end of the current input stream
+    */
+   def endOfInput = -1 == lastDelimiter
+   /**
     * true if the last read operation hit the end of the current document
     */
-   def endOfDocument = (FS.andabove contains lastDelimiter) || (lastDelimiter <= FS.chars.head)
+   def endOfDocument = -1::FS.andabove contains lastDelimiter
    /**
     * true if the last read operation hit the end of the current module
     */
-   def endOfModule = (GS.andabove contains lastDelimiter) || (lastDelimiter <= GS.chars.head)
+   def endOfModule = -1::GS.andabove contains lastDelimiter
    /**
     * true if the last read operation hit the end of the current declaration
     */
-   def endOfDeclaration = (RS.andabove contains lastDelimiter) || (lastDelimiter <= RS.chars.head)
+   def endOfDeclaration = -1::RS.andabove contains lastDelimiter
    /**
     * true if the last read operation hit the end of the current object
     */
-   def endOfObject = (US.andabove contains lastDelimiter) || (lastDelimiter <= US.chars.head)
+   def endOfObject = -1::US.andabove contains lastDelimiter
 
    //current position (offset counts \r\n as 1 character)
    private var line : Int = 0

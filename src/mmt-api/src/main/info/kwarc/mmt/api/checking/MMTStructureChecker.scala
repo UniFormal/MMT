@@ -26,7 +26,8 @@ case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: O
 }
 
 
-/** A StructureChecker traverses structural elements and checks them structurally.
+/** A StructureChecker traverses structural elements and checks them, calling the object checker as needed.
+  * It elaborates every element when it is checked. 
   *
   * Deriving classes may override unitCont and reCont to customize the behavior.
   */
@@ -36,6 +37,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   private implicit lazy val content = controller.globalLookup
   override val logPrefix = "structure-checker"
 
+  /* the entry points
+   * invariant for container elements: applyElementBegin + apply on every child + applyElementEnd <=> apply 
+   * 
+   */
+  
   def apply(e: StructuralElement)(implicit ce: CheckingEnvironment) {
     applyWithTimeout(e, None)
   }
@@ -66,6 +72,15 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     }
   }
 
+  /** called after checking an element */
+  private def elementChecked(e: StructuralElement)(implicit env: ExtendedCheckingEnvironment) {
+    try {env.ce.simplifier.apply(e)}
+    catch {case e: Error =>
+      env.errorCont(e)
+    }
+    new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
+  }
+
   @deprecated("unclear what happens here", "")
   def elabContext(th : DeclaredTheory)(implicit ce: CheckingEnvironment): Context = {
     //val con = getContext(th)
@@ -92,7 +107,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   /**
     * @param context all variables and theories that may be used in e (including the theory in which is declared)
     * @param e       the element to check
-    * @param streamed true if a later call of applyElementEnd on the parent of e is expected; so checks performed in applyElementEnd should be skipped
+    * @param streamed true if a later call of checkElementEnd on this element or its parent is expected; all checks performed in checkElementEnd are skipped
     */
   // e will be marked as checked (independent of whether there are errors)
   private def check(context: Context, e: StructuralElement, streamed: Boolean)(implicit env: ExtendedCheckingEnvironment) {
@@ -100,8 +115,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val path = e.path
     log("checking " + path )//+ " using the following rules: " + env.rules.toString)
     e match {
-      //TODO merge this case with the generic case for ContainerElements
-      //the extended treatment is probably needed for all ContainerElements anyway
       case c: ContainerElement[_] =>
         checkElementBegin(context, c)
         // mark all children as unchecked
@@ -114,14 +127,17 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         val (contextI, envI) = prepareCheckExtendContext(context, env, additionalContext)
         logGroup {
           tDecls foreach {d =>
-            check(contextI, d, streamed)(envI)
+            check(contextI, d, false)(envI)
           }
         }
-        checkElementEnd(context, c)
+        if (!streamed)
+           checkElementEnd(context, c)
       case oe: OpaqueElement =>
+        // when streamed, opaque elements are checked in the checkElementEnd method of their parent (to allow for forward-references)
         if (!streamed) {
           controller.extman.get(classOf[OpaqueChecker], oe.format) match {
-            case None => env.errorCont(InvalidElement(oe, "no checker found for format " + oe.format))
+            case None =>
+              env.errorCont(InvalidElement(oe, "no checker found for format " + oe.format))
             case Some(oc) =>
               oc.check(objectChecker, context, env.rules, oe)
           }
@@ -133,20 +149,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
         //TODO decide what to do here; usually, checking is redundant and may even fail here if the context is not fully elaborated and loaded
         //apply(target)
-      case dd: DerivedDeclaration =>
-        val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
-        sfOpt match {
-          case None =>
-            env.errorCont(InvalidElement(dd, s"structural feature '${dd.feature}' not registered"))
-          case Some(sf) =>
-            dd.tpC.get foreach {tp =>
-              val tpR = checkTerm(context, tp)
-              // not using tpR here because source references are gone
-            }
-            val conInner = sf.getInnerContext(dd)
-            check(context ++ conInner, dd.module, streamed)
-            sf.check(dd) //TODO this should happened at ElementEnd only
-        }
       case nm: NestedModule =>
         check(context, nm.module, streamed)
       case t: DefinedTheory =>
@@ -270,10 +272,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                 // try to guess the type of d by inferring without checking
                 val dIO = Solver.infer(controller, context ++ pr.unknown ++ pr.free, d, Some(env.rules))
                 dIO match {
-                  // need to check for free variables in dI because unknowns might be left (but maybe this check is too strict?)
-                  case Some(dI) /* if dI.freeVars.isEmpty */ => // TODO this check is in conflict with parameters of
-                    // theories, which are treated as free variables
-
+                  // we can only use the infered type if no extra variables are left in it
+                  case Some(dI) if dI.freeVars.forall(x => context.isDeclared(x))  =>
                     // dI was not computed by trusting d, so we need to check it as well; also this call sets c.tp 
                     checkInhabitable(ParseResult(Context.empty,Context.empty, dI))
                     (pr.unknown, dI, false)
@@ -314,8 +314,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         logError("unchecked " + path)
     }
     UncheckedElement.erase(e)
-    new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
-  }
+    e match {
+      case _:ContainerElement[_] if streamed =>
+        // streamed container elements are finalized in checkElementEnd
+      case _ => 
+        elementChecked(e)
+    }
+  }  
 
   /** determines which dimension of a term (parsed, analyzed, or neither) is checked */
   private def getTermToCheck(tc: TermContainer, dim: String) = {
@@ -341,9 +346,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
 
   /** auxiliary method of check */
   private def checkElementBegin(context : Context, e : ContainerElement[_<: StructuralElement])(implicit env: ExtendedCheckingEnvironment) {
+    val path = e.path
+    log("checking begin of " + path )
     val rules = env.rules
     implicit val ce = env.ce
-    val path = e.path
     e match {
       case d: Document =>
       case t: DeclaredTheory =>
@@ -361,6 +367,17 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         checkTheory(None, context, v.to) //TODO Some(CPath(v.path, DomComponent))
       case s: DeclaredStructure =>
         checkTheory(Some(CPath(s.path, TypeComponent)), context, s.from)
+      case dd: DerivedDeclaration =>
+        val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
+        sfOpt match {
+          case None =>
+            env.errorCont(InvalidElement(dd, s"structural feature '${dd.feature}' not registered"))
+          case Some(sf) =>
+            dd.tpC.get foreach {tp =>
+              val tpR = checkTerm(context, tp)
+              // not using tpR here because source references are gone
+            }
+        }
       case _ =>
         //succeed for everything else but signal error
         logError("unchecked " + path)
@@ -369,21 +386,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
 
   /** auxiliary method of check */
   private def checkElementEnd(context: Context, e: ContainerElement[_])(implicit env: ExtendedCheckingEnvironment) {
+    log("checking end of " + e.path )
     e match {
       case d: Document =>
       case t: DeclaredTheory =>
-        val (contextI, envI) = prepareCheckExtendContext(context, env, controller.getExtraInnerContext(t))
-        // check all the narrative structure (at the end to allow forward references)
-        //TODO currently this is called on a NestedModule before the rest of the parent is checked
-        def doDoc(ne: NarrativeElement) {
-          ne match {
-            case doc: Document => doc.getDeclarations foreach doDoc
-            case r: NRef =>
-            case oe: OpaqueElement =>
-              check(contextI, oe, false)(envI)
-          }
-        }
-        doDoc(t.asDocument)
       case v: DeclaredView =>
         val istotal = isTotal(context,v)
         if (istotal.nonEmpty) {
@@ -394,12 +400,36 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           env.errorCont(ie)
         }
       case s: DeclaredStructure =>
+      case dd: DerivedDeclaration =>
+        val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
+        // error for sfOpt.isEmpty is raised in checkElementegin already
+        sfOpt foreach {sf =>
+          sf.check(dd)
+        }
       case _ =>
         //succeed for everything else but signal error
         logError("unchecked " + e.path)
     }
+    // check all the narrative structure (at the end to allow forward references)
+    val (contextI, envI) = prepareCheckExtendContext(context, env, controller.getExtraInnerContext(e))
+    def doDoc(ne: NarrativeElement) {
+      ne match {
+        case doc: Document => doc.getDeclarations foreach doDoc
+        case r: NRef =>
+        case oe: OpaqueElement =>
+          check(contextI, oe, false)(envI)
+      }
+    }
+    e match {
+      case d: Document =>
+        doDoc(d)
+      case b: Body =>
+        doDoc(b.asDocument)      
+      case _ =>
+    }
+    elementChecked(e)
   }
-
+  
   /** checks if a view is total and returns the missing assignments */
   @deprecated("needs review", "")
   private def isTotal(context: Context, view: DeclaredView, currentincl: Option[Term] = None): List[GlobalName] = {
