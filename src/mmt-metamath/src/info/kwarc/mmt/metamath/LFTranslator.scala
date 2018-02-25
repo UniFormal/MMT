@@ -64,7 +64,7 @@ class LFTranslator(val controller: Controller, bt: BuildTask, index: Document =>
     val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
       throw GeneralError(s"no MMT checker found")
     }
-    checker(theory)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore,this))
+    checker(theory)(new CheckingEnvironment(controller.simplifier,new ErrorLogger(report), RelationHandler.ignore,this))
     doc
   }
 }
