@@ -180,7 +180,13 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       buildTreeComps(child, mod, context, reg)
       mod match {
          case m: DeclaredModule =>
-            m.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, m, d, context ++ m.getInnerContext, reg)}
+           val defElab = m.getDeclarations.filter(_.getOrigin == ElaborationOfDefinition)
+           if (defElab.nonEmpty) {
+              val elabChild = new DefaultMutableTreeNode(new MMTAuxAsset("-- flat definition --"))
+              child.add(elabChild)
+              defElab foreach {d => buildTreeDecl(elabChild, m, d, context ++ m.getInnerContext, reg)}
+           }
+           m.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, m, d, context ++ m.getInnerContext, reg)}
          case m: DefinedModule =>
       }
    }
@@ -211,7 +217,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       // a child with all declarations elaborated from dec
       val elab = parent.getDeclarations.filter(_.getOrigin == ElaborationOf(dec.path))
       if (elab.nonEmpty) {
-        val elabChild = new DefaultMutableTreeNode(new enhanced.SourceAsset("-- elaboration --", -1, MyPosition(-1)))
+        val elabChild = new DefaultMutableTreeNode(new MMTAuxAsset("-- elaboration --"))
         child.add(elabChild)
         elab foreach {e => buildTreeDecl(elabChild, parent, e, context, defaultReg)}
       }
@@ -231,7 +237,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    /** build the sidekick outline tree: component of a (module or symbol level) declaration */
    private def buildTreeComp(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, defaultReg: SourceRegion) {
       val reg = getRegion(t) getOrElse SourceRegion.none
-      val child = new DefaultMutableTreeNode(new MMTObjAsset(t, t, context, parent, parent.component.toString, reg))
+      val child = new DefaultMutableTreeNode(new MMTObjAsset(mmt, t, t, context, parent, parent.component.toString, reg))
       node.add(child)
       buildTreeTerm(child, parent, t, context, defaultReg)
    }
@@ -245,7 +251,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case PresentationNotationComponent => "notation (presentation)"
          case VerbalizationNotationComponent => "notation (verbalization)"
       }
-      val child = new DefaultMutableTreeNode(new MMTNotAsset(owner, label + ": " + tn.toString, tn, reg))
+      val child = new DefaultMutableTreeNode(new MMTNotAsset(owner, label, tn, reg))
       node.add(child)
    }
 
@@ -254,7 +260,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       con mapVarDecls {case (previous, vd @ VarDecl(n, f, tp, df, _)) =>
          val reg = getRegion(vd) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
          val currentContext = context ++ previous
-         val child = new DefaultMutableTreeNode(new MMTObjAsset(vd, vd, currentContext, parent, f.map(_+" ").getOrElse("") + n.toString, reg))
+         val child = new DefaultMutableTreeNode(new MMTObjAsset(mmt, vd, vd, currentContext, parent, f.map(_+" ").getOrElse("") + n.toString, reg))
          node.add(child)
          (tp.toList:::df.toList) foreach {t =>
             buildTreeTerm(child, parent, t, currentContext, reg)
@@ -281,7 +287,8 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case OMBINDC(OMID(p),_,_) => p.name.last.toStr(true)
          case OMA(ct,args) => "OMA" // TODO probably shouldn't occur, but throws errors!
       }
-      val child = new DefaultMutableTreeNode(new MMTObjAsset(t, tP, context, parent, label+extraLabel, reg))
+      val asset = new MMTObjAsset(mmt, t, tP, context, parent, label+extraLabel, reg)
+      val child = new DefaultMutableTreeNode(asset)
       node.add(child)
       tP match {
          case OML(_,tp,df,_,_) =>

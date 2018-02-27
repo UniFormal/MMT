@@ -182,7 +182,7 @@ class MMTToolTips(controller: Controller, editPane: EditPane) extends TextAreaEx
         asset match {
           case ta: MMTObjAsset =>
             if (selected) {
-              ta.inferType(controller).map(asString).getOrElse(null)
+              ta.inferType.map(asString).getOrElse(null)
             } else {
               ta.obj match {
                 case OMV(n) =>

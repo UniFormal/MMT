@@ -28,7 +28,7 @@ class EditActions(mmtplugin: MMTPlugin) {
     val as = MMTSideKick.getAssetAtOffset(view, offset).getOrElse(return)
     as match {
       case oa: MMTObjAsset =>
-        val tp = oa.inferType(mmtplugin.controller).getOrElse(return)
+        val tp = oa.inferType.getOrElse(return)
         val tm = checking.Hole(tp)
         val tmS = mmtplugin.controller.presenter.asString(tm)
         EditActions.overwriteText(textArea, offset, offset, tmS)

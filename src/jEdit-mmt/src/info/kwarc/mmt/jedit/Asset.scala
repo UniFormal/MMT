@@ -19,8 +19,7 @@ case class MyPosition(offset : Int) extends javax.swing.text.Position {
  * @param name the label of the asset
  * @param region the source region of the asset
  */
-sealed abstract class MMTAsset(name: String, val region: SourceRegion)
-  extends enhanced.SourceAsset(name, region.start.line, MyPosition(region.start.offset)) {
+sealed abstract class MMTAsset(name: String, val region: SourceRegion) extends enhanced.SourceAsset(name, region.start.line, MyPosition(region.start.offset)) {
   setEnd(MyPosition(region.end.offset+1))
   /** the base URIto use in the context of this asset */
   def getScope : Option[MPath]
@@ -66,26 +65,29 @@ class MMTElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion
  * @param parent the component containing the term
  * @param subobjectPosition the position in that term
  */
-class MMTObjAsset(val obj: Obj, val pragmatic: Obj, val context: Context, val parent: CPath, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
-  obj.head map {case p =>
-    setLongDescription(p.toPath)
-  }
+class MMTObjAsset(mmtplugin: MMTPlugin, val obj: Obj, val pragmatic: Obj, val context: Context, val parent: CPath, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
+  private lazy val longDescription = mmtplugin.asString(obj)
+  override def getLongString = longDescription
   def getScope = parent.parent match {
      case cp: ContentPath => Some(cp.module)
      case _ => None
   }
   
   /** tries to infer the type of this asset (may throw exceptions) */
-  def inferType(controller: frontend.Controller): Option[Term] = {
+  def inferType: Option[Term] = {
     obj match {
       case t: Term =>
         val thy = getScope.getOrElse(return None)
-        checking.Solver.infer(controller, Context(thy) ++ context, t, None)
+        checking.Solver.infer(mmtplugin.controller, Context(thy) ++ context, t, None)
       case _ => None
     }
   }
 }
 
 class MMTNotAsset(owner: ContentPath, label: String, not: TextNotation, reg: SourceRegion) extends MMTAsset(label, reg) {
+   setLongDescription(not.toText)
    def getScope = Some(owner.module)
 }
+
+/** a dummy asset for structuring the tree */
+class MMTAuxAsset(label: String) extends enhanced.SourceAsset(label, -1, MyPosition(-1))
