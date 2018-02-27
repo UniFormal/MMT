@@ -20,6 +20,8 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
   // this field is transient as some Throwables are not actually serialisable
   @transient private var causedBy: Option[Throwable] = None
 
+  def getCausedBy : Option[Throwable] = causedBy
+
   /** get the error due to which this error was thrown */
   def setCausedBy(e: Throwable): this.type = {
     causedBy = Some(e)

@@ -284,7 +284,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         }
         val sElab = doDeclsInIncludedTheory(s.from, None)
         // because s.from and its includes were already flattened recursively, we must avoid recursively elaborating the declarations in sElab
-        sElab foreach {d => ElaboratedElement.setFully(d)}  
+        sElab foreach {d => ElaboratedElement.setFully(d)}
         sElab
       // derived declarations: elaborate
       case (thy: DeclaredTheory, dd: DerivedDeclaration) =>
@@ -470,6 +470,10 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     exp match {
       case OMMOD(p: MPath) => lup.getTheory(p) match {
          case d: DefinedTheory if expandDefs => materialize(context, d.df, expandDefs, None)
+         case dt : DeclaredTheory =>
+           dt.getDeclarationsElaborated
+           apply(dt)
+           dt
          case d => d
       }
       case OMPMOD(p, args) => // materialization of instances of parametric theories

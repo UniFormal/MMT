@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api
 
+import info.kwarc.mmt.api.symbols.Declaration
+import info.kwarc.mmt.api.uom.ElaboratedElement
 import objects._
 
 trait NamedElement {
@@ -119,7 +121,19 @@ trait ContainerElement[S <: StructuralElement] extends StructuralElement with Mu
    /** the list of declarations in the order of addition, excludes generated declarations */
    def getPrimitiveDeclarations = getDeclarations.filterNot(_.isGenerated)
    /** the list of declarations using elaborated declarations where possible */
-   def getDeclarationsElaborated = getDeclarations.filterNot(uom.ElaboratedElement.isFully)
+   def getDeclarationsElaborated = {
+     var ret : List[S] = Nil
+     getDeclarations.indices.foreach(i => {
+       val h = getDeclarations(i)
+       h.path match {
+         case gn : GlobalName if !getDeclarations.drop(i+1).exists(_.getOrigin == ElaborationOf(gn)) =>
+           ret ::= h
+         case _ if !ElaboratedElement.isFully(h) =>
+           ret ::= h
+         case _ =>
+       }})
+     ret.reverse
+   }
 }
 
 /** delegates all methods to an existing container element; awkward auxiliary class needed because Scala doesn't let us delegate systematically
