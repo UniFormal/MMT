@@ -211,7 +211,7 @@ val jeditJars = Seq(
   "jsr.jar"
 )
 
-// using MMT inside 
+// using MMT inside jEdit. Maintainer: Florian
 lazy val jedit = (project in file("jEdit-mmt")).
   dependsOn(api, lf).
   settings(commonSettings("jEdit-mmt"): _*).
@@ -224,12 +224,12 @@ lazy val jedit = (project in file("jEdit-mmt")).
     install := Utils.installJEditJars
   )
   
-// using MMT as a part of LaTeX
+// using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).
   dependsOn(stex).
   settings(mmtProjectsSettings("latex-mmt"): _*)
 
-// using MMT in the OpenDreamKit project, includes language plugins for various systems such as GAP or Sage
+// using MMT in the OpenDreamKit project, includes language plugins for various systems such as GAP or Sage. Maintainer: Dennis
 lazy val odk = (project in file("mmt-odk")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-odk"): _*)
@@ -340,7 +340,7 @@ lazy val stex = (project in file("mmt-stex")).
   dependsOn(api).
   settings(mmtProjectsSettings("mmt-stex"): _*)
 
-// plugin for writing OpenMath CDs
+// plugin for writing OpenMath CDs. Maintainer: Florian
 lazy val openmath = (project in file("mmt-openmath")).
   dependsOn(api).
   settings(mmtProjectsSettings("mmt-openmath"): _*)
