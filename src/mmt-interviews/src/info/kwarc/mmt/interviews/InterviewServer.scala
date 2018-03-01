@@ -35,7 +35,7 @@ class InterviewServer extends ServerExtension("interview") {
             val (name,froms,tos) = (query("view").get,query("from").get,query("to").get)
             val mp = Path.parseM(name,NamespaceMap.empty)
             val (from,to) = (Path.parseM(froms,NamespaceMap.empty),Path.parseM(tos,NamespaceMap.empty))
-            val v = new DeclaredView(mp.parent,mp.name,OMMOD(from),OMMOD(to),false)
+            val v = DeclaredView(mp.parent,mp.name,OMMOD(from),OMMOD(to),false)
             controller add v
             checker.apply(v)(new CheckingEnvironment(controller.simplifier, errorCont,RelationHandler.ignore,MMTTask.generic))
             return ServerResponse.TextResponse("OK")

@@ -22,9 +22,9 @@ abstract class Structure extends Declaration with Link {
    /** the domain/type of the structure */
    val tpC: TermContainer
    /** the domain of the structure as a Term, may fail if tpC is undefined */
-   def from: Term = tpC.get.getOrElse {throw ImplementationError("access of unknown structure domain in " + path)}
+   def fromC = tpC
    /** the domain of a structure is its home theory*/
-   val to = home
+   val toC = new FinalTermContainer(home)
    val isImplicit: Boolean
    def namePrefix = name
 
@@ -60,6 +60,8 @@ class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermCont
       extends Structure with DeclaredLink {
    def getComponents = List(TypeComponent(tpC))
 
+   def getInnerContext = codomainAsContext
+   
    def translate(newHome: Term, prefix: LocalName, translator: Translator,context : Context): DeclaredStructure = {
      def tl(m: Term)= translator.applyModule(Context.empty, m)
      val res = new DeclaredStructure(home, prefix/name, tpC map tl, isImplicit)
@@ -106,7 +108,7 @@ class DefinedStructure(val home : Term, val name : LocalName,
 
    def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): DefinedStructure = {
      def tl(m: Term)= translator.applyModule(context, m)
-     new DefinedStructure(home, prefix/name, tpC map tl, dfC map tl, isImplicit)
+     new DefinedStructure(newHome, prefix/name, tpC map tl, dfC map tl, isImplicit)
    }
    def merge(that: Declaration): DefinedStructure = {
      that match {

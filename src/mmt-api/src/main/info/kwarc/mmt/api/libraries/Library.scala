@@ -256,10 +256,9 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             case IncludeVarDecl(_, OMPMOD(p, args), _) =>
               name.head match {
                 case ComplexStep(q) =>
-                  getImplicit(q, p).foreach { m =>
-                    val sym = get(OMMOD(q), name.tail, sourceError)
-                    val symT = translate(sym, m, error)
-                    return symT
+                  // if name is visible to p, delegate to lookup in p
+                  getImplicit(q, p).foreach {m =>
+                    return get(OMPMOD(p,args), name, error)
                   }
                 case _ =>
               }
@@ -319,8 +318,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     mod match {
       case t: Theory =>
       case d =>
-          if (0 != args.length)
-            throw GetError("number of arguments does not match number of parameters")
+        if (0 != args.length)
+          throw GetError("number of arguments does not match number of parameters")
     }
     // now the actual lookup
     mod match {
@@ -362,8 +361,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
      declLnOpt match {
        case Some((d, LocalName(Nil))) => d // perfect match
        case Some((d, ln)) => d match {
-         case PlainInclude(p,_) =>
-           getDeclarationInTerm(OMMOD(p),ln,error)
+         case Include(_,p,as) =>
+           getDeclarationInTerm(OMPMOD(p,as),ln,error)
          // a prefix exists and resolves to d, a suffix ln is left
          case s: Structure =>
            val sym = getDeclarationInTerm(s.from, ln, sourceError) // resolve ln in the domain of s
@@ -454,6 +453,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
           }
           // we look for the first assignment in l for a domain that includes theo
           // (there may be multiple, but they must be equal on theo if l well-formed)
+          // defaultMetaMorph, being last, is only considered as a default
           (l.getIncludes ::: defaultMetaMorph) foreach {case (f,m) =>
             val vis = visibleVia(OMMOD(f))
             vis foreach {case (d,v) =>
@@ -482,20 +482,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case OMPMOD(p, oldArgs) => OMPMOD(p, oldArgs ::: args)
         case _ => throw ImplementationError("cannot instantiate declaration of complex theory")
       }
-    decl match {
-      case c: Constant =>
-        Constant(newHome, c.name, c.alias, c.tp.map(_ ^? subs), c.df.map(_ ^? subs), c.rl, c.notC)
-      case s: DefinedStructure =>
-        DefinedStructure(newHome, s.name, s.from ^? subs, s.df ^? subs, s.isImplicit)
-      case s: DeclaredStructure =>
-        val sS = DeclaredStructure(newHome, s.name, s.from ^? subs, s.isImplicit)
-        s.getPrimitiveDeclarations.foreach { case d =>
-          sS.add(instantiate(d, params, args))
-        }
-        sS
-      case nm: NestedModule =>
-        throw ImplementationError("substitution in nested modules not implemented yet")
-    }
+    val dT = decl.translate(newHome, LocalName.empty, ApplySubs(subs), params)
+    dT
   }
 
   /** translate a Declaration along a morphism */

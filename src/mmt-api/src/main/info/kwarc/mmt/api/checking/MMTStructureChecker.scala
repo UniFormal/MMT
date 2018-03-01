@@ -433,7 +433,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   /** checks if a view is total and returns the missing assignments */
   @deprecated("needs review", "")
   private def isTotal(context: Context, view: DeclaredView, currentincl: Option[Term] = None): List[GlobalName] = {
-    val dom = controller.simplifier.materialize(context,currentincl.getOrElse(view.from),true,None).asInstanceOf[DeclaredTheory]
+    val dom = controller.simplifier.materialize(context,currentincl.getOrElse(view.from),None,None).asInstanceOf[DeclaredTheory]
     controller.simplifier(dom)
     val consts = dom.getConstants collect {
       case c : Constant if c.df.isEmpty && !view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name) => c.path

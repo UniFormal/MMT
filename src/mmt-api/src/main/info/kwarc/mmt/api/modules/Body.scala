@@ -19,6 +19,8 @@ import documents._
  * The latter is stored as a [[Document]], which holds [[SRef]] to the logical declarations.
 */
 trait Body extends ContentElement with ContainerElement[Declaration] {self =>
+  /** the context of all declarations in this body */
+  def getInnerContext: Context
    /** the set of named statements, indexed by name
     * if a statement has an alternativeName, it occurs twice in this map
     */

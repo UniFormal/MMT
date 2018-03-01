@@ -99,7 +99,6 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
          case _ =>
             return None
       }
-      def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) = controller.simplifier.materialize(cont,tm,expandDefs,parent)
    }
 
    /**

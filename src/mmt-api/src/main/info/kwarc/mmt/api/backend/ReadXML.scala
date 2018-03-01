@@ -153,7 +153,7 @@ class XMLReader(controller: Controller) extends Logger {
                      val v = DefinedView(namespace, name, from, to, df, isImplicit)
                      addModule(v, md, docOpt)
                   case assignments =>
-                      val v = new DeclaredView(namespace, name, from, to, isImplicit)
+                      val v = DeclaredView(namespace, name, from, to, isImplicit)
                      addModule(v, md, docOpt)
                      logGroup {
                         assignments.foreach {d =>
@@ -292,7 +292,7 @@ class XMLReader(controller: Controller) extends Logger {
                   val v = DefinedView(parent, vname, from, to, df, isImplicit)
                   addDeclaration(new NestedModule(OMMOD(home),name,v))
                case assignments =>
-                  val v = new DeclaredView(parent, name, from, to, isImplicit)
+                  val v = DeclaredView(parent, name, from, to, isImplicit)
                   addDeclaration(new NestedModule(OMMOD(home), name, v))
                   logGroup {
                      assignments.foreach {d =>

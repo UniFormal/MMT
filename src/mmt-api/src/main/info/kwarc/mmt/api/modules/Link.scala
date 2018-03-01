@@ -9,9 +9,11 @@ import info.kwarc.mmt.api.utils._
  */
 trait Link extends ContentElement {
    /** the domain of the link */
-   def from : Term
-   /** the codomain of the link */
-   def to : Term
+   def fromC: TermContainer
+   /** the codomain of the link (mutable for views but not structures) */
+   def toC: AbstractTermContainer
+   def from = fromC.get.get
+   def to = toC.get.get
    def codomainAsContext = to match {
        case ComplexTheory(cont) => cont
        case _ => throw ImplementationError("codomain of link must be theory")

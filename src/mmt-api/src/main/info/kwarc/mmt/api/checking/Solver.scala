@@ -393,31 +393,37 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     *
     * returns nothing if the type could not be reconstructed
     */
-   def getType(p: GlobalName): Option[Term] = {
-      val c = getConstant(p)
+   def getType(p: GlobalName)(implicit h: History): Option[Term] = {
+      val c = getConstant(p).getOrElse {return None}
       val t = c.tpC.getAnalyzedIfFullyChecked
       if (t.isDefined)
         addDependency(p $ TypeComponent)
       t
    }
 
-  private def getConstant(p : GlobalName) : Constant =
-    controller.library.get(ComplexTheory(constantContext), LocalName(p.module) / p.name, s => throw GetError(s)) match {
-      case c: Constant => c
-      case d => throw GetError("Not a constant: " + d)
-    }
-
    /** retrieves the definiens of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed
     */
-   def getDef(p: GlobalName) : Option[Term] = {
-      val c = getConstant(p)
+   def getDef(p: GlobalName)(implicit h: History) : Option[Term] = {
+      val c = getConstant(p).getOrElse {return None}
       val t = c.dfC.getAnalyzedIfFullyChecked
       if (t.isDefined)
         addDependency(p $ DefComponent)
       t
    }
+
+   private def getConstant(p : GlobalName)(implicit h: History): Option[Constant] =
+    controller.globalLookup.getO(ComplexTheory(constantContext), LocalName(p.module) / p.name) match {
+      case Some(c: Constant) => Some(c)
+      case Some(_) =>
+        error("not a constant: " + p)
+        None
+      case None =>
+        error("constant not found: " + p)
+        None
+    }
+
    def getModule(p: MPath) : Option[Module] = {
       controller.globalLookup.getO(p) match {
          case Some(m: Module) => Some(m)
@@ -428,8 +434,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
   // TODO this should track lookups for dependency management
   def lookup = controller.globalLookup
-  @deprecated("Used in LFX, but could probably be done better","")
-  def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) = controller.simplifier.materialize(cont,tm,expandDefs,parent)
 
    /**
     * looks up a variable in the appropriate context

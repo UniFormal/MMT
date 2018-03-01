@@ -505,7 +505,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           val name = readName
           val c = readConstant(name, mpath, linkOpt, context)
           addDeclaration(c)
-        //PlainInclude
+        //Include resp. LinkInclude
         case "include" =>
           mod match {
             case thy: DeclaredTheory =>
@@ -770,7 +770,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         val v = DefinedView(ns, name, from, to, df.toTerm, isImplicit)
         moduleCont(v, parent)
       case "=" =>
-        val v = new DeclaredView(ns, name, from, to, isImplicit)
+        val v = DeclaredView(ns, name, from, to, isImplicit)
         moduleCont(v, parent)
         logGroup {
           readInModule(v, context ++ v.getInnerContext, noFeatures)

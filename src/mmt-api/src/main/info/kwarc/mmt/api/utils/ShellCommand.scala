@@ -7,7 +7,7 @@ import scala.collection.JavaConverters._
 object ShellCommand {
 
   /** return value of [[ShellCommand]] */
-  abstract class Result(val errorO: Option[Error]) {
+  sealed abstract class Result(val errorO: Option[Error]) {
     def success = errorO.isEmpty
   }
   case class Abort(e: Exception) extends Result(Some(GeneralError("shell command aborted").setCausedBy(e)))

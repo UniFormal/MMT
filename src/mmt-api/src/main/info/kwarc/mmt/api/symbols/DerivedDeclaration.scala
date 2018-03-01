@@ -316,14 +316,10 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
       val dom = getDomain(dd)
       val context = parent.getInnerContext
-      val body = controller.simplifier.materialize(context, dom, true, None) match {
-        case m: DeclaredModule => m
-        case m: DefinedModule => throw ImplementationError("materialization failed")
-      }
-
+      val body = controller.simplifier.materialize(context, dom, None, None)
       new Elaboration {
         /** the morphism dd.dom -> parent of the pushout diagram: it maps every n to dd.name/n */
-        private val morphism = new DeclaredView(parent.parent, parent.name/dd.name, dom, parent.toTerm, false)
+        private val morphism = DeclaredView(parent.parent, parent.name/dd.name, dom, parent.toTerm, false)
         /** precompute domain and build the morphism */
         val domain = body.getDeclarationsElaborated.map {d =>
           val ddN = dd.name / d.name

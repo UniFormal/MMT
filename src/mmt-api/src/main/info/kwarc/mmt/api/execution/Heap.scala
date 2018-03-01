@@ -14,7 +14,7 @@ class Heap(id: Int, controller: Controller) extends DeclaredTheory(utils.mmt.mmt
    private var instanceId = 0
 
    def newInstance(context: Context, ofTerm: Term): Instance = {
-      val of = controller.simplifier.materialize(context, ofTerm, true, None).asInstanceOf[DeclaredTheory]
+      val of = controller.simplifier.materialize(context, ofTerm, None, None).asInstanceOf[DeclaredTheory]
       val i = new Instance(path, of.path, instanceId)
       instanceId += 1
 

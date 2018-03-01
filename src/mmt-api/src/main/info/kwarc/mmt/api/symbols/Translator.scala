@@ -70,7 +70,7 @@ case class ApplyMorphism(morph: Term) extends UniformTranslator {
 
 /** a translator that performs substitution */
 case class ApplySubs(subs: Substitution) extends UniformTranslator {
-  def apply(context: Context, tm: Term) = tm ^? (subs ++ context.id)
+  def apply(context: Context, tm: Term) = tm ^? subs
 }
 
 /** replaces all naked OML's; for convenience a substitution is used even though we are replacing OML's not OMV's */

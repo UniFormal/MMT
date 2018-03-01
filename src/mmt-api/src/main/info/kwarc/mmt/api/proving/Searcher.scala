@@ -48,7 +48,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
          case gn : GlobalName => Some(gn.module)
          case _ => None
       })
-      controller.simplifier.materialize(provingUnit.context,tm,true,mpath) match {
+      controller.simplifier.materialize(provingUnit.context,tm,mpath,None) match {
          case dt : modules.DeclaredTheory =>
             Some(dt)
          case _ =>
