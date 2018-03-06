@@ -345,7 +345,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   /** resolve a name in the domain of a link and insert the necessary ComplexStep */
   protected def resolveAssignmentName[A <: Declaration](cls: Class[A], home: Term, name: LocalName)(implicit state: ParserState) = {
-    TheoryExp.getSupport(home) foreach {p => controller.simplifier(p)}
+    TheoryExp.getSupport(home) foreach {p => controller.simplifier(p)} // TODO is this always redundant?
     controller.globalLookup.resolve(home, name) match {
       case Some(d: Declaration) if cls.isInstance(d) =>
         ComplexStep(d.parent) / d.name
@@ -353,13 +353,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         errorCont(makeError(currentSourceRegion, "not a declaration name of the right type: " + name))
         name
       case None =>
-        // check whether it's a theory parameter
-        if (Try(controller.getAs(classOf[DeclaredTheory],home.toMPath).parameters).toOption.exists(_.isDeclared(name)))
-          name
-        else {
-          errorCont(makeError(currentSourceRegion, "unknown or ambiguous name: " + name))
-          name
-        }
+        errorCont(makeError(currentSourceRegion, "unknown or ambiguous name: " + name))
+        name
     }
   }
 
@@ -476,7 +471,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
        throw ImplementationError("document home must extend content home")
     }
     lazy val parentInfo = IsMod(mpath, currentSection)
-    /* declarations must only be added through this method */
+    /* complete declarations should only be added through this method
+     * Incomplete container elements must be added separately, e.g., as in readStructure.
+     */
     def addDeclaration(d: Declaration) {
        d.setDocumentHome(currentSection)
        seCont(d)
@@ -531,26 +528,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               SourceRef.update(as.df, inclRef)
               addDeclaration(as)
           }
-        case "structure" =>
-          mod match {
-            case thy: DeclaredTheory => readStructure(parentInfo, linkOpt, context, isImplicit = false)
-            case link: DeclaredLink =>
-              val name = readName
-              val orig = controller.get(link.from.toMPath ? name) match {
-                case s: Structure => s
-                case _ => fail("not a structure: "+link.from.toMPath?name)
-              }
-              readDelimiter("=")
-              val incl = readSPath(link.path)
-              val target = controller.get(incl) match {
-                case s: Link => s
-                case _ => fail("not a link: "+incl)
-              }
-              val as = DefLinkAssignment(link.toTerm,name,target.from,target.toTerm)
-              // SourceRef.update(as.df,SourceRef.fromURI(URI.apply(target.path.toString)))
-              // SourceRef.update(as.from,SourceRef.fromURI(URI.apply(orig.path.toString)))
-              addDeclaration(as)
-          }
+        case "structure" => readStructure(parentInfo, linkOpt, context, isImplicit = false)
         case "theory" => readTheory(parentInfo, context)
         case ViewKey(_) => readView(parentInfo, context, isImplicit = false)
         case k if k.forall(_ == '#') =>
@@ -941,8 +919,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     constant
   }
 
-  /** auxiliary function to read structures
- *
+  /** read structures and calls continuations
+    *
     * @param parentInfo the containing module
     * @param context the context (excluding the structure to be read)
     * @param isImplicit whether the structure is implicit
@@ -950,41 +928,95 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   private def readStructure(parentInfo: IsMod, link: Option[DeclaredLink], context: Context,
                             isImplicit: Boolean)(implicit state: ParserState) {
     val givenName = readName
+    val home = OMMOD(parentInfo.modParent)
     val name = link.map {l => resolveAssignmentName(classOf[Structure], l.from, givenName)}.getOrElse(givenName)
     val spath = parentInfo.modParent ? name
-    readDelimiter(":")
+    // the type and the code to set it (if provided)
     val tpC = new TermContainer
-    //doComponent(TypeComponent, tpC, context)
-    val tp = OMMOD(readMPath(spath)._2)
-    tpC.parsed = tp
-    val s = new DeclaredStructure(OMMOD(parentInfo.modParent), name, tpC, isImplicit)
-    s.setDocumentHome(parentInfo.relDocParent)
-    seCont(s)
-    if (state.reader.endOfDeclaration) {
-      // s: tp RS
-      end(s)
-      return
+    // shared code for creating the structure
+    def createStructure(defined: Option[TermContainer]) = {
+      val s = defined match {
+        case None =>
+          new DeclaredStructure(home, name, tpC, isImplicit)
+        case Some(dfC) =>
+          new DefinedStructure(home, name, tpC, dfC, isImplicit)
+      }
+      s.setDocumentHome(parentInfo.relDocParent)
+      seCont(s)
+      s
     }
-    val (t, reg) = state.reader.readToken
-    t match {
-      case "=" =>
-        // s : tp US = body GS
-        logGroup {
-          readInModule(s, context, noFeatures)
+    // read the optional type
+    val (t, r) = state.reader.readToken
+    var token = t
+    var reg = r
+    // read the type (if any)
+    if (token == ":") {
+      //doComponent(TypeComponent, tpC, context)
+      val tp = OMMOD(readMPath(spath)._2)
+      tpC.parsed = tp
+      // read next token (if any)
+      if (state.reader.endOfDeclaration) {
+        // empty declared Structure: s: tp RS
+        if (link.isDefined) {
+          // declared structure only allowed in a theory
+          throw makeError(reg, "'=' expected, within structure " + spath)
         }
-      case "" =>
-        // good: s : tp US RS
-        // bad:  s : tp US _
-        if (!state.reader.endOfDeclaration)
-          throw makeError(reg, "'=' or end of declaration expected, within structure " + spath)
-      case _ =>
-        // s : tp US _
-        throw makeError(reg, "'=' or end of declaration expected, within structure " + spath)
+        val s = createStructure(None).asInstanceOf[DeclaredStructure]
+        end(s)
+        return
+      }
+      // read the next token
+      val (t,r) = state.reader.readToken
+      token = t
+      reg = r
+    } else {
+      if (link.isEmpty) {
+        // type may only be omitted in a link
+        throw makeError(reg, "':' expected, within structure " + spath)
+      }
     }
-    end(s)
+    // read the body or the definiens
+    val defDelim = if (link.isDefined) "=" else "abbrev"
+    if (token == defDelim) {
+      // read the definiens of a DefinedStructure
+      val (targetStr, reg) = state.reader.readObject
+      val nsMap = state.namespaces(parentInfo.modParent)
+      // TODO target should be parsed as a morphism expression, in particular compositions are allowed; for now we just parse a reference to a structure or a view
+      val pu = ParsingUnit(state.makeSourceRef(reg), context, targetStr, nsMap, None)
+      val target = try {
+        val p = Path.parseS(targetStr, nsMap)
+        OMS(p)
+      } catch {case _: Error =>
+        try {
+          val p = Path.parseM(targetStr, nsMap)
+          OMMOD(p)
+        } catch {case _: Error =>
+          makeError(reg, "only references to structures or views supported", None)
+          DefaultObjectParser(pu)(state.errorCont).toTerm
+        }
+      }
+      SourceRef.update(target, pu.source)
+      val dfC = TermContainer(target)
+      val s = createStructure(Some(dfC))
+    } else {
+      // read the body a DeclaredStructure
+      if (link.isDefined) {
+        // declared structure only allowed in a theory
+        throw makeError(reg, "'=' expected, within structure " + spath)
+      }
+      if (token != "=") {
+        // unexpected delimiter for the body of a declared structure
+        throw makeError(reg, "'=' expected, within structure " + spath)
+      }
+      val s = createStructure(None).asInstanceOf[DeclaredStructure]
+      logGroup {
+        readInModule(s, context, noFeatures)
+      }
+      end(s)
+    }
   }
 
-  /** reads the header of a [[DerivedDeclaration]] */
+  /** reads a [[DerivedDeclaration]] and calls continuations */
   private def readDerivedDeclaration(feature: StructuralFeature, parentInfo: IsMod, context: Context)(implicit state: ParserState) {
     val parent = parentInfo.modParent
     val pr = feature.getHeaderRule

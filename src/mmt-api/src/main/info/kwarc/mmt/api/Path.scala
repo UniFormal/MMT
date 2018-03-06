@@ -203,7 +203,9 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    def simplify: LocalName = {
       var complexBefore = false
       val stepsRS = steps.reverse filter {
-         case s: SimpleStep => true
+         case s: SimpleStep =>
+           complexBefore = false
+           true
          case c: ComplexStep =>
             val res = ! complexBefore
             complexBefore = true

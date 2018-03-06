@@ -34,8 +34,15 @@ trait Link extends ContentElement {
 }
 
 /**
-  * represents an MMT link given by a set of assignments.
-  */
+ * represents an MMT link given by a set of assignments.
+ *
+ * Assignments are
+ * 1) [[Constant]]s, whose name is the qualified name (always starts with [[ComplexStep]])
+ * of a domain [[Constant]]
+ * and whose definiens is codomain [[Term]]
+ * or
+ * 2) or accordingly with [[DefinedStructure]]s
+ */
 trait DeclaredLink extends Link with Body {
   /** like getIncludes but also with includes of parametric theories and their instantiations */
   def getIncludes: List[(MPath,Term)] = getDeclarations.flatMap {

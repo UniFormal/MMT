@@ -28,6 +28,7 @@ case class ByStructureSimplifier(home: Term, view: Term) extends Origin
  *   for container elements: x is false if the body has been elaborated only partially
  */
 //TODO mark InProgress to avoid infinite loops
+// TODO rewrite getDeclarationsElaborated; that method needs to know which declarations can be skipped because their external declarations are present
 object ElaboratedElement extends ClientProperty[StructuralElement,Option[Boolean]](utils.mmt.baseURI / "clientProperties" / "controller" / "elaborated") {
   def isPartially(t : StructuralElement) : Boolean = get(t).getOrElse(None).isDefined
   def isFully(t : StructuralElement) : Boolean = get(t).contains(Some(true))
@@ -55,15 +56,14 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   override def logPrefix = "structure-simplifier"
 
   // for efficiency, we use variants where the parent and its rules are already known; the main interface methods just defer to them
-  def apply(s: StructuralElement) {applyWithParent(s, None, None)}
-  def applyElementBegin(s: StructuralElement) {applyElementBeginWithParent(s, None, None)}
+  def applyChecked(s: StructuralElement)(implicit env: SimplificationEnvironment) {applyWithParent(s, None, None)}
+  def applyElementBegin(s: StructuralElement)(implicit env: SimplificationEnvironment) {applyElementBeginWithParent(s, None, None)}
   
   // internal and external flattening of s
   // equivalent to calling applyElementBegin and (if applicable) applyElementEnd
-  private def applyWithParent(s: StructuralElement, parentO: Option[Body], rulesO: Option[RuleSet]) {
+  private def applyWithParent(s: StructuralElement, parentO: Option[Body], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
     if (ElaboratedElement.isFully(s))
       return
-    log("simplifying " + s.path)
     applyElementBeginWithParent(s, parentO, rulesO)
     s match {
       case m: ContainerElement[_] =>
@@ -73,7 +73,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   }
   
   // internal and external flattening of s except for (in the case of container elements) those parts performed in applyElementEnd
-  private def applyElementBeginWithParent(s: StructuralElement, parentO: Option[Body], rulesO: Option[RuleSet]) {
+  private def applyElementBeginWithParent(s: StructuralElement, parentO: Option[Body], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
     if (ElaboratedElement.isFully(s))
       return
     log("flattening " + s.path)
@@ -91,9 +91,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case t: DeclaredTheory =>
               t.meta foreach apply
             case v: DeclaredLink =>
-              apply(materialize(Context.empty,v.from,None, Some(v.fromC)))
+              applyChecked(materialize(Context.empty,v.from,None, Some(v.fromC)))
               v match {
-                case v:DeclaredView => apply(materialize(Context.empty,v.to,None,Some(v.toC)))
+                case v:DeclaredView => applyChecked(materialize(Context.empty,v.to,None,Some(v.toC)))
                 case _: DeclaredStructure =>
               }
             case _ =>
@@ -128,7 +128,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     }
   }
 
-  def applyElementEnd(s: ContainerElement[_]) {
+  def applyElementEnd(s: ContainerElement[_])(implicit env: SimplificationEnvironment) {
     s match {
       case m: DeclaredModule =>
       case d: Declaration =>
@@ -224,16 +224,17 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
    *  
    *  this method recurses into apply for dependency closure
    */
-  private def flattenExternally(dOrig: Declaration, parentO: Option[Body], rulesO: Option[RuleSet]) {
+  private def flattenExternally(dOrig: Declaration, parentO: Option[Body], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
     if (ElaboratedElement.isFully(dOrig))
       return
     val parent = parentO getOrElse {
       dOrig.home match {
-       case OMMOD(p) =>
-         controller.globalLookup.get(p) match {
-           case mod: DeclaredModule => mod
+       case OMID(p) =>
+         val par = controller.globalLookup.get(p)
+         par match {
+           case par: Body => par
            case _ =>
-             return   // we don't elaborate inside structures, derived declarations
+             return   // we don't elaborate in derived declarations
          }
        case _ =>
          return // TODO materialize
@@ -256,7 +257,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      */
     def flattenInclude(from: MPath, mor: Term, alreadyIncluded: List[(MPath,Term)]): List[Declaration] = {
       val fromThy = lup.getAs(classOf[Theory], from)
-      apply(fromThy)
+      applyChecked(fromThy)
       fromThy match {
         case d: DefinedTheory =>
           Nil//TODO (deprecated anyway)
@@ -300,7 +301,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                   } else {
                     "two unequal morphisms included for the same theory"
                   }
-                  throw InvalidElement(dOrig, s"$msg: $newStr != $exStr")
+                  env.errorCont(InvalidElement(dOrig, s"$msg: $newStr != $exStr"))
+                  Nil
                 }
               // otherwise, we add the new include
               case None =>
@@ -309,9 +311,11 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           }
       }
     }
+    var addAfter = true
     val dElab: List[Declaration] = (parent, dOrig) match {
       // ************ includes
       case (thy: DeclaredTheory, Include(_, from, fromArgs)) =>
+        addAfter = false // generates includes are placed before the generating include so that they occur in dependency order
         // plain includes: copy (only) includes (i.e., transitive closure of includes)
         // from.meta is treated like any other include into from (in particular: skipped if from.meta included into thy.meta)
         val mor = OMINST(from,fromArgs)
@@ -341,7 +345,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           case exp =>
             materialize(Context(parentMPath),exp,None, Some(struc.tpC))
         }
-        apply(fromThy)
+        applyChecked(fromThy)
         // copy all declarations in theories p reflexive-transitively included into fromThy
         // no need to consider the instantiation arguments because the lookup methods are used to obtain the declarations in the elaboration
         val sElab = (fromThy.getAllIncludesWithoutMeta.map(_._1) ::: List(fromThy.path)).flatMap {p =>
@@ -368,13 +372,12 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               Nil
             case d: Declaration =>
               val sdname = prefix / d.name
-              logTemp("retrieving " + parentMPath ? sdname)
               val sd = lup.getAs(classOf[Declaration], parentMPath ? sdname)
               List(sd)
           }
           structure ::: decls
         }
-        // TODO in views we have to check equality in case of overlap with more specific instantiations; currently that yields AddErrors
+        // TODO in links we have to check equality in case of overlap with more specific instantiations; currently that yields AddErrors
         sElab foreach {d => ElaboratedElement.setFully(d)} // recursive elaboration already handled by recursively elaborating fromThy
         sElab
       // ************** derived declarations: elaborate
@@ -411,15 +414,21 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         // base case: no elaboration
         Nil
     }
-    dElab.reverseMap {e =>
-       e.setOrigin(ElaborationOf(dOrig.path))
-       log("flattening yields " + e)
-       controller.add(e, After(dOrig.name))
+    // if we add after dOrig, we have to reverse dElab to make sure the declarations occur in the same order as in dElab
+    val (add,at) = if (addAfter) {
+      (dElab.reverse, After(dOrig.name))
+    } else {
+      (dElab, Before(dOrig.name))
+    }
+    add.map {e =>
+      e.setOrigin(ElaborationOf(dOrig.path))
+      log("flattening yields " + e)
+      controller.add(e, at)
     }
     ElaboratedElement.setFully(dOrig)
  }
-
-  // TODO change management does not propagate to other theories yet
+ 
+ // TODO change management does not propagate to other theories yet
 
   /** deletes all declarations that were added by elaborating se */
   override def onDelete(se: StructuralElement) {

@@ -17,6 +17,10 @@ trait ObjectSimplifier extends Extension {self =>
    }
 }
 
+class SimplificationEnvironment(val covered: Boolean, val errorCont: ErrorHandler, val task: MMTTask)
+
+object TrivialSimplificationEnvironment extends SimplificationEnvironment(true, ErrorThrower, MMTTask.generic)
+
 /** simplifies/elaborates structural elements */
 trait StructureSimplifier extends Extension {
    /** convenience abbreviation */
@@ -28,11 +32,14 @@ trait StructureSimplifier extends Extension {
     *  This is typically used for assumed-correct content that is not checked, e.g., content loaded directly from OMDoc
     *  For container elements that are checked incrementally, one may alternatively use applyElementBegin and applyElementEnd
     */
-   def apply(se: StructuralElement): Unit
+   def apply(se: StructuralElement) {applyChecked(se)(TrivialSimplificationEnvironment)}
+   
+   /** like apply but takes an extra argument to handle checking and error reporting */
+   def applyChecked(se: StructuralElement)(implicit env: SimplificationEnvironment): Unit
    /** like apply except that for container elements applyElementBegin + apply on every child + applyElementEnd = apply */ 
-   def applyElementBegin(se: StructuralElement): Unit
+   def applyElementBegin(se: StructuralElement)(implicit env: SimplificationEnvironment): Unit
    /** called in conjunction with applyElementBegin */ 
-   def applyElementEnd(ce: ContainerElement[_]): Unit
+   def applyElementEnd(ce: ContainerElement[_])(implicit env: SimplificationEnvironment): Unit
 
    def materialize(context: Context, exp: Term, pathOpt: Option[MPath], tcOpt: Option[TermContainer]): DeclaredModule
 

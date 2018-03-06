@@ -31,10 +31,6 @@ abstract class View(doc : DPath, name : LocalName) extends Module(doc, name) wit
  /**
   * A DeclaredView represents an MMT view given by a list of assignments.
   *
-  * Assignments are [[Constant]]s, whose name is the qualified name (always starts with [[ComplexStep]])
-  * of a domain Constant
-  * and whose definiens is codomain [[Term]].
-  *
   * @param doc the namespace/parent document
   * @param name the name of the view
   * @param from the domain theory

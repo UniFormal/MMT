@@ -440,7 +440,9 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             error("local name " + ln + " left after resolving to constant assignment")
           case a: DefinedLink =>
             val dom = a.from.toMPath
-            getDeclarationInTerm(a.df,ComplexStep(dom) / ln, error)
+            val dfAssig = getDeclarationInTerm(a.df,ComplexStep(dom) / ln, error)
+            // dfAssig has the right definiens, but we need to change its home and name to fit the original request
+            dfAssig.translate(l.toTerm, a.name, IdentityTranslator, Context.empty)
         }
         case None =>
           val (theo, tname) = nameS.steps match {
@@ -507,7 +509,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         val ren = Renamer(p => if (p.module == f) Some(t ? p.name) else None)
         d.translate(TraversingTranslator(ren), Context.empty)
       case OMCOMP(Nil) => d
-      case OMCOMP(hd :: tl) => translate(translate(d, hd, error), OMCOMP(tl), error)
+      case OMCOMP(hd :: tl) =>
+        translate(translate(d, hd, error), OMCOMP(tl), error)
       //TODO remaining cases
     }
   }
@@ -531,9 +534,12 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
   /** auxiliary method of translate to unify translation along structures and views */
+  // if the morphism is partial, this returns a Constant with empty definiens;
+  // for a structure, the definiens is the composed morphism (which may be defined for some constants even if it is not defined in general)
   private def translateByLink(decl: Declaration, l: Link, error: String => Nothing): Declaration =
     l match {
-      case l: DefinedLink => translate(decl, l.df, error)
+      case l: DefinedLink =>
+        translate(decl, l.df, error)
       case l: DeclaredLink =>
         // if necessary, first translate decl along implicit morphism into l.from
         val imp = implicitGraph(decl.home, l.from) getOrElse {
@@ -567,7 +573,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                case _ => throw GetError("link " + l.path + " provides bad assignment for structure " + r.path)
             }
             val newDef = a.dfC.get.getOrElse {
-               OMCOMP(r.toTerm, l.toTerm) //TODO should result in DeclaredStructure
+               OMCOMP(r.toTerm, l.toTerm) //TODO should result in DeclaredStructure containing a subset of the assignments in l
             }
             DefinedStructure(l.to, newName, r.from, newDef, false)
         }

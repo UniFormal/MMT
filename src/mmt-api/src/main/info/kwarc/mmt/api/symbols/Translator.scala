@@ -53,6 +53,11 @@ abstract class UniformTranslator extends Translator {
    def applyDef(context: Context, tm: Term) = apply(context, tm)
 }
 
+/** identity (non-traversing) */
+object IdentityTranslator extends UniformTranslator {
+  def apply(context: Context, tm: Term) = tm
+}
+
 /** a translator obtained from a traverser */
 abstract class TraversingTranslator extends UniformTranslator {
   val trav: StatelessTraverser

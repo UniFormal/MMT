@@ -62,9 +62,6 @@ trait CheckingCallback {
 
    /** lookup */
    def lookup: Lookup
-   
-   @deprecated("needs to be reviewed", "")
-   def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) : Module = null
 }
 
 /**
