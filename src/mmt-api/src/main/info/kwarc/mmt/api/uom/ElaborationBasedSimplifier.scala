@@ -315,7 +315,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     val dElab: List[Declaration] = (parent, dOrig) match {
       // ************ includes
       case (thy: DeclaredTheory, Include(_, from, fromArgs)) =>
-        addAfter = false // generates includes are placed before the generating include so that they occur in dependency order
+        addAfter = false // generated includes are placed before the generating include so that they occur in dependency order
         // plain includes: copy (only) includes (i.e., transitive closure of includes)
         // from.meta is treated like any other include into from (in particular: skipped if from.meta included into thy.meta)
         val mor = OMINST(from,fromArgs)
