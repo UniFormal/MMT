@@ -2,11 +2,12 @@ package info.kwarc.mmt.api.test
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.test.utils._
+import info.kwarc.mmt.api.test.utils.testers.TestArchive
 import info.kwarc.mmt.api.utils.URI
 
 
 class APITest extends MMTIntegrationTest(
-  "MMT/urtheories"
+  TestArchive("MMT/urtheories", hasDevel = true),
 //  ,"MMT/LATIN"
 //  ,"MMT/LFX"
 //  ,"MitM/smglom"

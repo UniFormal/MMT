@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.test.utils.testers._
 import info.kwarc.mmt.api.test.utils._
 
 class LFTest extends MMTIntegrationTest(
-  "MMT/urtheories",
+  TestArchive("MMT/urtheories", hasDevel = true),
   "MMT/LFX",
   "Test/General",
   "MMT/examples"

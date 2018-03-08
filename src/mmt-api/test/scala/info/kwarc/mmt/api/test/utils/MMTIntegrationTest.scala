@@ -11,7 +11,7 @@ import scala.util.Try
   * @param neededArchives List of archives that should be automatically installed
   * @param neededExtensions List of extensions that should be needed
   */
-abstract class MMTIntegrationTest(neededArchives : String*)(neededExtensions : ExtensionSpec*) extends MMTUnitTest
+abstract class MMTIntegrationTest(neededArchives : TestArchive*)(neededExtensions : ExtensionSpec*) extends MMTUnitTest
   with ExtensionTester with ArchiveTester with CheckTester {
 
   lazy val rootFolder = File(s"test/${this.getClass.getCanonicalName}/target").canonical
@@ -23,7 +23,7 @@ abstract class MMTIntegrationTest(neededArchives : String*)(neededExtensions : E
 
     // configure folders we want to use for setup
     // this is put into .../mmt-subproject/test/<test-class>/target
-    // and is automatically .gitignored
+    // and is thus automatically .gitignored
 
     // create a setup instance
     val setup = new Setup {
@@ -44,8 +44,7 @@ abstract class MMTIntegrationTest(neededArchives : String*)(neededExtensions : E
     }
 
     /*
-    // Florian disable this, so for now we comment it out
-    // possible reactivate this when we have a proper co-versioning solution
+    // this used to be the old flag to setup archive versions from HEAD
     if(Try(sys.env("TEST_USE_ARCHIVE_HEAD")).toOption.contains("1")){
       log("TEST_USE_ARCHIVE_HEAD=1 was set, using newest archive versions")
       logGroup {
@@ -53,6 +52,11 @@ abstract class MMTIntegrationTest(neededArchives : String*)(neededExtensions : E
       }
     }
     */
+
+    // simply sho
+    if(useArchiveDevel){
+      log("TEST_USE_DEVEL=1 was set, using devel branch of selected archives")
+    }
 
     // and show some information about MMT itself
     handleLine("show mmt", showLog = true)
@@ -69,5 +73,5 @@ abstract class MMTIntegrationTest(neededArchives : String*)(neededExtensions : E
     ExtensionSpec("info.kwarc.mmt.api.web.JSONBasedGraphServer")
   ) ::: neededExtensions.toList
 
-  val archives: List[String] = neededArchives.toList
+  val archives: List[TestArchive] = neededArchives.toList
 }
