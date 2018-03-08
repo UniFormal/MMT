@@ -248,7 +248,6 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
              error("containing declaration not found: " + p)
          }
       // complex cases: lookup in module expressions
-        // TODO use simplifier instead
       case ComplexTheory(cont) =>
         cont.mapVarDecls { case (before, vd) =>
           val vdDecl = vd.toDeclaration(ComplexTheory(before))
@@ -440,9 +439,11 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             error("local name " + ln + " left after resolving to constant assignment")
           case a: DefinedLink =>
             val dom = a.from.toMPath
-            val dfAssig = getDeclarationInTerm(a.df,ComplexStep(dom) / ln, error)
+            val dfAssig = getDeclarationInTerm(a.df, ComplexStep(dom)/ln, error)
             // dfAssig has the right definiens, but we need to change its home and name to fit the original request
-            dfAssig.translate(l.toTerm, a.name, IdentityTranslator, Context.empty)
+            val h = dfAssig.name.head
+            val prefix = if (h.isInstanceOf[ComplexStep] && a.name.head == h) a.name.init else a.name
+            dfAssig.translate(l.toTerm, prefix, IdentityTranslator, Context.empty)
         }
         case None =>
           val (theo, tname) = nameS.steps match {

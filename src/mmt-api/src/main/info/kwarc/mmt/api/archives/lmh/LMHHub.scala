@@ -94,7 +94,7 @@ abstract class LMHHubEntry extends Logger {
     controller.backend.getArchive(root).get
   }
   /** loads this archive into the controller (if not done already) */
-  def load(): Unit = {
+  def load() {
     controller.backend.getArchive(root).getOrElse {
       controller.addArchive(root)
     }

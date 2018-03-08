@@ -46,7 +46,7 @@ case object AtEnd extends AddPosition
 case class After(name: LocalName) extends AddPosition
 case class Before(name: LocalName) extends AddPosition
 
-/** helper class for creating a sequence of [[ApddPosition]]'s where each is right after the previous one */
+/** helper class for creating a sequence of [[AddPosition]]'s where each is right after the previous one */
 class RepeatedAdd(private var next: AddPosition) {
   def getNextFor(d: NamedElement) = {
     val n = next

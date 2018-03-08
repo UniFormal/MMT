@@ -16,26 +16,30 @@ import Theory._
 import collection.immutable.{HashMap, HashSet}
 import scala.util.{Success, Try}
 import info.kwarc.mmt.api.libraries.AlreadyDefined
+import sun.management.MappedMXBeanType.InProgress
 
 /** used by [[MMTStructureSimplifier]] */
 @deprecated("needs review","")
 case class ByStructureSimplifier(home: Term, view: Term) extends Origin
 
 /**
- * if set, the element has been elaborated
- * None: no information
- * Some(x): has been elaborated
- *   for container elements: x is false if the body has been elaborated only partially
+ * information about elaboration status
+ * 0 or absent: no information, assume not elaborated
+ * 2: partially: header has been elaborated, some elements in body (e.g., new elements) body must still be elaborated
+ * 3: fully: applyElementEnd has been called
+ * -1: in progress, apply or applyElementBegin has been called
+ * -2: in progress and header already elaborated 
  */
 //TODO mark InProgress to avoid infinite loops
 // TODO rewrite getDeclarationsElaborated; that method needs to know which declarations can be skipped because their external declarations are present
-object ElaboratedElement extends ClientProperty[StructuralElement,Option[Boolean]](utils.mmt.baseURI / "clientProperties" / "controller" / "elaborated") {
-  def isPartially(t : StructuralElement) : Boolean = get(t).getOrElse(None).isDefined
-  def isFully(t : StructuralElement) : Boolean = get(t).contains(Some(true))
-  def setPartially(t: StructuralElement) {
-    put(t, Some(false))
-  }
-  def setFully(t : StructuralElement) = put(t,Some(true))
+object ElaboratedElement extends ClientProperty[StructuralElement,Int](utils.mmt.baseURI / "clientProperties" / "controller" / "elaborated") {
+  def getDefault(t: StructuralElement) = get(t).getOrElse(0)
+  def setInprogress(t: StructuralElement) = put(t, -get(t).getOrElse(1).abs)
+  def isInprogress(t: StructuralElement) = getDefault(t) < 0
+  def setPartially(t: StructuralElement) = put(t, get(t).getOrElse(1).signum * 2)
+  def isPartially(t : StructuralElement): Boolean = getDefault(t).abs >= 2
+  def setFully(t: StructuralElement) = put(t,3)
+  def isFully(t : StructuralElement) : Boolean = getDefault(t).abs >= 3
 }
 
 
@@ -62,7 +66,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   // internal and external flattening of s
   // equivalent to calling applyElementBegin and (if applicable) applyElementEnd
   private def applyWithParent(s: StructuralElement, parentO: Option[Body], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
-    if (ElaboratedElement.isFully(s))
+    if (ElaboratedElement.isInprogress(s) || ElaboratedElement.isFully(s))
       return
     applyElementBeginWithParent(s, parentO, rulesO)
     s match {
@@ -74,9 +78,10 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   
   // internal and external flattening of s except for (in the case of container elements) those parts performed in applyElementEnd
   private def applyElementBeginWithParent(s: StructuralElement, parentO: Option[Body], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
-    if (ElaboratedElement.isFully(s))
+    if (ElaboratedElement.isInprogress(s) || ElaboratedElement.isFully(s))
       return
     log("flattening " + s.path)
+    ElaboratedElement.setInprogress(s)
     // internal flattening
     s match {
       case Include(_) =>
@@ -86,7 +91,6 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         val rules = RuleSet.collectRules(controller, m.getInnerContext)
         if (!ElaboratedElement.isPartially(s)) {
           flattenDefinition(m, Some(rules))
-          ElaboratedElement.setPartially(s) // setting this here already avoids infinite cycles if this module references itself
           m match {
             case t: DeclaredTheory =>
               t.meta foreach apply
@@ -98,6 +102,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               }
             case _ =>
           }
+          ElaboratedElement.setPartially(s)
           // TODO flattenContext(m.parameters)
         }
         // recurse into all children
@@ -129,6 +134,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   }
 
   def applyElementEnd(s: ContainerElement[_])(implicit env: SimplificationEnvironment) {
+    if (ElaboratedElement.isFully(s))
+      return
+    log("finalize flattening of " + s.path)
     s match {
       case m: DeclaredModule =>
       case d: Declaration =>
@@ -136,6 +144,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         flattenExternally(d, None, None)
       case _ =>
     }
+    log("done flattening " + s.path)
     ElaboratedElement.setFully(s)
   }
 
@@ -415,15 +424,12 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         Nil
     }
     // if we add after dOrig, we have to reverse dElab to make sure the declarations occur in the same order as in dElab
-    val (add,at) = if (addAfter) {
-      (dElab.reverse, After(dOrig.name))
-    } else {
-      (dElab, Before(dOrig.name))
-    }
-    add.map {e =>
+    val at = if (addAfter) After(dOrig.name) else Before(dOrig.name)
+    val pos = new RepeatedAdd(at)
+    dElab.foreach {e =>
       e.setOrigin(ElaborationOf(dOrig.path))
-      log("flattening yields " + e)
-      controller.add(e, at)
+      log("flattening of " + dOrig.name + " yields " + e)
+      controller.add(e, pos.getNextFor(e))
     }
     ElaboratedElement.setFully(dOrig)
  }
