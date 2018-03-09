@@ -424,12 +424,13 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         Nil
     }
     // if we add after dOrig, we have to reverse dElab to make sure the declarations occur in the same order as in dElab
-    val at = if (addAfter) After(dOrig.name) else Before(dOrig.name)
-    val pos = new RepeatedAdd(at)
+    val atFirst = if (addAfter) After(dOrig.name) else Before(dOrig.name)
+    val pos = new RepeatedAdd(atFirst)
     dElab.foreach {e =>
       e.setOrigin(ElaborationOf(dOrig.path))
-      log("flattening of " + dOrig.name + " yields " + e)
-      controller.add(e, pos.getNextFor(e))
+      val at = pos.getNextFor(e)
+      log("flattening of " + dOrig.name + " yields " + e + " at " + at)
+      controller.add(e, at)
     }
     ElaboratedElement.setFully(dOrig)
  }
