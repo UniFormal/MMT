@@ -641,7 +641,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      def prepareS(s: Stack)(implicit h: History) = {
         //  ^^ subs might be redundant because simplifier expands defined variables
         // but there may be subtleties because terms may already be marked as simple
-        Stack(controller.simplifier(s.context ^^ subs, constantContext ++ solution, rules))
+        Stack(controller.simplifier(s.context ^^ subs, constantContext ++ solution, rules, false))
      }
      // look for an activatable constraint
      val solved = getSolvedVariables
@@ -1419,7 +1419,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * this subsumes substituting for solved unknowns before simplifier expands defined variables
     */
    def simplify(t : Obj)(implicit stack: Stack, history: History): t.ThisType = {
-      val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context, rules)
+      val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context, rules, false)
       if (tS != t)
          history += ("simplified: " + presentObj(t) + " ~~> " + presentObj(tS))
       tS

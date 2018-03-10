@@ -48,3 +48,16 @@ object LinkInclude {
     case _ => None
   }
 }
+
+/** a [[LinkInclude]] of the identity morphism: the analog to a plain include in a theory */
+object IdentityInclude {
+  /**
+   * @param home the link
+   * @param from the theory that is included into domain and codomain and fixed by the link
+   */
+  def apply(home: Term, from: MPath) = LinkInclude(home, from, OMIDENT(OMMOD(from)))
+  def unapply(d: ContentElement) = d match {
+    case LinkInclude(h, f, OMIDENT(OMMOD(p))) if f == p => Some((h,f))
+    case _ => None
+  }
+}

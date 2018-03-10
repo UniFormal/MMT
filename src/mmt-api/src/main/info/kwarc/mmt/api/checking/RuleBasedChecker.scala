@@ -151,7 +151,7 @@ class RuleBasedChecker extends ObjectChecker {
             case OMA(OMS(parser.ObjectParser.oneOf), uom.OMLiteral.OMI(i) :: args) =>
                Traverser(this, args(i.toInt))
             case _ if parser.SourceRef.get(t).isEmpty =>
-               controller.simplifier(t, con, rules)
+               controller.simplifier(t, con, rules, false)
             case _ =>
                Traverser(this, t)
          }

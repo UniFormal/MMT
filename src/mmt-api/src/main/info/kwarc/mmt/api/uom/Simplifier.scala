@@ -10,10 +10,10 @@ import modules._
 /** simplifies/rewrites objects */
 trait ObjectSimplifier extends Extension {self =>
    /** applies rules to simplify an object */
-   def apply(obj: Obj, context: Context, rules: RuleSet): obj.ThisType
-
-   def toTranslator(rules: RuleSet) = new UniformTranslator {
-     def apply(c: Context, t: Term) = self.apply(t, c, rules)
+   def apply(obj: Obj, context: Context, rules: RuleSet, expandDefinitions: Boolean): obj.ThisType
+   
+   def toTranslator(rules: RuleSet, expDef: Boolean) = new UniformTranslator {
+     def apply(c: Context, t: Term) = self.apply(t, c, rules, expDef)
    }
 }
 
@@ -52,9 +52,9 @@ trait StructureSimplifier extends Extension {
  * the designated super class of all simplifiers
  */
 abstract class Simplifier(val objectLevel: ObjectSimplifier) extends StructureSimplifier with LeveledExtension {
-   def apply(obj: Obj, context: Context, rules: RuleSet): obj.ThisType = objectLevel(obj, context, rules)
-   def apply(obj: Obj, context: Context): obj.ThisType = {
+   def apply(obj: Obj, context: Context, rules: RuleSet, expDef: Boolean): obj.ThisType = objectLevel(obj, context, rules, expDef)
+   def apply(obj: Obj, context: Context, expDef: Boolean = false): obj.ThisType = {
       val rules = RuleSet.collectRules(controller, context)
-      apply(obj, context, rules)
+      apply(obj, context, rules, expDef)
    }
 }

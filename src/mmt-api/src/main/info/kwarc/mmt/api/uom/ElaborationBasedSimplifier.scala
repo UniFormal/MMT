@@ -30,8 +30,6 @@ case class ByStructureSimplifier(home: Term, view: Term) extends Origin
  * -1: in progress, apply or applyElementBegin has been called
  * -2: in progress and header already elaborated 
  */
-//TODO mark InProgress to avoid infinite loops
-// TODO rewrite getDeclarationsElaborated; that method needs to know which declarations can be skipped because their external declarations are present
 object ElaboratedElement extends ClientProperty[StructuralElement,Int](utils.mmt.baseURI / "clientProperties" / "controller" / "elaborated") {
   def getDefault(t: StructuralElement) = get(t).getOrElse(0)
   def setInprogress(t: StructuralElement) = put(t, -get(t).getOrElse(1).abs)
@@ -182,7 +180,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           log("flattening yields " + d.path)
         }
         var previous: Option[LocalName] = None
-        thy.dfC.normalize {d => objectLevel(d, mod.getInnerContext, rules)}
+        thy.dfC.normalize {d => objectLevel(d, mod.getInnerContext, rules, false)}
         thy.dfC.normalized.foreach {dfS =>
           //TODO mod.getInnerContext is too small for nested theories
           dfS match {
@@ -281,7 +279,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             // in views v:  mor = v|_fromThy where p --OMINST(p,pArgs)--> fromThy --OMINST--> v.from --v--> target; newIndlude is a defined structure
             val newMor = OMCOMP(OMINST(p,pArgs), mor)
             val newMor1 = Morph.simplify(newMor)(lup)
-            val newMorN = oS(newMor1, innerCont, rules)
+            val newMorN = oS(newMor1, innerCont, rules, false)
             val newInclude = parent match {
               case thy: DeclaredTheory =>
                 val newArgs = newMorN match {
@@ -297,7 +295,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             utils.listmap(alreadyIncluded, p) match {
               // if an include for domain p already exists, we have to check equality
               case Some(existingMor) =>
-                val existingMorN = oS(existingMor, innerCont, rules)
+                val existingMorN = oS(existingMor, innerCont, rules, false)
                 val eq = Morph.equal(existingMorN,newMorN, OMMOD(p))(lup)
                 if (eq) {
                   // if equal, we can ignore the new include
@@ -333,6 +331,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       case (link: DeclaredLink, LinkInclude(_, from, mor)) =>
         // includes in views are treated very similarly; we compose mor with includes into from and check equality of duplicates
         // from.meta is treated like any other include into from (in particular: mor should include the intended meta-morphism out of from.meta)
+        // TODO there is no need to flatten IdentityIncludes, transitive closure is enough; this is analogous to how we handle includes in theories
         val alreadyIncluded = link.getIncludes
         flattenInclude(from, mor, alreadyIncluded)
       // ************ structures
@@ -396,7 +395,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
            case Some(sf) =>
               val elab = sf.elaborate(thy, dd)
               dd.module.setOrigin(GeneratedBy(dd.path))
-              val simp = oS.toTranslator(rules)
+              val simp = oS.toTranslator(rules, false)
              /*
              val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
                throw GeneralError(s"no mmt checker found")
@@ -417,6 +416,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         // nested module do not affect the semantics of their parent except when they are used, i.e., no external elaboration
         Nil
       case (_,_: Constant) =>
+        //TODO maybe allow constants to be marked in a way that forces the normalization of its definiens
         // base case: no elaboration
         Nil
       case (_,_: RuleConstant) =>

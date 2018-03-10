@@ -45,7 +45,7 @@ class EditActions(mmtplugin: MMTPlugin) {
     as match {
       case oa: MMTObjAsset =>
         val obj = oa.obj
-        val objS = mmtplugin.controller.simplifier(obj, oa.context)
+        val objS = mmtplugin.controller.simplifier(obj, oa.context, true)
         val str = mmtplugin.asString(objS)
         val textArea = view.getTextArea
         if (selected && replace) {

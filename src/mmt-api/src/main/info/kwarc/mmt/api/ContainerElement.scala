@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api
 
-import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.api.uom.ElaboratedElement
+import symbols._
+import uom._
 import objects._
 
 trait NamedElement {
@@ -120,19 +120,15 @@ trait DefaultMutability[S <: NamedElement] extends {self: MutableElementContaine
 trait ContainerElement[S <: StructuralElement] extends StructuralElement with MutableElementContainer[S] {
    /** the list of declarations in the order of addition, excludes generated declarations */
    def getPrimitiveDeclarations = getDeclarations.filterNot(_.isGenerated)
-   /** the list of declarations using elaborated declarations where possible */
-   def getDeclarationsElaborated = {
-     var ret : List[S] = Nil
-     getDeclarations.indices.foreach(i => {
-       val h = getDeclarations(i)
-       h.path match {
-         case gn : GlobalName if !getDeclarations.drop(i+1).exists(_.getOrigin == ElaborationOf(gn)) =>
-           ret ::= h
-         case _ if !ElaboratedElement.isFully(h) =>
-           ret ::= h
-         case _ =>
-       }})
-     ret.reverse
+   /** the list of declarations using elaborated declarations where possible
+    *  these are: primitive elements: includes, constants
+    *  other elements if they have not been fully elaborated
+    */
+   def getDeclarationsElaborated = getDeclarations.filter {
+     case _: Constant => true
+     case _: RuleConstant => true
+     case Include(_) => true
+     case s => ! ElaboratedElement.isFully(s)
    }
 }
 
