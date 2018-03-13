@@ -3,6 +3,8 @@
 	font: 10pt sans;
 }
 
+.jssocials-share-link { border-radius: 50%; }
+
 .sidenav 
 {
 	-moz-box-shadow:inset 0px 1px 0px 0px #ffffff;
