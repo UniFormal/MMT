@@ -581,6 +581,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         // get domain and codomain as contexts
         val bodyR = checkSubstitution(context, body, domC, codC, false)
         (ComplexMorphism(bodyR), dom, cod)
+      case _ =>
+        throw InvalidObject(m, "unknown morphism")
     }
     val implDom = content.getImplicit(dom, domI)
     val implCod = content.getImplicit(codI, ComplexTheory(context ++ codC))
