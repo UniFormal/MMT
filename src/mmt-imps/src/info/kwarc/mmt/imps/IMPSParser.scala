@@ -52,7 +52,7 @@ class IMPSParser
           val sref_region : SourceRegion   = SourceRegion(sref_start, sref_end)
           val sref        : SourceRef      = SourceRef(uri, sref_region)
 
-          exprs = exprs :+ Exp(List(Comment(str,sref)), sref)
+          exprs = exprs :+ Exp(List(Comment(str,Some(sref))), Some(sref))
         }
       }
     }
@@ -88,7 +88,7 @@ class IMPSParser
     }
 
     // Some printouts for manual inspection, to be removed later
-    println("#### Summary for " + uri.toString + ":")
+    println("\n#### Summary for " + uri.toString + ":")
     println("#### " + exprs.length + " expressions and subexpressions parsed; " + successes + " Successes, " + failures + " explicit Failures and " + dummies + " Dummies\n")
 
     // Set to true for pretty helpful debug output
@@ -102,7 +102,7 @@ class IMPSParser
     // for (p <- parsedExprs) { println("\n" + p.toString) }
 
     /* Return one expression with all the smaller expressions as children */
-    Exp(definedExprs, sr)
+    Exp(definedExprs, Some(sr))
   }
 
   /* Create an EXP expression from Unparsed object, until brackets
@@ -131,7 +131,7 @@ class IMPSParser
         val sr_region : SourceRegion   = SourceRegion(sr_start, sr_end)
         val sr        : SourceRef      = SourceRef(uri, sr_region)
 
-        children = children :+ Exp(List(Str("\"" + str + "\"")), sr)
+        children = children :+ Exp(List(Str("\"" + str + "\"")), Some(sr))
         u.next()
       }
       else if (u.head == '(')
@@ -166,7 +166,7 @@ class IMPSParser
         val sr        : SourceRef      = SourceRef(uri, sr_region)
 
         // TODO: Is this nesting overkill / overcommplicated?
-        children = children :+ Exp(List(Str(str)), sr)
+        children = children :+ Exp(List(Str(str)), Some(sr))
       }
     }
 
@@ -174,7 +174,7 @@ class IMPSParser
     val sourceRef_region : SourceRegion   = SourceRegion(sourceRef_start, sourceRef_end)
     val sourceRef        : SourceRef      = SourceRef(uri, sourceRef_region)
 
-    Exp(children, sourceRef)
+    Exp(children, Some(sourceRef))
   }
 
   /* Parse a single EXP expression into a special form or similar (if possible) */
@@ -208,7 +208,7 @@ class IMPSParser
 
         case Str("def-bnf") => return Some(Dummy("def-bnf"))
 
-        case Str("def-cartesian-product") => return impsDefFormParsers.parseCartesianProduct(e)
+        case Str("def-cartesian-product") => ??? // Defunct
 
         case Str("def-compound-macete") => return Some(Dummy("def-compund-macete"))
 
@@ -256,7 +256,7 @@ class IMPSParser
 
         case Str("def-theory-processors") => return Some(Dummy("def-theory-processors"))
 
-        case Str("def-translation") => return Some(Dummy("def-translation"))
+        case Str("def-translation") => return Some(impsDefFormParsers.parseTranslation(e,js))
 
         case Str("def-transported-symbols") => return Some(Dummy("def-transported-symbols"))
 
@@ -270,19 +270,21 @@ class IMPSParser
 
         /* Other meta-commands etc. */
 
-        case Str("set")    => { println(" > Dropping (set ...)")    ; return None }
-        case Str("define") => { println(" > Dropping (define ...)") ; return None }
+        case Str("set")                     => { println(" > Dropping (set ...)")     ; return None }
+        case Str("define")                  => { println(" > Dropping (define ...)")  ; return None }
+        case Str("comment")                 => { println(" > Dropping (comment ...)") ; return None }
+        case Str("make-tex-correspondence") => { println(" > Dropping (make-tex-correspondence ...)")     ; return None }
 
         /* Catchall cases */
         case Str(x) => {
           println(" > PARSEFAILURE " + x)
           return Some(ParseFailure(x))
         }
-        case foo => println("DBG: faulty structure? " + foo.toString)
+        case foo => println("DBG: faulty structure? " + foo.toString) ; return None
       }
 
-      case Comment(_, _) =>  /* No action for comment lines. */
-      case q  => println("DBG: Couldn't parse:\n~~~") ; println(q.toString + "\n~~~")
+      case Comment(_, _) => return None /* No action for comment lines. */
+      case q  => println("DBG: Couldn't parse:\n~~~") ; println(q.toString + "\n~~~") ; return None
     }
 
     println(" > META-PARSEFAILURE " + e.toString)

@@ -212,6 +212,30 @@ package object impsArgumentParsers
     } else { None }
   }
 
+  /* Parser for IMPS source argument objects
+   * used in: def-translation... */
+  def parseSource (e : Exp) : Option[TranslationSource] =
+  {
+    if (e.children.length == 2) {
+      e.children(1) match {
+        case Exp(List(Str(x)),_) => Some(TranslationSource(x, e.src))
+        case _                   => None
+      }
+    } else { None }
+  }
+
+  /* Parser for IMPS target argument objects
+   * used in: def-translation... */
+  def parseTarget (e : Exp) : Option[TranslationTarget] =
+  {
+    if (e.children.length == 2) {
+      e.children(1) match {
+        case Exp(List(Str(x)),_) => Some(TranslationTarget(x, e.src))
+        case _                   => None
+      }
+    } else { None }
+  }
+
   /* Parser for IMPS macete argument (!) objects
   * used in: def-theorem... */
   def parseMacete (e : Exp) : Option[Macete] =
@@ -375,7 +399,7 @@ package object impsArgumentParsers
       }
     }
 
-    if (lst.isEmpty) { None } else { Some(LangBaseTypes(lst, e.src))}
+    if (lst.isEmpty) { None } else { Some(LangBaseTypes(lst, e.src)) }
   }
 
   /* Parser for IMPS extensible argument
@@ -443,7 +467,9 @@ package object impsArgumentParsers
         case Exp(ss,_) =>
         {
           // Constant specification has two elements
-          assert(ss.length == 2)
+          if(!(ss.length == 2)) {
+            println(" > DROPPING tail of constant specs: " + ss.toString())
+          }
 
           ss(0) match {
             case Exp(List(Str(name)),sourceR) => ss(1) match {
@@ -468,10 +494,22 @@ package object impsArgumentParsers
                 str = str.trim
                 if (js.length >= 2) {str = str + "]"}
 
+                if (str.startsWith("\"") && str.endsWith("\"")) {
+                  str = str.tail.init
+                }
+
                 val mp     = new IMPSMathParser()
                 val parsed = mp.parseAll(mp.parseSort, str)
 
-                if (parsed.isEmpty) { ??? }
+                val foo = "sets[ind_1]"
+
+                if (parsed.isEmpty) {
+                  println(" > ERROR while parsing sort " + str)
+                  assert(mp.parseAll(mp.parseSort,foo).successful)
+                  println("ind_1 successful, though")
+                  if (str == foo) { println("same strings") }
+                }
+                assert(parsed.successful)
 
                 lst = lst :+ (name, parsed.get)
               }

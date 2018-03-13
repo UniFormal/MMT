@@ -6,13 +6,13 @@ import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.{LocalName, _}
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.metadata.MetaDatum
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Declaration
+import info.kwarc.mmt.api.symbols.PlainInclude
 import info.kwarc.mmt.imps.Usage.Usage
-
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
 
@@ -79,7 +79,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         /* Translating Theories to MMT */
         case t@(Theory(_,_,_,_,_,_))       => try
         {
-          if (!tState.theories_raw.contains(t)) { doTheory(t) }
+          if (!tState.theories_raw.contains(t)) { doTheory(t, bt.narrationDPath) }
         } catch {
           case e : IMPSDependencyException => { println(" > ... fail. Add to stack: " +  e.getMessage ) ; excps = excps.::(e) }
         }
@@ -96,7 +96,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     // Run Checker (to resolve unknowns, etc)
     // Set to true to run
-    val typecheck : Boolean = false
+    val typecheck : Boolean = true
 
     if (typecheck)
     {
@@ -117,9 +117,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     BuildSuccess(Nil,Nil)
 	}
 
-  def doTheory (t : Theory) : Unit =
+  def doTheory (t : Theory, dPath: DPath) : Unit =
   {
-    val nu_theory = new DeclaredTheory(bt.narrationDPath,
+    val nu_theory = new DeclaredTheory(dPath,
                                        LocalName(t.name),
                                        Some(IMPSTheory.lutinsPath),
                                        modules.Theory.noParams,
@@ -127,7 +127,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     println(" > trying to add theory " + t.name)
 
-    val mref : MRef = MRef(bt.narrationDPath,nu_theory.path)
+    val mref : MRef = MRef(dPath,nu_theory.path)
     controller.add(nu_theory)
     controller.add(mref)
 
@@ -151,6 +151,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       for (comp_theory <- t.cmpntthrs.get.lst)
       {
         if (!tState.theories_raw.exists(t => t.name.toLowerCase == comp_theory.toLowerCase)) { thy_reset() ; throw new IMPSDependencyException("required co-theory " + comp_theory.toLowerCase + " not found") }
+
+        /* Add Include */
+        val component = tState.theories_decl.find(p => p.name.toString.toLowerCase == comp_theory.toLowerCase)
+        assert(component.isDefined)
+        controller add PlainInclude.apply(component.get.path,nu_theory.path)
+
+        /* Union Languages */
         val t_index : Theory = tState.theories_raw.find(t => t.name.toLowerCase == comp_theory.toLowerCase).get
 
         if (t_index.lang.isDefined)
@@ -183,7 +190,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         val assumption = symbols.Constant(nu_theory.toTerm,doName(name),Nil,Some(mth),None,Some("Assumption"))
 
         if (ax.usgs.isDefined) { doUsages(assumption,ax.usgs.get) }
-        doSourceRef(assumption,ax.src)
+        if (ax.src.isDefined) { doSourceRef(assumption,ax.src.get) }
         controller.add(assumption)
       }
     }
@@ -208,14 +215,15 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
             val g1 : GlobalName = nu_theory.getDeclarations.find(d => d.name == LocalName(c1)).get.path
             val g2 : GlobalName = nu_theory.getDeclarations.find(d => d.name == LocalName(c2)).get.path
 
-            val dist_formula : IMPSMathExp = IMPSNegation(IMPSEquals(IMPSSymbolRef(g1), IMPSSymbolRef(g2)))
+            // val dist_formula : IMPSMathExp = IMPSNegation(IMPSEquals(IMPSSymbolRef(g1), IMPSSymbolRef(g2)))
+            val dist_formula : IMPSMathExp = IMPSNegation(IMPSEquals(IMPSMathSymbol(c1), IMPSMathSymbol(c2)))
             val mth          : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(dist_formula, nu_theory)))
             val name         : String = t.name + "_distinction_axiom_" + dist_count.toString
 
             dist_count += 1
 
             val dist_assumption = symbols.Constant(nu_theory.toTerm,doName(name),Nil,Some(mth),None,Some("Assumption"))
-            doSourceRef(dist_assumption, t.dstnct.get.src)
+            if (t.dstnct.get.src.isDefined) { doSourceRef(dist_assumption, t.dstnct.get.src.get) }
             controller.add(dist_assumption)
           }
         }
@@ -269,7 +277,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       for (baseType : String <- l.bstps.get.tps)
       {
         val basetype = symbols.Constant(t.toTerm, doName(baseType), Nil, None, None, Some("BaseType"))
-        doSourceRef(basetype, l.bstps.get.src)
+        if (l.bstps.get.src.isDefined) { doSourceRef(basetype, l.bstps.get.src.get) }
         controller add basetype
       }
     }
@@ -298,7 +306,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       {
         val mth_tp : Term = doSort(pair._2, t)
         val l_const = symbols.Constant(t.toTerm,doName(pair._1),Nil,Some(mth_tp),None,Some("Constant"))
-        doSourceRef(l_const,l.cnstnts.get.src)
+        if (l.cnstnts.get.src.isDefined) { doSourceRef(l_const,l.cnstnts.get.src.get) }
         controller add l_const
       }
     }
@@ -320,40 +328,50 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       }
     }
 
-    d match
-    {
+    d match {
+      case Heralding(md, src) => {
+        println(" > Dropping (herald ...)")
+      }
       case AtomicSort(name, defstring, theory, usages, witness, src, sort) =>
 
-        val ln : LocalName = LocalName(theory.thy.toLowerCase())
+        val ln: LocalName = LocalName(theory.thy.toLowerCase())
 
-        if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) { throw new IMPSDependencyException("required theory " + ln + " for atomic sort not found") }
-        val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
+        if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
+          throw new IMPSDependencyException("required theory " + ln + " for atomic sort not found")
+        }
+        val parent: DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
 
-        val definition : Term = tState.bindUnknowns(doMathExp(defstring, parent))
-        val enclosing  : Term = doSort(sort,parent)
+        val definition: Term = tState.bindUnknowns(doMathExp(defstring, parent))
+        val enclosing: Term = doSort(sort, parent)
         val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, Some(enclosing), Some(definition), Some("AtomicSort"))
 
         /* Add available MetaData */
-        if (witness.isDefined) { doMetaData(nu_atomicSort, "witness", witness.get.witness.toString) }
-        if (usages.isDefined)  { doUsages(nu_atomicSort, usages.get.usgs) }
-        doSourceRef(nu_atomicSort,src)
+        if (witness.isDefined) {
+          doMetaData(nu_atomicSort, "witness", witness.get.witness.toString)
+        }
+        if (usages.isDefined) {
+          doUsages(nu_atomicSort, usages.get.usgs)
+        }
+
+        if (src.isDefined) { doSourceRef(nu_atomicSort, src.get) }
 
         println(" > Adding atomic sort: " + name + " (enclosed by " + sort.toString + ")")
         controller add nu_atomicSort
 
       case Constant(name, definition, theory, sort, usages, src) =>
 
-        val ln : LocalName = LocalName(theory.thy.toLowerCase())
-        if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) { throw new IMPSDependencyException("required theory " + ln + " for constant not found") }
-        val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
+        val ln: LocalName = LocalName(theory.thy.toLowerCase())
+        if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
+          throw new IMPSDependencyException("required theory " + ln + " for constant not found")
+        }
+        val parent: DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
 
         /* look for sort in given theory. */
-        var srt : Option[Term] = None
-        if (sort.isDefined)
-        {
+        var srt: Option[Term] = None
+        if (sort.isDefined) {
           println(" > Adding constant with clear sort: " + name)
           /* Theory not in scope, so we find it by hand */
-          val theTheory : Option[DeclaredTheory] = tState.theories_decl.find(x => x.name == LocalName(theory.thy))
+          val theTheory: Option[DeclaredTheory] = tState.theories_decl.find(x => x.name == LocalName(theory.thy))
           assert(theTheory.isDefined)
 
           srt = Some(doSort(sort.get.sort, theTheory.get))
@@ -363,51 +381,123 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           srt = None
         }
 
-        val mth : Term = tState.bindUnknowns(doMathExp(definition, parent))
+        val mth: Term = tState.bindUnknowns(doMathExp(definition, parent))
         val nu_constant = symbols.Constant(parent.toTerm, LocalName(name), Nil, srt, Some(mth), Some("Constant"))
 
         /* Add available MetaData */
-        doSourceRef(nu_constant,src)
-        if (usages.isDefined) { doUsages(nu_constant,usages.get.usgs) }
+        if (src.isDefined) { doSourceRef(nu_constant, src.get) }
+        if (usages.isDefined) {
+          doUsages(nu_constant, usages.get.usgs)
+        }
         controller add nu_constant
 
-      case Theorem(name, formula, lemma, reverse, theory, usages, transport, macete, homeTheory, maybeProof, src) =>
+      case Theorem(name, formula, lemma, reverse, theory, usages, transport, macete, homeTheory, maybeProof, src) => {
 
-        val ln : LocalName = doName(theory.thy.toLowerCase)
-        if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) { throw new IMPSDependencyException("required theory " + ln + " for theorem not found") }
-        val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
+        val ln: LocalName = doName(theory.thy.toLowerCase)
+        if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
+          throw new IMPSDependencyException("required theory " + ln + " for theorem not found")
+        }
+        val parent: DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
 
-        val mth : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(formula, parent)))
+        val mth: Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(formula, parent)))
         val nu_theorem = symbols.Constant(parent.toTerm, doName(name), Nil, Some(mth), None, Some("Theorem"))
         //                                                                              ^-- proof goes here!
 
         /* Add available MetaData */
-        if (usages.isDefined)     { doUsages(nu_theorem, usages.get.usgs) }
-        if (transport.isDefined)  { doMetaData(nu_theorem, "translation", transport.get.trans) }
-        if (macete.isDefined)     { doMetaData(nu_theorem, "macete", macete.get.macete) }
-        if (homeTheory.isDefined) { doMetaData(nu_theorem, "homeTheory", homeTheory.get.hmthy) }
+        if (usages.isDefined) {
+          doUsages(nu_theorem, usages.get.usgs)
+        }
+        if (transport.isDefined) {
+          doMetaData(nu_theorem, "translation", transport.get.trans)
+        }
+        if (macete.isDefined) {
+          doMetaData(nu_theorem, "macete", macete.get.macete)
+        }
+        if (homeTheory.isDefined) {
+          doMetaData(nu_theorem, "homeTheory", homeTheory.get.hmthy)
+        }
 
-        if (lemma)   { doMetaData(nu_theorem,"lemma","present") }   else { doMetaData(nu_theorem,"lemma","absent") }
-        if (reverse) { doMetaData(nu_theorem,"reverse","present") } else { doMetaData(nu_theorem,"reverse","absent") }
+        if (lemma) {
+          doMetaData(nu_theorem, "lemma", "present")
+        } else {
+          doMetaData(nu_theorem, "lemma", "absent")
+        }
+        if (reverse) {
+          doMetaData(nu_theorem, "reverse", "present")
+        } else {
+          doMetaData(nu_theorem, "reverse", "absent")
+        }
 
-        doSourceRef(nu_theorem, src)
+        if (src.isDefined) { doSourceRef(nu_theorem, src.get) }
         controller add nu_theorem
 
-        if (maybeProof.isDefined)
-        {
+        if (maybeProof.isDefined) {
           /* opaque proofs are beetter than no proofs */
-          val proof_name : StringFragment = StringFragment("Opaque proof of theorem " + name)
-          val proof_text : StringFragment = StringFragment(maybeProof.get.prf.toString)
+          val proof_name: StringFragment = StringFragment("Opaque proof of theorem " + name)
+          val proof_text: StringFragment = StringFragment(maybeProof.get.prf.toString)
 
           val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(proof_name + "\n" + proof_text))
           controller add opaque
         }
+      }
+      case Translation(name, force, forceQL, dontEnrich, sourcet, targett, assumptions, fixed, sortpairs, constpairs, coretrans, theintcheck, src) => {
 
-      case SchematicMacete(_, _, thy, _, _, _) =>
+        val ln : LocalName = doName(name)
 
-        val ln : LocalName = LocalName(thy.thy.toLowerCase)
-        if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) { throw new IMPSDependencyException("required theory " + ln + " for schematic macete not found") }
-        val parent : DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
+        println(" > translating Translation " + name)
+
+        // Source and Target need to be defined!
+        assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(sourcet.thy).toString.toLowerCase))
+        val source_thy : Term = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(sourcet.thy).toString.toLowerCase).get.toTerm
+
+        assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(targett.thy).toString.toLowerCase))
+        val target_thy : Term = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(targett.thy).toString.toLowerCase).get.toTerm
+
+        val nu_view = new DeclaredView(bt.narrationDPath, ln, source_thy, target_thy, false)
+
+        if (force) {
+          val mv : GlobalName =     rootdpath ? name ? LocalName("force")
+          val mo : Obj        = OMS(rootdpath ? name ? "present")
+          nu_view.metadata.add(new MetaDatum(mv,mo))
+        } else {
+          val mv : GlobalName =     rootdpath ? name ? LocalName("force")
+          val mo : Obj        = OMS(rootdpath ? name ? "absent")
+          nu_view.metadata.add(new MetaDatum(mv,mo))
+        }
+
+        if (forceQL) {
+          val mv : GlobalName =     rootdpath ? name ? LocalName("force-under-quick-load")
+          val mo : Obj        = OMS(rootdpath ? name ? "present")
+          nu_view.metadata.add(new MetaDatum(mv,mo))
+        } else {
+          val mv : GlobalName =     rootdpath ? name ? LocalName("force-under-quick-load")
+          val mo : Obj        = OMS(rootdpath ? name ? "absent")
+          nu_view.metadata.add(new MetaDatum(mv,mo))
+        }
+
+        if (dontEnrich) {
+          val mv : GlobalName =     rootdpath ? name ? LocalName("dont-enrich")
+          val mo : Obj        = OMS(rootdpath ? name ? "present")
+          nu_view.metadata.add(new MetaDatum(mv,mo))
+        } else {
+          val mv : GlobalName =     rootdpath ? name ? LocalName("dont-enrich")
+          val mo : Obj        = OMS(rootdpath ? name ? "absent")
+          nu_view.metadata.add(new MetaDatum(mv,mo))
+        }
+
+        println(" > Adding translation " + name + " (not complete yet)")
+
+        if (src.isDefined) { doSourceRef(nu_view.toTerm,src.get) }
+        controller add nu_view
+
+      }
+      case SchematicMacete(_, _, thy, _, _, _) => {
+
+        val ln: LocalName = LocalName(thy.thy.toLowerCase)
+        if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
+          throw new IMPSDependencyException("required theory " + ln + " for schematic macete not found")
+        }
+        val parent: DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
 
         // Macetes are added as opaque (for now?)
         val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(d.toString))
@@ -415,8 +505,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         /* Opaque Text doesn't have metadata, apparently, so we don't add the src */
 
         controller add opaque
-
-      case _ => log("Error: Unknown LispExp encountered, not translated!")
+      }
+      case _ => {
+        println(" > Error: Unknown decl encountered, not translated!")
+        println(" > " + d.toString)
+      }
     }
   }
 
@@ -478,7 +571,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   }
 
   /* Introduces a sort to a theory and also assigns the enclosing sort to it. */
-  def doSubsort(subsort : IMPSSort, supersort : IMPSSort, thy : DeclaredTheory, src : SourceRef) : Unit =
+  def doSubsort(subsort : IMPSSort, supersort : IMPSSort, thy : DeclaredTheory, src : Option[SourceRef]) : Unit =
   {
     /* enclosing sort should already be defined */
     println(" > Adding sort: " + subsort.toString + ", enclosed by " + supersort.toString)
@@ -499,8 +592,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     val typing    : Declaration  = symbols.Constant(thy.toTerm,LocalName(subsort.toString),Nil,opt_ind,None,Some("Subsort_1"))
     val judgement : Declaration  = symbols.Constant(thy.toTerm,jdgmtname,Nil,jdgmttp,None,Some("Subsort_2"))
 
-    doSourceRef(typing,src)
-    doSourceRef(judgement,src)
+    if (src.isDefined)
+    {
+      doSourceRef(typing, src.get)
+      doSourceRef(judgement, src.get)
+    }
 
     controller add typing
     controller add judgement
@@ -547,6 +643,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSIsDefined(r)       => IMPSTheory.IsDefined(doMathExp(r,thy))
       case IMPSIsDefinedIn(r,s)   => IMPSTheory.IsDefinedIn(doMathExp(r,thy), doSort(s,thy))
       case IMPSUndefined(s)       => IMPSTheory.Undefined(doSort(s,thy))
+
+      case IMPSTotal(f,bs)        => IMPSTheory.Total(doMathExp(f,thy),bs.map(b => doSort(b,thy)))
+      case IMPSNonVacuous(p)      => IMPSTheory.Nonvacuous(doMathExp(p,thy))
+      case IMPSQuasiEquals(p,q)   => IMPSTheory.Quasiequals(doMathExp(p,thy), doMathExp(q,thy))
     }
   }
 
@@ -634,9 +734,47 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   def doIMPSForall(forall : IMPSForAll, thy : DeclaredTheory) : Term =
   {
     assert(forall.vs.nonEmpty)
-    val target : Term = doMathExp(forall.p,thy)
-    val foo = IMPSTheory.Forall(forall.vs map (p => (LocalName(p._1.v), p._2 map (x => doSort(x,thy)))), target)
-    foo
+
+    /* see above */
+    var filled_vs : List[(IMPSVar, IMPSSort)] = List.empty
+
+    /* Last variable sort must be defined */
+    assert(forall.vs.last._2.isDefined)
+    var latersort : IMPSSort = curry(forall.vs.last._2.get)
+
+    for (i <- ((forall.vs.length-1) to 0 by -1))
+    {
+      val thisSort : IMPSSort = if (forall.vs(i)._2.isDefined)
+      { forall.vs(i)._2.get } else { latersort }
+      latersort = thisSort
+
+      val k = filled_vs.length
+      filled_vs = (forall.vs(i)._1, thisSort) :: filled_vs
+      assert(filled_vs.length > k)
+    }
+
+    val final_vs : List[(LocalName, Term)] = filled_vs map (p => (LocalName(p._1.v),  matchSort(curry(p._2),thy)))
+
+    /* Translate body */
+    val target   : Term = doMathExp(replaceVars(filled_vs map (x => x._1),forall.p),thy)
+
+    /* Manual currying because MMT doesn't support flexary anything */
+    def curryForall(vs : List[(LocalName, Term)], body : Term) : Term =
+    {
+      assert(vs.nonEmpty)
+      if (vs.length == 1)
+      {
+        val lfforall : Term = info.kwarc.mmt.lf.Lambda(vs.head._1,vs.head._2,body)
+        IMPSTheory.Forall(tState.addUnknown(),tState.addUnknown(),vs.head._2,tState.addUnknown(),lfforall)
+      }
+      else
+      {
+        val inner   : Term = info.kwarc.mmt.lf.Lambda(vs.last._1,vs.last._2,body)
+        val newBody : Term = IMPSTheory.Forall(tState.addUnknown(),tState.addUnknown(),vs.last._2,tState.addUnknown(),inner)
+        curryForall(vs.init,newBody)
+      }
+    }
+    curryForall(final_vs,target)
   }
 }
 

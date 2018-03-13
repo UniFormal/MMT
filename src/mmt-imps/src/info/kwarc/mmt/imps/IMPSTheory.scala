@@ -13,6 +13,8 @@ object IMPSTheory
   val lutinsPropType = lutinsPath ? "boolType"
   val lutinsIndType  = lutinsPath ? "indType"
 
+  val anIndividual = lutinsPath ? "anIndividual"
+
   class Sym(s: String)
   {
     val path : GlobalName = lutinsPath ? s
@@ -84,7 +86,7 @@ object IMPSTheory
     }
   }
 
-  object If extends Sym("if") {
+  object If extends Sym("ifthenelse") {
     def apply(p : Term, t1 : Term, t2 : Term) : Term = {
       ApplySpine(this.term, p, t1, t2)
     }
@@ -126,12 +128,9 @@ object IMPSTheory
 
   object Forall extends Sym("forall")
   {
-    def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = {
-      assert(ls.nonEmpty)
-      ls match
-      {
-        case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
-      }
+    def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term) : Term =
+    {
+      ApplySpine(this.term, a, b, alpha, beta, f)
     }
   }
 
@@ -180,4 +179,26 @@ object IMPSTheory
       Apply(this.term, t)
     }
   }
+
+  object Total extends Sym("total")
+  {
+    def apply(f : Term, bs : List[Term]) : Term = {
+      ApplySpine(this.term, f) // TODO: FIXME
+    }
+  }
+
+  object Nonvacuous extends Sym("nonvacuous")
+  {
+    def apply(p : Term) : Term = {
+      Apply(this.term, p) // TODO: FIXME
+    }
+  }
+
+  object Quasiequals extends Sym("quasiequals")
+  {
+    def apply(p1 : Term , p2 : Term) : Term = {
+      ApplySpine(this.term, p1, p2) // TODO: FIXME
+    }
+  }
+
 }

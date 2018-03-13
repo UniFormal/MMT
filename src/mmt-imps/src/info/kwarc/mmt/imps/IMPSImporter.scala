@@ -1,8 +1,9 @@
 package info.kwarc.mmt.imps
 
-import info.kwarc.mmt.api.{GeneralError, LocalName, NamespaceMap, Path}
+import info.kwarc.mmt.api._
 
 import scala.io.Source
+import util.control.Breaks._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents._
@@ -23,11 +24,10 @@ class IMPSImporter extends Importer
 
     println("\nReading index file: " + bf.inFile.getName + "\n")
 
-    val tfiles    = bf.inFile.up.canonical.listFiles.filter(_.getName.endsWith(".t"))
+    val tfiles    = bf.inFile.up.canonical.listFiles.filter(_.getName.endsWith(".t")).toList
     val jsonfiles = bf.inFile.up.canonical.listFiles.filter(_.getName.endsWith(".json"))
 
     var parsed_json : List[JSONObject] = Nil
-    var parsed_t    : List[(Exp, URI)] = Nil
 
     for (file <- jsonfiles)
     {
@@ -44,75 +44,125 @@ class IMPSImporter extends Importer
 
     }
     tState.jsons = parsed_json
-    println(" ")
 
-    for (file <- tfiles)
-    {
-      println("Reading imps file: " + file)
+    println("\n== JSON PARSING COMPLETE ; BUILDING DEPENDENCY LIST ==\n")
 
-      val e = try
-      {
-        val fileLines = Source.fromFile(file).getLines
-        var contents: String = ""
+    /* hand coded because everything else is too complicated */
+    val order : Array[String] = Array(
+      "pure-generic-theories.t",
+      "indicators.t",
+      "pure-generic-theories-with-subsorts.t",
+      "pre-reals.t",
+      "reals.t",
+      "quotient-structures.t",
+      "normed-spaces.t",
+      "mappings-from-an-interval.t",
+      //...
+    )
 
-        for (line <- fileLines)
-        {
-          /* Drop code comments. There's like four of them
-           * in the entire codebase and they mess up parsing. */
-          contents = contents + line.takeWhile(_ != ';') + "\n"
-        }
+    val theseFiles = order.take(1)
+    order.map(i => println((if (theseFiles.contains(i)) {"✓ "} else {"  "}) + i))
+    println("  ...")
+    val translateFiles = tfiles.filter(f => theseFiles.contains(f.getName))
 
-        val lp: IMPSParser = new IMPSParser()
-        lp.parse(contents, FileURI(file), parsed_json)
-
-      } catch {
-        case e: ExtractError =>
-          log(e.getMessage)
-          sys.exit
-      }
-
-      assert(e.isInstanceOf[Exp])
-      e match {
-        case (d: Exp) => parsed_t = parsed_t.::((d,FileURI(file)))
-        case _        => BuildResult.empty
-      }
-
-    }
-
-    println("== READING / PARSING COMPLETE ; BEGINNING TRANSLATION==\n")
+    println("\n== BUILDING DEPENDENCY TREE COMPLETE ; BEGINNING T TRANSLATION ==\n")
 
     val importTask = new IMPSImportTask(controller, bf, index, tState)
 
-    var all_translations : List[((Exp, URI), Boolean)] = parsed_t.map(e => (e,false))
-    var i : Int = 0
+    println(" > tState: " + tState.theories_raw.length + " raw theories, " + tState.theories_decl.length + " declared theories and " + tState.languages.length + " languages.\n")
 
-    while (all_translations.map(_._2).contains(false))
+    val fakeURI : URI = URI(bf.inFile.getParentFile.getParentFile.getAbsolutePath + "/the-kernel-theory.t")
+    val fakeexp : Exp = Exp(List(theKernelLang(),theKernelTheory(),unitSortTheorem()),None)
+
+    importTask.doDocument(fakeexp,fakeURI)
+
+    println("\n > tState: " + tState.theories_raw.length + " raw theories, " + tState.theories_decl.length + " declared theories and " + tState.languages.length + " languages.\n")
+
+    for (file <- translateFiles)
     {
-      if (!all_translations(i)._2) // If not translated yet, translate
-      {
-        val d : (Exp, URI) = parsed_t(i)
-        println("#> Translating: " + d._2)
+      println("\n###########\nReading imps file: " + file)
 
-        try
-        {
-          importTask.doDocument(d._1, d._2)
-          println(" > Success!")
-          all_translations = all_translations.updated(i,(d,true))
+      val e = try
+      {
+        val contents = Source.fromFile(file).mkString
+        val lp: IMPSParser = new IMPSParser()
+
+        lp.parse(contents, FileURI(file), parsed_json)
+
+      } catch {
+        case e : IMPSDependencyException => {
+          println(" > Failure: " + e.getMessage)
+          sys.exit
         }
-        catch {
-          case e : IMPSDependencyException => {
-            println(" > Failure, will retry next pass: " + e.getMessage)
-          }
+        case e: ExtractError => {
+          log(e.getMessage)
+          sys.exit
         }
-        println(" > tState: " + tState.theories_raw.length + " raw theories, " + tState.theories_decl.length + " declared theories and " + tState.languages.length + " languages.\n")
       }
 
-      if (i == (all_translations.length - 1)) { i = 0 ; Thread.sleep(500) } else { i += 1 }
+      val uri : URI = FileURI(file)
+      println("#> Translating: " + uri)
 
+      try
+      {
+        e match
+        {
+          case e@Exp(_,_) => {
+            importTask.doDocument(e, uri)
+            println(" > Success!")
+          }
+          case _ => println("> Parsing mess-up!") ; sys.exit()
+        }
+      }
+      catch {
+        case e : IMPSDependencyException => { println(" > Failure! " + e.getMessage) ; sys.exit }
+      }
+      println(" > tState: " + tState.theories_raw.length + " raw theories, " + tState.theories_decl.length + " declared theories and " + tState.languages.length + " languages.\n")
     }
 
     BuildSuccess(Nil, Nil)
   }
+
+  def theKernelLang() : Language = Language(
+    "THE-KERNEL-LANGUAGE",
+    None,
+    None,
+    Some(LangBaseTypes(List("ind","prop","unitsort"),None)),
+    None,
+    Some(SortSpecifications(List((IMPSAtomSort("ind"),IMPSAtomSort("ind")),
+      (IMPSAtomSort("prop"),IMPSAtomSort("prop")),
+      (IMPSAtomSort("unit%sort"),IMPSAtomSort("unit%sort"))),None)),
+    Some(ConstantSpecifications(List(("an%individual",IMPSAtomSort("unit%sort"))),None)),
+    None
+  )
+
+  def theKernelTheory() : Theory = Theory(
+    "the-kernel-theory",
+    Some(ArgumentLanguage("THE-KERNEL-LANGUAGE",None)),
+    None,
+    Some(TheoryAxioms(List(AxiomSpecification(
+      IMPSForAll(List((IMPSVar("x"),Some(IMPSAtomSort("unit%sort")))),IMPSEquals(IMPSVar("x"),IMPSMathSymbol("an%individual"))),
+      Some("unit-sort-defining-axiom"),
+      None,
+      None)),None)),
+    None,
+    None
+  )
+
+  def unitSortTheorem() : Theorem = Theorem(
+    "()",
+    IMPSForAll(List((IMPSVar("x"),Some(IMPSAtomSort("unit%sort"))),(IMPSVar("y"),Some(IMPSAtomSort("unit%sort")))),
+      IMPSIff(IMPSEquals(IMPSVar("x"),IMPSVar("y")),IMPSTruth())),
+    false,
+    false,
+    ArgumentTheory("the-kernel-theory",None),
+    Some(ArgumentUsages(List(Usage.ELEMENTARYMACETE),None)),
+    None,
+    None,
+    None,
+    None,
+    None
+  )
 }
 
 /* Some things are convenient to carry around in state.
