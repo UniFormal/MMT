@@ -276,7 +276,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       for (baseType : String <- l.bstps.get.tps)
       {
-        val basetype = symbols.Constant(t.toTerm, doName(baseType), Nil, None, None, Some("BaseType"))
+        val tp : Term = IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
+        val basetype = symbols.Constant(t.toTerm, doName(baseType), Nil, Some(tp), None, Some("BaseType"))
         if (l.bstps.get.src.isDefined) { doSourceRef(basetype, l.bstps.get.src.get) }
         controller add basetype
       }
@@ -519,6 +520,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSAtomSort("ind")      => OMS(IMPSTheory.lutinsIndType)
       case IMPSAtomSort("prop")     => OMS(IMPSTheory.lutinsPropType)
       case IMPSAtomSort("bool")     => OMS(IMPSTheory.lutinsPropType)
+      case IMPSAtomSort("unit%sort")
+         | IMPSAtomSort("unitsort") => OMS(IMPSTheory.lutinsIndType)
       case IMPSAtomSort(_)          => OMS(IMPSTheory.lutinsIndType)
       case IMPSBinaryFunSort(s1,s2) => IMPSTheory.FunType(findKind(s1),findKind(s2))
       case _ => ??? // This should never happen, always call curry first!
@@ -531,6 +534,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSAtomSort("ind")  => OMS(IMPSTheory.lutinsPath ? "ind")
       case IMPSAtomSort("prop") => OMS(IMPSTheory.lutinsPath ? "bool")
       case IMPSAtomSort("bool") => OMS(IMPSTheory.lutinsPath ? "bool")
+      case IMPSAtomSort("unit%sort")
+         | IMPSAtomSort("unitsort") => OMS(IMPSTheory.lutinsPath ? "unitsort")
       case IMPSAtomSort(srt) => OMS(t.path ? srt)
       case IMPSBinaryFunSort(s1, s2) =>
       {
@@ -581,7 +586,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     val foo       : Term = matchSort(subsort,thy)
     val bar       : Term = matchSort(supersort,thy)
-    val baz       : Term = OMS(IMPSTheory.lutinsIndType)
+    val baz       : Term = findKind(supersort)
 
     val subs      : Term = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), baz, foo, bar)
 
@@ -609,6 +614,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       case IMPSVar(v)             => OMV(v)
 
+      case IMPSMathSymbol("an%individual") => { OMS(IMPSTheory.lutinsPath ? "anIndividual") }
       case IMPSMathSymbol(s)      => OMS(thy.path ? LocalName(s))
 
       case q@IMPSTruth()          => OMS(IMPSTheory.lutinsPath ? "thetrue")
@@ -616,14 +622,14 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
       case IMPSNegation(p)        => IMPSTheory.Negation(doMathExp(p,thy))
 
-      case IMPSIf(p,t1,t2)        => IMPSTheory.If(doMathExp(p,thy), doMathExp(t1,thy), doMathExp(t2,thy))
+      case IMPSIf(p,t1,t2)        => IMPSTheory.If(tState.addUnknown(), tState.addUnknown(), doMathExp(p,thy), doMathExp(t1,thy), doMathExp(t2,thy))
       case IMPSIff(p, q)          => IMPSTheory.Iff(doMathExp(p,thy), doMathExp(q,thy))
       case IMPSIfForm(p,q,r)      => IMPSTheory.If_Form(doMathExp(p,thy), doMathExp(q,thy), doMathExp(r,thy))
       case IMPSEquals(a,b)        => IMPSTheory.Equals(tState.addUnknown(),tState.addUnknown(),tState.addUnknown(),doMathExp(a,thy),doMathExp(b,thy))
       case IMPSDisjunction(ls)    => IMPSTheory.Or(ls map (x => doMathExp(x,thy)))
       case IMPSConjunction(ls)    => IMPSTheory.And(ls map (x => doMathExp(x,thy)))
       case q@IMPSLambda(_,_)      => doIMPSLambda(q, thy)
-      case q@IMPSForAll(_,_)      => doIMPSForall(q, thy)
+      case q@IMPSForAll(_,_)      => doIMPSForall(curryIMPSforall(q), thy)
       case IMPSForSome(vs, r)     => IMPSTheory.Forsome(vs map (p => (LocalName(p._1.v), p._2 map (x => doSort(x,thy)))), doMathExp(r,thy))
       case IMPSImplication(p,q)   => IMPSTheory.Implies(doMathExp(p,thy), doMathExp(q,thy))
       case IMPSApply(f,ts)        =>
@@ -640,9 +646,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       }
       case IMPSIota(v1,s1,p)      => IMPSTheory.Iota(LocalName(v1.v), doSort(s1,thy), doMathExp(p,thy))
       case IMPSIotaP(v1,s1,p)     => IMPSTheory.IotaP(LocalName(v1.v), doSort(s1,thy), doMathExp(p,thy))
-      case IMPSIsDefined(r)       => IMPSTheory.IsDefined(doMathExp(r,thy))
-      case IMPSIsDefinedIn(r,s)   => IMPSTheory.IsDefinedIn(doMathExp(r,thy), doSort(s,thy))
-      case IMPSUndefined(s)       => IMPSTheory.Undefined(doSort(s,thy))
+      case IMPSIsDefined(r)       => IMPSTheory.IsDefined(tState.addUnknown(), tState.addUnknown(), doMathExp(r,thy))
+      case IMPSIsDefinedIn(r,s)   => IMPSTheory.IsDefinedIn(tState.addUnknown(), tState.addUnknown(), doMathExp(r,thy), doSort(s,thy))
+      case IMPSUndefined(s)       => IMPSTheory.Undefined(findKind(s), matchSort(s,thy))
 
       case IMPSTotal(f,bs)        => IMPSTheory.Total(doMathExp(f,thy),bs.map(b => doSort(b,thy)))
       case IMPSNonVacuous(p)      => IMPSTheory.Nonvacuous(doMathExp(p,thy))
@@ -706,6 +712,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       filled_vs = (lambda.vs(i)._1, thisSort) :: filled_vs
       assert(filled_vs.length > k)
     }
+    println(" > doing IMPSLambda " + IMPSForAll(filled_vs.map(k => (k._1,Some(k._2))),lambda.t))
 
     val final_vs : List[(LocalName, Term)] = filled_vs map (p => (LocalName(p._1.v),  matchSort(curry(p._2),thy)))
 
@@ -731,50 +738,30 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     curryLambda(final_vs,target)
   }
 
+  def curryIMPSforall(f : IMPSForAll) : IMPSForAll =
+  {
+    assert(f.vs.nonEmpty)
+    assert(f.vs.forall(v => v._2.isDefined))
+    if (f.vs.length == 1) { f }
+    else {
+      IMPSForAll(List(f.vs.head),curryIMPSforall(IMPSForAll(f.vs.tail,f.p)))
+    }
+  }
+
   def doIMPSForall(forall : IMPSForAll, thy : DeclaredTheory) : Term =
   {
-    assert(forall.vs.nonEmpty)
+    // Always call curried
+    assert(forall.vs.length == 1)
 
-    /* see above */
-    var filled_vs : List[(IMPSVar, IMPSSort)] = List.empty
+    val thisVar     : LocalName = LocalName(forall.vs.head._1.v)
+    val thisSrt     : IMPSSort  = forall.vs.head._2.get
+    val expSortTerm : Term      = doSort(thisSrt,thy)     // <-- this is "exp whateversort"
+    val target      : Term      = doMathExp(forall.p,thy)
+    val body        : Term      = info.kwarc.mmt.lf.Lambda(thisVar, expSortTerm, target)
 
-    /* Last variable sort must be defined */
-    assert(forall.vs.last._2.isDefined)
-    var latersort : IMPSSort = curry(forall.vs.last._2.get)
-
-    for (i <- ((forall.vs.length-1) to 0 by -1))
-    {
-      val thisSort : IMPSSort = if (forall.vs(i)._2.isDefined)
-      { forall.vs(i)._2.get } else { latersort }
-      latersort = thisSort
-
-      val k = filled_vs.length
-      filled_vs = (forall.vs(i)._1, thisSort) :: filled_vs
-      assert(filled_vs.length > k)
-    }
-
-    val final_vs : List[(LocalName, Term)] = filled_vs map (p => (LocalName(p._1.v),  matchSort(curry(p._2),thy)))
-
-    /* Translate body */
-    val target   : Term = doMathExp(replaceVars(filled_vs map (x => x._1),forall.p),thy)
-
-    /* Manual currying because MMT doesn't support flexary anything */
-    def curryForall(vs : List[(LocalName, Term)], body : Term) : Term =
-    {
-      assert(vs.nonEmpty)
-      if (vs.length == 1)
-      {
-        val lfforall : Term = info.kwarc.mmt.lf.Lambda(vs.head._1,vs.head._2,body)
-        IMPSTheory.Forall(tState.addUnknown(),tState.addUnknown(),vs.head._2,tState.addUnknown(),lfforall)
-      }
-      else
-      {
-        val inner   : Term = info.kwarc.mmt.lf.Lambda(vs.last._1,vs.last._2,body)
-        val newBody : Term = IMPSTheory.Forall(tState.addUnknown(),tState.addUnknown(),vs.last._2,tState.addUnknown(),inner)
-        curryForall(vs.init,newBody)
-      }
-    }
-    curryForall(final_vs,target)
+    val jstSortTerm : Term      = matchSort(thisSrt,thy)
+    //                                ^-------v-------------------These are just the sort
+    IMPSTheory.Forall(findKind(thisSrt), jstSortTerm, body)
   }
 }
 

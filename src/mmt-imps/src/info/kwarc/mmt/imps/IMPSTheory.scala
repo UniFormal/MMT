@@ -15,6 +15,8 @@ object IMPSTheory
 
   val anIndividual = lutinsPath ? "anIndividual"
 
+  val lutinsTP = lutinsPath ? "tp"
+
   class Sym(s: String)
   {
     val path : GlobalName = lutinsPath ? s
@@ -87,8 +89,8 @@ object IMPSTheory
   }
 
   object If extends Sym("ifthenelse") {
-    def apply(p : Term, t1 : Term, t2 : Term) : Term = {
-      ApplySpine(this.term, p, t1, t2)
+    def apply(a : Term, alpha : Term, p : Term, t1 : Term, t2 : Term) : Term = {
+      ApplySpine(this.term, a, alpha, p, t1, t2)
     }
   }
 
@@ -128,9 +130,10 @@ object IMPSTheory
 
   object Forall extends Sym("forall")
   {
-    def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term) : Term =
+    // forall : {A, α : sort A} (exp α → exp bool) → exp bool# ∀ 3 prec 20
+    def apply(a : Term, alpha : Term, p : Term) : Term =
     {
-      ApplySpine(this.term, a, b, alpha, beta, f)
+      ApplySpine(this.term, a, alpha, p)
     }
   }
 
@@ -161,22 +164,22 @@ object IMPSTheory
 
   object IsDefined extends Sym("isdefined")
   {
-    def apply(t : Term) : Term = {
-      Apply(this.term, t)
+    def apply(a : Term, alpha : Term, t : Term) : Term = {
+      ApplySpine(this.term, a, alpha, t)
     }
   }
 
-  object IsDefinedIn extends Sym("definedin")
+  object IsDefinedIn extends Sym("isdefinedin")
   {
-    def apply(t : Term, s : Term) : Term = {
+    def apply(a : Term, alpha : Term, t : Term, s : Term) : Term = {
       ApplySpine(this.term, t, s)
     }
   }
 
   object Undefined extends Sym("undefined")
   {
-    def apply(t : Term) : Term = {
-      Apply(this.term, t)
+    def apply(a : Term, t : Term) : Term = {
+      ApplySpine(this.term, a, t)
     }
   }
 

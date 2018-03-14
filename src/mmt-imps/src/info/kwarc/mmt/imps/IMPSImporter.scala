@@ -29,7 +29,25 @@ class IMPSImporter extends Importer
 
     var parsed_json : List[JSONObject] = Nil
 
-    for (file <- jsonfiles)
+    /* hand coded because everything else is too complicated */
+    val orderjson : Array[String] = Array(
+      "pure-generic-theory-1.json",
+      "pure-generic-theory-2.json",
+      "pure-generic-theory-3.json",
+      "pure-generic-theory-4.json",
+      "generic-theory-1.json",
+      "generic-theory-2.json",
+      "generic-theory-3.json",
+      "generic-theory-4.json",
+      "indicators.json",
+      "h-o-real-arithmetic.json"
+      //...
+    )
+
+    val thesejsonFiles = orderjson.take(4)
+    val translatejsonFiles = jsonfiles.filter(f => thesejsonFiles.contains(f.getName))
+
+    for (file <- translatejsonFiles)
     {
       println("Reading json file: " + file)
 
@@ -56,7 +74,7 @@ class IMPSImporter extends Importer
       "reals.t",
       "quotient-structures.t",
       "normed-spaces.t",
-      "mappings-from-an-interval.t",
+      "mappings-from-an-interval.t"
       //...
     )
 
@@ -127,7 +145,7 @@ class IMPSImporter extends Importer
     "THE-KERNEL-LANGUAGE",
     None,
     None,
-    Some(LangBaseTypes(List("ind","prop","unitsort"),None)),
+    Some(LangBaseTypes(List("ind","prop","unit%sort"),None)),
     None,
     Some(SortSpecifications(List((IMPSAtomSort("ind"),IMPSAtomSort("ind")),
       (IMPSAtomSort("prop"),IMPSAtomSort("prop")),
@@ -141,7 +159,7 @@ class IMPSImporter extends Importer
     Some(ArgumentLanguage("THE-KERNEL-LANGUAGE",None)),
     None,
     Some(TheoryAxioms(List(AxiomSpecification(
-      IMPSForAll(List((IMPSVar("x"),Some(IMPSAtomSort("unit%sort")))),IMPSEquals(IMPSVar("x"),IMPSMathSymbol("an%individual"))),
+      IMPSForAll(List((IMPSVar("z"),Some(IMPSAtomSort("unit%sort")))),IMPSEquals(IMPSVar("z"),IMPSMathSymbol("an%individual"))),
       Some("unit-sort-defining-axiom"),
       None,
       None)),None)),
