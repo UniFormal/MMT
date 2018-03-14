@@ -275,7 +275,7 @@ class STeXImporter extends Importer {
           val tpWrapperO = n.child.find(_.label == "type")
           val tpO = tpWrapperO.map(tpN => Obj.parseTerm(rewriteCMP(tpN.child.head), NamespaceMap(dpath)))
           val dfO = None //TODO, get also def
-          val const = new FinalConstant(OMMOD(mpath), name, Nil, TermContainer(tpO), TermContainer(dfO), None, NotationContainer())
+          val const = Constant(OMMOD(mpath), name, Nil, TermContainer(tpO), TermContainer(dfO), None, NotationContainer())
           //adding metadata
           (n \ "@role").text match {
             case "primary" =>

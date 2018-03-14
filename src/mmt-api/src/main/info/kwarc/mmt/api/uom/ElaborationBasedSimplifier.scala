@@ -267,7 +267,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       applyChecked(fromThy)
       fromThy match {
         case d: DefinedTheory =>
-          Nil//TODO (deprecated anyway)
+            Nil//TODO (deprecated anyway)
         case fromThy: DeclaredTheory =>
           val fromIncls = fromThy.getAllIncludes
           fromIncls.flatMap {case (p, pArgs) =>
@@ -284,7 +284,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               case thy: DeclaredTheory =>
                 val newArgs = newMorN match {
                   case OMCOMP(Nil) | OMIDENT(_) => Nil
-                  case OMINST(_,nas) => nas
+                  case OMINST(np,nas) => if (np == p) nas else Nil // np != p occurs when (p,pArgs) = OMIDENT(p) and thus newMor = mor
                   case _ => throw ImplementationError("composition of includes must yield include")
                 }
                 Include(parent.toTerm, p, newArgs)
@@ -711,15 +711,13 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     rules
   }
 
-  private def rewrite(d : Declaration, vpath : MPath, newhome : MPath, context : Context)(implicit rules : HashMap[Path, Term]) : Declaration = d match {
-    case c : Constant =>
-      val newtpC = TermContainer(c.tp.map(t => controller.simplifier.apply(rewrite(t), context)))
-      val newdfC = TermContainer(c.df.map(rewrite))
-      val newname = LocalName(vpath.toPath) / c.home.toMPath.toPath / c.name
-      val newCons = new FinalConstant(OMMOD(newhome), newname, c.alias, newtpC, newdfC, c.rl, c.notC)
-      newCons.setOrigin(ByStructureSimplifier(c.home, OMID(vpath)))
-      newCons
-    case x => x
+  private def rewrite(d : Declaration, vpath : MPath, newhome : MPath, context : Context)(implicit rules : HashMap[Path, Term]) : Declaration = {
+      val tl = new UniformTranslator {
+        def apply(c: Context, t: Term) = apply(c, rewrite(t))
+      }
+      val dT = d.translate(OMMOD(newhome), LocalName(vpath.toPath) / d.home.toMPath.toPath, tl, context)
+      dT.setOrigin(ByStructureSimplifier(d.home, OMID(vpath)))
+      dT
   }
 
 

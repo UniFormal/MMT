@@ -340,7 +340,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
          def defaultDef = TermContainer(OMS(s.home.toMPath ? translateNameByLink(name, s)))
          assig match {
             case ca: Constant if ca.df.isEmpty =>
-               new FinalConstant(ca.home, ca.name, ca.alias, ca.tpC, defaultDef, ca.rl, ca.notC)
+               new FinalConstant(ca.home, ca.name, ca.alias, ca.tpC, defaultDef, ca.rl, ca.notC, ca.vs)
             case sa: DefinedStructure if sa.dfC.get.isEmpty =>
                new DefinedStructure(sa.toTerm, sa.name, sa.tpC, defaultDef, sa.isImplicit)
             case a => a

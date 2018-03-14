@@ -34,7 +34,7 @@ class ParserState(val reader: Reader, val ps: ParsingStream, val cont: Structure
   var namespaces = ps.nsMap
 
   /** the position at which the current StructuralElement started */
-  var startPosition = reader.getSourcePosition
+  var startPosition = reader.getNextSourcePosition
 
   def copy(rd: Reader = reader): ParserState = {
     val s = new ParserState(rd, ps, cont)
@@ -104,7 +104,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   protected def end(s: ContainerElement[_])(implicit state: ParserState) {
     //extend source reference until end of element
     SourceRef.get(s) foreach {r =>
-      SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getSourcePosition)))
+      SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getLastReadSourcePosition)))
     }
     state.cont.onElementEnd(s)
     log("end " + s.path)
@@ -112,7 +112,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   /** the region from the start of the current structural element to the current position */
   protected def currentSourceRegion(implicit state: ParserState) =
-    SourceRegion(state.startPosition, state.reader.getSourcePosition)
+    SourceRegion(state.startPosition, state.reader.getLastReadSourcePosition)
 
   /** like seCont but may wrap in NestedModule */
   private def moduleCont(m: Module, par: HasParentInfo)(implicit state: ParserState) {
@@ -417,7 +417,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           }
           val (mod, mreg) = state.reader.readModule
           val reader = Reader(mod)
-          reader.setSourcePosition(mreg.start)
+          reader.setNextSourcePosition(mreg.start)
           val pea = new ParserExtensionArguments(this, state.copy(reader), doc, k)
           extParser(pea) foreach {
             case m: Module =>
@@ -613,7 +613,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                     // 2) a parser extension identified by k
                     val (decl, reg) = state.reader.readDeclaration
                     val reader = Reader(decl)
-                    reader.setSourcePosition(reg.start)
+                    reader.setNextSourcePosition(reg.start)
                     val se = if (currentSection.length == 0) mod
                     else mod.asDocument.getLocally(currentSection).getOrElse {
                       throw ImplementationError("section not found in module")
@@ -891,7 +891,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             case Some(parser) =>
               val (obj, reg) = state.reader.readObject
               val reader = Reader(obj)
-              reader.setSourcePosition(reg.start)
+              reader.setNextSourcePosition(reg.start)
               val pea = new ParserExtensionArguments(this, state.copy(reader), cons, k, context)
               val tO = parser(pea)
               tO foreach {

@@ -386,9 +386,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        }
      }
    }
-
-   /* TODO get* methods must pass context */
-
+   
    /** retrieves the type type of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed
@@ -400,7 +398,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
         addDependency(p $ TypeComponent)
       t
    }
-
+   
    /** retrieves the definiens of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed
@@ -414,7 +412,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    }
 
    private def getConstant(p : GlobalName)(implicit h: History): Option[Constant] =
-    controller.globalLookup.getO(ComplexTheory(constantContext), LocalName(p.module) / p.name) match {
+    lookup.getO(ComplexTheory(constantContext), LocalName(p.module) / p.name) match {
       case Some(c: Constant) => Some(c)
       case Some(_) =>
         error("not a constant: " + p)

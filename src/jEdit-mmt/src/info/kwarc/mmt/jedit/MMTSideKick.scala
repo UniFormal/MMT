@@ -186,6 +186,12 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
               child.add(elabChild)
               defElab foreach {d => buildTreeDecl(elabChild, m, d, context ++ m.getInnerContext, reg)}
            }
+           val incls = m.getDeclarations.filter {d => Include.unapply(d).isDefined && d.isGenerated}
+           if (incls.nonEmpty) {
+              val inclsChild = new DefaultMutableTreeNode(new MMTAuxAsset("-- flat includes --"))
+              child.add(inclsChild)
+              incls foreach {d => buildTreeDecl(inclsChild, m, d, context ++ m.getInnerContext, reg)}
+           }
            m.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, m, d, context ++ m.getInnerContext, reg)}
          case m: DefinedModule =>
       }

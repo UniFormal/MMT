@@ -47,19 +47,21 @@ class Reader(val jr: java.io.BufferedReader) {
    private var line : Int = 0
    private var column : Int = 0
    private var offset : Int = 0
-   // most recent non-whitespace character that was read
+   /** most recent non-whitespace character that was read */
    private var sourcePosition: SourcePosition = null
 
-   /** @return the position of the next character to be read
-    */
-   def getSourcePosition = SourcePosition(offset, line, column)
+   /** @return the position of the next character to be read */
+   def getNextSourcePosition = SourcePosition(offset, line, column)
+   /** @return the position of the most recently read non-whitespace character */
+   def getLastReadSourcePosition = Option(sourcePosition).getOrElse(getNextSourcePosition) // null only at beginning
+   
    /**
     * sets the current position
     * @param s a source position to overwrite the position of the next character to be read
     * This only affects the SourceRegion returned by read operations,
     * not the actual position in the stream.
     */
-   def setSourcePosition(s: SourcePosition) {
+   def setNextSourcePosition(s: SourcePosition) {
       line = s.line
       column = s.column
       offset = s.offset
@@ -88,8 +90,9 @@ class Reader(val jr: java.io.BufferedReader) {
     */
    private def read: Int = {
       var c = jr.read
-      if (c == -1)
-         return c
+      if (c == -1) {
+        return c
+      }
       if (ignoreLineFeed && c == '\n') {
          c = jr.read
       }
