@@ -13,56 +13,58 @@ import info.kwarc.mmt.jedit._
   *
   * copies jars, modes, abbreviations etc. to jEdit settings directory
   * installation is idempotent
+  *
+  * @param logger Optional function to print interactive setup statements in. Defaults to println
   */
 class Setup extends ShellExtension("jeditsetup") {
+  def helpText = "needed arguments: (install | uninstall) [JEDIT/SETTINGS/FOLDER]"
 
-  def helpText = "needed arguments: (install | install-jars | uninstall) [JEDIT/SETTINGS/FOLDER]"
+  /** a function tog log a message */
+  val log: String => Unit = println
 
   /** run method as ShellExtension */
   def run(shell: Shell, args: List[String]): Boolean = {
     val l = args.length
     if (l <= 0 || l > 2) {
-      println(helpText)
+      log(helpText)
       return true
     }
     val jeditOpt = if (l >= 2) Some(File(args(1))) else OS.jEditSettingsFolder
     val jedit = jeditOpt.getOrElse {
-      println("The jEdit settings folder was not found. If you have installed jEdit just now, you may have to run it once so that it creates the folder.")
+      log("The jEdit settings folder was not found. If you have installed jEdit just now, you may have to run it once so that it creates the folder.")
       return true
     }
     val doIt = new DoIt(shell, jedit)
     if (args(0) == "customize") {
       doIt.customize
-    } else { 
-      val (installOpt,fat) = args(0) match {
-        case "install" => (Some(true),true)
-        case "uninstall" => (Some(false), true)
-        case "install-jars" => (Some(true), false)
-        case "uninstall-jars" => (Some(false), false)
-        case _ => (None, true)
+    } else {
+      val installOpt = args(0) match {
+        case "install" => Some(true)
+        case "uninstall" => Some(false)
+        case _ => None
       }
       val install = installOpt.getOrElse {
-        println(helpText)
+        log(helpText)
         return true
       }
       if (install) {
-        println("trying to install to " + jedit)
+        log("trying to install to " + jedit)
       } else {
-        println("trying to uninstall from " + jedit)
+        log("trying to uninstall from " + jedit)
       }
-      doIt.install(install, fat)
+      doIt.install(install)
     }
     true
   }
 
-  
+
   private class DoIt(shell: Shell, jedit: File) {
     val jarFolder = jedit / "jars"
     val propsFile = jedit / "properties"
     val keymapPath = List("keymaps", "imported_keys.props")
 
     val rl = shell.runStyle
-    
+
     def getResource(path: String): String = {
       rl match {
         case _: IsFat | OtherStyle => MMTSystem.getResourceAsString(path)
@@ -75,7 +77,7 @@ class Setup extends ShellExtension("jeditsetup") {
 
     /** merge properties from a resource into a jEdit file */
     def mergeProps(propsOldFile: File, propsAddResource: List[String]) {
-       println("merging " + propsAddResource.mkString("/") + " into " + propsOldFile) 
+       log("merging " + propsAddResource.mkString("/") + " into " + propsOldFile)
        var propsAdd = utils.stringToList(getPluginResource(propsAddResource), "\\n").flatMap {line =>
          val i = line.indexOf("=")
          if (!line.startsWith("#") && i != -1)
@@ -97,14 +99,14 @@ class Setup extends ShellExtension("jeditsetup") {
        propsNew = propsNew ::: propsAdd.map(_._2)
        File.WriteLineWise(propsOldFile, propsNew)
     }
- 
+
     /** the actual install/uninstall process
       *
       * @param jedit   the jEdit settings folder
       * @param install true/false for install/uninstall
       * @param fat install fat jar
       */
-    def install(install: Boolean, fat: Boolean) {
+    def install(install: Boolean) {
       /** copies or deletes a file depending on install/uninstall, always overwrites existing files */
       def copyOrDeleteJar(dir: File, f: List[String], g: List[String]) {
         if (install) {
@@ -118,37 +120,29 @@ class Setup extends ShellExtension("jeditsetup") {
         val file = jedit / f
         if (install) {
           if (!file.exists || replace) {
-            println("writing: " + file)
+            log("writing: " + file)
             File.write(file, getPluginResource(f))
           }
           else {
-            println("already exists, skipping: " + file)
+            log("already exists, skipping: " + file)
           }
         } else {
           delete(file)
         }
       }
-      // copy/delete the jars
-      // see src/project/Utils.scala for sbt
-      val mainJars = List("mmt-api.jar", "mmt-lf.jar", "MMTPlugin.jar", "mmt-specware.jar", "mmt-pvs.jar")
-      val libJars = List("scala-library.jar", "scala-parser-combinators.jar", "scala-reflect.jar", "scala-xml.jar",
-        "tiscaf.jar")
-      val allJars = List("lfcatalog", "lfcatalog.jar") :: mainJars.map(List("main", _)) ::: libJars.map(List("lib", _))
+      // copy/delete the jar
       jarFolder.mkdirs
       if (install) {
         rl match {
           case rs: IsFat =>
             copyOrDeleteJar(rs.jar, Nil, List("jars", "MMTPlugin.jar"))
           case nf: DeployRunStyle =>
-            if (fat)
-              copyOrDeleteJar(nf.deploy, List("mmt.jar"), List("jars", "MMTPlugin.jar"))
-            else
-              allJars.foreach(f => copyOrDeleteJar(nf.deploy, f, List("jars", f.last)))
+            copyOrDeleteJar(nf.deploy, List("mmt.jar"), List("jars", "MMTPlugin.jar"))
           case OtherStyle =>
-            println("cannot find jar files to install")
+            log("cannot find jar files to install")
         }
       } else {
-          allJars.foreach(f => delete(jedit / List("jars", f.last)))
+        delete(jedit / "jars" / "MMTPlugin.jar")
       }
       // modes
       // * copy/delete the mode files
@@ -177,7 +171,7 @@ class Setup extends ShellExtension("jeditsetup") {
         }
       }
       if (install || jcat.exists) {
-        println("updating " + jcat)
+        log("updating " + jcat)
         File.WriteLineWise(jcat, newCatalog.reverse)
       }
       // abbrevs
@@ -204,7 +198,7 @@ class Setup extends ShellExtension("jeditsetup") {
       }
       // write new abbrevs
       if (newAbbrevs.nonEmpty) {
-        println("updating " + jabb)
+        log("updating " + jabb)
         File.WriteLineWise(jabb, newAbbrevs.reverse)
       } else {
         delete(jabb)
@@ -216,29 +210,29 @@ class Setup extends ShellExtension("jeditsetup") {
         val d = jedit / plug
         if (d.isDirectory) {
           d.deleteDir
-          println("deleting directory " + d)
+          log("deleting directory " + d)
         }
       }
       // add properties that depend on MMT installation folder
       val propsOld = if (propsFile.exists) File.read(propsFile) else ""
       val archKey = MMTOptions.archives.jeditKey + "="
-      if (install) controller.getOAF.map { oaf =>
-        val contentFolder = oaf.root
-        println("adding property for content folder " + contentFolder)
+      if (install) controller.getMathHub.map {mh =>
+        val contentFolder = mh.local
+        log("adding property for content folder " + contentFolder)
         val encoded = contentFolder.toString.replace("\\", "\\\\").replace(":", "\\:").replace("=", "\\=")
         val newValues = archKey + encoded
         val propsNew = propsOld + newValues + "\n"
         File.write(propsFile, propsNew)
       } else {
-        println("deleting property for content folder: " + archKey)
+        log("deleting property for content folder: " + archKey)
         val newLines = propsOld.split("\n").filter(!_.startsWith(archKey)).toList
         if (newLines.nonEmpty && newLines != List("")) {
           File.WriteLineWise(propsFile, newLines)
         } else delete(propsFile)
       }
     }
-    
-    
+
+
     val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.1.0"), ("Console","5.1.4"), ("BufferTabs","1.2.4"))
     /** installs plugin dependencies and useful properties */
     def customize {
@@ -248,18 +242,18 @@ class Setup extends ShellExtension("jeditsetup") {
          if (!target.exists) {
            val url = URI(s"https://sourceforge.net/projects/jedit-plugins/files/$name/$version/$name-$version-bin.zip")
            val zip = target.setExtension("zip")
-           println("downloading " + url)
+           log("downloading " + url)
            try {
              File.download(url, zip)
              File.unzip(zip, jarFolder)
            } catch {
-             case e: Exception => println(e.getMessage)
+             case e: Exception => log(e.getMessage)
            } finally {
              zip.delete
            }
          }
        }
-       
+
        // add all properties and keymaps
        mergeProps(propsFile, List("properties"))
        mergeProps(jedit / keymapPath, keymapPath)
@@ -269,19 +263,19 @@ class Setup extends ShellExtension("jeditsetup") {
   private def delete(f: File) {
     if (f.exists && f.isFile) {
       f.delete
-      println("deleting " + f)
+      log("deleting " + f)
     }
   }
 
   private def copy(from: File, to: File, overwrite: Boolean) {
     if (to.exists && !overwrite) {
-      println("warning: " + to + " already exists, skipping; you probably want to run uninstall first")
+      log("warning: " + to + " already exists, skipping; you probably want to run uninstall first")
     } else {
-      println("copying " + from + " to " + to)
+      log("copying " + from + " to " + to)
       val success = File.copy(from, to, overwrite)
       if (!success) {
-        println("warning: " + from + " does not exist! (skipping)")
-        println("jedit setup may be incomplete or inconsistent.")
+        log("warning: " + from + " does not exist! (skipping)")
+        log("jedit setup may be incomplete or inconsistent.")
       }
     }
   }

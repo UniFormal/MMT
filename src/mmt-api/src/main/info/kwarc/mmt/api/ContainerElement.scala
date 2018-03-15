@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api
 
+import symbols._
+import uom._
 import objects._
 
 trait NamedElement {
@@ -15,8 +17,8 @@ trait ElementContainer[+S <: NamedElement] {
    def getMostSpecific(name: LocalName): Option[(S,LocalName)]
 
    def isDeclared(name : LocalName) = getO(name).isDefined
-   
-   /** same as get(LocalName(name)) */ 
+
+   /** same as get(LocalName(name)) */
    def getO(name : String) : Option[S] = getO(LocalName(name))
    def get(name: LocalName): S = getO(name) getOrElse {
      throw ImplementationError("get called without checking that name exists")
@@ -43,6 +45,15 @@ case object AtBegin extends AddPosition
 case object AtEnd extends AddPosition
 case class After(name: LocalName) extends AddPosition
 case class Before(name: LocalName) extends AddPosition
+
+/** helper class for creating a sequence of [[AddPosition]]'s where each is right after the previous one */
+class RepeatedAdd(private var next: AddPosition) {
+  def getNextFor(d: NamedElement) = {
+    val n = next
+    next = After(d.name)
+    n
+  }
+}
 
 trait MutableElementContainer[S <: NamedElement] extends ElementContainer[S] {
   def add(s: S, at: AddPosition = AtEnd): Unit
@@ -73,7 +84,7 @@ trait DefaultMutability[S <: NamedElement] extends {self: MutableElementContaine
            case i => i
         }
         case AtBegin => 0
-        case AtEnd => items.length 
+        case AtEnd => items.length
      }
      val (bef,aft) = items.splitAt(pos) // items(pos) == aft.head
      setDeclarations(bef ::: i :: aft)
@@ -98,7 +109,7 @@ trait DefaultMutability[S <: NamedElement] extends {self: MutableElementContaine
   def reorder(ln: LocalName) {
      val items = getDeclarations
      items.find(_.name == ln) match {
-        case Some(i) => 
+        case Some(i) =>
           delete(ln)
           setDeclarations(items ::: List(i))
         case None => throw ImplementationError("element does not exist")
@@ -109,8 +120,30 @@ trait DefaultMutability[S <: NamedElement] extends {self: MutableElementContaine
 trait ContainerElement[S <: StructuralElement] extends StructuralElement with MutableElementContainer[S] {
    /** the list of declarations in the order of addition, excludes generated declarations */
    def getPrimitiveDeclarations = getDeclarations.filterNot(_.isGenerated)
-   /** the list of declarations using elaborated declarations where possible */
-   def getDeclarationsElaborated = getDeclarations.filterNot(uom.ElaboratedElement.isProperly)  
+   /** the list of declarations using elaborated declarations where possible
+    *  these are: primitive elements: includes, constants
+    *  other elements if they have not been fully elaborated
+    */
+   def getDeclarationsElaborated = getDeclarations.filter {
+     case _: Constant => true
+     case _: RuleConstant => true
+     case Include(_) => true
+     case s => ! ElaboratedElement.isFully(s)
+   }
+}
+
+/** delegates all methods to an existing container element; awkward auxiliary class needed because Scala doesn't let us delegate systematically
+ *  only used in DerivedDeclaration */
+trait DelegatingContainerElement[S <: StructuralElement] extends ContainerElement[S] {
+  protected val delegatee: ContainerElement[S]
+  def domain = delegatee.domain
+  def getDeclarations = delegatee.getDeclarations
+  def getO(name: LocalName) = delegatee.getO(name)
+  def getMostSpecific(name: LocalName) = delegatee.getMostSpecific(name)
+  def add(s: S, at: AddPosition = AtEnd) = delegatee.add(s, at)
+  def update(s: S) = delegatee.update(s)
+  def delete(name: LocalName) = delegatee.delete(name)
+  def reorder(name: LocalName) = delegatee.reorder(name)
 }
 
 class ListContainer[S <: NamedElement](items: List[S]) extends ElementContainer[S] with DefaultLookup[S] {

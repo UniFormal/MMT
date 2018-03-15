@@ -1,2 +1,0 @@
-This is the MMT shell.
-See https://uniformal.github.io/apidoc/#info.kwarc.mmt.api.frontend.Action for the available commands.

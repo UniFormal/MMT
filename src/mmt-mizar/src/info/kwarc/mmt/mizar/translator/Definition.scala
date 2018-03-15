@@ -32,7 +32,7 @@ object DefinitionTranslator {
     sub.map(_.target)
   }
   */
-   
+
    def makeSubs(argTypes : List[Term], ret : Option[(String, Term)], cases : List[Term], results : List[Term], default : Option[Term]): List[Term] = {
      val argSubs = Sub("n", OMI(argTypes.length)) :: Sub("args", Sequence(argTypes: _*)) :: Nil
      val retSub = ret.map(t => Sub(t._1, t._2) :: Nil).getOrElse(Nil)
@@ -43,12 +43,12 @@ object DefinitionTranslator {
      val sub = argSubs ++ retSub ++ casesSubs ++ defSub
      sub.map(_.target)
    }
-   
+
 
   def getName(prefix : String, kind : String, nr : Int) : String = {
     prefix + kind + nr
   }
-  
+
   def makeDefTheorems(dts: List[MizDefTheorem]) = {
     dts foreach { dt =>
       val name = "D" + dt.nr
@@ -58,7 +58,7 @@ object DefinitionTranslator {
       TranslationController.add(const)
     }
   }
-  
+
   def translatePredMeansDef(p: MizPredMeansDef) = {
     val name = p.name match {
       case None => getName(p.prefix ,"R", p.absnr)
@@ -67,7 +67,7 @@ object DefinitionTranslator {
     p.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
     //TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
     TranslationController.addLocusVarBinder(OMV("it"))
-    
+
     val args = p.args.map(x => TypeTranslator.translateTyp(x._2))
     //val retType = TypeTranslator.translateTyp(p.retType)
     val cases = p.cases.map(x => PropositionTranslator.translateFormula(x._2))
@@ -119,9 +119,9 @@ object DefinitionTranslator {
       case None => getName(f.prefix, f.kind, f.absnr)
       case Some(s) => s
     }
-    
+
     val sind : uom.IntegerLiteral = uom.StandardInt
-    
+
     f.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
     //TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
     TranslationController.addLocusVarBinder(OMV("it"))
@@ -179,7 +179,7 @@ object DefinitionTranslator {
     }
     m.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
     TranslationController.addLocusVarBinder(OMV("it"))
-    
+
     val args = m.args.map(x => TypeTranslator.translateTyp(x._2))
     val cases = m.cases.map(x => PropositionTranslator.translateFormula(x._2))
     val results = m.cases.map(x => MMTUtils.Lam("it", Mizar.tp, PropositionTranslator.translateFormula(x._1)))
@@ -216,7 +216,7 @@ object DefinitionTranslator {
       case None => DefPatterns.MizModeIsCompleteDef
       case _ => DefPatterns.MizModeIsPartialDef
     }
-    
+
     val notC = TranslationController.getNotation("M", m.absnr)
     val inst = MizInstance(OMMOD(TranslationController.currentTheory),
       LocalName(name), pattern.path, matches, notC)
@@ -235,7 +235,7 @@ object DefinitionTranslator {
     a.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
     //TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
     TranslationController.addLocusVarBinder(OMV("it"))
-    
+
     val args = a.args.map(x => TypeTranslator.translateTyp(x._2))
     val mType = TypeTranslator.translateTyp(a.retType)
     val cases = a.cases.map(x => PropositionTranslator.translateFormula(x._2))
@@ -261,7 +261,7 @@ object DefinitionTranslator {
       case None => getName(a.prefix, "V", a.absnr)
       case Some(s) => s
     }
-    
+
     a.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2))))
     //TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: Nil))
 
@@ -275,7 +275,7 @@ object DefinitionTranslator {
       case None => DefPatterns.MizAttrIsCompleteDef
       case _ => DefPatterns.MizAttrIsPartialDef
     }
-    
+
     val notC = TranslationController.getNotation("V", a.absnr)
     val inst = MizInstance(OMMOD(TranslationController.currentTheory),
       LocalName(name), pattern.path, matches, notCont = notC)
@@ -284,7 +284,7 @@ object DefinitionTranslator {
     TranslationController.clearLocusVarContext()
     makeDefTheorems(a.dts)
   }
-  
+
   def translateExpMode(m : MizExpMode) = {
     val name = m.name match {
       case None => getName("", "NM", m.absnr)
@@ -296,9 +296,9 @@ object DefinitionTranslator {
     val tp = Arrow(args.map(x => Mizar.tp), Mizar.tp)
     val con = Context(VarDecl("x", Sequence(args : _*)))
     val df = Lambda(con, exp)
-    
+
     val const = makeConstant(name, Some(tp), Some(df))
-    
+
     TranslationController.clearLocusVarContext()
   }
 

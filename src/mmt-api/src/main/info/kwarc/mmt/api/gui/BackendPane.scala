@@ -19,7 +19,7 @@ class BackendPane(backend: Backend) extends {val ta = new JTextArea} with JScrol
          case a =>
             s += "other storage " + a.toString + "\n"
       }
-      ta.setText(s) 
+      ta.setText(s)
    }
    set
 }

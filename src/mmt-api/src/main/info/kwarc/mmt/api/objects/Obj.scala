@@ -17,17 +17,17 @@ import scala.xml.{Node,Elem,Utility}
  */
 abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj] {
    /** the type of this instance
-    *  
+    *
     *  This is needed to provide sharper return types for inductive functions,
-    *  e.g., substitution returns Term if applied to Term, Context if applied to Context, etc. 
+    *  e.g., substitution returns Term if applied to Term, Context if applied to Context, etc.
     */
    type ThisType >: this.type <: Obj
    protected def mdNode = metadata.toNode
-   
+
    /** defaults to toStr(false) */
    override def toString = toStr(false)
    /** configurable string representation
-    *  @param shortURIs print OMS without namespace, theory 
+    *  @param shortURIs print OMS without namespace, theory
     */
    def toStr(implicit shortURIs: Boolean): String
    /** prints to OpenMath */
@@ -41,15 +41,15 @@ abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj]
    def toCML = toCMLQVars(Context())
    /**
     * generic version of substitution that does one step and recurses according to a SubstitutionApplier
-    *  
+    *
     * capture is avoided by renaming bound variables that are free in sub
-    * 
+    *
     * Individual SubstitutionAppliers can default to this method in order to recurse one level.
     */
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) : ThisType
    /**
     * convenience method that applies substitution by relegating to a SubstitutionApplier
-    * 
+    *
     * This has the effect that o ^^ sub becomes an infix notation for substitution
     * if an implicit SubstitutionApplier is available.
     */
@@ -61,9 +61,9 @@ abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj]
    /** optimized version of substitution defined in terms of SmartSubstitutionApplier */
    def ^?(sub : Substitution) : ThisType = ^^(sub)(SmartSubstitutionApplier)
 
-   /** the free variables of this object in any order */ 
+   /** the free variables of this object in any order */
    lazy val freeVars : List[LocalName] = freeVars_.distinct
-   /** helper function for freeVars that computes the free variables without eliminating repetitions */ 
+   /** helper function for freeVars that computes the free variables without eliminating repetitions */
    private[objects] def freeVars_ : List[LocalName]
    /** all direct subobjects of this object with their context (excluding any outer context of this object) */
    def subobjects: List[(Context,Obj)]
@@ -83,9 +83,9 @@ abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj]
    /** the governing path required by Content is the head, if any */
    def governingPath = head
    /** replaces metadata of this with pointer to those of o
-    * 
+    *
     * @param o the original object
-    * call o2.copyFrom(o1) after transforming o1 into o2 in order to preserve metadata 
+    * call o2.copyFrom(o1) after transforming o1 into o2 in order to preserve metadata
     */
    def copyFrom(o: Obj) {
       metadata = o.metadata
@@ -110,11 +110,11 @@ sealed abstract class Term extends Obj with ThisTypeTrait {
      case OMMOD(p) => p
      case OMPMOD(p,_) =>
         p // TODO maybe?
-     case OMS(p) => p.module / p.name 
+     case OMS(p) => p.module / p.name
      case _ => mmt.mmtbase ? Obj.toPathEncoding(this)
    }
    /** applies copyFrom and returns this
-    * 
+    *
     * @return this object but with the metadata from o
     */
    def from(o: Term): this.type = {
@@ -131,7 +131,7 @@ case class OMID(path: ContentPath) extends Term {
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def subobjects = Nil
-   override def toStr(implicit shortURIs: Boolean) = if (shortURIs) path.name.toString else path.toString
+   override def toStr(implicit shortURIs: Boolean) = if (shortURIs) path.name.toStr else path.toString
    def toNode = path match {
       case doc ? mod => <om:OMS base={doc.toPath} module={mod.toPath}>{mdNode}</om:OMS>
       case doc ? mod ?? name => <om:OMS base={doc.toPath} module={mod.toPath} name={name.toPath}>{mdNode}</om:OMS>
@@ -157,7 +157,7 @@ object OMS {
 case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends Term  {
    def head = binder.head
    val numVars = context.variables.length
-   def toNode = 
+   def toNode =
       <om:OMBIND>{mdNode}
                  {binder.toNode}
                  {context.toNode}
@@ -165,13 +165,13 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
                     case (s,i) => s.toNode
                  }}
       </om:OMBIND>
-   override def toStr(implicit shortURIs: Boolean) = "(" + binder.toStr + " [" + context.toStr + "] " + scopes.map(_.toStr).mkString(" ") + ")"  
+   override def toStr(implicit shortURIs: Boolean) = "(" + binder.toStr + " [" + context.toStr + "] " + scopes.map(_.toStr).mkString(" ") + ")"
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = {
       val (newCon, alpha) = Context.makeFresh(context, sub.freeVars)
       val subN = sub ++ alpha
       OMBINDC(binder ^^ sub, newCon ^^ sub, scopes.map(_ ^^ subN)).from(this)
    }
-   private[objects] lazy val freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: scopes.flatMap(_.freeVars_).filterNot(x => context.isDeclared(x))      
+   private[objects] lazy val freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: scopes.flatMap(_.freeVars_).filterNot(x => context.isDeclared(x))
    def subobjects = ComplexTerm.subobjects(this) getOrElse {
      (Context(), binder) :: context.subobjects ::: scopes.map(s => (context, s))
    }
@@ -182,11 +182,11 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
  * OMBIND represents a binding without condition
  */
 object OMBIND {
-	def apply(binder : Term, context : Context, body : Term) = OMBINDC(binder, context, List(body))
-	def unapply(t : Term): Option[(Term,Context,Term)] = t match {
-		case OMBINDC(b,c,List(s)) => Some((b,c,s))
-		case _ => None
-	}
+   def apply(binder : Term, context : Context, body : Term) = OMBINDC(binder, context, List(body))
+   def unapply(t : Term): Option[(Term,Context,Term)] = t match {
+      case OMBINDC(b,c,List(s)) => Some((b,c,s))
+      case _ => None
+   }
 }
 
 /**
@@ -234,17 +234,17 @@ case class OMV(name : LocalName) extends Term {
    def %(tp : Term) = VarDecl(name,tp)
    def toNode = <om:OMV name={name.toPath}>{mdNode}</om:OMV>
    override def toStr(implicit shortURIs: Boolean) = name.toString
-   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = 
-	   sub(name) match {
-	  	   case Some(t) => t match {
-	  	      //substitution introduces structure-sharing if the same variable occurs more than once
-	  	      //that is normally useful for efficiency
-	  	      //but it the two occurrences carry different metadata (in particular, different source-references), it is undesirable
-	  	      //for the most important case of variable renamings, the OMV case below avoids structure sharing and preserves metadata 
-	  	      case OMV(x) => OMV(x).from(this)
-	  	      case _ => t
-	  	   }
-	  	   case None => this
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) =
+      sub(name) match {
+           case Some(t) => t match {
+              //substitution introduces structure-sharing if the same variable occurs more than once
+              //that is normally useful for efficiency
+              //but it the two occurrences carry different metadata (in particular, different source-references), it is undesirable
+              //for the most important case of variable renamings, the OMV case below avoids structure sharing and preserves metadata
+              case OMV(x) => OMV(x).from(this)
+              case _ => t
+           }
+           case None => this
        }
    private[objects] def freeVars_ = List(name)
    def subobjects = Nil
@@ -271,7 +271,7 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    def head = key.head
    override def strip = arg.strip
    override def toStr(implicit shortURIs: Boolean) = "{" + arg.toStr + " : " + key.toStr + " -> " + value.toStr + "}"
-   def toNode = 
+   def toNode =
       <om:OMATTR>{mdNode}<om:OMATP>{key.toNode}{value.toNode}</om:OMATP>
                  {arg.toNode}
       </om:OMATTR>
@@ -311,16 +311,16 @@ sealed trait OMLITTrait extends Term {
       case (l: OMLIT, m: OMLIT) => l.rt == m.rt && l.value == m.value
       case (l: UnknownOMLIT, m: UnknownOMLIT) => l.synType == m.synType && l.value == m.value
       case (l: OMLIT, m: UnknownOMLIT) =>
-         (l.synType == m.synType) && l == l.rt.parse(m.value) 
+         (l.synType == m.synType) && l == l.rt.parse(m.value)
       case (l: UnknownOMLIT, m: OMLIT) => m == l
       case _ => false
-   } 
+   }
 }
 
 /**
  * A literal consists of a RealizedType rt and a value of [[SemanticType]] rt.semType.
- * 
- * Literals can be constructed conveniently using RealizedType.apply 
+ *
+ * Literals can be constructed conveniently using RealizedType.apply
  *
  * invariant for structurally well-formed literals: the value is valid and normal, i.e,
  *   rt.semType.valid(value) and rt.semType.normalform(value) == value
@@ -331,15 +331,15 @@ case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait 
 }
 
 /** degenerate case of OMLIT when no RealizedType was known to parse a literal
- *  
+ *
  *  This class is awkward but necessary to permit a lookup-free parser, which delays parsing of literals to a later phase.
  *  UnknownOMLITs are replaced with OMLITs in the [[libraries.StructureChecker]].
- *  
+ *
  *  @param synType the type of the this literal
  */
 case class UnknownOMLIT(value: String, synType: Term) extends Term with OMLITTrait {
    override def toStr(implicit shortURIs: Boolean) = value
-   
+
    /** convert to OMLIT by choosing an applicable rule */
    def recognize(rules: RuleSet) = {
      rules.get(classOf[uom.RealizedType]).find(_.synType == synType).map {rule =>
@@ -363,8 +363,8 @@ case class OMFOREIGN(node : Node) extends Term {
 }
 
 
-//TODO: could this be merged with presentation.Literal?
 /** An OMSemiFormal represents a mathematical object that mixes formal and informal components */
+@deprecated("this should be replaced with the urtheory for semiformal objects","")
 case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFormalObjectList {
    def head = None
    def toStr(implicit shortURIs: Boolean) = toString
@@ -392,11 +392,11 @@ object OMSemiFormal {
 
 /**
  * local declarations with type and/or definiens, with scope, but not subject to alpha-renaming and substitution
- * 
- * These could be used for the typed/defined fields in a record type/value or the selection function. 
+ *
+ * These could be used for the typed/defined fields in a record type/value or the selection function.
  */
 case class OML(name: LocalName, tp: Option[Term], df: Option[Term], nt: Option[TextNotation] = None, featureOpt : Option[String] = None) extends Term with NamedElement {
-    def toStr(implicit shortURIs: Boolean) = vd.toStr  
+    def toStr(implicit shortURIs: Boolean) = if (tp.isEmpty && df.isEmpty && nt.isEmpty && featureOpt.isEmpty) name.toString else "(" + vd.toStr + ")"
     def vd = VarDecl(name, featureOpt, tp, df, nt)
     private[objects] def freeVars_ = vd.freeVars
     def head = None
@@ -410,44 +410,9 @@ object OML {
   def apply(name: LocalName): OML = OML(name, None, None)
 }
 
-// TODO Mirrors VarDecl
-
-class DerivedOMLFeature(val feature: String) {
-   val path = Path.parseS("http://cds.omdoc.org/mmt?mmt?StructuralFeature", NamespaceMap.empty)
-   def maketerm(feat : String, tp : Term) =
-      OMA(OMS(path), List(OML(LocalName(feat)),tp))
-
-   def apply(name: LocalName, tp: Term, df: Option[Term] = None, nt: Option[TextNotation] = None) =
-      OML(name, Some(tp), df, nt, Some(feature))
-
-   def unapply(o : OML): Option[(LocalName, Term, Option[Term])] = {
-      if (o.featureOpt contains feature) {
-         o match {
-            case OML(n, Some(tp), df, None, _) => Some((n,tp,df))
-            case _ => throw ImplementationError("unsupported properties of derived variable declaration")
-         }
-      } else
-         None
-   }
-}
-
-object DerivedOMLFeature {
-   def apply(name: LocalName, feat: String, tp: Term, df: Option[Term] = None) = OML(name, Some(tp), df, None, Some(feat))
-   def unapply(o:OML): Option[(LocalName, String, Term, Option[Term])] = o match {
-      case OML(n, Some(tp), df,_, Some(f)) => Some((n,f,tp,df))
-      case _ => None
-   }
-}
-
-object IncludeOML extends DerivedOMLFeature("include") {
-   def apply(p: MPath, args: List[Term]): OML = apply(LocalName(p), OMPMOD(p, args))
-}
-
-object StructureOML extends DerivedOMLFeature("structure")
-
 /**
  * ComplexTerm provides apply/unapply methods to unify OMA and OMBINDC as well as named arguments and complex binders
- * 
+ *
  * It does not subsume the OMID case
  */
 object ComplexTerm {
@@ -456,7 +421,7 @@ object ComplexTerm {
       def unapply(ts: List[(OMID,Term)]): Option[Substitution] = ts match {
          case Nil => Some(Nil)
          case (OMS(utils.mmt.label ?? l), t) :: rest =>
-            unapply(rest) map {case sub => Sub(l,t) ++ sub}  
+            unapply(rest) map {case sub => Sub(l,t) ++ sub}
          case _ => None
       }
    }
@@ -471,7 +436,7 @@ object ComplexTerm {
       case OMATTRMany(OMS(p), LabelledTerms(sub)) if ! sub.isEmpty => Some((p, sub, Context(), Nil))
       case OMA(OMATTRMany(OMS(p), LabelledTerms(sub)), args) => Some((p, sub, Context(), args))
       case OMBINDC(OMATTRMany(OMS(p), LabelledTerms(sub)), con, scopes) => Some((p, sub, con, scopes))
-      case OMBINDC(OMA(OMS(p), args), con, scopes) => 
+      case OMBINDC(OMA(OMS(p), args), con, scopes) =>
         val sub = Substitution(args.map(a => Sub(LocalName.empty, a)):_*)
         Some((p, sub, con, scopes))
       case _ => None
@@ -490,12 +455,12 @@ object Obj {
       case ComplexTerm(p, subs, con, args) => p :: getCs(subs) ::: getCs(con) ::: (args flatMap getCs)
       case OMS(p) => List(p)
       case c: Context => c flatMap getCs
-      case vd: VarDecl => (vd.tp.toList:::vd.df.toList).flatMap(getCs) 
+      case vd: VarDecl => (vd.tp.toList:::vd.df.toList).flatMap(getCs)
       case s: Substitution => s flatMap getCs
       case s: Sub => getCs(s.target)
       case _ => Nil
    }
-  
+
    /** use this in conjunction with utils.addAttrOrNode to generate XML with attributes instead of children where possible */
    def toStringOrNode(t: Term): Union[String,Node] = t match {
       case OMID(p) => Left(p.toPath)
@@ -509,7 +474,7 @@ object Obj {
       }
       case Right(c) => parseTerm(c, nm)
    }
-   
+
    /** parses an object (term or context) relative to a base address (a single OMV is always parsed as a Term, never as a VarDecl) */
    def parse(n: Node, nsMap: NamespaceMap): Obj = {
      n.label match {
@@ -518,9 +483,9 @@ object Obj {
        case _ => parseTerm(n, nsMap)
      }
    }
-   
+
    /** parses a term relative to a base address
-    *  @param Nmd node to parse (may not contain metadata) 
+    *  @param Nmd node to parse (may not contain metadata)
     *  @param nm namespace Map to resolve relative URIs
     *  @return the parsed term
     */
@@ -617,14 +582,14 @@ object Obj {
         mod % name*/
       case _ => throw ParseError("not a well-formed identifier: " + N.toString)
   }
-  
+
   /** separator string used in fromPathEncoding and toPathEncoding */
   private val sepString = "___"
   /** decodes an expression encoded by toPathEncoding
    * @throws ParseError whenever it does not understand the input
    */
-  def fromPathEncoding(s: String) : Term = 
-     if (s.startsWith("[") && s.endsWith("]")) 
+  def fromPathEncoding(s: String) : Term =
+     if (s.startsWith("[") && s.endsWith("]"))
         fromPathEncodingAux(s.substring(1, s.length - 1))
      else
         throw ParseError("not an MPath-encoded Term: " + s)
@@ -636,10 +601,10 @@ object Obj {
            case MPathEncodedOMS(p: ContentPath) => OMID(p)
            case _ => throw ParseError("not an MPath-encoded Term: " + s)
         }
-     } catch {case e: ParseError => 
+     } catch {case e: ParseError =>
        throw ParseError("not an MPath-encoded Term: " + s).setCausedBy(e)
      }
-  
+
   /** encodes a theory or morphism expressions as a String */
   def toPathEncoding(t: Term) = "[" + toPathEncodingAux(t) + "]"
   private def toPathEncodingAux(t: Term): String = t match {
@@ -668,7 +633,7 @@ object Obj {
                }
             }
             found = found.reverse
-            // now found is of the form List(op, (op___arg___arg), arg) 
+            // now found is of the form List(op, (op___arg___arg), arg)
             val op = Path.parse(found.head)
             Some((op, found.tail))
          }

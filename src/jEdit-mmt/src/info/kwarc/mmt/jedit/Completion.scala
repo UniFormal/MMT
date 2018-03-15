@@ -20,7 +20,7 @@ import scala.collection.JavaConversions.seqAsJavaList
 /**
  * @param view the current jEdit view
  * @param controller the current MMT controller
- * @param constants the MMT constants that are applicable here 
+ * @param constants the MMT constants that are applicable here
  * @param text the partial identifier that is completed
  * @param items the list of completion labels that is displayed
  */
@@ -75,11 +75,10 @@ class ProverCompletion(view : org.gjt.sp.jedit.View, controller: Controller, reg
      val ta = view.getEditPane.getTextArea
      val begin = region.start.offset
      val beginChar = ta.getText(begin,1)
-     ta.setSelection(new Selection.Range(begin, region.end.offset+1))
      // workaround for empty terms: selection includes US
      val correctEmptyTerm = begin == region.end.offset && parser.Reader.delims.contains(beginChar(0))
      // insert new text
-     ta.setSelectedText(newText + (if (correctEmptyTerm) beginChar else ""))
+     EditActions.overwriteText(ta, begin, region.end.offset, newText + (if (correctEmptyTerm) beginChar else ""))
      // reparse the buffer (will happen in background)
      SideKickPlugin.parse(view, false)
      // find next hole in the inserted text and move the caret to it

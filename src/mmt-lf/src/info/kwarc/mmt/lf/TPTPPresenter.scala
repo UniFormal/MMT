@@ -16,7 +16,7 @@ object TPTP {
    }
    case class Sym(name: String) extends TPTPFormula {
       override def toString = {
-         val escaped = Escape(name, '\\' -> "\\\\", '\'' -> "\\'") 
+         val escaped = Escape(name, '\\' -> "\\\\", '\'' -> "\\'")
          s"'$escaped'"
       }
    }
@@ -29,16 +29,16 @@ object TPTP {
       }
    }
    case class Lit(name: String) extends TPTPFormula {
-      override def toString = name 
+      override def toString = name
    }
    case class Unary(name: String, first: TPTPFormula) extends TPTPFormula {
-      override def toString = s"($name $first)" 
+      override def toString = s"($name $first)"
    }
    case class Binary(name: String, first: TPTPFormula, second: TPTPFormula) extends TPTPFormula {
-      override def toString = s"($first $name $second)" 
+      override def toString = s"($first $name $second)"
    }
    case class FOApp(fun: Sym, args: List[TPTPFormula]) extends TPTPFormula {
-      override def toString = s"$fun(${args.mkString(",")})" 
+      override def toString = s"$fun(${args.mkString(",")})"
    }
    case class Bind(name: String, vars: List[(Var, TPTPFormula)], scope: TPTPFormula) extends TPTPFormula {
       override def toString = {
@@ -61,7 +61,7 @@ object TPTPObjectPresenter extends ObjectPresenter {
       case Univ(_) => Builtin("tType")
       case OMV(n) => Var(n.toPath)
       case OMS(p) => Sym(p.toPath) //temporary for debugging, should be p.toPath
-      case l: OMLITTrait => Lit(l.toString) 
+      case l: OMLITTrait => Lit(l.toString)
       case Arrow(a,b) => Binary(">", a, b)
       case Pi(x,a,b) => Bind("!>", List((Var(x.toPath),a)), b)
       case Lambda(x,a,t) => Bind("^", List((Var(x.toPath),a)), t)
@@ -74,7 +74,7 @@ object TPTPObjectPresenter extends ObjectPresenter {
    def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) = {o match {
       case t: Term => rh(termToTPTP(t).toString)
       case c: Context => c.map {case VarDecl(x,_,t,d,_) =>
-         Var(x.toPath) + tmOptToTPTP(t, ":") + tmOptToTPTP(d, "=") 
+         Var(x.toPath) + tmOptToTPTP(t, ":") + tmOptToTPTP(d, "=")
       }.mkString(",")
       case s: Substitution => apply(s.asContext, origin)
    }}
@@ -102,7 +102,7 @@ class TPTPPresenter extends Presenter(TPTPObjectPresenter) {
          }
       }
    }
-   
+
    protected def doName(p: GlobalName)(implicit rh : RenderingHandler) {apply(OMS(p),None)}
 
    def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {e match {
@@ -131,7 +131,7 @@ class TPTPPresenter extends Presenter(TPTPObjectPresenter) {
          doName(c.path)
          val role = "type"
          rh << ","+role+","
-         doName(c.path) 
+         doName(c.path)
          c.tp.foreach {t =>
            rh << " : "
            apply(t, None)
@@ -152,7 +152,7 @@ class TPTPPresenter extends Presenter(TPTPObjectPresenter) {
          }
          rh << ")."
       case Include(OMMOD(p),q,Nil) =>
-         val f = p.doc.uri.relativize(q.doc.uri)/(q.name.toPath+"."+outExt) 
+         val f = p.doc.uri.relativize(q.doc.uri)/(q.name.toPath+"."+outExt)
          rh << Incl(f)
       case _: Structure => //ignored because of flattening
       case _: Module =>

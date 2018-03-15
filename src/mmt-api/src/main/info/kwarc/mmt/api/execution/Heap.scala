@@ -12,12 +12,12 @@ import Theory._
 
 class Heap(id: Int, controller: Controller) extends DeclaredTheory(utils.mmt.mmtbase / "heap", LocalName(id.toString), noMeta, noParams, noBase) {
    private var instanceId = 0
-   
+
    def newInstance(context: Context, ofTerm: Term): Instance = {
-      val of = controller.simplifier.materialize(context, ofTerm, true, None).asInstanceOf[DeclaredTheory]
+      val of = controller.simplifier.materialize(context, ofTerm, None, None).asInstanceOf[DeclaredTheory]
       val i = new Instance(path, of.path, instanceId)
       instanceId += 1
-      
+
       controller.simplifier(of)
       of.getDeclarations.foreach {
          case c: Constant if c.rl contains "state" =>
@@ -25,15 +25,15 @@ class Heap(id: Int, controller: Controller) extends DeclaredTheory(utils.mmt.mmt
            i.add(cI)
          case _ =>
       }
-      
+
       add(i)
       i
    }
-   
+
    def getInstance(n: LocalName): Instance = {
      get(n) match {
        case i: Instance => i
-       case _ => throw ExecutionError("not an instance " + n) 
+       case _ => throw ExecutionError("not an instance " + n)
      }
    }
 }

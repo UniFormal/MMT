@@ -9,20 +9,22 @@ import info.kwarc.mmt.api.utils._
  */
 trait Link extends ContentElement {
    /** the domain of the link */
-   def from : Term
-   /** the codomain of the link */
-   def to : Term
+   def fromC: TermContainer
+   /** the codomain of the link (mutable for views but not structures) */
+   def toC: AbstractTermContainer
+   def from = fromC.get.get
+   def to = toC.get.get
    def codomainAsContext = to match {
        case ComplexTheory(cont) => cont
        case _ => throw ImplementationError("codomain of link must be theory")
     }
-   
+
    def toTerm : Term
    val isImplicit : Boolean
-   
+
    /** the prefix used when translating declarations along this link */
    def namePrefix: LocalName
-   
+
    protected def innerNodes : Seq[scala.xml.Node]
    /** header as a string */
    protected def outerString : String
@@ -32,15 +34,26 @@ trait Link extends ContentElement {
 }
 
 /**
-  * represents an MMT link given by a set of assignments.
-  */
+ * represents an MMT link given by a set of assignments.
+ *
+ * Assignments are
+ * 1) [[Constant]]s, whose name is the qualified name (always starts with [[ComplexStep]])
+ * of a domain [[Constant]]
+ * and whose definiens is codomain [[Term]]
+ * or
+ * 2) or accordingly with [[DefinedStructure]]s
+ */
 trait DeclaredLink extends Link with Body {
-   val metamorph: Option[Term] = None
- }
+  /** like getIncludes but also with includes of parametric theories and their instantiations */
+  def getIncludes: List[(MPath,Term)] = getDeclarations.flatMap {
+    case LinkInclude(_, from, df) => List((from,df))
+    case _ => Nil
+  }
+}
 
-  /**
-   * represents an MMT link given by an existing morphism
-   */
+/**
+  * represents an MMT link given by an existing morphism
+  */
 trait DefinedLink extends Link with ModuleDefiniens {
    def df = dfC.get.getOrElse(Morph.empty)
 }

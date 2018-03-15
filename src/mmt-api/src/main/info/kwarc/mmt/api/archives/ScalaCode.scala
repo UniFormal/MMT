@@ -8,7 +8,7 @@ trait ScalaCode {self: Archive =>
 
   private var loader: java.net.URLClassLoader = null
 
-  def loadJava(controller: Controller, cls: String): Unit = {
+  def loadJava(controller: Controller, cls: String) {
     if (loader == null) {
       val jar = File(root / (id + ".jar"))
       try {
@@ -29,7 +29,7 @@ trait ScalaCode {self: Archive =>
   }
 
   /** Integrate scala into a dimension */
-  def integrateScala(controller: Controller, in: FilePath = EmptyPath): Unit = {
+  def integrateScala(controller: Controller, in: FilePath = EmptyPath) {
     traverse(content, in, Archive.traverseIf("omdoc")) { case Current(inFile, inPath) =>
       val mpath = Archive.ContentPathToMMTPath(inPath)
       val mod = controller.globalLookup.getModule(mpath)

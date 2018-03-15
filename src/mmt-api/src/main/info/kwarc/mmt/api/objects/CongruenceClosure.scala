@@ -3,19 +3,19 @@ import Conversions._
 
 /**
  * reduces an equality to a list of equalities by applying congruence and alpha-renaming
- * 
+ *
  * no context-specific reasoning or simplification is applied
  * always succeeds (returns List(eq) at worst)
- * 
+ *
  * @param assume callback that is tested before recursing
- * 
+ *
  * invariant: Conjunction(CongrunceClosure(eq))  ===>  eq
  */
 class CongruenceClosure(assume: Equality => Option[Boolean]) {
   def apply(eq: Equality): List[Equality] = {
      aux(eq.context, eq.tm1, eq.tm2)
   }
-  
+
   private def aux(cont: Context, t1: Term, t2: Term): List[Equality] = {
     val eq = Equality(Stack(cont), t1, t2, None)
     val noMatch = List(eq)
@@ -63,7 +63,7 @@ class CongruenceClosure(assume: Equality => Option[Boolean]) {
     * @param query a context with query variables to match against goal
     * @param context joint free variables of goal and query
     * @return if goal and query match up to alpha-renaming, the substitution query -> goal that performs the alpha-renaming
-    * 
+    *
     * terms occurring inside query are alpha-renamed accordingly
     */
    private def auxCon(cont: Context, c1: Context, c2: Context): Option[(List[Equality],Substitution)] = {

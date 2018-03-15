@@ -6,7 +6,6 @@ import java.io._
 import java.util.zip._
 
 import scala.collection.mutable
-import scala.language.implicitConversions
 
 /** File wraps around java.io.File to extend it with convenience methods
   *
@@ -31,7 +30,7 @@ case class File(toJava: java.io.File) {
   }
 
   def canonical = File(toJava.getCanonicalFile)
-  
+
   /** appends one path segment */
   def /(s: String): File = File(new java.io.File(toJava, s))
 
@@ -46,7 +45,7 @@ case class File(toJava: java.io.File) {
     val par = Option(toJava.getParentFile)
     if (par.isEmpty) this else File(par.get)
   }
-  
+
   def isRoot = up == this
 
   /** file name */
@@ -109,12 +108,12 @@ case class File(toJava: java.io.File) {
 
   /** @return subdirectories of this directory */
   def subdirs: List[File] = children.filter(_.toJava.isDirectory)
-  
+
   /** @return all files in this directory or any subdirectory */
   def descendants: List[File] = children.flatMap {c =>
     if (c.isDirectory) c.descendants else List(c)
   }
-  
+
   /** @return true if that begins with this */
   def <=(that: File) = that.segments.startsWith(segments)
 
@@ -140,7 +139,7 @@ case class FilePath(segments: List[String]) {
   def /(s: String): FilePath = FilePath(segments ::: List(s))
 
   override def toString: String = segments.mkString("/")
-  
+
   def getExtension = toFile.getExtension
   def setExtension(e: String) = toFile.setExtension(e).toFilePath
   def stripExtension = toFile.stripExtension.toFilePath
@@ -177,7 +176,7 @@ object FileURI {
 class StandardPrintWriter(f: File) extends
 OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(f.toJava)),
   java.nio.charset.Charset.forName("UTF-8")) {
-  def println(s: String): Unit = {
+  def println(s: String) {
     write(s + "\n")
   }
 }
@@ -208,7 +207,7 @@ object File {
   def append(f : File, strings: String*) {
     scala.tools.nsc.io.File(f.toString).appendAll(strings:_*)
   }
-  
+
   /**
    * streams a list-like object to a file
    * @param f the file to write to
@@ -286,9 +285,9 @@ object File {
     }
   }
 
-  def readProperties(manifest: File): mutable.Map[String, String] = {
+  def readPropertiesFromString(s: String): mutable.Map[String, String] = {
     val properties = new scala.collection.mutable.ListMap[String, String]
-    File.ReadLineWise(manifest) { case line =>
+    s.split("\n") foreach {line =>
       // usually continuation lines start with a space but we ignore those
       val tline = line.trim
       if (!tline.startsWith("//")) {
@@ -306,6 +305,7 @@ object File {
     }
     properties
   }
+  def readProperties(manifest: File) = readPropertiesFromString(File.read(manifest))
   
   /** copies a file */
   def copy(from: File, to: File, replace: Boolean): Boolean = {

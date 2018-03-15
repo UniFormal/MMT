@@ -23,7 +23,7 @@ class AddAlignments extends Extension {
     a
   }
 
-  override def start(args: List[String]): Unit = {
+  override def start(args: List[String]) {
     var errors : List[String] = Nil
     def wrap(f : File) : List[(Alignment,String)] = try {
       align.readFile(f).map((_,f.toString))

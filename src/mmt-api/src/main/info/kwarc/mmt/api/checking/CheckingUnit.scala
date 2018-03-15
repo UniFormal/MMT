@@ -8,15 +8,15 @@ import parser._
 /**
  * A checking unit encapsulates the proof obligations produced by a [[StructureChecker]]
  * and passed on to an [[ObjectChecker]].
- * 
+ *
  * Typically, each checking unit checks a single term that is part of a WFJudgement, i.e.,
  * the other parts of the judgement are assumed to be valid.
- * 
+ *
  * @param component the term component that is validated, e.g., namespace?theory?symbol?type
  * @param context the constant context
  * @param unknowns the unknown context
  * @param judgement the typing judgement to check
- * 
+ *
  * A checking unit involves three contexts, which must be separated because they correspond to a quantifier alternation.
  * The constant context is the (universally quantified) global context that does not change during checking.
  * It includes in particular the theory relative to which a unit is formed.
@@ -36,20 +36,20 @@ object CheckingUnit {
       val pr = ParseResult.fromTerm(unkt)
       byInference(cpath, context, pr)
    }
-   
+
    def byInference(cpath: Option[CPath], context: Context, pr: ParseResult): CheckingUnit = {
       val j = Typing(Stack(pr.free), pr.term, OMV(unknownType))
       CheckingUnit(cpath, context, pr.unknown ++ VarDecl(unknownType,None,None,None,None), j)
    }
-   
+
    def forContext(cpath: Option[CPath], context: Context, pr: ParseResult) = ???
 }
 
 /**
  * A checking result encapsulates all information returned by an [[ObjectChecker]].
- * 
+ *
  * See [[CheckingUnit]].
- * 
+ *
  * @param solved true if term was checked successfully
  * @param term the checked version of the term (possibly approximate if check failed)
  * @param solution the substitution for the unknown context (possibly partial)

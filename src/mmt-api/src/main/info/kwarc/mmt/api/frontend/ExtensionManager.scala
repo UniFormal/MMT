@@ -88,11 +88,11 @@ trait Extension extends Logger {
     * but they must clean up after themselves in this method
     */
   def destroy {}
-  
+
   /** extensions that process tasks in separate threads should override this and wait until those threads are done */
   def waitUntilRemainingTasksFinished {}
-  
-  /** convenience for calling waitUntilRemainingTasksFinished and then destroy */ 
+
+  /** convenience for calling waitUntilRemainingTasksFinished and then destroy */
   def destroyWhenRemainingTasksFinished {
     waitUntilRemainingTasksFinished
     destroy
@@ -162,9 +162,9 @@ class ExtensionManager(controller: Controller) extends Logger {
         case Some(tc) => (tc.cls, tc.args)
         case None => (format,Nil) // fallback: treat format as class name
       }
-      val ext = addExtension(className, extraArgs ::: args)
-      ext match {
-        case e: E@unchecked if cls.isInstance(e) => Some(e)
+      val ext = addExtensionO(className, extraArgs ::: args)
+      ext map {
+        case e: E@unchecked if cls.isInstance(e) => e
         case _ => throw RegistrationError(s"extension for $format exists but has unexpected type")
       }
     }
@@ -218,7 +218,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       case r: RegistrationError => None
     }
   }
-  
+
   /** initializes and adds an extension */
   def addExtension(ext: Extension, args: List[String] = Nil) {
     log("adding extension " + ext.getClass.toString)
@@ -272,13 +272,13 @@ class ExtensionManager(controller: Controller) extends Logger {
     val kwp = new KeywordBasedParser(nbp)
     val rbc = new RuleBasedChecker
     val msc = new MMTStructureChecker(rbc)
-    val mmtint = new TwoStepInterpreter(kwp, msc)// with MMTStructureEstimator
     val nbpr = new NotationBasedPresenter {
       override def twoDimensional = false
     }
     val msp = new MMTStructurePresenter(nbpr)
     val rbs = new RuleBasedSimplifier
     val mss = new ElaborationBasedSimplifier(rbs)
+    val mmtint = new TwoStepInterpreter(kwp, msc, mss)// with MMTStructureEstimator
     val rbe = new execution.RuleBasedExecutor
     //use this for identifying structure and thus dependencies
     //val mmtStructureOnly = new OneStepInterpreter(new KeywordBasedParser(DefaultObjectParser))
@@ -286,15 +286,6 @@ class ExtensionManager(controller: Controller) extends Logger {
 
     val rbp = new RuleBasedProver
     val prover: Extension = rbp
-    //quick hack to replace old prover with Mark's AgentProver if the latter is on the classpath
-    /*
-    val className = "info.kwarc.mmt.leo.provers.AgentProver"
-    try {
-      prover = Class.forName(className).newInstance.asInstanceOf[Extension]
-    } catch {
-      case _: Exception =>
-    }
-    */
 
     List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover, rbe).foreach {e => addExtension(e)}
     // build manager
@@ -317,7 +308,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     //queryExtensions
     import ontology._
     List(new Parse, new Infer, new Analyze, new Simplify, new Present, new PresentDecl).foreach(addExtension(_))
-    // graphs: loading these here is practical even though they need the path to dot (which will be retrieved via getEnvvar) 
+    // graphs: loading these here is practical even though they need the path to dot (which will be retrieved via getEnvvar)
     List(new DeclarationTreeExporter, new DependencyGraphExporter, new TheoryGraphExporter).foreach(addExtension(_))
     // shell extensions
     List(new ShellSendCommand, new execution.ShellCommand, new Make).foreach(addExtension(_))

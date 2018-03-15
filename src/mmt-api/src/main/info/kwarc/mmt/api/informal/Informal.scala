@@ -8,7 +8,7 @@ import scala.xml._
 
 object Informal {
    val base = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories")
-   
+
    val path = base ? "Informal"
    def constant(name : String) = path ? name
 //   lazy val hoas = notations.HOAS(Apply.path, Lambda.path, OfType.path)
@@ -40,7 +40,7 @@ object FlexiformalTerm {
 object FlexiformalRef {
   def apply(term : Term, node : Node) : Term = {
     OMATTR(term, Narration.term, OMFOREIGN(node))
-  } 
+  }
 }
 
 object FlexiformalNode {
@@ -51,16 +51,16 @@ object FlexiformalNode {
     val narNode = refs.foldLeft(node)((n,ref) => rewriteNode(n, ref._1, ref._2))
     OMATTR(Opaque.apply(terms), Narration.term, OMFOREIGN(narNode))
   }
-  
+
   def rewriteNode(node : Node, pos : List[Int], ref : Position) : Node = pos match {
     case Nil => <immtref pos={ref.toString}></immtref>
-    case hd :: tl => 
+    case hd :: tl =>
       val child = node.child.zipWithIndex map {
-        case (n,i) if i == hd => 
+        case (n,i) if i == hd =>
           rewriteNode(n, tl, ref)
         case p => p._1
       }
-      
+
       new Elem(node.prefix, node.label, node.attributes, node.scope, false, child : _*)
   }
 }

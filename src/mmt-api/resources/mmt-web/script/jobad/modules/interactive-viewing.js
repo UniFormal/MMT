@@ -230,9 +230,9 @@ var interactiveViewing = {
     showComputationResult: function(key, title, param) {
         var q = qmt.SubObject(qmt.Component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition)
         if (key == "i")
-            q = qmt.infer(q, uris.lf)
+            q = qmt.infer(q)
         else if (key == "s")
-            q = qmt.simplify(q, uris.lf)
+            q = qmt.simplify(q)
         else if (key == "a")
             q = qmt.align(q, param)
         this.showQuery(qmt.present(q), title);

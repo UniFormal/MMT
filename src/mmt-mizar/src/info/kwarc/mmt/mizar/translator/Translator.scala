@@ -88,7 +88,7 @@ class MizarCompiler extends archives.Importer {
     if (posOfDot == -1) name else name.substring(0, posOfDot)
 
   }
-  
+
   def importDocument(bf: archives.BuildTask, seCont: documents.Document => Unit): BuildResult = {
     val mmlBase = getBase(bf.inFile)
     val aid = getAid(bf.inFile)
@@ -112,11 +112,11 @@ class MizarCompiler extends archives.Importer {
   */
 
   def translateArticle(mml: String, aid: String, docBase: DPath) {
-    val name = aid.toLowerCase()    
+    val name = aid.toLowerCase()
 
     if (isInLib(aid)) //already translated it
       return
-      
+
     //files
     val xmlabs = mml + "/source/" + name + ".xmlabs" //TODO perhaps replace
     val dcx = mml + "/source/" + name + ".dcx"

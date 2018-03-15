@@ -1,1 +1,0 @@
-See documentation in https://svn.kwarc.info/repos/MMT/doc/html/index.html

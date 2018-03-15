@@ -11,7 +11,7 @@ import notations.ImplicitArg
 
 /**
  * a first step towards generalizing the SimplificationRuleGenerator towards arbitrary rules
- * 
+ *
  * the usefulness is unclear because such rules usually theorem proving anyway
  * the DeclarativeRule abstractions are very nice though
  * it could also be interesting bootstrap the LF rules this way
@@ -23,8 +23,8 @@ abstract class RuleGenerator extends ChangeListener {
   def ruleTags: List[String]
   def judgementTags: List[String]
   def dedTag: String
-  private val matcher = new RuleMatcher(controller.globalLookup, judgementTags, dedTag) 
-  
+  private val matcher = new RuleMatcher(controller.globalLookup, judgementTags, dedTag)
+
   private def getGeneratedRule(p: Path): Option[GeneratedRule] = {
      p match {
         case p: GlobalName =>
@@ -35,7 +35,7 @@ abstract class RuleGenerator extends ChangeListener {
         case _ => None
      }
   }
-     
+
   override def onAdd(e: StructuralElement) {onCheck(e)}
   override def onDelete(e: StructuralElement) {
      getGeneratedRule(e.path).foreach {r => controller.delete(r.rulePath)}
@@ -71,15 +71,15 @@ abstract class RuleGenerator extends ChangeListener {
            throw LocalError("not an inference rule: " + c.path)
      }
   }
-  
+
   val TypingRuleTag = "Typing"
   val EqualityRuleTag = "Equality"
-  
+
   /** reflects a declared rule into an implemented rule */
   private def generateRule(r: DeclarativeRule) {
      val ir = r.conclusion match {
         case AtomicJudgement(TypingRuleTag, typingOp, List(a,b)) =>
-            //doesn't quite work because typing rules should be sufficient and *necessary* 
+            //doesn't quite work because typing rules should be sufficient and *necessary*
             new TypingRule(???) {
               def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) = {
                  val rec = new Recurser(solver)
@@ -95,12 +95,12 @@ abstract class RuleGenerator extends ChangeListener {
            }
      }
   }
-  
-  /** calls the solver to check a ComplexJudgment */ 
+
+  /** calls the solver to check a ComplexJudgment */
   private class Recurser(solver: Solver) {
-     val solverContext = solver.constantContext ++ solver.getPartialSolution 
+     val solverContext = solver.constantContext ++ solver.getPartialSolution
      val solverVars = solverContext.map(_.name)
-     
+
      def apply(cj: ComplexJudgement)(implicit context: Stack, h: History): Boolean = {
         val (newParams, sub) = Context.makeFresh(cj.parameters, solverVars ::: context.context.map(_.name))
         val newContext = context ++ newParams

@@ -64,7 +64,7 @@ class MarkovClusterer(
     (0 to sparseMatrixSize(0) - 1).map { i => {
       //println(i)
       val column = matrix.getColum(i).values().toArray()
-      
+
       //println(matrix.getColum(i))
       val clusters = column.foldLeft(topics.length - 1, List[Path]())((b, a) => {
         println(a,b)
@@ -73,20 +73,20 @@ class MarkovClusterer(
         else
           (b._1 - 1, b._2)
       })
-      
+
       clusters._2.toArray
     }}.toArray
-    
+
     /*var finalClusters = new scala.collection.mutable.ListBuffer[Array[Path]]()
 
-    
+
     val res = (0 to (sparseMatrixSize(0)-1)).map { i =>
-      println(i) 
+      println(i)
       var cluster = new scala.collection.mutable.ListBuffer[Path]()
       val value = matrix.getColum(i)
-      
+
       println(value.values.toArray().deep)
-      
+
       value.values()
       .toArray().map { x => {
         if (x.asInstanceOf[Double] > 0) {
@@ -97,7 +97,7 @@ class MarkovClusterer(
               println(cluster.toArray.deep)
             }
           }
-          
+
           if(cluster.length > 0)
             cluster.toArray[Path]
             //finalClusters.append(cluster.toArray[Path])
@@ -105,7 +105,7 @@ class MarkovClusterer(
       }.asInstanceOf[Path]
       }
     }
-    
+
     res.toArray[Array[Path]]
 
     //finalClusters.toArray*/

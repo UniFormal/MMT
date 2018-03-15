@@ -5,9 +5,11 @@ import java.util.Calendar
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.frontend.actions._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
 import ServerResponse._
+import info.kwarc.mmt.api.frontend.actions.{Action, GetAction}
 import info.kwarc.mmt.api.objects.Context
 
 /**
@@ -37,7 +39,7 @@ abstract class ServerExtension(val pathPrefix: String) extends FormatBasedExtens
 }
 
 /** an example server extension that acts as a simple static web server
- *  
+ *
  *  see also [[FileServerHere]]
  */
 class FileServer extends ServerExtension("files") {
@@ -47,7 +49,7 @@ class FileServer extends ServerExtension("files") {
     args.headOption.map {h => rootO = Some(File(controller.getHome resolve h))}
   }
   def apply(request: ServerRequest): ServerResponse = {
-    val root = rootO orElse controller.getOAF.map(_.root) getOrElse {
+    val root = rootO orElse controller.getMathHub.map(_.local) getOrElse {
       throw LocalError("no root defined")
     }
     val path = request.pathForExtension
@@ -104,7 +106,7 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
     }
     val fromFile = path.dropComp match {
       case _: MPath | _: DPath =>
-        svgPath(path) flatMap {case (exportFolder, relPath) => 
+        svgPath(path) flatMap {case (exportFolder, relPath) =>
           val svgFile = exportFolder / graphkey / relPath
           if (svgFile.exists) {
             val svg = utils.File.read(svgFile.setExtension("svg"))
@@ -121,7 +123,7 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
     }
     ServerResponse(svg, "image/svg+xml")
   }
-  
+
   import MMTJavascript._
   def getEntries(path: Path) = {
     // all graphs we can build
@@ -134,13 +136,13 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
           case f if !exporters.exists(e => e.isApplicable(f.name)) && (f/relPath).exists => f.name
         } else Nil
     }
-    val allGraphs = exporters.map(e => (e.key, e.description)) ::: existingFiles.map(k => (k,k)) 
+    val allGraphs = exporters.map(e => (e.key, e.description)) ::: existingFiles.map(k => (k,k))
     allGraphs.map {case (key, description) =>
-      ContextMenuEntry("show " + description, showGraph(key, path.toPath))  
+      ContextMenuEntry("show " + description, showGraph(key, path.toPath))
     }
   }
-  
-  /** @return (d,f) such that d/key/f is the path to the svg file for path exported by key */ 
+
+  /** @return (d,f) such that d/key/f is the path to the svg file for path exported by key */
   private def svgPath(path: Path): Option[(File, List[String])] = {
     val (inNarr, newPath) = path.dropComp match {
       // narrative
@@ -175,7 +177,7 @@ class QueryServer extends ServerExtension("query") {
     * @param candidate Candidate Path that could not be parsed
     * @param t Internal exception causing this error
     */
-  class ContextParsingError(candidate : String, t: Throwable) extends LocalError(s"Unable to use context: '$candidate' is not a valid MPath. ") {
+  class ContextParsingError(candidate : String, t: Exception) extends LocalError(s"Unable to use context: '$candidate' is not a valid MPath. ") {
     setCausedBy(t)
   }
   /**
@@ -183,7 +185,7 @@ class QueryServer extends ServerExtension("query") {
     * @param item path to item that could not be retrieved
     * @param t Internal exception causing this error
     */
-  class ContextRetrievalError(item: MPath, t: Throwable) extends LocalError(s"Unable to use context: '${item.toPath}' could not be retrieved. Make sure the path exists. ") {
+  class ContextRetrievalError(item: MPath, t: Exception) extends LocalError(s"Unable to use context: '${item.toPath}' could not be retrieved. Make sure the path exists. ") {
     setCausedBy(t)
   }
   /**
@@ -197,7 +199,7 @@ class QueryServer extends ServerExtension("query") {
     * Represents an error that occured because the query could not be properly translated.
     * @param t Cause of the error
     */
-  class QueryTranslationParsingError(val t: Throwable) extends Error(s"Unable to parse query: ${t.getMessage}. Make sure your syntax is correct. ") {
+  class QueryTranslationParsingError(val t: Exception) extends Error(s"Unable to parse query: ${t.getMessage}. Make sure your syntax is correct. ") {
     setCausedBy(t)
   }
   def apply(request: ServerRequest): ServerResponse = {
@@ -266,7 +268,7 @@ class QueryServer extends ServerExtension("query") {
         TextResponse("Not found")
     }
   }
-  
+
   def run(query : Query, request: ServerRequest) : ServerResponse = {
     // check that the query is correct
     // TODO: Throw a proper error if this fails
@@ -383,7 +385,7 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
   }
 }
 
-/** interprets the query as an MMT [[frontend.GetAction]] and returns the result */
+/** interprets the query as an MMT [[frontend.actions.GetAction]] and returns the result */
 class GetActionServer extends ServerExtension("mmt") {
   def apply(request: ServerRequest): ServerResponse = {
     val action = Action.parseAct(request.query, controller.getBase, controller.getHome)
@@ -430,7 +432,7 @@ class MessageHandler extends ServerExtension("content") {
   }
 }
 
-/** interprets the query as an MMT [[frontend.Action]] and returns the log output */
+/** interprets the query as an MMT [[frontend.actions.Action]] and returns the log output */
 class ActionServer extends ServerExtension("action") {
   private lazy val logCache = new RecordingHandler(logPrefix)
 
@@ -444,7 +446,7 @@ class ActionServer extends ServerExtension("action") {
 
   def apply(request: ServerRequest): ServerResponse = {
     val c = request.decodedQuery
-    val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
+    val act = frontend.actions.Action.parseAct(c, controller.getBase, controller.getHome)
     if (act == Exit) {
       // special case for sending a response when exiting
       new Thread {
@@ -477,7 +479,7 @@ class ActionServer extends ServerExtension("action") {
 
 /**
  * experimental server for submitting comments
- *  
+ *
  * Handle the body of the POST request (json format)
  * and store the comment as user+date into the discussions folder
  */
@@ -540,9 +542,9 @@ import symbols._
 import modules._
 class URIProducer extends BuildTarget {
   def key = "uris"
-  
+
   private def jsonFile(a: Archive) = a / archives.export / key / "uris.json"
-  
+
   def build(a: Archive, up: Update, in: FilePath) {
      val thys = controller.depstore.querySet(DPath(a.narrationBase), Transitive(+Declares) * HasType(IsTheory))
      File.stream(jsonFile(a), "[\n", ",\n", "\n]") {out =>

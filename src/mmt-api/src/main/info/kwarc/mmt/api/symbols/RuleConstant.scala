@@ -6,13 +6,13 @@ import checking._
 import backend._
 import utils._
 
-import scala.xml.Node 
+import scala.xml.Node
 
 /**
  * A RuleConstant is a declaration whose value is an externally provided rule.
  * Its inner structure is not representable in or accessible to MMT,
  * but it exposes functionality that MMT can use and that defines the semantics of MMT.
- * 
+ *
  * @param df the rule this declaration provides
  */
 class RuleConstant(val home : Term, val name : LocalName, val tp: Term, var df: Option[Rule]) extends Declaration {
@@ -53,11 +53,11 @@ class RuleConstantInterpreter(controller: frontend.Controller) {
           so match {
             case r: Rule =>
               if (rlArgs.nonEmpty) throw InvalidObject(rl, "too many arguments")
-              r              
+              r
             case r: ParametricRule =>
               try {
                 r(controller, rc.home, rlArgs)
-              } catch {case e: Error =>
+              } catch {case e: Exception =>
                 throw InvalidObject(rl, "error while instantiating parametric rule").setCausedBy(e)
               }
             case _ => throw InvalidObject(rl, "semantic object exists but is not a rule: " + rl)
@@ -65,7 +65,7 @@ class RuleConstantInterpreter(controller: frontend.Controller) {
       }
       rc.df = Some(rule)
    }
-  
+
    /**
     * @param thy the containing theory
     * @param rl the rule (i.e., the type of the rule constant)
@@ -84,7 +84,7 @@ class RuleConstantInterpreter(controller: frontend.Controller) {
       // rules without arguments can be created immediately (to be used during parsing)
       if (rlArgs.isEmpty || create) createRule(rc)
       rc
-   }  
+   }
 }
 
 import parser._

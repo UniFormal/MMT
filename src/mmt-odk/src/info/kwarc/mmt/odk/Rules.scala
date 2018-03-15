@@ -24,8 +24,9 @@ object Math {
 
   // val tms = typesystem ? "tm"
   val bool = logic ? "bool"
-  val tt = OMLIT(true,RealizedType(OMS(Math.bool),uom.StandardBool))
-  val ff = OMLIT(false,RealizedType(OMS(Math.bool),uom.StandardBool))
+  val BoolLit = new RepresentedRealizedType(OMS(Math.bool),uom.StandardBool)
+  val tt = BoolLit(true)
+  val ff = BoolLit(false)
   val int = literals ? "int_lit"
   val nat = literals ? "nat_lit"
   val pos = literals ? "pos_lit"
@@ -42,8 +43,10 @@ object Math {
 
   val n = OMS(nat)
   val z = OMS(int)
+  val p = OMS(pos)
   val N = StandardNat
   val Z = StandardInt
+  val P = StandardPositive
 }
 
 import Math._
@@ -51,6 +54,7 @@ import SemanticOperator._
 
 object IntegerLiterals extends RepresentedRealizedType(z,Z)
 object NatLiterals extends RepresentedRealizedType(n,N)
+object PosLiterals extends RepresentedRealizedType(p,P)
 
 object NatSucc extends RealizedOperator(succ, n =>: n, Arithmetic.Succ, N =>: N)
 
@@ -61,7 +65,7 @@ object NatSuccInverse extends InverseOperator(Math.succ) {
   }
 }
 
-object StringLiterals extends RealizedType(OMS(Math.string),StandardString)
+object StringLiterals extends RepresentedRealizedType(OMS(Math.string),StandardString)
 
 object IntegerSubtype extends SubtypingRule {
   val head = Math.int

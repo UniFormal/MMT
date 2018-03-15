@@ -16,8 +16,52 @@ abstract class Codec[Code](val exp: Term, val tp: Term) {
    def decode(c: Code): Term
 }
 
-abstract class AtomicCodec[Rep,Code](id: GlobalName, tp: Term, semType: RSemanticType[Rep]) extends Codec[Code](OMS(id), tp) {
-   val rt = new RepresentedRealizedType(tp, semType)
+/**
+ * encodes/decodes terms whose type is of the form T = OMA(OMS(tp), pars)
+ * @param id the id of the codec operator
+ * @param tp the type operator
+ */
+abstract class CodecOperator[Code](val id: GlobalName, val tp: GlobalName) {
+
+   /** positions in the argument list (starting from 1) in OMA(list, ...) that are type arguments */
+   val typeParameterPositions : List[Int]
+
+   /**
+    * @param cs one codec for each type parameter; pre: cs.length == this.typeParameterPositions.length
+    * @return a codec for OMA(OMS(tp), cs.map(_.tp))
+    */
+   def apply(cs: Codec[Code]*) : Codec[Code]
+}
+
+/**
+ * lifts an embedding between code types to a functor on codecs
+ * 
+ * This is particularly useful to use [[AtomicStringCodec]] to code literals as strings and then lift the strings into the desired code type.  
+ */
+abstract class Embedding[From,To](c: Codec[From]) extends Codec[To](c.exp, c.tp) {
+  /** the embedding function */
+  def embed(f: From): To
+  /** partial inverse of embed */ 
+  def extract(t: To): Option[From]
+
+  def encode(t: Term) = embed(c.encode(t))
+  def decode(rT: To) = extract(rT) match {
+     case Some(rF) => c.decode(rF)
+     case None => throw CodecNotApplicable
+  }
+}
+
+/**
+ * encodes/decodes literals
+ *  
+ * the abstract methods must handle the toString/fromString for type Rep
+ * 
+ * @tparam Rep the underlying type of the literals
+ * @tparam Code the target type of the codecs
+ * @param id the id of the codec
+ * @param rt the realized type
+ */
+abstract class LiteralsCodec[Rep,Code](id: GlobalName, rt: RepresentedRealizedType[Rep]) extends Codec[Code](OMS(id), rt.synType) {
    def encodeRep(r: Rep): Code
    def encode(t: Term): Code = t match {
       case rt(u) => encodeRep(u)
@@ -28,33 +72,8 @@ abstract class AtomicCodec[Rep,Code](id: GlobalName, tp: Term, semType: RSemanti
    def decode(c: Code): Term = rt(decodeRep(c))
 }
 
-/**
- * encodes/decodes terms whose type is of the form T = OMA(OMS(tp), pars)
- * @param id the id of the codec operator
- * @param tp the type operator
- */
-abstract class CodecOperator[Code](val id: GlobalName, val tp: GlobalName) {
-
-   /** positions in the argument list (starting from 1) in OMA(list, ...) that are type arguments */ 
-   val typeParameterPositions : List[Int]
-   
-   /**
-    * @param cs one codec for each type parameter; pre: cs.length == this.typeParameterPositions.length
-    * @return a codec for OMA(OMS(tp), cs.map(_.tp)) 
-    */
-   def apply(cs: Codec[Code]*) : Codec[Code]
-}
-
-/** lifts an embedding between representation types to a functor on codecs */
-abstract class Embedding[From,To] {
-   def embed(f: From): To
-   def extract(t: To): Option[From]
-   
-   def apply(c: Codec[From]): Codec[To] = new Codec[To](c.exp, c.tp) {
-      def encode(t: Term) = embed(c.encode(t))
-      def decode(rT: To) = extract(rT) match {
-         case Some(rF) => c.decode(rF)
-         case None => throw CodecNotApplicable
-      }
-   }
+/** turns a realized type into the corresponding codec using the toString/fromString functions of the semantic type */ 
+class LiteralsAsStringsCodec[Rep](id: GlobalName, rt: RepresentedRealizedType[Rep]) extends Codec[String](OMS(id), rt.synType) {
+   def encode(t: Term) = rt.unapply(t) map rt.semType.toString getOrElse(throw CodecNotApplicable)
+   def decode(c: String) = try {rt.parse(c)} catch {case p: ParseError => throw CodecNotApplicable}
 }

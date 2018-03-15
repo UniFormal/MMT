@@ -67,7 +67,7 @@ class SpecwareImporter extends Importer {
     swC.outFile.delete
     swC.errFile.delete
     val result = swC.run
-    result foreach { r =>
+    result.errorO foreach { r =>
       throw LocalError("failed to run Specware: " + r)
     }
     swC.getErrors foreach { e => bt.errorCont(SourceError(key, e.getSourceRef, e.shortMsg)) }

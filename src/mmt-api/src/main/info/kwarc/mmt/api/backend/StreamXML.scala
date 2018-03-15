@@ -14,7 +14,7 @@ import scala.xml.parsing.ConstructingParser
 import scala.io.Source
 
 /** an awkward conversion from java.io.Reader to scala.io.Source
- *  needed in [[XMLStreamer]] because ParsingStream uses the former, but ConstructingParser the latter 
+ *  needed in [[XMLStreamer]] because ParsingStream uses the former, but ConstructingParser the latter
  */
 class SourceFromReader(r: java.io.Reader) extends Source {
    val iter = new Iterator[Char] {
@@ -48,7 +48,7 @@ object XMLObjectParser extends ObjectParser {
    }
 }
 
-/** 
+/**
  * similar to [[XMLReader]] but streams parsed elements into the continuation function
  */
 class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
@@ -73,11 +73,11 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
             if (parser.root == null)
                throw le
             else
-               errorCont << le 
+               errorCont << le
       }
       parser.root
    }
-   
+
    private object Stack {
       abstract class StackElement
       case class UnparsedContainer(elem: Elem) extends StackElement {
@@ -90,19 +90,19 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
       case object Other extends StackElement
    }
    import Stack._
-   
+
    /** XML parser that streams documents/modules and calls the reader on the other ones */
    private class ConsParser(parentInfo: ParentInfo, input: Source, cont: StructureParserContinuations) extends ConstructingParser(input, true) {
       /** the stack of currently open tags, innermost first */
       private var openTags : List[StackElement] = Nil
       /** holds the root element once parsing has finished */
       var root: Document = null
-   
+
       private def add(se: StructuralElement) {
          try {
             controller.add(se)
          } catch {case e: AddError =>
-            // errors in the XML are usually minor and  we can assume we can recover 
+            // errors in the XML are usually minor and  we can assume we can recover
             cont.errorCont << e
          }
       }
@@ -112,11 +112,11 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
          se match {
             case _:Document | _:Module => openTags ::= ParsedContainer(se)
             case nm: NestedModule => openTags ::= ParsedContainer(nm.module)
-            case _: MRef => // ignore the MRef generated in addition to a Module 
+            case _: MRef => // ignore the MRef generated in addition to a Module
             case e => throw ImplementationError("non-container element: " + e) // impossible
          }
       }
-      
+
       /** parse the top element, which must be an UnparsedContainer, and replace it with a ParsedContainer */
       private def parseHead {
          // pop the top element and obtain the node read so far
@@ -126,7 +126,7 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
          // below, catchSE will push the ParsedContainer that replaces uc
          openTags match {
             case Nil =>
-               // special treatment of the toplevel container 
+               // special treatment of the toplevel container
                streamer.log("parsing shape of top element")
                val dpath = parentInfo match {
                   case IsRootDoc(dp) => dp
@@ -135,13 +135,13 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
                reader.readDocument(dpath, node)(catchSE)
                val ParsedContainer(doc: Document) = openTags.head
                root = doc
-            case ParsedContainer(parent) :: _ => 
+            case ParsedContainer(parent) :: _ =>
                streamer.log("parsing shape of " + node.label + " in " + parent.path)
                reader.readIn(root.getNamespaceMap, parent, node)(catchSE)
             case hd :: _ => throw ImplementationError("illegal head: " + hd) // impossible
          }
       }
-      
+
       // called when an opening tag is encountered
       // invariant: possibly parse the top element; push exactly one element onto the stack
       override def elemStart(pos: Int, pre: String, label: String, attrs: MetaData, scope: NamespaceBinding) {

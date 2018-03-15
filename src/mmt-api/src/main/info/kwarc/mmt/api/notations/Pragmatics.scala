@@ -61,13 +61,13 @@ class Pragmatics extends ChangeListener {
    /**
     * the default treatment for application-like constructions without a known operator
     * used for: apply meta-variables to its dependent bound variables; whitespace operator; application of MPath
-    * 
+    *
     * @return as dictated by notation extension, OMA by default
     */
    def defaultApplication(level: Option[MPath], fun: Term, args: List[Term]): Term = {
       fun match {
         case OMMOD(_) => OMA(fun, args)
-        case _ => applicableByLevel(level).constructTerm(fun, args) 
+        case _ => applicableByLevel(level).constructTerm(fun, args)
       }
    }
 
@@ -112,14 +112,14 @@ class Pragmatics extends ChangeListener {
      }
      /**
       * @param strictApps the strict application symbols to wrap around the application
-      * @param fun the operator
+      * @param fun the operator (may be Term, contrary to unapply method)
       * @param args the arguments
       * @return intuitively: OMA(strictApps, fun, args)
       * pre-inverse of unapply
       */
-     def apply(strictApps: List[GlobalName], fun: GlobalName, args: List[Term]) = strictApps match {
-        case hd::tl => OMA(OMS(hd), tl.map(OMS(_)) ::: OMS(fun) :: args)
-        case Nil => OMA(OMS(fun), args)
+     def apply(strictApps: List[GlobalName], fun: Term, args: List[Term]) = strictApps match {
+        case hd::tl => OMA(OMS(hd), tl.map(OMS(_)) ::: fun :: args)
+        case Nil => OMA(fun, args)
      }
   }
 

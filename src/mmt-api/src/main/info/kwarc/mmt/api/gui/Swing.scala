@@ -8,7 +8,7 @@ case class Item(label: String, id: String)
 
 object Swing {
 
-   /** run code on the Swing thread */ 
+   /** run code on the Swing thread */
    def invokeLater[A](a: => A) {
       val r = new Runnable() {
         def run {
@@ -25,7 +25,7 @@ object Swing {
     * @return the JPanel
     */
    def RadioButtonPanel(items: Item*)(action: String => Unit) : JPanel = {
-      val jp = new JPanel 
+      val jp = new JPanel
       jp.setLayout(new BoxLayout(jp, BoxLayout.X_AXIS))
       val al = new ActionListener {
          def actionPerformed(e: ActionEvent) {
@@ -42,7 +42,7 @@ object Swing {
       }
       jp
    }
-   
+
    def Button(label: String, tooltip: String = "")(action: => Unit): JButton = {
       val b = new JButton(label)
       val al = new ActionListener {
@@ -54,7 +54,7 @@ object Swing {
       b.setToolTipText(tooltip)
       b
    }
-   
+
    def HorizontalPanel: java.awt.Container = {
       val panel = new JPanel()
       val layout = new BoxLayout(panel, BoxLayout.LINE_AXIS)
@@ -78,7 +78,7 @@ import java.awt._
 
 /**
  *  Modified FlowLayout that wraps lines properly
- *  
+ *
  *  This follows the ideas of WrapLayout.java but adds a defaultWidth
  */
 class WrapLayout(defaultWidth: Int, align: Int = FlowLayout.CENTER, hgap: Int = 5, vgap: Int = 5)

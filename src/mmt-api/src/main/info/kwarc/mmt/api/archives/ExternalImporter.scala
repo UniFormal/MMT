@@ -4,16 +4,16 @@ import info.kwarc.mmt.api._
 import utils._
 import parser._
 
-/** 
+/**
  * an importer implemented as a wrapper around an external tool
  */
 abstract class ExternalImporter extends Importer {
-  
+
   val toolName: String
-  
+
   /** the wrapper method to implement */
   def runExternalTool(bf: BuildTask, outFile: File)
-  
+
   /**
     * Compile an external file to OMDoc
     * @param bf the build task

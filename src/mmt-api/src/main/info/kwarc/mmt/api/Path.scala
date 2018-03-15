@@ -8,7 +8,7 @@ import scala.collection.mutable.Map
 
 /**
  * A Path represents an MMT path.
- * 
+ *
  * An MMT path refers to a document (doc), a module (doc?mod), or a symbol (M % sym).
  * Use the objects ?, %, /, \, and ! for pattern matching paths.
  */
@@ -78,7 +78,7 @@ trait QuestionMarkFunctions[A] {
  */
 case class DPath(uri : URI) extends Path with ComponentParent with SlashFunctions[DPath] with QuestionMarkFunctions[MPath] {
    if (uri.query.isDefined || uri.fragment.isDefined) throw ImplementationError("MMT namespace URI may not have query or fragment")
-   
+
    /** two paths are equal if their URIs are except that the scheme is ignored and AUTH/ == AUTH */
    override def equals(that: Any) = that match {
      case that: DPath =>
@@ -103,14 +103,14 @@ case class DPath(uri : URI) extends Path with ComponentParent with SlashFunction
          this.name.dropPrefix(pref.name)
       else
          None
-   }   
+   }
    /** if this.name != Nil then this.toMPath.toDPath == this */
    def toMPath = ^ ? LocalName(name.last)
 }
 
 /** A path to a module or symbol */
 sealed trait ContentPath extends Path with ComponentParent {
-   /** for GlobalName's referring to a theory-like [[Declaration]], this yields the URI of the corresponding [[Module]] */ 
+   /** for GlobalName's referring to a theory-like [[Declaration]], this yields the URI of the corresponding [[Module]] */
    def toMPath : MPath
    def name: LocalName
    /** the longest MPath prefix */
@@ -203,9 +203,11 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    def simplify: LocalName = {
       var complexBefore = false
       val stepsRS = steps.reverse filter {
-         case s: SimpleStep => true
+         case s: SimpleStep =>
+           complexBefore = false
+           true
          case c: ComplexStep =>
-            val res = ! complexBefore 
+            val res = ! complexBefore
             complexBefore = true
             res
       }
@@ -218,7 +220,8 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    /** machine-oriented string representation of this name, parsable and official */
    def toPath : String = steps.map(_.toPath).mkString("", "/", "")
   /** human-oriented string representation of this name, no encoding, possibly shortened */
-   override def toString : String = steps.map(_.toString).mkString("", "/", "")
+   override def toString : String = toStr(false)
+   def toStr(implicit shortURIs: Boolean) = steps.map(_.toStr).mkString("", "/", "")  
 }
 
 /** a step in a LocalName */
@@ -227,6 +230,8 @@ abstract class LNStep {
    def unary_! = LocalName(this)
    def /(n: LocalName) = LocalName(this) / n
    def /(n: LNStep) = LocalName(this) / n
+   override def toString = toStr(false)
+   def toStr(implicit shortURIs: Boolean): String  
 }
 
 object LNStep {
@@ -242,12 +247,12 @@ object LNStep {
 /** constant or structure declaration */
 case class SimpleStep(name: String) extends LNStep {
    def toPath = xml.encodeURI(name)
-   override def toString = name
+   def toStr(implicit shortURIs: Boolean) = name
 }
 /** an include declaration; ComplexStep(fromPath) acts as the name of an unnamed structure */
 case class ComplexStep(path: MPath) extends LNStep {
    def toPath = "[" + path.toPath + "]"
-   override def toString = "[" + path.toString + "]"
+   def toStr(implicit shortURIs: Boolean) = "[" + path.name.toStr + "]"
 }
 
 case class CPath(parent: ComponentParent, component: ComponentKey) extends Path {
@@ -328,7 +333,7 @@ object Path {
    /**
     * [[Path]]s consume a lot of memory because there are so many
     * because they are stateless, we can secretly introduce structure sharing
-    */ 
+    */
    private val pathCache = new ValueCache[Path](50)
    private val uriParseCache = new ResultCache[String,URI](URI(_), 5)
 
@@ -342,7 +347,7 @@ object Path {
       parse(d,m,n,c,nsMap)
    }
    // merge(x,y) merges the URI or LocalPath x with the relative or absolute reference y
-   private def mergeD(bd : Option[DPath], d : DPath) : DPath = if (bd.isEmpty) d else DPath(bd.get.uri.resolve(d.uri)) 
+   private def mergeD(bd : Option[DPath], d : DPath) : DPath = if (bd.isEmpty) d else DPath(bd.get.uri.resolve(d.uri))
    private def mergeN(nsMap : NamespaceMap, bl : Option[LocalName], l : LocalRef) : LocalName =
       if (bl.isEmpty || l.absolute)
          l.toLocalName(nsMap)
@@ -372,7 +377,7 @@ object Path {
          case (_       , _       , _, Some(d), None,    None   ) => mergeD(bdoc, d)
          case (_       , _       , _, Some(d), Some(m), None   ) => mergeD(bdoc, d) ? m.toLocalName(nsMap)
          case (_       , _       , _, Some(d), Some(m), Some(n)) => mergeD(bdoc, d) ? m.toLocalName(nsMap) ? n.toLocalName(nsMap)
-         case _ => throw ParseError("(" + doc + ", " + mod + ", " + name + ") cannot be resolved against " + base) 
+         case _ => throw ParseError("(" + doc + ", " + mod + ", " + name + ") cannot be resolved against " + base)
       }
       val pathR = pathCache.get(path)
       if (comp == "") pathR else pathR match {
@@ -413,22 +418,22 @@ object Path {
    /** as parse but fails if the result is not a component level URI */
    def parseC(s : String, nsMap : NamespaceMap) : CPath = parse(s,nsMap) match {
       case p : CPath => p
-      case p => throw ParseError("component path expected: " + p) 
+      case p => throw ParseError("component path expected: " + p)
    }
    /** as parse but fails if the result is not a symbol level URI */
    def parseS(s : String, nsMap : NamespaceMap) : GlobalName = parse(s,nsMap) match {
       case p : GlobalName => p
-      case p => throw ParseError("symbol path expected: " + p) 
+      case p => throw ParseError("symbol path expected: " + p)
    }
    /** as parse but fails if the result is not a module level URI */
    def parseM(s : String, nsMap : NamespaceMap) : MPath = parse(s,nsMap) match {
       case p : MPath => p
-      case p => throw ParseError("module path expected: " + p) 
+      case p => throw ParseError("module path expected: " + p)
    }
    /** as parse but fails if the result is not a document level URI */
    def parseD(s : String, nsMap : NamespaceMap) : DPath = parse(s,nsMap) match {
       case p : DPath => p
-      case p => throw ParseError("document path expected: " + p) 
+      case p => throw ParseError("document path expected: " + p)
    }
    def parseMS(s : String, nsMap : NamespaceMap) : ContentPath = parse(s,nsMap) match {
       case p : ContentPath => p
@@ -437,8 +442,8 @@ object Path {
    def fromURI(s : URI,nsmap : NamespaceMap) : Path = parse(s.toString,nsmap) // TODO properly
 }
 
-/** 
- * This permits the syntax doc ? mod in patterns. 
+/**
+ * This permits the syntax doc ? mod in patterns.
  */
 object ? {
    def unapply(p : Path) : Option[(DPath,LocalName)] = p match {
@@ -447,8 +452,8 @@ object ? {
    }
 }
 
-/** 
- * This permits the syntax mod ?? name in patterns. 
+/**
+ * This permits the syntax mod ?? name in patterns.
  */
 object ?? {
    def unapply(p : Path) : Option[(MPath,LocalName)] = p match {
@@ -457,23 +462,23 @@ object ?? {
    }
 }
 
-/** 
- * This permits the syntax head / tail in patterns. 
+/**
+ * This permits the syntax head / tail in patterns.
  */
 object / {
    def unapply(l : LocalName) : Option[(LNStep,LocalName)] = if (l.length <= 1) None else Some((l.head,l.tail))
 }
 
 
-/** 
- * This permits the syntax init \ last in patterns. 
+/**
+ * This permits the syntax init \ last in patterns.
  */
 object \ {
    def unapply(l : LocalName) : Option[(LocalName,LNStep)] = if (l.length <= 1) None else Some((l.init,l.last))
 }
 
-/** 
- * This permits the syntax !(n) in patterns to match atomic local names. 
+/**
+ * This permits the syntax !(n) in patterns to match atomic local names.
  */
 object ! {
    def unapply(l : LocalName) : Option[LNStep] = if (l.length == 1) Some(l.head) else None

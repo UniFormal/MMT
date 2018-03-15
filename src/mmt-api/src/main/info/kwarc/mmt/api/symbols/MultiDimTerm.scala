@@ -22,29 +22,44 @@ class ObjDimension[T] {
 }
 
 /** TermContainer acts as the interface between the structural and the object level
- * 
+ *
  * Elements like [[info.kwarc.mmt.api.symbols.Constant]] that have a [[info.kwarc.mmt.api.objects.Term]] as a component
  * will not declare a term directly but a TermContainer.
- * 
+ *
  * TermContainer keeps track of different syntactic representations of the same semantic term.
  * It also stores additional status information.
- * 
- * The representations are read < parsed < analyzed.
+ *
+ * The representations are read < parsed < analyzed < normalized.
  * Setting a representation marks the higher representations as dirty.
- * 
- * @tparam T the type of objects stored; the type bound is not actually needed, but it helps putting sharper bound on some return types  
+ *
+ * @tparam T the type of objects stored; the type bound is not actually needed, but it helps putting sharper bound on some return types
  */
 trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
-   private var _read     : Option[String] = None
-   private val _parsed   = new ObjDimension[T]
-   private val _analyzed = new ObjDimension[T]
-   override def toString = "read: " + _read.toString + "\nparsed: " + _parsed.toString + "\nanalyzed: " + _analyzed.toString
+   private var _read       : Option[String] = None
+   private val _parsed     = new ObjDimension[T]
+   private val _analyzed   = new ObjDimension[T]
+   private val _normalized = new ObjDimension[T]
+   override def toString = "read: " + _read.toString + "\nparsed: " + _parsed.toString + "\nanalyzed: " + _analyzed.toString +"\nnormalized: " + _normalized.toString
    /** the unparsed string representation */
    def read = _read
-   /** the parsed representation without further analysis */
-   def parsed = _parsed.obj
-   /** the analyzed representation after type and argument reconstruction */
-   def analyzed = _analyzed.obj
+   /** the parsed representation without further analysis (if non-dirty) */
+   def parsed = _parsed.termIfNotDirty
+   /** the analyzed representation after type and argument reconstruction (if non-dirty) */
+   def analyzed = _analyzed.termIfNotDirty
+   /** the normalized representation after type and argument reconstruction (if non-dirty)
+    *
+    *  This is not always computed, and even if it is, it is not returned by default by the get method.
+    *  It is intended for optimizations where the normalized form of a Term would otherwise have to be recomputed.
+    */
+   def normalized = _normalized.termIfNotDirty
+   /** sets the normalized representation (if not already set) using a normalization function
+    *  Because normalization is need-based, this should be called, if possible, before accessing the normalized representation. */ 
+   def normalize(normFun: T => T) {
+     normalized match {
+       case Some(_) =>
+       case None => normalized = analyzed map normFun
+     }
+   }
    /** setter for the unparsed string representation */
    def read_=(s: Option[String]): Boolean = {
       val changed = s != _read
@@ -52,6 +67,7 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
          _read           = s
          _parsed.dirty   = true
          _analyzed.dirty = true
+         _normalized.dirty = true
       }
       changed
    }
@@ -64,12 +80,13 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
        * metadata of oa points to metadata of op
        * np contains new metadata (e.g., for source references) even if op == np
        * if op != np, we compute na anyway, no problem
-       * if op == np, na := oa except that metadata of np must be integrated into metadata of op  
+       * if op == np, na := oa except that metadata of np must be integrated into metadata of op
        */
       _parsed.obj = t
       if (changed) {
          _parsed.time    = System.currentTimeMillis
          _analyzed.dirty = true
+         _normalized.dirty = true
       }
       _parsed.dirty = false
       changed
@@ -81,6 +98,7 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
       _analyzed.obj = t  // set this even if equal in order to get the metadata of the new term
       if (changed) {
          _analyzed.time = System.currentTimeMillis
+         _normalized.dirty = true
       }
       _analyzed.dirty = false
       changed
@@ -88,11 +106,17 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
    def analyzed_=(t: T): Boolean = {
       analyzed_=(Some(t))
    }
-   def getAnalyzedIfFullyChecked: Option[T]
-   /** sets an analyzed value */
-   def set(t: T) {
-     analyzed = t
+   /** setter for the normalized representation */
+   def normalized_=(t: Option[T]): Boolean = {
+      val changed = t != _normalized.obj
+      _normalized.obj = t  // set this even if equal in order to get the metadata of the new term
+      if (changed) {
+         _normalized.time = System.currentTimeMillis
+      }
+      _normalized.dirty = false
+      changed
    }
+   def getAnalyzedIfFullyChecked: Option[T]
    /** true if the term must still be (re)parsed */
    def isParsedDirty = ! _parsed.dirty
    /** time of the last change */
@@ -103,9 +127,9 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
    def setAnalyzedDirty {_analyzed.dirty = true}
    /** time of the last change */
    def lastChangeAnalyzed = _analyzed.time
-   
+
    /** getter for the best available non-dirty representation: analyzed or parsed */
-   def get: Option[T] = _analyzed.termIfNotDirty orElse _parsed.termIfNotDirty
+   def get: Option[T] = analyzed orElse parsed
    /** true if any dimension is present, i.e., if the component is present */
    def isDefined = _read.isDefined || get.isDefined
    /** stores the set of components that analysis depended on */
@@ -113,8 +137,13 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
    /** delete this component */
    def delete {
       _read = None
-      List(_parsed,_analyzed).foreach {_.delete}
+      List(_parsed,_analyzed,_normalized).foreach {_.delete}
       dependsOn.clear
+   }
+   /** clears the contents of this component and sets it to a new value */
+   def set(t: T) {
+     delete
+     analyzed = Some(t)
    }
 
    // auxiliary methods that cannot be implemented generically in Scala
@@ -123,8 +152,8 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
    protected def newEmpty: ThisType
    /** checks if a container stores objects of the same type */
    protected def hasSameType(oc: ObjContainer[_]): Boolean
-   
-   /** copies over the components of another TermContainer
+
+   /** copies over the non-dirty components of another TermContainer
     *  dependent dimensions that are not part of tc become dirty
     */
    def update(tc: ComponentContainer) = {tc match {
@@ -134,16 +163,19 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
             changed |= (parsed = tc.parsed)
          if (changed || tc.analyzed.isDefined)
             changed |= (analyzed = tc.analyzed)
+         if (changed || tc.normalized.isDefined)
+            changed |= (normalized = tc.normalized)
          changed
       case _ => throw ImplementationError("not a TermContainer")
    }}
 
-   /** creates a deep copy of this container */
+   /** creates a deep copy of this container, dirty parts are dropped */
    def copy: ThisType = {
      val tc = newEmpty
      tc.read = read
      tc.parsed = parsed
      tc.analyzed = analyzed
+     tc.normalized = normalized
      tc
    }
    def merge(that: ThisType): ThisType = {
@@ -151,18 +183,18 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
    }
 }
 
-/** container for mutable terms */ 
+/** container for mutable terms */
 class TermContainer extends ObjContainer[Term] with AbstractTermContainer {
    type ThisType = TermContainer
    protected def newEmpty = new TermContainer
    protected def hasSameType(oc: ObjContainer[_]) = oc.isInstanceOf[TermContainer]
-   
+
    /** applies a function to the contained Term and returns a new TermContainer */
    def map(f: Term => Term) = TermContainer(get map f)
 
-   /** returns the analyzed term if it has been successfully and completely checked */ 
+   /** returns the analyzed term if it has been successfully and completely checked */
    def getAnalyzedIfFullyChecked = {
-     if (isAnalyzedDirty) None else analyzed flatMap {t =>
+     analyzed flatMap {t =>
        val pr = parser.ParseResult.fromTerm(t)
        if (pr.unknown.isEmpty && pr.free.isEmpty)
          Some(pr.term)
@@ -195,7 +227,7 @@ object TermContainer {
          tc.parsed = t
       else
          tc.analyzed = t
-      }      
+      }
       tc
    }
 }

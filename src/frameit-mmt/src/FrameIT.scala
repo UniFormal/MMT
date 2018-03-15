@@ -18,32 +18,32 @@ import scala.collection.immutable._
 case class FrameitError(text : String) extends Error(text)
 
 class FrameViewer extends Extension {
-  
+
   def pushout(cpath : CPath, vpaths : MPath*) : Term = {
      val comp = controller.get(cpath.parent) match {
        case c : Constant => cpath.component match {
          case DefComponent => c.df.getOrElse(throw FrameitError("No definition found for constant: " + cpath.parent))
-         case TypeComponent => c.tp.getOrElse(throw FrameitError("No type found for constant: " + cpath.parent))      
+         case TypeComponent => c.tp.getOrElse(throw FrameitError("No type found for constant: " + cpath.parent))
        }
        case s => throw FrameitError("Expected component term found " + s.toString)
      }
      pushout(comp, vpaths : _*)
    }
-  
+
   def pushout(tm : Term, vpaths : MPath*) : Term = {
     vpaths.foldLeft(tm)((t, v) => pushoutOne(t, v))
   }
-   
+
    private def pushoutOne(tm : Term, vpath : MPath) : Term = {
      val view = controller.get(vpath) match {
        case v : DeclaredView => v
        case s => throw FrameitError("Expected view found " + s.toString)
      }
-     
+
      val rules = makeRules(view)
      pushout(tm)(rules)
    }
-   
+
    private def makeRules(v : DeclaredView) : HashMap[Path, Term]= {
      v.from match {
        case OMMOD(p) =>
@@ -62,15 +62,15 @@ class FrameViewer extends Extension {
        case _ => throw FrameitError("view.from not OMMOD " + v.from)
      }
    }
-   
+
    private def pushout(t : Term)(implicit rules : HashMap[Path, Term]) : Term = t match {
-     case OMS(p) => 
+     case OMS(p) =>
        if (rules.isDefinedAt(p)) rules(p) else t
      case OMA(f, args) => OMA(pushout(f), args.map(pushout))
      case OMBIND(b, con, body) => OMBIND(pushout(b), pushout(con), pushout(body))
      case _ => t
    }
-   
+
    private def pushout(con : Context)(implicit rules : HashMap[Path, Term]) : Context = con map (_ map pushout)
 }
 
@@ -83,12 +83,12 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
     controller.extman.addExtension(a)
     a
   }//new FrameViewer(controller)
-    
+
    /** Server */
 
    /*
    private def CORS_AllowOrigin(origin : String) = true //for now
-   
+
    private def checkCORS(tk : HTalk) : HTalk = tk.req.header("Origin")  match {
      case None => tk
      case Some(s) => CORS_AllowOrigin(s) match {
@@ -99,18 +99,18 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
    */
    /*
    private def GetResponse : HLet = new HSimpleLet {
-	 implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
+    implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
      def act(tk : HTalk) = try {
 
        val cpathS = tk.req.param("solPath").getOrElse(throw FrameitError("no solPath found"))
        val vpathS = tk.req.param("viewPath").getOrElse(throw FrameitError("no viewPath found"))
-       
+
        val cpath = Path.parse(cpathS) match {
          case c : CPath => c
          case gn : GlobalName => CPath(gn, DefComponent) //assuming definition
          case p => throw FrameitError("Expected CPath or Global Name found " + p)
        }
-       
+
        val vpath = Path.parse(vpathS) match {
          case vp : MPath => vp
          case p => throw FrameitError("Expected MPath found " + p)
@@ -119,7 +119,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
          case d : DeclaredView => d
          case _ => throw FrameitError("expected view")
        }
-       
+
        val tm = simplify(fv.pushout(cpath, vpath), view.to.toMPath)
        var tmS = tm.toString
        TextResponse(tmS).aact(tk)
@@ -129,7 +129,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
      }
    }
    */
-   
+
    private def simplify(t : Term, home : MPath) : Term = {
      log("Before: " + t.toString)
      //val solver = new Solver(controller,cu,rules)
@@ -172,17 +172,17 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
     val bodyArray: Array[Byte] = tk.req.octets.getOrElse(throw  FrameitError("no body found"))
     new String(bodyArray, "UTF-8")
   }
-  
+
   private def errorResponse(text : String) : HLet = {
     TextResponse(s"MMT Error in FrameIT extension: $text ")
   }
-  
+
   /**
    * A text response that the server sends back to the browser
     *
     * @param text the message that is sent in the HTTP body
    */
-  private def TextResponse(text: String): HLet = new HSimpleLet {    
+  private def TextResponse(text: String): HLet = new HSimpleLet {
     def act(tk: HTalk) {
       val out = text.getBytes("UTF-8")
       checkCORS(tk).setContentLength(out.size) // if not buffered
@@ -198,7 +198,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
     controller.extman.addExtension(ret)
     ret
   }
-  implicit val ce : CheckingEnvironment = new CheckingEnvironment(ErrorThrower,RelationHandler.ignore, this)
+  implicit val ce : CheckingEnvironment = new CheckingEnvironment(controller.simplifier,ErrorThrower,RelationHandler.ignore, this)
 
   val dpath = DPath(URI.http colon "cds.omdoc.org") / "FrameIT"
   val sitpath = dpath ? "situation_theory"
@@ -347,7 +347,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
 
     val checker = new MMTStructureChecker(new RuleBasedChecker)
     controller.extman.addExtension(checker)
-    implicit val ce : CheckingEnvironment = new CheckingEnvironment(ErrorThrower,RelationHandler.ignore, this)
+    implicit val ce : CheckingEnvironment = new CheckingEnvironment(controller.simplifier,ErrorThrower,RelationHandler.ignore, this)
     controller.simplifier(view)
     controller.simplifier(sol)
     controller.simplifier(dom)
@@ -370,5 +370,5 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
 
     //simplify(fv.pushout(cpath, vpath), view.to.toMPath)
   }
-  
+
 }

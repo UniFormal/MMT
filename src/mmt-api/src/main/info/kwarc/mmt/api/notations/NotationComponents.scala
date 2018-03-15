@@ -13,7 +13,7 @@ sealed abstract class Delimiter extends Marker {
    def text : String
    /** the value of a delimiter may depend on the name of the operator that owns the notation
     *  expand eliminates such dependencies
-    *  
+    *
     *  expansion is identity by default
     */
    def expand(name: ContentPath, alias: List[LocalName]) : Delimiter = this
@@ -46,7 +46,7 @@ case class Delim(s: String) extends Delimiter {
 
 /**
  * special delimiters that use non-trivial implementations of expand
- * 
+ *
  * These are only useful for presentation, not for parsing.
  */
 abstract class PlaceholderDelimiter extends Delimiter {
@@ -56,7 +56,7 @@ abstract class PlaceholderDelimiter extends Delimiter {
 
 /**
  * expands to the name of the instance
- * 
+ *
  * only legal for notations within patterns
  */
 case class InstanceName() extends PlaceholderDelimiter {
@@ -65,8 +65,8 @@ case class InstanceName() extends PlaceholderDelimiter {
 }
 
 /**
- * expands to the name of the symbol or an alias (whichever is the shortest) 
- * 
+ * expands to the name of the symbol or an alias (whichever is the shortest)
+ *
  * useful for repetitive notations that differ only in the name
  */
 case class SymbolName() extends PlaceholderDelimiter {
@@ -92,11 +92,11 @@ case class CommonMarkerProperties(precedence: Option[Precedence], localNotations
 
 sealed abstract class ArgumentMarker extends Marker with ArgumentComponent {
   val number: Int
-  
+
   val properties: CommonMarkerProperties
   def locallyUsesNotationsFrom: Option[SimpArg] = properties.localNotations.map(SimpArg(_,noProps))
   def precedence = properties.precedence
-  
+
   /** a copy of this marker with the field properties.localNotations set */
   def withLocalNotationsFrom(n: Int): ArgumentMarker = this match {
     case am: SimpArg     => am.copy(properties = properties.wlnf(n))
@@ -112,7 +112,7 @@ sealed abstract class ArgumentMarker extends Marker with ArgumentComponent {
   * @param n absolute value is the argument position, negative iff it is in the binding scope
   */
 sealed abstract class Arg extends ArgumentMarker {
-  /* this may come in handy some time but is not used at the moment */ 
+  /* this may come in handy some time but is not used at the moment */
   //val precedence : Option[Precedence]
   override def toString = number.toString
   /**
@@ -120,7 +120,7 @@ sealed abstract class Arg extends ArgumentMarker {
    * @param s the delimiter
    */
   def by(s:String) : SeqArg
-  
+
   /** renumbers the markers, used for arity flattening of sequences */
   def *(remap: Int => Int): Arg = {
     this match {
@@ -133,7 +133,7 @@ sealed abstract class Arg extends ArgumentMarker {
 /** a sequence argument
   *
   * @param n absolute value is the argument position, negative iff it is in the binding scope
- * @param sep the delimiter between elements of the sequence 
+ * @param sep the delimiter between elements of the sequence
  */
 sealed abstract class SeqArg extends ArgumentMarker {
   val sep: Delim
@@ -149,7 +149,7 @@ case class SimpArg(number : Int, properties: CommonMarkerProperties = noProps) e
 
 /**
  * an implicit argument
- * 
+ *
  * usually these are not mentioned in the notation, but occasionally they have to be, e.g., when an implicit argument is the last argument
  */
 case class ImplicitArg(number: Int, properties: CommonMarkerProperties = noProps) extends ArgumentMarker {
@@ -201,7 +201,7 @@ case class LabelSeqArg(number: Int, sep: Delim, info: LabelInfo, properties: Com
   * @param n the number of the variable
  * @param typed true if the variable carries a type (to be inferred if omitted)
  * @param sep if given, this is a variable sequence with this separator;
- *   for typed variables with the same type, only the last one needs a type 
+ *   for typed variables with the same type, only the last one needs a type
  */
 case class Var(number: Int, typed: Boolean, sep: Option[Delim], properties: CommonMarkerProperties = noProps) extends Marker with VariableComponent {
    def precedence = properties.precedence
@@ -230,7 +230,7 @@ case class WordMarker(word : String) extends VerbalizationMarker {
 
 /** PresentationMarker's occur in two-dimensional notations
  *
- *  They typically take other lists of markers as arguments, thus building a tree of markers.   
+ *  They typically take other lists of markers as arguments, thus building a tree of markers.
  */
 sealed abstract class PresentationMarker extends Marker {
    /** @return the same marker with all nested markers replaced according to a function */
@@ -260,26 +260,26 @@ case class FractionMarker(above: List[Marker], below: List[Marker], line: Boolea
 case class TdMarker(content : List[Marker]) extends PresentationMarker {
    def flatMap(f : Marker => List[Marker]) = {
      TdMarker(content.flatMap(f))
-   } 
+   }
 }
 /** a marker based on mathml mtd elements, representing table rows */
 case class TrMarker(content : List[Marker]) extends PresentationMarker {
    def flatMap(f : Marker => List[Marker]) = {
      TdMarker(content.flatMap(f))
-   } 
+   }
 }
 /** a marker based on mathml mtd elements, representing tables */
 case class TableMarker(content : List[Marker]) extends PresentationMarker {
    def flatMap(f : Marker => List[Marker]) = {
      TdMarker(content.flatMap(f))
-   } 
+   }
 }
 
 /**a marker representing the nth(index) root in mathml*/
 case class RootMarker(content : List[Marker], index : List[Marker] = Nil) extends PresentationMarker {
   def flatMap(f : Marker => List[Marker]) = {
     RootMarker(content.flatMap(f),index)
-  } 
+  }
 }
 
 /**a maker based on mathml label*/
@@ -293,14 +293,14 @@ case class LabelMarker(content: List[Marker], label : String) extends Presentati
 case class NumberMarker(value : Delim) extends PresentationMarker {
   def flatMap(f : Marker => List[Marker]) = {
     NumberMarker(value)
-  } 
+  }
 }
 
 /**Marker for Identifier in MathML -*/
 case class IdenMarker(value: Delim) extends PresentationMarker {
   def flatMap(f : Marker => List[Marker]) = {
     IdenMarker(value)
-  } 
+  }
 }
 
 /**Marker for error elements in MathML*/
@@ -343,7 +343,7 @@ object PresentationMarker {
      case hd :: Nil => hd
      case l => GroupMarker(l)
    }
-   
+
    private def splitOffOne(ms: List[Marker]) : (Marker,List[Marker]) = ms match {
       case Nil => (Delim(" "), Nil)
       case Delim("(") :: rest =>
@@ -390,7 +390,7 @@ object PresentationMarker {
                   case "_" => scripted.copy(sub = Some(pscript))
                   case "^^" => scripted.copy(over = Some(pscript))
                   case "__" => scripted.copy(under = Some(pscript))
-               } 
+               }
                sofar = newHead :: sofar.tail
             case Delim("/") =>
                if (sofar.isEmpty) sofar ::= Delim(" ")
@@ -399,22 +399,22 @@ object PresentationMarker {
                left = rest
                val newHead = FractionMarker(List(enum), List(denom), true)
                sofar = newHead :: sofar.tail
-            case Delim("[&") => 
+            case Delim("[&") =>
               get_until(List("&]"), others, true) match {
                case None => //end not found, ignoring
                  sofar ::= first
                  left = others
-               case Some((taken, end)) => 
+               case Some((taken, end)) =>
                  val processed = introducePresentationMarkers(taken)
                  sofar ::= TdMarker(processed)
                    left = end
              }
-            case Delim("[\\") => 
+            case Delim("[\\") =>
                get_until(List("\\]"), others, true) match {
                case None => //end not found, ignoring
                  sofar ::= first
                  left = others
-               case Some((taken, end)) => 
+               case Some((taken, end)) =>
                  val processed = introducePresentationMarkers(taken)
                  sofar ::= TrMarker(processed)
                  left = end
@@ -424,7 +424,7 @@ object PresentationMarker {
                case None => //end not found, ignoring
                  sofar ::= first
                  left = others
-               case Some((taken, end)) => 
+               case Some((taken, end)) =>
                  val processed = introducePresentationMarkers(taken)
                  sofar ::= TableMarker(processed)
                  left = end
@@ -450,7 +450,7 @@ object PresentationMarker {
                   sofar ::= PhantomMarker(processed)
                   left = end
               }
-               
+
             /*FR: I'm removing this case because ' is too important as a delimiter.
              In general, special markers must not clash with reasonable delimiters.
              The weirder ones should all start with some escape character.
@@ -460,11 +460,11 @@ object PresentationMarker {
               sofar ::= makeOne(introducePresentationMarkers(List(arg)))
               isRootProcessed = false
               */
-              
+
             case Delim(w) if w.startsWith("#num_") => //mathml number
               left = others
               sofar ::= NumberMarker(Delim(w.substring(5)))
-              
+
             case Delim(w) if w.startsWith("#id_") => //mathml identifier
               left = others
               sofar ::= IdenMarker(Delim(w.substring(4)))
@@ -472,7 +472,7 @@ object PresentationMarker {
             case Delim(w) if w.startsWith(".label(") => //TODO: support markers as labels
               if(w.endsWith(")"))
                 sofar.head match {
-                case td : TdMarker => 
+                case td : TdMarker =>
                   sofar = LabelMarker(List(sofar.head),w.substring(7).dropRight(1)) :: sofar.tail
                 case notEnding =>
                   sofar ::= first
@@ -480,16 +480,16 @@ object PresentationMarker {
               else
                 sofar ::= Delim(" ")
               left = others
-              
+
             case Delim(w) if w.startsWith("#glyph_") =>
               left = others
               sofar ::= GlyphMarker(Delim(w.substring(7)))
-              
+
             case Delim("err_") =>
               val (content,lrest) = splitOffOne(others)
               left = lrest
               sofar ::= ErrorMarker(List(content))
-            
+
             case Delim(w) if w.startsWith("/*") && w.endsWith("*/") =>{
               left = others
               val second = w.substring(2).dropRight(2)
@@ -502,7 +502,7 @@ object PresentationMarker {
       }
       sofar.reverse
    }
-   
+
    def get_until(delims : List[String], markers : List[Marker], dropLast : Boolean = false) : Option[(List[Marker], List[Marker])] = {
      var left = markers
      var sofar : List[Marker] = Nil
@@ -511,7 +511,7 @@ object PresentationMarker {
        left.head match {
          case Delim(s) if delims.contains(s) =>
            found = true
-           if (dropLast) 
+           if (dropLast)
              left = left.tail
          case _ =>
            sofar ::= left.head
@@ -524,11 +524,11 @@ object PresentationMarker {
        None
      }
    }
-   
+
    /** recursively replaces all presentation markers with their list of children and flattens the whole list
      *
      *  @return all non-presentation markers in m in traversal order
-    */ 
+    */
    def flatten(m: Marker): List[Marker] = m match {
       case p: PresentationMarker =>
          var res: List[Marker] = Nil
@@ -543,8 +543,8 @@ object PresentationMarker {
 }
 /**
  * see [[Arity]]
- * 
- * Almost all ArityComponents arise as the non-Delimiter NotationMarkers 
+ *
+ * Almost all ArityComponents arise as the non-Delimiter NotationMarkers
  */
 sealed trait ArityComponent {
    val number: Int
@@ -556,12 +556,12 @@ sealed trait VariableComponent extends ArityComponent
 //sealed trait ScopeComponent extends ArityComponent
 
 object Marker {
-   /** checks if s(i) exists and satisfies p; negative i counts from end */ 
+   /** checks if s(i) exists and satisfies p; negative i counts from end */
    private def charAt(s: String, i: Int, p: Char => Boolean) = {
      val iA = if (i < 0) i + s.length else i
-     iA < s.length && p(s(iA)) 
+     iA < s.length && p(s(iA))
    }
-  
+
    def parse(s: String) : Marker = s match {
          case s : String if s.startsWith("%L") =>
            var i = 2

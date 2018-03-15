@@ -13,15 +13,15 @@ import utils._
 
 class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document => Unit) extends Logger with MMTTask
 {
-	def logPrefix = "imps-omdoc"
-	protected def report: Report = controller.report
+   def logPrefix = "imps-omdoc"
+   protected def report: Report = controller.report
 
-	def doDocument(es : Exp, uri : URI) : BuildResult =
-	{
+   def doDocument(es : Exp, uri : URI) : BuildResult =
+   {
     var successfulTransfers : Int = 0
     println("#### " + successfulTransfers + " successfully transferred to MMT")
-		BuildResult.empty
-	}
+      BuildResult.empty
+   }
 
   def doModule(es : Exp) : DeclaredModule =
   {

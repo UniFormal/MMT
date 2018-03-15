@@ -5,24 +5,24 @@ import parser._
 
 /**
  * A Scala-level type to be used in a [[RealizedType]]
- * 
+ *
  * See also [[SemanticOperator]]
- * 
+ *
  * SemanticType's are closed under subtypes and quotients by using valid and normalform.
  * In other words, the triple (U, valid, normalform) forms a partial equivalence relation on a Scala type U.
- * 
+ *
  * For technical reasons, U is fixed as the type [[Any]] (Scala cannot type check enough to make the overhead worthwhile.)
  * Instead, type-safety-supporting syntax is offered wherever reasonable, see also [[RSemanticType]].
  */
 abstract class SemanticType extends SemanticObject {
-  
+
    /** string representation of this type (should be toString, but we want to force people to implement this) */
    def asString: String
-   
+
    override def toString = asString
-  
+
    /** the predicate on the semantic type used to obtain subtypes
-    *  
+    *
     *  true by default
     */
    def valid(u: Any): Boolean = true
@@ -43,12 +43,12 @@ abstract class SemanticType extends SemanticObject {
    def lex: Option[parser.LexFunction] = None
    /** @return a fresh iterator over values of this type */
    def enumerate: Option[Iterator[Any]] = None
-   
+
    /** returns a canonical embedding from this type into some other type
     *  only the identity of this type by default, override as needed
     */
    def embed(into: SemanticType): Option[SemanticOperator.Unary] = if (this == into) Some(id) else None
-   
+
    /** the identify function of this type */
    def id = SemanticOperator.Unary(this,this)(x => x)
 
@@ -61,11 +61,11 @@ abstract class SemanticType extends SemanticObject {
 trait RSemanticType[V] extends SemanticType {
    /** this must be the class object of V (which cannot be implemented generically here in Scala) */
    val cls: Class[V]
-   
+
    /** does nothing but triggers Scala type checking */
    def apply(v: V): Any = v
-   
-   /** does nothing but refines the Scala type if possible */ 
+
+   /** does nothing but refines the Scala type if possible */
    def unapply(u: Any): Option[V] = u match {
       //TODO not typesafe for complex types, cls == u.getClass works for complex types but does not consider subtyping
       case v: V@unchecked if cls.isInstance(v) =>
@@ -86,4 +86,13 @@ object SemanticType {
     }
     def fromString(s: String) = throw ParseError("cannot parse semantic types")
   }
+}
+
+/** a type that is equal to an existing Scala type */
+abstract class Atomic[V] extends RSemanticType[V] {
+  override def valid(u: Any) = unapply(u).isDefined
+  final def toString(u: Any) = atomicToString(unapply(u).get)
+  def atomicToString(u: V) = unapply(u).get.toString
+  /** narrower type */
+  def fromString(s: String): V
 }

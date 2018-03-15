@@ -8,10 +8,10 @@ import presentation._
 
 /**
  * A Structure represents an MMT structure.
- * 
+ *
  * Structures be declared (given by a list of assignments) or defined (given by an existing morphism).
  * These cases are distinguished by which subtrait of Link is mixed in.
- * 
+ *
  * @param parent the [[Path]] of the parent theory (also the codomain of the link)
  * @param name the name of the view
  * @param from the domain theory
@@ -22,12 +22,12 @@ abstract class Structure extends Declaration with Link {
    /** the domain/type of the structure */
    val tpC: TermContainer
    /** the domain of the structure as a Term, may fail if tpC is undefined */
-   def from: Term = tpC.get.getOrElse {throw ImplementationError("access of unknown structure domain in " + path)}
+   def fromC = tpC
    /** the domain of a structure is its home theory*/
-   val to = home
+   val toC = new FinalTermContainer(home)
    val isImplicit: Boolean
    def namePrefix = name
-   
+
    def isInclude = Include.unapply(this).isDefined
    private def nameOrKeyword = this match {
       case Include(_, fromPath, _) => "include "
@@ -43,14 +43,14 @@ abstract class Structure extends Declaration with Link {
    def toNode = {
       val nameAtt = if (isInclude) null else name.toPath
       val (fromAtt,fromNode) = backend.ReadXML.makeTermAttributeOrChild(from, "from")
-      val implAtt =if (isInclude) null else if (isImplicit) "true" else null 
+      val implAtt =if (isInclude) null else if (isImplicit) "true" else null
       <import name={nameAtt} from={fromAtt} implicit={implAtt}>{fromNode}{innerNodes}</import>
    }
 }
 
 /**
  * A DeclaredStructure represents an MMT structure given by a list of assignments.<p>
- * 
+ *
  * @param home the [[Term]] representing the parent theory
  * @param name the name of the structure
  * @param from the domain theory
@@ -60,6 +60,8 @@ class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermCont
       extends Structure with DeclaredLink {
    def getComponents = List(TypeComponent(tpC))
 
+   def getInnerContext = codomainAsContext
+   
    def translate(newHome: Term, prefix: LocalName, translator: Translator,context : Context): DeclaredStructure = {
      def tl(m: Term)= translator.applyModule(Context.empty, m)
      val res = new DeclaredStructure(home, prefix/name, tpC map tl, isImplicit)
@@ -92,7 +94,7 @@ class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermCont
 
  /**
   * A DefinedStructure represents an MMT structure given by an existing morphism.
-  * 
+  *
   * @param home the [[Term]] representing the parent theory
   * @param name the name of the structure
   * @param from the domain theory
@@ -103,10 +105,10 @@ class DefinedStructure(val home : Term, val name : LocalName,
                        val tpC: TermContainer, val dfC : TermContainer, val isImplicit : Boolean)
       extends Structure with DefinedLink {
    def getComponents = List(TypeComponent(tpC), DefComponent(dfC))
-   
+
    def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): DefinedStructure = {
      def tl(m: Term)= translator.applyModule(context, m)
-     new DefinedStructure(home, prefix/name, tpC map tl, dfC map tl, isImplicit)
+     new DefinedStructure(newHome, prefix/name, tpC map tl, dfC map tl, isImplicit)
    }
    def merge(that: Declaration): DefinedStructure = {
      that match {
@@ -124,7 +126,7 @@ class DefinedStructure(val home : Term, val name : LocalName,
 /** apply/unapply functions for [[DeclaredStructure]]s whose domain is an MPath */
 object SimpleDeclaredStructure {
    def apply(home : Term, name : LocalName, tp: MPath, isImplicit : Boolean) =
-      new DeclaredStructure(home, name, TermContainer(OMMOD(tp)), isImplicit) // TODO add metamorph?
+      new DeclaredStructure(home, name, TermContainer(OMMOD(tp)), isImplicit)
    def unapply(ce: ContentElement) = ce match {
       case SimpleStructure(s: DeclaredStructure, p) => Some((s.home, s.name, p, s.isImplicit))
       case _ => None
@@ -134,7 +136,7 @@ object SimpleDeclaredStructure {
 /** auxiliary functions */
 object DeclaredStructure {
    def apply(home : Term, name : LocalName, from : Term, isImplicit : Boolean) =
-      new DeclaredStructure(home, name, TermContainer(from), isImplicit) // TODO add metamorph?
+      new DeclaredStructure(home, name, TermContainer(from), isImplicit)
 }
 
 /** auxiliary functions */
@@ -159,7 +161,7 @@ object SimpleStructure {
 
 /**
  * unnamed imports with automatic sharing are represented as special [[Structure]]s
- * 
+ *
  * they do not carry assignments
  * their name is LocalName(from)
  */

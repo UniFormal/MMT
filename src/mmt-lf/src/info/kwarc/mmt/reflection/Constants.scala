@@ -38,7 +38,7 @@ object Terms extends TheoryScala {
       case _ => None
     }
   }
-  
+
   object eval {
      def apply(t: Term) = elim(t, OMCOMP())
   }

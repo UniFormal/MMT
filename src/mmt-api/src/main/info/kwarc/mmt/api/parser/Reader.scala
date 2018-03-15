@@ -5,57 +5,63 @@ import utils._
 
 /** a Java-style reader that provides MMT-specific read methods
  * @param jr the underlying Java reader
- * 
+ *
  * MMT documents are delimited by the control characters
  * FS, GS, RS, US (ASCII decimal 28-31) for end of document, module, declaration, object, respectively
- * 
+ *
  * PU1 and PU2 (ASCII decimal 145, 146) are used to escape in/out of other formats
  * content between balanced PU1 and PU2 is skipped
- * 
+ *
  */
-// This class generally uses integers (0 to 65535 and -1 for end-of-file) to represent characters.  
+// This class generally uses integers (0 to 65535 and -1 for end-of-file) to represent characters.
 class Reader(val jr: java.io.BufferedReader) {
    import Reader._
-   
+
    /** the delimiter that terminated the previous read operation */
    private var lastDelimiter: Int = 65536 // initialized as invalid Char
    //TODO remove
    @deprecated("needs review", "")
    def forceLastDelimiter(i : Int) = lastDelimiter = i
    /**
+    * true if the last read operation hit the end of the current input stream
+    */
+   def endOfInput = -1 == lastDelimiter
+   /**
     * true if the last read operation hit the end of the current document
     */
-   def endOfDocument = (FS.andabove contains lastDelimiter) || (lastDelimiter <= FS.chars.head)
+   def endOfDocument = -1::FS.andabove contains lastDelimiter
    /**
     * true if the last read operation hit the end of the current module
     */
-   def endOfModule = (GS.andabove contains lastDelimiter) || (lastDelimiter <= GS.chars.head)
+   def endOfModule = -1::GS.andabove contains lastDelimiter
    /**
     * true if the last read operation hit the end of the current declaration
     */
-   def endOfDeclaration = (RS.andabove contains lastDelimiter) || (lastDelimiter <= RS.chars.head)
+   def endOfDeclaration = -1::RS.andabove contains lastDelimiter
    /**
     * true if the last read operation hit the end of the current object
     */
-   def endOfObject = (US.andabove contains lastDelimiter) || (lastDelimiter <= US.chars.head)
+   def endOfObject = -1::US.andabove contains lastDelimiter
 
    //current position (offset counts \r\n as 1 character)
    private var line : Int = 0
    private var column : Int = 0
    private var offset : Int = 0
-   // most recent non-whitespace character that was read
+   /** most recent non-whitespace character that was read */
    private var sourcePosition: SourcePosition = null
 
-   /** @return the position of the next character to be read
-    */
-   def getSourcePosition = SourcePosition(offset, line, column)
+   /** @return the position of the next character to be read */
+   def getNextSourcePosition = SourcePosition(offset, line, column)
+   /** @return the position of the most recently read non-whitespace character */
+   def getLastReadSourcePosition = Option(sourcePosition).getOrElse(getNextSourcePosition) // null only at beginning
+   
    /**
     * sets the current position
     * @param s a source position to overwrite the position of the next character to be read
     * This only affects the SourceRegion returned by read operations,
-    * not the actual position in the stream.  
+    * not the actual position in the stream.
     */
-   def setSourcePosition(s: SourcePosition) {
+   def setNextSourcePosition(s: SourcePosition) {
       line = s.line
       column = s.column
       offset = s.offset
@@ -72,20 +78,21 @@ class Reader(val jr: java.io.BufferedReader) {
       jr.reset
       s
    }
-   
+
    /** checks if the remainder starts with a certain String */
    def startsWith(s: String): Boolean = {
      val r = lookAhead(s.length)
      r == s
    }
-   
+
    /** read one character
     * \n, \r, and \r\n are read as \n
     */
    private def read: Int = {
       var c = jr.read
-      if (c == -1)
-         return c
+      if (c == -1) {
+        return c
+      }
       if (ignoreLineFeed && c == '\n') {
          c = jr.read
       }
@@ -103,7 +110,7 @@ class Reader(val jr: java.io.BufferedReader) {
        offset += 1
        c
    }
-   
+
    /** as read but skips initial whitespace */
    private def readSkipWS: Int = {
       var c:Int = 0
@@ -112,7 +119,7 @@ class Reader(val jr: java.io.BufferedReader) {
       } while (whitespace(c))
       c
    }
-   
+
    /**
     * read everything up to and including the next delimiter
     * @param goal the delimiters to consider
@@ -165,7 +172,7 @@ class Reader(val jr: java.io.BufferedReader) {
     */
    def readToSpace = readUntil(32::US.andabove:_*)
 
-   /** reads until end of current Token, terminated by whitespace or by switch from letter-like to symbol-like characters 
+   /** reads until end of current Token, terminated by whitespace or by switch from letter-like to symbol-like characters
     */
    def readToken = {
       var s = ""
@@ -196,7 +203,7 @@ class Reader(val jr: java.io.BufferedReader) {
    /** reads until EOF
     */
    def readAll = readUntil()
-   
+
    /** closes the underlying Java reader */
    def close {
       jr.close

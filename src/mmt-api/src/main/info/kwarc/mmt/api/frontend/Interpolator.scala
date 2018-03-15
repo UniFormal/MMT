@@ -12,20 +12,20 @@ import uom.OMLiteral._
 
 /**
  * provides convenience methods to be used in an interactive Scala interpreter session
- * 
+ *
  * usage: val ip = new MMTInterpolator(controller); import i.MMTContext
  */
 class MMTInterpolator(controller: frontend.Controller) {
    implicit def int2OM(i: Int) = OMI(i)
    implicit def floatt2OM(f: Double) = OMF(f)
-   
+
    /** a shortcut for running MMT shell commands while in the Scala interpreter */
    def shell(command: String) {
      controller.handleLine(command)
    }
-   
+
    private def theory = controller.getBase match {
-        case d: DPath => utils.mmt.mmtcd 
+        case d: DPath => utils.mmt.mmtcd
         case p: MPath => p
         case GlobalName(t,_) => t
         case CPath(par,_) => par match {
@@ -54,23 +54,23 @@ class MMTInterpolator(controller: frontend.Controller) {
         val t = parser(pu)(ErrorThrower).toTerm
         val tI = t ^? cont.toPartialSubstitution
         if (check) {
-      	  val stack = Stack(Context(theory) ++ cont)
-      	  val (tR, tpR) = checking.Solver.check(controller, stack, tI).
+           val stack = Stack(Context(theory) ++ cont)
+           val (tR, tpR) = checking.Solver.check(controller, stack, tI).
                   left.toOption.getOrElse {
-      	      throw InvalidObject(t, "term was parsed but did not type-check")
-      	    }
-      	  tR
+               throw InvalidObject(t, "term was parsed but did not type-check")
+             }
+           tR
         } else
           tI
    }
-   
+
    /**
     * defines string interpolation methods
     *
     * use them as m"x" where m is the method name and x a string representing an Obj
     * notations are used according to the current theory,
     * integers and floats are turned into MMT objects
-    * 
+    *
     * example: val x = OMI(1); uom"1+$x" yields OMI(2) (if appropriate notation and simplification rule for + are registered)
     */
   implicit class MMTContext(sc: StringContext) {
@@ -80,14 +80,14 @@ class MMTInterpolator(controller: frontend.Controller) {
       /** uom"s" parses and simplifies s */
       def uom(ts: Term*): Term = {
          val t = mmt(ts : _*)
-	      controller.simplifier(t, Context(theory))
+         controller.simplifier(t, Context(theory))
       }
       /** r"s" parses and type-checks s */
       def r(ts: Term*): Term = parse(ss, ts.toList, None, true)
       /** s"s" parses, type-checks, and simplifies s */
       def rs(ts: Term*): Term = {
          val t = r(ts : _*)
-	      controller.simplifier(t, Context(theory))
+         controller.simplifier(t, Context(theory))
       }
       /** cont"s" parses s into a Context */
       def cont(ts: Term*) : Context = {
@@ -108,8 +108,8 @@ class MMTInterpolator(controller: frontend.Controller) {
         controller.presenter.asString(t)
       }
       /** standard string interpolation that is executed immediately as an MMT action */
-      def act(ss: String*): Unit = {
+      def act(ss: String*) {
          shell(sc.s(ss))
-      } 
+      }
    }
 }

@@ -27,7 +27,7 @@ trait AbstractTermContainer extends AbstractObjectContainer {
    def get: Option[Term]
 }
 
-/** a dummy container for a stateless term */ 
+/** a dummy container for a stateless term */
 class FinalTermContainer(t: Term) extends AbstractTermContainer {
    def update(nw: ComponentContainer) = nw match {
       case nw: FinalTermContainer => nw.get != Some(t)
@@ -35,7 +35,7 @@ class FinalTermContainer(t: Term) extends AbstractTermContainer {
    }
    def delete {}
    def isDefined = true
-   def get = Some(t) 
+   def get = Some(t)
 }
 
 /** A ComponentKey identifies a [[DeclarationComponent]]. */

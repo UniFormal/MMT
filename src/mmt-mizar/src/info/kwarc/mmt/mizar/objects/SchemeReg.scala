@@ -6,7 +6,7 @@ class MizSchemeBlock(val schemes : List[MizSchemeDef]) extends MizAny
 class MizSchemeDef(val schemeNr : Int, val args : List[MizSchemeArg], val premises : List[MizProposition],val prop : MizProposition) extends MizAny
 
 
-trait MizSchemeArg 
+trait MizSchemeArg
 
 class MizSchemeFuncDecl(val argTypes : List[MizTyp], val retType : MizTyp) extends MizSchemeArg
 

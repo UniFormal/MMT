@@ -4,7 +4,7 @@ import org.scalatest.FlatSpec
 import info.kwarc.mmt.api.utils.CompRegexParsers
 
 class ParserTestSpec extends FlatSpec {
-
+  behavior of "a completing string parser"
 
   //
   // STRING

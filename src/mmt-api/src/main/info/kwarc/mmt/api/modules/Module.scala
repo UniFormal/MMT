@@ -23,8 +23,6 @@ abstract class Module(val parent : DPath, val name : LocalName) extends ContentE
  * Module given by a set of statements
  */
 trait DeclaredModule extends Module with Body {
-   def getIncludes : List[MPath]
-   def getInnerContext: Context
    def asDocument: documents.Document
    def translate(newNS: DPath, prefix: LocalName, translator: Translator, context : Context): DeclaredModule
 }
@@ -41,7 +39,7 @@ trait DefinedModule extends Module with ModuleDefiniens {
  */
 trait ModuleWrapper extends ContentElement {
   def module : Module
-  def getComponents = module.getComponents 
+  def getComponents = module.getComponents
   def getDeclarations = module.getDeclarations
   // bend over metadata pointer
   this.metadata = module.metadata

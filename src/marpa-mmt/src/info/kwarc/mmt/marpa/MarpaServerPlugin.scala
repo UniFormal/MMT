@@ -4,15 +4,15 @@ package info.kwarc.mmt.marpa
  * ------------------------------------------
  * Toloaca Ion  <i.toloaca@jacobs-university.de>
  * ------------------------------------------
- * 		General information:
- * 	New notations are written in sTeX, afterwards LaTeXML is used to convert those to .omdoc ,
+ *       General information:
+ *    New notations are written in sTeX, afterwards LaTeXML is used to convert those to .omdoc ,
  * then MMT is used to parse the .omdoc documents and to store the relevant notations.
  *
- *   	Purpose:
- * 	The code below uses the notations stored in MMT as Markers (Scala datatypes) to create a Marpa
+ *      Purpose:
+ *    The code below uses the notations stored in MMT as Markers (Scala datatypes) to create a Marpa
  * grammar and make it available via a post request.
  *
- *  	 Details:
+ *      Details:
  *    To convert from Markers to a Marpa grammar an intermediate format is used (List[String]).
  * Although the format might have been omitted, using tokenized strings make the recursion and
  * the transformation from Markers to the grammar easier, and creating unique rules also becomes easier.
@@ -98,7 +98,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
     }
   }
 
-  //The post request response is defined here 
+  //The post request response is defined here
   def getGrammarResponse(request: ServerRequest): ServerResponse =
     val reqBody = request.body
     val notations = controller.library.getModules flatMap {
@@ -123,7 +123,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 
     val grammarAsStringList = Grammar.getMarpaGrammar.map(x ⇒ info.kwarc.mmt.api.utils.JSONString(x))
     val resp = info.kwarc.mmt.api.utils.JSONArray(grammarAsStringList: _*)
-    //		val params = reqBody.asJSON
+    //      val params = reqBody.asJSON
     ServerResponse.JsonResponse(resp)
   }
 
@@ -294,8 +294,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
       })
       /*
        *  <mn>x</mn> => OMI(x) for integers
-       *  <mi<x</mi> => OMV(x) 
-       *  <mo>s<mo> => OMS(s.toPath) 
+       *  <mi<x</mi> => OMV(x)
+       *  <mo>s<mo> => OMS(s.toPath)
        *  CML (apply/csymbol) => eventually literal OMLit(CML) or OMFOREIGN
        */
     }

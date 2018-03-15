@@ -14,7 +14,7 @@ import NatRules.NatLit
 
 /* TODO inferring the type of ApplySpine(f, a_1,...,a_n) must work with entire argument sequence if some a_i is a sequence
  * current rules work if sequence arguments always provided as sequence term
- * 
+ *
  * maybe an idea for more general treatment: use spines, sequences may not be split across spines
  * if length is
  *  literal: use rules as usual (add flexary ApplyTerm, Beta rules)
@@ -51,7 +51,7 @@ object NTypeTerm extends InferenceRule(rep.path, OfType.path) {
    }
 }
 
-/** 
+/**
  *  i, i/up |- t(i) : a_i : type --->  |- [t(i)] i=0^n : [a_i] i=0^n
  *  i, i/up |- t(i) : type       --->  |- [t(i)] i=0^n : type^n
  */
@@ -62,7 +62,7 @@ object EllipsisInfer extends InferenceRule(ellipsis.path, OfType.path) {
          val stackI = stack ++ i%OMS(nat)
          val iup = upBoundName(i)
          val stackILU = stackI ++ iup%lessType(OMV(i), n)
-         val aOpt = solver.inferType(t ^? sub)(stackILU , history.branch)
+         val aOpt = solver.inferType(t ^? sub)(stackILU , history)
          aOpt flatMap {a =>
             if (a == OMS(Typed.ktype)) {
                // sequences of types
@@ -86,7 +86,7 @@ object EllipsisInfer extends InferenceRule(ellipsis.path, OfType.path) {
    }
 }
 
-/** 
+/**
  *  ... t_i : A_i ...  for i = 1,...,n
  *  ----------------------------------
  *  t_1,...,t_n : A_1,...,A_n
@@ -104,7 +104,7 @@ object FlatSeqInfer extends InferenceRule(flatseq.path, OfType.path) {
 }
 
 
-/** 
+/**
  *  |- s : a
  *  |- i < |a|
  *  -------------
@@ -120,12 +120,15 @@ object IndexInfer extends InferenceRule(index.path, OfType.path) {
        case Some(sT) =>
           if (!covered) {
             Length.infer(solver, s) match {
-              case None => return None
-              case Some(sL) => Length.checkBelow(solver)(at, sL)
+              case None =>
+                history += "cannot infer length"
+                return None
+              case Some(sL) =>
+                Length.checkBelow(solver)(at, sL)
             }
           }
           if (sT == OMS(Typed.kind))
-             // special case for (type^n).i (which should never actually occur but is conceivable) 
+             // special case for (type^n).i (which should never actually occur but is conceivable)
              Some(OMS(Typed.kind))
           else
             Some(index(sT, at))
@@ -164,14 +167,14 @@ object IndexCompute extends ComputationRule(index.path) {
   }
 }
 
-/** 
+/**
  *  component-wise type-checking of a sequence
- *  
+ *
  *  |t| = |a|
  *  |- t.i : a.i  for all i=0,...,n-1
  *  ---------------------------------
  *  |- t : a
- *  
+ *
  *  applicable only if |a| simplifies to a literal
  */
 class SequenceTypeCheck(op: GlobalName) extends TypingRule(op) {
@@ -204,12 +207,12 @@ object RepTypeCheck extends SequenceTypeCheck(rep.path)
 
 /**
  *  component-wise equality-checking of sequences
- *  
+ *
  *  |s| = |t| = |a|
  *  |- s.i = t.i : a.i for all i=1,...,n-1
  *  --------------------------------------
  *  |- s=t : a
- *  
+ *
  *  applicable only if |a| simplifies to a literal
  */
 class SequenceEqualityCheck(op: GlobalName) extends TypeBasedEqualityRule(Nil, op) {
@@ -269,15 +272,15 @@ object ContractRep extends TermTransformationRule with ComplificationRule {
 /**
  * the beta-style rule
  * [E(i)]_{i=1}^n  --->  E(1),...,E(n)
- * 
+ *
  * The rule is applied only in argument sequences and contexts.
  * In contexts, it is only applied if the sequence variable occurs only with literal indices,
  * in which case each x.1 is replaced with x/"1" etc.
  * If the sequence variable occurs in any other way (e.g., as x or x.n), it is not expanded.
- * 
+ *
  * It would be easier to use the substitution x->Sequence(x/"1",...,x/"n"), but that is not possible because we avoid concatenation here.
- * Typically, sequence variables occur with indices that are index variables of ellipses. Those ellipses must have been previously simplified. 
- */ 
+ * Typically, sequence variables occur with indices that are index variables of ellipses. Those ellipses must have been previously simplified.
+ */
 class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       implicit val s = solver
@@ -315,7 +318,7 @@ object ExpandEllipsis {
         case a => List(a)
       }
    }
-   
+
    /** flattens a context and returns the substitution */
    def applyCont(con: Context)(implicit solver: CheckingCallback, stack: Stack, history: History): (Context,Substitution) = {
       var subs = Substitution.empty
@@ -363,7 +366,7 @@ object ExpandEllipsis {
          val name = x / i.toString
          VarDecl(name, tps(i.toInt))
       }
-      val vars = flatseq(vds.map(vd => OMV(vd.name)):_*) 
+      val vars = flatseq(vds.map(vd => OMV(vd.name)):_*)
       (vds, x -> vars)
    }
 }
@@ -379,7 +382,7 @@ object FlexaryComposition extends ExpandEllipsis(comp.path)
 
 /**
  * Restriction of StandardArgumentChecker that requires that expected and provided length agree
- */ 
+ */
 object LengthAwareArgumentChecker extends ArgumentChecker {
    def apply(solver: CheckingCallback)(tm: Term, tp: Term, covered: Boolean)(implicit stack: Stack, history: History): Boolean = {
       def sameLength = {
@@ -408,12 +411,12 @@ object LengthAwareArgumentChecker extends ArgumentChecker {
 }
 
 object LengthAwareApplyTerm extends GenericApplyTerm(LengthAwareArgumentChecker) {
-   /** LF's rule must be shadowed because it would allow not-length-matching inference */ 
+   /** LF's rule must be shadowed because it would allow not-length-matching inference */
    override def shadowedRules = List(ApplyTerm)
 }
 
 object LengthAwareBeta extends GenericBeta(LengthAwareArgumentChecker) {
-   /** LF's beta-rule must be shadowed because it would allow not-length-matching reduction */ 
+   /** LF's beta-rule must be shadowed because it would allow not-length-matching reduction */
    override def shadowedRules = List(Beta)
 }
 
@@ -421,7 +424,7 @@ object LengthAwareBeta extends GenericBeta(LengthAwareArgumentChecker) {
 /** matches an operator that expects sequence arguments against an argument sequence
  *
  *  this rule is called before ApplyTerm, solves unknown arity arguments, then fails
- *  once the arities are solved, ApplyTerm can do the rest 
+ *  once the arities are solved, ApplyTerm can do the rest
  */
 object SolveArity extends InferenceRule(Apply.path, OfType.path) {
    /** make sure this is called before the usual rule */
@@ -450,14 +453,14 @@ object SolveArity extends InferenceRule(Apply.path, OfType.path) {
          // TODO case where some arguments are given as sequences
          /*if (args.length == expTp.length) {
            val tpLs = expTps map {case ()
-           val lengthsMatch = (argLs zip expTpLs) 
+           val lengthsMatch = (argLs zip expTpLs)
          }*/
          history += "can only handle handle pure argument sequences"
          throw Backtrack("can't solve arity, assuming argument grouping matches expected grouping")
       }
       val nS = NatLit(args.tail.length)
       solver.check(Equality(stack, args.head, nS, Some(OMS(nat))))(history + "solving by number of arguments")
-      throw Backtrack("solved arity as " + args.tail.length + ", defering to other rules") 
+      throw Backtrack("solved arity as " + args.tail.length + ", defering to other rules")
    }
 }
 
@@ -483,10 +486,10 @@ object FlexaryCompositionInfer extends InferenceRule(comp.path, OfType.path) {
              }
              // m = pred(n), i.e., succ(m) = n
              val (m,_) = Common.pickFresh(solver, LocalName("pred"))
-             solver.defineByConstraint(m, OMS(nat)){mT => 
+             solver.defineByConstraint(m, OMS(nat)){mT =>
                solver.check(Equality(stack, succ(mT), n, Some(OMS(nat))))(history + "obtaining predecessor of length")
              }
-             // A.{i+1} = B.i 
+             // A.{i+1} = B.i
              val mT = OMV(m)
              val j = Equality(stack ++ i%mT, index(a,succ(iT)), index(b, iT), None)
              solver.check(j)(history + "checking composability")

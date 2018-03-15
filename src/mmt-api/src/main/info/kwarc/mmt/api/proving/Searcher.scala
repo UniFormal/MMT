@@ -11,12 +11,12 @@ import utils._
 /**
  * Conducts proof search, e.g., as used by the [[RuleBasedProver]].
  * A new instance must be created for each proof obligation.
- * 
+ *
  * @param controller the MMT controller to use for lookups, etc.
  * @param goal the goal to prove
  * @param rules the rules to use
  * @param provingUnit the proof task
- * 
+ *
  * The Searcher works in two modes:
  *  first, it greedily applies invertible tactics to each new goal (called the expansion phase)
  *  second, forward and backward breadth-first searches are performed in parallel
@@ -26,12 +26,12 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
    def logPrefix = provingUnit.logPrefix + "#prover"
 
    implicit val presentObj: Obj => String = o => controller.presenter.asString(o)
-   
+
    private val invertibleBackward = rules.getOrdered(classOf[BackwardInvertible])
    private val invertibleForward  = rules.getOrdered(classOf[ForwardInvertible])
    private val searchBackward     = rules.getOrdered(classOf[BackwardSearch])
    private val searchForward      = rules.getOrdered(classOf[ForwardSearch])
-   
+
    implicit val facts = new Facts(this, 2, provingUnit.logPrefix)
 
    private def doTheory(t : modules.DeclaredTheory) =
@@ -48,7 +48,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
          case gn : GlobalName => Some(gn.module)
          case _ => None
       })
-      controller.simplifier.materialize(provingUnit.context,tm,true,mpath) match {
+      controller.simplifier.materialize(provingUnit.context,tm,mpath,None) match {
          case dt : modules.DeclaredTheory =>
             Some(dt)
          case _ =>
@@ -88,7 +88,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
       search(levels)
       goal.isSolved
    }
-   
+
    /**
     * a list of possible steps to be used in an interactive proof
      *
@@ -108,7 +108,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
       val forwardOptions = facts.solutionsOfGoal(goal)
       (forwardOptions ::: backwardOptions).distinct
    }
-   
+
    private def search(levels: Int) {
       if (provingUnit.isKilled) {
          provingUnit.killact
@@ -118,11 +118,11 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
       backwardSearch(goal)
       // forward search at all goals
       forwardSearch(false)
-      goal.newFacts(facts)     
+      goal.newFacts(facts)
       if (goal.isSolved) return
       search(levels-1)
    }
-   
+
    private def forwardSearch(interactive: Boolean) {
       log("Performing forward search")
       searchForward.foreach {e =>
@@ -131,7 +131,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
       facts.integrateFutureFacts
       log("Finished Search, facts are:  \n"+facts)
    }
-   
+
    /**
     * applies backward search to all fully expanded goals
      *
@@ -150,14 +150,14 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
          if (g.isSolved) return
       }
    }
-   
+
    /** statefully changes g to a simpler goal */
    private def simplifyGoal(g: Goal) {
-      g.setConc(controller.simplifier(g.conc, g.fullContext, rules))
+      g.setConc(controller.simplifier(g.conc, g.fullContext, rules, false))
    }
    /** simplify a fact */
    private[proving] def simplifyFact(f: Fact): Fact = {
-      val tpS = controller.simplifier(f.tp, f.goal.fullContext, rules)
+      val tpS = controller.simplifier(f.tp, f.goal.fullContext, rules, false)
       f.copy(tp = tpS)
    }
 

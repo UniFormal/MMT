@@ -45,7 +45,7 @@ class Report extends Logger {
 
   /** output is categorized, the elements of group determine which categories are considered
     * the categories "user" (for user input), "error" are output by default, and "temp" (for temporary logging during debugging) */
-  private[api] val groups = scala.collection.mutable.Set[String]("user", "error", "temp")
+  private[api] val groups = scala.collection.mutable.Set[String]("user", "error", "temp", "response")
 
   /** gets a list of active groups */
   def active : List[String] = groups.toList
@@ -136,14 +136,15 @@ abstract class ReportHandler(val id: String) {
   /** logs as an error (categories "error" and "debug" for short and long message, respectively) */
   def apply(ind: Int, e: Error, debug: Boolean) {
     val caller = e.getStackTrace()(0).toString
-    val msg = e match {
-      case _: Invalid | _: ParseError => contentErrorHighlight(e.shortMsg)
-      case _ => systemErrorHighlight(e.shortMsg)
+    val (msg,content) = e match {
+      case _: ContentError => (contentErrorHighlight(e.shortMsg), e.getCausedBy.isEmpty)
+      case _ => (systemErrorHighlight(e.shortMsg), false)
     }
     // only report real errors
     if (e.level >= Level.Error) apply(ind, caller, "error", List(msg))
-    if (debug)
+    if (debug && !content) {
       apply(ind, caller, "debug", utils.stringToList(e.toStringLong, "\\n"))
+    }
   }
 
   def systemErrorHighlight(s: String): String = s
@@ -171,7 +172,7 @@ abstract class ReportHandler(val id: String) {
 
 /** outputs to standard output */
 object ConsoleHandler extends ReportHandler("console") {
-  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]): Unit = {
+  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]) {
     msgParts.foreach { msg =>
       val m = indentString(ind) + group + ": " + msg
       println(m)

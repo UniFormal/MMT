@@ -34,7 +34,7 @@ class ParserState(val reader: Reader, val ps: ParsingStream, val cont: Structure
   var namespaces = ps.nsMap
 
   /** the position at which the current StructuralElement started */
-  var startPosition = reader.getSourcePosition
+  var startPosition = reader.getNextSourcePosition
 
   def copy(rd: Reader = reader): ParserState = {
     val s = new ParserState(rd, ps, cont)
@@ -84,8 +84,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /**
    * A continuation function called on every StructuralElement that was found
    *
-   * For grouping elements (documents, modules with body), this must be called on the empty element first
-   * and then on each child, finally end(se) must be called on the grouping element.
+   * For container elements (documents, modules with body), this must be called on the empty element first
+   * and then on each child, finally end(se) must be called on the container element.
+   * This holds accordingsly for nested declared modules. 
    */
   protected def seCont(se: StructuralElement)(implicit state: ParserState) {
     log(se.toString)
@@ -102,9 +103,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /** called at the end of a document or module, does common bureaucracy */
   protected def end(s: ContainerElement[_])(implicit state: ParserState) {
     //extend source reference until end of element
-    SourceRef.get(s) foreach { r =>
-      SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getSourcePosition - 2)))
-      // the -2 seems to be necessary at the end of files (to avoid sourceref errors)
+    SourceRef.get(s) foreach {r =>
+      SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getLastReadSourcePosition)))
     }
     state.cont.onElementEnd(s)
     log("end " + s.path)
@@ -112,8 +112,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   /** the region from the start of the current structural element to the current position */
   protected def currentSourceRegion(implicit state: ParserState) =
-    SourceRegion(state.startPosition, state.reader.getSourcePosition)
-
+    SourceRegion(state.startPosition, state.reader.getLastReadSourcePosition)
 
   /** like seCont but may wrap in NestedModule */
   private def moduleCont(m: Module, par: HasParentInfo)(implicit state: ParserState) {
@@ -181,15 +180,15 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           end(doc)(state)
           (doc, state)
        case IsRootMod(mpath) => throw LocalError("unsupported")
-       case _ => throw LocalError("unsupported")
-       /*case IsDoc(dp) =>
+       // hack: we return the last element of the IsDoc/IsMod, assuming that's the only one that was parsed
+       case IsDoc(dp) =>
           val doc = controller.globalLookup.getAs(classOf[Document],dp)
           readInDocument(doc)(state)
-          (???,state)
+          (doc.getDeclarations.last,state)
        case IsMod(mp, rd) =>
           val mod = controller.globalLookup.getAs(classOf[DeclaredModule],mp)
-          readInModule(mod, mod.getInnerContext, Nil)(state)
-          (???, state)*/
+          readInModule(mod, mod.getInnerContext, new Features(Nil,Nil))(state)
+          (mod.getDeclarations.last, state)
     }
   }
 
@@ -288,7 +287,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val pr = puCont(pu)
     (obj, reg, pr)
   }
-  
+
   private def doComponent(c: ComponentKey, tc: TermContainer, cont: Context)(implicit state: ParserState) {
     val (obj, _, pr) = readParsedObject(cont)
     tc.read = obj
@@ -331,9 +330,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val cont = ParseResult.fromTerm(p) match {
 
 */
-  
-  
-  
+
+
+
   private def doNotation(c: NotationComponentKey, nc: NotationContainer, treg: SourceRegion)(implicit state: ParserState) {
     val notString = state.reader.readObject._1
     if (nc(c).isDefined)
@@ -346,7 +345,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   /** resolve a name in the domain of a link and insert the necessary ComplexStep */
   protected def resolveAssignmentName[A <: Declaration](cls: Class[A], home: Term, name: LocalName)(implicit state: ParserState) = {
-    TheoryExp.getSupport(home) foreach {p => controller.simplifier(p)}
+    TheoryExp.getSupport(home) foreach {p => controller.simplifier(p)} // TODO is this always redundant?
     controller.globalLookup.resolve(home, name) match {
       case Some(d: Declaration) if cls.isInstance(d) =>
         ComplexStep(d.parent) / d.name
@@ -354,13 +353,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         errorCont(makeError(currentSourceRegion, "not a declaration name of the right type: " + name))
         name
       case None =>
-        // check whether it's a theory parameter
-        if (Try(controller.getAs(classOf[DeclaredTheory],home.toMPath).parameters).toOption.exists(_.isDeclared(name)))
-          name
-        else {
-          errorCont(makeError(currentSourceRegion, "unknown or ambiguous name: " + name))
-          name
-        }
+        errorCont(makeError(currentSourceRegion, "unknown or ambiguous name: " + name))
+        name
     }
   }
 
@@ -423,10 +417,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           }
           val (mod, mreg) = state.reader.readModule
           val reader = Reader(mod)
-          reader.setSourcePosition(mreg.start)
+          reader.setNextSourcePosition(mreg.start)
           val pea = new ParserExtensionArguments(this, state.copy(reader), doc, k)
           extParser(pea) foreach {
-            case m: Module => moduleCont(m, parentInfo)
+            case m: Module =>
+              moduleCont(m, parentInfo)
+              //TODO unclear if end(m) should be called; presumably yes if m is declared
             case _ => throw makeError(reg, "parser extension returned non-module")
           }
       }
@@ -475,10 +471,18 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
        throw ImplementationError("document home must extend content home")
     }
     lazy val parentInfo = IsMod(mpath, currentSection)
-    /* declarations must only be added through this method */
+    /* complete declarations should only be added through this method
+     * Incomplete container elements must be added separately, e.g., as in readStructure.
+     */
     def addDeclaration(d: Declaration) {
        d.setDocumentHome(currentSection)
        seCont(d)
+       d match {
+         case ce: ContainerElement[_] =>
+           // if a container element is added in one go (e.g., includes, instances), we need to also call the end of element hook
+           state.cont.onElementEnd(ce)
+         case _ =>
+       }
     }
     // to be set if the section changes
     var nextSection = currentSection
@@ -498,7 +502,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           val name = readName
           val c = readConstant(name, mpath, linkOpt, context)
           addDeclaration(c)
-        //PlainInclude
+        //Include resp. LinkInclude
         case "include" =>
           mod match {
             case thy: DeclaredTheory =>
@@ -519,31 +523,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                 case _ =>
                   OMMOD(inclp)
               }
-              val as = ViewInclude(link.toTerm, from, target)
+              val as = LinkInclude(link.toTerm, from, target)
               SourceRef.update(as.from, fromRef)
               SourceRef.update(as.df, inclRef)
               addDeclaration(as)
           }
-        case "structure" =>
-          mod match {
-            case thy: DeclaredTheory => readStructure(parentInfo, linkOpt, context, isImplicit = false)
-            case link: DeclaredLink =>
-              val name = readName
-              val orig = controller.get(link.from.toMPath ? name) match {
-                case s: Structure => s
-                case _ => fail("not a structure: "+link.from.toMPath?name)
-              }
-              readDelimiter("=")
-              val incl = readSPath(link.path)
-              val target = controller.get(incl) match {
-                case s: Link => s
-                case _ => fail("not a link: "+incl)
-              }
-              val as = DefLinkAssignment(link.toTerm,name,target.from,target.toTerm)
-              // SourceRef.update(as.df,SourceRef.fromURI(URI.apply(target.path.toString)))
-              // SourceRef.update(as.from,SourceRef.fromURI(URI.apply(orig.path.toString)))
-              addDeclaration(as)
-          }
+        case "structure" => readStructure(parentInfo, linkOpt, context, isImplicit = false)
         case "theory" => readTheory(parentInfo, context)
         case ViewKey(_) => readView(parentInfo, context, isImplicit = false)
         case k if k.forall(_ == '#') =>
@@ -628,7 +613,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                     // 2) a parser extension identified by k
                     val (decl, reg) = state.reader.readDeclaration
                     val reader = Reader(decl)
-                    reader.setSourcePosition(reg.start)
+                    reader.setNextSourcePosition(reg.start)
                     val se = if (currentSection.length == 0) mod
                     else mod.asDocument.getLocally(currentSection).getOrElse {
                       throw ImplementationError("section not found in module")
@@ -763,7 +748,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         val v = DefinedView(ns, name, from, to, df.toTerm, isImplicit)
         moduleCont(v, parent)
       case "=" =>
-        val v = new DeclaredView(ns, name, from, to, isImplicit) // TODO add metamorph?
+        val v = DeclaredView(ns, name, from, to, isImplicit)
         moduleCont(v, parent)
         logGroup {
           readInModule(v, context ++ v.getInnerContext, noFeatures)
@@ -784,7 +769,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     def +(f : Features) = new Features((features ::: f.features).distinct,(patterns ::: f.patterns).distinct)
   }
   val noFeatures = new Features(Nil,Nil)
-  
+
   /** auxiliary function to collect all structural feature rules in a given context */
   protected def getFeatures(mp: MPath): Features = {
     controller.simplifier(mp)
@@ -851,7 +836,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
   /** auxiliary function to build input for readComponents for notation components */
   private def notationComponentSpec(nc: NotationContainer) =
-    List("#" -> ParsingNotationComponent, "##" -> PresentationNotationComponent).map{case (s,k) => s -> (k,nc)} 
+    List("#" -> ParsingNotationComponent, "##" -> PresentationNotationComponent).map{case (s,k) => s -> (k,nc)}
 
   /** reads the components of a [[Constant]]
  *
@@ -906,8 +891,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             case Some(parser) =>
               val (obj, reg) = state.reader.readObject
               val reader = Reader(obj)
-              reader.setSourcePosition(reg.start)
-              val pea = new ParserExtensionArguments(this, state.copy(reader), cons, k, context) 
+              reader.setNextSourcePosition(reg.start)
+              val pea = new ParserExtensionArguments(this, state.copy(reader), cons, k, context)
               val tO = parser(pea)
               tO foreach {
                 case d => throw makeError(reg, "parser extension in constant may not return anything")
@@ -934,8 +919,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     constant
   }
 
-  /** auxiliary function to read structures
- *
+  /** read structures and calls continuations
+    *
     * @param parentInfo the containing module
     * @param context the context (excluding the structure to be read)
     * @param isImplicit whether the structure is implicit
@@ -943,42 +928,96 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   private def readStructure(parentInfo: IsMod, link: Option[DeclaredLink], context: Context,
                             isImplicit: Boolean)(implicit state: ParserState) {
     val givenName = readName
+    val home = OMMOD(parentInfo.modParent)
     val name = link.map {l => resolveAssignmentName(classOf[Structure], l.from, givenName)}.getOrElse(givenName)
     val spath = parentInfo.modParent ? name
-    readDelimiter(":")
+    // the type and the code to set it (if provided)
     val tpC = new TermContainer
-    //doComponent(TypeComponent, tpC, context)
-    val tp = OMMOD(readMPath(spath)._2)
-    tpC.parsed = tp
-    val s = new DeclaredStructure(OMMOD(parentInfo.modParent), name, tpC, isImplicit) // TODO add metamorph?
-    s.setDocumentHome(parentInfo.relDocParent)
-    seCont(s)
-    if (state.reader.endOfDeclaration) {
-      // s: tp RS
-      end(s)
-      return
+    // shared code for creating the structure
+    def createStructure(defined: Option[TermContainer]) = {
+      val s = defined match {
+        case None =>
+          new DeclaredStructure(home, name, tpC, isImplicit)
+        case Some(dfC) =>
+          new DefinedStructure(home, name, tpC, dfC, isImplicit)
+      }
+      s.setDocumentHome(parentInfo.relDocParent)
+      seCont(s)
+      s
     }
-    val (t, reg) = state.reader.readToken
-    t match {
-      case "=" =>
-        // s : tp US = body GS
-        logGroup {
-          readInModule(s, context, noFeatures)
+    // read the optional type
+    val (t, r) = state.reader.readToken
+    var token = t
+    var reg = r
+    // read the type (if any)
+    if (token == ":") {
+      //doComponent(TypeComponent, tpC, context)
+      val tp = OMMOD(readMPath(spath)._2)
+      tpC.parsed = tp
+      // read next token (if any)
+      if (state.reader.endOfDeclaration) {
+        // empty declared Structure: s: tp RS
+        if (link.isDefined) {
+          // declared structure only allowed in a theory
+          throw makeError(reg, "'=' expected, within structure " + spath)
         }
-      case "" =>
-        // good: s : tp US RS
-        // bad:  s : tp US _
-        if (!state.reader.endOfDeclaration)
-          throw makeError(reg, "'=' or end of declaration expected, within structure " + spath)
-      case _ =>
-        // s : tp US _
-        throw makeError(reg, "'=' or end of declaration expected, within structure " + spath)
+        val s = createStructure(None).asInstanceOf[DeclaredStructure]
+        end(s)
+        return
+      }
+      // read the next token
+      val (t,r) = state.reader.readToken
+      token = t
+      reg = r
+    } else {
+      if (link.isEmpty) {
+        // type may only be omitted in a link
+        throw makeError(reg, "':' expected, within structure " + spath)
+      }
     }
-    end(s)
+    // read the body or the definiens
+    val defDelim = if (link.isDefined) "=" else "abbrev"
+    if (token == defDelim) {
+      // read the definiens of a DefinedStructure
+      val (targetStr, reg) = state.reader.readObject
+      val nsMap = state.namespaces(parentInfo.modParent)
+      // TODO target should be parsed as a morphism expression, in particular compositions are allowed; for now we just parse a reference to a structure or a view
+      val pu = ParsingUnit(state.makeSourceRef(reg), context, targetStr, nsMap, None)
+      val target = try {
+        val p = Path.parseS(targetStr, nsMap)
+        OMS(p)
+      } catch {case _: Error =>
+        try {
+          val p = Path.parseM(targetStr, nsMap)
+          OMMOD(p)
+        } catch {case _: Error =>
+          makeError(reg, "only references to structures or views supported", None)
+          DefaultObjectParser(pu)(state.errorCont).toTerm
+        }
+      }
+      SourceRef.update(target, pu.source)
+      val dfC = TermContainer(target)
+      val s = createStructure(Some(dfC))
+    } else {
+      // read the body a DeclaredStructure
+      if (link.isDefined) {
+        // declared structure only allowed in a theory
+        throw makeError(reg, "'=' expected, within structure " + spath)
+      }
+      if (token != "=") {
+        // unexpected delimiter for the body of a declared structure
+        throw makeError(reg, "'=' expected, within structure " + spath)
+      }
+      val s = createStructure(None).asInstanceOf[DeclaredStructure]
+      logGroup {
+        readInModule(s, context, noFeatures)
+      }
+      end(s)
+    }
   }
 
-  /** reads the header of a [[DerivedDeclaration]] */
-  private def readDerivedDeclaration(feature: StructuralFeature, parentInfo: IsMod, context: Context)(implicit state: ParserState) = {
+  /** reads a [[DerivedDeclaration]] and calls continuations */
+  private def readDerivedDeclaration(feature: StructuralFeature, parentInfo: IsMod, context: Context)(implicit state: ParserState) {
     val parent = parentInfo.modParent
     val pr = feature.getHeaderRule
     val (_, reg, header) = readParsedObject(context, Some(pr))
@@ -992,17 +1031,17 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     dd.setDocumentHome(parentInfo.relDocParent)
     seCont(dd)
     if (equalFound) {
-       //TODO calling the simplifier here is a hack that is not allowed 
+       //TODO calling the simplifier here is a hack that is not allowed
        //val innerContext = controller.simplifier.elaborateContext(context,feature.getInnerContext(dd))
        val innerContext = feature.getInnerContext(dd)
        val features = getFeatures(parent)
        readInModule(dd.module, context ++ innerContext, features)
     }
-    end(dd.module) //TODO is this correct?
+    end(dd)
   }
 
   /** returns an instance of [[InstanceFeature]]
-   *  
+   *
    *  parses 'pattern(name, args) NOTATIONS' where name is a free variable for the name of the instance */
   private def readInstance(instFeatPattern: (StructuralFeature,DerivedDeclaration), tpath: MPath)(implicit state: ParserState): DerivedDeclaration = {
     val (instFeat, pattern) = instFeatPattern
@@ -1016,7 +1055,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     readComponents(context, notationComponentSpec(nc), None)
     Instance(OMMOD(tpath), name, tpC, nc)
   }
-  
+
   private def readOpaque(pi: HasParentInfo, context: Context)(implicit state: ParserState): OpaqueElement = {
       val (format, freg) = state.reader.readToken
       val oi = controller.extman.get(classOf[OpaqueTextParser], format).getOrElse {

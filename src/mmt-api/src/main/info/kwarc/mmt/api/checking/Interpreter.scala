@@ -26,7 +26,7 @@ abstract class Interpreter extends Importer {
   /** structure interpretation */
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement
   /** object interpretation */
-  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term
+  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): CheckingResult
 
   /** converts the interface of [[Importer]] to the one of [[Parser]] */
   protected def buildTaskToParsingStream(bf: BuildTask): (DPath, ParsingStream) = {
@@ -52,7 +52,7 @@ abstract class Interpreter extends Importer {
     } map LogicalDependency
     val used = doc.getModulesResolved(controller.globalLookup).flatMap {
       case th : DeclaredTheory => th.meta.toList ::: th.getIncludes ::: th.getNamedStructures.map(_.from.toMPath)
-      case v : DeclaredView => v.from.toMPath :: v.to.toMPath :: v.getIncludes
+      case v : DeclaredView => v.from.toMPath :: v.to.toMPath :: v.getIncludes.map(_._1)
     }.distinct.map(LogicalDependency) // TODO this is an ugly hack and should be replaced by a precise method. Requires some planning though; in the
       // TODO meantime it's better than nothing
     val missing = used.collect {
@@ -69,15 +69,16 @@ abstract class Interpreter extends Importer {
 
 /** a combination of a Parser and a Checker
   *
-  * @param parser  the parser
-  * @param checker the checker
+  * @param parser  the first step: parsing
+  * @param checker the first part of the second step: checking
+  * @param simplifier the second part of the second step: elaboration/simplification
   */
-class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Interpreter {
+class TwoStepInterpreter(val parser: Parser, val checker: Checker, val simplifier: uom.Simplifier) extends Interpreter {
   def format = parser.format
 
   /** parses a [[ParsingStream]] and checks the result */
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement = {
-    val ce = new CheckingEnvironment(errorCont, RelationHandler.ignore, ps)
+    val ce = new CheckingEnvironment(simplifier, errorCont, RelationHandler.ignore, ps)
     try {
       val cont = new StructureParserContinuations(errorCont) {
         override def onElement(se: StructuralElement) {
@@ -95,12 +96,12 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Inter
     }
   }
 
-  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term = {
+  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = {
     val pr = parser(pu)
     val cu = CheckingUnit.byInference(None, pu.context, pr).diesWith(pu)
     val rules = RuleSet.collectRules(controller, pu.context)
-    val cr = checker(cu, rules)(new CheckingEnvironment(errorCont, RelationHandler.ignore, cu))
-    cr.term
+    val cr = checker(cu, rules)(new CheckingEnvironment(simplifier, errorCont, RelationHandler.ignore, cu))
+    cr
   }
 }
 
@@ -111,5 +112,10 @@ class OneStepInterpreter(val parser: Parser) extends Interpreter {
       val cont = new StructureParserContinuations(errorCont)
       parser(ps)(cont)
     }
-    def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = parser(pu).toTerm
+    def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = {
+      val pr = parser(pu)
+      val unk = pr.unknown
+      val term = pr.copy(unknown = Context.empty).toTerm
+      CheckingResult(unk.isEmpty, Some(unk), term)
+    }
 }

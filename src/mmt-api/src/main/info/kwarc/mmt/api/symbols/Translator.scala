@@ -6,9 +6,9 @@ import uom._
 
 /**
  * a general purpose term translator
- * 
+ *
  * There are a number of desirable properties that Translator can have.
- * In particular: preservation of typing, equality; commute with substitution.  
+ * In particular: preservation of typing, equality; commute with substitution.
  */
 abstract class Translator {self =>
    /** map terms that occur on the left side of MMT's typing judgment */
@@ -18,16 +18,16 @@ abstract class Translator {self =>
     * note that the same term may occur on both sides and thus be translated differently depending on where it occurs
     */
    def applyType(context: Context, tm: Term): Term
-   
+
    def applyVarDecl(context: Context, vd: VarDecl) = vd.copy(tp = vd.tp map {t => applyType(context,t)}, df = vd.df map {t => applyDef(context,t)})
-   
+
    def applyContext(context: Context, con: Context): Context = con.mapVarDecls {case (c, vd) =>
      val nc = context ++ c
      applyVarDecl(nc, vd)
    }
-   
+
    def applyModule(context: Context, tm: Term): Term = applyDef(context, tm)
-   
+
    /**
     * not all rules can be translated generically
     * this method implements only those cases for which a generic translation is possible
@@ -37,7 +37,7 @@ abstract class Translator {self =>
      case r: RealizedType => new RealizedType(applyType(Context.empty, r.synType), r.semType)
      case _ => throw GeneralError("untranslatable rule")
    }
-   
+
    /** diagrammatic composition (first this, then that) */
    def compose(that: Translator) = new Translator {
      def applyDef(con: Context, tm: Term) = that.applyDef(self.applyContext(Context.empty, con), self.applyDef(con, tm))
@@ -51,6 +51,11 @@ abstract class UniformTranslator extends Translator {
 
    def applyType(context: Context, tm: Term) = apply(context, tm)
    def applyDef(context: Context, tm: Term) = apply(context, tm)
+}
+
+/** identity (non-traversing) */
+object IdentityTranslator extends UniformTranslator {
+  def apply(context: Context, tm: Term) = tm
 }
 
 /** a translator obtained from a traverser */
@@ -70,7 +75,7 @@ case class ApplyMorphism(morph: Term) extends UniformTranslator {
 
 /** a translator that performs substitution */
 case class ApplySubs(subs: Substitution) extends UniformTranslator {
-  def apply(context: Context, tm: Term) = tm ^? (subs ++ context.id)
+  def apply(context: Context, tm: Term) = tm ^? subs
 }
 
 /** replaces all naked OML's; for convenience a substitution is used even though we are replacing OML's not OMV's */

@@ -1,5 +1,4 @@
-This folder contains a slightly modified copy of a previous version of
-the tiscaf library.
+This folder contains an unmodified copy of version 0.9 of the tiscaf library.
 
 tiscaf is subject to the license reproduced in this folder and not subject
 to any other license used by MMT.

@@ -97,7 +97,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     }
   }
 
-  protected def deleteFile(f: File): Unit = {
+  protected def deleteFile(f: File) {
     log("deleting " + f)
     f.delete
   }
@@ -175,7 +175,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     ret.distinct
   }
 
-  def readRelational(in: FilePath, controller: Controller, kd: String): Unit = {
+  def readRelational(in: FilePath, controller: Controller, kd: String) {
     log("Reading archive " + id)
     if ((this / relational).exists) {
       traverse(relational, in, Archive.traverseIf(kd)) { case Current(inFile, inPath) =>

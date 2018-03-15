@@ -7,14 +7,14 @@ import scala.collection.immutable.{HashMap}
 
 
 class PragmaticRefiner(pragTypes : Set[PragmaticChangeType]) {
-  
+
   def detectPossibleRefinements(diff : StrictDiff) : Set[(PragmaticChange, Set[Int])] = {
     val matches = new mutable.HashSet[(PragmaticChange,Set[Int])]()
-    
+
     val changes = diff.changes.zipWithIndex.toSet
-    changes.subsets foreach {indexedChSet =>       
-      // have to explicitly state more generic type due to 
-      // Set being invariant in its type parameter 
+    changes.subsets foreach {indexedChSet =>
+      // have to explicitly state more generic type due to
+      // Set being invariant in its type parameter
       val chSet : Set[ContentChange] = indexedChSet.map(_._1)
       val chIndexes = indexedChSet.map(_._2)
       pragTypes map {pType =>
@@ -24,18 +24,18 @@ class PragmaticRefiner(pragTypes : Set[PragmaticChangeType]) {
             case Some(ch) => matches += (ch -> chIndexes)
             case _ => throw ImplementationError("given refinement doesn't conform to pragmatic change type. " + pType.name + " with changes " + usedChanges)
           }
-        } 
+        }
       }
     }
     matches
   }
-  
+
   private var enabledMatches : Set[(PragmaticChange, Set[Int])] = new immutable.HashSet[(PragmaticChange, Set[Int])]()
-  
+
   private def setEnabledMatches(matches : Set[(PragmaticChange, Set[Int])]) = {
     enabledMatches = matches
   }
-  
+
   def enrich(diff :  StrictDiff, withChanges : Option[List[String]] = None) : Diff = {
     val possibleMatches = detectPossibleRefinements(diff)
     val enabledMatches = withChanges match {
@@ -43,7 +43,7 @@ class PragmaticRefiner(pragTypes : Set[PragmaticChangeType]) {
       case Some(l) => possibleMatches.filter(p => l.contains(p._1.description))
     }
     val changes = diff.changes
-    
+
     val tmp = enabledMatches.flatMap(_._2) //list of used indexes
     val usedIndexes = tmp.toSet //set of used indexes
     //ensure that used indexes are unique
@@ -54,7 +54,7 @@ class PragmaticRefiner(pragTypes : Set[PragmaticChangeType]) {
 
     new Diff(newChanges)
   }
-  
+
   def apply(diff : StrictDiff, withChanges : Option[List[String]] = None) : Diff = enrich(diff, withChanges)
 
 }

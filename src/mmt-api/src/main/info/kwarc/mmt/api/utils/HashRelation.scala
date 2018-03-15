@@ -20,7 +20,7 @@ class HashMapToSet[A,B] extends HashMap[A,HashSet[B]] {
    def cleanup(a : A) {
       get(a).foreach {b => if (b.isEmpty) this -= a}
    }
-   
+
    override def toString = {
       val sb = new StringBuilder
       foreach {case (a,hs) =>

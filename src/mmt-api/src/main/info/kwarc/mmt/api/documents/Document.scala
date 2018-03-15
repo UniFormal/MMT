@@ -17,11 +17,11 @@ import scala.xml.Elem
  * @param contentAncestor the closest container of this document that is a module (if any)
  * @param nsMap the namespaces declared in this document
  */
-//TODO check if we can mixin DefaultLookup 
+//TODO check if we can mixin DefaultLookup
 class Document(val path: DPath, val root: Boolean = false, val contentAncestor: Option[Body] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty)
      extends NarrativeElement with ContainerElement[NarrativeElement] with DefaultMutability[NarrativeElement] {
   val feature = "document"
-  /** the containing document if root == false; otherwise, the URI without path */ 
+  /** the containing document if root == false; otherwise, the URI without path */
   def parentOpt = if (root) None else Some(parent)
   val parent: DPath = if (root) path ^^ else path ^
   val name = if (root) path.name else LocalName(path.name.last)
@@ -34,7 +34,7 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
 
   /** returns the list of children of the document (including narration) */
   def getDeclarations: List[NarrativeElement] = items
-  
+
   /* used by DefaultMutability for add, delete, etc. */
   protected def setDeclarations(nes: List[NarrativeElement]) {
     items = nes
@@ -53,7 +53,7 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
 
   /** like getModules but resolves all modules */
   def getModulesResolved(lib: Lookup): List[Module] = getModules(lib) map {mp => lib.getModule(mp)}
- 
+
   def getMostSpecific(name: LocalName) : Option[(NarrativeElement, LocalName)] = {
      if (name.isEmpty) Some((this, LocalName.empty))
      else {
@@ -63,16 +63,16 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
         }
      }
    }
-  
+
   /** retrieves a descendant
-   *  
+   *
    *  This may fail for two reasons:
    *  - a segment of n does not exist
    *  - a segment of n exists but is not a [[Document]]
-   *  
+   *
    *  use Library.getNarrative for smarter dereferencing
    */
-  def getO(name: LocalName): Option[NarrativeElement] = { 
+  def getO(name: LocalName): Option[NarrativeElement] = {
      getMostSpecific(name).flatMap {
        case (ne, LocalName.empty) => Some(ne)
        case (parDoc: Document, rest) => parDoc.getO(rest)
@@ -96,7 +96,7 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
     rh("</omdoc>")
   }
 
-  /** prints document with all generated references expanded 
+  /** prints document with all generated references expanded
    *  @param lib the library where reference are looked up
    *  @param expandAll whether to expand all references or only generated ones
    *  false by default

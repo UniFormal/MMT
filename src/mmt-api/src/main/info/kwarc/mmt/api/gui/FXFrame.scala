@@ -95,7 +95,7 @@ class FXPanel extends JFXPanel {
         )
      }
    }
-   
+
    /** a wrapper around engine.loadContent, runs on the FX application thread */
    def load(html: scala.xml.Node) {
       loadContent(html.toString())
@@ -118,7 +118,7 @@ class FXPanel extends JFXPanel {
       engine.load(s)
    } }
 
-   
+
    // initialize the instance
    init
 }

@@ -10,9 +10,9 @@ import parser._
 
 /**
  * the primary object level checker of MMT
- * 
+ *
  * It checks [[CheckingUnit]]s by invoking [[Solver]]s and updates the checked objects with the solutions.
- * It manages errors and dependencies.  
+ * It manages errors and dependencies.
  */
 class RuleBasedChecker extends ObjectChecker {
    override val logPrefix = "object-checker"
@@ -25,7 +25,7 @@ class RuleBasedChecker extends ObjectChecker {
         case _ => throw ImplementationError("cannot check this object")
       }
       val prOrg = ParseResult(cu.unknowns, con, tm)
-      
+
       def fail(msg: String) = {
         env.errorCont(InvalidUnit(cu, NoHistory, msg))
         val tm = ParseResult
@@ -34,7 +34,7 @@ class RuleBasedChecker extends ObjectChecker {
       if (cu.isKilled) {
         fail("not checked")
       }
-      
+
       log("checking unit " + cu.component.getOrElse("without URI") + ": " + cu.judgement.present(o => controller.presenter.asString(o)))
       log("full form of term: " + cu.judgement.wfo.toStr(shortURIs = true))
       // if a component is given, we perform side effects on it
@@ -151,7 +151,7 @@ class RuleBasedChecker extends ObjectChecker {
             case OMA(OMS(parser.ObjectParser.oneOf), uom.OMLiteral.OMI(i) :: args) =>
                Traverser(this, args(i.toInt))
             case _ if parser.SourceRef.get(t).isEmpty =>
-               controller.simplifier(t, con, rules)
+               controller.simplifier(t, con, rules, false)
             case _ =>
                Traverser(this, t)
          }

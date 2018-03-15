@@ -18,46 +18,46 @@ class KillButton {
     killed = true
     action = Some(f)
   }
-  
+
   def isPressed = killed
-  
+
   def doAction : Any = {
     action.foreach(f => f())
     action = None
   }
-  
+
 }
 
 /** killable objects have a list of kill button any of which can be pressed to abort processing
- *  
+ *
  *  objects working with killable objects must regularly check the state of the kill button and abort gracefully if pressed
- *  
+ *
  *  multiple killable objects can share the same kill button;
  *  when creating a new killable object, it is often necessary to pass along an existing kill button
  */
 trait Killable {
   private var killButtons: List[KillButton] = Nil
-  
+
   /** signals aborting of processing */
   def kill[A](f : () => A) {
     killButtons.foreach(_.press(f))
   }
-  
+
   /** processing should be aborted gracefully if true */
   def isKilled = killButtons.exists(_.isPressed)
-  
+
   def killact = killButtons.foreach(_.doAction)
-  
+
   /**
    * gives a killable object the same kill button as one that is already around
-   * 
-   * This must be called on every newly-created killable object so that pressing the existing kill button also kills the new object 
+   *
+   * This must be called on every newly-created killable object so that pressing the existing kill button also kills the new object
    */
   def diesWith(implicit that: Killable): this.type = {
     this.killButtons :::= that.killButtons
     this
   }
-  
+
   /** presses the kill button after the specified number of milli seconds */
   def setTimeout[A](millisec: Int)(f : () => Unit): this.type = {
     val killButton = new KillButton
@@ -68,19 +68,19 @@ trait Killable {
     }
     this
   }
-  
+
 }
 
 case object TaskCancelled extends java.lang.Throwable
 
 /**
  * Computes a value in a separate thread, thus allowing cancellation of the computation
- * 
+ *
  * @param c the code to execute asynchronously
  */
 @deprecated("does not work well, should be deleted and MMTTask should be used instead", "")
 class CancellableTask[A](c: => A) {
-   /** the mutable computation result, which will later be either a value or an exception */ 
+   /** the mutable computation result, which will later be either a value or an exception */
    private val p = Promise[A]()
    /** the future result of the computation (immutable) */
    val future = p.future
@@ -98,14 +98,14 @@ class CancellableTask[A](c: => A) {
       }
    })
    t.start
-   
+
    /** waits for the computation and returns the result */
    def result: scala.util.Try[A] = Await.ready(future, scala.concurrent.duration.Duration.Inf).value.get
-   
+
    /** cancels the computation
-    *  
+    *
     *  This may produce inconsistent states due to half-executed side effects, but it seems to be the only way to
-    *  cancel an arbitrary asynchronous computation. (The only alternative would be for the latter to poll a flag.) 
+    *  cancel an arbitrary asynchronous computation. (The only alternative would be for the latter to poll a flag.)
     */
    def cancel {
       t.stop

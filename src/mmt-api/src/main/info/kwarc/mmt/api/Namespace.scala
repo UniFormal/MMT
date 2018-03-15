@@ -11,7 +11,7 @@ case class NamespaceMap(base: Path, prefixes: List[(String,URI)] = Nil) {
    def get(p: String) = prefixes.find(_._1 == p).map(_._2)
    /** define a new prefix (URI is relative to default) */
    def add(p: String, u: URI): NamespaceMap = copy(prefixes = (p,default.resolve(u))::prefixes)
-   /** union of two namespace map, entries in that override the ones in this */ 
+   /** union of two namespace map, entries in that override the ones in this */
    def ++(that: NamespaceMap) = NamespaceMap(that.base, that.prefixes ::: prefixes)
    /** define a new prefix as a string (which is relative to this NamespaceMap) */
    def add(p: String, u: String): NamespaceMap = add(p, URI(expand(u)))

@@ -33,50 +33,50 @@ class GAPDocImporter extends Importer {
   def inExts = List("xml")
   override val logPrefix = "gapdocimporter"
   var count = 0
-  
+
   var errCount = 0
   var succCount = 0
   var groups = new scala.collection.mutable.HashMap[Path, List[String]]()
-  
+
   def add(s : StructuralElement, desc : String = "")(implicit errorCont : ErrorHandler) = {
     try {
         controller.add(s)
         groups(s.path) = List(desc)
         succCount += 1
     } catch {
-      case e : AddError => 
+      case e : AddError =>
         errorCont(new GAPDocError(s.name + " already exists", None, Some(Level.Error)))
-        groups(s.path) ::= desc 
+        groups(s.path) ::= desc
         errCount += 1
     }
   }
-  
+
   def importDocument(bt : BuildTask, index : Document => Unit) : BuildResult = {
     try {
       errCount = 0
       succCount = 0
       groups = new scala.collection.mutable.HashMap[Path, List[String]]()
-  
+
       val src = scala.io.Source.fromFile(bt.inFile.toString)
       val cp = scala.xml.parsing.ConstructingParser.fromSource(src, preserveWS = true)
       val node: Node = cp.document()(0)
       src.close()
       val errCont = new FilteringErrorHandler(bt.errorCont, e => e.level != Level.Info && e.level != Level.Warning)
       parseBook(node)(bt.narrationDPath, errCont)
-      LocalName 
+      LocalName
       val doc = controller.getDocument(bt.narrationDPath)
-      
+
       index(doc)
-      
+
       /* Debugging, should be removed when this is no longer experimental */
       // statistics
       println(errCount)
       println(succCount)
       // groups of duplicate symbols
-      groups foreach {p => 
+      groups foreach {p =>
         if (p._2.length > 1) {
           println(p._1.last + ":")
-          p._2.foreach{s => 
+          p._2.foreach{s =>
             println("    " + s)
           }
           println("")
@@ -84,27 +84,27 @@ class GAPDocImporter extends Importer {
       }
       // all gapdoc-declared symbol names
       println("##############")
-      groups foreach {p => 
+      groups foreach {p =>
         if (!p._1.last.startsWith("narr.") && !(p._1.last.startsWith("[") && p._1.last.endsWith("]"))) {
           println(p._1.last)
         }
       }
       println("##############")
       /* End Debugging */
-      
+
       BuildResult.empty
     } catch {
-      case e : Exception => 
+      case e : Exception =>
         println(e.getMessage)
         println(e.getStackTrace().mkString("", EOL, EOL))
         bt.errorCont(GAPDocError.from(e, "Unknown error in importDocument"))
         BuildFailure(Nil, Nil)
     }
   }
-  
+
   def parseBook(n : Node)(implicit dpath : DPath, errorCont : ErrorHandler) {
     n.label match {
-      case "Book" =>         
+      case "Book" =>
         val doc = new Document(dpath, true)
         add(doc)
         val tname = LocalName("thy")
@@ -114,19 +114,19 @@ class GAPDocImporter extends Importer {
         add(ref)
         add(thy)
         implicit val mpath = thy.path
-    
+
         n.child.foreach(parseInDoc)
     }
   }
-  
+
   def parseInDoc(n: Node)(implicit mpath: MPath, errorCont: ErrorHandler) {
     n.label match {
-      case "Body" => 
+      case "Body" =>
         n.child.foreach(parseInBody)
       case l => log("Ignoring inDoc element " + l)
     }
   }
-  
+
   def parseInBody(n : Node)(implicit mpath: MPath, errorCont : ErrorHandler) {
     n.label match {
       case "Chapter" | "Section" | "Subsection" => //recursing & ignoring, treating as if flattened
@@ -135,85 +135,85 @@ class GAPDocImporter extends Importer {
       case l => log("Ignoring inDoc element " + l)
     }
   }
-  
+
   val declTypes = List("Filt",  "Func",  "Oper","Attr","Prop") //  "Meth")  ignoring Methods for now
-  
+
   def parseManSection(n : Node)(implicit mpath: MPath, errorCont : ErrorHandler) {
     var lastDecl : Option[(Declaration, Node)] = None
     n.child foreach {c => c.label match {
-      case dtype if (declTypes.contains(dtype)) => 
+      case dtype if (declTypes.contains(dtype)) =>
         val gname = (c \ "@Name").text
         var name = LocalName(gname)
         val label = (c \ "@Label").text
         if (!label.isEmpty) { //refinement of a pre-existing constant
-          
+
         }
         val arg = (c \ "@Arg").text // seems to be unnecessary
-        val const = new FinalConstant(OMMOD(mpath), name, Nil, TermContainer(None), TermContainer(None), None, NotationContainer())
+        val const = Constant(OMMOD(mpath), name, Nil, TermContainer(None), TermContainer(None), None, NotationContainer())
         add(const, c.toString.substring(0, c.toString.indexOf(">") + 1))
         lastDecl = Some(const, c)
       case "Returns" =>
         lastDecl match {
-          case Some(d) => 
-            val const = new FinalConstant(OMMOD(mpath), d._1.name, Nil, TermContainer(None), TermContainer(None), None, NotationContainer())
+          case Some(d) =>
+            val const = Constant(OMMOD(mpath), d._1.name, Nil, TermContainer(None), TermContainer(None), None, NotationContainer())
             //add(const) // should update
           case _ => errorCont(new GAPDocError("Found Returns tag without preceeding concept entry", None, Some(Level.Warning)))
         }
       case "Var" | "Fam" | "InfoClass" => //TODO
-      case "Description" => 
+      case "Description" =>
         val name = "narr." + count
         count += 1
         val obj = parseObject(<div> {c.child} </div>)(mpath ? name, errorCont)
         val narr = PlainNarration(OMMOD(mpath), LocalName(name), obj, LocalName.empty)
         add(narr)
       case l => log("Ignoring inDoc element " + l)
-      } 
+      }
     }
   }
-  
+
   def resolveRef(ref : Node)(implicit spath : GlobalName, errorCont : ErrorHandler) : Term =  {
     declTypes.find(d => !(ref \ ("@" + d)).text.isEmpty) match {
-      case Some(dtype) => 
+      case Some(dtype) =>
         val rname = (ref \ ("@" + dtype)).text
         var refName = LocalName(dtype) / rname
         val label = (ref \ "@Label").text
         if (!label.isEmpty) refName /= label.split(" ").mkString("_")
         val constants = controller.library.get(spath.module).getDeclarations.collect {case c : Constant => c}
         constants.filter(c => c.name.steps.length >= 2 && c.name.steps.tail.head.toPath == rname) match {
-          case Nil => 
+          case Nil =>
             if (spath.name.toPath == refName.toPath) {
               parseObject(<b> {spath.name} </b>)
             } else {
               errorCont(new GAPDocError("Dangling Ref, nonexistent symbol: " + rname, None, Some(Level.Warning)))
               makeTextObj(rname.toString)
             }
-          case l => 
+          case l =>
             l.find(_.name.toPath == refName.toPath) match {
               case Some(d) => OMS(d.path)
-              case None => 
+              case None =>
                 val options = l.map(_.name.steps.head.toPath)
-                errorCont(new GAPDocError(s"Dangling Ref, wrong decl type, given $refName, valid options are ${options.mkString(",")}", 
+                errorCont(new GAPDocError(s"Dangling Ref, wrong decl type, given $refName, valid options are ${options.mkString(",")}",
                     None, Some(Level.Warning)))
-                makeTextObj(rname.toString) 
+                makeTextObj(rname.toString)
             }
         }
-      case _ => 
+      case _ =>
         errorCont(new GAPDocError("Found Ref tag without valid attribute", None, Some(Level.Warning)))
         makeTextObj("#invalidRef")
- 
+
     }
   }
-  
+
   def parseObject(n : Node)(implicit spath : GlobalName, errorCont : ErrorHandler) : Term = {
     n.label match {
-      case "Ref" => resolveRef(n)  
+      case "Ref" => resolveRef(n)
       case "#PCDATA" => makeTextObj(n.toString)
       case _ =>
         val cterms = n.child.zipWithIndex.map(p => parseObject(p._1) -> List(p._2))
         FlexiformalNode(n, cterms.toList)
     }
   }
-  
+
   def makeTextObj(s : String) : Term = {
     val elems = s.toCharArray.toList
     def makeChildren(elems: List[Char], buffer: String): List[Node] = elems match {

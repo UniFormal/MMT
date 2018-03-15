@@ -58,16 +58,16 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
      }
      1
    }
-  
+
    override def doDefault(o: Obj)(implicit pc: PresentationContext): Int = o match {
      case ComplexTerm(op, subs, con, args) =>
-       if (subs.isEmpty && con.isEmpty) 
+       if (subs.isEmpty && con.isEmpty)
          doTermApplication(OMS(op), args)
        else super.doDefault(o)
      case OMA(f, args) => doTermApplication(f, args)
      case _ => super.doDefault(o)
    }
-   
+
   override def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
      implicit val pc = preparePresentation(o, origin)
      doInfToplevel(o) {
@@ -125,9 +125,9 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
     case _ => super.doDelimiter(p, d, implicits)
   }
 
-  
+
   //Namespaces whose nodes and attributes we ignore
-  private val ignoredNamespaces = List("http://omdoc.org/ns",  //omdoc 
+  private val ignoredNamespaces = List("http://omdoc.org/ns",  //omdoc
                                    "http://kwarc.info/ns/sTeX",  //stex
                                    "http://purl.org/dc/elements/1.1/", //dc
                                    "http://www.openmath.org/OpenMath" //openmath
@@ -135,7 +135,7 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
   //Namespaces for whose nodes and attributes we remove the prefix because they are in HTML5 (e.g. mathml & svg)
   private val coveredNamespaces = List("http://www.w3.org/1998/Math/MathML" //mathml
                                    )
-  
+
   def cleanAttribs(attrs : scala.xml.MetaData, scope : scala.xml.NamespaceBinding) : scala.xml.MetaData = {
     var newAttr : scala.xml.MetaData = attrs
     def traverse(att : scala.xml.MetaData) : Unit = att match {
@@ -157,7 +157,7 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
     traverse(attrs)
     newAttr
   }
-  
+
   private def cleanScope(scope : scala.xml.NamespaceBinding) : scala.xml.NamespaceBinding = {
     if (scope == scala.xml.TopScope) {
       scope
@@ -181,7 +181,7 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
     case s : scala.xml.SpecialNode => pc.out(s.toString)
     case _ =>
       val prefixURI = n.scope.getURI(n.prefix)
-      if (n.prefix == null || !ignoredNamespaces.contains(prefixURI)) { 
+      if (n.prefix == null || !ignoredNamespaces.contains(prefixURI)) {
         //removing prefix for html5-convered namespaces (e.g. mathml, svg)
         val prefix = if (coveredNamespaces.contains(prefixURI)) null else n.prefix
         val scope = cleanScope(n.scope)
@@ -301,7 +301,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        t.getPrimitiveDeclarations.foreach {
          case PlainInclude(from,to) =>
            div(cls = "include") {
-             span("keyword") {text("includes")} 
+             span("keyword") {text("includes")}
              text(" ")
              span(attributes = List(HTMLAttributes.symref -> from.toPath)) {
                text(from.name.toPath)
@@ -355,7 +355,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        }
      }
    }
-   
+
    def doHypernymsList(hypernyms : List[List[TextNotation]], id : String, lang : String) {
      if (!hypernyms.isEmpty) {
        div(attributes = ("id" -> (id)) :: ("style" -> "display:none;") :: Nil) {
@@ -371,7 +371,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        }
      }
    }
-   
+
    def doHyponymsList(hyponyms : List[List[TextNotation]], id : String, lang : String) {
      if (!hyponyms.isEmpty) {
        div(attributes = ("id" -> (id)) :: ("style" -> "display:none;") :: Nil) {
@@ -387,7 +387,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        }
      }
    }
-   
+
    def doSynonymsList(synonyms : List[TextNotation], id : String, lang : String) {
      if (!synonyms.isEmpty) {
        div(attributes = ("id" -> (id)) :: ("style" -> "display:none;") :: Nil) {
@@ -503,16 +503,16 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        controller.get(m.target) match {
          case t : DeclaredTheory =>
            if (t.name != OMV.anonymous) {
-	         li("mref") {
-		      doTheory(t)
-	         }
+            li("mref") {
+            doTheory(t)
+            }
            }
          case v : DeclaredView =>
            li("mref") {
-	         doView(v)
+            doView(v)
            }
        }
-     case s => 
+     case s =>
        throw ImplementationError("Presenting for " + s.getClass() + " not implemented yet ")
    }
 
@@ -521,8 +521,8 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        ul("doc-body") { doc.getDeclarations foreach {
          case x : NRef => doRef(x)
          case d : Document => doDocument(d)
-         case op : OpaqueElement => // div { out(op.raw.toString)} 
-         case s => 
+         case op : OpaqueElement => // div { out(op.raw.toString)}
+         case s =>
            throw ImplementationError("Presenting for " + s.getClass() + " not implemented yet ")
        }}
      }

@@ -41,7 +41,7 @@ abstract class Escaping {
 
   /** characters that are escaped because of an escape rule */
   protected lazy val escapedChars = usePlainEscapeVal ::: useCustomEscapeVal.map(_._1)
-  
+
   /** check invariant that guarantees invertibility of escaping */
   def check {
     useCustomEscapeVal foreach {case (c,s) =>
@@ -56,7 +56,7 @@ abstract class Escaping {
       }
     }
   }
-  
+
   def apply(c: Char): String = {
      if (legal(c)) c.toString
      else {
@@ -70,40 +70,40 @@ abstract class Escaping {
      }
   }
   def apply(s: String): String = s flatMap {c => apply(c)}
-  
+
   case class Error(msg: String) extends Exception(msg)
-  
+
   def unapply(s: String): String = {
-	   var escaped = s
-	   var unescaped = ""
-	   while (escaped.nonEmpty) {
-	     val first = escaped(0)
-	     val rest = escaped.substring(1)
-	     // the next character to produce, and the number of characters that were consumed
-	     val (next, length): (Char,Int) = if (first != escapeChar) {
-		    (first,1)
-	     } else {
-		      useCustomEscapeVal.find(cs => rest.startsWith(cs._2)) match {
-		        case Some((c,s)) => (c,1+s.length)
-		        case None =>
-    			    val second = rest(0)
-		          if (usePlainEscapeVal contains second)
-		            (second,2)
-		          else {
-		            try {
-		               val hex = rest.substring(0,4)
+      var escaped = s
+      var unescaped = ""
+      while (escaped.nonEmpty) {
+        val first = escaped(0)
+        val rest = escaped.substring(1)
+        // the next character to produce, and the number of characters that were consumed
+        val (next, length): (Char,Int) = if (first != escapeChar) {
+          (first,1)
+        } else {
+            useCustomEscapeVal.find(cs => rest.startsWith(cs._2)) match {
+              case Some((c,s)) => (c,1+s.length)
+              case None =>
+                 val second = rest(0)
+                if (usePlainEscapeVal contains second)
+                  (second,2)
+                else {
+                  try {
+                     val hex = rest.substring(0,4)
                    val char = Integer.parseInt(hex, 16).toChar
                    (char, 5)
-		            } catch {case _: Exception =>
-		              throw Error("illegal escape: " + escaped)
-		            }
-		          }
-		      }
-	     }
-		   unescaped += next
+                  } catch {case _: Exception =>
+                    throw Error("illegal escape: " + escaped)
+                  }
+                }
+            }
+        }
+         unescaped += next
        escaped = escaped.substring(length)
-	   }
-	   unescaped
+      }
+      unescaped
   }
 }
 
@@ -115,7 +115,7 @@ object StandardStringEscaping extends Escaping {
 /** escapes a string into one that is a legal file name on Windows and Unix */
 object FileNameEscaping extends Escaping {
   val escapeChar = '$'
-  
+
   override def usePlainEscape = Range(0,26).toList.map(i => (65+i).toChar)
   override def useCustomEscape = super.useCustomEscape ::: List(
       ' '  -> "sp", '/' -> "sl", '?' -> "qm", '<' -> "le", '>' -> "gr", '\\' -> "bs",

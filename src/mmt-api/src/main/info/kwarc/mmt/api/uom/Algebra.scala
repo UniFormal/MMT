@@ -187,7 +187,7 @@ class Lambda(lambda: GlobalName, app: GlobalName) {
             else if (numvars == numargs)
                GlobalChange(reduced)
             else
-               LocalChange(reduced :: after.drop(numvars))      
+               LocalChange(reduced :: after.drop(numvars))
          }
       }
    }
@@ -207,7 +207,7 @@ class Lambda(lambda: GlobalName, app: GlobalName) {
  */
 trait Counter {
    /** 0, usually either a symbol or OMI(0) */
-   val zero : Term // 
+   val zero : Term //
    /** 1, usually either a symbol or OMI(1) */
    val one  : Term
    /** -1, usually either a symbol or OMI(-1) */
@@ -260,7 +260,7 @@ object IntegerCounter extends Counter {
  * 3) k @ a ---> l @ a  by adding integers
  * 4) 1 @ a ---> a
  * 4) 0 @ a ---> (remove)
- * 4) -1 @ a ---> inv(a) 
+ * 4) -1 @ a ---> inv(a)
  * where k @ a = k of a
  * }}}
  *
@@ -269,7 +269,7 @@ object IntegerCounter extends Counter {
  * @param unit the value of the empty aggregation (i.e., when all terms cancel out), e.g., 0
  * @param inv the unary operator producing a negative aggregate, e.g., -
  * @param commutative If true, comp is commutative, and the elements are first reordered according to the hashcode of a.
- * action, unit, inv, commutative are mutable so that the Collect rule can be strengthened easily when forming RuleSet's by inheritance   
+ * action, unit, inv, commutative are mutable so that the Collect rule can be strengthened easily when forming RuleSet's by inheritance
 */
 class Collect(comp : GlobalName, var action: GlobalName, var unit: Option[GlobalName], var inv: Option[GlobalName], var commutative: Boolean) extends BreadthRule(comp) {
    private case class Quantity(base: Term, amount: BigInt) {
@@ -284,7 +284,7 @@ class Collect(comp : GlobalName, var action: GlobalName, var unit: Option[Global
    }
    private def fromTerm(t : Term) : Option[Quantity] = {
       t match {
-         case OMS(u) if unit == Some(u) => None 
+         case OMS(u) if unit == Some(u) => None
          case OMA(OMS(i), List(QuantityMatcher(base, n))) if inv == Some(i) => Some(Quantity(base, -n))
          case OMA(OMS(i), List(arg)) if inv == Some(i) => Some(Quantity(arg, -1))
          case QuantityMatcher(base, n) => Some(Quantity(base,n))
@@ -295,19 +295,19 @@ class Collect(comp : GlobalName, var action: GlobalName, var unit: Option[Global
       f.amount match {
          case a if a == 0 => None
          case a if a == 1 => Some(f.base)
-         case a if a == -1 && inv.isDefined => Some(inv.get(f.base)) //inv.isEmpty is unreasonable if count.minusone is possible  
+         case a if a == -1 && inv.isDefined => Some(inv.get(f.base)) //inv.isEmpty is unreasonable if count.minusone is possible
          case a => Some(action(f.base, OMI(a)))
       }
    }
    val apply: Rewrite = args => {
       var qs = args mapPartial fromTerm
       if (commutative) {
-         qs = qs.sortBy(_.base.hashCode) // not optimal if there are hash collisions; a more subtle ordering might be provided  
+         qs = qs.sortBy(_.base.hashCode) // not optimal if there are hash collisions; a more subtle ordering might be provided
       }
       var done : List[Quantity] = Nil
       var current : Quantity = qs.head
       var todo : List[Quantity] = qs.tail
-      // invariant: comp(done.reverse, current, todo) = comp(comp, qs) 
+      // invariant: comp(done.reverse, current, todo) = comp(comp, qs)
       while (todo != Nil) {
          val next = todo.head
          todo = todo.tail
@@ -329,7 +329,7 @@ class Collect(comp : GlobalName, var action: GlobalName, var unit: Option[Global
 }
 
 /** Commutativity of op
- * 
+ *
  * This orders the arguments by their hash code.
  */
 class Commutative(op: GlobalName) extends BreadthRule(op) {
@@ -366,7 +366,7 @@ class Idempotent(op: GlobalName) extends BreadthRule(op) {
  * {{{
  * a1 ... b ... (neg b) ... an ---> bound
  * }}}
- *  
+ *
  * this covers the two rules for the complement in a boolean lattice
  * @param the aggregate operation, e.g., conjunction/disjunction
  * @param neg negation
@@ -389,8 +389,12 @@ class Semigroup(op: GlobalName) extends MutableRuleSet {
    declares (
      new Association(op),
      collect
-     
    )
+  def associate(args: List[Term]): Term = args match {
+     case Nil => OMA(OMS(op),Nil) // should not happen
+     case hd::Nil => hd
+     case hd::tl => op(hd, associate(tl))
+  }
 }
 
 /** A Monoid packages the simplification rules that yield normalization in a monoid. */
@@ -399,6 +403,8 @@ class Monoid(op: GlobalName, unit: GlobalName) extends Semigroup(op) {
    declares (
       new Neutral(op, unit)
    )
+
+  override def associate(args: List[Term]) = if (args.isEmpty) OMS(unit) else super.associate(args)
 }
 
 /** A Group packages the simplification rules that yield normalization in a group. */
@@ -449,8 +455,8 @@ class BoundedSemiLattice(op: GlobalName, bound: GlobalName) extends Monoid(op, b
 /** A BooleanLattice packages the simplification rules that yield normalization in a Boolean lattice
  *
  * For example, "BooleanLattice(conj, disj, truth, falsity, neg)" yields the rules for a disjunctive normal form
- * in which redundant occurrences of "truth" and "falsity" are eliminated.  
- */ 
+ * in which redundant occurrences of "truth" and "falsity" are eliminated.
+ */
 class BooleanLattice(meet: GlobalName, join: GlobalName, top: GlobalName, bottom: GlobalName, compl: GlobalName) extends MutableRuleSet {
    imports (
        new BoundedSemiLattice(meet, top),

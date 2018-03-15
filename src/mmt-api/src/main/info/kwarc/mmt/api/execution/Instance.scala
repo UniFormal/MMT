@@ -13,7 +13,7 @@ class Instance(heap: MPath, of: MPath, id: Int) extends DeclaredStructure(OMMOD(
         case Some(c: Constant) =>
           c.dfC.analyzed = t
         case Some(_) =>
-          
+
         case None =>
           val c = ConstantAssignment(home, name, Nil, Some(t))
           add(c)

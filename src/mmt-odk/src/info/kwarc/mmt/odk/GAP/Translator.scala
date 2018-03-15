@@ -41,7 +41,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
       val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
         throw GeneralError(s"no mmt checker found")
       }
-      theories foreach (th => checker(th._2)(new CheckingEnvironment(new ErrorLogger(controller.report), RelationHandler.ignore, bt)))
+      theories foreach (th => checker(th._2)(new CheckingEnvironment(controller.simplifier, new ErrorLogger(controller.report), RelationHandler.ignore, bt)))
     }
     docs.values foreach index
   }

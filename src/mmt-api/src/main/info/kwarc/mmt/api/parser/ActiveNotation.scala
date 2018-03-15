@@ -7,16 +7,32 @@ import ActiveNotation._
 
 case class ScannerBacktrackInfo(currentIndex: Int, numCurrentTokens: Int)
 
+/** meant to replace ActiveNotation as a more general interface in Scanner and related classes
+ *  That would computational notations.
+ */
+abstract class ActiveParsingRule {
+  val rules: List[ParsingRule]
+  val backtrackInfo: ScannerBacktrackInfo  
+  
+  def applicable(currentToken: Token, futureTokens: String): Applicability
+  
+  def apply(currentIndex: Int): Boolean
+  
+  def closable: Applicability
+  
+  def close: Unit
+}
+
 /** An ActiveNotation is a notation whose firstDelimToken has been scanned
  *  An ActiveNotation maintains state about the found and still-expected markers
- *  
+ *
  *  @param scanner back-pointer to the owning scanner
- *  @param rules the parsing rules 
+ *  @param rules the parsing rules
  *    must be non-empty;
- *    if not a singleton, all [[TextNotation]]s must TextNotation.agree 
+ *    if not a singleton, all [[TextNotation]]s must TextNotation.agree
  *  @param firstToken the index of the Token that caused this notation to be opened (i.e., the first delimiter token)
  */
-class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtrackInfo: ScannerBacktrackInfo) {
+class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtrackInfo: ScannerBacktrackInfo) extends ActiveParsingRule {
    // invariant: found.reverse (qua List[Marker]) ::: left == markers of each rule
 
    override def toString = toShortString + " " + found.reverse.mkString("", " ", "")
@@ -59,10 +75,10 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
    }
    /**
     * pre: delim.startsWith(token)
-    * 
+    *
     * for each additional character c in delim, add Delim(c) to the front
     * this has the effect of skipping the subsequent Tokens that have been used already after matching token against delim
-    */ 
+    */
    private def addPrepickedDelims(delim: Delimiter, token: Token) {
       val prepicked = delim.text.substring(token.word.length).toList.map(c => Delim(c.toString))
       left = prepicked ::: left
@@ -82,7 +98,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
       }
       found = fs ::: found
    }
-   
+
    private def PickAllSeq(n: Int, infoOpt:Option[LabelInfo]) = {
       val ts = scanner.pick(numCurrentTokens)
       val a = infoOpt match {
@@ -115,14 +131,14 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
             found ::= f
       }
    }
-   
+
    /** remember stores operations for picking arguments
     *  these are remembered between calls of successive invocations of
     *  applicable-apply and closable-close
     *  only well-defined after applicable or closable returned true
     */
    private var remember : Int => Unit = null
-   
+
    /** stores an operation in remember for later execution */
    private def onApply(act: => Unit): Applicability = {
       remember = _ => act
@@ -133,13 +149,13 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
       remember = act
       Applicable
    }
-   
+
    private def inSeqArg(n: Int) = found match {
       case FoundSimpSeqArg(m, _) :: _ if m == n => true
       case FoundSeqOML(m,_,_) :: _ if m == n => true
       case _ => false
    }
-   
+
    /** splits a List[Marker] into
     *  a List[Int] (possibly Nil) that corresponds to a List[Arg]
     * and the remaining List[Marker]
@@ -150,7 +166,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
       case Delim("%w") :: rest => splitOffArgs(rest, ns)
       case rest => (ns.reverse, rest)
    }
-   
+
   /**
    * @param currentToken the currently scanned token
    * @param futureTokens a string containing those succeeding Tokens that could be merged into the current Token
@@ -210,7 +226,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                         fv.state = FoundVar.BeforeName
                      }
                   } else NotApplicable //shift and stay in this state
-                  
+
                case FoundVar.Done => null //nothing to do anymore, skip to remaining cases
             }
          case _ => null //skip to all other cases
@@ -325,7 +341,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
     * terminate the current argument(s) and match the current token to the next expected delimiter
      *
      * @param currentIndex the index of currentToken
-    * @return true iff the notation is fully applied, i.e., no further arguments or delimiters can be matched  
+    * @return true iff the notation is fully applied, i.e., no further arguments or delimiters can be matched
     */
   //currentIndex must be passed here because it is not known yet when applicable is called (because other notations may be closed in between)
    def apply(currentIndex: Int): Boolean = {
@@ -379,7 +395,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                         // can't close because we still need to parse vm
                         NotApplicable
                   }
-            case _ => 
+            case _ =>
                 // can't close because we've never started vm, still need to parse vm
                 NotApplicable
          }
@@ -399,7 +415,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
             }
             // as many arguments as there are Token's
             // should we abort immediately if the numbers do not match up?
-         case (ns, Nil) if numCurrentTokens == ns.length =>    
+         case (ns, Nil) if numCurrentTokens == ns.length =>
              onApply {
                 PickSingles(ns)
                 delete(ns.length)
@@ -419,7 +435,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
 /** a helper object */
 object ActiveNotation {
    /** a type to express the result of testing whether a notation is applicable
-    * 
+    *
     * essentially, a Notation is applicable if the next Token matches the next Delimiter it expects
     */
    sealed abstract class Applicability
@@ -433,7 +449,7 @@ object ActiveNotation {
     * (and parsing should backtrack)
     */
    case object Abort extends Applicability
-   
+
    /**
     * true if delim equals currentToken, possibly after extending currentToken with some characters from futureTokens
     */

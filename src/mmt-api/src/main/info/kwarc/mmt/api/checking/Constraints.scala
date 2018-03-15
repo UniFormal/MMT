@@ -35,6 +35,8 @@ trait HistoryEntry {
    /** for user-facing rendering */
    def present(implicit cont: Obj => String): String
    def indentation(level: Int) = if (level == 0) "" else utils.repeatString("-", level-1) + " "
+   /** this history entry but without any wrappers like for indentation */
+   def removeWrappers = this
 }
 
 /** a HistoryEntry that consists of a string, meant as a log or error message */
@@ -45,14 +47,15 @@ case class Comment(text: () => String) extends HistoryEntry {
 
 /**
  * The History is a branch in the tree of decisions, messages, and judgements that occurred during type-checking
- * 
+ *
  * The most import History's are those ending in an error message.
  * See [[Solver.getErrors]]
- * 
+ *
  * @param the nodes of the branch, from leaf to root
  */
 case class IndentedHistoryEntry(e : HistoryEntry, level: Int) extends HistoryEntry {
    def present(implicit cont: Obj => String): String = indentation(level) + e.present
+   override def removeWrappers = e.removeWrappers
 }
 class History(var steps: List[HistoryEntry]) {
    /** creates and returns a new branch with a child appended to the leaf */
@@ -81,13 +84,13 @@ class History(var steps: List[HistoryEntry]) {
        inc -=1
      }
    }
-   
+
    override def toString = steps.map(_.toString).mkString("\n")
-   
+
    /**
     * A History produced by the ObjectChecker starts with the ValidationUnit, but the error is only encountered along the way.
-    * 
-    * @return an educated guess which suffix of the history is most useful 
+    *
+    * @return an educated guess which suffix of the history is most useful
     */
    def narrowDownError : History = {
       // idea: we start at the comment immediately before the last WFJudgement before the first other Judgement

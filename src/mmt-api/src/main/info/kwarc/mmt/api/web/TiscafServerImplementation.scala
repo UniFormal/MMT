@@ -2,8 +2,7 @@ package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api._
 import utils._
-
-import java.io.InputStream
+import java.io.{IOException, InputStream}
 
 import tiscaf._
 
@@ -11,30 +10,30 @@ import scala.collection.mutable
 
 /** Implements an HTTP Server using Tiscaf */
 trait TiscafServerImplementation extends HServer with ServerImplementation {
-
   override def name : String = serverName
-  override def hostname : String = listenAddress
-  override def onMessage(s: String): Unit = {
-    handleMessage(s)
-  }
-  override def onError(e: Throwable) {
-    handleError(e)
-  }
+  override def bindHost : String = listenAddress
+
+  // log all the things
+  override protected val logInternals = true
+  override def error(msg: String, t: Throwable): Unit = handleError(t)
+  override def warning(msg: String): Unit = handleMessage(msg)
+  override def info(msg: String): Unit = handleMessage(msg)
+
   // override def writeBufSize = 16 * 1024
   // make this false if you have extremely frequent requests
   override def tcpNoDelay = true
   /* it seems tiscaf eagerly closes connections after 20 seconds of inactivity
    * so it can happen that the connections is already closed when we try to send the response
-   * so we increase the timeout here 
+   * so we increase the timeout here
    */
-  override def connectionTimeoutSeconds = 300 
+  override def connectionTimeoutSeconds = 300
   // prevents tiscaf from creating a "stop" listener
   override def startStopListener = {}
   // port to listen to
   protected def ports = Set(listenPort)
   // handlers to call
   protected def apps = List(new RequestHandler)
-  
+
   protected class RequestHandler extends HApp {
     //override def buffered = true
     override def chunked = true
@@ -74,6 +73,15 @@ trait TiscafServerImplementation extends HServer with ServerImplementation {
           }
         }
       })
+    }
+  }
+
+  /** stop the server; for some reason this throws IOException which we catch here */
+  override def stop: Unit = {
+    try {
+      super.stop
+    } catch {
+      case io: IOException =>
     }
   }
 }

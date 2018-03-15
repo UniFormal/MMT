@@ -22,7 +22,7 @@ case class SourceRegion(start: SourcePosition, end: SourcePosition) {
 object SourceRegion {
   /** parses the format start-end */
   def parse(s: String) : SourceRegion = {
-      val parts = if (s.contains(':')) s.split(":").toList else s.split("-").toList 
+      val parts = if (s.contains(':')) s.split(":").toList else s.split("-").toList
       if (parts.length == 2) SourceRegion(SourcePosition.parse(parts(0)), SourcePosition.parse(parts(1)))
       else throw ParseError("illegal source region: " + s)
    }
@@ -35,7 +35,7 @@ object SourceRegion {
  * @param line vertical two-dimensional coordinate
  * @param column horizontal two-dimensional coordinate
  * all coordinates start from 0
- * 
+ *
  * Unicode code points above FFFF count as 2 characters.
  * Arguably that is wrong.
  * But it corresponds to the implementation in Java Strings (see http://docs.oracle.com/javase/6/docs/api/java/lang/Character.html#unicode).
@@ -60,7 +60,7 @@ case class SourcePosition(offset: Int, line: Int, column: Int) {
   }
   /**
    * the position that is i places earlier in the same line
-   * 
+   *
    * pre: i >= column
    */
   def -(i: Int) = SourcePosition(offset - i, line, column - i)
@@ -101,7 +101,7 @@ case class SourceRef(container: URI, region: SourceRegion) {
    def toURI = container ## region.toString
    override def toString = toURI.toString
    /** whether that is a subregion of this */
-   def contains(that: SourceRef) = container == that.container && (region contains that.region) 
+   def contains(that: SourceRef) = container == that.container && (region contains that.region)
 }
 
 object SourceRef extends metadata.Linker[SourceRef](mmt.mmtbase ? "metadata" ? "sourceRef") {

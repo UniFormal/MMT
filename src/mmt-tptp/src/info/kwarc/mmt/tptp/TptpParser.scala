@@ -36,7 +36,7 @@ class TptpParser {
    * Parse next formula in the TPTP file specified when creating the parser
    */
   def parseNext = parser.topLevelItem(outputManager)
-  
+
   /**
    * This can be used to parse a TPTP formula [sub-part] specified as a string when
    * creating the parser.

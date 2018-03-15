@@ -13,7 +13,8 @@ abstract class LazyConstant(val home : Term, val name : LocalName) extends Const
    protected var _df : Option[Term] = None
    protected var _rl : Option[String] = None
    protected var _not : Option[TextNotation] = None
-   
+   protected var _vs : Option[Visibility] = None
+
    private var tpAccessed: Boolean = false
    private var dfAccessed: Boolean = false
    private var otherAccessed: Boolean = false
@@ -59,5 +60,12 @@ abstract class LazyConstant(val home : Term, val name : LocalName) extends Const
          otherAccessed = true
       }
       NotationContainer(_not)
+   }
+   def vs = {
+      if (otherAccessed) {
+         onAccessOther
+         otherAccessed = true
+      }
+      _vs getOrElse Visibility.public
    }
 }

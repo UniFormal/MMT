@@ -67,14 +67,14 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
        case g:GlobalInCurrentDoc => OMMOD(g.doc ? ln)
      }
    }
-   
+
    private def currentDoc = bt.narrationDPath
    // namespace is given by file name only; archive, folders, and file extension are ignored
    private def makeNamespace(file: String) = Focalize._base / file
    private def currentNamespace = makeNamespace(bt.inPath.stripExtension.segments.last)
-   
-   // **** documents ****  
-  
+
+   // **** documents ****
+
    def applyDoc(d: focdoc): Document = {
      val focdoc(nam, decls) = d
      val doc = new Document(currentDoc, root = true)
@@ -85,8 +85,8 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
      }
      doc
    }
-   
-   // **** modules ****  
+
+   // **** modules ****
 
    def applyMod(doc: Document, m: FocModule) {
      implicit val c = Context.empty
@@ -123,12 +123,12 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
          val vw = new DeclaredView(currentNamespace, LocalName(nam.foc_name), applyCollSpec(impl), to, false)
          controller.add(vw)
          controller.add(MRef(doc.path, vw.path))
-         // TODO how to handle collections? body repeats all inferred declarations         
+         // TODO how to handle collections? body repeats all inferred declarations
        case _ => // open, load etc. ignored
      }
    }
-   
-   
+
+
    def applyTop(doc: Document, d: ToplevelDeclaration) {
      // TODO declarations must be added to doc itself, not to a dummy theory in it
      val thy: DeclaredTheory = Theory.empty(currentNamespace, LocalName("global"), Some(Focalize._path))
@@ -198,9 +198,9 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
          }
      }
    }
-   
+
    // **** declarations ****
-   
+
    def applyDec(mod: DeclaredModule, d: FocDeclaration): (Option[Method], Option[Declaration]) = {
      d match {
        case signature(name, tp) if name.foc_name == "rep" =>
@@ -232,7 +232,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
        case signature(n, tp) =>
          Constant(mod.toTerm, LocalName(n.foc_name), Nil, Some(applyTypeLifted(tp)), None, Some("signature"))
        case property(n, prop) =>
-         Constant(mod.toTerm, LocalName(n.foc_name), Nil, Some(applyPropLifted(prop)), None, Some("property"))         
+         Constant(mod.toTerm, LocalName(n.foc_name), Nil, Some(applyPropLifted(prop)), None, Some("property"))
        case letprop(n, pars, p) =>
          val cont = pars map {case param_prop(n,tp) => VarDecl(LocalName(n), applyTypeLifted(tp))}
          val tp = Pi(cont, OMS(Focalize.prop))
@@ -249,9 +249,9 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
      }
      (inhInfo, Some(dM))
    }
-  
+
    // **** expressions ****
-   
+
    def applyCollSpec(e: CollectionOrSpeciesExpr)(implicit c: Context) = {
      val (mp, args) = applyCollSpecAux(e)
      ApplySpine(OMMOD(mp), args:_*)
@@ -300,7 +300,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
        case sum_args(args) => applyType(prod(args))
      }
    }
-   
+
    /** auxiliary function for translating propositional formulas */
    private def propAux(op: GlobalName, args: Proposition*)(implicit c: Context) = ApplySpine(OMS(op), args map applyProp:_*)
    /** auxiliary function for translating quantified formulas */
@@ -308,7 +308,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
      val cont = Context(VarDecl(applyName(v), applyTypeLifted(tp)))
      Apply(OMS(op), Lambda(cont, applyProp(bd)(c++cont)))
    }
-     
+
    /** toplevel translation of propositions lifts to LF types */
    private def applyPropLifted(e: Proposition)(implicit c: Context) = try {
      Apply(OMS(Focalize.proof), applyProp(e))
@@ -329,7 +329,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
        case ex(v, t, b) => quanAux(Focalize.ex, v, t, b)
      }
    }
-   
+
    /** auxiliary function for translating propositional formulas */
    private def exprAux(op: GlobalName, props: List[Proposition], args: Expression*)(implicit c: Context) =
      ApplySpine(OMS(op), (props map applyProp) ++ (args.toList map applyExpr):_*)
@@ -343,7 +343,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
         case fun(varnames, bd) =>
           val cont = varnames map {case foc_name(_,n) => VarDecl(LocalName(n), ???)}
           Apply(OMS(Focalize.fun), Lambda(cont, applyExpr(bd)(c++cont)))
-        case application(fun, args) => exprAux(Focalize.app, Nil, fun :: args:_*)          
+        case application(fun, args) => exprAux(Focalize.app, Nil, fun :: args:_*)
         case tuple_expr(args) => exprAux(Focalize.tuple, Nil, args:_*)
         case record_expr(fields) =>
           val fieldsM = fields map {case RecordField(n, e) =>
@@ -356,7 +356,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
         case int(v) => Focalize.intLiterals(v)
       }
    }
-   
+
    def applyProof(pf: ProofExpr)(implicit c: Context): Term = {
      pf match {
        case proof() => OMS(Focalize.omittedProof)
@@ -364,16 +364,16 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
    }
 
    // **** identifiers ****
-   
+
    def applyName(fn: foc_name): LocalName = LocalName(fn._name)
-   
+
    def applyModId(file: String, name: String): MPath = {
      if (file.isEmpty)
        throw imp.LocalError("missing or empty infile attribute in foc_name with name " + name)
      makeNamespace(file) ? name
    }
    def applyModId(fn: foc_name): MPath = applyModId(fn.infile, fn._name)
-   
+
    def applyDeclId(id: identifier)(implicit c: Context): Term = {
      val ln = applyName(id._name)
      id.of_species match {
@@ -386,7 +386,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
        }
      }
    }
-   
+
    // **** notations ****
 
    /** generate and add mixfix notation according to spaces in constant name */
@@ -406,5 +406,5 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
    private def insertNotation(c: Declaration, numImplArgs: Int, numExplArgs: Int) {
      //TODO
    }
-   
+
 }

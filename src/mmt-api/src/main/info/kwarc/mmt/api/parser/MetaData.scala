@@ -3,17 +3,17 @@ import info.kwarc.mmt.api._
 import metadata._
 import objects._
 
-/** 
+/**
  * A parser component for the keywords 'tag', 'meta', and 'link' to be parsed into the corresponding MetaDatum classes
- * 
+ *
  * It also treats various keys starting with @_ as abbreviations of the respective Dublin core keys
- * 
- * The parse results are added directly to the containing element 
+ *
+ * The parse results are added directly to the containing element
  */
 object MetadataParser extends ParserExtension {
    private val keywords = List("tag", "link", "meta")
    private val extraKeywords = documents.NarrativeMetadata.allKeys.map("@_"+_)
-   def isApplicable(se: StructuralElement, kw: String) = (keywords:::extraKeywords) contains kw 
+   def isApplicable(se: StructuralElement, kw: String) = (keywords:::extraKeywords) contains kw
    def apply(pea: ParserExtensionArguments) = {
       val k = pea.keyword
       val s = pea.state

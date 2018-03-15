@@ -100,7 +100,7 @@ case class URI(scheme: Option[String],
     if      (u.scheme.isDefined)    u
     else if (u.authority.isDefined) URI(scheme, u.authority, u.path,              u.absolute,                      u.query, u.fragment)
     else if (u.absolute)            URI(scheme, authority,   u.path,              u.absolute,                      u.query, u.fragment)
-    else if (u.path.nonEmpty)       URI(scheme, authority,   merge(path, u.path), absolute || authority.isDefined, u.query, u.fragment) 
+    else if (u.path.nonEmpty)       URI(scheme, authority,   merge(path, u.path), absolute || authority.isDefined, u.query, u.fragment)
     else if (u.query.isDefined)     URI(scheme, authority,   path,                absolute,                        u.query, u.fragment)
     else if (u.fragment.isDefined)  URI(scheme, authority,   path,                absolute,                        query,   u.fragment)
     else                            this
@@ -183,7 +183,7 @@ object URI {
   implicit def toJava(u: URI): java.net.URI = u.toJava
 
   implicit def fromJava(u: java.net.URI): URI = apply(u)
-  
+
   def get(uri: URI): java.io.InputStream = {
     val url = uri.toURL
     val conn = url.openConnection

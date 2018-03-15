@@ -1,7 +1,8 @@
 package info.kwarc.mmt.jedit
 import org.gjt.sp.jedit._
 import console._
-import info.kwarc.mmt.api.frontend.{Action, ReportHandler}
+import info.kwarc.mmt.api.frontend.ReportHandler
+import info.kwarc.mmt.api.frontend.actions.Action
 
 class OutputAsReport(output: Output) extends ReportHandler("jEdit console") {
    def apply(ind: Int, caller: => String, group : String, msgParts : List[String]) {
@@ -16,11 +17,11 @@ class MMTConsole extends console.Shell("mmt") {
    override def printInfoMessage (output: Output) {
       output.print(null, "This is the MMT Shell")
    }
-   //If your shell executes commands in a separate thread, this method should stop the currently running thread, if any. 
+   //If your shell executes commands in a separate thread, this method should stop the currently running thread, if any.
    override def stop (console: Console) {}
-   private var success : Option[Boolean] = Some(true) 
-   
-   //This method should block until the currently running command has completed, and return true if the command executed successfully, false otherwise. If no command is currently running, it should return the status of the most recently run command. 
+   private var success : Option[Boolean] = Some(true)
+
+   //This method should block until the currently running command has completed, and return true if the command executed successfully, false otherwise. If no command is currently running, it should return the status of the most recently run command.
    override def waitFor(console: Console) : Boolean = true
 
    override def getCompletions(console: Console, command: String): Shell.CompletionInfo = new Shell.CompletionInfo {

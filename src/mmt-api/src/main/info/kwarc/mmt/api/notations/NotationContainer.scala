@@ -17,7 +17,7 @@ class NotationDimension {
 
    def get(arity : Option[Int] = None, lang : Option[String] = None) : List[TextNotation] = {
      var options = arity.map(notations.getOrElse(_, Nil)).getOrElse(notations.values.flatten).toList
-     lang.foreach {l => 
+     lang.foreach {l =>
        options = options.filter(_.scope.languages.contains(l))
      }
      NotationDimension.order(options)
@@ -25,13 +25,13 @@ class NotationDimension {
 
    def set(not : TextNotation) = {
      val l = not.arity.length
-     val nots = notations.getOrElse(l, Nil) 
+     val nots = notations.getOrElse(l, Nil)
      notations(l) = (not :: nots).distinct // replaces previous occurrence of same notation (which might differ in metadata)
      if (l > maxArity) {
        _maxArity = l
      }
    }
-   
+
    def update(nd : NotationDimension) : Boolean = {
       val changed = _notations != nd.notations // over-reports changes in the rare case where nothing but the order changed
       _notations = nd.notations
@@ -43,7 +43,7 @@ class NotationDimension {
 
 object NotationDimension {
   def order(notations : List[TextNotation]) : List[TextNotation] = {
-     notations.sortWith((x,y) => x.scope.priority > y.scope.priority || 
+     notations.sortWith((x,y) => x.scope.priority > y.scope.priority ||
                                 (x.scope.priority == y.scope.priority && x.arity.length > y.arity.length))
   }
 }
@@ -53,15 +53,15 @@ class NotationContainer extends ComponentContainer {
    private val _parsingDim = new NotationDimension
    private val _presentationDim = new NotationDimension
    private val _verbalizationDim = new NotationDimension
-   
+
    def parsingDim = _parsingDim
    def presentationDim = _presentationDim
    def verbalizationDim = _verbalizationDim
-   
+
    def parsing = parsingDim.default
    def presentation = presentationDim.default
    def verbalization = verbalizationDim.default
-   
+
    /** get the notation for a certain component */
    def apply(c: NotationComponentKey) = c match {
       case ParsingNotationComponent => parsing
@@ -87,27 +87,24 @@ class NotationContainer extends ComponentContainer {
       presentationDim.delete
       verbalizationDim.delete
    }
-   /** a copy of this NotationContainer with some other notations merged in */ 
+   /** a copy of this NotationContainer with some other notations merged in */
    def merge(that: NotationContainer) = {
-      def add1(notOpt : Option[TextNotation]) : Option[TextNotation] = notOpt.map(not => {
-         not.copy(precedence = not.precedence + 1)
-      })
       val ntC = new NotationContainer()
       val comps = List(ParsingNotationComponent,PresentationNotationComponent,VerbalizationNotationComponent)
       comps.foreach {c =>
-        (this.apply(c) orElse add1(that.apply(c))).foreach {not =>
+        (this.apply(c) orElse that.apply(c)).foreach {not =>
           ntC(c) = not
         }
       }
       ntC
    }
    def copy = NotationContainer() merge this
-   
+
    def isDefined = parsing.isDefined || presentation.isDefined || verbalization.isDefined
    def getComponents = parsing.toList.map(_ => ParsingNotationComponent(this)) :::
                        presentation.toList.map(_ => PresentationNotationComponent(this))
                        verbalization.toList.map(_ => VerbalizationNotationComponent(this))
-   
+
    /** @return an appropriate notation for presentation, if any */
    def getPresentDefault : Option[TextNotation] = presentation orElse parsing orElse verbalization
    /** @return an appropriate notation for parsing, if any */
@@ -116,7 +113,7 @@ class NotationContainer extends ComponentContainer {
    def getVerbalDefault : Option[TextNotation] = verbalization
    def getNotations(dim : Option[Int], lang : Option[String] = None) : List[TextNotation] = {
      dim match {
-       case None => 
+       case None =>
          val all = parsingDim.get(None, lang) ::: presentationDim.get(None, lang) ::: verbalizationDim.get(None, lang)
          NotationDimension.order(all)
        case Some(1) => parsingDim.get(None, lang)
@@ -125,27 +122,27 @@ class NotationContainer extends ComponentContainer {
        case Some(n) => throw ImplementationError("Invalid notation dimension value " + n)
      }
    }
-     
+
    def getAllNotations : List[TextNotation] = {
-     List(parsingDim.notations.values.flatten, 
+     List(parsingDim.notations.values.flatten,
           presentationDim.notations.values.flatten,
           verbalizationDim.notations.values.flatten
      ).flatten
    }
-   
+
    def toNode = {
       val n1 = parsingDim.notations.values.flatten map {
-         case n if ! metadata.Generated(n) => 
+         case n if ! metadata.Generated(n) =>
            utils.xml.addAttr(n.toNode, "dimension", "1")
          case _ => Nil
       }
       val n2 = presentationDim.notations.values.flatten map {
-         case n if ! metadata.Generated(n) => 
+         case n if ! metadata.Generated(n) =>
            utils.xml.addAttr(n.toNode, "dimension", "2")
          case _ => Nil
       }
       val n3 = verbalizationDim.notations.values.flatten map {
-         case n if ! metadata.Generated(n) => 
+         case n if ! metadata.Generated(n) =>
            utils.xml.addAttr(n.toNode, "dimension", "3")
          case _ => Nil
       }
