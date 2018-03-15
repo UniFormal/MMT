@@ -695,7 +695,7 @@ case class IMPSMathSymbol(s : String) extends IMPSMathExp {
 }
 
 case class IMPSVar(v : String) extends IMPSMathExp {
-  override def toString: String = v
+  override def toString: String = "{" + v + "}"
 }
 
 case class IMPSTruth() extends IMPSMathExp
@@ -874,7 +874,6 @@ case class IMPSIndividual() extends  IMPSMathExp
 {
   override def toString: String = "an%individual"
 }
-
 
 //-----------
 

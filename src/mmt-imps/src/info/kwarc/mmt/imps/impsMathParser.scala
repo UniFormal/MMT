@@ -1,10 +1,8 @@
 package info.kwarc.mmt.imps
 
-import com.sun.xml.internal.bind.v2.runtime.output.StAXExStreamWriterOutput
-import info.kwarc.mmt.api.GlobalName
-
 import scala.util.parsing.combinator._
 import scala.util.parsing.combinator.PackratParsers
+import scala.util.Random
 
 package object impsMathParser
 {
@@ -397,99 +395,57 @@ package object impsMathParser
 
   }
 
-  def parseIMPSMath(s: String): Option[IMPSMathExp] =
+  //-----------
+
+  def freshVar(preferred : Option[String] = None, input : Option[IMPSMathExp] = None) : IMPSVar =
   {
-    // "lambda(v:[zz,sets[ind_1]],a:sets[ind_1],forsome(m:zz,forall(x:ind_1,x in a implies forsome(n:zz,-m<=n and n<=m and x in v(n)))))"
-
-    var store: Option[IMPSMathExp] = None
-    var input: String = s
-
-    input = input.trim
-    if (input.startsWith("\"")) {
-      input = input.drop(1)
+    def boundVars(input : IMPSMathExp) : List[String] =
+    {
+      val list : List[String] = input match
+      {
+        case IMPSVar(v)             => List(v)
+        case IMPSMathSymbol(s)      => Nil
+        case IMPSTruth()            => Nil
+        case IMPSFalsehood()        => Nil
+        case IMPSNegation(p)        => boundVars(p)
+        case IMPSIf(p,t1,t2)        => boundVars(p) ::: boundVars(t1) ::: boundVars(t2)
+        case IMPSIff(p, q)          => boundVars(p) ::: boundVars(q)
+        case IMPSIfForm(p,q,r)      => boundVars(p) ::: boundVars(q) ::: boundVars(r)
+        case IMPSEquals(a,b)        => boundVars(a) ::: boundVars(b)
+        case IMPSDisjunction(ls)    => ls.flatMap(boundVars)
+        case IMPSConjunction(ls)    => ls.flatMap(boundVars)
+        case IMPSLambda(vs,t)       => vs.flatMap(v => boundVars(v._1)) ::: boundVars(t)
+        case IMPSForAll(vs,p)       => vs.flatMap(v => boundVars(v._1)) ::: boundVars(p)
+        case IMPSForSome(vs,r   )   => vs.flatMap(v => boundVars(v._1)) ::: boundVars(r)
+        case IMPSImplication(p,q)   => boundVars(p) ::: boundVars(q)
+        case IMPSApply(f,ts)        => boundVars(f) ::: ts.flatMap(boundVars)
+        case IMPSIota(v1,s1,p)      => boundVars(v1) ::: boundVars(p)
+        case IMPSIotaP(v1,s1,p)     => boundVars(v1) ::: boundVars(p)
+        case IMPSIsDefined(r)       => boundVars(r)
+        case IMPSIsDefinedIn(r,s)   => boundVars(r)
+        case IMPSUndefined(s)       => Nil
+        case IMPSTotal(f,bs)        => boundVars(f)
+        case IMPSNonVacuous(p)      => boundVars(p)
+        case IMPSQuasiEquals(p,q)   => boundVars(p) ::: boundVars(q)
+      }
+      list.distinct
     }
-    if (input.endsWith("\"")) {
-      input = input.dropRight(1)
-    }
-    input = input.trim
 
-    /* This takes as reference the IMPS Manual pg. 65 */
-    val k = new IMPSMathParser()
-    val j = k.parseAll(k.parseMath, input)
-    if (j.isEmpty) {
-      //println("COULD NOT PARSE: " + s)
-      None
-    } else {
-      //println("PARSED:          " + j.get.toString)
-      Some(j.get)
-    }
+    val alphabet : List[String] = "abcefghijkmopqrstuvwxyz".flatMap(c => List(c.toString, c.toString+c.toString)).toList
+    val used     : List[String] = if (input.isDefined) { boundVars(input.get) } else { Nil }
+    val valid    : List[String] = alphabet.filter(s => !used.contains(s))
+    assert(valid.nonEmpty)
+
+    if (preferred.isDefined && valid.contains(preferred.get))
+    { return IMPSVar(preferred.get) }
+    else
+    { val random = new Random() ; return IMPSVar(valid(random.nextInt(valid.length))) }
+    /* Doesn't actually need to be random of course, could also be head. */
   }
 
   /* PackratParsers because those can be left-recursive */
   class IMPSMathParser extends RegexParsers with PackratParsers
   {
-    lazy val parseMath  : PackratParser[IMPSMathExp] =
-    {
-      /* Binding hierarchies taken from IMPS manual pg. 150*/
-      parseDisjunction | parseConjunction |
-        parseLambda | parseForAll | parseForSome |
-        parseEquals | parseIff | parseImplies | parseIfForm |
-        parseNot | parseTruth | parseFalse | parseApply | parseSymbol
-    }
-
-    lazy val parseTruth : PackratParser[IMPSTruth]     = { "truth"     ^^ {_ => IMPSTruth()     } }
-    lazy val parseFalse : PackratParser[IMPSFalsehood] = { "falsehood" ^^ {_ => IMPSFalsehood() } }
-
-    lazy val parseNot : PackratParser[IMPSNegation]  = {
-      ("not(" ~ parseMath ~ ")") ^^ { case _ ~ m ~ _ => IMPSNegation(m) }
-    }
-
-    lazy val parseIff : PackratParser[IMPSIff] = {
-      (parseMath ~ "iff" ~ parseMath) ^^ { case m1 ~ _ ~ m2 => IMPSIff(m1,m2)}
-    }
-
-    lazy val parseImplies : PackratParser[IMPSImplication] = {
-      (parseMath ~ "implies" ~ parseMath) ^^ { case m1 ~ _ ~ m2 => IMPSImplication(m1,m2) }
-    }
-
-    lazy val parseEquals : PackratParser[IMPSEquals] = {
-      (parseMath ~ "=" ~ parseMath) ^^ { case m1 ~ _ ~ m2 => IMPSEquals(m1,m2)}
-    }
-
-    lazy val parseUndefined : PackratParser[IMPSUndefined] = {
-      ("?" ~ parseSort) ^^ {case _ ~ m => IMPSUndefined(m)}
-    }
-
-    lazy val parseConjunction : PackratParser[IMPSConjunction] = {
-      parseMath ~ "and" ~ rep1sep(parseMath,"and") ^^ { case c ~ _ ~ cs => IMPSConjunction(List(c) ::: cs) }
-    }
-
-    lazy val parseDisjunction : PackratParser[IMPSDisjunction] = {
-      parseMath ~ "or" ~ rep1sep(parseMath,"or") ^^ { case c ~ _ ~ cs => IMPSDisjunction(List(c) ::: cs) }
-    }
-
-    lazy val parseLambda : PackratParser[IMPSLambda] = {
-      (("lambda(" ~> rep1sep(parseVal,",") <~ ",") ~ (parseMath <~ ")")) ^^ { case (vrs ~ p) => IMPSLambda(vrs,p) }
-    }
-
-    lazy val parseForAll : PackratParser[IMPSForAll] = {
-      (("forall(" ~> rep1sep(parseVal,",") <~ ",") ~ (parseMath <~ ")")) ^^ { case (vrs ~ p) => IMPSForAll(vrs,p) }
-    }
-
-    lazy val parseForSome : PackratParser[IMPSForSome] = {
-      (("forsome(" ~> rep1sep(parseVal,",") <~ ",") ~ (parseMath <~ ")")) ^^ { case (vrs ~ p) => IMPSForSome(vrs,p) }
-    }
-
-    lazy val parseIfForm : PackratParser[IMPSIfForm] = {
-      ("if_form(" ~> parseMath <~ ",") ~ (parseMath <~ ",") ~ (parseMath <~ ")") ^^ { case (p ~ q ~ f) => IMPSIfForm(p,q,f)}
-    }
-
-    lazy val parseVal : PackratParser[(IMPSVar, Option[IMPSSort])] = {
-      ("[^,:\\s]+".r ~ parseSortDecl) ^^ { case (name ~ sort) => (IMPSVar(name), Some(sort))}
-    }
-
-    lazy val parseSortDecl : PackratParser[IMPSSort] = { (":" ~ parseSort) ^^ {case (semi ~ sort) => sort} }
-
     lazy val parseSort : PackratParser[IMPSSort] = { parseSets | parseFunSort | parseFunSort2 | parseAtomicSort }
 
     lazy val parseSets : PackratParser[IMPSSetSort] = {
@@ -506,14 +462,6 @@ package object impsMathParser
 
     lazy val parseFunSort2 : PackratParser[IMPSNaryFunSort] = {
       "(" ~> rep1(parseSort) <~ ")" ^^ {case (sorts) => IMPSNaryFunSort(sorts)}
-    }
-
-    lazy val parseApply : PackratParser[IMPSApply] = {
-      (parseSymbol ~ ("(" ~> rep1sep(parseSymbol, ",") <~ ")")) ^^ {case (fun ~ args) => IMPSApply(fun, args)}
-    }
-
-    lazy val parseSymbol : PackratParser[IMPSMathSymbol] = {
-      ("[^(),\\s]+".r)  ^^ {case (sym) => IMPSMathSymbol(sym)}
     }
   }
 }

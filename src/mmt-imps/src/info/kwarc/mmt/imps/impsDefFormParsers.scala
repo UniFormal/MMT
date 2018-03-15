@@ -29,7 +29,6 @@ package object impsDefFormParsers
     {
       /* Parse positional arguments */
       e.children(1) match { case Exp(List(Str(x)), _) => name = Some(x) }
-      e.children(2) match { case Exp(List(Str(y)), _) => qss  = impsMathParser.parseIMPSMath(y) }
 
       /* Parse keyword arguments, these can come in any order */
       var i : Int = 3
@@ -54,11 +53,23 @@ package object impsDefFormParsers
       val defsorts : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"defsorts")
       assert(defsorts.nonEmpty)
       val thesort : Option[JSONObject] = defsorts.find(j => j.getAsString("name").toLowerCase == name.get.toLowerCase)
+      assert(thesort.get.getAsString("type") == "imps-theory-defsort")
       assert(thesort.isDefined)
+
       val supersort : String = thesort.get.getAsString("sort")
       assert(supersort.endsWith(" prop)"))
-
       val finalsort : IMPSSort = IMPSAtomSort(supersort.takeWhile(c => c != ' ').tail)
+
+      val thesexp : String = thesort.get.getAsString("formula-sexp")
+      assert(thesexp.nonEmpty)
+
+      val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+      val lsp = sp.parseAll(sp.parseSEXP,thesexp)
+      assert(lsp.successful)
+
+      var mpc : MathParsingContext = new MathParsingContext
+      qss = Some(impsMathParser.makeSEXPFormula(lsp.get, mpc))
+      println("     > Formula generation successful: " + qss.get.toString)
 
       /* check for required arguments */
       if (name.isEmpty || qss.isEmpty || thy.isEmpty) None
@@ -69,7 +80,7 @@ package object impsDefFormParsers
 
   /* Parser for IMPS special form def-constants
    * Documentation: IMPS manual pgs. 168, 169 */
-  def parseConstant (e : Exp) : Option[Constant] =
+  def parseConstant (e : Exp, js : List[JSONObject]) : Option[Constant] =
   {
     // Required arguments
     var name   : Option[String]         = None
@@ -87,7 +98,6 @@ package object impsDefFormParsers
     {
       /* Parse positional arguments */
       e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
-      e.children(2) match { case Exp(List(Str(y)), _) => defexp = impsMathParser.parseIMPSMath(y) }
 
       /* Parse keyword arguments, these can come in any order */
       var i : Int = 3
@@ -105,6 +115,26 @@ package object impsDefFormParsers
         }
         i += 1
       }
+
+      val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thy.get.thy)
+      assert(json_theory.isDefined)
+      assert(json_theory.get.getAsString("type") == "imps-theory")
+      val defconsts : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"defconsts")
+      assert(defconsts.nonEmpty)
+      val theconst : Option[JSONObject] = defconsts.find(j => j.getAsString("name").toLowerCase == name.get.toLowerCase)
+      assert(theconst.get.getAsString("type") == "imps-theory-defconst")
+      assert(theconst.isDefined)
+
+      val thesexp : String = theconst.get.getAsString("formula-sexp")
+      assert(thesexp.nonEmpty)
+
+      val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+      val lsp = sp.parseAll(sp.parseSEXP,thesexp)
+      assert(lsp.successful)
+
+      var mpc : MathParsingContext = new MathParsingContext
+      defexp = Some(impsMathParser.makeSEXPFormula(lsp.get, mpc))
+      println("     > Formula generation successful: " + defexp.get.toString)
 
       /* check for required arguments */
       if (name.isEmpty || defexp.isEmpty || thy.isEmpty) None
@@ -394,12 +424,12 @@ package object impsDefFormParsers
       e.children(2) match {
         case Exp(List(Str(x)), _) => {
           s = x.tail.init
-          println(" > scala theorem: " + removeWhitespace(x.tail.init))
+          println("     > scala theorem: " + removeWhitespace(x.tail.init))
           var tempt = theorems.find(j => removeWhitespace(j.getAsString("formula-string")) == removeWhitespace(x.tail.init))
 
           if (!(tempt.isDefined)) {
             val handpicked = handpick(removeWhitespace(x.tail.init))
-            println(" > handpicked: " +handpicked)
+            println("     > handpicked: " +handpicked)
             tempt = theorems.find(j => removeWhitespace(j.getAsString("formula-string")) == handpicked)
           }
 
@@ -420,7 +450,7 @@ package object impsDefFormParsers
         val foo = removeWhitespace(t.getAsString("formula-string"))
         val n = 5
         if (foo.take(n) == bar.take(n)) {
-          println(" > json theorem: " + foo)
+          println("     > json theorem: " + foo)
         }
       }
     }
@@ -435,7 +465,7 @@ package object impsDefFormParsers
 
     var mpc : MathParsingContext = new MathParsingContext
     formula = Some(impsMathParser.makeSEXPFormula(lsp.get, mpc))
-    println(" > Formula generation successful: " + formula.get.toString)
+    println("     > Formula generation successful: " + formula.get.toString)
 
     assert (!(name.isEmpty || formula.isEmpty || theory.isEmpty))
     Some(Theorem(name.get, formula.get, lemma, reverse, theory.get, usages, trans, macete, hmthy, prf, e.src))
@@ -490,7 +520,7 @@ package object impsDefFormParsers
 
   /* Parser for IMPS special form def-language
    * Documentation: IMPS manual pgs. 186-188 */
-  def parseTheory(e : Exp) : Option[Theory] =
+  def parseTheory(e : Exp, js : List[JSONObject]) : Option[Theory] =
   {
     /* Required Arguments */
     var name : Option[String] = None
@@ -507,6 +537,7 @@ package object impsDefFormParsers
       e.children(1) match {
         case Exp(List(Str(x)), _) => name = Some(x)
       }
+      assert(name.isDefined)
 
       /* Parse keyword arguments. These can be in any order */
       for (c <- e.children.tail)
@@ -516,7 +547,7 @@ package object impsDefFormParsers
             case Exp(List(Str("language")), _) => lang = impsArgumentParsers.parseArgumentLanguage(Exp(ds, src))
             case Exp(List(Str("component-theories")), _) => cmpntthrs = impsArgumentParsers.parseComponentTheories(Exp(ds, src))
             case Exp(List(Str("distinct-constants")), _) => dstnct = impsArgumentParsers.parseDistinctConstants(Exp(ds, src))
-            case Exp(List(Str("axioms")), _) => axioms = impsArgumentParsers.parseTheoryAxioms(Exp(ds,src))
+            case Exp(List(Str("axioms")), _) => axioms = impsArgumentParsers.parseTheoryAxioms(Exp(ds,src), js, name.get)
             case _ => ()
           }
           case _ => ()

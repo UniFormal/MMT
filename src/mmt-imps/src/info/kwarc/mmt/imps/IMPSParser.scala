@@ -212,7 +212,7 @@ class IMPSParser
 
         case Str("def-compound-macete") => return Some(Dummy("def-compund-macete"))
 
-        case Str("def-constant") => return impsDefFormParsers.parseConstant(e)
+        case Str("def-constant") => return impsDefFormParsers.parseConstant(e, js)
 
         case Str("def-imported-rewrite-rules") => return impsDefFormParsers.parseImportedRewriteRules(e)
 
@@ -242,7 +242,7 @@ class IMPSParser
 
         case Str("def-theorem") => return impsDefFormParsers.parseTheorem(e, js)
 
-        case Str("def-theory") => return impsDefFormParsers.parseTheory(e)
+        case Str("def-theory") => return impsDefFormParsers.parseTheory(e, js)
 
         case Str("def-theory-ensemble") => return Some(Dummy("def-theory-ensemble"))
 
@@ -262,11 +262,11 @@ class IMPSParser
 
         /* Syntax changers */
 
-        case Str("def-overloading") => return Some(Dummy("def-overloading"))
+        case Str("def-overloading") => println(" > Dropping (def-overloading ...)")   ; return None
 
-        case Str("def-parse-syntax") => return Some(Dummy("def-parse-syntax"))
+        case Str("def-parse-syntax") => println(" > Dropping (def-parse-syntax ...)") ; return None
 
-        case Str("def-print-syntax") => return Some(Dummy("def-print-syntax"))
+        case Str("def-print-syntax") => println(" > Dropping (def-print-syntax ...)") ; return None
 
         /* Other meta-commands etc. */
 

@@ -42,6 +42,13 @@ object IMPSTheory
     }
   }
 
+  object Sets extends Sym("sets")
+  {
+    def apply(a : Term, alpha : Term) : Term = {
+      ApplySpine(this.term, a, alpha)
+    }
+  }
+
   object FunSort extends Sym("fun")
   {
     def apply(tpA : Term, tpB : Term, srtA : Term, srtB : Term) : Term =
@@ -139,12 +146,10 @@ object IMPSTheory
 
   object Forsome extends Sym("forsome")
   {
-    def apply(ls : List[(LocalName,Option[Term])], t : Term) : Term = {
-      assert(ls.nonEmpty)
-      ls match
-      {
-        case _ => ls.foldRight(t)((tm,p) => ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(tm._1, tm._2.get, p)))
-      }
+    // forsome  : {A, α : sort A} (exp α → exp bool) → exp bool# ∃ 3 prec 20
+    def apply(a : Term, alpha : Term, p : Term) : Term =
+    {
+      ApplySpine(this.term, a, alpha, p)
     }
   }
 

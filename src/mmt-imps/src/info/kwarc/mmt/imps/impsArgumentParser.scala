@@ -1,14 +1,16 @@
 package info.kwarc.mmt.imps
 
+import info.kwarc.mmt.api.utils.JSONObject
 import info.kwarc.mmt.imps.Usage.Usage
 import info.kwarc.mmt.imps.NumericalType.NumericalType
+import info.kwarc.mmt.imps.impsDefFormParsers.{handpick, removeWhitespace}
 import info.kwarc.mmt.imps.impsMathParser.IMPSMathParser
 
 package object impsArgumentParsers
 {
   /* Parser for IMPS axiom specifications argument
    * used def-theory */
-  def parseAxiomSpecification(e : Exp) : Option[AxiomSpecification] =
+  def parseAxiomSpecification(e : Exp, js : List[JSONObject], thy : String) : Option[AxiomSpecification] =
   {
     assert(e.children.nonEmpty)
 
@@ -18,24 +20,29 @@ package object impsArgumentParsers
 
     var foobarList : List[LispExp] = Nil
 
+    var frml  : String = ""
+    var index : Int = 0
+
     e.children(0) match
     {
       case Exp(List(Str(h)),_) => {
         if (h.startsWith("\"")) {
-          formula = impsMathParser.parseIMPSMath(h)
+          frml = h
           foobarList = e.children.tail
+          index = 1
         } else {
           name = Some(h)
+          index = 2
           e.children(1) match {
             case Exp(List(Str(f)),_) => {
-              formula = impsMathParser.parseIMPSMath(f)
+              frml = f
               foobarList = e.children.tail.tail
             }
-            case _ => ()
+            case _ => ???
           }
         }
       }
-      case _ => ()
+      case _ => ???
     }
 
     // Parsing all usages
@@ -54,14 +61,77 @@ package object impsArgumentParsers
       }
     }
 
+    val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thy.toLowerCase)
+    assert(json_theory.isDefined)
+    assert(json_theory.get.getAsString("type") == "imps-theory")
+    val axioms : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"axioms")
+    assert(axioms.nonEmpty)
+
+    var s : String = ""
+
+    val theaxiom : Option[JSONObject] = if (name.get != "()")
+    {
+      println(" > looking for axiom " + name.get + " in theory " + thy + " ...")
+      axioms.find(j => j.getAsString("name") == name.get.toLowerCase)
+    } else {
+      println(" > looking for nameless axiom in theory " + thy + " ...")
+      e.children(index) match {
+        case Exp(List(Str(x)), _) => {
+          s = x.tail.init
+          println("     > scala axiom: " + removeWhitespace(x.tail.init))
+          var tempt = axioms.find(j => removeWhitespace(j.getAsString("formula-string")) == removeWhitespace(x.tail.init))
+
+          if (!(tempt.isDefined)) {
+            val handpicked = handpick(removeWhitespace(x.tail.init))
+            println("     > handpicked: " +handpicked)
+            tempt = axioms.find(j => removeWhitespace(j.getAsString("formula-string")) == handpicked)
+          }
+
+          tempt
+        }
+        case _                    => ???
+      }
+    }
+
+    if (!(theaxiom.isDefined))
+    {
+      assert(s != "")
+      val bar = removeWhitespace(s)
+      println(" > s = " + s)
+
+      for (t <- axioms)
+      {
+        val foo = removeWhitespace(t.getAsString("formula-string"))
+        val n = 5
+        if (foo.take(n) == bar.take(n)) {
+          println("     > json axiom: " + foo)
+        }
+      }
+    }
+
+    assert(theaxiom.get.getAsString("type") == "imps-theory-axiom")
+    assert(theaxiom.isDefined)
+
+    val thesexp : String = theaxiom.get.getAsString("formula-sexp")
+    assert(thesexp.nonEmpty)
+
+    val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+    val lsp = sp.parseAll(sp.parseSEXP,thesexp)
+    assert(lsp.successful)
+
+    var mpc : MathParsingContext = new MathParsingContext
+    formula = Some(impsMathParser.makeSEXPFormula(lsp.get, mpc))
+    println("     > Formula generation successful: " + formula.get.toString)
+
     val usgs : Option[List[Usage]] = if (usgs_prime.isEmpty) { None } else { Some(usgs_prime) }
 
-    if (formula.isDefined) { Some(AxiomSpecification(formula.get, name, usgs, e.src)) } else {None}
+    assert(formula.isDefined)
+    Some(AxiomSpecification(formula.get, name, usgs, e.src))
   }
 
   /* Parser for IMPS theory axioms argument
    * used def-theory */
-  def parseTheoryAxioms(e : Exp) : Option[TheoryAxioms] =
+  def parseTheoryAxioms(e : Exp, js : List[JSONObject], thy : String) : Option[TheoryAxioms] =
   {
     assert(e.children.tail.nonEmpty)
     var axms : List[AxiomSpecification] = Nil
@@ -69,14 +139,15 @@ package object impsArgumentParsers
     for (aspec <- e.children.tail)
     {
         aspec match {
-          case Exp(ds,src) => parseAxiomSpecification(Exp(ds,src)) match {
+          case Exp(ds,src) => parseAxiomSpecification(Exp(ds,src), js, thy) match {
             case Some(as)  => axms = axms :+ as
             case None      => ()
           }
         }
     }
 
-    if (axms.nonEmpty) { Some(TheoryAxioms(axms, e.src)) } else {None}
+    assert(axms.nonEmpty)
+    Some(TheoryAxioms(axms, e.src))
   }
 
   /* Parser for IMPS usages objects
@@ -86,6 +157,7 @@ package object impsArgumentParsers
     /* Can contain one or multiple usages */
     var usgs : List[Usage] = List.empty
 
+    assert(e.children.length >= 2)
     if (e.children.length >= 2)
     {
       var i : Int = 1
@@ -104,8 +176,9 @@ package object impsArgumentParsers
         }
         i += 1
       }
-      if (usgs != List.empty)
-      { Some(ArgumentUsages(usgs, e.src)) } else { None }
+
+      assert(usgs.nonEmpty)
+      Some(ArgumentUsages(usgs, e.src))
 
     } else { None }
   }
@@ -127,18 +200,20 @@ package object impsArgumentParsers
       }
     }
 
-    if (lst.nonEmpty) { Some(ComponentTheories(lst, e.src)) } else { None }
+    assert(lst.nonEmpty)
+    Some(ComponentTheories(lst, e.src))
   }
 
   /* Parser for IMPS constructor argument objects
    * used in: def-cartesian-product */
   def parseConstructor(e : Exp) : Option[Constructor] =
   {
+    assert(e.children.length == 2)
     if (e.children.length == 2)
     {
       e.children(1) match {
         case Exp(List(Str(x)),_) => Some(Constructor(x, e.src))
-        case _                   => None
+        case _                   => ???
       }
     } else { None }
   }
@@ -173,17 +248,19 @@ package object impsArgumentParsers
       }
     }
 
-    if (outerList.nonEmpty) { Some(DistinctConstants(outerList,e.src)) } else { None }
+    assert(outerList.nonEmpty)
+    Some(DistinctConstants(outerList,e.src))
   }
 
   /* Parser for IMPS theory argument objects
    * used in: def-atomic-sort... */
   def parseArgumentTheory(e : Exp) : Option[ArgumentTheory] =
   {
+    assert(e.children.length == 2)
     if (e.children.length == 2) {
       e.children(1) match {
         case Exp(List(Str(x)),_) => Some(ArgumentTheory(x, e.src))
-        case _                   => None
+        case _                   => ???
       }
     } else { None }
   }
@@ -192,10 +269,11 @@ package object impsArgumentParsers
    * used in: def-imported-rewrite-rules... */
   def parseSourceTheory (e : Exp) : Option[SourceTheory] =
   {
+    assert(e.children.length == 2)
     if (e.children.length == 2) {
       e.children(1) match {
         case Exp(List(Str(x)),_) => Some(SourceTheory(x, e.src))
-        case _                   => None
+        case _                   => ???
       }
     } else { None }
   }
@@ -204,10 +282,11 @@ package object impsArgumentParsers
    * used in: def-theorem... */
   def parseHomeTheory (e : Exp) : Option[HomeTheory] =
   {
+    assert(e.children.length == 2)
     if (e.children.length == 2) {
       e.children(1) match {
         case Exp(List(Str(x)),_) => Some(HomeTheory(x, e.src))
-        case _                   => None
+        case _                   => ???
       }
     } else { None }
   }
@@ -216,10 +295,11 @@ package object impsArgumentParsers
    * used in: def-translation... */
   def parseSource (e : Exp) : Option[TranslationSource] =
   {
+    assert(e.children.length == 2)
     if (e.children.length == 2) {
       e.children(1) match {
         case Exp(List(Str(x)),_) => Some(TranslationSource(x, e.src))
-        case _                   => None
+        case _                   => ???
       }
     } else { None }
   }
@@ -228,10 +308,11 @@ package object impsArgumentParsers
    * used in: def-translation... */
   def parseTarget (e : Exp) : Option[TranslationTarget] =
   {
+    assert(e.children.length == 2)
     if (e.children.length == 2) {
       e.children(1) match {
         case Exp(List(Str(x)),_) => Some(TranslationTarget(x, e.src))
-        case _                   => None
+        case _                   => ???
       }
     } else { None }
   }
@@ -240,10 +321,11 @@ package object impsArgumentParsers
   * used in: def-theorem... */
   def parseMacete (e : Exp) : Option[Macete] =
   {
+    assert(e.children.length == 2)
     if (e.children.length == 2) {
       e.children(1) match {
         case Exp(List(Str(x)),_) => Some(Macete(x, e.src))
-        case _                   => None
+        case _                   => ???
       }
     } else { None }
   }
@@ -288,6 +370,7 @@ package object impsArgumentParsers
    * used in: def-constant, ... */
   def parseSort (e : Exp) : Option[Sort] =
   {
+    assert(e.children.length == 2)
     if (e.children.length == 2) {
       e.children(1) match {
         case Exp(List(Str(x)),_) => {
@@ -300,7 +383,7 @@ package object impsArgumentParsers
           assert(!(j.isEmpty))
           return Some(Sort(j.get, e.src))
         }
-        case _                   => None
+        case _                   => ???
       }
     } else { None }
   }
@@ -312,6 +395,7 @@ package object impsArgumentParsers
     /* Can contain one or multiple usages */
     var fixed : List[String] = List.empty
 
+    assert(e.children.length >= 2)
     if (e.children.length >= 2)
     {
       var i : Int = 1
@@ -324,8 +408,9 @@ package object impsArgumentParsers
         }
         i += 1
       }
-      if (fixed != List.empty)
-      { Some(FixedTheories(fixed, e.src)) } else { None }
+
+      assert(fixed.nonEmpty)
+      Some(FixedTheories(fixed, e.src))
 
     } else { None }
   }
@@ -337,6 +422,7 @@ package object impsArgumentParsers
     /* Can contain one or multiple usages */
     var source : List[String] = List.empty
 
+    assert(e.children.length >= 2)
     if (e.children.length >= 2)
     {
       var i : Int = 1
@@ -345,12 +431,13 @@ package object impsArgumentParsers
         e.children(i) match
         {
           case Exp(List(Str(x)),_) => source = source :+ x
-          case _                   => None
+          case _                   => ???
         }
         i += 1
       }
-      if (source.nonEmpty)
-      { Some(SourceTheories(source, e.src)) } else { None }
+
+      assert(source.nonEmpty)
+      Some(SourceTheories(source, e.src))
 
     } else { None }
   }
@@ -363,7 +450,7 @@ package object impsArgumentParsers
 
     e.children(1) match {
       case Exp(List(Str(x)),_) => Some(EmbeddedLanguage(x, e.src))
-      case _                   => None
+      case _                   => ???
     }
   }
 
@@ -377,11 +464,12 @@ package object impsArgumentParsers
     {
       k match {
         case Exp(List(Str(x)),_) => lst = lst :+ x
-        case _                   => ()
+        case _                   => ???
       }
     }
 
-    if (lst.isEmpty) { None } else { Some(EmbeddedLanguages(lst, e.src)) }
+    assert(lst.nonEmpty)
+    Some(EmbeddedLanguages(lst, e.src))
   }
 
 
@@ -395,11 +483,12 @@ package object impsArgumentParsers
     {
       k match {
         case Exp(List(Str(x)),_) => lst = lst :+ x
-        case _                   => ()
+        case _                   => ???
       }
     }
 
-    if (lst.isEmpty) { None } else { Some(LangBaseTypes(lst, e.src)) }
+    assert(lst.nonEmpty)
+    Some(LangBaseTypes(lst, e.src))
   }
 
   /* Parser for IMPS extensible argument
@@ -412,13 +501,14 @@ package object impsArgumentParsers
     {
       val prs : Option[TypeSortAList] = l match {
         case Exp(x,y) => parseTypeSortAList(Exp(x,y))
-        case _        => None
+        case _        => ???
       }
 
       if (prs.isDefined) { list = list :+ prs.get }
     }
 
-    if (list.isEmpty) { None } else { Some(Extensible(list, e.src))}
+    assert(list.nonEmpty)
+    Some(Extensible(list, e.src))
 
   }
 
@@ -438,14 +528,14 @@ package object impsArgumentParsers
     {
       srt = e.children(1) match {
         case Exp(List(Str(y)),_) => Some(y)
-        case _                   => None
+        case _                   => ???
       }
     }
 
     if (ntp.isDefined && srt.isDefined) {
       Some(TypeSortAList(ntp.get,srt.get))
     } else {
-      None
+      ???
     }
 
   }
@@ -521,7 +611,8 @@ package object impsArgumentParsers
       }
     }
 
-    if (lst.isEmpty) { None } else { Some(ConstantSpecifications(lst, e.src)) }
+    assert(lst.nonEmpty)
+    Some(ConstantSpecifications(lst, e.src))
   }
 
   /* Parser for IMPS sorts argument
@@ -568,6 +659,7 @@ package object impsArgumentParsers
       }
     }
 
+    assert(lst.nonEmpty)
     if (lst.isEmpty) { None } else
     {
       val mp : IMPSMathParser = new IMPSMathParser()
@@ -595,6 +687,7 @@ package object impsArgumentParsers
     /* Can contain one or multiple usages */
     var accs : List[String] = List.empty
 
+    assert(e.children.length >= 2)
     if (e.children.length >= 2)
     {
       var i : Int = 1
@@ -607,8 +700,9 @@ package object impsArgumentParsers
         }
         i += 1
       }
-      if (accs != List.empty)
-      { Some(Accessors(accs, e.src)) } else { None }
+
+      assert(accs.nonEmpty)
+      Some(Accessors(accs, e.src))
 
     } else { None }
   }
