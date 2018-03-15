@@ -17,8 +17,9 @@ object RelationHandler {
    def ignore = new RelationHandler {def apply(r: RelationalElement) {}}
 }
 
-class CheckingEnvironment(val errorCont: ErrorHandler, val reCont: RelationHandler, val task: MMTTask)
-
+class CheckingEnvironment(val simplifier: uom.Simplifier, val errorCont: ErrorHandler, val reCont: RelationHandler, val task: MMTTask) {
+  def simpEnv = new uom.SimplificationEnvironment(false, errorCont, task)
+}
 
 /**
  * checks objects

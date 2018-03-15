@@ -227,7 +227,7 @@ object LMFDBStore extends Storage with LMFDBBackend {
           t
     }
     path match {
-       case p: GlobalName => getElement(p, schema, db)
+       case p: GlobalName => loadConstant(p, schema, db)
        case _ =>
     }
   }
@@ -236,7 +236,7 @@ object LMFDBStore extends Storage with LMFDBBackend {
     load(needed)
   }
 
-  private def getElement(path: GlobalName, schema: DeclaredTheory, db: DB)(implicit controller: Controller) {
+  private def loadConstant(path: GlobalName, schema: DeclaredTheory, db: DB)(implicit controller: Controller) {
     def error(msg: String) = throw BackendError(msg, path)
 
     // find the type we are implementing

@@ -17,8 +17,11 @@ sealed abstract class PrintAction extends ResponsiveAction {}
 
 case object MMTInfo extends PrintAction {
   def apply(implicit controller: Controller): Unit = {
-    respond(s"MMT Version     : ${MMTSystem.version.getOrElse("unversioned")}")
+    respond(s"MMT Version     : ${MMTSystem.version}")
     respond(s"Run Style       : ${MMTSystem.runStyle}")
+    MMTSystem.buildTime foreach {s =>
+    respond(s"Build time      : $s")
+    }
     respond(s"Operation System: ${OS.detect}")
 
     respond("use 'show extensions' to show current extensions. ")
@@ -28,6 +31,14 @@ case object MMTInfo extends PrintAction {
   def toParseString = "show mmt"
 }
 object MMTInfoCompanion extends ActionObjectCompanionImpl[MMTInfo.type]("show mmt system information", "show mmt")
+
+case object MMTVersion extends PrintAction {
+  def apply(implicit controller: Controller): Unit = {
+    respond(MMTSystem.version)
+  }
+  def toParseString = "show version"
+}
+object MMTVersionCompanion extends ActionObjectCompanionImpl[MMTVersion.type]("show mmt version information", "show version")
 
 /** print all loaded knowledge items to STDOUT in text syntax */
 case object ClearConsole extends PrintAction {

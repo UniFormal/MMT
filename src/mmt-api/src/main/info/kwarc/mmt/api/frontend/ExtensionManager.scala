@@ -162,9 +162,9 @@ class ExtensionManager(controller: Controller) extends Logger {
         case Some(tc) => (tc.cls, tc.args)
         case None => (format,Nil) // fallback: treat format as class name
       }
-      val ext = addExtension(className, extraArgs ::: args)
-      ext match {
-        case e: E@unchecked if cls.isInstance(e) => Some(e)
+      val ext = addExtensionO(className, extraArgs ::: args)
+      ext map {
+        case e: E@unchecked if cls.isInstance(e) => e
         case _ => throw RegistrationError(s"extension for $format exists but has unexpected type")
       }
     }
@@ -286,15 +286,6 @@ class ExtensionManager(controller: Controller) extends Logger {
 
     val rbp = new RuleBasedProver
     val prover: Extension = rbp
-    //quick hack to replace old prover with Mark's AgentProver if the latter is on the classpath
-    /*
-    val className = "info.kwarc.mmt.leo.provers.AgentProver"
-    try {
-      prover = Class.forName(className).newInstance.asInstanceOf[Extension]
-    } catch {
-      case _: Exception =>
-    }
-    */
 
     List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover, rbe).foreach {e => addExtension(e)}
     // build manager

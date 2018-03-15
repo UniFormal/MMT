@@ -2,7 +2,8 @@ package info.kwarc.mmt.jedit
 
 import javax.swing.tree.DefaultMutableTreeNode
 
-import org.gjt.sp.jedit._
+import org.gjt.sp.jedit
+import jedit._
 import sidekick._
 import errorlist._
 
@@ -118,12 +119,13 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          // add narrative structure of doc to outline tree
          buildTreeDoc(root, doc)
          tree
-      } catch {case e: Exception =>
-         val msg = e.getClass + ": " + e.getMessage
-         val pe = ParseError("unknown error: " + msg).setCausedBy(e)
-         log(msg)
-         errorCont(pe)
-         SideKickParsedData.getParsedData(jEdit.getActiveView)
+      } catch {
+        case e: Throwable =>
+          val msg = e.getClass + ": " + e.getMessage
+          val pe = ParseError("unknown error: " + msg).setCausedBy(e)
+          log(msg)
+          try {errorCont(pe)} catch {case e: Exception => log(Error(e).toStringLong)}
+          SideKickParsedData.getParsedData(jEdit.getActiveView)
       }
    }
 
@@ -178,12 +180,24 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       buildTreeComps(child, mod, context, reg)
       mod match {
          case m: DeclaredModule =>
-            m.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, d, context ++ m.getInnerContext, reg)}
+           val defElab = m.getDeclarations.filter(_.getOrigin == ElaborationOfDefinition)
+           if (defElab.nonEmpty) {
+              val elabChild = new DefaultMutableTreeNode(new MMTAuxAsset("-- flat definition --"))
+              child.add(elabChild)
+              defElab foreach {d => buildTreeDecl(elabChild, m, d, context ++ m.getInnerContext, reg)}
+           }
+           val incls = m.getDeclarations.filter {d => Include.unapply(d).isDefined && d.isGenerated}
+           if (incls.nonEmpty) {
+              val inclsChild = new DefaultMutableTreeNode(new MMTAuxAsset("-- flat includes --"))
+              child.add(inclsChild)
+              incls foreach {d => buildTreeDecl(inclsChild, m, d, context ++ m.getInnerContext, reg)}
+           }
+           m.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, m, d, context ++ m.getInnerContext, reg)}
          case m: DefinedModule =>
       }
    }
    /** build the sidekick outline tree: declaration (in a module) node */
-   private def buildTreeDecl(node: DefaultMutableTreeNode, dec: Declaration, context: Context, defaultReg: SourceRegion) {
+   private def buildTreeDecl(node: DefaultMutableTreeNode, parent: ContainerElement[_ <: Declaration], dec: Declaration, context: Context, defaultReg: SourceRegion) {
       val reg = getRegion(dec) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
       dec match {
          case nm: NestedModule if !nm.isInstanceOf[DerivedDeclaration] =>
@@ -192,19 +206,26 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case _ =>
       }
       val label = dec match {
-         case PlainInclude(from,_) => "include " + from.last
-         case PlainViewInclude(_,_,incl) => "include " + incl.last
+         case Include(_, from,_) => "include " + from.last
+         case LinkInclude(_,_,OMMOD(incl)) => "include " + incl.last
          case r: RuleConstant => r.feature
-         case d => d.feature + " " + d.name.toString
+         case d => d.feature + " " + d.name.toStr(true)
       }
       val child = new DefaultMutableTreeNode(new MMTElemAsset(dec, label, reg))
       node.add(child)
       buildTreeComps(child, dec, context, reg)
       dec match {
-        case dd: DerivedDeclaration =>
-          val sf = controller.extman.get(classOf[StructuralFeature], dd.feature).getOrElse {throw ImplementationError("unknown feature: " + dd.feature)}
-          dd.module.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, d, context ++ sf.getInnerContext(dd), reg)}
+        case ce: ContainerElement[Declaration]@unchecked => // declarations can only contain declarations
+          val contextInner = context ++ controller.getExtraInnerContext(ce)
+          dec.getDeclarations foreach {d => buildTreeDecl(child, ce, d, contextInner, reg)}
         case _ =>
+      }
+      // a child with all declarations elaborated from dec
+      val elab = parent.getDeclarations.filter(_.getOrigin == ElaborationOf(dec.path))
+      if (elab.nonEmpty) {
+        val elabChild = new DefaultMutableTreeNode(new MMTAuxAsset("-- elaboration --"))
+        child.add(elabChild)
+        elab foreach {e => buildTreeDecl(elabChild, parent, e, context, defaultReg)}
       }
    }
 
@@ -222,7 +243,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    /** build the sidekick outline tree: component of a (module or symbol level) declaration */
    private def buildTreeComp(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, defaultReg: SourceRegion) {
       val reg = getRegion(t) getOrElse SourceRegion.none
-      val child = new DefaultMutableTreeNode(new MMTObjAsset(t, t, context, parent, parent.component.toString, reg))
+      val child = new DefaultMutableTreeNode(new MMTObjAsset(mmt, t, t, context, parent, parent.component.toString, reg))
       node.add(child)
       buildTreeTerm(child, parent, t, context, defaultReg)
    }
@@ -236,7 +257,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case PresentationNotationComponent => "notation (presentation)"
          case VerbalizationNotationComponent => "notation (verbalization)"
       }
-      val child = new DefaultMutableTreeNode(new MMTNotAsset(owner, label + ": " + tn.toString, tn, reg))
+      val child = new DefaultMutableTreeNode(new MMTNotAsset(owner, label, tn, reg))
       node.add(child)
    }
 
@@ -245,7 +266,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       con mapVarDecls {case (previous, vd @ VarDecl(n, f, tp, df, _)) =>
          val reg = getRegion(vd) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
          val currentContext = context ++ previous
-         val child = new DefaultMutableTreeNode(new MMTObjAsset(vd, vd, currentContext, parent, f.map(_+" ").getOrElse("") + n.toString, reg))
+         val child = new DefaultMutableTreeNode(new MMTObjAsset(mmt, vd, vd, currentContext, parent, f.map(_+" ").getOrElse("") + n.toString, reg))
          node.add(child)
          (tp.toList:::df.toList) foreach {t =>
             buildTreeTerm(child, parent, t, currentContext, reg)
@@ -267,12 +288,13 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case l: OMLITTrait => l.toString
          case OML(nm,_,_,_,_) => nm.toString
          case OMSemiFormal(_) => "unparsed: " + tP.toString
-         case ComplexTerm(op, _,_,_) => op.last.toString
-         case OMA(OMID(p),_) => p.name.last.toString
-         case OMBINDC(OMID(p),_,_) => p.name.last.toString
+         case ComplexTerm(op, _,_,_) => op.name.last.toStr(true)
+         case OMA(OMID(p),_) => p.name.last.toStr(true)
+         case OMBINDC(OMID(p),_,_) => p.name.last.toStr(true)
          case OMA(ct,args) => "OMA" // TODO probably shouldn't occur, but throws errors!
       }
-      val child = new DefaultMutableTreeNode(new MMTObjAsset(t, tP, context, parent, label+extraLabel, reg))
+      val asset = new MMTObjAsset(mmt, t, tP, context, parent, label+extraLabel, reg)
+      val child = new DefaultMutableTreeNode(asset)
       node.add(child)
       tP match {
          case OML(_,tp,df,_,_) =>
@@ -299,30 +321,67 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
 }
 
 object MMTSideKick {
-   /** @return the asset at the specified position */
-   def getAssetAtOffset(view: org.gjt.sp.jedit.View, caret: Int) = {
+  /** @return the asset at the specified position */
+  def getAssetAtOffset(view: jedit.View, offset: Int): Option[MMTAsset] = {
       val pd = SideKickParsedData.getParsedData(view)
-      pd.getAssetAtOffset(caret) match {
+      pd.getAssetAtOffset(offset) match {
          case ma : MMTAsset => Some(ma)
          case _ => None
       }
-   }
-   /** @return the smallest asset covering the specified range */
-   def getAssetAtRange(view: org.gjt.sp.jedit.View, begin: Int, end: Int) = {
+  }
+
+  /** @return the smallest asset covering the specified range (inclusive begin, exclusive end) */
+  def getAssetAtRange(view: jedit.View, begin: Int, end: Int): Option[MMTAsset] = {
       val pd = SideKickParsedData.getParsedData(view)
       var path = pd.getTreePathForPosition(begin)
-      var asset: MMTAsset = null
+      var asset: Option[MMTAsset] = None
       while ({
          val a = path.getLastPathComponent.asInstanceOf[DefaultMutableTreeNode].getUserObject
          a match {
             case m: MMTAsset =>
-               asset = m
-               m.getEnd.getOffset < end
+               asset = Some(m)
+               m.getEnd.getOffset+1 < end
             case _ => false
          }
       }) {
          path = path.getParentPath
       }
       asset
-   }
+  }
+  
+  /**
+   * return the smallest asset covering the first selection or (if no selection) the asset at the the cursor; boolean is true if the former case
+   * this is useful for button or key interaction, where a selection or cursor position must be used to determine an asset  
+   */
+  def getCurrentAsset(view: jedit.View): Option[(MMTAsset,Boolean)] = {
+    val ta = view.getTextArea
+    ta.getSelectionCount match {
+      case 0 =>
+        getAssetAtOffset(view, ta.getCaretPosition) map {x => (x,false)}
+      case _ =>
+        val sel = ta.getSelection(0)
+        getAssetAtRange(view, sel.getStart, sel.getEnd) map {x => (x,true)}
+    }
+  }
+
+  /**
+   * like getAssetAtOffset, but includes the surrounding selection, if any; the boolean if true if the area is selected
+   * this is useful for mouse interaction, where an offset can be computed from the mouse pointer position
+   */
+  def getSelectedAssetAtOffset(view: jedit.View, offset: Int): Option[(MMTAsset,Boolean)] = {
+     val rangeOpt = getSelectedRangeAroundOffset(view.getTextArea, offset)
+     rangeOpt match {
+       case Some((b,e)) => getAssetAtRange(view, b, e) map {x => (x,true)}
+       case None => getAssetAtOffset(view, offset) map {x => (x,false)}
+     }
+  }
+  /** the range of the selection at a position (selection inclusive begin, exclusive end) */
+  def getSelectedRangeAroundOffset(ta: textarea.TextArea, offset: Int): Option[(Int,Int)] = {
+    if (ta.getSelectionCount != 1) return None
+    val sel = ta.getSelection(0)
+    if (sel.getStart <= offset && offset < sel.getEnd)
+       Some((sel.getStart, sel.getEnd))
+    else
+       None
+  }
 }

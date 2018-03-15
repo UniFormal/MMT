@@ -15,13 +15,18 @@ import javax.swing.SwingUtilities
  * the home directory is obtained from jEdit, e.g., settings/plugins/info.kwarc.mmt.jedit.MMTPlugin
  */
 class MMTPlugin extends EBPlugin with Logger {
-   val controller = new Controller
-   val report = controller.report
-   val logPrefix = "jedit"
-   val errorSource = new MMTErrorSource
+  val controller = new Controller
+  val report = controller.report
+  val logPrefix = "jedit"
+  val errorSource = new MMTErrorSource
 
-   val buildActions = new BuildActions(this)
+  /** these are not used in the code, but called by actions in actions.xml */
+  val buildActions = new BuildActions(this)
+  val editActions = new EditActions(this)
 
+  /** convenience */
+  def asString(o: objects.Obj) = controller.presenter.asString(o)
+   
    /** implements onNavigate hook in terms of the methods of MMTHyperlink */
    val mmtListener = new ChangeListener {
       override def onNavigate(p: Path) {
@@ -54,7 +59,7 @@ class MMTPlugin extends EBPlugin with Logger {
 
       errorlist.ErrorSource.registerErrorSource(errorSource)
       val archives = MMTOptions.archives.get orElse
-        controller.getOAF.map(_.local.toString) getOrElse "mars"
+        controller.getMathHub.map(_.local.toString) getOrElse "mars"
       controller.addArchive(home resolve archives)
       // status bar is not actually available yet at this point
       controller.report.addHandler(StatusBarLogger)
@@ -116,10 +121,10 @@ class MMTPlugin extends EBPlugin with Logger {
     val painter = ta.getPainter
     if (!painter.getExtensions.exists(_.isInstanceOf[MMTTextAreaExtension])) {
       val taExt = new MMTTextAreaExtension(controller, editPane)
+      val tooltipExt = new MMTToolTips(controller, editPane)
       painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
+      painter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, tooltipExt) // jedit tries lower layers first when looking for a tooltip; we must be below error list 
     }
-    //val sc = new StyleChanger(editPane, "mmt")
-    //painter.addExtension(TextAreaPainter.DEFAULT_LAYER, sc)
     val ma = new MMTMouseAdapter(editPane)
     painter.addMouseListener(ma)
 

@@ -21,11 +21,190 @@ function TheoryGraph()
 	// Positions of nodes before clustering
 	var clusterPositions=[];
 
+	var edgesNameToHide=[];
+	this.onConstructionDone=undefined;
 	var that=this;
 	
+this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
+	{
+		if (typeof parameterName == "undefined")
+		{
+			parameterName="tgviewGraphData_"+Math.floor(new Date() / 1000)+"_"+Math.floor(Math.random() * 1000);
+		}
+		
+		if (typeof onlySelected == "undefined")
+		{
+			onlySelected=false;
+		}
+
+		if (typeof compressionRate == "undefined")
+		{
+			compressionRate=1;
+		}
+		
+		return {"storage":"localStorage.setItem('"+parameterName+"', '"+generateCompressedJSON(onlySelected, compressionRate).split("'").join("\\'")+"');", "uri":location.protocol + '//' + location.host + location.pathname+"?"+graphDataURLSourceParameterNameTGView+"=iframe&"+graphDataURLDataSourceParameterNameTGView+"="+parameterName, "id":parameterName};
+	}
+	
+	this.graphToLocalStorageString=function(parameterName, onlySelected, compressionRate)
+	{
+		if (typeof parameterName == "undefined")
+		{
+			parameterName="tgviewGraphData_"+Math.floor(new Date() / 1000)+"_"+Math.floor(Math.random() * 1000);
+		}
+		
+		if (typeof onlySelected == "undefined")
+		{
+			onlySelected=false;
+		}
+
+		if (typeof compressionRate == "undefined")
+		{
+			compressionRate=1;
+		}
+		
+		return {"storage":"localStorage.setItem('"+parameterName+"', '"+generateCompressedJSON(onlySelected, compressionRate).split("'").join("\\'")+"');", "uri":location.protocol + '//' + location.host + location.pathname+"?"+graphDataURLSourceParameterNameTGView+"=param&"+graphDataURLDataSourceParameterNameTGView+"="+parameterName, "name":parameterName};
+	}
+	
+	this.graphToURIParameterString=function(onlySelected, compressionRate)
+	{
+		if (typeof onlySelected == "undefined")
+		{
+			onlySelected=false;
+		}
+
+		if (typeof compressionRate == "undefined")
+		{
+			compressionRate=2;
+		}
+		
+		return location.protocol + '//' + location.host + location.pathname+"?"+graphDataURLSourceParameterNameTGView+"=param&"+graphDataURLDataSourceParameterNameTGView+"="+encodeURI(generateCompressedJSON(onlySelected, compressionRate));
+	}
+	
+	function generateCompressedJSON(onlySelected, compressionRate)
+	{	
+		var json="{\"nodes\":[";
+		if (typeof onlySelected == "undefined")
+		{
+			onlySelected=false;
+		}
+		
+		if (typeof compressionRate == "undefined")
+		{
+			compressionRate=1;
+		}
+		
+		var nodeIds=undefined;
+		var nodeIdMapping=[];
+		
+		if(onlySelected==true)
+		{
+			nodeIds=network.getSelectedNodes();
+			
+			for (var i = 0; i < nodeIds.length; i++) 
+			{
+				nodeIdMapping[nodeIds[i]]=1;
+			}
+		}
+		
+		var mapping=[];
+		var counter=0;
+		for (var i = 0; i < originalNodes.length; i++) 
+		{
+			var currentNodeJson="{";
+			var curNode = originalNodes[i];
+			
+			if(onlySelected==true && typeof nodeIdMapping[curNode.id] == "undefined")
+			{
+				continue;
+			}
+			
+			if(typeof mapping[curNode.id] == "undefined")
+			{
+				mapping[curNode.id]=counter;
+				counter++;
+			}
+			
+			currentNodeJson+='"id":"'+mapping[curNode.id]+'",';
+			currentNodeJson+='"label":"'+curNode.label+'",';
+			currentNodeJson+='"style":"'+curNode.style+'"';
+			
+			if(typeof curNode.shape != "undefined" && curNode.shape!="")
+			{
+				currentNodeJson+=',"shape":"'+curNode.shape+'"';
+			}
+			
+			if(typeof curNode.mathml != "undefined" && curNode.mathml!="")
+			{
+				currentNodeJson+=',"mathml":"'+curNode.mathml.split('"').join("'")+'"';
+			}
+			
+			if(typeof curNode.url != "undefined" && curNode.url!="" && compressionRate<2)
+			{
+				currentNodeJson+=',"url":"'+curNode.url+'"';
+			}
+			
+			currentNodeJson+="},";
+			json+=currentNodeJson;
+		}
+		
+		json=json.substring(0, json.length - 1)+"],\"edges\":[";
+		
+		for (var i = 0; i < originalEdges.length; i++) 
+		{				
+			var currEdge = originalEdges[i];
+			if(typeof mapping[currEdge.to] != "undefined" && mapping[currEdge.from] != "undefined" )
+			{
+				var currentEdgeJson="{";
+				
+				currentEdgeJson+='"to":"'+mapping[currEdge.to]+'",';
+				currentEdgeJson+='"from":"'+mapping[currEdge.from]+'",';
+				currentEdgeJson+='"style":"'+currEdge.style+'"';
+				
+				if(typeof currEdge.label != "undefined" && currEdge.label!="" && compressionRate<2)
+				{
+					currentEdgeJson+=',"label":"'+currEdge.label+'"';
+				}
+				
+				if(typeof currEdge.weight != "undefined" && currEdge.weight!="" && compressionRate<2)
+				{
+					currentEdgeJson+=',"weight":"'+currEdge.weight+'"';
+				}
+				
+				if(typeof currEdge.url != "undefined" && currEdge.url!="" && compressionRate<2)
+				{
+					currentEdgeJson+=',"url":"'+currEdge.url+'"';
+				}
+				
+				currentEdgeJson+="},";
+				json+=currentEdgeJson;
+			}
+		}
+		
+		json=json.substring(0, json.length - 1)+"]}";
+		return json;
+	}
+	
+	this.loadGraphByLocalStorage=function(parameterName)
+	{
+		if (typeof parameterName == "undefined")
+		{
+			parameterName="tgviewGraphData";
+		}
+
+		var graphData=localStorage.getItem(parameterName);
+		drawGraph(JSON.parse(graphData));
+	}
+	
+	this.loadGraphByURIParameter=function()
+	{
+		var graphData=getParameterByName(graphDataURLDataSourceParameterNameTGView);
+		drawGraph(JSON.parse(graphData));
+	}
+
 	// Hides all edges with given type
 	this.hideEdges=function(type, hideEdge)
 	{
+		that.setEdgesHidden(type, hideEdge);
 		var edgesToHide=[];
 		for(var i=0;i<originalEdges.length;i++)
 		{
@@ -36,6 +215,20 @@ function TheoryGraph()
 			}
 		}
 		edges.update(edgesToHide);
+	}
+
+	this.setEdgesHidden=function(type, hideEdge)
+	{
+		for(var i=0;i<edgesNameToHide.length;i++)
+		{
+			if(type==edgesNameToHide.type)
+			{
+				edgesNameToHide.hidden=hideEdge;
+				return;
+			}
+		}
+
+		edgesNameToHide.push({"hidden": hideEdge,"type": type});
 	}
 	
 	// Downloads canvas as image
@@ -195,6 +388,42 @@ function TheoryGraph()
 		}
 		addToStateHistory("select", {"nodes": nodesIdInDrawing});
 		network.selectNodes(nodesIdInDrawing);
+	}
+	
+	// Colorizes nodes by name (* used as wildcard, e.g. "identity*" will colorize "identity" and "identity_probs")
+	// nodeNames can be an array of names or list of names joined with "," e.g: name1,name2,name3
+	this.colorizeNodesByName = function(nodeNames, color)
+	{
+		if(typeof nodeNames == "undefined" || nodeNames==null || nodeNames==undefined)
+		{
+			return;
+		}
+		
+		var colorizingIds=[];
+		var nodeNamesArray=[];
+		if( typeof nodeNames == 'string' ) 
+		{
+			var nodeNamesArray = nodeNames.replace(" ", "").split(",");
+			
+		}
+		else
+		{
+			nodeNamesArray=nodeNames;
+		}
+		
+		for(var i=0;i<nodeNamesArray.length;i++)
+		{
+			console.log("^"+nodeNamesArray[i].replace("*", "(.*)")+"$");
+			var re = new RegExp("^"+nodeNamesArray[i].split("*").join("(.*)")+"$");
+			for (var j = 0; j < originalNodes.length; j++) 
+			{
+				if (re.test(originalNodes[j].label)) 
+				{
+					colorizingIds.push(originalNodes[j].id);
+				}
+			}
+		}
+		that.colorizeNodes(colorizingIds,color);
 	}
 	
 	// Colorizes nodes by id
@@ -651,6 +880,23 @@ function TheoryGraph()
 			}
 		}
 		
+		for(var i=0;i<originalEdges.length;i++)
+		{
+			originalEdges[i].hidden=false;
+		}
+		
+		for(var j=0;j<edgesNameToHide.length;j++)
+		{
+			for(var i=0;i<originalEdges.length;i++)
+			{
+				var type=edgesNameToHide[j].type;
+				if(type==originalEdges[i]["style"] || ("graph"+type)==originalEdges[i]["style"] )
+				{
+					originalEdges[i].hidden=edgesNameToHide[j].hidden;
+				}
+			}
+		}
+		
 		nodes = new vis.DataSet(originalNodes);
 		edges = new vis.DataSet(originalEdges);
 		
@@ -670,6 +916,17 @@ function TheoryGraph()
 			document.body.style.cursor = 'auto';
 			setStatusText('<font color="green">Received '+originalNodes.length+' nodes</font>');
 		}
+		
+		network.on('afterDrawing', function() 
+		{	
+			if(that.onConstructionDone!=undefined)
+			{
+				var tmp=that.onConstructionDone;
+				that.onConstructionDone=undefined;;
+				tmp();
+				
+			}
+		});
 		
 		// If the document is clicked somewhere
 		network.on("click", function (e) 

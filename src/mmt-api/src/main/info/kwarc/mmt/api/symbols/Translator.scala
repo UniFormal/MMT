@@ -53,6 +53,11 @@ abstract class UniformTranslator extends Translator {
    def applyDef(context: Context, tm: Term) = apply(context, tm)
 }
 
+/** identity (non-traversing) */
+object IdentityTranslator extends UniformTranslator {
+  def apply(context: Context, tm: Term) = tm
+}
+
 /** a translator obtained from a traverser */
 abstract class TraversingTranslator extends UniformTranslator {
   val trav: StatelessTraverser
@@ -70,7 +75,7 @@ case class ApplyMorphism(morph: Term) extends UniformTranslator {
 
 /** a translator that performs substitution */
 case class ApplySubs(subs: Substitution) extends UniformTranslator {
-  def apply(context: Context, tm: Term) = tm ^? (subs ++ context.id)
+  def apply(context: Context, tm: Term) = tm ^? subs
 }
 
 /** replaces all naked OML's; for convenience a substitution is used even though we are replacing OML's not OMV's */

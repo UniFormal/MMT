@@ -2,16 +2,16 @@ package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import objects._
 import checking._
+import uom._
 
 object Typed {
    val _base = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories")
    val path = _base ? "Typed"
-   /** the MMT URI of type */
    val ktype = path ? "type"
-   /** the MMT URI of kind */
    val kind = _base ? "Kinded" ? "kind"
 }
 
+object TypeAttribution extends BinaryConstantScala(Typed.path, "typeAttribution")
 
 object OfType {
    val path = Typed.path ? "oftype"

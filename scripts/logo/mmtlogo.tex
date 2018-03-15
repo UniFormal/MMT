@@ -1,16 +1,13 @@
-\documentclass{article}
-\usepackage{tikz}
+\documentclass[crop,tikz,convert={outext=.svg,command=\unexpanded{pdf2svg \infile\space\outfile}},multi=false]{standalone}[2012/04/13]
+
 \begin{document}
-\thispagestyle{empty}
 \usetikzlibrary{decorations.pathmorphing,shapes,arrows}
-
 % Taken from pgflibrarytikzmmt.code.tex
-
 \newcommand{\mmtarrowtip}{angle 45}
 \newcommand{\mmtarrowtipmonoright}{right hook}
 
 \tikzstyle{include}=[\mmtarrowtipmonoright-\mmtarrowtip,thick]
-\tikzstyle{morph}=[-\mmtarrowtip,thick] 
+\tikzstyle{morph}=[-\mmtarrowtip,thick]
 \tikzstyle{preview}=[decorate, decoration={coil,aspect=0,amplitude=1pt,
                                                   segment length=6pt,
                                                   pre=lineto,pre length=3pt,
@@ -22,7 +19,7 @@
 
   % White Background (Margins are eyeballed)
   % This is necessary because we paste white over arrows later.
-  % If somebody want's to do the full song and dance with 
+  % If somebody want's to do the full song and dance with
   % interrupted arrows to get transparent background, be my guest.
 
   \fill[white!] (-0.01,0.15) rectangle (1.11,-0.95);

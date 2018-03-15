@@ -14,6 +14,8 @@ abstract class Constant extends Declaration with HasNotation {
    def tpC: TermContainer
    def dfC: TermContainer
    def rl : Option[String]
+   
+   def vs: Visibility
 
   override def alternativeNames = alias
 
@@ -52,9 +54,24 @@ abstract class Constant extends Declaration with HasNotation {
       val dfM = that.dfC merge this.dfC
       val notM = that.notC merge this.notC
       val rlM = that.rl orElse this.rl
-      new FinalConstant(this.home, this.name, aliasM, tpM, dfM, rlM, notM)
+      val vsM = that.vs merge this.vs
+      new FinalConstant(this.home, this.name, aliasM, tpM, dfM, rlM, notM, vsM)
     case _ => mergeError(that)
   }
+}
+
+/** visibility information for a [[Constant]]
+ *  @param tp type is visible
+ *  @param _df definiens is visible (must be invisible if type is)
+ */
+case class Visibility(tp: Boolean, private val _df: Boolean) {
+  val df = tp && _df
+  /** lower visibility prevails */
+  def merge(that: Visibility) = Visibility(tp && that.tp, df && that.df)
+}
+
+object Visibility {
+  val public = Visibility(true, true)
 }
 
 /**
@@ -68,7 +85,7 @@ abstract class Constant extends Declaration with HasNotation {
  * @param rl the role of the constant
  */
 class FinalConstant(val home : Term, val name : LocalName, val alias: List[LocalName],
-               val tpC : TermContainer, val dfC : TermContainer, val rl : Option[String], val notC: NotationContainer) extends Constant {
+               val tpC : TermContainer, val dfC : TermContainer, val rl : Option[String], val notC: NotationContainer, val vs: Visibility) extends Constant {
 }
 
 /** helper object */
@@ -80,8 +97,8 @@ object Constant {
     */
    def apply(home : Term, name : LocalName, alias: List[LocalName], tp: Option[Term], df: Option[Term],
              rl : Option[String], not: NotationContainer = NotationContainer()) =
-      new FinalConstant(home, name, alias, TermContainer(tp), TermContainer(df), rl, not)
+      new FinalConstant(home, name, alias, TermContainer(tp), TermContainer(df), rl, not, Visibility.public)
    def apply(home : Term, name : LocalName, alias: List[LocalName],
              tpC : TermContainer, dfC : TermContainer, rl : Option[String], notC: NotationContainer) =
-      new FinalConstant(home, name, alias, tpC, dfC, rl, notC)
+      new FinalConstant(home, name, alias, tpC, dfC, rl, notC, Visibility.public)
 }

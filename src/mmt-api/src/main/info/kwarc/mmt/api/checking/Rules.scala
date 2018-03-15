@@ -60,8 +60,8 @@ trait CheckingCallback {
    /** flag an error */
    def error(message: => String)(implicit history: History): Boolean = false
 
-  def lookup(p: Path): Option[StructuralElement]
-  def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) : Module
+   /** lookup */
+   def lookup: Lookup
 }
 
 /**

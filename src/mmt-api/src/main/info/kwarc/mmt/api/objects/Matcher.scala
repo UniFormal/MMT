@@ -49,7 +49,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     */
    private def solve(name: LocalName, value: Term) : Boolean = {
       val (left, solved :: right) = querySolution.span(_.name != name)
-      val valueS = controller.simplifier(value, constantContext ++ left, rules)
+      val valueS = controller.simplifier(value, constantContext ++ left, rules, false)
       solved.tp foreach {tp =>
          val valueTp = Solver.infer(controller, constantContext, value, Some(rules)).getOrElse(return false)
          val tpmatch = aux(Nil, valueTp, tp)
@@ -74,9 +74,9 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
          case _ => false
       }
 
-      override def lookup(p: Path): Option[StructuralElement] = controller.getO(p)
+      def lookup = controller.globalLookup
       def simplify(t: Obj)(implicit stack: Stack, history: History) =
-         controller.simplifier(t, stack.context, rules)
+         controller.simplifier(t, stack.context, rules, false)
       def outerContext = constantContext ++ querySolution
 
       def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = simplify(tm) match {
@@ -99,7 +99,6 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
          case _ =>
             return None
       }
-      def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) = controller.simplifier.materialize(cont,tm,expandDefs,parent)
    }
 
    /**

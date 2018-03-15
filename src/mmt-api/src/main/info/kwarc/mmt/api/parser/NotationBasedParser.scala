@@ -134,16 +134,11 @@ class NotationBasedParser extends ObjectParser {
      }
 
      /** name of an omitted implicit argument */
-     def newArgument =
-       LocalName("") / "I" / next
-
+     def newArgument = ParseResult.VariablePrefixes.implicitArg / next
      /** name of the omitted type of a variable */
-     def newType(name: LocalName) =
-       LocalName("") / name / next
-
+     def newType(name: LocalName) = LocalName("") / name / next
      /** name of an explicitly omitted argument */
-     def newExplicitUnknown =
-       LocalName("") / "_" / next
+     def newExplicitUnknown = ParseResult.VariablePrefixes.explicitUnknown / next
 
      /** generates a new unknown variable, constructed by applying a fresh name to all bound variables */
      def newUnknown(name: LocalName, boundNames: List[BoundName])(implicit pu: ParsingUnit) = {
@@ -273,8 +268,12 @@ class NotationBasedParser extends ObjectParser {
 
   /* like getRules but for a theory expression (currently only called for local notations) */
   private def getRules(thy: Term): RuleLists = {
-    controller.simplifier.apply(thy,Context.empty) match {
+    // this used to simplify thy first, but that may be dangerous and/or inefficient
+    thy match {
       case OMPMOD(mp,_) => getRules(Context(mp))
+      case AnonymousTheory(metaO, decls) =>
+        //we could also collect all notations in decls, but we do not have parsing rules for OML's
+        metaO.map(m => getRules(Context(m))).getOrElse((Nil,Nil,Nil))
       case _ => (Nil,Nil,Nil) // TODO only named theories are implemented so far
     }
   }
@@ -286,7 +285,7 @@ class NotationBasedParser extends ObjectParser {
    */
   private def mayBeFree(n: String) = {
      n != "" && n(0).isLetter &&
-     n.forall(c => c.isLetter || c.isDigit)
+     n.forall(c => c.isUpper || c.isDigit)
   }
 
  /**

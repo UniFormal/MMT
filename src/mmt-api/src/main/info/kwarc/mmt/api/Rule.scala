@@ -56,7 +56,7 @@ trait SyntaxDrivenRule extends Rule {
 class RuleType(be: Backend) extends Atomic[Rule] {
    def asString = "rule"
    val cls = classOf[Rule]
-   override def toString(u: Any) = unapply(u).get.mpath.toString
+   override def atomicToString(u: Rule) = u.mpath.toString
 
    def fromString(s: String): Rule = {
      val mp = Path.parseM(s, NamespaceMap.empty)
@@ -71,7 +71,7 @@ class RuleType(be: Backend) extends Atomic[Rule] {
 }
 
 /**
- * [[Rule]]s as literals (to be used as definies of constants that represent rules)
+ * [[Rule]]s as literals (to be used as definiens of constants that represent rules)
  */
 class RuleLiterals(be: backend.Backend) extends RepresentedRealizedType[Rule](OMS(utils.mmt.mmtcd ? "rule"), new RuleType(be))
 

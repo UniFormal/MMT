@@ -65,8 +65,8 @@ class TPTPImporter extends TraversingBuildTarget with BuildTargetArguments {
     log(command.mkString(" "))
     try {
       val result = ShellCommand.run(command: _*)
-      result foreach { s =>
-        bt.errorCont(LocalError(s))
+      result.errorO.foreach {e =>
+        bt.errorCont(e)
         outFile.delete()
       }
       // outFile wraps module header/footer around non-modular tempFile

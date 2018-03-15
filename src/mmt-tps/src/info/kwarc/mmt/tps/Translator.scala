@@ -33,7 +33,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
       val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
          throw GeneralError(s"no MMT checker found")
       }
-      modsM foreach (t => checker(t)(new CheckingEnvironment(new ErrorLogger(controller.report), RelationHandler.ignore,this)))
+      modsM foreach (t => checker(t)(new CheckingEnvironment(controller.simplifier, new ErrorLogger(controller.report), RelationHandler.ignore,this)))
       index(doc)
       BuildResult.empty
    }

@@ -154,7 +154,8 @@ private class HReqHeader(streamStrings : Seq[String]) extends HReqHeaderData {
 
   private def parseAddress(s : String) : HAddress = {
     val parts = s.split("\\?")
-    val query = if (parts.length == 2) parts(1) else ""
+    // val query = if (parts.length == 2) parts(1) else "" // FR: this line is a bug where tiscaf parses URIs wrong; fixed by next line 
+    val query = if (parts.length >= 2) parts.tail.mkString("?") else ""
     val uri = {
       val full = parts(0).replace('\\', '/')
       if (full.startsWith("/")) full.substring(1) else full

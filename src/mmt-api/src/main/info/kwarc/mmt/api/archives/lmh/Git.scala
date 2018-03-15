@@ -17,9 +17,9 @@ abstract class Git {
     * @param args Arguments to pass to git
     * @return
     */
-  def apply(wd: File, args: String*) : ShellCommand = {
-    val command = toArgs(args:_*)
-    new ShellCommand(Some(wd), command, Map("GIT_TERMINAL_PROMPT" -> "0", "GIT_ASKPASS" -> "/bin/false"))({_ =>})({_ => })
+  def apply(wd: File, args: String*): ShellCommand.Result = {
+    val fullArgs = toArgs(args:_*)
+    ShellCommand.runInWithEnv(wd, Map("GIT_TERMINAL_PROMPT" -> "0", "GIT_ASKPASS" -> "/bin/false"), fullArgs:_*)
   }
 }
 

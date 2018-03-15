@@ -1087,7 +1087,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     val endsAt = expectNext(positionAfter, ".")    // on the final dot
 
     // add the include assignment to the controller
-    val defLinkAssignment = ViewInclude(parent.toTerm, domain, morphism)
+    val defLinkAssignment = LinkInclude(parent.toTerm, domain, morphism)
     add(defLinkAssignment)
 
     // add semantic comment and source references
@@ -1288,7 +1288,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     var view : View = null
     if (flat.codePointAt(i) == '{') {
       // It's a DeclaredView
-      view = new DeclaredView(vpath.parent, vpath.name, domain, codomain, isImplicit) //TODO add metamorph?
+      view = DeclaredView(vpath.parent, vpath.name, domain, codomain, isImplicit)
       add(view)
       i = crawlLinkBody(i, view.asInstanceOf[DeclaredView])
     }

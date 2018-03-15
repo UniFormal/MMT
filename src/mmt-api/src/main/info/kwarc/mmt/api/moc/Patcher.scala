@@ -68,11 +68,11 @@ object Patcher {
        DefinedTheory(t.parent, t.name, df)
     /** Views */
     case (v : DeclaredView, CodComponent, Some(to : Term)) =>
-       val vN = new DeclaredView(v.parent, v.name, v.from, to, v.isImplicit) // TODO add metamorph?
+       val vN = DeclaredView(v.parent, v.name, v.from, to, v.isImplicit)
        copyDecls(v, vN)
        vN
     case (v : DeclaredView, DomComponent, Some(from : Term)) =>
-       val vN = new DeclaredView(v.parent, v.name, from, v.to, v.isImplicit) // TODO add metamorph?
+       val vN = DeclaredView(v.parent, v.name, from, v.to, v.isImplicit)
        copyDecls(v, vN)
        vN
     case (v : DefinedView, CodComponent, Some(to : Term)) =>

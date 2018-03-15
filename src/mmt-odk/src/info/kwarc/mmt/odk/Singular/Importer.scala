@@ -50,7 +50,7 @@ class SingularImporter extends Importer {
         ths ::= t.path
       })
       ths foreach {p =>
-        val ce = new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore, bf)
+        val ce = new CheckingEnvironment(controller.simplifier, new ErrorLogger(report), RelationHandler.ignore, bf)
         checker(p)(ce)
       }
     } catch {

@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api
 
+import symbols._
+import uom._
 import objects._
 
 trait NamedElement {
@@ -44,7 +46,7 @@ case object AtEnd extends AddPosition
 case class After(name: LocalName) extends AddPosition
 case class Before(name: LocalName) extends AddPosition
 
-/** helper class for creating a sequence of [[ApddPosition]]'s where each is right after the previous one */
+/** helper class for creating a sequence of [[AddPosition]]'s where each is right after the previous one */
 class RepeatedAdd(private var next: AddPosition) {
   def getNextFor(d: NamedElement) = {
     val n = next
@@ -118,8 +120,30 @@ trait DefaultMutability[S <: NamedElement] extends {self: MutableElementContaine
 trait ContainerElement[S <: StructuralElement] extends StructuralElement with MutableElementContainer[S] {
    /** the list of declarations in the order of addition, excludes generated declarations */
    def getPrimitiveDeclarations = getDeclarations.filterNot(_.isGenerated)
-   /** the list of declarations using elaborated declarations where possible */
-   def getDeclarationsElaborated = getDeclarations.filterNot(uom.ElaboratedElement.isProperly)
+   /** the list of declarations using elaborated declarations where possible
+    *  these are: primitive elements: includes, constants
+    *  other elements if they have not been fully elaborated
+    */
+   def getDeclarationsElaborated = getDeclarations.filter {
+     case _: Constant => true
+     case _: RuleConstant => true
+     case Include(_) => true
+     case s => ! ElaboratedElement.isFully(s)
+   }
+}
+
+/** delegates all methods to an existing container element; awkward auxiliary class needed because Scala doesn't let us delegate systematically
+ *  only used in DerivedDeclaration */
+trait DelegatingContainerElement[S <: StructuralElement] extends ContainerElement[S] {
+  protected val delegatee: ContainerElement[S]
+  def domain = delegatee.domain
+  def getDeclarations = delegatee.getDeclarations
+  def getO(name: LocalName) = delegatee.getO(name)
+  def getMostSpecific(name: LocalName) = delegatee.getMostSpecific(name)
+  def add(s: S, at: AddPosition = AtEnd) = delegatee.add(s, at)
+  def update(s: S) = delegatee.update(s)
+  def delete(name: LocalName) = delegatee.delete(name)
+  def reorder(name: LocalName) = delegatee.reorder(name)
 }
 
 class ListContainer[S <: NamedElement](items: List[S]) extends ElementContainer[S] with DefaultLookup[S] {

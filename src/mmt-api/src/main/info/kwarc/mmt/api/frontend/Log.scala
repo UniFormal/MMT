@@ -136,14 +136,15 @@ abstract class ReportHandler(val id: String) {
   /** logs as an error (categories "error" and "debug" for short and long message, respectively) */
   def apply(ind: Int, e: Error, debug: Boolean) {
     val caller = e.getStackTrace()(0).toString
-    val msg = e match {
-      case _: Invalid | _: ParseError => contentErrorHighlight(e.shortMsg)
-      case _ => systemErrorHighlight(e.shortMsg)
+    val (msg,content) = e match {
+      case _: ContentError => (contentErrorHighlight(e.shortMsg), e.getCausedBy.isEmpty)
+      case _ => (systemErrorHighlight(e.shortMsg), false)
     }
     // only report real errors
     if (e.level >= Level.Error) apply(ind, caller, "error", List(msg))
-    if (debug)
+    if (debug && !content) {
       apply(ind, caller, "debug", utils.stringToList(e.toStringLong, "\\n"))
+    }
   }
 
   def systemErrorHighlight(s: String): String = s

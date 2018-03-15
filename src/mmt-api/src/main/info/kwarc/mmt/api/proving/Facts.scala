@@ -121,7 +121,10 @@ class Facts(prover: Searcher, shapeDepth: Int, outerLogPrefix: String) extends f
       matches match {
         case MatchSuccess(solution) =>
            // we need freshSub ^ solution but restricted to those variables that were solved
-           val freshSubRestrict = freshSub.filter {case Sub(_, OMV(qF)) => solution.maps(qF)}
+           val freshSubRestrict = freshSub.filter {
+             case Sub(_, OMV(qF)) => solution.maps(qF)
+             case _ => false // impossible
+           }
            Some((freshSubRestrict ^ solution, f.tm))
         case _ =>
          None

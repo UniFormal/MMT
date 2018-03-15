@@ -114,6 +114,7 @@ var mmt = {
       if (this.focusIsMath) {
          this.focus = this.getSelectedParent(elem);
          this.currentElement = math.attr(mmtattr.owner);
+		 this.setActiveTheory(this.currentElement);
          this.currentComponent = math.attr(mmtattr.component);
 		 var pos = this.focus.getAttribute(mmtattr.position);
          this.currentPosition = pos == null ? "" : pos; // empty attributes are suppressed by HTML rendering
@@ -156,7 +157,6 @@ var mmt = {
          this.activeTheory = thy;
          $('#parseForm #activetheory').val(thy);
         $('#searchForm #theory').val(thy);
-
      }
    },
 

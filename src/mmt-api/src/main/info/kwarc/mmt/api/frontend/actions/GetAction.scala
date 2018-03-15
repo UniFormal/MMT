@@ -46,5 +46,5 @@ object GetActionCompanion extends ActionCompanionImpl[GetAction]("retrieve knowl
   private def closure(implicit state: ActionState) = path <~ "closure" ^^ { p => Closure(p) }
   private def elaboration(implicit state: ActionState) = path <~ "elaboration" ^^ { p => Elaboration(p) }
   private def component(implicit state: ActionState) = (path <~ "component") ~ str ^^ { case p ~ s => Component(p, ComponentKey.parse(s)) }
-  private def get(implicit state: ActionState) = path ^^ { p => Get(p) }
+  private def get(implicit state: ActionState) = path ^^ {p => Get(p)}
 }

@@ -13,57 +13,42 @@ abstract class LMHHub extends Logger {
   val logPrefix = "lmh"
   protected def report = controller.report
 
-  /** the versioning of archives */
-  def versioning : ArchiveVersioning
-
   /** find all locally installed repositories */
   protected def entries_ : List[LMHHubEntry]
-
   /** find all repositories given a specification */
-  def entries(spec: String*): List[LMHHubEntry] = if(spec.nonEmpty) entries_.filter(e => spec.exists(e.matches)) else entries_
+  def entries(spec: String*): List[LMHHubEntry] = if (spec.nonEmpty) entries_.filter(e => spec.exists(e.matches)) else entries_
 
   /** find a list of remotely available entries (if any) */
   protected def available_(): List[String]
-
   /** resolves a list of available entries and returns pairs (id, version) */
   def available(spec: String*): List[(String, Option[String])] = {
-
     // this function will perform the match case insensitive
     // however the spec returned will be case sensitive
     // because of their case sensitive path on the file system
-
     // furthermore, we can not rely on available_() returning all existing entries
     // as some archives may be private (or the API may be broken)
-
     // we will need this, so we should cache the available instances
     lazy val all = available_()
-
-
     spec.flatMap({ s =>
-
       // split off a version separated by an '@', if given, e.g:
       // 'repo@version' => ('repo', Some('version'))
       // 'repo' => ('repo', None)
       val idx = s.lastIndexOf("@")
       val (pattern, version) = if (idx > 0) {
-        (s.substring(0, idx - 1), Some(s.substring(idx + 1)))
+        (s.substring(0, idx), Some(s.substring(idx + 1)))
       } else {
         (s, None)
       }
-
-
       // if we have a pattern that needs resolving, i.e. it is non-trivial
       // we should search for it
       if (LMHHub.isNonStatic(pattern)) {
         all.filter(i => LMHHub.matchesComponents(pattern.toLowerCase, i.toLowerCase)).map(r => (r, version))
-
-      // if the pattern is static, it points to a single archive
+        // if the pattern is static, it points to a single archive
       } else {
         all.find(_.toLowerCase == pattern.toLowerCase) match {
           // try to find the given archive in the known list of archives
           // so that we can get the case right
           case Some(p) => List((p, version))
-
           // if it is not known, we will take and try the pattern as is
           // (e.g allow private archives which aren't listed to be installed)
           case None => List((pattern, version))
@@ -84,12 +69,11 @@ abstract class LMHHub extends Logger {
     * Install a new archive from the remote
     * @param id ID of archive to install
     * @param version Optional version to be installed
-    * @param enforceVersion If set to true, disable automatic version resolving (see [[ArchiveVersioning]])
     * @param recursive If set to false, do not install archive dependencies
     * @param visited Internal parameter used to keep track of archives already installed
     * @return the newly installed entry
     */
-  def installEntry(id: String, version: Option[String], enforceVersion: Boolean = false, recursive: Boolean = false, visited: List[LMHHubEntry] = Nil) : Option[LMHHubEntry]
+  def installEntry(id: String, version: Option[String], recursive: Boolean = false, visited: List[LMHHubEntry] = Nil) : Option[LMHHubEntry]
 
   /** get the default remote url for a repository with a given id */
   def remoteURL(id: String) : String
@@ -97,78 +81,62 @@ abstract class LMHHub extends Logger {
   def localPath(id: String) : File
 }
 
-/** represents a single archive inside of an [[LMHHub]] that is installed on disk */
+/** represents a single archive inside an [[LMHHub]] that is installed on disk */
 abstract class LMHHubEntry extends Logger {
-
   /** the [[MathHub]] this [[LMHHubEntry]] belongs to */
   val hub : LMHHub
   protected def controller: Controller = hub.controller
-
   val logPrefix: String = "lmh"
   def report: Report = controller.report
-
   /** returns the [[Archive]] instance belonging to this local ArchiveHub entry */
   lazy val archive : Archive = {
     load()
     controller.backend.getArchive(root).get
   }
   /** loads this archive into the controller (if not done already) */
-  def load(): Unit = {
+  def load() {
     controller.backend.getArchive(root).getOrElse {
       controller.addArchive(root)
     }
   }
-
   /** get the id of this archive */
   lazy val id: String = archive.id
 
   // Things to be implemented
-
   /** the local root of this archive entry */
   val root: File
-
   /** check if this archive matches a given spec */
   def matches(spec : String): Boolean = LMHHub.matchesComponents(spec, id)
-
   /** push the newest version of this archive to the remote */
   def push: Boolean
-
   /** pull the newest version of this archive from the remote */
   def pull: Boolean
-
   /** reset the remote url of this archive to a given one */
   def setRemote(remote : String) : Boolean
-
   /** fix the remote url of the archive */
   def fixRemote: Boolean = setRemote(hub.remoteURL(id))
-
   /** returns the version of an installed archive */
   def version: Option[String]
 }
 
 object LMHHub {
   final private val groupDepth = 2
-
   /** checks if a pattern is non-static, i.e. if it needs evaluation */
   def isNonStatic(pattern: String, separator: String = "/"): Boolean = {
     pattern.contains("*") || pattern.split("/").length != groupDepth
   }
-
   /** checks if a pattern matches an instance */
   def matchesComponents(pattern: String, instance: String, separator: String = "/") : Boolean = {
     val patternParts = pattern.split(separator).toList
     val instanceParts = instance.split(separator).toList
-
     if(patternParts.length > instanceParts.length) {
       return false
     }
-
-    for ( (i, p) <- instanceParts.take(patternParts.length) zip patternParts) {
-      if(!matches(p, i)){
+    (instanceParts.take(patternParts.length) zip patternParts) foreach {case (i,p) =>
+      if (!matches(p, i)) {
         return false
       }
     }
-
     true
   }
 

@@ -62,7 +62,7 @@ object EllipsisInfer extends InferenceRule(ellipsis.path, OfType.path) {
          val stackI = stack ++ i%OMS(nat)
          val iup = upBoundName(i)
          val stackILU = stackI ++ iup%lessType(OMV(i), n)
-         val aOpt = solver.inferType(t ^? sub)(stackILU , history.branch)
+         val aOpt = solver.inferType(t ^? sub)(stackILU , history)
          aOpt flatMap {a =>
             if (a == OMS(Typed.ktype)) {
                // sequences of types
@@ -120,8 +120,11 @@ object IndexInfer extends InferenceRule(index.path, OfType.path) {
        case Some(sT) =>
           if (!covered) {
             Length.infer(solver, s) match {
-              case None => return None
-              case Some(sL) => Length.checkBelow(solver)(at, sL)
+              case None =>
+                history += "cannot infer length"
+                return None
+              case Some(sL) =>
+                Length.checkBelow(solver)(at, sL)
             }
           }
           if (sT == OMS(Typed.kind))

@@ -10,13 +10,13 @@ import info.kwarc.mmt.api.presentation.{HTMLPresenter, Presenter}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 
 class InterviewServer extends ServerExtension("interview") {
-  implicit val errorCont = new ErrorContainer(None)
   private lazy val twostep = controller.extman.getOrAddExtension(classOf[TwoStepInterpreter],"mmt").get
   private lazy val parser = twostep.parser.asInstanceOf[KeywordBasedParser]
   private lazy val checker = twostep.checker.asInstanceOf[MMTStructureChecker]
 
   override def logPrefix: String = "interview"
   override def apply(request: ServerRequest): ServerResponse = {
+    implicit val errorCont = new ErrorContainer(None)
     val (path,query,body) = (request.path.tail,request.parsedQuery,request.body)
     log("Path: " + path.mkString("/"))
     log("Query: " + query)
@@ -28,16 +28,16 @@ class InterviewServer extends ServerExtension("interview") {
             val mp = Path.parseM(name,NamespaceMap.empty)
             val th = Theory.empty(mp.parent,mp.name,meta)
             controller add th
-            checker.apply(th)(new CheckingEnvironment(errorCont,RelationHandler.ignore,MMTTask.generic))
+            checker.apply(th)(new CheckingEnvironment(controller.simplifier, errorCont,RelationHandler.ignore,MMTTask.generic))
             return ServerResponse.TextResponse("OK")
         }
         if (query("view").isDefined && query("from").isDefined && query("to").isDefined) {
             val (name,froms,tos) = (query("view").get,query("from").get,query("to").get)
             val mp = Path.parseM(name,NamespaceMap.empty)
             val (from,to) = (Path.parseM(froms,NamespaceMap.empty),Path.parseM(tos,NamespaceMap.empty))
-            val v = new DeclaredView(mp.parent,mp.name,OMMOD(from),OMMOD(to),false)
+            val v = DeclaredView(mp.parent,mp.name,OMMOD(from),OMMOD(to),false)
             controller add v
-            checker.apply(v)(new CheckingEnvironment(errorCont,RelationHandler.ignore,MMTTask.generic))
+            checker.apply(v)(new CheckingEnvironment(controller.simplifier, errorCont,RelationHandler.ignore,MMTTask.generic))
             return ServerResponse.TextResponse("OK")
         }
         if (query("decl").isDefined && query("cont").isDefined) {
@@ -77,19 +77,19 @@ class InterviewServer extends ServerExtension("interview") {
       case _ =>
     }
 
-    ServerResponse.errorResponse("Invalid request")
+    ServerResponse.errorResponse("Invalid request:\nPath: " + path + "\nQuery: " + query)
   }
 
-  private def parseTerm(s : String, mp : MPath, check : Boolean = true) = {
+  private def parseTerm(s : String, mp : MPath, check : Boolean = true)(implicit errorCont : ErrorContainer) = {
     val t = parser.apply(ParsingUnit(SourceRef.anonymous(""),Context(mp),s,NamespaceMap.empty))
-    (t,errorCont.getErrors)
+    (t,errorCont.getErrors.filter(_.level > Level.Warning))
   }
 
-  private def parseDecl(s : String, th : DeclaredModule) = {
+  private def parseDecl(s : String, th : DeclaredModule)(implicit errorCont : ErrorContainer) = {
     val pstream = ParsingStream.fromString(s,th.parent,"mmt")
 
     val cont = new StructureParserContinuations(errorCont) {
-      val ce = new CheckingEnvironment(errorCont, RelationHandler.ignore, pstream)
+      val ce = new CheckingEnvironment(controller.simplifier, errorCont, RelationHandler.ignore, pstream)
       override def onElement(se: StructuralElement) {
         checker.applyElementBegin(se)(ce)
       }
@@ -100,7 +100,7 @@ class InterviewServer extends ServerExtension("interview") {
     implicit val pstate = new ParserState(Reader(s),pstream,cont)
     val context = th.getInnerContext
     parser.readInModule(th,context,parser.noFeatures)
-    errorCont.getErrors
+    errorCont.getErrors.filter(_.level > Level.Warning)
   }
 
 
@@ -111,4 +111,5 @@ class InterviewServer extends ServerExtension("interview") {
   private def response(o : objects.Obj) = {
     ServerResponse.HTMLResponse(html.objectPresenter.asString(o,None))
   }
+
 }

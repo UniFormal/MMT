@@ -22,6 +22,7 @@ import utils._
 import web._
 
 import scala.util.Try
+import info.kwarc.mmt.api.archives.lmh.MathHub
 
 /** An exception that is thrown when a needed knowledge item is not available
   *
@@ -382,9 +383,6 @@ class Controller extends ROController with ActionHandling with Logger {
       case d: Declaration =>
         parent match {
           case ce: ContainerElement[_] => getContextWithInner(ce)
-          case dd: DerivedDeclaration =>
-             val contOpt = extman.get(classOf[StructuralFeature], dd.feature).map(_.getInnerContext(dd))
-             getContext(dd) ++ contOpt.getOrElse(Context.empty)
           case nm: NestedModule => nm.module match {
             case ce: ContainerElement[_] => getContextWithInner(ce)
           }
@@ -400,6 +398,12 @@ class Controller extends ROController with ActionHandling with Logger {
     case d: Document => Context.empty
     case m: DeclaredModule => m.getInnerContext
     case s: DeclaredStructure => Context.empty
+    case dd: DerivedDeclaration =>
+      val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
+      sfOpt match {
+        case Some(sf) => sf.getInnerContext(dd)
+        case None => Context.empty
+      }
   }
 
   // ******************************* transparent loading during global lookup
@@ -540,7 +544,7 @@ class Controller extends ROController with ActionHandling with Logger {
           }
     }
   }
-
+  
   /**
    * if set, the element is deactivated
    */

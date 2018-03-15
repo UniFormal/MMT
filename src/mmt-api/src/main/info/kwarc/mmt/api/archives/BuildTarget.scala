@@ -486,7 +486,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
       if (testFile.exists) {
         var diffLog: Option[String] = Some("") // assume a difference if no diff is run
         if (testMod.compareWithTest) {
-          diffLog = ShellCommand.run("diff", "-u", testFile.toString, outFile.toString)
+          ShellCommand.run("diff", "-u", testFile.toString, outFile.toString) match {
+            case ShellCommand.Success(op) => diffLog = Some(op)
+            case _ =>
+          }
           if (diffLog.isDefined) {
             File.write(diffFile, diffLog.get)
             logResult("wrote: " + diffFile)

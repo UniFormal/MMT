@@ -68,6 +68,15 @@ class DeclaredTheory(doc: DPath, name: LocalName, private var mt: Option[MPath],
         case _ => Nil
      }
    }
+   /** like getIncludes but also with includes of parametric theories and their instantiations */
+   def getAllIncludes: List[(MPath,List[Term])] = meta.map(m => (m,Nil)).toList ::: getAllIncludesWithoutMeta
+   /** like getIncludesWithoutMeta but also with includes of parametric theories and their instantiations */
+   def getAllIncludesWithoutMeta: List[(MPath,List[Term])] = {
+     getDeclarations.flatMap {
+       case Include(_,p,args) => List((p,args))
+       case _ => Nil
+     }     
+   }
    /** convenience method to obtain all named structures */
    def getNamedStructures:List[Structure] = getDeclarations.flatMap {
       case s: Structure if ! s.isInclude => List(s)

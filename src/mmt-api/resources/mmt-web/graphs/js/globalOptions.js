@@ -11,14 +11,19 @@ var menuEntriesURL=serverUrl+":jgraph/menu?id=";
 var graphDataURL=serverUrl+":jgraph/json?";
 // For Backend
 var graphDataURLTypeParameterName = "key=";
-var graphDataURLDataParameterName = "uri=";
+var graphDataURLDataParameterName = "uri";
 // For TGView
-var graphDataURLTypeParameterNameTGView = "type=";
-var graphDataURLDataParameterNameTGView = "graphdata=";
+var graphDataURLTypeParameterNameTGView = "type";
+var graphDataURLDataParameterNameTGView = "graphdata";
+var graphDataURLHighlightParameterNameTGView = "highlight";
+var graphDataURLSourceParameterNameTGView = "source";
+var graphDataURLDataSourceParameterNameTGView = "uri";
 
 // Colors to select for colorizing nodes in graph 
 var colorizingNodesArray = ["#CCCCFF", "#FFFFCC", "#FFCC99", "#CCFFCC", "#DDDDDD", "#FFCCCC"];
 
+// Color to used for highlighting nodes given by URI parameter
+var highlightColorByURI = "#ff8080";
 
 // Options for theory-graph in general
 var THEORY_GRAPH_OPTIONS = 
@@ -166,6 +171,15 @@ var NODE_STYLES =
 	"theory":
 	{
 		shape: "circle",
+		color: "#D2E5FF",
+		colorBorder: "#2B7CE9",
+		colorHighlightBorder: "#2B7CE9",
+		colorHighlight: "#D2E5FF",
+		dashes: false
+	},
+	"bordercondition":
+	{
+		shape: "box",
 		color: "#D2E5FF",
 		colorBorder: "#2B7CE9",
 		colorHighlightBorder: "#2B7CE9",

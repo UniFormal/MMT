@@ -64,11 +64,24 @@ object Common {
    def pickFresh(solver: Solver, x: LocalName)(implicit stack: Stack) =
       Context.pickFresh(solver.constantContext ++ solver.getPartialSolution ++ stack.context, x)
 
-   /** true if a term is an unknown applied to arguments */
-   def isUnknownTerm(solver: Solver, t: Term) = t match {
-     case ApplyGeneral(OMV(u), _) => solver.getUnsolvedVariables.isDeclared(u)
-     case _ => false
-   }
+  /** true if a term is an unknown applied to arguments */
+  def isUnknownTerm(solver: Solver, t: Term) = t match {
+    case ApplyGeneral(OMV(u), _) => solver.getUnsolvedVariables.isDeclared(u)
+    case _ => false
+  }
+}
+
+/** matches an unknown applied to a list of variables */
+case class UnknownMatcher(solver: Solver) {
+  def unapply(t: Term): Option[(LocalName,List[LocalName])] = t match {
+    case ApplyGeneral(OMV(u), args) =>
+      if (!solver.getPartialSolution.isDeclared(u)) return None
+       val bvars = args map {
+         case OMV(n) => n
+         case _ => return None
+      }
+      Some((u, bvars))
+  }
 }
 
 import Common._
@@ -84,7 +97,7 @@ object PiTerm extends FormationRule(Pi.path, OfType.path) with PiOrArrowRule {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Pi(x,a,b) =>
-           isTypeLike(solver,a)
+           if (!covered) isTypeLike(solver,a)
            val (xn,sub) = Common.pickFresh(solver, x)
            solver.inferType(b ^? sub)(stack ++ xn % a, history) flatMap {bT =>
               if (bT.freeVars contains xn) {
@@ -106,7 +119,7 @@ object LambdaTerm extends IntroductionRule(Lambda.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Lambda(x,a,t) =>
-           if (!covered) solver.inferType(a)//isTypeLike(solver,a)
+           if (!covered) isTypeLike(solver,a) // this used to be solver.inferType(a), which is not correct
            val (xn,sub) = Common.pickFresh(solver, x)
            solver.inferType(t ^? sub)(stack ++ xn % a, history) map {b => Pi(xn,a,b)}
         case _ => None // should be impossible
@@ -390,6 +403,34 @@ class Injectivity(val head: GlobalName) extends TermBasedEqualityRule {
       None
    }
 }
+
+/** |- t:A  --->  |- (t:A) : A */
+object TypeAttributionTerm extends InferenceRule(TypeAttribution.path, OfType.path) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+    val TypeAttribution(t,a) = tm
+    if (!covered) {
+      solver.inferTypeAndThen(a)(stack, history + "checking the attributed type") {aI =>
+        // nothing to do, we just have to make sure that the type is well-formed before checking the term against it 
+        true
+      } 
+      solver.check(Typing(stack, t, a))(history + "checking against attributed type")
+    }
+    Some(a)
+  }
+}
+
+/** |- (t:A) = t */
+object DropTypeAttribution extends ComputationRule(TypeAttribution.path) {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+    val TypeAttribution(t,a) = tm
+    if (!covered) {
+      // this will call TypeAttributionTerm once, which recursively triggers the necessary checks of the type before we throw it away  
+      solver.inferType(tm, covered)(stack, history + "checking the attributed type")
+    }
+    Some(t)
+  }
+}
+
 
 // experimental (requiring that torso is variable does not combine with other solution rules)
 object SolveMultiple extends SolutionRule(Apply.path) {

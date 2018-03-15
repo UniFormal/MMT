@@ -198,7 +198,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
     controller.extman.addExtension(ret)
     ret
   }
-  implicit val ce : CheckingEnvironment = new CheckingEnvironment(ErrorThrower,RelationHandler.ignore, this)
+  implicit val ce : CheckingEnvironment = new CheckingEnvironment(controller.simplifier,ErrorThrower,RelationHandler.ignore, this)
 
   val dpath = DPath(URI.http colon "cds.omdoc.org") / "FrameIT"
   val sitpath = dpath ? "situation_theory"
@@ -347,7 +347,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
 
     val checker = new MMTStructureChecker(new RuleBasedChecker)
     controller.extman.addExtension(checker)
-    implicit val ce : CheckingEnvironment = new CheckingEnvironment(ErrorThrower,RelationHandler.ignore, this)
+    implicit val ce : CheckingEnvironment = new CheckingEnvironment(controller.simplifier,ErrorThrower,RelationHandler.ignore, this)
     controller.simplifier(view)
     controller.simplifier(sol)
     controller.simplifier(dom)

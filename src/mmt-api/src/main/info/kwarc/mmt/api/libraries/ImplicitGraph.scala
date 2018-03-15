@@ -56,12 +56,11 @@ case class AlreadyDefined[E](from: Term, to: Term, old: E, nw: E) extends java.l
   override def toString = s"implicit morphism $nw: $from -> $to already defined as $old"
 }
 
-/** A diagram of theories and morphisms.
- *  i.e., edges between two nodes must be equal.
+/** A diagram of theories and morphisms with at most one edge between any two nodes.
  *  Morph.simplify is used to normalize paths, and equality of paths is checked by comparing normal forms;
  *  this criterion is sound and efficient but not complete.
  */
-class UniqueGraph extends LabeledHashRelation[Term,Term] {
+class UniqueGraph(lib: Lookup) extends LabeledHashRelation[Term,Term] {
    /**
     * overrides update to check for existing morphisms
     *
@@ -70,20 +69,15 @@ class UniqueGraph extends LabeledHashRelation[Term,Term] {
    override def update(from: Term, to: Term, morph: Term) {
       val fromN  = TheoryExp.simplify(from)
       val toN    = TheoryExp.simplify(to)
-      val morphN = Morph.simplify(morph)
-      var current = apply(fromN,toN)
-      if (current.isDefined) {
-           if (current.get == morphN)
-              return
-           else
-              throw AlreadyDefined(from, to, current.get, morphN)
+      val morphN = Morph.simplify(morph)(lib)
+      val current = apply(fromN,toN)
+      current foreach {c =>
+        if (Morph.equal(c, morphN, from)(lib))
+          return
+        else
+          throw AlreadyDefined(from, to, c, morphN)
       }
-      (fromN,toN) match { // TODO experimental!!
-         case (OMPMOD(fr,args),OMMOD(t)) if args.nonEmpty =>
-            super.update(OMMOD(fr),toN,OMINST(OMMOD(fr),args:_*))
-         case _ =>
-            super.update(fromN, toN, morphN)
-      }
+      super.update(fromN, toN, morphN)
    }
 }
 
@@ -93,13 +87,14 @@ class UniqueGraph extends LabeledHashRelation[Term,Term] {
  * UniqueGraph is used to maintain the generated category, see its description for the treatment of equality.
  * The generated category is precomputed so that retrieval of morphisms takes constant and insertion up to quadratic time.
  */
-// TODO implicit morphisms into union or out of instantiations are a huge problem
+// TODO implicit morphisms into union is a huge problem
 // they come up in particular as the inverse of conservative extensions such as Neg/Classical <--cons-- Neg+Classical
-class ThinGeneratedCategory {
+// The library stores includes of parametric theories as [[OMINST]].
+class ThinGeneratedCategory(lib: Lookup) {
    /** generating edges of the diagram */
-   private val direct = new UniqueGraph
+   private val direct = new UniqueGraph(lib)
    /** all morphisms of the diagram, i.e., including compositions (also includes direct edges) */
-   private val impl   = new UniqueGraph
+   private val impl   = new UniqueGraph(lib)
 
    /** adds an implicit morphism
     * @param from domain
@@ -110,9 +105,9 @@ class ThinGeneratedCategory {
    def update(from: Term, to: Term, morph: Term) {
       // TODO: decompose links into complex theories
       from match {
-         case OMPMOD(_, _) | OMMOD(_) =>
+         case OMPMOD(_, _) =>
             //TODO handle args
-            val existsAlready = impl(from ,to).isDefined
+            val existsAlready = impl(from,to).isDefined
             // if existsAlready == true, this will check equality and throw exception if inequal
             direct(from, to) = morph
             if (! existsAlready) {
@@ -137,13 +132,18 @@ class ThinGeneratedCategory {
 
    def applyAtomic(from: MPath, to: MPath) = if (from == to) Some(OMCOMP()) else impl(OMMOD(from), OMMOD(to))
 
-   private def checkUnique(mors: List[Term]) =
+   private def checkUnique(mors: List[Term], from: Term) = {
       if (mors.isEmpty)
-         None
-      else if (mors.distinct.length == 1)
+        None
+      else {
+        val h = mors.head
+        if (mors.tail.forall(m => Morph.equal(h,m, from)(lib)))
          Some(mors.head)
-      else
+        else
          None
+      }
+   }
+
 
    /** retrieves the implicit morphism between two theories (if any)
     * @param from domain
@@ -157,10 +157,10 @@ class ThinGeneratedCategory {
          case (OMMOD(f), OMPMOD(t,_)) => applyAtomic(f,t)
          case (OMMOD(f), TUnion(ts)) =>
             val tsMors = ts.flatMap {t => apply(from,t).toList}
-            checkUnique(tsMors)
+            checkUnique(tsMors, from)
          case (OMMOD(f), ComplexTheory(toCont)) =>
             val toMors = toCont.getIncludes.flatMap {t => applyAtomic(f,t).toList}
-            checkUnique(toMors)
+            checkUnique(toMors, from)
          // otherwise: case split on domain for arbitrary codomain
          case (OMPMOD(p, args), _) =>
             // TODO check agreement with args

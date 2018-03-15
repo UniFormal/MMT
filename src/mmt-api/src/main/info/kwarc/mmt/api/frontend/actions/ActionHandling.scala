@@ -8,9 +8,8 @@ import objects._
 
 /**
   * An auxilary class to split the [[Controller]] into several files and implement the handling of [[Action]]s.
-  *
   */
-trait ActionHandling extends
+trait ActionHandling extends 
   ArchiveActionHandling with
   CheckActionHandling with
   ControlActionHandling with
@@ -18,16 +17,11 @@ trait ActionHandling extends
   ExecActionHandling with
   MathPathActionHandling with
   PrintActionHandling with
-  LMHActionHandling
-{
-  self: Controller =>
-
-
+  LMHActionHandling {self: Controller =>
 
   // ******************************** handling actions
-
+    
   // some actions are defined in separate methods below
-
   /** the name of the current action definition (if any) */
   def currentActionDefinition : Option[String] = state.currentActionDefinition.map(_.name)
 

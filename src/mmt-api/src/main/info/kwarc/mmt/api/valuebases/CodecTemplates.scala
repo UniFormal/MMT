@@ -12,7 +12,9 @@ abstract class ListCodec[Code](id: GlobalName, list: GlobalName, nil: GlobalName
 
    val typeParameterPositions = List(1)
 
+   /** merge a list of codes into a code */
    def aggregate(cs: List[Code]): Code
+   /** split a list-code into its elements */
    def separate(c: Code): List[Code]
 
    def destruct(tm: Term): List[Term] = tm match {
@@ -33,10 +35,3 @@ abstract class ListCodec[Code](id: GlobalName, list: GlobalName, nil: GlobalName
       }
    }
 }
-
-class AtomicStringCodec[Rep](id: GlobalName, tp: Term, semType: Atomic[Rep])
-   extends AtomicCodec[Rep,String](id, tp, semType) {
-   def encodeRep(r: Rep) = semType.toString(r)
-   def decodeRep(c: String) = semType.fromString(c)
-}
-

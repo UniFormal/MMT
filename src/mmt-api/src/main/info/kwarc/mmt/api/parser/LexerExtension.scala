@@ -374,26 +374,26 @@ object QuoteLexer extends LexParseExtension(
 )
 
 /** auxiliary class for [[StringInterpolationToken]]: part of the interpolated string */
-abstract class StringInterpolationPart
-case class StringPart(text: String) extends StringInterpolationPart
-case class MMTPart(unparsed: String, var term: Term = null) extends StringInterpolationPart
+abstract class StringInterpolationPart {
+  def reg: SourceRegion
+}
+case class StringPart(text: String, val reg: SourceRegion, var ref: SourceRef) extends StringInterpolationPart
+case class MMTPart(unparsed: String, val reg: SourceRegion, var term: Term) extends StringInterpolationPart
 
 /** the result of a [[StringInterpolationLexer]], carrying the continuation for parsing */
 case class StringInterpolationToken(text: String, firstPosition: SourcePosition, parts: List[StringInterpolationPart], lexer: StringInterpolationLexer) extends ExternalToken(text) {
     def parse(eti: ExternalTokenParsingInput) = {
-       var current = firstPosition.after(lexer.begin) //invariant: first character of current part
+       // parse all MMT parts
        parts foreach {
-          case StringPart(q) =>
-             current = current.after(q + lexer.mmt.begin)
-             //SourceRef.update(t, outer.source.copy(region = SourceRegion(current, current.after(q))))
+          case s: StringPart =>
+            s.ref = eti.outer.source.copy(region = s.reg)
           case m: MMTPart =>
-             val e = m.unparsed
-             val boundVars = BoundName.getVars(eti.boundNames)
-             val cont = eti.outer.context ++ Context(boundVars.map(VarDecl(_,None,None,None,None)) :_*)
-             val ref = eti.outer.source.copy(region = SourceRegion(current, current.after(e)))
-             current = current.after(e + lexer.mmt.end)
-             val pu = ParsingUnit(ref, cont, e, eti.outer.nsMap)
-             m.term = eti.parser(pu)(eti.errorCont).toTerm
+            val e = m.unparsed
+            val boundVars = BoundName.getVars(eti.boundNames)
+            val cont = eti.outer.context ++ Context(boundVars.map(VarDecl(_,None,None,None,None)) :_*)
+            val ref = eti.outer.source.copy(region = m.reg)
+            val pu = ParsingUnit(ref, cont, e, eti.outer.nsMap)
+            m.term = eti.parser(pu)(eti.errorCont).toTerm
        }
        lexer.makeTerm(this, eti)
     }
@@ -424,49 +424,70 @@ abstract class StringInterpolationLexer(trigger: String, str: Bracket, val mmt: 
   def applicable(s: String, i: Int) = s.substring(i).startsWith(begin)
   def apply(s: String, index: Int, fp: SourcePosition) = {
      var level = 1 // nesting of string and mmt parts, odd: string part, even: mmt part, 0: end of token reached
-     var i = index+begin.length
+     // the current position, current part, and list of parts, and the methods to move the position and create parts
+     var currentPos = fp
+     var startPosOfCurrent = currentPos
+     var i = index
      var parts: List[StringInterpolationPart] = Nil // invariant: alternating types of parts, begins and ends with a string part
      var current = ""
+     def advanceBy(a: String, addToCurrent: Boolean) {
+       currentPos = currentPos.after(a)
+       i += a.length
+       if (addToCurrent) current += a
+     }
+     def newPart(stringPart: Boolean, delim: String, includeDelimInPart: Boolean) {
+       val (endPosOfCurrent,startPosOfNext) = if (includeDelimInPart) {
+         advanceBy(delim.init, false)
+         val ep = currentPos
+         advanceBy(delim.last.toString, false)
+         (ep,currentPos)
+       } else {
+         val cp = currentPos
+         advanceBy(delim, false)
+         (cp,cp) // TODO actually first cp should be one lower
+       }
+       val reg = SourceRegion(startPosOfCurrent, endPosOfCurrent)
+       val part = if (stringPart) StringPart(current, reg, null) else MMTPart(current, reg, null)
+       parts ::= part
+       current = ""
+       startPosOfCurrent = startPosOfNext
+     }
+     advanceBy(begin, false)
+     // step through the string
      while (i < s.length && level > 0) {
-        if (s.substring(i).startsWith(str.begin) && level % 2 == 0) {
+        val si = StringSlice(s,i) // efficient substring
+        if (si.startsWith(str.begin) && level % 2 == 0) {
            level += 1
-           current += str.begin
-           i += str.beginL
-        } else if (s.substring(i).startsWith(str.end) && level % 2 == 1) {
+           advanceBy(str.begin, true)
+        } else if (si.startsWith(str.end) && level % 2 == 1) {
            level -= 1
-           if (level != 0) current += str.end
-           i += mmt.endL
-        } else if (s.substring(i).startsWith(mmt.begin) && level % 2 == 1) {
+           if (level == 0) {
+             // the last string part, possibly empty
+             newPart(stringPart = true, str.end, true)
+           } else {
+             advanceBy(str.end, true)
+           }
+        } else if (si.startsWith(mmt.begin) && level % 2 == 1) {
            if (level == 1) {
-             parts ::= StringPart(current)
-             current = ""
+             newPart(stringPart = true, mmt.begin, false)
            } else {
-             current += mmt.begin
+             advanceBy(mmt.begin, true)
            }
            level += 1
-           i += mmt.beginL
-        } else if (s.substring(i).startsWith(mmt.end) && level % 2 == 0) {
+        } else if (si.startsWith(mmt.end) && level % 2 == 0) {
            if (level == 2) {
-             parts ::= MMTPart(current)
-             current = ""
+             newPart(stringPart = false, mmt.end, true)
            } else {
-             current += mmt.end
+             advanceBy(mmt.end, true)
            }
            level -= 1
-           i += str.endL
         } else {
-           current += s(i)
-           i += 1
+           advanceBy(s(i).toString, true)
         }
      }
-     // end of input reached without delimiter -> throw error
-     //if (i == s.length)
-     // we add the final part(s), we always end with a string part even if it's empty
-     if (level % 2 == 0) {
-       parts ::= StringPart(current)
-     } else {
-       parts ::= MMTPart(current)
-       parts ::= StringPart("")
+     if (current.nonEmpty) {
+       // end of input reached, recover by adding a final part
+       newPart(stringPart = level == 1, " ", false)
      }
      parts = parts.reverse
      val text = s.substring(index,i)
@@ -474,17 +495,20 @@ abstract class StringInterpolationLexer(trigger: String, str: Bracket, val mmt: 
   }
 }
 
-/** quotation of MMT terms */
+/** quotation of MMT terms
+ *  @param quoteType the type of literals given by quoted terms
+ *  @param quoteTerm the constructor that takes a term literal and a substitution for its interpolation points
+ */
 class QuotationLexer(quoteType: GlobalName, quoteTerm: GlobalName) extends StringInterpolationLexer("q", Bracket("\"", "\""), Bracket("${","}")) {
   private object QuotedTerm extends uom.RepresentedRealizedType(OMS(quoteType), uom.TermLiteral)
 
   def makeTerm(token: StringInterpolationToken, eti: ExternalTokenParsingInput) = {
     var context = Context.empty
     val strings = token.parts map {
-      case StringPart(s) => s
+      case StringPart(s,_,_) => s
       case m: MMTPart =>
-        val name = "SIP_" + context.length.toString
-        context ++= OMV(name) % m.term
+        val name = LocalName("SIP_" + context.length.toString)
+        context ++= VarDecl(name, df = m.term)
         " " + name + " "
     }
     val names = context.map(_.name)

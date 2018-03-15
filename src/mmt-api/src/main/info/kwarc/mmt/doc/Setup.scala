@@ -19,11 +19,11 @@ import MMTSystem._
  *
  * @param logger Optional function to print interactive setup statements in. Defaults to println.
  */
-class Setup(logger: Option[String => Unit] = None) extends ShellExtension("setup") {
+class Setup extends ShellExtension("setup") {
    def helpText = "usage: setup [SYSTEM/FOLDER [CONTENT/FOLDER [JEDIT/SETTINGS/FOLDER]]]"
 
-   /** a function tog log a message */
-   val log: String => Unit = logger.getOrElse(println)
+   /** a function to log a message */
+   val log: String => Unit = println
 
    def run(shell: Shell, args: List[String]): Boolean = {
       log("\n\n\n\nThis is MMT's setup routine.\n" +
@@ -165,9 +165,6 @@ class Setup(logger: Option[String => Unit] = None) extends ShellExtension("setup
         log("done\n")
       }
 
-
-
-
       setupJEdit foreach {case (shell,jsf) =>
          controller.extman.getOrAddExtension(classOf[ShellExtension], "jeditsetup") match {
             case None =>
@@ -201,6 +198,6 @@ class Setup(logger: Option[String => Unit] = None) extends ShellExtension("setup
 
      log("\n\n\nThat's it. If there are no error messages above, you're ready to go.")
      log("\nThe main jar to execute is " + deploy/"mmt.jar" + ".")
-     log("\n\nTo force rerunning setup or to update MMT, just run `mmt.jar :setup`.")
+     log("\n\nTo force rerunning setup or to update MMT, just run `java -jar mmt.jar :setup`.")
      }
 }

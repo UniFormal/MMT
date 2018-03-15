@@ -386,38 +386,42 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        }
      }
    }
-
-   /* TODO get* methods must pass context */
-
+   
    /** retrieves the type type of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed
     */
-   def getType(p: GlobalName): Option[Term] = {
-      val c = getConstant(p)
+   def getType(p: GlobalName)(implicit h: History): Option[Term] = {
+      val c = getConstant(p).getOrElse {return None}
       val t = c.tpC.getAnalyzedIfFullyChecked
       if (t.isDefined)
         addDependency(p $ TypeComponent)
       t
    }
-
-  private def getConstant(p : GlobalName) : Constant =
-    controller.library.get(ComplexTheory(constantContext), LocalName(p.module) / p.name, s => throw GetError(s)) match {
-      case c: Constant => c
-      case d => throw GetError("Not a constant: " + d)
-    }
-
+   
    /** retrieves the definiens of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed
     */
-   def getDef(p: GlobalName) : Option[Term] = {
-      val c = getConstant(p)
+   def getDef(p: GlobalName)(implicit h: History) : Option[Term] = {
+      val c = getConstant(p).getOrElse {return None}
       val t = c.dfC.getAnalyzedIfFullyChecked
       if (t.isDefined)
         addDependency(p $ DefComponent)
       t
    }
+
+   private def getConstant(p : GlobalName)(implicit h: History): Option[Constant] =
+    lookup.getO(ComplexTheory(constantContext), LocalName(p.module) / p.name) match {
+      case Some(c: Constant) => Some(c)
+      case Some(_) =>
+        error("not a constant: " + p)
+        None
+      case None =>
+        error("constant not found: " + p)
+        None
+    }
+
    def getModule(p: MPath) : Option[Module] = {
       controller.globalLookup.getO(p) match {
          case Some(m: Module) => Some(m)
@@ -426,10 +430,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
    }
 
-  @deprecated("FR: This code does not look right.","")
-  def lookup(p : Path) : Option[StructuralElement] = controller.getO(p)
-  @deprecated("Used in LFX, but could probably be done better","")
-  def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) = controller.simplifier.materialize(cont,tm,expandDefs,parent)
+  // TODO this should track lookups for dependency management
+  def lookup = controller.globalLookup
 
    /**
     * looks up a variable in the appropriate context
@@ -637,7 +639,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      def prepareS(s: Stack)(implicit h: History) = {
         //  ^^ subs might be redundant because simplifier expands defined variables
         // but there may be subtleties because terms may already be marked as simple
-        Stack(controller.simplifier(s.context ^^ subs, constantContext ++ solution, rules))
+        Stack(controller.simplifier(s.context ^^ subs, constantContext ++ solution, rules, false))
      }
      // look for an activatable constraint
      val solved = getSolvedVariables
@@ -716,6 +718,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               case None =>
                 error("unsolved (untyped) unknown: " + vd.name)
               case Some(tp) =>
+                def tryAHole = if (vd.name.startsWith(ParseResult.VariablePrefixes.explicitUnknown)) {
+                  solve(vd.name, Hole(tp))
+                }
                 val rO = typebasedsolutionRules.find(r => r.applicable(tp))
                 rO match {
                   case Some(rule) =>
@@ -725,9 +730,12 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                       case Some(p) =>
                         solve(vd.name, p)
                       case None =>
+                        tryAHole
                         error("no solution found")
                     }
-                  case _ => error("unsolved (typed) unknown: " + vd.name)
+                  case _ =>
+                    tryAHole
+                    error("unsolved (typed) unknown: " + vd.name)
                 }
             }
       }
@@ -1090,7 +1098,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           history += "Applying InhabitableRule " + rule.toString
           rule(this)(uS)
         case (uS, None) =>
-           inferType(j.wfo)(stack, history + "inferring universe") match {
+           history += "inferring universe"
+           inferType(j.wfo)(stack, history) match {
              case None =>
                 delay(Inhabitable(stack, uS))
              case Some(univ) =>
@@ -1408,7 +1417,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * this subsumes substituting for solved unknowns before simplifier expands defined variables
     */
    def simplify(t : Obj)(implicit stack: Stack, history: History): t.ThisType = {
-      val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context, rules)
+      val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context, rules, false)
       if (tS != t)
          history += ("simplified: " + presentObj(t) + " ~~> " + presentObj(tS))
       tS
@@ -1518,7 +1527,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             }
             // no applicable rule, traverse
             Traverser(this,t)
-        case OMS(op) =>
+       /* case OMS(op) => //FR commenting this out, awaiting answer from DM about whether it's needed; it currently causes match errors
           // use first applicable rule
           computationRules foreach {rule =>
             if (rule.head == op) {
@@ -1531,7 +1540,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             }
           }
           // no applicable rule, traverse
-          Traverser(this,t)
+          Traverser(this,t) */
         case _ =>
             Traverser(this,t)
       }

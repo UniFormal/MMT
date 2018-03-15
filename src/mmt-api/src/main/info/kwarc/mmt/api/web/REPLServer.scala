@@ -10,28 +10,29 @@ import parser._
 import checking._
 import utils._
 
-/** stores the state of a content-inputing REPL session */ 
+/** stores the state of a content-inputing REPL session */
 class REPLSession(val path: DPath, val id: String, interpreter: Interpreter) {
-  override def toString = s"session with id $id and URI $path" 
+  override def toString = s"session with id $id and URI $path"
   val doc = new Document(path, true)
   private var currentScope: HasParentInfo = IsDoc(doc.path)
   private val errorCont = new ErrorContainer(None)
   private var counter = 0
 
-  /** parses a declaration in a specific point (default: current point) of the document associated with this session */
+  /** parses a declaration in a specific point (default: current point) of the document associated with this session (also stores in in controller) */
   def parseStructure(s: String, scopeOpt: Option[HasParentInfo] = None): StructuralElement = {
     val buffer = ParsingStream.stringToReader(s)
     val scope = scopeOpt.getOrElse(currentScope)
     val ps = ParsingStream(path.uri, scope, doc.nsMap, interpreter.format, buffer)
     val se = interpreter(ps)(errorCont)
     se match {
-      case m: DeclaredModule => currentScope = IsMod(m.path, LocalName.empty) 
+      case m: DeclaredModule => currentScope = IsMod(m.path, LocalName.empty)
       case nm: NestedModule => currentScope = IsMod(nm.module.path, LocalName.empty)
       case _ =>
     }
     se
   }
-  
+
+  /** closes the current container element, e.g., a theory */
   def parseElementEnd {
     currentScope match {
       case IsMod(m,_) =>
@@ -40,8 +41,8 @@ class REPLSession(val path: DPath, val id: String, interpreter: Interpreter) {
       case IsDoc(_) => throw GeneralError("no open module")
     }
   }
-  
-  /** like parseStructure but for objects; the object is stored as the definiens of a [[Constant]] declaration */
+
+  /** like parseStructure but for objects; the object is stored it as the definiens of a [[Constant]] declaration */
   def parseObject(s: String, scopeOpt: Option[HasParentInfo] = None): Declaration = {
     val scope = scopeOpt.getOrElse(currentScope)
     val mpath = scope match {
@@ -65,7 +66,7 @@ import ServerResponse._
 
 class REPLServer extends ServerExtension("repl") {
   private var sessions: List[REPLSession] = Nil
-  
+
   def apply(request: ServerRequest): ServerResponse = {
     val id = request.headers.get("mmtsession").getOrElse {
       throw LocalError("no mmtsession header")
@@ -115,7 +116,6 @@ class REPLServer extends ServerExtension("repl") {
             }
             TextResponse("read declaration " + se.toString)
         }
-        
     }
   }
 }
