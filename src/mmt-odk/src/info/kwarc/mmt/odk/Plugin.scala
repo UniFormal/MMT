@@ -72,8 +72,7 @@ class UniverseInference extends ChangeListener {
           val parentcurrent = parent.metadata.get(TypeLevel.path).map(_.value)
           val context = parent match {
             case th : DeclaredTheory => th.getInnerContext
-            case ds : DeclaredStructure => ds.codomainAsContext
-            case _ => Context.empty
+            case _ => return ()
           }
           val univ = Solver.infer(controller, context, tp, None)
           val previous : BigInt = parentcurrent.headOption match {
@@ -90,7 +89,11 @@ class UniverseInference extends ChangeListener {
         case _ =>
       }
     case ds : Structure =>
-      val parent = controller.getAs(classOf[DeclaredModule],c.parent)
+      // TODO
+      val parent = controller.get(c.parent) match {
+        case dm : DeclaredModule => dm
+        case _ => return ()
+      }
       val parentV : BigInt = parent.metadata.get(TypeLevel.path).map(_.value).headOption match {
         case Some(TypeLevel(j)) =>
           j
