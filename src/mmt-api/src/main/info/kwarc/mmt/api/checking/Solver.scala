@@ -784,9 +784,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
       JudgementStore.getOrElseUpdate(j) {
         history += j
-        log("checking: " + j.presentSucceedent)
+        log("checking: " + j.presentSucceedent + "\n  in context: " + j.presentAntecedent)
         logAndHistoryGroup {
-          log("in context: " + j.presentAntecedent)
           j match {
             case j: Typing   => checkTyping(j)
             case j: Subtyping => checkSubtyping(j)
@@ -836,6 +835,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      val solved = solveTyping(tm, tp)
      if (solved) return true
      def checkByInference(tpS: Term): Boolean = {
+        log("Checking by inference")
          val hisbranch = history.branch
          inferType(tm)(stack, hisbranch) match {
             case Some(itp) =>
@@ -881,15 +881,18 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        // the foundation-dependent cases
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
-         limitedSimplify(tp,typingRules) match {
+         log("finding applicable typing rule")
+         logAndHistoryGroup{limitedSimplify(tp,typingRules)} match {
            case (tpS, Some(rule)) =>
              try {
+                log("Applying TypingRule " + rule.toString)
                 history += "Applying TypingRule " + rule.toString
                 rule(this)(tm, tpS)
              } catch {
                case TypingRule.SwitchToInference =>
                  checkByInference(tpS)
                case rule.DelayJudgment(msg) =>
+                 log("Delaying judgment " + j)
                  delay(Typing(stack, tm, tpS, j.tpSymb))(history + msg)
              }
            case (tpS, None) =>
@@ -1470,6 +1473,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      def expandDefinition: Term = {
        val tmE = defExp(tm, outerContext++stack.context)
        if (tmE hashneq tm)
+         log("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
          history += ("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
        tmE
      }
@@ -1519,7 +1523,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               if (rule.head == op) {
                 val ret = rule(thisSolver)(t, false)(Stack(con),history)
                 ret foreach {tmS =>
-                  history += "applying computation rule " + rule.toString
+                  log("applied computation rule " + rule.toString + " to " + presentObj(t))
+                  history += "applied computation rule " + rule.toString
                   done = true
                   return tmS
                 }
