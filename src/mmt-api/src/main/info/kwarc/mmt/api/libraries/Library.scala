@@ -583,10 +583,12 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
 
   // ******************* additional retrieval methods
 
-  /** all declarations that are visible (based on what is currently loaded) to a theory */
-  //TODO this should be lazier (e.g., by returning an iterator), especially when declarations are translated.
-  //However, laziness breaks the NotFound handling in the Controller
+  /** all declarations that are visible (based on what is currently loaded) to a theory
+   *  replaced with forDeclarationsInScope
+   */
+  /*
   def getDeclarationsInScope(mod: Term): List[StructuralElement] = {
+   
     val impls = visibleVia(mod).toList
     impls.flatMap {
       case (OMMOD(from), OMCOMP(Nil)) =>
@@ -601,7 +603,23 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             d.getDeclarations.map(c => getDeclarationInTerm(OMPMOD(from, args), c.name, s => throw GetError(s)))
           case _ => Nil //TODO materialize?
         }
-      case (OMMOD(_), _) => Nil //TODO
+      case (OMMOD(p), m) =>
+        //TODO
+        logError("not collecting declarations from " + p + ", which is visible via " + m )
+        Nil
+    }
+  }*/
+
+  def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) {
+    val impls = visibleVia(mod).toList
+    impls.foreach {
+      case (OMMOD(p), m) =>
+        get(p) match {
+          case t: DeclaredTheory =>
+            t.getDeclarations foreach {d => f(p, m, d)}
+          case _ => //TODO materialize?
+        }
+      case _ =>
     }
   }
 

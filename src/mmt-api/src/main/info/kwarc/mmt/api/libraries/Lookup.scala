@@ -85,8 +85,13 @@ abstract class Lookup {self =>
    def getImplicit(from: MPath, to: MPath) : Option[Term] = getImplicit(OMMOD(from), OMMOD(to))
    def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined
 
-   def getDeclarationsInScope(mod: Term): List[StructuralElement]
-
+   /**
+    * apply a function to all declarations that are visible (based on what is currently loaded) to a theory
+    * @param mod the theory
+    * @param f applied to (theory t declaring d, morphism mod->t that makes d visible, d)
+    */
+   def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit): Unit
+   
    /** if p is imported by a structure, returns the preimage of the symbol under the outermost structure */
    def preImage(p : GlobalName) : Option[GlobalName]
 

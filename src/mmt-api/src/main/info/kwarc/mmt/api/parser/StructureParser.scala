@@ -775,7 +775,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     controller.simplifier(mp)
     var fs: List[(String,StructuralFeature)] = Nil
     var ps: List[(LocalName,(StructuralFeature,DerivedDeclaration))] = Nil
-    controller.globalLookup.getDeclarationsInScope(OMMOD(mp)).foreach {
+    controller.globalLookup.forDeclarationsInScope(OMMOD(mp)) {case (p,m,d) => d match {
+      //TODO translate via m where necessary
       case rc: RuleConstant => rc.df.foreach {
         case r: StructuralFeatureRule =>
           controller.extman.get(classOf[StructuralFeature], r.feature) match {
@@ -793,7 +794,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           case None =>
         }
       case _ =>
-    }
+    }}
     new Features(fs, ps)
   }
   protected def getFeatures(cont : Context) : Features = cont.collect({

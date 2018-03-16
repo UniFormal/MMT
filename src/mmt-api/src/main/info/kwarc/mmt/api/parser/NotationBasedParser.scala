@@ -229,11 +229,10 @@ class NotationBasedParser extends ObjectParser {
     support.foreach {p =>
       controller.simplifier(p)
     }
-    val decls = support.flatMap {p => controller.globalLookup.getDeclarationsInScope(OMMOD(p))}.distinct
     var nots: List[ParsingRule] = Nil
     var les: List[LexerExtension] = Nil
     var notExts: List[NotationExtension] = Nil
-    decls.foreach {
+    support.foreach {p => controller.globalLookup.forDeclarationsInScope(OMMOD(p)) {case (_,_,d) => d match {
       case c: Constant => // Declaration with HasNotation might collect too much here
         var names = (c.name :: c.alternativeNames).map(_.toString) //the names that can refer to this declaration
         if (c.name.last == SimpleStep("_")) names ::= c.name.init.toString
@@ -261,9 +260,9 @@ class NotationBasedParser extends ObjectParser {
         val tn = new TextNotation(ms, Precedence.infinite, None)
         nots ::= ParsingRule(nm.module.path, Nil, tn)
       case _ =>
-    }
+    }}}
     les = les.sortBy(- _.priority)
-    (nots, les, notExts)
+    (nots.distinct, les.distinct, notExts.distinct)
   }
 
   /* like getRules but for a theory expression (currently only called for local notations) */
