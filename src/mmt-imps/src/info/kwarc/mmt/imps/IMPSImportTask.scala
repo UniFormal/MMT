@@ -183,7 +183,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       var axiom_count : Int = -1
       for (ax <- t.axioms.get.axs)
       {
-        val mth : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(ax.formula, nu_theory)))
+        val mth : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(ax.formula, nu_theory, Nil)))
         val name : String = if (ax.name.isDefined) { ax.name.get }
         else { axiom_count += 1 ; t.name + "_unnamed_axiom" + axiom_count.toString }
 
@@ -217,7 +217,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
             // val dist_formula : IMPSMathExp = IMPSNegation(IMPSEquals(IMPSSymbolRef(g1), IMPSSymbolRef(g2)))
             val dist_formula : IMPSMathExp = IMPSNegation(IMPSEquals(IMPSMathSymbol(c1), IMPSMathSymbol(c2)))
-            val mth          : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(dist_formula, nu_theory)))
+            val mth          : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(dist_formula, nu_theory, Nil)))
             val name         : String = t.name + "_distinction_axiom_" + dist_count.toString
 
             dist_count += 1
@@ -342,7 +342,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         }
         val parent: DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
 
-        val definition: Term = tState.bindUnknowns(doMathExp(defstring, parent))
+        val definition: Term = tState.bindUnknowns(doMathExp(defstring, parent, Nil))
         val enclosing: Term = doSort(sort, parent)
         val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, Some(enclosing), Some(definition), Some("AtomicSort"))
 
@@ -382,7 +382,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           srt = None
         }
 
-        val mth: Term = tState.bindUnknowns(doMathExp(definition, parent))
+        val mth: Term = tState.bindUnknowns(doMathExp(definition, parent,Nil))
         val nu_constant = symbols.Constant(parent.toTerm, LocalName(name), Nil, srt, Some(mth), Some("Constant"))
 
         /* Add available MetaData */
@@ -400,7 +400,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         }
         val parent: DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
 
-        val mth: Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(formula, parent)))
+        val mth: Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(formula, parent,Nil)))
         val nu_theorem = symbols.Constant(parent.toTerm, doName(name), Nil, Some(mth), None, Some("Theorem"))
         //                                                                              ^-- proof goes here!
 
@@ -643,73 +643,162 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   }
 
   /* Translate IMPS Math Expressions to Terms */
-  def doMathExp(d : IMPSMathExp, thy : DeclaredTheory) : Term =
+  def doMathExp(d : IMPSMathExp, thy : DeclaredTheory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
   {
     d match
     {
+      case IMPSVar("an%individual") => { OMS(IMPSTheory.lutinsPath ? "anIndividual") }
       case IMPSVar(v)             => OMV(v)
+
 
       case IMPSMathSymbol("an%individual") => { OMS(IMPSTheory.lutinsPath ? "anIndividual") }
       case IMPSMathSymbol(s)      => OMS(thy.path ? LocalName(s))
 
-      case q@IMPSTruth()          => OMS(IMPSTheory.lutinsPath ? "thetrue")
-      case q@IMPSFalsehood()      => OMS(IMPSTheory.lutinsPath ? "thefalse")
+      case IMPSIndividual()       => OMS(IMPSTheory.lutinsPath ? "anIndividual")
+      case IMPSTruth()            => OMS(IMPSTheory.lutinsPath ? "thetrue")
+      case IMPSFalsehood()        => OMS(IMPSTheory.lutinsPath ? "thefalse")
 
-      case IMPSNegation(p)        => IMPSTheory.Negation(doMathExp(p,thy))
+      case IMPSNegation(p)        => IMPSTheory.Negation(doMathExp(p,thy,cntxt))
 
-      case IMPSIf(p,t1,t2)        => IMPSTheory.If(tState.addUnknown(), tState.addUnknown(), doMathExp(p,thy), doMathExp(t1,thy), doMathExp(t2,thy))
-      case IMPSIff(p, q)          => IMPSTheory.Iff(doMathExp(p,thy), doMathExp(q,thy))
-      case IMPSIfForm(p,q,r)      => IMPSTheory.If_Form(doMathExp(p,thy), doMathExp(q,thy), doMathExp(r,thy))
-      case IMPSEquals(a,b)        => IMPSTheory.Equals(tState.addUnknown(),tState.addUnknown(),tState.addUnknown(),doMathExp(a,thy),doMathExp(b,thy))
-      case IMPSDisjunction(ls)    => IMPSTheory.Or(ls map (x => doMathExp(x,thy)))
-      case IMPSConjunction(ls)    => IMPSTheory.And(ls map (x => doMathExp(x,thy)))
-      case q@IMPSLambda(_,_)      => doIMPSLambda(curryIMPSlambda(q), thy)
-      case q@IMPSForAll(_,_)      => doIMPSForall(curryIMPSforall(q), thy)
-      case q@IMPSForSome(vs, r)   => doIMPSForsome(curryIMPSforsome(q),thy)
-      case IMPSImplication(p,q)   => IMPSTheory.Implies(doMathExp(p,thy), doMathExp(q,thy))
+      case IMPSIf(p,t1,t2)        => IMPSTheory.If(tState.addUnknown(), tState.addUnknown(), doMathExp(p,thy,cntxt), doMathExp(t1,thy,cntxt), doMathExp(t2,thy,cntxt))
+      case IMPSIff(p, q)          => IMPSTheory.Iff(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt))
+      case IMPSIfForm(p,q,r)      => IMPSTheory.If_Form(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt), doMathExp(r,thy,cntxt))
+      case IMPSEquals(p,q)        => {
+        var a     : Term = null
+        var alpha : Term = null
+        var beta  : Term = null
+
+        p match
+        {
+          case IMPSVar(_) => {
+            if (cntxt.map(_._1).contains(p)) {
+              val theSort = cntxt.find(k => k._1 == p).get._2
+              alpha = matchSort(theSort,thy)
+              a = findKind(theSort)
+            }
+          }
+          case _          => ()
+        }
+
+        q match
+        {
+          case IMPSVar(_) => {
+            if (cntxt.map(_._1).contains(q)) {
+              val theSort = cntxt.find(k => k._1 == q).get._2
+              beta = matchSort(theSort,thy)
+              if (a == null) { a = findKind(theSort) } else { assert(a == findKind(theSort)) }
+            }
+          }
+          case _          => ()
+        }
+
+        if (alpha == null) { alpha = tState.addUnknown() }
+        if (beta  == null) { beta  = tState.addUnknown() }
+        if (a     == null) { a     = tState.addUnknown() }
+
+        IMPSTheory.Equals(a,alpha,beta,doMathExp(p,thy,cntxt),doMathExp(q,thy,cntxt))
+      }
+      case IMPSDisjunction(ls)    => IMPSTheory.Or(ls map (x => doMathExp(x,thy,cntxt)))
+      case IMPSConjunction(ls)    => IMPSTheory.And(ls map (x => doMathExp(x,thy,cntxt)))
+      case q@IMPSLambda(vs,_)     => doIMPSLambda(curryIMPSlambda(q), thy, cntxt ::: vs)
+      case q@IMPSForAll(vs,_)     => doIMPSForall(curryIMPSforall(q), thy, cntxt ::: vs)
+      case q@IMPSForSome(vs, r)   => doIMPSForsome(curryIMPSforsome(q),thy, cntxt ::: vs)
+      case IMPSImplication(p,q)   => IMPSTheory.Implies(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt))
       case IMPSApply(f,ts)        =>
       {
         assert(ts.nonEmpty)
         // Wheee, manual currying!
         if (ts.length == 1)
-          { IMPSTheory.IMPSApply(tState.addUnknown(),tState.addUnknown(),tState.addUnknown(),tState.addUnknown(),tState.addUnknown(),doMathExp(f,thy),doMathExp(ts.head,thy)) }
+        {
+          var alpha : Term = null
+          var beta  : Term = null
+          var gamma : Term = null
+
+          var a     : Term = null
+          var b     : Term = null
+
+          f match {
+            case IMPSVar(_) => {
+              if (cntxt.map(_._1).contains(f))
+              {
+                val theSort = cntxt.find(p => p._1 == f).get._2
+                theSort match {
+                  case IMPSBinaryFunSort(s1,s2) => {
+                    alpha = matchSort(s1,thy)
+                    beta  = matchSort(s2,thy)
+                    a     = findKind(s1)
+                    b     = findKind(s2)
+                  }
+                  case IMPSSetSort(s1) => {
+                    alpha = matchSort(s1,thy)
+                    beta  = matchSort(IMPSAtomSort("ind"),thy)
+                    a     = findKind(s1)
+                    b     = findKind(IMPSAtomSort("ind"))
+                  }
+                  case _ => println(" > theSort = " + theSort.toString) ; assert(false)
+                }
+              }
+            }
+            case _ => ()
+          }
+
+          ts.head match
+          {
+            case IMPSVar(_) => {
+              if (cntxt.map(_._1).contains(ts.head)) {
+                val theSort = cntxt.find(p => p._1 == ts.head).get._2
+                gamma = matchSort(theSort,thy)
+                if (a == null) { a = findKind(theSort) } else { assert(a == findKind(theSort)) }
+              }
+            }
+            case _          => ()
+          }
+
+          if (alpha == null) { alpha = tState.addUnknown() }
+          if (beta  == null) { beta  = tState.addUnknown() }
+          if (gamma == null) { gamma = tState.addUnknown() }
+
+          if (a == null) { a = tState.addUnknown() }
+          if (b == null) { b = tState.addUnknown() }
+
+          IMPSTheory.IMPSApply(a, b, alpha, gamma, beta, doMathExp(f,thy,cntxt), doMathExp(ts.head,thy,cntxt))
+        }
         else
         {
           val inner = IMPSApply(f,List(ts.head))
-          doMathExp(IMPSApply(inner,ts.tail),thy)
+          doMathExp(IMPSApply(inner,ts.tail),thy,cntxt)
         }
       }
-      case IMPSIota(v1,s1,p)      => IMPSTheory.Iota(LocalName(v1.v), doSort(s1,thy), doMathExp(p,thy))
-      case IMPSIotaP(v1,s1,p)     => IMPSTheory.IotaP(LocalName(v1.v), doSort(s1,thy), doMathExp(p,thy))
-      case IMPSIsDefined(r)       => IMPSTheory.IsDefined(tState.addUnknown(), tState.addUnknown(), doMathExp(r,thy))
-      case IMPSIsDefinedIn(r,s)   => IMPSTheory.IsDefinedIn(tState.addUnknown(), tState.addUnknown(), doMathExp(r,thy), doSort(s,thy))
+      case IMPSIota(v1,s1,p)      => IMPSTheory.Iota(LocalName(v1.v), doSort(s1,thy), doMathExp(p,thy,cntxt ::: List((v1,s1))))
+      case IMPSIotaP(v1,s1,p)     => IMPSTheory.IotaP(LocalName(v1.v), doSort(s1,thy), doMathExp(p,thy,cntxt ::: List((v1,s1))))
+      case IMPSIsDefined(r)       => IMPSTheory.IsDefined(tState.addUnknown(), tState.addUnknown(), doMathExp(r,thy,cntxt))
+      case IMPSIsDefinedIn(r,s)   => IMPSTheory.IsDefinedIn(findKind(s), tState.addUnknown(), doMathExp(r,thy,cntxt), matchSort(s,thy))
       case IMPSUndefined(s)       => IMPSTheory.Undefined(findKind(s), matchSort(s,thy))
 
-      case IMPSTotal(f,bs)        => IMPSTheory.Total(doMathExp(f,thy),bs.map(b => doSort(b,thy)))
-      case IMPSNonVacuous(p)      => IMPSTheory.Nonvacuous(doMathExp(p,thy))
-      case IMPSQuasiEquals(p,q)   => IMPSTheory.Quasiequals(doMathExp(p,thy), doMathExp(q,thy))
+      case IMPSTotal(f,bs)        => IMPSTheory.Total(doMathExp(f,thy,cntxt),bs.map(b => doSort(b,thy)))
+      case IMPSNonVacuous(p)      => IMPSTheory.Nonvacuous(doMathExp(p,thy,cntxt))
+      case IMPSQuasiEquals(p,q)   => IMPSTheory.Quasiequals(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt))
     }
   }
 
   def curryIMPSlambda(l : IMPSLambda) : IMPSLambda =
   {
     assert(l.vs.nonEmpty)
-    assert(l.vs.forall(v => v._2.isDefined))
     if (l.vs.length == 1) { l }
     else {
       IMPSLambda(List(l.vs.head),curryIMPSlambda(IMPSLambda(l.vs.tail,l.t)))
     }
   }
 
-  def doIMPSLambda(lambda : IMPSLambda, thy : DeclaredTheory) : Term =
+  def doIMPSLambda(lambda : IMPSLambda, thy : DeclaredTheory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
   {
     // Always call curried
     assert(lambda.vs.length == 1)
 
     val thisVar     : LocalName = LocalName(lambda.vs.head._1.v)
-    val thisSrt     : IMPSSort  = lambda.vs.head._2.get
+    val thisSrt     : IMPSSort  = lambda.vs.head._2
     val expSortTerm : Term      = doSort(thisSrt,thy)     // <-- this is "exp whateversort"
-    val target      : Term      = doMathExp(lambda.t,thy)
+    val target      : Term      = doMathExp(lambda.t,thy,cntxt)
     val body        : Term      = info.kwarc.mmt.lf.Lambda(thisVar, expSortTerm, target)
 
     val jstSortTerm : Term      = matchSort(thisSrt,thy)
@@ -720,22 +809,21 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   def curryIMPSforsome(f : IMPSForSome) : IMPSForSome =
   {
     assert(f.vs.nonEmpty)
-    assert(f.vs.forall(v => v._2.isDefined))
     if (f.vs.length == 1) { f }
     else {
       IMPSForSome(List(f.vs.head),curryIMPSforsome(IMPSForSome(f.vs.tail,f.p)))
     }
   }
 
-  def doIMPSForsome(forsome : IMPSForSome, thy : DeclaredTheory) : Term =
+  def doIMPSForsome(forsome : IMPSForSome, thy : DeclaredTheory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
   {
     // Always call curried
     assert(forsome.vs.length == 1)
 
     val thisVar     : LocalName = LocalName(forsome.vs.head._1.v)
-    val thisSrt     : IMPSSort  = forsome.vs.head._2.get
+    val thisSrt     : IMPSSort  = forsome.vs.head._2
     val expSortTerm : Term      = doSort(thisSrt,thy)     // <-- this is "exp whateversort"
-    val target      : Term      = doMathExp(forsome.p,thy)
+    val target      : Term      = doMathExp(forsome.p,thy,cntxt)
     val body        : Term      = info.kwarc.mmt.lf.Lambda(thisVar, expSortTerm, target)
 
     val jstSortTerm : Term      = matchSort(thisSrt,thy)
@@ -746,24 +834,21 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   def curryIMPSforall(f : IMPSForAll) : IMPSForAll =
   {
     assert(f.vs.nonEmpty)
-    assert(f.vs.forall(v => v._2.isDefined))
     if (f.vs.length == 1) { f }
     else {
       IMPSForAll(List(f.vs.head),curryIMPSforall(IMPSForAll(f.vs.tail,f.p)))
     }
   }
 
-  def doIMPSForall(forall : IMPSForAll, thy : DeclaredTheory) : Term =
+  def doIMPSForall(forall : IMPSForAll, thy : DeclaredTheory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
   {
     // Always call curried
     assert(forall.vs.length == 1)
 
-    println(" > doing forall " + forall.toString)
-
     val thisVar     : LocalName = LocalName(forall.vs.head._1.v)
-    val thisSrt     : IMPSSort  = curry(forall.vs.head._2.get)
+    val thisSrt     : IMPSSort  = curry(forall.vs.head._2)
     val expSortTerm : Term      = doSort(thisSrt,thy)     // <-- this is "exp whateversort"
-    val target      : Term      = doMathExp(forall.p,thy)
+    val target      : Term      = doMathExp(forall.p,thy,cntxt)
     val body        : Term      = info.kwarc.mmt.lf.Lambda(thisVar, expSortTerm, target)
 
     val jstSortTerm : Term      = matchSort(thisSrt,thy)

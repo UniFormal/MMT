@@ -43,36 +43,55 @@ package object impsMathParser
         /* User-defined quasi-constructors */
         /* These needed to be hand-translated */
 
-        case SEXPAtom("predicate-to-indicator") => {
+        case SEXPAtom("predicate-to-indicator") =>
+        {
           // "lambda(s:[uu,prop], lambda(x:uu, if(s(x), an%individual, ?unit%sort)))"
-          val var_s = (IMPSVar("s"), Some(IMPSBinaryFunSort(IMPSAtomSort("uu"),IMPSAtomSort("prop"))))
-          val var_x = (IMPSVar("x"), Some(IMPSAtomSort("uu")))
-          val appl  = IMPSApply(IMPSMathSymbol("s"),List(IMPSMathSymbol("x")))
+
+          assert(s.args.length == 2)
+          val pred : IMPSMathExp = makeSEXPFormula(s.args(1),mpc)
+
+          val var_s = (freshVar("s",Some(List(pred))), IMPSBinaryFunSort(IMPSAtomSort("uu"),IMPSAtomSort("prop")))
+          val var_x = (freshVar("x",Some(List(pred,var_s._1))), IMPSAtomSort("uu"))
+          val appl  = IMPSApply(var_s._1,List(var_x._1))
           val target = IMPSIf(appl,IMPSIndividual(),IMPSUndefined(IMPSAtomSort("unitsort")))
-          IMPSLambda(List(var_s),target)
+          IMPSApply(IMPSLambda(List(var_s), IMPSLambda(List(var_x),target)), List(pred))
         }
 
-        case SEXPAtom("sort-to-indicator") => {
+        case SEXPAtom("sort-to-indicator") =>
+        {
           // "lambda(e:uu, lambda(x:uu, an%individual))"
-          val e_var = (IMPSVar("e"), Some(IMPSAtomSort("uu")))
-          val x_var = (IMPSVar("x"), Some(IMPSAtomSort("uu")))
-          val inner = IMPSLambda(List(x_var),IMPSIndividual())
-          IMPSLambda(List(e_var),inner)
+
+          assert(s.args.length == 2)
+          val srt : IMPSMathExp = makeSEXPFormula(s.args(1),mpc)
+          assert(srt.isInstanceOf[IMPSUndefined])
+
+          val y_var = (freshVar("y",Some(List(srt))), IMPSAtomSort("uu"))
+          val e_var = (freshVar("e",Some(List(srt,y_var._1))), IMPSAtomSort("uu"))
+
+          val inner = IMPSLambda(List(y_var),IMPSIndividual())
+          IMPSApply(IMPSLambda(List(e_var),inner), List(srt))
         }
 
-        case SEXPAtom("i-in") => {
+        case SEXPAtom("i-in") =>
+        {
           // "lambda(x:uu,a:sets[uu], #(a(x)))"
-          val x_var = (IMPSVar("x"), Some(IMPSAtomSort("uu")))
-          val a_var = (IMPSVar("a"), Some(IMPSSetSort(IMPSAtomSort("uu"))))
-          val target = IMPSIsDefined(IMPSApply(IMPSMathSymbol("a"),List(IMPSMathSymbol("x"))))
-          IMPSLambda(List(x_var,a_var),target)
+
+          assert(s.args.length == 3)
+          val v1 : IMPSMathExp = makeSEXPFormula(s.args(1),mpc)
+          val v2 : IMPSMathExp = makeSEXPFormula(s.args(2),mpc)
+
+          val x_var = (freshVar("x",Some(List(v1,v2))), IMPSAtomSort("uu"))
+          val a_var = (freshVar("a",Some(List(v1,v2,x_var._1))), IMPSSetSort(IMPSAtomSort("uu")))
+
+          val target = IMPSIsDefined(IMPSApply(a_var._1,List(x_var._1)))
+          IMPSApply(IMPSLambda(List(x_var,a_var),target),List(v1,v2))
         }
 
         case SEXPAtom("i-subseteq") => {
           // "lambda(a,b:sets[uu], forall(x:uu, (x in a) implies (x in b)))"
-          val a_var = (IMPSVar("a"), Some(IMPSSetSort(IMPSAtomSort("uu"))))
-          val b_var = (IMPSVar("b"), Some(IMPSSetSort(IMPSAtomSort("uu"))))
-          val x_var = (IMPSVar("x"), Some(IMPSAtomSort("uu")))
+          val a_var = (IMPSVar("a"), IMPSSetSort(IMPSAtomSort("uu")))
+          val b_var = (IMPSVar("b"), IMPSSetSort(IMPSAtomSort("uu")))
+          val x_var = (IMPSVar("x"), IMPSAtomSort("uu"))
 
           val sp : SymbolicExpressionParser = new SymbolicExpressionParser
           val i1 = sp.parseAll(sp.parseSEXP,"(i-in x a)")
@@ -90,8 +109,8 @@ package object impsMathParser
 
         case SEXPAtom("i-subset") => {
           // "lambda(a,b:sets[uu], (a subseteq b) and not(a = b))"
-          val a_var = (IMPSVar("a"),Some(IMPSSetSort(IMPSAtomSort("uu"))))
-          val b_var = (IMPSVar("b"),Some(IMPSSetSort(IMPSAtomSort("uu"))))
+          val a_var = (IMPSVar("a"),IMPSSetSort(IMPSAtomSort("uu")))
+          val b_var = (IMPSVar("b"),IMPSSetSort(IMPSAtomSort("uu")))
 
           val sp : SymbolicExpressionParser = new SymbolicExpressionParser
           val i1 = sp.parseAll(sp.parseSEXP,"(i-subseteq a b)")
@@ -104,20 +123,20 @@ package object impsMathParser
 
         case SEXPAtom("i-empty-indicator") => {
           // "lambda(e:uu, lambda(x:uu,?unit%sort))"
-          val e_var = (IMPSVar("e"), Some(IMPSAtomSort("uu")))
-          val x_var = (IMPSVar("x"), Some(IMPSAtomSort("uu")))
+          val e_var = (IMPSVar("e"), IMPSAtomSort("uu"))
+          val x_var = (IMPSVar("x"), IMPSAtomSort("uu"))
           val inner = IMPSLambda(List(x_var), IMPSUndefined(IMPSAtomSort("unitsort")))
           IMPSLambda(List(e_var), inner)
         }
 
         case SEXPAtom("i-nonempty-indicator?") => {
           // "lambda(a:sets[uu], forsome(x:uu, x in a))"
-          val a_var = (IMPSVar("a"), Some(IMPSSetSort(IMPSAtomSort("uu"))))
-          val x_var = (IMPSVar("x"), Some(IMPSAtomSort("uu")))
+          val a_var = (IMPSVar("a"), IMPSSetSort(IMPSAtomSort("uu")))
+          val x_var = (IMPSVar("x"), IMPSAtomSort("uu"))
 
           // "lambda(x:uu,a:sets[uu], #(a(x)))"
-          val ia_var = (IMPSVar("a"), Some(IMPSSetSort(IMPSAtomSort("uu"))))
-          val ix_var = (IMPSVar("x"), Some(IMPSAtomSort("uu")))
+          val ia_var = (IMPSVar("a"), IMPSSetSort(IMPSAtomSort("uu")))
+          val ix_var = (IMPSVar("x"), IMPSAtomSort("uu"))
 
           ???
         }
@@ -237,19 +256,19 @@ package object impsMathParser
         //assert(args.forall(a => a.isInstanceOf[SEXPAtom]))
         val sorts : List[IMPSSort] = args.map(makeSort)
 
-        return IMPSNaryFunSort(sorts)
+        if (sorts.length == 2) { IMPSBinaryFunSort(sorts.head, sorts.last) } else { IMPSNaryFunSort(sorts) }
       }
     }
   }
 
-  def makeSortDecls(sexp : SEXPNested) : List[(IMPSVar, Option[IMPSSort])] =
+  def makeSortDecls(sexp : SEXPNested, inp : Option[List[IMPSMathExp]] = None) : List[(IMPSVar, IMPSSort)] =
   {
-    def oneSortDecl(sexp : SEXPNested) : List[(IMPSVar, Option[IMPSSort])] =
+    def oneSortDecl(sexp : SEXPNested, inp : Option[List[IMPSMathExp]] = None) : List[(IMPSVar, IMPSSort)] =
     {
       val theSort : IMPSSort = makeSort(sexp.args.head)
       assert(sexp.args.tail.forall(a => a.isInstanceOf[SEXPAtom]))
 
-      return sexp.args.tail.map(a => a match { case SEXPAtom(n) => (IMPSVar(n), Some(theSort))})
+      return sexp.args.tail.map(a => a match { case SEXPAtom(n) => (IMPSVar(n), theSort)})
     }
 
     assert(sexp.args.forall(a => a.isInstanceOf[SEXPNested]))
@@ -261,7 +280,7 @@ package object impsMathParser
     assert(sexp.args.head == SEXPAtom("forall"))
     assert(sexp.args.length == 3)
 
-    val sorts : List[(IMPSVar, Option[IMPSSort])] = sexp.args(1) match
+    val sorts : List[(IMPSVar, IMPSSort)] = sexp.args(1) match
     {
       case SEXPAtom(_)     => ???
       case s@SEXPNested(_) => makeSortDecls(s)
@@ -277,7 +296,7 @@ package object impsMathParser
     assert(sexp.args.head == SEXPAtom("forsome"))
     assert(sexp.args.length == 3)
 
-    val sorts : List[(IMPSVar, Option[IMPSSort])] = sexp.args(1) match
+    val sorts : List[(IMPSVar, IMPSSort)] = sexp.args(1) match
     {
       case SEXPAtom(_)     => ???
       case s@SEXPNested(_) => makeSortDecls(s)
@@ -293,7 +312,7 @@ package object impsMathParser
     assert(sexp.args.head == SEXPAtom("lambda"))
     assert(sexp.args.length == 3)
 
-    val sorts : List[(IMPSVar, Option[IMPSSort])] = sexp.args(1) match
+    val sorts : List[(IMPSVar, IMPSSort)] = sexp.args(1) match
     {
       case SEXPAtom(_)     => ???
       case s@SEXPNested(_) => makeSortDecls(s)
@@ -320,7 +339,7 @@ package object impsMathParser
     assert(sexp.args.length == 3)
 
     assert(sexp.args(1).isInstanceOf[SEXPNested])
-    val vars  : List[(IMPSVar, IMPSSort)] = sexp.args(1) match { case t@SEXPNested(_) => makeSortDecls(t).map(p => (p._1,p._2.get)) }
+    val vars  : List[(IMPSVar, IMPSSort)] = sexp.args(1) match { case t@SEXPNested(_) => makeSortDecls(t).map(p => (p._1,p._2)) }
     val recur : IMPSMathExp = makeSEXPFormula(sexp.args(2), mpc)
 
     assert(vars.length == 1)
@@ -397,13 +416,14 @@ package object impsMathParser
 
   //-----------
 
-  def freshVar(preferred : Option[String] = None, input : Option[IMPSMathExp] = None) : IMPSVar =
+  def freshVar(preferred : String, input : Option[List[IMPSMathExp]] = None) : IMPSVar =
   {
     def boundVars(input : IMPSMathExp) : List[String] =
     {
       val list : List[String] = input match
       {
         case IMPSVar(v)             => List(v)
+        case IMPSIndividual()       => Nil
         case IMPSMathSymbol(s)      => Nil
         case IMPSTruth()            => Nil
         case IMPSFalsehood()        => Nil
@@ -432,12 +452,12 @@ package object impsMathParser
     }
 
     val alphabet : List[String] = "abcefghijkmopqrstuvwxyz".flatMap(c => List(c.toString, c.toString+c.toString)).toList
-    val used     : List[String] = if (input.isDefined) { boundVars(input.get) } else { Nil }
+    val used     : List[String] = if (input.isDefined) { input.get.flatMap(m => boundVars(m)) } else { Nil }
     val valid    : List[String] = alphabet.filter(s => !used.contains(s))
     assert(valid.nonEmpty)
 
-    if (preferred.isDefined && valid.contains(preferred.get))
-    { return IMPSVar(preferred.get) }
+    if (valid.contains(preferred))
+    { return IMPSVar(preferred) }
     else
     { val random = new Random() ; return IMPSVar(valid(random.nextInt(valid.length))) }
     /* Doesn't actually need to be random of course, could also be head. */

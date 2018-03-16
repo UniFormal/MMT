@@ -645,6 +645,11 @@ extends LispExp
 
 abstract class IMPSSort
 
+case class IMPSIndividual() extends  IMPSMathExp
+{
+  override def toString: String = "an%individual"
+}
+
 /* The atomic sorts */
 case class IMPSAtomSort(s : String) extends IMPSSort
 {
@@ -663,7 +668,7 @@ case class IMPSNaryFunSort(ss : List[IMPSSort]) extends IMPSSort
     for (s <- ss.tail)
     { str = str + "," + s.toString }
 
-    str = str + "]"
+    str = str + "]^" + ss.length.toString
     str
   }
 }
@@ -754,7 +759,7 @@ case class IMPSIfForm(p : IMPSMathExp, q : IMPSMathExp, r : IMPSMathExp) extends
   override def toString: String = "if_form(" + p.toString + "," + q.toString + "," + r.toString + ")"
 }
 
-case class IMPSForAll(vs : List[(IMPSVar, Option[IMPSSort])], p : IMPSMathExp) extends IMPSMathExp
+case class IMPSForAll(vs : List[(IMPSVar, IMPSSort)], p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -762,7 +767,7 @@ case class IMPSForAll(vs : List[(IMPSVar, Option[IMPSSort])], p : IMPSMathExp) e
     for ((v, s) <- vs)
     {
       str = str + v.toString
-      if (s.isDefined) { str = str + ":" + s.get.toString }
+      str = str + ":" + s.toString
       str = str + ","
     }
     str = str + p.toString + ")"
@@ -770,7 +775,7 @@ case class IMPSForAll(vs : List[(IMPSVar, Option[IMPSSort])], p : IMPSMathExp) e
   }
 }
 
-case class IMPSForSome(vs : List[(IMPSVar, Option[IMPSSort])], p : IMPSMathExp) extends IMPSMathExp
+case class IMPSForSome(vs : List[(IMPSVar, IMPSSort)], p : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -778,7 +783,7 @@ case class IMPSForSome(vs : List[(IMPSVar, Option[IMPSSort])], p : IMPSMathExp) 
     for ((v, s) <- vs)
     {
       str = str + v.toString
-      if (s.isDefined) str = str + ":" + s.get.toString
+      str = str + ":" + s.toString
       str = str + ","
     }
     str = str + p.toString + ")"
@@ -797,7 +802,7 @@ case class IMPSApply(f : IMPSMathExp, ts : List[IMPSMathExp]) extends IMPSMathEx
   override def toString: String =
   {
     var str : String = f.toString
-    str = str + "(" + ts.head.toString
+    str = str + "@(" + ts.head.toString
     for (t <- ts.tail)
     {
       str = str + "," + t.toString
@@ -807,7 +812,7 @@ case class IMPSApply(f : IMPSMathExp, ts : List[IMPSMathExp]) extends IMPSMathEx
   }
 }
 
-case class IMPSLambda(vs : List[(IMPSVar, Option[IMPSSort])], t : IMPSMathExp) extends IMPSMathExp
+case class IMPSLambda(vs : List[(IMPSVar, IMPSSort)], t : IMPSMathExp) extends IMPSMathExp
 {
   override def toString: String =
   {
@@ -815,7 +820,7 @@ case class IMPSLambda(vs : List[(IMPSVar, Option[IMPSSort])], t : IMPSMathExp) e
     for ((v, s) <- vs)
     {
       str = str + v.toString
-      if (s.isDefined) str = str + ":" + s.get.toString
+      str = str + ":" + s.toString
       str = str + ","
     }
     str = str + t.toString + ")"
@@ -855,25 +860,24 @@ case class IMPSUndefined(s : IMPSSort) extends IMPSMathExp
 
 /* Quasi-Constructors */
 
-case class IMPSTotal(f : IMPSMathExp, betas : List[IMPSSort]) extends IMPSMathExp
+abstract class IMPSQuasiConstructor extends IMPSMathExp
+
+case class IMPSTotal(f : IMPSMathExp, betas : List[IMPSSort]) extends IMPSQuasiConstructor
 {
   override def toString: String = "total?(" + f.toString + ", " + betas.toString() + ")"
 }
 
-case class IMPSNonVacuous(p : IMPSMathExp) extends IMPSMathExp
+case class IMPSNonVacuous(p : IMPSMathExp) extends IMPSQuasiConstructor
 {
   override def toString: String = "nonvacuous?(" + p.toString + ")"
 }
 
-case class IMPSQuasiEquals(e1 : IMPSMathExp, e2 : IMPSMathExp) extends  IMPSMathExp
+case class IMPSQuasiEquals(e1 : IMPSMathExp, e2 : IMPSMathExp) extends  IMPSQuasiConstructor
 {
   override def toString: String = e1.toString + " == " + e2.toString
 }
 
-case class IMPSIndividual() extends  IMPSMathExp
-{
-  override def toString: String = "an%individual"
-}
+/* User-defined Quasi-Constructors */
 
 //-----------
 

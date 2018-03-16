@@ -159,7 +159,7 @@ class IMPSImporter extends Importer
     Some(ArgumentLanguage("THE-KERNEL-LANGUAGE",None)),
     None,
     Some(TheoryAxioms(List(AxiomSpecification(
-      IMPSForAll(List((IMPSVar("z"),Some(IMPSAtomSort("unit%sort")))),IMPSEquals(IMPSVar("z"),IMPSMathSymbol("an%individual"))),
+      IMPSForAll(List((IMPSVar("z"),IMPSAtomSort("unit%sort"))),IMPSEquals(IMPSVar("z"),IMPSMathSymbol("an%individual"))),
       Some("unit-sort-defining-axiom"),
       None,
       None)),None)),
@@ -169,7 +169,7 @@ class IMPSImporter extends Importer
 
   def unitSortTheorem() : Theorem = Theorem(
     "()",
-    IMPSForAll(List((IMPSVar("x"),Some(IMPSAtomSort("unit%sort"))),(IMPSVar("y"),Some(IMPSAtomSort("unit%sort")))),
+    IMPSForAll(List((IMPSVar("x"),IMPSAtomSort("unit%sort")),(IMPSVar("y"),IMPSAtomSort("unit%sort"))),
       IMPSIff(IMPSEquals(IMPSVar("x"),IMPSVar("y")),IMPSTruth())),
     false,
     false,

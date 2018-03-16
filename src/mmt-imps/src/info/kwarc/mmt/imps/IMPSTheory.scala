@@ -177,7 +177,7 @@ object IMPSTheory
   object IsDefinedIn extends Sym("isdefinedin")
   {
     def apply(a : Term, alpha : Term, t : Term, s : Term) : Term = {
-      ApplySpine(this.term, t, s)
+      ApplySpine(this.term, a, alpha, t, s)
     }
   }
 
