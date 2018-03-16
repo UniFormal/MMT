@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking.{History, MMTStructureChecker, Solver, SubtypingRule}
 import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.metadata.MetaDatum
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
 import info.kwarc.mmt.api.symbols.{DeclaredStructure, FinalConstant, Structure}
 import objects._
 import uom._
@@ -90,7 +90,7 @@ class UniverseInference extends ChangeListener {
         case _ =>
       }
     case ds : Structure =>
-      val parent = controller.getAs(classOf[DeclaredTheory],c.parent)
+      val parent = controller.getAs(classOf[DeclaredModule],c.parent)
       val parentV : BigInt = parent.metadata.get(TypeLevel.path).map(_.value).headOption match {
         case Some(TypeLevel(j)) =>
           j
