@@ -232,7 +232,8 @@ class NotationBasedParser extends ObjectParser {
     var nots: List[ParsingRule] = Nil
     var les: List[LexerExtension] = Nil
     var notExts: List[NotationExtension] = Nil
-    support.foreach {p => controller.globalLookup.forDeclarationsInScope(OMMOD(p)) {case (_,_,d) => d match {
+    support.foreach {p => controller.globalLookup.forDeclarationsInScope(OMMOD(p)) {case (_,via,d) => d match {
+      // TODO technically, d must be translated along via first; but that never changes the notations that we collect
       case c: Constant => // Declaration with HasNotation might collect too much here
         var names = (c.name :: c.alternativeNames).map(_.toString) //the names that can refer to this declaration
         if (c.name.last == SimpleStep("_")) names ::= c.name.init.toString
