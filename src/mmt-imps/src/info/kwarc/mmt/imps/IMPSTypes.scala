@@ -872,12 +872,43 @@ case class IMPSNonVacuous(p : IMPSMathExp) extends IMPSQuasiConstructor
   override def toString: String = "nonvacuous?(" + p.toString + ")"
 }
 
-case class IMPSQuasiEquals(e1 : IMPSMathExp, e2 : IMPSMathExp) extends  IMPSQuasiConstructor
+case class IMPSQuasiEquals(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSQuasiConstructor
 {
   override def toString: String = e1.toString + " == " + e2.toString
 }
 
 /* User-defined Quasi-Constructors */
+
+case class IMPSQCPred2Indicator(pred : IMPSMathExp) extends IMPSQuasiConstructor
+{
+  override def toString: String = "pred_to_indic(" + pred.toString + ")"
+}
+
+case class IMPSQCSort2Indicator(sort : IMPSMathExp) extends IMPSQuasiConstructor
+{
+  override def toString: String = {
+    assert(sort.isInstanceOf[IMPSUndefined])
+    sort match {
+      case IMPSUndefined(s) => "sort_to_indic(" + s.toString + ")"
+      case _ => ???
+    }
+  }
+}
+
+case class IMPSQCIn(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSQuasiConstructor
+{
+  override def toString: String = e1.toString + " in " + e2.toString
+}
+
+case class IMPSQCSubsetEQ(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSQuasiConstructor
+{
+  override def toString: String = e1.toString + " subseteq " + e2.toString
+}
+
+case class IMPSQCSubset(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSQuasiConstructor
+{
+  override def toString: String = e1.toString + " subset " + e2.toString
+}
 
 //-----------
 

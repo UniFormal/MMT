@@ -69,10 +69,10 @@ package object impsArgumentParsers
 
     var s : String = ""
 
-    val theaxiom : Option[JSONObject] = if (name.get != "()")
+    val theaxiom : Option[JSONObject] = if (name.isDefined)
     {
       println(" > looking for axiom " + name.get + " in theory " + thy + " ...")
-      axioms.find(j => j.getAsString("name") == name.get.toLowerCase)
+      axioms.find(j => j.getAsString("name").toLowerCase == name.get.toLowerCase)
     } else {
       println(" > looking for nameless axiom in theory " + thy + " ...")
       e.children(index) match {
@@ -497,7 +497,7 @@ package object impsArgumentParsers
   {
     var list : List[TypeSortAList] = Nil
 
-    for (l <- e.children)
+    for (l <- e.children.tail)
     {
       val prs : Option[TypeSortAList] = l match {
         case Exp(x,y) => parseTypeSortAList(Exp(x,y))
@@ -520,7 +520,7 @@ package object impsArgumentParsers
       case Exp(List(Str("*integer-type*")),_)  => Some(NumericalType.INTEGERTYPE)
       case Exp(List(Str("*rational-type*")),_) => Some(NumericalType.RATIONALTYPE)
       case Exp(List(Str("*octet-type*")),_)    => Some(NumericalType.OCTETTYPE)
-      case _                                   => None
+      case _                                   => println(" > e = " +e.children(0).toString) ; ???
     }
 
     var srt : Option[String] = None

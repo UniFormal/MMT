@@ -36,15 +36,15 @@ class IMPSImporter extends Importer
       "pure-generic-theory-3.json",
       "pure-generic-theory-4.json",
       "indicators.json",
+      "h-o-real-arithmetic.json",
       "generic-theory-1.json",
       "generic-theory-2.json",
       "generic-theory-3.json",
-      "generic-theory-4.json",
-      "h-o-real-arithmetic.json"
+      "generic-theory-4.json"
       //...
     )
 
-    val thesejsonFiles = orderjson.take(5)
+    val thesejsonFiles = orderjson.take(6)
     val translatejsonFiles = jsonfiles.filter(f => thesejsonFiles.contains(f.getName))
 
     for (file <- translatejsonFiles)
@@ -69,9 +69,8 @@ class IMPSImporter extends Importer
     val order : Array[String] = Array(
       "pure-generic-theories.t",
       "indicators.t",
-      "pure-generic-theories-with-subsorts.t",
-      "pre-reals.t",
       "reals.t",
+      "pre-reals.t",
       "quotient-structures.t",
       "normed-spaces.t",
       "mappings-from-an-interval.t"

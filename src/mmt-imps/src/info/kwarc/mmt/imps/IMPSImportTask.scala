@@ -13,6 +13,7 @@ import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.symbols.PlainInclude
 import info.kwarc.mmt.imps.Usage.Usage
+import info.kwarc.mmt.imps.impsMathParser.{freshVar, makeSEXPFormula}
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
 
@@ -647,9 +648,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   {
     d match
     {
-      case IMPSVar("an%individual") => { OMS(IMPSTheory.lutinsPath ? "anIndividual") }
-      case IMPSVar(v)             => OMV(v)
-
+      case IMPSVar(v)             => if (cntxt.map(_._1).contains(d)) { OMV(v) } else {
+        println(" | Switching from Var to MathSymbol: " + v + " ∉ {" + cntxt.toString() + "}")
+        doMathExp(IMPSMathSymbol(v),thy,cntxt)
+      }
 
       case IMPSMathSymbol("an%individual") => { OMS(IMPSTheory.lutinsPath ? "anIndividual") }
       case IMPSMathSymbol(s)      => OMS(thy.path ? LocalName(s))
@@ -659,7 +661,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSFalsehood()        => OMS(IMPSTheory.lutinsPath ? "thefalse")
 
       case IMPSNegation(p)        => IMPSTheory.Negation(doMathExp(p,thy,cntxt))
-
       case IMPSIf(p,t1,t2)        => IMPSTheory.If(tState.addUnknown(), tState.addUnknown(), doMathExp(p,thy,cntxt), doMathExp(t1,thy,cntxt), doMathExp(t2,thy,cntxt))
       case IMPSIff(p, q)          => IMPSTheory.Iff(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt))
       case IMPSIfForm(p,q,r)      => IMPSTheory.If_Form(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt), doMathExp(r,thy,cntxt))
@@ -668,8 +669,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         var alpha : Term = null
         var beta  : Term = null
 
-        p match
-        {
+        p match {
           case IMPSVar(_) => {
             if (cntxt.map(_._1).contains(p)) {
               val theSort = cntxt.find(k => k._1 == p).get._2
@@ -680,8 +680,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           case _          => ()
         }
 
-        q match
-        {
+        q match {
           case IMPSVar(_) => {
             if (cntxt.map(_._1).contains(q)) {
               val theSort = cntxt.find(k => k._1 == q).get._2
@@ -719,8 +718,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
           f match {
             case IMPSVar(_) => {
-              if (cntxt.map(_._1).contains(f))
-              {
+              if (cntxt.map(_._1).contains(f)) {
                 val theSort = cntxt.find(p => p._1 == f).get._2
                 theSort match {
                   case IMPSBinaryFunSort(s1,s2) => {
@@ -742,8 +740,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
             case _ => ()
           }
 
-          ts.head match
-          {
+          ts.head match {
             case IMPSVar(_) => {
               if (cntxt.map(_._1).contains(ts.head)) {
                 val theSort = cntxt.find(p => p._1 == ts.head).get._2
@@ -778,6 +775,12 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSTotal(f,bs)        => IMPSTheory.Total(doMathExp(f,thy,cntxt),bs.map(b => doSort(b,thy)))
       case IMPSNonVacuous(p)      => IMPSTheory.Nonvacuous(doMathExp(p,thy,cntxt))
       case IMPSQuasiEquals(p,q)   => IMPSTheory.Quasiequals(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt))
+
+      case IMPSQCPred2Indicator(_)
+         | IMPSQCSort2Indicator(_)
+         | IMPSQCIn(_,_)
+         | IMPSQCSubsetEQ(_,_)
+         | IMPSQCSubset(_,_)      => doMathExp(removeQCs(d,Nil),thy,cntxt)
     }
   }
 
@@ -854,6 +857,126 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     val jstSortTerm : Term      = matchSort(thisSrt,thy)
     //                                ^-------v-------------------These are just the sort
     IMPSTheory.Forall(findKind(thisSrt), jstSortTerm, body)
+  }
+
+  def removeQCs(input : IMPSMathExp, addCs : List[IMPSMathExp]) : IMPSMathExp =
+  {
+    input match
+    {
+      case IMPSVar(_)
+         | IMPSIndividual()
+         | IMPSMathSymbol(_)
+         | IMPSTruth()
+         | IMPSFalsehood()        => input
+
+      case IMPSNegation(p)        => IMPSNegation(removeQCs(p,addCs))
+      case IMPSIf(p,t1,t2)        => IMPSIf(removeQCs(p,addCs),removeQCs(t1,addCs),removeQCs(t2,addCs))
+      case IMPSIff(p, q)          => IMPSIff(removeQCs(p,addCs), removeQCs(q,addCs))
+      case IMPSIfForm(p,q,r)      => IMPSIfForm(removeQCs(p,addCs),removeQCs(q,addCs),removeQCs(r,addCs))
+      case IMPSEquals(a,b)        => IMPSEquals(removeQCs(a,addCs),removeQCs(b,addCs))
+      case IMPSDisjunction(ls)    => IMPSDisjunction(ls.map(l => removeQCs(l,addCs)))
+      case IMPSConjunction(ls)    => IMPSConjunction(ls.map(l => removeQCs(l,addCs)))
+      case IMPSLambda(vs,t)       => IMPSLambda(vs,removeQCs(t,addCs))
+      case IMPSForAll(vs,p)       => IMPSForAll(vs,removeQCs(p,addCs))
+      case IMPSForSome(vs,r)      => IMPSForSome(vs,removeQCs(r,addCs))
+      case IMPSImplication(p,q)   => IMPSImplication(removeQCs(p,addCs),removeQCs(q,addCs))
+      case IMPSApply(f,ts)        => IMPSApply(removeQCs(f,addCs),ts.map(t => removeQCs(t,addCs)))
+      case IMPSIota(v1,s1,p)      => IMPSIota(v1,s1,removeQCs(p,addCs))
+      case IMPSIotaP(v1,s1,p)     => IMPSIotaP(v1,s1,removeQCs(p,addCs))
+      case IMPSIsDefined(r)       => IMPSIsDefined(removeQCs(r,addCs))
+      case IMPSIsDefinedIn(r,s)   => IMPSIsDefinedIn(removeQCs(r,addCs),s)
+      case IMPSUndefined(s)       => IMPSUndefined(s)
+      case IMPSTotal(f,bs)        => IMPSTotal(removeQCs(f,addCs),bs)
+      case IMPSNonVacuous(p)      => IMPSNonVacuous(removeQCs(p,addCs))
+      case IMPSQuasiEquals(p,q)   => IMPSQuasiEquals(removeQCs(p,addCs),removeQCs(q,addCs))
+
+      case IMPSQCPred2Indicator(pred_u) =>
+      {
+        // "lambda(s:[uu,prop], lambda(x:uu, if(s(x), an%individual, ?unit%sort)))"
+        val pred  : IMPSMathExp = removeQCs(pred_u,addCs)
+
+        val s_var = (freshVar("s",List(pred)          ::: addCs), IMPSBinaryFunSort(IMPSAtomSort("uu"),IMPSAtomSort("prop")))
+        val x_var = (freshVar("x",List(pred,s_var._1) ::: addCs), IMPSAtomSort("uu"))
+
+        val appl    = IMPSApply(s_var._1,List(x_var._1))
+        val target  = IMPSIf(appl,IMPSIndividual(),IMPSUndefined(IMPSAtomSort("unitsort")))
+        val resolve = IMPSApply(IMPSLambda(List(s_var), IMPSLambda(List(x_var),target)), List(pred))
+
+        resolve
+      }
+
+      case IMPSQCSort2Indicator(sort_u) =>
+      {
+        // "lambda(e:uu, lambda(x:uu, an%individual))"
+        val sort  : IMPSMathExp = removeQCs(sort_u,addCs)
+
+        val y_var = (freshVar("x",List(sort)          ::: addCs), IMPSAtomSort("uu"))
+        val e_var = (freshVar("e",List(sort,y_var._1) ::: addCs), IMPSAtomSort("uu"))
+
+        val inner   : IMPSMathExp = IMPSLambda(List(y_var),IMPSIndividual())
+        val resolve : IMPSMathExp = IMPSApply(IMPSLambda(List(e_var),inner), List(sort))
+
+        resolve
+      }
+
+      case IMPSQCIn(e1_u,e2_u) =>
+      {
+        // "lambda(x:uu,a:sets[uu], #(a(x)))"
+        val e1    : IMPSMathExp = removeQCs(e1_u,addCs)
+        val e2    : IMPSMathExp = removeQCs(e2_u,addCs)
+
+        val x_var = (freshVar("x",List(e1,e2)          ::: addCs), IMPSAtomSort("uu"))
+        val a_var = (freshVar("a",List(e1,e2,x_var._1) ::: addCs), IMPSSetSort(IMPSAtomSort("uu")))
+
+        val target  : IMPSMathExp = IMPSIsDefined(IMPSApply(a_var._1,List(x_var._1)))
+        val resolve : IMPSMathExp = IMPSApply(IMPSLambda(List(x_var,a_var),target),List(e1,e2))
+
+        resolve
+      }
+
+      case IMPSQCSubsetEQ(e1_u, e2_u) =>
+      {
+        // "lambda(a,b:sets[uu], forall(x:uu, (x in a) implies (x in b)))"
+        val e1    : IMPSMathExp = removeQCs(e1_u,addCs)
+        val e2    : IMPSMathExp = removeQCs(e2_u,addCs)
+
+        val a_var = (freshVar("a",List(e1,e2) ::: addCs), IMPSSetSort(IMPSAtomSort("uu")))
+        val b_var = (freshVar("b",List(e1,e2) ::: addCs), IMPSSetSort(IMPSAtomSort("uu")))
+        val x_var = (freshVar("x",List(e1,e2) ::: addCs), IMPSAtomSort("uu"))
+
+        val addConstraints : List[IMPSMathExp]
+            = List(e1,e2,a_var._1,b_var._1,x_var._1) ::: addCs
+
+        val in1   : IMPSMathExp = removeQCs(IMPSQCIn(x_var._1,a_var._1), addConstraints)
+        val in2   : IMPSMathExp = removeQCs(IMPSQCIn(x_var._1,b_var._1), addConstraints)
+
+        val forall = IMPSForAll(List(x_var), IMPSImplication(in1,in2))
+        val lambda = IMPSLambda(List(a_var,b_var),forall)
+
+        IMPSApply(lambda,List(e1,e2))
+      }
+
+      case IMPSQCSubset(e1_u, e2_u) =>
+      {
+        // Not used?
+        // "lambda(a,b:sets[uu], (a subseteq b) and not(a = b))"
+        val e1    : IMPSMathExp = removeQCs(e1_u,addCs)
+        val e2    : IMPSMathExp = removeQCs(e2_u,addCs)
+
+        val a_var = (freshVar("a",List(e1,e2) ::: addCs), IMPSSetSort(IMPSAtomSort("uu")))
+        val b_var = (freshVar("b",List(e1,e2) ::: addCs), IMPSSetSort(IMPSAtomSort("uu")))
+
+        val addConstraints : List[IMPSMathExp]
+        = List(e1,e2,a_var._1,b_var._1) ::: addCs
+
+        val subs : IMPSMathExp = removeQCs(IMPSQCSubsetEQ(a_var._1,b_var._1), addConstraints)
+        val eq   : IMPSMathExp = removeQCs(IMPSEquals(a_var._1,b_var._1)    , addConstraints)
+        val neg  : IMPSMathExp = removeQCs(IMPSNegation(eq)                 , addConstraints)
+
+        val lambda = IMPSLambda(List(a_var,b_var), IMPSConjunction(List(subs,neg)))
+        IMPSApply(lambda,List(e1,e2))
+      }
+    }
   }
 }
 
