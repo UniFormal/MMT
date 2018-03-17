@@ -119,8 +119,7 @@ package object impsArgumentParsers
     val lsp = sp.parseAll(sp.parseSEXP,thesexp)
     assert(lsp.successful)
 
-    var mpc : MathParsingContext = new MathParsingContext
-    formula = Some(impsMathParser.makeSEXPFormula(lsp.get, mpc))
+    formula = Some(impsMathParser.makeSEXPFormula(lsp.get))
     println("     > Formula generation successful: " + formula.get.toString)
 
     val usgs : Option[List[Usage]] = if (usgs_prime.isEmpty) { None } else { Some(usgs_prime) }

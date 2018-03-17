@@ -67,8 +67,7 @@ package object impsDefFormParsers
       val lsp = sp.parseAll(sp.parseSEXP,thesexp)
       assert(lsp.successful)
 
-      var mpc : MathParsingContext = new MathParsingContext
-      qss = Some(impsMathParser.makeSEXPFormula(lsp.get, mpc))
+      qss = Some(impsMathParser.makeSEXPFormula(lsp.get))
       println("     > Formula generation successful: " + qss.get.toString)
 
       /* check for required arguments */
@@ -132,8 +131,7 @@ package object impsDefFormParsers
       val lsp = sp.parseAll(sp.parseSEXP,thesexp)
       assert(lsp.successful)
 
-      var mpc : MathParsingContext = new MathParsingContext
-      defexp = Some(impsMathParser.makeSEXPFormula(lsp.get, mpc))
+      defexp = Some(impsMathParser.makeSEXPFormula(lsp.get))
       println("     > Formula generation successful: " + defexp.get.toString)
 
       /* check for required arguments */
@@ -463,8 +461,7 @@ package object impsDefFormParsers
     val lsp = sp.parseAll(sp.parseSEXP,thesexp)
     assert(lsp.successful)
 
-    var mpc : MathParsingContext = new MathParsingContext
-    formula = Some(impsMathParser.makeSEXPFormula(lsp.get, mpc))
+    formula = Some(impsMathParser.makeSEXPFormula(lsp.get))
     println("     > Formula generation successful: " + formula.get.toString)
 
     assert (!(name.isEmpty || formula.isEmpty || theory.isEmpty))

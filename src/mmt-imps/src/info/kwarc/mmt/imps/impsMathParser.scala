@@ -6,7 +6,7 @@ import scala.util.Random
 
 package object impsMathParser
 {
-  def makeSEXPFormula(sexp : SEXP, mpc : MathParsingContext) : IMPSMathExp =
+  def makeSEXPFormula(sexp : SEXP) : IMPSMathExp =
   {
     sexp match {
       case s@SEXPAtom(name)   => IMPSVar(name)    /* Parse all "only strings" as Vars for now,
@@ -18,29 +18,29 @@ package object impsMathParser
 
         case SEXPAtom("truth")              => IMPSTruth()
         case SEXPAtom("falsehood")          => IMPSFalsehood()
-        case SEXPAtom("not")                => makeNot(s, mpc)
-        case SEXPAtom("and")                => makeConjunction(s, mpc)
-        case SEXPAtom("or")                 => makeDisjunction(s, mpc)
-        case SEXPAtom("implies")            => makeImplication(s, mpc)
-        case SEXPAtom("iff")                => makeIff(s, mpc)
-        case SEXPAtom("if-form")            => makeIfform(s,mpc)
-        case SEXPAtom("forall")             => makeForall(s, mpc)
-        case SEXPAtom("forsome")            => makeForSome(s, mpc)
-        case SEXPAtom("=")                  => makeEquals(s, mpc)
-        case SEXPAtom("apply-operator")     => makeApplication(s, mpc)
-        case SEXPAtom("lambda")             => makeLambda(s, mpc)
-        case SEXPAtom("iota")               => makeIota(s, mpc)
+        case SEXPAtom("not")                => makeNot(s)
+        case SEXPAtom("and")                => makeConjunction(s)
+        case SEXPAtom("or")                 => makeDisjunction(s)
+        case SEXPAtom("implies")            => makeImplication(s)
+        case SEXPAtom("iff")                => makeIff(s)
+        case SEXPAtom("if-form")            => makeIfform(s)
+        case SEXPAtom("forall")             => makeForall(s)
+        case SEXPAtom("forsome")            => makeForSome(s)
+        case SEXPAtom("=")                  => makeEquals(s)
+        case SEXPAtom("apply-operator")     => makeApplication(s)
+        case SEXPAtom("lambda")             => makeLambda(s)
+        case SEXPAtom("iota")               => makeIota(s)
         case SEXPAtom("iota-p")             => ??? // probably defunct
-        case SEXPAtom("if")                 => makeIf(s, mpc)
-        case SEXPAtom("is-defined")         => makeIsDefined(s, mpc)
-        case SEXPAtom("is-defined-in-sort") => makeIsDefinedInSort(s, mpc)
-        case SEXPAtom("undefined")          => makeUndefined(s, mpc)
+        case SEXPAtom("if")                 => makeIf(s)
+        case SEXPAtom("is-defined")         => makeIsDefined(s)
+        case SEXPAtom("is-defined-in-sort") => makeIsDefinedInSort(s)
+        case SEXPAtom("undefined")          => makeUndefined(s)
 
         /* IMPS-universal quasi-constructors */
 
-        case SEXPAtom("total?")             => makeTotal(s, mpc)
-        case SEXPAtom("nonvacuous?")        => makeNonvacuous(s, mpc)
-        case SEXPAtom("==")                 => makeQuasiEquals(s, mpc)
+        case SEXPAtom("total?")             => makeTotal(s)
+        case SEXPAtom("nonvacuous?")        => makeNonvacuous(s)
+        case SEXPAtom("==")                 => makeQuasiEquals(s)
 
         /* User-defined quasi-constructors */
         /* These needed to be hand-translated */
@@ -48,7 +48,7 @@ package object impsMathParser
         case SEXPAtom("predicate-to-indicator") =>
         {
           assert(s.args.length == 2)
-          val pred : IMPSMathExp = makeSEXPFormula(s.args(1),mpc)
+          val pred : IMPSMathExp = makeSEXPFormula(s.args(1))
 
           IMPSQCPred2Indicator(pred)
         }
@@ -56,7 +56,7 @@ package object impsMathParser
         case SEXPAtom("sort-to-indicator") =>
         {
           assert(s.args.length == 2)
-          val srt : IMPSMathExp = makeSEXPFormula(s.args(1),mpc)
+          val srt : IMPSMathExp = makeSEXPFormula(s.args(1))
           assert(srt.isInstanceOf[IMPSUndefined])
 
           IMPSQCSort2Indicator(srt)
@@ -65,8 +65,8 @@ package object impsMathParser
         case SEXPAtom("i-in") =>
         {
           assert(s.args.length == 3)
-          val v1 : IMPSMathExp = makeSEXPFormula(s.args(1),mpc)
-          val v2 : IMPSMathExp = makeSEXPFormula(s.args(2),mpc)
+          val v1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val v2 : IMPSMathExp = makeSEXPFormula(s.args(2))
 
           IMPSQCIn(v1,v2)
         }
@@ -74,8 +74,8 @@ package object impsMathParser
         case SEXPAtom("i-subseteq") =>
         {
           assert(s.args.length == 3)
-          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1),mpc)
-          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2),mpc)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
 
           IMPSQCSubsetEQ(e1,e2)
         }
@@ -108,104 +108,95 @@ package object impsMathParser
 
         case SEXPAtom(str) =>
         {
-          val qc : Option[(String, IMPSMathExp)] = mpc.quasiCs.find(q => q._1 == str)
-
-          if (qc.isDefined) { return makeQC(s, qc.get, mpc) }
-          else
-            { throw new IMPSDependencyException("Error: Unknown quasi-constructor(?): " + str) }
+          throw new IMPSDependencyException("Error: Unknown quasi-constructor(?): " + str)
         }
       }
     }
   }
 
-  def makeQC(sexp : SEXPNested, qc : (String, IMPSMathExp), mpc : MathParsingContext) : IMPSMathExp =
-  {
-    ???
-  }
 
-
-  def makeNot(sexp : SEXPNested, mpc : MathParsingContext) : IMPSNegation =
+  def makeNot(sexp : SEXPNested) : IMPSNegation =
   {
     assert(sexp.args.head == SEXPAtom("not"))
     assert(sexp.args.length == 2)
 
-    val recur : IMPSMathExp = makeSEXPFormula(sexp.args(1), mpc)
+    val recur : IMPSMathExp = makeSEXPFormula(sexp.args(1))
     return IMPSNegation(recur)
   }
 
-  def makeConjunction(sexp : SEXPNested, mpc : MathParsingContext) : IMPSConjunction =
+  def makeConjunction(sexp : SEXPNested) : IMPSConjunction =
   {
     assert(sexp.args.head == SEXPAtom("and"))
     assert(sexp.args.length >= 3)
 
-    val recurs : List[IMPSMathExp] = sexp.args.tail.map(r => makeSEXPFormula(r, mpc))
+    val recurs : List[IMPSMathExp] = sexp.args.tail.map(r => makeSEXPFormula(r))
 
     return IMPSConjunction(recurs)
   }
 
-  def makeDisjunction(sexp : SEXPNested, mpc : MathParsingContext) : IMPSDisjunction =
+  def makeDisjunction(sexp : SEXPNested) : IMPSDisjunction =
   {
     assert(sexp.args.head == SEXPAtom("or"))
     assert(sexp.args.length >= 3)
 
-    val recurs : List[IMPSMathExp] = sexp.args.tail.map(r => makeSEXPFormula(r, mpc))
+    val recurs : List[IMPSMathExp] = sexp.args.tail.map(r => makeSEXPFormula(r))
 
     return IMPSDisjunction(recurs)
   }
 
-  def makeImplication(sexp : SEXPNested, mpc : MathParsingContext) : IMPSImplication =
+  def makeImplication(sexp : SEXPNested) : IMPSImplication =
   {
     assert(sexp.args.head == SEXPAtom("implies"))
     assert(sexp.args.length == 3)
 
-    val recur1 : IMPSMathExp = makeSEXPFormula(sexp.args(1), mpc)
-    val recur2 : IMPSMathExp = makeSEXPFormula(sexp.args(2), mpc)
+    val recur1 : IMPSMathExp = makeSEXPFormula(sexp.args(1))
+    val recur2 : IMPSMathExp = makeSEXPFormula(sexp.args(2))
 
     return IMPSImplication(recur1, recur2)
   }
 
-  def makeEquals(sexp : SEXPNested, mpc : MathParsingContext) : IMPSEquals =
+  def makeEquals(sexp : SEXPNested) : IMPSEquals =
   {
     assert(sexp.args.head == SEXPAtom("="))
     assert(sexp.args.length == 3)
 
-    val recur1 : IMPSMathExp = makeSEXPFormula(sexp.args(1), mpc)
-    val recur2 : IMPSMathExp = makeSEXPFormula(sexp.args(2), mpc)
+    val recur1 : IMPSMathExp = makeSEXPFormula(sexp.args(1))
+    val recur2 : IMPSMathExp = makeSEXPFormula(sexp.args(2))
 
     return IMPSEquals(recur1, recur2)
   }
 
-  def makeIff(sexp : SEXPNested, mpc : MathParsingContext) : IMPSIff =
+  def makeIff(sexp : SEXPNested) : IMPSIff =
   {
     assert(sexp.args.head == SEXPAtom("iff"))
     assert(sexp.args.length == 3)
 
-    val recur1 : IMPSMathExp = makeSEXPFormula(sexp.args(1), mpc)
-    val recur2 : IMPSMathExp = makeSEXPFormula(sexp.args(2), mpc)
+    val recur1 : IMPSMathExp = makeSEXPFormula(sexp.args(1))
+    val recur2 : IMPSMathExp = makeSEXPFormula(sexp.args(2))
 
     return IMPSIff(recur1, recur2)
   }
 
-  def makeIfform(sexp : SEXPNested, mpc : MathParsingContext) : IMPSIfForm =
+  def makeIfform(sexp : SEXPNested) : IMPSIfForm =
   {
     assert(sexp.args.head == SEXPAtom("if-form"))
     assert(sexp.args.length == 4)
 
-    val recur1 : IMPSMathExp = makeSEXPFormula(sexp.args(1), mpc)
-    val recur2 : IMPSMathExp = makeSEXPFormula(sexp.args(2), mpc)
-    val recur3 : IMPSMathExp = makeSEXPFormula(sexp.args(3), mpc)
+    val recur1 : IMPSMathExp = makeSEXPFormula(sexp.args(1))
+    val recur2 : IMPSMathExp = makeSEXPFormula(sexp.args(2))
+    val recur3 : IMPSMathExp = makeSEXPFormula(sexp.args(3))
 
     return IMPSIfForm(recur1,recur2,recur3)
   }
 
-  def makeIf(sexp : SEXPNested, mpc : MathParsingContext) : IMPSIf =
+  def makeIf(sexp : SEXPNested) : IMPSIf =
   {
     assert(sexp.args.head == SEXPAtom("if"))
     assert(sexp.args.length == 4)
 
-    val recur1 : IMPSMathExp = makeSEXPFormula(sexp.args(1), mpc)
-    val recur2 : IMPSMathExp = makeSEXPFormula(sexp.args(2), mpc)
-    val recur3 : IMPSMathExp = makeSEXPFormula(sexp.args(3), mpc)
+    val recur1 : IMPSMathExp = makeSEXPFormula(sexp.args(1))
+    val recur2 : IMPSMathExp = makeSEXPFormula(sexp.args(2))
+    val recur3 : IMPSMathExp = makeSEXPFormula(sexp.args(3))
 
     return IMPSIf(recur1, recur2, recur3)
   }
@@ -244,7 +235,7 @@ package object impsMathParser
     })
   }
 
-  def makeForall(sexp : SEXPNested, mpc : MathParsingContext) : IMPSForAll =
+  def makeForall(sexp : SEXPNested) : IMPSForAll =
   {
     assert(sexp.args.head == SEXPAtom("forall"))
     assert(sexp.args.length == 3)
@@ -255,12 +246,12 @@ package object impsMathParser
       case s@SEXPNested(_) => makeSortDecls(s)
     }
 
-    val target : IMPSMathExp = makeSEXPFormula(sexp.args.last, mpc)
+    val target : IMPSMathExp = makeSEXPFormula(sexp.args.last)
 
     return IMPSForAll(sorts,target)
   }
 
-  def makeForSome(sexp : SEXPNested, mpc : MathParsingContext) : IMPSForSome =
+  def makeForSome(sexp : SEXPNested) : IMPSForSome =
   {
     assert(sexp.args.head == SEXPAtom("forsome"))
     assert(sexp.args.length == 3)
@@ -271,12 +262,12 @@ package object impsMathParser
       case s@SEXPNested(_) => makeSortDecls(s)
     }
 
-    val target : IMPSMathExp = makeSEXPFormula(sexp.args.last, mpc)
+    val target : IMPSMathExp = makeSEXPFormula(sexp.args.last)
 
     return IMPSForSome(sorts,target)
   }
 
-  def makeLambda(sexp : SEXPNested, mpc : MathParsingContext) : IMPSLambda =
+  def makeLambda(sexp : SEXPNested) : IMPSLambda =
   {
     assert(sexp.args.head == SEXPAtom("lambda"))
     assert(sexp.args.length == 3)
@@ -287,29 +278,29 @@ package object impsMathParser
       case s@SEXPNested(_) => makeSortDecls(s)
     }
 
-    val target : IMPSMathExp = makeSEXPFormula(sexp.args.last, mpc)
+    val target : IMPSMathExp = makeSEXPFormula(sexp.args.last)
 
     return IMPSLambda(sorts,target)
   }
 
-  def makeApplication(sexp : SEXPNested, mpc : MathParsingContext) : IMPSApply =
+  def makeApplication(sexp : SEXPNested) : IMPSApply =
   {
     assert(sexp.args.head == SEXPAtom("apply-operator"))
     assert(sexp.args.length >= 3)
 
-    val recurs : List[IMPSMathExp] = sexp.args.tail.map(r => makeSEXPFormula(r, mpc))
+    val recurs : List[IMPSMathExp] = sexp.args.tail.map(r => makeSEXPFormula(r))
 
     return  IMPSApply(recurs.head, recurs.tail)
   }
 
-  def makeIota(sexp : SEXPNested, mpc : MathParsingContext) : IMPSIota =
+  def makeIota(sexp : SEXPNested) : IMPSIota =
   {
     assert(sexp.args.head == SEXPAtom("iota"))
     assert(sexp.args.length == 3)
 
     assert(sexp.args(1).isInstanceOf[SEXPNested])
     val vars  : List[(IMPSVar, IMPSSort)] = sexp.args(1) match { case t@SEXPNested(_) => makeSortDecls(t).map(p => (p._1,p._2)) }
-    val recur : IMPSMathExp = makeSEXPFormula(sexp.args(2), mpc)
+    val recur : IMPSMathExp = makeSEXPFormula(sexp.args(2))
 
     assert(vars.length == 1)
 
@@ -317,27 +308,27 @@ package object impsMathParser
   }
 
 
-  def makeIsDefined(sexp : SEXPNested, mpc : MathParsingContext) : IMPSIsDefined =
+  def makeIsDefined(sexp : SEXPNested) : IMPSIsDefined =
   {
     assert(sexp.args.head == SEXPAtom("is-defined"))
     assert(sexp.args.length == 2)
 
-    val recur : IMPSMathExp = makeSEXPFormula(sexp.args(1), mpc)
+    val recur : IMPSMathExp = makeSEXPFormula(sexp.args(1))
     return IMPSIsDefined(recur)
   }
 
-  def makeIsDefinedInSort(sexp : SEXPNested, mpc : MathParsingContext) : IMPSIsDefinedIn =
+  def makeIsDefinedInSort(sexp : SEXPNested) : IMPSIsDefinedIn =
   {
     assert(sexp.args.head == SEXPAtom("is-defined-in-sort"))
     assert(sexp.args.length == 3)
 
-    val recur : IMPSMathExp = makeSEXPFormula(sexp.args(1), mpc)
+    val recur : IMPSMathExp = makeSEXPFormula(sexp.args(1))
     val sort  : IMPSSort    = makeSort(sexp.args(2))
     return IMPSIsDefinedIn(recur,sort)
   }
 
 
-  def makeUndefined(sexp : SEXPNested, mpc : MathParsingContext) : IMPSUndefined =
+  def makeUndefined(sexp : SEXPNested) : IMPSUndefined =
   {
     assert(sexp.args.head == SEXPAtom("undefined"))
     assert(sexp.args.length == 2)
@@ -348,36 +339,36 @@ package object impsMathParser
 
   /* Quasi-Constructprs */
 
-  def makeNonvacuous(sexp : SEXPNested, mpc : MathParsingContext) : IMPSNonVacuous =
+  def makeNonvacuous(sexp : SEXPNested) : IMPSNonVacuous =
   {
     assert(sexp.args.head == SEXPAtom("nonvacuous?"))
     assert(sexp.args.length == 2)
 
-    val recur : IMPSMathExp = makeSEXPFormula(sexp.args(1), mpc)
+    val recur : IMPSMathExp = makeSEXPFormula(sexp.args(1))
     return IMPSNonVacuous(recur)
   }
 
-  def makeTotal(sexp : SEXPNested, mpc : MathParsingContext) : IMPSTotal =
+  def makeTotal(sexp : SEXPNested) : IMPSTotal =
   {
     assert(sexp.args.head == SEXPAtom("total?"))
     assert(sexp.args.length >= 3)
 
-    val f     : IMPSMathExp    = makeSEXPFormula(sexp.args(1), mpc)
+    val f     : IMPSMathExp    = makeSEXPFormula(sexp.args(1))
     val betas : List[IMPSSort] = sexp.args.tail.tail.map(b => b match {
       case t@SEXPAtom(_)   => makeSort(t)
-      case t@SEXPNested(_) => if (t.args.head == SEXPAtom("undefined")) { makeUndefined(t, mpc).s } else { makeSort(t) }
+      case t@SEXPNested(_) => if (t.args.head == SEXPAtom("undefined")) { makeUndefined(t).s } else { makeSort(t) }
     })
 
     return IMPSTotal(f, betas)
   }
 
-  def makeQuasiEquals(sexp : SEXPNested, mpc : MathParsingContext) : IMPSQuasiEquals =
+  def makeQuasiEquals(sexp : SEXPNested) : IMPSQuasiEquals =
   {
     assert(sexp.args.head == SEXPAtom("=="))
     assert(sexp.args.length == 3)
 
-    val p1 : IMPSMathExp = makeSEXPFormula(sexp.args(1),mpc)
-    val p2 : IMPSMathExp = makeSEXPFormula(sexp.args(2),mpc)
+    val p1 : IMPSMathExp = makeSEXPFormula(sexp.args(1))
+    val p2 : IMPSMathExp = makeSEXPFormula(sexp.args(2))
 
     return IMPSQuasiEquals(p1,p2)
 
@@ -457,9 +448,4 @@ package object impsMathParser
       "(" ~> rep1(parseSort) <~ ")" ^^ {case (sorts) => IMPSNaryFunSort(sorts)}
     }
   }
-}
-
-class MathParsingContext
-{
-  var quasiCs : List[(String, IMPSMathExp)] = Nil
 }
