@@ -86,24 +86,20 @@ package object impsMathParser
           ???
         }
 
-        case SEXPAtom("i-empty-indicator") => {
-          // "lambda(e:uu, lambda(x:uu,?unit%sort))"
-          val e_var = (IMPSVar("e"), IMPSAtomSort("uu"))
-          val x_var = (IMPSVar("x"), IMPSAtomSort("uu"))
-          val inner = IMPSLambda(List(x_var), IMPSUndefined(IMPSAtomSort("unitsort")))
-          IMPSLambda(List(e_var), inner)
+        case SEXPAtom("i-empty-indicator") =>
+        {
+          assert(s.args.length == 2)
+          val srt : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCEmptyIndicator(srt)
         }
 
-        case SEXPAtom("i-nonempty-indicator?") => {
-          // "lambda(a:sets[uu], forsome(x:uu, x in a))"
-          val a_var = (IMPSVar("a"), IMPSSetSort(IMPSAtomSort("uu")))
-          val x_var = (IMPSVar("x"), IMPSAtomSort("uu"))
+        case SEXPAtom("i-nonempty-indicator?") =>
+        {
+          assert(s.args.length == 2)
+          val srt : IMPSMathExp = makeSEXPFormula(s.args(1))
 
-          // "lambda(x:uu,a:sets[uu], #(a(x)))"
-          val ia_var = (IMPSVar("a"), IMPSSetSort(IMPSAtomSort("uu")))
-          val ix_var = (IMPSVar("x"), IMPSAtomSort("uu"))
-
-          ???
+          IMPSQCNonemptyIndicator(srt)
         }
 
         case SEXPAtom(str) =>
@@ -359,7 +355,9 @@ package object impsMathParser
       case t@SEXPNested(_) => if (t.args.head == SEXPAtom("undefined")) { makeUndefined(t).s } else { makeSort(t) }
     })
 
-    return IMPSTotal(f, betas)
+    assert(betas.length == 1)
+
+    return IMPSTotal(f, betas.head)
   }
 
   def makeQuasiEquals(sexp : SEXPNested) : IMPSQuasiEquals =
@@ -415,9 +413,10 @@ package object impsMathParser
       list.distinct
     }
 
-    val alphabet : List[String] = "abcefghijkmopqrstuvwxyz".flatMap(c => List(c.toString, c.toString+c.toString)).toList
-    val used     : List[String] = if (input.nonEmpty) { input.flatMap(m => boundVars(m)) } else { Nil }
-    val valid    : List[String] = alphabet.filter(s => !used.contains(s))
+    val alphabet  : List[String] = "abcefghijkmopqrstuvwxyz".flatMap(c => List(c.toString, c.toString+c.toString)).toList
+    val canidates : List[String] = List(preferred) ::: alphabet
+    val used      : List[String] = if (input.nonEmpty) { input.flatMap(m => boundVars(m)) } else { Nil }
+    val valid     : List[String] = canidates.filter(s => !used.contains(s))
     assert(valid.nonEmpty)
 
     if (valid.contains(preferred))

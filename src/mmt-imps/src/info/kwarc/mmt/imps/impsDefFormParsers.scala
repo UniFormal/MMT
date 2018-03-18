@@ -1,5 +1,6 @@
 package info.kwarc.mmt.imps
 
+import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.utils.JSONObject
 import info.kwarc.mmt.imps.impsMathParser.IMPSMathParser
 
@@ -98,6 +99,8 @@ package object impsDefFormParsers
       /* Parse positional arguments */
       e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
 
+      var srtSR : Option[SourceRef] = None
+
       /* Parse keyword arguments, these can come in any order */
       var i : Int = 3
       while (cs - i > 0)
@@ -105,10 +108,10 @@ package object impsDefFormParsers
         e.children(i) match {
           case Exp(ds,src) => ds.head match
           {
-            case Exp(List(Str("theory")),_) => thy    = impsArgumentParsers.parseArgumentTheory(Exp(ds,src))
-            case Exp(List(Str("usages")),_) => usages = impsArgumentParsers.parseArgumentUsages(Exp(ds,src))
-            case Exp(List(Str("sort")),_)   => sort   = impsArgumentParsers.parseSort(Exp(ds,src))
-            case _                          => ()
+            case Exp(List(Str("theory")),_)  => thy    = impsArgumentParsers.parseArgumentTheory(Exp(ds,src))
+            case Exp(List(Str("usages")),_)  => usages = impsArgumentParsers.parseArgumentUsages(Exp(ds,src))
+            case Exp(List(Str("sort")),ssrc) => srtSR  = ssrc
+            case _                           => ()
           }
           case _ => ()
         }
@@ -134,9 +137,17 @@ package object impsDefFormParsers
       defexp = Some(impsMathParser.makeSEXPFormula(lsp.get))
       println("     > Formula generation successful: " + defexp.get.toString)
 
+      val thesort : String = theconst.get.getAsString("sort")
+      assert(thesort != "null")
+
+      val mp     = new IMPSMathParser()
+      val parsed = mp.parseAll(mp.parseSort, thesort)
+      assert(parsed.successful)
+      sort = Some(Sort(parsed.get,srtSR))
+
       /* check for required arguments */
       if (name.isEmpty || defexp.isEmpty || thy.isEmpty) None
-      else { println(" >> Success while trying to parse constant " + e.children(1)) ; Some(Constant(name.get, defexp.get, thy.get, sort, usages, e.src)) }
+      else { println(" >> Success while trying to parse constant " + name.get) ; Some(Constant(name.get, defexp.get, thy.get, sort, usages, e.src)) }
     } else { println(" >> Failure while trying to parse constant " + e.children(1)) ; None }
   }
 
@@ -317,23 +328,23 @@ package object impsDefFormParsers
           }
           case Exp(List(Str("fixed-theories")),_) => {
             ???
-            assert(assumptions.isDefined)
+            assert(fixed.isDefined)
           }
           case Exp(List(Str("sort-pairs")),_) => {
             ???
-            assert(assumptions.isDefined)
+            assert(sortpairs.isDefined)
           }
           case Exp(List(Str("constant-pairs")),_) => {
             ???
-            assert(assumptions.isDefined)
+            assert(constpairs.isDefined)
           }
           case Exp(List(Str("core-translation")),_) => {
             ???
-            assert(assumptions.isDefined)
+            assert(coretrans.isDefined)
           }
           case Exp(List(Str("theory-interpretation-check")),_) => {
             ???
-            assert(assumptions.isDefined)
+            assert(theintcheck.isDefined)
           }
           case (Str("force"))                  => force      = true
           case (Str("force-under-quick-load")) => forceQL    = true
@@ -412,11 +423,12 @@ package object impsDefFormParsers
     assert(json_theory.get.getAsString("type") == "imps-theory")
     val theorems : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"theorems")
     assert(theorems.nonEmpty)
+    val axioms : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"axioms")
     var s : String = ""
     val thetheorem : Option[JSONObject] = if (name.get != "()")
     {
       println(" > looking for theorem " + name.get + " in theory " + theory.get.thy + " ...")
-      theorems.find(j => j.getAsString("name") == name.get.toLowerCase)
+      (axioms ::: theorems).find(j => j.getAsString("name") == name.get.toLowerCase)
     } else {
       println(" > looking for nameless theorem () in theory " + theory.get.thy + " ...")
       e.children(2) match {
@@ -557,6 +569,7 @@ package object impsDefFormParsers
   }
 
   /* Welcome to the most shameful part of the codebase...
+   * Some strings are subtly different from JSON to T, so we correct by hand.
    */
   def handpick(str: String) : String =
   {
@@ -567,6 +580,13 @@ package object impsDefFormParsers
       case "total_q(+_kk,[kk,kk,kk])" => "total_q{+_kk,[kk,kk,kk]}"
       case "total_q(*_kk,[kk,kk,kk])" => "total_q{*_kk,[kk,kk,kk]}"
       case "total_q(-_kk,[kk,kk])" => "total_q{-_kk,[kk,kk]}"
+      case "forall(x:rr,x+(-x)=0)" => "forall(x:rr,x+-x=0)"
+      case "forall(y,x:rr,x-y=x+(-y))" => "forall(y,x:rr,x-y=x+-y)"
+      case "forall(n,m:zz,x:rr,((#(x^m,rr)and#(x^n,rr))iff#((x^m)^n,rr)))" => "forall(n,m:zz,x:rr,(#(x^m,rr)and#(x^n,rr))iff#((x^m)^n,rr))"
+      case "total_q(+,[rr,rr,rr])" => "total_q{+,[rr,rr,rr]}"
+      case "total_q(*,[rr,rr,rr])" => "total_q{*,[rr,rr,rr]}"
+      case "total_q(-,[rr,rr])" => "total_q{-,[rr,rr]}"
+      case "total_q(sub,[rr,rr,rr])" => "total_q{sub,[rr,rr,rr]}"
       case _ => str
     }
 

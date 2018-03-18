@@ -28,15 +28,15 @@ package object impsArgumentParsers
       case Exp(List(Str(h)),_) => {
         if (h.startsWith("\"")) {
           frml = h
-          foobarList = e.children.tail
-          index = 1
+          foobarList = e.children
+          index = 0
         } else {
           name = Some(h)
-          index = 2
+          index = 1
           e.children(1) match {
             case Exp(List(Str(f)),_) => {
               frml = f
-              foobarList = e.children.tail.tail
+              foobarList = e.children.tail
             }
             case _ => ???
           }
@@ -61,7 +61,8 @@ package object impsArgumentParsers
       }
     }
 
-    val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thy.toLowerCase)
+    val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name").toLowerCase == thy.toLowerCase)
+    println(" > Looking for " + thy.toLowerCase)
     assert(json_theory.isDefined)
     assert(json_theory.get.getAsString("type") == "imps-theory")
     val axioms : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"axioms")
@@ -590,14 +591,6 @@ package object impsArgumentParsers
                 val mp     = new IMPSMathParser()
                 val parsed = mp.parseAll(mp.parseSort, str)
 
-                val foo = "sets[ind_1]"
-
-                if (parsed.isEmpty) {
-                  println(" > ERROR while parsing sort " + str)
-                  assert(mp.parseAll(mp.parseSort,foo).successful)
-                  println("ind_1 successful, though")
-                  if (str == foo) { println("same strings") }
-                }
                 assert(parsed.successful)
 
                 lst = lst :+ (name, parsed.get)

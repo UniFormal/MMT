@@ -1,5 +1,7 @@
 package info.kwarc.mmt.imps
 
+import java.awt.AlphaComposite
+
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
@@ -153,17 +155,17 @@ object IMPSTheory
     }
   }
 
-  object Iota extends Sym("iota")
+  object Iota extends Sym("description_i")
   {
-    def apply(v1 : LocalName, s1 : Term, p : Term) : Term = {
-      ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(v1, s1, p))
+    def apply(a : Term, alpha : Term, iota : Term) : Term = {
+      ApplySpine(this.term,a,alpha,iota)
     }
   }
 
-  object IotaP extends Sym("iota_p")
+  object IotaP extends Sym("description_p")
   {
-    def apply(v1 : LocalName, s1 : Term, p : Term) : Term = {
-      ApplySpine(this.term,info.kwarc.mmt.lf.Lambda(v1, s1, p))
+    def apply(alpha : Term, iota_p : Term) : Term = {
+      ApplySpine(this.term,alpha,iota_p)
     }
   }
 
@@ -188,24 +190,39 @@ object IMPSTheory
     }
   }
 
+  /* Quasi-Constructors in LUTINS */
+
+  // Not used.
+  object Falselike extends Sym("falselike")
+  {
+    def apply : Term = ???
+  }
+
   object Total extends Sym("total")
   {
-    def apply(f : Term, bs : List[Term]) : Term = {
-      ApplySpine(this.term, f) // TODO: FIXME
+    def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term) : Term = {
+      ApplySpine(this.term, a, b, alpha, beta, f)
     }
   }
 
   object Nonvacuous extends Sym("nonvacuous")
   {
-    def apply(p : Term) : Term = {
-      Apply(this.term, p) // TODO: FIXME
+    def apply(a : Term, alpha : Term, p : Term) : Term = {
+      ApplySpine(this.term, a, alpha, p)
     }
   }
 
   object Quasiequals extends Sym("quasiequals")
   {
-    def apply(p1 : Term , p2 : Term) : Term = {
-      ApplySpine(this.term, p1, p2) // TODO: FIXME
+    def apply(a : Term, alpha : Term, beta : Term, p1 : Term , p2 : Term) : Term = {
+      ApplySpine(this.term, a, alpha, beta, p1, p2)
+    }
+  }
+
+  object Domain extends Sym("domain")
+  {
+    def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term) : Term = {
+      ApplySpine(this.term, a, b, alpha, beta, f)
     }
   }
 

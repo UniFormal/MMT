@@ -862,9 +862,9 @@ case class IMPSUndefined(s : IMPSSort) extends IMPSMathExp
 
 abstract class IMPSQuasiConstructor extends IMPSMathExp
 
-case class IMPSTotal(f : IMPSMathExp, betas : List[IMPSSort]) extends IMPSQuasiConstructor
+case class IMPSTotal(f : IMPSMathExp, beta : IMPSSort) extends IMPSQuasiConstructor
 {
-  override def toString: String = "total?(" + f.toString + ", " + betas.toString() + ")"
+  override def toString: String = "total?(" + f.toString + ", " + beta.toString() + ")"
 }
 
 case class IMPSNonVacuous(p : IMPSMathExp) extends IMPSQuasiConstructor
@@ -876,6 +876,14 @@ case class IMPSQuasiEquals(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSQuasi
 {
   override def toString: String = e1.toString + " == " + e2.toString
 }
+
+case class IMPSDomain(f : IMPSMathExp) extends IMPSQuasiConstructor
+{
+  override def toString: String = "domain(" + f.toString + ")"
+}
+
+// Not used.
+case class IMPSFalseLike(b : IMPSSort) extends IMPSQuasiConstructor
 
 /* User-defined Quasi-Constructors */
 
@@ -908,6 +916,16 @@ case class IMPSQCSubsetEQ(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSQuasiC
 case class IMPSQCSubset(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSQuasiConstructor
 {
   override def toString: String = e1.toString + " subset " + e2.toString
+}
+
+case class IMPSQCEmptyIndicator(srt : IMPSMathExp) extends IMPSQuasiConstructor
+{
+  override def toString: String = "empty_indic{" + srt.toString + "}"
+}
+
+case class IMPSQCNonemptyIndicator(srt : IMPSMathExp) extends  IMPSQuasiConstructor
+{
+  override def toString: String = "nonempty_inidc_q{" + srt.toString + "}"
 }
 
 //-----------
