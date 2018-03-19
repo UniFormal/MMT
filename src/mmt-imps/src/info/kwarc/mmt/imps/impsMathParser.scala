@@ -102,9 +102,225 @@ package object impsMathParser
           IMPSQCNonemptyIndicator(srt)
         }
 
+        case SEXPAtom("i-empty-indicator?") =>
+        {
+          assert(s.args.length == 2)
+          val srt : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCEmptyIndicatorQ(srt)
+        }
+
+        case SEXPAtom("i-complement") =>
+        {
+          assert(s.args.length == 2)
+          val m : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCComplement(m)
+        }
+
+        case SEXPAtom("i-union") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCUnion(e1,e2)
+        }
+
+        case SEXPAtom("i-intersection") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCIntersection(e1,e2)
+        }
+
+        case SEXPAtom("i-difference") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCDifference(e1,e2)
+        }
+
+        case SEXPAtom("i-disjoint") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCDisjoint(e1,e2)
+        }
+
+        case SEXPAtom("i-singleton") =>
+        {
+          assert(s.args.length == 2)
+          val m : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCSingleton(m)
+        }
+
+        case SEXPAtom("i-big-union") =>
+        {
+          assert(s.args.length == 2)
+          val m : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCBigUnion(m)
+        }
+
+        case SEXPAtom("i-big-intersection") =>
+        {
+          assert(s.args.length == 2)
+          val m : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCBigIntersection(m)
+        }
+
+        case SEXPAtom("i-partition?") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCPartitionQ(e1,e2)
+        }
+
+        case SEXPAtom("m-domain") =>
+        {
+          assert(s.args.length == 2)
+          val m : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCMDomain(m)
+        }
+
+        case SEXPAtom("m-composition") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCMComposition(e1,e2)
+        }
+
+        case SEXPAtom("m-range") =>
+        {
+          assert(s.args.length == 2)
+          val m : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCMRange(m)
+        }
+
+        case SEXPAtom("m-image") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCMImage(e1,e2)
+        }
+
+        case SEXPAtom("m-inverse-image") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCMInverseImage(e1,e2)
+        }
+
+        case SEXPAtom("m-inverse") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCMInverse(e1)
+        }
+
+        case SEXPAtom("m-id") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCMId(e1)
+        }
+
+        case SEXPAtom("m-restrict") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCMRestrict(e1,e2)
+        }
+
+        case SEXPAtom("m-restrict2") =>
+        {
+          assert(s.args.length == 4)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+          val e3 : IMPSMathExp = makeSEXPFormula(s.args(3))
+
+          IMPSQCMRestrict2(e1,e2,e3)
+        }
+
+        case SEXPAtom("m-surjective?") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCMSurjective(e1)
+        }
+
+        case SEXPAtom("m-injective?") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCMSurjective(e1)
+        }
+
+        case SEXPAtom("m-bijective?") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCMBijective(e1)
+        }
+
+        case SEXPAtom("m-surjective-on?") =>
+        {
+          assert(s.args.length == 4)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+          val e3 : IMPSMathExp = makeSEXPFormula(s.args(3))
+
+          IMPSQCMSurjectiveOn(e1,e2,e3)
+        }
+
+        case SEXPAtom("m-injective-on?") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCMInjectiveOn(e1,e2)
+        }
+
+        case SEXPAtom("m-bijective-on?") =>
+        {
+          assert(s.args.length == 4)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+          val e3 : IMPSMathExp = makeSEXPFormula(s.args(3))
+
+          IMPSQCMBijectiveOn(e1,e2,e3)
+        }
+
         case SEXPAtom(str) =>
         {
-          throw new IMPSDependencyException("Error: Unknown quasi-constructor(?): " + str)
+          throw new IMPSDependencyException("Error: Unknown operators: " + str)
         }
       }
     }
@@ -219,8 +435,6 @@ package object impsMathParser
     {
       val theSort : IMPSSort = makeSort(sexp.args.head)
       assert(sexp.args.tail.forall(a => a.isInstanceOf[SEXPAtom]))
-
-      println(" > TODO: make sortDecl use FreshVar")
 
       return sexp.args.tail.map { case SEXPAtom(n) => (IMPSVar(n), theSort) } // Needs FreshVar here
     }
@@ -382,7 +596,7 @@ package object impsMathParser
       {
         case IMPSVar(v)             => List(v)
         case IMPSIndividual()       => Nil
-        case IMPSMathSymbol(s)      => Nil
+        case (s)      => Nil
         case IMPSTruth()            => Nil
         case IMPSFalsehood()        => Nil
         case IMPSNegation(p)        => boundVars(p)
@@ -406,9 +620,24 @@ package object impsMathParser
         case IMPSNonVacuous(p)      => boundVars(p)
         case IMPSQuasiEquals(p,q)   => boundVars(p) ::: boundVars(q)
 
-        case IMPSQCIn(e1,e2)         => boundVars(e1) ::: boundVars(e2)
-        case IMPSQCSort2Indicator(s) => boundVars(s)
-        case IMPSQCPred2Indicator(p) => boundVars(p)
+        case IMPSQCIn(e1,e2)              => boundVars(e1) ::: boundVars(e2)
+        case IMPSQCSort2Indicator(s)      => boundVars(s)
+        case IMPSQCPred2Indicator(p)      => boundVars(p)
+        case IMPSQCDifference(d1,d2)      => boundVars(d1) ::: boundVars(d2)
+        case IMPSQCSymDifference(sd1,sd2) => boundVars(sd1) ::: boundVars(sd2)
+        case IMPSQCDisjoint(dj1,dj2)      => boundVars(dj1) ::: boundVars(dj2)
+        case IMPSQCNonemptyIndicator(srt) => boundVars(srt)
+        case IMPSQCEmptyIndicator(srt)    => boundVars(srt)
+        case IMPSQCEmptyIndicatorQ(srt)   => boundVars(srt)
+        case IMPSQCPartitionQ(p,s)        => boundVars(p) ::: boundVars(s)
+        case IMPSQCSingleton(f)           => boundVars(f)
+        case IMPSQCBigIntersection(f)     => boundVars(f)
+        case IMPSQCBigUnion(f)            => boundVars(f)
+        case IMPSQCIntersection(i1,i2)    => boundVars(i1) ::: boundVars(i2)
+        case IMPSQCUnion(u1,u2)           => boundVars(u1) ::: boundVars(u2)
+        case IMPSQCSubsetEQ(e1,e2)        => boundVars(e1) ::: boundVars(e2)
+        case IMPSQCSubset(e1,e2)          => boundVars(e1) ::: boundVars(e2)
+        case IMPSQCComplement(c)          => boundVars(c)
       }
       list.distinct
     }
@@ -422,8 +651,7 @@ package object impsMathParser
     if (valid.contains(preferred))
     { return IMPSVar(preferred) }
     else
-    { val random = new Random() ; return IMPSVar(valid(random.nextInt(valid.length))) }
-    /* Doesn't actually need to be random of course, could also be head. */
+    { IMPSVar(valid.head) }
   }
 
   /* PackratParsers because those can be left-recursive */

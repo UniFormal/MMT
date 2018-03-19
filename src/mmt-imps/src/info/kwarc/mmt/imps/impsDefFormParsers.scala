@@ -147,7 +147,7 @@ package object impsDefFormParsers
 
       /* check for required arguments */
       if (name.isEmpty || defexp.isEmpty || thy.isEmpty) None
-      else { println(" >> Success while trying to parse constant " + name.get) ; Some(Constant(name.get, defexp.get, thy.get, sort, usages, e.src)) }
+      else { println(" >> Success while trying to parse constant " + name.get + " : " + sort.get.sort.toString) ; Some(Constant(name.get, defexp.get, thy.get, sort, usages, e.src)) }
     } else { println(" >> Failure while trying to parse constant " + e.children(1)) ; None }
   }
 
@@ -418,6 +418,7 @@ package object impsDefFormParsers
     assert(name.nonEmpty)
     assert(theory.nonEmpty)
 
+    println(" > Looking for theory " + theory.get.thy)
     val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == theory.get.thy.toLowerCase)
     assert(json_theory.isDefined)
     assert(json_theory.get.getAsString("type") == "imps-theory")

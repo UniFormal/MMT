@@ -796,7 +796,6 @@ case class IMPSEquals(t1 : IMPSMathExp, t2 : IMPSMathExp) extends IMPSMathExp
   override def toString: String = t1.toString + "=" + t2.toString
 }
 
-/* TODO: Is this even correct? */
 case class IMPSApply(f : IMPSMathExp, ts : List[IMPSMathExp]) extends IMPSMathExp
 {
   override def toString: String =
@@ -887,12 +886,14 @@ case class IMPSFalseLike(b : IMPSSort) extends IMPSQuasiConstructor
 
 /* User-defined Quasi-Constructors */
 
-case class IMPSQCPred2Indicator(pred : IMPSMathExp) extends IMPSQuasiConstructor
+abstract class IMPSUserDefinedQuasiConstructor extends IMPSQuasiConstructor
+
+case class IMPSQCPred2Indicator(pred : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 {
   override def toString: String = "pred_to_indic(" + pred.toString + ")"
 }
 
-case class IMPSQCSort2Indicator(sort : IMPSMathExp) extends IMPSQuasiConstructor
+case class IMPSQCSort2Indicator(sort : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 {
   override def toString: String = {
     assert(sort.isInstanceOf[IMPSUndefined])
@@ -903,29 +904,159 @@ case class IMPSQCSort2Indicator(sort : IMPSMathExp) extends IMPSQuasiConstructor
   }
 }
 
-case class IMPSQCIn(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSQuasiConstructor
+case class IMPSQCIn(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 {
   override def toString: String = e1.toString + " in " + e2.toString
 }
 
-case class IMPSQCSubsetEQ(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSQuasiConstructor
+case class IMPSQCSubsetEQ(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 {
   override def toString: String = e1.toString + " subseteq " + e2.toString
 }
 
-case class IMPSQCSubset(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSQuasiConstructor
+case class IMPSQCSubset(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 {
   override def toString: String = e1.toString + " subset " + e2.toString
 }
 
-case class IMPSQCEmptyIndicator(srt : IMPSMathExp) extends IMPSQuasiConstructor
+case class IMPSQCEmptyIndicator(srt : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 {
   override def toString: String = "empty_indic{" + srt.toString + "}"
 }
 
-case class IMPSQCNonemptyIndicator(srt : IMPSMathExp) extends  IMPSQuasiConstructor
+case class IMPSQCNonemptyIndicator(srt : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 {
   override def toString: String = "nonempty_inidc_q{" + srt.toString + "}"
+}
+
+case class IMPSQCEmptyIndicatorQ(srt : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "empty_inidc_q{" + srt.toString + "}"
+}
+
+case class IMPSQCComplement(m : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "(" + m.toString + ")^C"
+}
+
+case class IMPSQCUnion(u1 : IMPSMathExp, u2 : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "(" + u1.toString + " union " + u2.toString + ")"
+}
+
+case class IMPSQCIntersection(i1 : IMPSMathExp, i2 : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "(" + i1.toString + " inters " + i2.toString + ")"
+}
+
+case class IMPSQCDifference(d1 : IMPSMathExp, d2 : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "(" + d1.toString + " diff " + d2.toString + ")"
+}
+
+case class IMPSQCSymDifference(sd1 : IMPSMathExp, sd2 : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "(" + sd1.toString + " sym_diff " + sd2.toString + ")"
+}
+
+case class IMPSQCDisjoint(dj1 : IMPSMathExp, dj2 : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "(" + dj1.toString + " disj " + dj2.toString + ")"
+}
+
+case class IMPSQCPartitionQ(p : IMPSMathExp, s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "partition_q{" + p.toString + "," + s.toString + "}"
+}
+
+case class IMPSQCSingleton(n : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "(singleton " + n.toString + ")"
+}
+
+case class IMPSQCBigUnion(f : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "(big_u " + f.toString + ")"
+}
+
+case class IMPSQCBigIntersection(f : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "(big_i " + f.toString + ")"
+}
+
+case class IMPSQCMDomain(f : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "dom{" + f.toString + "}"
+}
+
+case class IMPSQCMComposition(g : IMPSMathExp, f : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "(" + g.toString + " oo " + f.toString + ")"
+}
+
+case class IMPSQCMRange(f : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "ran{" + f.toString + "}"
+}
+
+case class IMPSQCMImage(f : IMPSMathExp, s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "imgage{" + f.toString + "," + s.toString + "}"
+}
+
+case class IMPSQCMInverseImage(f : IMPSMathExp, v : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "inv_image{" + f.toString + "," + v.toString + "}"
+}
+
+case class IMPSQCMInverse(f : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "inverse{" + f.toString + "}"
+}
+
+case class IMPSQCMId(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "id{" + s.toString + "}"
+}
+
+case class IMPSQCMRestrict(f : IMPSMathExp, a : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "restrict{" + f.toString + "," + a.toString + "}"
+}
+
+case class IMPSQCMRestrict2(f : IMPSMathExp, a : IMPSMathExp, b : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "restrict2{" + f.toString + "," + a.toString + "," + b.toString + "}"
+}
+
+case class IMPSQCMSurjective(f : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "surjective_q{" + f.toString + "}"
+}
+
+case class IMPSQCMInjective(f : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "injective_q{" + f.toString + "}"
+}
+
+case class IMPSQCMBijective(f : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "bijective_q{" + f.toString + "}"
+}
+
+case class IMPSQCMSurjectiveOn(f : IMPSMathExp, a : IMPSMathExp, b : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "surjective_on_q{" + f.toString + "," + a.toString + "," + b.toString + "}"
+}
+
+case class IMPSQCMInjectiveOn(f : IMPSMathExp, a : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "injective_on_q{" + f.toString + "," + a.toString + "}"
+}
+
+case class IMPSQCMBijectiveOn(f : IMPSMathExp, a : IMPSMathExp, b : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "bijective_on_q{" + f.toString + "," + a.toString + "," + b.toString + "}"
 }
 
 //-----------
@@ -935,3 +1066,7 @@ abstract class SEXP
 case class SEXPAtom(s : String) extends SEXP
 
 case class SEXPNested(args : List[SEXP]) extends SEXP
+
+//-----------
+
+case class Section(name : String, dependencies : List[String], files : List[String], jsons : List[String])

@@ -192,7 +192,7 @@ class IMPSParser
 
         case Str("load-section") => return parseLoadSection(e)
 
-        case Str("include-files") => return Some(Dummy("include-files"))
+        case Str("include-files") => println(" > (dropping include-files ...)") ; None //return Some(Dummy("include-files"))
           // val th = controller.get(theorypath : MPath) match { case th : DeclaredTheory => th case _ => throw something }
           // th.getDeclarations, th.getConstants, th.getIncludes : List[MPath]
           // th.getDeclarationsGenerated (unwahrscheinlich)
