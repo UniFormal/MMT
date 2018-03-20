@@ -14,7 +14,7 @@ import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.symbols.PlainInclude
 import info.kwarc.mmt.imps.Usage.Usage
 import info.kwarc.mmt.imps.impsMathParser.{freshVar}
-import info.kwarc.mmt.imps.impsRemoveQuasiConstructors
+import info.kwarc.mmt.imps.impsRemoveQuasiConstructors.{removeQCs}
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
 
