@@ -30,8 +30,7 @@ package object impsLibrarySections
     "generic-theories",
     List("basic-real-arithmetic", "pure-generic-theories"),
     List("generic-theories.t"),
-    List("generic-theory-1.json", "generic-theory-2.json",
-         "generic-theory-3.json", "generic-theory-4.json")
+    List("generic-theory-1.json", "generic-theory-2.json", "generic-theory-3.json", "generic-theory-4.json")
   )
 
   def indicators : Section = Section(
@@ -43,7 +42,7 @@ package object impsLibrarySections
 
   def mappings : Section = Section(
     "mappings",
-    List("indicators", "pure-generic-theories"),
+    List("indicators", "pure-generic-theories", "generic-theories"),
     List("mappings.t", "mapping-lemmas.t", "inverse-lemmas.t"),
     Nil
   )

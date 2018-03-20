@@ -588,8 +588,8 @@ package object impsRemoveQuasiConstructors
         val in2   = removeQCs(IMPSQCIn(y_var._1,ran),addConstraints)
         addConstraints = addConstraints :+ in2
 
-        val fora1 = IMPSForAll(List(x_var),fora1)
-        val fora2 = IMPSForAll(List(y_var),fora2)
+        val fora1 = IMPSForAll(List(x_var),in1)
+        val fora2 = IMPSForAll(List(y_var),in2)
         val lambda = IMPSLambda(List(f_var),IMPSConjunction(List(fora1,fora2)))
 
         IMPSApply(lambda,List(f))

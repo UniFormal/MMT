@@ -13,8 +13,6 @@ import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.symbols.PlainInclude
 import info.kwarc.mmt.imps.Usage.Usage
-import info.kwarc.mmt.imps.impsMathParser.{freshVar}
-import info.kwarc.mmt.imps.impsRemoveQuasiConstructors.{removeQCs}
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
 
@@ -278,6 +276,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       for (baseType : String <- l.bstps.get.tps)
       {
+        println(" > adding base type: " + baseType.toString + " to " + t.name)
+
         val tp : Term = IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
         val basetype = symbols.Constant(t.toTerm, doName(baseType), Nil, Some(tp), None, Some("BaseType"))
         if (l.bstps.get.src.isDefined) { doSourceRef(basetype, l.bstps.get.src.get) }
@@ -661,7 +661,17 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       }
 
       case IMPSMathSymbol("an%individual") => OMS(IMPSTheory.lutinsPath ? "anIndividual")
-      case IMPSMathSymbol(s)               => OMS(thy.path ? LocalName(s))
+      case IMPSMathSymbol(s)               =>
+      {
+        if (s.forall(_.isDigit)) {
+          OMLIT(BigInt(s),IntLiterals)
+        }
+        else {
+          OMS(thy.path ? LocalName(s))
+        }
+        //  Rational Literals
+        //  case "i/j" => OMLIT((BigInt(i),BigInt(j)),RatLiterals)
+      }
 
       case IMPSIndividual()       => OMS(IMPSTheory.lutinsPath ? "anIndividual")
       case IMPSTruth()            => OMS(IMPSTheory.lutinsPath ? "thetrue")

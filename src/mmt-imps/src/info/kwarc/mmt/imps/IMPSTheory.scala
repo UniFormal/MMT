@@ -4,8 +4,14 @@ import java.awt.AlphaComposite
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardRat}
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
+
+object IntLiterals extends
+  RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"integerType")),StandardInt)
+object RatLiterals extends
+  RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"rationalType")),StandardRat)
 
 object IMPSTheory
 {
