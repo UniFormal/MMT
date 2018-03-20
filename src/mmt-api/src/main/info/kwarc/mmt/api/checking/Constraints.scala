@@ -35,6 +35,8 @@ trait HistoryEntry {
    /** for user-facing rendering */
    def present(implicit cont: Obj => String): String
    def indentation(level: Int) = if (level == 0) "" else utils.repeatString("-", level-1) + " "
+   /** this history entry but without any wrappers like for indentation */
+   def removeWrappers = this
 }
 
 /** a HistoryEntry that consists of a string, meant as a log or error message */
@@ -53,6 +55,7 @@ case class Comment(text: () => String) extends HistoryEntry {
  */
 case class IndentedHistoryEntry(e : HistoryEntry, level: Int) extends HistoryEntry {
    def present(implicit cont: Obj => String): String = indentation(level) + e.present
+   override def removeWrappers = e.removeWrappers
 }
 class History(var steps: List[HistoryEntry]) {
    /** creates and returns a new branch with a child appended to the leaf */

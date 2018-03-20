@@ -19,11 +19,14 @@ import Theory._
 class DerivedDeclaration(h: Term, name: LocalName, override val feature: String, val tpC: TermContainer,
                          val notC: NotationContainer) extends {
    private val t = Theory.empty(h.toMPath.parent, h.toMPath.name/name, noMeta)
-} with NestedModule(h, name, t) with HasNotation {
-   // overriding to make the type stricter
+   protected val delegatee = t // inheriting the container element functions of t
+} with NestedModule(h, name, t) with DelegatingContainerElement[Declaration] with HasNotation {
+  
+  // overriding to make the type stricter
   override def module: DeclaredModule = t
   def modulePath = module.path
 
+  override def getDeclarations = module.getDeclarations
   override def getComponents = TypeComponent(tpC) :: notC.getComponents
 
   private def tpAttNode = tpC.get.map {t => backend.ReadXML.makeTermAttributeOrChild(t, "type")}.getOrElse((null,Nil))
@@ -313,14 +316,10 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
       val dom = getDomain(dd)
       val context = parent.getInnerContext
-      val body = controller.simplifier.materialize(context, dom, true, None) match {
-        case m: DeclaredModule => m
-        case m: DefinedModule => throw ImplementationError("materialization failed")
-      }
-
+      val body = controller.simplifier.materialize(context, dom, None, None)
       new Elaboration {
         /** the morphism dd.dom -> parent of the pushout diagram: it maps every n to dd.name/n */
-        private val morphism = new DeclaredView(parent.parent, parent.name/dd.name, dom, parent.toTerm, false)
+        private val morphism = DeclaredView(parent.parent, parent.name/dd.name, dom, parent.toTerm, false)
         /** precompute domain and build the morphism */
         val domain = body.getDeclarationsElaborated.map {d =>
           val ddN = dd.name / d.name
@@ -444,7 +443,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     def parentDerDecls = parenth.getDerivedDeclarations(feature).filterNot(_ == dd)//
     def parentDeclIncludes = parentDerDecls.map(s => getDomain(s).toMPath)
     def dones = parentDerDecls.indices.collect{
-      case i if ElaboratedElement.is(parentDerDecls(i)) => parentDeclIncludes(i)
+      case i if ElaboratedElement.isPartially(parentDerDecls(i)) => parentDeclIncludes(i)
     }
     def doFirsts = (body.getDerivedDeclarations(feature).map(s => getDomain(s).toMPath) ::: bodycont.collect{
       case DerivedVarDeclFeature(LocalName(ComplexStep(n) :: rest2),`feature`,_,_) => n

@@ -315,12 +315,12 @@ class Controller extends ROController with ActionHandling with Logger {
 
   /** a lookup that uses only the current memory data structures */
   val localLookup = new LookupWithNotFoundHandler(library) with FailingNotFoundHandler {
-    def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod)
+    def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) = library.forDeclarationsInScope(mod)(f)
   }
 
   /** a lookup that uses the previous in-memory version (ignoring the current one) */
   val previousLocalLookup = new LookupWithNotFoundHandler(memory.previousContent) with FailingNotFoundHandler {
-    def getDeclarationsInScope(mod: Term) = memory.previousContent.getDeclarationsInScope(mod)
+    def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) = memory.previousContent.forDeclarationsInScope(mod)(f)
   }
 
   /** a lookup that loads missing modules dynamically */
@@ -329,8 +329,8 @@ class Controller extends ROController with ActionHandling with Logger {
       code
     }
 
-    def getDeclarationsInScope(mod: Term) = iterate {
-      library.getDeclarationsInScope(mod)
+    def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) = iterate {
+      library.forDeclarationsInScope(mod)(f)
     }
   }
 
@@ -383,9 +383,6 @@ class Controller extends ROController with ActionHandling with Logger {
       case d: Declaration =>
         parent match {
           case ce: ContainerElement[_] => getContextWithInner(ce)
-          case dd: DerivedDeclaration =>
-             val contOpt = extman.get(classOf[StructuralFeature], dd.feature).map(_.getInnerContext(dd))
-             getContext(dd) ++ contOpt.getOrElse(Context.empty)
           case nm: NestedModule => nm.module match {
             case ce: ContainerElement[_] => getContextWithInner(ce)
           }
@@ -401,6 +398,12 @@ class Controller extends ROController with ActionHandling with Logger {
     case d: Document => Context.empty
     case m: DeclaredModule => m.getInnerContext
     case s: DeclaredStructure => Context.empty
+    case dd: DerivedDeclaration =>
+      val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
+      sfOpt match {
+        case Some(sf) => sf.getInnerContext(dd)
+        case None => Context.empty
+      }
   }
 
   // ******************************* transparent loading during global lookup
@@ -541,7 +544,7 @@ class Controller extends ROController with ActionHandling with Logger {
           }
     }
   }
-
+  
   /**
    * if set, the element is deactivated
    */

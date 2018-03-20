@@ -61,23 +61,31 @@ object MMTSystem {
      }
    }
 
+  /** the manifest file (if run from fat jar) */
+  lazy val manifest = (try {Some(getResourceAsString("/META-INF/MANIFEST.MF"))} catch {case e: Exception => None}) map File.readPropertiesFromString 
+  
   /** the version of MMT being used */
   lazy val version: String = {
     Option(this.getClass.getPackage.getImplementationVersion).getOrElse(getResourceAsString("versioning/system.txt") + "--localchanges")
   }
 
-   /** expected location of the user's mmtrc file */
-   val userConfigFile = {
-      OS.detect match {
-         case Windows => OS.settingsFolder / "mmt" / "mmtrc"
-         case MacOS => OS.settingsFolder / "mmt" / ".mmtrc"
-         case _ => OS.settingsFolder / ".mmtrc"
-      }
-   }
+  /** the time when this version of MMT (if far jar built with sbt) was built */
+  lazy val buildTime: Option[String] = {
+    manifest.flatMap(_.get("Build-Time"))
+  }
+
+  /** expected location of the user's mmtrc file */
+  val userConfigFile = {
+    OS.detect match {
+       case Windows => OS.settingsFolder / "mmt" / "mmtrc"
+       case MacOS => OS.settingsFolder / "mmt" / ".mmtrc"
+       case _ => OS.settingsFolder / ".mmtrc"
+    }
+  }
 
    /** retrieves a resource from the jar or the resource folder depending on the [[RunStyle]], may be null */
    def getResource(path: String): java.io.InputStream = {
-      if(!path.startsWith("/")){ return getResource("/" + path) } // make sure that the st
+      if(!path.startsWith("/")){ return getResource("/" + path) }
       runStyle match {
         case _:IsFat | _:ThinJars | OtherStyle =>
           getClass.getResourceAsStream(path) // the file inside the JAR

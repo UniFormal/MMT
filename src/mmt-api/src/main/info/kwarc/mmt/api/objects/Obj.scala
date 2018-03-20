@@ -131,7 +131,7 @@ case class OMID(path: ContentPath) extends Term {
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def subobjects = Nil
-   override def toStr(implicit shortURIs: Boolean) = if (shortURIs) path.name.toString else path.toString
+   override def toStr(implicit shortURIs: Boolean) = if (shortURIs) path.name.toStr else path.toString
    def toNode = path match {
       case doc ? mod => <om:OMS base={doc.toPath} module={mod.toPath}>{mdNode}</om:OMS>
       case doc ? mod ?? name => <om:OMS base={doc.toPath} module={mod.toPath} name={name.toPath}>{mdNode}</om:OMS>
@@ -363,8 +363,8 @@ case class OMFOREIGN(node : Node) extends Term {
 }
 
 
-//TODO: could this be merged with presentation.Literal?
 /** An OMSemiFormal represents a mathematical object that mixes formal and informal components */
+@deprecated("this should be replaced with the urtheory for semiformal objects","")
 case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFormalObjectList {
    def head = None
    def toStr(implicit shortURIs: Boolean) = toString

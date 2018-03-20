@@ -9,12 +9,15 @@
 		<link href="https://code.jquery.com/ui/1.12.1/themes/cupertino/jquery-ui.css" rel="stylesheet" type="text/css">
 		<link href="css/styles.css" rel="stylesheet" type="text/css">
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
-		
+		<link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/jquery.jssocials/1.4.0/jssocials.css" />
+		<link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/jquery.jssocials/1.4.0/jssocials-theme-flat.css" />
+		<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+
 		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.18.1/vis.js"></script>
 		<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
 		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
 		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.4/jstree.min.js"></script>
-		
+		<script type="text/javascript" src="https://cdn.jsdelivr.net/jquery.jssocials/1.4.0/jssocials.min.js"></script>
 		<!-- Load the magic path -->
 		<!-- Something does not work this way: <script type="text/javascript" src="?MMT_base_url.js"> </script> -->
 		
@@ -27,7 +30,7 @@
 	</head>
 
 	
-	<body class="ui-form">
+<body class="ui-form" style="cursor: auto;overflow:hidden">
 		
 <div id="mySidenav" class="sidenav">
   <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
@@ -38,6 +41,8 @@
 </div>
 		
 		<div id="mainbox" style="float:left;height:100%;width:99%; padding-left:10px; ">
+		<div id="shareIcons" class="jssocials" style="position: absolute;left:40px; text-align: center;width:95%">
+</div>
 			<div id="menuButtonsDiv">
 <button style="font-size:24px;cursor:pointer;margin:0px;" id="leftMenuButton" class="myButton" onclick="openNav()">&gt;</button>
 <button style="font-size:24px;cursor:pointer;right:16px;margin:0px;position:absolute" id="rightMenuButton" class="myButton" onclick="openNav2()">&lt;</button>
@@ -48,7 +53,7 @@
 			<div class="toolSelector">
 				<div id="generalMenu" name="generalMenu">
 				
-					<input type="checkbox" id="metaEdgesCheckbox" checked onChange="hideEdges('meta', !this.checked)">
+					<input type="checkbox" id="metaEdgesCheckbox" onChange="hideEdges('meta', !this.checked)">
 					<label for="metaEdgesCheckbox">Show Meta-Edges</label>
 					<br /><br />
 
@@ -86,6 +91,21 @@
 					<br />
 					Upload own JSON:
 					<input type="file" id="jsonLoader" name="jsonLoader"/>
+					<br />
+					<br />
+				<form action="">
+					<input type="radio" name="embedding" onClick="generateIFrameGraph()" value="iframe"> Embed graph in HTML using IFrame (recommended)<br>
+				  <input type="radio" name="embedding" onClick="generateHTMLGraph()" value="html"> Embed graph in HTML using JS<br>
+				  <input type="radio" name="embedding" onClick="generateParameterGraph()" value="parameter"> Embed graph in URI<br>
+				  <input type="radio" name="embedding" onClick="generateURIGraph()" value="uri"> Download graph from server (default)
+				  <br />
+				  <br />
+				  <textarea rows="2" id="uriTextarea" cols="42" readonly></textarea>
+				  <br />
+				  <textarea rows="4" id="informationTextarea" cols="42" readonly > </textarea>
+				  
+				  
+				</form>
 					</div>
 
 			</div>
@@ -128,6 +148,8 @@
 			var selectionMode=false;
 			var theoryGraph=new TheoryGraph();
 			
+			theoryGraph.setEdgesHidden("meta",true);
+			
 			lastGraphTypeUsed=getParameterByName("type");
 			lastGraphDataUsed=getParameterByName("graphdata");
 			
@@ -151,6 +173,50 @@
 				reader.readAsText(e.target.files[0]);   		
 			}
 			
+		function generateIFrameGraph()
+		{
+			var generatedJson=theoryGraph.graphToIFrameString();
+			
+			var embeddingCode="<script>";
+			embeddingCode+="function sendMessageToIFrameFromLocalStorage"+generatedJson.id+"(param){ var tmp=localStorage.getItem(param); document.getElementById('"+generatedJson.id+"').contentWindow.postMessage(tmp, '*'); }\r\n"+generatedJson.storage;
+			embeddingCode+="<\/script>\r\n";
+			embeddingCode+="<iframe style='width:100%;min-height:550px;' src='"+generatedJson.uri+"' onLoad=\"sendMessageToIFrameFromLocalStorage"+generatedJson.id+"('"+generatedJson.id+"')\" id='"+generatedJson.id+"'><\/iframe>";
+			
+			document.getElementById("uriTextarea").value="";
+			document.getElementById("informationTextarea").value=embeddingCode;
+		}
+		
+		function generateHTMLGraph()
+		{
+			var generatedJson=theoryGraph.graphToLocalStorageString();
+			
+			document.getElementById("uriTextarea").value=generatedJson.uri;
+			document.getElementById("informationTextarea").value=generatedJson.storage;
+		}
+		
+		function generateParameterGraph()
+		{
+			var generatedJson=theoryGraph.graphToURIParameterString();
+			
+			if(generatedJson.length > 220)
+			{
+				document.getElementById("uriTextarea").value="";
+				document.getElementById("informationTextarea").value="";
+				alert("Graph is too big to be embedded in URI. Select HTML-Embedding or IFrame-Embedding instead!");
+			}
+			else
+			{
+				document.getElementById("uriTextarea").value=generatedJson;
+				document.getElementById("informationTextarea").value="";
+			}
+		}
+		
+		function generateURIGraph()
+		{
+			document.getElementById("uriTextarea").value=window.location.href;
+			document.getElementById("informationTextarea").value="";
+		}
+
 			// Opens left menu
 			function openNav() 
 			{
@@ -254,7 +320,7 @@
 				}
 				createNewGraph();
 			}
-
+			
 			$(document).bind("contextmenu", function(event) {
 				// Avoid the real menu
 				event.preventDefault();
@@ -276,8 +342,46 @@
 			addColors();
 			generateCustomSideMenu();	
 		
-			// Starts downloading, creating and rendering graph
-			createNewGraph(getParameterByName("type"),getParameterByName("graphdata"));
+
+			var source=getParameterByName(graphDataURLSourceParameterNameTGView);
+		
+			function waitForJSONMessage()
+			{
+				if(recievedDataJSON == "")
+				{
+					setTimeout(waitForJSONMessage, 500);
+				}
+				else
+				{
+					theoryGraph.loadJSONGraph(JSON.parse(recievedDataJSON));
+					recievedDataJSON="";
+				}
+			}
+			
+			if(source == "html")
+			{
+				theoryGraph.loadGraphByLocalStorage(getParameterByName(graphDataURLDataSourceParameterNameTGView));
+			}
+			else if(source == "param")
+			{
+				theoryGraph.loadGraphByURIParameter(getParameterByName(graphDataURLDataSourceParameterNameTGView));
+			}
+			else if(source == "iframe")
+			{
+				waitForJSONMessage();
+			}
+			else
+			{
+				// Starts downloading, creating and rendering graph
+				createNewGraph(getParameterByName(graphDataURLTypeParameterNameTGView),getParameterByName(graphDataURLDataParameterNameTGView), getParameterByName(graphDataURLHighlightParameterNameTGView));
+			}
+
+			$("#shareIcons").jsSocials(
+			{
+			    showLabel: false,
+			    showCount: false,
+			    shares: ["email", "twitter", "facebook", "googleplus", "linkedin", "pinterest", "stumbleupon", "whatsapp"]
+			});
 		</script>
 	</body>
 </html>

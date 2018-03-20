@@ -248,7 +248,6 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
              error("containing declaration not found: " + p)
          }
       // complex cases: lookup in module expressions
-        // TODO use simplifier instead
       case ComplexTheory(cont) =>
         cont.mapVarDecls { case (before, vd) =>
           val vdDecl = vd.toDeclaration(ComplexTheory(before))
@@ -256,10 +255,9 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             case IncludeVarDecl(_, OMPMOD(p, args), _) =>
               name.head match {
                 case ComplexStep(q) =>
-                  getImplicit(q, p).foreach { m =>
-                    val sym = get(OMMOD(q), name.tail, sourceError)
-                    val symT = translate(sym, m, error)
-                    return symT
+                  // if name is visible to p, delegate to lookup in p
+                  getImplicit(q, p).foreach {m =>
+                    return get(OMPMOD(p,args), name, error)
                   }
                 case _ =>
               }
@@ -319,8 +317,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     mod match {
       case t: Theory =>
       case d =>
-          if (0 != args.length)
-            throw GetError("number of arguments does not match number of parameters")
+        if (0 != args.length)
+          throw GetError("number of arguments does not match number of parameters")
     }
     // now the actual lookup
     mod match {
@@ -342,7 +340,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
          def defaultDef = TermContainer(OMS(s.home.toMPath ? translateNameByLink(name, s)))
          assig match {
             case ca: Constant if ca.df.isEmpty =>
-               new FinalConstant(ca.home, ca.name, ca.alias, ca.tpC, defaultDef, ca.rl, ca.notC)
+               new FinalConstant(ca.home, ca.name, ca.alias, ca.tpC, defaultDef, ca.rl, ca.notC, ca.vs)
             case sa: DefinedStructure if sa.dfC.get.isEmpty =>
                new DefinedStructure(sa.toTerm, sa.name, sa.tpC, defaultDef, sa.isImplicit)
             case a => a
@@ -362,8 +360,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
      declLnOpt match {
        case Some((d, LocalName(Nil))) => d // perfect match
        case Some((d, ln)) => d match {
-         case PlainInclude(p,_) =>
-           getDeclarationInTerm(OMMOD(p),ln,error)
+         case Include(_,p,as) =>
+           getDeclarationInTerm(OMPMOD(p,as),ln,error)
          // a prefix exists and resolves to d, a suffix ln is left
          case s: Structure =>
            val sym = getDeclarationInTerm(s.from, ln, sourceError) // resolve ln in the domain of s
@@ -441,26 +439,35 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             error("local name " + ln + " left after resolving to constant assignment")
           case a: DefinedLink =>
             val dom = a.from.toMPath
-            getDeclarationInTerm(a.df,ComplexStep(dom) / ln, error)
+            val dfAssig = getDeclarationInTerm(a.df, ComplexStep(dom)/ln, error)
+            // dfAssig has the right definiens, but we need to change its home and name to fit the original request
+            val h = dfAssig.name.head
+            val prefix = if (h.isInstanceOf[ComplexStep] && a.name.head == h) a.name.init else a.name
+            dfAssig.translate(l.toTerm, prefix, IdentityTranslator, Context.empty)
         }
         case None =>
           val (theo, tname) = nameS.steps match {
             case ComplexStep(theo)::tname => (theo,tname)
             case _ => return default
           }
-          //TODO if theo is visible to the domain of one of the assignments in l, use that assignment
-
-          // check if 'theo' is visible to the meta-theory of l.from; if so, use meta-morphism of l
-          val fromMeta = TheoryExp.metas(l.from, false)(this).headOption.getOrElse {
-            return default
+          // for declarations of the meta-theory of l.from, we default to the identity if no other assignment is found
+          val defaultMetaMorph = TheoryExp.metas(l.from, false)(this).headOption.toList map {mt => 
+            (mt, OMIDENT(OMMOD(mt)))
           }
-          val vis = visible(OMMOD(fromMeta)) contains OMMOD(theo)
-          if (vis) {
-             //TODO precompose with implicit morphism via which it is visible
-             val mtm = l.metamorph getOrElse OMIDENT(OMMOD(theo)) // meta-morphism defaults to identity
-             getDeclarationInTerm(mtm, name, error)
-          } else
-             default
+          // we look for the first assignment in l for a domain that includes theo
+          // (there may be multiple, but they must be equal on theo if l well-formed)
+          // defaultMetaMorph, being last, is only considered as a default
+          (l.getIncludes ::: defaultMetaMorph) foreach {case (f,m) =>
+            val vis = visibleVia(OMMOD(f))
+            vis foreach {case (d,v) =>
+              if (d == OMMOD(theo)) {
+                // theo --v--> f --incl--> l.from --l--> l.to with l|_f == m; thus l|_theo == v;m
+                return getDeclarationInTerm(OMCOMP(v,m), name, error)
+              }
+            }
+          }
+          // otherwise, we use a default assignments
+          return default
      }
   }
 
@@ -478,20 +485,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case OMPMOD(p, oldArgs) => OMPMOD(p, oldArgs ::: args)
         case _ => throw ImplementationError("cannot instantiate declaration of complex theory")
       }
-    decl match {
-      case c: Constant =>
-        Constant(newHome, c.name, c.alias, c.tp.map(_ ^? subs), c.df.map(_ ^? subs), c.rl, c.notC)
-      case s: DefinedStructure =>
-        DefinedStructure(newHome, s.name, s.from ^? subs, s.df ^? subs, s.isImplicit)
-      case s: DeclaredStructure =>
-        val sS = DeclaredStructure(newHome, s.name, s.from ^? subs, s.isImplicit)
-        s.getPrimitiveDeclarations.foreach { case d =>
-          sS.add(instantiate(d, params, args))
-        }
-        sS
-      case nm: NestedModule =>
-        throw ImplementationError("substitution in nested modules not implemented yet")
-    }
+    val dT = decl.translate(newHome, LocalName.empty, ApplySubs(subs), params)
+    dT
   }
 
   /** translate a Declaration along a morphism */
@@ -515,7 +510,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         val ren = Renamer(p => if (p.module == f) Some(t ? p.name) else None)
         d.translate(TraversingTranslator(ren), Context.empty)
       case OMCOMP(Nil) => d
-      case OMCOMP(hd :: tl) => translate(translate(d, hd, error), OMCOMP(tl), error)
+      case OMCOMP(hd :: tl) =>
+        translate(translate(d, hd, error), OMCOMP(tl), error)
       //TODO remaining cases
     }
   }
@@ -539,9 +535,12 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
   /** auxiliary method of translate to unify translation along structures and views */
+  // if the morphism is partial, this returns a Constant with empty definiens;
+  // for a structure, the definiens is the composed morphism (which may be defined for some constants even if it is not defined in general)
   private def translateByLink(decl: Declaration, l: Link, error: String => Nothing): Declaration =
     l match {
-      case l: DefinedLink => translate(decl, l.df, error)
+      case l: DefinedLink =>
+        translate(decl, l.df, error)
       case l: DeclaredLink =>
         // if necessary, first translate decl along implicit morphism into l.from
         val imp = implicitGraph(decl.home, l.from) getOrElse {
@@ -575,7 +574,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                case _ => throw GetError("link " + l.path + " provides bad assignment for structure " + r.path)
             }
             val newDef = a.dfC.get.getOrElse {
-               OMCOMP(r.toTerm, l.toTerm) //TODO should result in DeclaredStructure
+               OMCOMP(r.toTerm, l.toTerm) //TODO should result in DeclaredStructure containing a subset of the assignments in l
             }
             DefinedStructure(l.to, newName, r.from, newDef, false)
         }
@@ -584,10 +583,12 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
 
   // ******************* additional retrieval methods
 
-  /** all declarations that are visible (based on what is currently loaded) to a theory */
-  //TODO this should be lazier (e.g., by returning an iterator), especially when declarations are translated.
-  //However, laziness breaks the NotFound handling in the Controller
+  /** all declarations that are visible (based on what is currently loaded) to a theory
+   *  replaced with forDeclarationsInScope
+   */
+  /*
   def getDeclarationsInScope(mod: Term): List[StructuralElement] = {
+   
     val impls = visibleVia(mod).toList
     impls.flatMap {
       case (OMMOD(from), OMCOMP(Nil)) =>
@@ -602,7 +603,23 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             d.getDeclarations.map(c => getDeclarationInTerm(OMPMOD(from, args), c.name, s => throw GetError(s)))
           case _ => Nil //TODO materialize?
         }
-      case (OMMOD(_), _) => Nil //TODO
+      case (OMMOD(p), m) =>
+        //TODO
+        logError("not collecting declarations from " + p + ", which is visible via " + m )
+        Nil
+    }
+  }*/
+
+  def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) {
+    val impls = visibleVia(mod).toList
+    impls.foreach {
+      case (OMMOD(p), m) =>
+        get(p) match {
+          case t: DeclaredTheory =>
+            t.getDeclarations foreach {d => f(p, m, d)}
+          case _ => //TODO materialize?
+        }
+      case _ =>
     }
   }
 
@@ -633,8 +650,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** as visible but only those where the morphism is trivial (i.e., all includes) */
   def visibleDirect(to: Term): mutable.HashSet[Term] = {
     val via = visibleVia(to)
-    via.flatMap {case (from, via) =>
-      if (via == OMCOMP()) List(from) else Nil
+    via.flatMap {
+      case (from, OMCOMP(Nil)) => List(from)
+      case (from, OMIDENT(_)) => List(from)
+      case _ => Nil
     }
   }
 

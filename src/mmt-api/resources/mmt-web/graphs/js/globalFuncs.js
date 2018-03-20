@@ -25,6 +25,12 @@ function setLocation(curLoc)
     location.hash = '#' + curLoc;
 }
 
+// Executed after first drawing of graph finished
+function updateNetworkOnFirstCall()
+{
+	theoryGraph.colorizeNodesByName(getParameterByName(graphDataURLHighlightParameterNameTGView),highlightColorByURI);
+}
+
 // Creates right-click menu for MMT menu (left side)
 function generateCustomSideMenu()
 {
@@ -45,15 +51,22 @@ function setStatusText(text)
 }
 
 // Creates a new graph using type and graphdata parameter (if empty lastGraphTypeUsed and lastGraphDataUsed will be used)
-function createNewGraph(type,graphdata) 
+function createNewGraph(type,graphdata, hightlightNodes) 
 {
 	var type=(typeof type =="undefined") ? lastGraphTypeUsed : type;
 	var graphdata=(typeof graphdata =="undefined") ? lastGraphDataUsed : graphdata;
 	
 	lastGraphTypeUsed=type;
 	lastGraphDataUsed=graphdata;
-	theoryGraph.getGraph( graphDataURL+graphDataURLTypeParameterName+ type + "&" + graphDataURLDataParameterName + graphdata);
-	var newURL=location.protocol + '//' + location.host + location.pathname+"?"+graphDataURLTypeParameterNameTGView+ type + "&" + graphDataURLDataParameterNameTGView + graphdata;
+	theoryGraph.onConstructionDone=updateNetworkOnFirstCall;
+	theoryGraph.getGraph( graphDataURL+graphDataURLTypeParameterName+ type + "&" + graphDataURLDataParameterName+"=" + graphdata);
+	var newURL=location.protocol + '//' + location.host + location.pathname+"?"+graphDataURLTypeParameterNameTGView+"="+ type + "&" + graphDataURLDataParameterNameTGView+"=" + graphdata;
+	
+	if(typeof hightlightNodes != "undefined")
+	{
+		newURL+="&"+graphDataURLHighlightParameterNameTGView+"="+hightlightNodes;
+	}
+	
 	setLocation(newURL);
 }	
 

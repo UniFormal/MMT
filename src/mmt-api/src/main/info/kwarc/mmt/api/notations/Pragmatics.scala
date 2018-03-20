@@ -112,14 +112,14 @@ class Pragmatics extends ChangeListener {
      }
      /**
       * @param strictApps the strict application symbols to wrap around the application
-      * @param fun the operator
+      * @param fun the operator (may be Term, contrary to unapply method)
       * @param args the arguments
       * @return intuitively: OMA(strictApps, fun, args)
       * pre-inverse of unapply
       */
-     def apply(strictApps: List[GlobalName], fun: GlobalName, args: List[Term]) = strictApps match {
-        case hd::tl => OMA(OMS(hd), tl.map(OMS(_)) ::: OMS(fun) :: args)
-        case Nil => OMA(OMS(fun), args)
+     def apply(strictApps: List[GlobalName], fun: Term, args: List[Term]) = strictApps match {
+        case hd::tl => OMA(OMS(hd), tl.map(OMS(_)) ::: fun :: args)
+        case Nil => OMA(fun, args)
      }
   }
 

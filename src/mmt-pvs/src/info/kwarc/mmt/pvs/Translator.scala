@@ -162,7 +162,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           throw GeneralError(s"no checker $id found")
         }.asInstanceOf[MMTStructureChecker]
         ths foreach {p =>
-          val ce = new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore, this)
+          val ce = new CheckingEnvironment(controller.simplifier, new ErrorLogger(report), RelationHandler.ignore, this)
           // checker.applyWithTimeout(p,Some(30000))(ce)
         }
       }

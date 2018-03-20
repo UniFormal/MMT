@@ -16,15 +16,17 @@ object Utils {
     */
    val settingsFile = src / "mmt-sbt-settings"
    import collection.mutable.Map
-   lazy val settings: Map[String,String] = if (settingsFile.exists) File.readProperties(settingsFile) else Map[String,String]()
+   def settings: Map[String,String] = if (settingsFile.exists) File.readProperties(settingsFile) else Map[String,String]()
 
    /** executes a shell command (in the src folder) */
    def runscript(command: String) = sys.process.Process(Seq(command), src.getAbsoluteFile).!!
 
+   def error(s: String) = throw new Exception(s)
+   
   // ************************************************** deploy-specific code (see also the TaskKey's deploy and deployFull)
 
  /**
-   * pacakges the compiled binaries and copies to deploy
+   * packages the compiled binaries and copies to deploy
    */
   import sbt.Keys.packageBin
   import sbt._
@@ -77,7 +79,7 @@ object Utils {
       settings.get(killJEdit).foreach {x => runscript(x)}
      Thread.sleep(500)
       val fname = settings.get(jeditSettingsFolder).getOrElse {
-        println(s"cannot copy jars because there is no setting '$jeditSettingsFolder' in $settingsFile")
+        error(s"cannot copy jars because there is no setting '$jeditSettingsFolder' in $settingsFile")
         return
       }
       val jsf = File(fname) / "jars"
@@ -104,7 +106,7 @@ object Utils {
    def copy(from: File, to: File) {
       println(s"copying $from to $to")
       if (!from.exists) {
-         println("error: file to copy not found")
+         error(s"error: file $from not found (when trying to copy it to $to)")
       } else if (!to.exists || from.lastModified > to.lastModified) {
          Files.copy(from.toPath, to.toPath, REPLACE_EXISTING)
       } else {

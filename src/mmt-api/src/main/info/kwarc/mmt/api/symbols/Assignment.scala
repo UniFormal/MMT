@@ -30,24 +30,34 @@ object DefLinkAssignment {
       DefinedStructure(home, name, from, target, false)
 }
 
-object ViewInclude {
-   def apply(home: Term, from: MPath, included: Term) = DefLinkAssignment(home, LocalName(from), OMMOD(from), included)
+
+/** include of a morphism into a link */
+object LinkInclude {
+  /**
+   * @param home the link
+   * @param from the domain of the included morphism
+   * @param mor the morphism
+   */
+  def apply(home: Term, from: MPath, mor: Term) = DefLinkAssignment(home, LocalName(from), OMMOD(from), mor)
+  def unapply(d: ContentElement) = d match {
+    case d: DefinedStructure =>
+      d.from match {
+        case OMMOD(f) if d.name == LocalName(f) => Some((d.home, f, d.df))
+        case _ => None
+      }
+    case _ => None
+  }
 }
 
-/** apply/unapply methods for the special case where a view includes another view */
-object PlainViewInclude {
-   /** pre: included is  view with domain from */
-   def apply(home: Term, from: MPath, included: MPath) = ViewInclude(home, from, OMMOD(included))
-   def unapply(s: Declaration) : Option[(Term, MPath, MPath)] = {
-      s match {
-         case d : DefinedStructure => d.name match {
-            case LocalName(List(ComplexStep(from))) => d.df match {
-               case OMMOD(included) => Some((d.home, from, included))
-               case _ => None
-            }
-            case _ => None
-         }
-         case _ => None
-      }
-   }
+/** a [[LinkInclude]] of the identity morphism: the analog to a plain include in a theory */
+object IdentityInclude {
+  /**
+   * @param home the link
+   * @param from the theory that is included into domain and codomain and fixed by the link
+   */
+  def apply(home: Term, from: MPath) = LinkInclude(home, from, OMIDENT(OMMOD(from)))
+  def unapply(d: ContentElement) = d match {
+    case LinkInclude(h, f, OMIDENT(OMMOD(p))) if f == p => Some((h,f))
+    case _ => None
+  }
 }

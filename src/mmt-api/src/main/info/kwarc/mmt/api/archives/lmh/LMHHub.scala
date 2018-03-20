@@ -35,7 +35,7 @@ abstract class LMHHub extends Logger {
       // 'repo' => ('repo', None)
       val idx = s.lastIndexOf("@")
       val (pattern, version) = if (idx > 0) {
-        (s.substring(0, idx - 1), Some(s.substring(idx + 1)))
+        (s.substring(0, idx), Some(s.substring(idx + 1)))
       } else {
         (s, None)
       }
@@ -94,7 +94,7 @@ abstract class LMHHubEntry extends Logger {
     controller.backend.getArchive(root).get
   }
   /** loads this archive into the controller (if not done already) */
-  def load(): Unit = {
+  def load() {
     controller.backend.getArchive(root).getOrElse {
       controller.addArchive(root)
     }

@@ -386,38 +386,42 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        }
      }
    }
-
-   /* TODO get* methods must pass context */
-
+   
    /** retrieves the type type of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed
     */
-   def getType(p: GlobalName): Option[Term] = {
-      val c = getConstant(p)
+   def getType(p: GlobalName)(implicit h: History): Option[Term] = {
+      val c = getConstant(p).getOrElse {return None}
       val t = c.tpC.getAnalyzedIfFullyChecked
       if (t.isDefined)
         addDependency(p $ TypeComponent)
       t
    }
-
-  private def getConstant(p : GlobalName) : Constant =
-    controller.library.get(ComplexTheory(constantContext), LocalName(p.module) / p.name, s => throw GetError(s)) match {
-      case c: Constant => c
-      case d => throw GetError("Not a constant: " + d)
-    }
-
+   
    /** retrieves the definiens of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed
     */
-   def getDef(p: GlobalName) : Option[Term] = {
-      val c = getConstant(p)
+   def getDef(p: GlobalName)(implicit h: History) : Option[Term] = {
+      val c = getConstant(p).getOrElse {return None}
       val t = c.dfC.getAnalyzedIfFullyChecked
       if (t.isDefined)
         addDependency(p $ DefComponent)
       t
    }
+
+   private def getConstant(p : GlobalName)(implicit h: History): Option[Constant] =
+    lookup.getO(ComplexTheory(constantContext), LocalName(p.module) / p.name) match {
+      case Some(c: Constant) => Some(c)
+      case Some(_) =>
+        error("not a constant: " + p)
+        None
+      case None =>
+        error("constant not found: " + p)
+        None
+    }
+
    def getModule(p: MPath) : Option[Module] = {
       controller.globalLookup.getO(p) match {
          case Some(m: Module) => Some(m)
@@ -428,8 +432,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
   // TODO this should track lookups for dependency management
   def lookup = controller.globalLookup
-  @deprecated("Used in LFX, but could probably be done better","")
-  def materialize(cont : Context, tm : Term, expandDefs : Boolean, parent : Option[MPath]) = controller.simplifier.materialize(cont,tm,expandDefs,parent)
 
    /**
     * looks up a variable in the appropriate context
@@ -637,7 +639,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      def prepareS(s: Stack)(implicit h: History) = {
         //  ^^ subs might be redundant because simplifier expands defined variables
         // but there may be subtleties because terms may already be marked as simple
-        Stack(controller.simplifier(s.context ^^ subs, constantContext ++ solution, rules))
+        Stack(controller.simplifier(s.context ^^ subs, constantContext ++ solution, rules, false))
      }
      // look for an activatable constraint
      val solved = getSolvedVariables
@@ -716,6 +718,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               case None =>
                 error("unsolved (untyped) unknown: " + vd.name)
               case Some(tp) =>
+                def tryAHole = if (vd.name.startsWith(ParseResult.VariablePrefixes.explicitUnknown)) {
+                  solve(vd.name, Hole(tp))
+                }
                 val rO = typebasedsolutionRules.find(r => r.applicable(tp))
                 rO match {
                   case Some(rule) =>
@@ -725,9 +730,12 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                       case Some(p) =>
                         solve(vd.name, p)
                       case None =>
+                        tryAHole
                         error("no solution found")
                     }
-                  case _ => error("unsolved (typed) unknown: " + vd.name)
+                  case _ =>
+                    tryAHole
+                    error("unsolved (typed) unknown: " + vd.name)
                 }
             }
       }
@@ -776,9 +784,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       }
       JudgementStore.getOrElseUpdate(j) {
         history += j
-        log("checking: " + j.presentSucceedent)
+        log("checking: " + j.presentSucceedent + "\n  in context: " + j.presentAntecedent)
         logAndHistoryGroup {
-          log("in context: " + j.presentAntecedent)
           j match {
             case j: Typing   => checkTyping(j)
             case j: Subtyping => checkSubtyping(j)
@@ -828,6 +835,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      val solved = solveTyping(tm, tp)
      if (solved) return true
      def checkByInference(tpS: Term): Boolean = {
+        log("Checking by inference")
          val hisbranch = history.branch
          inferType(tm)(stack, hisbranch) match {
             case Some(itp) =>
@@ -873,15 +881,18 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        // the foundation-dependent cases
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
-         limitedSimplify(tp,typingRules) match {
+         log("finding applicable typing rule")
+         logAndHistoryGroup{limitedSimplify(tp,typingRules)} match {
            case (tpS, Some(rule)) =>
              try {
+                log("Applying TypingRule " + rule.toString)
                 history += "Applying TypingRule " + rule.toString
                 rule(this)(tm, tpS)
              } catch {
                case TypingRule.SwitchToInference =>
                  checkByInference(tpS)
                case rule.DelayJudgment(msg) =>
+                 log("Delaying judgment " + j)
                  delay(Typing(stack, tm, tpS, j.tpSymb))(history + msg)
              }
            case (tpS, None) =>
@@ -1409,7 +1420,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * this subsumes substituting for solved unknowns before simplifier expands defined variables
     */
    def simplify(t : Obj)(implicit stack: Stack, history: History): t.ThisType = {
-      val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context, rules)
+      val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context, rules, false)
       if (tS != t)
          history += ("simplified: " + presentObj(t) + " ~~> " + presentObj(tS))
       tS
@@ -1462,6 +1473,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      def expandDefinition: Term = {
        val tmE = defExp(tm, outerContext++stack.context)
        if (tmE hashneq tm)
+         log("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
          history += ("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
        tmE
      }
@@ -1511,7 +1523,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               if (rule.head == op) {
                 val ret = rule(thisSolver)(t, false)(Stack(con),history)
                 ret foreach {tmS =>
-                  history += "applying computation rule " + rule.toString
+                  log("applied computation rule " + rule.toString + " to " + presentObj(t))
+                  history += "applied computation rule " + rule.toString
                   done = true
                   return tmS
                 }

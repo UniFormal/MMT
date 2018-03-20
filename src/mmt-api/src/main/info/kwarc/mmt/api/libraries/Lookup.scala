@@ -44,9 +44,9 @@ abstract class Lookup {self =>
    def getModule(path: MPath): Module = getAs(classOf[Module], path)
 
    /** lookup a declaration in a (possibly complex) module
-     *
-     * @param home the module in which to look up
-    * @param name the name look up
+    *
+    * @param home the module in which to look up
+    * @param name the name look up; must start with ComplexStep unless it is local to home
     * @param error the continuation to call on the error message
     * @return the declaration
     */
@@ -57,7 +57,7 @@ abstract class Lookup {self =>
    def getAs[E <: ContentElement](cls : Class[E], home: Term, name: LocalName, error: String => Nothing): E =
       as(cls){get(home, name, error)}
 
-   // deprecated, use getAs(classOf[X] instead of getX
+   // deprecated, use getAs(classOf[X],...) instead of getX
    def getTheory(path : MPath, msg : Path => String = defmsg) : Theory =
      get(path) match {case t: Theory => t case _ => throw GetError(msg(path))}
    def getDeclaredTheory(path : MPath, msg : Path => String = defmsg) : DeclaredTheory =
@@ -72,10 +72,6 @@ abstract class Lookup {self =>
      get(path) match {case e : Constant => e case _ => throw GetError(msg(path))}
    def getStructure(path : GlobalName, msg : Path => String = defmsg) : Structure =
      get(path) match {case e : Structure => e case _ => throw GetError(msg(path))}
-/*   def getPatternAssignment(path : GlobalName, msg : Path => String = defmsg) : PatternAssignment =
-     get(path) match {case e : PatternAssignment => e case _ => throw GetError(msg(path))}
-   def getPattern(path : GlobalName, msg: Path => String = defmsg) : Pattern =
-     get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}*/
 
    def getComponent(path: CPath) : ComponentContainer = {
       val se = getO(path.parent).getOrElse(throw GetError("parent does not exist: " + path))
@@ -89,8 +85,13 @@ abstract class Lookup {self =>
    def getImplicit(from: MPath, to: MPath) : Option[Term] = getImplicit(OMMOD(from), OMMOD(to))
    def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined
 
-   def getDeclarationsInScope(mod: Term): List[StructuralElement]
-
+   /**
+    * apply a function to all declarations that are visible (based on what is currently loaded) to a theory
+    * @param mod the theory
+    * @param f applied to (theory t declaring d, morphism mod->t that makes d visible, d)
+    */
+   def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit): Unit
+   
    /** if p is imported by a structure, returns the preimage of the symbol under the outermost structure */
    def preImage(p : GlobalName) : Option[GlobalName]
 

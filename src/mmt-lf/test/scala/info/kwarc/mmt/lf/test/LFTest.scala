@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.test.utils.testers._
 import info.kwarc.mmt.api.test.utils._
 
 class LFTest extends MMTIntegrationTest(
-  "MMT/urtheories",
+  TestArchive("MMT/urtheories", hasDevel = true),
   "MMT/LFX",
   "Test/General",
   "MMT/examples"
@@ -45,8 +45,8 @@ object Orders {
     ,"topology/basics.mmt"
     ,"algebra/basics.mmt"
     ,"algebra/ringsfields.mmt"
-    ,"algebra/numberspaces.mmt"
     ,"algebra/modulsvectors.mmt"
+    ,"algebra/numberspaces.mmt"
     ,"calculus/normedmetric.mmt"
     ,"calculus/sequencesseries.mmt"
     ,"calculus/limitsderivatives.mmt"

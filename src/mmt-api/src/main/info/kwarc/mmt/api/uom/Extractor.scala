@@ -194,8 +194,8 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
      rh.writeln("import " + trtPackage + "._\n")
      rh.writeln("import " + nameToScala(from.path.name) + "._\n")
      val includes = from.getIncludesWithoutMeta.flatMap {f =>
-        v.getO(LocalName(ComplexStep(f))) match {
-           case Some(PlainViewInclude(_,_,i)) => " with " + mpathToScala(i)
+        v.getO(LocalName(f)) match {
+           case Some(LinkInclude(_,_,OMMOD(i))) => " with " + mpathToScala(i)
            case _ => ""
         }
      }.mkString("")

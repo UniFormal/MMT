@@ -137,7 +137,7 @@ abstract class ReportHandler(val id: String) {
   def apply(ind: Int, e: Error, debug: Boolean) {
     val caller = e.getStackTrace()(0).toString
     val (msg,content) = e match {
-      case _: ContentError => (contentErrorHighlight(e.shortMsg), true)
+      case _: ContentError => (contentErrorHighlight(e.shortMsg), e.getCausedBy.isEmpty)
       case _ => (systemErrorHighlight(e.shortMsg), false)
     }
     // only report real errors

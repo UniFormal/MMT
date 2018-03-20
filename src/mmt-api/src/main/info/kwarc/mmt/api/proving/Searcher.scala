@@ -48,7 +48,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
          case gn : GlobalName => Some(gn.module)
          case _ => None
       })
-      controller.simplifier.materialize(provingUnit.context,tm,true,mpath) match {
+      controller.simplifier.materialize(provingUnit.context,tm,mpath,None) match {
          case dt : modules.DeclaredTheory =>
             Some(dt)
          case _ =>
@@ -153,11 +153,11 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
 
    /** statefully changes g to a simpler goal */
    private def simplifyGoal(g: Goal) {
-      g.setConc(controller.simplifier(g.conc, g.fullContext, rules))
+      g.setConc(controller.simplifier(g.conc, g.fullContext, rules, false))
    }
    /** simplify a fact */
    private[proving] def simplifyFact(f: Fact): Fact = {
-      val tpS = controller.simplifier(f.tp, f.goal.fullContext, rules)
+      val tpS = controller.simplifier(f.tp, f.goal.fullContext, rules, false)
       f.copy(tp = tpS)
    }
 

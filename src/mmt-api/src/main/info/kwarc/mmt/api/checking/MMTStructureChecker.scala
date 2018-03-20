@@ -26,7 +26,9 @@ case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: O
 }
 
 
-/** A StructureChecker traverses structural elements and checks them structurally.
+/** A StructureChecker traverses structural elements and checks them, calling the object checker as needed.
+  * 
+  * After checking an element, it is immediately elaborated.
   *
   * Deriving classes may override unitCont and reCont to customize the behavior.
   */
@@ -36,6 +38,19 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   private implicit lazy val content = controller.globalLookup
   override val logPrefix = "structure-checker"
 
+  /* interaction with simplifier
+   * 
+   * All container elements are streamed in to the simplifier even if they are not streamed into the checker.
+   * simplifier.applyElementBegin and applyElementEnd are called (as well as calls for every child).
+   * These calls happen at the end of checkElementBegin as well as of elementChecked, which is called by both check and checkElementEnd.
+   * 
+   * For non-container elements simplifier.applyChecked is called in elementChecked. 
+   */
+  
+  
+  /* the entry points
+   * invariant for container elements: applyElementBegin + apply on every child + applyElementEnd <=> apply 
+   */
   def apply(e: StructuralElement)(implicit ce: CheckingEnvironment) {
     applyWithTimeout(e, None)
   }
@@ -66,6 +81,17 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     }
   }
 
+  /** called after checking an element */
+  private def elementChecked(e: StructuralElement)(implicit env: ExtendedCheckingEnvironment) {
+    e match {
+      case e: ContainerElement[_] =>
+        env.ce.simplifier.applyElementEnd(e)(env.ce.simpEnv)
+      case _ =>
+        env.ce.simplifier.applyChecked(e)(env.ce.simpEnv)
+    }
+    new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
+  }
+
   @deprecated("unclear what happens here", "")
   def elabContext(th : DeclaredTheory)(implicit ce: CheckingEnvironment): Context = {
     //val con = getContext(th)
@@ -92,7 +118,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   /**
     * @param context all variables and theories that may be used in e (including the theory in which is declared)
     * @param e       the element to check
-    * @param streamed true if a later call of applyElementEnd on the parent of e is expected; so checks performed in applyElementEnd should be skipped
+    * @param streamed true if a later call of checkElementEnd on this element or its parent is expected; all checks performed in checkElementEnd are skipped
     */
   // e will be marked as checked (independent of whether there are errors)
   private def check(context: Context, e: StructuralElement, streamed: Boolean)(implicit env: ExtendedCheckingEnvironment) {
@@ -100,8 +126,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val path = e.path
     log("checking " + path )//+ " using the following rules: " + env.rules.toString)
     e match {
-      //TODO merge this case with the generic case for ContainerElements
-      //the extended treatment is probably needed for all ContainerElements anyway
       case c: ContainerElement[_] =>
         checkElementBegin(context, c)
         // mark all children as unchecked
@@ -114,14 +138,17 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         val (contextI, envI) = prepareCheckExtendContext(context, env, additionalContext)
         logGroup {
           tDecls foreach {d =>
-            check(contextI, d, streamed)(envI)
+            check(contextI, d, false)(envI)
           }
         }
-        checkElementEnd(context, c)
+        if (!streamed)
+           checkElementEnd(context, c)
       case oe: OpaqueElement =>
+        // when streamed, opaque elements are checked in the checkElementEnd method of their parent (to allow for forward-references)
         if (!streamed) {
           controller.extman.get(classOf[OpaqueChecker], oe.format) match {
-            case None => env.errorCont(InvalidElement(oe, "no checker found for format " + oe.format))
+            case None =>
+              env.errorCont(InvalidElement(oe, "no checker found for format " + oe.format))
             case Some(oc) =>
               oc.check(objectChecker, context, env.rules, oe)
           }
@@ -133,59 +160,40 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
         //TODO decide what to do here; usually, checking is redundant and may even fail here if the context is not fully elaborated and loaded
         //apply(target)
-      case dd: DerivedDeclaration =>
-        val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
-        sfOpt match {
-          case None =>
-            env.errorCont(InvalidElement(dd, s"structural feature '${dd.feature}' not registered"))
-          case Some(sf) =>
-            dd.tpC.get foreach {tp =>
-              val tpR = checkTerm(context, tp)
-              // not using tpR here because source references are gone
-            }
-            val conInner = sf.getInnerContext(dd)
-            check(context ++ conInner, dd.module, streamed)
-            sf.check(dd) //TODO this should happened at ElementEnd only
-        }
       case nm: NestedModule =>
         check(context, nm.module, streamed)
       case t: DefinedTheory =>
           checkTheory(Some(CPath(t.path, DefComponent)), context, t.df)
       case v: DefinedView =>
-        checkTheory(Some(CPath(v.path, DomComponent)), context, v.from)
-        checkTheory(Some(CPath(v.path, CodComponent)), context, v.to)
-        val (dfR, _, _) = checkMorphism(context, v.df, Some(v.from), Some(v.to))
+        checkTheory(CPath(v.path, DomComponent), v, context, v.fromC.get)
+        checkTheory(CPath(v.path, CodComponent), v, context, v.toC.get)
+        val (dfR, fromR, toR) = checkMorphism(context, v.df, v.fromC.get, v.toC.get)
+        v.fromC.analyzed = fromR
+        v.toC.analyzed = toR
         v.dfC.analyzed = dfR
       case s: DefinedStructure =>
         val (thy, linkOpt) = content.getDomain(s)
-        linkOpt match {
+        s.fromC.get foreach {f => checkTheory(Some(CPath(s.path, TypeComponent)), context, f)}
+        val (expectedDomain, expectedCodomain) = linkOpt match {
           case None =>
-            // declaration in a theory
-            checkTheory(Some(CPath(s.path, TypeComponent)), context, s.from)
-            checkRealization(context, s.df, s.from)
+            (s.fromC.get, Some(thy.toTerm))
           case Some(link) =>
-            // assignment in a link
-            if (s.isInclude) {
-              val (dfR, dom, _) = checkMorphism(context, s.df, Some(s.from), Some(link.to))
-              dom match {
-                case OMMOD(p) =>
-                  //TODO check if p is included into link.from
-                  s.dfC.analyzed = dfR
-                case _ =>
-                  env.errorCont(InvalidElement(s, "cannot infer atomic domain of assignment"))
-              }
-            } else {
-              val sOrg = content.getStructure(thy.path ? s.name)
-              // infer and set s.from if not provided
-              if (s.tpC.isDefined) {
-                if (!TheoryExp.equal(sOrg.from, s.from))
-                  env.errorCont(InvalidElement(s, "import-assignment has bad domain: found " + s.from + " expected " + sOrg.from))
-              } else {
-                s.tpC.analyzed = s.from
-              }
-              checkRealization(context, s.df, s.from)
+            val sOrg = content.getStructure(thy.path ? s.name)
+            val sOrgFrom = sOrg.from
+            s.fromC.get match {
+              case None =>
+                // if no domain is given, copy it over from thy
+                s.fromC.analyzed = sOrgFrom
+              case Some(f) =>
+                // otherwise, make sure they're equal 
+                if (!TheoryExp.equal(sOrgFrom, f))
+                  env.errorCont(InvalidElement(s, "import-assignment has bad domain: found " + f + " expected " + sOrgFrom))
             }
+            (Some(s.from), Some(link.to))
         }
+        val (dfR, fromR, _ ) = checkMorphism(context, s.df, expectedDomain, expectedCodomain)
+        s.fromC.analyzed = fromR
+        s.dfC.analyzed = dfR
       case rc: RuleConstant =>
         val _ = checkTerm(context, rc.tp)
         if (rc.df.isEmpty) {
@@ -270,8 +278,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                 // try to guess the type of d by inferring without checking
                 val dIO = Solver.infer(controller, context ++ pr.unknown ++ pr.free, d, Some(env.rules))
                 dIO match {
-                  // need to check for free variables in dI because unknowns might be left (but maybe this check is too strict?)
-                  case Some(dI) if dI.freeVars.isEmpty =>
+                  // we can only use the infered type if no extra variables are left in it
+                  case Some(dI) if dI.freeVars.forall(x => context.isDeclared(x))  =>
                     // dI was not computed by trusting d, so we need to check it as well; also this call sets c.tp 
                     checkInhabitable(ParseResult(Context.empty,Context.empty, dI))
                     (pr.unknown, dI, false)
@@ -312,8 +320,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         logError("unchecked " + path)
     }
     UncheckedElement.erase(e)
-    new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
-  }
+    e match {
+      case _:ContainerElement[_] if streamed =>
+        // streamed container elements are finalized in checkElementEnd
+      case _ =>
+        elementChecked(e)
+    }
+  }  
 
   /** determines which dimension of a term (parsed, analyzed, or neither) is checked */
   private def getTermToCheck(tc: TermContainer, dim: String) = {
@@ -339,9 +352,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
 
   /** auxiliary method of check */
   private def checkElementBegin(context : Context, e : ContainerElement[_<: StructuralElement])(implicit env: ExtendedCheckingEnvironment) {
+    val path = e.path
+    log("checking begin of " + path )
     val rules = env.rules
     implicit val ce = env.ce
-    val path = e.path
     e match {
       case d: Document =>
       case t: DeclaredTheory =>
@@ -355,63 +369,91 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         // this is redundant on a clean check because e is empty then;
         e.getPrimitiveDeclarations foreach {d => UncheckedElement.set(d)}
       case v: DeclaredView =>
-        checkTheory(None, context, v.from) //TODO Some(CPath(v.path, DomComponent))
-        checkTheory(None, context, v.to) //TODO Some(CPath(v.path, DomComponent))
+        checkTheory(CPath(v.path, DomComponent), v, context, v.fromC.get)
+        checkTheory(CPath(v.path, CodComponent), v, context, v.toC.get)
       case s: DeclaredStructure =>
-        checkTheory(Some(CPath(s.path, TypeComponent)), context, s.from)
+        checkTheory(CPath(s.path, TypeComponent), s, context, s.fromC.get)
+      case dd: DerivedDeclaration =>
+        val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
+        sfOpt match {
+          case None =>
+            env.errorCont(InvalidElement(dd, s"structural feature '${dd.feature}' not registered"))
+          case Some(sf) =>
+            dd.tpC.get foreach {tp =>
+              val tpR = checkTerm(context, tp)
+              // not using tpR here because source references are gone
+            }
+        }
       case _ =>
         //succeed for everything else but signal error
         logError("unchecked " + path)
     }
+    ce.simplifier.applyElementBegin(e)(ce.simpEnv)
   }
 
   /** auxiliary method of check */
   private def checkElementEnd(context: Context, e: ContainerElement[_])(implicit env: ExtendedCheckingEnvironment) {
+    log("checking end of " + e.path )
+    val ce = env.ce
     e match {
       case d: Document =>
       case t: DeclaredTheory =>
-        val (contextI, envI) = prepareCheckExtendContext(context, env, controller.getExtraInnerContext(t))
-        // check all the narrative structure (at the end to allow forward references)
-        //TODO currently this is called on a NestedModule before the rest of the parent is checked
-        def doDoc(ne: NarrativeElement) {
-          ne match {
-            case doc: Document => doc.getDeclarations foreach doDoc
-            case r: NRef =>
-            case oe: OpaqueElement =>
-              check(contextI, oe, false)(envI)
-          }
-        }
-        doDoc(t.asDocument)
       case v: DeclaredView =>
         val istotal = isTotal(context,v)
-        if (!(v.istotal contains false) && istotal.nonEmpty) {
-          v.istotal = Some(false)
+        if (istotal.nonEmpty) {
           val ie = new InvalidElement(v, "View is not total") {
             override def level = Level.Warning
             override def extraMessage = istotal.map(_.toString).mkString("\n")
           }
           env.errorCont(ie)
-        } else if (v.istotal.isEmpty) v.istotal = Some(true)
-        // TODO totality check
+        }
       case s: DeclaredStructure =>
+      case dd: DerivedDeclaration =>
+        val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
+        // error for sfOpt.isEmpty is raised in checkElementegin already
+        sfOpt foreach {sf =>
+          sf.check(dd)
+        }
       case _ =>
         //succeed for everything else but signal error
         logError("unchecked " + e.path)
     }
+    // check all the narrative structure (at the end to allow forward references)
+    val (contextI, envI) = prepareCheckExtendContext(context, env, controller.getExtraInnerContext(e))
+    def doDoc(ne: NarrativeElement) {
+      ne match {
+        case doc: Document => doc.getDeclarations foreach doDoc
+        case r: NRef =>
+        case oe: OpaqueElement =>
+          check(contextI, oe, false)(envI)
+      }
+    }
+    e match {
+      case d: Document =>
+        doDoc(d)
+      case b: Body =>
+        doDoc(b.asDocument)      
+      case _ =>
+    }
+    ce.simplifier.applyElementEnd(e)(ce.simpEnv)
+    elementChecked(e)
   }
-
-  private def isTotal(context : Context, view : DeclaredView, currentincl : Option[Term] = None) : List[GlobalName] = {
-    val dom = controller.simplifier.materialize(context,currentincl.getOrElse(view.from),true,None).asInstanceOf[DeclaredTheory]
-    controller.simplifier(dom)
-    val consts = dom.getConstants.collect{
-      case c : Constant if !view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name) => c.path
+  
+  /** checks if a view is total and returns the missing assignments */
+  @deprecated("needs review", "")
+  private def isTotal(context: Context, view: DeclaredView, currentincl: Option[Term] = None)(implicit env: ExtendedCheckingEnvironment): List[GlobalName] = {
+    val dom = env.ce.simplifier.materialize(context,currentincl.getOrElse(view.from),None,None).asInstanceOf[DeclaredTheory]
+    env.ce.simplifier(dom)
+    val consts = dom.getConstants collect {
+      case c : Constant if c.df.isEmpty && !view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name) => c.path
     }
-    val incls = dom.getIncludesWithoutMeta.view.filterNot(from =>
-      view.getDeclarations.exists(d => d.name == LocalName(from))).filterNot(from =>
-      controller.library.getImplicit(OMMOD(from),view.to).isDefined).flatMap{
-      case from =>
+    val incls = dom.getIncludesWithoutMeta.view.filterNot {from =>
+        view.getDeclarations.exists(d => d.name == LocalName(from))
+      }.filterNot {from =>
+        controller.library.getImplicit(OMMOD(from),view.to).isDefined
+      }.flatMap {case from =>
         isTotal(context,view,Some(OMMOD(from)))
-    }
+      }
     (consts ::: incls.toList).distinct
   }
 
@@ -476,6 +518,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       val result = objectChecker(cu, env.rules)(env.ce)
       result.term
   }
+  /** like checkTheory but reports an error if the theory is absent */
+  private def checkTheory(cpath: CPath, elem: StructuralElement, context: Context, tO: Option[Term])(implicit env: ExtendedCheckingEnvironment) {tO match {
+    case Some(t) =>
+      checkTheory(Some(cpath), context, t)
+    case None =>
+      env.errorCont(InvalidElement(elem, "missing " + cpath.component))
+  }}
 
   /** checks whether a morphism object is well-formed relative to a domain and a codomain
     * domain and codomain are (tried to be) infered if omitted
@@ -524,23 +573,18 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             (hdR, r, s1)
           else {
             val (tlR, s2, t) = checkMorphism(context, OMCOMP(tl), Some(s1), Some(cod))
-            content.getImplicit(s1, s2) match {
-              case Some(l) =>
-                (OMCOMP(hdR, l, tlR), r, t)
-              case None =>
-                throw InvalidObject(m, "ill-formed morphism: " + hd + " cannot be composed with " + tl)
-            }
+            // implicit morphism s1 -> s2 is inserted into tlR by recursive call
+            (OMCOMP(hdR, tlR), r, t)
           }
       }
       case ComplexMorphism(body) =>
         // get domain and codomain as contexts
         val bodyR = checkSubstitution(context, body, domC, codC, false)
         (ComplexMorphism(bodyR), dom, cod)
+      case _ =>
+        throw InvalidObject(m, "unknown morphism")
     }
-    lazy val domIC = ComplexTheory.unapply(domI) getOrElse {
-      throw InvalidObject(m, "domain is not a theory")
-    }
-    val implDom = content.getImplicit(dom, ComplexTheory(context ++ domIC))
+    val implDom = content.getImplicit(dom, domI)
     val implCod = content.getImplicit(codI, ComplexTheory(context ++ codC))
     val mRR = (implDom, implCod) match {
       case (Some(l0), Some(l1)) => OMCOMP(l0, mR, l1)
@@ -647,7 +691,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         checkTerm(context, synType)
         val rts = env.rules.get(classOf[uom.RealizedType])
         if (!rts.exists(_ == l.rt))
-          env.errorCont(InvalidObject(s, "literal not in scope: " + l.toString + " of type " + l.rt.toString))
+          env.errorCont(InvalidObject(l, "literal not in scope: " + l.toString + " (of type: " + l.synType + ", realized as: " + l.rt.semType + ")"))
         l
       // resolve type and parse unknown literal, return OMLIT
       case u @ UnknownOMLIT(v, synType) =>

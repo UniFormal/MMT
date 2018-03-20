@@ -149,13 +149,13 @@ class GAPDocImporter extends Importer {
 
         }
         val arg = (c \ "@Arg").text // seems to be unnecessary
-        val const = new FinalConstant(OMMOD(mpath), name, Nil, TermContainer(None), TermContainer(None), None, NotationContainer())
+        val const = Constant(OMMOD(mpath), name, Nil, TermContainer(None), TermContainer(None), None, NotationContainer())
         add(const, c.toString.substring(0, c.toString.indexOf(">") + 1))
         lastDecl = Some(const, c)
       case "Returns" =>
         lastDecl match {
           case Some(d) =>
-            val const = new FinalConstant(OMMOD(mpath), d._1.name, Nil, TermContainer(None), TermContainer(None), None, NotationContainer())
+            val const = Constant(OMMOD(mpath), d._1.name, Nil, TermContainer(None), TermContainer(None), None, NotationContainer())
             //add(const) // should update
           case _ => errorCont(new GAPDocError("Found Returns tag without preceeding concept entry", None, Some(Level.Warning)))
         }

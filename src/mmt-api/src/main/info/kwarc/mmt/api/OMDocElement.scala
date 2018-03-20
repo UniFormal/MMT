@@ -96,6 +96,8 @@ trait ContentElement extends StructuralElement {
 
   def path: ContentPath
 
+  def toTerm: Term
+  
   /** returns all children of this elements */
   def getDeclarations: List[ContentElement]
 

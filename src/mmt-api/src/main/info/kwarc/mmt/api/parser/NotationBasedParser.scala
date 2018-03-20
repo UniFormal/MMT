@@ -134,16 +134,11 @@ class NotationBasedParser extends ObjectParser {
      }
 
      /** name of an omitted implicit argument */
-     def newArgument =
-       LocalName("") / "I" / next
-
+     def newArgument = ParseResult.VariablePrefixes.implicitArg / next
      /** name of the omitted type of a variable */
-     def newType(name: LocalName) =
-       LocalName("") / name / next
-
+     def newType(name: LocalName) = LocalName("") / name / next
      /** name of an explicitly omitted argument */
-     def newExplicitUnknown =
-       LocalName("") / "_" / next
+     def newExplicitUnknown = ParseResult.VariablePrefixes.explicitUnknown / next
 
      /** generates a new unknown variable, constructed by applying a fresh name to all bound variables */
      def newUnknown(name: LocalName, boundNames: List[BoundName])(implicit pu: ParsingUnit) = {
@@ -234,11 +229,11 @@ class NotationBasedParser extends ObjectParser {
     support.foreach {p =>
       controller.simplifier(p)
     }
-    val decls = support.flatMap {p => controller.globalLookup.getDeclarationsInScope(OMMOD(p))}.distinct
     var nots: List[ParsingRule] = Nil
     var les: List[LexerExtension] = Nil
     var notExts: List[NotationExtension] = Nil
-    decls.foreach {
+    support.foreach {p => controller.globalLookup.forDeclarationsInScope(OMMOD(p)) {case (_,via,d) => d match {
+      // TODO technically, d must be translated along via first; but that never changes the notations that we collect
       case c: Constant => // Declaration with HasNotation might collect too much here
         var names = (c.name :: c.alternativeNames).map(_.toString) //the names that can refer to this declaration
         if (c.name.last == SimpleStep("_")) names ::= c.name.init.toString
@@ -266,9 +261,9 @@ class NotationBasedParser extends ObjectParser {
         val tn = new TextNotation(ms, Precedence.infinite, None)
         nots ::= ParsingRule(nm.module.path, Nil, tn)
       case _ =>
-    }
+    }}}
     les = les.sortBy(- _.priority)
-    (nots, les, notExts)
+    (nots.distinct, les.distinct, notExts.distinct)
   }
 
   /* like getRules but for a theory expression (currently only called for local notations) */
@@ -290,7 +285,7 @@ class NotationBasedParser extends ObjectParser {
    */
   private def mayBeFree(n: String) = {
      n != "" && n(0).isLetter &&
-     n.forall(c => c.isLetter || c.isDigit)
+     n.forall(c => c.isUpper || c.isDigit)
   }
 
  /**

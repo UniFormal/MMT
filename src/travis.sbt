@@ -44,7 +44,10 @@ travisConfig := {
       "install" -> sbt("update"),
 
       // setup the test environment, so that the lmh versioning is ignored on devel
-      "before_script" -> List("if [ \"$TRAVIS_BRANCH\" == \"devel\" ]; then export TEST_USE_ARCHIVE_HEAD=1; fi")
+      "before_script" -> List(
+        "if [ \"$TRAVIS_BRANCH\" == \"devel\" ]; then export TEST_USE_ARCHIVE_HEAD=1; fi",
+        "if [ \"$TRAVIS_BRANCH\" == \"devel\" ]; then export TEST_USE_DEVEL=1; fi"
+      )
     ),
 
     MatrixSet(

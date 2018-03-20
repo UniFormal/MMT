@@ -53,7 +53,7 @@ trait CheckActionHandling {
     val checker = extman.get(classOf[Checker], id).getOrElse {
       throw GeneralError(s"no checker $id found")
     }
-    checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore, task))
+    checker(p)(new CheckingEnvironment(simplifier, new ErrorLogger(report), RelationHandler.ignore, task))
   }
 
   /** Checks a term relative to the current base path, handling [[CheckTerm]] */

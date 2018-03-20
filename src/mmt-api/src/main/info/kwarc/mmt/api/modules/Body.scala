@@ -19,6 +19,8 @@ import documents._
  * The latter is stored as a [[Document]], which holds [[SRef]] to the logical declarations.
 */
 trait Body extends ContentElement with ContainerElement[Declaration] {self =>
+  /** the context of all declarations in this body */
+  def getInnerContext: Context
    /** the set of named statements, indexed by name
     * if a statement has an alternativeName, it occurs twice in this map
     */
@@ -119,8 +121,12 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
       val afterSRef = at match {
         case After(a) =>
           val aN = if (afterNarrative) a
-             else SRef(doc.path, path.toMPath ? a).name // name of SRef to afterOpt
+             else SRef(doc.path, path.toMPath ? a).name // name of SRef to a
           After(aN)
+        case Before(a) =>
+          val aN = if (afterNarrative) a
+             else SRef(doc.path, path.toMPath ? a).name // name of SRef to a
+          Before(aN)        
         case at => at
       }
       doc.add(ref, afterSRef)

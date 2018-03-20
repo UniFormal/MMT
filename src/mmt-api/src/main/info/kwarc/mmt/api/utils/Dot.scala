@@ -136,6 +136,7 @@ class DotToSVG(dotPath: File) {
       result match {
         case ShellCommand.Abort(e) => throw DotError("error while running dot").setCausedBy(e)
         case ShellCommand.Fail(m, _) => throw DotError(m)
+        case _: ShellCommand.Success =>
       }
       //dotFile.delete
       val svg = File.read(outFile)

@@ -222,11 +222,8 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     // first try to install via git
     val gitInstall = installGit(id, version)
     // if that has failed, try to download normally
-    if(gitInstall.isEmpty) {
+    gitInstall orElse {
       installGet(id, version)
-    // and if that has failed also, then return the repository
-    } else {
-      gitInstall
     }
   }
 }

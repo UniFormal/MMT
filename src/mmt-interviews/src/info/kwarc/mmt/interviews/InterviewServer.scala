@@ -28,16 +28,16 @@ class InterviewServer extends ServerExtension("interview") {
             val mp = Path.parseM(name,NamespaceMap.empty)
             val th = Theory.empty(mp.parent,mp.name,meta)
             controller add th
-            checker.apply(th)(new CheckingEnvironment(errorCont,RelationHandler.ignore,MMTTask.generic))
+            checker.apply(th)(new CheckingEnvironment(controller.simplifier, errorCont,RelationHandler.ignore,MMTTask.generic))
             return ServerResponse.TextResponse("OK")
         }
         if (query("view").isDefined && query("from").isDefined && query("to").isDefined) {
             val (name,froms,tos) = (query("view").get,query("from").get,query("to").get)
             val mp = Path.parseM(name,NamespaceMap.empty)
             val (from,to) = (Path.parseM(froms,NamespaceMap.empty),Path.parseM(tos,NamespaceMap.empty))
-            val v = new DeclaredView(mp.parent,mp.name,OMMOD(from),OMMOD(to),false)
+            val v = DeclaredView(mp.parent,mp.name,OMMOD(from),OMMOD(to),false)
             controller add v
-            checker.apply(v)(new CheckingEnvironment(errorCont,RelationHandler.ignore,MMTTask.generic))
+            checker.apply(v)(new CheckingEnvironment(controller.simplifier, errorCont,RelationHandler.ignore,MMTTask.generic))
             return ServerResponse.TextResponse("OK")
         }
         if (query("decl").isDefined && query("cont").isDefined) {
@@ -89,7 +89,7 @@ class InterviewServer extends ServerExtension("interview") {
     val pstream = ParsingStream.fromString(s,th.parent,"mmt")
 
     val cont = new StructureParserContinuations(errorCont) {
-      val ce = new CheckingEnvironment(errorCont, RelationHandler.ignore, pstream)
+      val ce = new CheckingEnvironment(controller.simplifier, errorCont, RelationHandler.ignore, pstream)
       override def onElement(se: StructuralElement) {
         checker.applyElementBegin(se)(ce)
       }

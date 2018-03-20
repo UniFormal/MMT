@@ -90,8 +90,9 @@ object SemanticType {
 
 /** a type that is equal to an existing Scala type */
 abstract class Atomic[V] extends RSemanticType[V] {
-   override def valid(u: Any) = unapply(u).isDefined
-   def toString(u: Any) = unapply(u).get.toString
-   /** narrower type */
-   def fromString(s: String): V
+  override def valid(u: Any) = unapply(u).isDefined
+  final def toString(u: Any) = atomicToString(unapply(u).get)
+  def atomicToString(u: V) = unapply(u).get.toString
+  /** narrower type */
+  def fromString(s: String): V
 }

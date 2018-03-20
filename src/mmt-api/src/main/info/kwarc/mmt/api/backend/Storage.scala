@@ -189,7 +189,8 @@ class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase
 class RealizationArchive(file: File) extends Storage with RealizationStorage {
   override def toString = "RealizationArchive for " + file
 
-  def loader: ClassLoader = try {
+  // this must be a val to make sure all classes are loaded by the same class loader (the same class loaded by different class loaders are distinct)
+  val loader: ClassLoader = try {
     val optCl = Option(getClass.getClassLoader)
     // the class loader that loaded this class, may be null for bootstrap class loader
     optCl match {

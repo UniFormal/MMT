@@ -164,51 +164,42 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
     }
   }
 
+}
+
+/** shows tooltips such as type inference (separate from the other TextAreaExtension so that it can be put on a different layer) */
+class MMTToolTips(controller: Controller, editPane: EditPane) extends TextAreaExtension {
+   private def log(msg: String) {controller.report("tooltips", msg)}
+   private val textArea = editPane.getTextArea
+   private val view = editPane.getView
+   
    private def asString(o: Obj) = controller.presenter.asString(o)
-   private def onSelection(ta: TextArea, offset: Int): Option[(Int,Int)] = {
-      if (textArea.getSelectionCount != 1) return None
-      val sel = textArea.getSelection(0)
-      if (sel.getStart <= offset && offset < sel.getEnd)
-         Some((sel.getStart, sel.getEnd))
-      else
-         None
-   }
+   
    override def getToolTipText(xCoord: Int, yCoord: Int): String = {
       val offset = textArea.xyToOffset(xCoord, yCoord, false)
       if (offset == -1) return null
-      onSelection(textArea,offset) match {
-         case Some((b,e)) =>
-            val as = try {MMTSideKick.getAssetAtRange(view, b, e)} catch {case ex: Exception => return ex.getClass.toString+ex.getMessage+" " + b + " " + e}
-            as match {
-               case ta: MMTObjAsset =>
-                  ta.obj match {
-                     case t: Term =>
-                        val thy = ta.getScope.getOrElse(return null)
-                        val tp = try {
-                          checking.Solver.infer(controller, Context(thy) ++ ta.context, t, None).getOrElse {throw GetError("error during type inference")}
-                        } catch {case e : Exception => return e.getMessage}
-                        asString(tp)
-                     case _ => return null
-                  }
-               case _ => return null
+      val (asset,selected) = MMTSideKick.getSelectedAssetAtOffset(view,offset) getOrElse{return null}
+      try {
+        asset match {
+          case ta: MMTObjAsset =>
+            if (selected) {
+              ta.inferType.map(asString).getOrElse(null)
+            } else {
+              ta.obj match {
+                case OMV(n) =>
+                  asString(ta.context(n))
+                case vd : VarDecl =>
+                  asString(vd)
+                case OMA(OMID(p), args) =>
+                  val implicits = args.filter(a => parser.SourceRef.get(a).isEmpty)
+                  if (implicits.isEmpty) null
+                  else implicits.map(asString).mkString("   ")
+                case _ => null
+              }
             }
-         case None =>
-            val as = MMTSideKick.getAssetAtOffset(view,offset)
-            as match {
-               case Some(ta: MMTObjAsset) =>
-                  ta.obj match {
-                    case OMV(n) =>
-                      asString(ta.context(n))
-                    case vd : VarDecl =>
-                        asString(vd)
-                    case OMA(OMID(p), args) =>
-                        val implicits = args.filter(a => parser.SourceRef.get(a).isEmpty)
-                        if (implicits.isEmpty) null
-                        else implicits.map(asString).mkString("   ")
-                    case _ => null
-                  }
-               case _ => null
-            }
+          case _ => null
+        }
+      } catch {case e: Exception =>
+        e.getMessage
       }
    }
 }

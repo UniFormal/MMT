@@ -203,7 +203,9 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    def simplify: LocalName = {
       var complexBefore = false
       val stepsRS = steps.reverse filter {
-         case s: SimpleStep => true
+         case s: SimpleStep =>
+           complexBefore = false
+           true
          case c: ComplexStep =>
             val res = ! complexBefore
             complexBefore = true
@@ -218,7 +220,8 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    /** machine-oriented string representation of this name, parsable and official */
    def toPath : String = steps.map(_.toPath).mkString("", "/", "")
   /** human-oriented string representation of this name, no encoding, possibly shortened */
-   override def toString : String = steps.map(_.toString).mkString("", "/", "")
+   override def toString : String = toStr(false)
+   def toStr(implicit shortURIs: Boolean) = steps.map(_.toStr).mkString("", "/", "")  
 }
 
 /** a step in a LocalName */
@@ -227,6 +230,8 @@ abstract class LNStep {
    def unary_! = LocalName(this)
    def /(n: LocalName) = LocalName(this) / n
    def /(n: LNStep) = LocalName(this) / n
+   override def toString = toStr(false)
+   def toStr(implicit shortURIs: Boolean): String  
 }
 
 object LNStep {
@@ -242,12 +247,12 @@ object LNStep {
 /** constant or structure declaration */
 case class SimpleStep(name: String) extends LNStep {
    def toPath = xml.encodeURI(name)
-   override def toString = name
+   def toStr(implicit shortURIs: Boolean) = name
 }
 /** an include declaration; ComplexStep(fromPath) acts as the name of an unnamed structure */
 case class ComplexStep(path: MPath) extends LNStep {
    def toPath = "[" + path.toPath + "]"
-   override def toString = "[" + path.toString + "]"
+   def toStr(implicit shortURIs: Boolean) = "[" + path.name.toStr + "]"
 }
 
 case class CPath(parent: ComponentParent, component: ComponentKey) extends Path {
