@@ -454,6 +454,18 @@ package object impsArgumentParsers
     }
   }
 
+  /* Parser for IMPS definition-name arguments
+   * used in: def-language */
+  def parseDefinitionName(e : Exp) : Option[DefinitionName] =
+  {
+    assert(e.children.length == 2)
+
+    e.children(1) match {
+      case Exp(List(Str(x)),_) => Some(DefinitionName(x, e.src))
+      case _                   => ???
+    }
+  }
+
   /* Parser for IMPS embedded-langs arguments
    * used in: def-language */
   def parseEmbeddedLangs(e : Exp) : Option[EmbeddedLanguages] =
@@ -523,17 +535,22 @@ package object impsArgumentParsers
       case _                                   => println(" > e = " +e.children(0).toString) ; ???
     }
 
-    var srt : Option[String] = None
+    var srt : Option[IMPSSort] = None
     if (ntp.isDefined)
     {
       srt = e.children(1) match {
-        case Exp(List(Str(y)),_) => Some(y)
+        case Exp(List(Str(y)),k) => {
+          val mp     = new IMPSMathParser()
+          val parsed = mp.parseAll(mp.parseSort, y)
+          assert(parsed.successful)
+          Some(parsed.get)
+        }
         case _                   => ???
       }
     }
 
     if (ntp.isDefined && srt.isDefined) {
-      Some(TypeSortAList(ntp.get,srt.get))
+      Some(TypeSortAList(ntp.get,srt.get,e.src))
     } else {
       ???
     }

@@ -206,7 +206,7 @@ class IMPSParser
 
         case Str("def-atomic-sort") => return impsDefFormParsers.parseAtomicSort(e, js)
 
-        case Str("def-bnf") => return Some(Dummy("def-bnf"))
+        case Str("def-bnf") => ??? // Defunct
 
         case Str("def-cartesian-product") => ??? // Defunct
 
@@ -228,7 +228,7 @@ class IMPSParser
 
         case Str("def-record-theory") => return Some(Dummy("def-record-theory"))
 
-        case Str("def-recursive-constant") => return Some(Dummy("def-recursive-constant"))
+        case Str("def-recursive-constant") => return impsDefFormParsers.parseRecursiveConstant(e,js)
 
         case Str("def-renamer") => return Some(Dummy("def-renamer"))
 

@@ -7,11 +7,11 @@ import info.kwarc.mmt.api.{LocalName, _}
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
+import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.SourceRef
-import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.api.symbols.PlainInclude
+import info.kwarc.mmt.api.symbols.{Declaration, PlainInclude, TermContainer}
 import info.kwarc.mmt.imps.Usage.Usage
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
@@ -107,7 +107,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           throw GeneralError("no checker found")
         }.asInstanceOf[MMTStructureChecker]
         tState.theories_decl foreach { p =>
-          val ce = new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore, this)
+          val ce = new CheckingEnvironment(controller.simplifier,new ErrorLogger(report),RelationHandler.ignore,this)
           checker.apply(p)(ce)
         }
       }
@@ -296,10 +296,34 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       for (tal : TypeSortAList <- l.extens.get.lst)
       {
-        // TODO: Can this be translated into something non-opaque?
-        //       See IMPS manual, pgs. 172, 173
-        val opaque = new OpaqueText(t.path.toDPath, OpaqueText.defaultFormat, StringFragment(tal.toString))
-        controller.add(opaque)
+        var name : String = tal.sort.toString + "_is_"
+
+        val sub : Term = tal.numericType match
+        {
+          case NumericalType.INTEGERTYPE  => {
+            name = name + "integer_type"
+            OMS(IMPSTheory.lutinsPath ? "integerType")
+          }
+          case NumericalType.RATIONALTYPE => {
+            name = name + "rational_type"
+            OMS(IMPSTheory.lutinsPath ? "rationalType")
+          }
+          case NumericalType.OCTETTYPE    => {
+            name = name + "octet_type"
+            ???
+          }
+        }
+
+        val srt = matchSort(tal.sort,t)
+        val knd = findKind(tal.sort)
+        val trm = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), knd, sub, srt)
+        val jdgmttp   : Option[Term] = Some(IMPSTheory.Thm(trm))
+        val judgement : Declaration  = symbols.Constant(t.toTerm, LocalName(name),Nil,jdgmttp,None,Some("Numerical Type Subsort"))
+
+        println(" > adding " + name)
+
+        if (tal.src.isDefined) { doSourceRef(judgement, tal.src.get) }
+        controller add judgement
       }
     }
 
@@ -362,40 +386,63 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         controller add nu_atomicSort
 
       case Constant(name, definition, theory, sort, usages, src) =>
-
+      {
         val ln: LocalName = LocalName(theory.thy.toLowerCase())
+
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
           throw new IMPSDependencyException("required theory " + ln + " for constant not found")
         }
         val parent: DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
 
-        /* look for sort in given theory. */
-        var srt: Option[Term] = None
-        if (sort.isDefined) {
-          println(" > Adding constant with clear sort: " + name)
-          /* Theory not in scope, so we find it by hand */
-          val theTheory: Option[DeclaredTheory] = tState.theories_decl.find(x => x.name == LocalName(theory.thy))
-          assert(theTheory.isDefined)
-
-          srt = Some(doSort(sort.get.sort, theTheory.get))
-        }
-        else {
-          println(" > Adding constant with unclear sort: " + name)
-          srt = None
-        }
-
-        val mth: Term = tState.bindUnknowns(doMathExp(definition, parent,Nil))
-        val nu_constant = symbols.Constant(parent.toTerm, LocalName(name), Nil, srt, Some(mth), Some("Constant"))
+        val srt : Term  = doSort(curry(sort), parent)
+        val mth : Term  = tState.bindUnknowns(doMathExp(definition, parent,Nil))
+        val nu_constant = symbols.Constant(parent.toTerm, LocalName(name.toLowerCase()), Nil, Some(srt), Some(mth), Some("Constant"))
 
         /* Add available MetaData */
-        if (src.isDefined) { doSourceRef(nu_constant, src.get) }
-        if (usages.isDefined) {
-          doUsages(nu_constant, usages.get.usgs)
-        }
+        if (src.isDefined)    { doSourceRef(nu_constant, src.get) }
+        if (usages.isDefined) { doUsages(nu_constant, usages.get.usgs) }
+
+        println(" > Adding constant: " + name.toLowerCase + " : " + sort.toString)
+
         controller add nu_constant
+      }
 
-      case Theorem(name, formula, lemma, reverse, theory, usages, transport, macete, homeTheory, maybeProof, src) => {
+      case RecursiveConstant(names,maths,sorts,argthy,usgs,definame,src) =>
+      {
+        val ln: LocalName = LocalName(argthy.thy.toLowerCase())
+        if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
+          throw new IMPSDependencyException("required theory " + ln + " for constant not found")
+        }
+        val parent: DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
 
+        val theseSorts = sorts.map(curry)
+
+        assert(names.lengthCompare(maths.length) == 0)
+        assert(maths.lengthCompare(theseSorts.length) == 0)
+
+        for (i <- names.indices)
+        {
+          val nm  : LocalName = LocalName(names(i).toLowerCase)
+
+          println(" > " + maths(i))
+
+          var srt : Term      = doSort(theseSorts(i), parent)
+          val mth : Term      = tState.bindUnknowns(doMathExp(maths(i), parent, Nil))
+
+          val nu_constant     = symbols.Constant(parent.toTerm, nm, Nil, Some(srt), Some(mth), Some("Recursive Constant"))
+
+          /* Add available MetaData */
+          if (src.isDefined)  { doSourceRef(nu_constant, src.get) }
+          if (usgs.isDefined) { doUsages(nu_constant, usgs.get.usgs) }
+
+          println(" > adding recursive constant " + nm + " : "  + theseSorts(i).toString)
+
+          controller add nu_constant
+        }
+      }
+
+      case Theorem(name, formula, lemma, reverse, theory, usages, transport, macete, homeTheory, maybeProof, src) =>
+      {
         val ln: LocalName = doName(theory.thy.toLowerCase)
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
           throw new IMPSDependencyException("required theory " + ln + " for theorem not found")
@@ -442,6 +489,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(proof_name + "\n" + proof_text))
           controller add opaque
         }
+
+        println(" > adding theorem " + name + " to theory " + parent.name)
       }
       case Translation(name, force, forceQL, dontEnrich, sourcet, targett, assumptions, fixed, sortpairs, constpairs, coretrans, theintcheck, src) => {
 
@@ -456,7 +505,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(targett.thy).toString.toLowerCase))
         val target_thy : Term = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(targett.thy).toString.toLowerCase).get.toTerm
 
-        val nu_view = new DeclaredView(bt.narrationDPath, ln, source_thy, target_thy, false)
+        val nu_view = new DeclaredView(bt.narrationDPath, ln, TermContainer(source_thy), TermContainer(target_thy), false)
 
         if (force) {
           val mv : GlobalName =     rootdpath ? name ? LocalName("force")
@@ -544,6 +593,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
   def findKind(sort : IMPSSort) : Term =
   {
+    if (sort.isInstanceOf[IMPSNaryFunSort]) { return findKind(curry(sort))}
+
     sort match {
       case IMPSAtomSort("ind")      => OMS(IMPSTheory.lutinsIndType)
       case IMPSAtomSort("prop")     => OMS(IMPSTheory.lutinsPropType)
@@ -559,6 +610,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
   def matchSort(e : IMPSSort, t : DeclaredTheory) : Term =
   {
+    if (e.isInstanceOf[IMPSNaryFunSort]) { return matchSort(curry(e),t)}
+
     e match {
       case IMPSAtomSort("ind")  => OMS(IMPSTheory.lutinsPath ? "ind")
       case IMPSAtomSort("prop") => OMS(IMPSTheory.lutinsPath ? "bool")
@@ -663,8 +716,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSMathSymbol("an%individual") => OMS(IMPSTheory.lutinsPath ? "anIndividual")
       case IMPSMathSymbol(s)               =>
       {
-        if (s.forall(_.isDigit)) {
-          OMLIT(BigInt(s),IntLiterals)
+        if (s.forall(_.isDigit) || (s.startsWith("-") && s.tail.nonEmpty && s.tail.forall(_.isDigit))) {
+          IntLiterals.parse(s)
         }
         else {
           OMS(thy.path ? LocalName(s))
@@ -681,7 +734,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSIf(p,t1,t2)        => IMPSTheory.If(tState.addUnknown(), tState.addUnknown(), doMathExp(p,thy,cntxt), doMathExp(t1,thy,cntxt), doMathExp(t2,thy,cntxt))
       case IMPSIff(p, q)          => IMPSTheory.Iff(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt))
       case IMPSIfForm(p,q,r)      => IMPSTheory.If_Form(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt), doMathExp(r,thy,cntxt))
-      case IMPSEquals(p,q)        => {
+      case IMPSEquals(p,q)        =>
+      {
         var a     : Term = null
         var alpha : Term = null
         var beta  : Term = null
@@ -736,7 +790,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           f match {
             case IMPSVar(_) => {
               if (cntxt.map(_._1).contains(f)) {
-                val theSort = cntxt.find(p => p._1 == f).get._2
+                val theSort = curry(cntxt.find(p => p._1 == f).get._2)
                 theSort match {
                   case IMPSBinaryFunSort(s1,s2) => {
                     alpha = matchSort(s1,thy)
@@ -750,7 +804,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
                     a     = findKind(s1)
                     b     = findKind(IMPSAtomSort("unit%sort"))
                   }
-                  case _ => println(" > theSort = " + theSort.toString) ; assert(false)
                 }
               }
             }
@@ -760,7 +813,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           ts.head match {
             case IMPSVar(_) => {
               if (cntxt.map(_._1).contains(ts.head)) {
-                val theSort = cntxt.find(p => p._1 == ts.head).get._2
+                val theSort = curry(cntxt.find(p => p._1 == ts.head).get._2)
                 gamma = matchSort(theSort,thy)
                 if (a == null) { a = findKind(theSort) } else { assert(a == findKind(theSort)) }
               }
@@ -784,44 +837,50 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         }
       }
       case IMPSIota(v1,s1,p)      => {
-        val the_exp = doMathExp(p,thy,cntxt ::: List((v1,s1)))
-        val the_srt = matchSort(s1,thy)
-        val the_knd = findKind(s1)
+        val s       = curry(s1)
+        val the_exp = doMathExp(p,thy,cntxt ::: List((v1,s)))
+        val the_srt = matchSort(s,thy)
+        val the_knd = findKind(s)
 
-        val target = info.kwarc.mmt.lf.Lambda(LocalName(v1.v), doSort(s1,thy), the_exp)
+        val target = info.kwarc.mmt.lf.Lambda(LocalName(v1.v), doSort(s,thy), the_exp)
 
         IMPSTheory.Iota(the_knd,the_srt,target)
       }
       case IMPSIotaP(v1,s1,p)     => {
-        val the_exp = doMathExp(p,thy,cntxt ::: List((v1,s1)))
-        val the_srt = matchSort(s1,thy)
-        IMPSTheory.IotaP(the_srt,the_exp)
+        val s       = curry(s1)
+        val the_exp = doMathExp(p,thy,cntxt ::: List((v1,s)))
+        val the_srt = matchSort(s,thy)
+
+        val target = info.kwarc.mmt.lf.Lambda(LocalName(v1.v), doSort(s,thy), the_exp)
+
+        IMPSTheory.IotaP(the_srt,target)
       }
       case IMPSIsDefined(r)       => IMPSTheory.IsDefined(tState.addUnknown(), tState.addUnknown(), doMathExp(r,thy,cntxt))
       case IMPSIsDefinedIn(r,s)   => IMPSTheory.IsDefinedIn(findKind(s), tState.addUnknown(), doMathExp(r,thy,cntxt), matchSort(s,thy))
       case IMPSUndefined(s)       => IMPSTheory.Undefined(findKind(s), matchSort(s,thy))
 
-      case IMPSTotal(f,b)         => {
+      case IMPSTotal(f,bs)         =>
+      {
+        var alpha_s : IMPSSort = null
+        var beta_s  : IMPSSort = null
 
-        f match {
-          case IMPSVar(x) => {
-            if (cntxt.map(_._1).contains(f))
-            {
-              println(" > f: " + f.toString + ", cntxt: " + cntxt.toString())
-              assert(cntxt.map(_._1).contains(f))
-              val pf = cntxt.find(k => k._1 == f).get
-              pf._2 match {
-                case IMPSBinaryFunSort(s1,s2) => {
-                  val the_exp = doMathExp(f,thy,cntxt)
-                  val the_srt = matchSort(b,thy)
-                  assert(findKind(s1) == findKind(s2))
-                  IMPSTheory.Total(findKind(s1),matchSort(s1,thy),matchSort(s2,thy),the_exp,the_srt)
-                }
-                case _ => ???
-              }
-            } else{ IMPSTheory.Total(tState.addUnknown(),tState.addUnknown(),tState.addUnknown(),doMathExp(f,thy,cntxt),matchSort(curry(b),thy)) }
-          } case _ => { IMPSTheory.Total(tState.addUnknown(),tState.addUnknown(),tState.addUnknown(),doMathExp(f,thy,cntxt),matchSort(b,thy)) }}
+        curry(bs) match
+        {
+          case IMPSBinaryFunSort(s1,s2) => { alpha_s = s1 ; beta_s = s2}
+          case _ => ??? // Impossible
+        }
+
+        assert(alpha_s != null && beta_s != null)
+
+        val a     = findKind(alpha_s)
+        val b     = findKind(beta_s)
+        val alpha = matchSort(alpha_s,thy)
+        val beta  = matchSort(beta_s,thy)
+        val func  = doMathExp(f,thy,cntxt)
+
+        IMPSTheory.Total(a,b,alpha,beta,func)
       }
+
       case IMPSNonVacuous(p) => {
         if (cntxt.map(_._1).contains(p)) {
           val foo = cntxt.find(k => k._1 == p).get
@@ -892,7 +951,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     var b     : Term = null
 
     val thisVar     : LocalName = LocalName(lambda.vs.head._1.v)
-    val thisSrt     : IMPSSort  = lambda.vs.head._2
+    val thisSrt     : IMPSSort  = curry(lambda.vs.head._2)
     val expSortTerm : Term      = doSort(thisSrt,thy)     // <-- this is "exp whateversort"
     val target      : Term      = doMathExp(lambda.t,thy,cntxt)
     val body        : Term      = info.kwarc.mmt.lf.Lambda(thisVar, expSortTerm, target)
@@ -921,7 +980,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     assert(forsome.vs.length == 1)
 
     val thisVar     : LocalName = LocalName(forsome.vs.head._1.v)
-    val thisSrt     : IMPSSort  = forsome.vs.head._2
+    val thisSrt     : IMPSSort  = curry(forsome.vs.head._2)
     val expSortTerm : Term      = doSort(thisSrt,thy)     // <-- this is "exp whateversort"
     val target      : Term      = doMathExp(forsome.p,thy,cntxt)
     val body        : Term      = info.kwarc.mmt.lf.Lambda(thisVar, expSortTerm, target)

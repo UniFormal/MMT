@@ -96,6 +96,10 @@ case class EmbeddedLanguage(name : String, src : Option[SourceRef]) extends Lisp
   override def toString: String = { "(embedded-language " + name + ")" }
 }
 
+case class DefinitionName(name : String, src : Option[SourceRef]) extends LispExp {
+  override def toString: String = { "(definition-name " + name + ")" }
+}
+
 case class EmbeddedLanguages(names : List[String], src : Option[SourceRef]) extends LispExp {
   override def toString: String = {
     var str : String = "(embedded-languages " + names.head
@@ -163,7 +167,7 @@ object NumericalType extends Enumeration
   val OCTETTYPE = Value("*octet-type*")
 }
 
-case class TypeSortAList(numericType : NumericalType, sort : String) extends LispExp
+case class TypeSortAList(numericType : NumericalType, sort : IMPSSort, src : Option[SourceRef]) extends LispExp
 {
   override def toString: String = "(" + numericType.toString + " " + sort + ")"
 }
@@ -356,11 +360,11 @@ case class AtomicSort(sortName        : String, /* Positional Argument, Required
 }
 
 /* def-constant
- * Ducomentation: IMPS manual pgs. 168,169 */
+ * Documentation: IMPS manual pgs. 168,169 */
 case class Constant(constantName : String, /* Positional Argument, Required */
                     math         : IMPSMathExp, /* Positional Argument, Required */
                     theory       : ArgumentTheory, /* Keyword Argument, Required */
-                    sort         : Option[Sort], /* Keyword Argument, Optional */
+                    sort         : IMPSSort, /* Keyword Argument, Optional */
                     usages       : Option[ArgumentUsages], /* Keyword Argument, Optional */
                     src          : Option[SourceRef])      /* SourceRef for MMT */
   extends LispExp
@@ -371,18 +375,30 @@ case class Constant(constantName : String, /* Positional Argument, Required */
     str = str + "\n  " + math.toString
     str = str + "\n  " + theory.toString
     if (usages.isDefined) { str = str + "\n  " + usages.get.toString}
-    if (sort.isDefined) { str = str + "\n  " + sort.get.toString}
+    str = str + "\n  (sort " + sort.toString + ")"
     str = str + ")"
     str
   }
 }
+
+/* def-recursive-constant
+ * Documentation: IMPS Manual pgs. 178, 179 */
+case class RecursiveConstant(constantNames : List[String],
+                             maths         : List[IMPSMathExp],
+                             sorts         : List[IMPSSort],
+                             theory        : ArgumentTheory,
+                             usages        : Option[ArgumentUsages],
+                             definame      : Option[DefinitionName],
+                             src           : Option[SourceRef])      /* SourceRef for MMT */
+extends LispExp
+{}
 
 /* def-imported-rewrite-rules
  * Documentation: IMPS manual pg. 169*/
 case class ImportedRewriteRules(theoryName  : String,                 /* Positional Argument, Required */
                                 srcTheory   : Option[SourceTheory],   /* Keyword Argument, Optional */
                                 srcTheories : Option[SourceTheories], /* Keyword Argument, Optional */
-                                src         : Option[SourceRef])              /* SourceRef for MMT */
+                                src         : Option[SourceRef])      /* SourceRef for MMT */
   extends LispExp
 {
   override def toString : String =
@@ -439,17 +455,17 @@ case class SchematicMacete(name                 : String, /* Positional Argument
 
 /* def-theorem
  * Documentation: IMPS manual pgs. 184 ff. */
-case class Theorem(name    : String, /* Positional argument. Required. */
-                   formula : IMPSMathExp, /* Positional argument. Required. */
-                   lemma   : Boolean, /* Modifier argument. Optional. */
-                   reverse : Boolean, /* Modifier argument. Optional. */
-                   thy     : ArgumentTheory, /* Keyword Argument, Required */
-                   usages  : Option[ArgumentUsages], /* Keyword Argument, Optional */
+case class Theorem(name    : String,                      /* Positional argument. Required. */
+                   formula : IMPSMathExp,                 /* Positional argument. Required. */
+                   lemma   : Boolean,                     /* Modifier argument. Optional. */
+                   reverse : Boolean,                     /* Modifier argument. Optional. */
+                   thy     : ArgumentTheory,              /* Keyword Argument, Required */
+                   usages  : Option[ArgumentUsages],      /* Keyword Argument, Optional */
                    trans   : Option[ArgumentTranslation], /* Keyword Argument, Optional */
-                   macete  : Option[Macete], /* Keyword Argument, Optional */
-                   hmthy   : Option[HomeTheory], /* Keyword Argument, Optional */
-                   prf     : Option[Proof], /* Keyword Argument, Optional */
-                   src     : Option[SourceRef])                   /* SourceRef for MMT */
+                   macete  : Option[Macete],              /* Keyword Argument, Optional */
+                   hmthy   : Option[HomeTheory],          /* Keyword Argument, Optional */
+                   prf     : Option[Proof],               /* Keyword Argument, Optional */
+                   src     : Option[SourceRef])           /* SourceRef for MMT */
   extends LispExp
 {
   override def toString: String =
@@ -863,12 +879,12 @@ abstract class IMPSQuasiConstructor extends IMPSMathExp
 
 case class IMPSTotal(f : IMPSMathExp, beta : IMPSSort) extends IMPSQuasiConstructor
 {
-  override def toString: String = "total?(" + f.toString + ", " + beta.toString() + ")"
+  override def toString: String = "total_q(" + f.toString + ", " + beta.toString() + ")"
 }
 
 case class IMPSNonVacuous(p : IMPSMathExp) extends IMPSQuasiConstructor
 {
-  override def toString: String = "nonvacuous?(" + p.toString + ")"
+  override def toString: String = "nonvacuous_q(" + p.toString + ")"
 }
 
 case class IMPSQuasiEquals(e1 : IMPSMathExp, e2 : IMPSMathExp) extends IMPSQuasiConstructor

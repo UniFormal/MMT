@@ -52,7 +52,7 @@ package object impsLibrarySections
     List("generic-theories", "mappings"),
     List("pure-generic-theories-with-subsorts.t", "reals-supplements.t", "some-obligations.t"),
     List("pure-generic-theory-1-with-1-subsort.json", "pure-generic-theory-2-with-1-subsort.json",
-         "pure-generic-theory-2-with-2-subsorts.json", "pure-generic-theory-2-with-2-subsorts.json")
+         "pure-generic-theory-2-with-2-subsorts.json", "pure-generic-theory-3-with-2-subsorts.json")
   )
 
   def allSections : List[Section] = List(

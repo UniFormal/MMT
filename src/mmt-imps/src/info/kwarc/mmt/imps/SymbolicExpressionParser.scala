@@ -16,7 +16,4 @@ class SymbolicExpressionParser extends RegexParsers
   {
     ("(" ~> rep1(parseSEXP) <~ ")") ^^ { case sexps => SEXPNested(sexps) }
   }
-
-  lazy val parseQuantor : PackratParser[SEXPNested] = ???
-
 }

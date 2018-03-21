@@ -1,7 +1,7 @@
 package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.parser.SourceRef
-import info.kwarc.mmt.api.utils.JSONObject
+import info.kwarc.mmt.api.utils.{JSONObject, JSONString}
 import info.kwarc.mmt.imps.impsMathParser.IMPSMathParser
 
 package object impsDefFormParsers
@@ -147,8 +147,109 @@ package object impsDefFormParsers
 
       /* check for required arguments */
       if (name.isEmpty || defexp.isEmpty || thy.isEmpty) None
-      else { println(" >> Success while trying to parse constant " + name.get + " : " + sort.get.sort.toString) ; Some(Constant(name.get, defexp.get, thy.get, sort, usages, e.src)) }
+      else { println(" >> Success while trying to parse constant " + name.get + " : " + sort.get.sort.toString) ; Some(Constant(name.get, defexp.get, thy.get, sort.get.sort, usages, e.src)) }
     } else { println(" >> Failure while trying to parse constant " + e.children(1)) ; None }
+  }
+
+  /* Parser for IMPS special form def-constants
+   * Documentation: IMPS manual pgs. 168, 169 */
+  def parseRecursiveConstant (e : Exp, js : List[JSONObject]) : Option[RecursiveConstant] =
+  {
+    // Required arguments
+    var names   : List[String]      = Nil
+    var defexps : List[IMPSMathExp] = Nil
+    var sorts   : List[IMPSSort]    = Nil
+
+    var thy     : ArgumentTheory    = null
+
+    // Optional arguments
+    var usages   : Option[ArgumentUsages] = None
+    var definame : Option[DefinitionName] = None
+
+    val cs : Int = e.children.length
+
+    /* Three arguments minimum because three req. arguments */
+    assert(cs >= 3)
+
+    /* Parse positional arguments */
+    e.children(1) match {
+      case Exp(List(Str(x)), _)   => names = List(x)
+      case Exp(List(Exp(cs,_)),_) => {
+        for (c <- cs) {
+          c match {
+            case Exp(List(Str(x)), _) => names = names ::: List()
+            case _ => ???
+          }
+        }
+      }
+    }
+
+    println(" > recusive constant: parsed " + names.length + " name(s): " + names.toString())
+
+    /* Parse keyword arguments, these can come in any order */
+    var i : Int = 1
+    while (cs - i > 0)
+    {
+      e.children(i) match {
+        case Exp(ds,src) => ds.head match
+        {
+          case Exp(List(Str("theory")),_)           => thy      = impsArgumentParsers.parseArgumentTheory(Exp(ds,src)).get
+          case Exp(List(Str("usages")),_)           => usages   = impsArgumentParsers.parseArgumentUsages(Exp(ds,src))
+          case Exp(List(Str("definition-name")),_)  => definame = impsArgumentParsers.parseDefinitionName(Exp(ds,src))
+          case _                                    => ()
+        }
+        case _ => ()
+      }
+      i += 1
+    }
+
+    assert(names.nonEmpty)
+    val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+    val mp : IMPSMathParser           = new IMPSMathParser()
+
+    val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thy.thy)
+    assert(json_theory.isDefined)
+    assert(json_theory.get.getAsString("type") == "imps-theory")
+
+    val recconsts : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"def-recursive-consts")
+    assert(recconsts.nonEmpty)
+
+    for (i <- names.indices)
+    {
+      println(" > Working on recursive constant " + names(i))
+
+      val theconst : Option[JSONObject] = recconsts.find(j => j.getAsList(classOf[JSONString], "names").map(_.value.toLowerCase).contains(names(i).toLowerCase))
+      assert(theconst.isDefined)
+      assert(theconst.get.getAsString("type") == "imps-theory-recursive-constant")
+
+      val thesexps = theconst.get.getAsList(classOf[JSONString],"defining-sexps")
+      assert(thesexps.nonEmpty)
+      assert(thesexps.length == names.length)
+      val thesexp = thesexps(i)
+      println(" > sexp: " + thesexp.value)
+
+      val lsp = sp.parseAll(sp.parseSEXP,thesexp.value)
+      assert(lsp.successful)
+
+      val defexp = impsMathParser.makeSEXPFormula(lsp.get)
+      defexps = defexps ::: List(defexp)
+      println("     > Formula generation successful: " + defexp.toString)
+
+      val thesortsp : List[JSONString] = theconst.get.getAsList(classOf[JSONString],"sortings")
+      val thesorts  : List[String]     = thesortsp.map(k => k.value)
+      assert(thesorts.nonEmpty)
+
+      val parsed = mp.parseAll(mp.parseSort, thesorts(i))
+      assert(parsed.successful)
+      sorts = sorts ::: List(parsed.get)
+    }
+
+    assert(names.nonEmpty)
+    assert(defexps.nonEmpty)
+    assert(sorts.nonEmpty)
+    assert(names.length == defexps.length)
+
+    Some(RecursiveConstant(names, defexps, sorts, thy, usages, definame, e.src))
   }
 
   /* Parser for IMPS special form def-quasi-constructor
