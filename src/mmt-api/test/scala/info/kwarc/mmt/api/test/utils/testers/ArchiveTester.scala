@@ -32,9 +32,9 @@ trait ArchiveTester extends BaseTester with ActionTester {
   private def installArchive(archive: TestArchive): Unit = {
     it should s"get archive ${archive.id}" in {
       // and install the archive (optionally a development version)
-      controller.report.groups += "lmh"
+      // controller.report.groups += "lmh"
       handleLine(s"lmh install ${archive.toLMHString(useArchiveDevel)}")
-      controller.report.groups -= "lmh"
+      // controller.report.groups -= "lmh"
 
       // and it should not be null
       assert(getArchive(archive.id) != null)
