@@ -359,8 +359,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case Heralding(md, src) => {
         println(" > Dropping (herald ...)")
       }
-      case AtomicSort(name, defstring, theory, usages, witness, src, sort) =>
 
+      case AtomicSort(name, defstring, theory, usages, witness, src, sort) =>
+      {
         val ln: LocalName = LocalName(theory.thy.toLowerCase())
 
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
@@ -368,13 +369,21 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         }
         val parent: DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
 
-        val definition: Term = tState.bindUnknowns(doMathExp(defstring, parent, Nil))
-        val enclosing: Term = doSort(sort, parent)
-        val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, Some(enclosing), Some(definition), Some("AtomicSort"))
+        val tp : Term = IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
+        val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name), Nil, Some(tp), None, Some("Atomic Sort"))
 
         /* Add available MetaData */
         if (witness.isDefined) {
           doMetaData(nu_atomicSort, "witness", witness.get.witness.toString)
+
+          println(" > defstring: " + defstring.toString)
+          val exp : IMPSMathExp = IMPSApply(defstring,List(witness.get.witness))
+
+          val wit : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(exp, parent, Nil)))
+
+          val fin = symbols.Constant(parent.toTerm, LocalName(name + "_witness"),Nil,Some(wit),None,Some("Atomic sort witness theorem"))
+
+          controller add fin
         }
         if (usages.isDefined) {
           doUsages(nu_atomicSort, usages.get.usgs)
@@ -384,6 +393,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         println(" > Adding atomic sort: " + name + " (enclosed by " + sort.toString + ")")
         controller add nu_atomicSort
+
+        doSubsort(IMPSAtomSort(name), sort, parent, src)
+      }
 
       case Constant(name, definition, theory, sort, usages, src) =>
       {
@@ -772,7 +784,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSConjunction(ls)    => IMPSTheory.And(ls map (x => doMathExp(x,thy,cntxt)))
       case q@IMPSLambda(vs,_)     => doIMPSLambda(curryIMPSlambda(q), thy, cntxt ::: vs)
       case q@IMPSForAll(vs,_)     => doIMPSForall(curryIMPSforall(q), thy, cntxt ::: vs)
-      case q@IMPSForSome(vs, r)   => doIMPSForsome(curryIMPSforsome(q),thy, cntxt ::: vs)
+      case q@IMPSForSome(vs,_)    => doIMPSForsome(curryIMPSforsome(q),thy, cntxt ::: vs)
       case IMPSImplication(p,q)   => IMPSTheory.Implies(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt))
       case IMPSApply(f,ts)        =>
       {
@@ -787,38 +799,35 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           var a     : Term = null
           var b     : Term = null
 
-          f match {
-            case IMPSVar(_) => {
-              if (cntxt.map(_._1).contains(f)) {
-                val theSort = curry(cntxt.find(p => p._1 == f).get._2)
-                theSort match {
-                  case IMPSBinaryFunSort(s1,s2) => {
-                    alpha = matchSort(s1,thy)
-                    beta  = matchSort(s2,thy)
-                    a     = findKind(s1)
-                    b     = findKind(s2)
-                  }
-                  case IMPSSetSort(s1) => {
-                    alpha = matchSort(s1,thy)
-                    beta  = matchSort(IMPSAtomSort("unit%sort"),thy)
-                    a     = findKind(s1)
-                    b     = findKind(IMPSAtomSort("unit%sort"))
-                  }
-                }
+          if (cntxt.map(_._1).contains(f))
+          {
+            val f_pair = cntxt.find(c => c._1 == f).get
+            val cntsrt = curry(f_pair._2)
+            assert(cntsrt.isInstanceOf[IMPSBinaryFunSort] || cntsrt.isInstanceOf[IMPSSort])
+            cntsrt match
+            {
+              case IMPSBinaryFunSort(s1,s2) =>
+              {
+                alpha = matchSort(s1,thy)
+                beta  = matchSort(s2,thy)
+                a     = findKind(s1)
+                b     = findKind(s2)
+              }
+              case IMPSSetSort(s1) =>
+              {
+                alpha = matchSort(s1,thy)
+                beta  = matchSort(IMPSAtomSort("unitsort"),thy)
+                a     = findKind(s1)
+                b     = IMPSTheory.lutinsIndType()
               }
             }
-            case _ => ()
           }
 
-          ts.head match {
-            case IMPSVar(_) => {
-              if (cntxt.map(_._1).contains(ts.head)) {
-                val theSort = curry(cntxt.find(p => p._1 == ts.head).get._2)
-                gamma = matchSort(theSort,thy)
-                if (a == null) { a = findKind(theSort) } else { assert(a == findKind(theSort)) }
-              }
-            }
-            case _          => ()
+          if (cntxt.map(_._1).contains(ts.head))
+          {
+            val y_pair = cntxt.find(c => c._1 == ts.head).get
+            gamma = matchSort(curry(y_pair._2),thy)
+            if (a == null) { a = findKind(curry(y_pair._2)) } else { assert(a == findKind(curry(y_pair._2))) }
           }
 
           if (alpha == null) { alpha = tState.addUnknown() }

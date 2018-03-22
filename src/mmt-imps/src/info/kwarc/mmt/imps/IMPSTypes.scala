@@ -80,7 +80,7 @@ case class Sort(sort : IMPSSort, src : Option[SourceRef]) extends LispExp {
   override def toString : String = { "(sort " + sort + ")" }
 }
 
-case class Witness(witness : String, src : Option[SourceRef]) extends LispExp {
+case class Witness(witness : IMPSMathExp, src : Option[SourceRef]) extends LispExp {
   override def toString : String = { "(witness " + witness + ")"}
 }
 

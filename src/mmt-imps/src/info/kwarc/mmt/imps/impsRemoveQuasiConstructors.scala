@@ -73,10 +73,10 @@ package object impsRemoveQuasiConstructors
         val x_var = (freshVar("x",List(e1,e2)          ::: addCs), IMPSAtomSort("uu"))
         val a_var = (freshVar("a",List(e1,e2,x_var._1) ::: addCs), IMPSSetSort(IMPSAtomSort("uu")))
 
-        val target  : IMPSMathExp = IMPSIsDefined(IMPSApply(a_var._1,List(x_var._1)))
-        val resolve : IMPSMathExp = IMPSApply(IMPSLambda(List(x_var,a_var),target),List(e1,e2))
+        val inner  : IMPSMathExp = IMPSIsDefined(IMPSApply(a_var._1,List(x_var._1)))
+        val lambda : IMPSMathExp = IMPSLambda(List(x_var,a_var), inner)
 
-        resolve
+        IMPSApply(lambda,List(e1,e2))
       }
 
       case IMPSQCSubsetEQ(e1_u, e2_u) =>

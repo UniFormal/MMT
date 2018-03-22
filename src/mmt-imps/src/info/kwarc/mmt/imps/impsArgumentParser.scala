@@ -348,7 +348,18 @@ package object impsArgumentParsers
   {
     if (e.children.length == 2) {
       e.children(1) match {
-        case Exp(List(Str(x)),_) => Some(Witness(x, e.src))
+        case Exp(List(Str(x)),_) => {
+
+          assert(x.startsWith("\""))
+          assert(x.endsWith("\""))
+
+          val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+          val lsp = sp.parseAll(sp.parseSEXP,x.init.tail)
+          assert(lsp.successful)
+
+          val wit = impsMathParser.makeSEXPFormula(lsp.get)
+          Some(Witness(wit, e.src))
+        }
         case _                   => None
       }
     } else { None }
@@ -380,7 +391,7 @@ package object impsArgumentParsers
           val mp = new IMPSMathParser()
           val j  = mp.parseAll(mp.parseSort, toBeParsed)
 
-          assert(!(j.isEmpty))
+          assert(j.successful)
           return Some(Sort(j.get, e.src))
         }
         case _                   => ???
