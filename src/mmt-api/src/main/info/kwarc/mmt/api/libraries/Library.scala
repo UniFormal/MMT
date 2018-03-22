@@ -227,6 +227,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     def makeAssignment(t: Term, name: LocalName, target: Option[Term]) = get(t, name, error) match {
       case c: Constant => ConstantAssignment(home, name, Nil, Some(target getOrElse c.toTerm))
       case l: Structure => DefLinkAssignment(home, name, l.from, target getOrElse l.toTerm)
+      case rc: RuleConstant => RuleConstant(home, name, target orElse rc.tp, None)
     }
     home match {
       // base case: lookup in atomic modules
@@ -285,7 +286,13 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
       } getOrElse {
         error("union of theories has no declarations except includes")
       }
-      case OMCOMP(Nil) => throw GetError("cannot lookup in identity morphism without domain: " + home)
+      case OMCOMP(Nil) =>
+        name match {
+          case LocalName(ComplexStep(d) :: _) =>
+            // infer domain of identity morphism
+            get(OMIDENT(OMMOD(d)),name,error)
+          case _ => throw GetError("cannot look up " + name + " in empty composition")
+        }
       case OMCOMP(hd :: tl) =>
         val a = get(hd, name, error)
         if (tl.isEmpty)
@@ -293,6 +300,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         else a match {
           case a: Constant => ConstantAssignment(home, a.name, a.alias, a.df.map(_ * OMCOMP(tl)))
           case a: DefinedStructure => DefLinkAssignment(home, a.name, a.from, OMCOMP(a.df :: tl))
+          case a: RuleConstant => RuleConstant(home, a.name, a.tp.map(_ * OMCOMP(tl)), None)
         }
       case OMIDENT(t) =>
         makeAssignment(t,name,None)
@@ -425,7 +433,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         val da = get(l.from, name, sourceError) match {
           case c: Constant => Constant(l.toTerm, name, Nil, None, None, None)
           case d: Structure => new DefinedStructure(l.toTerm, name, d.tpC, TermContainer(None), false)
-          case _ => throw ImplementationError("unimplemented default assignment")
+          case rc: RuleConstant => new RuleConstant(l.toTerm, name, new TermContainer, None)
+          case _ => throw ImplementationError(s"unimplemented default assignment (while looking up $name in link ${l.path})")
         }
         da.setOrigin(DefaultAssignment)
         da
@@ -553,13 +562,14 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         val newName = translateNameByLink(qualName, l)
         // TODO is it better to use lazy morphism application?
         def mapTerm(t: Term) = ApplyMorphs(t, l.toTerm, Context(l.from.toMPath)) //t * l.toTerm
+        // make sure assignment has the expected feature (*)
+        if (assig.feature != declT.feature) {
+          throw InvalidElement(assig, s"link ${l.path} provides ${assig.feature} assignment for ${declT.feature} ${declT.path}")
+        }
         // translate declT along assigOpt
         val newDecl = declT match {
           case c: Constant =>
-            val a: Constant = assig match {
-              case a: Constant => a
-              case _ => throw GetError("link " + l.path + " provides non-constant for constant " + c.path)
-            }
+            val a = assig.asInstanceOf[Constant] // succeeds because of (*)
             val newAlias = a.alias ::: c.alias.map(l.namePrefix / _)
             val newTp = a.tp orElse c.tp.map(mapTerm)
             val newDef = a.df orElse c.df.map(mapTerm)
@@ -569,14 +579,15 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             val newRole = a.rl orElse c.rl
             Constant(l.to, newName, newAlias, newTp, newDef, newRole, newNotC)
           case r: Structure =>
-            val a = assig match {
-               case a: DefinedStructure => a
-               case _ => throw GetError("link " + l.path + " provides bad assignment for structure " + r.path)
-            }
+            val a = assig.asInstanceOf[DefinedStructure] // succeeds because of (*); actually missing the case of DeclaredStructure, which are forbidden in links
             val newDef = a.dfC.get.getOrElse {
                OMCOMP(r.toTerm, l.toTerm) //TODO should result in DeclaredStructure containing a subset of the assignments in l
             }
             DefinedStructure(l.to, newName, r.from, newDef, false)
+          case rc: RuleConstant =>
+            val a = assig.asInstanceOf[RuleConstant] // succeeds because of (*)
+            val newTp = a.tp orElse rc.tp.map(mapTerm)
+            RuleConstant(l.to, newName, newTp, None)
         }
         newDecl
     }

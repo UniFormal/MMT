@@ -54,6 +54,7 @@ object ElaboratedElement extends ClientProperty[StructuralElement,Int](utils.mmt
 class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS) with ChangeListener {
   private lazy val memory = controller.memory
   private lazy val lup = controller.globalLookup
+  private lazy val rci = new RuleConstantInterpreter(controller)
 
   override def logPrefix = "structure-simplifier"
 
@@ -326,7 +327,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         // plain includes: copy (only) includes (i.e., transitive closure of includes)
         // from.meta is treated like any other include into from (in particular: skipped if from.meta included into thy.meta)
         val mor = OMINST(from,fromArgs)
-        val alreadyIncluded = thy.getAllIncludes.map {case (p,as) => (p,OMINST(p,as))}
+        // compute all includes into thy or any of its meta-theories
+        val thyMetas = TheoryExp.metas(thy.toTerm)(lup).map(p => lup.getAs(classOf[DeclaredTheory], p))
+        val alreadyIncluded = (thy::thyMetas).flatMap(_.getAllIncludes).map {case (p,as) => (p,OMINST(p,as))}
         flattenInclude(from, mor, alreadyIncluded)
       case (link: DeclaredLink, LinkInclude(_, from, mor)) =>
         // includes in views are treated very similarly; we compose mor with includes into from and check equality of duplicates
@@ -379,9 +382,13 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               // because pThy is already flattened transitively, we do not have to do a transitive closure
               Nil
             case d: Declaration =>
-              val sdname = prefix / d.name
-              val sd = lup.getAs(classOf[Declaration], parentMPath ? sdname)
-              List(sd)
+              if (skipWhenFlattening(d.getOrigin))
+                Nil
+              else {
+                val sdname = prefix / d.name
+                val sd = lup.getAs(classOf[Declaration], parentMPath ? sdname)
+                List(sd)
+              }
           }
           structure ::: decls
         }
@@ -430,9 +437,26 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       e.setOrigin(ElaborationOf(dOrig.path))
       val at = pos.getNextFor(e)
       log("flattening of " + dOrig.name + " yields " + e + " at " + at)
+      // special case: if we created a new rule, we try to create the rule
+      // TODO this is experimental because rules are often not translatable, e.g., along structures
+      e match {
+        case rc: RuleConstant if rc.df.isEmpty =>
+          rci.createRule(rc)
+        case _ =>
+      }
       controller.add(e, at)
     }
     ElaboratedElement.setFully(dOrig)
+ }
+  
+ /** depending on how a declaration was generated, we may or may not want to copy it when flattening a structure
+  *  for example, generated rules should be regenerated in the importing theory rather than copied
+  */
+ private def skipWhenFlattening(o: Origin) = o match {
+   case Original => false
+   case ElaborationOf(_) => false
+   case ElaborationOfDefinition => false
+   case _ => true
  }
  
  // TODO change management does not propagate to other theories yet

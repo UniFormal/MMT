@@ -512,8 +512,19 @@ class NotationBasedParser extends ObjectParser {
            doFoundContent(fc, uls)
        }
      }
-
-     val cons = ml.an.rules.map(_.name)
+     // basically, cons = mlCons, but we drop every constant that is defined to be equal to one we already have
+     // such cases can happen with structures, where the generated constants are essentially aliases that do not require ambiguity resolution 
+     var consVar: List[ContentPath] = Nil
+     val mlCons = ml.an.rules.map(_.name)
+     mlCons foreach {
+       case p: GlobalName =>
+         val pA = controller.globalLookup.quasiAliasFor(p)
+         if (utils.disjoint(mlCons, pA))
+           consVar ::= p
+       case p =>
+         consVar ::= p
+     }
+     val cons = consVar.reverse
 
      // hard-coded special case for a bracketed subterm
      if (cons == List(utils.mmt.brackets) || cons == List(utils.mmt.andrewsDot)) {

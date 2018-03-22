@@ -91,6 +91,15 @@ package object utils {
 
    /** applies a list of pairs seen as a map */
    def listmap[A,B](l: Iterable[(A,B)], a: A): Option[B] = l.find(_._1 == a).map(_._2)
+   
+   /** like map, but the map function knows what previous values produced */
+   def mapInContext[A,B](l: Iterable[A])(f: (List[(A,B)],A) => B) : List[B] = {
+     var sofar: List[(A,B)] = Nil
+     l foreach {a =>
+       sofar = sofar ::: List((a, f(sofar, a)))
+     }
+     sofar.map(_._2)
+   }
 
    /** disjointness of two lists (fast if first argument is empty) */
    def disjoint[A](l: Seq[A], m: Seq[A]) = l.forall(a => ! m.contains(a))

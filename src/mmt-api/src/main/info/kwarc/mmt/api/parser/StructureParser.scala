@@ -96,8 +96,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       controller.add(se)
       state.cont.onElement(se)
     } catch {case e: Error =>
-      val se = makeError(reg, "error while adding successfully parsed element", Some(e))
-      errorCont(se)
+      val srcerr = makeError(reg, "error while adding successfully parsed element " + se.path, Some(e))
+      errorCont(srcerr)
     }
   }
   /** called at the end of a document or module, does common bureaucracy */
@@ -643,7 +643,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         // wrap in source error if not source error already
         val se: SourceError = e match {
           case se: SourceError => se
-          case _ => makeError(currentSourceRegion, "error in declaration", Some(e))
+          case _ => makeError(currentSourceRegion, "unknown error in declaration", Some(e))
         }
         errorCont(se)
         if (!state.reader.endOfDeclaration)

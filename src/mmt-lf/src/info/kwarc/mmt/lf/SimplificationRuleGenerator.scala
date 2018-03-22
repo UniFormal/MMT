@@ -177,7 +177,7 @@ class SimplificationRuleGenerator extends ChangeListener {
          // create and add the rule
          val desc = ruleName.toPath + ": " + present(t1) + "  ~~>  " + present(t2)
          val rule = new GeneratedDepthRule(c, desc, n, t2)
-         val ruleConst = new RuleConstant(c.home, ruleName, OMS(c.path), Some(rule))
+         val ruleConst = RuleConstant(c.home, ruleName, OMS(c.path), Some(rule))
          ruleConst.setOrigin(GeneratedBy(this))
          controller.add(ruleConst)
          log(desc)
@@ -225,7 +225,7 @@ class SimplificationRuleGenerator extends ChangeListener {
               s"$ruleName: $have <==> $infer"
            }
            val rule = new GeneratedSolutionRule(c, desc, names, vPosition, bfrPositions, aftPositions)
-           val rc = new RuleConstant(c.home, ruleName, OMS(c.path), Some(rule)) //TODO nicer type
+           val rc = RuleConstant(c.home, ruleName, OMS(c.path), Some(rule)) //TODO nicer type
            rc.setOrigin(GeneratedBy(this))
            controller.add(rc)
            log(desc)

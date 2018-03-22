@@ -145,6 +145,21 @@ abstract class Lookup {self =>
          if (es.length == 1) Some(es.head) else None  // uniquely resolvable symbol in an included theory
       }
    }
+  
+  /**
+   * all constants for which c is a quasi-alias (recursively)
+   * a quasi-alias is defined by a definition c = OMS(d) 
+   */
+  def quasiAliasFor(c: GlobalName): List[GlobalName] = {
+    getO(c) match {
+      case Some(c: Constant) =>
+        c.df match {
+          case Some(OMS(p)) => p :: quasiAliasFor(p)
+          case _ => Nil
+        }
+      case _ => Nil
+    }
+  }
 
   /**
     * A Traverser that recursively expands definitions of Constants.
