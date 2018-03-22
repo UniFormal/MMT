@@ -34,7 +34,7 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 // =================================
 // GLOBAL SETTINGS
 // =================================
-scalaVersion in Global := "2.12.3"
+scalaVersion in Global := "2.12.5"
 scalacOptions in Global := Seq(
   "-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation", 
   "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems
@@ -197,7 +197,7 @@ lazy val lf = (project in file("mmt-lf")).
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
     unmanagedJars in Compile += Utils.deploy.toJava / "lfcatalog" / "lfcatalog.jar",
-//    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.12.3" % "test",
+//    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.12.5" % "test",
     unmanagedJars in Test += Utils.lib.toJava / "tiscaf.jar"
   )
 
