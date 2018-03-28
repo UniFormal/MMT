@@ -41,7 +41,7 @@ before_script:
   - 'if [ "$TRAVIS_BRANCH" == "devel" ]; then export TEST_USE_ARCHIVE_HEAD=1; fi'
   - 'if [ "$TRAVIS_BRANCH" == "devel" ]; then export TEST_USE_DEVEL=1; fi'
 install:
-  - "cd src && (cat /dev/null | sbt ++2.12.5 update) && cd .."
+  - "cd src && (cat /dev/null | sbt ++2.12.3 update) && cd .."
 jobs:
   include:
     # check that 'sbt genTravisYML' has been run
@@ -51,9 +51,9 @@ jobs:
         - 'SBT_VERSION_CMD="^validate"'
       jdk: openjdk8
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.5 genTravisYML) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 genTravisYML) && cd .."
         - '(git diff --quiet --exit-code ".travis.yml")'
       stage: SelfCheck
     # Check that our tests run and the code compiles
@@ -63,11 +63,11 @@ jobs:
         - 'SBT_VERSION_CMD="^validate"'
       jdk: openjdk8
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.5 scalastyle) && cd .."
-        - "cd src && (cat /dev/null | sbt ++2.12.5 compile) && cd .."
-        - "cd src && (cat /dev/null | sbt ++2.12.5 test) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 scalastyle) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 compile) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 test) && cd .."
       stage: CompileAndCheck
     - dist: trusty
       env:
@@ -75,22 +75,22 @@ jobs:
         - 'SBT_VERSION_CMD="^validate"'
       jdk: oraclejdk8
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.5 scalastyle) && cd .."
-        - "cd src && (cat /dev/null | sbt ++2.12.5 compile) && cd .."
-        - "cd src && (cat /dev/null | sbt ++2.12.5 test) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 scalastyle) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 compile) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 test) && cd .."
     - dist: trusty
       env:
         - "INFO='Check that the code compiles and the test runs run and the code compiles'"
         - 'SBT_VERSION_CMD="^validate"'
       jdk: oraclejdk9
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.5 scalastyle) && cd .."
-        - "cd src && (cat /dev/null | sbt ++2.12.5 compile) && cd .."
-        - "cd src && (cat /dev/null | sbt ++2.12.5 test) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 scalastyle) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 compile) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 test) && cd .."
     # check that the 'apidoc', 'deploy' and 'deployFull' targets work
     - dist: trusty
       env:
@@ -98,9 +98,9 @@ jobs:
         - 'SBT_VERSION_CMD="^validate"'
       jdk: openjdk8
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.5 deploy) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 deploy) && cd .."
         - '[[ -f "deploy/mmt.jar" ]]'
       stage: DeployCheck
     - dist: trusty
@@ -109,9 +109,9 @@ jobs:
         - 'SBT_VERSION_CMD="^validate"'
       jdk: oraclejdk8
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.5 deploy) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 deploy) && cd .."
         - '[[ -f "deploy/mmt.jar" ]]'
     - dist: trusty
       env:
@@ -119,9 +119,9 @@ jobs:
         - 'SBT_VERSION_CMD="^validate"'
       jdk: oraclejdk9
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.5 deploy) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 deploy) && cd .."
         - '[[ -f "deploy/mmt.jar" ]]'
     - dist: trusty
       env:
@@ -129,9 +129,9 @@ jobs:
         - 'SBT_VERSION_CMD="^validate"'
       jdk: openjdk8
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.5 deployFull) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 deployFull) && cd .."
         - '[[ -f "deploy/mmt.jar" ]]'
     - dist: trusty
       env:
@@ -139,9 +139,9 @@ jobs:
         - 'SBT_VERSION_CMD="^validate"'
       jdk: oraclejdk8
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.5 deployFull) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 deployFull) && cd .."
         - '[[ -f "deploy/mmt.jar" ]]'
     - dist: trusty
       env:
@@ -149,9 +149,9 @@ jobs:
         - 'SBT_VERSION_CMD="^validate"'
       jdk: oraclejdk9
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.5 deployFull) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 deployFull) && cd .."
         - '[[ -f "deploy/mmt.jar" ]]'
     - dist: trusty
       env:
@@ -159,9 +159,9 @@ jobs:
         - 'SBT_VERSION_CMD="^validate"'
       jdk: openjdk8
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.5 apidoc) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 apidoc) && cd .."
         - '[[ -d "apidoc" ]]'
     - dist: trusty
       env:
@@ -169,9 +169,9 @@ jobs:
         - 'SBT_VERSION_CMD="^validate"'
       jdk: oraclejdk8
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.5 apidoc) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 apidoc) && cd .."
         - '[[ -d "apidoc" ]]'
     - dist: trusty
       env:
@@ -179,9 +179,9 @@ jobs:
         - 'SBT_VERSION_CMD="^validate"'
       jdk: oraclejdk9
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.5 apidoc) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 apidoc) && cd .."
         - '[[ -d "apidoc" ]]'
     # deploy the api documentation
     - dist: trusty
@@ -190,7 +190,7 @@ jobs:
         - 'SBT_VERSION_CMD="^validate"'
       jdk: openjdk8
       language: scala
-      scala: "2.12.5"
+      scala: "2.12.3"
       script:
         - "bash scripts/travis/deploy_doc.sh"
       stage: deploy
