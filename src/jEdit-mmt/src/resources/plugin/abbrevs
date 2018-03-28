@@ -30,7 +30,7 @@ jlongrightarrow|⟶
 jlongleftarrow|⟵
 jlongleftrightarrow|⟷
 jLongrightarrow|⟹
-jLongleftrarrow|⟸
+jLongleftarrow|⟸
 jLongleftrightarrow|⟺
 juparrow|↑
 jdownarrow|↓
@@ -130,8 +130,8 @@ jtriangleright|▷
 jtriangleleft|◁
 jblacktriangleright|▶
 jblacktriangleleft|◀
-jder|⊢
-jvdash|⊦
+jder|⊦
+jvdash|⊢
 jdashv|⊣
 jmodels|⊧
 jtop|⊤
