@@ -287,7 +287,7 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
         c.rl.get match {case "Law" => "model" case _ => "theory"}
       }).getOrElse("theory")
       ostyle match {
-        case "model" => const.foreach(c => mathpres(c.tp.get,None)(sb))
+        case "model" => const.foreach(c => mathpres(c.tp.get,Some(c.path $ TypeComponent))(sb))
         case _ => const.foreach(c => mathpres(OMS(c.path),None)(sb))
       }
       log("Const: " + const)

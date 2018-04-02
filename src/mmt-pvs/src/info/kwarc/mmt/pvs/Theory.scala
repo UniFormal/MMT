@@ -280,17 +280,20 @@ object PVSTheory {
 
    object recordexpr extends sym("recordexpr") {
       def apply(nametpdf : (LocalName,Term,Term)*) = {
-         val rtp = LFX.RecExp(nametpdf map (t => OML(t._1, Some(tp.term), Some(t._2))): _*)
-         val rdf = LFX.RecExp(nametpdf map (t => OML(t._1, Some(expr(t._2)), Some(t._3))): _*)
+         val rtp = LFX.RecExp(OML(LocalName("DUMMY"),
+           Some(expr(bool.term)),Some(OMS(PVSTheory.thpath ? "TRUE"))) :: nametpdf.map(t => OML(t._1, Some(tp.term), Some(t._2))).toList : _*)
+         val rdf = LFX.RecExp(OML(LocalName("DUMMY"),
+           Some(expr(bool.term)),Some(OMS(PVSTheory.thpath ? "TRUE"))) :: nametpdf.map(t => OML(t._1, Some(expr(t._2)), Some(t._3))).toList : _*)
          ApplySpine(this.term, rtp,rdf)
       }
    }
 
    object recordtp extends sym("rectp") {
       def apply(nametp : (LocalName,Term)*) =
-         ApplySpine(this.term,LFX.RecExp(nametp.map(t => OML(t._1,Some(tp.term),Some(t._2))):_*))
+         ApplySpine(this.term,LFX.RecExp(OML(LocalName("DUMMY"),
+           Some(expr(bool.term)),Some(OMS(PVSTheory.thpath ? "TRUE"))) :: nametp.map(t => OML(t._1,Some(tp.term),Some(t._2))).toList :_*))
       def unapply(t:Term) : Option[List[(String,Term)]] = t match {
-         case ApplySpine(this.term,List(LFX.RecExp(l))) => Some(l.fields.map({
+         case ApplySpine(this.term,List(LFX.RecExp(l))) => Some(l.fields.tail.map({
             case OML(name,Some(tp.term),Some(df),_,_) => (name.toString,df)
             case tm @ _ => throw new Exception("Invalid Record type element: " + tm)
          }))

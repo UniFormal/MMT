@@ -63,8 +63,8 @@ sealed trait FormalParameter
 // not in rnc
 case class formal_type_decl(named: ChainedDecl, ne: NonEmptiness) extends FormalParameter
 /** type with given supertype -- a TYPE FROM A for a type A */
-/* Prelude */ case class formal_subtype_decl(named: ChainedDecl, ne: NonEmptiness, _sup: DeclaredType, _pred: const_decl) extends FormalParameter
-/* NASA */ // case class formal_subtype_decl(named: ChainedDecl, ne: NonEmptiness, _sup: Type, _pred: const_decl) extends FormalParameter
+/* Prelude */ // case class formal_subtype_decl(named: ChainedDecl, ne: NonEmptiness, _sup: DeclaredType, _pred: const_decl) extends FormalParameter
+/* NASA */ case class formal_subtype_decl(named: ChainedDecl, ne: NonEmptiness, _sup: Type, _pred: const_decl) extends FormalParameter
 /** typed constant -- c:A for a type A */
 case class formal_const_decl(named: ChainedDecl, tp: DeclaredType) extends FormalParameter
 /** model of a theory -- m: T for a theory T */
@@ -187,11 +187,16 @@ case class importing(unnamed: UnnamedDecl, _name: theory_name) extends Decl with
 // ********** commonly used groups of attributes/children
 
 /** common parts of a named declaration in a theory */
-case class NamedDecl(id: String, place: String, decl_formals: List[FormalParameter]) extends Group
+case class NamedDecl(id: String, place: String, decl_formals: List[FormalParameter]) extends Group {
+  def id_proper : String = if (id.startsWith("[") && id.endsWith("]")) "_" + id else id
+}
+
 /**
  * formal parameters only allowed if optional id is given
  */
-case class OptNamedDecl(id: Option[String], place: String, formals: List[FormalParameter], semi_colon_p: Boolean) extends Group
+case class OptNamedDecl(id: Option[String], place: String, formals: List[FormalParameter], semi_colon_p: Boolean) extends Group {
+  def id_proper: Option[String] = id.map(i => if (i.startsWith("[") && i.endsWith("]")) "_" + i else i)
+}
 /** like NamedDecl but may be chained */
 case class ChainedDecl(named: NamedDecl, chain_p: Boolean, semi_colon_p: Boolean) extends Group
 /** common parts of an unnamed declaration in a theory */

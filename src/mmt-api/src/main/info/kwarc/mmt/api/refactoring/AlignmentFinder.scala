@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api.refactoring
 
+import java.util.concurrent.Executors
+
 import info.kwarc.mmt.api.frontend.{Logger, Report}
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.symbols.FinalConstant
@@ -7,9 +9,12 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.FormalAlignment
+import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.utils.time.Time
 
 import scala.collection.mutable
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 class FinderConfig(finder : AlignmentFinder, protected val report : Report) extends Logger {
   override def logPrefix: String = "viewfinder"
@@ -22,6 +27,7 @@ class FinderConfig(finder : AlignmentFinder, protected val report : Report) exte
   private var judg2_var: Option[GlobalName] = None
   private var doDefs_var : Boolean = false
   private var minimal_parameter_length_var = 0
+  private var multithreaded : Boolean = false
 
   def fromTheories : List[DeclaredTheory] = fromTheories_var
   def toTheories : List[DeclaredTheory] = toTheories_var
@@ -31,6 +37,9 @@ class FinderConfig(finder : AlignmentFinder, protected val report : Report) exte
   def judg2: Option[GlobalName] = judg2_var
   def doDefs : Boolean = doDefs_var
   def minimal_parameter_length = minimal_parameter_length_var
+  def isMultithreaded = multithreaded
+
+  def setMultithreaded(b : Boolean) = multithreaded = b
 
   def addFrom(th : List[DeclaredTheory]) = {
     fromTheories_var :::= th
@@ -72,6 +81,7 @@ class FinderConfig(finder : AlignmentFinder, protected val report : Report) exte
 
 class AlignmentFinder extends frontend.Extension {
   override def logPrefix: String = "viewfinder"
+  implicit private val ec = ExecutionContext.global //.fromExecutor(Executors.newFixedThreadPool(10000))
 
   private[refactoring] def getJudgment(ths: List[DeclaredTheory]): Option[GlobalName] = {
     var i = 0
@@ -99,69 +109,182 @@ class AlignmentFinder extends frontend.Extension {
       list.headOption
     }
 
-    controller.simplifier.apply(th)
-    val ths = th.getIncludes.map(controller.get(_).asInstanceOf[DeclaredTheory])//closer.getIncludes(th,true)
-    (ths map findJudgmentIt) collectFirst {case Some(x) => x}
+    // controller.simplifier.apply(th)
+    // val ths = th.getIncludes.map(controller.get(_).asInstanceOf[DeclaredTheory])//closer.getIncludes(th,true)
+    findJudgmentIt(th)
   }
 
   def getConfig : FinderConfig = new FinderConfig(this,report)
 
-  def getConfig(a1: Archive, a2: Archive) : FinderConfig = {
+  def getConfig(a1 : Archive, a2 : Archive) : FinderConfig = {
     val cfg = getConfig
-    var collect : List[DeclaredTheory] = Nil
+    var dones : mutable.HashMap[MPath,List[DeclaredTheory]] = mutable.HashMap.empty
 
     // guarantees that the dependency closure is ordered
-    def flatten(th : DeclaredTheory) : Unit = {
-      collect ::= th
-      th.getIncludes.map(controller.get).foreach{
-        case t : DeclaredTheory => flatten(t)
-        case _ =>
-      }
+    def flatten(mp : MPath) : List[DeclaredTheory] = {
+      dones.getOrElse(mp, {
+        log("Doing: " + mp.toString)
+        // println(mp)
+        val ret = controller.getO(mp) match {
+          case Some(th : DeclaredTheory) =>
+            (th.getIncludes.flatMap(flatten) ::: List(th)).distinct
+          case _ => Nil
+        }
+        dones += ((mp,ret))
+        ret
+      })
     }
-    a1.allContent.map(controller.get).foreach {
-      case th : DeclaredTheory => flatten(th)
-      case _ =>
-    }
-    cfg.addFrom(collect)
 
-    collect = Nil
-    a2.allContent.map(controller.get).foreach {
-      case th : DeclaredTheory => flatten(th)
-      case _ =>
+    var lf = a1.root / "viewfinder_order"
+    if (lf.exists) {
+      log("Reading file " + lf)
+      val ls = File.read(lf).split("\n").toList.distinct
+      val mps = ls.map(s => Path.parseM(s,NamespaceMap.empty))
+      log("Adding " + mps.length + " theories...")
+      cfg.addFrom(mps.indices.map{i =>
+        print("\r  " + (i + 1) + " of " + mps.indices.length)
+        controller.getAs(classOf[DeclaredTheory],mps(i))
+      }.toList)
+      println(" Done.")
+    } else {
+      log("Collecting theories in " + a1.id)
+      val ths = a1.allContent.flatMap(flatten)
+      File.write(lf,ths.map(_.path.toString).distinct.mkString("\n"))
+      cfg.addFrom(ths)
+      dones.clear()
     }
-    cfg.addTo(collect)
+
+    lf = a2.root / "viewfinder_order"
+    if (lf.exists) {
+      log("Reading file " + lf)
+      val ls = File.read(lf).split("\n").toList.distinct
+      val mps = ls.map(s => Path.parseM(s,NamespaceMap.empty))
+      log("Adding " + mps.length + " theories...")
+      cfg.addTo(mps.indices.map{i =>
+        print("\r  " + (i + 1) + " of " + mps.indices.length)
+        controller.getAs(classOf[DeclaredTheory],mps(i))
+      }.toList)
+      println(" Done.")
+    } else {
+      log("Collecting theories in " + a2.id)
+      val ths = a2.allContent.flatMap(flatten)
+      File.write(lf,ths.map(_.path.toString).distinct.mkString("\n"))
+      cfg.addTo(ths)
+      dones.clear()
+    }
 
     cfg
   }
 
+/*
+  def getConfigMultithreaded(a1: Archive, a2: Archive) : (Long,FinderConfig) = Time.measure {
+    val cfg = getConfig
+
+    object Dones {
+      private var dones : mutable.HashMap[MPath,Future[List[DeclaredTheory]]] = mutable.HashMap.empty
+      private def flattenIn(mp : MPath) : Future[List[DeclaredTheory]] = dones.get(mp) match {
+        case None =>
+          val f = Future {
+            log("Doing: " + mp.toString)
+            controller.getO(mp) match {
+              case Some(th: DeclaredTheory) =>
+                val rec = Future.sequence(th.getIncludes.map(flattenIn))
+                rec.map { ls =>
+                  val r = (ls.flatten ::: List(th)).distinct
+                  log("DONE: " + mp.toString)
+                  r
+                }(ec)
+              // Await.result(rec,Duration.Inf).flatten ::: List(th).distinct
+              case _ => Future(Nil)
+            }
+          }(ec).flatten
+          synchronized(dones += ((mp, f)))
+          f
+        case Some(f) =>
+          f
+      }
+
+      def flatten(mp : MPath) : Unit = {
+        flattenIn(mp)
+      }
+
+
+      private def finished = dones.values.forall(_.isCompleted)
+
+      def getAll : List[DeclaredTheory] = {
+        while(!finished) {
+          // log("Waiting...")
+          Thread.sleep(1000)
+        }
+        dones.values.flatMap(_.value.get.get).toList
+      }
+      def reset = dones.clear()
+    }
+
+    log("Collecting theories in " + a1.id)
+    a1.allContent.foreach(Dones.flatten)
+    cfg.addFrom(Dones.getAll)
+
+    Dones.reset
+    log("Collecting theories in " + a2.id)
+    a2.allContent.foreach(Dones.flatten)
+    cfg.addTo(Dones.getAll)
+
+    cfg
+  }
+  */
+
   def run(cfg : FinderConfig) = {
     val proc = new FindingProcess(this.report,cfg)
-    proc.hash
+    log("Multithreaded: " + cfg.isMultithreaded)
+    proc.hash.run
     proc.run
   }
-
-  // TODO alignments
 
 }
 
 class FindingProcess(val report : Report, cfg : FinderConfig) extends MMTTask with Logger {
   override def logPrefix: String = "viewfinder"
+  implicit private val ec = ExecutionContext.global //.fromExecutor(Executors.newFixedThreadPool(10000))
 
   import cfg._
 
-  private object Hashes {
-    private var theories : scala.collection.mutable.HashMap[MPath,Theoryhash] = mutable.HashMap[MPath,Theoryhash]()
+  trait Hasher {
+    // starts the hashing process
+    protected def irun: Unit
+    def run {
+      log("Compute hashes... ")
+      val (t,_) = Time.measure(irun)
+      log("Hashing done after " + t + "ms.")
+    }
 
-    def getTheory(th : DeclaredTheory) : Theoryhash = theories.getOrElse(th.path,get(th))
+    def from : List[Theoryhash]
+    def to : List[Theoryhash]
+  }
+
+  val hash : Hasher = if (cfg.isMultithreaded) HashesMultithreaded else HashesNormal
+
+  private object HashesNormal extends Hasher {
+    private val theories : scala.collection.mutable.HashMap[MPath,Theoryhash] = mutable.HashMap()
+    lazy val alltheories = commonTheories ::: fromTheories ::: toTheories
+
+    // def getTheory(th : DeclaredTheory) : Theoryhash = theories.getOrElse(th.path,get(th))
 
     private def getTheory(p : MPath) : Theoryhash = theories.getOrElse(p, {
-      getTheory((commonTheories ::: fromTheories ::: toTheories).find(_.path == p).getOrElse(???)) // TODO shouldn't happen though
+      get(alltheories.find(_.path == p).getOrElse{
+        println(p)
+        ???
+      }) // TODO shouldn't happen though
     })
 
     private def get(th : DeclaredTheory) : Theoryhash = {
       val h = new Theoryhash(th.path)
+      // log("Hashing " + th.path)
       if (!(commonTheories contains th)) {
-        th.getConstants.collect({ case c : FinalConstant => c }) foreach (c =>
+        th.getConstants.collect({
+          case c : FinalConstant
+            if !cfg.fixing.exists(a => a.alignment.from.mmturi == c.path || a.alignment.to.mmturi == c.path) => c
+        }) foreach (c =>
           /* if (!alignments.exists(a => a.from.mmturi == c.path || a.to.mmturi == c.path)) */ h.addConstant(doConstant(c))
           )
         th.getIncludes.foreach(t => h.addInclude(getTheory(t)))
@@ -231,47 +354,168 @@ class FindingProcess(val report : Report, cfg : FinderConfig) extends MMTTask wi
       } else None
       Consthash(c.path,hash,tppars,isAxiom,optDef.map(d => (d.hashCode(),pars)))
     }
+
+    // starts the hashing process
+    def irun: Unit = {
+      alltheories.indices.foreach(i => {
+        print("\r  " + (i + 1) + " of " + alltheories.length)
+        get(alltheories(i))
+      })
+      println(" Done.")
+    }
+
+    lazy val from = fromTheories.map(t => getTheory(t.path))
+    lazy val to = toTheories.map(t => getTheory(t.path))
   }
 
-  // starts the hashing process and collects the theories on either "side" to use
-  def hash: Unit = {
-    log("Compute hashes")
-    (commonTheories ::: fromTheories ::: toTheories).foreach(Hashes.getTheory)
+  private object HashesMultithreaded extends Hasher {
+    private val theories: scala.collection.mutable.HashMap[MPath, Future[Theoryhash]] = mutable.HashMap()
+
+    // def getTheory(th : DeclaredTheory) : Theoryhash = theories.getOrElse(th.path,get(th))
+
+    private def getTheory(p: MPath): Future[Theoryhash] = theories.getOrElse(p, {
+      get((commonTheories ::: fromTheories ::: toTheories).find(_.path == p).getOrElse {
+        println(p)
+        ???
+      }) // TODO shouldn't happen though
+    })
+
+    private def get(th: DeclaredTheory): Future[Theoryhash] = {
+      val f = Future {
+        // log("Hashing " + th.path)
+        val h = new Theoryhash(th.path)
+        if (!(commonTheories contains th)) {
+          th.getConstants.collect({
+            case c: FinalConstant
+              if !cfg.fixing.exists(a => a.alignment.from.mmturi == c.path || a.alignment.to.mmturi == c.path) => c
+          }) foreach (c =>
+            /* if (!alignments.exists(a => a.from.mmturi == c.path || a.to.mmturi == c.path)) */ h.addConstant(doConstant(c))
+            )
+          val rec = Future.sequence(th.getIncludes.map(getTheory))
+          rec.foreach { ls =>
+            ls.foreach(h.addInclude)
+            h.init
+          }
+        }
+        h
+      }
+      synchronized(theories += ((th.path, f)))
+      f
+    }
+
+    private lazy val numbers = synchronized {
+      var inner: List[(GlobalName, Int)] = Nil
+      commonTheories.foreach { th =>
+        th.getConstants.foreach(c => inner ::= (c.path, inner.length + 1))
+      }
+      fixing.foreach { a =>
+        a.alignment.to.mmturi match {
+          case gn: GlobalName => (gn, inner.length + 1)
+        }
+      }
+      inner
+    }
+
+    private def doConstant(c: FinalConstant): Consthash = {
+      var isAxiom = false
+      var pars: List[GlobalName] = Nil
+
+      def traverse(t: Term)(implicit vars: List[LocalName]): List[Int] = {
+        // assumption: at most one alignment applicable
+        val al = fixing.find(_.applicable(t))
+        val tm = al.map(_.apply(t)).getOrElse(t)
+        tm match {
+          case OMV(name) =>
+            List(0, 2 * vars.indexOf(name))
+          case OMS(path) =>
+            if (judg1.contains(path) || judg2.contains(path)) isAxiom = true
+            val nopt = numbers.find(_._1 == path)
+            val (i, j) = nopt match {
+              case Some((_, n)) => (0, n)
+              case _ => (1, if (pars.contains(path)) pars.length - (pars.indexOf(path) + 1) else {
+                pars ::= path
+                pars.length - 1
+              })
+            }
+            List(1, i, j)
+          case OMA(f, args) =>
+            2 :: args.length :: traverse(f) ::: args.flatMap(traverse)
+          case OMBINDC(f, con, bds) =>
+            val (cont, newvars) = con.foldLeft((List(3, con.length), vars))((p, v) =>
+              (p._1 ::: v.tp.map(traverse(_)(p._2)).getOrElse(List(-1)), v.name :: p._2))
+            cont ::: List(bds.length) ::: bds.flatMap(traverse(_)(newvars))
+          case OMLIT(value, rt) =>
+            4 :: value.hashCode :: traverse(rt.synType)
+          case UnknownOMLIT(s, tp) =>
+            5 :: s.hashCode :: traverse(tp)
+          case OML(name, tp, df, _, _) =>
+            6 :: tp.map(traverse).getOrElse(List(-1)) ::: df.map(traverse).getOrElse(List(-1))
+          case tm =>
+            println("Missing: " + tm.getClass)
+            ???
+        }
+      }
+
+      val hash = c.tp.map(traverse(_)(Nil)).getOrElse(Nil).asInstanceOf[List[Any]]
+      val tppars = pars
+      val optDef = if (doDefs) {
+        pars = Nil
+        c.df.map(traverse(_)(Nil))
+      } else None
+      Consthash(c.path, hash, tppars, isAxiom, optDef.map(d => (d.hashCode(), pars)))
+    }
+
+    // starts the hashing process
+    def irun: Unit = {
+      (commonTheories ::: fromTheories ::: toTheories).foreach(t => getTheory(t.path))
+      while (!theories.values.forall(_.isCompleted)) {
+        // log("Waiting...")
+        Thread.sleep(500)
+      }
+    }
+
+    lazy val from: List[Theoryhash] = fromTheories.map(t => getTheory(t.path).value.get.get)
+    lazy val to: List[Theoryhash] = toTheories.map(t => getTheory(t.path).value.get.get)
   }
+
 
   def run = {
     log("Selecting Theories to use...")
-    val tops1 = select(fromTheories.map(Hashes.getTheory))
-    val tops2 = select(toTheories.map(Hashes.getTheory))
+    val (t1,tops1) = Time.measure(select(hash.from))
+    val (t2,tops2) = Time.measure(select(hash.to))
+    log("Done after " + (t1 + t2) + "ms")
 
     log(tops1.length + " and " + tops2.length + " selected elements")
-
-    // One thread for each pair, should speed things up
-    var fs : List[Future[Set[FinderResult]]] = Nil
-
-    tops1.foreach(t1 => tops2.foreach(t2 => {
-      val f = Future {
-        log("Looking for: " + t1.path + " -> " + t2.path)
+    log("Finding Views...")
+    val (t,alls : Set[FinderResult]) = Time.measure(if (cfg.isMultithreaded) {
+      // One thread for each pair, should speed things up
+      val ps = tops1.flatMap(t1 => tops2.map((t1,_)))
+      val fs = Future.sequence(ps.map(p =>
+        Future {
+          // log("   Looking for: " + t1.path + " -> " + t2.path)
+          val ret = findViews(p._1, p._2)
+          // log("   " + t1.path.name + " -> " + t2.path.name + ": " + ret.size + " Results.")
+          ret
+        }(ec)
+      ))
+      while (!fs.isCompleted) {
+        Thread.sleep(500)
+      }
+      fs.value.get.get.flatten.toSet
+    } else {
+      tops1.flatMap(t1 => tops2.flatMap { t2 =>
+        // log("   Looking for: " + t1.path + " -> " + t2.path)
         val ret = findViews(t1, t2)
-        log(t1.path.name + " -> " + t2.path.name + ": " + ret.size + " Results.")
+        // log("   " + t1.path.name + " -> " + t2.path.name + ": " + ret.size + " Results.")
         ret
-      }(scala.concurrent.ExecutionContext.global)
-      fs ::= f
-    }))
-    while (!fs.forall(_.isCompleted)) {
-      Thread.sleep(100)
-    }
-    val alls = fs.flatMap(_.value).collect {
-      case scala.util.Success(v) => v
-    }.flatten
+      })
+    }.toSet)
+    log("Done after " + t + "ms")
 
-    log("Postprocessing starts...")
-    val processed = logGroup {
-      postProcess(alls.toSet)
-    }
-    log("Evaluate...")
-    processed.foreach(_.evaluate((p1,p2) => 100 * processed.count(_.contains(p1,p2)).toDouble / processed.size.toDouble))
-    processed.toList.sortBy(_.value)
+    log("Postprocessing...")
+    val (tlast,res) = Time.measure(postProcess(alls))
+    log("Done after " + tlast + "ms")
+    res
   }
 
   // selects which theories to use. By default only maximal theories
@@ -294,23 +538,42 @@ class FindingProcess(val report : Report, cfg : FinderConfig) extends MMTTask wi
   = (if (judg1.isDefined || judg2.isDefined) allpairs.filter(p => p._1.isProp || p._2.isProp)
   else allpairs).filter(p => p._1.pars.length >= minimal_parameter_length)
 
-  // does something with the resulting lists of pairs. By default maximizes them
-  protected def postProcess(views: Set[FinderResult]) = {
-    if (views.nonEmpty) {
-      var ret = views
-      /*
-      logGroup {
-        log("Maximizing " + ret.size + " morphisms...")
-      }
-      logGroup {
-        ret = makeCompatible(ret)
-      }
-      */
-
-      log("Done - " + ret.size + " found")
-      ret
-    } else views
+  // does something with the resulting lists of pairs.
+  protected def postProcess (views: Set[FinderResult]) = {
+    log("  Collecting pairs...")
+    val consts = views.flatMap(_.entries).toList
+    log("  Evaluating...")
+    val evals = consts.indices.map {i =>
+      val tr = consts(i)
+      print("\r  " + (i+1) + " of " + consts.length)
+      (tr._1,tr._2,Math.round(100.0 * views.count(_.contains(tr._1, tr._2)).toDouble / views.size.toDouble))
+    }
+    println(" Done.")
+    List(FinderResult(hash.from.last,hash.to.last,evals.toSet,Set.empty))
   }
+  /* TODO does not scale
+protected def postProcess(views: Set[FinderResult]) : List[FinderResult] = {
+  val vs = views.toList
+  log("Evaluating...")
+  val ev = if (cfg.isMultithreaded)
+    vs.par.map(_.evaluate((p1,p2) => Math.round(100.0 * vs.count(_.contains(p1, p2)).toDouble / vs.length.toDouble))).toList
+    else vs.map(_.evaluate((p1,p2) => Math.round(100.0 * vs.count(_.contains(p1, p2)).toDouble / vs.length.toDouble)))
+  log("Flattening...")
+  // var ret = views.map(_.evaluate((p1, p2) => Math.round(100.0 * views.count(_.contains(p1, p2)).toDouble / views.size.toDouble))).toList
+  val dist = (if (cfg.isMultithreaded) {
+    ev.par.flatMap(_.distribute)
+  } else vs.indices.flatMap{v =>
+    print("  " + (v+1) + "/" + ev.length)
+    ev(v).distribute
+  }).toList
+  println("")
+
+    val ret = dist
+
+    log("Done - " + ret.size + " found")
+    ret.sortWith((a, b) => a < b)
+  }
+  */
 
   /**
     * Helper method, maximizing a partial morphism by adding all unique matches under an input morphism
@@ -360,70 +623,85 @@ class FindingProcess(val report : Report, cfg : FinderConfig) extends MMTTask wi
 
     implicit val allpairs : List[(Consthash,Consthash)] = potentialMatches(th1.getAll, th2.getAll)
     if (allpairs.isEmpty) {
-      log("No potential matches")
+      // log("No potential matches")
       return Set()
     }
-    log("Potential matches: " + allpairs.length)
+    // log("Potential matches: " + allpairs.length)
 
     val startingpoints = getStartingPoints
     if (startingpoints.isEmpty) {
-      log("No starting points")
+      // log("No starting points")
       return Set()
     }
-    log("Starting Points: " + startingpoints.length)
+    // log("Starting Points: " + startingpoints.length)
     val ret = startingpoints.indices.map(i => iterate(allpairs, startingpoints(i), List()).getOrElse(Nil)).toSet - Nil
-    ret.map(ls => FinderResult(makeMaximal(ls),th1.path,th2.path))
+    ret.map(ls => FinderResult(makeMaximal(ls),th1,th2))
   }
 
-  /*
-    /**
-    * Takes a list of partial morphisms and finds all maximally compatible unions of them
-    *
-    * @param allviews A list of morphisms, represented as Viewsets
-    * @return A List of new morphisms (as Viewsets)
-    */
-  private def makeCompatible(allviews: Set[List[(GlobalName, GlobalName)]])
-  : Set[List[(GlobalName, GlobalName)]] = {
-    def Iterate(views: List[List[(GlobalName, GlobalName)]], currentView: List[(GlobalName, GlobalName)] = Nil)
-    : List[List[(GlobalName, GlobalName)]] = {
-      if (views.isEmpty) List(currentView)
-      else if (views.tail.isEmpty) List(currentView ++ views.head)
-      else {
-        val newviews = views.tail.foldRight(Nil.asInstanceOf[List[List[(GlobalName, GlobalName)]]])((v, p) => {
-          val newv = v diff views.head
-          if (!newv.exists(x => views.head.exists(y => y._1 == x._1 || y._2 == x._2)) && newv.nonEmpty) newv :: p
-          else p
-        })
-        Iterate(views.tail, currentView) ::: Iterate(newviews, currentView ::: views.head)
-      }
-    }
-
-    log("Looking for maximally compatible unions in " + allviews.size + " morphisms...")
-    Iterate(allviews.toList).filter(x => x.nonEmpty).toSet
-  }
-   */
 }
 
-class FinderResult(from : MPath, to : MPath) {
-  private var entries : List[(GlobalName,GlobalName,Double)] = Nil
+case class FinderResult(from : Theoryhash,to : Theoryhash, entries : Set[(GlobalName,GlobalName,Long)], includes : Set[FinderResult]) {
 
-  def value : Double = entries.map(_._3).sum / entries.length.toDouble
+  lazy val allentries : Set[(GlobalName,GlobalName,Long)] = entries ++ includes.flatMap(_.allentries)
 
-  def evaluate(eval : (GlobalName,GlobalName) => Double) : Unit =
-    entries = entries.map(tr => (tr._1,tr._2,eval(tr._1,tr._2)))
+  private def le(that : FinderResult) : Boolean = (that.from.getAllIncludes contains this.from) ||
+    ((that.from == this.from) && (this.entries.size < that.entries.size))
+
+  def <(that : FinderResult) : Boolean =
+    (this le that) || ((!that.le(this)) && this.value > that.value)
+
+  def value : Long =
+    Math.round(allentries.toList.map(_._3).sum / allentries.toList.length.toDouble)
+
+  def evaluate(eval : (GlobalName,GlobalName) => Long) : FinderResult =
+    FinderResult(from,to,entries.map(tr => (tr._1,tr._2,eval(tr._1,tr._2))),includes.map(_.evaluate(eval)))
 
   def contains(p1 : GlobalName, p2 : GlobalName) : Boolean =
-    entries.exists(tr => tr._1 == p1 && tr._2 == p2)
+    allentries.exists(tr => tr._1 == p1 && tr._2 == p2)
 
-  override def toString() = "Result: " + from + " --> " + to + " (" + value + ")" + "\n" +
-    entries.map(tr => "  " + tr._1.module.name + "?" + tr._1.name + " -> " + tr._2.module.name + "?" + tr._2.name).mkString("\n")
+  private def refactor : Set[FinderResult] = {
+    val validtoincludes = to.getAllIncludes.filter(i => entries.forall(tr => i.getAll.exists(_.name == tr._2)))
+    val newto = validtoincludes.find(th => !validtoincludes.exists(_ < th)).getOrElse(to)
+    val locals = entries.filter(tr => tr._1.module == from.path)
+    val rest = entries diff locals
+    val recurses = from.getincludes.flatMap{ th =>
+      FinderResult(th,newto,rest.filter(r => th.getAll.exists(_.name == r._1)),Set.empty).refactor
+    }.toSet
+    if (locals.nonEmpty) {
+      val newthis = FinderResult(from,newto,locals,recurses)
+      Set(newthis)
+    } else recurses
+  }
+
+  private def allIncludes : Set[FinderResult] = includes ++ includes.flatMap(_.allIncludes)
+
+  def distribute : Set[FinderResult] = {
+    val rs = refactor
+    rs ++ rs.flatMap(_.allIncludes)
+  }
+
+  def asString(s : String = "") : String = s + this.hashCode().toString + ": " + from.path + " --> " + to.path + " (" + value + ") {\n" +
+    includes.map(_.asString(s + "  ")).mkString("\n") + "\n" +
+    entries.map(tr => s + "  " + tr._1.module.name + "?" + tr._1.name + " -> " + tr._2.module.name + "?" + tr._2.name +
+      " (" + tr._3 + ")").mkString("\n") + "\n" + s + "}"
+
+  override def toString() = this.hashCode().toString + ": " + from.path + " --> " + to.path + " (" + value + ")" + "\n" +
+    includes.map(i => "  include " + i.hashCode().toString).mkString("\n") + "\n" +
+    entries.toList.sortBy(_._3).reverse.map(tr => "  " + tr._1.module.name + "?" + tr._1.name + " -> " + tr._2.module.name + "?" + tr._2.name +
+     " (" + tr._3 + ")").mkString("\n")
+
+  private def pairs : Set[(GlobalName,GlobalName)] = entries.map(tr => (tr._1,tr._2))
+
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case that : FinderResult => this.from == that.from && this.to == that.to &&
+      this.pairs == that.pairs
+    case _ => false
+  }
 }
 
 object FinderResult {
-  def apply(viewset: List[(GlobalName, GlobalName)],from : MPath, to : MPath) : FinderResult = {
-    val ret = new FinderResult(from,to)
-    ret.entries = viewset.map(p => (p._1,p._2,0.0))
-    ret
+  def apply(viewset: List[(GlobalName, GlobalName)],from : Theoryhash, to : Theoryhash) : FinderResult = {
+    FinderResult(from,to,viewset.map(p => (p._1,p._2,0.toLong)).toSet,Set.empty)
   }
 }
 

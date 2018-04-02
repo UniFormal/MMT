@@ -39,6 +39,8 @@ class Theoryhash(val path:MPath) {
     allconsts = consts ::: allincludes.flatMap(_.getLocal)
   }
 
+  def <(that : Theoryhash) = that.getAllIncludes contains this
+
   private def toStringIndent(ind:String) : String =
     ind + path.name.toString +
       includes.map(x => "\n" + x.toStringIndent(ind + "  ")).mkString("\n") +
