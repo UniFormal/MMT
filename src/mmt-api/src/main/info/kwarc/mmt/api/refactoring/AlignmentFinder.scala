@@ -118,17 +118,19 @@ class AlignmentFinder extends frontend.Extension {
 
   def getConfig(a1 : Archive, a2 : Archive) : FinderConfig = {
     val cfg = getConfig
-    var dones : mutable.HashMap[MPath,List[DeclaredTheory]] = mutable.HashMap.empty
+    var dones : mutable.HashMap[MPath,Option[List[DeclaredTheory]]] = mutable.HashMap.empty
 
     // guarantees that the dependency closure is ordered
-    def flatten(mp : MPath) : List[DeclaredTheory] = {
+    def flatten(mp : MPath) : Option[List[DeclaredTheory]] = {
       dones.getOrElse(mp, {
         log("Doing: " + mp.toString)
         // println(mp)
         val ret = controller.getO(mp) match {
           case Some(th : DeclaredTheory) =>
-            (th.getIncludes.flatMap(flatten) ::: List(th)).distinct
-          case _ => Nil
+            val rec = th.getIncludes.map(flatten)
+            if (rec.contains(None)) None else
+              Some((rec.flatMap(_.get) ::: List(th)).distinct)
+          case _ => None
         }
         dones += ((mp,ret))
         ret
@@ -148,7 +150,7 @@ class AlignmentFinder extends frontend.Extension {
       println(" Done.")
     } else {
       log("Collecting theories in " + a1.id)
-      val ths = a1.allContent.flatMap(flatten)
+      val ths = a1.allContent.flatMap(flatten).flatten
       File.write(lf,ths.map(_.path.toString).distinct.mkString("\n"))
       cfg.addFrom(ths)
       dones.clear()
@@ -167,7 +169,7 @@ class AlignmentFinder extends frontend.Extension {
       println(" Done.")
     } else {
       log("Collecting theories in " + a2.id)
-      val ths = a2.allContent.flatMap(flatten)
+      val ths = a2.allContent.flatMap(flatten).flatten
       File.write(lf,ths.map(_.path.toString).distinct.mkString("\n"))
       cfg.addTo(ths)
       dones.clear()
@@ -487,7 +489,7 @@ class FindingProcess(val report : Report, cfg : FinderConfig) extends MMTTask wi
 
     log(tops1.length + " and " + tops2.length + " selected elements")
     log("Finding Views...")
-    val (t,alls : Set[FinderResult]) = Time.measure(if (cfg.isMultithreaded) {
+    val (t,alls : Set[List[Map]]) = Time.measure(if (cfg.isMultithreaded) {
       // One thread for each pair, should speed things up
       val ps = tops1.flatMap(t1 => tops2.map((t1,_)))
       val fs = Future.sequence(ps.map(p =>
@@ -515,6 +517,7 @@ class FindingProcess(val report : Report, cfg : FinderConfig) extends MMTTask wi
     log("Postprocessing...")
     val (tlast,res) = Time.measure(postProcess(alls))
     log("Done after " + tlast + "ms")
+    log(res.length + " maps found.")
     res
   }
 
@@ -539,41 +542,62 @@ class FindingProcess(val report : Report, cfg : FinderConfig) extends MMTTask wi
   else allpairs).filter(p => p._1.pars.length >= minimal_parameter_length)
 
   // does something with the resulting lists of pairs.
-  protected def postProcess (views: Set[FinderResult]) = {
-    log("  Collecting pairs...")
-    val consts = views.flatMap(_.entries).toList
+
+  protected def postProcess (views: Set[List[Map]]) = {
     log("  Evaluating...")
-    val evals = consts.indices.map {i =>
-      val tr = consts(i)
-      print("\r  " + (i+1) + " of " + consts.length)
-      (tr._1,tr._2,Math.round(100.0 * views.count(_.contains(tr._1, tr._2)).toDouble / views.size.toDouble))
+    val evals = views.toList.flatMap(_.map(m => Map(m.from,m.to,m.requires,
+      views.count(_.contains(Map(m.from,m.to,m.requires,0))).toDouble * 100.0 / views.size.toDouble)))
+    /*
+    val evals = views.par.map(_.evaluate((a,b) =>
+      (views.count(_.entries.contains((a,b,0))).toDouble * 100.0 / views.size.toDouble).toInt)) */
+
+    /* TODO optimize or throw away
+    log("  Doing complex stuff...")
+    var dones : List[FinderResult] = Nil
+    // var remains = evals.toList
+    def iterate(i : Int, remains : List[FinderResult]) : Unit = {
+      if (i == hash.from.length) return ()
+      val th = hash.from(i)
+      print("\r  " + i + " of " + hash.from.length)
+
+      var allpairs : List[(GlobalName,GlobalName,Int)] = Nil
+      var paired = remains.map(fr => {
+        val these = fr.entries.filter(_._1.module == th.path)
+        allpairs :::= these
+        (FinderResult(fr.from,fr.to,fr.entries.filterNot(these.contains),fr.includes),these,Nil.asInstanceOf[List[(GlobalName,GlobalName,Int)]])
+      })
+      allpairs = allpairs.distinct
+      val inorder = th.getLocal.map(_.name).filter(p => allpairs.exists(_._1 == p))
+      def split(ps : List[(GlobalName,GlobalName,Int)]) = {
+        paired = ps.flatMap {p =>
+          paired.flatMap{tr => if (tr._2 contains p) {
+            Some((tr._1,tr._2,p :: tr._3))
+          } else if (tr._2.exists(_._1 == p._1)) {
+            None
+          } else Some((tr._1,tr._2,p :: tr._3))
+          }
+        }
+      }
+      inorder.map(p => allpairs.filter(_._1 == p)).foreach(split)
+      val npaired = paired.map{ tr =>
+        val tos = tr._3.map(_._2)
+        val to = hash.to.find(t => tos.forall(t.getAll.map(_.name).contains)).getOrElse(tr._1.to)
+        val v = FinderResult(th, to,tr._3,tr._1.includes)
+        if (v.entries.isEmpty) (tr._1,v) else
+        (FinderResult(tr._1.from,tr._1.to,tr._1.entries,List(v)),v)
+      }
+      val nviews = npaired.map(_._2).distinct
+      synchronized(dones :::= nviews.filter(_.entries.nonEmpty))
+      if (nviews.isEmpty) iterate(i+1,remains)
+      else nviews.map(v => npaired.filter(_._2 == v).map(_._1)).par.foreach(iterate(i+1,_))
+
     }
-    println(" Done.")
-    List(FinderResult(hash.from.last,hash.to.last,evals.toSet,Set.empty))
+    iterate(0,evals.toList)
+    dones.reverse
+    */
+    val order = hash.from.flatMap(_.getLocal.reverse)
+    evals.view.distinct.sortBy(v => (order.indexWhere(_.name == v.from),-v.value))
   }
-  /* TODO does not scale
-protected def postProcess(views: Set[FinderResult]) : List[FinderResult] = {
-  val vs = views.toList
-  log("Evaluating...")
-  val ev = if (cfg.isMultithreaded)
-    vs.par.map(_.evaluate((p1,p2) => Math.round(100.0 * vs.count(_.contains(p1, p2)).toDouble / vs.length.toDouble))).toList
-    else vs.map(_.evaluate((p1,p2) => Math.round(100.0 * vs.count(_.contains(p1, p2)).toDouble / vs.length.toDouble)))
-  log("Flattening...")
-  // var ret = views.map(_.evaluate((p1, p2) => Math.round(100.0 * views.count(_.contains(p1, p2)).toDouble / views.size.toDouble))).toList
-  val dist = (if (cfg.isMultithreaded) {
-    ev.par.flatMap(_.distribute)
-  } else vs.indices.flatMap{v =>
-    print("  " + (v+1) + "/" + ev.length)
-    ev(v).distribute
-  }).toList
-  println("")
-
-    val ret = dist
-
-    log("Done - " + ret.size + " found")
-    ret.sortWith((a, b) => a < b)
-  }
-  */
 
   /**
     * Helper method, maximizing a partial morphism by adding all unique matches under an input morphism
@@ -589,35 +613,62 @@ protected def postProcess(views: Set[FinderResult]) : List[FinderResult] = {
       val imm_matches = matches1.filter(p => !matches1.exists(q => q != p && (q._1 == p._1 || p._2 == q._2)))
       if (imm_matches.isEmpty) view
       else {
-        val newview = view ++ imm_matches.map(p => (p._1.name, p._2.name))
+        val newview = view ::: imm_matches.map(p => (p._1.name, p._2.name))
         iterate(newview, pairs.filter(p => !imm_matches.exists(q => p._1.name == q._1.name || p._2.name == q._2.name)))
       }
     }
 
-    iterate(viewset, allpairs)
+    iterate(viewset, allpairs).distinct
   }
 
+  private object MapStore {
+    private var maps: mutable.HashMap[(GlobalName, GlobalName),Option[Map]] = mutable.HashMap.empty
+
+    def get(n1 : GlobalName,n2 : GlobalName)(implicit allpairs : List[(Consthash, Consthash)]) : Option[Map] =
+      maps.getOrElse((n1,n2),{
+        allpairs.collectFirst { case p if p._1.name == n1 && p._2.name == n2 => p } match {
+          case None =>
+            maps((n1,n2)) = None
+            None
+          case Some((f,t)) => get(f, t)
+        }
+      })
+
+    def get(from : Consthash, to : Consthash)(implicit allpairs : List[(Consthash, Consthash)]) : Option[Map] =
+      maps.getOrElseUpdate((from.name,to.name), {
+        if (from !<> to) return None
+        if (from.pars == to.pars) return Some(Map(from.name, to.name, Nil, 0))
+
+        val rec = from.pars.indices.map(i => get(from.pars(i), to.pars(i)))
+        if (rec.forall(_.isDefined)) Some(Map(from.name,to.name,rec.map(_.get).toList,0)) else None
+      })
+  }
+
+
   // finds views between two theories; returns a list of results as List of (GlobalName,GlobalName) pairs
-  protected def findViews(th1: Theoryhash, th2: Theoryhash): Set[FinderResult] = {
+  protected def findViews(th1: Theoryhash, th2: Theoryhash): Set[List[Map]] = {
     def iterate(pairs: List[(Consthash, Consthash)],
                 current: (Consthash, Consthash),
                 currentPath: List[(GlobalName, GlobalName)])
     : Option[List[(GlobalName, GlobalName)]] = {
+      val cp = currentPath
       if (current._1 !<> current._2) None
-      else if (current._1.pars == current._2.pars) Some((current._1.name, current._2.name) :: currentPath)
+      else if (current._1.pars == current._2.pars) Some((current._1.name, current._2.name) :: cp)
       else {
         current._1.pars.indices.foldLeft(
-          Some((current._1.name, current._2.name) :: currentPath).asInstanceOf[Option[List[(GlobalName, GlobalName)]]]
+          Some((current._1.name, current._2.name) :: cp).asInstanceOf[Option[List[(GlobalName, GlobalName)]]]
         )((pt, i) =>
           pt match {
-            case None => None
-            case Some(path) => if (path contains ((current._1.pars(i), current._2.pars(i)))) Some(path)
-            else pairs.collectFirst { case p if p._1.name == current._1.pars(i) && p._2.name == current._2.pars(i) => p } match {
+            case None => None /*
+            case Some(path) if path contains ((current._1.pars(i), current._2.pars(i))) =>
+              Some(((current._1.pars(i), current._2.pars(i)) :: path).distinct) */
+            // case Some(path) if path exists (p => p._1 == current._1.pars(i)) => None
+            case Some(path) => pairs.collectFirst { case p if p._1.name == current._1.pars(i) && p._2.name == current._2.pars(i) => p } match {
               case None => None
               case Some(x) => iterate(pairs, x, path)
             }
           }
-        )
+        ).map(_.distinct)
       }
     }
 
@@ -635,14 +686,27 @@ protected def postProcess(views: Set[FinderResult]) : List[FinderResult] = {
     }
     // log("Starting Points: " + startingpoints.length)
     val ret = startingpoints.indices.map(i => iterate(allpairs, startingpoints(i), List()).getOrElse(Nil)).toSet - Nil
-    ret.map(ls => FinderResult(makeMaximal(ls),th1,th2))
+    ret.map { ls =>
+      // val frs = ls.map(_._1)
+      // val tos = ls.map(_._2)
+      // val newfrom = hash.from.find(t => frs.forall(t.getAll.map(_.name).contains)).getOrElse(th1)
+      // val newto = hash.to.find(t => tos.forall(t.getAll.map(_.name).contains)).getOrElse(th2)
+      makeMaximal(ls).map(p => MapStore.get(p._1,p._2).get)
+    }
   }
 
 }
 
-case class FinderResult(from : Theoryhash,to : Theoryhash, entries : Set[(GlobalName,GlobalName,Long)], includes : Set[FinderResult]) {
+case class Map(from : GlobalName, to : GlobalName, requires : List[Map], value : Double) {
+  def asString() = "(" + value + ") " + from + " --> " + to + " requires: " + requires.mkString("["," , ","]")
+  def allRequires : List[Map] = (requires.flatMap(_.requires) ::: requires).distinct
+  override def toString: String = from + " -> " + to
+}
 
-  lazy val allentries : Set[(GlobalName,GlobalName,Long)] = entries ++ includes.flatMap(_.allentries)
+/*
+case class FinderResult(from : Theoryhash,to : Theoryhash, entries : List[(GlobalName,GlobalName,Int)], includes : List[FinderResult]) {
+
+  lazy val allentries : List[(GlobalName,GlobalName,Int)] = includes.flatMap(_.allentries) ::: entries
 
   private def le(that : FinderResult) : Boolean = (that.from.getAllIncludes contains this.from) ||
     ((that.from == this.from) && (this.entries.size < that.entries.size))
@@ -650,35 +714,17 @@ case class FinderResult(from : Theoryhash,to : Theoryhash, entries : Set[(Global
   def <(that : FinderResult) : Boolean =
     (this le that) || ((!that.le(this)) && this.value > that.value)
 
-  def value : Long =
-    Math.round(allentries.toList.map(_._3).sum / allentries.toList.length.toDouble)
+  lazy val value : Long =
+    Math.round(allentries.map(_._3).sum / allentries.length)
 
-  def evaluate(eval : (GlobalName,GlobalName) => Long) : FinderResult =
+  def evaluate(eval : (GlobalName,GlobalName) => Int) : FinderResult =
     FinderResult(from,to,entries.map(tr => (tr._1,tr._2,eval(tr._1,tr._2))),includes.map(_.evaluate(eval)))
 
   def contains(p1 : GlobalName, p2 : GlobalName) : Boolean =
     allentries.exists(tr => tr._1 == p1 && tr._2 == p2)
 
-  private def refactor : Set[FinderResult] = {
-    val validtoincludes = to.getAllIncludes.filter(i => entries.forall(tr => i.getAll.exists(_.name == tr._2)))
-    val newto = validtoincludes.find(th => !validtoincludes.exists(_ < th)).getOrElse(to)
-    val locals = entries.filter(tr => tr._1.module == from.path)
-    val rest = entries diff locals
-    val recurses = from.getincludes.flatMap{ th =>
-      FinderResult(th,newto,rest.filter(r => th.getAll.exists(_.name == r._1)),Set.empty).refactor
-    }.toSet
-    if (locals.nonEmpty) {
-      val newthis = FinderResult(from,newto,locals,recurses)
-      Set(newthis)
-    } else recurses
-  }
+  private def allIncludes : List[FinderResult] = includes.flatMap(_.allIncludes) ::: includes
 
-  private def allIncludes : Set[FinderResult] = includes ++ includes.flatMap(_.allIncludes)
-
-  def distribute : Set[FinderResult] = {
-    val rs = refactor
-    rs ++ rs.flatMap(_.allIncludes)
-  }
 
   def asString(s : String = "") : String = s + this.hashCode().toString + ": " + from.path + " --> " + to.path + " (" + value + ") {\n" +
     includes.map(_.asString(s + "  ")).mkString("\n") + "\n" +
@@ -687,10 +733,10 @@ case class FinderResult(from : Theoryhash,to : Theoryhash, entries : Set[(Global
 
   override def toString() = this.hashCode().toString + ": " + from.path + " --> " + to.path + " (" + value + ")" + "\n" +
     includes.map(i => "  include " + i.hashCode().toString).mkString("\n") + "\n" +
-    entries.toList.sortBy(_._3).reverse.map(tr => "  " + tr._1.module.name + "?" + tr._1.name + " -> " + tr._2.module.name + "?" + tr._2.name +
+    entries.map(tr => "  " + tr._1.module.name + "?" + tr._1.name + " -> " + tr._2.module.name + "?" + tr._2.name +
      " (" + tr._3 + ")").mkString("\n")
 
-  private def pairs : Set[(GlobalName,GlobalName)] = entries.map(tr => (tr._1,tr._2))
+  private def pairs : List[(GlobalName,GlobalName)] = entries.map(tr => (tr._1,tr._2))
 
   override def equals(obj: scala.Any): Boolean = obj match {
     case that : FinderResult => this.from == that.from && this.to == that.to &&
@@ -698,237 +744,4 @@ case class FinderResult(from : Theoryhash,to : Theoryhash, entries : Set[(Global
     case _ => false
   }
 }
-
-object FinderResult {
-  def apply(viewset: List[(GlobalName, GlobalName)],from : Theoryhash, to : Theoryhash) : FinderResult = {
-    FinderResult(from,to,viewset.map(p => (p._1,p._2,0.toLong)).toSet,Set.empty)
-  }
-}
-
-
-
-  /*
-  var identify_commons = true
-  var use_judgment = true
-  var minimal_parameter_length = 0
-  var identified : List[(GlobalName,GlobalName)] = Nil
-
-  var judg1 : Option[GlobalName] = None
-  var judg2 : Option[GlobalName] = None
-
-  private var commons : List[GlobalName] = Nil
-  private var commonths : List[DeclaredTheory] = Nil
-
-  private var allpairs : List[(Consthash,Consthash)] = Nil
-
-  // used to efficiently compute dependency closure and sorting them, by storing the results in var all
-  object Closer {
-    private var all : List[(DeclaredTheory,Set[DeclaredTheory])] = Nil
-
-    def  apply(th:DeclaredTheory) : Set[DeclaredTheory] = all.collectFirst({
-      case p if p._1==th => p._2
-    }).getOrElse({
-      run(th)
-    })
-
-    private def run(th: DeclaredTheory) : Set[DeclaredTheory] = {
-      val res = th.getIncludes.flatMap(mp => {
-        controller.get(mp) match {
-          case t:DeclaredTheory => apply(t)+t
-          case _ => throw new Exception("Not a DeclaredTheory: " + mp)
-        }
-      }).toSet
-      all::=(th, res)
-      res
-    }
-
-    def blowup(ths : List[DeclaredTheory]) : List[DeclaredTheory] =
-      (ths:::ths.flatMap(apply)).distinct.sortBy(apply(_).size)
-
-  }
-
-  // forwards to applyths by controller.getting the theories
-  def applypaths(lib1: List[MPath],lib2: List[MPath]): A = {
-    val ths1 = lib1.map(p => Try(controller.get(p).asInstanceOf[DeclaredTheory])).collect{
-      case Success(t:DeclaredTheory) => t}
-    val ths2 = lib2.map(p => Try(controller.get(p).asInstanceOf[DeclaredTheory])).collect{
-      case Success(t:DeclaredTheory) => t}
-    applyths(ths1,ths2)
-  }
-
-  // Collects dependency closures, sorts all theories by inclusion, applies the consthasher and passes on the theoryhashes.
-  // Optionally tries to find the judgment declarations in both sets and adds declarations in common theories
-  // to the list of fixed symbols during hashing
-  def applyths(lib1: List[DeclaredTheory], lib2 : List[DeclaredTheory]): A = {
-    log("Collecting dependencies...")
-    var ths1 = Closer.blowup(lib1)
-    var ths2 = Closer.blowup(lib2)
-
-    log("Theorylist 1: " + ths1.map(_.name).mkString(","))
-    log("Theorylist 2: " + ths2.map(_.name).mkString(","))
-
-    if(use_judgment) {
-
-      var i = 0
-      while (judg1.isEmpty && i < ths1.length) {
-        judg1 = AxiomHandler.findJudgment(controller, ths1(i), None)
-        i += 1
-      }
-      i = 0
-      while (judg2.isEmpty && i < ths2.length) {
-        judg2 = AxiomHandler.findJudgment(controller, ths2(i), None)
-        i += 1
-      }
-
-      log(if (judg1.isDefined) "Judgement for theory list 1: " + judg1.get else "No judgements for theory list 1 found.")
-      log(if (judg2.isDefined) "Judgement for theory list 2: " + judg2.get else "No judgements for theory list 2 found.")
-    }
-    // filter out theories in common and collect constants
-    if (identify_commons) {
-      log("identify common theories...")
-      commonths = ths1.filter(ths2.contains)
-      ths1 = ths1.filter(!commonths.contains(_))
-      ths2 = ths2.filter(!commonths.contains(_))
-      commons = commonths.flatMap(_.getConstants.map(_.path))
-      log("Common theories: " + commonths.map(_.name).mkString(", "))
-    }
-
-    if (identified.nonEmpty) log("Assuming:\n   " + identified.map(p => p._1 + " = " + p._2).mkString("\n   "))
-
-    selectTheories(
-      ths1.map(t => hasher(t,(commons ::: identified.map(_._1),commonths.map(_.path)),judg1)),
-      ths2.map(t => hasher(t,(commons ::: identified.map(_._2),commonths.map(_.path)),judg2))
-    )
-  }
-
-  // Selects the theories to use for viewfinding, passes them on as pairs and returns the result to postprocess.
-  // This default method picks the maximal ones wrt inclusion
-  protected def selectTheories(lib1:List[Theoryhash],lib2:List[Theoryhash]): A = {
-    log("Selecting Theories to use...")
-    var tops1 : List[Theoryhash] = Nil
-    var tops2 : List[Theoryhash] = Nil
-
-    lib1.indices.foreach(i => if (!lib1.drop(i+1).exists(p => p.getAllIncludes.contains(lib1(i)))) tops1::=lib1(i))
-    lib2.indices.foreach(i => if (!lib2.drop(i+1).exists(p => p.getAllIncludes.contains(lib2(i)))) tops2::=lib2(i))
-
-    log("Maximal theories:\n   " + tops1.map(_.path.name) + "\n   " + tops2.map(_.path.name))
-
-    postProcess(tops1.flatMap(t1 => tops2.flatMap(findViews(t1,_))).toSet)
-  }
-
-  // the method used for matching two constants. Defaults to hash equality with all parameters pairswise matched up
-  def matches(c : Consthash, d : Consthash)(l : Iterable[(GlobalName,GlobalName)]) : Boolean = {
-    if (c.hash!=d.hash) false
-    else if (c.pars.length!=d.pars.length) false
-    else (c.pars zip d.pars).forall {case (p,q) => p==q ||  l.exists(pair => pair._1.name == p && pair._2.name == q)}
-  }
-
-  // finds views between two theories; returns a list of results as List of (GlobalName,GlobalName) pairs
-  protected def findViews(th1 : Theoryhash, th2 : Theoryhash) : Set[List[(GlobalName,GlobalName)]] = {
-    def iterate(pairs:List[(Consthash,Consthash)],
-                current:(Consthash,Consthash),
-                currentPath:List[(GlobalName,GlobalName)])
-    : Option[List[(GlobalName,GlobalName)]] = {
-      if (current._1.pars.length!=current._2.pars.length) None
-      else if (current._1.pars==current._2.pars) Some((current._1.name,current._2.name)::currentPath)
-      else {
-        current._1.pars.indices.foldLeft(
-          Some((current._1.name,current._2.name)::currentPath).asInstanceOf[Option[List[(GlobalName,GlobalName)]]]
-        )((pt,i) =>
-          pt match {
-            case None => None
-            case Some(path) => if (path contains ((current._1.pars(i),current._2.pars(i)))) Some(path)
-            else pairs.collectFirst{case p if p._1.name==current._1.pars(i) && p._2.name==current._2.pars(i) => p} match {
-              case None => None
-              case Some(x) => iterate(pairs, x, path)
-            }
-          }
-        )
-      }
-    }
-
-    log("Looking for matches: " + th1.path.name + " -> " + th2.path.name)
-
-    potentialMatches(th1.getAll,th2.getAll)
-    val startingpoints = getStartingPoints
-    startingpoints.indices.map(i => iterate(allpairs, startingpoints(i), List()).getOrElse(Nil)).toSet - Nil
-
-    /*
-    log("Finding morphisms...")
-    val ls = startingpoints.indices.map(i => iterate(allpairs, startingpoints(i), List()).getOrElse(List()).toSet).toList
-    ls.filter(i => i.nonEmpty).map(Viewset(_))
-    */
-  }
-
-  //selects potential matches to work with; defaults to hash-equality
-  protected def potentialMatches(t1 : List[Consthash], t2 : List[Consthash]) : Unit
-  = allpairs = t1.flatMap(c => t2 collect {case d if c.hash == d.hash => (c,d)})
-
-  // gets starting points for viewfinding. Defaults to Axioms and minimal_parameter_length
-  protected def getStartingPoints : List[(Consthash,Consthash)]
-  = (if(judg1.isDefined) allpairs.filter(p =>  p._1.isProp)
-  else if(judg2.isDefined) allpairs.filter(p =>  p._2.isProp) else
-    allpairs).filter(p => p._1.pars.length >= minimal_parameter_length)
-
-  // does something with the resulting lists of pairs
-  protected def postProcess(views : Set[List[(GlobalName,GlobalName)]]) : A = {
-    log("Results : " + views.mkString("\n   "))
-    log("Postprocessing...")
-    val ret = makeCompatible(views.map(makeMaximal))
-    log("Done - " + ret.size + " found")
-    finish(ret)
-  }
-
-  /**
-    * Helper method, maximizing a partial morphism by adding all unique matches under an input morphism
-    *
-    * @param viewset  the morphism as list of pairs of GlobalName
-    * @return a new View as list of pairs of GlobalName
-    */
-
-  protected def makeMaximal(viewset : List[(GlobalName,GlobalName)])
-  : List[(GlobalName,GlobalName)] = {
-    def iterate(view: List[(GlobalName, GlobalName)], pairs: List[(Consthash, Consthash)]) : List[(GlobalName,GlobalName)]= {
-      val matches1 = pairs.filter(a => matches(a._1,a._2)(view)) //for{a <- pairs if a._1.matches(view)(a._2)}yield a
-      val imm_matches = matches1.filter(p => !matches1.exists(q => q != p && (q._1 == p._1 || p._2 == q._2)))
-      if (imm_matches.isEmpty) view
-      else {
-        val newview = view ++ imm_matches.map(p => (p._1.name, p._2.name))
-        iterate(newview, pairs.filter(p => !imm_matches.exists(q => p._1.name == q._1.name || p._2.name == q._2.name)))
-      }
-    }
-    log("Maximizing morphisms in\n   " + viewset.map(p => (p._1.name,p._2.name)))
-    iterate(viewset,allpairs)
-  }
-
-  /**
-    * Takes a list of partial morphisms and finds all maximally compatible unions of them
-    *
-    * @param allviews A list of morphisms, represented as Viewsets
-    * @return A List of new morphisms (as Viewsets)
-    */
-  protected def makeCompatible(allviews:Set[List[(GlobalName,GlobalName)]])
-  :Set[List[(GlobalName,GlobalName)]] = {
-    def Iterate(views:List[List[(GlobalName,GlobalName)]],currentView:List[(GlobalName,GlobalName)] = Nil)
-    : List[List[(GlobalName,GlobalName)]] = {
-      if (views.isEmpty) List(currentView)
-      else if (views.tail.isEmpty) List(currentView ++ views.head)
-      else {
-        val newviews = views.tail.foldRight(Nil.asInstanceOf[List[List[(GlobalName, GlobalName)]]])((v, p) => {
-          val newv = v diff views.head
-          if (!newv.exists(x => views.head.exists(y => y._1 == x._1 || y._2 == x._2)) && newv.nonEmpty) newv :: p
-          else p
-        })
-        Iterate(views.tail, currentView) ::: Iterate(newviews, currentView ::: views.head)
-      }
-    }
-    log("Looking for maximally compatible unions of morphisms...")
-    Iterate(allviews.toList).filter(x => x.nonEmpty).toSet
-  }
-
-  def convert(l:List[(GlobalName,GlobalName)]) : DeclaredView = {
-
-    ???
-  }
-
-  */
+*/
