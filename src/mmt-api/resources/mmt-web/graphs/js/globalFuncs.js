@@ -59,7 +59,7 @@ function createNewGraph(type,graphdata, hightlightNodes)
 	lastGraphTypeUsed=type;
 	lastGraphDataUsed=graphdata;
 	theoryGraph.onConstructionDone=updateNetworkOnFirstCall;
-	theoryGraph.getGraph( graphDataURL+graphDataURLTypeParameterName+ type + "&" + graphDataURLDataParameterName+"=" + graphdata);
+	theoryGraph.getGraph( graphDataURL+graphDataURLTypeParameterName+"="+ type + "&" + graphDataURLDataParameterName+"=" + graphdata);
 	var newURL=location.protocol + '//' + location.host + location.pathname+"?"+graphDataURLTypeParameterNameTGView+"="+ type + "&" + graphDataURLDataParameterNameTGView+"=" + graphdata;
 	
 	if(typeof hightlightNodes != "undefined")
