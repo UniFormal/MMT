@@ -70,14 +70,18 @@ object Hasher {
 
 trait Hasher {
 
+  val cfg : FinderConfig
+
   def from : List[Theoryhash]
   def to : List[Theoryhash]
   def common : List[MPath]
 
+  def get(mp : MPath) : Option[Theoryhash]
+
   def add(th : DeclaredTheory, as : Int) : Unit
 }
 
-private class HashesNormal(cfg : FinderConfig) extends Hasher {
+class HashesNormal(val cfg : FinderConfig) extends Hasher {
   private var theories : List[(Theoryhash,Int)] = Nil
   private var commons : List[MPath] = Nil
   private var numbers : List[GlobalName] = cfg.fixing.map { a =>
@@ -100,11 +104,7 @@ private class HashesNormal(cfg : FinderConfig) extends Hasher {
   }.reverse
   def common = commons
 
-  private def getTheory(p : MPath) : Theoryhash = theories.find(_._1.path == p).getOrElse {
-      val c = commons
-      println(p)
-      ???
-    }._1 // TODO shouldn't happen though
+  def get(p : MPath) : Option[Theoryhash] = theories.find(_._1.path == p).map(_._1)
 
   def add (th : DeclaredTheory, as : Int) = as match {
     case Hasher.COMMON =>
@@ -123,7 +123,7 @@ private class HashesNormal(cfg : FinderConfig) extends Hasher {
         case c : FinalConstant
           if !cfg.fixing.exists(a => a.alignment.from.mmturi == c.path || a.alignment.to.mmturi == c.path) => c
       }) foreach (c => h.addConstant(doConstant(c)))
-      th.getIncludes.filterNot(commons.contains).foreach(t => h.addInclude(getTheory(t)))
+      th.getIncludes.filterNot(commons.contains).foreach(t => h.addInclude(get(t).getOrElse( ??? )))
     }
     h.init
     h
