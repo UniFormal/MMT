@@ -5,16 +5,16 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.{GlobalName, LocalName, MPath}
+import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, utils}
 
 import scala.collection.mutable
 
-case class Consthash(name:GlobalName, hash: List[Int], pars: List[GlobalName],
-                     isProp: Boolean, optDef : Option[(Int,List[GlobalName])]) {
+case class Consthash(name:GlobalName, hash: List[Int], pars: List[Hasher.Targetable],
+                     isProp: Boolean, optDef : Option[(Int,List[Hasher.Targetable])]) {
 
   //def matches(l:List[(GlobalName,GlobalName)])(that:Consthash):Boolean = newPairs(l)(that).isEmpty
-  override def toString = name.toString + "[" + pars.map(_.name.toString).mkString(", ") + "]" +
-    optDef.map(p => " = [" + p._2.map(_.name.toString).mkString(", ") + "]").getOrElse("")
+  override def toString = name.toString + "[" + pars.map(_.toString).mkString(", ") + "]" +
+    optDef.map(p => " = [" + p._2.map(_.toString).mkString(", ") + "]").getOrElse("")
 
   def <>(that : Consthash) = this.hash == that.hash && this.pars.length == that.pars.length
   def !<>(that :Consthash) = !(this <> that)
@@ -66,6 +66,34 @@ object Hasher {
   val FROM = 0
   val TO = 1
   val COMMON = 2
+
+  trait Targetable // todo symbols, free variables, ...
+  case class Symbol(gn : GlobalName) extends Targetable {
+    override def toString: String = gn.toString
+  }
+  class Complex(val tm : Term) extends Targetable {
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that : Complex => this.tm == that.tm
+      case _ => false
+    }
+    def asTerm : Term = OMA(OMS(utils.mmt.mmtcd ? "Targetable"),List(tm))
+  }
+
+  object Complex {
+    val path = utils.mmt.mmtcd ? "Targetable"
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`path`),List(itm)) => Some(new Complex(itm))
+      case _ => None
+    }
+    def apply(tm : Term) = OMA(OMS(utils.mmt.mmtcd ? "Targetable"),List(tm))
+  }
+  /*
+  case class FreeVar(ln : LocalName) extends Targetable {
+    val tm = OMBINDC(OMS(utils.mmt.mmtcd ? "TargetableVariable"),VarDecl)
+
+    override def toString: String = "Variable("
+  }
+  */
 }
 
 trait Hasher {
@@ -131,21 +159,25 @@ class HashesNormal(val cfg : FinderConfig) extends Hasher {
 
   private def doConstant(c:FinalConstant) : Consthash = {
     var isAxiom = false
-    var pars : List[GlobalName] = Nil
+    var pars : List[Hasher.Targetable] = Nil
 
     def traverse(t: Term)(implicit vars : List[LocalName]) : List[Int] = {
       // assumption: at most one alignment applicable
       val al = cfg.fixing.find(_.applicable(t))
       val tm = al.map(_.apply(t)).getOrElse(t)
       tm match {
+        case Hasher.Complex(itm) => List(-1,if (pars.contains(itm)) pars.length - (pars.indexOf(itm)+1) else {
+          pars ::= itm
+          pars.length-1
+        })
         case OMV(name) =>
           List(0, 2 * vars.indexOf(name))
         case OMS(path) =>
           if (cfg.judg1.contains(path) || cfg.judg2.contains(path)) isAxiom = true
           val nopt = numbers.indexOf(path)
           val (i,j) = nopt match {
-            case -1 => (1,if (pars.contains(path)) pars.length - (pars.indexOf(path)+1) else {
-              pars ::= path
+            case -1 => (1,if (pars.contains(Hasher.Symbol(path))) pars.length - (pars.indexOf(path)+1) else {
+              pars ::= Hasher.Symbol(path)
               pars.length-1
             })
             case n => (0,n)

@@ -5,7 +5,9 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.ontology.FormalAlignment
+import info.kwarc.mmt.api.refactoring.Hasher.Targetable
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.utils.time.Time
 
@@ -246,7 +248,9 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
   // the method used for matching two constants. Defaults to hash equality with all parameters pairwise matched up
   protected def matches(c: Consthash, d: Consthash)(l: List[(GlobalName, GlobalName)]): Boolean = {
     if (c !<> d) false
-    else (c.pars zip d.pars).forall { case (p, q) => p == q || l.contains((p, q)) }
+    else (c.pars zip d.pars).forall { case (Hasher.Symbol(p), Hasher.Symbol(q)) => p == q || l.contains((p, q))
+    case _ => true
+    }
   }
 
   //selects potential matches to work with; defaults to hash-equality
@@ -354,10 +358,15 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     def get(from : Consthash, to : Consthash)(implicit allpairs : List[(Consthash, Consthash)]) : Option[Map] =
       maps.getOrElseUpdate((from.name,to.name), {
         if (from !<> to) return None
-        if (from.pars == to.pars) return Some(Map(from.name, to.name, Nil, 0))
+        if (from.pars == to.pars) return Some(Map(Hasher.Symbol(from.name), Hasher.Symbol(to.name), Nil, 0))
 
-        val rec = from.pars.indices.map(i => get(from.pars(i), to.pars(i)))
-        if (rec.forall(_.isDefined)) Some(Map(from.name,to.name,rec.map(_.get).toList,0)) else None
+        val rec = from.pars.indices.map(i =>
+          (from.pars(i),to.pars(i)) match {
+            case (Hasher.Symbol(f),Hasher.Symbol(t)) => get(f,t)
+            case _ => None
+          }
+        )
+        if (rec.forall(_.isDefined)) Some(Map(Hasher.Symbol(from.name),Hasher.Symbol(to.name),rec.map(_.get).toList,0)) else None
       })
   }
 
@@ -375,15 +384,17 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
         current._1.pars.indices.foldLeft(
           Some((current._1.name, current._2.name) :: cp).asInstanceOf[Option[List[(GlobalName, GlobalName)]]]
         )((pt, i) =>
-          pt match {
-            case None => None /*
+          (pt,current._1.pars(i),current._2.pars(i)) match {
+            case (None,_,_) => None /*
             case Some(path) if path contains ((current._1.pars(i), current._2.pars(i))) =>
               Some(((current._1.pars(i), current._2.pars(i)) :: path).distinct) */
             // case Some(path) if path exists (p => p._1 == current._1.pars(i)) => None
-            case Some(path) => pairs.collectFirst { case p if p._1.name == current._1.pars(i) && p._2.name == current._2.pars(i) => p } match {
+            case (Some(path),Hasher.Symbol(s1),Hasher.Symbol(s2)) =>
+              pairs.collectFirst { case p if p._1.name == s1 && p._2.name == s2 => p } match {
               case None => None
               case Some(x) => iterate(pairs, x, path)
             }
+            case _ => pt
           }
         ).map(_.distinct)
       }
@@ -414,10 +425,19 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
 
 }
 
-case class Map(from : GlobalName, to : GlobalName, requires : List[Map], value : Double) {
+case class Map(from : Targetable, to : Targetable, requires : List[Map], value : Double) {
+  // val isSimple = from.isInstanceOf[Hasher.Symbol] && to.isInstanceOf[Hasher.Symbol]
   def asString() = "(" + value + ") " + from + " --> " + to + " requires: " + requires.mkString("["," , ","]")
   def allRequires : List[Map] = (requires.flatMap(_.requires) ::: requires).distinct
   override def toString: String = from + " -> " + to
+}
+
+trait Preprocessor {
+  def apply(c : FinalConstant) : FinalConstant
+
+  def +(that : Preprocessor) : Preprocessor = { c =>
+    that.apply(this.apply(c))
+  }
 }
 
 /*
