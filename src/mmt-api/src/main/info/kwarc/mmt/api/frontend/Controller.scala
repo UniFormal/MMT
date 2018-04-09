@@ -170,7 +170,7 @@ class Controller extends ROController with ActionHandling with Logger {
        }
 
        // update the lmh cache
-       conf.getEntries(classOf[OAFConf]).foreach {c =>
+       conf.getEntries(classOf[LMHConf]).foreach { c =>
          lmh = Some(new MathHub(this, c.local, c.remote.getOrElse(MathHub.defaultURL), c.https))
        }
 
