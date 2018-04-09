@@ -1,16 +1,15 @@
 package info.kwarc.mmt.api.refactoring
 
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.frontend.{Logger, Report}
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.ontology.FormalAlignment
 import info.kwarc.mmt.api.symbols.FinalConstant
+import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath}
 
 import scala.collection.mutable
-import scala.util.Try
 
-case class Consthash(name:GlobalName, hash: List[Any], pars: List[GlobalName],
+case class Consthash(name:GlobalName, hash: List[Int], pars: List[GlobalName],
                      isProp: Boolean, optDef : Option[(Int,List[GlobalName])]) {
 
   //def matches(l:List[(GlobalName,GlobalName)])(that:Consthash):Boolean = newPairs(l)(that).isEmpty
@@ -19,18 +18,40 @@ case class Consthash(name:GlobalName, hash: List[Any], pars: List[GlobalName],
 
   def <>(that : Consthash) = this.hash == that.hash && this.pars.length == that.pars.length
   def !<>(that :Consthash) = !(this <> that)
+
+  private[refactoring] def toJson = JSONObject(
+    ("name",JSONString(name.toString)),
+    ("hash",JSONArray(hash.map(JSONInt):_*)),
+    ("pars",JSONArray(pars.map(p => JSONString(p.toString)):_*)),
+    ("isProp",JSONBoolean(isProp)) // TODO Definition
+  )
 }
 
 class Theoryhash(val path:MPath) {
-  protected var consts : List[Consthash] = Nil
-  protected var includes : List[Theoryhash] = Nil
-  protected var allincludes : List[Theoryhash] = Nil
-  protected var allconsts : List[Consthash] = Nil
+  private var consts : List[Consthash] = Nil
+  private var includes : List[Theoryhash] = Nil
+  private var allincludes : List[Theoryhash] = Nil
+  private var allconsts : List[Consthash] = Nil
+
+  private[refactoring] def toJson = JSONObject(
+    ("path",JSONString(path.toString)),
+    ("includes",JSONArray(includes.map(i => JSONString(i.path.toString)):_*)),
+    ("consts",JSONArray(consts.map(_.toJson):_*))
+  )
 
   def getLocal = consts
   def getAll = allconsts
   def getincludes = includes
   def getAllIncludes = allincludes
+
+  def addConstant(c : Consthash) = consts::=c
+  def addInclude(th : Theoryhash) = includes::=th
+  def init: Unit = {
+    allincludes = (includes:::includes.flatMap(_.getAllIncludes)).distinct
+    allconsts = consts ::: allincludes.flatMap(_.getLocal)
+  }
+
+  def <(that : Theoryhash) = that.getAllIncludes contains this
 
   private def toStringIndent(ind:String) : String =
     ind + path.name.toString +
@@ -41,166 +62,119 @@ class Theoryhash(val path:MPath) {
 
 }
 
-class Consthasher(controller:Controller,
-                  sources : List[DeclaredTheory],
-                  targets : List[DeclaredTheory],
-                  from : FullArchive,
-                  to : FullArchive,
-                  fixing : List[MPath],
-                  /*alignments : List[FormalAlignment],*/
-                  judgments : (Option[GlobalName],Option[GlobalName]),
-                  doDefs : Boolean
-                 ) {
+object Hasher {
+  val FROM = 0
+  val TO = 1
+  val COMMON = 2
+}
 
-  private var theories : scala.collection.mutable.HashMap[MPath,OpenTheoryhash] = mutable.HashMap[MPath,OpenTheoryhash]()
-  private val translator = ??? /* controller.extman.get(classOf[AcrossLibraryTranslator]).headOption.getOrElse {
-    val a = new AcrossLibraryTranslator
-    controller.extman.addExtension(a)
-    a
-  } */
-  // private val translations = alignments.flatMap(translator.fromAlignment)
+trait Hasher {
 
-  private class OpenTheoryhash(p : MPath) extends Theoryhash(p) {
-    def addConstant(c : Consthash) = consts::=c
-    def addInclude(th : Theoryhash) = includes::=th
-    def init: Unit = {
-      allincludes = (includes:::includes.flatMap(_.getAllIncludes)).distinct
-      allconsts = consts ::: allincludes.flatMap(_.getLocal)
+  def from : List[Theoryhash]
+  def to : List[Theoryhash]
+  def common : List[MPath]
+
+  def add(th : DeclaredTheory, as : Int) : Unit
+}
+
+private class HashesNormal(cfg : FinderConfig) extends Hasher {
+  private var theories : List[(Theoryhash,Int)] = Nil
+  private var commons : List[MPath] = Nil
+  private var numbers : List[GlobalName] = cfg.fixing.map { a =>
+    a.alignment.to.mmturi match {
+      case gn : GlobalName => gn
     }
   }
 
-  def getTheory(p : MPath) : Theoryhash = theories.getOrElse(p,{
-    if (!fixing.contains(p)) get(controller.get(p).asInstanceOf[DeclaredTheory])
-    else {
-      val h = new OpenTheoryhash(p)
-      h.init
-      theories += ((p,h))
-      h
+  private[refactoring] def toJson = JSONObject(
+    ("theories",JSONArray(theories.map(p => JSONArray(JSONInt(p._2),p._1.toJson)):_*)),
+    ("commons",JSONArray(commons.map(p => JSONString(p.toString)):_*)),
+    ("numbers",JSONArray(numbers.map(gn => JSONString(gn.toString)):_*))
+  )
+
+  def from = theories.collect {
+    case (th,Hasher.FROM) => th
+  }.reverse
+  def to = theories.collect {
+    case (th,Hasher.TO) => th
+  }.reverse
+  def common = commons
+
+  private def getTheory(p : MPath) : Theoryhash = theories.find(_._1.path == p).getOrElse {
+      val c = commons
+      println(p)
+      ???
+    }._1 // TODO shouldn't happen though
+
+  def add (th : DeclaredTheory, as : Int) = as match {
+    case Hasher.COMMON =>
+      commons ::= th.path
+      th.getConstants.foreach(c => numbers ::= c.path)
+    case _ => theories.find(_._1.path == th.path).getOrElse{
+      val ret = get(th)
+      theories ::= ((ret,as))
     }
-  })
+  }
 
-  def getTheory(th : DeclaredTheory) : Theoryhash = theories.getOrElse(th.path,get(th))
-
-  private def get(th : DeclaredTheory) : OpenTheoryhash = {
-    val h = new OpenTheoryhash(th.path)
-    if (!fixing.contains(th.path)) {
-      th.getConstants.collect({ case c : FinalConstant => c }) foreach (c =>
-       /* if (!alignments.exists(a => a.from.mmturi == c.path || a.to.mmturi == c.path)) */ h.addConstant(doConstant(c))
-        )
-      th.getIncludes.foreach(t => h.addInclude(getTheory(t)))
+  private def get(th : DeclaredTheory) : Theoryhash = {
+    val h = new Theoryhash(th.path)
+    if (!(commons contains th.path)) {
+      th.getConstants.collect({
+        case c : FinalConstant
+          if !cfg.fixing.exists(a => a.alignment.from.mmturi == c.path || a.alignment.to.mmturi == c.path) => c
+      }) foreach (c => h.addConstant(doConstant(c)))
+      th.getIncludes.filterNot(commons.contains).foreach(t => h.addInclude(getTheory(t)))
     }
     h.init
-    theories += ((th.path,h))
     h
   }
 
-  def doConstant(c:FinalConstant) : Consthash = {
+  private def doConstant(c:FinalConstant) : Consthash = {
     var isAxiom = false
     var pars : List[GlobalName] = Nil
 
-    def traverse(t: Term)(implicit vars : List[LocalName]) : List[Int] = { ??? /*
-      val al = translations.find(_.isApplicable(t).isDefined)
-      val allist = al.map(a => List(a.from,a.to)).getOrElse(Nil)
-      if (judgments._1.exists(p => allist contains p) || judgments._2.exists(p => allist contains p)) isAxiom = true
-      al.map(a => a.apply(t).head).getOrElse(t) match {
+    def traverse(t: Term)(implicit vars : List[LocalName]) : List[Int] = {
+      // assumption: at most one alignment applicable
+      val al = cfg.fixing.find(_.applicable(t))
+      val tm = al.map(_.apply(t)).getOrElse(t)
+      tm match {
         case OMV(name) =>
           List(0, 2 * vars.indexOf(name))
         case OMS(path) =>
-          if (judgments._1.contains(path) || judgments._2.contains(path)) isAxiom = true
-          List(1, alignments.find(a => a.from.mmturi == path || a.to.mmturi == path).map( a =>
-            2 * alignments.indexOf(a) + 1).getOrElse(2 * (alignments.length + {
-            if (pars.contains(path)) pars.length - pars.indexOf(path) else {
+          if (cfg.judg1.contains(path) || cfg.judg2.contains(path)) isAxiom = true
+          val nopt = numbers.indexOf(path)
+          val (i,j) = nopt match {
+            case -1 => (1,if (pars.contains(path)) pars.length - (pars.indexOf(path)+1) else {
               pars ::= path
-              pars.length
-            }
-          }) + 1))
+              pars.length-1
+            })
+            case n => (0,n)
+          }
+          List(1,i,j)
         case OMA(f, args) =>
           2 :: args.length :: traverse(f) ::: args.flatMap(traverse)
-        case OMBINDC(f,con,bds) =>
-          val (cont,newvars) = con.foldLeft((List(3,con.length), vars))((p,v) =>
-            (p._1 ::: v.tp.map(traverse(_)(p._2)).getOrElse(List(-1)),v.name :: p._2))
-            cont ::: List(bds.length) ::: bds.flatMap(traverse(_)(newvars))
-        case OMLIT(value,rt) =>
+        case OMBINDC(f, con, bds) =>
+          val (cont, newvars) = con.foldLeft((List(3, con.length), vars))((p, v) =>
+            (p._1 ::: v.tp.map(traverse(_)(p._2)).getOrElse(List(-1)), v.name :: p._2))
+          cont ::: List(bds.length) ::: bds.flatMap(traverse(_)(newvars))
+        case OMLIT(value, rt) =>
           4 :: value.hashCode :: traverse(rt.synType)
-        case UnknownOMLIT(s,tp) =>
+        case UnknownOMLIT(s, tp) =>
           5 :: s.hashCode :: traverse(tp)
-        case OML(VarDecl(name,tp,df,_)) =>
+        case OML(name, tp, df, _,_) =>
           6 :: tp.map(traverse).getOrElse(List(-1)) ::: df.map(traverse).getOrElse(List(-1))
-        case tm =>
+        case _ =>
           println("Missing: " + tm.getClass)
           ???
-      } */
+      }
     }
-    val hash = c.tp.map(traverse(_)(Nil)).getOrElse(Nil).asInstanceOf[List[Any]]
+    val hash = c.tp.map(traverse(_)(Nil)).getOrElse(Nil)//.asInstanceOf[List[Any]]
     val tppars = pars
-    val optDef = if(doDefs) {
+    val optDef = if(cfg.doDefs) {
       pars = Nil
       c.df.map(traverse(_)(Nil))
     } else None
     Consthash(c.path,hash,tppars,isAxiom,optDef.map(d => (d.hashCode(),pars)))
-  }
-
-}
-
-object AxiomHandler {
-
-  /**
-    * Tries to recursively find a/the [role Judgment] declaration used for axioms in a theory
-    *
-    * @param th .
-    * @return the GlobalName for the Judgment declaration.
-    */
-
-  def findJudgment(ctrl:Controller,th:DeclaredTheory,includes:Option[Set[DeclaredTheory]]):Option[GlobalName] = {
-
-    def findJudgmentIt(th:DeclaredTheory):Option[GlobalName] = {
-      val list = for {o <- th.getConstants.filter(p => p.rl match {
-        case t: Some[String] => true
-        case _ => false
-      }) if o.rl.get == "Judgment"} yield o match {
-        case t: FinalConstant => t.path
-        case _ => throw new Exception("FinalConstant Expected!")
-      }
-      list.headOption
-    }
-
-    val ths = includes match {
-      case Some(set) => set
-      case None =>
-        ctrl.simplifier.apply(th)
-        th.getIncludes.map(ctrl.get(_).asInstanceOf[DeclaredTheory])//closer.getIncludes(th,true)
-    }
-    ((ths map findJudgmentIt) collect {case Some(x) => x}).headOption
-
-  }
-
-  /**
-    * Checks whether the FinalConstant
-    *
-    * @param a is an axiom by looking for occurences of
-    * @param judg in the type of a. Used in the process of calculating ConstHash.
-    * @return true, if a is deemed an axiom.
-    */
-
-  def isAxiom(a:FinalConstant,judg:GlobalName):Boolean = a.tp match {
-    case None => false
-    case Some(tp) => isAxiomIterator(tp,judg)
-  }
-
-  /**
-    * Iterator method used by isAxiom.
-    *
-    * @param tp Some term.
-    * @param judg as above.
-    * @return true, if tp is deemed an axiom.
-    */
-
-  def isAxiomIterator(tp:Term,judg:GlobalName):Boolean = tp match {
-    case t: OMV => false
-    case t: OMID => t.head.get==judg
-    case t: OMA => ((t.head.get==judg)::(for{o <- t.args} yield isAxiomIterator(o,judg))) contains true
-    case t: OMBINDC => ((t.head.get==judg)::(for{o <- t.scopes} yield isAxiomIterator(o,judg))) contains true
-    case _ => false
   }
 
 }

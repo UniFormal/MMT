@@ -173,7 +173,7 @@ case class ObjectLevelTranslator(state : TranslationState,controller : Controlle
         })
 
       case record_expr(_,asslist) =>
-        println("RECORD IN " + state.path)
+        // println("RECORD IN " + state.path)
         val list = asslist.map(a => {
           val (df,tp) = doExpr(a._expr)
           (a.assignment_args match {
@@ -249,13 +249,13 @@ case class ObjectLevelTranslator(state : TranslationState,controller : Controlle
 
   def doPath(n:name,res:Option[resolution]) : Term = {
     var (id,thid,library_id,mappings,opttarget,allactuals) = (n,res) match {
-      case (name(id1,thid1,library_id1,mappings1,opttarget1,actuals1,dactuals1),Some(resolution(theory_name(_,thid2,library_id2,mappings2,opttarget2,actuals2,dactuals2),ind))) =>
-        (id1+(if(ind>0) "_"+ind else ""),
+      case (n@name(id1,thid1,library_id1,mappings1,opttarget1,actuals1,dactuals1),Some(resolution(theory_name(_,thid2,library_id2,mappings2,opttarget2,actuals2,dactuals2),ind))) =>
+        (n.id_proper+(if(ind>0) "_"+ind else ""),
           if (thid2 == "") thid1 else thid2,
           if (library_id2 == "") library_id1 else library_id2,
           mappings2,opttarget2,actuals2:::dactuals2)
-      case (name(id1,thid1,library_id1,mappings1,opttarget1,actuals,dactuals),None) =>
-        (id1,thid1,library_id1,mappings1,opttarget1,actuals:::dactuals)
+      case (n@name(id1,thid1,library_id1,mappings1,opttarget1,actuals,dactuals),None) =>
+        (n.id_proper,thid1,library_id1,mappings1,opttarget1,actuals:::dactuals)
     }
 
     val mpath = doMPath(theory_name("",thid,library_id,mappings,opttarget,allactuals,Nil))

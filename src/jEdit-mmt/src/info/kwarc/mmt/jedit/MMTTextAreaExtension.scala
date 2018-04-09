@@ -134,25 +134,26 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
          // if res != null: XY-coordinates of global offset assigned to startPoint (relative to the upper left corner of text area)
          // if res == null, point not visible (which sometimes happens)
          import parser.Reader._
-         if (res != null) segment.charAt(localOffset).toInt match {
-           case c if FS.chars.contains(c) =>
-             paintDelim(startPoint, new Color(high, high, low), "S")
-           case c if GS is c =>
-             paintDelim(startPoint, new Color(high, low, low), "M")
-           case c if RS is c =>
-             paintDelim(startPoint, new Color(low, high, low), "D")
-           case c if US is c =>
-             paintDelim(startPoint, new Color(low, low, high), "O")
-           case 32 =>
-           case c =>
-             if (MMTOptions.semantichighlighting.get.getOrElse(false)) {
-               // repaint c if semanticHighlighting returns a result
-               val globalOffset = segment.offset + localOffset
-               val styleOpt = semanticHighlighting(globalOffset)
-               styleOpt foreach {style =>
-                   paintChar(globalOffset, startPoint, style, c.toChar)
-               }
+         if (res != null) {
+           val c = segment.charAt(localOffset).toInt
+           if (c < 32) c match {
+             case c if FS.chars.contains(c) =>
+               paintDelim(startPoint, new Color(high, high, low), "S")
+             case c if GS is c =>
+               paintDelim(startPoint, new Color(high, low, low), "M")
+             case c if RS is c =>
+               paintDelim(startPoint, new Color(low, high, low), "D")
+             case c if US is c =>
+               paintDelim(startPoint, new Color(low, low, high), "O")
+           }
+           if (c > 32 && MMTOptions.semantichighlighting.get.getOrElse(false)) {
+             // repaint c if semanticHighlighting returns a result
+             val globalOffset = segment.offset + localOffset
+             val styleOpt = semanticHighlighting(globalOffset)
+             styleOpt foreach {style =>
+                 paintChar(globalOffset, startPoint, style, c.toChar)
              }
+           }
          }
        }
     } catch {

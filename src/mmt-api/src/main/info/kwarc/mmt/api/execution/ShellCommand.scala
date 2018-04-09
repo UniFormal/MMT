@@ -20,7 +20,7 @@ class ShellCommand extends ShellExtension("run") {
      val nsMap = controller.getNamespaceMap
      val thy = Path.parseM(args.head, nsMap)
      // TODO this is an inefficient way to fill the mathpath: load everything we know
-     controller.getConfig.getEntries(classOf[OAFConf]).foreach {e => controller.addArchive(e.local)}
+     controller.getConfig.getEntries(classOf[LMHConf]).foreach { e => controller.addArchive(e.local)}
      val con = Context(thy)
      val progS = args.tail.mkString(" ")
      val pu = ParsingUnit(SourceRef.anonymous(progS), con, progS, nsMap)

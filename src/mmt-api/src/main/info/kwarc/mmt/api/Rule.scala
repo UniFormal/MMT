@@ -129,19 +129,18 @@ object RuleSet {
     */
    def collectAdditionalRules(controller: Controller, addTo: Option[RuleSet], context: Context): MutableRuleSet = {
       val support = context.getIncludes
-      val decls = support.flatMap {p =>
-        controller.globalLookup.getDeclarationsInScope(OMMOD(p))
-      }.distinct
       var shadowed: List[Rule] = Nil
       val rs = new MutableRuleSet
       addTo.foreach {a => rs.imports(a)}
-      decls.foreach {
+      support.foreach {p =>
+        controller.globalLookup.forDeclarationsInScope(OMMOD(p)) {case (p,m,d) => d match {
          case rc: RuleConstant =>
             rc.df foreach {r =>
               rs.declares(r.providedRules :_*)
               shadowed :::= r.shadowedRules
             }
          case _ =>
+        }}
       }
       rs.shadow(shadowed:_*)
       rs

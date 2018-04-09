@@ -4,9 +4,6 @@
 
 <MODE>
 	<PROPS>
-		<PROPERTY NAME="commentStart" VALUE="/*" />
-		<PROPERTY NAME="commentEnd" VALUE="*/" />
-		<!-- <PROPERTY NAME="lineComment" VALUE="//" /> -->
 		<PROPERTY NAME="wordBreakChars" VALUE=".:[]{}() " />
 		<PROPERTY NAME="tabSize" VALUE="2"/>
 		<PROPERTY NAME="indentSize" VALUE="2"/>
@@ -14,105 +11,99 @@
 		<!-- Auto indent -->
 		<PROPERTY NAME="indentOpenBrackets" VALUE=""/>
 		<PROPERTY NAME="indentCloseBrackets" VALUE=""/>
-      <PROPERTY NAME="indentNextLines" VALUE=".*\{\s*"/>
-      <!--<PROPERTY NAME="unindentThisLine" VALUE="^\s*}\s*$"/>-->
-      <PROPERTY NAME="unindentNextLines" VALUE="^\s*\}\s*$"/>
+
+	    <PROPERTY NAME="indentNextLines" VALUE=".*\{\s*"/>
+        <!--<PROPERTY NAME="unindentThisLine" VALUE="^\s*}\s*$"/>-->
+        <PROPERTY NAME="unindentNextLines" VALUE="^\s*\}\s*$"/>
       
 		<!-- set this to 'true' if you want to use GNU coding style -->
 		<PROPERTY NAME="doubleBracketIndent" VALUE="false" />
+		
 		<PROPERTY NAME="lineUpClosingBracket" VALUE="true" />
 	</PROPS>
+
 	<RULES ESCAPE="\" IGNORE_CASE="FALSE" HIGHLIGHT_DIGITS="FALSE" DEFAULT="NULL">
 
-		<SPAN TYPE="LITERAL1" NO_LINE_BREAK="TRUE">
-			<BEGIN>"</BEGIN>
-			<END>"</END>
-		</SPAN>
-
-		<SPAN TYPE="COMMENT4">
-		  <BEGIN>%{HIDE</BEGIN>
-		  <END>}%</END>
-		</SPAN>
-		
-		<SPAN TYPE="COMMENT4" DELEGATE="MAIN">
-		  <BEGIN>%{SHOW</BEGIN>
-		  <END>}%</END>
-		</SPAN>
-
-		<SPAN TYPE="COMMENT3" MATCH_TYPE="COMMENT4">
+<!--      <SPAN TYPE="COMMENT3" MATCH_TYPE="COMMENT4">
 		  <BEGIN>_(</BEGIN>
 		  <END>)_</END>
 		</SPAN>
+-->
 
 		<SPAN_REGEXP TYPE="COMMENT1">
 			<BEGIN>//\s|/T\s</BEGIN>
 			<END REGEXP="TRUE">&#x1d;|&#x1f;|&#x1e;|&#10074;|&#10073;|&#10072;</END>
-		</SPAN_REGEXP> <!--
-		<SPAN TYPE="COMMENT1">
-			<BEGIN>//  </BEGIN>
-			<END>&#x1f;</END>
-		</SPAN>
-		<SPAN TYPE="COMMENT1">
-			<BEGIN>// </BEGIN>
-			<END>&#x1e;</END>
-		</SPAN> 
-		<SPAN TYPE="COMMENT1">
-			<BEGIN>/T   </BEGIN>
-			<END>&#x1d;|&#10074;</END>
-		</SPAN> 
-		<SPAN TYPE="COMMENT1">
-			<BEGIN>/T  </BEGIN>
-			<END>&#x1f;</END>
-		</SPAN>
-		<SPAN TYPE="COMMENT1">
-			<BEGIN>/T </BEGIN>
-			<END>&#x1e;</END>
-		</SPAN> -->
+		</SPAN_REGEXP>
 
-		<!-- see comment on NESTED1 below -->
-		<SPAN TYPE="LITERAL1" DELEGATE="NESTED1">
-		  <BEGIN>(</BEGIN>
-		  <END>)</END>
-		</SPAN>
-
-<!--		
-		<SPAN TYPE="KEYWORD1" DELEGATE="scala::MAIN">
-		   <BEGIN>&#x1b;scala</BEGIN>
-		   <END>&#x18;</END>
-		</SPAN>
-	-->	
-		
-		<SEQ TYPE="KEYWORD2">&#x1c;</SEQ>
-		<SEQ TYPE="KEYWORD2">&#x1d;</SEQ>
-		<SEQ TYPE="KEYWORD2">&#x1e;</SEQ>
-		<SEQ TYPE="KEYWORD2">&#x1f;</SEQ>
-		
-		<SEQ TYPE="OPERATOR">.</SEQ>
+        <!-- high Unicode delimiters and other delimiters of MMT concrete syntax-->		
+		<SEQ TYPE="LITERAL2">❚</SEQ>
+		<SEQ TYPE="LITERAL3">❙</SEQ>
+		<SEQ TYPE="LITERAL4">❘</SEQ>
 		<SEQ TYPE="OPERATOR">:</SEQ>
 		<SEQ TYPE="OPERATOR">@</SEQ>
 		<SEQ TYPE="OPERATOR">#</SEQ>
 		<SEQ TYPE="OPERATOR">=</SEQ>
-  		<SEQ TYPE="OPERATOR">(</SEQ>
-		<SEQ TYPE="OPERATOR">)</SEQ>
-		<SEQ TYPE="OPERATOR">[</SEQ>
-		<SEQ TYPE="OPERATOR">]</SEQ>
-		<SEQ TYPE="OPERATOR">{</SEQ>
-		<SEQ TYPE="OPERATOR">}</SEQ>
 		<KEYWORDS>
-         <OPERATOR>:=</OPERATOR>
-			<KEYWORD2>namespace</KEYWORD2>
-			<KEYWORD2>import</KEYWORD2>
-			<KEYWORD2>theory</KEYWORD2>
-			<KEYWORD2>view</KEYWORD2>
-			<KEYWORD2>constant</KEYWORD2>
-			<KEYWORD2>include</KEYWORD2>
-			<KEYWORD2>pattern</KEYWORD2>
-			<KEYWORD2>struct</KEYWORD2>
-			<KEYWORD2>implicit</KEYWORD2>
-			<KEYWORD2>structure</KEYWORD2>
-			<KEYWORD2>document</KEYWORD2>
-			<KEYWORD2>ref</KEYWORD2>
+			<KEYWORD1>namespace</KEYWORD1>
+			<KEYWORD1>import</KEYWORD1>
+			<KEYWORD1>document</KEYWORD1>
+			<KEYWORD1>ref</KEYWORD1>
+			<KEYWORD1>theory</KEYWORD1>
+			<KEYWORD1>view</KEYWORD1>
+			<KEYWORD1>constant</KEYWORD1>
+			<KEYWORD1>include</KEYWORD1>
+			<KEYWORD1>struct</KEYWORD1>
+			<KEYWORD1>pattern</KEYWORD1>
+			<KEYWORD1>structure</KEYWORD1>
+			<KEYWORD1>implicit</KEYWORD1>
+			<KEYWORD1>prec</KEYWORD1>
+	      <KEYWORD1>role</KEYWORD1>
+		<!-- typical meta-theory delimiters, e.g., LF -->
+         <KEYWORD2>type</KEYWORD2>
+         <KEYWORD2>kind</KEYWORD2>
 		</KEYWORDS>
+		<SEQ TYPE="KEYWORD2">.</SEQ>
+		<SEQ TYPE="KEYWORD2">[</SEQ>
+		<SEQ TYPE="KEYWORD2">]</SEQ>
+		<SEQ TYPE="KEYWORD2">{</SEQ>
+		<SEQ TYPE="KEYWORD2">}</SEQ>
+		<SEQ TYPE="KEYWORD2">⟶</SEQ>
+		<SEQ TYPE="KEYWORD2">⟵</SEQ>
+		<SEQ TYPE="KEYWORD2">⟷</SEQ>
+
+		<SPAN TYPE="LABEL" NO_LINE_BREAK="TRUE">
+			<BEGIN>"</BEGIN>
+			<END>"</END>
+		</SPAN>
+		<SEQ_REGEXP HASH_CHARS="0123456789" AT_WORD_START="TRUE" TYPE="DIGIT">[0-9]+(.[0-9]+)?</SEQ_REGEXP>
+
+		<!-- typical logic-level delimiters, e.g., FOL -->
+		<SEQ TYPE="KEYWORD3">⊦</SEQ>
+		<SEQ TYPE="KEYWORD3">⊢</SEQ>
+		<SEQ TYPE="KEYWORD3">⊣</SEQ>
+		<SEQ TYPE="KEYWORD3">≐</SEQ>
+		<SEQ TYPE="KEYWORD3">∀</SEQ>
+		<SEQ TYPE="KEYWORD3">∃</SEQ>
+		<SEQ TYPE="KEYWORD3">∧</SEQ>
+		<SEQ TYPE="KEYWORD3">∨</SEQ>
+		<SEQ TYPE="KEYWORD3">¬</SEQ>
+		<SEQ TYPE="KEYWORD3">→</SEQ>
+		<SEQ TYPE="KEYWORD3">←</SEQ>
+		<SEQ TYPE="KEYWORD3">↔</SEQ>
+		<SEQ TYPE="KEYWORD3">⇒</SEQ>
+		<SEQ TYPE="KEYWORD3">⇐</SEQ>
+		<SEQ TYPE="KEYWORD3">⇔</SEQ>
+		<SEQ TYPE="KEYWORD3">⟹</SEQ>
+		<SEQ TYPE="KEYWORD3">⟸</SEQ>
+		<SEQ TYPE="KEYWORD3">⟺</SEQ>
+		<SEQ TYPE="KEYWORD3">ι</SEQ>
+
+      <!-- see comment below for bracket highlighting -->
+      <SEQ TYPE="OPERATOR">)</SEQ> <!-- unmatched closing bracket -->
+	   <SPAN TYPE="LITERAL1" DELEGATE="NESTED1">
+	     <BEGIN>(</BEGIN>
+	     <END>)</END>
+	   </SPAN>
 	</RULES>
 
 

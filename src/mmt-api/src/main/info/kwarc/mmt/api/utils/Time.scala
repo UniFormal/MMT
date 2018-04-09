@@ -1,3 +1,14 @@
+package info.kwarc.mmt.api.utils.time
+
+object Time {
+  def measure[A](exec : => A) : (Long,A) = {
+    val t0 = System.nanoTime()
+    val result = exec
+    val t1 = System.nanoTime()
+    ((t1 - t0) / 1000000,result)
+  }
+}
+
 /*
 
 package info.kwarc.mmt.api.utils.time

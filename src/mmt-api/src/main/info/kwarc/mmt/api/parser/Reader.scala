@@ -230,17 +230,17 @@ object Reader {
    }
    /** the ASCII character GS (decimal 29) ends MMT modules */
    object GS extends MMTDelim {
-      val chars = List(29,'\u275A'.toInt)
+      val chars = List('\u275A'.toInt,29)
       def andabove = chars ::: FS.chars
    }
    /** the ASCII character GS (decimal 30) ends MMT declaration within modules */
    object RS extends MMTDelim {
-      val chars = List(30,'\u2759'.toInt)
+      val chars = List('\u2759'.toInt,30)
       def andabove = chars ::: GS.andabove
    }
    /** the ASCII character GS (decimal 31) ends MMT objects */
    object US extends MMTDelim {
-      val chars = List(31,'\u2758'.toInt)
+      val chars = List('\u2758'.toInt,31)
       def andabove = chars ::: RS.andabove
    }
    /** the special delimiters */

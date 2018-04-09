@@ -229,11 +229,11 @@ class NotationBasedParser extends ObjectParser {
     support.foreach {p =>
       controller.simplifier(p)
     }
-    val decls = support.flatMap {p => controller.globalLookup.getDeclarationsInScope(OMMOD(p))}.distinct
     var nots: List[ParsingRule] = Nil
     var les: List[LexerExtension] = Nil
     var notExts: List[NotationExtension] = Nil
-    decls.foreach {
+    support.foreach {p => controller.globalLookup.forDeclarationsInScope(OMMOD(p)) {case (_,via,d) => d match {
+      // TODO technically, d must be translated along via first; but that never changes the notations that we collect
       case c: Constant => // Declaration with HasNotation might collect too much here
         var names = (c.name :: c.alternativeNames).map(_.toString) //the names that can refer to this declaration
         if (c.name.last == SimpleStep("_")) names ::= c.name.init.toString
@@ -261,9 +261,9 @@ class NotationBasedParser extends ObjectParser {
         val tn = new TextNotation(ms, Precedence.infinite, None)
         nots ::= ParsingRule(nm.module.path, Nil, tn)
       case _ =>
-    }
+    }}}
     les = les.sortBy(- _.priority)
-    (nots, les, notExts)
+    (nots.distinct, les.distinct, notExts.distinct)
   }
 
   /* like getRules but for a theory expression (currently only called for local notations) */
@@ -512,8 +512,19 @@ class NotationBasedParser extends ObjectParser {
            doFoundContent(fc, uls)
        }
      }
-
-     val cons = ml.an.rules.map(_.name)
+     // basically, cons = mlCons, but we drop every constant that is defined to be equal to one we already have
+     // such cases can happen with structures, where the generated constants are essentially aliases that do not require ambiguity resolution 
+     var consVar: List[ContentPath] = Nil
+     val mlCons = ml.an.rules.map(_.name)
+     mlCons foreach {
+       case p: GlobalName =>
+         val pA = controller.globalLookup.quasiAliasFor(p)
+         if (utils.disjoint(mlCons, pA))
+           consVar ::= p
+       case p =>
+         consVar ::= p
+     }
+     val cons = consVar.reverse
 
      // hard-coded special case for a bracketed subterm
      if (cons == List(utils.mmt.brackets) || cons == List(utils.mmt.andrewsDot)) {
