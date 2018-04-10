@@ -85,8 +85,13 @@ abstract class Lookup {self =>
    def getImplicit(from: MPath, to: MPath) : Option[Term] = getImplicit(OMMOD(from), OMMOD(to))
    def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined
 
-   def getDeclarationsInScope(mod: Term): List[StructuralElement]
-
+   /**
+    * apply a function to all declarations that are visible (based on what is currently loaded) to a theory
+    * @param mod the theory
+    * @param f applied to (theory t declaring d, morphism mod->t that makes d visible, d)
+    */
+   def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit): Unit
+   
    /** if p is imported by a structure, returns the preimage of the symbol under the outermost structure */
    def preImage(p : GlobalName) : Option[GlobalName]
 
@@ -140,6 +145,21 @@ abstract class Lookup {self =>
          if (es.length == 1) Some(es.head) else None  // uniquely resolvable symbol in an included theory
       }
    }
+  
+  /**
+   * all constants for which c is a quasi-alias (recursively)
+   * a quasi-alias is defined by a definition c = OMS(d) 
+   */
+  def quasiAliasFor(c: GlobalName): List[GlobalName] = {
+    getO(c) match {
+      case Some(c: Constant) =>
+        c.df match {
+          case Some(OMS(p)) => p :: quasiAliasFor(p)
+          case _ => Nil
+        }
+      case _ => Nil
+    }
+  }
 
   /**
     * A Traverser that recursively expands definitions of Constants.

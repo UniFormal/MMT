@@ -129,7 +129,7 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
          case r: RuleConstant =>
             if (r.df.isEmpty) rh("unknown ")
             rh("rule ")
-            apply(r.tp, Some(r.path $ TypeComponent))
+            r.tp foreach {t => apply(t, Some(r.path $ TypeComponent))}
       }
       endDecl(e)
       rh("\n")

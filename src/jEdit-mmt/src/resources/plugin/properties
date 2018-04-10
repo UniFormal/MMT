@@ -2,8 +2,33 @@
 buffer.encoding=UTF-8
 # this means that space expands abbreviations
 view.expandOnInput=true
+
 view.wrapGuide=false
+view.showBufferSwitcher=false
+
+# sidekick-specific properties
 sidekick-tree.dock-position=left
 sidekick.buffer-save-parse=true
+
+# error list-specific
 error-list.dock-position=bottom
-view.showBufferSwitcher=false
+
+# MMT operators
+view.style.operator=color\:\#ff0000 style\:b
+# MMT keywords
+view.style.keyword1=color\:\#009966
+# logical framework operators and keywords
+view.style.keyword2=color\:\#ff0000
+# logic operators
+view.style.keyword3=color\:\#0000ff
+# nested brackets (outside to inside) and MMT special delimiters (high to low) 
+view.style.literal1=color\:\#0000ff style\:b
+view.style.literal2=color\:\#990099 style\:b
+view.style.literal3=color\:\#009900 style\:b
+view.style.literal4=color\:\#00cccc style\:b
+# strings
+view.style.label=color\:\#dddddd
+# numbers
+view.style.digit=color\:\#dddddd
+# comments
+view.style.comment1=color\:\#663300

@@ -51,9 +51,9 @@ object Morph {
   }
 
   /** transform a morphism into a list of morphisms by using associativity of composition */
-  def associateComposition(m: Term): List[Term] = m match {
-    case OMCOMP(ms) => ms flatMap associateComposition
-    case _ => List(m)
+  def associateComposition(mors: List[Term]): List[Term] = mors flatMap {
+    case OMCOMP(ms) => associateComposition(ms)
+    case m => List(m)
   }
 
   /** pre: mor is a valid morphism and includes all implicit morphisms
@@ -62,19 +62,20 @@ object Morph {
     * @param preserveType if true, identity morphisms that restrict the type domain are preserved if they cannot be reduced; otherwise, they become OMCOMP()
     */
   def simplify(mor: Term, preserveType: Boolean = false)(implicit lib: Lookup): Term = {
-    val mS = OMCOMP(associateComposition(mor))
-    mS match {
-      case OMMOD(p) => mS
+    mor match {
+      case OMMOD(p) => mor
       case OMS(p) => // TODO dangerous assumption that [mpath] is always a PlainInclude!
         if (p.name.length == 1 && p.name.steps.head.isInstanceOf[ComplexStep])
           OMCOMP()
         else
-          mS
-      case OMIDENT(t) => if (preserveType) mS else OMCOMP()
+          mor
+      case OMIDENT(t) => if (preserveType) mor else OMCOMP()
       case OMINST(t,args) => mor
       case OMStructuralInclude(f,t) => mor
       case OMCOMP(ms) =>
-        var left = ms map {m => simplify(m,true)} //TODO can we skip simplification? Nothing much happens because there are no nested compositions anymore
+        val parts = associateComposition(ms)
+        var partsS = parts map {m => simplify(m,true)} //TODO can we skip simplification? Nothing much happens because there are no nested compositions anymore
+        var left = associateComposition(partsS) // usually redundant, but simplification may occasionally introduce a composition
         var result: List[Term] = Nil
         // we go through all morphisms m in 'ms', building the simplification in 'result' (in reverse order)
         // we put R = OMCOMP(result.reverse) for the morphism processed so far
@@ -181,12 +182,8 @@ object Morph {
           case OMIDENT(_) => false
           case _ => true 
         }
-        // aggregate to a morphism if necessary
-        result match {
-          case Nil => OMCOMP()
-          case h :: Nil => h
-          case msS => OMCOMP(msS)
-        }
+        // OMCOMP disappears if result has length 1
+        OMCOMP(result)
     }
   }
 

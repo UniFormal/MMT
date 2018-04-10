@@ -29,10 +29,10 @@ object InferAmbiguous extends InferenceRule(ObjectParser.oneOf,ObjectParser.oneO
    def apply(checker: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
       case ComplexTerm(ObjectParser.oneOf, _, namedParts, choice :: alternatives) =>
          val subs = namedParts.toPartialSubstitution // always total if the term comes from NotationBasedParser
-      def choose(i: BigInt) = {
-         checker.inferType(alternatives(i.toInt) ^? subs, covered)
-      }
-
+         def choose(i: BigInt) = {
+           checker.inferType(alternatives(i.toInt) ^? subs, covered)
+         }
+         
          choice match {
             case OMI(i) =>
                history += "already disambiguated"
@@ -84,8 +84,8 @@ object InferAmbiguous extends InferenceRule(ObjectParser.oneOf,ObjectParser.oneO
                   None
                   // TODO: drop the failing alternatives
                   /* history += "removed some ill-typed alternatives"
-               val nonFailingAlternatives = nonFailures.map{case(_,i) => alternatives(i)}
-               Some(ObjectParser.oneOf(nonFailingAlternatives))*/
+                     val nonFailingAlternatives = nonFailures.map{case(_,i) => alternatives(i)}
+                     Some(ObjectParser.oneOf(nonFailingAlternatives))*/
                }
          }
       case _ => None

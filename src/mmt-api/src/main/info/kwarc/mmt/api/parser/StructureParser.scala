@@ -96,8 +96,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       controller.add(se)
       state.cont.onElement(se)
     } catch {case e: Error =>
-      val se = makeError(reg, "error while adding successfully parsed element", Some(e))
-      errorCont(se)
+      val srcerr = makeError(reg, "error while adding successfully parsed element " + se.path, Some(e))
+      errorCont(srcerr)
     }
   }
   /** called at the end of a document or module, does common bureaucracy */
@@ -643,7 +643,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         // wrap in source error if not source error already
         val se: SourceError = e match {
           case se: SourceError => se
-          case _ => makeError(currentSourceRegion, "error in declaration", Some(e))
+          case _ => makeError(currentSourceRegion, "unknown error in declaration", Some(e))
         }
         errorCont(se)
         if (!state.reader.endOfDeclaration)
@@ -775,7 +775,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     controller.simplifier(mp)
     var fs: List[(String,StructuralFeature)] = Nil
     var ps: List[(LocalName,(StructuralFeature,DerivedDeclaration))] = Nil
-    controller.globalLookup.getDeclarationsInScope(OMMOD(mp)).foreach {
+    controller.globalLookup.forDeclarationsInScope(OMMOD(mp)) {case (p,m,d) => d match {
+      //TODO translate via m where necessary
       case rc: RuleConstant => rc.df.foreach {
         case r: StructuralFeatureRule =>
           controller.extman.get(classOf[StructuralFeature], r.feature) match {
@@ -793,7 +794,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           case None =>
         }
       case _ =>
-    }
+    }}
     new Features(fs, ps)
   }
   protected def getFeatures(cont : Context) : Features = cont.collect({

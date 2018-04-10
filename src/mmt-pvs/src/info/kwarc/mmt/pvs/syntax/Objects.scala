@@ -189,7 +189,9 @@ case class theory_name(place: String, id: String, library_id: String, mappings: 
  * @param target abbreviation for substituting a set of names at once by the declarations of the same local name in a different theory
  */
 case class name(id: String, theory_id: String, library_id: String,
-                mappings: List[mapping], target: Option[theory_name], actuals: List[Object],dactuals:List[Object]) extends Group
+                mappings: List[mapping], target: Option[theory_name], actuals: List[Object],dactuals:List[Object]) extends Group {
+  def id_proper : String = if (id.startsWith("[") && id.endsWith("]")) "_" + id else id
+}
 
 
 /** superclass of instantiations and renaming when forming theories */

@@ -11,18 +11,23 @@ case class TestModifiers(compareWithTest: Boolean = false, addTest: Boolean = fa
   def makeTests: Boolean = compareWithTest || addTest || updateTest
 }
 
+/** when calling a [[BuildTarget]] we can use modifiers for, e.g., cleaning */ 
 sealed abstract class BuildTargetModifier {
   def toString(dim: String): String
 }
 
+/** default modifier: build the target */
+case class Build(update: Update) extends BuildTargetModifier {
+  def toString(dim: String) = dim
+}
+
+/** don't run, just delete all output files */
 case object Clean extends BuildTargetModifier {
   def toString(dim: String) = "-" + dim
 }
 
-case class BuildDepsFirst(update: Update) extends BuildTargetModifier {
-  def toString(dim: String) = dim + "&"
-}
-
+/** incremental build: skip this build if it nothing has changed */
+//TODO semantics of the attributes has never been specified, may be all wrong
 case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModifiers = TestModifiers(),
                   dependencyLevel: Option[Level] = Some(Level.Ignore)) {
   def key: String =
@@ -42,8 +47,10 @@ case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModi
     if (up.errorLevel < errorLevel) up else this
 }
 
-case class Build(update: Update) extends BuildTargetModifier {
-  def toString(dim: String) = dim
+@deprecated("needs review", "")
+//TODO this is only needed if called on the shell; check if any user actually calls it (presumably at most stex building, possibly in mathhub)
+case class BuildDepsFirst(update: Update) extends BuildTargetModifier {
+  def toString(dim: String) = dim + "&"
 }
 
 /** forces building independent of status */
@@ -51,6 +58,10 @@ object Build extends Build(Update(Level.Force, dependencyLevel = Some(Level.Forc
 
 import AnaArgs._
 
+/**
+ * parsing method for build target modifiers
+ */
+//TODO the outside-facing syntax should be reviewed; probably we do not need all these options
 object BuildTargetModifier {
 
   def optDescrs: OptionDescrs = List(
@@ -285,7 +296,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   /** the output archive folder */
   def outDim: ArchiveDimension
 
-  /** the name that is used for the special file representing the containing folder, empty by default */
+  /** the name that is used for the special file representing the containing folder (without extension), empty by default */
   protected val folderName = ""
 
   /** the file extension used for generated files, defaults to outDim, override as needed */
@@ -346,17 +357,19 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   protected def getOutFile(a: Archive, inPath: FilePath) = (a / outDim / inPath).setExtension(outExt)
 
+  protected def getFolderOutFile(a: Archive, inPath: FilePath) = getOutFile(a, inPath / folderName)
+
+  protected def getErrorFile(a: Archive, inPath: FilePath): File =
+    FileBuildDependency(key, a, inPath).getErrorFile(controller) //TODO why is this method not like the others?
+
+  //TODO why is this not protected?
+  def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
+
+  @deprecated("needs review", "")
   protected def getTestOutFile(a: Archive, inPath: FilePath) =
     (a / Dim("test", outDim.toString) / inPath).setExtension(outExt)
 
-  protected def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath / (folderName + "." + outExt)
-
   protected def getOutPath(a: Archive, outFile: File) = outFile.toFilePath
-
-  protected def getErrorFile(a: Archive, inPath: FilePath): File =
-    FileBuildDependency(key, a, inPath).getErrorFile(controller)
-
-  def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
 
   /** auxiliary method for logging results */
   protected def logResult(s: String) {
@@ -371,13 +384,14 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   /** entry point for recursive building */
-  def build(a: Archive, up: Update, in: FilePath, errorCont: Option[ErrorHandler] = None) {
+  def build(a: Archive, up: Update, in: FilePath, errorCont: Option[ErrorHandler]) {
     val qts = makeBuildTasks(a, in, errorCont)
     controller.buildManager.addTasks(up, qts)
   }
 
   /** like build, but returns all build tasks without adding them to the build manager */
   private def makeBuildTasks(a: Archive, in: FilePath, errorCont: Option[ErrorHandler]): List[QueuedTask] = {
+    // TODO it would be much cleaner if QueuedTask were not used in the BuildTarget class
     var tasks: List[QueuedTask] = Nil
     makeBuildTasksAux(in, a, errorCont) { qt =>
       tasks ::= qt
@@ -391,14 +405,16 @@ abstract class TraversingBuildTarget extends BuildTarget {
     a.traverse[BuildTask](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case Current(inFile, inPath) =>
         val bf = makeBuildTask(a, inPath, inFile, None, eCOpt)
-        val qt = new QueuedTask(this, bf)
+        val estRes = estimateResult(bf)
+        val qt = new QueuedTask(this, estRes, bf)
         cont(qt)
         bf
     }, {
       case (Current(inDir, inPath), builtChildren) =>
         val realChildren = builtChildren.filter(!_.isEmptyDir)
         val bd = makeBuildTask(a, inPath, inDir, Some(realChildren), None)
-        val qt = new QueuedTask(this, bd)
+        val estRes = estimateResult(bd)
+        val qt = new QueuedTask(this, estRes, bd)
         cont(qt)
         bd
     })
@@ -438,29 +454,30 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   // TODO the methods in this section should be revised together with a revision of the BuildQueue
 
-  /** the entry point for build managers */
-  def checkOrRunBuildTask(deps: Set[Dependency], bt: BuildTask, up: Update): BuildResult = {
+  /** the entry point for build managers: runs a build task unless (depending on the modifier) nothing has changed */
+  def runBuildTaskIfNeeded(deps: Set[Dependency], bt: BuildTask, up: Update): BuildResult = {
     var res: BuildResult = BuildEmpty("up-to-date")
     val outPath = bt.outPath
     val Update(errLev, dryRun, testMod, _) = up
     val rn = rebuildNeeded(deps, bt, errLev)
     if (!rn) {
       logResult("up-to-date " + outPath)
-    }
-    if (rn && dryRun) {
+    } else if (dryRun) {
+      // TODO is this the best way to dry runs?
       logResult("out-dated " + outPath)
       res = BuildEmpty("out-dated (dry run)")
-    }
-    if (rn && !dryRun) {
+    } else {
       res = runBuildTask(bt, errLev)
     }
+    // TODO why is this needed? what does it do?
     if (testMod.makeTests) {
       compareOutputAndTest(testMod, bt)
     }
     res
   }
 
-  /** auxiliary method of checkOrRunBuildTask */
+  /** auxiliary method of runBuildTaskIfNeeded: implements the semantics of Update to determine whether a task has to be built */
+  // TODO specify the semantics of Update
   private def rebuildNeeded(deps: Set[Dependency], bt: BuildTask, level: Level): Boolean = {
     val errorFile = bt.asDependency.getErrorFile(controller)
     val errs = hadErrors(errorFile, level)
@@ -477,7 +494,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     }
   }
 
-  /** auxiliary method of checkOrRunBuildTask */
+  /** auxiliary method of runBuildTaskIfNeeded */
   private def compareOutputAndTest(testMod: TestModifiers, bt: BuildTask) {
     val testFile = getTestOutFile(bt.archive, bt.inPath)
     val diffFile = testFile.addExtension("diff")
@@ -513,7 +530,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     }
   }
 
-  /** wraps around buildFile to add error handling, logging, etc.  */
+  /** wraps around buildFile and buildDir (which do the actual building) to add error handling, logging, etc.  */
   // TODO should be private, exposed only because it is overridden by LaTeXDirTarget
   protected def runBuildTask(bt: BuildTask, level: Level): BuildResult = {
     if (!bt.isDir) {
@@ -545,7 +562,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     } finally {
       if (!bt.isEmptyDir) bt.errorCont.close
     }
-    controller.notifyListeners.onFileBuilt(bt.archive, this, bt.inPath)
+    controller.notifyListeners.onFileBuilt(bt.archive, this, bt.inPath, res)
     res
   }
 
@@ -588,6 +605,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       { c => cleanFile(a, c) }, { case (c, _) => cleanDir(a, c) })
   }
 
+  /** checks if a file has been modified since the last built (using the date of the error file as the build time) */
   private def modified(inFile: File, errorFile: File): Boolean = {
     val mod = Modification(inFile, errorFile)
     mod == Modified || mod == Added
@@ -674,7 +692,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       case bd: FileBuildDependency =>
         val target = if (bd.key == key) this else bd.getTarget(controller)
         val bt = target.makeBuildTask(bd.archive, bd.inPath)
-        target.checkOrRunBuildTask(deps.getOrElse(bd, Set.empty), bt,
+        target.runBuildTaskIfNeeded(deps.getOrElse(bd, Set.empty), bt,
           if (requestedDeps.contains(bd)) up else up.forDependencies)
       case _ =>
     }

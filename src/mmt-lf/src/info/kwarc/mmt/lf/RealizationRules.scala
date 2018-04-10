@@ -13,8 +13,9 @@ object Realize extends ParametricRule {
 
    /** finds the semantic type that was previously declared to realized a syntactic type */
    private def getSemanticType(controller: Controller, home: Term, synTp: Term): SemanticType = {
-     controller.globalLookup.getDeclarationsInScope(home).foreach {
-       case rc: RuleConstant => rc.df match {
+     controller.globalLookup.forDeclarationsInScope(home) {
+       case (_,m,rc: RuleConstant) => rc.df match {
+         // TODO translate rt along m 
          case Some(rt: RealizedType) if rt.synType == synTp => return rt.semType
          case _ =>
        }

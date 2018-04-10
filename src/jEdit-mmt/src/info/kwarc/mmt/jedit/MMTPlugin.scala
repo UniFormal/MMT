@@ -60,7 +60,14 @@ class MMTPlugin extends EBPlugin with Logger {
       errorlist.ErrorSource.registerErrorSource(errorSource)
       val archives = MMTOptions.archives.get orElse
         controller.getMathHub.map(_.local.toString) getOrElse "mars"
-      controller.addArchive(home resolve archives)
+      val archivesFolder = home resolve archives
+      controller.addArchive(archivesFolder)
+      // if no lmh root has been defined (e.g., in the custom mmtrc file), we use the archives folder
+      if (controller.getMathHub.isEmpty && archives != "mars") {
+        val cf = new MMTConfig
+        cf.addEntry(LMHConf(archivesFolder, true, None))
+        controller.loadConfig(cf,false)
+      }
       // status bar is not actually available yet at this point
       controller.report.addHandler(StatusBarLogger)
       controller.extman.addExtension(mmtListener)

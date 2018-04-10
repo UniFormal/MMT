@@ -75,7 +75,7 @@ abstract class RealizationInScala extends RealizedTheory(None) {
       val rc = {
         val name = r.head.name / "realize"
         val tp = OMS(r.head)
-        new symbols.RuleConstant(toTerm, name, tp, Some(r)) //TODO nicer type
+        symbols.RuleConstant(toTerm, name, tp, Some(r)) //TODO nicer type
       }
       add(rc)
    }

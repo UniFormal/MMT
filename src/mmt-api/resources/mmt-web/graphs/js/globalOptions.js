@@ -10,7 +10,7 @@ var menuEntriesURL=serverUrl+":jgraph/menu?id=";
 // graphDataURL + graphDataURLTypeParameterName + concreteTypeValue + "&" + graphDataURLDataParameterName + concreteGraphdataValue
 var graphDataURL=serverUrl+":jgraph/json?";
 // For Backend
-var graphDataURLTypeParameterName = "key=";
+var graphDataURLTypeParameterName = "key";
 var graphDataURLDataParameterName = "uri";
 // For TGView
 var graphDataURLTypeParameterNameTGView = "type";
@@ -177,7 +177,7 @@ var NODE_STYLES =
 		colorHighlight: "#D2E5FF",
 		dashes: false
 	},
-	"bordercondition":
+	"boundarycondition":
 	{
 		shape: "box",
 		color: "#D2E5FF",

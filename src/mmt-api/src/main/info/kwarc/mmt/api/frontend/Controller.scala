@@ -158,22 +158,18 @@ class Controller extends ROController with ActionHandling with Logger {
   /** integrate a configuration into the current state */
   def loadConfig(conf: MMTConfig, loadEverything: Boolean) {
        state.config.add(conf)
-
        // add entries to the namespace
        conf.getEntries(classOf[NamespaceConf]).foreach {case NamespaceConf(id,uri) =>
           state.nsMap = state.nsMap.add(id, uri)
        }
-
        // add archives to the MathPath
        conf.getEntries(classOf[MathPathConf]).foreach {c =>
          addArchive(c.local)
        }
-
        // update the lmh cache
-       conf.getEntries(classOf[OAFConf]).foreach {c =>
+       conf.getEntries(classOf[LMHConf]).foreach { c =>
          lmh = Some(new MathHub(this, c.local, c.remote.getOrElse(MathHub.defaultURL), c.https))
        }
-
        if (loadEverything) {
          loadAllArchives(conf)
          loadAllNeededTargets(conf)
@@ -315,12 +311,12 @@ class Controller extends ROController with ActionHandling with Logger {
 
   /** a lookup that uses only the current memory data structures */
   val localLookup = new LookupWithNotFoundHandler(library) with FailingNotFoundHandler {
-    def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod)
+    def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) = library.forDeclarationsInScope(mod)(f)
   }
 
   /** a lookup that uses the previous in-memory version (ignoring the current one) */
   val previousLocalLookup = new LookupWithNotFoundHandler(memory.previousContent) with FailingNotFoundHandler {
-    def getDeclarationsInScope(mod: Term) = memory.previousContent.getDeclarationsInScope(mod)
+    def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) = memory.previousContent.forDeclarationsInScope(mod)(f)
   }
 
   /** a lookup that loads missing modules dynamically */
@@ -329,8 +325,8 @@ class Controller extends ROController with ActionHandling with Logger {
       code
     }
 
-    def getDeclarationsInScope(mod: Term) = iterate {
-      library.getDeclarationsInScope(mod)
+    def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) = iterate {
+      library.forDeclarationsInScope(mod)(f)
     }
   }
 
