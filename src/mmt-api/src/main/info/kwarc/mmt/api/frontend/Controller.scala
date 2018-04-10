@@ -158,22 +158,18 @@ class Controller extends ROController with ActionHandling with Logger {
   /** integrate a configuration into the current state */
   def loadConfig(conf: MMTConfig, loadEverything: Boolean) {
        state.config.add(conf)
-
        // add entries to the namespace
        conf.getEntries(classOf[NamespaceConf]).foreach {case NamespaceConf(id,uri) =>
           state.nsMap = state.nsMap.add(id, uri)
        }
-
        // add archives to the MathPath
        conf.getEntries(classOf[MathPathConf]).foreach {c =>
          addArchive(c.local)
        }
-
        // update the lmh cache
        conf.getEntries(classOf[LMHConf]).foreach { c =>
          lmh = Some(new MathHub(this, c.local, c.remote.getOrElse(MathHub.defaultURL), c.https))
        }
-
        if (loadEverything) {
          loadAllArchives(conf)
          loadAllNeededTargets(conf)

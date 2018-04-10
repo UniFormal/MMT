@@ -5,15 +5,16 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
-import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.ontology.FormalAlignment
+import info.kwarc.mmt.api.refactoring.Hasher.Targetable
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.utils.time.Time
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
-class FinderConfig(finder : AlignmentFinder, protected val report : Report) extends Logger {
+class FinderConfig(val finder : AlignmentFinder, protected val report : Report) extends Logger {
   override def logPrefix: String = "viewfinder"
 
   private var fromTheories_var : List[DeclaredTheory] = Nil
@@ -26,9 +27,9 @@ class FinderConfig(finder : AlignmentFinder, protected val report : Report) exte
   private var minimal_parameter_length_var = 0
   private var multithreaded : Boolean = false
 
-  def fromTheories : List[DeclaredTheory] = fromTheories_var
-  def toTheories : List[DeclaredTheory] = toTheories_var
-  def commonTheories : List[DeclaredTheory] = commonTheories_var
+  // def fromTheories : List[DeclaredTheory] = fromTheories_var
+  // def toTheories : List[DeclaredTheory] = toTheories_var
+  // def commonTheories : List[DeclaredTheory] = commonTheories_var
   def fixing : List[AlignmentTranslation] = fixing_var
   def judg1: Option[GlobalName] = judg1_var
   def judg2: Option[GlobalName] = judg2_var
@@ -38,6 +39,7 @@ class FinderConfig(finder : AlignmentFinder, protected val report : Report) exte
 
   def setMultithreaded(b : Boolean) = multithreaded = b
 
+  /*
   def addFrom(th : List[DeclaredTheory]) = {
     fromTheories_var :::= th
     val cs = fromTheories_var.filter(t => toTheories_var.contains(t) || commonTheories_var.contains(t))
@@ -54,6 +56,8 @@ class FinderConfig(finder : AlignmentFinder, protected val report : Report) exte
     toTheories_var = toTheories_var.filterNot(commonTheories_var.contains).distinct
     commonTheories_var = commonTheories_var.distinct
   }
+  */
+
   private def addAlignments(al : List[FormalAlignment]) = {
     fixing_var :::= al.map(finder.makeAlignment)
   }
@@ -66,25 +70,26 @@ class FinderConfig(finder : AlignmentFinder, protected val report : Report) exte
   def setDoDefs(b : Boolean) = doDefs_var = b
   def setMinParLength(i : Int) = minimal_parameter_length_var = i
 
-  def findJudgments = {
-    log("finding Judgments...")
-    val judg1 = if (judg1_var.isDefined) judg1_var else finder.getJudgment(fromTheories ::: commonTheories)
-    val judg2 = if (judg2_var.isDefined) judg2_var else finder.getJudgment(toTheories ::: commonTheories)
-    log("Judgments are " + judg1 + " and " + judg2)
-    judg1.foreach(addJudgmentFrom)
-    judg2.foreach(addJudgmentTo)
+  def findJudgments(from : List[MPath], to : List[MPath]) = {
+    // log("finding Judgments...")
+    val j1 = if (judg1.isDefined) judg1 else finder.getJudgment(from)
+    val j2 = if (judg2.isDefined) judg2 else finder.getJudgment(to)
+    // log("Judgments are " + judg1 + " and " + judg2)
+    j1.foreach(addJudgmentFrom)
+    j2.foreach(addJudgmentTo)
   }
+
 }
 
 class AlignmentFinder extends frontend.Extension {
   override def logPrefix: String = "viewfinder"
   implicit private val ec = ExecutionContext.global //.fromExecutor(Executors.newFixedThreadPool(10000))
 
-  private[refactoring] def getJudgment(ths: List[DeclaredTheory]): Option[GlobalName] = {
+  private[refactoring] def getJudgment(ths: List[MPath]): Option[GlobalName] = {
     var i = 0
     var judg: Option[GlobalName] = None
     while (judg.isEmpty && i < ths.length) {
-      judg = findJudgment(ths(i))
+      judg = findJudgment(controller.getAs(classOf[DeclaredTheory],ths(i)))
       i += 1
     }
     judg
@@ -106,104 +111,104 @@ class AlignmentFinder extends frontend.Extension {
       list.headOption
     }
 
-    // controller.simplifier.apply(th)
-    // val ths = th.getIncludes.map(controller.get(_).asInstanceOf[DeclaredTheory])//closer.getIncludes(th,true)
     findJudgmentIt(th)
   }
 
-  def getConfig : FinderConfig = new FinderConfig(this,report)
-
-  def getConfig(a1 : Archive, a2 : Archive) : FinderConfig = {
-    val cfg = getConfig
+  def getFlat(mpaths : List[MPath]) : List[DeclaredTheory] = { // TODO properly
     var dones : mutable.HashMap[MPath,Option[List[DeclaredTheory]]] = mutable.HashMap.empty
 
     // guarantees that the dependency closure is ordered
     def flatten(mp : MPath) : Option[List[DeclaredTheory]] = {
-      dones.getOrElse(mp, {
+      dones.getOrElseUpdate(mp, {
         log("Doing: " + mp.toString)
         // println(mp)
-        val ret = controller.getO(mp) match {
+        controller.getO(mp) match {
           case Some(th : DeclaredTheory) =>
             val rec = th.getIncludes.map(flatten)
             if (rec.contains(None)) None else
               Some((rec.flatMap(_.get) ::: List(th)).distinct)
           case _ => None
         }
-        dones += ((mp,ret))
-        ret
       })
     }
+    mpaths foreach flatten
+    dones.values.collect {
+      case Some(thl) => thl
+    }.toList.flatten.distinct
+  }
 
+  def getHasher : Hasher = new HashesNormal(new FinderConfig(this,report))
+
+  def addArchives(a1 : Archive, a2 : Archive, hasher : Hasher) : Unit = {
     var lf = a1.root / "viewfinder_order"
-    if (lf.exists) {
+    val froms = if (lf.exists) {
       log("Reading file " + lf)
       val ls = File.read(lf).split("\n").toList.distinct
       val mps = ls.map(s => Path.parseM(s,NamespaceMap.empty))
       log("Adding " + mps.length + " theories...")
-      cfg.addFrom(mps.indices.map{i =>
+      val ret = mps.indices.map{i =>
         print("\r  " + (i + 1) + " of " + mps.indices.length)
         controller.getAs(classOf[DeclaredTheory],mps(i))
-      }.toList)
+      }.toList
       println(" Done.")
+      ret
     } else {
       log("Collecting theories in " + a1.id)
-      val ths = a1.allContent.flatMap(flatten).flatten
+      val ths = getFlat(a1.allContent)
       File.write(lf,ths.map(_.path.toString).distinct.mkString("\n"))
-      cfg.addFrom(ths)
-      dones.clear()
+      ths
     }
 
     lf = a2.root / "viewfinder_order"
-    if (lf.exists) {
+    val tos = if (lf.exists) {
       log("Reading file " + lf)
       val ls = File.read(lf).split("\n").toList.distinct
       val mps = ls.map(s => Path.parseM(s,NamespaceMap.empty))
       log("Adding " + mps.length + " theories...")
-      cfg.addTo(mps.indices.map{i =>
+      val ret = mps.indices.map{i =>
         print("\r  " + (i + 1) + " of " + mps.indices.length)
         controller.getAs(classOf[DeclaredTheory],mps(i))
-      }.toList)
+      }.toList
       println(" Done.")
+      ret
     } else {
-      log("Collecting theories in " + a2.id)
-      val ths = a2.allContent.flatMap(flatten).flatten
+      log("Collecting theories in " + a1.id)
+      val ths = getFlat(a1.allContent)
       File.write(lf,ths.map(_.path.toString).distinct.mkString("\n"))
-      cfg.addTo(ths)
-      dones.clear()
+      ths
     }
 
-    cfg
+    val commons = froms.filter(tos.contains)
+    hasher.cfg.findJudgments(froms.map(_.path),tos.map(_.path))
+    val (t,_) = Time.measure {
+      commons foreach (t => hasher.add(t,Hasher.COMMON))
+      froms.filterNot(commons.contains) foreach (t => hasher.add(t,Hasher.FROM))
+      tos.filterNot(commons.contains) foreach (t => hasher.add(t,Hasher.TO))
+    }
   }
 
-  def run(cfg : FinderConfig) = {
-    val hasher = new HashesNormal(cfg)
-    log("Hashing...")
-    val (t,_) = Time.measure {
-      cfg.commonTheories foreach (t => hasher.add(t,Hasher.COMMON))
-      cfg.fromTheories foreach (t => hasher.add(t,Hasher.FROM))
-      cfg.toTheories foreach (t => hasher.add(t,Hasher.TO))
-    }
-    log("Done after " + t + "ms")
-    val proc = new FindingProcess(this.report,cfg,hasher)
-    log("Multithreaded: " + cfg.isMultithreaded)
-    proc.run
+  def run(hasher : Hasher) = {
+    val proc = new FindingProcess(this.report,hasher)
+    log("Multithreaded: " + hasher.cfg.isMultithreaded)
+    log("Judgment symbols are " + hasher.cfg.judg1 + " and " + hasher.cfg.judg2)
+    proc.run()
   }
 
 }
 
-class FindingProcess(val report : Report, cfg : FinderConfig, hash : Hasher) extends MMTTask with Logger {
+class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Logger {
   override def logPrefix: String = "viewfinder"
   implicit private val ec = ExecutionContext.global //.fromExecutor(Executors.newFixedThreadPool(10000))
 
-  def run = {
+  def run(from : List[Theoryhash]= Nil, to : List[Theoryhash] = Nil) = {
     log("Selecting Theories to use...")
-    val (t1,tops1) = Time.measure(select(hash.from))
-    val (t2,tops2) = Time.measure(select(hash.to))
+    val (t1,tops1) = if (from.nonEmpty) (0.toLong,from) else Time.measure(select(hash.from))
+    val (t2,tops2) = if (to.nonEmpty) (0.toLong,to) else Time.measure(select(hash.to))
     log("Done after " + (t1 + t2) + "ms")
 
     log(tops1.length + " and " + tops2.length + " selected elements")
     log("Finding Views...")
-    val (t,alls : Set[List[Map]]) = Time.measure(if (cfg.isMultithreaded) {
+    val (t,alls : Set[List[Map]]) = Time.measure(if (hash.cfg.isMultithreaded) {
       // One thread for each pair, should speed things up
       val ps = tops1.flatMap(t1 => tops2.map((t1,_)))
       val fs = Future.sequence(ps.map(p =>
@@ -243,7 +248,9 @@ class FindingProcess(val report : Report, cfg : FinderConfig, hash : Hasher) ext
   // the method used for matching two constants. Defaults to hash equality with all parameters pairwise matched up
   protected def matches(c: Consthash, d: Consthash)(l: List[(GlobalName, GlobalName)]): Boolean = {
     if (c !<> d) false
-    else (c.pars zip d.pars).forall { case (p, q) => p == q || l.contains((p, q)) }
+    else (c.pars zip d.pars).forall { case (Hasher.Symbol(p), Hasher.Symbol(q)) => p == q || l.contains((p, q))
+    case _ => true
+    }
   }
 
   //selects potential matches to work with; defaults to hash-equality
@@ -252,8 +259,8 @@ class FindingProcess(val report : Report, cfg : FinderConfig, hash : Hasher) ext
 
   // gets starting points for viewfinding. Defaults to Axioms and minimal_parameter_length
   protected def getStartingPoints(implicit allpairs : List[(Consthash, Consthash)]): List[(Consthash, Consthash)]
-  = (if (cfg.judg1.isDefined || cfg.judg2.isDefined) allpairs.filter(p => p._1.isProp || p._2.isProp)
-  else allpairs).filter(p => p._1.pars.length >= cfg.minimal_parameter_length)
+  = (if (hash.cfg.judg1.isDefined || hash.cfg.judg2.isDefined) allpairs.filter(p => p._1.isProp || p._2.isProp)
+  else allpairs).filter(p => p._1.pars.length >= hash.cfg.minimal_parameter_length)
 
   // does something with the resulting lists of pairs.
 
@@ -351,10 +358,15 @@ class FindingProcess(val report : Report, cfg : FinderConfig, hash : Hasher) ext
     def get(from : Consthash, to : Consthash)(implicit allpairs : List[(Consthash, Consthash)]) : Option[Map] =
       maps.getOrElseUpdate((from.name,to.name), {
         if (from !<> to) return None
-        if (from.pars == to.pars) return Some(Map(from.name, to.name, Nil, 0))
+        if (from.pars == to.pars) return Some(Map(Hasher.Symbol(from.name), Hasher.Symbol(to.name), Nil, 0))
 
-        val rec = from.pars.indices.map(i => get(from.pars(i), to.pars(i)))
-        if (rec.forall(_.isDefined)) Some(Map(from.name,to.name,rec.map(_.get).toList,0)) else None
+        val rec = from.pars.indices.map(i =>
+          (from.pars(i),to.pars(i)) match {
+            case (Hasher.Symbol(f),Hasher.Symbol(t)) => get(f,t)
+            case _ => None
+          }
+        )
+        if (rec.forall(_.isDefined)) Some(Map(Hasher.Symbol(from.name),Hasher.Symbol(to.name),rec.map(_.get).toList,0)) else None
       })
   }
 
@@ -372,15 +384,17 @@ class FindingProcess(val report : Report, cfg : FinderConfig, hash : Hasher) ext
         current._1.pars.indices.foldLeft(
           Some((current._1.name, current._2.name) :: cp).asInstanceOf[Option[List[(GlobalName, GlobalName)]]]
         )((pt, i) =>
-          pt match {
-            case None => None /*
+          (pt,current._1.pars(i),current._2.pars(i)) match {
+            case (None,_,_) => None /*
             case Some(path) if path contains ((current._1.pars(i), current._2.pars(i))) =>
               Some(((current._1.pars(i), current._2.pars(i)) :: path).distinct) */
             // case Some(path) if path exists (p => p._1 == current._1.pars(i)) => None
-            case Some(path) => pairs.collectFirst { case p if p._1.name == current._1.pars(i) && p._2.name == current._2.pars(i) => p } match {
+            case (Some(path),Hasher.Symbol(s1),Hasher.Symbol(s2)) =>
+              pairs.collectFirst { case p if p._1.name == s1 && p._2.name == s2 => p } match {
               case None => None
               case Some(x) => iterate(pairs, x, path)
             }
+            case _ => pt
           }
         ).map(_.distinct)
       }
@@ -411,10 +425,19 @@ class FindingProcess(val report : Report, cfg : FinderConfig, hash : Hasher) ext
 
 }
 
-case class Map(from : GlobalName, to : GlobalName, requires : List[Map], value : Double) {
+case class Map(from : Targetable, to : Targetable, requires : List[Map], value : Double) {
+  // val isSimple = from.isInstanceOf[Hasher.Symbol] && to.isInstanceOf[Hasher.Symbol]
   def asString() = "(" + value + ") " + from + " --> " + to + " requires: " + requires.mkString("["," , ","]")
   def allRequires : List[Map] = (requires.flatMap(_.requires) ::: requires).distinct
   override def toString: String = from + " -> " + to
+}
+
+trait Preprocessor {
+  def apply(c : FinalConstant) : FinalConstant
+
+  def +(that : Preprocessor) : Preprocessor = { c =>
+    that.apply(this.apply(c))
+  }
 }
 
 /*
