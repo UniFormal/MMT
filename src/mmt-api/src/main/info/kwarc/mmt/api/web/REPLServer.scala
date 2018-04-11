@@ -11,10 +11,10 @@ import checking._
 import utils._
 
 /** stores the state of a content-inputing REPL session */
-class REPLSession(val path: DPath, val id: String, interpreter: Interpreter) {
+class REPLSession(val doc: Document, val id: String, interpreter: Interpreter) {
+  private val path = doc.path
   override def toString = s"session with id $id and URI $path"
-  val doc = new Document(path, true)
-  private var currentScope: HasParentInfo = IsDoc(doc.path)
+  private var currentScope: HasParentInfo = IsDoc(path)
   private val errorCont = new ErrorContainer(None)
   private var counter = 0
 
@@ -80,11 +80,13 @@ class REPLServer extends ServerExtension("repl") {
           throw LocalError("session id already exists")
         }
         val path = DPath(mmt.baseURI) / "jupyter" / id
+        val doc = new Document(path, root=true)
+        controller.add(doc)
         val format = "mmt"
         val interpreter = controller.extman.get(classOf[Interpreter], format).getOrElse {
           throw LocalError("no parser found")
         }
-        val s = new REPLSession(path, id, interpreter)
+        val s = new REPLSession(doc, id, interpreter)
         sessions ::= s
         TextResponse("new session started with id " + id)
       case "quit" =>

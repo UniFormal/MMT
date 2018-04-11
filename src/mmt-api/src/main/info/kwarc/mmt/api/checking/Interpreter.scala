@@ -28,7 +28,7 @@ abstract class Interpreter extends Importer {
   /** object interpretation */
   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): CheckingResult
 
-  def simplifier: uom.Simplifier
+  def simplifier = controller.simplifier
   
   /** converts the interface of [[Importer]] to the one of [[Parser]] */
   protected def buildTaskToParsingStream(bf: BuildTask): (DPath, ParsingStream) = {
@@ -75,7 +75,7 @@ abstract class Interpreter extends Importer {
   * @param checker the first part of the second step: checking
   * @param simplifier the second part of the second step: elaboration/simplification
   */
-class TwoStepInterpreter(val parser: Parser, val checker: Checker, val simplifier: uom.Simplifier) extends Interpreter {
+class TwoStepInterpreter(val parser: Parser, val checker: Checker, override val simplifier: uom.Simplifier) extends Interpreter {
   def format = parser.format
 
   /** parses a [[ParsingStream]] and checks the result */
@@ -109,7 +109,6 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker, val simplifie
 
 /** an interpreter created from a trusted parser */
 class OneStepInterpreter(val parser: Parser) extends Interpreter {
-    def simplifier = controller.simplifier
     def format = parser.format
     def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) = {
       val cont = new StructureParserContinuations(errorCont)
