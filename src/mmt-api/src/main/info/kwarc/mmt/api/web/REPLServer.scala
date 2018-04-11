@@ -77,10 +77,10 @@ class REPLServer extends ServerExtension("repl") {
     val command = request.query
     command match {
       case "show" =>
-        val sessionsP = sessions flatMap {s =>
-          controller.presenter.asString(s.doc) + "\n\n"
+        val sessionsP = sessions map {s =>
+          controller.presenter.asString(s.doc)
         }
-        TextResponse(sessionsP.toString)
+        TextResponse(sessionsP.mkString("\n\n"))
       case "start" =>
         if (currentSessionOpt.nonEmpty) {
           throw LocalError("session id already exists")
