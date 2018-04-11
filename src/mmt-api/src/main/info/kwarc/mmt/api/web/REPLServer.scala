@@ -106,14 +106,11 @@ class REPLServer extends ServerExtension("repl") {
             // special case for closing the current container element (module etc.)
             currentSession.parseElementEnd
             TextResponse("closed module")
-          case _ =>
-            // assume anything else is content
-            // TODO check heuristically whether it is a declaration or a plain term
-            val se = if (true) {
-              currentSession.parseObject(input)
-            } else {
-              currentSession.parseStructure(input)
-            }
+          case "eval" =>
+             val d = currentSession.parseObject(input)
+             TextResponse("read declaration " + d.toString)
+          case "content" | _ =>
+            val se = currentSession.parseStructure(input)
             TextResponse("read declaration " + se.toString)
         }
     }
