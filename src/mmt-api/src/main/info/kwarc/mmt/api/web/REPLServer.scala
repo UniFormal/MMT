@@ -67,14 +67,35 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter) {
 import ServerResponse._
 
 class REPLServer extends ServerExtension("repl") {
+  private lazy val presenter = controller.presenter
+  
   private var sessions: List[REPLSession] = Nil
 
+  private def startSession(path: DPath, id: String) : REPLSession = {
+    val doc = new Document(path, root=true)
+    controller.add(doc)
+    val format = "mmt"
+    val interpreter = controller.extman.get(classOf[Interpreter], format).getOrElse {
+      throw LocalError("no parser found")
+    }
+    val s = new REPLSession(doc, id, interpreter)
+    sessions ::= s
+    s
+  }
+  private def deleteSession(s: REPLSession) {
+    controller.delete(s.doc.path)
+    sessions = sessions.filterNot(_.id == s.id)
+  }
+  
   def apply(request: ServerRequest): ServerResponse = {
     lazy val id = request.headers.get("mmtsession").getOrElse {
       throw LocalError("no mmtsession header")
     }
     lazy val path = DPath(mmt.baseURI) / "jupyter" / id
     lazy val currentSessionOpt = sessions.find(_.id == id)
+    lazy val currentSession = currentSessionOpt.getOrElse {
+      throw LocalError("unknown session")
+    }
     val command = request.query
     command match {
       case "show" =>
@@ -82,18 +103,14 @@ class REPLServer extends ServerExtension("repl") {
           controller.presenter.asString(s.doc)
         }
         TextResponse(sessionsP.mkString("\n\n"))
+      case "clear" =>
+        sessions foreach deleteSession
+        TextResponse("all sessions cleared")
       case "start" =>
         if (currentSessionOpt.nonEmpty) {
           throw LocalError("session id already exists")
         }
-        val doc = new Document(path, root=true)
-        controller.add(doc)
-        val format = "mmt"
-        val interpreter = controller.extman.get(classOf[Interpreter], format).getOrElse {
-          throw LocalError("no parser found")
-        }
-        val s = new REPLSession(doc, id, interpreter)
-        sessions ::= s
+        startSession(path, id)
         TextResponse("new session started with id " + id)
       case "quit" =>
         currentSessionOpt match {
@@ -104,10 +121,11 @@ class REPLServer extends ServerExtension("repl") {
             controller.delete(path)
             TextResponse("session terminated with id " + id)
         }
+      case "restart" =>
+        currentSessionOpt foreach deleteSession
+        startSession(path, id)
+        TextResponse("session restarted")
       case _ =>
-        val currentSession = currentSessionOpt.getOrElse {
-          throw LocalError("unknown session")
-        }
         val input = request.body.asString.trim
         val firstPart = input.takeWhile(c => !c.isWhitespace)
         val rest = input.substring(firstPart.length)
@@ -119,11 +137,15 @@ class REPLServer extends ServerExtension("repl") {
           case "eval" =>
             val d = currentSession.parseObject(rest)
             controller.add(d)
-            TextResponse("read declaration " + d.toString)
+            TextResponse(presenter.asString(d))
+          case "get" =>
+            val p = Path.parse(rest, currentSession.doc.nsMap)
+            val se = controller.get(p)
+            TextResponse(presenter.asString(se))
           case "content" | _ =>
             val toBeParsed = if (firstPart == "content") rest else input
             val se = currentSession.parseStructure(toBeParsed)
-            TextResponse("read declaration " + se.toString)
+            TextResponse(presenter.asString(se))
         }
     }
   }
