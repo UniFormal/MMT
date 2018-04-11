@@ -50,11 +50,12 @@ class REPLSession(val path: DPath, val id: String, interpreter: Interpreter) {
       case _ => throw GeneralError("can only parse term inside a theory")
     }
     val sref = SourceRef(path.uri, SourceRegion.ofString(s))
-    val pu = ParsingUnit(sref, Context(mpath), s, NamespaceMap.empty)
+    val context = Context(mpath)
+    val pu = ParsingUnit(sref, context, s, NamespaceMap.empty)
     val cr = interpreter(pu)(errorCont)
     val term = cr.term
-    //val termS = controller.simplifier(term)
-    val df = Some(cr.term)
+    val termS = interpreter.simplifier(term, context, true)
+    val df = Some(termS)
     val tp = cr.solution.flatMap(_.getO(CheckingUnit.unknownType).flatMap(_.df))
     val name = LocalName("res" + counter)
     counter += 1

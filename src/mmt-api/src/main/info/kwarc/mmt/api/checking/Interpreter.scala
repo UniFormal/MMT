@@ -28,6 +28,8 @@ abstract class Interpreter extends Importer {
   /** object interpretation */
   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): CheckingResult
 
+  def simplifier: uom.Simplifier
+  
   /** converts the interface of [[Importer]] to the one of [[Parser]] */
   protected def buildTaskToParsingStream(bf: BuildTask): (DPath, ParsingStream) = {
     val inPathOMDoc = bf.inPath.toFile.setExtension("omdoc").toFilePath
@@ -107,6 +109,7 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker, val simplifie
 
 /** an interpreter created from a trusted parser */
 class OneStepInterpreter(val parser: Parser) extends Interpreter {
+    def simplifier = controller.simplifier
     def format = parser.format
     def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) = {
       val cont = new StructureParserContinuations(errorCont)
