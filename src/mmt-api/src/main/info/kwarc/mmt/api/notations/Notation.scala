@@ -174,8 +174,7 @@ object TextNotation {
       new TextNotation(Mixfix(markers), prec, meta, scope)
    }
 
-   def parseScope(n : scala.xml.Node) : NotationScope = {
-       //parsing scope
+   private def parseScope(n : scala.xml.Node) : NotationScope = {
       val variant = utils.xml.attr(n, "variant") match {
         case "" => None
         case s => Some(s)

@@ -274,15 +274,24 @@ object MorphismApplicationTerm extends InferenceRule(ModExp.morphismapplication,
       if (t.freeVars.nonEmpty) {
         solver.error("cannot apply morphism to term with free variables yet")
       }
-      val mDom = Morph.domain(m)(solver.lookup).getOrElse(return None)
+      val mI = solver.inferType(m, covered)(stack, history + ("inferring type of morphism"))
+      val (mDom,mCod) = mI match {
+        case Some(MorphType(d,c)) => (d,c)
+        case _ => return None
+      }
+      val impl = solver.lookup.getImplicit(mCod, ComplexTheory(solver.constantContext)).getOrElse {
+        solver.error("morphism does not translate into the current theory")
+        return None
+      }
       val mDomContext = mDom match {
         case OMPMOD(p,as) => Context(IncludeVarDecl(p,as))
         case _ =>
           history += "domain of morphism is not an instance of a named theory"
           return None
       }
+      // TODO does not work because local context is ignored when looking up constants; also the wrong rules are applied
       val tI = solver.inferType(t, covered)(Stack(mDomContext), history + ("inferring term over theory "))
-      tI map {tp => OMM(tp,m)}
+      tI map {tp => OMM(tp,OMCOMP(m,impl))}
    }
 }
 
@@ -291,10 +300,19 @@ object MorphismApplicationTerm extends InferenceRule(ModExp.morphismapplication,
  * 
  * t APPLY m  ----> m(t)
  */
-object ComputeMorphism extends ComputationRule(ModExp.morphismapplication) {
+object MorphismApplicationCompute extends ComputationRule(ModExp.morphismapplication) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
       val OMM(t,m) = tm
-      val translator = ApplyMorphism(m)
+      val mI = solver.inferType(m, covered)(stack, history + ("inferring type of morphism"))
+      val (mDom,mCod) = mI match {
+        case Some(MorphType(d,c)) => (d,c)
+        case _ => return None
+      }
+      val impl = solver.lookup.getImplicit(mCod, ComplexTheory(solver.outerContext)).getOrElse {
+        solver.error("morphism does not translate into the current theory")
+        return None
+      }
+      val translator = ApplyMorphism(OMCOMP(m,impl))
       if (t.freeVars.nonEmpty) {
         solver.error("cannot apply morphism to term with free variables yet")
       }
