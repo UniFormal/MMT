@@ -15,16 +15,17 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter) {
   private val path = doc.path
   override def toString = doc.toString
   private var currentScope: HasParentInfo = IsDoc(path)
-  private val errorCont = new ErrorContainer(None)
+  private val errorCont = ErrorThrower
   private var counter = 0
 
   /** parses a declaration in a specific point (default: current point) of the document associated with this session (also stores in in controller) */
   def parseStructure(s: String, scopeOpt: Option[HasParentInfo] = None): StructuralElement = {
     val buffer = ParsingStream.stringToReader(s)
     val scope = scopeOpt.getOrElse(currentScope)
-    val ps = ParsingStream(path.uri, scope, doc.nsMap, interpreter.format, buffer)
+    val ps = ParsingStream(path.uri, scope, NamespaceMap(doc.path), interpreter.format, buffer)
     val se = interpreter(ps)(errorCont)
     se match {
+      case r: MRef => currentScope = IsMod(r.target, LocalName.empty)
       case m: DeclaredModule => currentScope = IsMod(m.path, LocalName.empty)
       case nm: NestedModule => currentScope = IsMod(nm.module.path, LocalName.empty)
       case _ =>
