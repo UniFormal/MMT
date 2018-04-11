@@ -13,7 +13,7 @@ import utils._
 /** stores the state of a content-inputing REPL session */
 class REPLSession(val doc: Document, val id: String, interpreter: Interpreter) {
   private val path = doc.path
-  override def toString = s"session with id $id and URI $path"
+  override def toString = doc.toString
   private var currentScope: HasParentInfo = IsDoc(path)
   private val errorCont = new ErrorContainer(None)
   private var counter = 0
@@ -72,14 +72,19 @@ class REPLServer extends ServerExtension("repl") {
     val id = request.headers.get("mmtsession").getOrElse {
       throw LocalError("no mmtsession header")
     }
+    val path = DPath(mmt.baseURI) / "jupyter" / id
     val currentSessionOpt = sessions.find(_.id == id)
     val command = request.query
     command match {
+      case "show" =>
+        val sessionsP = sessions flatMap {s =>
+          controller.presenter.asString(s.doc) + "\n\n"
+        }
+        TextResponse(sessionsP.toString)
       case "start" =>
         if (currentSessionOpt.nonEmpty) {
           throw LocalError("session id already exists")
         }
-        val path = DPath(mmt.baseURI) / "jupyter" / id
         val doc = new Document(path, root=true)
         controller.add(doc)
         val format = "mmt"
@@ -95,6 +100,7 @@ class REPLServer extends ServerExtension("repl") {
             TextResponse("session did not exist")
           case Some(s) =>
             sessions = sessions.filterNot(_ == s)
+            controller.delete(path)
             TextResponse("session terminated with id " + id)
         }
       case _ =>
