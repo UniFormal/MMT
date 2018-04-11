@@ -69,11 +69,11 @@ class REPLServer extends ServerExtension("repl") {
   private var sessions: List[REPLSession] = Nil
 
   def apply(request: ServerRequest): ServerResponse = {
-    val id = request.headers.get("mmtsession").getOrElse {
+    lazy val id = request.headers.get("mmtsession").getOrElse {
       throw LocalError("no mmtsession header")
     }
-    val path = DPath(mmt.baseURI) / "jupyter" / id
-    val currentSessionOpt = sessions.find(_.id == id)
+    lazy val path = DPath(mmt.baseURI) / "jupyter" / id
+    lazy val currentSessionOpt = sessions.find(_.id == id)
     val command = request.query
     command match {
       case "show" =>
