@@ -117,10 +117,11 @@ class REPLServer extends ServerExtension("repl") {
             currentSession.parseElementEnd
             TextResponse("closed module")
           case "eval" =>
-             val d = currentSession.parseObject(input)
-             TextResponse("read declaration " + d.toString)
+            val d = currentSession.parseObject(rest)
+            TextResponse("read declaration " + d.toString)
           case "content" | _ =>
-            val se = currentSession.parseStructure(input)
+            val toBeParsed = if (firstPart == "content") rest else input
+            val se = currentSession.parseStructure(toBeParsed)
             TextResponse("read declaration " + se.toString)
         }
     }
