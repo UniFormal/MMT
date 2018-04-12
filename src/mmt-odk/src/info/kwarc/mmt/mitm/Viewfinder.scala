@@ -1,16 +1,23 @@
 package info.kwarc.mmt.mitm
 
-import info.kwarc.mmt.api.{DPath, GlobalName, MPath}
+import info.kwarc.mmt.api
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents.Document
+import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
-import info.kwarc.mmt.api.objects.{OMS, Term}
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.refactoring._
-import info.kwarc.mmt.api.symbols.FinalConstant
-import info.kwarc.mmt.api.utils.FilePath
-import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.utils.time.Time
+import info.kwarc.mmt.lf._
 
-class Viewfinder extends Exporter {
+import scala.collection.mutable
+
+class Viewfinder extends Extension {
+  override val logPrefix = "viewfinding"
+
+  private val theories : mutable.HashMap[String,(List[DeclaredTheory],Option[GlobalName])] = mutable.HashMap()
 
   lazy val alignmentFinder : AlignmentFinder = controller.extman.get(classOf[AlignmentFinder]).headOption.getOrElse {
     val af = new AlignmentFinder
@@ -18,7 +25,52 @@ class Viewfinder extends Exporter {
     af
   }
 
-  lazy val mitm : Archive = controller.backend.getArchive("MitM/smglom").getOrElse(???)
+  // lazy val mitm : Archive = controller.backend.getArchive("MitM/smglom").getOrElse(???)
+
+  override def start(args: List[String]): Unit = {
+    val as = controller.backend.getArchives
+    log("Getting Archives...")
+    val (t,_) = Time.measure {
+      as.filterNot(_.id.startsWith("ODK")).foreach(a => try { a.id match {
+        case s if s.startsWith("MitM") =>
+          val (ths,judg) = alignmentFinder.getArchive(a)
+          theories(a.id) = (ths.map(mitmpreproc.apply),judg)
+        case s if s.startsWith("PVS") =>
+          val (ths,judg) = alignmentFinder.getArchive(a)
+          theories(a.id) = (ths.map(ParameterPreprocessor.apply),judg)
+        case _ => theories(a.id) = alignmentFinder.getArchive(a)
+      }
+      } catch {
+        case e: api.Error => log(e.shortMsg)
+      })
+    }
+    log("Finished after " + t)
+  }
+
+  def find(mp : MPath, to : String) = {
+    val hasher = alignmentFinder.getHasher
+    val froms = alignmentFinder.getFlat(List(mp))
+    val meta = froms.view.find(_.path == mp).get.meta.get
+    val metas = alignmentFinder.getFlat(List(meta))
+    val (tos,judg2) = theories(to)
+    val judg1 = alignmentFinder.getJudgment(froms.map(_.path))
+    val commons = froms.filter(metas.contains)
+    judg1.foreach(hasher.cfg.addJudgmentFrom)
+    judg2.foreach(hasher.cfg.addJudgmentTo)
+    val (t,_) = Time.measure {
+      log("Commons")
+      commons.foreach(hasher.add(_, Hasher.COMMON))
+      log("Froms")
+      froms.filterNot(commons.contains).foreach(hasher.add(_, Hasher.FROM))
+      log("Tos")
+      tos.filterNot(commons.contains).foreach(hasher.add(_, Hasher.TO))
+    }
+    log("Hashing done after " + t)
+    val proc = new FindingProcess(this.report,hasher)
+    proc.run(from = List(hasher.get(mp).get))
+  }
+
+  /*
 
   def find(mp : MPath, to : Archive) = {
     val hasher = default(mp, to) // TODO
@@ -33,12 +85,14 @@ class Viewfinder extends Exporter {
     val hasher = alignmentFinder.getHasher
     hasher.cfg.setDoDefs(false)
     hasher.cfg.setMultithreaded(false)
-    alignmentFinder.addArchives(mitm,to,hasher)
+    // alignmentFinder.addArchives(mitm,to,hasher)
     hasher
   }
 
-  val key = "viewfinding"
-  override val outExt = "viewfinding"
+  */
+
+  // val key = "viewfinding"
+  // override val outExt = "viewfinding"
 
   def exportTheory(t: DeclaredTheory, bf: BuildTask) { /*
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
@@ -69,67 +123,16 @@ class Viewfinder extends Exporter {
     //Nothing to do - no MathML at document level
   }
 
+  val mitmpreproc = ParameterPreprocessor + new LFClassicHOLPreprocessor(
+    ded = MitM.ded,
+    and = MitM.and,
+    not = MitM.not,
+    or = Some(MitM.or),
+    implies = Some(MitM.implies),
+    equiv = Some(MitM.equiv),
+    forall = Some(MitM.forall),
+    exists = Some(MitM.exists)
+  )
+
 }
 
-class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : GlobalName,
-                        or : Option[GlobalName],
-                        implies : Option[GlobalName],
-                        equiv : Option[GlobalName],
-                        equals : Option[GlobalName],
-                        forall : Option[GlobalName],
-                        exists : Option[GlobalName],
-                        hoasapply : Option[GlobalName]
-                       ) extends Preprocessor {
-
-  private object Apply {
-    def apply(f : Term, args : List[Term]) = if (hoasapply.isDefined) {
-      args.foldLeft(f)((nf,a) => ApplySpine(OMS(hoasapply.get), nf,a))
-    } else ApplySpine(f,args :_*)
-    def unapply(tm : Term) : Option[(Term,List[Term])] = if (hoasapply.isDefined) {
-      val hoas = hoasapply.get
-      tm match {
-        case ApplySpine(OMS(`hoas`),List(nf,a)) => Some(unapply(nf).map(p => (p._1, p._2 ::: a :: Nil)).getOrElse((nf,List(a))))
-      }
-    } else ApplySpine.unapply(tm)
-  }
-
-  private object Ded {
-    ???
-  }
-
-  private object And {
-    ???
-  }
-
-  private object Not {
-    ???
-  }
-
-  private object Or {
-    ???
-  }
-
-  private object Implies {
-    ???
-  }
-
-  private object Equiv {
-    ???
-  }
-
-  private object Equals {
-    ???
-  }
-
-  private object Forall {
-    ???
-  }
-
-  private object Exists {
-    ???
-  }
-
-  def apply(c : FinalConstant): FinalConstant = ???
-
-  private def leq(t1 : Term, t2 : Term) : Boolean = t1.subobjects.length <= t2.subobjects.length
-}

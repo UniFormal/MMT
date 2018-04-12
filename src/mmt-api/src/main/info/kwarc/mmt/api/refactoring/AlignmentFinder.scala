@@ -1,15 +1,15 @@
 package info.kwarc.mmt.api.refactoring
 
-import info.kwarc.mmt.api.frontend.{Logger, Report}
+import info.kwarc.mmt.api.frontend.{Extension, Logger, Report}
 import info.kwarc.mmt.api.modules.DeclaredTheory
-import info.kwarc.mmt.api.symbols.FinalConstant
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
-import info.kwarc.mmt.api.objects.Term
+import info.kwarc.mmt.api.objects.{OMV, Substitution, Term}
 import info.kwarc.mmt.api.ontology.FormalAlignment
 import info.kwarc.mmt.api.refactoring.Hasher.Targetable
 import info.kwarc.mmt.api.utils.File
-import info.kwarc.mmt.api.utils.time.Time
+import info.kwarc.mmt.api.utils.time.{Duration, Time}
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
@@ -85,7 +85,7 @@ class AlignmentFinder extends frontend.Extension {
   override def logPrefix: String = "viewfinder"
   implicit private val ec = ExecutionContext.global //.fromExecutor(Executors.newFixedThreadPool(10000))
 
-  private[refactoring] def getJudgment(ths: List[MPath]): Option[GlobalName] = {
+  def getJudgment(ths: List[MPath]): Option[GlobalName] = {
     var i = 0
     var judg: Option[GlobalName] = None
     while (judg.isEmpty && i < ths.length) {
@@ -120,14 +120,16 @@ class AlignmentFinder extends frontend.Extension {
     // guarantees that the dependency closure is ordered
     def flatten(mp : MPath) : Option[List[DeclaredTheory]] = {
       dones.getOrElseUpdate(mp, {
-        log("Doing: " + mp.toString)
+        // log("Doing: " + mp.toString)
         // println(mp)
         controller.getO(mp) match {
           case Some(th : DeclaredTheory) =>
             val rec = th.getIncludes.map(flatten)
             if (rec.contains(None)) None else
               Some((rec.flatMap(_.get) ::: List(th)).distinct)
-          case _ => None
+          case _ =>
+            // log("MISSING: " + mp)
+            None
         }
       })
     }
@@ -135,6 +137,17 @@ class AlignmentFinder extends frontend.Extension {
     dones.values.collect {
       case Some(thl) => thl
     }.toList.flatten.distinct
+  }
+
+  def getArchive(a : Archive) : (List[DeclaredTheory], Option[GlobalName]) = {
+    log("Collecting theories in " + a.id)
+    val ths = getFlat(a.allContent)
+    val judg = getJudgment(ths.map(_.path))
+    (ths,judg)
+  }
+
+  def addTheories(ths1 : List[DeclaredTheory], ths2 : List[DeclaredTheory], hasher : Hasher) = {
+
   }
 
   def getHasher : Hasher = new HashesNormal(new FinderConfig(this,report))
@@ -172,19 +185,21 @@ class AlignmentFinder extends frontend.Extension {
       println(" Done.")
       ret
     } else {
-      log("Collecting theories in " + a1.id)
-      val ths = getFlat(a1.allContent)
+      log("Collecting theories in " + a2.id)
+      val ths = getFlat(a2.allContent)
       File.write(lf,ths.map(_.path.toString).distinct.mkString("\n"))
       ths
     }
 
-    val commons = froms.filter(tos.contains)
-    hasher.cfg.findJudgments(froms.map(_.path),tos.map(_.path))
+    log("Hashing...")
     val (t,_) = Time.measure {
+      val commons = froms.filter(tos.contains)
+      hasher.cfg.findJudgments(froms.map(_.path),tos.map(_.path))
       commons foreach (t => hasher.add(t,Hasher.COMMON))
       froms.filterNot(commons.contains) foreach (t => hasher.add(t,Hasher.FROM))
       tos.filterNot(commons.contains) foreach (t => hasher.add(t,Hasher.TO))
     }
+    log("Done after " + t)
   }
 
   def run(hasher : Hasher) = {
@@ -202,9 +217,9 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
 
   def run(from : List[Theoryhash]= Nil, to : List[Theoryhash] = Nil) = {
     log("Selecting Theories to use...")
-    val (t1,tops1) = if (from.nonEmpty) (0.toLong,from) else Time.measure(select(hash.from))
-    val (t2,tops2) = if (to.nonEmpty) (0.toLong,to) else Time.measure(select(hash.to))
-    log("Done after " + (t1 + t2) + "ms")
+    val (t1,tops1) = if (from.nonEmpty) (Duration(0.toLong),from) else Time.measure(select(hash.from))
+    val (t2,tops2) = if (to.nonEmpty) (Duration(0.toLong),to) else Time.measure(select(hash.to))
+    log("Done after " + (t1 + t2))
 
     log(tops1.length + " and " + tops2.length + " selected elements")
     log("Finding Views...")
@@ -231,11 +246,11 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
         ret
       })
     }.toSet)
-    log("Done after " + t + "ms")
+    log("Done after " + t)
 
     log("Postprocessing...")
     val (tlast,res) = Time.measure(postProcess(alls))
-    log("Done after " + tlast + "ms")
+    log("Done after " + tlast)
     log(res.length + " maps found.")
     res
   }
@@ -317,7 +332,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     dones.reverse
     */
     val order = hash.from.flatMap(_.getLocal.reverse)
-    evals.view.distinct.sortBy(v => (order.indexWhere(_.name == v.from),-v.value))
+    evals.view.distinct.sortBy(v => (order.indexWhere(p => Hasher.Symbol(p.name) == v.from),-v.value))
   }
 
   /**
@@ -400,6 +415,8 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
       }
     }
 
+    println(th1.path + " --> " + th2.path)
+
     implicit val allpairs : List[(Consthash,Consthash)] = potentialMatches(th1.getAll, th2.getAll)
     if (allpairs.isEmpty) {
       // log("No potential matches")
@@ -432,11 +449,43 @@ case class Map(from : Targetable, to : Targetable, requires : List[Map], value :
   override def toString: String = from + " -> " + to
 }
 
-trait Preprocessor {
-  def apply(c : FinalConstant) : FinalConstant
+trait Preprocessor extends Extension { self =>
 
-  def +(that : Preprocessor) : Preprocessor = { c =>
-    that.apply(this.apply(c))
+  val archive : Option[String] = None
+
+  def apply(th : DeclaredTheory) : DeclaredTheory = {
+    val nth = new DeclaredTheory(th.parent,th.name,th.meta,th.paramC,th.dfC)
+    th.getDeclarations foreach {
+      case c : FinalConstant =>
+        val nc = Constant(nth.toTerm,c.name,c.alias,c.tp map doTerm,c.df map doTerm,c.rl,c.notC)
+        nth add nc
+      case o => nth add o
+    }
+    nth
+  }
+
+  protected def doTerm(tm : Term) : Term = tm
+
+
+  def +(that : Preprocessor) : Preprocessor = new Preprocessor {
+    override def apply(th : DeclaredTheory) = that.apply(self.apply(th))
+  }
+}
+
+object ParameterPreprocessor extends Preprocessor {
+  import info.kwarc.mmt.api.objects.Conversions._
+  override def apply(th: DeclaredTheory): DeclaredTheory = {
+    val nth = new DeclaredTheory(th.parent,th.name,th.meta,ContextContainer(Nil),TermContainer(None))
+    val sub = Substitution(th.parameters.map(v => v.name / Hasher.Complex(OMV(v.name))):_*)
+    th.getDeclarations foreach {
+      case Include(_,from,args) if args.nonEmpty => // get rid of parametric includes
+        nth.add(Include(nth.toTerm,from,Nil))
+      case c : FinalConstant if sub.asContext.nonEmpty =>
+        val nc = Constant(nth.toTerm,c.name,c.alias,c.tp map(_ ^? sub),c.df map(_ ^? sub),c.rl,c.notC)
+        nth add nc
+      case o => nth add o
+    }
+    nth
   }
 }
 
