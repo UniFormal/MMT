@@ -13,6 +13,8 @@ import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.{Declaration, PlainInclude, TermContainer}
 import info.kwarc.mmt.imps.Usage.Usage
+import info.kwarc.mmt.imps.impsMathParser.freshVar
+import info.kwarc.mmt.imps.impsRemoveQuasiConstructors.removeQCs
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
 
@@ -155,7 +157,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         /* Add Include */
         val component = tState.theories_decl.find(p => p.name.toString.toLowerCase == comp_theory.toLowerCase)
         assert(component.isDefined)
-        controller add PlainInclude.apply(component.get.path,nu_theory.path)
+        println("   > adding include of " + comp_theory.toLowerCase)
+        controller add PlainInclude(component.get.path,nu_theory.path)
 
         /* Union Languages */
         val t_index : Theory = tState.theories_raw.find(t => t.name.toLowerCase == comp_theory.toLowerCase).get
@@ -230,6 +233,15 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       }
     }
 
+    if (t.name != "the-kernel-theory")
+    {
+      println(" > adding include for kernel theory")
+
+      val component = tState.theories_decl.find(p => p.name.toString.toLowerCase == "the-kernel-theory")
+      assert(component.isDefined)
+      controller add PlainInclude.apply(component.get.path,nu_theory.path)
+    }
+
     println(" > actually adding theory " + t.name)
 
     tState.theories_decl = tState.theories_decl :+ nu_theory
@@ -255,9 +267,14 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       }
       else if (exists_theory)
       {
-        val argt : ArgumentLanguage = tState.theories_raw.find(p => p.name.toLowerCase == target.toLowerCase).get.lang.get
-        assert(tState.languages.exists(p => p.name.toLowerCase == argt.lang.toLowerCase))
-        doLanguage(tState.languages.find(p => p.name.toLowerCase == argt.lang.toLowerCase).get, t)
+        println(" > NEEDLE: " + target.toLowerCase() + " HAYSTACK: " + tState.theories_raw.map(p => p.name.toLowerCase()))
+        assert(tState.theories_raw.find(p => p.name.toLowerCase == target.toLowerCase).isDefined)
+        val argt = tState.theories_raw.find(p => p.name.toLowerCase == target.toLowerCase).get
+        if (argt.lang.isDefined)
+        {
+          assert(tState.languages.exists(p => p.name.toLowerCase == argt.lang.get.lang.toLowerCase))
+          doLanguage(tState.languages.find(p => p.name.toLowerCase == argt.lang.get.lang.toLowerCase).get, t)
+        }
       }
     }
 
@@ -314,8 +331,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           }
         }
 
-        val srt = matchSort(tal.sort,t)
-        val knd = findKind(tal.sort)
+        val srt = tState.bindUnknowns(matchSort(tal.sort,t))
+        val knd = tState.bindUnknowns(findKind(tal.sort))
         val trm = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), knd, sub, srt)
         val jdgmttp   : Option[Term] = Some(IMPSTheory.Thm(trm))
         val judgement : Declaration  = symbols.Constant(t.toTerm, LocalName(name),Nil,jdgmttp,None,Some("Numerical Type Subsort"))
@@ -331,7 +348,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       for (pair : (String, IMPSSort) <- l.cnstnts.get.lst)
       {
-        val mth_tp : Term = doSort(pair._2, t)
+        val mth_tp : Term = tState.bindUnknowns(doSort(pair._2, t))
         val l_const = symbols.Constant(t.toTerm,doName(pair._1),Nil,Some(mth_tp),None,Some("Constant"))
         if (l.cnstnts.get.src.isDefined) { doSourceRef(l_const,l.cnstnts.get.src.get) }
         controller add l_const
@@ -339,7 +356,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     }
   }
 
-  def doDeclaration (d : LispExp) : Unit =
+  def doDeclaration (d : TExp) : Unit =
   {
     // set this to true for helpful debug output
     val debug : Boolean = false
@@ -380,7 +397,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           val exp : IMPSMathExp = IMPSApply(defstring,List(witness.get.witness))
 
           val wit : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(exp, parent, Nil)))
-
           val fin = symbols.Constant(parent.toTerm, LocalName(name + "_witness"),Nil,Some(wit),None,Some("Atomic sort witness theorem"))
 
           controller add fin
@@ -406,7 +422,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         }
         val parent: DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
 
-        val srt : Term  = doSort(curry(sort), parent)
+        val srt : Term  = tState.bindUnknowns(doSort(curry(sort), parent))
         val mth : Term  = tState.bindUnknowns(doMathExp(definition, parent,Nil))
         val nu_constant = symbols.Constant(parent.toTerm, LocalName(name.toLowerCase()), Nil, Some(srt), Some(mth), Some("Constant"))
 
@@ -438,7 +454,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
           println(" > " + maths(i))
 
-          var srt : Term      = doSort(theseSorts(i), parent)
+          var srt : Term      = tState.bindUnknowns(doSort(theseSorts(i), parent))
           val mth : Term      = tState.bindUnknowns(doMathExp(maths(i), parent, Nil))
 
           val nu_constant     = symbols.Constant(parent.toTerm, nm, Nil, Some(srt), Some(mth), Some("Recursive Constant"))
@@ -490,10 +506,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           doMetaData(nu_theorem, "reverse", "absent")
         }
 
-        if (src.isDefined) { doSourceRef(nu_theorem, src.get) }
-        controller add nu_theorem
-
         if (maybeProof.isDefined) {
+          println(" > Adding proof!")
           /* opaque proofs are beetter than no proofs */
           val proof_name: StringFragment = StringFragment("Opaque proof of theorem " + name)
           val proof_text: StringFragment = StringFragment(maybeProof.get.prf.toString)
@@ -501,6 +515,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(proof_name + "\n" + proof_text))
           controller add opaque
         }
+
+        if (src.isDefined) { doSourceRef(nu_theorem, src.get) }
+        controller add nu_theorem
 
         println(" > adding theorem " + name + " to theory " + parent.name)
       }
@@ -607,7 +624,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   {
     if (sort.isInstanceOf[IMPSNaryFunSort]) { return findKind(curry(sort))}
 
-    sort match {
+    sort match
+    {
+      case IMPSUnknownSort(h)       => tState.doUnknown(Some(h))
       case IMPSAtomSort("ind")      => OMS(IMPSTheory.lutinsIndType)
       case IMPSAtomSort("prop")     => OMS(IMPSTheory.lutinsPropType)
       case IMPSAtomSort("bool")     => OMS(IMPSTheory.lutinsPropType)
@@ -625,6 +644,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     if (e.isInstanceOf[IMPSNaryFunSort]) { return matchSort(curry(e),t)}
 
     e match {
+      case IMPSUnknownSort(h)   => tState.doUnknown(Some(h))
       case IMPSAtomSort("ind")  => OMS(IMPSTheory.lutinsPath ? "ind")
       case IMPSAtomSort("prop") => OMS(IMPSTheory.lutinsPath ? "bool")
       case IMPSAtomSort("bool") => OMS(IMPSTheory.lutinsPath ? "bool")
@@ -656,7 +676,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   {
     srt match
     {
-      case IMPSAtomSort(_)                 => srt // don't change atomic sorts
+      case IMPSUnknownSort(_)
+         | IMPSAtomSort(_)                 => srt // don't change atomic sorts
       case IMPSBinaryFunSort(sort1, sort2) => IMPSBinaryFunSort(curry(sort1),curry(sort2))
       case IMPSNaryFunSort(sorts)          => {
         if (sorts.length == 2) {
@@ -680,15 +701,17 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   /* Introduces a sort to a theory and also assigns the enclosing sort to it. */
   def doSubsort(subsort : IMPSSort, supersort : IMPSSort, thy : DeclaredTheory, src : Option[SourceRef]) : Unit =
   {
+    // TODO: Fix different usages
+
     /* enclosing sort should already be defined */
     println(" > Adding sort: " + subsort.toString + ", enclosed by " + supersort.toString)
 
     val opt_ind   : Option[Term] = Some(Apply(OMS(IMPSTheory.lutinsPath ? LocalName("sort")), OMS(IMPSTheory.lutinsIndType)))
     val jdgmtname : LocalName    = LocalName(subsort.toString + "_sub_" + supersort.toString)
 
-    val foo       : Term = matchSort(subsort,thy)
-    val bar       : Term = matchSort(supersort,thy)
-    val baz       : Term = findKind(supersort)
+    val foo       : Term = tState.bindUnknowns(matchSort(subsort,thy))
+    val bar       : Term = tState.bindUnknowns(matchSort(supersort,thy))
+    val baz       : Term = tState.bindUnknowns(findKind(supersort))
 
     val subs      : Term = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), baz, foo, bar)
 
@@ -712,11 +735,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   /* Translate IMPS Math Expressions to Terms */
   def doMathExp(d : IMPSMathExp, thy : DeclaredTheory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
   {
-    // Remove Quasi-Constructors (user) if there is one.
-    if (d.isInstanceOf[IMPSUserDefinedQuasiConstructor])
-    {
-      return doMathExp(impsRemoveQuasiConstructors.removeQCs(d,cntxt.map(_._1)),thy,cntxt)
-    }
+    //return OMS(IMPSTheory.lutinsPath ? "thetrue")
 
     d match
     {
@@ -731,8 +750,28 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         if (s.forall(_.isDigit) || (s.startsWith("-") && s.tail.nonEmpty && s.tail.forall(_.isDigit))) {
           IntLiterals.parse(s)
         }
-        else {
-          OMS(thy.path ? LocalName(s))
+        else
+        {
+          var srcthy : DeclaredTheory = null
+
+          println(" > Looking for IMPSMathSymbol: " + s)
+
+          for (mp <- thy.getIncludes ::: List(thy.path))
+          {
+            val refthy : DeclaredTheory = controller.getTheory(mp)
+            val refcon : List[info.kwarc.mmt.api.symbols.Constant] = refthy.getConstants
+
+            if (refcon.find(c => c.name.toString.toLowerCase == s.toLowerCase).isDefined) {
+              srcthy = refthy
+              println("    > FOUND in " + refthy.name)
+            }
+            else {
+              println("    > Not found in " + refthy.name)
+            }
+          }
+
+          assert(srcthy != null)
+          OMS(srcthy.path ? LocalName(s))
         }
         //  Rational Literals
         //  case "i/j" => OMLIT((BigInt(i),BigInt(j)),RatLiterals)
@@ -743,7 +782,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSFalsehood()        => OMS(IMPSTheory.lutinsPath ? "thefalse")
 
       case IMPSNegation(p)        => IMPSTheory.Negation(doMathExp(p,thy,cntxt))
-      case IMPSIf(p,t1,t2)        => IMPSTheory.If(tState.addUnknown(), tState.addUnknown(), doMathExp(p,thy,cntxt), doMathExp(t1,thy,cntxt), doMathExp(t2,thy,cntxt))
+      case IMPSIf(p,t1,t2)        => IMPSTheory.If(tState.doUnknown(), tState.doUnknown(), doMathExp(p,thy,cntxt), doMathExp(t1,thy,cntxt), doMathExp(t2,thy,cntxt))
       case IMPSIff(p, q)          => IMPSTheory.Iff(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt))
       case IMPSIfForm(p,q,r)      => IMPSTheory.If_Form(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt), doMathExp(r,thy,cntxt))
       case IMPSEquals(p,q)        =>
@@ -768,15 +807,15 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
             if (cntxt.map(_._1).contains(q)) {
               val theSort = cntxt.find(k => k._1 == q).get._2
               beta = matchSort(theSort,thy)
-              if (a == null) { a = findKind(theSort) } else { assert(a == findKind(theSort)) }
+              if (a == null) { a = findKind(theSort) }
             }
           }
           case _          => ()
         }
 
-        if (alpha == null) { alpha = tState.addUnknown() }
-        if (beta  == null) { beta  = tState.addUnknown() }
-        if (a     == null) { a     = tState.addUnknown() }
+        if (alpha == null) { alpha = tState.doUnknown() }
+        if (beta  == null) { beta  = tState.doUnknown() }
+        if (a     == null) { a     = tState.doUnknown() }
 
         IMPSTheory.Equals(a,alpha,beta,doMathExp(p,thy,cntxt),doMathExp(q,thy,cntxt))
       }
@@ -827,15 +866,15 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           {
             val y_pair = cntxt.find(c => c._1 == ts.head).get
             gamma = matchSort(curry(y_pair._2),thy)
-            if (a == null) { a = findKind(curry(y_pair._2)) } else { assert(a == findKind(curry(y_pair._2))) }
+            if (a == null) { a = findKind(curry(y_pair._2)) }
           }
 
-          if (alpha == null) { alpha = tState.addUnknown() }
-          if (beta  == null) { beta  = tState.addUnknown() }
-          if (gamma == null) { gamma = tState.addUnknown() }
+          if (alpha == null) { alpha = tState.doUnknown() }
+          if (beta  == null) { beta  = tState.doUnknown() }
+          if (gamma == null) { gamma = tState.doUnknown() }
 
-          if (a == null) { a = tState.addUnknown() }
-          if (b == null) { b = tState.addUnknown() }
+          if (a == null) { a = tState.doUnknown() }
+          if (b == null) { b = tState.doUnknown() }
 
           IMPSTheory.IMPSApply(a, b, alpha, gamma, beta, doMathExp(f,thy,cntxt), doMathExp(ts.head,thy,cntxt))
         }
@@ -864,8 +903,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         IMPSTheory.IotaP(the_srt,target)
       }
-      case IMPSIsDefined(r)       => IMPSTheory.IsDefined(tState.addUnknown(), tState.addUnknown(), doMathExp(r,thy,cntxt))
-      case IMPSIsDefinedIn(r,s)   => IMPSTheory.IsDefinedIn(findKind(s), tState.addUnknown(), doMathExp(r,thy,cntxt), matchSort(s,thy))
+      case IMPSIsDefined(r)       => IMPSTheory.IsDefined(tState.doUnknown(), tState.doUnknown(), doMathExp(r,thy,cntxt))
+      case IMPSIsDefinedIn(r,s)   => IMPSTheory.IsDefinedIn(findKind(s), tState.doUnknown(), doMathExp(r,thy,cntxt), matchSort(s,thy))
       case IMPSUndefined(s)       => IMPSTheory.Undefined(findKind(s), matchSort(s,thy))
 
       case IMPSTotal(f,bs)         =>
@@ -902,7 +941,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
             }
             case _ => ???
           }
-        } else { IMPSTheory.Nonvacuous(tState.addUnknown(),tState.addUnknown(),doMathExp(p,thy,cntxt)) }
+        } else { IMPSTheory.Nonvacuous(tState.doUnknown(),tState.doUnknown(),doMathExp(p,thy,cntxt)) }
       }
       case IMPSQuasiEquals(p,q) => {
 
@@ -925,15 +964,19 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           if (a == null) { a = findKind(bar._2) } else { assert(a  == findKind(bar._2)) }
         }
 
-        if (a     == null) { a     = tState.addUnknown() }
-        if (alpha == null) { alpha = tState.addUnknown() }
-        if (beta  == null) { beta  = tState.addUnknown() }
+        if (a     == null) { a     = tState.doUnknown() }
+        if (alpha == null) { alpha = tState.doUnknown() }
+        if (beta  == null) { beta  = tState.doUnknown() }
 
         IMPSTheory.Quasiequals(a, alpha, beta, e1, e2)
       }
 
       case _ => {
-        println(" > " + d.isInstanceOf[IMPSUserDefinedQuasiConstructor] + " | " + d.toString)
+        // Remove Quasi-Constructors (user) if there is one.
+        if (d.isInstanceOf[IMPSUserDefinedQuasiConstructor])
+        {
+          return doMathExp(impsRemoveQuasiConstructors.removeQCs(d,cntxt.map(_._1),cntxt),thy,cntxt)
+        }
         ???
       }
     }
@@ -968,8 +1011,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     a     = findKind(thisSrt)
     alpha = matchSort(thisSrt,thy)
 
-    b     = tState.addUnknown()
-    beta  = tState.addUnknown()
+    b     = tState.doUnknown()
+    beta  = tState.doUnknown()
 
     IMPSTheory.Lambda(a, b, alpha, beta, body)
   }

@@ -318,6 +318,209 @@ package object impsMathParser
           IMPSQCMBijectiveOn(e1,e2,e3)
         }
 
+        case SEXPAtom("equinumerous") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCEquinumerous(e1,e2)
+        }
+
+        case SEXPAtom("embeds") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCEmbeds(e1,e2)
+        }
+
+        case SEXPAtom("finite%cover") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCFiniteCover(e1,e2)
+        }
+
+        case SEXPAtom("countable%cover") =>
+        {
+          assert(s.args.length == 3)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCCountableCover(e1,e2)
+        }
+
+        case SEXPAtom("group") =>
+        {
+          assert(s.args.length == 5)
+          val m   : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val mul : IMPSMathExp = makeSEXPFormula(s.args(2))
+          val e   : IMPSMathExp = makeSEXPFormula(s.args(3))
+          val inv : IMPSMathExp = makeSEXPFormula(s.args(4))
+
+          IMPSQCGroups(m,mul,e,inv)
+        }
+
+        case SEXPAtom("nil") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCNil(e1)
+        }
+
+        case SEXPAtom("length") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCLength(e1)
+        }
+
+        case SEXPAtom("f-seq?") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCFseq(e1)
+        }
+
+          //More sequences QCs
+
+        case SEXPAtom("finite-cardinality") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCFinCard(e1)
+        }
+
+        case SEXPAtom("finite-indicator?") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCFinIndic(e1)
+        }
+
+        case SEXPAtom("finite-sort?") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCFinSort(???)
+        }
+
+        case SEXPAtom("invariant") =>
+        {
+          assert(s.args.length == 3)
+          val a : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val f : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCInvariant(a,f)
+        }
+
+        case SEXPAtom("cons") =>
+        {
+          assert(s.args.length == 3)
+          val a : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val f : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCCons(a,f)
+        }
+
+        case SEXPAtom("drop") =>
+        {
+          assert(s.args.length == 3)
+          val a : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val f : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCDrop(a,f)
+        }
+
+        case SEXPAtom("takefirst") =>
+        {
+          assert(s.args.length == 3)
+          val a : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val f : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCTakeFirst(a,f)
+        }
+
+        case SEXPAtom("append") =>
+        {
+          assert(s.args.length == 3)
+          val a : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val f : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCAppend(a,f)
+        }
+
+        case SEXPAtom("in_seq") =>
+        {
+          assert(s.args.length == 3)
+          val a : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val f : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCInSeq(a,f)
+        }
+
+        case SEXPAtom("constrict") =>
+        {
+          assert(s.args.length == 3)
+          val a : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val f : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCConstrict(a,f)
+        }
+
+        case SEXPAtom("collapse") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCCollapse(e1)
+        }
+
+        case SEXPAtom("pair") =>
+        {
+          assert(s.args.length == 3)
+          val p1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val p2 : IMPSMathExp = makeSEXPFormula(s.args(2))
+
+          IMPSQCPair(p1,p2)
+        }
+
+        case SEXPAtom("pair?") =>
+        {
+          assert(s.args.length == 2)
+          val p : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCPairQ(p)
+        }
+
+        case SEXPAtom("first") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCFirst(e1)
+        }
+
+        case SEXPAtom("second") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCSecond(e1)
+        }
+
+
+
         case SEXPAtom(str) =>
         {
           throw new IMPSDependencyException("Error: Unknown operators: " + str)

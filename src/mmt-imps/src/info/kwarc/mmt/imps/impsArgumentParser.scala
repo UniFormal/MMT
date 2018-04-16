@@ -18,7 +18,7 @@ package object impsArgumentParsers
     var formula    : Option[IMPSMathExp]  = None
     var usgs_prime : List[Usage]          = Nil
 
-    var foobarList : List[LispExp] = Nil
+    var foobarList : List[TExp] = Nil
 
     var frml  : String = ""
     var index : Int = 0
@@ -157,7 +157,6 @@ package object impsArgumentParsers
     /* Can contain one or multiple usages */
     var usgs : List[Usage] = List.empty
 
-    assert(e.children.length >= 2)
     if (e.children.length >= 2)
     {
       var i : Int = 1
@@ -180,7 +179,7 @@ package object impsArgumentParsers
       assert(usgs.nonEmpty)
       Some(ArgumentUsages(usgs, e.src))
 
-    } else { None }
+    } else { Some(ArgumentUsages(Nil,e.src)) }
   }
 
   /* Parser for IMPS component-theories arguments
@@ -355,10 +354,17 @@ package object impsArgumentParsers
 
           val sp : SymbolicExpressionParser = new SymbolicExpressionParser
           val lsp = sp.parseAll(sp.parseSEXP,x.init.tail)
-          assert(lsp.successful)
 
-          val wit = impsMathParser.makeSEXPFormula(lsp.get)
-          Some(Witness(wit, e.src))
+          if (lsp.successful) {
+            val wit = impsMathParser.makeSEXPFormula(lsp.get)
+            Some(Witness(wit, e.src))
+          }
+          else
+          {
+            println(" > Could not parse WITNESS: " + x)
+            None
+          }
+
         }
         case _                   => None
       }
@@ -399,8 +405,34 @@ package object impsArgumentParsers
     } else { None }
   }
 
+  def parseSortPairs(e : Exp, js : List[JSONObject]) : Option[SortPairs] = {
+    println(e)
+    Some(SortPairs(Nil,e.src))  /* FIXME ಠ_ಠ */
+  }
+
+  def parseConstantPairs(e : Exp, js : List[JSONObject]) : Option[ConstantPairs] = {
+    println(e)
+    Some(ConstantPairs(Nil,e.src))  /* FIXME ಠ_ಠ */
+  }
+
+  def parseCoreTranslation(e : Exp) : Option[CoreTranslation] = {
+    Some(CoreTranslation("",e.src))  /* FIXME ಠ_ಠ */
+  }
+
+  def parseTheoryInterpretationCheck(e : Exp) : Option[TheoryInterpretationCheck] = {
+    Some(TheoryInterpretationCheck("",e.src))  /* FIXME ಠ_ಠ */
+  }
+
+  /* Parser for IMPS assumptions objects
+   * used in: def-translations */
+  def parseAssumptions(e : Exp, js : List[JSONObject]) : Option[Assumptions] =
+  {
+    assert(e.children.length >= 2)
+    Some(Assumptions(Nil,e.src)) /* FIXME ಠ_ಠ */
+  }
+
   /* Parser for IMPS fixed theories objects
-   * used in: def-quasi-constructor */
+   * used in: def-quasi-constructor, def-translation */
   def parseFixedTheories (e : Exp) : Option[FixedTheories] =
   {
     /* Can contain one or multiple usages */

@@ -118,6 +118,7 @@ package object impsDefFormParsers
         i += 1
       }
 
+      println(" > looking for theory: " + thy.get.thy)
       val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thy.get.thy)
       assert(json_theory.isDefined)
       assert(json_theory.get.getAsString("type") == "imps-theory")
@@ -172,7 +173,8 @@ package object impsDefFormParsers
     assert(cs >= 3)
 
     /* Parse positional arguments */
-    e.children(1) match {
+    e.children(1) match
+    {
       case Exp(List(Str(x)), _)   => names = List(x)
       case Exp(List(Exp(cs,_)),_) => {
         for (c <- cs) {
@@ -182,6 +184,8 @@ package object impsDefFormParsers
           }
         }
       }
+      case Exp(List(Exp(List(Str(x)),_), Exp(List(Str(y)),_)),_) => names = List(x,y)
+      case _ => println(e.children(1)) ; assert(false)
     }
 
     println(" > recusive constant: parsed " + names.length + " name(s): " + names.toString())
@@ -214,32 +218,44 @@ package object impsDefFormParsers
     val recconsts : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"def-recursive-consts")
     assert(recconsts.nonEmpty)
 
-    for (i <- names.indices)
+    val theconst : Option[JSONObject] = recconsts.find(j => j.getAsList(classOf[JSONString], "names").map(_.value.toLowerCase).contains(names(0).toLowerCase))
+    assert(theconst.isDefined)
+    assert(theconst.get.getAsString("type") == "imps-theory-recursive-constant")
+
+    val thesexps = theconst.get.getAsList(classOf[JSONString],"defining-sexps")
+    assert(thesexps.nonEmpty)
+    var realsexps : List[String] = thesexps.map(_.value)
+    if (thesexps.lengthCompare(names.length) != 0)
     {
-      println(" > Working on recursive constant " + names(i))
+      val nusexps = thesexps.head.value.split(", ")
+      assert(nusexps.lengthCompare(names.length) == 0)
+      realsexps = nusexps.toList
+    }
 
-      val theconst : Option[JSONObject] = recconsts.find(j => j.getAsList(classOf[JSONString], "names").map(_.value.toLowerCase).contains(names(i).toLowerCase))
-      assert(theconst.isDefined)
-      assert(theconst.get.getAsString("type") == "imps-theory-recursive-constant")
+    for (k <- names.indices)
+    {
+      println(" > Working on recursive constant " + names(k))
 
-      val thesexps = theconst.get.getAsList(classOf[JSONString],"defining-sexps")
-      assert(thesexps.nonEmpty)
-      assert(thesexps.length == names.length)
-      val thesexp = thesexps(i)
-      println(" > sexp: " + thesexp.value)
-
-      val lsp = sp.parseAll(sp.parseSEXP,thesexp.value)
+      val thesexp = realsexps(k)
+      val lsp = sp.parseAll(sp.parseSEXP,thesexp)
       assert(lsp.successful)
 
       val defexp = impsMathParser.makeSEXPFormula(lsp.get)
       defexps = defexps ::: List(defexp)
       println("     > Formula generation successful: " + defexp.toString)
 
-      val thesortsp : List[JSONString] = theconst.get.getAsList(classOf[JSONString],"sortings")
-      val thesorts  : List[String]     = thesortsp.map(k => k.value)
-      assert(thesorts.nonEmpty)
+      var thesorts  : List[String]     = theconst.get.getAsList(classOf[JSONString],"sortings").map(g => g.value)
 
-      val parsed = mp.parseAll(mp.parseSort, thesorts(i))
+      if (thesorts.length < names.length)
+      {
+        assert(thesorts.length == 1)
+        thesorts = thesorts.head.split(", ").toList
+      }
+
+      assert(thesorts.nonEmpty)
+      assert(thesorts.lengthCompare(names.length) == 0)
+
+      val parsed = mp.parseAll(mp.parseSort, thesorts(k))
       assert(parsed.successful)
       sorts = sorts ::: List(parsed.get)
     }
@@ -396,12 +412,12 @@ package object impsDefFormParsers
     var forceQL    : Boolean = false
     var dontEnrich : Boolean = false
 
-    var fixed : Option[List[String]] = None
-    var assumptions : Option[List[IMPSMathExp]] = None
-    var sortpairs : Option[List[(IMPSSort,String)]] = None
-    var constpairs : Option[List[(IMPSMathExp,IMPSMathExp)]] = None
-    var coretrans : Option[String] = None
-    var theintcheck : Option[String] = None
+    var fixed       : Option[FixedTheories]             = None
+    var assumptions : Option[Assumptions]               = None
+    var sortpairs   : Option[SortPairs]                 = None
+    var constpairs  : Option[ConstantPairs]             = None
+    var coretrans   : Option[CoreTranslation]           = None
+    var theintcheck : Option[TheoryInterpretationCheck] = None
 
     /* Parse positional arguments */
     e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
@@ -424,27 +440,27 @@ package object impsDefFormParsers
             assert(target.isDefined)
           }
           case Exp(List(Str("assumptions")),_) => {
-            ???
+            assumptions = impsArgumentParsers.parseAssumptions(Exp(ds,src),js)
             assert(assumptions.isDefined)
           }
           case Exp(List(Str("fixed-theories")),_) => {
-            ???
+            fixed = impsArgumentParsers.parseFixedTheories(Exp(ds,src))
             assert(fixed.isDefined)
           }
           case Exp(List(Str("sort-pairs")),_) => {
-            ???
+            sortpairs = impsArgumentParsers.parseSortPairs(Exp(ds,src),js)
             assert(sortpairs.isDefined)
           }
           case Exp(List(Str("constant-pairs")),_) => {
-            ???
+            constpairs = impsArgumentParsers.parseConstantPairs(Exp(ds,src),js)
             assert(constpairs.isDefined)
           }
           case Exp(List(Str("core-translation")),_) => {
-            ???
+            coretrans = impsArgumentParsers.parseCoreTranslation(Exp(ds,src))
             assert(coretrans.isDefined)
           }
           case Exp(List(Str("theory-interpretation-check")),_) => {
-            ???
+            theintcheck = impsArgumentParsers.parseTheoryInterpretationCheck(Exp(ds,src))
             assert(theintcheck.isDefined)
           }
           case (Str("force"))                  => force      = true
@@ -682,6 +698,7 @@ package object impsDefFormParsers
       case "total_q(+_kk,[kk,kk,kk])" => "total_q{+_kk,[kk,kk,kk]}"
       case "total_q(*_kk,[kk,kk,kk])" => "total_q{*_kk,[kk,kk,kk]}"
       case "total_q(-_kk,[kk,kk])" => "total_q{-_kk,[kk,kk]}"
+      case "total_q(**,[uu,uu,uu])" => "total_q{**,[uu,uu,uu]}"
       case "forall(x:rr,x+(-x)=0)" => "forall(x:rr,x+-x=0)"
       case "forall(y,x:rr,x-y=x+(-y))" => "forall(y,x:rr,x-y=x+-y)"
       case "forall(n,m:zz,x:rr,((#(x^m,rr)and#(x^n,rr))iff#((x^m)^n,rr)))" => "forall(n,m:zz,x:rr,(#(x^m,rr)and#(x^n,rr))iff#((x^m)^n,rr))"
@@ -689,6 +706,12 @@ package object impsDefFormParsers
       case "total_q(*,[rr,rr,rr])" => "total_q{*,[rr,rr,rr]}"
       case "total_q(-,[rr,rr])" => "total_q{-,[rr,rr]}"
       case "total_q(sub,[rr,rr,rr])" => "total_q{sub,[rr,rr,rr]}"
+      case "forall(x,y,z:kk,not(x=o_kk)andnot(y=o_kk)andnot(z=o_kk)impliesnot(x*_kky=o_kk)and(not(y*_kkz=o_kk)andx*_kky*_kkz=x*_kk(y*_kkz)))" => "forall(x,y,z:kk,not(x=o_kk)andnot(y=o_kk)andnot(z=o_kk)impliesnot(x*y=o_kk)and(not(y*z=o_kk)andx*y*z=x*(y*z)))"
+      case "forall(x:kk,not(x=o_kk)impliesnot(inv(x)=o_kk)andinv(x)*_kkx=i_kk)" => "forall(x:kk,not(x=o_kk)impliesnot(inv(x)=o_kk)andinv(x)*x=i_kk)"
+      case "forall(x:kk,not(x=o_kk)impliesnot(inv(x)=o_kk)andx*_kkinv(x)=i_kk)" => "forall(x:kk,not(x=o_kk)impliesnot(inv(x)=o_kk)andx*inv(x)=i_kk)"
+      case "forall(n,m:zz,x:kk,((#(x^m,kk)and#(x^n,kk))iff#((x^m)^n,kk)))" => "forall(n,m:zz,x:kk,(#(x^m,kk)and#(x^n,kk))iff#((x^m)^n,kk))"
+      case "total_q{iterate,[[pp,pp],pp,[zz,pp]]}" => "total_q{ms%iterate,[[pp,pp],pp,[zz,pp]]}"
+      case "forsome(a:sets[uu],equiv%class_q(a))" => "nonvacuous_q{equiv%class_q}"
       case _ => str
     }
 

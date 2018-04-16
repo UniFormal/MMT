@@ -9,30 +9,33 @@ import info.kwarc.mmt.imps.Usage.Usage
 
 /* Parser abstract class and case classes. */
 
-abstract class LispExp {
+abstract class TExp {
   override def toString: String = "<~ tokenized but unparsed expression ~>"
 }
 
-case class Exp(children : List[LispExp], src : Option[SourceRef]) extends LispExp {
+case class Exp(children : List[TExp], src : Option[SourceRef]) extends TExp {
   override def toString : String =
   {
-    "Exp(" + children.toString + ")"
+    var str : String = "Exp("
+    str = str + children.toString()
+    str = str + ")"
+    str
   }
 }
 
-case class Comment(content : String, src : Option[SourceRef]) extends LispExp {
+case class Comment(content : String, src : Option[SourceRef]) extends TExp {
   override def toString : String =
   {
     "; " + content
   }
 }
 
-case class Str(str : String) extends LispExp {
+case class Str(str : String) extends TExp {
   override def toString : String = { "Str(" + str + ")" }
 }
 
 /* TEMPORARY */
-case class Dummy(str : String) extends LispExp
+case class Dummy(str : String) extends TExp
 {
   override def toString : String =
   {
@@ -40,7 +43,9 @@ case class Dummy(str : String) extends LispExp
   }
 }
 
-case class ParseFailure(str : String) extends LispExp {
+case class Ignore(str : String) extends TExp
+
+case class ParseFailure(str : String) extends TExp {
   override def toString: String = {
     "Could not parse structure: " + str
   }
@@ -48,59 +53,59 @@ case class ParseFailure(str : String) extends LispExp {
 
 /* IMPS SPECIAL FORM ARGUMENTS */
 
-case class ArgumentTheory(thy : String, src : Option[SourceRef]) extends LispExp {
+case class ArgumentTheory(thy : String, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(theory " + thy + ")"}
 }
 
-case class HomeTheory(hmthy : String, src : Option[SourceRef]) extends LispExp {
+case class HomeTheory(hmthy : String, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(home-theory " + hmthy + ")"}
 }
 
-case class TranslationSource(thy : String, src : Option[SourceRef]) extends LispExp {
+case class TranslationSource(thy : String, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(source " + thy + ")"}
 }
 
-case class TranslationTarget(thy : String, src : Option[SourceRef]) extends LispExp {
+case class TranslationTarget(thy : String, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(target " + thy + ")"}
 }
 
-case class ArgumentLanguage(lang : String, src : Option[SourceRef]) extends LispExp {
+case class ArgumentLanguage(lang : String, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(language " + lang + ")"}
 }
 
-case class Constructor(const : String, src : Option[SourceRef]) extends LispExp {
+case class Constructor(const : String, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(constructor " + const + ")" }
 }
 
-case class Macete(macete : String, src : Option[SourceRef]) extends LispExp {
+case class Macete(macete : String, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(macete " + macete + ")" }
 }
 
-case class Sort(sort : IMPSSort, src : Option[SourceRef]) extends LispExp {
+case class Sort(sort : IMPSSort, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(sort " + sort + ")" }
 }
 
-case class Witness(witness : IMPSMathExp, src : Option[SourceRef]) extends LispExp {
+case class Witness(witness : IMPSMathExp, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(witness " + witness + ")"}
 }
 
-case class SourceTheory(srcthy : String, src : Option[SourceRef]) extends LispExp {
+case class SourceTheory(srcthy : String, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(source-theory " + srcthy + ")"}
 }
 
-case class ArgumentTranslation(trans : String, src : Option[SourceRef]) extends LispExp {
+case class ArgumentTranslation(trans : String, src : Option[SourceRef]) extends TExp {
   override def toString: String = { "(translation " + trans + ")" }
 }
 
-case class EmbeddedLanguage(name : String, src : Option[SourceRef]) extends LispExp {
+case class EmbeddedLanguage(name : String, src : Option[SourceRef]) extends TExp {
   override def toString: String = { "(embedded-language " + name + ")" }
 }
 
-case class DefinitionName(name : String, src : Option[SourceRef]) extends LispExp {
+case class DefinitionName(name : String, src : Option[SourceRef]) extends TExp {
   override def toString: String = { "(definition-name " + name + ")" }
 }
 
-case class EmbeddedLanguages(names : List[String], src : Option[SourceRef]) extends LispExp {
+case class EmbeddedLanguages(names : List[String], src : Option[SourceRef]) extends TExp {
   override def toString: String = {
     var str : String = "(embedded-languages " + names.head
     for (n <- names.tail)
@@ -112,7 +117,17 @@ case class EmbeddedLanguages(names : List[String], src : Option[SourceRef]) exte
   }
 }
 
-case class DistinctConstants(lst : List[List[String]], src : Option[SourceRef]) extends LispExp
+case class Assumptions(assmptns : List[IMPSMathExp], src : Option[SourceRef]) extends TExp
+
+case class TheoryInterpretationCheck(chk : String, src : Option[SourceRef]) extends TExp
+
+case class CoreTranslation(ctr : String, src : Option[SourceRef]) extends TExp
+
+case class SortPairs(prs : List[(Either[IMPSSort,IMPSMathExp],Either[IMPSSort,IMPSMathExp])], src : Option[SourceRef]) extends TExp
+
+case class ConstantPairs(prs : List[(IMPSMathExp,IMPSMathExp)], src: Option[SourceRef]) extends TExp
+
+case class DistinctConstants(lst : List[List[String]], src : Option[SourceRef]) extends TExp
 {
   override def toString: String =
   {
@@ -132,7 +147,7 @@ case class DistinctConstants(lst : List[List[String]], src : Option[SourceRef]) 
   }
 }
 
-case class LangBaseTypes(tps : List[String], src : Option[SourceRef]) extends LispExp {
+case class LangBaseTypes(tps : List[String], src : Option[SourceRef]) extends TExp {
   override def toString: String = {
     var str = "(base-types " + tps.head
     for (t <- tps.tail)
@@ -144,7 +159,7 @@ case class LangBaseTypes(tps : List[String], src : Option[SourceRef]) extends Li
   }
 }
 
-case class ComponentTheories(lst : List[String], src : Option[SourceRef]) extends LispExp
+case class ComponentTheories(lst : List[String], src : Option[SourceRef]) extends TExp
 {
   override def toString: String =
   {
@@ -167,12 +182,12 @@ object NumericalType extends Enumeration
   val OCTETTYPE = Value("*octet-type*")
 }
 
-case class TypeSortAList(numericType : NumericalType, sort : IMPSSort, src : Option[SourceRef]) extends LispExp
+case class TypeSortAList(numericType : NumericalType, sort : IMPSSort, src : Option[SourceRef]) extends TExp
 {
   override def toString: String = "(" + numericType.toString + " " + sort + ")"
 }
 
-case class Extensible(lst : List[TypeSortAList], src : Option[SourceRef]) extends LispExp
+case class Extensible(lst : List[TypeSortAList], src : Option[SourceRef]) extends TExp
 {
   override def toString: String = {
     var str : String = ""
@@ -185,7 +200,7 @@ case class Extensible(lst : List[TypeSortAList], src : Option[SourceRef]) extend
   }
 }
 
-case class SortSpecifications(lst : List[(IMPSSort, IMPSSort)], src : Option[SourceRef]) extends LispExp
+case class SortSpecifications(lst : List[(IMPSSort, IMPSSort)], src : Option[SourceRef]) extends TExp
 {
   override def toString: String = {
     var str : String = ""
@@ -198,7 +213,7 @@ case class SortSpecifications(lst : List[(IMPSSort, IMPSSort)], src : Option[Sou
   }
 }
 
-case class ConstantSpecifications(lst : List[(String, IMPSSort)], src : Option[SourceRef]) extends LispExp
+case class ConstantSpecifications(lst : List[(String, IMPSSort)], src : Option[SourceRef]) extends TExp
 {
   override def toString: String = {
     var str : String = ""
@@ -215,7 +230,7 @@ case class AxiomSpecification(formula : IMPSMathExp,
                               name    : Option[String],
                               usgs    : Option[List[Usage]],
                               src     : Option[SourceRef])
-  extends LispExp
+  extends TExp
 {
   override def toString: String =
   {
@@ -235,7 +250,7 @@ case class AxiomSpecification(formula : IMPSMathExp,
   }
 }
 
-case class TheoryAxioms(axs : List[AxiomSpecification], src : Option[SourceRef]) extends LispExp
+case class TheoryAxioms(axs : List[AxiomSpecification], src : Option[SourceRef]) extends TExp
 {
   override def toString: String =
   {
@@ -251,11 +266,11 @@ case class TheoryAxioms(axs : List[AxiomSpecification], src : Option[SourceRef])
 }
 
 // Proof scripts ATM only saved as strings
-case class Proof(prf : String, src : Option[SourceRef]) extends LispExp {
+case class Proof(prf : String, src : Option[SourceRef]) extends TExp {
   override def toString : String = { prf }
 }
 
-case class Accessors(accs : List[String], src : Option[SourceRef]) extends LispExp {
+case class Accessors(accs : List[String], src : Option[SourceRef]) extends TExp {
   override def toString : String =
   {
     var str : String = "(accessors "
@@ -284,7 +299,7 @@ object Usage extends Enumeration
   val DRVALUE                = Value("d-r-value")
 }
 
-case class ArgumentUsages(usgs : List[Usage], src : Option[SourceRef]) extends LispExp {
+case class ArgumentUsages(usgs : List[Usage], src : Option[SourceRef]) extends TExp {
   override def toString : String =
   {
     var str : String = "(usages "
@@ -298,7 +313,7 @@ case class ArgumentUsages(usgs : List[Usage], src : Option[SourceRef]) extends L
   }
 }
 
-case class FixedTheories(thrs : List[String], src : Option[SourceRef]) extends LispExp {
+case class FixedTheories(thrs : List[String], src : Option[SourceRef]) extends TExp {
   override def toString : String =
   {
     var str : String = "(fixed-theories "
@@ -312,7 +327,7 @@ case class FixedTheories(thrs : List[String], src : Option[SourceRef]) extends L
   }
 }
 
-case class SourceTheories(thrs : List[String], src : Option[SourceRef]) extends LispExp {
+case class SourceTheories(thrs : List[String], src : Option[SourceRef]) extends TExp {
   override def toString : String =
   {
     var str : String = "(source-theories "
@@ -326,11 +341,11 @@ case class SourceTheories(thrs : List[String], src : Option[SourceRef]) extends 
   }
 }
 
-case class Heralding(module : String, src : Option[SourceRef]) extends LispExp {
+case class Heralding(module : String, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(herald " + module + ")"}
 }
 
-case class LoadSection(section : String, src : Option[SourceRef]) extends LispExp {
+case class LoadSection(section : String, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(load-section " + section + ")"}
 }
 
@@ -345,7 +360,7 @@ case class AtomicSort(sortName        : String, /* Positional Argument, Required
                       witness         : Option[Witness], /* Keyword Argument, Optional */
                       src             : Option[SourceRef],       /* SourceRef for MMT */
                       encSort         : IMPSSort)
-  extends LispExp
+  extends TExp
 {
   override def toString : String =
   {
@@ -367,7 +382,7 @@ case class Constant(constantName : String, /* Positional Argument, Required */
                     sort         : IMPSSort, /* Keyword Argument, Optional */
                     usages       : Option[ArgumentUsages], /* Keyword Argument, Optional */
                     src          : Option[SourceRef])      /* SourceRef for MMT */
-  extends LispExp
+  extends TExp
 {
   override def toString : String =
   {
@@ -390,7 +405,7 @@ case class RecursiveConstant(constantNames : List[String],
                              usages        : Option[ArgumentUsages],
                              definame      : Option[DefinitionName],
                              src           : Option[SourceRef])      /* SourceRef for MMT */
-extends LispExp
+extends TExp
 {}
 
 /* def-imported-rewrite-rules
@@ -399,7 +414,7 @@ case class ImportedRewriteRules(theoryName  : String,                 /* Positio
                                 srcTheory   : Option[SourceTheory],   /* Keyword Argument, Optional */
                                 srcTheories : Option[SourceTheories], /* Keyword Argument, Optional */
                                 src         : Option[SourceRef])      /* SourceRef for MMT */
-  extends LispExp
+  extends TExp
 {
   override def toString : String =
   {
@@ -418,7 +433,7 @@ case class QuasiConstructor(name            : String,                 /* Positio
                             language         : ArgumentLanguage,      /* Keyword Argument, Required */
                             fixedTheories    : Option[FixedTheories], /* Keyword Argument, Optional */
                             src              : Option[SourceRef])             /* SourceRef for MMT */
-  extends LispExp
+  extends TExp
 {
   override def toString : String =
   {
@@ -439,7 +454,7 @@ case class SchematicMacete(name                 : String, /* Positional Argument
                            nullPresent          : Boolean, /* Keyword Argument, Optional */
                            transportablePresent : Boolean, /* Keyword Argument, Optional */
                            src                  : Option[SourceRef]) /* SourceRef for MMT */
-  extends LispExp
+  extends TExp
 {
   override def toString : String =
   {
@@ -466,7 +481,7 @@ case class Theorem(name    : String,                      /* Positional argument
                    hmthy   : Option[HomeTheory],          /* Keyword Argument, Optional */
                    prf     : Option[Proof],               /* Keyword Argument, Optional */
                    src     : Option[SourceRef])           /* SourceRef for MMT */
-  extends LispExp
+  extends TExp
 {
   override def toString: String =
   {
@@ -476,8 +491,8 @@ case class Theorem(name    : String,                      /* Positional argument
     str = str + "\n  " + thy.toString
     if (usages.isDefined) { str = str + "\n  " + usages.get.toString }
     if (macete.isDefined) { str = str + "\n  " + macete.get.toString }
-    if (hmthy.isDefined) { str = str + "\n  " + hmthy.get.toString }
-    if (prf.isDefined) { str = str + "\n  " + prf.get.toString }
+    if (hmthy.isDefined)  { str = str + "\n  " + hmthy.get.toString }
+    if (prf.isDefined)    { str = str + "\n  " + prf.get.toString }
     str = str + ")"
     str
   }
@@ -493,7 +508,7 @@ case class Language(name       : String,
                     srts       : Option[SortSpecifications],
                     cnstnts    : Option[ConstantSpecifications],
                     src        : Option[SourceRef])
-  extends LispExp
+  extends TExp
 {
   override def toString: String =
   {
@@ -625,7 +640,7 @@ case class Theory(name      : String,
                   axioms    : Option[TheoryAxioms],
                   dstnct    : Option[DistinctConstants],
                   src       : Option[SourceRef])
-  extends LispExp
+  extends TExp
 {
   override def toString: String =
   {
@@ -639,20 +654,20 @@ case class Theory(name      : String,
   }
 }
 
-case class Translation(name: String,
-                       force : Boolean,
-                       forceQL : Boolean,
-                       dontEnrich : Boolean,
-                       source : TranslationSource,
-                       target : TranslationTarget,
-                       fixed : Option[List[String]],
-                       assumptions : Option[List[IMPSMathExp]],
-                       sortpairs : Option[List[(IMPSSort,String)]],
-                       constpairs : Option[List[(IMPSMathExp,IMPSMathExp)]],
-                       coretrans : Option[String],
-                       theintcheck : Option[String],
-                       src : Option[SourceRef])
-extends LispExp
+case class Translation(name        : String,
+                       force       : Boolean,
+                       forceQL     : Boolean,
+                       dontEnrich  : Boolean,
+                       source      : TranslationSource,
+                       target      : TranslationTarget,
+                       fixed       : Option[FixedTheories],
+                       assumptions : Option[Assumptions],
+                       sortpairs   : Option[SortPairs],
+                       constpairs  : Option[ConstantPairs],
+                       coretrans   : Option[CoreTranslation],
+                       theintcheck : Option[TheoryInterpretationCheck],
+                       src         : Option[SourceRef])
+extends TExp
 {
 
 }
@@ -699,13 +714,15 @@ case class IMPSSetSort(s : IMPSSort) extends IMPSSort
   override def toString: String = "sets[" + s.toString + "]"
 }
 
+case class IMPSUnknownSort(hash : Int) extends IMPSSort
+{
+  override def toString: String = "?" + hash + "?"
+}
+
 /* IMPS MATH EXPRESSIONS */
 /* See page 64 etc. of the IMPS manual */
 
 abstract class IMPSMathExp
-{
-  override def toString: String = "<~ unparsed IMPS math expression ~>"
-}
 
 case class IMPSSymbolRef(gn : GlobalName) extends IMPSMathExp {
   override def toString: String = gn.toString
@@ -1075,6 +1092,121 @@ case class IMPSQCMBijectiveOn(f : IMPSMathExp, a : IMPSMathExp, b : IMPSMathExp)
   override def toString: String = "bijective_on_q{" + f.toString + "," + a.toString + "," + b.toString + "}"
 }
 
+case class IMPSQCEquinumerous(a : IMPSMathExp, b : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = a.toString + " equinumerous " + b.toString
+}
+
+case class IMPSQCEmbeds(a : IMPSMathExp, b : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = a.toString + " embeds " + b.toString
+}
+
+case class IMPSQCCountableCover(f : IMPSMathExp, a : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "countable%cover{" + f.toString + "," + a.toString + "}"
+}
+
+case class IMPSQCFiniteCover(f : IMPSMathExp, a : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "finite%cover{" + f.toString + "," + a.toString + "}"
+}
+
+case class IMPSQCGroups(m : IMPSMathExp, mul : IMPSMathExp, e : IMPSMathExp, inv : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "group{" + m + "," + mul + "," + e + "," + inv + "}"
+}
+
+case class IMPSQCNil(o : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "nil{" + o.toString + "}"
+}
+
+case class IMPSQCLength(o : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "length{" + o.toString + "}"
+}
+
+case class IMPSQCFseq(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "f_seq_q{" + s.toString + "}"
+}
+
+case class IMPSQCCons(e : IMPSMathExp, s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "cons{" + e.toString + "," + s.toString + "}"
+}
+
+case class IMPSQCDrop(e : IMPSMathExp, s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "drop{" + e.toString + "," + s.toString + "}"
+}
+
+case class IMPSQCTakeFirst(l : IMPSMathExp, n : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "takefirst{" + l.toString + "," + n.toString + "}"
+}
+
+case class IMPSQCAppend(s1 : IMPSMathExp, s2 : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "append{" + s1.toString + "," + s2.toString + "}"
+}
+
+case class IMPSQCInSeq(s1 : IMPSMathExp, s2 : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "in_seq{" + s1.toString + "," + s2.toString + "}"
+}
+
+case class IMPSQCFinCard(a : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "f_card{" + a.toString + "}"
+}
+
+case class IMPSQCFinIndic(i : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "f_indic_q{" + i.toString + "}"
+}
+
+case class IMPSQCFinSort(s : IMPSSort) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "f_sort_q{" + s.toString + "}"
+}
+
+case class IMPSQCInvariant(a : IMPSMathExp, f : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "invariant{" + a.toString + "," + f.toString + "}"
+}
+
+case class IMPSQCCollapse(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString : String = "collapse{" + s.toString + "}"
+}
+
+case class IMPSQCConstrict(s : IMPSMathExp, a : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "constrict{" + s.toString + "," + a.toString + "}"
+}
+
+case class IMPSQCPair(p : IMPSMathExp, q : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString: String = "pair{" + p.toString + "," + q.toString + "}"
+}
+
+case class IMPSQCPairQ(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString : String = "pair_q{" + s.toString + "}"
+}
+
+case class IMPSQCFirst(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString : String = "first{" + s.toString + "}"
+}
+
+case class IMPSQCSecond(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+{
+  override def toString : String = "second{" + s.toString + "}"
+}
+
 //-----------
 
 abstract class SEXP
@@ -1085,4 +1217,4 @@ case class SEXPNested(args : List[SEXP]) extends SEXP
 
 //-----------
 
-case class Section(name : String, dependencies : List[String], files : List[String], jsons : List[String])
+case class Section(name : String, dependencies : List[Section], files : List[String], jsons : List[String])

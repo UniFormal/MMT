@@ -43,13 +43,7 @@ class IMPSImporter extends Importer
       readingT = t.files ::: readingT
       readingJ = t.jsons ::: readingJ
 
-      for (s <- t.dependencies)
-      {
-        val sf = allSections.find(k => k.name == s)
-        assert(sf.isDefined)
-        importSection(sf.get,(n+1))
-      }
-
+      for (s <- t.dependencies) { importSection(s,(n+1)) }
     }
 
     importSection(targetSection,0)
@@ -109,7 +103,7 @@ class IMPSImporter extends Importer
 
     assert(translateFiles.length == readingT.length)
 
-    var parsed_t : List[(LispExp, URI)] = Nil
+    var parsed_t : List[(TExp, URI)] = Nil
 
     for (file <- translateFiles)
     {
@@ -222,13 +216,32 @@ class TranslationState ()
 
   var jsons              : List[JSONObject]     = Nil
 
+  var knownUnknowns      : List[(Int,Term)]     = Nil
+
   protected var unknowns : Int                  = 0
 
   protected def doiName(i : Int, isType : Boolean) : LocalName = {
     LocalName("") / { if (isType) LocalName("I") else LocalName("i") } / i.toString
   }
 
-  def addUnknown() : Term = OMV(doiName({unknowns+=1;unknowns-1},false))
+  def hashes() : List[Int] = knownUnknowns.map(_._1)
+
+  def doUnknown(h : Option[Int] = None) : Term = {
+    if (h.isDefined)
+    {
+      if (hashes().contains(h.get)) {
+        knownUnknowns.find(p => p._1 == h.get).get._2
+      } else {
+        val trm : Term = OMV(doiName({unknowns+=1;unknowns-1},false))
+        knownUnknowns = knownUnknowns ::: List((h.get,trm))
+        trm
+      }
+    }
+    else
+    {
+      OMV(doiName({unknowns+=1;unknowns-1},false))
+    }
+  }
 
   def bindUnknowns(t : Term) = {
     val symbs = t.freeVars.collect{
@@ -251,6 +264,7 @@ class TranslationState ()
   def resetUnknowns() : Unit =
   {
     unknowns = 0
+    knownUnknowns = Nil
     vars = Context.empty
   }
 }

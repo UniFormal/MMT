@@ -16,11 +16,11 @@ import utils._
 
 class IMPSParser
 {
-  def parse(s: String, uri : URI, js : List[JSONObject]) : LispExp = parse(new Unparsed(s, msg => throw GeneralError(msg)), uri, js)
+  def parse(s: String, uri : URI, js : List[JSONObject]) : TExp = parse(new Unparsed(s, msg => throw GeneralError(msg)), uri, js)
 
   /* Take an Unparsed object (info.kwarc.mmt.api.utils.Unparsed)
    * and parse the heck out of it */
-  private def parse(u : Unparsed, uri : URI, js : List[JSONObject]) : LispExp =
+  private def parse(u : Unparsed, uri : URI, js : List[JSONObject]) : TExp =
   {
     /* Expression starts at the very beginning */
     val sr_start : SourcePosition = u.getSourcePosition
@@ -70,26 +70,28 @@ class IMPSParser
     val sr        : SourceRef      = SourceRef(uri, sr_region)
 
     /* Actually parse Exps and filter for successes */
-    val definedExprs : List[LispExp]  = exprs.map(e => parseExpression(e,js)).filter(y => y.isDefined).map(z => z.get)
+    val definedExprs : List[TExp]  = exprs.map(e => parseExpression(e,js)).filter(y => y.isDefined).map(z => z.get)
 
     //println(definedExprs.toString())
 
     var successes : Int = 0
     var failures  : Int = 0
     var dummies   : Int = 0
+    var ignore    : Int = 0
 
     for (ex <- definedExprs)
     {
       ex match {
-        case Dummy(_) => dummies += 1
-        case ParseFailure(_) => failures += 1
-        case _ => successes += 1
+        case Dummy(_)        => dummies   += 1
+        case ParseFailure(_) => failures  += 1
+        case Ignore(_)       => ignore    += 1
+        case _               => successes += 1
       }
     }
 
     // Some printouts for manual inspection, to be removed later
     println("\n#### Summary for " + uri.toString + ":")
-    println("#### " + exprs.length + " expressions and subexpressions parsed; " + successes + " Successes, " + failures + " explicit Failures and " + dummies + " Dummies\n")
+    println("#### " + definedExprs.length + " expressions and subexpressions parsed; " + successes + " successes, " + failures + " explicit failures, " + dummies + " dummies and " + ignore + " ignored forms\n")
 
     // Set to true for pretty helpful debug output
     val debug : Boolean = false
@@ -178,7 +180,7 @@ class IMPSParser
   }
 
   /* Parse a single EXP expression into a special form or similar (if possible) */
-  private def parseExpression (e : Exp, js : List[JSONObject]) : Option[LispExp] =
+  private def parseExpression (e : Exp, js : List[JSONObject]) : Option[TExp] =
   {
     //println(" >>> parsing expression: " + e.children.head.toString)
 
@@ -192,7 +194,7 @@ class IMPSParser
 
         case Str("load-section") => return parseLoadSection(e)
 
-        case Str("include-files") => println(" > (dropping include-files ...)") ; None //return Some(Dummy("include-files"))
+        case Str("include-files") => println(" > Dropping (include-files ...)") ; return Some(Ignore("include-files"))
           // val th = controller.get(theorypath : MPath) match { case th : DeclaredTheory => th case _ => throw something }
           // th.getDeclarations, th.getConstants, th.getIncludes : List[MPath]
           // th.getDeclarationsGenerated (unwahrscheinlich)
@@ -262,18 +264,18 @@ class IMPSParser
 
         /* Syntax changers */
 
-        case Str("def-overloading") => println(" > Dropping (def-overloading ...)")   ; return None
+        case Str("def-overloading") => println(" > Dummy (def-overloading ...)")   ; return Some(Dummy("def-overloading"))
 
-        case Str("def-parse-syntax") => println(" > Dropping (def-parse-syntax ...)") ; return None
+        case Str("def-parse-syntax") => println(" > Dummy (def-parse-syntax ...)") ; return Some(Dummy("def-parse-syntax"))
 
-        case Str("def-print-syntax") => println(" > Dropping (def-print-syntax ...)") ; return None
+        case Str("def-print-syntax") => println(" > Dummy (def-print-syntax ...)") ; return Some(Dummy("def-print-syntax"))
 
         /* Other meta-commands etc. */
 
-        case Str("set")                     => { println(" > Dropping (set ...)")     ; return None }
-        case Str("define")                  => { println(" > Dropping (define ...)")  ; return None }
-        case Str("comment")                 => { println(" > Dropping (comment ...)") ; return None }
-        case Str("make-tex-correspondence") => { println(" > Dropping (make-tex-correspondence ...)")     ; return None }
+        case Str("set")                     => { println(" > Dropping (set ...)")     ; return Some(Ignore("set")) }
+        case Str("define")                  => { println(" > Dropping (define ...)")  ; return Some(Ignore("define")) }
+        case Str("comment")                 => { println(" > Dropping (comment ...)") ; return Some(Ignore("comment")) }
+        case Str("make-tex-correspondence") => { println(" > Dropping (make-tex-correspondence ...)")     ; return Some(Ignore("Tex-Correspondence")) }
 
         /* Catchall cases */
         case Str(x) => {
