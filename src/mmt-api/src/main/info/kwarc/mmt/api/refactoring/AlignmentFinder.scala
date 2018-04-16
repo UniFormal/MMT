@@ -1,11 +1,11 @@
 package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.frontend.{Extension, Logger, Report}
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
-import info.kwarc.mmt.api.objects.{OMV, Substitution, Term}
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.FormalAlignment
 import info.kwarc.mmt.api.refactoring.Hasher.Targetable
 import info.kwarc.mmt.api.utils.File
@@ -206,7 +206,13 @@ class AlignmentFinder extends frontend.Extension {
     val proc = new FindingProcess(this.report,hasher)
     log("Multithreaded: " + hasher.cfg.isMultithreaded)
     log("Judgment symbols are " + hasher.cfg.judg1 + " and " + hasher.cfg.judg2)
-    proc.run()
+    val ret = proc.run()
+    val (t1,ret1) = Time.measure {
+      log("Making views...")
+      proc.makeviews(Path.parseM("http://test.test/test?test",NamespaceMap.empty),ret)
+    }
+    log("Done after " + t1 + " - " + ret1.length + " Views found")
+    ret1
   }
 
 }
@@ -241,6 +247,8 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     } else {
       tops1.flatMap(t1 => tops2.flatMap { t2 =>
         // log("   Looking for: " + t1.path + " -> " + t2.path)
+        // println(t1.toString)
+        // println(t2.toString)
         val ret = findViews(t1, t2)
         // log("   " + t1.path.name + " -> " + t2.path.name + ": " + ret.size + " Results.")
         ret
@@ -252,7 +260,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     val (tlast,res) = Time.measure(postProcess(alls))
     log("Done after " + tlast)
     log(res.length + " maps found.")
-    res
+    res.toList
   }
 
   // selects which theories to use. By default only maximal theories
@@ -280,9 +288,13 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
   // does something with the resulting lists of pairs.
 
   protected def postProcess (views: Set[List[Map]]) = {
+    val valued : mutable.HashMap[Map,Map] = mutable.HashMap.empty
+    def eval(m : Map) : Map = valued.getOrElseUpdate(m, {
+      val v = views.count(_.contains(Map(m.from,m.to,m.requires,0))).toDouble * 100.0 / views.size.toDouble
+      Map(m.from,m.to,m.requires.map(eval),v)
+    })
     log("  Evaluating...")
-    val evals = views.toList.flatMap(_.map(m => Map(m.from,m.to,m.requires,
-      views.count(_.contains(Map(m.from,m.to,m.requires,0))).toDouble * 100.0 / views.size.toDouble)))
+    val evals = views.toList.flatMap(_.map(eval))
     /*
     val evals = views.par.map(_.evaluate((a,b) =>
       (views.count(_.entries.contains((a,b,0))).toDouble * 100.0 / views.size.toDouble).toInt)) */
@@ -361,10 +373,9 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     private var maps: mutable.HashMap[(GlobalName, GlobalName),Option[Map]] = mutable.HashMap.empty
 
     def get(n1 : GlobalName,n2 : GlobalName)(implicit allpairs : List[(Consthash, Consthash)]) : Option[Map] =
-      maps.getOrElse((n1,n2),{
+      maps.getOrElseUpdate((n1,n2),{
         allpairs.collectFirst { case p if p._1.name == n1 && p._2.name == n2 => p } match {
           case None =>
-            maps((n1,n2)) = None
             None
           case Some((f,t)) => get(f, t)
         }
@@ -378,7 +389,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
         val rec = from.pars.indices.map(i =>
           (from.pars(i),to.pars(i)) match {
             case (Hasher.Symbol(f),Hasher.Symbol(t)) => get(f,t)
-            case _ => None
+            case (t1,t2) => Some(Map(t1,t2,Nil,0))
           }
         )
         if (rec.forall(_.isDefined)) Some(Map(Hasher.Symbol(from.name),Hasher.Symbol(to.name),rec.map(_.get).toList,0)) else None
@@ -415,7 +426,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
       }
     }
 
-    println(th1.path + " --> " + th2.path)
+    // println(th1.path + " --> " + th2.path)
 
     implicit val allpairs : List[(Consthash,Consthash)] = potentialMatches(th1.getAll, th2.getAll)
     if (allpairs.isEmpty) {
@@ -436,17 +447,100 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
       // val tos = ls.map(_._2)
       // val newfrom = hash.from.find(t => frs.forall(t.getAll.map(_.name).contains)).getOrElse(th1)
       // val newto = hash.to.find(t => tos.forall(t.getAll.map(_.name).contains)).getOrElse(th2)
-      makeMaximal(ls).map(p => MapStore.get(p._1,p._2).get)
+      makeMaximal(ls).map(p => MapStore.get(p._1,p._2).getOrElse{
+        println("Missing: " + p._1 + " --> " + p._2)
+        sys.exit()
+      })
     }
+  }
+
+  private class InternalView(from : MPath) {
+    private var to : Option[MPath] = None
+    private var maps : List[Map] = Nil
+    private var includes : List[InternalView] = Nil
+    private var asView : Option[DeclaredView] = None
+
+    def allmaps : List[Map] = maps ::: includes.flatMap(_.allmaps)
+
+    def addto(tos : List[Theoryhash]) = to = tos.find { th =>
+      includes.flatMap(_.to).forall(p => th.getAllIncludes.exists(_.path == p)) &&
+      maps.map(_.to.asInstanceOf[Hasher.Symbol].gn).forall(th.getAll.map(_.name).contains)
+    }.map(_.path)
+
+    private def copy : InternalView = {
+      val cp = new InternalView(from)
+      cp.to = this.to
+      cp.maps = this.maps
+      cp.includes = this.includes
+      cp.asView = this.asView
+      cp
+    }
+
+    def add(ms : List[Map])(implicit views : List[InternalView]): List[InternalView] = {
+
+      require(
+          ms.forall(_.isSimple) &&
+          ms.nonEmpty &&
+          ms.tail.forall(_.from.asInstanceOf[Hasher.Symbol].gn == ms.head.from.asInstanceOf[Hasher.Symbol].gn)
+      )
+
+      ms.flatMap {m =>
+        if (m.requires.forall(maps.contains)) {
+          val cp = copy
+          cp.maps ::= m
+          List(cp)
+        } else {
+          val v = views.find(v => m.requires.forall((v.allmaps ::: maps).contains))
+          if (v.isDefined) {
+            val cp = copy
+            cp.includes ::= v.get
+            cp.maps ::= m
+            List(cp)
+          } else {
+            Nil
+          }
+        }
+      }
+    }
+
+    def toView(path : MPath) = asView.getOrElse {
+      val v = new DeclaredView(path.parent,path.name,TermContainer(OMMOD(from)),TermContainer(OMMOD(to.getOrElse(???))),false)
+      includes.reverse.foreach(i => v.add(PlainInclude(i.asView.getOrElse(???).path,v.path)))
+      maps.reverse.foreach(m => v.add(Constant(v.toTerm,m.from.asInstanceOf[Hasher.Symbol].gn.name,Nil,None,Some(OMS(m.to.asInstanceOf[Hasher.Symbol].gn)),None)))
+      asView = Some(v)
+      v
+    }
+  }
+
+  def makeviews(path : MPath, maps : List[Map]) : List[DeclaredView] = {
+    val froms = hash.from
+    val tos = hash.to
+    var imaps = maps.map(_.simple)
+    implicit var views : List[InternalView] = Nil
+    froms foreach { th => if (imaps.nonEmpty) {
+      var localviews: List[InternalView] = Nil
+      val maps = th.getLocal.reverse.map(f => (f.name, imaps.collect({
+        case m@Map(Hasher.Symbol(f.name), Hasher.Symbol(s2), _, _) => m
+      }))).filter(_._2.nonEmpty)
+      imaps = imaps.filterNot(maps.flatMap(_._2).contains)
+      if (maps.nonEmpty) localviews ::= new InternalView(th.path)
+      maps foreach { p =>
+        localviews = localviews.flatMap(_.add(p._2))
+      }
+      localviews.foreach(_.addto(tos))
+      views = views ::: localviews
+    }}
+    views.indices.map(i => views(i).toView(path.parent ? (path.name + i.toString))).toList
   }
 
 }
 
 case class Map(from : Targetable, to : Targetable, requires : List[Map], value : Double) {
-  // val isSimple = from.isInstanceOf[Hasher.Symbol] && to.isInstanceOf[Hasher.Symbol]
+  val isSimple = from.isInstanceOf[Hasher.Symbol] && to.isInstanceOf[Hasher.Symbol]
   def asString() = "(" + value + ") " + from + " --> " + to + " requires: " + requires.mkString("["," , ","]")
   def allRequires : List[Map] = (requires.flatMap(_.requires) ::: requires).distinct
   override def toString: String = from + " -> " + to
+  def simple : Map = Map(from,to,requires.filter(_.isSimple).map(_.simple),value)
 }
 
 trait Preprocessor extends Extension { self =>

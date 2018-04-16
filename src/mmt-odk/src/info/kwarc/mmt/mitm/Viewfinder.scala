@@ -28,7 +28,7 @@ class Viewfinder extends Extension {
   // lazy val mitm : Archive = controller.backend.getArchive("MitM/smglom").getOrElse(???)
 
   override def start(args: List[String]): Unit = {
-    val as = controller.backend.getArchives
+    val as = List("MitM/Foundation","MitM/smglom","MMT/LFX","PVS/Prelude","HOLLight/basic" /*,"PVS/NASA" */).map(controller.backend.getArchive(_).get) //controller.backend.getArchives
     log("Getting Archives...")
     val (t,_) = Time.measure {
       as.filterNot(_.id.startsWith("ODK")).foreach(a => try { a.id match {
@@ -49,25 +49,45 @@ class Viewfinder extends Extension {
 
   def find(mp : MPath, to : String) = {
     val hasher = alignmentFinder.getHasher
-    val froms = alignmentFinder.getFlat(List(mp))
+    val froms = alignmentFinder.getFlat(List(mp)).map(ParameterPreprocessor.apply) // TODO!
     val meta = froms.view.find(_.path == mp).get.meta.get
     val metas = alignmentFinder.getFlat(List(meta))
     val (tos,judg2) = theories(to)
     val judg1 = alignmentFinder.getJudgment(froms.map(_.path))
-    val commons = froms.filter(metas.contains)
+    val commons = tos.filter(t => metas.exists(_.path == t.path))
     judg1.foreach(hasher.cfg.addJudgmentFrom)
     judg2.foreach(hasher.cfg.addJudgmentTo)
     val (t,_) = Time.measure {
       log("Commons")
-      commons.foreach(hasher.add(_, Hasher.COMMON))
+      commons.indices.foreach({i =>
+        print("\r" + (i+1) + " of " + commons.length)
+        hasher.add(commons(i), Hasher.COMMON)
+      })
+      println("")
       log("Froms")
-      froms.filterNot(commons.contains).foreach(hasher.add(_, Hasher.FROM))
+      val nfrom = froms.filterNot(t => commons.exists(_.path == t.path))
+      nfrom.indices.foreach({ i =>
+        print("\r" + (i+1) + " of " + nfrom.length)
+        hasher.add(nfrom(i), Hasher.FROM)
+      })
+      println("")
       log("Tos")
-      tos.filterNot(commons.contains).foreach(hasher.add(_, Hasher.TO))
+      val ntos = tos.filterNot(commons.contains)
+      ntos.indices.foreach({ i =>
+        print("\r" + (i+1) + " of " + ntos.length)
+        hasher.add(ntos(i), Hasher.TO)
+      })
     }
+    println("")
     log("Hashing done after " + t)
     val proc = new FindingProcess(this.report,hasher)
-    proc.run(from = List(hasher.get(mp).get))
+    val ret = proc.run(from = List(hasher.get(mp).get))
+    val (t1,ret1) = Time.measure {
+      log("Making views...")
+      proc.makeviews(Path.parseM("http://test.test/test?test",NamespaceMap.empty),ret)
+    }
+    log("Done after " + t1 + " - " + ret1.length + " Views found")
+    ret1
   }
 
   /*

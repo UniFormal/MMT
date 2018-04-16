@@ -53,12 +53,12 @@ class Theoryhash(val path:MPath) {
 
   def <(that : Theoryhash) = that.getAllIncludes contains this
 
-  private def toStringIndent(ind:String) : String =
+  def toStringIndent(ind:String) : String =
     ind + path.name.toString +
       includes.map(x => "\n" + x.toStringIndent(ind + "  ")).mkString("\n") +
       consts.map(p => "\n  " + ind + p.toString).mkString("")
 
-  override def toString = toStringIndent("")
+  override def toString = "TheoryHash " + path.name.toString + "\n" + consts.mkString("\n ") + ")"
 
 }
 
@@ -69,7 +69,7 @@ object Hasher {
 
   trait Targetable // todo symbols, free variables, ...
   case class Symbol(gn : GlobalName) extends Targetable {
-    override def toString: String = gn.toString
+    override def toString: String = gn.module.name + "?" + gn.name.toString
   }
   class Complex(val tm : Term) extends Targetable {
     override def equals(obj: scala.Any): Boolean = obj match {
@@ -77,6 +77,8 @@ object Hasher {
       case _ => false
     }
     def asTerm : Term = OMA(OMS(utils.mmt.mmtcd ? "Targetable"),List(tm))
+
+    override def toString: String = tm.toStr(true)
   }
 
   object Complex {
