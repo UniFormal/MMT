@@ -25,31 +25,29 @@ class Viewfinder extends Extension {
     af
   }
 
+  private lazy val preprocs = controller.extman.get(classOf[Preprocessor]).collect {
+    case pp if pp.key != "" => (pp.key,pp)
+  }
+
   // lazy val mitm : Archive = controller.backend.getArchive("MitM/smglom").getOrElse(???)
 
   override def start(args: List[String]): Unit = {
-    val as = List("MitM/Foundation","MitM/smglom","MMT/LFX","PVS/Prelude","HOLLight/basic" /*,"PVS/NASA" */).map(controller.backend.getArchive(_).get) //controller.backend.getArchives
+    val as = List("MitM/Foundation","MitM/smglom"/*,"MMT/LFX","PVS/Prelude","HOLLight/basic","PVS/NASA"*/).map(controller.backend.getArchive(_).get) //controller.backend.getArchives
     log("Getting Archives...")
     val (t,_) = Time.measure {
-      as.filterNot(_.id.startsWith("ODK")).foreach(a => try { a.id match {
-        case s if s.startsWith("MitM") =>
+      as.foreach(a => preprocs.find(p => a.id.startsWith(p._1)) match {
+        case Some((_,pp)) =>
           val (ths,judg) = alignmentFinder.getArchive(a)
-          theories(a.id) = (ths.map(mitmpreproc.apply),judg)
-        case s if s.startsWith("PVS") =>
-          val (ths,judg) = alignmentFinder.getArchive(a)
-          theories(a.id) = (ths.map(ParameterPreprocessor.apply),judg)
+          theories(a.id) = (ths.map(pp.apply),judg)
         case _ => theories(a.id) = alignmentFinder.getArchive(a)
-      }
-      } catch {
-        case e: api.Error => log(e.shortMsg)
       })
     }
     log("Finished after " + t)
   }
 
-  def find(mp : MPath, to : String) = {
+  def find(mp : MPath, to : String, preproc : Option[Preprocessor] = None) = {
     val hasher = alignmentFinder.getHasher
-    val froms = alignmentFinder.getFlat(List(mp)).map(ParameterPreprocessor.apply) // TODO!
+    val froms = alignmentFinder.getFlat(List(mp)).map(t => preproc.map(_.apply(t)).getOrElse(t)) // TODO!
     val meta = froms.view.find(_.path == mp).get.meta.get
     val metas = alignmentFinder.getFlat(List(meta))
     val (tos,judg2) = theories(to)
@@ -142,17 +140,6 @@ class Viewfinder extends Extension {
   def exportDocument(doc : Document, bt: BuildTask) {
     //Nothing to do - no MathML at document level
   }
-
-  val mitmpreproc = ParameterPreprocessor + new LFClassicHOLPreprocessor(
-    ded = MitM.ded,
-    and = MitM.and,
-    not = MitM.not,
-    or = Some(MitM.or),
-    implies = Some(MitM.implies),
-    equiv = Some(MitM.equiv),
-    forall = Some(MitM.forall),
-    exists = Some(MitM.exists)
-  )
 
 }
 

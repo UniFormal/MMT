@@ -23,26 +23,65 @@ class Plugin extends frontend.Plugin {
 /** added by rule in LF theory */
 object LFHOAS extends notations.HOASNotation(LF.hoas)
 
-class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : GlobalName,
+case class ViewFinderHOAS(tpS : GlobalName, exprS : GlobalName, lambdaS : GlobalName, applyS : GlobalName, arrowS : GlobalName) {
+   object Expr {
+      def unapply(tm : Term) : Option[Term] = tm match {
+         case ApplySpine(OMS(`exprS`),List(tp)) => Some(tp)
+         case _ => None
+      }
+   }
+
+   object Lambda {
+      def unapply(tm : Term) : Option[(LocalName,Term,Term,Term)] = tm match {
+         case ApplySpine(OMS(`lambdaS`),List(tpA,tpB,info.kwarc.mmt.lf.Lambda(ln,_,bd))) => Some((ln,tpA,tpB,bd))
+         case _ => None
+      }
+   }
+
+   object Apply {
+      // def apply(f : Term, args : List[Term]) = args.foldLeft(f)((nf,a) => ApplySpine(OMS(applyS), nf,a))
+      def unapply(tm : Term) : Option[(Term,List[Term])] = tm match {
+         case ApplySpine(OMS(`applyS`), List(_,_,nf, a)) => Some(unapply(nf).map(p => (p._1, p._2 ::: a :: Nil)).getOrElse((nf, List(a))))
+         case _ => None
+      }
+   }
+
+   object Arrow {
+      def unapply(tm : Term) : Option[(Term,Term)] = tm match {
+         case ApplySpine(OMS(`arrowS`),List(tpA,tpB)) => Some((tpA,tpB))
+         case _ => None
+      }
+   }
+}
+
+case class LFHOASElim(hoas : ViewFinderHOAS) extends Preprocessor {
+   override def doTerm(tm: Term): Term = trav(tm,())
+
+   private val trav = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+         case OMS(hoas.tpS) =>
+            OMS(Typed.ktype)
+         case hoas.Expr(tm) =>
+            traverse(tm)
+         case hoas.Lambda(n,tpA,_,bd) =>
+            Lambda(n,traverse(tpA),traverse(bd))
+         case hoas.Apply(f,args) =>
+            ApplySpine(traverse(f),args.map(traverse):_*)
+         case hoas.Arrow(tpA,tpB) =>
+            Arrow(traverse(tpA),traverse(tpB))
+         case _ => Traverser(this,t)
+      }
+   }
+}
+
+
+case class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : GlobalName,
                                forall : Option[GlobalName] = None,
                                or : Option[GlobalName] = None,
                                implies : Option[GlobalName] = None,
                                equiv : Option[GlobalName] = None,
-                               exists : Option[GlobalName] = None,
-                               hoasapply : Option[GlobalName] = None
+                               exists : Option[GlobalName] = None
                               ) extends Preprocessor {
-
-   private object ApplyS {
-      def apply(f : Term, args : List[Term]) = if (hoasapply.isDefined) {
-         args.foldLeft(f)((nf,a) => ApplySpine(OMS(hoasapply.get), nf,a))
-      } else ApplySpine(f,args :_*)
-      def unapply(tm : Term) : Option[(Term,List[Term])] = if (hoasapply.isDefined) {
-         val hoas = hoasapply.get
-         tm match {
-            case ApplySpine(OMS(`hoas`),List(nf,a)) => Some(unapply(nf).map(p => (p._1, p._2 ::: a :: Nil)).getOrElse((nf,List(a))))
-         }
-      } else ApplySpine.unapply(tm)
-   }
 
    private object Ded {
       def apply(f : Term) = ApplySpine(OMS(ded),f)
@@ -53,38 +92,38 @@ class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : GlobalN
    }
 
    private object And {
-      def apply(a : Term, b : Term) = ApplyS(OMS(and),List(a,b))
+      def apply(a : Term, b : Term) = ApplySpine(OMS(and),a,b)
       def unapply(tm : Term) : Option[List[Term]] = tm match {
-         case ApplyS(OMS(`and`),a :: b :: Nil) => Some(unapply(a).getOrElse(List(a)) ::: unapply(b).getOrElse(List(b)))
+         case ApplySpine(OMS(`and`),a :: b :: Nil) => Some(unapply(a).getOrElse(List(a)) ::: unapply(b).getOrElse(List(b)))
          case _ => None
       }
    }
 
    private object Not {
-      def apply(f : Term) = ApplyS(OMS(not),List(f))
+      def apply(f : Term) = ApplySpine(OMS(not),f)
       def unapply(tm : Term) = tm match {
-         case ApplyS(OMS(`ded`),prop :: Nil) => Some(prop)
+         case ApplySpine(OMS(`ded`),prop :: Nil) => Some(prop)
          case _ => None
       }
    }
 
    private object Or {
       def unapply(tm : Term) = (or,tm) match {
-         case (Some(s),ApplyS(OMS(st),a :: b :: Nil)) if s == st => Some((a,b))
+         case (Some(s),ApplySpine(OMS(st),a :: b :: Nil)) if s == st => Some((a,b))
          case _ => None
       }
    }
 
    private object Implies {
       def unapply(tm : Term) = (implies,tm) match {
-         case (Some(s),ApplyS(OMS(st),a :: b :: Nil)) if s == st => Some((a,b))
+         case (Some(s),ApplySpine(OMS(st),a :: b :: Nil)) if s == st => Some((a,b))
          case _ => None
       }
    }
 
    private object Equiv {
       def unapply(tm : Term) = (equiv,tm) match {
-         case (Some(s),ApplyS(OMS(st),a :: b :: Nil)) if s == st => Some((a,b))
+         case (Some(s),ApplySpine(OMS(st),a :: b :: Nil)) if s == st => Some((a,b))
          case _ => None
       }
    }

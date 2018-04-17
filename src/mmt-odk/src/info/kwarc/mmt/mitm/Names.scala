@@ -2,8 +2,10 @@ package info.kwarc.mmt.mitm
 
 import info.kwarc.mmt.api.{DPath, uom}
 import info.kwarc.mmt.api.objects.OMS
+import info.kwarc.mmt.api.refactoring.ParameterPreprocessor
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardNat, StandardPositive}
 import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.lf.LFClassicHOLPreprocessor
 
 object MitM {
   val path = DPath(URI("http","mathhub.info") / "MitM" / "Foundation")
@@ -52,4 +54,15 @@ object MitM {
   val equiv = logic ? "iff"
   val forall = logic ? "forall"
   val exists = logic ? "exists"
+
+  val preproc = (ParameterPreprocessor + info.kwarc.mmt.api.refactoring.DefinitionExpander /* + new LFClassicHOLPreprocessor(
+    ded = MitM.ded,
+    and = MitM.and,
+    not = MitM.not,
+    or = Some(MitM.or),
+    implies = Some(MitM.implies),
+    equiv = Some(MitM.equiv),
+    forall = Some(MitM.forall),
+    exists = Some(MitM.exists)
+  ) */ ).withKey("MitM")
 }

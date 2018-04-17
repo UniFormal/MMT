@@ -5,15 +5,16 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, utils}
+import info.kwarc.mmt.api._
 
 import scala.collection.mutable
 
-case class Consthash(name:GlobalName, hash: List[Int], pars: List[Hasher.Targetable],
+case class Consthash(iname:GlobalName, hash: List[Int], pars: List[Hasher.Targetable],
                      isProp: Boolean, optDef : Option[(Int,List[Hasher.Targetable])]) {
+  val name = if (iname.name.steps.last == SimpleStep("defexp")) iname.module ? iname.name.steps.init else iname
 
   //def matches(l:List[(GlobalName,GlobalName)])(that:Consthash):Boolean = newPairs(l)(that).isEmpty
-  override def toString = name.toString + "[" + pars.map(_.toString).mkString(", ") + "]" +
+  override def toString = iname.toString + "[" + pars.map(_.toString).mkString(", ") + "]" +
     optDef.map(p => " = [" + p._2.map(_.toString).mkString(", ") + "]").getOrElse("")
 
   def <>(that : Consthash) = this.hash == that.hash && this.pars.length == that.pars.length
@@ -71,23 +72,28 @@ object Hasher {
   case class Symbol(gn : GlobalName) extends Targetable {
     override def toString: String = gn.module.name + "?" + gn.name.toString
   }
+  val complexpath = utils.mmt.mmtcd ? "unknown"
   class Complex(val tm : Term) extends Targetable {
     override def equals(obj: scala.Any): Boolean = obj match {
       case that : Complex => this.tm == that.tm
       case _ => false
     }
-    def asTerm : Term = OMA(OMS(utils.mmt.mmtcd ? "Targetable"),List(tm))
+    def asTerm : Term = OMA(OMS(complexpath),List(tm))
 
     override def toString: String = tm.toStr(true)
   }
 
+  object Bind {
+    val path = utils.mmt.mmtcd ? "free"
+    def apply(ln : LocalName) = OMBIND(OMS(path),VarDecl(ln),OMV(ln))
+  }
+
   object Complex {
-    val path = utils.mmt.mmtcd ? "Targetable"
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`path`),List(itm)) => Some(new Complex(itm))
+      case OMA(OMS(`complexpath`),List(itm)) => Some(new Complex(itm))
       case _ => None
     }
-    def apply(tm : Term) = OMA(OMS(utils.mmt.mmtcd ? "Targetable"),List(tm))
+    def apply(tm : Term) = OMA(OMS(complexpath),List(tm))
   }
   /*
   case class FreeVar(ln : LocalName) extends Targetable {
@@ -155,7 +161,11 @@ class HashesNormal(val cfg : FinderConfig) extends Hasher {
         case c : FinalConstant
           if !cfg.fixing.exists(a => a.alignment.from.mmturi == c.path || a.alignment.to.mmturi == c.path) => c
       }) foreach (c => h.addConstant(doConstant(c)))
-      th.getIncludes.filterNot(commons.contains).foreach(t => h.addInclude(get(t).getOrElse( ??? )))
+      th.getIncludes.filterNot(commons.contains).foreach(t => h.addInclude(get(t).getOrElse{
+        println(t)
+        println(th)
+        ???
+      }))
     }
     h.init
     h
@@ -170,7 +180,7 @@ class HashesNormal(val cfg : FinderConfig) extends Hasher {
       val al = cfg.fixing.find(_.applicable(t))
       val tm = al.map(_.apply(t)).getOrElse(t)
       tm match {
-        case Hasher.Complex(itm) => List(-1,if (pars.contains(itm)) pars.length - (pars.indexOf(itm)+1) else {
+        case Hasher.Complex(itm) => List(1,1,if (pars.contains(itm)) pars.length - (pars.indexOf(itm)+1) else {
           pars ::= itm
           pars.length-1
         })
@@ -180,7 +190,7 @@ class HashesNormal(val cfg : FinderConfig) extends Hasher {
           if (cfg.judg1.contains(path) || cfg.judg2.contains(path)) isAxiom = true
           val nopt = numbers.indexOf(path)
           val (i,j) = nopt match {
-            case -1 => (1,if (pars.contains(Hasher.Symbol(path))) pars.length - (pars.indexOf(path)+1) else {
+            case -1 => (1,if (pars.contains(Hasher.Symbol(path))) pars.length - (pars.indexOf(Hasher.Symbol(path))+1) else {
               pars ::= Hasher.Symbol(path)
               pars.length-1
             })
@@ -199,8 +209,14 @@ class HashesNormal(val cfg : FinderConfig) extends Hasher {
           5 :: s.hashCode :: traverse(tp)
         case OML(name, tp, df, _,_) =>
           6 :: tp.map(traverse).getOrElse(List(-1)) ::: df.map(traverse).getOrElse(List(-1))
+        case o@OMSemiFormal(_) => List(1,1,{
+          pars ::= new Hasher.Complex(o)
+          pars.length-1
+        })
         case _ =>
           println("Missing: " + tm.getClass)
+          println(c.path)
+          println(c.tp)
           ???
       }
     }

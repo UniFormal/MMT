@@ -43,6 +43,7 @@ object Orders {
     ,"typed_sets.mmt"
     ,"functions.mmt"
     ,"collections/basics.mmt"
+    ,"collections/matroids.mmt"
     ,"topology/basics.mmt"
     ,"algebra/basics.mmt"
     ,"algebra/ringsfields.mmt"
@@ -51,7 +52,7 @@ object Orders {
     ,"calculus/normedmetric.mmt"
     ,"calculus/sequencesseries.mmt"
     ,"calculus/limitsderivatives.mmt"
-    ,"calculus/domains.mmt"
+    // ,"calculus/domains.mmt"
     // "categories/basics.mmt"
   )
 
