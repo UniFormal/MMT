@@ -8,6 +8,8 @@ package object impsMathParser
 {
   def makeSEXPFormula(sexp : SEXP) : IMPSMathExp =
   {
+    println(sexp)
+
     sexp match {
       case s@SEXPAtom(name)   => IMPSVar(name)    /* Parse all "only strings" as Vars for now,
                                                      during translation we switch to MathSymbols
@@ -35,6 +37,23 @@ package object impsMathParser
         case SEXPAtom("is-defined")         => makeIsDefined(s)
         case SEXPAtom("is-defined-in-sort") => makeIsDefinedInSort(s)
         case SEXPAtom("undefined")          => makeUndefined(s)
+
+        case SEXPAtom("WITH")
+           | SEXPAtom("with")               =>
+        {
+          assert(args.head == SEXPAtom("with") | args.head == SEXPAtom("WITH"))
+          assert(args.length == 3)
+
+          val sorts : List[(IMPSVar, IMPSSort)] = args(1) match
+          {
+            case SEXPAtom(_)     => ???
+            case s@SEXPNested(_) => makeSortDecls(s)
+          }
+
+          val target : IMPSMathExp = makeSEXPFormula(args.last)
+
+          IMPSWith(sorts,target)
+        }
 
         /* IMPS-universal quasi-constructors */
 
@@ -799,7 +818,7 @@ package object impsMathParser
       {
         case IMPSVar(v)             => List(v)
         case IMPSIndividual()       => Nil
-        case (s)      => Nil
+        case IMPSMathSymbol(s)      => Nil
         case IMPSTruth()            => Nil
         case IMPSFalsehood()        => Nil
         case IMPSNegation(p)        => boundVars(p)

@@ -737,8 +737,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   {
     //return OMS(IMPSTheory.lutinsPath ? "thetrue")
 
+    println(d)
+
     d match
     {
+      case IMPSWith(vrs,trgt)     => doMathExp(trgt,thy,cntxt ::: vrs)
       case IMPSVar(v)             => if (cntxt.map(_._1).contains(d)) { OMV(v) } else {
         //println(" | Switching from Var to MathSymbol: " + v + " ∉ {" + cntxt.toString() + "}")
         doMathExp(IMPSMathSymbol(v),thy,cntxt)
@@ -761,7 +764,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
             val refthy : DeclaredTheory = controller.getTheory(mp)
             val refcon : List[info.kwarc.mmt.api.symbols.Constant] = refthy.getConstants
 
-            if (refcon.find(c => c.name.toString.toLowerCase == s.toLowerCase).isDefined) {
+            if (refcon.exists(c => c.name.toString.toLowerCase == s.toLowerCase)) {
               srcthy = refthy
               println("    > FOUND in " + refthy.name)
             }

@@ -259,8 +259,6 @@ package object impsRemoveQuasiConstructors
       case IMPSQCEmptyIndicatorQ(srt_u) =>
       {
         // "lambda(a:sets[uu], forall(x:uu, not(x in a)))"
-        println(" > eiq srt: " + srt_u)
-        println(" > eiq cntx: " + cntxt)
 
         var uu : IMPSSort = IMPSUnknownSort(freshHash())
 

@@ -724,8 +724,23 @@ case class IMPSUnknownSort(hash : Int) extends IMPSSort
 
 abstract class IMPSMathExp
 
-case class IMPSSymbolRef(gn : GlobalName) extends IMPSMathExp {
-  override def toString: String = gn.toString
+//case class IMPSSymbolRef(gn : GlobalName) extends IMPSMathExp {
+//  override def toString: String = gn.toString
+//}
+
+case class IMPSWith(vars : List[(IMPSVar,IMPSSort)], expression : IMPSMathExp) extends IMPSMathExp
+{
+  override def toString: String =
+  {
+    var str : String = "with("
+    assert(vars.nonEmpty)
+    str = str + vars.head._1.toString + ":" + vars.head._2.toString
+    for (vr <- vars.tail){
+      str = str + "," + vr._1.toString + ":" + vr._2.toString
+    }
+    str = str + "," + expression.toString + ")"
+    str
+  }
 }
 
 case class IMPSMathSymbol(s : String) extends IMPSMathExp {

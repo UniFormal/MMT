@@ -597,7 +597,59 @@ package object impsArgumentParsers
     } else {
       ???
     }
+  }
 
+  def oneConstant(c : TExp) : Option[(String,IMPSSort)] =
+  {
+    c match
+    {
+      case Exp(ss,_) =>
+      {
+        // Constant specification has two elements
+        if(!(ss.length == 2)) {
+          println(" > DROPPING tail of constant specs: " + ss.toString())
+          return None
+        }
+
+        ss(0) match {
+          case Exp(List(Str(name)),sourceR) => ss(1) match {
+            case Exp(js,_) =>
+            {
+              var str : String = ""
+              if (js.length >= 2) {str = "["}
+              for (j <- js)
+              {
+                j match {
+                  case Exp(List(Str(sort)),_) => {
+                    if (str.length > 1) {
+                      str = str + "," + sort
+                    } else {
+                      str = str + sort
+                    }
+                  }
+                  case Str(snm) => str = str + snm
+                  case _ => ()
+                }
+              }
+              str = str.trim
+              if (js.length >= 2) {str = str + "]"}
+
+              if (str.startsWith("\"") && str.endsWith("\"")) {
+                str = str.tail.init
+              }
+
+              val mp     = new IMPSMathParser()
+              val parsed = mp.parseAll(mp.parseSort, str)
+
+              assert(parsed.successful)
+              Some((name, parsed.get))
+            }
+          }
+          case _ => None
+        }
+      }
+      case _ => None
+    }
   }
 
   /* Parser for IMPS constantsList argument
@@ -612,55 +664,8 @@ package object impsArgumentParsers
     // each c is one constant specification
     for (c <- e.children.tail)
     {
-      c match
-      {
-        case Exp(ss,_) =>
-        {
-          // Constant specification has two elements
-          if(!(ss.length == 2)) {
-            println(" > DROPPING tail of constant specs: " + ss.toString())
-          }
-
-          ss(0) match {
-            case Exp(List(Str(name)),sourceR) => ss(1) match {
-              case Exp(js,_) =>
-              {
-                var str : String = ""
-                if (js.length >= 2) {str = "["}
-                for (j <- js)
-                {
-                  j match {
-                    case Exp(List(Str(sort)),_) => {
-                      if (str.length > 1) {
-                        str = str + "," + sort
-                      } else {
-                        str = str + sort
-                      }
-                    }
-                    case Str(snm) => str = str + snm
-                    case _ => ()
-                  }
-                }
-                str = str.trim
-                if (js.length >= 2) {str = str + "]"}
-
-                if (str.startsWith("\"") && str.endsWith("\"")) {
-                  str = str.tail.init
-                }
-
-                val mp     = new IMPSMathParser()
-                val parsed = mp.parseAll(mp.parseSort, str)
-
-                assert(parsed.successful)
-
-                lst = lst :+ (name, parsed.get)
-              }
-            }
-            case _ => ()
-          }
-        }
-        case _ => ()
-      }
+      val o = oneConstant(c)
+      if (o.isDefined) {lst = lst :+ o.get}
     }
 
     assert(lst.nonEmpty)
