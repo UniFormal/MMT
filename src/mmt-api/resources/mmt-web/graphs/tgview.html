@@ -53,8 +53,8 @@
 			<div class="toolSelector">
 				<div id="generalMenu" name="generalMenu">
 				
-					<input type="checkbox" id="metaEdgesCheckbox" onChange="hideEdges('meta', !this.checked)">
-					<label for="metaEdgesCheckbox">Show Meta-Edges</label>
+					<div id="edgesShowHideDiv" name="edgesShowHideDiv" style="max-height:200px; overflow:auto; width:99%">
+					</div>
 					<br /><br />
 
 					<select name="nodeSpacingBox" id="nodeSpacingBox" onChange="changeMethod();" >
@@ -82,14 +82,15 @@
 <br /><br />
 					<button id="selectionModeButton" onClick="switchSelectionMode();" title="Switch Selection Mode" class="myButton" style="width:32px;height:26px;"><div style="margin-top:2px" class="crosshairIcon"></div>
 					<button id="downloadButton" onClick="downloadGraph();" title="Download Graph" class="myButton" style="width:32px;height:26px;margin-left:4px;"><div style="margin-top:2px" class="downloadIcon"></div>
-					<button id="undoButton" onClick="undoLastAction();" title="Undo last Action" class="myButton" style="width:32px;height:26px;margin-left:4px;margin-right:4px;"><div style="margin-top:2px" class="undoIcon"></div>
+					<button id="undoButton" onClick="undoLastAction();" title="Undo last Action" class="myButton" style="width:32px;height:26px;margin-left:4px;"><div style="margin-top:2px" class="undoIcon">
+					<button id="undoButton" onClick="redoLastAction();" title="Redo last Action" class="myButton" style="width:32px;height:26px;margin-left:4px;margin-right:4px;"><div style="margin-top:2px" class="redoIcon"></div></div>
 					
 					<button id="clusterButton" onClick="clusterSelectedNodes()" class="myButton">Cluster Nodes</button>
 					<button id="selectNodes" onClick="selectNodes()" class="myButton">Select Nodes By Pathname</button>
 					<button id="helpButton"  class="myButton">Help</button>
 					<br />
 					<br />
-					Upload own JSON:
+					Upload JSON:
 					<input type="file" id="jsonLoader" name="jsonLoader"/>
 					<br />
 					<br />
@@ -97,7 +98,8 @@
 					<input type="radio" name="embedding" onClick="generateIFrameGraph()" value="iframe"> Embed graph in HTML using IFrame (recommended)<br>
 				  <input type="radio" name="embedding" onClick="generateHTMLGraph()" value="html"> Embed graph in HTML using JS<br>
 				  <input type="radio" name="embedding" onClick="generateParameterGraph()" value="parameter"> Embed graph in URI<br>
-				  <input type="radio" name="embedding" onClick="generateURIGraph()" value="uri"> Download graph from server (default)
+				  <input type="radio" name="embedding" onClick="generateURIGraph()" value="uri"> Download graph from server (default)<br>
+				  <input type="radio" name="embedding" onClick="downloadGraphJSON()" value="harddisk"> Save graph to harddisk as JSON
 				  <br />
 				  <br />
 				  <textarea rows="2" id="uriTextarea" cols="42" readonly></textarea>
@@ -147,8 +149,6 @@
 		<script type="text/javascript">
 			var selectionMode=false;
 			var theoryGraph=new TheoryGraph();
-			
-			theoryGraph.setEdgesHidden("meta",true);
 			
 			lastGraphTypeUsed=getParameterByName("type");
 			lastGraphDataUsed=getParameterByName("graphdata");
@@ -348,6 +348,35 @@
 
 			var source=getParameterByName(graphDataURLSourceParameterNameTGView);
 		
+			function selectNodesByType(type)
+			{
+				theoryGraph.selectNodesByType(type);
+			}
+			
+			function selectEdgesByType(type)
+			{
+				theoryGraph.selectEdgesByType(type);
+			}
+		
+			function downloadGraphJSON()
+			{
+				download("graph_data.json", theoryGraph.graphToStringJSON());
+			}
+
+			function download(filename, text) 
+			{
+			    var element = document.createElement('a');
+			    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+			    element.setAttribute('download', filename);
+
+			    element.style.display = 'none';
+			    document.body.appendChild(element);
+
+			    element.click();
+
+			    document.body.removeChild(element);
+			}
+
 			function waitForJSONMessage()
 			{
 				if(recievedDataJSON == "")

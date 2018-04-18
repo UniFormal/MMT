@@ -9,6 +9,10 @@ var lastGraphTypeUsed;
 var lastGraphDataUsed;
 // Array of history actions (used for undo button)
 var historyStates=[];
+// Array of undone history actions (used for redo button)
+var undoneHistoryStates=[];
+
+var lastActionWasUndoRedo=0;
 
 // Sets the URL to given location (without reloading page)
 function setLocation(curLoc)
@@ -25,10 +29,42 @@ function setLocation(curLoc)
     location.hash = '#' + curLoc;
 }
 
+
+
+function generateEdgesNodesHideDiv()
+{
+	var usedEdgeTypes = theoryGraph.getUsedEdgeTypes();
+	var html="<strong>Hide/Show Edges</strong><br>";
+	for(var i=0;i<usedEdgeTypes.length;i++)
+	{
+		var alias=(typeof ARROW_STYLES[usedEdgeTypes[i]] === "undefined" ? ARROW_STYLES[usedEdgeTypes[i].replace("graph","")].alias : ARROW_STYLES[usedEdgeTypes[i]].alias);
+		html+="<img onClick='selectEdgesByType(\""+usedEdgeTypes[i]+"\")' src='img/select.png' width='14' style='width:14px;' title='Select all "+alias+"'> </img>";
+		html+='<input type="checkbox" '+(usedEdgeTypes[i]=="meta" || usedEdgeTypes[i]=="graphmeta" ? "" : "checked")+' id="edgesCheckbox_'+i+'" value="'+usedEdgeTypes[i]+'" onChange="hideEdges(this.value, !this.checked)"><label for="edgesCheckbox_'+i+'">Show '+alias+'</label>';
+		html+="<br>";
+	}
+	
+	var usedNodeTypes = theoryGraph.getUsedNodeTypes();
+	html+="<br><strong>Hide/Show Nodes</strong><br>";
+	for(var i=0;i<usedNodeTypes.length;i++)
+	{
+		var alias=(typeof NODE_STYLES[usedNodeTypes[i]] === "undefined" ? NODE_STYLES[usedNodeTypes[i].replace("graph","")].alias : NODE_STYLES[usedNodeTypes[i]].alias);
+		html+="<img onClick='selectNodesByType(\""+usedNodeTypes[i]+"\")' src='img/select.png' width='14' style='width:14px;' title='Select all "+alias+"'> </img>";
+		html+='<input type="checkbox" '+"checked"+' id="nodesCheckbox_'+i+'" value="'+usedNodeTypes[i]+'" onChange="hideNodes(this.value, !this.checked)"><label for="nodesCheckbox_'+i+'">Show '+alias+'</label>';
+		if(i!=usedNodeTypes.length-1)
+		{
+			html+="<br>";
+		}
+	}
+	
+	document.getElementById("edgesShowHideDiv").innerHTML=html;
+}
+
 // Executed after first drawing of graph finished
 function updateNetworkOnFirstCall()
 {
 	theoryGraph.colorizeNodesByName(getParameterByName(graphDataURLHighlightParameterNameTGView),highlightColorByURI);
+	generateEdgesNodesHideDiv();
+	theoryGraph.hideEdges("graphmeta",true);
 }
 
 // Creates right-click menu for MMT menu (left side)
@@ -115,12 +151,24 @@ function getStartToEnd(start, theLen)
 function addToStateHistory(func, parameterArray)
 {
 	historyStates.push({"func":func, "param": parameterArray});
+	if(lastActionWasUndoRedo==0)
+	{
+		undoneHistoryStates=[];
+	}
+	lastActionWasUndoRedo=0;
 }
+
 
 // Undos the last action
 function undoLastAction()
 {
+	if(historyStates.length==0)
+		return;
+	
+	lastActionWasUndoRedo=1;
+	
 	var lastState = historyStates.pop();
+	undoneHistoryStates.push(lastState);
 	
 	if(lastState.func=="cluster")
 	{
@@ -138,15 +186,50 @@ function undoLastAction()
 	{
 		theoryGraph.selectNodes(lastState.param.nodes);
 	}
+	
 	historyStates.pop();
 	doLastAction();
+	lastActionWasUndoRedo=0;
 }
 
-// Redos the last action
+// Redos last undone action
+function redoLastAction()
+{
+	if(undoneHistoryStates.length==0)
+		return;
+	
+	lastActionWasUndoRedo=1;
+	
+	var lastState = undoneHistoryStates.pop();
+	
+	if(lastState.func=="cluster")
+	{
+		theoryGraph.cluster(lastState.param.nodes,lastState.param.name,lastState.param.clusterId);
+	}
+	else if(lastState.func=="uncluster")
+	{
+		theoryGraph.openCluster(lastState.param.clusterId);
+	}
+	else if(lastState.func=="select")
+	{
+		theoryGraph.selectNodes(lastState.param.nodes);
+	}
+	else if(lastState.func=="unselect")
+	{
+		theoryGraph.selectNodes([]);
+	}
+	//undoneHistoryStates.pop();
+	//doLastAction();
+	lastActionWasUndoRedo=0;
+}
+
+// Dos the last action
 function doLastAction()
 {
 	if(historyStates.length==0)
 		return;
+
+	lastActionWasUndoRedo=1;
 	
 	var lastState = historyStates[historyStates.length-1];
 	if(lastState.func=="unselect")
@@ -159,4 +242,6 @@ function doLastAction()
 		theoryGraph.selectNodes(lastState.param.nodes);
 		historyStates.pop();
 	}
+	
+	lastActionWasUndoRedo=0;
 }

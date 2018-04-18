@@ -87,7 +87,8 @@ var ARROW_STYLES=
 		circle:false,
 		directed: true,
 		smoothEdge: true,
-		width: 1
+		width: 1,
+		alias: "Include-Edges"
 	},
 	"modelinclude":
 	{
@@ -98,7 +99,8 @@ var ARROW_STYLES=
 		circle:false,
 		directed: false,
 		smoothEdge: false,
-		width: 1
+		width: 1,
+		alias: "Model Includes-Edges"
 	},
 	"meta":
 	{
@@ -109,7 +111,8 @@ var ARROW_STYLES=
 		circle: true,
 		directed: true,
 		smoothEdge: true,
-		width: 1
+		width: 1,
+		alias: "Meta-Edges"
 	},
 	"alignment":
 	{
@@ -120,7 +123,8 @@ var ARROW_STYLES=
 		circle: false,
 		directed: false,
 		smoothEdge: true,
-		width: 1
+		width: 1,
+		alias: "Alignment-Edges"
 	},
 	"view":
 	{
@@ -131,7 +135,8 @@ var ARROW_STYLES=
 		circle:false,
 		directed: true,
 		smoothEdge: true,
-		width: 1
+		width: 1,
+		alias: "View-Edges"
 	},
 	"structure":
 	{
@@ -142,7 +147,8 @@ var ARROW_STYLES=
 		circle:false,
 		directed: true,
 		smoothEdge: true,
-		width: 1
+		width: 1,
+		alias: "Structure-Edges"
 	}
 };
 
@@ -157,7 +163,8 @@ var NODE_STYLES =
 		colorBorder: "#222222",
 		colorHighlightBorder: "#444444",
 		colorHighlight: "#EEEEEE",
-		dashes: false
+		dashes: false,
+		alias: "Model-Nodes"
 	},
 	"border":
 	{
@@ -166,7 +173,8 @@ var NODE_STYLES =
 		colorBorder: "#D8D8D8",
 		colorHighlightBorder: "#A8A8A8",
 		colorHighlight: "#D8D8D8",
-		dashes: false
+		dashes: false,
+		alias: "Border-Nodes"
 	},
 	"theory":
 	{
@@ -175,16 +183,18 @@ var NODE_STYLES =
 		colorBorder: "#2B7CE9",
 		colorHighlightBorder: "#2B7CE9",
 		colorHighlight: "#D2E5FF",
-		dashes: false
+		dashes: false,
+		alias: "Theory-Nodes"
 	},
 	"boundarycondition":
 	{
-		shape: "box",
-		color: "#D2E5FF",
-		colorBorder: "#2B7CE9",
-		colorHighlightBorder: "#2B7CE9",
-		colorHighlight: "#D2E5FF",
-		dashes: false
+		shape: "square",
+		color: "#EEEEEE",
+		colorBorder: "#DDDDDD",
+		colorHighlightBorder: "#CCCCCC",
+		colorHighlight: "#DDDDDD",
+		dashes: true,
+		alias: "Boundary-Condition-Nodes"
 	}
 };
 

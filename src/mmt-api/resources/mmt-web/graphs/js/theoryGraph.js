@@ -20,12 +20,73 @@ function TheoryGraph()
 	var zoomClusters=[];
 	// Positions of nodes before clustering
 	var clusterPositions=[];
-
+	var allClusters=[];
+	var hiddenNodes={};
+	
+	
 	var edgesNameToHide=[];
 	this.onConstructionDone=undefined;
 	var that=this;
 	
-this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
+	this.selectNodesByType=function(type)
+	{
+		var nodeIds = network.getSelectedNodes();;
+		for (var i = 0; i < originalNodes.length; i++) 
+		{
+			var curNode = originalNodes[i];
+			if(curNode["style"]==type)
+			{
+				nodeIds.push(curNode.id);
+			}
+			
+		}
+		addToStateHistory("select", {"nodes": nodeIds});
+		network.selectNodes(nodeIds);
+	}
+	
+	this.selectEdgesByType=function(type)
+	{
+		var edgeIds = [];
+		for (var i = 0; i < originalEdges.length; i++) 
+		{
+			var currEdge = originalEdges[i];
+			if(currEdge["style"]==type)
+			{
+				edgeIds.push(currEdge.id);
+			}
+			
+		}
+		addToStateHistory("select", {"nodes": edgeIds});
+		network.selectEdges(edgeIds);
+	}
+	
+	this.getUsedNodeTypes=function()
+	{
+		var usedNodeTypes=[];
+		for (var i = 0; i < originalNodes.length; i++) 
+		{
+			if(typeof originalNodes[i]["style"]!="undefined" && usedNodeTypes.indexOf(originalNodes[i]["style"])==-1)
+			{
+				usedNodeTypes.push(originalNodes[i]["style"]);
+			}
+		}
+		return usedNodeTypes;
+	}
+	
+	this.getUsedEdgeTypes=function()
+	{
+		var usedEdgeTypes=[];
+		for (var i = 0; i < originalEdges.length; i++) 
+		{
+			if(typeof originalEdges[i]["style"]!="undefined" && usedEdgeTypes.indexOf(originalEdges[i]["style"])==-1)
+			{
+				usedEdgeTypes.push(originalEdges[i]["style"]);
+			}
+		}
+		return usedEdgeTypes;
+	}
+	
+	this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 	{
 		if (typeof parameterName == "undefined")
 		{
@@ -39,7 +100,7 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 
 		if (typeof compressionRate == "undefined")
 		{
-			compressionRate=1;
+			compressionRate=0;
 		}
 		
 		return {"storage":"localStorage.setItem('"+parameterName+"', '"+generateCompressedJSON(onlySelected, compressionRate).split("'").join("\\'")+"');", "uri":location.protocol + '//' + location.host + location.pathname+"?"+graphDataURLSourceParameterNameTGView+"=iframe&"+graphDataURLDataSourceParameterNameTGView+"="+parameterName, "id":parameterName};
@@ -59,7 +120,7 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 
 		if (typeof compressionRate == "undefined")
 		{
-			compressionRate=1;
+			compressionRate=0;
 		}
 		
 		return {"storage":"localStorage.setItem('"+parameterName+"', '"+generateCompressedJSON(onlySelected, compressionRate).split("'").join("\\'")+"');", "uri":location.protocol + '//' + location.host + location.pathname+"?"+graphDataURLSourceParameterNameTGView+"=param&"+graphDataURLDataSourceParameterNameTGView+"="+parameterName, "name":parameterName};
@@ -82,6 +143,8 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 	
 	function generateCompressedJSON(onlySelected, compressionRate)
 	{	
+		var allNodePositions=[];
+		
 		var json="{\"nodes\":[";
 		if (typeof onlySelected == "undefined")
 		{
@@ -90,7 +153,12 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 		
 		if (typeof compressionRate == "undefined")
 		{
-			compressionRate=1;
+			compressionRate=0;
+		}
+
+		if(compressionRate==0)
+		{
+			allNodePositions=network.getPositions();
 		}
 		
 		var nodeIds=undefined;
@@ -124,7 +192,7 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 				counter++;
 			}
 			
-			currentNodeJson+='"id":"'+mapping[curNode.id]+'",';
+			currentNodeJson+='"id":"'+curNode.id+'",';
 			currentNodeJson+='"label":"'+curNode.label+'",';
 			currentNodeJson+='"style":"'+curNode.style+'"';
 			
@@ -143,6 +211,12 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 				currentNodeJson+=',"url":"'+curNode.url+'"';
 			}
 			
+			if(compressionRate==0)
+			{
+				currentNodeJson+=',"x":"'+allNodePositions[curNode.id].x+'"';
+				currentNodeJson+=',"y":"'+allNodePositions[curNode.id].y+'"';
+			}
+			
 			currentNodeJson+="},";
 			json+=currentNodeJson;
 		}
@@ -156,8 +230,8 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 			{
 				var currentEdgeJson="{";
 				
-				currentEdgeJson+='"to":"'+mapping[currEdge.to]+'",';
-				currentEdgeJson+='"from":"'+mapping[currEdge.from]+'",';
+				currentEdgeJson+='"to":"'+currEdge.to+'",';
+				currentEdgeJson+='"from":"'+currEdge.from+'",';
 				currentEdgeJson+='"style":"'+currEdge.style+'"';
 				
 				if(typeof currEdge.label != "undefined" && currEdge.label!="" && compressionRate<2)
@@ -180,6 +254,25 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 			}
 		}
 		
+		if(allClusters.length>0)
+		{
+			json=json.substring(0, json.length - 1)+"],\"cluster\":[";
+			
+			for (var i = 0; i < allClusters.length; i++) 
+			{		
+				var currentClusterJson="{\"nodeIds\":";
+				currentClusterJson+=JSON.stringify(clusterPositions[allClusters[i]][0]);
+				currentClusterJson+=",";
+				
+				currentClusterJson+="\"nodePositions\":";
+				currentClusterJson+=JSON.stringify(clusterPositions[allClusters[i]][1]);
+				currentClusterJson+="";
+				
+				currentClusterJson+="},";
+				json+=currentClusterJson;
+			}
+		}
+
 		json=json.substring(0, json.length - 1)+"]}";
 		return json;
 	}
@@ -208,22 +301,73 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 		var edgesToHide=[];
 		for(var i=0;i<originalEdges.length;i++)
 		{
-			console.log(type+""+originalEdges[i]["style"]);
+			//console.log(type+""+originalEdges[i]["style"]);
 			if(type==originalEdges[i]["style"] || ("graph"+type)==originalEdges[i]["style"] )
+			{
+				if(hideEdge==true)
+				{
+					edgesToHide.push({id: originalEdges[i]["id"], hidden: hideEdge});
+				}
+				else if(hideEdge==false && (hiddenNodes[originalEdges[i].to]==false && hiddenNodes[originalEdges[i].from]==false))
+				{
+					edgesToHide.push({id: originalEdges[i]["id"], hidden: hideEdge});
+				}
+			}
+		}
+		edges.update(edgesToHide);
+	}
+
+	this.hideNodes=function(type, hideEdge)
+	{
+		//that.setEdgesHidden(type, hideEdge);
+		var nodesToHide=[];
+		
+		for(var i=0;i<originalNodes.length;i++)
+		{
+			//console.log(type+""+originalEdges[i]["style"]);
+			if(type==originalNodes[i]["style"] || ("graph"+type)==originalNodes[i]["style"] )
+			{
+				nodesToHide.push({id: originalNodes[i]["id"], hidden: hideEdge});
+				hiddenNodes[originalNodes[i]["id"]]=hideEdge;
+			}
+		}
+		nodes.update(nodesToHide);
+		
+		var mappedEdges={};
+		for(var i=0;i<edgesNameToHide.length;i++)
+		{
+			mappedEdges[edgesNameToHide[i].type]=edgesNameToHide[i].hidden;
+		}
+		
+		var edgesToHide=[];
+		for(var i=0;i<originalEdges.length;i++)
+		{
+			if(hideEdge==true && (hiddenNodes[originalEdges[i].to] == true || hiddenNodes[originalEdges[i].from] == true))
+			{
+				edgesToHide.push({id: originalEdges[i]["id"], hidden: hideEdge});
+			}
+			
+			if(typeof mappedEdges[originalEdges[i]["style"]] != "undefined" && mappedEdges[originalEdges[i]["style"]]!=hideEdge)
+			{
+				continue;
+			}
+			
+			
+			if(hideEdge==false && (hiddenNodes[originalEdges[i].to]==false && hiddenNodes[originalEdges[i].from]==false))
 			{
 				edgesToHide.push({id: originalEdges[i]["id"], hidden: hideEdge});
 			}
 		}
 		edges.update(edgesToHide);
 	}
-
+	
 	this.setEdgesHidden=function(type, hideEdge)
 	{
 		for(var i=0;i<edgesNameToHide.length;i++)
 		{
-			if(type==edgesNameToHide.type)
+			if(type==edgesNameToHide[i].type)
 			{
-				edgesNameToHide.hidden=hideEdge;
+				edgesNameToHide[i].hidden=hideEdge;
 				return;
 			}
 		}
@@ -474,6 +618,7 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 			clusterPositions['cluster_' +givenClusterId]=[];
 			clusterPositions['cluster_' +givenClusterId][0]=nodeIds;
 			clusterPositions['cluster_' +givenClusterId][1]=network.getPositions(nodeIds);
+			allClusters.push('cluster_' +givenClusterId);
 			var options = 
 			{
 				joinCondition:function(nodeOptions) 
@@ -537,7 +682,31 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 	// Loads graph using JSON
 	this.loadJSONGraph=function(data)
 	{
-		drawGraph(data);
+		if(data.length<20)
+		{
+			setStatusText('<font color="red">Graph-File is empty or corrupt</font>');
+			document.body.style.cursor = 'auto';
+			return;
+		}
+		
+		if(typeof data["nodes"] == 'undefined' || typeof data["edges"] == 'undefined')
+		{
+			setStatusText('<font color="red">Graph-File is invalid (maybe incorrect JSON?)</font>');
+			document.body.style.cursor = 'auto';
+			return;
+		}
+
+		originalNodes=data["nodes"];
+		originalEdges=data["edges"];
+
+		addUsedButNotDefinedNodes();
+		
+		ensureUniqueIds(originalNodes);
+		ensureUniqueIds(originalEdges);
+		
+		postprocessEdges();
+		
+		startConstruction(true);
 	}
 	
 	// Draws given data as graph
@@ -740,6 +909,7 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 	{
 		if (network.isCluster(nodeId) == true) 
 		{
+			var node = network.body.nodes[nodeId].options;
               network.openCluster(nodeId);
 			  var toUpdate=[];
 			  for (var i=0;i<clusterPositions[nodeId][0].length;i++) 
@@ -747,7 +917,14 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 				  var id=clusterPositions[nodeId][0][i];
 				  toUpdate.push({id: id, x:clusterPositions[nodeId][1][id].x, y:clusterPositions[nodeId][1][id].y});
 			  }
-			  addToStateHistory("uncluster", {"clusterId": nodeId, "nodes": toUpdate});
+			  
+			var index = allClusters.indexOf(nodeId);
+			if (index > -1) 
+			{
+				allClusters.splice(index, 1);
+			}
+			  
+			  addToStateHistory("uncluster", {"clusterId": nodeId, "nodes": toUpdate, "name":node.label});
 			  nodes.update(toUpdate);
 			  network.redraw();
         }
@@ -797,7 +974,7 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 	}
 	
 	// Start construction of graph
-	function startConstruction()
+	function startConstruction(fixedPositions=false)
 	{
 		setStatusText("Constructing graph...");
 		var processedNodes=0;
@@ -813,6 +990,7 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 
 		for(var i=0;i<originalNodes.length;i++)
 		{
+			hiddenNodes[originalNodes[i]["id"]]=false;
 			if(originalNodes[i]["image"]!="" && originalNodes[i]["image"]!=undefined)
 			{
 				function callback(node,data, status)
@@ -838,45 +1016,48 @@ this.graphToIFrameString=function(parameterName, onlySelected, compressionRate)
 		
 		if(nodesCount==0)
 		{
-			startRendering();
+			startRendering(fixedPositions);
 		}
 	}
 	
 	// Called when the Visualization API is loaded.
-	function startRendering() 
+	function startRendering(fixedPositions=false) 
 	{
 		setStatusText("Rendering graph...");
-		if(typeof THEORY_GRAPH_OPTIONS.layout === 'undefined' || typeof THEORY_GRAPH_OPTIONS.layout.ownLayoutIdx === 'undefined' || THEORY_GRAPH_OPTIONS.layout.ownLayoutIdx==1)
+		if(fixedPositions==false)
 		{
-			var opti=new Optimizer(originalNodes,originalEdges);
-			if(originalNodes.length+originalEdges.length>3000)
+			if(typeof THEORY_GRAPH_OPTIONS.layout === 'undefined' || typeof THEORY_GRAPH_OPTIONS.layout.ownLayoutIdx === 'undefined' || THEORY_GRAPH_OPTIONS.layout.ownLayoutIdx==1)
 			{
-				opti.weaklyHierarchicalLayout(500,document.getElementById('nodeSpacingBox').value);
+				var opti=new Optimizer(originalNodes,originalEdges);
+				if(originalNodes.length+originalEdges.length>3000)
+				{
+					opti.weaklyHierarchicalLayout(500,document.getElementById('nodeSpacingBox').value);
+				}
+				else if(originalNodes.length+originalEdges.length>2000)
+				{
+					opti.weaklyHierarchicalLayout(700,document.getElementById('nodeSpacingBox').value);
+				}
+				else
+				{
+					opti.weaklyHierarchicalLayout(1000,document.getElementById('nodeSpacingBox').value);
+				}
 			}
-			else if(originalNodes.length+originalEdges.length>2000)
+			else if(THEORY_GRAPH_OPTIONS.layout.ownLayoutIdx==2)
 			{
-				opti.weaklyHierarchicalLayout(700,document.getElementById('nodeSpacingBox').value);
-			}
-			else
-			{
-				opti.weaklyHierarchicalLayout(1000,document.getElementById('nodeSpacingBox').value);
-			}
-		}
-		else if(THEORY_GRAPH_OPTIONS.layout.ownLayoutIdx==2)
-		{
-			var opti=new Optimizer(originalNodes,originalEdges);
-			opti.GenerateRandomSolution();
-			if(originalNodes.length+originalEdges.length>3000)
-			{
-				opti.SolveUsingForces(200,document.getElementById('nodeSpacingBox').value);
-			}
-			else if(originalNodes.length+originalEdges.length>2000)
-			{
-				opti.SolveUsingForces(400,document.getElementById('nodeSpacingBox').value);
-			}
-			else
-			{
-				opti.SolveUsingForces(600,document.getElementById('nodeSpacingBox').value);
+				var opti=new Optimizer(originalNodes,originalEdges);
+				opti.GenerateRandomSolution();
+				if(originalNodes.length+originalEdges.length>3000)
+				{
+					opti.SolveUsingForces(200,document.getElementById('nodeSpacingBox').value);
+				}
+				else if(originalNodes.length+originalEdges.length>2000)
+				{
+					opti.SolveUsingForces(400,document.getElementById('nodeSpacingBox').value);
+				}
+				else
+				{
+					opti.SolveUsingForces(600,document.getElementById('nodeSpacingBox').value);
+				}
 			}
 		}
 		
