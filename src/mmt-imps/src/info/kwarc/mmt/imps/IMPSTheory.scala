@@ -3,6 +3,7 @@ package info.kwarc.mmt.imps
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardRat}
+import info.kwarc.mmt.imps.IMPSTheory.rootdpath
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
 
@@ -15,7 +16,7 @@ object RatLiterals extends
 object IMPSTheory
 {
   val rootdpath  = DPath(URI.http colon "latin.omdoc.org") / "foundations" / "lutins"
-  val lutinsPath = rootdpath ? "Lutins"
+  val lutinsPath = rootdpath ? "quasiLutins"
 
   val lutinsPropType = lutinsPath ? "boolType"
   val lutinsIndType  = lutinsPath ? "indType"
@@ -231,4 +232,126 @@ object IMPSTheory
     }
   }
 
+  // Subtheory for User-Defined Quasi-Constructors
+  object QCT
+  {
+    val quasiLutinsPath = rootdpath ? "quasiLutins"
+
+    class UDQC(s: String)
+    {
+      val path : GlobalName = quasiLutinsPath ? s
+      val term = OMS(path)
+    }
+
+    object pred2indicQC extends UDQC("pred2indicQC") {
+      def apply (u : Term, uu : Term, s : Term) : Term = {
+        ApplySpine(this.term, u, uu, s)
+      }
+    }
+
+    object sort2indicQC extends UDQC("sort2indicQC") {
+      def apply(u : Term, e : Term) : Term = {
+        ApplySpine(this.term, u, e)
+      }
+    }
+
+    object inQC extends UDQC("inQC") {
+      def apply(a : Term, alpha : Term, x : Term, aa : Term) : Term = {
+        ApplySpine(this.term, a, alpha, x, aa)
+      }
+    }
+
+    object subseteqQC extends UDQC("subseteqQC") {
+      def apply(u : Term, uu : Term, a : Term, b : Term) : Term = {
+        ApplySpine(this.term, u, uu, a, b)
+      }
+    }
+
+    object subsetQC extends UDQC("subsetQC") {
+      def apply (u : Term, uu : Term, a : Term, b : Term) : Term = {
+        ApplySpine(this.term, u, uu, a, b)
+      }
+    }
+
+    object emptyIndicQC extends UDQC("emptyIndicQC") {
+      def apply (u : Term, e : Term) : Term = {
+        ApplySpine(this.term, u, e)
+      }
+    }
+
+    object nonEmptyIndicQQC extends UDQC("nonEmptyIndicQQC") {
+      def apply (u : Term, uu : Term, a : Term) : Term = {
+        ApplySpine(this.term, u, uu, a)
+      }
+    }
+
+    object emptyIndicQQC extends UDQC("emptyIndicQQC") {
+      def apply (u : Term, uu : Term, a : Term) : Term = {
+        ApplySpine(this.term, u, uu, a)
+      }
+    }
+
+    object complementQC extends UDQC("complementQC") {
+      def apply (u : Term, uu : Term, s : Term) : Term = {
+        ApplySpine(this.term, u, uu, s)
+      }
+    }
+
+    object unionQC extends UDQC("unionQC") {
+      def apply (u : Term, uu : Term, s : Term, t : Term) : Term = {
+        ApplySpine(this.term, u, uu, s, t)
+      }
+    }
+
+    object intersectionQC extends UDQC("intersectionQC") {
+      def apply (u : Term, uu : Term, s : Term, t : Term) : Term = {
+        ApplySpine(this.term, u,uu,s,t)
+      }
+    }
+
+    object differenceQC extends UDQC("differenceQC") {
+      def apply (u : Term, uu : Term, s : Term, t : Term) : Term = {
+        ApplySpine(this.term, u, uu, s, t)
+      }
+    }
+
+    object symDifferenceQC extends UDQC("symDifferenceQC") {
+      def apply (u : Term, uu : Term, s : Term, t : Term) : Term = {
+        ApplySpine(this.term, u,uu,s,t)
+      }
+    }
+
+    object disjointQC extends UDQC("disjointQC") {
+      def apply (u : Term, uu : Term, s : Term, t : Term) : Term = {
+        ApplySpine(this.term, u, uu, s, t)
+      }
+    }
+
+    object partitionQQC extends UDQC("partitionQQC") {
+      def apply (u : Term, uu : Term, w : Term, s : Term) : Term = {
+        ApplySpine(this.term, u,uu,w,s)
+      }
+    }
+
+    object singletonQC extends UDQC("singletonQC") {
+      def apply (u : Term, uu : Term, a : Term) : Term = {
+        ApplySpine(this.term, u, uu, a)
+      }
+    }
+
+    object bigUnionQC extends UDQC("bigUnionQC") {
+      def apply(a : Term, i : Term, aa : Term, ii : Term, f : Term) : Term = {
+        ApplySpine(this.term, a, i, aa, ii, f)
+      }
+    }
+
+    object bigIntersectionQC extends UDQC("bigIntersectionQC") {
+      def apply(a : Term, i : Term, aa : Term, ii : Term, f : Term) : Term = {
+        ApplySpine(this.term, a, i, aa, ii, f)
+      }
+    }
+  }
+
 }
+
+

@@ -8,8 +8,6 @@ package object impsMathParser
 {
   def makeSEXPFormula(sexp : SEXP) : IMPSMathExp =
   {
-    println(sexp)
-
     sexp match {
       case s@SEXPAtom(name)   => IMPSVar(name)    /* Parse all "only strings" as Vars for now,
                                                      during translation we switch to MathSymbols

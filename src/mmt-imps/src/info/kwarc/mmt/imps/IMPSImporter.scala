@@ -218,6 +218,8 @@ class TranslationState ()
 
   var knownUnknowns      : List[(Int,Term)]     = Nil
 
+  var hashCount          : Int = 0
+
   protected var unknowns : Int                  = 0
 
   protected def doiName(i : Int, isType : Boolean) : LocalName = {
@@ -266,5 +268,11 @@ class TranslationState ()
     unknowns = 0
     knownUnknowns = Nil
     vars = Context.empty
+  }
+
+  def freshHash() : Int =
+  {
+    hashCount += 1
+    hashCount.toString.hashCode()
   }
 }
