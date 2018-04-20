@@ -102,7 +102,7 @@ case class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : Gl
    private object Not {
       def apply(f : Term) = ApplySpine(OMS(not),f)
       def unapply(tm : Term) = tm match {
-         case ApplySpine(OMS(`ded`),prop :: Nil) => Some(prop)
+         case ApplySpine(OMS(`not`),prop :: Nil) => Some(prop)
          case _ => None
       }
    }
@@ -163,16 +163,20 @@ case class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : Gl
                case r =>
                   Arrow(r,traverse(Ded(c)))
             }
-         case Ded(Forall(x,tp,bd,_)) => Pi(x,tp,traverse(Ded(bd)))
+         case Ded(Forall(x,tp,bd,_)) =>
+            Pi(x,tp,traverse(Ded(bd)))
          case Ded(Implies(a,b)) =>
             traverse(Ded(a)) match {
                case Ded(And(ls)) =>
                   Arrow(ls.map(Ded.apply),traverse(Ded(b)))
                case r => Arrow(r,traverse(Ded(b)))
             }
-         case Exists(x,tp,bd,tt) => traverse(Not(Forall(x,tp,Not(bd),tt)))
-         case Implies(a,b) => traverse(Not(And(a,Not(b))))
-         case Or(a,b) => traverse(Not(And(Not(a),Not(b))))
+         case Exists(x,tp,bd,tt) =>
+            traverse(Not(Forall(x,tp,Not(bd),tt)))
+         case Implies(a,b) =>
+            traverse(Not(And(a,Not(b))))
+         case Or(a,b) =>
+            traverse(Not(And(Not(a),Not(b))))
          case Not(inner) =>
             traverse(inner) match {
                case Not(ii) => ii

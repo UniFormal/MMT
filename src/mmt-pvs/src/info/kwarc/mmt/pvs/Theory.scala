@@ -47,8 +47,7 @@ object PVSTheory {
     override def apply(th : DeclaredTheory) : DeclaredTheory = {
       val nth = new DeclaredTheory(th.parent,th.name,th.meta,th.paramC,th.dfC)
       th.getDeclarations foreach {
-        case c : FinalConstant if !c.name.toString.contains("TCC") =>
-          nth add c
+        case c : FinalConstant if c.name.toString.contains("TCC") =>
         case o => nth add o
       }
       nth
@@ -61,7 +60,7 @@ object PVSTheory {
   private val implies = thpath ? "IMPLIES"
   private val equiv = thpath ? "IFF"
 
-  val preproc = (notccs + ParameterPreprocessor + paramelim + LFHOASElim(vfhoas) /* + LFClassicHOLPreprocessor(
+  val preproc = (notccs + ParameterPreprocessor + paramelim + LFHOASElim(vfhoas) + LFClassicHOLPreprocessor(
     proof.path,
     and,
     not,
@@ -70,7 +69,7 @@ object PVSTheory {
     or = Some(or),
     implies = Some(implies),
     equiv = Some(equiv)
-  )*/ ).withKey("PVS")
+  )).withKey("PVS")
 
   object parambind {
     val path: GlobalName = PVSTheory.rootdpath ? "BoundInclude" ? "parameter_binder"

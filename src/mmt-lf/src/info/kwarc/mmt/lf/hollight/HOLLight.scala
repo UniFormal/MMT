@@ -1,7 +1,7 @@
 package info.kwarc.mmt.lf.hollight
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.refactoring.ParameterPreprocessor
+import info.kwarc.mmt.api.refactoring.{DefinitionExpander, ParameterPreprocessor}
 import info.kwarc.mmt.lf.{LFClassicHOLPreprocessor, LFHOASElim, ViewFinderHOAS}
 import utils._
 
@@ -31,7 +31,7 @@ object HOLLight {
    val exists = boolth ? "?"
    val or = boolth ? "\\/"
 
-   val preproc = (LFHOASElim(vfhoas) /* + LFClassicHOLPreprocessor(
+   val preproc = (DefinitionExpander + LFHOASElim(vfhoas) /* + LFClassicHOLPreprocessor(
       ded, and, not, Some(forall), Some(or),Some(implies),None,Some(exists)
    )*/ ).withKey("HOLLight")
 /* TODO

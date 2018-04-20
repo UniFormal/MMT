@@ -7,6 +7,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.FormalAlignment
+import info.kwarc.mmt.api.parser.ParseResult
 import info.kwarc.mmt.api.refactoring.Hasher.Targetable
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.utils.time.{Duration, Time}
@@ -538,7 +539,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
 
     def toView(path : MPath) : Option[DeclaredView] = Some(asView.getOrElse {
       val v = new DeclaredView(path.parent,path.name,TermContainer(OMMOD(from)),TermContainer(OMMOD(to.getOrElse(return None))),false)
-      includes.reverse.foreach(i => v.add(PlainInclude(i.asView.getOrElse(return None).path,v.path)))
+      includes.reverse.foreach(i => v.add(LinkInclude(v.toTerm,i.from,i.asView.getOrElse(return None).toTerm)))
       maps.reverse.foreach(m => v.add(Constant(v.toTerm,m.from.asInstanceOf[Hasher.Symbol].gn.name,Nil,None,Some(OMS(m.to.asInstanceOf[Hasher.Symbol].gn)),None)))
       asView = Some(v)
       v
@@ -638,7 +639,7 @@ object ParameterPreprocessor extends Preprocessor {
       case _ => Traverser(this,t)
     }
   }
-  override def doTerm(tm: Term): Term = trav(tm,())
+  override def doTerm(tm: Term): Term = trav(ParseResult.fromTerm(tm).term,())
 }
 
 object DefinitionExpander extends Preprocessor {

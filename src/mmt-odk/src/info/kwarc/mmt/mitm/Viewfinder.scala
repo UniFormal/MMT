@@ -32,7 +32,7 @@ class Viewfinder extends Extension {
   // lazy val mitm : Archive = controller.backend.getArchive("MitM/smglom").getOrElse(???)
 
   override def start(args: List[String]): Unit = {
-    val as = List("MitM/Foundation","MitM/smglom"/*,"MMT/LFX","PVS/Prelude","HOLLight/basic","PVS/NASA"*/).map(controller.backend.getArchive(_).get) //controller.backend.getArchives
+    val as = List("MitM/Foundation","MitM/smglom","MMT/LFX","PVS/Prelude","HOLLight/basic","PVS/NASA").map(controller.backend.getArchive(_).get) //controller.backend.getArchives
     log("Getting Archives...")
     val (t,_) = Time.measure {
       as.foreach(a => preprocs.find(p => a.id.startsWith(p._1)) match {
@@ -47,7 +47,7 @@ class Viewfinder extends Extension {
 
   def find(mp : MPath, to : String, preproc : Option[Preprocessor] = None) = {
     val hasher = alignmentFinder.getHasher
-    val froms = alignmentFinder.getFlat(List(mp)).map(t => preproc.map(_.apply(t)).getOrElse(t)) // TODO!
+    val froms = alignmentFinder.getFlat(List(mp)).map(t => preproc.map(_.apply(t)).getOrElse(t))
     val meta = froms.view.find(_.path == mp).get.meta.get
     val metas = alignmentFinder.getFlat(List(meta))
     val (tos,judg2) = theories(to)
@@ -80,6 +80,7 @@ class Viewfinder extends Extension {
     log("Hashing done after " + t)
     val proc = new FindingProcess(this.report,hasher)
     val ret = proc.run(from = List(hasher.get(mp).get))
+    log(ret.map(_.asString()).mkString("\n"))
     val (t1,ret1) = Time.measure {
       log("Making views...")
       proc.makeviews(Path.parseM("http://test.test/test?test",NamespaceMap.empty),ret)
