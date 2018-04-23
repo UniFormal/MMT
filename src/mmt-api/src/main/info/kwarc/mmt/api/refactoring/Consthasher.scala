@@ -180,7 +180,7 @@ class HashesNormal(val cfg : FinderConfig) extends Hasher {
       val al = cfg.fixing.find(_.applicable(t))
       val tm = al.map(_.apply(t)).getOrElse(t)
       tm match {
-        case Hasher.Complex(itm) => List(1,1,if (pars.contains(itm)) pars.length - (pars.indexOf(itm)+1) else {
+        case Hasher.Complex(itm) => List(1,1,{
           pars ::= itm
           pars.length-1
         })
@@ -190,7 +190,7 @@ class HashesNormal(val cfg : FinderConfig) extends Hasher {
           if (cfg.judg1.contains(path) || cfg.judg2.contains(path)) isAxiom = true
           val nopt = numbers.indexOf(path)
           val (i,j) = nopt match {
-            case -1 => (1,if (pars.contains(Hasher.Symbol(path))) pars.length - (pars.indexOf(Hasher.Symbol(path))+1) else {
+            case -1 => (1,{
               pars ::= Hasher.Symbol(path)
               pars.length-1
             })

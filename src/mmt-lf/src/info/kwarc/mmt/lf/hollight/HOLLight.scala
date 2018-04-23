@@ -31,9 +31,9 @@ object HOLLight {
    val exists = boolth ? "?"
    val or = boolth ? "\\/"
 
-   val preproc = (DefinitionExpander + LFHOASElim(vfhoas) /* + LFClassicHOLPreprocessor(
+   val preproc = (DefinitionExpander + LFHOASElim(vfhoas) + LFClassicHOLPreprocessor(
       ded, and, not, Some(forall), Some(or),Some(implies),None,Some(exists)
-   )*/ ).withKey("HOLLight")
+   )).withKey("HOLLight").withKey(logic)
 /* TODO
    val mitmpreproc = ParameterPreprocessor + new LFClassicHOLPreprocessor(
       ded = MitM.ded,

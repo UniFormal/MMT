@@ -510,7 +510,7 @@ function TheoryGraph()
 	}
 	
 	// Selects all nodes in area of given rect
-	this.selectNodesInRect = function(rect) 
+		this.selectNodesInRect = function(rect) 
 	{
 		var fromX;
 		var toX;
@@ -524,10 +524,13 @@ function TheoryGraph()
 		{
 			var curNode = originalNodes[i];
 			var nodePosition = network.getPositions([curNode.id]);
-			var nodeXY = network.canvasToDOM({x: nodePosition[curNode.id].x, y: nodePosition[curNode.id].y});
-			if (xRange.start <= nodeXY.x && nodeXY.x <= xRange.end && yRange.start <= nodeXY.y && nodeXY.y <= yRange.end) 
+			if(typeof nodePosition!="undefined" && typeof network.body.nodes[curNode.id] !="undefined" && network.body.nodes[curNode.id].options.hidden!=true)
 			{
-				nodesIdInDrawing.push(curNode.id);
+				var nodeXY = network.canvasToDOM({x: nodePosition[curNode.id].x, y: nodePosition[curNode.id].y});
+				if (xRange.start <= nodeXY.x && nodeXY.x <= xRange.end && yRange.start <= nodeXY.y && nodeXY.y <= yRange.end) 
+				{
+					nodesIdInDrawing.push(curNode.id);
+				}
 			}
 		}
 		addToStateHistory("select", {"nodes": nodesIdInDrawing});
@@ -797,93 +800,184 @@ function TheoryGraph()
 	}
 	
 	// Apply styles to nodes/edges
-	function postprocessEdges()
+	function postprocessEdges(nodesIn, edgesIn)
 	{
-		for(var i=0;i<originalEdges.length;i++)
+		if(typeof edgesIn =="undefined" )
 		{
-			if(originalEdges[i].style!=undefined && ARROW_STYLES[originalEdges[i].style]!=undefined)
+			edgesIn=originalEdges;
+		}
+		
+		if(typeof nodesIn =="undefined" )
+		{
+			nodesIn=originalNodes;
+		}
+		
+		for(var i=0;i<edgesIn.length;i++)
+		{
+			if(edgesIn[i].style!=undefined && ARROW_STYLES[edgesIn[i].style]!=undefined)
 			{
-				var styleInfos=ARROW_STYLES[originalEdges[i].style];
-				originalEdges[i].arrows = {to:{enabled:styleInfos.directed}};
+				var styleInfos=ARROW_STYLES[edgesIn[i].style];
+				edgesIn[i].arrows = {to:{enabled:styleInfos.directed}};
 				
 				if(styleInfos.circle==true)
 				{
-					originalEdges[i].arrows.to.type="circle";
+					edgesIn[i].arrows.to.type="circle";
 				}
 				else
 				{
-					originalEdges[i].arrows.to.type="arrow";
+					edgesIn[i].arrows.to.type="arrow";
 				}
 
 				if(styleInfos.smoothEdge==false)
 				{
-					originalEdges[i].smooth={enabled: false};
+					edgesIn[i].smooth={enabled: false};
 				}
 				
-				originalEdges[i].dashes=styleInfos.dashes;
-				originalEdges[i].width=styleInfos.width;
-				originalEdges[i].color={color:styleInfos.color, highlight:styleInfos.colorHighlight, hover:styleInfos.colorHover};
+				edgesIn[i].dashes=styleInfos.dashes;
+				edgesIn[i].width=styleInfos.width;
+				edgesIn[i].color={color:styleInfos.color, highlight:styleInfos.colorHighlight, hover:styleInfos.colorHover};
 			}
 		}
 
-		for(var i=0;i<originalNodes.length;i++)
+		for(var i=0;i<nodesIn.length;i++)
 		{
-			if(originalNodes[i].style!=undefined && NODE_STYLES[originalNodes[i].style]!=undefined)
+			if(nodesIn[i].style!=undefined && NODE_STYLES[nodesIn[i].style]!=undefined)
 			{
-				var styleInfos=NODE_STYLES[originalNodes[i].style];
+				var styleInfos=NODE_STYLES[nodesIn[i].style];
 
 				if(styleInfos.shape=="ellipse" || styleInfos.shape=="circle")
 				{
-					if(originalNodes[i].mathml!=undefined && originalNodes[i].mathml!="" && originalNodes[i].mathml.length>10)
-						originalNodes[i].shape="circularImage";
+					if(nodesIn[i].mathml!=undefined && nodesIn[i].mathml!="" && nodesIn[i].mathml.length>10)
+						nodesIn[i].shape="circularImage";
 					else
-						originalNodes[i].shape="ellipse";
+						nodesIn[i].shape="ellipse";
 				}
 				else if(styleInfos.shape=="square")
 				{
-					if(originalNodes[i].mathml!=undefined && originalNodes[i].mathml!="" && originalNodes[i].mathml.length>10)
-						originalNodes[i].shape="image";
+					if(nodesIn[i].mathml!=undefined && nodesIn[i].mathml!="" && nodesIn[i].mathml.length>10)
+						nodesIn[i].shape="image";
 					else
-						originalNodes[i].shape="square";
+						nodesIn[i].shape="square";
 				}
 				else
 				{
-					originalNodes[i].shape=styleInfos.shape;
+					nodesIn[i].shape=styleInfos.shape;
 				}
 				
-				if(typeof originalNodes[i].color=="undefined")
+				if(typeof nodesIn[i].color=="undefined")
 				{
-					originalNodes[i].color={highlight:{}};
+					nodesIn[i].color={highlight:{}};
 				}
 				
-				if(typeof originalNodes[i].shapeProperties=="undefined")
+				if(typeof nodesIn[i].shapeProperties=="undefined")
 				{
-					originalNodes[i].shapeProperties={};
+					nodesIn[i].shapeProperties={};
 				}
 				
 				if (typeof styleInfos.color!="undefined" && styleInfos.color!="") 
 				{
-					originalNodes[i].color.background=styleInfos.color;
+					nodesIn[i].color.background=styleInfos.color;
 				}
 				if (typeof styleInfos.colorBorder!="undefined" && styleInfos.colorBorder!="") 
 				{
-					originalNodes[i].color.border=styleInfos.colorBorder;
+					nodesIn[i].color.border=styleInfos.colorBorder;
 				}
 				if (typeof styleInfos.colorHighlightBorder!="undefined" && styleInfos.colorHighlightBorder!="") 
 				{
-					originalNodes[i].color.highlight.border=styleInfos.colorHighlightBorder;
+					nodesIn[i].color.highlight.border=styleInfos.colorHighlightBorder;
 				}
 				if (typeof styleInfos.colorHighlight!="undefined" && styleInfos.colorHighlight!="") 
 				{
-					originalNodes[i].color.highlight.background=styleInfos.colorHighlight;
+					nodesIn[i].color.highlight.background=styleInfos.colorHighlight;
 				}
 				if (typeof styleInfos.dashes!="undefined" && styleInfos.dashes==true) 
 				{
-					originalNodes[i].shapeProperties.borderDashes=[5,5];
+					nodesIn[i].shapeProperties.borderDashes=[5,5];
 				}
 
 			}
 		}
+	}
+	
+	function addNodesAndEdges(data, status=200)
+	{
+		if(status!=200 && status!="success")
+		{
+			setStatusText('<font color="red">Downloading nodes failed (HTTP-Error-Code: '+status+')</font>');
+			document.body.style.cursor = 'auto';
+			return;
+		}
+	
+		if(data.length<20)
+		{
+			setStatusText('<font color="red">Graph-File is empty or corrupt</font>');
+			document.body.style.cursor = 'auto';
+			return;
+		}
+		
+		if(typeof data["nodes"] == 'undefined' || typeof data["edges"] == 'undefined')
+		{
+			setStatusText('<font color="red">Graph-File is invalid (maybe incorrect JSON?)</font>');
+			document.body.style.cursor = 'auto';
+			return;
+		}
+		
+		var nodesJSON=data["nodes"];
+		var edgesJSON=data["edges"];
+		
+		ensureUniqueIds(nodesJSON);
+		ensureUniqueIds(edgesJSON);
+		
+		postprocessEdges(nodesJSON, edgesJSON);
+		
+		edges.update(edgesJSON);
+		nodes.update(nodesJSON);
+		
+		originalEdges=originalEdges.concat(edgesJSON);
+		originalNodes=originalNodes.concat(nodesJSON);
+		
+		setStatusText("<font color=\"green\">Successfully recieved "+nodesJSON.length+" node(s) and "+edgesJSON.length+" edge(s)!</font>");
+		document.body.style.cursor = 'auto';
+	}
+	
+	this.lazyLoadNodes=function(jsonURL)
+	{
+		if(jsonURL==undefined || jsonURL.length<3)
+		{
+			return;
+		}
+		
+		setStatusText("Downloading nodes...");
+		document.body.style.cursor = 'wait';
+		
+		$.ajaxSetup(
+		{
+            error: function(x, e) 
+			{
+                if (x.status == 0) 
+				{
+					setStatusText('<font color="red">Downloading nodes failed (Check Your Network)</font>');
+					document.body.style.cursor = 'auto';
+                } 
+                else if (x.status == 404) 
+				{
+					setStatusText('<font color="red">Downloading nodes failed (Requested URL not found)</font>');
+					document.body.style.cursor = 'auto';
+                } 
+				else if (x.status == 500) 
+				{
+					setStatusText('<font color="red">Downloading nodes failed (Internel Server Error)</font>');
+                    document.body.style.cursor = 'auto';
+                }  
+				else 
+				{
+					setStatusText('<font color="red">Downloading nodes failed (HTTP-Error-Code: '+x.status+')</font>');
+					document.body.style.cursor = 'auto';
+                }
+            }
+        });
+		
+		$.get(jsonURL, addNodesAndEdges);
 	}
 	
 	// Make sure every node and edge has unique ids 
@@ -1179,6 +1273,7 @@ function TheoryGraph()
 					case "openCluster": that.openCluster(selected["id"]); break;
 					case "inferType": alert("Not implemented yet!"); break;
 					case "showDecl": alert("Not implemented yet!"); break;
+					case "childNodes": that.lazyLoadNodes(selectedNode.childsURL) ; break;
 				}
 			}
 			

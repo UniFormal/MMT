@@ -54,8 +54,9 @@ object MitM {
   val equiv = logic ? "iff"
   val forall = logic ? "forall"
   val exists = logic ? "exists"
+  val eq = logic ? "eq"
 
-  val preproc = (ParameterPreprocessor + info.kwarc.mmt.api.refactoring.DefinitionExpander /* + new LFClassicHOLPreprocessor(
+  val preproc = (ParameterPreprocessor + info.kwarc.mmt.api.refactoring.DefinitionExpander + new LFClassicHOLPreprocessor(
     ded = MitM.ded,
     and = MitM.and,
     not = MitM.not,
@@ -63,6 +64,7 @@ object MitM {
     implies = Some(MitM.implies),
     equiv = Some(MitM.equiv),
     forall = Some(MitM.forall),
-    exists = Some(MitM.exists)
-  ) */ ).withKey("MitM")
+    exists = Some(MitM.exists),
+    equal = Some(eq)
+  )).withKey("MitM").withKey(logic)
 }

@@ -14,9 +14,8 @@ import info.kwarc.mmt.api.utils.time.{Duration, Time}
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Success
 
-class FinderConfig(val finder : AlignmentFinder, protected val report : Report) extends Logger {
+class FinderConfig(val finder : ViewFinder, protected val report : Report) extends Logger {
   override def logPrefix: String = "viewfinder"
 
   private var fromTheories_var : List[DeclaredTheory] = Nil
@@ -83,9 +82,28 @@ class FinderConfig(val finder : AlignmentFinder, protected val report : Report) 
 
 }
 
-class AlignmentFinder extends frontend.Extension {
+class ViewFinder extends frontend.Extension {
   override def logPrefix: String = "viewfinder"
   implicit private val ec = ExecutionContext.global //.fromExecutor(Executors.newFixedThreadPool(10000))
+
+  private val theories : mutable.HashMap[String,(List[DeclaredTheory],Option[GlobalName])] = mutable.HashMap()
+
+  private lazy val preprocs = controller.extman.get(classOf[Preprocessor])
+
+  override def start(args: List[String]): Unit = {
+    val as = if (args.nonEmpty) args.map(controller.backend.getArchive(_).getOrElse(???))
+      else controller.backend.getArchives
+    log("Getting Archives...")
+    val (t,_) = Time.measure {
+      as.foreach(a => preprocs.find(p => p.key != "" && a.id.startsWith(p.key)) match {
+        case Some(pp) =>
+          val (ths,judg) = getArchive(a)
+          theories(a.id) = (ths.map(pp.apply),judg)
+        case _ => theories(a.id) = getArchive(a)
+      })
+    }
+    log("Finished after " + t)
+  }
 
   def getJudgment(ths: List[MPath]): Option[GlobalName] = {
     var i = 0
@@ -213,6 +231,59 @@ class AlignmentFinder extends frontend.Extension {
     log("Multithreaded: " + hasher.cfg.isMultithreaded)
     log("Judgment symbols are " + hasher.cfg.judg1 + " and " + hasher.cfg.judg2)
     val ret = proc.run()
+    val (t1,ret1) = Time.measure {
+      log("Making views...")
+      proc.makeviews(Path.parseM("http://test.test/test?test",NamespaceMap.empty),ret)
+    }
+    log("Done after " + t1 + " - " + ret1.length + " Views found")
+    ret1
+  }
+
+  def find(mp : MPath, to : String, pre : Option[Preprocessor] = None) = {
+    val hasher = getHasher
+    val fromsSimple = getFlat(List(mp))//.map(t => preproc.map(_.apply(t)).getOrElse(t))
+    val meta = fromsSimple.find(_.path == mp).get.meta.getOrElse(???)
+    val metaSimple = getFlat(List(meta))
+    val preprocessor : Option[Preprocessor] = if (pre.isDefined) pre else
+      metaSimple.reverse.collectFirst{
+        case th if preprocs.exists(_.meta.contains(th.path)) => preprocs.find(_.meta.contains(th.path)).get
+      }
+    if (preprocessor.isDefined) log("Preproccesor found")
+    val (metas,froms) = preprocessor match {
+      case Some(pp) => (metaSimple.map(pp.apply),fromsSimple.map(pp.apply))
+      case None => (metaSimple,fromsSimple)
+    }
+    val (tos,judg2) = theories(to)
+    val judg1 = getJudgment(froms.map(_.path))
+    val commons = tos.filter(t => metas.exists(_.path == t.path))
+    judg1.foreach(hasher.cfg.addJudgmentFrom)
+    judg2.foreach(hasher.cfg.addJudgmentTo)
+    val (t,_) = Time.measure {
+      log("Commons")
+      commons.indices.foreach({i =>
+        print("\r" + (i+1) + " of " + commons.length)
+        hasher.add(commons(i), Hasher.COMMON)
+      })
+      println("")
+      log("Froms")
+      val nfrom = froms.filterNot(t => commons.exists(_.path == t.path))
+      nfrom.indices.foreach({ i =>
+        print("\r" + (i+1) + " of " + nfrom.length)
+        hasher.add(nfrom(i), Hasher.FROM)
+      })
+      println("")
+      log("Tos")
+      val ntos = tos.filterNot(commons.contains)
+      ntos.indices.foreach({ i =>
+        print("\r" + (i+1) + " of " + ntos.length)
+        hasher.add(ntos(i), Hasher.TO)
+      })
+    }
+    println("")
+    log("Hashing done after " + t)
+    val proc = new FindingProcess(this.report,hasher)
+    val ret = proc.run(from = List(hasher.get(mp).get))
+    log(ret.map(_.asString()).mkString("\n"))
     val (t1,ret1) = Time.measure {
       log("Making views...")
       proc.makeviews(Path.parseM("http://test.test/test?test",NamespaceMap.empty),ret)
@@ -388,7 +459,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
       })
 
     private def makeMap(gn1 : GlobalName,gn2 : GlobalName,requires : List[Map]) : Map =
-      Map(Hasher.Symbol(simplify(gn1)),Hasher.Symbol(simplify(gn2)),requires,0)
+      Map(Hasher.Symbol(simplify(gn1)),Hasher.Symbol(simplify(gn2)),requires.distinct,0)
 
     private def simplify(gn : GlobalName) =
       if (gn.name.steps.last == SimpleStep("defexp")) gn.module ? gn.name.steps.init else gn
@@ -582,13 +653,16 @@ case class Map(from : Targetable, to : Targetable, requires : List[Map], value :
 
 trait Preprocessor extends Extension { self =>
   var key : String = ""
+  var meta : Option[MPath] = None
 
   def withKey(s : String) = {
     key = s
     this
   }
-
-  val archive : Option[String] = None
+  def withKey(mp : MPath) = {
+    meta = Some(mp)
+    this
+  }
 
   def apply(th : DeclaredTheory) : DeclaredTheory = {
     val nth = new DeclaredTheory(th.parent,th.name,th.meta,th.paramC,th.dfC)

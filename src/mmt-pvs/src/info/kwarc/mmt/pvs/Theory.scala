@@ -38,6 +38,13 @@ object PVSTheory {
       override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
         case ApplySpine(OMS(p),args) if !syms.contains(p) =>
           Hasher.Complex(t)
+        case ApplySpine(OMS(pvsapply.path), List(_,tpf,nf, tuple_expr(args))) =>
+          args.foldLeft(nf)((f,p) =>
+            ApplySpine(OMS(pvsapply.path),Hasher.Complex(p._2),Hasher.Complex(tpf),f,p._1)
+          )
+        case fun_type(tuple_type(ls),b) =>
+          ls.foldRight(b)((tp,r) => fun_type(tp,r))
+          // Some(unapply(nf).map(p => (p._1, p._2 ::: a :: Nil)).getOrElse((nf, List(a))))
         case _ => Traverser(this,t)
       }
     }
@@ -68,8 +75,9 @@ object PVSTheory {
     exists = Some(exists.path),
     or = Some(or),
     implies = Some(implies),
-    equiv = Some(equiv)
-  )).withKey("PVS")
+    equiv = Some(equiv),
+    equal = Some(equal.path)
+  )).withKey("PVS").withKey(thpath)
 
   object parambind {
     val path: GlobalName = PVSTheory.rootdpath ? "BoundInclude" ? "parameter_binder"

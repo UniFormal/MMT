@@ -3,7 +3,7 @@ package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import frontend._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.refactoring.Preprocessor
+import info.kwarc.mmt.api.refactoring.{Hasher, Preprocessor}
 
 class Plugin extends frontend.Plugin {
    val theory = LF.theoryPath
@@ -69,6 +69,7 @@ case class LFHOASElim(hoas : ViewFinderHOAS) extends Preprocessor {
             ApplySpine(traverse(f),args.map(traverse):_*)
          case hoas.Arrow(tpA,tpB) =>
             Arrow(traverse(tpA),traverse(tpB))
+         case Pi(x,tp,bd) => Pi(x,traverse(tp),traverse(bd)) // this uncurries
          case _ => Traverser(this,t)
       }
    }
@@ -80,7 +81,8 @@ case class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : Gl
                                or : Option[GlobalName] = None,
                                implies : Option[GlobalName] = None,
                                equiv : Option[GlobalName] = None,
-                               exists : Option[GlobalName] = None
+                               exists : Option[GlobalName] = None,
+                               equal : Option[GlobalName] = None
                               ) extends Preprocessor {
 
    private object Ded {
@@ -127,14 +129,18 @@ case class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : Gl
          case _ => None
       }
    }
-   /*
+
      private object Equals {
        def unapply(tm : Term) = (equal,tm) match {
-         case (Some(s),Apply(OMS(st),a :: b :: Nil)) if s == st => Some((a,b))
+         case (Some(s),ApplySpine(OMS(st),tp :: a :: b :: Nil)) if s == st => Some((tp,a,b))
          case _ => None
        }
+        def apply(tp : Term, a : Term, b : Term) = equal match {
+           case Some(s) => ApplySpine(OMS(s),tp,a,b)
+           case _ => ???
+        }
      }
-     */
+
 
    private object Forall {
       def apply(x : LocalName, tp : Term, bd : Term, btp : Term) =
@@ -185,6 +191,9 @@ case class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : Gl
          case And(ls) =>
             val ret = ls.sortWith(leq).map(traverse)
             ret.tail.foldLeft(ret.head)(And(_,_))
+         case Equals(tp,a,b) =>
+            Equals(Hasher.Complex(tp),traverse(a),traverse(b))
+         case Pi(x,tp,bd) => Pi(x,traverse(tp),traverse(bd)) // this uncurries
          case _ => Traverser(this,t)
       }
    }

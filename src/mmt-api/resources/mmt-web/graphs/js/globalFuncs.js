@@ -29,7 +29,15 @@ function setLocation(curLoc)
     location.hash = '#' + curLoc;
 }
 
+function hideEdges(type, hide)
+{
+	theoryGraph.hideEdges(type, hide);
+}
 
+function hideNodes(type, hide)
+{
+	theoryGraph.hideNodes(type, hide);
+}
 
 function generateEdgesNodesHideDiv()
 {
