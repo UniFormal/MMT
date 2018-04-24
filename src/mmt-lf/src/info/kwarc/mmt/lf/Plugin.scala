@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import frontend._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.refactoring.{Hasher, Preprocessor}
+import info.kwarc.mmt.lf.hollight.HOLLight
 
 class Plugin extends frontend.Plugin {
    val theory = LF.theoryPath
@@ -17,6 +18,7 @@ class Plugin extends frontend.Plugin {
       em.addExtension(new ScalaExporter)
       // Twelf parser
       em.addExtension(new TwelfParser)
+      em.addExtension(HOLLight.preproc)
    }
 }
 

@@ -41,6 +41,7 @@ function hideNodes(type, hide)
 
 function generateEdgesNodesHideDiv()
 {
+	console.log("Generate EdgesNodesDiv");
 	var usedEdgeTypes = theoryGraph.getUsedEdgeTypes();
 	var html="<strong>Hide/Show Edges</strong><br>";
 	for(var i=0;i<usedEdgeTypes.length;i++)
@@ -92,6 +93,7 @@ function setStatusText(text)
 {
 	statusbar = document.getElementById('statusBar');
 	statusBar.innerHTML=text;
+	console.log(text);
 }
 
 // Creates a new graph using type and graphdata parameter (if empty lastGraphTypeUsed and lastGraphDataUsed will be used)

@@ -26,6 +26,7 @@ class Plugin extends frontend.Extension {
     controller.extman.addExtension(new ODKGraph)
     controller.extman.addExtension(new MitMServer)
     controller.extman.addExtension(new UniverseInference)
+    controller.extman.addExtension(MitM.preproc)
   }
 }
 

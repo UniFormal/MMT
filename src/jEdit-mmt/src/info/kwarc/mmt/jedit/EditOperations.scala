@@ -2,9 +2,12 @@ package info.kwarc.mmt.jedit
 
 import info.kwarc.mmt.api._
 import gui.Swing
-
+import info.kwarc.mmt.api.refactoring.{NotDone, ViewFinder}
+import javax.swing.JMenu
 import org.gjt.sp.jedit._
 import textarea._
+
+import scala.concurrent.Future
 
 object EditActions {
   /** replaces a part of the text, first and last are inclusive */
@@ -58,6 +61,47 @@ class EditActions(mmtplugin: MMTPlugin) {
         }
       case _ =>
     }
+  }
+
+  private def findViewTo(view : View, to : String): Unit = {
+    val em = mmtplugin.controller.extman
+    val (as,selected) = MMTSideKick.getCurrentAsset(view).getOrElse(return)
+    as match {
+      case oa: MMTObjAsset =>
+        val str : String =  oa.getScope match {
+          case Some(mp : MPath) =>
+            val vfO = em.get(classOf[ViewFinder]).headOption
+            vfO match {
+              case Some(vf) =>
+                try {
+                  vf.find(mp,to).reverse.map(v => v.toString).mkString("\n\n")
+                } catch {
+                  case NotDone => NotDone.toString // Should not happen
+                }
+              case _ =>
+                ??? // should not happen
+            }
+          case _ => "Not in theory?"
+        }
+        new TextareaPopup(view.getTextArea, oa.region.start.offset, str)
+      case _ =>
+    }
+  }
+
+  def viewfindermenu(view : View) : JMenu = {
+    val vf = mmtplugin.controller.extman.get(classOf[ViewFinder]).headOption.getOrElse {
+      val n = new ViewFinder
+      mmtplugin.controller.extman.addExtension(n)
+      n
+    }
+    val menu = new JMenu("Find Views to...")
+    vf.targets.sortWith(_ < _) foreach {s =>
+      menu.add(ContextMenu.item(s,findViewTo(view,s)))
+    }
+    if (!vf.isInitialized) {
+      menu.add("(More still loading...)")
+    }
+    menu
   }
 }
 

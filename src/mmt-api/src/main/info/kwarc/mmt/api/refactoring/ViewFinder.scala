@@ -82,27 +82,38 @@ class FinderConfig(val finder : ViewFinder, protected val report : Report) exten
 
 }
 
+object NotDone extends Throwable {
+  override def toString: String = "Viewfinder not initialized"
+}
+
 class ViewFinder extends frontend.Extension {
   override def logPrefix: String = "viewfinder"
   implicit private val ec = ExecutionContext.global //.fromExecutor(Executors.newFixedThreadPool(10000))
 
+  private var initialized : Boolean = false
   private val theories : mutable.HashMap[String,(List[DeclaredTheory],Option[GlobalName])] = mutable.HashMap()
 
   private lazy val preprocs = controller.extman.get(classOf[Preprocessor])
 
+  def targets : List[String] = theories.keys.toList
+
+  def isInitialized : Boolean = initialized
+
   override def start(args: List[String]): Unit = {
     val as = if (args.nonEmpty) args.map(controller.backend.getArchive(_).getOrElse(???))
       else controller.backend.getArchives
-    log("Getting Archives...")
-    val (t,_) = Time.measure {
-      as.foreach(a => preprocs.find(p => p.key != "" && a.id.startsWith(p.key)) match {
-        case Some(pp) =>
-          val (ths,judg) = getArchive(a)
-          theories(a.id) = (ths.map(pp.apply),judg)
-        case _ => theories(a.id) = getArchive(a)
-      })
-    }
-    log("Finished after " + t)
+    Future {
+      log("Getting Archives...")
+      val (t, _) = Time.measure {
+        as.foreach(a => preprocs.find(p => p.key != "" && a.id.startsWith(p.key)) match {
+          case Some(pp) =>
+            val (ths, judg) = getArchive(a)
+            theories(a.id) = (ths.map(pp.apply), judg)
+          case _ => theories(a.id) = getArchive(a)
+        })
+      }
+      log("Finished after " + t)
+    }.onComplete{_ => initialized = true}
   }
 
   def getJudgment(ths: List[MPath]): Option[GlobalName] = {
@@ -226,6 +237,8 @@ class ViewFinder extends frontend.Extension {
     log("Done after " + t)
   }
 
+  private val domainpath = Path.parseM("http://viewfinder.results?View",NamespaceMap.empty)
+
   def run(hasher : Hasher) = {
     val proc = new FindingProcess(this.report,hasher)
     log("Multithreaded: " + hasher.cfg.isMultithreaded)
@@ -233,13 +246,15 @@ class ViewFinder extends frontend.Extension {
     val ret = proc.run()
     val (t1,ret1) = Time.measure {
       log("Making views...")
-      proc.makeviews(Path.parseM("http://test.test/test?test",NamespaceMap.empty),ret)
+      proc.makeviews(domainpath,ret)
     }
     log("Done after " + t1 + " - " + ret1.length + " Views found")
     ret1
   }
 
   def find(mp : MPath, to : String, pre : Option[Preprocessor] = None) = {
+    if (!initialized && !theories.keys.toList.contains(to)) throw NotDone
+
     val hasher = getHasher
     val fromsSimple = getFlat(List(mp))//.map(t => preproc.map(_.apply(t)).getOrElse(t))
     val meta = fromsSimple.find(_.path == mp).get.meta.getOrElse(???)
@@ -286,7 +301,7 @@ class ViewFinder extends frontend.Extension {
     log(ret.map(_.asString()).mkString("\n"))
     val (t1,ret1) = Time.measure {
       log("Making views...")
-      proc.makeviews(Path.parseM("http://test.test/test?test",NamespaceMap.empty),ret)
+      proc.makeviews(domainpath,ret)
     }
     log("Done after " + t1 + " - " + ret1.length + " Views found")
     ret1

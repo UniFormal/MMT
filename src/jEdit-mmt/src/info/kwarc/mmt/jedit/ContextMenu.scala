@@ -18,6 +18,7 @@ class ContextMenu extends DynamicContextMenuService {
     menu.add(ContextMenu.item("Show Normalization",mmt.editActions.showNormalization(view, false)))
     menu.add(ContextMenu.item("Normalize",mmt.editActions.showNormalization(view, true)))
     menu.add(ContextMenu.item("Introduce Hole",mmt.editActions.introduceHole(view)))
+    menu.add(mmt.editActions.viewfindermenu(view))
     Array(menu)
   }
 
