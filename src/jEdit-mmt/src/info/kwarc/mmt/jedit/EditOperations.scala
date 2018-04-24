@@ -20,13 +20,13 @@ object EditActions {
 /** collects functionality that changes the text in the buffer
  *  these functions should be bound to actions in actions.xml, which can then be bound to keystrokes etc.
  */ 
-class EditActions(mmtplugin: MMTPlugin) {  
+class EditActions(mmtplugin: MMTPlugin) {
   def introduceHole(view: View) {
     val editPane = view.getEditPane
     val textArea = editPane.getTextArea
     val buffer = editPane.getBuffer
     val offset = textArea.getCaretPosition
-    if (buffer.getText(offset,1) != "_")
+    if (buffer.getText(offset, 1) != "_")
       return
     val as = MMTSideKick.getAssetAtOffset(view, offset).getOrElse(return)
     as match {
@@ -38,13 +38,14 @@ class EditActions(mmtplugin: MMTPlugin) {
       case _ =>
     }
   }
-  
+
   /**
-   * shows the normalization of the current asset (selection or cursor)
-   * @param replace if true, replace selected asset; otherwise, show popup
-   */
+    * shows the normalization of the current asset (selection or cursor)
+    *
+    * @param replace if true, replace selected asset; otherwise, show popup
+    */
   def showNormalization(view: View, replace: Boolean) {
-    val (as,selected) = MMTSideKick.getCurrentAsset(view).getOrElse(return)
+    val (as, selected) = MMTSideKick.getCurrentAsset(view).getOrElse(return)
     as match {
       case oa: MMTObjAsset =>
         val obj = oa.obj
@@ -63,20 +64,22 @@ class EditActions(mmtplugin: MMTPlugin) {
     }
   }
 
-  private def findViewTo(view : View, to : String): Unit = {
+  private def findViewTo(view: View, to: String): Unit = {
     val em = mmtplugin.controller.extman
-    val (as,selected) = MMTSideKick.getCurrentAsset(view).getOrElse(return)
+    val (as, selected) = MMTSideKick.getCurrentAsset(view).getOrElse(return)
     as match {
       case oa: MMTObjAsset =>
-        val str : String =  oa.getScope match {
-          case Some(mp : MPath) =>
+        val str: String = oa.getScope match {
+          case Some(mp: MPath) =>
             val vfO = em.get(classOf[ViewFinder]).headOption
             vfO match {
               case Some(vf) =>
                 try {
-                  val results = vf.find(mp,to).reverse.map(v => v.toString)//.mkString("\n\n")
-                  if (results.isEmpty) "No results found :("
-                  else results.length + " Results found. Best:\n\n" + results.head
+                  val results = vf.find(mp, to).reverse.map(v => v.toString) //.mkString("\n\n")
+                  mp.toString + " --> " + to + "\n" + {
+                    if (results.isEmpty) "No results found :("
+                    else results.length + " Results found. Best:\n\n" + results.head
+                  }
                 } catch {
                   case NotDone => NotDone.toString // Should not happen
                 }
@@ -90,20 +93,22 @@ class EditActions(mmtplugin: MMTPlugin) {
     }
   }
 
-  def viewfindermenu(view : View) = {
+  def viewfindermenu(view: View) = {
     mmtplugin.controller.extman.get(classOf[ViewFinder]).headOption match {
       case Some(vf) =>
         val menu = new JMenu("Find Views to...")
-        vf.targets.sortWith(_ < _) foreach {s =>
-          menu.add(ContextMenu.item(s,findViewTo(view,s)))
+        vf.targets.sortWith(_ < _) foreach { s =>
+          menu.add(ContextMenu.item(s, findViewTo(view, s)))
         }
         if (!vf.isInitialized) {
           menu.add("(More still loading...)")
         }
         menu
       case None =>
-        ContextMenu.item("Start Viewfinder",{
-          mmtplugin.controller.extman.addExtension(new ViewFinder)
+        ContextMenu.item("Start Viewfinder", {
+          val n = new ViewFinder
+          mmtplugin.controller.handleLine("log+ " + n.logPrefix)
+          mmtplugin.controller.extman.addExtension(n)
         })
     }
   }

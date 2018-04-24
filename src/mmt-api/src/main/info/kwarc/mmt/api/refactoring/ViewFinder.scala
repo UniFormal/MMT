@@ -107,9 +107,15 @@ class ViewFinder extends frontend.Extension {
       val (t, _) = Time.measure {
         as.foreach(a => preprocs.find(p => p.key != "" && a.id.startsWith(p.key)) match {
           case Some(pp) =>
-            val (ths, judg) = getArchive(a)
-            theories(a.id) = (ths.map(pp.apply), judg)
-          case _ => theories(a.id) = getArchive(a)
+            getArchive(a) match {
+              case Some((ths,judg)) =>
+                theories(a.id) = (ths.map(pp.apply), judg)
+              case _ =>
+            }
+          case _ => /* getArchive(a) match {
+            case Some(r) => theories(a.id) = r
+            case _ =>
+          } */
         })
       }
       log("Finished after " + t)
@@ -174,12 +180,12 @@ class ViewFinder extends frontend.Extension {
     }.toList.flatten.distinct
   }
 
-  def getArchive(a : Archive) : (List[DeclaredTheory], Option[GlobalName]) = {
+  def getArchive(a : Archive) : Option[(List[DeclaredTheory], Option[GlobalName])] = scala.util.Try{
     log("Collecting theories in " + a.id)
     val ths = getFlat(a.allContent)
     val judg = getJudgment(ths.map(_.path))
     (ths,judg)
-  }
+  }.toOption
 
   def addTheories(ths1 : List[DeclaredTheory], ths2 : List[DeclaredTheory], hasher : Hasher) = {
 

@@ -164,13 +164,7 @@ case class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : Gl
 
    val traverser = new StatelessTraverser {
       override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-         case Arrow(Ded(a),Ded(c)) =>
-            traverse(Ded(a)) match {
-               case Ded(And(ls)) =>
-                  Arrow(ls.map(i => traverse(Ded(i))),traverse(Ded(c)))
-               case r =>
-                  Arrow(r,traverse(Ded(c)))
-            }
+         case Pi(x,tp,bd) => Pi(x,traverse(tp),traverse(bd)) // this uncurries
          case Ded(Forall(x,tp,bd,_)) =>
             Pi(x,tp,traverse(Ded(bd)))
          case Ded(Implies(a,b)) =>
@@ -178,6 +172,13 @@ case class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : Gl
                case Ded(And(ls)) =>
                   Arrow(ls.map(Ded.apply),traverse(Ded(b)))
                case r => Arrow(r,traverse(Ded(b)))
+            }
+         case Arrow(Ded(a),Ded(c)) =>
+            traverse(Ded(a)) match {
+               case Ded(And(ls)) =>
+                  Arrow(ls.map(i => traverse(Ded(i))),traverse(Ded(c)))
+               case r =>
+                  Arrow(r,traverse(Ded(c)))
             }
          case Exists(x,tp,bd,tt) =>
             traverse(Not(Forall(x,tp,Not(bd),tt)))
@@ -191,11 +192,12 @@ case class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : Gl
                case r => Not(r)
             }
          case And(ls) =>
-            val ret = ls.sortWith(leq).map(traverse)
+            val ret = ls.map(traverse).sortWith(leq)
             ret.tail.foldLeft(ret.head)(And(_,_))
          case Equals(tp,a,b) =>
-            Equals(Hasher.Complex(tp),traverse(a),traverse(b))
-         case Pi(x,tp,bd) => Pi(x,traverse(tp),traverse(bd)) // this uncurries
+            val (na,nb) = (traverse(a),traverse(b))
+            if (leq(nb,na)) Equals(Hasher.Complex(tp),nb,na)
+            else Equals(Hasher.Complex(tp),na,nb)
          case _ => Traverser(this,t)
       }
    }
