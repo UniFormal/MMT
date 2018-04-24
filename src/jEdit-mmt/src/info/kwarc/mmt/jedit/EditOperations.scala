@@ -74,7 +74,9 @@ class EditActions(mmtplugin: MMTPlugin) {
             vfO match {
               case Some(vf) =>
                 try {
-                  vf.find(mp,to).reverse.map(v => v.toString).mkString("\n\n")
+                  val results = vf.find(mp,to).reverse.map(v => v.toString)//.mkString("\n\n")
+                  if (results.isEmpty) "No results found :("
+                  else results.length + " Results found. Best:\n\n" + results.head
                 } catch {
                   case NotDone => NotDone.toString // Should not happen
                 }
@@ -88,20 +90,22 @@ class EditActions(mmtplugin: MMTPlugin) {
     }
   }
 
-  def viewfindermenu(view : View) : JMenu = {
-    val vf = mmtplugin.controller.extman.get(classOf[ViewFinder]).headOption.getOrElse {
-      val n = new ViewFinder
-      mmtplugin.controller.extman.addExtension(n)
-      n
+  def viewfindermenu(view : View) = {
+    mmtplugin.controller.extman.get(classOf[ViewFinder]).headOption match {
+      case Some(vf) =>
+        val menu = new JMenu("Find Views to...")
+        vf.targets.sortWith(_ < _) foreach {s =>
+          menu.add(ContextMenu.item(s,findViewTo(view,s)))
+        }
+        if (!vf.isInitialized) {
+          menu.add("(More still loading...)")
+        }
+        menu
+      case None =>
+        ContextMenu.item("Start Viewfinder",{
+          mmtplugin.controller.extman.addExtension(new ViewFinder)
+        })
     }
-    val menu = new JMenu("Find Views to...")
-    vf.targets.sortWith(_ < _) foreach {s =>
-      menu.add(ContextMenu.item(s,findViewTo(view,s)))
-    }
-    if (!vf.isInitialized) {
-      menu.add("(More still loading...)")
-    }
-    menu
   }
 }
 
