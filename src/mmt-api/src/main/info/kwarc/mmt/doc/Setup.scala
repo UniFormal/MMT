@@ -17,10 +17,23 @@ import MMTSystem._
  *
  * In all cases, the MMT folder has the same structure
  *
- * @param logger Optional function to print interactive setup statements in. Defaults to println.
  */
 class Setup extends ShellExtension("setup") {
-   def helpText = "usage: setup [SYSTEM/FOLDER [CONTENT/FOLDER [JEDIT/SETTINGS/FOLDER]]]"
+   def helpText =
+     """
+       |usage: setup [SYSTEM [CONTENT [JEDIT [--no-content]]]]
+       |
+       | Automatically generate an MMT Configuration File.
+       |
+       |  SYSTEM:       Folder that MMT System is in. Optional.
+       |  CONTENT:      Content folder to place and load archives from. Optional.
+       |  JEDIT:        JEdit Folder to load jedit into.
+       |                If omitted, detected automatically.
+       |                If set to ":", no jedit setup is performed.
+       |  --no-content: If given, Content Path will be set in the config file, but no
+       |                archives will be installed.
+       |
+     """.stripMargin
 
    /** a function to log a message */
    val log: String => Unit = println
@@ -32,12 +45,12 @@ class Setup extends ShellExtension("setup") {
               "I can also setup the integration with jEdit for you.\n\n\n"
       )
       val l = args.length
-      if (l > 3) {
+      if (l > 4) {
         log(helpText)
         return true
       }
 
-      val (sysFolder, conFolder, jeditSettingsFolder) = if (l == 0) {
+      val (sysFolder, conFolder, jeditSettingsFolder, installContent) = if (l == 0) {
         // interactive setup
         // choose system folder, content folder, and possibly fatjar to copy
         // the latter applies if the fat jar was run from outside MMT's directory structure, i.e., by running a binary-only download
@@ -60,19 +73,26 @@ class Setup extends ShellExtension("setup") {
            if (j.segments.isEmpty) None
            else Some(File(j))
         }
-        (sf, cf, jsf)
+        (sf, cf, jsf, true)
       } else {
         // setup via command line arguments
         val sf = File(args(0))
         val cf = if (l >= 2) File(args(1)) else {
-          sf.up/"content"
+          sf.up / "content"
         }
-        val jsf = if (l >= 3) Some(File(args(2))) else {
+        val jsf = if (l >= 3) {
+          if(args(2) == ":"){
+            None
+          } else {
+            Some(File(args(2)))
+          }
+        } else {
           OS.jEditSettingsFolder
         }
-        (sf, cf, jsf)
+        val ic = if(l >= 4) args(3) != "--no-content" else true
+        (sf, cf, jsf, ic)
       }
-      setup(sysFolder, conFolder, jeditSettingsFolder.map(f => (shell,f)))
+      setup(sysFolder, conFolder, jeditSettingsFolder.map(f => (shell,f)), installContent=installContent)
       true
    }
 
@@ -84,8 +104,8 @@ class Setup extends ShellExtension("setup") {
     * @param installContent if set to false, to do install the content archives
     */
    def setup(systemFolder: File, contentFolder: File, setupJEdit: Option[(Shell, File)], installContent: Boolean = true) {
-     log("\n\nI'm going to try to set things up now.\n" +
-              "If the following code fails and no help is around, you can try looking at the source code in info.kwarc.mmt.doc.Setup\n")
+     //log("\n\nI'm going to try to set things up now.\n" +
+     //         "If the following code fails and no help is around, you can try looking at the source code in info.kwarc.mmt.doc.Setup\n")
 
      log("MMT will be installed using the following data\n" +
          "MMT system folder:     " + systemFolder + "\n" +

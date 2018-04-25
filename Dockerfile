@@ -30,15 +30,12 @@ RUN apk --no-cache --no-progress add bash git
 VOLUME /content
 EXPOSE 8080
 
-# Setup folder structure
-RUN mkdir -p /root/MMT/deploy \
-    && mkdir -p /root/content \
-    && ln -s /content/ /root/content/ \
-    && mkdir -p /root/content/MathHub \
-    && ln -s /content/mmtrc /root/MMT/deploy/mmtrc
-
-# Copy over the MMT jar
+# Install MMT into /root/MMT
+RUN mkdir -p /root/MMT/deploy
 COPY --from=0 /build/MMT/deploy/mmt.jar /root/MMT/deploy/mmt.jar
 
-# The entrypoint is the MMT jar
-ENTRYPOINT ["java", "-jar", "/root/MMT/deploy/mmt.jar"]
+# Run setup and setup the entry for the future
+RUN java -jar /root/MMT/deploy/mmt.jar :setup "/root/MMT" "/content/" ":" "--no-content"
+
+ADD scripts/docker/entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
