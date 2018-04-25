@@ -1,7 +1,6 @@
 package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api._
-import frontend._
 import documents._
 import modules._
 import symbols._
@@ -84,13 +83,14 @@ class REPLServer extends ServerExtension("repl") {
   }
 
   // READING parameters from session
-  private def sessionIDOpt(implicit request: ServerRequest)= request.headers.get("X-REPL-Session")
+  private def sessionIDOpt(implicit request: ServerRequest)= request.headers.get("x-repl-session")
   private def sessionID(implicit request: ServerRequest) = sessionIDOpt.getOrElse(throw LocalError("Missing X-REPL-Session Header"))
 
   private def currentSessionOpt(implicit request: ServerRequest)= sessionIDOpt.flatMap(id => sessions.find(_.id == id))
   private def currentSession(implicit request: ServerRequest) = this.currentSessionOpt.getOrElse(throw LocalError("Unknown Session"))
 
-  private def path(implicit request: ServerRequest) = DPath(mmt.baseURI) / "jupyter" / sessionID
+  private def path( id: String): DPath = DPath(mmt.baseURI) / "jupyter" / id
+  private def path(implicit request: ServerRequest): DPath = path(sessionID)
 
   private def applyActual(implicit request: ServerRequest) : REPLServerResponse = request.query match {
     case "show" => getSessions
@@ -137,14 +137,12 @@ class REPLServer extends ServerExtension("repl") {
 
   private def startSession(implicit request: ServerRequest) = {
 
-    // no previous session of the same name should exist
-    if(currentSessionOpt.nonEmpty){
+    val id = sessionIDOpt.getOrElse(java.util.UUID.randomUUID().toString)
+    if(sessions.exists(_.id==id)){
       throw LocalError("Session already exists")
     }
 
-    // create the session
-    val id = sessionIDOpt.getOrElse(java.util.UUID.randomUUID().toString)
-    createSession(path, id)
+    createSession(path(id), id)
 
     // return the session id
     REPLServerResponse(Some(s"Created Session $id"), None, session = Some(id))
