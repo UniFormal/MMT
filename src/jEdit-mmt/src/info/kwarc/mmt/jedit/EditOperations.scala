@@ -1,5 +1,7 @@
 package info.kwarc.mmt.jedit
 
+import java.awt.Dimension
+
 import info.kwarc.mmt.api._
 import gui.Swing
 import info.kwarc.mmt.api.refactoring.{NotDone, ViewFinder}
@@ -75,10 +77,10 @@ class EditActions(mmtplugin: MMTPlugin) {
             vfO match {
               case Some(vf) =>
                 try {
-                  val results = vf.find(mp, to).reverse.map(v => v.toString) //.mkString("\n\n")
-                  mp.toString + " --> " + to + "\n" + {
+                  val results = vf.find(mp, to).map(v => v.toString) //.mkString("\n\n")
+                  "From: " + mp.toString + "\nTo: " + to + "\n" + {
                     if (results.isEmpty) "No results found :("
-                    else results.length + " Results found. Best:\n\n" + results.head
+                    else results.length + " Results found:\n\n" + results.mkString("\n\n")
                   }
                 } catch {
                   case NotDone => NotDone.toString // Should not happen
@@ -88,7 +90,7 @@ class EditActions(mmtplugin: MMTPlugin) {
             }
           case _ => "Not in theory?"
         }
-        new TextareaPopup(view.getTextArea, oa.region.start.offset, str)
+        new ScrollTextareaPopup(view.getTextArea, oa.region.start.offset, str)
       case _ =>
     }
   }
@@ -141,4 +143,34 @@ class TextareaPopup(textArea: TextArea, offset: Int, text: String) extends JFram
    set(text)
    setLocationRelativeToOffset(0,30)
    setVisible(true)
+}
+
+class ScrollTextareaPopup(textArea: TextArea, offset: Int, text: String) extends JFrame() {
+  private val contentArea = new JTextArea()
+  // private val panel = new JPanel()
+  private val scroll = new JScrollPane(contentArea,22,32)
+  private val closeButton = Swing.Button("X"){dispose}
+  private def set(content: String) {
+    contentArea.setText(content)
+  }
+  def setLocationRelativeToOffset(deltax: Int, deltay: Int) {
+    val p = textArea.offsetToXY(offset)
+    SwingUtilities.convertPointToScreen(p, textArea.getPainter)
+    setLocation(p.getX.toInt + deltax, p.getY.toInt + deltay)
+  }
+  contentArea.setEditable(false)
+  contentArea.setBorder(new border.LineBorder(Color.BLACK, 1, false))
+  closeButton.setSize(10,10)
+  setLayout(new FlowLayout())
+  add(scroll)
+  // panel.add(contentArea)
+  // add(contentArea)
+  add(closeButton)
+  setAlwaysOnTop(true)
+  setUndecorated(true)
+  set(text)
+  scroll.setPreferredSize(new Dimension(1000,300))
+  pack()
+  setLocationRelativeToOffset(0,30)
+  setVisible(true)
 }

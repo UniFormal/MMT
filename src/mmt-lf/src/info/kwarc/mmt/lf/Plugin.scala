@@ -71,7 +71,6 @@ case class LFHOASElim(hoas : ViewFinderHOAS) extends Preprocessor {
             ApplySpine(traverse(f),args.map(traverse):_*)
          case hoas.Arrow(tpA,tpB) =>
             Arrow(traverse(tpA),traverse(tpB))
-         case Pi(x,tp,bd) => Pi(x,traverse(tp),traverse(bd)) // this uncurries
          case _ => Traverser(this,t)
       }
    }
@@ -164,14 +163,14 @@ case class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : Gl
 
    val traverser = new StatelessTraverser {
       override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-         case Pi(x,tp,bd) => Pi(x,traverse(tp),traverse(bd)) // this uncurries
-         case Ded(Forall(x,tp,bd,_)) =>
-            Pi(x,tp,traverse(Ded(bd)))
+         case Ded(Forall(x,_,bd,tp)) =>
+            Pi(x,traverse(tp),traverse(Ded(bd)))
          case Ded(Implies(a,b)) =>
             traverse(Ded(a)) match {
                case Ded(And(ls)) =>
                   Arrow(ls.map(Ded.apply),traverse(Ded(b)))
-               case r => Arrow(r,traverse(Ded(b)))
+               case r =>
+                  Arrow(r,traverse(Ded(b)))
             }
          case Arrow(Ded(a),Ded(c)) =>
             traverse(Ded(a)) match {
@@ -198,6 +197,7 @@ case class LFClassicHOLPreprocessor(ded : GlobalName, and : GlobalName, not : Gl
             val (na,nb) = (traverse(a),traverse(b))
             if (leq(nb,na)) Equals(Hasher.Complex(tp),nb,na)
             else Equals(Hasher.Complex(tp),na,nb)
+         case Pi(x,tp,bd) => Pi(x,traverse(tp),traverse(bd)) // this uncurries
          case _ => Traverser(this,t)
       }
    }

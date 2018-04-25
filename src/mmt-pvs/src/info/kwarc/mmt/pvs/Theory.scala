@@ -39,13 +39,14 @@ object PVSTheory {
         case ApplySpine(OMS(p),args) if !syms.contains(p) =>
           Hasher.Complex(t)
         case ApplySpine(OMS(pvsapply.path), List(_,tpf,nf, tuple_expr(args))) =>
-          args.foldLeft(nf)((f,p) =>
-            ApplySpine(OMS(pvsapply.path),Hasher.Complex(p._2),Hasher.Complex(tpf),f,p._1)
+          args.foldLeft(traverse(nf))((f,p) =>
+            ApplySpine(OMS(pvsapply.path),Hasher.Complex(p._2),Hasher.Complex(tpf),f,traverse(p._1))
           )
         case fun_type(tuple_type(ls),b) =>
-          ls.foldRight(b)((tp,r) => fun_type(tp,r))
+          ls.foldRight(traverse(b))((tp,r) => fun_type(tp,r))
           // Some(unapply(nf).map(p => (p._1, p._2 ::: a :: Nil)).getOrElse((nf, List(a))))
-        case _ => Traverser(this,t)
+        case _ =>
+          Traverser(this,t)
       }
     }
     override protected def doTerm(tm: Term): Term = trav(tm,())
