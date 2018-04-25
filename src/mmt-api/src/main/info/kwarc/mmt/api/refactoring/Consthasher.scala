@@ -142,15 +142,13 @@ class HashesNormal(val cfg : FinderConfig) extends Hasher {
 
   def get(p : MPath) : Option[Theoryhash] = theories.find(_._1.path == p).map(_._1)
 
-  def add (th : DeclaredTheory, as : Int) = theories.find(_._1.path == th.path).getOrElse {
-    as match {
-      case Hasher.COMMON =>
-        commons ::= th.path
-        th.getConstants.foreach(c => numbers ::= c.path)
-      case _ => theories.find(_._1.path == th.path).getOrElse {
-        val ret = get(th)
-        theories ::= ((ret, as))
-      }
+  def add (th : DeclaredTheory, as : Int) = as match {
+    case Hasher.COMMON =>
+      commons ::= th.path
+      th.getConstants.foreach(c => numbers ::= c.path)
+    case _ => theories.find(p => p._1.path == th.path && p._2 == as).getOrElse {
+      val ret = get(th)
+      theories ::= ((ret, as))
     }
   }
 

@@ -152,7 +152,7 @@ class ViewFinder extends frontend.Extension {
   }
 
   def getFlat(mpaths : List[MPath]) : List[DeclaredTheory] = { // TODO properly
-    var dones : mutable.HashMap[MPath,Option[List[DeclaredTheory]]] = mutable.HashMap.empty
+    val dones : mutable.HashMap[MPath,Option[List[DeclaredTheory]]] = mutable.HashMap.empty
 
     // guarantees that the dependency closure is ordered
     def flatten(mp : MPath) : Option[List[DeclaredTheory]] = {
@@ -160,14 +160,24 @@ class ViewFinder extends frontend.Extension {
         // log("Doing: " + mp.toString)
         // println(mp)
         controller.getO(mp) match {
-          case Some(th : DeclaredTheory) =>
-            val nms = th.getDeclarations.collect {
+          case Some(t : DeclaredTheory) =>
+            var ns : List[DeclaredTheory] = Nil
+            val th = new DeclaredTheory(t.parent,t.name,t.meta,t.paramC,t.dfC)
+            t.getDeclarations.foreach {
+              case c : FinalConstant => th add c
+              case inc : Structure => th add inc
               case nm : NestedModule if nm.module.isInstanceOf[DeclaredTheory] =>
-                nm.module.asInstanceOf[DeclaredTheory]
+                val old = nm.module.asInstanceOf[DeclaredTheory]
+                val in = new DeclaredTheory(old.parent,old.name,old.meta,old.paramC,old.dfC)
+                th.getDeclarations.foreach(in.add(_))
+                old.getDeclarations.foreach(in.add(_))
+                ns ::= in
+              case _ =>
             }
-            val rec = (th.getIncludes ::: nms.flatMap(_.getIncludes)).distinct.map(flatten)
+            ns = ns.reverse
+            val rec = (ns.flatMap(_.getIncludes) ::: th.getIncludes).distinct.map(flatten)
             if (rec.contains(None)) None else
-              Some((rec.flatMap(_.get) ::: nms ::: List(th)).distinct)
+              Some((rec.flatMap(_.get) ::: ns ::: List(th)).distinct)
           case _ =>
             // log("MISSING: " + mp)
             None
@@ -186,10 +196,6 @@ class ViewFinder extends frontend.Extension {
     val judg = getJudgment(ths.map(_.path))
     (ths,judg)
   }.toOption
-
-  def addTheories(ths1 : List[DeclaredTheory], ths2 : List[DeclaredTheory], hasher : Hasher) = {
-
-  }
 
   def getHasher : Hasher = new HashesNormal(new FinderConfig(this,report))
 
@@ -442,7 +448,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     dones.reverse
     */
     val order = hash.from.flatMap(_.getLocal.reverse)
-    evals.view.distinct.sortBy(v => (order.indexWhere(p => Hasher.Symbol(p.name) == v.from),-v.value))
+    evals.distinct.sortBy(v => (order.indexWhere(p => Hasher.Symbol(p.name) == v.from),-v.value))
   }
 
   /**
@@ -522,8 +528,8 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
             // case Some(path) if path exists (p => p._1 == current._1.pars(i)) => None
             case (Some(path),Hasher.Symbol(s1),Hasher.Symbol(s2)) =>
               pairs.collectFirst { case p if p._1.name == s1 && p._2.name == s2 => p } match {
-              case None if s1 == s2 =>
-                  Some(path)
+              /* case None if s1 == s2 =>
+                  Some(path) */
               case None =>
                 None
               case Some(x) =>
@@ -566,21 +572,24 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
   }
 
   private class InternalView(private val from : MPath) {
-    private var to : Option[MPath] = None
-    private var maps : List[Map] = Nil
-    private var includes : List[InternalView] = Nil
-    private var asView : Option[DeclaredView] = None
+    var to : Option[MPath] = None
+    var maps : List[Map] = Nil
+    var includes : List[InternalView] = Nil
+    var asView : Option[DeclaredView] = None
 
     private def allrequires = maps.flatMap(_.requires)
 
     def allmaps : List[Map] = maps ::: includes.flatMap(_.allmaps)
 
-    def addto(tos : List[Theoryhash]) : Unit = to = Some(tos.find { th =>
-      includes.flatMap(_.to).forall(p => th.getAllIncludes.exists(_.path == p)) &&
-      maps.map(_.to.asInstanceOf[Hasher.Symbol].gn).forall(th.getAll.map(_.name).contains)
-    }.map(_.path).getOrElse{
-      return ()
-    })
+    def addto(tos : List[Theoryhash]) : Unit = to = Some{
+      val ret = tos.find { th =>
+        includes.flatMap(_.to).forall(p => th.getAllIncludes.exists(_.path == p)) &&
+          maps.map(_.to.asInstanceOf[Hasher.Symbol].gn).forall(th.getAll.map(_.name).contains)
+      }.map(_.path)
+      if (ret.isEmpty) {
+        return None
+      } else ret.get
+    }
 
     private def copy : InternalView = {
       val cp = new InternalView(from)
@@ -600,7 +609,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
         this.asView == that.asView
     }
 
-    def add(ms : List[Map])(implicit views : List[InternalView]): List[InternalView] = {
+    def add(ms : List[Map],views : List[InternalView]): List[InternalView] = {
 
       require(
           ms.forall(_.isSimple) &&
@@ -609,8 +618,12 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
       )
 
       ms.flatMap {m =>
-        if (maps.exists(_.from == m.from))
-          return List(this)
+        val err = maps.find(_.from == m.from)
+        err match {
+          case Some(_) =>
+            return List(this)
+          case None =>
+        }
         if (m.requires.forall(maps.contains)) {
           val cp = copy
           cp.maps ::= m
@@ -623,15 +636,23 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
             cp.maps ::= m
             List(cp)
           } else {
-            Nil
+            val cp = new InternalView(this.from)
+            val missings = (m.requires ::: allrequires).filterNot(allmaps.contains)
+            (missings ::: maps).foldLeft(List(cp))((ls,m2) => ls.flatMap(_.add(List(m2),views)))
           }
         }
       }
     }
 
     def toView(path : MPath) : Option[DeclaredView] = Some(asView.getOrElse {
-      val v = new DeclaredView(path.parent,path.name,TermContainer(OMMOD(from)),TermContainer(OMMOD(to.getOrElse(return None))),false)
-      includes.reverse.foreach(i => v.add(LinkInclude(v.toTerm,i.from,i.asView.getOrElse(return None).toTerm)))
+      val fr = TermContainer(OMMOD(from))
+      val to2 = TermContainer(OMMOD(to.getOrElse(
+        return None
+      )))
+      val v = new DeclaredView(path.parent,path.name,fr,to2,false)
+      includes.reverse.foreach(i => v.add(LinkInclude(v.toTerm,i.from,i.asView.getOrElse({
+        ???
+      }).toTerm)))
       maps.reverse.foreach(m => v.add(Constant(v.toTerm,m.from.asInstanceOf[Hasher.Symbol].gn.name,Nil,None,Some(OMS(m.to.asInstanceOf[Hasher.Symbol].gn)),None)))
       asView = Some(v)
       v
@@ -643,7 +664,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     val froms = hash.from
     val tos = hash.to
     var imaps = omaps.map(_.simple)
-    implicit var views : List[InternalView] = Nil
+    var views : List[InternalView] = Nil
     froms.indices foreach { i => if (imaps.nonEmpty) {
       print("\r" + (i+1) + " of " + froms.length + " (Currently: " + views.length + " Views)")
       val th = froms(i)
@@ -654,11 +675,13 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
       imaps = imaps.filterNot(maps.flatMap(_._2).contains)
       if (maps.nonEmpty) localviews ::= new InternalView(th.path)
       maps foreach { p =>
-        localviews = localviews.flatMap(_.add(p._2))
+        localviews = localviews.flatMap(_.add(p._2,views))
       }
-      localviews.distinct.foreach(_.addto(tos))
-      views = views ::: localviews.distinct
+      localviews = localviews.distinct
+      localviews.foreach(_.addto(tos))
+      views = views ::: localviews
     }}
+    println("")
     views.indices.flatMap(i => views(i).toView(path.parent ? (path.name + i.toString))).toList
   }
 
