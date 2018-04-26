@@ -190,7 +190,7 @@ class NotationBasedParser extends ObjectParser {
     val (parsing, lexing, _) = getRules(pu.context)
     val notations = tableNotations(parsing)
     Variables.reset()
-    log("parsing: " + pu.term)
+    log("parsing: " + pu.term + " in context " + pu.context)
     log("rules:")
     logGroup {
       log("parsing")
