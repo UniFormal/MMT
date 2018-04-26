@@ -506,11 +506,23 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
   }
 
   private class InternalView(from : MPath, to : MPath) {
-    private var maps: List[Map] = Nil
+    var maps: List[Map] = Nil
+
+    val validfroms = hash.get(from).map(_.getAll.map(_.name)).getOrElse(???)
+    val validtos = hash.get(to).map(_.getAll.map(_.name)).getOrElse(???)
+
+    def copy = {
+      val ret = new InternalView(from,to)
+      ret.maps = maps
+      ret
+    }
+
 
     def canAdd(newmap: Map): Boolean = {
       if (maps.exists(m => newmap.from == m.from && newmap.to != m.to)) false
       else {
+        validfroms.contains(newmap.sfrom) &&
+        validtos.contains(newmap.sto) &&
         newmap.requires.forall(canAdd)
       }
     }
@@ -528,6 +540,12 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     }
   }
 
+  private def nview(map : Map) = {
+    val newview  = new InternalView(map.sfrom.module,map.sto.module)
+    newview.add(map)
+    newview
+  }
+
   def makeviews(path : MPath, omaps : List[Map]) : List[DeclaredView] = {
     val imaps = omaps.reverse.filter(_.isSimple).map(_.simple).distinct
     var views : List[InternalView] = Nil
@@ -537,12 +555,19 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
       if (canadds.nonEmpty) canadds.foreach(_.add(map))
       else {
         val prevs = imaps.take(i).filter(_.compatible(map)) ::: map :: Nil
-        val newview = new InternalView(prevs.head.sfrom.module,prevs.head.sto.module)
-        prevs.foreach(m => if (newview.canAdd(m)) newview.add(m))
+        val s = prevs.collectFirst{case m if nview(m).canAdd(map) => nview(m)}.get
+        val newview = prevs.foldLeft(s) { (v, m) =>
+          if (v.canAdd(m)) {
+            val w = v.copy
+            w.add(m)
+            if (w.canAdd(map)) w else v
+          } else v
+        }
+
         views ::= newview
       }
     }
-    views.indices.map(i => views(i).toView(path.parent ? (path.name + i.toString))).toList
+    views.indices.map(i => views(i).toView(path.parent ? (path.name + i.toString))).toList.sortBy(_.getDeclarations.length).reverse
   }
 }
 
