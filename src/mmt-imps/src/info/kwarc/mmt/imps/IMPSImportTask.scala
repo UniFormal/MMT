@@ -120,7 +120,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   {
     val nu_theory = new DeclaredTheory(dPath,
                                        LocalName(t.name),
-                                       Some(IMPSTheory.lutinsPath),
+                                       Some(IMPSTheory.QCT.quasiLutinsPath),
                                        modules.Theory.noParams,
                                        modules.Theory.noBase)
 
