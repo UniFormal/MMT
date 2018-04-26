@@ -17,6 +17,8 @@ class LFTest extends MMTIntegrationTest(
   shouldLoadExtensions()
   shouldInstallArchives()
 
+  shouldCheck("MMT/urtheories")()
+
   shouldHandleLine("build MMT/LFX scala-bin")
   shouldHandleLine("build MMT/LFX mmt-omdoc")
 

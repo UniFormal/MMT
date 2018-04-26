@@ -24,8 +24,6 @@ class APITest extends MMTIntegrationTest(
   shouldLoadExtensions()
   shouldInstallArchives()
 
-  shouldCheck("MMT/urtheories")()
-
   it should "get a Constant" in {
     lazy val brackets = (DPath(URI.http colon "cds.omdoc.org") / "mmt") ? "mmt" ? "brackets"
     controller.getConstant(brackets)

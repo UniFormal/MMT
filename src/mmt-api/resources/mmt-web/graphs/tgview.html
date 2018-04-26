@@ -40,7 +40,7 @@
 	</div>
 </div>
 		
-		<div id="mainbox" style="float:left;height:100%;width:99%; padding-left:10px; ">
+		<div id="mainbox" style="float:left;width:99%; padding-left:10px; ">
 		<div id="shareIcons" class="jssocials" style="position: absolute;left:40px; text-align: center;width:95%">
 </div>
 			<div id="menuButtonsDiv">
@@ -328,19 +328,6 @@
 				// Avoid the real menu
 				event.preventDefault();
 			});
-
-			
-			var htmlCanvas = document.getElementById('toolCanvas');
-			htmlCanvas.width = (window.innerWidth * 0.99) | 0;
-			htmlCanvas.height = (window.innerHeight * 0.80) | 0;
-			htmlCanvas.style.width = htmlCanvas.width + "px";
-			htmlCanvas.style.height = htmlCanvas.height + "px";
-
-			htmlCanvas = document.getElementById('wholeNetwork');
-			htmlCanvas.width = (window.innerWidth * 0.99) | 0;
-			htmlCanvas.height = (window.innerHeight * 0.80) | 0;
-			htmlCanvas.style.width = htmlCanvas.width + "px";
-			htmlCanvas.style.height = htmlCanvas.height + "px";
 
 			addColors();
 			generateCustomSideMenu();	
