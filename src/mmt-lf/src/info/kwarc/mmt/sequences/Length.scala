@@ -36,6 +36,7 @@ object Length {
       case _: OMLITTrait => ONE
       case OMA(_,_) => ONE
       case OMBINDC(_,_,_) => ONE
+      case _ => None
     }
   }
 

@@ -91,8 +91,8 @@ trait PiOrArrowRule {self: CheckingRule =>
 }
 
 /** Formation: the type inference rule x:A:type|-B:U  --->  Pi x:A.B : U
- * This rule works for any universe U
-  * */
+  * This rule works for any universe U
+  */
 object PiTerm extends FormationRule(Pi.path, OfType.path) with PiOrArrowRule {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
