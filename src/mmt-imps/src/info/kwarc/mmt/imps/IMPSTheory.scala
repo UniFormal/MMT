@@ -350,6 +350,98 @@ object IMPSTheory
         ApplySpine(this.term, a, i, aa, ii, f)
       }
     }
+
+    object mcompositionQC extends UDQC("mcompositionQC") {
+      def apply(a : Term, b : Term, c : Term, alpha : Term, beta : Term, gamma : Term, f : Term, g : Term) : Term = {
+        ApplySpine(this.term, a, b, c, alpha, beta, gamma, f, g)
+      }
+    }
+
+    object mdomainQC extends UDQC("mdomainQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, f)
+      }
+    }
+
+    object mrangeQC extends UDQC("mrangeQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, f)
+      }
+    }
+
+    object mimageQC extends UDQC("mimageQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term, aset : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, f, aset)
+      }
+    }
+
+    object minverseimageQC extends UDQC("minverseimageQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term, bset : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, f, bset)
+      }
+    }
+
+    object minverseQC extends UDQC("minverseQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, f)
+      }
+    }
+
+    object midQC extends UDQC("midQC") {
+      def apply(a : Term, alpha : Term, aset : Term) : Term = {
+        ApplySpine(this.term, a, alpha, aset)
+      }
+    }
+
+    object mrestrictQC extends UDQC("mrestrictQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term, aset : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, f, aset)
+      }
+    }
+
+    object mrestrict2QC extends UDQC("mrestrict2QC") {
+      def apply(a : Term, b : Term, c : Term, alpha : Term, beta : Term, gamma : Term, f : Term, aset : Term, bset : Term) : Term = {
+        ApplySpine(this.term, a, b, c, alpha, beta, gamma, f, aset, bset)
+      }
+    }
+
+    object msurjectiveQQC extends UDQC("msurjectiveQQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, f)
+      }
+    }
+
+    object minjectiveQQC extends UDQC("minjectiveQQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, f)
+      }
+    }
+
+    object mbijectiveQQC extends UDQC("mbijectiveQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, f)
+      }
+    }
+
+    object msurjectiveonQQC extends UDQC("msurjectiveonQQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term, aset : Term, bset : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, f, aset, bset)
+      }
+    }
+
+    object minjectiveonQQC extends UDQC("minjectiveonQQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term, aset : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, f, aset)
+      }
+    }
+
+    object mbijectiveonQQC extends UDQC("mbijectiveonQQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term, aset : Term, bset : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, f, aset, bset)
+      }
+    }
+
+
   }
 
 }

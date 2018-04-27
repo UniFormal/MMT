@@ -9,15 +9,15 @@ package object impsMathParser
   def makeSEXPFormula(sexp : SEXP) : IMPSMathExp =
   {
     sexp match {
-      case s@SEXPAtom(name)   => IMPSVar(name)    /* Parse all "only strings" as Vars for now,
-                                                     during translation we switch to MathSymbols
-                                                     for undefined vars. */
+      case SEXPAtom("truth")      => IMPSTruth()
+      case SEXPAtom("falsehood")  => IMPSFalsehood()
+      case s@SEXPAtom(name)       => IMPSVar(name)    /* Parse all "only strings" as Vars for now,
+                                                         during translation we switch to MathSymbols
+                                                         for undefined vars. */
       case s@SEXPNested(args) => args.head match
       {
         /* See imps manual, page 64 */
 
-        case SEXPAtom("truth")              => IMPSTruth()
-        case SEXPAtom("falsehood")          => IMPSFalsehood()
         case SEXPAtom("not")                => makeNot(s)
         case SEXPAtom("and")                => makeConjunction(s)
         case SEXPAtom("or")                 => makeDisjunction(s)

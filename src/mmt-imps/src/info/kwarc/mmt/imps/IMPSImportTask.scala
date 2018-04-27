@@ -739,6 +739,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       }
 
       case IMPSMathSymbol("an%individual") => OMS(IMPSTheory.lutinsPath ? "anIndividual")
+      case IMPSMathSymbol("truth")         => OMS(IMPSTheory.lutinsPath ? "thetrue")
+      case IMPSMathSymbol("falsehood")     => OMS(IMPSTheory.lutinsPath ? "thefalse")
       case IMPSMathSymbol(s)               =>
       {
         if (s.forall(_.isDigit) || (s.startsWith("-") && s.tail.nonEmpty && s.tail.forall(_.isDigit))) {
@@ -959,8 +961,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         }
 
         if (a     == null) { a     = tState.doUnknown() }
-        if (alpha == null) { alpha = tState.doUnknown() }
         if (beta  == null) { beta  = tState.doUnknown() }
+        if (alpha == null) { alpha = tState.doUnknown() }
 
         IMPSTheory.Quasiequals(a, alpha, beta, e1, e2)
       }
@@ -1101,6 +1103,116 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       {
         val fp : Term = doMathExp(f,thy,cntxt)
         IMPSTheory.QCT.bigIntersectionQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+      }
+
+      case IMPSQCMDomain(f) =>
+      {
+        val fp : Term = doMathExp(f,thy,cntxt)
+        IMPSTheory.QCT.mdomainQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+      }
+
+      case IMPSQCMRange(f) =>
+      {
+        val fp : Term = doMathExp(f,thy,cntxt)
+        IMPSTheory.QCT.mrangeQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+      }
+
+      case IMPSQCMComposition(f,g) =>
+      {
+        val fp : Term = doMathExp(f,thy,cntxt)
+        val gp : Term = doMathExp(g,thy,cntxt)
+        IMPSTheory.QCT.mcompositionQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,gp)
+      }
+
+      case IMPSQCMImage(f,s) =>
+      {
+        val fp : Term = doMathExp(f,thy,cntxt)
+        val sp : Term = doMathExp(s,thy,cntxt)
+        IMPSTheory.QCT.mimageQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,sp)
+      }
+
+      case IMPSQCMInverseImage(f,s) =>
+      {
+        val fp : Term = doMathExp(f,thy,cntxt)
+        val sp : Term = doMathExp(s,thy,cntxt)
+        IMPSTheory.QCT.minverseimageQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,sp)
+      }
+
+      case IMPSQCMInverse(f) =>
+      {
+        val fp : Term = doMathExp(f,thy,cntxt)
+        IMPSTheory.QCT.minverseQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+      }
+
+      case IMPSQCMId(s) =>
+      {
+        val sp : Term = doMathExp(s,thy,cntxt)
+        IMPSTheory.QCT.midQC(tState.doUnknown(), tState.doUnknown(), sp)
+      }
+
+      case IMPSQCMRestrict(f,s) =>
+      {
+        val fp : Term = doMathExp(f,thy,cntxt)
+        val sp : Term = doMathExp(s,thy,cntxt)
+        IMPSTheory.QCT.mrestrictQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,sp)
+      }
+
+      case IMPSQCMRestrict2(f,s,t) =>
+      {
+        val fp : Term = doMathExp(f,thy,cntxt)
+        val sp : Term = doMathExp(s,thy,cntxt)
+        val tp : Term = doMathExp(t,thy,cntxt)
+        IMPSTheory.QCT.mrestrict2QC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,sp,tp)
+      }
+
+      case IMPSQCMSurjective(f) =>
+      {
+        val fp : Term = doMathExp(f,thy,cntxt)
+        IMPSTheory.QCT.msurjectiveQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+      }
+
+      case IMPSQCMInjective(f) =>
+      {
+        val fp : Term = doMathExp(f,thy,cntxt)
+        IMPSTheory.QCT.minjectiveQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+      }
+
+      case IMPSQCMBijective(f) =>
+      {
+        val fp : Term = doMathExp(f,thy,cntxt)
+        IMPSTheory.QCT.mbijectiveQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+      }
+
+      case IMPSQCMSurjectiveOn(f,as,bs) =>
+      {
+        {
+          val fp  : Term = doMathExp(f,thy,cntxt)
+          val asp : Term = doMathExp(as,thy,cntxt)
+          val bsp : Term = doMathExp(bs,thy,cntxt)
+
+          IMPSTheory.QCT.msurjectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp,bsp)
+        }
+      }
+
+      case IMPSQCMInjectiveOn(f,as) =>
+      {
+        {
+          val fp  : Term = doMathExp(f,thy,cntxt)
+          val asp : Term = doMathExp(as,thy,cntxt)
+
+          IMPSTheory.QCT.minjectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp)
+        }
+      }
+
+      case IMPSQCMBijectiveOn(f,as,bs) =>
+      {
+        {
+          val fp  : Term = doMathExp(f,thy,cntxt)
+          val asp : Term = doMathExp(as,thy,cntxt)
+          val bsp : Term = doMathExp(bs,thy,cntxt)
+
+          IMPSTheory.QCT.mbijectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp,bsp)
+        }
       }
 
       case _ => { println(d) ; ??? }
