@@ -296,7 +296,7 @@ object MorphismApplicationTerm extends InferenceRule(ModExp.morphismapplication,
 }
 
 /**
- * apply a moprhism
+ * apply a morphism
  * 
  * t APPLY m  ----> m(t)
  */

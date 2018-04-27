@@ -247,3 +247,46 @@ object JSON {
       }
    }
 }
+
+object JSONXML {
+  import scala.xml._
+  
+  val nameKey = "xml-name"
+  val childKey = "xml-children"
+  
+  /** encodes xml elements as JSON */
+  def xmlToJSON(e: Node): JSON = {
+    e match {
+      case e: Elem => JSONObject(nameKey -> JSONString(e.label), childKey -> JSONArray(e.child map xmlToJSON :_*))
+      case e: Text => JSONString(e.text)
+    }
+  }
+  
+  /** inverse of xmlToJSON (partial) */
+  def xmlToJSON(j: JSON): Node = {
+    j match {
+      case j: JSONObject =>
+        val l = j(nameKey) match {
+          case Some(JSONString(s)) => s
+          case Some(_) => throw JSON.JSONError(s"$nameKey must be string")
+          case None => throw JSON.JSONError(s"no $nameKey found")
+        }
+        var atts: MetaData = Null
+        j.map foreach {
+          case (JSONString(k),v: JSONValue) =>
+            if (k != nameKey && k != childKey) {
+              atts = new UnprefixedAttribute(k,v.toString,atts)
+            }
+          case _ => throw JSON.JSONError(s"attribute value must be JSON values")
+        }
+        val child = j(childKey) match {
+          case Some(c: JSONArray) => c.values map xmlToJSON
+          case Some(_) => throw JSON.JSONError(s"$childKey must be array")
+          case None => Nil
+        }
+        Elem(null, l, atts, TopScope, child:_*)
+      case j: JSONValue => Text(j.value.toString)
+      case _ => throw JSON.JSONError(s"object or value expected")
+    }
+  }
+}

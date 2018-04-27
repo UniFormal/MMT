@@ -209,12 +209,12 @@ trait ParametricTheoryLike extends StructuralFeature {
 
    override def getInnerContext(dd: DerivedDeclaration) = {
      val parameters = Type.getParameters(dd)
-     val self = IncludeVarDecl(dd.modulePath, parameters.id.map(_.target))
-     parameters ++ self
+     parameters ++ Context(dd.modulePath)
    }
 
    override def processHeader(header: Term) = header match {
      case OMBIND(OMMOD(`mpath`), cont, OML(name,None,None,_,_)) => (name, Type(cont))
+     case _ => throw InvalidObject(header, "ill-formed header")
    }
    override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
      case Some(Type(cont)) => OMBIND(OMMOD(mpath), cont, OML(dd.name, None,None))

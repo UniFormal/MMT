@@ -487,7 +487,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private def instantiate(decl: Declaration, params: Context, args: List[Term]): Declaration = {
     if (args.isEmpty) return decl // lookup from within parametric theory does not provide arguments
     val subs: Substitution = (params / args).getOrElse {
-        throw GetError("number of arguments does not match number of parameters of " + decl.path + ": " + params.length + "(" + params.map(_.name).mkString(", ") + ") given: " + args)
+        throw GetError("number of arguments does not match number of parameters of " + decl.path + ": " + params.length + " (" + params.map(_.name).mkString(", ") + ") given: " + args)
       }
     if (subs.isIdentity) return decl // avoid creating new instance
     val newHome = decl.home match {
@@ -625,10 +625,16 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     val impls = visibleVia(mod).toList
     impls.foreach {
       case (OMMOD(p), m) =>
-        get(p) match {
+        val thO = get(p) match {
           case t: DeclaredTheory =>
-            t.getDeclarations foreach {d => f(p, m, d)}
-          case _ => //TODO materialize?
+            Some(t)
+          case dd: DerivedDeclaration =>
+            Some(dd.module)
+          case _ =>
+            None//TODO materialize?
+        }
+        thO.foreach {th =>
+          th.getDeclarations foreach {d => f(p, m, d)}
         }
       case _ =>
     }

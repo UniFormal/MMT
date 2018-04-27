@@ -476,7 +476,8 @@ object Solve extends SolutionRule(Apply.path) {
          case Apply(t, OMV(x)) =>
              val i = j.stack.context.lastIndexWhere(_.name == x)
              if (i == -1) return None
-             var dropped = List(x) // the variables that we will remove from the context
+             // dropped contains x and all variable declarations that depend on it
+             var dropped = List(x) 
              var newCon : Context = j.stack.context.take(i) // the resulting context
              // iterate over the variables vd after x
              j.stack.context.drop(i+1) foreach {vd =>

@@ -150,7 +150,7 @@ class NotationBasedParser extends ObjectParser {
        else {
          //TODO in case of shadowing (duplicates in bvars), one variable must be renamed
          //apply meta-variable to all bound variables in whose scope it occurs
-         prag.defaultApplication(Some(pu.context.getIncludes.last), OMV(name), bvars.map(OMV(_)))
+         prag.defaultApplication(Some(pu.getLevel), OMV(name), bvars.map(OMV(_)))
        }
      }
 
@@ -344,7 +344,7 @@ class NotationBasedParser extends ObjectParser {
           By using defaultApplication, the behavior is somewhat configurable.
           */
           val terms = ul.tl.getTokens.map(makeTerm(_, boundNames))
-          prag.defaultApplication(pu.context.getIncludes.lastOption, terms.head, terms.tail)
+          prag.defaultApplication(Some(pu.getLevel), terms.head, terms.tail)
         }
         term
     }
