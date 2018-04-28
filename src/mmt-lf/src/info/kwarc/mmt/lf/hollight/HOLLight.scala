@@ -1,7 +1,7 @@
 package info.kwarc.mmt.lf.hollight
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.refactoring.{DefinitionExpander, ParameterPreprocessor}
+import info.kwarc.mmt.api.refactoring.DefinitionExpander
 import info.kwarc.mmt.lf.{LFClassicHOLPreprocessor, LFHOASElim, ViewFinderHOAS}
 import utils._
 
