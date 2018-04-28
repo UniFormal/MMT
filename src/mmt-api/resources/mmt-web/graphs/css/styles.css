@@ -139,7 +139,12 @@
 	  
 	  #operation 
 	  {
-      font-size:28px;
+		font-size:28px;
+	  }
+
+	  #edge-operation
+	  {
+		font-size:28px;
 	  }
 	  
 	  #network-popUp 
@@ -149,8 +154,25 @@
 		  top:350px;
 		  left:170px;
 		  z-index:299;
-		  width:250px;
-		  height:210px;
+		  width:300px;
+		  height:246px;
+		  background-color: #f9f9f9;
+		  border-style:solid;
+		  border-width:3px;
+		  border-color: #5394ed;
+		  padding:10px;
+		  text-align: center;
+	  }
+
+	  #network-edge-popUp 
+	  {
+		  display:none;
+		  position:absolute;
+		  top:350px;
+		  left:170px;
+		  z-index:299;
+		  width:270px;
+		  height:170px;
 		  background-color: #f9f9f9;
 		  border-style:solid;
 		  border-width:3px;

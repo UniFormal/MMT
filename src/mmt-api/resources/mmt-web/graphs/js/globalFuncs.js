@@ -74,6 +74,7 @@ function updateNetworkOnFirstCall()
 	theoryGraph.colorizeNodesByName(getParameterByName(graphDataURLHighlightParameterNameTGView),highlightColorByURI);
 	generateEdgesNodesHideDiv();
 	theoryGraph.hideEdges("graphmeta",true);
+	theoryGraph.hideEdges("meta",true);
 }
 
 // Creates right-click menu for MMT menu (left side)
@@ -169,40 +170,127 @@ function addToStateHistory(func, parameterArray)
 }
 
 
-// Undos the last action
+// Undoes the last action
+
 function undoLastAction()
 {
+	console.log(historyStates);
+	
 	if(historyStates.length==0)
 		return;
 	
 	lastActionWasUndoRedo=1;
 	
 	var lastState = historyStates.pop();
+	console.log(lastState);
 	undoneHistoryStates.push(lastState);
+	
+	if(typeof lastState.func=="undefined")
+		return;
+	
+	var repeatlastAction=true;
 	
 	if(lastState.func=="cluster")
 	{
 		theoryGraph.openCluster(lastState.param.clusterId);
+		historyStates.pop();
 	}
 	else if(lastState.func=="uncluster")
 	{
 		theoryGraph.cluster(lastState.param.nodes,lastState.param.name,lastState.param.clusterId);
+		historyStates.pop();
 	}
 	else if(lastState.func=="select")
 	{
 		theoryGraph.selectNodes([]);
+		historyStates.pop();
 	}
 	else if(lastState.func=="unselect")
 	{
 		theoryGraph.selectNodes(lastState.param.nodes);
+		historyStates.pop();
+	}
+	else if(lastState.func=="addNode")
+	{
+		theoryGraph.deleteNodes(lastState.param.node.id);
+		historyStates.pop();
+		repeatlastAction=false;
+	}
+	else if(lastState.func=="editNode")
+	{
+		theoryGraph.saveNode(lastState.param.oldNode);
+		historyStates.pop();
+	}
+	else if(lastState.func=="deleteNodes")
+	{
+		for(var i=0;i<lastState.param.nodes.length;i++)
+		{
+			theoryGraph.addNode(lastState.param.nodes[i]);
+			historyStates.pop();
+		}
+		
+		for(var i=0;i<lastState.param.edges.length;i++)
+		{
+			theoryGraph.addEdge(lastState.param.edges[i]);
+			historyStates.pop();
+		}
+	}
+	else if(lastState.func=="addEdge")
+	{
+		theoryGraph.deleteEdges([lastState.param.edge.id]);
+		historyStates.pop();
+		repeatlastAction=false;
+	}
+	else if(lastState.func=="editEdge")
+	{
+		theoryGraph.saveEdge(lastState.param.oldEdge);
+		historyStates.pop();
+	}
+	else if(lastState.func=="deleteEdges")
+	{
+		for(var i=0;i<lastState.param.edges.length;i++)
+		{
+			theoryGraph.addEdge(lastState.param.edges[i]);
+			historyStates.pop();
+		}
+	}	
+	else if(lastState.func=="cageNodes")
+	{
+		theoryGraph.removeNodeRegion(lastState.param.index);
+	}
+	else if(lastState.func=="hideNodes")
+	{
+		theoryGraph.hideNodesById(lastState.param.nodesToHide,!lastState.param.hidden);
+		historyStates.pop();
+	}
+	else if(lastState.func=="hideEdges")
+	{
+		var edgeIds=[];
+		
+		for(var i=0;i<lastState.param.hideEdges.length;i++)
+		{
+			edgeIds.push(lastState.param.hideEdges[i].id);
+		}
+		
+		theoryGraph.hideEdgesById(edgeIds,!lastState.param.hidden);
+		historyStates.pop();
+	}
+	else if(lastState.func=="selectEdges")
+	{
+		theoryGraph.selectEdgesById([]);
+		historyStates.pop();
 	}
 	
-	historyStates.pop();
-	doLastAction();
+	
+	if(repeatlastAction==true)
+	{
+		doLastAction();
+	}
 	lastActionWasUndoRedo=0;
 }
 
 // Redos last undone action
+
 function redoLastAction()
 {
 	if(undoneHistoryStates.length==0)
@@ -212,6 +300,9 @@ function redoLastAction()
 	
 	var lastState = undoneHistoryStates.pop();
 	
+	if(typeof lastState.func=="undefined")
+		return;
+			
 	if(lastState.func=="cluster")
 	{
 		theoryGraph.cluster(lastState.param.nodes,lastState.param.name,lastState.param.clusterId);
@@ -228,12 +319,80 @@ function redoLastAction()
 	{
 		theoryGraph.selectNodes([]);
 	}
+	else if(lastState.func=="addNode")
+	{
+		theoryGraph.addNode(lastState.param.node);
+	}
+	else if(lastState.func=="editNode")
+	{
+		theoryGraph.saveNode(lastState.param.newNode);
+	}
+	else if(lastState.func=="deleteNodes")
+	{
+		var toDelete=[];
+		for(var i=0;i<lastState.param.edges.length;i++)
+		{
+			toDelete.push(lastState.param.edges[i].id);
+		}
+		theoryGraph.deleteEdges(toDelete);
+		
+		toDelete=[];
+		for(var i=0;i<lastState.param.nodes.length;i++)
+		{
+			toDelete.push(lastState.param.nodes[i].id);
+		}
+		theoryGraph.deleteNodes(toDelete);
+	}
+	else if(lastState.func=="addEdge")
+	{
+		theoryGraph.addEdge(lastState.param.edge);
+	}
+	else if(lastState.func=="editEdge")
+	{
+		theoryGraph.saveEdge(lastState.param.newEdge);
+	}
+	else if(lastState.func=="deleteEdges")
+	{
+		var toDelete=[];
+		for(var i=0;i<lastState.param.edges.length;i++)
+		{
+			toDelete.push(lastState.param.edges[i].id);
+		}
+		theoryGraph.deleteEdges(toDelete);
+	}
+	else if(lastState.func=="cageNodes")
+	{
+		theoryGraph.cageNodes(lastState.param.nodeIds, lastState.param.color);
+	}
+	else if(lastState.func=="hideNodes")
+	{
+		theoryGraph.hideNodesById(lastState.param.nodesToHide,lastState.param.hidden);
+	}
+	else if(lastState.func=="hideEdges")
+	{
+		var edgeIds=[];
+		
+		for(var i=0;i<lastState.param.hideEdges.length;i++)
+		{
+			edgeIds.push(lastState.param.hideEdges[i].id);
+		}
+		
+		theoryGraph.hideEdgesById(edgeIds,lastState.param.hidden);
+	}
+	else if(lastState.func=="selectEdges")
+	{
+		theoryGraph.selectEdgesById(lastState.param.edges);
+		historyStates.pop();
+	}
+
+	
 	//undoneHistoryStates.pop();
 	//doLastAction();
 	lastActionWasUndoRedo=0;
 }
 
-// Dos the last action
+
+// Does the last action
 function doLastAction()
 {
 	if(historyStates.length==0)
@@ -241,17 +400,237 @@ function doLastAction()
 
 	lastActionWasUndoRedo=1;
 	
-	var lastState = historyStates[historyStates.length-1];
-	if(lastState.func=="unselect")
+	for(var i=historyStates.length-1;i>=0;i--)
 	{
-		theoryGraph.selectNodes([]);
-		historyStates.pop();
-	}
-	else if(lastState.func=="select")
-	{
-		theoryGraph.selectNodes(lastState.param.nodes);
-		historyStates.pop();
+		var lastState = historyStates[i];
+		if(lastState.func=="unselect")
+		{
+			theoryGraph.selectNodes([]);
+			historyStates.pop();
+			break;
+		}
+		else if(lastState.func=="select")
+		{
+			theoryGraph.selectNodes(lastState.param.nodes);
+			historyStates.pop();
+			break;
+		}
 	}
 	
 	lastActionWasUndoRedo=0;
+}
+
+
+
+function addDataNode(data, callback) 
+{
+	data.id = document.getElementById('node-id').value;
+	if(theoryGraph.isUniqueId(data.id)==false)
+	{
+		alert("The ID entered is already used, please enter an unique ID.");
+		return;
+	}
+	
+	data.label = document.getElementById('node-label').value;
+	data.url = document.getElementById('node-url').value;
+	data.mathml = document.getElementById('node-mathml').value;
+	data.style = document.getElementById('node-style').value;
+	clearPopUp();
+	theoryGraph.addNode(data);
+}
+
+function addDataEdge(data, callback) 
+{
+	var edge={};
+	edge.id = document.getElementById('edge-id').value;
+	if(theoryGraph.isUniqueEdgeId(edge.id)==false)
+	{
+		alert("The ID entered is already used, please enter an unique ID.");
+		return;
+	}
+	
+	edge.label = document.getElementById('edge-label').value;
+	edge.url = document.getElementById('edge-url').value;
+	edge.style = document.getElementById('edge-style').value;
+	edge.from=data.from;
+	edge.to=data.to;
+	clearPopUp();
+	theoryGraph.addEdge(edge);
+}
+
+function editDataEdge(data, callback) 
+{
+	var edge={};
+	edge.id = document.getElementById('edge-id').value;
+	edge.label = document.getElementById('edge-label').value;
+	edge.url = document.getElementById('edge-url').value;
+	edge.style = document.getElementById('edge-style').value;
+	edge.from=data.from;
+	edge.to=data.to;
+	clearPopUp();
+	theoryGraph.saveEdge(edge);
+	callback(null);
+}
+
+function saveDataNode(data, callback) 
+{
+	var node={};
+	node.id = document.getElementById('node-id').value;
+	node.label = document.getElementById('node-label').value;
+	node.url = document.getElementById('node-url').value;
+	node.mathml = document.getElementById('node-mathml').value;
+	node.style = document.getElementById('node-style').value;
+	clearPopUp();
+	theoryGraph.saveNode(node);
+	callback(null);
+}
+
+function clearPopUp() 
+{
+	document.getElementById('saveButton').onclick = null;
+	document.getElementById('cancelButton').onclick = null;
+	document.getElementById('network-popUp').style.display = 'none';
+	
+	document.getElementById('edge-saveButton').onclick = null;
+	document.getElementById('edge-cancelButton').onclick = null;
+	document.getElementById('network-edge-popUp').style.display = 'none';
+}
+
+function cancelEdit(callback) 
+{
+	clearPopUp();
+	callback(null);
+}
+
+function addNodeCallback(data, callback) 
+{
+	// filling in the popup DOM elements
+	document.getElementById('operation').innerHTML = "Add Node";
+	document.getElementById('node-id').value = data.id;
+	document.getElementById('node-label').value = data.label;
+	document.getElementById('node-url').value = "";
+	document.getElementById('node-mathml').value = "";
+	
+	var html="";
+	Object.keys(NODE_STYLES).forEach(function (key) 
+	{
+	   html+='<option value="'+key+'">'+NODE_STYLES[key].alias+'</option>';
+	});
+	
+	document.getElementById('node-style').innerHTML = html;
+	document.getElementById('saveButton').onclick = addDataNode.bind(this, data, callback);
+	document.getElementById('cancelButton').onclick = clearPopUp.bind();
+	document.getElementById('network-popUp').style.display = 'block';
+}
+
+function editNodeCallback(data, callback) 
+{
+	// filling in the popup DOM elements
+	document.getElementById('operation').innerHTML = "Edit Node";
+	document.getElementById('node-id').value = data.id;
+	document.getElementById('node-id').disabled=true;
+	document.getElementById('node-label').value = (typeof data.label !="undefined") ? data.label : "";
+	document.getElementById('node-url').value = (typeof data.url !="undefined") ? data.url : "";
+	document.getElementById('node-mathml').value = (typeof data.mathml !="undefined") ? data.mathml : "";
+	
+	var html="";
+	Object.keys(NODE_STYLES).forEach(function (key) 
+	{
+	   html+='<option value="'+key+'">'+NODE_STYLES[key].alias+'</option>';
+	});
+	
+	document.getElementById('node-style').innerHTML = html;
+	
+	if(typeof data.style !="undefined" )
+	{
+		document.getElementById('node-style').value = data.style;
+	}
+	
+	document.getElementById('saveButton').onclick = saveDataNode.bind(this, data, callback);
+	document.getElementById('cancelButton').onclick = cancelEdit.bind(this,callback);
+	document.getElementById('network-popUp').style.display = 'block';
+}
+
+function addEdgeCallbackHelper(data, callback)
+{
+	// filling in the popup DOM elements
+	document.getElementById('edge-operation').innerHTML = "Add Edge";
+	document.getElementById('edge-id').value = 'edge_' + Math.random().toString(36).substr(2, 9);
+	document.getElementById('edge-label').value = "";
+	document.getElementById('edge-url').value = "";
+	
+	var html="";
+	Object.keys(ARROW_STYLES).forEach(function (key) 
+	{
+	   html+='<option value="'+key+'">'+ARROW_STYLES[key].alias+'</option>';
+	});
+	
+	document.getElementById('edge-style').innerHTML = html;
+	document.getElementById('edge-saveButton').onclick = addDataEdge.bind(this, data, callback);
+	document.getElementById('edge-cancelButton').onclick = clearPopUp.bind();
+	document.getElementById('network-edge-popUp').style.display = 'block';
+}
+
+function addEdgeCallback(data, callback) 
+{
+	if (data.from == data.to) 
+	{
+		var r = confirm("Do you want to connect the node to itself?");
+		if (r == true) 
+		{
+			addEdgeCallbackHelper(data, callback);
+		}
+	}
+	else 
+	{
+		addEdgeCallbackHelper(data, callback);
+	}
+}
+
+function deleteEdgeCallback(data, callback) 
+{
+	console.log(data);
+	theoryGraph.deleteEdges(data["edges"]);
+}
+
+function deleteNodeCallback(data, callback) 
+{
+	console.log(data);
+	theoryGraph.deleteNodes(data["nodes"],data["edges"]);
+}
+
+function editEdgeCallbackHelper(data, callback) 
+{
+	// filling in the popup DOM elements
+	document.getElementById('edge-operation').innerHTML = "Edit Edge";
+	document.getElementById('edge-id').value = data.id;
+	document.getElementById('edge-label').value = (typeof data.label !="undefined") ? data.label : "";
+	document.getElementById('edge-url').value = (typeof data.url !="undefined") ? data.url : "";
+
+	var html="";
+	Object.keys(ARROW_STYLES).forEach(function (key) 
+	{
+	   html+='<option value="'+key+'">'+ARROW_STYLES[key].alias+'</option>';
+	});
+	
+	document.getElementById('edge-style').innerHTML = html;
+	document.getElementById('edge-saveButton').onclick = editDataEdge.bind(this, data, callback);
+	document.getElementById('edge-cancelButton').onclick = clearPopUp.bind();
+	document.getElementById('network-edge-popUp').style.display = 'block';
+}
+
+function editEdgeCallback(data, callback) 
+{
+	if (data.from == data.to) 
+	{
+		var r = confirm("Do you want to connect the node to itself?");
+		if (r == true) 
+		{
+			editEdgeCallbackHelper(data, callback);
+		}
+	}
+	else 
+	{
+		editEdgeCallbackHelper(data, callback);
+	}
 }

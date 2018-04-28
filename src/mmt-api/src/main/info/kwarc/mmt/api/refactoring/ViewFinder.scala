@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.FormalAlignment
 import info.kwarc.mmt.api.parser.ParseResult
@@ -14,6 +15,7 @@ import info.kwarc.mmt.api.utils.time.{Duration, Time}
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class FinderConfig(val finder : ViewFinder, protected val report : Report) extends Logger {
   override def logPrefix: String = "viewfinder"
@@ -81,25 +83,33 @@ class ViewFinder extends frontend.Extension {
   def isInitialized : Boolean = initialized
 
   override def start(args: List[String]): Unit = {
-    val as = if (args.nonEmpty) args.map(controller.backend.getArchive(_).getOrElse(???))
-      else controller.backend.getArchives
+    val as = if (args.nonEmpty) {
+      log("Archives: " + args.mkString(", "))
+      args.map(controller.backend.getArchive(_).getOrElse(???))
+    } else controller.backend.getArchives
     Future {
       log("Getting Archives...")
       val (t, _) = Time.measure {
-        as.foreach(a => preprocs.find(p => p.key != "" && a.id.startsWith(p.key)) match {
-          case Some(pp) =>
-            getArchive(a) match {
-              case Some((ths,judg)) =>
-                theories(a.id) = (ths.map(pp.apply), judg)
-              case _ =>
-            }
-          case _ => /* getArchive(a) match {
+        as.foreach { a => try {
+          log("Doing " + a.id)
+          preprocs.find(p => p.key != "" && a.id.startsWith(p.key)) match {
+            case Some(pp) =>
+              getArchive(a) match {
+                case Some((ths, judg)) =>
+                  theories(a.id) = (ths.map(pp.apply), judg)
+                case _ =>
+
+              }
+            case _ =>
+              log("No preproccesor for archive " + a.id)
+            /* getArchive(a) match {
             case Some(r) => theories(a.id) = r
             case _ =>
           } */
-        })
+          }
+        } catch {case t : Throwable => t.printStackTrace()} }
       }
-      log("Finished after " + t)
+      println("Finished after " + t)
     }.onComplete{_ => initialized = true}
   }
 
@@ -171,12 +181,12 @@ class ViewFinder extends frontend.Extension {
     }.toList.flatten.distinct
   }
 
-  def getArchive(a : Archive) : Option[(List[DeclaredTheory], Option[GlobalName])] = scala.util.Try{
+  def getArchive(a : Archive) : Option[(List[DeclaredTheory], Option[GlobalName])] = Some{
     log("Collecting theories in " + a.id)
     val ths = getFlat(a.allContent)
     val judg = getJudgment(ths.map(_.path))
     (ths,judg)
-  }.toOption
+  }
 
   def getHasher : Hasher = new HashesNormal(new FinderConfig(this,report))
 
@@ -555,16 +565,18 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
       if (canadds.nonEmpty) canadds.foreach(_.add(map))
       else {
         val prevs = imaps.take(i).filter(_.compatible(map)) ::: map :: Nil
-        val s = prevs.collectFirst{case m if nview(m).canAdd(map) => nview(m)}.get
-        val newview = prevs.foldLeft(s) { (v, m) =>
-          if (v.canAdd(m)) {
-            val w = v.copy
-            w.add(m)
-            if (w.canAdd(map)) w else v
-          } else v
+        prevs.collectFirst{case m if nview(m).canAdd(map) => nview(m)} match {
+          case Some(s) =>
+            val newview = prevs.foldLeft(s) { (v, m) =>
+              if (v.canAdd(m)) {
+                val w = v.copy
+                w.add(m)
+                if (w.canAdd(map)) w else v
+              } else v
+            }
+            views ::= newview
+          case _ =>
         }
-
-        views ::= newview
       }
     }
     views.indices.map(i => views(i).toView(path.parent ? (path.name + i.toString))).toList.sortBy(_.getDeclarations.length).reverse
@@ -631,24 +643,9 @@ trait Preprocessor extends Extension { self =>
   }
 }
 
-object ParameterPreprocessor extends Preprocessor {
+object SimpleParameterPreprocessor extends Preprocessor {
   import info.kwarc.mmt.api.objects.Conversions._
 
-  /*
-  override def apply(th: DeclaredTheory): DeclaredTheory = {
-    val nth = new DeclaredTheory(th.parent,th.name,th.meta,ContextContainer(Nil),TermContainer(None))
-    val sub = Substitution(th.parameters.map(v => v.name / Hasher.Complex(OMV(v.name))):_*)
-    th.getDeclarations foreach {
-      case Include(_,from,args) if args.nonEmpty => // get rid of parametric includes
-        nth.add(Include(nth.toTerm,from,Nil))
-      case c : FinalConstant if sub.asContext.nonEmpty =>
-        val nc = Constant(nth.toTerm,c.name,c.alias,c.tp map(_ ^? sub),c.df map(_ ^? sub),c.rl,c.notC)
-        nth add nc
-      case o => nth add o
-    }
-    nth
-  }
-  */
   val trav = new StatelessTraverser {
     override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
       case OMV(n) if con.index(n).isEmpty =>
@@ -659,11 +656,36 @@ object ParameterPreprocessor extends Preprocessor {
   override def doTerm(tm: Term): Term = trav(ParseResult.fromTerm(tm).term,())
 }
 
+object CovariantParameterPreprocessor extends Preprocessor {
+  import info.kwarc.mmt.api.objects.Conversions._
+
+  override def apply(th: DeclaredTheory): DeclaredTheory = {
+    val nth = new DeclaredTheory(th.parent,th.name,th.meta,ContextContainer(Nil),TermContainer(None))
+    var sub = Substitution()
+    th.parameters foreach {v =>
+      val c = Constant(nth.toTerm,LocalName("Parameter") / v.name,Nil,v.tp.map(_ ^? sub),v.df.map(_ ^? sub),None,NotationContainer(None))
+      nth add c
+      sub = Substitution(sub.subs.toList ::: (v.name / OMS(c.path) :: Nil) :_*)
+    }
+    // val sub = Substitution(th.parameters.map(v => v.name / Hasher.Complex(OMV(v.name))):_*)
+    th.getDeclarations foreach {
+      case Include(_,from,args) /* if args.nonEmpty */ => // get rid of parametric includes
+        nth.add(Include(nth.toTerm,from,Nil))
+      case c : FinalConstant if sub.asContext.nonEmpty =>
+        val nc = Constant(nth.toTerm,c.name,c.alias,c.tp map(_ ^? sub),c.df map(_ ^? sub),c.rl,c.notC)
+        nth add nc
+      case o => nth add o
+    }
+    nth
+  }
+  // override def doTerm(tm: Term): Term = trav(ParseResult.fromTerm(tm).term,())
+}
+
 object DefinitionExpander extends Preprocessor {
   // private val defs : mutable.HashMap[GlobalName,Option[Term]] = mutable.HashMap.empty
   private def getExpanded(gn : GlobalName) : Option[Term] = /* defs.getOrElseUpdate(gn,*/ {
-    val c = controller.getAs(classOf[FinalConstant],gn)
-    c.df.map(traverser(_,()))
+    val c = Try(controller.getAs(classOf[FinalConstant],gn)).toOption
+    c.flatMap(_.df.map(traverser(_,())))
   } //)
 
   private val traverser = new StatelessTraverser {
@@ -682,7 +704,14 @@ object DefinitionExpander extends Preprocessor {
       case Include(_,from,args) if args.nonEmpty => // get rid of parametric includes
         nth.add(Include(nth.toTerm,from,Nil))
       case c : FinalConstant =>
-        val ntp = c.tp.map(tp => simplifier(traverser(tp,()),th.getInnerContext,RuleSet.collectRules(controller,th.getInnerContext),false))
+        val ntp = c.tp.map { tp =>
+          val ret = traverser(tp, ())
+          try {
+            simplifier(ret, th.getInnerContext, RuleSet.collectRules(controller, th.getInnerContext), false)
+          } catch {
+            case _ : info.kwarc.mmt.api.Error => ret
+          }
+        }
         nth add c
         ntp match {
           case Some(tm) if !c.tp.contains(tm) =>

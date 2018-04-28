@@ -159,11 +159,12 @@ class HashesNormal(val cfg : FinderConfig) extends Hasher {
         case c : FinalConstant
           if !cfg.fixing.exists(a => a.alignment.from.mmturi == c.path || a.alignment.to.mmturi == c.path) => c
       }) foreach (c => h.addConstant(doConstant(c)))
-      th.getIncludes.filterNot(commons.contains).foreach(t => h.addInclude(get(t).getOrElse{
-        println(t)
-        println(th)
-        ???
-      }))
+      th.getIncludes.filterNot(commons.contains).foreach(t =>
+        get(t) match {
+          case Some(r) => h.addInclude(r)
+          case _ =>
+        }
+      )
     }
     h.init
     h
@@ -207,8 +208,8 @@ class HashesNormal(val cfg : FinderConfig) extends Hasher {
           5 :: s.hashCode :: traverse(tp)
         case OML(name, tp, df, _,_) =>
           6 :: tp.map(traverse).getOrElse(List(-1)) ::: df.map(traverse).getOrElse(List(-1))
-        case o@OMSemiFormal(_) => List(1,1,{
-          pars ::= new Hasher.Complex(o)
+        case OMSemiFormal(_) | OMMOD(_) => List(1,1,{
+          pars ::= new Hasher.Complex(t)
           pars.length-1
         })
         case _ =>

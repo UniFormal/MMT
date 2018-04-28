@@ -22,11 +22,232 @@ function TheoryGraph()
 	var clusterPositions=[];
 	var allClusters=[];
 	var hiddenNodes={};
+	this.onConstructionDone=undefined;
 	
+	var allManuallyHiddenNodes=[];
+	var allNodeRegions=[];
 	
 	var edgesNameToHide=[];
-	this.onConstructionDone=undefined;
 	var that=this;
+	
+		this.removeNodeRegion=function(index)
+	{
+		allNodeRegions.splice(index, 1);
+		network.redraw();
+	}
+	
+	this.drawAllColoredRegionsOnCanvas=function(ctx)
+	{
+		for(var i=0;i<allNodeRegions.length;i++)
+		{
+			ctx.fillStyle = allNodeRegions[i].color;
+			ctx.strokeStyle = allNodeRegions[i].color;
+			
+			ctx.setLineDash([10]);
+			var oldWidth=ctx.lineWidth;
+			ctx.lineWidth=10;
+			ctx.strokeRect(allNodeRegions[i].left,allNodeRegions[i].top,allNodeRegions[i].right-allNodeRegions[i].left,allNodeRegions[i].bottom-allNodeRegions[i].top);
+			ctx.setLineDash([]);
+			ctx.lineWidth=oldWidth;
+			//ctx.globalAlpha = 0.2;			
+			//ctx.fillRect(allNodeRegions[i].left,allNodeRegions[i].top,allNodeRegions[i].right-allNodeRegions[i].left,allNodeRegions[i].bottom-allNodeRegions[i].top);
+			//ctx.globalAlpha = 1.0;
+		}
+	}
+	
+	this.drawAllColoredRegions = function(ctx)
+	{
+		if(allNodeRegions.length==0)
+		{
+			return;
+		}
+
+		for(var i=0;i<allNodeRegions.length;i++)
+		{
+			allNodeRegions[i].left=10000000;
+			allNodeRegions[i].right=-10000000;
+			allNodeRegions[i].top=10000000;
+			allNodeRegions[i].bottom=-10000000;
+			allNodeRegions[i].mappedNodes={};
+			
+			for(var j=0;j<allNodeRegions[i].nodeIds.length;j++)
+			{
+				if(hiddenNodes[allNodeRegions[i].nodeIds[j]] == true)
+				{
+					continue;
+				}
+				var box=network.getBoundingBox(allNodeRegions[i].nodeIds[j]);
+				
+				allNodeRegions[i].left=Math.min(allNodeRegions[i].left,box.left);
+				allNodeRegions[i].right=Math.max(allNodeRegions[i].right,box.right);
+				allNodeRegions[i].top=Math.min(allNodeRegions[i].top,box.top);
+				allNodeRegions[i].bottom=Math.max(allNodeRegions[i].bottom,box.bottom);
+				
+				allNodeRegions[i].mappedNodes[allNodeRegions[i].nodeIds[j]]=1;
+			}
+			
+			var distance=(i*4)%20+8;
+
+			if(allNodeRegions[i].left==10000000)
+			{
+				continue;
+			}
+
+			allNodeRegions[i].left-=distance;
+			allNodeRegions[i].right+=distance;
+			allNodeRegions[i].top-=distance;
+			allNodeRegions[i].bottom+=distance;
+			
+			ctx.fillStyle = allNodeRegions[i].color;
+			ctx.strokeStyle = allNodeRegions[i].color;
+			ctx.globalAlpha = 0.2;			
+			ctx.fillRect(allNodeRegions[i].left,allNodeRegions[i].top,allNodeRegions[i].right-allNodeRegions[i].left,allNodeRegions[i].bottom-allNodeRegions[i].top);
+			ctx.globalAlpha = 1.0;
+		}
+		that.repositionNodes();
+	}
+
+	function intersectRect(a, b) 
+	{
+		return (a.left <= b.right &&
+			b.left <= a.right &&
+			a.top <= b.bottom &&
+			b.top <= a.bottom)
+	}
+	
+	function liesInAnyRegion(box,id)
+	{
+		for(var j=0;j<allNodeRegions.length;j++)
+		{
+			if(typeof allNodeRegions[j].mappedNodes[id]=="undefined" && intersectRect(box, allNodeRegions[j])==true)
+			{
+				return j;
+			}
+		}
+		
+		return -1;
+	}
+	
+	this.repositionNodes=function()
+	{
+		//var allNodePositions=network.getPositions();
+		var newPositions=[];
+		for(var i=0;i<originalNodes.length;i++)
+		{
+			var box=network.getBoundingBox(originalNodes[i].id);
+			for(var j=0;j<allNodeRegions.length;j++)
+			{	
+				if(typeof allNodeRegions[j].mappedNodes[originalNodes[i].id]=="undefined" && intersectRect(box, allNodeRegions[j])==true)
+				{
+					var minDirection=0;
+					var minDistance=Math.abs(box.right-allNodeRegions[j].left); 
+					var tmp;
+					var width=box.right-box.left;
+					var height=box.bottom-box.top;
+					
+					tmp=Math.abs(box.left-allNodeRegions[j].right);
+					
+					if(tmp<minDistance)
+					{
+						minDirection=1;
+						minDistance=tmp;
+					}
+					
+					tmp=Math.abs(box.bottom-allNodeRegions[j].top);
+					if(tmp<minDistance)
+					{
+						minDirection=2;
+						minDistance=tmp;
+					}
+					
+					tmp=Math.abs(box.top-allNodeRegions[j].bottom);
+					if(tmp<minDistance)
+					{
+						minDirection=3;
+						minDistance=tmp;
+					}	
+
+					
+					if(minDirection==0)
+					{
+						var intersectingRegion=0;
+						var newX=allNodeRegions[j].left-width/1.8;
+						while(intersectingRegion!=-1)
+						{
+							box.left=newX-width/2;
+							box.right=newX+width/2;
+							intersectingRegion=liesInAnyRegion(box,originalNodes[i].id);
+							if(intersectingRegion!=-1)
+							{
+								newX=allNodeRegions[intersectingRegion].left-width/1.8;
+							}
+						} 
+						newPositions.push({"x":newX, "id":originalNodes[i].id});
+					}
+					else if(minDirection==1)
+					{
+						var intersectingRegion=0;
+						var newX=allNodeRegions[j].right+width/1.8;
+						while(intersectingRegion!=-1)
+						{
+							box.left=newX-width/2;
+							box.right=newX+width/2;
+							intersectingRegion=liesInAnyRegion(box,originalNodes[i].id);
+							if(intersectingRegion!=-1)
+							{
+								newX=allNodeRegions[intersectingRegion].right+width/1.8;
+							}
+						} 
+						newPositions.push({"x":newX, "id":originalNodes[i].id});
+					}
+					else if(minDirection==2)
+					{
+						var intersectingRegion=0;
+						var newY=allNodeRegions[j].top-height/1.8;
+						while(intersectingRegion!=-1)
+						{
+							box.top=newY-height/2;
+							box.bottom=newY+height/2;
+							intersectingRegion=liesInAnyRegion(box,originalNodes[i].id);
+							if(intersectingRegion!=-1)
+							{
+								newY=allNodeRegions[intersectingRegion].top-height/1.8;
+							}
+						} 
+						newPositions.push({"y":newY, "id":originalNodes[i].id});
+					}
+					else if(minDirection==3)
+					{
+						var intersectingRegion=0;
+						var newY=allNodeRegions[j].bottom+height/1.8;
+						while(intersectingRegion!=-1)
+						{
+							box.top=newY-height/2;
+							box.bottom=newY+height/2;
+							intersectingRegion=liesInAnyRegion(box,originalNodes[i].id);
+							if(intersectingRegion!=-1)
+							{
+								newY=allNodeRegions[intersectingRegion].bottom+height/1.8;
+							}
+						} 
+						newPositions.push({"y":newY, "id":originalNodes[i].id});
+					}
+				}
+			}
+		}
+		
+		for(var i=0;i<newPositions.length;i++)
+		{
+			if(typeof newPositions[i].x != "undefined")
+			{
+				network.body.nodes[newPositions[i].id].x=newPositions[i].x;
+			}
+			if(typeof newPositions[i].y != "undefined")
+			{
+				network.body.nodes[newPositions[i].id].y=newPositions[i].y;
+			}
+		}
+	}
 	
 	this.selectNodesByType=function(type)
 	{
@@ -206,6 +427,11 @@ function TheoryGraph()
 				currentNodeJson+=',"mathml":"'+curNode.mathml.split('"').join("'")+'"';
 			}
 			
+			if(typeof curNode.previewhtml != "undefined" && curNode.previewhtml!="")
+			{
+				currentNodeJson+=',"previewhtml":"'+curNode.previewhtml.split('"').join("'")+'"';
+			}
+			
 			if(typeof curNode.url != "undefined" && curNode.url!="" && compressionRate<2)
 			{
 				currentNodeJson+=',"url":"'+curNode.url+'"';
@@ -315,8 +541,84 @@ function TheoryGraph()
 			}
 		}
 		edges.update(edgesToHide);
+		//addToStateHistory("hideEdges", {"hideEdges":edgesToHide,"hidden":hideEdge});
 	}
+	
+	this.hideEdgesById=function(edgeIds, hideEdge)
+	{
+		if(typeof edgeIds=="undefined" || edgeIds.length==0)
+			return;
+		
+		var edgesToHide=[];
+		for(var i=0;i<edgeIds.length;i++)
+		{
+			edgesToHide.push({id: edgeIds[i], hidden: hideEdge});
+		}
+		edges.update(edgesToHide);
+		addToStateHistory("hideEdges", {"hideEdges":edgesToHide,"hidden":hideEdge});
+	}
+	
+	this.showAllManuallyHiddenNodes=function()
+	{
+		var nodesToHide=[];
+		var edgesToHide=[];
+		for(var i=0;i<allManuallyHiddenNodes.length;i++)
+		{
+			for(var j=0;j<allManuallyHiddenNodes[i].nodes.length;j++)
+			{
+				allManuallyHiddenNodes[i].nodes[j].hidden=false;
+				nodesToHide.push(allManuallyHiddenNodes[i].nodes[j]);
+				hiddenNodes[allManuallyHiddenNodes[i].nodes[j].id]=false;
+			}
+			nodes.update(allManuallyHiddenNodes[i].nodes);
+			
+			for(var j=0;j<allManuallyHiddenNodes[i].edges.length;j++)
+			{
+				allManuallyHiddenNodes[i].edges[j].hidden=false;
+				edgesToHide.push(allManuallyHiddenNodes[i].edges[j]);
+			}
+			edges.update(allManuallyHiddenNodes[i].edges);
+		}
+		allManuallyHiddenNodes=[];
 
+		addToStateHistory("hideNodes", {"hideNodes":nodesToHide,"hideEdges":edgesToHide,"hidden":false});
+	}
+	
+	this.hideNodesById=function(nodeIds, hideNode)
+	{
+		if(typeof nodeIds=="undefined" || nodeIds.length==0)
+		{
+			nodeIds=network.getSelectedNodes();
+		}
+		
+		var nodesToHide=[];
+		for(var i=0;i<nodeIds.length;i++)
+		{
+			nodesToHide.push({id: nodeIds[i], hidden: hideNode});
+			hiddenNodes[nodeIds[i]]=hideNode;
+		}
+		nodes.update(nodesToHide);
+		
+
+		var edgesToHide=[];
+		for(var i=0;i<originalEdges.length;i++)
+		{
+			if(hideNode==true && (hiddenNodes[originalEdges[i].to] == true || hiddenNodes[originalEdges[i].from] == true))
+			{
+				edgesToHide.push({id: originalEdges[i]["id"], hidden: hideNode});
+			}
+
+			if(hideNode==false && (hiddenNodes[originalEdges[i].to]==false && hiddenNodes[originalEdges[i].from]==false))
+			{
+				edgesToHide.push({id: originalEdges[i]["id"], hidden: hideNode});
+			}
+		}
+		edges.update(edgesToHide);
+		
+		allManuallyHiddenNodes.push({"nodes":nodesToHide, "edges":edgesToHide});
+		addToStateHistory("hideNodes", {"hideNodes":nodesToHide,"hideEdges":edgesToHide,"hidden":hideNode});
+	}
+	
 	this.hideNodes=function(type, hideEdge)
 	{
 		//that.setEdgesHidden(type, hideEdge);
@@ -509,8 +811,27 @@ function TheoryGraph()
 		network.clusterOutliers(clusterOptionsByData);
 	}
 	
+	this.cageNodes=function(nodeIds,color)
+	{
+		if(nodeIds==undefined)
+		{
+			nodeIds=network.getSelectedNodes();
+		}
+
+		if(color==undefined)
+		{
+			color='#'+(4*Math.floor(Math.random()*4)).toString(16)+
+    		(4*Math.floor(Math.random()*4)).toString(16)+
+    		(4*Math.floor(Math.random()*4)).toString(16);
+		}
+		
+		allNodeRegions.push({"nodeIds":nodeIds,"color":color});
+		addToStateHistory("cageNodes", {"nodeIds":nodeIds,"color":color,"index":allNodeRegions.length-1});
+		network.redraw();
+	}
+	
 	// Selects all nodes in area of given rect
-		this.selectNodesInRect = function(rect) 
+	this.selectNodesInRect = function(rect) 
 	{
 		var fromX;
 		var toX;
@@ -708,6 +1029,7 @@ function TheoryGraph()
 		ensureUniqueIds(originalEdges);
 		
 		postprocessEdges();
+		postprocessNodes();
 		
 		startConstruction(true);
 	}
@@ -738,6 +1060,7 @@ function TheoryGraph()
 		ensureUniqueIds(originalEdges);
 		
 		postprocessEdges();
+		postprocessNodes();
 		
 		startConstruction();
 	}
@@ -800,45 +1123,13 @@ function TheoryGraph()
 	}
 	
 	// Apply styles to nodes/edges
-	function postprocessEdges(nodesIn, edgesIn)
-	{
-		if(typeof edgesIn =="undefined" )
-		{
-			edgesIn=originalEdges;
-		}
-		
+	function postprocessNodes(nodesIn)
+	{	
 		if(typeof nodesIn =="undefined" )
 		{
 			nodesIn=originalNodes;
 		}
 		
-		for(var i=0;i<edgesIn.length;i++)
-		{
-			if(edgesIn[i].style!=undefined && ARROW_STYLES[edgesIn[i].style]!=undefined)
-			{
-				var styleInfos=ARROW_STYLES[edgesIn[i].style];
-				edgesIn[i].arrows = {to:{enabled:styleInfos.directed}};
-				
-				if(styleInfos.circle==true)
-				{
-					edgesIn[i].arrows.to.type="circle";
-				}
-				else
-				{
-					edgesIn[i].arrows.to.type="arrow";
-				}
-
-				if(styleInfos.smoothEdge==false)
-				{
-					edgesIn[i].smooth={enabled: false};
-				}
-				
-				edgesIn[i].dashes=styleInfos.dashes;
-				edgesIn[i].width=styleInfos.width;
-				edgesIn[i].color={color:styleInfos.color, highlight:styleInfos.colorHighlight, hover:styleInfos.colorHover};
-			}
-		}
-
 		for(var i=0;i<nodesIn.length;i++)
 		{
 			if(nodesIn[i].style!=undefined && NODE_STYLES[nodesIn[i].style]!=undefined)
@@ -847,21 +1138,24 @@ function TheoryGraph()
 
 				if(styleInfos.shape=="ellipse" || styleInfos.shape=="circle")
 				{
-					if(nodesIn[i].mathml!=undefined && nodesIn[i].mathml!="" && nodesIn[i].mathml.length>10)
+					if((nodesIn[i].previewhtml!=undefined && nodesIn[i].previewhtml!="" && nodesIn[i].previewhtml.length>10) || (nodesIn[i].mathml!=undefined && nodesIn[i].mathml!="" && nodesIn[i].mathml.length>10))
 						nodesIn[i].shape="circularImage";
 					else
 						nodesIn[i].shape="ellipse";
 				}
 				else if(styleInfos.shape=="square")
 				{
-					if(nodesIn[i].mathml!=undefined && nodesIn[i].mathml!="" && nodesIn[i].mathml.length>10)
+					if((nodesIn[i].previewhtml!=undefined && nodesIn[i].previewhtml!="" && nodesIn[i].previewhtml.length>10) || (nodesIn[i].mathml!=undefined && nodesIn[i].mathml!="" && nodesIn[i].mathml.length>10))
 						nodesIn[i].shape="image";
 					else
 						nodesIn[i].shape="square";
 				}
 				else
 				{
-					nodesIn[i].shape=styleInfos.shape;
+					if((nodesIn[i].previewhtml!=undefined && nodesIn[i].previewhtml!="" && nodesIn[i].previewhtml.length>10) || (nodesIn[i].mathml!=undefined && nodesIn[i].mathml!="" && nodesIn[i].mathml.length>10))
+						nodesIn[i].shape="image";
+					else
+						nodesIn[i].shape=styleInfos.shape;
 				}
 				
 				if(typeof nodesIn[i].color=="undefined")
@@ -899,6 +1193,41 @@ function TheoryGraph()
 		}
 	}
 	
+	function postprocessEdges(edgesIn)
+	{
+		if(typeof edgesIn =="undefined" )
+		{
+			edgesIn=originalEdges;
+		}
+		
+		for(var i=0;i<edgesIn.length;i++)
+		{
+			if(edgesIn[i].style!=undefined && ARROW_STYLES[edgesIn[i].style]!=undefined)
+			{
+				var styleInfos=ARROW_STYLES[edgesIn[i].style];
+				edgesIn[i].arrows = {to:{enabled:styleInfos.directed}};
+				
+				if(styleInfos.circle==true)
+				{
+					edgesIn[i].arrows.to.type="circle";
+				}
+				else
+				{
+					edgesIn[i].arrows.to.type="arrow";
+				}
+
+				if(styleInfos.smoothEdge==false)
+				{
+					edgesIn[i].smooth={enabled: false};
+				}
+				
+				edgesIn[i].dashes=styleInfos.dashes;
+				edgesIn[i].width=styleInfos.width;
+				edgesIn[i].color={color:styleInfos.color, highlight:styleInfos.colorHighlight, hover:styleInfos.colorHover};
+			}
+		}
+	}
+	
 	function addNodesAndEdges(data, status=200)
 	{
 		if(status!=200 && status!="success")
@@ -928,7 +1257,8 @@ function TheoryGraph()
 		ensureUniqueIds(nodesJSON);
 		ensureUniqueIds(edgesJSON);
 		
-		postprocessEdges(nodesJSON, edgesJSON);
+		postprocessEdges(edgesJSON);
+		postprocessNodes(nodesJSON);
 		
 		edges.update(edgesJSON);
 		nodes.update(nodesJSON);
@@ -938,6 +1268,147 @@ function TheoryGraph()
 		
 		setStatusText("<font color=\"green\">Successfully recieved "+nodesJSON.length+" node(s) and "+edgesJSON.length+" edge(s)!</font>");
 		document.body.style.cursor = 'auto';
+	}
+	
+	this.addEdge = function(edge)
+	{
+		originalEdges.push(edge);
+		postprocessEdges([edge]);
+		edges.update(edge);
+		
+		addToStateHistory("addEdge", {"edge": edge});
+	}
+	
+	this.deleteEdges = function(edgeIds)
+	{
+		var deletedEdges=[];
+		originalEdges = originalEdges.filter(function(item) 
+		{
+			var keepEdge=true;
+			for(var i=0;i<edgeIds.length;i++)
+			{
+				if(item.id==edgeIds[i])
+				{
+					keepEdge=false;
+					deletedEdges.push(item);
+					break;
+				}
+			}
+			return keepEdge;
+		});
+
+		edges.remove(edgeIds);
+		addToStateHistory("deleteEdges", {"edges": deletedEdges});
+	}
+	
+	this.deleteNodes = function(nodeIds, edgeIds=undefined)
+	{
+		var deletedNodes=[];
+		var deletedEdges=[];
+		originalNodes = originalNodes.filter(function(item) 
+		{
+			var keepNode=true;
+			for(var i=0;i<nodeIds.length;i++)
+			{
+				if(item.id==nodeIds[i])
+				{
+					keepNode=false;
+					deletedNodes.push(item);
+					break;
+				}
+			}
+			return keepNode;
+		});
+		
+		nodes.remove(nodeIds);
+		
+		if(typeof edgeIds!="undefined")
+		{
+			originalEdges = originalEdges.filter(function(item) 
+			{
+				var keepEdge=true;
+				for(var i=0;i<edgeIds.length;i++)
+				{
+					if(item.id==edgeIds[i])
+					{
+						keepEdge=false;
+						deletedEdges.push(item);
+						break;
+					}
+				}
+				return keepEdge;
+			});
+		}
+		edges.remove(edgeIds);
+		addToStateHistory("deleteNodes", {"nodes": deletedNodes,"edges":deletedEdges});
+	}
+	
+	this.saveEdge = function(edge)
+	{
+		var oldEdge={};
+		postprocessEdges([edge]);
+		for(var i=0;i<originalEdges.length;i++)
+		{
+			if(originalEdges[i].id==edge.id)
+			{
+				oldEdge=originalEdges[i];
+				originalEdges[i]=edge;
+				break;
+			}
+		}
+
+		edges.update(edge);
+		addToStateHistory("editEdge", {"newEdge": edge,"oldEdge":oldEdge});
+	}
+	
+	this.saveNode = function(node)
+	{
+		var oldNode={};
+		postprocessNodes([node]);
+		for(var i=0;i<originalNodes.length;i++)
+		{
+			if(originalNodes[i].id==node.id)
+			{
+				oldNode=originalNodes[i];
+				originalNodes[i]=node;
+				break;
+			}
+		}
+		
+		if(typeof node["mathml"]!="undefined" && node["mathml"]!="")
+		{
+			nodeToSVGMath(node);
+		}
+		if(typeof node["previewhtml"]!="undefined" &&  node["previewhtml"]!="")
+		{
+			nodeToSVGHTML(node);
+		}
+		nodes.update(node);
+		addToStateHistory("editNode", {"newNode": node,"oldNode":oldNode});
+	}
+	
+	this.isUniqueId = function(id)
+	{
+		for(var i=0;i<originalNodes.length;i++)
+		{
+			if(originalNodes[i].id==id)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	this.isUniqueEdgeId = function(id)
+	{
+		for(var i=0;i<originalEdges.length;i++)
+		{
+			if(originalEdges[i].id==id)
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	this.lazyLoadNodes=function(jsonURL)
@@ -1037,6 +1508,37 @@ function TheoryGraph()
 		}
 	}
 	
+	function nodeToSVGHTML(node)
+	{
+		$('#string_span').html(node["previewhtml"]);
+		var width=$('#string_span').width();
+		var height=$('#string_span').height();
+		$('#string_span').html("");
+		var svg;
+		
+		if(node["shape"]=="image")
+		{
+			var overallheight=height;
+			svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+(width+16*1)+' '+(16*1+overallheight)+'" width="'+(width+16*1)+'px" height="'+(16*1+overallheight)+'px" preserveAspectRatio="none">' +
+			//svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMinYMin">' +
+			'<foreignObject x="8" y="8" width="'+(width+15)+'" height="'+overallheight+'">' +
+			'<div xmlns="http://www.w3.org/1999/xhtml" style="font-size:18px;margin-left: auto;margin-right: auto;display: flex;align-items: center;justify-content: center">' +
+			node["previewhtml"] +
+			'</div></foreignObject>' +
+			'</svg>';
+		}
+		else
+		{
+			svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(30*1+width)+'px" height="'+(30*1+height)+'px" preserveAspectRatio="none">' +
+			'<foreignObject x="15" y="13" width="100%" height="100%">' +
+			'<div xmlns="http://www.w3.org/1999/xhtml">' +
+			node["previewhtml"] +
+			'</div></foreignObject>' +
+			'</svg>';
+		}
+		node["image"]="data:image/svg+xml;charset=utf-8,"+ encodeURIComponent(svg);
+	}
+	
 	// Converts MathML node to SVG node
 	function nodeToSVGMath(node)
 	{
@@ -1115,8 +1617,13 @@ function TheoryGraph()
 	}
 	
 	// Called when the Visualization API is loaded.
-	function startRendering(fixedPositions=false) 
+	function startRendering(fixedPositions) 
 	{
+		if(typeof fixedPositions == "undefined")
+		{
+			fixedPositions=false;
+		}
+		
 		setStatusText("Rendering graph...");
 		console.log("fixedPositions: "+fixedPositions);
 		if(fixedPositions==false)
@@ -1200,7 +1707,7 @@ function TheoryGraph()
 			{
 				console.log("Execute onConstructionDone");
 				var tmp=that.onConstructionDone;
-				that.onConstructionDone=undefined;;
+				that.onConstructionDone=undefined;
 				tmp();
 				
 			}
@@ -1369,6 +1876,16 @@ function TheoryGraph()
 				openOutlierClusters(params.scale);
 			} 
 		});*/
+		
+		network.on("beforeDrawing", function (ctx) 
+		{
+			that.drawAllColoredRegions(ctx);
+		});
+		
+		network.on("afterDrawing", function (ctx) 
+		{
+			that.drawAllColoredRegionsOnCanvas(ctx);
+		});
 		
 		network.once('initRedraw', function() 
 		{

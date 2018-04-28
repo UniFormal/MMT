@@ -54,7 +54,7 @@ object Orders {
     ,"calculus/normedmetric.mmt"
     ,"calculus/sequencesseries.mmt"
     ,"calculus/limitsderivatives.mmt"
-    // ,"calculus/domains.mmt"
+    ,"calculus/domains.mmt"
     // "categories/basics.mmt"
   )
 

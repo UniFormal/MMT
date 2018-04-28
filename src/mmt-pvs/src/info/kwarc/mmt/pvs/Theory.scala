@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.refactoring.{Hasher, ParameterPreprocessor, Preprocessor}
+import info.kwarc.mmt.api.refactoring.{CovariantParameterPreprocessor, Hasher, Preprocessor}
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.lf.hollight.HOLLight.vfhoas
 import info.kwarc.mmt.lf._
@@ -37,7 +37,7 @@ object PVSTheory {
     private val trav = new StatelessTraverser {
       override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
         case ApplySpine(OMS(p),args) if !syms.contains(p) =>
-          Hasher.Complex(t)
+          OMS(p)
         case ApplySpine(OMS(pvsapply.path), List(_,tpf,nf, tuple_expr(args))) =>
           args.foldLeft(traverse(nf))((f,p) =>
             ApplySpine(OMS(pvsapply.path),Hasher.Complex(p._2),Hasher.Complex(tpf),f,traverse(p._1))
@@ -68,7 +68,7 @@ object PVSTheory {
   private val implies = thpath ? "IMPLIES"
   private val equiv = thpath ? "IFF"
 
-  val preproc = (notccs + ParameterPreprocessor + paramelim + LFHOASElim(vfhoas) + LFClassicHOLPreprocessor(
+  val preproc = (notccs + CovariantParameterPreprocessor + paramelim + LFHOASElim(vfhoas) + LFClassicHOLPreprocessor(
     proof.path,
     and,
     not,

@@ -2,7 +2,7 @@ package info.kwarc.mmt.mitm
 
 import info.kwarc.mmt.api.{DPath, uom}
 import info.kwarc.mmt.api.objects.OMS
-import info.kwarc.mmt.api.refactoring.ParameterPreprocessor
+import info.kwarc.mmt.api.refactoring.SimpleParameterPreprocessor
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardNat, StandardPositive}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.LFClassicHOLPreprocessor
@@ -56,7 +56,7 @@ object MitM {
   val exists = logic ? "exists"
   val eq = logic ? "eq"
 
-  val preproc = (ParameterPreprocessor + info.kwarc.mmt.api.refactoring.DefinitionExpander + new LFClassicHOLPreprocessor(
+  val preproc = (SimpleParameterPreprocessor + info.kwarc.mmt.api.refactoring.DefinitionExpander + new LFClassicHOLPreprocessor(
     ded = MitM.ded,
     and = MitM.and,
     not = MitM.not,

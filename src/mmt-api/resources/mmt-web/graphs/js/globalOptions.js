@@ -64,6 +64,15 @@ var THEORY_GRAPH_OPTIONS =
 			type: "straightCross",
 			roundness: 0.3
 		}
+	},
+	manipulation: 
+	{
+          addNode: addNodeCallback,
+          editNode: editNodeCallback,
+		  deleteNode: deleteNodeCallback,
+          addEdge: addEdgeCallback,
+		  editEdge: editEdgeCallback,
+		  deleteEdge: deleteEdgeCallback
 	}
 	/*layout: 
 	{
