@@ -4,7 +4,10 @@ import java.awt.Dimension
 
 import info.kwarc.mmt.api._
 import gui.Swing
+import info.kwarc.mmt.api.modules.DeclaredView
+import info.kwarc.mmt.api.objects.{OMID, OMS}
 import info.kwarc.mmt.api.refactoring.{NotDone, ViewFinder}
+import info.kwarc.mmt.api.symbols.FinalConstant
 import javax.swing.JMenu
 import org.gjt.sp.jedit._
 import textarea._
@@ -77,7 +80,7 @@ class EditActions(mmtplugin: MMTPlugin) {
             vfO match {
               case Some(vf) =>
                 try {
-                  val results = vf.find(mp, to).map(v => v.toString) //.mkString("\n\n")
+                  val results = vf.find(mp, to).map(presentView) //.mkString("\n\n")
                   "From: " + mp.toString + "\nTo: " + to + "\n" + {
                     if (results.isEmpty) "No results found :("
                     else results.length + " Results found:\n\n" + results.mkString("\n\n")
@@ -94,6 +97,17 @@ class EditActions(mmtplugin: MMTPlugin) {
       case _ =>
     }
   }
+
+  private def presentView(v : DeclaredView) : String = v.name.toString + " : " +
+    v.from.toMPath.module.name.toString + " -> " + v.to.toMPath.module.name.toString + "\n" + (v.getIncludes.map { i =>
+      "  include " + i._2.toStr(true)
+    } ::: v.getDeclarations.collect {
+      case c : FinalConstant if c.df.isDefined =>
+        "  " + c.name + " = " + (c.df match {
+          case Some(OMS(p)) => p.module.name + "?" + p.name
+          case Some(t) => t.toStr(true)
+        })
+    }).mkString("\n")
 
   def viewfindermenu(view: View) = {
     mmtplugin.controller.extman.get(classOf[ViewFinder]).headOption match {

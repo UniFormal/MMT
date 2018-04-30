@@ -395,6 +395,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     evals.distinct.sortBy(v => (order.indexWhere(p => Hasher.Symbol(p.name) == v.from),-v.value))
   }
 
+  /*
   /**
     * Helper method, maximizing a partial morphism by adding all unique matches under an input morphism
     *
@@ -416,6 +417,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
 
     iterate(viewset, allpairs).distinct
   }
+  */
 
   private object MapStore {
     private var maps: mutable.HashMap[(GlobalName, GlobalName),Option[Map]] = mutable.HashMap.empty
@@ -507,7 +509,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
       // val tos = ls.map(_._2)
       // val newfrom = hash.from.find(t => frs.forall(t.getAll.map(_.name).contains)).getOrElse(th1)
       // val newto = hash.to.find(t => tos.forall(t.getAll.map(_.name).contains)).getOrElse(th2)
-      makeMaximal(ls).map(p => MapStore.get(p._1,p._2).getOrElse{
+      ls.map(p => MapStore.get(p._1,p._2).getOrElse{
         // println("Missing: " + p._1 + " --> " + p._2)
         // sys.exit()
         Map(Hasher.Symbol(p._1),Hasher.Symbol(p._2),Nil,0)
@@ -545,7 +547,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     def toView(path : MPath) : DeclaredView = {
       maps = maps.distinct
       val v = new DeclaredView(path.parent,path.name,TermContainer(OMMOD(from)),TermContainer(OMMOD(to)),false)
-      maps.foreach(m => if (m.from != m.to) v.add(Constant(v.toTerm,m.sfrom.name,Nil,None,Some(OMS(m.sto)),None)))
+      maps.foreach(m => if (m.from != m.to && !v.declares(m.sfrom.name)) v.add(Constant(v.toTerm,m.sfrom.name,Nil,None,Some(OMS(m.sto)),None)))
       v
     }
   }
