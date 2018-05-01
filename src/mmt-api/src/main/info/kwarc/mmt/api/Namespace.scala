@@ -50,5 +50,5 @@ object NamespaceMap {
       xml.namespaces(n.scope).foreach {case (p,u) => nm ::= ((p,URI(u)))}
       NamespaceMap(mmt.mmtbase, nm)
    }
-   def empty = apply(mmt.mmtbase)
+   def empty = NamespaceMap(mmt.mmtbase)
 }

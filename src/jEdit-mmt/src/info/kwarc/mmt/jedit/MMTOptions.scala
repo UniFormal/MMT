@@ -86,7 +86,7 @@ class BooleanOption(val key: String, val label: String) extends MMTOption[Boolea
 object MMTOptions {
   val startup = new StringOption("startup", "custom startup msl file")
   val config = new StringOption("config", "custom configuration file")
-  val archives = new StringOption("archives", "custom folder that contains archives")
+  val archives = new StringOption("archives", "local folder that contains archives (mathhub root)")
   val lowAsciiDelims = new BooleanOption("lowAsciiDelims", "use ASCII 28-31 as delimiters")
   val semantichighlighting = new BooleanOption("SemanticHighlighting","Semantic highlighting (does not work yet)")
   /** the list of all options */

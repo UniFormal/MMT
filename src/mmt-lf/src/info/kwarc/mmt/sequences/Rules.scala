@@ -140,7 +140,8 @@ object IndexInfer extends InferenceRule(index.path, OfType.path) {
 /**
  * ([a(i)] i=1^n).k  ----> a(k)
  * (a^n).i           ----> a
- * (a_1,...,a_n).k  -----> a_k    if k literal
+ * (a_1,...,a_n).k   ----> a_k    if k literal
+ * a.0               ----> a      if |a|=1     // every plain term can be seen as a sequence of length 1
  */
 object IndexCompute extends ComputationRule(index.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
@@ -162,7 +163,11 @@ object IndexCompute extends ComputationRule(index.path) {
             Some(as(l.toInt))
           case _ => None
         }
-      case _ => None
+      case s =>
+        if ((nO contains OMS(one)) && at == NatLit(0)) {
+          Some(s)
+        } else
+          None
     }
   }
 }

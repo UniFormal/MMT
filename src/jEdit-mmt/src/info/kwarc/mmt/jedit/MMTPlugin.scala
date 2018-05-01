@@ -60,13 +60,21 @@ class MMTPlugin extends EBPlugin with Logger {
       errorlist.ErrorSource.registerErrorSource(errorSource)
       val archives = MMTOptions.archives.get orElse
         controller.getMathHub.map(_.local.toString) getOrElse "mars"
-      controller.addArchive(home resolve archives)
+      val archivesFolder = home resolve archives
+      controller.addArchive(archivesFolder)
+      // if no lmh root has been defined (e.g., in the custom mmtrc file), we use the archives folder
+      if (controller.getMathHub.isEmpty && archives != "mars") {
+        val cf = new MMTConfig
+        cf.addEntry(LMHConf(archivesFolder, true, None))
+        controller.loadConfig(cf,false)
+      }
       // status bar is not actually available yet at this point
       controller.report.addHandler(StatusBarLogger)
       controller.extman.addExtension(mmtListener)
       jEdit.getViews foreach customizeView
       // make tooltips stay longer
       javax.swing.ToolTipManager.sharedInstance().setDismissDelay(100000)
+      // tooltip font is set in handleMessage
    }
    /** called by jEdit when plugin is unloaded */
    override def stop {
@@ -92,6 +100,9 @@ class MMTPlugin extends EBPlugin with Logger {
               case ViewUpdate.CREATED =>
                  log("handling " + vup.paramString)
                  customizeView(view)
+                 // set tooltip font; this is only needed once and should be done is start; but it's unclear how to get the font if there is no view yet
+                 val font = view.getTextArea.getPainter().getFont()
+                 javax.swing.UIManager.put("ToolTip.font",font)
               case ViewUpdate.CLOSED =>
                  log("handling " + vup.paramString)
                  clearMMTToolBar(view)

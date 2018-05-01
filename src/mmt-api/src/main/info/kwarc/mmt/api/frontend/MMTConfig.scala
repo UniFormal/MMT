@@ -52,9 +52,9 @@ case class DatabaseConf(url: URI, uri: URI) extends BackendConf {
 }
 
 /**
- * registers a set of OAF working copies
+ * registers a set of LMH working copies
  */
-case class OAFConf(local: File, https: Boolean, remote: Option[URI]) extends BackendConf {
+case class LMHConf(local: File, https: Boolean, remote: Option[URI]) extends BackendConf {
    val id = remote.toString
 }
 
@@ -215,14 +215,14 @@ object MMTConfig {
           case _ => fail
         }
         case "backends" => split(line) match {
-           case "oaf" :: local :: args if args.length <= 2 =>
+           case ("lmh" | "oaf") :: local :: args if args.length <= 2 =>
               val (https, argsRest) = args match {
                 case "ssh" :: tl => (false, tl)
                 case "https" :: tl => (true, tl)
                 case _ => (true, args)
               }
               val remote = argsRest.headOption.map(URI(_))
-              config.addEntry(OAFConf(relFile(local), https, remote))
+              config.addEntry(LMHConf(relFile(local), https, remote))
            case "mathpath" :: local :: Nil =>
               config.addEntry(MathPathConf(File(local)))
            case _ => fail

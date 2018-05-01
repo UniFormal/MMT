@@ -2,10 +2,16 @@ package info.kwarc.mmt.pvs
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.metadata.MetaDatum
+import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.lf.{Apply, ApplySpine, Lambda}
+import info.kwarc.mmt.api.refactoring.{CovariantParameterPreprocessor, Hasher, Preprocessor}
+import info.kwarc.mmt.api.symbols.FinalConstant
+import info.kwarc.mmt.lf.hollight.HOLLight.vfhoas
+import info.kwarc.mmt.lf._
 import utils._
 import objects.Conversions._
+
+import scala.collection.mutable
 
 object PVSTheory {
    val rootdpath = DPath(URI.http colon "pvs.csl.sri.com")
@@ -18,6 +24,61 @@ object PVSTheory {
       val path = thpath ? s
       val term = OMS(path)
    }
+
+  val vfhoas = ViewFinderHOAS(tp.path,expr.path,pvslambda.path,pvsapply.path,fun_type.path)
+  private val paramelim = new Preprocessor {
+    private lazy val syms = getSyms(thpath)
+    private val symmap : mutable.HashMap[MPath,List[GlobalName]] = mutable.HashMap.empty
+    private def getSyms(mp : MPath) : List[GlobalName] = symmap.getOrElseUpdate(mp,{
+      val th = controller.getAs(classOf[DeclaredTheory],mp)
+      th.getIncludes.flatMap(getSyms).distinct ::: th.getConstants.map(_.path)
+    })
+
+    private val trav = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+        case ApplySpine(OMS(p),args) if !syms.contains(p) =>
+          OMS(p)
+        case ApplySpine(OMS(pvsapply.path), List(_,tpf,nf, tuple_expr(args))) =>
+          args.foldLeft(traverse(nf))((f,p) =>
+            ApplySpine(OMS(pvsapply.path),Hasher.Complex(p._2),Hasher.Complex(tpf),f,traverse(p._1))
+          )
+        case fun_type(tuple_type(ls),b) =>
+          ls.foldRight(traverse(b))((tp,r) => fun_type(tp,r))
+          // Some(unapply(nf).map(p => (p._1, p._2 ::: a :: Nil)).getOrElse((nf, List(a))))
+        case _ =>
+          Traverser(this,t)
+      }
+    }
+    override protected def doTerm(tm: Term): Term = trav(tm,())
+  }
+  private val notccs = new Preprocessor {
+    override def apply(th : DeclaredTheory) : DeclaredTheory = {
+      val nth = new DeclaredTheory(th.parent,th.name,th.meta,th.paramC,th.dfC)
+      th.getDeclarations foreach {
+        case c : FinalConstant if c.name.toString.contains("TCC") =>
+        case o => nth add o
+      }
+      nth
+    }
+  }
+
+  private val and = thpath ? "AND"
+  private val not = thpath ? "NOT"
+  private val or = thpath ? "OR"
+  private val implies = thpath ? "IMPLIES"
+  private val equiv = thpath ? "IFF"
+
+  val preproc = (notccs + CovariantParameterPreprocessor + paramelim + LFHOASElim(vfhoas) + LFClassicHOLPreprocessor(
+    proof.path,
+    and,
+    not,
+    forall = Some(forall.path),
+    exists = Some(exists.path),
+    or = Some(or),
+    implies = Some(implies),
+    equiv = Some(equiv),
+    equal = Some(equal.path)
+  )).withKey("PVS").withKey(thpath)
 
   object parambind {
     val path: GlobalName = PVSTheory.rootdpath ? "BoundInclude" ? "parameter_binder"
@@ -280,17 +341,20 @@ object PVSTheory {
 
    object recordexpr extends sym("recordexpr") {
       def apply(nametpdf : (LocalName,Term,Term)*) = {
-         val rtp = LFX.RecExp(nametpdf map (t => OML(t._1, Some(tp.term), Some(t._2))): _*)
-         val rdf = LFX.RecExp(nametpdf map (t => OML(t._1, Some(expr(t._2)), Some(t._3))): _*)
+         val rtp = LFX.RecExp(OML(LocalName("DUMMY"),
+           Some(expr(bool.term)),Some(OMS(PVSTheory.thpath ? "TRUE"))) :: nametpdf.map(t => OML(t._1, Some(tp.term), Some(t._2))).toList : _*)
+         val rdf = LFX.RecExp(OML(LocalName("DUMMY"),
+           Some(expr(bool.term)),Some(OMS(PVSTheory.thpath ? "TRUE"))) :: nametpdf.map(t => OML(t._1, Some(expr(t._2)), Some(t._3))).toList : _*)
          ApplySpine(this.term, rtp,rdf)
       }
    }
 
    object recordtp extends sym("rectp") {
       def apply(nametp : (LocalName,Term)*) =
-         ApplySpine(this.term,LFX.RecExp(nametp.map(t => OML(t._1,Some(tp.term),Some(t._2))):_*))
+         ApplySpine(this.term,LFX.RecExp(OML(LocalName("DUMMY"),
+           Some(expr(bool.term)),Some(OMS(PVSTheory.thpath ? "TRUE"))) :: nametp.map(t => OML(t._1,Some(tp.term),Some(t._2))).toList :_*))
       def unapply(t:Term) : Option[List[(String,Term)]] = t match {
-         case ApplySpine(this.term,List(LFX.RecExp(l))) => Some(l.fields.map({
+         case ApplySpine(this.term,List(LFX.RecExp(l))) => Some(l.fields.tail.map({
             case OML(name,Some(tp.term),Some(df),_,_) => (name.toString,df)
             case tm @ _ => throw new Exception("Invalid Record type element: " + tm)
          }))

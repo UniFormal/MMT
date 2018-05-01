@@ -33,7 +33,7 @@ trait ChangeListener extends Extension {
    /** called when an archive is removed */
    def onArchiveClose(a: Archive) {}
    /** called when a file was built */
-   def onFileBuilt(a: Archive, target: TraversingBuildTarget, path: FilePath) {}
+   def onFileBuilt(a: Archive, target: TraversingBuildTarget, path: FilePath, res: BuildResult) {}
 }
 
 /**
@@ -86,7 +86,7 @@ class Notify(listeners: List[ChangeListener], report: Report) {
       tryAll(_.onArchiveClose(a))
    }
 
-   def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath) {
-      tryAll(_.onFileBuilt(a, t, p))
+   def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath, res: BuildResult) {
+      tryAll(_.onFileBuilt(a, t, p, res))
    }
 }

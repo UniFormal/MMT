@@ -53,8 +53,13 @@ object MMTSystem {
               FatJar(classFolder)
            else
               DownloadedFatJar(classFolder)
-         } else
-           ThinJars(classFolder.up.up)
+         } else {
+           if (classFolder.up.up.name == "deploy") {
+             ThinJars(classFolder.up.up)
+           } else {
+             ThinJars(classFolder.up.up.up.up / "deploy")
+           }
+         }
       } else {
          Classes(classFolder)
       }

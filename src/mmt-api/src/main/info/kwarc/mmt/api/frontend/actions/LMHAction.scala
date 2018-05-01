@@ -5,7 +5,7 @@ import archives.lmh._
 import frontend._
 import utils._
 
-/** shared base class for Actions relating to OAF (lmh) */
+/** shared base class for Actions relating to lmh (formerly oaf) */
 sealed abstract class LMHAction extends ActionImpl {
   protected def mathHub(implicit controller: Controller): MathHub = controller.getMathHub.getOrElse {
     throw GeneralError("no LMH configuration entry found")

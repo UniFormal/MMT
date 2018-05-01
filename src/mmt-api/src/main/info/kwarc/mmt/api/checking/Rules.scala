@@ -26,10 +26,6 @@ trait CheckingCallback {
    /** a fixed context prefix that is not part of the contexts passed to the other methods */
    def outerContext : Context
 
-
-   //def getType(p: GlobalName): Option[Term]
-   //def getDef(p: GlobalName): Option[Term]
-
    /** checking */
    def check(j: Judgement)(implicit history: History): Boolean
    /** possibly unsafe simplification */
@@ -468,7 +464,7 @@ class AbbreviationRuleGenerator extends ChangeListener {
   override def onCheck(e: StructuralElement): Unit = e match {
     case c : Constant if (c.rl contains abbreviationTag) && c.dfC.analyzed.isDefined =>
       val rule = new AbbrevRule(c.path,c.df.get)//GeneratedAbbreviationRule(c)
-      val ruleConst = new RuleConstant(c.home, c.name / abbreviationTag, OMS(c.path), Some(rule))
+      val ruleConst = RuleConstant(c.home, c.name / abbreviationTag, OMS(c.path), Some(rule))
       ruleConst.setOrigin(GeneratedBy(this))
       log(c.name + " ~~> " + present(c.df.get))
       controller add ruleConst

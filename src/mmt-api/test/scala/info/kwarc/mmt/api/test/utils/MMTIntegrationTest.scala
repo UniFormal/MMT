@@ -38,9 +38,9 @@ abstract class MMTIntegrationTest(neededArchives : TestArchive*)(neededExtension
 
     log("Running automated setup")
     logGroup {
-      report.groups += "setup"
+      // report.groups += "setup"
       setup.setup(systemFolder, contentFolder, None, installContent = false)
-      report.groups -= "setup"
+      // report.groups -= "setup"
     }
 
     /*

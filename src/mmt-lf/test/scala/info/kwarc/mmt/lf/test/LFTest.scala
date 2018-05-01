@@ -5,9 +5,9 @@ import info.kwarc.mmt.api.test.utils._
 
 class LFTest extends MMTIntegrationTest(
   TestArchive("MMT/urtheories", hasDevel = true),
-  "MMT/LFX",
-  "Test/General",
-  "MMT/examples"
+  TestArchive("MMT/LFX", hasDevel = true),
+  TestArchive("Test/General", hasDevel = true),
+  TestArchive("MMT/examples", hasDevel = true)
 )(
   ExtensionSpec("info.kwarc.mmt.lf.Plugin")
 ) {
@@ -16,6 +16,8 @@ class LFTest extends MMTIntegrationTest(
 
   shouldLoadExtensions()
   shouldInstallArchives()
+
+  shouldCheck("MMT/urtheories")()
 
   shouldHandleLine("build MMT/LFX scala-bin")
   shouldHandleLine("build MMT/LFX mmt-omdoc")
@@ -42,6 +44,8 @@ object Orders {
     ,"arithmetics/complex.mmt"
     ,"typed_sets.mmt"
     ,"functions.mmt"
+    ,"collections/basics.mmt"
+    ,"collections/matroids.mmt"
     ,"topology/basics.mmt"
     ,"algebra/basics.mmt"
     ,"algebra/ringsfields.mmt"

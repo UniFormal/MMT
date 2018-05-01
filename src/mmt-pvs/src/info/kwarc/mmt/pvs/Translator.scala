@@ -186,18 +186,18 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       val path = bt.narrationDPath.^!.^!
       val isPrel = DPath(URI.http colon "pvs.csl.sri.com") / "prelude" <= path //path.toString == "http://pvs.csl.sri.com/prelude"
       val meta = if (isPrel) PVSTheory.thpath else PVSTheory.preludepath
-      val theory = new TheoryState(path, LocalName(named.id), meta)
+      val theory = new TheoryState(path, LocalName(named.id_proper), meta)
       state = new ImportState(bt,theory,isPrel) /* {
         val isPrelude = isPrel
         val th = theory
       } */
       theory.deps ::= meta
-      if (isPrel && named.id == "booleans") {
+      if (isPrel && named.id_proper == "booleans") {
         log("Skipped Booleans")
         // theory add new OpaqueText(path,List(StringFragment(""))).
         return theory
       }
-      if (isPrel && named.id == "equalities") {
+      if (isPrel && named.id_proper == "equalities") {
         log("Skipped Equalities")
         return theory
       }
@@ -210,11 +210,11 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       state.th
 
     case datatype(TopDatatypeBody(named, theory_formals, importings, constructors)) =>
-      // println(" -- Datatype: " + named.id)
+      // println(" -- Datatype: " + named.id_proper)
       val path = bt.narrationDPath.^!.^!
       val isPrel = path.toString == "http://pvs.csl.sri.com/prelude"
       val meta = if (isPrel) PVSTheory.thpath else PVSTheory.preludepath
-      val theory = new TheoryState(path, LocalName(named.id /* + "_adt" */ ), meta)
+      val theory = new TheoryState(path, LocalName(named.id_proper /* + "_adt" */ ), meta)
       state = new ImportState(bt,theory,isPrel) /*(this) {
         val isPrelude = isPrel
         val th = theory
@@ -225,10 +225,10 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
 
       importings foreach doFormal
       theory_formals foreach doFormal
-      val datatp = Constant(state.th.toTerm, LocalName(named.id), Nil, Some(PVSTheory.tp.term), None, None)
+      val datatp = Constant(state.th.toTerm, LocalName(named.id_proper), Nil, Some(PVSTheory.tp.term), None, None)
       state.th add datatp
 
-      constructors.foreach(doDatatypeConstructor(_,datatp)) // TODO subtype_id ?
+      constructors.foreach(doDatatypeConstructor(_,datatp)) // TODO subtype_id_proper ?
       state.th
 
     case _ =>
@@ -237,11 +237,11 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
   }
 
   def doDatatypeConstructor(con:constructor,datatp:FinalConstant) = {
-    val conname = LocalName(con.named.id)
+    val conname = LocalName(con.named.id_proper)
     state.reset
     val accs = con.accessors.map(a => {
       val tp = objectLevel.doType(a._type)
-      (LocalName(a.named.id), tp)})
+      (LocalName(a.named.id_proper), tp)})
     val contp = if (accs.isEmpty) datatp.toTerm
     else if (accs.length == 1) PVSTheory.fun_type(accs.head._2, datatp.toTerm)
     else PVSTheory.fun_type(PVSTheory.tuple_type(accs.map(_._2)), datatp.toTerm)
@@ -271,7 +271,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       case formal_type_decl(named,nonempty) =>
         state.reset
         val v = VarDecl(
-          LocalName(named.named.id),
+          LocalName(named.named.id_proper),
           if (nonempty.nonempty_p) PVSTheory.nonempty.tps else PVSTheory.tp.term)
         state.th.parameters = state.th.parameters ++ v
         state.inFormals = false
@@ -286,10 +286,11 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
             None,Some("Assumption")))
         }
         */
-      case formal_subtype_decl(ChainedDecl(NamedDecl(id,_,_),_,_),nonempty,sup,pred) =>
-        val name = LocalName(id)
+      case formal_subtype_decl(ChainedDecl(nd @ NamedDecl(_,_,_),_,_),nonempty,sup,pred) =>
+        val name = LocalName(nd.id_proper)
         state.reset
-        val actsup = objectLevel.doType(sup._declared)
+        /* Prelude */ // val actsup = objectLevel.doType(sup._declared)
+        /* NASA */ val actsup = objectLevel.doType(sup)
         val v = VarDecl(name, state.bind(PVSTheory.powertp(actsup)))
         state.th.parameters = state.th.parameters ++ v
         state.inFormals = false
@@ -306,10 +307,10 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         */
         doDecl(pred)(true)
 
-      case formal_const_decl(ChainedDecl(NamedDecl(id,_,_),_,_),tp) =>
+      case formal_const_decl(ChainedDecl(nd @ NamedDecl(_,_,_),_,_),tp) =>
         state.reset
         val fulltp = objectLevel.doType(tp._internal)
-        val v = VarDecl(LocalName(id), state.bind(PVSTheory.expr(fulltp)))
+        val v = VarDecl(LocalName(nd.id_proper), state.bind(PVSTheory.expr(fulltp)))
         state.th.parameters = state.th.parameters ++ v
         state.inFormals = false
       case importing(un,n) =>
@@ -327,15 +328,15 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
 
       case var_decl(id, unnamed, tp) => // Not needed
 
-      case tcc_decl(ChainedDecl(NamedDecl(id, _, _), _, _), Assertion(kind, formula)) =>
+      case tcc_decl(ChainedDecl(nd @ NamedDecl(_, _, _), _, _), Assertion(kind, formula)) =>
         state.reset
-        val name = LocalName(id)//if (id.dropRightUntil().endsWith("TCC")) newName(id) else newName(id + "_TCC")
+        val name = LocalName(nd.id_proper)//if (id_proper.dropRightUntil().endsWith("TCC")) newName(id_proper) else newName(id_proper + "_TCC")
         val c = Constant(state.th.toTerm, name, Nil, Some(state.bind(PVSTheory.proof(kind, objectLevel.doExprAs(formula, PVSTheory.bool.term)))), None,
           Some(if (isAss) "Assumption_TCC" else "TCC"))
         state.th add c
         state.tcc = Some(c)
 
-      case const_decl(ChainedDecl(NamedDecl(id, _, _), _, _), arg_formals, tp, defOpt) =>
+      case const_decl(ChainedDecl(nd @ NamedDecl(_, _, _), _, _), arg_formals, tp, defOpt) =>
         state.reset
         val tptm = objectLevel.doType(tp._declared)
         val exptp = arg_formals.flatMap(_._bindings).foldRight(tptm)((b, t) =>
@@ -345,13 +346,13 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           (PVSTheory.pvslambda(LocalName(b.id), objectLevel.doType(b._type), t._2, t._1),
             PVSTheory.pvspi(LocalName(b.id), objectLevel.doType(b._type), t._2)
             ))._1)
-        state.th add Constant(state.th.toTerm, state.newName(id), Nil, Some(state.bind(PVSTheory.expr(exptp))), defi.map(state.bind),
+        state.th add Constant(state.th.toTerm, state.newName(nd.id_proper), Nil, Some(state.bind(PVSTheory.expr(exptp))), defi.map(state.bind),
           if (isAss) Some("Assumption") else None)
 
-      case formula_decl(ChainedDecl(NamedDecl(id, _, _), _, _), Assertion(kind, form)) =>
+      case formula_decl(ChainedDecl(nd @ NamedDecl(_, _, _), _, _), Assertion(kind, form)) =>
         state.reset
         val phi = objectLevel.doExprAs(form, PVSTheory.bool.term)
-        state.th add Constant(state.th.toTerm, state.newName(id), Nil, Some(state.bind(PVSTheory.proof(kind, phi))), None, if (isAss) Some("Assumption") else None)
+        state.th add Constant(state.th.toTerm, state.newName(nd.id_proper), Nil, Some(state.bind(PVSTheory.proof(kind, phi))), None, if (isAss) Some("Assumption") else None)
 
       case conversion_decl(UnnamedDecl(_, _, _), kind, expr) => // TODO
 
@@ -360,7 +361,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       case def_decl(named, arg_formals, tp, df, optMeasure, optOrder) =>
         state.reset
         val tptm = objectLevel.doType(tp._internal)
-        val name = state.newName(named.named.id)
+        val name = state.newName(named.named.id_proper)
         val exptp = arg_formals.flatMap(_._bindings).foldRight(tptm)((b, t) =>
           PVSTheory.pvspi(LocalName(b.id), objectLevel.doType(b._type), t)
         )
@@ -379,7 +380,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         //doDecl(def_decl(ChainedDecl(named,false,false),arg_formals,tp,df,None,None))(isAss) // TODO?
         state.reset
         val tptm = objectLevel.doType(tp._internal)
-        val name = state.newName(named.id)
+        val name = state.newName(named.id_proper)
         val exptp = arg_formals.flatMap(_._bindings).foldRight(tptm)((b, t) =>
           PVSTheory.pvspi(LocalName(b.id), objectLevel.doType(b._type), t)
         )
@@ -395,7 +396,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           Some(state.bind(defi)), if (isAss) Some("Assumption") else None)
 
       case application_judgement(ond, nameexpr, arg_formals, tp) =>
-        val name = state.newName(ond.id.getOrElse("App_Judgment"))
+        val name = state.newName(ond.id_proper.getOrElse("App_Judgment"))
         state.reset
         val (exp, restp) = objectLevel.doExpr(arg_formals.flatMap(_._bindings).foldLeft(nameexpr.asInstanceOf[Expr])((e, b) =>
           application("", e, varname_expr("", b.id, b._type), false)))
@@ -405,14 +406,14 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         state.th add Constant(state.th.toTerm, name, Nil, Some(state.bind(fulltp)), None,
           if (isAss) Some("Assumption") else None)
 
-      case type_def_decl(NamedDecl(id, _, _), NonEmptiness(neb, exprOpt), arg_formals, df) =>
+      case type_def_decl(nd @ NamedDecl(_, _, _), NonEmptiness(neb, exprOpt), arg_formals, df) =>
         state.reset
         val bindings = arg_formals.flatMap(_._bindings).map(b => (LocalName(b.id), objectLevel.doType(b._type)))
         val defi = bindings.foldRight[Term](objectLevel.doType(df._declared))((b, t) =>
           Lambda(b._1, PVSTheory.expr(b._2), t))
         val tp = bindings.foldRight[Term](PVSTheory.tp.term)((b, t) =>
           Pi(b._1, PVSTheory.expr(b._2), t))
-        val name = state.newName(id)
+        val name = state.newName(nd.id_proper)
         val c = Constant(
           state.th.toTerm,
           name,
@@ -421,27 +422,27 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           if (isAss) Some("Assumption") else None)
         state.th add c
 
-      case axiom_decl(ChainedDecl(NamedDecl(id, _, _), _, _), Assertion(kind, form)) =>
+      case axiom_decl(ChainedDecl(nd @ NamedDecl(_, _, _), _, _), Assertion(kind, form)) =>
         state.reset
         val phi = objectLevel.doExprAs(form, PVSTheory.bool.term)
-        state.th add Constant(state.th.toTerm, state.newName(id), Nil, Some(state.bind(PVSTheory.proof(kind, phi))), None,
+        state.th add Constant(state.th.toTerm, state.newName(nd.id_proper), Nil, Some(state.bind(PVSTheory.proof(kind, phi))), None,
           if (isAss) Some("Assumption") else None)
 
-      case subtype_judgement(OptNamedDecl(id, _, _, _), sub, sup) =>
+      case subtype_judgement(nd @ OptNamedDecl(_, _, _, _), sub, sup) =>
         state.reset
         val subtp = objectLevel.doType(sub._internal)
         val suptp = objectLevel.doType(sup._internal)
-        val c = Constant(state.th.toTerm, state.newName(id.getOrElse("INTERNAL_Judgment")), Nil, Some(
+        val c = Constant(state.th.toTerm, state.newName(nd.id_proper.getOrElse("INTERNAL_Judgment")), Nil, Some(
           state.bind(PVSTheory.subtpjudg(subtp, suptp))
         ), None, None)
         state.th add c
-        state.th add Constant(state.th.toTerm, state.newName(id.getOrElse("INTERNAL_Assumption")), Nil,
+        state.th add Constant(state.th.toTerm, state.newName(nd.id_proper.getOrElse("INTERNAL_Assumption")), Nil,
           Some(state.bind(LFX.subtypeJudg(PVSTheory.expr(subtp), PVSTheory.expr(suptp)))),
           Some(state.bind(PVSTheory.subtpissubtype(subtp, suptp, c.path))), Some("Assumption"))
 
-      case type_from_decl(ChainedDecl(NamedDecl(id, _, _), _, _), nonempty, tp) =>
+      case type_from_decl(ChainedDecl(nd @ NamedDecl(_, _, _), _, _), nonempty, tp) =>
         state.reset
-        val name = state.newName(id)
+        val name = state.newName(nd.id_proper)
         val realtp = objectLevel.doType(tp._declared)
         val c = Constant(state.th.toTerm, name, Nil, Some(PVSTheory.tp.term), None, None)
         state.th add c
@@ -451,13 +452,13 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         state.th add Constant(state.th.toTerm, state.newName("INTERNAL_Assumption"), Nil,
           Some(state.bind(LFX.subtypeJudg(PVSTheory.expr(OMS(c.path)), PVSTheory.expr(realtp)))),
           Some(state.bind(PVSTheory.subtpissubtype(OMS(c.path), realtp, d.path))), Some("Assumption"))
-        state.th add Constant(state.th.toTerm, state.newName(id + "_pred"), Nil,
+        state.th add Constant(state.th.toTerm, state.newName(nd.id_proper + "_pred"), Nil,
           Some(state.bind(PVSTheory.expr(PVSTheory.fun_type(realtp, PVSTheory.bool.term)))), None, Some("Assumption"))
       // TODO add type equality name = setsubtype(name_pred,actsup)
 
-      case type_decl(ChainedDecl(NamedDecl(id, _, _), _, _), nonempty) =>
-        // if (state.th.path != (PVSTheory.rootdpath / "Prelude") ? "numbers" && id!="number") {
-        val c = Constant(state.th.toTerm, state.newName(id), Nil, Some(PVSTheory.tp.term), None, None)
+      case type_decl(ChainedDecl(nd @ NamedDecl(_, _, _), _, _), nonempty) =>
+        // if (state.th.path != (PVSTheory.rootdpath / "Prelude") ? "numbers" && id_proper!="number") {
+        val c = Constant(state.th.toTerm, state.newName(nd.id_proper), Nil, Some(PVSTheory.tp.term), None, None)
         state.th add c
         if (nonempty) {
           state.th add Constant(state.th.toTerm, state.newName("INTERNAL_Assumption"), Nil, Some(
@@ -465,15 +466,15 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
             None, if (isAss) Some("Assumption") else None)
         }
 
-      case name_judgement(OptNamedDecl(id, _, _, _), nameexpr, tp) =>
-        val name = state.newName(id.getOrElse("Name_Judgment"))
+      case name_judgement(ond @ OptNamedDecl(_, _, _, _), nameexpr, tp) =>
+        val name = state.newName(ond.id_proper.getOrElse("Name_Judgment"))
         state.reset
         val (exp, restp) = objectLevel.doExpr(nameexpr)
         val fulltp = PVSTheory.tpjudg(exp, restp, objectLevel.doType(tp._internal))
         state.th add Constant(state.th.toTerm, name, Nil, Some(state.bind(fulltp)), None, if (isAss) Some("Assumption") else None)
 
-      case enumtype_decl(NamedDecl(id, _, _), enum_elts) =>
-        state.th add Constant(state.th.toTerm, state.newName(id), Nil, Some(PVSTheory.tp.term),
+      case enumtype_decl(nd @ NamedDecl(_, _, _), enum_elts) =>
+        state.th add Constant(state.th.toTerm, state.newName(nd.id_proper), Nil, Some(PVSTheory.tp.term),
           Some(PVSTheory.enumtype(enum_elts.map(_._id))), None)
 
       case importing(un, namedec) =>
@@ -482,19 +483,19 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
           state.addinclude(path)
         } // TODO fix
 
-      case inline_datatype(InlineDatatypeBody(NamedDecl(id, _, _), arg_formals, constructors)) =>
+      case inline_datatype(InlineDatatypeBody(nd @ NamedDecl(_, _, _), arg_formals, constructors)) =>
         // TODO check if right
-        val datatp = Constant(state.th.toTerm, LocalName(id), Nil, Some(PVSTheory.tp.term), None, None)
+        val datatp = Constant(state.th.toTerm, LocalName(nd.id_proper), Nil, Some(PVSTheory.tp.term), None, None)
         state.th add datatp
         constructors foreach (doDatatypeConstructor(_, datatp))
 
-      case theory_decl(ChainedDecl(NamedDecl(id, _, _), _, _), domain) =>
+      case theory_decl(ChainedDecl(nd @ NamedDecl(_, _, _), _, _), domain) =>
         val p = objectLevel.doMPath(domain)
         state.addinclude(p)
         //TODO : this should be named etc.
 
       case e@expr_judgement(optNamed, bindings, expr, tp) =>
-        val name = state.newName(optNamed.id.getOrElse("Name_Judgment"))
+        val name = state.newName(optNamed.id_proper.getOrElse("Name_Judgment"))
         state.reset
         val (exp, restp) = objectLevel.doExpr(expr)
         val fulltp = PVSTheory.tpjudg(exp, restp, objectLevel.doType(tp._internal))

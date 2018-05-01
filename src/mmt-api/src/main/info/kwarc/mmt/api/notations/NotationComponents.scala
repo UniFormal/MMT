@@ -83,27 +83,48 @@ object CommonMarkerProperties {
 import CommonMarkerProperties._
 
 /** bundles minor properties of markers to make the interfaces more robust */
-case class CommonMarkerProperties(precedence: Option[Precedence], localNotations: Option[Int]) {
-  def wlnf(n: Int) = copy(localNotations = Some(n))
-  def *(remap: Int => Int) = copy(localNotations = localNotations.map(remap))
-  def asStringPrefix = localNotations.map(i => "%L" + i + "_").getOrElse("")
+case class CommonMarkerProperties(precedence: Option[Precedence], localNotations: Option[LocalNotationInfo]) {
+  def *(remap: Int => Int) = copy(localNotations = localNotations.map(_ * remap))
+  def asStringPrefix = localNotations.map(lni => "%L" + lni + "_").getOrElse("")
+  def addLocalNotationInfo(lni: LocalNotationInfo) = copy(localNotations = Some(lni))
 }
 
+object LocalNotationInfo {
+  /** determines how an argument is turned into a theory */
+  sealed abstract class Role(s: String) {
+    override def toString = s 
+  }
+  /** argument already is a theory */ 
+  case object Theory extends Role("")
+  /** argument is morphism and we take the domain */ 
+  case object Domain extends Role("d")
+  /** argument is morphism and we take the codomain */ 
+  case object Codomain extends Role("c")
+}
+/**
+ * determines how different notations are to be used for parsing a particular argument
+ * @param argument the argument that determines what notations to use
+ * @param role how does that argument determine a set of notations
+ * @param replace determines if new notations replace or extend existing ones  
+ */
+case class LocalNotationInfo(argument: Int, role: LocalNotationInfo.Role, replace: Boolean) {
+  override def toString = argument + role.toString + (if (replace) "!" else "")
+  def *(remap: Int => Int) = copy(argument = remap(argument))
+}
 
 sealed abstract class ArgumentMarker extends Marker with ArgumentComponent {
   val number: Int
 
   val properties: CommonMarkerProperties
-  def locallyUsesNotationsFrom: Option[SimpArg] = properties.localNotations.map(SimpArg(_,noProps))
   def precedence = properties.precedence
 
   /** a copy of this marker with the field properties.localNotations set */
-  def withLocalNotationsFrom(n: Int): ArgumentMarker = this match {
-    case am: SimpArg     => am.copy(properties = properties.wlnf(n))
-    case am: SimpSeqArg  => am.copy(properties = properties.wlnf(n))
-    case am: LabelArg    => am.copy(properties = properties.wlnf(n))
-    case am: LabelSeqArg => am.copy(properties = properties.wlnf(n))
-    case am: ImplicitArg => am.copy(properties = properties.wlnf(n))
+  def addLocalNotationInfo(lni: LocalNotationInfo): ArgumentMarker = this match {
+    case am: SimpArg     => am.copy(properties = properties.addLocalNotationInfo(lni))
+    case am: SimpSeqArg  => am.copy(properties = properties.addLocalNotationInfo(lni))
+    case am: LabelArg    => am.copy(properties = properties.addLocalNotationInfo(lni))
+    case am: LabelSeqArg => am.copy(properties = properties.addLocalNotationInfo(lni))
+    case am: ImplicitArg => am.copy(properties = properties.addLocalNotationInfo(lni))
   }
 }
 
@@ -112,9 +133,7 @@ sealed abstract class ArgumentMarker extends Marker with ArgumentComponent {
   * @param n absolute value is the argument position, negative iff it is in the binding scope
   */
 sealed abstract class Arg extends ArgumentMarker {
-  /* this may come in handy some time but is not used at the moment */
-  //val precedence : Option[Precedence]
-  override def toString = number.toString
+  override def toString = properties.asStringPrefix + number.toString
   /**
    * @return the corresponding sequence
    * @param s the delimiter
@@ -557,19 +576,31 @@ sealed trait VariableComponent extends ArityComponent
 
 object Marker {
    /** checks if s(i) exists and satisfies p; negative i counts from end */
-   private def charAt(s: String, i: Int, p: Char => Boolean) = {
-     val iA = if (i < 0) i + s.length else i
-     iA < s.length && p(s(iA))
+   private def charAtIs(s: String, i: Int, p: Char => Boolean) = {
+     charAt(s,i).map(p).getOrElse(false)
    }
 
    def parse(s: String) : Marker = s match {
          case s : String if s.startsWith("%L") =>
            var i = 2
-           while (charAt(s, i, _.isDigit)) {i+=1}
+           while (charAtIs(s, i, _.isDigit)) {i+=1}
            val n = s.substring(2,i).toInt
+           val role = charAt(s,i) match {
+             case Some('d') =>
+               i += 1
+               LocalNotationInfo.Domain
+             case Some('c') =>
+               i += 1               
+               LocalNotationInfo.Codomain
+             case _ =>
+               LocalNotationInfo.Theory
+           }
+           val replace = if (charAt(s,i) contains '!') {i += 1; true} else false
+           if (! (charAt(s,i) contains '_')) throw ParseError(s"'_' expected at position $i: $s")
+           val lni = LocalNotationInfo(n, role, replace)
            parse(s.substring(i+1)) match {
-             case am: ArgumentMarker => am.withLocalNotationsFrom(n)
-             case _ => throw ParseError("only argument markers can use local notations" + s.toString)
+             case am: ArgumentMarker => am.addLocalNotationInfo(lni)
+             case _ => throw ParseError("only argument markers can use local notations" + s)
            }
          case "%i" => InstanceName()
          case "%n" => SymbolName()
@@ -584,10 +615,10 @@ object Marker {
             // In or Gn ---> implicit argument or implicit guard
             val n = stringToInt(s.substring(2)).getOrElse(throw ParseError("not a valid marker " + s))
             ImplicitArg(n,noProps)
-         case s: String if s.startsWith("V") && charAt(s, 1, _.isDigit) =>
+         case s: String if s.startsWith("V") && charAtIs(s, 1, _.isDigit) =>
             //Vn ---> variable
             var i = 1
-            while (charAt(s, i, _.isDigit)) {i+=1}
+            while (charAtIs(s, i, _.isDigit)) {i+=1}
             val n = s.substring(1,i).toInt
             val d = s.substring(i)
             if (d == "")
@@ -606,7 +637,7 @@ object Marker {
                Var(n, false, Some(Delim(sep)),noProps)
             } else
                throw ParseError("not a valid marker " + s)
-         case s: String if s.startsWith("L") && charAt(s,1,_.isDigit) =>
+         case s: String if s.startsWith("L") && charAtIs(s,1,_.isDigit) =>
            //Ln ---> OML
            var i = 1
            while (i < s.length && s(i).isDigit) {i+=1}
@@ -635,10 +666,10 @@ object Marker {
              val li = LabelInfo(typed,defined,false)
              LabelArg(n,li,noProps)
            }
-         case s: String if s.endsWith("…") && charAt(s,0,_.isDigit) =>
+         case s: String if s.endsWith("…") && charAtIs(s,0,_.isDigit) =>
             //nsep… ---> sequence argument/scope
             var i = 0
-            while (charAt(s,i,_.isDigit)) {i+=1}
+            while (charAtIs(s,i,_.isDigit)) {i+=1}
             val n = s.substring(0, i).toInt
             val rem = s.substring(i,s.length-1)
             SimpSeqArg(n, Delim(rem),noProps)

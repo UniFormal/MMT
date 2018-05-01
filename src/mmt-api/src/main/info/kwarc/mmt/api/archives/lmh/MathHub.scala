@@ -14,6 +14,7 @@ import scala.util.Try
   * @param https should we use https or ssh for cloning?
   */
 class MathHub(val controller: Controller, var local: File, var remote: URI, var https: Boolean = true) extends LMHHub {
+
   /** implements git */
   protected val git: Git = OS.detect match {case Windows => new WindowsGit() case _ => UnixGit }
   // PATHS
@@ -170,10 +171,10 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
       val success = git(local, "clone", rp, id).success
       if (!success) {
         if (lp.exists) {
-          log("git failed, deleting " + lp)
+          logError(s"git clone $rp failed, deleting $lp")
           lp.deleteDir
         } else {
-          log("git failed")
+          logError(s"git clone $rp failed")
         }
         return None
       }
@@ -183,7 +184,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
         log(s"checking out ${version.get}")
         val vSuccess = git(lp, "checkout", "-f", version.get).success
         if (!vSuccess) {
-          log("checkout failed, Local version may differ from requested version. ")
+          logError("checkout failed, Local version may differ from requested version. ")
         }
       }
     }
@@ -203,7 +204,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
       Some(new MathHubEntry(lp))
     } catch {
       case _: Exception =>
-        log(s"download failed, aborting")
+        logError(s"download of '$url' failed, aborting")
         None
     } finally {
       zip.delete

@@ -227,6 +227,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     def makeAssignment(t: Term, name: LocalName, target: Option[Term]) = get(t, name, error) match {
       case c: Constant => ConstantAssignment(home, name, Nil, Some(target getOrElse c.toTerm))
       case l: Structure => DefLinkAssignment(home, name, l.from, target getOrElse l.toTerm)
+      case rc: RuleConstant => RuleConstant(home, name, target orElse rc.tp, None)
     }
     home match {
       // base case: lookup in atomic modules
@@ -285,7 +286,13 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
       } getOrElse {
         error("union of theories has no declarations except includes")
       }
-      case OMCOMP(Nil) => throw GetError("cannot lookup in identity morphism without domain: " + home)
+      case OMCOMP(Nil) =>
+        name match {
+          case LocalName(ComplexStep(d) :: _) =>
+            // infer domain of identity morphism
+            get(OMIDENT(OMMOD(d)),name,error)
+          case _ => throw GetError("cannot look up " + name + " in empty composition")
+        }
       case OMCOMP(hd :: tl) =>
         val a = get(hd, name, error)
         if (tl.isEmpty)
@@ -293,6 +300,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         else a match {
           case a: Constant => ConstantAssignment(home, a.name, a.alias, a.df.map(_ * OMCOMP(tl)))
           case a: DefinedStructure => DefLinkAssignment(home, a.name, a.from, OMCOMP(a.df :: tl))
+          case a: RuleConstant => RuleConstant(home, a.name, a.tp.map(_ * OMCOMP(tl)), None)
         }
       case OMIDENT(t) =>
         makeAssignment(t,name,None)
@@ -425,7 +433,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         val da = get(l.from, name, sourceError) match {
           case c: Constant => Constant(l.toTerm, name, Nil, None, None, None)
           case d: Structure => new DefinedStructure(l.toTerm, name, d.tpC, TermContainer(None), false)
-          case _ => throw ImplementationError("unimplemented default assignment")
+          case rc: RuleConstant => new RuleConstant(l.toTerm, name, new TermContainer, None)
+          case _ => throw ImplementationError(s"unimplemented default assignment (while looking up $name in link ${l.path})")
         }
         da.setOrigin(DefaultAssignment)
         da
@@ -478,7 +487,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private def instantiate(decl: Declaration, params: Context, args: List[Term]): Declaration = {
     if (args.isEmpty) return decl // lookup from within parametric theory does not provide arguments
     val subs: Substitution = (params / args).getOrElse {
-        throw GetError("number of arguments does not match number of parameters of " + decl.path + ": " + params.length + "(" + params.map(_.name).mkString(", ") + ") given: " + args)
+        throw GetError("number of arguments does not match number of parameters of " + decl.path + ": " + params.length + " (" + params.map(_.name).mkString(", ") + ") given: " + args)
       }
     if (subs.isIdentity) return decl // avoid creating new instance
     val newHome = decl.home match {
@@ -553,13 +562,14 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         val newName = translateNameByLink(qualName, l)
         // TODO is it better to use lazy morphism application?
         def mapTerm(t: Term) = ApplyMorphs(t, l.toTerm, Context(l.from.toMPath)) //t * l.toTerm
+        // make sure assignment has the expected feature (*)
+        if (assig.feature != declT.feature) {
+          throw InvalidElement(assig, s"link ${l.path} provides ${assig.feature} assignment for ${declT.feature} ${declT.path}")
+        }
         // translate declT along assigOpt
         val newDecl = declT match {
           case c: Constant =>
-            val a: Constant = assig match {
-              case a: Constant => a
-              case _ => throw GetError("link " + l.path + " provides non-constant for constant " + c.path)
-            }
+            val a = assig.asInstanceOf[Constant] // succeeds because of (*)
             val newAlias = a.alias ::: c.alias.map(l.namePrefix / _)
             val newTp = a.tp orElse c.tp.map(mapTerm)
             val newDef = a.df orElse c.df.map(mapTerm)
@@ -569,14 +579,15 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             val newRole = a.rl orElse c.rl
             Constant(l.to, newName, newAlias, newTp, newDef, newRole, newNotC)
           case r: Structure =>
-            val a = assig match {
-               case a: DefinedStructure => a
-               case _ => throw GetError("link " + l.path + " provides bad assignment for structure " + r.path)
-            }
+            val a = assig.asInstanceOf[DefinedStructure] // succeeds because of (*); actually missing the case of DeclaredStructure, which are forbidden in links
             val newDef = a.dfC.get.getOrElse {
                OMCOMP(r.toTerm, l.toTerm) //TODO should result in DeclaredStructure containing a subset of the assignments in l
             }
             DefinedStructure(l.to, newName, r.from, newDef, false)
+          case rc: RuleConstant =>
+            val a = assig.asInstanceOf[RuleConstant] // succeeds because of (*)
+            val newTp = a.tp orElse rc.tp.map(mapTerm)
+            RuleConstant(l.to, newName, newTp, None)
         }
         newDecl
     }
@@ -614,10 +625,16 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     val impls = visibleVia(mod).toList
     impls.foreach {
       case (OMMOD(p), m) =>
-        get(p) match {
+        val thO = get(p) match {
           case t: DeclaredTheory =>
-            t.getDeclarations foreach {d => f(p, m, d)}
-          case _ => //TODO materialize?
+            Some(t)
+          case dd: DerivedDeclaration =>
+            Some(dd.module)
+          case _ =>
+            None//TODO materialize?
+        }
+        thO.foreach {th =>
+          th.getDeclarations foreach {d => f(p, m, d)}
         }
       case _ =>
     }
@@ -751,8 +768,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case dd: DerivedDeclaration =>
         case e: NestedModule =>
           add(e.module, at)
-          //TODO this makes every declaration in a theory T visible to any theory S contained in T, regardless of
-          //  whether the declaration comes before or after S!
+          //TODO this makes every declaration in a theory T visible to any theory S nested in T, regardless of
+          //  whether the declaration comes before or after S
           implicitGraph(e.home, e.module.toTerm) = OMIDENT(e.home)
         case _ =>
         //TODO add equational axioms

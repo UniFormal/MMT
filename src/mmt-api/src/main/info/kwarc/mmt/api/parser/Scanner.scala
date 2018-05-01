@@ -30,8 +30,9 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
   /** the rules with which we still have to scan
    */
   private var ruleTable = ruleTableInit
-  def addRules(that: ParsingRuleTable) {
-    ruleTable = ruleTable.add(that)
+  def addRules(that: ParsingRuleTable, replace: Boolean) {
+    val newRuleTable = if (replace) that else ruleTable.add(that) 
+    ruleTable = newRuleTable
   }
 
   /** the notations to scan for in the current call to scan */

@@ -72,6 +72,7 @@ class NotationBasedParser extends ObjectParser {
   def isApplicable(format: String): Boolean = format == "mmt"
 
   private lazy val prag = controller.pragmatic
+  private lazy val lup = controller.globalLookup
 
   /**
    * builds parser's notation context based on content in the controller
@@ -149,7 +150,7 @@ class NotationBasedParser extends ObjectParser {
        else {
          //TODO in case of shadowing (duplicates in bvars), one variable must be renamed
          //apply meta-variable to all bound variables in whose scope it occurs
-         prag.defaultApplication(Some(pu.context.getIncludes.last), OMV(name), bvars.map(OMV(_)))
+         prag.defaultApplication(Some(pu.getLevel), OMV(name), bvars.map(OMV(_)))
        }
      }
 
@@ -189,7 +190,7 @@ class NotationBasedParser extends ObjectParser {
     val (parsing, lexing, _) = getRules(pu.context)
     val notations = tableNotations(parsing)
     Variables.reset()
-    log("parsing: " + pu.term)
+    log("parsing: " + pu.term + " in context " + pu.context)
     log("rules:")
     logGroup {
       log("parsing")
@@ -232,7 +233,7 @@ class NotationBasedParser extends ObjectParser {
     var nots: List[ParsingRule] = Nil
     var les: List[LexerExtension] = Nil
     var notExts: List[NotationExtension] = Nil
-    support.foreach {p => controller.globalLookup.forDeclarationsInScope(OMMOD(p)) {case (_,via,d) => d match {
+    support.foreach {p => lup.forDeclarationsInScope(OMMOD(p)) {case (_,via,d) => d match {
       // TODO technically, d must be translated along via first; but that never changes the notations that we collect
       case c: Constant => // Declaration with HasNotation might collect too much here
         var names = (c.name :: c.alternativeNames).map(_.toString) //the names that can refer to this declaration
@@ -343,7 +344,7 @@ class NotationBasedParser extends ObjectParser {
           By using defaultApplication, the behavior is somewhat configurable.
           */
           val terms = ul.tl.getTokens.map(makeTerm(_, boundNames))
-          prag.defaultApplication(pu.context.getIncludes.lastOption, terms.head, terms.tail)
+          prag.defaultApplication(Some(pu.getLevel), terms.head, terms.tail)
         }
         term
     }
@@ -480,11 +481,11 @@ class NotationBasedParser extends ObjectParser {
          }
          // now toksLeft.empty
      }}
-     val tokensWithLocalNotationInfo: List[(FoundContent, Option[SimpArg], List[UnmatchedList])] = ml.tokens map {case (fc, uls) =>
+     // all tokens of ml enriched with the respective local notation info
+     val tokensWithLocalNotationInfo: List[(FoundContent, Option[LocalNotationInfo], List[UnmatchedList])] = ml.tokens map {case (fc, uls) =>
         val arg = arity.components.find(_.number == fc.number)
-        // the FoundArg of the ActiveNotation that corresponds to arg.locallyUsesNotationsFrom
         val localNotInfo = arg flatMap {
-          case a: ArgumentMarker => a.locallyUsesNotationsFrom
+          case a: ArgumentMarker => a.properties.localNotations
           case _ => None
         }
         (fc, localNotInfo, uls)
@@ -501,19 +502,44 @@ class NotationBasedParser extends ObjectParser {
      tokensWithLocalNotationInfo.foreach {case (fc,lni,uls) =>
        lni match {
          case None =>
-         case Some(sa) =>
-           (subs:::args).find(_._1 == sa.number) foreach {case (_,t) =>
+         case Some(lni) =>
+             (subs:::args).find(_._1 == lni.argument) foreach {case (_,e) =>
+             val tO = lni.role match {
+               case LocalNotationInfo.Theory =>
+                 Some(e)
+               case LocalNotationInfo.Domain =>
+                 Morph.domain(e)(lup)
+               case LocalNotationInfo.Codomain =>
+                 Morph.codomain(e)(lup)
+             }
              //calling this on a non-type-checked t may or may not find all relevant notations
-             val localNotations = tableNotations(getRules(t)._1)
+             val localNotations = tO match {
+               case Some(t) =>
+                 tableNotations(getRules(t)._1)
+               case None =>
+                 makeError("cannot determine theory for local notations", ml.region)
+                 ParsingRuleTable(Nil)
+             }
              uls.foreach {ul =>
-               ul.addRules(localNotations)
+               ul.addRules(localNotations, lni.replace)
              }
            }
            doFoundContent(fc, uls)
        }
      }
-
-     val cons = ml.an.rules.map(_.name)
+     // basically, cons = mlCons, but we drop every constant that is defined to be equal to one we already have
+     // such cases can happen with structures, where the generated constants are essentially aliases that do not require ambiguity resolution 
+     var consVar: List[ContentPath] = Nil
+     val mlCons = ml.an.rules.map(_.name)
+     mlCons foreach {
+       case p: GlobalName =>
+         val pA = lup.quasiAliasFor(p)
+         if (utils.disjoint(mlCons, pA))
+           consVar ::= p
+       case p =>
+         consVar ::= p
+     }
+     val cons = consVar.reverse
 
      // hard-coded special case for a bracketed subterm
      if (cons == List(utils.mmt.brackets) || cons == List(utils.mmt.andrewsDot)) {
@@ -626,7 +652,7 @@ class NotationBasedParser extends ObjectParser {
         }
         // the level of the notation: if not provided, default to the meta-theory of the constant
         val level = notation.meta orElse {
-           controller.globalLookup.getO(con.module) match {
+           lup.getO(con.module) match {
              case Some(t: modules.DeclaredTheory) => t.meta
              case _ => None
            }

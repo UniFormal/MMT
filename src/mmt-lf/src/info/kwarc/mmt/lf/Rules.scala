@@ -91,8 +91,8 @@ trait PiOrArrowRule {self: CheckingRule =>
 }
 
 /** Formation: the type inference rule x:A:type|-B:U  --->  Pi x:A.B : U
- * This rule works for any universe U
-  * */
+  * This rule works for any universe U
+  */
 object PiTerm extends FormationRule(Pi.path, OfType.path) with PiOrArrowRule {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
@@ -476,7 +476,8 @@ object Solve extends SolutionRule(Apply.path) {
          case Apply(t, OMV(x)) =>
              val i = j.stack.context.lastIndexWhere(_.name == x)
              if (i == -1) return None
-             var dropped = List(x) // the variables that we will remove from the context
+             // dropped contains x and all variable declarations that depend on it
+             var dropped = List(x) 
              var newCon : Context = j.stack.context.take(i) // the resulting context
              // iterate over the variables vd after x
              j.stack.context.drop(i+1) foreach {vd =>

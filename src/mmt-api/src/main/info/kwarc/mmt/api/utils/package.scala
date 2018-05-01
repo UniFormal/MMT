@@ -21,9 +21,11 @@ package object utils {
 
    /** string index modulo string length */
    def moduloLength(s:String, i: Int) = {
-     val m = i % s.length
-     // fix falsely negative results
-     if (m >= 0) i else i+s.length
+     if (i >= 0) i else i+s.length
+   }
+   def charAt(s: String, i: Int) = {
+     val iA = moduloLength(s, i)
+     if (iA < s.length) Some(s(i)) else None
    }
    /** substring of a string given by begin and end, negative indices allowed */
    def substringFromTo(s: String, from: Int, to: Int) = {
@@ -91,6 +93,15 @@ package object utils {
 
    /** applies a list of pairs seen as a map */
    def listmap[A,B](l: Iterable[(A,B)], a: A): Option[B] = l.find(_._1 == a).map(_._2)
+   
+   /** like map, but the map function knows what previous values produced */
+   def mapInContext[A,B](l: Iterable[A])(f: (List[(A,B)],A) => B) : List[B] = {
+     var sofar: List[(A,B)] = Nil
+     l foreach {a =>
+       sofar = sofar ::: List((a, f(sofar, a)))
+     }
+     sofar.map(_._2)
+   }
 
    /** disjointness of two lists (fast if first argument is empty) */
    def disjoint[A](l: Seq[A], m: Seq[A]) = l.forall(a => ! m.contains(a))

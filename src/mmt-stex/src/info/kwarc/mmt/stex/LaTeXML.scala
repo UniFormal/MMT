@@ -484,15 +484,32 @@ class PdfLatex extends LaTeXBuildTarget {
 
   protected def runPdflatex(bt: BuildTask, output: StringBuffer): Int = {
     val in = bt.inFile
-    val pbCat = if (noAmble(in)) Process.cat(in.toJava)
-    else Process.cat(Seq(getAmbleFile("pre", bt), in,
-      getAmbleFile("post", bt)).map(_.toJava))
-    val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
-      in.stripExtension.getName, "-interaction", "scrollmode"),
-      in.up, env(bt): _*)
+
+    // find files that have to be read
+    val texFiles = if(noAmble(in)){ List(in)
+    } else {
+      List(getAmbleFile("pre", bt), in, getAmbleFile("post", bt))
+    }
+
+    // create a temporary file to concatinate the inputs
+    val tmpFile = bt.inFile.addExtension("tmp")
+    File.write(tmpFile, texFiles.map(File.read) :_*)
+
+    // create a process to compile the tex file
+    val pb = Process(
+      Seq(pdflatexPath, "-jobname", in.stripExtension.getName, "-interaction", "scrollmode", tmpFile.toString),
+      in.up, env(bt): _*
+    )
+
+    // run the process and delete the temporary file if it was successfull
     val exit = timeout(pb, procLogger(output, pipeOutput = pipeOutput))
+    if (exit == 0) tmpFile.delete
+
+    // and write a logFile
     val pdflogFile = in.setExtension("pdflog")
     if (!pipeOutput) File.write(pdflogFile, output.toString)
+
+    // and return
     exit
   }
 

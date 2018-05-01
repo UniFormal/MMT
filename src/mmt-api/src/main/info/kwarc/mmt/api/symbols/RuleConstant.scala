@@ -15,18 +15,24 @@ import scala.xml.Node
  *
  * @param df the rule this declaration provides
  */
-class RuleConstant(val home : Term, val name : LocalName, val tp: Term, var df: Option[Rule]) extends Declaration {
+class RuleConstant(val home : Term, val name : LocalName, val tpC: TermContainer, var df: Option[Rule]) extends Declaration {
    val feature = "rule"
-   def toNode = <ruleconstant name={name.toPath}><type>{tp.toNode}</type></ruleconstant>
-   override def toString = name.toString
-   def getComponents = List(TypeComponent(new FinalTermContainer(tp))) // df?
+   def tp = tpC.get
+   def toNode = <ruleconstant name={name.toPath}>{if (tpC.isDefined) <type>{tp.get.toOBJNode}</type> else Nil}</ruleconstant>
+   override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("")
+   def getComponents = List(TypeComponent(tpC)) // df?
    def getDeclarations = Nil
    type ThisType = RuleConstant
    /** translated rule must still be created from translated type */
    def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context) = {
-     new RuleConstant(newHome, prefix/name, translator.applyType(context, tp), None)
+     new RuleConstant(newHome, prefix/name, tpC map {t => translator.applyType(context, t)}, None)
    }
    def merge(that: Declaration) = mergeError(that)
+}
+
+object RuleConstant {
+  def apply(home : Term, name : LocalName, tm: Term, df: Option[Rule]) = new RuleConstant(home, name, TermContainer(tm), df)
+  def apply(home : Term, name : LocalName, tm: Option[Term], df: Option[Rule]) = new RuleConstant(home, name, TermContainer(tm), df)
 }
 
 /**
@@ -36,7 +42,9 @@ class RuleConstantInterpreter(controller: frontend.Controller) {
    /** computes the definiens of a rule constant by creating the rule
     */
    def createRule(rc: RuleConstant) {
-      val rl = rc.tp
+      val rl = rc.tp.getOrElse {
+        return
+      }
       val (rlP,rlArgs) = rl match {
         case OMPMOD(p,as) => (p,as)
         case _ => throw InvalidObject(rl, "cannot interpret as semantic object: " + rl)
@@ -80,7 +88,7 @@ class RuleConstantInterpreter(controller: frontend.Controller) {
         LocalName(rlP)
       else
         LocalName(rlP) / rl.hashCode.toString //TODO compute better name
-      val rc = new RuleConstant(OMMOD(thy), name, rl, None)
+      val rc = RuleConstant(OMMOD(thy), name, rl, None)
       // rules without arguments can be created immediately (to be used during parsing)
       if (rlArgs.isEmpty || create) createRule(rc)
       rc

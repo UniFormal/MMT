@@ -164,7 +164,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
           reader.close()
           if (str == null) "" else str
         }
-        def mods(s : String) : Option[String] = Some(StringMatcher("<theory",">").findFirstIn(s).getOrElse(StringMatcher("<view",">").findFirstIn(s).getOrElse(return None)))
+        // def mods(s : String) : Option[String] = Some(StringMatcher("<theory",">").findFirstIn(s).getOrElse(StringMatcher("<view",">").findFirstIn(s).getOrElse(return None)))
         thexp.findAllIn(getLine).toList foreach {
           case thexp(name, base) =>
             //println(base + "?" + name)

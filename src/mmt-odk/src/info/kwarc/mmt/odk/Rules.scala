@@ -7,50 +7,9 @@ import uom._
 import utils._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.odk.Singular.SingularImporter
-
-object Math {
-  // def tm(s : GlobalName) = Apply(OMS(tms),OMS(s))
-  val path = MitM.path ? "Math"
-
-  // val typesystem = ODK.path ? "Logic"
-  val logic = MitM.path ? "Logic"
-  // val natliterals = ODK.path ? "Nat"
-  // val intliterals = ODK.path ? "Int"
-  val literals = MitM.path ? "Literals"
-  val strings = MitM.path ? "Strings"
-  val lists = MitM.path ? "Lists"
-  val vectors = MitM.path ? "Vectors"
-  val matrices = MitM.path ? "Matrices"
-
-  // val tms = typesystem ? "tm"
-  val bool = logic ? "bool"
-  val BoolLit = new RepresentedRealizedType(OMS(Math.bool),uom.StandardBool)
-  val tt = BoolLit(true)
-  val ff = BoolLit(false)
-  val int = literals ? "int_lit"
-  val nat = literals ? "nat_lit"
-  val pos = literals ? "pos_lit"
-  val succ = literals ? "nat_lit_succ"
-  val string = strings ? "string"
-  val list = lists ? "list"
-  val nil = lists ? "nil"
-  val cons = lists ? "cons"
-  val vector = vectors ? "vector"
-  val zerovec = vectors ? "zerovec"
-  val vectorprepend = vectors ? "vector_prepend"
-  val matrix = matrices ? "matrix"
-  val matrixconst = matrices ? "matrix_const"
-
-  val n = OMS(nat)
-  val z = OMS(int)
-  val p = OMS(pos)
-  val N = StandardNat
-  val Z = StandardInt
-  val P = StandardPositive
-}
-
-import Math._
+import info.kwarc.mmt.mitm.MitM._
 import SemanticOperator._
+import info.kwarc.mmt.mitm.MitM
 
 object IntegerLiterals extends RepresentedRealizedType(z,Z)
 object NatLiterals extends RepresentedRealizedType(n,N)
@@ -58,17 +17,17 @@ object PosLiterals extends RepresentedRealizedType(p,P)
 
 object NatSucc extends RealizedOperator(succ, n =>: n, Arithmetic.Succ, N =>: N)
 
-object NatSuccInverse extends InverseOperator(Math.succ) {
+object NatSuccInverse extends InverseOperator(MitM.succ) {
   def unapply(l: OMLIT): Option[List[OMLIT]] = l match {
     case NatLiterals(u : BigInt) if u>0 => Some(List(NatLiterals.of(u-1)))
     case _ => None
   }
 }
 
-object StringLiterals extends RepresentedRealizedType(OMS(Math.string),StandardString)
+object StringLiterals extends RepresentedRealizedType(OMS(MitM.string),StandardString)
 
 object IntegerSubtype extends SubtypingRule {
-  val head = Math.int
+  val head = MitM.int
   def applicable(tp1: Term, tp2: Term): Boolean = (tp1,tp2) match {
     case (NatLiterals.synType,IntegerLiterals.synType) => true
     case _ => false

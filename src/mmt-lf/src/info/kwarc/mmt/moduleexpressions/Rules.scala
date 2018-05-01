@@ -10,7 +10,7 @@ import objects.Conversions._
 import info.kwarc.mmt.lf._
 
 /**
- * theory : Inhabitable
+ * THY : Inhabitable
  */
 object TheoryTypeInhabitable extends InhabitableRule(ModExp.theorytype) {
    def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Boolean = {
@@ -25,7 +25,7 @@ object TheoryTypeInhabitable extends InhabitableRule(ModExp.theorytype) {
 }
 
 /**
- * theory : Universe
+ * THY : Universe
  */
 object TheoryTypeUniverse extends UniverseRule(ModExp.theorytype) {
    def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Boolean = {
@@ -40,7 +40,7 @@ object TheoryTypeUniverse extends UniverseRule(ModExp.theorytype) {
 }
 
 /**
- * a => b : Inhabitable
+ * MOR A B : Inhabitable
  */
 object MorphTypeInhabitable extends InhabitableRule(ModExp.morphtype) {
    def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Boolean = {
@@ -108,7 +108,7 @@ object AnonymousTheoryInfer extends InferenceRule(ModExp.anonymoustheory, OfType
 }
 
 /**
- * m : a => b
+ * m : MOR A B
  */
 object MorphCheck extends TypingRule(ModExp.morphtype) {
    def check(solver: Solver)(subs: Substitution, from: Term, to: Term, allowPartial: Boolean)
@@ -263,15 +263,60 @@ object CompositionInfer extends InferenceRule(ModExp.composition, OfType.path) {
    }
 }
 
-object ComputeMorphism extends ComputationRule(ModExp.morphismapplication) {
+/**
+ * typing is preserved along morphisms
+ * 
+ * m: MOR mDom mCod  and   mDom |- t : a  --->  mCod |- t APPLY m : a APPLY m
+ */
+object MorphismApplicationTerm extends InferenceRule(ModExp.morphismapplication, OfType.path) {
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+      val OMM(t,m) = tm
+      if (t.freeVars.nonEmpty) {
+        solver.error("cannot apply morphism to term with free variables yet")
+      }
+      val mI = solver.inferType(m, covered)(stack, history + ("inferring type of morphism"))
+      val (mDom,mCod) = mI match {
+        case Some(MorphType(d,c)) => (d,c)
+        case _ => return None
+      }
+      val impl = solver.lookup.getImplicit(mCod, ComplexTheory(solver.constantContext)).getOrElse {
+        solver.error("morphism does not translate into the current theory")
+        return None
+      }
+      val mDomContext = mDom match {
+        case OMPMOD(p,as) => Context(IncludeVarDecl(p,as))
+        case _ =>
+          history += "domain of morphism is not an instance of a named theory"
+          return None
+      }
+      // TODO does not work because local context is ignored when looking up constants; also the wrong rules are applied
+      val tI = solver.inferType(t, covered)(Stack(mDomContext), history + ("inferring term over theory "))
+      tI map {tp => OMM(tp,OMCOMP(m,impl))}
+   }
+}
+
+/**
+ * apply a morphism
+ * 
+ * t APPLY m  ----> m(t)
+ */
+object MorphismApplicationCompute extends ComputationRule(ModExp.morphismapplication) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
       val OMM(t,m) = tm
-      val res = Common.asAnonymousTheory(solver, t).getOrElse(return None)
-      val translator = ApplyMorphism(m)
-      def tr(opt : Option[Term]) = opt.map(s => translator(Context.empty,s))
-      Some(AnonymousTheory(res.mt,res.decls.map{
-         case OML(name,tp,df,nt,feature) =>
-          OML(name,tr(tp),tr(df),nt,feature)
-      }))
+      val mI = solver.inferType(m, covered)(stack, history + ("inferring type of morphism"))
+      val (mDom,mCod) = mI match {
+        case Some(MorphType(d,c)) => (d,c)
+        case _ => return None
+      }
+      val impl = solver.lookup.getImplicit(mCod, ComplexTheory(solver.outerContext)).getOrElse {
+        solver.error("morphism does not translate into the current theory")
+        return None
+      }
+      val translator = ApplyMorphism(OMCOMP(m,impl))
+      if (t.freeVars.nonEmpty) {
+        solver.error("cannot apply morphism to term with free variables yet")
+      }
+      val tT = translator(Context.empty, t)
+      Some(tT)
    }
 }

@@ -195,17 +195,20 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         s.fromC.analyzed = fromR
         s.dfC.analyzed = dfR
       case rc: RuleConstant =>
-        val _ = checkTerm(context, rc.tp)
-        if (rc.df.isEmpty) {
-          if (ParseResult.fromTerm(rc.tp).isPlainTerm) {
-            try {
-              new RuleConstantInterpreter(controller).createRule(rc)
-            } catch {
-              case e: Error =>
-                env.errorCont(e)
+        rc.tp foreach {tp =>
+          val tpR = checkTerm(context, tp)
+          rc.tpC.analyzed = tpR
+          if (rc.df.isEmpty) {
+            if (ParseResult.fromTerm(tpR).isPlainTerm) {
+              try {
+                new RuleConstantInterpreter(controller).createRule(rc)
+              } catch {
+                case e: Error =>
+                  env.errorCont(e)
+              }
+            } else {
+              env.errorCont(InvalidElement(rc, "type of rule constant not fully checked"))
             }
-          } else {
-            env.errorCont(InvalidElement(rc, "type of rule constant not fully checked"))
           }
         }
       case c: Constant =>
@@ -643,7 +646,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case OMS(path) =>
         val ceOpt = content.getO(path)
         if (ceOpt.isEmpty) {
-           env.errorCont(InvalidObject(s, "ill-formed constant reference " + path))
+          env.errorCont(InvalidObject(s, "ill-formed constant reference " + path))
         }
         ceOpt match {
           case Some(d: Declaration) =>

@@ -15,6 +15,6 @@ object NatRules {
   private val N = StandardNat
   object NatLit extends RepresentedRealizedType(n,N)
   object Succ extends RealizedOperator(succ.path, n =>: n, Arithmetic.Succ, N =>: N)
-  object Zero extends RealizedOperator(zero, n, Arithmetic.Zero, N)
-  object One extends RealizedOperator(one, n, Arithmetic.One, N)
+  object Zero extends RealizedValue(zero, n, Arithmetic.Zero)
+  object One extends RealizedValue(one, n, Arithmetic.One)
 }

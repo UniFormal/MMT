@@ -153,11 +153,11 @@ class NotationContainer extends ComponentContainer {
    }
    override def toString = {
       val s1 = parsing match {
-         case Some(n) => " # " + n.toString
+         case Some(n) => " # " + n.toText
          case None => ""
       }
       val s2 = presentation match {
-         case Some(n) => " ## " + n.toString
+         case Some(n) => " ## " + n.toText
          case None => ""
       }
       //TODO .toString for verbalization notation

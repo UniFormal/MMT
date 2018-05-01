@@ -123,8 +123,7 @@ object ErrorReader {
 class ErrorMap(val archive: Archive) extends mutable.HashMap[(String, List[String]), List[BuildError]]
 
 /** maintains all errors produced while running [[BuildTarget]]s on [[Archive]]s */
-class ErrorManager extends Extension with Logger {
-  self =>
+class ErrorManager extends Extension with Logger {self =>
   override val logPrefix = "errormanager"
   /** the mutable data: one ErrorMap per open Archive */
   private var errorMaps: List[ErrorMap] = Nil
@@ -223,7 +222,8 @@ class ErrorManager extends Extension with Logger {
   }
 
   override def destroy {
-    //TODO remove cl and serve
+    controller.extman.removeExtension(serve)
+    controller.extman.removeExtension(cl)
   }
 
   /** adds/deletes [[ErrorMap]]s for each opened/closed [[Archive]] */
@@ -239,9 +239,12 @@ class ErrorManager extends Extension with Logger {
     }
 
     /** reloads the errors */
-    override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath) {
-      loadErrors(a, t.key, if ((a / t.inDim / p).isDirectory) p / ".err"
-      else p.toFile.addExtension("err").toFilePath, Some(a / t.inDim / p))
+    override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath, res: BuildResult) {
+      val errPath = if ((a / t.inDim / p).isDirectory)
+        p / ".err"
+      else
+        p.toFile.addExtension("err").toFilePath
+      loadErrors(a, t.key, errPath, Some(a / t.inDim / p))
     }
   }
   private val defaultLimit: Int = 100
