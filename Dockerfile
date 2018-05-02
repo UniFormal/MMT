@@ -30,12 +30,20 @@ RUN apk --no-cache --no-progress add bash git
 VOLUME /content
 EXPOSE 8080
 
-# Install MMT into /root/MMT
-RUN mkdir -p /root/MMT/deploy
-COPY --from=0 /build/MMT/deploy/mmt.jar /root/MMT/deploy/mmt.jar
+# Install MMT into /mmt/
+RUN mkdir -p /mmt/deploy
+
+# Add mmt.jar file and legal text
+COPY --from=0 /build/MMT/deploy/mmt.jar /mmt/deploy/mmt.jar
+ADD COPYING.txt /mmt/
+
+# Add MMT script to PATH
+ADD deploy/mmt /mmt/deploy/mmt
+ENV PATH="/mmt/deploy:${PATH}"
+
 
 # Run setup and setup the entry for the future
-RUN java -jar /root/MMT/deploy/mmt.jar :setup "/root/MMT" "/content/" ":" "--no-content"
+RUN mmt :setup "/mmt/" "/content/" ":" "--no-content"
 
 ADD scripts/docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
