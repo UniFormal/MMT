@@ -46,7 +46,20 @@ class Report extends Logger {
   /** output is categorized, the elements of group determine which categories are considered
     * the categories "user" (for user input), "error" are output by default, and "temp" (for temporary logging during debugging) */
   private[api] val groups = scala.collection.mutable.Set[String]("user", "error", "temp", "response")
-
+  private def checkDebug = groups contains "debug"
+  
+  private var counter = -1
+  private def nextId = {counter += 1; counter}
+  
+  /** this does nothing and should only be called during debugging:
+   *  it provides a convenient way to hit a breakpoint at a specific call to "log"
+   *  to use, set a breakpoint in this method and call "breakOnId(i)" after the call to "log" at which you want to break
+   */
+  def breakOnId(id: Int) {
+    if (id == counter)
+      return
+  }
+  
   /** gets a list of active groups */
   def active : List[String] = groups.toList
 
@@ -61,14 +74,22 @@ class Report extends Logger {
     }
     val prefixList = utils.stringToList(prefix, "#")
     if (prefixList.forall(p => groups.contains(p)) || groups.contains("all")) {
-      val msgParts = utils.stringToList(msg, "\\n")
+      var msgParts = utils.stringToList(msg, "\\n")
+      if (checkDebug) {
+        val id = nextId
+        val (hd,tl) = msgParts match {
+          case Nil => ("",Nil)
+          case h::t => (h,t)
+        }
+        msgParts = (hd + s" [message id: $id]") :: tl
+      }
       handlers.foreach(_.apply(ind, caller, prefix, msgParts))
     }
   }
 
   /** logs an error */
   def apply(e: Error) {
-    val debug = groups contains "debug"
+    val debug = checkDebug
     if (groups.contains("error") || debug)
       handlers.foreach(_.apply(ind, e, debug))
   }

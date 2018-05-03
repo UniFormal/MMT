@@ -43,7 +43,7 @@ object MMTVersionCompanion extends ActionObjectCompanionImpl[MMTVersion.type]("s
 /** print all loaded knowledge items to STDOUT in text syntax */
 case object ClearConsole extends PrintAction {
   def apply(implicit controller: Controller): Unit = {
-    System.out.print("\033[H\033[2J")
+    System.out.print("\u001b[H\u001b[2J")
     System.out.flush()
   }
   def toParseString = "clear console"

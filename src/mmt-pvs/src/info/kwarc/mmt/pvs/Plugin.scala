@@ -20,6 +20,7 @@ class Plugin extends frontend.Plugin {
     em.addExtension(new LambdaPiInclude)
     em.addExtension(new PVSImporter)
     em.addExtension(new PVSServer)
+    em.addExtension(PVSTheory.preproc)
   }
 }
 

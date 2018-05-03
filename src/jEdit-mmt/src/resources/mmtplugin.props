@@ -71,5 +71,5 @@ mode.mmt.hyperlink.source=mmt
 mode.lf.hyperlink.source=mmt
 
 # context menu plugin
-mode.mmt.contextmenu.label=MMT
-mode.mmt.contextmenu=mmt-show-normalization mmt-normalize-selection mmt-introduce-hole mmt-build mmt-buildopen
+# mode.mmt.contextmenu.label=MMT
+# mode.mmt.contextmenu=mmt-show-normalization mmt-normalize-selection mmt-introduce-hole mmt-build mmt-buildopen

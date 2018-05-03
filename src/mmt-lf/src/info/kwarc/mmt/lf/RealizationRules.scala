@@ -46,6 +46,18 @@ object Realize extends ParametricRule {
            case Right(solver) => throw ParseError("type must be LF-type: " + syn)
            case Left((synR,_)) => RealizedType(synR, st)
          }
+       case semVal: SemanticValue =>
+         val synP = syn match {
+           case OMS(p) => p
+           case _ => throw ParseError("realized value must be an identifier")
+         }
+         val synTp = controller.globalLookup.getO(synP) match {
+           case Some(c: Constant) => c.tpC.getAnalyzedIfFullyChecked.getOrElse {
+             throw ParseError("type not present or not fully checked")
+           }
+           case _ => throw ParseError("realized operator must be a constant")
+         }
+         new RealizedValue(synP, synTp, semVal)
        case semOp: SemanticOperator =>
          val synP = syn match {
            case OMS(p) => p

@@ -291,7 +291,7 @@ object StringOperations {
   import SemanticOperator._
   private val S = StandardString
 
-  object Empty extends Value(S)("")
+  object Empty extends SemanticValue(S, "")
 
   object Concat extends InvertibleBinary(S,S,S, {case (S(x),S(y)) => x+y}) {
     def invertLeft(x:Any,r:Any) = (x,r) match {
@@ -339,12 +339,12 @@ object Arithmetic {
   private val Z = StandardInt
   private val Q = StandardRat
 
-  object Zero extends Value(Z)(0) {
-    alsoHasType(N)
+  object Zero extends SemanticValue(N,BigInt(0)) {
+    //alsoHasType(N)
   }
 
-  object One extends Value(Z)(1) {
-    alsoHasType(N)
+  object One extends SemanticValue(N,BigInt(1)) {
+    //alsoHasType(N)
   }
 
   object Succ extends InvertibleUnary(Z,Z, {case Z(x) => x+1}, {case Z(x) => Some(x-1)}) {

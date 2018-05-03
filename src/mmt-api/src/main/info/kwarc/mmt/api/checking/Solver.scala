@@ -692,7 +692,11 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
               case di: DelayedInference =>
                   implicit val history = di.history
                   implicit val stackP = prepareS(di.stack)
-                  inferTypeAndThen(safeSimplify(di.tm ^^ subs))(stackP, history)(di.cont)
+                  val tmP = safeSimplify(di.tm ^^ subs)
+                  history += "reactivating"
+                  history += di.tm
+                  history += tmP
+                  inferTypeAndThen(tmP)(stackP, history)(di.cont)
            }
            if (mayhold) {
               //recurse to activate the next constraint
@@ -945,7 +949,11 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
              history += "lookup in literal"
              // structurally well-formed literals carry their type
              Some(l.rt.synType) // no need to use InferredType.put on literals
-          case l : UnknownOMLIT => Some(l.synType)
+          case l : UnknownOMLIT =>
+            if (!covered) {
+              // TODO check literal
+            }
+            Some(l.synType)
           case OMMOD(p) =>
              // types of theories and views are formed using meta-level operators
              history += "lookup in library"
@@ -1441,9 +1449,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private def safeSimplify(tm: Term)(implicit stack: Stack, history: History): Term = tm match {
       case _:OMID | _:OMLITTrait => tm
       case OMV(n) => (stack.context.getO(n) orElse solution.getO(n) orElse constantContext.getO(n)) match {
-        case Some(vd) if vd.tp.isDefined =>
+        case Some(vd) if vd.df.isDefined =>
           //TODO variable definitions that contain shadowed variables may not be expanded
-          safeSimplify(vd.tp.get)
+          safeSimplify(vd.df.get)
         case _ => tm
       }
       case o: OML => o
@@ -1472,9 +1480,10 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = {
      def expandDefinition: Term = {
        val tmE = defExp(tm, outerContext++stack.context)
-       if (tmE hashneq tm)
+       if (tmE hashneq tm) {
          log("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
          history += ("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
+       }
        tmE
      }
      if (checkingUnit.isKilled) {

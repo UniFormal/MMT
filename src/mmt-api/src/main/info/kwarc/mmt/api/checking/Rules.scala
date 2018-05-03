@@ -26,10 +26,6 @@ trait CheckingCallback {
    /** a fixed context prefix that is not part of the contexts passed to the other methods */
    def outerContext : Context
 
-
-   //def getType(p: GlobalName): Option[Term]
-   //def getDef(p: GlobalName): Option[Term]
-
    /** checking */
    def check(j: Judgement)(implicit history: History): Boolean
    /** possibly unsafe simplification */

@@ -133,7 +133,7 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
    def expectedComponents: List[(String,ObjComponentKey)] = Nil
 
    /** additional context relative to which to interpret the body of a derived declaration */
-   def getInnerContext(dd: DerivedDeclaration): Context = Context.empty
+   def getInnerContext(dd: DerivedDeclaration): Context = dd.module.getInnerContext
 
    /** called after checking components and inner declarations for additional feature-specific checks */
    def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit
@@ -202,15 +202,19 @@ trait IncludeLike {self: StructuralFeature =>
 }
 
 /** for structural features that are parametric theories with special meaning, e.g., patterns, inductive types */
-trait ParametricTheoryLike {self: StructuralFeature =>
+trait ParametricTheoryLike extends StructuralFeature {
    val Type = ParametricTheoryLike.Type(getClass)
 
    def getHeaderNotation = List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), Delim(")"))
 
-   override def getInnerContext(dd: DerivedDeclaration) = Type.getParameters(dd)
+   override def getInnerContext(dd: DerivedDeclaration) = {
+     val parameters = Type.getParameters(dd)
+     parameters ++ Context(dd.modulePath)
+   }
 
    override def processHeader(header: Term) = header match {
      case OMBIND(OMMOD(`mpath`), cont, OML(name,None,None,_,_)) => (name, Type(cont))
+     case _ => throw InvalidObject(header, "ill-formed header")
    }
    override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
      case Some(Type(cont)) => OMBIND(OMMOD(mpath), cont, OML(dd.name, None,None))

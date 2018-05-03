@@ -278,20 +278,27 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
     def doView(v: View)(implicit controller : Controller) = (Nil,Nil)
     def doTheory(th: DeclaredTheory)(implicit controller : Controller) : (List[JGraphNode],List[JGraphEdge]) = {
       log("Doing theory " + th.path)
+      val consts = th.getPrimitiveDeclarations.collect{case c : Constant => c}
       val sb = new info.kwarc.mmt.api.presentation.StringBuilder
-      val const = th.getPrimitiveDeclarations.collect{case c : Constant => c}.find(_.rl contains "Law") match {
+      val const = consts.find(_.rl contains "Law") match {
         case Some(c) => Some(c)
-        case _ => th.getPrimitiveDeclarations.collect{case c : Constant => c}.find(_.rl contains "BoundaryCondition") match {
+        case _ => consts.find(_.rl contains "BoundaryCondition") match {
           case Some(c) => Some(c)
-          case _ => th.getPrimitiveDeclarations.collect{case c : Constant => c}.find(_.rl contains "Quantity")
+          case _ => consts.find(_.rl contains "Quantity")
         }
       }
       if (const.isEmpty) return (Nil,Nil)
+
       val ostyle : String = const.map(c => {
-        c.rl.get match {case "Law" => "model" case "BoundaryCondition" => "boundarycondition" case _ => "theory"}
-      }).getOrElse("theory")
+        c.rl.get match {
+          case "Law" => "model"
+          case "BoundaryCondition" => "boundarycondition"
+          case _ => "theory"}
+      }).get
+
       ostyle match {
         case "model" => const.foreach(c => mathpres(c.tp.get,Some(c.path $ TypeComponent))(sb))
+        case "boundarycondition" => const.foreach(c => mathpres(c.tp.get,Some(c.path $ TypeComponent))(sb))
         case _ => const.foreach(c => mathpres(OMS(c.path),None)(sb))
       }
       log("Const: " + const)

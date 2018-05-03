@@ -1060,11 +1060,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   private def readOpaque(pi: HasParentInfo, context: Context)(implicit state: ParserState): OpaqueElement = {
       val (format, freg) = state.reader.readToken
       val oi = controller.extman.get(classOf[OpaqueTextParser], format).getOrElse {
-         throw makeError(freg, "unknown opaque format: " + format)
+        throw makeError(freg, "unknown opaque format: " + format)
       }
       val (text, treg) = pi match {
-         case _:IsDoc => state.reader.readModule
-         case _:IsMod => state.reader.readDeclaration
+        case _:IsDoc => state.reader.readModule
+        case _:IsMod => state.reader.readDeclaration
       }
       val pu = ParsingUnit(state.makeSourceRef(treg), context, text, state.namespaces)
       oi.fromString(objectParser, pi.docParent, pu)(state.errorCont)

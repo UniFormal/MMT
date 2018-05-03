@@ -154,6 +154,7 @@ class TokenList(private var tokens: List[TokenListElem]) {
   /**
    * applies a notation and transforms this token list accordingly (this is the only place where [[MatchedList]]s are created)
    * @param an the notation to reduce
+   * @param rt current parsing rule table
    * @return the slice reduced into 1 Token
    */
   def reduce(an: ActiveNotation, rt: ParsingRuleTable, rep: frontend.Report): (Int, Int) = {
@@ -286,8 +287,8 @@ class MatchedList(val tokens: List[(FoundContent,List[UnmatchedList])], val an: 
   else
     tokens.map(_._2.toString).mkString("{" + an.toShortString + " ", " ", " " + an.toShortString + "}")
 
-  private[parser] def addRules(rules : ParsingRuleTable) {tokens foreach {
-    case (_,ul) => ul.foreach(_.addRules(rules))
+  private[parser] def addRules(rules : ParsingRuleTable, replace: Boolean) {tokens foreach {
+    case (_,ul) => ul.foreach(_.addRules(rules, replace))
   }}
 }
 
@@ -305,11 +306,11 @@ class UnmatchedList(val tl: TokenList) extends TokenListElem {
   val lastPosition = tl(tl.length - 1).lastPosition
   private[parser] var scanner: Scanner = null
   private[parser] var localNotations: Option[ParsingRuleTable] = None
-  def addRules(rules : ParsingRuleTable) {
-    scanner.addRules(rules)
+  def addRules(rules : ParsingRuleTable, replace: Boolean) {
+    scanner.addRules(rules, replace)
     tl.getTokens.foreach {
-      case ul : UnmatchedList => ul.addRules(rules)
-      case ml : MatchedList => ml.addRules(rules)
+      case ul : UnmatchedList => ul.addRules(rules, replace)
+      case ml : MatchedList => ml.addRules(rules, replace)
       case _ =>
     }
   }

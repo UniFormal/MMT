@@ -51,7 +51,7 @@ class Pragmatics extends ChangeListener {
       if (applicable.isEmpty)
         MixfixNotation
       else
-         applicable.maxBy(_.priority)
+        applicable.maxBy(_.priority)
    }
    def makeStrict(level: Option[MPath], op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation
          )(implicit newUnkwown: () => Term) : Term = {
