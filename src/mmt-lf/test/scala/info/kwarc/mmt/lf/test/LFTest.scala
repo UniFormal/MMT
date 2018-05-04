@@ -17,6 +17,8 @@ class LFTest extends MMTIntegrationTest(
   shouldLoadExtensions()
   shouldInstallArchives()
 
+  shouldCheck("MMT/urtheories")()
+
   shouldHandleLine("build MMT/LFX scala-bin")
   shouldHandleLine("build MMT/LFX mmt-omdoc")
 
@@ -42,6 +44,8 @@ object Orders {
     ,"arithmetics/complex.mmt"
     ,"typed_sets.mmt"
     ,"functions.mmt"
+    ,"collections/basics.mmt"
+    ,"collections/matroids.mmt"
     ,"topology/basics.mmt"
     ,"algebra/basics.mmt"
     ,"algebra/ringsfields.mmt"

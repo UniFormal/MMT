@@ -646,7 +646,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case OMS(path) =>
         val ceOpt = content.getO(path)
         if (ceOpt.isEmpty) {
-           env.errorCont(InvalidObject(s, "ill-formed constant reference " + path))
+          env.errorCont(InvalidObject(s, "ill-formed constant reference " + path))
         }
         ceOpt match {
           case Some(d: Declaration) =>

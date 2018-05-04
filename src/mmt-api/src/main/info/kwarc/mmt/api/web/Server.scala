@@ -52,9 +52,10 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
       //log(request.body.asString)
       resolve(request)
     } catch {
-      case err: Error => return errorResponse(err, "html")
-      case e : Exception => return errorResponse(ServerError("unknown error").setCausedBy(e), "html")
+      case err: Error => errorResponse(err, "html")
+      case e : Exception => errorResponse(ServerError("unknown error").setCausedBy(e), "html")
     }
+
     // log the response being made
     //log(response.toString)
     //set cors headers and return

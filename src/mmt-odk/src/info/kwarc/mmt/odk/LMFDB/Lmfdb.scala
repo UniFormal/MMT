@@ -15,12 +15,13 @@ import utils._
 import valuebases._
 import info.kwarc.mmt.odk._
 import info.kwarc.mmt.lf.Apply
+import info.kwarc.mmt.mitm.MitM
 
 import scala.collection.mutable.HashSet
 import scala.util.Try
 
 class Plugin extends frontend.Plugin {
-  val theory = Math.path
+  val theory = MitM.mathpath
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
     controller.backend.addStore(LMFDBStore)

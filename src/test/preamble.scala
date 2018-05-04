@@ -38,7 +38,7 @@ abstract class Test(archivepath : String,
   controller.handleLine("extension info.kwarc.mmt.pvs.Plugin")
   // controller.handleLine("extension info.kwarc.mmt.metamath.Plugin")
   controller.handleLine("mathpath archive " + archivepath)
-  controller.handleLine("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath)
+  controller.handleLine(("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath).trim)
 
 
   def doFirst : Unit = {}
@@ -95,6 +95,15 @@ abstract class TomTest(prefixes : String*) extends Test(
   prefixes.toList,
   "/home/twiesing/Projects/KWARC/MathHub/localmh/MathHub/alignments/Public",
   Some(8080),
+  true,
+  None
+)
+
+abstract class JonasTest(prefixes: String*) extends Test(
+  "/home/jbetzend/Development/KWARC/content/",
+  prefixes.toList,
+  "",
+  None,
   true,
   None
 )

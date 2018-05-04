@@ -11,4 +11,7 @@
    <SERVICE CLASS="gatchan.jedit.hyperlinks.HyperlinkSource" NAME="mmt">
       new info.kwarc.mmt.jedit.MMTHyperlinkSource();
    </SERVICE>
+   <SERVICE CLASS="org.gjt.sp.jedit.gui.DynamicContextMenuService" NAME="mmt">
+      new info.kwarc.mmt.jedit.ContextMenu();
+   </SERVICE>
 </SERVICES>

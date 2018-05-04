@@ -3,24 +3,22 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import parser._
 
+/** a Scala-level value to be used in a [[RealizedValue]] */
+case class SemanticValue(tp: SemanticType, value: Any) extends SemanticObject
+
 /** a Scala-level function between [[SemanticType]]s to be used in a [[RealizedOperator]] */
 abstract class SemanticOperator(val tp: SemOpType) extends SemanticObject {
-
   private var types = List(tp)
   def getTypes = types
-
   lazy val arity = tp.arity
-
   protected def alsoHasType(t: SemOpType) {
       types ::= t
   }
-
   /** basic type checking */
   override def init {
     if (types.exists(_.arity != arity))
       throw ImplementationError("types of semantic operator do not have the same arity")
   }
-
   /**
    * the implementation of the operator
    * pre: args.length == arity
@@ -33,7 +31,8 @@ trait Invertible {
   /**
    * the implementation of the inverse
    *
-   * @param args eitthe unapply method receives
+   * @param args arguments of the function (known or unknown)
+   * @param result result of function application
    * @return true if result == this(args) can be uniquely solved, and all unknown arguments were filled in; false if there is no solution; None if inconclusive
    *
    * pre: args.length == arity
@@ -44,7 +43,7 @@ trait Invertible {
 /** used to pass the arguments to the unapply method of a [[SemanticOperator]] */
 sealed abstract class UnapplyArg
 case class KnownArg(value: Any, pos: Int) extends UnapplyArg
-/** an unknown argument that unappy must solve by calling solve */
+/** an unknown argument that unapply must solve by calling solve */
 class UnknownArg(val tp: SemanticType, val pos: Int) extends UnapplyArg {
   private var value: Option[Any] = None
   def solve(a: Any) = {
@@ -57,11 +56,7 @@ class UnknownArg(val tp: SemanticType, val pos: Int) extends UnapplyArg {
   def getSolution = value
 }
 
-object SemanticOperator {
-  /** abbreviation for nullary operators */
-  case class Value(t: SemanticType)(value: Any) extends SemanticOperator(t) {
-    def apply(x:List[Any]) = value
-  }
+object SemanticOperator {  
   /** abbreviation for unary operators */
   class Unary(val from: SemanticType, val to: SemanticType, val map: Any => Any) extends SemanticOperator(from =>: to) {
     def apply(x: List[Any]) = map(x(0))

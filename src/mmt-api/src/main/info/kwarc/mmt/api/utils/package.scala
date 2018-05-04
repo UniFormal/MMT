@@ -21,9 +21,11 @@ package object utils {
 
    /** string index modulo string length */
    def moduloLength(s:String, i: Int) = {
-     val m = i % s.length
-     // fix falsely negative results
-     if (m >= 0) i else i+s.length
+     if (i >= 0) i else i+s.length
+   }
+   def charAt(s: String, i: Int) = {
+     val iA = moduloLength(s, i)
+     if (iA < s.length) Some(s(i)) else None
    }
    /** substring of a string given by begin and end, negative indices allowed */
    def substringFromTo(s: String, from: Int, to: Int) = {

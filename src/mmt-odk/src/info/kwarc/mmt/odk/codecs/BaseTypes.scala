@@ -5,8 +5,8 @@ import objects._
 import uom._
 import utils._
 import valuebases._
-
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
+import info.kwarc.mmt.mitm.MitM
 import info.kwarc.mmt.odk._
 
 trait BigIntAsJSON {
@@ -30,9 +30,9 @@ object TMPos extends LiteralsCodec[BigInt,JSON](Codecs.standardPos, PosLiterals)
 
 object TMString extends EmbedStringToJSON(new LiteralsAsStringsCodec(Codecs.standardString, StringLiterals))
 
-object BoolAsString extends EmbedStringToJSON(new LiteralsAsStringsCodec(Codecs.boolAsString, Math.BoolLit))
+object BoolAsString extends EmbedStringToJSON(new LiteralsAsStringsCodec(Codecs.boolAsString, MitM.BoolLit))
 
-object BoolAsInt extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.boolAsInt, Math.BoolLit) {
+object BoolAsInt extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.boolAsInt, MitM.BoolLit) {
   def encodeRep(b: java.lang.Boolean) = if (b) JSONInt(1) else JSONInt(0)
   def decodeRep(j: JSON) = j match {
     case JSONInt(1) => true
@@ -41,7 +41,7 @@ object BoolAsInt extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.boolAsInt,
   }
 }
 
-object StandardBool extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.standardBool, Math.BoolLit) {
+object StandardBool extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.standardBool, MitM.BoolLit) {
   def encodeRep(b: java.lang.Boolean) = JSONBoolean(b)
   def decodeRep(j: JSON) = j match {
     case JSONBoolean(b) => b
@@ -49,7 +49,7 @@ object StandardBool extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.standar
   }
 }
 
-object TMList extends ListCodec[JSON](Codecs.standardList, Math.list, Math.nil, Math.cons) {
+object TMList extends ListCodec[JSON](Codecs.standardList, MitM.list, MitM.nil, MitM.cons) {
   def aggregate(cs: List[JSON]): JSON = JSONArray(cs:_*)
   def separate(j: JSON): List[JSON] = j match {
     case JSONArray(js@_*) => js.toList
@@ -57,7 +57,7 @@ object TMList extends ListCodec[JSON](Codecs.standardList, Math.list, Math.nil, 
   }
 }
 
-object StandardVector extends CodecOperator[JSON](Codecs.standardVector, Math.vector) {self =>
+object StandardVector extends CodecOperator[JSON](Codecs.standardVector, MitM.vector) {self =>
   val typeParameterPositions : List[Int] = List(1)
 
   def aggregate(cs: List[JSON]): JSON = JSONArray(cs:_*)
@@ -67,13 +67,13 @@ object StandardVector extends CodecOperator[JSON](Codecs.standardVector, Math.ve
   }
 
   def destruct(tm: Term): List[Term] = tm match {
-    case Apply(OMS(Math.zerovec), _) => Nil
-    case ApplySpine(OMS(Math.vectorprepend), List(_, _, hd, tl)) => hd :: destruct(tl)
+    case Apply(OMS(MitM.zerovec), _) => Nil
+    case ApplySpine(OMS(MitM.vectorprepend), List(_, _, hd, tl)) => hd :: destruct(tl)
   }
   def construct(elemTp: Term, tms: List[Term]): Term = {
-    tms.foldLeft[Term](Apply(OMS(Math.zerovec),elemTp)) {
+    tms.foldLeft[Term](Apply(OMS(MitM.zerovec),elemTp)) {
       case (sofar, next) =>
-        ApplySpine(OMS(Math.vectorprepend), elemTp, NatLiterals.of(BigInt(destruct(sofar).length)), next, sofar)
+        ApplySpine(OMS(MitM.vectorprepend), elemTp, NatLiterals.of(BigInt(destruct(sofar).length)), next, sofar)
     }
   }
 
@@ -88,7 +88,7 @@ object StandardVector extends CodecOperator[JSON](Codecs.standardVector, Math.ve
 }
 
 
-object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, Math.matrix) {self =>
+object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, MitM.matrix) {self =>
 
   val typeParameterPositions : List[Int] = List(1)
 
@@ -109,7 +109,7 @@ object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, Math.ma
       if (tms.tail.forall(_.length == tms.head.length)) tms.head.length else throw CodecNotApplicable
     } else tms.length
     StandardVector.construct(
-      ApplySpine(OMS(Math.vector), elemTp, NatLiterals.of(m)),
+      ApplySpine(OMS(MitM.vector), elemTp, NatLiterals.of(m)),
       tms.map(StandardVector.construct(elemTp, _)))
   }
   /*

@@ -30,7 +30,7 @@ trait Link extends ContentElement {
    protected def outerString : String
    /** body as a string */
    protected def innerString : String
-   override def toString = outerString + innerString
+   override def toString = outerString + "\n" + innerString
 }
 
 /**

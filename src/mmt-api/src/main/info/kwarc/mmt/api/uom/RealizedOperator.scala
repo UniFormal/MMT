@@ -18,6 +18,16 @@ case class SemOpType(args: List[SemanticType], ret: SemanticType) {
   def =>:(arg: SemanticType) = SemOpType(arg::args, ret)
 }
 
+/** A RealizedOperator couples a syntactic constant (a Constant) with a semantic function (a Scala function) */
+class RealizedValue(synVal: GlobalName, synTp: Term, semVal: SemanticValue) extends AbbrevRule(synVal, RealizedValue.make(synTp, semVal))
+
+object RealizedValue {
+  /** builds the literal from a semantic value */
+  def make(tp: Term, semVal: SemanticValue) = {
+    val rt = new RealizedType(tp, semVal.tp)
+    rt.of(semVal.value)
+  }
+}
 /** A RealizedOperator couples a syntactic function (a Constant) with a semantic function (a Scala function) */
 case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: SemanticOperator, semTp: SemOpType) extends BreadthRule(synOp) {
   /** basic type-checking */
