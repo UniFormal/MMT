@@ -1,5 +1,5 @@
 # Python side of Java-Python bridge
-# see info.kwarc.mmt.python.Py4JGateway for the counterpart
+# see info.kwarc.mmt.python.Py4JGateway (an MMT extension that must be added to MMT for the bridge to work) for the counterpart
 
 from py4j.java_gateway import JavaGateway, JavaObject, GatewayParameters
 import py4j
