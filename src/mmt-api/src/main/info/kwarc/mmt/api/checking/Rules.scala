@@ -438,6 +438,8 @@ abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) 
       case None => None
     }
   }
+
+  def default(solver : Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
 }
 
 class AbbreviationRuleGenerator extends ChangeListener {
