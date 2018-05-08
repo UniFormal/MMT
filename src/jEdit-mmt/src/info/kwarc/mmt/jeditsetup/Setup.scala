@@ -14,7 +14,6 @@ import info.kwarc.mmt.jedit._
   * copies jars, modes, abbreviations etc. to jEdit settings directory
   * installation is idempotent
   *
-  * @param logger Optional function to print interactive setup statements in. Defaults to println
   */
 class Setup extends ShellExtension("jeditsetup") {
   def helpText = "needed arguments: (install | uninstall) [JEDIT/SETTINGS/FOLDER]"
