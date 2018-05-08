@@ -280,3 +280,7 @@ jsubminus|₋
 jsubequal|₌
 jsubopen|₍
 jsubclose|₎
+jprec|≺
+jpreceq|≼
+jsucc|≻
+jsucceq|≽
