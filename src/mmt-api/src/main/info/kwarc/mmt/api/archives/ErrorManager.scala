@@ -276,7 +276,6 @@ class ErrorManager extends Extension with Logger {self =>
         case "newer" => date >= dateStr
         case _ => date.indexOf(dateStr) > -1
       }
-      //noinspection SideEffectsInMonadicTransformation
       assert(args.length == be.length)
       dateMatch && args.zip(be).forall { case (a, b) => b.indexOf(a) > -1 } &&
         hideQueries.forall { hq => hq.zip(be3).exists { case (a, b) => b.indexOf(a) == -1 } }

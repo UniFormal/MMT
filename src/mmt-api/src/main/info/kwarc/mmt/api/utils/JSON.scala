@@ -248,6 +248,7 @@ object JSON {
    }
 }
 
+/** converts between XML and JSON following the jsonML specification */
 object JSONXML {
   import scala.xml._
   

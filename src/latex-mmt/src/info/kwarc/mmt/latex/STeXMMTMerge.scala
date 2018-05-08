@@ -1,3 +1,5 @@
+/*
+
 package info.kwarc.mmt.latex
 
 import info.kwarc.mmt.api._
@@ -250,3 +252,5 @@ class STeXMMTMerge extends ShellExtension("stexmmt") {
       true
    }
 }
+
+*/

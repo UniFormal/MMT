@@ -6,6 +6,8 @@ import utils._
 /** Objects of type Marker make up the pattern of a Notation */
 sealed abstract class Marker {
    override def toString : String
+   /** for markers that contain nested markers, this should be overridden to return all leafs of the syntax tree */
+   def atomicDescendants: List[Marker] = List(this)
 }
 
 /** Markers that are delimiters */
@@ -254,10 +256,23 @@ case class WordMarker(word : String) extends VerbalizationMarker {
 sealed abstract class PresentationMarker extends Marker {
    /** @return the same marker with all nested markers replaced according to a function */
    def flatMap(f: Marker => List[Marker]) : PresentationMarker
+   /** the list of all markers that occur as children of this one (excluding delimiters) */
+   def content: List[Marker]
+   /** visits every marker once */
+   override def atomicDescendants: List[Marker] = {
+     val c = content
+     if (c.isEmpty) List(this)
+     else c.flatMap(_.atomicDescendants)
+   }
 }
+
+sealed abstract class AtomicPresentationMarker extends PresentationMarker {
+  def content = Nil
+}
+
 /** groups a list of markers into a single marker */
-case class GroupMarker(elements: List[Marker]) extends PresentationMarker {
-   def flatMap(f: Marker => List[Marker]) = GroupMarker(elements flatMap f)
+case class GroupMarker(content: List[Marker]) extends PresentationMarker {
+   def flatMap(f: Marker => List[Marker]) = GroupMarker(content flatMap f)
 }
 /** decorates a marker with various scripts */
 case class ScriptMarker(main: Marker, sup: Option[Marker], sub: Option[Marker],
@@ -268,12 +283,18 @@ case class ScriptMarker(main: Marker, sup: Option[Marker], sub: Option[Marker],
    }
    def flatMap(f: Marker => List[Marker]) =
       ScriptMarker(gMap(f)(main), sup map gMap(f), sub map gMap(f), over map gMap(f), under map gMap(f))
+   def content = main :: List(sup,sub,over,under).flatMap(_.toList)
 }
 /** a marker for fractions */
 case class FractionMarker(above: List[Marker], below: List[Marker], line: Boolean) extends PresentationMarker {
    def flatMap(f: Marker => List[Marker]) = {
       FractionMarker(above.flatMap(f), below.flatMap(f), line)
    }
+   def content = above:::below
+}
+trait PresentationMarkerWrappingMarkerList {
+  def content: List[Marker]
+  def foreach(f: Marker => Unit) {content foreach f}
 }
 /** a marker based on mathml mtd elements, representing table cells */
 case class TdMarker(content : List[Marker]) extends PresentationMarker {
@@ -295,10 +316,11 @@ case class TableMarker(content : List[Marker]) extends PresentationMarker {
 }
 
 /**a marker representing the nth(index) root in mathml*/
-case class RootMarker(content : List[Marker], index : List[Marker] = Nil) extends PresentationMarker {
+case class RootMarker(argument : List[Marker], index : List[Marker] = Nil) extends PresentationMarker {
   def flatMap(f : Marker => List[Marker]) = {
     RootMarker(content.flatMap(f),index)
   }
+  def content = argument ::: index
 }
 
 /**a maker based on mathml label*/
@@ -309,14 +331,14 @@ case class LabelMarker(content: List[Marker], label : String) extends Presentati
 }
 
 /** a marker for a fixed numeric value */
-case class NumberMarker(value : Delim) extends PresentationMarker {
+case class NumberMarker(value : Delim) extends AtomicPresentationMarker {
   def flatMap(f : Marker => List[Marker]) = {
     NumberMarker(value)
   }
 }
 
 /**Marker for Identifier in MathML -*/
-case class IdenMarker(value: Delim) extends PresentationMarker {
+case class IdenMarker(value: Delim) extends AtomicPresentationMarker {
   def flatMap(f : Marker => List[Marker]) = {
     IdenMarker(value)
   }
@@ -340,21 +362,21 @@ case class PhantomMarker(content : List[Marker]) extends PresentationMarker{
   *  @param src the source (link) of the symbol
  *  @param alt the text to show in case of failure
  *  */
-case class GlyphMarker( src : Delim, alt: String = "Failed Loading") extends PresentationMarker{
+case class GlyphMarker( src : Delim, alt: String = "Failed Loading") extends AtomicPresentationMarker {
   def flatMap(f: Marker => List[Marker]) = {
     GlyphMarker(src)
   }
 }
 
-case class TextMarker(text : Delim) extends PresentationMarker {
+case class TextMarker(text : Delim) extends AtomicPresentationMarker {
   def flatMap(f:Marker => List[Marker]) = {
     TextMarker(text)
   }
 }
 
 /** a marker for type of the presented object */
-case object InferenceMarker extends PresentationMarker {
-   def flatMap(f: Marker => List[Marker]) = InferenceMarker
+case object InferenceMarker extends AtomicPresentationMarker {
+  def flatMap(f: Marker => List[Marker]) = InferenceMarker
 }
 
 object PresentationMarker {

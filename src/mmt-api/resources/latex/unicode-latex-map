@@ -1,211 +1,282 @@
-♯ \sharp
-♭ \flat
-→ \ra
-← \la
-↔ \lra
-⇒ \rA
-⇐ \lA
-⇔ \lrA
-⟶ \raa
-⟵ \laa
-⟷ \lraa
-⟹ \rAA
-⟸ \lAA
-⟺ \lrAA
-→ \rightarrow
-← \leftarrow
-↔ \leftrightarrow
-⇒ \Rightarrow
-⇐ \Leftarrow
-⇔ \Leftrightarrow
-⟶ \longrightarrow
-⟵ \longleftarrow
-⟷ \longleftrightarrow
-⟹ \Longrightarrow
-⟸ \Longleftrarrow
-⟺ \Longleftrightarrow
-↑ \uparrow
-↓ \downarrow
-↕ \updownarrow
-⇑ \Uparrow
-⇓ \Downarrow
-⇕ \Updownarrow
-↦ \mapsto
-⟼ \longmapsto
-⊸ \lolli
-↪ \hra
-↪ \hookrightarrow
-↩ \hla
-↩ \hookleftarrow
-⟿ \rewrites
-↯ \contra
-∗ \ast
-★ \star
-⋅ \cdot
-∘ \circ
-∙ \bullet
-× \times
-± \pm
-∓ \mp
-∧ \wedge
-∨ \vee
-∩ \cap
-∪ \cup
-⊓ \sqcap
-⊔ \sqcup
-⊕ \oplus
-⊖ \ominus
-⊗ \otimes
-⊘ \oslash
-⊛ \oast
-⊚ \ocirc
-⊙ \odot
-⨉ \bigtimes
-◯ \bigcirc
-⋀ \bigwedge
-⋁ \bigvee
-⋂ \bigcap
-⋃ \bigcup
-◇ \bigdiamond
-⨁ \bigoplus
-⨂ \bigotimes
-⊂ \subset
-⊃ \supset
-⊆ \sq‍
-⊆ \subseteq‍
-⊇ \supseteq
-⊄ \nsubset
-⊅ \nsupset
-⊈ \nsubseteq
-⊉ \nsupseteq
-⊊ \subsetneq
-⊋ \supsetneq
-≤ \leq
-≥ \geq
-≪ \ll
-≫ \gg
-≨ \nleq
-≩ \ngeq
-⊏ \sqsubset
-⊐ \sqsupset
-⊑ \subseteq
-⊒ \supseteq
-∈‍ \in
-∉ \nin
-∋ \ni
-∌ \nni
-≠ \neq
-≐ \doteq
-⚌ \eq
-≡ \equiv
-≢ \nequiv
-∼ \sim
-≃ \simeq
-≄ \nsimeq
-≅ \cong
-≇ \ncong
-≈ \approx
-≉ \napprox
-≊ \approxeq
-▷ \triangleright
-◁ \triangleleft
-▶ \blacktriangleright
-◀ \blacktriangleleft
-⊢ \der
-⊢ \vdash
-⊣ \dashv
-⊧ \models
-⊤ \top
-⊥ \bot
-¬ \neg
-∀ \forall
-∃ \exists
-∄ \nexists
-□ \box
-□ \square
-⋄ \diamond
-∅ \es
-∅ \emptyset
-א \aleph
-∞ \infty
-∑ \sum
-∏ \prod
-∐ \coprod
-∐ \amalg
-∁ \comp
-∁ \complement
-∖ \sm
-∖ \setminus
-∶ \colon
-≔ \coloneq
-⟨ \langle
-⟩ \rangle
-⟪ \llangle
-⟫ \rrangle
-⟦ \llbracket
-⟧ \rrbracket
-⌈ \lceil
-⌉ \rceil
-⌊ \lfloor
-⌋ \rfloor
-⌜ \ulcorner
-⌝ \urcorner
-⌞ \llcorner
-⌟ \lrcorner
-… \ldots
-⋮ \vdots
-ℕ \N
-ℤ \Z
-ℚ \Q
-ℝ \R
-ℂ \C
-ℬ \B
-℘ \pow
-Α \Alpha
-Β \Beta
-Γ \Gamma
-Δ \Delta
-Ε \Epsilon
-Ζ \Zeta
-Η \Eta
-Θ \Theta
-Ι \Iota
-Κ \Kappa
-Λ \Lambda
-Μ \Mu
-Ν \Nu
-Ξ \Xi
-Ο \Omikron
-Π \Pi
-Ρ \Rho
-Σ \Sigma
-Τ \Tau
-Υ \Upsilon
-Φ \Phi
-Χ \Chi
-Ψ \Psi
-Ω \Omega
-α \alpha
-β \beta
-γ \gamma
-δ \delta
-ε \epsilon
-ζ \zeta
-η \eta
-ϑ \theta
-ι \iota
-κ \kappa
-λ \lambda
-μ \mu
-ν \nu
-ξ \xi
-ο \omikron
-π \pi
-ρ \rho
-σ \sigma
-τ \tau
-υ \upsilon
-φ \phi
-χ \chi
-ψ \psi
-ω \omega
+jMD|❚
+jDD|❙
+jOD|❘
+jsharp|♯
+jflat|♭
+jra|→
+jla|←
+jlra|↔
+jrA|⇒
+jlA|⇐
+jlrA|⇔
+jraa|⟶
+jlaa|⟵
+jlraa|⟷
+jrAA|⟹
+jlAA|⟸
+jlrAA|⟺
+jhra|↪
+jhla|↩
+jrightarrow|→
+jleftarrow|←
+jleftrightarrow|↔
+jRightarrow|⇒
+jLeftarrow|⇐
+jLeftrightarrow|⇔
+jhookrightarrow|↪
+jhookleftarrow|↩
+jlongrightarrow|⟶
+jlongleftarrow|⟵
+jlongleftrightarrow|⟷
+jLongrightarrow|⟹
+jLongleftarrow|⟸
+jLongleftrightarrow|⟺
+jbla|↦
+jblA|⤇
+jblaa|⟼
+jblAA|⤇
+jbra|↤
+jbrA|⤆
+jbraa|⟻
+jbrAA|⤆
+jls|⇝
+jlss|⟿
+jrs|⇜
+jrss|⬳
+jmapsto|↦
+jMapsto|⤇
+jlongmapsto|⟼
+jLongmapsto|⤇
+jmapsfrom|↤
+jMapsfrom|⤆
+jlongmapsfrom|⟻
+jLongmapsfrom|⤆
+jrightsquigarrow|⇝
+jlongrightsquigarrow|⟿
+jleftsquigarrow|⇜
+jlongleftsquigarrow|⬳
+jlolli|⊸
+jrewrites|⟿
+juparrow|↑
+jdownarrow|↓
+jupdownarrow|↕
+jUparrow|⇑
+jDownarrow|⇓
+jUpdownarrow|⇕
+jcontra|↯
+jcheck|✓
+jast|∗
+jstar|★
+jcdot|⋅
+jcirc|∘
+jbullet|∙
+jtimes|×
+jpm|±
+jmp|∓
+jwedge|∧
+jvee|∨
+jcap|∩
+jcup|∪
+jsqcap|⊓
+jsqcup|⊔
+joplus|⊕
+jominus|⊖
+jotimes|⊗
+joslash|⊘
+joast|⊛
+jocirc|⊚
+jodot|⊙
+jo0|⓪
+jo1|①
+jo2|②
+jo3|③
+jo4|④
+jo5|⑤
+jo6|⑥
+jo7|⑦
+jo8|⑧
+jo9|⑨
+jbigtimes|⨉
+jbigcirc|◯
+jbigwedge|⋀
+jbigvee|⋁
+jbigcap|⋂
+jbigcup|⋃
+jbigdiamond|◇
+jbigoplus|⨁
+jbigotimes|⨂
+jsubset|⊂
+jsupset|⊃
+jsq|⊆‍
+jsubseteq|⊆‍
+jsupseteq|⊇
+jnsubset|⊄
+jnsupset|⊅
+jnsubseteq|⊈
+jnsupseteq|⊉
+jsubsetneq|⊊
+jsupsetneq|⊋
+jleq|≤
+jgeq|≥
+jll|≪
+jgg|≫
+jnleq|≨
+jngeq|≩
+jsqsubset|⊏
+jsqsupset|⊐
+jsubseteq|⊑
+jsupseteq|⊒
+jin|‍∈
+jnin|∉
+jni|∋
+jnni|∌
+jneq|≠
+jdoteq|≐
+jeq|⚌
+jequiv|≡
+jnequiv|≢
+jsim|∼
+jsimeq|≃
+jnsimeq|≄
+jcong|≅
+jncong|≇
+japprox|≈
+jnapprox|≉
+japproxeq|≊
+jtriangleright|▷
+jtriangleleft|◁
+jblacktriangleright|▶
+jblacktriangleleft|◀
+jder|⊦
+jrightassert|⊦
+jvdash|⊢
+jdashv|⊣
+jmodels|⊧
+jtop|⊤
+jbot|⊥
+jneg|¬
+jforall|∀
+jexists|∃
+jnexists|∄
+jbox|□
+jsquare|□
+jdiamond|⋄
+jes|∅
+jemptyset|∅
+jaleph|א
+jinfty|∞
+jsum|∑
+jprod|∏
+jcoprod|∐
+jamalg|∐
+jcomp|∁
+jcomplement|∁
+jsm|∖
+jsetminus|∖
+jcolon|∶
+jcoloneq|≔
+jlangle|⟨
+jrangle|⟩
+jllangle|⟪
+jrrangle|⟫
+jllbracket|⟦
+jrrbracket|⟧
+jlceil|⌈
+jrceil|⌉
+jlfloor|⌊
+jrfloor|⌋
+julcorner|⌜
+jurcorner|⌝
+jllcorner|⌞
+jlrcorner|⌟
+jldots|…
+jvdots|⋮
+jN|ℕ
+jZ|ℤ
+jQ|ℚ
+jR|ℝ
+jC|ℂ
+jB|ℬ
+jpow|℘
+jAlpha|Α
+jBeta|Β
+jGamma|Γ
+jDelta|Δ
+jEpsilon|Ε
+jZeta|Ζ
+jEta|Η
+jTheta|Θ
+jIota|Ι
+jKappa|Κ
+jLambda|Λ
+jMu|Μ
+jNu|Ν
+jXi|Ξ
+jOmikron|Ο
+jPi|Π
+jRho|Ρ
+jSigma|Σ
+jTau|Τ
+jUpsilon|Υ
+jPhi|Φ
+jChi|Χ
+jPsi|Ψ
+jOmega|Ω
+jalpha|α
+jbeta|β
+jgamma|γ
+jdelta|δ
+jepsilon|ε
+jzeta|ζ
+jeta|η
+jtheta|ϑ
+jiota|ι
+jkappa|κ
+jlambda|λ
+jmu|μ
+jnu|ν
+jxi|ξ
+jomikron|ο
+jpi|π
+jrho|ρ
+jsigma|σ
+jtau|τ
+jupsilon|υ
+jphi|φ
+jchi|χ
+jpsi|ψ
+jomega|ω
+jsuper0|⁰
+jsuper1|¹  
+jsuper2|²
+jsuper3|³
+jsuper4|⁴
+jsuper5|⁵
+jsuper6|⁶
+jsuper7|⁷
+jsuper8|⁸
+jsuper9|⁹
+jsuperplus|⁺
+jsuperminus|⁻
+jsuperequal|⁼
+jsuperopen|⁽
+jsuperclose|⁾
+jsub0|₀
+jsub1|₁
+jsub2|₂
+jsub3|₃
+jsub4|₄
+jsub5|₅
+jsub6|₆
+jsub7|₇
+jsub8|₈
+jsub9|₉
+jsubplus|₊
+jsubminus|₋
+jsubequal|₌
+jsubopen|₍
+jsubclose|₎
+jprec|≺
+jpreceq|≼
+jsucc|≻
+jsucceq|≽

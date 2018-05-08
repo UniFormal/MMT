@@ -71,6 +71,8 @@ class Shell extends StandardIOHelper {
   private def deferToExtension(key: String, args: List[String]) {
      controller.extman.getOrAddExtension(classOf[ShellExtension], key) match {
        case Some(se) =>
+          controller.report.addHandler(ConsoleHandler)
+          controller.report.groups += se.logPrefix
           val doCleanup = se.run(this, args)
           if (doCleanup) {
              controller.cleanup

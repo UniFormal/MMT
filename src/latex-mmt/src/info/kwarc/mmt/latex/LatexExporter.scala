@@ -1,4 +1,6 @@
+/*
 package info.kwarc.mmt.latex
+
 
 import info.kwarc.mmt.api._
 import archives._
@@ -79,7 +81,6 @@ class LatexExporter extends Exporter {
         s"\\$command{$aboveL}{$belowL}"
       case InferenceMarker => "ERROR(INFERENCE)"
       case m =>
-        //noinspection SideEffectsInMonadicTransformation
         logError("unexpected notation marker: " + m)
         "ERROR"
     }.mkString("")
@@ -173,3 +174,5 @@ object LatexExporter {
   /** escapes of characters within latex delimiters */
   def delimEscapes = '\\' -> "\\backslash " :: '~' -> "\\sim " :: "$#%&{}_^".toList.map(c => (c, "\\" + c))
 }
+
+*/

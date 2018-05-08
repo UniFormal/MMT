@@ -2,8 +2,14 @@
 
 \usepackage{amsmath}
 
+%\usepackage{fdsymbol}
+\newcommand{\rightassert}{\vdash} % should be supplied by \usepackage{fdsymbol}, but that causes a weird error
 
-\usepackage{mmt}
+% change this to give your MathHub root folder
+\newcommand{\mmttexmathhubroot}{c:/other/oaff/}
+\usepackage{mmttex}
+
+%\RequireMMTPackage{MMT/examples/export/presentation/mmt-sty/content/http..cds.omdoc.org/examples/$P$L}
 
 \begin{document}
 
@@ -14,26 +20,26 @@
 \begin{mmttheory}{test}{ur:/?LF}
 \mmtinclude{ex:?FOLEQNatDed}
 
-\mmtconstant{id}{o -> o}{[x] x}{id 1}
+\mmtconstant{id}{prop ⟶ prop}{[x] x}{id 1}
 
 "[A] impI [p: ded A] andI p p"
 
 \begin{mmtcontext}
-\mmtvar{x}{A}
+\mmtvar{x}{prop}
 
-\mmtvar{y}{B}
+\mmtvar{y}{prop}
 
 \begin{mmtcontext}
-\mmtvar{z}{C}
-\mmtvar{zz}{CC}
-"x imp y imp z imp zz"
+\mmtvar{z}{prop}
+\mmtvar{zz}{prop}
+"x ⇒ y ⇒ z ⇒ zz"
 \end{mmtcontext}
 
-\mmtvar{yy}{BB}
-"x imp y imp z imp zz"
+\mmtvar{yy}{prop}
+"[a,b] a ⇒ b ⇒ yy"
 
 \end{mmtcontext}
-"x imp y imp z imp zz"
+"id true"
 
 \end{mmttheory}
 

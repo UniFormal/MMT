@@ -1,3 +1,5 @@
+/*
+
 package info.kwarc.mmt.latex
 
 import info.kwarc.mmt.api._
@@ -624,4 +626,6 @@ class LatexState(val dpath : DPath, controller : Controller) {
     Thread.sleep(100)
   }
 }
-* */
+
+*/
+*/

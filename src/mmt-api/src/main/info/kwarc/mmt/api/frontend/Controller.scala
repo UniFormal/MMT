@@ -279,7 +279,7 @@ class Controller extends ROController with ActionHandling with Logger {
        throw GeneralError(s"no ${if (interpret) "interpreter" else "parser"} for format ${ps.format} found")
      }
      // interpret the document
-     interpreter(ps)
+     val _ = interpreter(ps)
      // (M): delete all now-inactive parts of the old structure
      // TODO for two-step interpreters, deleteInactive should be called after parsing (currently: after checking)
      oldDocOpt.foreach {doc => deleteInactive(doc)}
