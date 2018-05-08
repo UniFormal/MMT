@@ -100,8 +100,8 @@ def commonSettings(nameStr: String) = Seq(
       PathList("rootdoc.txt") | // 2 versions from from scala jars
       PathList("META-INF", _*) => // should never be merged anyway
       MergeStrategy.discard
-    // work around Florian's obsession with unmanaged jars
-    // otherwise, we wouldn't need this
+    // in case of files appearing in multiple unmanaged jars
+    // assume they are identical and take the first one
     case _ => MergeStrategy.first
   },
   // errors for assembly only
@@ -134,6 +134,12 @@ lazy val excludedProjects = {
     .java9(concepts)
 }
 
+// =================================
+// Scala Features & Library
+// =================================
+
+lazy val scalaParserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.0"
+lazy val scalaXML               = "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
 // =================================
 // Main MMT Projects
 // =================================
@@ -188,32 +194,28 @@ lazy val mmt = (project in file("mmt")).
 
 // MMT is split into multiple subprojects to that are managed independently.
 
-def apiJars(u: Utils) = Seq(
-  "scala-compiler.jar",
-  "scala-reflect.jar",
-  "scala-parser-combinators.jar",
-  "scala-xml.jar",
-  "xz.jar",
-).map(u.lib.toJava / _)
-
 // The kernel upon which everything else depends. Maintainer: Florian
 lazy val api = (project in file("mmt-api")).
   settings(mmtProjectsSettings("mmt-api"): _*).
   dependsOn(tiscaf).
-  dependsOn(lfcatalog).
   settings(
     scalacOptions in Compile ++= Seq("-language:existentials"),
     scalaSource in Compile := baseDirectory.value / "src" / "main",
-    unmanagedJars in Compile ++= apiJars(utils.value),
-    unmanagedJars in Test ++= apiJars(utils.value),
+
+    libraryDependencies ++= Seq(
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+      scalaParserCombinators,
+      scalaXML,
+      "org.tukaani" % "xz" % "1.8",
+    )
   )
 
 
 // Some foundation-specific extensions. Maintainer: Florian
 lazy val lf = (project in file("mmt-lf")).
   dependsOn(api % "compile -> compile; test -> test").
-  dependsOn(tiscaf).
-  dependsOn(lfcatalog).
+  dependsOn(tiscaf, lfcatalog).
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
     //    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.12.8" % "test",
@@ -289,8 +291,8 @@ lazy val interviews = (project in file("mmt-interviews")).
 lazy val python = (project in file("python-mmt")).
   dependsOn(api, odk).
   settings(mmtProjectsSettings("python-mmt"): _*).
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "py4j0.10.7.jar")
-
+  settings(libraryDependencies += "net.sf.py4j" % "py4j" % "0.10.7")
+  
 // graph optimization. Maintainer: Michael Banken
 lazy val got = (project in file("mmt-got")).
   dependsOn(api).
@@ -312,15 +314,13 @@ lazy val repl = (project in file("mmt-repl")).
 
 // alignment-based concept browser. Maintainer: Dennis
 lazy val concepts = (project in file("concept-browser")).
-  dependsOn(api).
-  dependsOn(tiscaf).
-  dependsOn(lfcatalog).
+  dependsOn(api, tiscaf).
   settings(mmtProjectsSettings("concept-browser"): _*).
   settings(
     libraryDependencies ++= Seq(
-      "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
-    ),
-    unmanagedJars in Compile += utils.value.lib.toJava / "scala-xml.jar"
+      "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2",
+      scalaXML
+    )
   )
 
 // =================================
@@ -363,7 +363,7 @@ lazy val pvs = (project in file("mmt-pvs")).
   settings(mmtProjectsSettings("mmt-pvs"): _*)
 
 // plugin for reading metamath
-lazy val mmscala = RootProject(uri("https://github.com/UniFormal/mm-scala#master"))
+lazy val mmscala = RootProject(uri("git://github.com/UniFormal/mm-scala#master"))
 lazy val metamath = (project in file("mmt-metamath")).
   dependsOn(api, lf, mmscala).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
@@ -410,7 +410,7 @@ lazy val oeis = (project in file("mmt-oeis")).
   dependsOn(planetary).
   settings(mmtProjectsSettings("mmt-oeis"): _*).
   settings(
-    unmanagedJars in Compile += utils.value.lib.toJava / "scala-parser-combinators.jar"
+    libraryDependencies += scalaParserCombinators
   )
 
 // =================================
@@ -433,8 +433,8 @@ lazy val tiscaf = (project in file("tiscaf")).
 
 // this is a dependency of Twelf if used in conjunction with the module system; it is automatically started when using the Twelf importer
 lazy val lfcatalog = (project in file("lfcatalog")).
-  dependsOn(tiscaf).
   settings(commonSettings("lfcatalog")).
+  dependsOn(tiscaf).
   settings(
     scalaSource in Compile := baseDirectory.value / "src",
     publishTo := Some(Resolver.file("file", utils.value.deploy.toJava / " main")),
@@ -445,7 +445,7 @@ lazy val lfcatalog = (project in file("lfcatalog")).
         Utils.deployTo(u.deploy / "lfcatalog" / "lfcatalog.jar")(jar)
       }
     }.value,
-    unmanagedJars in Compile += utils.value.lib.toJava / "scala-xml.jar"
+    libraryDependencies += scalaXML
   )
 
 // =================================

@@ -1,0 +1,6 @@
+Dependencies of the mmt-lean project:
+
+com.chuusai.shapeless_2.11-2.3.2
+com.github.scopt.scopt_2.11-3.6.0
+org.parboiled.parboiled_2.11-2.1.4
+org.typelevel.macro-compat_2.11-1.1.1
