@@ -132,7 +132,7 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregate(
       mmt, api,
-      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, odk, specware, stex, webEdit, planetary, interviews, latex, openmath, oeis, repl,
+      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, odk, specware, stex, webEdit, mathhub, planetary, interviews, latex, openmath, oeis, repl,
       tiscaf, lfcatalog,
       jedit
   ).settings(
@@ -233,6 +233,11 @@ lazy val latex = (project in file("latex-mmt")).
 lazy val odk = (project in file("mmt-odk")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-odk"): _*)
+
+// MMT-Mathhub backend. Maintainer: Tom
+lazy val mathhub = (project in file("mmt-mathhub")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("mmt-mathhub"): _*)
 
 // using MMT in the planetary/MathHub systems. Orginally developed by Mihnea, functional but should be reviewed
 lazy val planetary = (project in file("planetary-mmt")).
