@@ -63,9 +63,8 @@ travisConfig := {
       TravisJob("Check that the code compiles and the test runs run and the code compiles", sbt("scalastyle") ::: sbt("compile") ::: sbt("test"))
     ),
 
-    TravisStage("DeployCheck", "check that the 'apidoc', 'deploy' and 'deployFull' targets work")(
+    TravisStage("DeployCheck", "check that the 'apidoc' and 'deploy' targets work")(
       TravisJob("Check mmt.jar generation using `sbt deploy`", sbt("deploy", file("deploy/mmt.jar"))),
-      TravisJob("Check mmt.jar generation using `sbt deployfull`", sbt("deployFull", file("deploy/mmt.jar"))),
       TravisJob("Check that apidoc generation works", sbt("apidoc", dir("apidoc")))
     ),
 

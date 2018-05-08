@@ -53,7 +53,6 @@ testOptions in Test += Tests.Argument("-oI")
 // =================================
 
 val deploy = TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
-val deployFull = TaskKey[Unit]("deployFull", "copies all (including tiscaf and lfcatalog) packaged jars to deploy location.")
 val install = TaskKey[Unit]("install", "copies jedit jars to local jedit installation folder.")
 
 // =================================
@@ -110,8 +109,7 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
   publishTo := Some(Resolver.file("file", Utils.deploy.toJava / " main")),
 
   install := {},
-  deploy := Utils.deployPackage("main/" + nameStr + ".jar").value,
-  deployFull := Utils.deployPackage("main/" + nameStr + ".jar").value
+  deploy := Utils.deployPackage("main/" + nameStr + ".jar").value
 )
 
 // =================================
@@ -152,7 +150,6 @@ lazy val mmt = (project in file("mmt")).
     deploy := {
       assembly in Compile map Utils.deployTo(Utils.deploy / "mmt.jar")
     }.value,
-    deployFull := deployFull.dependsOn(deploy).value,
     assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
       cp filter { j => jeditJars.contains(j.data.getName) }
@@ -172,15 +169,15 @@ lazy val mmt = (project in file("mmt")).
 // The kernel upon which everything else depends. Maintainer: Florian
 lazy val api = (project in file("mmt-api")).
   settings(mmtProjectsSettings("mmt-api"): _*).
+  dependsOn(tiscaf).
+  dependsOn(lfcatalog).
   settings(
     scalacOptions in Compile ++= Seq("-language:existentials"),
     scalaSource in Compile := baseDirectory.value / "src" / "main",
-    unmanagedJars in Compile += Utils.lib.toJava / "tiscaf.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-compiler.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-reflect.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-parser-combinators.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar",
-    unmanagedJars in Test += Utils.lib.toJava / "tiscaf.jar",
     unmanagedJars in Test += Utils.lib.toJava / "scala-compiler.jar",
     unmanagedJars in Test += Utils.lib.toJava / "scala-reflect.jar",
     unmanagedJars in Test += Utils.lib.toJava / "scala-parser-combinators.jar",
@@ -194,11 +191,11 @@ lazy val api = (project in file("mmt-api")).
 // Some foundation-specific extensions. Maintainer: Florian
 lazy val lf = (project in file("mmt-lf")).
   dependsOn(api % "compile -> compile; test -> test").
+  dependsOn(tiscaf).
+  dependsOn(lfcatalog).
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
-    unmanagedJars in Compile += Utils.deploy.toJava / "lfcatalog" / "lfcatalog.jar",
 //    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.12.3" % "test",
-    unmanagedJars in Test += Utils.lib.toJava / "tiscaf.jar"
   )
 
 // =================================
@@ -224,7 +221,6 @@ lazy val jedit = (project in file("jEdit-mmt")).
     resourceDirectory in Compile := baseDirectory.value / "src/resources",
     unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" / _),
     deploy := Utils.deployPackage("main/MMTPlugin.jar").value,
-    deployFull := Utils.deployPackage("main/MMTPlugin.jar").value,
     install := Utils.installJEditJars
   )
   
@@ -270,12 +266,13 @@ lazy val repl = (project in file("mmt-repl")).
 // alignment-based concept browser. Maintainer: Dennis
 lazy val concepts = (project in file("concept-browser")).
   dependsOn(api).
+  dependsOn(tiscaf).
+  dependsOn(lfcatalog).
   settings(mmtProjectsSettings("concept-browser"): _*).
   settings(
     libraryDependencies ++= Seq(
       "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
     ),
-    unmanagedJars in Compile += Utils.lib.toJava / "tiscaf.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
  )
 
@@ -371,18 +368,16 @@ lazy val tiscaf = (project in file("tiscaf")).
 //      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
       "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     ),
-    deployFull := Utils.deployPackage("lib/tiscaf.jar").value,
     test := {} // disable tests for tiscaf
   )
 
 // this is a dependency of Twelf if used in conjunction with the module system; it is automatically started when using the Twelf importer
 lazy val lfcatalog = (project in file("lfcatalog")).
+  dependsOn(tiscaf).
   settings(commonSettings("lfcatalog")).
   settings(
     scalaSource in Compile := baseDirectory.value / "src",
-    unmanagedJars in Compile += Utils.lib.toJava / "tiscaf.jar",
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar",
-    deployFull := Utils.deployPackage("lfcatalog/lfcatalog.jar").value
+    unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
   )
 
 // =================================
