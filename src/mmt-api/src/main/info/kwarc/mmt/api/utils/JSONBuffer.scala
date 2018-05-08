@@ -85,6 +85,11 @@ case class ConverterNotApplicable(json: JSON) extends Exception(s"Not applicable
 
 
 object JSONConverter {
+
+  def toJSON[T](obj: T)(implicit converter: JSONConverter[T]) : JSON = converter.toJSON(obj)
+  def fromJSON[T](json: JSON)(implicit converter: JSONConverter[T]): T = converter.fromJSON(json)
+  def fromJSONOption[T](json: JSON)(implicit converter: JSONConverter[T]): Option[T] = converter.fromJSONOption(json)
+
   implicit object convertJSON extends JSONConverter[JSON] {
     def toJSON(j: JSON): JSON = j
     def fromJSONOption(j: JSON): Option[JSON] = Some(j)
