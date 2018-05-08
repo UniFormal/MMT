@@ -91,7 +91,7 @@ jobs:
         - "cd src && (cat /dev/null | sbt ++2.12.3 scalastyle) && cd .."
         - "cd src && (cat /dev/null | sbt ++2.12.3 compile) && cd .."
         - "cd src && (cat /dev/null | sbt ++2.12.3 test) && cd .."
-    # check that the 'apidoc', 'deploy' and 'deployFull' targets work
+    # check that the 'apidoc' and 'deploy' targets work
     - dist: trusty
       env:
         - "INFO='Check mmt.jar generation using `sbt deploy`'"
@@ -122,36 +122,6 @@ jobs:
       scala: "2.12.3"
       script:
         - "cd src && (cat /dev/null | sbt ++2.12.3 deploy) && cd .."
-        - '[[ -f "deploy/mmt.jar" ]]'
-    - dist: trusty
-      env:
-        - "INFO='Check mmt.jar generation using `sbt deployfull`'"
-        - 'SBT_VERSION_CMD="^validate"'
-      jdk: openjdk8
-      language: scala
-      scala: "2.12.3"
-      script:
-        - "cd src && (cat /dev/null | sbt ++2.12.3 deployFull) && cd .."
-        - '[[ -f "deploy/mmt.jar" ]]'
-    - dist: trusty
-      env:
-        - "INFO='Check mmt.jar generation using `sbt deployfull`'"
-        - 'SBT_VERSION_CMD="^validate"'
-      jdk: oraclejdk8
-      language: scala
-      scala: "2.12.3"
-      script:
-        - "cd src && (cat /dev/null | sbt ++2.12.3 deployFull) && cd .."
-        - '[[ -f "deploy/mmt.jar" ]]'
-    - dist: trusty
-      env:
-        - "INFO='Check mmt.jar generation using `sbt deployfull`'"
-        - 'SBT_VERSION_CMD="^validate"'
-      jdk: oraclejdk9
-      language: scala
-      scala: "2.12.3"
-      script:
-        - "cd src && (cat /dev/null | sbt ++2.12.3 deployFull) && cd .."
         - '[[ -f "deploy/mmt.jar" ]]'
     - dist: trusty
       env:
