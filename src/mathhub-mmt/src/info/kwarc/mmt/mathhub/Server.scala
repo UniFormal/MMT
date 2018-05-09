@@ -1,9 +1,11 @@
 package info.kwarc.mmt.mathhub
 
-import info.kwarc.mmt.api.utils.{JSON, JSONConverter, JSONListBuffer}
+import info.kwarc.mmt.api.utils.JSONConverter
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 
-class Extension extends ServerExtension("mathhub") with MathHubAPIImpl  {
+class Server extends ServerExtension("mathhub") with MathHubAPIImpl  {
+  override val logPrefix = "user"
+
   def apply(request: ServerRequest): ServerResponse = try {
     applyActual(request)
   } catch {

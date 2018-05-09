@@ -1,10 +1,10 @@
 package info.kwarc.mmt.mathhub
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.{GeneralError, MPath}
 import info.kwarc.mmt.api.archives.lmh.{LMHHub, LMHHubArchiveEntry, LMHHubGroupEntry}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.{GeneralError, MPath}
 
 trait MathHubAPIImpl {
   protected var controller: Controller
