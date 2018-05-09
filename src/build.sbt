@@ -235,9 +235,9 @@ lazy val odk = (project in file("mmt-odk")).
   settings(mmtProjectsSettings("mmt-odk"): _*)
 
 // MMT-Mathhub backend. Maintainer: Tom
-lazy val mathhub = (project in file("mmt-mathhub")).
+lazy val mathhub = (project in file("mathhub-mmt")).
   dependsOn(api).
-  settings(mmtProjectsSettings("mmt-mathhub"): _*)
+  settings(mmtProjectsSettings("mathhub-mmt"): _*)
 
 // using MMT in the planetary/MathHub systems. Orginally developed by Mihnea, functional but should be reviewed
 lazy val planetary = (project in file("planetary-mmt")).
