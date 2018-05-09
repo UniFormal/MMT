@@ -3,7 +3,9 @@ package info.kwarc.mmt.api.archives.lmh
 import info.kwarc.mmt.api._
 import utils._
 import frontend._
+import info.kwarc.mmt.api.archives.Archive
 
+import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
 /**
@@ -36,8 +38,10 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     ret
   }
 
+  // GETTING and LOADING existing entries
+
   /** represents a single entry of a MathHub controller */
-  class MathHubEntry(val root: File) extends LMHHubEntry {
+  abstract class MathHubEntry(val root: File) extends LMHHubEntry {
     val hub: MathHub = MathHub.this
 
     def version: Option[String] = hub.git(root, "show-ref", "HEAD") match {
@@ -55,19 +59,78 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     def setRemote(remote : String) : Boolean = hub.git(root, "remote", "set-url", "origin", remote).success
   }
 
+  object MathHubEntry {
+    /** creates a new MathHubEntry of the most specific kind and loads it */
+    def apply(root: File) : MathHubEntry = {
+      // try to load an archive
+      val ae = new MathHubArchiveEntry(root)
+      try {
+        ae.load()
+        return ae
+      } catch {
+        case e: NotLoadableArchiveEntry =>
+      }
+
+      // try to load a group
+      val ge = new MathHubGroupEntry(root)
+      try {
+        ge.load()
+        return ge
+      } catch {
+        case e: NotLoadableGroupEntry =>
+      }
+
+      new MathHubDirectoryEntry(root)
+    }
+  }
+
+  class MathHubDirectoryEntry(override val root: File) extends MathHubEntry(root) with LMHHubDirectoryEntry
+  class MathHubArchiveEntry(override val root: File) extends MathHubEntry(root) with LMHHubArchiveEntry
+  class MathHubGroupEntry(override val root: File) extends MathHubEntry(root) with LMHHubGroupEntry
+
   /** gets a single entry from the MathHub root */
   def getEntry(root: File): Option[MathHubEntry] = {
-    // if the folder exists and is a valid git root
-    // TODO: Check if we are in the **root** folder of a repository
-    if(root.exists && git(root, "rev-parse").success){
-      Some(new MathHubEntry(root))
+    // TODO: Check if we are under git control
+    if(root.exists){
+      Some(MathHubEntry(root))
     } else None
   }
-  
+
+  override def getEntry(id: String): Option[MathHubEntry] =
+    // the implementation of the super method recurses into getEntry(root: File)
+    // thus we can safely type cast here
+    super.getEntry(id).map(_.asInstanceOf[MathHubEntry])
+
+  def getEntry(archive: Archive) : Option[MathHubArchiveEntry] = {
+    val ae = new MathHubArchiveEntry(archive.root)
+    try {
+      ae.load()
+      Some(ae)
+    } catch {
+      case e: NotLoadableArchiveEntry => None
+    }
+  }
+
   // code for listing entries
 
   /** find all the archives known to the controller */
-  def entries_ : List[MathHubEntry] = controller.backend.getArchives.flatMap {a => getEntry(a.root)}
+  def entries_ : List[MathHubEntry] = {
+    val folders = new ListBuffer[File]
+
+    // add all the folders from all backend archives
+    controller.backend.getArchives.foreach {a => folders += a.root}
+
+    // add all the level-2 subdirectories
+    local.children.foreach { c =>
+      if(c.isDirectory) {
+        c.children.filter(_.isDirectory).foreach(d => folders += d)
+      }
+    }
+
+    // get all the archive instances
+    folders.result().distinct.map(root => MathHubEntry(root))
+  }
+
   /** tries to get some json form a given URL */
   private def get_json(url: URI) : Option[JSON] = {
     log(s"fetching $url")
@@ -116,8 +179,9 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     git(root, "add", (root / "source" / "README.txt").toString)
     git(root, "commit", "-m", "\"automatically created by MMT\"")
     git(root, "remote", "add", "origin", remoteURL(id))
-    // and return the archive we just created
-    Some(new MathHubEntry(root))
+
+    // create and load the actual entry
+    Some(MathHubEntry(root))
   }
 
   // code for installing new entries
@@ -130,22 +194,34 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
       log(s"$id has already been installed and re-scanned for dependencies, skipping. ")
       return None
     }
+
     installActual(id, version) match {
       case Some(entry: MathHubEntry) =>
-        // load the entry first
-        entry.load()
         if (recursive) {
-          // Find the dependencies
-          // TODO: Fix legacy lmh using the wrong separator
-          val depS = entry.archive.properties.getOrElse("dependencies", "")
-          val deps = if (depS.contains(",")) stringToList(depS, ",").map(_.trim) else stringToList(depS)
-          // and install each of the sub-entries, and keeping track of all the archives we have already visited
-          // failing silently
-          deps foreach {d =>
-            logGroup {
-              log(s"installing dependency ${deps.mkString("")} of $id")
-              installEntry(d, version = None, recursive = true, visited = entry :: visited)
+          entry match {
+            case ae: MathHubArchiveEntry => {
+              // Find the dependencies
+
+              log(s"checking for dependencies of $id")
+
+              // the corresponding meta-inf repository
+              val metainf = ae.group + "/meta-inf"
+
+              // the dependencies
+              val depS = ae.archive.properties.getOrElse("dependencies", "")
+              val deps = if (depS.contains(",")) stringToList(depS, ",").map(_.trim) else stringToList(depS)
+
+              // and install each of the sub-entries, and keeping track of all the archives we have already visited
+              // failing silently
+              (metainf :: deps).distinct foreach {d =>
+                logGroup {
+                  log(s"installing dependency ${deps.mkString("")} of $id")
+                  installEntry(d, version = None, recursive = true, visited = entry :: visited)
+                }
+              }
             }
+            case _ =>
+              log(s"$id is not an archive, skipping dependency check")
           }
         }
         Some(entry)
@@ -188,7 +264,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
         }
       }
     }
-    Some(new MathHubEntry(lp))
+    Some(MathHubEntry(lp))
   }
   
   private def installGet(id: String, version: Option[String]) : Option[MathHubEntry] = {
@@ -201,7 +277,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
       File.download(url, zip)
       log(s"unpacking '$url' into '$lp'")
       File.unzip(zip, lp, skipRootDir = true)
-      Some(new MathHubEntry(lp))
+      Some(MathHubEntry(lp))
     } catch {
       case _: Exception =>
         logError(s"download of '$url' failed, aborting")
@@ -213,12 +289,13 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
 
   private def installActual(id : String, version: Option[String]) : Option[MathHubEntry] = {
     log(s"Attempting to install archive $id (version=$version)")
+
     // if the archive is already installed, we should not install it again
     // however we return it, so that we can scan dependencies again
     val entry = getEntry(id)
     if(entry.isDefined){
       log(s"$id has already been installed at ${entry.get.root}, re-scanning dependencies. ")
-      return entry.map({e => new MathHubEntry(e.root) })
+      return Some(MathHubEntry(entry.get.root))
     }
     // first try to install via git
     val gitInstall = installGit(id, version)
