@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.archives.lmh
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
-import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.utils.{File, stringToList}
 
 import scala.collection.mutable
 import scala.util.matching.Regex
@@ -104,10 +104,9 @@ trait LMHHubEntry extends Logger {
   def report: Report = controller.report
 
   /** the name of the group of this entry */
-  lazy val group: String = id.split("/").toList match {
-    case g :: _ => g
-    case Nil => ""
-  }
+  lazy val group: String = id.split("/").toList.headOption.getOrElse("")
+  /** the name of this archive */
+  lazy val name: String = id.split("/").toList.lastOption.getOrElse("")
 
   // Things to be implemented
 
@@ -158,6 +157,18 @@ trait LMHHubArchiveEntry extends LMHHubDirectoryEntry {
 
   /** get the id of this archive */
   override lazy val id: String = archive.id
+
+  /** the list of dependencies of this archive */
+  def dependencies: List[String] = {
+    // the corresponding meta-inf repository
+    val metainf = group + "/meta-inf"
+
+    // the declared dependencies
+    val depS = archive.properties.getOrElse("dependencies", "")
+    val deps = if (depS.contains(",")) stringToList(depS, ",").map(_.trim) else stringToList(depS)
+
+    (metainf :: deps).distinct
+  }
 }
 
 /** Error that is thrown when an archive on disk is not an actual archive */
@@ -181,10 +192,12 @@ trait LMHHubGroupEntry extends LMHHubDirectoryEntry {
     }
   }
 
+  /** the group properties */
   def properties : mutable.Map[String, String] = {
     load()
     groupManifest
   }
+
 
   // TODO: Do we want to read the entry from the folder
   // override lazy val id: String = properties.getOrElse("id", (root / "..").name) + "/" + "meta-inf"

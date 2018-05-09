@@ -213,7 +213,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
 
               // and install each of the sub-entries, and keeping track of all the archives we have already visited
               // failing silently
-              (metainf :: deps).distinct foreach {d =>
+              ae.dependencies foreach {d =>
                 logGroup {
                   log(s"installing dependency ${deps.mkString("")} of $id")
                   installEntry(d, version = None, recursive = true, visited = entry :: visited)

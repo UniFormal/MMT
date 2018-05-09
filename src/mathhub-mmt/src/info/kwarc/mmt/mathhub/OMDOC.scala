@@ -28,26 +28,31 @@ object OMDOC {
 // GROUPS
 //
 
-
-case class IGroupItem(name: String, description: String) extends OMDOC{
+case class IGroupItem(id: String, title: String, teaser: String) extends OMDOC{
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
-    buffer.add("name", name)
-    buffer.add("description", description)
+
+    buffer.add("id", id)
+    buffer.add("title", title)
+    buffer.add("teaser", teaser)
+
     buffer.result()
   }
 }
 
 case class IGroup(
-                  name: String, description: String,
-                  longDescription: String, maintainer: String, archives: List[IArchiveItem]
+                   id: String, title: String, teaser: String,
+                   description: String, responsible: List[String], archives: List[IArchiveItem]
                  ) extends OMDOC {
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
-    buffer.add("name", name)
+
+    buffer.add("id", id)
+    buffer.add("title", title)
+    buffer.add("teaser", teaser)
+
     buffer.add("description", description)
-    buffer.add("longDescription", longDescription)
-    buffer.add("maintainer", maintainer)
+    buffer.add("responsible", responsible)
     buffer.add("archives", archives)
 
     buffer.result()
@@ -58,30 +63,36 @@ case class IGroup(
 // ARCHIVES
 //
 
-
-case class IArchiveItem(name: String, group: String, description: String) extends OMDOC {
+case class IArchiveItem(id: String, group: String, title: String, teaser: String) extends OMDOC {
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
-    buffer.add("name", name)
+
+    buffer.add("id", id)
     buffer.add("group", group)
-    buffer.add("description", description)
+    buffer.add("title", title)
+    buffer.add("teaser", teaser)
+
     buffer.result()
   }
 }
 
 
 case class IArchive(
-                     name: String, group: String, description: String,
-                     longDescription: String, maintainer: String, modules: List[IModuleItem]
+                     id: String, group: String, title: String, teaser: String,
+                     description: String, responsible: List[String], modules: List[IModuleItem]
                    ) extends OMDOC {
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
-    buffer.add("name", name)
+
+    buffer.add("id", id)
     buffer.add("group", group)
+    buffer.add("title", title)
+    buffer.add("teaser", teaser)
+
     buffer.add("description", description)
-    buffer.add("longDescription", longDescription)
-    buffer.add("maintainer", maintainer)
+    buffer.add("responsible", responsible)
     buffer.add("modules", modules)
+
     buffer.result()
   }
 }
@@ -94,8 +105,10 @@ case class IArchive(
 case class IModuleItem(name: String, archive: String) extends OMDOC {
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
+
     buffer.add("name", name)
     buffer.add("archive", archive)
+
     buffer.result()
   }
 }
@@ -106,9 +119,12 @@ case class IModule(
                   ) extends OMDOC {
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
+
     buffer.add("name", name)
     buffer.add("archive", archive)
+
     buffer.add("content", content)
+
     buffer.result()
   }
 }
