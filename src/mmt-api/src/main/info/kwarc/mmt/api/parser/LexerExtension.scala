@@ -75,6 +75,7 @@ object MMTURILexer extends PrefixedTokenLexer('`', false, false)
 abstract class WordReplacer extends LexerExtension {
    val maps: List[(String,String)]
    /** caches the result of applicable so that apply does not have to traverse the list again */
+   // TODO not thread safe
    private var memory: Option[(String,Int,(String,String))] = None
    def applicable(s: String, i: Int) = {
       val si = s.substring(i)

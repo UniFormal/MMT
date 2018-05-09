@@ -6,47 +6,46 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.Context
 
 /** shared base class for actions checking objects */
-sealed abstract class CheckAction extends ActionImpl
+sealed abstract class CheckAction extends Action
 
 case class Check(p: Path, id: String) extends CheckAction {
-  def apply(implicit controller: Controller): Unit = controller.checkPath(p, id)(this)
+  def apply() =controller.checkPath(p, id)(this)
   def toParseString = s"check $p $id"
 }
-object CheckCompanion extends ActionCompanionImpl[Check]("check a knowledge item with respect to a certain checker", "check") {
+object CheckCompanion extends ActionCompanion("check a knowledge item with respect to a certain checker", "check") {
   import Action._
   def parserActual(implicit state: ActionState) =  path ~ (str ?) ^^ {case p ~ idOpt => Check(p, idOpt.getOrElse("mmt"))}
 }
 
 case class CheckTerm(s: String) extends CheckAction {
-  def apply(implicit controller: Controller): Unit = controller.checkTerm(s)
+  def apply() {controller.checkTerm(s)}
   def toParseString = "term \""+s+"\""
 }
-object CheckTermCompanion extends ActionCompanionImpl[CheckTerm]("check a knowledge item with respect to a certain checker", "term") {
+object CheckTermCompanion extends ActionCompanion("check a knowledge item with respect to a certain checker", "term") {
   import Action._
   def parserActual(implicit state: ActionState) = quotedStr ^^ { s => CheckTerm(s)}
 }
 
 case class Navigate(p: Path) extends CheckAction {
-  def apply(implicit controller: Controller): Unit = controller.navigate(p)
+  def apply() {controller.navigate(p)}
   def toParseString = s"navigate $p"
 }
-object NavigateCompanion extends ActionCompanionImpl[Navigate]("navigate to knowledge item", "navigate") {
+object NavigateCompanion extends ActionCompanion("navigate to knowledge item", "navigate") {
   import Action._
   def parserActual(implicit state: ActionState) = path ^^ { p => Navigate(p) }
 }
 
 case class Compare(p: Path, r: Int) extends CheckAction {
-  def apply(implicit controller: Controller): Unit = ???
+  def apply() {???}
   override def toParseString = s"diff ${p.toPath}:$r"
 }
-object CompareCompanion extends ActionCompanionImpl[Compare]("Compare two objects", "diff") {
+object CompareCompanion extends ActionCompanion("Compare two objects", "diff") {
   import Action._
   def parserActual(implicit state: ActionState) = path ~ ("diff" ~> int) ^^ { case p ~ i => Compare(p, i) }
 }
 
 /** Implements handling of [[CheckAction]]s */
-trait CheckActionHandling {
-  self: Controller =>
+trait CheckActionHandling {self: Controller =>
 
   /** Checks a path using the [[Checker]] of the given ID, handling [[CheckAction]] */
   def checkPath(p: Path, id: String)(implicit task: MMTTask) {

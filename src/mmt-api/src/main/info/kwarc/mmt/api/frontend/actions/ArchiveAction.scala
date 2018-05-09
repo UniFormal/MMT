@@ -7,14 +7,14 @@ import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.utils._
 
 /** Shared base class for Actions that are related to Archives */
-sealed abstract class ArchiveAction extends ActionImpl {}
+sealed abstract class ArchiveAction extends Action {}
 
 case class ArchiveBuild(ids: List[String], dim: String, modifier: BuildTargetModifier, in: FilePath = EmptyPath) extends ArchiveAction {
-  def apply(implicit controller: Controller): Unit = controller.buildArchive(ids, dim, modifier, in)
+  def apply() =controller.buildArchive(ids, dim, modifier, in)
   def toParseString = s"build ${MyList(ids).mkString("[", ",", "]")} ${modifier.toString(dim)}" +
     (if (in.segments.isEmpty) "" else " " + in)
 }
-object ArchiveBuildCompanion extends ActionCompanionImpl[ArchiveBuild]("builds a dimension in a previously opened archive", "build", "archive"){
+object ArchiveBuildCompanion extends ActionCompanion("builds a dimension in a previously opened archive", "build", "archive"){
   import Action._
 
   override val addKeywords = false
@@ -33,10 +33,10 @@ object ArchiveBuildCompanion extends ActionCompanionImpl[ArchiveBuild]("builds a
 }
 
 case class ConfBuild(mod : String, targets : List[String], profile : String) extends ArchiveAction {
-  def apply(implicit controller: Controller): Unit = controller.configBuild(mod, targets, profile)
+  def apply() =controller.configBuild(mod, targets, profile)
   def toParseString = "cbuild " + mod + " " + MyList(targets).mkString("[", ",", "]") + " " + profile
 }
-object ConfBuildCompanion extends ActionCompanionImpl[ConfBuild]("handle building relative to a configuration file", "cbuild"){
+object ConfBuildCompanion extends ActionCompanion("handle building relative to a configuration file", "cbuild"){
   import Action._
   def parserActual(implicit state: ActionState) = str ~ stringList ~ str ^^ {
     case mod ~ comps ~ profile =>
@@ -45,10 +45,10 @@ object ConfBuildCompanion extends ActionCompanionImpl[ConfBuild]("handle buildin
 }
 
 case class MakeAction(key: String, args: List[String]) extends ArchiveAction {
-  def apply(implicit controller: Controller): Unit = controller.make(key, args)
+  def apply() =controller.make(key, args)
   def toParseString = "make " + key + args.map(" " + _).mkString
 }
-object MakeActionCompanion extends ActionCompanionImpl[MakeAction]("handle the make command line", "make", "rbuild") {
+object MakeActionCompanion extends ActionCompanion("handle the make command line", "make", "rbuild") {
   import Action._
   def parserActual(implicit state: ActionState) = str ~ (str *) ^^ {
     case key ~ args => MakeAction(key, args)
@@ -56,14 +56,13 @@ object MakeActionCompanion extends ActionCompanionImpl[MakeAction]("handle the m
 }
 
 case class ArchiveMar(id: String, file: File) extends ArchiveAction {
-  def apply(implicit controller: Controller): Unit = {
-    import controller._
-    val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
+  def apply() {
+    val arch = controller.backend.getArchive(id).getOrElse(throw GetError("archive not found"))
     arch.toMar(file)
   }
   def toParseString = s"archive $id mar $file"
 }
-object ArchiveMarCompanion extends  ActionCompanionImpl[ArchiveMar]("builds a dimension in a previously opened archive", "archive") {
+object ArchiveMarCompanion extends  ActionCompanion("builds a dimension in a previously opened archive", "archive") {
   import Action._
   def parserActual(implicit state: ActionState) = str ~ ("mar" ~> file) ^^ { case id ~ trg => ArchiveMar(id, trg) }
 }

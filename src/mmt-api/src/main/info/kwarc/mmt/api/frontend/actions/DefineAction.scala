@@ -5,10 +5,10 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.utils.File
 
 /** shared base class for actions defining and using procedures */
-sealed abstract class DefineAction extends ActionImpl {}
+sealed abstract class DefineAction extends Action {}
 
 case class InspectDefine(name: Option[String]) extends DefineAction with ResponsiveAction {
-  def apply(implicit controller: Controller) = name match {
+  def apply() = name match {
     case None =>
       respond("The following definitions are known: ")
 
@@ -35,31 +35,31 @@ case class InspectDefine(name: Option[String]) extends DefineAction with Respons
   }
   def toParseString: String = s"show definition${name.map(" " +).getOrElse("")}"
 }
-object InspectDefineCompanion extends ActionCompanionImpl[InspectDefine]("inspect the set of defined actions", "show definition") {
+object InspectDefineCompanion extends ActionCompanion("inspect the set of defined actions", "show definition") {
   import Action._
   def parserActual(implicit state: ActionState) = (str?) ^^ InspectDefine
 }
 
 case class Define(name: String) extends DefineAction {
-  def apply(implicit controller: Controller) = controller.enterDefine(name)
+  def apply() = controller.enterDefine(name)
   def toParseString = s"define $name"
 }
-object DefineCompanion extends ActionCompanionImpl[Define]("bind all following commands to a name without executing them", "define") {
+object DefineCompanion extends ActionCompanion("bind all following commands to a name without executing them", "define") {
   import Action._
   def parserActual(implicit state: ActionState) = str ^^ { s => Define(s) }
 }
 
 case object EndDefine extends DefineAction {
-  def apply(implicit controller: Controller) = controller.endDefine()
+  def apply() = controller.endDefine()
   def toParseString = "end"
 }
-object EndDefineCompanion extends ActionObjectCompanionImpl[EndDefine.type]("ends binding commands using 'define'", "end")
+object EndDefineCompanion extends ObjectActionCompanion(EndDefine, "ends binding commands using 'define'", "end")
 
 case class Do(file: Option[File], name: String) extends DefineAction {
-  def apply(implicit controller: Controller) = controller.runDefinition(file, name)
+  def apply() = controller.runDefinition(file, name)
   def toParseString = s"do ${file.getOrElse("")} $name"
 }
-object DoCompanion extends ActionCompanionImpl[Do]("run a previously named list of commands", "do"){
+object DoCompanion extends ActionCompanion("run a previously named list of commands", "do"){
   import Action._
   def parserActual(implicit state: ActionState) = str ~ (file ?) ^^ { case s ~ f => Do(f, s) }
 }

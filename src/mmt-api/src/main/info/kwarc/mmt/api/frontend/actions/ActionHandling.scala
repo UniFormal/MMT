@@ -27,7 +27,7 @@ trait ActionHandling extends
 
   /** executes a string command */
   def handleLine(l: String, showLog: Boolean = true) {
-    val act = Action.parseAct(l, getBase, getHome)
+    val act = Action.parseAct(this, l)
     handle(act, showLog)
   }
 
@@ -43,9 +43,7 @@ trait ActionHandling extends
           report("user", s"'$act'")
           report.indent
         }
-
-        act(self)
-
+        act()
         if (act != NoAction && showLog) {
           report.unindent
           report("user", s"'$act' finished")
@@ -57,7 +55,7 @@ trait ActionHandling extends
   def tryHandleLine(l: String, showLog: Boolean = true): ActionResult = {
     // parse and run the line
     val act = try {
-      Action.parseAct(l, getBase, getHome)
+      Action.parseAct(this, l)
     } catch {
       case pe: ParseError => return ActionParsingError(pe)
     }
@@ -72,7 +70,6 @@ trait ActionHandling extends
       case e: Error => ActionExecutionError(e)
     }
   }
-
 
   // ******************************** handling messages
 

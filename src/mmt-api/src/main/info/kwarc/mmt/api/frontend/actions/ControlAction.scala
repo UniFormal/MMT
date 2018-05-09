@@ -4,36 +4,34 @@ import info.kwarc.mmt.api.Path
 import info.kwarc.mmt.api.frontend.Controller
 
 /** shared base class for actions controlling the shell or other actions */
-sealed abstract class ControlAction extends ActionImpl
+sealed abstract class ControlAction extends Action
 
 case object Clear extends ControlAction {
-  def apply(implicit controller: Controller): Unit = {
+  def apply() {
     controller.clear
   }
   def toParseString = "clear"
 }
-object ClearCompanion extends ActionObjectCompanionImpl[Clear.type]("clear the current state of the controller", "clear")
+object ClearCompanion extends ObjectActionCompanion(Clear, "clear the current state of the controller", "clear")
 
 /** release all resources and exit
   *
   * concrete syntax: exit
   */
 case object Exit extends ControlAction {
-  def apply(implicit controller: Controller): Unit = {
+  def apply() {
     controller.cleanup
     sys.exit()
   }
   def toParseString = "exit"
 }
-object ExitCompanion extends ActionObjectCompanionImpl[Exit.type]("release all resources and exit MMT", "exit") {
-  def parse(implicit state: ActionState) = Exit
-}
+object ExitCompanion extends ObjectActionCompanion(Exit, "release all resources and exit MMT", "exit")
 
 case class SetBase(base: Path) extends ControlAction {
-  def apply(implicit controller: Controller): Unit = controller.setBase(base)
+  def apply() =controller.setBase(base)
   def toParseString = s"base $base"
 }
-object SetBaseCompanion extends ActionCompanionImpl[SetBase]("set the current base path", "base") {
+object SetBaseCompanion extends ActionCompanion("set the current base path", "base") {
   import Action._
   def parserActual(implicit state: ActionState) = path ^^ { p => SetBase(p) }
 }

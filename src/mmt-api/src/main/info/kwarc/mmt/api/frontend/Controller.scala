@@ -149,7 +149,9 @@ class Controller extends ROController with ActionHandling with Logger {
 
   /** @return the current action being defined or None */
   def getCurrentActionDefinition = state.currentActionDefinition.map(_.name)
-
+  /** @return the defined actions */
+  def getActionDefinitions = state.actionDefinitions
+  
   /** @return the value of an environment variable */
   def getEnvVar(name: String): Option[String] = {
     state.config.getEntry(classOf[EnvVarConf], name).map(_.value) orElse Option(System.getenv.get(name))
