@@ -375,7 +375,18 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         checkTheory(CPath(v.path, DomComponent), v, context, v.fromC.get)
         checkTheory(CPath(v.path, CodComponent), v, context, v.toC.get)
       case s: DeclaredStructure =>
-        checkTheory(CPath(s.path, TypeComponent), s, context, s.fromC.get)
+        val fr = s.fromC.get
+        fr match {
+          case Some(OMPMOD(mp,_)) if mp.name.steps.length > 1 => // Include/Structure from nested theory
+            val parent = mp.parent ? mp.name.steps.init
+            controller.globalLookup.getImplicit(OMMOD(parent),s.to) match {
+              case Some(_) =>
+              case None =>
+                env.errorCont(InvalidElement(s,"No implicit morphism from " + parent + " to " + s.to))
+            }
+          case _ =>
+        }
+        checkTheory(CPath(s.path, TypeComponent), s, context, fr)
       case dd: DerivedDeclaration =>
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         sfOpt match {

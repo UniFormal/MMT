@@ -236,6 +236,16 @@ object TheoryExp {
     * @param all if false, stop after the first meta-theory, true by default
     */
   def metas(thy: Term, all: Boolean = true)(implicit lib: Lookup): List[MPath] = thy match {
+    case OMMOD(p) if p.name.steps.length > 1 => // Nested theory; consider the parent theory as meta-theory
+      val parent = lib.getTheory(p.parent ? p.name.steps.init)
+      if (all) {
+        parent.path :: (lib.getTheory(p) match {
+          case t : DeclaredTheory => t.meta match {
+            case None => Nil
+            case Some(m) => m :: metas(OMMOD(m))
+          }
+        }) ::: metas(OMMOD(parent.path))
+      } else List(parent.path)
     case OMMOD(p) => lib.getTheory(p) match {
       case t: DeclaredTheory => t.meta match {
         case None => Nil
