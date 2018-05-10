@@ -55,7 +55,7 @@ trait Extension extends Logger {
   }
 
 
-  /** MMT initialization */
+  /** MMT initialization (idempotent) */
   private[api] def init(controller: Controller) {
     this.controller = controller
     report = controller.report
