@@ -56,8 +56,8 @@ object Orders {
     ,"sets/poset.mmt"
     ,"algebra/lattice.mmt"
     ,"calculus/normedmetric.mmt"
-    ,"calculus/sequencesseries.mmt"
-    ,"calculus/limitsderivatives.mmt"
+    ,"calculus/sequencesconvergence.mmt"
+    ,"calculus/derivatives.mmt"
     ,"calculus/domains.mmt"
     // "categories/basics.mmt"
   )

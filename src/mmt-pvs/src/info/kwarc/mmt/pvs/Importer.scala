@@ -8,6 +8,17 @@ import archives._
 class PVSImporter extends Importer {
    val key = "pvs-omdoc"
 
+
+   override def start(args: List[String]) {
+      val em = controller.extman
+      // content enhancers
+      super.start(args)
+      em.addExtension(new LambdaPiInclude)
+      // em.addExtension(new PVSImporter)
+      em.addExtension(new PVSServer)
+      em.addExtension(PVSTheory.preproc)
+   }
+
    def inExts = List("xml")
 
    //override def inDim = RedirectableDimension("pvsxml", Some(Dim("src","pvsxml")))
