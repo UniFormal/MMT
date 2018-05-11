@@ -198,7 +198,6 @@ trait LMHHubGroupEntry extends LMHHubDirectoryEntry {
     groupManifest
   }
 
-
   // TODO: Do we want to read the entry from the folder
   // override lazy val id: String = properties.getOrElse("id", (root / "..").name) + "/" + "meta-inf"
 }
