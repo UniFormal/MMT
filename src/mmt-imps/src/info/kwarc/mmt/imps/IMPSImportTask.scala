@@ -370,9 +370,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     }
 
     d match {
-      case Heralding(md, src) => {
-        println(" > Dropping (herald ...)")
-      }
 
       case AtomicSort(name, defstring, theory, usages, witness, src, sort) =>
       {
@@ -608,8 +605,15 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         controller add opaque
       }
-      case _ => {
+      case Dummy(kind) => {
+        println(" > Error: Dummy decl (" + kind + ") encountered, not translated!")
+      }
+      case Ignore(kind) => {
+        println("Dropping ignored decl (" + kind + ").")
+      }
+      case some => {
         println(" > Error: Unknown decl encountered, not translated!")
+        println(some)
       }
     }
   }

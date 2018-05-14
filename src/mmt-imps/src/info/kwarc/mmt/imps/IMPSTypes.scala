@@ -9,9 +9,7 @@ import info.kwarc.mmt.imps.Usage.Usage
 
 /* Parser abstract class and case classes. */
 
-abstract class TExp {
-  override def toString: String = "<~ tokenized but unparsed expression ~>"
-}
+abstract class TExp
 
 case class Exp(children : List[TExp], src : Option[SourceRef]) extends TExp {
   override def toString : String =
@@ -339,14 +337,6 @@ case class SourceTheories(thrs : List[String], src : Option[SourceRef]) extends 
     str = str + ")"
     str
   }
-}
-
-case class Heralding(module : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(herald " + module + ")"}
-}
-
-case class LoadSection(section : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(load-section " + section + ")"}
 }
 
 /* IMPS SPECIAL FORMS */

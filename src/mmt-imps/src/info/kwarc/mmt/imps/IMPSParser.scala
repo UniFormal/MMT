@@ -190,9 +190,9 @@ class IMPSParser
       case Exp(cs,_) => cs.head match
       {
         /* toplevel stuff */
-        case Str("herald") => return parseHeralding(e)
+        case Str("herald") => return Some(Ignore("heralding"))
 
-        case Str("load-section") => return parseLoadSection(e)
+        case Str("load-section") => return Some(Ignore("load-section"))
 
         case Str("include-files") => println(" > Dropping (include-files ...)") ; return Some(Ignore("include-files"))
           // val th = controller.get(theorypath : MPath) match { case th : DeclaredTheory => th case _ => throw something }
@@ -293,33 +293,5 @@ class IMPSParser
 
     /* Return None if nothing could be parsed */
     None
-  }
-
-  /* ######### Tiny parsers ######### */
-
-  /* Parser for IMPS load-section objects
-   * used in: toplevel imports */
-  private def parseLoadSection (e : Exp) : Option[LoadSection] =
-  {
-    if (e.children.length == 2)
-    {
-      e.children(1) match {
-        case Exp(List(Str(x)),_) => Some(LoadSection(x, e.src))
-        case _                   => None
-      }
-    } else { None }
-  }
-
-  /* Parser for IMPS heralding objects
-   * used in: toplevel module declaration */
-  private def parseHeralding (e : Exp) : Option[Heralding] =
-  {
-    if (e.children.length == 2)
-    {
-      e.children(1) match {
-        case Exp(List(Str(x)),_) => Some(Heralding(x, e.src))
-        case _                   => None
-      }
-    } else { None }
   }
 }
