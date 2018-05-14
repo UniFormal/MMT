@@ -1,9 +1,11 @@
 package info.kwarc.mmt.api.archives.lmh
 
+import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
 import info.kwarc.mmt.api.utils.File
 
+import scala.collection.mutable
 import scala.util.matching.Regex
 
 /** represents a hub of archives */
@@ -13,7 +15,7 @@ abstract class LMHHub extends Logger {
   val logPrefix = "lmh"
   protected def report = controller.report
 
-  /** find all locally installed repositories */
+  /** find all locally installed entries */
   protected def entries_ : List[LMHHubEntry]
   /** find all repositories given a specification */
   def entries(spec: String*): List[LMHHubEntry] = if (spec.nonEmpty) entries_.filter(e => spec.exists(e.matches)) else entries_
@@ -58,8 +60,20 @@ abstract class LMHHub extends Logger {
   }
 
   /** gets a single locally installed archive */
-  def getEntry(id : String) : Option[LMHHubEntry] = controller.backend.getArchive(id).flatMap(getEntry)
-  def getEntry(archive: Archive) : Option[LMHHubEntry] = getEntry(archive.root)
+  def getEntry(id : String) : Option[LMHHubEntry] = {
+    controller.backend.getArchive(id) match {
+      case Some(a) => getEntry(a)
+      case None => {
+        val path = localPath(id)
+        if(path.exists) {
+          getEntry(path)
+        } else {
+          None
+        }
+      }
+    }
+  }
+  def getEntry(archive: Archive) : Option[LMHHubArchiveEntry]
   def getEntry(root: File) : Option[LMHHubEntry]
 
   /** creates a new archive */
@@ -81,28 +95,26 @@ abstract class LMHHub extends Logger {
   def localPath(id: String) : File
 }
 
-/** represents a single archive inside an [[LMHHub]] that is installed on disk */
-abstract class LMHHubEntry extends Logger {
+/** represents a single git archive inside an [[LMHHub]] that is installed on disk */
+trait LMHHubEntry extends Logger {
   /** the [[MathHub]] this [[LMHHubEntry]] belongs to */
   val hub : LMHHub
   protected def controller: Controller = hub.controller
   val logPrefix: String = "lmh"
   def report: Report = controller.report
-  /** returns the [[Archive]] instance belonging to this local ArchiveHub entry */
-  lazy val archive : Archive = {
-    load()
-    controller.backend.getArchive(root).get
+
+  /** the name of the group of this entry */
+  lazy val group: String = id.split("/").toList match {
+    case g :: _ => g
+    case Nil => ""
   }
-  /** loads this archive into the controller (if not done already) */
-  def load() {
-    controller.backend.getArchive(root).getOrElse {
-      controller.addArchive(root)
-    }
-  }
-  /** get the id of this archive */
-  lazy val id: String = archive.id
 
   // Things to be implemented
+
+  /** loads the LMHHubEntry or throw an error if it is invalid */
+  def load(): Unit
+  /** the id of this archive entry */
+  val id: String
   /** the local root of this archive entry */
   val root: File
   /** check if this archive matches a given spec */
@@ -118,6 +130,69 @@ abstract class LMHHubEntry extends Logger {
   /** returns the version of an installed archive */
   def version: Option[String]
 }
+
+/** Represents a simple LMHHub Directory entry */
+trait LMHHubDirectoryEntry extends LMHHubEntry {
+  def load(): Unit = {}
+
+  lazy val id: String = (root / "..").canonical.name + "/" + root.canonical.name
+}
+
+/** represents a single archive inside an [[LMHHub]] that is installed on disk */
+trait LMHHubArchiveEntry extends LMHHubDirectoryEntry {
+  /** returns the [[Archive]] instance belonging to this local ArchiveHub entry */
+  def archive : Archive = {
+    load()
+    controller.backend.getArchive(root).get
+  }
+  /** loads this archive into the controller (if not done already) */
+  override def load() {
+    controller.backend.getArchive(root).getOrElse {
+      controller.addArchive(root)
+    }
+
+    if(controller.backend.getArchive(root).isEmpty) {
+      throw NotLoadableArchiveEntry(root)
+    }
+  }
+
+  /** get the id of this archive */
+  override lazy val id: String = archive.id
+}
+
+/** Error that is thrown when an archive on disk is not an actual archive */
+case class NotLoadableArchiveEntry(root: File) extends api.Error("not a loadable archive at: "+root.toString)
+
+/** represents a group archive inside an [[LMHHub]] that is installed on disk */
+trait LMHHubGroupEntry extends LMHHubDirectoryEntry {
+  private var groupManifest: mutable.Map[String, String] = null
+
+  override def load(): Unit = {
+    val manifest = root / "GROUP_MANIFEST.mf"
+
+    if(!manifest.exists){
+      throw NotLoadableGroupEntry(root)
+    }
+
+    try {
+      groupManifest = File.readProperties(manifest)
+    } catch {
+      case e: Exception => throw NotLoadableGroupEntry(root).setCausedBy(e)
+    }
+  }
+
+  def properties : mutable.Map[String, String] = {
+    load()
+    groupManifest
+  }
+
+  // TODO: Do we want to read the entry from the folder
+  // override lazy val id: String = properties.getOrElse("id", (root / "..").name) + "/" + "meta-inf"
+}
+
+/** Error that is thrown when an archive on disk is not an actual archive */
+case class NotLoadableGroupEntry(root: File) extends api.Error("not a loadable group at: "+root.toString)
+
 
 object LMHHub {
   final private val groupDepth = 2
