@@ -53,6 +53,7 @@ testOptions in Test += Tests.Argument("-oI")
 // =================================
 
 val deploy = TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
+val deployLFCatalog = TaskKey[Unit]("deployLFCatalog", "builds a stand-alone lfcatalog.jar")
 val install = TaskKey[Unit]("install", "copies jedit jars to local jedit installation folder.")
 
 // =================================
@@ -377,6 +378,10 @@ lazy val lfcatalog = (project in file("lfcatalog")).
   settings(commonSettings("lfcatalog")).
   settings(
     scalaSource in Compile := baseDirectory.value / "src",
+    publishTo := Some(Resolver.file("file", Utils.deploy.toJava / " main")),
+    deployLFCatalog := {
+      assembly in Compile map Utils.deployTo(Utils.deploy / "lfcatalog" / "lfcatalog.jar")
+    }.value, 
     unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
   )
 

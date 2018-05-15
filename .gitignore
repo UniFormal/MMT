@@ -12,9 +12,13 @@ src/mmt-sbt-settings
 # mmtrc --created by installed
 deploy/mmtrc
 
-# compiled stuff
+# compiled MMT Jars
 deploy/mmt.jar
 deploy/main/*.jar
+
+# Compiled dependened projects
+deploy/lfcatalog/lfcatalog.jar
+deploy/lib/tiscaf.jar
 
 # Documentation & Deploy
 apidoc
