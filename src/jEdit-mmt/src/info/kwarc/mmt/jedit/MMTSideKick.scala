@@ -108,15 +108,17 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
                ParsingStream.fromSourceFile(a, FilePath(p), Some(ParsingStream.stringToReader(text)), Some(nsMap))
          }
          log("parsing " + path)
-         val tree = new SideKickParsedData(path.toJava.getName)
-         val root = tree.root
-         // read the document in a task that can be cancelled by the stop method
+         // store the task for cancellation and progress reports
+         mmt.progressTracker(buffer) = ps
+         ps.addListener(new LineInvalidator(buffer))
+         // read the document
          val doc = controller.read(ps, true, true)(errorCont) match {
             case d: Document => d
             case _ => throw ImplementationError("document expected")
          }
-         currentTask = Some(ps)
          // add narrative structure of doc to outline tree
+         val tree = new SideKickParsedData(path.toJava.getName)
+         val root = tree.root
          buildTreeDoc(root, doc)
          tree
       } catch {
@@ -126,16 +128,15 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
           log(msg)
           try {errorCont(pe)} catch {case e: Exception => log(Error(e).toStringLong)}
           SideKickParsedData.getParsedData(jEdit.getActiveView)
+      } finally { 
+         // we only track progress during checking (simpler and prevents memory leaks)
+         mmt.progressTracker -= buffer
       }
    }
 
-   /** stores the current parse task so that it can be stopped by the stop method */
-   private var currentTask: Option[MMTTask] = None
-   // this is called from another tread and should interrupt parsing
-   override def stop {
-      // this may cause an inconsistent state but calling clear in parse method should fix most problems
-      currentTask.foreach {_.kill(() => ())}
-   }
+   /** this is called from another tread if the cancel button was pressed; but it seems sidekick force-kills the parsing before calling this
+    *  so it doesn't help us much; MMT has to maintain its own smart cancel method instead */
+   //override def stop {}
 
    private def getRegion(e: metadata.HasMetaData) : Option[SourceRegion] = SourceRef.get(e).map(_.region)
 
@@ -383,5 +384,22 @@ object MMTSideKick {
        Some((sel.getStart, sel.getEnd))
     else
        None
+  }
+}
+
+/** used by sidekick to mark gutter lines for repainting */
+class LineInvalidator(buffer: Buffer) extends MMTTaskProgressListener {
+  def apply(r: MMTTaskProgress) = r match {
+    case r: MMTInterpretationProgress =>
+      r.sourceLine foreach {l =>
+         jEdit.getViews foreach {v =>
+           v.getEditPanes foreach {e =>
+             if (e.getBuffer == buffer) {
+               e.getTextArea.invalidateLine(l)
+             }
+           }
+         }
+      }
+    case _ =>
   }
 }
