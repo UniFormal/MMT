@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.frontend.actions
 
 import info.kwarc.mmt.api._
-import archives.lmh._
+import archives.lmh.{LMHHubGroupEntry, _}
 import frontend._
 import utils._
 
@@ -100,10 +100,16 @@ sealed trait LocalAction extends LMHAction {
 
 
 case class LMHList(spec: List[String]) extends LMHAction with LocalAction with ResponsiveAction {
-  protected def applyActual(archive: LMHHubEntry) {archive.version match {
-    case Some(v) => respond(s"${archive.id}: $v")
-    case None => respond(s"${archive.id}: (unversioned)")
-  }}
+  protected def applyActual(archive: LMHHubEntry) {
+    val name = archive match {
+      case ge: LMHHubGroupEntry =>   s"Group   ${ge.group}"
+      case ae: LMHHubArchiveEntry => s"Archive ${ae.id}"
+      case _ =>                      s"Repo    ${archive.id}"
+    }
+    val version = archive.version.getOrElse("(unknown version)")
+
+    respond(s"$name: $version in '${archive.root.toJava.toString}'")
+  }
   def toParseString = s"lmh ls ${spec.mkString(" ")}".trim
 }
 object LMHListCompanion extends ActionCompanion("show archives that are installed locally along with their versions", "lmh ls"){

@@ -179,12 +179,10 @@ trait LMHHubGroupEntry extends LMHHubDirectoryEntry {
   private var groupManifest: mutable.Map[String, String] = null
 
   override def load(): Unit = {
-    val manifest = root / "GROUP_MANIFEST.mf"
-
-    if(!manifest.exists){
-      throw NotLoadableGroupEntry(root)
+    val manifest = {
+      List("GROUP_MANIFEST.MF", "GROUP_MANIFEST.mf").map(root./)
+        .find(_.exists).getOrElse(throw NotLoadableGroupEntry(root))
     }
-
     try {
       groupManifest = File.readProperties(manifest)
     } catch {
