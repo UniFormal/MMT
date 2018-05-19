@@ -19,15 +19,16 @@ class Server extends ServerExtension("mathhub") with MathHubAPIImpl  {
     case List("content", "group", g) => toResponse(getGroup(g))
     case List("content", "archive", g, a) => toResponse(getArchive(g, a))
     case List("content", "module", g, a, m) => toResponse(getModule(g, a, m))
+    case List("content", "variant", g, a, m, v) => toResponse(getVariant(g, a, m, v))
 
     // fallback: Not Found
     case _ => ServerResponse("Not found", "text/plain", ServerResponse.statusCodeNotFound)
   }
 
   /** turns an object into a server response */
-  def toResponse(omdoc: OMDOC): ServerResponse = ServerResponse.JsonResponse(omdoc.toJSON)
-  def toResponse(omdocs: List[OMDOC]): ServerResponse = {
-    import OMDOC._
+  def toResponse(omdoc: API): ServerResponse = ServerResponse.JsonResponse(omdoc.toJSON)
+  def toResponse(omdocs: List[API]): ServerResponse = {
+    import API._
     ServerResponse.JsonResponse(JSONConverter.toJSON(omdocs))
   }
 }

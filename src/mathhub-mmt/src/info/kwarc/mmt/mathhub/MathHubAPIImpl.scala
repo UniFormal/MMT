@@ -36,9 +36,14 @@ trait MathHubAPIImpl {
       .toIArchive
   }
 
-  protected def getModule(group: String, archive: String, name: String): IModuleItem = {
+  protected def getModule(group: String, archive: String, name: String): IModule = {
     // FIXME implement this
     throw GeneralError("Module does not exist")
+  }
+
+  protected def getVariant(group: String, archive: String, name: String, variant: String): IVariant = {
+    // FIXME implement this
+    throw GeneralError("Variant does not exist")
   }
 }
 
@@ -113,5 +118,5 @@ case class ArchiveInformation(archive: LMHHubArchiveEntry) {
 
 case class ModuleInformation(module: MPath, archive: LMHHubArchiveEntry) {
   def toIModuleItem: IModuleItem = IModuleItem(module.toString, archive.id)
-  def toIModule: IModule = IModule(module.toString, archive.id, "unimplemented")
+  def toIModule: IModule = IModule(module.toString, archive.id, List())
 }

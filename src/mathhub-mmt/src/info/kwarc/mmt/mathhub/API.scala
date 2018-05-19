@@ -11,13 +11,13 @@ import info.kwarc.mmt.api.utils.{JSON, JSONConverter, JSONObjectBuffer}
 /**
   * Anything that can be serialized as OMDOC via the MMT-MathHub API
   */
-abstract class OMDOC {
+abstract class API {
   def toJSON: JSON
 }
 
-object OMDOC {
+object API {
   /** so that we can convert all the things into JSON */
-  implicit def converter[T <: OMDOC]: JSONConverter[T] = new JSONConverter[T] {
+  implicit def converter[T <: API]: JSONConverter[T] = new JSONConverter[T] {
     def toJSON(obj: T): JSON = obj.toJSON
     def fromJSONOption(j: JSON): Option[T] = None
   }
@@ -28,7 +28,7 @@ object OMDOC {
 // GROUPS
 //
 
-case class IGroupItem(id: String, title: String, teaser: String) extends OMDOC{
+case class IGroupItem(id: String, title: String, teaser: String) extends API{
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
 
@@ -43,7 +43,7 @@ case class IGroupItem(id: String, title: String, teaser: String) extends OMDOC{
 case class IGroup(
                    id: String, title: String, teaser: String,
                    description: String, responsible: List[String], archives: List[IArchiveItem]
-                 ) extends OMDOC {
+                 ) extends API {
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
 
@@ -63,7 +63,7 @@ case class IGroup(
 // ARCHIVES
 //
 
-case class IArchiveItem(id: String, group: String, title: String, teaser: String) extends OMDOC {
+case class IArchiveItem(id: String, group: String, title: String, teaser: String) extends API {
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
 
@@ -80,7 +80,7 @@ case class IArchiveItem(id: String, group: String, title: String, teaser: String
 case class IArchive(
                      id: String, group: String, title: String, teaser: String,
                      description: String, responsible: List[String], modules: List[IModuleItem]
-                   ) extends OMDOC {
+                   ) extends API {
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
 
@@ -102,7 +102,7 @@ case class IArchive(
 //
 
 
-case class IModuleItem(name: String, archive: String) extends OMDOC {
+case class IModuleItem(name: String, archive: String) extends API {
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
 
@@ -115,15 +115,43 @@ case class IModuleItem(name: String, archive: String) extends OMDOC {
 
 case class IModule(
                     name: String, archive: String,
-                    content: String
-                  ) extends OMDOC {
+                    variants: List[IVariantItem]
+                  ) extends API {
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
 
     buffer.add("name", name)
     buffer.add("archive", archive)
 
-    buffer.add("content", content)
+    buffer.add("variants", variants)
+
+    buffer.result()
+  }
+}
+
+case class IVariantItem(name: String, module: String) extends API {
+  def toJSON: JSON = {
+    val buffer = new JSONObjectBuffer
+
+    buffer.add("name", name)
+    buffer.add("module", module)
+
+    buffer.result()
+  }
+}
+
+case class IVariant(
+                     name: String, module: String,
+                     presentation: String, source: String
+                   ) extends API {
+  def toJSON: JSON = {
+    val buffer = new JSONObjectBuffer
+
+    buffer.add("name", name)
+    buffer.add("module", module)
+
+    buffer.add("presentation", presentation)
+    buffer.add("source", source)
 
     buffer.result()
   }
