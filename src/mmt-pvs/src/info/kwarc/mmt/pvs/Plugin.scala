@@ -11,6 +11,7 @@ import notations._
 import symbols._
 import info.kwarc.mmt.lf._
 
+/*
 class Plugin extends frontend.Plugin {
   val theory = PVSTheory.thpath
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
@@ -23,6 +24,7 @@ class Plugin extends frontend.Plugin {
     em.addExtension(PVSTheory.preproc)
   }
 }
+*/
 
 import PVSTheory._
 

@@ -50,8 +50,8 @@ class Shell extends StandardIOHelper {
       case e: Error =>
         controller.report(e)
         controller.cleanup
-        // We do not re-throw the exception here
-        // but instead simply exit with a non-zero code
+        // We do not re-throw the exception here but instead simply exit with a non-zero code
+        // Make sure ShellArguments is configured in such a way that we log to the console by default; otherwise, this would suppress errors
         sys.exit(Shell.EXIT_CODE_FAIL_EXCEPTION)
     }
   }
@@ -71,6 +71,8 @@ class Shell extends StandardIOHelper {
   private def deferToExtension(key: String, args: List[String]) {
      controller.extman.getOrAddExtension(classOf[ShellExtension], key) match {
        case Some(se) =>
+          controller.report.addHandler(ConsoleHandler)
+          controller.report.groups += se.logPrefix
           val doCleanup = se.run(this, args)
           if (doCleanup) {
              controller.cleanup
@@ -179,7 +181,7 @@ class Shell extends StandardIOHelper {
     val mbtCommands = args.scalaFiles map {s => MBT(File(s))}
     (mmtCommands ::: mbtCommands) foreach {a => controller.handle(a)}
     // run the remaining commands
-    args.commands.mkString(" ").split(" ; ") foreach {l => controller.handleLine(l, showLog = false)}
+    args.commands.mkString(" ").split(" ; ") foreach {l => controller.handleLine(l, showLog = true)}
 
     // if we want a shell, prompt and handle input
     if (args.prompt) {

@@ -133,7 +133,7 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregate(
       mmt, api,
-      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, odk, specware, stex, webEdit, planetary, interviews, latex, openmath, oeis, repl,
+      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, odk, specware, stex, webEdit, mathhub, planetary, interviews, latex, openmath, oeis, repl,
       tiscaf, lfcatalog,
       jedit
   ).settings(
@@ -143,7 +143,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, interviews).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, interviews, mathhub).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -234,6 +234,11 @@ lazy val latex = (project in file("latex-mmt")).
 lazy val odk = (project in file("mmt-odk")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-odk"): _*)
+
+// MMT-Mathhub backend. Maintainer: Tom
+lazy val mathhub = (project in file("mathhub-mmt")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("mathhub-mmt"): _*)
 
 // using MMT in the planetary/MathHub systems. Orginally developed by Mihnea, functional but should be reviewed
 lazy val planetary = (project in file("planetary-mmt")).

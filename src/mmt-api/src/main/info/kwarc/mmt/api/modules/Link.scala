@@ -12,8 +12,8 @@ trait Link extends ContentElement {
    def fromC: TermContainer
    /** the codomain of the link (mutable for views but not structures) */
    def toC: AbstractTermContainer
-   def from = fromC.get.get
-   def to = toC.get.get
+   def from = fromC.get.getOrElse(Link.unknownTheory)
+   def to = toC.get.getOrElse(Link.unknownTheory)
    def codomainAsContext = to match {
        case ComplexTheory(cont) => cont
        case _ => throw ImplementationError("codomain of link must be theory")
@@ -31,6 +31,10 @@ trait Link extends ContentElement {
    /** body as a string */
    protected def innerString : String
    override def toString = outerString + "\n" + innerString
+}
+
+object Link {
+  val unknownTheory = OMSemiFormal(Text("unchecked", "not inferred"))
 }
 
 /**

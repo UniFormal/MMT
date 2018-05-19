@@ -3,7 +3,8 @@ twelf-omdoc info.kwarc.mmt.lf.Twelf
 lf-scala    info.kwarc.mmt.lf.ScalaExporter
 tptp-twelf  info.kwarc.mmt.tptp.TPTPImporter
 scala-bin   info.kwarc.mmt.api.archives.ScalaCompiler
-mmt-latex   info.kwarc.mmt.api.archives.latex.LatexExporter
+mmt-sty     info.kwarc.mmt.latex.MacroGeneratingPresenter
+mmttex      info.kwarc.mmt.latex.MMTTeXActionParser
 mws         info.kwarc.mmt.api.archives.MWSHarvestExporter
 planetary   info.kwarc.mmt.planetary.PlanetaryPresenter
 mh-html     info.kwarc.mmt.planetary.MathHubFormalPresenter

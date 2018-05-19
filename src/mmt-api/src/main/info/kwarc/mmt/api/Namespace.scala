@@ -26,7 +26,7 @@ case class NamespaceMap(base: Path, prefixes: List[(String,URI)] = Nil) {
          val p = u.scheme.get
          get(p) match {
             case Some(r) => URI(r.toString + uS.toString)
-            case None => uS
+            case None => u
          }
       } else u
    /** compactifies a URI into a CURIE */

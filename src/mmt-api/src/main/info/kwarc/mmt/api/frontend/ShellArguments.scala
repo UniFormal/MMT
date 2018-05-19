@@ -42,7 +42,7 @@ case class ShellArguments(
      */
    def runCleanup = ! keepalive && ! prompt
 
-   /** automatically log to console */
+   /** automatically log to console, true by default */
    def consoleLog = verbosity >= 0
    /** automatically log debug output */
    def debugOutput = verbosity > 10
@@ -78,7 +78,7 @@ object ShellArguments {
       noshell = m.get("noshell").isDefined,
       keepalive = m.get("keepalive").isDefined,
       useQueue = m.get("noqueue").isEmpty,
-      verbosity = m.get("verbosity").map(_.getIntVal).getOrElse(-1)
+      verbosity = m.get("verbosity").map(_.getIntVal).getOrElse(0)
     )
     val fs = sa.mmtFiles ++ sa.scalaFiles ++ sa.cfgFiles
     if (sa.help && sa.about) {

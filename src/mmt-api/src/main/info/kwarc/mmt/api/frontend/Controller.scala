@@ -149,7 +149,9 @@ class Controller extends ROController with ActionHandling with Logger {
 
   /** @return the current action being defined or None */
   def getCurrentActionDefinition = state.currentActionDefinition.map(_.name)
-
+  /** @return the defined actions */
+  def getActionDefinitions = state.actionDefinitions
+  
   /** @return the value of an environment variable */
   def getEnvVar(name: String): Option[String] = {
     state.config.getEntry(classOf[EnvVarConf], name).map(_.value) orElse Option(System.getenv.get(name))
@@ -279,7 +281,7 @@ class Controller extends ROController with ActionHandling with Logger {
        throw GeneralError(s"no ${if (interpret) "interpreter" else "parser"} for format ${ps.format} found")
      }
      // interpret the document
-     interpreter(ps)
+     val _ = interpreter(ps)
      // (M): delete all now-inactive parts of the old structure
      // TODO for two-step interpreters, deleteInactive should be called after parsing (currently: after checking)
      oldDocOpt.foreach {doc => deleteInactive(doc)}

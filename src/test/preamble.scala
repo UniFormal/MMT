@@ -35,7 +35,7 @@ abstract class Test(archivepath : String,
   ("test" :: logprefixes) foreach (s => controller.handleLine("log+ " + s))
   controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
   controller.handleLine("extension info.kwarc.mmt.odk.Plugin")
-  controller.handleLine("extension info.kwarc.mmt.pvs.Plugin")
+  controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
   // controller.handleLine("extension info.kwarc.mmt.metamath.Plugin")
   controller.handleLine("mathpath archive " + archivepath)
   controller.handleLine(("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath).trim)

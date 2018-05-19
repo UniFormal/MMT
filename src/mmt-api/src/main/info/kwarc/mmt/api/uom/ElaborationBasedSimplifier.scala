@@ -129,6 +129,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       case _: ContainerElement[_] =>
       case _ =>
         ElaboratedElement.setFully(s)
+        env.task.reportProgress(Elaborated(s))
     }
   }
 
@@ -145,6 +146,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     }
     log("done flattening " + s.path)
     ElaboratedElement.setFully(s)
+    env.task.reportProgress(Elaborated(s))
   }
 
   @deprecated("needs to be reviewed","")

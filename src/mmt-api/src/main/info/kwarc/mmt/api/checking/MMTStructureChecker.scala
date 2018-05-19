@@ -83,12 +83,15 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
 
   /** called after checking an element */
   private def elementChecked(e: StructuralElement)(implicit env: ExtendedCheckingEnvironment) {
-    e match {
-      case e: ContainerElement[_] =>
-        env.ce.simplifier.applyElementEnd(e)(env.ce.simpEnv)
-      case _ =>
-        env.ce.simplifier.applyChecked(e)(env.ce.simpEnv)
+    if (!env.ce.task.isKilled) {
+      e match {
+        case e: ContainerElement[_] =>
+          env.ce.simplifier.applyElementEnd(e)(env.ce.simpEnv)
+        case _ =>
+          env.ce.simplifier.applyChecked(e)(env.ce.simpEnv)
+      }
     }
+    env.ce.task.reportProgress(Checked(e))
     new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
   }
 
@@ -375,7 +378,18 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         checkTheory(CPath(v.path, DomComponent), v, context, v.fromC.get)
         checkTheory(CPath(v.path, CodComponent), v, context, v.toC.get)
       case s: DeclaredStructure =>
-        checkTheory(CPath(s.path, TypeComponent), s, context, s.fromC.get)
+        val fr = s.fromC.get
+        fr match {
+          case Some(OMPMOD(mp,_)) if mp.name.steps.length > 1 => // Include/Structure from nested theory
+            val parent = mp.parent ? mp.name.steps.init
+            controller.globalLookup.getImplicit(OMMOD(parent),s.to) match {
+              case Some(_) =>
+              case None =>
+                env.errorCont(InvalidElement(s,"No implicit morphism from " + parent + " to " + s.to))
+            }
+          case _ =>
+        }
+        checkTheory(CPath(s.path, TypeComponent), s, context, fr)
       case dd: DerivedDeclaration =>
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         sfOpt match {
@@ -391,7 +405,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         //succeed for everything else but signal error
         logError("unchecked " + path)
     }
-    ce.simplifier.applyElementBegin(e)(ce.simpEnv)
+    if (!env.ce.task.isKilled) {
+      ce.simplifier.applyElementBegin(e)(ce.simpEnv)
+    }
   }
 
   /** auxiliary method of check */
@@ -438,7 +454,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         doDoc(b.asDocument)      
       case _ =>
     }
-    ce.simplifier.applyElementEnd(e)(ce.simpEnv)
     elementChecked(e)
   }
   

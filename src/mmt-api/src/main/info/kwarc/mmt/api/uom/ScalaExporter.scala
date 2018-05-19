@@ -139,7 +139,6 @@ import GenericScalaExporter._
 
 /** This trait bundles auxiliary methods for exporting Scala code */
 class GenericScalaExporter extends Exporter {
-  val outDim = Dim("export", "scala")
   val key = "scala"
   override val outExt = "scala"
   override protected val folderName = "NAMESPACE"

@@ -1,20 +1,20 @@
 package info.kwarc.mmt.api.frontend.actions
 
 import info.kwarc.mmt.api._
-import archives.lmh._
+import archives.lmh.{LMHHubGroupEntry, _}
 import frontend._
 import utils._
 
 /** shared base class for Actions relating to lmh (formerly oaf) */
-sealed abstract class LMHAction extends ActionImpl {
-  protected def mathHub(implicit controller: Controller): MathHub = controller.getMathHub.getOrElse {
+sealed abstract class LMHAction extends Action {
+  protected def mathHub = controller.getMathHub.getOrElse {
     throw GeneralError("no LMH configuration entry found")
   }
 }
 
 case object ShowLMH extends LMHAction with ResponsiveAction {
   override def toParseString: String = "show lmh"
-  def apply(implicit controller: Controller) {
+  def apply() {
     controller.getMathHub match {
       case Some(mh) => {
         respond("Local LMH Root at: " + mh.local)
@@ -24,16 +24,16 @@ case object ShowLMH extends LMHAction with ResponsiveAction {
     }
   }
 }
-object ShowLMHCompanion extends ActionObjectCompanionImpl[ShowLMH.type]("print information about lmh", "show lmh")
+object ShowLMHCompanion extends ObjectActionCompanion(ShowLMH, "print information about lmh", "show lmh")
 
 case class SetLMHRoot(path: String, https: Boolean) extends LMHAction {
-  def apply(implicit controller: Controller) {
+  def apply() {
     // create a new lmh instance
     controller.lmh = Some(new MathHub(controller, File(path), MathHub.defaultURL, https))
   }
   override def toParseString = s"lmh root $path ${if(https) "https" else "ssh"}"
 }
-object SetLMHRootCompanion extends ActionCompanionImpl[SetLMHRoot]("set the lmh root folder", "lmh root"){
+object SetLMHRootCompanion extends ActionCompanion("set the lmh root folder", "lmh root"){
   import Action._
   def parserActual(implicit state: ActionState) = str ~ (("ssh" | "https")?) ^^ {
     case p ~ Some(https) => SetLMHRoot(p, https == "https")
@@ -42,47 +42,47 @@ object SetLMHRootCompanion extends ActionCompanionImpl[SetLMHRoot]("set the lmh 
 }
 
 case class LMHInit(path: String, template: Option[String]) extends LMHAction {
-  def apply(implicit controller: Controller) {mathHub.createEntry(path)}
+  def apply() {mathHub.createEntry(path)}
   override def toParseString = s"lmh init $path"
 }
-object LMHInitCompanion extends ActionCompanionImpl[LMHInit]("create a new lmh archive", "lmh init", "oaf init"){
+object LMHInitCompanion extends ActionCompanion("create a new lmh archive", "lmh init", "oaf init"){
   import Action._
   def parserActual(implicit state: ActionState) = str ~ (str?) ^^ {case p ~ t => LMHInit(p, t)}
 }
 
 case class LMHClone(id: String, version: Option[String]) extends LMHAction {
-  def apply(implicit controller: Controller) {
+  def apply() {
     // install all the entries
     mathHub.installEntry(id, version, recursive=true)
   }
   def toParseString = s"lmh clone $id${version.map(" " + ).getOrElse("")}"
 }
-object LMHCloneCompanion extends ActionCompanionImpl[LMHClone]("clone specific versions of archives from MathHub", "lmh clone"){
+object LMHCloneCompanion extends ActionCompanion("clone specific versions of archives from MathHub", "lmh clone"){
   import Action._
   def parserActual(implicit state: ActionState) = str ~ (str?) ^^ { case i ~ v => LMHClone(i, v)}
 }
 
 
 case class LMHInstall(spec: List[String]) extends LMHAction {
-  def apply(implicit controller: Controller) {
+  def apply() {
     val resolved = mathHub.available(spec: _*)
     resolved.foreach {case (id, version) => mathHub.installEntry(id, version, recursive=true) }
   }
   def toParseString = s"lmh install ${spec.mkString(" ")}".trim
 }
-object LMHInstallCompanion extends ActionCompanionImpl[LMHInstall]("install a set of archives from MathHub", "lmh install", "oaf clone"){
+object LMHInstallCompanion extends ActionCompanion("install a set of archives from MathHub", "lmh install", "oaf clone"){
   import Action._
   override val addKeywords : Boolean = false
   def parserActual(implicit state: ActionState) = strs(keyRegEx) ^^ LMHInstall
 }
 
 case class LMHListRemote(spec: List[String]) extends LMHAction with ResponsiveAction {
-  def apply(implicit controller: Controller) {
+  def apply() {
     mathHub.available(spec: _*).foreach {case (id, version) => respond(s"$id")}
   }
   def toParseString = s"lmh search ${spec.mkString(" ")}".trim
 }
-object LMHListRemoteCompanion extends ActionCompanionImpl[LMHListRemote]("show remote archives matching a pattern", "lmh search"){
+object LMHListRemoteCompanion extends ActionCompanion("show remote archives matching a pattern", "lmh search"){
   import Action._
   override val addKeywords : Boolean = false
   def parserActual(implicit state: ActionState) = strs(keyRegEx) ^^ LMHListRemote
@@ -94,19 +94,25 @@ sealed trait LocalAction extends LMHAction {
   /** list archives that this action will iterate over */
   val spec: List[String]
 
-  def apply(implicit controller: Controller) {mathHub.entries(spec: _*) foreach applyActual}
-  protected def applyActual(archive: LMHHubEntry)(implicit controller: Controller): Unit
+  def apply() {mathHub.entries(spec: _*) foreach applyActual}
+  protected def applyActual(archive: LMHHubEntry): Unit
 }
 
 
 case class LMHList(spec: List[String]) extends LMHAction with LocalAction with ResponsiveAction {
-  protected def applyActual(archive: LMHHubEntry)(implicit controller: Controller) {archive.version match {
-    case Some(v) => respond(s"${archive.id}: $v")
-    case None => respond(s"${archive.id}: (unversioned)")
-  }}
+  protected def applyActual(archive: LMHHubEntry) {
+    val name = archive match {
+      case ge: LMHHubGroupEntry =>   s"Group   ${ge.group}"
+      case ae: LMHHubArchiveEntry => s"Archive ${ae.id}"
+      case _ =>                      s"Repo    ${archive.id}"
+    }
+    val version = archive.version.getOrElse("(unknown version)")
+
+    respond(s"$name: $version in '${archive.root.toJava.toString}'")
+  }
   def toParseString = s"lmh ls ${spec.mkString(" ")}".trim
 }
-object LMHListCompanion extends ActionCompanionImpl[LMHList]("show archives that are installed locally along with their versions", "lmh ls"){
+object LMHListCompanion extends ActionCompanion("show archives that are installed locally along with their versions", "lmh ls"){
   import Action._
   override val addKeywords : Boolean = false
   def parserActual(implicit state: ActionState) = strs(keyRegEx) ^^ LMHList
@@ -114,10 +120,10 @@ object LMHListCompanion extends ActionCompanionImpl[LMHList]("show archives that
 
 
 case class LMHPull(spec: List[String]) extends LMHAction with LocalAction {
-  def applyActual(entry: LMHHubEntry)(implicit controller: Controller) {entry.pull}
+  def applyActual(entry: LMHHubEntry) {entry.pull}
   def toParseString = s"lmh pull ${spec.mkString(" ")}".trim
 }
-object LMHPullCompanion extends ActionCompanionImpl[LMHPull]("pull updates to locally installed archives", "lmh pull", "oaf pull"){
+object LMHPullCompanion extends ActionCompanion("pull updates to locally installed archives", "lmh pull", "oaf pull"){
   import Action._
   override val addKeywords : Boolean = false
   def parserActual(implicit state: ActionState) = strs(keyRegEx) ^^ LMHPull
@@ -125,10 +131,10 @@ object LMHPullCompanion extends ActionCompanionImpl[LMHPull]("pull updates to lo
 
 
 case class LMHPush(spec: List[String]) extends LMHAction with LocalAction {
-  def applyActual(entry: LMHHubEntry)(implicit controller: Controller) {entry.push}
+  def applyActual(entry: LMHHubEntry) {entry.push}
   def toParseString = s"lmh push ${spec.mkString(" ")}".trim
 }
-object LMHPushCompanion extends ActionCompanionImpl[LMHPush]("push updates to locally installed archives", "lmh push", "oaf push"){
+object LMHPushCompanion extends ActionCompanion("push updates to locally installed archives", "lmh push", "oaf push"){
   import Action._
   override val addKeywords : Boolean = false
   def parserActual(implicit state: ActionState) = strs(keyRegEx) ^^ LMHPush
@@ -136,10 +142,10 @@ object LMHPushCompanion extends ActionCompanionImpl[LMHPush]("push updates to lo
 
 
 case class LMHSetRemote(spec: List[String]) extends LMHAction with LocalAction {
-  def applyActual(entry: LMHHubEntry)(implicit controller: Controller) = entry.fixRemote
+  def applyActual(entry: LMHHubEntry) = entry.fixRemote
   def toParseString = s"lmh setremote ${spec.mkString(" ")}".trim
 }
-object LMHSetRemoteCompanion extends ActionCompanionImpl[LMHSetRemote]("fix all remote urls for installed archives", "lmh setremote", "oaf setremote") {
+object LMHSetRemoteCompanion extends ActionCompanion("fix all remote urls for installed archives", "lmh setremote", "oaf setremote") {
   import Action._
   override val addKeywords : Boolean = false
   def parserActual(implicit state: ActionState) = strs(keyRegEx) ^^ LMHSetRemote

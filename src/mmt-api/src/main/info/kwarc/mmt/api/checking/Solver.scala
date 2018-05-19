@@ -83,6 +83,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    val constantContext = checkingUnit.context
    val initUnknowns = checkingUnit.unknowns
 
+  private var _warnings: List[String] = Nil
+  def warnings = _warnings
+
    /**
     * to have better control over state changes, all stateful variables are encapsulated a second time
     */
@@ -734,8 +737,14 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                       case Some(p) =>
                         solve(vd.name, p)
                       case None =>
-                        tryAHole
-                        error("no solution found")
+                        rule.default(this)(tp) match {
+                          case Some(res) =>
+                            _warnings ::= "Default solution used for " + vd.name + ": " + presentObj(res)
+                            solve(vd.name,res)
+                          case None =>
+                            tryAHole
+                            error("no solution found")
+                        }
                     }
                   case _ =>
                     tryAHole
@@ -783,7 +792,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    def check(j: Judgement)(implicit history: History): Boolean = {
       if (checkingUnit.isKilled) {
-        checkingUnit.killact
         return error("checking was cancelled by external signal")
       }
       JudgementStore.getOrElseUpdate(j) {
