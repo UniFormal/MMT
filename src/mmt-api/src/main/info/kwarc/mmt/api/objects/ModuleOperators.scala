@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.NotFound
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import symbols._
@@ -97,7 +98,12 @@ object Morph {
                     case p: MPath => p ? ComplexStep(t)
                     case p: GlobalName => p / ComplexStep(t)
                   }
-                  lib.getO(pt) match {
+                  (try {
+                  lib.getO(pt)
+                  } catch {
+                    case nf : NotFound =>
+                      None
+                  }) match {
                     case Some(l: DefinedStructure) =>
                       // restrict l to t
                       result ::= l.df
