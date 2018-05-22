@@ -60,6 +60,7 @@
                      <option value="0">Strictly Hierarchical Layout</option>
                      <option value="1" selected>Semi Hierarchical Layout</option>
                      <option value="2">Forces Driven Layout</option>
+					 <option value="3">Manual Focus Layout</option>
                   </select>
                   <br /><br />					
                   <div style="float:left" id="colorPicker" name="colorPicker"> 
@@ -356,6 +357,7 @@
 			// idx=2 --> Forces driven
 			function changeMethod(idx) 
 			{
+				theoryGraph.manualFocus=false;
 				setStatusText("Relayouting graph...");
 				if(typeof idx !=='undefined')
 				{
@@ -366,6 +368,12 @@
 					else if(idx==0)
 					{
 						THEORY_GRAPH_OPTIONS.layout={ownLayoutIdx:0, hierarchical: {sortMethod: "directed",direction: "LR"}};
+					}
+					else if(idx==3)
+					{
+						theoryGraph.manualFocus=true;
+						document.body.style.cursor = 'auto';
+						return;
 					}
 				}
 				createNewGraph();
