@@ -194,7 +194,7 @@ class IMPSParser
 
         case Str("load-section") => return Some(Ignore("load-section"))
 
-        case Str("include-files") => println(" > Dropping (include-files ...)") ; return Some(Ignore("include-files"))
+        case Str("include-files") => return Some(Ignore("include-files"))
           // val th = controller.get(theorypath : MPath) match { case th : DeclaredTheory => th case _ => throw something }
           // th.getDeclarations, th.getConstants, th.getIncludes : List[MPath]
           // th.getDeclarationsGenerated (unwahrscheinlich)
@@ -204,7 +204,11 @@ class IMPSParser
 
         /* Actual IMPS special forms */
 
-        case Str("def-algebraic-processor") => return Some(Dummy("def-algebraic-processor"))
+        case Str("def-algebraic-processor") => {
+          println("ALGEBRAIC PROCESSOR")
+          println(e)
+          return Some(Dummy("def-algebraic-processor"))
+        }
 
         case Str("def-atomic-sort") => return impsDefFormParsers.parseAtomicSort(e, js)
 
@@ -264,18 +268,18 @@ class IMPSParser
 
         /* Syntax changers */
 
-        case Str("def-overloading") => println(" > Dummy (def-overloading ...)")   ; return Some(Dummy("def-overloading"))
+        case Str("def-overloading") => return Some(Dummy("def-overloading"))
 
-        case Str("def-parse-syntax") => println(" > Dummy (def-parse-syntax ...)") ; return Some(Dummy("def-parse-syntax"))
+        case Str("def-parse-syntax") => return impsDefFormParsers.parseParseSyntax(e)
 
-        case Str("def-print-syntax") => println(" > Dummy (def-print-syntax ...)") ; return Some(Dummy("def-print-syntax"))
+        case Str("def-print-syntax") => return Some(Dummy("def-print-syntax"))
 
         /* Other meta-commands etc. */
 
-        case Str("set")                     => { println(" > Dropping (set ...)")     ; return Some(Ignore("set")) }
-        case Str("define")                  => { println(" > Dropping (define ...)")  ; return Some(Ignore("define")) }
-        case Str("comment")                 => { println(" > Dropping (comment ...)") ; return Some(Ignore("comment")) }
-        case Str("make-tex-correspondence") => { println(" > Dropping (make-tex-correspondence ...)")     ; return Some(Ignore("Tex-Correspondence")) }
+        case Str("set")                     => { return Some(Ignore("set")) }
+        case Str("define")                  => { return Some(Ignore("define")) }
+        case Str("comment")                 => { return Some(Ignore("comment")) }
+        case Str("make-tex-correspondence") => { return Some(Ignore("Tex-Correspondence")) }
 
         /* Catchall cases */
         case Str(x) => {

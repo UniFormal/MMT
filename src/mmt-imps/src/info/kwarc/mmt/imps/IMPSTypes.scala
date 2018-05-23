@@ -4,6 +4,7 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.imps.Method.Method
 import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.Usage.Usage
 
@@ -14,7 +15,7 @@ abstract class TExp
 case class Exp(children : List[TExp], src : Option[SourceRef]) extends TExp {
   override def toString : String =
   {
-    var str : String = "Exp("
+    var str : String = "("
     str = str + children.toString()
     str = str + ")"
     str
@@ -29,7 +30,7 @@ case class Comment(content : String, src : Option[SourceRef]) extends TExp {
 }
 
 case class Str(str : String) extends TExp {
-  override def toString : String = { "Str(" + str + ")" }
+  override def toString : String = { "\"" + str + "\"" }
 }
 
 /* TEMPORARY */
@@ -50,6 +51,26 @@ case class ParseFailure(str : String) extends TExp {
 }
 
 /* IMPS SPECIAL FORM ARGUMENTS */
+
+case class LeftMethod(m : Method, src : Option[SourceRef]) extends TExp {
+  override def toString: String = { "(left-method " + m.toString + ")"}
+}
+
+case class NullMethod(m : Method, src : Option[SourceRef]) extends TExp {
+  override def toString: String = { "(null-method " + m.toString + ")"}
+}
+
+case class Token(spec : String, src : Option[SourceRef]) extends TExp {
+  override def toString: String = { "(token " + spec + ")"}
+}
+
+case class Table(tablename : String, src : Option[SourceRef]) extends TExp {
+  override def toString: String = { "(table " + tablename + ")"}
+}
+
+case class Binding(n : Int, src : Option[SourceRef]) extends TExp {
+  override def toString: String = { "(binding " + n.toString + ")"}
+}
 
 case class ArgumentTheory(thy : String, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(theory " + thy + ")"}
@@ -175,9 +196,9 @@ case class ComponentTheories(lst : List[String], src : Option[SourceRef]) extend
 object NumericalType extends Enumeration
 {
   type NumericalType = Value
-  val INTEGERTYPE = Value("*integer-type*")
+  val INTEGERTYPE  = Value("*integer-type*")
   val RATIONALTYPE = Value("*rational-type*")
-  val OCTETTYPE = Value("*octet-type*")
+  val OCTETTYPE    = Value("*octet-type*")
 }
 
 case class TypeSortAList(numericType : NumericalType, sort : IMPSSort, src : Option[SourceRef]) extends TExp
@@ -282,6 +303,20 @@ case class Accessors(accs : List[String], src : Option[SourceRef]) extends TExp 
   }
 }
 
+object Method extends Enumeration
+{
+  type Method = Value
+
+  val PREFIXMETHOD   = Value("prefix-operator-method")
+  val INFIXMETHOD    = Value("infix-operator-method")
+  val POSTFIXMETHOD  = Value("postfix-operator-method")
+  val NEGATIONMETHOD = Value("negation-operator-method")
+  val TABLEMETHOD    = Value("table-operator-method")
+  val INDBOTHSYN     = Value("parse-indicator-constructor-both-syntaxes")
+  val PREFSORTDEPOM  = Value("prefix-sort-dependent-operator-method")
+  val NULLCALL       = Value("null-call-method-terminator")
+}
+
 /* These are all seven usages of (for example) theorems.
  * See page 77 of IMPS manual. */
 object Usage extends Enumeration
@@ -340,6 +375,45 @@ case class SourceTheories(thrs : List[String], src : Option[SourceRef]) extends 
 }
 
 /* IMPS SPECIAL FORMS */
+
+case class Overloading(symbol : String,
+                       pairs  : List[(String,String)],
+                       src    : Option[SourceRef])
+  extends TExp
+{
+  override def toString: String = {
+    var str = "(def-overloading " + symbol
+    for (pair <- pairs)
+    {
+      str = str + "\n  (" + pair._1 + " " + pair._2 + ")"
+    }
+    str = str + ")"
+    str
+  }
+}
+
+case class ParseSyntax(name  : String,
+                       token : Option[Token],
+                       leftM : Option[LeftMethod],
+                       nullM : Option[NullMethod],
+                       tbl   : Option[Table],
+                       bnd   : Option[Binding],
+                       src   : Option[SourceRef])
+  extends TExp
+{
+  override def toString: String = {
+    var str : String = "(def-parse-syntax " + name
+
+    if (token.isDefined) { str = str + token.toString + "\n" }
+    if (leftM.isDefined) { str = str + leftM.toString + "\n" }
+    if (nullM.isDefined) { str = str + nullM.toString + "\n" }
+    if (tbl.isDefined)   { str = str + tbl.toString + "\n" }
+    if (bnd.isDefined)   { str = str + bnd.toString + "\n" }
+
+    str = str + ")"
+    str
+  }
+}
 
 /* def-atomic-sort
  * Documentation: IMPS manual pgs. 158, 159 */

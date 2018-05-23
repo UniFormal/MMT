@@ -22,13 +22,14 @@ class IMPSImporter extends Importer
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult =
   {
     val tState : TranslationState = new TranslationState()
-
-    println("\nReading index file: " + bf.inFile.getName)
-
-    println("\n== BUILDING DEPENDENCY TREE ==\n")
-
     val targetSection : Section = impsLibrarySections.foundation
-    println("Target section: " + targetSection.name + "\n")
+
+    if (tState.verbosity > 0)
+    {
+      println("\nReading index file: " + bf.inFile.getName)
+      println("\n== BUILDING DEPENDENCY TREE ==\n")
+      println("Target section: " + targetSection.name + "\n")
+    }
 
     var readingT : List[String] = Nil
     var readingJ : List[String] = Nil
@@ -36,9 +37,12 @@ class IMPSImporter extends Importer
     def importSection(t : Section, n : Int) : Unit =
     {
       val indent : String = "  " * n  // This syntax makes me shiver!
-      println(indent + "> " + t.name)
 
-      for (f <- t.files) { println(indent + "  | " + f) }
+      if (tState.verbosity > 1)
+      {
+        println(indent + "> " + t.name)
+        for (f <- t.files) { println(indent + "  | " + f) }
+      }
 
       readingT = t.files ::: readingT
       readingJ = t.jsons ::: readingJ
@@ -51,7 +55,10 @@ class IMPSImporter extends Importer
     readingJ = readingJ.distinct
     readingT = readingT.distinct
 
-    println("\n== DEPENDECIES CLEAR ; BEGINNING JSON PARSING ==\n")
+    if (tState.verbosity > 0)
+    {
+      println("\n== DEPENDECIES CLEAR ; BEGINNING JSON PARSING ==\n")
+    }
 
     val jsonfiles = bf.inFile.up.canonical.listFiles.filter(_.getName.endsWith(".json"))
     var parsed_json : List[JSONObject] = Nil
@@ -63,16 +70,22 @@ class IMPSImporter extends Importer
 
     assert(translatejsonFiles.length == readingJ.length)
 
-    for (rj <- readingJ)
+    if (tState.verbosity > 0)
     {
-      if (translatejsonFiles.find(f => f.getName == rj).isDefined) { print("✓ ") } else { print("  ") }
-      println(rj)
+      for (rj <- readingJ)
+      {
+        if (translatejsonFiles.find(f => f.getName == rj).isDefined) { print("✓ ") } else { print("  ") }
+        println(rj)
+      }
+      println("")
     }
-    println("")
 
     for (file <- translatejsonFiles)
     {
-      println("# Reading json file: " + file)
+      if (tState.verbosity > 0)
+      {
+        println("# Reading json file: " + file)
+      }
 
       val fileLines = Source.fromFile(file).getLines
       var contents: String = ""
@@ -86,7 +99,10 @@ class IMPSImporter extends Importer
     }
     tState.jsons = parsed_json
 
-    println("\n== JSON PARSING COMPLETE ; BEGINNING T PARSING ==\n")
+    if (tState.verbosity > 0)
+    {
+      println("\n== JSON PARSING COMPLETE ; BEGINNING T PARSING ==\n")
+    }
 
     val tfiles    = bf.inFile.up.canonical.listFiles.filter(_.getName.endsWith(".t")).toList
     val translateFiles = readingT.map(fn => {
@@ -95,10 +111,13 @@ class IMPSImporter extends Importer
       foo.get
     })
 
-    for (rt <- readingT)
+    if (tState.verbosity > 0)
     {
-      if (translateFiles.find(f => f.getName == rt).isDefined) { print("✓ ") } else { print("  ") }
-      println(rt)
+      for (rt <- readingT)
+      {
+        if (translateFiles.find(f => f.getName == rt).isDefined) { print("✓ ") } else { print("  ") }
+        println(rt)
+      }
     }
 
     assert(translateFiles.length == readingT.length)
@@ -107,7 +126,10 @@ class IMPSImporter extends Importer
 
     for (file <- translateFiles)
     {
-      println("\n###########\nReading imps file: " + file)
+      if (tState.verbosity > 0)
+      {
+        println("\n###########\nReading imps file: " + file)
+      }
 
       val e = try
       {
@@ -129,20 +151,32 @@ class IMPSImporter extends Importer
       parsed_t = parsed_t ::: List((e,FileURI(file)))
     }
 
-    println("\n== PARSING COMPLETE ; BEGINNING T TRANSLATION ==\n")
+    if (tState.verbosity > 0)
+    {
+      println("\n== PARSING COMPLETE ; BEGINNING T TRANSLATION ==\n")
+    }
 
     val importTask = new IMPSImportTask(controller, bf, index, tState)
 
     val fakeURI : URI = URI(bf.inFile.getParentFile.getParentFile.getAbsolutePath + "/the-kernel-theory.t")
     val fakeexp : Exp = Exp(List(theKernelLang(),theKernelTheory(),unitSortTheorem()),None)
 
-    println("#> Translating: " + fakeURI)
+    if (tState.verbosity > 0)
+    {
+      println("#> Translating: " + fakeURI)
+    }
     importTask.doDocument(fakeexp,fakeURI)
-    println(" > Success!")
+    if (tState.verbosity > 0)
+    {
+      println(" > Success!")
+    }
 
     for (e <- parsed_t)
     {
-      println("\n#> Translating: " + e._2)
+      if (tState.verbosity > 0)
+      {
+        println("\n#> Translating: " + e._2)
+      }
 
       try
       {
@@ -150,7 +184,10 @@ class IMPSImporter extends Importer
         {
           case p@Exp(_,_) => {
             importTask.doDocument(p, e._2)
-            println(" > Success!")
+            if (tState.verbosity > 0)
+            {
+              println(" > Success!")
+            }
           }
           case _ => println("> Parsing mess-up!") ; sys.exit()
         }
@@ -219,6 +256,8 @@ class TranslationState ()
   var knownUnknowns      : List[(Int,Term)]     = Nil
 
   var hashCount          : Int = 0
+
+  var verbosity          : Int = 0
 
   protected var unknowns : Int                  = 0
 

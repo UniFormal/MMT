@@ -1,6 +1,7 @@
 package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.utils.JSONObject
+import info.kwarc.mmt.imps.Method.Method
 import info.kwarc.mmt.imps.Usage.Usage
 import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.impsDefFormParsers.{handpick, removeWhitespace}
@@ -62,7 +63,7 @@ package object impsArgumentParsers
     }
 
     val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name").toLowerCase == thy.toLowerCase)
-    println(" > Looking for " + thy.toLowerCase)
+    //println(" > Looking for " + thy.toLowerCase)
     assert(json_theory.isDefined)
     assert(json_theory.get.getAsString("type") == "imps-theory")
     val axioms : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"axioms")
@@ -72,19 +73,19 @@ package object impsArgumentParsers
 
     val theaxiom : Option[JSONObject] = if (name.isDefined)
     {
-      println(" > looking for axiom " + name.get + " in theory " + thy + " ...")
+      //println(" > looking for axiom " + name.get + " in theory " + thy + " ...")
       axioms.find(j => j.getAsString("name").toLowerCase == name.get.toLowerCase)
     } else {
-      println(" > looking for nameless axiom in theory " + thy + " ...")
+      //println(" > looking for nameless axiom in theory " + thy + " ...")
       e.children(index) match {
         case Exp(List(Str(x)), _) => {
           s = x.tail.init
-          println("     > scala axiom: " + removeWhitespace(x.tail.init))
+          //println("     > scala axiom: " + removeWhitespace(x.tail.init))
           var tempt = axioms.find(j => removeWhitespace(j.getAsString("formula-string")) == removeWhitespace(x.tail.init))
 
           if (!(tempt.isDefined)) {
             val handpicked = handpick(removeWhitespace(x.tail.init))
-            println("     > handpicked: " +handpicked)
+            //println("     > handpicked: " +handpicked)
             tempt = axioms.find(j => removeWhitespace(j.getAsString("formula-string")) == handpicked)
           }
 
@@ -105,7 +106,7 @@ package object impsArgumentParsers
         val foo = removeWhitespace(t.getAsString("formula-string"))
         val n = 5
         if (foo.take(n) == bar.take(n)) {
-          println("     > json axiom: " + foo)
+          //println("     > json axiom: " + foo)
         }
       }
     }
@@ -121,7 +122,7 @@ package object impsArgumentParsers
     assert(lsp.successful)
 
     formula = Some(impsMathParser.makeSEXPFormula(lsp.get))
-    println("     > Formula generation successful: " + formula.get.toString)
+    //println("     > Formula generation successful: " + formula.get.toString)
 
     val usgs : Option[List[Usage]] = if (usgs_prime.isEmpty) { None } else { Some(usgs_prime) }
 
@@ -497,6 +498,65 @@ package object impsArgumentParsers
     }
   }
 
+  def parseMethod(s : String) : Option[Method] = {
+    s match {
+      case "prefix-operator-method"        => Some(Method.PREFIXMETHOD)
+      case "infix-operator-method"         => Some(Method.INFIXMETHOD)
+      case "postfix-operator-method"       => Some(Method.POSTFIXMETHOD)
+      case "negation-operator-method"      => Some(Method.NEGATIONMETHOD)
+      case "table-operator-method"         => Some(Method.TABLEMETHOD)
+      case "parse-indicator-constructor-both-syntaxes" => Some(Method.INDBOTHSYN)
+      case "prefix-sort-dependent-operator-method"     => Some(Method.PREFSORTDEPOM)
+      case "null-call-method-terminator"               => Some(Method.NULLCALL)
+      case _ => None
+    }
+  }
+
+  def parseLeftMethod(e : Exp) : Option[LeftMethod] = {
+    assert(e.children.length == 2)
+
+    e.children(1) match {
+      case Exp(List(Str(x)),_) => Some(LeftMethod(parseMethod(x).get, e.src))
+      case _                   => ???
+    }
+  }
+
+  def parseNullMethod(e : Exp) : Option[NullMethod] = {
+    assert(e.children.length == 2)
+
+    e.children(1) match {
+      case Exp(List(Str(x)),_) => Some(NullMethod(parseMethod(x).get, e.src))
+      case _                   => ???
+    }
+  }
+
+  def parseBinding(e : Exp) : Option[Binding] = {
+    assert(e.children.length == 2)
+
+    e.children(1) match {
+      case Exp(List(Str(x)),_) => Some(Binding(Integer.parseInt(x), e.src))
+      case _                   => ???
+    }
+  }
+
+  def parseTable(e : Exp) : Option[Table] = {
+    assert(e.children.length == 2)
+
+    e.children(1) match {
+      case Exp(List(Str(x)),_) => Some(Table(x, e.src))
+      case _                   => ???
+    }
+  }
+
+  def parseToken(e : Exp) : Option[Token] = {
+    assert(e.children.length == 2)
+
+    e.children(1) match {
+      case Exp(List(Str(x)),_) => Some(Token(x, e.src))
+      case _                   => ???
+    }
+  }
+
   /* Parser for IMPS definition-name arguments
    * used in: def-language */
   def parseDefinitionName(e : Exp) : Option[DefinitionName] =
@@ -607,7 +667,7 @@ package object impsArgumentParsers
       {
         // Constant specification has two elements
         if(!(ss.length == 2)) {
-          println(" > DROPPING tail of constant specs: " + ss.toString())
+          //println(" > DROPPING tail of constant specs: " + ss.toString())
           return None
         }
 
