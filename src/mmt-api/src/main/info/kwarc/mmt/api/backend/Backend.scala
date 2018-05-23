@@ -51,8 +51,9 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   def load(nf: NotFound)(implicit controller: Controller) {
     val p = nf.path
     log("loading " + p)
+    var messages: List[String] = Nil
     stores foreach {hd =>
-      log("trying " + hd)
+      //log("trying " + hd)
       try {
         nf.found match {
           case None => hd.load(p)
@@ -60,10 +61,18 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
         }
         return
       } catch {case NotApplicable(msg) =>
-        log(hd.toString + " not applicable to " + p + (if (msg != "") " ("+msg+")" else ""))
+        messages ::= hd.toString + " not applicable to " + p + (if (msg != "") " ("+msg+")" else "")
       }
     }
-    throw NotApplicable("no backend available that is applicable to " + p)
+    logGroup {
+      //messages.reverse.foreach {m => log(m)}
+      log("no backend applicable: " + nf)
+    }
+    val exMsg = nf.found match {
+      case Some(exP) => exP.toString + " exists, but "
+      case None => ""
+    }
+    throw NotApplicable(exMsg + "no backend applicable to " + p)
   }
 
   /** like load but tries to load a Rule (no side-effects) */

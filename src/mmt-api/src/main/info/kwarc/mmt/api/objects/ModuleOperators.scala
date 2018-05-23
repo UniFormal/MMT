@@ -95,15 +95,11 @@ object Morph {
               cod match {
                 case Some(OMMOD(t)) =>
                   val pt = p match {
-                    case p: MPath => p ? ComplexStep(t)
-                    case p: GlobalName => p / ComplexStep(t)
+                    case p: MPath => p ? ComplexStep(t) // p is view
+                    case p: GlobalName => p / ComplexStep(t) // p is structure
                   }
-                  (try {
-                  lib.getO(pt)
-                  } catch {
-                    case nf : NotFound =>
-                      None
-                  }) match {
+                  // check if p contains an assignment to t
+                  lib.getO(pt) match {
                     case Some(l: DefinedStructure) =>
                       // restrict l to t
                       result ::= l.df

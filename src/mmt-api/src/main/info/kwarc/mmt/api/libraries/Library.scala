@@ -234,7 +234,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
       case OMPMOD(p, args) =>
          val mod = seeAsMod(getContent(p, error), error)
          val newName = name.steps match {
-           case ComplexStep(`p`) :: r => LocalName(r)
+           case ComplexStep(`p`) :: r =>
+             if (r.isEmpty)
+               throw GetError("cannot lookup " + p + " in itself")
+             LocalName(r)
            case _ => name
          }
          getDeclarationInElement(mod, args, newName, error)
@@ -399,6 +402,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
              case None =>
                error("cannot resolve " + mpath)
            }
+         case LocalName(Nil) =>
+           throw GetError("empty name not allowed")
          case _ => throw NotFound(t.path ? name, Some(t.path)) // [[Storage]]s may add declarations to a theory dynamically, so we throw NotFound
        }
      }
