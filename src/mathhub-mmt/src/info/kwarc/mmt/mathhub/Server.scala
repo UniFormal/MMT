@@ -18,8 +18,8 @@ class Server extends ServerExtension("mathhub") with MathHubAPIImpl  {
     case List("content", "groups") => toResponse(getGroups)
     case List("content", "group", g) => toResponse(getGroup(g))
     case List("content", "archive", g, a) => toResponse(getArchive(g, a))
+    case List("content", "document", g, a, d) => toResponse(getDocument(g, a, d))
     case List("content", "module", g, a, m) => toResponse(getModule(g, a, m))
-    case List("content", "variant", g, a, m, v) => toResponse(getVariant(g, a, m, v))
 
     // fallback: Not Found
     case _ => ServerResponse("Not found", "text/plain", ServerResponse.statusCodeNotFound)

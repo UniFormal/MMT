@@ -79,7 +79,7 @@ case class IArchiveItem(id: String, group: String, title: String, teaser: String
 
 case class IArchive(
                      id: String, group: String, title: String, teaser: String,
-                     description: String, responsible: List[String], modules: List[IModuleItem]
+                     description: String, responsible: List[String], documents: List[IDocumentItem]
                    ) extends API {
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
@@ -91,6 +91,36 @@ case class IArchive(
 
     buffer.add("description", description)
     buffer.add("responsible", responsible)
+    buffer.add("documents", documents)
+
+    buffer.result()
+  }
+}
+
+//
+// DOCUMENTS
+//
+case class IDocumentItem(archive: String, name: String) extends API {
+  def toJSON: JSON = {
+    val buffer = new JSONObjectBuffer
+
+    buffer.add("archive", archive)
+    buffer.add("name", name)
+
+    buffer.result()
+  }
+}
+
+case class IDocument(
+                      archive: String, name: String,
+                      modules: List[IModuleItem]
+                    ) extends API {
+  def toJSON: JSON = {
+    val buffer = new JSONObjectBuffer
+
+    buffer.add("archive", archive)
+    buffer.add("name", name)
+
     buffer.add("modules", modules)
 
     buffer.result()
@@ -115,40 +145,13 @@ case class IModuleItem(name: String, archive: String) extends API {
 
 case class IModule(
                     name: String, archive: String,
-                    variants: List[IVariantItem]
+                    presentation: String, source: String
                   ) extends API {
   def toJSON: JSON = {
     val buffer = new JSONObjectBuffer
 
     buffer.add("name", name)
     buffer.add("archive", archive)
-
-    buffer.add("variants", variants)
-
-    buffer.result()
-  }
-}
-
-case class IVariantItem(name: String, module: String) extends API {
-  def toJSON: JSON = {
-    val buffer = new JSONObjectBuffer
-
-    buffer.add("name", name)
-    buffer.add("module", module)
-
-    buffer.result()
-  }
-}
-
-case class IVariant(
-                     name: String, module: String,
-                     presentation: String, source: String
-                   ) extends API {
-  def toJSON: JSON = {
-    val buffer = new JSONObjectBuffer
-
-    buffer.add("name", name)
-    buffer.add("module", module)
 
     buffer.add("presentation", presentation)
     buffer.add("source", source)
