@@ -15,20 +15,22 @@ class Server extends ServerExtension("mathhub") with MathHubAPIImpl  {
   }
 
   def applyActual(request: ServerRequest) : ServerResponse = request.pathForExtension match {
-    case List("content", "groups") => toResponse(getGroups)
-    case List("content", "group", g) => toResponse(getGroup(g))
-    case List("content", "archive", g, a) => toResponse(getArchive(g, a))
-    case List("content", "document", g, a, d) => toResponse(getDocument(g, a, d))
-    case List("content", "module", g, a, m) => toResponse(getModule(g, a, m))
+    // TODO: Do proper path escaping
+    case "content" :: "uri" :: g => toResponse(getURI(g.mkString("/")))
+    case "content" :: "groups" :: Nil => toResponse(getGroups)
+    case "content" :: "group" :: g => toResponse(getGroup(g.mkString("/")))
+    case "content" :: "archive" ::g :: a => toResponse(getArchive(g, a.mkString("/")))
+    case "content" :: "document" :: g :: a :: d => toResponse(getDocument(g, a, d.mkString("/")))
+    case "content" :: "module" :: g :: a :: m => toResponse(getModule(g, a, m.mkString("/")))
 
     // fallback: Not Found
     case _ => ServerResponse("Not found", "text/plain", ServerResponse.statusCodeNotFound)
   }
 
   /** turns an object into a server response */
-  def toResponse(omdoc: API): ServerResponse = ServerResponse.JsonResponse(omdoc.toJSON)
-  def toResponse(omdocs: List[API]): ServerResponse = {
-    import API._
-    ServerResponse.JsonResponse(JSONConverter.toJSON(omdocs))
+  def toResponse(result: IAPIObjectItem): ServerResponse = ServerResponse.JsonResponse(result.toJSON)
+  def toResponse(results: List[IAPIObjectItem]): ServerResponse = {
+    import IAPIObjectItem._
+    ServerResponse.JsonResponse(JSONConverter.toJSON(results))
   }
 }
