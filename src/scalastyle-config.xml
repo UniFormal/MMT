@@ -7,7 +7,7 @@
  <check level="warning" class="org.scalastyle.scalariform.SpacesAfterPlusChecker" enabled="false" />
  <check level="warning" class="org.scalastyle.file.WhitespaceEndOfLineChecker" enabled="true" />
  <check level="warning" class="org.scalastyle.file.FileLineLengthChecker" enabled="false" />
- <check level="warning" class="org.scalastyle.scalariform.ClassNamesChecker" enabled="true">
+ <check level="warning" class="org.scalastyle.scalariform.ClassNamesChecker" enabled="false">
   <parameters>
    <parameter name="regex"><![CDATA[[A-Z][A-Za-z]*]]></parameter>
   </parameters>
