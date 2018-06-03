@@ -108,7 +108,7 @@ case class IArchiveRef(
                         override val parent: Some[IGroupRef],
                         override val id: String,
                         override val title: IAPIObjectItem.HTML,
-                        override val teaser: IAPIObjectItem.HTML,
+                        override val teaser: IAPIObjectItem.HTML
                       ) extends IArchiveItem with IReference with INarrativeParentRef
 
 /** a full description of a MathHub Archive */
@@ -192,7 +192,7 @@ case class IDocument(
 case class IOpaqueElement(
                          override val parent: Some[INarrativeParentRef],
 
-                         text: String,
+                         text: String
                          ) extends IReferencable with INarrativeElement {
   val kind: String = "opaque"
   val id: String = ""
