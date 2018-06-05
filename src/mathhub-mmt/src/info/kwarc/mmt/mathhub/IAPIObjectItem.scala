@@ -118,7 +118,7 @@ case class IArchiveRef(
                         override val name: String,
                         override val title: IAPIObjectItem.HTML,
                         override val teaser: IAPIObjectItem.HTML
-                      ) extends IArchiveItem with IReference with INarrativeParentRef
+                      ) extends IArchiveItem with IReference with IDocumentParentRef
 
 /** a full description of a MathHub Archive */
 case class IArchive(
@@ -150,13 +150,13 @@ case class IArchive(
 /** a narrative element inside an archive */
 trait INarrativeElement extends IAPIObjectItem // TODO: URIS?
 
-/** anything that can be the parent of a narrative element */
-trait INarrativeParentRef extends IReference
+/** anything that can be the parent of a document */
+trait IDocumentParentRef extends IReference
 
 
 trait IDocumentItem extends IAPIObjectItem {
   val kind = "document"
-  val parent: Some[INarrativeParentRef]
+  val parent: Some[IDocumentParentRef]
 
   /** the uri of this document */
   val id: String
@@ -171,14 +171,14 @@ trait IDocumentItem extends IAPIObjectItem {
 
 /** a reference to a document */
 case class IDocumentRef(
-                       override val parent: Some[INarrativeParentRef],
-                       override val id: IAPIObjectItem.URI,
-                       override val name: String
-                       ) extends IDocumentItem with IReference with INarrativeParentRef
+                         override val parent: Some[IDocumentParentRef],
+                         override val id: IAPIObjectItem.URI,
+                         override val name: String
+                       ) extends IDocumentItem with IReference with IDocumentParentRef with INarrativeElement
 
 /** a document of content */
 case class IDocument(
-                      override val parent: Some[INarrativeParentRef],
+                      override val parent: Some[IDocumentParentRef],
                       override val id: IAPIObjectItem.URI,
                       override val name: String,
 
@@ -196,7 +196,7 @@ case class IDocument(
 
 trait IOpaqueElementItem extends IAPIObjectItem {
   val kind: String = "opaque"
-  val parent: Some[INarrativeParentRef]
+  val parent: Some[IDocumentParentRef]
 
   /** name of the module */
   val name: String
@@ -211,19 +211,19 @@ trait IOpaqueElementItem extends IAPIObjectItem {
 
 /** a reference to an opaque element */
 case class IOpaqueElementRef(
-                              override val parent: Some[INarrativeParentRef],
+                              override val parent: Some[IDocumentRef],
                               override val id: String,
                               override val name: String,
                             ) extends IOpaqueElementItem with IReference
 
 /** an opaque element */
 case class IOpaqueElement(
-                         override val parent: Some[INarrativeParentRef],
-                         override val id: String,
-                         override val name: String,
+                           override val parent: Some[IDocumentRef],
+                           override val id: String,
+                           override val name: String,
 
-                         contentFormat: String,
-                         content: String
+                           contentFormat: String,
+                           content: String
                          ) extends IOpaqueElementItem with IReferencable with INarrativeElement {
 
   override def toJSONBuffer: JSONObjectBuffer = {
@@ -242,7 +242,7 @@ case class IOpaqueElement(
 //
 
 trait IModuleItem extends IAPIObjectItem {
-  val parent: Some[INarrativeParentRef]
+  val parent: Some[IDocumentRef]
 
   /** name of the module */
   val name: String
@@ -264,9 +264,9 @@ trait IModuleRef extends IModuleItem with IReference with INarrativeElement
 
 /** a reference to a theory */
 case class ITheoryRef(
-                     override val parent: Some[INarrativeParentRef],
-                     override val id: IAPIObjectItem.URI,
-                     override val name: String
+                       override val parent: Some[IDocumentRef],
+                       override val id: IAPIObjectItem.URI,
+                       override val name: String
                      ) extends IModuleRef {
   val kind: String = "theory"
 }
@@ -274,9 +274,9 @@ case class ITheoryRef(
 
 /** a reference to a view */
 case class IViewRef(
-                       override val parent: Some[INarrativeParentRef],
-                       override val id: IAPIObjectItem.URI,
-                       override val name: String
+                     override val parent: Some[IDocumentRef],
+                     override val id: IAPIObjectItem.URI,
+                     override val name: String
                      ) extends IModuleRef {
   val kind: String = "view"
 }
@@ -302,14 +302,14 @@ trait IModule extends IModuleItem with IReferencable {
 
 /** a description of a theory */
 case class ITheory(
-                       override val parent: Some[INarrativeParentRef],
-                       override val id: IAPIObjectItem.URI,
-                       override val name: String,
+                    override val parent: Some[IDocumentRef],
+                    override val id: IAPIObjectItem.URI,
+                    override val name: String,
 
-                       override val presentation: IAPIObjectItem.HTML,
-                       override val source: Option[String],
+                    override val presentation: IAPIObjectItem.HTML,
+                    override val source: Option[String],
 
-                       meta: Option[ITheoryRef]
+                    meta: Option[ITheoryRef]
                      ) extends IModule {
   val kind: String = "theory"
 
@@ -324,15 +324,15 @@ case class ITheory(
 
 /** a description of a view */
 case class IView(
-                    override val parent: Some[INarrativeParentRef],
-                    override val id: IAPIObjectItem.URI,
-                    override val name: String,
+                  override val parent: Some[IDocumentRef],
+                  override val id: IAPIObjectItem.URI,
+                  override val name: String,
 
-                    override val presentation: IAPIObjectItem.HTML,
-                    override val source: Option[String],
+                  override val presentation: IAPIObjectItem.HTML,
+                  override val source: Option[String],
 
-                    domain: ITheoryRef,
-                    codomain: ITheoryRef
+                  domain: ITheoryRef,
+                  codomain: ITheoryRef
                   ) extends IModule {
   val kind: String = "theory"
 

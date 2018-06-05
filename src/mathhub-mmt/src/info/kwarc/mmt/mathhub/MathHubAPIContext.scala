@@ -2,7 +2,7 @@ package info.kwarc.mmt.mathhub
 
 import info.kwarc.mmt.api.{GeneralError, Path}
 import info.kwarc.mmt.api.archives.lmh.{LMHHubGroupEntry, _}
-import info.kwarc.mmt.api.documents.{Document, MRef, NRef}
+import info.kwarc.mmt.api.documents.{DRef, Document, MRef, NRef}
 import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
 import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView, Theory, View}
 import info.kwarc.mmt.api.objects.OMS
@@ -71,11 +71,17 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
   }
 
   /** gets a reference of a specific type */
-  private def getReferenceOf[T <: IReference](cls: Class[T], id: String): Option[T] = {
-    log(s"trying to get reference $id")
+  private def getReferenceOf[T <: IReference](cls: Class[T], id: String): Option[T] = logGroup {
+    log(s"trying to get reference of kind ${cls.getName} $id")
     getReference(id) match {
-      case Some(t: T@unchecked) if cls.isInstance(t) => Some(t)
-      case _ => None
+      case Some(t: T@unchecked) if cls.isInstance(t) => {
+        log(s"got reference for $id")
+        Some(t)
+      }
+      case rv => {
+        log(s"did not get reference for $id")
+        None
+      }
     }
   }
 
@@ -86,7 +92,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
   def getArchiveRef(id: String): Option[IArchiveRef] = getReferenceOf(classOf[IArchiveRef], id)
 
   /** gets a reference to a narrative parent */
-  def getNarrativeParentRef(id: String): Option[INarrativeParentRef] = {
+  def getNarrativeParentRef(id: String): Option[IDocumentParentRef] = {
     getArchiveRef(id).map(Some(_)).getOrElse(getDocumentRef(id)) // ArchiveRef | DocumentRef
   }
 
@@ -129,11 +135,17 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
   }
 
   /** gets an object of a specific type */
-  private def getObjectOf[T <: IReferencable](cls: Class[T], id: String): Option[T] = {
-    log(s"trying to get object $id")
+  private def getObjectOf[T <: IReferencable](cls: Class[T], id: String): Option[T] = logGroup {
+    log(s"trying to get object of kind ${cls.getName} $id")
     getObject(id) match {
-      case Some(t: T@unchecked) if cls.isInstance(t) => Some(t)
-      case _ => None
+      case Some(t: T@unchecked) if cls.isInstance(t) => {
+        log(s"got object for for $id")
+        Some(t)
+      }
+      case _ => {
+        log(s"did not get object for $id")
+        None
+      }
     }
   }
 
@@ -145,7 +157,9 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
 
   /** gets a narrative element */
   def getNarrativeElement(id: String): Option[INarrativeElement] = {
-    // IOpaqueElement | IDocument | IModuleRef
+    // IOpaqueElement | IDocument | IDocumentRef | IModuleRef
+
+    // TODO: This always sends a full document and not a reference
     getOpaqueElement(id).map(Some(_))
       .getOrElse(getDocument(id)).map(Some(_))
       .getOrElse(getModuleRef(id))
@@ -182,20 +196,35 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
 
   /** tries to find a group with the given id */
   private def tryGroup(id: String) : Option[LMHHubGroupEntry] = {
-    mathHub.entries_.collectFirst({
+    log(s"trying $id as group")
+
+    val optEntry = mathHub.entries_.collectFirst({
       case e: LMHHubGroupEntry if e.group == id => e
     })
+
+    if(optEntry.isEmpty){
+      log(s"$id is not a group")
+    }
+
+    optEntry
   }
 
   /** tries to find an archive with a given id */
   private def tryArchive(id: String) : Option[LMHHubArchiveEntry] = {
-    mathHub.entries_.collectFirst({
-      case e: LMHHubArchiveEntry if e.group == id => e
+    log(s"trying $id as archive")
+    val optEntry = mathHub.entries_.collectFirst({
+      case e: LMHHubArchiveEntry if e.id == id => e
     })
+
+    if(optEntry.isEmpty){
+      log(s"$id is not an archive")
+    }
+
+    optEntry
   }
 
   /** builds a reference to an item, if it exists in the controller */
-  private def buildReference(id: String): Option[IReference] = {
+  private def buildReference(id: String): Option[IReference] = logGroup {
 
     // try to build a group reference
     tryGroup(id).map(e => return buildGroupReference(e))
@@ -208,40 +237,27 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     val path = try{
       Path.parse(id, controller.getNamespaceMap)
     } catch {
-      case _: Exception => return buildFailure(id, "Path.parse(id)")
+      case _: Exception => return buildFailure(id, "Path.parse(ref.id)")
     }
 
     // try to get the path or
 
-    controller.getO(path).getOrElse(return buildFailure(id, "controller.getO(path)")) match {
-      case view: DeclaredView => buildViewReference(view)
-      case theory: DeclaredTheory => buildTheoryReference(theory)
+    controller.getO(path).getOrElse(return buildFailure(id, "controller.getO(ref.path)")) match {
+      case view: View => buildViewReference(view)
+      case theory: Theory => buildTheoryReference(theory)
 
       case opaque: OpaqueElement => buildOpaqueReference(opaque)
       case document: Document => buildDocumentReference(document)
 
-      case _ => buildFailure(id, "controller.get(path) match")
-    }
-  }
-
-  /** helper function to resolve the narrative parent element reference */
-  private def buildGetNarrativeParentRef(path: Path): Option[INarrativeParentRef] = {
-    // try to find an archive with the narration root of the path in question
-    mathHub.entries_.find({
-      case ae: LMHHubArchiveEntry => ae.archive.narrationBase == URI(path.toPath)
-      case _ => false
-    }) match {
-      case Some(ae) => getArchiveRef(ae.id)
-      // fallback to a document
-      case None => getDocumentRef(path.toPath)
+      case _ => buildFailure(id, "controller.get(ref.path) match")
     }
   }
 
   /** builds a reference to a group */
   private def buildGroupReference(entry: LMHHubGroupEntry) : Option[IGroupRef] = Some(
     IGroupRef(
-      entry.id, /* id */
-      entry.id, /* name */
+      entry.group, /* id */
+      entry.group, /* name */
       entry.properties.getOrElse("title", return buildFailure(entry.id, "group.title")), /* title */
       entry.properties.getOrElse("teaser", return buildFailure(entry.id, "group.teaser")) /* teaser */
     )
@@ -259,36 +275,55 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
   )
 
   /** builds a reference to a document */
-  private def buildDocumentReference(document: Document) : Option[IDocumentRef] = Some(
-    IDocumentRef(
-      buildGetNarrativeParentRef(document.parent).map(Some(_)).getOrElse(return buildFailure(document.path.toPath, "document.parent")),/* parent */
-      document.path.toPath, /* id */
-      document.name.toString /* name */
+  private def buildDocumentReference(document: Document) : Option[IDocumentRef] = {
+
+    log(s"parent of ${document} is ${document.parent.toPath}")
+    // if we are the narrationBase of an archive, that is our parent
+    val parent = mathHub.entries_.find({
+      case ae: LMHHubArchiveEntry => ae.archive.narrationBase.toString == document.path.toPath
+      case _ => false
+    }) match {
+      case Some(ae) => getArchiveRef(ae.id)
+      // if not, the parent is simply a document
+      case None => getDocumentRef(document.path.^.toPath) // TODO: is parent working properly?
+    }
+
+
+    Some(
+      IDocumentRef(
+        parent.map(Some(_))
+          .getOrElse(return buildFailure(document.path.toPath, "getRef(document.parent)")),/* parent */
+        document.path.toPath, /* id */
+        document.name.toString /* name */
+      )
     )
-  )
+  }
 
   /** builds a reference to an opaque element */
   private def buildOpaqueReference(opaque: OpaqueElement) : Option[IOpaqueElementRef] = Some(
     IOpaqueElementRef(
-      buildGetNarrativeParentRef(opaque.parent).map(Some(_)).getOrElse(return buildFailure(opaque.path.toPath, "opaque.parent")),/* parent */
+      getDocumentRef(opaque.path.^.toPath).map(Some(_)) // TODO: is parent working properly?
+        .getOrElse(return buildFailure(opaque.path.toPath, "getDocumentRef(opaque.parent)")),/* parent */
       opaque.path.toPath, /* id */
       opaque.name.toString /* name */
     )
   )
 
   /** builds a reference to a view */
-  private def buildViewReference(view: DeclaredView) : Option[IViewRef] = Some(
+  private def buildViewReference(view: View) : Option[IViewRef] = Some(
     IViewRef(
-      buildGetNarrativeParentRef(view.parent).map(Some(_)).getOrElse(return buildFailure(view.path.toPath, "view.parent")), /* parent */
+      getDocumentRef(view.path.^.toPath).map(Some(_)) // TODO: is parent working properly?
+        .getOrElse(return buildFailure(view.path.toPath, "getDocumentRef(view.parent)")), /* parent */
       view.path.toPath, /* id */
       view.name.toString /* name */
     )
   )
 
   /** builds a reference to a theory */
-  private def buildTheoryReference(theory: DeclaredTheory) : Option[ITheoryRef] = Some(
+  private def buildTheoryReference(theory: Theory) : Option[ITheoryRef] = Some(
     ITheoryRef(
-      buildGetNarrativeParentRef(theory.parent).map(Some(_)).getOrElse(return buildFailure(theory.path.toPath, "theory.parent")), /* parent */
+      getDocumentRef(theory.path.^.toPath).map(Some(_)) // TODO: is parent working properly?
+        .getOrElse(return buildFailure(theory.path.toPath, "getDocumentRef(theory.parent)")), /* parent */
       theory.path.toPath, /* id */
       theory.name.toString /* name */
     )
@@ -296,7 +331,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
 
 
   /** builds a reference to an object, if it exists in the controller */
-  private def buildObject(id: String): Option[IReferencable] = {
+  private def buildObject(id: String): Option[IReferencable] = logGroup {
 
     // try to build a group reference
     tryGroup(id).map(e => return buildGroup(e))
@@ -309,25 +344,25 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     val path = try{
       Path.parse(id, controller.getNamespaceMap)
     } catch {
-      case _: Exception => return buildFailure(id, "Path.parse(id)")
+      case _: Exception => return buildFailure(id, "Path.parse(object.id)")
     }
 
     // try to get the path or
 
-    controller.getO(path).getOrElse(return buildFailure(id, "controller.getO(path)")) match {
-      case view: DeclaredView => buildView(view)
-      case theory: DeclaredTheory => buildTheory(theory)
+    controller.getO(path).getOrElse(return buildFailure(id, "controller.getO(object.path)")) match {
+      case view: View => buildView(view)
+      case theory: Theory => buildTheory(theory)
 
       case opaque: OpaqueElement => buildOpaque(opaque)
       case document: Document => buildDocument(document)
 
-      case _ => buildFailure(id, "controller.get(path) match")
+      case _ => buildFailure(id, "controller.get(object.path) match")
     }
   }
 
   /** builds a group representation */
   private def buildGroup(entry: LMHHubGroupEntry): Option[IGroup] = {
-    val ref = getGroupRef(entry.id).getOrElse(return  buildFailure(entry.id, "getGroupRef(id)"))
+    val ref = getGroupRef(entry.group).getOrElse(return buildFailure(entry.group, "getGroupRef(group.id)"))
 
     // get the description file
     val file = entry.root / entry.properties.getOrElse("description", "desc.html")
@@ -350,7 +385,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
 
   /** builds an archive representation */
   private def buildArchive(entry: LMHHubArchiveEntry): Option[IArchive] = {
-    val ref = getArchiveRef(entry.group).getOrElse(return buildFailure(entry.id, "getArchiveRef(id)"))
+    val ref = getArchiveRef(entry.id).getOrElse(return buildFailure(entry.id, "getArchiveRef(archive.id)"))
 
     // get the description file
     val file = entry.root / entry.archive.properties.getOrElse("description", "desc.html")
@@ -361,7 +396,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     val responsible = entry.archive.properties.getOrElse("responsible", "").split(",").map(_.trim).toList
 
     val narrativeRoot = getDocument(entry.archive.narrationBase.toString)
-      .getOrElse(return buildFailure(entry.id, "getDocument(archive.narrativeRoot)")) // TODO: Check if this works
+        .getOrElse(return buildFailure(entry.id, "getDocument(archive.narrativeRoot)"))
 
     Some(IArchive(
       ref.parent, ref.id, ref.name, ref.title, ref.teaser,
@@ -376,23 +411,27 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
   /** builds a document representation */
   private def buildDocument(document: Document): Option[IDocument] = {
     val ref = getDocumentRef(document.path.toPath)
-      .getOrElse(return buildFailure(document.path.toPath, "getDocumentRef(id)"))
+      .getOrElse(return buildFailure(document.path.toPath, "getDocumentRef(document.id)"))
 
     // find all the declarations
+    // TODO: Implement other types and section references
     val decls = document.getDeclarations.flatMap({
 
       // IOpaqueElement
       case o: OpaqueElement => getOpaqueElement(o.path.toPath).map(Some(_))
-          .getOrElse(return buildFailure(document.path.toPath, s"getOpaqueElement(declaration[${o.path.toPath}])"))
+          .getOrElse(return buildFailure(document.path.toPath, s"getOpaqueElement(document.decls[${o.path.toPath}])"))
 
       // IDocument
       case d: Document => getDocument(d.path.toPath).map(Some(_))
-          .getOrElse(return buildFailure(document.path.toPath, s"getOpaqueElement(declaration[${d.path.toPath}])"))
+          .getOrElse(return buildFailure(document.path.toPath, s"getDocument(document.decls[${d.path.toPath}])"))
+
+      //IDocumentRef
+      case d: DRef => getDocumentRef(d.target.toPath).map(Some(_))
+        .getOrElse(return buildFailure(document.path.toPath, s"getDocumentRef(document.decls[${d.path.toPath}])"))
 
       // IModuleRef
       case m: MRef => getModuleRef(m.target.toPath).map(Some(_))
-          .getOrElse(return buildFailure(document.path.toPath, s"getOpaqueElement(declaration[${m.target.toPath}])"))
-
+          .getOrElse(return buildFailure(document.path.toPath, s"getModuleRef(doc.decls[${m.target.toPath}])"))
 
       // TODO: Implement URIs
       case d => {
@@ -411,7 +450,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
   /** builds an opaque representation */
   private def buildOpaque(opaque: OpaqueElement): Option[IOpaqueElement] = {
     val ref = getOpaqueElementRef(opaque.path.toPath)
-      .getOrElse(return buildFailure(opaque.path.toPath, "getOpaqueElementRef(id)"))
+      .getOrElse(return buildFailure(opaque.path.toPath, "getOpaqueElementRef(opaque.id)"))
 
     Some(IOpaqueElement(
       ref.parent, ref.id, ref.name,
@@ -422,15 +461,19 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
   }
 
   /** builds a theory representation */
-  private def buildTheory(theory: DeclaredTheory): Option[ITheory] = {
+  private def buildTheory(theory: Theory): Option[ITheory] = {
     val ref = getTheoryRef(theory.path.toPath)
-      .getOrElse(return buildFailure(theory.path.toPath, "getTheoryRef(id)"))
+      .getOrElse(return buildFailure(theory.path.toPath, "getTheoryRef(theory.id)"))
 
-    val meta = theory.meta.map(mt =>
-      getTheoryRef(mt.toPath)
-        .getOrElse(return buildFailure(theory.path.toPath, "getTheoryRef(theory.meta)")
+    val meta = theory match {
+      case dc: DeclaredTheory =>
+        dc.meta.map(mt =>
+          getTheoryRef(mt.toPath)
+            .getOrElse(return buildFailure(theory.path.toPath, "getTheoryRef(theory.meta)")
+            )
         )
-    )
+      case _ => None
+    }
 
     val presentation: String = "" // TODO: html presentation of `theory`
     val source: Option[String] = None // TODO: source code of `theory` if any
@@ -446,19 +489,15 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
   }
 
   /** builds a view representation */
-  private def buildView(view: DeclaredView): Option[IView] = {
+  private def buildView(view: View): Option[IView] = {
     val ref = getViewRef(view.path.toPath)
-      .getOrElse(return buildFailure(view.path.toPath, "getViewRef(id)"))
+      .getOrElse(return buildFailure(view.path.toPath, "getViewRef(view.id)"))
 
-    val domain = view.fromC.get.getOrElse("view.get(domain)") match {
-      case OMS(p: Path) => getTheoryRef(p.toPath).getOrElse(return buildFailure(view.path.toPath, "getTheoryRef(view.domain)"))
-      case None => return buildFailure(view.path.toPath, "view.domain match")
-    }
+    val domain = getTheoryRef(view.from.toMPath.toPath)
+      .getOrElse(return buildFailure(view.path.toPath, "getTheoryRef(view.domain)"))
 
-    val codomain = view.toC.get.getOrElse("view.get(codomain)") match {
-      case OMS(p: Path) => getTheoryRef(p.toPath).getOrElse(return buildFailure(view.path.toPath, "getTheoryRef(view.codomain)"))
-      case None => return buildFailure(view.path.toPath, "view.codomain match")
-    }
+    val codomain = getTheoryRef(view.to.toMPath.toPath)
+      .getOrElse(return buildFailure(view.path.toPath, "getTheoryRef(view.codomain)"))
 
     val presentation: String = "" // TODO: html presentation of `view`
     val source: Option[String] = None // TODO: source code of `view` if any
