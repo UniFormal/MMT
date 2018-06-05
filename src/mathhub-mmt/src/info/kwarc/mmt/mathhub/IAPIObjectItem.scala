@@ -32,6 +32,9 @@ trait IGroupItem extends IAPIObjectItem {
   /** a machine-readable ID of the group */
   val id: String
 
+  /** the name of this group, same as id */
+  val name: String
+
   /** human-readable title of the group */
   val title: IAPIObjectItem.HTML
 
@@ -51,6 +54,7 @@ trait IGroupItem extends IAPIObjectItem {
 /** a reference to a MathHub Archive */
 case class IGroupRef(
                       override val id: String,
+                      override val name: String,
                       override val title: IAPIObjectItem.HTML,
                       override val teaser: IAPIObjectItem.HTML
                     ) extends IGroupItem with IReference
@@ -58,6 +62,7 @@ case class IGroupRef(
 /** a full description of a MathHub Group */
 case class IGroup(
                    override val id: String,
+                   override val name: String,
                    override val title: IAPIObjectItem.HTML,
                    override val teaser: IAPIObjectItem.HTML,
 
@@ -87,6 +92,9 @@ trait IArchiveItem extends IAPIObjectItem {
   /** the id of the archive $parent.id/$name */
   val id: String
 
+  /** the name of this archive */
+  val name: String
+
   /** human-readable title of the group */
   val title: IAPIObjectItem.HTML
 
@@ -107,6 +115,7 @@ trait IArchiveItem extends IAPIObjectItem {
 case class IArchiveRef(
                         override val parent: Some[IGroupRef],
                         override val id: String,
+                        override val name: String,
                         override val title: IAPIObjectItem.HTML,
                         override val teaser: IAPIObjectItem.HTML
                       ) extends IArchiveItem with IReference with INarrativeParentRef
@@ -115,12 +124,13 @@ case class IArchiveRef(
 case class IArchive(
                         override val parent: Some[IGroupRef],
                         override val id: String,
+                        override val name: String,
                         override val title: IAPIObjectItem.HTML,
                         override val teaser: IAPIObjectItem.HTML,
 
                         description: IAPIObjectItem.HTML,
                         responsible: List[String],
-                        narrativeRoot: List[INarrativeElement]
+                        narrativeRoot: IDocument
                       ) extends IArchiveItem with IReferencable {
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
@@ -149,17 +159,13 @@ trait IDocumentItem extends IAPIObjectItem {
   val parent: Some[INarrativeParentRef]
 
   /** the uri of this document */
-  val id: IAPIObjectItem.URI
+  val id: String
 
   /** the name of this document */
   val name: String
 
   def toJSONBuffer: JSONObjectBuffer = {
-    val buffer = new JSONObjectBuffer
-
-    buffer.add("name", name)
-
-    buffer
+    new JSONObjectBuffer
   }
 }
 
@@ -188,19 +194,43 @@ case class IDocument(
 
 }
 
+trait IOpaqueElementItem extends IAPIObjectItem {
+  val kind: String = "opaque"
+  val parent: Some[INarrativeParentRef]
+
+  /** name of the module */
+  val name: String
+
+  /** the uri of this IModuleItem */
+  val id: String
+
+  def toJSONBuffer: JSONObjectBuffer = {
+    new JSONObjectBuffer
+  }
+}
+
+/** a reference to an opaque element */
+case class IOpaqueElementRef(
+                              override val parent: Some[INarrativeParentRef],
+                              override val id: String,
+                              override val name: String,
+                            ) extends IOpaqueElementItem with IReference
+
 /** an opaque element */
 case class IOpaqueElement(
                          override val parent: Some[INarrativeParentRef],
+                         override val id: String,
+                         override val name: String,
 
-                         text: String
-                         ) extends IReferencable with INarrativeElement {
-  val kind: String = "opaque"
-  val id: String = ""
+                         contentFormat: String,
+                         content: String
+                         ) extends IOpaqueElementItem with IReferencable with INarrativeElement {
 
-  def toJSONBuffer: JSONObjectBuffer = {
-    val buffer = new JSONObjectBuffer
+  override def toJSONBuffer: JSONObjectBuffer = {
+    val buffer = super.toJSONBuffer
 
-    buffer.add("text", text)
+    buffer.add("contentFormat", contentFormat)
+    buffer.add("content", content)
 
     buffer
   }
@@ -218,7 +248,7 @@ trait IModuleItem extends IAPIObjectItem {
   val name: String
 
   /** the uri of this IModuleItem */
-  val id: IAPIObjectItem.URI
+  val id: String
 
   def toJSONBuffer: JSONObjectBuffer = {
     val buffer = new JSONObjectBuffer
@@ -332,15 +362,17 @@ trait IAPIObjectItem {
   /** weather this object is a reference or a full description */
   val ref: Boolean
 
-  /** the id of this object, if any */
+  /** the id of this object */
   val id: String
+
+  /** the name of this object */
+  val name: String
 
   /** the parent of this object, if any */
   val parent: Option[IReference]
 
 
-
-  /** serialiazes this object into a JSONObject Buffer */
+  /** serializes this object into a JSONObject Buffer */
   protected def toJSONBuffer: JSONObjectBuffer
 
   /** serializes this object into a JSON Object */
@@ -351,6 +383,7 @@ trait IAPIObjectItem {
     buffer.add("kind", kind)
     buffer.add("ref", ref)
     buffer.add("id", id)
+    buffer.add("name", name)
     buffer.add("parent", parent)
 
     buffer.result()
