@@ -3,20 +3,27 @@ package info.kwarc.mmt.api.utils
 
 import info.kwarc.mmt.api.ParseError
 
-import scala.util.parsing.json.JSONFormat
-
 /**
  * straightforward API for JSON objects
  */
-sealed abstract class JSON
+sealed abstract class JSON {
+  /** turns this JSON into a prettified string */
+  override def toString: String = toFormattedString("  ")
+
+  /** turns this JSON Object into a compact (no-spaces) string */
+  def toCompactString: String = toFormattedString("")
+
+  /** turns this JSON object into a formatted string */
+  def toFormattedString(indent: String): String
+}
 
 case object JSONNull extends JSON {
-  override def toString = "null"
+  def toFormattedString(indent: String): String = "null"
 }
 
 sealed abstract class JSONValue extends JSON {
    def value: Any
-   override def toString = value.toString
+   def toFormattedString(indent: String): String = value.toString
 }
 sealed abstract class JSONNumber extends JSONValue
 
@@ -31,14 +38,26 @@ case class JSONFloat(value: Double) extends JSONNumber
 case class JSONBoolean(value: Boolean) extends JSONValue
 
 case class JSONString(value: String) extends JSONValue {
-  override def toString = {
-    val escaped = JSONFormat.quoteString(value) //also escapes / to \/ which is allowed but weird
+  override def toFormattedString(indent: String): String = {
+    val escaped = JSON.quoteString(value) //also escapes / to \/ which is allowed but weird
     "\"" + escaped + "\""
   }
 }
 
 case class JSONArray(values: JSON*) extends JSON {
-  override def toString = values.mkString("[", ", ", "]")
+  def toFormattedString(indent: String): String = {
+    val (start, sep, end) = {
+      if(indent != ""){
+        ("[\n"+indent, ",\n"+indent, "\n]")
+      } else {
+        ("[", ",", "]")
+      }
+    }
+
+    values.map( v =>
+      JSON.addIndent(v.toFormattedString(indent), indent)
+    ).mkString(start, sep, end)
+  }
 }
 
 object JSONArray {
@@ -47,8 +66,21 @@ object JSONArray {
 }
 
 case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
-  override def toString =
-    map.map { case (k, v) => k.toString + " : " + v.toString}.mkString("{", ",\n", "}")
+  def toFormattedString(indent: String): String = {
+    val (start, sep, end) = {
+      if(indent != ""){
+        ("{\n"+indent, ",\n"+indent, "\n}")
+      } else {
+        ("{", ",", "}")
+      }
+    }
+
+    val spaces = if(indent != "") " " else ""
+    map.map { case (k, v) =>
+      k.toFormattedString(indent) + ":" + spaces + JSON.addIndent(v.toFormattedString(indent), indent)
+    }.mkString(start, sep, end)
+  }
+
   def apply(s: String): Option[JSON] = map.find(_._1 == JSONString(s)).map(_._2)
 
   def getAs[A](cls: Class[A], s : String) : A = {
@@ -246,6 +278,42 @@ object JSON {
          parseOpenArray(s, first::seen)
       }
    }
+   def addIndent(formatted: String, indent: String): String = {
+     formatted.split("\n").zipWithIndex
+       .map(si => {
+         if(si._2 > 0){
+           indent + si._1
+         } else {
+           si._1
+         }
+       }).mkString("\n")
+   }
+  /**
+    * This function can be used to properly quote Strings for JSON output.
+    *
+    * adapted from JSONFormat.quoteString in Scala 2.12.4; which has now been deprecated
+    * but licensed under BSD 3-Clause Scala License <https://www.scala-lang.org/license/>.
+    */
+  def quoteString(s : String): String = s.map {
+    case '"'  => "\\\""
+    case '\\' => "\\\\"
+    case '/'  => "\\/"
+    case '\b' => "\\b"
+    case '\f' => "\\f"
+    case '\n' => "\\n"
+    case '\r' => "\\r"
+    case '\t' => "\\t"
+    /* We'll unicode escape any control characters. These include:
+     * 0x0 -> 0x1f  : ASCII Control (C0 Control Codes)
+     * 0x7f         : ASCII DELETE
+     * 0x80 -> 0x9f : C1 Control Codes
+     *
+     * Per RFC4627, section 2.5, we're not technically required to
+     * encode the C1 codes, but we do to be safe.
+     */
+    case c if (c >= '\u0000' && c <= '\u001f') || (c >= '\u007f' && c <= '\u009f') => "\\u%04x".format(c.toInt)
+    case c => c
+  }.mkString
 }
 
 /** converts between XML and JSON following the jsonML specification */
