@@ -297,7 +297,7 @@ object JSON {
   def quoteString(s : String): String = s.map {
     case '"'  => "\\\""
     case '\\' => "\\\\"
-    case '/'  => "\\/"
+    /*case '/'  => "\\/" redundant */
     case '\b' => "\\b"
     case '\f' => "\\f"
     case '\n' => "\\n"
