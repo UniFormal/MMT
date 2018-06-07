@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.test.utils.testers
 
 import info.kwarc.mmt.api.Level.Level
+import info.kwarc.mmt.api.archives.lmh.LMHHubArchiveEntry
 import info.kwarc.mmt.api.archives.{Archive, Current, RedirectableDimension, TraverseMode}
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.Controller
@@ -53,6 +54,25 @@ trait CheckTester extends BaseTester {
     // and return all the errors
     ret.toList
   }
+
+  /**
+    * Checks that a given dimension is deleted from an archive
+    * @param archiveID
+    * @param dimensionName
+    */
+  def shouldClearTarget(archiveID: String, dimensionName: String): Unit =
+    it should s"delete $archiveID target $dimensionName" in {
+
+      val archive = this.getArchive(archiveID)
+      val folder = archive.root / archive.resolveDimension(RedirectableDimension(dimensionName))
+
+      if(folder.exists()){
+        log(s"deleted $folder")
+        folder.deleteDir
+      } else {
+        log(s"skipped")
+      }
+    }
 
   /**
     * Checks a set of files inside an archive

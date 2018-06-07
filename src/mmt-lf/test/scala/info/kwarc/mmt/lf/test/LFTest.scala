@@ -1,7 +1,10 @@
 package info.kwarc.mmt.lf.test
 
+import info.kwarc.mmt.api.archives.RedirectableDimension
+import info.kwarc.mmt.api.archives.lmh.LMHHubArchiveEntry
 import info.kwarc.mmt.api.test.utils.testers._
 import info.kwarc.mmt.api.test.utils._
+import info.kwarc.mmt.api.utils.File
 
 class LFTest extends MMTIntegrationTest(
   TestArchive("MMT/urtheories", hasDevel = true),
@@ -19,12 +22,12 @@ class LFTest extends MMTIntegrationTest(
 
   shouldCheck("MMT/urtheories")()
 
+  shouldClearTarget("MMT/LFX", "bin")
   shouldHandleLine("build MMT/LFX scala-bin")
   shouldHandleLine("build MMT/LFX mmt-omdoc")
 
   shouldCheck("Test/General", Orders.testgeneral:_*)(mayfail = List(
-    "http://test.kwarc.info/Structure?C?test2?definition",
-    "http:/test.kwarc.info/LFX?HierarchyTest?f?type" // TODO: This fails on OpenJDK8 -- figure out why
+    "http://test.kwarc.info/Structure?C?test2?definition"
   ))
   shouldCheck("MMT/examples",Orders.examples:_*)(onlyfiles = true)
 }
