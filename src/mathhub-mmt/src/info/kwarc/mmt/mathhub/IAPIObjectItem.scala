@@ -213,7 +213,7 @@ trait IOpaqueElementItem extends IAPIObjectItem {
 case class IOpaqueElementRef(
                               override val parent: Some[IDocumentRef],
                               override val id: String,
-                              override val name: String,
+                              override val name: String
                             ) extends IOpaqueElementItem with IReference
 
 /** an opaque element */
