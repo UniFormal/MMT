@@ -425,14 +425,20 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
       case d: Document => getDocument(d.path.toPath).map(Some(_))
           .getOrElse(return buildFailure(document.path.toPath, s"getDocument(document.decls[${d.path.toPath}])"))
 
-      //IDocumentRef
-      case d: DRef => getDocumentRef(d.target.toPath).map(Some(_))
-        .getOrElse(return buildFailure(document.path.toPath, s"getDocumentRef(document.decls[${d.path.toPath}])"))
+      // Reference, currently support IDocumentRef and IModuleRef
+      case n: NRef => {
+        val path = n.target.toPath
+        getReference(path) match {
+          case Some(mr: IModuleRef) => Some(mr)
+          case Some(dr: IDocumentRef) => Some(dr)
 
-      // IModuleRef
-      case m: MRef => getModuleRef(m.target.toPath).map(Some(_))
-          .getOrElse(return buildFailure(document.path.toPath, s"getModuleRef(doc.decls[${m.target.toPath}])"))
-
+          // TODO: Support other types once they have been implemented
+          case None => {
+            log(s"buildDocument: ignoring unknown reference child ${path} of ${document.path.toPath} (not Module, Document)")
+            None
+          }
+        }
+      }
       // TODO: Implement URIs
       case d => {
         log(s"buildDocument: ignoring unknown child ${d.path.toPath} of ${document.path.toPath} (not OpaqueElement, Document or MRef)")

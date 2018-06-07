@@ -1,5 +1,8 @@
 package info.kwarc.mmt.mathhub
 
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
+
 import info.kwarc.mmt.api.utils.JSONConverter
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 
@@ -14,23 +17,26 @@ class Server extends ServerExtension("mathhub"){
     )
   }
 
-  /** decodes an ID used with the API */
-  private def decodeID(values: List[String]) : String = {
-    import java.net.URLDecoder
-    import java.nio.charset.StandardCharsets
-    URLDecoder.decode(values.mkString("/"), StandardCharsets.UTF_8.toString)
-  }
-
   def applyActual(request: ServerRequest) : ServerResponse = request.pathForExtension match {
-    case "content" :: "uri" :: args => toResponse(getURI(decodeID(args)))
-    case "content" :: "groups" :: Nil => toResponse(getGroups())
-    case "content" :: "group" :: args => toResponse(getGroup(decodeID(args)))
-    case "content" :: "archive" :: args => toResponse(getArchive(decodeID(args)))
-    case "content" :: "document" :: args => toResponse(getDocument(decodeID(args)))
-    case "content" :: "module" :: args => toResponse(getModule(decodeID(args)))
+    case "content" :: "uri" :: Nil =>
+      toResponse(getURI(request.parsedQuery.string("uri", return missingParameter("uri"))))
+    case "content" :: "groups" :: Nil =>
+      toResponse(getGroups())
+    case "content" :: "group" :: Nil =>
+      toResponse(getGroup(request.parsedQuery.string("id", return missingParameter("id"))))
+    case "content" :: "archive" :: Nil =>
+      toResponse(getArchive(request.parsedQuery.string("id", return missingParameter("id"))))
+    case "content" :: "document" :: Nil =>
+      toResponse(getDocument(request.parsedQuery.string("id", return missingParameter("id"))))
+    case "content" :: "module" :: Nil =>
+      toResponse(getModule(request.parsedQuery.string("id", return missingParameter("id"))))
 
     // fallback: Not Found
     case path => ServerResponse(s"API Route not found: ${path.mkString("/")}", "text/plain", ServerResponse.statusCodeNotFound)
+  }
+
+  def missingParameter(name: String) : ServerResponse = {
+    ServerResponse(s"Missing GET parameter: $name", "text/plain", ServerResponse.statusCodeBadRequest)
   }
 
   /** turns an object into a server response */
