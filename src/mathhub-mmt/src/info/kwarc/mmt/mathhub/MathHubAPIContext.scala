@@ -1,12 +1,13 @@
 package info.kwarc.mmt.mathhub
 
-import info.kwarc.mmt.api.{GeneralError, Path}
+import info.kwarc.mmt.api.{GeneralError, Path, StructuralElement}
 import info.kwarc.mmt.api.archives.lmh.{LMHHubGroupEntry, _}
-import info.kwarc.mmt.api.documents.{DRef, Document, MRef, NRef}
+import info.kwarc.mmt.api.documents.{Document, NRef}
 import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
-import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView, Theory, View}
-import info.kwarc.mmt.api.objects.OMS
+import info.kwarc.mmt.api.modules.{DeclaredTheory, Theory, View}
+import info.kwarc.mmt.api.presentation.StringBuilder
 import info.kwarc.mmt.api.opaque.OpaqueElement
+import info.kwarc.mmt.api.presentation.HTMLExporter
 import info.kwarc.mmt.api.utils.{File, URI}
 
 import scala.collection.mutable
@@ -294,7 +295,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
         parent.map(Some(_))
           .getOrElse(return buildFailure(document.path.toPath, "getRef(document.parent)")),/* parent */
         document.path.toPath, /* id */
-        document.name.toString /* name */
+        document.name.last.toPath /* name */
       )
     )
   }
@@ -305,7 +306,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
       getDocumentRef(opaque.path.^.toPath).map(Some(_)) // TODO: is parent working properly?
         .getOrElse(return buildFailure(opaque.path.toPath, "getDocumentRef(opaque.parent)")),/* parent */
       opaque.path.toPath, /* id */
-      opaque.name.toString /* name */
+      opaque.name.last.toPath /* name */
     )
   )
 
@@ -315,7 +316,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
       getDocumentRef(view.path.^.toPath).map(Some(_)) // TODO: is parent working properly?
         .getOrElse(return buildFailure(view.path.toPath, "getDocumentRef(view.parent)")), /* parent */
       view.path.toPath, /* id */
-      view.name.toString /* name */
+      view.name.last.toPath /* name */
     )
   )
 
@@ -325,7 +326,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
       getDocumentRef(theory.path.^.toPath).map(Some(_)) // TODO: is parent working properly?
         .getOrElse(return buildFailure(theory.path.toPath, "getDocumentRef(theory.parent)")), /* parent */
       theory.path.toPath, /* id */
-      theory.name.toString /* name */
+      theory.name.last.toPath /* name */
     )
   )
 
@@ -466,6 +467,13 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     ))
   }
 
+  private def present(se: StructuralElement): String = {
+    val exporter = controller.extman.get(classOf[HTMLExporter]).head // TODO: Build a custom presenter
+    val sb = new StringBuilder
+    exporter(se, standalone = false)(sb)
+    sb.get
+  }
+
   /** builds a theory representation */
   private def buildTheory(theory: Theory): Option[ITheory] = {
     val ref = getTheoryRef(theory.path.toPath)
@@ -481,7 +489,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
       case _ => None
     }
 
-    val presentation: String = "" // TODO: html presentation of `theory`
+    val presentation: String = present(theory)
     val source: Option[String] = None // TODO: source code of `theory` if any
 
     Some(ITheory(
@@ -505,7 +513,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     val codomain = getTheoryRef(view.to.toMPath.toPath)
       .getOrElse(return buildFailure(view.path.toPath, "getTheoryRef(view.codomain)"))
 
-    val presentation: String = "" // TODO: html presentation of `view`
+    val presentation: String = present(view)
     val source: Option[String] = None // TODO: source code of `view` if any
 
     Some(IView(
