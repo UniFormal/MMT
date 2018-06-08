@@ -327,6 +327,11 @@ lazy val metamath = (project in file("mmt-metamath")).
   dependsOn(api, lf, mmscala).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
 
+// plugin for reading isabelle. author: Makarius Wenzel
+lazy val isabelle = (project in file("mmt-isabelle")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-isabelle"): _*)
+
 // plugin for reading TPS
 lazy val tps = (project in file("mmt-tps")).
   dependsOn(api, lf).
