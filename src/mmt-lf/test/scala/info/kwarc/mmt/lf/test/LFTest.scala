@@ -45,10 +45,10 @@ object Orders {
     ,"sets/typed_sets.mmt"
     ,"sets/relations.mmt"
     ,"sets/functions.mmt"
-    ,"graphs.mmt"
-    ,"collections/basics.mmt"
+    ,"graphs/graphs.mmt"
+    ,"collections/collections.mmt"
     ,"collections/matroids.mmt"
-    ,"topology/basics.mmt"
+    ,"topology/topology.mmt"
     ,"algebra/basics.mmt"
     ,"algebra/ringsfields.mmt"
     ,"algebra/modulsvectors.mmt"
@@ -59,6 +59,8 @@ object Orders {
     ,"calculus/sequencesconvergence.mmt"
     ,"calculus/derivatives.mmt"
     ,"calculus/domains.mmt"
+    ,"measures/setalgebras.mmt"
+    ,"measures/measures.mmt"
     // "categories/basics.mmt"
   )
 
