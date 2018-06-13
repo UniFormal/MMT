@@ -132,6 +132,16 @@ class RelStore(report : frontend.Report) {
           add(start)
    }}
 
+  def makeStatistics(p: Path): List[(String, Int)] = {
+
+    val ds = querySet(p, Transitive(ToObject(Declares)))
+    var dsG = ds.toList.groupBy(x => getType(x)).toList flatMap {
+      case (Some(t),l:List[Path]) => List((t.toString,l.size))
+      case (None, _) => Nil
+    }
+    dsG=("Induced theory morphisms", getNumberTheoryMorphisms)::Nil
+    dsG
+  }
 
    /**
     * Returns the set of theories a theory depends on
@@ -155,4 +165,16 @@ class RelStore(report : frontend.Report) {
          types.clear
       }
    }
+	
+	def getNumberTheoryMorphisms = {
+		val q = Transitive(+HasMeta | +Includes | +DependsOn | Reflexive)
+		(individuals(IsTheory) map {th => querySet(th, q)}).flatten.size
+	}
+	def getNumberAlignments = {
+		val q = Transitive(IsAlignedWith)
+		(individuals(IsConstant) map {th => querySet(th, q)}).flatten.size
+	}
+	def getAllConstants : Iterator[Path]= {
+		individuals.pairs map {case (tp,p) => p}
+	}	
 }
