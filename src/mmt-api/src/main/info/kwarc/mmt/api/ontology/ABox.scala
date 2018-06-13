@@ -132,14 +132,32 @@ class RelStore(report : frontend.Report) {
           add(start)
    }}
 
-  def makeStatistics(p: Path): List[(String, Int)] = {
-
-    val ds = querySet(p, Transitive(ToObject(Declares)))
-    var dsG = ds.toList.groupBy(x => getType(x)).toList flatMap {
-      case (Some(t),l:List[Path]) => List((t.toString,l.size))
+  def makeStatisticsFor(p:Path, q:RelationExp, prefix:String) : List[(String, Int)] = {
+    val ds=querySet(p, q)
+    val dsG = ds.toList.groupBy(x => getType(x)).toList flatMap {
+      case (Some(t),l:List[Path]) => (List((prefix + t.toString,l.size)))
       case (None, _) => Nil
     }
-    dsG=("Induced theory morphisms", getNumberTheoryMorphisms)::Nil
+    dsG
+  }
+   
+  /*def makeImplicitDeclarationStatistics(p:Path, q:RelationExp, prefix:String) : List[(String, Int)] = {
+    val holoThs = querySet(p, Transitive(+HasMeta | +Includes | +DependsOn | Reflexive))
+    val ds = querySet(p, q)
+    val dsG = ds.toList.groupBy(x => getType(x)).toList flatMap {
+      case (Some(t),l:List[Path]) => (List((prefix + "Implicitly Defines" + t.toString,l.size)))
+      case (None, _) => Nil
+    }
+    dsG
+  }*/
+  
+  def makeStatistics(p: Path): List[(String, Int)] = {
+    val decl = Transitive(ToObject(Declares))
+    val align = Sequence(ToObject(Declares) | Transitive(ToObject(IsAlignedWith)))
+    val morph = Transitive(+HasMeta | +Includes | +DependsOn | Reflexive)
+    var dsG = makeStatisticsFor(p, decl, "")
+    dsG = makeStatisticsFor(p, align, "Alignments of ") ++ dsG
+    dsG=("Induced theory morphisms", getTheoryMorphisms(p).size)::Nil
     dsG
   }
 
@@ -166,15 +184,8 @@ class RelStore(report : frontend.Report) {
       }
    }
 	
-	def getNumberTheoryMorphisms = {
+	def getTheoryMorphisms(p : Path) = {
 		val q = Transitive(+HasMeta | +Includes | +DependsOn | Reflexive)
-		(individuals(IsTheory) map {th => querySet(th, q)}).flatten.size
-	}
-	def getNumberAlignments = {
-		val q = Transitive(IsAlignedWith)
-		(individuals(IsConstant) map {th => querySet(th, q)}).flatten.size
-	}
-	def getAllConstants : Iterator[Path]= {
-		individuals.pairs map {case (tp,p) => p}
+		querySet(p, q) //(individuals(IsTheory) map {th => querySet(th, q)}).flatten
 	}	
 }
