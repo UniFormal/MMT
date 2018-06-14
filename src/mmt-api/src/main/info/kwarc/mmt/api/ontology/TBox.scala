@@ -87,6 +87,8 @@ case object HasDomain extends Binary("has domain", "is domain of")
 case object HasCodomain extends Binary("has codomain", "is codomain of")
 //theory - theory, mediated by implicit views and structures (excluding includes)
 case object IsImplicitly extends Binary("implicitly realizes", "is implicitly realized by")
+//structure - structure, mediated by views
+case object HasViewFrom extends Binary("has view from", "has view as")
 // constant - constant (not used yet)
 case object IsInstanceOf extends Binary("is instance of", "instantiates")
 //path - path

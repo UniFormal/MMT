@@ -28,7 +28,7 @@ object MMTExtractor extends RelationalExtractor {
    val allUnary = List(IsDocument,IsTheory,IsView,IsConstant,IsStructure,IsConAss,
                           IsStrAss,IsNotation,IsDerivedDeclaration,IsPattern,IsInstance)
    val allBinary = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,
-         IsAlignedWith)
+         IsAlignedWith, HasViewFrom)
 
 
    /** apply a continuation function to every relational element of a StructuralElement */
@@ -61,6 +61,7 @@ object MMTExtractor extends RelationalExtractor {
             f(HasDomain(path, v.from.toMPath))
             f(HasCodomain(path, v.to.toMPath))
             f(IsView(path))
+            f(HasViewFrom(v.to.toMPath, v.from.toMPath))
          case _ =>
       }
       e match {

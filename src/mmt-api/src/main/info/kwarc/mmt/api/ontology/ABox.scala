@@ -153,12 +153,14 @@ class RelStore(report : frontend.Report) {
   }*/
   
   def makeStatistics(p: Path) = {
-    val decl = Transitive(ToObject(Declares))
-    val align = Sequence(ToObject(Declares) | Transitive(ToObject(IsAlignedWith)))
-    val morph = Transitive(+HasMeta | +Includes | +DependsOn | Reflexive)
+    val decl = Transitive(+Declares)
+    val align = decl * Transitive(+IsAlignedWith)
+    val morph = Transitive(+HasMeta | +Includes | +IsImplicitly | +HasViewFrom)
+    val induced = morph * +Declares * HasType(IsConstant)
     var dsG = makeStatisticsFor(p, decl, "")
     dsG += makeStatisticsFor(p, align, "Alignments of ")
-    dsG += ("Induced theory morphisms", getTheoryMorphisms(p).size)
+    dsG += ("Induced theory morphisms", querySet(p, morph).size)
+    dsG += makeStatisticsFor(p, induced, "Induced declarations of ")
     dsG
   }
 
@@ -184,12 +186,6 @@ class RelStore(report : frontend.Report) {
          types.clear
       }
    }
-	
-	def getTheoryMorphisms(p : Path) = {
-		val q = Transitive(+HasMeta | +Includes | +IsImplicitly)
-		val q2 = q * Declares * HasType(IsConstant)
-		querySet(p, q) //(individuals(IsTheory) map {th => querySet(th, q)}).flatten
-	}	
 }
 
 case class Statistics(entries: List[(String,Int)]) {
