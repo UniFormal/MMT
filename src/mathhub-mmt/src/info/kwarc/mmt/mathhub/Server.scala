@@ -2,6 +2,7 @@ package info.kwarc.mmt.mathhub
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import java.text.DateFormat
 
 import info.kwarc.mmt.api.utils.{JSONConverter, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
@@ -58,7 +59,14 @@ class Server extends ServerExtension("mathhub"){
   //
 
   /** gets the version of the MMT System */
-  def getMMTVersion : Option[IMMTVersionInfo] = Some(IMMTVersionInfo(MMTSystem.version))
+  def getMMTVersion : Option[IMMTVersionInfo] = {
+    val versionNumber = MMTSystem.version.split(" ").head
+
+    val format = new java.text.SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
+    val buildDate = MMTSystem.buildTime.map(format.parse).map(_.getTime.toString)
+
+    Some(IMMTVersionInfo(versionNumber, buildDate))
+  }
 
   /** helper method to build a MathHubAPI Context
     * TODO: Figure out global caching

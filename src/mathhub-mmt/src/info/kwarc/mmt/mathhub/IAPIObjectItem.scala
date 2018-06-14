@@ -360,11 +360,15 @@ case class IView(
 //
 
 /** a version information about MMT */
-case class IMMTVersionInfo(version: String) extends IResponse {
+case class IMMTVersionInfo(
+                            versionNumber: String,
+                            buildDate: Option[String]
+                          ) extends IResponse {
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = new JSONObjectBuffer
 
-    buffer.add("version", version)
+    buffer.add("versionNumber", versionNumber)
+    buffer.add("buildDate", buildDate)
 
     buffer
   }
