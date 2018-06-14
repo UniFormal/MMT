@@ -436,7 +436,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
           case Some(dr: IDocumentRef) => Some(dr)
 
           // TODO: Support other types once they have been implemented
-          case None => {
+          case _ => {
             log(s"buildDocument: ignoring unknown reference child ${path} of ${document.path.toPath} (not Module, Document)")
             None
           }
