@@ -14,9 +14,9 @@ class StatisticsExporter extends Exporter {
 
   def exportDocument(doc: Document, bf: BuildTask) {
     val rep = controller.report
-    val rs = new RelStore(rep)
+    val rs = controller.depstore
     val stat = rs.makeStatistics(doc.path)
-    val jsar  = stat.map {case (dec, n) => JSONObject(dec -> JSONInt(n))}
+    val jsar  = stat.entries.map {case (dec, n) => JSONObject(dec -> JSONInt(n))}
     val j = JSONArray.fromList(jsar)
     rh(j.toString)
   }

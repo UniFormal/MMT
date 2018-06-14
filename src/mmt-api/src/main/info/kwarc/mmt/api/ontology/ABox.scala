@@ -107,6 +107,7 @@ class RelStore(report : frontend.Report) {
          var added = HashSet.empty[Path]
          def step(p : Path) {
             if (! added.contains(p)) {
+               //println("Added path "+p.toString()+" as a path related to the starting path "+start.toString()+" with search query "+q.toString())
                added += p
                val next = query(p, qn)(step)
                add(p) //add parent only after children
@@ -132,32 +133,32 @@ class RelStore(report : frontend.Report) {
           add(start)
    }}
 
-  def makeStatisticsFor(p:Path, q:RelationExp, prefix:String) : List[(String, Int)] = {
+  def makeStatisticsFor(p:Path, q:RelationExp, prefix:String) = {
     val ds=querySet(p, q)
     val dsG = ds.toList.groupBy(x => getType(x)).toList flatMap {
       case (Some(t),l:List[Path]) => (List((prefix + t.toString,l.size)))
       case (None, _) => Nil
     }
-    dsG
+    Statistics(dsG)
   }
    
   /*def makeImplicitDeclarationStatistics(p:Path, q:RelationExp, prefix:String) : List[(String, Int)] = {
-    val holoThs = querySet(p, Transitive(+HasMeta | +Includes | +DependsOn | Reflexive))
+    val holoThs = querySet(p, Transitive(ToSubject(+HasMeta | +Includes | +DependsOn | Reflexive)))
     val ds = querySet(p, q)
     val dsG = ds.toList.groupBy(x => getType(x)).toList flatMap {
-      case (Some(t),l:List[Path]) => (List((prefix + "Implicitly Defines" + t.toString,l.size)))
+      case (Some(t),l:List[Path]) => (List((prefix + "Defined Implicitly" + t.toString,l.size)))
       case (None, _) => Nil
     }
     dsG
   }*/
   
-  def makeStatistics(p: Path): List[(String, Int)] = {
+  def makeStatistics(p: Path) = {
     val decl = Transitive(ToObject(Declares))
     val align = Sequence(ToObject(Declares) | Transitive(ToObject(IsAlignedWith)))
     val morph = Transitive(+HasMeta | +Includes | +DependsOn | Reflexive)
     var dsG = makeStatisticsFor(p, decl, "")
-    dsG = makeStatisticsFor(p, align, "Alignments of ") ++ dsG
-    dsG=("Induced theory morphisms", getTheoryMorphisms(p).size)::Nil
+    dsG += makeStatisticsFor(p, align, "Alignments of ")
+    dsG += ("Induced theory morphisms", getTheoryMorphisms(p).size)
     dsG
   }
 
@@ -185,7 +186,17 @@ class RelStore(report : frontend.Report) {
    }
 	
 	def getTheoryMorphisms(p : Path) = {
-		val q = Transitive(+HasMeta | +Includes | +DependsOn | Reflexive)
+		val q = Transitive(+HasMeta | +Includes | +IsImplicitly)
+		val q2 = q * Declares * HasType(IsConstant)
 		querySet(p, q) //(individuals(IsTheory) map {th => querySet(th, q)}).flatten
 	}	
+}
+
+case class Statistics(entries: List[(String,Int)]) {
+  def +(that: Statistics): Statistics = {
+    Statistics(entries ::: that.entries)
+  }
+  def +(s: String, n: Int): Statistics = {
+    this + Statistics(List((s,n)))
+  }
 }

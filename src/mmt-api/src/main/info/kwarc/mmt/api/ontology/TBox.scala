@@ -24,6 +24,7 @@ case object IsDerivedDeclaration extends Unary("deriveddeclaration")
 case object IsConAss extends Unary("conass")
 case object IsStrAss extends Unary("strass")
 case object IsNotation extends Unary("notation")
+
 /** Extractor extensions should use instances of this class to extend the ontology for unary relations */
 case class CustomUnary(name : String) extends Unary(name)
 
@@ -84,6 +85,8 @@ case object Includes extends Binary("includes", "included by")
 //link - theory, style - any
 case object HasDomain extends Binary("has domain", "is domain of")
 case object HasCodomain extends Binary("has codomain", "is codomain of")
+//theory - theory, mediated by implicit views and structures (excluding includes)
+case object IsImplicitly extends Binary("implicitly realizes", "is implicitly realized by")
 // constant - constant (not used yet)
 case object IsInstanceOf extends Binary("is instance of", "instantiates")
 //path - path

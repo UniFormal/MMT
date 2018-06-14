@@ -110,5 +110,9 @@ object MMTExtractor extends RelationalExtractor {
             }}
          case _ =>
       }
+      e match {
+        case l: Link if l.isImplicit =>
+          f(IsImplicitly(l.to.toMPath,l.from.toMPath))
+      }
    }
 }
