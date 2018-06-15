@@ -4,6 +4,18 @@ import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.utils.MyList.fromList
 import info.kwarc.mmt.api.objects._
 import scala.collection.mutable.{HashSet,HashMap}
+import info.kwarc.mmt.api.checking.ObjectChecker
+import info.kwarc.mmt.api.checking.Checker
+import info.kwarc.mmt.api.checking.CheckingResult
+import info.kwarc.mmt.api.frontend.actions.Check
+import info.kwarc.mmt.api.checking.StructureChecker
+
+import documents._
+import modules._
+import archives._
+import java.util.ResourceBundle.Control
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.lf._
 
 /**
  * An ABoxStore stores the abox of the loaded elements with respect to the MMT ontology.
@@ -133,34 +145,51 @@ class RelStore(report : frontend.Report) {
           add(start)
    }}
 
-  def makeStatisticsFor(p:Path, q:RelationExp, prefix:String) = {
+   def mapConstant(s:Unary, p:Path,con:Controller) = {
+     //TODO: discriminate constants of different universes
+     if (s.toString != "constant")
+       (s.toString,p)
+     val (dop, lo, mo) = p.toTriple
+     val d=dop getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
+     val l=lo getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
+     val m=mo getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
+     val gnP = GlobalName(MPath(d,l),m)
+     val t = con.getConstant(gnP)
+     val tp = t.tp getOrElse {throw new Exception("Invalid term "+t.toString()+" at "+p.toString()+". ")}
+     tp match {
+       case Univ(1) => (s.toString+" Type (or statement) ", p)
+     }
+     (s.toString,p)
+   }
+   def mapConstants(p:(Option[Unary], List[Path]),c:Controller) : List[(String, Path)]= {
+     val res = p match {
+       case (Some(t),x::l) => mapConstant(t, x,c:Controller)::mapConstants((Some(t),l),c:Controller)       
+       case (None, _) => Nil
+     }
+     res
+   }
+   
+  def makeStatisticsFor(p:Path, q:RelationExp, prefix:String, con:Controller) = {
     val ds=querySet(p, q)
-    val dsG = ds.toList.groupBy(x => getType(x)).toList flatMap {
+    val dsGl = ds.toList.groupBy(x => getType(x)).toList flatMap {x => mapConstants(x,con)} /*{
       case (Some(t),l:List[Path]) => (List((prefix + t.toString,l.size)))
       case (None, _) => Nil
+    }*/
+    val dsG = dsGl.groupBy({case (s,x)=>s}).toList flatMap {
+      case (s:String,l) => (List((prefix+s,l.size)))
     }
     Statistics(dsG)
   }
    
-  /*def makeImplicitDeclarationStatistics(p:Path, q:RelationExp, prefix:String) : List[(String, Int)] = {
-    val holoThs = querySet(p, Transitive(ToSubject(+HasMeta | +Includes | +DependsOn | Reflexive)))
-    val ds = querySet(p, q)
-    val dsG = ds.toList.groupBy(x => getType(x)).toList flatMap {
-      case (Some(t),l:List[Path]) => (List((prefix + "Defined Implicitly" + t.toString,l.size)))
-      case (None, _) => Nil
-    }
-    dsG
-  }*/
-  
-  def makeStatistics(p: Path) = {
+  def makeStatistics(p: Path, con:Controller) = {
     val decl = Transitive(+Declares)
     val align = decl * Transitive(+IsAlignedWith)
     val morph = Transitive(+HasMeta | +Includes | +IsImplicitly | +HasViewFrom)
     val induced = morph * +Declares * HasType(IsConstant)
-    var dsG = makeStatisticsFor(p, decl, "")
-    dsG += makeStatisticsFor(p, align, "Alignments of ")
+    var dsG = makeStatisticsFor(p, decl, "",con)
+    dsG += makeStatisticsFor(p, align, "Alignments of ",con)
     dsG += ("Induced theory morphisms", querySet(p, morph).size)
-    dsG += makeStatisticsFor(p, induced, "Induced declarations of ")
+    dsG += makeStatisticsFor(p, induced, "Induced declarations of ",con)
     dsG
   }
 
