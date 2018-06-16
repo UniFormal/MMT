@@ -16,6 +16,8 @@ import archives._
 import java.util.ResourceBundle.Control
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.lf._
+import scala.util.control.Exception.Catch
+import com.sun.org.glassfish.external.statistics.Statistic
 
 /**
  * An ABoxStore stores the abox of the loaded elements with respect to the MMT ontology.
@@ -145,51 +147,95 @@ class RelStore(report : frontend.Report) {
           add(start)
    }}
 
+   /**
+    * Discriminates the different sorts of constants into malformatted (malformatted URI), untyped, maltyped and typed constants,
+    *  type constructor or statements, kinds and types of type universe >2
+    * @param s the type of the constant
+    * @param p the path of the constant
+    * @param the controller (needed to retrieve type information for the constant)
+    */
    def mapConstant(s:Unary, p:Path,con:Controller) = {
      //TODO: discriminate constants of different universes
-     if (s.toString != "constant")
-       (s.toString,p)
-     val (dop, lo, mo) = p.toTriple
-     val d=dop getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
-     val l=lo getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
-     val m=mo getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
-     val gnP = GlobalName(MPath(d,l),m)
-     val t = con.getConstant(gnP)
-     val tp = t.tp getOrElse {throw new Exception("Invalid term "+t.toString()+" at "+p.toString()+". ")}
-     tp match {
-       case Univ(1) => (s.toString+" Type (or statement) ", p)
+     if (s == IsConstant && s.toString == "constant") {
+       try {
+         val (dop, lo, mo) = p.toTriple
+         val d=dop getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
+         val l=lo getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
+         val m=mo getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
+         val gnP = GlobalName(MPath(d,l),m)
+         val t = con.getConstant(gnP)
+         val tp = t.tp
+         tp match {
+           case Some(Univ(1)) => ("type constructor or statement", p)
+           case Some(Univ(2)) => ("kind", p)
+           case Some(Univ(n)) if n > 2 => ("type of type universe >2", p) 
+           case None => ("untyped constant", p)
+           case Some(_) => ("typed constant",p)
+         }
+       } catch {
+         case e:Exception => ("malformatted constant", p)
+         case t: Throwable => t.printStackTrace() 
+         ("maltyped constant", p)
+       }
      }
-     (s.toString,p)
+     else {
+       (s.toString, p)
+     }
    }
+   
+   /**
+    * Discriminates the a list of constants into the sorts malformatted (malformatted URI), untyped, maltyped and typed constants,
+    *  type constructor or statements, kinds and types of type universe >2
+    * @param p the list of constants
+    * @param the controller (needed to retrieve type information for the constants)
+    */
    def mapConstants(p:(Option[Unary], List[Path]),c:Controller) : List[(String, Path)]= {
      val res = p match {
-       case (Some(t),x::l) => mapConstant(t, x,c:Controller)::mapConstants((Some(t),l),c:Controller)       
+       case (Some(t),x::l) => mapConstant(t, x,c:Controller)::mapConstants((Some(t),l),c:Controller)
+       case (Some(p), Nil) => Nil
        case (None, _) => Nil
      }
      res
    }
    
+  /**
+    * Make a statistic for the given query and prepend the prefix to the descriptions of the found declarations
+    * @param p the path of the document of theory to make the statistic for
+    * @param q the query
+    * @param the controller (needed to retrieve type information for the constant)
+    */ 
   def makeStatisticsFor(p:Path, q:RelationExp, prefix:String, con:Controller) = {
     val ds=querySet(p, q)
-    val dsGl = ds.toList.groupBy(x => getType(x)).toList flatMap {x => mapConstants(x,con)} /*{
-      case (Some(t),l:List[Path]) => (List((prefix + t.toString,l.size)))
-      case (None, _) => Nil
-    }*/
-    val dsG = dsGl.groupBy({case (s,x)=>s}).toList flatMap {
+    val dsGl = ds.toList.groupBy(x => getType(x)).toList flatMap {x => mapConstants(x,con)}
+      val dsG = dsGl.groupBy({case (s,x)=>s}).toList flatMap {
       case (s:String,l) => (List((prefix+s,l.size)))
     }
     Statistics(dsG)
   }
    
+  /**
+    * Make a statistic for the document or theory at the given path
+    * @param p the path of the document or theory
+    * @param the controller (needed to retrieve type information for the constants)
+    */
   def makeStatistics(p: Path, con:Controller) = {
     val decl = Transitive(+Declares)
     val align = decl * Transitive(+IsAlignedWith)
+    // Should also morphisms to subtheories be counted?
+    // val subtheory = Transitive(+Declares *HasType(IsTheory) | Reflexive)
+    val expMorph = Transitive(+HasViewFrom)
     val morph = Transitive(+HasMeta | +Includes | +IsImplicitly | +HasViewFrom)
+    val expinduced = expMorph * +Declares * HasType(IsConstant)
     val induced = morph * +Declares * HasType(IsConstant)
     var dsG = makeStatisticsFor(p, decl, "",con)
     dsG += makeStatisticsFor(p, align, "Alignments of ",con)
-    dsG += ("Induced theory morphisms", querySet(p, morph).size)
-    dsG += makeStatisticsFor(p, induced, "Induced declarations of ",con)
+    val (exMorph, anyMorph) = (querySet(p, expMorph).size, querySet(p, morph).size)
+    if (exMorph > 0)
+      dsG += ("Explicit theory morphisms", exMorph)
+    if (anyMorph > 0)
+      dsG += ("Any theory morphisms", anyMorph)
+    dsG += makeStatisticsFor(p, expinduced, "Induced declarations via explicit theory morphisms of ",con)
+    dsG += makeStatisticsFor(p, induced, "Induced declarations via any theory morphisms of ",con)
     dsG
   }
 
@@ -224,4 +270,101 @@ case class Statistics(entries: List[(String,Int)]) {
   def +(s: String, n: Int): Statistics = {
     this + Statistics(List((s,n)))
   }
+}
+
+sealed abstract class StatisticEntries {
+  def description : String
+  def +(s: String): StatisticEntries = {
+    def description = {s+this.description}
+    this
+  }
+}
+sealed abstract class IndStatisticEntries extends StatisticEntries {
+  def description : String
+  def fromStatisticEntries(e:StatisticEntries) : this.type = {
+    def description = {e.description}
+    this
+  }
+}
+
+sealed abstract class ExpIndStatisticEntries extends IndStatisticEntries {
+  def description : String
+  def fromStatisticEntries(e:IndStatisticEntries) : this.type = {
+    def description = {e.description}
+    this
+  }
+}
+case class Theory() extends StatisticEntries {
+  def description = {"theory"}
+}
+case class Document() extends StatisticEntries {
+  def description = {"document"}
+}
+case class UntypedConstant() extends StatisticEntries {
+  def description = {"untyped constant"}
+}
+case class TypedConstant() extends StatisticEntries {
+  def description = {"typed constant"}
+}
+case class MalformattedConstant() extends StatisticEntries {
+  def description = {"malformatted constant"}
+}
+case class MalformedConstant() extends StatisticEntries {
+  def description = {"malformed constant"}
+}
+case class Structure() extends StatisticEntries {
+  def description = {"structure"}
+}
+class TypeConstructor extends StatisticEntries {
+  def description = {"type constructor or statement"}
+}
+case class View() extends StatisticEntries {
+  def description = {"view"}
+}
+case class Kind() extends StatisticEntries {
+  def description = {"kind"}
+}
+case class ExplicitMorphism() extends StatisticEntries {
+  def description = {"explicit theory morphisms"}
+}
+case class AnyMorphism() extends StatisticEntries {
+  def description = {"any theory morphism"}
+}
+
+case class ExpIndUntypedConstant() extends ExpIndStatisticEntries {
+  def description = {"untyped constant"}
+}
+case class ExpIndTypedConstant() extends ExpIndStatisticEntries {
+  def description = {"typed constant"}
+}
+case class ExpIndMalformattedConstant() extends ExpIndStatisticEntries {
+  def description = {"malformatted constant"}
+}
+case class ExpIndMalformedConstant() extends ExpIndStatisticEntries {
+  def description = {"malformed constant"}
+}
+case class ExpIndStructure() extends ExpIndStatisticEntries {
+  def description = {"structure"}
+}
+case class ExpIndTypeConstructor() extends ExpIndStatisticEntries {
+  def description = {"type constructor or statement"}
+}
+
+case class IndUntypedConstant() extends IndStatisticEntries {
+  def description = {"untyped constant"}
+}
+case class IndTypedConstant() extends IndStatisticEntries {
+  def description = {"typed constant"}
+}
+case class IndMalformattedConstant() extends IndStatisticEntries {
+  def description = {"malformatted constant"}
+}
+case class IndMalformedConstant() extends IndStatisticEntries {
+  def description = {"malformed constant"}
+}
+case class IndStructure() extends IndStatisticEntries {
+  def description = {"structure"}
+}
+case class IndTypeConstructor() extends IndStatisticEntries {
+  def description = {"type constructor or statement"}
 }
