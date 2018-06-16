@@ -156,7 +156,7 @@ class RelStore(report : frontend.Report) {
     */
    def mapConstant(s:Unary, p:Path,con:Controller) = {
      //TODO: discriminate constants of different universes
-     if (s == IsConstant && s.toString == "constant") {
+     if (s == IsConstant) {
        try {
          val (dop, lo, mo) = p.toTriple
          val d=dop getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
@@ -166,20 +166,26 @@ class RelStore(report : frontend.Report) {
          val t = con.getConstant(gnP)
          val tp = t.tp
          tp match {
-           case Some(Univ(1)) => ("type constructor or statement", p)
-           case Some(Univ(2)) => ("kind", p)
-           case Some(Univ(n)) if n > 2 => ("type of type universe >2", p) 
-           case None => ("untyped constant", p)
-           case Some(_) => ("typed constant",p)
+           case Some(Univ(1)) => (TypeConstructor(), p)
+           case Some(Univ(2)) => (Kind(), p)
+           case Some(Univ(n)) if n > 2 => (HighUniverse(), p) 
+           case None => (UntypedConstant(), p)
+           case Some(_) => (TypedConstant(),p)
          }
        } catch {
-         case e:Exception => ("malformatted constant", p)
-         case t: Throwable => t.printStackTrace() 
-         ("maltyped constant", p)
+         case e:Exception => (MalformattedConstant(), p)
+         case t: Throwable => t.printStackTrace(); (MaltypedConstant(), p)
        }
      }
      else {
-       (s.toString, p)
+       s match {
+         case IsTheory => (Theory(), p)
+         case IsDocument => (SourceDocument(), p)
+         case IsView => (View(), p)
+         case IsStructure => (Structure(), p)
+         case IsPattern => (Pattern(), p)
+         case _ => (new StatisticEntries(s.toString),p)
+       }
      }
    }
    
@@ -189,13 +195,12 @@ class RelStore(report : frontend.Report) {
     * @param p the list of constants
     * @param the controller (needed to retrieve type information for the constants)
     */
-   def mapConstants(p:(Option[Unary], List[Path]),c:Controller) : List[(String, Path)]= {
-     val res = p match {
+   def mapConstants(p:(Option[Unary], List[Path]),c:Controller) : List[(StatisticEntries, Path)]= {
+     p match {
        case (Some(t),x::l) => mapConstant(t, x,c:Controller)::mapConstants((Some(t),l),c:Controller)
        case (Some(p), Nil) => Nil
        case (None, _) => Nil
      }
-     res
    }
    
   /**
@@ -207,8 +212,9 @@ class RelStore(report : frontend.Report) {
   def makeStatisticsFor(p:Path, q:RelationExp, prefix:String, con:Controller) = {
     val ds=querySet(p, q)
     val dsGl = ds.toList.groupBy(x => getType(x)).toList flatMap {x => mapConstants(x,con)}
-      val dsG = dsGl.groupBy({case (s,x)=>s}).toList flatMap {
-      case (s:String,l) => (List((prefix+s,l.size)))
+    val bla : List[(StatisticEntries,List[(StatisticEntries,Path)])] = dsGl.groupBy({case (s,x)=>s}).toList
+    val dsG : List[(StatisticEntries, Int)] = bla flatMap {
+      case (s:StatisticEntries,l) => (List((s+prefix,l.size)))
     }
     Statistics(dsG)
   }
@@ -230,7 +236,7 @@ class RelStore(report : frontend.Report) {
     var dsG = makeStatisticsFor(p, decl, "",con)
     dsG += makeStatisticsFor(p, align, "Alignments of ",con)
     val (exMorph, anyMorph) = (querySet(p, expMorph).size, querySet(p, morph).size)
-    if (exMorph > 0)
+    if (exMorph > 0) 
       dsG += ("Explicit theory morphisms", exMorph)
     if (anyMorph > 0)
       dsG += ("Any theory morphisms", anyMorph)
@@ -263,108 +269,36 @@ class RelStore(report : frontend.Report) {
    }
 }
 
-case class Statistics(entries: List[(String,Int)]) {
+case class Statistics(entries: List[(StatisticEntries,Int)]) {
   def +(that: Statistics): Statistics = {
     Statistics(entries ::: that.entries)
   }
   def +(s: String, n: Int): Statistics = {
+    this + Statistics(List((new StatisticEntries(s),n)))
+  }
+  def +(s: StatisticEntries, n: Int): Statistics = {
     this + Statistics(List((s,n)))
   }
 }
 
-sealed abstract class StatisticEntries {
-  def description : String
+sealed class StatisticEntries(description:String) {
   def +(s: String): StatisticEntries = {
-    def description = {s+this.description}
-    this
+    new StatisticEntries(s+description)
   }
-}
-sealed abstract class IndStatisticEntries extends StatisticEntries {
-  def description : String
-  def fromStatisticEntries(e:StatisticEntries) : this.type = {
-    def description = {e.description}
-    this
-  }
+  def getDescription = {description}
 }
 
-sealed abstract class ExpIndStatisticEntries extends IndStatisticEntries {
-  def description : String
-  def fromStatisticEntries(e:IndStatisticEntries) : this.type = {
-    def description = {e.description}
-    this
-  }
-}
-case class Theory() extends StatisticEntries {
-  def description = {"theory"}
-}
-case class Document() extends StatisticEntries {
-  def description = {"document"}
-}
-case class UntypedConstant() extends StatisticEntries {
-  def description = {"untyped constant"}
-}
-case class TypedConstant() extends StatisticEntries {
-  def description = {"typed constant"}
-}
-case class MalformattedConstant() extends StatisticEntries {
-  def description = {"malformatted constant"}
-}
-case class MalformedConstant() extends StatisticEntries {
-  def description = {"malformed constant"}
-}
-case class Structure() extends StatisticEntries {
-  def description = {"structure"}
-}
-class TypeConstructor extends StatisticEntries {
-  def description = {"type constructor or statement"}
-}
-case class View() extends StatisticEntries {
-  def description = {"view"}
-}
-case class Kind() extends StatisticEntries {
-  def description = {"kind"}
-}
-case class ExplicitMorphism() extends StatisticEntries {
-  def description = {"explicit theory morphisms"}
-}
-case class AnyMorphism() extends StatisticEntries {
-  def description = {"any theory morphism"}
-}
-
-case class ExpIndUntypedConstant() extends ExpIndStatisticEntries {
-  def description = {"untyped constant"}
-}
-case class ExpIndTypedConstant() extends ExpIndStatisticEntries {
-  def description = {"typed constant"}
-}
-case class ExpIndMalformattedConstant() extends ExpIndStatisticEntries {
-  def description = {"malformatted constant"}
-}
-case class ExpIndMalformedConstant() extends ExpIndStatisticEntries {
-  def description = {"malformed constant"}
-}
-case class ExpIndStructure() extends ExpIndStatisticEntries {
-  def description = {"structure"}
-}
-case class ExpIndTypeConstructor() extends ExpIndStatisticEntries {
-  def description = {"type constructor or statement"}
-}
-
-case class IndUntypedConstant() extends IndStatisticEntries {
-  def description = {"untyped constant"}
-}
-case class IndTypedConstant() extends IndStatisticEntries {
-  def description = {"typed constant"}
-}
-case class IndMalformattedConstant() extends IndStatisticEntries {
-  def description = {"malformatted constant"}
-}
-case class IndMalformedConstant() extends IndStatisticEntries {
-  def description = {"malformed constant"}
-}
-case class IndStructure() extends IndStatisticEntries {
-  def description = {"structure"}
-}
-case class IndTypeConstructor() extends IndStatisticEntries {
-  def description = {"type constructor or statement"}
-}
+case class Theory() extends StatisticEntries("theory")
+case class SourceDocument() extends StatisticEntries("document")
+case class UntypedConstant() extends StatisticEntries("untyped constant")
+case class TypedConstant() extends StatisticEntries("typed constant")
+case class MalformattedConstant() extends StatisticEntries("malformatted constant")
+case class MaltypedConstant() extends StatisticEntries("maltyped constant")
+case class Structure() extends StatisticEntries("structure")
+case class Pattern() extends StatisticEntries("pattern")
+case class TypeConstructor() extends StatisticEntries("type constructor or statement")
+case class View() extends StatisticEntries("view")
+case class Kind() extends StatisticEntries("kind")
+case class HighUniverse() extends StatisticEntries("type of type universe >2")
+case class ExplicitMorphism() extends StatisticEntries("explicit theory morphisms")
+case class AnyMorphism() extends StatisticEntries("any theory morphism")
