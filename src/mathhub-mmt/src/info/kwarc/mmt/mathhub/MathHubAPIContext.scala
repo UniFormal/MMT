@@ -1,14 +1,16 @@
 package info.kwarc.mmt.mathhub
 
-import info.kwarc.mmt.api.{GeneralError, Path, StructuralElement}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.lmh.{LMHHubGroupEntry, _}
 import info.kwarc.mmt.api.documents.{Document, NRef}
 import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
+import info.kwarc.mmt.api.metadata.{HasMetaData, MetaData}
 import info.kwarc.mmt.api.modules.{DeclaredTheory, Theory, View}
 import info.kwarc.mmt.api.presentation.StringBuilder
 import info.kwarc.mmt.api.opaque.OpaqueElement
+import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.presentation.HTMLExporter
-import info.kwarc.mmt.api.utils.{File, URI}
+import info.kwarc.mmt.api.utils.{File, URI, mmt}
 
 import scala.collection.mutable
 
@@ -434,7 +436,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
           case Some(dr: IDocumentRef) => Some(dr)
 
           // TODO: Support other types once they have been implemented
-          case None => {
+          case _ => {
             log(s"buildDocument: ignoring unknown reference child ${path} of ${document.path.toPath} (not Module, Document)")
             None
           }
@@ -467,11 +469,40 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     ))
   }
 
-  private def present(se: StructuralElement): String = {
+  /** presents any element for the MathHub API */
+  private def getPresentationOf(se: StructuralElement): String = {
     val exporter = controller.extman.get(classOf[HTMLExporter]).head // TODO: Build a custom presenter
     val sb = new StringBuilder
     exporter(se, standalone = false)(sb)
     sb.get
+  }
+
+  /** gets a string representing the source code of a specific object */
+  private def getSourceOf(md: HasMetaData): Option[String] = {
+    // get the source ref string
+    val sourceRef = md.metadata.getLinks(mmt.mmtbase ? "metadata" ? "sourceRef")
+        .headOption.map(SourceRef.fromURI).getOrElse(return None)
+
+    // try to resolve the physical path to the source in the source Dimension
+    val (archive, path) = controller.backend.resolveLogical(sourceRef.container).getOrElse(return None)
+    val sourcePath = path.foldLeft[File](archive.root / archive.resolveDimension(archives.source))((p, c) => p / c)
+    if(!sourcePath.isFile){ return None }
+
+    // take the appropriate lines from the source file
+    val sourceLines = File.read(sourcePath).split("\n")
+      .slice(sourceRef.region.start.line, sourceRef.region.end.line + 1)
+
+    if(sourceLines.length > 1){
+      // we have > 1 source line
+      val firstLine = sourceLines.headOption.map(_.drop(sourceRef.region.start.column))
+      val middleLines = sourceLines.drop(1).dropRight(1).toList
+      val lastLine = sourceLines.lastOption.map(l => l.dropRight(l.length - sourceRef.region.end.column))
+
+      Some((firstLine :: middleLines :: (lastLine :: Nil)).mkString("\n"))
+    } else {
+      // we have exactly one line
+      Some(sourceLines.head.slice(sourceRef.region.start.column, sourceRef.region.end.column + 1))
+    }
   }
 
   /** builds a theory representation */
@@ -489,8 +520,8 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
       case _ => None
     }
 
-    val presentation: String = present(theory)
-    val source: Option[String] = None // TODO: source code of `theory` if any
+    val presentation: String = getPresentationOf(theory)
+    val source: Option[String] = getSourceOf(theory)
 
     Some(ITheory(
       ref.parent, ref.id, ref.name,
@@ -513,8 +544,8 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     val codomain = getTheoryRef(view.to.toMPath.toPath)
       .getOrElse(return buildFailure(view.path.toPath, "getTheoryRef(view.codomain)"))
 
-    val presentation: String = present(view)
-    val source: Option[String] = None // TODO: source code of `view` if any
+    val presentation: String = getPresentationOf(view)
+    val source: Option[String] = getSourceOf(view)
 
     Some(IView(
       ref.parent, ref.id, ref.name,

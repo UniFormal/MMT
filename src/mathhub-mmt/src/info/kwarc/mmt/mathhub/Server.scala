@@ -2,8 +2,9 @@ package info.kwarc.mmt.mathhub
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import java.text.DateFormat
 
-import info.kwarc.mmt.api.utils.JSONConverter
+import info.kwarc.mmt.api.utils.{JSONConverter, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 
 class Server extends ServerExtension("mathhub"){
@@ -18,6 +19,9 @@ class Server extends ServerExtension("mathhub"){
   }
 
   def applyActual(request: ServerRequest) : ServerResponse = request.pathForExtension match {
+    case "version" :: Nil =>
+      toResponse(getMMTVersion)
+
     case "content" :: "uri" :: Nil =>
       toResponse(getURI(request.parsedQuery.string("uri", return missingParameter("uri"))))
     case "content" :: "groups" :: Nil =>
@@ -40,11 +44,11 @@ class Server extends ServerExtension("mathhub"){
   }
 
   /** turns an object into a server response */
-  def toResponse(result: Option[IAPIObjectItem]): ServerResponse = result match {
+  def toResponse(result: Option[IResponse]): ServerResponse = result match {
     case Some(r) => ServerResponse.fromJSON(r.toJSON)
     case None => ServerResponse("Not found", "text", ServerResponse.statusCodeNotFound)
   }
-  def toResponse(results: List[IAPIObjectItem]): ServerResponse = {
+  def toResponse(results: List[IResponse]): ServerResponse = {
     import IAPIObjectItem._
     ServerResponse.JsonResponse(JSONConverter.toJSON(results))
   }
@@ -53,6 +57,16 @@ class Server extends ServerExtension("mathhub"){
   //
   // API Methods
   //
+
+  /** gets the version of the MMT System */
+  def getMMTVersion : Option[IMMTVersionInfo] = {
+    val versionNumber = MMTSystem.version.split(" ").head
+
+    val format = new java.text.SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
+    val buildDate = MMTSystem.buildTime.map(format.parse).map(_.getTime.toString)
+
+    Some(IMMTVersionInfo(versionNumber, buildDate))
+  }
 
   /** helper method to build a MathHubAPI Context
     * TODO: Figure out global caching

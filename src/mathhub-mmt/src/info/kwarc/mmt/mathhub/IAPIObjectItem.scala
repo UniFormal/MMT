@@ -10,6 +10,15 @@ package info.kwarc.mmt.mathhub
 
 import info.kwarc.mmt.api.utils.{JSON, JSONConverter, JSONObjectBuffer}
 
+/** anything returned by the API */
+trait IResponse {
+  /** serializes this response into a JSONObject Buffer */
+  protected def toJSONBuffer: JSONObjectBuffer
+
+  /** turns this response into a JSON object */
+  def toJSON: JSON = toJSONBuffer.result()
+}
+
 /** any object that is referencable */
 trait IReferencable extends IAPIObjectItem {
   val ref: Boolean = false
@@ -346,6 +355,25 @@ case class IView(
   }
 }
 
+//
+// Other responses
+//
+
+/** a version information about MMT */
+case class IMMTVersionInfo(
+                            versionNumber: String,
+                            buildDate: Option[String]
+                          ) extends IResponse {
+  override def toJSONBuffer: JSONObjectBuffer = {
+    val buffer = new JSONObjectBuffer
+
+    buffer.add("versionNumber", versionNumber)
+    buffer.add("buildDate", buildDate)
+
+    buffer
+  }
+}
+
 
 //
 // Helper object
@@ -354,7 +382,7 @@ case class IView(
 /**
   * Any object exposed by the API
   */
-trait IAPIObjectItem {
+trait IAPIObjectItem extends IResponse {
 
   /** the kind of object this represents */
   val kind: String
@@ -371,12 +399,8 @@ trait IAPIObjectItem {
   /** the parent of this object, if any */
   val parent: Option[IReference]
 
-
-  /** serializes this object into a JSONObject Buffer */
-  protected def toJSONBuffer: JSONObjectBuffer
-
   /** serializes this object into a JSON Object */
-  final def toJSON: JSON = {
+  override final def toJSON: JSON = {
     val buffer = toJSONBuffer
 
     // add shared attributes
@@ -395,7 +419,7 @@ object IAPIObjectItem {
   type URI = String
 
   /** so that we can convert all the things into JSON */
-  implicit def converter[T <: IAPIObjectItem]: JSONConverter[T] = new JSONConverter[T] {
+  implicit def converter[T <: IResponse]: JSONConverter[T] = new JSONConverter[T] {
     def toJSON(obj: T): JSON = obj.toJSON
     def fromJSONOption(j: JSON): Option[T] = None
   }
