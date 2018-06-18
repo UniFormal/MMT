@@ -17,7 +17,10 @@ class IsabelleImporter extends Importer {
   def key = "isabelle-omdoc"
   def inExts = List("thy")
   
-  def importDocument(bt: BuildTask, index: Document => Unit) = {
+  def importDocument(bt: BuildTask, index: Document => Unit) =
+  {
+    isabelle.Isabelle_System.init()
+
     val inText = File.read(bt.inFile)
     
     // a document corresponding to the source file

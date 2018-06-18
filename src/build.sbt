@@ -328,9 +328,15 @@ lazy val metamath = (project in file("mmt-metamath")).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
 
 // plugin for reading isabelle. Author: Makarius Wenzel
-lazy val isabelle = (project in file("mmt-isabelle")).
+lazy val isabelle_root =
+  System.getenv().getOrDefault("ISABELLE_ROOT", System.getProperty("isabelle.root", ""))
+lazy val isabelle_jars =
+  if (isabelle_root == "") Nil else List(file(isabelle_root) / "lib" / "classes" / "Pure.jar")
+lazy val isabelle =
+  (project in file(if (isabelle_root == "") "mmt-isabelle/dummy" else "mmt-isabelle")).
   dependsOn(api, lf).
-  settings(mmtProjectsSettings("mmt-isabelle"): _*)
+  settings(mmtProjectsSettings("mmt-isabelle"): _*).
+  settings(unmanagedJars in Compile ++= isabelle_jars)
 
 // plugin for reading TPS
 lazy val tps = (project in file("mmt-tps")).
