@@ -15,7 +15,6 @@ import modules._
 import archives._
 import java.util.ResourceBundle.Control
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.lf._
 import scala.util.control.Exception.Catch
 import com.sun.org.glassfish.external.statistics.Statistic
 
@@ -166,24 +165,24 @@ class RelStore(report : frontend.Report) {
          val t = con.getConstant(gnP)
          val tp = t.tp
          tp match {
-           case Some(Univ(1)) => (TypeConstructor(), p)
+           /*case Some(Univ(1)) => (TypeConstructor(), p)
            case Some(Univ(2)) => (Kind(), p)
-           case Some(Univ(n)) if n > 2 => (HighUniverse(), p) 
-           case None => (UntypedConstant(), p)
-           case Some(_) => (TypedConstant(),p)
+           case Some(Univ(n)) if n > 2 => (HighUniverse(), p) */
+           case None => (UntypedConstantEntry(), p)
+           case Some(_) => (TypedConstantEntry(),p)
          }
        } catch {
-         case e:Exception => (MalformattedConstant(), p)
-         case t: Throwable => t.printStackTrace(); (MaltypedConstant(), p)
+         case e:Exception => (MalformattedConstantEntry(), p)
+         case t: Throwable => t.printStackTrace(); (MaltypedConstantEntry(), p)
        }
      }
      else {
        s match {
-         case IsTheory => (Theory(), p)
-         case IsDocument => (SourceDocument(), p)
-         case IsView => (View(), p)
-         case IsStructure => (Structure(), p)
-         case IsPattern => (Pattern(), p)
+         case IsTheory => (TheoryEntry(), p)
+         case IsDocument => (DocumentEntry(), p)
+         case IsView => (ViewEntry(), p)
+         case IsStructure => (StructureEntry(), p)
+         case IsPattern => (PatternEntry(), p)
          case _ => (new StatisticEntries(s.toString),p)
        }
      }
@@ -288,17 +287,17 @@ sealed class StatisticEntries(description:String) {
   def getDescription = {description}
 }
 
-case class Theory() extends StatisticEntries("theory")
-case class SourceDocument() extends StatisticEntries("document")
-case class UntypedConstant() extends StatisticEntries("untyped constant")
-case class TypedConstant() extends StatisticEntries("typed constant")
-case class MalformattedConstant() extends StatisticEntries("malformatted constant")
-case class MaltypedConstant() extends StatisticEntries("maltyped constant")
-case class Structure() extends StatisticEntries("structure")
-case class Pattern() extends StatisticEntries("pattern")
-case class TypeConstructor() extends StatisticEntries("type constructor or statement")
-case class View() extends StatisticEntries("view")
-case class Kind() extends StatisticEntries("kind")
-case class HighUniverse() extends StatisticEntries("type of type universe >2")
-case class ExplicitMorphism() extends StatisticEntries("explicit theory morphisms")
-case class AnyMorphism() extends StatisticEntries("any theory morphism")
+case class TheoryEntry() extends StatisticEntries("theory")
+case class DocumentEntry() extends StatisticEntries("document")
+case class UntypedConstantEntry() extends StatisticEntries("untyped constant")
+case class TypedConstantEntry() extends StatisticEntries("typed constant")
+case class MalformattedConstantEntry() extends StatisticEntries("malformatted constant")
+case class MaltypedConstantEntry() extends StatisticEntries("maltyped constant")
+case class StructureEntry() extends StatisticEntries("structure")
+case class PatternEntry() extends StatisticEntries("pattern")
+case class TypeConstructorEntry() extends StatisticEntries("type constructor or statement")
+case class ViewEntry() extends StatisticEntries("view")
+case class KindEntry() extends StatisticEntries("kind")
+case class HighUniverseEntry() extends StatisticEntries("type of type universe >2")
+case class ExplicitMorphismEntry() extends StatisticEntries("explicit theory morphisms")
+case class AnyMorphismEntry() extends StatisticEntries("any theory morphism")

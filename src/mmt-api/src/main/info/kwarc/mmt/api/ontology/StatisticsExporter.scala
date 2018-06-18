@@ -12,6 +12,11 @@ class StatisticsExporter extends Exporter {
 
   override def outExt = "json"
 
+  /**
+    * Get the statistic for the document convert it to json and write it to the respective file in export
+    * @param doc the document to make the statistic for
+    * @param bf the build task
+    */
   def exportDocument(doc: Document, bf: BuildTask) {
     val rep = controller.report
     val rs = controller.depstore
