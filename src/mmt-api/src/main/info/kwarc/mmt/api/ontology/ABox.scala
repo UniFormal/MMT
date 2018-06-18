@@ -4,6 +4,19 @@ import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.utils.MyList.fromList
 import info.kwarc.mmt.api.objects._
 import scala.collection.mutable.{HashSet,HashMap}
+import info.kwarc.mmt.api.checking.ObjectChecker
+import info.kwarc.mmt.api.checking.Checker
+import info.kwarc.mmt.api.checking.CheckingResult
+import info.kwarc.mmt.api.frontend.actions.Check
+import info.kwarc.mmt.api.checking.StructureChecker
+
+import documents._
+import modules._
+import archives._
+import java.util.ResourceBundle.Control
+import info.kwarc.mmt.api.frontend.Controller
+import scala.util.control.Exception.Catch
+import com.sun.org.glassfish.external.statistics.Statistic
 
 /**
  * An ABoxStore stores the abox of the loaded elements with respect to the MMT ontology.
@@ -133,34 +146,101 @@ class RelStore(report : frontend.Report) {
           add(start)
    }}
 
-  def makeStatisticsFor(p:Path, q:RelationExp, prefix:String) = {
+   /**
+    * Discriminates the different sorts of constants into malformatted (malformatted URI), untyped, maltyped and typed constants,
+    *  type constructor or statements, kinds and types of type universe >2
+    * @param s the type of the constant
+    * @param p the path of the constant
+    * @param the controller (needed to retrieve type information for the constant)
+    */
+   def mapConstant(s:Unary, p:Path,con:Controller) = {
+     //TODO: discriminate constants of different universes
+     if (s == IsConstant) {
+       try {
+         val (dop, lo, mo) = p.toTriple
+         val d=dop getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
+         val l=lo getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
+         val m=mo getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
+         val gnP = GlobalName(MPath(d,l),m)
+         val t = con.getConstant(gnP)
+         val tp = t.tp
+         tp match {
+           /*case Some(Univ(1)) => (TypeConstructor(), p)
+           case Some(Univ(2)) => (Kind(), p)
+           case Some(Univ(n)) if n > 2 => (HighUniverse(), p) */
+           case None => (UntypedConstantEntry(), p)
+           case Some(_) => (TypedConstantEntry(),p)
+         }
+       } catch {
+         case e:Exception => (MalformattedConstantEntry(), p)
+         case t: Throwable => t.printStackTrace(); (MaltypedConstantEntry(), p)
+       }
+     }
+     else {
+       s match {
+         case IsTheory => (TheoryEntry(), p)
+         case IsDocument => (DocumentEntry(), p)
+         case IsView => (ViewEntry(), p)
+         case IsStructure => (StructureEntry(), p)
+         case IsPattern => (PatternEntry(), p)
+         case _ => (new StatisticEntries(s.toString),p)
+       }
+     }
+   }
+   
+   /**
+    * Discriminates the a list of constants into the sorts malformatted (malformatted URI), untyped, maltyped and typed constants,
+    *  type constructor or statements, kinds and types of type universe >2
+    * @param p the list of constants
+    * @param the controller (needed to retrieve type information for the constants)
+    */
+   def mapConstants(p:(Option[Unary], List[Path]),c:Controller) : List[(StatisticEntries, Path)]= {
+     p match {
+       case (Some(t),x::l) => mapConstant(t, x,c:Controller)::mapConstants((Some(t),l),c:Controller)
+       case (Some(p), Nil) => Nil
+       case (None, _) => Nil
+     }
+   }
+   
+  /**
+    * Make a statistic for the given query and prepend the prefix to the descriptions of the found declarations
+    * @param p the path of the document of theory to make the statistic for
+    * @param q the query
+    * @param the controller (needed to retrieve type information for the constant)
+    */ 
+  def makeStatisticsFor(p:Path, q:RelationExp, prefix:String, con:Controller) = {
     val ds=querySet(p, q)
-    val dsG = ds.toList.groupBy(x => getType(x)).toList flatMap {
-      case (Some(t),l:List[Path]) => (List((prefix + t.toString,l.size)))
-      case (None, _) => Nil
+    val dsGl = ds.toList.groupBy(x => getType(x)).toList flatMap {x => mapConstants(x,con)}
+    val bla : List[(StatisticEntries,List[(StatisticEntries,Path)])] = dsGl.groupBy({case (s,x)=>s}).toList
+    val dsG : List[(StatisticEntries, Int)] = bla flatMap {
+      case (s:StatisticEntries,l) => (List((s+prefix,l.size)))
     }
     Statistics(dsG)
   }
    
-  /*def makeImplicitDeclarationStatistics(p:Path, q:RelationExp, prefix:String) : List[(String, Int)] = {
-    val holoThs = querySet(p, Transitive(ToSubject(+HasMeta | +Includes | +DependsOn | Reflexive)))
-    val ds = querySet(p, q)
-    val dsG = ds.toList.groupBy(x => getType(x)).toList flatMap {
-      case (Some(t),l:List[Path]) => (List((prefix + "Defined Implicitly" + t.toString,l.size)))
-      case (None, _) => Nil
-    }
-    dsG
-  }*/
-  
-  def makeStatistics(p: Path) = {
+  /**
+    * Make a statistic for the document or theory at the given path
+    * @param p the path of the document or theory
+    * @param the controller (needed to retrieve type information for the constants)
+    */
+  def makeStatistics(p: Path, con:Controller) = {
     val decl = Transitive(+Declares)
     val align = decl * Transitive(+IsAlignedWith)
+    // Should also morphisms to subtheories be counted?
+    // val subtheory = Transitive(+Declares *HasType(IsTheory) | Reflexive)
+    val expMorph = Transitive(+HasViewFrom)
     val morph = Transitive(+HasMeta | +Includes | +IsImplicitly | +HasViewFrom)
+    val expinduced = expMorph * +Declares * HasType(IsConstant)
     val induced = morph * +Declares * HasType(IsConstant)
-    var dsG = makeStatisticsFor(p, decl, "")
-    dsG += makeStatisticsFor(p, align, "Alignments of ")
-    dsG += ("Induced theory morphisms", querySet(p, morph).size)
-    dsG += makeStatisticsFor(p, induced, "Induced declarations of ")
+    var dsG = makeStatisticsFor(p, decl, "",con)
+    dsG += makeStatisticsFor(p, align, "Alignments of ",con)
+    val (exMorph, anyMorph) = (querySet(p, expMorph).size, querySet(p, morph).size)
+    if (exMorph > 0) 
+      dsG += ("Explicit theory morphisms", exMorph)
+    if (anyMorph > 0)
+      dsG += ("Any theory morphisms", anyMorph)
+    dsG += makeStatisticsFor(p, expinduced, "Induced declarations via explicit theory morphisms of ",con)
+    dsG += makeStatisticsFor(p, induced, "Induced declarations via any theory morphisms of ",con)
     dsG
   }
 
@@ -188,11 +268,36 @@ class RelStore(report : frontend.Report) {
    }
 }
 
-case class Statistics(entries: List[(String,Int)]) {
+case class Statistics(entries: List[(StatisticEntries,Int)]) {
   def +(that: Statistics): Statistics = {
     Statistics(entries ::: that.entries)
   }
   def +(s: String, n: Int): Statistics = {
+    this + Statistics(List((new StatisticEntries(s),n)))
+  }
+  def +(s: StatisticEntries, n: Int): Statistics = {
     this + Statistics(List((s,n)))
   }
 }
+
+sealed class StatisticEntries(description:String) {
+  def +(s: String): StatisticEntries = {
+    new StatisticEntries(s+description)
+  }
+  def getDescription = {description}
+}
+
+case class TheoryEntry() extends StatisticEntries("theory")
+case class DocumentEntry() extends StatisticEntries("document")
+case class UntypedConstantEntry() extends StatisticEntries("untyped constant")
+case class TypedConstantEntry() extends StatisticEntries("typed constant")
+case class MalformattedConstantEntry() extends StatisticEntries("malformatted constant")
+case class MaltypedConstantEntry() extends StatisticEntries("maltyped constant")
+case class StructureEntry() extends StatisticEntries("structure")
+case class PatternEntry() extends StatisticEntries("pattern")
+case class TypeConstructorEntry() extends StatisticEntries("type constructor or statement")
+case class ViewEntry() extends StatisticEntries("view")
+case class KindEntry() extends StatisticEntries("kind")
+case class HighUniverseEntry() extends StatisticEntries("type of type universe >2")
+case class ExplicitMorphismEntry() extends StatisticEntries("explicit theory morphisms")
+case class AnyMorphismEntry() extends StatisticEntries("any theory morphism")
