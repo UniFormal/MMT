@@ -195,8 +195,7 @@ object Isabelle {
 
   def make_theory(name: isabelle.Document.Node.Name): DeclaredTheory =
   {
-    val logic_base = DPath(URI("https", "isabelle.in.tum.de") / "logic")
-    val mod = logic_base ? name.theory
+    val mod = isaLibraryBase ? name.theory
     Theory.empty(mod.doc, mod.name, Some(mod))
   }
 
