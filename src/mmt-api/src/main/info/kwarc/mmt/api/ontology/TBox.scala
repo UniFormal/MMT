@@ -18,6 +18,10 @@ case object IsTheory extends Unary("theory")
 case object IsView extends Unary("view")
 case object IsStructure extends Unary("structure")
 case object IsConstant extends Unary("constant")
+case object IsType extends Unary("type")
+case object IsJudgement extends Unary("judgement")
+case object IsKind extends Unary("kind")
+case object IsHighUniverse extends Unary("highuniverse")
 case object IsPattern extends Unary("pattern")
 case object IsInstance extends Unary("instance")
 case object IsDerivedDeclaration extends Unary("deriveddeclaration")
@@ -36,7 +40,10 @@ object Unary {
       case OMS(QMTUnaries.IsView) => IsView
       case OMS(QMTUnaries.IsStructure) => IsStructure
       case OMS(QMTUnaries.IsConstant) => IsConstant
-      case OMS(QMTUnaries.IsPattern) => IsPattern
+      case OMS(QMTUnaries.IsType) => IsType
+      case OMS(QMTUnaries.IsJudgement) => IsJudgement
+      case OMS(QMTUnaries.IsKind) => IsKind
+      case OMS(QMTUnaries.IsHighUniverse) => IsHighUniverse
       case OMS(QMTUnaries.IsInstance) => IsInstance
       case OMS(QMTUnaries.IsDerivedDeclaration) => IsDerivedDeclaration
       case OMS(QMTUnaries.IsConAss) => IsConAss
@@ -73,6 +80,9 @@ object Binary {
       case OMS(QMTBinaries.Declares) => Declares
       case OMS(QMTBinaries.IsAliasFor) => IsAliasFor
       case OMS(QMTBinaries.IsAlignedWith) => IsAlignedWith
+      case OMS(QMTBinaries.HasViewFrom) => HasViewFrom
+      case OMS(QMTBinaries.IsImplicitly) => IsImplicitly
+
       // TODO: Custom binary
    }
 }
