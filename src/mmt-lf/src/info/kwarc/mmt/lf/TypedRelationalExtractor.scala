@@ -1,6 +1,7 @@
-package info.kwarc.mmt.api.ontology
+package info.kwarc.mmt.lf
 
 import info.kwarc.mmt.api._
+import symbols._
 import documents._
 import modules._
 import symbols._
@@ -8,29 +9,29 @@ import patterns._
 import objects._
 import frontend._
 import opaque._
+import notations._
+import ontology._
 
-
-abstract class RelationalExtractor extends Extension {
-  /** all unary relations that this extractor can generate (extract) */
-  def allUnary : List[Unary]
-
-  /** all binary relations that this extractor can generate (extract) */
-  def allBinary : List[Binary]
-
-  /** apply a continuation function to every relational element of a StructuralElement */
-  def apply(e : StructuralElement)(implicit f: RelationalElement => Unit) : Unit
-
-}
-
-/** The Extractor produces the declaration-level relational representation of a SructuralElement
+/**
+ * The TypedRelationalExtractor adds a few more typing related informations to the .rel files.
  */
-object MMTExtractor extends RelationalExtractor {
-   val allUnary = List(IsDocument,IsTheory,IsView,IsConstant,IsStructure,IsConAss,
-                          IsStrAss,IsNotation,IsDerivedDeclaration,IsPattern,IsInstance)
+class TypedRelationalExtractor extends RelationalExtractor {
+   val allUnary = List(IsDocument,ontology.IsTheory,IsView,IsConstant,IsType,IsJudgement,IsKind,IsHighUniverse,
+   IsStructure,IsConAss, IsStrAss,IsNotation,IsDerivedDeclaration,IsPattern,IsInstance)
    val allBinary = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,
-         IsAlignedWith, HasViewFrom, IsImplicitly)
+         IsAlignedWith, HasViewFrom)
 
-
+   private def isJudgment(tp: Term): Boolean = tp match {
+      case FunType(_, ApplySpine(OMS(s),_)) =>
+         //this can throw errors if the implicit graph is not fully loaded
+         try {
+            controller.globalLookup.getConstant(s).rl.contains("Judgment")
+         } catch {case e: Error =>
+            false
+         }
+      case _ => false
+   }
+         
    /** apply a continuation function to every relational element of a StructuralElement */
    def apply(e: StructuralElement)(implicit f: RelationalElement => Unit) {
       val path = e.path
@@ -51,7 +52,7 @@ object MMTExtractor extends RelationalExtractor {
          case n: NRef =>
          case oe: OpaqueElement =>
          case t: Theory =>
-            f(IsTheory(path))
+            f(ontology.IsTheory(path))
             t match {
                case t: DeclaredTheory =>
                   t.meta foreach {p => f(HasMeta(path, p))}
@@ -75,6 +76,13 @@ object MMTExtractor extends RelationalExtractor {
                      c.alias foreach {a =>
                        f(IsAliasFor(t.path ? a, c.path))
                      }
+                     if (isJudgment(c.toTerm))
+                       f(IsJudgement(c.path))
+                     c.tp match {
+                         case Some(Univ(1)) => f(IsType(c.path))
+                         case Some(Univ(n)) if n > 1 => f(IsHighUniverse(c.path))
+                         case _ =>
+                       }
                   case s: Structure =>
                      val from = s.from match {
                         case OMPMOD(p,_) => p

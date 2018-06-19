@@ -25,7 +25,9 @@ case class TermLevel(name: LocalName, args: List[(Option[LocalName], Term)], ret
 class InductiveTypes extends StructuralFeature("inductive") {
   def getHeaderNotation = List(LabelArg(1, LabelInfo.none))
 
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+    //TODO: check for inhabitability
+  }
 
   def injDecl(parent : DeclaredModule, d : TermLevel) : Declaration = {
     val e : Declaration = VarDecl(LocalName("_"), None, Some(d.tp), Some(d.toTerm), None).toDeclaration(parent.toTerm)
