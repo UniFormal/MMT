@@ -1,11 +1,11 @@
 package info.kwarc.mmt.mitm
 
 import info.kwarc.mmt.api.{DPath, uom}
-import info.kwarc.mmt.api.objects.OMS
-import info.kwarc.mmt.api.refactoring.SimpleParameterPreprocessor
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.refactoring.{Preprocessor, SimpleParameterPreprocessor}
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardNat, StandardPositive}
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.lf.LFClassicHOLPreprocessor
+import info.kwarc.mmt.lf.{ApplySpine, LFClassicHOLPreprocessor}
 
 object MitM {
   val path = DPath(URI("http","mathhub.info") / "MitM" / "Foundation")
@@ -56,7 +56,20 @@ object MitM {
   val exists = logic ? "exists"
   val eq = logic ? "eq"
 
-  val preproc = (SimpleParameterPreprocessor + info.kwarc.mmt.api.refactoring.DefinitionExpander + new LFClassicHOLPreprocessor(
+  val implicitProof = logic ? "ImplicitProof"
+
+  private object EliminateImplicits extends Preprocessor {
+    val trav = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+        case ApplySpine(OMS(`implicitProof`),_) => OMS(implicitProof)
+        case _ => Traverser(this,t)
+      }
+    }
+    override protected def doTerm(tm: Term): Term = super.doTerm(tm)
+  }
+
+  val preproc = (SimpleParameterPreprocessor + info.kwarc.mmt.api.refactoring.DefinitionExpander + EliminateImplicits +
+    new LFClassicHOLPreprocessor(
     ded = MitM.ded,
     and = MitM.and,
     not = MitM.not,

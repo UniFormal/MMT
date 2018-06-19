@@ -143,9 +143,45 @@ class ViewFinder extends frontend.Extension {
   }
 
   def getFlat(mpaths : List[MPath]) : List[DeclaredTheory] = { // TODO properly
-    val dones : mutable.HashMap[MPath,Option[List[DeclaredTheory]]] = mutable.HashMap.empty
 
+    var dones : List[DeclaredTheory] = Nil
+    def flatten(mp : MPath): Unit = {
+      if (dones.exists(_.path == mp)) return ()
+      controller.getO(mp) match {
+        case Some(t : DeclaredTheory) if !t.getDeclarations.exists(_.isInstanceOf[NestedModule]) =>
+          t.getIncludes.foreach(flatten)
+          dones ::= t
+        case Some(t : DeclaredTheory) =>
+          var ns : List[DeclaredTheory] = Nil
+          val th = new DeclaredTheory(t.parent,t.name,t.meta,t.paramC,t.dfC)
+          t.getDeclarations.foreach {
+            case c : FinalConstant => th add c
+            case inc : Structure =>
+              flatten(inc.from.toMPath)
+              th add inc
+            case nm : NestedModule if nm.module.isInstanceOf[DeclaredTheory] =>
+              val old = nm.module.asInstanceOf[DeclaredTheory]
+              val in = new DeclaredTheory(old.parent,old.name,old.meta,old.paramC,old.dfC)
+              th.getDeclarations.foreach(in.add(_))
+              old.getDeclarations.foreach(in.add(_))
+              ns ::= in
+
+            case _ =>
+          }
+          ns = ns.reverse
+          ns.flatMap(_.getIncludes).foreach(flatten)
+          ns.foreach(dones ::= _)
+          dones ::= th
+        case _ =>
+          // log("MISSING: " + mp)
+      }
+    }
+
+    mpaths foreach { mp => Try(flatten(mp)).getOrElse(log("Failed: " + mp)) }
+    dones.reverse
+/*
     // guarantees that the dependency closure is ordered
+    val dones : mutable.HashMap[MPath,Option[List[DeclaredTheory]]] = mutable.HashMap.empty
     def flatten(mp : MPath) : Option[List[DeclaredTheory]] = {
       dones.getOrElseUpdate(mp, {
         // log("Doing: " + mp.toString)
@@ -170,20 +206,26 @@ class ViewFinder extends frontend.Extension {
             if (rec.contains(None)) None else
               Some((rec.flatMap(_.get) ::: ns ::: List(th)).distinct)
           case _ =>
-            // log("MISSING: " + mp)
+            log("MISSING: " + mp)
             None
         }
       })
     }
+
     mpaths foreach flatten
     dones.values.collect {
       case Some(thl) => thl
     }.toList.flatten.distinct
+*/
   }
 
   def getArchive(a : Archive) : Option[(List[DeclaredTheory], Option[GlobalName])] = Some{
     log("Collecting theories in " + a.id)
-    val ths = getFlat(a.allContent)
+    val (t0,cont) = Time.measure { a.allContent }
+    //log("Loaded after " + t0)
+    //log("Flat sorting...")
+    val (t1,ths) = Time.measure{ getFlat(cont) }
+    // log("Flattened after " + t1)
     val judg = getJudgment(ths.map(_.path))
     (ths,judg)
   }
@@ -687,6 +729,8 @@ object DefinitionExpander extends Preprocessor {
   // private val defs : mutable.HashMap[GlobalName,Option[Term]] = mutable.HashMap.empty
   private def getExpanded(gn : GlobalName) : Option[Term] = /* defs.getOrElseUpdate(gn,*/ {
     val c = Try(controller.getAs(classOf[FinalConstant],gn)).toOption
+    // println(gn)
+    // println(c.flatMap(_.df))
     c.flatMap(_.df.map(traverser(_,())))
   } //)
 

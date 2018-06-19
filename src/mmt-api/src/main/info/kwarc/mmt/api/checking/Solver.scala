@@ -307,15 +307,15 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private lazy val inferenceRules = rules.getOrdered(classOf[InferenceRule])
    private lazy val subtypingRules = rules.getOrdered(classOf[SubtypingRule])
    //TODO why are these not ordered?
-   private lazy val typebasedsolutionRules = rules.get(classOf[TypeBasedSolutionRule])
-   private lazy val typingRules = rules.get(classOf[TypingRule])
-   private lazy val universeRules = rules.get(classOf[UniverseRule])
-   private lazy val inhabitableRules = rules.get(classOf[InhabitableRule])
-   private lazy val termBasedEqualityRules = rules.get(classOf[TermBasedEqualityRule])
-   private lazy val termHeadBasedEqualityRules = rules.get(classOf[TermHeadBasedEqualityRule])
-   private lazy val typeBasedEqualityRules = rules.get(classOf[TypeBasedEqualityRule])
-   private lazy val solutionRules = rules.get(classOf[SolutionRule])
-   private lazy val forwardSolutionRules = rules.get(classOf[ForwardSolutionRule])
+   private lazy val typebasedsolutionRules = rules.getOrdered(classOf[TypeBasedSolutionRule])
+   private lazy val typingRules = rules.getOrdered(classOf[TypingRule])
+   private lazy val universeRules = rules.getOrdered(classOf[UniverseRule])
+   private lazy val inhabitableRules = rules.getOrdered(classOf[InhabitableRule])
+   private lazy val termBasedEqualityRules = rules.getOrdered(classOf[TermBasedEqualityRule])
+   private lazy val termHeadBasedEqualityRules = rules.getOrdered(classOf[TermHeadBasedEqualityRule])
+   private lazy val typeBasedEqualityRules = rules.getOrdered(classOf[TypeBasedEqualityRule])
+   private lazy val solutionRules = rules.getOrdered(classOf[SolutionRule])
+   private lazy val forwardSolutionRules = rules.getOrdered(classOf[ForwardSolutionRule])
    /* convenience function for going to the next rule after one has been tried */
    private def dropTill[A](l: List[A], a: A) = l.dropWhile(_ != a).tail
    private def dropJust[A](l: List[A], a:A) = l.filter(_ != a)
@@ -794,6 +794,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       if (checkingUnit.isKilled) {
         return error("checking was cancelled by external signal")
       }
+     report.breakOnId(28)
       JudgementStore.getOrElseUpdate(j) {
         history += j
         log("checking: " + j.presentSucceedent + "\n  in context: " + j.presentAntecedent)
@@ -1120,7 +1121,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
            history += "inferring universe"
            inferType(j.wfo)(stack, history) match {
              case None =>
-                delay(Inhabitable(stack, uS))
+                delay(Inhabitable(stack, j.wfo))
              case Some(univ) =>
                 check(Universe(stack, univ))
           }
