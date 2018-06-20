@@ -103,7 +103,7 @@ object BoundInclude {
   }
 }
 
-object BoundIncludeRule extends StructuralFeatureRule(BoundInclude.feature)
+object BoundIncludeRule extends StructuralFeatureRule(classOf[LambdaPiInclude], BoundInclude.feature)
 
 // Literals
 
@@ -120,19 +120,19 @@ object RationalLiterals extends RepresentedRealizedType(expr(OMS(PVSTheory.thpat
 // Other Rules
 
 object CurryingPiRule extends ComputationRule(PVSTheory.pvspi.path) {
-  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
+  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
     case pvspi(v0,sigmaspine(ls,b0),c) =>
       var x = Context.pickFresh(stack.context,"x")
       val ret1 = c ^? (v0 / tuple_expr(ls.map(p => (OMV(p._1),p._2)) ::: (OMV(x._1),b0) :: Nil)._1)
-      Some(ls.foldRight(pvspi(x._1,b0,ret1))((p,t) => pvspi(p._1,p._2,t)))
+      Simplify(ls.foldRight(pvspi(x._1,b0,ret1))((p,t) => pvspi(p._1,p._2,t)))
       // var ret = pvspi()
 
-    case _ => None
+    case _ => Recurse
   }
   override def priority: Int = 10
 }
 object CurryingLambdaRule extends ComputationRule(PVSTheory.pvslambda.path) {
-  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
+  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
     case pvslambda(v0,sigmaspine(ls,b0),tpc,bd) =>
       var x = Context.pickFresh(stack.context,"x")
       val tp1 = tpc ^? (v0 / tuple_expr(ls.map(p => (OMV(p._1),p._2)) ::: (OMV(x._1),b0) :: Nil)._1)
@@ -140,8 +140,8 @@ object CurryingLambdaRule extends ComputationRule(PVSTheory.pvslambda.path) {
       val (retbd,rettp) = ls.foldRight((pvslambda(x._1,b0,tp1,bd1),pvspi(x._1,b0,tp1)))((p,t) =>
         (pvslambda(p._1,p._2,t._2,t._1),pvspi(p._1,p._2,t._2))
       )
-      Some(retbd)
-    case _ => None
+      Simplify(retbd)
+    case _ => Recurse
   }
   override def priority: Int = 10
 }
@@ -160,7 +160,7 @@ object CurryingEqualityPiRule extends TermBasedEqualityRule {
     case (pvspi(v1, sig @ pvssigma(v2, a, b), target),
           pvspi(v12, a2, pvspi(v22, b2, target2))) =>
       val ret = CurryingPiRule(check)(tm1,true)
-      if (ret.isDefined) Some(Continue(check.check(Equality(stack,ret.get,tm2,None))(history)))
+      if (ret.get.isDefined) Some(Continue(check.check(Equality(stack,ret.get.get,tm2,None))(history)))
       else None
     case (pvspi(v12, a2, pvspi(v22, b2, target2)), pvspi(v1, pvssigma(v2, a, b), target)) =>
       apply(check)(tm2, tm1, tp)
@@ -182,7 +182,7 @@ object CurryingEqualityLambdaRule extends TermBasedEqualityRule {
     case (pvslambda(v1, sig @ pvssigma(v2, a, b), retp1, target),
     pvslambda(v12, a2, _, pvslambda(v22, b2, retp2, target2))) =>
       val ret = CurryingLambdaRule(check)(tm1,true)
-      if (ret.isDefined) Some(Continue(check.check(Equality(stack,ret.get,tm2,None))(history)))
+      if (ret.get.isDefined) Some(Continue(check.check(Equality(stack,ret.get.get,tm2,None))(history)))
       else None
     case (pvslambda(v12, a2, _, pvslambda(v22, b2, _, target2)), pvslambda(v1, pvssigma(v2, a, b), _, target)) =>
       apply(check)(tm2, tm1, tp)
@@ -230,10 +230,10 @@ object PVSHOAS extends NestedHOASNotation(HOAS(pvsapply.path,pvslambda.path,expr
 import PVSTheory._
 
 object SetsubRule extends ComputationRule(PVSTheory.expr.path) {
-  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
-    case expr(setsub(tp,prop)) => Some(LFX.predsubtp(expr(tp),proof("internal_judgment",
+  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
+    case expr(setsub(tp,prop)) => Simplify(LFX.predsubtp(expr(tp),proof("internal_judgment",
       Lambda(doName,expr(tp),pvsapply(prop,OMV(doName),expr(tp),bool.term)._1))))
-    case _ => None
+    case _ => Recurse
   }
 
   def doName = Context.pickFresh(Context.empty,LocalName("Ipred")/"x")._1

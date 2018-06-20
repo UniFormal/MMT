@@ -10,15 +10,15 @@ import OMLiteral.OMI
  * oneOf(OMI(i),a_1,...a_n)  --->  a_i
  */
 object Disambiguation extends ComputationRule(ObjectParser.oneOf) {
-   def apply(checker: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
+   def apply(checker: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
       case ComplexTerm(ObjectParser.oneOf, _, namedParts, choice :: alternatives) =>
          choice match {
             case OMI(i) =>
                val subs = namedParts.toPartialSubstitution
-               Some(alternatives(i.toInt) ^? subs)
-            case _ => None
+               Simplify(alternatives(i.toInt) ^? subs)
+            case _ => Recurse
          }
-      case _ => None
+      case _ => Simplifiability.NoRecurse
    }
 }
 

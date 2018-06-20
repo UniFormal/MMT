@@ -144,30 +144,30 @@ object IndexInfer extends InferenceRule(index.path, OfType.path) {
  * a.0               ----> a      if |a|=1     // every plain term can be seen as a sequence of length 1
  */
 object IndexCompute extends ComputationRule(index.path) {
-  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
     val Sequences.index(s,at) = tm
     val nO = Length.infer(solver, s)
     if (!covered) {
-       val n = nO getOrElse {return None}
+       val n = nO getOrElse {return Recurse}
        Length.checkBelow(solver)(at,n)
     }
     s match {
       case Sequences.ellipsis(n,i,t) =>
         val tS = t ^? (i -> at)
-        Some(tS)
+        Simplify(tS)
       case Sequences.rep(a,n) =>
-        Some(a)
+        Simplify(a)
       case Sequences.flatseq(as@_*) =>
         at match {
           case NatLit(l) =>
-            Some(as(l.toInt))
-          case _ => None
+            Simplify(as(l.toInt))
+          case _ => RecurseOnly(List(2))
         }
       case s =>
         if ((nO contains OMS(one)) && at == NatLit(0)) {
-          Some(s)
+          Simplify(s)
         } else
-          None
+          RecurseOnly(List(1))
     }
   }
 }
@@ -252,13 +252,13 @@ object FlatseqInjective extends CongruenceRule(flatseq.path)
 
 /** a^n ---> [a]i=0^n for fresh i */
 object ExpandRep extends ComputationRule(rep.path) {
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
      val Sequences.rep(t,n) = tm
      if (t == OMS(Typed.ktype))
-       None
+       Simplifiability.NoRecurse
      else {
        val e = ellipsis(n, OMV.anonymous, t)
-       Some(e)
+       Simplify(e)
      }
    }
 }
@@ -287,26 +287,26 @@ object ContractRep extends TermTransformationRule with ComplificationRule {
  * Typically, sequence variables occur with indices that are index variables of ellipses. Those ellipses must have been previously simplified.
  */
 class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
       implicit val s = solver
       tm match {
          // turn sequence arguments into argument sequences
          case OMA(f, args) =>
             val argsE = ExpandEllipsis.applyList(args)
             if (argsE != args)
-               Some(OMA(f, argsE))
+              Simplify(OMA(f, argsE))
             else
-               None
+              Recurse 
          // turn sequence variables into variable sequences
          case OMBINDC(binder, con, args) =>
             val (conE,subs) = ExpandEllipsis.applyCont(con)
             val argsS = args map {a => a ^? subs}
             val argsE = ExpandEllipsis.applyList(argsS)
             if (conE != con || argsE != args) {
-              Some(OMBINDC(binder, conE, argsE))
+              Simplify(OMBINDC(binder, conE, argsE))
             } else
-              None
-         case _ => None
+              Recurse
+         case _ => Recurse
       }
    }
 }

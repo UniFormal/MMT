@@ -1453,7 +1453,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       tSS.asInstanceOf[t.ThisType] // always succeeds but Scala doesn't know that
    }
 
-   /** simplifies safely one step along each branches, well-formedness is preserved+reflected */
+   /** simplifies safely one step along each branch, well-formedness is preserved+reflected */
    //TODO merge with limitedSimplify; offer simplification strategies
    private def safeSimplify(tm: Term)(implicit stack: Stack, history: History): Term = tm match {
       case _:OMID | _:OMLITTrait => tm
@@ -1467,7 +1467,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       case ComplexTerm(op, subs, cont, args) =>
          computationRules foreach {rule =>
             if (rule.head == op) {
-              rule(this)(tm, false) match {
+              rule(this)(tm, false).get match {
                 case Some(tmS) =>
                   history += "applying computation rule " + rule.toString
                   log("simplified: " + tm + " ~~> " + tmS)
@@ -1497,78 +1497,43 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
      }
      if (checkingUnit.isKilled) {
        return tm
-     } /*
-     tm.head match {
-       case Some(h) =>
-         // use first applicable rule
-         computationRules foreach {rule =>
-           if (rule.head == h) {
-             val ret = rule(this)(tm, false)
-             ret foreach {tmS =>
-               history += "applying computation rule " + rule.toString
-               history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
-               return tmS
-             }
-           }
-         }
-         // no applicable rule, expand a definition
-         expandDefinition
-       case None => expandDefinition
-     } */
-     val traverser = new SimplifyTraverser(stack,history)
-     val (ret,done) = traverser.run(tm)
-     if (done) {
-       history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(ret))
-       ret
-     } else expandDefinition
-   }
+     }
 
-  private val thisSolver = this
-  /* a very naive simplifier that simplifies anywhere in a term */
-  // TODO this does not scale; it is unclear what heuristic to use for simplification
-  private class SimplifyTraverser(stack: Stack, history: History) extends StatelessTraverser {
-    private var done = false
-    def run(t : Term): (Term,Boolean) = {
-      val ret = apply(t, stack.context)
-      (ret,done)
-    }
-    def traverse(t: Term)(implicit con: Context, state: State): Term = {
-      if (done) return t
-      t match {
-        case ComplexTerm(op,_,_,_) =>
-            // use first applicable rule
-            computationRules foreach {rule =>
-              if (rule.head == op) {
-                val ret = rule(thisSolver)(t, false)(Stack(con),history)
-                ret foreach {tmS =>
-                  log("applied computation rule " + rule.toString + " to " + presentObj(t))
-                  history += "applied computation rule " + rule.toString
-                  done = true
-                  return tmS
-                }
-              }
-            }
-            // no applicable rule, traverse
-            Traverser(this,t)
-       /* case OMS(op) => //FR commenting this out, awaiting answer from DM about whether it's needed; it currently causes match errors
+     val tmS = tm match {
+       case OMID(_) =>
+         expandDefinition
+       case OMV(_) =>
+         expandDefinition
+       case ComplexTerm(op,subs,con,args) =>
           // use first applicable rule
+          var simp: CannotSimplify = Simplifiability.NoRecurse
           computationRules foreach {rule =>
             if (rule.head == op) {
-              val ret = rule(thisSolver)(t, false)(Stack(con),history)
-              ret foreach {tmS =>
-                history += "applying computation rule " + rule.toString
-                done = true
-                return tmS
+              val ret = rule(this)(tm, false)(stack,history)
+              ret match {
+                case Simplify(tmS) =>
+                  log("applied computation rule " + rule.toString + " to " + presentObj(tm))
+                  history += "applied computation rule " + rule.toString
+                  history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
+                  return tmS
+                case cannot: CannotSimplify =>
+                  simp = simp join cannot
               }
             }
           }
-          // no applicable rule, traverse
-          Traverser(this,t) */
-        case _ =>
-            Traverser(this,t)
-      }
-    }
-  }
+          // no applicable rule: check stability
+          val recursePositions = simp match {
+            case RecurseOnly(p) => p.distinct
+            case Recurse => 1 to tm.subobjects.length
+          }
+          ComplexTerm(op, subs, con, args) //TODO: recurse
+     }
+     if (tm hashneq tmS) {
+       history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
+     }
+     tmS
+   }
+
 
    /** special case of the version below where we simplify until an applicable rule is found
  *
@@ -1816,7 +1781,7 @@ object Solver {
       val rules = rulesOpt.getOrElse {
          RuleSet.collectRules(controller, context)
       }
-      implicit val stack = Stack(Context())
+      implicit val stack = Stack(Context.empty)
       implicit val history = new History(Nil)
       val cu = CheckingUnit(None, context, Context.empty, null) // awkward but works because we do not call applyMain
       val solver = new Solver(controller, cu, rules)
