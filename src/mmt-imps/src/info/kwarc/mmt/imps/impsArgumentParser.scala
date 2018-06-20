@@ -624,8 +624,23 @@ package object impsArgumentParsers
 
     assert(list.nonEmpty)
     Some(Extensible(list, e.src))
-
   }
+
+  def parseAlgProcBase(e : Exp) : Option[AlgProcessorBase] =
+  {
+    ???
+  }
+
+  def parseAlgProcExponen(e : Exp) : Option[AlgProcessorExponent] =
+  {
+    ???
+  }
+
+  def parseAlgProcCoefficient(e : Exp) : Option[AlgProcessorCoefficient] =
+  {
+    ???
+  }
+
 
   /* Parser for IMPS typeSortALists
    * used in: def-language (extensible, see parseExtensible) */

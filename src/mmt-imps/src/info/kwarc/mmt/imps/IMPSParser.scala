@@ -207,7 +207,7 @@ class IMPSParser
         case Str("def-algebraic-processor") => {
           println("ALGEBRAIC PROCESSOR")
           println(e)
-          return Some(Dummy("def-algebraic-processor"))
+          return impsDefFormParsers.parseAlgebraicProcessor(e)
         }
 
         case Str("def-atomic-sort") => return impsDefFormParsers.parseAtomicSort(e, js)

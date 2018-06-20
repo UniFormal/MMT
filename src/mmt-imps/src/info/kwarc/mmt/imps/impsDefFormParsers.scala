@@ -362,6 +362,50 @@ package object impsDefFormParsers
     } else { None }
   }
 
+  def parseAlgebraicProcessor(e : Exp) : Option[AlgebraicProcessor] =
+  {
+    // Required arguments
+    var name   : Option[String]           = None
+    var lang   : Option[ArgumentLanguage] = None
+    var base   : Option[AlgProcessorBase] = None
+
+    // Optional arguments
+    var expo   : Option[AlgProcessorExponent] = None
+    var coef   : Option[AlgProcessorCoefficient] = None
+    var canc   : Boolean = false
+
+    val cs : Int = e.children.length
+    assert(cs >= 3)
+
+    /* Parse positional arguments */
+    e.children(1) match { case Exp(List(Str(x)), _) => name = Some(x) }
+
+    /* Parse keyword arguments, these can come in any order */
+    var i : Int = 3
+    while (cs - i > 0)
+    {
+      e.children(i) match {
+        case Exp(ds,src) => ds.head match
+        {
+          case Exp(List(Str("language")),_)      => lang = impsArgumentParsers.parseArgumentLanguage(Exp(ds,src))   ; assert(lang.isDefined)
+          case Exp(List(Str("base")),_)          => base = impsArgumentParsers.parseAlgProcBase(Exp(ds,src))        ; assert(base.isDefined)
+          case Exp(List(Str("exponent")),_)      => expo = impsArgumentParsers.parseAlgProcExponen(Exp(ds,src))     ; assert(expo.isDefined)
+          case Exp(List(Str("coefficient")),_)   => coef = impsArgumentParsers.parseAlgProcCoefficient(Exp(ds,src)) ; assert(coef.isDefined)
+          case Exp(List(Str("cancellative.")),_) => canc = true
+          case _                           => ???
+        }
+        case _ => ()
+      }
+      i += 1
+    }
+
+    assert(name.isDefined)
+    assert(lang.isDefined)
+    assert(base.isDefined)
+
+    Some(AlgebraicProcessor(name.get, canc, lang.get, base.get, expo, coef, e.src))
+  }
+
   /* Parser for IMPS special form def-imported-rewrite-rules
    * Documentation: IMPS manual pg. 169 */
   def parseImportedRewriteRules (e : Exp) : Option[ImportedRewriteRules] =

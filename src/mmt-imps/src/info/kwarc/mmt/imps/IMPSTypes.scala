@@ -2,10 +2,10 @@ package info.kwarc.mmt.imps
 
 /* IMPORTS */
 
-import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.imps.Method.Method
 import info.kwarc.mmt.imps.NumericalType.NumericalType
+import info.kwarc.mmt.imps.OperationType.OperationType
 import info.kwarc.mmt.imps.Usage.Usage
 
 /* Parser abstract class and case classes. */
@@ -15,7 +15,7 @@ abstract class TExp
 case class Exp(children : List[TExp], src : Option[SourceRef]) extends TExp {
   override def toString : String =
   {
-    var str : String = "("
+    var str : String = "Exp("
     str = str + children.toString()
     str = str + ")"
     str
@@ -346,6 +346,73 @@ case class ArgumentUsages(usgs : List[Usage], src : Option[SourceRef]) extends T
   }
 }
 
+abstract class SpecForm() extends TExp
+
+case class SpecFormByName(name : String,
+                          src  : Option[SourceRef]) extends SpecForm
+{
+  override def toString: String = name
+}
+
+case class SpecFormByList(elems : List[SpecFormElement],
+                          src   : Option[SourceRef]) extends SpecForm
+{
+  override def toString: String = "(" + elems.flatMap(_.toString) + ")"
+}
+
+abstract class SpecFormElement() extends TExp
+
+case class SpecFormScalars(nt  : NumericalType,
+                           src : Option[SourceRef]) extends SpecFormElement {
+  override def toString: String = "(scalars " + nt.toString + ")"
+}
+
+case class SpecFormOperations(ops : List[OperationAlist],
+                              src : Option[SourceRef]) extends SpecFormElement {
+  override def toString: String = "(operations " + ops.flatMap(_.toString) + ")"
+}
+
+case class SpecFormCommutes(src : Option[SourceRef]) extends SpecFormElement {
+  override def toString: String = "commutes."
+}
+
+case class SpecFormNumeralsForGroundTerms(src : Option[SourceRef]) extends SpecFormElement {
+  override def toString: String = "use-numerals-for-ground-terms."
+}
+
+object OperationType extends Enumeration
+{
+  type OperationType = Value
+
+  val PLUS  = Value("+")
+  val TIMES = Value("*")
+  val MINUS = Value("-")
+  val DIV   = Value("/")
+  val EXP   = Value("^")
+  val SUB   = Value("sub")
+  val ZERO  = Value("zero")
+  val UNIT  = Value("unit")
+}
+
+case class OperationAlist(optype   : OperationType,
+                          opname   : String,
+                          src : Option[SourceRef]) extends SpecForm
+{
+  override def toString: String = "(" + optype.toString + " " + opname + ")"
+}
+
+case class AlgProcessorBase(spec : SpecForm, src : Option[SourceRef]) extends TExp {
+  override def toString: String = "(base " + spec.toString + ")"
+}
+
+case class AlgProcessorExponent(spec : SpecForm, src : Option[SourceRef]) extends TExp {
+  override def toString: String = "(exponent " + spec.toString + ")"
+}
+
+case class AlgProcessorCoefficient(spec : SpecForm, src : Option[SourceRef]) extends TExp {
+  override def toString: String = "(coefficient " + spec.toString + ")"
+}
+
 case class FixedTheories(thrs : List[String], src : Option[SourceRef]) extends TExp {
   override def toString : String =
   {
@@ -391,6 +458,28 @@ case class Overloading(symbol : String,
     str
   }
 }
+
+case class AlgebraicProcessor(name : String,
+                              cancellative : Boolean,
+                              language : ArgumentLanguage,
+                              base     : AlgProcessorBase,
+                              expo     : Option[AlgProcessorExponent],
+                              coeff    : Option[AlgProcessorCoefficient],
+                              src      : Option[SourceRef]
+                             ) extends TExp
+{
+  override def toString: String = {
+    var str : String = "(def-algebraic-processor " + name
+    str = str + "\n  " + language.toString
+    str = str + "\n  " + base.toString
+    if (expo.isDefined) { str = str + "\n  " + expo.get.toString }
+    if (coeff.isDefined) { str = str + "\n  " + coeff.get.toString }
+    if (cancellative) { str = str + "\n  cancellative."}
+    str
+  }
+}
+
+
 
 case class ParseSyntax(name  : String,
                        token : Option[Token],
@@ -438,6 +527,39 @@ case class AtomicSort(sortName        : String, /* Positional Argument, Required
   }
 }
 
+abstract class MaceteSpec
+
+case class SpecSeries(specs : List[MaceteSpec]) extends MaceteSpec {
+  override def toString: String = "(series " + specs.flatMap(_.toString) + ")"
+}
+
+case class SpecRepeat(specs : List[MaceteSpec]) extends MaceteSpec {
+  override def toString: String = "(repeat " + specs.flatMap(_.toString) + ")"
+}
+
+case class SpecSequential(specs : List[MaceteSpec]) extends MaceteSpec {
+  override def toString: String = "(sequential " + specs.flatMap(_.toString) + ")"
+}
+
+case class SpecParallel(specs : List[MaceteSpec]) extends MaceteSpec {
+  override def toString: String = "(parallel " + specs.flatMap(_.toString) + ")"
+}
+
+case class SpecSound(spec1 : MaceteSpec, spec2 : MaceteSpec, spec3 : MaceteSpec) extends MaceteSpec {
+  override def toString: String = "(sound " + spec1 + " " + spec2 + " " + spec3 + ")"
+}
+
+case class SpecWithoutMinorPremises(spec : MaceteSpec) extends MaceteSpec {
+  override def toString: String = "(without-minor-premises " + spec.toString + ")"
+}
+
+case class CompoundMacete(name : String,
+                          spec : MaceteSpec,
+                          src  : Option[SourceRef]) extends TExp
+{
+  override def toString: String = "(def-compound-macete " + name + "\n  " + spec.toString + ")"
+}
+
 /* def-constant
  * Documentation: IMPS manual pgs. 168,169 */
 case class Constant(constantName : String, /* Positional Argument, Required */
@@ -456,6 +578,45 @@ case class Constant(constantName : String, /* Positional Argument, Required */
     if (usages.isDefined) { str = str + "\n  " + usages.get.toString}
     str = str + "\n  (sort " + sort.toString + ")"
     str = str + ")"
+    str
+  }
+}
+
+case class ArgumentBaseCaseHook(name : String, src : Option[SourceRef]) extends TExp {
+  override def toString: String = "(base-case-hook " + name + ")"
+}
+
+case class ArgumentStepHook(name : String, src : Option[SourceRef]) extends TExp {
+  override def toString: String = "(step-hook " + name + ")"
+}
+
+case class ArgumentDontUnfold(names : List[String], src : Option[SourceRef]) extends TExp {
+  override def toString: String = {
+    var str = "(base-case-hook"
+    for (n <- names) { str = str + " " + n}
+    str = str + ")"
+    str
+  }
+}
+
+case class Inductor(name : String,
+                    inductionPrinciple : String,
+                    thy : ArgumentTheory,
+                    trans : Option[ArgumentTranslation],
+                    base : Option[ArgumentBaseCaseHook],
+                    step : Option[ArgumentStepHook],
+                    unf  : Option[ArgumentDontUnfold],
+                    src : Option[SourceRef]
+                    ) extends TExp
+{
+  override def toString: String = {
+    var str = "(def-inductor " + name
+    str = str + "\n  " + inductionPrinciple
+    str = str + "\n  " + thy
+    if (trans.isDefined) { str = str + "\n  " + trans.get.toString }
+    if (base.isDefined) { str = str + "\n  " + base.get.toString }
+    if (step.isDefined) { str = str + "\n  " + step.get.toString }
+    if (unf.isDefined) { str = str + "\n  " + unf.get.toString }
     str
   }
 }
@@ -1285,6 +1446,12 @@ case class IMPSQCSecond(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 {
   override def toString : String = "second{" + s.toString + "}"
 }
+
+//-----------
+
+abstract class DefForm(src : Option[SourceRef])
+
+case class Heralding(s : String, src : Option[SourceRef]) extends DefForm(src)
 
 //-----------
 
