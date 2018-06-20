@@ -1504,6 +1504,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
          expandDefinition
        case OMV(_) =>
          expandDefinition
+       case t: OMLITTrait => t
        case ComplexTerm(op,subs,con,args) =>
           // use first applicable rule
           var simp: CannotSimplify = Simplifiability.NoRecurse
@@ -1558,6 +1559,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             subobjsNew ::= sNew
           }
           result
+       case t => t 
      }
      if (tm hashneq tmS) {
        history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
