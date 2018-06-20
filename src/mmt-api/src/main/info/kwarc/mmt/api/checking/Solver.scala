@@ -1526,7 +1526,36 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             case RecurseOnly(p) => p.distinct
             case Recurse => 1 to tm.subobjects.length
           }
-          ComplexTerm(op, subs, con, args) //TODO: recurse
+          // invariant: tm simplifies to result
+          var subobjsLeft: List[Obj] = subs ::: con ::: args
+          var subobjsNew: List[Obj] = Nil
+          var done: Boolean = false // true if tm is not identical to result anymore
+          def result = ComplexTerm(op, subobjsNew.reverse ::: subobjsLeft)
+          // we go through all subobjects and try to simplify one of them
+          subobjsLeft.zipWithIndex foreach {case (o,i) =>
+            val h = history + ("recursing into subobject " + i) 
+            subobjsLeft = subobjsLeft.tail
+            val sNew = if (!done && !recursePositions.contains(i+1)) {
+              o // only recurse if this is one of the recurse positions and no previous subobjects has changed 
+            } else {
+              val oN = o match {
+                case s: Sub =>
+                  s.mapTerms(t => safeSimplifyOne(t)(stack,h))
+                case vd: VarDecl =>
+                  vd.mapTerms {case (_,t) => safeSimplifyOne(t)(stack ++ con.take(i-subs.length), h)}
+                case t: Term =>
+                  safeSimplifyOne(t)(stack ++ con, h) 
+              }
+              if (o hasheq oN) {
+                o // if no change, retain the old pointer
+              } else {
+                done = true
+                oN
+              }
+            }
+            subobjsNew ::= sNew
+          }
+          result
      }
      if (tm hashneq tmS) {
        history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
