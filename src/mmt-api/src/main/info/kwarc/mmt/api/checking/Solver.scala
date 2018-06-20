@@ -1532,10 +1532,12 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           var done: Boolean = false // true if tm is not identical to result anymore
           def result = ComplexTerm(op, subobjsNew.reverse ::: subobjsLeft)
           // we go through all subobjects and try to simplify one of them
-          subobjsLeft.zipWithIndex foreach {case (o,i) =>
-            val h = history + ("recursing into subobject " + i) 
+          while (subobjsLeft.nonEmpty) {
+            val o = subobjsLeft.head
             subobjsLeft = subobjsLeft.tail
-            val sNew = if (!done && !recursePositions.contains(i+1)) {
+            val i = subobjsNew.length + 1 // position of o
+            val h = history + ("recursing into subobject " + i) 
+            val sNew = if (!done && !recursePositions.contains(i)) {
               o // only recurse if this is one of the recurse positions and no previous subobjects has changed 
             } else {
               val oN = o match {
