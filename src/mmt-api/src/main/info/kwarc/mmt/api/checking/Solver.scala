@@ -794,7 +794,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       if (checkingUnit.isKilled) {
         return error("checking was cancelled by external signal")
       }
-     report.breakOnId(28)
       JudgementStore.getOrElseUpdate(j) {
         history += j
         log("checking: " + j.presentSucceedent + "\n  in context: " + j.presentAntecedent)
@@ -944,7 +943,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           //foundation-independent cases
           case OMV(x) =>
              history += "lookup in context"
-             getVar(x).tp
+             getVar(x).tp // TODO infer type of definiens if no type
           case OMS(p) =>
              history += "lookup in theory"
              getType(p) orElse {
@@ -1543,9 +1542,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             } else {
               val oN = o match {
                 case s: Sub =>
-                  s.mapTerms(t => safeSimplifyOne(t)(stack,h))
+                  s.map(t => safeSimplifyOne(t)(stack,h))
                 case vd: VarDecl =>
-                  vd.mapTerms {case (_,t) => safeSimplifyOne(t)(stack ++ con.take(i-subs.length), h)}
+                  vd.map {t => safeSimplifyOne(t)(stack ++ con.take(i-subs.length), h)}
                 case t: Term =>
                   safeSimplifyOne(t)(stack ++ con, h) 
               }

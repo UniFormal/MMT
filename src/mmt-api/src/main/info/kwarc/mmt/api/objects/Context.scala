@@ -340,6 +340,7 @@ case class Sub(name : LocalName, target : Term) extends Obj {
      s.copyFrom(this)
      s
    }
+   def map(f: Term => Term) = Sub(name, f(target))
    private[objects] def freeVars_ = target.freeVars_
    def subobjects = subobjectsNoContext(List(target))
    def toNode: Node = <om:OMV name={name.toString}>{mdNode}{target.toNode}</om:OMV>
