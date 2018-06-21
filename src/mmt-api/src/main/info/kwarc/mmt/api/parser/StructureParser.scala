@@ -905,7 +905,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               }
             case None =>
               if (!state.reader.endOfDeclaration) {
-                errorCont(makeError(treg, "expected " + keyString + ", found " + k))
+                errorCont(makeError(treg, s"expected $keyString, found $k (note that '$givenName' was treated as a constant name because it was not recognized as a keyword)"))
               } else if (k != "") {
                 if (!state.reader.endOfObject)
                   state.reader.readObject

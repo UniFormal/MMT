@@ -122,6 +122,7 @@ class TypedRelationalExtractor extends RelationalExtractor {
       e match {
         case l: Link if l.isImplicit =>
           f(IsImplicitly(l.to.toMPath,l.from.toMPath))
+        case _ =>
       }
    }
 }

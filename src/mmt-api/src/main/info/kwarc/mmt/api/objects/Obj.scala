@@ -425,11 +425,25 @@ object ComplexTerm {
          case _ => None
       }
    }
-   def apply(p: GlobalName, sub: Substitution, con: Context, args: List[Term]) = {
+   def apply(p: GlobalName, sub: Substitution, con: Context, args: List[Term]): Term = {
       val psub = OMATTRMany(OMS(p), LabelledTerms(sub))
       if (con.isEmpty && args.isEmpty) psub
       else if (con.isEmpty) OMA(psub, args)
       else OMBINDC(psub, con, args)
+   }
+   /** like apply, but takes sub, con, and args in a single list
+    *  pre: subobjects of the form x:::y:::z with x:List[Sub], y: List[VarDecl], z: List[Term]
+    */
+   def apply(p: GlobalName, subobjects: List[Obj]): Term = {
+     val (subs, conArgs) = subobjects.span(_.isInstanceOf[Sub])
+     val (con,args) = conArgs.span(_.isInstanceOf[VarDecl])
+     val subsI = subs.map(_.asInstanceOf[Sub])
+     val conI = con.map(_.asInstanceOf[VarDecl])
+     val argsI = args.map {
+       case t: Term => t
+       case _ => throw ImplementationError("term expected")
+     }
+     ComplexTerm(p, subsI, conI, argsI)
    }
    def unapply(t: Term) : Option[(GlobalName, Substitution, Context, List[Term])] = t match {
       //case OMS(p) => Some((p, Nil, Context(), Nil))

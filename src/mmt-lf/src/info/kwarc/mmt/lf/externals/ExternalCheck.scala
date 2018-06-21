@@ -106,11 +106,11 @@ object EqualityLock extends TypeBasedEqualityRule(Nil, LockType.path) {
 }
 
 object UnlockLock extends ComputationRule(Unlock.path) {
-  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
      val Unlock(l) = tm
      l match {
-       case LockTerm(p, n, s, t) => Some(t)
-       case _ => None
+       case LockTerm(p, n, s, t) => Simplify(t)
+       case _ => Recurse
      }
   }
 }

@@ -127,4 +127,4 @@ class InductiveTypes extends StructuralFeature("inductive") {
   }
 }
 
-object InductiveRule extends StructuralFeatureRule("inductive")
+object InductiveRule extends StructuralFeatureRule(classOf[InductiveTypes], "inductive")

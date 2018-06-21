@@ -98,7 +98,7 @@ object Morph {
                     case p: MPath => p ? ComplexStep(t) // p is view
                     case p: GlobalName => p / ComplexStep(t) // p is structure
                   }
-                  // check if p contains an assignment to t
+                  // check if p contains an assignment to t (will fail if cod = p.from)
                   lib.getO(pt) match {
                     case Some(l: DefinedStructure) =>
                       // restrict l to t

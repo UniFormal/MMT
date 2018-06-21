@@ -80,9 +80,10 @@ class DerivedDeclaration(h: Term, name: LocalName, override val feature: String,
 /**
  * a rule that legitimizes a [[StructuralFeature]]
  */
-case class StructuralFeatureRule(feature: String) extends Rule {
+case class StructuralFeatureRule(cls: Class[_ <: StructuralFeature], feature: String) extends Rule {
   override def toString = "rule for feature " + feature
 }
+
 
 /**
  * A StructureFeature defines the semantics of a [[DerivedDeclaration]]
@@ -153,7 +154,7 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
    def modules(dd: DerivedDeclaration): List[Module] = Nil
 
    /** returns the rule constant for using this feature in a theory */
-   def getRule = StructuralFeatureRule(feature)
+   def getRule = StructuralFeatureRule(getClass, feature)
 
    /** for creating/matching variable declarations of this feature */
    object VarDeclFeature extends DerivedVarDeclFeature(feature)
