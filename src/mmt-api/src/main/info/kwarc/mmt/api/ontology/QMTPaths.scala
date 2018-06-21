@@ -90,6 +90,8 @@ object QMTBinaries {
   val Declares: GlobalName = QMTPaths.QMTBinaries ? "Declares"
   val IsAliasFor: GlobalName = QMTPaths.QMTBinaries ? "IsAliasFor"
   val IsAlignedWith: GlobalName = QMTPaths.QMTBinaries ? "IsAlignedWith"
+  val HasViewFrom: GlobalName = QMTPaths.QMTBinaries ? "HasViewFrom"
+  val IsImplicitly: GlobalName = QMTPaths.QMTBinaries ? "IsImplicitly"
 }
 
 object QMTUnaries {
@@ -98,6 +100,10 @@ object QMTUnaries {
   val IsView: GlobalName = QMTPaths.QMTUnaries ? "IsView"
   val IsStructure: GlobalName = QMTPaths.QMTUnaries ? "IsStructure"
   val IsConstant: GlobalName = QMTPaths.QMTUnaries ? "IsConstant"
+  val IsType: GlobalName = QMTPaths.QMTUnaries ? "IsType"
+  val IsJudgement: GlobalName = QMTPaths.QMTUnaries ? "IsJudgement"
+  val IsKind: GlobalName = QMTPaths.QMTUnaries ? "IsKind"
+  val IsHighUniverse: GlobalName = QMTPaths.QMTUnaries ? "IsHighUniverse"
   val IsPattern: GlobalName = QMTPaths.QMTUnaries ? "IsPattern"
   val IsInstance: GlobalName = QMTPaths.QMTUnaries ? "IsInstance"
   val IsDerivedDeclaration: GlobalName = QMTPaths.QMTUnaries ? "IsDerivedDeclaration"

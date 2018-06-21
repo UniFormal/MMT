@@ -2,6 +2,16 @@
 
 \RequirePackage[colorlinks]{hyperref}
 
+% Attaching other objects to pdf object
+% 1) /ActualText
+% \RequirePackage{repltext} 
+% this allows using \repltext{COPY}{TEXT} to attach COPY to TEXT in a way that copying TEXT actually copies COPY
+% could be used to annotate MMT source to a formula, but few viewers support it
+% 2) /AF (associated file)
+% It's possible to associate arbitrary other data to arbitrary pdf objects, e.g., latex source or pdf renderings of other latex objects.
+% see https://arxiv.org/pdf/1406.6126 for examples
+% This does not appear to be implemented by any latex package and only barely by a few pdf viewers.
+
 % \mmt@ifnonempty[b]{test}{a} = if (test == empty) a else b
 \newcommand{\mmt@ifnonempty}[3][]{\def\@empty{}\def\@test{#2}\ifx\@test\@empty#1\else#3\fi}
 

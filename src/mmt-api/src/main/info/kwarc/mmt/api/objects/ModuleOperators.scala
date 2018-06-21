@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.NotFound
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import symbols._
@@ -94,9 +95,10 @@ object Morph {
               cod match {
                 case Some(OMMOD(t)) =>
                   val pt = p match {
-                    case p: MPath => p ? ComplexStep(t)
-                    case p: GlobalName => p / ComplexStep(t)
+                    case p: MPath => p ? ComplexStep(t) // p is view
+                    case p: GlobalName => p / ComplexStep(t) // p is structure
                   }
+                  // check if p contains an assignment to t (will fail if cod = p.from)
                   lib.getO(pt) match {
                     case Some(l: DefinedStructure) =>
                       // restrict l to t

@@ -83,12 +83,15 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
 
   /** called after checking an element */
   private def elementChecked(e: StructuralElement)(implicit env: ExtendedCheckingEnvironment) {
-    e match {
-      case e: ContainerElement[_] =>
-        env.ce.simplifier.applyElementEnd(e)(env.ce.simpEnv)
-      case _ =>
-        env.ce.simplifier.applyChecked(e)(env.ce.simpEnv)
+    if (!env.ce.task.isKilled) {
+      e match {
+        case e: ContainerElement[_] =>
+          env.ce.simplifier.applyElementEnd(e)(env.ce.simpEnv)
+        case _ =>
+          env.ce.simplifier.applyChecked(e)(env.ce.simpEnv)
+      }
     }
+    env.ce.task.reportProgress(Checked(e))
     new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
   }
 
@@ -402,7 +405,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         //succeed for everything else but signal error
         logError("unchecked " + path)
     }
-    ce.simplifier.applyElementBegin(e)(ce.simpEnv)
+    if (!env.ce.task.isKilled) {
+      ce.simplifier.applyElementBegin(e)(ce.simpEnv)
+    }
   }
 
   /** auxiliary method of check */
@@ -449,7 +454,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         doDoc(b.asDocument)      
       case _ =>
     }
-    ce.simplifier.applyElementEnd(e)(ce.simpEnv)
     elementChecked(e)
   }
   

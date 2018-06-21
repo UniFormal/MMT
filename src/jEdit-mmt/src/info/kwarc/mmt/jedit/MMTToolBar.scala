@@ -37,7 +37,12 @@ class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
     val buildOpenButton = Swing.Button("Build all", tooltip = "Builds all open files") {
       mmtp.buildActions.buildOpen(view)
     }
-
+    val stopButton = Swing.Button("Stop", tooltip = "Stop parsing of current file") {
+      val buffer = view.getBuffer
+      mmtp.progressTracker.get(buffer).foreach {
+        _.kill
+      }
+    }
     val clrButton = Swing.Button("Clear", tooltip = "Clears MMT memory") {
       controller.clear
     }
@@ -62,6 +67,7 @@ class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
     add(insUS)
     add(insRS)
     add(insGS)
+    add(stopButton)
     add(buildButton)
     add(buildOpenButton)
     add(clrButton)

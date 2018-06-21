@@ -117,9 +117,9 @@ object Extends extends FlexaryConstantScala(Combinators._path, "extends")
 // declaration merging must happen somewhere
 
 object ComputeExtends extends ComputationRule(Extends.path) {
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
       val Extends(thy,wth@_*) = tm
-      val thyAnon = Common.asAnonymousTheory(solver, thy).getOrElse {return None}
+      val thyAnon = Common.asAnonymousTheory(solver, thy).getOrElse {return RecurseOnly(List(1))}
       wth match {
         case OMLList(extDecls) =>
           // replace OMS-references to declarations in thy with OML-references to declarations in thyAnon
@@ -128,8 +128,8 @@ object ComputeExtends extends ComputationRule(Extends.path) {
           }
           val extDeclsR = extDecls map {oml => trav(oml,stack.context).asInstanceOf[OML]}
           val extAnon = new AnonymousTheory(thyAnon.mt, thyAnon.decls ::: extDeclsR)
-          Some(extAnon.toTerm)
-        case _ => return None
+          Simplify(extAnon.toTerm)
+        case _ => RecurseOnly(List(2))
       }
    }
 }
@@ -137,9 +137,9 @@ object ComputeExtends extends ComputationRule(Extends.path) {
 object Combine extends FlexaryConstantScala(Combinators._path, "combine")
 
 object ComputeCombine extends ComputationRule(Combine.path) {
-  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
       val Combine(thys@_*) = tm
-      val thysAnon = thys map {thy => Common.asAnonymousTheory(solver, thy).getOrElse(return None)}
+      val thysAnon = thys map {thy => Common.asAnonymousTheory(solver, thy).getOrElse(return Recurse)}
       var mts: List[MPath] = Nil
       var decls: List[OML] = Nil
       thysAnon.foreach {at =>
@@ -150,18 +150,18 @@ object ComputeCombine extends ComputationRule(Combine.path) {
       val mt = mts.distinct match {
         case Nil => None
         case hd::Nil => Some(hd)
-        case _ => return None
+        case _ => return Recurse
       }
-      Some(AnonymousTheory(mt, declsD))
+      Simplify(AnonymousTheory(mt, declsD))
   }
 }
 
 object Rename extends FlexaryConstantScala(Combinators._path, "rename")
 
 object ComputeRename extends ComputationRule(Rename.path) {
-  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
     val Rename(thy,rens@_*) = tm
-    val thyAnon = Common.asAnonymousTheory(solver, thy).getOrElse {return None}
+    val thyAnon = Common.asAnonymousTheory(solver, thy).getOrElse {return RecurseOnly(List(1))}
     // perform the renaming
     val oldNew = rens.flatMap {
       case OML(nw, None, Some(OML(old, None,None,_,_)),_,_) =>
@@ -188,7 +188,7 @@ object ComputeRename extends ComputationRule(Rename.path) {
       case _ => Nil
     }
     thyAnon.decls = thyAnon.decls diff removeReals
-    Some(thyAnon.toTerm)
+    Simplify(thyAnon.toTerm)
   }
 }
 
@@ -203,12 +203,12 @@ object ComputeRename extends ComputationRule(Rename.path) {
 object Translate extends BinaryConstantScala(Combinators._path, "translate")
 
 object ComputeTranslate extends ComputationRule(Translate.path) {
-  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
     val Translate(mor, thy) = tm
-    val dom = Morph.domain(mor)(solver.lookup).getOrElse{return None}
-    val cod = Morph.codomain(mor)(solver.lookup).getOrElse{return None}
-    val List(thyAnon,domAnon,codAnon) = List(thy,dom,cod).map {t => Common.asAnonymousTheory(solver, t).getOrElse(return None)}
-    val morAnon = Common.asAnonymousMorphism(solver, dom, domAnon, cod, codAnon, mor).getOrElse(return None)
+    val dom = Morph.domain(mor)(solver.lookup).getOrElse{return Recurse}
+    val cod = Morph.codomain(mor)(solver.lookup).getOrElse{return Recurse}
+    val List(thyAnon,domAnon,codAnon) = List(thy,dom,cod).map {t => Common.asAnonymousTheory(solver, t).getOrElse(return Recurse)}
+    val morAnon = Common.asAnonymousMorphism(solver, dom, domAnon, cod, codAnon, mor).getOrElse(return Recurse)
     // translate all declarations of thy that are not from dom via mor and add them to cod
     val morAsSub = morAnon.decls.flatMap {oml => oml.df.toList.map {d => Sub(oml.name, d)}}
     val translator = new OMLReplacer(morAsSub)
@@ -220,13 +220,13 @@ object ComputeTranslate extends ComputationRule(Translate.path) {
         if (! domAnon.isDeclared(oml.name)) {
           if (codAnon.isDeclared(oml.name)) {
             solver.error("pushout not defined because of name clash: " + oml.name)
-            return None
+            return Recurse
           }
           val omlT = translator(oml, stack.context).asInstanceOf[OML]
           pushout.add(omlT)
         }
     }
-    Some(pushout.toTerm)
+    Simplify(pushout.toTerm)
   }
 }
 
@@ -236,7 +236,7 @@ object Expand extends BinaryConstantScala(Combinators._path, "expand")
 
 // TODO does not work yet
 object ComputeExpand extends ComputationRule(Expand.path) {
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
       val Expand(mor, thy) = tm
       thy match {
         case AnonymousTheory(mt, ds) =>
@@ -247,8 +247,8 @@ object ComputeExpand extends ComputationRule(Expand.path) {
             val ass = OML(n,None,Some(OML(n,None,None)))
             res.add(ass)
           }
-          Some(res.toTerm)
-        case _ => None
+          Simplify(res.toTerm)
+        case _ => Recurse
       }
    }
 }

@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.utils._
 sealed abstract class ArchiveAction extends Action {}
 
 case class ArchiveBuild(ids: List[String], dim: String, modifier: BuildTargetModifier, in: FilePath = EmptyPath) extends ArchiveAction {
-  def apply() =controller.buildArchive(ids, dim, modifier, in)
+  def apply() = controller.buildArchive(ids, dim, modifier, in)
   def toParseString = s"build ${MyList(ids).mkString("[", ",", "]")} ${modifier.toString(dim)}" +
     (if (in.segments.isEmpty) "" else " " + in)
 }
@@ -33,7 +33,7 @@ object ArchiveBuildCompanion extends ActionCompanion("builds a dimension in a pr
 }
 
 case class ConfBuild(mod : String, targets : List[String], profile : String) extends ArchiveAction {
-  def apply() =controller.configBuild(mod, targets, profile)
+  def apply() = controller.configBuild(mod, targets, profile)
   def toParseString = "cbuild " + mod + " " + MyList(targets).mkString("[", ",", "]") + " " + profile
 }
 object ConfBuildCompanion extends ActionCompanion("handle building relative to a configuration file", "cbuild"){
@@ -45,7 +45,7 @@ object ConfBuildCompanion extends ActionCompanion("handle building relative to a
 }
 
 case class MakeAction(key: String, args: List[String]) extends ArchiveAction {
-  def apply() =controller.make(key, args)
+  def apply() = controller.make(key, args)
   def toParseString = "make " + key + args.map(" " + _).mkString
 }
 object MakeActionCompanion extends ActionCompanion("handle the make command line", "make", "rbuild") {

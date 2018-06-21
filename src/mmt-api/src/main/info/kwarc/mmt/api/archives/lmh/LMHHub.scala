@@ -17,11 +17,20 @@ abstract class LMHHub extends Logger {
 
   /** find all locally installed entries */
   protected def entries_ : List[LMHHubEntry]
+
   /** find all repositories given a specification */
   def entries(spec: String*): List[LMHHubEntry] = if (spec.nonEmpty) entries_.filter(e => spec.exists(e.matches)) else entries_
+  /** finds all archive entries available locally */
+  def archiveEntries: List[LMHHubArchiveEntry] = entries_.collect({case a: LMHHubArchiveEntry => a})
+  /** finds all group entries available locally */
+  def groupEntries: List[LMHHubGroupEntry] = entries_.collect({case g: LMHHubGroupEntry => g})
+  /** finds all directory entries available locally */
+  def dirEntries: List[LMHHubDirectoryEntry] = entries_.collect({case d: LMHHubDirectoryEntry => d})
+
 
   /** find a list of remotely available entries (if any) */
   protected def available_(): List[String]
+
   /** resolves a list of available entries and returns pairs (id, version) */
   def available(spec: String*): List[(String, Option[String])] = {
     // this function will perform the match case insensitive
@@ -179,12 +188,10 @@ trait LMHHubGroupEntry extends LMHHubDirectoryEntry {
   private var groupManifest: mutable.Map[String, String] = null
 
   override def load(): Unit = {
-    val manifest = root / "GROUP_MANIFEST.mf"
-
-    if(!manifest.exists){
-      throw NotLoadableGroupEntry(root)
+    val manifest = {
+      List("GROUP_MANIFEST.MF", "GROUP_MANIFEST.mf").map(root./)
+        .find(_.exists).getOrElse(throw NotLoadableGroupEntry(root))
     }
-
     try {
       groupManifest = File.readProperties(manifest)
     } catch {

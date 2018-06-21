@@ -12,7 +12,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
 
 
    /** a default notation in case the pattern is not known */
-   def getHeaderNotation = List(LabelArg(1, LabelInfo.none), Delim(":"), SimpArg(1))
+   def getHeaderNotation = List(LabelArg(1, LabelInfo.none), Delim(":"), SimpArg(2))
 
    override def processHeader(header: Term): (LocalName,Term) = {
      header match {

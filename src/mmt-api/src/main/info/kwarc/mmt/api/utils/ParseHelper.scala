@@ -2,6 +2,8 @@ package info.kwarc.mmt.api.utils
 
 import info.kwarc.mmt.api.parser.SourcePosition
 
+import scala.util.parsing.input.{Position, Reader}
+
 /**
   * helper class for working with substrings without copying
   * (standard Java substring method creates a copy)
@@ -25,18 +27,18 @@ object StringSlice {
 case class BracketPair(open: String, close: String, ignore: Boolean)
 
 /** \n, \r, and \r\n are read as \n */
-class Unparsed(input: String, error: String => Nothing) {
+class Unparsed(input: String, error: String => Nothing) extends Reader[String] {
    private var current: Int = 0
    private val length = input.length
 
    def empty = current == length
 
    /** number of characters that have been eaten */
-   private var offset: Int = 0
+   private var poffset: Int = 0
    private var line : Int = 0
    private var column : Int = 0
    private def advancePositionBy(c: Char) {
-      offset += 1
+      poffset += 1
       column += 1
       if (c == '\n') {
          line += 1
@@ -44,7 +46,7 @@ class Unparsed(input: String, error: String => Nothing) {
       }
    }
    /** the position of the next character to be read */
-   def getSourcePosition = SourcePosition(offset, line, column)
+   def getSourcePosition = SourcePosition(poffset, line, column)
 
    def remainder = StringSlice(input, current)
 
@@ -75,7 +77,7 @@ class Unparsed(input: String, error: String => Nothing) {
       this
    }
    def drop(s: String) {
-      if (StringSlice(input, offset).startsWith(s)) {
+      if (StringSlice(input, poffset).startsWith(s)) {
          current += s.length
          s.foreach {c => advancePositionBy(c)}
       } else
@@ -159,4 +161,32 @@ class Unparsed(input: String, error: String => Nothing) {
       }
       return seen // impossible
    }
+
+   // Reader Instance
+
+   override def offset : Int          = poffset
+   override def source : CharSequence = input
+
+   class UnparsedPosition(u : Unparsed) extends Position
+   {
+      def line   : Int = u.line
+      def column : Int = u.column
+
+      /* This still seems kinda hacky; is there a better way? */
+      def lineContents : String =
+      {
+         var l,r : Int = u.current
+         val delims : List[Char] = List('\n', '\r')
+
+         while (!delims.contains(u.input(l - 1))) { l -= 1 }
+         while (!delims.contains(u.input(r + 1))) { r += 1 }
+
+         input.substring(l,r)
+      }
+   }
+
+   def pos   : Position       = new UnparsedPosition(this)
+   def atEnd : Boolean        = empty
+   def rest  : Reader[String] = tail
+   def first : String         = head.toString
 }

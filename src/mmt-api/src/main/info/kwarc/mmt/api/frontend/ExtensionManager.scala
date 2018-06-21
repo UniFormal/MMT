@@ -17,7 +17,7 @@ import web._
 
 
 trait Extension extends Logger {
-  /** the controller that this extension is added to; only valid after creation of the extension, i.e., will return nuill if used in a non-lazy val-field */
+  /** the controller that this extension is added to; only valid after creation of the extension, i.e., will return null if used in a non-lazy val-field */
   protected var controller: Controller = null
   protected var report: Report = null
 

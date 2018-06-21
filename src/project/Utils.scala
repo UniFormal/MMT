@@ -34,7 +34,7 @@ object Utils {
     packageBin in Compile map {jar => deployTo(Utils.deploy / name)(jar)}
 
  /**
-   * pacakges the compiled binaries and copies to deploy
+   * packages the compiled binaries and copies to deploy
    */
   def deployMathHub(target: File): Def.Initialize[Task[Unit]] =
     packageBin in Compile map {jar => deployTo(target)(jar)}

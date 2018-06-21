@@ -1,0 +1,1 @@
+To build the file "lfcatalog.jar", use "sbt deployLFCatalog"

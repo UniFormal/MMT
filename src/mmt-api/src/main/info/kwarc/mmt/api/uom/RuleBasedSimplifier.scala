@@ -353,7 +353,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
       val cb = callback(state)
       state.compRules.foreach {rule =>
          if (rule.heads contains tm.head.orNull) {
-           rule(cb)(tm, true)(Stack(context), NoHistory).foreach {tmS =>
+           rule(cb)(tm, true)(Stack(context), NoHistory).get.foreach {tmS =>
              return GlobalChange(tmS)
            }
          }

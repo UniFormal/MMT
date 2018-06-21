@@ -75,6 +75,8 @@ JavaObject.__ge__ = MagicFun(">=")
 jc = gateway.jvm.scala.collection.JavaConverters
 def Seq(l):
     return jc.asScalaBufferConverter(l).asScala().toSeq()
+def List(l):
+    return jc.asScalaBufferConverter(l).asScala().toList()
 def Map(m):
     return jc.mapAsScalaMapConverter(m).asScala()
 def LMap(m):

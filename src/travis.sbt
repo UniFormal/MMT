@@ -65,6 +65,7 @@ travisConfig := {
 
     TravisStage("DeployCheck", "check that the 'apidoc' and 'deploy' targets work")(
       TravisJob("Check mmt.jar generation using `sbt deploy`", sbt("deploy", file("deploy/mmt.jar"))),
+      TravisJob("Check lfcatalog.jar generation using `sbt deployLFCatalog`", sbt("deployLFCatalog", file("deploy/lfcatalog/lfcatalog.jar"))),
       TravisJob("Check that apidoc generation works", sbt("apidoc", dir("apidoc")))
     ),
 

@@ -63,24 +63,32 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     /** creates a new MathHubEntry of the most specific kind and loads it */
     def apply(root: File) : MathHubEntry = {
       // try to load an archive
-      val ae = new MathHubArchiveEntry(root)
-      try {
-        ae.load()
-        return ae
-      } catch {
-        case e: NotLoadableArchiveEntry =>
-      }
 
-      // try to load a group
-      val ge = new MathHubGroupEntry(root)
-      try {
-        ge.load()
-        return ge
-      } catch {
-        case e: NotLoadableGroupEntry =>
-      }
+      debug(s"trying to load entry at ${root.toJava.toString}")
 
-      new MathHubDirectoryEntry(root)
+      logGroup {
+        try {
+          val ae = new MathHubArchiveEntry(root)
+          ae.load()
+          debug(s"found archive '${ae.id}' in $root")
+          return ae
+        } catch {
+          case e: NotLoadableArchiveEntry => report("debug", s"lmh failed to add archive in $root")
+        }
+
+        // try to load a group
+        try {
+          val ge = new MathHubGroupEntry(root)
+          ge.load()
+          debug(s"found group '${ge.group}' in $root")
+          return ge
+        } catch {
+          case e: NotLoadableGroupEntry => report("debug", s"lmh failed to add group in $root")
+        }
+
+        debug(s"falling back to Directory at $root")
+        new MathHubDirectoryEntry(root)
+      }
     }
   }
 
@@ -113,17 +121,28 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
 
   // code for listing entries
 
+  /** logs a debug message */
+  private def debug(message: String): Unit ={
+    report("debug", s"lmh $message")
+  }
+
   /** find all the archives known to the controller */
   def entries_ : List[MathHubEntry] = {
     val folders = new ListBuffer[File]
 
-    // add all the folders from all backend archives
-    controller.backend.getArchives.foreach {a => folders += a.root}
+    debug("scanning for archives")
 
-    // add all the level-2 subdirectories
-    local.children.foreach { c =>
-      if(c.isDirectory) {
-        c.children.filter(_.isDirectory).foreach(d => folders += d)
+    logGroup {
+      // add all the folders from all backend archives
+      controller.backend.getArchives.foreach {a => debug(s"adding loaded archive candidate ${a.root.toJava.toString}"); folders += a.root}
+
+      // add all the level-2 subdirectories
+      local.children.foreach { c =>
+
+        if(c.isDirectory) {
+          debug(s"scanning for archives in ${c.toJava.toString}")
+          c.children.filter(_.isDirectory).foreach(d => {debug(s"adding folder candidate ${d.toJava.toString}"); folders += d})
+        }
       }
     }
 

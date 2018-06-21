@@ -53,6 +53,7 @@ testOptions in Test += Tests.Argument("-oI")
 // =================================
 
 val deploy = TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
+val deployLFCatalog = TaskKey[Unit]("deployLFCatalog", "builds a stand-alone lfcatalog.jar")
 val install = TaskKey[Unit]("install", "copies jedit jars to local jedit installation folder.")
 
 // =================================
@@ -132,7 +133,7 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregate(
       mmt, api,
-      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, odk, specware, stex, webEdit, mathhub, planetary, interviews, latex, openmath, oeis, repl,
+      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, webEdit, mathhub, planetary, interviews, latex, openmath, oeis, repl,
       tiscaf, lfcatalog,
       jedit
   ).settings(
@@ -142,7 +143,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, interviews, mathhub).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -326,6 +327,17 @@ lazy val metamath = (project in file("mmt-metamath")).
   dependsOn(api, lf, mmscala).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
 
+// plugin for reading isabelle. Author: Makarius Wenzel
+lazy val isabelle_root =
+  System.getenv().getOrDefault("ISABELLE_ROOT", System.getProperty("isabelle.root", ""))
+lazy val isabelle_jars =
+  if (isabelle_root == "") Nil else List(file(isabelle_root) / "lib" / "classes" / "Pure.jar")
+lazy val isabelle =
+  (project in file(if (isabelle_root == "") "mmt-isabelle/dummy" else "mmt-isabelle")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-isabelle"): _*).
+  settings(unmanagedJars in Compile ++= isabelle_jars)
+
 // plugin for reading TPS
 lazy val tps = (project in file("mmt-tps")).
   dependsOn(api, lf).
@@ -382,6 +394,10 @@ lazy val lfcatalog = (project in file("lfcatalog")).
   settings(commonSettings("lfcatalog")).
   settings(
     scalaSource in Compile := baseDirectory.value / "src",
+    publishTo := Some(Resolver.file("file", Utils.deploy.toJava / " main")),
+    deployLFCatalog := {
+      assembly in Compile map Utils.deployTo(Utils.deploy / "lfcatalog" / "lfcatalog.jar")
+    }.value, 
     unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
   )
 
