@@ -188,6 +188,13 @@ object Morph {
         OMCOMP(result)
     }
   }
+  
+  /** true if m is a morphism that immediately reduces to the identity/include */
+  def isInclude(m: Term): Boolean = m match {
+    case OMIDENT(_) => true
+    case OMCOMP(ms) => ms forall isInclude
+    case _ => false
+  }
 
   /** checks equality of two morphisms using the simplify method; sound but not complete
    *  pre: a and b are well-formed, include all implicit morphisms, and have domain 'from'
@@ -238,20 +245,12 @@ object TheoryExp {
     * @param all if false, stop after the first meta-theory, true by default
     */
   def metas(thy: Term, all: Boolean = true)(implicit lib: Lookup): List[MPath] = thy match {
-    case OMMOD(p) if p.name.steps.length > 1 => // Nested theory; consider the parent theory as meta-theory
-      val parent = lib.getTheory(p.parent ? p.name.steps.init)
-      if (all) {
-        parent.path :: (lib.getTheory(p) match {
-          case t : DeclaredTheory => t.meta match {
-            case None => Nil
-            case Some(m) => m :: metas(OMMOD(m))
-          }
-        }) ::: metas(OMMOD(parent.path))
-      } else List(parent.path)
     case OMMOD(p) => lib.getTheory(p) match {
       case t: DeclaredTheory => t.meta match {
-        case None => Nil
-        case Some(m) => if (all) m :: metas(OMMOD(m)) else List(m)
+        case None => 
+          Nil
+        case Some(m) =>
+          if (all) m :: metas(OMMOD(m)) else List(m)
       }
       case t: DefinedTheory => metas(t.df)
     }
