@@ -19,7 +19,7 @@ class Plugin extends frontend.Plugin {
       // Twelf parser
       em.addExtension(new TwelfParser)
       em.addExtension(HOLLight.preproc)
-      em.addExtension(new TypedRelationalExtractor)
+      em.addExtension(TypedRelationalExtractor)
    }
 }
 

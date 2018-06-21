@@ -15,7 +15,7 @@ import ontology._
 /**
  * The TypedRelationalExtractor adds a few more typing related informations to the .rel files.
  */
-class TypedRelationalExtractor extends RelationalExtractor {
+object TypedRelationalExtractor extends RelationalExtractor {
    val allUnary = List(IsDocument,ontology.IsTheory,IsView,IsConstant,IsType,IsJudgement,IsKind,IsHighUniverse,
    IsStructure,IsConAss, IsStrAss,IsNotation,IsDerivedDeclaration,IsPattern,IsInstance)
    val allBinary = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,
@@ -125,3 +125,12 @@ class TypedRelationalExtractor extends RelationalExtractor {
       }
    }
 }
+
+class TExtensionManager(controller: Controller) extends ExtensionManager(controller: Controller) {
+    val mmtextr = TypedRelationalExtractor
+}
+
+class TController extends Controller {
+  override val extman = new TExtensionManager(this)
+}
+
