@@ -173,16 +173,10 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[String] {
       def line   : Int = u.line
       def column : Int = u.column
 
-      /* This still seems kinda hacky; is there a better way? */
-      def lineContents : String =
-      {
-         var l,r : Int = u.current
+      /* No way to look back? */
+      def lineContents : String = {
          val delims : List[Char] = List('\n', '\r')
-
-         while (!delims.contains(u.input(l - 1))) { l -= 1 }
-         while (!delims.contains(u.input(r + 1))) { r += 1 }
-
-         input.substring(l,r)
+         u.takeWhile(c => !delims.contains(c))
       }
    }
 
