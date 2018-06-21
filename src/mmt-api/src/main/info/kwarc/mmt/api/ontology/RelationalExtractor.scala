@@ -22,7 +22,7 @@ abstract class RelationalExtractor extends Extension {
 
 }
 
-/** The Extractor produces the declaration-level relational representation of a SructuralElement
+/** The Extractor produces the declaration-level relational representation of a StructuralElement
  */
 object MMTExtractor extends RelationalExtractor {
    val allUnary = List(IsDocument,IsTheory,IsView,IsConstant,IsStructure,IsConAss,

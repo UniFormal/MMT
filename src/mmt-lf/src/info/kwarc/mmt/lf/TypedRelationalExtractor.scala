@@ -15,7 +15,7 @@ import ontology._
 /**
  * The TypedRelationalExtractor adds a few more typing related informations to the .rel files.
  */
-object TypedRelationalExtractor extends RelationalExtractor {
+class TypedRelationalExtractor extends RelationalExtractor {
    val allUnary = List(IsDocument,ontology.IsTheory,IsView,IsConstant,IsType,IsJudgement,IsKind,IsHighUniverse,
    IsStructure,IsConAss, IsStrAss,IsNotation,IsDerivedDeclaration,IsPattern,IsInstance)
    val allBinary = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,
@@ -31,7 +31,7 @@ object TypedRelationalExtractor extends RelationalExtractor {
          }
       case _ => false
    }
-         
+           
    /** apply a continuation function to every relational element of a StructuralElement */
    def apply(e: StructuralElement)(implicit f: RelationalElement => Unit) {
       val path = e.path
@@ -126,11 +126,27 @@ object TypedRelationalExtractor extends RelationalExtractor {
    }
 }
 
-class TExtensionManager(controller: Controller) extends ExtensionManager(controller: Controller) {
+
+
+/*class TExtensionManager(controller: Controller) extends ExtensionManager(controller: Controller) {
     val mmtextr = TypedRelationalExtractor
 }
 
 class TController extends Controller {
   override val extman = new TExtensionManager(this)
 }
+
+trait TExtension extends Extension {
+  /** the controller that this extension is added to; only valid after creation of the extension, i.e., will return null if used in a non-lazy val-field */
+    /** MMT initialization (idempotent) */
+  override def init(controller: Controller) {
+    this.controller = controller
+    report = controller.report
+    
+  }
+}
+
+*/
+
+
 
