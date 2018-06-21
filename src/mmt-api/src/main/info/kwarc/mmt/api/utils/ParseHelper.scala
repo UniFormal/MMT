@@ -173,16 +173,10 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[String] {
       def line   : Int = u.line
       def column : Int = u.column
 
-      /* This still seems kinda hacky; is there a better way? */
-      def lineContents : String =
-      {
-         var l,r : Int = u.current
+      /* No way to look back? */
+      def lineContents : String = {
          val delims : List[Char] = List('\n', '\r')
-
-         while (!delims.contains(u.input(l - 1))) { l -= 1 }
-         while (!delims.contains(u.input(r + 1))) { r += 1 }
-
-         input.substring(l,r)
+         u.takeWhile(c => !delims.contains(c))
       }
    }
 
@@ -192,30 +186,11 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[String] {
    def first : String         = head.toString
 }
 
-class UnparsedParsers extends RegexParsers
-                         with Parsers
+object UnparsedParsers extends Parsers
 {
    override type Input = Unparsed
-
-   // Relevant snippet source:
-   // stackoverflow.com/questions/14707127/accessing-position-information-in-a-scala-combinatorparser-kills-performance
-
-   class UParser[T](p: Parser[T])
-   {
-      def ^^#(f: (SourceRef, T) => T) : Parser[T] = Parser { in =>
-
-        val before : SourcePosition = in.getSourcePosition
-        p(in.rest) match
-        {
-           case Success(t, in1) =>
-           {
-              val after = in1.getSourcePosition
-              val src   = SourceRef(???, SourceRegion(before,after))
-              Success(f(src,t), in1)
-           }
-           case ns: NoSuccess => ns
-        }
-      }
-
-   }
 }
+
+// Relevant snippet source:
+// stackoverflow.com/questions/14707127/accessing-position-information-in-a-scala-combinatorparser-kills-performance
+
