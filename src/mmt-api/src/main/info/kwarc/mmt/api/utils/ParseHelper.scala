@@ -28,7 +28,7 @@ object StringSlice {
 case class BracketPair(open: String, close: String, ignore: Boolean)
 
 /** \n, \r, and \r\n are read as \n */
-class Unparsed(input: String, error: String => Nothing) extends Reader[String] {
+class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {
    private var current: Int = 0
    private val length = input.length
 
@@ -180,17 +180,15 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[String] {
       }
    }
 
-   def pos   : Position       = new UnparsedPosition(this)
-   def atEnd : Boolean        = empty
-   def rest  : Reader[String] = tail
-   def first : String         = head.toString
+   def pos   : Position     = new UnparsedPosition(this)
+   def atEnd : Boolean      = empty
+   def rest  : Reader[Char] = tail
+   def first : Char         = head
 }
 
-object UnparsedParsers extends Parsers
+class UnparsedParsers extends RegexParsers
+                         with Parsers
 {
-   override type Input = Unparsed
+  override type Elem  = Char
+  override type Input = Reader[Char]
 }
-
-// Relevant snippet source:
-// stackoverflow.com/questions/14707127/accessing-position-information-in-a-scala-combinatorparser-kills-performance
-
