@@ -2,7 +2,8 @@ package info.kwarc.mmt.imps
 
 /* IMPORTS */
 
-import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
+import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.imps.Method.Method
 import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.OperationType.OperationType
@@ -1449,9 +1450,20 @@ case class IMPSQCSecond(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 
 //-----------
 
-abstract class DefForm(src : Option[SourceRef])
+abstract class DefForm(src : SourceInfo)
+{
+  def updateURL(uri : URI) : Unit =
+  {
+    if (this.src.isDefined) {
+      this.src.get match {
+        case Left(((a,b,c),(x,y,z))) => SourceRef(uri,SourceRegion(SourcePosition(a,b,c), SourcePosition(x,y,z)))
+        case Right(source)           => SourceRef(uri,source.region)
+      }
+    }
+  }
+}
 
-case class Heralding(s : String, src : Option[SourceRef]) extends DefForm(src)
+case class Heralding(s : String, src : SourceInfo) extends DefForm(src)
 
 //-----------
 
