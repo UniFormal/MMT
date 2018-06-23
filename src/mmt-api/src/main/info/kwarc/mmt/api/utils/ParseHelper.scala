@@ -186,7 +186,7 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {
    def first : Char         = head
 }
 
-class UnparsedParsers extends RegexParsers
+trait UnparsedParsers extends RegexParsers
                          with PackratParsers
 {
   override type Elem  = Char
