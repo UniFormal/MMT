@@ -12,6 +12,20 @@ import info.kwarc.mmt.api.utils.Unparsed
 import info.kwarc.mmt.api._
 import utils._
 
+class NEWIMPSParser
+{
+  def parse(s: String, uri : URI, js : List[JSONObject]) : List[DefForm]
+      = parse(new Unparsed(s, msg => throw GeneralError(msg)), uri, js)
+
+  def parse(u : Unparsed, uri : URI, js : List[JSONObject]) : List[DefForm] =
+  {
+    val foo = DefFormParser.parseAll(DefFormParser.parseImpsSource,u)
+    assert(foo.successful)
+
+    foo.get
+  }
+}
+
 /* ######### PARSER ######### */
 
 class IMPSParser

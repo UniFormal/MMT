@@ -1450,7 +1450,7 @@ case class IMPSQCSecond(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 
 //-----------
 
-abstract class DefForm(src : SourceInfo)
+abstract class DefForm(var src: SourceInfo)
 {
   def updateURL(uri : URI) : Unit =
   {
@@ -1463,7 +1463,7 @@ abstract class DefForm(src : SourceInfo)
   }
 }
 
-case class Heralding(s : String, src : SourceInfo) extends DefForm(src)
+case class Heralding(s : String, source : SourceInfo) extends DefForm(src = source)
 
 //-----------
 

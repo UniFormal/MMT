@@ -2,6 +2,13 @@ package info.kwarc.mmt.imps
 
 package object impsLibrarySections
 {
+  def testOnly : Section = Section(
+    "test-only",
+    Nil,
+    List("test.t"),
+    Nil
+  )
+
   // See some-sections.ool
 
   def pureGenericTheories : Section = Section(

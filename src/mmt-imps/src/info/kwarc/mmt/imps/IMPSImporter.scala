@@ -22,7 +22,7 @@ class IMPSImporter extends Importer
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult =
   {
     val tState : TranslationState = new TranslationState()
-    val targetSection : Section = impsLibrarySections.foundation
+    val targetSection : Section = impsLibrarySections.testOnly
 
     if (tState.verbosity > 0)
     {
@@ -134,9 +134,12 @@ class IMPSImporter extends Importer
       val e = try
       {
         val contents = Source.fromFile(file).mkString
-        val lp: IMPSParser = new IMPSParser()
 
-        lp.parse(contents, FileURI(file), parsed_json)
+        val nlp : NEWIMPSParser = new NEWIMPSParser()
+        nlp.parse(contents, FileURI(file), parsed_json)
+
+        //val lp: IMPSParser = new IMPSParser()
+        //lp.parse(contents, FileURI(file), parsed_json)
 
       } catch {
         case e : IMPSDependencyException => {
@@ -148,7 +151,7 @@ class IMPSImporter extends Importer
           sys.exit
         }
       }
-      parsed_t = parsed_t ::: List((e,FileURI(file)))
+      //parsed_t = parsed_t ::: List((e,FileURI(file)))
     }
 
     if (tState.verbosity > 0)
