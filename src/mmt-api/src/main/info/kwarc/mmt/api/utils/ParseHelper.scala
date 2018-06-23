@@ -187,7 +187,7 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {
 }
 
 class UnparsedParsers extends RegexParsers
-                         with Parsers
+                         with PackratParsers
 {
   override type Elem  = Char
   override type Input = Reader[Char]
