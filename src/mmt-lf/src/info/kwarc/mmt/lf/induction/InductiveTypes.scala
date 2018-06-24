@@ -21,11 +21,24 @@ case class TypeLevel(name: LocalName, args: List[(Option[LocalName], Term)]) ext
   def ret = Univ(1)
 }
 case class TermLevel(name: LocalName, args: List[(Option[LocalName], Term)], ret: Term) extends InductiveDecl
+case class StatementLevel(name: LocalName, args: List[(Option[LocalName], Term)]) extends InductiveDecl {
+  def ret = Univ(1)
+}
 
-class InductiveTypes extends StructuralFeature("inductive") {
-  def getHeaderNotation = List(LabelArg(1, LabelInfo.none))
+class InductiveTypes extends StructuralFeature("inductive") with ParametricTheoryLike {
+  def isJudgment(tp: Term): Boolean = tp match {
+      case FunType(_, ApplySpine(OMS(s),_)) =>
+         //this can throw errors if the implicit graph is not fully loaded
+         try {
+            controller.globalLookup.getConstant(s).rl.contains("Judgment")
+         } catch {case e: Error =>
+            false
+         }
+      case _ => false
+   }
+  //def getHeaderNotation = List(LabelArg(1, LabelInfo.none))
 
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
     //TODO: check for inhabitability
   }
 
@@ -86,10 +99,25 @@ class InductiveTypes extends StructuralFeature("inductive") {
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
     var tmdecls : List[TermLevel]= Nil
     var tpdecls : List[TypeLevel]= Nil
-    val decls = dd.getDeclarations map {
+    val indArgs = dd.tpC.get match {
+      case Some(OMA(_, args)) => args
+    }
+    val tpArgs = indArgs.foldLeft(Nil:List[Term])({(l:List[Term], tm:Term) => tm match {
+      case Univ(1) => tm::l
+      case _ => l
+      }})
+    var elabDecls:List[Declaration] = tpArgs map {tp:Term => VarDecl(LocalName(parent.name.toString()+tp.toString()), None, Some(Univ(1)),  Some(tp), None).toDeclaration(parent.toTerm)}
+    tpdecls = elabDecls.zip(tpArgs) map {case (d, tp) => 
+      val FunType(args, ret) = tp
+      TypeLevel(d.name, args)
+    }
+    val decls = tpdecls ++ dd.getDeclarations map {
       case c: Constant =>
-        val tp = c.tp getOrElse {throw LocalError("missing type")}
+        val tp = c.tp getOrElse {throw LocalError("missing type")}        
           val FunType(args, ret) = tp
+          if (isJudgment(tp)) {
+            StatementLevel(c.name, args)
+          } else {
           ret match {
             case Univ(1) => {
               val tpdecl = TypeLevel(c.name, args)
@@ -103,9 +131,9 @@ class InductiveTypes extends StructuralFeature("inductive") {
               tmdecl
             }
           }
+        }
       case _ => throw LocalError("illegal declaration")
-    }
-    var elabDecls: List[Declaration] = Nil
+    } 
     decls foreach {d =>
       val tp = d.toTerm
       val c = Constant(parent.toTerm, d.name, Nil, Some(tp), None, None)
