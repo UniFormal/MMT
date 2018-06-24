@@ -1450,20 +1450,11 @@ case class IMPSQCSecond(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 
 //-----------
 
-abstract class DefForm(var src: SourceInfo)
-{
-  def updateURL(uri : URI) : Unit =
-  {
-    if (this.src.isDefined) {
-      this.src.get match {
-        case Left(((a,b,c),(x,y,z))) => SourceRef(uri,SourceRegion(SourcePosition(a,b,c), SourcePosition(x,y,z)))
-        case Right(source)           => SourceRef(uri,source.region)
-      }
-    }
-  }
-}
+abstract class DefForm(var src: SourceInfo, val cmt : Option[LineComment] = None)
 
-case class Heralding(s : String, source : SourceInfo) extends DefForm(src = source)
+case class LineComment(s : String, var source : SourceInfo) extends DefForm(src = source)
+
+case class Heralding(s : String, var source : SourceInfo, comment : Option[LineComment]) extends DefForm(src = source, cmt = comment)
 
 //-----------
 
