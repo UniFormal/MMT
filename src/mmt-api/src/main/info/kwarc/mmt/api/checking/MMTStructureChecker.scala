@@ -378,18 +378,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         checkTheory(CPath(v.path, DomComponent), v, context, v.fromC.get)
         checkTheory(CPath(v.path, CodComponent), v, context, v.toC.get)
       case s: DeclaredStructure =>
-        val fr = s.fromC.get
-        fr match {
-          case Some(OMPMOD(mp,_)) if mp.name.steps.length > 1 => // Include/Structure from nested theory
-            val parent = mp.parent ? mp.name.steps.init
-            controller.globalLookup.getImplicit(OMMOD(parent),s.to) match {
-              case Some(_) =>
-              case None =>
-                env.errorCont(InvalidElement(s,"No implicit morphism from " + parent + " to " + s.to))
-            }
-          case _ =>
-        }
-        checkTheory(CPath(s.path, TypeComponent), s, context, fr)
+        checkTheory(CPath(s.path, TypeComponent), s, context, s.fromC.get)
       case dd: DerivedDeclaration =>
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         sfOpt match {
@@ -507,9 +496,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         case nm: NestedModule => nm.module
         case _ =>
           env.errorCont(InvalidObject(t, "not a module: " + controller.presenter.asString(t)))
+          dec
       }
-      thy match {
+      val tR: Term = thy match {
         case thy: Theory =>
+          // check instantiation
           val pars = thy.parameters
           if (pars.nonEmpty && args.nonEmpty) {
             env.pCont(p)
@@ -519,11 +510,27 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             }
             checkSubstitution(context, subs, pars, Context.empty, false)
           }
+          // check visibility of thy
+          thy.superModule match {
+            case None => t // root modules are always visible
+            case Some(parent) =>
+              controller.globalLookup.getImplicit(OMMOD(parent), ComplexTheory(context)) match {
+                case None =>
+                  env.errorCont(InvalidObject(t, "theory not visible in current context"))
+                  t
+                case Some(m) =>
+                  if (!Morph.isInclude(m)) {
+                     env.errorCont(InvalidObject(t, "theory is visible via morphism " + m + " but pushout is not implemented yet"))                    
+                  }
+                  t
+              }
+          }
         case _ =>
           env.errorCont(InvalidObject(t, "not a theory identifier: " + p.toPath))
+          t
       }
-      cpath foreach {cp => setAnalyzed(cp, t)} 
-      t
+      cpath foreach {cp => setAnalyzed(cp, tR)} 
+      tR
     case ComplexTheory(body) =>
       val bodyR = checkContext(context, body)
       val tR = ComplexTheory(bodyR)
