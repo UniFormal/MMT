@@ -28,10 +28,9 @@ object StringSlice {
 case class BracketPair(open: String, close: String, ignore: Boolean)
 
 /** \n, \r, and \r\n are read as \n */
-class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {
+class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {self =>
    private var current: Int = 0
    private val length = input.length
-   private val entire = input // only used for lineContents
 
    def empty = current == length
 
@@ -169,26 +168,27 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {
    override def offset : Int          = current
    override def source : CharSequence = input
 
-   class UnparsedPosition(u : Unparsed) extends Position
+   class UnparsedPosition extends Position
    {
-      def line   : Int = u.line
-      def column : Int = u.column
+      val line   : Int = self.line
+      val column : Int = self.column
 
       /* Now new and improved! Lawful instance is lawful! */
+      /* Potentially inefficient? */
       def lineContents : String =
       {
          val curr : Int = current
          var l, r : Int = curr
 
          val delims = List('\n', '\r')
-         while (!delims.contains(u.entire(l-1))) { l -= 1 }
-         while (!delims.contains(u.entire(r+1))) { r += 1 }
+         while (!delims.contains(input(l-1))) { l -= 1 }
+         while (!delims.contains(input(r+1))) { r += 1 }
 
-         u.entire.substring(l,r)
+         input.substring(l,r)
       }
    }
 
-   def pos   : Position     = new UnparsedPosition(this)
+   def pos   : Position     = new UnparsedPosition
    def atEnd : Boolean      = empty
    def rest  : Reader[Char] = tail
    def first : Char         = head
