@@ -11,8 +11,13 @@ import scala.collection.mutable.ArrayBuffer
 class JSONObjectBuffer {
   private val buffer = new ArrayBuffer[(String, JSON)]
 
+  /** adds a value to this JSONObject buffer */
   def add[T](key: String, value: T)(implicit converter: JSONConverter[T]): Unit = {
     buffer += ((key, converter.toJSON(value)))
+  }
+  /** convenience method to add a value unless None */
+  def addO[T](key: String, value: Option[T])(implicit converter: JSONConverter[T]): Unit = {
+    value.foreach(v => add[T](key, v))
   }
 
   def result(): JSONObject = {
@@ -31,8 +36,14 @@ class JSONObjectParser(obj: JSONObject){
     b
   }
 
+  /** takes a value from this JSONObjectParser */
   def take[T](key: String)(implicit converter: JSONConverter[T]) : T = {
     converter.fromJSON(buffer.remove(key).getOrElse(throw NOSuchKey(key)))
+  }
+
+  /** convenience method to take a value from this JSOnObjectParser if it exists */
+  def takeO[T](key: String)(implicit converter: JSONConverter[T]) : Option[T] = {
+    buffer.remove(key).map(converter.fromJSON)
   }
 
   implicit def rest: Map[String, JSON] = buffer.toMap
