@@ -37,8 +37,8 @@ object DefFormParser extends Parsers with UnparsedParsers
   def updateSourceInfo(d : DefForm, sourceInfo : SourceInfo) : DefForm =
   {
     d match {
-      case LineComment(s,_) => LineComment(s, sourceInfo)
-      case Heralding(s,_,c) => Heralding(s,sourceInfo,c)
+      case c@LineComment(_,_,_) => c.copy(src = sourceInfo)
+      case h@Heralding(_,_,_) => h.copy(src = sourceInfo)
       case _ => ???
     }
   }
@@ -51,7 +51,7 @@ object DefFormParser extends Parsers with UnparsedParsers
   lazy val parseText = { regex("""[^\r\n]+""".r) }
 
   lazy val pLineComment: PackratParser[LineComment] = {
-    (";" ~> parseText) ^^ { case txt => LineComment(txt.dropWhile(_ == ';').trim, None) }
+    (";" ~> parseText) ^^ { case txt => LineComment(txt.dropWhile(_ == ';').trim, None, None) }
   }
 
   lazy val pHeralding: PackratParser[Heralding] = {

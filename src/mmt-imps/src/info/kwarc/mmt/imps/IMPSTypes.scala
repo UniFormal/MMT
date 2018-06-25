@@ -1450,11 +1450,28 @@ case class IMPSQCSecond(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 
 //-----------
 
-abstract class DefForm(var src: SourceInfo, val cmt : Option[LineComment] = None)
+trait DefForm
+{
+  var src : SourceInfo
+  var cmt : CommentInfo
 
-case class LineComment(s : String, var source : SourceInfo) extends DefForm(src = source)
+  def updateURI(uri : URI) : (SourceInfo => SourceInfo) =
+  {
+    case None => None
+    case Some(scala.util.Left(((a,b,c),(x,y,z)))) => Some(scala.util.Right(SourceRef(uri,SourceRegion(SourcePosition(a,b,c),SourcePosition(x,y,z)))))
+    case Some(scala.util.Right(SourceRef(_,sr))) => Some(scala.util.Right(SourceRef(uri,sr)))
+  }
 
-case class Heralding(s : String, var source : SourceInfo, comment : Option[LineComment]) extends DefForm(src = source, cmt = comment)
+  def updateSource(uri : URI): Unit = {
+    val foo = updateURI(uri)
+    this.src = foo(this.src)
+    if (this.cmt.isDefined) { this.cmt.get.updateSource(uri) }
+  }
+}
+
+case class LineComment(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+case class Heralding(name : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 //-----------
 

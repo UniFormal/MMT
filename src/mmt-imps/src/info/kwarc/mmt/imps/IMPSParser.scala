@@ -22,21 +22,9 @@ class NEWIMPSParser
     val foo = DefFormParser.parseAll(DefFormParser.parseImpsSource,u)
     assert(foo.successful)
 
-    var dfs : List[DefForm] = List.empty
-
-    for (d <- foo.get) {
-      val si : SourceInfo = {
-        d.src match {
-          case None => None
-          case Some(scala.util.Right(ref))              => d.src
-          case Some(scala.util.Left(((a,b,c),(x,y,z)))) =>
-            Some(scala.util.Right(SourceRef(uri,SourceRegion(SourcePosition(a,b,c),SourcePosition(x,y,z)))))
-        }
-      }
-
-      dfs = dfs ::: List(DefFormParser.updateSourceInfo(d,si))
-    }
-    dfs.map(println)
+    val dfs = foo.get
+    dfs.foreach(_.updateSource(uri))
+    dfs.foreach(println)
     dfs
   }
 }
