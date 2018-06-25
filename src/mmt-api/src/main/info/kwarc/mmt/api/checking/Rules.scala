@@ -208,6 +208,7 @@ abstract class EliminationRule(h: GlobalName, t: GlobalName) extends InferenceRu
 sealed abstract class Simplifiability {
   def get: Option[Term]
 }
+
 /** simplify t to result */
 case class Simplify(result: Term) extends Simplifiability {
   def get = Some(result)
