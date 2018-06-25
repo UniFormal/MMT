@@ -1472,6 +1472,10 @@ trait DefForm
     this.src = foo(this.src)
     if (this.cmt.isDefined) { this.cmt.get.updateSource(uri) }
   }
+
+  def addComment(c : CommentInfo) : Unit = {
+    if (this.cmt.isEmpty) { this.cmt = c }
+  }
 }
 
 case class LineComment(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm

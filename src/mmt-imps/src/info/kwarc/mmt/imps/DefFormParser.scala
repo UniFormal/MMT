@@ -46,9 +46,14 @@ object DefFormParser extends Parsers with UnparsedParsers
   }
 
   lazy val pHeralding: PackratParser[Heralding] = {
-    (("(herald " ~> parseName <~ ")") ~ (parseLineComment?)) ^^ { case name ~ c => Heralding(name, None, c) }
+    ("(herald " ~> parseName <~ ")") ^^ { case name => Heralding(name, None, None) }
   }
 
   def parseLineComment : DefFormParser[LineComment] = { new DefFormParser[LineComment](pLineComment) }
-  def parseHeralding   : DefFormParser[Heralding]   = { new DefFormParser[Heralding](pHeralding) }
+
+  def withComment[T <: DefForm](dfp : DefFormParser[T]) : Parser[T] = {
+    (dfp ~ (parseLineComment?)) ^^ { case r ~ c => r.addComment(c) ; r }
+  }
+
+  def parseHeralding : Parser[Heralding] = { withComment(new DefFormParser[Heralding](pHeralding)) }
 }
