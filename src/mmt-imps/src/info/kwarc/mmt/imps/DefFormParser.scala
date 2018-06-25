@@ -26,20 +26,11 @@ object DefFormParser extends Parsers with UnparsedParsers
         {
           val ip = inwo.pos
           val after = (in1.offset, ip.line, ip.column)
-          val u = updateSourceInfo(t, Some(Left((before, after))))
-          Success(u.asInstanceOf[T], in1)
+          t.addSource(before,after)
+          Success(t.asInstanceOf[T], in1)
         }
         case ns: NoSuccess => ns
       }
-    }
-  }
-
-  def updateSourceInfo(d : DefForm, sourceInfo : SourceInfo) : DefForm =
-  {
-    d match {
-      case c@LineComment(_,_,_) => c.copy(src = sourceInfo)
-      case h@Heralding(_,_,_) => h.copy(src = sourceInfo)
-      case _ => ???
     }
   }
 

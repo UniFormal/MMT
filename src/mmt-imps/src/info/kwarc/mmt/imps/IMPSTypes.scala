@@ -1455,6 +1455,11 @@ trait DefForm
   var src : SourceInfo
   var cmt : CommentInfo
 
+  def addSource(start : (Int, Int, Int), end : (Int, Int, Int)) : Unit = {
+    if (this.src.isEmpty) { this.src = Some(scala.util.Left((start,end))) }
+  }
+
+  /* This is kept separate so that it doesn't need to be overwritten */
   def updateURI(uri : URI) : (SourceInfo => SourceInfo) =
   {
     case None => None
@@ -1462,7 +1467,7 @@ trait DefForm
     case Some(scala.util.Right(SourceRef(_,sr))) => Some(scala.util.Right(SourceRef(uri,sr)))
   }
 
-  def updateSource(uri : URI): Unit = {
+  def updateSource(uri : URI) : Unit = {
     val foo = updateURI(uri)
     this.src = foo(this.src)
     if (this.cmt.isDefined) { this.cmt.get.updateSource(uri) }
