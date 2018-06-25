@@ -1452,6 +1452,8 @@ case class IMPSQCSecond(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 
 trait DefForm
 {
+  /* idea: make vals here for lists of pos/key arguments, generate parser automatically? */
+
   var src : SourceInfo
   var cmt : CommentInfo
 

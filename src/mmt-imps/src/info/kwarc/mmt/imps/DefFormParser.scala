@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.utils.UnparsedParsers
 
 import scala.util.parsing.combinator.Parsers
 
+/* TODO: Refactor into "PositionParser" or something more accurate. */
 object DefFormParser extends Parsers with UnparsedParsers
 {
   class DefFormParser[T <: DefForm](p : Parser[T]) extends Parser[T]
