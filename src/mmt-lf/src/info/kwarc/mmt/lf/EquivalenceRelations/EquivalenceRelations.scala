@@ -42,50 +42,19 @@ class InductiveTypes extends StructuralFeature("EquivalenceRelation") with Param
     //TODO: check for inhabitability
   }
 
-  def injDecl(parent : DeclaredModule, d : TermLevel) : Declaration = {
-    val e : Declaration = VarDecl(LocalName("_"), None, Some(d.tp), Some(d.toTerm), None).toDeclaration(parent.toTerm)
-    val FunType(eargs, eret) = e match {
-      case c:Constant => c.tp getOrElse {throw LocalError("missing type")}
-      case _ => throw LocalError("illegal internal declaration") 
-    }
-    val (ds, es) = (d.toTerm, e.toTerm)
-    val True = LFEquality(d.toTerm, d.toTerm)
-    val p : List[(Term, Term)] = d.args.zip(eargs) map {case ((_ : Option[LocalName], x: Term), (_ : Option[LocalName], y: Term)) => (x,y)}
-    val argsEqual = p.foldLeft[Term](True)({case (b :Term, (x : Term, y : Term)) => Lambda(LocalName("_"), LFEquality(x, y), b)})
-    val body = Pi(LocalName("_"), LFEquality.apply(ds, es), argsEqual)
-    val inj : Term= p.foldLeft[Term](body)({case (l, (a, b)) => Pi(LocalName("_"), Pi(LocalName("_"), l, b), a)})
-    Constant(parent.toTerm, LocalName("_"), Nil, Some(inj), None, None)
-  }
-  
-  def noConf(parent : DeclaredModule, d : TermLevel, tmdecls: List[TermLevel]) : List[Declaration] = {
-    var resDecls = Nil
-    tmdecls map { 
-      dec => 
-      if (dec != d) {
-        val (ds, es) = (d.toTerm, dec.toTerm)
-        val (dargs, decargs) = (d.args map {case (_ : Option[LocalName], x: Term) => x}, dec.args map {case (_ : Option[LocalName], x: Term) => x})
-        val False = LFEquality(d.toTerm, dec.toTerm)
-        val body : Term = Pi(LocalName("_"), LFEquality.apply(ds, es), False)
-        val quantifiedDec = decargs.foldLeft[Term](body)({(l, a) => Pi(LocalName("_"), a, l)})
-        val noConf = dargs.foldLeft[Term](quantifiedDec)({(l, a) => Pi(LocalName("_"), a, l)})
-        Constant(parent.toTerm, d.name, Nil, Some(noConf), None, None)
-      }
-      injDecl(parent, d)
-    }
-  }
-  
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
     val args = dd.tpC.get match {
       case Some(OMA(_, args)) => args
     }
-    val (tpArg, relArg) = args match {
+    val (tpArg:OMV, relName:LocalName, relArg:OMV, relTp:OMV) = args match {
         case x::List(y) => x match {
-          case Univ(1) => (x,y)
+          case Univ(1) => y match {
+            case OML(relName, Some(relTp), Some(relArg), _, _) => (x,relName, relArg, relTp)
+          }
         }
       case _ => throw LocalError("bad Arguments")
     }
-    val relTp = OfType.unapply(relArg).getOrElse(throw LocalError("relation must be typed"))
-    val l= LocalName("")
+    val loc= LocalName("")
     val Lambda(_, Lambda(_, a, b), prop) = relTp
     if (a != b)
       throw LocalError("conflicting argument types: The second argument is not of type A -> A -> Bool")
@@ -94,13 +63,21 @@ class InductiveTypes extends StructuralFeature("EquivalenceRelation") with Param
     val relDecl = VarDecl(LocalName(parent.name.toString()+relArg.toMPath.last), None, Some(tpArg), Some(relArg), None).toDeclaration(parent.toTerm)
     
     val True : Term = LFEquality(relArg, relArg)
-    val (trans, refl, symm) = (True, True, True)     //TODO: Replace by something meaningful
-    val predTrans = Lambda(l, relTp, trans)
-    val predRefl = Lambda(l, relTp, refl)
-    val predSymm = Lambda(l, relTp, symm)
-    
+    val List(c, d, e, f, g, h):List[OMV] = List(1 to 6) map {n => OMV(parent.path+"quantifiedVar"+n.toString())}
+    val List(i, j, k, l, m, n) = List(c, d, e, f, g, h) map {tm => OML(tm.name, Some(tpArg), None, None, None)}
     val dedPath : LocalName = LocalName("http://docs.omdoc.org/urtheories/primitive_types/bool.mmt#335.14.2:387.14.54")
     val ded = OMV(dedPath)
+    val transBody = LFEquality(True, Arrow(OMA(relArg, List(i, j)), Arrow(OMA(relArg, List(j, k)), OMA(relArg, List(i, k)))))
+    val trans= Pi(i.name, i.tp.get, Pi(j.name, j.tp.get, Pi(k.name, k.tp.get, OMA(ded, List(transBody)))))
+    val symmBody = LFEquality(True, Arrow(OMA(relArg, List(l, m)), OMA(relArg, List(m, l))))
+    val symm = Pi(l.name, l.tp.get, Pi(m.name, m.tp.get, OMA(ded, List(symmBody))))
+    val reflBody = LFEquality(True, OMA(relArg, List(n, n)))
+    val refl = Pi(n.name, l.tp.get, OMA(ded, List(reflBody)))
+    val predTrans = Lambda(LocalName(parent.name+"transitive_predicate"), relTp, trans)
+    val predRefl = Lambda(loc, relTp, refl)
+    val predSymm = Lambda(loc, relTp, symm)
+    
+    
     val applyPred = {pred:Term => OMBIND(ded, Context.empty,OMBIND(pred, Context.empty, relArg))}
     val axiomToDecl = {ax:Term => VarDecl(LocalName(parent.name.toString()+ax.toString()), None, Some(Univ(1)),  Some(ax), None).toDeclaration(parent.toTerm)}
     val predToDecl = {pred:Term => axiomToDecl(applyPred(pred))}
