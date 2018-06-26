@@ -71,10 +71,8 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
     ???
   }
 
-  def composeParser[T <: DefForm](name : String, pos : List[Parser[DefForm]], x : Comp[T]) : Parser[T] =
-  {
-    val c = implicitly[Baz].snafu
-    (("(" + name) ~> positional(pos) <~ ")") ^^ { case p => x.build(p) }
+  def composeParser[T <: DefForm](name : String, pos : List[Parser[DefForm]], x : Comp[T]) : Parser[T] = {
+    fullParser((("(" + name) ~> positional(pos) <~ ")") ^^ { case p => x.build(p) })
   }
 
   val parseHeralding : Parser[Heralding] = composeParser("herald", List(parseTName), Heralding)
