@@ -143,7 +143,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -255,6 +255,12 @@ lazy val interviews = (project in file("mmt-interviews")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-interviews"): _*)
 
+// using MMT from Python via Py4J, maintainer: Florian
+lazy val python = (project in file("python-mmt")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("python-mmt"): _*).
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "py4j0.10.7.jar")
+  
 // =================================
 // MMT projects: additional (optional) functionality that is factored out into separate projects due to dependencies
 // =================================

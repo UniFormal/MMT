@@ -1,11 +1,13 @@
 # Python side of Java-Python bridge
 # see info.kwarc.mmt.python.Py4JGateway (an MMT extension that must be added to MMT for the bridge to work) for the counterpart
 
-from py4j.java_gateway import JavaGateway, JavaObject, GatewayParameters
+from py4j.java_gateway import JavaGateway, JavaObject, GatewayParameters, CallbackServerParameters
 import py4j
 
 # create the gateway that communicates with the JVM
-gateway = JavaGateway(gateway_parameters=GatewayParameters(auto_field=True,auto_convert=True))
+gwp = GatewayParameters(auto_field=True,auto_convert=True)
+cbp = CallbackServerParameters()
+gateway = JavaGateway(gateway_parameters=gwp,callback_server_parameters=cbp)
 
 # MMT sets the entry point to be the MMT controller
 controller = gateway.entry_point
@@ -81,3 +83,5 @@ def Map(m):
     return jc.mapAsScalaMapConverter(m).asScala()
 def LMap(m):
     return jc.mapAsScalaMapConverter(m).asScala().toList()
+  
+        
