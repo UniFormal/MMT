@@ -4,10 +4,9 @@ import info.kwarc.mmt.api.utils.UnparsedParsers
 
 import scala.util.parsing.combinator.Parsers
 
-/* TODO: Refactor into "PositionParser" or something more accurate. */
-object DefFormParser extends Parsers with UnparsedParsers
+object ParserWithSourcePosition extends Parsers with UnparsedParsers
 {
-  class DefFormParser[T <: DefForm](p : Parser[T]) extends Parser[T]
+  class ParserWithSourcePosition[T <: DefForm](p : Parser[T]) extends Parser[T]
   {
     // Source of a relevant (yet changed) code snippet:
     // stackoverflow.com/questions/14707127/accessing-position-information-in-a-scala-combinatorparser-kills-performance
@@ -16,13 +15,14 @@ object DefFormParser extends Parsers with UnparsedParsers
     {
       val source = in.source
       val offset = in.offset
-      val start = handleWhiteSpace(source, offset)
-      val inwo = in.drop(start - offset)
+      val start  = handleWhiteSpace(source, offset)
+      val inwo   = in.drop(start - offset)
 
-      val posb4 = in.pos
+      val posb4  = in.pos
       val before = (offset, posb4.line, posb4.column)
 
-      p(inwo) match {
+      p(inwo) match
+      {
         case Success(t, in1) =>
         {
           val ip = inwo.pos
@@ -46,18 +46,18 @@ object DefFormParser extends Parsers with UnparsedParsers
     (";" ~> parseText) ^^ { case txt => LineComment(txt.dropWhile(_ == ';').trim, None, None) }
   }
 
-  def parseLineComment : DefFormParser[LineComment] = { new DefFormParser[LineComment](pLineComment) }
+  def parseLineComment : ParserWithSourcePosition[LineComment] = { new ParserWithSourcePosition[LineComment](pLineComment) }
 
   /* I <3 Parser Combinators */
-  def withComment[T <: DefForm](dfp : DefFormParser[T]) : Parser[T] = {
+  def withComment[T <: DefForm](dfp : ParserWithSourcePosition[T]) : Parser[T] = {
     (dfp ~ (parseLineComment?)) ^^ { case r ~ c => r.addComment(c) ; r }
   }
 
-  def fullParser[T <: DefForm](p : Parser[T]) : Parser[T] = { withComment(new DefFormParser[T](p)) }
+  def fullParser[T <: DefForm](p : Parser[T]) : Parser[T] = { withComment(new ParserWithSourcePosition[T](p)) }
 
   /* Positional Arguments must all appear in exactly the order given */
-  def positional(ps : List[Parser[DefForm]]) : Parser[List[DefForm]] = {
-    (fullParser(ps.head) ~ positional(ps.tail)) ^^ { case p ~ ps => List(p) ::: ps }
+  def positional(parsers : List[Parser[DefForm]]) : Parser[List[DefForm]] = {
+    (fullParser(parsers.head) ~ positional(parsers.tail)) ^^ { case p ~ ps => List(p) ::: ps }
   }
 
   /* Keyword Arguments are all optional and can appear in any order */
@@ -67,9 +67,11 @@ object DefFormParser extends Parsers with UnparsedParsers
     ???
   }
 
-  lazy val pHeralding: PackratParser[Heralding] = {
-    ("(herald " ~> parseName <~ ")") ^^ { case name => Heralding(name, None, None) }
+  def composeParser(name : String, pos : List[Parser[DefForm]], key : List[Parser[DefForm]]) : Parser[DefForm] =
+  {
+    val pr = (("(" + name).r ~> (positional(pos) ~ keyworded(key)) <~ ")") ^^ { case p ~ _ => asInstanceOf[DefForm].build(p) }
+    fullParser(pr)
   }
 
-  def parseHeralding : Parser[Heralding] = fullParser(pHeralding)
+  val parseHeralding : Parser[Heralding] = composeParser("herald", List(fullParser(parseName)), ???)
 }

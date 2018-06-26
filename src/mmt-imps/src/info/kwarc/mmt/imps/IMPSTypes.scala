@@ -4,6 +4,7 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.imps.HList.:+:
 import info.kwarc.mmt.imps.Method.Method
 import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.OperationType.OperationType
@@ -1448,12 +1449,34 @@ case class IMPSQCSecond(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
   override def toString : String = "second{" + s.toString + "}"
 }
 
-//-----------
+//-------------
+
+/* This version of HLists is sourced from here, to make do without Shapeless */
+/* https://apocalisp.wordpress.com/2010/07/06/type-level-programming-in-scala-part-6a-heterogeneous-list%c2%a0basics/ */
+
+sealed trait HList
+
+final case class HCons[H, T <: HList](head : H, tail : T) extends HList {
+  def :+:[U](v : U) = HCons(v, this)
+}
+
+sealed class HNil extends HList {
+  def :+:[T](v : T) = HCons(v, this)
+}
+
+object HNil extends HNil
+
+// aliases for building HList types and for pattern matching
+object HList {
+  type :+:[H, T <: HList] = HCons[H, T]
+  val :+: : HCons.type = HCons
+
+  // contains no type information: not even A
+  implicit def fromList[A](list: Traversable[A]): HList = ((HNil : HList) /: list) ( (hl,v) => HCons(v, hl) )
+}
 
 trait DefForm
 {
-  /* idea: make vals here for lists of pos/key arguments, generate parser automatically? */
-
   var src : SourceInfo
   var cmt : CommentInfo
 
@@ -1478,11 +1501,26 @@ trait DefForm
   def addComment(c : CommentInfo) : Unit = {
     if (this.cmt.isEmpty) { this.cmt = c }
   }
+
+  def build[T <: DefForm](args : HList) : T
 }
 
 case class LineComment(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+{
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (str : String) :+: _ => LineComment(str, src, cmt).asInstanceOf[T]
+    case _ => ???
+  }
+}
 
 case class Heralding(name : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+{
+
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (str : String) :+: _ => Heralding(str, src, cmt).asInstanceOf[T]
+    case _ => ???
+  }
+}
 
 //-----------
 
