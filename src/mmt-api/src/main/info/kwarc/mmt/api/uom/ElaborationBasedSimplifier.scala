@@ -356,6 +356,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             val t = lup.getAs(classOf[DeclaredTheory], p)
             t
           case exp =>
+            // TODO also materialize pushout if a nested theory is visible via an implicit morphism
             materialize(Context(parentMPath),exp,None, Some(struc.tpC))
         }
         applyChecked(fromThy)
