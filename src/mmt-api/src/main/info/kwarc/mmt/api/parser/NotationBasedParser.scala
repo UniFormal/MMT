@@ -50,7 +50,7 @@ case class ParsingRuleTable(groups: List[ParsingRuleGroup]) {
 }
 
 /**
- * names are locally meaningful: variables bound in the contexts (to be parsed as OMV), fields of dependnet OML sequences (to be parsed as OML)
+ * names are locally meaningful: variables bound in the contexts (to be parsed as OMV), fields of dependent OML sequences (to be parsed as OML)
  */
 case class BoundName(name: LocalName, isOML: Boolean)
 

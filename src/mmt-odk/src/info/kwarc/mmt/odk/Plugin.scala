@@ -11,6 +11,7 @@ import uom._
 import utils._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.mitm.MitM
+import info.kwarc.mmt.odk.OpenMath.CodingServer
 import info.kwarc.mmt.odk.SCSCP.Server.MitMServer
 import info.kwarc.mmt.odk.Singular.SingularImporter
 
@@ -26,6 +27,7 @@ class Plugin extends frontend.Extension {
     controller.extman.addExtension(new ODKGraph)
     controller.extman.addExtension(new MitMServer)
     controller.extman.addExtension(new UniverseInference)
+    controller.extman.addExtension(new CodingServer)
     controller.extman.addExtension(MitM.preproc)
   }
 }

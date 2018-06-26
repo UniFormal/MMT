@@ -21,7 +21,7 @@ class TypedRelationalExtractor extends RelationalExtractor {
    val allBinary = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,
          IsAlignedWith, HasViewFrom)
 
-   private def isJudgment(tp: Term): Boolean = tp match {
+   def isJudgment(tp: Term): Boolean = tp match {
       case FunType(_, ApplySpine(OMS(s),_)) =>
          //this can throw errors if the implicit graph is not fully loaded
          try {
@@ -31,7 +31,7 @@ class TypedRelationalExtractor extends RelationalExtractor {
          }
       case _ => false
    }
-         
+           
    /** apply a continuation function to every relational element of a StructuralElement */
    def apply(e: StructuralElement)(implicit f: RelationalElement => Unit) {
       val path = e.path
@@ -76,11 +76,12 @@ class TypedRelationalExtractor extends RelationalExtractor {
                      c.alias foreach {a =>
                        f(IsAliasFor(t.path ? a, c.path))
                      }
-                     if (isJudgment(c.toTerm))
-                       f(IsJudgement(c.path))
-                     c.tp match {
-                         case Some(Univ(1)) => f(IsType(c.path))
-                         case Some(Univ(n)) if n > 1 => f(IsHighUniverse(c.path))
+                     if (isJudgment(c.toTerm)) {
+                       println("Found Judgement: "+c.path); f(IsJudgement(c.path))}
+                     else c.tp match {
+                         case Some(Univ(1)) => println("Found Type: "+c.path); f(IsType(c.path))
+                         case Some(Univ(2)) => println("Found Kind: "+c.path); f(IsKind(c.path))
+                         case Some(Univ(n)) if n > 2 => f(IsHighUniverse(c.path))
                          case _ =>
                        }
                   case s: Structure =>
@@ -126,3 +127,25 @@ class TypedRelationalExtractor extends RelationalExtractor {
       }
    }
 }
+
+
+
+/*class TExtensionManager(controller: Controller) extends ExtensionManager(controller: Controller) {
+    val mmtextr = TypedRelationalExtractor
+}
+
+class TController extends Controller {
+  override val extman = new TExtensionManager(this)
+}
+
+trait TExtension extends Extension {
+  /** the controller that this extension is added to; only valid after creation of the extension, i.e., will return null if used in a non-lazy val-field */
+    /** MMT initialization (idempotent) */
+  override def init(controller: Controller) {
+    this.controller = controller
+    report = controller.report
+    
+  }
+}
+
+*/

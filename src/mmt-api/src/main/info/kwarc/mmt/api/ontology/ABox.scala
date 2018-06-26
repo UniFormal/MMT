@@ -187,7 +187,7 @@ class RelStore(report : frontend.Report) {
          case IsView => (ViewEntry(), p)
          case IsStructure => (StructureEntry(), p)
          case IsPattern => (PatternEntry(), p)
-         case _ => (new StatisticEntries(s.toString),p)
+         case _ => (AnyOtherEntry(), p)//(new StatisticEntries(s.toString),p)
        }
      }
    }
@@ -306,3 +306,4 @@ case class KindEntry() extends StatisticEntries("kind")
 case class HighUniverseEntry() extends StatisticEntries("type of type universe >2")
 case class ExplicitMorphismEntry() extends StatisticEntries("explicit theory morphisms")
 case class AnyMorphismEntry() extends StatisticEntries("any theory morphism")
+case class AnyOtherEntry() extends StatisticEntries("other")

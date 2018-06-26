@@ -151,6 +151,8 @@ case class MPath(parent : DPath, name : LocalName) extends ContentPath with Slas
    /** if this.name != Nil then this.toGlobalName.toMPath == this */
    def toGlobalName = ^ ? LocalName(name.last)
    def module = this
+   /** the super module if this is a nested module */
+   def superModule = if (name.length <= 1) None else Some(this ^)
 }
 
 /**

@@ -27,7 +27,24 @@ import scala.util.Try
  * currently all definitions in t1 and t2 are expanded even though op is often injective, especially if op is a type operator
  */
 
-object InferredType extends TermProperty[(Branchpoint,Term)](utils.mmt.baseURI / "clientProperties" / "solver" / "inferred")
+/** caches the inferred type of a term with that term */
+object InferredType extends TermProperty[(Branchpoint,Term)](Solver.propertyURI / "inferred")
+
+/** marks a term as head-stable: no rule can change the head symbol */
+object Stability extends BooleanTermProperty(Solver.propertyURI / "stability") {
+  def hasStableShape(o: Obj, sh: Shape): Boolean = {
+    (o,sh) match {
+      case (_, Wildcard) => true
+      case (t, AtomicShape(s)) =>
+        t == s && Stability.is(t)
+      case (ComplexTerm(op,_,_,_), ComplexShape(sop, children)) if op == sop =>
+        (o.subobjects zip children) forall {case ((_,t), c) =>
+            hasStableShape(t,c)
+        }
+      case _ => false
+    }
+  }
+}
 
 /** returned by [[Solver.dryRun]] as the result of a side-effect-free check */
 sealed trait DryRunResult {
@@ -794,7 +811,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       if (checkingUnit.isKilled) {
         return error("checking was cancelled by external signal")
       }
-     report.breakOnId(28)
       JudgementStore.getOrElseUpdate(j) {
         history += j
         log("checking: " + j.presentSucceedent + "\n  in context: " + j.presentAntecedent)
@@ -944,7 +960,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           //foundation-independent cases
           case OMV(x) =>
              history += "lookup in context"
-             getVar(x).tp
+             getVar(x).tp // TODO infer type of definiens if no type
           case OMS(p) =>
              history += "lookup in theory"
              getType(p) orElse {
@@ -1487,24 +1503,33 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
    /** simplifies one step overall */
    private def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = {
-     def expandDefinition: Term = {
-       val tmE = defExp(tm, outerContext++stack.context)
-       if (tmE hashneq tm) {
-         log("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
-         history += ("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
-       }
-       tmE
-     }
      if (checkingUnit.isKilled) {
        return tm
      }
-
      val tmS = tm match {
-       case OMID(_) =>
-         expandDefinition
-       case OMV(_) =>
-         expandDefinition
-       case t: OMLITTrait => t
+       case OMS(p) =>
+         val d = getDef(p)
+         d match {
+           case Some(tD) =>
+             tD
+           case None =>
+             // TODO apply abbrev rules?
+             Stability.set(tm) // undefined constants are stable 
+             tm             
+         }
+       case OMV(n) =>
+         val vd = outerContext.getO(n) getOrElse stack.context(n)
+         vd.df match {
+           case Some(tD) =>
+             tD
+           case None =>
+             if (!solution.isDeclared(n))
+               Stability.set(tm) // unknowns are unstable, any other undefined variable is stable 
+             tm
+         }
+       case t: OMLITTrait =>
+         Stability.set(t) // literals are always stable
+         t
        case ComplexTerm(op,subs,con,args) =>
           // use first applicable rule
           var simp: CannotSimplify = Simplifiability.NoRecurse
@@ -1530,7 +1555,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           // invariant: tm simplifies to result
           var subobjsLeft: List[Obj] = subs ::: con ::: args
           var subobjsNew: List[Obj] = Nil
-          var done: Boolean = false // true if tm is not identical to result anymore
+          var simplified: Boolean = false // true if tm is not identical to result anymore
+          var stable: Boolean = true // true if the subterms in all recurse positions are shape-stable
           def result = ComplexTerm(op, subobjsNew.reverse ::: subobjsLeft)
           // we go through all subobjects and try to simplify one of them
           while (subobjsLeft.nonEmpty) {
@@ -1538,30 +1564,45 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
             subobjsLeft = subobjsLeft.tail
             val i = subobjsNew.length + 1 // position of o
             val h = history + ("recursing into subobject " + i) 
-            val sNew = if (!done && !recursePositions.contains(i)) {
+            val sNew = if (!simplified && !recursePositions.contains(i)) {
               o // only recurse if this is one of the recurse positions and no previous subobjects has changed 
             } else {
               val oN = o match {
                 case s: Sub =>
-                  s.mapTerms(t => safeSimplifyOne(t)(stack,h))
+                  val sN = s.map(t => safeSimplifyOne(t)(stack,h))
+                  if (Stability.is(sN.target))
+                    Stability.set(sN)
+                  sN
                 case vd: VarDecl =>
-                  vd.mapTerms {case (_,t) => safeSimplifyOne(t)(stack ++ con.take(i-subs.length), h)}
+                  val vdN = vd.map {t => safeSimplifyOne(t)(stack ++ con.take(i-subs.length), h)}
+                  if ((vdN.tp.toList ::: vdN.df.toList).forall {t => Stability.is(t)})
+                    Stability.set(vdN)
+                  vdN
                 case t: Term =>
                   safeSimplifyOne(t)(stack ++ con, h) 
               }
               if (o hasheq oN) {
                 o // if no change, retain the old pointer
               } else {
-                done = true
+                simplified = true
                 oN
               }
             }
+            stable &&= Stability.is(sNew)
             subobjsNew ::= sNew
           }
-          result
-       case t => t 
+          if (simplified) {
+            result
+          } else {
+            // mark original term as head-stable if all relevant subterms are 
+            if (stable)
+              Stability.set(tm)
+            tm
+          }
+       case t => t
      }
      if (tm hashneq tmS) {
+       log("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
        history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
      }
      tmS
@@ -1792,6 +1833,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 }
 
 object Solver {
+  /** base for client property keys */
+  val propertyURI = utils.mmt.baseURI / "clientProperties" / "solver"
+  
   /** reconstructs a single term and returns the reconstructed term and its type */
   def check(controller: Controller, stack: Stack, tm: Term): Either[(Term,Term),Solver] = {
       val ParseResult(unknowns,free,tmU) = ParseResult.fromTerm(tm)
