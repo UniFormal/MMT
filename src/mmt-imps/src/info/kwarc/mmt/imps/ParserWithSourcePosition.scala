@@ -39,8 +39,10 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
 
   lazy val parseDefForm : PackratParser[DefForm] = { parseLineComment | parseHeralding }
 
-  lazy val parseName = { regex("""[^()\t\r\n ]+""".r) }
-  lazy val parseText = { regex("""[^\r\n]+""".r) }
+  lazy val parseName = regex("""[^()\t\r\n ]+""".r)
+  lazy val parseText = regex("""[^\r\n]+""".r)
+
+  lazy val parseTName : Parser[Name] = fullParser(parseName ^^ { case nm => Name(nm,None,None)} )
 
   lazy val pLineComment: PackratParser[LineComment] = {
     (";" ~> parseText) ^^ { case txt => LineComment(txt.dropWhile(_ == ';').trim, None, None) }
@@ -57,7 +59,9 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
 
   /* Positional Arguments must all appear in exactly the order given */
   def positional(parsers : List[Parser[DefForm]]) : Parser[List[DefForm]] = {
-    (fullParser(parsers.head) ~ positional(parsers.tail)) ^^ { case p ~ ps => List(p) ::: ps }
+    println("positional: " + parsers.length)
+    if (parsers.isEmpty) { success(List.empty) } else
+      { (fullParser(parsers.head) ~ positional(parsers.tail)) ^^ { case p ~ ps => List(p) ::: ps } }
   }
 
   /* Keyword Arguments are all optional and can appear in any order */
@@ -67,11 +71,11 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
     ???
   }
 
-  def composeParser(name : String, pos : List[Parser[DefForm]], key : List[Parser[DefForm]]) : Parser[DefForm] =
+  def composeParser[T <: DefForm](name : String, pos : List[Parser[DefForm]], x : Comp[T]) : Parser[T] =
   {
-    val pr = (("(" + name).r ~> (positional(pos) ~ keyworded(key)) <~ ")") ^^ { case p ~ _ => asInstanceOf[DefForm].build(p) }
-    fullParser(pr)
+    val c = implicitly[Baz].snafu
+    (("(" + name) ~> positional(pos) <~ ")") ^^ { case p => x.build(p) }
   }
 
-  val parseHeralding : Parser[Heralding] = composeParser("herald", List(fullParser(parseName)), ???)
+  val parseHeralding : Parser[Heralding] = composeParser("herald", List(parseTName), Heralding)
 }

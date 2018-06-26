@@ -1501,24 +1501,38 @@ trait DefForm
   def addComment(c : CommentInfo) : Unit = {
     if (this.cmt.isEmpty) { this.cmt = c }
   }
+}
 
+abstract class Comp[T <: DefForm] {
   def build[T <: DefForm](args : HList) : T
 }
 
-case class LineComment(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+case class Name(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object Name extends Comp[Name]
 {
   override def build[T <: DefForm](args : HList) : T = args match {
-    case (str : String) :+: _ => LineComment(str, src, cmt).asInstanceOf[T]
+    case (str : String) :+: _ => Name(str, None, None).asInstanceOf[T]
     case _ => ???
   }
 }
 
-case class Heralding(name : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
-{
+case class LineComment(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
+object LineComment extends Comp[LineComment]
+{
   override def build[T <: DefForm](args : HList) : T = args match {
-    case (str : String) :+: _ => Heralding(str, src, cmt).asInstanceOf[T]
+    case (str : String) :+: _ => LineComment(str, None, None).asInstanceOf[T]
     case _ => ???
+  }
+}
+
+case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object Heralding extends Comp[Heralding] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (nm : Name) :+: _ => Heralding(nm, None, None).asInstanceOf[T]
+    case _ => println(args) ; ???
   }
 }
 
