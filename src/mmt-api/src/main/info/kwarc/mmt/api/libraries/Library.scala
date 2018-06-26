@@ -470,6 +470,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
           }
           val defaultParentMorph = l.from match {
             case OMPMOD(fromP,_) => fromP.superModule.toList.map {par =>
+              // note: if the parent theory is implicitly visible only, we need to apply the implicit morphism; see the corresponding case in the StructureChecker, which currently forbids this
               (par, OMIDENT(OMMOD(par)))
             }
             case _ => Nil

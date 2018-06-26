@@ -520,6 +520,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                   t
                 case Some(m) =>
                   if (!Morph.isInclude(m)) {
+                     // note: to allow the pushout, we have to at least consider the note in Library.getInLink 
                      env.errorCont(InvalidObject(t, "theory is visible via morphism " + m + " but pushout is not implemented yet"))                    
                   }
                   t
