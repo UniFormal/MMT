@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.checking
 import info.kwarc.mmt.api._
 import frontend._
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
+import info.kwarc.mmt.api.uom.AbbrevRule
 import info.kwarc.mmt.api.utils.Killable
 import modules._
 import objects.Conversions._
@@ -333,6 +334,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private lazy val typeBasedEqualityRules = rules.getOrdered(classOf[TypeBasedEqualityRule])
    private lazy val solutionRules = rules.getOrdered(classOf[SolutionRule])
    private lazy val forwardSolutionRules = rules.getOrdered(classOf[ForwardSolutionRule])
+   private lazy val abbreviationRules = rules.getOrdered(classOf[AbbrevRule])
    /* convenience function for going to the next rule after one has been tried */
    private def dropTill[A](l: List[A], a: A) = l.dropWhile(_ != a).tail
    private def dropJust[A](l: List[A], a:A) = l.filter(_ != a)
@@ -1472,6 +1474,12 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    /** simplifies safely one step along each branch, well-formedness is preserved+reflected */
    //TODO merge with limitedSimplify; offer simplification strategies
    private def safeSimplify(tm: Term)(implicit stack: Stack, history: History): Term = tm match {
+      case OMID(p) if abbreviationRules.exists(_.head == p) =>
+        val rule = abbreviationRules.find(_.head == p).get
+        history += "applying abbreviation rule for " + p.name
+        val tmS = rule.term
+        history += "simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS)
+        return tmS.from(tm)
       case _:OMID | _:OMLITTrait => tm
       case OMV(n) => (stack.context.getO(n) orElse solution.getO(n) orElse constantContext.getO(n)) match {
         case Some(vd) if vd.df.isDefined =>

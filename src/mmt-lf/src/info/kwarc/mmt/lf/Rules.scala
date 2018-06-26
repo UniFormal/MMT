@@ -327,12 +327,19 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
               Recurse
             }
          case (f, Nil) =>
-            //all arguments were used, recurse in case f is again a redex
-            //otherwise, return f (only possible if there was a reduction, so no need for 'if (reduced)')
-            apply(solver)(f, covered) match {
-              case s: Simplify => s
-              case _: CannotSimplify => Simplify(f)
-            }
+           //all arguments were used, recurse in case f is again a redex
+           //otherwise, return f (only possible if there was a reduction, so no need for 'if (reduced)')
+           apply(solver)(f, covered) match {
+             case s: Simplify => s
+             case _: CannotSimplify => Simplify(f)
+           }
+         case(OMS(p),ls) =>
+           val dfO = solver.lookup.getConstant(p).df
+           if (dfO.isDefined) reduce(dfO.get,args)
+           else if (reduced)
+             Simplify(ApplySpine(f,args : _*))
+           else
+             Simplifiability.NoRecurse
          case _ =>
             /*// simplify f recursively to see if it becomes a Lambda
             val fS = solver.simplify(f)

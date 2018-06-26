@@ -64,69 +64,67 @@ class UniverseInference extends ChangeListener {
     }
   }
 
+  private val default : BigInt = 100
+
+  def getUniverse(e : StructuralElement) : BigInt = e match {
+    case ds: Structure =>
+      val dom: Option[DeclaredTheory] = ds.from match {
+        case OMPMOD(mp, _) =>
+          Some(controller.getAs(classOf[DeclaredTheory], mp))
+        case _ => return default
+      }
+      dom.map(getUniverse).getOrElse(default)
+
+    case th: DeclaredTheory =>
+      th.metadata.get(TypeLevel.path).map(_.value).headOption match {
+        case Some(TypeLevel(j)) => j
+        case _ =>
+          val decs = th.getDeclarations.map(getUniverse)
+          if (decs.isEmpty) default else decs.max
+      }
+    case c : FinalConstant if c.tp.isDefined && c.df.isEmpty =>
+      val parent = controller.get(c.parent)
+      val parentcurrent = parent.metadata.get(TypeLevel.path).map(_.value)
+      val context = parent match {
+        case th : DeclaredTheory => th.getInnerContext
+        case _ => return default
+      }
+      val univ = Solver.infer(controller, context, c.tp.get, None)
+      val ret = univ match {
+        case Some(TypeLevel(i)) =>
+          i
+        case _ => default
+      }
+      ret
+    case _ : FinalConstant => 1
+    case _ => 1
+  }
+
   override def onCheck(c: StructuralElement) : Unit = c match {
     case c : FinalConstant =>
       c.tp match {
         case Some(tp) if c.df.isEmpty =>
           val parent = controller.get(c.parent)
           val parentcurrent = parent.metadata.get(TypeLevel.path).map(_.value)
-          val context = parent match {
-            case th : DeclaredTheory => th.getInnerContext
-            case _ => return ()
-          }
-          val univ = Solver.infer(controller, context, tp, None)
           val previous : BigInt = parentcurrent.headOption match {
             case Some(TypeLevel(j)) => j
             case _ => 1
           }
-          val ret = univ match {
-            case Some(TypeLevel(i)) =>
-              c.metadata.update(new MetaDatum(TypeLevel.path, TypeLevel(i)))
-              i max previous
-            case _ => previous
-          }
+          val newU = getUniverse(c)
+          c.metadata.update(new MetaDatum(TypeLevel.path, TypeLevel(newU)))
+          val ret = newU max previous
           parent.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(ret)))
         case _ =>
       }
     case ds : Structure =>
-      // TODO
       val parent = controller.get(c.parent) match {
         case dm : DeclaredModule => dm
         case _ => return ()
       }
-      val parentV : BigInt = parent.metadata.get(TypeLevel.path).map(_.value).headOption match {
-        case Some(TypeLevel(j)) =>
-          j
-        case _ => 1
-      }
-      val dom : Option[DeclaredTheory] = ds.from match {
-        case OMPMOD(mp,_) =>
-          Some(controller.getAs(classOf[DeclaredTheory],mp))
-        case _ => None
-      }
-      val structV : BigInt = dom.flatMap(_.metadata.get(TypeLevel.path).map(_.value).headOption) match {
-        case Some(TypeLevel(j)) =>
-          j
-        case _ => 1
-      }
+      val parentV = getUniverse(parent)
+      val structV = getUniverse(ds)
+      ds.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(parentV)))
       parent.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(parentV max structV)))
-    case th : DeclaredTheory if th.parameters.nonEmpty =>
-      /* This is actually wrong
-      var current : BigInt = th.metadata.get(TypeLevel.path).map(_.value).headOption match {
-        case Some(TypeLevel(j)) => j
-        case _ => 1
-      }
-      th.parameters.foreach {
-        case VarDecl(_,_,Some(tp),_,_) =>
-          val univ = Solver.infer(controller, th.getInnerContext, tp, None)
-          univ match {
-            case Some(TypeLevel(i)) =>
-              current = i max current
-            case _ =>
-          }
-        case _ =>
-      }
-      th.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(current))) */
     case _ =>
   }
 }
