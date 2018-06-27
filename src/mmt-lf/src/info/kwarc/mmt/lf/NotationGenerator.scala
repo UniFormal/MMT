@@ -19,26 +19,10 @@ import notations._
  */
 class NotationGenerator extends ChangeListener {
    override val logPrefix = "notation-gen"
-   /**
-    * Determines whether a type is a judgment type
-    * @param tp the argument type of a constant
-    * @return true if tp is atomic and formed from a symbol with role "Judgment" or a function type returning such a judgment type
-    *
-    * Other extensions may want to override this to consider more types as judgment types
-    * (e.g., Sigma types formed from judgment types).
-    */
-   protected def isJudgment(tp: Term): Boolean = tp match {
-      case FunType(_, ApplySpine(OMS(s),_)) =>
-         //this can throw errors if the implicit graph is not fully loaded
-         try {
-            controller.globalLookup.getConstant(s).rl.contains("Judgment")
-         } catch {case e: Error =>
-            false
-         }
-      case _ => false
-   }
+
    override def onAdd(e: StructuralElement) {e match {
       case c: Constant =>
+         implicit val lup = controller.globalLookup
          val notC = c.notC
          if (notC.parsing.isDefined && notC.presentation.isDefined) return
          val tpU = c.tpC.get.getOrElse(return) // nothing to do if there is no (function) type
@@ -46,8 +30,8 @@ class NotationGenerator extends ChangeListener {
          //TODO handle free variables here?
          val (args, scp) = FunType.unapply(tp).getOrElse(return)
          val numTotalArgs = args.length
-         if (numTotalArgs == 0 || ! isJudgment(scp)) return
-         val numImplicitArgs = args.prefixLength {case (_, argType) => ! isJudgment(argType)}
+         if (numTotalArgs == 0 || ! JudgmentTypes.isJudgment(scp)) return
+         val numImplicitArgs = args.prefixLength {case (_, argType) => ! JudgmentTypes.isJudgment(argType)}
          log(s"adding notation for ${c.name} ($numImplicitArgs implicit args, $numTotalArgs total args")
          if (notC.parsing.isEmpty) {
             val parseMarkers = SymbolName() ::
