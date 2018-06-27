@@ -29,15 +29,19 @@ class ODKTest extends MMTIntegrationTest(
   shouldCheck("Test/General", Orders.testgeneral:_*)(mayfail = List(
     "http://test.kwarc.info/Structure?C?test2?definition"
   ))
+}
+
+
+class MitMTest extends MMTIntegrationTest(TestArchive("MitM/smglom", hasDevel = true))(
+  ExtensionSpec("info.kwarc.mmt.lf.Plugin"),
+  ExtensionSpec("info.kwarc.mmt.odk.Plugin")
+) {
+
+  bootstrapTests()
+
+  shouldLoadExtensions()
+  shouldInstallArchives()
   handleLine("log+ structure-checker")
   shouldCheck("MitM/smglom",Orders.mitmsmglom:_*)(onlyfiles = true)
 }
 
-/*
-class MitMTest extends MMTTest("MMT/LFX","MitM/Foundation","MitM/smglom")("info.kwarc.mmt.lf.Plugin") {
-  behavior of "MitM"
-  // shouldhl("build MitM/Foundation mmt-omdoc")
-
-  // shouldcheck("MitM/smglom",Orders.mitmsmglom:_*)()
-}
-*/
