@@ -319,21 +319,6 @@ object Method extends Enumeration
   val NULLCALL       = Value("null-call-method-terminator")
 }
 
-/* These are all seven usages of (for example) theorems.
- * See page 77 of IMPS manual. */
-object Usage extends Enumeration
-{
-  type Usage = Value
-
-  val ELEMENTARYMACETE       = Value("elementary-macete")
-  val TRANSPORTABLEMACETE    = Value("transportable-macete")
-  val REWRITE                = Value("rewrite")
-  val TRANSPORTABLEREWRITE   = Value("transportable-rewrite")
-  val SIMPLIFYLOGICALLYFIRST = Value("simplify-logically-first")
-  val DRCONVERGENCE          = Value("d-r-convergence")
-  val DRVALUE                = Value("d-r-value")
-}
-
 case class ArgumentUsages(usgs : List[Usage], src : Option[SourceRef]) extends TExp {
   override def toString : String =
   {
@@ -1472,7 +1457,7 @@ object HList {
   val :+: : HCons.type = HCons
 
   // contains no type information: not even A
-  implicit def fromList[A](list: Traversable[A]): HList = ((HNil : HList) /: list) ( (hl,v) => HCons(v, hl) )
+  implicit def fromList[A](list: List[A]): HList = ((HNil : HList) /: list.reverse) ( (hl,v) => HCons(v, hl) )
 }
 
 trait DefForm
@@ -1507,35 +1492,66 @@ abstract class Comp[T <: DefForm] {
   def build[T <: DefForm](args : HList) : T
 }
 
-case class Name(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
-{
+case class LineComment(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+// Arguments and whatnot
+
+case class Name(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString: String = s
 }
 
-object Name extends Comp[Name]
-{
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (str : String) :+: _ => Name(str, None, None).asInstanceOf[T]
-    case _ => ???
-  }
+case class DefString(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = s
 }
 
-case class LineComment(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
-
-object LineComment extends Comp[LineComment]
-{
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (str : String) :+: _ => LineComment(str, None, None).asInstanceOf[T]
-    case _ => ???
-  }
+case class ArgTheory(thy : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(theory " + thy.toString + ")"}
 }
+
+case class ArgWitness(w : DefString, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(witness " + w.toString + ")"}
+}
+
+/* These are all seven usages of (for example) theorems.
+ * See page 77 of IMPS manual. */
+object Usage extends Enumeration
+{
+  type Usage = Value
+
+  val ELEMENTARYMACETE       : Usage = Value("elementary-macete")
+  val TRANSPORTABLEMACETE    : Usage = Value("transportable-macete")
+  val REWRITE                : Usage = Value("rewrite")
+  val TRANSPORTABLEREWRITE   : Usage = Value("transportable-rewrite")
+  val SIMPLIFYLOGICALLYFIRST : Usage = Value("simplify-logically-first")
+  val DRCONVERGENCE          : Usage = Value("d-r-convergence")
+  val DRVALUE                : Usage = Value("d-r-value")
+}
+
+case class ArgUsages(usgs : List[Usage], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(usages " + usgs.mkString(" ") + ")"}
+}
+
+// Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object Heralding extends Comp[Heralding] {
   override def build[T <: DefForm](args : HList) : T = args match {
-    case (nm : Name) :+: _ => Heralding(nm, None, None).asInstanceOf[T]
-    case _ => println(args) ; ???
+    case (nm : Name) :+: HNil => Heralding(nm, None, None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+
+case class DFAtomicSort(name : Name, dfs : DefString, thy : ArgTheory,
+                        usgs : Option[ArgUsages], wtn : Option[ArgWitness],
+                        var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFAtomicSort extends Comp[DFAtomicSort] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (d : DefString) :+: (t : Option[ArgTheory]) :+: (u : Option[ArgUsages]) :+:
+      (w : Option[ArgWitness]) :+: HNil => DFAtomicSort(n,d,t.get,u,w,None,None).asInstanceOf[T]
+    case _ => ??!(args)
   }
 }
 
