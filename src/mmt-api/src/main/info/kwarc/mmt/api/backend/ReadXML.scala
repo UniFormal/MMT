@@ -274,6 +274,7 @@ class XMLReader(controller: Controller) extends Logger {
             }
             val t = Theory.empty(parent, tname, meta) //definition and parameters are parsed by readIn
             addDeclaration(new NestedModule(OMMOD(home), name, t))
+            md.foreach(d => t.metadata.add(d.getAll:_*))
             body.foreach {n =>
                logGroup {
                   readIn(nsMap, t, n)

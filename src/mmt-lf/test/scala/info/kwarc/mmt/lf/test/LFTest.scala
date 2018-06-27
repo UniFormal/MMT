@@ -10,7 +10,8 @@ class LFTest extends MMTIntegrationTest(
   TestArchive("MMT/urtheories", hasDevel = true),
   TestArchive("MMT/LFX", hasDevel = true),
   TestArchive("Test/General", hasDevel = true),
-  TestArchive("MMT/examples", hasDevel = true)
+  TestArchive("MMT/examples", hasDevel = true),
+  TestArchive("MitM/smglom", hasDevel = true)
 )(
   ExtensionSpec("info.kwarc.mmt.lf.Plugin")
 ) {
@@ -30,6 +31,7 @@ class LFTest extends MMTIntegrationTest(
     "http://test.kwarc.info/Structure?C?test2?definition"
   ))
   shouldCheck("MMT/examples",Orders.examples:_*)(onlyfiles = true)
+  shouldCheck("MitM/smglom",Orders.mitmsmglom:_*)(onlyfiles = true)
 }
 
 /*
@@ -60,6 +62,7 @@ object Orders {
     ,"algebra/modulsvectors.mmt"
     ,"algebra/numberspaces.mmt"
     ,"algebra/permutation-group.mmt"
+    ,"algebra/polynomials.mmt"
     ,"elliptic_curves/algebra_base.mmt"
     ,"elliptic_curves/Weierstrass-model.omf.mmt"
     ,"elliptic_curves/elliptic-curve.omf.mmt"
@@ -73,6 +76,7 @@ object Orders {
     ,"elliptic_curves/q-expansion.omf.mmt"
     ,"elliptic_curves/Rouse-classification.omf.mmt"
     ,"elliptic_curves/elliptic-curve-toolchest.omf.mmt"
+    ,"algebra/hecke.mmt"
     ,"sets/poset.mmt"
     ,"algebra/lattice.mmt"
     ,"calculus/normedmetric.mmt"

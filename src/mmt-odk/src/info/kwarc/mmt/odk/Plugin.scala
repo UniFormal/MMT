@@ -115,6 +115,8 @@ class UniverseInference extends ChangeListener {
           val ret = newU max previous
           parent.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(ret)))
         case _ =>
+          val parent = controller.get(c.parent)
+          if (parent.metadata.get(TypeLevel.path).isEmpty) parent.metadata.add(new MetaDatum(TypeLevel.path,TypeLevel(1)))
       }
     case ds : Structure =>
       val parent = controller.get(c.parent) match {
