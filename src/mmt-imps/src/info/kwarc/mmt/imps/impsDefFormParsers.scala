@@ -69,7 +69,7 @@ package object impsDefFormParsers
       assert(lsp.successful)
 
       qss = Some(impsMathParser.makeSEXPFormula(lsp.get))
-      println("     > Formula generation successful: " + qss.get.toString)
+      //println("     > Formula generation successful: " + qss.get.toString)
 
       /* check for required arguments */
       if (name.isEmpty || qss.isEmpty || thy.isEmpty) None
@@ -118,7 +118,7 @@ package object impsDefFormParsers
         i += 1
       }
 
-      println(" > looking for theory: " + thy.get.thy)
+      //println(" > looking for theory: " + thy.get.thy)
       val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thy.get.thy)
       assert(json_theory.isDefined)
       assert(json_theory.get.getAsString("type") == "imps-theory")
@@ -136,7 +136,7 @@ package object impsDefFormParsers
       assert(lsp.successful)
 
       defexp = Some(impsMathParser.makeSEXPFormula(lsp.get))
-      println("     > Formula generation successful: " + defexp.get.toString)
+      //println("     > Formula generation successful: " + defexp.get.toString)
 
       val thesort : String = theconst.get.getAsString("sort")
       assert(thesort != "null")
@@ -148,7 +148,7 @@ package object impsDefFormParsers
 
       /* check for required arguments */
       if (name.isEmpty || defexp.isEmpty || thy.isEmpty) None
-      else { println(" >> Success while trying to parse constant " + name.get + " : " + sort.get.sort.toString) ; Some(Constant(name.get, defexp.get, thy.get, sort.get.sort, usages, e.src)) }
+      else { Some(Constant(name.get, defexp.get, thy.get, sort.get.sort, usages, e.src)) }
     } else { println(" >> Failure while trying to parse constant " + e.children(1)) ; None }
   }
 
@@ -188,7 +188,7 @@ package object impsDefFormParsers
       case _ => println(e.children(1)) ; assert(false)
     }
 
-    println(" > recusive constant: parsed " + names.length + " name(s): " + names.toString())
+    //println(" > recusive constant: parsed " + names.length + " name(s): " + names.toString())
 
     /* Parse keyword arguments, these can come in any order */
     var i : Int = 1
@@ -234,7 +234,7 @@ package object impsDefFormParsers
 
     for (k <- names.indices)
     {
-      println(" > Working on recursive constant " + names(k))
+      //println(" > Working on recursive constant " + names(k))
 
       val thesexp = realsexps(k)
       val lsp = sp.parseAll(sp.parseSEXP,thesexp)
@@ -242,7 +242,7 @@ package object impsDefFormParsers
 
       val defexp = impsMathParser.makeSEXPFormula(lsp.get)
       defexps = defexps ::: List(defexp)
-      println("     > Formula generation successful: " + defexp.toString)
+      //println("     > Formula generation successful: " + defexp.toString)
 
       var thesorts  : List[String]     = theconst.get.getAsList(classOf[JSONString],"sortings").map(g => g.value)
 
@@ -266,6 +266,56 @@ package object impsDefFormParsers
     assert(names.length == defexps.length)
 
     Some(RecursiveConstant(names, defexps, sorts, thy, usages, definame, e.src))
+  }
+
+  /* Parser for IMPS special form def-quasi-constructor
+ * Documentation: IMPS manual pgs. 177, 178 */
+  def parseParseSyntax(e : Exp) : Option[ParseSyntax] =
+  {
+    // Required arguments
+    var name   : Option[String] = None
+
+    // Optional arguments
+    var token  : Option[Token] = None
+    var tabl   : Option[Table] = None
+    var bind   : Option[Binding] = None
+    var nullm  : Option[NullMethod] = None
+    var leftm  : Option[LeftMethod] = None
+
+    val cs : Int = e.children.length
+
+    /* Three arguments minimum because two req. arguments */
+    if (cs >= 1)
+    {
+      /* Parse positional arguments */
+      e.children(1) match { case Exp(List(Str(x)), _) => name   = Some(x) }
+
+      /* Parse keyword arguments, these can come in any order */
+      var i : Int = 2
+      while (cs - i > 0)
+      {
+        e.children(i) match {
+          case Exp(ds,src) => ds.head match
+          {
+            case Exp(List(Str("token")),_)       => token = impsArgumentParsers.parseToken(Exp(ds,src)) ; assert(token.isDefined)
+            case Exp(List(Str("left-method")),_) => leftm = impsArgumentParsers.parseLeftMethod(Exp(ds,src)) ; assert(leftm.isDefined)
+            case Exp(List(Str("null-method")),_) => nullm = impsArgumentParsers.parseNullMethod(Exp(ds,src)) ; assert(nullm.isDefined)
+            case Exp(List(Str("table")),_)       => tabl  = impsArgumentParsers.parseTable(Exp(ds,src)) ; assert(tabl.isDefined)
+            case Exp(List(Str("binding")),_)     => bind  = impsArgumentParsers.parseBinding(Exp(ds,src)) ; assert(bind.isDefined)
+            case _                           => ()
+          }
+          case _ => ()
+        }
+        i += 1
+      }
+
+      /* check for required arguments */
+      assert(name.nonEmpty)
+      assert(leftm.isDefined || nullm.isDefined)
+
+      Some(ParseSyntax(name.get, token, leftm, nullm, tabl, bind, e.src))
+
+    } else { assert(false); None }
   }
 
   /* Parser for IMPS special form def-quasi-constructor
@@ -310,6 +360,50 @@ package object impsDefFormParsers
       else { Some(QuasiConstructor(name.get, expstr.get, lang.get, fixed, e.src)) }
 
     } else { None }
+  }
+
+  def parseAlgebraicProcessor(e : Exp) : Option[AlgebraicProcessor] =
+  {
+    // Required arguments
+    var name   : Option[String]           = None
+    var lang   : Option[ArgumentLanguage] = None
+    var base   : Option[AlgProcessorBase] = None
+
+    // Optional arguments
+    var expo   : Option[AlgProcessorExponent] = None
+    var coef   : Option[AlgProcessorCoefficient] = None
+    var canc   : Boolean = false
+
+    val cs : Int = e.children.length
+    assert(cs >= 3)
+
+    /* Parse positional arguments */
+    e.children(1) match { case Exp(List(Str(x)), _) => name = Some(x) }
+
+    /* Parse keyword arguments, these can come in any order */
+    var i : Int = 3
+    while (cs - i > 0)
+    {
+      e.children(i) match {
+        case Exp(ds,src) => ds.head match
+        {
+          case Exp(List(Str("language")),_)      => lang = impsArgumentParsers.parseArgumentLanguage(Exp(ds,src))   ; assert(lang.isDefined)
+          case Exp(List(Str("base")),_)          => base = impsArgumentParsers.parseAlgProcBase(Exp(ds,src))        ; assert(base.isDefined)
+          case Exp(List(Str("exponent")),_)      => expo = impsArgumentParsers.parseAlgProcExponen(Exp(ds,src))     ; assert(expo.isDefined)
+          case Exp(List(Str("coefficient")),_)   => coef = impsArgumentParsers.parseAlgProcCoefficient(Exp(ds,src)) ; assert(coef.isDefined)
+          case Exp(List(Str("cancellative.")),_) => canc = true
+          case _                           => ???
+        }
+        case _ => ()
+      }
+      i += 1
+    }
+
+    assert(name.isDefined)
+    assert(lang.isDefined)
+    assert(base.isDefined)
+
+    Some(AlgebraicProcessor(name.get, canc, lang.get, base.get, expo, coef, e.src))
   }
 
   /* Parser for IMPS special form def-imported-rewrite-rules
@@ -535,7 +629,7 @@ package object impsDefFormParsers
     assert(name.nonEmpty)
     assert(theory.nonEmpty)
 
-    println(" > Looking for theory " + theory.get.thy)
+    //println(" > Looking for theory " + theory.get.thy)
     val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == theory.get.thy.toLowerCase)
     assert(json_theory.isDefined)
     assert(json_theory.get.getAsString("type") == "imps-theory")
@@ -545,19 +639,19 @@ package object impsDefFormParsers
     var s : String = ""
     val thetheorem : Option[JSONObject] = if (name.get != "()")
     {
-      println(" > looking for theorem " + name.get + " in theory " + theory.get.thy + " ...")
+      //println(" > looking for theorem " + name.get + " in theory " + theory.get.thy + " ...")
       (axioms ::: theorems).find(j => j.getAsString("name") == name.get.toLowerCase)
     } else {
-      println(" > looking for nameless theorem () in theory " + theory.get.thy + " ...")
+      //println(" > looking for nameless theorem () in theory " + theory.get.thy + " ...")
       e.children(2) match {
         case Exp(List(Str(x)), _) => {
           s = x.tail.init
-          println("     > scala theorem: " + removeWhitespace(x.tail.init))
+          //println("     > scala theorem: " + removeWhitespace(x.tail.init))
           var tempt = theorems.find(j => removeWhitespace(j.getAsString("formula-string")) == removeWhitespace(x.tail.init))
 
           if (!(tempt.isDefined)) {
             val handpicked = handpick(removeWhitespace(x.tail.init))
-            println("     > handpicked: " +handpicked)
+            //println("     > handpicked: " +handpicked)
             tempt = theorems.find(j => removeWhitespace(j.getAsString("formula-string")) == handpicked)
           }
 
@@ -571,14 +665,14 @@ package object impsDefFormParsers
     {
       assert(s != "")
       val bar = removeWhitespace(s)
-      println(" > s = " + s)
+      //println(" > s = " + s)
 
       for (t <- theorems)
       {
         val foo = removeWhitespace(t.getAsString("formula-string"))
         val n = 5
         if (foo.take(n) == bar.take(n)) {
-          println("     > json theorem: " + foo)
+          //println("     > json theorem: " + foo)
         }
       }
     }
@@ -592,7 +686,7 @@ package object impsDefFormParsers
     assert(lsp.successful)
 
     formula = Some(impsMathParser.makeSEXPFormula(lsp.get))
-    println("     > Formula generation successful: " + formula.get.toString)
+    //println("     > Formula generation successful: " + formula.get.toString)
 
     assert (!(name.isEmpty || formula.isEmpty || theory.isEmpty))
     Some(Theorem(name.get, formula.get, lemma, reverse, theory.get, usages, trans, macete, hmthy, prf, e.src))

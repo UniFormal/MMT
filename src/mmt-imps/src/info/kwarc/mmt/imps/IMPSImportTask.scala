@@ -84,7 +84,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         }
         // Languages are processed in context of theories using them, not by themselves
         case l@(Language(_,_,_,_,_,_,_,_)) => {
-          if (!tState.languages.contains(l)) { println(" > adding language " + l.name) ; tState.languages = tState.languages :+ l }
+          if (!tState.languages.contains(l)) {
+            if (tState.verbosity > 0)
+            {
+              println(" > adding language " + l.name)
+            }
+            tState.languages = tState.languages :+ l
+          }
         }
         // If it's none of these, fall back to doDeclaration
         case _                             => doDeclaration(exp)
@@ -124,7 +130,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
                                        modules.Theory.noParams,
                                        modules.Theory.noBase)
 
-    println(" > trying to add theory " + t.name)
+    if (tState.verbosity > 1)
+    {
+      println(" > trying to add theory " + t.name)
+    } else if (tState.verbosity > 0)
+    {
+      println(" > adding theory " + t.name)
+    }
 
     val mref : MRef = MRef(dPath,nu_theory.path)
     controller.add(nu_theory)
@@ -154,7 +166,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         /* Add Include */
         val component = tState.theories_decl.find(p => p.name.toString.toLowerCase == comp_theory.toLowerCase)
         assert(component.isDefined)
-        println("   > adding include of " + comp_theory.toLowerCase)
+        if (tState.verbosity > 0)
+        {
+          println("   > adding include of " + comp_theory.toLowerCase)
+        }
         controller add PlainInclude(component.get.path,nu_theory.path)
 
         /* Union Languages */
@@ -232,14 +247,20 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     if (t.name != "the-kernel-theory")
     {
-      println(" > adding include for kernel theory")
+      if (tState.verbosity > 0)
+      {
+        println(" > adding include for kernel theory")
+      }
 
       val component = tState.theories_decl.find(p => p.name.toString.toLowerCase == "the-kernel-theory")
       assert(component.isDefined)
       controller add PlainInclude.apply(component.get.path,nu_theory.path)
     }
 
-    println(" > actually adding theory " + t.name)
+    if (tState.verbosity > 1)
+    {
+      println(" > actually adding theory " + t.name)
+    }
 
     tState.theories_decl = tState.theories_decl :+ nu_theory
     tState.theories_raw  = tState.theories_raw  :+ t
@@ -264,7 +285,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       }
       else if (exists_theory)
       {
-        println(" > NEEDLE: " + target.toLowerCase() + " HAYSTACK: " + tState.theories_raw.map(p => p.name.toLowerCase()))
         assert(tState.theories_raw.find(p => p.name.toLowerCase == target.toLowerCase).isDefined)
         val argt = tState.theories_raw.find(p => p.name.toLowerCase == target.toLowerCase).get
         if (argt.lang.isDefined)
@@ -290,7 +310,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       for (baseType : String <- l.bstps.get.tps)
       {
-        println(" > adding base type: " + baseType.toString + " to " + t.name)
+        if (tState.verbosity > 0) {
+          println(" > adding base type: " + baseType.toString + " to " + t.name)
+        }
 
         val tp : Term = IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
         val basetype = symbols.Constant(t.toTerm, doName(baseType), Nil, Some(tp), None, Some("BaseType"))
@@ -334,7 +356,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         val jdgmttp   : Option[Term] = Some(IMPSTheory.Thm(trm))
         val judgement : Declaration  = symbols.Constant(t.toTerm, LocalName(name),Nil,jdgmttp,None,Some("Numerical Type Subsort"))
 
-        println(" > adding " + name)
+        if (tState.verbosity > 0)
+        {
+          println(" > adding " + name)
+        }
 
         if (tal.src.isDefined) { doSourceRef(judgement, tal.src.get) }
         controller add judgement
@@ -359,20 +384,21 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     val debug : Boolean = false
     if (debug)
     {
-      println("\n>>>>> Call to doDecl for the following expression:\n")
-      println(d.toString)
-      for (thy <- tState.theories_decl)
+      if (tState.verbosity > 0)
       {
-        println("\n<<<<< Theory " + thy.name + " contains the following declarations:")
-        for(d <- thy.getDeclarations)
-        { println("~~~ " + d.name.toString) }
+        println("\n>>>>> Call to doDecl for the following expression:\n")
+        println(d.toString)
+
+        for (thy <- tState.theories_decl)
+        {
+          println("\n<<<<< Theory " + thy.name + " contains the following declarations:")
+          for(d <- thy.getDeclarations)
+          { println("~~~ " + d.name.toString) }
+        }
       }
     }
 
     d match {
-      case Heralding(md, src) => {
-        println(" > Dropping (herald ...)")
-      }
 
       case AtomicSort(name, defstring, theory, usages, witness, src, sort) =>
       {
@@ -390,7 +416,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         if (witness.isDefined) {
           doMetaData(nu_atomicSort, "witness", witness.get.witness.toString)
 
-          println(" > defstring: " + defstring.toString)
+          if (tState.verbosity > 1)
+          {
+            println(" > adding atomic sort " + name + "with defstring: " + defstring.toString)
+          }
+
           val exp : IMPSMathExp = IMPSApply(defstring,List(witness.get.witness))
 
           val wit : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(exp, parent, Nil)))
@@ -404,7 +434,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         if (src.isDefined) { doSourceRef(nu_atomicSort, src.get) }
 
-        println(" > Adding atomic sort: " + name + " (enclosed by " + sort.toString + ")")
+        if (tState.verbosity > 0)
+        {
+          println(" > Adding atomic sort: " + name + " (enclosed by " + sort.toString + ")")
+        }
+
         controller add nu_atomicSort
 
         doSubsort(IMPSAtomSort(name), sort, parent, src)
@@ -427,7 +461,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         if (src.isDefined)    { doSourceRef(nu_constant, src.get) }
         if (usages.isDefined) { doUsages(nu_constant, usages.get.usgs) }
 
-        println(" > Adding constant: " + name.toLowerCase + " : " + sort.toString)
+        if (tState.verbosity > 0)
+        {
+          println(" > Adding constant: " + name.toLowerCase + " : " + sort.toString)
+        }
 
         controller add nu_constant
       }
@@ -458,7 +495,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           if (src.isDefined)  { doSourceRef(nu_constant, src.get) }
           if (usgs.isDefined) { doUsages(nu_constant, usgs.get.usgs) }
 
-          println(" > adding recursive constant " + nm + " : "  + theseSorts(i).toString)
+          if (tState.verbosity > 0)
+          {
+            println(" > adding recursive constant " + nm + " : "  + theseSorts(i).toString)
+          }
 
           controller add nu_constant
         }
@@ -502,7 +542,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         }
 
         if (maybeProof.isDefined) {
-          println(" > Adding proof!")
+          if (tState.verbosity > 1)
+          {
+            println(" > Adding proof!")
+          }
+
           /* opaque proofs are beetter than no proofs */
           val proof_name: StringFragment = StringFragment("Opaque proof of theorem " + name)
           val proof_text: StringFragment = StringFragment(maybeProof.get.prf.toString)
@@ -514,13 +558,19 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         if (src.isDefined) { doSourceRef(nu_theorem, src.get) }
         controller add nu_theorem
 
-        println(" > adding theorem " + name + " to theory " + parent.name)
+        if (tState.verbosity > 0)
+        {
+          println(" > adding theorem " + name + " to theory " + parent.name)
+        }
       }
       case Translation(name, force, forceQL, dontEnrich, sourcet, targett, assumptions, fixed, sortpairs, constpairs, coretrans, theintcheck, src) => {
 
         val ln : LocalName = doName(name)
 
-        println(" > translating Translation " + name)
+        if (tState.verbosity > 0)
+        {
+          println(" > translating Translation " + name)
+        }
 
         // Source and Target need to be defined!
         assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(sourcet.thy).toString.toLowerCase))
@@ -561,7 +611,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           nu_view.metadata.add(new MetaDatum(mv,mo))
         }
 
-        println(" > Adding translation " + name + " (not complete yet)")
+        if (tState.verbosity > 0)
+        {
+          println(" > Adding translation " + name + " (not complete yet)")
+        }
 
         if (src.isDefined) { doSourceRef(nu_view.toTerm,src.get) }
         controller add nu_view
@@ -608,8 +661,24 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         controller add opaque
       }
-      case _ => {
-        println(" > Error: Unknown decl encountered, not translated!")
+      case Dummy(kind) => {
+        if (tState.verbosity > 1)
+        {
+          println(" > Error: Dummy decl (" + kind + ") encountered, not translated!")
+        }
+      }
+      case Ignore(kind) => {
+        if (tState.verbosity > 1)
+        {
+          println("Dropping ignored decl (" + kind + ").")
+        }
+      }
+      case some => {
+        if (tState.verbosity > 0)
+        {
+          println(" > Error: Unknown decl encountered, not translated!")
+          println(some)
+        }
       }
     }
   }
@@ -698,7 +767,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     // TODO: Fix different usages
 
     /* enclosing sort should already be defined */
-    println(" > Adding sort: " + subsort.toString + ", enclosed by " + supersort.toString)
+    if (tState.verbosity > 0)
+    {
+      println(" > Adding sort: " + subsort.toString + ", enclosed by " + supersort.toString)
+    }
 
     val opt_ind   : Option[Term] = Some(Apply(OMS(IMPSTheory.lutinsPath ? LocalName("sort")), OMS(IMPSTheory.lutinsIndType)))
     val jdgmtname : LocalName    = LocalName(subsort.toString + "_sub_" + supersort.toString)
@@ -750,7 +822,14 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         {
           var srcthy : DeclaredTheory = null
 
-          println(" > Looking for IMPSMathSymbol: " + s)
+          if (tState.verbosity > 0)
+          {
+            println(" > Locating IMPSMathSymbol: " + s)
+          } else if (tState.verbosity > 1)
+          {
+            println(" > Looking for IMPSMathSymbol: " + s)
+          }
+
 
           for (mp <- thy.getIncludes ::: List(thy.path))
           {
@@ -759,10 +838,16 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
             if (refcon.exists(c => c.name.toString.toLowerCase == s.toLowerCase)) {
               srcthy = refthy
-              println("    > FOUND in " + refthy.name)
+              if (tState.verbosity > 1)
+              {
+                println("    > FOUND in " + refthy.name)
+              }
             }
             else {
-              println("    > Not found in " + refthy.name)
+              if (tState.verbosity > 1)
+              {
+                println("    > Not found in " + refthy.name)
+              }
             }
           }
 
