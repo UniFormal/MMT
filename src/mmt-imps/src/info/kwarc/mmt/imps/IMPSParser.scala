@@ -19,7 +19,8 @@ class NEWIMPSParser
 
   def parse(u : Unparsed, uri : URI, js : List[JSONObject]) : List[DefForm] =
   {
-    val foo = ParserWithSourcePosition.parseAll(ParserWithSourcePosition.parseImpsSource,u)
+    val dfp = new DefFormParsers()
+    val foo = ParserWithSourcePosition.parseAll(dfp.parseImpsSource,u)
     assert(foo.successful)
 
     val dfs = foo.get

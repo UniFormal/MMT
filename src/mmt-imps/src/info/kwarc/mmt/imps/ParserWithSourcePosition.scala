@@ -1,11 +1,20 @@
 package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.utils.UnparsedParsers
+import info.kwarc.mmt.imps.ParserWithSourcePosition.ParserWithSourcePosition
 
+import scala.reflect.internal.Required
 import scala.util.parsing.combinator.Parsers
 
 object ParserWithSourcePosition extends Parsers with UnparsedParsers
 {
+  /**
+    * This little ray of sunshine class allows the usage of Parser Combinators while also delivering
+    * SourceRefs (or at least SourcePositions), which previously required state.
+    *
+    * @param p "Innocent" parser that just does the parsing, without SourceRefs.
+    * @tparam T The type of the def-form, needs to implement trait DefForm.
+    */
   class ParserWithSourcePosition[T <: DefForm](p : Parser[T]) extends Parser[T]
   {
     // Source of a relevant (yet changed) code snippet:
@@ -15,11 +24,12 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
     {
       val source = in.source
       val offset = in.offset
+
       val start  = handleWhiteSpace(source, offset)
       val inwo   = in.drop(start - offset)
 
       val posb4  = in.pos
-      val before = (offset, posb4.line, posb4.column)
+      val before = (in.offset, posb4.line, posb4.column)
 
       p(inwo) match
       {
@@ -35,27 +45,24 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
     }
   }
 
-  lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(parseDefForm) }
-
-  lazy val parseDefForm : PackratParser[DefForm] = { parseLineComment | parseHeralding }
-
-  lazy val parseName = regex("""[^()\t\r\n ]+""".r)
   lazy val parseText = regex("""[^\r\n]+""".r)
 
-  lazy val parseTName : Parser[Name] = fullParser(parseName ^^ { case nm => Name(nm,None,None)} )
-
-  lazy val pLineComment: PackratParser[LineComment] = {
+  lazy val parseLineComment: PackratParser[LineComment] = {
     (";" ~> parseText) ^^ { case txt => LineComment(txt.dropWhile(_ == ';').trim, None, None) }
   }
 
-  def parseLineComment : ParserWithSourcePosition[LineComment] = { new ParserWithSourcePosition[LineComment](pLineComment) }
-
-  /* I <3 Parser Combinators */
-  def withComment[T <: DefForm](dfp : ParserWithSourcePosition[T]) : Parser[T] = {
-    (dfp ~ (parseLineComment?)) ^^ { case r ~ c => r.addComment(c) ; r }
+  def pLineComment : ParserWithSourcePosition[LineComment] = {
+    new ParserWithSourcePosition[LineComment](parseLineComment)
   }
 
+  /* Super useful combinators for parsing everything awesomely! */
+  /* I <3 Parser Combinators */
+
   def fullParser[T <: DefForm](p : Parser[T]) : Parser[T] = { withComment(new ParserWithSourcePosition[T](p)) }
+
+  def withComment[T <: DefForm](dfp : ParserWithSourcePosition[T]) : Parser[T] = {
+    (dfp ~ (pLineComment?)) ^^ { case r ~ c => r.addComment(c) ; r }
+  }
 
   /* Positional Arguments must all appear in exactly the order given */
   def positional(parsers : List[Parser[DefForm]]) : Parser[List[DefForm]] = {
@@ -67,20 +74,40 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
     if (ks.isEmpty) { failure("none of anyOf") } else { ks.head | anyOf(ks.tail) }
   }
 
-  /* Keyword Arguments are all optional and can appear in any order */
-  def keyworded(ks : List[Parser[DefForm]]) : Parser[List[DefForm]] =
+
+  def keyworded(ks : List[(Parser[DefForm],Required)]) : Parser[List[Option[DefForm]]] =
   {
-    /* General idea: transform all parsers in list from Parsers for X to Parsers for (X,i) where i is
-     * the index in the original list, then return arrangement sorted via index. */
+    def fill(l : List[(Option[DefForm], Int)]) : List[(Option[DefForm], Int)] = {
+      var lp = l
+      for (ki <- ks.indices){ if (!lp.map(_._2).contains(ki)) {lp = lp ::: List((None, ki))} } ; lp
+    }
 
-    val ks0 = ks.map(p => fullParser(p))
-    val ks1 = ks0.map(r => r.map(d => (d,ks0.indexOf(r))))
-    rep(anyOf(ks1)).map(l => l.sortWith((x,y) => x._2 < y._2).map(_._1))
+    val ks0 = ks.map(p => fullParser(p._1))
+    val ks1 = ks0.map(r => r.map(d => (Some(d),ks0.indexOf(r))))
+
+    rep(anyOf(ks1)).map(l => fill(l).sortWith((x,y) => x._2 < y._2).map(_._1))
   }
 
-  def composeParser[T <: DefForm](name : String, pos : List[Parser[DefForm]], key : List[Parser[DefForm]], x : Comp[T]) : Parser[T] = {
-    fullParser((("(" + name) ~> positional(pos) ~ keyworded(key) <~ ")") ^^ { case p ~ k => x.build(p ::: k) })
+  /**
+    * Parser Combinator that composes a parser for a large def-form from parsers for its parts.
+    *
+    * Note: This is not a fullparser, because while we _do_ want SourceRefs, we also want for
+    *       potentially following comments to stand on their own.
+    *
+    * @param name The name of the Def-Form, e.g. "def-atomic-sort".
+    * @param pos Parsers for all positional arguments (all required and in this order).
+    * @param key Parsers for all keyword arguments (might be optional, can come in any order) and
+    *            value indicating if they're optional or required.
+    * @param x Companion object containing the applicable build() method.
+    * @tparam T The type of the def-form, needs to implement trait DefForm.
+    * @return A parser that parses the entire def-form.
+    */
+  def composeParser[T <: DefForm](name : String,
+                                   pos : List[Parser[DefForm]],
+                                   key : List[(Parser[DefForm], Required)],
+                                     x : Comp[T]) : Parser[T] = {
+    new ParserWithSourcePosition((("(" + name) ~> positional(pos) ~ keyworded(key) <~ ")") ^^
+      { case p ~ k => for (ky <- key.indices) { if (key(ky)._2) { assert(k(ky).isDefined) } }
+                      x.build(p ::: k) })
   }
-
-  val parseHeralding : Parser[Heralding] = composeParser("herald", List(parseTName), List.empty, Heralding)
 }

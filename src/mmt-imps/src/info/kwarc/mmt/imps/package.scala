@@ -7,8 +7,12 @@ package object imps
   type SourceInfo  = Option[Either[((Int,Int,Int),(Int,Int,Int)),SourceRef]]
   type CommentInfo = Option[LineComment]
 
-  trait Baz { val snafu : Int }
-  implicit object Foo extends Baz {
-    val snafu = 4
+  type Required = Boolean
+  val R = true
+  val O = false
+
+  def ??![T](x : Any) : T = {
+    println(x)
+    ???
   }
 }
