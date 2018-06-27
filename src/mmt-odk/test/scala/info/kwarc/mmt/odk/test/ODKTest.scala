@@ -29,7 +29,7 @@ class ODKTest extends MMTIntegrationTest(
   shouldCheck("Test/General", Orders.testgeneral:_*)(mayfail = List(
     "http://test.kwarc.info/Structure?C?test2?definition"
   ))
-  
+  handleLine("log+ structure-checker")
   shouldCheck("MitM/smglom",Orders.mitmsmglom:_*)(onlyfiles = true)
 }
 

@@ -63,7 +63,6 @@ object Orders {
     ,"elliptic_curves/isogeny-class.omf.mmt"
     ,"elliptic_curves/modular-degree.omf.mmt"
     ,"elliptic_curves/q-expansion.omf.mmt"
-    ,"elliptic_curves/Rouse-classification.omf.mmt"
     ,"elliptic_curves/elliptic-curve-toolchest.omf.mmt"
     ,"algebra/hecke.mmt"
     ,"sets/poset.mmt"
