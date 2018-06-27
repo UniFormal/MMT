@@ -13,16 +13,6 @@ import info.kwarc.mmt.lf.induction.InductiveTypes
 //import scala.collection.parallel.ParIterableLike.Copy
 
 class EquivalenceRelation extends StructuralFeature("EquivalenceRelation") with ParametricTheoryLike {
-  def isJudgment(tp: Term): Boolean = tp match {
-      case FunType(_, ApplySpine(OMS(s),_)) =>
-         //this can throw errors if the implicit graph is not fully loaded
-         try {
-            controller.globalLookup.getConstant(s).rl.contains("Judgment")
-         } catch {case e: Error =>
-            false
-         }
-      case _ => false
-   }
   //def getHeaderNotation = List(LabelArg(1, LabelInfo.none))
 
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
