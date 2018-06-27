@@ -8,10 +8,7 @@ import info.kwarc.mmt.api.utils.File
 
 class LFTest extends MMTIntegrationTest(
   TestArchive("MMT/urtheories", hasDevel = true),
-  TestArchive("MMT/LFX", hasDevel = true),
-  TestArchive("Test/General", hasDevel = true),
   TestArchive("MMT/examples", hasDevel = true),
-  TestArchive("MitM/smglom", hasDevel = true)
 )(
   ExtensionSpec("info.kwarc.mmt.lf.Plugin")
 ) {
@@ -23,15 +20,7 @@ class LFTest extends MMTIntegrationTest(
 
   shouldCheck("MMT/urtheories")()
 
-  shouldClearTarget("MMT/LFX", "bin")
-  shouldHandleLine("build MMT/LFX scala-bin")
-  shouldHandleLine("build MMT/LFX mmt-omdoc")
-
-  shouldCheck("Test/General", Orders.testgeneral:_*)(mayfail = List(
-    "http://test.kwarc.info/Structure?C?test2?definition"
-  ))
   shouldCheck("MMT/examples",Orders.examples:_*)(onlyfiles = true)
-  shouldCheck("MitM/smglom",Orders.mitmsmglom:_*)(onlyfiles = true)
 }
 
 /*
