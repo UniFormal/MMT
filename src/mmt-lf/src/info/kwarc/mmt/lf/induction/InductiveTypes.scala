@@ -37,6 +37,19 @@ class InductiveTypes extends StructuralFeature("inductive") {// with ParametricT
       case _ => false
    }
   def getHeaderNotation = List(LabelArg(1, LabelInfo.none))
+            
+  def PI(a:Term, b:Term) = {
+    a match {
+      case OML(name, _, Some(df), _, _) => Pi(name, df, b)
+      case t @ OMV(name) => Pi(name, t, b)
+      case _ => {
+        val aName = LocalName("TermAt"+a.toString())
+        val aOML = OML(OMV(aName).name, Some(Univ(1)), Some(a), None, None)
+        Pi(aOML.name, aOML, b)
+      }
+    }
+     
+  }     
 
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
     //TODO: check for inhabitability
@@ -67,7 +80,7 @@ class InductiveTypes extends StructuralFeature("inductive") {// with ParametricT
     val argPairsTl = aArgs.zip(bArgs).tail
     val argEq = argPairsTl.foldLeft(LFEquality(aArgs.head, bArgs.head))({case (sofar:Term, (a:Term, b:Term)) => AND(LFEquality(a,b),sofar)})
     val body:Term = Arrow(DED(LFEquality(OMA(d.toTerm, aArgs), OMA(d.toTerm, bArgs))), DED(argEq))
-    val inj = (aArgs++bArgs).foldLeft(body)({case (arg:OML, tm:Term) => Pi(arg.name, arg.tp.get, body)})
+    val inj = (aArgs++bArgs).foldLeft(body)({case (arg:Term, tm:Term) => PI(arg, body)})
     Constant(parent.toTerm, LocalName("injectivityRuleFor"+inj.toString()), Nil, Some(inj), None, None)
   }
   
@@ -81,7 +94,7 @@ class InductiveTypes extends StructuralFeature("inductive") {// with ParametricT
           case (Some(loc), arg) => (loc, arg)
           case (None, arg) => (LocalName("NameForArgument"+arg.toString()+"OfTerm"+d.name), arg)
         }
-        var dArgs : List[OML]= Nil
+        var dArgs : List[Term]= Nil
         if (dargs.length >0) {
           val dargsHd = d.args.head match {case (_, arg) => arg}      
           val dargTp = FunTerm(dargs.tail , dargsHd)
@@ -92,13 +105,13 @@ class InductiveTypes extends StructuralFeature("inductive") {// with ParametricT
           case (None, arg) => (LocalName("NameForArgument"+arg.toString()+"OfTerm"+e.name), arg)
         }
         
-        var eArgs : List[OML] = Nil
+        var eArgs : List[Term] = Nil
         if (eargs.length >0) {
           val eargsHd = e.args.head match {case (_, arg) => arg}
           val eargTp = FunTerm(eargs.tail , eargsHd)
           eArgs = eargs map {case (loc, tp) => OML(OMV(parent.toString()+"quantifiedVar1ForArgument"+loc.toString()).name, Some(tp), None, None, None)}
         }
-                
+
         val False = LFEquality(d.toTerm, e.toTerm)
         val ded = OMV(LocalName("http://mathhub.info/MitM/Foundation?Logic?ded"))
         def DED(x:Term) = OMA(ded, List(x))
@@ -106,7 +119,10 @@ class InductiveTypes extends StructuralFeature("inductive") {// with ParametricT
         val body:Term = Arrow(LFEquality(OMA(d.toTerm, dArgs), OMA(e.toTerm, eArgs)), False)
         if ((dArgs++eArgs).length > 0) {
           val (hd, tl) = ((dArgs++eArgs).head, (dArgs++eArgs).tail)
-          val noConf = (dArgs++eArgs).foldLeft(body)({case (arg:OML, tm:Term) => Pi(arg.name, arg.tp.get, body)})
+          val noConf = (dArgs++eArgs).foldLeft[Term](body)({(a:Term, b:Term)=> (a, b) match {
+            case (arg:Term, tm:Term) => PI(arg, body)
+            case x => throw ImplementationError("/pattern matching error in line 111 of InductiveTypes.scala: Encountered "+x.toString()+" instead of a tuple (Term, Term)")}
+          })
           decls ::= Constant(parent.toTerm, d.name, Nil, Some(noConf), None, None)
         } else {
           decls ::= Constant(parent.toTerm, d.name, Nil, Some(Arrow(DED(LFEquality(d.toTerm, e.toTerm)),False)), None, None)
