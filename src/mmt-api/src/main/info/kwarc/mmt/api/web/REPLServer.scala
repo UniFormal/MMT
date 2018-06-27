@@ -67,6 +67,31 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter) {
 
 import ServerResponse._
 
+object REPLServer {
+  abstract class Command
+  case object Start extends Command
+  case object Clear extends Command
+  case object Show extends Command
+  case object Restart extends Command
+  case object Quit extends Command
+  case class Eval(command: String) extends Command
+  
+  object Command {
+    def parse(s: String): Command = {
+      s match {
+        case "start" => Start
+        case "clear" => Clear
+        case "show" => Show
+        case "restart" => Restart
+        case "quit" => Quit
+        case s => Eval(s) 
+      }
+    }
+  }
+}
+
+import REPLServer._
+
 class REPLServer extends ServerExtension("repl") {
   private lazy val presenter = controller.presenter
 
@@ -74,7 +99,10 @@ class REPLServer extends ServerExtension("repl") {
 
   def apply(request: ServerRequest): ServerResponse = {
     val response: REPLServerResponse = try {
-      applyActual(request)
+      val input = (request.query + " " + request.body.asString).trim
+      val command = Command.parse(input)
+      val session = request.headers.get("x-repl-session")
+      apply(session, command)
     } catch {
       case err: Error => REPLServerResponse(Some(err.toHTML), None, success = false)
       case e : Exception => REPLServerResponse(Some(ServerError("unknown error").setCausedBy(e).toHTML), None, success = false)
@@ -82,50 +110,53 @@ class REPLServer extends ServerExtension("repl") {
     JsonResponse(response.toJSON)
   }
 
-  // READING parameters from session
-  private def sessionIDOpt(implicit request: ServerRequest)= request.headers.get("x-repl-session")
-  private def sessionID(implicit request: ServerRequest) = sessionIDOpt.getOrElse(throw LocalError("Missing X-REPL-Session Header"))
-
-  private def currentSessionOpt(implicit request: ServerRequest)= sessionIDOpt.flatMap(id => sessions.find(_.id == id))
-  private def currentSession(implicit request: ServerRequest) = this.currentSessionOpt.getOrElse(throw LocalError("Unknown Session"))
-
-  private def path( id: String): DPath = DPath(mmt.baseURI) / "jupyter" / id
-  private def path(implicit request: ServerRequest): DPath = path(sessionID)
-
-  private def applyActual(implicit request: ServerRequest) : REPLServerResponse = request.query match {
-    case "show" => getSessions
-    case "clear" => clearSessions
-    case "start" => startSession
-    case "restart" => restartSession
-    case "quit" => quitSession
-
-    case _ => evalInSession
+  def apply(session: Option[String], command: Command): REPLServerResponse = {
+    applyActual(session, command)
   }
+  
+  private def getSessionOpt(id: String) = sessions.find(_.id == id)
+  private def getSession(id: String) = getSessionOpt(id).getOrElse(throw LocalError("Unknown Session"))
 
-  private def evalInSession(implicit request: ServerRequest) = {
-    val input = request.body.asString.trim
+  private def path(id: String): DPath = DPath(mmt.baseURI) / "jupyter" / id
+
+  private def applyActual(idO: Option[String], command: Command) : REPLServerResponse = {
+    implicit lazy val session = idO match {
+      case None => throw LocalError("session needed")
+      case Some(id) => getSession(id)
+    }
+    command match {
+      case Show => getSessions
+      case Clear => clearSessions
+      case Start => startSession
+      case Restart => restartSession(session)
+      case Quit => quitSession(session)
+      case Eval(s) => evalInSession(session, s)
+    }
+}
+
+  private def evalInSession(session: REPLSession, input: String) = {
     val firstPart = input.takeWhile(c => !c.isWhitespace)
     val rest = input.substring(firstPart.length)
 
     val message = firstPart match {
       case "end" =>
         // special case for closing the current container element (module etc.)
-        currentSession.parseElementEnd
+        session.parseElementEnd
         Some("closed module")
       case "eval" =>
-        val d = currentSession.parseObject(rest)
+        val d = session.parseObject(rest)
         controller.add(d)
         Some(presenter.asString(d))
       case "get" =>
-        val p = Path.parse(rest, currentSession.doc.nsMap)
+        val p = Path.parse(rest, session.doc.nsMap)
         val se = controller.get(p)
         Some(presenter.asString(se))
       case "content" | _ =>
         val toBeParsed = if (firstPart == "content") rest else input
-        val se = currentSession.parseStructure(toBeParsed)
+        val se = session.parseStructure(toBeParsed)
         Some(presenter.asString(se))
     }
-    REPLServerResponse(message, None, session = Some(sessionID))
+    REPLServerResponse(message, None, session = Some(session.id))
   }
 
 
@@ -135,37 +166,31 @@ class REPLServer extends ServerExtension("repl") {
     REPLServerResponse(Some("Sessions cleared"), None)
   }
 
-  private def startSession(implicit request: ServerRequest) = {
-
-    val id = sessionIDOpt.getOrElse(java.util.UUID.randomUUID().toString)
-    if(sessions.exists(_.id==id)){
+  private def startSession = {
+    val id = java.util.UUID.randomUUID().toString
+    if (sessions.exists(_.id==id)){
       throw LocalError("Session already exists")
     }
-
     createSession(path(id), id)
-
     // return the session id
     REPLServerResponse(Some(s"Created Session $id"), None, session = Some(id))
   }
 
-  private def restartSession(implicit request: ServerRequest): REPLServerResponse = {
-    currentSessionOpt foreach deleteSession
-    createSession(path, sessionID)
-
-    REPLServerResponse(Some(s"Restarted Session $sessionID"), None, session = Some(sessionID))
+  private def restartSession(session: REPLSession) = {
+    val id = session.id
+    deleteSession(session)
+    createSession(path(id), id)
+    REPLServerResponse(Some(s"Restarted Session $id"), None, session = Some(id))
   }
 
-  private def quitSession(implicit request: ServerRequest) = {
-    sessions = sessions.filterNot(_.id == sessionID)
-    controller.delete(path)
-
-    REPLServerResponse(Some(s"Deleted session $sessionID"), None, session = Some(sessionID))
+  private def quitSession(session: REPLSession) = {
+    val id = session.id
+    deleteSession(session)
+    controller.delete(session.doc.path)
+    REPLServerResponse(Some(s"Deleted session $id"), None, session = Some(id))
   }
 
-
-  //
   // SESSION MANAGEMENT
-  //
 
   private def createSession(path: DPath, id: String) : REPLSession = {
     val doc = new Document(path, root=true)

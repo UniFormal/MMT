@@ -267,7 +267,7 @@ class AsymmetricEscapeLexer(begin: String, end: String) extends LexFunction {
         } else
            i += 1
      }
-     val text = if (level > 0) s.substring(first) else s.substring(first,i-end.length)
+     val text = s.substring(first,i-end.length)
      (text, begin+text+end)
   }
 

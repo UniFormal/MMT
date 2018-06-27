@@ -106,7 +106,11 @@ trait LMFDBBackend {
     */
   private def get_json(url: URI) : Option[JSON] = {
     val attempt = Try(io.Source.fromURL(url.toString))
-    if (attempt.isFailure) None else Some(attempt.get.toBuffer.mkString).map(JSON.parse)
+    if (attempt.isFailure) None else {
+      val json = Try(JSON.parse(attempt.get.toBuffer.mkString))
+      if (json.isFailure) throw ParseError(url.toString).setCausedBy(json.failed.get)
+      json.toOption
+    }
   }
 
   /**
@@ -157,7 +161,7 @@ trait LMFDBBackend {
   /** runs a simple lmfdb query */
   protected def lmfdbquery(db:String, query:String) : List[JSON] = {
     // get the url
-    val url = URI(s"http://www.lmfdb.org/api/$db?_format=json$query")
+    val url = URI(s"http://beta.lmfdb.org/api/$db?_format=json$query")
 
     debug(s"attempting to retrieve json from $url")
 
@@ -198,8 +202,10 @@ trait LMFDBBackend {
     schema.metadata.getValues(Metadata.key).headOption.getOrElse {
       err("metadata key 'key' not found in schema: " + schema.path); null
     } match {
-      case StringLiterals(k : String) => k // This no longer works; we are using the HACK below
-      case UnknownOMLIT(a, `spath`) => a.toString
+      case StringLiterals(k : String) =>
+        k // This no longer works; we are using the HACK below
+      case UnknownOMLIT(a, `spath`) =>
+        a.toString
       case s => err("metadata key 'key' is not a string in schema: " + schema.path); null
     }
   }

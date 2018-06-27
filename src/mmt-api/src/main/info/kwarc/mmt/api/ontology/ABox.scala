@@ -168,10 +168,11 @@ class RelStore(report : frontend.Report) {
            case None => (UntypedConstantEntry(), p)
            case Some(_) => 
              s match {
-               case IsType => (TypeConstructorEntry(), p)
-               case IsKind => (KindEntry(), p)
+               case IsDatatypeConstructor => (DatatypeConstructorEntry(), p)
+               case IsDataConstructor => (DataConstructorEntry(), p)
+               case IsRule => (RuleEntry(), p)
+               case IsJudgementConstructor => (JudgementConstructorEntry(), p)
                case IsHighUniverse => (HighUniverseEntry(), p)
-               case IsJudgement => (JudgementEntry(), p)
                case _ => (TypedConstantEntry(),p)
              }
          }
@@ -299,10 +300,11 @@ case class MalformattedConstantEntry() extends StatisticEntries("malformatted co
 case class MaltypedConstantEntry() extends StatisticEntries("maltyped constant")
 case class StructureEntry() extends StatisticEntries("structure")
 case class PatternEntry() extends StatisticEntries("pattern")
-case class TypeConstructorEntry() extends StatisticEntries("type constructor")
-case class JudgementEntry() extends StatisticEntries("statement")
+case class JudgementConstructorEntry() extends StatisticEntries("judgement constructor")
+case class DataConstructorEntry() extends StatisticEntries("data constructor")
+case class DatatypeConstructorEntry() extends StatisticEntries("datatype constructor")
+case class RuleEntry() extends StatisticEntries("rule")
 case class ViewEntry() extends StatisticEntries("view")
-case class KindEntry() extends StatisticEntries("kind")
 case class HighUniverseEntry() extends StatisticEntries("type of type universe >2")
 case class ExplicitMorphismEntry() extends StatisticEntries("explicit theory morphisms")
 case class AnyMorphismEntry() extends StatisticEntries("any theory morphism")
