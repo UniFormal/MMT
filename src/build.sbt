@@ -261,6 +261,11 @@ lazy val python = (project in file("python-mmt")).
   settings(mmtProjectsSettings("python-mmt"): _*).
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "py4j0.10.7.jar")
   
+// graph optimization. Maintainer: Michael Banken
+lazy val got = (project in file("mmt-got")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("mmt-got"): _*)
+
 // =================================
 // MMT projects: additional (optional) functionality that is factored out into separate projects due to dependencies
 // =================================

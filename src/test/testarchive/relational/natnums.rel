@@ -1,0 +1,4 @@
+document http://mydomain.org/testarchive/natnums.omdoc
+Declares http://mydomain.org/testarchive/natnums.omdoc http://mydomain.org/testarchive/mmt-example?NatNums
+Declares http://mydomain.org/testarchive/natnums.omdoc http://mydomain.org/testarchive/natnums.omdoc/opaque_-1820296805
+Declares http://mydomain.org/testarchive/natnums.omdoc http://mydomain.org/testarchive/mmt-example?NatPlus

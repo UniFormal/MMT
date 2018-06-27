@@ -1,0 +1,53 @@
+theory http://mydomain.org/testarchive/mmt-example?NatDed
+HasMeta http://mydomain.org/testarchive/mmt-example?NatDed http://cds.omdoc.org/urtheories?LF
+Includes http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?FOL
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?contra
+constant http://mydomain.org/testarchive/mmt-example?NatDed?contra
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?trueI
+constant http://mydomain.org/testarchive/mmt-example?NatDed?trueI
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?falseE
+constant http://mydomain.org/testarchive/mmt-example?NatDed?falseE
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?andI
+constant http://mydomain.org/testarchive/mmt-example?NatDed?andI
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?andEl
+constant http://mydomain.org/testarchive/mmt-example?NatDed?andEl
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?andEr
+constant http://mydomain.org/testarchive/mmt-example?NatDed?andEr
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?orIl
+constant http://mydomain.org/testarchive/mmt-example?NatDed?orIl
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?orIr
+constant http://mydomain.org/testarchive/mmt-example?NatDed?orIr
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?orE
+constant http://mydomain.org/testarchive/mmt-example?NatDed?orE
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?impI
+constant http://mydomain.org/testarchive/mmt-example?NatDed?impI
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?impE
+constant http://mydomain.org/testarchive/mmt-example?NatDed?impE
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?notI
+constant http://mydomain.org/testarchive/mmt-example?NatDed?notI
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?notE
+constant http://mydomain.org/testarchive/mmt-example?NatDed?notE
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?equivI
+constant http://mydomain.org/testarchive/mmt-example?NatDed?equivI
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?equivEl
+constant http://mydomain.org/testarchive/mmt-example?NatDed?equivEl
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?equivEr
+constant http://mydomain.org/testarchive/mmt-example?NatDed?equivEr
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?forallI
+constant http://mydomain.org/testarchive/mmt-example?NatDed?forallI
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?forallE
+constant http://mydomain.org/testarchive/mmt-example?NatDed?forallE
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?existsI
+constant http://mydomain.org/testarchive/mmt-example?NatDed?existsI
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?existsE
+constant http://mydomain.org/testarchive/mmt-example?NatDed?existsE
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?refl
+constant http://mydomain.org/testarchive/mmt-example?NatDed?refl
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?sym
+constant http://mydomain.org/testarchive/mmt-example?NatDed?sym
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?trans
+constant http://mydomain.org/testarchive/mmt-example?NatDed?trans
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?congTerm
+constant http://mydomain.org/testarchive/mmt-example?NatDed?congTerm
+Declares http://mydomain.org/testarchive/mmt-example?NatDed http://mydomain.org/testarchive/mmt-example?NatDed?congForm
+constant http://mydomain.org/testarchive/mmt-example?NatDed?congForm

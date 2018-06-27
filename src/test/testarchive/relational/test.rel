@@ -1,0 +1,8 @@
+document http://mydomain.org/testarchive/test.omdoc
+Declares http://mydomain.org/testarchive/test.omdoc http://mydomain.org/testarchive/mmt-example?test_base
+Declares http://mydomain.org/testarchive/test.omdoc http://mydomain.org/testarchive/mmt-example?test_middleman_a
+Declares http://mydomain.org/testarchive/test.omdoc http://mydomain.org/testarchive/mmt-example?test_middleman_b
+Declares http://mydomain.org/testarchive/test.omdoc http://mydomain.org/testarchive/mmt-example?test_united
+Declares http://mydomain.org/testarchive/test.omdoc http://mydomain.org/testarchive/mmt-example?test_all
+Declares http://mydomain.org/testarchive/test.omdoc http://mydomain.org/testarchive/mmt-example?test_future
+Declares http://mydomain.org/testarchive/test.omdoc http://mydomain.org/testarchive/mmt-example?test_other

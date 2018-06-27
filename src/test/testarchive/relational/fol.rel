@@ -1,0 +1,3 @@
+document http://mydomain.org/testarchive/fol.omdoc
+Declares http://mydomain.org/testarchive/fol.omdoc http://mydomain.org/testarchive/mmt-example?FOL
+Declares http://mydomain.org/testarchive/fol.omdoc http://mydomain.org/testarchive/mmt-example?NatDed
