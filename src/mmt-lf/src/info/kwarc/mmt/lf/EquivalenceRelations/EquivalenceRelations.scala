@@ -63,8 +63,17 @@ class InductiveTypes extends StructuralFeature("EquivalenceRelation") with Param
     val relDecl = VarDecl(LocalName(parent.name.toString()+relArg.toMPath.last), None, Some(tpArg), Some(relArg), None).toDeclaration(parent.toTerm)
     
     val True : Term = LFEquality(relArg, relArg)
-    val List(c, d, e, f, g, h):List[OMV] = List(1 to 6) map {n => OMV(parent.path+"quantifiedVar"+n.toString())}
-    val List(i, j, k, l, m, n) = List(c, d, e, f, g, h) map {tm => OML(tm.name, Some(tpArg), None, None, None)}
+    val con = Context(dd.modulePath)
+    def newVar() : OMV = {
+      val tm : Term = Context.pickFresh(Context(dd.modulePath), LocalName("x")) match {case (nm:LocalName, s:Substitution) => s.apply(nm).get}
+      tm match {
+        case x:OMV => x
+        case _ => throw ImplementationError("Unexpected result: Context.pickFresh doesn't generate an OMV")
+      }
+    }
+    Context.pickFresh(con, LocalName("x")) match {case (name:LocalName, s:Substitution) => s.apply(name).get}
+    val List(c, d, e, f, g, h):List[OMV] = List(1 to 6) map {n => newVar}
+    val List(i, j, k, l, m, n) = List(c, d, e, f, g, h) map {tm:OMV => OML(tm.name, Some(tpArg), None, None, None)}
     val dedPath : LocalName = LocalName("http://docs.omdoc.org/urtheories/primitive_types/bool.mmt#335.14.2:387.14.54")
     val ded = OMV(dedPath)
     val DED = {x:Term => OMA(ded, List(x))}
@@ -83,7 +92,7 @@ class InductiveTypes extends StructuralFeature("EquivalenceRelation") with Param
     val applyPred = {pred:Term => OMBIND(ded, Context.empty,OMBIND(pred, Context.empty, relArg))}
     val axiomToDecl = {ax:Term => VarDecl(LocalName(parent.name.toString()+ax.toString()), None, Some(Univ(1)),  Some(ax), None).toDeclaration(parent.toTerm)}
     val predToDecl = {pred:Term => axiomToDecl(applyPred(pred))}
-    val elabDecls @ _::transDecl::reflDecl::List(symmDecl) = relDecl::(predTrans::predRefl::List(predSymm) map predToDecl)
+    val elabDecls @ List(_, transDecl, reflDecl, symmDecl) = relDecl::(List(predTrans, predRefl, predSymm) map predToDecl)
     new Elaboration {
       def domain = elabDecls map {d => d.name}
       def getO(n: LocalName) = {

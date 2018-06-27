@@ -37,8 +37,19 @@ class InductiveTypes extends StructuralFeature("inductive") {// with ParametricT
       case _ => false
    }
   def getHeaderNotation = List(LabelArg(1, LabelInfo.none))
-            
-  def PI(a:Term, b:Term) = {
+  
+  private def newVar(name:Option[String], tp:Option[Term], df: Option[Term], con: Option[Context] = None) : OML = {
+    val c = con.getOrElse(Context.empty)
+    val n = name.getOrElse("newVar")
+    val tm : Term = Context.pickFresh(c, LocalName(n)) match {case (nm:LocalName, s:Substitution) => s.apply(nm).get}
+    val vr = tm match {
+      case x:OMV => x
+      case _ => throw ImplementationError("Unexpected result: Context.pickFresh doesn't generate an OMV")
+    }
+    OML(vr.name, tp, df, None, None)
+  }
+  
+  private def PI(a:Term, b:Term) = {
     a match {
       case OML(name, _, Some(df), _, _) => Pi(name, df, b)
       case t @ OMV(name) => Pi(name, t, b)
@@ -67,8 +78,8 @@ class InductiveTypes extends StructuralFeature("inductive") {// with ParametricT
     }
     val dargsHd = d.args.head match {case (_, arg) => arg}
     val argTp = FunTerm(dargs.tail , dargsHd)
-    val aArgs = dargs map {case (loc, tp) => OML(OMV(parent.toString()+"quantifiedVar1ForArgument"+loc.toString()).name, Some(tp), None, None, None)}
-    val bArgs = dargs map {case (loc, tp) => OML(OMV(parent.toString()+"quantifiedVar2ForArgument"+loc.toString()).name, Some(tp), None, None, None)}
+    val aArgs = dargs map {case (loc, tp) => newVar(Some(loc.toString()+"1"), Some(tp), None, None)}
+    val bArgs = dargs map {case (loc, tp) => newVar(Some(loc.toString()+"2"), Some(tp), None, None)}
     val ded = OMV(LocalName("http://mathhub.info/MitM/Foundation?Logic?ded"))
     def DED(x:Term) = OMA(ded, List(x))
     val andPath : LocalName = LocalName("http://mathhub.info/MitM/Foundation?Logic?and")
@@ -98,7 +109,7 @@ class InductiveTypes extends StructuralFeature("inductive") {// with ParametricT
         if (dargs.length >0) {
           val dargsHd = d.args.head match {case (_, arg) => arg}      
           val dargTp = FunTerm(dargs.tail , dargsHd)
-          dArgs = dargs map {case (loc, tp) => OML(OMV(parent.toString()+"quantifiedVar1ForArgument"+loc.toString()).name, Some(tp), None, None, None)}
+          dArgs = dargs map {case (loc, tp) => newVar(Some(loc.toString()+"quantified"), Some(tp), None, None)}
         }
         val eargs : List[(LocalName, Term)]= e.args map {
           case (Some(loc), arg) => (loc, arg)
@@ -109,7 +120,7 @@ class InductiveTypes extends StructuralFeature("inductive") {// with ParametricT
         if (eargs.length >0) {
           val eargsHd = e.args.head match {case (_, arg) => arg}
           val eargTp = FunTerm(eargs.tail , eargsHd)
-          eArgs = eargs map {case (loc, tp) => OML(OMV(parent.toString()+"quantifiedVar1ForArgument"+loc.toString()).name, Some(tp), None, None, None)}
+          eArgs = eargs map {case (loc, tp) => newVar(Some(loc.toString()+"quantified"), Some(tp), None, None)}
         }
 
         val False = LFEquality(d.toTerm, e.toTerm)
@@ -144,9 +155,9 @@ class InductiveTypes extends StructuralFeature("inductive") {// with ParametricT
     val chainedDeclsTypeList = decls.map {dec => dec.tp}
     val (hd, tl) = (chainedDeclsTypeList.head,chainedDeclsTypeList.tail)
     val chainedDecls = tl.foldLeft[Term](hd)({(l, a) => Arrow(l, a)})
-    val defTpsDecls = definedTypes map {tp:Term => VarDecl(LocalName(parent.name.toString()+tp.toString()), None, Some(Univ(1)),  Some(tp), None).name}
+    val defTpsDecls = definedTypes map {tp:Term => newVar(Some("freeVar_of_type"+tp.toString()), Some(Univ(1)), None, None).vd}
     val substPairs = defTpsDecls.zip(quantifiedTps)
-    val substitutions = substPairs map {case (tpDec:LocalName, target:Term) =>Substitution(Sub(tpDec, target))}
+    val substitutions = substPairs map {case (tpDec:VarDecl, target:Term) =>Substitution(Sub(tpDec.name, target))}
     val (shd, stl) = (substitutions.head, substitutions.tail)
     val substitution = stl.foldLeft[Substitution](shd)({(l, a) => a++l})
     val body = chainedDecls.^(substitution)
