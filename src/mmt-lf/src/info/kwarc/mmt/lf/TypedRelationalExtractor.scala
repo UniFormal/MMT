@@ -47,6 +47,7 @@ class TypedRelationalExtractor extends RelationalExtractor {
           f(IsImplicitly(l.to.toMPath,l.from.toMPath))
         case _ =>
       }
+         case _ =>
     }
   }
 }
