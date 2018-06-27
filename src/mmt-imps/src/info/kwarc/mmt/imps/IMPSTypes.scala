@@ -1508,6 +1508,9 @@ abstract class Comp[T <: DefForm] {
 }
 
 case class Name(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+{
+  override def toString: String = s
+}
 
 object Name extends Comp[Name]
 {
