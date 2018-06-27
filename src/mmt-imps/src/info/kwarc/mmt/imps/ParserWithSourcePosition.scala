@@ -59,21 +59,28 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
 
   /* Positional Arguments must all appear in exactly the order given */
   def positional(parsers : List[Parser[DefForm]]) : Parser[List[DefForm]] = {
-    println("positional: " + parsers.length)
     if (parsers.isEmpty) { success(List.empty) } else
       { (fullParser(parsers.head) ~ positional(parsers.tail)) ^^ { case p ~ ps => List(p) ::: ps } }
   }
 
+  def anyOf[A](ks : List[Parser[A]]) : Parser[A] = {
+    if (ks.isEmpty) { failure("none of anyOf") } else { ks.head | anyOf(ks.tail) }
+  }
+
   /* Keyword Arguments are all optional and can appear in any order */
-  def keyworded(ks : List[Parser[DefForm]]) : Parser[List[DefForm]] = {
-    /* Too tired now, but idea: transform all parsers in list from Parsers for X to Parsers for (X,i) where i is
-     * the index in the original list, then return arrangement sorted via index. Should be doable? */
-    ???
+  def keyworded(ks : List[Parser[DefForm]]) : Parser[List[DefForm]] =
+  {
+    /* General idea: transform all parsers in list from Parsers for X to Parsers for (X,i) where i is
+     * the index in the original list, then return arrangement sorted via index. */
+
+    val ks0 = ks.map(p => fullParser(p))
+    val ks1 = ks0.map(r => r.map(d => (d,ks0.indexOf(r))))
+    rep(anyOf(ks1)).map(l => l.sortWith((x,y) => x._2 < y._2).map(_._1))
   }
 
-  def composeParser[T <: DefForm](name : String, pos : List[Parser[DefForm]], x : Comp[T]) : Parser[T] = {
-    fullParser((("(" + name) ~> positional(pos) <~ ")") ^^ { case p => x.build(p) })
+  def composeParser[T <: DefForm](name : String, pos : List[Parser[DefForm]], key : List[Parser[DefForm]], x : Comp[T]) : Parser[T] = {
+    fullParser((("(" + name) ~> positional(pos) ~ keyworded(key) <~ ")") ^^ { case p ~ k => x.build(p ::: k) })
   }
 
-  val parseHeralding : Parser[Heralding] = composeParser("herald", List(parseTName), Heralding)
+  val parseHeralding : Parser[Heralding] = composeParser("herald", List(parseTName), List.empty, Heralding)
 }
