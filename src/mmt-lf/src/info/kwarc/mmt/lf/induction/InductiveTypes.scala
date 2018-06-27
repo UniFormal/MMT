@@ -104,26 +104,25 @@ class InductiveTypes extends StructuralFeature("inductive") {// with ParametricT
     Constant(parent.toTerm, uniqueLN(Some("injectivity_rule_for"+inj.toString())), Nil, Some(inj), None, None)
   }
   
-  def dontConfuse(parent : DeclaredModule, d : TermLevel, e : TermLevel) : Declaration = {
+  def dontConfuse(parent : DeclaredModule, d : Term, e : Term, dargs : List[(Option[LocalName], Term)], eargs : List[(Option[LocalName], Term)]) : Term = {
     // Would be a much nicer implementation, but still not quite working
-    /* d.args match {
+    dargs match {
       case Nil => {
-        e.args match {
+        eargs match {
           case Nil => {
             val False = OMV(LocalName("http://mathhub.info/MMT/urtheories?DHOL?FALSE"))
             val ded = OMV(LocalName("http://mathhub.info/MitM/Foundation?Logic?ded"))
             def DED(x:Term) = OMA(ded, List(x))
             // TODO: Replace this hack by something more reasonable
-            val body:Term = Arrow(LFEquality(d.toTerm, e.toTerm), False)
-            Constant(parent.toTerm, uniqueLN(Some("no_conf_axiom_for_"+d.name.toString()+"_"+e.name.toString())), Nil, Some(body), None, None)
+            val body:Term = Arrow(LFEquality(d, e), False)
+            body
           }
           case hd::tl => {
             val (argNm, tp) = hd match {
               case (op : Option[LocalName], tp:Term) => (uniqueLN(Some(op.getOrElse("").toString())).toString(), tp)
             }
             val quant = newVar(Some(argNm), Some(tp), None, None)
-            val eName = newVar(None, None, Some(OMA(e.toTerm, List(quant))), None).name
-            PI(quant, dontConfuse(parent, d, TermLevel.apply(eName, tl.m, e.ret)))
+            PI(quant, dontConfuse(parent, d, OMA(e, List(quant)), dargs, tl))
           }
         }
       }
@@ -132,49 +131,10 @@ class InductiveTypes extends StructuralFeature("inductive") {// with ParametricT
           case (op : Option[LocalName], tp:Term) => (uniqueLN(Some(op.getOrElse("").toString())).toString(), tp)
         }
         val quant = newVar(Some(argNm), Some(tp), None, None)
-        PI(quant, dontConfuse(parent, OMA(d.toTerm, List(quant)), e))
+        PI(quant, dontConfuse(parent, OMA(d, List(quant)), e, tl, eargs))
       }
     }
-  } */
-  val dargs : List[(LocalName, Term)]= d.args map {
-      case (Some(loc), arg) => (loc, arg)
-      case (None, arg) => (uniqueLN(Some("name_for_argument"+arg.toString()+"of_term"+d.name)), arg)
-    }
-    var dArgs : List[Term]= Nil
-    if (dargs.length >0) {
-      val dargsHd = d.args.head match {case (_, arg) => arg}      
-      val dargTp = FunTerm(dargs.tail , dargsHd)
-      dArgs = dargs map {case (loc, tp) => newVar(Some(loc.toString()+"quantified"), Some(tp), None, None)}
-    }
-    val eargs : List[(LocalName, Term)]= e.args map {
-      case (Some(loc), arg) => (loc, arg)
-      case (None, arg) => (uniqueLN(Some("name_for_argument"+arg.toString()+"of_term"+e.name)), arg)
-    }
-        
-    var eArgs : List[Term] = Nil
-    if (eargs.length >0) {
-      val eargsHd = e.args.head match {case (_, arg) => arg}
-      val eargTp = FunTerm(eargs.tail , eargsHd)
-      eArgs = eargs map {case (loc, tp) => newVar(Some(loc.toString()+"quantified"), Some(tp), None, None)}
-    }
-
-    val False = OMV(LocalName("http://mathhub.info/MMT/urtheories?DHOL?FALSE"))
-    val ded = OMV(LocalName("http://mathhub.info/MitM/Foundation?Logic?ded"))
-    def DED(x:Term) = OMA(ded, List(x))
-    // TODO: Replace this hack by something more reasonable
-    val body:Term = Arrow(LFEquality(d.toTerm, e.toTerm), False)
-            
-    if ((dArgs++eArgs).length > 0) {
-      val (hd, tl) = ((dArgs++eArgs).head, (dArgs++eArgs).tail)
-      val noConf = (dArgs++eArgs).foldLeft[Term](body)({(a:Term, b:Term)=> (a, b) match {
-        case (arg:Term, tm:Term) => PI(arg, body)
-        case x => throw ImplementationError("/pattern matching error in line 111 of InductiveTypes.scala: Encountered "+x.toString()+" instead of a tuple (Term, Term)")}
-      })
-      Constant(parent.toTerm, uniqueLN(Some("no_conf_axiom_for_"+d.name.toString()+"_"+e.name.toString())), Nil, Some(noConf), None, None)
-    } else {
-      Constant(parent.toTerm, uniqueLN(Some("no_conf_axiom_for_"+d.name.toString()+"_"+e.name.toString())), Nil, Some(body), None, None)
-    }
-}
+  } 
   
   def noConf(parent : DeclaredModule, d : TermLevel, tmdecls: List[TermLevel]) : List[Declaration] = {
     var resDecls = Nil
@@ -185,7 +145,7 @@ class InductiveTypes extends StructuralFeature("inductive") {// with ParametricT
         if(d.args.length > 0)
           decls::=injDecl(parent, d)  
       } else {
-          decls::=dontConfuse(parent, d, e)
+          decls::=Constant(parent.toTerm, uniqueLN(Some("no_conf_axiom_for_"+d.toString()+"_"+e.toString())), Nil, Some(dontConfuse(parent, d.toTerm, e.toTerm, d.args, e.args)), None, None)
       }
     }
     decls
