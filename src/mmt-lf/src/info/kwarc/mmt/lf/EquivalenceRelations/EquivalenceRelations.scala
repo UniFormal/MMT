@@ -8,24 +8,11 @@ import checking._
 import modules._
 
 import info.kwarc.mmt.lf._
+import info.kwarc.mmt.lf.induction.InductiveTypes
+
 //import scala.collection.parallel.ParIterableLike.Copy
 
-sealed abstract class InductiveDecl {
-  def name: LocalName
-  def args: List[(Option[LocalName], Term)]
-  def ret: Term
-  def tp : Term = {FunType(args, ret)}
-  def toTerm = FunType(args,ret)
-}
-case class TypeLevel(name: LocalName, args: List[(Option[LocalName], Term)]) extends InductiveDecl {
-  def ret = Univ(1)
-}
-case class TermLevel(name: LocalName, args: List[(Option[LocalName], Term)], ret: Term) extends InductiveDecl
-case class StatementLevel(name: LocalName, args: List[(Option[LocalName], Term)]) extends InductiveDecl {
-  def ret = Univ(1)
-}
-
-class InductiveTypes extends StructuralFeature("EquivalenceRelation") with ParametricTheoryLike {
+class EquivalenceRelation extends StructuralFeature("EquivalenceRelation") with ParametricTheoryLike {
   def isJudgment(tp: Term): Boolean = tp match {
       case FunType(_, ApplySpine(OMS(s),_)) =>
          //this can throw errors if the implicit graph is not fully loaded
@@ -54,7 +41,6 @@ class InductiveTypes extends StructuralFeature("EquivalenceRelation") with Param
         }
       case _ => throw LocalError("bad Arguments")
     }
-    val loc= LocalName("")
     val Lambda(_, Lambda(_, a, b), prop) = relTp
     if (a != b)
       throw LocalError("conflicting argument types: The second argument is not of type A -> A -> Bool")
@@ -84,10 +70,9 @@ class InductiveTypes extends StructuralFeature("EquivalenceRelation") with Param
     val symm = Pi(l.name, l.tp.get, Pi(m.name, m.tp.get, DED(symmBody)))
     val reflBody = LFEquality(True, ApplRel(n, n))
     val refl = Pi(n.name, l.tp.get, DED(reflBody))
-    val predTrans = Lambda(LocalName(parent.name+"transitive_predicate"), relTp, trans)
-    val predRefl = Lambda(loc, relTp, refl)
-    val predSymm = Lambda(loc, relTp, symm)
-    
+    val predTrans = Lambda(LocalName(parent.name+"transitivity_predicate"), relTp, trans)
+    val predRefl = Lambda(LocalName(parent.name+"reflexivity_predicate"), relTp, refl)
+    val predSymm = Lambda(LocalName(parent.name+"symmetry_predicate"), relTp, symm)
     
     val applyPred = {pred:Term => OMBIND(ded, Context.empty,OMBIND(pred, Context.empty, relArg))}
     val axiomToDecl = {ax:Term => VarDecl(LocalName(parent.name.toString()+ax.toString()), None, Some(Univ(1)),  Some(ax), None).toDeclaration(parent.toTerm)}
