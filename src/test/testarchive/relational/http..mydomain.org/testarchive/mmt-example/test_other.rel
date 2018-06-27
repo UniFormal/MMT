@@ -1,0 +1,6 @@
+theory http://mydomain.org/testarchive/mmt-example?test_other
+HasMeta http://mydomain.org/testarchive/mmt-example?test_other http://mathhub.info/MitM/Foundation?Logic
+Includes http://mydomain.org/testarchive/mmt-example?test_other http://mydomain.org/testarchive/mmt-example?test_base
+Includes http://mydomain.org/testarchive/mmt-example?test_other http://mydomain.org/testarchive/mmt-example?test_middleman_a
+Declares http://mydomain.org/testarchive/mmt-example?test_other http://mydomain.org/testarchive/mmt-example?test_other?base
+constant http://mydomain.org/testarchive/mmt-example?test_other?base

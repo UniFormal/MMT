@@ -1,4 +1,5 @@
 import info.kwarc.mmt.api
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{Logger, Run}
 import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
 import info.kwarc.mmt.api.web.JSONBasedGraphServer
@@ -104,6 +105,15 @@ abstract class JonasTest(prefixes: String*) extends Test(
   prefixes.toList,
   "",
   None,
+  true,
+  None
+)
+
+abstract class MichaelTest(prefixes: String*) extends Test(
+  "/home/michael/content/",
+  prefixes.toList,
+  "",
+  Some(8080),
   true,
   None
 )

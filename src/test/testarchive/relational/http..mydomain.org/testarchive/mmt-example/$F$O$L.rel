@@ -1,0 +1,30 @@
+theory http://mydomain.org/testarchive/mmt-example?FOL
+HasMeta http://mydomain.org/testarchive/mmt-example?FOL http://cds.omdoc.org/urtheories?LF
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?prop
+constant http://mydomain.org/testarchive/mmt-example?FOL?prop
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?true
+constant http://mydomain.org/testarchive/mmt-example?FOL?true
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?false
+constant http://mydomain.org/testarchive/mmt-example?FOL?false
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?and
+constant http://mydomain.org/testarchive/mmt-example?FOL?and
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?or
+constant http://mydomain.org/testarchive/mmt-example?FOL?or
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?impl
+constant http://mydomain.org/testarchive/mmt-example?FOL?impl
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?not
+constant http://mydomain.org/testarchive/mmt-example?FOL?not
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?equiv
+constant http://mydomain.org/testarchive/mmt-example?FOL?equiv
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?sort
+constant http://mydomain.org/testarchive/mmt-example?FOL?sort
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?term
+constant http://mydomain.org/testarchive/mmt-example?FOL?term
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?equal
+constant http://mydomain.org/testarchive/mmt-example?FOL?equal
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?forall
+constant http://mydomain.org/testarchive/mmt-example?FOL?forall
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?exists
+constant http://mydomain.org/testarchive/mmt-example?FOL?exists
+Declares http://mydomain.org/testarchive/mmt-example?FOL http://mydomain.org/testarchive/mmt-example?FOL?proof
+constant http://mydomain.org/testarchive/mmt-example?FOL?proof

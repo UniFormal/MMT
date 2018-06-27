@@ -232,7 +232,7 @@ lazy val latex = (project in file("latex-mmt")).
 
 // using MMT in the OpenDreamKit project, includes language plugins for various systems such as GAP or Sage. Maintainer: Dennis
 lazy val odk = (project in file("mmt-odk")).
-  dependsOn(api, lf).
+  dependsOn(api, lf % "compile -> compile; test -> test").
   settings(mmtProjectsSettings("mmt-odk"): _*)
 
 // MMT-Mathhub backend. Maintainer: Tom
@@ -261,6 +261,11 @@ lazy val python = (project in file("python-mmt")).
   settings(mmtProjectsSettings("python-mmt"): _*).
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "py4j0.10.7.jar")
   
+// graph optimization. Maintainer: Michael Banken
+lazy val got = (project in file("mmt-got")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("mmt-got"): _*)
+
 // =================================
 // MMT projects: additional (optional) functionality that is factored out into separate projects due to dependencies
 // =================================

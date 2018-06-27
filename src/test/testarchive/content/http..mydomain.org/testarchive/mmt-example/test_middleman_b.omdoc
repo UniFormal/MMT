@@ -1,0 +1,6 @@
+<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath"><theory name="test_middleman_b" base="http://mydomain.org/testarchive/mmt-example" meta="http://mathhub.info/MitM/Foundation?Logic"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/test.mmt#251.13.0:336.16.1"/></metadata><import from="http://mydomain.org/testarchive/mmt-example?test_base"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/test.mmt#292.14.1:311.14.20"/></metadata></import><constant name="unused">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/test.mmt#314.15.1:334.15.21"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="test_base" name="base_type"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/test.mmt#323.15.10:331.15.18"/></metadata></om:OMS></om:OMOBJ></type>
+       
+       
+     </constant></theory></omdoc>

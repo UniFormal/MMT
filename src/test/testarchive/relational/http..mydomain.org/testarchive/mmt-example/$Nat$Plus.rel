@@ -1,0 +1,9 @@
+theory http://mydomain.org/testarchive/mmt-example?NatPlus
+HasMeta http://mydomain.org/testarchive/mmt-example?NatPlus http://mathhub.info/MitM/Foundation?Logic
+Includes http://mydomain.org/testarchive/mmt-example?NatPlus http://mydomain.org/testarchive/mmt-example?NatNums
+Declares http://mydomain.org/testarchive/mmt-example?NatPlus http://mydomain.org/testarchive/mmt-example?NatPlus?plus
+constant http://mydomain.org/testarchive/mmt-example?NatPlus?plus
+Declares http://mydomain.org/testarchive/mmt-example?NatPlus http://mydomain.org/testarchive/mmt-example?NatPlus?P6
+constant http://mydomain.org/testarchive/mmt-example?NatPlus?P6
+Declares http://mydomain.org/testarchive/mmt-example?NatPlus http://mydomain.org/testarchive/mmt-example?NatPlus?P7
+constant http://mydomain.org/testarchive/mmt-example?NatPlus?P7
