@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.checking.{History, MMTStructureChecker, Solver, Subtyp
 import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
-import info.kwarc.mmt.api.symbols.{DeclaredStructure, FinalConstant, Structure}
+import info.kwarc.mmt.api.symbols._
 import objects._
 import uom._
 import utils._
@@ -28,6 +28,7 @@ class Plugin extends frontend.Extension {
     controller.extman.addExtension(new MitMServer)
     controller.extman.addExtension(new UniverseInference)
     controller.extman.addExtension(new CodingServer)
+    controller.extman.addExtension(new SubtypeGenerator)
     controller.extman.addExtension(MitM.preproc)
   }
 }
@@ -128,5 +129,74 @@ class UniverseInference extends ChangeListener {
       ds.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(parentV)))
       parent.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(parentV max structV)))
     case _ =>
+  }
+}
+
+class SubtypeGenerator extends ChangeListener {
+  override val logPrefix = "abbrev-rule-gen"
+  protected val subtypeTag = "subtype_rule"
+
+  private def rulePath(r: SubtypeJudgRule) = r.by / subtypeTag
+
+  private def present(t: Term) = controller.presenter.asString(t)
+
+
+  private def getGeneratedRule(p: Path): Option[SubtypeJudgRule] = {
+    p match {
+      case p: GlobalName =>
+        controller.globalLookup.getO(p / subtypeTag) match {
+          case Some(r: RuleConstant) => r.df.map(df => df.asInstanceOf[SubtypeJudgRule])
+          case _ => None
+        }
+      case _ => None
+    }
+  }
+
+
+  override def onAdd(e: StructuralElement) {
+    onCheck(e)
+  }
+
+  override def onDelete(e: StructuralElement) {
+    getGeneratedRule(e.path).foreach { r => controller.delete(rulePath(r)) }
+  }
+
+  override def onCheck(e: StructuralElement): Unit = e match {
+    case c: Constant if c.tpC.analyzed.isDefined => c.tp match {
+      case Some(subtypeJudg(tm1,tm2)) =>
+        val rule = new SubtypeJudgRule(tm1,tm2,c.path)
+        val ruleConst = RuleConstant(c.home,c.name / subtypeTag,subtypeJudg(tm1,tm2),Some(rule))
+        ruleConst.setOrigin(GeneratedBy(this))
+        log(c.name + " ~~> " + present(tm1) + " <: " + present(tm2))
+        controller add ruleConst
+      case _ =>
+    }
+    case _ =>
+  }
+
+}
+
+class SubtypeJudgRule(val tm1 : Term, val tm2 : Term, val by : GlobalName) extends SubtypingRule {
+  val head = subtypeJudg.path
+
+  override def applicable(tp1: Term, tp2: Term): Boolean = tp1.hasheq(tm1) && tp2.hasheq(tm2)
+
+  def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+    solver.check(Equality(stack,tm1,tp1,None))
+    solver.check(Equality(stack,tm2,tp2,None))
+    Some(true)
+  }
+}
+
+object subtypeJudg {
+  val name = "subtypeJudge"
+  val baseURI = LFX.ns / "Subtyping"
+  val judgpath = baseURI ? "JudgmentSymbol"
+  val path = judgpath ? name
+  val term = OMS(path)
+  def apply(t1 : Term, t2 : Term) = OMA(term,List(t1,t2))
+  def unapply(t : Term) : Option[(Term,Term)] = t match {
+    case OMA(this.term,List(t1,t2)) => Some(t1,t2)
+    case _ => None
   }
 }
