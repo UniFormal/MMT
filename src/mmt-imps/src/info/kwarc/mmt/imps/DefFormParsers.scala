@@ -47,12 +47,14 @@ class DefFormParsers
     "herald",
     List(parseTName),
     Nil,
+    Nil,
     Heralding
   )
 
   val pAtomicSort : Parser[DFAtomicSort] = composeParser(
     "def-atomic-sort",
     List(parseTName, parseDefString),
+    Nil,
     List((parseArgTheory, R), (parseArgUsages, O), (parseArgWitness, O)),
     DFAtomicSort
   )
@@ -60,6 +62,7 @@ class DefFormParsers
   val pConstant : Parser[DFConstant] = composeParser(
     "def-constant",
     List(parseTName, parseDefString),
+    Nil,
     List((parseArgTheory,R),(parseArgSort,O),(parseArgUsages,O)),
     DFConstant
   )
