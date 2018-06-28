@@ -8,7 +8,7 @@ class DefFormParsers
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(parseDefForm) }
 
   lazy val parseDefForm : PackratParser[DefForm] = {
-    parseLineComment | pHeralding | pAtomicSort
+    parseLineComment | pHeralding | pAtomicSort | pConstant
   }
 
   // ######### Argument Parsers
