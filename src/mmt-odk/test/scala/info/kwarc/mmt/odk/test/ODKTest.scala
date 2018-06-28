@@ -35,7 +35,12 @@ class ODKTest extends MMTIntegrationTest(
 }
 
 
-class MitMTest extends MMTIntegrationTest(TestArchive("MitM/smglom", hasDevel = true))(
+class MitMTest extends MMTIntegrationTest(
+  TestArchive("MMT/urtheories", hasDevel = true),
+  TestArchive("MMT/LFX", hasDevel = true),
+  TestArchive("MitM/Foundation", hasDevel = true),
+  TestArchive("MitM/smglom", hasDevel = true)
+)(
   ExtensionSpec("info.kwarc.mmt.lf.Plugin"),
   ExtensionSpec("info.kwarc.mmt.odk.Plugin")
 ) {
