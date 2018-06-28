@@ -60,8 +60,8 @@ class MitMTest extends MMTIntegrationTest(
   shouldClearTarget("MitM/Foundation", "bin")
   shouldHandleLine("build MitM/Foundation scala-bin")
 
-  shouldHandleLine("log+ object-checker")
   logGroup {
+    shouldHandleLine("log+ structure-checker-simple")
     shouldCheck("MitM/smglom",Orders.mitmsmglom:_*)(onlyfiles = true)
   }
 }
