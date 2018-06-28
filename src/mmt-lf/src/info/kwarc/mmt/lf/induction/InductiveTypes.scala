@@ -53,6 +53,7 @@ sealed abstract class InductiveDecl {
     val tm = ApplySpine(OMS(path), con.map(_.toTerm) :_*)
     (con, tm)
   }
+  def toVarDecl : VarDecl = VarDecl(this.name, this.toTerm, OMS(this.path))
 }
 
 /** type declaration */
@@ -130,6 +131,33 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     }
     // build the result
     elabDecls = elabDecls.reverse ::: noConfDecls ::: noJunk(parent, decls, tpdecls, dd)
+    
+    // TODO: Add the induction axioms for the term constructors (using the noJunk axioms for the type constructors)
+    /*
+     * Exam:
+     * induct_N : (U:type) (u:U) (f:U -> U) (N -> U)
+     * induct_z : |- induct_N (U:type) (u:U) (f:U -> U) z = u
+     * induct_s : |- induct_N (U:type) (u:U) (f:U -> U) 
+     * 
+     * Now induct_N is functor from N to any (given) modell U
+     * We want our elaborate to correspond (via applying Mod) to the initial modell of N, i.e.
+     * inductive_N satisfies universal mapping property or equivalently our modell
+     * is the initial object in the category of modells of N
+     * 
+     * Perhaps additionally uniqueness of functor induct_N from N to given modell U
+     * 
+     * Rec. def. func: like additional noConf axiom
+     * Exam:
+     * def m(n) = 
+     * 	n match {
+     * 	case z => u
+     * 	case s(x) => f(m(x))
+     * }
+     * 
+     * or more involved:
+     * 
+     * fact = (induct_N (N x N) (z, 1) ([f] [(n, n')] (s n, sn * n')) . Pi_2)
+     */
     new Elaboration {
       def domain = elabDecls map {d => d.name}
       def getO(n: LocalName) = {
@@ -147,7 +175,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     
     val argEq = (aCtx zip bCtx) map {case (a,b) => Eq(a.toTerm,b.toTerm)}
     val resEq = Eq(aApplied, bApplied)
-    val body = Arrow(resEq :: argEq, Contra)
+    val body = Arrow(Arrow(argEq, Contra), Arrow(resEq, Contra))
     val inj = Pi(aCtx ++ bCtx,  body)
     
     Constant(parent.toTerm, uniqueLN("injective_"+d.name.toString), Nil, Some(inj), None, None)
@@ -172,23 +200,19 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   }
   
   private def noJunk(parent : DeclaredModule, decls : List[InductiveDecl], tpdecls: List[TypeLevel], dd: DerivedDeclaration) : List[Declaration] = {
-    //val quantifyModell = Constant(parent.toTerm, parent.name, Nil, Some(Univ(1)), None, None)
-    val definedTypes = tpdecls map {x => x.ret} //TODO: find better heuristic
-    val quantifiedTps = definedTypes map {tp => 
-      val quantifiedTypeDecl = VarDecl(uniqueLN("quantifying_type_substituting_"+tp.toString), None, Some(Univ(1)), None, None)
-      quantifiedTypeDecl.toTerm
+    val quant : List[(Context, List[Sub], Term)]= tpdecls map {case dec => 
+      val (ctx, x) = dec.argContext(None)
+      val a = newVar(LocalName(""), x, None)
+      (ctx++a, Context.pickFresh(ctx++a, a.name)._2.subs.toList, x)
     }
-    val chainedDeclsTypeList = decls.map {dec => dec.toTerm}
-    val (hd, tl) = (chainedDeclsTypeList.head,chainedDeclsTypeList.tail)
-    val chainedDecls = tl.foldLeft[Term](hd)({(l, a) => Arrow(l, a)})
-    val defTpsDecls = definedTypes map {tp => newVar(LocalName("free_var_of_type_"+tp.toString), Univ(1), None)}
-    val substPairs = defTpsDecls zip quantifiedTps
-    val substitution: Substitution = substPairs map {case (tpDec:VarDecl, target:Term) => Sub(tpDec.name, target)}
-    val body = chainedDecls ^ substitution
-    val prepostTpPairs = definedTypes.zip(quantifiedTps)
+    val bla : List[Iterator[Sub]] = quant map(_._2.toIterator)
+    val blabla = bla.flatten 
     
-    val noJunks = prepostTpPairs map {case (preTp, postTp) => Arrow(preTp, Arrow(body, postTp))}
+    val subs : List[Sub] = quant map {x:(Context, List[Sub], Term) => x._2.toIterator} flatten
+    val subst : Substitution = Substitution.list2substitution(subs)
+    val chain : Context = Context.list2context(decls map {case x : InductiveDecl => x.toVarDecl}) ^ subst
+    val noJunks = quant map {case x:(Context, List[Sub], Term) => Pi(x._1.++(chain), x._3)}
+    
     noJunks map {t => Constant(parent.toTerm, uniqueLN("no_junk_axiom_for_"+dd.name.toString), Nil, Some(t), None, None)}
-  }
-  
+  } 
 }
