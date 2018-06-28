@@ -38,6 +38,9 @@ class DefFormParsers
   lazy val parseArgUsages  : Parser[ArgUsages] =
     fullParser(("(usages" ~> rep1(parseUsage) <~ ")") ^^ { case us => ArgUsages(us,None,None) })
 
+  lazy val parseArgSort    : Parser[ArgSort] =
+    fullParser(("(sort" ~> parseTName <~ ")") ^^ {case n => ArgSort(n,None,None)})
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -52,6 +55,13 @@ class DefFormParsers
     List(parseTName, parseDefString),
     List((parseArgTheory, R), (parseArgUsages, O), (parseArgWitness, O)),
     DFAtomicSort
+  )
+
+  val pConstant : Parser[DFConstant] = composeParser(
+    "def-constant",
+    List(parseTName, parseDefString),
+    List((parseArgTheory,R),(parseArgSort,O),(parseArgUsages,O)),
+    DFConstant
   )
 
 }

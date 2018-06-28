@@ -1531,6 +1531,10 @@ case class ArgUsages(usgs : List[Usage], var src : SourceInfo, var cmt : Comment
   override def toString : String = { "(usages " + usgs.mkString(" ") + ")"}
 }
 
+case class ArgSort(srt : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(sort " + srt.toString + ")"}
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1551,6 +1555,18 @@ object DFAtomicSort extends Comp[DFAtomicSort] {
   override def build[T <: DefForm](args : HList) : T = args match {
     case (n : Name) :+: (d : DefString) :+: (t : Option[ArgTheory]) :+: (u : Option[ArgUsages]) :+:
       (w : Option[ArgWitness]) :+: HNil => DFAtomicSort(n,d,t.get,u,w,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFConstant(name : Name, dfs : DefString, thy : ArgTheory,
+                      srt : Option[ArgSort], usgs : Option[ArgUsages],
+                      var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFConstant extends Comp[DFConstant] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (d : DefString) :+: (t : Option[ArgTheory]) :+: (s : Option[ArgSort]) :+:
+      (u : Option[ArgUsages]) :+: HNil => DFConstant(n,d,t.get,s,u,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
