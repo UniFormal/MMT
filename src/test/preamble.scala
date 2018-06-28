@@ -84,7 +84,7 @@ abstract class Test(archivepath : String,
 abstract class DennisTest(prefixes : String*) extends Test(
   "/home/jazzpirate/work/MathHub",
   prefixes.toList,
-  "/home/jazzpirate/work/Stuff/Public",
+  "/home/jazzpirate/work/Stuff/AlignmentsPublic",
   Some(8080),
   true,
   Some("/home/jazzpirate/work/mmtlog.html")
