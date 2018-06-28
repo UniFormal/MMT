@@ -8,7 +8,7 @@ class DefFormParsers
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(parseDefForm) }
 
   lazy val parseDefForm : PackratParser[DefForm] = {
-    parseLineComment | pHeralding | pAtomicSort | pConstant | pQuasiConstructor
+    parseLineComment | pHeralding | pAtomicSort | pConstant | pQuasiConstructor | pSchematicMacete
   }
 
   // ######### Argument Parsers
@@ -48,6 +48,11 @@ class DefFormParsers
   lazy val parseArgFixedTheories  : Parser[ArgFixedTheories] =
     fullParser(("(fixed-theories" ~> rep1(parseTName) <~ ")") ^^ { case ts => ArgFixedTheories(ts,None,None) })
 
+  lazy val parseModTransportable  : Parser[ModTransportable] =
+    fullParser("transportable" ^^ {case _ => ModTransportable(None,None)} )
+
+  lazy val parseModNull : Parser[ModNull] = fullParser("null" ^^ {case _ => ModNull(None,None)} )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -80,6 +85,14 @@ class DefFormParsers
     Nil,
     List((parseArgLanguage,R),(parseArgFixedTheories,O)),
     DFQuasiConstructor
+  )
+
+  val pSchematicMacete : Parser[DFSchematicMacete] = composeParser(
+    "def-schematic-macete",
+    List(parseTName, parseDefString),
+    List(parseModNull, parseModTransportable),
+    List((parseArgTheory,R)),
+    DFSchematicMacete
   )
 
 }

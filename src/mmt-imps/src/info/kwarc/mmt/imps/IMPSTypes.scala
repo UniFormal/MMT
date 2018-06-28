@@ -1543,6 +1543,14 @@ case class ArgFixedTheories(ts : List[Name], var src : SourceInfo, var cmt : Com
   override def toString : String = { "(usages " + ts.mkString(" ") + ")"}
 }
 
+case class ModTransportable(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "transportable"
+}
+
+case class ModNull(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "null"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1587,6 +1595,18 @@ object DFQuasiConstructor extends Comp[DFQuasiConstructor] {
   override def build[T <: DefForm](args : HList) : T = args match {
     case (n : Name) :+: (d : DefString) :+: (t : Option[ArgLanguage]) :+: (f : Option[ArgFixedTheories]) :+: HNil =>
       DFQuasiConstructor(n,d,t.get,f,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFSchematicMacete(name : Name, dfs : DefString, nil : Option[ModNull],
+                             trans : Option[ModTransportable], t : ArgTheory,
+                             var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFSchematicMacete extends Comp[DFSchematicMacete] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (d : DefString) :+: (nl : Option[ModNull]) :+: (tr : Option[ModTransportable]) :+:
+      (t : Option[ArgTheory]) :+: HNil => DFSchematicMacete(n,d,nl,tr,t.get,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }

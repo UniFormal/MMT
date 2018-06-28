@@ -93,7 +93,8 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
     *
     * @param name The name of the Def-Form, e.g. "def-atomic-sort".
     * @param pos Parsers for all positional arguments (all required and in this order).
-    * @param mod Persers for all modifier arguments (all optional, any order)
+    * @param mod Parsers for all modifier arguments (all optional, any order).
+    *            These are essentially treated exactly like keyword arguments.
     * @param key Parsers for all keyword arguments (might be optional, can come in any order) and
     *            value indicating if they're optional or required.
     * @param x Companion object containing the applicable build() method.
@@ -102,10 +103,10 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
     */
   def composeParser[T <: DefForm](name : String,
                                    pos : List[Parser[DefForm]],
-                                   mod : List[Parser[String]],
+                                   mod : List[Parser[DefForm]],
                                    key : List[(Parser[DefForm], Required)],
                                      x : Comp[T]) : Parser[T] = {
-    new ParserWithSourcePosition((("(" + name) ~> positional(pos) ~ keyworded(key) <~ ")") ^^
+    new ParserWithSourcePosition((("(" + name) ~> positional(pos) ~ keyworded(mod.map(k => (k,O)) ::: key) <~ ")") ^^
       { case p ~ k => for (ky <- key.indices) { if (key(ky)._2) { assert(k(ky).isDefined) } }
                       x.build(p ::: k) })
   }
