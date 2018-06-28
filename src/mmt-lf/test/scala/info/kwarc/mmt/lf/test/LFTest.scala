@@ -18,6 +18,10 @@ class LFTest extends MMTIntegrationTest(
   shouldLoadExtensions()
   shouldInstallArchives()
 
+
+  shouldClearTarget("MMT/urtheories", "bin")
+  shouldHandleLine("build MMT/urtheories scala-bin")
+
   shouldCheck("MMT/urtheories")()
 
   shouldCheck("MMT/examples",Orders.examples:_*)(onlyfiles = true)

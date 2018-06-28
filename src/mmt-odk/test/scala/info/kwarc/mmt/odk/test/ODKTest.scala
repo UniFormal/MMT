@@ -41,6 +41,13 @@ class MitMTest extends MMTIntegrationTest(TestArchive("MitM/smglom", hasDevel = 
 
   shouldLoadExtensions()
   shouldInstallArchives()
+
+  shouldClearTarget("MMT/LFX", "bin")
+  shouldHandleLine("build MMT/LFX scala-bin")
+
+  shouldClearTarget("MitM/Foundation", "bin")
+  shouldHandleLine("build MitM/Foundation scala-bin")
+
   handleLine("log+ structure-checker")
   shouldCheck("MitM/smglom",Orders.mitmsmglom:_*)(onlyfiles = true)
 }
