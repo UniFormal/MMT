@@ -22,6 +22,9 @@ class ODKTest extends MMTIntegrationTest(
   shouldLoadExtensions()
   shouldInstallArchives()
 
+  shouldClearTarget("MMT/urtheories", "bin")
+  shouldHandleLine("build MMT/urtheories scala-bin")
+
   shouldClearTarget("MMT/LFX", "bin")
   shouldHandleLine("build MMT/LFX scala-bin")
   shouldHandleLine("build MMT/LFX mmt-omdoc")
@@ -41,6 +44,10 @@ class MitMTest extends MMTIntegrationTest(TestArchive("MitM/smglom", hasDevel = 
 
   shouldLoadExtensions()
   shouldInstallArchives()
+
+
+  shouldClearTarget("MMT/urtheories", "bin")
+  shouldHandleLine("build MMT/urtheories scala-bin")
 
   shouldClearTarget("MMT/LFX", "bin")
   shouldHandleLine("build MMT/LFX scala-bin")
