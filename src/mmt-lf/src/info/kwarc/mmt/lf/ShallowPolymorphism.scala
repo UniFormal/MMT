@@ -17,3 +17,15 @@ object ShallowPolymorphism extends InhabitableRule(Pi.path) with PiOrArrowRule {
       }
    }
 }
+
+object PolymorphicApplyTerm extends EliminationRule(Apply.path, OfType.path) {
+   override def priority: Int = super.priority + 1
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+      case ApplySpine(Lambda(x,tpA,bd),arg1 :: rest) =>
+         solver.check(Typing(stack,arg1,tpA,None))
+         solver.inferType(ApplySpine(bd ^? x/arg1,rest:_*),covered)
+      case Apply(_,_) =>
+         ApplyTerm.apply(solver)(tm,covered)
+      case _ => None
+   }
+}
