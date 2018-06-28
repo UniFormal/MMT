@@ -104,16 +104,6 @@ jobs:
         - '[[ -f "deploy/mmt.jar" ]]'
     - dist: trusty
       env:
-        - "INFO='Check mmt.jar generation using `sbt deploy`'"
-        - 'SBT_VERSION_CMD="^validate"'
-      jdk: oraclejdk9
-      language: scala
-      scala: "2.12.3"
-      script:
-        - "cd src && (cat /dev/null | sbt ++2.12.3 deploy) && cd .."
-        - '[[ -f "deploy/mmt.jar" ]]'
-    - dist: trusty
-      env:
         - "INFO='Check lfcatalog.jar generation using `sbt deployLFCatalog`'"
         - 'SBT_VERSION_CMD="^validate"'
       jdk: openjdk8
@@ -134,16 +124,6 @@ jobs:
         - '[[ -f "deploy/lfcatalog/lfcatalog.jar" ]]'
     - dist: trusty
       env:
-        - "INFO='Check lfcatalog.jar generation using `sbt deployLFCatalog`'"
-        - 'SBT_VERSION_CMD="^validate"'
-      jdk: oraclejdk9
-      language: scala
-      scala: "2.12.3"
-      script:
-        - "cd src && (cat /dev/null | sbt ++2.12.3 deployLFCatalog) && cd .."
-        - '[[ -f "deploy/lfcatalog/lfcatalog.jar" ]]'
-    - dist: trusty
-      env:
         - "INFO='Check that apidoc generation works'"
         - 'SBT_VERSION_CMD="^validate"'
       jdk: openjdk8
@@ -157,16 +137,6 @@ jobs:
         - "INFO='Check that apidoc generation works'"
         - 'SBT_VERSION_CMD="^validate"'
       jdk: oraclejdk8
-      language: scala
-      scala: "2.12.3"
-      script:
-        - "cd src && (cat /dev/null | sbt ++2.12.3 apidoc) && cd .."
-        - '[[ -d "apidoc" ]]'
-    - dist: trusty
-      env:
-        - "INFO='Check that apidoc generation works'"
-        - 'SBT_VERSION_CMD="^validate"'
-      jdk: oraclejdk9
       language: scala
       scala: "2.12.3"
       script:
