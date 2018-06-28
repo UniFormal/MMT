@@ -21,7 +21,7 @@ travisConfig := {
 
   val LinuxTesting = MatrixSet(
     Trusty, Language("scala"), Env(Map(("SBT_VERSION_CMD", "\"^validate\""))),
-    OpenJDK8, OracleJDK8, OracleJDK9
+    OpenJDK8, OracleJDK8//, OracleJDK9
   )
 
   // in principle we would test OS X as follows
@@ -60,7 +60,7 @@ travisConfig := {
     ),
 
     TravisStage("CompileAndCheck", "Check that our tests run and the code compiles")(
-      TravisJob("Check that the code compiles and the test runs run and the code compiles", sbt("scalastyle") ::: sbt("compile") ::: sbt("test"))
+      TravisJob("Check that the code compiles and the test runs run", sbt("scalastyle") ::: sbt("compile") ::: sbt("test"))
     ),
 
     TravisStage("DeployCheck", "check that the 'apidoc' and 'deploy' targets work")(
