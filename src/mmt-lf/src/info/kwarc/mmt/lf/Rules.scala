@@ -152,7 +152,7 @@ object StandardArgumentChecker extends ArgumentChecker {
 class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       // calling Beta first could make this rule more reusable because it would avoid inferring the type of a possibly large lambda
-
+      // println(solver.presentObj(tm))
       // auxiliary function that handles one argument at a time
       def iterate(fT: Term, args: List[Term]): Option[Term] = {
          (fT,args) match {

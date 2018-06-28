@@ -346,13 +346,18 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
        case _ =>
          return None
     }
+
+    override def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term, Option[A]) = {
+      val s = simplify(tm)
+      (s,simple(s))
+    }
   }
 
    /** applies all computation rules */
    private def applyCompRules(tm: Term)(implicit context: Context, state: UOMState): Change = {
       val cb = callback(state)
       state.compRules.foreach {rule =>
-         if (rule.heads contains tm.head.orNull) {
+         if (rule.applicable(tm.head.orNull)) {
            rule(cb)(tm, true)(Stack(context), NoHistory).get.foreach {tmS =>
              return GlobalChange(tmS)
            }

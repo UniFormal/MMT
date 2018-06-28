@@ -101,8 +101,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    val constantContext = checkingUnit.context
    val initUnknowns = checkingUnit.unknowns
 
-  private var _warnings: List[String] = Nil
-  def warnings = _warnings
+   def warnings = state._warnings
 
    /**
     * to have better control over state changes, all stateful variables are encapsulated a second time
@@ -120,6 +119,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       private var _errors: List[History] = Nil
       /** tracks the dependencies in reverse order of encountering */
       private var _dependencies : List[CPath] = Nil
+
+      var _warnings: List[String] = Nil
 
       // accessor methods for the above
       def solution = _solution
@@ -152,6 +153,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
            throw WouldFail
          }
       }
+
       /** registers a dependency */
       def addDependency(p: CPath) {
          _dependencies ::= p
@@ -587,6 +589,13 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       false
    }
 
+  def warning(s : String)(implicit history: History) : Boolean = {
+    log("Warning: " + s)
+    history += s
+    state._warnings ::= s
+    true
+  }
+
    /**
     * main entry method: runs the solver on the judgment in the checking unit
     */
@@ -758,7 +767,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                       case None =>
                         rule.default(this)(tp) match {
                           case Some(res) =>
-                            _warnings ::= "Default solution used for " + vd.name + ": " + presentObj(res)
+                            state._warnings ::= "Default solution used for " + vd.name + ": " + presentObj(res)
                             solve(vd.name,res)
                           case None =>
                             tryAHole
@@ -835,6 +844,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    // judgements are not cached if we are in a dry run to make sure they are run again later to solve unknowns
    private object JudgementStore {
      private val store = new scala.collection.mutable.HashMap[Judgement,Boolean]
+     def get(j : Judgement) = store.get(j)
      /** lookup up result for j; if not known, run f to define it */
      def getOrElseUpdate(j : Judgement)(f: => Boolean): Boolean = {
        store.find {case (k,_) => k implies j} match {
@@ -1490,7 +1500,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       case o: OML => o
       case ComplexTerm(op, subs, cont, args) =>
          computationRules foreach {rule =>
-            if (rule.head == op) {
+            if (rule.applicable(op)) {
               rule(this)(tm, false).get match {
                 case Some(tmS) =>
                   history += "applying computation rule " + rule.toString
@@ -1542,7 +1552,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           // use first applicable rule
           var simp: CannotSimplify = Simplifiability.NoRecurse
           computationRules foreach {rule =>
-            if (rule.head == op) {
+            if (rule.applicable(op)) {
               val ret = rule(this)(tm, false)(stack,history)
               ret match {
                 case Simplify(tmS) =>
@@ -1635,7 +1645,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     *  @param stack the context of tm
     *  @return (tmS, Some(a)) if tmS is simple and simple(tm)=tmS; (tmS, None) if tmS is not simple but no further simplification rules are applicable
     */
-   def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = {
+   override def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = {
       simple(tm) match {
          case Some(a) => (tm,Some(a))
          case None =>
