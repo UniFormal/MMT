@@ -8,7 +8,7 @@ class DefFormParsers
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(parseDefForm) }
 
   lazy val parseDefForm : PackratParser[DefForm] = {
-    parseLineComment | pHeralding | pAtomicSort | pConstant
+    parseLineComment | pHeralding | pAtomicSort | pConstant | pQuasiConstructor
   }
 
   // ######### Argument Parsers
@@ -16,10 +16,14 @@ class DefFormParsers
   lazy val parseName  : Parser[String] = regex("""[^()\t\r\n ]+""".r)
   lazy val parseTName : Parser[Name]   = fullParser(parseName ^^ { case nm => Name(nm,None,None)})
 
-  lazy val parseDefString : Parser[DefString] = fullParser(regex("\".+\"".r) ^^ {case s => DefString(s,None,None)})
+  // ToDo: nested strings could be a problem. Do those occur?
+  lazy val parseDefString : Parser[DefString] = fullParser(regex("""\"[^\"]+\"""".r) ^^ {case s => DefString(s,None,None)})
 
   lazy val parseArgTheory : Parser[ArgTheory] =
     fullParser(("(theory" ~> parseTName <~ ")") ^^ { case n => ArgTheory(n,None,None) })
+
+  lazy val parseArgLanguage : Parser[ArgLanguage] =
+    fullParser(("(language" ~> parseTName <~ ")") ^^ { case n => ArgLanguage(n,None,None) })
 
   lazy val parseArgWitness : Parser[ArgWitness] =
     fullParser(("(witness" ~> parseDefString <~ ")") ^^ {case s => ArgWitness(s,None,None)})
@@ -40,6 +44,9 @@ class DefFormParsers
 
   lazy val parseArgSort    : Parser[ArgSort] =
     fullParser(("(sort" ~> parseTName <~ ")") ^^ {case n => ArgSort(n,None,None)})
+
+  lazy val parseArgFixedTheories  : Parser[ArgFixedTheories] =
+    fullParser(("(fixed-theories" ~> rep1(parseTName) <~ ")") ^^ { case ts => ArgFixedTheories(ts,None,None) })
 
   // ######### Full Def-Form Parsers
 
@@ -65,6 +72,14 @@ class DefFormParsers
     Nil,
     List((parseArgTheory,R),(parseArgSort,O),(parseArgUsages,O)),
     DFConstant
+  )
+
+  val pQuasiConstructor : Parser[DFQuasiConstructor] = composeParser(
+    "def-quasi-constructor",
+    List(parseTName, parseDefString),
+    Nil,
+    List((parseArgLanguage,R),(parseArgFixedTheories,O)),
+    DFQuasiConstructor
   )
 
 }

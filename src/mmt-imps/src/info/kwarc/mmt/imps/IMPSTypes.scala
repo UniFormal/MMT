@@ -1508,6 +1508,10 @@ case class ArgTheory(thy : Name, var src : SourceInfo, var cmt : CommentInfo) ex
   override def toString : String = { "(theory " + thy.toString + ")"}
 }
 
+case class ArgLanguage(lang : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(theory " + lang.toString + ")"}
+}
+
 case class ArgWitness(w : DefString, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString : String = { "(witness " + w.toString + ")"}
 }
@@ -1533,6 +1537,10 @@ case class ArgUsages(usgs : List[Usage], var src : SourceInfo, var cmt : Comment
 
 case class ArgSort(srt : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString : String = { "(sort " + srt.toString + ")"}
+}
+
+case class ArgFixedTheories(ts : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(usages " + ts.mkString(" ") + ")"}
 }
 
 // Full DefForms
@@ -1567,6 +1575,18 @@ object DFConstant extends Comp[DFConstant] {
   override def build[T <: DefForm](args : HList) : T = args match {
     case (n : Name) :+: (d : DefString) :+: (t : Option[ArgTheory]) :+: (s : Option[ArgSort]) :+:
       (u : Option[ArgUsages]) :+: HNil => DFConstant(n,d,t.get,s,u,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFQuasiConstructor(name : Name, dfs : DefString,
+                              lan  : ArgLanguage, fx : Option[ArgFixedTheories],
+                              var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFQuasiConstructor extends Comp[DFQuasiConstructor] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (d : DefString) :+: (t : Option[ArgLanguage]) :+: (f : Option[ArgFixedTheories]) :+: HNil =>
+      DFQuasiConstructor(n,d,t.get,f,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
