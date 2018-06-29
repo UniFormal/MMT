@@ -24,6 +24,9 @@ class MMTPlugin extends EBPlugin with Logger {
   val buildActions = new BuildActions(this)
   val editActions = new EditActions(this)
 
+  /** set by [[MMTSideKick]], read by [[MMTGutterExtension]] */
+  val progressTracker = new scala.collection.mutable.ListMap[Buffer,MMTTask]
+  
   /** convenience */
   def asString(o: objects.Obj) = controller.presenter.asString(o)
    
@@ -133,8 +136,10 @@ class MMTPlugin extends EBPlugin with Logger {
     if (!painter.getExtensions.exists(_.isInstanceOf[MMTTextAreaExtension])) {
       val taExt = new MMTTextAreaExtension(controller, editPane)
       val tooltipExt = new MMTToolTips(controller, editPane)
+      val gutterExt = new MMTGutterExtension(this, editPane)
       painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
-      painter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, tooltipExt) // jedit tries lower layers first when looking for a tooltip; we must be below error list 
+      painter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, tooltipExt) // jedit tries lower layers first when looking for a tooltip; we must be below error list
+      ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, gutterExt)
     }
     val ma = new MMTMouseAdapter(editPane)
     painter.addMouseListener(ma)

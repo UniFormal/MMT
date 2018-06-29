@@ -175,7 +175,7 @@ class Setup extends ShellExtension("jeditsetup") {
         File.WriteLineWise(jcat, newCatalog.reverse)
       }
       // abbrevs
-      val sabb = "/plugin/abbrevs"
+      val sabb = MMTSystem.getResourceAsString("latex/unicode-latex-map")
       val jabb = jedit / "abbrevs"
       var newAbbrevs: List[String] = Nil
       var remove = false
@@ -194,7 +194,8 @@ class Setup extends ShellExtension("jeditsetup") {
       }
       // append MMT abbrevs if installing
       if (install) {
-        handleResourceLineWise(sabb) {l => newAbbrevs ::= l}
+        newAbbrevs ::= "[mmt]"
+        stringToList(sabb,"\\n") foreach {l => newAbbrevs ::= l}
       }
       // write new abbrevs
       if (newAbbrevs.nonEmpty) {

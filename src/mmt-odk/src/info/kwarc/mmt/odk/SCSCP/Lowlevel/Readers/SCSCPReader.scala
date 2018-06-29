@@ -2,9 +2,10 @@ package info.kwarc.mmt.odk.SCSCP.Lowlevel.Readers
 
 import java.io.InputStream
 
-import info.kwarc.mmt.odk.OpenMath.Coding.OMXMLCoding
+import info.kwarc.mmt.api.utils.JSON
+import info.kwarc.mmt.odk.OpenMath.Coding.{OMJSONCoding, OMXMLCoding}
 import info.kwarc.mmt.odk.OpenMath.OMObject
-import info.kwarc.mmt.odk.SCSCP.Lowlevel.SCSCPPi
+import info.kwarc.mmt.odk.SCSCP.Lowlevel._
 
 import scala.collection.mutable.ListBuffer
 
@@ -23,7 +24,15 @@ class SCSCPReader(val stream: InputStream, val encoding: String = "UTF-8") {
 
   // open a new reader and a new encoding object
   private val reader = new BufferedLineReader(stream, encoding)
-  private val coder = new OMXMLCoding()
+
+  // Codings (XML or JSON)
+  private val xmlCoder = new OMXMLCoding()
+  private val jsonCoder = new OMJSONCoding()
+
+  // the last used OpenMathCoding
+  private var _codingState : OMCodingState = AutoState
+  def codingState: OMCodingState =  _codingState
+
 
   /**
     * Reads the next OpenMath object or Processing instruction from the socket.
@@ -104,7 +113,21 @@ class SCSCPReader(val stream: InputStream, val encoding: String = "UTF-8") {
         // if it is the end, return
         if (inst == END_INST) {
           try {
-            return coder(scala.xml.XML.loadString(buffer.toString))
+
+            // try to read JSON
+            try {
+              val xml = xmlCoder(scala.xml.XML.loadString(buffer.toString))
+              _codingState = XMLState
+              return xml
+            } catch {
+              case e: Exception =>
+            }
+
+            // then try to read JSON
+            val json = jsonCoder(JSON.parse(buffer.toString))
+            _codingState = JSONState
+            return json
+
           } catch {
             case e: Exception => throw new OpenMathParsingFailure(e)
           }

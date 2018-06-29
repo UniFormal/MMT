@@ -18,12 +18,18 @@ case object IsTheory extends Unary("theory")
 case object IsView extends Unary("view")
 case object IsStructure extends Unary("structure")
 case object IsConstant extends Unary("constant")
+case object IsDataConstructor extends Unary("dataconstructor")
+case object IsRule extends Unary("rule")
+case object IsJudgementConstructor extends Unary("judgementconstructor")
+case object IsDatatypeConstructor extends Unary("datatypeconstructor")
+case object IsHighUniverse extends Unary("highuniverse")
 case object IsPattern extends Unary("pattern")
 case object IsInstance extends Unary("instance")
 case object IsDerivedDeclaration extends Unary("deriveddeclaration")
 case object IsConAss extends Unary("conass")
 case object IsStrAss extends Unary("strass")
 case object IsNotation extends Unary("notation")
+
 /** Extractor extensions should use instances of this class to extend the ontology for unary relations */
 case class CustomUnary(name : String) extends Unary(name)
 
@@ -35,7 +41,11 @@ object Unary {
       case OMS(QMTUnaries.IsView) => IsView
       case OMS(QMTUnaries.IsStructure) => IsStructure
       case OMS(QMTUnaries.IsConstant) => IsConstant
-      case OMS(QMTUnaries.IsPattern) => IsPattern
+      case OMS(QMTUnaries.IsDatatypeConstructor) => IsDatatypeConstructor
+      case OMS(QMTUnaries.IsDataConstructor) => IsDataConstructor
+      case OMS(QMTUnaries.IsJudgementConstructor) => IsJudgementConstructor
+      case OMS(QMTUnaries.IsRule) => IsRule
+      case OMS(QMTUnaries.IsHighUniverse) => IsHighUniverse
       case OMS(QMTUnaries.IsInstance) => IsInstance
       case OMS(QMTUnaries.IsDerivedDeclaration) => IsDerivedDeclaration
       case OMS(QMTUnaries.IsConAss) => IsConAss
@@ -72,6 +82,9 @@ object Binary {
       case OMS(QMTBinaries.Declares) => Declares
       case OMS(QMTBinaries.IsAliasFor) => IsAliasFor
       case OMS(QMTBinaries.IsAlignedWith) => IsAlignedWith
+      case OMS(QMTBinaries.HasViewFrom) => HasViewFrom
+      case OMS(QMTBinaries.IsImplicitly) => IsImplicitly
+
       // TODO: Custom binary
    }
 }
@@ -84,6 +97,10 @@ case object Includes extends Binary("includes", "included by")
 //link - theory, style - any
 case object HasDomain extends Binary("has domain", "is domain of")
 case object HasCodomain extends Binary("has codomain", "is codomain of")
+//theory - theory, mediated by implicit views and structures (excluding includes)
+case object IsImplicitly extends Binary("implicitly realizes", "is implicitly realized by")
+//structure - structure, mediated by views
+case object HasViewFrom extends Binary("has view from", "has view as")
 // constant - constant (not used yet)
 case object IsInstanceOf extends Binary("is instance of", "instantiates")
 //path - path

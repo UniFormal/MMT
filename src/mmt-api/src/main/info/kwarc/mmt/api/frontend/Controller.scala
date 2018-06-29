@@ -27,9 +27,13 @@ import info.kwarc.mmt.api.archives.lmh.MathHub
 /** An exception that is thrown when a needed knowledge item is not available
   *
   * A Controller catches it and retrieves the item dynamically.
+  * 
+  * @param path the URI of the not-found element
+  * @param found a parent URI that has been loaded
   */
 case class NotFound(path: Path, found: Option[Path] = None) extends java.lang.Throwable {
-  override def toString = "NotFound(" + path + ")\n" + Stacktrace.asString(this)
+  override def toString = s"NotFound($path,$found)" // badly implemented in Throwable
+  def toStringLong = toString + "\n" + Stacktrace.asString(this)
 }
 
 /** minor variables kept by the controller, usually modifiable via actions */
@@ -149,7 +153,9 @@ class Controller extends ROController with ActionHandling with Logger {
 
   /** @return the current action being defined or None */
   def getCurrentActionDefinition = state.currentActionDefinition.map(_.name)
-
+  /** @return the defined actions */
+  def getActionDefinitions = state.actionDefinitions
+  
   /** @return the value of an environment variable */
   def getEnvVar(name: String): Option[String] = {
     state.config.getEntry(classOf[EnvVarConf], name).map(_.value) orElse Option(System.getenv.get(name))
@@ -279,7 +285,7 @@ class Controller extends ROController with ActionHandling with Logger {
        throw GeneralError(s"no ${if (interpret) "interpreter" else "parser"} for format ${ps.format} found")
      }
      // interpret the document
-     interpreter(ps)
+     val _ = interpreter(ps)
      // (M): delete all now-inactive parts of the old structure
      // TODO for two-step interpreters, deleteInactive should be called after parsing (currently: after checking)
      oldDocOpt.foreach {doc => deleteInactive(doc)}
@@ -416,7 +422,9 @@ class Controller extends ROController with ActionHandling with Logger {
 
   /** repeatedly tries to evaluate its argument while missing resources (NotFound(p)) are retrieved
     *
-    * stops if cyclic retrieval of resources
+    * @param a the expression to evaluate
+    * @param previous all previous not-found failures during this recursion (needed for cycle detection)
+    * @param org true if this is the original request, not a recursive call
     */
   private def iterate[A](a: => A, previous: List[NotFound], org: Boolean): A = {
     try {
@@ -449,7 +457,7 @@ class Controller extends ROController with ActionHandling with Logger {
         }
       } catch {
         case NotApplicable(msg) =>
-          throw GetError("backend: " + msg)
+          throw GetError(msg)
       }
     }
     log("retrieved " + nf.path)

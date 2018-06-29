@@ -132,10 +132,10 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
    */
   def loadFromFolder(uri: URI, suffix: List[String])(implicit controller: Controller) {
     val folder = base / suffix
-    val entries = folder.list.toList.sorted.diff(List(".svn"))
+    val entries = folder.children.filter(x => x.isDirectory || (x.getExtension contains "omdoc"))
     val prefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
     // dref must be unnamed; using name={n} would give the dref the same URI as the referenced document
-    val node = <omdoc>{entries.map(n => <dref name="" target={prefix + n}/>)}</omdoc>
+    val node = <omdoc>{entries.map(n => <dref name="" target={prefix + n.name}/>)}</omdoc>
     val reader = new BufferedReader(new java.io.StringReader(node.toString))
     loadXML(uri, DPath(uri), reader)
   }
@@ -164,7 +164,7 @@ class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase
       with LocalCopy(nBase.schemeNull, nBase.authorityNull, nBase.pathAsString, a / narration) {
    override def loadFromFolder(uri: URI, suffix: List[String])(implicit controller: Controller) {
       val narrFolder = base / suffix
-      val entries = narrFolder.list.toList.sorted.diff(List(".svn"))
+      val entries = narrFolder.children.filter(x => x.isDirectory || (x.getExtension contains "omdoc"))
       val prefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
       val descOpt = {
          // TODO test for files with other endings than html, use the ending as the format
@@ -178,7 +178,7 @@ class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase
       val oe = descOpt.map {case (desc,format) =>
          s"""<opaque format="$format">$desc</opaque>"""
       }
-      val es = entries.map(n => <dref name={n + ".ref"} target={prefix + n}/>).mkString("\n")
+      val es = entries.map(n => <dref name={n.name + ".ref"} target={prefix + n.name}/>).mkString("\n")
       val docS = s"""<omdoc>$oe$es</omdoc>"""
       val reader = new BufferedReader(new java.io.StringReader(docS))
       loadXML(uri, DPath(uri), reader)

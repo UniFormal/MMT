@@ -53,7 +53,7 @@ class MWSHarvestExporter extends Exporter {
 
 
 class FlatteningMWSExporter extends Exporter {
-  val outDim = Dim("export", "mws-flat")
+  override val outDim = Dim("export", "mws-flat")
   val key = "mws-flat-harvest"
   override val outExt = "harvest"
   lazy val mf = controller.simplifier

@@ -1,0 +1,144 @@
+<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath"><theory name="FOL" base="http://mydomain.org/testarchive/mmt-example" meta="http://cds.omdoc.org/urtheories?LF"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#57.2.0:746.27.1"/></metadata><constant name="prop">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#108.4.0:122.4.14"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS base="http://cds.omdoc.org/urtheories" module="Typed" name="type"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#116.4.8:119.4.11"/></metadata></om:OMS></om:OMOBJ></type>
+       
+       
+     </constant><constant name="true">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#124.6.0:170.6.46"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#132.6.8:135.6.11"/></metadata></om:OMS></om:OMOBJ></type>
+       
+       
+     </constant><constant name="false">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#171.7.0:217.7.46"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#179.7.8:182.7.11"/></metadata></om:OMS></om:OMOBJ></type>
+       
+       
+     </constant><constant name="and">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#218.8.0:264.8.46"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#226.8.8:243.8.25"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#240.8.22:243.8.25"/></metadata></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       <notations><notation dimension="1" precedence="15" fixity="mixfix" arguments="1 ∧ 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="or">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#265.9.0:311.9.46"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#273.9.8:290.9.25"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#287.9.22:290.9.25"/></metadata></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       <notations><notation dimension="1" precedence="15" fixity="mixfix" arguments="1 ∨ 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="impl">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#312.10.0:358.10.46"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#320.10.8:337.10.25"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#334.10.22:337.10.25"/></metadata></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       <notations><notation dimension="1" precedence="10" fixity="mixfix" arguments="1 ⇒ 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="not">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#359.11.0:405.11.46"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#367.11.8:377.11.18"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#374.11.15:377.11.18"/></metadata></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       <notations><notation dimension="1" precedence="20" fixity="mixfix" arguments="¬ 1"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="equiv">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#407.13.0:488.14.34"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#415.13.8:432.13.25"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#429.13.22:432.13.25"/></metadata></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       <definition><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMBIND>
+                 <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="lambda"></om:OMS>
+                 <om:OMBVAR><om:OMV name="x"><metadata><tag property="http://cds.omdoc.org/mmt?mmt?inferred-type"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#465.14.11:465.14.11"/></metadata><type><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"></om:OMS></type></om:OMV><om:OMV name="y"><metadata><tag property="http://cds.omdoc.org/mmt?mmt?inferred-type"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#467.14.13:467.14.13"/></metadata><type><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"></om:OMS></type></om:OMV></om:OMBVAR>
+                 <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#470.14.16:486.14.32"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="and"></om:OMS><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#470.14.16:476.14.22"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="impl"></om:OMS><om:OMV name="x"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#471.14.17:471.14.17"/></metadata></om:OMV><om:OMV name="y"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#475.14.21:475.14.21"/></metadata></om:OMV>
+      </om:OMA><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#480.14.26:486.14.32"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="impl"></om:OMS><om:OMV name="y"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#481.14.27:481.14.27"/></metadata></om:OMV><om:OMV name="x"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#485.14.31:485.14.31"/></metadata></om:OMV>
+      </om:OMA>
+      </om:OMA>
+      </om:OMBIND></om:OMOBJ></definition>
+       <notations><notation dimension="1" precedence="10" fixity="mixfix" arguments="1 ⇔ 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="sort">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#490.16.0:504.16.14"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS base="http://cds.omdoc.org/urtheories" module="Typed" name="type"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#499.16.9:502.16.12"/></metadata></om:OMS></om:OMOBJ></type>
+       
+       
+     </constant><constant name="term">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#505.17.0:534.17.29"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#514.17.9:524.17.19"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="sort"></om:OMS><om:OMS base="http://cds.omdoc.org/urtheories" module="Typed" name="type"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#521.17.16:524.17.19"/></metadata></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="tm 1"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="equal" role="Eq">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#536.19.0:600.19.64"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMBIND><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#544.19.8:571.19.35"/></metadata>
+                 <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="Pi"></om:OMS>
+                 <om:OMBVAR><om:OMV name="s"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#545.19.9:545.19.9"/></metadata><type><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="sort"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#548.19.12:551.19.15"/></metadata></om:OMS></type></om:OMV></om:OMBVAR>
+                 <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#554.19.18:571.19.35"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#554.19.18:557.19.21"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="term"></om:OMS><om:OMV name="s"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#557.19.21:557.19.21"/></metadata></om:OMV>
+      </om:OMA><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#561.19.25:564.19.28"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="term"></om:OMS><om:OMV name="s"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#564.19.28:564.19.28"/></metadata></om:OMV>
+      </om:OMA><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#568.19.32:571.19.35"/></metadata></om:OMS>
+      </om:OMA>
+      </om:OMBIND></om:OMOBJ></type>
+       
+       <notations><notation dimension="1" precedence="30" fixity="mixfix" arguments="2 = 3"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="forall">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#602.21.0:642.21.40"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMBIND><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#611.21.9:634.21.32"/></metadata>
+                 <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="Pi"></om:OMS>
+                 <om:OMBVAR><om:OMV name="s"><metadata><tag property="http://cds.omdoc.org/mmt?mmt?inferred-type"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#612.21.10:612.21.10"/></metadata><type><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="sort"></om:OMS></type></om:OMV></om:OMBVAR>
+                 <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#615.21.13:634.21.32"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#615.21.13:627.21.25"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#616.21.14:619.21.17"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="term"></om:OMS><om:OMV name="s"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#619.21.17:619.21.17"/></metadata></om:OMV>
+      </om:OMA><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#623.21.21:626.21.24"/></metadata></om:OMS>
+      </om:OMA><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#631.21.29:634.21.32"/></metadata></om:OMS>
+      </om:OMA>
+      </om:OMBIND></om:OMOBJ></type>
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="∀ 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="exists">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#643.22.0:683.22.40"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMBIND><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#652.22.9:675.22.32"/></metadata>
+                 <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="Pi"></om:OMS>
+                 <om:OMBVAR><om:OMV name="s"><metadata><tag property="http://cds.omdoc.org/mmt?mmt?inferred-type"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#653.22.10:653.22.10"/></metadata><type><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="sort"></om:OMS></type></om:OMV></om:OMBVAR>
+                 <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#656.22.13:675.22.32"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#656.22.13:668.22.25"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#657.22.14:660.22.17"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="term"></om:OMS><om:OMV name="s"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#660.22.17:660.22.17"/></metadata></om:OMV>
+      </om:OMA><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#664.22.21:667.22.24"/></metadata></om:OMS>
+      </om:OMA><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#672.22.29:675.22.32"/></metadata></om:OMS>
+      </om:OMA>
+      </om:OMBIND></om:OMOBJ></type>
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="∃ 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="proof" role="Judgment">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#685.24.0:743.25.24"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#693.24.8:703.24.18"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="FOL" name="prop"></om:OMS><om:OMS base="http://cds.omdoc.org/urtheories" module="Typed" name="type"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/fol.mmt#700.24.15:703.24.18"/></metadata></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="⊢ 1"> <scope languages="" priority="0"/> </notation></notations>
+     </constant></theory></omdoc>

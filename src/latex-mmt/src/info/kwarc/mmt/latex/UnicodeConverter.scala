@@ -1,3 +1,5 @@
+/*
+
 package info.kwarc.mmt.latex
 
 object UnicodeConverter {
@@ -209,3 +211,4 @@ jomega|ω
    }
    init
 }
+*/

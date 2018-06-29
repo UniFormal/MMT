@@ -98,7 +98,7 @@ object TokenList {
             case _ if isConnector(c) =>
               current += c
               connect = true
-            // Java stores unicode code points above FFFF as 2 characters, the first of which is in a certain range
+            // Java stores Unicode code points above FFFF as 2 characters, the first of which is in a certain range
             // consequently, source references also count them as 2 characters
             case _ if '\uD800' < c && c < '\uDBFF' =>
               current += c

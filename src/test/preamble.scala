@@ -1,4 +1,5 @@
 import info.kwarc.mmt.api
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{Logger, Run}
 import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
 import info.kwarc.mmt.api.web.JSONBasedGraphServer
@@ -35,7 +36,7 @@ abstract class Test(archivepath : String,
   ("test" :: logprefixes) foreach (s => controller.handleLine("log+ " + s))
   controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
   controller.handleLine("extension info.kwarc.mmt.odk.Plugin")
-  controller.handleLine("extension info.kwarc.mmt.pvs.Plugin")
+  controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
   // controller.handleLine("extension info.kwarc.mmt.metamath.Plugin")
   controller.handleLine("mathpath archive " + archivepath)
   controller.handleLine(("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath).trim)
@@ -83,7 +84,7 @@ abstract class Test(archivepath : String,
 abstract class DennisTest(prefixes : String*) extends Test(
   "/home/jazzpirate/work/MathHub",
   prefixes.toList,
-  "/home/jazzpirate/work/Stuff/Public",
+  "/home/jazzpirate/work/Stuff/AlignmentsPublic",
   Some(8080),
   true,
   Some("/home/jazzpirate/work/mmtlog.html")
@@ -104,6 +105,15 @@ abstract class JonasTest(prefixes: String*) extends Test(
   prefixes.toList,
   "",
   None,
+  true,
+  None
+)
+
+abstract class MichaelTest(prefixes: String*) extends Test(
+  "/home/michael/content/",
+  prefixes.toList,
+  "",
+  Some(8080),
   true,
   None
 )

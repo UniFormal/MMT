@@ -15,7 +15,7 @@ case class URI(scheme: Option[String],
                fragment: Option[String] = None) {
   private def isIllegal = (!abs && path.nonEmpty && authority.isDefined) || (!abs && path.startsWith(List("")))
   if (isIllegal) throw ImplementationError("illegal URI: " + this)
-  /** true if the path is absolute; automatically set to true if scheme or authority are present */
+  /** true if the path is absolute */
   def absolute: Boolean = abs
 
   /** drop authority, path, query, fragment, append authority and make path absolute */
@@ -45,7 +45,7 @@ case class URI(scheme: Option[String],
   def ^ : URI = URI(scheme, authority, if (path.isEmpty) Nil else path.init, absolute)
 
   /** drops query and fragment and path */
-  def ^! : URI = URI(scheme, authority)
+  def ^! : URI = URI(scheme, authority, abs = absolute)
 
   /** drop query, fragment, append query */
   def ?(q: String): URI = URI(scheme, authority, path, absolute, Some(q))

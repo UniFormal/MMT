@@ -83,12 +83,15 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
 
   /** called after checking an element */
   private def elementChecked(e: StructuralElement)(implicit env: ExtendedCheckingEnvironment) {
-    e match {
-      case e: ContainerElement[_] =>
-        env.ce.simplifier.applyElementEnd(e)(env.ce.simpEnv)
-      case _ =>
-        env.ce.simplifier.applyChecked(e)(env.ce.simpEnv)
+    if (!env.ce.task.isKilled) {
+      e match {
+        case e: ContainerElement[_] =>
+          env.ce.simplifier.applyElementEnd(e)(env.ce.simpEnv)
+        case _ =>
+          env.ce.simplifier.applyChecked(e)(env.ce.simpEnv)
+      }
     }
+    env.ce.task.reportProgress(Checked(e))
     new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
   }
 
@@ -124,7 +127,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   private def check(context: Context, e: StructuralElement, streamed: Boolean)(implicit env: ExtendedCheckingEnvironment) {
     implicit val ce = env.ce
     val path = e.path
-    log("checking " + path )//+ " using the following rules: " + env.rules.toString)
+    log("checking " + path ,Some("simple"))
+    log("checking " + path)//+ " using the following rules: " + env.rules.toString)
     e match {
       case c: ContainerElement[_] =>
         checkElementBegin(context, c)
@@ -391,7 +395,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         //succeed for everything else but signal error
         logError("unchecked " + path)
     }
-    ce.simplifier.applyElementBegin(e)(ce.simpEnv)
+    if (!env.ce.task.isKilled) {
+      ce.simplifier.applyElementBegin(e)(ce.simpEnv)
+    }
   }
 
   /** auxiliary method of check */
@@ -438,7 +444,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         doDoc(b.asDocument)      
       case _ =>
     }
-    ce.simplifier.applyElementEnd(e)(ce.simpEnv)
     elementChecked(e)
   }
   
@@ -492,9 +497,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         case nm: NestedModule => nm.module
         case _ =>
           env.errorCont(InvalidObject(t, "not a module: " + controller.presenter.asString(t)))
+          dec
       }
-      thy match {
+      val tR: Term = thy match {
         case thy: Theory =>
+          // check instantiation
           val pars = thy.parameters
           if (pars.nonEmpty && args.nonEmpty) {
             env.pCont(p)
@@ -504,11 +511,28 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             }
             checkSubstitution(context, subs, pars, Context.empty, false)
           }
+          // check visibility of thy
+          thy.superModule match {
+            case None => t // root modules are always visible
+            case Some(parent) =>
+              controller.globalLookup.getImplicit(OMMOD(parent), ComplexTheory(context)) match {
+                case None =>
+                  env.errorCont(InvalidObject(t, "theory not visible in current context"))
+                  t
+                case Some(m) =>
+                  if (!Morph.isInclude(m)) {
+                     // note: to allow the pushout, we have to at least consider the note in Library.getInLink 
+                     env.errorCont(InvalidObject(t, "theory is visible via morphism " + m + " but pushout is not implemented yet"))                    
+                  }
+                  t
+              }
+          }
         case _ =>
           env.errorCont(InvalidObject(t, "not a theory identifier: " + p.toPath))
+          t
       }
-      cpath foreach {cp => setAnalyzed(cp, t)} 
-      t
+      cpath foreach {cp => setAnalyzed(cp, tR)} 
+      tR
     case ComplexTheory(body) =>
       val bodyR = checkContext(context, body)
       val tR = ComplexTheory(bodyR)

@@ -1,0 +1,147 @@
+<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath"><theory name="NatNums" base="http://mydomain.org/testarchive/mmt-example" meta="http://mathhub.info/MitM/Foundation?Logic"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#107.3.0:468.19.1"/></metadata><opaque format="text"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#139.4.1:209.4.71"/></metadata>The type of natural numbers has type &quot;type&quot; and notation &quot;ℕ&quot; (jN)</opaque><constant name="NaturalNumbers">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#211.5.1:239.5.29"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS base="http://cds.omdoc.org/urtheories" module="Typed" name="type"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#228.5.18:231.5.21"/></metadata></om:OMS></om:OMOBJ></type>
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="ℕ"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="zero">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#242.7.1:252.7.11"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#249.7.8:249.7.8"/></metadata></om:OMS></om:OMOBJ></type>
+       
+       
+     </constant><constant name="successor">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#255.9.1:282.9.28"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#267.9.13:271.9.17"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS>
+      </om:OMA></om:OMOBJ></type>
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="S 1"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="one">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#286.11.1:313.11.28"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#292.11.7:292.11.7"/></metadata></om:OMS></om:OMOBJ></type>
+       <definition><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#305.11.20:310.11.25"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="successor"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="zero"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#307.11.22:310.11.25"/></metadata></om:OMS>
+      </om:OMA></om:OMOBJ></definition>
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="%D%1"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="P3">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#316.13.1:342.13.27"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#321.13.6:339.13.24"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="ded"></om:OMS><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#323.13.8:339.13.24"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="not"></om:OMS><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#325.13.10:339.13.24"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="exists"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS><om:OMBIND><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#326.13.11:339.13.24"/></metadata>
+                 <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="lambda"></om:OMS>
+                 <om:OMBVAR><om:OMV name="n"><metadata><tag property="http://cds.omdoc.org/mmt?mmt?inferred-type"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#327.13.12:327.13.12"/></metadata><type><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS></type></om:OMV></om:OMBVAR>
+                 <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#330.13.15:339.13.24"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="eq"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#330.13.15:332.13.17"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="successor"></om:OMS><om:OMV name="n"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#332.13.17:332.13.17"/></metadata></om:OMV>
+      </om:OMA><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="zero"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#336.13.21:339.13.24"/></metadata></om:OMS>
+      </om:OMA>
+      </om:OMBIND>
+      </om:OMA>
+      </om:OMA>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="P4">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#346.15.1:380.15.35"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#351.15.6:378.15.33"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="ded"></om:OMS><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#353.15.8:378.15.33"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="forall"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS><om:OMBIND><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#354.15.9:378.15.33"/></metadata>
+                 <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="lambda"></om:OMS>
+                 <om:OMBVAR><om:OMV name="n"><metadata><tag property="http://cds.omdoc.org/mmt?mmt?inferred-type"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#355.15.10:355.15.10"/></metadata><type><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS></type></om:OMV></om:OMBVAR>
+                 <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#357.15.12:378.15.33"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="forall"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS><om:OMBIND><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#358.15.13:378.15.33"/></metadata>
+                 <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="lambda"></om:OMS>
+                 <om:OMBVAR><om:OMV name="m"><metadata><tag property="http://cds.omdoc.org/mmt?mmt?inferred-type"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#359.15.14:359.15.14"/></metadata><type><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS></type></om:OMV></om:OMBVAR>
+                 <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#362.15.17:378.15.33"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="implies"></om:OMS><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#362.15.17:370.15.25"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="eq"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#362.15.17:364.15.19"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="successor"></om:OMS><om:OMV name="n"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#364.15.19:364.15.19"/></metadata></om:OMV>
+      </om:OMA><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#368.15.23:370.15.25"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="successor"></om:OMS><om:OMV name="m"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#370.15.25:370.15.25"/></metadata></om:OMV>
+      </om:OMA>
+      </om:OMA><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#374.15.29:378.15.33"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="eq"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS><om:OMV name="n"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#374.15.29:374.15.29"/></metadata></om:OMV><om:OMV name="m"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#378.15.33:378.15.33"/></metadata></om:OMV>
+      </om:OMA>
+      </om:OMA>
+      </om:OMBIND>
+      </om:OMA>
+      </om:OMBIND>
+      </om:OMA>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><constant name="P5">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#384.17.1:451.17.68"/></metadata>
+       <type><om:OMOBJ xmlns:om="http://www.openmath.org/OpenMath"><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#389.17.6:448.17.65"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="ded"></om:OMS><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#391.17.8:448.17.65"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="forall"></om:OMS><om:OMA>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS><om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="bool"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#401.17.18:404.17.21"/></metadata></om:OMS>
+      </om:OMA><om:OMBIND><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#392.17.9:448.17.65"/></metadata>
+                 <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="lambda"></om:OMS>
+                 <om:OMBVAR><om:OMV name="P"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#393.17.10:393.17.10"/></metadata><type><om:OMA>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="arrow"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS><om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="bool"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#401.17.18:404.17.21"/></metadata></om:OMS>
+      </om:OMA></type></om:OMV></om:OMBVAR>
+                 <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#407.17.24:448.17.65"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="implies"></om:OMS><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#407.17.24:437.17.54"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="and"></om:OMS><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#408.17.25:413.17.30"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMV name="P"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#408.17.25:408.17.25"/></metadata></om:OMV><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="zero"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#410.17.27:413.17.30"/></metadata></om:OMS>
+      </om:OMA><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#417.17.34:436.17.53"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="forall"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS><om:OMBIND><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#419.17.36:435.17.52"/></metadata>
+                 <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="lambda"></om:OMS>
+                 <om:OMBVAR><om:OMV name="n"><metadata><tag property="http://cds.omdoc.org/mmt?mmt?inferred-type"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#420.17.37:420.17.37"/></metadata><type><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS></type></om:OMV></om:OMBVAR>
+                 <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#423.17.40:435.17.52"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="implies"></om:OMS><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#423.17.40:425.17.42"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMV name="P"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#423.17.40:423.17.40"/></metadata></om:OMV><om:OMV name="n"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#425.17.42:425.17.42"/></metadata></om:OMV>
+      </om:OMA><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#429.17.46:435.17.52"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMV name="P"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#429.17.46:429.17.46"/></metadata></om:OMV><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#431.17.48:435.17.52"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="successor"></om:OMS><om:OMV name="n"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#434.17.51:434.17.51"/></metadata></om:OMV>
+      </om:OMA>
+      </om:OMA>
+      </om:OMA>
+      </om:OMBIND>
+      </om:OMA>
+      </om:OMA><om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#441.17.58:448.17.65"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMS base="http://mathhub.info/MitM/Foundation" module="Logic" name="forall"></om:OMS><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS><om:OMBIND><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#442.17.59:448.17.65"/></metadata>
+                 <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="lambda"></om:OMS>
+                 <om:OMBVAR><om:OMV name="n"><metadata><tag property="http://cds.omdoc.org/mmt?mmt?inferred-type"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#443.17.60:443.17.60"/></metadata><type><om:OMS base="http://mydomain.org/testarchive/mmt-example" module="NatNums" name="NaturalNumbers"></om:OMS></type></om:OMV></om:OMBVAR>
+                 <om:OMA><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#446.17.63:448.17.65"/></metadata>
+              <om:OMS base="http://cds.omdoc.org/urtheories" module="LambdaPi" name="apply"></om:OMS>
+              <om:OMV name="P"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#446.17.63:446.17.63"/></metadata></om:OMV><om:OMV name="n"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#448.17.65:448.17.65"/></metadata></om:OMV>
+      </om:OMA>
+      </om:OMBIND>
+      </om:OMA>
+      </om:OMA>
+      </om:OMBIND>
+      </om:OMA>
+      </om:OMA></om:OMOBJ></type>
+       
+       
+     </constant><opaque format="text"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://mydomain.org/testarchive/natnums.mmt#453.18.1:466.18.14"/></metadata>(jeqdge)</opaque></theory></omdoc>

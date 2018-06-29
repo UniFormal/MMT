@@ -53,7 +53,7 @@ testOptions in Test += Tests.Argument("-oI")
 // =================================
 
 val deploy = TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
-val deployFull = TaskKey[Unit]("deployFull", "copies all (including tiscaf and lfcatalog) packaged jars to deploy location.")
+val deployLFCatalog = TaskKey[Unit]("deployLFCatalog", "builds a stand-alone lfcatalog.jar")
 val install = TaskKey[Unit]("install", "copies jedit jars to local jedit installation folder.")
 
 // =================================
@@ -110,8 +110,7 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
   publishTo := Some(Resolver.file("file", Utils.deploy.toJava / " main")),
 
   install := {},
-  deploy := Utils.deployPackage("main/" + nameStr + ".jar").value,
-  deployFull := Utils.deployPackage("main/" + nameStr + ".jar").value
+  deploy := Utils.deployPackage("main/" + nameStr + ".jar").value
 )
 
 // =================================
@@ -134,7 +133,7 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregate(
       mmt, api,
-      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, odk, specware, stex, webEdit, planetary, interviews, latex, openmath, oeis, repl,
+      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, webEdit, mathhub, planetary, interviews, latex, openmath, oeis, repl,
       tiscaf, lfcatalog,
       jedit
   ).settings(
@@ -144,7 +143,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, repl, concepts, interviews).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -152,7 +151,6 @@ lazy val mmt = (project in file("mmt")).
     deploy := {
       assembly in Compile map Utils.deployTo(Utils.deploy / "mmt.jar")
     }.value,
-    deployFull := deployFull.dependsOn(deploy).value,
     assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
       cp filter { j => jeditJars.contains(j.data.getName) }
@@ -172,15 +170,15 @@ lazy val mmt = (project in file("mmt")).
 // The kernel upon which everything else depends. Maintainer: Florian
 lazy val api = (project in file("mmt-api")).
   settings(mmtProjectsSettings("mmt-api"): _*).
+  dependsOn(tiscaf).
+  dependsOn(lfcatalog).
   settings(
     scalacOptions in Compile ++= Seq("-language:existentials"),
     scalaSource in Compile := baseDirectory.value / "src" / "main",
-    unmanagedJars in Compile += Utils.lib.toJava / "tiscaf.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-compiler.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-reflect.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-parser-combinators.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar",
-    unmanagedJars in Test += Utils.lib.toJava / "tiscaf.jar",
     unmanagedJars in Test += Utils.lib.toJava / "scala-compiler.jar",
     unmanagedJars in Test += Utils.lib.toJava / "scala-reflect.jar",
     unmanagedJars in Test += Utils.lib.toJava / "scala-parser-combinators.jar",
@@ -194,11 +192,11 @@ lazy val api = (project in file("mmt-api")).
 // Some foundation-specific extensions. Maintainer: Florian
 lazy val lf = (project in file("mmt-lf")).
   dependsOn(api % "compile -> compile; test -> test").
+  dependsOn(tiscaf).
+  dependsOn(lfcatalog).
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
-    unmanagedJars in Compile += Utils.deploy.toJava / "lfcatalog" / "lfcatalog.jar",
 //    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.12.3" % "test",
-    unmanagedJars in Test += Utils.lib.toJava / "tiscaf.jar"
   )
 
 // =================================
@@ -224,7 +222,6 @@ lazy val jedit = (project in file("jEdit-mmt")).
     resourceDirectory in Compile := baseDirectory.value / "src/resources",
     unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" / _),
     deploy := Utils.deployPackage("main/MMTPlugin.jar").value,
-    deployFull := Utils.deployPackage("main/MMTPlugin.jar").value,
     install := Utils.installJEditJars
   )
   
@@ -235,8 +232,13 @@ lazy val latex = (project in file("latex-mmt")).
 
 // using MMT in the OpenDreamKit project, includes language plugins for various systems such as GAP or Sage. Maintainer: Dennis
 lazy val odk = (project in file("mmt-odk")).
-  dependsOn(api, lf).
+  dependsOn(api, lf % "compile -> compile; test -> test").
   settings(mmtProjectsSettings("mmt-odk"): _*)
+
+// MMT-Mathhub backend. Maintainer: Tom
+lazy val mathhub = (project in file("mathhub-mmt")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("mathhub-mmt"): _*)
 
 // using MMT in the planetary/MathHub systems. Orginally developed by Mihnea, functional but should be reviewed
 lazy val planetary = (project in file("planetary-mmt")).
@@ -252,6 +254,17 @@ lazy val webEdit = (project in file("mmt-webEdit")).
 lazy val interviews = (project in file("mmt-interviews")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-interviews"): _*)
+
+// using MMT from Python via Py4J, maintainer: Florian
+lazy val python = (project in file("python-mmt")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("python-mmt"): _*).
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "py4j0.10.7.jar")
+  
+// graph optimization. Maintainer: Michael Banken
+lazy val got = (project in file("mmt-got")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("mmt-got"): _*)
 
 // =================================
 // MMT projects: additional (optional) functionality that is factored out into separate projects due to dependencies
@@ -270,12 +283,13 @@ lazy val repl = (project in file("mmt-repl")).
 // alignment-based concept browser. Maintainer: Dennis
 lazy val concepts = (project in file("concept-browser")).
   dependsOn(api).
+  dependsOn(tiscaf).
+  dependsOn(lfcatalog).
   settings(mmtProjectsSettings("concept-browser"): _*).
   settings(
     libraryDependencies ++= Seq(
       "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
     ),
-    unmanagedJars in Compile += Utils.lib.toJava / "tiscaf.jar",
     unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
  )
 
@@ -324,6 +338,17 @@ lazy val metamath = (project in file("mmt-metamath")).
   dependsOn(api, lf, mmscala).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
 
+// plugin for reading isabelle. Author: Makarius Wenzel
+lazy val isabelle_root =
+  System.getenv().getOrDefault("ISABELLE_ROOT", System.getProperty("isabelle.root", ""))
+lazy val isabelle_jars =
+  if (isabelle_root == "") Nil else List(file(isabelle_root) / "lib" / "classes" / "Pure.jar")
+lazy val isabelle =
+  (project in file(if (isabelle_root == "") "mmt-isabelle/dummy" else "mmt-isabelle")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-isabelle"): _*).
+  settings(unmanagedJars in Compile ++= isabelle_jars)
+
 // plugin for reading TPS
 lazy val tps = (project in file("mmt-tps")).
   dependsOn(api, lf).
@@ -371,18 +396,20 @@ lazy val tiscaf = (project in file("tiscaf")).
 //      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
       "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     ),
-    deployFull := Utils.deployPackage("lib/tiscaf.jar").value,
     test := {} // disable tests for tiscaf
   )
 
 // this is a dependency of Twelf if used in conjunction with the module system; it is automatically started when using the Twelf importer
 lazy val lfcatalog = (project in file("lfcatalog")).
+  dependsOn(tiscaf).
   settings(commonSettings("lfcatalog")).
   settings(
     scalaSource in Compile := baseDirectory.value / "src",
-    unmanagedJars in Compile += Utils.lib.toJava / "tiscaf.jar",
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar",
-    deployFull := Utils.deployPackage("lfcatalog/lfcatalog.jar").value
+    publishTo := Some(Resolver.file("file", Utils.deploy.toJava / " main")),
+    deployLFCatalog := {
+      assembly in Compile map Utils.deployTo(Utils.deploy / "lfcatalog" / "lfcatalog.jar")
+    }.value, 
+    unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
   )
 
 // =================================

@@ -111,7 +111,6 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
 
    private def search(levels: Int) {
       if (provingUnit.isKilled) {
-         provingUnit.killact
         return
       }
       if (levels == 0) return

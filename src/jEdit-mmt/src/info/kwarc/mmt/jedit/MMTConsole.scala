@@ -26,7 +26,7 @@ class MMTConsole extends console.Shell("mmt") {
 
    override def getCompletions(console: Console, command: String): Shell.CompletionInfo = new Shell.CompletionInfo {
       offset = 0
-      completions = Action.completeAct(command).toArray
+      completions = Action.completeAct(controller, command).toArray
    }
 
    def execute(console: Console, input: String, output: Output, error: Output, command: String) {

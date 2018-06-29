@@ -9,7 +9,7 @@ import objects._
 /**
   * An auxilary class to split the [[Controller]] into several files and implement the handling of [[Action]]s.
   */
-trait ActionHandling extends 
+trait ActionHandling extends
   ArchiveActionHandling with
   CheckActionHandling with
   ControlActionHandling with
@@ -27,12 +27,13 @@ trait ActionHandling extends
 
   /** executes a string command */
   def handleLine(l: String, showLog: Boolean = true) {
-    val act = Action.parseAct(l, getBase, getHome)
+    val act = Action.parseAct(this, l)
     handle(act, showLog)
   }
 
   /** executes an Action */
   def handle(act: Action, showLog: Boolean = true) {
+    act.init(this)
     implicit val task = act
     state.currentActionDefinition match {
       case Some(Defined(file, name, acts)) if act != EndDefine =>
@@ -43,9 +44,7 @@ trait ActionHandling extends
           report("user", s"'$act'")
           report.indent
         }
-
-        act(self)
-
+        act()
         if (act != NoAction && showLog) {
           report.unindent
           report("user", s"'$act' finished")
@@ -57,7 +56,7 @@ trait ActionHandling extends
   def tryHandleLine(l: String, showLog: Boolean = true): ActionResult = {
     // parse and run the line
     val act = try {
-      Action.parseAct(l, getBase, getHome)
+      Action.parseAct(this, l)
     } catch {
       case pe: ParseError => return ActionParsingError(pe)
     }
@@ -72,7 +71,6 @@ trait ActionHandling extends
       case e: Error => ActionExecutionError(e)
     }
   }
-
 
   // ******************************** handling messages
 

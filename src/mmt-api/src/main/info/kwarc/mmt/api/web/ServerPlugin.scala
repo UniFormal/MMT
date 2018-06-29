@@ -388,7 +388,7 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
 /** interprets the query as an MMT [[frontend.actions.GetAction]] and returns the result */
 class GetActionServer extends ServerExtension("mmt") {
   def apply(request: ServerRequest): ServerResponse = {
-    val action = Action.parseAct(request.query, controller.getBase, controller.getHome)
+    val action = Action.parseAct(controller, request.query)
     val resp: String = action match {
       case GetAction(a: ToWindow) =>
         a.make(controller)
@@ -446,7 +446,7 @@ class ActionServer extends ServerExtension("action") {
 
   def apply(request: ServerRequest): ServerResponse = {
     val c = request.decodedQuery
-    val act = frontend.actions.Action.parseAct(c, controller.getBase, controller.getHome)
+    val act = frontend.actions.Action.parseAct(controller, c)
     if (act == Exit) {
       // special case for sending a response when exiting
       new Thread {

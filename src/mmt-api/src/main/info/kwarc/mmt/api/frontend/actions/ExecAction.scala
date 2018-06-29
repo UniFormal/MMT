@@ -5,30 +5,30 @@ import info.kwarc.mmt.api.frontend.{Controller, MMTILoop, MMTScriptEngine}
 import info.kwarc.mmt.api.utils.File
 
 /** shared base class for actions related to execution of Action code */
-sealed abstract class ExecAction extends ActionImpl
+sealed abstract class ExecAction extends Action
 
 /** load a file containing commands and execute them, fails on first error if any
   *
   * concrete syntax: file file:FILE
   */
 case class ExecFile(file: File, name: Option[String]) extends ExecAction {
-  def apply(implicit controller: Controller) : Unit = controller.runMSLFile(file, name)
+  def apply() {controller.runMSLFile(file, name)}
   def toParseString = s"file $file ${name.map(" " + _).getOrElse("")}"
 }
-object ExecFileCompanion extends ActionCompanionImpl[ExecFile]("load a file containing commands and execute them", "file") {
+object ExecFileCompanion extends ActionCompanion("load a file containing commands and execute them", "file") {
   import Action._
   def parserActual(implicit state: ActionState) = file ~ (str ?) ^^ { case f ~ s => ExecFile(f, s) }
 }
 
 /** run a Scala interpreter or evaluate a Scala expression */
 case class Scala(init: Option[String]) extends ExecAction {
-  def apply(implicit controller: Controller) : Unit = {
+  def apply() {
     val interp = new MMTILoop(controller)
     interp.run(init)
   }
   def toParseString = s"scala${init.map(" " + _).getOrElse("")}"
 }
-object ScalaCompanion extends ActionCompanionImpl[Scala]("run a Scala interpreter or evaluate a Scala expression", "scala"){
+object ScalaCompanion extends ActionCompanion("run a Scala interpreter or evaluate a Scala expression", "scala"){
   import Action._
   def parserActual(implicit state: ActionState) = ("[^\\n]*" r) ^^ { s => val t = s.trim; Scala(if (t == "") None else Some(t)) }
 }
@@ -36,12 +36,12 @@ object ScalaCompanion extends ActionCompanionImpl[Scala]("run a Scala interprete
 
 /** run an .mbt file */
 case class MBT(file: File) extends ExecAction {
-  def apply(implicit controller: Controller): Unit = {
+  def apply() {
     new MMTScriptEngine(controller).apply(file)
   }
   def toParseString = s"mbt $file"
 }
-object MBTCompanion extends ActionCompanionImpl[MBT]("run an .mbt file", "mbt"){
+object MBTCompanion extends ActionCompanion("run an .mbt file", "mbt"){
   import Action._
   def parserActual(implicit state: ActionState) = file ^^ { f => MBT(f)}
 }

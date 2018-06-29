@@ -21,13 +21,13 @@ import info.kwarc.mmt.api.frontend._
   *
   * @param o the instance of Output that executes all three steps.
   */
-case class GetAction(o: Output) extends ActionImpl {
+case class GetAction(o: Output) extends Action {
   /** implement the Action using the provided Controller */
-  def apply(implicit controller: Controller): Unit = o.make(controller)
+  def apply() =o.make(controller)
 
   def toParseString = o.toString
 }
-object GetActionCompanion extends ActionCompanionImpl[GetAction]("retrieve knowledge from the controller", "get") {
+object GetActionCompanion extends ActionCompanion("retrieve knowledge from the controller", "get") {
   import Action._
   override val addKeywords = false
   def parserActual(implicit state: ActionState) = tofile | towindow | respond | print

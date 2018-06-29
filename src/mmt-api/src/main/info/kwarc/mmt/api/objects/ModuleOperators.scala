@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.NotFound
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import symbols._
@@ -94,9 +95,10 @@ object Morph {
               cod match {
                 case Some(OMMOD(t)) =>
                   val pt = p match {
-                    case p: MPath => p ? ComplexStep(t)
-                    case p: GlobalName => p / ComplexStep(t)
+                    case p: MPath => p ? ComplexStep(t) // p is view
+                    case p: GlobalName => p / ComplexStep(t) // p is structure
                   }
+                  // check if p contains an assignment to t (will fail if cod = p.from)
                   lib.getO(pt) match {
                     case Some(l: DefinedStructure) =>
                       // restrict l to t
@@ -186,6 +188,13 @@ object Morph {
         OMCOMP(result)
     }
   }
+  
+  /** true if m is a morphism that immediately reduces to the identity/include */
+  def isInclude(m: Term): Boolean = m match {
+    case OMIDENT(_) => true
+    case OMCOMP(ms) => ms forall isInclude
+    case _ => false
+  }
 
   /** checks equality of two morphisms using the simplify method; sound but not complete
    *  pre: a and b are well-formed, include all implicit morphisms, and have domain 'from'
@@ -238,8 +247,10 @@ object TheoryExp {
   def metas(thy: Term, all: Boolean = true)(implicit lib: Lookup): List[MPath] = thy match {
     case OMMOD(p) => lib.getTheory(p) match {
       case t: DeclaredTheory => t.meta match {
-        case None => Nil
-        case Some(m) => if (all) m :: metas(OMMOD(m)) else List(m)
+        case None => 
+          Nil
+        case Some(m) =>
+          if (all) m :: metas(OMMOD(m)) else List(m)
       }
       case t: DefinedTheory => metas(t.df)
     }

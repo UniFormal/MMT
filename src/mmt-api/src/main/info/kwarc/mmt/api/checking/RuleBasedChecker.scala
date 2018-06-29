@@ -73,6 +73,11 @@ class RuleBasedChecker extends ObjectChecker {
              override val level: Level = Level.Warning
           })
         }
+        solver.warnings foreach {w =>
+          env.errorCont(new InvalidUnit(cu, NoHistory, w){
+            override val level: Level = Level.Warning
+          })
+        }
       }
       // ** logging and error reporting **
       if (success) {

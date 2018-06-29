@@ -56,7 +56,7 @@ case class Arity(subargs: List[ArgumentComponent],
    }
    // distributes available components to numTotal normal/sequence components where the positions of the sequences are given by seqs
    // returns: number of arguments per sequence and cutoff below which sequences get one extra argument
-   private def distribute(available: Int, numTotal: Int, seqs: List[Int]):(Int,Int) = {
+   private def distribute(available: Int, numTotal: Int, seqs: List[Int]): (Int,Int) = {
      val numSeqs = seqs.length
      if (numSeqs == 0) return (0,0)
      val numSingle = numTotal - numSeqs
@@ -119,12 +119,15 @@ case class Arity(subargs: List[ArgumentComponent],
 
    /**
     * groups a list of arguments into sequences according to distributeArgs
+    * @param args the arguments to group
+    * @param useSubArgs arguments occur before/after bound variables
     */
-   def groupArgs(args: List[Term]) : List[List[Term]] = {
+   def groupArgs(args: List[Term], useSubArgs: Boolean) : List[List[Term]] = {
+      val comps = if (useSubArgs) subargs else arguments 
       var remain = args
       var result : List[List[Term]] = Nil
-      val (perSeq,cutoff) = distributeArgs(arguments, remain.length)
-      arguments foreach {
+      val (perSeq,cutoff) = distributeArgs(comps, remain.length)
+      comps foreach {
          case _:Arg | _ :ImplicitArg =>
             result ::= List(remain.head)
             remain = remain.tail

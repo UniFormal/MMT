@@ -1,0 +1,2 @@
+id: testarchive
+narration-base: http://mydomain.org/testarchive

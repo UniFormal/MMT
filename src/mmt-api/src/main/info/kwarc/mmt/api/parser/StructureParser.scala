@@ -86,7 +86,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    *
    * For container elements (documents, modules with body), this must be called on the empty element first
    * and then on each child, finally end(se) must be called on the container element.
-   * This holds accordingsly for nested declared modules. 
+   * This holds accordingly for nested declared modules. 
    */
   protected def seCont(se: StructuralElement)(implicit state: ParserState) {
     log(se.toString)
@@ -94,7 +94,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     SourceRef.update(se, state.makeSourceRef(reg))
     try {
       controller.add(se)
-      state.cont.onElement(se)
+      state.ps.reportProgress(Parsed(se))
+      if (!state.ps.isKilled) {
+        state.cont.onElement(se)
+      }
     } catch {case e: Error =>
       val srcerr = makeError(reg, "error while adding successfully parsed element " + se.path, Some(e))
       errorCont(srcerr)
@@ -106,7 +109,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     SourceRef.get(s) foreach {r =>
       SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getLastReadSourcePosition)))
     }
-    state.cont.onElementEnd(s)
+    if (!state.ps.isKilled) {
+      state.cont.onElementEnd(s)
+    }
     log("end " + s.path)
   }
 
@@ -137,13 +142,16 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    * Fatal errors are recovered from by defaulting to [[DefaultObjectParser]]
    */
   private def puCont(pu: ParsingUnit)(implicit state: ParserState): ParseResult = {
+    def default = DefaultObjectParser(pu)(state.errorCont) 
+    if (state.ps.isKilled) return default
     try {
+      pu.diesWith(state.ps)
       objectParser(pu)(state.errorCont)
     } catch {
       case e: Error =>
         val se = makeError(pu.source.region, "error in object, recovered by using default parser", Some(e))
         state.errorCont(se)
-        DefaultObjectParser(pu)(state.errorCont)
+        default
     }
   }
 
@@ -301,6 +309,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val cont: Context = pr.term match {
       case Context.AsTerm(cont) =>
         cont
+      case _: OMSemiFormal =>
+        // recover from parsing errors
+        Context.empty
       case _ =>
         errorCont(makeError(reg, "not a context: " + controller.presenter.asString(pr.toTerm)))
         Context.empty
@@ -326,12 +337,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     } else Nil
     (fromRef,from,tms)
   }
-/*
-    val cont = ParseResult.fromTerm(p) match {
-
-*/
-
-
 
   private def doNotation(c: NotationComponentKey, nc: NotationContainer, treg: SourceRegion)(implicit state: ParserState) {
     val notString = state.reader.readObject._1
@@ -900,7 +905,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               }
             case None =>
               if (!state.reader.endOfDeclaration) {
-                errorCont(makeError(treg, "expected " + keyString + ", found " + k))
+                errorCont(makeError(treg, s"expected $keyString, found $k (note that '$givenName' was treated as a constant name because it was not recognized as a keyword)"))
               } else if (k != "") {
                 if (!state.reader.endOfObject)
                   state.reader.readObject

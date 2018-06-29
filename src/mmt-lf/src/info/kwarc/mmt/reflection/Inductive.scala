@@ -72,13 +72,13 @@ object Extensionality extends TypeBasedEqualityRule(Nil, Terms.formation.path) {
 
 /** |- m: p -> .  ---> |- elim(refl(p, t), m) = m(t) */
 object Computation extends ComputationRule(Terms.elim.path) {
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack : Stack, history: History) : Option[Term] = {
+   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack : Stack, history: History) = {
       tm match {
          case Terms.elim(Terms.refl(p,t),mor) =>
             if (!covered)
                solver.check(IsRealization(stack,mor,OMMOD(p)))
-            Some(OMM(t, mor))
-         case _ => None
+            Simplify(OMM(t, mor))
+         case _ => Recurse
       }
    }
 }

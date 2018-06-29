@@ -58,6 +58,13 @@ trait CheckingCallback {
 
    /** lookup */
    def lookup: Lookup
+
+  def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = simple(tm) match {
+    case Some(a) => (tm,Some(a))
+    case _ =>
+      val s = simplify(tm)
+      (s,simple(s))
+  }
 }
 
 /**
@@ -204,12 +211,47 @@ abstract class FormationRule(h: GlobalName, t: GlobalName) extends InferenceRule
 abstract class IntroductionRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t)
 abstract class EliminationRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t)
 
+/** return type of applying a simplification rule to a term t*/
+sealed abstract class Simplifiability {
+  def get: Option[Term]
+}
+
+/** simplify t to result */
+case class Simplify(result: Term) extends Simplifiability {
+  def get = Some(result)
+}
+
+/** this rule cannot be applied to t at toplevel */
+sealed abstract class CannotSimplify extends Simplifiability {
+  def get = None
+  /** a bounded semi-lattice, ordered by uncertainty about stability; least/neutral element: NoRecurse, greatest/attractive element Recurse */ 
+  def join(that: CannotSimplify): CannotSimplify = (this,that) match {
+    case (Recurse, _) | (_, Recurse) => Recurse 
+    case (RecurseOnly(p1),RecurseOnly(p2)) => RecurseOnly(p1:::p2)
+  }
+}
+
+/** this rule cannot become applicable unless a subterm in one of the given positions is simplified; the first argument has position 1 */
+case class RecurseOnly(positions: List[Int]) extends CannotSimplify
+
+/** this rule might become applicable if any subterm is simplified
+ *  
+ *  this should be returned by default; it replaces the return value "None" from the previous ComputationRule.apply method that returned Option[Term]
+ */
+case object Recurse extends CannotSimplify
+
+object Simplifiability {
+  /** this rule cannot become applicable no matter what and how subterms are simplified */
+  val NoRecurse = RecurseOnly(Nil) 
+}
+
 /** A ComputationRule simplifies an expression operating at the toplevel of the term.
  *  But it may recursively simplify the components if that makes the rule applicable.
  *  The rule must preserve equality and well-typedness of the simplified term. If necessary, additional checks must be performed.
  *  @param head the head of the term this rule can simplify
  */
 abstract class ComputationRule(val head: GlobalName) extends CheckingRule {
+  def applicable(gn : ContentPath) : Boolean = (head :: alternativeHeads) contains gn
    /**
     *  @param check provides callbacks to the currently solved system of judgments
     *  @param tm the term to simplify
@@ -217,7 +259,7 @@ abstract class ComputationRule(val head: GlobalName) extends CheckingRule {
     *  @param stack its context
     *  @return the simplified term if simplification was possible
     */
-   def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term]
+   def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability
 }
 
 /** A UnaryTermRule checks a [[UnaryTermJudgement]]
@@ -438,6 +480,8 @@ abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) 
       case None => None
     }
   }
+
+  def default(solver : Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
 }
 
 class AbbreviationRuleGenerator extends ChangeListener {

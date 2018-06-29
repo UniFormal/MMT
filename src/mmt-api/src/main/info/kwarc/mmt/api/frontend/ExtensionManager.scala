@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
+import actions._
 import archives._
 import backend._
 import checking._
@@ -16,7 +17,7 @@ import web._
 
 
 trait Extension extends Logger {
-  /** the controller that this extension is added to; only valid after creation of the extension, i.e., will return nuill if used in a non-lazy val-field */
+  /** the controller that this extension is added to; only valid after creation of the extension, i.e., will return null if used in a non-lazy val-field */
   protected var controller: Controller = null
   protected var report: Report = null
 
@@ -54,7 +55,7 @@ trait Extension extends Logger {
   }
 
 
-  /** MMT initialization */
+  /** MMT initialization (idempotent) */
   private[api] def init(controller: Controller) {
     this.controller = controller
     report = controller.report
@@ -315,6 +316,24 @@ class ExtensionManager(controller: Controller) extends Logger {
     List(new ShellSendCommand, new execution.ShellCommand, new Make).foreach(addExtension(_))
 
     addExtension(new AbbreviationRuleGenerator)
+    
+    // action companions
+    List(NoActionCompanion,RemoteActionCompanion,
+        ListReportGroupsCompanion, AddReportHandlerCompanion, LoggingOnCompanion, LoggingOffCompanion,
+        ExecFileCompanion, ScalaCompanion, MBTCompanion,
+        InspectDefineCompanion, DefineCompanion, EndDefineCompanion, DoCompanion,
+        CheckCompanion, CheckTermCompanion, NavigateCompanion, CompareCompanion,
+        ShowArchivesCompanion, LocalCompanion, AddArchiveCompanion, AddMathPathFSCompanion, AddMathPathJavaCompanion, ReadCompanion,
+        ServerInfoActionCompanion, ServerOnCompanion, ServerOffCompanion,
+        MMTInfoCompanion, MMTVersionCompanion, ClearConsoleCompanion, PrintAllCompanion, PrintAllXMLCompanion, PrintConfigCompanion, HelpActionCompanion,
+        ShowLMHCompanion, SetLMHRootCompanion, LMHInitCompanion, LMHCloneCompanion, LMHInstallCompanion, LMHListCompanion, LMHPullCompanion, LMHPushCompanion, LMHSetRemoteCompanion, LMHListRemoteCompanion,
+        ClearCompanion, ExitCompanion, SetBaseCompanion,
+        ListExtensionsCompanion, AddExtensionCompanion, RemoveExtensionCompanion, AddMWSCompanion,
+        WindowCloseCompanion, WindowPositionCompanion, GUIOnCompanion, GUIOffCompanion,
+        ArchiveBuildCompanion, ConfBuildCompanion, MakeActionCompanion, ArchiveMarCompanion
+    ).foreach{e => addExtension(e)}
+    // This **must** be at the end, to act as a default for stuff
+    addExtension(GetActionCompanion)
   }
 
   def cleanup {

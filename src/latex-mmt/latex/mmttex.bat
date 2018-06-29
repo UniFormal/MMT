@@ -1,0 +1,1 @@
+mmt :send 8080 mmttex %*

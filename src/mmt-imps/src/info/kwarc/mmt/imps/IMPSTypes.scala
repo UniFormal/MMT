@@ -2,16 +2,17 @@ package info.kwarc.mmt.imps
 
 /* IMPORTS */
 
-import info.kwarc.mmt.api.GlobalName
-import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
+import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.imps.HList.:+:
+import info.kwarc.mmt.imps.Method.Method
 import info.kwarc.mmt.imps.NumericalType.NumericalType
+import info.kwarc.mmt.imps.OperationType.OperationType
 import info.kwarc.mmt.imps.Usage.Usage
 
 /* Parser abstract class and case classes. */
 
-abstract class TExp {
-  override def toString: String = "<~ tokenized but unparsed expression ~>"
-}
+abstract class TExp
 
 case class Exp(children : List[TExp], src : Option[SourceRef]) extends TExp {
   override def toString : String =
@@ -31,7 +32,7 @@ case class Comment(content : String, src : Option[SourceRef]) extends TExp {
 }
 
 case class Str(str : String) extends TExp {
-  override def toString : String = { "Str(" + str + ")" }
+  override def toString : String = { "\"" + str + "\"" }
 }
 
 /* TEMPORARY */
@@ -52,6 +53,26 @@ case class ParseFailure(str : String) extends TExp {
 }
 
 /* IMPS SPECIAL FORM ARGUMENTS */
+
+case class LeftMethod(m : Method, src : Option[SourceRef]) extends TExp {
+  override def toString: String = { "(left-method " + m.toString + ")"}
+}
+
+case class NullMethod(m : Method, src : Option[SourceRef]) extends TExp {
+  override def toString: String = { "(null-method " + m.toString + ")"}
+}
+
+case class Token(spec : String, src : Option[SourceRef]) extends TExp {
+  override def toString: String = { "(token " + spec + ")"}
+}
+
+case class Table(tablename : String, src : Option[SourceRef]) extends TExp {
+  override def toString: String = { "(table " + tablename + ")"}
+}
+
+case class Binding(n : Int, src : Option[SourceRef]) extends TExp {
+  override def toString: String = { "(binding " + n.toString + ")"}
+}
 
 case class ArgumentTheory(thy : String, src : Option[SourceRef]) extends TExp {
   override def toString : String = { "(theory " + thy + ")"}
@@ -177,9 +198,9 @@ case class ComponentTheories(lst : List[String], src : Option[SourceRef]) extend
 object NumericalType extends Enumeration
 {
   type NumericalType = Value
-  val INTEGERTYPE = Value("*integer-type*")
+  val INTEGERTYPE  = Value("*integer-type*")
   val RATIONALTYPE = Value("*rational-type*")
-  val OCTETTYPE = Value("*octet-type*")
+  val OCTETTYPE    = Value("*octet-type*")
 }
 
 case class TypeSortAList(numericType : NumericalType, sort : IMPSSort, src : Option[SourceRef]) extends TExp
@@ -284,19 +305,18 @@ case class Accessors(accs : List[String], src : Option[SourceRef]) extends TExp 
   }
 }
 
-/* These are all seven usages of (for example) theorems.
- * See page 77 of IMPS manual. */
-object Usage extends Enumeration
+object Method extends Enumeration
 {
-  type Usage = Value
+  type Method = Value
 
-  val ELEMENTARYMACETE       = Value("elementary-macete")
-  val TRANSPORTABLEMACETE    = Value("transportable-macete")
-  val REWRITE                = Value("rewrite")
-  val TRANSPORTABLEREWRITE   = Value("transportable-rewrite")
-  val SIMPLIFYLOGICALLYFIRST = Value("simplify-logically-first")
-  val DRCONVERGENCE          = Value("d-r-convergence")
-  val DRVALUE                = Value("d-r-value")
+  val PREFIXMETHOD   = Value("prefix-operator-method")
+  val INFIXMETHOD    = Value("infix-operator-method")
+  val POSTFIXMETHOD  = Value("postfix-operator-method")
+  val NEGATIONMETHOD = Value("negation-operator-method")
+  val TABLEMETHOD    = Value("table-operator-method")
+  val INDBOTHSYN     = Value("parse-indicator-constructor-both-syntaxes")
+  val PREFSORTDEPOM  = Value("prefix-sort-dependent-operator-method")
+  val NULLCALL       = Value("null-call-method-terminator")
 }
 
 case class ArgumentUsages(usgs : List[Usage], src : Option[SourceRef]) extends TExp {
@@ -311,6 +331,73 @@ case class ArgumentUsages(usgs : List[Usage], src : Option[SourceRef]) extends T
     str = str + ")"
     str
   }
+}
+
+abstract class SpecForm() extends TExp
+
+case class SpecFormByName(name : String,
+                          src  : Option[SourceRef]) extends SpecForm
+{
+  override def toString: String = name
+}
+
+case class SpecFormByList(elems : List[SpecFormElement],
+                          src   : Option[SourceRef]) extends SpecForm
+{
+  override def toString: String = "(" + elems.flatMap(_.toString) + ")"
+}
+
+abstract class SpecFormElement() extends TExp
+
+case class SpecFormScalars(nt  : NumericalType,
+                           src : Option[SourceRef]) extends SpecFormElement {
+  override def toString: String = "(scalars " + nt.toString + ")"
+}
+
+case class SpecFormOperations(ops : List[OperationAlist],
+                              src : Option[SourceRef]) extends SpecFormElement {
+  override def toString: String = "(operations " + ops.flatMap(_.toString) + ")"
+}
+
+case class SpecFormCommutes(src : Option[SourceRef]) extends SpecFormElement {
+  override def toString: String = "commutes."
+}
+
+case class SpecFormNumeralsForGroundTerms(src : Option[SourceRef]) extends SpecFormElement {
+  override def toString: String = "use-numerals-for-ground-terms."
+}
+
+object OperationType extends Enumeration
+{
+  type OperationType = Value
+
+  val PLUS  = Value("+")
+  val TIMES = Value("*")
+  val MINUS = Value("-")
+  val DIV   = Value("/")
+  val EXP   = Value("^")
+  val SUB   = Value("sub")
+  val ZERO  = Value("zero")
+  val UNIT  = Value("unit")
+}
+
+case class OperationAlist(optype   : OperationType,
+                          opname   : String,
+                          src : Option[SourceRef]) extends SpecForm
+{
+  override def toString: String = "(" + optype.toString + " " + opname + ")"
+}
+
+case class AlgProcessorBase(spec : SpecForm, src : Option[SourceRef]) extends TExp {
+  override def toString: String = "(base " + spec.toString + ")"
+}
+
+case class AlgProcessorExponent(spec : SpecForm, src : Option[SourceRef]) extends TExp {
+  override def toString: String = "(exponent " + spec.toString + ")"
+}
+
+case class AlgProcessorCoefficient(spec : SpecForm, src : Option[SourceRef]) extends TExp {
+  override def toString: String = "(coefficient " + spec.toString + ")"
 }
 
 case class FixedTheories(thrs : List[String], src : Option[SourceRef]) extends TExp {
@@ -341,15 +428,68 @@ case class SourceTheories(thrs : List[String], src : Option[SourceRef]) extends 
   }
 }
 
-case class Heralding(module : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(herald " + module + ")"}
-}
-
-case class LoadSection(section : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(load-section " + section + ")"}
-}
-
 /* IMPS SPECIAL FORMS */
+
+case class Overloading(symbol : String,
+                       pairs  : List[(String,String)],
+                       src    : Option[SourceRef])
+  extends TExp
+{
+  override def toString: String = {
+    var str = "(def-overloading " + symbol
+    for (pair <- pairs)
+    {
+      str = str + "\n  (" + pair._1 + " " + pair._2 + ")"
+    }
+    str = str + ")"
+    str
+  }
+}
+
+case class AlgebraicProcessor(name : String,
+                              cancellative : Boolean,
+                              language : ArgumentLanguage,
+                              base     : AlgProcessorBase,
+                              expo     : Option[AlgProcessorExponent],
+                              coeff    : Option[AlgProcessorCoefficient],
+                              src      : Option[SourceRef]
+                             ) extends TExp
+{
+  override def toString: String = {
+    var str : String = "(def-algebraic-processor " + name
+    str = str + "\n  " + language.toString
+    str = str + "\n  " + base.toString
+    if (expo.isDefined) { str = str + "\n  " + expo.get.toString }
+    if (coeff.isDefined) { str = str + "\n  " + coeff.get.toString }
+    if (cancellative) { str = str + "\n  cancellative."}
+    str
+  }
+}
+
+
+
+case class ParseSyntax(name  : String,
+                       token : Option[Token],
+                       leftM : Option[LeftMethod],
+                       nullM : Option[NullMethod],
+                       tbl   : Option[Table],
+                       bnd   : Option[Binding],
+                       src   : Option[SourceRef])
+  extends TExp
+{
+  override def toString: String = {
+    var str : String = "(def-parse-syntax " + name
+
+    if (token.isDefined) { str = str + token.toString + "\n" }
+    if (leftM.isDefined) { str = str + leftM.toString + "\n" }
+    if (nullM.isDefined) { str = str + nullM.toString + "\n" }
+    if (tbl.isDefined)   { str = str + tbl.toString + "\n" }
+    if (bnd.isDefined)   { str = str + bnd.toString + "\n" }
+
+    str = str + ")"
+    str
+  }
+}
 
 /* def-atomic-sort
  * Documentation: IMPS manual pgs. 158, 159 */
@@ -374,6 +514,39 @@ case class AtomicSort(sortName        : String, /* Positional Argument, Required
   }
 }
 
+abstract class MaceteSpec
+
+case class SpecSeries(specs : List[MaceteSpec]) extends MaceteSpec {
+  override def toString: String = "(series " + specs.flatMap(_.toString) + ")"
+}
+
+case class SpecRepeat(specs : List[MaceteSpec]) extends MaceteSpec {
+  override def toString: String = "(repeat " + specs.flatMap(_.toString) + ")"
+}
+
+case class SpecSequential(specs : List[MaceteSpec]) extends MaceteSpec {
+  override def toString: String = "(sequential " + specs.flatMap(_.toString) + ")"
+}
+
+case class SpecParallel(specs : List[MaceteSpec]) extends MaceteSpec {
+  override def toString: String = "(parallel " + specs.flatMap(_.toString) + ")"
+}
+
+case class SpecSound(spec1 : MaceteSpec, spec2 : MaceteSpec, spec3 : MaceteSpec) extends MaceteSpec {
+  override def toString: String = "(sound " + spec1 + " " + spec2 + " " + spec3 + ")"
+}
+
+case class SpecWithoutMinorPremises(spec : MaceteSpec) extends MaceteSpec {
+  override def toString: String = "(without-minor-premises " + spec.toString + ")"
+}
+
+case class CompoundMacete(name : String,
+                          spec : MaceteSpec,
+                          src  : Option[SourceRef]) extends TExp
+{
+  override def toString: String = "(def-compound-macete " + name + "\n  " + spec.toString + ")"
+}
+
 /* def-constant
  * Documentation: IMPS manual pgs. 168,169 */
 case class Constant(constantName : String, /* Positional Argument, Required */
@@ -392,6 +565,45 @@ case class Constant(constantName : String, /* Positional Argument, Required */
     if (usages.isDefined) { str = str + "\n  " + usages.get.toString}
     str = str + "\n  (sort " + sort.toString + ")"
     str = str + ")"
+    str
+  }
+}
+
+case class ArgumentBaseCaseHook(name : String, src : Option[SourceRef]) extends TExp {
+  override def toString: String = "(base-case-hook " + name + ")"
+}
+
+case class ArgumentStepHook(name : String, src : Option[SourceRef]) extends TExp {
+  override def toString: String = "(step-hook " + name + ")"
+}
+
+case class ArgumentDontUnfold(names : List[String], src : Option[SourceRef]) extends TExp {
+  override def toString: String = {
+    var str = "(base-case-hook"
+    for (n <- names) { str = str + " " + n}
+    str = str + ")"
+    str
+  }
+}
+
+case class Inductor(name : String,
+                    inductionPrinciple : String,
+                    thy : ArgumentTheory,
+                    trans : Option[ArgumentTranslation],
+                    base : Option[ArgumentBaseCaseHook],
+                    step : Option[ArgumentStepHook],
+                    unf  : Option[ArgumentDontUnfold],
+                    src : Option[SourceRef]
+                    ) extends TExp
+{
+  override def toString: String = {
+    var str = "(def-inductor " + name
+    str = str + "\n  " + inductionPrinciple
+    str = str + "\n  " + thy
+    if (trans.isDefined) { str = str + "\n  " + trans.get.toString }
+    if (base.isDefined) { str = str + "\n  " + base.get.toString }
+    if (step.isDefined) { str = str + "\n  " + step.get.toString }
+    if (unf.isDefined) { str = str + "\n  " + unf.get.toString }
     str
   }
 }
@@ -1220,6 +1432,127 @@ case class IMPSQCFirst(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 case class IMPSQCSecond(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 {
   override def toString : String = "second{" + s.toString + "}"
+}
+
+//-------------
+
+/* This version of HLists is sourced from here, to make do without Shapeless */
+/* https://apocalisp.wordpress.com/2010/07/06/type-level-programming-in-scala-part-6a-heterogeneous-list%c2%a0basics/ */
+
+sealed trait HList
+
+final case class HCons[H, T <: HList](head : H, tail : T) extends HList {
+  def :+:[U](v : U) = HCons(v, this)
+}
+
+sealed class HNil extends HList {
+  def :+:[T](v : T) = HCons(v, this)
+}
+
+object HNil extends HNil
+
+// aliases for building HList types and for pattern matching
+object HList {
+  type :+:[H, T <: HList] = HCons[H, T]
+  val :+: : HCons.type = HCons
+
+  // contains no type information: not even A
+  implicit def fromList[A](list: List[A]): HList = ((HNil : HList) /: list.reverse) ( (hl,v) => HCons(v, hl) )
+}
+
+trait DefForm
+{
+  var src : SourceInfo
+  var cmt : CommentInfo
+
+  def addSource(start : (Int, Int, Int), end : (Int, Int, Int)) : Unit = {
+    if (this.src.isEmpty) { this.src = Some(scala.util.Left((start,end))) }
+  }
+
+  /* This is kept separate so that it doesn't need to be overwritten */
+  def updateURI(uri : URI) : (SourceInfo => SourceInfo) =
+  {
+    case None => None
+    case Some(scala.util.Left(((a,b,c),(x,y,z)))) => Some(scala.util.Right(SourceRef(uri,SourceRegion(SourcePosition(a,b,c),SourcePosition(x,y,z)))))
+    case Some(scala.util.Right(SourceRef(_,sr))) => Some(scala.util.Right(SourceRef(uri,sr)))
+  }
+
+  def updateSource(uri : URI) : Unit = {
+    val foo = updateURI(uri)
+    this.src = foo(this.src)
+    if (this.cmt.isDefined) { this.cmt.get.updateSource(uri) }
+  }
+
+  def addComment(c : CommentInfo) : Unit = {
+    if (this.cmt.isEmpty) { this.cmt = c }
+  }
+}
+
+abstract class Comp[T <: DefForm] {
+  def build[T <: DefForm](args : HList) : T
+}
+
+case class LineComment(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+// Arguments and whatnot
+
+case class Name(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = s
+}
+
+case class DefString(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = s
+}
+
+case class ArgTheory(thy : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(theory " + thy.toString + ")"}
+}
+
+case class ArgWitness(w : DefString, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(witness " + w.toString + ")"}
+}
+
+/* These are all seven usages of (for example) theorems.
+ * See page 77 of IMPS manual. */
+object Usage extends Enumeration
+{
+  type Usage = Value
+
+  val ELEMENTARYMACETE       : Usage = Value("elementary-macete")
+  val TRANSPORTABLEMACETE    : Usage = Value("transportable-macete")
+  val REWRITE                : Usage = Value("rewrite")
+  val TRANSPORTABLEREWRITE   : Usage = Value("transportable-rewrite")
+  val SIMPLIFYLOGICALLYFIRST : Usage = Value("simplify-logically-first")
+  val DRCONVERGENCE          : Usage = Value("d-r-convergence")
+  val DRVALUE                : Usage = Value("d-r-value")
+}
+
+case class ArgUsages(usgs : List[Usage], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(usages " + usgs.mkString(" ") + ")"}
+}
+
+// Full DefForms
+
+case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object Heralding extends Comp[Heralding] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (nm : Name) :+: HNil => Heralding(nm, None, None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+
+case class DFAtomicSort(name : Name, dfs : DefString, thy : ArgTheory,
+                        usgs : Option[ArgUsages], wtn : Option[ArgWitness],
+                        var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFAtomicSort extends Comp[DFAtomicSort] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (d : DefString) :+: (t : Option[ArgTheory]) :+: (u : Option[ArgUsages]) :+:
+      (w : Option[ArgWitness]) :+: HNil => DFAtomicSort(n,d,t.get,u,w,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
 }
 
 //-----------

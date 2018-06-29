@@ -3,10 +3,10 @@ package info.kwarc.mmt.api.frontend.actions
 import info.kwarc.mmt.api.frontend._
 
 /** shared base class for actions related to logging */
-sealed abstract class LoggingAction extends ActionImpl {}
+sealed abstract class LoggingAction extends Action {}
 
 case object ListReportGroups extends LoggingAction with ResponsiveAction {
-  def apply(implicit controller: Controller) = {
+  def apply() = {
     respond("the following log groups are active: ")
 
     logGroup {
@@ -18,13 +18,13 @@ case object ListReportGroups extends LoggingAction with ResponsiveAction {
   }
   def toParseString: String = "show log groups"
 }
-object ListReportGroupsCompanion extends ActionObjectCompanionImpl[ListReportGroups.type]("list active log groups", "show log groups")
+object ListReportGroupsCompanion extends ObjectActionCompanion(ListReportGroups, "list active log groups", "show log groups")
 
 case class AddReportHandler(h: ReportHandler) extends LoggingAction {
-  def apply(implicit controller: Controller): Unit = controller.report.addHandler(h)
+  def apply() =controller.report.addHandler(h)
   def toParseString = s"log $h"
 }
-object AddReportHandlerCompanion extends ActionCompanionImpl[AddReportHandler]("add a log handler", "log") {
+object AddReportHandlerCompanion extends ActionCompanion("add a log handler", "log") {
   import Action._
 
   def parserActual(implicit state: ActionState) = logfilets | logfile | loghtml | logconsole
@@ -35,19 +35,19 @@ object AddReportHandlerCompanion extends ActionCompanionImpl[AddReportHandler]("
 }
 
 case class LoggingOn(group: String) extends LoggingAction {
-  def apply(implicit controller: Controller): Unit = report.groups += group
+  def apply() =report.groups += group
   def toParseString = s"log+ $group"
 }
-object LoggingOnCompanion extends ActionCompanionImpl[LoggingOn]("switch on logging for a certain group", "log+") {
+object LoggingOnCompanion extends ActionCompanion("switch on logging for a certain group", "log+") {
   import Action._
   def parserActual(implicit state: ActionState) = str ^^ { s => LoggingOn(s) }
 }
 
 case class LoggingOff(group: String) extends LoggingAction {
-  def apply(implicit controller: Controller): Unit = report.groups -= group
+  def apply() =report.groups -= group
   def toParseString = s"log- $group"
 }
-object LoggingOffCompanion extends ActionCompanionImpl[LoggingOff]("switch off logging for a certain group", "log-") {
+object LoggingOffCompanion extends ActionCompanion("switch off logging for a certain group", "log-") {
   import Action._
   def parserActual(implicit state: ActionState) = str ^^ { s => LoggingOff(s) }
 }

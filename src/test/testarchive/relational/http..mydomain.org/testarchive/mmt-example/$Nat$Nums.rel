@@ -1,0 +1,16 @@
+theory http://mydomain.org/testarchive/mmt-example?NatNums
+HasMeta http://mydomain.org/testarchive/mmt-example?NatNums http://mathhub.info/MitM/Foundation?Logic
+Declares http://mydomain.org/testarchive/mmt-example?NatNums http://mydomain.org/testarchive/mmt-example?NatNums?NaturalNumbers
+constant http://mydomain.org/testarchive/mmt-example?NatNums?NaturalNumbers
+Declares http://mydomain.org/testarchive/mmt-example?NatNums http://mydomain.org/testarchive/mmt-example?NatNums?zero
+constant http://mydomain.org/testarchive/mmt-example?NatNums?zero
+Declares http://mydomain.org/testarchive/mmt-example?NatNums http://mydomain.org/testarchive/mmt-example?NatNums?successor
+constant http://mydomain.org/testarchive/mmt-example?NatNums?successor
+Declares http://mydomain.org/testarchive/mmt-example?NatNums http://mydomain.org/testarchive/mmt-example?NatNums?one
+constant http://mydomain.org/testarchive/mmt-example?NatNums?one
+Declares http://mydomain.org/testarchive/mmt-example?NatNums http://mydomain.org/testarchive/mmt-example?NatNums?P3
+constant http://mydomain.org/testarchive/mmt-example?NatNums?P3
+Declares http://mydomain.org/testarchive/mmt-example?NatNums http://mydomain.org/testarchive/mmt-example?NatNums?P4
+constant http://mydomain.org/testarchive/mmt-example?NatNums?P4
+Declares http://mydomain.org/testarchive/mmt-example?NatNums http://mydomain.org/testarchive/mmt-example?NatNums?P5
+constant http://mydomain.org/testarchive/mmt-example?NatNums?P5

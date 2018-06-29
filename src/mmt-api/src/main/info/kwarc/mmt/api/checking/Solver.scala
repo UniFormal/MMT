@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.checking
 import info.kwarc.mmt.api._
 import frontend._
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
+import info.kwarc.mmt.api.uom.AbbrevRule
 import info.kwarc.mmt.api.utils.Killable
 import modules._
 import objects.Conversions._
@@ -27,7 +28,24 @@ import scala.util.Try
  * currently all definitions in t1 and t2 are expanded even though op is often injective, especially if op is a type operator
  */
 
-object InferredType extends TermProperty[(Branchpoint,Term)](utils.mmt.baseURI / "clientProperties" / "solver" / "inferred")
+/** caches the inferred type of a term with that term */
+object InferredType extends TermProperty[(Branchpoint,Term)](Solver.propertyURI / "inferred")
+
+/** marks a term as head-stable: no rule can change the head symbol */
+object Stability extends BooleanTermProperty(Solver.propertyURI / "stability") {
+  def hasStableShape(o: Obj, sh: Shape): Boolean = {
+    (o,sh) match {
+      case (_, Wildcard) => true
+      case (t, AtomicShape(s)) =>
+        t == s && Stability.is(t)
+      case (ComplexTerm(op,_,_,_), ComplexShape(sop, children)) if op == sop =>
+        (o.subobjects zip children) forall {case ((_,t), c) =>
+            hasStableShape(t,c)
+        }
+      case _ => false
+    }
+  }
+}
 
 /** returned by [[Solver.dryRun]] as the result of a side-effect-free check */
 sealed trait DryRunResult {
@@ -83,6 +101,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    val constantContext = checkingUnit.context
    val initUnknowns = checkingUnit.unknowns
 
+   def warnings = state._warnings
+
    /**
     * to have better control over state changes, all stateful variables are encapsulated a second time
     */
@@ -99,6 +119,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       private var _errors: List[History] = Nil
       /** tracks the dependencies in reverse order of encountering */
       private var _dependencies : List[CPath] = Nil
+
+      var _warnings: List[String] = Nil
 
       // accessor methods for the above
       def solution = _solution
@@ -131,6 +153,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
            throw WouldFail
          }
       }
+
       /** registers a dependency */
       def addDependency(p: CPath) {
          _dependencies ::= p
@@ -304,15 +327,16 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private lazy val inferenceRules = rules.getOrdered(classOf[InferenceRule])
    private lazy val subtypingRules = rules.getOrdered(classOf[SubtypingRule])
    //TODO why are these not ordered?
-   private lazy val typebasedsolutionRules = rules.get(classOf[TypeBasedSolutionRule])
-   private lazy val typingRules = rules.get(classOf[TypingRule])
-   private lazy val universeRules = rules.get(classOf[UniverseRule])
-   private lazy val inhabitableRules = rules.get(classOf[InhabitableRule])
-   private lazy val termBasedEqualityRules = rules.get(classOf[TermBasedEqualityRule])
-   private lazy val termHeadBasedEqualityRules = rules.get(classOf[TermHeadBasedEqualityRule])
-   private lazy val typeBasedEqualityRules = rules.get(classOf[TypeBasedEqualityRule])
-   private lazy val solutionRules = rules.get(classOf[SolutionRule])
-   private lazy val forwardSolutionRules = rules.get(classOf[ForwardSolutionRule])
+   private lazy val typebasedsolutionRules = rules.getOrdered(classOf[TypeBasedSolutionRule])
+   private lazy val typingRules = rules.getOrdered(classOf[TypingRule])
+   private lazy val universeRules = rules.getOrdered(classOf[UniverseRule])
+   private lazy val inhabitableRules = rules.getOrdered(classOf[InhabitableRule])
+   private lazy val termBasedEqualityRules = rules.getOrdered(classOf[TermBasedEqualityRule])
+   private lazy val termHeadBasedEqualityRules = rules.getOrdered(classOf[TermHeadBasedEqualityRule])
+   private lazy val typeBasedEqualityRules = rules.getOrdered(classOf[TypeBasedEqualityRule])
+   private lazy val solutionRules = rules.getOrdered(classOf[SolutionRule])
+   private lazy val forwardSolutionRules = rules.getOrdered(classOf[ForwardSolutionRule])
+   private lazy val abbreviationRules = rules.getOrdered(classOf[AbbrevRule])
    /* convenience function for going to the next rule after one has been tried */
    private def dropTill[A](l: List[A], a: A) = l.dropWhile(_ != a).tail
    private def dropJust[A](l: List[A], a:A) = l.filter(_ != a)
@@ -456,7 +480,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       if (solved.df.isDefined) {
          check(Equality(Stack.empty, value, solved.df.get, solved.tp))(history + "solution must be equal to previously found solution") //TODO
       } else {
-         val valueS = simplify(value ^^ left.toPartialSubstitution)(Stack.empty,history) // substitute solutions of earlier variables that have been found already
+         val valueS = value ^^ left.toPartialSubstitution // simplify(value ^^ left.toPartialSubstitution)(Stack.empty,history) // substitute solutions of earlier variables that have been found already
          parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
          val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of later variables that have been found already
          val vd = solved.copy(df = Some(valueS))
@@ -498,7 +522,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private def solveType(name: LocalName, value: Term)(implicit history: History) : Boolean = {
       log("solving type of " + name + " as " + value)
      history += "solving type of " + name + " as " + value
-      val valueS = simplify(value)(Stack.empty, history)
+      val valueS = value //simplify(value)(Stack.empty, history)
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.tp.isDefined) {
         /* TODO this is a first attempt at what roughly should happen. Since WithoutDelay doesn't solve variables itself
@@ -564,6 +588,13 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       // maybe return true so that more errors are found
       false
    }
+
+  def warning(s : String)(implicit history: History) : Boolean = {
+    log("Warning: " + s)
+    history += s
+    state._warnings ::= s
+    true
+  }
 
    /**
     * main entry method: runs the solver on the judgment in the checking unit
@@ -734,8 +765,15 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                       case Some(p) =>
                         solve(vd.name, p)
                       case None =>
-                        tryAHole
-                        error("no solution found")
+                        log("Trying default for " + presentObj(tp))
+                        rule.default(this)(tp) match {
+                          case Some(res) =>
+                            state._warnings ::= "Default solution used for " + vd.name + ": " + presentObj(res)
+                            solve(vd.name,res)
+                          case None =>
+                            tryAHole
+                            error("no solution found")
+                        }
                     }
                   case _ =>
                     tryAHole
@@ -783,7 +821,6 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     */
    def check(j: Judgement)(implicit history: History): Boolean = {
       if (checkingUnit.isKilled) {
-        checkingUnit.killact
         return error("checking was cancelled by external signal")
       }
       JudgementStore.getOrElseUpdate(j) {
@@ -808,6 +845,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    // judgements are not cached if we are in a dry run to make sure they are run again later to solve unknowns
    private object JudgementStore {
      private val store = new scala.collection.mutable.HashMap[Judgement,Boolean]
+     def get(j : Judgement) = store.get(j)
      /** lookup up result for j; if not known, run f to define it */
      def getOrElseUpdate(j : Judgement)(f: => Boolean): Boolean = {
        store.find {case (k,_) => k implies j} match {
@@ -935,7 +973,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
           //foundation-independent cases
           case OMV(x) =>
              history += "lookup in context"
-             getVar(x).tp
+             getVar(x).tp // TODO infer type of definiens if no type
           case OMS(p) =>
              history += "lookup in theory"
              getType(p) orElse {
@@ -1051,13 +1089,14 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
              }
            case None =>
              // try unsafe (since the alternative is equality-checking, which does this anyway, this shouldn't break anything)
+             /*
              val tp1N = simplify(tp1S)
              val tp2N = simplify(tp2S)
              if (tp1S.hashneq(tp1N) || tp2S.hashneq(tp2N)) {
                history += "Trying unsafe"
                return innerCheck(tp1N, tp2N)
              }
-
+              */
              history += "No rules left; final terms are: " + presentObj(tp1S) + " and " + presentObj(tp2S)
              done = true
            // if (existsActivatable) return delay(Subtyping(stack, tp1S, tp2S), true)
@@ -1112,7 +1151,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
            history += "inferring universe"
            inferType(j.wfo)(stack, history) match {
              case None =>
-                delay(Inhabitable(stack, uS))
+                delay(Inhabitable(stack, j.wfo))
              case Some(univ) =>
                 check(Universe(stack, univ))
           }
@@ -1245,7 +1284,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        // see if we can expand a definition in t1
        val t1E = defExp(t1, outerContext++stack.context)
        val t1EL = safeSimplifyOne(t1E)
-       val t1ES = simplify(t1EL)
+       val t1ES = t1EL // simplify(t1EL)
        val changed = t1ES hashneq t1
        if (changed) {
           log("left term rewritten to " + t1ES.toStr(true))
@@ -1440,13 +1479,19 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    def substituteSolved(t: Obj, covered: Boolean)(implicit stack: Stack, history: History): t.ThisType = {
       val subs = solution.toPartialSubstitution
       val tS = t ^^ subs
-      val tSS = if (covered) simplify(tS) else tS
+      val tSS = tS// if (covered) simplify(tS) else tS
       tSS.asInstanceOf[t.ThisType] // always succeeds but Scala doesn't know that
    }
 
-   /** simplifies safely one step along each branches, well-formedness is preserved+reflected */
+   /** simplifies safely one step along each branch, well-formedness is preserved+reflected */
    //TODO merge with limitedSimplify; offer simplification strategies
    private def safeSimplify(tm: Term)(implicit stack: Stack, history: History): Term = tm match {
+      case OMID(p) if abbreviationRules.exists(_.head == p) =>
+        val rule = abbreviationRules.find(_.head == p).get
+        history += "applying abbreviation rule for " + p.name
+        val tmS = rule.term
+        history += "simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS)
+        return tmS.from(tm)
       case _:OMID | _:OMLITTrait => tm
       case OMV(n) => (stack.context.getO(n) orElse solution.getO(n) orElse constantContext.getO(n)) match {
         case Some(vd) if vd.df.isDefined =>
@@ -1457,8 +1502,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       case o: OML => o
       case ComplexTerm(op, subs, cont, args) =>
          computationRules foreach {rule =>
-            if (rule.head == op) {
-              rule(this)(tm, false) match {
+            if (rule.applicable(op)) {
+              rule(this)(tm, false).get match {
                 case Some(tmS) =>
                   history += "applying computation rule " + rule.toString
                   log("simplified: " + tm + " ~~> " + tmS)
@@ -1478,88 +1523,111 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 
    /** simplifies one step overall */
    private def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = {
-     def expandDefinition: Term = {
-       val tmE = defExp(tm, outerContext++stack.context)
-       if (tmE hashneq tm) {
-         log("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
-         history += ("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
-       }
-       tmE
-     }
      if (checkingUnit.isKilled) {
        return tm
-     } /*
-     tm.head match {
-       case Some(h) =>
-         // use first applicable rule
-         computationRules foreach {rule =>
-           if (rule.head == h) {
-             val ret = rule(this)(tm, false)
-             ret foreach {tmS =>
-               history += "applying computation rule " + rule.toString
-               history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
-               return tmS
-             }
-           }
+     }
+     val tmS = tm match {
+       case OMS(p) =>
+         val d = getDef(p)
+         d match {
+           case Some(tD) =>
+             tD
+           case None =>
+             // TODO apply abbrev rules?
+             Stability.set(tm) // undefined constants are stable 
+             tm             
          }
-         // no applicable rule, expand a definition
-         expandDefinition
-       case None => expandDefinition
-     } */
-     val traverser = new SimplifyTraverser(stack,history)
-     val (ret,done) = traverser.run(tm)
-     if (done) {
-       history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(ret))
-       ret
-     } else expandDefinition
-   }
-
-  private val thisSolver = this
-  /* a very naive simplifier that simplifies anywhere in a term */
-  // TODO this does not scale; it is unclear what heuristic to use for simplification
-  private class SimplifyTraverser(stack: Stack, history: History) extends StatelessTraverser {
-    private var done = false
-    def run(t : Term): (Term,Boolean) = {
-      val ret = apply(t, stack.context)
-      (ret,done)
-    }
-    def traverse(t: Term)(implicit con: Context, state: State): Term = {
-      if (done) return t
-      t match {
-        case ComplexTerm(op,_,_,_) =>
-            // use first applicable rule
-            computationRules foreach {rule =>
-              if (rule.head == op) {
-                val ret = rule(thisSolver)(t, false)(Stack(con),history)
-                ret foreach {tmS =>
-                  log("applied computation rule " + rule.toString + " to " + presentObj(t))
-                  history += "applied computation rule " + rule.toString
-                  done = true
-                  return tmS
-                }
-              }
-            }
-            // no applicable rule, traverse
-            Traverser(this,t)
-       /* case OMS(op) => //FR commenting this out, awaiting answer from DM about whether it's needed; it currently causes match errors
+       case OMV(n) =>
+         val vd = outerContext.getO(n) getOrElse stack.context(n)
+         vd.df match {
+           case Some(tD) =>
+             tD
+           case None =>
+             if (!solution.isDeclared(n))
+               Stability.set(tm) // unknowns are unstable, any other undefined variable is stable 
+             tm
+         }
+       case t: OMLITTrait =>
+         Stability.set(t) // literals are always stable
+         t
+       case ComplexTerm(op,subs,con,args) =>
           // use first applicable rule
+          var simp: CannotSimplify = Simplifiability.NoRecurse
           computationRules foreach {rule =>
-            if (rule.head == op) {
-              val ret = rule(thisSolver)(t, false)(Stack(con),history)
-              ret foreach {tmS =>
-                history += "applying computation rule " + rule.toString
-                done = true
-                return tmS
+            if (rule.applicable(op)) {
+              val ret = rule(this)(tm, false)(stack,history)
+              ret match {
+                case Simplify(tmS) =>
+                  log("applied computation rule " + rule.toString + " to " + presentObj(tm))
+                  history += "applied computation rule " + rule.toString
+                  history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
+                  return tmS
+                case cannot: CannotSimplify =>
+                  simp = simp join cannot
               }
             }
           }
-          // no applicable rule, traverse
-          Traverser(this,t) */
-        case _ =>
-            Traverser(this,t)
-      }
-    }
-  }
+          // no applicable rule: check stability
+          val recursePositions = simp match {
+            case RecurseOnly(p) => p.distinct
+            case Recurse => 1 to tm.subobjects.length
+          }
+          // invariant: tm simplifies to result
+          var subobjsLeft: List[Obj] = subs ::: con ::: args
+          var subobjsNew: List[Obj] = Nil
+          var simplified: Boolean = false // true if tm is not identical to result anymore
+          var stable: Boolean = true // true if the subterms in all recurse positions are shape-stable
+          def result = ComplexTerm(op, subobjsNew.reverse ::: subobjsLeft)
+          // we go through all subobjects and try to simplify one of them
+          while (subobjsLeft.nonEmpty) {
+            val o = subobjsLeft.head
+            subobjsLeft = subobjsLeft.tail
+            val i = subobjsNew.length + 1 // position of o
+            val h = history + ("recursing into subobject " + i) 
+            val sNew = if (!simplified && !recursePositions.contains(i)) {
+              o // only recurse if this is one of the recurse positions and no previous subobjects has changed 
+            } else {
+              val oN = o match {
+                case s: Sub =>
+                  val sN = s.map(t => safeSimplifyOne(t)(stack,h))
+                  if (Stability.is(sN.target))
+                    Stability.set(sN)
+                  sN
+                case vd: VarDecl =>
+                  val vdN = vd.map {t => safeSimplifyOne(t)(stack ++ con.take(i-subs.length), h)}
+                  if ((vdN.tp.toList ::: vdN.df.toList).forall {t => Stability.is(t)})
+                    Stability.set(vdN)
+                  vdN
+                case t: Term =>
+                  safeSimplifyOne(t)(stack ++ con, h) 
+              }
+              if (o hasheq oN) {
+                o // if no change, retain the old pointer
+              } else {
+                simplified = true
+                oN
+              }
+            }
+            stable &&= Stability.is(sNew)
+            subobjsNew ::= sNew
+          }
+          if (simplified) {
+            result
+          } else {
+            // mark original term as head-stable if all relevant subterms are 
+            if (stable)
+              Stability.set(tm)
+            tm
+          }
+       case t => t
+     }
+     if (tm hashneq tmS) {
+       log("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
+       history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
+     }
+     tmS
+   }
+
 
    /** special case of the version below where we simplify until an applicable rule is found
  *
@@ -1579,7 +1647,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     *  @param stack the context of tm
     *  @return (tmS, Some(a)) if tmS is simple and simple(tm)=tmS; (tmS, None) if tmS is not simple but no further simplification rules are applicable
     */
-   def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = {
+   override def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = {
       simple(tm) match {
          case Some(a) => (tm,Some(a))
          case None =>
@@ -1718,7 +1786,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * post: inhabitation judgment is covered
     */
    private def checkInhabited(j : Inhabited)(implicit history: History): Boolean = {
-      val res = prove(j.tp)(j.stack, history)
+     val tp = safeSimplify(substituteSolved(j.tp,true)(j.stack,history))(j.stack,history)
+      val res = prove(tp)(j.stack, history)
       if (res.isDefined)
          true
       else
@@ -1742,7 +1811,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
       log(msg)
       history += msg
-      val pu = ProvingUnit(checkingUnit.component, simplify(context)(Stack(context),history), conc, logPrefix).diesWith(checkingUnit)
+      val pu = ProvingUnit(checkingUnit.component, context/*simplify(context)(Stack(context),history)*/, conc, logPrefix).diesWith(checkingUnit)
       controller.extman.get(classOf[Prover]) foreach {prover =>
          val (found, proof) = prover.apply(pu, rules, 3) //Set the timeout on the prover
          if (found) {
@@ -1785,6 +1854,9 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
 }
 
 object Solver {
+  /** base for client property keys */
+  val propertyURI = utils.mmt.baseURI / "clientProperties" / "solver"
+  
   /** reconstructs a single term and returns the reconstructed term and its type */
   def check(controller: Controller, stack: Stack, tm: Term): Either[(Term,Term),Solver] = {
       val ParseResult(unknowns,free,tmU) = ParseResult.fromTerm(tm)
@@ -1807,12 +1879,12 @@ object Solver {
       val rules = rulesOpt.getOrElse {
          RuleSet.collectRules(controller, context)
       }
-      implicit val stack = Stack(Context())
+      implicit val stack = Stack(Context.empty)
       implicit val history = new History(Nil)
       val cu = CheckingUnit(None, context, Context.empty, null) // awkward but works because we do not call applyMain
       val solver = new Solver(controller, cu, rules)
       val tpOpt = solver.inferType(tm, true)
-      tpOpt map {tp => solver.simplify(tp)}
+      tpOpt // map {tp => solver.simplify(tp)}
   }
 
   /**

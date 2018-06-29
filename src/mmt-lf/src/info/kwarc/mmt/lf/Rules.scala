@@ -152,7 +152,7 @@ object StandardArgumentChecker extends ArgumentChecker {
 class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       // calling Beta first could make this rule more reusable because it would avoid inferring the type of a possibly large lambda
-
+      // println(solver.presentObj(tm))
       // auxiliary function that handles one argument at a time
       def iterate(fT: Term, args: List[Term]): Option[Term] = {
          (fT,args) match {
@@ -313,23 +313,33 @@ object PiCongruence extends TermBasedEqualityRule with PiOrArrowRule {
  */
 class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path) {
 
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
       var reduced = false // remembers if there was a reduction
       // auxiliary recursive function to beta-reduce as often as possible
       // returns Some(reducedTerm) or None if no reduction
-      def reduce(f: Term, args: List[Term]): Option[Term] = (f,args) match {
+      def reduce(f: Term, args: List[Term]): Simplifiability = (f,args) match {
          case (Lambda(x,a,t), s :: rest) =>
             if (conforms(solver)(s,a,covered)) {
               reduced = true
               reduce(t ^? (x / s), rest)
             } else {
               history += "cannot beta-reduce at this point"
-              None
+              Recurse
             }
          case (f, Nil) =>
-            //all arguments were used, recurse in case f is again a redex
-            //otherwise, return f (only possible if there was a reduction, so no need for 'if (reduced)')
-            apply(solver)(f, covered) orElse Some(f)
+           //all arguments were used, recurse in case f is again a redex
+           //otherwise, return f (only possible if there was a reduction, so no need for 'if (reduced)')
+           apply(solver)(f, covered) match {
+             case s: Simplify => s
+             case _: CannotSimplify => Simplify(f)
+           }
+         case(OMS(p),ls) =>
+           val dfO = solver.lookup.getConstant(p).df
+           if (dfO.isDefined) reduce(dfO.get,args)
+           else if (reduced)
+             Simplify(ApplySpine(f,args : _*))
+           else
+             Simplifiability.NoRecurse
          case _ =>
             /*// simplify f recursively to see if it becomes a Lambda
             val fS = solver.simplify(f)
@@ -337,14 +347,14 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
             else {*/
               //no more reduction possible
               if (reduced)
-                Some(ApplySpine(f,args : _*))
+                Simplify(ApplySpine(f,args : _*))
               else
-                None
+                Recurse
       }
       tm match {
          //using ApplySpine here also normalizes curried application by merging them into a single one
          case ApplySpine(f, args) => reduce(f, args)
-         case _ => None // only possible after recursing
+         case _ => Recurse // only possible after recursing
       }
    }
 }
@@ -386,9 +396,9 @@ object UnsafeBeta extends BreadthRule(Apply.path){
  * LocalName.Anon is used for x */
 // not used anymore because Pi rules now also apply to arrow
 object ExpandArrow extends ComputationRule(Arrow.path) {
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
-      case Arrow(a,b) => Some(Pi(OMV.anonymous, a, b))
-      case _ => None
+   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
+      case Arrow(a,b) => Simplify(Pi(OMV.anonymous, a, b))
+      case _ => Simplifiability.NoRecurse
    }
 }
 
@@ -421,13 +431,13 @@ object TypeAttributionTerm extends InferenceRule(TypeAttribution.path, OfType.pa
 
 /** |- (t:A) = t */
 object DropTypeAttribution extends ComputationRule(TypeAttribution.path) {
-  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
     val TypeAttribution(t,a) = tm
     if (!covered) {
       // this will call TypeAttributionTerm once, which recursively triggers the necessary checks of the type before we throw it away  
       solver.inferType(tm, covered)(stack, history + "checking the attributed type")
     }
-    Some(t)
+    Simplify(t)
   }
 }
 
@@ -549,7 +559,7 @@ object SolveType extends TypeSolutionRule(Apply.path) {
 object TheoryTypeWithLF extends ComputationRule(ModExp.theorytype) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
       case TheoryType(params) =>
-         if (params.isEmpty) None else Some(Pi(params, TheoryType(Nil)))
-      case _ => None
+         if (params.isEmpty) Recurse else Simplify(Pi(params, TheoryType(Nil)))
+      case _ => Simplifiability.NoRecurse
    }
 }

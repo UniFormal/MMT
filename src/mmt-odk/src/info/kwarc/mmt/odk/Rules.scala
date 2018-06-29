@@ -40,8 +40,9 @@ object IntegerSubtype extends SubtypingRule {
 }
 
 object LFX {
+  val ns = DPath(URI.http colon "gl.mathhub.info") / "MMT" / "LFX"
   class LFRecSymbol(name:String) {
-    val path = (DPath(URI.http colon "gl.mathhub.info") / "MMT" / "LFX" / "Records") ? "Symbols" ? name
+    val path = (ns / "Records") ? "Symbols" ? name
     val term = OMS(path)
   }
 

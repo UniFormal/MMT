@@ -6,7 +6,6 @@ import symbols._
 import documents._
 
 class PythonExporter extends Exporter {
-   val outDim = Dim("export", "python")
    override val outExt = "py"
    val key = "python"
    override val folderName = "__init__"

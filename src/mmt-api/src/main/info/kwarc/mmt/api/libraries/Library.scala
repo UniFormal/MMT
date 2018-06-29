@@ -234,7 +234,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
       case OMPMOD(p, args) =>
          val mod = seeAsMod(getContent(p, error), error)
          val newName = name.steps match {
-           case ComplexStep(`p`) :: r => LocalName(r)
+           case ComplexStep(`p`) :: r =>
+             if (r.isEmpty)
+               throw GetError("cannot lookup " + p + " in itself")
+             LocalName(r)
            case _ => name
          }
          getDeclarationInElement(mod, args, newName, error)
@@ -399,6 +402,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
              case None =>
                error("cannot resolve " + mpath)
            }
+         case LocalName(Nil) =>
+           throw GetError("empty name not allowed")
          case _ => throw NotFound(t.path ? name, Some(t.path)) // [[Storage]]s may add declarations to a theory dynamically, so we throw NotFound
        }
      }
@@ -459,14 +464,21 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             case ComplexStep(theo)::tname => (theo,tname)
             case _ => return default
           }
-          // for declarations of the meta-theory of l.from, we default to the identity if no other assignment is found
+          // for declarations of the meta-theory of the parent theory of l.from, we default to the identity if no other assignment is found
           val defaultMetaMorph = TheoryExp.metas(l.from, false)(this).headOption.toList map {mt => 
             (mt, OMIDENT(OMMOD(mt)))
+          }
+          val defaultParentMorph = l.from match {
+            case OMPMOD(fromP,_) => fromP.superModule.toList.map {par =>
+              // note: if the parent theory is implicitly visible only, we need to apply the implicit morphism; see the corresponding case in the StructureChecker, which currently forbids this
+              (par, OMIDENT(OMMOD(par)))
+            }
+            case _ => Nil
           }
           // we look for the first assignment in l for a domain that includes theo
           // (there may be multiple, but they must be equal on theo if l well-formed)
           // defaultMetaMorph, being last, is only considered as a default
-          (l.getIncludes ::: defaultMetaMorph) foreach {case (f,m) =>
+          (l.getIncludes ::: defaultMetaMorph ::: defaultParentMorph) foreach {case (f,m) =>
             val vis = visibleVia(OMMOD(f))
             vis foreach {case (d,v) =>
               if (d == OMMOD(theo)) {

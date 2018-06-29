@@ -9,8 +9,7 @@ import objects._
 import presentation._
 import utils._
 
-trait Exporter extends BuildTarget {
-  self =>
+trait Exporter extends BuildTarget {self =>
   /** must be set by deriving classes to direct output, not necessary if outputTo is used */
   protected var _rh: RenderingHandler = null
   /**
@@ -81,6 +80,9 @@ trait Exporter extends BuildTarget {
 
   /** the file extension used for generated files, defaults to key, override as needed */
   protected def outExt = key
+  
+  /** the dimension for storing generated files, defaults to export/key, override as needed */
+  protected def outDim = Dim("export", key)
 
   /** the common properties of the content and the narration exporter */
   private trait ExportInfo extends TraversingBuildTarget {
@@ -88,7 +90,7 @@ trait Exporter extends BuildTarget {
 
     def includeFile(name: String) = name.endsWith(".omdoc")
 
-    def outDim: Dim = Dim("export", self.key, inDim.toString)
+    def outDim: Dim = self.outDim / inDim.toString
 
     override def outExt = self.outExt
 
