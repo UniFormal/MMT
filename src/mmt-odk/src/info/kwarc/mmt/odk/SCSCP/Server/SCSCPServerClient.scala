@@ -106,7 +106,9 @@ class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = 
       return
     }
 
+    // read data and update the OM Coding that has been used
     val data = reader.get()
+    writer.codingState = reader.codingState
 
     data match {
       case Some(Left(pi: SCSCPPi)) => processPi(pi)

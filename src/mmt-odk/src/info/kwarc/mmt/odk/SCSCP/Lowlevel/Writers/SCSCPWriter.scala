@@ -3,11 +3,11 @@ package info.kwarc.mmt.odk.SCSCP.Lowlevel.Writers
 import java.io.OutputStream
 import java.nio.charset.Charset
 
-import info.kwarc.mmt.odk.OpenMath.Coding.OMXMLCoding
+import info.kwarc.mmt.odk.OpenMath.Coding.{OMJSONCoding, OMXMLCoding}
 import info.kwarc.mmt.odk.OpenMath.OMObject
-import info.kwarc.mmt.odk.SCSCP.Lowlevel.SCSCPPi
+import info.kwarc.mmt.odk.SCSCP.Lowlevel._
 
-class SCSCPWriter(stream: OutputStream, val encoding: String = "UTF-8") {
+class SCSCPWriter(stream: OutputStream, val encoding: String = "UTF-8", var codingState: OMCodingState = AutoState) {
 
   // hard coded instructions
   final private val START_INST = SCSCPPi(Some("start"), Map())
@@ -15,7 +15,8 @@ class SCSCPWriter(stream: OutputStream, val encoding: String = "UTF-8") {
   final private val CANCEL_INST = SCSCPPi(Some("cancel"), Map())
 
   // read write OpenMath XML
-  private val coder = new OMXMLCoding()
+  private val xmlCoder = new OMXMLCoding()
+  private val jsonCoder = new OMJSONCoding()
 
   /**
     * Writes a string to the stream
@@ -38,9 +39,21 @@ class SCSCPWriter(stream: OutputStream, val encoding: String = "UTF-8") {
   /**
     * Writes an OpenMath object to the stream
     */
-  def write(om: OMObject): Unit = {
+  def write(om: OMObject): Unit = codingState match {
+    case XMLState => writeXML(om)
+    case JSONState => writeJSON(om)
+    case _ => writeXML(om) // fallback to XML
+  }
+
+  private def writeXML(om: OMObject): Unit = {
     write(START_INST)
-    write(coder(om).toString)
+    write(xmlCoder(om).toString)
+    write(END_INST)
+  }
+
+  private def writeJSON(om: OMObject): Unit = {
+    write(START_INST)
+    write(jsonCoder(om).toCompactString)
     write(END_INST)
   }
 }

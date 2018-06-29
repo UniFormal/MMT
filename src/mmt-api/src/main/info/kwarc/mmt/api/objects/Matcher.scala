@@ -99,6 +99,11 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
          case _ =>
             return None
       }
+
+      override def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term, Option[A]) = {
+         val s = simplify(tm)
+         (s, simple(s))
+      }
    }
 
    /**
