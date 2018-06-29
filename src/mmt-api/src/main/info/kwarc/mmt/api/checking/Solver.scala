@@ -480,7 +480,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       if (solved.df.isDefined) {
          check(Equality(Stack.empty, value, solved.df.get, solved.tp))(history + "solution must be equal to previously found solution") //TODO
       } else {
-         val valueS = simplify(value ^^ left.toPartialSubstitution)(Stack.empty,history) // substitute solutions of earlier variables that have been found already
+         val valueS = value ^^ left.toPartialSubstitution // simplify(value ^^ left.toPartialSubstitution)(Stack.empty,history) // substitute solutions of earlier variables that have been found already
          parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
          val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of later variables that have been found already
          val vd = solved.copy(df = Some(valueS))
@@ -522,7 +522,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    private def solveType(name: LocalName, value: Term)(implicit history: History) : Boolean = {
       log("solving type of " + name + " as " + value)
      history += "solving type of " + name + " as " + value
-      val valueS = simplify(value)(Stack.empty, history)
+      val valueS = value //simplify(value)(Stack.empty, history)
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.tp.isDefined) {
         /* TODO this is a first attempt at what roughly should happen. Since WithoutDelay doesn't solve variables itself
@@ -765,6 +765,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
                       case Some(p) =>
                         solve(vd.name, p)
                       case None =>
+                        log("Trying default for " + presentObj(tp))
                         rule.default(this)(tp) match {
                           case Some(res) =>
                             state._warnings ::= "Default solution used for " + vd.name + ": " + presentObj(res)
@@ -1088,13 +1089,14 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
              }
            case None =>
              // try unsafe (since the alternative is equality-checking, which does this anyway, this shouldn't break anything)
+             /*
              val tp1N = simplify(tp1S)
              val tp2N = simplify(tp2S)
              if (tp1S.hashneq(tp1N) || tp2S.hashneq(tp2N)) {
                history += "Trying unsafe"
                return innerCheck(tp1N, tp2N)
              }
-
+              */
              history += "No rules left; final terms are: " + presentObj(tp1S) + " and " + presentObj(tp2S)
              done = true
            // if (existsActivatable) return delay(Subtyping(stack, tp1S, tp2S), true)
@@ -1282,7 +1284,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
        // see if we can expand a definition in t1
        val t1E = defExp(t1, outerContext++stack.context)
        val t1EL = safeSimplifyOne(t1E)
-       val t1ES = simplify(t1EL)
+       val t1ES = t1EL // simplify(t1EL)
        val changed = t1ES hashneq t1
        if (changed) {
           log("left term rewritten to " + t1ES.toStr(true))
@@ -1477,7 +1479,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
    def substituteSolved(t: Obj, covered: Boolean)(implicit stack: Stack, history: History): t.ThisType = {
       val subs = solution.toPartialSubstitution
       val tS = t ^^ subs
-      val tSS = if (covered) simplify(tS) else tS
+      val tSS = tS// if (covered) simplify(tS) else tS
       tSS.asInstanceOf[t.ThisType] // always succeeds but Scala doesn't know that
    }
 
@@ -1784,7 +1786,8 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
     * post: inhabitation judgment is covered
     */
    private def checkInhabited(j : Inhabited)(implicit history: History): Boolean = {
-      val res = prove(j.tp)(j.stack, history)
+     val tp = safeSimplify(substituteSolved(j.tp,true)(j.stack,history))(j.stack,history)
+      val res = prove(tp)(j.stack, history)
       if (res.isDefined)
          true
       else
@@ -1808,7 +1811,7 @@ class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: 
       val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
       log(msg)
       history += msg
-      val pu = ProvingUnit(checkingUnit.component, simplify(context)(Stack(context),history), conc, logPrefix).diesWith(checkingUnit)
+      val pu = ProvingUnit(checkingUnit.component, context/*simplify(context)(Stack(context),history)*/, conc, logPrefix).diesWith(checkingUnit)
       controller.extman.get(classOf[Prover]) foreach {prover =>
          val (found, proof) = prover.apply(pu, rules, 3) //Set the timeout on the prover
          if (found) {
@@ -1881,7 +1884,7 @@ object Solver {
       val cu = CheckingUnit(None, context, Context.empty, null) // awkward but works because we do not call applyMain
       val solver = new Solver(controller, cu, rules)
       val tpOpt = solver.inferType(tm, true)
-      tpOpt map {tp => solver.simplify(tp)}
+      tpOpt // map {tp => solver.simplify(tp)}
   }
 
   /**

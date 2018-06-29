@@ -13,7 +13,7 @@ class SimpleIrrelevanceRule(p : GlobalName, default : Option[Term] = None) exten
 
   def default(solver: Solver)(tp: Term)(implicit stack: Stack, history: History): Option[Term] = tp match {
     case Apply(OMS(`p`),prop) =>
-      default.map(d => solver.simplify(Apply(d,prop)))
+      default.map(d => Beta.apply(solver)(Apply(d,prop),true).get.getOrElse(Apply(d,prop)))
   }
 
 }

@@ -111,13 +111,13 @@ object FlatSeqInfer extends InferenceRule(flatseq.path, OfType.path) {
  *  |- s.i : a.i
  */
 object IndexInfer extends InferenceRule(index.path, OfType.path) {
-   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
-     val Sequences.index(s, at) = tm
-     if (!covered)
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
+    case Sequences.index(s, at) =>
+      if (!covered)
         solver.check(Typing(stack, at, OMS(Nat.nat)))(history.branch)
-     val sTOpt = solver.inferType(s)(stack, history + "inferring type of sequence")
-     sTOpt match {
-       case Some(sT) =>
+      val sTOpt = solver.inferType(s)(stack, history + "inferring type of sequence")
+      sTOpt match {
+        case Some(sT) =>
           if (!covered) {
             Length.infer(solver, s) match {
               case None =>
@@ -128,13 +128,15 @@ object IndexInfer extends InferenceRule(index.path, OfType.path) {
             }
           }
           if (sT == OMS(Typed.kind))
-             // special case for (type^n).i (which should never actually occur but is conceivable)
-             Some(OMS(Typed.kind))
+          // special case for (type^n).i (which should never actually occur but is conceivable)
+            Some(OMS(Typed.kind))
           else
             Some(index(sT, at))
-       case _ => None // TODO decomposition? error message?
-     }
-   }
+        case _ => None // TODO decomposition? error message?
+      }
+    case _ =>
+      None
+  }
 }
 
 /**
@@ -189,7 +191,7 @@ class SequenceTypeCheck(op: GlobalName) extends TypingRule(op) {
     }
     if (!equalLength) return false
     val n = Length.infer(solver, tp).get
-    val nS = solver.simplify(n)
+    val nS = solver.safeSimplifyUntil(n)(NatLit.unapply)._1
     nS match {
       case NatLit(nI) =>
         (BigInt(0) until nI) forall {iI =>
