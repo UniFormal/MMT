@@ -1,29 +1,0 @@
-namespace http://mydomain.org/myarchive/mmt-example 
-
-import mitm http://mathhub.info/MitM/Foundation 
-theory NatNums : mitm:?Logic =
-	/T The type of natural numbers has type "type" and notation "ℕ" (jN) 
-	NaturalNumbers : type  # ℕ
-
-	zero : ℕ 
-
-	successor : ℕ → ℕ  # S 1 
-	
-	one : ℕ  # %1  = S zero 
-
-	P3 : ⊦ ¬ ∃[n] S n ≐ zero 
-	
-	P4 : ⊦ ∀[n]∀[m] S n ≐ S m ⇒ n ≐ m
-	
-	P5 : ⊦ ∀[P : ℕ → bool] (P zero ∧ (∀[n] P n ⇒ P (S n))) ⇒ ∀[n] P n 
-	/T (jeqdge) 
-
-/T   Addition   
-theory NatPlus : mitm:?Logic =
-	include ?NatNums 
-	
-	plus : ℕ → (ℕ → ℕ)  //  = ℕ × ℕ → ℕ   # 1 + 2 
-	
-	P6: ⊦ ∀[n] n + zero ≐ n 
-	P7: ⊦ ∀[n]∀[m] n + S m ≐ S (n + m) 
-

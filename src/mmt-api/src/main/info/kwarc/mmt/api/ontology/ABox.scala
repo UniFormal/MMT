@@ -53,18 +53,23 @@ class RelStore(report : frontend.Report) {
    //def getObjects(d : Binary) = subjects.keys.filter(_._1 == d).map(_._2).toSet
    //def getSubjects(d : Binary) = objects.keys.filter(_._2 == d).map(_._1).toSet
 
+   var test : List[Individual] = Nil
+   
    /** adds a RelationalElement */
    def +=(d : RelationalElement) {
       synchronized {
-         log(d.toString)
          d match {
            case Relation(dep, subj, obj) =>
               subjects += ((dep, obj), subj)
               objects += ((subj, dep), obj)
               dependencies += ((subj, obj), dep)
-           case Individual(p, tp) =>
+           case ind @ Individual(p, tp) =>
               types(p) = tp
               individuals += (tp, p)
+              if (List(IsDataConstructor, IsDatatypeConstructor, IsJudgementConstructor, IsRule) contains tp) {
+                //log("Adding individual: " + d.toString())
+                test ::= ind
+              }
               /*
               p.ancestors match {
                  case `p` :: tail =>
@@ -153,24 +158,32 @@ class RelStore(report : frontend.Report) {
     * @param p the path of the constant
     * @param the controller (needed to retrieve type information for the constant)
     */
-   def mapConstant(s:Unary, p:Path,con:Controller) = {
+   def mapConstant(s:Unary, p:Path, con:Controller) = {
      //TODO: discriminate constants of different universes
+     if (test contains Individual(p, s))
+       println("Found match: "+Individual(p, s))
      if (s == IsConstant) {
        try {
-         val gnP : GlobalName = p.doc.?(p.toTriple._2 getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")})
-         .?(p.toTriple._3 getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")})
-         val tp = con.getConstant(gnP).tp
-         tp match {
-           case None => (UntypedConstantEntry(), p)
-           case Some(_) => 
-             s match {
-               case IsDatatypeConstructor => (DatatypeConstructorEntry(), p)
-               case IsDataConstructor => (DataConstructorEntry(), p)
-               case IsRule => (RuleEntry(), p)
-               case IsJudgementConstructor => (JudgementConstructorEntry(), p)
-               case IsHighUniverse => (HighUniverseEntry(), p)
-               case _ => (TypedConstantEntry(),p)
-             }
+         var re: List[Individual] = Nil
+         con.relman.extract(con.get(p)) {
+           case r:Individual => re ::= r
+           case _ =>
+         }
+         var types : List[(StatisticEntries, Path)] = Nil
+         re foreach {case Individual(path, un) => 
+           un match {
+             case IsDatatypeConstructor => types::=(DatatypeConstructorEntry(), p)
+             case IsDataConstructor => types::=(DataConstructorEntry(), p)
+             case IsRule => types::=(RuleEntry(), p)
+             case IsJudgementConstructor => types::=(JudgementConstructorEntry(), p)
+             case IsHighUniverse => types::=(HighUniverseEntry(), p)
+             case _ => 
+           }
+         }
+         if (types.length > 0) {
+           types.head
+         } else {
+           (TypedConstantEntry(),p)
          }
        } catch {
          case e:Exception => (MalformattedConstantEntry(), p)
@@ -224,8 +237,9 @@ class RelStore(report : frontend.Report) {
     * @param p the path of the document or theory
     * @param the controller (needed to retrieve type information for the constants)
     */
-  def makeStatistics(p: Path, q: Path, con:Controller) = {
-    println("Ha: "+q.toString())
+  def makeStatistics(q: Path, con:Controller) = {
+    log(test.toString())
+    //println("Ha: "+q.toString())
     val decl = Transitive(+Declares)
     val align = decl * Transitive(+IsAlignedWith)
     // Should also morphisms to subtheories be counted?
@@ -236,7 +250,7 @@ class RelStore(report : frontend.Report) {
     val induced = morph * +Declares * HasType(IsConstant)
     var dsG = makeStatisticsFor(q, decl, "",con)
     dsG += makeStatisticsFor(q, align, "Alignments of ",con)
-    val (exMorph, anyMorph) = (querySet(p, expMorph).size, querySet(q, morph).size)
+    val (exMorph, anyMorph) = (querySet(q, expMorph).size, querySet(q, morph).size)
     if (exMorph > 0) 
       dsG += ("Explicit theory morphisms", exMorph)
     if (anyMorph > 0)

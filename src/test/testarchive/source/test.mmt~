@@ -1,42 +1,0 @@
-namespace http://mydomain.org/testarchive/mmt-example 
-
-import mitm http://mathhub.info/MitM/Foundation 
-
-theory test_base : mitm:?Logic =
-	base_type : type 
-
-
-theory test_middleman_a : mitm:?Logic =
-	include ?test_base 
-	middle : base_type 
-
-
-theory test_middleman_b : mitm:?Logic =
-	include ?test_base 
-	unused : base_type 
-
-
-theory test_united : mitm:?Logic =
-	include ?test_middleman_a 
-	include ?test_middleman_b 
-
-
-
-theory test_all : mitm:?Logic =
-	include ?test_base 
-	include ?test_united 
-  final : base_type 
-        = middle
-
-
-theory test_future : mitm:?Logic =
-	include ?test_all 
-	using : base_type 
-				= unused 
-
-
-theory test_other : mitm:?Logic =
-	include ?test_base 
-	include ?test_middleman_a 
-	base : base_type 
-

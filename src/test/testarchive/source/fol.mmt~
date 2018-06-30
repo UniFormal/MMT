@@ -1,75 +1,0 @@
-namespace http://mydomain.org/myarchive/mmt-example 
-
-theory FOL : http://cds.omdoc.org/urtheories?LF =
-
-prop  : type 
-
-true  : prop                                 
-false : prop                                 
-and   : prop → prop → prop   # 1 ∧ 2 prec 15
-or    : prop → prop → prop   # 1 ∨ 2 prec 15
-impl  : prop → prop → prop   # 1 ⇒ 2 prec 10
-not   : prop → prop          # ¬ 1   prec 20
-
-equiv : prop → prop → prop   # 1 ⇔ 2 prec 10
-        = [x,y] (x ⇒ y) ∧ (y ⇒ x)
-
-sort   : type
-term   : sort → type # tm 1
-
-equal : {s: sort} tm s → tm s → prop# 2 = 3 prec 30  role Eq 
-
-forall : {s} (tm s → prop) → prop# ∀ 2
-exists : {s} (tm s → prop) → prop# ∃ 2
-
-proof : prop → type # ⊢ 1 prec 0
-         role Judgment
-
-
-theory NatDed : http://cds.omdoc.org/urtheories?LF =
-
-  include ?FOL 
-
-  contra : type  = {a} ⊢ a # ↯
-
-  trueI : ⊢ true
-
-  falseE : ⊢ false → ↯
-  
-  andI  : {A,B} ⊢ A → ⊢ B → ⊢ A ∧ B   
-  andEl : {A,B} ⊢ A ∧ B → ⊢ A         
-  andEr : {A,B} ⊢ A ∧ B → ⊢ B         
-
-  orIl  : {A,B} ⊢ A → ⊢ A ∨ B         
-  orIr  : {A,B} ⊢ B → ⊢ A ∨ B         
-  orE   : {A,B,C} ⊢ A ∨ B → (⊢ A → ⊢ C) → (⊢ B → ⊢ C) → ⊢ C
-                                      
-
-  impI  : {A,B} (⊢ A → ⊢ B) → ⊢ A ⇒ B 
-  impE  : {A,B} ⊢ A ⇒ B → ⊢ A → ⊢ B   
-
-  notI  : {A} (⊢ A → ↯) → ⊢ ¬ A# notI 2
-  notE  : {A} ⊢ ¬ A → ⊢ A → ↯  # notE 2 3
-
-
-  equivI : {A,B} (⊢ A → ⊢ B) → (⊢ B → ⊢ A) → ⊢ A ⇔ B  
-         = [A,B,p,q] andI (impI [x] p x) (impI [x] q x)  
-         
-  equivEl : {A,B} ⊢ A ⇔ B → ⊢ A → ⊢ B
-          = [A,B,p,a] impE (andEl p) a 
-  equivEr : {A,B} ⊢ A ⇔ B → ⊢ B → ⊢ A
-          = [A,B,p,b] impE (andEr p) b 
-          
-  forallI  : {s, A: tm s → prop} ({x} ⊢ (A x)) → ⊢ ∀ A  # allI 3
-  forallE  : {s, A: tm s → prop} ⊢ (∀ A) → {x} ⊢ (A x)  # allE 3
-
-  existsI  : {s, A: tm s → prop} {c} ⊢ (A c) → ⊢ ∃ [x] (A x) # exI 2 4
-  existsE  : {s, A: tm s → prop, C} ⊢ (∃ A) → ({x} ⊢ (A x) → ⊢ C) → ⊢ C  # exE 4 5
-
-  refl     : {s,x: tm s} ⊢ x = x  # refl 2 
-  sym      : {s,x: tm s,y} ⊢ x = y → ⊢ y = x
-  trans    : {s,x: tm s,y,z} ⊢ x = y → ⊢ y = z → ⊢ x = z
-  
-  congTerm : {s,t, T: tm s → tm t}{x,y} ⊢ x = y → ⊢ (T x) = (T y)
-  congForm : {s,   F: tm s → prop}{x,y} ⊢ x = y → ⊢ (F x) → ⊢ (F y)
-
