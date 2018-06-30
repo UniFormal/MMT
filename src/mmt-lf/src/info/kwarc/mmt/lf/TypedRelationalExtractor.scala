@@ -16,7 +16,7 @@ import ontology._
  * The TypedRelationalExtractor adds a few more typing related informations to the .rel files.
  */
 class TypedRelationalExtractor extends RelationalExtractor {
-   val allUnary = List(IsDatatypeConstructor, IsDataConstructor, IsJudgementConstructor, IsRule)
+   val allUnary = List(IsDatatypeConstructor, IsDataConstructor, IsJudgementConstructor, IsRule, IsHighUniverse)
    val allBinary = Nil
            
    /** apply a continuation function to every relational element of a StructuralElement */
@@ -28,16 +28,25 @@ class TypedRelationalExtractor extends RelationalExtractor {
 					  case c: Constant =>
                	c.tp foreach { case FunType(_, tp) => tp match {
                	  case Univ(1) => 
-               	    if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment"))
+               	    if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) {
+               	      log("Judgment at "+c.path.toString())
                	      f(IsJudgementConstructor(c.path))
-               	    else
+               	    }
+               	    else {
+               	      log("Datatype constructor at "+c.path.toString())
                	      f(IsDatatypeConstructor(c.path))
-               	  case Univ(2) => f(IsHighUniverse(c.path))
+                    }
+               	  case Univ(n) if n > 1 => println("found high universe at "+c.path.toString()); (IsHighUniverse(c.path))
                	  case _ => 
-               	    if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment"))
+               	    if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) {
+               	      log("Rule at "+c.path.toString())
                	      f(IsRule(c.path))
-               	    else
+               	    }
+               	    else {
+               	      log("Data constructor at "+c.path.toString())
+               	      // log("f="+f.toString())
                	      f(IsDataConstructor(c.path))
+               	    }
                	}
              }
          case _ =>

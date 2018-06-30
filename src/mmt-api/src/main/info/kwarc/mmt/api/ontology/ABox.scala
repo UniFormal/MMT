@@ -157,13 +157,9 @@ class RelStore(report : frontend.Report) {
      //TODO: discriminate constants of different universes
      if (s == IsConstant) {
        try {
-         val (dop, lo, mo) = p.toTriple
-         val d=dop getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
-         val l=lo getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
-         val m=mo getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
-         val gnP = GlobalName(MPath(d,l),m)
-         val t = con.getConstant(gnP)
-         val tp = t.tp
+         val gnP : GlobalName = p.doc.?(p.toTriple._2 getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")})
+         .?(p.toTriple._3 getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")})
+         val tp = con.getConstant(gnP).tp
          tp match {
            case None => (UntypedConstantEntry(), p)
            case Some(_) => 
@@ -228,7 +224,8 @@ class RelStore(report : frontend.Report) {
     * @param p the path of the document or theory
     * @param the controller (needed to retrieve type information for the constants)
     */
-  def makeStatistics(p: Path, con:Controller) = {
+  def makeStatistics(p: Path, q: Path, con:Controller) = {
+    println("Ha: "+q.toString())
     val decl = Transitive(+Declares)
     val align = decl * Transitive(+IsAlignedWith)
     // Should also morphisms to subtheories be counted?
@@ -237,15 +234,15 @@ class RelStore(report : frontend.Report) {
     val morph = Transitive(+HasMeta | +Includes | +IsImplicitly | +HasViewFrom)
     val expinduced = expMorph * +Declares * HasType(IsConstant)
     val induced = morph * +Declares * HasType(IsConstant)
-    var dsG = makeStatisticsFor(p, decl, "",con)
-    dsG += makeStatisticsFor(p, align, "Alignments of ",con)
-    val (exMorph, anyMorph) = (querySet(p, expMorph).size, querySet(p, morph).size)
+    var dsG = makeStatisticsFor(q, decl, "",con)
+    dsG += makeStatisticsFor(q, align, "Alignments of ",con)
+    val (exMorph, anyMorph) = (querySet(p, expMorph).size, querySet(q, morph).size)
     if (exMorph > 0) 
       dsG += ("Explicit theory morphisms", exMorph)
     if (anyMorph > 0)
       dsG += ("Any theory morphisms", anyMorph)
-    dsG += makeStatisticsFor(p, expinduced, "Induced declarations via explicit theory morphisms of ",con)
-    dsG += makeStatisticsFor(p, induced, "Induced declarations via any theory morphisms of ",con)
+    dsG += makeStatisticsFor(q, expinduced, "Induced declarations via explicit theory morphisms of ",con)
+    dsG += makeStatisticsFor(q, induced, "Induced declarations via any theory morphisms of ",con)
     dsG
   }
 
