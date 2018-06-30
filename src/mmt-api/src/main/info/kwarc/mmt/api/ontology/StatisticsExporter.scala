@@ -20,11 +20,13 @@ class StatisticsExporter extends Exporter {
   def exportDocument(doc: Document, bf: BuildTask) {
     val rep = controller.report
     val rs = controller.depstore
+    log("[  -> statistics]     "+doc.path.toPath+" "+bf.outFile.toString())
     // Ugly workaround
-    // TODO: Fix the problem (the output of typedRelationalExtractor is written to content, but the statistic is made only from relational/narration
-    val contentPath : DPath= DPath(URI.empty./("http://cds.omdoc.org")./(doc.nsMap.base.doc.uri.path.init.head))
-    log("modified original path p = "+doc.path.toString()+" to corrected path "+contentPath.toString())
-    val stat = rs.makeStatistics(doc.path, contentPath, controller)
+    // TODO: Fix the problem:
+    //(the output of typedRelationalExtractor is written to content, but the statistic is made only from relational/narration
+    //val contentPath : DPath= DPath(URI.empty./("http://cds.omdoc.org") / (doc.path.toString().replaceFirst("http://docs.omdoc.org/", "")))
+    //log("modified original path p = "+doc.path.toString()+" to corrected path "+contentPath.toString())
+    val stat = rs.makeStatistics(doc.path, controller)
     val jsar  = stat.entries.map {case (dec, n) => JSONObject(dec.getDescription -> JSONInt(n))}
     val j = JSONArray.fromList(jsar)
     rh(j.toString)
