@@ -514,34 +514,34 @@ case class AtomicSort(sortName        : String, /* Positional Argument, Required
   }
 }
 
-abstract class MaceteSpec
+abstract class MaceteSpecOld
 
-case class SpecSeries(specs : List[MaceteSpec]) extends MaceteSpec {
+case class SpecSeries(specs : List[MaceteSpecOld]) extends MaceteSpecOld {
   override def toString: String = "(series " + specs.flatMap(_.toString) + ")"
 }
 
-case class SpecRepeat(specs : List[MaceteSpec]) extends MaceteSpec {
+case class SpecRepeat(specs : List[MaceteSpecOld]) extends MaceteSpecOld {
   override def toString: String = "(repeat " + specs.flatMap(_.toString) + ")"
 }
 
-case class SpecSequential(specs : List[MaceteSpec]) extends MaceteSpec {
+case class SpecSequential(specs : List[MaceteSpecOld]) extends MaceteSpecOld {
   override def toString: String = "(sequential " + specs.flatMap(_.toString) + ")"
 }
 
-case class SpecParallel(specs : List[MaceteSpec]) extends MaceteSpec {
+case class SpecParallel(specs : List[MaceteSpecOld]) extends MaceteSpecOld {
   override def toString: String = "(parallel " + specs.flatMap(_.toString) + ")"
 }
 
-case class SpecSound(spec1 : MaceteSpec, spec2 : MaceteSpec, spec3 : MaceteSpec) extends MaceteSpec {
+case class SpecSound(spec1 : MaceteSpecOld, spec2 : MaceteSpecOld, spec3 : MaceteSpecOld) extends MaceteSpecOld {
   override def toString: String = "(sound " + spec1 + " " + spec2 + " " + spec3 + ")"
 }
 
-case class SpecWithoutMinorPremises(spec : MaceteSpec) extends MaceteSpec {
+case class SpecWithoutMinorPremises(spec : MaceteSpecOld) extends MaceteSpecOld {
   override def toString: String = "(without-minor-premises " + spec.toString + ")"
 }
 
 case class CompoundMacete(name : String,
-                          spec : MaceteSpec,
+                          spec : MaceteSpecOld,
                           src  : Option[SourceRef]) extends TExp
 {
   override def toString: String = "(def-compound-macete " + name + "\n  " + spec.toString + ")"
@@ -1551,6 +1551,39 @@ case class ModNull(var src : SourceInfo, var cmt : CommentInfo) extends DefForm 
   override def toString : String = "null"
 }
 
+abstract class MaceteSpec extends DefForm
+
+case class MSpecName(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec {
+  override def toString: String = nm.s
+}
+
+case class MSpecSeries(specs : List[MaceteSpec], var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec {
+  override def toString: String = "(series " + specs.mkString(" ") + ")"
+}
+
+case class MSpecRepeat(specs : List[MaceteSpec], var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec {
+  override def toString: String = "(repeat " + specs.mkString(" ") + ")"
+}
+
+case class MSpecSequential(specs : List[MaceteSpec], var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec {
+  override def toString: String = "(sequential " + specs.mkString(" ") + ")"
+}
+
+case class MSpecParallel(specs : List[MaceteSpec], var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec {
+  override def toString: String = "(parallel " + specs.mkString(" ") + ")"
+}
+
+case class MSpecSound(spec1 : MaceteSpec, spec2 : MaceteSpec, spec3 : MaceteSpec,
+                      var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec
+{
+  override def toString: String = "(sound " + spec1 + " " + spec2 + " " + spec3 + ")"
+}
+
+case class MSpecWithoutMinorPremises(spec : MaceteSpec, var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec
+{
+  override def toString: String = "(without-minor-premises " + spec.toString + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1607,6 +1640,15 @@ object DFSchematicMacete extends Comp[DFSchematicMacete] {
   override def build[T <: DefForm](args : HList) : T = args match {
     case (n : Name) :+: (d : DefString) :+: (nl : Option[ModNull]) :+: (tr : Option[ModTransportable]) :+:
       (t : Option[ArgTheory]) :+: HNil => DFSchematicMacete(n,d,nl,tr,t.get,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFCompoundMacete(nm : Name, spec : MaceteSpec, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFCompoundMacete extends Comp[DFCompoundMacete] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (s : MaceteSpec) :+: HNil => DFCompoundMacete(n,s,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }

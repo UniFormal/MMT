@@ -5,12 +5,6 @@ import info.kwarc.mmt.imps.Usage.Usage
 
 class DefFormParsers
 {
-  lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(parseDefForm) }
-
-  lazy val parseDefForm : PackratParser[DefForm] = {
-    parseLineComment | pHeralding | pAtomicSort | pConstant | pQuasiConstructor | pSchematicMacete
-  }
-
   // ######### Argument Parsers
 
   lazy val parseName  : Parser[String] = regex("""[^()\t\r\n ]+""".r)
@@ -53,6 +47,39 @@ class DefFormParsers
 
   lazy val parseModNull : Parser[ModNull] = fullParser("null" ^^ {case _ => ModNull(None,None)} )
 
+  lazy val parseSpecName : Parser[MSpecName] = fullParser(parseTName ^^ {case n => MSpecName(n,None,None)})
+
+  lazy val parseSpecSeries : Parser[MSpecSeries] = fullParser(
+    "(series" ~> rep1(parseSpec) <~ ")" ^^ { case s => MSpecSeries(s,None,None)}
+  )
+
+  lazy val parseSpecRepeat : Parser[MSpecRepeat] = fullParser(
+    "(repeat" ~> rep1(parseSpec) <~ ")" ^^ { case s => MSpecRepeat(s,None,None)}
+  )
+
+  lazy val parseSpecSequential : Parser[MSpecSequential] = fullParser(
+    "(sequential" ~> rep1(parseSpec) <~ ")" ^^ { case s => MSpecSequential(s,None,None)}
+  )
+
+  lazy val parseSpecSound : Parser[MSpecSound] = fullParser(
+    "(sound" ~> (parseSpec ~ parseSpec ~ parseSpec) <~ ")" ^^ { case x ~ y ~ z => MSpecSound(x,y,z,None,None)}
+  )
+
+  lazy val parseSpecParallel : Parser[MSpecParallel] = fullParser(
+    "(parallel" ~> rep1(parseSpec) <~ ")" ^^ { case s => MSpecParallel(s,None,None)}
+  )
+
+  lazy val parseSpecWithoutMinorPremises : Parser[MSpecWithoutMinorPremises] = fullParser(
+    "(without-minor-premises" ~> parseSpec <~ ")" ^^ { case s => MSpecWithoutMinorPremises(s,None,None)}
+  )
+
+  val allMSpecs : List[Parser[MaceteSpec]] = List(
+    parseSpecSeries, parseSpecRepeat, parseSpecSequential, parseSpecSound,
+    parseSpecParallel, parseSpecWithoutMinorPremises, parseSpecName
+  )
+
+  lazy val parseSpec : Parser[MaceteSpec] = anyOf(allMSpecs)
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -94,5 +121,21 @@ class DefFormParsers
     List((parseArgTheory,R)),
     DFSchematicMacete
   )
+
+  val pCompoundMacete : Parser[DFCompoundMacete] = composeParser(
+    "def-compound-macete",
+    List(parseTName, parseSpec),
+    Nil,
+    Nil,
+    DFCompoundMacete
+  )
+
+  // ######### Complete Parsers
+
+  val allDefFormParsers : List[Parser[DefForm]] = List(
+    parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete
+  )
+
+  lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }
 
 }
