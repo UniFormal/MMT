@@ -15,17 +15,22 @@ private object InductiveTypes {
     LocalName("") / nm
   }
   
- def newVar(name: LocalName, tp: Term, con: Option[Context] = None) : VarDecl = {
-    val c = con.getOrElse(Context.empty)
-    val (freshName,_) = Context.pickFresh(c, name)
-    VarDecl(freshName, tp)
-  }
+   def newVar(name: LocalName, tp: Term, con: Option[Context] = None) : VarDecl = {
+      val c = con.getOrElse(Context.empty)
+      val (freshName,_) = Context.pickFresh(c, name)
+      VarDecl(freshName, tp)
+   }
 
   val theory: MPath = ???
   object Eq extends BinaryLFConstantScala(theory, "eq")
   object Neq extends BinaryLFConstantScala(theory, "neq")
   
   val Contra = OMS(theory ? "contra") 
+  
+  def substituteByMorph(tp : Term, sub : (Term, Context, Term)) : Term = {
+    val (source, con,  morph) = sub
+    ApplyGeneral(morph, con.variables.toList.map(_.toTerm))
+  }
 }
 
 import InductiveTypes._
@@ -37,8 +42,8 @@ sealed abstract class InductiveDecl {
   def args: List[(Option[LocalName], Term)]
   def ret: Term
   def toTerm = FunType(args,ret)
-  /** a context quantifying over all arguments and this constructor applied to those arguments */
-  def argContext(suffix: Option[String]): (Context, Term) = { 
+  /** a context quantifying over all arguments and the variable declaration for the result of this constructor applied to those arguments */
+  def argContext(suffix: Option[String]): (Context, VarDecl) = { 
       val dargs= args.zipWithIndex map {
       case ((Some(loc), arg), _) => (loc, arg)
       case ((None, arg), i) => (uniqueLN(i.toString), arg)
@@ -51,7 +56,7 @@ sealed abstract class InductiveDecl {
       newVar(n, tp, None)
     }
     val tm = ApplySpine(OMS(path), con.map(_.toTerm) :_*)
-    (con, tm)
+    (con, VarDecl(uniqueLN("return_type_of_"+name), None, Some(tm), None, None))
   }
   def toVarDecl : VarDecl = VarDecl(this.name, this.toTerm, OMS(this.path))
 }
@@ -62,8 +67,24 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)]) ex
 }
 
 /** constructor declaration */
-case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term) extends InductiveDecl
+case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term) extends InductiveDecl {
+  def substituteOfType(sub : (Term, Context, Term)) : TermLevel = {
+    val subArgs : List[(Option[LocalName], Term)]= args map {
+      case (Some(loc), tp) => (Some(uniqueLN(loc + "substituted_"+sub.toString())), substituteByMorph(tp, sub))
+      case (None, tp) => (None, substituteByMorph(tp, sub))
+    }
+    TermLevel(path./("term_substituted_"+sub.toString()), subArgs, ret)
+  }
+  def substitute(sub : Substitution) : TermLevel = {
+    val subArgs = args map {
+      case (Some(loc), tp) => (Some(uniqueLN(loc + "substituted_"+sub.toString())), tp ^ sub)
+      case (None, tp) => (None, tp ^ sub)
+    }
+    TermLevel(path./("substituted_"+sub.toString()), subArgs, ret ^ sub)
+  }
+}
 
+/* Rules and Judgments */
 case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)]) extends InductiveDecl {
   def ret = Univ(1)
 }
@@ -78,20 +99,6 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
     // to hold the result
     var elabDecls : List[Declaration] = Nil
-    /* val indArgs = dd.tpC.get match {
-      case Some(OMA(_, args)) => args
-    }
-    val tpArgs = indArgs.foldLeft(Nil:List[Term])({(l:List[Term], tm:Term) => tm match {
-      case Univ(1) => tm::l
-      case _ => l
-      }}) 
-    val tpArgs = Nil
-    var elabDecls:List[Declaration] = tpArgs map {tp:Term => VarDecl(LocalName(parent.name.toString()+tp.toString()), None, Some(Univ(1)),  Some(tp), None).toDeclaration(parent.toTerm)}
-    tpdecls = elabDecls.zip(tpArgs) map {case (d, tp) => 
-      val FunType(args, ret) = tp
-      TypeLevel(d.name, args)
-    } */
-    // split declarations into term and type level
     var tmdecls : List[TermLevel]= Nil
     var tpdecls : List[TypeLevel]= Nil
     val decls = dd.getDeclarations map {
@@ -130,34 +137,8 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       }
     }
     // build the result
-    elabDecls = elabDecls.reverse ::: noConfDecls ::: noJunk(parent, decls, tpdecls, dd)
+    elabDecls = elabDecls.reverse ::: noConfDecls ::: noJunk(parent, decls, tpdecls, tmdecls, dd)
     
-    // TODO: Add the induction axioms for the term constructors (using the noJunk axioms for the type constructors)
-    /*
-     * Exam:
-     * induct_N : (U:type) (u:U) (f:U -> U) (N -> U)
-     * induct_z : |- induct_N (U:type) (u:U) (f:U -> U) z = u
-     * induct_s : |- induct_N (U:type) (u:U) (f:U -> U) 
-     * 
-     * Now induct_N is functor from N to any (given) modell U
-     * We want our elaborate to correspond (via applying Mod) to the initial modell of N, i.e.
-     * inductive_N satisfies universal mapping property or equivalently our modell
-     * is the initial object in the category of modells of N
-     * 
-     * Perhaps additionally uniqueness of functor induct_N from N to given modell U
-     * 
-     * Rec. def. func: like additional noConf axiom
-     * Exam:
-     * def m(n) = 
-     * 	n match {
-     * 	case z => u
-     * 	case s(x) => f(m(x))
-     * }
-     * 
-     * or more involved:
-     * 
-     * fact = (induct_N (N x N) (z, 1) ([f] [(n, n')] (s n, sn * n')) . Pi_2)
-     */
     new Elaboration {
       def domain = elabDecls map {d => d.name}
       def getO(n: LocalName) = {
@@ -174,7 +155,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     val (bCtx, bApplied) = d.argContext(Some("2"))
     
     val argEq = (aCtx zip bCtx) map {case (a,b) => Eq(a.toTerm,b.toTerm)}
-    val resEq = Eq(aApplied, bApplied)
+    val resEq = Eq(aApplied.toTerm, bApplied.toTerm)
     val body = Arrow(Arrow(argEq, Contra), Arrow(resEq, Contra))
     val inj = Pi(aCtx ++ bCtx,  body)
     
@@ -192,27 +173,43 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
           val name = uniqueLN("no_conf_axiom_for_" + d.name.toString + "_" + e.toString)
           val (dCtx, dApplied) = d.argContext(Some("1"))
           val (eCtx, eApplied) = e.argContext(Some("2"))
-          val tp = Pi(dCtx ++ eCtx, Neq(dApplied, eApplied))
+          val tp = Pi(dCtx ++ eCtx, Neq(dApplied.toTerm, eApplied.toTerm))
           decls ::= Constant(parent.toTerm, name, Nil, Some(tp), None, None)
       }
     }
     decls
   }
   
-  private def noJunk(parent : DeclaredModule, decls : List[InductiveDecl], tpdecls: List[TypeLevel], dd: DerivedDeclaration) : List[Declaration] = {
-    val quant : List[(Context, List[Sub], Term)]= tpdecls map {case dec => 
+  private def noJunk(parent : DeclaredModule, decls : List[InductiveDecl], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], dd: DerivedDeclaration) : List[Declaration] = {
+    
+    var derived_decls:List[Declaration] = Nil
+    //A list of quadruples consisting of (context of arguments, a, the sub replacing x with a free type a, x) for each type declaration declaring a type x
+    val quant : List[(Context, VarDecl, Sub, VarDecl)]= tpdecls map {case dec => 
       val (ctx, x) = dec.argContext(None)
-      val a = newVar(LocalName(""), x, None)
-      (ctx++a, Context.pickFresh(ctx++a, a.name)._2.subs.toList, x)
+      val a = newVar(LocalName(""), Univ(1), None)
+      (ctx, a, Sub(x.name, a.toTerm), x)
     }
-    val bla : List[Iterator[Sub]] = quant map(_._2.toIterator)
-    val blabla = bla.flatten 
     
-    val subs : List[Sub] = quant map {x:(Context, List[Sub], Term) => x._2.toIterator} flatten
-    val subst : Substitution = Substitution.list2substitution(subs)
+    val subst : Substitution = Substitution.list2substitution(quant.map(_._3))
     val chain : Context = Context.list2context(decls map {case x : InductiveDecl => x.toVarDecl}) ^ subst
-    val noJunks = quant map {case x:(Context, List[Sub], Term) => Pi(x._1.++(chain), x._3)}
+    //The morphisms for each defined type x
+    val morphisms : List[(VarDecl, Term)]= quant map {case x:(Context, VarDecl, Sub, VarDecl) => (x._4, Pi(x._1.++(chain).++(x._2), x._4.toTerm))}
+    //The corresponding declarations
+    derived_decls = morphisms map {case (x, t) => Constant(parent.toTerm, uniqueLN("no_junk_axiom_for_type_"+x.toString), Nil, Some(t), None, None)}
+    val morphs : List[(VarDecl, Declaration)] = morphisms.map(_._1) zip derived_decls
     
-    noJunks map {t => Constant(parent.toTerm, uniqueLN("no_junk_axiom_for_"+dd.name.toString), Nil, Some(t), None, None)}
+    //Now we need to produce the noJunk axioms for the term constructors
+    tmdecls zip morphs foreach {
+      case (tmdecl : TermLevel, (x : VarDecl, t : Declaration)) =>
+        val args = tmdecl.argContext(None)._1
+        val sub : (Term, Context, Term) = (x.toTerm, args, ApplyGeneral(OMV(t.name), (chain ^ subst).map(_.toTerm)))
+        
+        val original = tmdecl.argContext(Some("no_junk_result_1"))
+        val mappedDecl : TermLevel = tmdecl.substituteOfType(sub).substitute(subst)
+        val image = mappedDecl.argContext(Some("no_junk_result_2"))
+        val assertion = Pi(args++original._1++image._1, Eq(original._2.toTerm, image._2.toTerm))
+        derived_decls ::= Constant(parent.toTerm, uniqueLN("no_junk_axiom_for_constructor_"+assertion.toString), Nil, Some(assertion), None, None)
+    }
+    derived_decls
   } 
 }

@@ -23,16 +23,22 @@ class StatisticsExporter extends Exporter {
     log("[  -> statistics]     "+doc.path.toPath+" "+bf.outFile.toString())
     // Ugly workaround
     // TODO: Fix the problem:
-    //(the output of typedRelationalExtractor is written to content, but the statistic is made only from relational/narration
-    //val contentPath : DPath= DPath(URI.empty./("http://cds.omdoc.org") / (doc.path.toString().replaceFirst("http://docs.omdoc.org/", "")))
-    //log("modified original path p = "+doc.path.toString()+" to corrected path "+contentPath.toString())
+    // (the output of typedRelationalExtractor is written to content, but the statistic is made only from relational/narration
     val stat = rs.makeStatistics(doc.path, controller)
     val jsar  = stat.entries.map {case (dec, n) => JSONObject(dec.getDescription -> JSONInt(n))}
     val j = JSONArray.fromList(jsar)
     rh(j.toString)
   }
 
-  def exportTheory(thy: DeclaredTheory, bf: BuildTask) {}
+  def exportTheory(thy: DeclaredTheory, bf: BuildTask) {
+    /* //Maybe useful later, to extend functionality for web interface
+    val rep = controller.report
+    val rs = controller.depstore
+    val stat = rs.makeStatistics(thy.path, controller)
+    val jsar  = stat.entries.map {case (dec, n) => JSONObject(dec.getDescription -> JSONInt(n))}
+    val j = JSONArray.fromList(jsar)
+    rh(j.toString)*/
+  }
   def exportView(view: DeclaredView, bf: BuildTask)  {}
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 

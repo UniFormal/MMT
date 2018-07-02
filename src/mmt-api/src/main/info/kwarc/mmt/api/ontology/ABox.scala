@@ -239,7 +239,6 @@ class RelStore(report : frontend.Report) {
     */
   def makeStatistics(q: Path, con:Controller) = {
     log(test.toString())
-    //println("Ha: "+q.toString())
     val decl = Transitive(+Declares)
     val align = decl * Transitive(+IsAlignedWith)
     // Should also morphisms to subtheories be counted?
