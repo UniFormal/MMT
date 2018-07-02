@@ -1584,6 +1584,14 @@ case class MSpecWithoutMinorPremises(spec : MaceteSpec, var src : SourceInfo, va
   override def toString: String = "(without-minor-premises " + spec.toString + ")"
 }
 
+case class ArgSourceTheory(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(source-theory " + nm.toString + ")"
+}
+
+case class ArgSourceTheories(nms : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(source-theories " + nms.mkString(" ") + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1649,6 +1657,17 @@ case class DFCompoundMacete(nm : Name, spec : MaceteSpec, var src : SourceInfo, 
 object DFCompoundMacete extends Comp[DFCompoundMacete] {
   override def build[T <: DefForm](args : HList) : T = args match {
     case (n : Name) :+: (s : MaceteSpec) :+: HNil => DFCompoundMacete(n,s,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFImportedRewriteRules(nm : Name, thy : Option[ArgSourceTheory], thies : Option[ArgSourceTheories],
+                                  var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFImportedRewriteRules extends Comp[DFImportedRewriteRules] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (thy : Option[ArgSourceTheory]) :+: (thies : Option[ArgSourceTheories]) :+: HNil =>
+      DFImportedRewriteRules(n,thy,thies,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }

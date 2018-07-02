@@ -80,6 +80,14 @@ class DefFormParsers
 
   lazy val parseSpec : Parser[MaceteSpec] = anyOf(allMSpecs)
 
+  lazy val parseArgSourceTheory : Parser[ArgSourceTheory] = fullParser(
+    "(source-theory" ~> parseTName <~ ")" ^^ { case n => ArgSourceTheory(n,None,None) }
+  )
+
+  lazy val parseArgSourceTheories : Parser[ArgSourceTheories] = fullParser(
+    "(source-theories" ~> rep1(parseTName) <~ ")" ^^ { case ns => ArgSourceTheories(ns,None,None) }
+  )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -98,12 +106,28 @@ class DefFormParsers
     DFAtomicSort
   )
 
+  val pCompoundMacete : Parser[DFCompoundMacete] = composeParser(
+    "def-compound-macete",
+    List(parseTName, parseSpec),
+    Nil,
+    Nil,
+    DFCompoundMacete
+  )
+
   val pConstant : Parser[DFConstant] = composeParser(
     "def-constant",
     List(parseTName, parseDefString),
     Nil,
     List((parseArgTheory,R),(parseArgSort,O),(parseArgUsages,O)),
     DFConstant
+  )
+
+  val pImportedRewriteRules : Parser[DFImportedRewriteRules] = composeParser(
+    "def-imported-rewrite-rules",
+    List(parseTName),
+    Nil,
+    List((parseArgSourceTheory,O), (parseArgSourceTheories,O)),
+    DFImportedRewriteRules
   )
 
   val pQuasiConstructor : Parser[DFQuasiConstructor] = composeParser(
@@ -122,13 +146,7 @@ class DefFormParsers
     DFSchematicMacete
   )
 
-  val pCompoundMacete : Parser[DFCompoundMacete] = composeParser(
-    "def-compound-macete",
-    List(parseTName, parseSpec),
-    Nil,
-    Nil,
-    DFCompoundMacete
-  )
+
 
   // ######### Complete Parsers
 
