@@ -16,6 +16,9 @@ class DefFormParsers
   lazy val parseArgTheory : Parser[ArgTheory] =
     fullParser(("(theory" ~> parseTName <~ ")") ^^ { case n => ArgTheory(n,None,None) })
 
+  lazy val parseArgTranslation : Parser[ArgTranslation] =
+    fullParser(("(translation" ~> parseTName <~ ")") ^^ { case n => ArgTranslation(n,None,None) })
+
   lazy val parseArgLanguage : Parser[ArgLanguage] =
     fullParser(("(language" ~> parseTName <~ ")") ^^ { case n => ArgLanguage(n,None,None) })
 
@@ -88,6 +91,26 @@ class DefFormParsers
     "(source-theories" ~> rep1(parseTName) <~ ")" ^^ { case ns => ArgSourceTheories(ns,None,None) }
   )
 
+  lazy val parseInductionPrinciple : Parser[ArgInductionPrinciple] = fullParser(
+    (parseDefString | parseTName) ^^ { case i => i match {
+      case n@Name(_,_,_)      => ArgInductionPrinciple(Left(n),None,None)
+      case d@DefString(_,_,_) => ArgInductionPrinciple(Right(d),None,None)
+      case _                  => ??!(i)
+    }}
+  )
+
+  lazy val parseArgBaseCaseHook : Parser[ArgBaseCaseHook] = fullParser(
+    "(base-case-hook" ~> parseTName <~ ")" ^^ { case n => ArgBaseCaseHook(n,None,None) }
+  )
+
+  lazy val parseArgInductionStepHook : Parser[ArgInductionStepHook] = fullParser(
+    "(induction-step-hook" ~> parseTName <~ ")" ^^ { case n => ArgInductionStepHook(n,None,None) }
+  )
+
+  lazy val parseArgDontUnfold : Parser[ArgDontUnfold] = fullParser(
+    "(dont-unfold" ~> rep1(parseTName) <~ ")" ^^ { case ns => ArgDontUnfold(ns,None,None) }
+  )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -130,6 +153,15 @@ class DefFormParsers
     DFImportedRewriteRules
   )
 
+  val pInductor : Parser[DFInductor] = composeParser(
+    "def-inductor",
+    List(parseTName, parseInductionPrinciple),
+    Nil,
+    List((parseArgTheory,R), (parseArgTranslation,O), (parseArgBaseCaseHook,O),
+      (parseArgInductionStepHook,O), (parseArgDontUnfold,O)),
+    DFInductor
+  )
+
   val pQuasiConstructor : Parser[DFQuasiConstructor] = composeParser(
     "def-quasi-constructor",
     List(parseTName, parseDefString),
@@ -146,12 +178,11 @@ class DefFormParsers
     DFSchematicMacete
   )
 
-
-
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
-    parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete
+    parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
+    pInductor, pImportedRewriteRules
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

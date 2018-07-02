@@ -1508,6 +1508,10 @@ case class ArgTheory(thy : Name, var src : SourceInfo, var cmt : CommentInfo) ex
   override def toString : String = { "(theory " + thy.toString + ")"}
 }
 
+case class ArgTranslation(t : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(translation " + t.toString + ")"}
+}
+
 case class ArgLanguage(lang : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString : String = { "(theory " + lang.toString + ")"}
 }
@@ -1592,6 +1596,25 @@ case class ArgSourceTheories(nms : List[Name], var src : SourceInfo, var cmt : C
   override def toString: String = "(source-theories " + nms.mkString(" ") + ")"
 }
 
+case class ArgBaseCaseHook(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(base-case-hook " + nm.toString + ")"
+}
+
+case class ArgInductionStepHook(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(induction-step-hook " + nm.toString + ")"
+}
+
+case class ArgDontUnfold(nms : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(dont-unfold " + nms.mkString(" ") + ")"
+}
+
+case class ArgInductionPrinciple(p : Either[Name,DefString], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = p match {
+    case Left(Name(n,_,_)) => n
+    case Right(d)          => d.toString
+  }
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1668,6 +1691,20 @@ object DFImportedRewriteRules extends Comp[DFImportedRewriteRules] {
   override def build[T <: DefForm](args : HList) : T = args match {
     case (n : Name) :+: (thy : Option[ArgSourceTheory]) :+: (thies : Option[ArgSourceTheories]) :+: HNil =>
       DFImportedRewriteRules(n,thy,thies,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFInductor(nm : Name, princ : ArgInductionPrinciple, thy : ArgTheory,
+                      trans : Option[ArgTranslation], bh : Option[ArgBaseCaseHook],
+                      ih : Option[ArgInductionStepHook], du : Option[ArgDontUnfold],
+                      var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFInductor extends Comp[DFInductor] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (p : ArgInductionPrinciple) :+: (thy : Option[ArgTheory]) :+: (tr : Option[ArgTranslation])
+      :+: (bh : Option[ArgBaseCaseHook]) :+: (ih : Option[ArgInductionStepHook]) :+: (du : Option[ArgDontUnfold])
+      :+: HNil => DFInductor(n,p,thy.get,tr,bh,ih,du,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
