@@ -18,6 +18,7 @@ case object IsTheory extends Unary("theory")
 case object IsView extends Unary("view")
 case object IsStructure extends Unary("structure")
 case object IsConstant extends Unary("constant")
+case object IsUntypedConstant extends Unary("untypedconstant")
 case object IsDataConstructor extends Unary("dataconstructor")
 case object IsRule extends Unary("rule")
 case object IsJudgementConstructor extends Unary("judgementconstructor")
@@ -41,6 +42,7 @@ object Unary {
       case OMS(QMTUnaries.IsView) => IsView
       case OMS(QMTUnaries.IsStructure) => IsStructure
       case OMS(QMTUnaries.IsConstant) => IsConstant
+      case OMS(QMTUnaries.IsUntypedConstant) => IsUntypedConstant
       case OMS(QMTUnaries.IsDatatypeConstructor) => IsDatatypeConstructor
       case OMS(QMTUnaries.IsDataConstructor) => IsDataConstructor
       case OMS(QMTUnaries.IsJudgementConstructor) => IsJudgementConstructor

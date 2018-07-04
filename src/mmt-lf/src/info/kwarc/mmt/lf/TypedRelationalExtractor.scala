@@ -26,37 +26,30 @@ class TypedRelationalExtractor extends RelationalExtractor {
          case t: DeclaredModule =>
             t.getDeclarations foreach {
 					  case c: Constant =>
-               	c.tp foreach { case FunType(_, tp) => tp match {
-               	  case Univ(1) => 
-               	    if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) {
-               	      log("Judgment at "+c.path.toString())
-               	      f(IsJudgementConstructor(c.path))
-               	    }
-               	    else {
-               	      log("Datatype constructor at "+c.path.toString())
-               	      f(IsDatatypeConstructor(c.path))
-                    }
-               	  case Univ(n) if n > 1 => println("found high universe at "+c.path.toString()); (IsHighUniverse(c.path))
-               	  case _ => 
-               	    if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) {
-               	      log("Rule at "+c.path.toString())
-               	      f(IsRule(c.path))
-               	    }
-               	    else {
-               	      log("Data constructor at "+c.path.toString())
-               	      // log("f="+f.toString())
-               	      f(IsDataConstructor(c.path))
-               	    }
+               	c.tp match {
+               	  case Some(x) => x match {
+                 	  case FunType(_, tp) => tp match {
+                   	  case Univ(1) => 
+                   	    if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) {
+                   	      f(IsJudgementConstructor(c.path))
+                   	    }
+                   	    else {
+                   	      f(IsDatatypeConstructor(c.path))
+                        }
+                   	  case Univ(n) if n > 1 => println("found high universe at "+c.path.toString()); (IsHighUniverse(c.path))
+                   	  case _ => 
+                   	    if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) {
+                   	      f(IsRule(c.path))
+                   	    }
+                   	    else {
+                   	      f(IsDataConstructor(c.path))
+                   	    }
+                   	  }
+                 	  }
+               	  case None => f(IsUntypedConstant(c.path))
                	}
-             }
+            }
          case _ =>
       }
-      e match {
-        case l: Link if l.isImplicit =>
-          f(IsImplicitly(l.to.toMPath,l.from.toMPath))
-        case _ =>
-      }
-         case _ =>
-    }
   }
 }
