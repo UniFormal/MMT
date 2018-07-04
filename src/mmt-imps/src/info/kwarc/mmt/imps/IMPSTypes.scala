@@ -195,14 +195,6 @@ case class ComponentTheories(lst : List[String], src : Option[SourceRef]) extend
   }
 }
 
-object NumericalType extends Enumeration
-{
-  type NumericalType = Value
-  val INTEGERTYPE  = Value("*integer-type*")
-  val RATIONALTYPE = Value("*rational-type*")
-  val OCTETTYPE    = Value("*octet-type*")
-}
-
 case class TypeSortAList(numericType : NumericalType, sort : IMPSSort, src : Option[SourceRef]) extends TExp
 {
   override def toString: String = "(" + numericType.toString + " " + sort + ")"
@@ -1539,7 +1531,7 @@ case class ArgUsages(usgs : List[Usage], var src : SourceInfo, var cmt : Comment
   override def toString : String = { "(usages " + usgs.mkString(" ") + ")"}
 }
 
-case class ArgSort(srt : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+case class ArgSort(srt : IMPSSort, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString : String = { "(sort " + srt.toString + ")"}
 }
 
@@ -1614,6 +1606,52 @@ case class ArgInductionPrinciple(p : Either[Name,DefString], var src : SourceInf
     case Right(d)          => d.toString
   }
 }
+
+case class ArgEmbeddedLang(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(embedded-language " + nm.toString + ")"
+}
+
+case class ArgEmbeddedLangs(nms : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(embedded-languages " + nms.mkString(" ") + ")"
+}
+
+case class ArgBaseTypes(nms : List[IMPSSort], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(base-types " + nms.mkString(" ") + ")"
+}
+
+case class ArgSortSpec(sub : IMPSSort, enc : IMPSSort, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + sub.toString + " " + enc.toString + ")"
+}
+
+case class ArgSorts(specs : List[ArgSortSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(sorts " + specs.mkString(" ") + ")"
+}
+
+case class ArgConstantSpec(nm : Name, enc : IMPSSort, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + nm.toString + " " + enc.toString + ")"
+}
+
+case class ArgConstants(specs : List[ArgConstantSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(constants " + specs.mkString(" ") + ")"
+}
+
+object NumericalType extends Enumeration
+{
+  type NumericalType = Value
+
+  val INTEGERTYPE  : NumericalType = Value("*integer-type*")
+  val RATIONALTYPE : NumericalType = Value("*rational-type*")
+  val OCTETTYPE    : NumericalType = Value("*octet-type*")
+}
+
+case class ArgTypeSortAList(tp : NumericalType, srt : IMPSSort, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + tp.toString + " " + srt.toString + ")"
+}
+
+case class ArgExtensible(specs : List[ArgTypeSortAList], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(extensible " + specs.mkString(" ") + ")"
+}
+
 
 // Full DefForms
 
@@ -1705,6 +1743,21 @@ object DFInductor extends Comp[DFInductor] {
     case (n : Name) :+: (p : ArgInductionPrinciple) :+: (thy : Option[ArgTheory]) :+: (tr : Option[ArgTranslation])
       :+: (bh : Option[ArgBaseCaseHook]) :+: (ih : Option[ArgInductionStepHook]) :+: (du : Option[ArgDontUnfold])
       :+: HNil => DFInductor(n,p,thy.get,tr,bh,ih,du,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFLanguage(nm : Name, els : Option[ArgEmbeddedLangs], el : Option[ArgEmbeddedLang],
+                      bt : Option[ArgBaseTypes], srts : Option[ArgSorts],
+                      ex : Option[ArgExtensible], cnsts : Option[ArgConstants],
+                      var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFLanguage extends Comp[DFLanguage] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (els : Option[ArgEmbeddedLangs]) :+: (el : Option[ArgEmbeddedLang])
+                    :+: (bt : Option[ArgBaseTypes]) :+: (srts : Option[ArgSorts])
+                    :+: (ex : Option[ArgExtensible]) :+: (cnsts : Option[ArgConstants])
+                    :+: HNil => DFLanguage(n,els,el,bt,srts,ex,cnsts,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }

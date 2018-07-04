@@ -1,10 +1,31 @@
 package info.kwarc.mmt.imps
 
+import info.kwarc.mmt.imps.NumericalType.{NumericalType, Value}
 import info.kwarc.mmt.imps.ParserWithSourcePosition._
 import info.kwarc.mmt.imps.Usage.Usage
 
 class DefFormParsers
 {
+  // ######### Sort Parsers
+
+  lazy val parseAtomicSort : PackratParser[IMPSAtomSort] = {
+    ("[^,\\]):\\s]+".r) ^^ {case sort => IMPSAtomSort(sort)}
+  }
+
+  lazy val parseSort : PackratParser[IMPSSort] = { parseSets | parseFunSort | parseFunSort2 | parseAtomicSort }
+
+  lazy val parseSets : PackratParser[IMPSSetSort] = {
+    ("sets[" ~> parseSort <~ "]") ^^ { case setsort => IMPSSetSort(setsort)}
+  }
+
+  lazy val parseFunSort : PackratParser[IMPSNaryFunSort] = {
+    "[" ~> rep1sep(parseSort,",") <~ "]" ^^ {case (sorts) => IMPSNaryFunSort(sorts)}
+  }
+
+  lazy val parseFunSort2 : PackratParser[IMPSNaryFunSort] = {
+    "(" ~> rep1(parseSort) <~ ")" ^^ {case (sorts) => IMPSNaryFunSort(sorts)}
+  }
+
   // ######### Argument Parsers
 
   lazy val parseName  : Parser[String] = regex("""[^()\t\r\n ]+""".r)
@@ -40,7 +61,7 @@ class DefFormParsers
     fullParser(("(usages" ~> rep1(parseUsage) <~ ")") ^^ { case us => ArgUsages(us,None,None) })
 
   lazy val parseArgSort    : Parser[ArgSort] =
-    fullParser(("(sort" ~> parseTName <~ ")") ^^ {case n => ArgSort(n,None,None)})
+    fullParser(("(sort" ~> (("\""?) ~> parseSort <~ ("\""?)) <~ ")") ^^ {case n => ArgSort(n,None,None)})
 
   lazy val parseArgFixedTheories  : Parser[ArgFixedTheories] =
     fullParser(("(fixed-theories" ~> rep1(parseTName) <~ ")") ^^ { case ts => ArgFixedTheories(ts,None,None) })
@@ -111,6 +132,48 @@ class DefFormParsers
     "(dont-unfold" ~> rep1(parseTName) <~ ")" ^^ { case ns => ArgDontUnfold(ns,None,None) }
   )
 
+  lazy val parseArgEmbeddedLang : Parser[ArgEmbeddedLang] = fullParser(
+    "(embedded-language" ~> parseTName <~ ")" ^^ { case n => ArgEmbeddedLang(n,None,None) }
+  )
+
+  lazy val parseArgEmbeddedLangs : Parser[ArgEmbeddedLangs] = fullParser(
+    "(embedded-language" ~> rep1(parseTName) <~ ")" ^^ { case ns => ArgEmbeddedLangs(ns,None,None) }
+  )
+
+  lazy val parseArgBaseTypes : Parser[ArgBaseTypes] = fullParser(
+    "(base-types" ~> rep1(parseAtomicSort) <~ ")" ^^ { case ns => ArgBaseTypes(ns,None,None) }
+  )
+
+  lazy val parseArgSortSpec : Parser[ArgSortSpec] = fullParser(
+    "(" ~> (parseSort ~ parseSort) <~ ")" ^^ { case (sub ~ sup) => ArgSortSpec(sub,sup,None,None) }
+  )
+
+  lazy val parseArgSorts : Parser[ArgSorts] = fullParser(
+    "(sorts" ~> rep1(parseArgSortSpec) <~ ")" ^^ { case ns => ArgSorts(ns,None,None) }
+  )
+
+  lazy val parseNumericalType : Parser[NumericalType] = parseName ^^ {
+    case "*integer-type*"  => NumericalType.INTEGERTYPE
+    case "*rational-type*" => NumericalType.RATIONALTYPE
+    case "*octet-type*"    => NumericalType.OCTETTYPE
+  }
+
+  lazy val parseArgTypeSortAList : Parser[ArgTypeSortAList] = fullParser(
+    "(" ~> (parseNumericalType ~ parseSort) <~ ")" ^^ { case (num ~ srt) => ArgTypeSortAList(num,srt,None,None) }
+  )
+
+  lazy val parseArgExtensible : Parser[ArgExtensible] = fullParser(
+    "(extensible" ~> rep1(parseArgTypeSortAList) <~ ")" ^^ { case als => ArgExtensible(als,None,None) }
+  )
+
+  lazy val parseArgConstantSpec : Parser[ArgConstantSpec] = fullParser(
+    "(" ~> (parseTName ~ parseSort) <~ ")" ^^ { case (nm ~ srt) => ArgConstantSpec(nm,srt,None,None) }
+  )
+
+  lazy val parseArgConstants : Parser[ArgConstants] = fullParser(
+    "(constants" ~> rep1(parseArgConstantSpec) <~ ")" ^^ { case ns => ArgConstants(ns,None,None) }
+  )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -162,6 +225,15 @@ class DefFormParsers
     DFInductor
   )
 
+  val pLanguage : Parser[DFLanguage] = composeParser(
+    "def-language",
+    List(parseTName),
+    Nil,
+    List(parseArgEmbeddedLang, parseArgEmbeddedLangs, parseArgBaseTypes, parseArgSorts,
+      parseArgExtensible, parseArgConstants).map(p => (p,O)), // all optional
+    DFLanguage
+  )
+
   val pQuasiConstructor : Parser[DFQuasiConstructor] = composeParser(
     "def-quasi-constructor",
     List(parseTName, parseDefString),
@@ -182,7 +254,7 @@ class DefFormParsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
-    pInductor, pImportedRewriteRules
+    pInductor, pImportedRewriteRules, pLanguage
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }
