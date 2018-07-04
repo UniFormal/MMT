@@ -31,13 +31,12 @@ class StatisticsExporter extends Exporter {
   }
 
   def exportTheory(thy: DeclaredTheory, bf: BuildTask) {
-    /* //Maybe useful later, to extend functionality for web interface
     val rep = controller.report
     val rs = controller.depstore
     val stat = rs.makeStatistics(thy.path, controller)
     val jsar  = stat.entries.map {case (dec, n) => JSONObject(dec.getDescription -> JSONInt(n))}
     val j = JSONArray.fromList(jsar)
-    rh(j.toString)*/
+    rh(j.toString)
   }
   def exportView(view: DeclaredView, bf: BuildTask)  {}
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}

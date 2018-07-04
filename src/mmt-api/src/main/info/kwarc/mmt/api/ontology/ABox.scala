@@ -53,7 +53,7 @@ class RelStore(report : frontend.Report) {
    //def getObjects(d : Binary) = subjects.keys.filter(_._1 == d).map(_._2).toSet
    //def getSubjects(d : Binary) = objects.keys.filter(_._2 == d).map(_._1).toSet
 
-   var test : List[Individual] = Nil
+   //var test : List[Individual] = Nil
    
    /** adds a RelationalElement */
    def +=(d : RelationalElement) {
@@ -66,16 +66,6 @@ class RelStore(report : frontend.Report) {
            case ind @ Individual(p, tp) =>
               types(p) = tp
               individuals += (tp, p)
-              if (List(IsDataConstructor, IsDatatypeConstructor, IsJudgementConstructor, IsRule) contains tp) {
-                //log("Adding individual: " + d.toString())
-                test ::= ind
-              }
-              /*
-              p.ancestors match {
-                 case `p` :: tail =>
-                    tail.foldLeft(p)((q1,q2) => {objects += ((q2,Declares),q1) ; q2}) // seems to be necessary to add theories to their namespaces
-                 case _ =>
-              } */
          }
       }
    }
@@ -158,36 +148,38 @@ class RelStore(report : frontend.Report) {
     * @param p the path of the constant
     * @param the controller (needed to retrieve type information for the constant)
     */
-   def mapConstant(s:Unary, p:Path, con:Controller) = {
-     //TODO: discriminate constants of different universes
-     if (test contains Individual(p, s))
-       println("Found match: "+Individual(p, s))
+   def mapConstant(s:Unary, p:Path, con:Controller) : (StatisticEntries, Path) = {
      if (s == IsConstant) {
        try {
-         var re: List[Individual] = Nil
-         con.relman.extract(con.get(p)) {
-           case r:Individual => re ::= r
-           case _ =>
+         val desiredTypes : List[Unary] = List(IsDataConstructor, IsDatatypeConstructor, IsRule, IsJudgementConstructor, IsHighUniverse, IsUntypedConstant)
+         val un = desiredTypes find {tp => hasType(p, tp)}
+         val entry = un getOrElse {
+           IsConstant
          }
-         var types : List[(StatisticEntries, Path)] = Nil
-         re foreach {case Individual(path, un) => 
-           un match {
-             case IsDatatypeConstructor => types::=(DatatypeConstructorEntry(), p)
-             case IsDataConstructor => types::=(DataConstructorEntry(), p)
-             case IsRule => types::=(RuleEntry(), p)
-             case IsJudgementConstructor => types::=(JudgementConstructorEntry(), p)
-             case IsHighUniverse => types::=(HighUniverseEntry(), p)
-             case _ => 
-           }
+         var entries : List[(StatisticEntries, Path)] = Nil
+         entry match {
+           case IsDatatypeConstructor => entries::=(DatatypeConstructorEntry(), p)
+           case IsDataConstructor => entries::=(DataConstructorEntry(), p)
+           case IsRule => entries::=(RuleEntry(), p)
+           case IsJudgementConstructor => entries::=(JudgementConstructorEntry(), p)
+           case IsHighUniverse => entries::=(HighUniverseEntry(), p)
+           case IsUntypedConstant => entries::=(UntypedConstantEntry(), p)
+           case IsConstant => 
+           case _ => log("Found unexpected Individual: "+p.toPath)
          }
-         if (types.length > 0) {
-           types.head
+         if (entries.length > 0) {
+           if (entries.length >1)
+             log ("clashing relational data for: "+p.toPath+": "+entries.toString())
+           entries.head
          } else {
+           //log ("Failed to identify the type of declaration of "+p.toPath+". \nPlease update the relational files. ")
            (TypedConstantEntry(),p)
          }
        } catch {
-         case e:Exception => (MalformattedConstantEntry(), p)
-         case t: Throwable => t.printStackTrace(); (MaltypedConstantEntry(), p)
+         case t: Throwable => 
+           //t.printStackTrace()
+           log("Maltyped constant at: "+p.toString())
+           (MaltypedConstantEntry(), p)
        }
      }
      else {
@@ -238,13 +230,12 @@ class RelStore(report : frontend.Report) {
     * @param the controller (needed to retrieve type information for the constants)
     */
   def makeStatistics(q: Path, con:Controller) = {
-    log(test.toString())
     val decl = Transitive(+Declares)
+    val subtheory = Transitive(+Declares | Reflexive) * HasType(IsTheory)
     val align = decl * Transitive(+IsAlignedWith)
-    // Should also morphisms to subtheories be counted?
     // val subtheory = Transitive(+Declares *HasType(IsTheory) | Reflexive)
-    val expMorph = Transitive(+HasViewFrom)
-    val morph = Transitive(+HasMeta | +Includes | +IsImplicitly | +HasViewFrom)
+    val expMorph = subtheory * Transitive(+HasViewFrom)
+    val morph = subtheory * Transitive(+HasMeta | +Includes | +IsImplicitly | +HasViewFrom)
     val expinduced = expMorph * +Declares * HasType(IsConstant)
     val induced = morph * +Declares * HasType(IsConstant)
     var dsG = makeStatisticsFor(q, decl, "",con)
@@ -306,7 +297,6 @@ case class TheoryEntry() extends StatisticEntries("theory")
 case class DocumentEntry() extends StatisticEntries("document")
 case class UntypedConstantEntry() extends StatisticEntries("untyped constant")
 case class TypedConstantEntry() extends StatisticEntries("typed constant")
-case class MalformattedConstantEntry() extends StatisticEntries("malformatted constant")
 case class MaltypedConstantEntry() extends StatisticEntries("maltyped constant")
 case class StructureEntry() extends StatisticEntries("structure")
 case class PatternEntry() extends StatisticEntries("pattern")
@@ -315,7 +305,7 @@ case class DataConstructorEntry() extends StatisticEntries("data constructor")
 case class DatatypeConstructorEntry() extends StatisticEntries("datatype constructor")
 case class RuleEntry() extends StatisticEntries("rule")
 case class ViewEntry() extends StatisticEntries("view")
-case class HighUniverseEntry() extends StatisticEntries("type of type universe >2")
-case class ExplicitMorphismEntry() extends StatisticEntries("explicit theory morphisms")
+case class HighUniverseEntry() extends StatisticEntries("high universe")
+case class ExplicitMorphismEntry() extends StatisticEntries("explicit theory morphism")
 case class AnyMorphismEntry() extends StatisticEntries("any theory morphism")
 case class AnyOtherEntry() extends StatisticEntries("other")
