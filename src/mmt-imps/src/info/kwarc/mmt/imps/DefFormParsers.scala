@@ -29,22 +29,22 @@ class DefFormParsers
   // ######### Argument Parsers
 
   lazy val parseName  : Parser[String] = regex("""[^()\t\r\n ]+""".r)
-  lazy val parseTName : Parser[Name]   = fullParser(parseName ^^ { case nm => Name(nm,None,None)})
+  lazy val parseTName : Parser[Name]   = fullParser(parseName ^^ { case (nm) => Name(nm,None,None)})
 
   // ToDo: nested strings could be a problem. Do those occur?
-  lazy val parseDefString : Parser[DefString] = fullParser(regex("""\"[^\"]+\"""".r) ^^ {case s => DefString(s,None,None)})
+  lazy val parseDefString : Parser[DefString] = fullParser(regex("""\"[^\"]+\"""".r) ^^ {case (s) => DefString(s,None,None)})
 
   lazy val parseArgTheory : Parser[ArgTheory] =
-    fullParser(("(theory" ~> parseTName <~ ")") ^^ { case n => ArgTheory(n,None,None) })
+    fullParser(("(theory" ~> parseTName <~ ")") ^^ { case (n) => ArgTheory(n,None,None) })
 
   lazy val parseArgTranslation : Parser[ArgTranslation] =
-    fullParser(("(translation" ~> parseTName <~ ")") ^^ { case n => ArgTranslation(n,None,None) })
+    fullParser(("(translation" ~> parseTName <~ ")") ^^ { case (n) => ArgTranslation(n,None,None) })
 
   lazy val parseArgLanguage : Parser[ArgLanguage] =
-    fullParser(("(language" ~> parseTName <~ ")") ^^ { case n => ArgLanguage(n,None,None) })
+    fullParser(("(language" ~> parseTName <~ ")") ^^ { case (n) => ArgLanguage(n,None,None) })
 
   lazy val parseArgWitness : Parser[ArgWitness] =
-    fullParser(("(witness" ~> parseDefString <~ ")") ^^ {case s => ArgWitness(s,None,None)})
+    fullParser(("(witness" ~> parseDefString <~ ")") ^^ {case (s) => ArgWitness(s,None,None)})
 
   lazy val parseUsage : Parser[Usage] = parseName ^^ {
     case "elementary-macete"        => Usage.ELEMENTARYMACETE
@@ -54,35 +54,34 @@ class DefFormParsers
     case "simplify-logically-first" => Usage.SIMPLIFYLOGICALLYFIRST
     case "d-r-convergence"          => Usage.DRCONVERGENCE
     case "d-r-value"                => Usage.DRVALUE
-    case _                          => ???
   }
 
   lazy val parseArgUsages  : Parser[ArgUsages] =
-    fullParser(("(usages" ~> rep1(parseUsage) <~ ")") ^^ { case us => ArgUsages(us,None,None) })
+    fullParser(("(usages" ~> rep1(parseUsage) <~ ")") ^^ { case (us) => ArgUsages(us,None,None) })
 
   lazy val parseArgSort    : Parser[ArgSort] =
-    fullParser(("(sort" ~> (("\""?) ~> parseSort <~ ("\""?)) <~ ")") ^^ {case n => ArgSort(n,None,None)})
+    fullParser(("(sort" ~> (("\""?) ~> parseSort <~ ("\""?)) <~ ")") ^^ {case (n) => ArgSort(n,None,None)})
 
   lazy val parseArgFixedTheories  : Parser[ArgFixedTheories] =
-    fullParser(("(fixed-theories" ~> rep1(parseTName) <~ ")") ^^ { case ts => ArgFixedTheories(ts,None,None) })
+    fullParser(("(fixed-theories" ~> rep1(parseTName) <~ ")") ^^ { case (ts) => ArgFixedTheories(ts,None,None) })
 
   lazy val parseModTransportable  : Parser[ModTransportable] =
-    fullParser("transportable" ^^ {case _ => ModTransportable(None,None)} )
+    fullParser("transportable" ^^ {case (_) => ModTransportable(None,None)} )
 
-  lazy val parseModNull : Parser[ModNull] = fullParser("null" ^^ {case _ => ModNull(None,None)} )
+  lazy val parseModNull : Parser[ModNull] = fullParser("null" ^^ {case (_) => ModNull(None,None)} )
 
-  lazy val parseSpecName : Parser[MSpecName] = fullParser(parseTName ^^ {case n => MSpecName(n,None,None)})
+  lazy val parseSpecName : Parser[MSpecName] = fullParser(parseTName ^^ {case (n) => MSpecName(n,None,None)})
 
   lazy val parseSpecSeries : Parser[MSpecSeries] = fullParser(
-    "(series" ~> rep1(parseSpec) <~ ")" ^^ { case s => MSpecSeries(s,None,None)}
+    "(series" ~> rep1(parseSpec) <~ ")" ^^ { case (s) => MSpecSeries(s,None,None)}
   )
 
   lazy val parseSpecRepeat : Parser[MSpecRepeat] = fullParser(
-    "(repeat" ~> rep1(parseSpec) <~ ")" ^^ { case s => MSpecRepeat(s,None,None)}
+    "(repeat" ~> rep1(parseSpec) <~ ")" ^^ { case (s) => MSpecRepeat(s,None,None)}
   )
 
   lazy val parseSpecSequential : Parser[MSpecSequential] = fullParser(
-    "(sequential" ~> rep1(parseSpec) <~ ")" ^^ { case s => MSpecSequential(s,None,None)}
+    "(sequential" ~> rep1(parseSpec) <~ ")" ^^ { case (s) => MSpecSequential(s,None,None)}
   )
 
   lazy val parseSpecSound : Parser[MSpecSound] = fullParser(
@@ -90,11 +89,11 @@ class DefFormParsers
   )
 
   lazy val parseSpecParallel : Parser[MSpecParallel] = fullParser(
-    "(parallel" ~> rep1(parseSpec) <~ ")" ^^ { case s => MSpecParallel(s,None,None)}
+    "(parallel" ~> rep1(parseSpec) <~ ")" ^^ { case (s) => MSpecParallel(s,None,None)}
   )
 
   lazy val parseSpecWithoutMinorPremises : Parser[MSpecWithoutMinorPremises] = fullParser(
-    "(without-minor-premises" ~> parseSpec <~ ")" ^^ { case s => MSpecWithoutMinorPremises(s,None,None)}
+    "(without-minor-premises" ~> parseSpec <~ ")" ^^ { case (s) => MSpecWithoutMinorPremises(s,None,None)}
   )
 
   val allMSpecs : List[Parser[MaceteSpec]] = List(
@@ -105,43 +104,43 @@ class DefFormParsers
   lazy val parseSpec : Parser[MaceteSpec] = anyOf(allMSpecs)
 
   lazy val parseArgSourceTheory : Parser[ArgSourceTheory] = fullParser(
-    "(source-theory" ~> parseTName <~ ")" ^^ { case n => ArgSourceTheory(n,None,None) }
+    "(source-theory" ~> parseTName <~ ")" ^^ { case (n) => ArgSourceTheory(n,None,None) }
   )
 
   lazy val parseArgSourceTheories : Parser[ArgSourceTheories] = fullParser(
-    "(source-theories" ~> rep1(parseTName) <~ ")" ^^ { case ns => ArgSourceTheories(ns,None,None) }
+    "(source-theories" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgSourceTheories(ns,None,None) }
   )
 
   lazy val parseInductionPrinciple : Parser[ArgInductionPrinciple] = fullParser(
-    (parseDefString | parseTName) ^^ { case i => i match {
+    (parseDefString | parseTName) ^^ {
       case n@Name(_,_,_)      => ArgInductionPrinciple(Left(n),None,None)
       case d@DefString(_,_,_) => ArgInductionPrinciple(Right(d),None,None)
-      case _                  => ??!(i)
-    }}
+      case p@_                => ??!(p)
+    }
   )
 
   lazy val parseArgBaseCaseHook : Parser[ArgBaseCaseHook] = fullParser(
-    "(base-case-hook" ~> parseTName <~ ")" ^^ { case n => ArgBaseCaseHook(n,None,None) }
+    "(base-case-hook" ~> parseTName <~ ")" ^^ { case (n) => ArgBaseCaseHook(n,None,None) }
   )
 
   lazy val parseArgInductionStepHook : Parser[ArgInductionStepHook] = fullParser(
-    "(induction-step-hook" ~> parseTName <~ ")" ^^ { case n => ArgInductionStepHook(n,None,None) }
+    "(induction-step-hook" ~> parseTName <~ ")" ^^ { case (n) => ArgInductionStepHook(n,None,None) }
   )
 
   lazy val parseArgDontUnfold : Parser[ArgDontUnfold] = fullParser(
-    "(dont-unfold" ~> rep1(parseTName) <~ ")" ^^ { case ns => ArgDontUnfold(ns,None,None) }
+    "(dont-unfold" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgDontUnfold(ns,None,None) }
   )
 
   lazy val parseArgEmbeddedLang : Parser[ArgEmbeddedLang] = fullParser(
-    "(embedded-language" ~> parseTName <~ ")" ^^ { case n => ArgEmbeddedLang(n,None,None) }
+    "(embedded-language" ~> parseTName <~ ")" ^^ { case (n) => ArgEmbeddedLang(n,None,None) }
   )
 
   lazy val parseArgEmbeddedLangs : Parser[ArgEmbeddedLangs] = fullParser(
-    "(embedded-language" ~> rep1(parseTName) <~ ")" ^^ { case ns => ArgEmbeddedLangs(ns,None,None) }
+    "(embedded-language" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgEmbeddedLangs(ns,None,None) }
   )
 
   lazy val parseArgBaseTypes : Parser[ArgBaseTypes] = fullParser(
-    "(base-types" ~> rep1(parseAtomicSort) <~ ")" ^^ { case ns => ArgBaseTypes(ns,None,None) }
+    "(base-types" ~> rep1(parseAtomicSort) <~ ")" ^^ { case (ns) => ArgBaseTypes(ns,None,None) }
   )
 
   lazy val parseArgSortSpec : Parser[ArgSortSpec] = fullParser(
@@ -149,7 +148,7 @@ class DefFormParsers
   )
 
   lazy val parseArgSorts : Parser[ArgSorts] = fullParser(
-    "(sorts" ~> rep1(parseArgSortSpec) <~ ")" ^^ { case ns => ArgSorts(ns,None,None) }
+    "(sorts" ~> rep1(parseArgSortSpec) <~ ")" ^^ { case (ns) => ArgSorts(ns,None,None) }
   )
 
   lazy val parseNumericalType : Parser[NumericalType] = parseName ^^ {
@@ -163,7 +162,7 @@ class DefFormParsers
   )
 
   lazy val parseArgExtensible : Parser[ArgExtensible] = fullParser(
-    "(extensible" ~> rep1(parseArgTypeSortAList) <~ ")" ^^ { case als => ArgExtensible(als,None,None) }
+    "(extensible" ~> rep1(parseArgTypeSortAList) <~ ")" ^^ { case (als) => ArgExtensible(als,None,None) }
   )
 
   lazy val parseArgConstantSpec : Parser[ArgConstantSpec] = fullParser(
@@ -171,7 +170,15 @@ class DefFormParsers
   )
 
   lazy val parseArgConstants : Parser[ArgConstants] = fullParser(
-    "(constants" ~> rep1(parseArgConstantSpec) <~ ")" ^^ { case ns => ArgConstants(ns,None,None) }
+    "(constants" ~> rep1(parseArgConstantSpec) <~ ")" ^^ { case (ns) => ArgConstants(ns,None,None) }
+  )
+
+  lazy val parseArgRenamerPair : Parser[ArgRenamerPair] = fullParser(
+    "(" ~> parseTName ~ parseTName <~ ")" ^^ { case (old ~ nu) => ArgRenamerPair(old,nu,None,None) }
+  )
+
+  lazy val parseArgRenamerPairs : Parser[ArgPairs] = fullParser(
+    "(pairs" ~> rep1(parseArgRenamerPair) <~ ")" ^^ { case (ps) => ArgPairs(ps,None,None) }
   )
 
   // ######### Full Def-Form Parsers
@@ -242,6 +249,14 @@ class DefFormParsers
     DFQuasiConstructor
   )
 
+  val pRenamer : Parser[DFRenamer] = composeParser(
+    "def-renamer",
+    List(parseTName),
+    Nil,
+    List((parseArgRenamerPairs,O)),
+    DFRenamer
+  )
+
   val pSchematicMacete : Parser[DFSchematicMacete] = composeParser(
     "def-schematic-macete",
     List(parseTName, parseDefString),
@@ -254,7 +269,7 @@ class DefFormParsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
-    pInductor, pImportedRewriteRules, pLanguage
+    pInductor, pImportedRewriteRules, pLanguage, pRenamer
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

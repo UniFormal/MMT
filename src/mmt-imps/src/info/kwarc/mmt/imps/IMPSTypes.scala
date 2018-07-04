@@ -1652,6 +1652,13 @@ case class ArgExtensible(specs : List[ArgTypeSortAList], var src : SourceInfo, v
   override def toString: String = "(extensible " + specs.mkString(" ") + ")"
 }
 
+case class ArgRenamerPair(old : Name, nu : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + old.toString + " " + nu.toString + ")"
+}
+
+case class ArgPairs(ps : List[ArgRenamerPair], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(pairs " + ps.mkString(" ") + ")"
+}
 
 // Full DefForms
 
@@ -1758,6 +1765,15 @@ object DFLanguage extends Comp[DFLanguage] {
                     :+: (bt : Option[ArgBaseTypes]) :+: (srts : Option[ArgSorts])
                     :+: (ex : Option[ArgExtensible]) :+: (cnsts : Option[ArgConstants])
                     :+: HNil => DFLanguage(n,els,el,bt,srts,ex,cnsts,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFRenamer(nm : Name, ps : Option[ArgPairs], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFRenamer extends Comp[DFRenamer] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (ps : Option[ArgPairs]) :+: HNil => DFRenamer(n,ps,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
