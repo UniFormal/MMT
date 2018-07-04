@@ -28,9 +28,10 @@ object RunMichael extends MichaelTest {
     */
 
     val list = Path.parseM("http://mydomain.org/testarchive/mmt-example?test_other",NamespaceMap.empty) :: Path.parseM("http://mydomain.org/testarchive/mmt-example?test_all",NamespaceMap.empty) :: Path.parseM("http://mydomain.org/testarchive/mmt-example?test_future",NamespaceMap.empty) :: Nil
-    //println(got.toXML(got.findReplacements(list, true)))
     val starttime = System.currentTimeMillis()
-    println(got.toXML(got.findReplacements()))
-    println((System.currentTimeMillis()-starttime)/1000)
+    //println(got.toXML(got.findReplacements()))
+    //println(got.toXML(got.findReplacements(list, true)))
+    //println((System.currentTimeMillis()-starttime)/1000)
+    controller.handleLine("build testarchive got")
   }
 }
