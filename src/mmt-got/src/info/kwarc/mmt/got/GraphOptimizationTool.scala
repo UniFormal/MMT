@@ -691,7 +691,10 @@ class GraphOptimizationTool extends BuildTarget {
   override def key: String = "got"
 
   /** clean this target in a given archive */
-  override def clean(a: Archive, in: FilePath): Unit = {}
+  override def clean(a: Archive, in: FilePath): Unit = {
+    val file = new java.io.File(a.root + "/export/got/"+a.id+".xml")
+    file.delete()
+  }
 
   /** build or update this target in a given archive */
   override def build(a: Archive, up: Update, in: FilePath): Unit = {
