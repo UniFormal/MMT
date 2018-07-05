@@ -1,6 +1,7 @@
 package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.imps.NumericalType.{NumericalType, Value}
+import info.kwarc.mmt.imps.ParseMethod.{ParseMethod, Value}
 import info.kwarc.mmt.imps.ParserWithSourcePosition._
 import info.kwarc.mmt.imps.Usage.Usage
 
@@ -27,6 +28,8 @@ class DefFormParsers
   }
 
   // ######### Argument Parsers
+
+  lazy val number     : Parser[Int]    = """(0|[1-9]\d*)""".r ^^ { _.toInt }
 
   lazy val parseName  : Parser[String] = regex("""[^()\t\r\n ]+""".r)
   lazy val parseTName : Parser[Name]   = fullParser(parseName ^^ { case (nm) => Name(nm,None,None)})
@@ -181,6 +184,43 @@ class DefFormParsers
     "(pairs" ~> rep1(parseArgRenamerPair) <~ ")" ^^ { case (ps) => ArgPairs(ps,None,None) }
   )
 
+  lazy val parseArgToken : Parser[ArgToken] = fullParser(
+    "(token" ~> (("\""?) ~> rep1(parseName) <~ ("\""?)) <~ ")" ^^ { case (muls) => ArgToken(muls,None,None) }
+  )
+
+  lazy val parseArgBinding : Parser[ArgBinding] = fullParser(
+    "(binding" ~> number <~ ")" ^^ { case (n) => ArgBinding(n,None,None) }
+  )
+
+  lazy val parseArgTable : Parser[ArgTable] = fullParser(
+    "(table" ~> parseTName <~ ")" ^^ { case (t) => ArgTable(t,None,None) }
+  )
+
+  lazy val parseArgMethod : Parser[ArgMethod] = fullParser(
+    "(method" ~> parseTName <~ ")" ^^ { case (m) => ArgMethod(m,None,None) }
+  )
+
+  lazy val parseParseMethod : Parser[ParseMethod] = parseName ^^ {
+      case "prefix-operator-method"                    => ParseMethod.PREFIXMETHOD
+      case "infix-operator-method"                     => ParseMethod.INFIXMETHOD
+      case "postfix-operator-method"                   => ParseMethod.POSTFIXMETHOD
+      case "negation-operator-method"                  => ParseMethod.NEGATIONMETHOD
+      case "table-operator-method"                     => ParseMethod.TABLEMETHOD
+      case "parse-indicator-constructor-both-syntaxes" => ParseMethod.INDBOTHSYN
+      case "prefix-sort-dependent-operator-method"     => ParseMethod.PREFSORTDEPOM
+      case "null-call-method-terminator"               => ParseMethod.NULLCALL
+    }
+
+  lazy val parseArgLeftMethod : Parser[ArgLeftMethod] = fullParser(
+    "(left-method" ~> parseParseMethod <~ ")" ^^ { case (m) => ArgLeftMethod(m,None,None) }
+  )
+
+  lazy val parseArgNullMethod : Parser[ArgNullMethod] = fullParser(
+    "(null-method" ~> parseParseMethod <~ ")" ^^ { case (m) => ArgNullMethod(m,None,None) }
+  )
+
+  lazy val parseModTex : Parser[ModTex] = fullParser("tex" ^^ {case (_) => ModTex(None,None)} )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -265,11 +305,27 @@ class DefFormParsers
     DFSchematicMacete
   )
 
+  val pParseSyntax : Parser[DFParseSyntax] = composeParser(
+    "def-parse-syntax",
+    List(parseTName),
+    Nil,
+    List((parseArgToken,O),(parseArgLeftMethod,O),(parseArgNullMethod,O),(parseArgTable,O),(parseArgBinding,R)),
+    DFParseSyntax
+  )
+
+  val pPrintSyntax : Parser[DFPrintSyntax] = composeParser(
+    "def-print-syntax",
+    List(parseTName),
+    List(parseModTex),
+    List((parseArgToken,O),(parseArgMethod,O),(parseArgTable,O),(parseArgBinding,R)),
+    DFPrintSyntax
+  )
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
-    pInductor, pImportedRewriteRules, pLanguage, pRenamer
+    pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

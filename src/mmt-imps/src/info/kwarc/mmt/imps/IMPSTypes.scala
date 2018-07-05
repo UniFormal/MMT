@@ -5,7 +5,7 @@ package info.kwarc.mmt.imps
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.imps.HList.:+:
-import info.kwarc.mmt.imps.Method.Method
+import info.kwarc.mmt.imps.ParseMethod.ParseMethod
 import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.OperationType.OperationType
 import info.kwarc.mmt.imps.Usage.Usage
@@ -54,11 +54,11 @@ case class ParseFailure(str : String) extends TExp {
 
 /* IMPS SPECIAL FORM ARGUMENTS */
 
-case class LeftMethod(m : Method, src : Option[SourceRef]) extends TExp {
+case class LeftMethod(m : ParseMethod, src : Option[SourceRef]) extends TExp {
   override def toString: String = { "(left-method " + m.toString + ")"}
 }
 
-case class NullMethod(m : Method, src : Option[SourceRef]) extends TExp {
+case class NullMethod(m : ParseMethod, src : Option[SourceRef]) extends TExp {
   override def toString: String = { "(null-method " + m.toString + ")"}
 }
 
@@ -295,20 +295,6 @@ case class Accessors(accs : List[String], src : Option[SourceRef]) extends TExp 
     str = str + ")"
     str
   }
-}
-
-object Method extends Enumeration
-{
-  type Method = Value
-
-  val PREFIXMETHOD   = Value("prefix-operator-method")
-  val INFIXMETHOD    = Value("infix-operator-method")
-  val POSTFIXMETHOD  = Value("postfix-operator-method")
-  val NEGATIONMETHOD = Value("negation-operator-method")
-  val TABLEMETHOD    = Value("table-operator-method")
-  val INDBOTHSYN     = Value("parse-indicator-constructor-both-syntaxes")
-  val PREFSORTDEPOM  = Value("prefix-sort-dependent-operator-method")
-  val NULLCALL       = Value("null-call-method-terminator")
 }
 
 case class ArgumentUsages(usgs : List[Usage], src : Option[SourceRef]) extends TExp {
@@ -1660,6 +1646,81 @@ case class ArgPairs(ps : List[ArgRenamerPair], var src : SourceInfo, var cmt : C
   override def toString: String = "(pairs " + ps.mkString(" ") + ")"
 }
 
+case class ArgToken(t : List[String], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String =
+    if (t.length == 1) { "(token " + t.head.toString + ")" } else { "(token (" + t.mkString(" ") + "))" }
+}
+
+case class ArgBinding(n : Int, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(binding " + n.toString + ")"
+}
+
+case class ArgTable(tn : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(table " + tn.toString + ")"
+}
+
+/* Maybe make a better representation for this method (like below) if it ever becomes relevant.
+
+jbetzend@turing :: 13:34:20 :: ~ > grep -r -o --no-filename "(method .*)" Development/KWARC/content/MathHub/MMT/imps/source/ | sort | uniq
+(method  present-binary-infix-operator)
+(method present-binary-infix-operator)
+(method present-indicator-constructor-operator)
+(method  present-loglike-operator)
+(method present-loglike-operator)
+(method present-non-associative-infix-operator)
+(method present-postfix-operator)
+(method present-prefix-operator)
+(method present-sort-dependent-prefix-operator)
+(method present-subscripted-sort-arg)
+(method  present-tex-binary-infix-operator)
+(method present-tex-binary-infix-operator)
+(method present-tex-delimited-expression)
+(method present-tex-delimited-expression-with-dots)
+(method PRESENT-TEX-differentiation)
+(method present-tex-direct-image-operator)
+(method present-tex-id-operator)
+(method present-tex-indicator-constructor-operator)
+(method present-tex-interval-iteration-operator)
+(method present-tex-inverse-image-operator)
+(method present-tex-inverse-operator)
+(method present-tex-prefix-operator)
+(method PRESENT-TEX-RAISE)
+(method present-tex-sort-dependent-prefix-operator)
+(method present-tex-stack-label)
+(method present-tex-symbol)
+
+ */
+
+case class ArgMethod(mn : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(method " + mn.toString + ")"
+}
+
+object ParseMethod extends Enumeration
+{
+  type ParseMethod = Value
+
+  val PREFIXMETHOD   : ParseMethod = Value("prefix-operator-method")
+  val INFIXMETHOD    : ParseMethod = Value("infix-operator-method")
+  val POSTFIXMETHOD  : ParseMethod = Value("postfix-operator-method")
+  val NEGATIONMETHOD : ParseMethod = Value("negation-operator-method")
+  val TABLEMETHOD    : ParseMethod = Value("table-operator-method")
+  val INDBOTHSYN     : ParseMethod = Value("parse-indicator-constructor-both-syntaxes")
+  val PREFSORTDEPOM  : ParseMethod = Value("prefix-sort-dependent-operator-method")
+  val NULLCALL       : ParseMethod = Value("null-call-method-terminator")
+}
+
+case class ArgLeftMethod(mn : ParseMethod, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(left-method " + mn.toString + ")"
+}
+
+case class ArgNullMethod(mn : ParseMethod, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(null-method " + mn.toString + ")"
+}
+
+case class ModTex(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "tex"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1774,6 +1835,32 @@ case class DFRenamer(nm : Name, ps : Option[ArgPairs], var src : SourceInfo, var
 object DFRenamer extends Comp[DFRenamer] {
   override def build[T <: DefForm](args : HList) : T = args match {
     case (n : Name) :+: (ps : Option[ArgPairs]) :+: HNil => DFRenamer(n,ps,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFParseSyntax(n : Name, t : Option[ArgToken], lm : Option[ArgLeftMethod],
+                         nm : Option[ArgNullMethod], tbl : Option[ArgTable],
+                         bnd : ArgBinding, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFParseSyntax extends Comp[DFParseSyntax] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (t : Option[ArgToken]) :+: (lm : Option[ArgLeftMethod]) :+: (nm : Option[ArgNullMethod])
+                    :+: (tbl : Option[ArgTable]) :+: (bnd : Option[ArgBinding]) :+: HNil
+                    => DFParseSyntax(n,t,lm,nm,tbl,bnd.get,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFPrintSyntax(n : Name, tex : Option[ModTex], t : Option[ArgToken],
+                         m : Option[ArgMethod], tbl : Option[ArgTable], bnd : ArgBinding,
+                         var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFPrintSyntax extends Comp[DFPrintSyntax] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (tex : Option[ModTex]) :+: (t : Option[ArgToken]) :+: (m : Option[ArgMethod])
+      :+: (tbl : Option[ArgTable]) :+: (bnd : Option[ArgBinding]) :+: HNil
+    => DFPrintSyntax(n,tex,t,m,tbl,bnd.get,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }

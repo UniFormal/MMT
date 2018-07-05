@@ -107,7 +107,7 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
                                    key : List[(Parser[DefForm], Required)],
                                      x : Comp[T]) : Parser[T] = {
     new ParserWithSourcePosition((("(" + name) ~> positional(pos) ~ keyworded(mod.map(k => (k,O)) ::: key) <~ ")") ^^
-      { case p ~ k => for (ky <- key.indices) { if (key(ky)._2) { assert(k(ky).isDefined) } }
+      { case p ~ k => for (ky <- key.indices) { if (key(ky)._2) { assert(k(ky+mod.length).isDefined) } }
                       x.build(p ::: k) })
   }
 }

@@ -1,7 +1,7 @@
 package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.utils.JSONObject
-import info.kwarc.mmt.imps.Method.Method
+import info.kwarc.mmt.imps.ParseMethod.ParseMethod
 import info.kwarc.mmt.imps.Usage.Usage
 import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.impsDefFormParsers.{handpick, removeWhitespace}
@@ -498,16 +498,16 @@ package object impsArgumentParsers
     }
   }
 
-  def parseMethod(s : String) : Option[Method] = {
+  def parseMethod(s : String) : Option[ParseMethod] = {
     s match {
-      case "prefix-operator-method"        => Some(Method.PREFIXMETHOD)
-      case "infix-operator-method"         => Some(Method.INFIXMETHOD)
-      case "postfix-operator-method"       => Some(Method.POSTFIXMETHOD)
-      case "negation-operator-method"      => Some(Method.NEGATIONMETHOD)
-      case "table-operator-method"         => Some(Method.TABLEMETHOD)
-      case "parse-indicator-constructor-both-syntaxes" => Some(Method.INDBOTHSYN)
-      case "prefix-sort-dependent-operator-method"     => Some(Method.PREFSORTDEPOM)
-      case "null-call-method-terminator"               => Some(Method.NULLCALL)
+      case "prefix-operator-method"        => Some(ParseMethod.PREFIXMETHOD)
+      case "infix-operator-method"         => Some(ParseMethod.INFIXMETHOD)
+      case "postfix-operator-method"       => Some(ParseMethod.POSTFIXMETHOD)
+      case "negation-operator-method"      => Some(ParseMethod.NEGATIONMETHOD)
+      case "table-operator-method"         => Some(ParseMethod.TABLEMETHOD)
+      case "parse-indicator-constructor-both-syntaxes" => Some(ParseMethod.INDBOTHSYN)
+      case "prefix-sort-dependent-operator-method"     => Some(ParseMethod.PREFSORTDEPOM)
+      case "null-call-method-terminator"               => Some(ParseMethod.NULLCALL)
       case _ => None
     }
   }
