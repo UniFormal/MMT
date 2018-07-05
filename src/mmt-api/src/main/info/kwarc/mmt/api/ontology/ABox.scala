@@ -142,13 +142,14 @@ class RelStore(report : frontend.Report) {
    }}
 
    /**
-    * Discriminates the different sorts of constants into malformatted (malformatted URI), untyped, maltyped and typed constants,
-    *  type constructor or statements, kinds and types of type universe >2
+    * Discriminates the different sorts of constants into types untyped constant, data constructor, datatype constructor, 
+    * rule, judgement constructor, high universe (kind level constructors and higher) and typed constant (fallback),
     * @param s the type of the constant
     * @param p the path of the constant
-    * @param the controller (needed to retrieve type information for the constant)
+    * @note precondition: Every constant is annotated as having exactly one of the types untyped constant, data constructor,
+    * datatype constructor, rule, judgement constructor, high universe
     */
-   def mapConstant(s:Unary, p:Path, con:Controller) : (StatisticEntries, Path) = {
+   def mapConstant(s:Unary, p:Path) : (StatisticEntries, Path) = {
      if (s == IsConstant) {
        try {
          val desiredTypes : List[Unary] = List(IsDataConstructor, IsDatatypeConstructor, IsRule, IsJudgementConstructor, IsHighUniverse, IsUntypedConstant)
@@ -172,7 +173,8 @@ class RelStore(report : frontend.Report) {
              log ("clashing relational data for: "+p.toPath+": "+entries.toString())
            entries.head
          } else {
-           //log ("Failed to identify the type of declaration of "+p.toPath+". \nPlease update the relational files. ")
+           //log ("Failed to identify the type of declaration of "+p.toPath+" (most likely an error building the archive). ")
+           //log("Please update the relational files. ")
            (TypedConstantEntry(),p)
          }
        } catch {
@@ -195,14 +197,13 @@ class RelStore(report : frontend.Report) {
    }
    
    /**
-    * Discriminates the a list of constants into the sorts malformatted (malformatted URI), untyped, maltyped and typed constants,
-    *  type constructor or statements, kinds and types of type universe >2
-    * @param p the list of constants
-    * @param the controller (needed to retrieve type information for the constants)
+    * Discriminates the a list of constants into the types untyped constant, data constructor, datatype constructor, 
+    * rule, judgement constructor, high universe and typed constant (fallback),
+    * @param p a tuple containing the unary "type" of the individual and the list of constants of that type
     */
-   def mapConstants(p:(Option[Unary], List[Path]),c:Controller) : List[(StatisticEntries, Path)]= {
+   def mapConstants(p:(Option[Unary], List[Path])) : List[(StatisticEntries, Path)]= {
      p match {
-       case (Some(t),x::l) => mapConstant(t, x,c:Controller)::mapConstants((Some(t),l),c:Controller)
+       case (Some(t),x::l) => mapConstant(t, x)::mapConstants((Some(t),l))
        case (Some(p), Nil) => Nil
        case (None, _) => Nil
      }
@@ -212,11 +213,10 @@ class RelStore(report : frontend.Report) {
     * Make a statistic for the given query and prepend the prefix to the descriptions of the found declarations
     * @param p the path of the document of theory to make the statistic for
     * @param q the query
-    * @param the controller (needed to retrieve type information for the constant)
     */ 
-  def makeStatisticsFor(p:Path, q:RelationExp, prefix:String, con:Controller) = {
+  def makeStatisticsFor(p:Path, q:RelationExp, prefix:String) = {
     val ds=querySet(p, q)
-    val dsGl = ds.toList.groupBy(x => getType(x)).toList flatMap {x => mapConstants(x,con)}
+    val dsGl = ds.toList.groupBy(x => getType(x)).toList flatMap {x => mapConstants(x)}
     val bla : List[(StatisticEntries,List[(StatisticEntries,Path)])] = dsGl.groupBy({case (s,x)=>s}).toList
     val dsG : List[(StatisticEntries, Int)] = bla flatMap {
       case (s:StatisticEntries,l) => (List((s+prefix,l.size)))
@@ -227,9 +227,8 @@ class RelStore(report : frontend.Report) {
   /**
     * Make a statistic for the document or theory at the given path
     * @param p the path of the document or theory
-    * @param the controller (needed to retrieve type information for the constants)
     */
-  def makeStatistics(q: Path, con:Controller) = {
+  def makeStatistics(q: Path) = {
     val decl = Transitive(+Declares)
     val subtheory = Transitive(+Declares | Reflexive) * HasType(IsTheory)
     val align = decl * Transitive(+IsAlignedWith)
@@ -238,15 +237,15 @@ class RelStore(report : frontend.Report) {
     val morph = subtheory * Transitive(+HasMeta | +Includes | +IsImplicitly | +HasViewFrom)
     val expinduced = expMorph * +Declares * HasType(IsConstant)
     val induced = morph * +Declares * HasType(IsConstant)
-    var dsG = makeStatisticsFor(q, decl, "",con)
-    dsG += makeStatisticsFor(q, align, "Alignments of ",con)
+    var dsG = makeStatisticsFor(q, decl, "")
+    dsG += makeStatisticsFor(q, align, "Alignments of ")
     val (exMorph, anyMorph) = (querySet(q, expMorph).size, querySet(q, morph).size)
     if (exMorph > 0) 
       dsG += ("Explicit theory morphisms", exMorph)
     if (anyMorph > 0)
       dsG += ("Any theory morphisms", anyMorph)
-    dsG += makeStatisticsFor(q, expinduced, "Induced declarations via explicit theory morphisms of ",con)
-    dsG += makeStatisticsFor(q, induced, "Induced declarations via any theory morphisms of ",con)
+    dsG += makeStatisticsFor(q, expinduced, "Induced declarations via explicit theory morphisms of ")
+    dsG += makeStatisticsFor(q, induced, "Induced declarations via any theory morphisms of ")
     dsG
   }
 
@@ -274,6 +273,7 @@ class RelStore(report : frontend.Report) {
    }
 }
 
+//The type of a statistics for a theory, document or archive
 case class Statistics(entries: List[(StatisticEntries,Int)]) {
   def +(that: Statistics): Statistics = {
     Statistics(entries ::: that.entries)
@@ -286,6 +286,7 @@ case class Statistics(entries: List[(StatisticEntries,Int)]) {
   }
 }
 
+//The types of the entries of the statistics to be generated
 sealed class StatisticEntries(description:String) {
   def +(s: String): StatisticEntries = {
     new StatisticEntries(s+description)

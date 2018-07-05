@@ -14,7 +14,14 @@ private object InductiveTypes {
   def uniqueLN(nm: String): LocalName = {
     LocalName("") / nm
   }
-  
+   
+  /**
+    * Make a new variable declaration for a variable of type tp and fresh name (preferably name) in the given (optional) context
+    * @param name the local name that will preferably be picked for the variable declaration
+    * @param tp the type of the variable
+    * @param the context in which to pick the a fresh variable (optional)
+    * @note postcondition: the returned variable is free in the given context
+    */
    def newVar(name: LocalName, tp: Term, con: Option[Context] = None) : VarDecl = {
       val c = con.getOrElse(Context.empty)
       val (freshName,_) = Context.pickFresh(c, name)
@@ -27,7 +34,7 @@ private object InductiveTypes {
   
   val Contra = OMS(theory ? "contra") 
   
-  def substituteByMorph(tp : Term, sub : (Term, Context, Term)) : Term = {
+  def substituteByMorph(sub : (Term, Context, Term)) : Term = {
     val (source, con,  morph) = sub
     ApplyGeneral(morph, con.variables.toList.map(_.toTerm))
   }
@@ -70,8 +77,8 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)]) ex
 case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term) extends InductiveDecl {
   def substituteOfType(sub : (Term, Context, Term)) : TermLevel = {
     val subArgs : List[(Option[LocalName], Term)]= args map {
-      case (Some(loc), tp) => (Some(uniqueLN(loc + "substituted_"+sub.toString())), substituteByMorph(tp, sub))
-      case (None, tp) => (None, substituteByMorph(tp, sub))
+      case (Some(loc), tp) => (Some(uniqueLN(loc + "substituted_"+sub.toString())), substituteByMorph(sub))
+      case (None, tp) => (None, substituteByMorph(sub))
     }
     TermLevel(path./("term_substituted_"+sub.toString()), subArgs, ret)
   }
