@@ -45,7 +45,7 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
   lazy val parseText = regex("""[^\r\n]+""".r)
 
   lazy val parseLineComment: PackratParser[LineComment] = {
-    (";" ~> parseText) ^^ { case txt => LineComment(txt.dropWhile(_ == ';').trim, None, None) }
+    rep1(";" ~> parseText) ^^ { case txts => LineComment(txts.map(t => t.dropWhile(_ == ';').trim).mkString("\n"), None, None) }
   }
 
   def pLineComment : ParserWithSourcePosition[LineComment] = {

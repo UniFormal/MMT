@@ -1,11 +1,12 @@
 package info.kwarc.mmt.imps
 
-import info.kwarc.mmt.imps.NumericalType.{NumericalType, Value}
-import info.kwarc.mmt.imps.ParseMethod.{ParseMethod, Value}
+import info.kwarc.mmt.api.utils.JSONObject
+import info.kwarc.mmt.imps.NumericalType.{NumericalType}
+import info.kwarc.mmt.imps.ParseMethod.{ParseMethod}
 import info.kwarc.mmt.imps.ParserWithSourcePosition._
 import info.kwarc.mmt.imps.Usage.Usage
 
-class DefFormParsers
+class DefFormParsers(js : List[JSONObject])
 {
   // ######### Sort Parsers
 
@@ -32,7 +33,9 @@ class DefFormParsers
   lazy val number     : Parser[Int]    = """(0|[1-9]\d*)""".r ^^ { _.toInt }
 
   lazy val parseName  : Parser[String] = regex("""[^()\t\r\n ]+""".r)
-  lazy val parseTName : Parser[Name]   = fullParser(parseName ^^ { case (nm) => Name(nm,None,None)})
+  lazy val parseTName : Parser[Name]   = fullParser(
+    (parseName ^^ { case (nm) => Name(nm,None,None)}) | ("()" ^^ {case (_) => Name("()",None,None)})
+  )
 
   // ToDo: nested strings could be a problem. Do those occur?
   lazy val parseDefString : Parser[DefString] = fullParser(regex("""\"[^\"]+\"""".r) ^^ {case (s) => DefString(s,None,None)})
@@ -221,6 +224,40 @@ class DefFormParsers
 
   lazy val parseModTex : Parser[ModTex] = fullParser("tex" ^^ {case (_) => ModTex(None,None)} )
 
+  lazy val parseModReverse : Parser[ModReverse] = fullParser("reverse" ^^ {case (_) => ModReverse(None,None)} )
+
+  lazy val parseModLemma : Parser[ModLemma] = fullParser("lemma" ^^ {case (_) => ModLemma(None,None)} )
+
+  lazy val parseArgMacete : Parser[ArgMacete] = fullParser(
+    "(macete" ~> parseTName <~ ")" ^^ { case (m) => ArgMacete(m,None,None) }
+  )
+
+  lazy val parseArgHomeTheory : Parser[ArgHomeTheory] = fullParser(
+    "(home-theory" ~> parseTName <~ ")" ^^ { case (m) => ArgHomeTheory(m,None,None) }
+  )
+
+  def balance(chars:List[Char], level:Int=0): Boolean = {
+    if (level < 0) return false;
+
+    val nextParen = chars.dropWhile(char => char != ')' && char != '(')
+    if (nextParen.isEmpty) {
+      level == 0
+    } else if (nextParen.head == '(') {
+      balance(nextParen.tail, level + 1)
+    } else {
+      assert(nextParen.head == ')')
+      balance(nextParen.tail, level - 1)
+    }
+  }
+
+  lazy val stuff            : Parser[String] = "[^()]+".r
+  lazy val bracketed        : Parser[String] = "(" ~> parseProofScript <~ ")" ^^ {case (s) => "(" + s + ")"}
+  lazy val parseProofScript : Parser[String] = rep1(bracketed|stuff) ^^ {_.mkString(" ")}
+
+  lazy val parseArgProof : Parser[ArgProof] = fullParser(
+    "(proof" ~> parseProofScript <~ ")" ^^ { case (m) => ArgProof(m,None,None) }
+  )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -321,11 +358,24 @@ class DefFormParsers
     DFPrintSyntax
   )
 
+  val pTheorem : Parser[DFTheorem] = {
+    DFTheorem.js = this.js
+    composeParser(
+      "def-theorem",
+      List(parseTName, parseDefString),
+      List(parseModReverse, parseModLemma),
+      List((parseArgTheory,R)) :::
+        List(parseArgUsages, parseArgTranslation, parseArgMacete,parseArgHomeTheory,parseArgProof).map(p => (p,O)),
+      DFTheorem
+    )
+  }
+
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
-    pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax
+    pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

@@ -3,12 +3,13 @@ package info.kwarc.mmt.imps
 /* IMPORTS */
 
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
-import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.api.utils.{JSONObject, URI}
 import info.kwarc.mmt.imps.HList.:+:
 import info.kwarc.mmt.imps.ParseMethod.ParseMethod
 import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.OperationType.OperationType
 import info.kwarc.mmt.imps.Usage.Usage
+import info.kwarc.mmt.imps.impsDefFormParsers.{handpick, removeWhitespace}
 
 /* Parser abstract class and case classes. */
 
@@ -1721,6 +1722,26 @@ case class ModTex(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString : String = "tex"
 }
 
+case class ModReverse(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "reverse"
+}
+
+case class ModLemma(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "lemma"
+}
+
+case class ArgMacete(mn : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(macete " + mn.toString + ")"
+}
+
+case class ArgHomeTheory(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(home-theory " + nm.toString + ")"
+}
+
+case class ArgProof(prf : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(proof " + prf + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1864,6 +1885,84 @@ object DFPrintSyntax extends Comp[DFPrintSyntax] {
     case _ => ??!(args)
   }
 }
+
+case class DFTheorem(n : Name, dfstr : DefString, frm : Option[IMPSMathExp], modr : Option[ModReverse],
+                     modl : Option[ModLemma], t : ArgTheory, us : Option[ArgUsages], tr : Option[ArgTranslation],
+                     mac : Option[ArgMacete], ht : Option[ArgHomeTheory], prf : Option[ArgProof],
+                     var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFTheorem extends Comp[DFTheorem] {
+
+  var js : List[JSONObject] = Nil
+
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (dfstr : DefString)       :+: (modr : Option[ModReverse])  :+: (modl : Option[ModLemma])
+                    :+: (thy : Option[ArgTheory]) :+: (us : Option[ArgUsages])     :+: (tr : Option[ArgTranslation])
+                    :+: (mac : Option[ArgMacete]) :+: (ht : Option[ArgHomeTheory]) :+: (prf : Option[ArgProof]) :+: HNil
+    => { // Construct full theorem!
+
+      /*
+      //println(" > Looking for theory " + theory.get.thy)
+      val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thy.get.thy.s.toLowerCase)
+      assert(json_theory.isDefined)
+      assert(json_theory.get.getAsString("type") == "imps-theory")
+      val theorems : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"theorems")
+      assert(theorems.nonEmpty)
+      val axioms : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"axioms")
+      var s : String = ""
+      val thetheorem : Option[JSONObject] = if (n.s != "()")
+      {
+        //println(" > looking for theorem " + name.get + " in theory " + theory.get.thy + " ...")
+        (axioms ::: theorems).find(j => j.getAsString("name") == n.s.toLowerCase)
+      } else {
+        //println(" > looking for nameless theorem () in theory " + theory.get.thy + " ...")
+
+        s = dfstr.s.tail.init
+        //println("     > scala theorem: " + removeWhitespace(x.tail.init))
+        var tempt = theorems.find(j => removeWhitespace(j.getAsString("formula-string")) == removeWhitespace(x.tail.init))
+
+        if (!(tempt.isDefined)) {
+            val handpicked = handpick(removeWhitespace(dfstr.s.tail.init))
+              //println("     > handpicked: " +handpicked)
+              tempt = theorems.find(j => removeWhitespace(j.getAsString("formula-string")) == handpicked)
+            }
+            tempt
+        }
+
+
+      if (!(thetheorem.isDefined))
+      {
+        assert(s != "")
+        val bar = removeWhitespace(s)
+        //println(" > s = " + s)
+
+        for (t <- theorems)
+        {
+          val foo = removeWhitespace(t.getAsString("formula-string"))
+          val n = 5
+          if (foo.take(n) == bar.take(n)) {
+            //println("     > json theorem: " + foo)
+          }
+        }
+      }
+
+      assert(thetheorem.isDefined)
+      val thesexp : String = thetheorem.get.getAsString("formula-sexp")
+      assert(thesexp.nonEmpty)
+
+      val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+      val lsp = sp.parseAll(sp.parseSEXP,thesexp)
+      assert(lsp.successful)
+
+      val formula = impsMathParser.makeSEXPFormula(lsp.get)*/
+
+      println("Don't forget to put formula parsing back in")
+      DFTheorem(n,dfstr,None,modr,modl,thy.get,us,tr,mac,ht,prf,None,None).asInstanceOf[T]
+    }
+    case _ => ??!(args)
+  }
+}
+
 
 //-----------
 
