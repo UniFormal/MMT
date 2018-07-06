@@ -71,7 +71,6 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
     if (ks.isEmpty) { failure("none of anyOf") } else { ks.head | anyOf(ks.tail) }
   }
 
-
   def keyworded(ks : List[(Parser[DefForm],Required)]) : Parser[List[Option[DefForm]]] =
   {
     def fill(l : List[(Option[DefForm], Int)]) : List[(Option[DefForm], Int)] = {

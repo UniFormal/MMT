@@ -258,6 +258,11 @@ class DefFormParsers(js : List[JSONObject])
     "(proof" ~> parseProofScript <~ ")" ^^ { case (m) => ArgProof(m,None,None) }
   )
 
+  lazy val parseDefStringOrName : Parser[ODefString] = fullParser((parseDefString | parseTName) ^^ {
+      case (d : DefString) => ODefString(Left(d),None,None)
+      case (n : Name)      => ODefString(Right(n),None,None)
+  })
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -362,7 +367,7 @@ class DefFormParsers(js : List[JSONObject])
     DFTheorem.js = this.js
     composeParser(
       "def-theorem",
-      List(parseTName, parseDefString),
+      List(parseTName, parseDefStringOrName),
       List(parseModReverse, parseModLemma),
       List((parseArgTheory,R)) :::
         List(parseArgUsages, parseArgTranslation, parseArgMacete,parseArgHomeTheory,parseArgProof).map(p => (p,O)),

@@ -1483,6 +1483,10 @@ case class DefString(s : String, var src : SourceInfo, var cmt : CommentInfo) ex
   override def toString: String = s
 }
 
+case class ODefString(o : Either[DefString,Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = o.toString
+}
+
 case class ArgTheory(thy : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString : String = { "(theory " + thy.toString + ")"}
 }
@@ -1886,7 +1890,7 @@ object DFPrintSyntax extends Comp[DFPrintSyntax] {
   }
 }
 
-case class DFTheorem(n : Name, dfstr : DefString, frm : Option[IMPSMathExp], modr : Option[ModReverse],
+case class DFTheorem(n : Name, defn : ODefString, frm : Option[IMPSMathExp], modr : Option[ModReverse],
                      modl : Option[ModLemma], t : ArgTheory, us : Option[ArgUsages], tr : Option[ArgTranslation],
                      mac : Option[ArgMacete], ht : Option[ArgHomeTheory], prf : Option[ArgProof],
                      var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1896,7 +1900,7 @@ object DFTheorem extends Comp[DFTheorem] {
   var js : List[JSONObject] = Nil
 
   override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (dfstr : DefString)       :+: (modr : Option[ModReverse])  :+: (modl : Option[ModLemma])
+    case (n : Name) :+: (df  : ODefString)        :+: (modr : Option[ModReverse])  :+: (modl : Option[ModLemma])
                     :+: (thy : Option[ArgTheory]) :+: (us : Option[ArgUsages])     :+: (tr : Option[ArgTranslation])
                     :+: (mac : Option[ArgMacete]) :+: (ht : Option[ArgHomeTheory]) :+: (prf : Option[ArgProof]) :+: HNil
     => { // Construct full theorem!
@@ -1957,7 +1961,7 @@ object DFTheorem extends Comp[DFTheorem] {
       val formula = impsMathParser.makeSEXPFormula(lsp.get)*/
 
       println("Don't forget to put formula parsing back in")
-      DFTheorem(n,dfstr,None,modr,modl,thy.get,us,tr,mac,ht,prf,None,None).asInstanceOf[T]
+      DFTheorem(n,df,None,modr,modl,thy.get,us,tr,mac,ht,prf,None,None).asInstanceOf[T]
     }
     case _ => ??!(args)
   }
