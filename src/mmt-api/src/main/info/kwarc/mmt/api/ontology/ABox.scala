@@ -240,6 +240,16 @@ class RelStore(report : frontend.Report) {
     dsG += makeStatisticsFor(q, align, Some(AnyMorphismPrefix()))
     dsG
   }
+  
+  def statDescription : JSONArray = {
+    val prefsClasses = List(NoPrefix(), ExplicitMorphismPrefix(), AnyMorphismPrefix(), AlignmentPrefix())
+    val statClasses = List(TheoryEntry(), DocumentEntry(), UntypedConstantEntry(), TypedConstantEntry(), MaltypedConstantEntry(), 
+        StructureEntry(), PatternEntry(), JudgementConstructorEntry(), DataConstructorEntry(), DatatypeConstructorEntry(), 
+        RuleEntry(), ViewEntry(), HighUniverseEntry(), ExplicitMorphismEntry(), AnyMorphismEntry())
+    val prefs = JSONArray.fromList(prefsClasses map(_.toJSON))
+    val entries = JSONArray.fromList(statClasses map(_.toJSON))
+    JSONArray.fromList(List(JSONObject("sorts of relations to the declaration" -> prefs), JSONObject("types of declarations" -> entries)))
+  }
 
    /**
     * Returns the set of theories a theory depends on
@@ -304,7 +314,7 @@ case class Statistics(entries: List[(StatPrefixEntry, List[StatisticEntry])]) {
   def +(s: StatType, n: Int, pre:Option[StatPrefixEntry]): Statistics = {
     this + (StatisticEntry(s, n), pre.getOrElse(NoPrefix()))
   }
-  def empty() = Statistics(Nil)
+  def empty = Statistics(Nil)
   /**
     * Returns a JSON representation of the statistics
     */
@@ -315,10 +325,11 @@ case class Statistics(entries: List[(StatPrefixEntry, List[StatisticEntry])]) {
 }
 
 sealed class StatPrefixEntry(key:String, teaser:String, description:String) {
-  def getKey = {key}
-  def getTeaser = {teaser}
-  def getDescription = {description}
-  def ==(other : StatType) = {this.getKey == other.getKey}
+  def getKey = key
+  def getTeaser = teaser
+  def getDescription = description
+  def ==(other : StatType) = this.getKey == other.getKey
+  def toJSON = JSONArray.fromList((List(JSONObject("key"->JSONString(key)), JSONObject("teaser"->JSONString(teaser)), JSONObject("description"->JSONString(description)))))
 }
 case class NoPrefix() extends StatPrefixEntry("decl", "Declared declaration", 
     "Declarations declared (possibly via multiple hops) by the given theory/document/archive")
@@ -357,6 +368,7 @@ sealed class StatType(key:String, teaser:String, description: String) {
   def getTeaser = {teaser}
   def getDescription = {description}
   def ==(other : StatType) = {this.getKey == other.getKey}
+  def toJSON = JSONArray.fromList((List(JSONObject("key"->JSONString(key)), JSONObject("teaser"->JSONString(teaser)), JSONObject("description"->JSONString(description)))))
 }
 
 case class TheoryEntry() extends StatType("theo", "theory", "theory")

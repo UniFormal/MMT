@@ -22,6 +22,11 @@ class StatisticsExporter extends Exporter {
     val rs = controller.depstore
     log("[  -> statistics]     "+doc.path.toPath+" "+bf.outFile.toString())
     rh(rs.makeStatistics(doc.path).toJSON.toString)
+    var root = bf.archive.rootString
+    val filename : String = (root+"/export/statistics/description_of_statistics_keys.json")
+    log(filename)
+    val usageFile = File(filename)
+    utils.File.write(usageFile, rs.statDescription.toString())
   }
 
   /**
@@ -36,5 +41,4 @@ class StatisticsExporter extends Exporter {
   }
   def exportView(view: DeclaredView, bf: BuildTask)  {}
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
-
 }
