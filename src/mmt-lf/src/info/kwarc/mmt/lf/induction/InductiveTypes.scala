@@ -11,6 +11,10 @@ import info.kwarc.mmt.lf._
 //import scala.collection.parallel.ParIterableLike.Copy
 
 private object InductiveTypes {
+  /**
+    * Make a new unique local name from the given string
+    * @param nm the string from which the local name is generated
+    */
   def uniqueLN(nm: String): LocalName = {
     LocalName("") / nm
   }
@@ -33,11 +37,6 @@ private object InductiveTypes {
   object Neq extends BinaryLFConstantScala(theory, "neq")
   
   val Contra = OMS(theory ? "contra") 
-  
-  def substituteByMorph(sub : (Term, Context, Term)) : Term = {
-    val (source, con,  morph) = sub
-    ApplyGeneral(morph, con.variables.toList.map(_.toTerm))
-  }
 }
 
 import InductiveTypes._
@@ -49,7 +48,11 @@ sealed abstract class InductiveDecl {
   def args: List[(Option[LocalName], Term)]
   def ret: Term
   def toTerm = FunType(args,ret)
-  /** a context quantifying over all arguments and the variable declaration for the result of this constructor applied to those arguments */
+  /**
+    * Built a context quantifying over all arguments
+    *  and the variable declaration for the result of this constructor applied to those arguments
+    * @param suffix (optional) a suffix to append to the local name of each variable declaration in the returned context
+    */
   def argContext(suffix: Option[String]): (Context, VarDecl) = { 
       val dargs= args.zipWithIndex map {
       case ((Some(loc), arg), _) => (loc, arg)
@@ -71,17 +74,39 @@ sealed abstract class InductiveDecl {
 /** type declaration */
 case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)]) extends InductiveDecl {
   def ret = Univ(1)
+  def getTypes(suffix: Option[String]) : (Context, VarDecl, VarDecl, Sub) = {
+    val (argsCon, x)=this.argContext(suffix)
+    //TODO: Define in terms of Quotations
+    val a = newVar(LocalName(""), Univ(1), None)
+    (argsCon, x, a, x.toTerm / (a.toTerm))
+  }
+  /** 
+  *  Generate morphism declaration for a typelevel declaration
+  * @param parent the parent declared module of the derived declaration to elaborate
+  * @param decls all declarations
+  * @param tpdecls all type level declarations
+  *  @returns returns the morphism declaration and the morphism itself
+  */    
+  def getMorph(parent : DeclaredModule, chain : Context) : (Declaration, Term => Term) = {
+    //A list of quadruples consisting of (context of arguments, a, the sub replacing x with a free type a, x) for each type declaration declaring a type x
+    val (ctx, x, a, sub) = getTypes(None)
+    val morphType : Term = Pi.apply(chain++ctx++x, a.toTerm)
+    // Define the morphism
+    val morphTerm : Term = ???
+    val morph = VarDecl.apply(uniqueLN("no_junk_axiom_for_type_"+x.toString), morphType, morphTerm)
+    val morphDecl = morph.toDeclaration(parent.toTerm)
+    def m(tm : Term) = ApplyGeneral(morph.toTerm, ctx.map(_.toTerm) :+ tm)
+    (morphDecl, m)
+  }
 }
 
 /** constructor declaration */
 case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term) extends InductiveDecl {
-  def substituteOfType(sub : (Term, Context, Term)) : TermLevel = {
-    val subArgs : List[(Option[LocalName], Term)]= args map {
-      case (Some(loc), tp) => (Some(uniqueLN(loc.toString() + "substituted_"+sub.toString())), substituteByMorph(sub))
-      case (None, tp) => (None, substituteByMorph(sub))
-    }
-    TermLevel(path./("term_substituted_"+sub.toString()), subArgs, ret)
-  }
+    
+  /**
+    * Substitute the argument types of the term level declaration according to the substitution sub
+    * @param sub the substitution to apply
+    */
   def substitute(sub : Substitution) : TermLevel = {
     val subArgs = args map {
       case (Some(loc), tp) => (Some(uniqueLN(loc.toString() + "substituted_"+sub.toString())), tp ^ sub)
@@ -89,7 +114,16 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
     }
     TermLevel(path./("substituted_"+sub.toString()), subArgs, ret ^ sub)
   }
+  
+  /**
+   * inversely apply a sub to the argument types of the term level
+   */
+  def invertSubstitution(sub : Sub) : TermLevel = {
+    val Sub(x:LocalName, a:OMV) = sub
+    this.substitute((a / OMV(x)))
+  }
 }
+
 
 /* Rules and Judgments */
 case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)]) extends InductiveDecl {
@@ -99,6 +133,10 @@ case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)
 /** theories as a set of types of expressions */ 
 class InductiveTypes extends StructuralFeature("inductive") with ParametricTheoryLike {
 
+  /**
+    * Checks the validity of the inductive type(s) to be constructed
+    * @param dd the derived declaration from which the inductive type(s) are to be constructed
+    */
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
     //TODO: check for inhabitability
   }
@@ -138,7 +176,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
         }
       case _ => throw LocalError("unsupported declaration")
     }
-    // the type and term constructors of the inductive types
+    // the type and term constructors of the inductive types and the no confusion axioms for the term constructors
     var noConfDecls : List[Declaration] = Nil
     decls foreach {d =>
       val tp = d.toTerm
@@ -150,8 +188,8 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
         case _ =>
       }
     }
-    // build the result
-    elabDecls = elabDecls.reverse ::: noConfDecls ::: noJunk(parent, decls, tpdecls, tmdecls, dd)
+    // get the no junk axioms and build the result
+    elabDecls = elabDecls.reverse ::: noConfDecls ::: noJunk(parent, decls, tpdecls, tmdecls)
     
     new Elaboration {
       def domain = elabDecls map {d => d.name}
@@ -161,14 +199,12 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     }
   }
 
-  /** 
-   *  declarations for injectivity of all term constructors 
-   * @param parent The parent module of the declared inductive types
-   * @param d the termlevel inductive declaration, for which the injectivity declaration is to be generated
-   */
+  /**
+    * Generate injectivity declaration for term constructor d
+    * @param parent the parent declared module of the derived declaration to elaborate
+    * @param d the term level for which to generate the injectivity axiom
+    */
   private def injDecl(parent : DeclaredModule, d : TermLevel) : Declaration = {
-    if (d.args.length <= 0) 
-      throw ImplementationError("Trying to assert injectivity of a constant function")
     val (aCtx, aApplied) = d.argContext(Some("1"))
     val (bCtx, bApplied) = d.argContext(Some("2"))
     
@@ -180,68 +216,76 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     Constant(parent.toTerm, uniqueLN("injective_"+d.name.toString), Nil, Some(inj), None, None)
   }
   
-  /** 
-   * generates the no confusion/injectivity declarations for d and any other constructor
-   * @param parent The parent module of the declared inductive types
-   * @param d the termlevel inductive declaration, for which the no confusion/injectivity declarations are to be generated
-   * @params tmdecls all the termlevel declarations
-   */
+  /**
+  * Generate no confusion/injectivity declaration for term constructor d and all term constructors of the same return type
+  * @param parent the parent declared module of the derived declaration to elaborate
+  * @param d the term level declaration for which to generate the no confusion declarations
+  * @param tmdecls all term level declarations
+  */
   private def noConf(parent : DeclaredModule, d : TermLevel, tmdecls: List[TermLevel]) : List[Declaration] = {
-    var decls:List[Declaration] = Nil
-    tmdecls foreach {e => 
-      if (e == d) {
-        if(d.args.length > 0)
-          decls ::= injDecl(parent, d)  
-      } else {
-          val name = uniqueLN("no_conf_axiom_for_" + d.name.toString + "_" + e.toString)
-          val (dCtx, dApplied) = d.argContext(Some("1"))
-          val (eCtx, eApplied) = e.argContext(Some("2"))
-          val tp = Pi(dCtx ++ eCtx, Neq(dApplied.toTerm, eApplied.toTerm))
-          decls ::= Constant(parent.toTerm, name, Nil, Some(tp), None, None)
-      }
+  var decls:List[Declaration] = Nil
+  tmdecls.filter(_.ret == d.ret) foreach {e => 
+    if (e == d) {
+      if(d.args.length > 0)
+        decls ::= injDecl(parent, d)  
+    } else {
+        val name = uniqueLN("no_conf_axiom_for_" + d.name.toString + "_" + e.toString)
+        val (dCtx, dApplied) = d.argContext(Some("1"))
+        val (eCtx, eApplied) = e.argContext(Some("2"))
+        val tp = Pi(dCtx ++ eCtx, Neq(dApplied.toTerm, eApplied.toTerm))
+        decls ::= Constant(parent.toTerm, name, Nil, Some(tp), None, None)
     }
-    decls
+  }
+  decls
   }
   
-  /** 
-   * generates the no junk declarations for all term-- and typelevel inductive declarations
-   * @param parent The parent module of the declared inductive types
-   * @param decls all the inductive declarations
-   * @param tpdecls all typelevel inductive declarations
-   * @params tmdecls all the termlevel declarations
-   * @returns returns one no junk (morphism) declaration for each typelevel inductive declaration
-   * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
-   */
-  private def noJunk(parent : DeclaredModule, decls : List[InductiveDecl], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], dd: DerivedDeclaration) : List[Declaration] = {
-    
+  
+  /** Generate no junk declaration for all term-- and typelevel inductive declarations
+  * @param parent the parent declared module of the derived declaration to elaborate
+  * @param decls all declarations
+  * @param tmdecls all term level declarations
+  * @param tpdecls all type level declarations
+  *  @returns returns one no junk (morphism) declaration for each typelevel inductive declaration
+  * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
+  */    
+  private def noJunk(parent : DeclaredModule, decls : List[InductiveDecl], tpdecls: List[TypeLevel], tmdecls: List[TermLevel]) : List[Declaration] = {
     var derived_decls:List[Declaration] = Nil
-    //A list of quadruples consisting of (context of arguments, a, the sub replacing x with a free type a, x) for each type declaration declaring a type x
-    val quant : List[(Context, VarDecl, Sub, VarDecl)]= tpdecls map {case dec => 
-      val (ctx, x) = dec.argContext(None)
-      val a = newVar(LocalName(""), Univ(1), None)
-      (ctx, a, Sub(x.name, a.toTerm), x)
-    }
+    //A list of quadruples consisting of (context of arguments, x, a, the sub replacing x with a free type a) for each type declaration declaring a type x
+    val types : List[(Context, VarDecl, VarDecl, Sub)]= tpdecls map(_.getTypes(None))
     
-    val subst : Substitution = Substitution.list2substitution(quant.map(_._3))
+    val subst = types.map(_._4)
     val chain : Context = Context.list2context(decls map {case x : InductiveDecl => x.toVarDecl}) ^ subst
-    //The morphisms for each defined type x
-    val morphisms : List[(VarDecl, Term)]= quant map {case x:(Context, VarDecl, Sub, VarDecl) => (x._4, Pi(x._1.++(chain).++(x._2), x._4.toTerm))}
-    //The corresponding declarations
-    derived_decls = morphisms map {case (x, t) => Constant(parent.toTerm, uniqueLN("no_junk_axiom_for_type_"+x.toString), Nil, Some(t), None, None)}
-    val morphs : List[(VarDecl, Declaration)] = morphisms.map(_._1) zip derived_decls
     
-    //Now we need to produce the noJunk axioms for the term constructors
-    tmdecls zip morphs foreach {
-      case (tmdecl : TermLevel, (x : VarDecl, t : Declaration)) =>
-        val args = tmdecl.argContext(None)._1
-        val sub : (Term, Context, Term) = (x.toTerm, args, ApplyGeneral(OMV(t.name), (chain ^ subst).map(_.toTerm)))
+    //The morphisms for each defined type x
+    val morphisms = tpdecls map {x:TypeLevel => x.getMorph(parent, chain)}
+    derived_decls = morphisms map(_._1)
         
-        val original = tmdecl.argContext(Some("no_junk_result_1"))
-        val mappedDecl : TermLevel = tmdecl.substituteOfType(sub).substitute(subst)
-        val image = mappedDecl.argContext(Some("no_junk_result_2"))
-        val assertion = Pi(args++original._1++image._1, Eq(original._2.toTerm, image._2.toTerm))
-        derived_decls ::= Constant(parent.toTerm, uniqueLN("no_junk_axiom_for_constructor_"+assertion.toString), Nil, Some(assertion), None, None)
-    }
+    types zip morphisms foreach {case ((_ : Context, x : VarDecl, a : VarDecl, s : Sub), (t : Declaration, m: (Term => Term))) =>
+    //Now we need to produce the noJunk axioms for the constructors of the type x
+      tmdecls.filter(_.ret == x.tp.get) foreach {
+        case tmdeclOrig : TermLevel => 
+          //substitute the other types by their models, (needed in case of mutual induction)
+          val tmdecl = tmdeclOrig.substitute(subst filterNot (_ == s))
+          val (decl, args) = (tmdecl.toTerm, tmdecl.argContext(None)._1)
+            
+          //the result obtained when mapping the result of the constructor
+          val orig = ApplyGeneral(decl, args.variables.map(_.toTerm).toList)
+          val mappedOrig = m(orig)
+          
+          //the result obtained when mapping the arguments to the constructor
+          val argsMapped : List[Term]= args.variables.toList map {arg =>
+            if (arg.tp.get == x) {
+              m(arg.toTerm)
+            } else
+              arg.toTerm
+          }
+          val mappedArgs : Term = ApplyGeneral(decl, argsMapped)
+
+          //both results should be equal, if m is actually a homomorphism
+          val assertion = Pi(args, Eq(mappedOrig, mappedArgs))
+          derived_decls ::= Constant(parent.toTerm, uniqueLN("no_junk_axiom_for_constructor_"+assertion.toString), Nil, Some(assertion), None, None)
+        }
+      }
     derived_decls
   } 
 }
