@@ -84,7 +84,7 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
     */
   def substitute(sub : Substitution) : TermLevel = {
     val subArgs = args map {
-      case (Some(loc), tp) => (Some(uniqueLN(loc + "substituted_"+sub.toString())), tp ^ sub)
+      case (Some(loc), tp) => (Some(uniqueLN(loc.toString() + "substituted_"+sub.toString())), tp ^ sub)
       case (None, tp) => (None, tp ^ sub)
     }
     TermLevel(path./("substituted_"+sub.toString()), subArgs, ret ^ sub)
@@ -107,12 +107,13 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     //TODO: check for inhabitability
   }
 
-  /**
-    * Elaborate the derived declarations into the inductive type(s), defined in it
-    *  and the variable declaration for the result of this constructor applied to those arguments
-    * @param parent the parent declared module of the derived declaration to elaborate
-    * @param dd the derived declaration to elaborate
-    */
+  /***
+   * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 
+   * as well as the corresponding no confusion and no junk axioms
+   * Constructs a structure whose models are exactly the (not necessarily initial) models of the declared inductive types
+   * @param parent The parent module of the declared inductive types
+   * @param dd the derived declaration to be elaborated
+   */
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
     // to hold the result
     var elabDecls : List[Declaration] = Nil
@@ -204,12 +205,15 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   decls
   }
   
-  /** Generate no junk declaration for all declarations
-  * @param parent the parent declared module of the derived declaration to elaborate
-  * @param decls all declarations
-  * @param tmdecls all term level declarations
-  * @param tpdecls all type level declarations
-  */    
+  /** 
+   * generates the no junk declarations for all term-- and typelevel inductive declarations
+   * @param parent The parent module of the declared inductive types
+   * @param decls all the inductive declarations
+   * @param tpdecls all typelevel inductive declarations
+   * @params tmdecls all the termlevel declarations
+   * @returns returns one no junk (morphism) declaration for each typelevel inductive declaration
+   * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
+   */
   private def noJunk(parent : DeclaredModule, decls : List[InductiveDecl], tpdecls: List[TypeLevel], tmdecls: List[TermLevel]) : List[Declaration] = {
     var derived_decls:List[Declaration] = Nil
     //A list of quadruples consisting of (context of arguments, a, the sub replacing x with a free type a, x) for each type declaration declaring a type x
