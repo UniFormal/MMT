@@ -77,14 +77,14 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)]) ex
 case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term) extends InductiveDecl {
   def substituteOfType(sub : (Term, Context, Term)) : TermLevel = {
     val subArgs : List[(Option[LocalName], Term)]= args map {
-      case (Some(loc), tp) => (Some(uniqueLN(loc + "substituted_"+sub.toString())), substituteByMorph(sub))
+      case (Some(loc), tp) => (Some(uniqueLN(loc.toString() + "substituted_"+sub.toString())), substituteByMorph(sub))
       case (None, tp) => (None, substituteByMorph(sub))
     }
     TermLevel(path./("term_substituted_"+sub.toString()), subArgs, ret)
   }
   def substitute(sub : Substitution) : TermLevel = {
     val subArgs = args map {
-      case (Some(loc), tp) => (Some(uniqueLN(loc + "substituted_"+sub.toString())), tp ^ sub)
+      case (Some(loc), tp) => (Some(uniqueLN(loc.toString() + "substituted_"+sub.toString())), tp ^ sub)
       case (None, tp) => (None, tp ^ sub)
     }
     TermLevel(path./("substituted_"+sub.toString()), subArgs, ret ^ sub)
@@ -102,7 +102,14 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
     //TODO: check for inhabitability
   }
-
+  
+  /***
+   * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 
+   * as well as the corresponding no confusion and no junk axioms
+   * Constructs a structure whose models are exactly the (not necessarily initial) models of the declared inductive types
+   * @param parent The parent module of the declared inductive types
+   * @param dd the derived declaration to be elaborated
+   */
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
     // to hold the result
     var elabDecls : List[Declaration] = Nil
@@ -154,7 +161,11 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     }
   }
 
-  /** declarations for injectivity of all term constructors */
+  /** 
+   *  declarations for injectivity of all term constructors 
+   * @param parent The parent module of the declared inductive types
+   * @param d the termlevel inductive declaration, for which the injectivity declaration is to be generated
+   */
   private def injDecl(parent : DeclaredModule, d : TermLevel) : Declaration = {
     if (d.args.length <= 0) 
       throw ImplementationError("Trying to assert injectivity of a constant function")
@@ -169,7 +180,12 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     Constant(parent.toTerm, uniqueLN("injective_"+d.name.toString), Nil, Some(inj), None, None)
   }
   
-  /** no confusion declarations for d and any other constructor */
+  /** 
+   * generates the no confusion/injectivity declarations for d and any other constructor
+   * @param parent The parent module of the declared inductive types
+   * @param d the termlevel inductive declaration, for which the no confusion/injectivity declarations are to be generated
+   * @params tmdecls all the termlevel declarations
+   */
   private def noConf(parent : DeclaredModule, d : TermLevel, tmdecls: List[TermLevel]) : List[Declaration] = {
     var decls:List[Declaration] = Nil
     tmdecls foreach {e => 
@@ -187,6 +203,15 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     decls
   }
   
+  /** 
+   * generates the no junk declarations for all term-- and typelevel inductive declarations
+   * @param parent The parent module of the declared inductive types
+   * @param decls all the inductive declarations
+   * @param tpdecls all typelevel inductive declarations
+   * @params tmdecls all the termlevel declarations
+   * @returns returns one no junk (morphism) declaration for each typelevel inductive declaration
+   * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
+   */
   private def noJunk(parent : DeclaredModule, decls : List[InductiveDecl], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], dd: DerivedDeclaration) : List[Declaration] = {
     
     var derived_decls:List[Declaration] = Nil
