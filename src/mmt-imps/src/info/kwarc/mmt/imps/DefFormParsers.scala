@@ -32,7 +32,7 @@ class DefFormParsers(js : List[JSONObject])
 
   lazy val number     : Parser[Int]    = """(0|[1-9]\d*)""".r ^^ { _.toInt }
 
-  lazy val parseName  : Parser[String] = regex("""[^()\t\r\n ]+""".r)
+  lazy val parseName  : Parser[String] = regex("""[^()\"\t\r\n ]+""".r)
   lazy val parseTName : Parser[Name]   = fullParser(
     (parseName ^^ { case (nm) => Name(nm,None,None)}) | ("()" ^^ {case (_) => Name("()",None,None)})
   )
@@ -263,6 +263,22 @@ class DefFormParsers(js : List[JSONObject])
       case (n : Name)      => ODefString(Right(n),None,None)
   })
 
+  lazy val parseArgComponentTheories : Parser[ArgComponentTheories] = fullParser(
+    "(component-theories" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgComponentTheories(ns,None,None) }
+  )
+
+  lazy val parseArgDistinctConstants : Parser[ArgDistinctConstants] = fullParser(
+    "(distinct-constants" ~> rep1("(" ~> rep1(parseTName) <~ ")") <~ ")" ^^ { case (ll) => ArgDistinctConstants(ll,None,None)}
+  )
+
+  lazy val parseAxiomSpec : Parser[AxiomSpec] = fullParser(
+    "(" ~> (parseName?) ~ parseDefString ~ (rep1(parseUsage)?) <~ ")" ^^ {case n ~ d ~ us => AxiomSpec(n,d,us,None,None)}
+  )
+
+  lazy val parseArgAxioms : Parser[ArgAxioms] = fullParser(
+    "(axioms" ~> rep1(parseAxiomSpec) <~ ")" ^^ { case (as) => ArgAxioms(as,None,None) }
+  )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -375,12 +391,23 @@ class DefFormParsers(js : List[JSONObject])
     )
   }
 
+  val pTheory : Parser[DFTheory] = {
+    DFTheorem.js = this.js
+    composeParser(
+      "def-theory",
+      List(parseTName),
+      Nil,
+      List(parseArgLanguage,parseArgAxioms,parseArgComponentTheories,parseArgDistinctConstants).map(p => (p,O)),
+      DFTheory
+    )
+  }
+
 
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
-    pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem
+    pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

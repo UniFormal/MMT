@@ -1746,6 +1746,32 @@ case class ArgProof(prf : String, var src : SourceInfo, var cmt : CommentInfo) e
   override def toString: String = "(proof " + prf + ")"
 }
 
+case class ArgComponentTheories(cps : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(component-theories " + cps.mkString(" ") + ")"
+}
+
+case class ArgDistinctConstants(ds : List[List[Name]], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = {
+    var str = "(distinct-constants"
+    for (d <- ds) {
+      str = str + " (" + d.mkString(" ") +  ")"
+    }
+    str = str + ")"
+    str
+  }
+}
+
+case class AxiomSpec(name : Option[String], defstr : DefString, usgs : Option[List[Usage]],
+                     var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = {
+    "(" + (if (name.isDefined) {name.get + " "} else {""}) + defstr.toString + (if (usgs.isDefined) {" " + usgs.get.mkString(" ")} else {""}) + ")"
+  }
+}
+
+case class ArgAxioms(cps : List[AxiomSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(axioms " + cps.mkString(" ") + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1905,65 +1931,88 @@ object DFTheorem extends Comp[DFTheorem] {
                     :+: (mac : Option[ArgMacete]) :+: (ht : Option[ArgHomeTheory]) :+: (prf : Option[ArgProof]) :+: HNil
     => { // Construct full theorem!
 
-      /*
-      //println(" > Looking for theory " + theory.get.thy)
-      val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thy.get.thy.s.toLowerCase)
-      assert(json_theory.isDefined)
-      assert(json_theory.get.getAsString("type") == "imps-theory")
-      val theorems : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"theorems")
-      assert(theorems.nonEmpty)
-      val axioms : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"axioms")
-      var s : String = ""
-      val thetheorem : Option[JSONObject] = if (n.s != "()")
-      {
-        //println(" > looking for theorem " + name.get + " in theory " + theory.get.thy + " ...")
-        (axioms ::: theorems).find(j => j.getAsString("name") == n.s.toLowerCase)
-      } else {
-        //println(" > looking for nameless theorem () in theory " + theory.get.thy + " ...")
-
-        s = dfstr.s.tail.init
-        //println("     > scala theorem: " + removeWhitespace(x.tail.init))
-        var tempt = theorems.find(j => removeWhitespace(j.getAsString("formula-string")) == removeWhitespace(x.tail.init))
-
-        if (!(tempt.isDefined)) {
-            val handpicked = handpick(removeWhitespace(dfstr.s.tail.init))
-              //println("     > handpicked: " +handpicked)
-              tempt = theorems.find(j => removeWhitespace(j.getAsString("formula-string")) == handpicked)
-            }
-            tempt
-        }
-
-
-      if (!(thetheorem.isDefined))
-      {
-        assert(s != "")
-        val bar = removeWhitespace(s)
-        //println(" > s = " + s)
-
-        for (t <- theorems)
-        {
-          val foo = removeWhitespace(t.getAsString("formula-string"))
-          val n = 5
-          if (foo.take(n) == bar.take(n)) {
-            //println("     > json theorem: " + foo)
-          }
-        }
-      }
-
-      assert(thetheorem.isDefined)
-      val thesexp : String = thetheorem.get.getAsString("formula-sexp")
-      assert(thesexp.nonEmpty)
-
-      val sp : SymbolicExpressionParser = new SymbolicExpressionParser
-      val lsp = sp.parseAll(sp.parseSEXP,thesexp)
-      assert(lsp.successful)
-
-      val formula = impsMathParser.makeSEXPFormula(lsp.get)*/
-
       println("Don't forget to put formula parsing back in")
       DFTheorem(n,df,None,modr,modl,thy.get,us,tr,mac,ht,prf,None,None).asInstanceOf[T]
     }
     case _ => ??!(args)
+  }
+}
+
+case class DFTheory(n : Name, lang : Option[ArgLanguage], comp : Option[ArgComponentTheories],
+                    axs : Option[ArgAxioms], dscs : Option[ArgDistinctConstants],
+                    var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFTheory extends Comp[DFTheory] {
+
+  var js : List[JSONObject] = Nil
+
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (lang : Option[ArgLanguage]) :+: (comp : Option[ArgComponentTheories])
+                    :+: (axs : Option[ArgAxioms]) :+: (dscs : Option[ArgDistinctConstants]) :+: HNil => {
+      println("Don't forget to put formula parsing back in")
+      DFTheory(n,lang,comp,axs,dscs,None,None).asInstanceOf[T]
+    }
+    case _ => ??!(args)
+  }
+}
+
+object FrmFnd
+{
+  def findAxiom(thyname : String, spec : AxiomSpec, js : List[JSONObject]) : IMPSMathExp =
+    findFormula(thyname, spec.defstr, "theorems", "axioms", spec.name, js)
+
+  def findFormula(thyname : String, dfstr : DefString, g1 : String, g2 : String, n : Option[String], js : List[JSONObject]) : IMPSMathExp =
+  {
+    val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thyname.toLowerCase)
+    assert(json_theory.isDefined)
+    assert(json_theory.get.getAsString("type") == "imps-theory")
+
+    val group1 : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],g1)
+    assert(group1.nonEmpty)
+    val group2 : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],g2)
+
+    var s : String = ""
+    val theThing : Option[JSONObject] = if (n.isDefined)
+    {
+      (group2 ::: group1).find(j => j.getAsString("name") == n.get.toLowerCase)
+    } else {
+      s = dfstr.s.tail.init
+      //println("     > scala theorem: " + removeWhitespace(x.tail.init))
+      var tempt = group1.find(j => removeWhitespace(j.getAsString("formula-string")) == removeWhitespace(dfstr.s.tail.init))
+
+      if (tempt.isEmpty) {
+        val handpicked = handpick(removeWhitespace(dfstr.s.tail.init))
+        //println("     > handpicked: " +handpicked)
+        tempt = group1.find(j => removeWhitespace(j.getAsString("formula-string")) == handpicked)
+      }
+      tempt
+    }
+
+    if (theThing.isEmpty)
+    {
+      assert(s != "")
+      val bar = removeWhitespace(s)
+      //println(" > s = " + s)
+
+      for (t <- group1)
+      {
+        val foo = removeWhitespace(t.getAsString("formula-string"))
+        val n = 5
+        if (foo.take(n) == bar.take(n)) {
+          //println("     > json theorem: " + foo)
+        }
+      }
+    }
+
+    assert(theThing.isDefined)
+    val thesexp : String = theThing.get.getAsString("formula-sexp")
+    assert(thesexp.nonEmpty)
+
+    val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+    val lsp = sp.parseAll(sp.parseSEXP,thesexp)
+    assert(lsp.successful)
+
+    impsMathParser.makeSEXPFormula(lsp.get)
   }
 }
 
