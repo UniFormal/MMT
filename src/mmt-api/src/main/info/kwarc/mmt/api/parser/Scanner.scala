@@ -96,7 +96,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
   /** the currently open notations, inner-most first; initialized with the topRule or empty list */
   private var active: List[ActiveNotation] = {
     parsingUnitOpt.flatMap(_.top).toList.map {topRule =>
-       new ActiveNotation(this, List(topRule), ScannerBacktrackInfo(0,0))
+       new ActiveNotation(this, List(topRule), ScannerNoBacktrack)
     }
   }
 
@@ -203,11 +203,15 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
   }
 
   private def restoreBacktrackInfo(an: ActiveNotation) {
-    val bti = an.backtrackInfo
-    currentIndex = bti.currentIndex
-    active match {
-      case Nil => numCurrentTokens = bti.numCurrentTokens
-      case hd::_ => hd.numCurrentTokens = bti.numCurrentTokens
+    an.backtrackInfo match {
+      case bti: ScannerBacktrack =>
+        currentIndex = bti.currentIndex
+        active match {
+          case Nil => numCurrentTokens = bti.numCurrentTokens
+          case hd::_ => hd.numCurrentTokens = bti.numCurrentTokens
+        }
+      case ScannerNoBacktrack =>
+        throw ParseError("required notation did not match: " + an.toString)
     }
   }
 
@@ -290,7 +294,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
                   case Nil => numCurrentTokens
                   case hd::_ => hd.numCurrentTokens
                 }
-                val an = new ActiveNotation(this, hd::others, ScannerBacktrackInfo(currentIndex, nct))
+                val an = new ActiveNotation(this, hd::others, ScannerBacktrack(currentIndex, nct))
                 active ::= an
                 applyFirst(true)
               case Nil =>
