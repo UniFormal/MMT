@@ -58,6 +58,9 @@ case class JSONArray(values: JSON*) extends JSON {
       JSON.addIndent(v.toFormattedString(indent), indent)
     ).mkString(start, sep, end)
   }
+  
+  // needed for Python bridge
+  def iterator = values.iterator
 }
 
 object JSONArray {
@@ -81,8 +84,12 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
     }.mkString(start, sep, end)
   }
 
-  def apply(s: String): Option[JSON] = map.find(_._1 == JSONString(s)).map(_._2)
+  def apply(s: JSONString): Option[JSON] = map.find(_._1 == s).map(_._2)
+  def apply(s: String): Option[JSON] = apply(JSONString(s))
 
+  // needed for Python bridge
+  def iterator = map.iterator.map(_._1)
+  
   def getAs[A](cls: Class[A], s : String) : A = {
     val ret = apply(s).getOrElse(throw new ParseError("Field \"" + s + "\" not defined in JSONObject " + this)) match {
       case j : JSONValue => j.value
@@ -116,6 +123,7 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
       case j => throw ParseError("getAs Error: A=" + cls.toString + ", j:" + j.getClass + " = " + j)
     }
   }
+  
 }
 
 object JSONObject {

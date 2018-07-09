@@ -37,7 +37,11 @@ class JupyterKernel extends Extension {
     }
   }
   
-  def processRequest(kernel: JupyterKernelPython, req: String): String = {
+  def processRequest(kernel: JupyterKernelPython, session: String, req: String): JSON = {
+    val comm = REPLServer.Command.parse(req)
+    val resp = repl(Some(session), comm)
+    resp.toJSON
+    
     // example code, delete eventually
     //val w = kernel.getWidgets.find(_.name == "hello").get
     //val before = w.get("hello")
@@ -45,11 +49,11 @@ class JupyterKernel extends Extension {
     // beginnings of the real code
     //val command = REPLServer.Command.parse(req)
     //val resp = repl(None, command)
-    val wid = kernel.makeWidget("test")
-    wid.set("text", "init")
-    wid.observe("text", (k,a) => wid.set("text", "changed"))
-    kernel.addWidget(wid)
-    "ok"
+    //val wid = kernel.makeWidget("test")
+    //wid.set("text", "init")
+    //wid.observe("text", (k,a) => wid.set("text", "changed"))
+    //kernel.addWidget(wid)
+    // "ok"
     //resp.toString
   }
 }

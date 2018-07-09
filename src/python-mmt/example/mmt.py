@@ -60,6 +60,16 @@ JavaObject.__len__ = lambda self: self.length()
 JavaObject.__contains__ = lambda self,x: self.contains(x)
 JavaObject.__getitem__ = lambda self,x: self.apply(x)
 JavaObject.__setitem__ = lambda self,x,y: self.update(x,y)
+JavaObject.__delitem__ = lambda self,x: self.delete(x)
+JavaObject.__contains__ = lambda self,x: self.contains(x)
+JavaObject.__iter__ = lambda self: self.iterator()
+# needed because we can't inline it in Python
+def iternext(o):
+    if o.hasNext():
+        return o.next()
+    else:
+        raise StopIteration
+JavaObject.__next__ = iternext
 JavaObject.__add__ = MagicFun("+")
 JavaObject.__sub__ = MagicFun("-")
 JavaObject.__mul__ = MagicFun("*")

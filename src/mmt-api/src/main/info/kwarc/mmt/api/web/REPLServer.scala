@@ -69,12 +69,15 @@ import ServerResponse._
 
 object REPLServer {
   abstract class Command
-  case object Start extends Command
-  case object Clear extends Command
+  // meta-commands managing the set of sessions
   case object Show extends Command
+  case object Clear extends Command
+  // meta-commands managing a single session
+  case object Start extends Command
   case object Restart extends Command
   case object Quit extends Command
-  case class Eval(command: String) extends Command
+  // mathematically relevant commands
+  case class Input(command: String) extends Command
   
   object Command {
     def parse(s: String): Command = {
@@ -84,7 +87,7 @@ object REPLServer {
         case "show" => Show
         case "restart" => Restart
         case "quit" => Quit
-        case s => Eval(s) 
+        case s => Input(s) 
       }
     }
   }
@@ -104,8 +107,7 @@ class REPLServer extends ServerExtension("repl") {
       val session = request.headers.get("x-repl-session")
       apply(session, command)
     } catch {
-      case err: Error => REPLServerResponse(Some(err.toHTML), None, success = false)
-      case e : Exception => REPLServerResponse(Some(ServerError("unknown error").setCausedBy(e).toHTML), None, success = false)
+      case e : Exception => return ServerResponse.errorResponse(Error(e), "html")
     }
     JsonResponse(response.toJSON)
   }
@@ -130,7 +132,7 @@ class REPLServer extends ServerExtension("repl") {
       case Start => startSession
       case Restart => restartSession(session)
       case Quit => quitSession(session)
-      case Eval(s) => evalInSession(session, s)
+      case Input(s) => evalInSession(session, s)
     }
 }
 
@@ -142,28 +144,28 @@ class REPLServer extends ServerExtension("repl") {
       case "end" =>
         // special case for closing the current container element (module etc.)
         session.parseElementEnd
-        Some("closed module")
+        "closed module"
       case "eval" =>
         val d = session.parseObject(rest)
         controller.add(d)
-        Some(presenter.asString(d))
+        presenter.asString(d)
       case "get" =>
         val p = Path.parse(rest, session.doc.nsMap)
         val se = controller.get(p)
-        Some(presenter.asString(se))
+        presenter.asString(se)
       case "content" | _ =>
         val toBeParsed = if (firstPart == "content") rest else input
         val se = session.parseStructure(toBeParsed)
-        Some(presenter.asString(se))
+        presenter.asString(se)
     }
-    REPLServerResponse(message, None, session = Some(session.id))
+    REPLServerResponse(message)
   }
 
 
-  private def getSessions = REPLServerResponse(None, Some(sessions.map(_.id)))
+  private def getSessions = REPLServerResponse(sessions.map(_.id).mkString(", "))
   private def clearSessions = {
     sessions foreach deleteSession
-    REPLServerResponse(Some("Sessions cleared"), None)
+    REPLServerResponse("Sessions cleared")
   }
 
   private def startSession = {
@@ -173,21 +175,21 @@ class REPLServer extends ServerExtension("repl") {
     }
     createSession(path(id), id)
     // return the session id
-    REPLServerResponse(Some(s"Created Session $id"), None, session = Some(id))
+    REPLServerResponse(s"Created Session $id")
   }
 
   private def restartSession(session: REPLSession) = {
     val id = session.id
     deleteSession(session)
     createSession(path(id), id)
-    REPLServerResponse(Some(s"Restarted Session $id"), None, session = Some(id))
+    REPLServerResponse(s"Restarted Session $id")
   }
 
   private def quitSession(session: REPLSession) = {
     val id = session.id
     deleteSession(session)
     controller.delete(session.doc.path)
-    REPLServerResponse(Some(s"Deleted session $id"), None, session = Some(id))
+    REPLServerResponse(s"Deleted session $id")
   }
 
   // SESSION MANAGEMENT
@@ -210,39 +212,12 @@ class REPLServer extends ServerExtension("repl") {
   }
 }
 
+import utils._
 /** Response to a REPL Session */
-case class REPLServerResponse(message: Option[String], sessions: Option[List[String]], session: Option[String] = None, success: Boolean = true) {
-  def toJSON: JSON = REPLServerResponse.Converter.toJSON(this)
-}
-
-object REPLServerResponse {
-  implicit object Converter extends JSONConverter[REPLServerResponse] {
-    import JSONConverter._
-
-    def toJSON(r: REPLServerResponse) = r match {
-      case REPLServerResponse(message, sessions, session, success) =>
-        val buffer = new JSONObjectBuffer
-
-        buffer.add("message", message)
-        buffer.add("sessions", sessions)
-        buffer.add("session", session)
-        buffer.add("success", success)
-
-        buffer.result()
-    }
-    def fromJSONOption(j: JSON): Option[REPLServerResponse] = j match {
-      case jo: JSONObject =>
-        val r = new JSONObjectParser(jo)
-
-        Try(
-          REPLServerResponse(
-            r.take[Option[String]]("message"),
-            r.take[Option[List[String]]]("sessions"),
-            r.take[Option[String]]("session"),
-            r.take[Boolean]("success")
-          )
-        ).toOption
-      case _ => None
-    }
+case class REPLServerResponse(message: String) {
+  def toJSON: JSON = {
+    JSONObject(
+      "message" -> JSONString(message)
+    )
   }
 }
