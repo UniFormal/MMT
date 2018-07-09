@@ -56,6 +56,7 @@ class TypedRelationalExtractor extends RelationalExtractor {
                	  case None => IsUntypedConstant
                	}
                	f(declType(c.path))
+					  case _ =>
             }
          case _ =>
       }

@@ -180,13 +180,15 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
               tpdecl
             }
             case Univ(x) if x != 1 => throw LocalError("unsupported universe")
-            case r => {// TODO check that r is a type
+            case r if (r match {
+              case Univ(1) => true
+              case _ => false
+            }) =>
               val tmdecl = TermLevel(c.path, args, r)
               tmdecls ::= tmdecl 
               tmdecl
             }
           }
-        }
       case _ => throw LocalError("unsupported declaration")
     }
     // the type and term constructors of the inductive types and the no confusion axioms for the term constructors
