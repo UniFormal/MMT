@@ -4,20 +4,8 @@ import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.utils.MyList.fromList
 import info.kwarc.mmt.api.objects._
 import scala.collection.mutable.{HashSet,HashMap}
-import info.kwarc.mmt.api.checking.ObjectChecker
-import info.kwarc.mmt.api.checking.Checker
-import info.kwarc.mmt.api.checking.CheckingResult
-import info.kwarc.mmt.api.frontend.actions.Check
-import info.kwarc.mmt.api.checking.StructureChecker
 
-import documents._
-import modules._
-import archives._
-import java.util.ResourceBundle.Control
-import info.kwarc.mmt.api.frontend.Controller
 import scala.util.control.Exception.Catch
-import com.sun.org.glassfish.external.statistics.Statistic
-import com.sun.xml.internal.fastinfoset.util.PrefixArray.PrefixEntry
 
 /**
  * An ABoxStore stores the abox of the loaded elements with respect to the MMT ontology.
@@ -150,7 +138,7 @@ class RelStore(report : frontend.Report) {
     * @note precondition: Every constant is annotated as having exactly one of the types untyped constant, data constructor,
     * datatype constructor, rule, judgement constructor, high universe
     */
-   def mapConstant(s:Unary, p:Path) : (StatisticEntries, Path) = {
+   def mapConstant(s:Unary, p:Path) : (StatType, Path) = {
      if (s == IsConstant) {
        try {
          val desiredTypes : List[Unary] = List(IsDataConstructor, IsDatatypeConstructor, IsRule, IsJudgementConstructor, IsHighUniverse, IsUntypedConstant)
@@ -158,7 +146,7 @@ class RelStore(report : frontend.Report) {
          val entry = un getOrElse {
            IsConstant
          }
-         var entries : List[(StatisticEntries, Path)] = Nil
+         var entries : List[(StatType, Path)] = Nil
          entry match {
            case IsDatatypeConstructor => entries::=(DatatypeConstructorEntry(), p)
            case IsDataConstructor => entries::=(DataConstructorEntry(), p)
@@ -192,7 +180,7 @@ class RelStore(report : frontend.Report) {
          case IsView => (ViewEntry(), p)
          case IsStructure => (StructureEntry(), p)
          case IsPattern => (PatternEntry(), p)
-         case _ => (AnyOtherEntry(), p)//(new StatisticEntries(s.toString),p)
+         case _ => (AnyOtherEntry(), p)//(new StatType(s.toString),p)
        }
      }
    }
@@ -202,7 +190,7 @@ class RelStore(report : frontend.Report) {
     * rule, judgement constructor, high universe and typed constant (fallback),
     * @param p a tuple containing the unary "type" of the individual and the list of constants of that type
     */
-   def mapConstants(p:(Option[Unary], List[Path])) : List[(StatisticEntries, Path)]= {
+   def mapConstants(p:(Option[Unary], List[Path])) : List[(StatType, Path)]= {
      p match {
        case (Some(t),x::l) => mapConstant(t, x)::mapConstants((Some(t),l))
        case (Some(p), Nil) => Nil
@@ -215,13 +203,13 @@ class RelStore(report : frontend.Report) {
     * @param p the path of the document of theory to make the statistic for
     * @param q the query
     */ 
-  def makeStatisticsFor(p:Path, q:RelationExp, prefix:Option[PrefixEntry]) = {
+  def makeStatisticsFor(p:Path, q:RelationExp, prefix:Option[StatPrefixEntry]) = {
     val pre = prefix.getOrElse(NoPrefix())
     val ds=querySet(p, q)
     val dsGl = ds.toList.groupBy(x => getType(x)).toList flatMap {x => mapConstants(x)}
-    val bla : List[(StatisticEntries,List[(StatisticEntries,Path)])] = dsGl.groupBy({case (s,x)=>s}).toList
-    val dsG : List[(StatisticEntries, Int)] = bla flatMap {
-      case (s:StatisticEntries,l) => (List((s,l.size)))
+    val bla : List[(StatType,List[(StatType,Path)])] = dsGl.groupBy({case (s,x)=>s}).toList
+    val dsG : List[StatisticEntry] = bla flatMap {
+      case (s:StatType,l) => (List(StatisticEntry(s,l.size)))
     }
     Statistics(List((pre, dsG)))
   }
@@ -231,24 +219,36 @@ class RelStore(report : frontend.Report) {
     * @param p the path of the document or theory
     */
   def makeStatistics(q: Path) = {
+    if (q.toString() == "http://docs.omdoc.org/examples")
+    {}
     val decl = Transitive(+Declares)
-    val subtheory = Transitive(+Declares | Reflexive) * HasType(IsTheory)
+    val subtheory = (decl | Reflexive) * HasType(IsTheory)
     val align = decl * Transitive(+IsAlignedWith)
     // val subtheory = Transitive(+Declares *HasType(IsTheory) | Reflexive)
-    val expMorph = subtheory * Transitive(+HasViewFrom)
-    val morph = subtheory * Transitive(+HasMeta | +Includes | +IsImplicitly | +HasViewFrom)
-    val expinduced = expMorph * +Declares * HasType(IsConstant)
-    val induced = morph * +Declares * HasType(IsConstant)
+    val expMorph = decl * Transitive(+HasViewFrom)
+    val morph = decl * Transitive(+HasMeta | +Includes | +IsImplicitly | +HasViewFrom)
+    val expinduced = expMorph * decl * HasType(IsConstant)
+    val induced = subtheory * morph * decl * HasType(IsConstant)
     var dsG = makeStatisticsFor(q, decl, None)
     dsG += makeStatisticsFor(q, align, Some(AlignmentPrefix()))
     val (exMorph, anyMorph) = (querySet(q, expMorph).size, querySet(q, morph).size)
-    if (exMorph > 0) 
-      dsG += ("exp_mor", "Explicit theory morphisms", exMorph, None)
+    if (exMorph > 0)
+      dsG += (ExplicitMorphismEntry(), exMorph, None)
     if (anyMorph > 0)
-      dsG += ("any_mor", "Any theory morphisms", anyMorph, None)
+      dsG += (AnyMorphismEntry(), anyMorph, None)
     dsG += makeStatisticsFor(q, expinduced, Some(ExplicitMorphismPrefix()))
-    dsG += makeStatisticsFor(q, induced, Some(AnyMorphismPrefix()))
+    dsG += makeStatisticsFor(q, align, Some(AnyMorphismPrefix()))
     dsG
+  }
+  
+  def statDescription : JSONArray = {
+    val prefsClasses = List(NoPrefix(), ExplicitMorphismPrefix(), AnyMorphismPrefix(), AlignmentPrefix())
+    val statClasses = List(TheoryEntry(), DocumentEntry(), UntypedConstantEntry(), TypedConstantEntry(), MaltypedConstantEntry(), 
+        StructureEntry(), PatternEntry(), JudgementConstructorEntry(), DataConstructorEntry(), DatatypeConstructorEntry(), 
+        RuleEntry(), ViewEntry(), HighUniverseEntry(), ExplicitMorphismEntry(), AnyMorphismEntry())
+    val prefs = JSONArray.fromList(prefsClasses map(_.toJSON))
+    val entries = JSONArray.fromList(statClasses map(_.toJSON))
+    JSONArray.fromList(List(JSONObject("sorts of relations to the declaration" -> prefs), JSONObject("types of declarations" -> entries)))
   }
 
    /**
@@ -276,49 +276,114 @@ class RelStore(report : frontend.Report) {
 }
 
 //The type of a statistics for a theory, document or archive
-case class Statistics(entries: List[(PrefixEntry, List[(StatisticEntries,Int)])]) {
+case class Statistics(entries: List[(StatPrefixEntry, List[StatisticEntry])]) {
+  def +(s: StatisticEntry, pre:StatPrefixEntry): Statistics = {
+    val entriesRes = (!(entries.map(_._1.getKey) contains pre.getKey)) match {
+      case true => 
+        (pre, List(s))::entries
+      case false =>
+        val ent = entries map {
+          case (p, stats) if (p.getKey == pre.getKey) =>
+            if (stats map(_.stat) contains s.stat) {
+              val statsRes = stats map {
+                case e if (e.stat.getKey != s.stat.getKey) => e
+                case e if (e.stat.getKey == s.stat.getKey) => StatisticEntry(e.stat, e.n+s.n)
+              }
+              (p, statsRes)
+            } else
+              (p, s::stats)
+          case e => e
+        }
+      ent
+    }
+    Statistics(entriesRes)
+  }
+  def +(that: (StatPrefixEntry, List[StatisticEntry])) : Statistics = {
+    var stat : Statistics = this
+    def f(p:(StatisticEntry, StatPrefixEntry)) : Unit = stat = stat+(p._1, p._2)
+    that._2 map {s => (s, that._1)} foreach f
+    stat
+  }
+  
   def +(that: Statistics): Statistics = {
-    Statistics(entries ::: that.entries)
+    var stat = this
+    def f(e:(StatPrefixEntry, List[StatisticEntry])) = stat = stat + e
+    that.entries foreach f
+    stat
   }
-  def +(key: String, description: String, n: Int, pre:Option[PrefixEntry]): Statistics = {
-    this + Statistics(List((pre.getOrElse(NoPrefix()), List((new StatisticEntries(key, description),n)))))
+  def +(s: StatType, n: Int, pre:Option[StatPrefixEntry]): Statistics = {
+    this + (StatisticEntry(s, n), pre.getOrElse(NoPrefix()))
   }
-  def +(s: StatisticEntries, n: Int, pre:PrefixEntry): Statistics = {
-    this + Statistics(List((pre, List((s,n)))))
+  def empty = Statistics(Nil)
+  /**
+    * Returns a JSON representation of the statistics
+    */
+  def toJSON : JSONArray = {
+    val jstats = entries map {case (pre, substat) => JSONObject(pre.getKey -> JSONArray.fromList(substat.map(_.toJSON)))}
+    JSONArray.fromList(jstats)
   }
-  def empty() = Statistics(Nil)
 }
 
-sealed class PrefixEntry(key:String, description:String) {
-  def getDescription = {description}
-  def getKey = {key}
+sealed class StatPrefixEntry(key:String, teaser:String, description:String) {
+  def getKey = key
+  def getTeaser = teaser
+  def getDescription = description
+  def ==(other : StatType) = this.getKey == other.getKey
+  def toJSON = JSONArray.fromList((List(JSONObject("key"->JSONString(key)), JSONObject("teaser"->JSONString(teaser)), JSONObject("description"->JSONString(description)))))
 }
-case class NoPrefix() extends PrefixEntry("decl", "Declared declaration")
-case class ExplicitMorphismPrefix() extends PrefixEntry("exp_mor", "Induced declaration by explicit morphisms (views)")
-case class AnyMorphismPrefix() extends PrefixEntry("any_mor", "Induced declaration by any morphisms")
-case class AlignmentPrefix() extends PrefixEntry("align", "Alignment")
+case class NoPrefix() extends StatPrefixEntry("decl", "Declared declaration", 
+    "Declarations declared (possibly via multiple hops) by the given theory/document/archive")
+case class ExplicitMorphismPrefix() extends StatPrefixEntry("exp_mor", "Induced declaration by explicit morphisms (views)", 
+    "Declarations induced via (possibly multiple concatenated) explicit theory morphisms (aka. views)")
+case class AnyMorphismPrefix() extends StatPrefixEntry("any_mor", "Induced declaration by any morphisms", 
+    "Declarations induced via any (possibly multiple concatenated) theory morphisms (views, includes, metas and implicit morphisms)")
+case class AlignmentPrefix() extends StatPrefixEntry("align", "Alignment", 
+    "Declarations aligned (possibly via multiple intermediate alignments) with declaration declared by the given theory/document/archive")
 
 
 //The types of the entries of the statistics to be generated
-sealed class StatisticEntries(key:String, description:String) {
-  def getDescription = {description}
-  def getKey = {key}
-  private var pre : PrefixEntry = NoPrefix()
+case class StatisticEntry(stat : StatType, n:Int) {
+  def +(other : StatisticEntry) : List[StatisticEntry] = {
+    if (stat.getKey == other.getStat.getKey)
+      List(StatisticEntry(stat, n+other.getN))
+    else 
+      List(this, other)
+  }
+  def :+(stats : List[StatisticEntry]) : List[StatisticEntry] = {
+    if (stats map(_.getStat) contains stat) {
+      stats map {
+        case x if (x.getStat.getKey == stat.getKey) => StatisticEntry(stat, n+x.getN)
+        case y => y
+      }
+    } else 
+      this::stats
+  }
+  def getStat = {stat}
+  def getN = {n}
+  def toJSON : JSONObject = JSONObject(stat.getKey -> JSONInt(n))
 }
 
-case class TheoryEntry() extends StatisticEntries("theo", "theory")
-case class DocumentEntry() extends StatisticEntries("doc", "document")
-case class UntypedConstantEntry() extends StatisticEntries("unty_con", "untyped constant")
-case class TypedConstantEntry() extends StatisticEntries("ty_con", "typed constant")
-case class MaltypedConstantEntry() extends StatisticEntries("mal_con", "maltyped constant")
-case class StructureEntry() extends StatisticEntries("struc", "structure")
-case class PatternEntry() extends StatisticEntries("pat", "pattern")
-case class JudgementConstructorEntry() extends StatisticEntries("judg", "judgement constructor")
-case class DataConstructorEntry() extends StatisticEntries("data", "data constructor")
-case class DatatypeConstructorEntry() extends StatisticEntries("type", "datatype constructor")
-case class RuleEntry() extends StatisticEntries("rule", "rule")
-case class ViewEntry() extends StatisticEntries("view", "view")
-case class HighUniverseEntry() extends StatisticEntries("high", "high universe")
-case class ExplicitMorphismEntry() extends StatisticEntries("exp_mor", "explicit theory morphism")
-case class AnyMorphismEntry() extends StatisticEntries("any_mor", "any theory morphism")
-case class AnyOtherEntry() extends StatisticEntries("other", "other")
+sealed class StatType(key:String, teaser:String, description: String) {
+  def getKey = {key}
+  def getTeaser = {teaser}
+  def getDescription = {description}
+  def ==(other : StatType) = {this.getKey == other.getKey}
+  def toJSON = JSONArray.fromList((List(JSONObject("key"->JSONString(key)), JSONObject("teaser"->JSONString(teaser)), JSONObject("description"->JSONString(description)))))
+}
+
+case class TheoryEntry() extends StatType("theo", "theory", "theory")
+case class DocumentEntry() extends StatType("doc", "document", "document")
+case class UntypedConstantEntry() extends StatType("unty_con", "untyped constant", "declaration of untyped constant")
+case class TypedConstantEntry() extends StatType("ty_con", "typed constant", "declaration of typed constant")
+case class MaltypedConstantEntry() extends StatType("mal_con", "maltyped constant", "maltyped (type can't be infered) constant declaration")
+case class StructureEntry() extends StatType("struc", "structure", "structure")
+case class PatternEntry() extends StatType("pat", "pattern", "pattern")
+case class JudgementConstructorEntry() extends StatType("judg", "judgement constructor", "judgement constructor")
+case class DataConstructorEntry() extends StatType("data", "data constructor", "data constructor")
+case class DatatypeConstructorEntry() extends StatType("type", "datatype constructor", "datatype constructor")
+case class RuleEntry() extends StatType("rule", "rule", "rule declarations")
+case class ViewEntry() extends StatType("view", "view", "views in the theory")
+case class HighUniverseEntry() extends StatType("high", "high universe", "constructors returning kinds or object in even higher typing universes")
+case class ExplicitMorphismEntry() extends StatType("exp_mor", "explicit theory morphism", "the transitive closure of all theory morphisms into the theory")
+case class AnyMorphismEntry() extends StatType("any_mor", "any theory morphism", "the transitive closure of all theory morphisms into the theory")
+case class AnyOtherEntry() extends StatType("other", "other", "other")
