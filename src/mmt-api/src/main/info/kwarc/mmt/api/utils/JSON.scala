@@ -7,8 +7,7 @@ import info.kwarc.mmt.api.ParseError
  * straightforward API for JSON objects
  */
 sealed abstract class JSON {
-  /** turns this JSON into a prettified string */
-  override def toString: String = toFormattedString("  ")
+  override def toString: String = toCompactString
 
   /** turns this JSON Object into a compact (no-spaces) string */
   def toCompactString: String = toFormattedString("")
@@ -78,7 +77,7 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
       }
     }
 
-    val spaces = if(indent != "") " " else ""
+    val spaces = if (indent != "") " " else ""
     map.map { case (k, v) =>
       k.toFormattedString(indent) + ":" + spaces + JSON.addIndent(v.toFormattedString(indent), indent)
     }.mkString(start, sep, end)

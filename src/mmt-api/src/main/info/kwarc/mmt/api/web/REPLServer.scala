@@ -91,6 +91,17 @@ object REPLServer {
       }
     }
   }
+
+  /** Response by a REPL session after executing a [[Command]] */
+  abstract class REPLResponse
+  
+  case class AdminResponse(message: String) extends REPLResponse
+  
+  abstract class ElementResponse extends REPLResponse {
+    def element: StructuralElement
+  }
+  case class NewElement(element: StructuralElement) extends ElementResponse
+  case class ExistingElement(element: StructuralElement) extends ElementResponse
 }
 
 import REPLServer._
@@ -101,7 +112,7 @@ class REPLServer extends ServerExtension("repl") {
   private var sessions: List[REPLSession] = Nil
 
   def apply(request: ServerRequest): ServerResponse = {
-    val response: REPLServerResponse = try {
+    val response: REPLResponse = try {
       val input = (request.query + " " + request.body.asString).trim
       val command = Command.parse(input)
       val session = request.headers.get("x-repl-session")
@@ -109,10 +120,10 @@ class REPLServer extends ServerExtension("repl") {
     } catch {
       case e : Exception => return ServerResponse.errorResponse(Error(e), "html")
     }
-    JsonResponse(response.toJSON)
+    TextResponse(response.toString)
   }
 
-  def apply(session: Option[String], command: Command): REPLServerResponse = {
+  def apply(session: Option[String], command: Command): REPLResponse = {
     applyActual(session, command)
   }
   
@@ -121,7 +132,7 @@ class REPLServer extends ServerExtension("repl") {
 
   private def path(id: String): DPath = DPath(mmt.baseURI) / "jupyter" / id
 
-  private def applyActual(idO: Option[String], command: Command) : REPLServerResponse = {
+  private def applyActual(idO: Option[String], command: Command) : REPLResponse = {
     implicit lazy val session = idO match {
       case None => throw LocalError("session needed")
       case Some(id) => getSession(id)
@@ -134,38 +145,37 @@ class REPLServer extends ServerExtension("repl") {
       case Quit => quitSession(session)
       case Input(s) => evalInSession(session, s)
     }
-}
+  }
 
   private def evalInSession(session: REPLSession, input: String) = {
     val firstPart = input.takeWhile(c => !c.isWhitespace)
     val rest = input.substring(firstPart.length)
 
-    val message = firstPart match {
+    firstPart match {
       case "end" =>
         // special case for closing the current container element (module etc.)
         session.parseElementEnd
-        "closed module"
+        AdminResponse("closed module")
       case "eval" =>
         val d = session.parseObject(rest)
         controller.add(d)
-        presenter.asString(d)
+        NewElement(d)
       case "get" =>
         val p = Path.parse(rest, session.doc.nsMap)
         val se = controller.get(p)
-        presenter.asString(se)
+        ExistingElement(se)
       case "content" | _ =>
         val toBeParsed = if (firstPart == "content") rest else input
         val se = session.parseStructure(toBeParsed)
-        presenter.asString(se)
+        NewElement(se)
     }
-    REPLServerResponse(message)
   }
 
 
-  private def getSessions = REPLServerResponse(sessions.map(_.id).mkString(", "))
+  private def getSessions = AdminResponse(sessions.map(_.id).mkString(", "))
   private def clearSessions = {
     sessions foreach deleteSession
-    REPLServerResponse("Sessions cleared")
+    AdminResponse("Sessions cleared")
   }
 
   private def startSession = {
@@ -175,21 +185,21 @@ class REPLServer extends ServerExtension("repl") {
     }
     createSession(path(id), id)
     // return the session id
-    REPLServerResponse(s"Created Session $id")
+    AdminResponse(s"Created Session $id")
   }
 
   private def restartSession(session: REPLSession) = {
     val id = session.id
     deleteSession(session)
     createSession(path(id), id)
-    REPLServerResponse(s"Restarted Session $id")
+    AdminResponse(s"Restarted Session $id")
   }
 
   private def quitSession(session: REPLSession) = {
     val id = session.id
     deleteSession(session)
     controller.delete(session.doc.path)
-    REPLServerResponse(s"Deleted session $id")
+    AdminResponse(s"Deleted session $id")
   }
 
   // SESSION MANAGEMENT
@@ -213,11 +223,3 @@ class REPLServer extends ServerExtension("repl") {
 }
 
 import utils._
-/** Response to a REPL Session */
-case class REPLServerResponse(message: String) {
-  def toJSON: JSON = {
-    JSONObject(
-      "message" -> JSONString(message)
-    )
-  }
-}

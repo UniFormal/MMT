@@ -1,10 +1,12 @@
 package info.kwarc.mmt.python
 
+
 import info.kwarc.mmt.api._
 import web._
 import frontend._
-
+import presentation._
 import utils._
+
 
 /** interface to the Python side of the Jupyter kernel (will be implemented in Python) */
 trait WidgetPython {
@@ -26,6 +28,7 @@ trait JupyterKernelPython {
 
 class JupyterKernel extends Extension {
   private var repl: REPLServer = null
+  private lazy val presenter = controller.extman.get(classOf[Presenter], "html").getOrElse(controller.presenter)
   
   override def start(args: List[String]) {
     super.start(args)
@@ -38,9 +41,16 @@ class JupyterKernel extends Extension {
   }
   
   def processRequest(kernel: JupyterKernelPython, session: String, req: String): JSON = {
+    import REPLServer._
     val comm = REPLServer.Command.parse(req)
     val resp = repl(Some(session), comm)
-    resp.toJSON
+    resp match {
+      case AdminResponse(s) =>
+        JSONObject("message" -> JSONString(s))
+      case e: ElementResponse =>
+        val h = presenter.asString(e.element)
+        JSONObject("element" -> JSONString(h))
+    }
     
     // example code, delete eventually
     //val w = kernel.getWidgets.find(_.name == "hello").get
