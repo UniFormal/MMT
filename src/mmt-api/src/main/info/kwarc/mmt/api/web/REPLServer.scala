@@ -149,7 +149,7 @@ class REPLServer extends ServerExtension("repl") {
 
   private def evalInSession(session: REPLSession, input: String) = {
     val firstPart = input.takeWhile(c => !c.isWhitespace)
-    val rest = input.substring(firstPart.length)
+    val rest = input.substring(firstPart.length).trim
 
     firstPart match {
       case "end" =>
