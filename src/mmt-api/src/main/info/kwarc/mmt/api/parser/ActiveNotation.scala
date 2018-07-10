@@ -5,7 +5,11 @@ import utils.MyList._
 
 import ActiveNotation._
 
-case class ScannerBacktrackInfo(currentIndex: Int, numCurrentTokens: Int)
+/** remembers the relevant Scanner state at the time when an [[ActiveNotation]] was created */
+abstract class ScannerBacktrackInfo
+case class ScannerBacktrack(currentIndex: Int, numCurrentTokens: Int) extends ScannerBacktrackInfo
+/** cut, i.e, fail if this notation is not applicable */
+case object ScannerNoBacktrack extends ScannerBacktrackInfo
 
 /** meant to replace ActiveNotation as a more general interface in Scanner and related classes
  *  That would computational notations.
@@ -30,7 +34,7 @@ abstract class ActiveParsingRule {
  *  @param rules the parsing rules
  *    must be non-empty;
  *    if not a singleton, all [[TextNotation]]s must TextNotation.agree
- *  @param firstToken the index of the Token that caused this notation to be opened (i.e., the first delimiter token)
+ *  @param backtrackInfo information for restoring the state before activating this notation
  */
 class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtrackInfo: ScannerBacktrackInfo) extends ActiveParsingRule {
    // invariant: found.reverse (qua List[Marker]) ::: left == markers of each rule
@@ -234,25 +238,32 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
       if (result != null) return result
       // second: otherwise, try to match the current Token against an upcoming delimiter
       splitOffArgs(left) match {
+         // the notation expects some arguments followed by the current token: all previously shifted tokens become arguments 
          case (ns, Delimiter(s) :: _) if matches(s) =>
-            ns match {
+          ns match {
+            // no arguments expected: just consume the delimiter
             case Nil =>
                onApplyI {currentIndex =>
                   deleteDelim(currentIndex)
                }
-            case List((n,isOML)) =>
+            // create a single arg with all available tokens
+            case List((n,isOML)) if numCurrentTokens > 0 =>
                onApplyI {currentIndex =>
                   found ::= PickAll(n,isOML)
                   delete(1)
                   deleteDelim(currentIndex)
                }
+            // create a single arg for each available token
             case _ if ns.length == numCurrentTokens =>
                onApplyI {currentIndex =>
                   PickSingles(ns)
                   delete(numCurrentTokens)
                   deleteDelim(currentIndex)
                }
+            case _ =>
+               NotApplicable
          }
+         // the notation expects a sequence whose separator is the current token: all previously shifted tokens become the first element, and we start the sequence
          case (Nil, SimpSeqArg(n, Delimiter(s),_) :: _) if matches(s) =>
               onApply {
                  PickAllSeq(n,None)
@@ -263,6 +274,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                PickAllSeq(n,Some(lsa.info))
                addPrepickedDelims(Delim(s),currentToken)
             }
+         // the notation expects a sequence followed by the current token: end the sequence
          case (Nil, SimpSeqArg(n, Delimiter(t),_) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
               if (numCurrentTokens > 0) {
                  //picks the last element of the sequence (possibly the only one)
@@ -297,7 +309,15 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                }
             } else
                NotApplicable //abort?
-         // start a variable
+         // the notation expects a variable sequence followed by the current token: find the empty sequence
+         case (Nil, (vm @ Var(n, _, Some(Delimiter(t)), _)) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
+            onApplyI {currentIndex =>
+              val fv = new FoundVar(vm)
+              fv.state = FoundVar.Done
+              delete(1)
+              deleteDelim(currentIndex)
+            }
+         // start a variable, interpreting the current token as the variable name
          case (Nil, (vm @ Var(n, _, sep, _)) :: rest) =>
             numCurrentTokens match {
                case 0 => onApplyI {currentIndex =>

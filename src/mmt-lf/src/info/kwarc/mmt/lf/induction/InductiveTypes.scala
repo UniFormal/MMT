@@ -32,7 +32,7 @@ private object InductiveTypes {
       VarDecl(freshName, tp)
    }
 
-  val theory: MPath = ???
+  val theory: MPath = LF._base ? "Inductive"
   object Eq extends BinaryLFConstantScala(theory, "eq")
   object Neq extends BinaryLFConstantScala(theory, "neq")
   

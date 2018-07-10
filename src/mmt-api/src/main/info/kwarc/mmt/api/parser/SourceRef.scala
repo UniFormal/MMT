@@ -16,6 +16,8 @@ case class SourceRegion(start: SourcePosition, end: SourcePosition) {
   def length = end.offset - start.offset + 1
   /* whether that a subregion of this */
   def contains(that: SourceRegion) = start <= that.start && that.end <= end
+  /* whether that is a point in this */
+  def contains(that: SourcePosition) = start <= that && that <= end
 }
 
 /** helper object */

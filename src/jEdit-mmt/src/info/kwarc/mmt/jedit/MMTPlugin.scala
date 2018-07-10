@@ -134,12 +134,14 @@ class MMTPlugin extends EBPlugin with Logger {
     val ta = editPane.getTextArea
     val painter = ta.getPainter
     if (!painter.getExtensions.exists(_.isInstanceOf[MMTTextAreaExtension])) {
-      val taExt = new MMTTextAreaExtension(controller, editPane)
+      val taExt = new MMTTextHighlighting(controller, editPane)
       val tooltipExt = new MMTToolTips(controller, editPane)
       val gutterExt = new MMTGutterExtension(this, editPane)
+      val annotExt = new MMTGutterAnnotations(this, editPane)
       painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
       painter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, tooltipExt) // jedit tries lower layers first when looking for a tooltip; we must be below error list
       ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, gutterExt)
+      ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER-1, annotExt)
     }
     val ma = new MMTMouseAdapter(editPane)
     painter.addMouseListener(ma)
@@ -207,6 +209,27 @@ object MMTPlugin {
       while (right < lineLength - 1 && isIDChar(lineText(right + 1))) {right = right + 1}
       Some((line, lineStart + left, lineStart + right + 1, lineText.substring(left, right + 1)))
    }
+}
+
+/** base class for MMT's text area extensions */
+abstract class MMTTextAreaExtension(editPane: EditPane) extends TextAreaExtension {
+  protected val gutterWidth = 12 // hard-coded in Gutter
+  protected val view = editPane.getView
+  protected val textArea = editPane.getTextArea
+  protected val lineHeight = textArea.getPainter.getFontMetrics.getHeight
+  
+  /** @param y vertical position (same as passed by jEdit) */
+  protected def drawMarker(gfx: java.awt.Graphics2D, color: java.awt.Color, y: Int, oval: Boolean) {
+    val diameter = (lineHeight-2) min (gutterWidth-2)
+	  val horiMargin = (gutterWidth-diameter)/2
+	  val vertiMargin = (lineHeight-diameter)/2
+	  gfx.setColor(color)
+    if (oval)
+      gfx.fillOval(horiMargin,y+vertiMargin,diameter,diameter)
+    else
+      gfx.fillRect(horiMargin,y+vertiMargin,diameter,diameter)
+  }
+
 }
 
 object StatusBarLogger extends ReportHandler("jEdit") {

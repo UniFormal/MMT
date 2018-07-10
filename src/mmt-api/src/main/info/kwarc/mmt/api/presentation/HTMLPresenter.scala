@@ -28,6 +28,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
      s match {
        case doc : Document =>
          doHTMLOrNot(doc.path, standalone) {doDocument(doc)}
+       case ne: NarrativeElement => doHTMLOrNot(ne.path, standalone) {doNarrativeElement(ne, (x: NarrativeElement) => _)}
        case thy : DeclaredTheory =>
          doHTMLOrNot(thy.path.doc, standalone) {doTheory(thy)}
        case view : DeclaredView =>
