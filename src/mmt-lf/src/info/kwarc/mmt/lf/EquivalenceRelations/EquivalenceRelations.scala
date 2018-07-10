@@ -12,7 +12,7 @@ import info.kwarc.mmt.lf.induction.InductiveTypes
 
 //import scala.collection.parallel.ParIterableLike.Copy
 
-class EquivalenceRelation extends StructuralFeature("EquivalenceRelation") with ParametricTheoryLike {
+class EquivalenceRelation extends StructuralFeature("equivalence_relation") with ParametricTheoryLike {
   //def getHeaderNotation = List(LabelArg(1, LabelInfo.none))
 
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
@@ -77,4 +77,4 @@ class EquivalenceRelation extends StructuralFeature("EquivalenceRelation") with 
   }
 }
 
-object InductiveRule extends StructuralFeatureRule(classOf[InductiveTypes], "EquivalenceRelation")
+object EquivalenceRelationRule extends StructuralFeatureRule(classOf[InductiveTypes], "EquivalenceRelation")
