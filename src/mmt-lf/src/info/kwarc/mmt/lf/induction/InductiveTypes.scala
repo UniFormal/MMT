@@ -42,10 +42,39 @@ private object InductiveTypesUtil {
   object Neq extends BinaryLFConstantScala(theory, "neq")
   
   val Contra = OMS(theory ? "contra") 
+  
+  /**
+   * get the induction axiom declarations for the type levels as well as the term level and constructor level part 
+   * of the morphism mapping an (term or statement level) internal declaration to its image in the model
+   * @param decls All internal declarations
+   * @param tpdecls All type level internal declarations
+   */
+  def getFullMorph(decls : List[InternalDecl], tpdecls: List[TypeLevel])(implicit parent : Term) : (List[Declaration], InternalDecl => InternalDecl, VarDecl => Term) = {
+    //A list of quadruples consisting of (context of arguments, x, x_, the sub replacing x with a free type x_) for each type declaration declaring a type x
+    val types : List[(Context, VarDecl, VarDecl, Sub)]= tpdecls map(_.getTypes(None))
+    
+    val subst = types.map(_._4)
+    def mapConstr(con: InternalDecl): InternalDecl = con ^ subst
+    val chain : List[InternalDecl]= decls map mapConstr
+    
+    //The morphisms x=>x' for each defined type x
+    val morphisms = tpdecls zip types map {case (t:TypeLevel, (c, x, x_, s)) => t.getMorph(chain, c, x, x_, s)}
+    val tp_induct_decls = morphisms map(_._1)
+    
+    // Now the declarations for the computation axioms
+    def M(tm: VarDecl) : Term = {
+      morphisms.find(x => Some(x._3.toTerm) == tm.tp) match {
+        case Some(morph) => morph._2(tm.toTerm)
+        case None => tm.toTerm
+      }
+    }
+    (tp_induct_decls, mapConstr, M)
+  }
 }
 
 import InductiveTypesUtil._
 import info.kwarc.mmt.api.utils.URI
+import jdk.nashorn.internal.codegen.MapCreator
 
 //import info.kwarc.mmt.quotation.Quotation.quote
 
@@ -126,8 +155,8 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)]) ex
   def getMorph(chain : List[InternalDecl], ctx: Context, x: VarDecl, a: VarDecl, sub: Sub)(implicit parent : Term) = {
     val morphType : Term = Pi.apply(chain.map(_.toVarDecl)++ctx.++(x), a.toTerm)
     // TODO: Define the morphism in terms of quotations
-    val morphTerm : Term = ???
-    val morph = VarDecl.apply(uniqueLN("no_junk_axiom_for_type_"+x.toString), morphType)
+    //val morphTerm : Term = ???
+    val morph = VarDecl(uniqueLN("no_junk_axiom_for_type_"+x.toString), None, Some(morphType), None, None)
     val morphDecl = morph.toDeclaration(parent)
     def m(tm : Term) = ApplyGeneral(morph.toTerm, ctx.map(_.toTerm) :+ tm)
     (morphDecl, m _, x, a, sub)
@@ -175,6 +204,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     // to hold the result
     var elabDecls : List[Declaration] = Nil
     var tmdecls : List[TermLevel]= Nil
+    var statdecls : List[StatementLevel]= Nil
     var tpdecls : List[TypeLevel]= Nil
     try {
       val decls = dd.getDeclarations map {
@@ -182,7 +212,9 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
         val tp = c.tp getOrElse {throw LocalError("missing type")}        
           val FunType(args, ret) = tp
           if (JudgmentTypes.isJudgment(ret)(controller.globalLookup)) {
-            StatementLevel(c.path, args)
+            val statdecl= StatementLevel(c.path, args)
+            statdecls ::= statdecl
+            statdecl
           } else {
           ret match {
             case Univ(1) => {
@@ -216,7 +248,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
         }
       }
       // get the no junk axioms and build the result
-      elabDecls = elabDecls.reverse ::: noConfDecls ::: noJunk(decls, tpdecls, tmdecls)
+      elabDecls = elabDecls.reverse ::: noConfDecls ::: noJunk(decls, tpdecls, tmdecls, statdecls)
       }
     catch {
     case e : Error => 
@@ -278,7 +310,6 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   decls
   }
   
-  
   /**
   * Generate no junk declaration for all term-- and typelevel inductive declarations
   * @param parent the parent declared module of the derived declaration to elaborate
@@ -288,46 +319,23 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   * @returns returns one no junk (morphism) declaration for each type level declaration
   * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
   */    
-  private def noJunk(decls : List[InternalDecl], tpdecls: List[TypeLevel], tmdecls: List[TermLevel])(implicit parent : Term) : List[Declaration] = {
+  private def noJunk(decls : List[InternalDecl], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], statdecls: List[StatementLevel])(implicit parent : Term) : List[Declaration] = {
     var derived_decls:List[Declaration] = Nil
-    //A list of quadruples consisting of (context of arguments, x, a, the sub replacing x with a free type a) for each type declaration declaring a type x
-    val types : List[(Context, VarDecl, VarDecl, Sub)]= tpdecls map(_.getTypes(None))
+    val (tp_induct_decls, mapConstr, mapTerm) = getFullMorph(decls, tpdecls)
+    derived_decls ++=tp_induct_decls
     
-    val subst = types.map(_._4)
-    def mapConstr(con: InternalDecl): InternalDecl = con ^ subst
-    val chain : List[InternalDecl]= decls map (mapConstr _)
-    
-    //The morphisms for each defined type x
-    val morphisms = tpdecls zip types map {case (t:TypeLevel, (c, x, a, s)) => t.getMorph(chain, c, x, a, s)}
-    derived_decls = morphisms map(_._1)
-        
-    morphisms foreach {case (t : Declaration, m: (Term => Term), x : VarDecl, a : VarDecl, s : Sub) =>
-      //Now we need to produce the noJunk axioms for the constructors of the type x under the morphism with x |-> a
-      tmdecls foreach {
-        case tmdecl : TermLevel => 
-          val args = tmdecl.argContext(None)._1
-            
-          //map the term if of one of the inductive types, otherwise leave it
-          def M(tm: VarDecl) : Term = {
-            if (types.map(x => Some(x._2)) contains tm.tp) {
-              (morphisms.find(x => Some(x._3) == tm.tp).get._2)(tm.toTerm)
-            } else {
-              tm.toTerm
-            }
-          }
+    tmdecls++statdecls foreach {decl : InternalDecl => 
+          val (args, orig) = decl.argContext(None)
             
           //the result of applying m to the result of the constructor
-          val mappedOrig = ApplyGeneral(tmdecl, args.variables.map(M _).toList)   
+          val mappedOrig = mapTerm(orig)
           
-          //the image of the arguments of the constructor under m
-          val argsMapped : List[Term]= args map M
           //the result of applying the image of the constructor (all types substituted) to the image of the arguments
-          val mappedArgs : Term = ApplyGeneral(mapConstr (tmdecl), argsMapped)
+          val mappedArgs : Term = ApplyGeneral(mapConstr (decl), args map mapTerm)
           
           //both results should be equal, if m is actually a homomorphism
           val assertion = Pi(args, Eq(mappedOrig, mappedArgs))
           derived_decls ::= Constant(parent, uniqueLN("no_junk_axiom_for_constructor_"+assertion.toString), Nil, Some(assertion), None, None)
-        }
       }
     derived_decls
   } 
