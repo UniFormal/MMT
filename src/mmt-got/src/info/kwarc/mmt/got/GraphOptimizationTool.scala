@@ -519,9 +519,11 @@ class GraphOptimizationTool extends BuildTarget {
     */
   def toXML(map : HashMap[MPath, HashMap[Path, HashSet[MPath]]]) : String = {
     var sb : StringBuilder = new StringBuilder()
+    sb ++= "<optimizations>\n"
     for (theoryPath <- map.keySet) {
       sb ++= replaceTheoryToXML(theoryPath, map)
     }
+    sb ++= "</optimizations>\n"
     return sb.toString
   }
 
@@ -551,7 +553,7 @@ class GraphOptimizationTool extends BuildTarget {
     var sb : StringBuilder = new StringBuilder()
     for (path <- map.keySet) {
       if (map.get(path).get.isEmpty)
-        sb ++= "\t<removeInclusion MPath=" ++= "\"" ++= path.toString ++= "\"" ++= ">\n"
+        sb ++= "\t<removeInclusion MPath=" ++= "\"" ++= path.toString ++= "\"" ++= "/>\n"
       else {
         sb ++= "\t<replaceInclusion MPath=" ++= "\"" ++= path.toString ++= "\"" ++= ">\n"
         for (theoryPath <- map.get(path).get) sb ++= "\t\t<replacement MPath=" ++= "\"" ++= theoryPath.toString ++= "\"/" ++= ">\n"
