@@ -37,7 +37,7 @@ private object InductiveTypesUtil {
      }
    }
 
-  val theory: MPath = MPath(DPath(info.kwarc.mmt.api.utils.URI("????")), LocalName(""))//???
+  val theory: MPath = LF._base ? "Inductive"
   object Eq extends BinaryLFConstantScala(theory, "eq")
   object Neq extends BinaryLFConstantScala(theory, "neq")
   

@@ -16,10 +16,8 @@ import javax.swing.ImageIcon
  *  it can be used for custom painting, e.g., background highlighting, tooltips
  *  Currently it highlights terminator characters
  */
-class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends TextAreaExtension {
+class MMTTextHighlighting(controller: Controller, editPane: EditPane) extends MMTTextAreaExtension(editPane) {
    private def log(msg: String) {controller.report("jedit-painter", msg)}
-   private val textArea = editPane.getTextArea
-   private val view = editPane.getView
    private val painter = textArea.getPainter
 
    //val oIMG = new ImageIcon(this.getClass().getResource("/images/object_t.png")).getImage()
