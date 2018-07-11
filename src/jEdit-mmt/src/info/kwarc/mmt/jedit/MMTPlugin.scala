@@ -1,5 +1,7 @@
     package info.kwarc.mmt.jedit
 
+import java.awt.Font
+
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.utils.File._
@@ -228,6 +230,16 @@ abstract class MMTTextAreaExtension(editPane: EditPane) extends TextAreaExtensio
       gfx.fillOval(horiMargin,y+vertiMargin,diameter,diameter)
     else
       gfx.fillRect(horiMargin,y+vertiMargin,diameter,diameter)
+  }
+
+  /** @param y vertical position (same as passed by jEdit) */
+  protected def drawChar(gfx: java.awt.Graphics2D, color: java.awt.Color, y: Int, char : Char) {
+    val painter = textArea.getPainter
+    gfx.setColor(color)
+    val horiMargin = (gutterWidth-painter.getStringWidth(char.toString))/2
+    val fm = painter.getFontMetrics
+    val baseLine = y + painter.getFontHeight - (fm.getLeading()) - fm.getDescent()  // taken from TextAreaPainter#PaintText
+    gfx.drawString(char.toString, horiMargin, baseLine)
   }
 
 }
