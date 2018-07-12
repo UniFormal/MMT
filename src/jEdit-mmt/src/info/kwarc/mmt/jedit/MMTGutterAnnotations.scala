@@ -1,18 +1,17 @@
 package info.kwarc.mmt.jedit
 
+import java.awt.Font
+
 import info.kwarc.mmt.api._
 import ontology._
-
 import org.gjt.sp.jedit._
-import org.gjt.sp.jedit.textarea._
 
 /**
  * adds markers in the gutter whenever an annotation for a declaration in made in that line is known to MMT
  */
 class MMTGutterAnnotations(mmt: MMTPlugin, editPane: EditPane) extends MMTTextAreaExtension(editPane) {
   private val extman = mmt.controller.extman
-  
-  import parser._
+
   private def getAnnotations(start: Int, end: Int): Seq[Annotation] = {
     val assetOs = (start until end) map {o => MMTSideKick.getAssetAtOffset(view, o)} //TODO check if this is too slow
     val uris = assetOs.distinct flatMap {
@@ -32,14 +31,21 @@ class MMTGutterAnnotations(mmt: MMTPlugin, editPane: EditPane) extends MMTTextAr
   
   // called on every visible line every time we scroll or edit
   override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
+    val fontcolor = java.awt.Color.GRAY
     val annotations = getAnnotations(startOffset, endOffset) 
     if (annotations.isEmpty) return // optimization
     drawMarker(gfx, java.awt.Color.YELLOW, y, true)
     // TODO if not 1, write number of annotations into the oval, e.g., somehow like below
-    // gfx.setFont(style.getFont)
-    // val fm = painter.getFontMetrics
-    // val baseLine = startPoint.y + painter.getFontHeight - (fm.getLeading()+1) - fm.getDescent() // taken from TextAreaPainter#PaintText
-    // gfx.drawString(c.toString, startPoint.x, baseLine)
+    var oldFont = gfx.getFont
+
+    gfx.setFont(new Font(oldFont.getName, oldFont.getStyle, oldFont.getSize-2))
+    if (annotations.size==1)
+      drawChar (gfx, fontcolor, y-1, annotations.head.getMarker)
+    else if (annotations.size<10)
+      drawChar (gfx, fontcolor, y-1, annotations.size.toString.charAt(0))
+    else
+      drawChar (gfx, fontcolor, y-1, '+')
+    gfx.setFont(oldFont)
   }
   
   override def getToolTipText(x: Int, y: Int): String = {
@@ -53,6 +59,7 @@ class MMTGutterAnnotations(mmt: MMTPlugin, editPane: EditPane) extends MMTTextAr
     val start = textArea.getLineStartOffset(line)
     val end   = textArea.getLineEndOffset(line)
     val annotations = getAnnotations(start, end)
-    annotations.map {a => a.getTooltip}.mkString("<html>","<br/>","</html>")
+    if (annotations.isEmpty) return null
+    annotations.map(a => a.getTooltip).mkString("<html>","<br>","</html>")
   }
 }

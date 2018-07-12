@@ -2,20 +2,22 @@ package info.kwarc.mmt.got
 
 import java.awt.event.{ActionEvent, ActionListener}
 import java.awt.{BorderLayout, ComponentOrientation, Container, Dimension, FlowLayout}
-import javax.swing._
+import java.io.{PrintWriter}
 
+import javax.swing._
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.Extension
+import info.kwarc.mmt.api.archives.{Archive, BuildTarget, Update}
 import info.kwarc.mmt.api.modules.{DeclaredTheory, View}
 import info.kwarc.mmt.api.objects.{Context, OMID, Term, Traverser}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, PlainInclude, Structure}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, PlainInclude}
+import info.kwarc.mmt.api.utils.FilePath
 
 import scala.collection.mutable.{HashMap, HashSet, ListBuffer, StringBuilder}
 
 /**
   * Created by michael on 15.05.17.
   */
-class GraphOptimizationTool extends Extension {
+class GraphOptimizationTool extends BuildTarget {
   var printErrors = true      //print Errors on error stream, otherwise not at all
   var predictFuture = true    //declarations used in future lite code are counted as used by optimization
   var ignoreUnion = true      //Unions are not optimized if true
@@ -517,9 +519,11 @@ class GraphOptimizationTool extends Extension {
     */
   def toXML(map : HashMap[MPath, HashMap[Path, HashSet[MPath]]]) : String = {
     var sb : StringBuilder = new StringBuilder()
+    sb ++= "<optimizations>\n"
     for (theoryPath <- map.keySet) {
       sb ++= replaceTheoryToXML(theoryPath, map)
     }
+    sb ++= "</optimizations>\n"
     return sb.toString
   }
 
@@ -549,7 +553,7 @@ class GraphOptimizationTool extends Extension {
     var sb : StringBuilder = new StringBuilder()
     for (path <- map.keySet) {
       if (map.get(path).get.isEmpty)
-        sb ++= "\t<removeInclusion MPath=" ++= "\"" ++= path.toString ++= "\"" ++= ">\n"
+        sb ++= "\t<removeInclusion MPath=" ++= "\"" ++= path.toString ++= "\"" ++= "/>\n"
       else {
         sb ++= "\t<replaceInclusion MPath=" ++= "\"" ++= path.toString ++= "\"" ++= ">\n"
         for (theoryPath <- map.get(path).get) sb ++= "\t\t<replacement MPath=" ++= "\"" ++= theoryPath.toString ++= "\"/" ++= ">\n"
@@ -683,5 +687,26 @@ class GraphOptimizationTool extends Extension {
       /*resize window*/
       pack()
     }
+  }
+
+  /** a string identifying this build target, used for parsing commands, logging, error messages */
+  override def key: String = "got"
+
+  /** clean this target in a given archive */
+  override def clean(a: Archive, in: FilePath): Unit = {
+    val file = new java.io.File(a.root + "/export/got/"+a.id+".xml")
+    file.delete()
+  }
+
+  /** build or update this target in a given archive */
+  override def build(a: Archive, up: Update, in: FilePath): Unit = {
+    val theories = a.allContent.flatMap({p:MPath => controller.get(p) match { case dt : DeclaredTheory => Some(p) case _ => None}})
+    val replacements = findReplacements(theories, false)
+    val output = toXML(replacements)
+    val file = new java.io.File(a.root + "/export/got/"+a.id+".xml")
+    file.getParentFile.mkdirs
+    val pw = new PrintWriter(file)
+    pw.write(output)
+    pw.close
   }
 }
