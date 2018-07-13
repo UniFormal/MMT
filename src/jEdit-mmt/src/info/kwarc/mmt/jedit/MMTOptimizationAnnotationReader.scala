@@ -1,33 +1,55 @@
 package info.kwarc.mmt.jedit
 
 import info.kwarc.mmt.api.Path
-import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.archives.{Archive, BuildTarget}
 import info.kwarc.mmt.api.ontology._
 import java.io.File
-import scala.xml._
 
+import scala.xml._
 import scala.collection.mutable
 
+/** Extension for reading built optimizations from [[GraphOptimizationTool]] and providing annotations
+  */
 class MMTOptimizationAnnotationReader extends AnnotationProvider{
 
   val annotationMap: mutable.HashMap[Path, List[Annotation]] = mutable.HashMap[Path, List[Annotation]]()
 
+  /** extracts Path attribute from xml node
+    *
+    * @param node
+    * @return
+    */
   private  def nodeToPath(node: Node) : Path = {
     Path.parse(node.attribute("Path").get.head.toString)
   }
 
+  /** simple implementation of [[Annotation]]
+    * @param string tooltip string
+    * @param marker character to display in the annotation marker
+    */
   private case class simpleAnnotation(string : String, marker : Char) extends Annotation{
     override def getMarker: Char = marker
     /** the tooltip for this annotation */
     override def getTooltip: String = string
   }
 
+  /** converts xml node <replaceInclusion...>...</replaceInclusion> to tooltip
+    *
+    * @param node xml node
+    * @return annotation
+    */
   private def replaceTooltip(node : Node): Annotation ={
       simpleAnnotation("replace inclusion " + nodeToPath(node) + " with:<br>" +
       (node\"replacement").map({
         r => "&emsp;"+ nodeToPath(r)
       }).mkString("<br>"), 'o')
   }
+
+  /** converts xml node <removeInclusion.../> to tooltip
+    *
+    * @param node xml node
+    * @return annotation
+    */
   private def removeTooltip(node : Node): Annotation = {
     simpleAnnotation("remove inclusion " + nodeToPath(node), 'o')
   }

@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api._
 import frontend._
+import javax.swing.JLabel
 
 /** provides additional information about MMT elements (e.g., compilation warnings, refactoring suggestions, discussion pointers) */
 abstract class AnnotationProvider extends Extension {
@@ -16,4 +17,7 @@ abstract class Annotation {
   def getMarker: Char = ' '
 
   override def toString: String = getTooltip
+
+  val dialogueContent : java.awt.Component = new JLabel("<html>"+toString+"</html>")
+
 }
