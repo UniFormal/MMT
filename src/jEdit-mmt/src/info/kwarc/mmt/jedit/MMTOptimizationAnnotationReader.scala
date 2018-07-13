@@ -3,18 +3,35 @@ package info.kwarc.mmt.jedit
 import info.kwarc.mmt.api.Path
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.ontology._
-import java.io._
+import java.io.File
 import scala.xml._
 
 import scala.collection.mutable
 
 class MMTOptimizationAnnotationReader extends AnnotationProvider{
 
-  val annotationMap = mutable.HashMap[Path, List[Annotation]]()
+  val annotationMap: mutable.HashMap[Path, List[Annotation]] = mutable.HashMap[Path, List[Annotation]]()
 
   private  def nodeToPath(node: Node) : Path = {
-    Path.parse(node.attribute("MPath").get.head.toString())
+    Path.parse(node.attribute("Path").get.head.toString)
   }
+
+  private case class simpleAnnotation(string : String, marker : Char) extends Annotation{
+    override def getMarker: Char = marker
+    /** the tooltip for this annotation */
+    override def getTooltip: String = string
+  }
+
+  private def replaceTooltip(node : Node): Annotation ={
+      simpleAnnotation("replace inclusion " + nodeToPath(node) + " with:<br>" +
+      (node\"replacement").map({
+        r => "&emsp;"+ nodeToPath(r)
+      }).mkString("<br>"), 'o')
+  }
+  private def removeTooltip(node : Node): Annotation = {
+    simpleAnnotation("remove inclusion " + nodeToPath(node), 'o')
+  }
+
   /** reads optimizations for archive from files
     *
     * searches for .xml files in archiveroot/export/got and adds the suggested optimizations as annotations
@@ -27,23 +44,22 @@ class MMTOptimizationAnnotationReader extends AnnotationProvider{
       return
     }
     val optFiles = optFolder.listFiles.filter(_.getName.endsWith("xml"))
-    optFiles.map(
+    optFiles.foreach(
       f => {
         val xml = Utility.trim(XML.loadFile(f.getPath))
-        (xml\"theory").map(t => {
-          annotationMap.put(
-            nodeToPath(t),
-            (t\"replaceInclusion").toList.map(s => new Annotation {
-              override def getMarker: Char = 'o'
-              override def getTooltip: String = "replace inclusion " + nodeToPath(s) + " with:<br>" +
-                (s\"replacement").map({
-                  r => "&emsp;"+ nodeToPath(r)
-                }).mkString("<br>")
-             }) ++
-            (t\"removeInclusion").toList.map(s => new Annotation {
-              override def getMarker: Char = 'o'
-              override def getTooltip: String = "remove inclusion " + nodeToPath(s)
-            }))
+        (xml\"theory"\"replaceInclusion").foreach(node => {
+          try {annotationMap.put(nodeToPath(node), replaceTooltip(node)::Nil)}
+          catch {
+            case _ : java.util.NoSuchElementException => Console.err.println("error reading file: " + f.getName)
+            case e => throw e
+          }
+        })
+        (xml\"theory"\"removeInclusion").foreach(node => {
+          try {annotationMap.put(nodeToPath(node), removeTooltip(node)::Nil)}
+          catch {
+            case _ : java.util.NoSuchElementException => Console.err.println("error reading file: " + f.getName)
+            case e => throw e
+          }
         })
       }
     )
@@ -57,7 +73,7 @@ class MMTOptimizationAnnotationReader extends AnnotationProvider{
     */
   override def start(args: List[String]): Unit = {
     super.start(args)
-    controller.backend.getArchives.map(readArchive)
+    controller.backend.getArchives.foreach(readArchive)
   }
 
   /** provides optimization annotations for asset

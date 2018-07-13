@@ -27,6 +27,10 @@ class GraphOptimizationTool extends BuildTarget {
   var command : String = ""
   val dialogue = new Dialogue(this)
 
+  private def printError(string : String) = {
+    if (printErrors) Console.err.println(string)
+  }
+
 
   /** Returns theory inclusions
     *
@@ -42,20 +46,20 @@ class GraphOptimizationTool extends BuildTarget {
     try controller.getTheory(theoryPath)
     catch {
       case e : GetError =>
-        if (printErrors) Console.err.println("Error:" + e.toString + ", while looking up includes of " + theoryPath + "(skipped)")
+        printError("Error:" + e.toString + ", while looking up includes of " + theoryPath + "(skipped)")
         return ret
     }
     try {
       ret ++= (controller.getTheory(theoryPath).meta match {case Some(meta)  => includes(meta, replacementmap) case _ => None}) ++= controller.getTheory(theoryPath).meta
     } catch {
-      case e : GetError => if (printErrors) Console.err.println("Error:" + e.toString + ", while looking up includes of " + theoryPath + "(skipped)")
+      case e : GetError => printError("Error:" + e.toString + ", while looking up includes of " + theoryPath + "(skipped)")
     }
     for (include <- directIncludes(theoryPath, replacementmap)) {
       ret += include
       try {
         ret ++= includes(include, replacementmap)
       } catch {
-        case e : GetError => if (printErrors) Console.err.println("Error:" + e.toString + ", while looking up includes of " + theoryPath + "(skipped)")
+        case e : GetError => printError("Error:" + e.toString + ", while looking up includes of " + theoryPath + "(skipped)")
       }
     }
     ret
@@ -76,7 +80,7 @@ class GraphOptimizationTool extends BuildTarget {
     try controller.getTheory(theoryPath)
     catch {
       case e : GetError =>
-        if (printErrors) Console.err.println("Error:" + e.toString + ", while looking up direct includes of " + theoryPath + "(skipped)")
+        printError("Error:" + e.toString + ", while looking up direct includes of " + theoryPath + "(skipped)")
         return ret
     }
     val theory : DeclaredTheory = controller.get(theoryPath).asInstanceOf[DeclaredTheory]
@@ -154,7 +158,7 @@ class GraphOptimizationTool extends BuildTarget {
       }
     } catch {
       case e : Error => {
-        if (printErrors) Console.err.println("Error:" + e.toString + ", while looking up dependencies of " + mpath + "(skipped)")
+        printError("Error:" + e.toString + ", while looking up dependencies of " + mpath + "(skipped)")
         HashSet[MPath]()
       }
     }
@@ -398,7 +402,7 @@ class GraphOptimizationTool extends BuildTarget {
           futureUse.put(theoryPath, FindUsedTheories(controller.get(theoryPath)))
         } catch {
           case _: Error => {
-            if (printErrors) Console.err.println("Error: while looking into Future " + theoryPath + "(skipped)")
+            printError("Error: while looking into Future " + theoryPath + "(skipped)")
             futureUse.put(theoryPath, HashSet[MPath]())
           }
         }
@@ -434,7 +438,6 @@ class GraphOptimizationTool extends BuildTarget {
                 if (command == "yes") {
                   replacements.get(theoryPath).get.put(key, suggestions.get(key).get)
                   changed = true
-                  //TODO apply change to source
                 }
                 if (command == "no") {
                   if (no.get(theoryPath).isEmpty) no.put(theoryPath, HashSet[Path]())
@@ -460,7 +463,6 @@ class GraphOptimizationTool extends BuildTarget {
                 if (command == "yes") {
                   replacements.get(theoryPath).get.put(redundant, HashSet[MPath]())
                   changed = true
-                  //TODO apply change to source
                 }
                 if (command == "no") {
                   if (no.get(theoryPath).isEmpty) no.put(theoryPath, HashSet[Path]())
@@ -473,7 +475,7 @@ class GraphOptimizationTool extends BuildTarget {
           }
         } catch {
           case _: Error => {
-            if (printErrors) Console.err.println("Error: while optimizing " + theoryPath + " (skipped)")
+            printError("Error: while optimizing " + theoryPath + " (skipped)")
             replacements.put(theoryPath, HashMap[Path, HashSet[MPath]]())
           }
         }
@@ -487,7 +489,7 @@ class GraphOptimizationTool extends BuildTarget {
     if (interactive) {
       dialogue.done()
     }
-    replacements
+    convertToInclusionURIs(replacements)
   }
 
   /** Optimizes all known theories
@@ -509,6 +511,23 @@ class GraphOptimizationTool extends BuildTarget {
       }
     ))
     findReplacements(theories, interactive)
+  }
+
+  protected def convertToInclusionURIs (map : HashMap[MPath, HashMap[Path, HashSet[MPath]]]) : HashMap[MPath, HashMap[Path, HashSet[MPath]]] = {
+    val converted = HashMap[MPath, HashMap[Path, HashSet[MPath]]]()
+    for (theory <- map.keySet) {
+      val replacements = map(theory)
+      val convertedInner = HashMap[Path, HashSet[MPath]]()
+      for (dec <- controller.getTheory(theory).getPrimitiveDeclarations) {
+        dec match {
+          case PlainInclude(from, _) =>
+            if (replacements.keySet.contains(from)) convertedInner.put(dec.path, replacements(from))
+          case _ =>
+        }
+      }
+      converted.put(theory, convertedInner)
+    }
+    converted
   }
 
   /** Converts map to xml
@@ -537,7 +556,7 @@ class GraphOptimizationTool extends BuildTarget {
   protected def replaceTheoryToXML(theoryPath : MPath, map : HashMap[MPath, HashMap[Path, HashSet[MPath]]]) : String = {
     var sb : StringBuilder = new StringBuilder()
     if (map.get(theoryPath).get.keySet.isEmpty) return ""
-    sb ++= "<theory MPath=" ++= "\"" ++= theoryPath.toString ++= "\"" ++= ">\n"
+    sb ++= "<theory Path=" ++= "\"" ++= theoryPath.toString ++= "\"" ++= ">\n"
     sb ++= replaceInclusionToXML(map.get(theoryPath).get)
     sb ++= "</theory>\n"
     return sb.toString
@@ -553,10 +572,10 @@ class GraphOptimizationTool extends BuildTarget {
     var sb : StringBuilder = new StringBuilder()
     for (path <- map.keySet) {
       if (map.get(path).get.isEmpty)
-        sb ++= "\t<removeInclusion MPath=" ++= "\"" ++= path.toString ++= "\"" ++= "/>\n"
+        sb ++= "\t<removeInclusion Path=" ++= "\"" ++= path.toString ++= "\"" ++= "/>\n"
       else {
-        sb ++= "\t<replaceInclusion MPath=" ++= "\"" ++= path.toString ++= "\"" ++= ">\n"
-        for (theoryPath <- map.get(path).get) sb ++= "\t\t<replacement MPath=" ++= "\"" ++= theoryPath.toString ++= "\"/" ++= ">\n"
+        sb ++= "\t<replaceInclusion Path=" ++= "\"" ++= path.toString ++= "\"" ++= ">\n"
+        for (theoryPath <- map.get(path).get) sb ++= "\t\t<replacement Path=" ++= "\"" ++= theoryPath.toString ++= "\"/" ++= ">\n"
         sb ++= "\t</replaceInclusion>\n"
       }
     }

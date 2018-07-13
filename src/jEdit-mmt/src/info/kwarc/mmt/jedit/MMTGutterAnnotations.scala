@@ -32,15 +32,16 @@ class MMTGutterAnnotations(mmt: MMTPlugin, editPane: EditPane) extends MMTTextAr
   // called on every visible line every time we scroll or edit
   override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
     val fontcolor = java.awt.Color.GRAY
+    //find annotations
     val annotations = getAnnotations(startOffset, endOffset) 
-    if (annotations.isEmpty) return // optimization
+    if (annotations.isEmpty) return // no annotations in line
+    //mark line
     drawMarker(gfx, java.awt.Color.YELLOW, y, true)
-    // TODO if not 1, write number of annotations into the oval, e.g., somehow like below
+    //draw marker character
     var oldFont = gfx.getFont
-
     gfx.setFont(new Font(oldFont.getName, oldFont.getStyle, oldFont.getSize-2))
     if (annotations.size==1)
-      drawChar (gfx, fontcolor, y-1, annotations.head.getMarker)
+      if (annotations.head.getMarker!=' ') drawChar (gfx, fontcolor, y-1, annotations.head.getMarker)
     else if (annotations.size<10)
       drawChar (gfx, fontcolor, y-1, annotations.size.toString.charAt(0))
     else
