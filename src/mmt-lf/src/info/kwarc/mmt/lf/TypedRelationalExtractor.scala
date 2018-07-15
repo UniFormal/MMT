@@ -32,31 +32,33 @@ class TypedRelationalExtractor extends RelationalExtractor {
       e match {
          case t: DeclaredModule =>
             t.getDeclarations foreach {
-					  case c: Constant =>
-               	val declType : Unary = c.tp match {
-               	  case Some(x) => x match {
-                 	  case FunType(_, tp) => tp match {
-                   	  case Univ(1) => 
-                   	    if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) {
-                   	      IsJudgementConstructor
-                   	    }
-                   	    else {
-                   	      IsDatatypeConstructor
-                        }
-                   	  case Univ(n) if n > 1 => println("found high universe at "+c.path.toString()); IsHighUniverse
-                   	  case _ => 
-                   	    if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) {
-                   	      IsRule
-                   	    }
-                   	    else {
-                   	      IsDataConstructor
-                   	    }
-                   	  }
-                 	  }
-               	  case None => IsUntypedConstant
-               	}
-               	f(declType(c.path))
-            }
+							case c: Constant =>
+								val declType: Unary = c.tp match {
+									case Some(x) => x match {
+										case FunType(_, tp) => tp match {
+											case Univ(1) =>
+												if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) {
+													IsJudgementConstructor
+												}
+												else {
+													IsDatatypeConstructor
+												}
+											case Univ(n) if n > 1 => // println("found high universe at " + c.path.toString());
+												IsHighUniverse
+											case _ =>
+												if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) {
+													IsRule
+												}
+												else {
+													IsDataConstructor
+												}
+										}
+									}
+									case None => IsUntypedConstant
+								}
+								f(declType(c.path))
+							case _ =>
+						}
          case _ =>
       }
   }
