@@ -13,7 +13,7 @@ abstract class AnnotationProvider extends Extension {
 abstract class Annotation {
   /** the tooltip for this annotation */
   def getTooltip: String
-  def getMarker: Char = 'A'
+  def getMarker: Char = ' '
 
   override def toString: String = getTooltip
 }
