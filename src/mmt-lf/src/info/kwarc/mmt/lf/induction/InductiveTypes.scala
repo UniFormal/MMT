@@ -42,9 +42,9 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       case c: Constant =>
         val intDecl = InternalDeclaration.fromConstant(c, controller)
         intDecl match {
-          case d @ TermLevel(_, _, _, _) => tmdecls :+= d; intDecl
-          case d @ TypeLevel(_, _, _) => tpdecls :+= d; intDecl
-          case d @ StatementLevel(_, _, _) => statdecls :+= d; intDecl 
+          case d @ TermLevel(_, _, _, _, _) => tmdecls :+= d; intDecl
+          case d @ TypeLevel(_, _, _, _) => tpdecls :+= d; intDecl
+          case d @ StatementLevel(_, _, _, _) => statdecls :+= d; intDecl 
         }
       case _ => throw LocalError("unsupported declaration")
       }

@@ -87,6 +87,8 @@ sealed abstract class InternalDeclaration {
   def name = path.name
   def args: List[(Option[LocalName], Term)]
   def ret: Term
+  def notation: NotationContainer
+  def tp = FunType(args, ret)
   def df : Option[Term]
 
   /**
@@ -138,15 +140,15 @@ sealed abstract class InternalDeclaration {
       case (None, tp) => (None, subst (tp))
     }
     this match {
-      case TermLevel(_, _, _, df) => TermLevel(path.module.?(name.toString()+"'"), subArgs, subst (ret), df)
-      case TypeLevel(_, _, df) => TypeLevel(path.module.?(name.toString()+"'"), subArgs, df)
-      case StatementLevel(_, _, df) => StatementLevel(path.module.?(name.toString()+"'"), subArgs, df)
+      case TermLevel(_, _, _, df, n) => TermLevel(path.module.?(name.toString()+"'"), subArgs, subst (ret), df, n)
+      case TypeLevel(_, _, df, n) => TypeLevel(path.module.?(name.toString()+"'"), subArgs, df, n)
+      case StatementLevel(_, _, df, n) => StatementLevel(path.module.?(name.toString()+"'"), subArgs, df, n)
     }
     
   }
   
   def toVarDecl : VarDecl = VarDecl(this.name, this, OMS(this.path))
-  def toConstant(implicit parent : OMID) : Constant = Constant(parent, name, Nil, Some(this), None, None)
+  def toConstant(implicit parent : OMID) : Constant = Constant(parent, name, Nil, Some(tp), df, None, notation)
 }
 
 object InternalDeclaration {
@@ -163,16 +165,14 @@ object InternalDeclaration {
     val tp = c.tp getOrElse {throw InvalidElement(c, "missing type")}        
       val FunType(args, ret) = tp
       if (JudgmentTypes.isJudgment(ret)(con.globalLookup)) {
-        StatementLevel(c.path.module ? parent.path.name / c.path.name, args, c.df)
+        StatementLevel(c.path.module ? parent.path.name / c.path.name, args, c.df, c.notC)
       } else {
       ret match {
-        case Univ(1) => {
-          TypeLevel(c.path.module ? parent.path.name / c.path.name, args, c.df)
-        }
+        case Univ(1) => TypeLevel(c.path.module ? parent.path.name / c.path.name, args, c.df, c.notC)
         case Univ(x) if x != 1 => throw ImplementationError("unsupported universe")
         case r =>
           //TODO: Check r:type
-          TermLevel(c.path.module ? parent.path.name / c.path.name, args, r, c.df)
+          TermLevel(c.path.module ? parent.path.name / c.path.name, args, r, c.df, c.notC)
         }
       }
   }
@@ -213,9 +213,10 @@ object InternalDeclaration {
 }
 
 /** type declaration */
-case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term])(implicit parent : OMID) extends InternalDeclaration {
+case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], notC : NotationContainer)(implicit parent : OMID) extends InternalDeclaration {
   def ret = Univ(1)
   def tm = df
+  def notation = notC
   def getTypes(suffix: Option[String]) : (Context, VarDecl, VarDecl, (Term, Term)) = {
     val (argsCon, x)=this.argContext(suffix)
     //TODO: Define in terms of Quotations, fix below try
@@ -246,8 +247,9 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df
 }
 
 /** term constructor declaration */
-case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term, df: Option[Term])(implicit parent : OMID) extends InternalDeclaration {
+case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term, df: Option[Term], notC: NotationContainer)(implicit parent : OMID) extends InternalDeclaration {
   def tm = df
+  def notation = notC
   /**
    * Generate injectivity declaration for the term constructor d
    * @param parent the parent declared module of the derived declaration to elaborate
@@ -304,7 +306,8 @@ object TermLevel {
 }
 
 /** Rules and Judgment constructors */
-case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term])(implicit parent : OMID) extends InternalDeclaration {
+case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], notC: NotationContainer)(implicit parent : OMID) extends InternalDeclaration {
   def ret = Univ(1)
   def tm = df
+  def notation = notC
 }
