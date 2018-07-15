@@ -56,19 +56,10 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       elabDecls = elabDecls.reverse ::: TermLevel.noConfs(tmdecls, context)
       
       // the no junk axioms
-      elabDecls ++= InternalDeclaration.noJunk(decls, tpdecls, tmdecls, statdecls, controller, context)
+      elabDecls ++= InternalDeclaration.noJunk(decls, tpdecls, tmdecls, statdecls, context)
       
-      def present(c: Constant) : String = {
-        var s = "constant: "
-        def preTp(e: Term) : String = controller.presenter.asString(e).replaceAll("%2F", "/")
-        s = s + c.name 
-        s = s + " : " + preTp (c.tp.get)
-        if (c.df != None)
-          s = s + " = " + controller.presenter.asString(c.df.get)
-        s.replace("\n", "")
-      }
       elabDecls foreach {d =>
-        println(present(d))
+        println(controller.presenter.asString(d).replaceAll("%2F", "/").replaceAll("\n", ""))
       }
     }
     catch {

@@ -45,7 +45,7 @@ private object InternalDeclarationUtil {
   val Contra = OMS(theory ? "contra") 
   
   // TODO: Fix this hack
-  def compTp(a: Term, b: Term, con: Controller): Boolean = con.presenter.asString(a) == con.presenter.asString(b)
+  def compTp(a: Term, b: Term): Boolean = a.toStr(true) == b.toStr(true)//con.presenter.asString(a) == con.presenter.asString(b)
   
   /**
    * get the induction axiom declarations for the type levels as well as the term level and constructor level part 
@@ -55,11 +55,11 @@ private object InternalDeclarationUtil {
    * @param cont the controller
    * @param context the inner context of the derived declaration
    */
-  def getFullMorph(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], cont: Controller, context: Context)(implicit parent : OMID) : (List[Constant], InternalDeclaration => InternalDeclaration, VarDecl => Term, List[InternalDeclaration]) = {
+  def getFullMorph(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], context: Context)(implicit parent : OMID) : (List[Constant], InternalDeclaration => InternalDeclaration, VarDecl => Term, List[InternalDeclaration]) = {
     //A list of quadruples consisting of (context of arguments, x, x_, the sub replacing x with a free type x_) for each type declaration declaring a type x
     val types : List[(Context, VarDecl, VarDecl, (Term, Term))]= tpdecls map(_.getTypes(None))
     
-    def mapConstr(con: InternalDeclaration): InternalDeclaration = con ^ (types.map(_._4), cont)
+    def mapConstr(con: InternalDeclaration): InternalDeclaration = con ^ (types.map(_._4))
     val chain : List[InternalDeclaration]= decls map mapConstr
     
     /** The morphisms x=>x' for each defined type x */
@@ -68,7 +68,7 @@ private object InternalDeclarationUtil {
     
     /** Now the declarations for the computation axioms */
     def M(tm: VarDecl) : Term = {
-      morphisms.find(x => compTp(x._1.toTerm, tm.tp.get, cont)) match {
+      morphisms.find(x => compTp(x._1.toTerm, tm.tp.get)) match {
         case Some(morph) => morph._3(tm.toTerm)
         case None => tm.toTerm
       }
@@ -115,12 +115,12 @@ sealed abstract class InternalDeclaration {
      * @param sub the substitution to apply
      * @param con the controller
      */
-  def ^(sub : List[(Term, Term)], con: Controller)(implicit parent : OMID) : InternalDeclaration = {
+  def ^(sub : List[(Term, Term)])(implicit parent : OMID) : InternalDeclaration = {
     //For some reason substitutions don't seem to work properly here, hence this reinvention of the wheel
     def substitute(t: Term) : Term = {
         var res = t
         sub. foreach {case (a, b) =>
-          if (compTp(a, t, con)) {
+          if (compTp(a, t)) {
             res = b}
         }
         res
@@ -139,10 +139,11 @@ sealed abstract class InternalDeclaration {
       case a @ (Some(loc), tp) => (Some(LocalName(loc.toString() + "'")), subst (tp))
       case (None, tp) => (None, subst (tp))
     }
+    val p = path//path.module ? (name + "'")
     this match {
-      case TermLevel(_, _, _, df, n) => TermLevel(path.module.?(name.toString()+"'"), subArgs, subst (ret), df, n)
-      case TypeLevel(_, _, df, n) => TypeLevel(path.module.?(name.toString()+"'"), subArgs, df, n)
-      case StatementLevel(_, _, df, n) => StatementLevel(path.module.?(name.toString()+"'"), subArgs, df, n)
+      case TermLevel(_, _, _, df, n) => TermLevel(p, subArgs, subst (ret), df, n)
+      case TypeLevel(_, _, df, n) => TypeLevel(p, subArgs, df, n)
+      case StatementLevel(_, _, df, n) => StatementLevel(p, subArgs, df, n)
     }
     
   }
@@ -164,15 +165,16 @@ object InternalDeclaration {
   def fromConstant(c: Constant, con: Controller)(implicit parent : OMID) : InternalDeclaration = {
     val tp = c.tp getOrElse {throw InvalidElement(c, "missing type")}        
       val FunType(args, ret) = tp
-      if (JudgmentTypes.isJudgment(ret)(con.globalLookup)) {
-        StatementLevel(c.path.module ? parent.path.name / c.path.name, args, c.df, c.notC)
+      val p = parent.path.module ? c.path.last
+        if (JudgmentTypes.isJudgment(ret)(con.globalLookup)) {
+        StatementLevel(p, args, c.df, c.notC)
       } else {
       ret match {
-        case Univ(1) => TypeLevel(c.path.module ? parent.path.name / c.path.name, args, c.df, c.notC)
+        case Univ(1) => TypeLevel(p, args, c.df, c.notC)
         case Univ(x) if x != 1 => throw ImplementationError("unsupported universe")
         case r =>
           //TODO: Check r:type
-          TermLevel(c.path.module ? parent.path.name / c.path.name, args, r, c.df, c.notC)
+          TermLevel(p, args, r, c.df, c.notC)
         }
       }
   }
@@ -188,9 +190,9 @@ object InternalDeclaration {
    * @returns returns one no junk (morphism) declaration for each type level declaration
    * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
    */    
-  def noJunk(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], statdecls: List[StatementLevel], con: Controller, context: Context)(implicit parent : OMID) : List[Constant] = {
+  def noJunk(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], statdecls: List[StatementLevel], context: Context)(implicit parent : OMID) : List[Constant] = {
     var derived_decls:List[Constant] = Nil
-    val (tp_induct_decls, mapConstr, mapTerm, chain) = getFullMorph(decls, tpdecls, con, context)
+    val (tp_induct_decls, mapConstr, mapTerm, chain) = getFullMorph(decls, tpdecls, context)
     derived_decls ++=tp_induct_decls
     
     (tmdecls++statdecls).reverse foreach {decl : InternalDeclaration => 
@@ -206,7 +208,7 @@ object InternalDeclaration {
           
           //both results should be equal, if m is actually a homomorphism
           val assertion = Pi(context++chain.map (_.toVarDecl) ++ args, Eq(mappedOrig, mappedArgs))
-          derived_decls :+= Constant(parent, uniqueLN("compute_"+decl.name), Nil, Some(assertion), None, None)
+          derived_decls :+= Constant(parent, uniqueLN("compute_"+decl.name.last), Nil, Some(assertion), None, None)
     }
     derived_decls
   } 
@@ -264,7 +266,7 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
     val body = Arrow(Arrow(argEq, Contra), Arrow(resEq, Contra))
     val inj = Pi(context++aCtx ++ bCtx,  body)
     
-    Constant(parent, uniqueLN("injective_"+name.toString), Nil, Some(inj), None, None)
+    Constant(parent, uniqueLN("injective_"+name.last.toString), Nil, Some(inj), None, None)
   }
    
   /**
@@ -281,7 +283,7 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
       if(args.length > 0)
         decls :+= injDecl(context)
       } else {
-        val newName = uniqueLN("no_conf_" + name+ "_" + b.name)
+        val newName = uniqueLN("no_conf_" + name.last+ "_" + b.name.last)
         val (aCtx, aApplied) = argContext(None)
         val (bCtx, bApplied) = b.argContext(None)
         val tp = Pi(context++aCtx ++ bCtx, Neq(aApplied.toTerm, bApplied.toTerm))
