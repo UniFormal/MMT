@@ -18,8 +18,8 @@ private object InternalDeclarationUtil {
    */
   def uniqueLN(nm: String)(implicit parent: OMID): LocalName = {
     LocalName(nm)
-    //In case it is applied multiple times on the same object, change it only the first time
-    //if (nm.filterNot(_ == '/') contains parent.path.name.toString.filterNot(_ == '/')) LocalName(nm) else parent.path.name / nm
+	 ////In case it is applied multiple times on the same object, change it only the first time
+    //if (nm contains parent.path.name.toString.filterNot(_ == '/')) LocalName(nm) else parent.path.name / nm
   }
    
   /**
@@ -30,9 +30,9 @@ private object InternalDeclarationUtil {
     * @note postcondition: the returned variable is free in the given context
     */
    def newVar(name: LocalName, tp: Term, con: Option[Context] = None)(implicit parent: OMID) : VarDecl = {
-    val c = con.getOrElse(Context.empty)
-    val (freshName,_) = Context.pickFresh(c, uniqueLN(name.toString()))
-    VarDecl(freshName, tp)
+     val c = con.getOrElse(Context.empty)
+     val (freshName,_) = Context.pickFresh(c, uniqueLN(name.toString()))
+     VarDecl(freshName, tp)
    }
 
   val theory: MPath = LF._base ? "Inductive"
@@ -182,7 +182,8 @@ object InternalDeclaration {
    * @param c the constant to convert
    * @param con the controller
    */
-  def fromConstant(c: Constant, con: Controller, ctx : Context)(implicit parent : OMID) : InternalDeclaration = {
+  def fromConstant(c: Constant, con: Controller, ctx: Context)(implicit parent : OMID) : InternalDeclaration = {
+	 println("bla")
     val tp = c.tp getOrElse {throw InvalidElement(c, "missing type")}        
       val FunType(args, ret) = tp
       val p = parent.path.module ? c.path.last
@@ -192,25 +193,22 @@ object InternalDeclaration {
       ret match {
         case Univ(1) => TypeLevel(p, args, c.df, c.notC)
         case Univ(x) if x != 1 => throw ImplementationError("unsupported universe")
-        case r => 
-         try {//TODO: Find better heuristic, this one doesn't seem to work
+        case r =>
+          try {//TODO: Find better heuristic, this one doesn't seem to work
            println("The context looked at: "+ctx.foldLeft("")((a, b)=>a+" "+b.name))
-           val decl : VarDecl = Context.context2list(ctx).find({case x : VarDecl => val FunType(_, xRet) = x.toTerm; println(con.presenter.asString(xRet)); xRet == r}).get
-           /*val decl : Option[VarDecl] = (ctx find ({x : VarDecl => val FunType(_, xRet) = x.toTerm; println(con.presenter.asString(xRet)); xRet == r}))
-           //if (decl != None) {
-           //  println("Found some decls!")
-           //}*/
-           val res = if (decl.tp == Some(Univ(1))) TermLevel(p, args, ret, c.df, c.notC) else TypeLevel(p, args, c.df, c.notC)
-           res
-        } catch {//In case of an empty get
-           case e: Throwable => TermLevel(p, args, ret, c.df, c.notC)
-        }
-
+           val decl : Option[VarDecl] = Context.context2list(ctx).find({case x : VarDecl => val FunType(_, xRet) = x.toTerm; println(con.presenter.asString(xRet)); xRet == r})
+			   decl match {
+			    case None => TermLevel(p, args, ret, c.df, c.notC)
+				 case Some(dec) => if (dec.tp == Some(Univ(1))) TermLevel(p, args, ret, c.df, c.notC) else TypeLevel(p, args, c.df, c.notC)
+            }
+          } catch {//In case of an empty get
+            case e: Throwable => TermLevel(p, args, ret, c.df, c.notC)
+        	 }
         }
       }
   }
   
-  /**
+   /**
    * Generate no junk declaration for all term-- and typelevel inductive declarations
    * @param parent the parent declared module of the derived declaration to elaborate
    * @param decls all declarations
@@ -226,19 +224,8 @@ object InternalDeclaration {
     val (tp_induct_decls, mapConstr, mapTerm, chain) = getFullMorph(decls, tpdecls, context)
     derived_decls ++=tp_induct_decls
     
-    (tmdecls++statdecls).reverse foreach {decl : InternalDeclaration => 
-          val (args, orig) = decl.argContext(None)
-            
-          //the result of applying m to the result of the constructor
-          //redeclaring the type to preserve matches in mapTerm, despite more complicated type structure of orig
-          //TODO: Can this hack be avoided
-          val mappedOrig = mapTerm(VarDecl(orig.name, None, Some(decl.ret), orig.df, None))
-          
-          //the result of applying the image of the constructor (all types substituted) to the image of the arguments
-          val mappedArgs : Term = ApplyGeneral(mapConstr(decl).toVarDecl.toTerm, args map mapTerm)
-          
-          //both results should be equal, if m is actually a homomorphism
-          val assertion = Pi(context++chain.map (_.toVarDecl) ++ args, Eq(mappedOrig, mappedArgs))
+    (tmdecls++statdecls) foreach {decl : InternalDeclaration => 
+          val assertion = decl.noJunk(chain.map(_.toVarDecl), mapConstr, mapTerm)
           derived_decls :+= Constant(parent, uniqueLN("compute_"+decl.name.last), Nil, Some(assertion), None, None)
     }
     derived_decls
@@ -274,7 +261,7 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df
     val morphTerm : Option[Term] = None
     val morph = VarDecl(uniqueLN("induct_"+x.name), None, Some(morphType), morphTerm, None)
     val morphDecl = Constant(parent, morph.name, Nil, morph.tp, morph.df, None) //morph.toDeclaration(parent)
-    def m(tm : Term) = ApplyGeneral(morph.toTerm, chain.map(_.toTerm) ++ ctx.map(_.toTerm) :+ tm)
+    def m(tm : Term) = ApplyGeneral(morph.toTerm, chain.map(_.tp) ++ ctx.map(_.toTerm) :+ tm)
     (x, morphDecl, m _)
   }
 }
