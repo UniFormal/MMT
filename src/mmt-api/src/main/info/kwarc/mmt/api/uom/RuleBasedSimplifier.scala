@@ -132,13 +132,17 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
               // LocalChange impossible
             }
          // expand definitions of variables (Simple(_) prevents this case if the definiens is added later, e.g., when solving an unknown)
-         case OMV(n) => con(n).df match {
+         case OMV(n) => try {
+           con(n).df match {
            case Some(d) =>
              log("expanding and simplifying definition of variable " + n)
              traverse(d)(con.before(n), init)
            case None =>
              t
-         }
+         }}
+           catch {
+             case exc : LookupError => log("LookupError while traversing into OMV("+n+"): "+exc.getMessage); throw exc
+           }
          // literals read from XML may not be recognized yet
          case u: UnknownOMLIT =>
            u.recognize(init.rules).getOrElse(u)
