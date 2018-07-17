@@ -360,7 +360,7 @@ case class StatisticEntry(stat : StatType, n:Int) {
   }
   def getStat = {stat}
   def getN = {n}
-  def toJSON : JSONObject = JSONObject(stat.getKey -> JSONInt(n))
+  def toJSON : JSONObject = JSONObject(("key" , JSONString(stat.getKey)), ("value" -> JSONInt(n)))
 }
 
 sealed class StatType(key:String, teaser:String, description: String) {
