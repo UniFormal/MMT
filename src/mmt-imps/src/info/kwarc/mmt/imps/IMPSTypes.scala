@@ -1772,6 +1772,10 @@ case class ArgAxioms(cps : List[AxiomSpec], var src : SourceInfo, var cmt : Comm
   override def toString: String = "(axioms " + cps.mkString(" ") + ")"
 }
 
+case class ArgOverloadingPair(tname : Name, sname : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + tname.toString + " " + sname.toString + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1955,6 +1959,17 @@ object DFTheory extends Comp[DFTheory] {
     case _ => ??!(args)
   }
 }
+
+case class DFOverloading(n : Name, ps : List[ArgOverloadingPair], var src : SourceInfo, var cmt : CommentInfo)
+  extends DefForm
+
+object DFOverloading extends Comp[DFOverloading] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (ps : List[ArgOverloadingPair]) :+: HNil => DFOverloading(n,ps,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
 
 object FrmFnd
 {

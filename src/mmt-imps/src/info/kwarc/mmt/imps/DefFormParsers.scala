@@ -279,6 +279,16 @@ class DefFormParsers(js : List[JSONObject])
     "(axioms" ~> rep1(parseAxiomSpec) <~ ")" ^^ { case (as) => ArgAxioms(as,None,None) }
   )
 
+  lazy val parseArgOverloadingPairs : Parser[ArgOverloadingPair] = fullParser(
+    "(" ~> parseTName ~ parseTName <~ ")" ^^ {case p1 ~ p2 => ArgOverloadingPair(p1,p2,None,None)}
+  )
+
+  lazy val pOverloading : Parser[DFOverloading] = fullParser(
+    "(def-overloading" ~> parseTName ~ rep1(parseArgOverloadingPairs) <~ ")" ^^ { case t ~ ps =>
+      DFOverloading.build(List(t,ps))
+    }
+  )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -402,12 +412,11 @@ class DefFormParsers(js : List[JSONObject])
     )
   }
 
-
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
-    pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory
+    pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

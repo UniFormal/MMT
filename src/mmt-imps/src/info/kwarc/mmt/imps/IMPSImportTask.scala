@@ -66,7 +66,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
 	def doDocument(es : Exp, uri : URI) : BuildResult =
 	{
-    val doc = new Document(bt.narrationDPath, true)
+    val doc = new Document(DPath(uri), true)
     controller.add(doc)
 
     var excps : List[Exception] = Nil
@@ -78,7 +78,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         /* Translating Theories to MMT */
         case t@(Theory(_,_,_,_,_,_))       => try
         {
-          if (!tState.theories_raw.contains(t)) { doTheory(t, bt.narrationDPath) }
+          if (!tState.theories_raw.contains(t)) { doTheory(t, doc.path, bt.narrationDPath) }
         } catch {
           case e : IMPSDependencyException => { println(" > ... fail. Add to stack: " +  e.getMessage ) ; excps = excps.::(e) }
         }
@@ -122,9 +122,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     BuildSuccess(Nil,Nil)
 	}
 
-  def doTheory (t : Theory, dPath: DPath) : Unit =
+  def doTheory (t : Theory, docPath: DPath, ns:DPath) : Unit =
   {
-    val nu_theory = new DeclaredTheory(dPath,
+    val nu_theory = new DeclaredTheory(ns,
                                        LocalName(t.name),
                                        Some(IMPSTheory.QCT.quasiLutinsPath),
                                        modules.Theory.noParams,
@@ -138,7 +138,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       println(" > adding theory " + t.name)
     }
 
-    val mref : MRef = MRef(dPath,nu_theory.path)
+    val mref : MRef = MRef(docPath,nu_theory.path)
     controller.add(nu_theory)
     controller.add(mref)
 
