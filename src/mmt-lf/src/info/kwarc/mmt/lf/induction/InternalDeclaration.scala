@@ -63,7 +63,7 @@ private object InternalDeclarationUtil {
     def mapTerm(morphisms: List[(VarDecl, Constant, Term => Term)], tm: VarDecl) : Term = {
       morphisms.find(x => compTp(x._1.toTerm, tm.tp.get)) match {
         case Some(morph) => morph._3(tm.toTerm)
-        case None => tm.toTerm
+        case None => toOMS(tm)
       }
     }
     
@@ -77,6 +77,8 @@ private object InternalDeclarationUtil {
     
     (tp_induct_decls, mapConstr, mapTerm (morphisms, _), chain)
   }
+  def toOMS(vd: VarDecl)(implicit parent : OMID) : Term = OMS(GlobalName(parent.path.toMPath, vd.name))
+  def toOMS(tp: Term)(implicit parent: OMID) : Term = OMS(Constant(parent, uniqueLN(tp.toStr(true)), Nil, Some(tp), None, None).path)
 }
 
 import InternalDeclarationUtil._
@@ -109,7 +111,9 @@ sealed abstract class InternalDeclaration {
       newVar(n, tp, None)
     }
     val tp = ApplyGeneral(OMS(path), con.map(_.toTerm))
-    val newName = if (tp == OMS(path)) name else uniqueLN(name+suf+con.foldLeft("")((a, b)=>a+" "+b.name))
+    val newName = if (tp == OMS(path)) name else {
+      val appliedName = name+suf+" ("+con.foldLeft("")((a, b)=>a+" "+b.name)+")"//+"_res"
+      if (con == Nil) uniqueLN(name+suf) else uniqueLN(appliedName)}
     (con, VarDecl(newName, None, Some(tp), None, None))
   }
     /**
@@ -130,7 +134,7 @@ sealed abstract class InternalDeclaration {
     def subst (tp: Term) : Term = {
       def subs(tp: Term) : Term = {
         val FunType(ars, ret) = tp 
-        FunType(ars map {case (x, y) => (x, substitute(y))}, substitute (ret))
+        FunType(ars map {case (x, y) => (x, substitute(y))}, substitute (tp))//substitute (ret))
       }
       var res = tp
       while (res != subs(tp)) {res = subs(res)}
@@ -162,13 +166,14 @@ sealed abstract class InternalDeclaration {
     
     //both results should be equal, if m is actually a homomorphism
     def assertion(assert:(Term, Term) => Term) = Pi(chain ++ args, assert(mappedOrig, mappedArgs))
+    //Use Arrow or Eq depending on whether the results are term or type level
     this match {
       case TypeLevel(_, _, _, _) => assertion ((x, y) => Arrow(x, y))
       case _ => assertion ((x, y) => Eq(x, y))
     }
   }
   
-  def toVarDecl : VarDecl = VarDecl(this.name, this, OMS(this.path))
+  def toVarDecl : VarDecl = VarDecl(this.name, this.tp, OMS(this.path))
   def toConstant(implicit parent : OMID) : Constant = Constant(parent, name, Nil, Some(tp), df, None, notation)
 }
 
@@ -177,13 +182,15 @@ object InternalDeclaration {
   implicit def tm(d: InternalDeclaration): Option[Term] = d.df
   implicit def toVarDecl(d: InternalDeclaration): VarDecl = d.toVarDecl
 
+  //TODO: Implement this properly
+  def isTypeLevel(tp: Term) : Boolean = false
+  
   /**
    * convert the given constant into the appropriate internal declaration
    * @param c the constant to convert
    * @param con the controller
    */
-  def fromConstant(c: Constant, con: Controller, ctx: Context)(implicit parent : OMID) : InternalDeclaration = {
-	 println("bla")
+  def fromConstant(c: Constant, con: Controller)(implicit parent : OMID) : InternalDeclaration = {
     val tp = c.tp getOrElse {throw InvalidElement(c, "missing type")}        
       val FunType(args, ret) = tp
       val p = parent.path.module ? c.path.last
@@ -193,18 +200,7 @@ object InternalDeclaration {
       ret match {
         case Univ(1) => TypeLevel(p, args, c.df, c.notC)
         case Univ(x) if x != 1 => throw ImplementationError("unsupported universe")
-        case r =>
-          try {//TODO: Find better heuristic, this one doesn't seem to work
-           println("The context looked at: "+ctx.foldLeft("")((a, b)=>a+" "+b.name))
-           val decl : Option[VarDecl] = Context.context2list(ctx).find({case x : VarDecl => val FunType(_, xRet) = x.toTerm; println(con.presenter.asString(xRet)); xRet == r})
-			   decl match {
-			    case None => TermLevel(p, args, ret, c.df, c.notC)
-				 case Some(dec) => if (dec.tp == Some(Univ(1))) TermLevel(p, args, ret, c.df, c.notC) else TypeLevel(p, args, c.df, c.notC)
-            }
-          } catch {//In case of an empty get
-            case e: Throwable => TermLevel(p, args, ret, c.df, c.notC)
-        	 }
-        }
+        case r => if (isTypeLevel(r)) TypeLevel(p, args, c.df, c.notC) else TermLevel(p, args, ret, c.df, c.notC) }
       }
   }
   
@@ -219,7 +215,7 @@ object InternalDeclaration {
    * @returns returns one no junk (morphism) declaration for each type level declaration
    * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
    */    
-  def noJunk(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], statdecls: List[StatementLevel], context: Context)(implicit parent : OMID) : List[Constant] = {
+  def noJunks(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], statdecls: List[StatementLevel], context: Context)(implicit parent : OMID) : List[Constant] = {
     var derived_decls:List[Constant] = Nil
     val (tp_induct_decls, mapConstr, mapTerm, chain) = getFullMorph(decls, tpdecls, context)
     derived_decls ++=tp_induct_decls
@@ -241,7 +237,7 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df
     val (argsCon, x)=this.argContext(suffix)
     //TODO: Define in terms of Quotations, fix below try
     //val a = VarDecl(uniqueLN("quoted_return_type_of_"+x.name), None, Some(Univ(1)), Some(quote(x.toTerm, Nil)), None)
-    val a = VarDecl(uniqueLN(x.name+"*"), None, Some(Univ(1)), None, None)
+    val a = VarDecl(uniqueLN(x.name+"'"), None, Some(Univ(1)), None, None)
     (argsCon, x, (x.toTerm, a.toTerm))
   }
   
@@ -260,8 +256,11 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df
     // TODO: Define the morphism in terms of quotations
     val morphTerm : Option[Term] = None
     val morph = VarDecl(uniqueLN("induct_"+x.name), None, Some(morphType), morphTerm, None)
-    val morphDecl = Constant(parent, morph.name, Nil, morph.tp, morph.df, None) //morph.toDeclaration(parent)
-    def m(tm : Term) = ApplyGeneral(morph.toTerm, chain.map(_.tp) ++ ctx.map(_.toTerm) :+ tm)
+    val morphDecl = Constant(parent, morph.name, Nil, Some(toOMS(morph)), morph.df, None) //morph.toDeclaration(parent)
+    def m(tm : Term) = {
+      val tp = ApplyGeneral(morph.toTerm, chain.map(_.tp) ++ ctx.map(_.toTerm) :+ tm)
+      OMS(Constant(parent, uniqueLN(morph.name+" M "+tm.toStr(true)), Nil, Some(tp), morph.df, None).path)
+    }
     (x, morphDecl, m _)
   }
 }
@@ -280,7 +279,7 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
     val (bCtx, bApplied) = argContext(Some("_1"))
     
     val argEq = (aCtx zip bCtx) map {case (a,b) => Eq(a.toTerm,b.toTerm)}
-    val resEq = Eq(aApplied.toTerm, bApplied.toTerm)
+    val resEq = Eq(toOMS(aApplied), toOMS(bApplied))
     val body = Arrow(Arrow(argEq, Contra), Arrow(resEq, Contra))
     val inj = Pi(context++aCtx ++ bCtx,  body)
     
@@ -304,7 +303,7 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
         val newName = uniqueLN("no_conf_" + name.last+ "_" + b.name.last)
         val (aCtx, aApplied) = argContext(None)
         val (bCtx, bApplied) = b.argContext(None)
-        val tp = Pi(context++aCtx ++ bCtx, Neq(aApplied.toTerm, bApplied.toTerm))
+        val tp = Pi(context++aCtx ++ bCtx, Neq(toOMS(aApplied), toOMS(bApplied)))
         decls :+= Constant(parent, newName, Nil, Some(tp), None, None)
     }
   }

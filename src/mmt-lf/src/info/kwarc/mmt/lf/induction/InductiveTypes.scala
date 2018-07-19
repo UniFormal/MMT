@@ -40,8 +40,9 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     implicit var tpdecls : List[TypeLevel]= Nil
     val decls = dd.getDeclarations map {
       case c: Constant =>
-        val intDecl = InternalDeclaration.fromConstant(c, controller, (context++dd.getDeclarations filter {case _ : Constant => true
-        case _ => false}) map({case c:Constant=>VarDecl.apply(c.name, None, c.tp, c.tp, None)}))
+       // val fullContext = (context++dd.getDeclarations filter {case _ : Constant => true
+       // case _ => false}) map({case c:Constant=>VarDecl.apply(c.name, None, c.tp, c.tp, None)})
+        val intDecl = InternalDeclaration.fromConstant(c, controller)
         intDecl match {
           case d @ TermLevel(_, _, _, _, _) => tmdecls :+= d; intDecl
           case d @ TypeLevel(_, _, _, _) => tpdecls :+= d; intDecl
@@ -57,10 +58,41 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     elabDecls = elabDecls.reverse ::: TermLevel.noConfs(tmdecls, context)
     
     // the no junk axioms
-    elabDecls ++= InternalDeclaration.noJunk(decls, tpdecls, tmdecls, statdecls, context)
+    elabDecls ++= InternalDeclaration.noJunks(decls, tpdecls, tmdecls, statdecls, context)
+    
+    def present(c: Constant) : String = {
+      var s = ""
+      def preTp(e: Term) : String = {
+        //def pres(e: Term) = controller.presenter.asString(e).replaceAll("%2F", "/")
+        def flatStrList(l : List[String], sep : String) = l match {
+          case Nil => ""
+          case hd::tl => hd+tl.foldLeft("")((a, b) => a + sep + b)
+        }
+        def preCon(ctx: Context) = {
+          val args = (ctx map (x => present(Constant(parentTerm, x.name, Nil, x.tp, x.df, None)).replaceAll("\n", " ")))
+          if (args == Nil) "" else " {"+flatStrList(args, ", ")+"}"
+        }
+        def iterPre(body: Term) : String = {
+          body match {
+            case OMBIND(Pi.term, con, body) => preCon(con) + " "+iterPre(body)
+            case ApplyGeneral(f:Term, args @ hd::tl) => iterPre(f)+ " " + flatStrList(args map iterPre, " ")
+            case Arrow(a, b) => "("+iterPre(a) + "-> " + iterPre(b)+")"
+            case OMS(target) => target.name.toString()
+            case ApplySpine(t : Term, List(arg1: Term, arg2: Term)) => "("+iterPre(t) + " " + iterPre(arg1) + " " + iterPre(arg2)+")" // + iterPre(arg1) + " " 
+            case OMV(n) => n.toString()
+          }
+        }
+        iterPre(e)
+      }
+      s = s + c.name 
+      s + ": " + preTp (c.tp.get)
+      /*if (c.df != None)
+      	s = s + " = " + controller.presenter.asString(c.df.get).replaceAll("%2F", "/").replaceAll("\n", "")*/
+    }
     
     elabDecls foreach {d =>
-      log(controller.presenter.asString(d).replaceAll("%2F", "/").replaceAll("\n", ""))
+      log(present(d))
+      //log(controller.presenter.asString(d).replaceAll("%2F", "/").replaceAll("\n", ""))
     }
     new Elaboration {
       val elabs : List[Declaration] = Nil 
