@@ -302,26 +302,24 @@ class DefFormParsers(js : List[JSONObject])
     "(assumptions" ~> rep1(parseDefString) <~ ")" ^^ { case (as) => ArgAssumptions(as, None, None) }
   )
 
-  lazy val parseArgSortPairSpec1 : Parser[ArgSortPairSpec1] = fullParser(
-    "(" ~> parseTName ~ parseTName <~ ")" ^^ { case f ~ b => ArgSortPairSpec1(f,b,None,None) }
-  )
+  lazy val pv0 = parseTName ^^ { case (n) => (n,0) }
+  lazy val pv1 = parseDefString ^^ { case (d) => (d,1) }
+  lazy val pv2 = "(pred" ~> parseDefString <~ ")" ^^ { case (d) => (d,2) }
+  lazy val pv3 = "(indic" ~> parseDefString <~ ")" ^^ { case (d) => (d,3) }
 
-  lazy val parseArgSortPairSpec2 : Parser[ArgSortPairSpec2] = fullParser(
-    "(" ~> parseTName ~ parseDefString <~ ")" ^^ { case f ~ b => ArgSortPairSpec2(f,b,None,None) }
+  lazy val parseSortPairSpec : Parser[ArgSortPairSpec] = fullParser(
+    "(" ~> parseTName ~ (pv0 | pv1 | pv2 | pv3) <~ ")" ^^ { case (nm : Name) ~ t => t match {
+      case (n : Name, 0)      => ArgSortPairSpec(nm,Left(Left(n)),None,None)
+      case (d : DefString, 1) => ArgSortPairSpec(nm,Left(Right(d)),None,None)
+      case (d : DefString, 2) => ArgSortPairSpec(nm,Right(Left(d)),None,None)
+      case (d : DefString, 3) => ArgSortPairSpec(nm,Right(Right(d)),None,None)
+      case _ => ??!("omg:" + t)
+    }
+    }
   )
-
-  lazy val parseArgSortPairSpec3 : Parser[ArgSortPairSpec3] = fullParser(
-    "(" ~> parseTName ~ ("(pred" ~> parseDefString <~ "))") ^^ { case f ~ b => ArgSortPairSpec3(f,b,None,None) }
-  )
-
-  lazy val parseArgSortPairSpec4 : Parser[ArgSortPairSpec4] = fullParser(
-    "(" ~> parseTName ~ ("(indic" ~> parseDefString <~ "))") ^^ { case f ~ b => ArgSortPairSpec4(f,b,None,None) }
-  )
-
-  lazy val anySortPairSpec : Parser[SortPairSpec] = parseArgSortPairSpec1 | parseArgSortPairSpec2 | parseArgSortPairSpec3 | parseArgSortPairSpec4
 
   lazy val parseArgSortPairs : Parser[ArgSortPairs] = fullParser(
-    "(sort-pairs" ~> rep1(anySortPairSpec) <~ ")" ^^ { case (as) => ArgSortPairs(as, None, None) }
+    "(sort-pairs" ~> rep1(parseSortPairSpec) <~ ")" ^^ { case (sps) => ArgSortPairs(sps, None, None) }
   )
 
   lazy val parseArgConstPairSpec : Parser[ArgConstPairSpec] = fullParser(

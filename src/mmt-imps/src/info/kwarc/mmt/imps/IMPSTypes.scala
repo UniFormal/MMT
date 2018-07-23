@@ -1800,25 +1800,11 @@ case class ArgAssumptions(defs : List[DefString], var src : SourceInfo, var cmt 
   override def toString: String = "(assumptions " + defs.mkString(" ") + ")"
 }
 
-trait SortPairSpec extends DefForm
-
-case class ArgSortPairSpec1(foo : Name, bar : Name, var src : SourceInfo, var cmt : CommentInfo) extends SortPairSpec {
-  override def toString: String = "(" + foo.toString + " " + bar.toString + ")"
+case class ArgSortPairSpec(nm : Name, srt : Either[Either[Name,DefString],Either[DefString,DefString]], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + nm.toString + " " + srt.toString + ")"
 }
 
-case class ArgSortPairSpec2(foo : Name, bar : DefString, var src : SourceInfo, var cmt : CommentInfo) extends SortPairSpec {
-  override def toString: String = "(" + foo.toString + " " + bar.toString + ")"
-}
-
-case class ArgSortPairSpec3(foo : Name, bar : DefString, var src : SourceInfo, var cmt : CommentInfo) extends SortPairSpec {
-  override def toString: String = "(" + foo.toString + " (pred " + bar.toString + "))"
-}
-
-case class ArgSortPairSpec4(foo : Name, bar : DefString, var src : SourceInfo, var cmt : CommentInfo) extends SortPairSpec {
-  override def toString: String = "(" + foo.toString + " (indic " + bar.toString + "))"
-}
-
-case class ArgSortPairs(defs : List[SortPairSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+case class ArgSortPairs(defs : List[ArgSortPairSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString: String = "(sort-pairs " + defs.mkString(" ") + ")"
 }
 
