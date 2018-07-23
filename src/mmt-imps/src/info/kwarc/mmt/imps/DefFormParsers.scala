@@ -32,13 +32,13 @@ class DefFormParsers(js : List[JSONObject])
 
   lazy val number     : Parser[Int]    = """(0|[1-9]\d*)""".r ^^ { _.toInt }
 
-  lazy val parseName  : Parser[String] = regex("""[^()\"\t\r\n ]+""".r)
+  lazy val parseName  : Parser[String] = "[^()\"\t\r\n ]+".r
   lazy val parseTName : Parser[Name]   = fullParser(
     (parseName ^^ { case (nm) => Name(nm,None,None)}) | ("()" ^^ {case (_) => Name("()",None,None)})
   )
 
   // ToDo: nested strings could be a problem. Do those occur?
-  lazy val parseDefString : Parser[DefString] = fullParser(regex("""\"[^\"]+\"""".r) ^^ {case (s) => DefString(s,None,None)})
+  lazy val parseDefString : Parser[DefString] = fullParser("\"[^\"]+\"".r ^^ {case (s) => DefString(s,None,None)})
 
   lazy val parseArgTheory : Parser[ArgTheory] =
     fullParser(("(theory" ~> parseTName <~ ")") ^^ { case (n) => ArgTheory(n,None,None) })
@@ -46,8 +46,9 @@ class DefFormParsers(js : List[JSONObject])
   lazy val parseArgTranslation : Parser[ArgTranslation] =
     fullParser(("(translation" ~> parseTName <~ ")") ^^ { case (n) => ArgTranslation(n,None,None) })
 
-  lazy val parseArgLanguage : Parser[ArgLanguage] =
-    fullParser(("(language" ~> parseTName <~ ")") ^^ { case (n) => ArgLanguage(n,None,None) })
+  lazy val parseArgLanguage : Parser[ArgLanguage] = {
+    fullParser(("(language" ~> parseTName <~ ")") ^^ { case (n) => ArgLanguage(n, None, None) })
+  }
 
   lazy val parseArgWitness : Parser[ArgWitness] =
     fullParser(("(witness" ~> parseDefString <~ ")") ^^ {case (s) => ArgWitness(s,None,None)})
@@ -283,11 +284,62 @@ class DefFormParsers(js : List[JSONObject])
     "(" ~> parseTName ~ parseTName <~ ")" ^^ {case p1 ~ p2 => ArgOverloadingPair(p1,p2,None,None)}
   )
 
-  lazy val pOverloading : Parser[DFOverloading] = fullParser(
-    "(def-overloading" ~> parseTName ~ rep1(parseArgOverloadingPairs) <~ ")" ^^ { case t ~ ps =>
-      DFOverloading.build(List(t,ps))
-    }
+  lazy val parseModForce : Parser[ModForce] = fullParser("force" ^^ {case (_) => ModForce(None,None)})
+
+  lazy val parseModForceU : Parser[ModForceUnderQuickLoad] = fullParser("force-under-quick-load" ^^ {case (_) => ModForceUnderQuickLoad(None,None)})
+
+  lazy val parseModDontEnrich : Parser[ModDontEnrich] = fullParser("dont-enrich" ^^ {case (_) => ModDontEnrich(None,None)})
+
+  lazy val parseArgSource : Parser[ArgSource] = fullParser(
+    "(source" ~> parseTName <~ ")" ^^ { case (n) => ArgSource(n, None, None) }
   )
+
+  lazy val parseArgTarget : Parser[ArgTarget] = fullParser(
+    "(target" ~> parseTName <~ ")" ^^ { case (n) => ArgTarget(n, None, None) }
+  )
+
+  lazy val parseArgAssumptions : Parser[ArgAssumptions] = fullParser(
+    "(assumptions" ~> rep1(parseDefString) <~ ")" ^^ { case (as) => ArgAssumptions(as, None, None) }
+  )
+
+  lazy val parseArgSortPairSpec1 : Parser[ArgSortPairSpec1] = fullParser(
+    "(" ~> parseTName ~ parseTName <~ ")" ^^ { case f ~ b => ArgSortPairSpec1(f,b,None,None) }
+  )
+
+  lazy val parseArgSortPairSpec2 : Parser[ArgSortPairSpec2] = fullParser(
+    "(" ~> parseTName ~ parseDefString <~ ")" ^^ { case f ~ b => ArgSortPairSpec2(f,b,None,None) }
+  )
+
+  lazy val parseArgSortPairSpec3 : Parser[ArgSortPairSpec3] = fullParser(
+    "(" ~> parseTName ~ ("(pred" ~> parseDefString <~ "))") ^^ { case f ~ b => ArgSortPairSpec3(f,b,None,None) }
+  )
+
+  lazy val parseArgSortPairSpec4 : Parser[ArgSortPairSpec4] = fullParser(
+    "(" ~> parseTName ~ ("(indic" ~> parseDefString <~ "))") ^^ { case f ~ b => ArgSortPairSpec4(f,b,None,None) }
+  )
+
+  lazy val anySortPairSpec : Parser[SortPairSpec] = parseArgSortPairSpec1 | parseArgSortPairSpec2 | parseArgSortPairSpec3 | parseArgSortPairSpec4
+
+  lazy val parseArgSortPairs : Parser[ArgSortPairs] = fullParser(
+    "(sort-pairs" ~> rep1(anySortPairSpec) <~ ")" ^^ { case (as) => ArgSortPairs(as, None, None) }
+  )
+
+  lazy val parseArgConstPairSpec : Parser[ArgConstPairSpec] = fullParser(
+    "(" ~> parseTName ~ parseDefStringOrName <~ ")" ^^ { case (f ~ b) => ArgConstPairSpec(f,b,None,None) }
+  )
+
+  lazy val parseArgConstPairs : Parser[ArgConstPairs] = fullParser(
+    ("(constant-pairs" ~> rep1(parseArgConstPairSpec) <~ ")") ^^ { case (as) => ArgConstPairs(as, None, None) }
+  )
+
+  lazy val parseArgCoreTranslation : Parser[ArgCoreTranslation] = fullParser(
+    "(core-translation" ~> parseTName <~ ")" ^^ { case (n) => ArgCoreTranslation(n, None, None) }
+  )
+
+  lazy val parseArgTheoryInterpretationCheck : Parser[ArgTheoryInterpretationCheck] = fullParser(
+    "(theory-interpretation-check" ~> parseTName <~ ")" ^^ { case (n) => ArgTheoryInterpretationCheck(n, None, None) }
+  )
+
 
   // ######### Full Def-Form Parsers
 
@@ -412,11 +464,31 @@ class DefFormParsers(js : List[JSONObject])
     )
   }
 
+  lazy val pOverloading : Parser[DFOverloading] = fullParser(
+    "(def-overloading" ~> parseTName ~ rep1(parseArgOverloadingPairs) <~ ")" ^^ { case t ~ ps =>
+      DFOverloading.build(List(t,ps))
+    }
+  )
+
+  lazy val pTranslation : Parser[DFTranslation] = {
+    DFTheorem.js = this.js
+    composeParser(
+      "def-translation",
+      List(parseTName),
+      List(parseModForce,parseModForceU,parseModDontEnrich),
+      List(parseArgSource, parseArgTarget).map(p => (p,R)) :::
+        List(parseArgAssumptions, parseArgFixedTheories, parseArgSortPairs, parseArgConstPairs,
+          parseArgCoreTranslation, parseArgTheoryInterpretationCheck).map(p => (p,O)),
+      DFTranslation
+    )
+  }
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
-    pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading
+    pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading,
+    pTranslation
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

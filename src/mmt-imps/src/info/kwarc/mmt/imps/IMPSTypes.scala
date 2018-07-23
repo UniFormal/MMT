@@ -1527,7 +1527,7 @@ case class ArgSort(srt : IMPSSort, var src : SourceInfo, var cmt : CommentInfo) 
 }
 
 case class ArgFixedTheories(ts : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
-  override def toString : String = { "(usages " + ts.mkString(" ") + ")"}
+  override def toString : String = { "(fixed-theories " + ts.mkString(" ") + ")"}
 }
 
 case class ModTransportable(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
@@ -1776,6 +1776,68 @@ case class ArgOverloadingPair(tname : Name, sname : Name, var src : SourceInfo, 
   override def toString: String = "(" + tname.toString + " " + sname.toString + ")"
 }
 
+case class ModForce(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "force"
+}
+
+case class ModForceUnderQuickLoad(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "force-under-quick-load"
+}
+
+case class ModDontEnrich(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "dont-enrich"
+}
+
+case class ArgSource(var thy : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(source " + thy.toString + ")"
+}
+
+case class ArgTarget(var thy : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(target " + thy.toString + ")"
+}
+
+case class ArgAssumptions(defs : List[DefString], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(assumptions " + defs.mkString(" ") + ")"
+}
+
+trait SortPairSpec extends DefForm
+
+case class ArgSortPairSpec1(foo : Name, bar : Name, var src : SourceInfo, var cmt : CommentInfo) extends SortPairSpec {
+  override def toString: String = "(" + foo.toString + " " + bar.toString + ")"
+}
+
+case class ArgSortPairSpec2(foo : Name, bar : DefString, var src : SourceInfo, var cmt : CommentInfo) extends SortPairSpec {
+  override def toString: String = "(" + foo.toString + " " + bar.toString + ")"
+}
+
+case class ArgSortPairSpec3(foo : Name, bar : DefString, var src : SourceInfo, var cmt : CommentInfo) extends SortPairSpec {
+  override def toString: String = "(" + foo.toString + " (pred " + bar.toString + "))"
+}
+
+case class ArgSortPairSpec4(foo : Name, bar : DefString, var src : SourceInfo, var cmt : CommentInfo) extends SortPairSpec {
+  override def toString: String = "(" + foo.toString + " (indic " + bar.toString + "))"
+}
+
+case class ArgSortPairs(defs : List[SortPairSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(sort-pairs " + defs.mkString(" ") + ")"
+}
+
+case class ArgConstPairSpec(name : Name, const : ODefString, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + name.toString + " " + const.toString + ")"
+}
+
+case class ArgConstPairs(defs : List[ArgConstPairSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(constant-pairs " + defs.mkString(" ") + ")"
+}
+
+case class ArgCoreTranslation(var tr : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(core-translation " + tr.toString + ")"
+}
+
+case class ArgTheoryInterpretationCheck(var cm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(theory-interpretation-check " + cm.toString + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1970,6 +2032,27 @@ object DFOverloading extends Comp[DFOverloading] {
   }
 }
 
+case class DFTranslation(n : Name, f : Option[ModForce], fu : Option[ModForceUnderQuickLoad], de : Option[ModDontEnrich],
+                         sour : ArgSource, tar : ArgTarget, asms : Option[ArgAssumptions], fxd : Option[ArgFixedTheories],
+                         sps : Option[ArgSortPairs], cps : Option[ArgConstPairs], ct : Option[ArgCoreTranslation],
+                         tic : Option[ArgTheoryInterpretationCheck], var src : SourceInfo, var cmt : CommentInfo)
+  extends DefForm
+
+object DFTranslation extends Comp[DFTranslation] {
+
+  var js : List[JSONObject] = Nil
+
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (n : Name) :+: (f : Option[ModForce]) :+: (fu : Option[ModForceUnderQuickLoad]) :+: (de : Option[ModDontEnrich])
+                    :+: (sour : Option[ArgSource]) :+: (tar : Option[ArgTarget]) :+: (asms : Option[ArgAssumptions])
+                    :+: (fxd : Option[ArgFixedTheories]) :+: (sps : Option[ArgSortPairs]) :+: (cps : Option[ArgConstPairs])
+                    :+: (ct : Option[ArgCoreTranslation]) :+: (tic : Option[ArgTheoryInterpretationCheck]) :+: HNil => {
+      println("Don't forget to put formula parsing back in")
+      DFTranslation(n, f, fu, de, sour.get, tar.get, asms, fxd, sps, cps, ct, tic, None, None).asInstanceOf[T]
+    }
+    case _ => ??!(args)
+  }
+}
 
 object FrmFnd
 {
