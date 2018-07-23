@@ -18,10 +18,8 @@ private object InternalDeclarationUtil {
    */
   def uniqueLN(nm: String)(implicit parent: OMID): LocalName = {
     LocalName(nm)
-	 ////In case it is applied multiple times on the same object, change it only the first time
-    //if (nm contains parent.path.name.toString.filterNot(_ == '/')) LocalName(nm) else parent.path.name / nm
   }
-   
+
   /**
     * Make a new variable declaration for a variable of type tp and fresh name (preferably name) in the given (optional) context
     * @param name the local name that will preferably be picked for the variable declaration
@@ -43,7 +41,7 @@ private object InternalDeclarationUtil {
   
   // TODO: Fix this hack
   def compTp(a: Term, b: Term): Boolean = a.toStr(true) == b.toStr(true)
-  
+
   /**
    * get the induction axiom declarations for the type levels as well as the term level and constructor level part 
    * of the morphism mapping an (term or statement level) internal declaration to its image in the model
@@ -51,23 +49,23 @@ private object InternalDeclarationUtil {
    * @param tpdecls All type level internal declarations
    * @param context the inner context of the derived declaration
    */
-  def getFullMorph(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], context: Context)(implicit parent : OMID) : (List[Constant], InternalDeclaration => InternalDeclaration, VarDecl => Term, List[InternalDeclaration]) = {
+  def getFullMorph(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], context: Context)(implicit parent : OMID) : (List[Constant], InternalDeclaration => InternalDeclaration, VarDecl => VarDecl, List[InternalDeclaration]) = {
     //A list of quadruples consisting of (context of arguments, x, x_, the sub replacing x with a free type x_) for each type declaration declaring a type x
     val types : List[(Context, VarDecl, (Term, Term))]= tpdecls map(_.getTypes(None))
     
     /** The morphism on constructors, it map c |-> c' for each constructor c */
     def mapConstr(con: InternalDeclaration): InternalDeclaration = con ^ (types.map(_._3))
     val chain : List[InternalDeclaration]= decls map mapConstr
-    
+
     /** The morphism for terms, it maps all terms t: a = m |-> t' : a* = m' iff a is one of the earlier inductively defined types */
-    def mapTerm(morphisms: List[(VarDecl, Constant, Term => Term)], tm: VarDecl) : Term = {
+    def mapTerm(morphisms: List[(VarDecl, Constant, VarDecl => VarDecl)], tm: VarDecl) : VarDecl = {
       morphisms.find(x => compTp(x._1.toTerm, tm.tp.get)) match {
-        case Some(morph) => morph._3(tm.toTerm)
-        case None => toOMS(tm)
+        case Some(morph) => morph._3(tm)
+        case None => tm
       }
     }
     
-    var morphisms : List[(VarDecl, Constant, Term => Term)] = Nil
+    var morphisms : List[(VarDecl, Constant, VarDecl => VarDecl)] = Nil
     tpdecls zip types foreach {
       case (t:TypeLevel, (c, x, s)) => morphisms = morphisms :+ t.getMorph(t, chain, mapTerm (morphisms, _), mapConstr, c, x, context)
     }
@@ -83,6 +81,10 @@ private object InternalDeclarationUtil {
 
 import InternalDeclarationUtil._
 import info.kwarc.mmt.api.utils.URI
+import scala.util.Random
+import java.util.Random
+import scala.util.Random
+
 //import info.kwarc.mmt.quotation.Quotation.quote
 
 /** helper class for the various declarations in an inductive type */ 
@@ -116,10 +118,13 @@ sealed abstract class InternalDeclaration {
       if (con == Nil) uniqueLN(name+suf) else uniqueLN(appliedName)}
     (con, VarDecl(newName, None, Some(tp), None, None))
   }
+  
+  /** apply the internal declaration to the given argument context */
+  def appliedTo(args: Context)(implicit parent: OMID):Term = toOMS(ApplyGeneral(OMS(path), args.map(_.toTerm)))
+  
     /**
      * Substitute the argument types of the inductive declaration according to the substitution sub
      * @param sub the substitution to apply
-     * @param con the controller
      */
   def ^(sub : List[(Term, Term)])(implicit parent : OMID) : InternalDeclaration = {
     //For some reason substitutions don't seem to work properly here, hence this reinvention of the wheel
@@ -151,22 +156,31 @@ sealed abstract class InternalDeclaration {
       case TypeLevel(_, _, df, n) => TypeLevel(p, subArgs, df, n)
       case StatementLevel(_, _, df, n) => StatementLevel(p, subArgs, df, n)
     }
-    }
+  }
 
-  def noJunk(chain:Context, mapConstr: InternalDeclaration=>InternalDeclaration, mapTerm: VarDecl=>Term)(implicit parent: OMID) : Term = {
+  /**
+   * generate the type of the no junk axiom for the internal declaration
+   * @param chain all internal declarations
+   * @param ctx the context of the axiom
+   * @param mapConstr the declaration level part of the morphism
+   * @param mapTerm the term devel part of the morphism
+   * @param parent (implicit) the parent module
+   * @returns the term containing the type of the no junk axiom
+   */
+  def noJunk(chain:List[InternalDeclaration], ctx:Context, mapConstr: InternalDeclaration=>InternalDeclaration, mapTerm: VarDecl=>VarDecl)(implicit parent: OMID) : Term = {
     val (args, orig) = this.argContext(None)
-        
+    
     //the result of applying m to the result of the constructor
-    //redeclaring the type to preserve matches in mapTerm, despite more complicated type structure of orig
-    //TODO: Can this hack be avoided
-    val mappedOrig = mapTerm(VarDecl(orig.name, None, Some(ret), orig.df, None))
+    val mappedRes = toOMS(mapTerm(VarDecl(orig.name, None, Some(ret), orig.df, None)))
     
     //the result of applying the image of the constructor (all types substituted) to the image of the arguments
-    val mappedArgs : Term = ApplyGeneral(mapConstr(this).toVarDecl.toTerm, args map mapTerm)
+    val mappedArgs : List[VarDecl] = args map mapTerm
+    //ensure everything went well and the argument is actually in the context
+    val mappedConstr : Term = chain.find(_ == mapConstr(this)).get.appliedTo(mappedArgs)
     
-    //both results should be equal, if m is actually a homomorphism
-    def assertion(assert:(Term, Term) => Term) = Pi(chain ++ args, assert(mappedOrig, mappedArgs))
-    //Use Arrow or Eq depending on whether the results are term or type level
+    //both results should be equal, if m is actually a morphism
+    def assertion(assert:(Term, Term) => Term) = Pi(chain.map(_.toVarDecl) ++ ctx ++ args, assert(mappedRes, mappedConstr))
+    //Use Arrow or Eq depending on whether the internal declaration is term or type level
     this match {
       case TypeLevel(_, _, _, _) => assertion ((x, y) => Arrow(x, y))
       case _ => assertion ((x, y) => Eq(x, y))
@@ -205,12 +219,11 @@ object InternalDeclaration {
   }
   
    /**
-   * Generate no junk declaration for all term-- and typelevel inductive declarations
+   * Generate no junk declaration for all internal declarations
    * @param parent the parent declared module of the derived declaration to elaborate
    * @param decls all declarations
    * @param tmdecls all term level declarations
    * @param tpdecls all type level declarations
-   * @param con the controller
    * @param context the inner context of the derived declaration
    * @returns returns one no junk (morphism) declaration for each type level declaration
    * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
@@ -221,8 +234,8 @@ object InternalDeclaration {
     derived_decls ++=tp_induct_decls
     
     (tmdecls++statdecls) foreach {decl : InternalDeclaration => 
-          val assertion = decl.noJunk(chain.map(_.toVarDecl), mapConstr, mapTerm)
-          derived_decls :+= Constant(parent, uniqueLN("compute_"+decl.name.last), Nil, Some(assertion), None, None)
+      val assertion = decl.noJunk(chain, context, mapConstr, mapTerm)
+      derived_decls :+= Constant(parent, uniqueLN("compute_"+decl.name.last), Nil, Some(assertion), None, None)
     }
     derived_decls
   } 
@@ -251,15 +264,18 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df
    * @param context the inner context of the derived declaration
    * @returns returns the domain type, the morphism declaration and the morphism itself
    */    
-  def getMorph(t: InternalDeclaration, chain : List[InternalDeclaration], mapTerm: VarDecl => Term, mapConstr: InternalDeclaration => InternalDeclaration, ctx: Context, x: VarDecl, context: Context) = {
-    val morphType : Term = t.noJunk(chain.map(_.toVarDecl)++context, mapConstr, mapTerm)
+  def getMorph(t: InternalDeclaration, chain : List[InternalDeclaration], mapTerm: VarDecl => VarDecl, mapConstr: InternalDeclaration => InternalDeclaration, ctx: Context, x: VarDecl, context: Context) = {
+    val morphType : Term = t.noJunk(chain, context, mapConstr, mapTerm)
+    //println("morphType: "+morphType.toNode.toString())
     // TODO: Define the morphism in terms of quotations
     val morphTerm : Option[Term] = None
     val morph = VarDecl(uniqueLN("induct_"+x.name), None, Some(morphType), morphTerm, None)
-    val morphDecl = Constant(parent, morph.name, Nil, Some(toOMS(morph)), morph.df, None) //morph.toDeclaration(parent)
-    def m(tm : Term) = {
-      val tp = ApplyGeneral(morph.toTerm, chain.map(_.tp) ++ ctx.map(_.toTerm) :+ tm)
-      OMS(Constant(parent, uniqueLN(morph.name+" M "+tm.toStr(true)), Nil, Some(tp), morph.df, None).path)
+    val morphDecl = Constant(parent, morph.name, Nil, morph.tp, morph.df, None) //morph.toDeclaration(parent)
+    //println("morphDecl: "+morphDecl.toNode.toString())
+    def m(tm : VarDecl) = {
+      val tp = ApplyGeneral(morph.toTerm, chain.map(_.tp) ++ ctx.map(_.toTerm) :+ tm.toTerm)
+      val const = Constant(parent, uniqueLN(morph.name+" M "+tm.toStr(true)), Nil, Some(tp), morph.df, None)//val const = Constant(parent, uniqueLN(morph.name+" M "+tm.toStr(true)), Nil, Some(tp), morph.df, None)
+      VarDecl(const.name, None, const.tp, const.df, None)
     }
     (x, morphDecl, m _)
   }
@@ -269,6 +285,7 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df
 case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term, df: Option[Term], notC: NotationContainer)(implicit parent : OMID) extends InternalDeclaration {
   def tm = df
   def notation = notC
+
   /**
    * Generate injectivity declaration for the term constructor d
    * @param parent the parent declared module of the derived declaration to elaborate
@@ -312,6 +329,7 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
 }
 
 object TermLevel {
+
   /**
    * generate the no confusion axioms for the list of term level internal declarations
    * @param tmdecs the list of term levels

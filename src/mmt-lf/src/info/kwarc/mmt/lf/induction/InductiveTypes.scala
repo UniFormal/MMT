@@ -60,10 +60,9 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     // the no junk axioms
     elabDecls ++= InternalDeclaration.noJunks(decls, tpdecls, tmdecls, statdecls, context)
     
-    def present(c: Constant) : String = {
-      var s = ""
+    //much nicer to read output than controller.presenter.asString
+      def present(c: Constant) : String = {
       def preTp(e: Term) : String = {
-        //def pres(e: Term) = controller.presenter.asString(e).replaceAll("%2F", "/")
         def flatStrList(l : List[String], sep : String) = l match {
           case Nil => ""
           case hd::tl => hd+tl.foldLeft("")((a, b) => a + sep + b)
@@ -84,15 +83,11 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
         }
         iterPre(e)
       }
-      s = s + c.name 
-      s + ": " + preTp (c.tp.get)
-      /*if (c.df != None)
-      	s = s + " = " + controller.presenter.asString(c.df.get).replaceAll("%2F", "/").replaceAll("\n", "")*/
+      c.path + ": " + preTp (c.tp.get)
     }
     
     elabDecls foreach {d =>
       log(present(d))
-      //log(controller.presenter.asString(d).replaceAll("%2F", "/").replaceAll("\n", ""))
     }
     new Elaboration {
       val elabs : List[Declaration] = Nil 
