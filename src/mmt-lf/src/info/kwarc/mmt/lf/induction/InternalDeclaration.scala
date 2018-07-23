@@ -51,7 +51,7 @@ private object InternalDeclarationUtil {
    */
   def getFullMorph(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], context: Context)(implicit parent : OMID) : (List[Constant], InternalDeclaration => InternalDeclaration, VarDecl => VarDecl, List[InternalDeclaration]) = {
     //A list of quadruples consisting of (context of arguments, x, x_, the sub replacing x with a free type x_) for each type declaration declaring a type x
-    val types : List[(Context, VarDecl, (Term, Term))]= tpdecls map(_.getTypes(None))
+    val types : List[(Context, VarDecl, Sub)]= tpdecls map(_.getTypes(None))
     
     /** The morphism on constructors, it map c |-> c' for each constructor c */
     def mapConstr(con: InternalDeclaration): InternalDeclaration = con ^ (types.map(_._3))
@@ -116,7 +116,7 @@ sealed abstract class InternalDeclaration {
     val newName = if (tp == OMS(path)) name else {
       val appliedName = name+suf+" ("+con.foldLeft("")((a, b)=>a+" "+b.name)+")"//+"_res"
       if (con == Nil) uniqueLN(name+suf) else uniqueLN(appliedName)}
-    (con, VarDecl(newName, None, Some(tp), None, None))
+    (con, VarDecl(newName, None, Some(ret), None, None))
   }
   
   /** apply the internal declaration to the given argument context */
@@ -126,38 +126,18 @@ sealed abstract class InternalDeclaration {
      * Substitute the argument types of the inductive declaration according to the substitution sub
      * @param sub the substitution to apply
      */
-  def ^(sub : List[(Term, Term)])(implicit parent : OMID) : InternalDeclaration = {
-    //For some reason substitutions don't seem to work properly here, hence this reinvention of the wheel
-    def substitute(t: Term) : Term = {
-        var res = t
-        sub. foreach {case (a, b) =>
-          if (compTp(a, t)) {
-            res = b}
-        }
-        res
-      }
-    def subst (tp: Term) : Term = {
-      def subs(tp: Term) : Term = {
-        val FunType(ars, ret) = tp 
-        FunType(ars map {case (x, y) => (x, substitute(y))}, substitute (tp))//substitute (ret))
-      }
-      var res = tp
-      while (res != subs(tp)) {res = subs(res)}
-      res
-    }
-    
-    val subArgs : List[(Option[LocalName], Term)]= args map {
-      case a @ (Some(loc), tp) => (Some(LocalName(loc.toString() + "'")), subst (tp))
-      case (None, tp) => (None, subst (tp))
-    }
+  def ^(sub: Substitution)(implicit parent: OMID) : InternalDeclaration = {
+    def toOMV(tp: Term)(implicit parent: OMID): Term = toOMS(tp) match {case OMS(p) => OMV(p.name)}
+    val margs = args map({case (None, x) => (None, toOMV(x)^sub) case (Some(l), x) => (Some(l), VarDecl(OMV.anonymous, x).toTerm^sub)})
+    val mtp = FunType(margs, toOMV(ret)^sub)
     val p = path.module ? LocalName(path.name+"'")
     this match {
-      case TermLevel(_, _, _, df, n) => TermLevel(p, subArgs, subst (ret), df, n)
-      case TypeLevel(_, _, df, n) => TypeLevel(p, subArgs, df, n)
-      case StatementLevel(_, _, df, n) => StatementLevel(p, subArgs, df, n)
+      case TermLevel(_, _, _, df, n) => TermLevel(p, margs, toOMV(ret)^sub, df, n)
+      case TypeLevel(_, _, df, n) => TypeLevel(p, margs, df, n)
+      case StatementLevel(_, _, df, n) => StatementLevel(p, margs, df, n)
     }
   }
-
+  
   /**
    * generate the type of the no junk axiom for the internal declaration
    * @param chain all internal declarations
@@ -165,13 +145,13 @@ sealed abstract class InternalDeclaration {
    * @param mapConstr the declaration level part of the morphism
    * @param mapTerm the term devel part of the morphism
    * @param parent (implicit) the parent module
-   * @returns the term containing the type of the no junk axiom
+   * @return the term containing the type of the no junk axiom
    */
   def noJunk(chain:List[InternalDeclaration], ctx:Context, mapConstr: InternalDeclaration=>InternalDeclaration, mapTerm: VarDecl=>VarDecl)(implicit parent: OMID) : Term = {
     val (args, orig) = this.argContext(None)
     
     //the result of applying m to the result of the constructor
-    val mappedRes = toOMS(mapTerm(VarDecl(orig.name, None, Some(ret), orig.df, None)))
+    val mappedRes = toOMS(mapTerm(orig))
     
     //the result of applying the image of the constructor (all types substituted) to the image of the arguments
     val mappedArgs : List[VarDecl] = args map mapTerm
@@ -246,12 +226,12 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df
   def ret = Univ(1)
   def tm = df
   def notation = notC
-  def getTypes(suffix: Option[String]) : (Context, VarDecl, (Term, Term)) = {
+  def getTypes(suffix: Option[String]) : (Context, VarDecl, Sub) = {
     val (argsCon, x)=this.argContext(suffix)
     //TODO: Define in terms of Quotations, fix below try
     //val a = VarDecl(uniqueLN("quoted_return_type_of_"+x.name), None, Some(Univ(1)), Some(quote(x.toTerm, Nil)), None)
     val a = VarDecl(uniqueLN(x.name+"'"), None, Some(Univ(1)), None, None)
-    (argsCon, x, (x.toTerm, a.toTerm))
+    (argsCon, x, (x.toTerm / a.toTerm))
   }
   
   /** 
