@@ -1836,6 +1836,10 @@ case class ArgDefStringList(var dfs : List[DefString], var src : SourceInfo, var
   override def toString: String = if (dfs.length == 1) { dfs.head.toString } else { "(" + dfs.mkString(" ") + ")"}
 }
 
+case class ArgRenamer(var rn : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(renamer " + rn.toString + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -2065,10 +2069,19 @@ object DFRecursiveConstant extends Comp[DFRecursiveConstant] {
       DFRecursiveConstant(ns,defs,thy.get,usgs,defname,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
-
-
 }
 
+case class DFTransportedSymbols(ns : ArgNameList, tr : ArgTranslation, rn : Option[ArgRenamer],
+                                var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+
+object DFTransportedSymbols extends Comp[DFTransportedSymbols] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (ns : ArgNameList) :+: (tr : Option[ArgTranslation]) :+: (rn : Option[ArgRenamer]) :+: HNil =>
+      DFTransportedSymbols(ns,tr.get,rn,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
 
 object FrmFnd
 {

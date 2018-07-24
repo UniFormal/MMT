@@ -350,6 +350,10 @@ class DefFormParsers(js : List[JSONObject])
     "(definition-name" ~> parseTName <~ ")" ^^ { case (nm) => ArgDefinitionName(nm,None,None) }
   )
 
+  lazy val parseArgRenamer : Parser[ArgRenamer] = fullParser(
+    "(renamer" ~> parseTName <~ ")" ^^ { case (r) => ArgRenamer(r,None,None) }
+  )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -503,12 +507,20 @@ class DefFormParsers(js : List[JSONObject])
     )
   }
 
+  lazy val pTransportedSymbols : Parser[DFTransportedSymbols] = composeParser(
+    "def-transported-symbols",
+    List(parseArgNameList),
+    Nil,
+    List((parseArgTranslation,R),(parseArgRenamer,O)),
+    DFTransportedSymbols
+  )
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
     pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading,
-    pTranslation, pRecursiveConstant
+    pTranslation, pTransportedSymbols, pRecursiveConstant
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }
