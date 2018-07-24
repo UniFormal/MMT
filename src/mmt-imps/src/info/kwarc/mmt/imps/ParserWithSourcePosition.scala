@@ -67,6 +67,9 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
       { (fullParser(parsers.head) ~ positional(parsers.tail)) ^^ { case p ~ ps => List(p) ::: ps } }
   }
 
+  def singleOrList[A](p : Parser[A]) : Parser[List[A]] =
+    (p ^^ { case (r) => List(r) }) | ("(" ~> rep1(p) <~")" ^^ { case (rs) => rs })
+
   def anyOf[A](ks : List[Parser[A]]) : Parser[A] = {
     if (ks.isEmpty) { failure("none of anyOf") } else { ks.head | anyOf(ks.tail) }
   }

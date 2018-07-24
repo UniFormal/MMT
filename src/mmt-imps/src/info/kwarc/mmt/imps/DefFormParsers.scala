@@ -313,7 +313,7 @@ class DefFormParsers(js : List[JSONObject])
       case (d : DefString, 1) => ArgSortPairSpec(nm,Left(Right(d)),None,None)
       case (d : DefString, 2) => ArgSortPairSpec(nm,Right(Left(d)),None,None)
       case (d : DefString, 3) => ArgSortPairSpec(nm,Right(Right(d)),None,None)
-      case _ => ??!("omg:" + t)
+      case _ => ??!(t)
     }
     }
   )
@@ -338,6 +338,17 @@ class DefFormParsers(js : List[JSONObject])
     "(theory-interpretation-check" ~> parseTName <~ ")" ^^ { case (n) => ArgTheoryInterpretationCheck(n, None, None) }
   )
 
+  lazy val parseArgNameList : Parser[ArgNameList] = fullParser(
+    singleOrList(parseTName) ^^ { case (ns) => ArgNameList(ns,None,None) }
+  )
+
+  lazy val parseArgDefStringList : Parser[ArgDefStringList] = fullParser(
+    singleOrList(parseDefString) ^^ { case (ds) => ArgDefStringList(ds,None,None) }
+  )
+
+  lazy val parseArgDefinitionName : Parser[ArgDefinitionName] = fullParser(
+    "(definition-name" ~> parseTName <~ ")" ^^ { case (nm) => ArgDefinitionName(nm,None,None) }
+  )
 
   // ######### Full Def-Form Parsers
 
@@ -481,12 +492,23 @@ class DefFormParsers(js : List[JSONObject])
     )
   }
 
+  lazy val pRecursiveConstant : Parser[DFRecursiveConstant] = {
+    DFTheorem.js = this.js
+    composeParser(
+      "def-recursive-constant",
+      List(parseArgNameList, parseArgDefStringList),
+      Nil,
+      List((parseArgTheory,R),(parseArgUsages,O),(parseArgDefinitionName,O)),
+      DFRecursiveConstant
+    )
+  }
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
     pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading,
-    pTranslation
+    pTranslation, pRecursiveConstant
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

@@ -1824,6 +1824,18 @@ case class ArgTheoryInterpretationCheck(var cm : Name, var src : SourceInfo, var
   override def toString: String = "(theory-interpretation-check " + cm.toString + ")"
 }
 
+case class ArgDefinitionName(var dn : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(definition-name " + dn.toString + ")"
+}
+
+case class ArgNameList(var nms : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = if (nms.length == 1) { nms.head.toString } else { "(" + nms.mkString(" ") + ")"}
+}
+
+case class ArgDefStringList(var dfs : List[DefString], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = if (dfs.length == 1) { dfs.head.toString } else { "(" + dfs.mkString(" ") + ")"}
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -2039,6 +2051,24 @@ object DFTranslation extends Comp[DFTranslation] {
     case _ => ??!(args)
   }
 }
+
+case class DFRecursiveConstant(ns : ArgNameList, defs : ArgDefStringList, thy : ArgTheory, usgs : Option[ArgUsages],
+                               defname : Option[ArgDefinitionName], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFRecursiveConstant extends Comp[DFRecursiveConstant] {
+
+  var js : List[JSONObject] = Nil
+
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (ns : ArgNameList) :+: (defs : ArgDefStringList) :+: (thy : Option[ArgTheory]) :+: (usgs : Option[ArgUsages])
+                            :+: (defname : Option[ArgDefinitionName]) :+: HNil =>
+      DFRecursiveConstant(ns,defs,thy.get,usgs,defname,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+
+
+}
+
 
 object FrmFnd
 {
