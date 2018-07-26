@@ -1,8 +1,9 @@
 package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.utils.JSONObject
-import info.kwarc.mmt.imps.NumericalType.{NumericalType}
-import info.kwarc.mmt.imps.ParseMethod.{ParseMethod}
+import info.kwarc.mmt.imps.NumericalType.NumericalType
+import info.kwarc.mmt.imps.OperationType.OperationType
+import info.kwarc.mmt.imps.ParseMethod.ParseMethod
 import info.kwarc.mmt.imps.ParserWithSourcePosition._
 import info.kwarc.mmt.imps.Usage.Usage
 
@@ -354,6 +355,65 @@ class DefFormParsers(js : List[JSONObject])
     "(renamer" ~> parseTName <~ ")" ^^ { case (r) => ArgRenamer(r,None,None) }
   )
 
+  lazy val parseOperationType : Parser[OperationType] = parseName ^^ {
+    case "+"    => OperationType.PLUS
+    case "-"    => OperationType.MINUS
+    case "*"    => OperationType.TIMES
+    case "/"    => OperationType.DIV
+    case "^"    => OperationType.EXP
+    case "sub"  => OperationType.SUB
+    case "zero" => OperationType.ZERO
+    case "unit" => OperationType.UNIT
+  }
+
+  lazy val parseOperationAlist : Parser[ArgOperationAlist] = fullParser(
+    "(" ~> parseOperationType ~ parseTName <~ ")" ^^ {case ot ~ n => ArgOperationAlist(ot,n,None,None) }
+  )
+
+  lazy val parseArgOperations : Parser[ArgOperations] = fullParser(
+    "(operations" ~> rep1(parseOperationAlist) <~ ")" ^^ { case (oas) => ArgOperations(oas,None,None) }
+  )
+
+  lazy val parseArgScalars : Parser[ArgScalars] = fullParser(
+    "(scalars" ~> parseNumericalType <~ ")" ^^ { case (nt) => ArgScalars(nt,None,None) }
+  )
+
+  lazy val parseModUseNumerals : Parser[ModUseNumerals] = fullParser(
+    "use-numerals-for-ground-terms" ^^ { case _ => ModUseNumerals(None,None) }
+  )
+
+  lazy val parseModCommutes : Parser[ModCommutes] = fullParser(
+    "commutes" ^^ { case _ => ModCommutes(None,None) }
+  )
+
+  lazy val parseQDFSpecForm : Parser[QDFSpecForm] = composeParser(
+    "",
+    Nil,
+    List(parseModCommutes,parseModUseNumerals),
+    List(parseArgScalars,parseArgOperations).map(p => (p,O)),
+    QDFSpecForm
+  )
+
+  lazy val parseArgSpecForms : Parser[ArgSpecForms] = fullParser(
+    (parseQDFSpecForm ^^ { case (sf) => ArgSpecForms(Right(sf),None,None) }) | (parseTName ^^ { case (n) => ArgSpecForms(Left(n),None,None) })
+  )
+
+  lazy val parseArgBase : Parser[ArgBase] = fullParser(
+    "(base" ~> parseArgSpecForms <~ ")" ^^ { case (b) => ArgBase(b,None,None) }
+  )
+
+  lazy val parseArgExponent : Parser[ArgExponent] = fullParser(
+    "(exponent" ~> parseArgSpecForms <~ ")" ^^ { case (b) => ArgExponent(b,None,None) }
+  )
+
+  lazy val parseArgCoefficient : Parser[ArgCoefficient] = fullParser(
+    "(coefficient" ~> parseArgSpecForms <~ ")" ^^ { case (b) => ArgCoefficient(b,None,None) }
+  )
+
+  lazy val parseModCancellative : Parser[ModCancellative] = fullParser(
+    "cancellative" ^^ { case _ => ModCancellative(None,None) }
+  )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -515,12 +575,20 @@ class DefFormParsers(js : List[JSONObject])
     DFTransportedSymbols
   )
 
+  lazy val pAlgebraicProcessor : Parser[DFAlgebraicProcessor] = composeParser(
+    "def-algebraic-processor",
+    List(parseTName),
+    List(parseModCancellative),
+    List((parseArgLanguage,R),(parseArgBase,R),(parseArgExponent,O),(parseArgCoefficient,O)),
+    DFAlgebraicProcessor
+  )
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
     pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading,
-    pTranslation, pTransportedSymbols, pRecursiveConstant
+    pTranslation, pTransportedSymbols, pRecursiveConstant, pAlgebraicProcessor
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

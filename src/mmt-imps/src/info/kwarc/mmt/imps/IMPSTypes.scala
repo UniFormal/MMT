@@ -333,38 +333,12 @@ case class SpecFormScalars(nt  : NumericalType,
   override def toString: String = "(scalars " + nt.toString + ")"
 }
 
-case class SpecFormOperations(ops : List[OperationAlist],
-                              src : Option[SourceRef]) extends SpecFormElement {
-  override def toString: String = "(operations " + ops.flatMap(_.toString) + ")"
-}
-
 case class SpecFormCommutes(src : Option[SourceRef]) extends SpecFormElement {
   override def toString: String = "commutes."
 }
 
 case class SpecFormNumeralsForGroundTerms(src : Option[SourceRef]) extends SpecFormElement {
   override def toString: String = "use-numerals-for-ground-terms."
-}
-
-object OperationType extends Enumeration
-{
-  type OperationType = Value
-
-  val PLUS  = Value("+")
-  val TIMES = Value("*")
-  val MINUS = Value("-")
-  val DIV   = Value("/")
-  val EXP   = Value("^")
-  val SUB   = Value("sub")
-  val ZERO  = Value("zero")
-  val UNIT  = Value("unit")
-}
-
-case class OperationAlist(optype   : OperationType,
-                          opname   : String,
-                          src : Option[SourceRef]) extends SpecForm
-{
-  override def toString: String = "(" + optype.toString + " " + opname + ")"
 }
 
 case class AlgProcessorBase(spec : SpecForm, src : Option[SourceRef]) extends TExp {
@@ -1840,6 +1814,63 @@ case class ArgRenamer(var rn : Name, var src : SourceInfo, var cmt : CommentInfo
   override def toString: String = "(renamer " + rn.toString + ")"
 }
 
+case class ModCancellative(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "cancellative"
+}
+
+object OperationType extends Enumeration
+{
+  type OperationType = Value
+
+  val PLUS  : OperationType = Value("+")
+  val TIMES : OperationType = Value("*")
+  val MINUS : OperationType = Value("-")
+  val DIV   : OperationType = Value("/")
+  val EXP   : OperationType = Value("^")
+  val SUB   : OperationType = Value("sub")
+  val ZERO  : OperationType = Value("zero")
+  val UNIT  : OperationType = Value("unit")
+}
+
+case class ArgOperationAlist(optype : OperationType, op : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(" + optype.toString + " " + op.toString + ")"
+}
+
+case class ArgOperations(defs : List[ArgOperationAlist], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(operations " + defs.mkString(" ") + ")"
+}
+
+case class ArgScalars(ntype : NumericalType, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(scalars" + ntype.toString + ")"
+}
+
+case class ModCommutes(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "commutes"
+}
+
+case class ModUseNumerals(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "use-numerals-for-ground-terms"
+}
+
+case class ArgSpecForms(specform : Either[Name,QDFSpecForm], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = specform match {
+    case Left(n)  => n.toString
+    case Right(s) => s.toString
+  }
+}
+
+case class ArgBase(sf : ArgSpecForms, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(base" + sf.toString + ")"
+}
+
+case class ArgExponent(sf : ArgSpecForms, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(exponent" + sf.toString + ")"
+}
+
+case class ArgCoefficient(sf : ArgSpecForms, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(coefficient" + sf.toString + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -2079,6 +2110,31 @@ object DFTransportedSymbols extends Comp[DFTransportedSymbols] {
   override def build[T <: DefForm](args : HList) : T = args match {
     case (ns : ArgNameList) :+: (tr : Option[ArgTranslation]) :+: (rn : Option[ArgRenamer]) :+: HNil =>
       DFTransportedSymbols(ns,tr.get,rn,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class QDFSpecForm(sclrs : Option[ArgScalars], ops : Option[ArgOperations],
+                       usenum : Option[ModUseNumerals], comm : Option[ModCommutes],
+                       var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object QDFSpecForm extends Comp[QDFSpecForm] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (sclrs : Option[ArgScalars]) :+: (ops : Option[ArgOperations]) :+: (usenum : Option[ModUseNumerals])
+      :+: (comm : Option[ModCommutes]) :+: HNil => QDFSpecForm(sclrs,ops,usenum,comm,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFAlgebraicProcessor(nm : Name, canc : Option[ModCancellative], lang : ArgLanguage,
+                                bs : ArgBase, ex : Option[ArgExponent], co : Option[ArgCoefficient],
+                                var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFAlgebraicProcessor extends Comp[DFAlgebraicProcessor] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (nm : Name) :+: (canc : Option[ModCancellative]) :+: (lang : Option[ArgLanguage]) :+: (bs : Option[ArgBase])
+                     :+: (ex : Option[ArgExponent]) :+: (co : Option[ArgCoefficient]) :+: HNil =>
+      DFAlgebraicProcessor(nm,canc,lang.get,bs.get,ex,co,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
