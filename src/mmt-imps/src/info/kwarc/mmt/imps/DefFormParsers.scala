@@ -31,7 +31,10 @@ class DefFormParsers(js : List[JSONObject])
 
   // ######### Argument Parsers
 
-  lazy val number     : Parser[Int]    = """(0|[1-9]\d*)""".r ^^ { _.toInt }
+  lazy val number       : Parser[Int]    = """(0|[1-9]\d*)""".r ^^ { _.toInt }
+  lazy val parseTNumber : Parser[Number] = fullParser(
+    number ^^ { case (n) => Number(n,None,None) }
+  )
 
   lazy val parseName  : Parser[String] = "[^()\"\t\r\n ]+".r
   lazy val parseTName : Parser[Name]   = fullParser(
@@ -252,12 +255,14 @@ class DefFormParsers(js : List[JSONObject])
     }
   }
 
-  lazy val stuff            : Parser[String] = "[^()]+".r
-  lazy val bracketed        : Parser[String] = "(" ~> parseProofScript <~ ")" ^^ {case (s) => "(" + s + ")"}
-  lazy val parseProofScript : Parser[String] = rep1(bracketed|stuff) ^^ {_.mkString(" ")}
+  lazy val stuff       : Parser[String] = "[^()]+".r
+  lazy val bracketed   : Parser[String] = "(" ~> parseScript <~ ")" ^^ {case (s) => "(" + s + ")"}
+  lazy val parseScript : Parser[Script] = fullParser(
+    rep1(bracketed|stuff) ^^ {case (ss) => Script(ss.mkString(" "),None,None) }
+  )
 
   lazy val parseArgProof : Parser[ArgProof] = fullParser(
-    "(proof" ~> parseProofScript <~ ")" ^^ { case (m) => ArgProof(m,None,None) }
+    "(proof" ~> parseScript <~ ")" ^^ { case (m) => ArgProof(m,None,None) }
   )
 
   lazy val parseDefStringOrName : Parser[ODefString] = fullParser((parseDefString | parseTName) ^^ {
@@ -412,6 +417,14 @@ class DefFormParsers(js : List[JSONObject])
 
   lazy val parseModCancellative : Parser[ModCancellative] = fullParser(
     "cancellative" ^^ { case _ => ModCancellative(None,None) }
+  )
+
+  lazy val parseArgRetrievalProtocol : Parser[ArgRetrievalProtocol] = fullParser(
+    "(retrieval-protocol" ~> parseTName <~ ")" ^^ { case (b) => ArgRetrievalProtocol(b,None,None) }
+  )
+
+  lazy val parseArgApplicabilityRecognizer : Parser[ArgApplicabilityRecognizer] = fullParser(
+    "(applicability-recognizer" ~> parseTName <~ ")" ^^ { case (b) => ArgApplicabilityRecognizer(b,None,None) }
   )
 
   // ######### Full Def-Form Parsers
@@ -583,12 +596,20 @@ class DefFormParsers(js : List[JSONObject])
     DFAlgebraicProcessor
   )
 
+  lazy val pScript : Parser[DFScript] = composeParser(
+    "def-script",
+    List(parseTName,parseTNumber,parseScript),
+    Nil,
+    List(parseArgRetrievalProtocol, parseArgApplicabilityRecognizer).map(p => (p,O)),
+    DFScript
+  )
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
     pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading,
-    pTranslation, pTransportedSymbols, pRecursiveConstant, pAlgebraicProcessor
+    pTranslation, pTransportedSymbols, pRecursiveConstant, pAlgebraicProcessor, pScript
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

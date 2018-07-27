@@ -1453,6 +1453,14 @@ case class Name(s : String, var src : SourceInfo, var cmt : CommentInfo) extends
   override def toString: String = s
 }
 
+case class Number(n : Int, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = n.toString
+}
+
+case class Script(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = s
+}
+
 case class DefString(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString: String = s
 }
@@ -1716,8 +1724,8 @@ case class ArgHomeTheory(nm : Name, var src : SourceInfo, var cmt : CommentInfo)
   override def toString: String = "(home-theory " + nm.toString + ")"
 }
 
-case class ArgProof(prf : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
-  override def toString: String = "(proof " + prf + ")"
+case class ArgProof(prf : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(proof " + prf.toString + ")"
 }
 
 case class ArgComponentTheories(cps : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
@@ -1841,7 +1849,7 @@ case class ArgOperations(defs : List[ArgOperationAlist], var src : SourceInfo, v
 }
 
 case class ArgScalars(ntype : NumericalType, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
-  override def toString : String = "(scalars" + ntype.toString + ")"
+  override def toString : String = "(scalars " + ntype.toString + ")"
 }
 
 case class ModCommutes(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
@@ -1860,15 +1868,23 @@ case class ArgSpecForms(specform : Either[Name,QDFSpecForm], var src : SourceInf
 }
 
 case class ArgBase(sf : ArgSpecForms, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
-  override def toString : String = "(base" + sf.toString + ")"
+  override def toString : String = "(base " + sf.toString + ")"
 }
 
 case class ArgExponent(sf : ArgSpecForms, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
-  override def toString : String = "(exponent" + sf.toString + ")"
+  override def toString : String = "(exponent " + sf.toString + ")"
 }
 
 case class ArgCoefficient(sf : ArgSpecForms, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
-  override def toString : String = "(coefficient" + sf.toString + ")"
+  override def toString : String = "(coefficient " + sf.toString + ")"
+}
+
+case class ArgRetrievalProtocol(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(retrieval-protocol " + nm.toString + ")"
+}
+
+case class ArgApplicabilityRecognizer(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(applicability-recognizer " + nm.toString + ")"
 }
 
 // Full DefForms
@@ -2135,6 +2151,17 @@ object DFAlgebraicProcessor extends Comp[DFAlgebraicProcessor] {
     case (nm : Name) :+: (canc : Option[ModCancellative]) :+: (lang : Option[ArgLanguage]) :+: (bs : Option[ArgBase])
                      :+: (ex : Option[ArgExponent]) :+: (co : Option[ArgCoefficient]) :+: HNil =>
       DFAlgebraicProcessor(nm,canc,lang.get,bs.get,ex,co,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFScript(nm : Name, argc : Number, scrpt : Script, ret : Option[ArgRetrievalProtocol],
+                    rec : Option[ArgApplicabilityRecognizer], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFScript extends Comp[DFScript] {
+  override def build[T <: DefForm](args : HList) : T = args match {
+    case (nm : Name) :+: (argc : Number) :+: (scrpt : Script) :+: (ret : Option[ArgRetrievalProtocol])
+      :+: (rec : Option[ArgApplicabilityRecognizer]) :+: HNil => DFScript(nm,argc,scrpt,ret,rec,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
