@@ -1887,6 +1887,18 @@ case class ArgApplicabilityRecognizer(nm : Name, var src : SourceInfo, var cmt :
   override def toString : String = "(applicability-recognizer " + nm.toString + ")"
 }
 
+case class ArgComponentSections(nms : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(component-sections " + nms.mkString(" ") + ")"
+}
+
+case class ArgFileSpec(nm1 : Name, nm2 : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(" + nm1.toString + " " + nm2.toString + ")"
+}
+
+case class ArgFiles(nms : List[ArgFileSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(files " + nms.mkString(" ") + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -2162,6 +2174,17 @@ object DFScript extends Comp[DFScript] {
   override def build[T <: DefForm](args : HList) : T = args match {
     case (nm : Name) :+: (argc : Number) :+: (scrpt : Script) :+: (ret : Option[ArgRetrievalProtocol])
       :+: (rec : Option[ArgApplicabilityRecognizer]) :+: HNil => DFScript(nm,argc,scrpt,ret,rec,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFSection(nm : Name, com : Option[ArgComponentSections], fls : Option[ArgFiles],
+                     var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFSection extends Comp[DFSection] {
+  override def build[T <: DefForm](args : HList): T = args match {
+    case (nm : Name) :+: (com : Option[ArgComponentSections]) :+: (fls : Option[ArgFiles]) :+: HNil =>
+      DFSection(nm,com,fls,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }

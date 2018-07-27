@@ -1,6 +1,7 @@
 package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.utils.JSONObject
+import info.kwarc.mmt.imps
 import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.OperationType.OperationType
 import info.kwarc.mmt.imps.ParseMethod.ParseMethod
@@ -427,6 +428,18 @@ class DefFormParsers(js : List[JSONObject])
     "(applicability-recognizer" ~> parseTName <~ ")" ^^ { case (b) => ArgApplicabilityRecognizer(b,None,None) }
   )
 
+  lazy val parseArgFileSpec : Parser[ArgFileSpec] = fullParser(
+    "(" ~> parseTName ~ parseTName <~ ")" ^^ { case (p ~ q) => ArgFileSpec(p,q,None,None) }
+  )
+
+  lazy val parseArgFiles : Parser[ArgFiles] = fullParser(
+    "(files" ~> rep1(parseArgFileSpec) <~ ")" ^^ { case (fss) => ArgFiles(fss,None,None) }
+  )
+
+  lazy val parseArgComponentSections : Parser[ArgComponentSections] = fullParser(
+    "(component-sections" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgComponentSections(ns,None,None) }
+  )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -604,12 +617,20 @@ class DefFormParsers(js : List[JSONObject])
     DFScript
   )
 
+  lazy val pSection : Parser[DFSection] = composeParser(
+    "def-section",
+    List(parseTName),
+    Nil,
+    List(parseArgComponentSections, parseArgFiles).map(p => (p,O)),
+    DFSection
+  )
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
     pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading,
-    pTranslation, pTransportedSymbols, pRecursiveConstant, pAlgebraicProcessor, pScript
+    pTranslation, pTransportedSymbols, pRecursiveConstant, pAlgebraicProcessor, pScript, pSection
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }
