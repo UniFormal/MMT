@@ -1899,6 +1899,14 @@ case class ArgFiles(nms : List[ArgFileSpec], var src : SourceInfo, var cmt : Com
   override def toString : String = "(files " + nms.mkString(" ") + ")"
 }
 
+case class ArgBaseTheory(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(base-theory " + nm.toString + ")"
+}
+
+case class ArgReplicaRenamer(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(replica-renamer " + nm.toString + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -2186,6 +2194,20 @@ object DFSection extends Comp[DFSection] {
     case (nm : Name) :+: (com : Option[ArgComponentSections]) :+: (fls : Option[ArgFiles]) :+: HNil =>
       DFSection(nm,com,fls,None,None).asInstanceOf[T]
     case _ => ??!(args)
+  }
+}
+
+case class DFTheoryEnsemble(nm : Name, bt : Option[ArgBaseTheory], fts : Option[ArgFixedTheories],
+                            rnm : Option[ArgReplicaRenamer], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFTheoryEnsemble extends Comp[DFTheoryEnsemble] {
+  override def build[T <: DefForm](args : HList): T = {
+    println("ARGFOOBAR!")
+    args match {
+      case (nm : Name) :+: (bt : Option[ArgBaseTheory]) :+: (fts : Option[ArgFixedTheories]) :+: (rnm : Option[ArgReplicaRenamer]) :+: HNil
+      => DFTheoryEnsemble(nm,bt,fts,rnm,None,None).asInstanceOf[T]
+      case _ => ??!(args)
+    }
   }
 }
 
