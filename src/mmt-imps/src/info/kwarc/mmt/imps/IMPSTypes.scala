@@ -1907,6 +1907,10 @@ case class ArgReplicaRenamer(nm : Name, var src : SourceInfo, var cmt : CommentI
   override def toString : String = "(replica-renamer " + nm.toString + ")"
 }
 
+case class ArgNumbers(ns : List[Number], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = ns.mkString(" ")
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -2202,10 +2206,31 @@ case class DFTheoryEnsemble(nm : Name, bt : Option[ArgBaseTheory], fts : Option[
 
 object DFTheoryEnsemble extends Comp[DFTheoryEnsemble] {
   override def build[T <: DefForm](args : HList): T = {
-    println("ARGFOOBAR!")
     args match {
       case (nm : Name) :+: (bt : Option[ArgBaseTheory]) :+: (fts : Option[ArgFixedTheories]) :+: (rnm : Option[ArgReplicaRenamer]) :+: HNil
       => DFTheoryEnsemble(nm,bt,fts,rnm,None,None).asInstanceOf[T]
+      case _ => ??!(args)
+    }
+  }
+}
+
+case class DFTheoryEnsembleMultiple(nm : Name, n : Number, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFTheoryEnsembleMultiple extends Comp[DFTheoryEnsembleMultiple] {
+  override def build[T <: DefForm](args : HList): T = {
+    args match {
+      case (nm : Name) :+: (n : Number) :+: HNil => DFTheoryEnsembleMultiple(nm,n,None,None).asInstanceOf[T]
+      case _ => ??!(args)
+    }
+  }
+}
+
+case class DFTheoryEnsembleOverloadings(nm : Name, ns : ArgNumbers, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFTheoryEnsembleOverloadings extends Comp[DFTheoryEnsembleOverloadings] {
+  override def build[T <: DefForm](args : HList): T = {
+    args match {
+      case (nm : Name) :+: (ns : ArgNumbers) :+: HNil => DFTheoryEnsembleOverloadings(nm,ns,None,None).asInstanceOf[T]
       case _ => ??!(args)
     }
   }

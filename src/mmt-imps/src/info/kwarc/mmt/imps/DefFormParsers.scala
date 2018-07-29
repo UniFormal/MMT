@@ -448,6 +448,10 @@ class DefFormParsers(js : List[JSONObject])
     "(replica-renamer" ~> parseTName <~ ")" ^^ { case (b) => ArgReplicaRenamer(b,None,None) }
   )
 
+  lazy val parseArgNumbers : Parser[ArgNumbers] = fullParser(
+    rep1(parseTNumber) ^^ { case (ns) => ArgNumbers(ns,None,None) }
+  )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -634,11 +638,27 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val pTheoryEnsemble : Parser[DFTheoryEnsemble] = composeParser(
-    "def-theory-ensemble",
+    "def-theory-ensemble ",
     List(parseTName),
     Nil,
     List(parseArgBaseTheory,parseArgFixedTheories,parseArgReplicaRenamer).map(p => (p,O)),
     DFTheoryEnsemble
+  )
+
+  lazy val pTheoryEnsembleMultiple : Parser[DFTheoryEnsembleMultiple] = composeParser(
+    "def-theory-ensemble-multiple",
+    List(parseTName,parseTNumber),
+    Nil,
+    Nil,
+    DFTheoryEnsembleMultiple
+  )
+
+  lazy val pTheoryEnsembleOverloadings : Parser[DFTheoryEnsembleOverloadings] = composeParser(
+    "def-theory-ensemble-overloadings",
+    List(parseTName,parseArgNumbers),
+    Nil,
+    Nil,
+    DFTheoryEnsembleOverloadings
   )
 
   // ######### Complete Parsers
@@ -646,7 +666,8 @@ class DefFormParsers(js : List[JSONObject])
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
     pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading,
-    pTranslation, pTransportedSymbols, pRecursiveConstant, pAlgebraicProcessor, pScript, pSection, pTheoryEnsemble
+    pTranslation, pTransportedSymbols, pRecursiveConstant, pAlgebraicProcessor, pScript, pSection, pTheoryEnsemble,
+    pTheoryEnsembleMultiple, pTheoryEnsembleOverloadings
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }
