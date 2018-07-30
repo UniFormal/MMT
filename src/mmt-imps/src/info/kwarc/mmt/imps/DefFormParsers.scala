@@ -491,6 +491,26 @@ class DefFormParsers(js : List[JSONObject])
     "(new-translation-name" ~> parseTName <~ ")" ^^ { case (n) => ArgNewTranslationName(n,None,None) }
   )
 
+  lazy val parseAlgebraicSimplifierSpec : Parser[ArgAlgebraicSimplifierSpec] = fullParser(
+    "(" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgAlgebraicSimplifierSpec(ns,None,None) }
+  )
+
+  lazy val parseAlgebraicSimplifier : Parser[ArgAlgebraicSimplifier] = fullParser(
+    "(algebraic-simplifier" ~> rep1(parseAlgebraicSimplifierSpec) <~ ")" ^^ { case (specs) => ArgAlgebraicSimplifier(specs,None,None) }
+  )
+
+  lazy val parseAlgebraicOrderSimplifierSpec : Parser[ArgAlgebraicOrderSimplifierSpec] = fullParser(
+    "(" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgAlgebraicOrderSimplifierSpec(ns,None,None) }
+  )
+
+  lazy val parseAlgebraicOrderSimplifier : Parser[ArgAlgebraicOrderSimplifier] = fullParser(
+    "(algebraic-order-simplifier" ~> rep1(parseAlgebraicOrderSimplifierSpec) <~ ")" ^^ { case (specs) => ArgAlgebraicOrderSimplifier(specs,None,None) }
+  )
+
+  lazy val parseAlgebraicTermComparator : Parser[ArgAlgebraicTermComparator] = fullParser(
+    "(algebraic-term-comparator" ~> rep1(parseTName) <~ ")" ^^ { case (specs) => ArgAlgebraicTermComparator(specs,None,None) }
+  )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -718,13 +738,21 @@ class DefFormParsers(js : List[JSONObject])
     DFTheoryInstance
   )
 
+  lazy val pTheoryProcessors : Parser[DFTheoryProcessors] = composeParser(
+    "def-theory-processors",
+    List(parseTName),
+    Nil,
+    List(parseAlgebraicSimplifier,parseAlgebraicOrderSimplifier,parseAlgebraicTermComparator).map(p => (p,O)),
+    DFTheoryProcessors
+  )
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
     pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading,
     pTranslation, pTransportedSymbols, pRecursiveConstant, pAlgebraicProcessor, pScript, pSection, pTheoryEnsemble,
-    pTheoryEnsembleMultiple, pTheoryEnsembleOverloadings, pTheoryEnsembleInstances, pTheoryInstance
+    pTheoryEnsembleMultiple, pTheoryEnsembleOverloadings, pTheoryEnsembleInstances, pTheoryInstance, pTheoryProcessors
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

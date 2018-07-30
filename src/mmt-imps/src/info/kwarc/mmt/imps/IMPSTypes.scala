@@ -1964,6 +1964,29 @@ case class ArgNewTranslationName(nm : Name, var src : SourceInfo, var cmt : Comm
   override def toString : String = "(new-translation-name " + nm.toString + ")"
 }
 
+case class ArgAlgebraicSimplifierSpec(names : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + names.mkString(" ") + ")"
+}
+
+case class ArgAlgebraicSimplifier(specs : List[ArgAlgebraicSimplifierSpec],
+                                  var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(algebraic-simplifier" + specs.mkString(" ") + ")"
+}
+
+
+case class ArgAlgebraicOrderSimplifierSpec(names : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + names.mkString(" ") + ")"
+}
+
+case class ArgAlgebraicOrderSimplifier(specs : List[ArgAlgebraicOrderSimplifierSpec],
+                                       var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(algebraic-order-simplifier" + specs.mkString(" ") + ")"
+}
+
+case class ArgAlgebraicTermComparator(specs : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(algebraic-term-comparator" + specs.mkString(" ") + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -2312,6 +2335,17 @@ object DFTheoryInstance extends Comp[DFTheoryInstance] {
     case (nm : Name) :+: (sr : Option[ArgSource]) :+: (tar : Option[ArgTarget]) :+: (trans : Option[ArgTranslation])
       :+: (fts : Option[ArgFixedTheories]) :+: (rnm : Option[ArgRenamer]) :+: (ntn : Option[ArgNewTranslationName])
       :+: HNil => DFTheoryInstance(nm,sr.get,tar.get,trans.get,fts,rnm,ntn,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFTheoryProcessors(nm : Name, as : Option[ArgAlgebraicSimplifier], aos : Option[ArgAlgebraicOrderSimplifier],
+                              atc : Option[ArgAlgebraicTermComparator], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFTheoryProcessors extends Comp[DFTheoryProcessors] {
+  override def build[T <: DefForm](args : HList): T = args match {
+    case (nm : Name) :+: (as : Option[ArgAlgebraicSimplifier]) :+: (aos : Option[ArgAlgebraicOrderSimplifier]) :+:
+      (atc : Option[ArgAlgebraicTermComparator]) :+: HNil => DFTheoryProcessors(nm,as,aos,atc,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
