@@ -266,11 +266,6 @@ class DefFormParsers(js : List[JSONObject])
     "(proof" ~> parseScript <~ ")" ^^ { case (m) => ArgProof(m,None,None) }
   )
 
-  lazy val parseDefStringOrName : Parser[ODefString] = fullParser((parseDefString | parseTName) ^^ {
-      case (d : DefString) => ODefString(Left(d),None,None)
-      case (n : Name)      => ODefString(Right(n),None,None)
-  })
-
   lazy val parseArgComponentTheories : Parser[ArgComponentTheories] = fullParser(
     "(component-theories" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgComponentTheories(ns,None,None) }
   )
@@ -327,6 +322,10 @@ class DefFormParsers(js : List[JSONObject])
 
   lazy val parseArgSortPairs : Parser[ArgSortPairs] = fullParser(
     "(sort-pairs" ~> rep1(parseSortPairSpec) <~ ")" ^^ { case (sps) => ArgSortPairs(sps, None, None) }
+  )
+
+  lazy val parseDefStringOrName : Parser[ODefString] = fullParser(
+    (parseDefString ^^ { case (d) => ODefString(Left(d),None,None) }) | (parseTName ^^ { case (n) => ODefString(Right(n),None,None) })
   )
 
   lazy val parseArgConstPairSpec : Parser[ArgConstPairSpec] = fullParser(
@@ -451,6 +450,43 @@ class DefFormParsers(js : List[JSONObject])
   lazy val parseArgNumbers : Parser[ArgNumbers] = fullParser(
     rep1(parseTNumber) ^^ { case (ns) => ArgNumbers(ns,None,None) }
   )
+
+  lazy val parseArgTargetTheories : Parser[ArgTargetTheories] = fullParser(
+    "(target-theories" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgTargetTheories(ns,None,None) }
+  )
+
+  lazy val parseArgTargetMultiple : Parser[ArgTargetMultiple] = fullParser(
+    "(target-multiple" ~> parseTNumber <~ ")" ^^ { case (n) => ArgTargetMultiple(n,None,None) }
+  )
+
+  lazy val parseArgSortAssoc : Parser[ArgSortAssoc] = fullParser(
+    "(" ~> parseTName ~ rep1(parseDefStringOrName) <~ ")" ^^ { case (n ~ ns) => ArgSortAssoc(n,ns,None,None) }
+  )
+
+  lazy val parseArgEnsembleSorts : Parser[ArgEnsembleSorts] = fullParser(
+    "(sorts" ~> rep1(parseArgSortAssoc) <~ ")" ^^ { case (sas) => ArgEnsembleSorts(sas,None,None) }
+  )
+
+  lazy val parseArgConstAssoc : Parser[ArgConstAssoc] = fullParser(
+    "(" ~> parseTName ~ rep1(parseDefStringOrName) <~ ")" ^^ { case (n ~ ns) => ArgConstAssoc(n,ns,None,None) }
+  )
+
+  lazy val parseArgEnsembleConsts : Parser[ArgEnsembleConsts] = fullParser(
+    "(constants" ~> rep1(parseArgConstAssoc) <~ ")" ^^ { case (cas) => ArgEnsembleConsts(cas,None,None) }
+  )
+
+  lazy val parseArgMultiples : Parser[ArgMultiples] = fullParser(
+    "(multiples" ~> rep1(parseTNumber) <~ ")" ^^ { case (ns) => ArgMultiples(ns,None,None) }
+  )
+
+  lazy val parseArgPermutations : Parser[ArgPermutations] = fullParser(
+    "(permutations" ~> rep1("(" ~> rep1(parseTNumber) <~ ")") <~ ")" ^^ { case (ns) => ArgPermutations(ns,None,None) }
+  )
+
+  lazy val parseArgSpecialRenamings : Parser[ArgSpecialRenamings] = fullParser(
+    "(special-renamings" ~> rep1(parseArgRenamerPair) <~ ")" ^^ { case (ns) => ArgSpecialRenamings(ns,None,None) }
+  )
+
 
   // ######### Full Def-Form Parsers
 
@@ -661,13 +697,22 @@ class DefFormParsers(js : List[JSONObject])
     DFTheoryEnsembleOverloadings
   )
 
+  lazy val pTheoryEnsembleInstances : Parser[DFTheoryEnsembleInstances] = composeParser(
+    "def-theory-ensemble-instances",
+    List(parseTName),
+    Nil,
+    List(parseArgTargetTheories, parseArgTargetMultiple, parseArgEnsembleSorts, parseArgEnsembleConsts,
+      parseArgMultiples,parseArgPermutations,parseArgSpecialRenamings).map(p => (p,O)),
+    DFTheoryEnsembleInstances
+  )
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
     pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading,
     pTranslation, pTransportedSymbols, pRecursiveConstant, pAlgebraicProcessor, pScript, pSection, pTheoryEnsemble,
-    pTheoryEnsembleMultiple, pTheoryEnsembleOverloadings
+    pTheoryEnsembleMultiple, pTheoryEnsembleOverloadings, pTheoryEnsembleInstances
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

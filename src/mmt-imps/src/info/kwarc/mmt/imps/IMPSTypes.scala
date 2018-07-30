@@ -1911,6 +1911,55 @@ case class ArgNumbers(ns : List[Number], var src : SourceInfo, var cmt : Comment
   override def toString : String = ns.mkString(" ")
 }
 
+case class ArgPermutations(nns : List[List[Number]], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = {
+    var str = "(permutations"
+    for (p <- nns) {
+      str = str + " (" + p.mkString(" ") + ")"
+    }
+    str = str + ")"
+    str
+  }
+}
+
+case class ArgMultiples(ns : List[Number], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(multiples " + ns.mkString(" ") + ")"
+}
+
+case class ArgSpecialRenamings(ns : List[ArgRenamerPair], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(special-renamings " + ns.mkString(" ") + ")"
+}
+
+case class ArgTargetTheories(ns : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(target-theories " + ns.mkString(" ") + ")"
+}
+
+case class ArgTargetMultiple(n : Number, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(target-multiple " + n.toString + ")"
+}
+
+case class ArgSortAssoc(nm : Name, sorts : List[ODefString], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "( " + nm.toString + sorts.map(k => k.o match {
+    case Left(d)  => " " + d.toString
+    case Right(n) => " " + n.toString
+  }) + ")"
+}
+
+case class ArgEnsembleSorts(sorts : List[ArgSortAssoc], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(sorts " + sorts.mkString(" ") + ")"
+}
+
+case class ArgConstAssoc(nm : Name, sorts : List[ODefString], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "( " + nm.toString + sorts.map(k => k.o match {
+    case Left(d)  => " " + d.toString
+    case Right(n) => " " + n.toString
+  }) + ")"
+}
+
+case class ArgEnsembleConsts(sorts : List[ArgConstAssoc], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(constants " + sorts.mkString(" ") + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -2233,6 +2282,20 @@ object DFTheoryEnsembleOverloadings extends Comp[DFTheoryEnsembleOverloadings] {
       case (nm : Name) :+: (ns : ArgNumbers) :+: HNil => DFTheoryEnsembleOverloadings(nm,ns,None,None).asInstanceOf[T]
       case _ => ??!(args)
     }
+  }
+}
+
+case class DFTheoryEnsembleInstances(nm : Name, tt : Option[ArgTargetTheories], tm : Option[ArgTargetMultiple],
+                                     ss : Option[ArgEnsembleSorts], cs : Option[ArgEnsembleConsts],
+                                     ms : Option[ArgMultiples], ps : Option[ArgPermutations], srs : Option[ArgSpecialRenamings],
+                                     var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object  DFTheoryEnsembleInstances extends Comp[ DFTheoryEnsembleInstances] {
+  override def build[T <: DefForm](args : HList): T = args match {
+    case (nm : Name) :+: (tt : Option[ArgTargetTheories]) :+: (tm : Option[ArgTargetMultiple]) :+:
+      (ss : Option[ArgEnsembleSorts]) :+: (cs : Option[ArgEnsembleConsts]) :+: (ms : Option[ArgMultiples]) :+:
+      (ps : Option[ArgPermutations]) :+: (srs : Option[ArgSpecialRenamings]) :+: HNil => DFTheoryEnsembleInstances(nm,tt,tm,ss,cs,ms,ps,srs,None,None).asInstanceOf[T]
+    case _ => ??!(args)
   }
 }
 
