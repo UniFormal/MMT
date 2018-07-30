@@ -487,6 +487,9 @@ class DefFormParsers(js : List[JSONObject])
     "(special-renamings" ~> rep1(parseArgRenamerPair) <~ ")" ^^ { case (ns) => ArgSpecialRenamings(ns,None,None) }
   )
 
+  lazy val parseArgNewTranslationName : Parser[ArgNewTranslationName] = fullParser(
+    "(new-translation-name" ~> parseTName <~ ")" ^^ { case (n) => ArgNewTranslationName(n,None,None) }
+  )
 
   // ######### Full Def-Form Parsers
 
@@ -706,13 +709,22 @@ class DefFormParsers(js : List[JSONObject])
     DFTheoryEnsembleInstances
   )
 
+  lazy val pTheoryInstance : Parser[DFTheoryInstance] = composeParser(
+    "def-theory-instance",
+    List(parseTName),
+    Nil,
+    List((parseArgSource,R),(parseArgTarget,R),(parseArgTranslation,R),(parseArgFixedTheories,O),
+      (parseArgRenamer,O),(parseArgNewTranslationName,O)),
+    DFTheoryInstance
+  )
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
     pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading,
     pTranslation, pTransportedSymbols, pRecursiveConstant, pAlgebraicProcessor, pScript, pSection, pTheoryEnsemble,
-    pTheoryEnsembleMultiple, pTheoryEnsembleOverloadings, pTheoryEnsembleInstances
+    pTheoryEnsembleMultiple, pTheoryEnsembleOverloadings, pTheoryEnsembleInstances, pTheoryInstance
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

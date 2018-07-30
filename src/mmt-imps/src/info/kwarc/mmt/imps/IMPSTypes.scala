@@ -1960,6 +1960,10 @@ case class ArgEnsembleConsts(sorts : List[ArgConstAssoc], var src : SourceInfo, 
   override def toString : String = "(constants " + sorts.mkString(" ") + ")"
 }
 
+case class ArgNewTranslationName(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(new-translation-name " + nm.toString + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -2295,6 +2299,19 @@ object  DFTheoryEnsembleInstances extends Comp[ DFTheoryEnsembleInstances] {
     case (nm : Name) :+: (tt : Option[ArgTargetTheories]) :+: (tm : Option[ArgTargetMultiple]) :+:
       (ss : Option[ArgEnsembleSorts]) :+: (cs : Option[ArgEnsembleConsts]) :+: (ms : Option[ArgMultiples]) :+:
       (ps : Option[ArgPermutations]) :+: (srs : Option[ArgSpecialRenamings]) :+: HNil => DFTheoryEnsembleInstances(nm,tt,tm,ss,cs,ms,ps,srs,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFTheoryInstance(nm : Name, sr : ArgSource, tar : ArgTarget, trans : ArgTranslation,
+                            fts : Option[ArgFixedTheories], rnm : Option[ArgRenamer], ntn : Option[ArgNewTranslationName],
+                            var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFTheoryInstance extends Comp[DFTheoryInstance] {
+  override def build[T <: DefForm](args : HList): T = args match {
+    case (nm : Name) :+: (sr : Option[ArgSource]) :+: (tar : Option[ArgTarget]) :+: (trans : Option[ArgTranslation])
+      :+: (fts : Option[ArgFixedTheories]) :+: (rnm : Option[ArgRenamer]) :+: (ntn : Option[ArgNewTranslationName])
+      :+: HNil => DFTheoryInstance(nm,sr.get,tar.get,trans.get,fts,rnm,ntn,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
