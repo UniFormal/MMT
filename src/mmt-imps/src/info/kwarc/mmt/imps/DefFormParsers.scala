@@ -511,6 +511,22 @@ class DefFormParsers(js : List[JSONObject])
     "(algebraic-term-comparator" ~> rep1(parseTName) <~ ")" ^^ { case (specs) => ArgAlgebraicTermComparator(specs,None,None) }
   )
 
+  lazy val parseArgAlgebraicProcessor : Parser[ArgAlgebraicProcessor] = fullParser(
+    "(algebraic-processor" ~> parseTName <~ ")" ^^ { case (n) => ArgAlgebraicProcessor(n,None,None) }
+  )
+
+  lazy val parseArgDiscreteSorts : Parser[ArgDiscreteSorts] = fullParser(
+    "(discrete-sorts" ~> rep1(parseSort) <~ ")" ^^ { case (srt) => ArgDiscreteSorts(srt,None,None) }
+  )
+
+  lazy val parseArgOperationsAlist : Parser[ArgOperationsAlist] = fullParser(
+    "(" ~> parseTName ~ parseTName <~ ")" ^^ { case (o ~ p) => ArgOperationsAlist(o,p,None,None) }
+  )
+
+  lazy val parseArgProcOperations : Parser[ArgProcOperations] = fullParser(
+    "(operations" ~> rep1(parseArgOperationsAlist) <~ ")" ^^ { case (ls) => ArgProcOperations(ls,None,None) }
+  )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -746,13 +762,22 @@ class DefFormParsers(js : List[JSONObject])
     DFTheoryProcessors
   )
 
+  lazy val pOrderProcessors : Parser[DFOrderProcessor] = composeParser(
+    "def-order-processor",
+    List(parseTName),
+    Nil,
+    List(parseArgAlgebraicProcessor,parseArgProcOperations,parseArgDiscreteSorts).map(p => (p,O)),
+    DFOrderProcessor
+  )
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
     parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
     pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading,
     pTranslation, pTransportedSymbols, pRecursiveConstant, pAlgebraicProcessor, pScript, pSection, pTheoryEnsemble,
-    pTheoryEnsembleMultiple, pTheoryEnsembleOverloadings, pTheoryEnsembleInstances, pTheoryInstance, pTheoryProcessors
+    pTheoryEnsembleMultiple, pTheoryEnsembleOverloadings, pTheoryEnsembleInstances, pTheoryInstance, pTheoryProcessors,
+    pOrderProcessors
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

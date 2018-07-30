@@ -1987,6 +1987,22 @@ case class ArgAlgebraicTermComparator(specs : List[Name], var src : SourceInfo, 
   override def toString: String = "(algebraic-term-comparator" + specs.mkString(" ") + ")"
 }
 
+case class ArgAlgebraicProcessor(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(algebraic-processor" + nm.toString + ")"
+}
+
+case class ArgDiscreteSorts(srts : List[IMPSSort], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(discrete-sorts" + srts.mkString(" ") + ")"
+}
+
+case class ArgOperationsAlist(optype : Name, op : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + optype.toString + " " + op.toString + ")"
+}
+
+case class ArgProcOperations(alists : List[ArgOperationsAlist], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(operations " + alists.mkString(" ") + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -2349,6 +2365,19 @@ object DFTheoryProcessors extends Comp[DFTheoryProcessors] {
     case _ => ??!(args)
   }
 }
+
+case class DFOrderProcessor(nm : Name, ap : Option[ArgAlgebraicProcessor], ops : Option[ArgProcOperations],
+                            ds : Option[ArgDiscreteSorts], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFOrderProcessor extends Comp[DFOrderProcessor] {
+  override def build[T <: DefForm](args : HList): T = args match {
+    case (nm : Name) :+: (ap : Option[ArgAlgebraicProcessor]) :+: (ops : Option[ArgProcOperations])
+      :+: (ds : Option[ArgDiscreteSorts]) :+: HNil => DFOrderProcessor(nm,ap,ops,ds,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+
 
 object FrmFnd
 {
