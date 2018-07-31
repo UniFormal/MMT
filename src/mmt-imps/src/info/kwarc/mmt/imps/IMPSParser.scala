@@ -21,6 +21,7 @@ class NEWIMPSParser
   {
     val dfp = new DefFormParsers(js)
     val foo = ParserWithSourcePosition.parseAll(dfp.parseImpsSource,u)
+    if (!foo.successful) { println("### Parsing Error near: L" + u.pos.line + "C" + u.pos.column) }
     assert(foo.successful)
 
     val dfs = foo.get

@@ -256,8 +256,9 @@ class DefFormParsers(js : List[JSONObject])
     }
   }
 
+
   lazy val stuff       : Parser[String] = "[^()]+".r
-  lazy val bracketed   : Parser[String] = "(" ~> parseScript <~ ")" ^^ {case (s) => "(" + s + ")"}
+  lazy val bracketed   : Parser[String] = "(" ~> (parseScript | "") <~ ")" ^^ {case (s) => "(" + s.toString + ")"}
   lazy val parseScript : Parser[Script] = fullParser(
     rep1(bracketed|stuff) ^^ {case (ss) => Script(ss.mkString(" "),None,None) }
   )
@@ -527,6 +528,14 @@ class DefFormParsers(js : List[JSONObject])
     "(operations" ~> rep1(parseArgOperationsAlist) <~ ")" ^^ { case (ls) => ArgProcOperations(ls,None,None) }
   )
 
+  lazy val parseModReload : Parser[ModReload] = fullParser(
+    "reload" ^^ { case _ => ModReload(None,None) }
+  )
+
+  lazy val parseModQuickLoad : Parser[ModQuickLoad] = fullParser(
+    "quick-load" ^^ { case _ => ModQuickLoad(None,None) }
+  )
+
   // ######### Full Def-Form Parsers
 
   val pHeralding  : Parser[Heralding] = composeParser(
@@ -770,6 +779,30 @@ class DefFormParsers(js : List[JSONObject])
     DFOrderProcessor
   )
 
+  lazy val pIncludeFiles : Parser[DFIncludeFiles] = composeParser(
+    "include-files",
+    Nil,
+    List(parseModReload,parseModQuickLoad),
+    List((parseArgFiles,O)),
+    DFIncludeFiles
+  )
+
+  lazy val pLoadSection : Parser[DFLoadSection] = composeParser(
+    "load-section",
+    List(parseTName),
+    Nil,
+    Nil,
+    DFLoadSection
+  )
+
+  lazy val pSet : Parser[Set] = fullParser(
+    "(set" ~> parseScript <~ ")" ^^ { case (c) => Set(c,None,None) }
+  )
+
+  lazy val pDefine : Parser[Define] = fullParser(
+    "(define" ~> parseScript <~ ")" ^^ { case (c) => Define(c,None,None) }
+  )
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
@@ -777,7 +810,7 @@ class DefFormParsers(js : List[JSONObject])
     pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading,
     pTranslation, pTransportedSymbols, pRecursiveConstant, pAlgebraicProcessor, pScript, pSection, pTheoryEnsemble,
     pTheoryEnsembleMultiple, pTheoryEnsembleOverloadings, pTheoryEnsembleInstances, pTheoryInstance, pTheoryProcessors,
-    pOrderProcessors
+    pOrderProcessors,pIncludeFiles,pLoadSection,pSet,pDefine
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }

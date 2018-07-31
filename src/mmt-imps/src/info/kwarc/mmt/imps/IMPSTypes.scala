@@ -2003,6 +2003,22 @@ case class ArgProcOperations(alists : List[ArgOperationsAlist], var src : Source
   override def toString: String = "(operations " + alists.mkString(" ") + ")"
 }
 
+case class Set(cont : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(set " + cont.toString + ")"
+}
+
+case class Define(cont : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(define " + cont.toString + ")"
+}
+
+case class ModReload(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "reload"
+}
+
+case class ModQuickLoad(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "quick-load"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -2377,7 +2393,25 @@ object DFOrderProcessor extends Comp[DFOrderProcessor] {
   }
 }
 
+case class DFIncludeFiles(rl : Option[ModReload], ql : Option[ModQuickLoad], fs : Option[ArgFiles],
+                          var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
+object DFIncludeFiles extends Comp[DFIncludeFiles] {
+  override def build[T <: DefForm](args : HList): T = args match {
+    case (rl : Option[ModReload]) :+: (ql : Option[ModQuickLoad]) :+: (fs : Option[ArgFiles]) :+: HNil =>
+      DFIncludeFiles(rl,ql,fs,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFLoadSection(sc : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFLoadSection extends Comp[DFLoadSection] {
+  override def build[T <: DefForm](args : HList): T = args match {
+    case (sc : Name) :+: HNil => DFLoadSection(sc,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
 
 object FrmFnd
 {

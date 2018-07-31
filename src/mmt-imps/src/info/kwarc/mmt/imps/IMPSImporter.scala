@@ -22,7 +22,8 @@ class IMPSImporter extends Importer
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult =
   {
     val tState : TranslationState = new TranslationState()
-    val targetSection : Section = impsLibrarySections.testOnly
+    tState.verbosity = 1
+    val targetSection : Section = impsLibrarySections.preReals
 
     if (tState.verbosity > 0)
     {
