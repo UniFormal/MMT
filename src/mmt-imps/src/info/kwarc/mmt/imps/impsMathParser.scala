@@ -874,25 +874,18 @@ package object impsMathParser
     { IMPSVar(valid.head) }
   }
 
-  /* PackratParsers because those can be left-recursive */
-  class IMPSMathParser extends RegexParsers with PackratParsers
+  class SymbolicExpressionParser extends RegexParsers with PackratParsers
   {
-    lazy val parseSort : PackratParser[IMPSSort] = { parseSets | parseFunSort | parseFunSort2 | parseAtomicSort }
+    lazy val parseSEXP : PackratParser[SEXP] = { parseNestedSEXP | parseAtom }
 
-    lazy val parseSets : PackratParser[IMPSSetSort] = {
-      ("sets[" ~> parseSort <~ "]") ^^ { case setsort => IMPSSetSort(setsort)}
+    lazy val parseAtom : PackratParser[SEXPAtom] =
+    {
+      """[^()\t\r\n ]+""".r ^^ { case name => SEXPAtom(name)}
     }
 
-    lazy val parseAtomicSort : PackratParser[IMPSAtomSort] = {
-      ("[^,\\]):\\s]+".r) ^^ {case (sort) => IMPSAtomSort(sort)}
-    }
-
-    lazy val parseFunSort : PackratParser[IMPSNaryFunSort] = {
-      "[" ~> rep1sep(parseSort,",") <~ "]" ^^ {case (sorts) => IMPSNaryFunSort(sorts)}
-    }
-
-    lazy val parseFunSort2 : PackratParser[IMPSNaryFunSort] = {
-      "(" ~> rep1(parseSort) <~ ")" ^^ {case (sorts) => IMPSNaryFunSort(sorts)}
+    lazy val parseNestedSEXP : PackratParser[SEXPNested] =
+    {
+      ("(" ~> rep1(parseSEXP) <~ ")") ^^ { case sexps => SEXPNested(sexps) }
     }
   }
 }

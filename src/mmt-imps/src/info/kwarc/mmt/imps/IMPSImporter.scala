@@ -3,6 +3,7 @@ package info.kwarc.mmt.imps
 import info.kwarc.mmt.api._
 
 import scala.io.Source
+import scala.util.Either
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents._
@@ -23,7 +24,7 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
     tState.verbosity = 1
-    val targetSection : Section = impsLibrarySections.impsMathLibrary
+    val targetSection : Section = impsLibrarySections.foundation
 
     if (tState.verbosity > 0)
     {
@@ -123,7 +124,7 @@ class IMPSImporter extends Importer
 
     assert(translateFiles.length == readingT.length)
 
-    var parsed_t : List[(TExp, URI)] = Nil
+    var parsed_t : List[(List[DefForm], URI)] = Nil
 
     for (file <- translateFiles)
     {
@@ -132,16 +133,13 @@ class IMPSImporter extends Importer
         println("\n###########\nReading imps file: " + file)
       }
 
-      val e = try
+      val e : List[DefForm] = try
       {
         val contents = Source.fromFile(file).mkString
 
         val nlp : NEWIMPSParser = new NEWIMPSParser()
-        nlp.parse(contents, FileURI(file), parsed_json)
-
-        //val lp: IMPSParser = new IMPSParser()
-        //lp.parse(contents, FileURI(file), parsed_json)
-
+        val res = nlp.parse(contents, FileURI(file), parsed_json)
+        res
       } catch {
         case e : IMPSDependencyException => {
           println(" > Failure: " + e.getMessage)
@@ -152,7 +150,7 @@ class IMPSImporter extends Importer
           sys.exit
         }
       }
-      //parsed_t = parsed_t ::: List((e,FileURI(file)))
+      parsed_t = parsed_t ::: List((e,FileURI(file)))
     }
 
     if (tState.verbosity > 0)
@@ -163,7 +161,7 @@ class IMPSImporter extends Importer
     val importTask = new IMPSImportTask(controller, bf, index, tState)
 
     val fakeURI : URI = URI(bf.inFile.getParentFile.getParentFile.getAbsolutePath + "/the-kernel-theory.t")
-    val fakeexp : Exp = Exp(List(theKernelLang(),theKernelTheory(),unitSortTheorem()),None)
+    val fakeexp : List[DefForm] = List(theKernelLang,theKernelTheory,unitSortTheorem)
 
     if (tState.verbosity > 0)
     {
@@ -177,67 +175,62 @@ class IMPSImporter extends Importer
 
     for (e <- parsed_t)
     {
-      if (tState.verbosity > 0)
-      {
+      if (tState.verbosity > 0) {
         println("\n#> Translating: " + e._2)
       }
 
-      try
-      {
-        e._1 match
-        {
-          case p@Exp(_,_) => {
-            importTask.doDocument(p, e._2)
-            if (tState.verbosity > 0)
-            {
-              println(" > Success!")
-            }
-          }
-          case _ => println("> Parsing mess-up!") ; sys.exit()
+      try {
+        importTask.doDocument(e._1, e._2)
+        if (tState.verbosity > 0) {
+          println(" > Success!")
         }
       }
       catch {
         case e : IMPSDependencyException => { println(" > Failure! " + e.getMessage) ; sys.exit }
       }
     }
-
     BuildSuccess(Nil, Nil)
   }
 
-  def theKernelLang() : Language = Language(
-    "THE-KERNEL-LANGUAGE",
+  val theKernelLang : DFLanguage = DFLanguage(
+    Name("THE-KERNEL-LANGUAGE",None,None),
     None,
     None,
-    Some(LangBaseTypes(List("ind","prop","unit%sort"),None)),
+    Some(ArgBaseTypes(List(IMPSAtomSort("ind"),IMPSAtomSort("prop"),IMPSAtomSort("unit%sort")),None,None)),
+    Some(ArgSorts(List(ArgSortSpec(IMPSAtomSort("ind"),IMPSAtomSort("ind"),None,None),
+      ArgSortSpec(IMPSAtomSort("prop"),IMPSAtomSort("prop"),None,None),
+      ArgSortSpec(IMPSAtomSort("unit%sort"),IMPSAtomSort("unit%sort"),None,None)),None,None)),
     None,
-    Some(SortSpecifications(List((IMPSAtomSort("ind"),IMPSAtomSort("ind")),
-      (IMPSAtomSort("prop"),IMPSAtomSort("prop")),
-      (IMPSAtomSort("unit%sort"),IMPSAtomSort("unit%sort"))),None)),
-    Some(ConstantSpecifications(List(("an%individual",IMPSAtomSort("unit%sort"))),None)),
+    Some(ArgConstants(List(ArgConstantSpec(Name("an%individual",None,None),IMPSAtomSort("unit%sort"),None,None)),None,None)),
+    None,
     None
   )
 
-  def theKernelTheory() : Theory = Theory(
-    "the-kernel-theory",
-    Some(ArgumentLanguage("THE-KERNEL-LANGUAGE",None)),
+  val theKernelTheory : DFTheory = DFTheory(
+    Name("the-kernel-theory",None,None),
+    Some(ArgLanguage(Name("THE-KERNEL-LANGUAGE",None,None),None,None)),
     None,
-    Some(TheoryAxioms(List(AxiomSpecification(
-      IMPSForAll(List((IMPSVar("z"),IMPSAtomSort("unit%sort"))),IMPSEquals(IMPSVar("z"),IMPSMathSymbol("an%individual"))),
+    Some(ArgAxioms(List(AxiomSpec(
       Some("unit-sort-defining-axiom"),
+      DefString("forall(x,y:unit%sort,x=y iff truth",None,None),
+      Some(IMPSForAll(List((IMPSVar("z"),IMPSAtomSort("unit%sort"))),IMPSEquals(IMPSVar("z"),IMPSMathSymbol("an%individual")))),
       None,
-      None)),None)),
+      None,None)),None,None)),
+    None,
     None,
     None
   )
 
-  def unitSortTheorem() : Theorem = Theorem(
-    "()",
-    IMPSForAll(List((IMPSVar("x"),IMPSAtomSort("unit%sort")),(IMPSVar("y"),IMPSAtomSort("unit%sort"))),
-      IMPSIff(IMPSEquals(IMPSVar("x"),IMPSVar("y")),IMPSTruth())),
-    false,
-    false,
-    ArgumentTheory("the-kernel-theory",None),
-    Some(ArgumentUsages(List(Usage.ELEMENTARYMACETE),None)),
+  val unitSortTheorem : DFTheorem = DFTheorem(
+    Name("()",None,None),
+    ODefString(scala.util.Left(DefString("forall(x:unit%sort,x=an%individual)",None,None)),None,None),
+    Some(IMPSForAll(List((IMPSVar("x"),IMPSAtomSort("unit%sort")),(IMPSVar("y"),IMPSAtomSort("unit%sort"))),
+      IMPSIff(IMPSEquals(IMPSVar("x"),IMPSVar("y")),IMPSTruth()))),
+    None,
+    None,
+    ArgTheory(Name("the-kernel-theory",None,None),None,None),
+    Some(ArgUsages(List(Usage.ELEMENTARYMACETE),None,None)),
+    None,
     None,
     None,
     None,
@@ -246,14 +239,32 @@ class IMPSImporter extends Importer
   )
 }
 
+class NEWIMPSParser
+{
+  def parse(s: String, uri : URI, js : List[JSONObject]) : List[DefForm]
+  = parse(new Unparsed(s, msg => throw GeneralError(msg)), uri, js)
+
+  def parse(u : Unparsed, uri : URI, js : List[JSONObject]) : List[DefForm] =
+  {
+    val dfp = new DefFormParsers(js)
+    val foo  = ParserWithSourcePosition.parseAll(dfp.parseImpsSource,u)
+    if (!foo.successful) { println("### Parsing Error near: Line " + u.pos.line + " Column" + u.pos.column) }
+    assert(foo.successful)
+
+    val dfs : List[DefForm] = foo.get
+    dfs.foreach(_.updateSource(uri))
+    dfs
+  }
+}
+
 /* Some things are convenient to carry around in state.
    See also: This exact thing, but in PVS */
 class TranslationState ()
 {
   var vars               : Context              = Context.empty
   var theories_decl      : List[DeclaredTheory] = Nil
-  var theories_raw       : List[Theory]         = Nil
-  var languages          : List[Language]       = Nil
+  var theories_raw       : List[DFTheory]       = Nil
+  var languages          : List[DFLanguage]     = Nil
 
   var jsons              : List[JSONObject]     = Nil
 
@@ -288,7 +299,7 @@ class TranslationState ()
     }
   }
 
-  def bindUnknowns(t : Term) = {
+  def bindUnknowns(t : Term) : Term = {
     val symbs = t.freeVars.collect{
       case ln if ln.toString.startsWith("""/i/""") => ln
     }
