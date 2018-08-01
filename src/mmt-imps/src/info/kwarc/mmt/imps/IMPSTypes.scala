@@ -4,7 +4,6 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.{JSONObject, URI}
-import info.kwarc.mmt.imps.HList.:+:
 import info.kwarc.mmt.imps.ParseMethod.ParseMethod
 import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.OperationType.OperationType
@@ -1389,30 +1388,6 @@ case class IMPSQCSecond(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 
 //-------------
 
-/* This version of HLists is sourced from here, to make do without Shapeless */
-/* https://apocalisp.wordpress.com/2010/07/06/type-level-programming-in-scala-part-6a-heterogeneous-list%c2%a0basics/ */
-
-sealed trait HList
-
-final case class HCons[H, T <: HList](head : H, tail : T) extends HList {
-  def :+:[U](v : U) = HCons(v, this)
-}
-
-sealed class HNil extends HList {
-  def :+:[T](v : T) = HCons(v, this)
-}
-
-object HNil extends HNil
-
-// aliases for building HList types and for pattern matching
-object HList {
-  type :+:[H, T <: HList] = HCons[H, T]
-  val :+: : HCons.type = HCons
-
-  // contains no type information: not even A
-  implicit def fromList[A](list: List[A]): HList = ((HNil : HList) /: list.reverse) ( (hl,v) => HCons(v, hl) )
-}
-
 trait DefForm
 {
   var src : SourceInfo
@@ -1442,7 +1417,7 @@ trait DefForm
 }
 
 abstract class Comp[T <: DefForm] {
-  def build[T <: DefForm](args : HList) : T
+  def build[T <: DefForm](args : List[Any]) : T
 }
 
 case class LineComment(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1492,6 +1467,7 @@ object Usage extends Enumeration
   type Usage = Value
 
   val ELEMENTARYMACETE       : Usage = Value("elementary-macete")
+  val TRANSPORTABLE          : Usage = Value("transportable")
   val TRANSPORTABLEMACETE    : Usage = Value("transportable-macete")
   val REWRITE                : Usage = Value("rewrite")
   val TRANSPORTABLEREWRITE   : Usage = Value("transportable-rewrite")
@@ -1633,9 +1609,8 @@ case class ArgPairs(ps : List[ArgRenamerPair], var src : SourceInfo, var cmt : C
   override def toString: String = "(pairs " + ps.mkString(" ") + ")"
 }
 
-case class ArgToken(t : List[String], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
-  override def toString : String =
-    if (t.length == 1) { "(token " + t.head.toString + ")" } else { "(token (" + t.mkString(" ") + "))" }
+case class ArgToken(t : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(token " + t.toString + ")"
 }
 
 case class ArgBinding(n : Int, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
@@ -1908,7 +1883,7 @@ case class ArgReplicaRenamer(nm : Name, var src : SourceInfo, var cmt : CommentI
 }
 
 case class ArgNumbers(ns : List[Number], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
-  override def toString : String = ns.mkString(" ")
+  override def toString : String = "(" + ns.mkString(" ") + ")"
 }
 
 case class ArgPermutations(nns : List[List[Number]], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
@@ -2019,13 +1994,33 @@ case class ModQuickLoad(var src : SourceInfo, var cmt : CommentInfo) extends Def
   override def toString: String = "quick-load"
 }
 
+case class TeXCorrespondence(scrpt : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(make-tex-correspondence " + scrpt.toString + ")"
+}
+
+case class QCConstantlike(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(make-quasi-constructor-constantlike " + nm.toString + ")"
+}
+
+case class EnsembleDontTranslateConst(nm : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(ensemble-dont-translate-constant " + nm.toString + ")"
+}
+
+case class ArbitraryScript(opener : String, scrpt : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + opener + " " + scrpt.toString + ")"
+}
+
+case class Simplog1stWrapper(d : DefForm, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(transportable-rewrite-usage-simplog1st " + d.toString + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object Heralding extends Comp[Heralding] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (nm : Name) :+: HNil => Heralding(nm, None, None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (nm : Name) :: Nil => Heralding(nm, None, None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2036,9 +2031,9 @@ case class DFAtomicSort(name : Name, dfs : DefString, thy : ArgTheory,
                         var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFAtomicSort extends Comp[DFAtomicSort] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (d : DefString) :+: (t : Option[ArgTheory]) :+: (u : Option[ArgUsages]) :+:
-      (w : Option[ArgWitness]) :+: HNil => DFAtomicSort(n,d,t.get,u,w,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (d : DefString) :: (t : Option[ArgTheory]) :: (u : Option[ArgUsages]) ::
+      (w : Option[ArgWitness]) :: Nil => DFAtomicSort(n,d,t.get,u,w,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2048,9 +2043,9 @@ case class DFConstant(name : Name, dfs : DefString, thy : ArgTheory,
                       var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFConstant extends Comp[DFConstant] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (d : DefString) :+: (t : Option[ArgTheory]) :+: (s : Option[ArgSort]) :+:
-      (u : Option[ArgUsages]) :+: HNil => DFConstant(n,d,t.get,s,u,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (d : DefString) :: (t : Option[ArgTheory]) :: (s : Option[ArgSort]) ::
+      (u : Option[ArgUsages]) :: Nil => DFConstant(n,d,t.get,s,u,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2060,8 +2055,8 @@ case class DFQuasiConstructor(name : Name, dfs : DefString,
                               var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFQuasiConstructor extends Comp[DFQuasiConstructor] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (d : DefString) :+: (t : Option[ArgLanguage]) :+: (f : Option[ArgFixedTheories]) :+: HNil =>
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (d : DefString) :: (t : Option[ArgLanguage]) :: (f : Option[ArgFixedTheories]) :: Nil =>
       DFQuasiConstructor(n,d,t.get,f,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
@@ -2072,9 +2067,9 @@ case class DFSchematicMacete(name : Name, dfs : DefString, nil : Option[ModNull]
                              var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFSchematicMacete extends Comp[DFSchematicMacete] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (d : DefString) :+: (nl : Option[ModNull]) :+: (tr : Option[ModTransportable]) :+:
-      (t : Option[ArgTheory]) :+: HNil => DFSchematicMacete(n,d,nl,tr,t.get,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (d : DefString) :: (nl : Option[ModNull]) :: (tr : Option[ModTransportable]) ::
+      (t : Option[ArgTheory]) :: Nil => DFSchematicMacete(n,d,nl,tr,t.get,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2082,8 +2077,8 @@ object DFSchematicMacete extends Comp[DFSchematicMacete] {
 case class DFCompoundMacete(nm : Name, spec : MaceteSpec, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFCompoundMacete extends Comp[DFCompoundMacete] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (s : MaceteSpec) :+: HNil => DFCompoundMacete(n,s,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (s : MaceteSpec) :: Nil => DFCompoundMacete(n,s,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2092,8 +2087,8 @@ case class DFImportedRewriteRules(nm : Name, thy : Option[ArgSourceTheory], thie
                                   var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFImportedRewriteRules extends Comp[DFImportedRewriteRules] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (thy : Option[ArgSourceTheory]) :+: (thies : Option[ArgSourceTheories]) :+: HNil =>
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (thy : Option[ArgSourceTheory]) :: (thies : Option[ArgSourceTheories]) :: Nil =>
       DFImportedRewriteRules(n,thy,thies,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
@@ -2105,10 +2100,10 @@ case class DFInductor(nm : Name, princ : ArgInductionPrinciple, thy : ArgTheory,
                       var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFInductor extends Comp[DFInductor] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (p : ArgInductionPrinciple) :+: (thy : Option[ArgTheory]) :+: (tr : Option[ArgTranslation])
-      :+: (bh : Option[ArgBaseCaseHook]) :+: (ih : Option[ArgInductionStepHook]) :+: (du : Option[ArgDontUnfold])
-      :+: HNil => DFInductor(n,p,thy.get,tr,bh,ih,du,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (p : ArgInductionPrinciple) :: (thy : Option[ArgTheory]) :: (tr : Option[ArgTranslation])
+      :: (bh : Option[ArgBaseCaseHook]) :: (ih : Option[ArgInductionStepHook]) :: (du : Option[ArgDontUnfold])
+      :: Nil => DFInductor(n,p,thy.get,tr,bh,ih,du,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2119,11 +2114,11 @@ case class DFLanguage(nm : Name, els : Option[ArgEmbeddedLangs], el : Option[Arg
                       var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFLanguage extends Comp[DFLanguage] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (els : Option[ArgEmbeddedLangs]) :+: (el : Option[ArgEmbeddedLang])
-                    :+: (bt : Option[ArgBaseTypes]) :+: (srts : Option[ArgSorts])
-                    :+: (ex : Option[ArgExtensible]) :+: (cnsts : Option[ArgConstants])
-                    :+: HNil => DFLanguage(n,els,el,bt,srts,ex,cnsts,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (els : Option[ArgEmbeddedLangs]) :: (el : Option[ArgEmbeddedLang])
+                    :: (bt : Option[ArgBaseTypes]) :: (srts : Option[ArgSorts])
+                    :: (ex : Option[ArgExtensible]) :: (cnsts : Option[ArgConstants])
+                    :: Nil => DFLanguage(n,els,el,bt,srts,ex,cnsts,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2131,8 +2126,8 @@ object DFLanguage extends Comp[DFLanguage] {
 case class DFRenamer(nm : Name, ps : Option[ArgPairs], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFRenamer extends Comp[DFRenamer] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (ps : Option[ArgPairs]) :+: HNil => DFRenamer(n,ps,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (ps : Option[ArgPairs]) :: Nil => DFRenamer(n,ps,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2142,9 +2137,9 @@ case class DFParseSyntax(n : Name, t : Option[ArgToken], lm : Option[ArgLeftMeth
                          bnd : ArgBinding, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFParseSyntax extends Comp[DFParseSyntax] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (t : Option[ArgToken]) :+: (lm : Option[ArgLeftMethod]) :+: (nm : Option[ArgNullMethod])
-                    :+: (tbl : Option[ArgTable]) :+: (bnd : Option[ArgBinding]) :+: HNil
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (t : Option[ArgToken]) :: (lm : Option[ArgLeftMethod]) :: (nm : Option[ArgNullMethod])
+                    :: (tbl : Option[ArgTable]) :: (bnd : Option[ArgBinding]) :: Nil
                     => DFParseSyntax(n,t,lm,nm,tbl,bnd.get,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
@@ -2155,9 +2150,9 @@ case class DFPrintSyntax(n : Name, tex : Option[ModTex], t : Option[ArgToken],
                          var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFPrintSyntax extends Comp[DFPrintSyntax] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (tex : Option[ModTex]) :+: (t : Option[ArgToken]) :+: (m : Option[ArgMethod])
-      :+: (tbl : Option[ArgTable]) :+: (bnd : Option[ArgBinding]) :+: HNil
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (tex : Option[ModTex]) :: (t : Option[ArgToken]) :: (m : Option[ArgMethod])
+      :: (tbl : Option[ArgTable]) :: (bnd : Option[ArgBinding]) :: Nil
     => DFPrintSyntax(n,tex,t,m,tbl,bnd.get,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
@@ -2172,10 +2167,10 @@ object DFTheorem extends Comp[DFTheorem] {
 
   var js : List[JSONObject] = Nil
 
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (df  : ODefString)        :+: (modr : Option[ModReverse])  :+: (modl : Option[ModLemma])
-                    :+: (thy : Option[ArgTheory]) :+: (us : Option[ArgUsages])     :+: (tr : Option[ArgTranslation])
-                    :+: (mac : Option[ArgMacete]) :+: (ht : Option[ArgHomeTheory]) :+: (prf : Option[ArgProof]) :+: HNil
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (df  : ODefString)        :: (modr : Option[ModReverse])  :: (modl : Option[ModLemma])
+                    :: (thy : Option[ArgTheory]) :: (us : Option[ArgUsages])     :: (tr : Option[ArgTranslation])
+                    :: (mac : Option[ArgMacete]) :: (ht : Option[ArgHomeTheory]) :: (prf : Option[ArgProof]) :: Nil
     => { // Construct full theorem!
 
       println("Don't forget to put formula parsing back in")
@@ -2193,9 +2188,9 @@ object DFTheory extends Comp[DFTheory] {
 
   var js : List[JSONObject] = Nil
 
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (lang : Option[ArgLanguage]) :+: (comp : Option[ArgComponentTheories])
-                    :+: (axs : Option[ArgAxioms]) :+: (dscs : Option[ArgDistinctConstants]) :+: HNil => {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (lang : Option[ArgLanguage]) :: (comp : Option[ArgComponentTheories])
+                    :: (axs : Option[ArgAxioms]) :: (dscs : Option[ArgDistinctConstants]) :: Nil => {
       println("Don't forget to put formula parsing back in")
       DFTheory(n,lang,comp,axs,dscs,None,None).asInstanceOf[T]
     }
@@ -2207,8 +2202,8 @@ case class DFOverloading(n : Name, ps : List[ArgOverloadingPair], var src : Sour
   extends DefForm
 
 object DFOverloading extends Comp[DFOverloading] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (ps : List[ArgOverloadingPair]) :+: HNil => DFOverloading(n,ps,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (ps : List[ArgOverloadingPair]) :: Nil => DFOverloading(n,ps,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2223,11 +2218,11 @@ object DFTranslation extends Comp[DFTranslation] {
 
   var js : List[JSONObject] = Nil
 
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (f : Option[ModForce]) :+: (fu : Option[ModForceUnderQuickLoad]) :+: (de : Option[ModDontEnrich])
-                    :+: (sour : Option[ArgSource]) :+: (tar : Option[ArgTarget]) :+: (asms : Option[ArgAssumptions])
-                    :+: (fxd : Option[ArgFixedTheories]) :+: (sps : Option[ArgSortPairs]) :+: (cps : Option[ArgConstPairs])
-                    :+: (ct : Option[ArgCoreTranslation]) :+: (tic : Option[ArgTheoryInterpretationCheck]) :+: HNil => {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (f : Option[ModForce]) :: (fu : Option[ModForceUnderQuickLoad]) :: (de : Option[ModDontEnrich])
+                    :: (sour : Option[ArgSource]) :: (tar : Option[ArgTarget]) :: (asms : Option[ArgAssumptions])
+                    :: (fxd : Option[ArgFixedTheories]) :: (sps : Option[ArgSortPairs]) :: (cps : Option[ArgConstPairs])
+                    :: (ct : Option[ArgCoreTranslation]) :: (tic : Option[ArgTheoryInterpretationCheck]) :: Nil => {
       println("Don't forget to put formula parsing back in")
       DFTranslation(n, f, fu, de, sour.get, tar.get, asms, fxd, sps, cps, ct, tic, None, None).asInstanceOf[T]
     }
@@ -2242,9 +2237,9 @@ object DFRecursiveConstant extends Comp[DFRecursiveConstant] {
 
   var js : List[JSONObject] = Nil
 
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (ns : ArgNameList) :+: (defs : ArgDefStringList) :+: (thy : Option[ArgTheory]) :+: (usgs : Option[ArgUsages])
-                            :+: (defname : Option[ArgDefinitionName]) :+: HNil =>
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (ns : ArgNameList) :: (defs : ArgDefStringList) :: (thy : Option[ArgTheory]) :: (usgs : Option[ArgUsages])
+                            :: (defname : Option[ArgDefinitionName]) :: Nil =>
       DFRecursiveConstant(ns,defs,thy.get,usgs,defname,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
@@ -2255,8 +2250,8 @@ case class DFTransportedSymbols(ns : ArgNameList, tr : ArgTranslation, rn : Opti
 
 
 object DFTransportedSymbols extends Comp[DFTransportedSymbols] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (ns : ArgNameList) :+: (tr : Option[ArgTranslation]) :+: (rn : Option[ArgRenamer]) :+: HNil =>
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (ns : ArgNameList) :: (tr : Option[ArgTranslation]) :: (rn : Option[ArgRenamer]) :: Nil =>
       DFTransportedSymbols(ns,tr.get,rn,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
@@ -2267,9 +2262,9 @@ case class QDFSpecForm(sclrs : Option[ArgScalars], ops : Option[ArgOperations],
                        var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object QDFSpecForm extends Comp[QDFSpecForm] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (sclrs : Option[ArgScalars]) :+: (ops : Option[ArgOperations]) :+: (usenum : Option[ModUseNumerals])
-      :+: (comm : Option[ModCommutes]) :+: HNil => QDFSpecForm(sclrs,ops,usenum,comm,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (sclrs : Option[ArgScalars]) :: (ops : Option[ArgOperations]) :: (usenum : Option[ModUseNumerals])
+      :: (comm : Option[ModCommutes]) :: Nil => QDFSpecForm(sclrs,ops,usenum,comm,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2279,9 +2274,9 @@ case class DFAlgebraicProcessor(nm : Name, canc : Option[ModCancellative], lang 
                                 var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFAlgebraicProcessor extends Comp[DFAlgebraicProcessor] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (nm : Name) :+: (canc : Option[ModCancellative]) :+: (lang : Option[ArgLanguage]) :+: (bs : Option[ArgBase])
-                     :+: (ex : Option[ArgExponent]) :+: (co : Option[ArgCoefficient]) :+: HNil =>
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (nm : Name) :: (canc : Option[ModCancellative]) :: (lang : Option[ArgLanguage]) :: (bs : Option[ArgBase])
+                     :: (ex : Option[ArgExponent]) :: (co : Option[ArgCoefficient]) :: Nil =>
       DFAlgebraicProcessor(nm,canc,lang.get,bs.get,ex,co,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
@@ -2291,9 +2286,9 @@ case class DFScript(nm : Name, argc : Number, scrpt : Script, ret : Option[ArgRe
                     rec : Option[ArgApplicabilityRecognizer], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFScript extends Comp[DFScript] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (nm : Name) :+: (argc : Number) :+: (scrpt : Script) :+: (ret : Option[ArgRetrievalProtocol])
-      :+: (rec : Option[ArgApplicabilityRecognizer]) :+: HNil => DFScript(nm,argc,scrpt,ret,rec,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (nm : Name) :: (argc : Number) :: (scrpt : Script) :: (ret : Option[ArgRetrievalProtocol])
+      :: (rec : Option[ArgApplicabilityRecognizer]) :: Nil => DFScript(nm,argc,scrpt,ret,rec,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2302,8 +2297,8 @@ case class DFSection(nm : Name, com : Option[ArgComponentSections], fls : Option
                      var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFSection extends Comp[DFSection] {
-  override def build[T <: DefForm](args : HList): T = args match {
-    case (nm : Name) :+: (com : Option[ArgComponentSections]) :+: (fls : Option[ArgFiles]) :+: HNil =>
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (nm : Name) :: (com : Option[ArgComponentSections]) :: (fls : Option[ArgFiles]) :: Nil =>
       DFSection(nm,com,fls,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
@@ -2313,9 +2308,9 @@ case class DFTheoryEnsemble(nm : Name, bt : Option[ArgBaseTheory], fts : Option[
                             rnm : Option[ArgReplicaRenamer], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFTheoryEnsemble extends Comp[DFTheoryEnsemble] {
-  override def build[T <: DefForm](args : HList): T = {
+  override def build[T <: DefForm](args : List[Any]): T = {
     args match {
-      case (nm : Name) :+: (bt : Option[ArgBaseTheory]) :+: (fts : Option[ArgFixedTheories]) :+: (rnm : Option[ArgReplicaRenamer]) :+: HNil
+      case (nm : Name) :: (bt : Option[ArgBaseTheory]) :: (fts : Option[ArgFixedTheories]) :: (rnm : Option[ArgReplicaRenamer]) :: Nil
       => DFTheoryEnsemble(nm,bt,fts,rnm,None,None).asInstanceOf[T]
       case _ => ??!(args)
     }
@@ -2325,9 +2320,9 @@ object DFTheoryEnsemble extends Comp[DFTheoryEnsemble] {
 case class DFTheoryEnsembleMultiple(nm : Name, n : Number, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFTheoryEnsembleMultiple extends Comp[DFTheoryEnsembleMultiple] {
-  override def build[T <: DefForm](args : HList): T = {
+  override def build[T <: DefForm](args : List[Any]): T = {
     args match {
-      case (nm : Name) :+: (n : Number) :+: HNil => DFTheoryEnsembleMultiple(nm,n,None,None).asInstanceOf[T]
+      case (nm : Name) :: (n : Number) :: Nil => DFTheoryEnsembleMultiple(nm,n,None,None).asInstanceOf[T]
       case _ => ??!(args)
     }
   }
@@ -2336,24 +2331,25 @@ object DFTheoryEnsembleMultiple extends Comp[DFTheoryEnsembleMultiple] {
 case class DFTheoryEnsembleOverloadings(nm : Name, ns : ArgNumbers, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFTheoryEnsembleOverloadings extends Comp[DFTheoryEnsembleOverloadings] {
-  override def build[T <: DefForm](args : HList): T = {
+  override def build[T <: DefForm](args : List[Any]): T = {
     args match {
-      case (nm : Name) :+: (ns : ArgNumbers) :+: HNil => DFTheoryEnsembleOverloadings(nm,ns,None,None).asInstanceOf[T]
+      case (nm : Name) :: (ns : ArgNumbers) :: Nil => DFTheoryEnsembleOverloadings(nm,ns,None,None).asInstanceOf[T]
       case _ => ??!(args)
     }
   }
 }
 
-case class DFTheoryEnsembleInstances(nm : Name, tt : Option[ArgTargetTheories], tm : Option[ArgTargetMultiple],
-                                     ss : Option[ArgEnsembleSorts], cs : Option[ArgEnsembleConsts],
-                                     ms : Option[ArgMultiples], ps : Option[ArgPermutations], srs : Option[ArgSpecialRenamings],
+case class DFTheoryEnsembleInstances(nm : Name, fuq : Option[ModForceUnderQuickLoad], tt : Option[ArgTargetTheories],
+                                     tm : Option[ArgTargetMultiple], ss : Option[ArgEnsembleSorts], cs : Option[ArgEnsembleConsts],
+                                     ms : Option[ArgMultiples], tic : Option[ArgTheoryInterpretationCheck],
+                                     ps : Option[ArgPermutations], srs : Option[ArgSpecialRenamings],
                                      var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object  DFTheoryEnsembleInstances extends Comp[ DFTheoryEnsembleInstances] {
-  override def build[T <: DefForm](args : HList): T = args match {
-    case (nm : Name) :+: (tt : Option[ArgTargetTheories]) :+: (tm : Option[ArgTargetMultiple]) :+:
-      (ss : Option[ArgEnsembleSorts]) :+: (cs : Option[ArgEnsembleConsts]) :+: (ms : Option[ArgMultiples]) :+:
-      (ps : Option[ArgPermutations]) :+: (srs : Option[ArgSpecialRenamings]) :+: HNil => DFTheoryEnsembleInstances(nm,tt,tm,ss,cs,ms,ps,srs,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (nm : Name) :: (fuq : Option[ModForceUnderQuickLoad]) :: (tt : Option[ArgTargetTheories]) :: (tm : Option[ArgTargetMultiple]) ::
+      (ss : Option[ArgEnsembleSorts]) :: (cs : Option[ArgEnsembleConsts]) :: (ms : Option[ArgMultiples]) :: (tic : Option[ArgTheoryInterpretationCheck]) ::
+      (ps : Option[ArgPermutations]) :: (srs : Option[ArgSpecialRenamings]) :: Nil => DFTheoryEnsembleInstances(nm,fuq,tt,tm,ss,cs,ms,tic,ps,srs,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2363,10 +2359,10 @@ case class DFTheoryInstance(nm : Name, sr : ArgSource, tar : ArgTarget, trans : 
                             var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFTheoryInstance extends Comp[DFTheoryInstance] {
-  override def build[T <: DefForm](args : HList): T = args match {
-    case (nm : Name) :+: (sr : Option[ArgSource]) :+: (tar : Option[ArgTarget]) :+: (trans : Option[ArgTranslation])
-      :+: (fts : Option[ArgFixedTheories]) :+: (rnm : Option[ArgRenamer]) :+: (ntn : Option[ArgNewTranslationName])
-      :+: HNil => DFTheoryInstance(nm,sr.get,tar.get,trans.get,fts,rnm,ntn,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (nm : Name) :: (sr : Option[ArgSource]) :: (tar : Option[ArgTarget]) :: (trans : Option[ArgTranslation])
+      :: (fts : Option[ArgFixedTheories]) :: (rnm : Option[ArgRenamer]) :: (ntn : Option[ArgNewTranslationName])
+      :: Nil => DFTheoryInstance(nm,sr.get,tar.get,trans.get,fts,rnm,ntn,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2375,9 +2371,9 @@ case class DFTheoryProcessors(nm : Name, as : Option[ArgAlgebraicSimplifier], ao
                               atc : Option[ArgAlgebraicTermComparator], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFTheoryProcessors extends Comp[DFTheoryProcessors] {
-  override def build[T <: DefForm](args : HList): T = args match {
-    case (nm : Name) :+: (as : Option[ArgAlgebraicSimplifier]) :+: (aos : Option[ArgAlgebraicOrderSimplifier]) :+:
-      (atc : Option[ArgAlgebraicTermComparator]) :+: HNil => DFTheoryProcessors(nm,as,aos,atc,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (nm : Name) :: (as : Option[ArgAlgebraicSimplifier]) :: (aos : Option[ArgAlgebraicOrderSimplifier]) ::
+      (atc : Option[ArgAlgebraicTermComparator]) :: Nil => DFTheoryProcessors(nm,as,aos,atc,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2386,9 +2382,9 @@ case class DFOrderProcessor(nm : Name, ap : Option[ArgAlgebraicProcessor], ops :
                             ds : Option[ArgDiscreteSorts], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFOrderProcessor extends Comp[DFOrderProcessor] {
-  override def build[T <: DefForm](args : HList): T = args match {
-    case (nm : Name) :+: (ap : Option[ArgAlgebraicProcessor]) :+: (ops : Option[ArgProcOperations])
-      :+: (ds : Option[ArgDiscreteSorts]) :+: HNil => DFOrderProcessor(nm,ap,ops,ds,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (nm : Name) :: (ap : Option[ArgAlgebraicProcessor]) :: (ops : Option[ArgProcOperations])
+      :: (ds : Option[ArgDiscreteSorts]) :: Nil => DFOrderProcessor(nm,ap,ops,ds,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -2397,8 +2393,8 @@ case class DFIncludeFiles(rl : Option[ModReload], ql : Option[ModQuickLoad], fs 
                           var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFIncludeFiles extends Comp[DFIncludeFiles] {
-  override def build[T <: DefForm](args : HList): T = args match {
-    case (rl : Option[ModReload]) :+: (ql : Option[ModQuickLoad]) :+: (fs : Option[ArgFiles]) :+: HNil =>
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (rl : Option[ModReload]) :: (ql : Option[ModQuickLoad]) :: (fs : Option[ArgFiles]) :: Nil =>
       DFIncludeFiles(rl,ql,fs,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
@@ -2407,8 +2403,17 @@ object DFIncludeFiles extends Comp[DFIncludeFiles] {
 case class DFLoadSection(sc : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object DFLoadSection extends Comp[DFLoadSection] {
-  override def build[T <: DefForm](args : HList): T = args match {
-    case (sc : Name) :+: HNil => DFLoadSection(sc,None,None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (sc : Name) :: Nil => DFLoadSection(sc,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFComment(c : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFComment extends Comp[DFComment] {
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (c : Script) :: Nil => DFComment(c,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }

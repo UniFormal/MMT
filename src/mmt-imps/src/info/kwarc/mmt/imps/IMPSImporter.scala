@@ -23,7 +23,7 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
     tState.verbosity = 1
-    val targetSection : Section = impsLibrarySections.preReals
+    val targetSection : Section = impsLibrarySections.impsMathLibrary
 
     if (tState.verbosity > 0)
     {

@@ -76,15 +76,20 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
 
   def keyworded(ks : List[(Parser[DefForm],Required)]) : Parser[List[Option[DefForm]]] =
   {
+    def uniques[A](xs : List[(A, Int)]) : List[(A, Int)] = xs match {
+      case Nil       => Nil
+      case (y :: ys) => y :: uniques(ys.filter(p => p._2 != y._2))
+    }
+
     def fill(l : List[(Option[DefForm], Int)]) : List[(Option[DefForm], Int)] = {
       var lp = l
       for (ki <- ks.indices){ if (!lp.map(_._2).contains(ki)) {lp = lp ::: List((None, ki))} } ; lp
     }
 
-    val ks0 = ks.map(p => fullParser(p._1))
+    val ks0 = ks.map(p => p._1)
     val ks1 = ks0.map(r => r.map(d => (Some(d),ks0.indexOf(r))))
 
-    rep(anyOf(ks1)).map(l => fill(l).sortWith((x,y) => x._2 < y._2).map(_._1))
+    rep(anyOf(ks1)).map(l => uniques(fill(l).sortWith((x,y) => x._2 < y._2)).map(_._1))
   }
 
   /**

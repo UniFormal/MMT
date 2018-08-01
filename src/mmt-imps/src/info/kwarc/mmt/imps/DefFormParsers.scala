@@ -66,10 +66,11 @@ class DefFormParsers(js : List[JSONObject])
     case "simplify-logically-first" => Usage.SIMPLIFYLOGICALLYFIRST
     case "d-r-convergence"          => Usage.DRCONVERGENCE
     case "d-r-value"                => Usage.DRVALUE
+    case "transportable"            => Usage.TRANSPORTABLE
   }
 
   lazy val parseArgUsages  : Parser[ArgUsages] =
-    fullParser(("(usages" ~> rep1(parseUsage) <~ ")") ^^ { case (us) => ArgUsages(us,None,None) })
+    fullParser(("(usages" ~> rep(parseUsage) <~ ")") ^^ { case (us) => ArgUsages(us,None,None) })
 
   lazy val parseArgSort    : Parser[ArgSort] =
     fullParser(("(sort" ~> (("\""?) ~> parseSort <~ ("\""?)) <~ ")") ^^ {case (n) => ArgSort(n,None,None)})
@@ -148,7 +149,7 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseArgEmbeddedLangs : Parser[ArgEmbeddedLangs] = fullParser(
-    "(embedded-language" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgEmbeddedLangs(ns,None,None) }
+    "(embedded-languages" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgEmbeddedLangs(ns,None,None) }
   )
 
   lazy val parseArgBaseTypes : Parser[ArgBaseTypes] = fullParser(
@@ -178,7 +179,7 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseArgConstantSpec : Parser[ArgConstantSpec] = fullParser(
-    "(" ~> (parseTName ~ parseSort) <~ ")" ^^ { case (nm ~ srt) => ArgConstantSpec(nm,srt,None,None) }
+    "(" ~> (parseTName ~ (("\""?) ~> parseSort <~ ("\""?))) <~ ")" ^^ { case (nm ~ srt) => ArgConstantSpec(nm,srt,None,None) }
   )
 
   lazy val parseArgConstants : Parser[ArgConstants] = fullParser(
@@ -194,7 +195,7 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseArgToken : Parser[ArgToken] = fullParser(
-    "(token" ~> (("\""?) ~> rep1(parseName) <~ ("\""?)) <~ ")" ^^ { case (muls) => ArgToken(muls,None,None) }
+    "(token" ~> parseScript <~ ")" ^^ { case (muls) => ArgToken(muls,None,None) }
   )
 
   lazy val parseArgBinding : Parser[ArgBinding] = fullParser(
@@ -228,7 +229,7 @@ class DefFormParsers(js : List[JSONObject])
     "(null-method" ~> parseParseMethod <~ ")" ^^ { case (m) => ArgNullMethod(m,None,None) }
   )
 
-  lazy val parseModTex : Parser[ModTex] = fullParser("tex" ^^ {case (_) => ModTex(None,None)} )
+  lazy val parseModTex : Parser[ModTex] = fullParser(("tex" | "TeX" | "TEX") ^^ {case (_) => ModTex(None,None)} )
 
   lazy val parseModReverse : Parser[ModReverse] = fullParser("reverse" ^^ {case (_) => ModReverse(None,None)} )
 
@@ -429,7 +430,7 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseArgFileSpec : Parser[ArgFileSpec] = fullParser(
-    "(" ~> parseTName ~ parseTName <~ ")" ^^ { case (p ~ q) => ArgFileSpec(p,q,None,None) }
+    (";;"?) ~> "(" ~> parseTName ~ parseTName <~ ")" ^^ { case (p ~ q) => ArgFileSpec(p,q,None,None) }
   )
 
   lazy val parseArgFiles : Parser[ArgFiles] = fullParser(
@@ -449,7 +450,7 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseArgNumbers : Parser[ArgNumbers] = fullParser(
-    rep1(parseTNumber) ^^ { case (ns) => ArgNumbers(ns,None,None) }
+    "(" ~> rep1(parseTNumber) <~ ")" ^^ { case (ns) => ArgNumbers(ns,None,None) }
   )
 
   lazy val parseArgTargetTheories : Parser[ArgTargetTheories] = fullParser(
@@ -591,7 +592,7 @@ class DefFormParsers(js : List[JSONObject])
     "def-language",
     List(parseTName),
     Nil,
-    List(parseArgEmbeddedLang, parseArgEmbeddedLangs, parseArgBaseTypes, parseArgSorts,
+    List(parseArgEmbeddedLangs, parseArgEmbeddedLang, parseArgBaseTypes, parseArgSorts,
       parseArgExtensible, parseArgConstants).map(p => (p,O)), // all optional
     DFLanguage
   )
@@ -670,7 +671,7 @@ class DefFormParsers(js : List[JSONObject])
     composeParser(
       "def-translation",
       List(parseTName),
-      List(parseModForce,parseModForceU,parseModDontEnrich),
+      List(parseModForceU,parseModForce,parseModDontEnrich),
       List(parseArgSource, parseArgTarget).map(p => (p,R)) :::
         List(parseArgAssumptions, parseArgFixedTheories, parseArgSortPairs, parseArgConstPairs,
           parseArgCoreTranslation, parseArgTheoryInterpretationCheck).map(p => (p,O)),
@@ -748,9 +749,9 @@ class DefFormParsers(js : List[JSONObject])
   lazy val pTheoryEnsembleInstances : Parser[DFTheoryEnsembleInstances] = composeParser(
     "def-theory-ensemble-instances",
     List(parseTName),
-    Nil,
+    List(parseModForceU),
     List(parseArgTargetTheories, parseArgTargetMultiple, parseArgEnsembleSorts, parseArgEnsembleConsts,
-      parseArgMultiples,parseArgPermutations,parseArgSpecialRenamings).map(p => (p,O)),
+      parseArgMultiples, parseArgTheoryInterpretationCheck, parseArgPermutations,parseArgSpecialRenamings).map(p => (p,O)),
     DFTheoryEnsembleInstances
   )
 
@@ -795,6 +796,14 @@ class DefFormParsers(js : List[JSONObject])
     DFLoadSection
   )
 
+  lazy val pComment : Parser[DFComment] = composeParser(
+    "comment",
+    List(parseScript),
+    Nil,
+    Nil,
+    DFComment
+  )
+
   lazy val pSet : Parser[Set] = fullParser(
     "(set" ~> parseScript <~ ")" ^^ { case (c) => Set(c,None,None) }
   )
@@ -803,14 +812,35 @@ class DefFormParsers(js : List[JSONObject])
     "(define" ~> parseScript <~ ")" ^^ { case (c) => Define(c,None,None) }
   )
 
+  lazy val pTeXCorrespondence : Parser[TeXCorrespondence] = fullParser(
+    "(make-tex-correspondence" ~> parseScript <~ ")" ^^ { case (s) => TeXCorrespondence(s,None,None) }
+  )
+
+  lazy val pQCConstantlike : Parser[QCConstantlike] = fullParser(
+    "(make-quasi-constructor-constantlike" ~> parseTName <~ ")" ^^ { case (s) => QCConstantlike(s,None,None) }
+  )
+
+  lazy val pEnsembleDontTranslateConst : Parser[EnsembleDontTranslateConst] = fullParser(
+    "(ensemble-dont-translate-constant" ~> parseScript <~ ")" ^^ { case (s) => EnsembleDontTranslateConst(s,None,None) }
+  )
+
+  def parseArbitrary(str : String) : Parser[ArbitraryScript] = fullParser(
+    "(" ~> str.r ~ parseScript <~ ")" ^^ { case (n ~ s) => println(n + ";" + s) ; ArbitraryScript(n,s,None,None) }
+  )
+
+  lazy val pSimplog1stWrapper : Parser[Simplog1stWrapper] = fullParser(
+    "(transportable-rewrite-usage-simplog1st" ~> pTheorem <~ ")" ^^ { case (d) => Simplog1stWrapper(d,None,None) }
+  )
+
   // ######### Complete Parsers
 
   val allDefFormParsers : List[Parser[DefForm]] = List(
-    parseLineComment, pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
+    parseLineComment,pComment,pHeralding, pAtomicSort, pConstant, pQuasiConstructor, pSchematicMacete, pCompoundMacete,
     pInductor, pImportedRewriteRules, pLanguage, pRenamer, pPrintSyntax, pParseSyntax, pTheorem, pTheory, pOverloading,
     pTranslation, pTransportedSymbols, pRecursiveConstant, pAlgebraicProcessor, pScript, pSection, pTheoryEnsemble,
     pTheoryEnsembleMultiple, pTheoryEnsembleOverloadings, pTheoryEnsembleInstances, pTheoryInstance, pTheoryProcessors,
-    pOrderProcessors,pIncludeFiles,pLoadSection,pSet,pDefine
+    pOrderProcessors,pIncludeFiles,pLoadSection,pSet,pDefine,pTeXCorrespondence,pQCConstantlike, pEnsembleDontTranslateConst,
+    pSimplog1stWrapper
   )
 
   lazy val parseImpsSource : PackratParser[List[DefForm]] = { rep1(anyOf(allDefFormParsers)) }
