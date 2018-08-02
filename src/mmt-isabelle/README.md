@@ -4,7 +4,7 @@ Isabelle/MMT
 This tool requires a formal Isabelle system context (with certain environment
 variables, additions to CLASSPATH, and access to the source distribition).
 
-It requires Isabelle2018 (or a development snapshot after the release from
+It requires a development snapshot after Isabelle2018 (from
 https://isabelle.sketis.net/devel/release_snapshot).
 
   * Build (in directory ```src```): ```isabelle env sbt mmt/deploy```
