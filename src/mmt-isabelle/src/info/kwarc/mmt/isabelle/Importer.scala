@@ -60,8 +60,7 @@ class Importer extends archives.Importer
     val include_sessions = session_deps.sessions_structure.imports_topological_order
 
     _session =
-      Some(isabelle.Thy_Resources.start_session(session_options,
-        isabelle.Isabelle_System.getenv("ISABELLE_LOGIC"),
+      Some(isabelle.Thy_Resources.start_session(session_options, Isabelle.Pure,
         include_sessions = include_sessions, progress = progress, log = logger))
   }
 
@@ -185,13 +184,14 @@ class Importer extends archives.Importer
 
 /** convenience functions for building Isabelle objects */
 object Isabelle {
- 
+  val Pure = "Pure"
+
   /** common namespace for all theories in all sessions in all Isabelle archives */
   val isaLibraryBase = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
    
   /** namespace for MMT definitions of Isabelle built-in features (i.e., things not in the Isabelle library) */
   val logicBase = lf.LF._base
-  val pure = logicBase ? "Pure"
+  val pure = logicBase ? Pure
 
   def make_theory(name: isabelle.Document.Node.Name): DeclaredTheory =
   {
