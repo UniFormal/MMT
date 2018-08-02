@@ -1,7 +1,6 @@
 package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.utils.JSONObject
-import info.kwarc.mmt.imps
 import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.OperationType.OperationType
 import info.kwarc.mmt.imps.ParseMethod.ParseMethod
@@ -277,7 +276,7 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseAxiomSpec : Parser[AxiomSpec] = fullParser(
-    "(" ~> (parseName?) ~ parseDefString ~ (rep1(parseUsage)?) <~ ")" ^^ {case n ~ d ~ us => AxiomSpec(n,d,us,None,None)}
+    "(" ~> (parseName?) ~ parseDefString ~ (rep1(parseUsage)?) <~ ")" ^^ {case n ~ d ~ us => AxiomSpec(n,d,None,us,None,None)}
   )
 
   lazy val parseArgAxioms : Parser[ArgAxioms] = fullParser(
@@ -303,7 +302,7 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseArgAssumptions : Parser[ArgAssumptions] = fullParser(
-    "(assumptions" ~> rep1(parseDefString) <~ ")" ^^ { case (as) => ArgAssumptions(as, None, None) }
+    "(assumptions" ~> rep1(parseDefString) <~ ")" ^^ { case (as) => ArgAssumptions(as, Nil, None, None) }
   )
 
   lazy val pv0 = parseTName ^^ { case (n) => (n,0) }
@@ -552,7 +551,7 @@ class DefFormParsers(js : List[JSONObject])
     List(parseTName, parseDefString),
     Nil,
     List((parseArgTheory, R), (parseArgUsages, O), (parseArgWitness, O)),
-    DFAtomicSort
+    new DFAtomicSortC(js)
   )
 
   val pCompoundMacete : Parser[DFCompoundMacete] = composeParser(
@@ -568,7 +567,7 @@ class DefFormParsers(js : List[JSONObject])
     List(parseTName, parseDefString),
     Nil,
     List((parseArgTheory,R),(parseArgSort,O),(parseArgUsages,O)),
-    DFConstant
+    new DFConstantC(js)
   )
 
   val pImportedRewriteRules : Parser[DFImportedRewriteRules] = composeParser(
@@ -637,28 +636,23 @@ class DefFormParsers(js : List[JSONObject])
     DFPrintSyntax
   )
 
-  val pTheorem : Parser[DFTheorem] = {
-    DFTheorem.js = this.js
+  val pTheorem : Parser[DFTheorem] =
     composeParser(
       "def-theorem",
       List(parseTName, parseDefStringOrName),
       List(parseModReverse, parseModLemma),
       List((parseArgTheory,R)) :::
         List(parseArgUsages, parseArgTranslation, parseArgMacete,parseArgHomeTheory,parseArgProof).map(p => (p,O)),
-      DFTheorem
+      new DFTheoremC(js)
     )
-  }
 
-  val pTheory : Parser[DFTheory] = {
-    DFTheorem.js = this.js
-    composeParser(
+  val pTheory : Parser[DFTheory] = composeParser(
       "def-theory ", // space is necessary because otherwise this conflicts with theory-ensemble etc.
       List(parseTName),
       Nil,
-      List(parseArgLanguage,parseArgAxioms,parseArgComponentTheories,parseArgDistinctConstants).map(p => (p,O)),
-      DFTheory
-    )
-  }
+      List(parseArgLanguage,parseArgComponentTheories,parseArgAxioms,parseArgDistinctConstants).map(p => (p,O)),
+      new DFTheoryC(js)
+  )
 
   lazy val pOverloading : Parser[DFOverloading] = fullParser(
     "(def-overloading" ~> parseTName ~ rep1(parseArgOverloadingPairs) <~ ")" ^^ { case t ~ ps =>
@@ -666,27 +660,23 @@ class DefFormParsers(js : List[JSONObject])
     }
   )
 
-  lazy val pTranslation : Parser[DFTranslation] = {
-    DFTheorem.js = this.js
-    composeParser(
+  lazy val pTranslation : Parser[DFTranslation] = composeParser(
       "def-translation",
       List(parseTName),
       List(parseModForceU,parseModForce,parseModDontEnrich),
       List(parseArgSource, parseArgTarget).map(p => (p,R)) :::
         List(parseArgAssumptions, parseArgFixedTheories, parseArgSortPairs, parseArgConstPairs,
           parseArgCoreTranslation, parseArgTheoryInterpretationCheck).map(p => (p,O)),
-      DFTranslation
+      new DFTranslationC(js)
     )
-  }
 
   lazy val pRecursiveConstant : Parser[DFRecursiveConstant] = {
-    DFTheorem.js = this.js
     composeParser(
       "def-recursive-constant",
       List(parseArgNameList, parseArgDefStringList),
       Nil,
       List((parseArgTheory,R),(parseArgUsages,O),(parseArgDefinitionName,O)),
-      DFRecursiveConstant
+      new DFRecursiveConstantC(js)
     )
   }
 

@@ -150,6 +150,10 @@ class IMPSImporter extends Importer
           sys.exit
         }
       }
+      if (tState.verbosity > 0)
+      {
+        println("Done! Succesfully parsed " + e.length.toString + " def-forms!")
+      }
       parsed_t = parsed_t ::: List((e,FileURI(file)))
     }
 

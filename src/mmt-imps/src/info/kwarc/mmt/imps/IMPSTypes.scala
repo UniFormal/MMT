@@ -3,11 +3,17 @@ package info.kwarc.mmt.imps
 /* IMPORTS */
 
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
-import info.kwarc.mmt.api.utils.{JSONObject, URI}
+import info.kwarc.mmt.api.utils.{JSONObject, JSONString, URI}
+import info.kwarc.mmt.imps.FrmFnd.{handpick, removeWhitespace}
 import info.kwarc.mmt.imps.ParseMethod.ParseMethod
 import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.OperationType.OperationType
 import info.kwarc.mmt.imps.Usage.Usage
+import info.kwarc.mmt.imps.impsMathParser.{SortParser, SymbolicExpressionParser}
+import info.kwarc.mmt.imps.ParserWithSourcePosition._
+
+import scala.util.parsing.combinator.{PackratParsers, RegexParsers}
+
 
 //-----------
 
@@ -601,7 +607,7 @@ trait DefForm
   }
 }
 
-abstract class Comp[T <: DefForm] {
+abstract class Comp[T <: DefForm](js : List[JSONObject] = Nil) {
   def build[T <: DefForm](args : List[Any]) : T
 }
 
@@ -938,7 +944,7 @@ case class ArgTarget(var thy : Name, var src : SourceInfo, var cmt : CommentInfo
   override def toString: String = "(target " + thy.toString + ")"
 }
 
-case class ArgAssumptions(defs : List[DefString], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+case class ArgAssumptions(defs : List[DefString], frms : List[IMPSMathExp], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString: String = "(assumptions " + defs.mkString(" ") + ")"
 }
 
@@ -1215,10 +1221,15 @@ case class DFAtomicSort(name : Name, dfs : DefString, frm : IMPSMathExp, sort : 
                         thy : ArgTheory, usgs : Option[ArgUsages], wtn : Option[ArgWitness],
                         var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
-object DFAtomicSort extends Comp[DFAtomicSort] {
+class DFAtomicSortC(js : List[JSONObject]) extends Comp[DFAtomicSort] {
   override def build[T <: DefForm](args : List[Any]) : T = args match {
     case (n : Name) :: (d : DefString) :: (t : Option[ArgTheory]) :: (u : Option[ArgUsages]) ::
-      (w : Option[ArgWitness]) :: Nil => DFAtomicSort(n,d,???,???,t.get,u,w,None,None).asInstanceOf[T]
+      (w : Option[ArgWitness]) :: Nil =>
+
+      val frm : IMPSMathExp = FrmFnd.findFormula(t.get.thy.s,d,"defsorts","",Some(n.s),js)
+      val srt : IMPSSort    = FrmFnd.findSort(t.get.thy.s,d,"defsorts",Some(n.s),js)
+
+      DFAtomicSort(n,d,frm,srt,t.get,u,w,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -1227,10 +1238,15 @@ case class DFConstant(name : Name, dfs : DefString, frm : IMPSMathExp, sort : IM
                       srt : Option[ArgSort], usgs : Option[ArgUsages],
                       var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
-object DFConstant extends Comp[DFConstant] {
+class DFConstantC(js : List[JSONObject]) extends Comp[DFConstant] {
   override def build[T <: DefForm](args : List[Any]) : T = args match {
-    case (n : Name) :: (d : DefString) :: (t : Option[ArgTheory]) :: (s : Option[ArgSort]) ::
-      (u : Option[ArgUsages]) :: Nil => DFConstant(n,d,???,???,t.get,s,u,None,None).asInstanceOf[T]
+    case (n : Name) :: (d : DefString) :: (thy : Option[ArgTheory]) :: (s : Option[ArgSort]) ::
+      (u : Option[ArgUsages]) :: Nil =>
+
+      val frm = FrmFnd.findFormula(thy.get.thy.s,d,"defconsts","",Some(n.s),js)
+      val srt = FrmFnd.findSort(thy.get.thy.s,d,"defconsts",Some(n.s),js)
+
+      DFConstant(n,d,frm,srt,thy.get,s,u,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
@@ -1457,18 +1473,19 @@ case class DFTheorem(n : Name, defn : ODefString, frm : Option[IMPSMathExp], mod
                      mac : Option[ArgMacete], ht : Option[ArgHomeTheory], prf : Option[ArgProof],
                      var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
-object DFTheorem extends Comp[DFTheorem] {
-
-  var js : List[JSONObject] = Nil
-
+class DFTheoremC(js : List[JSONObject]) extends Comp[DFTheorem] {
   override def build[T <: DefForm](args : List[Any]) : T = args match {
     case (n : Name) :: (df  : ODefString)        :: (modr : Option[ModReverse])  :: (modl : Option[ModLemma])
                     :: (thy : Option[ArgTheory]) :: (us : Option[ArgUsages])     :: (tr : Option[ArgTranslation])
                     :: (mac : Option[ArgMacete]) :: (ht : Option[ArgHomeTheory]) :: (prf : Option[ArgProof]) :: Nil
     => { // Construct full theorem!
 
-      println("Don't forget to put formula parsing back in")
-      DFTheorem(n,df,None,modr,modl,thy.get,us,tr,mac,ht,prf,None,None).asInstanceOf[T]
+      val id : DefString = df.o match {
+        case Left(defstring) => defstring
+        case Right(name)     => ???
+      }
+      val formula : IMPSMathExp = FrmFnd.findFormula(thy.get.thy.s,id,"theorems","axioms",Some(n.s),js)
+      DFTheorem(n,df,Some(formula),modr,modl,thy.get,us,tr,mac,ht,prf,None,None).asInstanceOf[T]
     }
     case _ => ??!(args)
   }
@@ -1478,15 +1495,22 @@ case class DFTheory(name : Name, lang : Option[ArgLanguage], comp : Option[ArgCo
                     axioms : Option[ArgAxioms], dstnct : Option[ArgDistinctConstants],
                     var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
-object DFTheory extends Comp[DFTheory] {
-
-  var js : List[JSONObject] = Nil
+class DFTheoryC(js : List[JSONObject]) extends Comp[DFTheory] {
 
   override def build[T <: DefForm](args : List[Any]) : T = args match {
     case (n : Name) :: (lang : Option[ArgLanguage]) :: (comp : Option[ArgComponentTheories])
                     :: (axs : Option[ArgAxioms]) :: (dscs : Option[ArgDistinctConstants]) :: Nil => {
-      println("Don't forget to put formula parsing back in")
-      DFTheory(n,lang,comp,axs,dscs,None,None).asInstanceOf[T]
+
+      var nuaxs : Option[ArgAxioms] = if (axs.isDefined) {
+        var nu : List[AxiomSpec] = Nil
+        for (ax <- axs.get.cps) {
+          val found = FrmFnd.findAxiom(n.s, ax, js)
+          nu = nu ::: List(AxiomSpec(ax.name,ax.defstr,Some(found),ax.usgs,ax.src,ax.cmt))
+        }
+        Some(ArgAxioms(nu,axs.get.src,axs.get.cmt))
+      } else { None }
+
+      DFTheory(n,lang,comp,nuaxs,dscs,None,None).asInstanceOf[T]
     }
     case _ => ??!(args)
   }
@@ -1508,33 +1532,101 @@ case class DFTranslation(n : Name, f : Option[ModForce], fu : Option[ModForceUnd
                          tic : Option[ArgTheoryInterpretationCheck], var src : SourceInfo, var cmt : CommentInfo)
   extends DefForm
 
-object DFTranslation extends Comp[DFTranslation] {
-
-  var js : List[JSONObject] = Nil
+class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
 
   override def build[T <: DefForm](args : List[Any]) : T = args match {
     case (n : Name) :: (f : Option[ModForce]) :: (fu : Option[ModForceUnderQuickLoad]) :: (de : Option[ModDontEnrich])
                     :: (sour : Option[ArgSource]) :: (tar : Option[ArgTarget]) :: (asms : Option[ArgAssumptions])
                     :: (fxd : Option[ArgFixedTheories]) :: (sps : Option[ArgSortPairs]) :: (cps : Option[ArgConstPairs])
                     :: (ct : Option[ArgCoreTranslation]) :: (tic : Option[ArgTheoryInterpretationCheck]) :: Nil => {
-      println("Don't forget to put formula parsing back in")
-      DFTranslation(n, f, fu, de, sour.get, tar.get, asms, fxd, sps, cps, ct, tic, None, None).asInstanceOf[T]
+
+      var formulas : List[IMPSMathExp] = Nil
+
+      if (asms.isDefined) {
+        for (as <- asms.get.defs) {
+          formulas = formulas ::: List(FrmFnd.findFormula(sour.get.thy.s,as,"translations","",None,js))
+        }
+      }
+
+      val nuAsms : Option[ArgAssumptions] = if (asms.isDefined) { Some(asms.get.copy(frms = formulas)) } else { None }
+
+      DFTranslation(n, f, fu, de, sour.get, tar.get, nuAsms, fxd, sps, cps, ct, tic, None, None).asInstanceOf[T]
     }
     case _ => ??!(args)
   }
 }
 
-case class DFRecursiveConstant(ns : ArgNameList, defs : ArgDefStringList, thy : ArgTheory, usgs : Option[ArgUsages],
-                               defname : Option[ArgDefinitionName], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+case class DFRecursiveConstant(ns : ArgNameList, defs : ArgDefStringList, frms : List[IMPSMathExp], srts : List[IMPSSort],
+                               thy : ArgTheory, usgs : Option[ArgUsages], defname : Option[ArgDefinitionName],
+                               var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
-object DFRecursiveConstant extends Comp[DFRecursiveConstant] {
-
-  var js : List[JSONObject] = Nil
-
+class DFRecursiveConstantC(js : List[JSONObject]) extends Comp[DFRecursiveConstant] {
   override def build[T <: DefForm](args : List[Any]) : T = args match {
     case (ns : ArgNameList) :: (defs : ArgDefStringList) :: (thy : Option[ArgTheory]) :: (usgs : Option[ArgUsages])
-                            :: (defname : Option[ArgDefinitionName]) :: Nil =>
-      DFRecursiveConstant(ns,defs,thy.get,usgs,defname,None,None).asInstanceOf[T]
+                            :: (defname : Option[ArgDefinitionName]) :: Nil => {
+
+      var frms : List[IMPSMathExp] = Nil
+      var srts : List[IMPSSort] = Nil
+
+      val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thy.get.thy.s)
+      assert(json_theory.isDefined)
+      assert(json_theory.get.getAsString("type") == "imps-theory")
+
+      val recconsts : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"def-recursive-consts")
+      assert(recconsts.nonEmpty)
+
+      val theconst : Option[JSONObject] = recconsts.find(j => j.getAsList(classOf[JSONString], "names").map(_.value.toLowerCase).contains(ns.nms.map(_.s).head.toLowerCase))
+      assert(theconst.isDefined)
+      assert(theconst.get.getAsString("type") == "imps-theory-recursive-constant")
+
+      val thesexps = theconst.get.getAsList(classOf[JSONString],"defining-sexps")
+      assert(thesexps.nonEmpty)
+      var realsexps : List[String] = thesexps.map(_.value)
+      if (thesexps.lengthCompare(ns.nms.length) != 0)
+      {
+        val nusexps = thesexps.head.value.split(", ")
+        assert(nusexps.lengthCompare(ns.nms.length) == 0)
+        realsexps = nusexps.toList
+      }
+
+      val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+
+      for (k <- ns.nms.indices)
+      {
+        //println(" > Working on recursive constant " + names(k))
+
+        val thesexp = realsexps(k)
+        val lsp = sp.parseAll(sp.parseSEXP,thesexp)
+        assert(lsp.successful)
+
+        val defexp = impsMathParser.makeSEXPFormula(lsp.get)
+        frms = frms ::: List(defexp)
+        //println("     > Formula generation successful: " + defexp.toString)
+
+        var thesorts  : List[String]     = theconst.get.getAsList(classOf[JSONString],"sortings").map(g => g.value)
+
+        if (thesorts.length < ns.nms.length)
+        {
+          assert(thesorts.length == 1)
+          thesorts = thesorts.head.split(", ").toList
+        }
+
+        assert(thesorts.nonEmpty)
+        assert(thesorts.lengthCompare(ns.nms.length) == 0)
+
+        val sop = new SortParser()
+        val losp = sop.parseAll(sop.parseSort,thesorts(k))
+        assert(losp.successful)
+
+        srts = srts ::: List(losp.get)
+      }
+
+      assert(frms.nonEmpty)
+      assert(srts.nonEmpty)
+      assert(ns.nms.length == frms.length)
+
+      DFRecursiveConstant(ns,defs,frms,srts,thy.get,usgs,defname,None,None).asInstanceOf[T]
+      }
     case _ => ??!(args)
   }
 }
@@ -1714,14 +1806,12 @@ object DFComment extends Comp[DFComment] {
 
 object FrmFnd
 {
-  def removeWhitespace(str : String) : String = {
-    return str.replaceAll(" ", "").replaceAll("\t","").replaceAll("\n","").toLowerCase
-  }
+  def removeWhitespace(str : String) : String = str.replaceAll(" ", "").replaceAll("\t","").replaceAll("\n","").toLowerCase
 
   def findAxiom(thyname : String, spec : AxiomSpec, js : List[JSONObject]) : IMPSMathExp =
     findFormula(thyname, spec.defstr, "theorems", "axioms", spec.name, js)
 
-  def findFormula(thyname : String, dfstr : DefString, g1 : String, g2 : String, n : Option[String], js : List[JSONObject]) : IMPSMathExp =
+  def findFormula(thyname : String, dfstr : DefString, g1 : String, g2 : String = "", n : Option[String], js : List[JSONObject]) : IMPSMathExp =
   {
     val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thyname.toLowerCase)
     assert(json_theory.isDefined)
@@ -1729,15 +1819,84 @@ object FrmFnd
 
     val group1 : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],g1)
     assert(group1.nonEmpty)
-    val group2 : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],g2)
+    val group2 : List[JSONObject] = if (g2 == "") { Nil } else { json_theory.get.getAsList(classOf[JSONObject],g2) }
+
+    val haystack : List[JSONObject] = (group1 ::: group2).distinct
+
+    var needle : String = ""
+    var theThing : Option[JSONObject] = None
+
+    // Search by name
+    if (n.isDefined)
+    {
+      assert(n.get != "")
+      val temps = haystack.find(j => j.getAsString("name") == n.get.toLowerCase)
+      theThing = temps
+    }
+
+    // Search by string
+    if (theThing.isEmpty)
+    {
+      // unmodified string
+      needle = removeWhitespace(dfstr.s.tail.init)
+      var tempt = haystack.find(j => removeWhitespace(j.getAsString("formula-string")) == needle)
+
+      // if that didn't work, handpicked string
+      if (tempt.isEmpty) {
+        val handpicked = handpick(removeWhitespace(dfstr.s.tail.init))
+        tempt = haystack.find(j => removeWhitespace(j.getAsString("formula-string")) == handpicked)
+      }
+      theThing = tempt
+    }
+
+    if (theThing.isEmpty)
+    {
+      if (n.isDefined) { println("looking for " + n.get.toLowerCase) } else { println("looking for nameless formula") }
+      assert(needle != "")
+      val bar = removeWhitespace(needle)
+      println(" > s = " + needle)
+
+      for (t <- haystack)
+      {
+        val foo = removeWhitespace(t.getAsString("formula-string"))
+        val numb = math.min(foo.length,9)
+        if (foo.take(numb) == bar.take(numb)) {
+          println("     > /f/ json theorem: " + (if (!(t.getAsString("name") == "")) { t.getAsString("name") + ": " } else {""}) + foo)
+        }
+      }
+    }
+
+    if (theThing.isEmpty) {
+      println("ERROR: Didn't find thing for " + g1 + " or " + g2 + " / " + dfstr)
+    }
+
+    assert(theThing.isDefined)
+    val thesexp : String = theThing.get.getAsString("formula-sexp")
+    assert(thesexp.nonEmpty)
+
+    val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+    val lsp = sp.parseAll(sp.parseSEXP,thesexp)
+    assert(lsp.successful)
+
+    impsMathParser.makeSEXPFormula(lsp.get)
+  }
+
+  def findSort(thyname : String, dfstr : DefString, g1 : String, n : Option[String], js : List[JSONObject]) : IMPSSort =
+  {
+    val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thyname.toLowerCase)
+    assert(json_theory.isDefined)
+    assert(json_theory.get.getAsString("type") == "imps-theory")
+
+    val group1 : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],g1)
+    assert(group1.nonEmpty)
 
     var s : String = ""
     val theThing : Option[JSONObject] = if (n.isDefined)
     {
-      (group2 ::: group1).find(j => j.getAsString("name") == n.get.toLowerCase)
+      group1.find(j => j.getAsString("name") == n.get.toLowerCase)
     } else {
       s = dfstr.s.tail.init
-      //println("     > scala theorem: " + removeWhitespace(x.tail.init))
+      //println("     > scala theorem: " + removeWhitespace(dfstr.s.tail.init))
       var tempt = group1.find(j => removeWhitespace(j.getAsString("formula-string")) == removeWhitespace(dfstr.s.tail.init))
 
       if (tempt.isEmpty) {
@@ -1752,27 +1911,30 @@ object FrmFnd
     {
       assert(s != "")
       val bar = removeWhitespace(s)
-      //println(" > s = " + s)
+      println(" > s = " + s)
 
       for (t <- group1)
       {
         val foo = removeWhitespace(t.getAsString("formula-string"))
         val n = 5
         if (foo.take(n) == bar.take(n)) {
-          //println("     > json theorem: " + foo)
+          println("     > json theorem: " + foo)
         }
       }
     }
 
+    if (theThing.isEmpty) {
+      println("ERROR: Didn't find thing for " + g1 + " or " + " / " + dfstr)
+    }
+
     assert(theThing.isDefined)
-    val thesexp : String = theThing.get.getAsString("formula-sexp")
-    assert(thesexp.nonEmpty)
+    val thesort : String = theThing.get.getAsString("sort")
+    assert(thesort.nonEmpty)
 
-    val sp : SymbolicExpressionParser = new SymbolicExpressionParser
-    val lsp = sp.parseAll(sp.parseSEXP,thesexp)
+    val sp = new SortParser()
+    val lsp = sp.parseAll(sp.parseSort,thesort)
     assert(lsp.successful)
-
-    impsMathParser.makeSEXPFormula(lsp.get)
+    lsp.get
   }
 
   /* Welcome to the most shameful part of the codebase...

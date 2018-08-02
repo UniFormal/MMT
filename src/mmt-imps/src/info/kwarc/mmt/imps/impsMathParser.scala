@@ -874,6 +874,27 @@ package object impsMathParser
     { IMPSVar(valid.head) }
   }
 
+  class SortParser extends RegexParsers with PackratParsers
+  {
+    lazy val parseAtomicSort : PackratParser[IMPSAtomSort] = {
+      ("[^,\\]):\\s]+".r) ^^ {case sort => IMPSAtomSort(sort)}
+    }
+
+    lazy val parseSort : PackratParser[IMPSSort] = { parseSets | parseFunSort | parseFunSort2 | parseAtomicSort }
+
+    lazy val parseSets : PackratParser[IMPSSetSort] = {
+      ("sets[" ~> parseSort <~ "]") ^^ { case setsort => IMPSSetSort(setsort)}
+    }
+
+    lazy val parseFunSort : PackratParser[IMPSNaryFunSort] = {
+      "[" ~> rep1sep(parseSort,",") <~ "]" ^^ {case (sorts) => IMPSNaryFunSort(sorts)}
+    }
+
+    lazy val parseFunSort2 : PackratParser[IMPSNaryFunSort] = {
+      "(" ~> rep1(parseSort) <~ ")" ^^ {case (sorts) => IMPSNaryFunSort(sorts)}
+    }
+  }
+
   class SymbolicExpressionParser extends RegexParsers with PackratParsers
   {
     lazy val parseSEXP : PackratParser[SEXP] = { parseNestedSEXP | parseAtom }
