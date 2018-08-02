@@ -57,6 +57,10 @@ class Importer extends archives.Importer
 
     isabelle.Isabelle_System.init()
 
+    val build_results =
+      isabelle.Build.build(options, progress = progress, sessions = List(Isabelle.Pure))
+    if (!build_results.ok) isabelle.error("Failed to build Isabelle/Pure")
+
     val include_sessions = session_deps.sessions_structure.imports_topological_order
 
     _session =
