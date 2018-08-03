@@ -12,8 +12,6 @@ import parser._
 
 import info.kwarc.mmt.lf
 
-import Isabelle._
-
 class Importer extends archives.Importer {
   val key = "isabelle-omdoc"
 
@@ -104,7 +102,6 @@ class Importer extends archives.Importer {
       val store = isabelle.Sessions.store(options)
       val cache = isabelle.Term.make_cache()
 
-      val pure_name = isabelle.Document.Node.Name.loaded_theory(isabelle.Thy_Header.PURE)
       val pure_theory = isabelle.Export_Theory.read_pure_theory(store, cache = Some(cache))
 
       val node_theories =
@@ -173,6 +170,8 @@ class Importer extends archives.Importer {
 
   def importDocumentExample(bt: BuildTask, index: Document => Unit) =
   {
+    import Isabelle._
+
     isabelle.Isabelle_System.init()
 
     val inText = File.read(bt.inFile)
@@ -227,7 +226,8 @@ class Importer extends archives.Importer {
 
 
 /** convenience functions for building Isabelle objects */
-object Isabelle {
+object Isabelle
+{
   val Pure = "Pure"
 
   /** common namespace for all theories in all sessions in all Isabelle archives */
