@@ -131,7 +131,62 @@ class Importer extends archives.Importer {
   // FIXME demo
   def importDocumentExample(bt: BuildTask, index: Document => Unit) =
   {
-    import Isabelle0._
+    val Pure = "Pure"
+
+    /** common namespace for all theories in all sessions in all Isabelle archives */
+    val isaLibraryBase = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
+
+    /** namespace for MMT definitions of Isabelle built-in features (i.e., things not in the Isabelle library) */
+    val logicBase = lf.LF._base
+    val pure = logicBase ? Pure
+
+    object Type {
+      def apply() = OMS(lf.Typed.ktype)
+    }
+
+    object Fun {
+      def apply(from: Term, to: Term) = lf.Arrow(from, to)
+    }
+
+    object Lambda {
+      def apply(name: String, tp: Term, body: Term) = lf.Lambda(LocalName(name), tp, body)
+    }
+
+    object Apply {
+      def apply(fun: Term, arg: Term) = lf.ApplySpine(fun, arg)
+    }
+
+    object Typargs {
+      def apply(names: List[String], t: Term) = {
+        val con = names map {n => OMV(n) % Type()}
+        lf.Pi(con, t)
+      }
+    }
+
+    object Prop {
+      val path = pure ? isabelle.Pure_Thy.PROP
+      def apply() = OMS(path)
+    }
+
+    object All {
+      val path = pure ? isabelle.Pure_Thy.ALL
+      def apply(name: String, tp: Term, body: Term) =
+        lf.Apply(OMS(path), lf.Lambda(LocalName(name), tp, body))
+    }
+
+    object Imp {
+      val path = pure ? isabelle.Pure_Thy.IMP
+      def apply(left: Term, right: Term) = lf.ApplySpine(OMS(path), left, right)
+    }
+
+    object Eq {
+      val path = pure ? isabelle.Pure_Thy.EQ
+      def apply(tp: Term, left: Term, right: Term) = lf.ApplySpine(OMS(path), tp, left, right)
+    }
+
+    object Kind {
+      val const = "const"
+    }
 
     isabelle.Isabelle_System.init()
 
@@ -263,67 +318,4 @@ class Isabelle(val progress: isabelle.Progress, val log: isabelle.Logger)
 
   def use_theories(theories: List[String]): isabelle.Thy_Resources.Theories_Result =
     session.use_theories(theories, progress = progress)
-}
-
-
-// FIXME demo
-/** convenience functions for building Isabelle objects */
-object Isabelle0
-{
-  val Pure = "Pure"
-
-  /** common namespace for all theories in all sessions in all Isabelle archives */
-  val isaLibraryBase = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
-   
-  /** namespace for MMT definitions of Isabelle built-in features (i.e., things not in the Isabelle library) */
-  val logicBase = lf.LF._base
-  val pure = logicBase ? Pure
-
-  object Type {
-    def apply() = OMS(lf.Typed.ktype)
-  }
-  
-  object Fun {
-    def apply(from: Term, to: Term) = lf.Arrow(from, to)
-  }
-  
-  object Lambda {
-    def apply(name: String, tp: Term, body: Term) = lf.Lambda(LocalName(name), tp, body)
-  }
-
-  object Apply {
-    def apply(fun: Term, arg: Term) = lf.ApplySpine(fun, arg)
-  }
-  
-  object Typargs {
-    def apply(names: List[String], t: Term) = {
-      val con = names map {n => OMV(n) % Type()}
-      lf.Pi(con, t)
-    }
-  }
-
-  object Prop {
-    val path = pure ? "prop"
-    def apply() = OMS(path)
-  }
-  
-  object All {
-    val path = pure ? "Pure.all"
-    def apply(name: String, tp: Term, body: Term) =
-      lf.Apply(OMS(path), lf.Lambda(LocalName(name), tp, body))
-  }
-  
-  object Imp {
-    val path = pure ? "Pure.imp"
-    def apply(left: Term, right: Term) = lf.ApplySpine(OMS(path), left, right)
-  }
-  
-  object Eq {
-    val path = pure ? "Pure.eq"
-    def apply(tp: Term, left: Term, right: Term) = lf.ApplySpine(OMS(path), tp, left, right)
-  }
-
-  object Kind {
-    val const = "const"
-  }
 }
