@@ -12,34 +12,18 @@ import parser._
 
 import info.kwarc.mmt.lf
 
-class Importer extends archives.Importer {
+class Importer extends archives.Importer
+{
+  importer =>
+
   val key = "isabelle-omdoc"
 
   def inExts = List("thy")
 
 
-  /* logging */
-
-  val logger = new isabelle.Logger {
-    def apply(msg: => String) {
-      log(msg)
-    }
-  }
-
-  val progress = new isabelle.Progress {
-    override def echo(msg: String) {
-      log(msg)
-    }
-
-    override def theory(session: String, theory: String) {
-      log(isabelle.Progress.theory_message(session, theory))
-    }
-  }
-
-
   /* Isabelle environment and session */
 
-  object Isabelle extends Isabelle(progress, logger)
+  object Isabelle extends Isabelle(importer.log(_))
 
   override def start(args: List[String])
   {
@@ -240,11 +224,27 @@ class Importer extends archives.Importer {
   }
 }
 
-class Isabelle(val progress: isabelle.Progress, val log: isabelle.Logger)
+class Isabelle(log: String => Unit)
 {
+  /* logging */
+
+  val logger: isabelle.Logger =
+    new isabelle.Logger { def apply(msg: => String): Unit = log(msg) }
+
+  val progress =
+    new isabelle.Progress {
+      override def echo(msg: String): Unit = log(msg)
+      override def theory(session: String, theory: String): Unit =
+        log(isabelle.Progress.theory_message(session, theory))
+    }
+
+
+  /* options */
+
   lazy val options: isabelle.Options = isabelle.Options.init()
+
   lazy val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
-  lazy val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
+  val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
 
 
   /* names */
@@ -292,7 +292,7 @@ class Isabelle(val progress: isabelle.Progress, val log: isabelle.Logger)
 
     _session =
       Some(isabelle.Thy_Resources.start_session(session_options, PURE,
-        include_sessions = include_sessions, progress = progress, log = log))
+        include_sessions = include_sessions, progress = progress, log = logger))
   }
 
   def exit()
