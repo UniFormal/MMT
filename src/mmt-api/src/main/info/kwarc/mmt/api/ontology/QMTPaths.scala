@@ -100,6 +100,7 @@ object QMTUnaries {
   val IsView: GlobalName = QMTPaths.QMTUnaries ? "IsView"
   val IsStructure: GlobalName = QMTPaths.QMTUnaries ? "IsStructure"
   val IsConstant: GlobalName = QMTPaths.QMTUnaries ? "IsConstant"
+  val IsUntypedConstant: GlobalName = QMTPaths.QMTUnaries ? "IsUntypedConstant"
   val IsDatatypeConstructor: GlobalName = QMTPaths.QMTUnaries ? "IsDatatypeConstructor"
   val IsDataConstructor: GlobalName = QMTPaths.QMTUnaries ? "IsDataConstructor"
   val IsJudgementConstructor: GlobalName = QMTPaths.QMTUnaries ? "IsJudgementConstructor"

@@ -58,6 +58,13 @@ trait CheckingCallback {
 
    /** lookup */
    def lookup: Lookup
+
+  def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = simple(tm) match {
+    case Some(a) => (tm,Some(a))
+    case _ =>
+      val s = simplify(tm)
+      (s,simple(s))
+  }
 }
 
 /**
@@ -244,6 +251,7 @@ object Simplifiability {
  *  @param head the head of the term this rule can simplify
  */
 abstract class ComputationRule(val head: GlobalName) extends CheckingRule {
+  def applicable(gn : ContentPath) : Boolean = (head :: alternativeHeads) contains gn
    /**
     *  @param check provides callbacks to the currently solved system of judgments
     *  @param tm the term to simplify

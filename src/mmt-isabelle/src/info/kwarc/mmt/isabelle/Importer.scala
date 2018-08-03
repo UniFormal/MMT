@@ -14,21 +14,28 @@ import info.kwarc.mmt.lf
 
 import Isabelle._
 
-class Importer extends archives.Importer
-{
+class Importer extends archives.Importer {
   val key = "isabelle-omdoc"
+
   def inExts = List("thy")
 
 
   /* logging */
 
-  val logger = new isabelle.Logger { def apply(msg: => String) { log(msg) } }
+  val logger = new isabelle.Logger {
+    def apply(msg: => String) {
+      log(msg)
+    }
+  }
 
-  val progress = new isabelle.Progress
-  {
-    override def echo(msg: String) { log(msg) }
-    override def theory(session: String, theory: String)
-    { log(isabelle.Progress.theory_message(session, theory)) }
+  val progress = new isabelle.Progress {
+    override def echo(msg: String) {
+      log(msg)
+    }
+
+    override def theory(session: String, theory: String) {
+      log(isabelle.Progress.theory_message(session, theory))
+    }
   }
 
 
@@ -51,22 +58,23 @@ class Importer extends archives.Importer
   def session: isabelle.Thy_Resources.Session =
     _session.getOrElse(isabelle.error("No Isabelle/PIDE session"))
 
-  override def start(args: List[String]): Unit =
-  {
+  override def start(args: List[String]): Unit = {
     super.start(args)
 
     isabelle.Isabelle_System.init()
 
+    val build_results =
+      isabelle.Build.build(options, progress = progress, sessions = List(Isabelle.Pure))
+    if (!build_results.ok) isabelle.error("Failed to build Isabelle/Pure")
+
     val include_sessions = session_deps.sessions_structure.imports_topological_order
 
     _session =
-      Some(isabelle.Thy_Resources.start_session(session_options,
-        isabelle.Isabelle_System.getenv("ISABELLE_LOGIC"),
+      Some(isabelle.Thy_Resources.start_session(session_options, Isabelle.Pure,
         include_sessions = include_sessions, progress = progress, log = logger))
   }
 
-  override def destroy
-  {
+  override def destroy {
     session.stop()
     _session = None
     super.destroy
@@ -77,56 +85,90 @@ class Importer extends archives.Importer
 
   def importDocument(bt: BuildTask, index: Document => Unit): BuildResult =
   {
-    /* document */
+    /* use theories */
 
-    val doc = new Document(bt.narrationDPath, root = true)
-    controller add doc
+    val pure_node = session.resources.import_name("", "", isabelle.Thy_Header.PURE)
 
-    val thy_node =
+    val root_node =
       session.resources.import_name(isabelle.Sessions.DRAFT, "",
         bt.inFile.canonical.stripExtension.getPath)
 
-    val thy = Isabelle.make_theory(thy_node)
-    controller add thy
-    controller add MRef(doc.path, thy.path)
-
-    val thy_text = isabelle.File.read(bt.inFile)
-    val thy_text_output = isabelle.Symbol.decode(thy_text.replace(' ', '\u00a0'))
-    controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(thy_text_output)))
-
-
-    /* theory status */
-
-    val theories = List(thy_node.path.split_ext._1.implode)
-    val theories_result = session.use_theories(theories, progress = progress)
-
-    val thy_status = theories_result.nodes.collectFirst({ case (name, status) if name == thy_node => status })
+    val use_theories_result =
+      session.use_theories(List(root_node.path.split_ext._1.implode), progress = progress)
 
 
     /* theory exports */
 
-    if (thy_status.isDefined && thy_status.get.ok) {
-      val snapshot = theories_result.snapshot(thy_node)
-      val provider = isabelle.Export.Provider.snapshot(snapshot)
+    val thy_exports: List[(isabelle.Document.Node.Name, isabelle.Export_Theory.Theory)] =
+    {
+      val store = isabelle.Sessions.store(options)
+      val cache = isabelle.Term.make_cache()
 
-      for (c <- isabelle.Export_Theory.read_types(provider)) {
-        controller add Constant(thy.toTerm, LocalName("type." + c.entity.name), Nil, None, None, None)
-      }
+      val pure_name = isabelle.Document.Node.Name.loaded_theory(isabelle.Thy_Header.PURE)
+      val pure_theory = isabelle.Export_Theory.read_pure_theory(store, cache = Some(cache))
 
-      for (c <- isabelle.Export_Theory.read_consts(provider)) {
-        controller add Constant(thy.toTerm, LocalName("const." + c.entity.name), Nil, None, None, None)
-      }
+      val node_theories =
+        for {(name, status) <- use_theories_result.nodes if status.ok}
+          yield {
+            val snapshot = use_theories_result.snapshot(name)
+            val provider = isabelle.Export.Provider.snapshot(snapshot)
+            val theory =
+              isabelle.Export_Theory.read_theory(
+                provider, isabelle.Sessions.DRAFT, name.theory, cache = Some(cache))
+            (name, theory)
+          }
 
-      for (c <- isabelle.Export_Theory.read_facts(provider)) {
-        controller add Constant(thy.toTerm, LocalName("fact." + c.entity.name), Nil, None, None, None)
-      }
+      (pure_node, pure_theory) :: node_theories
+    }
+
+    def entity_name(kind: String, entity: isabelle.Export_Theory.Entity): LocalName =
+    {
+      val node_name =
+        thy_exports.collectFirst({ case (name, theory) if theory.entities.contains(entity.serial) => name }).
+          getOrElse(isabelle.error("Unknown theory for entity " + isabelle.quote(entity.name)))
+
+      LocalName(node_name.theory, kind, entity.name)
     }
 
 
-    /* result */
+    /* documents */
 
-    index(doc)
-    BuildResult.fromImportedDocument(doc)
+    for ((thy_name, theory) <- thy_exports) {
+      val doc = new Document(DPath(bt.base / theory.name), root = true)
+      controller.add(doc)
+
+      val mod = Isabelle.isaLibraryBase ? theory.name
+      val thy = Theory.empty(mod.doc, mod.name, Some(mod))
+
+      controller.add(thy)
+      controller.add(MRef(doc.path, thy.path))
+
+      // theory source
+      if (thy_name != pure_node) {
+        val thy_text = isabelle.File.read(thy_name.path)
+        val thy_text_output = isabelle.Symbol.decode(thy_text.replace(' ', '\u00a0'))
+        controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(thy_text_output)))
+      }
+
+      // types
+      for (c <- theory.types) {
+        controller.add(Constant(thy.toTerm, entity_name(c.kind, c.entity), Nil, None, None, None))
+      }
+
+      // consts
+      for (c <- theory.consts) {
+        controller.add(Constant(thy.toTerm, entity_name(c.kind, c.entity), Nil, None, None, None))
+      }
+
+      // facts
+      for (c <- theory.facts) {
+        controller.add(Constant(thy.toTerm, entity_name(c.kind, c.entity), Nil, None, None, None))
+      }
+
+      index(doc)
+    }
+
+    BuildResult.empty
   }
 
   def importDocumentExample(bt: BuildTask, index: Document => Unit) =
@@ -183,22 +225,17 @@ class Importer extends archives.Importer
   }
 }
 
+
 /** convenience functions for building Isabelle objects */
 object Isabelle {
- 
+  val Pure = "Pure"
+
   /** common namespace for all theories in all sessions in all Isabelle archives */
   val isaLibraryBase = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
    
   /** namespace for MMT definitions of Isabelle built-in features (i.e., things not in the Isabelle library) */
   val logicBase = lf.LF._base
-  val pure = logicBase ? "Pure"
-
-  def make_theory(name: isabelle.Document.Node.Name): DeclaredTheory =
-  {
-    val logic_base = DPath(URI("https", "isabelle.in.tum.de") / "logic")
-    val mod = logic_base ? name.theory
-    Theory.empty(mod.doc, mod.name, Some(mod))
-  }
+  val pure = logicBase ? Pure
 
   object Type {
     def apply() = OMS(lf.Typed.ktype)
@@ -243,7 +280,7 @@ object Isabelle {
     val path = pure ? "Pure.eq"
     def apply(tp: Term, left: Term, right: Term) = lf.ApplySpine(OMS(path), tp, left, right)
   }
-  
+
   object Kind {
     val const = "const"
   }

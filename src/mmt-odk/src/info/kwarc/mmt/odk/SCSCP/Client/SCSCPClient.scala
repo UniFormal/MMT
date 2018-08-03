@@ -5,7 +5,7 @@ import java.net.Socket
 import info.kwarc.mmt.odk.OpenMath.{OMApplication, OMExpression, OMObject, OMSymbol}
 import info.kwarc.mmt.odk.SCSCP.CD.{SymbolSet, scscp2}
 import info.kwarc.mmt.odk.SCSCP.Lowlevel.Readers.SCSCPReader
-import info.kwarc.mmt.odk.SCSCP.Lowlevel.SCSCPPi
+import info.kwarc.mmt.odk.SCSCP.Lowlevel.{AutoState, OMCodingState, SCSCPPi}
 import info.kwarc.mmt.odk.SCSCP.Lowlevel.Writers.SCSCPWriter
 import info.kwarc.mmt.odk.SCSCP.Protocol._
 
@@ -17,11 +17,11 @@ import scala.collection.mutable
   * @param socket
   * @param encoding
   */
-class SCSCPClient(socket: Socket, encoding: String = "UTF-8") {
+class SCSCPClient(socket: Socket, encoding: String = "UTF-8", codingState: OMCodingState = AutoState) {
 
   // create reader and writer instances
   val reader: SCSCPReader = new SCSCPReader(socket.getInputStream, encoding)
-  val writer: SCSCPWriter = new SCSCPWriter(socket.getOutputStream, encoding)
+  val writer: SCSCPWriter = new SCSCPWriter(socket.getOutputStream, encoding, codingState = codingState)
 
   /**
     * Connection code

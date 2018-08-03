@@ -23,10 +23,10 @@ abstract class QueryExtension(val name: String) extends Extension {
     *
     * @param q           Query to evaluate
     * @param e           A QueryEvaluator to use for recursive queries
-    * @param substiution Substiution (Context) to apply QueryEvaluation in
+    * @param substitution Substiution (Context) to apply QueryEvaluation in
     * @return
     */
-  def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]]
+  def evaluate(q: Query, e: QueryEvaluator)(implicit substitution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]]
 }
 
 

@@ -179,6 +179,7 @@ abstract class Lookup {self =>
     * A Traverser that recursively eliminates all explicit morphism applications.
     * apply(t,m) can be used to apply a morphism to a term.
     */
+   //TODO try to support tail-recursive morphism applications; benchmark example: eval(s(...s(z)...)) where eval is the fold that maps number terms to number values
    object ApplyMorphs extends Traverser[Term] {
      def traverse(t: Term)(implicit con: Context, morph: Term) : Term = {
        t match {
