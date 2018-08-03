@@ -84,7 +84,9 @@ class Importer extends archives.Importer
 
       // types
       for (c <- theory.types) {
-        controller.add(Constant(thy.toTerm, Isabelle.entity_name(thy_name, c.entity), Nil, None, None, None))
+        val name = Isabelle.entity_name(thy_name, c.entity)
+        val tp = Isabelle.Type.con(c.args.length)
+        controller.add(Constant(thy.toTerm, name, Nil, Some(tp), None, None))
       }
 
       // consts
@@ -312,4 +314,13 @@ class Isabelle(log: String => Unit)
 
   def use_theories(theories: List[String]): isabelle.Thy_Resources.Theories_Result =
     session.use_theories(theories, progress = progress)
+
+
+  /* logic */
+
+  object Type
+  {
+    def apply(): Term = OMS(lf.Typed.ktype)
+    def con(n: Int): Term = lf.Arrow(isabelle.Library.replicate(n, Type()), Type())
+  }
 }
