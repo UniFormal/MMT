@@ -64,15 +64,6 @@ class Importer extends archives.Importer
       (Isabelle.pure_name, Isabelle.pure_theory) :: node_theories
     }
 
-    def entity_name(kind: String, entity: isabelle.Export_Theory.Entity): LocalName =
-    {
-      val node_name =
-        thy_exports.collectFirst({ case (name, theory) if theory.entities.contains(entity.serial) => name }).
-          getOrElse(isabelle.error("Unknown theory for entity " + isabelle.quote(entity.name)))
-
-      LocalName(node_name.theory, kind, entity.name)
-    }
-
 
     /* documents */
 
@@ -80,7 +71,7 @@ class Importer extends archives.Importer
       val doc = new Document(DPath(bt.base / theory.name), root = true)
       controller.add(doc)
 
-      val thy = Isabelle.declared_theory(theory.name)
+      val thy = Isabelle.declared_theory(thy_name)
       controller.add(thy)
       controller.add(MRef(doc.path, thy.path))
 
@@ -93,17 +84,17 @@ class Importer extends archives.Importer
 
       // types
       for (c <- theory.types) {
-        controller.add(Constant(thy.toTerm, entity_name(c.kind, c.entity), Nil, None, None, None))
+        controller.add(Constant(thy.toTerm, Isabelle.entity_name(thy_name, c.entity), Nil, None, None, None))
       }
 
       // consts
       for (c <- theory.consts) {
-        controller.add(Constant(thy.toTerm, entity_name(c.kind, c.entity), Nil, None, None, None))
+        controller.add(Constant(thy.toTerm, Isabelle.entity_name(thy_name, c.entity), Nil, None, None, None))
       }
 
       // facts
       for (c <- theory.facts) {
-        controller.add(Constant(thy.toTerm, entity_name(c.kind, c.entity), Nil, None, None, None))
+        controller.add(Constant(thy.toTerm, Isabelle.entity_name(thy_name, c.entity), Nil, None, None, None))
       }
 
       index(doc)
@@ -252,11 +243,14 @@ class Isabelle(log: String => Unit)
   /*common namespace for all theories in all sessions in all Isabelle archives*/
   val library_base: DPath = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
 
-  def declared_theory(name: String): DeclaredTheory =
+  def declared_theory(node_name: isabelle.Document.Node.Name): DeclaredTheory =
   {
-    val mod = library_base ? name
+    val mod = library_base ? node_name.theory
     Theory.empty(mod.doc, mod.name, Some(mod))
   }
+
+  def entity_name(node_name: isabelle.Document.Node.Name, entity: isabelle.Export_Theory.Entity): LocalName =
+    LocalName(node_name.theory, entity.kind.toString, entity.name)
 
   def PURE: String = isabelle.Thy_Header.PURE
 
