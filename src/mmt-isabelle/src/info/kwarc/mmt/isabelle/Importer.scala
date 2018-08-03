@@ -1,5 +1,9 @@
 package info.kwarc.mmt.isabelle
 
+import scala.math.Ordering
+import scala.collection.SortedMap
+
+import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import archives._
 import symbols._
@@ -10,7 +14,84 @@ import opaque._
 import utils._
 import parser._
 
-import info.kwarc.mmt.lf
+
+object Importer
+{
+  /* names */
+
+  /*common namespace for all theories in all sessions in all Isabelle archives*/
+  val library_base: DPath = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
+
+  def declared_theory(node_name: isabelle.Document.Node.Name): DeclaredTheory =
+  {
+    val mod = library_base ? node_name.theory
+    Theory.empty(mod.doc, mod.name, Some(mod))
+  }
+
+
+  /* formal items */
+
+  object Item
+  {
+    object Key
+    {
+      object Ordering extends scala.math.Ordering[Key]
+      {
+        def compare(key1: Key, key2: Key): Int =
+          key1.kind compare key2.kind match {
+            case 0 => key1.name compare key2.name
+            case ord => ord
+          }
+      }
+    }
+
+    sealed case class Key(kind: isabelle.Export_Theory.Kind.Value, name: String)
+    {
+      override def toString: String = kind.toString + " " + isabelle.quote(name)
+    }
+  }
+
+  sealed case class Item(
+    node_name: isabelle.Document.Node.Name,
+    entity: isabelle.Export_Theory.Entity)
+  {
+    val key: Item.Key = Item.Key(entity.kind, entity.name)
+
+    def local_name: LocalName = LocalName(node_name.theory, entity.kind.toString, entity.name)
+    def global_name: GlobalName = constant(None, None).path
+
+    def constant(tp: Option[Term], df: Option[Term]): Constant =
+      Constant(declared_theory(node_name).toTerm, local_name, Nil, tp, df, None)
+  }
+
+  object Items
+  {
+    val empty: Items = new Items(SortedMap.empty[Item.Key, Item](Item.Key.Ordering))
+    def merge(args: TraversableOnce[Items]): Items = (empty /: args)(_ ++ _)
+  }
+
+  final class Items private(private val rep: SortedMap[Item.Key, Item])
+  {
+    def get(key: Item.Key): Item = rep.get(key) getOrElse isabelle.error("Undeclared " + key.toString)
+    def get_type(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.TYPE, name))
+    def get_const(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CONST, name))
+
+    def is_empty: Boolean = rep.isEmpty
+    def defined(key: Item.Key): Boolean = rep.isDefinedAt(key)
+
+    def + (item: Item): Items =
+      if (defined(item.key)) this
+      else new Items(rep + (item.key -> item))
+
+    def ++ (other: Items): Items =
+      if (this eq other) this
+      else if (is_empty) other
+      else (this /: other.rep)({ case (map, (_, item)) => map + item })
+
+    override def toString: String =
+      rep.iterator.map(_._2).mkString("Items(", ", ", ")")
+  }
+}
 
 class Importer extends archives.Importer
 {
@@ -50,7 +131,7 @@ class Importer extends archives.Importer
       Isabelle.use_theories(List(root_name.path.split_ext._1.implode))
 
 
-    /* theory exports */
+    /* theory exports (foundational order) */
 
     val thy_exports =
     {
@@ -65,13 +146,26 @@ class Importer extends archives.Importer
     }
 
 
-    /* documents */
+    /* imported items (foundational order) */
+
+    var thy_items = Map.empty[String, Importer.Items]
 
     for ((thy_name, theory) <- thy_exports) {
+      // items
+      var current_items = Importer.Items.merge(theory.parents.map(thy_items(_)))
+      def store_items() { thy_items += (thy_name.theory -> current_items) }
+      def make_item(entity: isabelle.Export_Theory.Entity): Importer.Item =
+      {
+        val item = Importer.Item(thy_name, entity)
+        current_items += item
+        item
+      }
+
+      // document
       val doc = new Document(DPath(bt.base / theory.name), root = true)
       controller.add(doc)
 
-      val thy = Isabelle.declared_theory(thy_name)
+      val thy = Importer.declared_theory(thy_name)
       controller.add(thy)
       controller.add(MRef(doc.path, thy.path))
 
@@ -84,21 +178,24 @@ class Importer extends archives.Importer
 
       // types
       for (c <- theory.types) {
-        val name = Isabelle.entity_name(thy_name, c.entity)
+        val item = make_item(c.entity)
         val tp = Isabelle.Type(c.args.length)
-        controller.add(Constant(thy.toTerm, name, Nil, Some(tp), None, None))
+        controller.add(item.constant(Some(tp), None))
       }
 
       // consts
       for (c <- theory.consts) {
-        controller.add(Constant(thy.toTerm, Isabelle.entity_name(thy_name, c.entity), Nil, None, None, None))
+        val item = make_item(c.entity)
+        controller.add(item.constant(None, None))
       }
 
       // facts
       for (c <- theory.facts) {
-        controller.add(Constant(thy.toTerm, Isabelle.entity_name(thy_name, c.entity), Nil, None, None, None))
+        val item = make_item(c.entity)
+        controller.add(item.constant(None, None))
       }
 
+      store_items()
       index(doc)
     }
 
@@ -240,23 +337,6 @@ class Isabelle(log: String => Unit)
   val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
 
 
-  /* names */
-
-  /*common namespace for all theories in all sessions in all Isabelle archives*/
-  val library_base: DPath = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
-
-  def declared_theory(node_name: isabelle.Document.Node.Name): DeclaredTheory =
-  {
-    val mod = library_base ? node_name.theory
-    Theory.empty(mod.doc, mod.name, Some(mod))
-  }
-
-  def entity_name(node_name: isabelle.Document.Node.Name, entity: isabelle.Export_Theory.Entity): LocalName =
-    LocalName(node_name.theory, entity.kind.toString, entity.name)
-
-  def PURE: String = isabelle.Thy_Header.PURE
-
-
   /* session */
 
   private var _session: Option[isabelle.Thy_Resources.Session] = None
@@ -268,6 +348,8 @@ class Isabelle(log: String => Unit)
 
   def import_name(s: String): isabelle.Document.Node.Name =
     resources.import_name(isabelle.Sessions.DRAFT, "", s)
+
+  def PURE: String = isabelle.Thy_Header.PURE
 
   def init()
   {
