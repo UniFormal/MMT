@@ -1226,7 +1226,7 @@ class DFAtomicSortC(js : List[JSONObject]) extends Comp[DFAtomicSort] {
     case (n : Name) :: (d : DefString) :: (t : Option[ArgTheory]) :: (u : Option[ArgUsages]) ::
       (w : Option[ArgWitness]) :: Nil =>
 
-      val frm : IMPSMathExp = FrmFnd.findFormula(t.get.thy.s,d,"defsorts","",Some(n.s),js)
+      val frm : IMPSMathExp = FrmFnd.findFormula(t.get.thy.s,Some(d),"defsorts","",Some(n.s),js)
       val srt : IMPSSort    = FrmFnd.findSort(t.get.thy.s,d,"defsorts",Some(n.s),js)
 
       DFAtomicSort(n,d,frm,srt,t.get,u,w,None,None).asInstanceOf[T]
@@ -1243,7 +1243,7 @@ class DFConstantC(js : List[JSONObject]) extends Comp[DFConstant] {
     case (n : Name) :: (d : DefString) :: (thy : Option[ArgTheory]) :: (s : Option[ArgSort]) ::
       (u : Option[ArgUsages]) :: Nil =>
 
-      val frm = FrmFnd.findFormula(thy.get.thy.s,d,"defconsts","",Some(n.s),js)
+      val frm = FrmFnd.findFormula(thy.get.thy.s,Some(d),"defconsts","",Some(n.s),js)
       val srt = FrmFnd.findSort(thy.get.thy.s,d,"defconsts",Some(n.s),js)
 
       DFConstant(n,d,frm,srt,thy.get,s,u,None,None).asInstanceOf[T]
@@ -1480,11 +1480,15 @@ class DFTheoremC(js : List[JSONObject]) extends Comp[DFTheorem] {
                     :: (mac : Option[ArgMacete]) :: (ht : Option[ArgHomeTheory]) :: (prf : Option[ArgProof]) :: Nil
     => { // Construct full theorem!
 
-      val id : DefString = df.o match {
-        case Left(defstring) => defstring
-        case Right(name)     => ???
+      val formula : IMPSMathExp = df.o match {
+        case Left(defstring)                                => FrmFnd.findFormula(thy.get.thy.s,Some(defstring),"theorems","axioms",Some(n.s),js)
+        case Right(Name(k@"right-act-inv",_,_))             => FrmFnd.findFormula("group-actions",None,"theorems","axioms",Some(k),js)
+        case Right(Name(k@"left-act-inv",_,_))              => FrmFnd.findFormula("group-actions",None,"theorems","axioms",Some(k),js)
+        case Right(Name(k@"action-macete",_,_))             => FrmFnd.findFormula("group-actions",None,"theorems","axioms",Some(k),js)
+        case Right(Name(k@"reverse-act-associativity",_,_)) => FrmFnd.findFormula("group-actions",None,"theorems","axioms",Some(k),js)
+        case Right(Name(k@"finiteness-of-zeta-orbit",_,_))  => FrmFnd.findFormula("counting-theorem-theory",None,"theorems","axioms",Some(k),js)
+        case Right(name)                                    => FrmFnd.findFormula(thy.get.thy.s,None,"theorems","axioms",Some(name.s),js)
       }
-      val formula : IMPSMathExp = FrmFnd.findFormula(thy.get.thy.s,id,"theorems","axioms",Some(n.s),js)
       DFTheorem(n,df,Some(formula),modr,modl,thy.get,us,tr,mac,ht,prf,None,None).asInstanceOf[T]
     }
     case _ => ??!(args)
@@ -1542,9 +1546,66 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
 
       var formulas : List[IMPSMathExp] = Nil
 
-      if (asms.isDefined) {
-        for (as <- asms.get.defs) {
-          formulas = formulas ::: List(FrmFnd.findFormula(sour.get.thy.s,as,"translations","",None,js))
+      if (asms.isDefined)
+      {
+        val json_theory1 : Option[JSONObject] = js.find(j => j.getAsString("name") == sour.get.thy.s.toLowerCase)
+        assert(json_theory1.isDefined)
+        assert(json_theory1.get.getAsString("type") == "imps-theory")
+
+        val json_theory2 : Option[JSONObject] = js.find(j => j.getAsString("name") == tar.get.thy.s.toLowerCase)
+        assert(json_theory2.isDefined)
+        assert(json_theory2.get.getAsString("type") == "imps-theory")
+
+        val group1   : List[JSONObject] = json_theory1.get.getAsList(classOf[JSONObject],"translations")
+        val group2   : List[JSONObject] = json_theory2.get.getAsList(classOf[JSONObject],"translations")
+        val haystack : List[JSONObject] = (group1 ::: group2).distinct
+        assert(haystack.nonEmpty)
+
+        for (as <- asms.get.defs.indices)
+        {
+          var needle : String = asms.get.defs(as).s.tail.init
+          var theThing : Option[JSONObject] = None
+
+          // Search by string
+          if (theThing.isEmpty)
+          {
+            // At this point, we need the actual def-string
+            assert(needle.nonEmpty)
+
+            // unmodified string
+            needle = removeWhitespace(needle)
+            var tempt = haystack.find(j => j.getAsList(classOf[JSONString],"assumptions").map(_.value.toLowerCase).map(a => removeWhitespace(a)).contains(needle))
+
+            // if that didn't work, handpicked string
+            if (tempt.isEmpty) {
+              val handpicked = handpick(needle)
+              tempt = haystack.find(j => j.getAsList(classOf[JSONString],"assumptions").map(_.value.toLowerCase).map(a => removeWhitespace(a)).contains(handpicked))
+            }
+            theThing = tempt
+          }
+
+          if (theThing.isEmpty)
+          {
+            assert(needle != "")
+            println("\n > needle     = " + needle)
+            println(" > handpicked = " + handpick(needle))
+
+            for (t <- haystack)
+            {
+              println("\nCandidates:\n")
+              t.getAsList(classOf[JSONString],"assumptions").map(_.value.toLowerCase).map(a => println(removeWhitespace(a)))
+            }
+          }
+
+          assert(theThing.isDefined)
+          val thesexp : List[String] = theThing.get.getAsList(classOf[String],"assumptions-sexp")
+          assert(thesexp.nonEmpty)
+
+          val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+          val lsp = sp.parseAll(sp.parseSEXP,thesexp(as).toLowerCase)
+          assert(lsp.successful)
+
+          formulas = formulas ::: List(impsMathParser.makeSEXPFormula(lsp.get))
         }
       }
 
@@ -1809,19 +1870,19 @@ object FrmFnd
   def removeWhitespace(str : String) : String = str.replaceAll(" ", "").replaceAll("\t","").replaceAll("\n","").toLowerCase
 
   def findAxiom(thyname : String, spec : AxiomSpec, js : List[JSONObject]) : IMPSMathExp =
-    findFormula(thyname, spec.defstr, "theorems", "axioms", spec.name, js)
+    findFormula(thyname, Some(spec.defstr), "theorems", "axioms", spec.name, js)
 
-  def findFormula(thyname : String, dfstr : DefString, g1 : String, g2 : String = "", n : Option[String], js : List[JSONObject]) : IMPSMathExp =
+  def findFormula(thyname : String, dfstr : Option[DefString], g1 : String, g2 : String = "", n : Option[String], js : List[JSONObject]) : IMPSMathExp =
   {
     val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thyname.toLowerCase)
     assert(json_theory.isDefined)
     assert(json_theory.get.getAsString("type") == "imps-theory")
 
     val group1 : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],g1)
-    assert(group1.nonEmpty)
     val group2 : List[JSONObject] = if (g2 == "") { Nil } else { json_theory.get.getAsList(classOf[JSONObject],g2) }
 
     val haystack : List[JSONObject] = (group1 ::: group2).distinct
+    assert(haystack.nonEmpty)
 
     var needle : String = ""
     var theThing : Option[JSONObject] = None
@@ -1837,13 +1898,17 @@ object FrmFnd
     // Search by string
     if (theThing.isEmpty)
     {
+      // At this point, we need the actual def-string
+      if (dfstr.isEmpty) { println(" > No defstr for " + n.get + " but nothing found via name either.") }
+      assert(dfstr.isDefined)
+
       // unmodified string
-      needle = removeWhitespace(dfstr.s.tail.init)
+      needle = removeWhitespace(dfstr.get.s.tail.init)
       var tempt = haystack.find(j => removeWhitespace(j.getAsString("formula-string")) == needle)
 
       // if that didn't work, handpicked string
       if (tempt.isEmpty) {
-        val handpicked = handpick(removeWhitespace(dfstr.s.tail.init))
+        val handpicked = handpick(removeWhitespace(dfstr.get.s.tail.init))
         tempt = haystack.find(j => removeWhitespace(j.getAsString("formula-string")) == handpicked)
       }
       theThing = tempt
@@ -1861,13 +1926,9 @@ object FrmFnd
         val foo = removeWhitespace(t.getAsString("formula-string"))
         val numb = math.min(foo.length,9)
         if (foo.take(numb) == bar.take(numb)) {
-          println("     > /f/ json theorem: " + (if (!(t.getAsString("name") == "")) { t.getAsString("name") + ": " } else {""}) + foo)
+          println("     > json candidate: " + (if (!(t.getAsString("name") == "")) { t.getAsString("name") + ": " } else {""}) + foo)
         }
       }
-    }
-
-    if (theThing.isEmpty) {
-      println("ERROR: Didn't find thing for " + g1 + " or " + g2 + " / " + dfstr)
     }
 
     assert(theThing.isDefined)
@@ -1962,6 +2023,12 @@ object FrmFnd
       case "forall(n,m:zz,x:kk,((#(x^m,kk)and#(x^n,kk))iff#((x^m)^n,kk)))" => "forall(n,m:zz,x:kk,(#(x^m,kk)and#(x^n,kk))iff#((x^m)^n,kk))"
       case "total_q{iterate,[[pp,pp],pp,[zz,pp]]}" => "total_q{ms%iterate,[[pp,pp],pp,[zz,pp]]}"
       case "forsome(a:sets[uu],equiv%class_q(a))" => "nonvacuous_q{equiv%class_q}"
+      case "with(a:sets[gg],forall(g,h:gg,(gina)and(hina)implies(gmulh)ina))" => "with(a:sets[gg],forall(g,h:gg,ginaandhinaimplies(gmulh)ina))"
+      case "with(a:sets[gg],forall(g:gg,(gina)implies(inv(g)ina)))" => "with(a:sets[gg],forall(g:gg,ginaimpliesinv(g)ina))"
+      case "with(u:[ind_1,ind_2],a:sets[ind_1],dom{u}=a)" => "with(a:sets[ind_1],u:[ind_1,ind_2],dom{u}=a)"
+      case "with(v:[ind_2,ind_1],b:sets[ind_2],dom{v}=b)" => "with(b:sets[ind_2],v:[ind_2,ind_1],dom{v}=b)"
+      case "with(u:[ind_1,ind_2],b:sets[ind_2],ran{u}subseteqb)" => "with(b:sets[ind_2],u:[ind_1,ind_2],ran{u}subseteqb)"
+      case "with(v:[ind_2,ind_1],a:sets[ind_1],ran{v}subseteqa)" => "with(a:sets[ind_1],v:[ind_2,ind_1],ran{v}subseteqa)"
       case _ => str
     }
   }

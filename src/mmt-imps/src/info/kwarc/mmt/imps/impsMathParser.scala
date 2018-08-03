@@ -111,7 +111,8 @@ package object impsMathParser
           IMPSQCEmptyIndicator(srt)
         }
 
-        case SEXPAtom("i-nonempty-indicator?") =>
+        case SEXPAtom("I-NONEMPTY-INDICATOR?")
+           | SEXPAtom("i-nonempty-indicator?") =>
         {
           assert(s.args.length == 2)
           val srt : IMPSMathExp = makeSEXPFormula(s.args(1))

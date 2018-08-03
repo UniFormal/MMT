@@ -24,13 +24,13 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
     tState.verbosity = 1
-    val targetSection : Section = impsLibrarySections.foundation
+    val targetSection : Section = impsLibrarySections.impsMathLibrary
 
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)
       println("\n== BUILDING DEPENDENCY TREE ==\n")
-      println("Target section: " + targetSection.name + "\n")
+      println("Target section: " + targetSection.name)
     }
 
     var readingT : List[String] = Nil
@@ -49,7 +49,7 @@ class IMPSImporter extends Importer
       readingT = t.files ::: readingT
       readingJ = t.jsons ::: readingJ
 
-      for (s <- t.dependencies) { importSection(s,(n+1)) }
+      for (s <- t.dependencies) { importSection(s,n+1) }
     }
 
     importSection(targetSection,0)
@@ -76,7 +76,7 @@ class IMPSImporter extends Importer
     {
       for (rj <- readingJ)
       {
-        if (translatejsonFiles.find(f => f.getName == rj).isDefined) { print("✓ ") } else { print("  ") }
+        if (translatejsonFiles.exists(f => f.getName == rj)) { print("✓ ") } else { print("  ") }
         println(rj)
       }
       println("")
@@ -117,7 +117,7 @@ class IMPSImporter extends Importer
     {
       for (rt <- readingT)
       {
-        if (translateFiles.find(f => f.getName == rt).isDefined) { print("✓ ") } else { print("  ") }
+        if (translateFiles.exists(f => f.getName == rt)) { print("✓ ") } else { print("  ") }
         println(rt)
       }
     }
