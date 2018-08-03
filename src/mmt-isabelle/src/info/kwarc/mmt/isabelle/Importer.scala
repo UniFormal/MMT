@@ -56,7 +56,13 @@ class Importer extends archives.Importer {
   def session: isabelle.Thy_Resources.Session =
     _session.getOrElse(isabelle.error("No Isabelle/PIDE session"))
 
-  override def start(args: List[String]): Unit = {
+  def import_name(s: String): isabelle.Document.Node.Name =
+    session.resources.import_name(isabelle.Sessions.DRAFT, "", s)
+
+  def pure_name: isabelle.Document.Node.Name = import_name(isabelle.Thy_Header.PURE)
+
+  override def start(args: List[String])
+  {
     super.start(args)
 
     isabelle.Isabelle_System.init()
@@ -72,7 +78,8 @@ class Importer extends archives.Importer {
         include_sessions = include_sessions, progress = progress, log = logger))
   }
 
-  override def destroy {
+  override def destroy
+  {
     session.stop()
     _session = None
     super.destroy
@@ -85,14 +92,10 @@ class Importer extends archives.Importer {
   {
     /* use theories */
 
-    val pure_node = session.resources.import_name("", "", isabelle.Thy_Header.PURE)
-
-    val root_node =
-      session.resources.import_name(isabelle.Sessions.DRAFT, "",
-        bt.inFile.canonical.stripExtension.getPath)
+    val root_name = import_name(bt.inFile.canonical.stripExtension.getPath)
 
     val use_theories_result =
-      session.use_theories(List(root_node.path.split_ext._1.implode), progress = progress)
+      session.use_theories(List(root_name.path.split_ext._1.implode), progress = progress)
 
 
     /* theory exports */
@@ -115,7 +118,7 @@ class Importer extends archives.Importer {
             (name, theory)
           }
 
-      (pure_node, pure_theory) :: node_theories
+      (pure_name, pure_theory) :: node_theories
     }
 
     def entity_name(kind: String, entity: isabelle.Export_Theory.Entity): LocalName =
@@ -141,7 +144,7 @@ class Importer extends archives.Importer {
       controller.add(MRef(doc.path, thy.path))
 
       // theory source
-      if (thy_name != pure_node) {
+      if (thy_name != pure_name) {
         val thy_text = isabelle.File.read(thy_name.path)
         val thy_text_output = isabelle.Symbol.decode(thy_text.replace(' ', '\u00a0'))
         controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(thy_text_output)))
