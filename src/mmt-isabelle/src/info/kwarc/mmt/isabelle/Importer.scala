@@ -188,13 +188,15 @@ class Importer extends archives.Importer
       for (c <- theory.types if !Importer.suppress_types(c.entity.name)) {
         val item = declare_item(c.entity)
         val tp = Isabelle.Type(c.args.length)
-        controller.add(item.constant(Some(tp), None))
+        val df = c.abbrev.map(rhs => Isabelle.Polymorphic(c.args, Isabelle.import_type(items, rhs)))
+        controller.add(item.constant(Some(tp), df))
       }
 
       // consts
       for (c <- theory.consts) {
         val item = declare_item(c.entity)
-        controller.add(item.constant(None, None))
+        val tp = Isabelle.Polymorphic(c.typargs, Isabelle.import_type(items, c.typ))
+        controller.add(item.constant(Some(tp), None))
       }
 
       // facts
@@ -413,7 +415,7 @@ class Isabelle(log: String => Unit)
   object Polymorphic
   {
     def apply(as: List[String], t: Term): Term =
-      lf.Pi(as.map(a => OMV(a) % Type()), t)
+      if (as.isEmpty) t else lf.Pi(as.map(a => OMV(a) % Type()), t)
   }
 
   object Abs
@@ -477,10 +479,17 @@ class Isabelle(log: String => Unit)
   def begin_theory(theory: isabelle.Export_Theory.Theory): Importer.Items =
     Importer.Items.merge(theory.parents.map(the_theory(_)))
 
-  def end_theory(theory: isabelle.Export_Theory.Theory, items: Importer.Items)
-  {
-    imported.change(map =>
-      if (map.isDefinedAt(theory.name)) isabelle.error("Duplicate theory " + isabelle.quote(theory.name))
-      else map + (theory.name -> items))
-  }
+  def end_theory(theory: isabelle.Export_Theory.Theory, items: Importer.Items): Unit =
+    imported.change(map => map + (theory.name -> items))
+
+  def import_type(items: Importer.Items, typ: isabelle.Term.Typ): Term =
+    typ match {
+      case isabelle.Term.Type(isabelle.Pure_Thy.FUN, List(a, b)) =>
+        lf.Arrow(import_type(items, a), import_type(items, b))
+      case isabelle.Term.Type(name, args) =>
+        val op = OMS(items.get_type(name).global_name)
+        if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(import_type(items, _)))
+      case isabelle.Term.TFree(a, _) => OMV(a)
+      case isabelle.Term.TVar(xi, _) => isabelle.error("Illegal schematic type variable " + xi.toString)
+    }
 }
