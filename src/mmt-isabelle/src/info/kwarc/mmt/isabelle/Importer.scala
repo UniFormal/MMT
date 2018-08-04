@@ -79,6 +79,15 @@ object Importer
     def is_empty: Boolean = rep.isEmpty
     def defined(key: Item.Key): Boolean = rep.isDefinedAt(key)
 
+    def declare(item: Item): Items =
+    {
+      if (defined(item.key)) {
+        isabelle.error("Duplicate " + item.key.toString + " in theory " +
+          isabelle.quote(item.node_name.theory))
+      }
+      else this + item
+    }
+
     def + (item: Item): Items =
       if (defined(item.key)) this
       else new Items(rep + (item.key -> item))
@@ -148,16 +157,13 @@ class Importer extends archives.Importer
 
     /* imported items (foundational order) */
 
-    var thy_items = Map.empty[String, Importer.Items]
-
     for ((thy_name, theory) <- thy_exports) {
       // items
-      var current_items = Importer.Items.merge(theory.parents.map(thy_items(_)))
-      def store_items() { thy_items += (thy_name.theory -> current_items) }
-      def make_item(entity: isabelle.Export_Theory.Entity): Importer.Item =
+      var items = Isabelle.begin_theory(theory)
+      def declare_item(entity: isabelle.Export_Theory.Entity): Importer.Item =
       {
         val item = Importer.Item(thy_name, entity)
-        current_items += item
+        items = items.declare(item)
         item
       }
 
@@ -178,24 +184,24 @@ class Importer extends archives.Importer
 
       // types
       for (c <- theory.types) {
-        val item = make_item(c.entity)
+        val item = declare_item(c.entity)
         val tp = Isabelle.Type(c.args.length)
         controller.add(item.constant(Some(tp), None))
       }
 
       // consts
       for (c <- theory.consts) {
-        val item = make_item(c.entity)
+        val item = declare_item(c.entity)
         controller.add(item.constant(None, None))
       }
 
       // facts
       for (c <- theory.facts) {
-        val item = make_item(c.entity)
+        val item = declare_item(c.entity)
         controller.add(item.constant(None, None))
       }
 
-      store_items()
+      Isabelle.end_theory(theory, items)
       index(doc)
     }
 
@@ -396,6 +402,24 @@ class Isabelle(log: String => Unit)
 
   def use_theories(theories: List[String]): isabelle.Thy_Resources.Theories_Result =
     session.use_theories(theories, progress = progress)
+
+
+  /* imported theory items */
+
+  private val imported = isabelle.Synchronized(Map.empty[String, Importer.Items])
+
+  def the_theory(name: String): Importer.Items =
+    imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
+
+  def begin_theory(theory: isabelle.Export_Theory.Theory): Importer.Items =
+    Importer.Items.merge(theory.parents.map(the_theory(_)))
+
+  def end_theory(theory: isabelle.Export_Theory.Theory, items: Importer.Items)
+  {
+    imported.change(map =>
+      if (map.isDefinedAt(theory.name)) isabelle.error("Duplicate theory " + isabelle.quote(theory.name))
+      else map + (theory.name -> items))
+  }
 
 
   /* logic */
