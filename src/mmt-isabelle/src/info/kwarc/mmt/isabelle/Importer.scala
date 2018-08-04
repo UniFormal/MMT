@@ -358,6 +358,7 @@ class Isabelle(log: String => Unit)
     resources.import_name(isabelle.Sessions.DRAFT, "", s)
 
   def PURE: String = isabelle.Thy_Header.PURE
+  def pure_name: isabelle.Document.Node.Name = import_name(PURE)
 
   def init()
   {
@@ -390,8 +391,6 @@ class Isabelle(log: String => Unit)
 
   /* theories */
 
-  def pure_name: isabelle.Document.Node.Name = import_name(PURE)
-
   lazy val pure_theory: isabelle.Export_Theory.Theory =
     isabelle.Export_Theory.read_pure_theory(store, cache = Some(cache))
 
@@ -423,6 +422,9 @@ class Isabelle(log: String => Unit)
       else map + (theory.name -> items))
   }
 
+  def get_pure_type(name: String): GlobalName = the_theory(PURE).get_type(name).global_name
+  def get_pure_const(name: String): GlobalName = the_theory(PURE).get_const(name).global_name
+
 
   /* logic */
 
@@ -433,5 +435,48 @@ class Isabelle(log: String => Unit)
       val t = OMS(lf.Typed.ktype)
       if (n == 0) t else lf.Arrow(isabelle.Library.replicate(n, t), t)
     }
+  }
+
+  object Polymorphic
+  {
+    def apply(as: List[String], t: Term): Term =
+      lf.Pi(as.map(a => OMV(a) % Type()), t)
+  }
+
+  object Abs
+  {
+    def apply(x: String, tp: Term, body: Term): Term =
+      lf.Lambda(LocalName(x), tp, body)
+  }
+
+  object App
+  {
+    def apply(t: Term, u: Term): Term =
+      lf.ApplySpine(t, u)
+  }
+
+  object Prop
+  {
+    lazy val path: GlobalName = get_pure_type(isabelle.Pure_Thy.PROP)
+    def apply(): Term = OMS(path)
+  }
+
+  object All
+  {
+    lazy val path: GlobalName = get_pure_const(isabelle.Pure_Thy.ALL)
+    def apply(x: String, tp: Term, body: Term): Term =
+      lf.Apply(OMS(path), lf.Lambda(LocalName(x), tp, body))
+  }
+
+  object Imp
+  {
+    lazy val path: GlobalName = get_pure_const(isabelle.Pure_Thy.IMP)
+    def apply(t: Term, u: Term): Term = lf.ApplySpine(OMS(path), t, u)
+  }
+
+  object Eq
+  {
+    lazy val path: GlobalName = get_pure_const(isabelle.Pure_Thy.EQ)
+    def apply(tp: Term, t: Term, u: Term): Term = lf.ApplySpine(OMS(path), tp, t, u)
   }
 }
