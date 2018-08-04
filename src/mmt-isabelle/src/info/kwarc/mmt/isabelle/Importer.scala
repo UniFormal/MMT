@@ -401,40 +401,6 @@ class Isabelle(log: String => Unit)
   def pure_type(name: String): GlobalName = pure_entity(pure_theory.types.map(_.entity), name)
   def pure_const(name: String): GlobalName = pure_entity(pure_theory.consts.map(_.entity), name)
 
-
-  /* user theories */
-
-  def read_theory(provider: isabelle.Export.Provider, name: isabelle.Document.Node.Name)
-    : isabelle.Export_Theory.Theory =
-  {
-    isabelle.Export_Theory.read_theory(
-      provider, isabelle.Sessions.DRAFT, name.theory, cache = Some(cache))
-  }
-
-  def use_theories(theories: List[String]): isabelle.Thy_Resources.Theories_Result =
-    session.use_theories(theories, progress = progress)
-
-
-  /* imported theory items */
-
-  private val imported = isabelle.Synchronized(Map.empty[String, Importer.Items])
-
-  def the_theory(name: String): Importer.Items =
-    imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
-
-  def begin_theory(theory: isabelle.Export_Theory.Theory): Importer.Items =
-    Importer.Items.merge(theory.parents.map(the_theory(_)))
-
-  def end_theory(theory: isabelle.Export_Theory.Theory, items: Importer.Items)
-  {
-    imported.change(map =>
-      if (map.isDefinedAt(theory.name)) isabelle.error("Duplicate theory " + isabelle.quote(theory.name))
-      else map + (theory.name -> items))
-  }
-
-
-  /* logic */
-
   object Type
   {
     def apply(n: Int = 0): Term =
@@ -485,5 +451,36 @@ class Isabelle(log: String => Unit)
   {
     lazy val path: GlobalName = pure_const(isabelle.Pure_Thy.EQ)
     def apply(tp: Term, t: Term, u: Term): Term = lf.ApplySpine(OMS(path), tp, t, u)
+  }
+
+
+  /* user theories */
+
+  def read_theory(provider: isabelle.Export.Provider, name: isabelle.Document.Node.Name)
+    : isabelle.Export_Theory.Theory =
+  {
+    isabelle.Export_Theory.read_theory(
+      provider, isabelle.Sessions.DRAFT, name.theory, cache = Some(cache))
+  }
+
+  def use_theories(theories: List[String]): isabelle.Thy_Resources.Theories_Result =
+    session.use_theories(theories, progress = progress)
+
+
+  /* imported theory items */
+
+  private val imported = isabelle.Synchronized(Map.empty[String, Importer.Items])
+
+  def the_theory(name: String): Importer.Items =
+    imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
+
+  def begin_theory(theory: isabelle.Export_Theory.Theory): Importer.Items =
+    Importer.Items.merge(theory.parents.map(the_theory(_)))
+
+  def end_theory(theory: isabelle.Export_Theory.Theory, items: Importer.Items)
+  {
+    imported.change(map =>
+      if (map.isDefinedAt(theory.name)) isabelle.error("Duplicate theory " + isabelle.quote(theory.name))
+      else map + (theory.name -> items))
   }
 }
