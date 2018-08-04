@@ -28,6 +28,8 @@ object Importer
     Theory.empty(mod.doc, mod.name, Some(mod))
   }
 
+  val suppress_types: Set[String] = Set(isabelle.Pure_Thy.DUMMY, isabelle.Pure_Thy.FUN)
+
 
   /* formal items */
 
@@ -183,7 +185,7 @@ class Importer extends archives.Importer
       }
 
       // types
-      for (c <- theory.types) {
+      for (c <- theory.types if !Importer.suppress_types(c.entity.name)) {
         val item = declare_item(c.entity)
         val tp = Isabelle.Type(c.args.length)
         controller.add(item.constant(Some(tp), None))
