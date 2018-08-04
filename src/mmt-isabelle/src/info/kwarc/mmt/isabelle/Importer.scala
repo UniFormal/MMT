@@ -389,10 +389,20 @@ class Isabelle(log: String => Unit)
   }
 
 
-  /* theories */
+  /* Pure theory */
 
   lazy val pure_theory: isabelle.Export_Theory.Theory =
     isabelle.Export_Theory.read_pure_theory(store, cache = Some(cache))
+
+  private def pure_entity(entities: List[isabelle.Export_Theory.Entity], name: String): GlobalName =
+    entities.collectFirst({ case entity if entity.name == name => Importer.Item(pure_name, entity).global_name }).
+      getOrElse(isabelle.error("Unknown entity " + isabelle.quote(name)))
+
+  def pure_type(name: String): GlobalName = pure_entity(pure_theory.types.map(_.entity), name)
+  def pure_const(name: String): GlobalName = pure_entity(pure_theory.consts.map(_.entity), name)
+
+
+  /* user theories */
 
   def read_theory(provider: isabelle.Export.Provider, name: isabelle.Document.Node.Name)
     : isabelle.Export_Theory.Theory =
@@ -421,9 +431,6 @@ class Isabelle(log: String => Unit)
       if (map.isDefinedAt(theory.name)) isabelle.error("Duplicate theory " + isabelle.quote(theory.name))
       else map + (theory.name -> items))
   }
-
-  def get_pure_type(name: String): GlobalName = the_theory(PURE).get_type(name).global_name
-  def get_pure_const(name: String): GlobalName = the_theory(PURE).get_const(name).global_name
 
 
   /* logic */
@@ -457,26 +464,26 @@ class Isabelle(log: String => Unit)
 
   object Prop
   {
-    lazy val path: GlobalName = get_pure_type(isabelle.Pure_Thy.PROP)
+    lazy val path: GlobalName = pure_type(isabelle.Pure_Thy.PROP)
     def apply(): Term = OMS(path)
   }
 
   object All
   {
-    lazy val path: GlobalName = get_pure_const(isabelle.Pure_Thy.ALL)
+    lazy val path: GlobalName = pure_const(isabelle.Pure_Thy.ALL)
     def apply(x: String, tp: Term, body: Term): Term =
       lf.Apply(OMS(path), lf.Lambda(LocalName(x), tp, body))
   }
 
   object Imp
   {
-    lazy val path: GlobalName = get_pure_const(isabelle.Pure_Thy.IMP)
+    lazy val path: GlobalName = pure_const(isabelle.Pure_Thy.IMP)
     def apply(t: Term, u: Term): Term = lf.ApplySpine(OMS(path), t, u)
   }
 
   object Eq
   {
-    lazy val path: GlobalName = get_pure_const(isabelle.Pure_Thy.EQ)
+    lazy val path: GlobalName = pure_const(isabelle.Pure_Thy.EQ)
     def apply(tp: Term, t: Term, u: Term): Term = lf.ApplySpine(OMS(path), tp, t, u)
   }
 }
