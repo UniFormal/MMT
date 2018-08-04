@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
-import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols.{Declaration, PlainInclude, TermContainer}
 import info.kwarc.mmt.imps.Usage.Usage
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
@@ -37,14 +37,14 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   val rootdpath : DPath            = DPath(URI.http colon "imps.mcmaster.ca") /* arbitrary, but seemed fitting */
 
   /* Source References. */
-  def doSourceRefT(t : Term,        s : SourceInfo) : Unit = if (s.isDefined) s.get match {
-    case l@scala.util.Left(_)    => ??!(l)
-    case r@scala.util.Right(src) => SourceRef.update(t, src)
+  def doSourceRefT(t : Term,        s : SourceInfo, uri : URI) : Unit = if (s.isDefined) s.get match {
+    case l@scala.util.Left(((a,b,c),(x,y,z))) => SourceRef.update(t, SourceRef(uri,SourceRegion(SourcePosition(a,b,c),SourcePosition(x,y,z))))
+    case r@scala.util.Right(src)              => SourceRef.update(t, src)
   }
 
-  def doSourceRefD(d : Declaration, s : SourceInfo) : Unit = if (s.isDefined) s.get match {
-    case l@scala.util.Left(_)    => ??!(l)
-    case r@scala.util.Right(src) => SourceRef.update(d, src)
+  def doSourceRefD(d : Declaration, s : SourceInfo, uri : URI) : Unit = if (s.isDefined) s.get match {
+    case l@scala.util.Left(((a,b,c),(x,y,z))) => SourceRef.update(d, SourceRef(uri,SourceRegion(SourcePosition(a,b,c),SourcePosition(x,y,z))))
+    case r@scala.util.Right(src)              => SourceRef.update(d, src)
   }
 
   /* Add metadata from usages element */
@@ -73,7 +73,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
 	def doDocument(es : List[DefForm], uri : URI) : BuildResult =
 	{
-    val doc = new Document(DPath(uri), true)
+    val doc = new Document(rootdpath, true)
     controller.add(doc)
 
     var excps : List[Exception] = Nil
@@ -85,7 +85,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         /* Translating Theories to MMT */
         case t@(DFTheory(_,_,_,_,_,_,_))       => try
         {
-          if (!tState.theories_raw.contains(t)) { doTheory(t, doc.path, bt.narrationDPath) }
+          if (!tState.theories_raw.contains(t)) { doTheory(t, doc.path, bt.narrationDPath, uri) }
         } catch {
           case e : IMPSDependencyException => { println(" > ... fail. Add to stack: " +  e.getMessage ) ; excps = excps.::(e) }
         }
@@ -100,7 +100,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           }
         }
         // If it's none of these, fall back to doDeclaration
-        case _                             => doDeclaration(exp)
+        case _                             => doDeclaration(exp,uri)
       }
     }
 
@@ -129,7 +129,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     BuildSuccess(Nil,Nil)
 	}
 
-  def doTheory (t : DFTheory, docPath: DPath, ns:DPath) : Unit =
+  def doTheory (t : DFTheory, docPath: DPath, ns:DPath, uri : URI) : Unit =
   {
     val nu_theory = new DeclaredTheory(ns,
                                        LocalName(t.name.toString),
@@ -197,7 +197,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     }
 
     // Actually translate resulting language
-    if (l.isDefined) { doLanguage(l.get, nu_theory) }
+    if (l.isDefined) { doLanguage(l.get, nu_theory, uri) }
 
     /* Translate all axioms, if there are any */
     if (t.axioms.isDefined)
@@ -212,7 +212,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         val assumption : Declaration = symbols.Constant(nu_theory.toTerm,doName(name),Nil,Some(mth),None,Some("Assumption"))
 
         if (ax.usgs.isDefined) { doUsages(assumption,ax.usgs.get) }
-        if (ax.src.isDefined) { doSourceRefD(assumption,ax.src) }
+        if (ax.src.isDefined) { doSourceRefD(assumption,ax.src,uri) }
         controller.add(assumption)
       }
     }
@@ -244,7 +244,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
             dist_count += 1
 
             val dist_assumption = symbols.Constant(nu_theory.toTerm,doName(name),Nil,Some(mth),None,Some("Assumption"))
-            if (t.dstnct.get.src.isDefined) { doSourceRefD(dist_assumption, t.dstnct.get.src) }
+            if (t.dstnct.get.src.isDefined) { doSourceRefD(dist_assumption, t.dstnct.get.src,uri) }
             controller.add(dist_assumption)
           }
         }
@@ -273,7 +273,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
   }
 
-  def doLanguage(l : DFLanguage, t : DeclaredTheory) : Unit =
+  def doLanguage(l : DFLanguage, t : DeclaredTheory, uri : URI) : Unit =
   {
     def doLanguageOrTheory(target : String, t : DeclaredTheory) : Unit =
     {
@@ -287,7 +287,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
       if (exists_language)
       {
-        doLanguage(tState.languages.find(p => p.name.toString.toLowerCase == target.toLowerCase).get, t)
+        doLanguage(tState.languages.find(p => p.name.toString.toLowerCase == target.toLowerCase).get, t, uri)
       }
       else if (exists_theory)
       {
@@ -296,7 +296,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         if (argt.lang.isDefined)
         {
           assert(tState.languages.exists(p => p.name.toString.toLowerCase == argt.lang.get.lang.toString.toLowerCase))
-          doLanguage(tState.languages.find(p => p.name.toString.toLowerCase == argt.lang.get.lang.toString.toLowerCase).get, t)
+          doLanguage(tState.languages.find(p => p.name.toString.toLowerCase == argt.lang.get.lang.toString.toLowerCase).get, t, uri)
         }
       }
     }
@@ -322,7 +322,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         val tp : Term = IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
         val basetype = symbols.Constant(t.toTerm, doName(baseType.toString), Nil, Some(tp), None, Some("BaseType"))
-        if (l.bt.get.src.isDefined) { doSourceRefD(basetype, l.bt.get.src) }
+        if (l.bt.get.src.isDefined) { doSourceRefD(basetype, l.bt.get.src, uri) }
         controller add basetype
       }
     }
@@ -331,7 +331,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       /* introduce all sorts with their respective enclosing sorts */
       for (spec : ArgSortSpec <- l.srts.get.specs)
-        { doSubsort(spec.sub, spec.enc, t, spec.src) }
+        { doSubsort(spec.sub, spec.enc, t, spec.src, uri) }
     }
 
     if (l.ex.isDefined)
@@ -367,7 +367,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           println(" > adding " + name)
         }
 
-        if (tal.src.isDefined) { doSourceRefD(judgement, tal.src) }
+        if (tal.src.isDefined) { doSourceRefD(judgement, tal.src, uri) }
         controller add judgement
       }
     }
@@ -378,13 +378,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       {
         val mth_tp : Term = tState.bindUnknowns(doSort(pair.enc, t))
         val l_const = symbols.Constant(t.toTerm,doName(pair.nm.s),Nil,Some(mth_tp),None,Some("Constant"))
-        if (l.cnsts.get.src.isDefined) { doSourceRefD(l_const,l.cnsts.get.src) }
+        if (l.cnsts.get.src.isDefined) { doSourceRefD(l_const,l.cnsts.get.src, uri) }
         controller add l_const
       }
     }
   }
 
-  def doDeclaration (d : DefForm) : Unit =
+  def doDeclaration (d : DefForm, uri : URI) : Unit =
   {
     // set this to true for helpful debug output
     val debug : Boolean = false
@@ -438,7 +438,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           doUsages(nu_atomicSort, usgs.get.usgs)
         }
 
-        doSourceRefD(nu_atomicSort, src)
+        doSourceRefD(nu_atomicSort, src, uri)
 
         if (tState.verbosity > 0)
         {
@@ -447,7 +447,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         controller add nu_atomicSort
 
-        doSubsort(IMPSAtomSort(name.s), sort, parent, src)
+        doSubsort(IMPSAtomSort(name.s), sort, parent, src, uri)
       }
 
       case DFConstant(name,definition,frm,sort,thy,argsort,usages,src,cmt) =>
@@ -464,7 +464,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         val nu_constant = symbols.Constant(parent.toTerm, LocalName(name.s.toLowerCase()), Nil, Some(srt), Some(mth), Some("Constant"))
 
         /* Add available MetaData */
-        doSourceRefD(nu_constant, src)
+        doSourceRefD(nu_constant, src, uri)
         if (usages.isDefined) { doUsages(nu_constant, usages.get.usgs) }
 
         if (tState.verbosity > 0)
@@ -498,7 +498,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           val nu_constant     = symbols.Constant(parent.toTerm, nm, Nil, Some(srt), Some(mth), Some("Recursive Constant"))
 
           /* Add available MetaData */
-          doSourceRefD(nu_constant, src)
+          doSourceRefD(nu_constant, src, uri)
           if (usgs.isDefined) { doUsages(nu_constant, usgs.get.usgs) }
 
           if (tState.verbosity > 0)
@@ -558,7 +558,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           controller add opaque
         }
 
-        doSourceRefD(nu_theorem, src)
+        doSourceRefD(nu_theorem, src, uri)
         controller add nu_theorem
 
         if (tState.verbosity > 0)
@@ -607,7 +607,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           println(" > Adding translation " + name + " (not complete yet)")
         }
 
-        doSourceRefT(nu_view.toTerm,src)
+        doSourceRefT(nu_view.toTerm,src, uri)
         controller add nu_view
 
       }
@@ -740,7 +740,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
   }
 
   /* Introduces a sort to a theory and also assigns the enclosing sort to it. */
-  def doSubsort(subsort : IMPSSort, supersort : IMPSSort, thy : DeclaredTheory, src : SourceInfo) : Unit =
+  def doSubsort(subsort : IMPSSort, supersort : IMPSSort, thy : DeclaredTheory, src : SourceInfo, uri : URI) : Unit =
   {
     // TODO: Fix different usages
 
@@ -768,8 +768,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     if (src.isDefined)
     {
-      doSourceRefD(typing, src)
-      doSourceRefD(judgement, src)
+      doSourceRefD(typing, src, uri)
+      doSourceRefD(judgement, src, uri)
     }
 
     controller add typing
@@ -793,43 +793,14 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case IMPSMathSymbol("falsehood")     => OMS(IMPSTheory.lutinsPath ? "thefalse")
       case IMPSMathSymbol(s)               =>
       {
-        if (s.forall(_.isDigit) || (s.startsWith("-") && s.tail.nonEmpty && s.tail.forall(_.isDigit))) {
+        if (s.startsWith("\"") && s.endsWith("\"")) { doMathExp(IMPSMathSymbol(s.tail.init),thy,cntxt) }
+        else if (s.forall(_.isDigit) || (s.startsWith("-") && s.tail.nonEmpty && s.tail.forall(_.isDigit))) {
           IntLiterals.parse(s)
         }
+        else if (false) { ??? } // ToDo: Octliterals
         else
         {
-          var srcthy : DeclaredTheory = null
-
-          if (tState.verbosity > 0)
-          {
-            println(" > Locating IMPSMathSymbol: " + s)
-          } else if (tState.verbosity > 1)
-          {
-            println(" > Looking for IMPSMathSymbol: " + s)
-          }
-
-
-          for (mp <- thy.getIncludes ::: List(thy.path))
-          {
-            val refthy : DeclaredTheory = controller.getTheory(mp)
-            val refcon : List[info.kwarc.mmt.api.symbols.Constant] = refthy.getConstants
-
-            if (refcon.exists(c => c.name.toString.toLowerCase == s.toLowerCase)) {
-              srcthy = refthy
-              if (tState.verbosity > 1)
-              {
-                println("    > FOUND in " + refthy.name)
-              }
-            }
-            else {
-              if (tState.verbosity > 1)
-              {
-                println("    > Not found in " + refthy.name)
-              }
-            }
-          }
-
-          assert(srcthy != null)
+          val srcthy : DeclaredTheory = locateMathSymbolHome(s,thy)
           OMS(srcthy.path ? LocalName(s))
         }
         //  Rational Literals
@@ -1280,6 +1251,43 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
       case _ => { println(d) ; ??? }
     }
+  }
+
+  def locateMathSymbolHome(s : String, thy : DeclaredTheory) : DeclaredTheory =
+  {
+    var srcthy : DeclaredTheory = null
+
+    if (tState.verbosity > 0)
+    {
+      println(" > Locating IMPSMathSymbol: " + s)
+    } else if (tState.verbosity > 1)
+    {
+      println(" > Looking for IMPSMathSymbol: " + s)
+    }
+
+
+    for (mp <- thy.getIncludes ::: List(thy.path))
+    {
+      val refthy : DeclaredTheory = controller.getTheory(mp)
+      val refcon : List[info.kwarc.mmt.api.symbols.Constant] = refthy.getConstants
+
+      if (refcon.exists(c => c.name.toString.toLowerCase == s.toLowerCase)) {
+        srcthy = refthy
+        if (tState.verbosity > 1)
+        {
+          println("    > FOUND in " + refthy.name)
+        }
+      }
+      else {
+        if (tState.verbosity > 1)
+        {
+          println("    > Not found in " + refthy.name)
+        }
+      }
+    }
+
+    assert(srcthy != null)
+    srcthy
   }
 
   def findSortFromContext(exp : IMPSMathExp, context : List[(IMPSVar,IMPSSort)]) : Option[IMPSSort] =

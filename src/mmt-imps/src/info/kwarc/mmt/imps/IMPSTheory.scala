@@ -15,15 +15,13 @@ object RatLiterals extends
 
 object IMPSTheory
 {
-  val rootdpath  = DPath(URI.http colon "latin.omdoc.org") / "foundations" / "lutins"
-  val lutinsPath = rootdpath ? "Lutins"
+  val rootdpath  : DPath = DPath(URI.http colon "latin.omdoc.org") / "foundations" / "lutins"
+  val lutinsPath : MPath = rootdpath ? "Lutins"
 
-  val lutinsPropType = lutinsPath ? "boolType"
-  val lutinsIndType  = lutinsPath ? "indType"
-
-  val anIndividual = lutinsPath ? "anIndividual"
-
-  val lutinsTP = lutinsPath ? "tp"
+  val lutinsPropType : GlobalName = lutinsPath ? "boolType"
+  val lutinsIndType  : GlobalName = lutinsPath ? "indType"
+  val anIndividual   : GlobalName = lutinsPath ? "anIndividual"
+  val lutinsTP       : GlobalName = lutinsPath ? "tp"
 
   class Sym(s: String)
   {
@@ -235,7 +233,7 @@ object IMPSTheory
   // Subtheory for User-Defined Quasi-Constructors
   object QCT
   {
-    val quasiLutinsPath = rootdpath ? "QuasiLutins"
+    val quasiLutinsPath : MPath = rootdpath ? "QuasiLutins"
 
     class UDQC(s: String)
     {
