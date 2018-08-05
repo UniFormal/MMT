@@ -237,10 +237,11 @@ class Importer extends archives.Importer
       }
 
       // facts
-      for (decl <- theory.facts) {
+      for (decl_multi <- theory.facts; decl <- decl_multi.split) {
         try {
           val item = declare_item(decl.entity, Importer.dummy_type_scheme)
-          controller.add(item.constant(None, None))
+          val tp = Isabelle.import_prop(items, decl.prop)
+          controller.add(item.constant(Some(tp), None))
         }
         catch { case isabelle.ERROR(msg) => decl_error(msg, decl.entity) }
       }
@@ -537,7 +538,7 @@ class Isabelle(log: String => Unit)
         case isabelle.Term.Const(c, ty) =>
           val item = items.get_const(c)
           Type.app(OMS(item.global_name), item.typargs(ty).map(typ(_)))
-        case isabelle.Term.Free(x, ty) => OMV(x)  // FIXME type!?
+        case isabelle.Term.Free(x, ty) => OMV(x)
         case isabelle.Term.Var(xi, _) => isabelle.error("Illegal schematic variable " + xi.toString)
         case isabelle.Term.Bound(i) =>
           val x =
@@ -550,5 +551,13 @@ class Isabelle(log: String => Unit)
 
     try { term(Nil, tm) }
     catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin term " + tm) }
+  }
+
+  def import_prop(items: Importer.Items, prop: isabelle.Export_Theory.Prop): Term =
+  {
+    val as = prop.typargs.map(_._1)  // FIXME handle sort constraints
+    val xs = prop.args.map({ case (x, ty) => OMV(x) % import_type(items, ty) })
+    val t = import_term(items, prop.term)
+    Type.all(as, if (xs.isEmpty) t else lf.Pi(xs, t))
   }
 }
