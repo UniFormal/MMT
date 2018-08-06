@@ -1,9 +1,6 @@
 package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.utils.UnparsedParsers
-import info.kwarc.mmt.imps.ParserWithSourcePosition.ParserWithSourcePosition
-
-import scala.reflect.internal.Required
 import scala.util.parsing.combinator.Parsers
 
 object ParserWithSourcePosition extends Parsers with UnparsedParsers
@@ -48,7 +45,7 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
   lazy val parseText = regex("""[^\r\n]+""".r)
 
   lazy val parseLineComment: PackratParser[LineComment] = {
-    (";" ~> parseText) ^^ { case txt => LineComment(txt.dropWhile(_ == ';').trim, None, None) }
+    rep1(";" ~> parseText) ^^ { case txts => LineComment(txts.map(t => t.dropWhile(_ == ';').trim).mkString("\n"), None, None) }
   }
 
   def pLineComment : ParserWithSourcePosition[LineComment] = {
@@ -70,22 +67,29 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
       { (fullParser(parsers.head) ~ positional(parsers.tail)) ^^ { case p ~ ps => List(p) ::: ps } }
   }
 
+  def singleOrList[A](p : Parser[A]) : Parser[List[A]] =
+    (p ^^ { case (r) => List(r) }) | ("(" ~> rep1(p) <~")" ^^ { case (rs) => rs })
+
   def anyOf[A](ks : List[Parser[A]]) : Parser[A] = {
     if (ks.isEmpty) { failure("none of anyOf") } else { ks.head | anyOf(ks.tail) }
   }
 
-
   def keyworded(ks : List[(Parser[DefForm],Required)]) : Parser[List[Option[DefForm]]] =
   {
+    def uniques[A](xs : List[(A, Int)]) : List[(A, Int)] = xs match {
+      case Nil       => Nil
+      case (y :: ys) => y :: uniques(ys.filter(p => p._2 != y._2))
+    }
+
     def fill(l : List[(Option[DefForm], Int)]) : List[(Option[DefForm], Int)] = {
       var lp = l
       for (ki <- ks.indices){ if (!lp.map(_._2).contains(ki)) {lp = lp ::: List((None, ki))} } ; lp
     }
 
-    val ks0 = ks.map(p => fullParser(p._1))
+    val ks0 = ks.map(p => p._1)
     val ks1 = ks0.map(r => r.map(d => (Some(d),ks0.indexOf(r))))
 
-    rep(anyOf(ks1)).map(l => fill(l).sortWith((x,y) => x._2 < y._2).map(_._1))
+    rep(anyOf(ks1)).map(l => uniques(fill(l).sortWith((x,y) => x._2 < y._2)).map(_._1))
   }
 
   /**
@@ -96,6 +100,8 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
     *
     * @param name The name of the Def-Form, e.g. "def-atomic-sort".
     * @param pos Parsers for all positional arguments (all required and in this order).
+    * @param mod Parsers for all modifier arguments (all optional, any order).
+    *            These are essentially treated exactly like keyword arguments.
     * @param key Parsers for all keyword arguments (might be optional, can come in any order) and
     *            value indicating if they're optional or required.
     * @param x Companion object containing the applicable build() method.
@@ -104,10 +110,11 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
     */
   def composeParser[T <: DefForm](name : String,
                                    pos : List[Parser[DefForm]],
+                                   mod : List[Parser[DefForm]],
                                    key : List[(Parser[DefForm], Required)],
                                      x : Comp[T]) : Parser[T] = {
-    new ParserWithSourcePosition((("(" + name) ~> positional(pos) ~ keyworded(key) <~ ")") ^^
-      { case p ~ k => for (ky <- key.indices) { if (key(ky)._2) { assert(k(ky).isDefined) } }
+    new ParserWithSourcePosition((("(" + name) ~> positional(pos) ~ keyworded(mod.map(k => (k,O)) ::: key) <~ ")") ^^
+      { case p ~ k => for (ky <- key.indices) { if (key(ky)._2) { assert(k(ky+mod.length).isDefined) } }
                       x.build(p ::: k) })
   }
 }
