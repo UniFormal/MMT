@@ -100,6 +100,7 @@ object Importer
   final class Items private(private val rep: SortedMap[Item.Key, Item])
   {
     def get(key: Item.Key): Item = rep.get(key) getOrElse isabelle.error("Undeclared " + key.toString)
+    def get_class(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CLASS, name))
     def get_type(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.TYPE, name))
     def get_const(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CONST, name))
 
@@ -213,6 +214,16 @@ class Importer extends archives.Importer
 
       def decl_error(msg: String, entity: isabelle.Export_Theory.Entity): Nothing =
         isabelle.error(msg + "\nin declaration of " + entity + isabelle.Position.here(entity.pos))
+
+      // classes
+      for (decl <- theory.classes) {
+        try {
+          val item = declare_item(decl.entity, Importer.dummy_type_scheme)
+          val tp = Isabelle.Class()
+          controller.add(item.constant(Some(tp), None))
+        }
+        catch { case isabelle.ERROR(msg) => decl_error(msg, decl.entity) }
+      }
 
       // types
       for (decl <- theory.types if !Importer.suppress_types(decl.entity.name)) {
@@ -357,6 +368,11 @@ class Isabelle(log: String => Unit)
     def apply(): Term = OMS(path)
   }
 
+  object Class
+  {
+    def apply(): Term = lf.Arrow(Type(), Prop())
+  }
+
   object All
   {
     lazy val path: GlobalName = pure_const(isabelle.Pure_Thy.ALL)
@@ -403,6 +419,9 @@ class Isabelle(log: String => Unit)
   def end_theory(theory: isabelle.Export_Theory.Theory, items: Importer.Items): Unit =
     imported.change(map => map + (theory.name -> items))
 
+  def import_class(items: Importer.Items, name: String): Term =
+    OMS(items.get_class(name).global_name)
+
   def import_type(items: Importer.Items, typ: isabelle.Term.Typ): Term =
   {
     try {
@@ -444,9 +463,12 @@ class Isabelle(log: String => Unit)
 
   def import_prop(items: Importer.Items, prop: isabelle.Export_Theory.Prop): Term =
   {
-    val as = prop.typargs.map(_._1)  // FIXME handle sort constraints
+    val types = prop.typargs.map(_._1)
+    val sorts = prop.typargs.flatMap({ case (a, s) => s.map(c => lf.Apply(import_class(items, c), OMV(a))) })
+
     val xs = prop.args.map({ case (x, ty) => OMV(x) % import_type(items, ty) })
     val t = import_term(items, prop.term)
-    Type.all(as, if (xs.isEmpty) t else lf.Pi(xs, t))
+    val u = if (xs.isEmpty) t else lf.Pi(xs, t)
+    Type.all(types, if (sorts.isEmpty) u else lf.Arrow(sorts, u))
   }
 }
