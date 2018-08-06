@@ -481,6 +481,14 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                if (e.getOrigin == ElaborationOf(d.path))
                  v.delete(e.name)
              }
+           case b : DerivedDeclaration =>
+             b.getDeclarations.foreach {e =>
+               if (e.getOrigin == ElaborationOf(d.path))
+                 b.delete(e.name)
+           }
+           case any =>
+             //This should never happen, but simplifies catching other bugs
+             throw ImplementationError("Match error while trying to delete old structural element: "+any.toString())
          }
        case _ =>
      }

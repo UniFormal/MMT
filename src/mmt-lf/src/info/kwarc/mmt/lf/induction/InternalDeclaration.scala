@@ -128,7 +128,8 @@ sealed abstract class InternalDeclaration {
      */
   def ^(sub: Substitution)(implicit parent: OMID) : InternalDeclaration = {
     def toOMV(tp: Term)(implicit parent: OMID): Term = toOMS(tp) match {case OMS(p) => OMV(p.name)}
-    val margs = args map({case (None, x) => (None, toOMV(x)^sub) case (Some(l), x) => (Some(l), VarDecl(OMV.anonymous, x).toTerm^sub)})
+    def mapTm(tp:Term) = if ((toOMV(tp)^sub) != toOMV(tp)) toOMV(tp) ^sub else tp
+    val margs = args map({case (a, x) => (a, mapTm(x))})
     val mtp = FunType(margs, toOMV(ret)^sub)
     val p = path.module ? LocalName(path.name+"'")
     this match {
