@@ -2,16 +2,23 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardRat}
-import info.kwarc.mmt.imps.IMPSTheory.rootdpath
+import info.kwarc.mmt.api.uom.{RSubtype, RepresentedRealizedType, StandardInt, StandardRat, StandardNat}
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
+
+object ImpsOctet extends RSubtype(StandardNat) {
+  override def asString = "octet"
+  def by(u: Any) : Boolean = StandardInt.unapply(u).get >= 0 && StandardInt.unapply(u).get <= 255
+}
 
 object IntLiterals extends
   RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"integerType")),StandardInt)
 
 object RatLiterals extends
   RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"rationalType")),StandardRat)
+
+object OctLiterals extends
+  RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"octetType")),ImpsOctet)
 
 object IMPSTheory
 {

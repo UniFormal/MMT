@@ -929,7 +929,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         else if (s.forall(_.isDigit) || (s.startsWith("-") && s.tail.nonEmpty && s.tail.forall(_.isDigit))) {
           IntLiterals.parse(s)
         }
-        else if (false) { ??? } // ToDo: Octliterals
+        else if (false) { ??? } // ToDo: Ratliterals
+        else if (s.endsWith("#8") && s.init.init.nonEmpty && s.init.init.forall(_.isDigit)) { OctLiterals.parse(s.init.init) }
         else
         {
           val srcthy : DeclaredTheory = locateMathSymbolHome(s,thy)
