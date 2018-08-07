@@ -729,42 +729,49 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
           controller add nu_trans_symbol
         }
-
       }
-      case p@DFAlgebraicProcessor(nm,_,lang,_,_,_,_,_) => {
-
-        val parent_raw = tState.theories_raw.find(rt => if (rt.lang.isDefined) {
-          rt.lang.get.lang.s.toLowerCase == lang.lang.s.toLowerCase
-        } else {false} )
-        val parent_dec = if (parent_raw.isDefined) {
-          tState.theories_decl.find(dt => dt.name.toString.toLowerCase == parent_raw.get.name.s.toLowerCase)
-        } else {
-          tState.theories_decl.find(dt => dt.name.toString.toLowerCase == lang.lang.s.toLowerCase)
+      case DFInductor(name,princ,thy,trans,bh,ish,du,src,cmt) =>
+      {
+        val ln: LocalName = LocalName(thy.thy.s.toLowerCase)
+        if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
+          throw new IMPSDependencyException("required theory " + ln + " for inductor " + name.s + " not found")
         }
-        if (parent_dec.isEmpty) {
-          println(" > could not find theory or language " + lang.lang.s + " for AlgProc " + nm.s)
-          throw new IMPSDependencyException("required theory " + nm.s + " for algebraic processor not found")
-        }
-        assert(parent_dec.isDefined)
-
-        val opaque = new OpaqueText(parent_dec.get.path.toDPath, OpaqueText.defaultFormat, StringFragment(d.toString))
+        val parent: DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
+        val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(d.toString))
+        if (tState.verbosity > 1) { println("   > adding inductor " + name.toString + " to theory " + thy.thy.s) }
+        controller add opaque
+      }
+      case DFAlgebraicProcessor(nm,_,lang,_,_,_,_,_) =>
+      {
+        // Processors are theory-independent
+        val opaque = new OpaqueText(rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
         if (tState.verbosity > 1) {
-            println(" > adding algebraic processor " + nm.s)
+          println(" > adding algebraic-processor " + nm.s)
         }
         controller add opaque
       }
-      case p@DFTheoryProcessors(nm,_,_,_,_,_) =>
+      case DFTheoryProcessors(nm,_,_,_,_,_) =>
       {
-        val parent_dec = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == nm.s.toLowerCase)
-        if (parent_dec.isEmpty) {
-          println(" > could not find theory " + nm.s + " for ThyProc of same name")
-          throw new IMPSDependencyException("required theory " + nm.s + " for theory-processor not found")
-        }
-        assert(parent_dec.isDefined)
-
-        val opaque = new OpaqueText(parent_dec.get.path.toDPath, OpaqueText.defaultFormat, StringFragment(d.toString))
+        // Processors are theory-independent
+        val opaque = new OpaqueText(rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
         if (tState.verbosity > 1) {
-          println(" > adding theory processor " + nm.s)
+          println(" > adding theory-processor " + nm.s)
+        }
+        controller add opaque
+      }
+      case DFOrderProcessor(nm,_,_,_,_,_) =>
+      {
+        // Processors are theory-independent
+        val opaque = new OpaqueText(rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
+        if (tState.verbosity > 1) {
+            println(" > adding order-processor " + nm.s)
+        }
+        controller add opaque
+      }
+      case s@DFScript(nm,_,_,_,_,_,_) => {
+        val opaque = new OpaqueText(rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
+        if (tState.verbosity > 1) {
+          println(" > adding script: " + nm.s)
         }
         controller add opaque
       }
