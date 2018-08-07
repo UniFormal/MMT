@@ -7,11 +7,10 @@ import scala.util.Either
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf.Typed
 import info.kwarc.mmt.api.utils.JSON
-
 import info.kwarc.mmt.imps.impsLibrarySections.allSections
 
 class IMPSImporter extends Importer
@@ -265,15 +264,20 @@ class NEWIMPSParser
    See also: This exact thing, but in PVS */
 class TranslationState ()
 {
-  var vars               : Context              = Context.empty
-  var theories_decl      : List[DeclaredTheory] = Nil
   var theories_raw       : List[DFTheory]       = Nil
+  var theories_decl      : List[DeclaredTheory] = Nil
+
   var languages          : List[DFLanguage]     = Nil
+
+  var translations_raw   : List[DFTranslation]  = Nil
+  var translations_decl  : List[DeclaredView]   = Nil
+
+  var renamers           : List[DFRenamer]      = Nil
 
   var jsons              : List[JSONObject]     = Nil
 
+  var vars               : Context              = Context.empty
   var knownUnknowns      : List[(Int,Term)]     = Nil
-
   var hashCount          : Int = 0
 
   var verbosity          : Int = 0

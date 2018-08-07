@@ -405,7 +405,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     }
 
     d match {
-
+      case LineComment(_,_,_)
+           | DFComment(_,_,_) => {
+        val opaque = new OpaqueText(rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
+      }
       case DFAtomicSort(name,dfs,frm,sort,thy,usgs,witness,src,cmt) =>
       {
         val ln: LocalName = LocalName(thy.thy.s.toLowerCase())
@@ -544,10 +547,15 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           doMetaData(nu_theorem, "reverse", "present")
         }
 
+        if (tState.verbosity > 0)
+        {
+          println(" > adding theorem " + name + " to theory " + parent.name)
+        }
+
         if (proof.isDefined) {
           if (tState.verbosity > 1)
           {
-            println(" > Adding proof!")
+            println("   > Adding proof!")
           }
 
           /* opaque proofs are beetter than no proofs */
@@ -560,13 +568,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         doSourceRefD(nu_theorem, src, uri)
         controller add nu_theorem
-
-        if (tState.verbosity > 0)
-        {
-          println(" > adding theorem " + name + " to theory " + parent.name)
-        }
       }
-      case DFTranslation(name,force,forceQL,dontEnrich,sourcet,targett,assumptions,fixed,sortPairs,constPairs,core,tic,src,cmt) => {
+      case t@DFTranslation(name,force,forceQL,dontEnrich,sourcet,targett,assumptions,fixed,sortPairs,constPairs,core,tic,src,cmt) =>
+      {
+        tState.translations_raw = t :: tState.translations_raw
 
         val ln : LocalName = doName(name.s)
 
@@ -579,10 +584,44 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(sourcet.thy.s).toString.toLowerCase))
         val source_thy : Term = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(sourcet.thy.s).toString.toLowerCase).get.toTerm
 
-        assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(targett.thy.s).toString.toLowerCase))
-        val target_thy : Term = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(targett.thy.s).toString.toLowerCase).get.toTerm
+        // ToDo: Clone theory if assumptions are present
 
-        val nu_view = new DeclaredView(bt.narrationDPath, ln, TermContainer(source_thy), TermContainer(target_thy), false)
+        assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(targett.thy.s).toString.toLowerCase))
+        val target_thy : DeclaredTheory = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(targett.thy.s).toString.toLowerCase).get
+        val target_thy_t : Term = target_thy.toTerm
+
+        val nu_view = new DeclaredView(bt.narrationDPath, ln, TermContainer(source_thy), TermContainer(target_thy_t), false)
+        tState.translations_decl = nu_view :: tState.translations_decl
+        controller add nu_view
+
+        if (sortPairs.isDefined) {
+          for (sp <- sortPairs.get.defs) {
+            var tar : String = ""
+            val target_sort_term : Term = sp.srt match {
+              case scala.util.Left(scala.util.Left(n@srt_name))          => tar = n.toString ; doSort(IMPSAtomSort(srt_name.s), target_thy)
+              case scala.util.Left(scala.util.Right(n@srt_dfstr))        => tar = n.toString ; ???
+              case scala.util.Right(scala.util.Left(n@pred_srt_dfstr))   => tar = n.toString ; ???
+              case scala.util.Right(scala.util.Right(n@indic_srt_dfstr)) => tar = n.toString ; ???
+            }
+            val nu_sort_map = symbols.Constant(nu_view.toTerm,doName(sp.nm.s),Nil,None,Some(target_sort_term),None)
+            if (tState.verbosity > 1) { println(" >  adding sort-mapping: " + sp.nm.s + " → " + tar) }
+            controller add nu_sort_map
+          }
+        }
+
+        if (constPairs.isDefined) {
+          for (cp <- constPairs.get.defs) {
+            var tar : String = ""
+            val target_const_term : Term = cp.const.o match {
+              case scala.util.Left(df) => tar = df.s ; ???
+              case scala.util.Right(n) => tar = n.s  ; doMathExp(IMPSMathSymbol(n.s),target_thy,Nil)
+            }
+            val nu_const_map = symbols.Constant(nu_view.toTerm,doName(cp.name.s),Nil,None,Some(target_const_term),None)
+            if (tState.verbosity > 1) { println(" >  adding constant-mapping: " + cp.name.s + " → " + tar) }
+            controller add nu_const_map
+          }
+        }
+
 
         if (force.isDefined) {
           val mv : GlobalName =     rootdpath ? name.s ? LocalName("force")
@@ -609,7 +648,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         doSourceRefT(nu_view.toTerm,src, uri)
         controller add nu_view
-
       }
       case DFSchematicMacete(name,dfs,_,_,thy,src,cmt) => {
 
@@ -626,6 +664,15 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         controller add opaque
       }
+      case DFCompoundMacete(name,mspec,src,cmt) =>
+      {
+        // Macetes are added as opaque (for now?)
+        val opaque = new OpaqueText(rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
+
+        /* Opaque Text doesn't have metadata, apparently, so we don't add the src */
+        controller add opaque
+      }
+
       case DFQuasiConstructor(name,dfs,arglang,fixedthys,src,cmt) =>
       {
         // Quasi-Constructors needed to be built in because they're not parseable
@@ -652,10 +699,88 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         controller add opaque
       }
+      case r@DFRenamer(_,_,_,_) => tState.renamers = r :: tState.renamers
+      case DFTransportedSymbols(names,translation,renamer,src,cmt) =>
+      {
+
+        val rename : (String => String) = {
+          if (renamer.isDefined) {
+            val rnmr = tState.renamers.find(r => r.nm.s.toLowerCase == renamer.get.rn.s.toLowerCase)
+            assert(rnmr.isDefined)
+            rnmr.get.toFunction
+          } else { identity }
+        }
+
+        val trans_decl = tState.translations_decl.find(t => t.name.toString.toLowerCase == translation.t.s.toLowerCase)
+        assert(trans_decl.isDefined)
+
+        val target = tState.theories_decl.find(thy => thy.name.toString.toLowerCase == tState.translations_raw.find(t => t.n.s.toLowerCase == translation.t.s.toLowerCase).get.tar.thy.s.toLowerCase)
+        assert(target.isDefined)
+
+        if (tState.verbosity > 0) { println( " > Adding transported symbols along " + translation.t.s + ": " + names.nms.mkString(" ")) }
+
+        for (n <- names.nms)
+        {
+          val p = doName(n.s)
+          val q = doName(rename(n.s))
+          val nu_trans_symbol = ??? //symbols.Constant(trans_decl.get.toTerm,p,Nil,None,Some(q),None)
+
+          if (tState.verbosity > 1) { println("   > adding " + n.toString) }
+
+          controller add nu_trans_symbol
+        }
+
+      }
+      case p@DFAlgebraicProcessor(nm,_,lang,_,_,_,_,_) => {
+
+        val parent_raw = tState.theories_raw.find(rt => if (rt.lang.isDefined) {
+          rt.lang.get.lang.s.toLowerCase == lang.lang.s.toLowerCase
+        } else {false} )
+        val parent_dec = if (parent_raw.isDefined) {
+          tState.theories_decl.find(dt => dt.name.toString.toLowerCase == parent_raw.get.name.s.toLowerCase)
+        } else {
+          tState.theories_decl.find(dt => dt.name.toString.toLowerCase == lang.lang.s.toLowerCase)
+        }
+        if (parent_dec.isEmpty) {
+          println(" > could not find theory or language " + lang.lang.s + " for AlgProc " + nm.s)
+          throw new IMPSDependencyException("required theory " + nm.s + " for algebraic processor not found")
+        }
+        assert(parent_dec.isDefined)
+
+        val opaque = new OpaqueText(parent_dec.get.path.toDPath, OpaqueText.defaultFormat, StringFragment(d.toString))
+        if (tState.verbosity > 1) {
+            println(" > adding algebraic processor " + nm.s)
+        }
+        controller add opaque
+      }
+      case p@DFTheoryProcessors(nm,_,_,_,_,_) =>
+      {
+        val parent_dec = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == nm.s.toLowerCase)
+        if (parent_dec.isEmpty) {
+          println(" > could not find theory " + nm.s + " for ThyProc of same name")
+          throw new IMPSDependencyException("required theory " + nm.s + " for theory-processor not found")
+        }
+        assert(parent_dec.isDefined)
+
+        val opaque = new OpaqueText(parent_dec.get.path.toDPath, OpaqueText.defaultFormat, StringFragment(d.toString))
+        if (tState.verbosity > 1) {
+          println(" > adding theory processor " + nm.s)
+        }
+        controller add opaque
+      }
+      case DFPrintSyntax(_,_,_,_,_,_,_,_)
+         | DFParseSyntax(_,_,_,_,_,_,_,_) => {} // Not used, because they are hardcoded.
+      case Heralding(_,_,_)
+         | DFIncludeFiles(_,_,_,_,_)
+         | DFSection(_,_,_,_,_)
+         | Define(_,_,_)
+         | Set(_,_,_)
+         | DFLoadSection(_,_,_) => {} // Not used, because information is present elsewhere.
       case some => {
         if (tState.verbosity > 0)
         {
           println(" > Error: Unknown decl encountered, not translated!")
+          println(" > " + some.getClass + "\n")
         }
       }
     }
