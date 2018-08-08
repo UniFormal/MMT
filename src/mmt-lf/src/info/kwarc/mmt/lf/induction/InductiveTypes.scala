@@ -60,35 +60,9 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     // the no junk axioms
     elabDecls ++= InternalDeclaration.noJunks(decls, tpdecls, tmdecls, statdecls, context)
     
-    //much nicer to read output than the one by controller.presenter.asString
-      def present(c: Constant) : String = {
-      def preTp(e: Term) : String = {
-        def flatStrList(l : List[String], sep : String) = l match {
-          case Nil => ""
-          case hd::tl => hd+tl.foldLeft("")((a, b) => a + sep + b)
-        }
-        def preCon(ctx: Context) = {
-          val args = (ctx map (x => present(Constant(parentTerm, x.name, Nil, x.tp, x.df, None)).replaceAll("\n", " ")))
-          if (args == Nil) "" else " {"+flatStrList(args, ", ")+"}"
-        }
-        def iterPre(body: Term) : String = {
-          body match {
-            case OMBIND(Pi.term, con, body) => preCon(con) + " "+iterPre(body)
-            case ApplyGeneral(f:Term, args @ hd::tl) => iterPre(f)+ " " + flatStrList(args map iterPre, " ")
-            case Arrow(a, b) => "("+iterPre(a) + "-> " + iterPre(b)+")"
-            case OMS(target) => target.name.toString()
-            case ApplySpine(t : Term, List(arg1: Term, arg2: Term)) => "("+iterPre(t) + " " + iterPre(arg1) + " " + iterPre(arg2)+")" // + iterPre(arg1) + " " 
-            case OMV(n) => n.toString()
-          }
-        }
-        iterPre(e)
-      }
-      c.path + ": " + preTp (c.tp.get)
+    elabDecls foreach {d =>
+      //log(InternalDeclarationUtil.present(d))
     }
-    
-    /*elabDecls foreach {d =>
-      log(present(d))
-    }*/
     new Elaboration {
       val elabs : List[Declaration] = Nil 
       def domain = elabDecls map {d => d.name}

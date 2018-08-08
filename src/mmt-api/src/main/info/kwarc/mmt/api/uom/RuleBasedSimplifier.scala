@@ -56,7 +56,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
               try {
                 traverse(t,initState, context)
               } catch {
-                case le: LookupError => println("Lookup Error while simplifying " + controller.presenter.asString(obj)+": "+le.getMessage); throw le
+                case le: LookupError => println("Lookup Error while simplifying " + controller.presenter.asString(obj)+": ")
+                log(le.getMessage)
+                throw le
                 case e: Exception =>
                   // this should never happen; but if there is a bug, it's easier to locate this way 
                   throw GeneralError("error while simplifying " + controller.presenter.asString(obj)).setCausedBy(e)
@@ -109,7 +111,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
                   Changed(tSM)
                else
                   tSM
-            }} catch {case e : Error => println("Error in traverse for case of ComplexTerm: "+e.getMessage); throw e}
+            }} catch {case e : Error => 
+              log("Error in traverse for case of ComplexTerm: "+e.getMessage)
+              throw e}
          // expand abbreviations but not definitions
          case OMS(p) =>
             applyAbbrevRules(p) match {
@@ -142,7 +146,10 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
              t
          }}
            catch {
-             case exc : LookupError => println("LookupError while traversing into OMV("+n+"): "+exc.getMessage); throw exc
+             case exc : LookupError => 
+               println("LookupError while traversing into OMV("+n+"): ")
+               log(exc.getMessage)
+               println(""); throw exc
            }
          // literals read from XML may not be recognized yet
          case u: UnknownOMLIT =>try{
