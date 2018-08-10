@@ -326,7 +326,7 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseDefStringOrName : Parser[ODefString] = fullParser(
-    (parseDefString ^^ { case (d) => ODefString(Left(d),None,None) }) | (parseTName ^^ { case (n) => ODefString(Right(n),None,None) })
+    (parseDefString ^^ { case (d) => ODefString(Left((d,None)),None,None) }) | (parseTName ^^ { case (n) => ODefString(Right(n),None,None) })
   )
 
   lazy val parseArgConstPairSpec : Parser[ArgConstPairSpec] = fullParser(

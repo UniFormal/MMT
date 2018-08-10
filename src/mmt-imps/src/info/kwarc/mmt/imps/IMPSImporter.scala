@@ -23,8 +23,7 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
     tState.verbosity = 2
-    val targetSection : Section = impsLibrarySections.impsMathLibrary
-
+    val targetSection : Section = impsLibrarySections.partialOrders
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)
@@ -224,22 +223,27 @@ class IMPSImporter extends Importer
     None
   )
 
-  val unitSortTheorem : DFTheorem = DFTheorem(
-    Name("()",None,None),
-    ODefString(scala.util.Left(DefString("forall(x:unit%sort,x=an%individual)",None,None)),None,None),
-    Some(IMPSForAll(List((IMPSVar("x"),IMPSAtomSort("unit%sort")),(IMPSVar("y"),IMPSAtomSort("unit%sort"))),
-      IMPSIff(IMPSEquals(IMPSVar("x"),IMPSVar("y")),IMPSTruth()))),
-    None,
-    None,
-    ArgTheory(Name("the-kernel-theory",None,None),None,None),
-    Some(ArgUsages(List(Usage.ELEMENTARYMACETE),None,None)),
-    None,
-    None,
-    None,
-    None,
-    None,
-    None
-  )
+  val unitSortTheorem : DFTheorem = {
+
+    val frm = Some(IMPSForAll(List((IMPSVar("x"),IMPSAtomSort("unit%sort")),(IMPSVar("y"),IMPSAtomSort("unit%sort"))),
+      IMPSIff(IMPSEquals(IMPSVar("x"),IMPSVar("y")),IMPSTruth())))
+
+    DFTheorem(
+      Name("()",None,None),
+      ODefString(scala.util.Left((DefString("forall(x:unit%sort,x=an%individual)",None,None),frm)),None,None),
+      frm,
+      None,
+      None,
+      ArgTheory(Name("the-kernel-theory",None,None),None,None),
+      Some(ArgUsages(List(Usage.ELEMENTARYMACETE),None,None)),
+      None,
+      None,
+      None,
+      None,
+      None,
+      None
+    )
+  }
 }
 
 class NEWIMPSParser
