@@ -1568,17 +1568,14 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
                | scala.util.Left((_,Some(_))) => nu_cps_defs = nu_cps_defs ::: List(cps.get.defs(cp))
             case scala.util.Left((dfs,None))  => {
 
-              val json_theory1 : Option[JSONObject] = js.find(j => j.getAsString("name") == sour.get.thy.s.toLowerCase)
-              assert(json_theory1.isDefined)
-              assert(json_theory1.get.getAsString("type") == "imps-theory")
+              println(" > looking for formula for constant-pair: " + cps.get.defs(cp))
 
               val json_theory2 : Option[JSONObject] = js.find(j => j.getAsString("name") == tar.get.thy.s.toLowerCase)
               assert(json_theory2.isDefined)
               assert(json_theory2.get.getAsString("type") == "imps-theory")
 
-              val group1   : List[JSONObject] = json_theory1.get.getAsList(classOf[JSONObject],"translations")
               val group2   : List[JSONObject] = json_theory2.get.getAsList(classOf[JSONObject],"translations")
-              val haystack : List[JSONObject] = (group1 ::: group2).distinct
+              val haystack : List[JSONObject] = (group2).distinct
               assert(haystack.nonEmpty)
 
               var needle : String = dfs.s.tail.init
@@ -1592,12 +1589,12 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
 
                 // unmodified string
                 needle = removeWhitespace(needle)
-                var tempt = haystack.find(j => j.getAsList(classOf[JSONString],"constant-pairs").map(_.value.toLowerCase).map(a => removeWhitespace(a.split(" ").last.init)).contains(needle))
+                var tempt = haystack.find(j => j.getAsList(classOf[JSONString],"constant-pairs").map(_.value.toLowerCase).map(a => removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init)).contains(needle))
 
                 // if that didn't work, handpicked string
                 if (tempt.isEmpty) {
                   val handpicked = handpick(needle)
-                  tempt = haystack.find(j => j.getAsList(classOf[JSONString],"constant-pairs").map(_.value.toLowerCase).map(a => removeWhitespace(a.split(" ").last.init)).contains(handpicked))
+                  tempt = haystack.find(j => j.getAsList(classOf[JSONString],"constant-pairs").map(_.value.toLowerCase).map(a => removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init)).contains(handpicked))
                 }
                 theThing = tempt
               }

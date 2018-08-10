@@ -23,7 +23,7 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
     tState.verbosity = 2
-    val targetSection : Section = impsLibrarySections.partialOrders
+    val targetSection : Section = impsLibrarySections.basicFields
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)

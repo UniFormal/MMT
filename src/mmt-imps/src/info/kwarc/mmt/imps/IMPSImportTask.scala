@@ -166,19 +166,38 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     if (t.comp.isDefined)
     {
+      def recursiveInclude(includee : DeclaredTheory, includer : DeclaredTheory) : Unit =
+      {
+        // Don't add superfluous includes
+        if (!includer.getIncludes.contains(includee.path))
+        {
+          /* Add Include */
+          if (tState.verbosity > 0) {
+            println("   > adding include of " + includee.name.toString.toLowerCase)
+          }
+          controller add PlainInclude(includee.path,includer.path)
+
+          for (i <- includee.getIncludes)
+          {
+            // These are metatheories, don't need to be included
+            if (!List("Lutins","QuasiLutins").contains(i.name.toString))
+            {
+              val inc : Option[DeclaredTheory] = tState.theories_decl.find(t => t.path == i)
+              assert(inc.isDefined)
+              recursiveInclude(inc.get,includer)
+            }
+          }
+        }
+      }
+
       /* For each component theory, take its language (if there is one) */
       for (comp_theory <- t.comp.get.cps)
       {
         if (!tState.theories_raw.exists(t => t.name.toString.toLowerCase == comp_theory.toString.toLowerCase)) { thy_reset() ; throw new IMPSDependencyException("required co-theory " + comp_theory.s.toLowerCase + " not found") }
 
-        /* Add Include */
         val component = tState.theories_decl.find(p => p.name.toString.toLowerCase == comp_theory.toString.toLowerCase)
         assert(component.isDefined)
-        if (tState.verbosity > 0)
-        {
-          println("   > adding include of " + comp_theory.toString.toLowerCase)
-        }
-        controller add PlainInclude(component.get.path,nu_theory.path)
+        recursiveInclude(component.get,nu_theory)
 
         /* Union Languages */
         val t_index : DFTheory = tState.theories_raw.find(t => t.name.toString.toLowerCase == comp_theory.toString.toLowerCase).get
@@ -256,7 +275,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       if (tState.verbosity > 0)
       {
-        println(" > adding include for kernel theory")
+        println("  > adding include for kernel theory")
       }
 
       val component = tState.theories_decl.find(p => p.name.toString.toLowerCase == "the-kernel-theory")
@@ -508,7 +527,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
           if (tState.verbosity > 0)
           {
-            println(" > adding recursive constant " + nm + " : "  + theseSorts(i).toString)
+            println(" > Adding recursive constant " + nm + " : "  + theseSorts(i).toString)
           }
 
           controller add nu_constant
@@ -712,6 +731,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         val rename : (String => String) = {
           if (renamer.isDefined) {
             val rnmr = tState.renamers.find(r => r.nm.s.toLowerCase == renamer.get.rn.s.toLowerCase)
+            if (rnmr.isEmpty) { println("  > could not find renamer " + renamer.get.rn.s.toLowerCase) ; println(tState.renamers) }
             assert(rnmr.isDefined)
             rnmr.get.toFunction
           } else { identity }
@@ -869,10 +889,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       }
       case IMPSAtomSort(srt) => {
         if (t.getConstants.exists(c => c.name.toString.toLowerCase == srt.toLowerCase)) {
-          println(" > found the sort " + srt + " in " + t.name.toString)
+          //println(" > found the sort " + srt + " in " + t.name.toString)
           OMS(t.path ? srt)
         } else {
-          println(" > did not find the sort " + srt + " in " + t.name.toString + "???")
+          //println(" > did not find the sort " + srt + " in " + t.name.toString + "???")
           OMS(t.path ? srt)
         }
       }
@@ -1423,12 +1443,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     if (tState.verbosity > 0)
     {
-      println(" > Locating IMPSMathSymbol: " + s)
-    } else if (tState.verbosity > 1)
-    {
-      println(" > Looking for IMPSMathSymbol: " + s)
+      println(" > Locating IMPSMathSymbol " + s + " for use in theory " + thy.name.toString)
     }
-
 
     for (mp <- thy.getIncludes ::: List(thy.path))
     {
