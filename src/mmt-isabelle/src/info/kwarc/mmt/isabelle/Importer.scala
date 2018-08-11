@@ -128,6 +128,186 @@ object Importer
     override def toString: String =
       rep.iterator.map(_._2).mkString("Items(", ", ", ")")
   }
+
+
+
+  /** Isabelle session specification: command-line arguments vs. JSON **/
+
+  object Arguments
+  {
+    val extension: String = "isabelle_arguments"
+    val file_name: isabelle.Path = isabelle.Path.explode("command_line").ext(extension)
+
+    val default_output_dir: String = "isabelle_mmt"
+    def default_logic: String = isabelle.Isabelle_System.getenv("ISABELLE_LOGIC")
+
+    def command_line(args: List[String]): Arguments =
+    {
+      var base_sessions: List[String] = Nil
+      var select_dirs: List[String] = Nil
+      var output_dir = ""
+      var requirements = false
+      var exclude_session_groups: List[String] = Nil
+      var all_sessions = false
+      var dirs: List[String] = Nil
+      var session_groups: List[String] = Nil
+      var logic = ""
+      var options: List[String] = Nil
+      var verbose = false
+      var exclude_sessions: List[String] = Nil
+
+      val options0 = isabelle.Options.init()
+
+      val getopts = isabelle.Getopts("""
+Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
+
+  Options are:
+    -B NAME      include session NAME and all descendants
+    -D DIR       include session directory and select its sessions
+    -O DIR       output directory for MMT (default: """ + default_output_dir + """)
+    -R           operate on requirements of selected sessions
+    -X NAME      exclude sessions from group NAME and all descendants
+    -a           select all sessions
+    -d DIR       include session directory
+    -g NAME      select session group NAME
+    -l NAME      logic session name (default ISABELLE_LOGIC=""" + isabelle.quote(default_logic) + """)
+    -o OPTION    override Isabelle system OPTION (via NAME=VAL or NAME)
+    -v           verbose
+    -x NAME      exclude session NAME and all descendants
+
+  Import specified sessions into MMT output directory.
+""",
+        "B:" -> (arg => base_sessions = base_sessions ::: List(arg)),
+        "D:" -> (arg => { isabelle.Path.explode(arg); select_dirs = select_dirs ::: List(arg) }),
+        "O:" -> (arg => { isabelle.Path.explode(arg); output_dir = arg }),
+        "R" -> (_ => requirements = true),
+        "X:" -> (arg => exclude_session_groups = exclude_session_groups ::: List(arg)),
+        "a" -> (_ => all_sessions = true),
+        "d:" -> (arg => { isabelle.Path.explode(arg); dirs = dirs ::: List(arg) }),
+        "g:" -> (arg => session_groups = session_groups ::: List(arg)),
+        "l:" -> (arg => logic = arg),
+        "o:" -> (arg => { options0 + arg; options = options ::: List(arg) }),
+        "v" -> (_ => verbose = true),
+        "x:" -> (arg => exclude_sessions = exclude_sessions ::: List(arg)))
+
+      val sessions = getopts(args)
+
+      Arguments(base_sessions = base_sessions,
+        select_dirs = select_dirs,
+        output_dir = output_dir,
+        requirements = requirements,
+        exclude_session_groups = exclude_session_groups,
+        all_sessions = all_sessions,
+        dirs = dirs,
+        session_groups = session_groups,
+        logic = logic,
+        options = options,
+        verbose = verbose,
+        exclude_sessions = exclude_sessions,
+        sessions = sessions)
+    }
+
+    def read_json(path: isabelle.Path): Arguments =
+    {
+      try { json(isabelle.JSON.parse(isabelle.File.read(path))) }
+      catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin file " + path) }
+    }
+
+    def json(json: isabelle.JSON.T): Arguments =
+    {
+      def err: Nothing = isabelle.error("Bad JSON arguments: " + json)
+
+      json match {
+        case isabelle.JSON.Object(obj) if obj.keySet.subsetOf(domain) =>
+          (for {
+            base_sessions <- isabelle.JSON.strings_default(obj, "base_sessions")
+            select_dirs <- isabelle.JSON.strings_default(obj, "select_dirs")
+            output_dir <- isabelle.JSON.string_default(obj, "output_dir", default_output_dir)
+            requirements <- isabelle.JSON.bool_default(obj, "requirements")
+            exclude_session_groups <- isabelle.JSON.strings_default(obj, "exclude_session_groups")
+            all_sessions <- isabelle.JSON.bool_default(obj, "all_sessions")
+            dirs <- isabelle.JSON.strings_default(obj, "dirs")
+            session_groups <- isabelle.JSON.strings_default(obj, "session_groups")
+            logic <- isabelle.JSON.string_default(obj, "logic", default_logic)
+            options <- isabelle.JSON.strings_default(obj, "options")
+            verbose <- isabelle.JSON.bool_default(obj, "verbose")
+            exclude_sessions <- isabelle.JSON.strings_default(obj, "exclude_sessions")
+            sessions <- isabelle.JSON.strings_default(obj, "sessions")
+          } yield {
+            Arguments(base_sessions = base_sessions,
+              select_dirs = select_dirs,
+              output_dir = output_dir,
+              requirements = requirements,
+              exclude_session_groups = exclude_session_groups,
+              all_sessions = all_sessions,
+              dirs = dirs,
+              session_groups = session_groups,
+              logic = logic,
+              options = options,
+              verbose = verbose,
+              exclude_sessions = exclude_sessions,
+              sessions = sessions)
+          }).getOrElse(err)
+        case _ => err
+      }
+    }
+
+    private lazy val domain: Set[String] =
+      Arguments().json.asInstanceOf[isabelle.JSON.Object.T].keySet
+  }
+
+  sealed case class Arguments(
+    base_sessions: List[String] = Nil,
+    select_dirs: List[String] = Nil,
+    output_dir: String = "",
+    requirements: Boolean = false,
+    exclude_session_groups: List[String] = Nil,
+    all_sessions: Boolean = false,
+    dirs: List[String] = Nil,
+    session_groups: List[String] = Nil,
+    logic: String = "",
+    options: List[String] = Nil,
+    verbose: Boolean = false,
+    exclude_sessions: List[String] = Nil,
+    sessions: List[String] = Nil)
+  {
+    def defaults: Arguments =
+      copy(
+        output_dir = isabelle.proper_string(output_dir).getOrElse(Arguments.default_output_dir),
+        logic = isabelle.proper_string(logic).getOrElse(Arguments.default_logic))
+
+    def json: isabelle.JSON.T =
+      Map("base_sessions" -> base_sessions,
+        "select_dirs" -> select_dirs,
+        "output_dir" -> output_dir,
+        "requirements" -> requirements,
+        "exclude_session_groups" -> exclude_session_groups,
+        "all_sessions" -> all_sessions,
+        "dirs" -> dirs,
+        "session_groups" -> session_groups,
+        "logic" -> logic,
+        "options" -> options,
+        "verbose" -> verbose,
+        "exclude_sessions" -> exclude_sessions,
+        "sessions" -> sessions)
+
+    def write_json(path: isabelle.Path): Unit =
+      isabelle.File.write(path, isabelle.JSON.Format(json))
+  }
+
+
+
+  /** command-line tool **/
+
+  class Tool_Body extends isabelle.Isabelle_Tool.Body
+  {
+    def apply(args: List[String])
+    {
+      val arguments = Arguments.command_line(args)
+      // FIXME
+      println(arguments.defaults.json.toString)
+    }
+  }
 }
 
 class Importer extends archives.Importer
