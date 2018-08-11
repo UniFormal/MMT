@@ -1,6 +1,6 @@
 // DESCRIPTION: build and deploy MMT, using sbt
 
-object Build_MMT extends isabelle.Isabelle_Tool.Body
+object MMT_Build extends isabelle.Isabelle_Tool.Body
 {
   import isabelle._
 
