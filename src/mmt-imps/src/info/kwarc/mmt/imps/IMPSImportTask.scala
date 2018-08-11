@@ -336,14 +336,15 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     {
       for (baseType : IMPSSort <- l.bt.get.nms)
       {
-        if (tState.verbosity > 0) {
-          println(" > adding base type: " + baseType.toString + " to " + t.name)
-        }
-
         val tp : Term = IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
         val basetype = symbols.Constant(t.toTerm, doName(baseType.toString), Nil, Some(tp), None, Some("BaseType"))
         if (l.bt.get.src.isDefined) { doSourceRefD(basetype, l.bt.get.src, uri) }
         controller add basetype
+
+        if (tState.verbosity > 0) {
+          println(" > adding base type: " + baseType.toString + " to " + t.name)
+          println(" > " + basetype.path + "\n")
+        }
       }
     }
 
@@ -372,7 +373,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           }
           case NumericalType.OCTETTYPE    => {
             name = name + "octet_type"
-            ???
+            OMS(IMPSTheory.lutinsPath ? "octetType")
           }
         }
 
@@ -399,6 +400,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         val mth_tp : Term = tState.bindUnknowns(doSort(pair.enc, t))
         val l_const = symbols.Constant(t.toTerm,doName(pair.nm.s),Nil,Some(mth_tp),None,Some("Constant"))
         if (l.cnsts.get.src.isDefined) { doSourceRefD(l_const,l.cnsts.get.src, uri) }
+        if (tState.verbosity > 0)
+        {
+          println(" > adding constant " + pair.nm.s + " : " + pair.enc)
+        }
         controller add l_const
       }
     }
@@ -622,7 +627,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
               case scala.util.Left(scala.util.Left(n@srt_name))          => tar = n.toString ; doSort(IMPSAtomSort(srt_name.s), target_thy)
               case scala.util.Left(scala.util.Right(n@srt_dfstr))        => tar = n.toString ; ???
               case scala.util.Right(scala.util.Left(n@pred_srt_dfstr))   => tar = n.toString ; ???
-              case scala.util.Right(scala.util.Right(n@indic_srt_dfstr)) => tar = n.toString ; ???
+              case scala.util.Right(scala.util.Right(n@indic_srt_dfstr)) => {
+                tar = n.toString
+                assert(sp.mth.isDefined)
+                doMathExp(sp.mth.get,target_thy,Nil)
+              }
             }
             val nu_sort_map = symbols.Constant(nu_view.toTerm,doName(sp.nm.s),Nil,None,Some(target_sort_term),None)
             if (tState.verbosity > 1) { println(" >  adding sort-mapping: " + sp.nm.s + " → " + tar) }
@@ -636,8 +645,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
             val target_const_term : Term = cp.const.o match {
               case scala.util.Left(df) => {
                 tar = df._1.s
-
-                ???
+                assert(df._2.isDefined)
+                doMathExp(df._2.get,target_thy,Nil)
               }
               case scala.util.Right(n) => tar = n.s  ; doMathExp(IMPSMathSymbol(n.s),target_thy,Nil)
             }
@@ -1403,37 +1412,41 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
       case IMPSQCMSurjectiveOn(f,as,bs) =>
       {
-        {
-          val fp  : Term = doMathExp(f,thy,cntxt)
-          val asp : Term = doMathExp(as,thy,cntxt)
-          val bsp : Term = doMathExp(bs,thy,cntxt)
+        val fp  : Term = doMathExp(f,thy,cntxt)
+        val asp : Term = doMathExp(as,thy,cntxt)
+        val bsp : Term = doMathExp(bs,thy,cntxt)
 
-          IMPSTheory.QCT.msurjectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp,bsp)
-        }
+        IMPSTheory.QCT.msurjectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp,bsp)
       }
 
       case IMPSQCMInjectiveOn(f,as) =>
       {
-        {
-          val fp  : Term = doMathExp(f,thy,cntxt)
-          val asp : Term = doMathExp(as,thy,cntxt)
+        val fp  : Term = doMathExp(f,thy,cntxt)
+        val asp : Term = doMathExp(as,thy,cntxt)
 
-          IMPSTheory.QCT.minjectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp)
-        }
+        IMPSTheory.QCT.minjectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp)
       }
 
       case IMPSQCMBijectiveOn(f,as,bs) =>
       {
-        {
-          val fp  : Term = doMathExp(f,thy,cntxt)
-          val asp : Term = doMathExp(as,thy,cntxt)
-          val bsp : Term = doMathExp(bs,thy,cntxt)
+        val fp  : Term = doMathExp(f,thy,cntxt)
+        val asp : Term = doMathExp(as,thy,cntxt)
+        val bsp : Term = doMathExp(bs,thy,cntxt)
 
-          IMPSTheory.QCT.mbijectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp,bsp)
-        }
+        IMPSTheory.QCT.mbijectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp,bsp)
       }
 
-      case _ => { println(d) ; ??? }
+      case IMPSQCGroups(m,mul,e,inv) =>
+      {
+        val g_t : Term = doMathExp(m,thy,cntxt)
+        val m_t : Term = doMathExp(mul,thy,cntxt)
+        val e_t : Term = doMathExp(e,thy,cntxt)
+        val i_t : Term = doMathExp(inv,thy,cntxt)
+
+        IMPSTheory.QCT.groupsQC(tState.doUnknown(),tState.doUnknown(),g_t,m_t,e_t,i_t)
+      }
+
+      case _ => { println(d + " (" + d.getClass + ")") ; ??? }
     }
   }
 
@@ -1466,6 +1479,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       }
     }
 
+    if (srcthy == null) { println(" > could not find thy for " + s) }
     assert(srcthy != null)
     srcthy
   }

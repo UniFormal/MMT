@@ -948,7 +948,7 @@ case class ArgAssumptions(defs : List[DefString], frms : List[IMPSMathExp], var 
   override def toString: String = "(assumptions " + defs.mkString(" ") + ")"
 }
 
-case class ArgSortPairSpec(nm : Name, srt : Either[Either[Name,DefString],Either[DefString,DefString]], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+case class ArgSortPairSpec(nm : Name, srt : Either[Either[Name,DefString],Either[DefString,DefString]], mth : Option[IMPSMathExp], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString: String = "(" + nm.toString + " " + srt.toString + ")"
 }
 
@@ -1556,6 +1556,83 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
 
       var formulas : List[IMPSMathExp] = Nil
       var nu_cps : Option[ArgConstPairs] = None
+      var nu_sps : Option[ArgSortPairs]  = None
+
+      if (sps.isDefined)
+      {
+        var nu_sps_defs : List[ArgSortPairSpec] = Nil
+
+        for (sp <- sps.get.defs.indices)
+        {
+          var needle : String = ""
+
+          sps.get.defs(sp).srt match {
+            case scala.util.Left(scala.util.Left(n@the_name))    => nu_sps_defs = nu_sps_defs ::: List(sps.get.defs(sp))
+            case scala.util.Left(scala.util.Right(n@the_string)) => needle = removeWhitespace(n.s.tail.init)
+            case scala.util.Right(scala.util.Left(n@the_pred))   => needle = removeWhitespace(n.s.tail.init)
+            case scala.util.Right(scala.util.Right(n@the_indic)) => needle = removeWhitespace(n.s.tail.init)
+          }
+
+          if (needle.nonEmpty)
+          {
+            println(" > looking for formula for sort-pair: " + sps.get.defs(sp))
+
+            val json_theory2 : Option[JSONObject] = js.find(j => j.getAsString("name") == tar.get.thy.s.toLowerCase)
+            assert(json_theory2.isDefined)
+            assert(json_theory2.get.getAsString("type") == "imps-theory")
+
+            val group2   : List[JSONObject] = json_theory2.get.getAsList(classOf[JSONObject],"translations")
+            val haystack : List[JSONObject] = group2.distinct
+            assert(haystack.nonEmpty)
+
+            var theThing : Option[JSONObject] = None
+
+            // Search by string
+            if (theThing.isEmpty)
+            {
+              // At this point, we need the actual def-string
+              assert(needle.nonEmpty)
+
+              // unmodified string
+              needle = removeWhitespace(needle)
+              var tempt = haystack.find(j => j.getAsList(classOf[JSONString],"sort-pairs").map(_.value.toLowerCase).map(a => removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init)).contains(needle))
+
+              // if that didn't work, handpicked string
+              if (tempt.isEmpty) {
+                val handpicked = handpick(needle)
+                tempt = haystack.find(j => j.getAsList(classOf[JSONString],"sort-pairs").map(_.value.toLowerCase).map(a => removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init)).contains(handpicked))
+              }
+              theThing = tempt
+            }
+
+            if (theThing.isEmpty)
+            {
+              assert(needle != "")
+              println("\n > needle     = " + needle)
+              println(" > handpicked = " + handpick(needle))
+
+              println("\nCandidates:\n")
+              for (t <- haystack)
+              {
+                t.getAsList(classOf[JSONString],"sort-pairs").map(_.value.toLowerCase).map(a => println(removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init)))
+              }
+            }
+
+            assert(theThing.isDefined)
+            val thesexp : List[String] = theThing.get.getAsList(classOf[String],"sort-pairs-sexp")
+            assert(thesexp.nonEmpty)
+
+            val sep : SymbolicExpressionParser = new SymbolicExpressionParser
+            val lsp = sep.parseAll(sep.parseSEXP,thesexp(sp).toLowerCase.dropWhile(c => !c.isWhitespace).init.trim)
+            assert(lsp.successful)
+
+            val foo = Some(impsMathParser.makeSEXPFormula(lsp.get))
+
+            nu_sps_defs = nu_sps_defs ::: List(ArgSortPairSpec(sps.get.defs(sp).nm,sps.get.defs(sp).srt,foo,sps.get.defs(sp).src,sps.get.defs(sp).cmt))
+          }
+
+        }
+      }
 
       if (cps.isDefined)
       {
@@ -1575,7 +1652,7 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
               assert(json_theory2.get.getAsString("type") == "imps-theory")
 
               val group2   : List[JSONObject] = json_theory2.get.getAsList(classOf[JSONObject],"translations")
-              val haystack : List[JSONObject] = (group2).distinct
+              val haystack : List[JSONObject] = group2.distinct
               assert(haystack.nonEmpty)
 
               var needle : String = dfs.s.tail.init
@@ -1608,7 +1685,7 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
                 println("\nCandidates:\n")
                 for (t <- haystack)
                 {
-                  t.getAsList(classOf[JSONString],"constant-pairs").map(_.value.toLowerCase).map(a => println(removeWhitespace(a.split(" ").last.init)))
+                  t.getAsList(classOf[JSONString],"constant-pairs").map(_.value.toLowerCase).map(a => println(removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init)))
                 }
               }
 
@@ -1617,10 +1694,10 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
               assert(thesexp.nonEmpty)
 
               val sp : SymbolicExpressionParser = new SymbolicExpressionParser
-              val lsp = sp.parseAll(sp.parseSEXP,thesexp(cp).toLowerCase)
+              val lsp = sp.parseAll(sp.parseSEXP,thesexp(cp).toLowerCase.dropWhile(c => !c.isWhitespace).init.trim)
               assert(lsp.successful)
 
-              nu_cps_defs ::: List(ArgConstPairs(nu_cps_defs,cps.get.defs(cp).src,cps.get.defs(cp).cmt))
+              nu_cps_defs = nu_cps_defs ::: List(ArgConstPairSpec(cps.get.defs(cp).name,ODefString(scala.util.Left((dfs,Some(impsMathParser.makeSEXPFormula(lsp.get)))),None,None),None,None))
             }
           }
         }
@@ -1693,7 +1770,7 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
 
       val nuAsms : Option[ArgAssumptions] = if (asms.isDefined) { Some(asms.get.copy(frms = formulas)) } else { None }
 
-      DFTranslation(n, f, fu, de, sour.get, tar.get, nuAsms, fxd, sps, nu_cps, ct, tic, None, None).asInstanceOf[T]
+      DFTranslation(n, f, fu, de, sour.get, tar.get, nuAsms, fxd, nu_sps, nu_cps, ct, tic, None, None).asInstanceOf[T]
     }
     case _ => ??!(args)
   }
@@ -2111,6 +2188,10 @@ object FrmFnd
       case "with(v:[ind_2,ind_1],b:sets[ind_2],dom{v}=b)" => "with(b:sets[ind_2],v:[ind_2,ind_1],dom{v}=b)"
       case "with(u:[ind_1,ind_2],b:sets[ind_2],ran{u}subseteqb)" => "with(b:sets[ind_2],u:[ind_1,ind_2],ran{u}subseteqb)"
       case "with(v:[ind_2,ind_1],a:sets[ind_1],ran{v}subseteqa)" => "with(a:sets[ind_1],v:[ind_2,ind_1],ran{v}subseteqa)"
+      case "lambda(x,y:kk,if(x=o_kkory=o_kk,?kk,x*y))" => "lambda(x,y:kk,if(x=o_kkory=o_kk,?kk,x*_kky))"
+      case "with(a:sets[gg],lambda(x,y:gg,if((xina)and(yina),xmuly,?gg)))" => "with(a:sets[gg],restrict2{mul,a,a})"
+      case "with(a:sets[gg],lambda(x:gg,if(xina,inv(x),?gg)))" => "with(a:sets[gg],restrict{inv,a})"
+      case "with(a:sets[gg],a)" => "with(a:sets[gg],lambda(x_0:gg,x_0ina))"
       case _ => str
     }
   }

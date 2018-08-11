@@ -135,8 +135,8 @@ package object impsLibrarySections
   def basicGroupTheory : Section = Section(
     "basic-group-theory",
     List(foundation),
-    List("groups.t", "subgroups.t", "group-actions.t", "group-lemmas.t", "cosets.t", "normal-subgroups.t"), // "cyclic-groups.t"?
-    List("groups.json", "group-actions.json") // "abelian-groups.json"?
+    List("groups.t", "subgroups.t", "cosets.t", "group-actions.t", "group-lemmas.t", "normal-subgroups.t", "cyclic-groups.t"), // "cyclic-groups.t"?
+    List("groups.json", "group-actions.json", "abelian-groups.json") // "abelian-groups.json"?
   )
 
   def fundamentalCountingTheorem : Section = Section(
@@ -211,7 +211,7 @@ package object impsLibrarySections
 
   def basicFields : Section = Section(
     "basic-fields",
-    List(foundation, preReals, basicMonoids), //basicGroupTheory
+    List(foundation, preReals, basicMonoids, basicGroupTheory), //basicGroupTheory
     List("fields.t", "fields-supplements.t"),
     List("fields.json")
   )

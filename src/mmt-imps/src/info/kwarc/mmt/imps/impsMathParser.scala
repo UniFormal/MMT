@@ -529,19 +529,16 @@ package object impsMathParser
           IMPSQCFirst(e1)
         }
 
-        case SEXPAtom("second") =>
-        {
+        case SEXPAtom("second") => {
           assert(s.args.length == 2)
-          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e1: IMPSMathExp = makeSEXPFormula(s.args(1))
 
           IMPSQCSecond(e1)
         }
 
-
-
         case SEXPAtom(str) =>
         {
-          throw new IMPSDependencyException("Error: Unknown operators: " + str)
+          throw new IMPSDependencyException("Error: Unknown operators: " + str + "\n" + s)
         }
       }
     }

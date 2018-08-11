@@ -446,6 +446,12 @@ object IMPSTheory
       }
     }
 
+    object groupsQC extends UDQC("groupsQC") {
+      def apply(a : Term, alpha : Term, g : Term, m : Term, e : Term, i : Term) : Term = {
+        ApplySpine(this.term, a, alpha, g, m, e, i)
+      }
+    }
+
 
   }
 
