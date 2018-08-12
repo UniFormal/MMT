@@ -5,6 +5,7 @@ import scala.collection.SortedMap
 
 import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
+import frontend.Controller
 import archives._
 import symbols._
 import modules._
@@ -136,22 +137,22 @@ object Importer
   object Arguments
   {
     val extension: String = "isabelle_arguments"
-    val file_name: isabelle.Path = isabelle.Path.explode("command_line").ext(extension)
+    val standard_file: isabelle.Path = isabelle.Path.explode("source/standard").ext(extension)
 
     val default_output_dir: String = "isabelle_mmt"
-    def default_logic: String = isabelle.Isabelle_System.getenv("ISABELLE_LOGIC")
+    val default_logic: String = isabelle.Thy_Header.PURE
 
     def command_line(args: List[String]): Arguments =
     {
       var base_sessions: List[String] = Nil
       var select_dirs: List[String] = Nil
-      var output_dir = ""
+      var output_dir = default_output_dir
       var requirements = false
       var exclude_session_groups: List[String] = Nil
       var all_sessions = false
       var dirs: List[String] = Nil
       var session_groups: List[String] = Nil
-      var logic = ""
+      var logic = default_logic
       var options: List[String] = Nil
       var verbose = false
       var exclude_sessions: List[String] = Nil
@@ -164,13 +165,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
   Options are:
     -B NAME      include session NAME and all descendants
     -D DIR       include session directory and select its sessions
-    -O DIR       output directory for MMT (default: """ + default_output_dir + """)
+    -O DIR       output directory for MMT (default: """ + isabelle.quote(default_output_dir) + """)
     -R           operate on requirements of selected sessions
     -X NAME      exclude sessions from group NAME and all descendants
     -a           select all sessions
     -d DIR       include session directory
     -g NAME      select session group NAME
-    -l NAME      logic session name (default ISABELLE_LOGIC=""" + isabelle.quote(default_logic) + """)
+    -l NAME      logic session name (default: """ + isabelle.quote(default_logic) + """)
     -o OPTION    override Isabelle system OPTION (via NAME=VAL or NAME)
     -v           verbose
     -x NAME      exclude session NAME and all descendants
@@ -259,22 +260,27 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
   sealed case class Arguments(
     base_sessions: List[String] = Nil,
     select_dirs: List[String] = Nil,
-    output_dir: String = "",
+    output_dir: String = Arguments.default_output_dir,
     requirements: Boolean = false,
     exclude_session_groups: List[String] = Nil,
     all_sessions: Boolean = false,
     dirs: List[String] = Nil,
     session_groups: List[String] = Nil,
-    logic: String = "",
+    logic: String = Arguments.default_logic,
     options: List[String] = Nil,
     verbose: Boolean = false,
     exclude_sessions: List[String] = Nil,
     sessions: List[String] = Nil)
   {
-    def defaults: Arguments =
-      copy(
-        output_dir = isabelle.proper_string(output_dir).getOrElse(Arguments.default_output_dir),
-        logic = isabelle.proper_string(logic).getOrElse(Arguments.default_logic))
+    def selection: isabelle.Sessions.Selection =
+      isabelle.Sessions.Selection(
+        requirements = requirements,
+        all_sessions = all_sessions,
+        base_sessions = base_sessions,
+        exclude_session_groups = exclude_session_groups,
+        exclude_sessions = exclude_sessions,
+        session_groups = session_groups,
+        sessions = sessions)
 
     def json: isabelle.JSON.T =
       Map("base_sessions" -> base_sessions,
@@ -292,7 +298,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         "sessions" -> sessions)
 
     def write_json(path: isabelle.Path): Unit =
+    {
+      isabelle.Isabelle_System.mkdirs(path.dir)
       isabelle.File.write(path, isabelle.JSON.Format(json))
+    }
   }
 
 
@@ -304,8 +313,24 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     def apply(args: List[String])
     {
       val arguments = Arguments.command_line(args)
-      // FIXME
-      println(arguments.defaults.json.toString)
+      val output_dir = isabelle.Path.explode(arguments.output_dir)
+      arguments.write_json(output_dir + Arguments.standard_file)
+
+      val meta_inf = output_dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
+      isabelle.Isabelle_System.mkdirs(meta_inf.dir)
+      isabelle.File.write(meta_inf, "id: Isabelle\ntitle: Isabelle\n")
+
+      val controller = new Controller
+      controller.setHome(File(output_dir.file))
+
+      controller.handleLine("extension " + classOf[Importer].getName)
+      if (arguments.verbose) {
+        controller.handleLine("log console")
+        controller.handleLine("log+ archive")
+        controller.handleLine("log+ isabelle-omdoc")
+      }
+      controller.handleLine("mathpath archive .")
+      controller.handleLine("build Isabelle isabelle-omdoc")
     }
   }
 }
@@ -315,40 +340,19 @@ class Importer extends archives.Importer
   importer =>
 
   val key = "isabelle-omdoc"
-
-  def inExts = List("thy")
-
-
-  /* Isabelle environment and session */
-
-  object Isabelle extends Isabelle(importer.log(_))
-
-  override def start(args: List[String])
-  {
-    super.start(args)
-    Isabelle.init()
-  }
-
-  override def destroy
-  {
-    Isabelle.exit()
-    super.destroy
-  }
-
-
-  /* import theory file */
+  def inExts = List(Importer.Arguments.extension)
 
   def importDocument(bt: BuildTask, index: Document => Unit): BuildResult =
   {
-    /* use theories */
+    val arguments =
+      Importer.Arguments.read_json(isabelle.Path.explode(isabelle.File.standard_path(bt.inFile.toJava)))
 
-    val root_name = Isabelle.import_name(bt.inFile.canonical.stripExtension.getPath)
-
-    val use_theories_result =
-      Isabelle.use_theories(List(root_name.path.split_ext._1.implode))
+    object Isabelle extends Isabelle(importer.log(_), arguments)
 
 
     /* theory exports (foundational order) */
+
+    val use_theories_result = Isabelle.start_session()
 
     val thy_exports =
     {
@@ -441,11 +445,12 @@ class Importer extends archives.Importer
       index(doc)
     }
 
+    Isabelle.stop_session()
     BuildResult.empty
   }
 }
 
-class Isabelle(log: String => Unit)
+class Isabelle(log: String => Unit, arguments: Importer.Arguments)
 {
   /* logging */
 
@@ -456,15 +461,18 @@ class Isabelle(log: String => Unit)
     new isabelle.Progress {
       override def echo(msg: String): Unit = log(msg)
       override def theory(session: String, theory: String): Unit =
-        log(isabelle.Progress.theory_message(session, theory))
+        if (arguments.verbose) log(isabelle.Progress.theory_message(session, theory))
     }
 
 
   /* options */
 
-  lazy val options: isabelle.Options = isabelle.Options.init()
+  isabelle.Isabelle_System.init()
 
-  lazy val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
+  val options: isabelle.Options =
+    (isabelle.Dump.make_options(isabelle.Options.init(), isabelle.Dump.known_aspects) /: arguments.options)(_ + _)
+
+  val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
   val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
 
 
@@ -480,32 +488,33 @@ class Isabelle(log: String => Unit)
   def import_name(s: String): isabelle.Document.Node.Name =
     resources.import_name(isabelle.Sessions.DRAFT, "", s)
 
-  def PURE: String = isabelle.Thy_Header.PURE
-  def pure_name: isabelle.Document.Node.Name = import_name(PURE)
-
-  def init()
+  def start_session(): isabelle.Thy_Resources.Theories_Result =
   {
-    isabelle.Isabelle_System.init()
+    val dirs = arguments.dirs.map(isabelle.Path.explode)
+    val select_dirs = arguments.dirs.map(isabelle.Path.explode)
+
+    val session_deps: isabelle.Sessions.Deps =
+      isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs).
+        selection_deps(arguments.selection, progress = progress)
 
     val build_results =
-      isabelle.Build.build(options, progress = progress, sessions = List(PURE))
-    if (!build_results.ok) isabelle.error("Failed to build Isabelle/Pure")
-
-    val session_options =
-      isabelle.Dump.make_options(options, isabelle.Dump.known_aspects)
-
-    val session_deps =
-      isabelle.Sessions.load_structure(session_options).
-        selection_deps(isabelle.Sessions.Selection.all, progress = progress)
-
-    val include_sessions = session_deps.sessions_structure.imports_topological_order
+      isabelle.Build.build(options, progress = progress,
+        dirs = dirs ::: select_dirs, sessions = List(arguments.logic))
+    if (!build_results.ok) isabelle.error("Failed to build Isabelle/" + arguments.logic)
 
     _session =
-      Some(isabelle.Thy_Resources.start_session(session_options, PURE,
-        include_sessions = include_sessions, progress = progress, log = logger))
+      Some(isabelle.Thy_Resources.start_session(options, arguments.logic,
+        session_dirs = dirs ::: select_dirs,
+        include_sessions = session_deps.sessions_structure.imports_topological_order,
+        progress = progress, log = logger))
+
+    session.use_theories(
+      session_deps.sessions_structure.build_topological_order.
+        flatMap(session_name => session_deps.session_bases(session_name).used_theories.map(_.theory)),
+      progress = progress)
   }
 
-  def exit()
+  def stop_session()
   {
     session.stop()
     _session = None
@@ -513,6 +522,9 @@ class Isabelle(log: String => Unit)
 
 
   /* Pure theory */
+
+  def PURE: String = isabelle.Thy_Header.PURE
+  def pure_name: isabelle.Document.Node.Name = import_name(PURE)
 
   lazy val pure_theory: isabelle.Export_Theory.Theory =
     isabelle.Export_Theory.read_pure_theory(store, cache = Some(cache))
