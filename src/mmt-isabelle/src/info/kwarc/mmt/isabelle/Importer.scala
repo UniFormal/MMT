@@ -491,7 +491,7 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
   def start_session(): isabelle.Thy_Resources.Theories_Result =
   {
     val dirs = arguments.dirs.map(isabelle.Path.explode)
-    val select_dirs = arguments.dirs.map(isabelle.Path.explode)
+    val select_dirs = arguments.select_dirs.map(isabelle.Path.explode)
 
     val session_deps: isabelle.Sessions.Deps =
       isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs).
