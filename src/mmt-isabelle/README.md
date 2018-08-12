@@ -9,7 +9,9 @@ as Isabelle component, e.g. in ```$ISABELLE_HOME_USER/etc/settings``` like this:
 
 * build (requires sbt): ```isabelle mmt_build```
 
-* run: e.g. ```isabelle mmt_import -v ZF```
+* importer: e.g. ```isabelle mmt_import -v ZF```
+
+* MMT shell: ```isabelle mmt```
 
 * development: ```isabelle env idea```
 
