@@ -369,6 +369,9 @@ class Importer extends archives.Importer
     /* imported items (foundational order) */
 
     for ((thy_name, theory) <- thy_exports) {
+      val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
+      val thy_base_name = isabelle.Long_Name.base_name(theory.name)
+
       // items
       var items = Isabelle.begin_theory(theory)
 
@@ -381,7 +384,7 @@ class Importer extends archives.Importer
       }
 
       // document
-      val doc = new Document(DPath(bt.base / theory.name), root = true)
+      val doc = new Document(DPath(bt.base / thy_qualifier / thy_base_name), root = true)
       controller.add(doc)
 
       val thy = Importer.declared_theory(thy_name)
