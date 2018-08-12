@@ -326,10 +326,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       if (arguments.verbose) {
         controller.handleLine("log console")
         controller.handleLine("log+ archive")
-        controller.handleLine("log+ isabelle-omdoc")
+        controller.handleLine("log+ Isabelle")
       }
       controller.handleLine("mathpath archive .")
-      controller.handleLine("build Isabelle isabelle-omdoc")
+      controller.handleLine("build Isabelle Isabelle")
     }
   }
 }
@@ -338,7 +338,7 @@ class Importer extends archives.Importer
 {
   importer =>
 
-  val key = "isabelle-omdoc"
+  val key = "Isabelle"
   def inExts = List(Importer.Arguments.extension)
 
   def importDocument(bt: BuildTask, index: Document => Unit): BuildResult =
