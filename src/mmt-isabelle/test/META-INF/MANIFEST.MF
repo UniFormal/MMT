@@ -1,2 +1,0 @@
-id: Isabelle/test
-title: Isabelle Test
