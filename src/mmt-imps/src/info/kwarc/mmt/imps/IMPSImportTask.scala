@@ -107,25 +107,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
     if (excps.nonEmpty) { throw excps.head }
 
-    // Run Checker (to resolve unknowns, etc)
-    // Set to true to run
-    val typecheck : Boolean = true
-
-    if (typecheck)
-    {
-      log("Checking:")
-      logGroup
-      {
-        val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
-          throw GeneralError("no checker found")
-        }.asInstanceOf[MMTStructureChecker]
-        tState.theories_decl foreach { p =>
-          val ce = new CheckingEnvironment(controller.simplifier,new ErrorLogger(report),RelationHandler.ignore,this)
-          checker.apply(p)(ce)
-        }
-      }
-    }
-
     index(doc)
     BuildSuccess(Nil,Nil)
 	}
@@ -539,13 +520,23 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
         }
       }
 
-      case DFTheorem(name,defn,frm,modr,modl,theory,usages,trans,macete,homeTheory,proof,src,cmt) =>
+      case t@DFTheorem(name,defn,frm,modr,modl,theory,usages,trans,macete,homeTheory,proof,src,cmt) =>
       {
+        val delays : List[String] = List("LEFT-LEFT%TRANS-INV", "LEFT-RIGHT%TRANS-INV", "RIGHT-LEFT%TRANS-INV", "RIGHT-RIGHT%TRANS-INV",
+        "LEFT-TRANSLATION-MACETE", "RIGHT-TRANSLATION-MACETE", "REVERSE-SET%CONJUGATE-ASSOCIATIVITY", "REVERSE-LEFT%TRANS-ASSOCIATIVITY",
+          "REVERSE-RIGHT%TRANS-ASSOCIATIVITY", "LEFT-MUL-MACETE", "RIGHT-MUL-MACETE")
+        if (delays.contains(name.s)) { tState.delayed = (t,uri) :: tState.delayed ; return }
+
         val ln: LocalName = doName(theory.thy.s.toLowerCase)
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
           throw new IMPSDependencyException("required theory " + ln + " for theorem not found")
         }
         val parent: DeclaredTheory = tState.theories_decl.find(dt => dt.name.toString.toLowerCase == ln.toString).get
+
+        if (tState.verbosity > 0)
+        {
+          println(" > adding theorem " + name + " to theory " + parent.name)
+        }
 
         val mth: Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(frm.get, parent,Nil)))
         val nu_theorem = symbols.Constant(parent.toTerm, doName(name.s), Nil, Some(mth), None, Some("Theorem"))
@@ -573,11 +564,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
           doMetaData(nu_theorem, "reverse", "present")
         }
 
-        if (tState.verbosity > 0)
-        {
-          println(" > adding theorem " + name + " to theory " + parent.name)
-        }
-
         if (proof.isDefined) {
           if (tState.verbosity > 1)
           {
@@ -597,6 +583,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       }
       case t@DFTranslation(name,force,forceQL,dontEnrich,sourcet,targett,assumptions,fixed,sortPairs,constPairs,core,tic,src,cmt) =>
       {
+        val delays : List[String] = List("ACT->LEFT%TRANS","ACT->RIGHT%TRANS", "ACT->SET%CONJUGATE", "ACT->LEFT-MUL", "ACT->RIGHT-MUL")
+        if (delays.contains(name.s)) { tState.delayed = (t,uri) :: tState.delayed ; return }
+
         tState.translations_raw = t :: tState.translations_raw
 
         val ln : LocalName = doName(name.s)
@@ -736,6 +725,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case r@DFRenamer(_,_,_,_) => tState.renamers = r :: tState.renamers
       case DFTransportedSymbols(names,translation,renamer,src,cmt) =>
       {
+        if (tState.verbosity > 0) { println( " > Adding transported symbols along " + translation.t.s + ": " + names.nms.mkString(" ")) }
 
         val rename : (String => String) = {
           if (renamer.isDefined) {
@@ -754,8 +744,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
         val target = tState.theories_decl.find(thy => thy.name.toString.toLowerCase == tState.translations_raw.find(t => t.n.s.toLowerCase == translation.t.s.toLowerCase).get.tar.thy.s.toLowerCase)
         assert(target.isDefined)
-
-        if (tState.verbosity > 0) { println( " > Adding transported symbols along " + translation.t.s + ": " + names.nms.mkString(" ")) }
 
         for (n <- names.nms)
         {

@@ -6,6 +6,7 @@ import scala.io.Source
 import scala.util.Either
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureChecker, RelationHandler}
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
@@ -191,6 +192,26 @@ class IMPSImporter extends Importer
         case e : IMPSDependencyException => { println(" > Failure! " + e.getMessage) ; sys.exit }
       }
     }
+
+    // Run Checker (to resolve unknowns, etc)
+    // Set to true to run
+    val typecheck : Boolean = true
+
+    if (typecheck)
+    {
+      log("Checking:")
+      logGroup
+      {
+        val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
+          throw GeneralError("no checker found")
+        }.asInstanceOf[MMTStructureChecker]
+        tState.theories_decl foreach { p =>
+          val ce = new CheckingEnvironment(controller.simplifier,new ErrorLogger(report),RelationHandler.ignore,importTask)
+          checker.apply(p)(ce)
+        }
+      }
+    }
+
     BuildSuccess(Nil, Nil)
   }
 
@@ -277,6 +298,8 @@ class TranslationState ()
   var translations_decl  : List[DeclaredView]   = Nil
 
   var renamers           : List[DFRenamer]      = Nil
+
+  var delayed            : List[(DefForm,URI)]  = Nil
 
   var jsons              : List[JSONObject]     = Nil
 

@@ -120,7 +120,7 @@ object IMPSTheory
     }
   }
 
-  object If_Form extends Sym("ifform") {
+  object If_Form extends Sym("if_form") {
     def apply(p1 : Term, p2 : Term, p3 : Term) : Term = {
       ApplySpine(this.term, p1, p2, p3)
     }

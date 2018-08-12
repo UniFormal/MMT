@@ -135,7 +135,7 @@ package object impsLibrarySections
   def basicGroupTheory : Section = Section(
     "basic-group-theory",
     List(foundation),
-    List("groups.t", "subgroups.t", "cosets.t", "group-actions.t", "group-lemmas.t", "normal-subgroups.t", "cyclic-groups.t"), // "cyclic-groups.t"?
+    List("groups.t", "subgroups.t", "group-actions.t", "cosets.t", "group-lemmas.t", "normal-subgroups.t", "cyclic-groups.t"), // "cyclic-groups.t"?
     List("groups.json", "group-actions.json", "abelian-groups.json") // "abelian-groups.json"?
   )
 
