@@ -308,11 +308,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
   /** command-line tool **/
 
-  class Tool_Body extends isabelle.Isabelle_Tool.Body
+  def main(args: Array[String])
   {
-    def apply(args: List[String])
-    {
-      val arguments = Arguments.command_line(args)
+    isabelle.Command_Line.tool0 {
+      val arguments = Arguments.command_line(args.toList)
       val output_dir = isabelle.Path.explode(arguments.output_dir)
       arguments.write_json(output_dir + Arguments.standard_file)
 
