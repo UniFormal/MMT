@@ -147,6 +147,7 @@ object Importer
       var select_dirs: List[String] = Nil
       var output_dir = default_output_dir
       var requirements = false
+      var inline_source = false
       var exclude_session_groups: List[String] = Nil
       var all_sessions = false
       var dirs: List[String] = Nil
@@ -166,6 +167,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     -D DIR       include session directory and select its sessions
     -O DIR       output directory for MMT (default: """ + isabelle.quote(default_output_dir) + """)
     -R           operate on requirements of selected sessions
+    -S           inline theory source
     -X NAME      exclude sessions from group NAME and all descendants
     -a           select all sessions
     -d DIR       include session directory
@@ -181,6 +183,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         "D:" -> (arg => { isabelle.Path.explode(arg); select_dirs = select_dirs ::: List(arg) }),
         "O:" -> (arg => { isabelle.Path.explode(arg); output_dir = arg }),
         "R" -> (_ => requirements = true),
+        "S" -> (_ => inline_source = true),
         "X:" -> (arg => exclude_session_groups = exclude_session_groups ::: List(arg)),
         "a" -> (_ => all_sessions = true),
         "d:" -> (arg => { isabelle.Path.explode(arg); dirs = dirs ::: List(arg) }),
@@ -196,6 +199,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         select_dirs = select_dirs,
         output_dir = output_dir,
         requirements = requirements,
+        inline_source = inline_source,
         exclude_session_groups = exclude_session_groups,
         all_sessions = all_sessions,
         dirs = dirs,
@@ -224,6 +228,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             select_dirs <- isabelle.JSON.strings_default(obj, "select_dirs")
             output_dir <- isabelle.JSON.string_default(obj, "output_dir", default_output_dir)
             requirements <- isabelle.JSON.bool_default(obj, "requirements")
+            inline_source <- isabelle.JSON.bool_default(obj, "inline_source")
             exclude_session_groups <- isabelle.JSON.strings_default(obj, "exclude_session_groups")
             all_sessions <- isabelle.JSON.bool_default(obj, "all_sessions")
             dirs <- isabelle.JSON.strings_default(obj, "dirs")
@@ -238,6 +243,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               select_dirs = select_dirs,
               output_dir = output_dir,
               requirements = requirements,
+              inline_source = inline_source,
               exclude_session_groups = exclude_session_groups,
               all_sessions = all_sessions,
               dirs = dirs,
@@ -261,6 +267,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     select_dirs: List[String] = Nil,
     output_dir: String = Arguments.default_output_dir,
     requirements: Boolean = false,
+    inline_source: Boolean = false,
     exclude_session_groups: List[String] = Nil,
     all_sessions: Boolean = false,
     dirs: List[String] = Nil,
@@ -286,6 +293,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         "select_dirs" -> select_dirs,
         "output_dir" -> output_dir,
         "requirements" -> requirements,
+        "inline_source" -> inline_source,
         "exclude_session_groups" -> exclude_session_groups,
         "all_sessions" -> all_sessions,
         "dirs" -> dirs,
@@ -391,7 +399,7 @@ class Importer extends archives.Importer
       controller.add(MRef(doc.path, thy.path))
 
       // theory source
-      if (thy_name != Isabelle.pure_name) {
+      if (arguments.inline_source && thy_name != Isabelle.pure_name) {
         val thy_text = isabelle.File.read(thy_name.path)
         val thy_text_output = isabelle.Symbol.decode(thy_text.replace(' ', '\u00a0'))
         controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(thy_text_output)))
