@@ -1,7 +1,7 @@
 package info.kwarc.mmt.isabelle
 
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.utils.{File,MMTSystem}
 import info.kwarc.mmt.api.web.Util
 
 object Server
@@ -33,10 +33,19 @@ Usage: isabelle mmt_server [OPTIONS]
       if (Util.isTaken(port)) isabelle.error("Port " + port + " already taken")
 
       val controller = new Controller
+      for {
+        config <-
+          List(File(isabelle.Path.explode("$ISABELLE_MMT_ROOT/deploy/mmtrc").file),
+            MMTSystem.userConfigFile)
+        if config.exists
+      } controller.loadConfigFile(config, false)
+
       controller.setHome(File(output_dir.file))
 
       controller.handleLine("mathpath archive .")
       controller.handleLine("server on " + port)
+
+      println(info.kwarc.mmt.api.utils.MMTSystem.runStyle)
 
       println("Server http://127.0.0.1:" + port + " for archive " + output_dir.absolute)
       println("Waiting for INTERRUPT signal ...")
