@@ -46,8 +46,6 @@ Usage: isabelle mmt_server [OPTIONS]
       controller.handleLine("mathpath archive .")
       controller.handleLine("server on " + port)
 
-      println(info.kwarc.mmt.api.utils.MMTSystem.runStyle)
-
       println("Server http://127.0.0.1:" + port + " for archive " + output_dir.absolute)
       println("Waiting for INTERRUPT signal ...")
 
