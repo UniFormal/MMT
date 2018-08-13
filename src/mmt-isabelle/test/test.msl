@@ -1,9 +1,0 @@
-extension info.kwarc.mmt.isabelle.Importer
-
-log console
-log+ archive
-
-mathpath archive .
-
-log+ isabelle-omdoc
-build Isabelle/test isabelle-omdoc

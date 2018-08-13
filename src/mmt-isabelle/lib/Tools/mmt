@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#
+# DESCRIPTION: MMT shell
+
+isabelle java info.kwarc.mmt.api.frontend.Run "$@"
