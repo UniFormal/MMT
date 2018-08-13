@@ -1,4 +1,4 @@
-package info.kwarc.mmt.lf.induction
+package info.kwarc.mmt.lf.structuralfeatures
 
 import info.kwarc.mmt.api._
 import objects._
@@ -40,8 +40,6 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     implicit var tpdecls : List[TypeLevel]= Nil
     val decls = dd.getDeclarations map {
       case c: Constant =>
-       // val fullContext = (context++dd.getDeclarations filter {case _ : Constant => true
-       // case _ => false}) map({case c:Constant=>VarDecl.apply(c.name, None, c.tp, c.tp, None)})
         val intDecl = InternalDeclaration.fromConstant(c, controller)
         intDecl match {
           case d @ TermLevel(_, _, _, _, _) => tmdecls :+= d; intDecl
@@ -58,7 +56,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     elabDecls = elabDecls.reverse ::: TermLevel.noConfs(tmdecls, context)
     
     // the no junk axioms
-    elabDecls ++= InternalDeclaration.noJunks(decls, tpdecls, tmdecls, statdecls, context)
+    elabDecls ++= InternalDeclaration.noJunks(decls, tpdecls, tmdecls, statdecls, context, None, {x => x})
     
     elabDecls foreach {d =>
       //log(InternalDeclarationUtil.present(d))

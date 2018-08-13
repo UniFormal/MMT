@@ -8,8 +8,7 @@ import checking._
 import modules._
 
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.lf.induction.InductiveTypes
-
+import info.kwarc.mmt.lf.structuralfeatures
 //import scala.collection.parallel.ParIterableLike.Copy
 
 class EquivalenceRelation extends StructuralFeature("equivalence_relation") with ParametricTheoryLike {
@@ -77,4 +76,4 @@ class EquivalenceRelation extends StructuralFeature("equivalence_relation") with
   }
 }
 
-object EquivalenceRelationRule extends StructuralFeatureRule(classOf[InductiveTypes], "EquivalenceRelation")
+object EquivalenceRelationRule extends StructuralFeatureRule(classOf[EquivalenceRelation], "EquivalenceRelation")

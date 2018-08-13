@@ -1,4 +1,4 @@
-package info.kwarc.mmt.lf.induction
+package info.kwarc.mmt.lf.structuralfeatures
 
 import info.kwarc.mmt.api._
 import objects._
@@ -113,7 +113,8 @@ sealed abstract class InternalDeclaration {
   }
   
   /** apply the internal declaration to the given argument context */
-  def appliedTo(args: Context)(implicit parent: OMID):Term = toOMS(ApplyGeneral(OMS(path), args map toOMS))
+  def applied(args: Context)(implicit parent: OMID):Term = toOMS(ApplyGeneral(OMS(path), args map toOMS))
+  def applyTo(args: List[Term])(implicit parent: OMID):Term = applied(args map {x => OMV(toOMS(x) match {case OMS(p) => p.name}) % x})
   
   /**
    * Substitute the argument types of the inductive declaration according to the substitution sub
@@ -150,7 +151,7 @@ sealed abstract class InternalDeclaration {
     //the result of applying the image of the constructor (all types substituted) to the image of the arguments
     val mappedArgs : List[VarDecl] = args map mapTerm
     //ensure everything went well and the argument is actually in the context
-    val mappedConstr : Term = chain.find(_ == mapConstr(this)).get.appliedTo(mappedArgs)
+    val mappedConstr : Term = chain.find(_ == mapConstr(this)).get.applied(mappedArgs)
     
     //both results should be equal, if m is actually a morphism
     def assertion(assert:(Term, Term) => Term) = Pi(chain.map(_.toVarDecl) ++ ctx ++ args, assert(mappedRes, mappedConstr))
@@ -163,6 +164,7 @@ sealed abstract class InternalDeclaration {
   
   def toVarDecl(implicit parent: OMID) : VarDecl = VarDecl(this.name, this.tp, OMS(this.path))
   def toConstant(implicit parent : OMID) : Constant = Constant(parent, name, Nil, Some(tp), df, None, notation)
+  def ToOMS(implicit parent : OMID) : Term = OMS(toConstant.path)
 }
 
 object InternalDeclaration {
@@ -195,16 +197,16 @@ object InternalDeclaration {
    /**
    * Generate no junk declaration for all internal declarations
    * @param parent the parent declared module of the derived declaration to elaborate
-   * @param decls all declarations
+   * @param decls all declarations, used to construct the chain
    * @param tmdecls all term level declarations
    * @param tpdecls all type level declarations
    * @param context the inner context of the derived declaration
    * @returns returns one no junk (morphism) declaration for each type level declaration
    * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
    */    
-  def noJunks(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], statdecls: List[StatementLevel], context: Context)(implicit parent : OMID) : List[Constant] = {
+  def noJunks(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], statdecls: List[StatementLevel], context: Context, applyTermConstrs: Option[List[(Term, InternalDeclaration, (VarDecl, Context, InternalDeclaration => InternalDeclaration) => VarDecl)]], mapConstructors : InternalDeclaration => InternalDeclaration)(implicit parent : OMID) : List[Constant] = {
     var derived_decls:List[Constant] = Nil
-    val (tp_induct_decls, mapConstr, mapTerm, chain) = getFullMorph(decls, tpdecls, context)
+    val (tp_induct_decls, mapConstr, mapTerm, chain) = getFullMorph(decls, tpdecls, context, applyTermConstrs, mapConstructors)
     derived_decls ++=tp_induct_decls
     
     (tmdecls++statdecls) foreach {decl : InternalDeclaration => 
@@ -221,12 +223,12 @@ object InternalDeclaration {
    * @param tpdecls All type level internal declarations
    * @param context the inner context of the derived declaration
    */
-  def getFullMorph(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], context: Context)(implicit parent : OMID) : (List[Constant], InternalDeclaration => InternalDeclaration, VarDecl => VarDecl, List[InternalDeclaration]) = {
+  def getFullMorph(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], context: Context, morphs: Option[List[(Term, InternalDeclaration, (VarDecl, Context, InternalDeclaration => InternalDeclaration) => VarDecl)]], mapConstructors : InternalDeclaration => InternalDeclaration)(implicit parent : OMID) : (List[Constant], InternalDeclaration => InternalDeclaration, VarDecl => VarDecl, List[InternalDeclaration]) = {
     //A list of quadruples consisting of (context of arguments, x, x_, the sub replacing x with a free type x_) for each type declaration declaring a type x
     val types : List[(Context, VarDecl, Sub)]= tpdecls map(_.getTypes(None))
     
     /** The morphism on constructors, it map c |-> c' for each constructor c */
-    def mapConstr(con: InternalDeclaration): InternalDeclaration = con ^ (types.map(_._3))
+    def mapConstr: InternalDeclaration => InternalDeclaration = {con => mapConstructors (con ^ (types.map(_._3)))}
     val chain : List[InternalDeclaration]= decls map mapConstr
 
     /** The morphism for terms, it maps all terms t: a = m |-> t' : a* = m' iff a is one of the earlier inductively defined types */
@@ -237,7 +239,8 @@ object InternalDeclaration {
       }
     }
     
-    var morphisms : List[(VarDecl, Constant, VarDecl => VarDecl)] = Nil
+    val initMorphs = morphs getOrElse(Nil) map {case (x:Term, y:InternalDeclaration, map) => (OMV(uniqueLN(y.name+"_ret")) % x, y.toConstant, {t:VarDecl => map (t, chain map(_.toVarDecl), mapConstr)})}
+    var morphisms : List[(VarDecl, Constant, VarDecl => VarDecl)] = initMorphs
     tpdecls zip types foreach {
       case (t:TypeLevel, (c, x, s)) => morphisms = morphisms :+ t.getMorph(t, chain, mapTerm (morphisms, _), mapConstr, c, x, context)
     }
