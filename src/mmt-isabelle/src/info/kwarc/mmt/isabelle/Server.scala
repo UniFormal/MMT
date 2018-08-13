@@ -30,6 +30,7 @@ Usage: isabelle mmt_server [OPTIONS]
       val more_args = getopts(args)
       if (more_args.nonEmpty) getopts.usage()
 
+      if (!output_dir.is_dir) isabelle.error("Bad directory " + output_dir)
       if (Util.isTaken(port)) isabelle.error("Port " + port + " already taken")
 
       val controller = new Controller
