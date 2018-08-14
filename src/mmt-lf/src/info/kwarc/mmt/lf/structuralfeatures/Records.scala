@@ -10,6 +10,9 @@ import frontend.Controller
 
 import info.kwarc.mmt.lf._
 
+import InternalDeclaration._
+import InternalDeclarationUtil._
+
 /** theories as a set of types of expressions */ 
 class Records extends StructuralFeature("record") with ParametricTheoryLike {
 
@@ -38,59 +41,35 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     implicit var statdecls : List[StatementLevel]= Nil
     implicit var tpdecls : List[TypeLevel] = Nil
     
-    val hd = InternalDeclaration.fromConstant(Constant(parentTerm, InternalDeclarationUtil.uniqueLN("M"), Nil, Some(Univ(1)), None, None), controller)
+    val hd = fromConstant(Constant(parentTerm, uniqueLN("M"), Nil, Some(Univ(1)), None, None), controller)
     elabDecls :+= hd.toConstant
     
-    var origDecls : List[InternalDeclaration] = Nil
-    val decls : List[InternalDeclaration] = dd.getDeclarations map {
-      case c: Constant =>
-        val intDecl = InternalDeclaration.fromConstant(c, controller)
-        var mapTypes : List[Sub] = Nil
-        intDecl match {
-          case TermLevel(p, args, ret, df, notC) => 
-          	origDecls ::= intDecl
-          	TermLevel(p, (Some(InternalDeclarationUtil.uniqueLN("m")), hd.ToOMS)::args, ret, df, notC) ^ mapTypes
-          case d @ TypeLevel(p, args, df, notC) => 
-          	origDecls ::= intDecl
-          	val tpl = TypeLevel(p, (None, OMS(hd.toConstant.path))::args, df, notC) ^ mapTypes
-          	val s : Sub = OMV(p.name) / tpl.applied(hd.toVarDecl); mapTypes ::=s
-          	tpl
-          case d @ StatementLevel(p, args, df, notC) => 
-          	origDecls ::= intDecl
-          	StatementLevel(p, (Some(InternalDeclarationUtil.uniqueLN("m")), hd.ToOMS)::args, df, notC) ^ mapTypes
-          	
-         }
+    val origDecls : List[InternalDeclaration] = dd.getDeclarations map {
+      case c: Constant => fromConstant(c, controller)
       case _ => throw LocalError("unsupported declaration")
     }
+    val decls : List[InternalDeclaration] = toEliminationDecls(origDecls, hd)
+    
     decls foreach {
        case d @ TermLevel(_, _, _, _, _) => tmdecls :+= d
        case d @ TypeLevel(_, _, _, _) => tpdecls :+= d
        case d @ StatementLevel(_, _, _, _) => statdecls :+= d
     }
     
-    val make : InternalDeclaration = InternalDeclaration.fromConstant(Constant(parentTerm, InternalDeclarationUtil.uniqueLN("M"), Nil, Some(Pi(origDecls.map(_.toVarDecl), hd.ToOMS)), None, None), controller)
-	  val applyMakeToArgs = (make.ret, make, {(arg:VarDecl, chain:Context, mapConstr: InternalDeclaration => InternalDeclaration) => OMV(make.name) % make.applied(origDecls.map(x => mapConstr(x).toVarDecl))})
+    val make : InternalDeclaration = fromConstant(Constant(parentTerm, uniqueLN("make"), Nil, Some(FunType(origDecls.reverse.map(x => (Some(x.name), x.ToOMS)), hd.ToOMS)), None, None), controller)
     
     // copy all the declarations
     decls foreach {d => elabDecls ::= d.toConstant}
     
-    //process chain
-    def processChain: InternalDeclaration => InternalDeclaration = {d => d match {
-      case TermLevel(p, args, ret, df, notC) => TermLevel(p, args.tail, ret, df, notC)
-       case TypeLevel(p, args, df, notC) => TypeLevel(p, args.tail, df, notC)
-       case StatementLevel(p, args, df, notC) => StatementLevel(p, args.tail, df, notC)
-    }}
-    
     // the no junk axioms
-    elabDecls = elabDecls.reverse ++ InternalDeclaration.noJunks(decls, tpdecls, tmdecls, statdecls, context, Some(List(applyMakeToArgs)), processChain)
+    elabDecls = elabDecls.reverse ++ noJunksEliminationDeclarations(decls, tpdecls, tmdecls, statdecls, context, make, origDecls)
     
-    val arg = InternalDeclarationUtil.newVar(InternalDeclarationUtil.uniqueLN("m"), hd.ret, None)
-    val repTm = Pi(arg, InternalDeclarationUtil.Eq(hd.applyTo(decls.map(_.applied(arg))), arg.toTerm))
-    val repr = OMV(InternalDeclarationUtil.uniqueLN("repr")) % repTm
+    val arg = newVar(uniqueLN("m"), hd.ret, None)
+    val repr = OMV(uniqueLN("repr")) % Pi(arg, Eq(hd.applyTo(decls.map(_.applied(arg))), arg.toTerm))
     elabDecls :+= Constant.apply(parentTerm, repr.name, Nil, repr.tp, repr.df, None)
     
     elabDecls foreach {d =>
-      println(InternalDeclarationUtil.present(d))
+      log(present(d))
     }
     new Elaboration {
       val elabs : List[Declaration] = Nil 

@@ -56,10 +56,10 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     elabDecls = elabDecls.reverse ::: TermLevel.noConfs(tmdecls, context)
     
     // the no junk axioms
-    elabDecls ++= InternalDeclaration.noJunks(decls, tpdecls, tmdecls, statdecls, context, None, {x => x})
+    elabDecls ++= InternalDeclaration.noJunks(decls, tpdecls, tmdecls, statdecls, context)
     
     elabDecls foreach {d =>
-      //log(InternalDeclarationUtil.present(d))
+      log(InternalDeclarationUtil.present(d))
     }
     new Elaboration {
       val elabs : List[Declaration] = Nil 

@@ -116,21 +116,33 @@ sealed abstract class InternalDeclaration {
   def applied(args: Context)(implicit parent: OMID):Term = toOMS(ApplyGeneral(OMS(path), args map toOMS))
   def applyTo(args: List[Term])(implicit parent: OMID):Term = applied(args map {x => OMV(toOMS(x) match {case OMS(p) => p.name}) % x})
   
+  def ^^(sub: Substitution)(implicit parent: OMID) : InternalDeclaration = {
+    def toOMV(tp: Term)(implicit parent: OMID): Term = toOMS(tp) match {case OMS(p) => OMV(p.name)}
+    def mapTm(tp:Term) = if ((toOMV(tp)^sub) != toOMV(tp)) toOMV(tp) ^sub else tp
+    val margs = args map({case (a, x) => (a, mapTm(x))})
+    val mtp = FunType(margs, toOMV(ret)^sub)
+    this match {
+      case TermLevel(_, _, _, df, n) => TermLevel(path, margs, toOMV(ret)^sub, df, n)
+      case TypeLevel(_, _, df, n) => TypeLevel(path, margs, df, n)
+      case StatementLevel(_, _, df, n) => StatementLevel(path, margs, df, n)
+    }
+  }
+  
+  def rename(newName: LocalName)(implicit parent: OMID) : InternalDeclaration = {
+    val p = path.module ? newName
+    this match {
+      case TermLevel(_, _, _, _, n) => TermLevel(p, args, ret, df, n)
+      case TypeLevel(_, _, _, n) => TypeLevel(p, args, df, n)
+      case StatementLevel(_, _, _, n) => StatementLevel(p, args, df, n)
+    }
+  }
+    
   /**
    * Substitute the argument types of the inductive declaration according to the substitution sub
    * @param sub the substitution to apply
    */
   def ^(sub: Substitution)(implicit parent: OMID) : InternalDeclaration = {
-    def toOMV(tp: Term)(implicit parent: OMID): Term = toOMS(tp) match {case OMS(p) => OMV(p.name)}
-    def mapTm(tp:Term) = if ((toOMV(tp)^sub) != toOMV(tp)) toOMV(tp) ^sub else tp
-    val margs = args map({case (a, x) => (a, mapTm(x))})
-    val mtp = FunType(margs, toOMV(ret)^sub)
-    val p = path.module ? LocalName(path.name+"'")
-    this match {
-      case TermLevel(_, _, _, df, n) => TermLevel(p, margs, toOMV(ret)^sub, df, n)
-      case TypeLevel(_, _, df, n) => TypeLevel(p, margs, df, n)
-      case StatementLevel(_, _, df, n) => StatementLevel(p, margs, df, n)
-    }
+    this ^^ sub rename(uniqueLN(this.name+"'"))
   }
   
   /**
@@ -151,7 +163,7 @@ sealed abstract class InternalDeclaration {
     //the result of applying the image of the constructor (all types substituted) to the image of the arguments
     val mappedArgs : List[VarDecl] = args map mapTerm
     //ensure everything went well and the argument is actually in the context
-    val mappedConstr : Term = chain.find(_ == mapConstr(this)).get.applied(mappedArgs)
+    val mappedConstr : Term = mapConstr(this).applied(mappedArgs)
     
     //both results should be equal, if m is actually a morphism
     def assertion(assert:(Term, Term) => Term) = Pi(chain.map(_.toVarDecl) ++ ctx ++ args, assert(mappedRes, mappedConstr))
@@ -165,6 +177,15 @@ sealed abstract class InternalDeclaration {
   def toVarDecl(implicit parent: OMID) : VarDecl = VarDecl(this.name, this.tp, OMS(this.path))
   def toConstant(implicit parent : OMID) : Constant = Constant(parent, name, Nil, Some(tp), df, None, notation)
   def ToOMS(implicit parent : OMID) : Term = OMS(toConstant.path)
+  def toEliminationDecl(structure: InternalDeclaration, types:List[TypeLevel])(implicit parent : OMID) : InternalDeclaration = {
+    val mapTypes = types map {tpl => OMV(tpl.path.name) / tpl.applied(structure.toVarDecl)}
+    this match {
+      case d @ TermLevel(p, args, ret, df, notC) => TermLevel(p, (Some(uniqueLN("m")), structure.ret)::args, ret, df, notC) ^^ mapTypes
+      case d @ TypeLevel(p, args, df, notC) => TypeLevel(p, (None, structure.ret)::args, df, notC) ^^ mapTypes
+      case d @ StatementLevel(p, args, df, notC) => StatementLevel(p, (Some(uniqueLN("m")), structure.ret)::args, df, notC) ^^ mapTypes
+    }
+  }
+  def toString(implicit parent : OMID) = present(this.toConstant)
 }
 
 object InternalDeclaration {
@@ -204,9 +225,9 @@ object InternalDeclaration {
    * @returns returns one no junk (morphism) declaration for each type level declaration
    * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
    */    
-  def noJunks(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], statdecls: List[StatementLevel], context: Context, applyTermConstrs: Option[List[(Term, InternalDeclaration, (VarDecl, Context, InternalDeclaration => InternalDeclaration) => VarDecl)]], mapConstructors : InternalDeclaration => InternalDeclaration)(implicit parent : OMID) : List[Constant] = {
+  def noJunks(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], statdecls: List[StatementLevel], context: Context)(implicit parent : OMID) : List[Constant] = {
     var derived_decls:List[Constant] = Nil
-    val (tp_induct_decls, mapConstr, mapTerm, chain) = getFullMorph(decls, tpdecls, context, applyTermConstrs, mapConstructors)
+    val (tp_induct_decls, mapConstr, mapTerm, chain) = getFullMorph(decls, tpdecls, context, None)
     derived_decls ++=tp_induct_decls
     
     (tmdecls++statdecls) foreach {decl : InternalDeclaration => 
@@ -217,30 +238,95 @@ object InternalDeclaration {
   }
   
   /**
+   * Generate no junk declaration for all the elimination form internal declarations
+   * @param parent the parent declared module of the derived declaration to elaborate
+   * @param decls all the elimination form declarations, used to construct the chain
+   * @param tmdecls all term level declarations
+   * @param tpdecls all type level declarations
+   * @param context the inner context of the derived declaration
+   * @returns returns one no junk (morphism) declaration for each type level declaration
+   * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
+   */    
+  def noJunksEliminationDeclarations(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], statdecls: List[StatementLevel], context: Context, introductionDecl: InternalDeclaration, origDecls: List[InternalDeclaration])(implicit parent : OMID) : List[Constant] = {
+    val types : List[(Context, VarDecl, Sub)]= tpdecls map(_.getTypes(None))
+    def mapConstr: InternalDeclaration => InternalDeclaration = {con => con ^ (types.map(_._3))}
+    val chain : List[InternalDeclaration]= origDecls map mapConstr
+    def makeApplNm = uniqueLN(introductionDecl.name+chain.foldLeft("")((a, b)=>a +" "+b.name))
+    def makeApplied = (introductionDecl.ret, introductionDecl, {(arg:VarDecl, chain:Context, mapConstr: InternalDeclaration => InternalDeclaration) => OMV(makeApplNm) % introductionDecl.applied(chain)})
+    
+    def makeAppl = makeApplied match {case (x, y, map) => (x, {t:VarDecl => map (t, chain map(_.toVarDecl), mapConstr)})}
+    
+    def mapTerm(tm: VarDecl) : VarDecl = {
+      println("makeAppl: "+makeAppl._1+", tm: "+tm.tp.get)
+      List(makeAppl).find(x => compTp(x._1, tm.tp.get)) match {
+        case Some(morph) => println(morph._2(tm)); morph._2(tm)
+        case None => tm
+      }
+    }
+    
+    origDecls map {e => 
+      val decl = e.toEliminationDecl(introductionDecl, tpdecls)
+      val d = mapConstr(e)
+      println("d: "+d.toString+", decl: "+decl.toString)
+      
+      //the result of applying m to the result of the constructor
+      val (args, mappedRes) = d.argContext(None)
+    
+      //the result of applying the image of the constructor (all types substituted) to the image of the arguments
+      val mappedArgs : List[VarDecl] = decl.argContext(None)._1.getDeclarations.head::args map (mapTerm(_))
+      //ensure everything went well and the argument is actually in the context
+      val mappedConstr : Term = decl.applied(mappedArgs)
+      
+      println("decl.args: "+decl.args)
+      val assertion = Pi(chain.map(_.toVarDecl) ++ context ++ args, Eq(mappedConstr, toOMS(mappedRes)))
+      Constant(parent, uniqueLN("compute_"+d.name.last), Nil, Some(assertion), None, None)
+    }
+    
+ 	  /*var derived_decls:List[Constant] = Nil
+    val (tp_induct_decls, mapConstr, mapTerm, chain) = getFullMorph(decls, tpdecls, context, Some(List(applyMakeToArgs)))
+    val makeApplied = applyMakeToArgs(mapConstr)
+    
+    
+    /*derived_decls ++=tp_induct_decls
+    
+    (tmdecls++statdecls) foreach {decl : InternalDeclaration => 
+      val assertion = decl.noJunk(chain, context, mapConstr, mapTerm)
+      derived_decls :+= Constant(parent, uniqueLN("compute_"+decl.name.last), Nil, Some(assertion), None, None)
+    }
+    derived_decls*/*/
+    
+  }
+  
+  /**
    * get the induction axiom declarations for the type levels as well as the term level and constructor level part 
    * of the morphism mapping an (term or statement level) internal declaration to its image in the model
    * @param decls All internal declarations
    * @param tpdecls All type level internal declarations
    * @param context the inner context of the derived declaration
    */
-  def getFullMorph(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], context: Context, morphs: Option[List[(Term, InternalDeclaration, (VarDecl, Context, InternalDeclaration => InternalDeclaration) => VarDecl)]], mapConstructors : InternalDeclaration => InternalDeclaration)(implicit parent : OMID) : (List[Constant], InternalDeclaration => InternalDeclaration, VarDecl => VarDecl, List[InternalDeclaration]) = {
+  private def getFullMorph(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], context: Context, morphs: Option[List[(InternalDeclaration=>InternalDeclaration)=>(Term, InternalDeclaration, (VarDecl, Context, InternalDeclaration => InternalDeclaration) => VarDecl)]])(implicit parent : OMID) : (List[Constant], InternalDeclaration => InternalDeclaration, VarDecl => VarDecl, List[InternalDeclaration]) = {
     //A list of quadruples consisting of (context of arguments, x, x_, the sub replacing x with a free type x_) for each type declaration declaring a type x
     val types : List[(Context, VarDecl, Sub)]= tpdecls map(_.getTypes(None))
     
     /** The morphism on constructors, it map c |-> c' for each constructor c */
-    def mapConstr: InternalDeclaration => InternalDeclaration = {con => mapConstructors (con ^ (types.map(_._3)))}
+    def mapConstr: InternalDeclaration => InternalDeclaration = {con => con ^ (types.map(_._3))}
     val chain : List[InternalDeclaration]= decls map mapConstr
 
+    val initMorphs = morphs getOrElse(Nil) map (z => z(mapConstr)) map {case (x:Term, y:InternalDeclaration, map) => (OMV(uniqueLN(y.name+"_ret")) % x, y.toConstant, {t:VarDecl => map (t, chain map(_.toVarDecl), mapConstr)})}
     /** The morphism for terms, it maps all terms t: a = m |-> t' : a* = m' iff a is one of the earlier inductively defined types */
     def mapTerm(morphisms: List[(VarDecl, Constant, VarDecl => VarDecl)], tm: VarDecl) : VarDecl = {
-      morphisms.find(x => compTp(x._1.toTerm, tm.tp.get)) match {
+      //initial mapping
+      val tmpost = initMorphs.find(x => compTp(x._1.tp.get, tm.tp.get)) match {
         case Some(morph) => morph._3(tm)
         case None => tm
       }
+      morphisms.find(x => compTp(x._1.toTerm, tmpost.tp.get)) match {
+        case Some(morph) => morph._3(tmpost)
+        case None => tmpost
+      }
     }
     
-    val initMorphs = morphs getOrElse(Nil) map {case (x:Term, y:InternalDeclaration, map) => (OMV(uniqueLN(y.name+"_ret")) % x, y.toConstant, {t:VarDecl => map (t, chain map(_.toVarDecl), mapConstr)})}
-    var morphisms : List[(VarDecl, Constant, VarDecl => VarDecl)] = initMorphs
+    var morphisms : List[(VarDecl, Constant, VarDecl => VarDecl)] = Nil
     tpdecls zip types foreach {
       case (t:TypeLevel, (c, x, s)) => morphisms = morphisms :+ t.getMorph(t, chain, mapTerm (morphisms, _), mapConstr, c, x, context)
     }
@@ -249,6 +335,13 @@ object InternalDeclaration {
     val tp_induct_decls = morphisms map(_._2)
     
     (tp_induct_decls, mapConstr, mapTerm (morphisms, _), chain)
+  }
+  def toEliminationDecls(decls: List[InternalDeclaration], structure: InternalDeclaration)(implicit parent : OMID) : List[InternalDeclaration] = {
+    var types : List[TypeLevel] = Nil
+    decls map {
+      case tpl @ TypeLevel(_, _, _, _) => val tplelim = tpl.toEliminationDecl(structure, types); types :+= (tplelim match {case t @ TypeLevel(_,_,_,_) => t}); tplelim
+      case d => d.toEliminationDecl(structure, types)
+    }
   }
 }
 
