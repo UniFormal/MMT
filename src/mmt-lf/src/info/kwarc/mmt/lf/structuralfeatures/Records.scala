@@ -41,14 +41,14 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     implicit var statdecls : List[StatementLevel]= Nil
     implicit var tpdecls : List[TypeLevel] = Nil
     
-    val hd = fromConstant(Constant(parentTerm, uniqueLN("M"), Nil, Some(Univ(1)), None, None), controller)
-    elabDecls :+= hd.toConstant
+    val structure : TypeLevel = structureDeclaration
+    elabDecls :+= structure.toConstant
     
     val origDecls : List[InternalDeclaration] = dd.getDeclarations map {
       case c: Constant => fromConstant(c, controller)
       case _ => throw LocalError("unsupported declaration")
     }
-    val decls : List[InternalDeclaration] = toEliminationDecls(origDecls, hd)
+    val decls : List[InternalDeclaration] = toEliminationDecls(origDecls, structure)
     
     decls foreach {
        case d @ TermLevel(_, _, _, _, _) => tmdecls :+= d
@@ -56,17 +56,14 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
        case d @ StatementLevel(_, _, _, _) => statdecls :+= d
     }
     
-    val make : InternalDeclaration = fromConstant(Constant(parentTerm, uniqueLN("make"), Nil, Some(FunType(origDecls.reverse.map(x => (Some(x.name), x.ToOMS)), hd.ToOMS)), None, None), controller)
-    
+    val make : TermLevel = introductionDeclaration(structure, origDecls)
     // copy all the declarations
     decls foreach {d => elabDecls ::= d.toConstant}
     
     // the no junk axioms
     elabDecls = elabDecls.reverse ++ noJunksEliminationDeclarations(decls, tpdecls, tmdecls, statdecls, context, make, origDecls)
     
-    val arg = newVar(uniqueLN("m"), hd.ret, None)
-    val repr = OMV(uniqueLN("repr")) % Pi(arg, Eq(hd.applyTo(decls.map(_.applied(arg))), arg.toTerm))
-    elabDecls :+= Constant.apply(parentTerm, repr.name, Nil, repr.tp, repr.df, None)
+    elabDecls :+= reprDeclaration(structure, decls).toConstant
     
     elabDecls foreach {d =>
       log(present(d))
