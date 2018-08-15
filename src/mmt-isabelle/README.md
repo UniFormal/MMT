@@ -11,6 +11,8 @@ as Isabelle component, e.g. in ```$ISABELLE_HOME_USER/etc/settings``` like this:
 
 * importer: e.g. ```isabelle mmt_import -v ZF```
 
+* HTTP server: ```isabelle mmt_server```
+
 * MMT shell: ```isabelle mmt```
 
 * development: ```isabelle env idea```
