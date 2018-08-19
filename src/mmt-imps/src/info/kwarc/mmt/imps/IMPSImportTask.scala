@@ -29,13 +29,17 @@ theory Booleans =
  constant true%val <- http://imps.blubb?Booleans?true%val
  */
 
-class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document => Unit, tState : TranslationState)
+object IMPSImportTask{
+  val rootdpath : DPath = DPath(URI.http colon "imps.mcmaster.ca") /* arbitrary, but seemed fitting */
+  val docpath = (rootdpath / "impsMath")
+}
+
+class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : TranslationState, toplevelDoc : Document, index : Document => Unit)
   extends Logger with MMTTask
 {
 	          def logPrefix : String = "imps-omdoc"
 	protected def report    : Report = controller.report
 
-  val rootdpath : DPath            = DPath(URI.http colon "imps.mcmaster.ca") /* arbitrary, but seemed fitting */
 
   /* Source References. */
   def doSourceRefT(t : Term,        s : SourceInfo, uri : URI) : Unit = if (s.isDefined) s.get match {
@@ -54,8 +58,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     for (usage <- usages)
     {
       // using rootdpath and not IMPSTheory.rootdpath because this is IMPS, not LUTINS
-      val metadata_verb   : GlobalName = rootdpath ? d.name ? LocalName("usage")
-      val metadata_object : Obj        = OMS(rootdpath ? d.name ? usage.toString)
+      val metadata_verb   : GlobalName = IMPSImportTask.rootdpath ? d.name ? LocalName("usage")
+      val metadata_object : Obj        = OMS(IMPSImportTask.rootdpath ? d.name ? usage.toString)
       d.metadata.add(new MetaDatum(metadata_verb, metadata_object))
     }
   }
@@ -64,8 +68,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
    * Might be rewritten, when we have cleverer solutions for MetaData */
   def doMetaData(d : Declaration, metaVerb : String, metaObject : String) : Unit =
   {
-    val mv : GlobalName =     rootdpath ? d.name ? LocalName(metaVerb)
-    val mo : Obj        = OMS(rootdpath ? d.name ? metaObject)
+    val mv : GlobalName =     IMPSImportTask.rootdpath ? d.name ? LocalName(metaVerb)
+    val mo : Obj        = OMS(IMPSImportTask.rootdpath ? d.name ? metaObject)
 
     d.metadata.add(new MetaDatum(mv,mo))
   }
@@ -74,8 +78,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
 	def doDocument(es : List[DefForm], uri : URI) : BuildResult =
 	{
-    val doc = new Document(rootdpath, true)
-    controller.add(doc)
+    val doc = new Document(DPath((IMPSImportTask.rootdpath / "impsMath" / uri.path.last).uri.setExtension("omdoc")), false)
+    controller add doc
+    controller add DRef(toplevelDoc.path,doc.path)
 
     var excps : List[Exception] = Nil
 
@@ -413,7 +418,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
     d match {
       case LineComment(_,_,_)
            | DFComment(_,_,_) => {
-        val opaque = new OpaqueText(rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
+        val opaque = new OpaqueText(IMPSImportTask.rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
       }
       case DFAtomicSort(name,dfs,frm,sort,thy,usgs,witness,src,cmt) =>
       {
@@ -647,20 +652,20 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
 
 
         if (force.isDefined) {
-          val mv : GlobalName =     rootdpath ? name.s ? LocalName("force")
-          val mo : Obj        = OMS(rootdpath ? name.s ? "present")
+          val mv : GlobalName =     IMPSImportTask.rootdpath ? name.s ? LocalName("force")
+          val mo : Obj        = OMS(IMPSImportTask.rootdpath ? name.s ? "present")
           nu_view.metadata.add(new MetaDatum(mv,mo))
         }
 
         if (forceQL.isDefined) {
-          val mv : GlobalName =     rootdpath ? name.s ? LocalName("force-under-quick-load")
-          val mo : Obj        = OMS(rootdpath ? name.s ? "present")
+          val mv : GlobalName =     IMPSImportTask.rootdpath ? name.s ? LocalName("force-under-quick-load")
+          val mo : Obj        = OMS(IMPSImportTask.rootdpath ? name.s ? "present")
           nu_view.metadata.add(new MetaDatum(mv,mo))
         }
 
         if (dontEnrich.isDefined) {
-          val mv : GlobalName =     rootdpath ? name.s ? LocalName("dont-enrich")
-          val mo : Obj        = OMS(rootdpath ? name.s ? "present")
+          val mv : GlobalName =     IMPSImportTask.rootdpath ? name.s ? LocalName("dont-enrich")
+          val mo : Obj        = OMS(IMPSImportTask.rootdpath ? name.s ? "present")
           nu_view.metadata.add(new MetaDatum(mv,mo))
         }
 
@@ -690,7 +695,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case DFCompoundMacete(name,mspec,src,cmt) =>
       {
         // Macetes are added as opaque (for now?)
-        val opaque = new OpaqueText(rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
+        val opaque = new OpaqueText(IMPSImportTask.rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
 
         /* Opaque Text doesn't have metadata, apparently, so we don't add the src */
         controller add opaque
@@ -788,7 +793,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case DFAlgebraicProcessor(nm,_,lang,_,_,_,_,_) =>
       {
         // Processors are theory-independent
-        val opaque = new OpaqueText(rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
+        val opaque = new OpaqueText(IMPSImportTask.rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
         if (tState.verbosity > 1) {
           println(" > adding algebraic-processor " + nm.s)
         }
@@ -797,7 +802,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case DFTheoryProcessors(nm,_,_,_,_,_) =>
       {
         // Processors are theory-independent
-        val opaque = new OpaqueText(rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
+        val opaque = new OpaqueText(IMPSImportTask.rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
         if (tState.verbosity > 1) {
           println(" > adding theory-processor " + nm.s)
         }
@@ -806,14 +811,14 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, index: Document 
       case DFOrderProcessor(nm,_,_,_,_,_) =>
       {
         // Processors are theory-independent
-        val opaque = new OpaqueText(rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
+        val opaque = new OpaqueText(IMPSImportTask.rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
         if (tState.verbosity > 1) {
             println(" > adding order-processor " + nm.s)
         }
         controller add opaque
       }
       case s@DFScript(nm,_,_,_,_,_,_) => {
-        val opaque = new OpaqueText(rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
+        val opaque = new OpaqueText(IMPSImportTask.rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
         if (tState.verbosity > 1) {
           println(" > adding script: " + nm.s)
         }

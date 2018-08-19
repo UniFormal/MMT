@@ -24,7 +24,7 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
     tState.verbosity = 2
-    val targetSection : Section = impsLibrarySections.basicFields
+    val targetSection : Section = impsLibrarySections.foundation
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)
@@ -161,7 +161,11 @@ class IMPSImporter extends Importer
       println("\n== PARSING COMPLETE ; BEGINNING T TRANSLATION ==\n")
     }
 
-    val importTask = new IMPSImportTask(controller, bf, index, tState)
+    val doc = new Document(IMPSImportTask.docpath
+      , true)
+    controller.add(doc)
+
+    val importTask = new IMPSImportTask(controller, bf, tState,doc, index)
 
     val fakeURI : URI = URI(bf.inFile.getParentFile.getParentFile.getAbsolutePath + "/the-kernel-theory.t")
     val fakeexp : List[DefForm] = List(theKernelLang,theKernelTheory,unitSortTheorem)
@@ -211,7 +215,7 @@ class IMPSImporter extends Importer
         }
       }
     }
-
+    index(doc)
     BuildSuccess(Nil, Nil)
   }
 
