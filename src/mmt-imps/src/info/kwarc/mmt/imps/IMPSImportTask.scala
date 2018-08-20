@@ -1,5 +1,6 @@
 package info.kwarc.mmt.imps
 
+import com.sun.xml.internal.bind.CycleRecoverable
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureChecker, RelationHandler}
@@ -732,7 +733,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       {
         if (tState.verbosity > 0) { println( " > Adding transported symbols along " + translation.t.s + ": " + names.nms.mkString(" ")) }
 
-        val rename : (String => String) = {
+        val rename : String => String = {
           if (renamer.isDefined) {
             val rnmr = tState.renamers.find(r => r.nm.s.toLowerCase == renamer.get.rn.s.toLowerCase)
             if (rnmr.isEmpty) { println("  > could not find renamer " + renamer.get.rn.s.toLowerCase) ; println(tState.renamers) }
@@ -752,13 +753,19 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
         for (n <- names.nms)
         {
+          println("   > Transported symbol: " + n + " (" + source.get.name +  " ~> " + target.get.name + ")")
+
           val p = doName(n.s)
           val q = doName(rename(n.s))
-          //val foo = source.get.getConstants.find(c => c.name.toString.toLowerCase == n.s.toLowerCase).get
-          //println(" > foo defined: " + foo)
-          //val bar = api.symbols.ApplyMorphism(trans_decl.get.toTerm).apply(Context(),foo.toTerm)
-          //println(" > bar defined: " + bar)
-          val nu_trans_symbol = symbols.Constant(target.get.toTerm,q,Nil,None,None,None) // ToDo: Add Definiens!
+
+          val nsource = locateMathSymbolHome(n.s,source.get)
+          val urimage = nsource.getConstants.find(c => c.name.toString.toLowerCase == n.s.toLowerCase).get
+          println("   > urimage defined: " + urimage)
+          val tp    = if (urimage.tp.isDefined) { Some( api.symbols.ApplyMorphism(trans_decl.get.toTerm).apply(Context(),urimage.tp.get)) } else { None }
+          val con   = if (tp.isDefined) { Context(tp.get.toMPath) } else { Context() }
+          val image = api.symbols.ApplyMorphism(trans_decl.get.toTerm).apply(con,urimage.toTerm)
+          println("   >   image defined: " + image)
+          val nu_trans_symbol = symbols.Constant(target.get.toTerm,q,Nil,tp,Some(image),Some("transported symbol"))
 
           if (tState.verbosity > 1) { println("   > adding " + n.toString) }
 
@@ -777,7 +784,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         assert(parent.isDefined)
 
         symbols.DeclaredStructure(parent.get.toTerm,ln,???,false)
-
       }
       case DFInductor(name,princ,thy,trans,bh,ish,du,src,cmt) =>
       {
@@ -1187,260 +1193,280 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         IMPSTheory.Quasiequals(a, alpha, beta, e1, e2)
       }
 
-      case IMPSQCPred2Indicator(m) => {
-        val ca = findSortFromContext(m, cntxt)
-        val as: IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
-        val t1 = doMathExp(m, thy, cntxt)
+      case qc : IMPSUserDefinedQuasiConstructor => doQuasiConstructor(qc,thy,cntxt)
 
-        IMPSTheory.QCT.pred2indicQC(findKind(as), matchSort(as, thy), t1)
-      }
-
-      case IMPSQCSort2Indicator(srt) => {
-        val ca = findSortFromContext(srt,cntxt)
-        val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
-
-        IMPSTheory.QCT.sort2indicQC(findKind(as),matchSort(as,thy))
-      }
-
-      case IMPSQCIn(e1,e2) => {
-        val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-        val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
-        val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-        IMPSTheory.QCT.inQC(findKind(as),matchSort(as,thy),t1,t2)
-      }
-
-      case IMPSQCSubsetEQ(e1,e2) => {
-        val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-        val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
-        val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-        IMPSTheory.QCT.subseteqQC(findKind(as), matchSort(as,thy), t1, t2)
-      }
-
-      case IMPSQCSubset(e1,e2) => {
-        val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-        val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
-        val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-        IMPSTheory.QCT.subsetQC(findKind(as), matchSort(as,thy), t1, t2)
-      }
-
-      case IMPSQCEmptyIndicator(srt) => {
-        val ca = findSortFromContext(srt,cntxt)
-        val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
-
-        IMPSTheory.QCT.emptyIndicQC(findKind(as),matchSort(as,thy))
-      }
-
-      case IMPSQCEmptyIndicatorQ(srt) => {
-        val ca = findSortFromContext(srt,cntxt)
-        val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
-        val t1 = doMathExp(srt,thy,cntxt)
-
-        IMPSTheory.QCT.emptyIndicQQC(findKind(as),matchSort(as,thy),t1)
-      }
-
-      case IMPSQCNonemptyIndicator(srt) => {
-        val ca = findSortFromContext(srt,cntxt)
-        val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
-        val t1 = doMathExp(srt,thy,cntxt)
-
-        IMPSTheory.QCT.nonEmptyIndicQQC(findKind(as),matchSort(as,thy),t1)
-      }
-
-      case IMPSQCComplement(m) => {
-        val ca = findSortFromContext(m,cntxt)
-        val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
-        val t1 = doMathExp(m,thy,cntxt)
-
-        IMPSTheory.QCT.complementQC(findKind(as),matchSort(as,thy),t1)
-      }
-
-      case IMPSQCUnion(e1,e2) => {
-        val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-        val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
-        val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-        IMPSTheory.QCT.unionQC(findKind(as), matchSort(as,thy), t1, t2)
-      }
-
-      case IMPSQCIntersection(e1,e2) => {
-        val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-        val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
-        val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-        IMPSTheory.QCT.intersectionQC(findKind(as), matchSort(as,thy), t1, t2)
-      }
-
-      case IMPSQCDifference(e1,e2) => {
-        val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-        val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
-        val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-        IMPSTheory.QCT.differenceQC(findKind(as), matchSort(as,thy), t1, t2)
-      }
-
-      case IMPSQCSymDifference(e1,e2) => {
-        val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-        val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
-        val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-        IMPSTheory.QCT.symDifferenceQC(findKind(as), matchSort(as,thy), t1, t2)
-      }
-
-      case IMPSQCDisjoint(e1,e2) => {
-        val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-        val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
-        val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-        IMPSTheory.QCT.disjointQC(findKind(as), matchSort(as,thy), t1, t2)
-      }
-
-      case IMPSQCPartitionQ(e1,e2) => {
-        val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-        val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
-        val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-        IMPSTheory.QCT.partitionQQC(findKind(as), matchSort(as,thy), t1, t2)
-      }
-
-      case IMPSQCSingleton(m) => {
-        val ca = findSortFromContext(m, cntxt)
-        val as: IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
-        val t1 = doMathExp(m, thy, cntxt)
-
-        IMPSTheory.QCT.singletonQC(findKind(as), matchSort(as, thy), t1)
-      }
-
-      case IMPSQCBigUnion(f) =>
-      {
-        val fp : Term = doMathExp(f,thy,cntxt)
-        IMPSTheory.QCT.bigUnionQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
-      }
-
-      case IMPSQCBigIntersection(f) =>
-      {
-        val fp : Term = doMathExp(f,thy,cntxt)
-        IMPSTheory.QCT.bigIntersectionQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
-      }
-
-      case IMPSQCMDomain(f) =>
-      {
-        val fp : Term = doMathExp(f,thy,cntxt)
-        IMPSTheory.QCT.mdomainQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
-      }
-
-      case IMPSQCMRange(f) =>
-      {
-        val fp : Term = doMathExp(f,thy,cntxt)
-        IMPSTheory.QCT.mrangeQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
-      }
-
-      case IMPSQCMComposition(f,g) =>
-      {
-        val fp : Term = doMathExp(f,thy,cntxt)
-        val gp : Term = doMathExp(g,thy,cntxt)
-        IMPSTheory.QCT.mcompositionQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,gp)
-      }
-
-      case IMPSQCMImage(f,s) =>
-      {
-        val fp : Term = doMathExp(f,thy,cntxt)
-        val sp : Term = doMathExp(s,thy,cntxt)
-        IMPSTheory.QCT.mimageQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,sp)
-      }
-
-      case IMPSQCMInverseImage(f,s) =>
-      {
-        val fp : Term = doMathExp(f,thy,cntxt)
-        val sp : Term = doMathExp(s,thy,cntxt)
-        IMPSTheory.QCT.minverseimageQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,sp)
-      }
-
-      case IMPSQCMInverse(f) =>
-      {
-        val fp : Term = doMathExp(f,thy,cntxt)
-        IMPSTheory.QCT.minverseQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
-      }
-
-      case IMPSQCMId(s) =>
-      {
-        val sp : Term = doMathExp(s,thy,cntxt)
-        IMPSTheory.QCT.midQC(tState.doUnknown(), tState.doUnknown(), sp)
-      }
-
-      case IMPSQCMRestrict(f,s) =>
-      {
-        val fp : Term = doMathExp(f,thy,cntxt)
-        val sp : Term = doMathExp(s,thy,cntxt)
-        IMPSTheory.QCT.mrestrictQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,sp)
-      }
-
-      case IMPSQCMRestrict2(f,s,t) =>
-      {
-        val fp : Term = doMathExp(f,thy,cntxt)
-        val sp : Term = doMathExp(s,thy,cntxt)
-        val tp : Term = doMathExp(t,thy,cntxt)
-        IMPSTheory.QCT.mrestrict2QC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,sp,tp)
-      }
-
-      case IMPSQCMSurjective(f) =>
-      {
-        val fp : Term = doMathExp(f,thy,cntxt)
-        IMPSTheory.QCT.msurjectiveQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
-      }
-
-      case IMPSQCMInjective(f) =>
-      {
-        val fp : Term = doMathExp(f,thy,cntxt)
-        IMPSTheory.QCT.minjectiveQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
-      }
-
-      case IMPSQCMBijective(f) =>
-      {
-        val fp : Term = doMathExp(f,thy,cntxt)
-        IMPSTheory.QCT.mbijectiveQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
-      }
-
-      case IMPSQCMSurjectiveOn(f,as,bs) =>
-      {
-        val fp  : Term = doMathExp(f,thy,cntxt)
-        val asp : Term = doMathExp(as,thy,cntxt)
-        val bsp : Term = doMathExp(bs,thy,cntxt)
-
-        IMPSTheory.QCT.msurjectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp,bsp)
-      }
-
-      case IMPSQCMInjectiveOn(f,as) =>
-      {
-        val fp  : Term = doMathExp(f,thy,cntxt)
-        val asp : Term = doMathExp(as,thy,cntxt)
-
-        IMPSTheory.QCT.minjectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp)
-      }
-
-      case IMPSQCMBijectiveOn(f,as,bs) =>
-      {
-        val fp  : Term = doMathExp(f,thy,cntxt)
-        val asp : Term = doMathExp(as,thy,cntxt)
-        val bsp : Term = doMathExp(bs,thy,cntxt)
-
-        IMPSTheory.QCT.mbijectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp,bsp)
-      }
-
-      case IMPSQCGroups(m,mul,e,inv) =>
-      {
-        val g_t : Term = doMathExp(m,thy,cntxt)
-        val m_t : Term = doMathExp(mul,thy,cntxt)
-        val e_t : Term = doMathExp(e,thy,cntxt)
-        val i_t : Term = doMathExp(inv,thy,cntxt)
-
-        IMPSTheory.QCT.groupsQC(tState.doUnknown(),tState.doUnknown(),g_t,m_t,e_t,i_t)
-      }
-
-      case _ => { println(d + " (" + d.getClass + ")") ; ??? }
+      case _ => println("Error: Unknown IMPSMathExp\n" + d + " (" + d.getClass + ")") ; ???
     }
+  }
+
+  def doQuasiConstructor(d : IMPSMathExp, thy : DeclaredTheory, cntxt : List[(IMPSVar,IMPSSort)]) : Term = d match
+  {
+    case IMPSQCPred2Indicator(m) => {
+      val ca = findSortFromContext(m, cntxt)
+      val as: IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
+      val t1 = doMathExp(m, thy, cntxt)
+
+      IMPSTheory.QCT.pred2indicQC(findKind(as), matchSort(as, thy), t1)
+    }
+
+    case IMPSQCSort2Indicator(srt) => {
+      val ca = findSortFromContext(srt,cntxt)
+      val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
+
+      IMPSTheory.QCT.sort2indicQC(findKind(as),matchSort(as,thy))
+    }
+
+    case IMPSQCIn(e1,e2) => {
+      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
+      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
+      val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
+
+      IMPSTheory.QCT.inQC(findKind(as),matchSort(as,thy),t1,t2)
+    }
+
+    case IMPSQCSubsetEQ(e1,e2) => {
+      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
+      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
+      val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
+
+      IMPSTheory.QCT.subseteqQC(findKind(as), matchSort(as,thy), t1, t2)
+    }
+
+    case IMPSQCSubset(e1,e2) => {
+      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
+      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
+      val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
+
+      IMPSTheory.QCT.subsetQC(findKind(as), matchSort(as,thy), t1, t2)
+    }
+
+    case IMPSQCEmptyIndicator(srt) => {
+      val ca = findSortFromContext(srt,cntxt)
+      val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
+
+      IMPSTheory.QCT.emptyIndicQC(findKind(as),matchSort(as,thy))
+    }
+
+    case IMPSQCEmptyIndicatorQ(srt) => {
+      val ca = findSortFromContext(srt,cntxt)
+      val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
+      val t1 = doMathExp(srt,thy,cntxt)
+
+      IMPSTheory.QCT.emptyIndicQQC(findKind(as),matchSort(as,thy),t1)
+    }
+
+    case IMPSQCNonemptyIndicator(srt) => {
+      val ca = findSortFromContext(srt,cntxt)
+      val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
+      val t1 = doMathExp(srt,thy,cntxt)
+
+      IMPSTheory.QCT.nonEmptyIndicQQC(findKind(as),matchSort(as,thy),t1)
+    }
+
+    case IMPSQCComplement(m) => {
+      val ca = findSortFromContext(m,cntxt)
+      val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
+      val t1 = doMathExp(m,thy,cntxt)
+
+      IMPSTheory.QCT.complementQC(findKind(as),matchSort(as,thy),t1)
+    }
+
+    case IMPSQCUnion(e1,e2) => {
+      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
+      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
+      val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
+
+      IMPSTheory.QCT.unionQC(findKind(as), matchSort(as,thy), t1, t2)
+    }
+
+    case IMPSQCIntersection(e1,e2) => {
+      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
+      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
+      val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
+
+      IMPSTheory.QCT.intersectionQC(findKind(as), matchSort(as,thy), t1, t2)
+    }
+
+    case IMPSQCDifference(e1,e2) => {
+      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
+      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
+      val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
+
+      IMPSTheory.QCT.differenceQC(findKind(as), matchSort(as,thy), t1, t2)
+    }
+
+    case IMPSQCSymDifference(e1,e2) => {
+      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
+      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
+      val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
+
+      IMPSTheory.QCT.symDifferenceQC(findKind(as), matchSort(as,thy), t1, t2)
+    }
+
+    case IMPSQCDisjoint(e1,e2) => {
+      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
+      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
+      val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
+
+      IMPSTheory.QCT.disjointQC(findKind(as), matchSort(as,thy), t1, t2)
+    }
+
+    case IMPSQCPartitionQ(e1,e2) => {
+      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
+      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
+      val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
+
+      IMPSTheory.QCT.partitionQQC(findKind(as), matchSort(as,thy), t1, t2)
+    }
+
+    case IMPSQCSingleton(m) => {
+      val ca = findSortFromContext(m, cntxt)
+      val as: IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
+      val t1 = doMathExp(m, thy, cntxt)
+
+      IMPSTheory.QCT.singletonQC(findKind(as), matchSort(as, thy), t1)
+    }
+
+    case IMPSQCBigUnion(f) =>
+    {
+      val fp : Term = doMathExp(f,thy,cntxt)
+      IMPSTheory.QCT.bigUnionQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+    }
+
+    case IMPSQCBigIntersection(f) =>
+    {
+      val fp : Term = doMathExp(f,thy,cntxt)
+      IMPSTheory.QCT.bigIntersectionQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+    }
+
+    case IMPSQCMDomain(f) =>
+    {
+      val fp : Term = doMathExp(f,thy,cntxt)
+      IMPSTheory.QCT.mdomainQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+    }
+
+    case IMPSQCMRange(f) =>
+    {
+      val fp : Term = doMathExp(f,thy,cntxt)
+      IMPSTheory.QCT.mrangeQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+    }
+
+    case IMPSQCMComposition(f,g) =>
+    {
+      val fp : Term = doMathExp(f,thy,cntxt)
+      val gp : Term = doMathExp(g,thy,cntxt)
+      IMPSTheory.QCT.mcompositionQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,gp)
+    }
+
+    case IMPSQCMImage(f,s) =>
+    {
+      val fp : Term = doMathExp(f,thy,cntxt)
+      val sp : Term = doMathExp(s,thy,cntxt)
+      IMPSTheory.QCT.mimageQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,sp)
+    }
+
+    case IMPSQCMInverseImage(f,s) =>
+    {
+      val fp : Term = doMathExp(f,thy,cntxt)
+      val sp : Term = doMathExp(s,thy,cntxt)
+      IMPSTheory.QCT.minverseimageQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,sp)
+    }
+
+    case IMPSQCMInverse(f) =>
+    {
+      val fp : Term = doMathExp(f,thy,cntxt)
+      IMPSTheory.QCT.minverseQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+    }
+
+    case IMPSQCMId(s) =>
+    {
+      val sp : Term = doMathExp(s,thy,cntxt)
+      IMPSTheory.QCT.midQC(tState.doUnknown(), tState.doUnknown(), sp)
+    }
+
+    case IMPSQCMRestrict(f,s) =>
+    {
+      val fp : Term = doMathExp(f,thy,cntxt)
+      val sp : Term = doMathExp(s,thy,cntxt)
+      IMPSTheory.QCT.mrestrictQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,sp)
+    }
+
+    case IMPSQCMRestrict2(f,s,t) =>
+    {
+      val fp : Term = doMathExp(f,thy,cntxt)
+      val sp : Term = doMathExp(s,thy,cntxt)
+      val tp : Term = doMathExp(t,thy,cntxt)
+      IMPSTheory.QCT.mrestrict2QC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,sp,tp)
+    }
+
+    case IMPSQCMSurjective(f) =>
+    {
+      val fp : Term = doMathExp(f,thy,cntxt)
+      IMPSTheory.QCT.msurjectiveQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+    }
+
+    case IMPSQCMInjective(f) =>
+    {
+      val fp : Term = doMathExp(f,thy,cntxt)
+      IMPSTheory.QCT.minjectiveQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+    }
+
+    case IMPSQCMBijective(f) =>
+    {
+      val fp : Term = doMathExp(f,thy,cntxt)
+      IMPSTheory.QCT.mbijectiveQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
+    }
+
+    case IMPSQCMSurjectiveOn(f,as,bs) =>
+    {
+      val fp  : Term = doMathExp(f,thy,cntxt)
+      val asp : Term = doMathExp(as,thy,cntxt)
+      val bsp : Term = doMathExp(bs,thy,cntxt)
+
+      IMPSTheory.QCT.msurjectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp,bsp)
+    }
+
+    case IMPSQCMInjectiveOn(f,as) =>
+    {
+      val fp  : Term = doMathExp(f,thy,cntxt)
+      val asp : Term = doMathExp(as,thy,cntxt)
+
+      IMPSTheory.QCT.minjectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp)
+    }
+
+    case IMPSQCMBijectiveOn(f,as,bs) =>
+    {
+      val fp  : Term = doMathExp(f,thy,cntxt)
+      val asp : Term = doMathExp(as,thy,cntxt)
+      val bsp : Term = doMathExp(bs,thy,cntxt)
+
+      IMPSTheory.QCT.mbijectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp,bsp)
+    }
+
+    case IMPSQCGroups(m,mul,e,inv) =>
+    {
+      val g_t : Term = doMathExp(m,thy,cntxt)
+      val m_t : Term = doMathExp(mul,thy,cntxt)
+      val e_t : Term = doMathExp(e,thy,cntxt)
+      val i_t : Term = doMathExp(inv,thy,cntxt)
+
+      IMPSTheory.QCT.groupsQC(tState.doUnknown(),tState.doUnknown(),g_t,m_t,e_t,i_t)
+    }
+
+    case _ => { println(" > Error: Unknown Quasi-Constructor!") ; ??!(d) }
+  }
+
+  def recursiveIncludes(ts : List[DeclaredTheory]) : List[DeclaredTheory] =
+  {
+    var is : List[DeclaredTheory] = ts
+
+    for (t <- ts)
+    {
+      val recs = recursiveIncludes(t.getIncludes.map(m => controller.getTheory(m)))
+      is = is ::: recs
+    }
+
+    is.distinct
   }
 
   def locateMathSymbolHome(s : String, thy : DeclaredTheory) : DeclaredTheory =
@@ -1452,9 +1478,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       println(" > Locating IMPSMathSymbol " + s + " for use in theory " + thy.name.toString)
     }
 
-    for (mp <- thy.getIncludes ::: List(thy.path))
+    for (rt <- recursiveIncludes(List(thy)))
     {
-      val refthy : DeclaredTheory = controller.getTheory(mp)
+      val refthy : DeclaredTheory = rt
       val refcon : List[info.kwarc.mmt.api.symbols.Constant] = refthy.getConstants
 
       if (refcon.exists(c => c.name.toString.toLowerCase == s.toLowerCase)) {
