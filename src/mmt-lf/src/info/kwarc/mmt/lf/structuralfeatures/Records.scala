@@ -41,7 +41,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     implicit var statdecls : List[StatementLevel]= Nil
     implicit var tpdecls : List[TypeLevel] = Nil
     
-    val structure : TypeLevel = structureDeclaration
+    val structure : TypeLevel = structureDeclaration(None)
     elabDecls :+= structure.toConstant
     
     val origDecls : List[InternalDeclaration] = dd.getDeclarations map {
@@ -56,7 +56,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
        case d @ StatementLevel(_, _, _, _) => statdecls :+= d
     }
     
-    val make : TermLevel = introductionDeclaration(structure, origDecls)
+    val make : TermLevel = introductionDeclaration(structure, origDecls, None)
     // copy all the declarations
     decls foreach {d => elabDecls ::= d.toConstant}
     

@@ -9,6 +9,8 @@ import modules._
 import frontend.Controller
 
 import info.kwarc.mmt.lf._
+import InternalDeclaration._
+import InternalDeclarationUtil._
 
 /** theories as a set of types of expressions */ 
 class InductiveTypes extends StructuralFeature("inductive") with ParametricTheoryLike {
@@ -30,7 +32,6 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    */
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
     val context = Type.getParameters(dd) 
-//Type.getParameters(dd)//getInnerContext(dd)//Context.empty//Type.getParameters(dd)//this.getInnerContext(dd)//Type.getParameters(dd)//this.getInnerContext(dd)
     val name = LocalName(dd.path.last)
     implicit val parentTerm = OMID(parent.path / name)
     // to hold the result

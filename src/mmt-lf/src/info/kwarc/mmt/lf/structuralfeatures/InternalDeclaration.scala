@@ -19,6 +19,7 @@ private object InternalDeclarationUtil {
   def uniqueLN(nm: String)(implicit parent: OMID): LocalName = {
     LocalName(nm)
   }
+  def uniqueGN(nm: String)(implicit parent: OMID): GlobalName = parent.path.module ? uniqueLN(nm)
 
   /**
     * Make a new variable declaration for a variable of type tp and fresh name (preferably name) in the given (optional) context
@@ -200,16 +201,25 @@ object InternalDeclaration {
    */
   def fromConstant(c: Constant, con: Controller)(implicit parent : OMID) : InternalDeclaration = {
     val tp = c.tp getOrElse {throw InvalidElement(c, "missing type")}        
-      val FunType(args, ret) = tp
-      val p = parent.path.module ? c.path.last
-        if (JudgmentTypes.isJudgment(ret)(con.globalLookup)) {
-        StatementLevel(p, args, c.df, c.notC)
-      } else {
+    val FunType(args, ret) = tp
+    val p = parent.path.module ? c.path.last
+    if (JudgmentTypes.isJudgment(ret)(con.globalLookup)) {
+      StatementLevel(p, args, c.df, Some(c.notC))
+    } else {
       ret match {
-        case Univ(1) => TypeLevel(p, args, c.df, c.notC)
+        case Univ(1) => TypeLevel(p, args, c.df, Some(c.notC))
         case Univ(x) if x != 1 => throw ImplementationError("unsupported universe")
-        case r => if (isTypeLevel(r)) TypeLevel(p, args, c.df, c.notC) else TermLevel(p, args, ret, c.df, c.notC) }
-      }
+        case r => if (isTypeLevel(r)) TypeLevel(p, args, c.df, Some(c.notC)) else TermLevel(p, args, ret, c.df, Some(c.notC)) }
+    }
+  }
+  
+  /**
+   * convert the given VarDecl into the appropriate internal declaration
+   * @param vd the vd to convert
+   * @param con the controller
+   */
+  def fromVarDecl(vd: VarDecl, ctx: Option[Context], con: Controller)(implicit parent: OMID) : InternalDeclaration = {
+    fromConstant(vd.toConstant(parent.path.module, ctx getOrElse Context.empty), con)
   }
   
    /**
@@ -322,23 +332,29 @@ object InternalDeclaration {
     }
   }
   
-  def structureDeclaration(implicit parent : OMID) = TypeLevel(parent.path.module ? uniqueLN("M"), Nil, None, NotationContainer())
-  def introductionDeclaration(structure:TypeLevel, decls: List[InternalDeclaration])(implicit parent : OMID): TermLevel = {
-    val (p, args) = (structure.path.module ? uniqueLN("make"), decls.map(x => (Some(x.name), x.ToOMS)))
-    TermLevel(p, args, structure.ToOMS, None, NotationContainer())
+  def structureDeclaration(name: Option[String])(implicit parent : OMID) = TypeLevel(uniqueGN(name getOrElse "M"), Nil, None, None)
+  def introductionDeclaration(structure:TypeLevel, decls: List[InternalDeclaration], nm: Option[String])(implicit parent : OMID): TermLevel = {
+    val (p, args) = (uniqueGN(nm getOrElse "make"), decls.map(x => (Some(x.name), x.ToOMS)))
+    TermLevel(p, args, structure.ToOMS, None, None)
   }
   def reprDeclaration(structure:TypeLevel, decls:List[InternalDeclaration])(implicit parent: OMID) : TermLevel = {
-    val arg : VarDecl= newVar(uniqueLN("m"), structure.ToOMS, None)
+    val arg : VarDecl= structure.makeVar("m", Context.empty)
     val ret : Term = toOMS(Eq(structure.applyTo(decls.map(_.applyTo(List(toOMS(arg))))), toOMS(arg)))
-    TermLevel(structure.path.module ? uniqueLN("repr"), List((Some(arg.name), toOMS(arg))), ret, None, NotationContainer())
+    TermLevel(uniqueGN("repr"), List((Some(arg.name), toOMS(arg))), ret, None, None)
+  }
+  def quotientEq(structure: TypeLevel, rel: InternalDeclaration, quot: TermLevel, name: Option[String])(implicit parent: OMID): TermLevel = {
+    val FunType(List((_, a)), q) = structure.tp
+    val args = List(newVar(uniqueLN("a1"), a, None), newVar(uniqueLN("a2"), a, None))
+    val ret : Term = Pi(args, Arrow(rel.applied(args), Eq(quot.applied(args.init), quot.applied(args.tail))))
+    TermLevel(uniqueGN(name getOrElse "quot"), args map (x => (Some(x.name), x.tp.get)), ret, None, None)
   }
 }
 
 /** type declaration */
-case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], notC : NotationContainer)(implicit parent : OMID) extends InternalDeclaration {
+case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], notC : Option[NotationContainer])(implicit parent : OMID) extends InternalDeclaration {
   def ret = Univ(1)
   def tm = df
-  def notation = notC
+  def notation = notC getOrElse NotationContainer()
   def getTypes(suffix: Option[String]) : (Context, VarDecl, Sub) = {
     val (argsCon, x)=this.argContext(suffix)
     //TODO: Define in terms of Quotations, fix below try
@@ -371,13 +387,14 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df
     }
     (t, x, morphDecl, {(a: List[Term], b:VarDecl) => m(a, b)})
   }
+  def makeVar(name: String, args: Context)(implicit parent : OMID) = newVar(uniqueLN(name), applied(args), None)
 }
 
 /** term constructor declaration */
-case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], Ret: Term, df: Option[Term], notC: NotationContainer)(implicit parent : OMID) extends InternalDeclaration {
+case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], Ret: Term, df: Option[Term], notC: Option[NotationContainer])(implicit parent : OMID) extends InternalDeclaration {
   def tm = df
   def ret = toOMS(Ret)
-  def notation = notC
+  def notation = notC getOrElse NotationContainer()
 
   /**
    * Generate injectivity declaration for the term constructor d
@@ -436,8 +453,8 @@ object TermLevel {
 }
 
 /** Rules and Judgment constructors */
-case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], notC: NotationContainer)(implicit parent : OMID) extends InternalDeclaration {
+case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], notC: Option[NotationContainer])(implicit parent : OMID) extends InternalDeclaration {
   def ret = Univ(1)
   def tm = df
-  def notation = notC
+  def notation = notC getOrElse NotationContainer()
 }
