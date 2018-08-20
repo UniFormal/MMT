@@ -8,7 +8,8 @@ import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{ApplySpine, LFClassicHOLPreprocessor}
 
 object MitM {
-  val path = DPath(URI("http","mathhub.info") / "MitM" / "Foundation")
+  val basepath = DPath(URI("http","mathhub.info") / "MitM")
+  val path = basepath / "Foundation"
   val mathpath = path ? "Math"
 
   val logic = path ? "Logic"
@@ -19,6 +20,10 @@ object MitM {
   val lists = path ? "Lists"
   val vectors = path ? "Vectors"
   val matrices = path ? "Matrices"
+
+  val polypath = (basepath / "smglom" / "elliptic_curves") ? "Base"
+  val polynomials = polypath ? "polynomial"
+  val polycons = polypath ? "poly_con"
 
   // val tms = typesystem ? "tm"
   val bool = logic ? "bool"

@@ -34,29 +34,34 @@ object LMFDB {
    val path = DPath(URI("http","www.lmfdb.org"))
    val schemaPath = path / "schema"
    val dbPath = path / "db"
+   val uri = URI("http://beta.lmfdb.org") / "api"
 }
 
 object Metadata {
    val path = LMFDB.path ? "Metadata"
    val implements = path ? "implements"
+   val extend = path ? "extends"
    val constructor = path ? "constructor"
    val key = path ? "key"
    val codec = path ? "codec"
 }
 
 case class DBField(jsonKey: String, codec: Codec[JSON])
-case class DBSchema(fields: List[DBField])
+case class DBTheory(tp : Term, constructor : Term, parents : List[(DB,DeclaredTheory)] = Nil) {
+  def +(th : DeclaredTheory)(implicit controller: Controller) = DBTheory(tp,constructor,
+    (DB.fromPath(th.path).getOrElse{throw BackendError("Not a schema theory",th.path)},th) :: parents)
+}
 
-case class DB(suffix: LocalName, mod: LocalName) {
-   def schemaTheory: MPath = (LMFDB.schemaPath / suffix) ? mod
-   def dbTheory: MPath = (LMFDB.dbPath / suffix) ? mod
+class DB(suffix: LocalName, mod: LocalName) {
+   def schemaPath: MPath = (LMFDB.schemaPath / suffix) ? mod
+   def dbPath: MPath = (LMFDB.dbPath / suffix) ? mod
    def dbpath: String = suffix.toString + "/" + mod.toString
 }
 
 object DB {
 
-  def schema2db(sPath : MPath) : MPath = fromPath(sPath).get.dbTheory
-  def db2Schema(dbPath : MPath) : MPath = fromPath(dbPath).get.schemaTheory
+  // def schema2db(sPath : MPath) : MPath = fromPath(sPath).get.dbPath
+  // def db2Schema(dbPath : MPath) : MPath = fromPath(dbPath).get.schemaPath
 
   def fromPath(pth : Path, allowDBPath: Boolean = true, allowSchemaPath : Boolean = true) : Option[DB] = {
     // extract relevant components
@@ -71,11 +76,11 @@ object DB {
     val suffixD = if(allowDBPath) ndoc.get.dropPrefix(LMFDB.dbPath) else None
 
     // if we have neither, we are not a valid theory
-    if (suffixD.isEmpty && suffixD.isEmpty)
+    if (suffixS.isEmpty && suffixD.isEmpty)
       return None
 
     // and get the db object
-    Some(DB(suffixS.getOrElse({suffixD.get}), mod.get))
+    Some(new DB(suffixS.getOrElse({suffixD.get}), mod.get))
   }
 }
 /**
@@ -88,7 +93,7 @@ trait LMFDBBackend {
   protected def toOML(json: JSONObject, db: DB, fields: List[DBField])(implicit controller: Controller): List[OML] = {
     fields map {case DBField(key, codec) =>
       val dfJ = json(key).getOrElse {
-        throw BackendError("could not find JSON value " + key + " in \n" + json, db.schemaTheory) //TODO use correct path
+        throw BackendError("could not find JSON value " + key + " in \n" + json, db.schemaPath) //TODO use correct path
       }
       val df = codec.decode(dfJ)
       OML(LocalName(key), None, Some(df))
@@ -161,7 +166,7 @@ trait LMFDBBackend {
   /** runs a simple lmfdb query */
   protected def lmfdbquery(db:String, query:String) : List[JSON] = {
     // get the url
-    val url = URI(s"http://beta.lmfdb.org/api/$db?_format=json$query")
+    val url = LMFDB.uri / s"$db?_format=json$query"
 
     debug(s"attempting to retrieve json from $url")
 
@@ -169,13 +174,6 @@ trait LMFDBBackend {
     get_json_withnext(url).flatMap(
       _.asInstanceOf[JSONObject]("data").get.asInstanceOf[JSONArray].values
     )
-  }
-
-  protected def getTP(schema : DeclaredTheory, err : String => Unit) : Term = schema.metadata.getValues(Metadata.implements).headOption.getOrElse {
-    err("metadata key 'implements' not found in schema: " + schema.path)
-  } match {
-    case t: Term => t
-    case _ => err("metadata key 'implements'  found in schema: " + schema.path); null
   }
 
   protected def findImplementor(schema : DeclaredTheory, forSymbol: GlobalName, err : String => Unit) : GlobalName = schema.getDeclarations.filter(d => {
@@ -187,15 +185,8 @@ trait LMFDBBackend {
     err(s"no implementor found for $forSymbol in ${schema.path}"); null
   })
 
-
-  protected def getConstructor(schema : DeclaredTheory, err: String => Unit) : Term = schema.metadata.getValues(Metadata.constructor).headOption.getOrElse {
-    err("metadata key 'constructor' not found in schema: " + schema.path)
-  } match {
-    case t: Term => t
-    case _ => err("metadata key 'constructor'  found in schema: " + schema.path); null
-  }
-
-  protected def getKey(schema : DeclaredTheory, err: String => Unit) : String = {
+  protected def getKey(schema : DeclaredTheory) : String = {
+    def err(s: String) = throw BackendError(s,schema.path)
     // HACK HACK HACK; parse the ODK String
     val spath = OMS(Path.parseS("http://mathhub.info/MitM/Foundation?Strings?string", NamespaceMap.empty))
 
@@ -207,6 +198,39 @@ trait LMFDBBackend {
       case UnknownOMLIT(a, `spath`) =>
         a.toString
       case s => err("metadata key 'key' is not a string in schema: " + schema.path); null
+    }
+  }
+
+  def getTP(db : DB)(implicit controller: Controller) : DBTheory = getTP(db,db.schemaPath)
+
+  private def getTP(db : DB, mp : MPath)(implicit controller: Controller) : DBTheory = {
+    def err(s: String) = throw BackendError(s,mp)
+    val th = Try(controller.getTheory(mp)).toOption match {
+      case Some(t : DeclaredTheory) =>
+        // db.addParent(t)
+        t
+      case _ =>
+        err("Not a DeclaredTheory or Theory not found")
+    }
+    th.metadata.getValues(Metadata.implements).headOption.getOrElse {
+      val ext = th.metadata.getValues(Metadata.extend).headOption match {
+        case Some(OMMOD(mp2)) =>
+          return getTP(db,mp2) + th
+        case _ =>
+          err("metadata key 'implements' or 'extends' not found in schema")
+      }
+    } match {
+      case t: Term =>
+        th.metadata.getValues(Metadata.constructor).headOption.getOrElse {
+          err("metadata key 'constructor' not found in schema")
+        } match {
+          case t2: Term =>
+            DBTheory(t,t2)
+          case _ =>
+            err("metadata key 'constructor'  found in schema")
+        }
+      case _ =>
+        err("metadata key 'implements' or 'extends' not found in schema")
     }
   }
 }
@@ -223,19 +247,16 @@ object LMFDBStore extends Storage with LMFDBBackend {
       throw NotApplicable("")
     }
 
-    val schema = controller.globalLookup.getAs(classOf[DeclaredTheory], db.schemaTheory)
-
-    val th = controller.localLookup.getO(db.dbTheory) match {
-       case Some(thy: DeclaredTheory) => thy
-       case Some(_) => throw BackendError("unexpected type", db.dbTheory)
-       case None =>
-          val t = Theory.empty(db.dbTheory.parent, db.dbTheory.name, schema.meta)
-          controller add t
-          t
-    }
     path match {
-       case p: GlobalName => loadConstant(p, schema, db)
-       case _ =>
+       case p: GlobalName => loadConstant(p, db)
+       case mp : MPath =>
+         val sch = Try(controller.getTheory(db.schemaPath)).toOption match {
+           case Some(t : DeclaredTheory) => t
+           case _ => throw NotApplicable("")
+         }
+        controller.library.getModules.find(_.path == mp).getOrElse {
+          controller.add(Theory.empty(mp.parent,mp.name,sch.meta))
+        }
     }
   }
 
@@ -243,17 +264,28 @@ object LMFDBStore extends Storage with LMFDBBackend {
     load(needed)
   }
 
-  private def loadConstant(path: GlobalName, schema: DeclaredTheory, db: DB)(implicit controller: Controller) {
-    def error(msg: String) = throw BackendError(msg, path)
+  private def loadConstant(path: GlobalName, db: DB)(implicit controller: Controller) {
 
-    // find the type we are implementing
-    val tp = getTP(schema, error)
+    // find the type we are implementing, getting from records --> instance
+    val dbT = getTP(db)
 
-    // getting from records --> instance
-    val constructor = getConstructor(schema, error)
-
-    val key = getKey(schema, error)
-
+    val omls = dbT.parents.flatMap { case (ndb,s) =>
+      val key = getKey(s)
+      val fields = s.getConstants.flatMap {c =>
+        c.metadata.getValues(Metadata.codec).headOption.toList.collect {
+          case codecExp: Term =>
+            DBField(c.name.toString, LMFDBCoder.buildCodec(codecExp))
+        }
+      }
+      // TODO
+      val query = "&" + key + "=" + path.name.toString
+      val json = JSONObject(lmfdbquery(ndb.dbpath, query).flatMap { // TODO this flattening looks wrong
+        case a: JSONObject => a.map
+        case j => Nil
+      })
+      toOML(json,db,fields)
+    }
+    /*
 
     val fields = schema.getConstants.flatMap {c =>
        c.metadata.getValues(Metadata.codec).headOption.toList.collect {
@@ -268,10 +300,11 @@ object LMFDBStore extends Storage with LMFDBBackend {
         case j => Nil
       })
      val omls = toOML(json, db, fields)
+     */
 
      val df = LFX.RecExp(omls : _*)
 
-     val c = Constant(OMMOD(db.dbTheory), path.name, Nil, Some(tp), Some(Apply(constructor,df)), None)
+     val c = Constant(OMMOD(db.dbPath), path.name, Nil, Some(dbT.tp), Some(Apply(dbT.constructor,df)), None)
      controller.add(c)
   }
 }
@@ -292,13 +325,13 @@ object LMFDBSystem extends VRESystem("lmfdb") with LMFDBBackend {//QueryExtensio
   /** retrieves a set of urls from a database that are subject to a given condition */
   private def getSubjectTo(db: DB, query : JSONObject) : List[GlobalName] = {
     // get the schema theory, this is a DeclaredTheory by precondition
-    val schema = controller.get(db.schemaTheory) match {
+    val schema = controller.get(db.schemaPath) match {
       case dt:DeclaredTheory => dt
       case _ => error("Schema-Theory missing from controller")
     }
 
     // get the key needed
-    val key = getKey(schema, error)
+    val key = getKey(schema)
 
     // build the query
     val queryJS = JSONObject(query.map :+ (JSONString("_fields"), JSONString(key)))
@@ -316,7 +349,7 @@ object LMFDBSystem extends VRESystem("lmfdb") with LMFDBBackend {//QueryExtensio
 
     // and return a list of globalnames in the db theory
     labels.map {
-      case s : JSONString => db.dbTheory ? s.value
+      case s : JSONString => db.dbPath ? s.value
       case _ => error("Ill-formed JSON returned from database: Expected labels to be a list of strings. ")
     }
   }
@@ -367,8 +400,8 @@ object LMFDBSystem extends VRESystem("lmfdb") with LMFDBBackend {//QueryExtensio
           error(s"Unable to translate predicated into an lmfdb field selector. Expected LF Application, on the left hand side $o. ")
       }
 
-      // find tyhe symbol that is implemented by the operation
-      val implementedSymbol = findImplementor(controller.getTheory(db.schemaTheory), symbol, error)
+      // find the symbol that is implemented by the operation
+      val implementedSymbol = findImplementor(controller.getTheory(db.schemaPath), symbol, error)
 
       // the name of the field to look for
       val field = implementedSymbol.name.toPath

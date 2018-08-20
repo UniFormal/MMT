@@ -12,7 +12,7 @@ class DefFormParsers(js : List[JSONObject])
   // ######### Sort Parsers
 
   lazy val parseAtomicSort : PackratParser[IMPSAtomSort] = {
-    ("[^,\\]):\\s]+".r) ^^ {case sort => IMPSAtomSort(sort)}
+    ("[^,\\]):\\s\"]+".r) ^^ {case sort => IMPSAtomSort(sort)}
   }
 
   lazy val parseSort : PackratParser[IMPSSort] = { parseSets | parseFunSort | parseFunSort2 | parseAtomicSort }
@@ -312,10 +312,10 @@ class DefFormParsers(js : List[JSONObject])
 
   lazy val parseSortPairSpec : Parser[ArgSortPairSpec] = fullParser(
     "(" ~> parseTName ~ (pv0 | pv1 | pv2 | pv3) <~ ")" ^^ { case (nm : Name) ~ t => t match {
-      case (n : Name, 0)      => ArgSortPairSpec(nm,Left(Left(n)),None,None)
-      case (d : DefString, 1) => ArgSortPairSpec(nm,Left(Right(d)),None,None)
-      case (d : DefString, 2) => ArgSortPairSpec(nm,Right(Left(d)),None,None)
-      case (d : DefString, 3) => ArgSortPairSpec(nm,Right(Right(d)),None,None)
+      case (n : Name, 0)      => ArgSortPairSpec(nm,Left(Left(n)),None,None,None)
+      case (d : DefString, 1) => ArgSortPairSpec(nm,Left(Right(d)),None,None,None)
+      case (d : DefString, 2) => ArgSortPairSpec(nm,Right(Left(d)),None,None,None)
+      case (d : DefString, 3) => ArgSortPairSpec(nm,Right(Right(d)),None,None,None)
       case _ => ??!(t)
     }
     }
@@ -326,7 +326,7 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseDefStringOrName : Parser[ODefString] = fullParser(
-    (parseDefString ^^ { case (d) => ODefString(Left(d),None,None) }) | (parseTName ^^ { case (n) => ODefString(Right(n),None,None) })
+    (parseDefString ^^ { case (d) => ODefString(Left((d,None)),None,None) }) | (parseTName ^^ { case (n) => ODefString(Right(n),None,None) })
   )
 
   lazy val parseArgConstPairSpec : Parser[ArgConstPairSpec] = fullParser(

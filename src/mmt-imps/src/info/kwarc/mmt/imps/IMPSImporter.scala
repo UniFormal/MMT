@@ -6,12 +6,12 @@ import scala.io.Source
 import scala.util.Either
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureChecker, RelationHandler}
 import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf.Typed
 import info.kwarc.mmt.api.utils.JSON
-
 import info.kwarc.mmt.imps.impsLibrarySections.allSections
 
 class IMPSImporter extends Importer
@@ -23,9 +23,8 @@ class IMPSImporter extends Importer
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult =
   {
     val tState : TranslationState = new TranslationState()
-    tState.verbosity = 1
-    val targetSection : Section = impsLibrarySections.impsMathLibrary
-
+    tState.verbosity = 2
+    val targetSection : Section = impsLibrarySections.foundation
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)
@@ -162,7 +161,11 @@ class IMPSImporter extends Importer
       println("\n== PARSING COMPLETE ; BEGINNING T TRANSLATION ==\n")
     }
 
-    val importTask = new IMPSImportTask(controller, bf, index, tState)
+    val doc = new Document(IMPSImportTask.docpath
+      , true)
+    controller.add(doc)
+
+    val importTask = new IMPSImportTask(controller, bf, tState,doc, index)
 
     val fakeURI : URI = URI(bf.inFile.getParentFile.getParentFile.getAbsolutePath + "/the-kernel-theory.t")
     val fakeexp : List[DefForm] = List(theKernelLang,theKernelTheory,unitSortTheorem)
@@ -193,6 +196,26 @@ class IMPSImporter extends Importer
         case e : IMPSDependencyException => { println(" > Failure! " + e.getMessage) ; sys.exit }
       }
     }
+
+    // Run Checker (to resolve unknowns, etc)
+    // Set to true to run
+    val typecheck : Boolean = true
+
+    if (typecheck)
+    {
+      log("Checking:")
+      logGroup
+      {
+        val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
+          throw GeneralError("no checker found")
+        }.asInstanceOf[MMTStructureChecker]
+        tState.theories_decl foreach { p =>
+          val ce = new CheckingEnvironment(controller.simplifier,new ErrorLogger(report),RelationHandler.ignore,importTask)
+          checker.apply(p)(ce)
+        }
+      }
+    }
+    index(doc)
     BuildSuccess(Nil, Nil)
   }
 
@@ -225,22 +248,27 @@ class IMPSImporter extends Importer
     None
   )
 
-  val unitSortTheorem : DFTheorem = DFTheorem(
-    Name("()",None,None),
-    ODefString(scala.util.Left(DefString("forall(x:unit%sort,x=an%individual)",None,None)),None,None),
-    Some(IMPSForAll(List((IMPSVar("x"),IMPSAtomSort("unit%sort")),(IMPSVar("y"),IMPSAtomSort("unit%sort"))),
-      IMPSIff(IMPSEquals(IMPSVar("x"),IMPSVar("y")),IMPSTruth()))),
-    None,
-    None,
-    ArgTheory(Name("the-kernel-theory",None,None),None,None),
-    Some(ArgUsages(List(Usage.ELEMENTARYMACETE),None,None)),
-    None,
-    None,
-    None,
-    None,
-    None,
-    None
-  )
+  val unitSortTheorem : DFTheorem = {
+
+    val frm = Some(IMPSForAll(List((IMPSVar("x"),IMPSAtomSort("unit%sort")),(IMPSVar("y"),IMPSAtomSort("unit%sort"))),
+      IMPSIff(IMPSEquals(IMPSVar("x"),IMPSVar("y")),IMPSTruth())))
+
+    DFTheorem(
+      Name("()",None,None),
+      ODefString(scala.util.Left((DefString("forall(x:unit%sort,x=an%individual)",None,None),frm)),None,None),
+      frm,
+      None,
+      None,
+      ArgTheory(Name("the-kernel-theory",None,None),None,None),
+      Some(ArgUsages(List(Usage.ELEMENTARYMACETE),None,None)),
+      None,
+      None,
+      None,
+      None,
+      None,
+      None
+    )
+  }
 }
 
 class NEWIMPSParser
@@ -265,15 +293,22 @@ class NEWIMPSParser
    See also: This exact thing, but in PVS */
 class TranslationState ()
 {
-  var vars               : Context              = Context.empty
-  var theories_decl      : List[DeclaredTheory] = Nil
   var theories_raw       : List[DFTheory]       = Nil
+  var theories_decl      : List[DeclaredTheory] = Nil
+
   var languages          : List[DFLanguage]     = Nil
+
+  var translations_raw   : List[DFTranslation]  = Nil
+  var translations_decl  : List[DeclaredView]   = Nil
+
+  var renamers           : List[DFRenamer]      = Nil
+
+  var delayed            : List[(DefForm,URI)]  = Nil
 
   var jsons              : List[JSONObject]     = Nil
 
+  var vars               : Context              = Context.empty
   var knownUnknowns      : List[(Int,Term)]     = Nil
-
   var hashCount          : Int = 0
 
   var verbosity          : Int = 0
