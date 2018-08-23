@@ -17,6 +17,7 @@ import java.util.ResourceBundle.Control
 import info.kwarc.mmt.api.frontend.Controller
 import scala.util.control.Exception.Catch
 import com.sun.org.glassfish.external.statistics.Statistic
+import com.sun.xml.internal.fastinfoset.util.PrefixArray.PrefixEntry
 
 /**
  * An ABoxStore stores the abox of the loaded elements with respect to the MMT ontology.
@@ -53,24 +54,19 @@ class RelStore(report : frontend.Report) {
    //def getObjects(d : Binary) = subjects.keys.filter(_._1 == d).map(_._2).toSet
    //def getSubjects(d : Binary) = objects.keys.filter(_._2 == d).map(_._1).toSet
 
+   //var test : List[Individual] = Nil
+   
    /** adds a RelationalElement */
    def +=(d : RelationalElement) {
       synchronized {
-         log(d.toString)
          d match {
            case Relation(dep, subj, obj) =>
               subjects += ((dep, obj), subj)
               objects += ((subj, dep), obj)
               dependencies += ((subj, obj), dep)
-           case Individual(p, tp) =>
+           case ind @ Individual(p, tp) =>
               types(p) = tp
               individuals += (tp, p)
-              /*
-              p.ancestors match {
-                 case `p` :: tail =>
-                    tail.foldLeft(p)((q1,q2) => {objects += ((q2,Declares),q1) ; q2}) // seems to be necessary to add theories to their namespaces
-                 case _ =>
-              } */
          }
       }
    }
@@ -147,38 +143,46 @@ class RelStore(report : frontend.Report) {
    }}
 
    /**
-    * Discriminates the different sorts of constants into malformatted (malformatted URI), untyped, maltyped and typed constants,
-    *  type constructor or statements, kinds and types of type universe >2
+    * Discriminates the different sorts of constants into types untyped constant, data constructor, datatype constructor, 
+    * rule, judgement constructor, high universe (kind level constructors and higher) and typed constant (fallback),
     * @param s the type of the constant
     * @param p the path of the constant
-    * @param the controller (needed to retrieve type information for the constant)
+    * @note precondition: Every constant is annotated as having exactly one of the types untyped constant, data constructor,
+    * datatype constructor, rule, judgement constructor, high universe
     */
-   def mapConstant(s:Unary, p:Path,con:Controller) = {
-     //TODO: discriminate constants of different universes
+   def mapConstant(s:Unary, p:Path) : (StatisticEntries, Path) = {
      if (s == IsConstant) {
        try {
-         val (dop, lo, mo) = p.toTriple
-         val d=dop getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
-         val l=lo getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
-         val m=mo getOrElse {throw new Exception("Corrupted path "+p.toString()+". ")}
-         val gnP = GlobalName(MPath(d,l),m)
-         val t = con.getConstant(gnP)
-         val tp = t.tp
-         tp match {
-           case None => (UntypedConstantEntry(), p)
-           case Some(_) => 
-             s match {
-               case IsDatatypeConstructor => (DatatypeConstructorEntry(), p)
-               case IsDataConstructor => (DataConstructorEntry(), p)
-               case IsRule => (RuleEntry(), p)
-               case IsJudgementConstructor => (JudgementConstructorEntry(), p)
-               case IsHighUniverse => (HighUniverseEntry(), p)
-               case _ => (TypedConstantEntry(),p)
-             }
+         val desiredTypes : List[Unary] = List(IsDataConstructor, IsDatatypeConstructor, IsRule, IsJudgementConstructor, IsHighUniverse, IsUntypedConstant)
+         val un = desiredTypes find {tp => hasType(p, tp)}
+         val entry = un getOrElse {
+           IsConstant
+         }
+         var entries : List[(StatisticEntries, Path)] = Nil
+         entry match {
+           case IsDatatypeConstructor => entries::=(DatatypeConstructorEntry(), p)
+           case IsDataConstructor => entries::=(DataConstructorEntry(), p)
+           case IsRule => entries::=(RuleEntry(), p)
+           case IsJudgementConstructor => entries::=(JudgementConstructorEntry(), p)
+           case IsHighUniverse => entries::=(HighUniverseEntry(), p)
+           case IsUntypedConstant => entries::=(UntypedConstantEntry(), p)
+           case IsConstant => 
+           case _ => log("Found unexpected Individual: "+p.toPath)
+         }
+         if (entries.length > 0) {
+           if (entries.length >1)
+             log ("clashing relational data for: "+p.toPath+": "+entries.toString())
+           entries.head
+         } else {
+           //log ("Failed to identify the type of declaration of "+p.toPath+" (most likely an error building the archive). ")
+           //log("Please update the relational files. ")
+           (TypedConstantEntry(),p)
          }
        } catch {
-         case e:Exception => (MalformattedConstantEntry(), p)
-         case t: Throwable => t.printStackTrace(); (MaltypedConstantEntry(), p)
+         case t: Throwable => 
+           //t.printStackTrace()
+           log("Maltyped constant at: "+p.toString())
+           (MaltypedConstantEntry(), p)
        }
      }
      else {
@@ -194,14 +198,13 @@ class RelStore(report : frontend.Report) {
    }
    
    /**
-    * Discriminates the a list of constants into the sorts malformatted (malformatted URI), untyped, maltyped and typed constants,
-    *  type constructor or statements, kinds and types of type universe >2
-    * @param p the list of constants
-    * @param the controller (needed to retrieve type information for the constants)
+    * Discriminates the a list of constants into the types untyped constant, data constructor, datatype constructor, 
+    * rule, judgement constructor, high universe and typed constant (fallback),
+    * @param p a tuple containing the unary "type" of the individual and the list of constants of that type
     */
-   def mapConstants(p:(Option[Unary], List[Path]),c:Controller) : List[(StatisticEntries, Path)]= {
+   def mapConstants(p:(Option[Unary], List[Path])) : List[(StatisticEntries, Path)]= {
      p match {
-       case (Some(t),x::l) => mapConstant(t, x,c:Controller)::mapConstants((Some(t),l),c:Controller)
+       case (Some(t),x::l) => mapConstant(t, x)::mapConstants((Some(t),l))
        case (Some(p), Nil) => Nil
        case (None, _) => Nil
      }
@@ -211,41 +214,40 @@ class RelStore(report : frontend.Report) {
     * Make a statistic for the given query and prepend the prefix to the descriptions of the found declarations
     * @param p the path of the document of theory to make the statistic for
     * @param q the query
-    * @param the controller (needed to retrieve type information for the constant)
     */ 
-  def makeStatisticsFor(p:Path, q:RelationExp, prefix:String, con:Controller) = {
+  def makeStatisticsFor(p:Path, q:RelationExp, prefix:Option[PrefixEntry]) = {
+    val pre = prefix.getOrElse(NoPrefix())
     val ds=querySet(p, q)
-    val dsGl = ds.toList.groupBy(x => getType(x)).toList flatMap {x => mapConstants(x,con)}
+    val dsGl = ds.toList.groupBy(x => getType(x)).toList flatMap {x => mapConstants(x)}
     val bla : List[(StatisticEntries,List[(StatisticEntries,Path)])] = dsGl.groupBy({case (s,x)=>s}).toList
     val dsG : List[(StatisticEntries, Int)] = bla flatMap {
-      case (s:StatisticEntries,l) => (List((s+prefix,l.size)))
+      case (s:StatisticEntries,l) => (List((s,l.size)))
     }
-    Statistics(dsG)
+    Statistics(List((pre, dsG)))
   }
    
   /**
     * Make a statistic for the document or theory at the given path
     * @param p the path of the document or theory
-    * @param the controller (needed to retrieve type information for the constants)
     */
-  def makeStatistics(p: Path, con:Controller) = {
+  def makeStatistics(q: Path) = {
     val decl = Transitive(+Declares)
+    val subtheory = Transitive(+Declares | Reflexive) * HasType(IsTheory)
     val align = decl * Transitive(+IsAlignedWith)
-    // Should also morphisms to subtheories be counted?
     // val subtheory = Transitive(+Declares *HasType(IsTheory) | Reflexive)
-    val expMorph = Transitive(+HasViewFrom)
-    val morph = Transitive(+HasMeta | +Includes | +IsImplicitly | +HasViewFrom)
+    val expMorph = subtheory * Transitive(+HasViewFrom)
+    val morph = subtheory * Transitive(+HasMeta | +Includes | +IsImplicitly | +HasViewFrom)
     val expinduced = expMorph * +Declares * HasType(IsConstant)
     val induced = morph * +Declares * HasType(IsConstant)
-    var dsG = makeStatisticsFor(p, decl, "",con)
-    dsG += makeStatisticsFor(p, align, "Alignments of ",con)
-    val (exMorph, anyMorph) = (querySet(p, expMorph).size, querySet(p, morph).size)
+    var dsG = makeStatisticsFor(q, decl, None)
+    dsG += makeStatisticsFor(q, align, Some(AlignmentPrefix()))
+    val (exMorph, anyMorph) = (querySet(q, expMorph).size, querySet(q, morph).size)
     if (exMorph > 0) 
-      dsG += ("Explicit theory morphisms", exMorph)
+      dsG += ("exp_mor", "Explicit theory morphisms", exMorph, None)
     if (anyMorph > 0)
-      dsG += ("Any theory morphisms", anyMorph)
-    dsG += makeStatisticsFor(p, expinduced, "Induced declarations via explicit theory morphisms of ",con)
-    dsG += makeStatisticsFor(p, induced, "Induced declarations via any theory morphisms of ",con)
+      dsG += ("any_mor", "Any theory morphisms", anyMorph, None)
+    dsG += makeStatisticsFor(q, expinduced, Some(ExplicitMorphismPrefix()))
+    dsG += makeStatisticsFor(q, induced, Some(AnyMorphismPrefix()))
     dsG
   }
 
@@ -273,39 +275,50 @@ class RelStore(report : frontend.Report) {
    }
 }
 
-case class Statistics(entries: List[(StatisticEntries,Int)]) {
+//The type of a statistics for a theory, document or archive
+case class Statistics(entries: List[(PrefixEntry, List[(StatisticEntries,Int)])]) {
   def +(that: Statistics): Statistics = {
     Statistics(entries ::: that.entries)
   }
-  def +(s: String, n: Int): Statistics = {
-    this + Statistics(List((new StatisticEntries(s),n)))
+  def +(key: String, description: String, n: Int, pre:Option[PrefixEntry]): Statistics = {
+    this + Statistics(List((pre.getOrElse(NoPrefix()), List((new StatisticEntries(key, description),n)))))
   }
-  def +(s: StatisticEntries, n: Int): Statistics = {
-    this + Statistics(List((s,n)))
+  def +(s: StatisticEntries, n: Int, pre:PrefixEntry): Statistics = {
+    this + Statistics(List((pre, List((s,n)))))
   }
+  def empty() = Statistics(Nil)
 }
 
-sealed class StatisticEntries(description:String) {
-  def +(s: String): StatisticEntries = {
-    new StatisticEntries(s+description)
-  }
+sealed class PrefixEntry(key:String, description:String) {
   def getDescription = {description}
+  def getKey = {key}
+}
+case class NoPrefix() extends PrefixEntry("decl", "Declared declaration")
+case class ExplicitMorphismPrefix() extends PrefixEntry("exp_mor", "Induced declaration by explicit morphisms (views)")
+case class AnyMorphismPrefix() extends PrefixEntry("any_mor", "Induced declaration by any morphisms")
+case class AlignmentPrefix() extends PrefixEntry("align", "Alignment")
+
+
+//The types of the entries of the statistics to be generated
+sealed class StatisticEntries(key:String, description:String) {
+  def getDescription = {description}
+  def getKey = {key}
+  private var pre : PrefixEntry = NoPrefix()
 }
 
-case class TheoryEntry() extends StatisticEntries("theory")
-case class DocumentEntry() extends StatisticEntries("document")
-case class UntypedConstantEntry() extends StatisticEntries("untyped constant")
-case class TypedConstantEntry() extends StatisticEntries("typed constant")
-case class MalformattedConstantEntry() extends StatisticEntries("malformatted constant")
-case class MaltypedConstantEntry() extends StatisticEntries("maltyped constant")
-case class StructureEntry() extends StatisticEntries("structure")
-case class PatternEntry() extends StatisticEntries("pattern")
-case class JudgementConstructorEntry() extends StatisticEntries("judgement constructor")
-case class DataConstructorEntry() extends StatisticEntries("data constructor")
-case class DatatypeConstructorEntry() extends StatisticEntries("datatype constructor")
-case class RuleEntry() extends StatisticEntries("rule")
-case class ViewEntry() extends StatisticEntries("view")
-case class HighUniverseEntry() extends StatisticEntries("type of type universe >2")
-case class ExplicitMorphismEntry() extends StatisticEntries("explicit theory morphisms")
-case class AnyMorphismEntry() extends StatisticEntries("any theory morphism")
-case class AnyOtherEntry() extends StatisticEntries("other")
+case class TheoryEntry() extends StatisticEntries("theo", "theory")
+case class DocumentEntry() extends StatisticEntries("doc", "document")
+case class UntypedConstantEntry() extends StatisticEntries("unty_con", "untyped constant")
+case class TypedConstantEntry() extends StatisticEntries("ty_con", "typed constant")
+case class MaltypedConstantEntry() extends StatisticEntries("mal_con", "maltyped constant")
+case class StructureEntry() extends StatisticEntries("struc", "structure")
+case class PatternEntry() extends StatisticEntries("pat", "pattern")
+case class JudgementConstructorEntry() extends StatisticEntries("judg", "judgement constructor")
+case class DataConstructorEntry() extends StatisticEntries("data", "data constructor")
+case class DatatypeConstructorEntry() extends StatisticEntries("type", "datatype constructor")
+case class RuleEntry() extends StatisticEntries("rule", "rule")
+case class ViewEntry() extends StatisticEntries("view", "view")
+case class HighUniverseEntry() extends StatisticEntries("high", "high universe")
+case class ExplicitMorphismEntry() extends StatisticEntries("exp_mor", "explicit theory morphism")
+case class AnyMorphismEntry() extends StatisticEntries("any_mor", "any theory morphism")
+case class AnyOtherEntry() extends StatisticEntries("other", "other")

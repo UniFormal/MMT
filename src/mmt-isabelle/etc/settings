@@ -1,0 +1,8 @@
+# -*- shell-script -*- :mode=shellscript:
+
+ISABELLE_MMT_HOME="$COMPONENT"
+ISABELLE_MMT_ROOT="$(cd "$COMPONENT/../.."; pwd)"
+
+ISABELLE_TOOLS="$ISABELLE_TOOLS:$ISABELLE_MMT_HOME/lib/Tools"
+
+classpath "$ISABELLE_MMT_ROOT/deploy/mmt.jar"

@@ -8,6 +8,7 @@ import valuebases._
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import info.kwarc.mmt.mitm.MitM
 import info.kwarc.mmt.odk._
+import info.kwarc.mmt.sequences.{NatRules, Sequences}
 
 trait BigIntAsJSON {
   def encodeRep(i: BigInt): JSON = {
@@ -123,3 +124,16 @@ object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, MitM.ma
   */
   def apply(cs : Codec[JSON]*) = StandardVector(StandardVector(cs.head))
 }
+
+/* TODO
+object StandardPolynomial extends CodecOperator[JSON](Codecs.rationalPolynomial, MitM.polynomials) { self =>
+  val typeParameterPositions : List[Int] = Nil
+
+  // Constructs a polynomial out of a list of rational numbers
+  private def constructPolynomial(ls : List[Term]) : Term = ApplySpine(
+    OMS(MitM.polycons),
+    NatRules.NatLit(ls.length),
+    Sequences.flatseq(ls:_*)
+  )
+}
+*/

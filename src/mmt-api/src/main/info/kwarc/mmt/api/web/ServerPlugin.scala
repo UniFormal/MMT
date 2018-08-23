@@ -53,7 +53,10 @@ class FileServer extends ServerExtension("files") {
       throw LocalError("no root defined")
     }
     val path = request.pathForExtension
-    val show = root / path
+    val show = (root / path).canonical
+    if (!(root <= show)) {
+      throw LocalError("inaccessible path: " + show)
+    }
     if (!show.exists) {
       throw LocalError("file not found")
     } else if (show.isDirectory) {
@@ -405,7 +408,8 @@ class GetActionServer extends ServerExtension("mmt") {
 /** an HTTP interface for processing [[Message]]s */
 class MessageHandler extends ServerExtension("content") {
   def apply(request: ServerRequest): ServerResponse = {
-     if (request.path.length != 1)
+     val path = request.pathForExtension
+     if (path.length != 1)
        throw LocalError("path must have length 1")
      val wq = WebQuery.parse(request.query)
      lazy val inFormat = wq.string("inFormat")
@@ -414,7 +418,7 @@ class MessageHandler extends ServerExtension("content") {
      lazy val context = objects.Context(Path.parseM(theory, controller.getNamespaceMap))
      lazy val inURI = Path.parse(wq.string("uri"))
      lazy val in = request.body.asString
-     val message: Message = request.path.head match {
+     val message: Message = path.head match {
        case "get"    => GetMessage(inURI, outFormat)
        case "delete" => DeleteMessage(inURI)
        case "add"    => AddMessage(???, inFormat, in)

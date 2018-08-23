@@ -74,6 +74,7 @@ class UniverseInference extends ChangeListener {
           Some(controller.getAs(classOf[DeclaredTheory], mp))
         case _ => return default
       }
+      // println("Structure " + ds.path + "with domain " + dom.map(_.path))
       dom.map(getUniverse).getOrElse(default)
 
     case th: DeclaredTheory =>

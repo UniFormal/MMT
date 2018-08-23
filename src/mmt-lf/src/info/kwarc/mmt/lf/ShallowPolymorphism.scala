@@ -4,7 +4,20 @@ import info.kwarc.mmt.api._
 import checking._
 import objects._
 import objects.Conversions._
-
+/**
+ * A:U for some universe U ---> c: {x:A} B allowed
+ * 
+ * This allows, e.g., declaring list: type -> type or id: {a:type} a -> a
+ */
+/* TODO possible generalizations
+ * Higher Pi types in higher-order positions, e.g., h: ({a:type}a->a) -> int.
+ * allowed in System F and Haskell
+ * 
+ * a:K:kind |- A:type ---> {a:K}A : type
+ * System F: only K = type
+ * Haskell: allows more kinds for K, e.g., type -> type
+ * But Haskrell restricts arguments to type variables to not contain Pi. It's unclear if/how this can be generalized to the MMT setting.
+ */
 object ShallowPolymorphism extends InhabitableRule(Pi.path) with PiOrArrowRule {
    def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Boolean = {
       tp match {

@@ -2,10 +2,14 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardRat}
-import info.kwarc.mmt.imps.IMPSTheory.rootdpath
+import info.kwarc.mmt.api.uom.{RSubtype, RepresentedRealizedType, StandardInt, StandardRat, StandardNat}
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
+
+object ImpsOctet extends RSubtype(StandardNat) {
+  override def asString = "octet"
+  def by(u: Any) : Boolean = StandardInt.unapply(u).get >= 0 && StandardInt.unapply(u).get <= 255
+}
 
 object IntLiterals extends
   RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"integerType")),StandardInt)
@@ -13,17 +17,18 @@ object IntLiterals extends
 object RatLiterals extends
   RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"rationalType")),StandardRat)
 
+object OctLiterals extends
+  RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"octetType")),ImpsOctet)
+
 object IMPSTheory
 {
-  val rootdpath  = DPath(URI.http colon "latin.omdoc.org") / "foundations" / "lutins"
-  val lutinsPath = rootdpath ? "Lutins"
+  val rootdpath  : DPath = DPath(URI.http colon "latin.omdoc.org") / "foundations" / "lutins"
+  val lutinsPath : MPath = rootdpath ? "Lutins"
 
-  val lutinsPropType = lutinsPath ? "boolType"
-  val lutinsIndType  = lutinsPath ? "indType"
-
-  val anIndividual = lutinsPath ? "anIndividual"
-
-  val lutinsTP = lutinsPath ? "tp"
+  val lutinsPropType : GlobalName = lutinsPath ? "boolType"
+  val lutinsIndType  : GlobalName = lutinsPath ? "indType"
+  val anIndividual   : GlobalName = lutinsPath ? "anIndividual"
+  val lutinsTP       : GlobalName = lutinsPath ? "tp"
 
   class Sym(s: String)
   {
@@ -115,7 +120,7 @@ object IMPSTheory
     }
   }
 
-  object If_Form extends Sym("ifform") {
+  object If_Form extends Sym("if_form") {
     def apply(p1 : Term, p2 : Term, p3 : Term) : Term = {
       ApplySpine(this.term, p1, p2, p3)
     }
@@ -235,7 +240,7 @@ object IMPSTheory
   // Subtheory for User-Defined Quasi-Constructors
   object QCT
   {
-    val quasiLutinsPath = rootdpath ? "QuasiLutins"
+    val quasiLutinsPath : MPath = rootdpath ? "QuasiLutins"
 
     class UDQC(s: String)
     {
@@ -438,6 +443,12 @@ object IMPSTheory
     object mbijectiveonQQC extends UDQC("mbijectiveonQQC") {
       def apply(a : Term, b : Term, alpha : Term, beta : Term, f : Term, aset : Term, bset : Term) : Term = {
         ApplySpine(this.term, a, b, alpha, beta, f, aset, bset)
+      }
+    }
+
+    object groupsQC extends UDQC("groupsQC") {
+      def apply(a : Term, alpha : Term, g : Term, m : Term, e : Term, i : Term) : Term = {
+        ApplySpine(this.term, a, alpha, g, m, e, i)
       }
     }
 

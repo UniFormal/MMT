@@ -215,6 +215,7 @@ trait ParametricTheoryLike extends StructuralFeature {
 
    override def processHeader(header: Term) = header match {
      case OMBIND(OMMOD(`mpath`), cont, OML(name,None,None,_,_)) => (name, Type(cont))
+     case OMA(OMMOD(`mpath`), List(OML(name,None,None,_,_))) => (name, Type(Context.empty))
      case _ => throw InvalidObject(header, "ill-formed header")
    }
    override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {

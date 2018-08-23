@@ -88,6 +88,9 @@ case class DPath(uri : URI) extends Path with ComponentParent with SlashFunction
        // query and fragment must be empty anyway
      case _ => false
    }
+   /** overridden to ensure equal elements have same hash code */
+   override val hashCode = (uri.authority, uri.pathNoTrailingSlash).hashCode
+   
    def ^^ = DPath(uri ^!)
    /** the path of this document, this == ^^ / name */
    def name = LocalName(uri.path map {s => LNStep.parse(s, NamespaceMap.empty)})

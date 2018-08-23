@@ -55,11 +55,30 @@ JavaObject.M = lambda self,s: py4j.java_gateway.get_method(self,dollarReplace(s)
 def MagicFun(s):
     return lambda self,*args,**kwargs: self.M(s)(*args,**kwargs)
 JavaObject.__str__  = lambda self: self.toString()
-JavaObject.__call__ = lambda self,*args,**kwargs: self.apply(*args,**kwargs)
 JavaObject.__len__ = lambda self: self.length()
-JavaObject.__contains__ = lambda self,x: self.contains(x)
+# () notation
+JavaObject.__call__ = lambda self,*args,**kwargs: self.apply(*args,**kwargs)
+# [] notation
+JavaObject.__keys__ = lambda self: self.keys() # values for which getitem is defined, not standard in Scala
 JavaObject.__getitem__ = lambda self,x: self.apply(x)
 JavaObject.__setitem__ = lambda self,x,y: self.update(x,y)
+JavaObject.__delitem__ = lambda self,x: self.delete(x)
+# . notation, not standard in Scala
+JavaObject.__dir__ = lambda self: self.attrs(x)
+JavaObject.__getattr__ = lambda self,x: self.getattr(x)
+JavaObject.__setattr__ = lambda self,x,y: self.setattr(x,y)
+JavaObject.__delattr__ = lambda self,x: self.delattr(x,y)
+# in test
+JavaObject.__contains__ = lambda self,x: self.contains(x)
+# iteration
+JavaObject.__iter__ = lambda self: self.iterator()
+# needed because we can't inline it in Python
+def iternext(o):
+    if o.hasNext():
+        return o.next()
+    else:
+        raise StopIteration
+JavaObject.__next__ = iternext
 JavaObject.__add__ = MagicFun("+")
 JavaObject.__sub__ = MagicFun("-")
 JavaObject.__mul__ = MagicFun("*")
