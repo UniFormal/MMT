@@ -36,7 +36,7 @@ object GAP {
   val IsBool = theory ? "IsBool"
   val IsObject = theory ? "IsObject"
 
-  def dotp(tm : Term, tp : GAPObject) = ApplySpine(OMS(theory ? "#"),tm,Translator.objtotype(tp))
+  def dotp(tm : Term, tp : GAPObject) = ApplySpine(OMS(theory ? "hastp"),tm,Translator.objtotype(tp))
   def propfilt(tm : GAPProperty) = Apply(OMS(theory ? "propertyFilter"),tm.toTerm)
   def propfilt(tm : GAPOperation) = Apply(OMS(theory ? "propertyFilter"),tm.toTerm)
   def catfilt(tm : GAPCategory) = Apply(OMS(theory ? "catFilter"),tm.toTerm)

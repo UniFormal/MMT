@@ -23,7 +23,7 @@ case class ParsedCategory(name : String, implied: List[String], axioms: List[Str
   private val dpath = Sage.catdoc / steps.head
   private val tname = LocalName(steps.tail.mkString("."))
   val path = dpath ? tname
-  println(path)
+  // println(path)
   val includes = implied.distinct
 
   val isStructure = structure contains name
@@ -33,7 +33,7 @@ case class ParsedClass(name : String, doc : String, implied: List[String],method
   private val dpath = Sage.clssdoc / steps.head
   private val tname = LocalName(steps.tail.mkString("."))
   val path = dpath ? tname
-  println(path)
+  // println(path)
   val includes = implied.distinct
 }
 
