@@ -33,8 +33,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
    */
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
     val context = Type.getParameters(dd) 
-    val name = LocalName(dd.path.last)
-    implicit val parentTerm = OMID(parent.path / name)
+    implicit val parentTerm = dd.path
     // to hold the result
     var elabDecls : List[Constant] = Nil
     implicit var tmdecls : List[TermLevel]= Nil
@@ -45,15 +44,15 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     elabDecls :+= structure.toConstant
     
     val origDecls : List[InternalDeclaration] = dd.getDeclarations map {
-      case c: Constant => fromConstant(c, controller)
+      case c: Constant => fromConstant(c, controller, Some(context))
       case _ => throw LocalError("unsupported declaration")
     }
     val decls : List[InternalDeclaration] = toEliminationDecls(origDecls, structure)
     
     decls foreach {
-       case d @ TermLevel(_, _, _, _, _) => tmdecls :+= d
-       case d @ TypeLevel(_, _, _, _) => tpdecls :+= d
-       case d @ StatementLevel(_, _, _, _) => statdecls :+= d
+       case d @ TermLevel(_, _, _, _, _,_) => tmdecls :+= d
+       case d @ TypeLevel(_, _, _, _,_) => tpdecls :+= d
+       case d @ StatementLevel(_, _, _,_, _) => statdecls :+= d
     }
     
     val make : TermLevel = introductionDeclaration(structure, origDecls, None)
@@ -61,12 +60,12 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     decls foreach {d => elabDecls ::= d.toConstant}
     
     // the no junk axioms
-    elabDecls = elabDecls.reverse ++ noJunksEliminationDeclarations(decls, tpdecls, tmdecls, statdecls, context, make, origDecls)
+    elabDecls = elabDecls.reverse ++ noJunksEliminationDeclarations(decls, context, make, origDecls)
     
-    elabDecls :+= reprDeclaration(structure, decls).toConstant
+    elabDecls :+= reprDeclaration(structure, decls)
     
     elabDecls foreach {d =>
-      log(present(d))
+      log(controller.presenter.asString(d))
     }
     new Elaboration {
       val elabs : List[Declaration] = Nil 

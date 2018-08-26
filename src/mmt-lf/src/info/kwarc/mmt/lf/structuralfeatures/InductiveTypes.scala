@@ -32,8 +32,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    */
   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
     val context = Type.getParameters(dd) 
-    val name = LocalName(dd.path.last)
-    implicit val parentTerm = OMID(parent.path / name)
+    implicit val parentTerm = dd.path
     // to hold the result
     var elabDecls : List[Constant] = Nil
     implicit var tmdecls : List[TermLevel]= Nil
@@ -41,11 +40,11 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     implicit var tpdecls : List[TypeLevel]= Nil
     val decls = dd.getDeclarations map {
       case c: Constant =>
-        val intDecl = InternalDeclaration.fromConstant(c, controller)
+        val intDecl = InternalDeclaration.fromConstant(c, controller, Some(context))
         intDecl match {
-          case d @ TermLevel(_, _, _, _, _) => tmdecls :+= d; intDecl
-          case d @ TypeLevel(_, _, _, _) => tpdecls :+= d; intDecl
-          case d @ StatementLevel(_, _, _, _) => statdecls :+= d; intDecl 
+          case d @ TermLevel(_, _, _, _, _,_) => tmdecls :+= d; intDecl
+          case d @ TypeLevel(_, _, _, _,_) => tpdecls :+= d; intDecl
+          case d @ StatementLevel(_, _, _, _,_) => statdecls :+= d; intDecl 
          }
       case _ => throw LocalError("unsupported declaration")
     }
@@ -54,13 +53,19 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     decls foreach {d => elabDecls ::= d.toConstant}
     
     // the no confusion axioms for the data constructors
-    elabDecls = elabDecls.reverse ::: TermLevel.noConfs(tmdecls, context)
+    /*
+     * For dependently-typed constructors, we cannot elaborate into plain LF:
+     * some of the (in)equality axioms would be ill-typed because
+     * the type system already forces elements of different instances of a dependent type to be unequal and of unequal type
+     */
+    elabDecls = elabDecls.reverse ::: tmdecls.flatMap(_.noConf(tmdecls)(dd.path))
     
     // the no junk axioms
-    elabDecls ++= InternalDeclaration.noJunks(decls, tpdecls, tmdecls, statdecls, context)
+    elabDecls ++= InternalDeclaration.noJunks(decls, context)(dd.path)
     
     elabDecls foreach {d =>
-      log(InternalDeclarationUtil.present(d))
+      //log(InternalDeclarationUtil.present(d))
+      log(controller.presenter.asString(d))
     }
     new Elaboration {
       val elabs : List[Declaration] = Nil 
@@ -70,6 +75,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       }
     }
   }
+
 }
 
 object InductiveRule extends StructuralFeatureRule(classOf[InductiveTypes], "inductive")

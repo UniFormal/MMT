@@ -16,10 +16,11 @@ private object InternalDeclarationUtil {
    * Make a new unique local name from the given string
    * @param nm the string from which the local name is generated
    */
-  def uniqueLN(nm: String)(implicit parent: OMID): LocalName = {
+  def uniqueLN(nm: String): LocalName = {
     LocalName(nm)
   }
-  def uniqueGN(nm: String)(implicit parent: OMID): GlobalName = parent.path.module ? uniqueLN(nm)
+  
+  def uniqueGN(nm: String)(implicit parent: GlobalName): GlobalName = parent.module ? uniqueLN(nm)
 
   /**
     * Make a new variable declaration for a variable of type tp and fresh name (preferably name) in the given (optional) context
@@ -28,17 +29,17 @@ private object InternalDeclarationUtil {
     * @param the context in which to pick the a fresh variable (optional)
     * @note postcondition: the returned variable is free in the given context
     */
-   def newVar(name: LocalName, tp: Term, con: Option[Context] = None)(implicit parent: OMID) : VarDecl = {
+   def newVar(name: LocalName, tp: Term, con: Option[Context] = None) : VarDecl = {
      val c = con.getOrElse(Context.empty)
      val (freshName,_) = Context.pickFresh(c, uniqueLN(name.toString()))
      VarDecl(freshName, tp)
    }
-   
+  
    //much nicer to read output than the one by controller.presenter.asString
-  def present(c: Constant)(implicit parent: OMID) : String = {
-    c.path.name + ": " + preTp (c.tp.get)
+  /*def present(c: Constant)(implicit parent: OMID) : String = {
+    c.path.name + ": " + present(c.tp.get)
   }
-  def preTp(e: Term)(implicit parent: OMID) : String = {
+  def present(e: Term)(implicit parent: OMID) : String = {
     def flatStrList(l : List[String], sep : String) = l match {
       case Nil => ""
       case hd::tl => hd+tl.foldLeft("")((a, b) => a + sep + b)
@@ -58,16 +59,22 @@ private object InternalDeclarationUtil {
       }
     }
     iterPre(e)
-  }   
+  }  */ 
 
   val theory: MPath = LF._base ? "Inductive"
   object Eq extends BinaryLFConstantScala(theory, "eq")
   object Neq extends BinaryLFConstantScala(theory, "neq")
   
-  val Contra = OMS(theory ? "contra") 
+  val Contra = OMS(theory ? "contra")
+  def neg(tp: Term) : Term = Arrow(tp, Contra)
   
-  def toOMS(vd: VarDecl)(implicit parent : OMID) : Term = OMS(GlobalName(parent.path.toMPath, vd.name))
-  def toOMS(tp: Term)(implicit parent: OMID) : Term = OMS(Constant(parent, uniqueLN(tp.toStr(true)), Nil, Some(tp), None, None).path)
+  def makeConst(name: LocalName, tp: Term, df:Option[Term], notC: Option[NotationContainer])(implicit parent: GlobalName): Constant = {
+    val externalName = parent.name / name
+    Constant(OMMOD(parent.module), externalName, Nil, Some(tp), df, None, notC getOrElse NotationContainer())
+  }
+  def makeConst(name: LocalName, tp: Term, df:Option[Term])(implicit parent: GlobalName): Constant = makeConst(name, tp, df, None)
+  def makeConst(name: LocalName, tp: Term)(implicit parent:  GlobalName): Constant = makeConst(name, tp, None)
+  
 }
 
 import InternalDeclarationUtil._
@@ -76,120 +83,10 @@ import scala.util.Random
 import java.util.Random
 import scala.util.Random
 
-//import info.kwarc.mmt.quotation.Quotation.quote
-
-/** helper class for the various declarations in an inductive type */ 
-sealed abstract class InternalDeclaration {
-  def path: GlobalName
-  def name = path.name
-  def args: List[(Option[LocalName], Term)]
-  def ret: Term
-  def notation: NotationContainer
-  def tp(implicit parent: OMID) = FunType(args, ret)
-  def df : Option[Term]
-
-  /**
-	 * Build a context quantifying over all arguments
-	 *  and the variable declaration for the result of this constructor applied to those arguments
-	 * @param suffix (optional) a suffix to append to the local name of each variable declaration in the returned context
-   */
-  def argContext(suffix: Option[String])(implicit parent: OMID): (Context, VarDecl) = { 
-    val suf = suffix getOrElse ""
-    val dargs= args.zipWithIndex map {
-      case ((Some(loc), arg), _) => (loc, arg)
-      case ((None, arg), i) => (uniqueLN("x_"+i.toString()), arg)
-    }
-    val con = dargs map {case (loc, tp) =>
-      val n = uniqueLN(loc.toString()+suf)
-      newVar(n, tp, None)
-    }
-    val tp = ApplyGeneral(OMS(path), con.map(_.toTerm))
-    val newName = if (tp == OMS(path)) name else {
-      val appliedName = name+suf+" ("+con.foldLeft("")((a, b)=>a+" "+b.name)+")"//+"_res"
-      if (con == Nil) uniqueLN(name+suf) else uniqueLN(appliedName)}
-    (con, VarDecl(newName, None, Some(ret), None, None))
-  }
-  
-  /** apply the internal declaration to the given argument context */
-  def applied(args: Context)(implicit parent: OMID):Term = toOMS(ApplyGeneral(OMS(path), args map toOMS))
-  def applyTo(args: List[Term])(implicit parent: OMID):Term = applied(args map {x => OMV(toOMS(x) match {case OMS(p) => p.name}) % x})
-  
-  def ^^(sub: Substitution)(implicit parent: OMID) : InternalDeclaration = {
-    def toOMV(tp: Term)(implicit parent: OMID): Term = toOMS(tp) match {case OMS(p) => OMV(p.name)}
-    def mapTm(tp:Term) = if ((toOMV(tp)^sub) != toOMV(tp)) toOMV(tp) ^sub else tp
-    val margs = args map({case (a, x) => (a, mapTm(x))})
-    val mtp = FunType(margs, toOMV(ret)^sub)
-    this match {
-      case TermLevel(_, _, _, df, n) => TermLevel(path, margs, toOMV(ret)^sub, df, n)
-      case TypeLevel(_, _, df, n) => TypeLevel(path, margs, df, n)
-      case StatementLevel(_, _, df, n) => StatementLevel(path, margs, df, n)
-    }
-  }
-  
-  def rename(newName: LocalName)(implicit parent: OMID) : InternalDeclaration = {
-    val p = path.module ? newName
-    this match {
-      case TermLevel(_, _, _, _, n) => TermLevel(p, args, ret, df, n)
-      case TypeLevel(_, _, _, n) => TypeLevel(p, args, df, n)
-      case StatementLevel(_, _, _, n) => StatementLevel(p, args, df, n)
-    }
-  }
-    
-  /**
-   * Substitute the argument types of the inductive declaration according to the substitution sub
-   * @param sub the substitution to apply
-   */
-  def ^(sub: Substitution)(implicit parent: OMID) : InternalDeclaration = {
-    this ^^ sub rename(uniqueLN(this.name+"'"))
-  }
-  
-  /**
-   * generate the type of the no junk axiom for the internal declaration
-   * @param chain all internal declarations
-   * @param ctx the context of the axiom
-   * @param mapConstr the declaration level part of the morphism
-   * @param mapTerm the term devel part of the morphism
-   * @param parent (implicit) the parent module
-   * @return the term containing the type of the no junk axiom
-   */
-  def noJunk(chain:List[InternalDeclaration], ctx:Context, mapConstr: InternalDeclaration=>InternalDeclaration, mapTerm: VarDecl=>VarDecl)(implicit parent: OMID) : Term = {
-    val (args, orig) = this.argContext(None)
-    
-    //the result of applying m to the result of the constructor
-    val mappedRes = toOMS(mapTerm(orig))
-    
-    //the result of applying the image of the constructor (all types substituted) to the image of the arguments
-    val mappedArgs : List[VarDecl] = args map mapTerm
-    //ensure everything went well and the argument is actually in the context
-    val mappedConstr : Term = mapConstr(this).applied(mappedArgs)
-    
-    //both results should be equal, if m is actually a morphism
-    def assertion(assert:(Term, Term) => Term) = Pi(chain.map(_.toVarDecl) ++ ctx ++ args, assert(mappedRes, mappedConstr))
-    //Use Arrow or Eq depending on whether the internal declaration is term or type level
-    this match {
-      case TypeLevel(_, _, _, _) => assertion ((x, y) => Arrow(x, y))
-      case _ => assertion ((x, y) => Eq(x, y))
-    }
-  }
-  
-  def toVarDecl(implicit parent: OMID) : VarDecl = VarDecl(this.name, this.tp, OMS(this.path))
-  def toConstant(implicit parent : OMID) : Constant = Constant(parent, name, Nil, Some(tp), df, None, notation)
-  def ToOMS(implicit parent : OMID) : Term = OMS(toConstant.path)
-  def toEliminationDecl(structure: InternalDeclaration, types:List[TypeLevel])(implicit parent : OMID) : InternalDeclaration = {
-    val mapTypes = types map {tpl => OMV(tpl.path.name) / tpl.applied(structure.toVarDecl)}
-    this match {
-      case d @ TermLevel(p, args, ret, df, notC) => TermLevel(p, (Some(uniqueLN("m")), structure.ret)::args, ret, df, notC) ^^ mapTypes
-      case d @ TypeLevel(p, args, df, notC) => TypeLevel(p, (None, structure.ret)::args, df, notC) ^^ mapTypes
-      case d @ StatementLevel(p, args, df, notC) => StatementLevel(p, (Some(uniqueLN("m")), structure.ret)::args, df, notC) ^^ mapTypes
-    }
-  }
-  def toString(implicit parent : OMID) = present(this.toConstant)
-}
-
 object InternalDeclaration {
-  implicit def tp(d: InternalDeclaration)(implicit parent: OMID): Term = d.tp
+  implicit def tp(d: InternalDeclaration)(implicit parent: GlobalName): Term = d.tp
   implicit def tm(d: InternalDeclaration): Option[Term] = d.df
-  implicit def toVarDecl(d: InternalDeclaration)(implicit parent: OMID): VarDecl = d.toVarDecl
+  implicit def toVarDecl(d: InternalDeclaration)(implicit parent: GlobalName): VarDecl = d.toVarDecl
 
   //TODO: Implement this properly
   def isTypeLevel(tp: Term) : Boolean = false
@@ -199,17 +96,23 @@ object InternalDeclaration {
    * @param c the constant to convert
    * @param con the controller
    */
-  def fromConstant(c: Constant, con: Controller)(implicit parent : OMID) : InternalDeclaration = {
-    val tp = c.tp getOrElse {throw InvalidElement(c, "missing type")}        
-    val FunType(args, ret) = tp
-    val p = parent.path.module ? c.path.last
+  def fromConstant(c: Constant, con: Controller, ctx: Option[Context])(implicit parent : GlobalName) : InternalDeclaration = {
+    val tp = c.tp getOrElse {throw InvalidElement(c, "missing type")}
+    /*def parsePi(tp: Term) : (Context, Term) = tp match {
+      case Pi(name, hd, tl) => val (ctx, tm) = parsePi(tl); (OMV(name) % hd ::ctx, tm)
+      case tm => (Context.empty, tm)
+    }*/
+    val (retCtx, retTp) = (Context.empty, tp)//parsePi(tp)
+    val FunType(args, ret) = retTp
+    val context = Some(ctx getOrElse Context.empty ++ retCtx)
+    val p = parent.module ? c.path.last
     if (JudgmentTypes.isJudgment(ret)(con.globalLookup)) {
-      StatementLevel(p, args, c.df, Some(c.notC))
+      StatementLevel(p, args, c.df, Some(c.notC), context)
     } else {
       ret match {
-        case Univ(1) => TypeLevel(p, args, c.df, Some(c.notC))
+        case Univ(1) => TypeLevel(p, args, c.df, Some(c.notC), context)
         case Univ(x) if x != 1 => throw ImplementationError("unsupported universe")
-        case r => if (isTypeLevel(r)) TypeLevel(p, args, c.df, Some(c.notC)) else TermLevel(p, args, ret, c.df, Some(c.notC)) }
+        case r => if (isTypeLevel(r)) TypeLevel(p, args, c.df, Some(c.notC), context) else TermLevel(p, args, ret, c.df, Some(c.notC), context)}
     }
   }
   
@@ -218,31 +121,80 @@ object InternalDeclaration {
    * @param vd the vd to convert
    * @param con the controller
    */
-  def fromVarDecl(vd: VarDecl, ctx: Option[Context], con: Controller)(implicit parent: OMID) : InternalDeclaration = {
-    fromConstant(vd.toConstant(parent.path.module, ctx getOrElse Context.empty), con)
+  def fromVarDecl(vd: VarDecl, ctx: Option[Context], con: Controller, context: Context)(implicit parent: GlobalName) : InternalDeclaration = {
+    fromConstant(vd.toConstant(parent.module, ctx getOrElse Context.empty), con, Some(context))
+  }
+  
+  private def chain(decls: List[InternalDeclaration], context: Context) : (List[(GlobalName, OMV)], List[VarDecl]) = {
+    var repls: List[(GlobalName,OMV)] = Nil
+    val tr = TraversingTranslator(OMSReplacer(p => utils.listmap(repls, p)))
+    val modelContext = decls map {d =>
+      val namePrimed = d.name / "'"
+      val vdPrimed = VarDecl(namePrimed, tr(context, d.tp))
+      repls ::= d.path -> OMV(namePrimed)
+      vdPrimed
+    }
+    (repls, modelContext)
   }
   
    /**
-   * Generate no junk declaration for all internal declarations
-   * @param parent the parent declared module of the derived declaration to elaborate
-   * @param decls all declarations, used to construct the chain
-   * @param tmdecls all term level declarations
-   * @param tpdecls all type level declarations
-   * @param context the inner context of the derived declaration
-   * @returns returns one no junk (morphism) declaration for each type level declaration
-   * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
-   */    
-  def noJunks(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], statdecls: List[StatementLevel], context: Context)(implicit parent : OMID) : List[Constant] = {
-    var derived_decls:List[Constant] = Nil
-    val (tp_induct_decls, mapConstr, mapTerm, chain) = getFullMorph(decls, tpdecls, context)
-    derived_decls ++=tp_induct_decls
-    
-    (tmdecls++statdecls) foreach {decl : InternalDeclaration => 
-      val assertion = decl.noJunk(chain, context, mapConstr, mapTerm)
-      derived_decls :+= Constant(parent, uniqueLN("compute_"+decl.name.last), Nil, Some(assertion), None, None)
-    }
-    derived_decls
+   * Generate no junk declarations for an inductive type declaration I
+   * @param decls all declarations in I
+   * @param parent the URI of I
+   * @param context the parameters of I
+   * 
+   * for type level declarations c: {G} type
+   *   induct_c: {M,G} c g -> c_M (g map induct)
+   * for term level declaration c: {G} A
+   *   induct_c: {M,G} induct(c g) = c_M (g map induct)
+   * where
+   *  * M declares one (primed) variable for every declaration in I
+   *  * c_M is the variable in M corresponding to c
+   *  * g is the list of varibles declared in G
+   *  * induct(t) is the inductive translation of t, defined in terms of the induct function corresponding to the type of t,
+   *    e.g., induct_a(m,t) if t has type a for some a: type in I
+   *       or induct_a(m,h,t) if t has type (a h) for some a: {H}type in I
+   */
+  def noJunks(decls : List[InternalDeclaration], context: Context)(implicit parent : GlobalName): List[Constant] = {
+    val (repls, modelContext) : (List[(GlobalName, OMV)], List[VarDecl]) = chain(decls, context)
+    val model = modelContext.map(_.toTerm)
+    var inductNames : List[(GlobalName,GlobalName)] = Nil
+    decls map {d =>
+      val (argCon, dApplied) = d.argContext(None)
+      val dAppliedInduct = induct(model, d.ret, dApplied, inductNames)
+      val dPrimed = utils.listmap(repls, d.path).get
+      val dAppliedPrimed = ApplyGeneral(dPrimed, argCon map {vd => induct(model, vd.tp.get, vd.toTerm, inductNames)})
+      val ret = d match {
+        case tl: TermLevel => Eq(dAppliedInduct, dAppliedPrimed)
+        case tl: TypeLevel => Arrow(dAppliedInduct, dAppliedPrimed)
+      }
+      val tp = Pi(context ++ modelContext ++ argCon, ret)
+      val name = inductName(d.name)
+      val c = makeConst(name, tp)
+      inductNames ::= d.path -> c.path
+      c
+    } 
   }
+  /**
+   * name of the declaration corresponding to n declared in noJunks
+   */
+  private def inductName(n: LocalName) = LocalName("induct_" + n.toPath)
+  /**
+   * applies the inductive translation needed in noJunks by constructing terms that apply the appropriate induction functions
+   * @param model the model for which we need the inductive translation (as built by noJunks)
+   * @param tp the type of tm
+   * @param tm the term to translate
+   * @param inductNames map of the declarations in the inductive type to the corresponding generated induction functions
+   */
+  private def induct(model: List[Term], tp: Term, tm: Term, inductNames: List[(GlobalName,GlobalName)]) = tp match {
+    case ApplyGeneral(OMS(p), args) =>
+      utils.listmap(inductNames, p) match {
+        case Some(inductP) => ApplyGeneral(OMS(inductP), model:::args:::List(tm))
+        case None => tm
+      }
+    case _ => throw ImplementationError("missing case")
+  }
+  
   
   /**
    * Generate no junk declaration for all the elimination form internal declarations
@@ -256,204 +208,223 @@ object InternalDeclaration {
    * @returns returns one no junk (morphism) declaration for each type level declaration
    * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
    */    
-  def noJunksEliminationDeclarations(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], tmdecls: List[TermLevel], statdecls: List[StatementLevel], context: Context, introductionDecl: InternalDeclaration, origDecls: List[InternalDeclaration])(implicit parent : OMID) : List[Constant] = {
-    val types : List[(Context, VarDecl, Sub)]= tpdecls map(_.getTypes(None))
-    def mapConstr: InternalDeclaration => InternalDeclaration = {con => con ^ (types.map(_._3))}
-    val chain : List[InternalDeclaration]= origDecls map mapConstr
-    def makeApplNm = uniqueLN(introductionDecl.name+chain.foldLeft("")((a, b)=>a +" "+b.name))
-    def makeApplied = (introductionDecl.ret, introductionDecl, {(arg:VarDecl, chain:Context, mapConstr: InternalDeclaration => InternalDeclaration) => OMV(makeApplNm) % introductionDecl.applied(chain)})
+  def noJunksEliminationDeclarations(decls : List[InternalDeclaration], context: Context, introductionDecl: InternalDeclaration, origDecls: List[InternalDeclaration])(implicit parent : GlobalName) : List[Constant] = {
+    val (repls, modelCtx) = chain(origDecls, context)
+    def makeApplNm = uniqueLN(introductionDecl.name+modelCtx.foldLeft("")((a, b)=>a +" "+b.name))
+    def makeApplied = (introductionDecl.ret, introductionDecl, {(arg:VarDecl, chain:Context) => OMV(makeApplNm) % introductionDecl.applyTo(chain)})
     
-    def makeAppl = makeApplied match {case (x, y, map) => (x, {t:VarDecl => map (t, chain map(_.toVarDecl), mapConstr)})}
+    def makeAppl = makeApplied match {case (x, y, map) => (x, {t:VarDecl => map (t, modelCtx)})}
     
     def mapTerm(tm: VarDecl) : VarDecl = if (makeAppl._1 == tm.tp.get) makeAppl._2(tm) else tm
     
-    origDecls map {e => 
-      val decl = e.toEliminationDecl(introductionDecl, tpdecls)
-      val d = mapConstr(e)
-      println("d: "+d.toString+", decl: "+decl.toString)
+    origDecls zip origDecls.map(_.translate(TraversingTranslator(OMSReplacer(p => utils.listmap(repls, p))))) map {case (e, dDecl) => 
+      val decl = e.toEliminationDecl(introductionDecl, decls map (_.path))
+      val d = utils.listmap(repls, e.path).get
       
       //the result of applying m to the result of the constructor
-      val (args, mappedRes) = d.argContext(None)
+      val (args, mappedRes) = dDecl.argContext(None)
     
       //the result of applying the image of the constructor (all types substituted) to the image of the arguments
       val mappedArgs : List[VarDecl] = decl.argContext(None)._1.getDeclarations.head::args map (mapTerm(_))
       //ensure everything went well and the argument is actually in the context
-      val mappedConstr : Term = decl.applied(mappedArgs)
-      
-      println("decl.args: "+decl.args)
-      
+      val mappedConstr : Term = decl.applyTo(mappedArgs)
+         
       def assert(x: Term, y: Term) : (Term, LocalName) = e match {
-        case TypeLevel(_, _, _, _) => (Arrow(x, y), uniqueLN("induct_"+d.name))
+        case TypeLevel(_, _, _, _,_) => (Arrow(x, y), uniqueLN("induct_"+d.name))
         case _ => (Eq(x, y), uniqueLN("compute_"+d.name))
       }
-      val ass = assert(mappedConstr, toOMS(mappedRes))
-      Constant(parent, ass._2, Nil, Some(Pi(chain.map(_.toVarDecl) ++ context ++ args, ass._1)), None, None)
+      val ass = assert(mappedConstr, mappedRes)
+      makeConst(ass._2, Pi(modelCtx ++ context ++ args, ass._1))
     }
   }
   
-  /**
-   * get the induction axiom declarations for the type levels as well as the term level and constructor level part 
-   * of the morphism mapping an (term or statement level) internal declaration to its image in the model
-   * @param decls All internal declarations
-   * @param tpdecls All type level internal declarations
-   * @param context the inner context of the derived declaration
-   */
-  private def getFullMorph(decls : List[InternalDeclaration], tpdecls: List[TypeLevel], context: Context)(implicit parent : OMID) : (List[Constant], InternalDeclaration => InternalDeclaration, VarDecl => VarDecl, List[InternalDeclaration]) = {
-    //A list of quadruples consisting of (context of arguments, x, x_, the sub replacing x with a free type x_) for each type declaration declaring a type x
-    val types : List[(Context, VarDecl, Sub)]= tpdecls map(_.getTypes(None))
-    
-    /** The morphism on constructors, it map c |-> c' for each constructor c */
-    def mapConstr: InternalDeclaration => InternalDeclaration = {con => con ^ (types.map(_._3))}
-    val chain : List[InternalDeclaration]= decls map mapConstr
-    
-    /** The morphism for terms, it maps all terms t: a = m |-> t' : a* = m' iff a is one of the earlier inductively defined types */
-    def mapTerm(morphisms: List[(TypeLevel, VarDecl, Constant, (List[Term], VarDecl) => VarDecl)], tm: VarDecl) : VarDecl = {
-      morphisms.find{x => val ApplyGeneral(f, args) = tm.tp.get; x._1.ToOMS ==f} match {
-        case Some(morph) => val ApplyGeneral(f, args) = morph._1.ToOMS; morph._4(args, tm)
-        case None => tm
-      }
-    }
-    
-    var morphisms : List[(TypeLevel, VarDecl, Constant, (List[Term], VarDecl) => VarDecl)] = Nil
-    tpdecls zip types foreach {
-      case (t:TypeLevel, (c, x, s)) => morphisms = morphisms :+ t.getMorph(t, chain, mapTerm (morphisms, _), mapConstr, x, context)
-    }
-    
-    /** Now the declarations for the computation axioms */
-    val tp_induct_decls = morphisms map(_._3)
-    
-    (tp_induct_decls, mapConstr, mapTerm (morphisms, _), chain)
-  }
-  def toEliminationDecls(decls: List[InternalDeclaration], structure: InternalDeclaration)(implicit parent : OMID) : List[InternalDeclaration] = {
+  def toEliminationDecls(decls: List[InternalDeclaration], structure: InternalDeclaration)(implicit parent : GlobalName) : List[InternalDeclaration] = {
     var types : List[TypeLevel] = Nil
     decls map {
-      case tpl @ TypeLevel(_, _, _, _) => val tplelim = tpl.toEliminationDecl(structure, types); types :+= (tplelim match {case t @ TypeLevel(_,_,_,_) => t}); tplelim
-      case d => d.toEliminationDecl(structure, types)
+      case tpl @ TypeLevel(_, _, _, _, _) => val tplelim = tpl.toEliminationDecl(structure, types map (_.path)); types :+= (tplelim match {case t @ TypeLevel(_,_,_,_,_) => t}); tplelim
+      case d => d.toEliminationDecl(structure, types map (_.path))
     }
   }
   
-  def structureDeclaration(name: Option[String])(implicit parent : OMID) = TypeLevel(uniqueGN(name getOrElse "M"), Nil, None, None)
-  def introductionDeclaration(structure:TypeLevel, decls: List[InternalDeclaration], nm: Option[String])(implicit parent : OMID): TermLevel = {
-    val (p, args) = (uniqueGN(nm getOrElse "make"), decls.map(x => (Some(x.name), x.ToOMS)))
-    TermLevel(p, args, structure.ToOMS, None, None)
+  def structureDeclaration(name: Option[String])(implicit parent : GlobalName) = TypeLevel(uniqueGN(name getOrElse "M"), Nil, None, None, None)
+  def introductionDeclaration(structure:TypeLevel, decls: List[InternalDeclaration], nm: Option[String])(implicit parent : GlobalName): TermLevel = {
+    val (p, args) = (uniqueGN(nm getOrElse "make"), decls.map(x => (Some(x.name), x.toTerm)))
+    TermLevel(p, args, structure.toTerm, None, None, None)
   }
-  def reprDeclaration(structure:TypeLevel, decls:List[InternalDeclaration])(implicit parent: OMID) : TermLevel = {
-    val arg : VarDecl= structure.makeVar("m", Context.empty)
-    val ret : Term = toOMS(Eq(structure.applyTo(decls.map(_.applyTo(List(toOMS(arg))))), toOMS(arg)))
-    TermLevel(uniqueGN("repr"), List((Some(arg.name), toOMS(arg))), ret, None, None)
+  def reprDeclaration(structure:TypeLevel, decls:List[InternalDeclaration])(implicit parent: GlobalName) : Constant = {
+    val arg = structure.makeVar("m", Context.empty)
+    val ret : Term = Eq(structure.applyTo(decls.map(_.applyTo(arg.toTerm))), arg.toTerm)
+    makeConst(uniqueLN("repr"), Pi(List(arg), ret))
   }
-  def quotientEq(structure: TypeLevel, rel: InternalDeclaration, quot: TermLevel, name: Option[String])(implicit parent: OMID): TermLevel = {
-    val FunType(List((_, a)), q) = structure.tp
+  def quotientEq(structure: TypeLevel, rel: InternalDeclaration, quot: TermLevel, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): TermLevel = {
+    //val FunType(List((_, a), _), q) = structure.tp
+    val a = rel.args match {
+      case List((_, d), (_,_)) => d
+      case tp => println(tp); throw ImplementationError("Unexpected match case. ")
+    }
     val args = List(newVar(uniqueLN("a1"), a, None), newVar(uniqueLN("a2"), a, None))
-    val ret : Term = Pi(args, Arrow(rel.applied(args), Eq(quot.applied(args.init), quot.applied(args.tail))))
-    TermLevel(uniqueGN(name getOrElse "quot"), args map (x => (Some(x.name), x.tp.get)), ret, None, None)
+    val ret : Term = Pi(args, Arrow(rel.applyTo(args), Eq(quot.applyTo(args.init), quot.applyTo(args.tail))))
+    TermLevel(uniqueGN(name getOrElse "quot"), args map (x => (Some(x.name), x.tp.get)), ret, None, None, ctx)
   }
+  def quotientInvert(domain:TypeLevel, structure:TypeLevel, rel:InternalDeclaration, quot: TermLevel, name: Option[String])(implicit parent: GlobalName) = {
+    val B = structureDeclaration(Some("B"))
+    val f = TermLevel(uniqueGN("f"), List((None, domain.toTerm)), B.toTerm, None, None, None)
+    val xy @ List(x, y) = List(domain.makeVar("x", Context.empty), structure.makeVar("y", Context.empty))
+    val p = TermLevel(uniqueGN("p"), xy map (x => (Some(x.name), x.tp.get)), Arrow(rel.applyTo(xy), Eq(f.applyTo(x.tp.get), f.applyTo(y.tp.get))), None, None, None)
+    (B, f, p, TermLevel(uniqueGN(name getOrElse "quotInvert"), List(B, f, p).map(x => (Some(x.name), x.tp)) :+ (Some(structure.name), structure.toTerm), B.toTerm, None, None, None))
+  }
+  def quotientInverse(domain:TypeLevel, structure:TypeLevel, rel:InternalDeclaration, quot: TermLevel, B: TypeLevel, F:TermLevel, P:TermLevel, quotInv: TermLevel, name: Option[String])(implicit parent: GlobalName): Constant = {
+    val ctx = B.context
+    val (b, f, p, arg) = (B.makeVar("b", ctx), newVar(uniqueLN("f"), F.tp, Some(ctx)), newVar(uniqueLN("p"), P.tp, Some(ctx)), domain.makeVar("x", ctx))
+    val im = OMV(uniqueLN("image_point")) % quot.applyTo(arg.toTerm)
+    val tp = Pi(List(b, f, p, arg), Eq(quotInv.applyTo(List(b, f, p).map(_.toTerm) :+ quot.applyTo(arg.toTerm)), F.applyTo(arg.toTerm)))
+    makeConst(uniqueLN(name getOrElse "quotInverse"), tp)
+  }
+}
+
+
+/** helper class for the various declarations in an inductive type */ 
+sealed abstract class InternalDeclaration {
+  def path: GlobalName
+  def name = path.name
+  def args: List[(Option[LocalName], Term)]
+  def ret: Term
+  protected def ctx: Option[Context] // TODO do we need this
+  def context = ctx getOrElse Context.empty
+  def notation: NotationContainer // TODO do we need this
+  def tp = Pi(context, FunType(args, ret))
+  def df : Option[Term]
+
+  /**
+	 * Build a context quantifying over all arguments
+	 *  and the term of this constructor applied to those arguments
+	 * @param suffix (optional) a suffix to append to the local name of each variable declaration in the returned context
+   */
+  def argContext(suffix: Option[String]): (Context, Term) = { 
+    val suf = suffix getOrElse ""
+    val dargs = args.zipWithIndex map {
+      case ((Some(loc), arg), _) => (loc, arg)
+      case ((None, arg), i) => (uniqueLN("x_"+i), arg)
+    }
+    val con = dargs map {case (loc, tp) =>
+      val n = uniqueLN(loc.toString()+suf)
+      newVar(n, tp, None)
+    }
+    val tp = ApplyGeneral(OMS(path), con.map(_.toTerm))
+    (con, tp)
+  }
+  
+  def toVarDecl = VarDecl(name, tp)
+  def toConstant(implicit parent : GlobalName) : Constant = makeConst(name, Pi(context, tp), df, Some(notation))
+  def toTerm(implicit parent : GlobalName) : Term = OMS(path)
+  
+  /** apply the internal declaration to the given argument context */
+  def applyTo(args: Context): Term = ApplyGeneral(OMS(path), args.map(_.toTerm))
+  def applyTo(args: List[Term]):Term = ApplyGeneral(OMS(path), args)
+  def applyTo(t: Term): Term = applyTo(List(t))
+  
+  /**
+   * applies a term translator
+   */
+  def translate(tr: Translator) : InternalDeclaration = {
+    val argsT = args map {case (nO, t) => (nO, tr.applyType(context, t))}
+    this match {
+      case tl: TermLevel => tl.copy(args = argsT, ret = tr.applyType(context, ret))
+      case tl: TypeLevel => tl.copy(args = argsT)
+      case sl: StatementLevel => sl.copy(args = argsT)
+    }    
+  }
+
+  // auxiliary methods for specific strucutral features
+  
+  /**
+   * for records: for a declaration c:A, this produces the declaration c: {r:R} A[r]
+   * where A[r] is like A with every d declared in this record with d r
+   */
+  def toEliminationDecl(recType: InternalDeclaration, recordFields: List[GlobalName]): InternalDeclaration = {
+    val r = LocalName("r")
+    val tr = TraversingTranslator(OMSReplacer(p => if (recordFields contains p) Some(Apply(OMS(p), OMV(r))) else None))
+    translate(tr)
+  }
+  
+  def toString(implicit parent : OMID) = name+": "+tp+(if(df != None) " = "+df.get else "")
 }
 
 /** type declaration */
-case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], notC : Option[NotationContainer])(implicit parent : OMID) extends InternalDeclaration {
+case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], notC : Option[NotationContainer], ctx: Option[Context]) extends InternalDeclaration {
   def ret = Univ(1)
   def tm = df
   def notation = notC getOrElse NotationContainer()
-  def getTypes(suffix: Option[String]) : (Context, VarDecl, Sub) = {
-    val (argsCon, x)=this.argContext(suffix)
-    //TODO: Define in terms of Quotations, fix below try
-    //val a = VarDecl(uniqueLN("quoted_return_type_of_"+x.name), None, Some(Univ(1)), Some(quote(x.toTerm, Nil)), None)
-    val a = VarDecl(uniqueLN(x.name+"'"), None, Some(Univ(1)), None, None)
-    (argsCon, x, (x.toTerm / a.toTerm))
-  }
-  
-  /** 
-   * Generate the domain type, the morphism declaration and the actual morphism for a type level declaration
-   * @param chain all internal declarations
-   * @param decls ctx the argument context of the type level declaration
-   * @param x the declaration of the resulting type of the type level declaration
-   * @param a the declaration of the resulting type of the image of this type level declaration
-   * @param the substitution from the resulting type of this declaration, to the resulting type of its image
-   * @param context the inner context of the derived declaration
-   * @returns returns the domain type, the morphism declaration and the morphism itself
-   */    
-  def getMorph(t: TypeLevel, chain : List[InternalDeclaration], mapTerm: VarDecl => VarDecl, mapConstr: InternalDeclaration => InternalDeclaration, x: VarDecl, context: Context) = {
-    val morphType : Term = t.noJunk(chain, context, mapConstr, mapTerm)
-    // TODO: Define the morphism
-    val morphTerm : Option[Term] = None
-    val morph = VarDecl(uniqueLN("induct_"+x.name), None, Some(morphType), morphTerm, None)
-    val morphDecl = Constant(parent, morph.name, Nil, morph.tp, morph.df, None) //morph.toDeclaration(parent)
-    //println("morphDecl: "+morphDecl.toNode.toString())
-    def m(ctx: List[Term], tm: VarDecl) : VarDecl = {
-      val tp = ApplyGeneral(morph.toTerm, chain.map(_.tp) ++ ctx :+ tm.toTerm)
-      val morphConst : Constant = Constant(parent, uniqueLN(morph.name+" M "+ctx.map(x => " "+preTp(x))+tm.toStr(true)), Nil, Some(tp), morph.df, None)
-      VarDecl(morphConst.name, None, morphConst.tp, morphConst.df, None)
-    }
-    (t, x, morphDecl, {(a: List[Term], b:VarDecl) => m(a, b)})
-  }
-  def makeVar(name: String, args: Context)(implicit parent : OMID) = newVar(uniqueLN(name), applied(args), None)
+
+  /** a var decl with a fresh name whose type is this one */
+  def makeVar(name: String, con: Context) = newVar(uniqueLN(name), applyTo(con), None)
 }
 
 /** term constructor declaration */
-case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], Ret: Term, df: Option[Term], notC: Option[NotationContainer])(implicit parent : OMID) extends InternalDeclaration {
+case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term, df: Option[Term], notC: Option[NotationContainer], ctx: Option[Context]) extends InternalDeclaration {
   def tm = df
-  def ret = toOMS(Ret)
   def notation = notC getOrElse NotationContainer()
+  /** a var decl with a fresh name of the same type as this one */
+  def makeVar(name: String) = newVar(uniqueLN(name), tp)
 
   /**
    * Generate injectivity declaration for the term constructor d
    * @param parent the parent declared module of the derived declaration to elaborate
    * @param d the term level for which to generate the injectivity axiom
    */
-  def injDecl(context: Context)(implicit parent : OMID) : Constant = {
+  def injDecl(implicit parent : GlobalName) : Constant = {
     val (aCtx, aApplied) = argContext(Some("_0"))
     val (bCtx, bApplied) = argContext(Some("_1"))
     
     val argEq = (aCtx zip bCtx) map {case (a,b) => Eq(a.toTerm,b.toTerm)}
-    val resEq = Eq(toOMS(aApplied), toOMS(bApplied))
-    val body = Arrow(Arrow(argEq, Contra), Arrow(resEq, Contra))
+    val resNeq = Neq(aApplied, bApplied)
+    val body = Arrow(Arrow(argEq, Contra), resNeq)
     val inj = Pi(context++aCtx ++ bCtx,  body)
     
-    Constant(parent, uniqueLN("injective_"+name.last.toString), Nil, Some(inj), None, None)
+    makeConst(uniqueLN("injective_"+name.last.toString), inj)
   }
+  
+  /**
+   * Generate surjectivity declaration for the term constructor d
+   * @param parent the parent declared module of the derived declaration to elaborate
+   * @param d the term level for which to generate the surjectivity axiom
+   */
+  def surjDecl(implicit parent : GlobalName) : Constant = {
+    val im = newVar(uniqueLN("image_point"), ret, Some(context))
+    val (aCtx, aApplied) = argContext(None)
+    
+    val surj = Pi(context++im,  neg(Pi(aCtx, neg(Eq(aApplied, im.toTerm)))))   
+    makeConst(uniqueLN("surjective_"+name.last.toString), surj)
+  }
+   
    
   /**
    * Generate no confusion/injectivity declaration for term constructor d and all term constructors of the same return type
-   * @param parent the parent declared module of the derived declaration to elaborate
-   * @param d the term level declaration for which to generate the no confusion declarations
+   * @param parent the derived declaration to elaborate
    * @param tmdecls all term level declarations
-   * @param context the inner context of the derived declaration
    */
-  def noConf(tmdecls: List[TermLevel], context: Context)(implicit parent : OMID) : List[Constant] = {
-  var decls:List[Constant] = Nil
-  tmdecls.filter(_.ret == ret) foreach {b => 
-    if (b == this) {
-      if(args.length > 0)
-        decls :+= injDecl(context)
-      } else {
+  def noConf(tmdecls: List[TermLevel])(parent: GlobalName): List[Constant] = {
+    var decls: List[Constant] = Nil
+    tmdecls.takeWhile(_ != this) foreach {b => 
+    if (b.ret == ret) {
+        // TODO for dependently-typed, this can generate ill-typed declarations
         val newName = uniqueLN("no_conf_" + name.last+ "_" + b.name.last)
         val (aCtx, aApplied) = argContext(None)
         val (bCtx, bApplied) = b.argContext(None)
-        val tp = Pi(context++aCtx ++ bCtx, Neq(toOMS(aApplied), toOMS(bApplied)))
-        decls :+= Constant(parent, newName, Nil, Some(tp), None, None)
+        val tp = Pi(context++aCtx ++ bCtx, Neq(aApplied, bApplied))
+        decls ::= Constant(OMMOD(parent.module), parent.name/newName, Nil, Some(tp), None, None)
     }
   }
+  decls = decls.reverse
+  if(args.length > 0)
+    decls ::= injDecl(parent)
   decls
   }
 }
 
-object TermLevel {
-
-  /**
-   * generate the no confusion axioms for the list of term level internal declarations
-   * @param tmdecs the list of term levels
-   * @param context the inner context of the derived declaration
-   * @param parent the parent term (needed to generate unique local names)
-   */
-  def noConfs(tmdecs : List[TermLevel], context: Context)(implicit parent : OMID) : List[Constant] = tmdecs match {
-    case Nil => Nil
-    case l @ hd::tl => hd.noConf(l, context)++noConfs(tl, context)
-  }
-}
 
 /** Rules and Judgment constructors */
-case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], notC: Option[NotationContainer])(implicit parent : OMID) extends InternalDeclaration {
+case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], notC: Option[NotationContainer], ctx: Option[Context]) extends InternalDeclaration {
   def ret = Univ(1)
   def tm = df
   def notation = notC getOrElse NotationContainer()
