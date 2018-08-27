@@ -10,10 +10,6 @@ import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.OperationType.OperationType
 import info.kwarc.mmt.imps.Usage.Usage
 import info.kwarc.mmt.imps.impsMathParser.{SortParser, SymbolicExpressionParser}
-import info.kwarc.mmt.imps.ParserWithSourcePosition._
-
-import scala.util.parsing.combinator.{PackratParsers, RegexParsers}
-
 
 //-----------
 
@@ -266,7 +262,7 @@ abstract class IMPSQuasiConstructor extends IMPSMathExp
 
 case class IMPSTotal(f : IMPSMathExp, beta : IMPSSort) extends IMPSQuasiConstructor
 {
-  override def toString: String = "total_q(" + f.toString + ", " + beta.toString() + ")"
+  override def toString: String = "total_q(" + f.toString + ", " + beta.toString + ")"
 }
 
 case class IMPSNonVacuous(p : IMPSMathExp) extends IMPSQuasiConstructor
@@ -302,7 +298,6 @@ case class IMPSQCSort2Indicator(sort : IMPSMathExp) extends IMPSUserDefinedQuasi
     assert(sort.isInstanceOf[IMPSUndefined])
     sort match {
       case IMPSUndefined(s) => "sort_to_indic(" + s.toString + ")"
-      case _ => ???
     }
   }
 }
@@ -589,7 +584,7 @@ trait DefForm
   }
 
   /* This is kept separate so that it doesn't need to be overwritten */
-  def updateURI(uri : URI) : (SourceInfo => SourceInfo) =
+  def updateURI(uri : URI) : SourceInfo => SourceInfo =
   {
     case None => None
     case Some(scala.util.Left(((a,b,c),(x,y,z)))) => Some(scala.util.Right(SourceRef(uri,SourceRegion(SourcePosition(a,b,c),SourcePosition(x,y,z)))))
@@ -608,7 +603,7 @@ trait DefForm
 }
 
 abstract class Comp[T <: DefForm](js : List[JSONObject] = Nil) {
-  def build[T <: DefForm](args : List[Any]) : T
+  def build[S <: DefForm](args : List[Any]) : S
 }
 
 case class LineComment(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1448,8 +1443,8 @@ object DFLanguage extends Comp[DFLanguage] {
 
 case class DFRenamer(nm : Name, ps : Option[ArgPairs], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 {
-  def toFunction : (String => String) = {
-    if (ps.isDefined) { (x : String) => applyRenaming(x,ps.get.ps) } else { identity }
+  def toFunction : String => String = {
+    if (ps.isDefined) { x : String => applyRenaming(x,ps.get.ps) } else { identity }
   }
 
   def applyRenaming(in : String, res : List[ArgRenamerPair]) : String = {
@@ -1500,11 +1495,11 @@ class DFTheoremC(js : List[JSONObject]) extends Comp[DFTheorem] {
     case (n : Name) :: (df  : ODefString)        :: (modr : Option[ModReverse])  :: (modl : Option[ModLemma])
                     :: (thy : Option[ArgTheory]) :: (us : Option[ArgUsages])     :: (tr : Option[ArgTranslation])
                     :: (mac : Option[ArgMacete]) :: (ht : Option[ArgHomeTheory]) :: (prf : Option[ArgProof]) :: Nil
-    => { // Construct full theorem!
-
+    =>
+      // Construct full theorem!
       val formula : IMPSMathExp = df.o match {
         case Left((defstring,None))                         => FrmFnd.findFormula(thy.get.thy.s,Some(defstring),"theorems","axioms",Some(n.s),js)
-        case Left((defstring,Some(thef)))                   => thef
+        case Left((_,Some(thef)))                           => thef
         case Right(Name(k@"right-act-inv",_,_))             => FrmFnd.findFormula("group-actions",None,"theorems","axioms",Some(k),js)
         case Right(Name(k@"left-act-inv",_,_))              => FrmFnd.findFormula("group-actions",None,"theorems","axioms",Some(k),js)
         case Right(Name(k@"action-macete",_,_))             => FrmFnd.findFormula("group-actions",None,"theorems","axioms",Some(k),js)
@@ -1513,7 +1508,7 @@ class DFTheoremC(js : List[JSONObject]) extends Comp[DFTheorem] {
         case Right(name)                                    => FrmFnd.findFormula(thy.get.thy.s,None,"theorems","axioms",Some(name.s),js)
       }
       DFTheorem(n,df,Some(formula),modr,modl,thy.get,us,tr,mac,ht,prf,None,None).asInstanceOf[T]
-    }
+
     case _ => ??!(args)
   }
 }
@@ -1526,9 +1521,9 @@ class DFTheoryC(js : List[JSONObject]) extends Comp[DFTheory] {
 
   override def build[T <: DefForm](args : List[Any]) : T = args match {
     case (n : Name) :: (lang : Option[ArgLanguage]) :: (comp : Option[ArgComponentTheories])
-                    :: (axs : Option[ArgAxioms]) :: (dscs : Option[ArgDistinctConstants]) :: Nil => {
+                    :: (axs : Option[ArgAxioms]) :: (dscs : Option[ArgDistinctConstants]) :: Nil =>
 
-      var nuaxs : Option[ArgAxioms] = if (axs.isDefined) {
+      val nuaxs : Option[ArgAxioms] = if (axs.isDefined) {
         var nu : List[AxiomSpec] = Nil
         for (ax <- axs.get.cps) {
           val found = FrmFnd.findAxiom(n.s, ax, js)
@@ -1538,7 +1533,7 @@ class DFTheoryC(js : List[JSONObject]) extends Comp[DFTheory] {
       } else { None }
 
       DFTheory(n,lang,comp,nuaxs,dscs,None,None).asInstanceOf[T]
-    }
+
     case _ => ??!(args)
   }
 }
@@ -1565,7 +1560,7 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
     case (n : Name) :: (f : Option[ModForce]) :: (fu : Option[ModForceUnderQuickLoad]) :: (de : Option[ModDontEnrich])
                     :: (sour : Option[ArgSource]) :: (tar : Option[ArgTarget]) :: (asms : Option[ArgAssumptions])
                     :: (fxd : Option[ArgFixedTheories]) :: (sps : Option[ArgSortPairs]) :: (cps : Option[ArgConstPairs])
-                    :: (ct : Option[ArgCoreTranslation]) :: (tic : Option[ArgTheoryInterpretationCheck]) :: Nil => {
+                    :: (ct : Option[ArgCoreTranslation]) :: (tic : Option[ArgTheoryInterpretationCheck]) :: Nil =>
 
       var formulas : List[IMPSMathExp] = Nil
       var nu_cps : Option[ArgConstPairs] = None
@@ -1580,10 +1575,10 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
           var needle : String = ""
 
           sps.get.defs(sp).srt match {
-            case scala.util.Left(scala.util.Left(n@the_name))    => nu_sps_defs = nu_sps_defs ::: List(sps.get.defs(sp))
-            case scala.util.Left(scala.util.Right(n@the_string)) => needle = removeWhitespace(n.s.tail.init)
-            case scala.util.Right(scala.util.Left(n@the_pred))   => needle = "(pred " + removeWhitespace(n.s.tail.init) + ")"
-            case scala.util.Right(scala.util.Right(n@the_indic)) => needle = "(indic " + removeWhitespace(n.s.tail.init) + ")"
+            case scala.util.Left(scala.util.Left(_))           => nu_sps_defs = nu_sps_defs ::: List(sps.get.defs(sp))
+            case scala.util.Left(scala.util.Right(the_string)) => needle = removeWhitespace(the_string.s.tail.init)
+            case scala.util.Right(scala.util.Left(the_pred))   => needle = "(pred " + removeWhitespace(the_pred.s.tail.init) + ")"
+            case scala.util.Right(scala.util.Right(the_indic)) => needle = "(indic " + removeWhitespace(the_indic.s.tail.init) + ")"
           }
 
           if (needle.nonEmpty)
@@ -1625,9 +1620,10 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
               println(" > handpicked = " + handpick(needle))
 
               println("\nCandidates:\n")
-              for (t <- haystack)
-              {
-                t.getAsList(classOf[JSONString],"sort-pairs").map(_.value.toLowerCase).map(a => println(removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init)))
+              for (t <- haystack) {
+                for (a <- t.getAsList(classOf[JSONString],"sort-pairs").map(_.value.toLowerCase)) {
+                  println(removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init))
+                }
               }
             }
 
@@ -1643,8 +1639,8 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
 
             nu_sps_defs = nu_sps_defs ::: List(ArgSortPairSpec(sps.get.defs(sp).nm,sps.get.defs(sp).srt,foo,sps.get.defs(sp).src,sps.get.defs(sp).cmt))
           }
-
         }
+        nu_sps = Some(ArgSortPairs(nu_sps_defs,sps.get.src,sps.get.cmt))
       }
 
       if (cps.isDefined)
@@ -1656,7 +1652,7 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
           cps.get.defs(cp).const.o match {
             case scala.util.Right(_)
                | scala.util.Left((_,Some(_))) => nu_cps_defs = nu_cps_defs ::: List(cps.get.defs(cp))
-            case scala.util.Left((dfs,None))  => {
+            case scala.util.Left((dfs,None))  =>
 
               println(" > looking for formula for constant-pair: " + cps.get.defs(cp))
 
@@ -1698,7 +1694,9 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
                 println("\nCandidates:\n")
                 for (t <- haystack)
                 {
-                  t.getAsList(classOf[JSONString],"constant-pairs").map(_.value.toLowerCase).map(a => println(removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init)))
+                  for (a <- t.getAsList(classOf[JSONString],"constant-pairs").map(_.value.toLowerCase)) {
+                    println(removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init))
+                  }
                 }
               }
 
@@ -1711,7 +1709,6 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
               assert(lsp.successful)
 
               nu_cps_defs = nu_cps_defs ::: List(ArgConstPairSpec(cps.get.defs(cp).name,ODefString(scala.util.Left((dfs,Some(impsMathParser.makeSEXPFormula(lsp.get)))),None,None),None,None))
-            }
           }
         }
 
@@ -1765,7 +1762,9 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
             for (t <- haystack)
             {
               println("\nCandidates:\n")
-              t.getAsList(classOf[JSONString],"assumptions").map(_.value.toLowerCase).map(a => println(removeWhitespace(a)))
+              for (a <- t.getAsList(classOf[JSONString],"assumptions").map(_.value.toLowerCase)) {
+                println(removeWhitespace(a))
+              }
             }
           }
 
@@ -1784,7 +1783,7 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
       val nuAsms : Option[ArgAssumptions] = if (asms.isDefined) { Some(asms.get.copy(frms = formulas)) } else { None }
 
       DFTranslation(n, f, fu, de, sour.get, tar.get, nuAsms, fxd, nu_sps, nu_cps, ct, tic, None, None).asInstanceOf[T]
-    }
+
     case _ => ??!(args)
   }
 }
@@ -1796,7 +1795,7 @@ case class DFRecursiveConstant(ns : ArgNameList, defs : ArgDefStringList, frms :
 class DFRecursiveConstantC(js : List[JSONObject]) extends Comp[DFRecursiveConstant] {
   override def build[T <: DefForm](args : List[Any]) : T = args match {
     case (ns : ArgNameList) :: (defs : ArgDefStringList) :: (thy : Option[ArgTheory]) :: (usgs : Option[ArgUsages])
-                            :: (defname : Option[ArgDefinitionName]) :: Nil => {
+                            :: (defname : Option[ArgDefinitionName]) :: Nil =>
 
       var frms : List[IMPSMathExp] = Nil
       var srts : List[IMPSSort] = Nil
@@ -1859,7 +1858,7 @@ class DFRecursiveConstantC(js : List[JSONObject]) extends Comp[DFRecursiveConsta
       assert(ns.nms.length == frms.length)
 
       DFRecursiveConstant(ns,defs,frms,srts,thy.get,usgs,defname,None,None).asInstanceOf[T]
-      }
+
     case _ => ??!(args)
   }
 }
@@ -1964,7 +1963,7 @@ case class DFTheoryEnsembleInstances(nm : Name, fuq : Option[ModForceUnderQuickL
                                      ps : Option[ArgPermutations], srs : Option[ArgSpecialRenamings],
                                      var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
-object  DFTheoryEnsembleInstances extends Comp[ DFTheoryEnsembleInstances] {
+object  DFTheoryEnsembleInstances extends Comp[DFTheoryEnsembleInstances] {
   override def build[T <: DefForm](args : List[Any]): T = args match {
     case (nm : Name) :: (fuq : Option[ModForceUnderQuickLoad]) :: (tt : Option[ArgTargetTheories]) :: (tm : Option[ArgTargetMultiple])
       :: (ss : Option[ArgEnsembleSorts]) :: (cs : Option[ArgEnsembleConsts]) :: (ms : Option[ArgMultiples]) :: (tic : Option[ArgTheoryInterpretationCheck])
