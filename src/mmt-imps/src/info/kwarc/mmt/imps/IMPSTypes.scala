@@ -948,8 +948,21 @@ case class ArgAssumptions(defs : List[DefString], frms : List[IMPSMathExp], var 
   override def toString: String = "(assumptions " + defs.mkString(" ") + ")"
 }
 
+
 case class ArgSortPairSpec(nm : Name, srt : Either[Either[Name,DefString],Either[DefString,DefString]], mth : Option[IMPSMathExp], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
-  override def toString: String = "(" + nm.toString + " " + srt.toString + ")"
+
+  def mapPrint[A,B,C,D](e : Either[Either[A,B],Either[C,D]]) : String = {
+    e match {
+      case Left(Left(value))   => value.toString
+      case Left(Right(value))  => value.toString
+      case Right(Left(value))  => value.toString
+      case Right(Right(value)) => value.toString
+    }
+  }
+
+  override def toString: String = {
+    "(" + nm.toString + " " + mapPrint(srt) + ")"
+  }
 }
 
 case class ArgSortPairs(defs : List[ArgSortPairSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
@@ -1569,8 +1582,8 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
           sps.get.defs(sp).srt match {
             case scala.util.Left(scala.util.Left(n@the_name))    => nu_sps_defs = nu_sps_defs ::: List(sps.get.defs(sp))
             case scala.util.Left(scala.util.Right(n@the_string)) => needle = removeWhitespace(n.s.tail.init)
-            case scala.util.Right(scala.util.Left(n@the_pred))   => needle = removeWhitespace(n.s.tail.init)
-            case scala.util.Right(scala.util.Right(n@the_indic)) => needle = removeWhitespace(n.s.tail.init)
+            case scala.util.Right(scala.util.Left(n@the_pred))   => needle = "(pred " + removeWhitespace(n.s.tail.init) + ")"
+            case scala.util.Right(scala.util.Right(n@the_indic)) => needle = "(indic " + removeWhitespace(n.s.tail.init) + ")"
           }
 
           if (needle.nonEmpty)
@@ -2192,6 +2205,8 @@ object FrmFnd
       case "with(a:sets[gg],lambda(x,y:gg,if((xina)and(yina),xmuly,?gg)))" => "with(a:sets[gg],restrict2{mul,a,a})"
       case "with(a:sets[gg],lambda(x:gg,if(xina,inv(x),?gg)))" => "with(a:sets[gg],restrict{inv,a})"
       case "with(a:sets[gg],a)" => "with(a:sets[gg],lambda(x_0:gg,x_0ina))"
+      case "(indica)" => "lambda(x_0:ind_1,x_0ina)"
+      case "(indicb)" => "lambda(x_0:ind_2,x_0inb)"
       case _ => str
     }
   }

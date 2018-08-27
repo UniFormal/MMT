@@ -32,7 +32,7 @@ theory Booleans =
 
 object IMPSImportTask{
   val rootdpath : DPath = DPath(URI.http colon "imps.mcmaster.ca") /* arbitrary, but seemed fitting */
-  val docpath = (rootdpath / "impsMath")
+  val docpath   : DPath = rootdpath / "impsMath"
 }
 
 class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : TranslationState, toplevelDoc : Document, index : Document => Unit)
@@ -90,14 +90,14 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       exp match
       {
         /* Translating Theories to MMT */
-        case t@(DFTheory(_,_,_,_,_,_,_))       => try
+        case t@DFTheory(_,_,_,_,_,_,_) => try
         {
           if (!tState.theories_raw.contains(t)) { doTheory(t, doc.path, bt.narrationDPath, uri) }
         } catch {
           case e : IMPSDependencyException => { println(" > ... fail. Add to stack: " +  e.getMessage ) ; excps = excps.::(e) }
         }
         // Languages are processed in context of theories using them, not by themselves
-        case l@(DFLanguage(_,_,_,_,_,_,_,_,_)) => {
+        case l@DFLanguage(_,_,_,_,_,_,_,_,_) => {
           if (!tState.languages.contains(l)) {
             if (tState.verbosity > 0)
             {
@@ -848,23 +848,17 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
     }
   }
 
-  def findKind(sort : IMPSSort) : Term =
-  {
-    if (sort.isInstanceOf[IMPSNaryFunSort]) { return findKind(curry(sort))}
-
-    sort match
-    {
-      case IMPSUnknownSort(h)       => tState.doUnknown(Some(h))
-      case IMPSAtomSort("ind")      => OMS(IMPSTheory.lutinsIndType)
-      case IMPSAtomSort("prop")     => OMS(IMPSTheory.lutinsPropType)
-      case IMPSAtomSort("bool")     => OMS(IMPSTheory.lutinsPropType)
-      case IMPSAtomSort("unit%sort")
+  def findKind(sort : IMPSSort) : Term = sort match {
+    case IMPSUnknownSort(h)         => tState.doUnknown(Some(h))
+    case IMPSAtomSort("ind")        => OMS(IMPSTheory.lutinsIndType)
+    case IMPSAtomSort("prop")       => OMS(IMPSTheory.lutinsPropType)
+    case IMPSAtomSort("bool")       => OMS(IMPSTheory.lutinsPropType)
+    case IMPSAtomSort("unit%sort")
          | IMPSAtomSort("unitsort") => OMS(IMPSTheory.lutinsIndType)
-      case IMPSAtomSort(_)          => OMS(IMPSTheory.lutinsIndType)
-      case IMPSBinaryFunSort(s1,s2) => IMPSTheory.FunType(findKind(s1),findKind(s2))
-      case IMPSSetSort(s)           => IMPSTheory.FunType(findKind(s),OMS(IMPSTheory.lutinsIndType))
-      case _ => ??? // This should never happen, always call curry first!
-    }
+    case IMPSAtomSort(_)            => OMS(IMPSTheory.lutinsIndType)
+    case IMPSBinaryFunSort(s1,s2)   => IMPSTheory.FunType(findKind(s1),findKind(s2))
+    case IMPSSetSort(s)             => IMPSTheory.FunType(findKind(s),OMS(IMPSTheory.lutinsIndType))
+    case IMPSNaryFunSort(sorts)     => findKind(curry(sort))
   }
 
   def matchSort(e : IMPSSort, t : DeclaredTheory) : Term =
@@ -1444,14 +1438,12 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
     }
 
     case IMPSQCGroups(m,mul,e,inv) =>
-    {
       val g_t : Term = doMathExp(m,thy,cntxt)
       val m_t : Term = doMathExp(mul,thy,cntxt)
       val e_t : Term = doMathExp(e,thy,cntxt)
       val i_t : Term = doMathExp(inv,thy,cntxt)
 
       IMPSTheory.QCT.groupsQC(tState.doUnknown(),tState.doUnknown(),g_t,m_t,e_t,i_t)
-    }
 
     case _ => { println(" > Error: Unknown Quasi-Constructor!") ; ??!(d) }
   }
