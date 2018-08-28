@@ -115,6 +115,8 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     })
     controller.add(MRef(doc.path,th.path))
 
+    if (cat.gap != "") println(th.path + " ~> " + cat.gap)
+
     controller.add(PlainInclude(axth.path, th.path))
     controller.add(PlainInclude(structh.path, th.path))
     theories(cat.name) = th
@@ -204,12 +206,12 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
       throw GeneralError(s"no mmt checker found")
     }
-    //println(axth)
-    (axth :: structh :: theories.values.toList) foreach (th => checker(th)(new CheckingEnvironment(controller.simplifier, new ErrorLogger(controller.report), RelationHandler.ignore, MMTTask.generic)))
+    // TODO infinite loop, apparently
+    // (axth :: structh :: theories.values.toList) foreach (th => checker(th)(new CheckingEnvironment(controller.simplifier, new ErrorLogger(controller.report), RelationHandler.ignore, MMTTask.generic)))
     //println(axth)
     //index(doc)
     //index(catdoc)
     docs.values foreach index
-    missings.distinct foreach println
+    missings.distinct.foreach(m => println("Missing: " + m))
   }
 }
