@@ -142,7 +142,8 @@ object Importer
     facts: List[isabelle.Export_Theory.Fact_Multi] = Nil)
   {
     def text: String = if (commands.isEmpty) "" else commands.head.source
-    def relevant: Boolean = text.nonEmpty && (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty)
+    def text_relevant: Boolean =
+      text.nonEmpty && (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty)
 
     def facts_single: List[isabelle.Export_Theory.Fact_Single] =
       (for {
@@ -411,7 +412,7 @@ class Importer extends archives.Importer
 
         for (segment <- thy_export.segments) {
           // source text
-          if (segment.relevant) {
+          if (segment.text_relevant) {
             val text = isabelle.Symbol.decode(segment.text.replace(' ', '\u00a0'))
             controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(text)))
           }
