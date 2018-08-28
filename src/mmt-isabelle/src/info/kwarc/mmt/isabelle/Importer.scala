@@ -380,23 +380,8 @@ class Importer extends archives.Importer
 
       object Isabelle extends Isabelle(importer.log(_), arguments)
 
-
-      /* theory exports (foundational order) */
-
-      val use_theories_result = Isabelle.start_session()
-
-      val thy_exports =
+      Isabelle.export_session((thy_export: Importer.Theory_Export) =>
       {
-        val node_theories =
-          for {(name, status) <- use_theories_result.nodes if status.ok}
-            yield Isabelle.read_theory_export(use_theories_result.snapshot(name))
-        Isabelle.pure_theory_export :: node_theories
-      }
-
-
-      /* imported items (foundational order) */
-
-      for (thy_export <- thy_exports) {
         val thy_name = thy_export.name
         val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
         val thy_base_name = isabelle.Long_Name.base_name(thy_export.theory.name)
@@ -476,12 +461,11 @@ class Importer extends archives.Importer
 
         Isabelle.end_theory(thy_export, items)
         index(doc)
-      }
-
-      Isabelle.stop_session()
-      BuildResult.empty
+      })
     }
     catch { case isabelle.ERROR(msg) => throw new Importer.Isabelle_Error(msg) }
+
+    BuildResult.empty
   }
 }
 
@@ -553,6 +537,20 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
   {
     session.stop()
     _session = None
+  }
+
+  def export_session(export: Importer.Theory_Export => Unit)
+  {
+    val use_theories_result = start_session()
+
+    export(pure_theory_export)
+
+    for {(name, status) <- use_theories_result.nodes if status.ok} {
+      val thy_export = read_theory_export(use_theories_result.snapshot(name))
+      export(thy_export)
+    }
+
+    stop_session()
   }
 
 
