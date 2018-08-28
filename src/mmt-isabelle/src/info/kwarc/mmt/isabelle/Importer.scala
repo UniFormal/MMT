@@ -2,7 +2,6 @@ package info.kwarc.mmt.isabelle
 
 import scala.math.Ordering
 import scala.collection.SortedMap
-
 import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import frontend.Controller
@@ -17,6 +16,11 @@ import utils._
 
 object Importer
 {
+  /* errors */
+
+  class Isabelle_Error(msg: String) extends Error("Isabelle error: " + msg)
+
+
   /* names */
 
   /*common namespace for all theories in all sessions in all Isabelle archives*/
@@ -370,111 +374,114 @@ class Importer extends archives.Importer
 
   def importDocument(bt: BuildTask, index: Document => Unit): BuildResult =
   {
-    val arguments =
-      Importer.Arguments.read_json(isabelle.Path.explode(isabelle.File.standard_path(bt.inFile.toJava)))
+    try {
+      val arguments =
+        Importer.Arguments.read_json(isabelle.Path.explode(isabelle.File.standard_path(bt.inFile.toJava)))
 
-    object Isabelle extends Isabelle(importer.log(_), arguments)
-
-
-    /* theory exports (foundational order) */
-
-    val use_theories_result = Isabelle.start_session()
-
-    val thy_exports =
-    {
-      val node_theories =
-        for {(name, status) <- use_theories_result.nodes if status.ok}
-        yield Isabelle.read_theory_export(use_theories_result.snapshot(name))
-      Isabelle.pure_theory_export :: node_theories
-    }
+      object Isabelle extends Isabelle(importer.log(_), arguments)
 
 
-    /* imported items (foundational order) */
+      /* theory exports (foundational order) */
 
-    for (thy_export <- thy_exports) {
-      val thy_name = thy_export.name
-      val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
-      val thy_base_name = isabelle.Long_Name.base_name(thy_export.theory.name)
+      val use_theories_result = Isabelle.start_session()
 
-      // items
-      var items = Isabelle.begin_theory(thy_export)
+      val thy_exports =
+      {
+        val node_theories =
+          for {(name, status) <- use_theories_result.nodes if status.ok}
+            yield Isabelle.read_theory_export(use_theories_result.snapshot(name))
+        Isabelle.pure_theory_export :: node_theories
+      }
 
-      def declare_item(entity: isabelle.Export_Theory.Entity, type_scheme: (List[String], isabelle.Term.Typ))
+
+      /* imported items (foundational order) */
+
+      for (thy_export <- thy_exports) {
+        val thy_name = thy_export.name
+        val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
+        val thy_base_name = isabelle.Long_Name.base_name(thy_export.theory.name)
+
+        // items
+        var items = Isabelle.begin_theory(thy_export)
+
+        def declare_item(entity: isabelle.Export_Theory.Entity, type_scheme: (List[String], isabelle.Term.Typ))
         : Importer.Item =
-      {
-        val item = Importer.Item(thy_name, entity, type_scheme)
-        items = items.declare(item)
-        item
-      }
-
-      // document
-      val doc = new Document(DPath(bt.base / thy_qualifier / thy_base_name), root = true)
-      controller.add(doc)
-
-      val thy = Importer.declared_theory(thy_name)
-      controller.add(thy)
-      controller.add(MRef(doc.path, thy.path))
-
-      // theory source
-      if (arguments.inline_source && thy_name != Isabelle.pure_name) {
-        val thy_text = isabelle.File.read(thy_name.path)
-        val thy_text_output = isabelle.Symbol.decode(thy_text.replace(' ', '\u00a0'))
-        controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(thy_text_output)))
-      }
-
-      def decl_error(entity: isabelle.Export_Theory.Entity)(body: => Unit)
-      {
-        try { body }
-        catch {
-          case isabelle.ERROR(msg) =>
-            isabelle.error(msg + "\nin declaration of " + entity + isabelle.Position.here(entity.pos))
+        {
+          val item = Importer.Item(thy_name, entity, type_scheme)
+          items = items.declare(item)
+          item
         }
-      }
 
-      // classes
-      for (decl <- thy_export.classes) {
-        decl_error(decl.entity) {
-          val item = declare_item(decl.entity, Importer.dummy_type_scheme)
-          val tp = Isabelle.Class()
-          controller.add(item.constant(Some(tp), None))
+        // document
+        val doc = new Document(DPath(bt.base / thy_qualifier / thy_base_name), root = true)
+        controller.add(doc)
+
+        val thy = Importer.declared_theory(thy_name)
+        controller.add(thy)
+        controller.add(MRef(doc.path, thy.path))
+
+        // theory source
+        if (arguments.inline_source && thy_name != Isabelle.pure_name) {
+          val thy_text = isabelle.File.read(thy_name.path)
+          val thy_text_output = isabelle.Symbol.decode(thy_text.replace(' ', '\u00a0'))
+          controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(thy_text_output)))
         }
-      }
 
-      // types
-      for (decl <- thy_export.types) {
-        decl_error(decl.entity) {
-          val item = declare_item(decl.entity, Importer.dummy_type_scheme)
-          val tp = Isabelle.Type(decl.args.length)
-          val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, Isabelle.import_type(items, rhs)))
-          controller.add(item.constant(Some(tp), df))
+        def decl_error(entity: isabelle.Export_Theory.Entity)(body: => Unit)
+        {
+          try { body }
+          catch {
+            case isabelle.ERROR(msg) =>
+              isabelle.error(msg + "\nin declaration of " + entity + isabelle.Position.here(entity.pos))
+          }
         }
-      }
 
-      // consts
-      for (decl <- thy_export.consts) {
-        decl_error(decl.entity) {
-          val item = declare_item(decl.entity, (decl.typargs, decl.typ))
-          val tp = Isabelle.Type.all(decl.typargs, Isabelle.import_type(items, decl.typ))
-          val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, Isabelle.import_term(items, rhs)))
-          controller.add(item.constant(Some(tp), df))
+        // classes
+        for (decl <- thy_export.classes) {
+          decl_error(decl.entity) {
+            val item = declare_item(decl.entity, Importer.dummy_type_scheme)
+            val tp = Isabelle.Class()
+            controller.add(item.constant(Some(tp), None))
+          }
         }
-      }
 
-      // facts
-      for (decl <- thy_export.facts) {
-        decl_error(decl.entity) {
-          val item = declare_item(decl.entity, Importer.dummy_type_scheme)
-          val tp = Isabelle.import_prop(items, decl.prop)
-          controller.add(item.constant(Some(tp), None))
+        // types
+        for (decl <- thy_export.types) {
+          decl_error(decl.entity) {
+            val item = declare_item(decl.entity, Importer.dummy_type_scheme)
+            val tp = Isabelle.Type(decl.args.length)
+            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, Isabelle.import_type(items, rhs)))
+            controller.add(item.constant(Some(tp), df))
+          }
         }
+
+        // consts
+        for (decl <- thy_export.consts) {
+          decl_error(decl.entity) {
+            val item = declare_item(decl.entity, (decl.typargs, decl.typ))
+            val tp = Isabelle.Type.all(decl.typargs, Isabelle.import_type(items, decl.typ))
+            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, Isabelle.import_term(items, rhs)))
+            controller.add(item.constant(Some(tp), df))
+          }
+        }
+
+        // facts
+        for (decl <- thy_export.facts) {
+          decl_error(decl.entity) {
+            val item = declare_item(decl.entity, Importer.dummy_type_scheme)
+            val tp = Isabelle.import_prop(items, decl.prop)
+            controller.add(item.constant(Some(tp), None))
+          }
+        }
+
+        Isabelle.end_theory(thy_export, items)
+        index(doc)
       }
 
-      Isabelle.end_theory(thy_export, items)
-      index(doc)
+      Isabelle.stop_session()
+      BuildResult.empty
     }
-
-    Isabelle.stop_session()
-    BuildResult.empty
+    catch { case isabelle.ERROR(msg) => throw new Importer.Isabelle_Error(msg) }
   }
 }
 
