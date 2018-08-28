@@ -106,6 +106,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
             tState.languages = tState.languages :+ l
           }
         }
+        case t@DFTranslation(_,_,_,_,_,_,_,_,_,_,_,_,_,_) => doTranslation(t, doc.path, uri)
         // If it's none of these, fall back to doDeclaration
         case _                             => doDeclaration(exp,uri)
       }
@@ -396,6 +397,108 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
     }
   }
 
+  def doTranslation(d : DFTranslation, docPath: DPath, uri : URI) : Unit = d match
+  {
+    case t@DFTranslation(name,force,forceQL,dontEnrich,sourcet,targett,assumptions,fixed,sortPairs,constPairs,core,tic,src,cmt) =>
+    {
+      // TODO: Deal with these delays.
+      val delays : List[String] = List("ACT->LEFT%TRANS","ACT->RIGHT%TRANS", "ACT->SET%CONJUGATE", "ACT->LEFT-MUL", "ACT->RIGHT-MUL")
+      if (delays.contains(name.s)) { tState.delayed = (t,uri) :: tState.delayed ; return }
+
+      tState.translations_raw = t :: tState.translations_raw
+
+      val ln : LocalName = doName(name.s)
+
+      if (tState.verbosity > 0)
+      {
+        println(" > translating Translation " + name)
+      }
+
+      // Source and Target need to be defined!
+      assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(sourcet.thy.s).toString.toLowerCase))
+      val source_thy : Term = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(sourcet.thy.s).toString.toLowerCase).get.toTerm
+
+      // ToDo: Clone theory if assumptions are present
+
+      assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(targett.thy.s).toString.toLowerCase))
+      val target_thy : DeclaredTheory = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(targett.thy.s).toString.toLowerCase).get
+      val target_thy_t : Term = target_thy.toTerm
+
+      val nu_view = new DeclaredView(bt.narrationDPath, ln, TermContainer(source_thy), TermContainer(target_thy_t), false)
+      val mref : MRef = MRef(docPath,nu_view.path)
+      controller add nu_view
+      controller add mref
+
+      tState.translations_decl = nu_view :: tState.translations_decl
+
+      if (sortPairs.isDefined) {
+        for (sp <- sortPairs.get.defs) {
+          var tar : String = ""
+          val target_sort_term : Term = sp.srt match {
+            case scala.util.Left(scala.util.Left(n@srt_name))          => tar = n.toString ; doSort(IMPSAtomSort(srt_name.s), target_thy)
+            case scala.util.Left(scala.util.Right(n@srt_dfstr))        => tar = n.toString ; ???
+            case scala.util.Right(scala.util.Left(n@pred_srt_dfstr))   => tar = n.toString ; ???
+            case scala.util.Right(scala.util.Right(n@indic_srt_dfstr)) => {
+              tar = n.toString
+              assert(sp.mth.isDefined)
+              doMathExp(sp.mth.get,target_thy,Nil)
+            }
+          }
+          val nu_sort_map = symbols.Constant(nu_view.toTerm,doName(sp.nm.s),Nil,None,Some(target_sort_term),None)
+          if (tState.verbosity > 1) { println(" >  adding sort-mapping: " + sp.nm.s + " → " + tar) }
+          //nu_view.add(nu_sort_map)
+          controller add nu_sort_map
+        }
+      }
+
+      if (constPairs.isDefined) {
+        for (cp <- constPairs.get.defs) {
+          var tar : String = ""
+          val target_const_term : Term = cp.const.o match {
+            case scala.util.Left(df) => {
+              tar = df._1.s
+              assert(df._2.isDefined)
+              doMathExp(df._2.get,target_thy,Nil)
+            }
+            case scala.util.Right(n) => tar = n.s  ; doMathExp(IMPSMathSymbol(n.s),target_thy,Nil)
+          }
+          val nu_const_map = symbols.Constant(nu_view.toTerm,doName(cp.name.s),Nil,None,Some(target_const_term),None)
+          if (tState.verbosity > 1) { println(" >  adding constant-mapping: " + cp.name.s + " → " + tar) }
+          //nu_view.add(nu_const_map)
+          controller add nu_const_map
+        }
+      }
+
+
+      if (force.isDefined) {
+        val mv : GlobalName =     IMPSImportTask.rootdpath ? name.s ? LocalName("force")
+        val mo : Obj        = OMS(IMPSImportTask.rootdpath ? name.s ? "present")
+        nu_view.metadata.add(new MetaDatum(mv,mo))
+      }
+
+      if (forceQL.isDefined) {
+        val mv : GlobalName =     IMPSImportTask.rootdpath ? name.s ? LocalName("force-under-quick-load")
+        val mo : Obj        = OMS(IMPSImportTask.rootdpath ? name.s ? "present")
+        nu_view.metadata.add(new MetaDatum(mv,mo))
+      }
+
+      if (dontEnrich.isDefined) {
+        val mv : GlobalName =     IMPSImportTask.rootdpath ? name.s ? LocalName("dont-enrich")
+        val mo : Obj        = OMS(IMPSImportTask.rootdpath ? name.s ? "present")
+        nu_view.metadata.add(new MetaDatum(mv,mo))
+      }
+
+      if (tState.verbosity > 0)
+      {
+        println(" > Adding translation " + name + " (not complete yet)")
+      }
+
+      doSourceRefT(nu_view.toTerm,src, uri)
+      controller add nu_view
+    }
+    case _ => println("Error: Unknown translation structure!")
+  }
+
   def doDeclaration (d : DefForm, uri : URI) : Unit =
   {
     // set this to true for helpful debug output
@@ -586,97 +689,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
         doSourceRefD(nu_theorem, src, uri)
         controller add nu_theorem
-      }
-      case t@DFTranslation(name,force,forceQL,dontEnrich,sourcet,targett,assumptions,fixed,sortPairs,constPairs,core,tic,src,cmt) =>
-      {
-        val delays : List[String] = List("ACT->LEFT%TRANS","ACT->RIGHT%TRANS", "ACT->SET%CONJUGATE", "ACT->LEFT-MUL", "ACT->RIGHT-MUL")
-        if (delays.contains(name.s)) { tState.delayed = (t,uri) :: tState.delayed ; return }
-
-        tState.translations_raw = t :: tState.translations_raw
-
-        val ln : LocalName = doName(name.s)
-
-        if (tState.verbosity > 0)
-        {
-          println(" > translating Translation " + name)
-        }
-
-        // Source and Target need to be defined!
-        assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(sourcet.thy.s).toString.toLowerCase))
-        val source_thy : Term = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(sourcet.thy.s).toString.toLowerCase).get.toTerm
-
-        // ToDo: Clone theory if assumptions are present
-
-        assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(targett.thy.s).toString.toLowerCase))
-        val target_thy : DeclaredTheory = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(targett.thy.s).toString.toLowerCase).get
-        val target_thy_t : Term = target_thy.toTerm
-
-        val nu_view = new DeclaredView(bt.narrationDPath, ln, TermContainer(source_thy), TermContainer(target_thy_t), false)
-        tState.translations_decl = nu_view :: tState.translations_decl
-        controller add nu_view
-
-        if (sortPairs.isDefined) {
-          for (sp <- sortPairs.get.defs) {
-            var tar : String = ""
-            val target_sort_term : Term = sp.srt match {
-              case scala.util.Left(scala.util.Left(n@srt_name))          => tar = n.toString ; doSort(IMPSAtomSort(srt_name.s), target_thy)
-              case scala.util.Left(scala.util.Right(n@srt_dfstr))        => tar = n.toString ; ???
-              case scala.util.Right(scala.util.Left(n@pred_srt_dfstr))   => tar = n.toString ; ???
-              case scala.util.Right(scala.util.Right(n@indic_srt_dfstr)) => {
-                tar = n.toString
-                assert(sp.mth.isDefined)
-                doMathExp(sp.mth.get,target_thy,Nil)
-              }
-            }
-            val nu_sort_map = symbols.Constant(nu_view.toTerm,doName(sp.nm.s),Nil,None,Some(target_sort_term),None)
-            if (tState.verbosity > 1) { println(" >  adding sort-mapping: " + sp.nm.s + " → " + tar) }
-            controller add nu_sort_map
-          }
-        }
-
-        if (constPairs.isDefined) {
-          for (cp <- constPairs.get.defs) {
-            var tar : String = ""
-            val target_const_term : Term = cp.const.o match {
-              case scala.util.Left(df) => {
-                tar = df._1.s
-                assert(df._2.isDefined)
-                doMathExp(df._2.get,target_thy,Nil)
-              }
-              case scala.util.Right(n) => tar = n.s  ; doMathExp(IMPSMathSymbol(n.s),target_thy,Nil)
-            }
-            val nu_const_map = symbols.Constant(nu_view.toTerm,doName(cp.name.s),Nil,None,Some(target_const_term),None)
-            if (tState.verbosity > 1) { println(" >  adding constant-mapping: " + cp.name.s + " → " + tar) }
-            controller add nu_const_map
-          }
-        }
-
-
-        if (force.isDefined) {
-          val mv : GlobalName =     IMPSImportTask.rootdpath ? name.s ? LocalName("force")
-          val mo : Obj        = OMS(IMPSImportTask.rootdpath ? name.s ? "present")
-          nu_view.metadata.add(new MetaDatum(mv,mo))
-        }
-
-        if (forceQL.isDefined) {
-          val mv : GlobalName =     IMPSImportTask.rootdpath ? name.s ? LocalName("force-under-quick-load")
-          val mo : Obj        = OMS(IMPSImportTask.rootdpath ? name.s ? "present")
-          nu_view.metadata.add(new MetaDatum(mv,mo))
-        }
-
-        if (dontEnrich.isDefined) {
-          val mv : GlobalName =     IMPSImportTask.rootdpath ? name.s ? LocalName("dont-enrich")
-          val mo : Obj        = OMS(IMPSImportTask.rootdpath ? name.s ? "present")
-          nu_view.metadata.add(new MetaDatum(mv,mo))
-        }
-
-        if (tState.verbosity > 0)
-        {
-          println(" > Adding translation " + name + " (not complete yet)")
-        }
-
-        doSourceRefT(nu_view.toTerm,src, uri)
-        controller add nu_view
       }
       case DFSchematicMacete(name,dfs,_,_,thy,src,cmt) => {
 
@@ -1380,7 +1392,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
       IMPSTheory.QCT.minjectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp)
 
-
     case IMPSQCMBijectiveOn(f,as,bs) =>
       val fp  : Term = doMathExp(f,thy,cntxt)
       val asp : Term = doMathExp(as,thy,cntxt)
@@ -1395,6 +1406,18 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       val i_t : Term = doMathExp(inv,thy,cntxt)
 
       IMPSTheory.QCT.groupsQC(tState.doUnknown(),tState.doUnknown(),g_t,m_t,e_t,i_t)
+
+    case IMPSQCEquinumerous(p,q) =>
+      val p_t : Term = doMathExp(p,thy,cntxt)
+      val q_t : Term = doMathExp(q,thy,cntxt)
+
+      IMPSTheory.QCT.equinumerousQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),p_t,q_t)
+
+    case IMPSQCEmbeds(p,q) =>
+      val p_t : Term = doMathExp(p,thy,cntxt)
+      val q_t : Term = doMathExp(q,thy,cntxt)
+
+      IMPSTheory.QCT.embedsQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),p_t,q_t)
 
     case _ => println(" > Error: Unknown Quasi-Constructor!") ; ??!(d)
   }

@@ -452,6 +452,18 @@ object IMPSTheory
       }
     }
 
+    object equinumerousQC extends UDQC("equinumerousQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, p : Term, q : Term): Term = {
+        ApplySpine(this.term, a, b, alpha, beta, p, q)
+      }
+    }
+
+    object embedsQC extends UDQC("embedsQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, p : Term, q : Term): Term = {
+        ApplySpine(this.term, a, b, alpha, beta, p, q)
+      }
+    }
+
 
   }
 
