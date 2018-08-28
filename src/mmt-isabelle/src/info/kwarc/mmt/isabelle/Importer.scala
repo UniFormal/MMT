@@ -28,8 +28,6 @@ object Importer
     Theory.empty(mod.doc, mod.name, Some(mod))
   }
 
-  val suppress_types: Set[String] = Set(isabelle.Pure_Thy.DUMMY, isabelle.Pure_Thy.FUN)
-
 
   /* formal items */
 
@@ -127,6 +125,28 @@ object Importer
 
     override def toString: String =
       rep.iterator.map(_._2).mkString("Items(", ", ", ")")
+  }
+
+
+  /* theory export */
+
+  sealed case class Theory_Export(name: isabelle.Document.Node.Name, theory: isabelle.Export_Theory.Theory)
+  {
+    def classes: List[isabelle.Export_Theory.Class] = theory.classes
+
+    def types: List[isabelle.Export_Theory.Type] =
+      for {
+        decl <- theory.types
+        if decl.entity.name != isabelle.Pure_Thy.DUMMY && decl.entity.name != isabelle.Pure_Thy.FUN
+      } yield decl
+
+    def consts: List[isabelle.Export_Theory.Const] = theory.consts
+
+    def facts: List[isabelle.Export_Theory.Fact_Single] =
+      for {
+        decl_multi <- theory.facts
+        decl <- decl_multi.split
+      } yield decl
   }
 
 
@@ -364,23 +384,20 @@ class Importer extends archives.Importer
     {
       val node_theories =
         for {(name, status) <- use_theories_result.nodes if status.ok}
-          yield {
-            val snapshot = use_theories_result.snapshot(name)
-            val provider = isabelle.Export.Provider.snapshot(snapshot)
-            (name, Isabelle.read_theory(provider, name))
-          }
-      (Isabelle.pure_name, Isabelle.pure_theory) :: node_theories
+        yield Isabelle.read_theory_export(use_theories_result.snapshot(name))
+      Isabelle.pure_theory_export :: node_theories
     }
 
 
     /* imported items (foundational order) */
 
-    for ((thy_name, theory) <- thy_exports) {
+    for (thy_export <- thy_exports) {
+      val thy_name = thy_export.name
       val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
-      val thy_base_name = isabelle.Long_Name.base_name(theory.name)
+      val thy_base_name = isabelle.Long_Name.base_name(thy_export.theory.name)
 
       // items
-      var items = Isabelle.begin_theory(theory)
+      var items = Isabelle.begin_theory(thy_export)
 
       def declare_item(entity: isabelle.Export_Theory.Entity, type_scheme: (List[String], isabelle.Term.Typ))
         : Importer.Item =
@@ -405,52 +422,54 @@ class Importer extends archives.Importer
         controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(thy_text_output)))
       }
 
-      def decl_error(msg: String, entity: isabelle.Export_Theory.Entity): Nothing =
-        isabelle.error(msg + "\nin declaration of " + entity + isabelle.Position.here(entity.pos))
+      def decl_error(entity: isabelle.Export_Theory.Entity)(body: => Unit)
+      {
+        try { body }
+        catch {
+          case isabelle.ERROR(msg) =>
+            isabelle.error(msg + "\nin declaration of " + entity + isabelle.Position.here(entity.pos))
+        }
+      }
 
       // classes
-      for (decl <- theory.classes) {
-        try {
+      for (decl <- thy_export.classes) {
+        decl_error(decl.entity) {
           val item = declare_item(decl.entity, Importer.dummy_type_scheme)
           val tp = Isabelle.Class()
           controller.add(item.constant(Some(tp), None))
         }
-        catch { case isabelle.ERROR(msg) => decl_error(msg, decl.entity) }
       }
 
       // types
-      for (decl <- theory.types if !Importer.suppress_types(decl.entity.name)) {
-        try {
+      for (decl <- thy_export.types) {
+        decl_error(decl.entity) {
           val item = declare_item(decl.entity, Importer.dummy_type_scheme)
           val tp = Isabelle.Type(decl.args.length)
           val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, Isabelle.import_type(items, rhs)))
           controller.add(item.constant(Some(tp), df))
         }
-        catch { case isabelle.ERROR(msg) => decl_error(msg, decl.entity) }
       }
 
       // consts
-      for (decl <- theory.consts) {
-        try {
+      for (decl <- thy_export.consts) {
+        decl_error(decl.entity) {
           val item = declare_item(decl.entity, (decl.typargs, decl.typ))
           val tp = Isabelle.Type.all(decl.typargs, Isabelle.import_type(items, decl.typ))
           val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, Isabelle.import_term(items, rhs)))
           controller.add(item.constant(Some(tp), df))
         }
-        catch { case isabelle.ERROR(msg) => decl_error(msg, decl.entity) }
       }
 
       // facts
-      for (decl_multi <- theory.facts; decl <- decl_multi.split) {
-        try {
+      for (decl <- thy_export.facts) {
+        decl_error(decl.entity) {
           val item = declare_item(decl.entity, Importer.dummy_type_scheme)
           val tp = Isabelle.import_prop(items, decl.prop)
           controller.add(item.constant(Some(tp), None))
         }
-        catch { case isabelle.ERROR(msg) => decl_error(msg, decl.entity) }
       }
 
-      Isabelle.end_theory(theory, items)
+      Isabelle.end_theory(thy_export, items)
       index(doc)
     }
 
@@ -538,6 +557,9 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
   lazy val pure_theory: isabelle.Export_Theory.Theory =
     isabelle.Export_Theory.read_pure_theory(store, cache = Some(cache))
 
+  def pure_theory_export: Importer.Theory_Export =
+    Importer.Theory_Export(pure_name, pure_theory)
+
   private def pure_entity(entities: List[isabelle.Export_Theory.Entity], name: String): GlobalName =
     entities.collectFirst({ case entity if entity.name == name => Importer.Item(pure_name, entity).global_name }).
       getOrElse(isabelle.error("Unknown entity " + isabelle.quote(name)))
@@ -596,11 +618,13 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
 
   /* user theories */
 
-  def read_theory(provider: isabelle.Export.Provider, name: isabelle.Document.Node.Name)
-    : isabelle.Export_Theory.Theory =
+  def read_theory_export(snapshot: isabelle.Document.Snapshot): Importer.Theory_Export =
   {
-    isabelle.Export_Theory.read_theory(
-      provider, isabelle.Sessions.DRAFT, name.theory, cache = Some(cache))
+    val provider = isabelle.Export.Provider.snapshot(snapshot)
+    val name = snapshot.node_name
+    val theory =
+      isabelle.Export_Theory.read_theory(provider, isabelle.Sessions.DRAFT, name.theory, cache = Some(cache))
+    Importer.Theory_Export(name, theory)
   }
 
   def use_theories(theories: List[String]): isabelle.Thy_Resources.Theories_Result =
@@ -614,11 +638,11 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
   def the_theory(name: String): Importer.Items =
     imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
 
-  def begin_theory(theory: isabelle.Export_Theory.Theory): Importer.Items =
-    Importer.Items.merge(theory.parents.map(the_theory(_)))
+  def begin_theory(thy_export: Importer.Theory_Export): Importer.Items =
+    Importer.Items.merge(thy_export.theory.parents.map(the_theory(_)))
 
-  def end_theory(theory: isabelle.Export_Theory.Theory, items: Importer.Items): Unit =
-    imported.change(map => map + (theory.name -> items))
+  def end_theory(thy_export: Importer.Theory_Export, items: Importer.Items): Unit =
+    imported.change(map => map + (thy_export.theory.name -> items))
 
   def import_class(items: Importer.Items, name: String): Term =
     OMS(items.get_class(name).global_name)
