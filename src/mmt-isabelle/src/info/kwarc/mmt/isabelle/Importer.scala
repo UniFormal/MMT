@@ -134,24 +134,27 @@ object Importer
 
   /* theory export */
 
-  sealed case class Theory_Export(name: isabelle.Document.Node.Name, theory: isabelle.Export_Theory.Theory)
+  sealed case class Theory_Segment(
+    commands: List[isabelle.Command] = Nil,
+    classes: List[isabelle.Export_Theory.Class] = Nil,
+    types: List[isabelle.Export_Theory.Type] = Nil,
+    consts: List[isabelle.Export_Theory.Const] = Nil,
+    facts: List[isabelle.Export_Theory.Fact_Multi] = Nil)
   {
-    def classes: List[isabelle.Export_Theory.Class] = theory.classes
+    def text: String = if (commands.isEmpty) "" else commands.head.source
+    def has_decls: Boolean = classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty
 
-    def types: List[isabelle.Export_Theory.Type] =
-      for {
-        decl <- theory.types
-        if decl.entity.name != isabelle.Pure_Thy.DUMMY && decl.entity.name != isabelle.Pure_Thy.FUN
-      } yield decl
-
-    def consts: List[isabelle.Export_Theory.Const] = theory.consts
-
-    def facts: List[isabelle.Export_Theory.Fact_Single] =
-      for {
-        decl_multi <- theory.facts
-        decl <- decl_multi.split
-      } yield decl
+    def facts_single: List[isabelle.Export_Theory.Fact_Single] =
+      (for {
+        decl_multi <- facts.iterator
+        decl <- decl_multi.split.iterator
+      } yield decl).toList
   }
+
+  sealed case class Theory_Export(
+    node_name: isabelle.Document.Node.Name,
+    parents: List[String],
+    segments: List[Theory_Segment])
 
 
 
@@ -382,9 +385,9 @@ class Importer extends archives.Importer
 
       Isabelle.export_session((thy_export: Importer.Theory_Export) =>
       {
-        val thy_name = thy_export.name
+        val thy_name = thy_export.node_name
         val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
-        val thy_base_name = isabelle.Long_Name.base_name(thy_export.theory.name)
+        val thy_base_name = isabelle.Long_Name.base_name(thy_export.node_name.theory)
 
         // items
         var items = Isabelle.begin_theory(thy_export)
@@ -405,13 +408,6 @@ class Importer extends archives.Importer
         controller.add(thy)
         controller.add(MRef(doc.path, thy.path))
 
-        // theory source
-        if (arguments.inline_source && thy_name != Isabelle.pure_name) {
-          val thy_text = isabelle.File.read(thy_name.path)
-          val thy_text_output = isabelle.Symbol.decode(thy_text.replace(' ', '\u00a0'))
-          controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(thy_text_output)))
-        }
-
         def decl_error(entity: isabelle.Export_Theory.Entity)(body: => Unit)
         {
           try { body }
@@ -421,41 +417,49 @@ class Importer extends archives.Importer
           }
         }
 
-        // classes
-        for (decl <- thy_export.classes) {
-          decl_error(decl.entity) {
-            val item = declare_item(decl.entity, Importer.dummy_type_scheme)
-            val tp = Isabelle.Class()
-            controller.add(item.constant(Some(tp), None))
+        for (segment <- thy_export.segments) {
+          // source text
+          if (segment.text.nonEmpty && (segment.has_decls || arguments.inline_source)) {
+            val text = isabelle.Symbol.decode(segment.text.replace(' ', '\u00a0'))
+            controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(text)))
           }
-        }
 
-        // types
-        for (decl <- thy_export.types) {
-          decl_error(decl.entity) {
-            val item = declare_item(decl.entity, Importer.dummy_type_scheme)
-            val tp = Isabelle.Type(decl.args.length)
-            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, Isabelle.import_type(items, rhs)))
-            controller.add(item.constant(Some(tp), df))
+          // classes
+          for (decl <- segment.classes) {
+            decl_error(decl.entity) {
+              val item = declare_item(decl.entity, Importer.dummy_type_scheme)
+              val tp = Isabelle.Class()
+              controller.add(item.constant(Some(tp), None))
+            }
           }
-        }
 
-        // consts
-        for (decl <- thy_export.consts) {
-          decl_error(decl.entity) {
-            val item = declare_item(decl.entity, (decl.typargs, decl.typ))
-            val tp = Isabelle.Type.all(decl.typargs, Isabelle.import_type(items, decl.typ))
-            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, Isabelle.import_term(items, rhs)))
-            controller.add(item.constant(Some(tp), df))
+          // types
+          for (decl <- segment.types) {
+            decl_error(decl.entity) {
+              val item = declare_item(decl.entity, Importer.dummy_type_scheme)
+              val tp = Isabelle.Type(decl.args.length)
+              val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, Isabelle.import_type(items, rhs)))
+              controller.add(item.constant(Some(tp), df))
+            }
           }
-        }
 
-        // facts
-        for (decl <- thy_export.facts) {
-          decl_error(decl.entity) {
-            val item = declare_item(decl.entity, Importer.dummy_type_scheme)
-            val tp = Isabelle.import_prop(items, decl.prop)
-            controller.add(item.constant(Some(tp), None))
+          // consts
+          for (decl <- segment.consts) {
+            decl_error(decl.entity) {
+              val item = declare_item(decl.entity, (decl.typargs, decl.typ))
+              val tp = Isabelle.Type.all(decl.typargs, Isabelle.import_type(items, decl.typ))
+              val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, Isabelle.import_term(items, rhs)))
+              controller.add(item.constant(Some(tp), df))
+            }
+          }
+
+          // facts
+          for (decl <- segment.facts_single) {
+            decl_error(decl.entity) {
+              val item = declare_item(decl.entity, Importer.dummy_type_scheme)
+              val tp = Isabelle.import_prop(items, decl.prop)
+              controller.add(item.constant(Some(tp), None))
+            }
           }
         }
 
@@ -563,7 +567,19 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
     isabelle.Export_Theory.read_pure_theory(store, cache = Some(cache))
 
   def pure_theory_export: Importer.Theory_Export =
-    Importer.Theory_Export(pure_name, pure_theory)
+  {
+    val segment =
+      Importer.Theory_Segment(
+        classes = pure_theory.classes,
+        types =
+          for {
+            decl <- pure_theory.types
+            if decl.entity.name != isabelle.Pure_Thy.DUMMY && decl.entity.name != isabelle.Pure_Thy.FUN
+          } yield decl,
+        consts = pure_theory.consts,
+        facts = pure_theory.facts)
+    Importer.Theory_Export(pure_name, Nil, List(segment))
+  }
 
   private def pure_entity(entities: List[isabelle.Export_Theory.Entity], name: String): GlobalName =
     entities.collectFirst({ case entity if entity.name == name => Importer.Item(pure_name, entity).global_name }).
@@ -629,7 +645,32 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
     val name = snapshot.node_name
     val theory =
       isabelle.Export_Theory.read_theory(provider, isabelle.Sessions.DRAFT, name.theory, cache = Some(cache))
-    Importer.Theory_Export(name, theory)
+
+    val command_ids = snapshot.command_id_map
+
+    def make_segment(commands: List[isabelle.Command]): Importer.Theory_Segment =
+    {
+      def defined(entity: isabelle.Export_Theory.Entity): Boolean =
+      {
+        def err(msg: String): Nothing =
+          isabelle.error(msg + " for " + entity + " in theory " + isabelle.quote(name.theory))
+        val id = if (entity.id.isDefined) entity.id.get else err("Missing command id")
+        val command = command_ids.getOrElse(id, err("No command with suitable id"))
+        commands.exists(cmd => cmd.id == command.id)
+      }
+      Importer.Theory_Segment(
+        commands = commands,
+        classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,
+        types = for (decl <- theory.types if defined(decl.entity)) yield decl,
+        consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
+        facts = for (decl <- theory.facts if defined(decl.entity)) yield decl)
+    }
+
+    val segments =
+      for (command <- snapshot.node.commands.toList)
+        yield make_segment(List(command))
+
+    Importer.Theory_Export(name, theory.parents, segments)
   }
 
   def use_theories(theories: List[String]): isabelle.Thy_Resources.Theories_Result =
@@ -644,10 +685,10 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
     imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
 
   def begin_theory(thy_export: Importer.Theory_Export): Importer.Items =
-    Importer.Items.merge(thy_export.theory.parents.map(the_theory(_)))
+    Importer.Items.merge(thy_export.parents.map(the_theory(_)))
 
   def end_theory(thy_export: Importer.Theory_Export, items: Importer.Items): Unit =
-    imported.change(map => map + (thy_export.theory.name -> items))
+    imported.change(map => map + (thy_export.node_name.theory -> items))
 
   def import_class(items: Importer.Items, name: String): Term =
     OMS(items.get_class(name).global_name)
