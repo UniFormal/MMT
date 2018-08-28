@@ -142,7 +142,7 @@ object Importer
     facts: List[isabelle.Export_Theory.Fact_Multi] = Nil)
   {
     def text: String = if (commands.isEmpty) "" else commands.head.source
-    def has_decls: Boolean = classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty
+    def relevant: Boolean = text.nonEmpty && (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty)
 
     def facts_single: List[isabelle.Export_Theory.Fact_Single] =
       (for {
@@ -411,7 +411,7 @@ class Importer extends archives.Importer
 
         for (segment <- thy_export.segments) {
           // source text
-          if (segment.text.nonEmpty && segment.has_decls) {
+          if (segment.relevant) {
             val text = isabelle.Symbol.decode(segment.text.replace(' ', '\u00a0'))
             controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(text)))
           }
@@ -640,28 +640,24 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
 
     val command_ids = snapshot.command_id_map
 
-    def make_segment(commands: List[isabelle.Command]): Importer.Theory_Segment =
+    def make_segment(command: isabelle.Command): Importer.Theory_Segment =
     {
       def defined(entity: isabelle.Export_Theory.Entity): Boolean =
       {
         def err(msg: String): Nothing =
           isabelle.error(msg + " for " + entity + " in theory " + isabelle.quote(name.theory))
         val id = if (entity.id.isDefined) entity.id.get else err("Missing command id")
-        val command = command_ids.getOrElse(id, err("No command with suitable id"))
-        commands.exists(cmd => cmd.id == command.id)
+        val entity_command = command_ids.getOrElse(id, err("No command with suitable id"))
+        command.id == entity_command.id
       }
       Importer.Theory_Segment(
-        commands = commands,
+        commands = List(command),
         classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,
         types = for (decl <- theory.types if defined(decl.entity)) yield decl,
         consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
         facts = for (decl <- theory.facts if defined(decl.entity)) yield decl)
     }
-
-    val segments =
-      for (command <- snapshot.node.commands.toList)
-        yield make_segment(List(command))
-
+    val segments = snapshot.node.commands.toList.map(make_segment)
     Importer.Theory_Export(name, theory.parents, segments)
   }
 
