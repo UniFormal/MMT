@@ -164,8 +164,8 @@ object Importer
 
   object Arguments
   {
-    val extension: String = "isabelle_arguments"
-    val standard_file: isabelle.Path = isabelle.Path.explode("source/standard").ext(extension)
+    val extension: String = "isabelle"
+    val source_file: isabelle.Path = isabelle.Path.explode("source/arguments").ext(extension)
 
     val default_output_dir: String = "isabelle_mmt"
     val default_logic: String = isabelle.Thy_Header.PURE
@@ -341,7 +341,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     isabelle.Command_Line.tool0 {
       val arguments = Arguments.command_line(args.toList)
       val output_dir = isabelle.Path.explode(arguments.output_dir)
-      arguments.write_json(output_dir + Arguments.standard_file)
+      arguments.write_json(output_dir + Arguments.source_file)
 
       val meta_inf = output_dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
       isabelle.Isabelle_System.mkdirs(meta_inf.dir)
