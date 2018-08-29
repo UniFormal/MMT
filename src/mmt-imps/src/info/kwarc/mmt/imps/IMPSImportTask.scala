@@ -12,7 +12,7 @@ import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
-import info.kwarc.mmt.api.symbols.{Declaration, FinalConstant, PlainInclude, TermContainer}
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.imps.Usage.Usage
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
@@ -409,27 +409,41 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
       val ln : LocalName = doName(name.s)
 
-      if (tState.verbosity > 0)
-      {
-        println(" > translating Translation " + name)
-      }
+      if (tState.verbosity > 0) { println(" > translating Translation " + name) }
 
       // Source and Target need to be defined!
       assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(sourcet.thy.s).toString.toLowerCase))
-      val source_thy : Term = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(sourcet.thy.s).toString.toLowerCase).get.toTerm
+      val source_thy   : DeclaredTheory = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(sourcet.thy.s).toString.toLowerCase).get
+      val source_thy_t : Term = source_thy.toTerm
 
-      // ToDo: Clone theory if assumptions are present
+      // ToDo: Clone theory if assumptions are present?
 
       assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(targett.thy.s).toString.toLowerCase))
       val target_thy : DeclaredTheory = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(targett.thy.s).toString.toLowerCase).get
       val target_thy_t : Term = target_thy.toTerm
 
-      val nu_view = new DeclaredView(bt.narrationDPath, ln, TermContainer(source_thy), TermContainer(target_thy_t), false)
+      val nu_view = new DeclaredView(bt.narrationDPath, ln, TermContainer(source_thy_t), TermContainer(target_thy_t), false)
       val mref : MRef = MRef(docPath,nu_view.path)
       controller add nu_view
       controller add mref
 
       tState.translations_decl = nu_view :: tState.translations_decl
+
+      if (fixed.isDefined)
+      {
+        for (ft <- fixed.get.ts.indices)
+        {
+          if (tState.verbosity > 1) { println("  > translation " + name.s + " fixes theory " + fixed.get.ts(ft).s) }
+
+          val fix = tState.theories_decl.find(t => t.name.toString.toLowerCase == fixed.get.ts(ft).s.toLowerCase)
+          assert(fix.isDefined)
+
+          val cn : LocalName = LocalName(ComplexStep(fix.get.path))
+
+          val id_fix : DefinedStructure = DefinedStructure(target_thy_t,cn,source_thy_t,OMIDENT(fix.get.toTerm),false) // get it? :D
+          controller add id_fix
+        }
+      }
 
       if (sortPairs.isDefined) {
         for (sp <- sortPairs.get.defs) {
@@ -438,14 +452,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
             case scala.util.Left(scala.util.Left(n@srt_name))          => tar = n.toString ; doSort(IMPSAtomSort(srt_name.s), target_thy)
             case scala.util.Left(scala.util.Right(n@srt_dfstr))        => tar = n.toString ; ???
             case scala.util.Right(scala.util.Left(n@pred_srt_dfstr))   => tar = n.toString ; ???
-            case scala.util.Right(scala.util.Right(n@indic_srt_dfstr)) => {
-              tar = n.toString
-              assert(sp.mth.isDefined)
-              doMathExp(sp.mth.get,target_thy,Nil)
-            }
+            case scala.util.Right(scala.util.Right(n@indic_srt_dfstr)) => tar = n.toString
+                                                                          assert(sp.mth.isDefined)
+                                                                          doMathExp(sp.mth.get,target_thy,Nil)
           }
-          val nu_sort_map = symbols.Constant(nu_view.toTerm,doName(sp.nm.s),Nil,None,Some(target_sort_term),None)
-          if (tState.verbosity > 1) { println(" >  adding sort-mapping: " + sp.nm.s + " → " + tar) }
+
+          val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(source_thy_t.toMPath) / doName(sp.nm.s),Nil,None,Some(target_sort_term),None)
+          if (tState.verbosity > 1) { println(" >  adding sort-mapping: " + sp.nm.s + " → " + tar + " // " + ComplexStep(source_thy_t.toMPath) / doName(sp.nm.s)) }
           //nu_view.add(nu_sort_map)
           controller add nu_sort_map
         }
@@ -773,14 +786,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
           val nsource = locateMathSymbolHome(n.s,source.get)
           val urimage = nsource.getConstants.find(c => c.name.toString.toLowerCase == n.s.toLowerCase).get
           println("   > urimage defined: " + urimage)
-          val tp    = if (urimage.tp.isDefined) { Some( api.symbols.ApplyMorphism(trans_decl.get.toTerm).apply(Context(),urimage.tp.get)) } else { None }
-          val con   = if (tp.isDefined) { Context(tp.get.toMPath) } else { Context() }
-          val image = api.symbols.ApplyMorphism(trans_decl.get.toTerm).apply(con,urimage.toTerm)
+          val tp : Option[Term] = if (urimage.tp.isDefined) { Some(controller.library.ApplyMorphs(urimage.tp.get,trans_decl.get.toTerm)) } else { None } // api.symbols.ApplyMorphism(trans_decl.get.toTerm).apply(Context(),urimage.tp.get)
+          println("   > urimage type:    " + tp)
+          val image = controller.library.ApplyMorphs(urimage.toTerm,trans_decl.get.toTerm) //api.symbols.ApplyMorphism(trans_decl.get.toTerm).apply(con,urimage.toTerm)
           println("   >   image defined: " + image)
           val nu_trans_symbol = symbols.Constant(target.get.toTerm,q,Nil,tp,Some(image),Some("transported symbol"))
 
           if (tState.verbosity > 1) { println("   > adding " + n.toString) }
-
           controller add nu_trans_symbol
         }
       }
@@ -843,20 +855,18 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         controller add opaque
       }
       case DFPrintSyntax(_,_,_,_,_,_,_,_)
-         | DFParseSyntax(_,_,_,_,_,_,_,_) => {} // Not used, because they are hardcoded.
+         | DFParseSyntax(_,_,_,_,_,_,_,_) => // Not used, because they are hardcoded.
       case Heralding(_,_,_)
          | DFIncludeFiles(_,_,_,_,_)
          | DFSection(_,_,_,_,_)
          | Define(_,_,_)
          | Set(_,_,_)
-         | DFLoadSection(_,_,_) => {} // Not used, because information is present elsewhere.
-      case some => {
-        if (tState.verbosity > 0)
-        {
+         | DFLoadSection(_,_,_) => // Not used, because information is present elsewhere.
+      case some =>
+        if (tState.verbosity > 0) {
           println(" > Error: Unknown decl encountered, not translated!")
           println(" > " + some.getClass + "\n")
         }
-      }
     }
   }
 
@@ -1439,7 +1449,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
   {
     var srcthy : DeclaredTheory = null
 
-    if (tState.verbosity > 0)
+    if (tState.verbosity > 1)
     {
       println(" > Locating IMPSMathSymbol " + s + " for use in theory " + thy.name.toString)
     }
@@ -1451,13 +1461,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
       if (refcon.exists(c => c.name.toString.toLowerCase == s.toLowerCase)) {
         srcthy = refthy
-        if (tState.verbosity > 1)
+        if (tState.verbosity > 2)
         {
           println("    > FOUND in " + refthy.name)
         }
       }
       else {
-        if (tState.verbosity > 1)
+        if (tState.verbosity > 2)
         {
           println("    > Not found in " + refthy.name)
         }
