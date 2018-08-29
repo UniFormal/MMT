@@ -135,15 +135,16 @@ object Importer
   /* theory export */
 
   sealed case class Theory_Segment(
-    commands: List[isabelle.Command] = Nil,
+    element: isabelle.Thy_Element.Element_Command = isabelle.Thy_Element.atom(isabelle.Command.empty),
     classes: List[isabelle.Export_Theory.Class] = Nil,
     types: List[isabelle.Export_Theory.Type] = Nil,
     consts: List[isabelle.Export_Theory.Const] = Nil,
     facts: List[isabelle.Export_Theory.Fact_Multi] = Nil)
   {
-    def text: String = if (commands.isEmpty) "" else commands.head.source
-    def text_relevant: Boolean =
-      text.nonEmpty && (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty)
+    val header: String =
+      element.head.span.content.iterator.takeWhile(tok => !tok.is_begin).map(_.source).mkString
+    def header_relevant: Boolean =
+      header.nonEmpty && (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty)
 
     def facts_single: List[isabelle.Export_Theory.Fact_Single] =
       (for {
@@ -412,8 +413,8 @@ class Importer extends archives.Importer
 
         for (segment <- thy_export.segments) {
           // source text
-          if (segment.text_relevant) {
-            val text = isabelle.Symbol.decode(segment.text.replace(' ', '\u00a0'))
+          if (segment.header_relevant) {
+            val text = isabelle.Symbol.decode(segment.header.replace(' ', '\u00a0'))
             controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(text)))
           }
 
@@ -641,21 +642,36 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
       isabelle.Export_Theory.read_theory(isabelle.Export.Provider.snapshot(snapshot),
         isabelle.Sessions.DRAFT, theory_name, cache = Some(cache))
 
+    val syntax = resources.session_base.node_syntax(snapshot.version.nodes, node_name)
+
     val segments =
     {
-      val command_ids = snapshot.command_id_map
-      for { command <- snapshot.node.commands.toList }
+      val relevant_elements =
+        isabelle.Thy_Element.parse_elements(syntax.keywords, snapshot.node.commands.toList).
+          filter(elem => elem.head.span.is_kind(syntax.keywords, isabelle.Keyword.theory, false))
+      val relevant_ids =
+        (for { element <- relevant_elements.iterator; cmd <- element.outline_iterator }
+          yield cmd.id).toSet
+
+      val node_command_ids = snapshot.command_id_map
+
+      for (element <- relevant_elements)
       yield {
         def defined(entity: isabelle.Export_Theory.Entity): Boolean =
         {
           def err(msg: String): Nothing =
             isabelle.error(msg + " for " + entity + " in theory " + isabelle.quote(theory_name))
-          val id = if (entity.id.isDefined) entity.id.get else err("Missing command id")
-          val entity_command = command_ids.getOrElse(id, err("No command with suitable id"))
-          command.id == entity_command.id
+
+          val entity_id = if (entity.id.isDefined) entity.id.get else err("Missing command id")
+          val entity_command =
+            node_command_ids.get(entity_id) match {
+              case Some(cmd) if relevant_ids(cmd.id) => cmd
+              case _ => err("No command with suitable id")
+            }
+          element.outline_iterator.exists(cmd => cmd.id == entity_command.id)
         }
         Importer.Theory_Segment(
-          commands = List(command),
+          element = element,
           classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,
           types = for (decl <- theory.types if defined(decl.entity)) yield decl,
           consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
