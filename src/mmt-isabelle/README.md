@@ -7,15 +7,27 @@ as Isabelle component, e.g. in ```$ISABELLE_HOME_USER/etc/settings``` like this:
 
     init_component ".../MMT/src/mmt-isabelle"
 
-* build (requires sbt): ```isabelle mmt_build```
+* build (requires sbt):
 
-* importer: e.g. ```isabelle mmt_import -v ZF```
+      isabelle mmt_build
 
-* HTTP server: ```isabelle mmt_server```
+* importer: e.g.
 
-* MMT shell: ```isabelle mmt```
+      isabelle mmt_import -v ZF
+      isabelle mmt_import -v -B ZF
+      isabelle mmt_import -v HOL
 
-* development: ```isabelle env idea```
+* HTTP server:
+
+      isabelle mmt_server
+
+* MMT shell:
+
+      isabelle mmt
+
+* development:
+
+      isabelle env idea
 
   Note that ```build.sbt``` has some tricks on conditional project composition:
   it requires re-initializing the IDEA project after dropping in or out of
