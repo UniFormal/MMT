@@ -659,14 +659,26 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
       yield {
         def defined(entity: isabelle.Export_Theory.Entity): Boolean =
         {
-          def err(msg: String): Nothing =
-            isabelle.error(msg + " for " + entity + " in theory " + isabelle.quote(theory_name))
+          def for_entity: String =
+            " for " + entity + " in theory " + isabelle.quote(theory_name)
 
-          val entity_id = if (entity.id.isDefined) entity.id.get else err("Missing command id")
+          val entity_id =
+            entity.id match {
+              case Some(id) => id
+              case None => isabelle.error("Missing command id" + for_entity)
+            }
           val entity_command =
             node_command_ids.get(entity_id) match {
               case Some(cmd) if relevant_ids(cmd.id) => cmd
-              case _ => err("No command with suitable id")
+              case _ =>
+                val msg = "No command with suitable id" + for_entity
+                snapshot.state.lookup_id(entity_id) match {
+                  case None => isabelle.error(msg)
+                  case Some(st) =>
+                    isabelle.error(msg + " -- it refers to command " +
+                      isabelle.quote(st.command.source) + " in " +
+                      isabelle.quote(st.command.node_name.node))
+                }
             }
           element.outline_iterator.exists(cmd => cmd.id == entity_command.id)
         }
