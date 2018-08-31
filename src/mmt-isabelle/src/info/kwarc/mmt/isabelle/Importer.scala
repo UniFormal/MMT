@@ -105,6 +105,7 @@ object Importer
     def get_class(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CLASS, name))
     def get_type(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.TYPE, name))
     def get_const(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CONST, name))
+    def get_locale(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE, name))
 
     def is_empty: Boolean = rep.isEmpty
     def defined(key: Item.Key): Boolean = rep.isDefinedAt(key)
@@ -139,12 +140,14 @@ object Importer
     classes: List[isabelle.Export_Theory.Class] = Nil,
     types: List[isabelle.Export_Theory.Type] = Nil,
     consts: List[isabelle.Export_Theory.Const] = Nil,
-    facts: List[isabelle.Export_Theory.Fact_Multi] = Nil)
+    facts: List[isabelle.Export_Theory.Fact_Multi] = Nil,
+    locales: List[isabelle.Export_Theory.Locale] = Nil)
   {
     val header: String =
       element.head.span.content.iterator.takeWhile(tok => !tok.is_begin).map(_.source).mkString
     def header_relevant: Boolean =
-      header.nonEmpty && (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty)
+      header.nonEmpty &&
+        (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty || locales.nonEmpty)
 
     def facts_single: List[isabelle.Export_Theory.Fact_Single] =
       (for {
@@ -455,6 +458,15 @@ class Importer extends archives.Importer
               controller.add(item.constant(Some(tp), None))
             }
           }
+
+          // locales
+          for (decl <- segment.locales) {
+            decl_error(decl.entity) {
+              val item = declare_item(decl.entity, Importer.dummy_type_scheme)
+              val tp = Isabelle.import_locale(items, decl)
+              controller.add(item.constant(Some(tp), None))
+            }
+          }
         }
 
         Isabelle.end_theory(thy_export, items)
@@ -571,7 +583,8 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
             if decl.entity.name != isabelle.Pure_Thy.DUMMY && decl.entity.name != isabelle.Pure_Thy.FUN
           } yield decl,
         consts = pure_theory.consts,
-        facts = pure_theory.facts)
+        facts = pure_theory.facts,
+        locales = pure_theory.locales)
     Importer.Theory_Export(pure_name, Nil, List(segment))
   }
 
@@ -687,7 +700,8 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
           classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,
           types = for (decl <- theory.types if defined(decl.entity)) yield decl,
           consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
-          facts = for (decl <- theory.facts if defined(decl.entity)) yield decl)
+          facts = for (decl <- theory.facts if defined(decl.entity)) yield decl,
+          locales = for (decl <- theory.locales if defined(decl.entity)) yield decl)
       }
     }
     Importer.Theory_Export(node_name, theory.parents, segments)
@@ -752,14 +766,28 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
     catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin term " + tm) }
   }
 
+  def import_params(
+    items: Importer.Items,
+    type_params: List[(String, isabelle.Term.Sort)],
+    params: List[(String, isabelle.Term.Typ)]): (List[String], List[Term], List[VarDecl]) =
+  {
+    val types = type_params.map(_._1)
+    val sorts = type_params.flatMap({ case (a, s) => s.map(c => lf.Apply(import_class(items, c), OMV(a))) })
+    val vars = params.map({ case (x, ty) => OMV(x) % import_type(items, ty) })
+    (types, sorts, vars)
+  }
+
   def import_prop(items: Importer.Items, prop: isabelle.Export_Theory.Prop): Term =
   {
-    val types = prop.typargs.map(_._1)
-    val sorts = prop.typargs.flatMap({ case (a, s) => s.map(c => lf.Apply(import_class(items, c), OMV(a))) })
-
-    val xs = prop.args.map({ case (x, ty) => OMV(x) % import_type(items, ty) })
+    val (types, sorts, vars) = import_params(items, prop.typargs, prop.args)
     val t = import_term(items, prop.term)
-    val u = if (xs.isEmpty) t else lf.Pi(xs, t)
-    Type.all(types, if (sorts.isEmpty) u else lf.Arrow(sorts, u))
+    Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
+  }
+
+  def import_locale(items: Importer.Items, locale: isabelle.Export_Theory.Locale): Term =
+  {
+    val (types, sorts, vars) = import_params(items, locale.type_params, locale.params)
+    val t = Prop()
+    Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
   }
 }
