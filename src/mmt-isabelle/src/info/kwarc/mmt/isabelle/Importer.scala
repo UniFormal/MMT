@@ -766,27 +766,27 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
     catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin term " + tm) }
   }
 
-  def import_params(
+  def import_args(
     items: Importer.Items,
-    type_params: List[(String, isabelle.Term.Sort)],
-    params: List[(String, isabelle.Term.Typ)]): (List[String], List[Term], List[VarDecl]) =
+    typargs: List[(String, isabelle.Term.Sort)],
+    args: List[(String, isabelle.Term.Typ)]): (List[String], List[Term], List[VarDecl]) =
   {
-    val types = type_params.map(_._1)
-    val sorts = type_params.flatMap({ case (a, s) => s.map(c => lf.Apply(import_class(items, c), OMV(a))) })
-    val vars = params.map({ case (x, ty) => OMV(x) % import_type(items, ty) })
+    val types = typargs.map(_._1)
+    val sorts = typargs.flatMap({ case (a, s) => s.map(c => lf.Apply(import_class(items, c), OMV(a))) })
+    val vars = args.map({ case (x, ty) => OMV(x) % import_type(items, ty) })
     (types, sorts, vars)
   }
 
   def import_prop(items: Importer.Items, prop: isabelle.Export_Theory.Prop): Term =
   {
-    val (types, sorts, vars) = import_params(items, prop.typargs, prop.args)
+    val (types, sorts, vars) = import_args(items, prop.typargs, prop.args)
     val t = import_term(items, prop.term)
     Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
   }
 
   def import_locale(items: Importer.Items, locale: isabelle.Export_Theory.Locale): Term =
   {
-    val (types, sorts, vars) = import_params(items, locale.type_params, locale.params)
+    val (types, sorts, vars) = import_args(items, locale.typargs, locale.args)
     val t = Prop()
     Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
   }
