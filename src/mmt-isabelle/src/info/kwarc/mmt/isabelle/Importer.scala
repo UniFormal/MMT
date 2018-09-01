@@ -727,20 +727,20 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
   def import_class(items: Importer.Items, name: String): Term =
     OMS(items.get_class(name).global_name)
 
-  def import_type(items: Importer.Items, typ: isabelle.Term.Typ): Term =
+  def import_type(items: Importer.Items, ty: isabelle.Term.Typ): Term =
   {
+    def typ(t: isabelle.Term.Typ): Term = import_type(items, t)
     try {
-      typ match {
-        case isabelle.Term.Type(isabelle.Pure_Thy.FUN, List(a, b)) =>
-          lf.Arrow(import_type(items, a), import_type(items, b))
+      ty match {
+        case isabelle.Term.Type(isabelle.Pure_Thy.FUN, List(a, b)) => lf.Arrow(typ(a), typ(b))
         case isabelle.Term.Type(name, args) =>
           val op = OMS(items.get_type(name).global_name)
-          if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(import_type(items, _)))
+          if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(typ(_)))
         case isabelle.Term.TFree(a, _) => OMV(a)
         case isabelle.Term.TVar(xi, _) => isabelle.error("Illegal schematic type variable " + xi.toString)
       }
     }
-    catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin type " + typ) }
+    catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin type " + ty) }
   }
 
   def import_term(items: Importer.Items, tm: isabelle.Term.Term): Term =
