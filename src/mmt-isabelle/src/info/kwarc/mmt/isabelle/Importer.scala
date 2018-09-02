@@ -555,12 +555,26 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
 
     export(pure_theory_export)
 
-    for {(name, status) <- use_theories_result.nodes if status.ok} {
+    for { (name, status) <- use_theories_result.nodes if status.ok } {
       val thy_export = read_theory_export(use_theories_result.snapshot(name))
       export(thy_export)
     }
 
+    val failed_theories =
+      for { (name, status) <- use_theories_result.nodes if !status.ok } yield name
+
+    for {
+      name <- failed_theories.iterator
+      snapshot = use_theories_result.snapshot(name)
+      (msg, _) <- snapshot.messages if isabelle.Protocol.is_error(msg)
+    } progress.echo_error_message(isabelle.XML.content(isabelle.Pretty.formatted(List(msg))))
+
     stop_session()
+
+    if (failed_theories.nonEmpty) {
+      isabelle.error("Failed theories: " +
+        isabelle.Library.commas_quote(failed_theories.map(_.theory).sorted))
+    }
   }
 
 
