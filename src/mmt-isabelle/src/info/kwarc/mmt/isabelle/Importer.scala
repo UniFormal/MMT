@@ -491,6 +491,8 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
       override def echo(msg: String): Unit = log(msg)
       override def theory(session: String, theory: String): Unit =
         if (arguments.verbose) log(isabelle.Progress.theory_message(session, theory))
+      override def theory_percentage(session: String, theory: String, percentage: Int): Unit =
+        if (arguments.verbose) echo(isabelle.Progress.theory_message(session, theory) + ": " + percentage + "%")
     }
 
 
