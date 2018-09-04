@@ -440,7 +440,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
           val cn : LocalName = LocalName(ComplexStep(fix.get.path))
 
-          val id_fix : DefinedStructure = DefinedStructure(target_thy_t,cn,source_thy_t,OMIDENT(fix.get.toTerm),false) // get it? :D
+          val id_fix : DefinedStructure = DefinedStructure(nu_view.toTerm,cn,fix.get.toTerm,OMIDENT(fix.get.toTerm),false) // get it? :D
           controller add id_fix
         }
       }
@@ -660,9 +660,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
           println(" > adding theorem " + name + " to theory " + parent.name)
         }
 
-        val mth: Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(frm.get, parent,Nil)))
-        val nu_theorem = symbols.Constant(parent.toTerm, doName(name.s), Nil, Some(mth), None, Some("Theorem"))
-        //                                                                                ^-- proof goes here!
+        val trm : Term = doMathExp(frm.get, parent,Nil)
+        val thm : Term = tState.bindUnknowns(IMPSTheory.Thm(trm))
+        val prf : Term = tState.bindUnknowns(IMPSTheory.Proofs.MagicProof(trm))
+        val nu_theorem = symbols.Constant(parent.toTerm, doName(name.s), Nil, Some(thm), Some(prf), Some("Theorem"))
+        //                                                                                ^-- proof goes here! Some(IMPSTheory.Proofs.MagicProof(trm))
 
         /* Add available MetaData */
         if (usages.isDefined) {

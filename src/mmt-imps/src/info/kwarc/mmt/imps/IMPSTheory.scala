@@ -237,6 +237,19 @@ object IMPSTheory
     }
   }
 
+  object Proofs
+  {
+    val lutinsProofsPath : MPath = rootdpath ? "LutinsProofs"
+
+    object MagicProof
+    {
+      val path : GlobalName = lutinsProofsPath ? "magic"
+      val term = OMS(path)
+
+      def apply(e : Term) : Term = ApplySpine(this.term, e)
+    }
+  }
+
   // Subtheory for User-Defined Quasi-Constructors
   object QCT
   {

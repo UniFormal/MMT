@@ -2206,6 +2206,12 @@ object FrmFnd
       case "with(a:sets[gg],a)" => "with(a:sets[gg],lambda(x_0:gg,x_0ina))"
       case "(indica)" => "lambda(x_0:ind_1,x_0ina)"
       case "(indicb)" => "lambda(x_0:ind_2,x_0inb)"
+      case "(indicwith(a:sets[gg],a))" => "with(a:sets[gg],lambda(x_0:gg,x_0ina))"
+      case "(predlambda(x:kk,not(x=o_kk)))" => "lambda(x:kk,not(x=o_kk))"
+      case "(predlambda(z:kk,not(z=o_kk)))" => "lambda(z:kk,not(z=o_kk))"
+      case "lambda(x,y:kk,if(not(x=o_kk)andnot(y=o_kk),x*_kky,?kk))" => "(mullambda(x,y:kk,if(not(x=o_kk)andnot(y=o_kk),x*_kky,?kk))"
+      case "(indicwith(a:sets[ind_1],a))" => "with(a:sets[ind_1],lambda(x_0:ind_1,x_0ina))"
+      case "(indicwith(b:sets[ind_2],b))" => "with(b:sets[ind_2],lambda(x_0:ind_2,x_0inb))"
       case _ => str
     }
   }
