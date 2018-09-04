@@ -75,6 +75,61 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       }
     }
   }
+  def reprDeclaration(structure:TypeLevel, decls:List[InternalDeclaration])(implicit parent: GlobalName) : Constant = {
+    val arg = structure.makeVar("m", Context.empty)
+    val ret : Term = Eq(structure.applyTo(decls.map(_.applyTo(arg.toTerm))), arg.toTerm)
+    makeConst(uniqueLN("repr"), PiOrEmpty(List(arg), ret))
+  }
+  
+  def toEliminationDecls(decls: List[InternalDeclaration], structure: InternalDeclaration)(implicit parent : GlobalName) : List[InternalDeclaration] = {
+    var types : List[TypeLevel] = Nil
+    decls map {
+      case tpl @ TypeLevel(_, _, _, _, _) => val tplelim = tpl.toEliminationDecl(structure, types map (_.path)); types :+= (tplelim match {case t @ TypeLevel(_,_,_,_,_) => t}); tplelim
+      case d => d.toEliminationDecl(structure, types map (_.path))
+    }
+  }
+    
+  /**
+   * Generate no junk declaration for all the elimination form internal declarations
+   * @param parent the parent declared module of the derived declaration to elaborate
+   * @param decls all the elimination form declarations, used to construct the chain
+   * @param tmdecls all term level declarations
+   * @param tpdecls all type level declarations
+   * @param context the inner context of the derived declaration
+   * @param introductionDecl the introduction declaration of the structure
+   * @param 
+   * @returns returns one no junk (morphism) declaration for each type level declaration
+   * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
+   */    
+  def noJunksEliminationDeclarations(decls : List[InternalDeclaration], context: Context, introductionDecl: InternalDeclaration, origDecls: List[InternalDeclaration])(implicit parent : GlobalName) : List[Constant] = {
+    val (repls, modelCtx) = chain(origDecls, context)
+    def makeApplNm = uniqueLN(introductionDecl.name+modelCtx.foldLeft("")((a, b)=>a +" "+b.name))
+    def makeApplied = (introductionDecl.ret, introductionDecl, {(arg:VarDecl, chain:Context) => OMV(makeApplNm) % introductionDecl.applyTo(chain)})
+    
+    def makeAppl = makeApplied match {case (x, y, map) => (x, {t:VarDecl => map (t, modelCtx)})}
+    
+    def mapTerm(tm: VarDecl) : VarDecl = if (makeAppl._1 == tm.tp.get) makeAppl._2(tm) else tm
+    
+    origDecls zip origDecls.map(_.translate(TraversingTranslator(OMSReplacer(p => utils.listmap(repls, p))))) map {case (e, dDecl) => 
+      val decl = e.toEliminationDecl(introductionDecl, decls map (_.path))
+      val d = utils.listmap(repls, e.path).get
+      
+      //the result of applying m to the result of the constructor
+      val (args, mappedRes) = dDecl.argContext(None)
+    
+      //the result of applying the image of the constructor (all types substituted) to the image of the arguments
+      val mappedArgs : List[VarDecl] = decl.argContext(None)._1.getDeclarations.head::args map (mapTerm(_))
+      //ensure everything went well and the argument is actually in the context
+      val mappedConstr : Term = decl.applyTo(mappedArgs)
+         
+      def assert(x: Term, y: Term) : (Term, LocalName) = e match {
+        case TypeLevel(_, _, _, _,_) => (Arrow(x, y), uniqueLN("induct_"+d.name))
+        case _ => (Eq(x, y), uniqueLN("compute_"+d.name))
+      }
+      val ass = assert(mappedConstr, mappedRes)
+      makeConst(ass._2, PiOrEmpty(modelCtx ++ context ++ args, ass._1))
+    }
+  }  
 }
 
 object RecordRule extends StructuralFeatureRule(classOf[Records], "record")

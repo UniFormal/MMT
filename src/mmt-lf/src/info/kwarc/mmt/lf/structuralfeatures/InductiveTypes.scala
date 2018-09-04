@@ -51,21 +51,21 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
 
     // copy all the declarations
     decls foreach {d => elabDecls ::= d.toConstant}
-    
+        
     // the no confusion axioms for the data constructors
     /*
      * For dependently-typed constructors, we cannot elaborate into plain LF:
      * some of the (in)equality axioms would be ill-typed because
      * the type system already forces elements of different instances of a dependent type to be unequal and of unequal type
      */
-    elabDecls = elabDecls.reverse ::: tmdecls.flatMap(_.noConf(tmdecls)(dd.path))
+    elabDecls = elabDecls.reverse ::: tmdecls.flatMap(x => noConf(x, tmdecls)(dd.path))
     
     // the no junk axioms
-    elabDecls ++= InternalDeclaration.noJunks(decls, context)(dd.path)
+    elabDecls ++= noJunks(decls, context)(dd.path)
     
     elabDecls foreach {d =>
-      //log(InternalDeclarationUtil.present(d))
-      log(controller.presenter.asString(d))
+     log(InternalDeclarationUtil.present(d))
+     //log(controller.presenter.asString(d))
     }
     new Elaboration {
       val elabs : List[Declaration] = Nil 
@@ -75,7 +75,87 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       }
     }
   }
-
+  
+  /**
+   * Generate no junk declarations for an inductive type declaration I
+   * @param decls all declarations in I
+   * @param parent the URI of I
+   * @param context the parameters of I
+   * 
+   * for type level declarations c: {G} type
+   *   induct_c: {M,G} c g -> c_M (g map induct)
+   * for term level declaration c: {G} A
+   *   induct_c: {M,G} induct(c g) = c_M (g map induct)
+   * where
+   *  * M declares one (primed) variable for every declaration in I
+   *  * c_M is the variable in M corresponding to c
+   *  * g is the list of varibles declared in G
+   *  * induct(t) is the inductive translation of t, defined in terms of the induct function corresponding to the type of t,
+   *    e.g., induct_a(m,t) if t has type a for some a: type in I
+   *       or induct_a(m,h,t) if t has type (a h) for some a: {H}type in I
+   */
+  def noJunks(decls : List[InternalDeclaration], context: Context)(implicit parent : GlobalName): List[Constant] = {
+    val (repls, modelContext) : (List[(GlobalName, OMV)], List[VarDecl]) = chain(decls, context)
+    val model = modelContext.map(_.toTerm)
+    var inductNames : List[(GlobalName,GlobalName)] = Nil
+    decls map {d =>
+      val (argCon, dApplied) = d.argContext(None)
+      val dAppliedInduct = induct(model, d.ret, dApplied, inductNames)
+      val dPrimed = utils.listmap(repls, d.path).get
+      val dAppliedPrimed = ApplyGeneral(dPrimed, argCon map {vd => induct(model, vd.tp.get, vd.toTerm, inductNames)})
+      val ret = d match {
+        case tl: TermLevel => Eq(dAppliedInduct, dAppliedPrimed)
+        case tl: TypeLevel => Arrow(dAppliedInduct, dAppliedPrimed)
+      }
+      val tp = Pi(context ++ modelContext ++ argCon, ret)
+      val name = inductName(d.name)
+      val c = makeConst(name, tp)
+      inductNames ::= d.path -> c.path
+      c
+    } 
+  }
+  /**
+   * name of the declaration corresponding to n declared in noJunks
+   */
+  private def inductName(n: LocalName) = LocalName("induct_" + n.toPath)
+  /**
+   * applies the inductive translation needed in noJunks by constructing terms that apply the appropriate induction functions
+   * @param model the model for which we need the inductive translation (as built by noJunks)
+   * @param tp the type of tm
+   * @param tm the term to translate
+   * @param inductNames map of the declarations in the inductive type to the corresponding generated induction functions
+   */
+  private def induct(model: List[Term], tp: Term, tm: Term, inductNames: List[(GlobalName,GlobalName)]) = tp match {
+    case ApplyGeneral(OMS(p), args) =>
+      utils.listmap(inductNames, p) match {
+        case Some(inductP) => ApplyGeneral(OMS(inductP), model:::args:::List(tm))
+        case None => tm
+      }
+    case _ => throw ImplementationError("missing case")
+  }
+  
+    /**
+   * Generate no confusion/injectivity declaration for term constructor d and all term constructors of the same return type
+   * @param parent the derived declaration to elaborate
+   * @param tmdecls all term level declarations
+   */
+  def noConf(d: TermLevel, tmdecls: List[TermLevel])(implicit parent: GlobalName): List[Constant] = {
+    var decls: List[Constant] = Nil
+    tmdecls.takeWhile(_ != this) foreach {b => 
+      if (b.ret == d.ret) {
+        // TODO for dependently-typed, this can generate ill-typed declarations
+        val newName = uniqueLN("no_conf_" + d.name.last+ "_" + b.name.last)
+        val (aCtx, aApplied) = d.argContext(None)
+        val (bCtx, bApplied) = b.argContext(None)
+        val tp = Pi(d.context++aCtx ++ bCtx, Neq(aApplied, bApplied))
+        decls ::= makeConst(newName, tp)
+      }
+    }
+    decls = decls.reverse
+    if(d.args.length > 0)
+      decls ::= d.injDecl
+    decls
+  }
 }
 
 object InductiveRule extends StructuralFeatureRule(classOf[InductiveTypes], "inductive")
