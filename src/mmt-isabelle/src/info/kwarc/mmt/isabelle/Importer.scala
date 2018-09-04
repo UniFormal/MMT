@@ -558,25 +558,34 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
 
     export(pure_theory_export)
 
-    for { (name, status) <- use_theories_result.nodes if status.ok } {
+    val (nodes_ok, nodes_bad) =
+      use_theories_result.nodes.partition({ case (_, st) => st.ok && st.consolidated })
+
+    for ((name, st) <- nodes_bad) {
+      progress.echo_error_message("Bad theory " + name +
+        (if (st.consolidated) "" else ": " + st.percentage + "% finished"))
+    }
+
+    for {
+      (name, _) <- nodes_bad
+      snapshot = use_theories_result.snapshot(name)
+      (msg, pos) <- snapshot.messages if isabelle.Protocol.is_error(msg)
+    } {
+      progress.echo_error_message(
+        "Error" + isabelle.Position.here(pos) + ":\n" +
+        isabelle.XML.content(isabelle.Pretty.formatted(List(msg))))
+    }
+
+    for { (name, _) <- nodes_ok } {
       val thy_export = read_theory_export(use_theories_result.snapshot(name))
       export(thy_export)
     }
 
-    val failed_theories =
-      for { (name, status) <- use_theories_result.nodes if !status.ok } yield name
-
-    for {
-      name <- failed_theories.iterator
-      snapshot = use_theories_result.snapshot(name)
-      (msg, _) <- snapshot.messages if isabelle.Protocol.is_error(msg)
-    } progress.echo_error_message(isabelle.XML.content(isabelle.Pretty.formatted(List(msg))))
-
     stop_session()
 
-    if (failed_theories.nonEmpty) {
-      isabelle.error("Failed theories: " +
-        isabelle.Library.commas_quote(failed_theories.map(_.theory).sorted))
+    if (nodes_bad.nonEmpty) {
+      isabelle.error("theory " +
+        isabelle.Library.commas(nodes_bad.map(p => p._1.theory).sorted) + " FAILED")
     }
   }
 
