@@ -28,7 +28,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
    def report = controller.report
    private def presentObj(o: Obj) = controller.presenter.asString(o)
 
-   private val solutionRules = rules.get(classOf[SolutionRule])
+   private val solutionRules = rules.get(classOf[ValueSolutionRule])
    private val equalityRules = rules.get(classOf[TermBasedEqualityRule])
 
    private var constantContext: Context = Context.empty
@@ -168,7 +168,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
       // j is the equality judgment that we try to apply solution rules to
       var j = Equality(Stack(boundOrg), queryOrg, goalOrg, None)
       // applies all the rules found by findSolvableVariable
-      def applyRules(rs: List[SolutionRule]) {
+      def applyRules(rs: List[ValueSolutionRule]) {
          rs.foreach {r =>
             j = r(j).getOrElse(return)._1
          }

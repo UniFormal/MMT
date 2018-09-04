@@ -134,13 +134,12 @@ class UniverseInference extends ChangeListener {
 }
 
 class SubtypeGenerator extends ChangeListener {
-  override val logPrefix = "abbrev-rule-gen"
+  override val logPrefix = "subtype-rule-gen"
   protected val subtypeTag = "subtype_rule"
 
   private def rulePath(r: SubtypeJudgRule) = r.by / subtypeTag
 
   private def present(t: Term) = controller.presenter.asString(t)
-
 
   private def getGeneratedRule(p: Path): Option[SubtypeJudgRule] = {
     p match {
@@ -179,12 +178,8 @@ class SubtypeGenerator extends ChangeListener {
 
 class SubtypeJudgRule(val tm1 : Term, val tm2 : Term, val by : GlobalName) extends SubtypingRule {
   val head = subtypeJudg.path
-
-  override def applicable(tp1: Term, tp2: Term): Boolean = tp1.hasheq(tm1) && tp2.hasheq(tm2)
-
+  def applicable(tp1: Term, tp2: Term): Boolean = tp1.hasheq(tm1) && tp2.hasheq(tm2)
   def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
-    solver.check(Equality(stack,tm1,tp1,None))
-    solver.check(Equality(stack,tm2,tp2,None))
     Some(true)
   }
 }

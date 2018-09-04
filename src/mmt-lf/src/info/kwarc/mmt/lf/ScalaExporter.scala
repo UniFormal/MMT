@@ -166,7 +166,7 @@ import uom._
 trait SolutionRules extends RealizationInScala {
    def solve_unary(op:GlobalName, argTypeN: GlobalName, rTypeN: GlobalName)(invert: Any => Option[Any]) = {
       val List(argType, rType) = List(argTypeN, rTypeN) map getRealizedType
-      val sr = new SolutionRule(op / "invert") {
+      val sr = new ValueSolutionRule(op / "invert") {
          def applicable(tm1: Term) = tm1 match {
             case ApplySpine(OMS(`op`), List(_)) => Some(1)
             case _ => None
@@ -183,7 +183,7 @@ trait SolutionRules extends RealizationInScala {
    def solve_binary_right(op:GlobalName, argType1N: GlobalName, argType2N: GlobalName, rTypeN: GlobalName)
             (invert: (Any,Any) => Option[Any]) = {
       val List(argType1, argType2, rType) = List(argType1N, argType2N, rTypeN) map getRealizedType
-      val sr = new SolutionRule(op / "right-invert") {
+      val sr = new ValueSolutionRule(op / "right-invert") {
          def applicable(tm1: Term) = tm1 match {
             case ApplySpine(OMS(`op`), List(_,argType2(_))) => Some(1)
             case _ => None
@@ -200,7 +200,7 @@ trait SolutionRules extends RealizationInScala {
    def solve_binary_left(op:GlobalName, argType1N: GlobalName, argType2N: GlobalName, rTypeN: GlobalName)
             (invert: (Any,Any) => Option[Any]) = {
       val List(argType1, argType2, rType) = List(argType1N, argType2N, rTypeN) map getRealizedType
-      val sr = new SolutionRule(op / "left-invert") {
+      val sr = new ValueSolutionRule(op / "left-invert") {
          def applicable(tm1: Term) = tm1 match {
             case ApplySpine(OMS(`op`), List(argType1(_),_)) => Some(2)
             case _ => None

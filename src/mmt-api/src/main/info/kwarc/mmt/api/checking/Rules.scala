@@ -33,7 +33,7 @@ trait CheckingCallback {
    /** type inference, fails by default */
    def inferType(t : Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = None
    /** runs code and succeeds by default */
-   def dryRun[A](allowDelay: Boolean, commitOnSucces: A => Boolean)(code: => A): DryRunResult = Success(code)
+   def dryRun[A](allowDelay: Boolean, commitOnSuccess: A => Boolean)(code: => A): DryRunResult = Success(code)
    /**
     * tries to check some judgments without delaying constraints
     *
@@ -124,18 +124,23 @@ abstract class SubtypingRule extends CheckingRule with MaytriggerBacktrack {
    def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History) : Option[Boolean]
 }
 
+/** applies to  op(args1) <: op(args2) */
+abstract class VarianceRule(val head: GlobalName) extends SubtypingRule {
+  def applicable(tp1: Term, tp2: Term) = (tp1,tp2) match {
+    case (ComplexTerm(this.head, _,_,_), ComplexTerm(this.head, _, _, _)) => true
+    case _ => false
+  }
+}
+
+/** variances annotations, used by [[DelarativeVarianceRule]] */
 sealed abstract class Variance
 case object Covariant extends Variance
 case object Contravariant extends Variance
 case object Invariant extends Variance
 case object Ignorevariant extends Variance
 
-/** |- op(args1) <: op(args2)  according to variances */
-class VarianceRule(val head: GlobalName, variance: List[Variance]) extends SubtypingRule {
-  def applicable(tp1: Term, tp2: Term) = (tp1,tp2) match {
-    case (OMA(OMS(this.head), _), OMA(OMS(this.head), _)) => true
-    case _ => false
-  }
+/** VarianceRule for OMA(op, args) defined by giving a variance annotation for each arg */
+class DelarativeVarianceRule(h: GlobalName, variance: List[Variance]) extends VarianceRule(h) {
   def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     val OMA(_, args1) = tp1
     val OMA(_, args2) = tp2
@@ -251,7 +256,13 @@ object Simplifiability {
  *  @param head the head of the term this rule can simplify
  */
 abstract class ComputationRule(val head: GlobalName) extends CheckingRule {
-  def applicable(gn : ContentPath) : Boolean = (head :: alternativeHeads) contains gn
+  /** if this returns false, then the Simplifiability of rule should be considered as NoRecurse */
+  def applicable(tm : Term): Boolean = {
+    tm.head match {
+      case None => false
+      case Some(h) => (head :: alternativeHeads) contains h
+    }
+  }
    /**
     *  @param check provides callbacks to the currently solved system of judgments
     *  @param tm the term to simplify
@@ -279,13 +290,14 @@ abstract class InhabitableRule(head: GlobalName) extends UnaryTermRule(head)
 /** checks a [[Universe]] judgement */
 abstract class UniverseRule(head: GlobalName) extends UnaryTermRule(head)
 
+/** used to change the 'applicable' method when the head symbol of the rule occurs under some HOAS apply operators */
 trait ApplicableUnder extends CheckingRule {
    def under: List[GlobalName]
-   private lazy val ops = (under:::List(head)).map(p => OMS(p))
+   private lazy val operatorAlternatives = heads map {h => (under:::List(h)).map(p => OMS(p))}
    def applicable(tm: Term) = tm match {
-      case OMA(f,a) => (f::a).startsWith(ops)
+      case OMA(f,a) => operatorAlternatives exists {ops => (f::a).startsWith(ops)}
       case OMS(p) => under == Nil && heads.contains(p)
-      case OMBINDC(OMS(p), _, _) => p == head && under.isEmpty
+      case OMBINDC(OMS(p), _, _) => under == Nil && heads.contains(p)
       case _ => false
    }
 }
@@ -303,14 +315,21 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
     *  @return true iff the judgment holds; None if the solver should proceed with term-based equality checking
     */
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean]
+
+   /** 
+    *  type-based equality reasoning often uses extensionality, which can be inefficient or even lead to cacles.
+    *  Therefore, these rules are only applied to tm1 = tm2 : tp if tm1 or tm2 satisfies this predicate.
+    */
+   def applicableToTerm(tm: Term): Boolean
 }
 
-/** always succeeds, e.g., as needed to implement proof irrelevance */
-class TermIrrelevanceRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
-  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
-    history += "all terms of this type are equal"
-    Some(true)
-  }
+/**
+ *  For example, for extensionality rules, it makes sense to make this true for terms that can be reduced after applying the elimination form,
+ *  i.e., for terms that are not stable or an introduction form.
+ */
+abstract class ExtensionalityRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
+   val introForm: {def unapply(tm: Term): Option[Any]}
+   def applicableToTerm(tm: Term) = !Stability.is(tm) || introForm.unapply(tm).isDefined 
 }
 
 /**
@@ -415,9 +434,21 @@ object ForwardSolutionRule {
 }
 
 /**
- * A SolutionRule tries to solve for an unknown that occurs in an equality judgement.
+ * A SolutionRule tries to isolate an unknown that occurs in a judgement.
  *
  * It may be partial by, e.g., by inverting the toplevel operation of a Term without completely isolating an unknown occurring in it.
+ */
+abstract class SolutionRule extends CheckingRule {
+   /**
+    * @return Some(i) if the rule is applicable to t1 in the judgment t1=t2,
+    *   in that case, i is the position of the argument of t1 (starting from 0) that the rule will try to isolate
+    *   this is about spotting unknowns, not predicting whether the isolation will succeed
+    */
+   def applicable(t: Term) : Option[Int]
+}
+
+/**
+ * A ValueSolutionRule tries to solve for the value an unknown in an equality judgment.
  *
  * f(t1) = t2   --->   t1 = g(t2), where t1 contains a target variable that we try to isolate
  *
@@ -427,13 +458,7 @@ object ForwardSolutionRule {
  * and instead transform one judgement into another.
  * This also allows reusing them in other situations, in particular when matching already-type-checked terms.
  */
-abstract class SolutionRule(val head: GlobalName) extends CheckingRule {
-   /**
-    * @return Some(i) if the rule is applicable to t1 in the judgment t1=t2,
-    *   in that case, i is the position of the argument of t1 (starting from 0) that the rule will try to isolate
-    *   this is about spotting unknowns, not predicting whether the isolation will succeed
-    */
-   def applicable(t: Term) : Option[Int]
+abstract class ValueSolutionRule(val head: GlobalName) extends SolutionRule {
    /**
     *  @param j the equality in which to isolate a variable on the left side
     *  @return the transformed equality and a log message if a step towards isolation was possible
@@ -442,19 +467,14 @@ abstract class SolutionRule(val head: GlobalName) extends CheckingRule {
 }
 
 /**
- * A TypeSolutionRule tries to solve for the type of an unknown.
+ * A TypeSolutionRule tries to solve for the type of an unknown in the term of a typing judgment.
  */
-abstract class TypeSolutionRule(val head: GlobalName) extends CheckingRule {
+abstract class TypeSolutionRule(val head: GlobalName) extends SolutionRule {
    /**
-    *  @param solver provides callbacks to the currently solved system of judgments
-    *  @param tm the term that contains the unknown to be solved
-    *  @param tp its type
-    *  @param stack the context
-    *  @return false if this rule is not applicable;
-    *    if this rule is applicable, it may return true only if the Typing Judgement is guaranteed
-    *    (by calling an appropriate callback method such as delay or checkTyping)
+    *  @param j the typing judgment in which to isolate a variable on the left side
+    *  @return the transformed equality and a log message if a step towards isolation was possible
     */
-   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean
+   def apply(j: Typing): Option[(Typing,String)]
 }
 
 /**
@@ -467,12 +487,12 @@ abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) 
    *
    *  This method is already called during equality-checking. Therefore, it may not perform complex search operations.
    */
-  def solve(solver : Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
+  def solve(solver: Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
 
   /** if used as an equality rule, this makes all terms of this type equal if solve succeeds */
   final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     /* for atomic types, this method could immediately return Some(true),
-       but by calling solve, we allow for type constructors that are only proof-irrelevant if their components are */
+       but by calling solve, we allow for type constructors whose proof-irrelevance depends on their components */
     solve(solver)(tp) match {
       case Some(_) =>
         history += "all terms of this type are equal"
@@ -480,8 +500,9 @@ abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) 
       case None => None
     }
   }
-
-  def default(solver : Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
+  
+  /** always true as the shape of terms is irrelevant anyway */
+  def applicableToTerm(tm: Term) = true
 }
 
 class AbbreviationRuleGenerator extends ChangeListener {

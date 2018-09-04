@@ -222,7 +222,14 @@ object RepTypeCheck extends SequenceTypeCheck(rep.path)
  *
  *  applicable only if |a| simplifies to a literal
  */
-class SequenceEqualityCheck(op: GlobalName) extends TypeBasedEqualityRule(Nil, op) {
+class SequenceEqualityCheck(op: GlobalName) extends ExtensionalityRule(Nil, op) {
+  val introForm = new {def unapply(tm: Term) = tm match {
+    case Sequences.ellipsis(x) => Some(x)
+    case Sequences.rep(x) => Some(x)
+    case Sequences.flatseq(x) => Some(x)
+    case _ => None 
+  }}
+  
   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     val equalLength = List(tm1,tm2).map {tm => Length.checkEqual(solver,tm,tp).getOrElse {
       throw DelayJudgment("length not known")
@@ -451,7 +458,7 @@ object SolveArity extends InferenceRule(Apply.path, OfType.path) {
       if (expNats.length != 1)
         throw Backtrack("can only solve for a single natural number") // TODO multiple nats; nats that do not occur at beginning
       val n = expNats.head._1.get
-      if (!Common.isUnknownTerm(solver, args.head))
+      if (solver.Unknown.unapply(args.head).isEmpty)
         throw Backtrack("arity already known")
       //val expLs = expTps map {case (_,tp) => Length.infer(solver, tp).getOrElse{return None}}
       // Length.infer(a) == None if a is bound variable with omitted type: heuristically assume length 1
