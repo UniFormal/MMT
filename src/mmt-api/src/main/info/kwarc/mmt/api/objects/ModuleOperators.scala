@@ -346,10 +346,10 @@ object OMMOD {
 /** An OMPMOD represents a reference to a parametric module applied to arguments */
 object OMPMOD {
   /** @param path the path to the module */
-  def apply(path: MPath, args: List[Term]) = OMAorOMID(OMMOD(path), args)
+  def apply(path: MPath, args: List[Term]) = OMAorAny(OMMOD(path), args)
 
   def unapply(term: Term): Option[(MPath, List[Term])] = term match {
-    case OMAorOMID(OMMOD(m), args) => Some((m, args))
+    case OMAorAny(OMMOD(m), args) => Some((m, args))
     case _ => None
   }
 }

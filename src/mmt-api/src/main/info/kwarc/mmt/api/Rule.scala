@@ -76,34 +76,37 @@ class RuleType(be: Backend) extends Atomic[Rule] {
 class RuleLiterals(be: backend.Backend) extends RepresentedRealizedType[Rule](OMS(utils.mmt.mmtcd ? "rule"), new RuleType(be))
 
 /** A RuleSet groups some Rule's. */
-abstract class RuleSet {self =>
-   /** the underlying set of rules */
-   def getAll: Iterable[Rule]
+abstract class RuleSet extends Rule {self =>
+  /** by making this a rule, MMT theories can add entire rule sets at once */
+  override def providedRules = super.providedRules ::: getAll.toList
+  
+  /** the underlying set of rules */
+  def getAll: Iterable[Rule]
 
-   /** get all rules of a certain type */
-   def get[R<:Rule](cls: Class[R]): Iterable[R] = getAll flatMap {r =>
-      if (cls.isInstance(r))
-         List(r.asInstanceOf[R])
-      else
-         Nil
-   }
-   /** like get but ordered by descending priority */
-   def getOrdered[R<:Rule](cls: Class[R]) = get(cls).toList.sortBy(r => - r.priority)
+  /** get all rules of a certain type */
+  def get[R<:Rule](cls: Class[R]): Iterable[R] = getAll flatMap {r =>
+    if (cls.isInstance(r))
+       List(r.asInstanceOf[R])
+    else
+       Nil
+  }
+  /** like get but ordered by descending priority */
+  def getOrdered[R<:Rule](cls: Class[R]) = get(cls).toList.sortBy(r => - r.priority)
 
-   /** get all rules a certain type with a certain head */
-   def getByHead[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): Iterable[R] =
-     get(cls) filter {r => r.head == head || (r.alternativeHeads contains head)}
+  /** get all rules a certain type with a certain head */
+  def getByHead[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): Iterable[R] =
+    get(cls) filter {r => r.head == head || (r.alternativeHeads contains head)}
 
-   /** get the first rule of a certain type with a certain head */
-   def getFirst[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): Option[R] =
-     getByHead(cls, head).headOption
+  /** get the first rule of a certain type with a certain head */
+  def getFirst[R<:checking.CheckingRule](cls: Class[R], head: ContentPath): Option[R] =
+    getByHead(cls, head).headOption
 
    override def toString = getAll.toList.map(_.toString).mkString(", ")
 
-   /** filters this set by a predicate */
-   def filter(include: Rule => Boolean) = new RuleSet {
-     def getAll = self.getAll.filter(include)
-   }
+  /** filters this set by a predicate */
+  def filter(include: Rule => Boolean) = new RuleSet {
+    def getAll = self.getAll.filter(include)
+  }
 }
 
 /** standard implementation of using set of rules hashed by their head */

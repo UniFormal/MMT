@@ -185,7 +185,6 @@ object Importer
       var session_groups: List[String] = Nil
       var logic = default_logic
       var options: List[String] = Nil
-      var percentage = false
       var verbose = false
       var exclude_sessions: List[String] = Nil
 
@@ -205,7 +204,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     -g NAME      select session group NAME
     -l NAME      logic session name (default: """ + isabelle.quote(default_logic) + """)
     -o OPTION    override Isabelle system OPTION (via NAME=VAL or NAME)
-    -p           progress of percentage of theory processing (requires verbose mode)
     -v           verbose mode
     -x NAME      exclude session NAME and all descendants
 
@@ -221,7 +219,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         "g:" -> (arg => session_groups = session_groups ::: List(arg)),
         "l:" -> (arg => logic = arg),
         "o:" -> (arg => { options0 + arg; options = options ::: List(arg) }),
-        "p" -> (_ => percentage = true),
         "v" -> (_ => verbose = true),
         "x:" -> (arg => exclude_sessions = exclude_sessions ::: List(arg)))
 
@@ -237,7 +234,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         session_groups = session_groups,
         logic = logic,
         options = options,
-        percentage = percentage,
         verbose = verbose,
         exclude_sessions = exclude_sessions,
         sessions = sessions)
@@ -266,7 +262,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             session_groups <- isabelle.JSON.strings_default(obj, "session_groups")
             logic <- isabelle.JSON.string_default(obj, "logic", default_logic)
             options <- isabelle.JSON.strings_default(obj, "options")
-            percentage <- isabelle.JSON.bool_default(obj, "percentage")
             verbose <- isabelle.JSON.bool_default(obj, "verbose")
             exclude_sessions <- isabelle.JSON.strings_default(obj, "exclude_sessions")
             sessions <- isabelle.JSON.strings_default(obj, "sessions")
@@ -281,7 +276,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               session_groups = session_groups,
               logic = logic,
               options = options,
-              percentage = percentage,
               verbose = verbose,
               exclude_sessions = exclude_sessions,
               sessions = sessions)
@@ -305,7 +299,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     session_groups: List[String] = Nil,
     logic: String = Arguments.default_logic,
     options: List[String] = Nil,
-    percentage: Boolean = false,
     verbose: Boolean = false,
     exclude_sessions: List[String] = Nil,
     sessions: List[String] = Nil)
@@ -331,7 +324,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         "session_groups" -> session_groups,
         "logic" -> logic,
         "options" -> options,
-        "percentage" -> percentage,
         "verbose" -> verbose,
         "exclude_sessions" -> exclude_sessions,
         "sessions" -> sessions)
@@ -497,14 +489,9 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
   val progress: isabelle.Progress =
     new isabelle.Progress {
       override def echo(msg: String): Unit = log(msg)
-      override def theory(session: String, theory: String): Unit =
-      {
-        if (arguments.verbose && !arguments.percentage)
-          log(isabelle.Progress.theory_message(session, theory))
-      }
       override def theory_percentage(session: String, theory: String, percentage: Int): Unit =
       {
-        if (arguments.verbose && arguments.percentage)
+        if (arguments.verbose)
           echo(isabelle.Progress.theory_message(session, theory) + ": " + percentage + "%")
       }
     }

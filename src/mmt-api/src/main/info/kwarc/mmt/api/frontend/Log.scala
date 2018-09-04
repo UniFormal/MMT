@@ -56,7 +56,7 @@ class Report extends Logger {
    *  to use, set a breakpoint in this method and call "breakOnId(i)" after the call to "log" at which you want to break
    */
   def breakOnId(id: Int) {
-    if (id == counter)
+    if (id <= counter)
       return
   }
   

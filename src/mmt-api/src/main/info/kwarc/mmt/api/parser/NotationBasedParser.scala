@@ -150,7 +150,7 @@ class NotationBasedParser extends ObjectParser {
        else {
          //TODO in case of shadowing (duplicates in bvars), one variable must be renamed
          //apply meta-variable to all bound variables in whose scope it occurs
-         prag.defaultApplication(Some(pu.getLevel), OMV(name), bvars.map(OMV(_)))
+         checking.Solver.makeUnknown(name, bvars)
        }
      }
 

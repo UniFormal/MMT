@@ -90,6 +90,12 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
          case SimplificationResult(tS) =>
            log("structure-shared term was already simplified")
            tS
+         case OMAorAny(Free(cont,bd), args) if cont.length == args.length =>
+           // MMT-level untyped beta-reduction using 'free' as 'lambda'
+           // should only be needed if we expand the definition of an unknown variable
+           val sub = (cont / args).get // defined due to guard
+           val tC = bd ^? sub
+           traverse(tC)
          // apply morphisms TODO should become computation rule once module expressions are handled properly
          case OMM(tt, mor) =>
             val tM = controller.globalLookup.ApplyMorphs(tt, mor)
@@ -357,7 +363,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
    private def applyCompRules(tm: Term)(implicit context: Context, state: UOMState): Change = {
       val cb = callback(state)
       state.compRules.foreach {rule =>
-         if (rule.applicable(tm.head.orNull)) {
+         if (rule.applicable(tm)) {
            rule(cb)(tm, true)(Stack(context), NoHistory).get.foreach {tmS =>
              return GlobalChange(tmS)
            }
