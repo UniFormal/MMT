@@ -171,6 +171,7 @@ object Importer
     val source_file: isabelle.Path = isabelle.Path.explode("source/arguments").ext(extension)
 
     val default_output_dir: String = "isabelle_mmt"
+    val default_watchdog_timeout: Double = 600.0
     val default_logic: String = isabelle.Thy_Header.PURE
 
     def command_line(args: List[String]): Arguments =
@@ -179,6 +180,7 @@ object Importer
       var select_dirs: List[String] = Nil
       var output_dir = default_output_dir
       var requirements = false
+      var watchdog_timeout = default_watchdog_timeout
       var exclude_session_groups: List[String] = Nil
       var all_sessions = false
       var dirs: List[String] = Nil
@@ -198,6 +200,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     -D DIR       include session directory and select its sessions
     -O DIR       output directory for MMT (default: """ + isabelle.quote(default_output_dir) + """)
     -R           operate on requirements of selected sessions
+    -W SECONDS   watchdog timeout for PIDE processing (0 = unlimited, default: """ +
+        default_watchdog_timeout.toInt + """)
     -X NAME      exclude sessions from group NAME and all descendants
     -a           select all sessions
     -d DIR       include session directory
@@ -213,6 +217,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         "D:" -> (arg => { isabelle.Path.explode(arg); select_dirs = select_dirs ::: List(arg) }),
         "O:" -> (arg => { isabelle.Path.explode(arg); output_dir = arg }),
         "R" -> (_ => requirements = true),
+        "W:" -> (arg => watchdog_timeout = isabelle.Value.Double.parse(arg)),
         "X:" -> (arg => exclude_session_groups = exclude_session_groups ::: List(arg)),
         "a" -> (_ => all_sessions = true),
         "d:" -> (arg => { isabelle.Path.explode(arg); dirs = dirs ::: List(arg) }),
@@ -228,6 +233,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         select_dirs = select_dirs,
         output_dir = output_dir,
         requirements = requirements,
+        watchdog_timeout = watchdog_timeout,
         exclude_session_groups = exclude_session_groups,
         all_sessions = all_sessions,
         dirs = dirs,
@@ -256,6 +262,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             select_dirs <- isabelle.JSON.strings_default(obj, "select_dirs")
             output_dir <- isabelle.JSON.string_default(obj, "output_dir", default_output_dir)
             requirements <- isabelle.JSON.bool_default(obj, "requirements")
+            watchdog_timeout <-
+              isabelle.JSON.double_default(obj, "watchdog_timeout", default_watchdog_timeout)
             exclude_session_groups <- isabelle.JSON.strings_default(obj, "exclude_session_groups")
             all_sessions <- isabelle.JSON.bool_default(obj, "all_sessions")
             dirs <- isabelle.JSON.strings_default(obj, "dirs")
@@ -270,6 +278,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               select_dirs = select_dirs,
               output_dir = output_dir,
               requirements = requirements,
+              watchdog_timeout = watchdog_timeout,
               exclude_session_groups = exclude_session_groups,
               all_sessions = all_sessions,
               dirs = dirs,
@@ -293,6 +302,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     select_dirs: List[String] = Nil,
     output_dir: String = Arguments.default_output_dir,
     requirements: Boolean = false,
+    watchdog_timeout: Double = Arguments.default_watchdog_timeout,
     exclude_session_groups: List[String] = Nil,
     all_sessions: Boolean = false,
     dirs: List[String] = Nil,
@@ -318,6 +328,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         "select_dirs" -> select_dirs,
         "output_dir" -> output_dir,
         "requirements" -> requirements,
+        "watchdog_timeout" -> watchdog_timeout,
         "exclude_session_groups" -> exclude_session_groups,
         "all_sessions" -> all_sessions,
         "dirs" -> dirs,
@@ -543,6 +554,7 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
     session.use_theories(
       session_deps.sessions_structure.build_topological_order.
         flatMap(session_name => session_deps.session_bases(session_name).used_theories.map(_.theory)),
+      watchdog_timeout = isabelle.Time.seconds(arguments.watchdog_timeout),
       progress = progress)
   }
 
@@ -558,25 +570,34 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
 
     export(pure_theory_export)
 
-    for { (name, status) <- use_theories_result.nodes if status.ok } {
+    val (nodes_ok, nodes_bad) =
+      use_theories_result.nodes.partition({ case (_, st) => st.ok && st.consolidated })
+
+    for ((name, st) <- nodes_bad) {
+      progress.echo_error_message("Bad theory " + name +
+        (if (st.consolidated) "" else ": " + st.percentage + "% finished"))
+    }
+
+    for {
+      (name, _) <- nodes_bad
+      snapshot = use_theories_result.snapshot(name)
+      (msg, pos) <- snapshot.messages if isabelle.Protocol.is_error(msg)
+    } {
+      progress.echo_error_message(
+        "Error" + isabelle.Position.here(pos) + ":\n" +
+        isabelle.XML.content(isabelle.Pretty.formatted(List(msg))))
+    }
+
+    for { (name, _) <- nodes_ok } {
       val thy_export = read_theory_export(use_theories_result.snapshot(name))
       export(thy_export)
     }
 
-    val failed_theories =
-      for { (name, status) <- use_theories_result.nodes if !status.ok } yield name
-
-    for {
-      name <- failed_theories.iterator
-      snapshot = use_theories_result.snapshot(name)
-      (msg, _) <- snapshot.messages if isabelle.Protocol.is_error(msg)
-    } progress.echo_error_message(isabelle.XML.content(isabelle.Pretty.formatted(List(msg))))
-
     stop_session()
 
-    if (failed_theories.nonEmpty) {
-      isabelle.error("Failed theories: " +
-        isabelle.Library.commas_quote(failed_theories.map(_.theory).sorted))
+    if (nodes_bad.nonEmpty) {
+      isabelle.error("theory " +
+        isabelle.Library.commas(nodes_bad.map(p => p._1.theory).sorted) + " FAILED")
     }
   }
 

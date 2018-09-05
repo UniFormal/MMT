@@ -317,14 +317,14 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean]
 
    /** 
-    *  type-based equality reasoning often uses extensionality, which can be inefficient or even lead to cacles.
+    *  type-based equality reasoning often uses extensionality, which can be inefficient or even lead to cycles.
     *  Therefore, these rules are only applied to tm1 = tm2 : tp if tm1 or tm2 satisfies this predicate.
     */
    def applicableToTerm(tm: Term): Boolean
 }
 
 /**
- *  For example, for extensionality rules, it makes sense to make this true for terms that can be reduced after applying the elimination form,
+ *  For extensionality rules, it makes sense to make applicableToTerm true only for terms that can be reduced after applying the elimination form,
  *  i.e., for terms that are not stable or an introduction form.
  */
 abstract class ExtensionalityRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
@@ -490,7 +490,7 @@ abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) 
   def solve(solver: Solver)(tp : Term)(implicit stack: Stack, history: History): Option[Term]
 
   /** if used as an equality rule, this makes all terms of this type equal if solve succeeds */
-  final def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+  def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     /* for atomic types, this method could immediately return Some(true),
        but by calling solve, we allow for type constructors whose proof-irrelevance depends on their components */
     solve(solver)(tp) match {

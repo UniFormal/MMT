@@ -63,7 +63,8 @@ object TypingRule extends TypingRule(Terms.formation.path) {
 /**
  * p |- eval(t1) = eval(t2): a  --->  |- t1 = t2 : formation(p,a)
  */
-object Extensionality extends TypeBasedEqualityRule(Nil, Terms.formation.path) {
+object Extensionality extends ExtensionalityRule(Nil, Terms.formation.path) {
+  val introForm = Terms.formation
   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History) : Option[Boolean] = tp match {
      case Terms.formation(p, a) =>
         Some(solver.check(Equality(stack++Context(p), Terms.eval(tm1), Terms.eval(tm2), Some(a))))

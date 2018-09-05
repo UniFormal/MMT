@@ -6,7 +6,9 @@ import frontend._
 import checking._
 
 /**
- * tries to solve an unknown by proof search; if provided, recovers by returning a dummy term as a default   
+ * Irrelevance rules for proof irrelevant types:
+ * - terms of these types are always equal
+ * - unknowns terms of these types are found using proof search; if provided, a default value is used to recover if search fails   
  */
 class SimpleIrrelevanceRule(p : GlobalName, default: Option[Term] = None) extends TypeBasedSolutionRule(List(Apply.path), p) {
   def solve(solver: Solver)(tp: Term)(implicit stack: Stack, history: History): Option[Term] = {
@@ -19,6 +21,8 @@ class SimpleIrrelevanceRule(p : GlobalName, default: Option[Term] = None) extend
       }
     }}
   }
+  /** always true */
+  override def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = Some(true)
 }
 
 object TermIrrelevanceRule extends ParametricRule {
