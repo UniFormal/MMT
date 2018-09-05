@@ -84,8 +84,8 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
   def toEliminationDecls(decls: List[InternalDeclaration], structure: InternalDeclaration)(implicit parent : GlobalName) : List[InternalDeclaration] = {
     var types : List[TypeLevel] = Nil
     decls map {
-      case tpl @ TypeLevel(_, _, _, _, _) => val tplelim = tpl.toEliminationDecl(structure, types map (_.path)); types :+= (tplelim match {case t @ TypeLevel(_,_,_,_,_) => t}); tplelim
-      case d => d.toEliminationDecl(structure, types map (_.path))
+      case tpl @ TypeLevel(_, _, _, _, _) => val tplelim = toEliminationDecl(tpl, structure, types map (_.path)); types :+= (tplelim match {case t @ TypeLevel(_,_,_,_,_) => t}); tplelim
+      case d => toEliminationDecl(d, structure, types map (_.path))
     }
   }
     
@@ -111,7 +111,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     def mapTerm(tm: VarDecl) : VarDecl = if (makeAppl._1 == tm.tp.get) makeAppl._2(tm) else tm
     
     origDecls zip origDecls.map(_.translate(TraversingTranslator(OMSReplacer(p => utils.listmap(repls, p))))) map {case (e, dDecl) => 
-      val decl = e.toEliminationDecl(introductionDecl, decls map (_.path))
+      val decl = toEliminationDecl(e, introductionDecl, decls map (_.path))
       val d = utils.listmap(repls, e.path).get
       
       //the result of applying m to the result of the constructor
@@ -129,7 +129,17 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       val ass = assert(mappedConstr, mappedRes)
       makeConst(ass._2, PiOrEmpty(modelCtx ++ context ++ args, ass._1))
     }
-  }  
+  }
+  
+  /**
+   * for records: for a declaration c:A, this produces the declaration c: {r:R} A[r]
+   * where A[r] is like A with every d declared in this record with d r
+   */
+  def toEliminationDecl(c:InternalDeclaration, recType: InternalDeclaration, recordFields: List[GlobalName]): InternalDeclaration = {
+    val r = LocalName("r")
+    val tr = TraversingTranslator(OMSReplacer(p => if (recordFields contains p) Some(Apply(OMS(p), OMV(r))) else None))
+    c.translate(tr)
+  }
 }
 
 object RecordRule extends StructuralFeatureRule(classOf[Records], "record")

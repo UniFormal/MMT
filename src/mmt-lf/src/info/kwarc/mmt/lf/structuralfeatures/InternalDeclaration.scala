@@ -71,7 +71,9 @@ private object InternalDeclarationUtil {
   /** negate the statement in the type */
   def neg(tp: Term) : Term = Arrow(tp, Contra)
   
-  def externalName(parent: GlobalName, name: LocalName): LocalName = parent.name / name//uniqueLN(parent.name + "__"+name)
+  //This is the wrong path, but a bug in the library lookup code prevents the correct one (commented out) from working
+  //TODO: Fix it
+  def externalName(parent: GlobalName, name: LocalName): (MPath, LocalName) = (parent.module / parent.name, name)//parent.name / name
   
   /** produces a Constant derived declaration 
    *  @param name the local name of the constant
@@ -80,7 +82,8 @@ private object InternalDeclarationUtil {
    *  @param parent (implicit) the inductive definition to elaborate
    */
   def makeConst(name: LocalName, tp: Term, df:Option[Term], notC: Option[NotationContainer])(implicit parent: GlobalName): Constant = {
-    Constant(OMMOD(parent.module), externalName(parent, name), Nil, Some(tp), df, None, notC getOrElse NotationContainer())
+    //Constant(OMMOD(parent.module), externalName(parent, name), Nil, Some(tp), df, None, notC getOrElse NotationContainer())
+    Constant(OMMOD(externalName(parent, name)._1), externalName(parent, name)._2, Nil, Some(tp), df, None, notC getOrElse NotationContainer())
   }
   def makeConst(name: LocalName, tp: Term, df:Option[Term])(implicit parent: GlobalName): Constant = makeConst(name, tp, df, None)
   def makeConst(name: LocalName, tp: Term)(implicit parent:  GlobalName): Constant = makeConst(name, tp, None)
@@ -181,7 +184,7 @@ sealed abstract class InternalDeclaration {
   
   def toVarDecl = VarDecl(name, tp)
   def toConstant(implicit parent: GlobalName): Constant = makeConst(name, PiOrEmpty(context, tp), df)(parent)
-  def toTerm(implicit parent: GlobalName): Term = OMS(parent.module ? InternalDeclarationUtil.externalName(parent, name))
+  def toTerm(implicit parent: GlobalName): Term = OMS(externalName(parent, name)._1 ? externalName(parent, name)._2)
   
   /** apply the internal declaration to the given argument context */
   def applyTo(args: Context)(implicit parent: GlobalName): Term = ApplyGeneral(toTerm, args.map(_.toTerm))
@@ -200,18 +203,6 @@ sealed abstract class InternalDeclaration {
     }    
   }
 
-  // auxiliary methods for specific strucutral features
-  
-  /**
-   * for records: for a declaration c:A, this produces the declaration c: {r:R} A[r]
-   * where A[r] is like A with every d declared in this record with d r
-   */
-  def toEliminationDecl(recType: InternalDeclaration, recordFields: List[GlobalName]): InternalDeclaration = {
-    val r = LocalName("r")
-    val tr = TraversingTranslator(OMSReplacer(p => if (recordFields contains p) Some(Apply(OMS(p), OMV(r))) else None))
-    translate(tr)
-  }
-  
   override def toString = name+": "+tp+(if(df != None) " = "+df.get else "")
 }
 
