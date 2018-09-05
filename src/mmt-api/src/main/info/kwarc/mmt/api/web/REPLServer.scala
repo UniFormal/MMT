@@ -78,7 +78,7 @@ object REPLServer {
   case object Quit extends Command
   // mathematically relevant commands
   case class Input(command: String) extends Command
-  
+
   object Command {
     def parse(s: String): Command = {
       s match {
@@ -87,16 +87,16 @@ object REPLServer {
         case "show" => Show
         case "restart" => Restart
         case "quit" => Quit
-        case s => Input(s) 
+        case s => Input(s)
       }
     }
   }
 
   /** Response by a REPL session after executing a [[Command]] */
   abstract class REPLResponse
-  
+
   case class AdminResponse(message: String) extends REPLResponse
-  
+
   abstract class ElementResponse extends REPLResponse {
     def element: StructuralElement
   }
@@ -126,7 +126,7 @@ class REPLServer extends ServerExtension("repl") {
   def apply(session: Option[String], command: Command): REPLResponse = {
     applyActual(session, command)
   }
-  
+
   private def getSessionOpt(id: String) = sessions.find(_.id == id)
   private def getSession(id: String) = getSessionOpt(id).getOrElse(throw LocalError("Unknown Session"))
 
@@ -140,7 +140,7 @@ class REPLServer extends ServerExtension("repl") {
     command match {
       case Show => getSessions
       case Clear => clearSessions
-      case Start => startSession
+      case Start => startSession(idO.getOrElse(throw LocalError("No session provided")))
       case Restart => restartSession(session)
       case Quit => quitSession(session)
       case Input(s) => evalInSession(session, s)
@@ -178,8 +178,7 @@ class REPLServer extends ServerExtension("repl") {
     AdminResponse("Sessions cleared")
   }
 
-  private def startSession = {
-    val id = java.util.UUID.randomUUID().toString
+  private def startSession(id: String) = {
     if (sessions.exists(_.id==id)){
       throw LocalError("Session already exists")
     }
@@ -221,5 +220,3 @@ class REPLServer extends ServerExtension("repl") {
     sessions = sessions.filterNot(_.id == s.id)
   }
 }
-
-import utils._
