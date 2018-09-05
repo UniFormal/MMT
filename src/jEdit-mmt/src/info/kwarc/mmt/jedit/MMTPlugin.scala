@@ -25,6 +25,7 @@ class MMTPlugin extends EBPlugin with Logger {
   /** these are not used in the code, but called by actions in actions.xml */
   val buildActions = new BuildActions(this)
   val editActions = new EditActions(this)
+  val debugActions = new DebugActions(this)
 
   /** set by [[MMTSideKick]], read by [[MMTGutterExtension]] */
   val progressTracker = new scala.collection.mutable.ListMap[Buffer,MMTTask]
@@ -212,6 +213,11 @@ object MMTPlugin {
       while (right < lineLength - 1 && isIDChar(lineText(right + 1))) {right = right + 1}
       Some((line, lineStart + left, lineStart + right + 1, lineText.substring(left, right + 1)))
    }
+   
+   /** get the MMT plugin, helpful for debugging in jEdit */
+   def plugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
+   /** easy access to debug commands in the MMT plugin */
+   def debug = plugin.debugActions
 }
 
 /** base class for MMT's text area extensions */

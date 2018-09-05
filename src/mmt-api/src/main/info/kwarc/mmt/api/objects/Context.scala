@@ -142,14 +142,14 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
    /** @return the prefix up to and excluding the variable */
    def before(name: LocalName): Context = {
       index(name) match {
-         case None => this
+         case None => Context.empty
          case Some(i) => Context(variables.take(variables.length-i-1):_*)
       }
    }
    /** @return the suffix after and excluding the variable */
    def after(name: LocalName): Context = {
       index(name) match {
-         case None => Context.empty
+         case None => this
          case Some(i) => Context(variables.drop(variables.length-i):_*)
       }
    }
@@ -235,6 +235,7 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
          Some(s)
       }
    }
+   def /!(args: List[Term]) = (this / args).getOrElse {throw ImplementationError("wrong number of arguments")}
 
    /** applies a function to the type/definiens of all variables (in the respective context)
     * @return the resulting context

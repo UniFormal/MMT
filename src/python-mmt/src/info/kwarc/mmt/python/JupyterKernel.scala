@@ -67,3 +67,15 @@ class JupyterKernel extends Extension {
     //resp.toString
   }
 }
+
+/* 
+ * TODO add %%mmt in standard Python kernel, map it to a method 'parse' here
+ * then using a special MMT kernel becomes redundant
+ * moreover, widgets can be constructed easily by evaluating a Python expression that returns the widget
+ * if the object returned by 'parse' implements the magic methods for dot notation,
+ * the SageExplorer widget for dynamic and interactive documentation/introspection works immediately for that object
+ 
+ * to register a magic command like %%mmt, see https://ipython.org/ipython-doc/3/config/custommagics.html
+ * 
+ */
+ 

@@ -19,9 +19,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    * Checks the validity of the inductive type(s) to be constructed
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
    */
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
-    //TODO: check for inhabitability
-  }
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
   
   /**
    * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 

@@ -98,7 +98,7 @@ object InternalDeclaration {
   implicit def tm(d: InternalDeclaration): Option[Term] = d.df
   implicit def toVarDecl(d: InternalDeclaration)(implicit parent: GlobalName): VarDecl = d.toVarDecl
 
-  //TODO: Implement this properly
+  //TODO: Implement this properly (not required in LF)
   def isTypeLevel(tp: Term) : Boolean = false
   
   /**
