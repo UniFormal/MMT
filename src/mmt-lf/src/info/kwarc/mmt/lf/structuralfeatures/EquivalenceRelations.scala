@@ -39,8 +39,9 @@ class EquivalenceRelation extends StructuralFeature("equivRel") with ParametricT
       val reflTp = OMV(uniqueLN("refl_"+eqRel.name)) % Pi(context++a, rel(a, a))
       
       val elabDecls = eqRel.toConstant::(List(transTp, symmTp, reflTp) map {x => makeConst(x.name, x.tp.get)})
+      elabDecls map {d => log(controller.presenter.asString(d))}
       new Elaboration {
-        def domain = elabDecls map {d => log(controller.presenter.asString(d)); d.name}
+        def domain = elabDecls map {d => d.name}
         def getO(n: LocalName) = {
           elabDecls.find(_.name == n)
         }

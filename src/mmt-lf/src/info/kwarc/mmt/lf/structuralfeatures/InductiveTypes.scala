@@ -62,8 +62,8 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     elabDecls ++= noJunks(decls, context)(dd.path)
     
     elabDecls foreach {d =>
-     log(InternalDeclarationUtil.present(d))
-     //log(controller.presenter.asString(d))
+     //log(InternalDeclarationUtil.present(d))
+     log(d.toString)
     }
     new Elaboration {
       val elabs : List[Declaration] = Nil 
@@ -97,17 +97,19 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     val model = modelContext.map(_.toTerm)
     var inductNames : List[(GlobalName,GlobalName)] = Nil
     decls map {d =>
-      val (argCon, dApplied) = d.argContext(None)
-      val dAppliedInduct = induct(model, d.ret, dApplied, inductNames)
-      val dPrimed = utils.listmap(repls, d.path).get
-      val dAppliedPrimed = ApplyGeneral(dPrimed, argCon map {vd => induct(model, vd.tp.get, vd.toTerm, inductNames)})
-      val ret = d match {
-        case tl: TermLevel => Eq(dAppliedInduct, dAppliedPrimed)
-        case tl: TypeLevel => Arrow(dAppliedInduct, dAppliedPrimed)
+      val Ltp = () => {
+        val (argCon, dApplied) = d.argContext(None)
+        val dAppliedInduct = induct(model, d.ret, dApplied, inductNames)
+        val dPrimed = utils.listmap(repls, d.path).get
+        val dAppliedPrimed = ApplyGeneral(dPrimed, argCon map {vd => induct(model, vd.tp.get, vd.toTerm, inductNames)})
+        val ret = d match {
+          case tl: TermLevel => Eq(dAppliedInduct, dAppliedPrimed)
+          case tl: TypeLevel => Arrow(dAppliedInduct, dAppliedPrimed)
+        }
+        Pi(context ++ modelContext ++ argCon, ret)
       }
-      val tp = Pi(context ++ modelContext ++ argCon, ret)
       val name = inductName(d.name)
-      val c = makeConst(name, tp)
+      val c = makeConst(name, Ltp)
       inductNames ::= d.path -> c.path
       c
     } 
@@ -143,10 +145,12 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       if (b.ret == d.ret) {
         // TODO for dependently-typed, this can generate ill-typed declarations
         val newName = uniqueLN("no_conf_" + d.name.last+ "_" + b.name.last)
-        val (aCtx, aApplied) = d.argContext(None)
-        val (bCtx, bApplied) = b.argContext(None)
-        val tp = Pi(d.context++aCtx ++ bCtx, Neq(aApplied, bApplied))
-        decls ::= makeConst(newName, tp)
+        val Ltp = () => {
+          val (aCtx, aApplied) = d.argContext(None)
+          val (bCtx, bApplied) = b.argContext(None)
+          Pi(d.context++aCtx ++ bCtx, Neq(aApplied, bApplied))
+        }
+        decls ::= makeConst(newName, Ltp)
       }
     }
     decls = decls.reverse

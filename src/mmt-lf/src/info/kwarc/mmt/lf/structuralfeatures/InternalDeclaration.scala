@@ -35,6 +35,13 @@ private object InternalDeclarationUtil {
      VarDecl(freshName, tp)
    }
   
+  object noLookupPresenter extends presentation.NotationBasedPresenter {
+    override def getNotations(p: GlobalName) = if (false) Nil else super.getNotations(p)
+    override def getAlias(p: GlobalName) = if (false) Nil else super.getAlias(p)
+  }
+  
+  def defaultPresenter(c: Constant)(implicit con: Controller): String = c.name + ": " + noLookupPresenter.asString(c.tp.get) + (if (c.df != None) " = "+noLookupPresenter.asString(c.df.get) else "")
+  
    /** a very detailed presenter, useful for debugging */
   def present(c: Constant)(implicit parent: GlobalName) : String = {
     c.path + ": " + present(c.tp.get)
@@ -71,9 +78,10 @@ private object InternalDeclarationUtil {
   /** negate the statement in the type */
   def neg(tp: Term) : Term = Arrow(tp, Contra)
   
-  //This is the wrong path, but a bug in the library lookup code prevents the correct one (commented out) from working
-  //TODO: Fix it
-  def externalName(parent: GlobalName, name: LocalName): (MPath, LocalName) = (parent.module / parent.name, name)//parent.name / name
+  def externalName(parent: GlobalName, name: LocalName): GlobalName = //(parent.module / parent.name, name)
+    parent.module ? parent.name / name
+ 
+  def externalizeNames(parent: GlobalName) = Renamer(p => if (p.module == parent.toMPath) Some(externalName(parent, p.name)) else None) 
   
   /** produces a Constant derived declaration 
    *  @param name the local name of the constant
@@ -83,10 +91,21 @@ private object InternalDeclarationUtil {
    */
   def makeConst(name: LocalName, tp: Term, df:Option[Term], notC: Option[NotationContainer])(implicit parent: GlobalName): Constant = {
     //Constant(OMMOD(parent.module), externalName(parent, name), Nil, Some(tp), df, None, notC getOrElse NotationContainer())
-    Constant(OMMOD(externalName(parent, name)._1), externalName(parent, name)._2, Nil, Some(tp), df, None, notC getOrElse NotationContainer())
+    val p = externalName(parent, name)
+    Constant(OMMOD(p.module), p.name, Nil, Some(tp), df, None, notC getOrElse NotationContainer())
   }
+  def makeConst(name: LocalName, tp: Term)(implicit parent: GlobalName): Constant = makeConst(name, tp, None)
   def makeConst(name: LocalName, tp: Term, df:Option[Term])(implicit parent: GlobalName): Constant = makeConst(name, tp, df, None)
-  def makeConst(name: LocalName, tp: Term)(implicit parent:  GlobalName): Constant = makeConst(name, tp, None)
+  def makeConst(name: LocalName, Ltp: () => Term, Ldf: () => Option[Term] = () => None)(implicit parent:  GlobalName): Constant = {
+    val p = externalName(parent, name)
+    new SimpleLazyConstant(OMMOD(p.module), p.name) {
+      otherDefined = true
+      def onAccess {
+        _tp = Some(Ltp())
+        _df = Ldf()
+      }
+    }
+  }
   
   def PiOrEmpty(ctx: Context, body: Term) = if (ctx.isEmpty) body else Pi(ctx, body)
 }
@@ -113,12 +132,13 @@ object InternalDeclaration {
     val context = Some(ctx getOrElse Context.empty ++ retCtx)
     val p = parent.module ? c.path.last
     if (JudgmentTypes.isJudgment(ret)(con.globalLookup)) {
-      StatementLevel(p, args, c.df, Some(c.notC), context)
+      StatementLevel(p, args, c.df, context, Some(c.notC))
     } else {
       ret match {
-        case Univ(1) => TypeLevel(p, args, c.df, Some(c.notC), context)
+        case Univ(1) => TypeLevel(p, args, c.df, context, Some(c.notC))
         case Univ(x) if x != 1 => throw ImplementationError("unsupported universe")
-        case r => if (isTypeLevel(r)) TypeLevel(p, args, c.df, Some(c.notC), context) else TermLevel(p, args, ret, c.df, Some(c.notC), context)}
+        case r => if (isTypeLevel(r)) TypeLevel(p, args, c.df, context, Some(c.notC)) else TermLevel(p, args, ret, c.df, Some(c.notC), ctx)
+      }
     }
   }
   
@@ -131,6 +151,7 @@ object InternalDeclaration {
     fromConstant(vd.toConstant(parent.module, ctx getOrElse Context.empty), con, Some(context))
   }
   
+  /** build a dictionary from the declaration paths to OMV with their "primed" type, as well as a context with all the "primed" declarations*/
   def chain(decls: List[InternalDeclaration], context: Context) : (List[(GlobalName, OMV)], List[VarDecl]) = {
     var repls: List[(GlobalName,OMV)] = Nil
     val tr = TraversingTranslator(OMSReplacer(p => utils.listmap(repls, p)))
@@ -143,10 +164,10 @@ object InternalDeclaration {
     (repls, modelContext)
   }
   
-  def structureDeclaration(name: Option[String])(implicit parent : GlobalName) = TypeLevel(uniqueGN(name getOrElse "M"), Nil, None, None, None)
-  def introductionDeclaration(structure:TypeLevel, decls: List[InternalDeclaration], nm: Option[String])(implicit parent : GlobalName): TermLevel = {
-    val (p, args) = (uniqueGN(nm getOrElse "make"), decls map (x => (Some(x.name), x.toTerm)))
-    TermLevel(p, args, structure.toTerm, None, None, None)
+  def structureDeclaration(name: Option[String], context: Option[Context])(implicit parent : GlobalName) = TypeLevel(uniqueGN(name getOrElse "M"), Nil, None, context)
+  def introductionDeclaration(recType: GlobalName, decls: List[InternalDeclaration], nm: Option[String], context: Option[Context])(implicit parent : GlobalName): TermLevel = {
+    val (p, args) = (uniqueGN(nm getOrElse "make"), decls map (_.toVarDecl))
+    TermLevel(p, args, OMS(recType), None, context)
   }
 }
 
@@ -162,7 +183,12 @@ sealed abstract class InternalDeclaration {
   def notation: NotationContainer // TODO do we need this
   def tp = PiOrEmpty(context, FunType(args, ret))
   def df : Option[Term]
-
+  
+  /** like tp but with all names externalized */
+  def externalTp(implicit parent: GlobalName) = externalizeNames(parent)(tp, context)
+  /** like df but with all names externalized */
+  def externalDf(implicit parent: GlobalName) = df map {t => externalizeNames(parent)(t, context)}
+ 
   /**
 	 * Build a context quantifying over all arguments
 	 *  and the term of this constructor applied to those arguments
@@ -183,13 +209,16 @@ sealed abstract class InternalDeclaration {
   }
   
   def toVarDecl = VarDecl(name, tp)
-  def toConstant(implicit parent: GlobalName): Constant = makeConst(name, PiOrEmpty(context, tp), df)(parent)
-  def toTerm(implicit parent: GlobalName): Term = OMS(externalName(parent, name)._1 ? externalName(parent, name)._2)
+  def toConstant(implicit parent: GlobalName): Constant = {
+    makeConst(name, () => PiOrEmpty(context, externalTp), () => externalDf)(parent)
+  }
+  def toTerm(implicit parent: GlobalName): Term = OMS(externalName(parent, name))
   
   /** apply the internal declaration to the given argument context */
   def applyTo(args: Context)(implicit parent: GlobalName): Term = ApplyGeneral(toTerm, args.map(_.toTerm))
   def applyTo(args: List[Term])(implicit parent: GlobalName): Term = ApplyGeneral(toTerm, args)
   def applyTo(tm: Term)(implicit parent: GlobalName): Term = applyTo(List(tm))
+ 
   
   /**
    * applies a term translator
@@ -207,7 +236,7 @@ sealed abstract class InternalDeclaration {
 }
 
 /** type declaration */
-case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], notC : Option[NotationContainer], ctx: Option[Context]) extends InternalDeclaration {
+case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], ctx: Option[Context]=None, notC : Option[NotationContainer]=None) extends InternalDeclaration {
   def ret = Univ(1)
   def tm = df
   def notation = notC getOrElse NotationContainer()
@@ -217,13 +246,14 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df
 }
 
 object TypeLevel {
-  def apply(path: GlobalName, args: Context, df: Option[Term], notC : Option[NotationContainer], ctx: Option[Context]): TypeLevel = {
-    TypeLevel(path, args map {vd => (Some(vd.name), vd.toTerm)}, df, notC, ctx)
-  }
+  def apply(path: GlobalName, args: Context, df: Option[Term], ctx: Option[Context], notC : Option[NotationContainer]): TypeLevel = TypeLevel(path, args map {vd => (Some(vd.name), vd.toTerm)}, df, ctx, notC)
+  def apply(path: GlobalName, args: Context, df: Option[Term], ctx: Option[Context]): TypeLevel = TypeLevel(path, args map {vd => (Some(vd.name), vd.toTerm)}, df, ctx)
+  def apply(path: GlobalName, args: Context, df: Option[Term]): TypeLevel = TypeLevel(path, args map {vd => (Some(vd.name), vd.toTerm)}, df)
+  def apply(path: GlobalName, args: Context): TypeLevel = TypeLevel(path, args map {vd => (Some(vd.name), vd.toTerm)}, None)
 }
 
 /** term constructor declaration */
-case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term, df: Option[Term], notC: Option[NotationContainer], ctx: Option[Context]) extends InternalDeclaration {
+case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term, df: Option[Term]=None, notC: Option[NotationContainer]=None, ctx: Option[Context]=None) extends InternalDeclaration {
   def tm = df
   def notation = notC getOrElse NotationContainer()
   /** a var decl with a fresh name of the same type as this one */
@@ -268,14 +298,15 @@ object TermLevel {
 }
 
 /** Rules and Judgment constructors */
-case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], notC: Option[NotationContainer], ctx: Option[Context]) extends InternalDeclaration {
+case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term]=None, ctx: Option[Context]=None, notC: Option[NotationContainer]=None) extends InternalDeclaration {
   def ret = Univ(1)
   def tm = df
   def notation = notC getOrElse NotationContainer()
 }
 
 object StatementLevel {
-  def apply(p: GlobalName, a: Context, df: Option[Term], n: Option[NotationContainer], c: Option[Context]): StatementLevel = StatementLevel(p, a.map(x => (Some(x.name), x.toTerm)), df, n, c)
-  def apply(p: GlobalName, a: Context, df: Option[Term], c: Option[Context]): StatementLevel = StatementLevel(p, a.map(x => (Some(x.name), x.toTerm)), df, None, c)
+  def apply(p: GlobalName, a: Context, df: Option[Term], c: Option[Context], n: Option[NotationContainer]): StatementLevel = StatementLevel(p, a.map(x => (Some(x.name), x.toTerm)), df, c, n)
+  def apply(p: GlobalName, a: Context, df: Option[Term], c: Option[Context]): StatementLevel = StatementLevel(p, a, df, c, None)
   def apply(p: GlobalName, a: Context, df: Option[Term]): StatementLevel = StatementLevel(p, a, df, None)
+  def apply(p: GlobalName, a: Context): StatementLevel = StatementLevel(p, a, None)
 }
