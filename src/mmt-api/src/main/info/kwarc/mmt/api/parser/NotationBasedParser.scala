@@ -145,13 +145,11 @@ class NotationBasedParser extends ObjectParser {
      def newUnknown(name: LocalName, boundNames: List[BoundName])(implicit pu: ParsingUnit) = {
        unknowns ::= VarDecl(name)
        val bvars = BoundName.getVars(boundNames)
-       if (bvars.isEmpty)
-         OMV(name)
-       else {
-         //TODO in case of shadowing (duplicates in bvars), one variable must be renamed
-         //apply meta-variable to all bound variables in whose scope it occurs
-         checking.Solver.makeUnknown(name, bvars)
-       }
+       // handling of shadowing: we assume that an unknown cannot depend on a shadowed variable
+       // so we remove shadowed (i.e., earlier) occurrences of bound variables
+       val bvarsD = bvars.reverse.distinct.reverse
+       //apply meta-variable to all bound variables in whose scope it occurs
+       checking.Solver.makeUnknown(name, bvarsD)
      }
 
      /** generates a new unknown variable for the index that chooses from a list of options in an ambiguity
