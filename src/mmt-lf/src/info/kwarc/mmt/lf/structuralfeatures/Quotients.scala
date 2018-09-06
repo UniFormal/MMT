@@ -30,11 +30,11 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
       val structure : TypeLevel = structureDeclaration(Some("Q"), context)
       val quotientMap = introductionDeclaration(structure.path, List(domain), Some("quotient_map"), context)
       val quotMapSurj = quotientMap.surjDecl
-      val (b, f, p, quotInvert) = quotientInvert(domain, structure, eqRel, quotientMap, Some("quotInvert"), context)
-      val quotInverse = quotientInverse(domain, structure, eqRel, quotientMap, b, f, p, quotInvert.path, Some("quotInverse"))
+      val (b, f, p, quotInvert) = Lift(domain, structure, eqRel, quotientMap, Some("quotInvert"), context)
+      val quotInverse = inverse(domain, structure, eqRel, quotientMap, b, f, p, quotInvert.path, Some("quotInverse"))
       
       val elabDecls = List(structure, quotientMap).map(_.toConstant) ++ List(quotInvert, quotInverse, quotMapSurj)
-      elabDecls map {d => log(InternalDeclarationUtil.defaultPresenter(d)(controller))}
+      elabDecls map {d => log(defaultPresenter(d)(controller))}
       new Elaboration {
         def domain = elabDecls map {d => d.name}
         def getO(n: LocalName) = {
@@ -54,22 +54,27 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
     val ret : Term = PiOrEmpty(args, Arrow(rel.applyTo(args), Eq(quot.applyTo(args.init), quot.applyTo(args.tail))))
     TermLevel(uniqueGN(name getOrElse "quot"), args map (x => (Some(x.name), x.tp.get)), ret, None, None, ctx)
   }
-  def quotientInvert(domain:TypeLevel, structure:TypeLevel, rel:InternalDeclaration, quot: TermLevel, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): (TypeLevel, TermLevel, TermLevel, Constant) = {
+  
+  /** Declares the lifting of a function on the domain to the quotient, whenever well-defined */
+  def Lift(domain:TypeLevel, structure:TypeLevel, rel:InternalDeclaration, quot: TermLevel, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): (TypeLevel, TermLevel, TermLevel, Constant) = {
     val B = TypeLevel(uniqueGN("B"), Nil, None, ctx)
     val f = TermLevel(uniqueGN("f"), List((None, domain.toTerm)), B.toTerm, None, None, None)
-    val xy @ List(x, y) = List(domain.makeVar("x", Context.empty), structure.makeVar("y", Context.empty))
-    val p = TermLevel(uniqueGN("p"), xy map (x => (Some(x.name), x.tp.get)), Arrow(rel.applyTo(xy), Eq(f.applyTo(x.tp.get), f.applyTo(y.tp.get))), None, None, None)
+    val xy @ List(x, y) = List(domain.makeVar("x", Context.empty), domain.makeVar("y", Context.empty))
+    val p = TermLevel(uniqueGN("p"), xy, Arrow(rel.applyTo(xy), Eq(f.applyTo(x.tp.get), f.applyTo(y.tp.get))), None, None, None)
     val quotInv = makeConst(uniqueLN(name getOrElse "quotInvert"), () => {
       FunType(List(B, f, p).map(x => (Some(x.name), x.tp)) :+ (Some(structure.name), structure.toTerm), B.toTerm)
     }, () => None)
     (B, f, p, quotInv)
   }
-  def quotientInverse(domain:TypeLevel, structure:TypeLevel, rel:InternalDeclaration, quot: TermLevel, B: TypeLevel, F:TermLevel, P:TermLevel, quotInv: GlobalName, name: Option[String])(implicit parent: GlobalName): Constant = {
-    val ctx = B.context
-    val (b, f, p, arg) = (B.makeVar("b", ctx), newVar(uniqueLN("f"), F.tp, Some(ctx)), newVar(uniqueLN("p"), P.tp, Some(ctx)), domain.makeVar("x", ctx))
-    val im = OMV(uniqueLN("image_point")) % quot.applyTo(arg.toTerm)
-    val tp = PiOrEmpty(List(b, f, p, arg), Eq(ApplyGeneral(OMS(quotInv), List(b, f, p).map(_.toTerm) :+ quot.applyTo(arg.toTerm)), F.applyTo(arg.toTerm)))
-    makeConst(uniqueLN(name getOrElse "quotInverse"), tp)
+  
+  def inverse(domain:TypeLevel, structure:TypeLevel, rel:InternalDeclaration, quot: TermLevel, B: TypeLevel, F:TermLevel, P:TermLevel, quotInv: GlobalName, name: Option[String])(implicit parent: GlobalName): Constant = {
+    val Ltp = () => {
+      val ctx = B.context
+      val (b, f, p, arg) = (B.makeVar("b", ctx), newVar(uniqueLN("f"), F.tp, Some(ctx)), newVar(uniqueLN("p"), P.tp, Some(ctx)), domain.makeVar("x", ctx))
+      val im = OMV(uniqueLN("image_point")) % quot.applyTo(arg.toTerm)
+      PiOrEmpty(List(b, f, p, arg), Eq(ApplyGeneral(OMS(quotInv), List(b, f, p).map(_.toTerm) :+ quot.applyTo(arg.toTerm)), F.applyTo(arg.toTerm)))
+    }
+  makeConst(uniqueLN(name getOrElse "quotInverse"), Ltp)
   }
 }
 

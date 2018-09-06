@@ -50,12 +50,12 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     decls foreach (elabDecls ::= _)
     
     // the no junk axioms
-    elabDecls = elabDecls.reverse ++ noJunksEliminationDeclarations(decls map (_.path), params, structure.path, make.path, origDecls)
+    elabDecls = elabDecls.reverse ++ noJunksDeclarations(decls map (_.path), params, structure.path, make.path, origDecls)
     
     elabDecls :+= reprDeclaration(structure, decls map (_.path))
     
     elabDecls foreach {d =>
-      log(InternalDeclarationUtil.defaultPresenter(d)(controller))
+      log(defaultPresenter(d)(controller))
     }
     new Elaboration {
       val elabs : List[Declaration] = Nil 
@@ -66,9 +66,12 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     }
   }
   def reprDeclaration(structure:TypeLevel, recordFields:List[GlobalName])(implicit parent: GlobalName) : Constant = {
-    val arg = structure.makeVar("m", Context.empty)
-    val ret : Term = Eq(structure.applyTo(recordFields map {f => ApplyGeneral(OMS(f), List(arg.toTerm))}), arg.toTerm)
-    makeConst(uniqueLN("repr"), Pi(List(arg), ret))
+    val Ltp = () => {
+      val arg = structure.makeVar("m", Context.empty)
+      val ret : Term = Eq(structure.applyTo(recordFields map {f => ApplyGeneral(OMS(f), List(arg.toTerm))}), arg.toTerm)
+      Pi(List(arg), ret)
+    }
+    makeConst(uniqueLN("repr"), Ltp)
   }
   
   def toEliminationDecls(decls: List[InternalDeclaration], recType: GlobalName)(implicit parent : GlobalName) : List[Constant] = {
@@ -93,7 +96,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
    * @returns returns one no junk (morphism) declaration for each type level declaration
    * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
    */    
-  def noJunksEliminationDeclarations(recordFields : List[GlobalName], context: Context, recType: GlobalName, recMake: GlobalName, origDecls: List[InternalDeclaration])(implicit parent : GlobalName) : List[Constant] = {
+  def noJunksDeclarations(recordFields : List[GlobalName], context: Context, recType: GlobalName, recMake: GlobalName, origDecls: List[InternalDeclaration])(implicit parent : GlobalName) : List[Constant] = {
     val (repls, modelCtx) = chain(origDecls, context)
     (origDecls zip repls) map {case (d, (p, v)) =>
       val Ltp = () => {
@@ -113,9 +116,12 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
    * where A[r] is like A with every d declared in this record with d r
    */
   def toEliminationDecl(c:InternalDeclaration, recType: GlobalName, recordFields: List[GlobalName])(implicit parent: GlobalName): Constant = {
-    val r = LocalName("r")
-    val tr = TraversingTranslator(OMSReplacer(p => if (recordFields contains p) Some(Apply(OMS(p), OMV(r))) else None))
-    makeConst(c.name, Pi(r, OMS(recType), tr(c.context, c.externalTp)), None)
+    val Ltp = () => {
+      val r = LocalName("r")
+      val tr = TraversingTranslator(OMSReplacer(p => if (recordFields contains p) Some(Apply(OMS(p), OMV(r))) else None))
+      Pi(r, OMS(recType), tr(c.context, c.externalTp))
+    }
+    makeConst(c.name, Ltp)
   }
 }
 

@@ -89,13 +89,6 @@ private object InternalDeclarationUtil {
    *  @param df (optional) the definition of the constant
    *  @param parent (implicit) the inductive definition to elaborate
    */
-  def makeConst(name: LocalName, tp: Term, df:Option[Term], notC: Option[NotationContainer])(implicit parent: GlobalName): Constant = {
-    //Constant(OMMOD(parent.module), externalName(parent, name), Nil, Some(tp), df, None, notC getOrElse NotationContainer())
-    val p = externalName(parent, name)
-    Constant(OMMOD(p.module), p.name, Nil, Some(tp), df, None, notC getOrElse NotationContainer())
-  }
-  def makeConst(name: LocalName, tp: Term)(implicit parent: GlobalName): Constant = makeConst(name, tp, None)
-  def makeConst(name: LocalName, tp: Term, df:Option[Term])(implicit parent: GlobalName): Constant = makeConst(name, tp, df, None)
   def makeConst(name: LocalName, Ltp: () => Term, Ldf: () => Option[Term] = () => None)(implicit parent:  GlobalName): Constant = {
     val p = externalName(parent, name)
     new SimpleLazyConstant(OMMOD(p.module), p.name) {
@@ -265,15 +258,16 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
    * @param d the term level for which to generate the injectivity axiom
    */
   def injDecl(implicit parent: GlobalName): Constant = {
-    val (aCtx, aApplied) = argContext(Some("_0"))
-    val (bCtx, bApplied) = argContext(Some("_1"))
-    
-    val argEq = (aCtx zip bCtx) map {case (a,b) => Eq(a.toTerm, b.toTerm)}
-    val resNeq = Neq(aApplied, bApplied)
-    val body = Arrow(Arrow(argEq, Contra), resNeq)
-    val inj = PiOrEmpty(context++aCtx ++ bCtx,  body)
-    
-    makeConst(uniqueLN("injective_"+name), inj)(parent)
+    val Ltp = () => {
+      val (aCtx, aApplied) = argContext(Some("_0"))
+      val (bCtx, bApplied) = argContext(Some("_1"))
+      
+      val argEq = (aCtx zip bCtx) map {case (a,b) => Eq(a.toTerm, b.toTerm)}
+      val resNeq = Neq(aApplied, bApplied)
+      val body = Arrow(Arrow(argEq, Contra), resNeq)
+      PiOrEmpty(context++aCtx ++ bCtx,  body)
+    }
+    makeConst(uniqueLN("injective_"+name), Ltp)(parent)
   }
   
   /**
@@ -282,11 +276,13 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
    * @param d the term level for which to generate the surjectivity axiom
    */
   def surjDecl(implicit parent: GlobalName): Constant = {
-    val im = newVar(uniqueLN("image_point"), ret, Some(context))
-    val (aCtx, aApplied) = argContext(None)
+    val Ltp = () => {
+      val im = newVar(uniqueLN("image_point"), ret, Some(context))
+      val (aCtx, aApplied) = argContext(None)
     
-    val surj = PiOrEmpty(context++im,  neg(PiOrEmpty(aCtx, neg(Eq(aApplied, im.toTerm)))))   
-    makeConst(uniqueLN("surjective_"+name), surj)(parent)
+      PiOrEmpty(context++im,  neg(PiOrEmpty(aCtx, neg(Eq(aApplied, im.toTerm)))))
+    }
+    makeConst(uniqueLN("surjective_"+name), Ltp)(parent)
   }
 }
 
