@@ -904,7 +904,7 @@ object Solver {
   }
 
   /** create an unknown whose solution may contain certain variables */
-  def makeUnknown(name: LocalName, args: List[LocalName]) = OMA(OMV(name), args.map(OMV(_)))
+  def makeUnknown(name: LocalName, args: List[LocalName]) = OMAorAny(OMV(name), args.map(OMV(_)))
   
   /**
     * tests a term for the occurrence of an unknown variables that can be isolated by applying solution rules

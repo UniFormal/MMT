@@ -6,7 +6,7 @@ import frontend._
 import checking._
 
 /**
- * Irrelevance rules for proof irrelevant types:
+ * Irrelevance rules for (usually atomic) types that introduce proof irrelevance (as opposed to complex that happen to be irrelevant because their components are):
  * - terms of these types are always equal
  * - unknowns terms of these types are found using proof search; if provided, a default value is used to recover if search fails   
  */
