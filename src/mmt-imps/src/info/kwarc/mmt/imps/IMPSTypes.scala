@@ -944,7 +944,7 @@ case class ArgAssumptions(defs : List[DefString], frms : List[IMPSMathExp], var 
 }
 
 
-case class ArgSortPairSpec(nm : Name, srt : Either[Either[Name,DefString],Either[DefString,DefString]], mth : Option[IMPSMathExp], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+case class ArgSortPairSpec(name : Name, srt : Either[Either[Name,DefString],Either[DefString,DefString]], mth : Option[IMPSMathExp], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
 
   def mapPrint[A,B,C,D](e : Either[Either[A,B],Either[C,D]]) : String = {
     e match {
@@ -956,7 +956,7 @@ case class ArgSortPairSpec(nm : Name, srt : Either[Either[Name,DefString],Either
   }
 
   override def toString: String = {
-    "(" + nm.toString + " " + mapPrint(srt) + ")"
+    "(" + name.toString + " " + mapPrint(srt) + ")"
   }
 }
 
@@ -1637,7 +1637,7 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
 
             val foo = Some(impsMathParser.makeSEXPFormula(lsp.get))
 
-            nu_sps_defs = nu_sps_defs ::: List(ArgSortPairSpec(sps.get.defs(sp).nm,sps.get.defs(sp).srt,foo,sps.get.defs(sp).src,sps.get.defs(sp).cmt))
+            nu_sps_defs = nu_sps_defs ::: List(ArgSortPairSpec(sps.get.defs(sp).name,sps.get.defs(sp).srt,foo,sps.get.defs(sp).src,sps.get.defs(sp).cmt))
           }
         }
         nu_sps = Some(ArgSortPairs(nu_sps_defs,sps.get.src,sps.get.cmt))
@@ -1654,7 +1654,7 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
                | scala.util.Left((_,Some(_))) => nu_cps_defs = nu_cps_defs ::: List(cps.get.defs(cp))
             case scala.util.Left((dfs,None))  =>
 
-              println(" > looking for formula for constant-pair: " + cps.get.defs(cp))
+              //println(" > looking for formula for constant-pair: " + cps.get.defs(cp))
 
               val json_theory2 : Option[JSONObject] = js.find(j => j.getAsString("name") == tar.get.thy.s.toLowerCase)
               assert(json_theory2.isDefined)

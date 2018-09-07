@@ -1,9 +1,6 @@
 package info.kwarc.mmt.imps
 
-import com.sun.xml.internal.bind.CycleRecoverable
-import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureChecker, RelationHandler}
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.{LocalName, _}
 import info.kwarc.mmt.api.frontend._
@@ -14,7 +11,7 @@ import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.imps.Usage.Usage
-import info.kwarc.mmt.lf.{Apply, ApplySpine}
+import info.kwarc.mmt.lf.{ApplySpine}
 import utils._
 
 /* REMINDER:
@@ -214,8 +211,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       for (ax <- t.axioms.get.cps)
       {
         val mth : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(ax.frm.get, nu_theory, Nil)))
-        val name : String = if (ax.name.isDefined) { ax.name.get }
-        else { axiom_count += 1 ; t.name + "_unnamed_axiom" + axiom_count.toString }
+        val name : String = if (ax.name.isDefined) { ax.name.get } else { axiom_count += 1 ; t.name + "_unnamed_axiom" + axiom_count.toString }
 
         val assumption : Declaration = symbols.Constant(nu_theory.toTerm,doName(name),Nil,Some(mth),None,Some("Assumption"))
 
@@ -400,16 +396,18 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
   def doTranslation(d : DFTranslation, docPath: DPath, uri : URI) : Unit = d match
   {
     case t@DFTranslation(name,force,forceQL,dontEnrich,sourcet,targett,assumptions,fixed,sortPairs,constPairs,core,tic,src,cmt) =>
-    {
+
       // TODO: Deal with these delays.
       val delays : List[String] = List("ACT->LEFT%TRANS","ACT->RIGHT%TRANS", "ACT->SET%CONJUGATE", "ACT->LEFT-MUL", "ACT->RIGHT-MUL")
       if (delays.contains(name.s)) { tState.delayed = (t,uri) :: tState.delayed ; return }
+
+      var translated_constant_names : List[LocalName] = Nil
 
       tState.translations_raw = t :: tState.translations_raw
 
       val ln : LocalName = doName(name.s)
 
-      if (tState.verbosity > 0) { println(" > translating Translation " + name) }
+      if (true) { println(" > translating Translation " + name) }
 
       // Source and Target need to be defined!
       assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(sourcet.thy.s).toString.toLowerCase))
@@ -435,7 +433,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         {
           if (tState.verbosity > 1) { println("  > translation " + name.s + " fixes theory " + fixed.get.ts(ft).s) }
 
-          val fix = tState.theories_decl.find(t => t.name.toString.toLowerCase == fixed.get.ts(ft).s.toLowerCase)
+          val fix : Option[DeclaredTheory] = tState.theories_decl.find(t => t.name.toString.toLowerCase == fixed.get.ts(ft).s.toLowerCase)
           assert(fix.isDefined)
 
           val cn : LocalName = LocalName(ComplexStep(fix.get.path))
@@ -445,11 +443,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         }
       }
 
+      /* Translate all explicity listed sort pairs */
+
       if (sortPairs.isDefined) {
         for (sp <- sortPairs.get.defs) {
           var tar : String = ""
           val target_sort_term : Term = sp.srt match {
-            case scala.util.Left(scala.util.Left(n@srt_name))          => tar = n.toString ; doSort(IMPSAtomSort(srt_name.s), target_thy)
+            case scala.util.Left(scala.util.Left(n@srt_name))          => tar = n.toString ; matchSort(IMPSAtomSort(srt_name.s), target_thy)
             case scala.util.Left(scala.util.Right(n@srt_dfstr))        => tar = n.toString ; ???
             case scala.util.Right(scala.util.Left(n@pred_srt_dfstr))   => tar = n.toString ; ???
             case scala.util.Right(scala.util.Right(n@indic_srt_dfstr)) => tar = n.toString
@@ -457,12 +457,16 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
                                                                           doMathExp(sp.mth.get,target_thy,Nil)
           }
 
-          val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(source_thy_t.toMPath) / doName(sp.nm.s),Nil,None,Some(target_sort_term),None)
-          if (tState.verbosity > 1) { println(" >  adding sort-mapping: " + sp.nm.s + " → " + tar + " // " + ComplexStep(source_thy_t.toMPath) / doName(sp.nm.s)) }
-          //nu_view.add(nu_sort_map)
+          val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(source_thy_t.toMPath) / doName(sp.name.s),Nil,None,Some(target_sort_term),None)
+          if (true) { println(" >  adding sort-mapping: " + sp.name.s + " → " + tar + " // " + ComplexStep(source_thy_t.toMPath) / doName(sp.name.s)) }
+
+          translated_constant_names = doName(sp.name.toString) :: translated_constant_names
+          println(nu_sort_map)
           controller add nu_sort_map
         }
       }
+
+      /* Translate all explicity listed constant pairs */
 
       if (constPairs.isDefined) {
         for (cp <- constPairs.get.defs) {
@@ -475,13 +479,43 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
             }
             case scala.util.Right(n) => tar = n.s  ; doMathExp(IMPSMathSymbol(n.s),target_thy,Nil)
           }
-          val nu_const_map = symbols.Constant(nu_view.toTerm,doName(cp.name.s),Nil,None,Some(target_const_term),None)
-          if (tState.verbosity > 1) { println(" >  adding constant-mapping: " + cp.name.s + " → " + tar) }
-          //nu_view.add(nu_const_map)
+          val nu_const_map = symbols.Constant(nu_view.toTerm,ComplexStep(source_thy_t.toMPath) / doName(cp.name.s),Nil,None,Some(target_const_term),None)
+          if (true) { println(" >  adding constant-mapping: " + cp.name.s + " → " + tar + " // " + ComplexStep(source_thy_t.toMPath) / doName(cp.name.s)) }
+
+          translated_constant_names = doName(cp.name.toString) :: translated_constant_names
           controller add nu_const_map
         }
       }
 
+      /* Add translations from all non-mentioned constants to themselves if source = target */
+      // ToDo: What about when it isn't? Do we need some manual addings there, too?
+
+      if (source_thy == target_thy)
+      {
+        if (tState.verbosity > 1) { println(" >  adding constant-endo-mappings.") }
+
+        for (c <- source_thy.getConstants) {
+          if (!translated_constant_names.contains(c.name))
+          {
+            if (tState.verbosity > 4) { println(" >    adding constant-endo-mapping for " + c.name) }
+            val nu_id_const = symbols.Constant(nu_view.toTerm,ComplexStep(source_thy.path) / c.name,c.alias,c.tp,Some(c.toTerm),c.rl)
+            controller add nu_id_const
+          }
+        }
+      }
+      else
+      {
+        if (tState.verbosity > 1) { println(" >  adding constant-mappings for untranslated constants.") }
+
+        for (c <- source_thy.getConstants) {
+          if (!translated_constant_names.contains(c.name))
+          {
+            if (c.df.isEmpty && c.rl != Some("Assumption")) { println("*** CONSTANT W/O DEFINIENS: " + c) }
+          }
+        }
+      }
+
+      /* Include MetaData */
 
       if (force.isDefined) {
         val mv : GlobalName =     IMPSImportTask.rootdpath ? name.s ? LocalName("force")
@@ -501,14 +535,12 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         nu_view.metadata.add(new MetaDatum(mv,mo))
       }
 
-      if (tState.verbosity > 0)
-      {
-        println(" > Adding translation " + name + " (not complete yet)")
-      }
-
       doSourceRefT(nu_view.toTerm,src, uri)
-      controller add nu_view
-    }
+      controller.simplifier.apply(nu_view)
+
+      println(nu_view)
+      println("\n\n")
+
     case _ => println("Error: Unknown translation structure!")
   }
 
@@ -913,15 +945,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
         IMPSTheory.Sets(tp,srt)
       }
-      case IMPSAtomSort(srt) => {
-        if (t.getConstants.exists(c => c.name.toString.toLowerCase == srt.toLowerCase)) {
-          //println(" > found the sort " + srt + " in " + t.name.toString)
-          OMS(t.path ? srt)
-        } else {
-          //println(" > did not find the sort " + srt + " in " + t.name.toString + "???")
-          OMS(t.path ? srt)
-        }
-      }
+      case IMPSAtomSort(srt) =>
+        val thy : DeclaredTheory = locateMathSymbolHome(srt,t)
+        OMS(thy.path ? srt)
     }
   }
 
