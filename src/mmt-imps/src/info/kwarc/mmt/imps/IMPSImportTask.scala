@@ -11,7 +11,7 @@ import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.imps.Usage.Usage
-import info.kwarc.mmt.lf.{ApplySpine}
+import info.kwarc.mmt.lf.ApplySpine
 import utils._
 
 /* REMINDER:
@@ -91,10 +91,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         {
           if (!tState.theories_raw.contains(t)) { doTheory(t, doc.path, bt.narrationDPath, uri) }
         } catch {
-          case e : IMPSDependencyException => { println(" > ... fail. Add to stack: " +  e.getMessage ) ; excps = excps.::(e) }
+          case e : IMPSDependencyException => println(" > ... fail. Add to stack: " +  e.getMessage ) ; excps = excps.::(e)
         }
         // Languages are processed in context of theories using them, not by themselves
-        case l@DFLanguage(_,_,_,_,_,_,_,_,_) => {
+        case l@DFLanguage(_,_,_,_,_,_,_,_,_) =>
           if (!tState.languages.contains(l)) {
             if (tState.verbosity > 0)
             {
@@ -102,7 +102,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
             }
             tState.languages = tState.languages :+ l
           }
-        }
         case t@DFTranslation(_,_,_,_,_,_,_,_,_,_,_,_,_,_) => doTranslation(t, doc.path, uri)
         // If it's none of these, fall back to doDeclaration
         case _                             => doDeclaration(exp,uri)
@@ -347,18 +346,15 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
         val sub : Term = tal.tp match
         {
-          case NumericalType.INTEGERTYPE  => {
+          case NumericalType.INTEGERTYPE  =>
             name = name + "integer_type"
             OMS(IMPSTheory.lutinsPath ? "integerType")
-          }
-          case NumericalType.RATIONALTYPE => {
+          case NumericalType.RATIONALTYPE =>
             name = name + "rational_type"
             OMS(IMPSTheory.lutinsPath ? "rationalType")
-          }
-          case NumericalType.OCTETTYPE    => {
+          case NumericalType.OCTETTYPE    =>
             name = name + "octet_type"
             OMS(IMPSTheory.lutinsPath ? "octetType")
-          }
         }
 
         val srt = tState.bindUnknowns(matchSort(tal.srt,t))
@@ -420,7 +416,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       val target_thy : DeclaredTheory = tState.theories_decl.find(t => t.name.toString.toLowerCase == doName(targett.thy.s).toString.toLowerCase).get
       val target_thy_t : Term = target_thy.toTerm
 
-      val nu_view = new DeclaredView(bt.narrationDPath, ln, TermContainer(source_thy_t), TermContainer(target_thy_t), false)
+      val nu_view = new DeclaredView(bt.narrationDPath, ln, TermContainer(source_thy_t), TermContainer(target_thy_t), isImplicit = false)
       val mref : MRef = MRef(docPath,nu_view.path)
       controller add nu_view
       controller add mref
@@ -438,7 +434,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
           val cn : LocalName = LocalName(ComplexStep(fix.get.path))
 
-          val id_fix : DefinedStructure = DefinedStructure(nu_view.toTerm,cn,fix.get.toTerm,OMIDENT(fix.get.toTerm),false) // get it? :D
+          val id_fix : DefinedStructure = DefinedStructure(nu_view.toTerm,cn,fix.get.toTerm,OMIDENT(fix.get.toTerm), isImplicit = false) // get it? :D
           controller add id_fix
         }
       }
@@ -472,12 +468,12 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         for (cp <- constPairs.get.defs) {
           var tar : String = ""
           val target_const_term : Term = cp.const.o match {
-            case scala.util.Left(df) => {
+            case scala.util.Left(df) =>
               tar = df._1.s
               assert(df._2.isDefined)
               doMathExp(df._2.get,target_thy,Nil)
-            }
-            case scala.util.Right(n) => tar = n.s  ; doMathExp(IMPSMathSymbol(n.s),target_thy,Nil)
+
+            case scala.util.Right(n) => tar = n.s ; doMathExp(IMPSMathSymbol(n.s),target_thy,Nil)
           }
           val nu_const_map = symbols.Constant(nu_view.toTerm,ComplexStep(source_thy_t.toMPath) / doName(cp.name.s),Nil,None,Some(target_const_term),None)
           if (true) { println(" >  adding constant-mapping: " + cp.name.s + " → " + tar + " // " + ComplexStep(source_thy_t.toMPath) / doName(cp.name.s)) }
@@ -510,7 +506,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         for (c <- source_thy.getConstants) {
           if (!translated_constant_names.contains(c.name))
           {
-            if (c.df.isEmpty && c.rl != Some("Assumption")) { println("*** CONSTANT W/O DEFINIENS: " + c) }
+            if (c.df.isEmpty && !c.rl.contains("Assumption")) { println("*** CONSTANT W/O DEFINIENS: " + c) }
           }
         }
       }
@@ -566,11 +562,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
     d match {
       case LineComment(_,_,_)
-           | DFComment(_,_,_) => {
+           | DFComment(_,_,_) =>
         val opaque = new OpaqueText(IMPSImportTask.rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
-      }
+
       case DFAtomicSort(name,dfs,frm,sort,thy,usgs,witness,src,cmt) =>
-      {
+
         val ln: LocalName = LocalName(thy.thy.s.toLowerCase())
 
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
@@ -609,12 +605,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         }
 
         controller add nu_atomicSort
-
         doSubsort(IMPSAtomSort(name.s), sort, parent, src, uri)
-      }
 
       case DFConstant(name,definition,frm,sort,thy,argsort,usages,src,cmt) =>
-      {
+
         val ln: LocalName = LocalName(thy.thy.s.toLowerCase())
 
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
@@ -637,10 +631,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         }
 
         controller add nu_constant
-      }
 
       case DFRecursiveConstant(names,defs,maths,sorts,argthy,usgs,defname,src,cmt) =>
-      {
+
         val ln: LocalName = LocalName(argthy.thy.s.toLowerCase())
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
           throw new IMPSDependencyException("required theory " + ln + " for constant not found")
@@ -672,10 +665,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
           controller add nu_constant
         }
-      }
 
       case t@DFTheorem(name,defn,frm,modr,modl,theory,usages,trans,macete,homeTheory,proof,src,cmt) =>
-      {
+
         val delays : List[String] = List("LEFT-LEFT%TRANS-INV", "LEFT-RIGHT%TRANS-INV", "RIGHT-LEFT%TRANS-INV", "RIGHT-RIGHT%TRANS-INV",
         "LEFT-TRANSLATION-MACETE", "RIGHT-TRANSLATION-MACETE", "REVERSE-SET%CONJUGATE-ASSOCIATIVITY", "REVERSE-LEFT%TRANS-ASSOCIATIVITY",
           "REVERSE-RIGHT%TRANS-ASSOCIATIVITY", "LEFT-MUL-MACETE", "RIGHT-MUL-MACETE")
@@ -736,8 +728,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
         doSourceRefD(nu_theorem, src, uri)
         controller add nu_theorem
-      }
-      case DFSchematicMacete(name,dfs,_,_,thy,src,cmt) => {
+
+      case DFSchematicMacete(name,dfs,_,_,thy,src,cmt) =>
 
         val ln: LocalName = LocalName(thy.thy.s.toLowerCase)
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
@@ -749,20 +741,18 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(d.toString))
 
         /* Opaque Text doesn't have metadata, apparently, so we don't add the src */
-
         controller add opaque
-      }
+
       case DFCompoundMacete(name,mspec,src,cmt) =>
-      {
+
         // Macetes are added as opaque (for now?)
         val opaque = new OpaqueText(IMPSImportTask.rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
 
         /* Opaque Text doesn't have metadata, apparently, so we don't add the src */
         controller add opaque
-      }
 
       case DFQuasiConstructor(name,dfs,arglang,fixedthys,src,cmt) =>
-      {
+
         // Quasi-Constructors needed to be built in because they're not parseable
 
         assert(tState.languages.exists(p => p.name.s.toLowerCase == arglang.lang.s.toLowerCase)
@@ -784,12 +774,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         }
 
         val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(d.toString))
-
         controller add opaque
-      }
+
       case r@DFRenamer(_,_,_,_) => tState.renamers = r :: tState.renamers
       case DFTransportedSymbols(names,translation,renamer,src,cmt) =>
-      {
+
         if (tState.verbosity > 0) { println( " > Adding transported symbols along " + translation.t.s + ": " + names.nms.mkString(" ")) }
 
         val rename : String => String = {
@@ -829,9 +818,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
           if (tState.verbosity > 1) { println("   > adding " + n.toString) }
           controller add nu_trans_symbol
         }
-      }
+
       case DFTheoryEnsemble(name,baseTheory,fixed,reprenamer,src,cmt) =>
-      {
+
         val ln      : LocalName = LocalName(name.s)
         val thyName : String    = if (baseTheory.isDefined) {baseTheory.get.nm.s} else {name.s}
 
@@ -840,11 +829,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
           throw new IMPSDependencyException("required theory " + thyName + " for theory-ensemble " + name.s + " not found")
         }
         assert(parent.isDefined)
+        symbols.DeclaredStructure(parent.get.toTerm,ln,???,isImplicit = false)
 
-        symbols.DeclaredStructure(parent.get.toTerm,ln,???,false)
-      }
       case DFInductor(name,princ,thy,trans,bh,ish,du,src,cmt) =>
-      {
+
         val ln: LocalName = LocalName(thy.thy.s.toLowerCase)
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
           throw new IMPSDependencyException("required theory " + ln + " for inductor " + name.s + " not found")
@@ -853,41 +841,42 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(d.toString))
         if (tState.verbosity > 1) { println("   > adding inductor " + name.toString + " to theory " + thy.thy.s) }
         controller add opaque
-      }
+
       case DFAlgebraicProcessor(nm,_,lang,_,_,_,_,_) =>
-      {
+
         // Processors are theory-independent
         val opaque = new OpaqueText(IMPSImportTask.rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
         if (tState.verbosity > 1) {
           println(" > adding algebraic-processor " + nm.s)
         }
         controller add opaque
-      }
+
       case DFTheoryProcessors(nm,_,_,_,_,_) =>
-      {
+
         // Processors are theory-independent
         val opaque = new OpaqueText(IMPSImportTask.rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
         if (tState.verbosity > 1) {
           println(" > adding theory-processor " + nm.s)
         }
         controller add opaque
-      }
+
       case DFOrderProcessor(nm,_,_,_,_,_) =>
-      {
+
         // Processors are theory-independent
         val opaque = new OpaqueText(IMPSImportTask.rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
         if (tState.verbosity > 1) {
             println(" > adding order-processor " + nm.s)
         }
         controller add opaque
-      }
-      case s@DFScript(nm,_,_,_,_,_,_) => {
+
+      case s@DFScript(nm,_,_,_,_,_,_) =>
+
         val opaque = new OpaqueText(IMPSImportTask.rootdpath, OpaqueText.defaultFormat, StringFragment(d.toString))
         if (tState.verbosity > 1) {
           println(" > adding script: " + nm.s)
         }
         controller add opaque
-      }
+
       case DFPrintSyntax(_,_,_,_,_,_,_,_)
          | DFParseSyntax(_,_,_,_,_,_,_,_) => // Not used, because they are hardcoded.
       case Heralding(_,_,_)
@@ -929,7 +918,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       case IMPSAtomSort("unit%sort")
          | IMPSAtomSort("unitsort") => OMS(IMPSTheory.lutinsPath ? "unitsort")
       case IMPSBinaryFunSort(s1, s2) =>
-      {
+
         val tpA: Term = findKind(s1)
         val tpB: Term = findKind(s2)
 
@@ -937,14 +926,14 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         val sortB: Term = matchSort(s2, t)
 
         IMPSTheory.FunSort(tpA, tpB, sortA, sortB)
-      }
-      case IMPSSetSort(s) => {
+
+      case IMPSSetSort(s) =>
 
         val tp  : Term = findKind(s)
         val srt : Term = matchSort(s,t)
 
         IMPSTheory.Sets(tp,srt)
-      }
+
       case IMPSAtomSort(srt) =>
         val thy : DeclaredTheory = locateMathSymbolHome(srt,t)
         OMS(thy.path ? srt)
@@ -959,13 +948,12 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       case IMPSUnknownSort(_)
          | IMPSAtomSort(_)                 => srt // don't change atomic sorts
       case IMPSBinaryFunSort(sort1, sort2) => IMPSBinaryFunSort(curry(sort1),curry(sort2))
-      case IMPSNaryFunSort(sorts)          => {
+      case IMPSNaryFunSort(sorts)          =>
         if (sorts.length == 2) {
-          IMPSBinaryFunSort(curry(sorts(0)), curry(sorts(1)))
+          IMPSBinaryFunSort(curry(sorts.head), curry(sorts(1)))
         } else {
-          IMPSBinaryFunSort(curry(sorts(0)), curry(IMPSNaryFunSort(sorts.tail)))
+          IMPSBinaryFunSort(curry(sorts.head), curry(IMPSNaryFunSort(sorts.tail)))
         }
-      }
       case IMPSSetSort(st) => IMPSSetSort(curry(st))
     }
   }
@@ -1027,7 +1015,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       case IMPSMathSymbol("truth")         => OMS(IMPSTheory.lutinsPath ? "thetrue")
       case IMPSMathSymbol("falsehood")     => OMS(IMPSTheory.lutinsPath ? "thefalse")
       case IMPSMathSymbol(s)               =>
-      {
+
         if (s.startsWith("\"") && s.endsWith("\"")) { doMathExp(IMPSMathSymbol(s.tail.init),thy,cntxt) }
         else if (s.forall(_.isDigit) || (s.startsWith("-") && s.tail.nonEmpty && s.tail.forall(_.isDigit))) {
           IntLiterals.parse(s)
@@ -1041,7 +1029,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         }
         //  Rational Literals
         //  case "i/j" => OMLIT((BigInt(i),BigInt(j)),RatLiterals)
-      }
 
       case IMPSIndividual()       => OMS(IMPSTheory.lutinsPath ? "anIndividual")
       case IMPSTruth()            => OMS(IMPSTheory.lutinsPath ? "thetrue")
@@ -1052,30 +1039,28 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       case IMPSIff(p, q)          => IMPSTheory.Iff(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt))
       case IMPSIfForm(p,q,r)      => IMPSTheory.If_Form(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt), doMathExp(r,thy,cntxt))
       case IMPSEquals(p,q)        =>
-      {
+
         var a     : Term = null
         var alpha : Term = null
         var beta  : Term = null
 
         p match {
-          case IMPSVar(_) => {
+          case IMPSVar(_) =>
             if (cntxt.map(_._1).contains(p)) {
               val theSort = cntxt.find(k => k._1 == p).get._2
               alpha = matchSort(theSort,thy)
               a = findKind(theSort)
             }
-          }
           case _          => ()
         }
 
         q match {
-          case IMPSVar(_) => {
+          case IMPSVar(_) =>
             if (cntxt.map(_._1).contains(q)) {
               val theSort = cntxt.find(k => k._1 == q).get._2
               beta = matchSort(theSort,thy)
               if (a == null) { a = findKind(theSort) }
             }
-          }
           case _          => ()
         }
 
@@ -1084,7 +1069,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         if (a     == null) { a     = tState.doUnknown() }
 
         IMPSTheory.Equals(a,alpha,beta,doMathExp(p,thy,cntxt),doMathExp(q,thy,cntxt))
-      }
+
       case IMPSDisjunction(ls)    => IMPSTheory.Or(ls map (x => doMathExp(x,thy,cntxt)))
       case IMPSConjunction(ls)    => IMPSTheory.And(ls map (x => doMathExp(x,thy,cntxt)))
       case q@IMPSLambda(vs,_)     => doIMPSLambda(curryIMPSlambda(q), thy, cntxt ::: vs)
@@ -1150,7 +1135,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
           doMathExp(IMPSApply(inner,ts.tail),thy,cntxt)
         }
       }
-      case IMPSIota(v1,s1,p)      => {
+      case IMPSIota(v1,s1,p)      =>
         val s       = curry(s1)
         val the_exp = doMathExp(p,thy,cntxt ::: List((v1,s)))
         val the_srt = matchSort(s,thy)
@@ -1159,8 +1144,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         val target = info.kwarc.mmt.lf.Lambda(LocalName(v1.v), doSort(s,thy), the_exp)
 
         IMPSTheory.Iota(the_knd,the_srt,target)
-      }
-      case IMPSIotaP(v1,s1,p)     => {
+
+      case IMPSIotaP(v1,s1,p)     =>
         val s       = curry(s1)
         val the_exp = doMathExp(p,thy,cntxt ::: List((v1,s)))
         val the_srt = matchSort(s,thy)
@@ -1168,20 +1153,20 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         val target = info.kwarc.mmt.lf.Lambda(LocalName(v1.v), doSort(s,thy), the_exp)
 
         IMPSTheory.IotaP(the_srt,target)
-      }
+
       case IMPSIsDefined(r)       => IMPSTheory.IsDefined(tState.doUnknown(), tState.doUnknown(), doMathExp(r,thy,cntxt))
       case IMPSIsDefinedIn(r,s)   => IMPSTheory.IsDefinedIn(findKind(s), tState.doUnknown(), doMathExp(r,thy,cntxt), matchSort(s,thy))
       case IMPSUndefined(s)       => IMPSTheory.Undefined(findKind(s), matchSort(s,thy))
 
       case IMPSTotal(f,bs)         =>
-      {
+
         var alpha_s : IMPSSort = null
         var beta_s  : IMPSSort = null
 
         curry(bs) match
         {
-          case IMPSBinaryFunSort(s1,s2) => { alpha_s = s1 ; beta_s = s2}
-          case _ => ??? // Impossible
+          case IMPSBinaryFunSort(s1,s2) => alpha_s = s1 ; beta_s = s2
+          case _ => assert(false) // Impossible
         }
 
         assert(alpha_s != null && beta_s != null)
@@ -1193,23 +1178,22 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         val func  = doMathExp(f,thy,cntxt)
 
         IMPSTheory.Total(a,b,alpha,beta,func)
-      }
 
-      case IMPSNonVacuous(p) => {
+      case IMPSNonVacuous(p) =>
         if (cntxt.map(_._1).contains(p)) {
           val foo = cntxt.find(k => k._1 == p).get
           foo._2 match {
-            case IMPSBinaryFunSort(s1,s2) => {
+            case IMPSBinaryFunSort(s1,s2) =>
               val the_exp = doMathExp(p,thy,cntxt)
               val the_srt = matchSort(s1,thy)
               assert(s2 == IMPSAtomSort("bool") || s2 == IMPSAtomSort("prop"))
               IMPSTheory.Nonvacuous(findKind(s1),the_srt,the_exp)
-            }
+
             case _ => ???
           }
         } else { IMPSTheory.Nonvacuous(tState.doUnknown(),tState.doUnknown(),doMathExp(p,thy,cntxt)) }
-      }
-      case IMPSQuasiEquals(p,q) => {
+
+      case IMPSQuasiEquals(p,q) =>
 
         var a     : Term = null
         var alpha : Term = null
@@ -1235,7 +1219,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         if (alpha == null) { alpha = tState.doUnknown() }
 
         IMPSTheory.Quasiequals(a, alpha, beta, e1, e2)
-      }
 
       case qc : IMPSUserDefinedQuasiConstructor => doQuasiConstructor(qc,thy,cntxt)
 
@@ -1523,9 +1506,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
          | IMPSIsDefined(_)
          | IMPSIsDefinedIn(_,_)
          | IMPSIfForm(_,_,_) => Some(IMPSAtomSort("prop"))
-      case _ => {
-        if (context.contains(exp)) { Some(context.find(k => k._1 == exp).get._2) } else { None }
-      }
+      case _ => if (context.map(_._1).contains(exp)) { Some(context.find(k => k._1 == exp).get._2) } else { None }
     }
   }
 
