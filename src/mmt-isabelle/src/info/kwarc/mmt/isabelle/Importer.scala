@@ -582,23 +582,25 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
 
     object Consumer
     {
-      private val consumer_ok = isabelle.Synchronized(true)
+      private val consumer_bad_theories =
+        isabelle.Synchronized(List.empty[(isabelle.Document.Node.Name, isabelle.Document_Status.Node_Status)])
 
       private val consumer =
         isabelle.Consumer_Thread.fork(name = "mmt_import")(
           consume = (args: (isabelle.Document.Snapshot, isabelle.Document_Status.Node_Status)) =>
           {
             val (snapshot, node_status) = args
+            val entry = (snapshot.node_name, node_status)
             if (node_status.ok) {
               try { export(read_theory_export(snapshot)) }
               catch {
                 case exn: Throwable if !isabelle.Exn.is_interrupt(exn) =>
-                  consumer_ok.change(_ => false)
+                  consumer_bad_theories.change(entry :: _)
                   progress.echo_error_message(isabelle.Exn.message(exn))
               }
             }
             else {
-              consumer_ok.change(_ => false)
+              consumer_bad_theories.change(entry :: _)
               for ((tree, pos) <- snapshot.messages if isabelle.Protocol.is_error(tree)) {
                 val msg = isabelle.XML.content(isabelle.Pretty.formatted(List(tree)))
                 progress.echo_error_message("Error" + isabelle.Position.here(pos) + ":\n" + msg)
@@ -610,31 +612,24 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
       def apply(snapshot: isabelle.Document.Snapshot, node_status: isabelle.Document_Status.Node_Status): Unit =
         consumer.send((snapshot, node_status))
 
-      def shutdown(): Boolean =
+      def shutdown(): List[(isabelle.Document.Node.Name, isabelle.Document_Status.Node_Status)] =
       {
         consumer.shutdown()
-        consumer_ok.value
+        consumer_bad_theories.value.reverse
       }
     }
 
-    val use_theories_result =
-      session.use_theories(
-        session_deps.sessions_structure.build_topological_order.
-          flatMap(session_name => session_deps.session_bases(session_name).used_theories.map(_.theory)),
-        check_delay = Importer.Arguments.check_delay,
-        commit = Some(Consumer.apply _),
-        commit_clean_delay = arguments.commit_clean_delay,
-        watchdog_timeout = arguments.watchdog_timeout,
-        progress = progress)
+    session.use_theories(
+      session_deps.sessions_structure.build_topological_order.
+        flatMap(session_name => session_deps.session_bases(session_name).used_theories.map(_.theory)),
+      check_delay = Importer.Arguments.check_delay,
+      commit = Some(Consumer.apply _),
+      commit_clean_delay = arguments.commit_clean_delay,
+      watchdog_timeout = arguments.watchdog_timeout,
+      progress = progress)
 
-    val consumer_ok = Consumer.shutdown()
+    val bad_theories = Consumer.shutdown()
     val session_result = stop_session()
-
-    val bad_theories =
-      for {
-        (name, status) <- use_theories_result.nodes
-        if !(status.ok && status.consolidated)
-      } yield (name, status)
 
     for { (name, status) <- bad_theories } {
       progress.echo_error_message("Bad theory " + name +
@@ -645,8 +640,8 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
       isabelle.error("theory " +
         isabelle.Library.commas(bad_theories.map(p => p._1.theory).sorted) + " FAILED")
     }
-    else if (!(consumer_ok && session_result.ok)) {
-      isabelle.error("FAILED")
+    else if (!session_result.ok) {
+      isabelle.error("session FAILED")
     }
   }
 
