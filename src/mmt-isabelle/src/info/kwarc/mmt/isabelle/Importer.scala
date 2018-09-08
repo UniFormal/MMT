@@ -171,7 +171,7 @@ object Importer
     val source_file: isabelle.Path = isabelle.Path.explode("source/arguments").ext(extension)
 
     val default_output_dir: String = "isabelle_mmt"
-    val default_watchdog_timeout: Double = 600.0
+    val default_watchdog_timeout: isabelle.Time = isabelle.Time.seconds(600.0)
     val default_logic: String = isabelle.Thy_Header.PURE
 
     def command_line(args: List[String]): Arguments =
@@ -201,7 +201,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     -O DIR       output directory for MMT (default: """ + isabelle.quote(default_output_dir) + """)
     -R           operate on requirements of selected sessions
     -W SECONDS   watchdog timeout for PIDE processing (0 = unlimited, default: """ +
-        default_watchdog_timeout.toInt + """)
+        default_watchdog_timeout.seconds.toInt + """)
     -X NAME      exclude sessions from group NAME and all descendants
     -a           select all sessions
     -d DIR       include session directory
@@ -217,7 +217,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         "D:" -> (arg => { isabelle.Path.explode(arg); select_dirs = select_dirs ::: List(arg) }),
         "O:" -> (arg => { isabelle.Path.explode(arg); output_dir = arg }),
         "R" -> (_ => requirements = true),
-        "W:" -> (arg => watchdog_timeout = isabelle.Value.Double.parse(arg)),
+        "W:" -> (arg => watchdog_timeout = isabelle.Value.Seconds.parse(arg)),
         "X:" -> (arg => exclude_session_groups = exclude_session_groups ::: List(arg)),
         "a" -> (_ => all_sessions = true),
         "d:" -> (arg => { isabelle.Path.explode(arg); dirs = dirs ::: List(arg) }),
@@ -263,7 +263,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             output_dir <- isabelle.JSON.string_default(obj, "output_dir", default_output_dir)
             requirements <- isabelle.JSON.bool_default(obj, "requirements")
             watchdog_timeout <-
-              isabelle.JSON.double_default(obj, "watchdog_timeout", default_watchdog_timeout)
+              isabelle.JSON.seconds_default(obj, "watchdog_timeout", default_watchdog_timeout)
             exclude_session_groups <- isabelle.JSON.strings_default(obj, "exclude_session_groups")
             all_sessions <- isabelle.JSON.bool_default(obj, "all_sessions")
             dirs <- isabelle.JSON.strings_default(obj, "dirs")
@@ -302,7 +302,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     select_dirs: List[String] = Nil,
     output_dir: String = Arguments.default_output_dir,
     requirements: Boolean = false,
-    watchdog_timeout: Double = Arguments.default_watchdog_timeout,
+    watchdog_timeout: isabelle.Time = Arguments.default_watchdog_timeout,
     exclude_session_groups: List[String] = Nil,
     all_sessions: Boolean = false,
     dirs: List[String] = Nil,
@@ -554,7 +554,7 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
     session.use_theories(
       session_deps.sessions_structure.build_topological_order.
         flatMap(session_name => session_deps.session_bases(session_name).used_theories.map(_.theory)),
-      watchdog_timeout = isabelle.Time.seconds(arguments.watchdog_timeout),
+      watchdog_timeout = arguments.watchdog_timeout,
       progress = progress)
   }
 
