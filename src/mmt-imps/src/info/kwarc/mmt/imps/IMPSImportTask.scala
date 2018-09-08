@@ -444,16 +444,26 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       if (sortPairs.isDefined) {
         for (sp <- sortPairs.get.defs) {
           var tar : String = ""
-          val target_sort_term : Term = sp.srt match {
-            case scala.util.Left(scala.util.Left(n@srt_name))          => tar = n.toString ; matchSort(IMPSAtomSort(srt_name.s), target_thy)
+
+          var target : Either[IMPSSort,IMPSMathExp] = sp.srt match
+          {
+            case scala.util.Left(scala.util.Left(n@srt_name))          => tar = n.toString ; scala.util.Left(IMPSAtomSort(srt_name.s))
             case scala.util.Left(scala.util.Right(n@srt_dfstr))        => tar = n.toString ; ???
             case scala.util.Right(scala.util.Left(n@pred_srt_dfstr))   => tar = n.toString ; ???
-            case scala.util.Right(scala.util.Right(n@indic_srt_dfstr)) => tar = n.toString
-                                                                          assert(sp.mth.isDefined)
-                                                                          doMathExp(sp.mth.get,target_thy,Nil)
+            case scala.util.Right(scala.util.Right(n@indic_srt_dfstr)) => tar = n.toString ; assert(sp.mth.isDefined) ; scala.util.Right(sp.mth.get)
           }
 
-          val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(source_thy_t.toMPath) / doName(sp.name.s),Nil,None,Some(target_sort_term),None)
+          val target_term : Term = target match {
+            case scala.util.Left(is)  => matchSort(is,target_thy)
+            case scala.util.Right(im) => doMathExp(im,target_thy,Nil)
+          }
+
+          val target_tp : Option[Term] = target match {
+            case scala.util.Left(is) => Some(IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType)))
+            case scala.util.Right(_) => None
+          }
+
+          val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(source_thy_t.toMPath) / doName(sp.name.s),Nil,target_tp,Some(target_term),None)
           if (true) { println(" >  adding sort-mapping: " + sp.name.s + " → " + tar + " // " + ComplexStep(source_thy_t.toMPath) / doName(sp.name.s)) }
 
           translated_constant_names = doName(sp.name.toString) :: translated_constant_names
@@ -809,6 +819,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
           val nsource = locateMathSymbolHome(n.s,source.get)
           val urimage = nsource.getConstants.find(c => c.name.toString.toLowerCase == n.s.toLowerCase).get
           println("   > urimage defined: " + urimage)
+
+          println("type before: " + urimage.tp)
           val tp : Option[Term] = if (urimage.tp.isDefined) { Some(controller.library.ApplyMorphs(urimage.tp.get,trans_decl.get.toTerm)) } else { None } // api.symbols.ApplyMorphism(trans_decl.get.toTerm).apply(Context(),urimage.tp.get)
           println("   > urimage type:    " + tp)
           val image = controller.library.ApplyMorphs(urimage.toTerm,trans_decl.get.toTerm) //api.symbols.ApplyMorphism(trans_decl.get.toTerm).apply(con,urimage.toTerm)
@@ -1077,7 +1089,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       case q@IMPSForSome(vs,_)    => doIMPSForsome(curryIMPSforsome(q),thy, cntxt ::: vs)
       case IMPSImplication(p,q)   => IMPSTheory.Implies(doMathExp(p,thy,cntxt), doMathExp(q,thy,cntxt))
       case IMPSApply(f,ts)        =>
-      {
+
         assert(ts.nonEmpty)
         // Wheee, manual currying!
         if (ts.length == 1)
@@ -1097,19 +1109,15 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
             cntsrt match
             {
               case IMPSBinaryFunSort(s1,s2) =>
-              {
                 alpha = matchSort(s1,thy)
                 beta  = matchSort(s2,thy)
                 a     = findKind(s1)
                 b     = findKind(s2)
-              }
               case IMPSSetSort(s1) =>
-              {
                 alpha = matchSort(s1,thy)
                 beta  = matchSort(IMPSAtomSort("unitsort"),thy)
                 a     = findKind(s1)
                 b     = IMPSTheory.lutinsIndType()
-              }
             }
           }
 
@@ -1134,7 +1142,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
           val inner = IMPSApply(f,List(ts.head))
           doMathExp(IMPSApply(inner,ts.tail),thy,cntxt)
         }
-      }
+
       case IMPSIota(v1,s1,p)      =>
         val s       = curry(s1)
         val the_exp = doMathExp(p,thy,cntxt ::: List((v1,s)))
