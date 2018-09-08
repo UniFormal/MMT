@@ -170,13 +170,17 @@ object Importer
     val extension: String = "isabelle"
     val source_file: isabelle.Path = isabelle.Path.explode("source/arguments").ext(extension)
 
+    val check_delay: isabelle.Time = isabelle.Time.seconds(10.0)
+
     val default_output_dir: String = "isabelle_mmt"
-    val default_watchdog_timeout: isabelle.Time = isabelle.Dump.default_watchdog_timeout
+    val default_commit_clean_delay: isabelle.Time = isabelle.Thy_Resources.default_commit_clean_delay
+    val default_watchdog_timeout: isabelle.Time = isabelle.Thy_Resources.default_watchdog_timeout
     val default_logic: String = isabelle.Thy_Header.PURE
 
     def command_line(args: List[String]): Arguments =
     {
       var base_sessions: List[String] = Nil
+      var commit_clean_delay = default_commit_clean_delay
       var select_dirs: List[String] = Nil
       var output_dir = default_output_dir
       var requirements = false
@@ -197,11 +201,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
   Options are:
     -B NAME      include session NAME and all descendants
+    -C SECONDS   delay for cleaning of already dumped theories (0 = disabled, default: """ +
+      isabelle.Value.Seconds(default_commit_clean_delay) + """)
     -D DIR       include session directory and select its sessions
     -O DIR       output directory for MMT (default: """ + isabelle.quote(default_output_dir) + """)
     -R           operate on requirements of selected sessions
-    -W SECONDS   watchdog timeout for PIDE processing (0 = unlimited, default: """ +
-        default_watchdog_timeout.seconds.toInt + """)
+    -W SECONDS   watchdog timeout for PIDE processing (0 = disabled, default: """ +
+      isabelle.Value.Seconds(default_watchdog_timeout) + """)
     -X NAME      exclude sessions from group NAME and all descendants
     -a           select all sessions
     -d DIR       include session directory
@@ -214,6 +220,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
   Import specified sessions into MMT output directory.
 """,
         "B:" -> (arg => base_sessions = base_sessions ::: List(arg)),
+        "C:" -> (arg => commit_clean_delay = isabelle.Value.Seconds.parse(arg)),
         "D:" -> (arg => { isabelle.Path.explode(arg); select_dirs = select_dirs ::: List(arg) }),
         "O:" -> (arg => { isabelle.Path.explode(arg); output_dir = arg }),
         "R" -> (_ => requirements = true),
@@ -230,6 +237,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       val sessions = getopts(args)
 
       Arguments(base_sessions = base_sessions,
+        commit_clean_delay = commit_clean_delay,
         select_dirs = select_dirs,
         output_dir = output_dir,
         requirements = requirements,
@@ -259,6 +267,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         case isabelle.JSON.Object(obj) if obj.keySet.subsetOf(domain) =>
           (for {
             base_sessions <- isabelle.JSON.strings_default(obj, "base_sessions")
+            commit_clean_delay <-
+              isabelle.JSON.seconds_default(obj,"commit_clean_delay", default_commit_clean_delay)
             select_dirs <- isabelle.JSON.strings_default(obj, "select_dirs")
             output_dir <- isabelle.JSON.string_default(obj, "output_dir", default_output_dir)
             requirements <- isabelle.JSON.bool_default(obj, "requirements")
@@ -275,6 +285,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             sessions <- isabelle.JSON.strings_default(obj, "sessions")
           } yield {
             Arguments(base_sessions = base_sessions,
+              commit_clean_delay = commit_clean_delay,
               select_dirs = select_dirs,
               output_dir = output_dir,
               requirements = requirements,
@@ -299,6 +310,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
   sealed case class Arguments(
     base_sessions: List[String] = Nil,
+    commit_clean_delay: isabelle.Time = Arguments.default_commit_clean_delay,
     select_dirs: List[String] = Nil,
     output_dir: String = Arguments.default_output_dir,
     requirements: Boolean = false,
@@ -325,10 +337,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     def json: isabelle.JSON.T =
       Map("base_sessions" -> base_sessions,
+        "commit_clean_delay" -> commit_clean_delay.seconds,
         "select_dirs" -> select_dirs,
         "output_dir" -> output_dir,
         "requirements" -> requirements,
-        "watchdog_timeout" -> watchdog_timeout,
+        "watchdog_timeout" -> watchdog_timeout.seconds,
         "exclude_session_groups" -> exclude_session_groups,
         "all_sessions" -> all_sessions,
         "dirs" -> dirs,
@@ -531,7 +544,7 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
   def import_name(s: String): isabelle.Document.Node.Name =
     resources.import_name(isabelle.Sessions.DRAFT, "", s)
 
-  def start_session(): isabelle.Thy_Resources.Theories_Result =
+  def start_session(): isabelle.Sessions.Deps =
   {
     val dirs = arguments.dirs.map(isabelle.Path.explode)
     val select_dirs = arguments.select_dirs.map(isabelle.Path.explode)
@@ -551,53 +564,89 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
         include_sessions = session_deps.sessions_structure.imports_topological_order,
         progress = progress, log = logger))
 
-    session.use_theories(
-      session_deps.sessions_structure.build_topological_order.
-        flatMap(session_name => session_deps.session_bases(session_name).used_theories.map(_.theory)),
-      watchdog_timeout = arguments.watchdog_timeout,
-      progress = progress)
+    session_deps
   }
 
-  def stop_session()
+  def stop_session(): isabelle.Process_Result =
   {
-    session.stop()
+    val res = session.stop()
     _session = None
+    res
   }
 
   def export_session(export: Importer.Theory_Export => Unit)
   {
-    val use_theories_result = start_session()
+    val session_deps = start_session()
 
     export(pure_theory_export)
 
-    val (nodes_ok, nodes_bad) =
-      use_theories_result.nodes.partition({ case (_, st) => st.ok && st.consolidated })
+    object Consumer
+    {
+      private val consumer_ok = isabelle.Synchronized(true)
 
-    for ((name, st) <- nodes_bad) {
+      private val consumer =
+        isabelle.Consumer_Thread.fork(name = "mmt_import")(
+          consume = (args: (isabelle.Document.Snapshot, isabelle.Document_Status.Node_Status)) =>
+          {
+            val (snapshot, node_status) = args
+            if (node_status.ok) {
+              try { export(read_theory_export(snapshot)) }
+              catch {
+                case exn: Throwable if !isabelle.Exn.is_interrupt(exn) =>
+                  consumer_ok.change(_ => false)
+                  progress.echo_error_message(isabelle.Exn.message(exn))
+              }
+            }
+            else {
+              consumer_ok.change(_ => false)
+              for ((tree, pos) <- snapshot.messages if isabelle.Protocol.is_error(tree)) {
+                val msg = isabelle.XML.content(isabelle.Pretty.formatted(List(tree)))
+                progress.echo_error_message("Error" + isabelle.Position.here(pos) + ":\n" + msg)
+              }
+            }
+            true
+          })
+
+      def apply(snapshot: isabelle.Document.Snapshot, node_status: isabelle.Document_Status.Node_Status): Unit =
+        consumer.send((snapshot, node_status))
+
+      def shutdown(): Boolean =
+      {
+        consumer.shutdown()
+        consumer_ok.value
+      }
+    }
+
+    val use_theories_result =
+      session.use_theories(
+        session_deps.sessions_structure.build_topological_order.
+          flatMap(session_name => session_deps.session_bases(session_name).used_theories.map(_.theory)),
+        check_delay = Importer.Arguments.check_delay,
+        commit = Some(Consumer.apply _),
+        commit_clean_delay = arguments.commit_clean_delay,
+        watchdog_timeout = arguments.watchdog_timeout,
+        progress = progress)
+
+    val consumer_ok = Consumer.shutdown()
+    val session_result = stop_session()
+
+    val bad_theories =
+      for {
+        (name, status) <- use_theories_result.nodes
+        if !(status.ok && status.consolidated)
+      } yield (name, status)
+
+    for { (name, status) <- bad_theories } {
       progress.echo_error_message("Bad theory " + name +
-        (if (st.consolidated) "" else ": " + st.percentage + "% finished"))
+        (if (status.consolidated) "" else ": " + status.percentage + "% finished"))
     }
 
-    for {
-      (name, _) <- nodes_bad
-      snapshot = use_theories_result.snapshot(name)
-      (msg, pos) <- snapshot.messages if isabelle.Protocol.is_error(msg)
-    } {
-      progress.echo_error_message(
-        "Error" + isabelle.Position.here(pos) + ":\n" +
-        isabelle.XML.content(isabelle.Pretty.formatted(List(msg))))
-    }
-
-    for { (name, _) <- nodes_ok } {
-      val thy_export = read_theory_export(use_theories_result.snapshot(name))
-      export(thy_export)
-    }
-
-    stop_session()
-
-    if (nodes_bad.nonEmpty) {
+    if (bad_theories.nonEmpty) {
       isabelle.error("theory " +
-        isabelle.Library.commas(nodes_bad.map(p => p._1.theory).sorted) + " FAILED")
+        isabelle.Library.commas(bad_theories.map(p => p._1.theory).sorted) + " FAILED")
+    }
+    else if (!(consumer_ok && session_result.ok)) {
+      isabelle.error("FAILED")
     }
   }
 
