@@ -552,10 +552,10 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
       isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs).
         selection_deps(arguments.selection, progress = progress)
 
-    val build_results =
-      isabelle.Build.build(options, progress = progress,
-        dirs = dirs ::: select_dirs, sessions = List(arguments.logic))
-    if (!build_results.ok) isabelle.error("Failed to build Isabelle/" + arguments.logic)
+    val build_rc =
+      isabelle.Build.build_logic(options, arguments.logic, build_heap = true, progress = progress,
+        dirs = dirs ::: select_dirs)
+    if (build_rc != 0) isabelle.error("Failed to build Isabelle/" + arguments.logic)
 
     _session =
       Some(isabelle.Thy_Resources.start_session(options, arguments.logic,
