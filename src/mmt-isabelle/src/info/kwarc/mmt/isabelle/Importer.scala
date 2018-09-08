@@ -171,7 +171,7 @@ object Importer
     val source_file: isabelle.Path = isabelle.Path.explode("source/arguments").ext(extension)
 
     val default_output_dir: String = "isabelle_mmt"
-    val default_watchdog_timeout: isabelle.Time = isabelle.Time.seconds(600.0)
+    val default_watchdog_timeout: isabelle.Time = isabelle.Dump.default_watchdog_timeout
     val default_logic: String = isabelle.Thy_Header.PURE
 
     def command_line(args: List[String]): Arguments =
