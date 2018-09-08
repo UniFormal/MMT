@@ -513,11 +513,10 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
   val progress: isabelle.Progress =
     new isabelle.Progress {
       override def echo(msg: String): Unit = log(msg)
+      override def theory(session: String, theory: String): Unit =
+        echo(isabelle.Progress.theory_message(session, theory))
       override def theory_percentage(session: String, theory: String, percentage: Int): Unit =
-      {
-        if (arguments.verbose)
-          echo(isabelle.Progress.theory_message(session, theory) + ": " + percentage + "%")
-      }
+        echo(isabelle.Progress.theory_percentage_message(session, theory, percentage))
     }
 
 
