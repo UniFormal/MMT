@@ -578,29 +578,35 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
 
     object Consumer
     {
-      private val consumer_bad_theories =
-        isabelle.Synchronized(List.empty[(isabelle.Document.Node.Name, isabelle.Document_Status.Node_Status)])
+      sealed case class Bad_Theory(
+        name: isabelle.Document.Node.Name, status: isabelle.Document_Status.Node_Status, errors: List[String])
+
+      private val consumer_bad_theories = isabelle.Synchronized(List.empty[Bad_Theory])
 
       private val consumer =
         isabelle.Consumer_Thread.fork(name = "mmt_import")(
           consume = (args: (isabelle.Document.Snapshot, isabelle.Document_Status.Node_Status)) =>
           {
-            val (snapshot, node_status) = args
-            val entry = (snapshot.node_name, node_status)
-            if (node_status.ok) {
+            val (snapshot, status) = args
+            val name = snapshot.node_name
+            if (status.ok) {
               try { export(read_theory_export(snapshot)) }
               catch {
                 case exn: Throwable if !isabelle.Exn.is_interrupt(exn) =>
-                  consumer_bad_theories.change(entry :: _)
-                  progress.echo_error_message(isabelle.Exn.message(exn))
+                  val msg = isabelle.Exn.message(exn)
+                  progress.echo_error_message(msg)
+                  consumer_bad_theories.change(Bad_Theory(name, status, List(msg)) :: _)
               }
             }
             else {
-              consumer_bad_theories.change(entry :: _)
-              for ((tree, pos) <- snapshot.messages if isabelle.Protocol.is_error(tree)) {
-                val msg = isabelle.XML.content(isabelle.Pretty.formatted(List(tree)))
-                progress.echo_error_message("Error" + isabelle.Position.here(pos) + ":\n" + msg)
-              }
+              val msgs =
+                for ((tree, pos) <- snapshot.messages if isabelle.Protocol.is_error(tree))
+                yield {
+                  "Error" + isabelle.Position.here(pos) + ":\n" +
+                    isabelle.XML.content(isabelle.Pretty.formatted(List(tree)))
+                }
+              msgs.foreach(progress.echo_error_message(_))
+              consumer_bad_theories.change(Bad_Theory(name, status, msgs) :: _)
             }
             true
           })
@@ -608,7 +614,7 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
       def apply(snapshot: isabelle.Document.Snapshot, node_status: isabelle.Document_Status.Node_Status): Unit =
         consumer.send((snapshot, node_status))
 
-      def shutdown(): List[(isabelle.Document.Node.Name, isabelle.Document_Status.Node_Status)] =
+      def shutdown(): List[Bad_Theory] =
       {
         consumer.shutdown()
         consumer_bad_theories.value.reverse
@@ -627,14 +633,17 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
     val bad_theories = Consumer.shutdown()
     val session_result = stop_session()
 
-    for { (name, status) <- bad_theories } {
-      progress.echo_error_message("Bad theory " + name +
-        (if (status.consolidated) "" else ": " + status.percentage + "% finished"))
-    }
+    val bad_msgs =
+      for { bad <- bad_theories }
+      yield {
+        "Bad theory " + bad.name +
+        (if (bad.status.consolidated) "" else ": " + bad.status.percentage + "% finished") +
+        (if (bad.errors.isEmpty) "" else bad.errors.mkString("\n", "\n", ""))
+      }
+    bad_msgs.foreach(progress.echo_error_message(_))
 
-    if (bad_theories.nonEmpty) {
-      isabelle.error("theory " +
-        isabelle.Library.commas(bad_theories.map(p => p._1.theory).sorted) + " FAILED")
+    if (bad_msgs.nonEmpty) {
+      isabelle.error(isabelle.cat_lines(bad_msgs.map(isabelle.Output.clean_yxml(_))))
     }
     else if (!session_result.ok) {
       isabelle.error("session FAILED")
