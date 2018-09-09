@@ -378,11 +378,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       controller.setHome(File(output_dir.file))
 
       controller.handleLine("extension " + classOf[Importer].getName)
-      if (arguments.verbose) {
-        controller.handleLine("log console")
-        controller.handleLine("log+ archive")
-        controller.handleLine("log+ Isabelle")
-      }
+      controller.handleLine("log console")
+      controller.handleLine("log+ archive")
+      controller.handleLine("log+ Isabelle")
       controller.handleLine("mathpath archive .")
       controller.handleLine("build Isabelle Isabelle")
     }
@@ -513,7 +511,8 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
   val progress: isabelle.Progress =
     new isabelle.Progress {
       override def echo(msg: String): Unit = log(msg)
-      override def theory(theory: isabelle.Progress.Theory): Unit = echo(theory.message)
+      override def theory(theory: isabelle.Progress.Theory): Unit =
+        if (arguments.verbose) echo(theory.message)
     }
 
 
