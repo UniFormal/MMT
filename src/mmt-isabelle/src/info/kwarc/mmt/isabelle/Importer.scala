@@ -767,7 +767,7 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
                   case None => isabelle.error(msg)
                   case Some(st) =>
                     isabelle.error(msg + " -- it refers to command " +
-                      isabelle.quote(st.command.source) + " in " +
+                      isabelle.Symbol.cartouche_decoded(st.command.source) + " in " +
                       isabelle.quote(st.command.node_name.node))
                 }
             }
