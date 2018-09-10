@@ -128,6 +128,11 @@ trait SolverAlgorithms {self: Solver =>
                     history += ("applying inference rule " + rule.toString)
                     try {
                       tp = rule(this)(tmS, covered)
+                      tp match {
+                        case None =>
+                          activerules = dropJust(activerules, rule)
+                          tryAgain = true
+                      }
                     } catch {
                        case t : MaytriggerBacktrack#Backtrack =>
                           history += t.getMessage
