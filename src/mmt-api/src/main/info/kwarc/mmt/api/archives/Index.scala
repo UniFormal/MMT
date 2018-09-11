@@ -78,6 +78,11 @@ trait GeneralImporter extends Extension {
 abstract class NonTraversingImporter extends GeneralImporter {
   val key: String
   
+  /**
+   * The main method to be called on every document.
+   * doc.path must be of the form a.narrationBase/sourcePath  
+   * The produced narration file will be in the location a.root/narration/sourcePath.
+   */
   def importDocument(a: Archive, doc: Document) {
     indexDocument(a, doc)
   }
