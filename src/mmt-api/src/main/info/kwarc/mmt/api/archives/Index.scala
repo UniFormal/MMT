@@ -8,21 +8,16 @@ import modules._
 import parser._
 import utils._
 
-/** an extension for importing an archive in some source syntax
- *  
- * Importers that handle each source file individually should subclass [[Importer]] instead, which is also a build target.
- * 
- * This class should only be mixed in directly by extensions that control the entire import on their own and import all documents at once.
- * Such implementations must call indexDocument on every document they generate.   
- */
+/** common functionality of importers */
 trait GeneralImporter extends Extension {
+  
   /** index a document
     * @param a the archive   
     * @param doc the document to index
     * doc.path must be of the form a.narrationBase / sourcePath  
     * The produced narration file will be in the location given by sourcePath.
     */
-  protected def indexDocument(a: Archive, doc: Document) {
+  private[archives] def indexDocument(a: Archive, doc: Document) {
     // write narration file
     val docPath = doc.path.dropPrefix(DPath(a.narrationBase)) match {
       case Some(suffix) =>
@@ -70,6 +65,35 @@ trait GeneralImporter extends Extension {
       r => relFileHandle.write(r.toPath + "\n")
     }
     relFileHandle.close
+  }
+}
+
+/**
+ * An importer that controls the entire import on its own and imports all documents at once.
+ * It may import multiple archives at once.
+ * Implementations must call importDocument on every document they generate.   
+ *
+ * Importers that handle each source file individually should subclass [[Importer]] instead, which is also a build target.
+ */
+abstract class NonTraversingImporter extends GeneralImporter {
+  val key: String
+  
+  def importDocument(a: Archive, doc: Document) {
+    indexDocument(a, doc)
+  }
+
+  def importDocument(a: Archive, dpath: DPath) {
+    val doc = controller.getDocument(dpath)
+    importDocument(a, doc)
+  }
+  
+  /** like index, but additionally allows for error reporting */
+  def importDocumentWithErrorHandler(a: Archive, dpath: DPath)(body: ErrorHandler => Unit) {
+    val errorFileName = a / errors / key
+    val eh = new ErrorWriter(errorFileName, Some(report))
+    body(eh)
+    eh.close
+    importDocument(a, dpath)
   }
 }
 

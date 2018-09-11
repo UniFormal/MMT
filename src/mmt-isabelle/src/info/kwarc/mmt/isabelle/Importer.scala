@@ -394,10 +394,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
   }
 }
 
-class Importer(archives: List[Archive], arguments: Importer.Arguments) extends archives.GeneralImporter
+class Importer(archives: List[Archive], arguments: Importer.Arguments) extends archives.NonTraversingImporter
 {
   importer =>
 
+  val key = "isabelle-omdoc"
+    
   def importAll =
   {
     try {
@@ -422,7 +424,8 @@ class Importer(archives: List[Archive], arguments: Importer.Arguments) extends a
 
         // document
         val archive: Archive = ??? // the archive in which this document should be placed: Distribution or AFP
-        val doc = new Document(DPath(archive.narrationBase / thy_qualifier / thy_base_name), root = true)
+        val dpath = DPath(archive.narrationBase / thy_qualifier / thy_base_name)
+        val doc = new Document(dpath, root = true)
         controller.add(doc)
 
         val thy = Importer.declared_theory(thy_name)
@@ -494,7 +497,8 @@ class Importer(archives: List[Archive], arguments: Importer.Arguments) extends a
         }
 
         Isabelle.end_theory(thy_export, items)
-        indexDocument(archive, doc)
+        // alternatively, use importDocumentWithErrorHandler to log errors
+        importDocument(archive, doc)
       })
     }
     catch { case isabelle.ERROR(msg) => throw new Importer.Isabelle_Error(msg) }
