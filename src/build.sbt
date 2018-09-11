@@ -339,6 +339,7 @@ lazy val metamath = (project in file("mmt-metamath")).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
 
 // plugin for reading isabelle. Author: Makarius Wenzel
+// This only works if an Isabelle environment is present. If not, we use an empty dummy project.
 lazy val isabelle_root =
   System.getenv().getOrDefault("ISABELLE_ROOT", System.getProperty("isabelle.root", ""))
 lazy val isabelle_jars =

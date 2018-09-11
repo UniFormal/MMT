@@ -13,7 +13,10 @@ import objects._
 import opaque._
 import utils._
 
-
+/**
+ * An application that starts the Isabelle [[Importer]].
+ * This is called by the shell-script mmt_import, via which it is available as a tool from within Isabelle.
+ */
 object Importer
 {
   /* errors */

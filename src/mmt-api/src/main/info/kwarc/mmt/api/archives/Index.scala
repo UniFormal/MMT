@@ -90,7 +90,7 @@ abstract class Importer extends TraversingBuildTarget {imp =>
     val node = doc.toNode
     xml.writeFile(node, narrFile)
     // write relational file
-    writeToRel(doc, a / relational / inPath)
+    writeToRel(doc, a / relational / docPath)
     doc.getModulesResolved(controller.globalLookup) foreach { mod => indexModule(a, mod) }
   }
 

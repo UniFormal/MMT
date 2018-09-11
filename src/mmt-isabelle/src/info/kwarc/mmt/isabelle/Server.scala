@@ -4,6 +4,10 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.utils.{File,MMTSystem}
 import info.kwarc.mmt.api.web.Util
 
+/**
+ * A simple application that starts an MMT server and serves a given directory.
+ * This is called by the shell-script mmt_server, via which it is available as a tool from within Isabelle.
+ */
 object Server
 {
   val default_output_dir = isabelle.Path.explode(Importer.Arguments.default_output_dir)

@@ -903,6 +903,16 @@ object Solver {
       tpOpt // map {tp => solver.simplify(tp)}
   }
 
+  /** checks a term against a type, returns the solver if not successful */
+  def checkType(controller: Controller, context: Context, tm: Term, tp: Term): Option[Solver] = {
+      val j = Typing(Stack(Context.empty), tm, tp, None)
+      val cu = CheckingUnit(None, context, Context.empty, j)
+      val rules = RuleSet.collectRules(controller, context)
+      val solver = new Solver(controller, cu, rules)
+      solver.applyMain
+      if (solver.checkSucceeded) None else Some(solver)
+  }
+
   /** create an unknown whose solution may contain certain variables */
   def makeUnknown(name: LocalName, args: List[LocalName]) = OMAorAny(OMV(name), args.map(OMV(_)))
   
