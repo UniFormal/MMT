@@ -46,6 +46,9 @@ case class File(toJava: java.io.File) {
     if (par.isEmpty) this else File(par.get)
   }
 
+  /** tests if this exists, possibly in compressed form */
+  def existsCompressed = toJava.exists || Compress.name(this).exists
+  
   def isRoot = up == this
 
   /** file name */
@@ -172,10 +175,17 @@ object FileURI {
   }
 }
 
+/** wrappers for streams that allow toggling compressions */
+object Compress {
+  import org.tukaani.xz._
+  def name(f: File) = f.addExtension("xz")
+  def out(s: OutputStream, c: Boolean) = if (c) new XZOutputStream(s, new LZMA2Options()) else new BufferedOutputStream(s)
+  def in(s: InputStream, c: Boolean) = if (c) new XZInputStream(s) else s
+}
+
 /** MMT's default way to write to files; uses buffering, UTF-8, and \n */
-class StandardPrintWriter(f: File) extends
-OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(f.toJava)),
-  java.nio.charset.Charset.forName("UTF-8")) {
+class StandardPrintWriter(f: File, compress: Boolean) extends
+      OutputStreamWriter(Compress.out(new FileOutputStream(f.toJava), compress), java.nio.charset.Charset.forName("UTF-8")) {
   def println(s: String) {
     write(s + "\n")
   }
@@ -185,10 +195,12 @@ OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(f.toJava)),
 object File {
   /** constructs a File from a string, using the java.io.File parser */
   def apply(s: String): File = File(new java.io.File(s))
-
-  def Writer(f: File): StandardPrintWriter = {
+  
+  /** @param compress if true, the file is compressed while writing */
+  def Writer(f: File, compress: Boolean = false): StandardPrintWriter = {
     f.up.toJava.mkdirs
-    new StandardPrintWriter(f)
+    val fC = if (compress) Compress.name(f) else f
+    new StandardPrintWriter(fC, compress)
   }
 
   /**
@@ -263,9 +275,17 @@ object File {
     s.result
   }
 
-  /** convenience method to obtain a typical (buffered, UTF-8) reader for a file */
-  def Reader(f: File): BufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(f.toJava),
-    java.nio.charset.Charset.forName("UTF-8")))
+  /** convenience method to obtain a typical (buffered, UTF-8) reader for a file
+   *  
+   *  If f does not exist, Compress.name(f) is tried and automatically decompressed.
+   */
+  def Reader(f: File): BufferedReader = {
+    val fC = Compress.name(f)
+    val compress = !f.exists && fC.exists
+    val fileName = if (compress) fC else f
+    val in = Compress.in(new FileInputStream(f.toJava), compress)
+    new BufferedReader(new InputStreamReader(in, java.nio.charset.Charset.forName("UTF-8")))
+  }
 
   /** convenience method to read a file line by line
     * @param f the file

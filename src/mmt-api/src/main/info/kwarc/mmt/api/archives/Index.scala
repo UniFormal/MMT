@@ -49,7 +49,7 @@ trait GeneralImporter extends Extension {
   private def writeToContent(a: Archive, mod: Module) {
     val contFile = a.MMTPathToContentPath(mod.path)
     log("[  -> content   ]     " + contFile.getPath)
-    val w = new presentation.FileWriter(contFile)
+    val w = new presentation.FileWriter(contFile, compress = true)
     w("""<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">""")
     mod.toNode(w)
     w("</omdoc>")
@@ -156,7 +156,8 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
       //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly
       doc.getModules(controller.globalLookup) foreach {mp =>
         val cPath = Archive.MMTPathToContentPath(mp)
-        delete(a / content / cPath)
+        val cFile = Compress.name(a / content / cPath)
+        delete(cFile)
         delete((a / relational / cPath).setExtension("rel"))
       }
     } catch {
