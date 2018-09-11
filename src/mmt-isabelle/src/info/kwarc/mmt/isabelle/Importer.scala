@@ -371,38 +371,36 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     isabelle.Command_Line.tool0 {
       val arguments = Arguments.command_line(args.toList)
       val output_dir = isabelle.Path.explode(arguments.output_dir)
-      arguments.write_json(output_dir + Arguments.source_file)
 
       val meta_inf = output_dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
       isabelle.Isabelle_System.mkdirs(meta_inf.dir)
       isabelle.File.write(meta_inf, "id: Isabelle\ntitle: Isabelle\n")
 
       val controller = new Controller
-      controller.setHome(File(output_dir.file))
+      controller.setHome(output_dir.file)
+      
+      val archives = controller.backend.openArchive(output_dir.file)
+      
+      val importer = new Importer(archives, arguments)
+      controller.extman.addExtension(importer, Nil)
 
-      controller.handleLine("extension " + classOf[Importer].getName)
       controller.handleLine("log console")
       controller.handleLine("log+ archive")
       controller.handleLine("log+ Isabelle")
-      controller.handleLine("mathpath archive .")
-      controller.handleLine("build Isabelle Isabelle")
+     
+      importer.importAll
+      
     }
   }
 }
 
-class Importer extends archives.Importer
+class Importer(archives: List[Archive], arguments: Importer.Arguments) extends archives.GeneralImporter
 {
   importer =>
 
-  val key = "Isabelle"
-  def inExts = List(Importer.Arguments.extension)
-
-  def importDocument(bt: BuildTask, index: Document => Unit): BuildResult =
+  def importAll =
   {
     try {
-      val arguments =
-        Importer.Arguments.read_json(isabelle.Path.explode(isabelle.File.standard_path(bt.inFile.toJava)))
-
       object Isabelle extends Isabelle(importer.log(_), arguments)
 
       Isabelle.export_session((thy_export: Importer.Theory_Export) =>
@@ -423,7 +421,8 @@ class Importer extends archives.Importer
         }
 
         // document
-        val doc = new Document(DPath(bt.base / thy_qualifier / thy_base_name), root = true)
+        val archive: Archive = ??? // the archive in which this document should be placed: Distribution or AFP
+        val doc = new Document(DPath(archive.narrationBase / thy_qualifier / thy_base_name), root = true)
         controller.add(doc)
 
         val thy = Importer.declared_theory(thy_name)
@@ -495,7 +494,7 @@ class Importer extends archives.Importer
         }
 
         Isabelle.end_theory(thy_export, items)
-        index(doc)
+        indexDocument(archive, doc)
       })
     }
     catch { case isabelle.ERROR(msg) => throw new Importer.Isabelle_Error(msg) }

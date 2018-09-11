@@ -8,13 +8,78 @@ import modules._
 import parser._
 import utils._
 
-/** a build target for importing an archive in some source syntax
+/** an extension for importing an archive in some source syntax
+ *  
+ * Importers that handle each source file individually should subclass [[Importer]] instead, which is also a build target.
+ * 
+ * This class should only be mixed in directly by extensions that control the entire import on their own and import all documents at once.
+ * Such implementations must call indexDocument on every document they generate.   
+ */
+trait GeneralImporter extends Extension {
+  /** index a document
+    * @param a the archive   
+    * @param doc the document to index
+    * doc.path must be of the form a.narrationBase / sourcePath  
+    * The produced narration file will be in the location given by sourcePath.
+    */
+  protected def indexDocument(a: Archive, doc: Document) {
+    // write narration file
+    val docPath = doc.path.dropPrefix(DPath(a.narrationBase)) match {
+      case Some(suffix) =>
+        val names = suffix.steps collect {
+          case SimpleStep(s) => s
+          case _ => throw LocalError("document path contains complex step")
+        }
+        FilePath(names)
+      case None => throw LocalError("document path must start with narration base")
+    }
+    val narrFile = (a / narration / docPath).setExtension("omdoc")
+    log("[  -> narration ]     " + narrFile)
+    val node = doc.toNode
+    xml.writeFile(node, narrFile)
+    // write relational file
+    writeToRel(doc, a / relational / docPath)
+    doc.getModulesResolved(controller.globalLookup) foreach { mod => indexModule(a, mod) }
+  }
+
+  /** index a module */
+  private def indexModule(a: Archive, mod: Module) {
+    // write content file
+    writeToContent(a, mod)
+    // write relational file
+    writeToRel(mod, a / relational / Archive.MMTPathToContentPath(mod.path))
+  }
+  
+  /** Write a module to content folder */
+  private def writeToContent(a: Archive, mod: Module) {
+    val contFile = a.MMTPathToContentPath(mod.path)
+    log("[  -> content   ]     " + contFile.getPath)
+    val w = new presentation.FileWriter(contFile)
+    w("""<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">""")
+    mod.toNode(w)
+    w("</omdoc>")
+    w.done
+  }
+
+  /** extract the relational information about a knowledge item and write it to a file */
+  protected def writeToRel(se: StructuralElement, file: File) {
+    val relFile = file.setExtension("rel")
+    log("[  -> relational]     " + relFile.getPath)
+    val relFileHandle = File.Writer(relFile)
+    controller.relman.extract(se) {
+      r => relFileHandle.write(r.toPath + "\n")
+    }
+    relFileHandle.close
+  }
+}
+
+/** a traversing build target for importing an archive in some source syntax
   *
   * This should only be needed when OMDoc is received from a third party.
   * OMDoc produced by [[Compiler]]s is indexed automatically.
   *
   */
-abstract class Importer extends TraversingBuildTarget {imp =>
+abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp =>
   /** source by default, may be overridden */
   def inDim = source
 
@@ -36,7 +101,7 @@ abstract class Importer extends TraversingBuildTarget {imp =>
   def importDocument(bt: BuildTask, index: Document => Unit): BuildResult
 
   def buildFile(bf: BuildTask): BuildResult = {
-    importDocument(bf, doc => indexDocument(bf.archive, doc, bf.inPath))
+    importDocument(bf, doc => indexDocument(bf.archive, doc))
   }
 
   override def buildDir(bd: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult = {
@@ -45,61 +110,6 @@ abstract class Importer extends TraversingBuildTarget {imp =>
     val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
     writeToRel(doc, bd.archive / relational / inPathFile)
     BuildResult.empty
-  }
-
-  /** Write a module to content folder */
-  private def writeToContent(a: Archive, mod: Module) {
-    val contFile = a.MMTPathToContentPath(mod.path)
-    log("[  -> content   ]     " + contFile.getPath)
-    val w = new presentation.FileWriter(contFile)
-    w("""<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">""")
-    mod.toNode(w)
-    w("</omdoc>")
-    w.done
-  }
-
-  /** extract and write the relational information about a knowledge item */
-  private def writeToRel(se: StructuralElement, file: File) {
-    val relFile = file.setExtension("rel")
-    log("[  -> relational]     " + relFile.getPath)
-    val relFileHandle = File.Writer(relFile)
-    controller.relman.extract(se) {
-      r => relFileHandle.write(r.toPath + "\n")
-    }
-    relFileHandle.close
-  }
-
-  /** index a document
-    * @param doc the document to index
-    * @param inPath the path of the input file
-    * The produced narration file is the suffix of the document's path relative to the narration base.
-    */
-  private def indexDocument(a: Archive, doc: Document, inPath: FilePath) {
-    // write narration file
-    val docPath = doc.path.dropPrefix(DPath(a.narrationBase)) match {
-      case Some(suffix) =>
-        val names = suffix.steps collect {
-          case SimpleStep(s) => s
-          case _ => throw LocalError("document path contains complex step")
-        }
-        FilePath(names)
-      case None => throw LocalError("document path must start with narration base")
-    }
-    val narrFile = getOutFile(a, docPath)
-    log("[  -> narration ]     " + narrFile)
-    val node = doc.toNode
-    xml.writeFile(node, narrFile)
-    // write relational file
-    writeToRel(doc, a / relational / docPath)
-    doc.getModulesResolved(controller.globalLookup) foreach { mod => indexModule(a, mod) }
-  }
-
-  /** index a module */
-  private def indexModule(a: Archive, mod: Module) {
-    // write content file
-    writeToContent(a, mod)
-    // write relational file
-    writeToRel(mod, a / relational / Archive.MMTPathToContentPath(mod.path))
   }
 
   /** additionally deletes content and relational */
@@ -166,7 +176,7 @@ abstract class Importer extends TraversingBuildTarget {imp =>
   }
 }
 
-/** a trivial importer that reads OMDoc documents and returns them */
+/** a trivial importer that reads OMDoc documents and indexes them */
 class OMDocImporter extends Importer {
   val key = "index"
 
