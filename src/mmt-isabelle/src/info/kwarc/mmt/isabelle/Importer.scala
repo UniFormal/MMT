@@ -21,8 +21,6 @@ object Importer
 {
   /* defaults */
 
-  val check_delay: isabelle.Time = isabelle.Time.seconds(10.0)
-
   val default_output_dir: isabelle.Path = isabelle.Path.explode("isabelle_mmt")
   val default_logic: String = isabelle.Thy_Header.PURE
 
@@ -486,7 +484,7 @@ class Isabelle(
     session.use_theories(
       session_deps.sessions_structure.build_topological_order.
         flatMap(session_name => session_deps.session_bases(session_name).used_theories.map(_.theory)),
-      check_delay = Importer.check_delay,
+      check_delay = options.seconds("mmt_check_delay"),
       commit = Some(Consumer.apply _),
       commit_clean_delay = options.seconds("mmt_cleanup_delay"),
       watchdog_timeout = options.seconds("mmt_watchdog_timeout"),
