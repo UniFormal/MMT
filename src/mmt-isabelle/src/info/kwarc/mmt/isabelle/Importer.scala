@@ -675,7 +675,7 @@ class Isabelle(
           case isabelle.Term.Const(c, ty) =>
             val item = get_const(c)
             Type.app(OMS(item.global_name), item.typargs(ty).map(import_type(_)))
-          case isabelle.Term.Free(x, ty) => OMV(x)
+          case isabelle.Term.Free(x, _) => OMV(x)
           case isabelle.Term.Var(xi, _) => isabelle.error("Illegal schematic variable " + xi.toString)
           case isabelle.Term.Bound(i) =>
             val x =
