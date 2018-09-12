@@ -283,7 +283,7 @@ object File {
     val fC = Compress.name(f)
     val compress = !f.exists && fC.exists
     val fileName = if (compress) fC else f
-    val in = Compress.in(new FileInputStream(f.toJava), compress)
+    val in = Compress.in(new FileInputStream(fileName.toJava), compress)
     new BufferedReader(new InputStreamReader(in, java.nio.charset.Charset.forName("UTF-8")))
   }
 
