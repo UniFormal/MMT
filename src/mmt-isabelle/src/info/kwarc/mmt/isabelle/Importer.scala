@@ -19,6 +19,16 @@ import utils._
  */
 object Importer
 {
+  /* defaults */
+
+  val check_delay: isabelle.Time = isabelle.Time.seconds(10.0)
+
+  val default_output_dir: isabelle.Path = isabelle.Path.explode("isabelle_mmt")
+  val default_commit_clean_delay: isabelle.Time = isabelle.Thy_Resources.default_commit_clean_delay
+  val default_watchdog_timeout: isabelle.Time = isabelle.Thy_Resources.default_watchdog_timeout
+  val default_logic: String = isabelle.Thy_Header.PURE
+
+
   /* errors */
 
   class Isabelle_Error(msg: String) extends Error("Isabelle error: " + msg)
@@ -166,38 +176,25 @@ object Importer
 
 
 
-  /** Isabelle session specification: command-line arguments vs. JSON **/
+  /** command-line tool **/
 
-  object Arguments
+  def main(args: Array[String])
   {
-    val extension: String = "isabelle"
-    val source_file: isabelle.Path = isabelle.Path.explode("source/arguments").ext(extension)
-
-    val check_delay: isabelle.Time = isabelle.Time.seconds(10.0)
-
-    val default_output_dir: String = "isabelle_mmt"
-    val default_commit_clean_delay: isabelle.Time = isabelle.Thy_Resources.default_commit_clean_delay
-    val default_watchdog_timeout: isabelle.Time = isabelle.Thy_Resources.default_watchdog_timeout
-    val default_logic: String = isabelle.Thy_Header.PURE
-
-    def command_line(args: List[String]): Arguments =
-    {
+    isabelle.Command_Line.tool0 {
       var base_sessions: List[String] = Nil
       var commit_clean_delay = default_commit_clean_delay
-      var select_dirs: List[String] = Nil
+      var select_dirs: List[isabelle.Path] = Nil
       var output_dir = default_output_dir
       var requirements = false
       var watchdog_timeout = default_watchdog_timeout
       var exclude_session_groups: List[String] = Nil
       var all_sessions = false
-      var dirs: List[String] = Nil
+      var dirs: List[isabelle.Path] = Nil
       var session_groups: List[String] = Nil
       var logic = default_logic
-      var options: List[String] = Nil
+      var options = isabelle.Dump.make_options(isabelle.Options.init(), isabelle.Dump.known_aspects)
       var verbose = false
       var exclude_sessions: List[String] = Nil
-
-      val options0 = isabelle.Options.init()
 
       val getopts = isabelle.Getopts("""
 Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
@@ -207,7 +204,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     -C SECONDS   delay for cleaning of already dumped theories (0 = disabled, default: """ +
       isabelle.Value.Seconds(default_commit_clean_delay) + """)
     -D DIR       include session directory and select its sessions
-    -O DIR       output directory for MMT (default: """ + isabelle.quote(default_output_dir) + """)
+    -O DIR       output directory for MMT (default: """ + default_output_dir + """)
     -R           operate on requirements of selected sessions
     -W SECONDS   watchdog timeout for PIDE processing (0 = disabled, default: """ +
       isabelle.Value.Seconds(default_watchdog_timeout) + """)
@@ -222,179 +219,75 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
   Import specified sessions into MMT output directory.
 """,
-        "B:" -> (arg => base_sessions = base_sessions ::: List(arg)),
-        "C:" -> (arg => commit_clean_delay = isabelle.Value.Seconds.parse(arg)),
-        "D:" -> (arg => { isabelle.Path.explode(arg); select_dirs = select_dirs ::: List(arg) }),
-        "O:" -> (arg => { isabelle.Path.explode(arg); output_dir = arg }),
-        "R" -> (_ => requirements = true),
-        "W:" -> (arg => watchdog_timeout = isabelle.Value.Seconds.parse(arg)),
-        "X:" -> (arg => exclude_session_groups = exclude_session_groups ::: List(arg)),
-        "a" -> (_ => all_sessions = true),
-        "d:" -> (arg => { isabelle.Path.explode(arg); dirs = dirs ::: List(arg) }),
-        "g:" -> (arg => session_groups = session_groups ::: List(arg)),
-        "l:" -> (arg => logic = arg),
-        "o:" -> (arg => { options0 + arg; options = options ::: List(arg) }),
-        "v" -> (_ => verbose = true),
-        "x:" -> (arg => exclude_sessions = exclude_sessions ::: List(arg)))
+      "B:" -> (arg => base_sessions = base_sessions ::: List(arg)),
+      "C:" -> (arg => commit_clean_delay = isabelle.Value.Seconds.parse(arg)),
+      "D:" -> (arg => { select_dirs = select_dirs ::: List(isabelle.Path.explode(arg)) }),
+      "O:" -> (arg => { output_dir = isabelle.Path.explode(arg) }),
+      "R" -> (_ => requirements = true),
+      "W:" -> (arg => watchdog_timeout = isabelle.Value.Seconds.parse(arg)),
+      "X:" -> (arg => exclude_session_groups = exclude_session_groups ::: List(arg)),
+      "a" -> (_ => all_sessions = true),
+      "d:" -> (arg => { dirs = dirs ::: List(isabelle.Path.explode(arg)) }),
+      "g:" -> (arg => session_groups = session_groups ::: List(arg)),
+      "l:" -> (arg => logic = arg),
+      "o:" -> (arg => { options += arg }),
+      "v" -> (_ => verbose = true),
+      "x:" -> (arg => exclude_sessions = exclude_sessions ::: List(arg)))
 
       val sessions = getopts(args)
 
-      Arguments(base_sessions = base_sessions,
-        commit_clean_delay = commit_clean_delay,
-        select_dirs = select_dirs,
-        output_dir = output_dir,
-        requirements = requirements,
-        watchdog_timeout = watchdog_timeout,
-        exclude_session_groups = exclude_session_groups,
-        all_sessions = all_sessions,
-        dirs = dirs,
-        session_groups = session_groups,
-        logic = logic,
-        options = options,
-        verbose = verbose,
-        exclude_sessions = exclude_sessions,
-        sessions = sessions)
-    }
 
-    def read_json(path: isabelle.Path): Arguments =
-    {
-      try { json(isabelle.JSON.parse(isabelle.File.read(path))) }
-      catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin file " + path) }
-    }
-
-    def json(json: isabelle.JSON.T): Arguments =
-    {
-      def err: Nothing = isabelle.error("Bad JSON arguments: " + json)
-
-      json match {
-        case isabelle.JSON.Object(obj) if obj.keySet.subsetOf(domain) =>
-          (for {
-            base_sessions <- isabelle.JSON.strings_default(obj, "base_sessions")
-            commit_clean_delay <-
-              isabelle.JSON.seconds_default(obj,"commit_clean_delay", default_commit_clean_delay)
-            select_dirs <- isabelle.JSON.strings_default(obj, "select_dirs")
-            output_dir <- isabelle.JSON.string_default(obj, "output_dir", default_output_dir)
-            requirements <- isabelle.JSON.bool_default(obj, "requirements")
-            watchdog_timeout <-
-              isabelle.JSON.seconds_default(obj, "watchdog_timeout", default_watchdog_timeout)
-            exclude_session_groups <- isabelle.JSON.strings_default(obj, "exclude_session_groups")
-            all_sessions <- isabelle.JSON.bool_default(obj, "all_sessions")
-            dirs <- isabelle.JSON.strings_default(obj, "dirs")
-            session_groups <- isabelle.JSON.strings_default(obj, "session_groups")
-            logic <- isabelle.JSON.string_default(obj, "logic", default_logic)
-            options <- isabelle.JSON.strings_default(obj, "options")
-            verbose <- isabelle.JSON.bool_default(obj, "verbose")
-            exclude_sessions <- isabelle.JSON.strings_default(obj, "exclude_sessions")
-            sessions <- isabelle.JSON.strings_default(obj, "sessions")
-          } yield {
-            Arguments(base_sessions = base_sessions,
-              commit_clean_delay = commit_clean_delay,
-              select_dirs = select_dirs,
-              output_dir = output_dir,
-              requirements = requirements,
-              watchdog_timeout = watchdog_timeout,
-              exclude_session_groups = exclude_session_groups,
-              all_sessions = all_sessions,
-              dirs = dirs,
-              session_groups = session_groups,
-              logic = logic,
-              options = options,
-              verbose = verbose,
-              exclude_sessions = exclude_sessions,
-              sessions = sessions)
-          }).getOrElse(err)
-        case _ => err
-      }
-    }
-
-    private lazy val domain: Set[String] =
-      Arguments().json.asInstanceOf[isabelle.JSON.Object.T].keySet
-  }
-
-  sealed case class Arguments(
-    base_sessions: List[String] = Nil,
-    commit_clean_delay: isabelle.Time = Arguments.default_commit_clean_delay,
-    select_dirs: List[String] = Nil,
-    output_dir: String = Arguments.default_output_dir,
-    requirements: Boolean = false,
-    watchdog_timeout: isabelle.Time = Arguments.default_watchdog_timeout,
-    exclude_session_groups: List[String] = Nil,
-    all_sessions: Boolean = false,
-    dirs: List[String] = Nil,
-    session_groups: List[String] = Nil,
-    logic: String = Arguments.default_logic,
-    options: List[String] = Nil,
-    verbose: Boolean = false,
-    exclude_sessions: List[String] = Nil,
-    sessions: List[String] = Nil)
-  {
-    def selection: isabelle.Sessions.Selection =
-      isabelle.Sessions.Selection(
-        requirements = requirements,
-        all_sessions = all_sessions,
-        base_sessions = base_sessions,
-        exclude_session_groups = exclude_session_groups,
-        exclude_sessions = exclude_sessions,
-        session_groups = session_groups,
-        sessions = sessions)
-
-    def json: isabelle.JSON.T =
-      Map("base_sessions" -> base_sessions,
-        "commit_clean_delay" -> commit_clean_delay.seconds,
-        "select_dirs" -> select_dirs,
-        "output_dir" -> output_dir,
-        "requirements" -> requirements,
-        "watchdog_timeout" -> watchdog_timeout.seconds,
-        "exclude_session_groups" -> exclude_session_groups,
-        "all_sessions" -> all_sessions,
-        "dirs" -> dirs,
-        "session_groups" -> session_groups,
-        "logic" -> logic,
-        "options" -> options,
-        "verbose" -> verbose,
-        "exclude_sessions" -> exclude_sessions,
-        "sessions" -> sessions)
-
-    def write_json(path: isabelle.Path): Unit =
-    {
-      isabelle.Isabelle_System.mkdirs(path.dir)
-      isabelle.File.write(path, isabelle.JSON.Format(json))
-    }
-  }
-
-
-
-  /** command-line tool **/
-
-  def main(args: Array[String])
-  {
-    isabelle.Command_Line.tool0 {
-      val arguments = Arguments.command_line(args.toList)
-      val output_dir = isabelle.Path.explode(arguments.output_dir).absolute
+      val progress = new isabelle.Console_Progress(verbose = verbose)
 
       val meta_inf = output_dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
       isabelle.Isabelle_System.mkdirs(meta_inf.dir)
       isabelle.File.write(meta_inf, "id: Isabelle\ntitle: Isabelle\n")
 
       val controller = new Controller
-      controller.setHome(output_dir.file)
+      controller.setHome(output_dir.absolute_file)
       
-      val archives = controller.backend.openArchive(output_dir.file)
-      
-      val importer = new Importer(archives, arguments)
+      val archives = controller.backend.openArchive(output_dir.absolute_file)
+
+      val selection =
+        isabelle.Sessions.Selection(
+          requirements = requirements,
+          all_sessions = all_sessions,
+          base_sessions = base_sessions,
+          exclude_session_groups = exclude_session_groups,
+          exclude_sessions = exclude_sessions,
+          session_groups = session_groups,
+          sessions = sessions)
+
+      val importer =
+        new Importer(archives,
+          options,
+          logic = logic,
+          dirs = dirs,
+          select_dirs = select_dirs,
+          selection = selection,
+          commit_clean_delay = commit_clean_delay,
+          watchdog_timeout = watchdog_timeout,
+          output_dir = output_dir,
+          progress = progress)
 
       controller.extman.addExtension(importer, Nil)
 
-      controller.handleLine("log console")
-      controller.handleLine("log+ archive")
-      controller.handleLine("log+ Isabelle")
-     
       importer.run
     }
   }
 }
 
-class Importer(archives: List[Archive], arguments: Importer.Arguments) extends NonTraversingImporter
+class Importer(archives: List[Archive],
+    options: isabelle.Options,
+    logic: String = Importer.default_logic,
+    dirs: List[isabelle.Path] = Nil,
+    select_dirs: List[isabelle.Path] = Nil,
+    selection: isabelle.Sessions.Selection = isabelle.Sessions.Selection.empty,
+    commit_clean_delay: isabelle.Time = Importer.default_commit_clean_delay,
+    watchdog_timeout: isabelle.Time = Importer.default_watchdog_timeout,
+    output_dir: isabelle.Path = Importer.default_output_dir,
+    progress: isabelle.Progress = isabelle.No_Progress)
+  extends NonTraversingImporter
 {
   importer =>
 
@@ -403,10 +296,16 @@ class Importer(archives: List[Archive], arguments: Importer.Arguments) extends N
   def run
   {
     try {
-      object Isabelle extends Isabelle(importer.log(_), arguments)
+      object Isabelle extends
+        Isabelle(
+          options, logic, dirs, select_dirs, selection, commit_clean_delay,
+          watchdog_timeout, progress
+        )
 
       Isabelle.export_session((thy_export: Importer.Theory_Export) =>
       {
+        progress.echo("Importing theory " + thy_export.node_name + " ...")
+
         val thy_name = thy_export.node_name
         val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
         val thy_base_name = isabelle.Long_Name.base_name(thy_export.node_name.theory)
@@ -505,27 +404,19 @@ class Importer(archives: List[Archive], arguments: Importer.Arguments) extends N
   }
 }
 
-class Isabelle(log: String => Unit, arguments: Importer.Arguments)
+class Isabelle(
+  options: isabelle.Options,
+  logic: String,
+  dirs: List[isabelle.Path],
+  select_dirs: List[isabelle.Path],
+  selection: isabelle.Sessions.Selection,
+  commit_clean_delay: isabelle.Time,
+  watchdog_timeout: isabelle.Time,
+  progress: isabelle.Progress)
 {
-  /* logging */
-
-  val logger: isabelle.Logger =
-    new isabelle.Logger { def apply(msg: => String): Unit = log(msg) }
-
-  val progress: isabelle.Progress =
-    new isabelle.Progress {
-      override def echo(msg: String): Unit = log(msg)
-      override def theory(theory: isabelle.Progress.Theory): Unit =
-        if (arguments.verbose) echo(theory.message)
-    }
-
-
   /* options */
 
   isabelle.Isabelle_System.init()
-
-  val options: isabelle.Options =
-    (isabelle.Dump.make_options(isabelle.Options.init(), isabelle.Dump.known_aspects) /: arguments.options)(_ + _)
 
   val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
   val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
@@ -545,23 +436,20 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
 
   def start_session(): isabelle.Sessions.Deps =
   {
-    val dirs = arguments.dirs.map(isabelle.Path.explode)
-    val select_dirs = arguments.select_dirs.map(isabelle.Path.explode)
-
     val session_deps: isabelle.Sessions.Deps =
       isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs).
-        selection_deps(arguments.selection, progress = progress)
+        selection_deps(selection, progress = progress)
 
     val build_rc =
-      isabelle.Build.build_logic(options, arguments.logic, build_heap = true, progress = progress,
+      isabelle.Build.build_logic(options, logic, build_heap = true, progress = progress,
         dirs = dirs ::: select_dirs)
-    if (build_rc != 0) isabelle.error("Failed to build Isabelle/" + arguments.logic)
+    if (build_rc != 0) isabelle.error("Failed to build Isabelle/" + logic)
 
     _session =
-      Some(isabelle.Thy_Resources.start_session(options, arguments.logic,
+      Some(isabelle.Thy_Resources.start_session(options, logic,
         session_dirs = dirs ::: select_dirs,
         include_sessions = session_deps.sessions_structure.imports_topological_order,
-        progress = progress, log = logger))
+        progress = progress))
 
     session_deps
   }
@@ -627,10 +515,10 @@ class Isabelle(log: String => Unit, arguments: Importer.Arguments)
     session.use_theories(
       session_deps.sessions_structure.build_topological_order.
         flatMap(session_name => session_deps.session_bases(session_name).used_theories.map(_.theory)),
-      check_delay = Importer.Arguments.check_delay,
+      check_delay = Importer.check_delay,
       commit = Some(Consumer.apply _),
-      commit_clean_delay = arguments.commit_clean_delay,
-      watchdog_timeout = arguments.watchdog_timeout,
+      commit_clean_delay = commit_clean_delay,
+      watchdog_timeout = watchdog_timeout,
       progress = progress)
 
     val bad_theories = Consumer.shutdown()

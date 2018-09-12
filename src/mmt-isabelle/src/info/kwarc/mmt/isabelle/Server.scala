@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.web.Util
  */
 object Server
 {
-  val default_output_dir = isabelle.Path.explode(Importer.Arguments.default_output_dir)
+  val default_output_dir: isabelle.Path = Importer.default_output_dir
   val default_port: Int = 8080
 
   def main(args: Array[String])
@@ -45,7 +45,7 @@ Usage: isabelle mmt_server [OPTIONS]
         if config.exists
       } controller.loadConfigFile(config, false)
 
-      controller.setHome(File(output_dir.file))
+      controller.setHome(File(output_dir.absolute_file))
 
       controller.handleLine("mathpath archive .")
       controller.handleLine("server on " + port)
