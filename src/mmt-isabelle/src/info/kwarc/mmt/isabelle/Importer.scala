@@ -25,11 +25,6 @@ object Importer
   val default_logic: String = isabelle.Thy_Header.PURE
 
 
-  /* errors */
-
-  class Isabelle_Error(msg: String) extends Error("Isabelle error: " + msg)
-
-
   /* names */
 
   /*common namespace for all theories in all sessions in all Isabelle archives*/
