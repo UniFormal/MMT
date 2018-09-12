@@ -23,8 +23,8 @@ class IMPSImporter extends Importer
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult =
   {
     val tState : TranslationState = new TranslationState()
-    tState.verbosity = (-1)
-    val targetSection : Section = impsLibrarySections.partialOrders
+    tState.verbosity = 2
+    val targetSection : Section = impsLibrarySections.impsMathLibrary
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)

@@ -448,13 +448,13 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
           var target : Either[IMPSSort,IMPSMathExp] = sp.srt match
           {
             case scala.util.Left(scala.util.Left(n@srt_name))          => tar = n.toString ; scala.util.Left(IMPSAtomSort(srt_name.s))
-            case scala.util.Left(scala.util.Right(n@srt_dfstr))        => tar = n.toString ; ???
+            case scala.util.Left(scala.util.Right(n@srt_dfstr))        => tar = n.toString ; assert(sp.mth.isDefined) ; scala.util.Right(sp.mth.get)
             case scala.util.Right(scala.util.Left(n@pred_srt_dfstr))   => tar = n.toString ; ???
             case scala.util.Right(scala.util.Right(n@indic_srt_dfstr)) => tar = n.toString ; assert(sp.mth.isDefined) ; scala.util.Right(sp.mth.get)
           }
 
           val target_term : Term = target match {
-            case scala.util.Left(is)  => matchSort(is,target_thy)
+            case scala.util.Left(is)  => matchSort(is,locateMathSymbolHome(is.toString,target_thy))
             case scala.util.Right(im) => doMathExp(im,target_thy,Nil)
           }
 
@@ -463,8 +463,11 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
             case scala.util.Right(_) => None
           }
 
-          val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(source_thy_t.toMPath) / doName(sp.name.s),Nil,target_tp,Some(target_term),None)
-          if (true) { println(" >  adding sort-mapping: " + sp.name.s + " → " + tar + " // " + ComplexStep(source_thy_t.toMPath) / doName(sp.name.s)) }
+          val quelle : DeclaredTheory = locateMathSymbolHome(sp.name.toString, source_thy)
+          println("Quelle of sort " + sp.name.toString + " is " + quelle.name.toString)
+
+          val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.path) / doName(sp.name.s),Nil,target_tp,Some(target_term),None)
+          if (true) { println(" >  adding sort-mapping: " + sp.name.s + " → " + tar + " // " + ComplexStep(quelle.path) / doName(sp.name.s)) }
 
           translated_constant_names = doName(sp.name.toString) :: translated_constant_names
           println(nu_sort_map)
@@ -483,10 +486,14 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
               assert(df._2.isDefined)
               doMathExp(df._2.get,target_thy,Nil)
 
-            case scala.util.Right(n) => tar = n.s ; doMathExp(IMPSMathSymbol(n.s),target_thy,Nil)
+            case scala.util.Right(n) => tar = n.s ; doMathExp(IMPSMathSymbol(n.s),locateMathSymbolHome(n.s,target_thy),Nil)
           }
-          val nu_const_map = symbols.Constant(nu_view.toTerm,ComplexStep(source_thy_t.toMPath) / doName(cp.name.s),Nil,None,Some(target_const_term),None)
-          if (true) { println(" >  adding constant-mapping: " + cp.name.s + " → " + tar + " // " + ComplexStep(source_thy_t.toMPath) / doName(cp.name.s)) }
+
+          val quelle : DeclaredTheory = locateMathSymbolHome(cp.name.toString, source_thy)
+          println("Quelle of sort " + cp.name.toString + " is " + quelle.name.toString)
+
+          val nu_const_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.path) / doName(cp.name.s),Nil,None,Some(target_const_term),None)
+          if (true) { println(" >  adding constant-mapping: " + cp.name.s + " → " + tar + " // " + ComplexStep(quelle.path) / doName(cp.name.s)) }
 
           translated_constant_names = doName(cp.name.toString) :: translated_constant_names
           controller add nu_const_map
@@ -504,7 +511,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
           if (!translated_constant_names.contains(c.name))
           {
             if (tState.verbosity > 4) { println(" >    adding constant-endo-mapping for " + c.name) }
-            val nu_id_const = symbols.Constant(nu_view.toTerm,ComplexStep(source_thy.path) / c.name,c.alias,c.tp,Some(c.toTerm),c.rl)
+            val quelle : DeclaredTheory = locateMathSymbolHome(c.name.toString, source_thy)
+            val orig_c = quelle.getConstants.find(k => k.name.toString.toLowerCase == c.name.toString.toLowerCase)
+            assert(orig_c.isDefined)
+            val nu_id_const = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.path) / c.name,c.alias,c.tp,Some(orig_c.get.toTerm),c.rl)
             controller add nu_id_const
           }
         }
@@ -789,7 +799,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       case r@DFRenamer(_,_,_,_) => tState.renamers = r :: tState.renamers
       case DFTransportedSymbols(names,translation,renamer,src,cmt) =>
 
-        if (tState.verbosity > 0) { println( " > Adding transported symbols along " + translation.t.s + ": " + names.nms.mkString(" ")) }
+        if (true) { println( " > Adding transported symbols along " + translation.t.s + ": " + names.nms.mkString(" ")) }
 
         val rename : String => String = {
           if (renamer.isDefined) {
@@ -803,6 +813,10 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         val trans_decl = tState.translations_decl.find(t => t.name.toString.toLowerCase == translation.t.s.toLowerCase)
         assert(trans_decl.isDefined)
 
+        println(" > using this translation: ")
+        println(trans_decl.get)
+        println("")
+
         val source = tState.theories_decl.find(thy => thy.name.toString.toLowerCase == tState.translations_raw.find(t => t.n.s.toLowerCase == translation.t.s.toLowerCase).get.sour.thy.s.toLowerCase)
         assert(source.isDefined)
 
@@ -811,23 +825,23 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
         for (n <- names.nms)
         {
-          println("   > Transported symbol: " + n + " (" + source.get.name +  " ~> " + target.get.name + ")")
+          println("   > Transported symbol: " + n + " => " + rename(n.s) + " (" + source.get.name +  " ~> " + target.get.name + ")")
 
           val p = doName(n.s)
           val q = doName(rename(n.s))
 
           val nsource = locateMathSymbolHome(n.s,source.get)
           val urimage = nsource.getConstants.find(c => c.name.toString.toLowerCase == n.s.toLowerCase).get
-          println("   > urimage defined: " + urimage)
+          println("     > urimage definiens: " + urimage.df)
+          println("     > urimage type:      " + urimage.tp)
 
-          println("type before: " + urimage.tp)
-          val tp : Option[Term] = if (urimage.tp.isDefined) { Some(controller.library.ApplyMorphs(urimage.tp.get,trans_decl.get.toTerm)) } else { None } // api.symbols.ApplyMorphism(trans_decl.get.toTerm).apply(Context(),urimage.tp.get)
-          println("   > urimage type:    " + tp)
-          val image = controller.library.ApplyMorphs(urimage.toTerm,trans_decl.get.toTerm) //api.symbols.ApplyMorphism(trans_decl.get.toTerm).apply(con,urimage.toTerm)
-          println("   >   image defined: " + image)
+          val tp : Option[Term] = if (urimage.tp.isDefined) { Some(controller.library.ApplyMorphs(urimage.tp.get,trans_decl.get.toTerm)) } else { None }
+          val image = controller.library.ApplyMorphs(urimage.toTerm,trans_decl.get.toTerm)
           val nu_trans_symbol = symbols.Constant(target.get.toTerm,q,Nil,tp,Some(image),Some("transported symbol"))
+          println("     >   image definiens: " + nu_trans_symbol.df)
+          println("     >   image type:      " + nu_trans_symbol.tp)
 
-          if (tState.verbosity > 1) { println("   > adding " + n.toString) }
+          if (true) { println("   > adding " + n.toString + "\n") }
           controller add nu_trans_symbol
         }
 
@@ -1466,36 +1480,17 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
   def locateMathSymbolHome(s : String, thy : DeclaredTheory) : DeclaredTheory =
   {
-    var srcthy : DeclaredTheory = null
-
+    val srcthy : Option[DeclaredTheory] = recursiveIncludes(List(thy)).reverse.find(t => t.getConstants.exists(c => c.name.toString.toLowerCase == s.toLowerCase))
     if (tState.verbosity > 1)
     {
       println(" > Locating IMPSMathSymbol " + s + " for use in theory " + thy.name.toString)
     }
 
-    for (rt <- recursiveIncludes(List(thy)))
-    {
-      val refthy : DeclaredTheory = rt
-      val refcon : List[info.kwarc.mmt.api.symbols.Constant] = refthy.getConstants
+    if (srcthy.isEmpty) { println("            (could not find location for " + s + ")") }
+    else if (tState.verbosity > 1) { println("            (location for " + s + " is " + srcthy.get.name.toString + ")") }
 
-      if (refcon.exists(c => c.name.toString.toLowerCase == s.toLowerCase)) {
-        srcthy = refthy
-        if (tState.verbosity > 2)
-        {
-          println("    > FOUND in " + refthy.name)
-        }
-      }
-      else {
-        if (tState.verbosity > 2)
-        {
-          println("    > Not found in " + refthy.name)
-        }
-      }
-    }
-
-    if (srcthy == null) { println(" > could not find thy for " + s) }
-    assert(srcthy != null)
-    srcthy
+    assert(srcthy.isDefined)
+    srcthy.get
   }
 
   def findSortFromContext(exp : IMPSMathExp, context : List[(IMPSVar,IMPSSort)]) : Option[IMPSSort] =
