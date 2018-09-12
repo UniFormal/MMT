@@ -617,6 +617,8 @@ class Isabelle(
 
   final class Content private(private val rep: SortedMap[Importer.Item.Key, Importer.Item])
   {
+    content =>
+
     def get(key: Importer.Item.Key): Importer.Item = rep.getOrElse(key, isabelle.error("Undeclared " + key.toString))
     def get_class(name: String): Importer.Item = get(Importer.Item.Key(isabelle.Export_Theory.Kind.CLASS, name))
     def get_type(name: String): Importer.Item = get(Importer.Item.Key(isabelle.Export_Theory.Kind.TYPE, name))
@@ -632,23 +634,23 @@ class Isabelle(
         isabelle.error("Duplicate " + item.key.toString + " in theory " +
           isabelle.quote(item.node_name.theory))
       }
-      else this + item
+      else content + item
     }
 
     def + (item: Importer.Item): Content =
-      if (defined(item.key)) this
+      if (defined(item.key)) content
       else new Content(rep + (item.key -> item))
 
     def ++ (other: Content): Content =
-      if (this eq other) this
+      if (content eq other) content
       else if (is_empty) other
-      else (this /: other.rep)({ case (map, (_, item)) => map + item })
+      else (content /: other.rep)({ case (map, (_, item)) => map + item })
 
     override def toString: String =
       rep.iterator.map(_._2).mkString("Content(", ", ", ")")
 
 
-    /* MMT import */
+    /* MMT import of Isabelle classes, types, terms etc. */
 
     def import_class(name: String): Term = OMS(get_class(name).global_name)
 
@@ -660,7 +662,7 @@ class Isabelle(
             lf.Arrow(import_type(a), import_type(b))
           case isabelle.Term.Type(name, args) =>
             val op = OMS(get_type(name).global_name)
-            if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(import_type(_)))
+            if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(content.import_type))
           case isabelle.Term.TFree(a, _) => OMV(a)
           case isabelle.Term.TVar(xi, _) => isabelle.error("Illegal schematic type variable " + xi.toString)
         }
@@ -674,7 +676,7 @@ class Isabelle(
         t match {
           case isabelle.Term.Const(c, ty) =>
             val item = get_const(c)
-            Type.app(OMS(item.global_name), item.typargs(ty).map(import_type(_)))
+            Type.app(OMS(item.global_name), item.typargs(ty).map(content.import_type))
           case isabelle.Term.Free(x, _) => OMV(x)
           case isabelle.Term.Var(xi, _) => isabelle.error("Illegal schematic variable " + xi.toString)
           case isabelle.Term.Bound(i) =>
