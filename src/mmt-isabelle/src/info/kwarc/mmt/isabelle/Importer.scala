@@ -24,8 +24,6 @@ object Importer
   val check_delay: isabelle.Time = isabelle.Time.seconds(10.0)
 
   val default_output_dir: isabelle.Path = isabelle.Path.explode("isabelle_mmt")
-  val default_commit_clean_delay: isabelle.Time = isabelle.Thy_Resources.default_commit_clean_delay
-  val default_watchdog_timeout: isabelle.Time = isabelle.Thy_Resources.default_watchdog_timeout
   val default_logic: String = isabelle.Thy_Header.PURE
 
 
@@ -182,8 +180,6 @@ object Importer
     dirs: List[isabelle.Path] = Nil,
     select_dirs: List[isabelle.Path] = Nil,
     selection: isabelle.Sessions.Selection = isabelle.Sessions.Selection.empty,
-    commit_clean_delay: isabelle.Time = Importer.default_commit_clean_delay,
-    watchdog_timeout: isabelle.Time = Importer.default_watchdog_timeout,
     output_dir: isabelle.Path = Importer.default_output_dir,
     progress: isabelle.Progress = isabelle.No_Progress)
   {
@@ -204,11 +200,7 @@ object Importer
     val archives = controller.backend.openArchive(output_dir.absolute_file)
 
 
-    object Isabelle extends
-      Isabelle(
-        options, logic, dirs, select_dirs, selection, commit_clean_delay,
-        watchdog_timeout, progress
-      )
+    object Isabelle extends Isabelle(options, logic, dirs, select_dirs, selection, progress)
 
     Isabelle.export_session((thy_export: Importer.Theory_Export) =>
     {
@@ -317,11 +309,9 @@ object Importer
   {
     isabelle.Command_Line.tool0 {
       var base_sessions: List[String] = Nil
-      var commit_clean_delay = default_commit_clean_delay
       var select_dirs: List[isabelle.Path] = Nil
       var output_dir = default_output_dir
       var requirements = false
-      var watchdog_timeout = default_watchdog_timeout
       var exclude_session_groups: List[String] = Nil
       var all_sessions = false
       var dirs: List[isabelle.Path] = Nil
@@ -336,13 +326,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
   Options are:
     -B NAME      include session NAME and all descendants
-    -C SECONDS   delay for cleaning of already dumped theories (0 = disabled, default: """ +
-      isabelle.Value.Seconds(default_commit_clean_delay) + """)
     -D DIR       include session directory and select its sessions
     -O DIR       output directory for MMT (default: """ + default_output_dir + """)
     -R           operate on requirements of selected sessions
-    -W SECONDS   watchdog timeout for PIDE processing (0 = disabled, default: """ +
-      isabelle.Value.Seconds(default_watchdog_timeout) + """)
     -X NAME      exclude sessions from group NAME and all descendants
     -a           select all sessions
     -d DIR       include session directory
@@ -355,11 +341,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
   Import specified sessions into MMT output directory.
 """,
       "B:" -> (arg => base_sessions = base_sessions ::: List(arg)),
-      "C:" -> (arg => commit_clean_delay = isabelle.Value.Seconds.parse(arg)),
       "D:" -> (arg => { select_dirs = select_dirs ::: List(isabelle.Path.explode(arg)) }),
       "O:" -> (arg => { output_dir = isabelle.Path.explode(arg) }),
       "R" -> (_ => requirements = true),
-      "W:" -> (arg => watchdog_timeout = isabelle.Value.Seconds.parse(arg)),
       "X:" -> (arg => exclude_session_groups = exclude_session_groups ::: List(arg)),
       "a" -> (_ => all_sessions = true),
       "d:" -> (arg => { dirs = dirs ::: List(isabelle.Path.explode(arg)) }),
@@ -388,8 +372,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         dirs = dirs,
         select_dirs = select_dirs,
         selection = selection,
-        commit_clean_delay = commit_clean_delay,
-        watchdog_timeout = watchdog_timeout,
         output_dir = output_dir,
         progress = progress)
     }
@@ -402,8 +384,6 @@ class Isabelle(
   dirs: List[isabelle.Path],
   select_dirs: List[isabelle.Path],
   selection: isabelle.Sessions.Selection,
-  commit_clean_delay: isabelle.Time,
-  watchdog_timeout: isabelle.Time,
   progress: isabelle.Progress)
 {
   /* options */
@@ -507,8 +487,8 @@ class Isabelle(
         flatMap(session_name => session_deps.session_bases(session_name).used_theories.map(_.theory)),
       check_delay = Importer.check_delay,
       commit = Some(Consumer.apply _),
-      commit_clean_delay = commit_clean_delay,
-      watchdog_timeout = watchdog_timeout,
+      commit_clean_delay = options.seconds("mmt_cleanup_delay"),
+      watchdog_timeout = options.seconds("mmt_watchdog_timeout"),
       progress = progress)
 
     val bad_theories = Consumer.shutdown()
