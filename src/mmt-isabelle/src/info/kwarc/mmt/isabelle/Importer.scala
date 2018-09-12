@@ -128,7 +128,28 @@ object Importer
 
 
 
-  /** importer **/
+  /** MMT archives within the file-system **/
+
+  def init_archives(controller: Controller, output_dir: isabelle.Path): List[Archive] =
+  {
+    def get_archives: Option[List[Archive]] =
+      controller.backend.openArchive(output_dir.absolute_file) match {
+        case Nil => None
+        case archives => Some(archives)
+      }
+
+    get_archives getOrElse {
+      val meta_inf = output_dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
+      isabelle.Isabelle_System.mkdirs(meta_inf.dir)
+      isabelle.File.write(meta_inf, "id: Isabelle\ntitle: Isabelle\n")
+
+      get_archives getOrElse
+        isabelle.error("Failed to initialize archives in " + output_dir)
+    }
+  }
+
+
+  /** Isabelle to MMT importer **/
 
   def importer(options: isabelle.Options,
     logic: String = Importer.default_logic,
@@ -144,12 +165,7 @@ object Importer
     object MMT_Importer extends NonTraversingImporter { val key = "isabelle-omdoc" }
     controller.extman.addExtension(MMT_Importer, Nil)
 
-    val meta_inf = output_dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
-    isabelle.Isabelle_System.mkdirs(meta_inf.dir)
-    isabelle.File.write(meta_inf, "id: Isabelle\ntitle: Isabelle\n")
-
-    val archives = controller.backend.openArchive(output_dir.absolute_file)
-
+    val archives = init_archives(controller, output_dir)
 
     object Isabelle extends Isabelle(options, logic, dirs, select_dirs, selection, progress)
 
