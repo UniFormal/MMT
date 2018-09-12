@@ -175,6 +175,141 @@ object Importer
     segments: List[Theory_Segment])
 
 
+  /** importer **/
+
+  def importer(options: isabelle.Options,
+    logic: String = Importer.default_logic,
+    dirs: List[isabelle.Path] = Nil,
+    select_dirs: List[isabelle.Path] = Nil,
+    selection: isabelle.Sessions.Selection = isabelle.Sessions.Selection.empty,
+    commit_clean_delay: isabelle.Time = Importer.default_commit_clean_delay,
+    watchdog_timeout: isabelle.Time = Importer.default_watchdog_timeout,
+    output_dir: isabelle.Path = Importer.default_output_dir,
+    progress: isabelle.Progress = isabelle.No_Progress)
+  {
+    val controller = new Controller
+    controller.setHome(output_dir.absolute_file)
+
+    object MMT_Importer extends NonTraversingImporter
+    {
+      val key = "isabelle-omdoc"
+    }
+
+    controller.extman.addExtension(MMT_Importer, Nil)
+
+    val meta_inf = output_dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
+    isabelle.Isabelle_System.mkdirs(meta_inf.dir)
+    isabelle.File.write(meta_inf, "id: Isabelle\ntitle: Isabelle\n")
+
+    val archives = controller.backend.openArchive(output_dir.absolute_file)
+
+
+    object Isabelle extends
+      Isabelle(
+        options, logic, dirs, select_dirs, selection, commit_clean_delay,
+        watchdog_timeout, progress
+      )
+
+    Isabelle.export_session((thy_export: Importer.Theory_Export) =>
+    {
+      progress.echo("Importing theory " + thy_export.node_name + " ...")
+
+      val thy_name = thy_export.node_name
+      val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
+      val thy_base_name = isabelle.Long_Name.base_name(thy_export.node_name.theory)
+
+      // items
+      var items = Isabelle.begin_theory(thy_export)
+
+      def declare_item(entity: isabelle.Export_Theory.Entity, type_scheme: (List[String], isabelle.Term.Typ))
+      : Importer.Item =
+      {
+        val item = Importer.Item(thy_name, entity, type_scheme)
+        items = items.declare(item)
+        item
+      }
+
+      // document
+      val archive: Archive = archives.head // FIXME the archive in which this document should be placed: Distribution or AFP
+      val dpath = DPath(archive.narrationBase / thy_qualifier / thy_base_name)
+      val doc = new Document(dpath, root = true)
+      controller.add(doc)
+
+      val thy = Importer.declared_theory(thy_name)
+      controller.add(thy)
+      controller.add(MRef(doc.path, thy.path))
+
+      def decl_error(entity: isabelle.Export_Theory.Entity)(body: => Unit)
+      {
+        try { body }
+        catch {
+          case isabelle.ERROR(msg) =>
+            isabelle.error(msg + "\nin declaration of " + entity + isabelle.Position.here(entity.pos))
+        }
+      }
+
+      for (segment <- thy_export.segments) {
+        // source text
+        if (segment.header_relevant) {
+          val text = isabelle.Symbol.decode(segment.header.replace(' ', '\u00a0'))
+          controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(text)))
+        }
+
+        // classes
+        for (decl <- segment.classes) {
+          decl_error(decl.entity) {
+            val item = declare_item(decl.entity, Importer.dummy_type_scheme)
+            val tp = Isabelle.Class()
+            controller.add(item.constant(Some(tp), None))
+          }
+        }
+
+        // types
+        for (decl <- segment.types) {
+          decl_error(decl.entity) {
+            val item = declare_item(decl.entity, Importer.dummy_type_scheme)
+            val tp = Isabelle.Type(decl.args.length)
+            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, Isabelle.import_type(items, rhs)))
+            controller.add(item.constant(Some(tp), df))
+          }
+        }
+
+        // consts
+        for (decl <- segment.consts) {
+          decl_error(decl.entity) {
+            val item = declare_item(decl.entity, (decl.typargs, decl.typ))
+            val tp = Isabelle.Type.all(decl.typargs, Isabelle.import_type(items, decl.typ))
+            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, Isabelle.import_term(items, rhs)))
+            controller.add(item.constant(Some(tp), df))
+          }
+        }
+
+        // facts
+        for (decl <- segment.facts_single) {
+          decl_error(decl.entity) {
+            val item = declare_item(decl.entity, Importer.dummy_type_scheme)
+            val tp = Isabelle.import_prop(items, decl.prop)
+            controller.add(item.constant(Some(tp), None))
+          }
+        }
+
+        // locales
+        for (decl <- segment.locales) {
+          decl_error(decl.entity) {
+            val item = declare_item(decl.entity, Importer.dummy_type_scheme)
+            val tp = Isabelle.import_locale(items, decl)
+            controller.add(item.constant(Some(tp), None))
+          }
+        }
+      }
+
+      Isabelle.end_theory(thy_export, items)
+      // alternatively, use importDocumentWithErrorHandler to log errors
+      MMT_Importer.importDocument(archive, doc)
+    })
+  }
+
+
 
   /** command-line tool **/
 
@@ -236,18 +371,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       val sessions = getopts(args)
 
-
-      val progress = new isabelle.Console_Progress(verbose = verbose)
-
-      val meta_inf = output_dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
-      isabelle.Isabelle_System.mkdirs(meta_inf.dir)
-      isabelle.File.write(meta_inf, "id: Isabelle\ntitle: Isabelle\n")
-
-      val controller = new Controller
-      controller.setHome(output_dir.absolute_file)
-      
-      val archives = controller.backend.openArchive(output_dir.absolute_file)
-
       val selection =
         isabelle.Sessions.Selection(
           requirements = requirements,
@@ -258,149 +381,18 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           session_groups = session_groups,
           sessions = sessions)
 
-      val importer =
-        new Importer(archives,
-          options,
-          logic = logic,
-          dirs = dirs,
-          select_dirs = select_dirs,
-          selection = selection,
-          commit_clean_delay = commit_clean_delay,
-          watchdog_timeout = watchdog_timeout,
-          output_dir = output_dir,
-          progress = progress)
+      val progress = new isabelle.Console_Progress(verbose = verbose)
 
-      controller.extman.addExtension(importer, Nil)
-
-      importer.run
+      importer(options,
+        logic = logic,
+        dirs = dirs,
+        select_dirs = select_dirs,
+        selection = selection,
+        commit_clean_delay = commit_clean_delay,
+        watchdog_timeout = watchdog_timeout,
+        output_dir = output_dir,
+        progress = progress)
     }
-  }
-}
-
-class Importer(archives: List[Archive],
-    options: isabelle.Options,
-    logic: String = Importer.default_logic,
-    dirs: List[isabelle.Path] = Nil,
-    select_dirs: List[isabelle.Path] = Nil,
-    selection: isabelle.Sessions.Selection = isabelle.Sessions.Selection.empty,
-    commit_clean_delay: isabelle.Time = Importer.default_commit_clean_delay,
-    watchdog_timeout: isabelle.Time = Importer.default_watchdog_timeout,
-    output_dir: isabelle.Path = Importer.default_output_dir,
-    progress: isabelle.Progress = isabelle.No_Progress)
-  extends NonTraversingImporter
-{
-  importer =>
-
-  val key = "isabelle-omdoc"
-    
-  def run
-  {
-    try {
-      object Isabelle extends
-        Isabelle(
-          options, logic, dirs, select_dirs, selection, commit_clean_delay,
-          watchdog_timeout, progress
-        )
-
-      Isabelle.export_session((thy_export: Importer.Theory_Export) =>
-      {
-        progress.echo("Importing theory " + thy_export.node_name + " ...")
-
-        val thy_name = thy_export.node_name
-        val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
-        val thy_base_name = isabelle.Long_Name.base_name(thy_export.node_name.theory)
-
-        // items
-        var items = Isabelle.begin_theory(thy_export)
-
-        def declare_item(entity: isabelle.Export_Theory.Entity, type_scheme: (List[String], isabelle.Term.Typ))
-        : Importer.Item =
-        {
-          val item = Importer.Item(thy_name, entity, type_scheme)
-          items = items.declare(item)
-          item
-        }
-
-        // document
-        val archive: Archive = archives.head // FIXME the archive in which this document should be placed: Distribution or AFP
-        val dpath = DPath(archive.narrationBase / thy_qualifier / thy_base_name)
-        val doc = new Document(dpath, root = true)
-        controller.add(doc)
-
-        val thy = Importer.declared_theory(thy_name)
-        controller.add(thy)
-        controller.add(MRef(doc.path, thy.path))
-
-        def decl_error(entity: isabelle.Export_Theory.Entity)(body: => Unit)
-        {
-          try { body }
-          catch {
-            case isabelle.ERROR(msg) =>
-              isabelle.error(msg + "\nin declaration of " + entity + isabelle.Position.here(entity.pos))
-          }
-        }
-
-        for (segment <- thy_export.segments) {
-          // source text
-          if (segment.header_relevant) {
-            val text = isabelle.Symbol.decode(segment.header.replace(' ', '\u00a0'))
-            controller.add(new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(text)))
-          }
-
-          // classes
-          for (decl <- segment.classes) {
-            decl_error(decl.entity) {
-              val item = declare_item(decl.entity, Importer.dummy_type_scheme)
-              val tp = Isabelle.Class()
-              controller.add(item.constant(Some(tp), None))
-            }
-          }
-
-          // types
-          for (decl <- segment.types) {
-            decl_error(decl.entity) {
-              val item = declare_item(decl.entity, Importer.dummy_type_scheme)
-              val tp = Isabelle.Type(decl.args.length)
-              val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, Isabelle.import_type(items, rhs)))
-              controller.add(item.constant(Some(tp), df))
-            }
-          }
-
-          // consts
-          for (decl <- segment.consts) {
-            decl_error(decl.entity) {
-              val item = declare_item(decl.entity, (decl.typargs, decl.typ))
-              val tp = Isabelle.Type.all(decl.typargs, Isabelle.import_type(items, decl.typ))
-              val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, Isabelle.import_term(items, rhs)))
-              controller.add(item.constant(Some(tp), df))
-            }
-          }
-
-          // facts
-          for (decl <- segment.facts_single) {
-            decl_error(decl.entity) {
-              val item = declare_item(decl.entity, Importer.dummy_type_scheme)
-              val tp = Isabelle.import_prop(items, decl.prop)
-              controller.add(item.constant(Some(tp), None))
-            }
-          }
-
-          // locales
-          for (decl <- segment.locales) {
-            decl_error(decl.entity) {
-              val item = declare_item(decl.entity, Importer.dummy_type_scheme)
-              val tp = Isabelle.import_locale(items, decl)
-              controller.add(item.constant(Some(tp), None))
-            }
-          }
-        }
-
-        Isabelle.end_theory(thy_export, items)
-        // alternatively, use importDocumentWithErrorHandler to log errors
-        importDocument(archive, doc)
-      })
-    }
-    catch { case isabelle.ERROR(msg) => throw new Importer.Isabelle_Error(msg) }
   }
 }
 
@@ -417,7 +409,7 @@ class Isabelle(
   /* options */
 
   isabelle.Isabelle_System.init()
-
+  
   val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
   val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
 
