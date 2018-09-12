@@ -329,7 +329,7 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
  */
 abstract class ExtensionalityRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
    val introForm: {def unapply(tm: Term): Option[Any]}
-   def applicableToTerm(tm: Term) = !Stability.is(tm) || introForm.unapply(tm).isDefined 
+   def applicableToTerm(tm: Term) = !Stability.is(tm) || introForm.unapply(tm).isDefined
 }
 
 /**

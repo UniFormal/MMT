@@ -132,6 +132,7 @@ trait SolverAlgorithms {self: Solver =>
                         case None =>
                           activerules = dropJust(activerules, rule)
                           tryAgain = true
+                        case _ =>
                       }
                     } catch {
                        case t : MaytriggerBacktrack#Backtrack =>
