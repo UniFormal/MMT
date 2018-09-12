@@ -719,11 +719,11 @@ class Isabelle(
 
   private val imported = isabelle.Synchronized(Map.empty[String, Content])
 
-  def the_theory(name: String): Content =
+  def theory_content(name: String): Content =
     imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
 
   def begin_theory(thy_export: Importer.Theory_Export): Content =
-    Content.merge(thy_export.parents.map(the_theory(_)))
+    Content.merge(thy_export.parents.map(theory_content(_)))
 
   def end_theory(thy_export: Importer.Theory_Export, content: Content): Unit =
     imported.change(map => map + (thy_export.node_name.theory -> content))
