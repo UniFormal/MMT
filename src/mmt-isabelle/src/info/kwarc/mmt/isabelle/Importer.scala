@@ -4,8 +4,8 @@ import scala.math.Ordering
 import scala.collection.SortedMap
 import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
-import frontend.Controller
-import archives._
+import frontend.{Controller, Extension}
+import archives.{Archive, NonTraversingImporter}
 import symbols._
 import modules._
 import documents._
@@ -370,7 +370,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
   {
     isabelle.Command_Line.tool0 {
       val arguments = Arguments.command_line(args.toList)
-      val output_dir = isabelle.Path.explode(arguments.output_dir)
+      val output_dir = isabelle.Path.explode(arguments.output_dir).absolute
 
       val meta_inf = output_dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
       isabelle.Isabelle_System.mkdirs(meta_inf.dir)
@@ -382,25 +382,25 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       val archives = controller.backend.openArchive(output_dir.file)
       
       val importer = new Importer(archives, arguments)
+
       controller.extman.addExtension(importer, Nil)
 
       controller.handleLine("log console")
       controller.handleLine("log+ archive")
       controller.handleLine("log+ Isabelle")
      
-      importer.importAll
-      
+      importer.run
     }
   }
 }
 
-class Importer(archives: List[Archive], arguments: Importer.Arguments) extends archives.NonTraversingImporter
+class Importer(archives: List[Archive], arguments: Importer.Arguments) extends NonTraversingImporter
 {
   importer =>
 
   val key = "isabelle-omdoc"
     
-  def importAll =
+  def run
   {
     try {
       object Isabelle extends Isabelle(importer.log(_), arguments)
@@ -423,7 +423,7 @@ class Importer(archives: List[Archive], arguments: Importer.Arguments) extends a
         }
 
         // document
-        val archive: Archive = ??? // the archive in which this document should be placed: Distribution or AFP
+        val archive: Archive = archives.head // FIXME the archive in which this document should be placed: Distribution or AFP
         val dpath = DPath(archive.narrationBase / thy_qualifier / thy_base_name)
         val doc = new Document(dpath, root = true)
         controller.add(doc)
@@ -502,8 +502,6 @@ class Importer(archives: List[Archive], arguments: Importer.Arguments) extends a
       })
     }
     catch { case isabelle.ERROR(msg) => throw new Importer.Isabelle_Error(msg) }
-
-    BuildResult.empty
   }
 }
 
