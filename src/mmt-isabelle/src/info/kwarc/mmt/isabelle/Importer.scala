@@ -144,7 +144,7 @@ object Importer
   }
 
 
-  /* theory export */
+  /* theory export structures */
 
   sealed case class Theory_Segment(
     element: isabelle.Thy_Element.Element_Command = isabelle.Thy_Element.atom(isabelle.Command.empty),
@@ -171,6 +171,7 @@ object Importer
     node_name: isabelle.Document.Node.Name,
     parents: List[String],
     segments: List[Theory_Segment])
+
 
 
   /** importer **/
@@ -202,7 +203,7 @@ object Importer
 
     object Isabelle extends Isabelle(options, logic, dirs, select_dirs, selection, progress)
 
-    Isabelle.export_session((thy_export: Importer.Theory_Export) =>
+    Isabelle.import_session((thy_export: Importer.Theory_Export) =>
     {
       progress.echo("Importing theory " + thy_export.node_name + " ...")
 
@@ -431,11 +432,11 @@ class Isabelle(
     res
   }
 
-  def export_session(export: Importer.Theory_Export => Unit)
+  def import_session(import_theory: Importer.Theory_Export => Unit)
   {
     val session_deps = start_session()
 
-    export(pure_theory_export)
+    import_theory(pure_theory_export)
 
     object Consumer
     {
@@ -451,7 +452,7 @@ class Isabelle(
             val (snapshot, status) = args
             val name = snapshot.node_name
             if (status.ok) {
-              try { export(read_theory_export(snapshot)) }
+              try { import_theory(read_theory_export(snapshot)) }
               catch {
                 case exn: Throwable if !isabelle.Exn.is_interrupt(exn) =>
                   val msg = isabelle.Exn.message(exn)
