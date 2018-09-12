@@ -203,7 +203,7 @@ object Importer
 
     Isabelle.import_session((thy_export: Importer.Theory_Export) =>
     {
-      progress.echo("Importing theory " + thy_export.node_name + " ...")
+      progress.echo("Importing " + thy_export.node_name + " ...")
 
       val thy_name = thy_export.node_name
       val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
