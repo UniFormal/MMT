@@ -408,8 +408,6 @@ class Isabelle(
 {
   /* options */
 
-  isabelle.Isabelle_System.init()
-  
   val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
   val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
 
