@@ -451,7 +451,7 @@ class Isabelle(
         flatMap(session_name => session_deps.session_bases(session_name).used_theories.map(_.theory)),
       check_delay = options.seconds("mmt_check_delay"),
       commit = Some(Consumer.apply _),
-      commit_clean_delay = options.seconds("mmt_cleanup_delay"),
+      commit_cleanup_delay = options.seconds("mmt_cleanup_delay"),
       watchdog_timeout = options.seconds("mmt_watchdog_timeout"),
       progress = progress)
 
