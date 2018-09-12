@@ -183,6 +183,7 @@ lazy val api = (project in file("mmt-api")).
     unmanagedJars in Test += Utils.lib.toJava / "scala-reflect.jar",
     unmanagedJars in Test += Utils.lib.toJava / "scala-parser-combinators.jar",
     unmanagedJars in Test += Utils.lib.toJava / "scala-xml.jar",
+    libraryDependencies += "org.tukaani" % "xz" % "1.5", // florian broke stuff
 //    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % scalaVersion.value % "test",
     libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % "test",
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
