@@ -305,7 +305,7 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
             if (argsE != args)
               Simplify(OMA(f, argsE))
             else
-              Recurse 
+              Simplifiability.NoRecurse
          // turn sequence variables into variable sequences
          case OMBINDC(binder, con, args) =>
             val (conE,subs) = ExpandEllipsis.applyCont(con)
@@ -314,8 +314,9 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
             if (conE != con || argsE != args) {
               Simplify(OMBINDC(binder, conE, argsE))
             } else
-              Recurse
-         case _ => Recurse
+              Simplifiability.NoRecurse
+         case _ =>
+           Simplifiability.NoRecurse
       }
    }
 }
