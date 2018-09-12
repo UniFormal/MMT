@@ -37,7 +37,7 @@ object Importer
   }
 
 
-  /* formal items */
+  /* theory content items */
 
   object Item
   {
@@ -95,45 +95,6 @@ object Importer
       raw_match(type_scheme._2, typ)
       type_scheme._1.map(subst(_))
     }
-  }
-
-  object Items
-  {
-    val empty: Items = new Items(SortedMap.empty[Item.Key, Item](Item.Key.Ordering))
-    def merge(args: TraversableOnce[Items]): Items = (empty /: args)(_ ++ _)
-  }
-
-  final class Items private(private val rep: SortedMap[Item.Key, Item])
-  {
-    def get(key: Item.Key): Item = rep.getOrElse(key, isabelle.error("Undeclared " + key.toString))
-    def get_class(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CLASS, name))
-    def get_type(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.TYPE, name))
-    def get_const(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CONST, name))
-    def get_locale(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE, name))
-
-    def is_empty: Boolean = rep.isEmpty
-    def defined(key: Item.Key): Boolean = rep.isDefinedAt(key)
-
-    def declare(item: Item): Items =
-    {
-      if (defined(item.key)) {
-        isabelle.error("Duplicate " + item.key.toString + " in theory " +
-          isabelle.quote(item.node_name.theory))
-      }
-      else this + item
-    }
-
-    def + (item: Item): Items =
-      if (defined(item.key)) this
-      else new Items(rep + (item.key -> item))
-
-    def ++ (other: Items): Items =
-      if (this eq other) this
-      else if (is_empty) other
-      else (this /: other.rep)({ case (map, (_, item)) => map + item })
-
-    override def toString: String =
-      rep.iterator.map(_._2).mkString("Items(", ", ", ")")
   }
 
 
@@ -200,14 +161,13 @@ object Importer
       val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
       val thy_base_name = isabelle.Long_Name.base_name(thy_export.node_name.theory)
 
-      // items
-      var items = Isabelle.begin_theory(thy_export)
+      var content = Isabelle.begin_theory(thy_export)
 
       def declare_item(entity: isabelle.Export_Theory.Entity, type_scheme: (List[String], isabelle.Term.Typ))
       : Importer.Item =
       {
         val item = Importer.Item(thy_name, entity, type_scheme)
-        items = items.declare(item)
+        content = content.declare(item)
         item
       }
 
@@ -251,7 +211,7 @@ object Importer
           decl_error(decl.entity) {
             val item = declare_item(decl.entity, Importer.dummy_type_scheme)
             val tp = Isabelle.Type(decl.args.length)
-            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, Isabelle.import_type(items, rhs)))
+            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, content.import_type(rhs)))
             controller.add(item.constant(Some(tp), df))
           }
         }
@@ -260,8 +220,8 @@ object Importer
         for (decl <- segment.consts) {
           decl_error(decl.entity) {
             val item = declare_item(decl.entity, (decl.typargs, decl.typ))
-            val tp = Isabelle.Type.all(decl.typargs, Isabelle.import_type(items, decl.typ))
-            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, Isabelle.import_term(items, rhs)))
+            val tp = Isabelle.Type.all(decl.typargs, content.import_type(decl.typ))
+            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, content.import_term(rhs)))
             controller.add(item.constant(Some(tp), df))
           }
         }
@@ -270,7 +230,7 @@ object Importer
         for (decl <- segment.facts_single) {
           decl_error(decl.entity) {
             val item = declare_item(decl.entity, Importer.dummy_type_scheme)
-            val tp = Isabelle.import_prop(items, decl.prop)
+            val tp = content.import_prop(decl.prop)
             controller.add(item.constant(Some(tp), None))
           }
         }
@@ -279,13 +239,13 @@ object Importer
         for (decl <- segment.locales) {
           decl_error(decl.entity) {
             val item = declare_item(decl.entity, Importer.dummy_type_scheme)
-            val tp = Isabelle.import_locale(items, decl)
+            val tp = content.import_locale(decl)
             controller.add(item.constant(Some(tp), None))
           }
         }
       }
 
-      Isabelle.end_theory(thy_export, items)
+      Isabelle.end_theory(thy_export, content)
       // alternatively, use importDocumentWithErrorHandler to log errors
       MMT_Importer.importDocument(archive, doc)
     })
@@ -647,83 +607,124 @@ class Isabelle(
     session.use_theories(theories, progress = progress)
 
 
-  /* imported theory items */
+  /* imported theory content */
 
-  private val imported = isabelle.Synchronized(Map.empty[String, Importer.Items])
+  object Content
+  {
+    val empty: Content = new Content(SortedMap.empty[Importer.Item.Key, Importer.Item](Importer.Item.Key.Ordering))
+    def merge(args: TraversableOnce[Content]): Content = (empty /: args)(_ ++ _)
+  }
 
-  def the_theory(name: String): Importer.Items =
+  final class Content private(private val rep: SortedMap[Importer.Item.Key, Importer.Item])
+  {
+    def get(key: Importer.Item.Key): Importer.Item = rep.getOrElse(key, isabelle.error("Undeclared " + key.toString))
+    def get_class(name: String): Importer.Item = get(Importer.Item.Key(isabelle.Export_Theory.Kind.CLASS, name))
+    def get_type(name: String): Importer.Item = get(Importer.Item.Key(isabelle.Export_Theory.Kind.TYPE, name))
+    def get_const(name: String): Importer.Item = get(Importer.Item.Key(isabelle.Export_Theory.Kind.CONST, name))
+    def get_locale(name: String): Importer.Item = get(Importer.Item.Key(isabelle.Export_Theory.Kind.LOCALE, name))
+
+    def is_empty: Boolean = rep.isEmpty
+    def defined(key: Importer.Item.Key): Boolean = rep.isDefinedAt(key)
+
+    def declare(item: Importer.Item): Content =
+    {
+      if (defined(item.key)) {
+        isabelle.error("Duplicate " + item.key.toString + " in theory " +
+          isabelle.quote(item.node_name.theory))
+      }
+      else this + item
+    }
+
+    def + (item: Importer.Item): Content =
+      if (defined(item.key)) this
+      else new Content(rep + (item.key -> item))
+
+    def ++ (other: Content): Content =
+      if (this eq other) this
+      else if (is_empty) other
+      else (this /: other.rep)({ case (map, (_, item)) => map + item })
+
+    override def toString: String =
+      rep.iterator.map(_._2).mkString("Content(", ", ", ")")
+
+
+    /* MMT import */
+
+    def import_class(name: String): Term = OMS(get_class(name).global_name)
+
+    def import_type(ty: isabelle.Term.Typ): Term =
+    {
+      try {
+        ty match {
+          case isabelle.Term.Type(isabelle.Pure_Thy.FUN, List(a, b)) =>
+            lf.Arrow(import_type(a), import_type(b))
+          case isabelle.Term.Type(name, args) =>
+            val op = OMS(get_type(name).global_name)
+            if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(import_type(_)))
+          case isabelle.Term.TFree(a, _) => OMV(a)
+          case isabelle.Term.TVar(xi, _) => isabelle.error("Illegal schematic type variable " + xi.toString)
+        }
+      }
+      catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin type " + ty) }
+    }
+
+    def import_term(tm: isabelle.Term.Term): Term =
+    {
+      def term(bounds: List[String], t: isabelle.Term.Term): Term =
+        t match {
+          case isabelle.Term.Const(c, ty) =>
+            val item = get_const(c)
+            Type.app(OMS(item.global_name), item.typargs(ty).map(import_type(_)))
+          case isabelle.Term.Free(x, ty) => OMV(x)
+          case isabelle.Term.Var(xi, _) => isabelle.error("Illegal schematic variable " + xi.toString)
+          case isabelle.Term.Bound(i) =>
+            val x =
+              try { bounds(i) }
+              catch { case _: IndexOutOfBoundsException => isabelle.error("Loose de-Bruijn index " + i) }
+            OMV(x)
+          case isabelle.Term.Abs(x, ty, b) =>
+            lf.Lambda(LocalName(x), import_type(ty), term(x :: bounds, b))
+          case isabelle.Term.App(a, b) =>
+            lf.Apply(term(bounds, a), term(bounds, b))
+        }
+
+      try { term(Nil, tm) }
+      catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin term " + tm) }
+    }
+
+    def import_args(
+      typargs: List[(String, isabelle.Term.Sort)],
+      args: List[(String, isabelle.Term.Typ)]): (List[String], List[Term], List[VarDecl]) =
+    {
+      val types = typargs.map(_._1)
+      val sorts = typargs.flatMap({ case (a, s) => s.map(c => lf.Apply(import_class(c), OMV(a))) })
+      val vars = args.map({ case (x, ty) => OMV(x) % import_type(ty) })
+      (types, sorts, vars)
+    }
+
+    def import_prop(prop: isabelle.Export_Theory.Prop): Term =
+    {
+      val (types, sorts, vars) = import_args(prop.typargs, prop.args)
+      val t = import_term(prop.term)
+      Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
+    }
+
+    def import_locale(locale: isabelle.Export_Theory.Locale): Term =
+    {
+      val (types, sorts, vars) = import_args(locale.typargs, locale.args)
+      val t = Prop()
+      Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
+    }
+  }
+
+  private val imported = isabelle.Synchronized(Map.empty[String, Content])
+
+  def the_theory(name: String): Content =
     imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
 
-  def begin_theory(thy_export: Importer.Theory_Export): Importer.Items =
-    Importer.Items.merge(thy_export.parents.map(the_theory(_)))
+  def begin_theory(thy_export: Importer.Theory_Export): Content =
+    Content.merge(thy_export.parents.map(the_theory(_)))
 
-  def end_theory(thy_export: Importer.Theory_Export, items: Importer.Items): Unit =
-    imported.change(map => map + (thy_export.node_name.theory -> items))
-
-  def import_class(items: Importer.Items, name: String): Term =
-    OMS(items.get_class(name).global_name)
-
-  def import_type(items: Importer.Items, ty: isabelle.Term.Typ): Term =
-  {
-    def typ(t: isabelle.Term.Typ): Term = import_type(items, t)
-    try {
-      ty match {
-        case isabelle.Term.Type(isabelle.Pure_Thy.FUN, List(a, b)) => lf.Arrow(typ(a), typ(b))
-        case isabelle.Term.Type(name, args) =>
-          val op = OMS(items.get_type(name).global_name)
-          if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(typ(_)))
-        case isabelle.Term.TFree(a, _) => OMV(a)
-        case isabelle.Term.TVar(xi, _) => isabelle.error("Illegal schematic type variable " + xi.toString)
-      }
-    }
-    catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin type " + ty) }
-  }
-
-  def import_term(items: Importer.Items, tm: isabelle.Term.Term): Term =
-  {
-    def typ(ty: isabelle.Term.Typ): Term = import_type(items, ty)
-    def term(bounds: List[String], t: isabelle.Term.Term): Term =
-      t match {
-        case isabelle.Term.Const(c, ty) =>
-          val item = items.get_const(c)
-          Type.app(OMS(item.global_name), item.typargs(ty).map(typ(_)))
-        case isabelle.Term.Free(x, ty) => OMV(x)
-        case isabelle.Term.Var(xi, _) => isabelle.error("Illegal schematic variable " + xi.toString)
-        case isabelle.Term.Bound(i) =>
-          val x =
-            try { bounds(i) }
-            catch { case _: IndexOutOfBoundsException => isabelle.error("Loose de-Bruijn index " + i) }
-          OMV(x)
-        case isabelle.Term.Abs(x, ty, b) => lf.Lambda(LocalName(x), typ(ty), term(x :: bounds, b))
-        case isabelle.Term.App(a, b) => lf.Apply(term(bounds, a), term(bounds, b))
-      }
-
-    try { term(Nil, tm) }
-    catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin term " + tm) }
-  }
-
-  def import_args(
-    items: Importer.Items,
-    typargs: List[(String, isabelle.Term.Sort)],
-    args: List[(String, isabelle.Term.Typ)]): (List[String], List[Term], List[VarDecl]) =
-  {
-    val types = typargs.map(_._1)
-    val sorts = typargs.flatMap({ case (a, s) => s.map(c => lf.Apply(import_class(items, c), OMV(a))) })
-    val vars = args.map({ case (x, ty) => OMV(x) % import_type(items, ty) })
-    (types, sorts, vars)
-  }
-
-  def import_prop(items: Importer.Items, prop: isabelle.Export_Theory.Prop): Term =
-  {
-    val (types, sorts, vars) = import_args(items, prop.typargs, prop.args)
-    val t = import_term(items, prop.term)
-    Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
-  }
-
-  def import_locale(items: Importer.Items, locale: isabelle.Export_Theory.Locale): Term =
-  {
-    val (types, sorts, vars) = import_args(items, locale.typargs, locale.args)
-    val t = Prop()
-    Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
-  }
+  def end_theory(thy_export: Importer.Theory_Export, content: Content): Unit =
+    imported.change(map => map + (thy_export.node_name.theory -> content))
 }
