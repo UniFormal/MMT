@@ -180,11 +180,7 @@ object Importer
     val controller = new Controller
     controller.setHome(output_dir.absolute_file)
 
-    object MMT_Importer extends NonTraversingImporter
-    {
-      val key = "isabelle-omdoc"
-    }
-
+    object MMT_Importer extends NonTraversingImporter { val key = "isabelle-omdoc" }
     controller.extman.addExtension(MMT_Importer, Nil)
 
     val meta_inf = output_dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
@@ -380,8 +376,6 @@ class Isabelle(
   selection: isabelle.Sessions.Selection,
   progress: isabelle.Progress)
 {
-  /* options */
-
   val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
   val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
 
