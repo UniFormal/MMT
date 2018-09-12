@@ -449,12 +449,12 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
           {
             case scala.util.Left(scala.util.Left(n@srt_name))          => tar = n.toString ; scala.util.Left(IMPSAtomSort(srt_name.s))
             case scala.util.Left(scala.util.Right(n@srt_dfstr))        => tar = n.toString ; assert(sp.mth.isDefined) ; scala.util.Right(sp.mth.get)
-            case scala.util.Right(scala.util.Left(n@pred_srt_dfstr))   => tar = n.toString ; ???
+            case scala.util.Right(scala.util.Left(n@pred_srt_dfstr))   => tar = n.toString ; assert(sp.mth.isDefined) ; scala.util.Right(sp.mth.get) // TODO: FIX THESE!!!
             case scala.util.Right(scala.util.Right(n@indic_srt_dfstr)) => tar = n.toString ; assert(sp.mth.isDefined) ; scala.util.Right(sp.mth.get)
           }
 
           val target_term : Term = target match {
-            case scala.util.Left(is)  => matchSort(is,locateMathSymbolHome(is.toString,target_thy))
+            case scala.util.Left(is)  => val q = locateMathSymbolHome(is.toString,target_thy) ; assert(q.isDefined) ; matchSort(is,q.get)
             case scala.util.Right(im) => doMathExp(im,target_thy,Nil)
           }
 
@@ -463,11 +463,12 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
             case scala.util.Right(_) => None
           }
 
-          val quelle : DeclaredTheory = locateMathSymbolHome(sp.name.toString, source_thy)
-          println("Quelle of sort " + sp.name.toString + " is " + quelle.name.toString)
+          val quelle : Option[DeclaredTheory] = locateMathSymbolHome(sp.name.toString, source_thy)
+          assert(quelle.isDefined)
+          println("Quelle of sort " + sp.name.toString + " is " + quelle.get.name.toString)
 
-          val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.path) / doName(sp.name.s),Nil,target_tp,Some(target_term),None)
-          if (true) { println(" >  adding sort-mapping: " + sp.name.s + " → " + tar + " // " + ComplexStep(quelle.path) / doName(sp.name.s)) }
+          val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(sp.name.s),Nil,target_tp,Some(target_term),None)
+          if (true) { println(" >  adding sort-mapping: " + sp.name.s + " → " + tar + " // " + ComplexStep(quelle.get.path) / doName(sp.name.s)) }
 
           translated_constant_names = doName(sp.name.toString) :: translated_constant_names
           println(nu_sort_map)
@@ -486,10 +487,19 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
               assert(df._2.isDefined)
               doMathExp(df._2.get,target_thy,Nil)
 
-            case scala.util.Right(n) => tar = n.s ; doMathExp(IMPSMathSymbol(n.s),locateMathSymbolHome(n.s,target_thy),Nil)
+            case scala.util.Right(n) => {
+              tar = n.s
+              val quelle = locateMathSymbolHome(n.s,target_thy)
+
+              if (quelle.isDefined) { doMathExp(IMPSMathSymbol(n.s),quelle.get,Nil) }
+              else {
+                assert(isRatLiteral(n.s) || isIntLiteral(n.s) || isOctLiteral(n.s))
+                doLiteral(n.s)
+              }
+            }
           }
 
-          val quelle : DeclaredTheory = locateMathSymbolHome(cp.name.toString, source_thy)
+          val quelle : DeclaredTheory = locateMathSymbolHome(cp.name.toString, source_thy).get
           println("Quelle of sort " + cp.name.toString + " is " + quelle.name.toString)
 
           val nu_const_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.path) / doName(cp.name.s),Nil,None,Some(target_const_term),None)
@@ -511,7 +521,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
           if (!translated_constant_names.contains(c.name))
           {
             if (tState.verbosity > 4) { println(" >    adding constant-endo-mapping for " + c.name) }
-            val quelle : DeclaredTheory = locateMathSymbolHome(c.name.toString, source_thy)
+            val quelle : DeclaredTheory = locateMathSymbolHome(c.name.toString, source_thy).get
             val orig_c = quelle.getConstants.find(k => k.name.toString.toLowerCase == c.name.toString.toLowerCase)
             assert(orig_c.isDefined)
             val nu_id_const = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.path) / c.name,c.alias,c.tp,Some(orig_c.get.toTerm),c.rl)
@@ -830,7 +840,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
           val p = doName(n.s)
           val q = doName(rename(n.s))
 
-          val nsource = locateMathSymbolHome(n.s,source.get)
+          val nnsource = locateMathSymbolHome(n.s,source.get)
+          assert(nnsource.isDefined)
+          val nsource = nnsource.get
           val urimage = nsource.getConstants.find(c => c.name.toString.toLowerCase == n.s.toLowerCase).get
           println("     > urimage definiens: " + urimage.df)
           println("     > urimage type:      " + urimage.tp)
@@ -961,8 +973,9 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         IMPSTheory.Sets(tp,srt)
 
       case IMPSAtomSort(srt) =>
-        val thy : DeclaredTheory = locateMathSymbolHome(srt,t)
-        OMS(thy.path ? srt)
+        val thy : Option[DeclaredTheory] = locateMathSymbolHome(srt,t)
+        assert(thy.isDefined)
+        OMS(thy.get.path ? srt)
     }
   }
 
@@ -1025,6 +1038,17 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
     controller add judgement
   }
 
+  def isIntLiteral(s : String) : Boolean = { s.forall(_.isDigit) || (s.startsWith("-") && s.tail.nonEmpty && s.tail.forall(_.isDigit)) }
+  def isRatLiteral(s : String) : Boolean = false
+  def isOctLiteral(s : String) : Boolean = { s.endsWith("#8") && s.init.init.nonEmpty && s.init.init.forall(_.isDigit) }
+
+  def doLiteral(s : String) : Term =
+  {
+    if (isIntLiteral(s)) { IntLiterals.parse(s) }
+    else if (isOctLiteral(s)) { OctLiterals.parse(s.init.init) }
+    else { ??? } // ToDo: Ratliterals
+  }
+
   /* Translate IMPS Math Expressions to Terms */
   def doMathExp(d : IMPSMathExp, thy : DeclaredTheory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
   {
@@ -1043,15 +1067,12 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       case IMPSMathSymbol(s)               =>
 
         if (s.startsWith("\"") && s.endsWith("\"")) { doMathExp(IMPSMathSymbol(s.tail.init),thy,cntxt) }
-        else if (s.forall(_.isDigit) || (s.startsWith("-") && s.tail.nonEmpty && s.tail.forall(_.isDigit))) {
-          IntLiterals.parse(s)
-        }
-        else if (false) { ??? } // ToDo: Ratliterals
-        else if (s.endsWith("#8") && s.init.init.nonEmpty && s.init.init.forall(_.isDigit)) { OctLiterals.parse(s.init.init) }
+        else if (isIntLiteral(s) || isRatLiteral(s) || isOctLiteral(s)) { doLiteral(s) }
         else
         {
-          val srcthy : DeclaredTheory = locateMathSymbolHome(s,thy)
-          OMS(srcthy.path ? LocalName(s))
+          val srcthy : Option[DeclaredTheory] = locateMathSymbolHome(s,thy)
+          assert(srcthy.isDefined)
+          OMS(srcthy.get.path ? LocalName(s))
         }
         //  Rational Literals
         //  case "i/j" => OMLIT((BigInt(i),BigInt(j)),RatLiterals)
@@ -1478,19 +1499,18 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
     is.distinct
   }
 
-  def locateMathSymbolHome(s : String, thy : DeclaredTheory) : DeclaredTheory =
+  def locateMathSymbolHome(s : String, thy : DeclaredTheory) : Option[DeclaredTheory] =
   {
     val srcthy : Option[DeclaredTheory] = recursiveIncludes(List(thy)).reverse.find(t => t.getConstants.exists(c => c.name.toString.toLowerCase == s.toLowerCase))
-    if (tState.verbosity > 1)
+    if (tState.verbosity > 2)
     {
       println(" > Locating IMPSMathSymbol " + s + " for use in theory " + thy.name.toString)
     }
 
-    if (srcthy.isEmpty) { println("            (could not find location for " + s + ")") }
-    else if (tState.verbosity > 1) { println("            (location for " + s + " is " + srcthy.get.name.toString + ")") }
+    if (tState.verbosity > 2)      { println("            (could not find location for " + s + ")") }
+    else if (tState.verbosity > 2) { println("            (location for " + s + " is " + srcthy.get.name.toString + ")") }
 
-    assert(srcthy.isDefined)
-    srcthy.get
+    srcthy
   }
 
   def findSortFromContext(exp : IMPSMathExp, context : List[(IMPSVar,IMPSSort)]) : Option[IMPSSort] =
