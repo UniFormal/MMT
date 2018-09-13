@@ -183,18 +183,23 @@ object Importer
       val thy_name = thy_export.node_name
       val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
       val thy_base_name = isabelle.Long_Name.base_name(thy_export.node_name.theory)
-
-      val thy_content = Isabelle.begin_theory(thy_export)
+      val thy_is_pure: Boolean = thy_name == Isabelle.pure_name
 
       // document
       val archive: Archive = archives.head // FIXME the archive in which this document should be placed: Distribution or AFP
-
       val dpath = DPath(archive.narrationBase / thy_qualifier / thy_base_name)
       val doc = new Document(dpath, root = true)
       controller.add(doc)
 
+      // theory content
+      val thy_content = Isabelle.begin_theory(thy_export, if (thy_is_pure) None else Some(Isabelle.pure_path))
+
       controller.add(thy_content.thy)
       controller.add(MRef(doc.path, thy_content.thy.path))
+
+      if (thy_is_pure) {
+        controller.add(Include(thy_content.thy.toTerm, lf.PLF._path, Nil))
+      }
 
       def decl_error(entity: isabelle.Export_Theory.Entity)(body: => Unit)
       {
@@ -765,9 +770,9 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
   def theory_content(name: String): Content =
     imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
 
-  def begin_theory(thy_export: Importer.Theory_Export): Theory_Content_Var =
+  def begin_theory(thy_export: Importer.Theory_Export, meta_theory: Option[MPath]): Theory_Content_Var =
   {
-    val thy = Importer.declared_theory(thy_export.node_name, None)
+    val thy = Importer.declared_theory(thy_export.node_name, meta_theory)
     val parent_content = Content.merge(thy_export.parents.map(theory_content))
     new Theory_Content_Var(thy, thy_export.node_name, parent_content)
   }
