@@ -32,10 +32,12 @@ object Importer
 
   def module_name(node_name: isabelle.Document.Node.Name): MPath = isabelle_base ? node_name.theory
 
-  def declared_theory(node_name: isabelle.Document.Node.Name): DeclaredTheory =
+  def declared_theory(
+    node_name: isabelle.Document.Node.Name,
+    meta_theory: Option[MPath]): DeclaredTheory =
   {
     val module = module_name(node_name)
-    Theory.empty(module.doc, module.name, Some(module))
+    Theory.empty(module.doc, module.name, meta_theory)
   }
 
 
@@ -64,6 +66,7 @@ object Importer
   val dummy_type_scheme: (List[String], isabelle.Term.Typ) = (Nil, isabelle.Term.dummyT)
 
   sealed case class Item(
+    theory_path: MPath,
     node_name: isabelle.Document.Node.Name,
     entity: isabelle.Export_Theory.Entity,
     type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme)
@@ -74,7 +77,7 @@ object Importer
     def global_name: GlobalName = constant(None, None).path
 
     def constant(tp: Option[Term], df: Option[Term]): Constant =
-      Constant(declared_theory(node_name).toTerm, local_name, Nil, tp, df, None)
+      Constant(OMID(theory_path), local_name, Nil, tp, df, None)
 
     def typargs(typ: isabelle.Term.Typ): List[isabelle.Term.Typ] =
     {
@@ -181,12 +184,12 @@ object Importer
       val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
       val thy_base_name = isabelle.Long_Name.base_name(thy_export.node_name.theory)
 
-      var content = Isabelle.begin_theory(thy_export)
+      var (thy, content) = Isabelle.begin_theory(thy_export)
 
       def declare_item(entity: isabelle.Export_Theory.Entity, type_scheme: (List[String], isabelle.Term.Typ))
       : Importer.Item =
       {
-        val item = Importer.Item(thy_name, entity, type_scheme)
+        val item = Importer.Item(thy.path, thy_name, entity, type_scheme)
         content = content.declare(item)
         item
       }
@@ -198,7 +201,6 @@ object Importer
       val doc = new Document(dpath, root = true)
       controller.add(doc)
 
-      val thy = Importer.declared_theory(thy_name)
       controller.add(thy)
       controller.add(MRef(doc.path, thy.path))
 
@@ -503,6 +505,9 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
   def PURE: String = isabelle.Thy_Header.PURE
   def pure_name: isabelle.Document.Node.Name = import_name(PURE)
 
+  lazy val pure_path: MPath =
+    Importer.declared_theory(pure_name, None).path
+
   lazy val pure_theory: isabelle.Export_Theory.Theory =
     isabelle.Export_Theory.read_pure_theory(store, cache = Some(cache))
 
@@ -523,8 +528,10 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
   }
 
   private def pure_entity(entities: List[isabelle.Export_Theory.Entity], name: String): GlobalName =
-    entities.collectFirst({ case entity if entity.name == name => Importer.Item(pure_name, entity).global_name }).
-      getOrElse(isabelle.error("Unknown entity " + isabelle.quote(name)))
+    entities.collectFirst(
+      { case entity if entity.name == name =>
+          Importer.Item(pure_path, pure_name, entity).global_name
+      }).getOrElse(isabelle.error("Unknown entity " + isabelle.quote(name)))
 
   def pure_type(name: String): GlobalName = pure_entity(pure_theory.types.map(_.entity), name)
   def pure_const(name: String): GlobalName = pure_entity(pure_theory.consts.map(_.entity), name)
@@ -652,8 +659,12 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
   def theory_content(name: String): Content =
     imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
 
-  def begin_theory(thy_export: Importer.Theory_Export): Content =
-    Content.merge(thy_export.parents.map(theory_content))
+  def begin_theory(thy_export: Importer.Theory_Export): (DeclaredTheory, Content) =
+  {
+    val thy = Importer.declared_theory(thy_export.node_name, None)
+    val content = Content.merge(thy_export.parents.map(theory_content))
+    (thy, content)
+  }
 
   def end_theory(thy_export: Importer.Theory_Export, content: Content): Unit =
     imported.change(map => map + (thy_export.node_name.theory -> content))
