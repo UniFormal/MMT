@@ -132,93 +132,6 @@ object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, MitM.ma
 object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OMS(MitM.polynomials)) { self =>
   val typeParameterPositions : List[Int] = Nil
 
-  // Constructs a polynomial out of a list of rational numbers
-  private def constructPolynomial(varName: String, ls : List[BigDecimal]) : Term = ApplySpine(
-    OMS(MitM.polycons),
-    NatRules.NatLit(ls.length),
-    StringLiterals.apply(varName),
-    Sequences.flatseq(ls.map(_.toBigInt).map(NatRules.NatLit.of):_*)
-  )
-
-  // turns a polynomial into a list of rational numbers
-  private def destructPolynomial(t : Term): (String, List[BigDecimal]) = t match {
-    case ApplySpine(OMS(MitM.polycons), _ :: (str@OMLIT(vname: String, StringLiterals)) :: Sequences.flatseq(ls @ _*) :: Nil) =>
-      (vname, ls.toList.map({ case NatRules.NatLit(bi: BigInt) => BigDecimal(bi)}))
-    case _ => throw new Exception("not a polynomial")
-  }
-
-  /**
-    * parses a polynomial into a list of added terms
-    * @param s
-    * @return
-    */
-  def parsePoly(s : String) : List[(BigDecimal, List[(String, BigDecimal)])] = {
-    // split by plusses and minus
-    val splitRegex = "(?<!\\^)([+-])".r
-
-    splitRegex.split(
-      splitRegex.replaceAllIn(
-        """\s+""".r.replaceAllIn(s, ""), // replace all the spaces
-        "$1$1")               // duplicate +-s
-    ) // split
-      .map(parsePolyPart).toList // and parse parts
-  }
-
-  /**
-    * Splits a single part of a polynomial into an integer constant and a list of (variable, power)
-    * @param s
-    * @return
-    */
-  def parsePolyPart(s: String): (BigDecimal, List[(String, BigDecimal)]) = {
-
-    // extract the factor in front of the term
-    val factorRE = """^([+-]?\d+(?:\.\d+)?)""".r
-    val theFactor: BigDecimal = s match {
-      case factorRE(fs: String) => BigDecimal(fs)
-      case _ => 1
-    }
-
-    // find all the individual parts
-    var partRE = """\*?([aA-zZ])(?:\^([+-]?\d+(?:\.\d+)?))?""".r
-    val theParts = partRE.findAllMatchIn(factorRE.replaceAllIn(s, "")).map(m => (m.group(1), BigDecimal(m.group(2))))
-
-    // return the extracted factor and list
-    (theFactor, theParts.toList)
-  }
-
-  /** turns a polynomial into a string */
-  def makePoly(parts: List[(BigDecimal, List[(String, BigDecimal)])]): String = {
-    parts.map(makePolyPart).filter(_.nonEmpty).mkString("+")
-      .replaceAll("+-", "-").replaceAll("++", "+") // replace all duplicate signs created by .mkString
-  }
-
-  /** turns a parsed polynomial part into a string */
-  def makePolyPart(part: (BigDecimal, List[(String, BigDecimal)])): String = {
-    val (factor, lst) = part
-    if(factor.toIntExact == 0){
-      return ""
-    }
-    factor.toString + "*" + lst.map(f => s"${f._1}^${f._2}").mkString("")
-  }
-
-  /** given a parsed set of factors, returns a map of poly factors */
-  def extractPolyFactors(parts: List[(BigDecimal, List[(String, BigDecimal)])]): Map[String, List[BigDecimal]] = {
-    val map = mutable.Map[String, mutable.Buffer[BigDecimal]]() // the map of a single polynomial
-
-    // create appropriate buffers for each variable
-    parts.foreach(part => {
-      part._2.foreach(sd => {
-        if(!map.contains(sd._1)){
-          map(sd._1) = mutable.Buffer[BigDecimal]()
-        }
-        map(sd._1)(sd._2.toIntExact) = part._1
-      })
-    })
-
-    // and turn it into something non-mutable
-    map.toList.map(kv => (kv._1, kv._2.toList)).toMap
-  }
-
 
   def encode(t: Term): JSON = {
     // destruct the polynomial
@@ -239,5 +152,92 @@ object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OM
       val varname = factorMap.keys.head
       constructPolynomial(varname, factorMap(varname))
     case _ => throw new Exception("not a polynomial")
+  }
+
+  // Constructs a polynomial out of a list of rational numbers
+  private def constructPolynomial(varName: String, ls : List[BigDecimal]) : Term = ApplySpine(
+    OMS(MitM.polycons),
+    NatRules.NatLit(ls.length),
+    StringLiterals.apply(varName),
+    Sequences.flatseq(ls.map(_.toBigInt).map(NatRules.NatLit.of):_*)
+  )
+
+  // turns a polynomial into a list of rational numbers
+  private def destructPolynomial(t : Term): (String, List[BigDecimal]) = t match {
+    case ApplySpine(OMS(MitM.polycons), _ :: OMLIT(vname: String, StringLiterals) :: Sequences.flatseq(ls @ _*) :: Nil) =>
+      (vname, ls.toList.map({ case NatRules.NatLit(bi: BigInt) => BigDecimal(bi)}))
+    case _ => throw new Exception("not a polynomial")
+  }
+
+  /**
+    * parses a polynomial into a list of added terms
+    * @param s
+    * @return
+    */
+  private def parsePoly(s : String) : List[(BigDecimal, List[(String, BigDecimal)])] = {
+    // split by plusses and minus
+    val splitRegex = "(?<!\\^)([+-])".r
+
+    splitRegex.split(
+      splitRegex.replaceAllIn(
+        """\s+""".r.replaceAllIn(s, ""), // replace all the spaces
+        "$1$1")               // duplicate +-s
+    ) // split
+      .map(parsePolyPart).toList // and parse parts
+  }
+
+  /**
+    * Splits a single part of a polynomial into an integer constant and a list of (variable, power)
+    * @param s
+    * @return
+    */
+  private def parsePolyPart(s: String): (BigDecimal, List[(String, BigDecimal)]) = {
+
+    // extract the factor in front of the term
+    val factorRE = """^([+-]?\d+(?:\.\d+)?)""".r
+    val theFactor: BigDecimal = s match {
+      case factorRE(fs: String) => BigDecimal(fs)
+      case _ => 1
+    }
+
+    // find all the individual parts
+    var partRE = """\*?([aA-zZ])(?:\^([+-]?\d+(?:\.\d+)?))?""".r
+    val theParts = partRE.findAllMatchIn(factorRE.replaceAllIn(s, "")).map(m => (m.group(1), BigDecimal(m.group(2))))
+
+    // return the extracted factor and list
+    (theFactor, theParts.toList)
+  }
+
+  /** turns a polynomial into a string */
+  private def makePoly(parts: List[(BigDecimal, List[(String, BigDecimal)])]): String = {
+    parts.map(makePolyPart).filter(_.nonEmpty).mkString("+")
+      .replaceAll("+-", "-").replaceAll("++", "+") // replace all duplicate signs created by .mkString
+  }
+
+  /** turns a parsed polynomial part into a string */
+  private def makePolyPart(part: (BigDecimal, List[(String, BigDecimal)])): String = {
+    val (factor, lst) = part
+    if(factor.toIntExact == 0){
+      return ""
+    }
+    factor.toString + "*" + lst.map(f => s"${f._1}^${f._2}").mkString("")
+  }
+
+  /** given a parsed set of factors, returns a map of poly factors */
+  private def extractPolyFactors(parts: List[(BigDecimal, List[(String, BigDecimal)])]): Map[String, List[BigDecimal]] = {
+    val map = mutable.Map[String, mutable.Buffer[BigDecimal]]() // the map of a single polynomial
+
+    // create appropriate buffers for each variable
+    parts.foreach(part => {
+      part._2.foreach(sd => {
+        if(!map.contains(sd._1)){
+          map(sd._1) = mutable.Buffer[BigDecimal]()
+        }
+        map(sd._1)(sd._2.toIntExact) = part._1
+      })
+    })
+
+    // and turn it into something non-mutable
+    map.toList.map(kv => (kv._1, kv._2.toList)).toMap
   }
 }
