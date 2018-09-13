@@ -128,6 +128,7 @@ object Importer
 
   sealed case class Theory_Export(
     node_name: isabelle.Document.Node.Name,
+    node_source: String,
     parents: List[String],
     segments: List[Theory_Segment])
 
@@ -181,13 +182,12 @@ object Importer
       progress.echo("Importing theory " + thy_export.node_name + " ...")
 
       val thy_name = thy_export.node_name
-      val thy_qualifier = Isabelle.resources.session_base.theory_qualifier(thy_name)
       val thy_base_name = isabelle.Long_Name.base_name(thy_export.node_name.theory)
       val thy_is_pure: Boolean = thy_name == Isabelle.pure_name
 
       // document
       val archive: Archive = archives.head // FIXME the archive in which this document should be placed: Distribution or AFP
-      val dpath = DPath(archive.narrationBase / thy_qualifier / thy_base_name)
+      val dpath = DPath(archive.narrationBase / Isabelle.theory_qualifier(thy_name) / thy_base_name)
       val doc = new Document(dpath, root = true)
       controller.add(doc)
 
@@ -199,6 +199,15 @@ object Importer
 
       if (thy_is_pure) {
         controller.add(Include(thy_content.thy.toTerm, lf.PLF._path, Nil))
+      }
+
+      // PIDE theory source
+      isabelle.Symbol.decode(thy_export.node_source) match {
+        case source if source.nonEmpty =>
+          val source_output = isabelle.File.path(archive.root.toJava) + Isabelle.source_output(thy_name)
+          isabelle.Isabelle_System.mkdirs(source_output.dir)
+          isabelle.File.write(source_output, source)
+        case _ =>
       }
 
       def decl_error(entity: isabelle.Export_Theory.Entity)(body: => Unit)
@@ -387,6 +396,13 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
   def import_name(s: String): isabelle.Document.Node.Name =
     resources.import_name(isabelle.Sessions.DRAFT, "", s)
 
+  def theory_qualifier(name: isabelle.Document.Node.Name): String =
+    resources.session_base.theory_qualifier(name)
+
+  def source_output(name: isabelle.Document.Node.Name): isabelle.Path =
+    isabelle.Path.basic("source") + isabelle.Path.basic(theory_qualifier(name)) +
+      isabelle.Path.basic(name.theory).ext("theory")
+
   def start_session(
     logic: String,
     dirs: List[isabelle.Path],
@@ -511,7 +527,7 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
         consts = pure_theory.consts,
         facts = pure_theory.facts,
         locales = pure_theory.locales)
-    Importer.Theory_Export(pure_name, Nil, List(segment))
+    Importer.Theory_Export(pure_name, "", Nil, List(segment))
   }
 
   private def pure_entity(entities: List[isabelle.Export_Theory.Entity], name: String): GlobalName =
@@ -632,7 +648,7 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
           locales = for (decl <- theory.locales if defined(decl.entity)) yield decl)
       }
     }
-    Importer.Theory_Export(node_name, theory.parents, segments)
+    Importer.Theory_Export(node_name, snapshot.node.source, theory.parents, segments)
   }
 
   def use_theories(theories: List[String]): isabelle.Thy_Resources.Theories_Result =
