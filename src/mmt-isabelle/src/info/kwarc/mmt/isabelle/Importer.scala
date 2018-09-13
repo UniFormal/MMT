@@ -28,12 +28,14 @@ object Importer
   /* names */
 
   /*common namespace for all theories in all sessions in all Isabelle archives*/
-  val library_base: DPath = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
+  val isabelle_base: DPath = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
+
+  def module_name(node_name: isabelle.Document.Node.Name): MPath = isabelle_base ? node_name.theory
 
   def declared_theory(node_name: isabelle.Document.Node.Name): DeclaredTheory =
   {
-    val mod = library_base ? node_name.theory
-    Theory.empty(mod.doc, mod.name, Some(mod))
+    val module = module_name(node_name)
+    Theory.empty(module.doc, module.name, Some(module))
   }
 
 
