@@ -20,7 +20,7 @@ object Codecs {
   val standardList = path ? "standardList"
   val standardVector = path ? "standardVector"
   val standardMatrix = path ? "standardMatrix"
-  val integerPolynomial = path ? "rationalPolynomial"
+  val rationalPolynomial = path ? "rationalPolynomial"
 }
 
 object LMFDBCoder extends Coder(List(TMInt,TMString,BoolAsInt,StandardBool,TMNat,TMPos), List(TMList,StandardVector,StandardMatrix)) {
