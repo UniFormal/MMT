@@ -271,21 +271,11 @@ object Importer
       MMT_Importer.importDocument(archive, doc)
     }
 
-
-    /* errors */
-
-    val errs_theories =
-      try {
-        import_theory(Isabelle.pure_theory_export)
-        Isabelle.import_session(session_deps, import_theory)
-        Nil
-      }
-      catch { case isabelle.ERROR(msg) => List(msg) }
-
-    val errs_session = Isabelle.stop_session()
-
-    val errs = errs_theories ::: errs_session
-    if (errs.nonEmpty) isabelle.error(errs.mkString("\n\n"))
+    try {
+      import_theory(Isabelle.pure_theory_export)
+      Isabelle.import_session(session_deps, import_theory)
+    }
+    finally { Isabelle.stop_session() }
   }
 
 
@@ -490,11 +480,10 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
     if (bad_msgs.nonEmpty) isabelle.error(bad_msgs.mkString("\n\n"))
   }
 
-  def stop_session(): List[String] =
+  def stop_session()
   {
     val res = session.stop()
     _session = None
-    if (res.ok) Nil else List("FAILED session: return code " + res.rc)
   }
 
 
