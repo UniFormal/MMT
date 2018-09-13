@@ -423,7 +423,7 @@ class Isabelle(
               catch {
                 case exn: Throwable if !isabelle.Exn.is_interrupt(exn) =>
                   val msg = isabelle.Exn.message(exn)
-                  progress.echo_error_message(msg)
+                  progress.echo("FAILED to import theory " + name)
                   consumer_bad_theories.change(Bad_Theory(name, status, List(msg)) :: _)
               }
             }
@@ -434,7 +434,7 @@ class Isabelle(
                   "Error" + isabelle.Position.here(pos) + ":\n" +
                     isabelle.XML.content(isabelle.Pretty.formatted(List(tree)))
                 }
-              msgs.foreach(progress.echo_error_message)
+              progress.echo("FAILED to process theory " + name)
               consumer_bad_theories.change(Bad_Theory(name, status, msgs) :: _)
             }
             true
@@ -462,21 +462,20 @@ class Isabelle(
     val bad_theories = Consumer.shutdown()
     val session_result = stop_session()
 
-    val bad_msgs =
-      for { bad <- bad_theories }
-      yield {
-        "Bad theory " + bad.name +
-        (if (bad.status.consolidated) "" else ": " + bad.status.percentage + "% finished") +
-        (if (bad.errors.isEmpty) "" else bad.errors.mkString("\n", "\n", ""))
-      }
-    bad_msgs.foreach(progress.echo_error_message)
+    val errors =
+    {
+      val bad_msgs =
+        for { bad <- bad_theories }
+          yield {
+            "FAILED theory " + bad.name +
+              (if (bad.status.consolidated) "" else ": " + bad.status.percentage + "% finished") +
+              (if (bad.errors.isEmpty) "" else bad.errors.mkString("\n", "\n", ""))
+          }
+      if (session_result.ok) bad_msgs
+      else bad_msgs ::: List("FAILED session: return code " + session_result.rc)
+    }.map(isabelle.Output.clean_yxml)
 
-    if (bad_msgs.nonEmpty) {
-      isabelle.error(isabelle.cat_lines(bad_msgs.map(isabelle.Output.clean_yxml)))
-    }
-    else if (!session_result.ok) {
-      isabelle.error("session FAILED")
-    }
+    if (errors.nonEmpty) isabelle.error(errors.mkString("\n\n"))
   }
 
 
