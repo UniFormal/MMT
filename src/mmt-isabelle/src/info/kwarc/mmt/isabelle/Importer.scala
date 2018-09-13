@@ -652,7 +652,7 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
     session.use_theories(theories, progress = progress)
 
 
-  /* imported theory content */
+  /* theory content */
 
   object Content
   {
@@ -765,7 +765,7 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
   }
 
 
-  /* theory content management */
+  /* management of imported content */
 
   private val imported = isabelle.Synchronized(Map.empty[String, Content])
 
