@@ -167,9 +167,11 @@ object Importer
 
     val archives = init_archives(controller, output_dir)
 
-    object Isabelle extends Isabelle(options, logic, dirs, select_dirs, selection, progress)
+    object Isabelle extends Isabelle(options, progress)
 
-    Isabelle.import_session((thy_export: Importer.Theory_Export) =>
+    val session_deps = Isabelle.start_session(logic, dirs, select_dirs, selection)
+
+    def import_theory(thy_export: Importer.Theory_Export)
     {
       progress.echo("Importing theory " + thy_export.node_name + " ...")
 
@@ -189,6 +191,7 @@ object Importer
 
       // document
       val archive: Archive = archives.head // FIXME the archive in which this document should be placed: Distribution or AFP
+
       val dpath = DPath(archive.narrationBase / thy_qualifier / thy_base_name)
       val doc = new Document(dpath, root = true)
       controller.add(doc)
@@ -264,7 +267,23 @@ object Importer
       Isabelle.end_theory(thy_export, content)
 
       MMT_Importer.importDocument(archive, doc)
-    })
+    }
+
+
+    /* errors */
+
+    val errs_theories =
+      try {
+        import_theory(Isabelle.pure_theory_export)
+        Isabelle.import_session(session_deps, import_theory)
+        Nil
+      }
+      catch { case isabelle.ERROR(msg) => List(msg) }
+
+    val errs_session = Isabelle.stop_session()
+
+    val errs = errs_theories ::: errs_session
+    if (errs.nonEmpty) isabelle.error(errs.mkString("\n\n"))
   }
 
 
@@ -358,13 +377,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
   }
 }
 
-class Isabelle(
-  options: isabelle.Options,
-  logic: String,
-  dirs: List[isabelle.Path],
-  select_dirs: List[isabelle.Path],
-  selection: isabelle.Sessions.Selection,
-  progress: isabelle.Progress)
+class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
 {
   val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
   val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
@@ -382,7 +395,11 @@ class Isabelle(
   def import_name(s: String): isabelle.Document.Node.Name =
     resources.import_name(isabelle.Sessions.DRAFT, "", s)
 
-  def start_session(): isabelle.Sessions.Deps =
+  def start_session(
+    logic: String,
+    dirs: List[isabelle.Path],
+    select_dirs: List[isabelle.Path],
+    selection: isabelle.Sessions.Selection): isabelle.Sessions.Deps =
   {
     val session_deps: isabelle.Sessions.Deps =
       isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs).
@@ -402,19 +419,8 @@ class Isabelle(
     session_deps
   }
 
-  def stop_session(): isabelle.Process_Result =
+  def import_session(session_deps: isabelle.Sessions.Deps, import_theory: Importer.Theory_Export => Unit)
   {
-    val res = session.stop()
-    _session = None
-    res
-  }
-
-  def import_session(import_theory: Importer.Theory_Export => Unit)
-  {
-    val session_deps = start_session()
-
-    import_theory(pure_theory_export)
-
     object Consumer
     {
       sealed case class Bad_Theory(
@@ -470,22 +476,23 @@ class Isabelle(
       progress = progress)
 
     val bad_theories = Consumer.shutdown()
-    val session_result = stop_session()
+    val bad_msgs =
+      for { bad <- bad_theories }
+      yield {
+        val msg =
+          "FAILED theory " + bad.name +
+            (if (bad.status.consolidated) "" else ": " + bad.status.percentage + "% finished") +
+            (if (bad.errors.isEmpty) "" else bad.errors.mkString("\n", "\n", ""))
+        isabelle.Output.clean_yxml(msg)
+      }
+    if (bad_msgs.nonEmpty) isabelle.error(bad_msgs.mkString("\n\n"))
+  }
 
-    val errors =
-    {
-      val bad_msgs =
-        for { bad <- bad_theories }
-          yield {
-            "FAILED theory " + bad.name +
-              (if (bad.status.consolidated) "" else ": " + bad.status.percentage + "% finished") +
-              (if (bad.errors.isEmpty) "" else bad.errors.mkString("\n", "\n", ""))
-          }
-      if (session_result.ok) bad_msgs
-      else bad_msgs ::: List("FAILED session: return code " + session_result.rc)
-    }.map(isabelle.Output.clean_yxml)
-
-    if (errors.nonEmpty) isabelle.error(errors.mkString("\n\n"))
+  def stop_session(): List[String] =
+  {
+    val res = session.stop()
+    _session = None
+    if (res.ok) Nil else List("FAILED session: return code " + res.rc)
   }
 
 
@@ -638,6 +645,17 @@ class Isabelle(
 
   /* imported theory content */
 
+  private val imported = isabelle.Synchronized(Map.empty[String, Content])
+
+  def theory_content(name: String): Content =
+    imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
+
+  def begin_theory(thy_export: Importer.Theory_Export): Content =
+    Content.merge(thy_export.parents.map(theory_content))
+
+  def end_theory(thy_export: Importer.Theory_Export, content: Content): Unit =
+    imported.change(map => map + (thy_export.node_name.theory -> content))
+
   object Content
   {
     val empty: Content = new Content(SortedMap.empty[Importer.Item.Key, Importer.Item](Importer.Item.Key.Ordering))
@@ -747,15 +765,4 @@ class Isabelle(
       Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
     }
   }
-
-  private val imported = isabelle.Synchronized(Map.empty[String, Content])
-
-  def theory_content(name: String): Content =
-    imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
-
-  def begin_theory(thy_export: Importer.Theory_Export): Content =
-    Content.merge(thy_export.parents.map(theory_content))
-
-  def end_theory(thy_export: Importer.Theory_Export, content: Content): Unit =
-    imported.change(map => map + (thy_export.node_name.theory -> content))
 }
