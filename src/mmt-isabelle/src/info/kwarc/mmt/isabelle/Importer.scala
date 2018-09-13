@@ -262,7 +262,7 @@ object Importer
       }
 
       Isabelle.end_theory(thy_export, content)
-      // alternatively, use importDocumentWithErrorHandler to log errors
+
       MMT_Importer.importDocument(archive, doc)
     })
   }
