@@ -654,21 +654,6 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
 
   /* imported theory content */
 
-  private val imported = isabelle.Synchronized(Map.empty[String, Content])
-
-  def theory_content(name: String): Content =
-    imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
-
-  def begin_theory(thy_export: Importer.Theory_Export): (DeclaredTheory, Content) =
-  {
-    val thy = Importer.declared_theory(thy_export.node_name, None)
-    val content = Content.merge(thy_export.parents.map(theory_content))
-    (thy, content)
-  }
-
-  def end_theory(thy_export: Importer.Theory_Export, content: Content): Unit =
-    imported.change(map => map + (thy_export.node_name.theory -> content))
-
   object Content
   {
     val empty: Content = new Content(SortedMap.empty[Importer.Item.Key, Importer.Item](Importer.Item.Key.Ordering))
@@ -778,4 +763,22 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
       Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
     }
   }
+
+
+  /* theory content management */
+
+  private val imported = isabelle.Synchronized(Map.empty[String, Content])
+
+  def theory_content(name: String): Content =
+    imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
+
+  def begin_theory(thy_export: Importer.Theory_Export): (DeclaredTheory, Content) =
+  {
+    val thy = Importer.declared_theory(thy_export.node_name, None)
+    val content = Content.merge(thy_export.parents.map(theory_content))
+    (thy, content)
+  }
+
+  def end_theory(thy_export: Importer.Theory_Export, content: Content): Unit =
+    imported.change(map => map + (thy_export.node_name.theory -> content))
 }
