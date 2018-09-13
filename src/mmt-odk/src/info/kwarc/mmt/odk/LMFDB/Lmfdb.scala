@@ -309,7 +309,7 @@ object LMFDBStore extends Storage with LMFDBBackend {
   }
 }
 
-object LMFDBSystem extends VRESystem("lmfdb") with LMFDBBackend {//QueryExtension("lmfdb") with LMFDBBackend {
+object LMFDBSystem extends VRESystem("lmfdb",Systems.lmfdbsym) with LMFDBBackend {//QueryExtension("lmfdb") with LMFDBBackend {
   val namespace = LMFDB.path
 
   def debug(s : String): Unit = log(s)
@@ -438,8 +438,10 @@ object LMFDBSystem extends VRESystem("lmfdb") with LMFDBBackend {//QueryExtensio
     * @param substiution Substiution (Context) to apply QueryEvaluation in
     * @return
     */
-  def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = {
+  override def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = {
     val (db, query) = translateQuery(q, e)
     ResultSet.fromElementList(getSubjectTo(db, query))
   }
+
+  override def call(t: Term): Term = ???
 }
