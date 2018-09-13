@@ -337,13 +337,23 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             if (verbose) echo("Processing " + theory.print_theory + theory.print_percentage)
         }
 
-      importer(options,
-        logic = logic,
-        dirs = dirs,
-        select_dirs = select_dirs,
-        selection = selection,
-        output_dir = output_dir,
-        progress = progress)
+      val start_date = isabelle.Date.now()
+      if (verbose) progress.echo("Started at " + isabelle.Build_Log.print_date(start_date) + "\n")
+
+      try {
+        importer(options,
+          logic = logic,
+          dirs = dirs,
+          select_dirs = select_dirs,
+          selection = selection,
+          output_dir = output_dir,
+          progress = progress)
+      }
+      finally {
+        val end_date = isabelle.Date.now()
+        if (verbose) progress.echo("\nFinished at " + isabelle.Build_Log.print_date(end_date))
+        progress.echo((end_date.time - start_date.time).message_hms + " elapsed time")
+      }
     }
   }
 }
