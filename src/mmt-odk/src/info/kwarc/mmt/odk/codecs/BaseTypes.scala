@@ -135,15 +135,15 @@ object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OM
   // Constructs a polynomial out of a list of rational numbers
   private def constructPolynomial(varName: String, ls : List[BigDecimal]) : Term = ApplySpine(
     OMS(MitM.polycons),
-    // TODO: Make a string literal from varName and insert it here
     NatRules.NatLit(ls.length),
+    StringLiterals.apply(varName),
     Sequences.flatseq(ls.map(_.toBigInt).map(NatRules.NatLit.of):_*)
   )
 
   // turns a polynomial into a list of rational numbers
   private def destructPolynomial(t : Term): (String, List[BigDecimal]) = t match {
-    case ApplySpine(OMS(MitM.polycons), str :: _ :: Sequences.flatseq(ls @ _*) :: Nil) =>
-      ("w", ls.toList.map({ case NatRules.NatLit(bi: BigInt) => BigDecimal(bi)})) // TODO: Instead of w return the extracted variable name from str
+    case ApplySpine(OMS(MitM.polycons), _ :: (str@OMLIT(vname: String, StringLiterals)) :: Sequences.flatseq(ls @ _*) :: Nil) =>
+      (vname, ls.toList.map({ case NatRules.NatLit(bi: BigInt) => BigDecimal(bi)}))
     case _ => throw new Exception("not a polynomial")
   }
 
