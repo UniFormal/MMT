@@ -87,7 +87,7 @@ object Importer
               case Some(ty1) => if (ty != ty1) bad_match()
             }
           case (isabelle.Term.Type(c1, args1), isabelle.Term.Type(c2, args2)) if c1 == c2 =>
-            (args1 zip args2).foreach(raw_match(_))
+            (args1 zip args2).foreach(raw_match)
           case _ => bad_match()
         }
       }
@@ -430,7 +430,7 @@ class Isabelle(
                   "Error" + isabelle.Position.here(pos) + ":\n" +
                     isabelle.XML.content(isabelle.Pretty.formatted(List(tree)))
                 }
-              msgs.foreach(progress.echo_error_message(_))
+              msgs.foreach(progress.echo_error_message)
               consumer_bad_theories.change(Bad_Theory(name, status, msgs) :: _)
             }
             true
@@ -465,10 +465,10 @@ class Isabelle(
         (if (bad.status.consolidated) "" else ": " + bad.status.percentage + "% finished") +
         (if (bad.errors.isEmpty) "" else bad.errors.mkString("\n", "\n", ""))
       }
-    bad_msgs.foreach(progress.echo_error_message(_))
+    bad_msgs.foreach(progress.echo_error_message)
 
     if (bad_msgs.nonEmpty) {
-      isabelle.error(isabelle.cat_lines(bad_msgs.map(isabelle.Output.clean_yxml(_))))
+      isabelle.error(isabelle.cat_lines(bad_msgs.map(isabelle.Output.clean_yxml)))
     }
     else if (!session_result.ok) {
       isabelle.error("session FAILED")
@@ -741,7 +741,7 @@ class Isabelle(
     imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
 
   def begin_theory(thy_export: Importer.Theory_Export): Content =
-    Content.merge(thy_export.parents.map(theory_content(_)))
+    Content.merge(thy_export.parents.map(theory_content))
 
   def end_theory(thy_export: Importer.Theory_Export, content: Content): Unit =
     imported.change(map => map + (thy_export.node_name.theory -> content))
