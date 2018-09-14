@@ -187,7 +187,8 @@ object Importer
       controller.add(doc)
 
       // theory content
-      val thy_content = Isabelle.begin_theory(thy_export, if (thy_is_pure) None else Some(Isabelle.pure_path))
+      val thy_content =
+        Isabelle.begin_theory(thy_export, if (thy_is_pure) None else Some(Isabelle.pure_path))
 
       controller.add(thy_content.thy)
       controller.add(MRef(doc.path, thy_content.thy.path))
@@ -199,7 +200,8 @@ object Importer
       // PIDE theory source
       isabelle.Symbol.decode(thy_export.node_source) match {
         case source if source.nonEmpty =>
-          val source_output = isabelle.File.path(archive.root.toJava) + Isabelle.source_output(thy_name)
+          val source_output =
+            isabelle.File.path(archive.root.toJava) + Isabelle.source_output(thy_name)
           isabelle.Isabelle_System.mkdirs(source_output.dir)
           isabelle.File.write(source_output, source)
         case _ =>
@@ -218,8 +220,10 @@ object Importer
         // source text
         if (segment.header_relevant) {
           val text = isabelle.Symbol.decode(segment.header.replace(' ', '\u00a0'))
-          controller.add(
-            new OpaqueText(thy_content.thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(text)))
+          val opaque =
+            new OpaqueText(thy_content.thy.asDocument.path,
+              OpaqueText.defaultFormat, StringFragment(text))
+          controller.add(opaque)
         }
 
         // classes
@@ -424,12 +428,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       session_deps
     }
 
-    def import_session(session_deps: isabelle.Sessions.Deps, import_theory: Importer.Theory_Export => Unit)
+    def import_session(
+      session_deps: isabelle.Sessions.Deps, import_theory: Importer.Theory_Export => Unit)
     {
       object Consumer
       {
         sealed case class Bad_Theory(
-          name: isabelle.Document.Node.Name, status: isabelle.Document_Status.Node_Status, errors: List[String])
+          name: isabelle.Document.Node.Name,
+          status: isabelle.Document_Status.Node_Status,
+          errors: List[String])
 
         private val consumer_bad_theories = isabelle.Synchronized(List.empty[Bad_Theory])
 
@@ -461,7 +468,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               true
             })
 
-        def apply(snapshot: isabelle.Document.Snapshot, node_status: isabelle.Document_Status.Node_Status): Unit =
+        def apply(
+            snapshot: isabelle.Document.Snapshot,
+            node_status: isabelle.Document_Status.Node_Status): Unit =
           consumer.send((snapshot, node_status))
 
         def shutdown(): List[Bad_Theory] =
@@ -473,7 +482,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       session.use_theories(
         session_deps.sessions_structure.build_topological_order.
-          flatMap(session_name => session_deps.session_bases(session_name).used_theories.map(_.theory)),
+          flatMap(session => session_deps.session_bases(session).used_theories.map(_.theory)),
         check_delay = options.seconds("mmt_check_delay"),
         commit = Some(Consumer.apply _),
         commit_cleanup_delay = options.seconds("mmt_cleanup_delay"),
@@ -519,7 +528,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           types =
             for {
               decl <- pure_theory.types
-              if decl.entity.name != isabelle.Pure_Thy.DUMMY && decl.entity.name != isabelle.Pure_Thy.FUN
+              if decl.entity.name != isabelle.Pure_Thy.DUMMY &&
+                decl.entity.name != isabelle.Pure_Thy.FUN
             } yield decl,
           consts = pure_theory.consts,
           facts = pure_theory.facts,
@@ -656,7 +666,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     object Content
     {
-      val empty: Content = new Content(SortedMap.empty[Importer.Item.Key, Importer.Item](Importer.Item.Key.Ordering))
+      val empty: Content =
+        new Content(SortedMap.empty[Importer.Item.Key, Importer.Item](Importer.Item.Key.Ordering))
       def merge(args: TraversableOnce[Content]): Content = (empty /: args)(_ ++ _)
     }
 
@@ -664,11 +675,16 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     {
       content =>
 
-      def get(key: Importer.Item.Key): Importer.Item = rep.getOrElse(key, isabelle.error("Undeclared " + key.toString))
-      def get_class(name: String): Importer.Item = get(Importer.Item.Key(isabelle.Export_Theory.Kind.CLASS, name))
-      def get_type(name: String): Importer.Item = get(Importer.Item.Key(isabelle.Export_Theory.Kind.TYPE, name))
-      def get_const(name: String): Importer.Item = get(Importer.Item.Key(isabelle.Export_Theory.Kind.CONST, name))
-      def get_locale(name: String): Importer.Item = get(Importer.Item.Key(isabelle.Export_Theory.Kind.LOCALE, name))
+      def get(key: Importer.Item.Key): Importer.Item =
+        rep.getOrElse(key, isabelle.error("Undeclared " + key.toString))
+      def get_class(name: String): Importer.Item =
+        get(Importer.Item.Key(isabelle.Export_Theory.Kind.CLASS, name))
+      def get_type(name: String): Importer.Item =
+        get(Importer.Item.Key(isabelle.Export_Theory.Kind.TYPE, name))
+      def get_const(name: String): Importer.Item =
+        get(Importer.Item.Key(isabelle.Export_Theory.Kind.CONST, name))
+      def get_locale(name: String): Importer.Item =
+        get(Importer.Item.Key(isabelle.Export_Theory.Kind.LOCALE, name))
 
       def is_empty: Boolean = rep.isEmpty
       def defined(key: Importer.Item.Key): Boolean = rep.isDefinedAt(key)
@@ -709,7 +725,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               val op = OMS(get_type(name).global_name)
               if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(content.import_type))
             case isabelle.Term.TFree(a, _) => OMV(a)
-            case isabelle.Term.TVar(xi, _) => isabelle.error("Illegal schematic type variable " + xi.toString)
+            case isabelle.Term.TVar(xi, _) =>
+              isabelle.error("Illegal schematic type variable " + xi.toString)
           }
         }
         catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin type " + ty) }
@@ -723,11 +740,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               val item = get_const(c)
               Type.app(OMS(item.global_name), item.typargs(ty).map(content.import_type))
             case isabelle.Term.Free(x, _) => OMV(x)
-            case isabelle.Term.Var(xi, _) => isabelle.error("Illegal schematic variable " + xi.toString)
+            case isabelle.Term.Var(xi, _) =>
+              isabelle.error("Illegal schematic variable " + xi.toString)
             case isabelle.Term.Bound(i) =>
               val x =
                 try { bounds(i) }
-                catch { case _: IndexOutOfBoundsException => isabelle.error("Loose de-Bruijn index " + i) }
+                catch {
+                  case _: IndexOutOfBoundsException =>
+                    isabelle.error("Loose de-Bruijn index " + i)
+                }
               OMV(x)
             case isabelle.Term.Abs(x, ty, b) =>
               lf.Lambda(LocalName(x), import_type(ty), term(x :: bounds, b))
