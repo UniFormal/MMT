@@ -78,17 +78,19 @@ object Importer
 
     def position(offset: isabelle.Text.Offset): SourcePosition =
     {
-      require(offset >= 0 && offset <= line_doc.text_length)
-
-      val line_pos = line_doc.position(offset)
-      SourcePosition(offset, line_pos.line, line_pos.column)
+      if (offset >= 0 && offset <= line_doc.text_length) {
+        val line_pos = line_doc.position(offset)
+        SourcePosition(offset, line_pos.line, line_pos.column)
+      }
+      else isabelle.error("Bad position offset " + offset)
     }
 
     def region(range: isabelle.Text.Range): SourceRegion =
     {
-      require(!range.is_singularity)
-
-      SourceRegion(position(range.start), position(range.stop - 1))
+      if (!range.is_singularity) {
+        SourceRegion(position(range.start), position(range.stop - 1))
+      }
+      else isabelle.error("Bad range singularity " + range)
     }
 
     def symbol_position(symbol_offset: isabelle.Symbol.Offset): SourcePosition =
@@ -99,7 +101,10 @@ object Importer
 
     def ref(opt_uri: Option[URI], pos: isabelle.Position.T): Option[SourceRef] =
       for { uri <- opt_uri; range <- isabelle.Position.Range.unapply(pos) }
-      yield SourceRef(uri, symbol_region(range))
+      yield {
+        try { SourceRef(uri, symbol_region(range)) }
+        catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin " + uri) }
+      }
   }
 
 
