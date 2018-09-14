@@ -5,6 +5,7 @@ import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import frontend.Controller
 import archives.{Archive, NonTraversingImporter}
+import info.kwarc.mmt.api.parser.{SourceRegion, SourcePosition, SourceRef}
 import symbols._
 import modules._
 import documents._
@@ -53,11 +54,61 @@ object Importer
 
 
 
+  /** source with position: offset, line, column (counting 16-bit Char addresses from 0) **/
+
+  object Source
+  {
+    def apply(text0: String): Source =
+    {
+      val text = isabelle.Symbol.decode(isabelle.Line.normalize(text0))
+      val line_doc = isabelle.Line.Document(text)
+      val text_chunk = isabelle.Symbol.Text_Chunk(text)
+      new Source(line_doc, text_chunk)
+    }
+
+    val empty: Source = apply("")
+  }
+
+  final class Source private(line_doc: isabelle.Line.Document, text_chunk: isabelle.Symbol.Text_Chunk)
+  {
+    def is_empty: Boolean = line_doc.lines.isEmpty
+
+    def text: String = line_doc.text
+    override def toString: String = line_doc.text
+
+    def position(offset: isabelle.Text.Offset): SourcePosition =
+    {
+      require(offset >= 0 && offset <= line_doc.text_length)
+
+      val line_pos = line_doc.position(offset)
+      SourcePosition(offset, line_pos.line, line_pos.column)
+    }
+
+    def region(range: isabelle.Text.Range): SourceRegion =
+    {
+      require(!range.is_singularity)
+
+      SourceRegion(position(range.start), position(range.stop - 1))
+    }
+
+    def symbol_position(symbol_offset: isabelle.Symbol.Offset): SourcePosition =
+      position(text_chunk.decode(symbol_offset))
+
+    def symbol_region(symbol_range: isabelle.Symbol.Range): SourceRegion =
+      region(text_chunk.decode(symbol_range))
+
+    def ref(opt_uri: Option[URI], pos: isabelle.Position.T): Option[SourceRef] =
+      for { uri <- opt_uri; range <- isabelle.Position.Range.unapply(pos) }
+      yield SourceRef(uri, symbol_region(range))
+  }
+
+
+
   /** Isabelle export structures **/
 
   sealed case class Theory_Export(
     node_name: isabelle.Document.Node.Name,
-    node_source: String,
+    node_source: Source,
     parents: List[String],
     segments: List[Theory_Segment])
 
@@ -109,8 +160,10 @@ object Importer
   val dummy_type_scheme: (List[String], isabelle.Term.Typ) = (Nil, isabelle.Term.dummyT)
 
   sealed case class Item(
+    theory_source: Option[URI],
     theory_path: MPath,
     node_name: isabelle.Document.Node.Name,
+    node_source: Source,
     entity: isabelle.Export_Theory.Entity,
     type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme)
   {
@@ -120,7 +173,11 @@ object Importer
     def global_name: GlobalName = constant(None, None).path
 
     def constant(tp: Option[Term], df: Option[Term]): Constant =
-      Constant(OMID(theory_path), local_name, Nil, tp, df, None)
+    {
+      val c = Constant(OMID(theory_path), local_name, Nil, tp, df, None)
+      for (sref <- node_source.ref(theory_source, entity.pos)) SourceRef.update(c, sref)
+      c
+    }
 
     def typargs(typ: isabelle.Term.Typ): List[isabelle.Term.Typ] =
     {
@@ -180,15 +237,20 @@ object Importer
       val thy_base_name = isabelle.Long_Name.base_name(thy_export.node_name.theory)
       val thy_is_pure: Boolean = thy_name == Isabelle.pure_name
 
-      // document
+      // archive
       val archive: Archive = archives.head // FIXME the archive in which this document should be placed: Distribution or AFP
+      val thy_source_path = isabelle.File.path(archive.root.toJava) + Isabelle.source_path(thy_name)
+
+      // document
       val dpath = DPath(archive.narrationBase / Isabelle.theory_qualifier(thy_name) / thy_base_name)
       val doc = new Document(dpath, root = true)
       controller.add(doc)
 
       // theory content
       val thy_content =
-        Isabelle.begin_theory(thy_export, if (thy_is_pure) None else Some(Isabelle.pure_path))
+        Isabelle.begin_theory(thy_export,
+          if (thy_is_pure) None else Some(URI(thy_source_path.file.toPath.toUri)),
+          if (thy_is_pure) None else Some(Isabelle.pure_path))
 
       controller.add(thy_content.thy)
       controller.add(MRef(doc.path, thy_content.thy.path))
@@ -198,13 +260,9 @@ object Importer
       }
 
       // PIDE theory source
-      isabelle.Symbol.decode(thy_export.node_source) match {
-        case source if source.nonEmpty =>
-          val source_output =
-            isabelle.File.path(archive.root.toJava) + Isabelle.source_output(thy_name)
-          isabelle.Isabelle_System.mkdirs(source_output.dir)
-          isabelle.File.write(source_output, source)
-        case _ =>
+      if (!thy_export.node_source.is_empty) {
+        isabelle.Isabelle_System.mkdirs(thy_source_path.dir)
+        isabelle.File.write(thy_source_path, thy_export.node_source.text)
       }
 
       def decl_error(entity: isabelle.Export_Theory.Entity)(body: => Unit)
@@ -400,7 +458,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     def theory_qualifier(name: isabelle.Document.Node.Name): String =
       resources.session_base.theory_qualifier(name)
 
-    def source_output(name: isabelle.Document.Node.Name): isabelle.Path =
+    def source_path(name: isabelle.Document.Node.Name): isabelle.Path =
       isabelle.Path.basic("source") + isabelle.Path.basic(theory_qualifier(name)) +
         isabelle.Path.basic(name.theory).ext("theory")
 
@@ -532,12 +590,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           consts = pure_theory.consts,
           facts = pure_theory.facts,
           locales = pure_theory.locales)
-      Theory_Export(pure_name, "", Nil, List(segment))
+      Theory_Export(pure_name, Source.empty, Nil, List(segment))
     }
 
     private def pure_entity(entities: List[isabelle.Export_Theory.Entity], name: String): GlobalName =
       entities.collectFirst(
-        { case entity if entity.name == name => Item(pure_path, pure_name, entity).global_name
+        { case entity if entity.name == name => Item(None, pure_path, pure_name, Source.empty, entity).global_name
         }).getOrElse(isabelle.error("Unknown entity " + isabelle.quote(name)))
 
     def pure_type(name: String): GlobalName = pure_entity(pure_theory.types.map(_.entity), name)
@@ -652,7 +710,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             locales = for (decl <- theory.locales if defined(decl.entity)) yield decl)
         }
       }
-      Theory_Export(node_name, snapshot.node.source, theory.parents, segments)
+      Theory_Export(node_name, Source(snapshot.node.source), theory.parents, segments)
     }
 
     def use_theories(theories: List[String]): isabelle.Thy_Resources.Theories_Result =
@@ -784,16 +842,23 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     def theory_content(name: String): Content =
       imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
 
-    def begin_theory(thy_export: Theory_Export, meta_theory: Option[MPath]): Theory_Content_Var =
+    def begin_theory(
+      thy_export: Theory_Export,
+      thy_source: Option[URI],
+      meta_theory: Option[MPath]): Theory_Content_Var =
     {
       val thy = declared_theory(thy_export.node_name, meta_theory)
+      for (uri <- thy_source) SourceRef.update(thy, SourceRef(uri, SourceRegion.none))
+
       val parent_content = Content.merge(thy_export.parents.map(theory_content))
-      new Theory_Content_Var(thy, thy_export.node_name, parent_content)
+      new Theory_Content_Var(thy_source, thy, thy_export.node_name, thy_export.node_source, parent_content)
     }
 
     class Theory_Content_Var private[Isabelle](
+      thy_source: Option[URI],
       val thy: DeclaredTheory,
       val node_name: isabelle.Document.Node.Name,
+      node_source: Source,
       val parent_content: Content)
     {
       private val content = isabelle.Synchronized(parent_content)
@@ -803,7 +868,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         entity: isabelle.Export_Theory.Entity,
         type_scheme: (List[String], isabelle.Term.Typ)): Item =
       {
-        val item = Item(thy.path, node_name, entity, type_scheme)
+        val item = Item(thy_source, thy.path, node_name, node_source, entity, type_scheme)
         content.change(_.declare(item))
         item
       }
