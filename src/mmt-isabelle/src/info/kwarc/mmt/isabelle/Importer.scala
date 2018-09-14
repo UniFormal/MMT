@@ -1,10 +1,9 @@
 package info.kwarc.mmt.isabelle
 
-import scala.math.Ordering
 import scala.collection.SortedMap
 import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
-import frontend.{Controller, Extension}
+import frontend.Controller
 import archives.{Archive, NonTraversingImporter}
 import symbols._
 import modules._
@@ -275,7 +274,7 @@ object Importer
         }
       }
 
-      thy_content.end_theory
+      thy_content.end_theory()
 
       MMT_Importer.importDocument(archive, doc)
     }
@@ -498,7 +497,7 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
 
   def stop_session()
   {
-    val res = session.stop()
+    session.stop()
     _session = None
   }
 
@@ -799,6 +798,6 @@ class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
       item
     }
 
-    def end_theory: Unit = imported.change(map => map + (node_name.theory -> value))
+    def end_theory(): Unit = imported.change(map => map + (node_name.theory -> value))
   }
 }
