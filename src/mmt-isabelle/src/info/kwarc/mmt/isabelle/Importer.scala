@@ -55,6 +55,12 @@ object Importer
 
   /** Isabelle export structures **/
 
+  sealed case class Theory_Export(
+    node_name: isabelle.Document.Node.Name,
+    node_source: String,
+    parents: List[String],
+    segments: List[Theory_Segment])
+
   sealed case class Theory_Segment(
     element: isabelle.Thy_Element.Element_Command = isabelle.Thy_Element.atom(isabelle.Command.empty),
     classes: List[isabelle.Export_Theory.Class] = Nil,
@@ -75,12 +81,6 @@ object Importer
         decl <- decl_multi.split.iterator
       } yield decl).toList
   }
-
-  sealed case class Theory_Export(
-    node_name: isabelle.Document.Node.Name,
-    node_source: String,
-    parents: List[String],
-    segments: List[Theory_Segment])
 
 
 
