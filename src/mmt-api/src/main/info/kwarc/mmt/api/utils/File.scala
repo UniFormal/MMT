@@ -178,9 +178,10 @@ object FileURI {
 /** wrappers for streams that allow toggling compressions */
 object Compress {
   import org.tukaani.xz._
+  private val cache = BasicArrayCache.getInstance
   def name(f: File) = f.addExtension("xz")
-  def out(s: OutputStream, c: Boolean) = if (c) new XZOutputStream(s, new LZMA2Options()) else new BufferedOutputStream(s)
-  def in(s: InputStream, c: Boolean) = if (c) new XZInputStream(s) else s
+  def out(s: OutputStream, c: Boolean) = if (c) new XZOutputStream(s, new LZMA2Options(), cache) else new BufferedOutputStream(s)
+  def in(s: InputStream, c: Boolean) = if (c) new XZInputStream(s, cache) else s
 }
 
 /** MMT's default way to write to files; uses buffering, UTF-8, and \n */
