@@ -174,12 +174,12 @@ object Importer
   {
     val key: Item.Key = Item.Key(entity.kind, entity.name)
 
-    def local_name: LocalName = LocalName(node_name.theory, entity.kind.toString, entity.name)
     def global_name: GlobalName = constant(None, None).path
 
     def constant(tp: Option[Term], df: Option[Term]): Constant =
     {
-      val c = Constant(OMID(theory_path), local_name, Nil, tp, df, None)
+      val name = LocalName(node_name.theory, entity.kind.toString, entity.name)
+      val c = Constant(OMID(theory_path), name, Nil, tp, df, None)
       for (sref <- node_source.ref(theory_source, entity.pos)) SourceRef.update(c, sref)
       c
     }
