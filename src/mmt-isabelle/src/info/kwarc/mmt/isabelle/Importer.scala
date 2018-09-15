@@ -5,7 +5,8 @@ import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import frontend.Controller
 import archives.{Archive, NonTraversingImporter}
-import info.kwarc.mmt.api.parser.{SourceRegion, SourcePosition, SourceRef}
+import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
+import notations._
 import symbols._
 import modules._
 import documents._
@@ -176,10 +177,19 @@ object Importer
 
     def global_name: GlobalName = constant(None, None).path
 
+    def notation: NotationContainer =
+    {
+      val notation = NotationContainer()
+      val fixity = Prefix(Delim(entity.xname), 0, 0)
+      val text_notation = new TextNotation(fixity, Precedence.infinite, None)
+      notation.presentationDim.set(text_notation)
+      notation
+    }
+
     def constant(tp: Option[Term], df: Option[Term]): Constant =
     {
       val name = LocalName(node_name.theory, entity.kind.toString, entity.name)
-      val c = Constant(OMID(theory_path), name, Nil, tp, df, None)
+      val c = Constant(OMID(theory_path), name, Nil, tp, df, None, notation)
       for (sref <- node_source.ref(theory_source, entity.pos)) SourceRef.update(c, sref)
       c
     }
