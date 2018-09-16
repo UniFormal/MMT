@@ -295,6 +295,7 @@ class TranslationState ()
 {
   var theories_raw       : List[DFTheory]       = Nil
   var theories_decl      : List[DeclaredTheory] = Nil
+  var ensembles_decl     : List[DeclaredTheory] = Nil
 
   var languages          : List[DFLanguage]     = Nil
 

@@ -477,6 +477,18 @@ object IMPSTheory
       }
     }
 
+    object countableCoverQC extends UDQC("countableCoverQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, v : Term, q : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, v, q)
+      }
+    }
+
+    object finiteCoverQC extends UDQC("finiteCoverQC") {
+      def apply(a : Term, b : Term, alpha : Term, beta : Term, m : Term, l : Term, v : Term, q : Term) : Term = {
+        ApplySpine(this.term, a, b, alpha, beta, m, l, v, q)
+      }
+    }
+
 
   }
 
