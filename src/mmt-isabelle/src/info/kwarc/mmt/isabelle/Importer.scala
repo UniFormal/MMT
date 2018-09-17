@@ -375,7 +375,7 @@ object Importer
     }
     finally { Isabelle.stop_session() }
 
-    progress.echo("Imported " + Isabelle.report_imported)
+    progress.echo("Finished import of " + Isabelle.report_imported)
   }
 
 
@@ -525,6 +525,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
         selection.copy(exclude_sessions = excluded ::: selection.exclude_sessions)
       }
+
+      val selection_size = sessions_structure0.selection(selection1).imports_graph.size
+      if (selection_size > 1) progress.echo("Loading " + selection_size + " sessions ...")
 
       val session_deps: isabelle.Sessions.Deps =
         sessions_structure0.selection_deps(selection1, progress = progress)
@@ -794,8 +797,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def report: String =
         isabelle.commas(
           List(
-            isabelle.Export_Theory.Kind.CLASS,
             isabelle.Export_Theory.Kind.LOCALE,
+            isabelle.Export_Theory.Kind.CLASS,
             isabelle.Export_Theory.Kind.TYPE,
             isabelle.Export_Theory.Kind.CONST,
             isabelle.Export_Theory.Kind.FACT).map(report_kind))
