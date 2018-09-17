@@ -18,6 +18,7 @@ as Isabelle component, e.g. in ```$ISABELLE_HOME_USER/etc/settings``` like this:
       isabelle mmt_import -v HOL
       isabelle mmt_import -v -B FOL
       isabelle mmt_import -v -B HOL-Analysis
+      isabelle mmt_import -o record_proofs=2 -B HOL-Proofs
 
 * HTTP server:
 
