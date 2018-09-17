@@ -500,7 +500,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       logic: String,
       dirs: List[isabelle.Path],
       select_dirs: List[isabelle.Path],
-      selection: isabelle.Sessions.Selection): List[isabelle.Document.Node.Name] =
+      selection: isabelle.Sessions.Selection): List[String] =
     {
       val sessions_structure0 =
         isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs)
@@ -533,6 +533,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       val session_deps: isabelle.Sessions.Deps =
         sessions_structure0.selection_deps(selection1, progress = progress)
 
+      val theories = session_deps.used_theories_conditions(progress.echo_warning)
+
       val build_rc =
         isabelle.Build.build_logic(options, logic, build_heap = true, progress = progress,
           dirs = dirs ::: select_dirs)
@@ -544,11 +546,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           include_sessions = session_deps.sessions_structure.imports_topological_order,
           progress = progress))
 
-      session_deps.sessions_structure.build_topological_order.
-        flatMap(session => session_deps.session_bases(session).used_theories)
+      theories
     }
 
-    def import_session(theories: List[isabelle.Document.Node.Name], import_theory: Theory_Export => Unit)
+    def import_session(theories: List[String], import_theory: Theory_Export => Unit)
     {
       object Consumer
       {
@@ -600,7 +601,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       }
 
       session.use_theories(
-        theories.map(_.theory),
+        theories,
         check_delay = options.seconds("mmt_check_delay"),
         commit = Some(Consumer.apply _),
         commit_cleanup_delay = options.seconds("mmt_cleanup_delay"),
