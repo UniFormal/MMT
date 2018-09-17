@@ -171,6 +171,7 @@ object Importer
     node_name: isabelle.Document.Node.Name,
     node_source: Source,
     entity: isabelle.Export_Theory.Entity,
+    syntax: Option[isabelle.Export_Theory.Infix] = None,
     type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme)
   {
     val key: Item.Key = Item.Key(entity.kind, entity.name)
@@ -180,9 +181,25 @@ object Importer
     def notation: NotationContainer =
     {
       val notation = NotationContainer()
-      val fixity = Prefix(Delim(entity.xname), 0, 0)
-      val text_notation = new TextNotation(fixity, Precedence.infinite, None)
-      notation.presentationDim.set(text_notation)
+      val prefix_notation =
+        new TextNotation(Prefix(Delim(entity.xname), 0, 0), Precedence.infinite, None)
+      val infix_notation =
+        syntax.map(infix =>
+        {
+          val assoc =
+            infix.assoc match {
+              case isabelle.Export_Theory.Assoc.NO_ASSOC => None
+              case isabelle.Export_Theory.Assoc.LEFT_ASSOC => Some(true)
+              case isabelle.Export_Theory.Assoc.RIGHT_ASSOC => Some(false)
+            }
+          val delim = Delim(isabelle.Symbol.decode(infix.delim))
+          val fixity = Infix(delim, type_scheme._1.length, 2, assoc)
+          new TextNotation(fixity, Precedence.integer(infix.pri), None)
+        })
+
+      if (infix_notation.isDefined) notation.presentationDim.set(infix_notation.get)
+      notation.presentationDim.set(prefix_notation)
+
       notation
     }
 
@@ -302,7 +319,7 @@ object Importer
         // classes
         for (decl <- segment.classes) {
           decl_error(decl.entity) {
-            val item = thy_content.declare_item(decl.entity, dummy_type_scheme)
+            val item = thy_content.declare_item(decl.entity)
             val tp = Isabelle.Class()
             controller.add(item.constant(Some(tp), None))
           }
@@ -311,7 +328,7 @@ object Importer
         // types
         for (decl <- segment.types) {
           decl_error(decl.entity) {
-            val item = thy_content.declare_item(decl.entity, dummy_type_scheme)
+            val item = thy_content.declare_item(decl.entity, decl.syntax)
             val tp = Isabelle.Type(decl.args.length)
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, thy_content.value.import_type(rhs)))
             controller.add(item.constant(Some(tp), df))
@@ -321,7 +338,7 @@ object Importer
         // consts
         for (decl <- segment.consts) {
           decl_error(decl.entity) {
-            val item = thy_content.declare_item(decl.entity, (decl.typargs, decl.typ))
+            val item = thy_content.declare_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
             val tp = Isabelle.Type.all(decl.typargs, thy_content.value.import_type(decl.typ))
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_content.value.import_term(rhs)))
             controller.add(item.constant(Some(tp), df))
@@ -331,7 +348,7 @@ object Importer
         // facts
         for (decl <- segment.facts_single) {
           decl_error(decl.entity) {
-            val item = thy_content.declare_item(decl.entity, dummy_type_scheme)
+            val item = thy_content.declare_item(decl.entity)
             val tp = thy_content.value.import_prop(decl.prop)
             controller.add(item.constant(Some(tp), None))
           }
@@ -340,7 +357,7 @@ object Importer
         // locales
         for (decl <- segment.locales) {
           decl_error(decl.entity) {
-            val item = thy_content.declare_item(decl.entity, dummy_type_scheme)
+            val item = thy_content.declare_item(decl.entity)
             val tp = thy_content.value.import_locale(decl)
             controller.add(item.constant(Some(tp), None))
           }
@@ -881,9 +898,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       def declare_item(
         entity: isabelle.Export_Theory.Entity,
-        type_scheme: (List[String], isabelle.Term.Typ)): Item =
+        syntax: Option[isabelle.Export_Theory.Infix] = None,
+        type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
       {
-        val item = Item(thy_source, thy.path, node_name, node_source, entity, type_scheme)
+        val item = Item(thy_source, thy.path, node_name, node_source, entity, syntax, type_scheme)
         content.change(_.declare(item))
         item
       }
