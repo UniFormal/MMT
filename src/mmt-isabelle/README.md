@@ -13,11 +13,11 @@ as Isabelle component, e.g. in ```$ISABELLE_HOME_USER/etc/settings``` like this:
 
 * importer: e.g.
 
-      isabelle mmt_import -v ZF
-      isabelle mmt_import -v -B ZF
-      isabelle mmt_import -v HOL
-      isabelle mmt_import -v -B FOL
-      isabelle mmt_import -v -B HOL-Analysis
+      isabelle mmt_import ZF
+      isabelle mmt_import -B ZF
+      isabelle mmt_import HOL
+      isabelle mmt_import -B FOL
+      isabelle mmt_import -B HOL-Analysis
       isabelle mmt_import -o record_proofs=2 -B HOL-Proofs
 
 * HTTP server:
@@ -54,5 +54,5 @@ This requires 64-bit setup Poly/ML and generous Java stack/heap space, e.g. as f
 
 Examples:
 
-      isabelle mmt_import -d '$AFP' -v -B HOL-Analysis -X slow
-      isabelle mmt_import -d '$AFP' -v -B HOL-Analysis
+      isabelle mmt_import -d '$AFP' -B HOL-Analysis -X slow
+      isabelle mmt_import -d '$AFP' -B HOL-Analysis
