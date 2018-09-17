@@ -509,15 +509,16 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       {
         val sessions_structure = sessions_structure0.selection(selection)
 
-        val record_proofs =
+        val default_record_proofs = options.int("record_proofs")
+        val sessions_record_proofs =
           for {
             name <- sessions_structure.imports_topological_order
             info <- sessions_structure.get(name)
-            if info.options.int("record_proofs") > 0
+            if info.options.int("record_proofs") > default_record_proofs
           } yield name
 
         val excluded =
-          for (name <- sessions_structure.imports_descendants(record_proofs))
+          for (name <- sessions_structure.imports_descendants(sessions_record_proofs))
           yield {
             progress.echo_warning("Skipping session " + name + "  (option record_proofs)")
             name
