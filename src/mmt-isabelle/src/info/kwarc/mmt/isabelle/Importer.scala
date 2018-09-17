@@ -502,9 +502,32 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       select_dirs: List[isabelle.Path],
       selection: isabelle.Sessions.Selection): isabelle.Sessions.Deps =
     {
+      val sessions_structure0 =
+        isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs)
+
+      val selection1 =
+      {
+        val sessions_structure = sessions_structure0.selection(selection)
+
+        val record_proofs =
+          for {
+            name <- sessions_structure.imports_topological_order
+            info <- sessions_structure.get(name)
+            if info.options.int("record_proofs") > 0
+          } yield name
+
+        val excluded =
+          for (name <- sessions_structure.imports_descendants(record_proofs))
+          yield {
+            progress.echo_warning("Skipping session " + name + "  (option record_proofs)")
+            name
+          }
+
+        selection.copy(exclude_sessions = excluded ::: selection.exclude_sessions)
+      }
+
       val session_deps: isabelle.Sessions.Deps =
-        isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs).
-          selection_deps(selection, progress = progress)
+        sessions_structure0.selection_deps(selection1, progress = progress)
 
       val build_rc =
         isabelle.Build.build_logic(options, logic, build_heap = true, progress = progress,
