@@ -374,6 +374,8 @@ object Importer
       Isabelle.import_session(session_deps, import_theory)
     }
     finally { Isabelle.stop_session() }
+
+    progress.echo("Imported " + Isabelle.report_imported)
   }
 
 
@@ -761,10 +763,25 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     {
       content =>
 
+      def size: Int = rep.size
+
+      def report_kind(kind: isabelle.Export_Theory.Kind.Value): String =
+        rep.count({ case (_, item) => item.entity.kind == kind }).toString + " " + kind.toString
+
+      def report: String =
+        isabelle.commas(
+          List(
+            isabelle.Export_Theory.Kind.CLASS,
+            isabelle.Export_Theory.Kind.LOCALE,
+            isabelle.Export_Theory.Kind.TYPE,
+            isabelle.Export_Theory.Kind.CONST,
+            isabelle.Export_Theory.Kind.FACT).map(report_kind))
+
       def get(key: Item.Key): Item = rep.getOrElse(key, isabelle.error("Undeclared " + key.toString))
       def get_class(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CLASS, name))
       def get_type(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.TYPE, name))
       def get_const(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CONST, name))
+      def get_fact(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.FACT, name))
       def get_locale(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE, name))
 
       def is_empty: Boolean = rep.isEmpty
@@ -870,6 +887,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     /* management of imported content */
 
     private val imported = isabelle.Synchronized(Map.empty[String, Content])
+
+    def report_imported: String =
+    {
+      val theories = imported.value
+      val items = Content.merge(theories.valuesIterator)
+      theories.size.toString + " theories with " + items.size + " items: " + items.report
+    }
 
     def theory_content(name: String): Content =
       imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
