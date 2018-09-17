@@ -259,7 +259,7 @@ object Importer
 
     object Isabelle extends Isabelle(options, progress)
 
-    val session_deps = Isabelle.start_session(logic, dirs, select_dirs, selection)
+    val theories = Isabelle.start_session(logic, dirs, select_dirs, selection)
 
     def import_theory(thy_export: Theory_Export)
     {
@@ -371,7 +371,7 @@ object Importer
 
     try {
       import_theory(Isabelle.pure_theory_export)
-      Isabelle.import_session(session_deps, import_theory)
+      Isabelle.import_session(theories, import_theory)
     }
     finally { Isabelle.stop_session() }
 
@@ -500,7 +500,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       logic: String,
       dirs: List[isabelle.Path],
       select_dirs: List[isabelle.Path],
-      selection: isabelle.Sessions.Selection): isabelle.Sessions.Deps =
+      selection: isabelle.Sessions.Selection): List[isabelle.Document.Node.Name] =
     {
       val sessions_structure0 =
         isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs)
@@ -543,10 +543,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           include_sessions = session_deps.sessions_structure.imports_topological_order,
           progress = progress))
 
-      session_deps
+      session_deps.sessions_structure.build_topological_order.
+        flatMap(session => session_deps.session_bases(session).used_theories)
     }
 
-    def import_session(session_deps: isabelle.Sessions.Deps, import_theory: Theory_Export => Unit)
+    def import_session(theories: List[isabelle.Document.Node.Name], import_theory: Theory_Export => Unit)
     {
       object Consumer
       {
@@ -598,8 +599,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       }
 
       session.use_theories(
-        session_deps.sessions_structure.build_topological_order.
-          flatMap(session => session_deps.session_bases(session).used_theories.map(_.theory)),
+        theories.map(_.theory),
         check_delay = options.seconds("mmt_check_delay"),
         commit = Some(Consumer.apply _),
         commit_cleanup_delay = options.seconds("mmt_cleanup_delay"),
