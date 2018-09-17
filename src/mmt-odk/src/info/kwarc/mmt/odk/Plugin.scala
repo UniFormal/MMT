@@ -2,7 +2,7 @@ package info.kwarc.mmt.odk
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
-import info.kwarc.mmt.api.checking.{History, MMTStructureChecker, Solver, SubtypingRule}
+import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules._
@@ -21,7 +21,7 @@ import info.kwarc.mmt.odk.Singular.SingularImporter
 
 import scala.util.Try
 
-class Plugin extends frontend.Extension {
+class Plugin extends ChangeListener {
   val theory = MitM.mathpath
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
@@ -45,11 +45,33 @@ class Plugin extends frontend.Extension {
       case _ => ???
     }
   }
+
+  def getRule : ComputationRule = new ComputationRule(Systems.evalSymbol) {
+    override def alternativeHeads: List[GlobalName] = List(Apply.path)
+
+    override def applicable(tm: Term): Boolean = tm match {
+      case OMA(OMS(Systems.evalSymbol),List(OMS(_),_)) | ApplySpine(OMS(Systems.evalSymbol),List(OMS(_),_)) => true
+      case _ => false
+    }
+
+    override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
+      val (sys, subtm) = tm match {
+        case OMA(OMS(Systems.evalSymbol),List(OMS(s),t)) => (s,t)
+        case ApplySpine(OMS(Systems.evalSymbol),List(OMS(s),t)) => (s,t)
+        case _ => return Simplifiability.NoRecurse
+      }
+      Simplify(callVRE(check.simplify(subtm),sys))
+    }
+  }
+
+
 }
 
 object Systems {
   val _basepath = DPath(URI("http","opendreamkit.org"))
   val vretheory = _basepath ? "Systems"
+
+  val evalSymbol = vretheory ? "Eval"
 
   val gapsym = vretheory ? "GAPEval"
   val sagesym = vretheory ? "SageEval"
