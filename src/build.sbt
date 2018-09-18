@@ -93,8 +93,9 @@ def commonSettings(nameStr: String) = Seq(
       PathList("rootdoc.txt") | // 2 versions from from scala jars
       PathList("META-INF", _*) => // should never be merged anyway
       MergeStrategy.discard
-    // work around weird behavior of default strategy, which renames files for no apparent reason
-    case _ => MergeStrategy.singleOrError
+    // work around Florian's obsession with unmanaged jars
+    // otherwise, we wouldn't need this
+    case _ => MergeStrategy.first
   }
 )
 
@@ -186,8 +187,8 @@ lazy val api = (project in file("mmt-api")).
     unmanagedJars in Test += Utils.lib.toJava / "scala-xml.jar",
     unmanagedJars in Test += Utils.lib.toJava / "xz.jar",
 //    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % scalaVersion.value % "test",
-    libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % "test",
-    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
+    libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
   )
 
 
@@ -397,7 +398,8 @@ lazy val tiscaf = (project in file("tiscaf")).
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
     libraryDependencies ++= Seq(
 //      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
-      "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
+      "org.slf4j" % "slf4j-simple" % "1.7.12" % "test",
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value
     ),
     test := {} // disable tests for tiscaf
   )
@@ -411,7 +413,7 @@ lazy val lfcatalog = (project in file("lfcatalog")).
     publishTo := Some(Resolver.file("file", Utils.deploy.toJava / " main")),
     deployLFCatalog := {
       assembly in Compile map Utils.deployTo(Utils.deploy / "lfcatalog" / "lfcatalog.jar")
-    }.value, 
+    }.value,
     unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
   )
 
