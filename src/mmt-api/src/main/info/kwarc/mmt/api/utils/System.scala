@@ -79,6 +79,11 @@ object MMTSystem {
     manifest.flatMap(_.get("Build-Time"))
   }
 
+  /** legal notices, required by certain licenses */
+  lazy val legalNotices: String = MMTSystem.getResourceList("/legal/").sorted.collect({
+      case s: String if s.endsWith(".txt") => MMTSystem.getResourceAsString("/legal/" + s)
+    }).mkString("\n")
+
   /** expected location of the user's mmtrc file */
   val userConfigFile = {
     OS.detect match {

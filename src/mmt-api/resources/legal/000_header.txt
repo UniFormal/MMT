@@ -1,0 +1,6 @@
+The MMT System is licensed as documented in COPYING.txt at the root folder of
+the MMT repository.
+
+MMT makes use of and bundles several software libraries.
+Some of these require that their license be reproduced, to which we oblige
+below.
