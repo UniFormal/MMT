@@ -517,13 +517,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         val default_record_proofs = options.int("record_proofs")
         val sessions_record_proofs =
           for {
-            name <- sessions_structure.imports_topological_order
+            name <- sessions_structure.build_topological_order
             info <- sessions_structure.get(name)
             if info.options.int("record_proofs") > default_record_proofs
           } yield name
 
         val excluded =
-          for (name <- sessions_structure.imports_descendants(sessions_record_proofs))
+          for (name <- sessions_structure.build_descendants(sessions_record_proofs))
             yield {
               progress.echo_warning("Skipping session " + name + "  (option record_proofs)")
               name
@@ -532,7 +532,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         selection.copy(exclude_sessions = excluded ::: selection.exclude_sessions)
       }
 
-      val selection_size = sessions_structure0.selection(selection1).imports_graph.size
+      val selection_size = sessions_structure0.selection(selection1).build_graph.size
       if (selection_size > 1) progress.echo("Loading " + selection_size + " sessions ...")
 
       sessions_structure0.selection_deps(selection1, progress = progress)
