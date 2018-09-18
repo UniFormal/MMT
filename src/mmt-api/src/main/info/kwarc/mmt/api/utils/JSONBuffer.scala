@@ -6,9 +6,13 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 /**
+  * This file implements methods to construct/destruct json
+  * objects using a mutable.*Buffer-esque approach
+  */
+
+/**
   * A convenience class to construct JSON Objects
   */
-@deprecated("this looks like we don't need it", "")
 class JSONObjectBuffer {
   private val buffer = new ArrayBuffer[(String, JSON)]
 
@@ -30,7 +34,6 @@ class JSONObjectBuffer {
   * A convenienve class to deconstruct JSON Objects
   * @param obj
   */
-@deprecated("this looks like we don't need it", "")
 class JSONObjectParser(obj: JSONObject){
   lazy private val buffer: mutable.HashMap[String, JSON] = {
     val b = new mutable.HashMap[String, JSON]()
@@ -56,7 +59,6 @@ case class NOSuchKey(key: String) extends Exception(s"No such key: $key")
 /**
   * A convenience class to construct JSON Arrays
   */
-@deprecated("this looks like we don't need it", "")
 class JSONListBuffer {
   private val buffer = new ArrayBuffer[JSON]
 
@@ -73,7 +75,6 @@ class JSONListBuffer {
   * A convenience class to parse JSON Arrays
   * @param a
   */
-@deprecated("this looks like we don't need it", "")
 class JSONListParser(a: JSONArray) {
   private var buffer = a.values.toList
 
@@ -89,7 +90,6 @@ case object EmptyList extends Exception(s"JSON List is empty and does not contai
 
 
 /** A class to quickly convert objects between Scala and JSON */
-@deprecated("this looks like we don't need it", "")
 trait JSONConverter[T] {
   def toJSON(obj: T) : JSON
 
@@ -99,7 +99,6 @@ trait JSONConverter[T] {
 case class ConverterNotApplicable(json: JSON) extends Exception(s"Not applicable: $json")
 
 
-@deprecated("this looks like we don't need it", "")
 object JSONConverter {
 
   def toJSON[T](obj: T)(implicit converter: JSONConverter[T]) : JSON = converter.toJSON(obj)
