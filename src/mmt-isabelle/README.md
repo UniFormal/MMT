@@ -54,5 +54,6 @@ This requires 64-bit setup Poly/ML and generous Java stack/heap space, e.g. as f
 
 Examples:
 
+      isabelle mmt_import -a -X doc
       isabelle mmt_import -d '$AFP' -B HOL-Analysis -X slow
       isabelle mmt_import -d '$AFP' -B HOL-Analysis
