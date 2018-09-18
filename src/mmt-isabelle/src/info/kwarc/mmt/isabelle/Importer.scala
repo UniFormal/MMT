@@ -257,9 +257,7 @@ object Importer
 
     val archives = init_archives(controller, output_dir)
 
-    object Isabelle extends Isabelle(options, progress)
-
-    val theories = Isabelle.start_session(logic, dirs, select_dirs, selection)
+    object Isabelle extends Isabelle(options, progress, logic, dirs, select_dirs, selection)
 
     def import_theory(thy_export: Theory_Export)
     {
@@ -371,9 +369,9 @@ object Importer
 
     try {
       import_theory(Isabelle.pure_theory_export)
-      Isabelle.import_session(theories, import_theory)
+      Isabelle.import_session(import_theory)
     }
-    finally { Isabelle.stop_session() }
+    finally { Isabelle.session.stop() }
 
     progress.echo("Finished import of " + Isabelle.report_imported)
   }
@@ -471,36 +469,21 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
   /** Isabelle session with imported content **/
 
-  class Isabelle(options: isabelle.Options, progress: isabelle.Progress)
+  class Isabelle(
+    options: isabelle.Options,
+    progress: isabelle.Progress,
+    logic: String,
+    dirs: List[isabelle.Path],
+    select_dirs: List[isabelle.Path],
+    selection: isabelle.Sessions.Selection)
   {
     val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
     val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
 
 
-    /* session */
+    /* dependencies */
 
-    private var _session: Option[isabelle.Headless.Session] = None
-
-    def session: isabelle.Headless.Session =
-      _session.getOrElse(isabelle.error("No Isabelle/PIDE session"))
-
-    def resources: isabelle.Headless.Resources = session.resources
-
-    def import_name(s: String): isabelle.Document.Node.Name =
-      resources.import_name(isabelle.Sessions.DRAFT, "", s)
-
-    def theory_qualifier(name: isabelle.Document.Node.Name): String =
-      resources.session_base.theory_qualifier(name)
-
-    def source_path(name: isabelle.Document.Node.Name): isabelle.Path =
-      isabelle.Path.basic("source") + isabelle.Path.basic(theory_qualifier(name)) +
-        isabelle.Path.basic(name.theory).ext("theory")
-
-    def start_session(
-      logic: String,
-      dirs: List[isabelle.Path],
-      select_dirs: List[isabelle.Path],
-      selection: isabelle.Sessions.Selection): List[String] =
+    private val session_deps: isabelle.Sessions.Deps =
     {
       val sessions_structure0 =
         isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs)
@@ -519,10 +502,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
         val excluded =
           for (name <- sessions_structure.imports_descendants(sessions_record_proofs))
-          yield {
-            progress.echo_warning("Skipping session " + name + "  (option record_proofs)")
-            name
-          }
+            yield {
+              progress.echo_warning("Skipping session " + name + "  (option record_proofs)")
+              name
+            }
 
         selection.copy(exclude_sessions = excluded ::: selection.exclude_sessions)
       }
@@ -530,26 +513,44 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       val selection_size = sessions_structure0.selection(selection1).imports_graph.size
       if (selection_size > 1) progress.echo("Loading " + selection_size + " sessions ...")
 
-      val session_deps: isabelle.Sessions.Deps =
-        sessions_structure0.selection_deps(selection1, progress = progress)
+      sessions_structure0.selection_deps(selection1, progress = progress)
+    }
 
-      val theories = session_deps.used_theories_conditions(progress.echo_warning)
 
+    /* session */
+
+    val session: isabelle.Headless.Session =
+    {
       val build_rc =
         isabelle.Build.build_logic(options, logic, build_heap = true, progress = progress,
           dirs = dirs ::: select_dirs)
       if (build_rc != 0) isabelle.error("Failed to build Isabelle/" + logic)
 
-      _session =
-        Some(isabelle.Headless.start_session(options, logic,
-          session_dirs = dirs ::: select_dirs,
-          include_sessions = session_deps.sessions_structure.imports_topological_order,
-          progress = progress))
-
-      theories
+      isabelle.Headless.start_session(options, logic,
+        session_dirs = dirs ::: select_dirs,
+        include_sessions = session_deps.sessions_structure.imports_topological_order,
+        progress = progress)
     }
 
-    def import_session(theories: List[String], import_theory: Theory_Export => Unit)
+
+    /* resources */
+
+    def resources: isabelle.Headless.Resources = session.resources
+
+    def import_name(s: String): isabelle.Document.Node.Name =
+      resources.import_name(isabelle.Sessions.DRAFT, "", s)
+
+    def theory_qualifier(name: isabelle.Document.Node.Name): String =
+      resources.session_base.theory_qualifier(name)
+
+    def source_path(name: isabelle.Document.Node.Name): isabelle.Path =
+      isabelle.Path.basic("source") + isabelle.Path.basic(theory_qualifier(name)) +
+        isabelle.Path.basic(name.theory).ext("theory")
+
+
+    /* import */
+
+    def import_session(import_theory: Theory_Export => Unit)
     {
       object Consumer
       {
@@ -601,7 +602,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       }
 
       session.use_theories(
-        theories,
+        session_deps.used_theories_conditions(progress.echo_warning),
         check_delay = options.seconds("mmt_check_delay"),
         commit = Some(Consumer.apply _),
         commit_cleanup_delay = options.seconds("mmt_cleanup_delay"),
@@ -619,12 +620,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           isabelle.Output.clean_yxml(msg)
         }
       if (bad_msgs.nonEmpty) isabelle.error(bad_msgs.mkString("\n\n"))
-    }
-
-    def stop_session()
-    {
-      session.stop()
-      _session = None
     }
 
 
