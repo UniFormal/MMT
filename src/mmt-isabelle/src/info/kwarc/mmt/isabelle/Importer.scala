@@ -479,12 +479,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     /* session */
 
-    private var _session: Option[isabelle.Thy_Resources.Session] = None
+    private var _session: Option[isabelle.Headless.Session] = None
 
-    def session: isabelle.Thy_Resources.Session =
+    def session: isabelle.Headless.Session =
       _session.getOrElse(isabelle.error("No Isabelle/PIDE session"))
 
-    def resources: isabelle.Thy_Resources = session.resources
+    def resources: isabelle.Headless.Resources = session.resources
 
     def import_name(s: String): isabelle.Document.Node.Name =
       resources.import_name(isabelle.Sessions.DRAFT, "", s)
@@ -541,7 +541,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       if (build_rc != 0) isabelle.error("Failed to build Isabelle/" + logic)
 
       _session =
-        Some(isabelle.Thy_Resources.start_session(options, logic,
+        Some(isabelle.Headless.start_session(options, logic,
           session_dirs = dirs ::: select_dirs,
           include_sessions = session_deps.sessions_structure.imports_topological_order,
           progress = progress))
@@ -775,7 +775,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       Theory_Export(node_name, Source(snapshot.node.source), theory.parents, segments)
     }
 
-    def use_theories(theories: List[String]): isabelle.Thy_Resources.Theories_Result =
+    def use_theories(theories: List[String]): isabelle.Headless.Use_Theories_Result =
       session.use_theories(theories, progress = progress)
 
 
