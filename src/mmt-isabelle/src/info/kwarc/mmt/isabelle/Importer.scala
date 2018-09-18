@@ -35,22 +35,11 @@ object Importer
     Theory.empty(module.doc, module.name, meta_theory)
   }
 
-  def init_archives(controller: Controller, output_dir: isabelle.Path): List[Archive] =
+  def init_archive(dir: isabelle.Path)
   {
-    def get_archives: Option[List[Archive]] =
-      controller.backend.openArchive(output_dir.absolute_file) match {
-        case Nil => None
-        case archives => Some(archives)
-      }
-
-    get_archives getOrElse {
-      val meta_inf = output_dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
-      isabelle.Isabelle_System.mkdirs(meta_inf.dir)
-      isabelle.File.write(meta_inf, "id: Isabelle\ntitle: Isabelle\n")
-
-      get_archives getOrElse
-        isabelle.error("Failed to initialize archives in " + output_dir)
-    }
+    val meta_inf = dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
+    isabelle.Isabelle_System.mkdirs(meta_inf.dir)
+    isabelle.File.write(meta_inf, "id: Isabelle\ntitle: Isabelle\n")
   }
 
 
@@ -238,7 +227,7 @@ object Importer
 
   /** Isabelle to MMT importer **/
 
-  val default_output_dir: isabelle.Path = isabelle.Path.explode("isabelle_mmt")
+  val default_init_archive_dir: isabelle.Path = isabelle.Path.explode("isabelle_mmt")
   val default_logic: String = isabelle.Thy_Header.PURE
 
   def importer(options: isabelle.Options,
@@ -246,18 +235,33 @@ object Importer
     dirs: List[isabelle.Path] = Nil,
     select_dirs: List[isabelle.Path] = Nil,
     selection: isabelle.Sessions.Selection = isabelle.Sessions.Selection.empty,
-    output_dir: isabelle.Path = default_output_dir,
+    archive_dirs: List[isabelle.Path],
+    init_archive_dir: isabelle.Path,
+    chapter_archive: String => Option[String],
     progress: isabelle.Progress = isabelle.No_Progress)
   {
     val controller = new Controller
-    controller.setHome(output_dir.absolute_file)
 
     object MMT_Importer extends NonTraversingImporter { val key = "isabelle-omdoc" }
     controller.extman.addExtension(MMT_Importer, Nil)
 
-    val archives = init_archives(controller, output_dir)
+    val archives: List[Archive] =
+      (init_archive_dir :: archive_dirs).flatMap(dir =>
+          controller.backend.openArchive(dir.absolute_file))
+      match {
+        case Nil =>
+          init_archive(init_archive_dir)
+          controller.backend.openArchive(init_archive_dir.absolute_file) match {
+            case Nil => isabelle.error("Failed to initialize archive in " + init_archive_dir)
+            case archives => archives
+          }
+        case archives => archives
+      }
 
-    object Isabelle extends Isabelle(options, progress, logic, dirs, select_dirs, selection)
+    archives.foreach(archive => progress.echo("Adding " + archive))
+
+    object Isabelle extends
+      Isabelle(options, progress, logic, dirs, select_dirs, selection, archives, chapter_archive)
 
     def import_theory(thy_export: Theory_Export)
     {
@@ -268,12 +272,10 @@ object Importer
       val thy_is_pure: Boolean = thy_name == Isabelle.pure_name
 
       // archive
-      val archive: Archive = archives.head // FIXME the archive in which this document should be placed: Distribution or AFP
-      val thy_source_path = isabelle.File.path(archive.root.toJava) + Isabelle.source_path(thy_name)
+      val (archive, thy_source_path, thy_doc_path) = Isabelle.theory_archive(thy_name)
 
       // document
-      val dpath = DPath(archive.narrationBase / Isabelle.theory_qualifier(thy_name) / thy_base_name)
-      val doc = new Document(dpath, root = true)
+      val doc = new Document(thy_doc_path, root = true)
       controller.add(doc)
 
       // theory content
@@ -382,9 +384,12 @@ object Importer
   def main(args: Array[String])
   {
     isabelle.Command_Line.tool0 {
+      var archive_dirs: List[isabelle.Path] = Nil
+      var chapter_archive_map: Map[String, String] = Map.empty
+      var chapter_archive_default = ""
       var base_sessions: List[String] = Nil
       var select_dirs: List[isabelle.Path] = Nil
-      var output_dir = default_output_dir
+      var init_archive_dir = default_init_archive_dir
       var requirements = false
       var exclude_session_groups: List[String] = Nil
       var all_sessions = false
@@ -399,9 +404,11 @@ object Importer
 Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
   Options are:
+    -A DIR       add archive directory
+    -C CH=AR     add mapping of chapter CH to archive AR, or default "_=AR"
     -B NAME      include session NAME and all descendants
     -D DIR       include session directory and select its sessions
-    -O DIR       output directory for MMT (default: """ + default_output_dir + """)
+    -I DIR       init archive directory (default: """ + default_init_archive_dir + """)
     -R           operate on requirements of selected sessions
     -X NAME      exclude sessions from group NAME and all descendants
     -a           select all sessions
@@ -414,9 +421,18 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
   Import specified sessions into MMT output directory.
 """,
+      "A:" -> (arg => archive_dirs = archive_dirs ::: List(isabelle.Path.explode(arg))),
+      "C:" -> (arg =>
+        isabelle.space_explode('=', arg) match {
+          case ch :: ar =>
+            val archive = ar.mkString("=")
+            if (ch == "_") chapter_archive_default = archive
+            else chapter_archive_map += (ch -> archive)
+          case Nil => isabelle.error("Malformed chapter to archive mapping")
+        }),
       "B:" -> (arg => base_sessions = base_sessions ::: List(arg)),
       "D:" -> (arg => { select_dirs = select_dirs ::: List(isabelle.Path.explode(arg)) }),
-      "O:" -> (arg => { output_dir = isabelle.Path.explode(arg) }),
+      "I:" -> (arg => { init_archive_dir = isabelle.Path.explode(arg) }),
       "R" -> (_ => requirements = true),
       "X:" -> (arg => exclude_session_groups = exclude_session_groups ::: List(arg)),
       "a" -> (_ => all_sessions = true),
@@ -454,7 +470,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           dirs = dirs,
           select_dirs = select_dirs,
           selection = selection,
-          output_dir = output_dir,
+          archive_dirs = archive_dirs,
+          init_archive_dir = init_archive_dir,
+          chapter_archive =
+            (ch: String) => chapter_archive_map.get(ch) orElse
+              isabelle.proper_string(chapter_archive_default),
           progress = progress)
       }
       finally {
@@ -475,7 +495,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     logic: String,
     dirs: List[isabelle.Path],
     select_dirs: List[isabelle.Path],
-    selection: isabelle.Sessions.Selection)
+    selection: isabelle.Sessions.Selection,
+    archives: List[Archive],
+    chapter_archive: String => Option[String])
   {
     val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
     val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
@@ -543,12 +565,49 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     def theory_qualifier(name: isabelle.Document.Node.Name): String =
       resources.session_base.theory_qualifier(name)
 
-    def source_path(name: isabelle.Document.Node.Name): isabelle.Path =
-      isabelle.Path.basic("source") + isabelle.Path.basic(theory_qualifier(name)) +
-        isabelle.Path.basic(name.theory).ext("theory")
+    def theory_archive(name: isabelle.Document.Node.Name): (Archive, isabelle.Path, DPath) =
+    {
+      def err(msg: String): Nothing =
+        isabelle.error(msg + " (theory " + isabelle.quote(name.toString) + ")")
+
+      val session_name = theory_qualifier(name)
+      val session_info =
+        session_deps.sessions_structure.get(session_name) getOrElse
+          err("Undefined session info " + isabelle.quote(session_name))
+
+      val chapter = session_info.chapter
+
+      val archive =
+        archives match {
+          case List(archive) => archive
+          case _ =>
+            val archive_name =
+              chapter_archive(chapter) getOrElse
+                err("Unspecified archive for chapter " + isabelle.quote(chapter))
+
+            archives.find(archive => archive.root.getName == archive_name) getOrElse
+              err("Unknown archive for chapter " + isabelle.quote(chapter))
+        }
+      val subdir = if (archive.root.getName == chapter) None else Some(chapter)
+
+      val source_path =
+        isabelle.File.path(archive.root.toJava) +
+          isabelle.Path.basic("source") +
+          isabelle.Path.explode(subdir.getOrElse("")) +
+          isabelle.Path.basic(session_name) +
+          isabelle.Path.basic(name.theory).ext("theory")
+
+      val doc_path =
+        DPath(archive.narrationBase / subdir.toList / session_name / name.theory_base_name)
+
+      (archive, source_path, doc_path)
+    }
 
 
-    /* import */
+    /* import session theories */
+
+    private val import_theories = session_deps.used_theories_condition(progress.echo_warning)
+    import_theories.foreach(theory_archive)
 
     def import_session(import_theory: Theory_Export => Unit)
     {
@@ -602,7 +661,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       }
 
       session.use_theories(
-        session_deps.used_theories_conditions(progress.echo_warning),
+        import_theories.map(_.theory),
         check_delay = options.seconds("mmt_check_delay"),
         commit = Some(Consumer.apply _),
         commit_cleanup_delay = options.seconds("mmt_cleanup_delay"),

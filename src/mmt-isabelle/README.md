@@ -22,7 +22,7 @@ as Isabelle component, e.g. in ```$ISABELLE_HOME_USER/etc/settings``` like this:
 
 * HTTP server:
 
-      isabelle mmt_server
+      isabelle mmt_server -A isabelle_mmt
 
 * MMT shell:
 
@@ -57,3 +57,6 @@ Examples:
       isabelle mmt_import -a -X doc
       isabelle mmt_import -d '$AFP' -B HOL-Analysis -X slow
       isabelle mmt_import -d '$AFP' -B HOL-Analysis
+
+      # MathHub archive layout
+      isabelle mmt_import -d '$AFP' -B HOL-Analysis -A content/MathHub -C AFP=AFP -C _=Distribution
