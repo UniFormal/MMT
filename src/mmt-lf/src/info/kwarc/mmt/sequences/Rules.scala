@@ -1,13 +1,11 @@
 package info.kwarc.mmt.sequences
 
-import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.{checking, _}
 import checking._
 import uom._
 import objects._
 import objects.Conversions._
-
 import info.kwarc.mmt.lf._
-
 import Sequences._
 import Nat._
 import NatRules.NatLit
@@ -315,8 +313,7 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
               Simplify(OMBINDC(binder, conE, argsE))
             } else
               Simplifiability.NoRecurse
-         case _ =>
-           Simplifiability.NoRecurse
+         case _ => Simplifiability.NoRecurse
       }
    }
 }
