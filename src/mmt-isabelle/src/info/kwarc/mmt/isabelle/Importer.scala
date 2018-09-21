@@ -689,6 +689,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
                     case exn: Throwable if !isabelle.Exn.is_interrupt(exn) =>
                       val msg = isabelle.Exn.message(exn)
                       progress.echo("FAILED to import theory " + name)
+                      progress.echo_error_message(msg)
                       consumer_bad_theories.change(Bad_Theory(name, status, List(msg)) :: _)
                   }
                 }
@@ -700,6 +701,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
                         isabelle.XML.content(isabelle.Pretty.formatted(List(tree)))
                     }
                   progress.echo("FAILED to process theory " + name)
+                  msgs.foreach(progress.echo_error_message)
                   consumer_bad_theories.change(Bad_Theory(name, status, msgs) :: _)
                 }
                 true
