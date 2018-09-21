@@ -657,7 +657,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     /* import session theories */
 
-    private val import_theories = session_deps.used_theories_condition(progress.echo_warning)
+    private val import_theories =
+      for { (_, name) <- session_deps.used_theories_condition(options, progress.echo_warning) }
+        yield name
+
     import_theories.foreach(theory_archive)
 
     def import_session(import_theory: Theory_Export => Unit)
