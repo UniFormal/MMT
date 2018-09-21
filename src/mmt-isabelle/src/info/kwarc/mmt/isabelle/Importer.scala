@@ -1,6 +1,7 @@
 package info.kwarc.mmt.isabelle
 
 import scala.collection.SortedMap
+import scala.util.matching.Regex
 import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import frontend.Controller
@@ -33,6 +34,14 @@ object Importer
   {
     val module = module_name(node_name)
     Theory.empty(module.doc, module.name, meta_theory)
+  }
+
+  class Indexed_Name(val name: String)
+  {
+    def apply(i: Int): String = name + "(" + i + ")"
+    private val Pattern = (Regex.quote(name) + """\((\d+)\)""").r
+    def unapply(s: String): Option[Int] =
+      s match { case Pattern(isabelle.Value.Int(i)) => Some(i) case _ => None }
   }
 
   def init_archive(dir: isabelle.Path)
@@ -132,6 +141,19 @@ object Importer
 
   /** MMT import structures **/
 
+  object Env
+  {
+    val empty: Env = new Env(Map.empty)
+  }
+
+  final class Env private(rep: Map[String, Term])
+  {
+    def get(x: String): Term = rep.getOrElse(x, OMV(x))
+    def + (entry: (String, Term)): Env = new Env(rep + entry)
+  }
+
+  val dummy_type_scheme: (List[String], isabelle.Term.Typ) = (Nil, isabelle.Term.dummyT)
+
   object Item
   {
     object Key
@@ -152,8 +174,6 @@ object Importer
     }
   }
 
-  val dummy_type_scheme: (List[String], isabelle.Term.Typ) = (Nil, isabelle.Term.dummyT)
-
   sealed case class Item(
     theory_source: Option[URI],
     theory_path: MPath,
@@ -165,6 +185,7 @@ object Importer
   {
     val key: Item.Key = Item.Key(entity.kind, entity.name)
 
+    def local_name: LocalName = LocalName(node_name.theory, entity.kind.toString, entity.name)
     def global_name: GlobalName = constant(None, None).path
 
     def notation: NotationContainer =
@@ -194,8 +215,7 @@ object Importer
 
     def constant(tp: Option[Term], df: Option[Term]): Constant =
     {
-      val name = LocalName(node_name.theory, entity.kind.toString, entity.name)
-      val c = Constant(OMID(theory_path), name, Nil, tp, df, None, notation)
+      val c = Constant(OMID(theory_path), local_name, Nil, tp, df, None, notation)
       for (sref <- node_source.ref(theory_source, entity.pos)) SourceRef.update(c, sref)
       c
     }
@@ -355,11 +375,45 @@ object Importer
         }
 
         // locales
-        for (decl <- segment.locales) {
-          decl_error(decl.entity) {
-            val item = thy_content.declare_item(decl.entity)
-            val tp = thy_content.value.import_locale(decl)
-            controller.add(item.constant(Some(tp), None))
+        for (locale <- segment.locales) {
+          decl_error(locale.entity) {
+            val content = thy_content.value
+            val item = thy_content.declare_item(locale.entity)
+            val loc_name = item.local_name
+            val loc_thy = Theory.empty((thy_content.thy.path / loc_name).toDPath, loc_name, None)
+
+            // type parameters
+            val type_env =
+              (Env.empty /: locale.typargs) {
+                case (env, (a, _)) =>
+                  val c = Constant(loc_thy.toTerm, LocalName(a), Nil, Some(Isabelle.Type()), None, None)
+                  loc_thy.add(c)
+                  env + (a -> c.toTerm)
+              }
+
+            // sort constraints
+            for { (prop, i) <- content.import_sorts(locale.typargs).zipWithIndex } {
+              val name = LocalName(Isabelle.Locale.Sorts(i + 1))
+              loc_thy.add(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
+            }
+
+            // term parameters
+            val term_env =
+              (type_env /: locale.args) {
+                case (env, (x, ty)) =>
+                  val tp = content.import_type(ty, type_env)
+                  val c = Constant(loc_thy.toTerm, LocalName(x), Nil, Some(tp), None, None)
+                  loc_thy.add(c)
+                  env + (x -> c.toTerm)
+              }
+
+            // logical axioms
+            for { (prop, i) <- locale.axioms.map(content.import_prop(_, term_env)).zipWithIndex } {
+              val name = LocalName(Isabelle.Locale.Axioms(i + 1))
+              loc_thy.add(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
+            }
+
+            controller.add(new NestedModule(thy_content.thy.toTerm, loc_name, loc_thy))
           }
         }
       }
@@ -369,10 +423,7 @@ object Importer
       MMT_Importer.importDocument(archive, doc)
     }
 
-    try {
-      import_theory(Isabelle.pure_theory_export)
-      Isabelle.import_session(import_theory)
-    }
+    try { Isabelle.import_session(import_theory) }
     finally { Isabelle.session.stop() }
 
     progress.echo("Finished import of " + Isabelle.report_imported)
@@ -611,74 +662,81 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     def import_session(import_theory: Theory_Export => Unit)
     {
-      object Consumer
-      {
-        sealed case class Bad_Theory(
-          name: isabelle.Document.Node.Name,
-          status: isabelle.Document_Status.Node_Status,
-          errors: List[String])
-
-        private val consumer_bad_theories = isabelle.Synchronized(List.empty[Bad_Theory])
-
-        private val consumer =
-          isabelle.Consumer_Thread.fork(name = "mmt_import")(
-            consume = (args: (isabelle.Document.Snapshot, isabelle.Document_Status.Node_Status)) =>
-            {
-              val (snapshot, status) = args
-              val name = snapshot.node_name
-              if (status.ok) {
-                try { import_theory(read_theory_export(snapshot)) }
-                catch {
-                  case exn: Throwable if !isabelle.Exn.is_interrupt(exn) =>
-                    val msg = isabelle.Exn.message(exn)
-                    progress.echo("FAILED to import theory " + name)
-                    consumer_bad_theories.change(Bad_Theory(name, status, List(msg)) :: _)
-                }
-              }
-              else {
-                val msgs =
-                  for ((tree, pos) <- snapshot.messages if isabelle.Protocol.is_error(tree))
-                  yield {
-                    "Error" + isabelle.Position.here(pos) + ":\n" +
-                      isabelle.XML.content(isabelle.Pretty.formatted(List(tree)))
-                  }
-                progress.echo("FAILED to process theory " + name)
-                consumer_bad_theories.change(Bad_Theory(name, status, msgs) :: _)
-              }
-              true
-            })
-
-        def apply(
-            snapshot: isabelle.Document.Snapshot,
-            node_status: isabelle.Document_Status.Node_Status): Unit =
-          consumer.send((snapshot, node_status))
-
-        def shutdown(): List[Bad_Theory] =
-        {
-          consumer.shutdown()
-          consumer_bad_theories.value.reverse
-        }
+      if (import_theories.isEmpty) {
+        progress.echo_warning("Nothing to import")
       }
+      else {
+        import_theory(pure_theory_export)
 
-      session.use_theories(
-        import_theories.map(_.theory),
-        check_delay = options.seconds("mmt_check_delay"),
-        commit = Some(Consumer.apply _),
-        commit_cleanup_delay = options.seconds("mmt_cleanup_delay"),
-        watchdog_timeout = options.seconds("mmt_watchdog_timeout"),
-        progress = progress)
+        object Consumer
+        {
+          sealed case class Bad_Theory(
+            name: isabelle.Document.Node.Name,
+            status: isabelle.Document_Status.Node_Status,
+            errors: List[String])
 
-      val bad_theories = Consumer.shutdown()
-      val bad_msgs =
-        for { bad <- bad_theories }
-        yield {
-          val msg =
-            "FAILED theory " + bad.name +
-              (if (bad.status.consolidated) "" else ": " + bad.status.percentage + "% finished") +
-              (if (bad.errors.isEmpty) "" else bad.errors.mkString("\n", "\n", ""))
-          isabelle.Output.clean_yxml(msg)
+          private val consumer_bad_theories = isabelle.Synchronized(List.empty[Bad_Theory])
+
+          private val consumer =
+            isabelle.Consumer_Thread.fork(name = "mmt_import")(
+              consume = (args: (isabelle.Document.Snapshot, isabelle.Document_Status.Node_Status)) =>
+              {
+                val (snapshot, status) = args
+                val name = snapshot.node_name
+                if (status.ok) {
+                  try { import_theory(read_theory_export(snapshot)) }
+                  catch {
+                    case exn: Throwable if !isabelle.Exn.is_interrupt(exn) =>
+                      val msg = isabelle.Exn.message(exn)
+                      progress.echo("FAILED to import theory " + name)
+                      consumer_bad_theories.change(Bad_Theory(name, status, List(msg)) :: _)
+                  }
+                }
+                else {
+                  val msgs =
+                    for ((tree, pos) <- snapshot.messages if isabelle.Protocol.is_error(tree))
+                    yield {
+                      "Error" + isabelle.Position.here(pos) + ":\n" +
+                        isabelle.XML.content(isabelle.Pretty.formatted(List(tree)))
+                    }
+                  progress.echo("FAILED to process theory " + name)
+                  consumer_bad_theories.change(Bad_Theory(name, status, msgs) :: _)
+                }
+                true
+              })
+
+          def apply(
+              snapshot: isabelle.Document.Snapshot,
+              node_status: isabelle.Document_Status.Node_Status): Unit =
+            consumer.send((snapshot, node_status))
+
+          def shutdown(): List[Bad_Theory] =
+          {
+            consumer.shutdown()
+            consumer_bad_theories.value.reverse
+          }
         }
-      if (bad_msgs.nonEmpty) isabelle.error(bad_msgs.mkString("\n\n"))
+
+        session.use_theories(
+          import_theories.map(_.theory),
+          check_delay = options.seconds("mmt_check_delay"),
+          commit = Some(Consumer.apply _),
+          commit_cleanup_delay = options.seconds("mmt_cleanup_delay"),
+          watchdog_timeout = options.seconds("mmt_watchdog_timeout"),
+          progress = progress)
+
+        val bad_theories = Consumer.shutdown()
+        val bad_msgs =
+          for { bad <- bad_theories }
+          yield {
+            val msg =
+              "FAILED theory " + bad.name +
+                (if (bad.status.consolidated) "" else ": " + bad.status.percentage + "% finished") +
+                (if (bad.errors.isEmpty) "" else bad.errors.mkString("\n", "\n", ""))
+            isabelle.Output.clean_yxml(msg)
+          }
+        if (bad_msgs.nonEmpty) isabelle.error(bad_msgs.mkString("\n\n"))
+      }
     }
 
 
@@ -763,6 +821,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     {
       lazy val path: GlobalName = pure_const(isabelle.Pure_Thy.EQ)
       def apply(tp: Term, t: Term, u: Term): Term = lf.ApplySpine(OMS(path), tp, t, u)
+    }
+
+    object Locale
+    {
+      object Sorts extends Indexed_Name("sorts")
+      object Axioms extends Indexed_Name("axioms")
     }
 
 
@@ -895,16 +959,16 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       def import_class(name: String): Term = OMS(get_class(name).global_name)
 
-      def import_type(ty: isabelle.Term.Typ): Term =
+      def import_type(ty: isabelle.Term.Typ, env: Env = Env.empty): Term =
       {
         try {
           ty match {
             case isabelle.Term.Type(isabelle.Pure_Thy.FUN, List(a, b)) =>
-              lf.Arrow(import_type(a), import_type(b))
+              lf.Arrow(import_type(a, env), import_type(b, env))
             case isabelle.Term.Type(name, args) =>
               val op = OMS(get_type(name).global_name)
-              if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(content.import_type))
-            case isabelle.Term.TFree(a, _) => OMV(a)
+              if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(content.import_type(_, env)))
+            case isabelle.Term.TFree(a, _) => env.get(a)
             case isabelle.Term.TVar(xi, _) =>
               isabelle.error("Illegal schematic type variable " + xi.toString)
           }
@@ -912,14 +976,14 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin type " + ty) }
       }
 
-      def import_term(tm: isabelle.Term.Term): Term =
+      def import_term(tm: isabelle.Term.Term, env: Env = Env.empty): Term =
       {
         def term(bounds: List[String], t: isabelle.Term.Term): Term =
           t match {
             case isabelle.Term.Const(c, ty) =>
               val item = get_const(c)
-              Type.app(OMS(item.global_name), item.typargs(ty).map(content.import_type))
-            case isabelle.Term.Free(x, _) => OMV(x)
+              Type.app(OMS(item.global_name), item.typargs(ty).map(content.import_type(_, env)))
+            case isabelle.Term.Free(x, _) => env.get(x)
             case isabelle.Term.Var(xi, _) =>
               isabelle.error("Illegal schematic variable " + xi.toString)
             case isabelle.Term.Bound(i) =>
@@ -931,7 +995,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
                 }
               OMV(x)
             case isabelle.Term.Abs(x, ty, b) =>
-              lf.Lambda(LocalName(x), import_type(ty), term(x :: bounds, b))
+              lf.Lambda(LocalName(x), import_type(ty, env), term(x :: bounds, b))
             case isabelle.Term.App(a, b) =>
               lf.Apply(term(bounds, a), term(bounds, b))
           }
@@ -940,27 +1004,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin term " + tm) }
       }
 
-      def import_args(
-        typargs: List[(String, isabelle.Term.Sort)],
-        args: List[(String, isabelle.Term.Typ)]): (List[String], List[Term], List[VarDecl]) =
-      {
-        val types = typargs.map(_._1)
-        val sorts = typargs.flatMap({ case (a, s) => s.map(c => lf.Apply(import_class(c), OMV(a))) })
-        val vars = args.map({ case (x, ty) => OMV(x) % import_type(ty) })
-        (types, sorts, vars)
-      }
+      def import_sorts(typargs: List[(String, isabelle.Term.Sort)]): List[Term] =
+        typargs.flatMap({ case (a, s) => s.map(c => lf.Apply(import_class(c), OMV(a))) })
 
-      def import_prop(prop: isabelle.Export_Theory.Prop): Term =
+      def import_prop(prop: isabelle.Export_Theory.Prop, env: Env = Env.empty): Term =
       {
-        val (types, sorts, vars) = import_args(prop.typargs, prop.args)
-        val t = import_term(prop.term)
-        Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
-      }
-
-      def import_locale(locale: isabelle.Export_Theory.Locale): Term =
-      {
-        val (types, sorts, vars) = import_args(locale.typargs, locale.args)
-        val t = Prop()
+        val types = prop.typargs.map(_._1)
+        val sorts = import_sorts(prop.typargs)
+        val vars = prop.args.map({ case (x, ty) => OMV(x) % import_type(ty, env) })
+        val t = import_term(prop.term, env)
         Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
       }
     }
