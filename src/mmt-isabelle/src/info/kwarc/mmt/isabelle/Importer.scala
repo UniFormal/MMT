@@ -50,6 +50,37 @@ object Importer
 
 
 
+  /** type checking **/
+
+  def solver_error(solver: checking.Solver, err: => String)
+  {
+    val errs =
+      for {
+        solver_error <- solver.getErrors
+        if solver_error.level >= Level.Error
+      } yield solver_error.history.toString
+    if (errs.nonEmpty) isabelle.error(isabelle.cat_lines(err :: errs))
+  }
+
+  def check_term(controller: Controller, context: Context, t: Term)
+  {
+    checking.Solver.check(controller, Stack(context), t) match {
+      case Left(_) =>
+      case Right(solver) => solver_error(solver, "Failed to check term: " + t)
+    }
+  }
+
+  def check_term_type(controller: Controller, context: Context, t: Term, tp: Term)
+  {
+    checking.Solver.checkType(controller, context, t, tp) match {
+      case None =>
+      case Some(solver) =>
+        solver_error(solver, "Failed to check term: " + t + "\nagainst type: " + tp)
+    }
+  }
+
+
+
   /** source with position: offset, line, column (counting 16-bit Char addresses from 0) **/
 
   object Source
@@ -307,6 +338,17 @@ object Importer
         controller.add(PlainInclude(declared_theory(parent).path, thy_draft.thy.path))
       }
 
+      def add_constant(item: Item, tp: Option[Term], df: Option[Term])
+      {
+        val context = Context(thy_draft.thy.path)
+        if (options.bool("mmt_type_checking")) {
+          for (t <- tp.iterator ++ df.iterator) check_term(controller, context, t)
+          if (tp.isDefined && df.isDefined) check_term_type(controller, context, df.get, tp.get)
+        }
+        val c = item.constant(tp, df)
+        controller.add(c)
+      }
+
       // PIDE theory source
       if (!thy_export.node_source.is_empty) {
         isabelle.Isabelle_System.mkdirs(thy_source_path.dir)
@@ -337,7 +379,7 @@ object Importer
           decl_error(decl.entity) {
             val item = thy_draft.declare_item(decl.entity)
             val tp = Isabelle.Class()
-            controller.add(item.constant(Some(tp), None))
+            add_constant(item, Some(tp), None)
           }
         }
 
@@ -347,7 +389,7 @@ object Importer
             val item = thy_draft.declare_item(decl.entity, decl.syntax)
             val tp = Isabelle.Type(decl.args.length)
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, thy_draft.content.import_type(rhs)))
-            controller.add(item.constant(Some(tp), df))
+            add_constant(item, Some(tp), df)
           }
         }
 
@@ -357,7 +399,7 @@ object Importer
             val item = thy_draft.declare_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
             val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
-            controller.add(item.constant(Some(tp), df))
+            add_constant(item, Some(tp), df)
           }
         }
 
@@ -366,7 +408,7 @@ object Importer
           decl_error(decl.entity) {
             val item = thy_draft.declare_item(decl.entity)
             val tp = thy_draft.content.import_prop(decl.prop)
-            controller.add(item.constant(Some(tp), None))
+            add_constant(item, Some(tp), None)
           }
         }
 

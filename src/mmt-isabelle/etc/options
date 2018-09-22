@@ -8,3 +8,6 @@ option mmt_cleanup_delay : real = 60
 
 option mmt_watchdog_timeout : real = 600
   -- {* watchdog timeout for PIDE processing of broken theories (seconds, 0 = disabled) *}
+
+option mmt_type_checking : bool = false
+  -- {* explicit type-checking for imported items *}
