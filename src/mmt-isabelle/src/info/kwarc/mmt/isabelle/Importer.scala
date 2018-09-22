@@ -718,13 +718,14 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           }
         }
 
-        session.use_theories(
-          import_theories.map(_.theory),
-          check_delay = options.seconds("mmt_check_delay"),
-          commit = Some(Consumer.apply _),
-          commit_cleanup_delay = options.seconds("mmt_cleanup_delay"),
-          watchdog_timeout = options.seconds("mmt_watchdog_timeout"),
-          progress = progress)
+        val use_theories_result =
+          session.use_theories(
+            import_theories.map(_.theory),
+            check_delay = options.seconds("mmt_check_delay"),
+            commit = Some(Consumer.apply _),
+            commit_cleanup_delay = options.seconds("mmt_cleanup_delay"),
+            watchdog_timeout = options.seconds("mmt_watchdog_timeout"),
+            progress = progress)
 
         val bad_theories = Consumer.shutdown()
         val bad_msgs =
@@ -736,7 +737,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
                 (if (bad.errors.isEmpty) "" else bad.errors.mkString("\n", "\n", ""))
             isabelle.Output.clean_yxml(msg)
           }
-        if (bad_msgs.nonEmpty) isabelle.error(bad_msgs.mkString("\n\n"))
+
+        val pending_msgs =
+          use_theories_result.nodes_pending match {
+            case Nil => Nil
+            case pending => List("Pending theories: " + isabelle.commas(pending.map(p => p._1.toString)))
+          }
+
+        val errors = bad_msgs ::: pending_msgs
+        if (errors.nonEmpty) isabelle.error(errors.mkString("\n\n"))
       }
     }
 
