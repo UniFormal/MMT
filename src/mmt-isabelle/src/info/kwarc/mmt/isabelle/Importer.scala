@@ -509,7 +509,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     -v           verbose mode
     -x NAME      exclude session NAME and all descendants
 
-  Import specified sessions into MMT output directory.
+  Import specified sessions into MMT archive directories.
 """,
       "A:" -> (arg => archive_dirs = archive_dirs ::: List(isabelle.Path.explode(arg))),
       "C:" -> (arg =>
