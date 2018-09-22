@@ -299,16 +299,16 @@ object Importer
       controller.add(doc)
 
       // theory content
-      val thy_content =
+      val thy_draft =
         Isabelle.begin_theory(thy_export,
           if (thy_is_pure) None else Some(URI(thy_source_path.file.toPath.toUri)),
           if (thy_is_pure) None else Some(Isabelle.pure_path))
 
-      controller.add(thy_content.thy)
-      controller.add(MRef(doc.path, thy_content.thy.path))
+      controller.add(thy_draft.thy)
+      controller.add(MRef(doc.path, thy_draft.thy.path))
 
       if (thy_is_pure) {
-        controller.add(Include(thy_content.thy.toTerm, lf.PLF._path, Nil))
+        controller.add(Include(thy_draft.thy.toTerm, lf.PLF._path, Nil))
       }
 
       // PIDE theory source
@@ -331,7 +331,7 @@ object Importer
         if (segment.header_relevant) {
           val text = isabelle.Symbol.decode(segment.header.replace(' ', '\u00a0'))
           val opaque =
-            new OpaqueText(thy_content.thy.asDocument.path,
+            new OpaqueText(thy_draft.thy.asDocument.path,
               OpaqueText.defaultFormat, StringFragment(text))
           controller.add(opaque)
         }
@@ -339,7 +339,7 @@ object Importer
         // classes
         for (decl <- segment.classes) {
           decl_error(decl.entity) {
-            val item = thy_content.declare_item(decl.entity)
+            val item = thy_draft.declare_item(decl.entity)
             val tp = Isabelle.Class()
             controller.add(item.constant(Some(tp), None))
           }
@@ -348,9 +348,9 @@ object Importer
         // types
         for (decl <- segment.types) {
           decl_error(decl.entity) {
-            val item = thy_content.declare_item(decl.entity, decl.syntax)
+            val item = thy_draft.declare_item(decl.entity, decl.syntax)
             val tp = Isabelle.Type(decl.args.length)
-            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, thy_content.value.import_type(rhs)))
+            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, thy_draft.content.import_type(rhs)))
             controller.add(item.constant(Some(tp), df))
           }
         }
@@ -358,9 +358,9 @@ object Importer
         // consts
         for (decl <- segment.consts) {
           decl_error(decl.entity) {
-            val item = thy_content.declare_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
-            val tp = Isabelle.Type.all(decl.typargs, thy_content.value.import_type(decl.typ))
-            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_content.value.import_term(rhs)))
+            val item = thy_draft.declare_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
+            val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
+            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
             controller.add(item.constant(Some(tp), df))
           }
         }
@@ -368,8 +368,8 @@ object Importer
         // facts
         for (decl <- segment.facts_single) {
           decl_error(decl.entity) {
-            val item = thy_content.declare_item(decl.entity)
-            val tp = thy_content.value.import_prop(decl.prop)
+            val item = thy_draft.declare_item(decl.entity)
+            val tp = thy_draft.content.import_prop(decl.prop)
             controller.add(item.constant(Some(tp), None))
           }
         }
@@ -377,10 +377,10 @@ object Importer
         // locales
         for (locale <- segment.locales) {
           decl_error(locale.entity) {
-            val content = thy_content.value
-            val item = thy_content.declare_item(locale.entity)
+            val content = thy_draft.content
+            val item = thy_draft.declare_item(locale.entity)
             val loc_name = item.local_name
-            val loc_thy = Theory.empty((thy_content.thy.path / loc_name).toDPath, loc_name, None)
+            val loc_thy = Theory.empty((thy_draft.thy.path / loc_name).toDPath, loc_name, None)
 
             // type parameters
             val type_env =
@@ -413,12 +413,12 @@ object Importer
               loc_thy.add(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
             }
 
-            controller.add(new NestedModule(thy_content.thy.toTerm, loc_name, loc_thy))
+            controller.add(new NestedModule(thy_draft.thy.toTerm, loc_name, loc_thy))
           }
         }
       }
 
-      thy_content.end_theory()
+      thy_draft.end_theory()
 
       MMT_Importer.importDocument(archive, doc)
     }
@@ -1040,24 +1040,24 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     def begin_theory(
       thy_export: Theory_Export,
       thy_source: Option[URI],
-      meta_theory: Option[MPath]): Theory_Content_Var =
+      meta_theory: Option[MPath]): Theory_Draft =
     {
       val thy = declared_theory(thy_export.node_name, meta_theory)
       for (uri <- thy_source) SourceRef.update(thy, SourceRef(uri, SourceRegion.none))
 
       val parent_content = Content.merge(thy_export.parents.map(theory_content))
-      new Theory_Content_Var(thy_source, thy, thy_export.node_name, thy_export.node_source, parent_content)
+      new Theory_Draft(thy_source, thy, thy_export.node_name, thy_export.node_source, parent_content)
     }
 
-    class Theory_Content_Var private[Isabelle](
+    class Theory_Draft private[Isabelle](
       thy_source: Option[URI],
       val thy: DeclaredTheory,
-      val node_name: isabelle.Document.Node.Name,
+      node_name: isabelle.Document.Node.Name,
       node_source: Source,
-      val parent_content: Content)
+      parent_content: Content)
     {
-      private val content = isabelle.Synchronized(parent_content)
-      def value: Content = content.value
+      private val _content = isabelle.Synchronized(parent_content)
+      def content: Content = _content.value
 
       def declare_item(
         entity: isabelle.Export_Theory.Entity,
@@ -1065,11 +1065,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
       {
         val item = Item(thy_source, thy.path, node_name, node_source, entity, syntax, type_scheme)
-        content.change(_.declare(item))
+        _content.change(_.declare(item))
         item
       }
 
-      def end_theory(): Unit = imported.change(map => map + (node_name.theory -> value))
+      def end_theory(): Unit = imported.change(map => map + (node_name.theory -> content))
     }
   }
 }
