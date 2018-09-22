@@ -25,7 +25,7 @@ Usage: isabelle mmt_server [OPTIONS]
     -A DIR       add archive directory
     -p PORT      server port (default: """ + default_port + """)
 
-  Start MMT HTTP server on localhost, using output directory as archive.
+  Start MMT HTTP server on localhost, using specified archive directories.
 """,
         "A:" -> (arg => archive_dirs = archive_dirs ::: List(isabelle.Path.explode(arg))),
         "p:" -> (arg => port = isabelle.Value.Int.parse(arg)))

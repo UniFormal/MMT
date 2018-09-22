@@ -104,7 +104,7 @@ Archive of Formal Proofs. The `isabelle mmt_import` tool can use the chapter
 structure of Isabelle sessions to distribute documents into different
 archives. Its option `-C` provides (multiple) mappings from chapter names to
 archive names (according to the base directory name). The chapter name `_`
-serves as catch-all pattern for anything that else.
+serves as catch-all pattern.
 
 Since all sessions in AFP are guaranteed to belong to the chapter `AFP`, the
 following works for Isabelle + AFP as one big import process:
@@ -119,17 +119,17 @@ the default chapter is `Unsorted`.
 Command-line reference
 ======================
 
-The entry point for Isabelle/MMT tools reside in the MMT directory
-`src/mmt-isabelle/lib/Tools` as plain shell scripts: most tools invoke Java
+The entry points for Isabelle/MMT tools reside in the MMT directory
+`src/mmt-isabelle/lib/Tools` -- usually some shell scripts that invoke Java
 within the Isabelle environment, to pass the control over to some Scala
-`main()` functions. The actual implementation is via regular Scala
-functions, without assuming command-line context.
+`main()` functions. The actual implementation is provided by regular Scala
+functions, without assuming a command-line context.
 
-Command-line usage generally follows GNU bash standards: the Isabelle/Scala
-library provides an imitation of GNU getopts for that. Output and error
-behavior follows the usual customs for Isabelle command-line tools: in
-particular, internal Java exception traces are *not* shown to end-users by
-default.
+The usage of command-line tools generally follows GNU bash standards: the
+Isabelle/Scala library provides an imitation of GNU `getopts` for that.
+Output and error behavior follows established standards for Isabelle
+command-line tools. In particular, internal Java exception traces are *not*
+shown to end-users by default.
 
 
 ## isabelle mmt_build
@@ -168,15 +168,15 @@ directories. Its command-line usage is as follows:
       Import specified sessions into MMT archive directories.
 
 Options `-A`, `-C`, `-I` specify target archives and a mapping from Isabelle
-session chapters to archives. Chapter names are those of Isabelle `ROOT`
-specifications and archive names the base directory names: if it is the same
-as the chapter name, the directory will be used at its root; otherwise the
-chapter becomes a sub-directory of the archive. The directories given via
-(multiple) `-A` options are recursively searched for MMT archives; if the
-result is empty, a fresh archive is initialized according to option `-I`.
-Thus it is possible to use `isabelle mmt` without any archive options and
-get results into the default directory `isabelle_mmt`, freshly initialized
-on demand.
+session chapters to MMT archives. Chapter names are provided in Isabelle
+session `ROOT` specifications, and archive names are the base directory
+names: if it is the same as the chapter name, the directory will be used at
+its root; otherwise the chapter becomes a sub-directory of the archive. The
+directories given via (multiple) `-A` options are recursively searched for
+MMT archives; if the result is empty, a fresh archive is initialized
+according to option `-I`. Thus it is possible to use `isabelle mmt` without
+any archive options and get results into the default directory
+`isabelle_mmt`, freshly initialized on demand.
 
 Options `-B`, `-D`, `-R`, `-X`, `-a`, `-d`, `-g`, `-x` with remaining
 non-option arguments provide the standard Isabelle vocabulary to specify
@@ -193,7 +193,7 @@ descriptions).
 Option `-v` enables verbose mode, similar to `isabelle build`.
 
 Option `-l` allows to use a different base logic images than the `Pure`. It
-rarely makes sense to use something else, because formal content of between
+rarely makes sense to use something else, because formal content between
 `Pure` and the base logic is *missing* from the import.
 
 
@@ -209,11 +209,12 @@ the results of that tool. The command-line usage is as follows:
         -A DIR       add archive directory
         -p PORT      server port (default: 8080)
 
-      Start MMT HTTP server on localhost, using output directory as archive.
+      Start MMT HTTP server on localhost, using specified archive directories.
 
 Option `-A` refers to archive directories that are recursively explored as
 in `isabelle mmt_build`. In order to refer to the default archive of that
-tool (option `-I` above), it needs to be included explicitly as `-A` here.
+tool (option `-I` above), it needs to be included explicitly as `-A` here:
+e.g. `isabelle mmt_server -A isabelle_mmt`.
 
 Option `-p` specifies an alternative HTTP server port.
 
@@ -221,8 +222,9 @@ Option `-p` specifies an alternative HTTP server port.
 ## isabelle mmt
 
 This is a thin wrapper to the standard MMT shell, running within the
-Isabelle system environment, with both the `mmt.jar` and the Isabelle jars
-in the Java name space. In particular, dropping into its `scala` toplevel
-allows to explore Isabelle and MMT functionality interactively.
+Isabelle system environment, with both the `mmt.jar` and the Isabelle/Scala
+jars in the Java name space. In particular, dropping into its `scala`
+toplevel allows to explore Isabelle and MMT functionality interactively on
+the Scala toplevel.
 
 The command-line usage is the same as for the regular MMT shell.
