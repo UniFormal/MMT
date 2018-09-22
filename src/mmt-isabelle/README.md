@@ -16,9 +16,10 @@ Isabelle/MMT is a command-line tool within the Isabelle system environment.
 Both building and running it requires proper Isabelle component setup, which
 results in certain environment variables in the enclosing process. For
 general explanations, see the Isabelle **system** manual (chapter 1), e.g.
-available in the *Documentation* panel of Isabelle/jEdit. The sub-directory
-`MMT/src/mmt-isabelle` already provides suitable component settings that can
-be activated e.g. in ```$ISABELLE_HOME_USER/etc/settings``` like this:
+available in the *Documentation* panel of Isabelle/jEdit. The MMT
+sub-directory `src/mmt-isabelle` already provides suitable component
+settings that can be activated e.g. in `$ISABELLE_HOME_USER/etc/settings`
+like this:
 
     init_component ".../MMT/src/mmt-isabelle"
 
@@ -90,7 +91,7 @@ Examples:
       isabelle mmt_import -d '$AFP' -a -X doc -X slow
 
 Here `$AFP` refers to the Isabelle settings variable provided by the Archive
-of Formal proofs as Isabelle component (using a suitable `init_component`
+of Formal Proofs as Isabelle component (using a suitable `init_component`
 line in `$ISABELLE_HOME_USER/etc/settings`). Alternatively, it is possible
 to refer to the physical AFP directory as `.../AFP/thys` (the sub-directory
 `thys` is important here).
@@ -99,12 +100,11 @@ to refer to the physical AFP directory as `.../AFP/thys` (the sub-directory
 ## Directory layout for MathHub
 
 The MMT MathHub keeps the main Isabelle Distribution separate from the
-Archive of Formal Proofs. The `isabelle mmt_import` tool allows to use the
-formal chapter structure of Isabelle sessions to distribute documents into
-different archives. Its option `-C` provides (multiple) mappings from
-chapter names to archive names (according to the base directory name). The
-chapter name `_` serves as catch-all pattern for anything that is not
-specified elsewhere.
+Archive of Formal Proofs. The `isabelle mmt_import` tool can use the chapter
+structure of Isabelle sessions to distribute documents into different
+archives. Its option `-C` provides (multiple) mappings from chapter names to
+archive names (according to the base directory name). The chapter name `_`
+serves as catch-all pattern for anything that else.
 
 Since all sessions in AFP are guaranteed to belong to the chapter `AFP`, the
 following works for Isabelle + AFP as one big import process:
@@ -112,8 +112,8 @@ following works for Isabelle + AFP as one big import process:
       isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X slow
 
 Note that other Isabelle applications may have their own chapter naming
-scheme, or re-use official chapter names; if nothing is specified, the
-default chapter is `Unsorted`.
+scheme, or re-use official Isabelle chapter names; if nothing is specified,
+the default chapter is `Unsorted`.
 
 
 Command-line reference
