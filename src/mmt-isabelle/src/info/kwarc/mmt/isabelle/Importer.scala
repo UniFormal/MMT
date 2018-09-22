@@ -1046,16 +1046,18 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       for (uri <- thy_source) SourceRef.update(thy, SourceRef(uri, SourceRegion.none))
 
       val parent_content = Content.merge(thy_export.parents.map(theory_content))
-      new Theory_Draft(thy_source, thy, thy_export.node_name, thy_export.node_source, parent_content)
+      new Theory_Draft(thy_export, thy_source, thy, parent_content)
     }
 
     class Theory_Draft private[Isabelle](
+      thy_export: Theory_Export,
       thy_source: Option[URI],
       val thy: DeclaredTheory,
-      node_name: isabelle.Document.Node.Name,
-      node_source: Source,
       parent_content: Content)
     {
+      private val node_name = thy_export.node_name
+      private val node_source = thy_export.node_source
+
       private val _content = isabelle.Synchronized(parent_content)
       def content: Content = _content.value
 
