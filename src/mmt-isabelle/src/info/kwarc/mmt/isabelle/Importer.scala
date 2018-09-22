@@ -213,7 +213,8 @@ object Importer
   {
     val key: Item.Key = Item.Key(entity.kind, entity.name)
 
-    def local_name: LocalName = LocalName(node_name.theory, entity.kind.toString, entity.name)
+    def local_name: LocalName =
+      LocalName(node_name.theory + "," + entity.kind.toString + "," + entity.name)
     def global_name: GlobalName = constant(None, None).path
 
     def notation: NotationContainer =
