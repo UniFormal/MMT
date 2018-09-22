@@ -25,15 +25,12 @@ object Importer
 
   /*common namespace for all theories in all sessions in all Isabelle archives*/
   val isabelle_base: DPath = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
+  val isabelle_meta_theory: MPath = lf.PLF._path
 
-  def module_name(node_name: isabelle.Document.Node.Name): MPath = isabelle_base ? node_name.theory
-
-  def declared_theory(
-    node_name: isabelle.Document.Node.Name,
-    meta_theory: Option[MPath]): DeclaredTheory =
+  def declared_theory(theory: String): DeclaredTheory =
   {
-    val module = module_name(node_name)
-    Theory.empty(module.doc, module.name, meta_theory)
+    val module = isabelle_base ? theory
+    Theory.empty(module.doc, module.name, Some(isabelle_meta_theory))
   }
 
   class Indexed_Name(val name: String)
@@ -301,14 +298,13 @@ object Importer
       // theory content
       val thy_draft =
         Isabelle.begin_theory(thy_export,
-          if (thy_is_pure) None else Some(URI(thy_source_path.file.toPath.toUri)),
-          if (thy_is_pure) None else Some(Isabelle.pure_path))
+          if (thy_is_pure) None else Some(URI(thy_source_path.file.toPath.toUri)))
 
       controller.add(thy_draft.thy)
       controller.add(MRef(doc.path, thy_draft.thy.path))
 
-      if (thy_is_pure) {
-        controller.add(Include(thy_draft.thy.toTerm, lf.PLF._path, Nil))
+      for (parent <- thy_export.parents) {
+        controller.add(PlainInclude(declared_theory(parent).path, thy_draft.thy.path))
       }
 
       // PIDE theory source
@@ -750,7 +746,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     def PURE: String = isabelle.Thy_Header.PURE
     def pure_name: isabelle.Document.Node.Name = import_name(PURE)
 
-    lazy val pure_path: MPath = declared_theory(pure_name, None).path
+    lazy val pure_path: MPath = declared_theory(PURE).path
 
     lazy val pure_theory: isabelle.Export_Theory.Theory =
       isabelle.Export_Theory.read_pure_theory(store, cache = Some(cache))
@@ -1037,28 +1033,20 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     def theory_content(name: String): Content =
       imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
 
-    def begin_theory(
-      thy_export: Theory_Export,
-      thy_source: Option[URI],
-      meta_theory: Option[MPath]): Theory_Draft =
-    {
-      val thy = declared_theory(thy_export.node_name, meta_theory)
-      for (uri <- thy_source) SourceRef.update(thy, SourceRef(uri, SourceRegion.none))
+    def begin_theory(thy_export: Theory_Export, thy_source: Option[URI]): Theory_Draft =
+      new Theory_Draft(thy_export, thy_source)
 
-      val parent_content = Content.merge(thy_export.parents.map(theory_content))
-      new Theory_Draft(thy_export, thy_source, thy, parent_content)
-    }
-
-    class Theory_Draft private[Isabelle](
-      thy_export: Theory_Export,
-      thy_source: Option[URI],
-      val thy: DeclaredTheory,
-      parent_content: Content)
+    class Theory_Draft private[Isabelle](thy_export: Theory_Export, thy_source: Option[URI])
     {
       private val node_name = thy_export.node_name
       private val node_source = thy_export.node_source
 
-      private val _content = isabelle.Synchronized(parent_content)
+      val thy: DeclaredTheory = declared_theory(node_name.theory)
+      for (uri <- thy_source) SourceRef.update(thy, SourceRef(uri, SourceRegion.none))
+
+      private val _content =
+        isabelle.Synchronized(Content.merge(thy_export.parents.map(theory_content)))
+
       def content: Content = _content.value
 
       def declare_item(
