@@ -99,6 +99,16 @@ private object InternalDeclarationUtil {
       }
     }
   }
+  def injDecl(c: Constant, con: Controller, ctx: Option[Context])(implicit parent: GlobalName) = {
+    val decl = InternalDeclaration.fromConstant(c, con, ctx)
+    val tmdecl = decl match {case tmd: TermLevel => tmd case _ => throw ImplementationError("Termlevel declaration expected.")}
+    tmdecl.injDecl
+  }
+  def surjDecl(c: Constant, con: Controller, ctx: Option[Context])(implicit parent: GlobalName) = {
+    val decl = InternalDeclaration.fromConstant(c, con, ctx)
+    val tmdecl = decl match {case tmd: TermLevel => tmd case _ => throw ImplementationError("Termlevel declaration expected.")}
+    tmdecl.surjDecl
+  }
   
   def PiOrEmpty(ctx: Context, body: Term) = if (ctx.isEmpty) body else Pi(ctx, body)
 }
@@ -158,10 +168,6 @@ object InternalDeclaration {
   }
   
   def structureDeclaration(name: Option[String], context: Option[Context])(implicit parent : GlobalName) = TypeLevel(uniqueGN(name getOrElse "M"), Nil, None, context)
-  def introductionDeclaration(recType: GlobalName, decls: List[InternalDeclaration], nm: Option[String], context: Option[Context])(implicit parent : GlobalName): TermLevel = {
-    val (p, args) = (uniqueGN(nm getOrElse "make"), decls map (_.toVarDecl))
-    TermLevel(p, args, OMS(recType), None, context)
-  }
 }
 
 

@@ -45,7 +45,8 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     }
     val decls : List[Constant] = toEliminationDecls(origDecls, structure.path)
         
-    val make : Constant = introductionDeclaration(structure.path, origDecls, None, context).toConstant
+    val make : Constant = this.introductionDeclaration(structure.path, origDecls, None, context).toConstant
+    elabDecls :+= make
     // copy all the declarations
     decls foreach (elabDecls ::= _)
     
@@ -63,6 +64,12 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       }
     }
   }
+  
+  def introductionDeclaration(recType: GlobalName, decls: List[InternalDeclaration], nm: Option[String], context: Option[Context])(implicit parent : GlobalName): TermLevel = {
+    val (p, args) = (uniqueGN(nm getOrElse "make"), decls map (_.toVarDecl))
+    TermLevel(p, args, OMS(recType), None, context)
+  }
+  
   def reprDeclaration(structure:TypeLevel, recordFields:List[GlobalName])(implicit parent: GlobalName) : Constant = {
     val Ltp = () => {
       val arg = structure.makeVar("m", Context.empty)

@@ -23,17 +23,24 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
       val eqRel = dd.getDeclarations.last match {case c:Constant=>fromConstant(c, controller, context)}
       val dom = eqRel.args match {
         case List((_, d), (_,_)) => d
-        case tp => log("Unexpectedly found: . ")
+        case tp => throw ImplementationError("Unexpectedly found: . ")
       }
-      val domain = TypeLevel(uniqueGN("A"), Nil, None, context)
-            
-      val structure : TypeLevel = structureDeclaration(Some("Q"), context)
-      val quotientMap = introductionDeclaration(structure.path, List(domain), Some("quotient_map"), context)
-      val quotMapSurj = quotientMap.surjDecl
-      val quotInvert = Pushout(domain.path, structure.path, eqRel.path, quotientMap.path, Some("quotInvert"), context)
-      val quotInverse = inverse(domain.path, structure.path, eqRel.path, quotientMap.path, quotInvert.path, Some("quotInverse"), context)
+      val rel = eqRel.toConstant
+      val structure = structureDeclaration(Some("Q"), context).toConstant
       
-      val elabDecls = List(structure, quotientMap).map(_.toConstant) ++ List(quotInvert, quotInverse, quotMapSurj)
+      val quotientMap = {
+        val Ltp = () => {
+          val tp = Arrow(dom, structure.tp.get)
+          PiOrEmpty(params, if (!params.isEmpty) ApplyGeneral(tp, params.map(_.toTerm)) else tp)
+        }
+        makeConst(uniqueLN("quotient_map"), Ltp)
+      }
+      val quotMapSurj = surjDecl(quotientMap, controller, context)
+      
+      val quotInvert = Pushout(dom, structure.path, rel.path, quotientMap.path, Some("quotInvert"), context)
+      val quotInverse = inverse(dom, structure.path, rel.path, quotientMap.path, quotInvert.path, Some("quotInverse"), context)
+      
+      val elabDecls = List(rel, structure, quotientMap, quotInvert, quotInverse, quotMapSurj)
       //elabDecls map {d => log(defaultPresenter(d)(controller))}
       new Elaboration {
         def domain = elabDecls map {d => d.name}
@@ -56,26 +63,28 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
   }
   
   /** Declares the unique push-out of a function on the domain down to the quotient, whenever well-defined */
-  def Pushout(D:GlobalName, Q:GlobalName, rel:GlobalName, quot: GlobalName, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
+  def Pushout(dom: Term, Quot:GlobalName, relat:GlobalName, quot: GlobalName, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
-      val f = newVar(uniqueLN("f"), Arrow(OMS(D), OMS(D)), ctx)
-      val (x, y) = (newVar(uniqueLN("x"), OMS(D), ctx), newVar(uniqueLN("y"), OMS(D), ctx))
-      val proof = Pi(List(x, y), ApplyGeneral(OMS(rel), List(x.toTerm, y.toTerm)))
+      val (q, rel) = if (!ctx.isEmpty) (ApplyGeneral(OMS(Quot), ctx.get.map(_.toTerm)), ApplyGeneral(OMS(relat), ctx.get.map(_.toTerm))) else (OMS(Quot), OMS(relat))
+      val f = newVar(uniqueLN("f"), Arrow(dom, dom), ctx)
+      val (x, y) = (newVar(uniqueLN("x"), dom, ctx), newVar(uniqueLN("y"), dom, ctx))
+      val proof = Pi(List(x, y), ApplyGeneral(rel, List(x.toTerm, y.toTerm)))
       
-      Pi(f, Arrow(proof, Arrow(OMS(Q), OMS(Q))))
+      Pi(ctx getOrElse Context.empty ++ f, Arrow(proof, Arrow(q, q)))
     }
     makeConst(uniqueLN(name getOrElse "g"), Ltp)
   }
   
-  def inverse(D:GlobalName, Q:GlobalName, rel:GlobalName, quot: GlobalName, quotInv: GlobalName, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
+  def inverse(dom: Term, Quot:GlobalName, relat:GlobalName, quot: GlobalName, quotInv: GlobalName, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
-      val f = newVar(uniqueLN("f"), Arrow(OMS(D), OMS(D)), ctx)
-      val (x, y, z) = (newVar(uniqueLN("x"), OMS(D), ctx), newVar(uniqueLN("y"), OMS(D), ctx), newVar(uniqueLN("z"), OMS(D), ctx))
-      val proof = Pi(List(x, y), ApplyGeneral(OMS(rel), List(x.toTerm, y.toTerm)))
+      val (q, rel) = if (!ctx.isEmpty) (ApplyGeneral(OMS(Quot), ctx.get.map(_.toTerm)), ApplyGeneral(OMS(relat), ctx.get.map(_.toTerm))) else (OMS(Quot), OMS(relat))
+      val f = newVar(uniqueLN("f"), Arrow(dom, dom), ctx)
+      val (x, y, z) = (newVar(uniqueLN("x"), dom, ctx), newVar(uniqueLN("y"), dom, ctx), newVar(uniqueLN("z"), dom, ctx))
+      val proof = Pi(List(x, y), ApplyGeneral(rel, List(x.toTerm, y.toTerm)))
       
       val g_z = ApplyGeneral(OMS(quotInv), (ctx getOrElse Context.empty).map(_.toTerm) ++ List(f.toTerm, proof, z.toTerm))
       val f_o_quot_z = ApplySpine(OMS(quot), ApplySpine(f.toTerm, z.toTerm))
-      PiOrEmpty(List(f, z), Eq(g_z, f_o_quot_z))
+      Pi((ctx getOrElse Context.empty) ++ f ++ z, Eq(g_z, f_o_quot_z))
     }
   makeConst(uniqueLN(name getOrElse "quotInverse"), Ltp)
   }
