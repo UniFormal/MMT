@@ -7,6 +7,7 @@ import symbols._
 import objects._
 import checking._
 import uom._
+import utils._
 
 /** realize an LF-type/function as a [[SemanticType]] or [[SemanticOperator]] */
 object Realize extends ParametricRule {

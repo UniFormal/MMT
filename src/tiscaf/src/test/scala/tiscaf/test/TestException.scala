@@ -1,5 +1,8 @@
+// twiesing 18-09-2018: Remove call to deprecated methods
 package tiscaf
 package test
+
+import scala.io.StdIn
 
 object TestException extends HServer with App {
 
@@ -17,7 +20,7 @@ object TestException extends HServer with App {
   }
 
   start
-  Console.readLine
+  StdIn.readLine()
   new HStop("localhost", 8911).stop
 
 }

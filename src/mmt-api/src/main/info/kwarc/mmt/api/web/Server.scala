@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.web
 import info.kwarc.mmt.api._
 import frontend._
 import backend._
+import info.kwarc.mmt.api.utils.MMTSystem
 
 import scala.xml._
 
@@ -71,6 +72,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
     // everything else
     } else {
       request.extensionName match {
+        case Some("notices") => ServerResponse.fromText(MMTSystem.legalNotices) // legal notices are required
         case Some("debug") => resolveDebug(request)
         case Some("change") => resolveChange(request)
         case Some("mws") => resolveMWS(request)

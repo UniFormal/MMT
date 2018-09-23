@@ -1,10 +1,14 @@
 package info.kwarc.mmt.odk
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.checking.{History, MMTStructureChecker, Solver, SubtypingRule}
+import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.metadata.MetaDatum
-import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
+import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.api.refactoring.{AcrossLibraryTranslation, AcrossLibraryTranslator, AlignmentTranslation, LinkTranslation}
 import info.kwarc.mmt.api.symbols._
 import objects._
 import uom._
@@ -15,7 +19,9 @@ import info.kwarc.mmt.odk.OpenMath.CodingServer
 import info.kwarc.mmt.odk.SCSCP.Server.MitMServer
 import info.kwarc.mmt.odk.Singular.SingularImporter
 
-class Plugin extends frontend.Extension {
+import scala.util.Try
+
+class Plugin extends ChangeListener {
   val theory = MitM.mathpath
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
@@ -31,173 +37,158 @@ class Plugin extends frontend.Extension {
     controller.extman.addExtension(new SubtypeGenerator)
     controller.extman.addExtension(MitM.preproc)
   }
+
+  def callVRE(t : Term, system : GlobalName) = {
+    val systems = controller.extman.get(classOf[VRESystem])
+    systems.find(_.sym == system) match {
+      case Some(s) => s.call(t)
+      case _ => ???
+    }
+  }
+
+  def getRule : ComputationRule = new ComputationRule(Systems.evalSymbol) {
+    override def alternativeHeads: List[GlobalName] = List(Apply.path)
+
+    override def applicable(tm: Term): Boolean = tm match {
+      case OMA(OMS(Systems.evalSymbol),List(OMS(_),_)) | ApplySpine(OMS(Systems.evalSymbol),List(OMS(_),_)) => true
+      case _ => false
+    }
+
+    override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
+      val (sys, subtm) = tm match {
+        case OMA(OMS(Systems.evalSymbol),List(OMS(s),t)) => (s,t)
+        case ApplySpine(OMS(Systems.evalSymbol),List(OMS(s),t)) => (s,t)
+        case _ => return Simplifiability.NoRecurse
+      }
+      Simplify(callVRE(check.simplify(subtm),sys))
+    }
+  }
+
+
 }
 
-class GAPSystem(serverurl : String, port : Int = 26133) extends VREWithAlignmentAndSCSCP("GAP",GAP.GAP._base,serverurl,port)
-class SingularSystem(serverurl : String, port : Int = 26133) extends VREWithAlignmentAndSCSCP("Singular",Singular.Singular.dpath,serverurl,port)
-class SageSystem(serverurl : String, port : Int = 26133) extends VREWithAlignmentAndSCSCP("Sage",Sage.Sage._base,serverurl,port)
+object Systems {
+  val _basepath = DPath(URI("http","opendreamkit.org"))
+  val vretheory = _basepath ? "Systems"
+
+  val evalSymbol = vretheory ? "Eval"
+
+  val gapsym = vretheory ? "GAPEval"
+  val sagesym = vretheory ? "SageEval"
+  val singularsym = vretheory ? "SingularEval"
+  val lmfdbsym = vretheory ? "LMFDBEval"
+}
+
+
+abstract class VRESystem(val id : String, val sym : GlobalName) extends QueryExtension(id) {
+  override val logPrefix = id
+
+  /** has this system evaluate t and returns the result as an MitM expression **/
+  def call(t : Term) : Term
+
+  def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QuerySubstitution): scala.collection.mutable.HashSet[List[BaseType]] = {
+    // evaluate the qiery normally
+    val result = e.evalSet(q)
+
+    // and return the map
+    result.map({
+      case List(t: Term) => List(call(t))
+      case _ => throw ImplementationError("Failed to evaluate Query with VRE")
+    })
+  }
+}
+
+class VREWithAlignmentAndSCSCP(id : String, sym : GlobalName, archiveId : String, val serverurl : String, override val port : Int = 26133)
+  extends VRESystem(id,sym) with AlignmentBasedMitMTranslation with UsesSCSCP {
+  lazy val archive = controller.backend.getArchive(archiveId).getOrElse(???)
+
+  def call(t : Term) = translateToMitM(scscpcall(translateToSystem(t)))
+}
+
+trait AlignmentBasedMitMTranslation { this : VRESystem =>
+  val archive : Archive
+  lazy val mitm : Archive = controller.backend.getArchive("MitM/smglom").getOrElse( ??? )
+
+  val complexTranslations : List[AcrossLibraryTranslation] = Nil
+
+  lazy protected val alignmentserver = controller.extman.get(classOf[AlignmentsServer]).headOption.getOrElse {
+    val a = new AlignmentsServer
+    controller.extman.addExtension(a)
+    a
+  }
+/*
+  val trgract = (DPath(URI.http colon "mathhub.info") / "MitM" / "smglom" / "algebra" / "permutationgroup") ? "transitive_group_action"
+  val transitivegrouprec =  trgract ? "from_record"
+  val transitivegroupcons = trgract ? "transitive_group"
+
+  private val mitmToSystem = new StatelessTraverser {
+    override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+      case ApplySpine(OMS(`transitivegrouprec`),List(LFX.RecExp(ls))) => // TODO implement in general
+        val tr = Try(Traverser(this,OMA(OMS(transitivegroupcons),List(ls.fields.find(_.name == LocalName("n")).get.df.get,ls.fields.find(_.name == LocalName("t")).get.df.get))))
+        tr.getOrElse(t)
+      case ApplySpine(fun,args) => Traverser(this,OMA(fun,args))
+      case OMS(pth) if VRESystem.MitM <= pth =>
+        val trg = alignmentserver.getFormalAlignments(pth).filter(_.props contains (("type","VRE"))).collect{
+          case a if namespace <= a.to.mmturi => a.to.mmturi
+        }
+        trg.headOption match {
+          case Some(gn : GlobalName) => OMS(gn)
+          case _ => throw GeneralError("No alignment to " + t)
+        }
+      case _ => Traverser(this,t)
+    }
+  }
+
+  private val systemToMitM = new StatelessTraverser {
+    override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+      case OMA(fun,args) if fun != Apply.term => ApplySpine(Traverser(this,fun),args.map(Traverser(this,_)):_*)
+      case OMS(pth) if namespace <= pth =>
+        val trg = alignmentserver.getFormalAlignments(pth).filter(_.props contains (("type","VRE"))).collect{
+          case a if VRESystem.MitM <= a.to.mmturi => a.to.mmturi
+        }
+        trg.headOption match {
+          case Some(gn : GlobalName) => OMS(gn)
+          case _ => throw GeneralError("No alignment to")
+        }
+      case _ => Traverser(this,t)
+    }
+  }
+  */
+
+  lazy val links : List[DeclaredLink] = (archive.allContent ::: mitm.allContent).map(controller.get).collect {
+    case th : DeclaredTheory => th.getNamedStructures collect {
+      case s : DeclaredStructure => s
+    }
+    case v : DeclaredView => List(v)
+  }.flatten
+
+  private def translator(to : Archive) = {
+    val aligns = alignmentserver.getAll.collect {
+      case fa : FormalAlignment => AlignmentTranslation(fa)(controller)
+    }
+    val linktrs = links.map(l => LinkTranslation(l)(controller))
+
+    new AcrossLibraryTranslator(controller,aligns ::: complexTranslations,linktrs,to)
+  }
+
+  def translateToSystem(t : Term) : Term = {
+    val trl = translator(archive)
+    val (res,succ) = trl.translate(t)
+    succ.foreach(s => throw BackendError("could not translate symbol",s))
+    res
+  }
+  def translateToMitM(t : Term) : Term = {
+    val trl = translator(mitm)
+    val (res,succ) = trl.translate(t)
+    succ.foreach(s => throw BackendError("could not translate symbol",s))
+    res
+  }
+}
+
+
+class GAPSystem(serverurl : String, port : Int = 26133) extends VREWithAlignmentAndSCSCP("GAP",Systems.gapsym,"ODK/GAP",serverurl,port)
+class SingularSystem(serverurl : String, port : Int = 26133) extends VREWithAlignmentAndSCSCP("Singular",Systems.singularsym,"ODK/Singular",serverurl,port)
+class SageSystem(serverurl : String, port : Int = 26133) extends VREWithAlignmentAndSCSCP("Sage",Systems.sagesym,"ODK/Sage",serverurl,port)
 
 object RemoteGAPSystem extends GAPSystem("neptune.eecs.jacobs-university.de")
 
-class UniverseInference extends ChangeListener {
-
-  private lazy val checker = controller.extman.get(classOf[MMTStructureChecker])
-  private object TypeLevel {
-    val path = (DPath(URI.http colon "gl.mathhub.info") / "MMT" / "LFX" / "TypedHierarchy") ? "Symbols" ? "TypeLevel"
-    val term = OMS(path)
-    def apply(i : BigInt) : Term = i match {
-      case _ if i == BigInt(1) => OMS(Typed.ktype)
-      case _ if i == BigInt(2) => OMS(Typed.kind)
-      case _ if i < 1 =>
-        require(i>=1)
-        ???
-      case _ =>
-        OMA(this.term,List(NatLiterals.of(i)))
-    }
-    def unapply(t:Term) : Option[BigInt] = t match {
-      case OMA(this.term,List(NatLiterals(i))) => i match {
-        case i:BigInt => Some(i)
-        case _ => None
-      }
-      case OMS(Typed.ktype) => Some(1)
-      case OMS(Typed.kind) => Some(2)
-      case _ => None
-    }
-  }
-
-  private val default : BigInt = 100
-
-  def getUniverse(e : StructuralElement) : BigInt = e match {
-    case ds: Structure =>
-      val dom: Option[DeclaredTheory] = ds.from match {
-        case OMPMOD(mp, _) =>
-          Some(controller.getAs(classOf[DeclaredTheory], mp))
-        case _ => return default
-      }
-      // println("Structure " + ds.path + "with domain " + dom.map(_.path))
-      dom.map(getUniverse).getOrElse(default)
-
-    case th: DeclaredTheory =>
-      th.metadata.get(TypeLevel.path).map(_.value).headOption match {
-        case Some(TypeLevel(j)) => j
-        case _ =>
-          val decs = th.getDeclarations.map(getUniverse)
-          if (decs.isEmpty) default else decs.max
-      }
-    case c : FinalConstant if c.tp.isDefined && c.df.isEmpty =>
-      val parent = controller.get(c.parent)
-      val parentcurrent = parent.metadata.get(TypeLevel.path).map(_.value)
-      val context = parent match {
-        case th : DeclaredTheory => th.getInnerContext
-        case _ => return default
-      }
-      val univ = Solver.infer(controller, context, c.tp.get, None)
-      val ret = univ match {
-        case Some(TypeLevel(i)) =>
-          i
-        case _ => default
-      }
-      ret
-    case _ : FinalConstant => 1
-    case _ => 1
-  }
-
-  override def onCheck(c: StructuralElement) : Unit = c match {
-    case c : FinalConstant =>
-      c.tp match {
-        case Some(tp) if c.df.isEmpty =>
-          val parent = controller.get(c.parent)
-          val parentcurrent = parent.metadata.get(TypeLevel.path).map(_.value)
-          val previous : BigInt = parentcurrent.headOption match {
-            case Some(TypeLevel(j)) => j
-            case _ => 1
-          }
-          val newU = getUniverse(c)
-          c.metadata.update(new MetaDatum(TypeLevel.path, TypeLevel(newU)))
-          val ret = newU max previous
-          parent.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(ret)))
-        case _ =>
-          val parent = controller.get(c.parent)
-          if (parent.metadata.get(TypeLevel.path).isEmpty) parent.metadata.add(new MetaDatum(TypeLevel.path,TypeLevel(1)))
-      }
-    case ds : Structure =>
-      val parent = controller.get(c.parent) match {
-        case dm : DeclaredModule => dm
-        case _ => return ()
-      }
-      val parentV = getUniverse(parent)
-      val structV = getUniverse(ds)
-      ds.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(parentV)))
-      parent.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(parentV max structV)))
-    case _ =>
-  }
-}
-
-class SubtypeGenerator extends ChangeListener {
-  override val logPrefix = "abbrev-rule-gen"
-  protected val subtypeTag = "subtype_rule"
-
-  private def rulePath(r: SubtypeJudgRule) = r.by / subtypeTag
-
-  private def present(t: Term) = controller.presenter.asString(t)
-
-
-  private def getGeneratedRule(p: Path): Option[SubtypeJudgRule] = {
-    p match {
-      case p: GlobalName =>
-        controller.globalLookup.getO(p / subtypeTag) match {
-          case Some(r: RuleConstant) => r.df.map(df => df.asInstanceOf[SubtypeJudgRule])
-          case _ => None
-        }
-      case _ => None
-    }
-  }
-
-
-  override def onAdd(e: StructuralElement) {
-    onCheck(e)
-  }
-
-  override def onDelete(e: StructuralElement) {
-    getGeneratedRule(e.path).foreach { r => controller.delete(rulePath(r)) }
-  }
-
-  override def onCheck(e: StructuralElement): Unit = e match {
-    case c: Constant if c.tpC.analyzed.isDefined => c.tp match {
-      case Some(subtypeJudg(tm1,tm2)) =>
-        val rule = new SubtypeJudgRule(tm1,tm2,c.path)
-        val ruleConst = RuleConstant(c.home,c.name / subtypeTag,subtypeJudg(tm1,tm2),Some(rule))
-        ruleConst.setOrigin(GeneratedBy(this))
-        log(c.name + " ~~> " + present(tm1) + " <: " + present(tm2))
-        controller add ruleConst
-      case _ =>
-    }
-    case _ =>
-  }
-
-}
-
-class SubtypeJudgRule(val tm1 : Term, val tm2 : Term, val by : GlobalName) extends SubtypingRule {
-  val head = subtypeJudg.path
-
-  override def applicable(tp1: Term, tp2: Term): Boolean = tp1.hasheq(tm1) && tp2.hasheq(tm2)
-
-  def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
-    solver.check(Equality(stack,tm1,tp1,None))
-    solver.check(Equality(stack,tm2,tp2,None))
-    Some(true)
-  }
-}
-
-object subtypeJudg {
-  val name = "subtypeJudge"
-  val baseURI = LFX.ns / "Subtyping"
-  val judgpath = baseURI ? "JudgmentSymbol"
-  val path = judgpath ? name
-  val term = OMS(path)
-  def apply(t1 : Term, t2 : Term) = OMA(term,List(t1,t2))
-  def unapply(t : Term) : Option[(Term,Term)] = t match {
-    case OMA(this.term,List(t1,t2)) => Some(t1,t2)
-    case _ => None
-  }
-}

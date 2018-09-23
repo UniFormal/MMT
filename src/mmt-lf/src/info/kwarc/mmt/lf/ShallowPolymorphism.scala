@@ -4,6 +4,13 @@ import info.kwarc.mmt.api._
 import checking._
 import objects._
 import objects.Conversions._
+
+/** helper object for polymorphic LF */
+object PLF {
+   val _base = Typed._base
+   val _path = _base ? "PLF"
+}
+
 /**
  * A:U for some universe U ---> c: {x:A} B allowed
  * 
@@ -31,32 +38,20 @@ object ShallowPolymorphism extends InhabitableRule(Pi.path) with PiOrArrowRule {
    }
 }
 
+/** infers the type of a beta-redex whose lambda is not well-typed by itself because it quantifies over too large a universe */ 
 object PolymorphicApplyTerm extends EliminationRule(Apply.path, OfType.path) {
    override def priority: Int = super.priority + 1
 
-   val kind = OMS(Typed.kind)
-   val tp = OMS(Typed.ktype)
-
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
       case ApplySpine(Lambda(x, tpA, bd), arg :: rest) =>
-         solver.inferType(tpA)(stack, history) match {
-            case Some(_) =>
-               solver.check(Typing(stack, arg, tpA, None))
-               val bS = solver.substituteSolved(bd ^? (x / arg), covered)
-               val ret = if (rest.nonEmpty) ApplySpine(bS, rest: _*) else bS
-               return solver.inferType(ret, covered)
-            case _ =>
+         if (!covered) {
+           solver.inferType(tpA)(stack, history + "checking type of bound variable").getOrElse(return None)
+           solver.check(Typing(stack, arg, tpA, None))(history + "checking type of argument")
          }
-         ApplyTerm.apply(solver)(tm, covered)
-
-      /*
-      case ApplySpine(Lambda(x,tpA,bd),arg1 :: rest) =>
-         solver.check(Inhabitable(stack,tpA))
-         solver.check(Typing(stack,arg1,tpA,None))
-         solver.inferType(ApplySpine(bd ^? x/arg1,rest:_*),covered)
-         */
-      case Apply(_, _) =>
-         ApplyTerm.apply(solver)(tm, covered)
-      case _ => None
+         val bS = solver.substituteSolution(bd ^? (x / arg))
+         val ret = ApplyGeneral(bS, rest)
+         solver.inferType(ret, covered)          
+      case _ =>
+        None
    }
 }

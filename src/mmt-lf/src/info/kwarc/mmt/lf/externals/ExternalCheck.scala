@@ -97,7 +97,9 @@ object TypingLock extends TypingRule(LockType.path) {
   }
 }
 
-object EqualityLock extends TypeBasedEqualityRule(Nil, LockType.path) {
+object EqualityLock extends ExtensionalityRule(Nil, LockType.path) {
+  val introForm = LockTerm
+  
   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History) = {
     val LockType(pT, nT, sT, a) = tp
     val r = solver.check(Equality(stack ++ Key.makeKeyDecl(Key(pT,nT,sT)), Unlock(tm1), Unlock(tm2), Some(a)))

@@ -210,14 +210,13 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
 
 /**
  * special application that elides empty argument lists:
- * @return f if args is Nil, OMA(f, args) otherwise
+ * @return f if args is Nil, OMA(f, args) otherwise; always matches
  */
-object OMAorOMID {
+object OMAorAny {
    def apply(f: Term, args: List[Term]) = if (args == Nil) f else OMA(f,args)
    def unapply(t: Term) = t match {
-      case OMID(p) => Some((t, Nil))
       case OMA(t, args) => Some((t, args))
-      case _ => None
+      case t => Some((t, Nil))
    }
 }
 

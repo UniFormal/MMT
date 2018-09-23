@@ -312,7 +312,7 @@ class GeneratedDepthRule(val from: Constant, desc: String, names: OuterInnerName
  */
 class GeneratedSolutionRule(from: Constant, desc: String, names: OuterInnerNames,
                             vPosition: Int, bfrPositions: List[Int], aftPositions: List[Int])
-   extends SolutionRule(names.inner) {
+   extends ValueSolutionRule(names.inner) {
    override def toString = desc
    def applicable(t: Term) : Option[Int] = t match {
       case ApplySpine(OMS(this.head), args) =>

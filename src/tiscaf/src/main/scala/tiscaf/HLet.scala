@@ -15,6 +15,7 @@
  *  along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  *  ****************************************************************************
  */
+// twiesing 18-09-2018: Remove call to deprecated methods
 package tiscaf
 
 import scala.util._
@@ -127,6 +128,8 @@ class Suspended[T] {
   }
 }
 
+import scala.reflect.runtime.{universe => ru}
+
 /**  This computation may potentially be suspended at any moment and several times
  *  by calling the [[tiscaf.HSuspendableLet]]#suspend methods. The computation
  *  will be resumed at this point when the [[tiscaf.HLet]]#resume method
@@ -140,18 +143,17 @@ trait HSuspendable {
 
   /** This method is called whenever the `suspend` method is called.
    *  Implementer may choose how to store the suspended computation. */
-  protected def onSuspend[T: Manifest](promise: Suspended[T])
+  protected def onSuspend[T: ru.TypeTag](promise: Suspended[T])
 
   //------------------------ few helpers --------------------
 
-  protected def suspend[T: Manifest]: Future[T] = {
+  protected def suspend[T: ru.TypeTag]: Future[T] = {
     val suspended = new Suspended[T]
     onSuspend(suspended)
     suspended.p.future
   }
 
-  protected def suspend[T](resume: T => Unit)(implicit manifest: Manifest[T],
-    executionContext: ExecutionContext): Future[Unit] = {
+  protected def suspend[T](resume: T => Unit)(implicit typeTag: ru.TypeTag[T], executionContext: ExecutionContext): Future[Unit] = {
       suspend[T] flatMap (v => Future(resume(v)))
   }
 

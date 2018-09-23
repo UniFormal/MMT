@@ -36,7 +36,7 @@ case class ParseResult(unknown: Context, free: Context, term: Term) {
    def toTerm = {
       var res = term
       if (free.nonEmpty) {
-         res = OMBIND(OMS(ParseResult.free), free, res)
+         res = Free(free, res)
       }
       if (unknown.nonEmpty) {
          res = OMBIND(OMS(ParseResult.unknown), unknown, res)
@@ -52,7 +52,7 @@ case class ParseResult(unknown: Context, free: Context, term: Term) {
 
 object ParseResult {
    val unknown = utils.mmt.mmtcd ? "unknown"
-   val free = utils.mmt.mmtcd ? "free"
+   val free = Free.free
    val substitute = utils.mmt.mmtcd ? "substitute"
    def fromTerm(uft: Term) = {
       val (u,ft) = uft match {
@@ -60,7 +60,7 @@ object ParseResult {
          case _ => (Context.empty, uft)
       }
       val (f,t) = ft match {
-         case OMBIND(OMS(this.free), f, t) => (f,t)
+         case Free(f, t) => (f,t)
          case _ => (Context.empty, ft)
       }
       ParseResult(u,f,t)

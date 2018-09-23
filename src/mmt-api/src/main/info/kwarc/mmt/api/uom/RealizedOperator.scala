@@ -75,7 +75,7 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
    //TODO pragmatic applications
    def getSolutionRule: Option[SolutionRule] = semOp match {
      case so: Invertible =>
-       val sr = new SolutionRule(synOp) {
+       val sr = new ValueSolutionRule(synOp) {
          def applicable(t: Term) = t match {
            case OMA(OMS(`synOp`), args) if args.length == arity =>
              val nonlits = args.zipWithIndex.filterNot(_._1.isInstanceOf[OMLIT])

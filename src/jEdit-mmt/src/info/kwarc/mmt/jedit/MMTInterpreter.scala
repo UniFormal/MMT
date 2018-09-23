@@ -1,17 +1,17 @@
 package info.kwarc.mmt.jedit
 
-import console._
 import info.kwarc.mmt.api._
 import frontend.MMTInterpolator
 import frontend.actions.SetBase
 import objects._
+import parser._
+import utils._
+
+import console._
 import org.gjt.sp.jedit._
 import org.gjt.sp.jedit.bufferset._
-import parser._
-import utils.URI
 
 import scala.collection.mutable
-import scala.util._
 
 //Class for the MMT interpreter
 class MMTInterpreter extends console.Shell("mmt-interpreter") {

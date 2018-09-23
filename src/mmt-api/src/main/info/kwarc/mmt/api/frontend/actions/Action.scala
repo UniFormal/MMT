@@ -31,7 +31,7 @@ object Action extends CompRegexParsers {
     val state = new ActionState(controller)
     val p =
       try {
-        parse(commented(state), s)
+        parse(commented(state), s.trim)
       } catch {case e: Exception =>
         throw ParseError("unknown parse error: " + e.getMessage).setCausedBy(e)
       }

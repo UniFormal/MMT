@@ -13,6 +13,13 @@ class UnaryLFConstantScala(val parent: MPath, val name: String) extends Constant
 }
 class BinaryLFConstantScala(val parent: MPath, val name: String) extends ConstantScala {
    def apply(arg1: Term, arg2: Term) = ApplySpine(OMS(path), arg1, arg2)
+   def assoc(neutral: Term, args: List[Term]) = {
+     args match {
+       case Nil => neutral
+       case hd::tl => tl.fold(hd) {case (x,y) => apply(x,y)}
+     }
+     
+   }
    def unapply(t: Term) = t match {
       case ApplySpine(OMS(this.path), List(a1, a2)) => Some((a1,a2))
       case _ => None
