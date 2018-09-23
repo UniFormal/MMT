@@ -492,7 +492,7 @@ case class IMPSQCLength(o : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
   override def toString: String = "length{" + o.toString + "}"
 }
 
-case class IMPSQCFseq(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+case class IMPSQCFseqQ(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 {
   override def toString: String = "f_seq_q{" + s.toString + "}"
 }

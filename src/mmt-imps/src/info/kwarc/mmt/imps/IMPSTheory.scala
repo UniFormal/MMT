@@ -489,7 +489,119 @@ object IMPSTheory
       }
     }
 
+    object finiteCardinalityQC extends UDQC("finiteCardinalityQC") {
+      def apply(a : Term, alpha : Term, nn : Term, w : Term, as : Term) : Term = {
+        ApplySpine(this.term, a, alpha, nn, w, as)
+      }
+    }
 
+    object finiteSortQC extends UDQC("finiteSortQC") {
+      def apply(a : Term, alpha : Term, nn : Term, w : Term, e : Term) : Term = {
+        ApplySpine(this.term, a, alpha, nn, w, e)
+      }
+    }
+
+    object finiteIndicatorQC extends UDQC("finiteIndicatorQC") {
+      def apply(a : Term, alpha : Term, nn : Term, w : Term, e : Term) : Term = {
+        ApplySpine(this.term, a, alpha, nn, w, e)
+      }
+    }
+
+    object invariantQC extends UDQC("invariantQC") {
+      def apply(a : Term, alpha : Term, s : Term, f : Term) : Term = {
+        ApplySpine(this.term,a,alpha,s,f)
+      }
+    }
+
+    object pairQC extends UDQC("pairQC") {
+      def apply(a: Term,b: Term,alpha: Term,beta: Term,at: Term,bt : Term) : Term = {
+        ApplySpine(this.term,a,b,alpha,beta,at,bt)
+      }
+    }
+
+    object pairQQC extends UDQC("pairQQC") {
+      def apply(a: Term, b : Term, alpha : Term, beta : Term, p : Term) : Term = {
+        ApplySpine(this.term,a,b,alpha,beta,p)
+      }
+    }
+
+    object firstQC extends UDQC("firstQC") {
+      def apply(a: Term, b : Term, alpha : Term, beta : Term, p : Term) : Term = {
+        ApplySpine(this.term,a,b,alpha,beta,p)
+      }
+    }
+
+    object secondQC extends UDQC("secondQC") {
+      def apply(a: Term, b : Term, alpha : Term, beta : Term, p : Term) : Term = {
+        ApplySpine(this.term,a,b,alpha,beta,p)
+      }
+    }
+
+    object crossProductQC extends UDQC("crossProductQC") {
+      def apply(a: Term, b : Term, alpha : Term, beta : Term, at : Term, bt : Term) : Term = {
+        ApplySpine(this.term,a,b,alpha,beta,at,bt)
+      }
+    }
+
+    object lengthQC extends UDQC("lengthQC") {
+      def apply(a : Term, alpha : Term, nn : Term, leq : Term, s : Term) : Term = {
+        ApplySpine(this.term,a,alpha,nn,leq,s)
+      }
+    }
+
+    object fSeqQQC extends UDQC("fSeqQQC") {
+      def apply(a : Term, alpha : Term, nn : Term, leq : Term, s : Term) : Term = {
+        ApplySpine(this.term,a,alpha,nn,leq,s)
+      }
+    }
+
+    object nilQC extends UDQC("nilQC") {
+      def apply(a : Term, alpha : Term, nn : Term, e : Term) : Term = {
+        ApplySpine(this.term,a,alpha,nn,e)
+      }
+    }
+
+    object consQC extends UDQC("consQC") {
+      def apply(a : Term, alpha : Term, nn : Term, leq : Term, minus : Term, one : Term, e : Term, s : Term) : Term = {
+        ApplySpine(this.term,a,alpha,nn,leq,minus,one,e,s)
+      }
+    }
+
+    object dropQC extends UDQC("dropQC") {
+      def apply(a : Term, alpha : Term, nu : Term, nn : Term, plus : Term, s : Term, n : Term) : Term = {
+        ApplySpine(this.term,a,alpha,nu,nn,plus,s,n)
+      }
+    }
+
+    object takeFirstQC extends UDQC("takeFirstQC") {
+      def apply(a : Term, alpha : Term, nu : Term, nn : Term, leq : Term, s : Term, n : Term) : Term = {
+        ApplySpine(this.term,a,alpha,nu,nn,leq,s,n)
+      }
+    }
+
+    object appendQC extends UDQC("appendQC") {
+      def apply(a : Term, alpha : Term, nn : Term, leq : Term, minus : Term, s1 : Term, s2 : Term) : Term = {
+        ApplySpine(this.term,a,alpha,nn,leq,minus,s1,s2)
+      }
+    }
+
+    object inSeqQC extends UDQC("inSeqQC") {
+      def apply(a : Term, alpha : Term, nn : Term, x : Term, s : Term) : Term = {
+        ApplySpine(this.term,a,alpha,nn,x,s)
+      }
+    }
+
+    object collapseQC extends UDQC("collapseQC") {
+      def apply(a : Term, alpha : Term, nn : Term, omega : Term, f : Term) : Term = {
+        ApplySpine(this.term,a,alpha,nn,omega,f)
+      }
+    }
+
+    object constrictQC extends UDQC("constrictQC") {
+      def apply(a : Term, alpha : Term, nn : Term, omega : Term, f : Term, at : Term) : Term = {
+        ApplySpine(this.term,a,alpha,nn,omega,f,at)
+      }
+    }
   }
 
 }

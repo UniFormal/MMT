@@ -105,7 +105,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         case t@DFTranslation(_,_,_,_,_,_,_,_,_,_,_,_,_,_) => doTranslation(t, doc.path, uri)
         case DFTheoryEnsemble(name,baseTheory,fixed,reprenamer,src,cmt) =>
 
-          val ln      : LocalName = LocalName(name.s)
+          val ln      : LocalName = LocalName(name.s + "_ensemble")
           val thyName : String    = if (baseTheory.isDefined) {baseTheory.get.nm.s} else {name.s}
 
           val parent = tState.theories_decl.find(t => t.name.toString.toLowerCase == thyName.toLowerCase)
@@ -294,11 +294,6 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       controller add PlainInclude.apply(component.get.path,nu_theory.path)
     }
 
-    if (tState.verbosity > 1)
-    {
-      println(" > actually adding theory " + t.name)
-    }
-
     tState.theories_decl = tState.theories_decl :+ nu_theory
     tState.theories_raw  = tState.theories_raw  :+ t
 
@@ -410,7 +405,7 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         if (l.cnsts.get.src.isDefined) { doSourceRefD(l_const,l.cnsts.get.src, uri) }
         if (tState.verbosity > 0)
         {
-          println(" > adding constant " + pair.nm.s + " : " + pair.enc)
+          println(" > adding constant " + pair.nm.s + " : " + pair.enc + " to " + t.path)
         }
         controller add l_const
       }
@@ -665,15 +660,16 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
         val mth : Term  = tState.bindUnknowns(doMathExp(frm, parent,Nil))
         val nu_constant : FinalConstant = symbols.Constant(parent.toTerm, LocalName(name.s.toLowerCase()), Nil, Some(srt), Some(mth), Some("Constant"))
 
-        controller add nu_constant
-
         /* Add available MetaData */
         doSourceRefD(nu_constant, src, uri)
         if (usages.isDefined) { doUsages(nu_constant, usages.get.usgs) }
 
+        controller add nu_constant
+
         if (tState.verbosity > 0)
         {
-          println(" > Adding constant: " + name.s.toLowerCase + " : " + sort.toString + " to theory " + parent.name.toString)
+          println(" > Adding constant: " + nu_constant.path + " : " + sort.toString + " to theory " + parent.path)
+          println(controller.get(parent.path))
         }
 
       case DFRecursiveConstant(names,defs,maths,sorts,argthy,usgs,defname,src,cmt) =>
@@ -1273,6 +1269,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
   def doQuasiConstructor(d : IMPSMathExp, thy : DeclaredTheory, cntxt : List[(IMPSVar,IMPSSort)]) : Term = d match
   {
+    /* QCs from indicators.t */
+
     case IMPSQCPred2Indicator(m) =>
       val ca = findSortFromContext(m, cntxt)
       val as: IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
@@ -1391,6 +1389,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       val fp : Term = doMathExp(f,thy,cntxt)
       IMPSTheory.QCT.bigIntersectionQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
 
+    /* QCs from mappings.t */
+
     case IMPSQCMDomain(f) =>
       val fp : Term = doMathExp(f,thy,cntxt)
       IMPSTheory.QCT.mdomainQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp)
@@ -1465,6 +1465,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
 
       IMPSTheory.QCT.mbijectiveonQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),fp,asp,bsp)
 
+    /* QCs from groups.t */
+
     case IMPSQCGroups(m,mul,e,inv) =>
       val g_t : Term = doMathExp(m,thy,cntxt)
       val m_t : Term = doMathExp(mul,thy,cntxt)
@@ -1472,6 +1474,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       val i_t : Term = doMathExp(inv,thy,cntxt)
 
       IMPSTheory.QCT.groupsQC(tState.doUnknown(),tState.doUnknown(),g_t,m_t,e_t,i_t)
+
+    /* QCs from cardinality.t */
 
     case IMPSQCEquinumerous(p,q) =>
       val p_t : Term = doMathExp(p,thy,cntxt)
@@ -1484,6 +1488,8 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       val q_t : Term = doMathExp(q,thy,cntxt)
 
       IMPSTheory.QCT.embedsQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),p_t,q_t)
+
+    /* QCs from covers.t */
 
     case IMPSQCCountableCover(f,a) =>
       val f_t : Term = doMathExp(f,thy,cntxt)
@@ -1505,6 +1511,127 @@ class IMPSImportTask(val controller: Controller, bt: BuildTask, tState : Transla
       val leq   : Constant = getConstant("<=", r)
 
       IMPSTheory.QCT.finiteCoverQC(OMS(IMPSTheory.lutinsIndType), tState.doUnknown(), zz, tState.doUnknown(), minus.toTerm, leq.toTerm, f_t, a_t)
+
+    /* QCs from finite-cardinality.t */
+
+    case IMPSQCFinCard(a) =>
+      val a_t : Term = doMathExp(a,thy,cntxt)
+
+      val r = getTheory("h-o-real-arithmetic")
+      val nn : Term = matchSort(IMPSAtomSort("nn"), r)
+      val  w : Term = getConstant("omega",r).toTerm
+
+      IMPSTheory.QCT.finiteCardinalityQC(tState.doUnknown(),tState.doUnknown(),nn,w,a_t)
+
+    case IMPSQCFinIndic(i) =>
+      val i_t : Term = doMathExp(i,thy,cntxt)
+
+      val r = getTheory("h-o-real-arithmetic")
+      val nn : Term = matchSort(IMPSAtomSort("nn"), r)
+      val  w : Term = getConstant("omega",r).toTerm
+
+      IMPSTheory.QCT.finiteIndicatorQC(tState.doUnknown(),tState.doUnknown(),nn,w,i_t)
+
+    case IMPSQCFinSort(s) =>
+      val s_t : Term = matchSort(s,thy)
+
+      val r = getTheory("h-o-real-arithmetic")
+      val nn : Term = matchSort(IMPSAtomSort("nn"), r)
+      val  w : Term = getConstant("omega",r).toTerm
+
+      IMPSTheory.QCT.finiteSortQC(tState.doUnknown(),tState.doUnknown(),nn,w,s_t)
+
+    /* QCs from iterate-supplements.t */
+
+    case IMPSQCInvariant(a,f) =>
+      val a_t : Term = doMathExp(a,thy,cntxt)
+      val f_t : Term = doMathExp(f,thy,cntxt)
+
+      IMPSTheory.QCT.invariantQC(tState.doUnknown(),tState.doUnknown(),a_t,f_t)
+
+    /* QCs from pairs.t */
+
+    case IMPSQCPair(p,q) =>
+      val p_t : Term = doMathExp(p,thy,cntxt)
+      val q_t : Term = doMathExp(q,thy,cntxt)
+
+      IMPSTheory.QCT.pairQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),p_t,q_t)
+
+    case IMPSQCPairQ(p) =>
+      val p_t : Term = doMathExp(p,thy,cntxt)
+      IMPSTheory.QCT.pairQQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),p_t)
+
+    case IMPSQCFirst(p) =>
+      val p_t : Term = doMathExp(p,thy,cntxt)
+      IMPSTheory.QCT.firstQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),p_t)
+
+    case IMPSQCSecond(p) =>
+      val p_t : Term = doMathExp(p,thy,cntxt)
+      IMPSTheory.QCT.secondQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),p_t)
+
+    // Crossproduct QC defunct
+
+    case IMPSQCLength(l) =>
+      val l_t : Term = doMathExp(l,thy,cntxt)
+      val r = getTheory("h-o-real-arithmetic")
+      val nn : Term = matchSort(IMPSAtomSort("nn"), r)
+      val leq : Term = getConstant("<=",r).toTerm
+      IMPSTheory.QCT.lengthQC(tState.doUnknown(),tState.doUnknown(),nn,leq,l_t)
+
+    case IMPSQCFseqQ(l) =>
+      val l_t : Term = doMathExp(l,thy,cntxt)
+      val r = getTheory("h-o-real-arithmetic")
+      val nn : Term = matchSort(IMPSAtomSort("nn"), r)
+      val leq : Term = getConstant("<=",r).toTerm
+      IMPSTheory.QCT.fSeqQQC(tState.doUnknown(),tState.doUnknown(),nn,leq,l_t)
+
+    case IMPSQCNil(l) =>
+      val l_t : Term = doMathExp(l,thy,cntxt)
+      val r = getTheory("h-o-real-arithmetic")
+      val nn : Term = matchSort(IMPSAtomSort("nn"), r)
+      IMPSTheory.QCT.nilQC(tState.doUnknown(),tState.doUnknown(),nn,l_t)
+
+    case IMPSQCCons(e,l) =>
+      val l_t : Term = doMathExp(l,thy,cntxt)
+      val e_t : Term = doMathExp(e,thy,cntxt)
+      val r = getTheory("h-o-real-arithmetic")
+      val nn : Term = matchSort(IMPSAtomSort("nn"), r)
+      val leq : Term = getConstant("<=",r).toTerm
+      val minus : Term = getConstant("-",r).toTerm
+      val one : Term = doLiteral("1")
+      IMPSTheory.QCT.consQC(tState.doUnknown(),tState.doUnknown(),nn,leq,minus,one,e_t,l_t)
+
+    case IMPSQCDrop(e,l) =>
+      val l_t : Term = doMathExp(l,thy,cntxt)
+      val e_t : Term = doMathExp(e,thy,cntxt)
+      val r = getTheory("h-o-real-arithmetic")
+      val nn : Term = matchSort(IMPSAtomSort("nn"), r)
+      val plus : Term = getConstant("+",r).toTerm
+      IMPSTheory.QCT.dropQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),nn,plus,e_t,l_t)
+
+    case IMPSQCAppend(l1,l2) =>
+      val l1_t : Term = doMathExp(l1,thy,cntxt)
+      val l2_t : Term = doMathExp(l2,thy,cntxt)
+      val r = getTheory("h-o-real-arithmetic")
+      val nn : Term = matchSort(IMPSAtomSort("nn"), r)
+      val minus : Term = getConstant("-",r).toTerm
+      val leq : Term = getConstant("<=",r).toTerm
+      IMPSTheory.QCT.appendQC(tState.doUnknown(),tState.doUnknown(),nn,leq,minus,l1_t,l2_t)
+
+    case IMPSQCTakeFirst(l,n) =>
+      val l_t : Term = doMathExp(l,thy,cntxt)
+      val n_t : Term = doMathExp(n,thy,cntxt)
+      val r = getTheory("h-o-real-arithmetic")
+      val nn : Term = matchSort(IMPSAtomSort("nn"), r)
+      val leq : Term = getConstant("<=",r).toTerm
+      IMPSTheory.QCT.takeFirstQC(tState.doUnknown(),tState.doUnknown(),tState.doUnknown(),nn,leq,l_t,n_t)
+
+    case IMPSQCInSeq(l1,l2) =>
+      val l1_t : Term = doMathExp(l1,thy,cntxt)
+      val l2_t : Term = doMathExp(l2,thy,cntxt)
+      val r = getTheory("h-o-real-arithmetic")
+      val nn : Term = matchSort(IMPSAtomSort("nn"), r)
+      IMPSTheory.QCT.inSeqQC(tState.doUnknown(),tState.doUnknown(),nn,l1_t,l2_t)
 
     case _ => println(" > Error: Unknown Quasi-Constructor!") ; ??!(d)
   }
