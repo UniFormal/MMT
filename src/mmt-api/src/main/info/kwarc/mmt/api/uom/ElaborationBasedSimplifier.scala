@@ -405,19 +405,22 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
            case Some(sf) =>
               val elab = sf.elaborate(thy, dd)
               dd.module.setOrigin(GeneratedBy(dd.path))
-              val simp = oS.toTranslator(rules, false)
+              // val simp = oS.toTranslator(rules, false)
              /*
              val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
                throw GeneralError(s"no mmt checker found")
              }.asInstanceOf[MMTStructureChecker]
              var cont = checker.elabContext(parent)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore,new MMTTask{}))
               */
+             /* This throws errors if the declarations are mutually dependent!!
              val contE = elaborateContext(Context.empty,innerCont)
               elab.getDeclarations.map {d =>
                 //println(d)
                 val dS = d.translate(simp,contE)
                 dS
               }
+              */
+             elab.getDeclarations
          }
       // the treatment of derived declarations in links has not been specified yet
       case (link: DeclaredLink, dd: DerivedDeclaration) =>
@@ -434,6 +437,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         Nil
     }
     // if we add after dOrig, we have to reverse dElab to make sure the declarations occur in the same order as in dElab
+    val simp = oS.toTranslator(rules, false)
+    val contE = elaborateContext(Context.empty,innerCont)
+
     val atFirst = if (addAfter) After(dOrig.name) else Before(dOrig.name)
     val pos = new RepeatedAdd(atFirst)
     dElab.foreach {e =>
@@ -447,6 +453,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           rci.createRule(rc)
         case _ =>
       }
+      val eS = e.translate(simp,contE)
       controller.add(e, at)
     }
     ElaboratedElement.setFully(dOrig)

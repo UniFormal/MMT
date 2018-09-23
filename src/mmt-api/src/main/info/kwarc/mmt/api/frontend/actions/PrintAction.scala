@@ -15,6 +15,12 @@ private[actions] trait ResponsiveAction extends Action {
 /** Shared base class for Actions for printing something */
 sealed abstract class PrintAction extends ResponsiveAction {}
 
+case object MMTLegal extends PrintAction {
+  def apply(): Unit = respond(MMTSystem.legalNotices)
+  def toParseString = "show notices"
+}
+object MMTLegalCompanion extends ObjectActionCompanion(MMTLegal, "show legal notices", "show notices")
+
 case object MMTInfo extends PrintAction {
   def apply() {
     respond(s"MMT Version     : ${MMTSystem.version}")

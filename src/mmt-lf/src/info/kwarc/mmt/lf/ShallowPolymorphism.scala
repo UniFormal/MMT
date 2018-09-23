@@ -4,6 +4,13 @@ import info.kwarc.mmt.api._
 import checking._
 import objects._
 import objects.Conversions._
+
+/** helper object for polymorphic LF */
+object PLF {
+   val _base = Typed._base
+   val _path = _base ? "PLF"
+}
+
 /**
  * A:U for some universe U ---> c: {x:A} B allowed
  * 

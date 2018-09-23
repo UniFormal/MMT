@@ -278,15 +278,29 @@ trait TypedConstantLike {self: StructuralFeature =>
   }
 }
 
-trait TheoryLike {self: StructuralFeature =>
+trait TheoryLike extends StructuralFeature {
+  object Type {
+    val mpath = SemanticObject.javaToMMT(getClass.getCanonicalName)
+
+    def apply(params: Context) = OMBINDC(OMMOD(mpath), params, Nil)
+    def unapply(t: Term) = t match {
+      case OMBINDC(OMMOD(this.mpath), params, Nil) => Some((params))
+      case _ => None
+    }
+
+    /** retrieves the parameters */
+    def getParameters(dd: DerivedDeclaration) = {
+      dd.tpC.get.flatMap(unapply).getOrElse(Context.empty)
+    }
+  }
   def getHeaderNotation: List[Marker] = List(LabelArg(1,LabelInfo.none))
   override def processHeader(header: Term) = header match {
-    case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_))) => (LocalName(name),None)// (name, Type(cont))
-    case _ => throw ImplementationError("unexpected header")
+    case OMBIND(OMMOD(`mpath`), cont, OML(name,None,None,_,_)) => (name, Type(cont))
+    case OMA(OMMOD(`mpath`), List(OML(name,None,None,_,_))) => (name, Type(Context.empty))
+    case _ => throw InvalidObject(header, "ill-formed header")
   }
   override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
-    case Some(t) => OMA(OMMOD(mpath), List(OML(dd.name,None,None)))
-    case None => throw ImplementationError("no type present")
+    case Some(Type(cont)) => OMBIND(OMMOD(mpath), cont, OML(dd.name, None,None))
   }
   def getType(dd: DerivedDeclaration): Term = dd.tpC.get.get
   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {

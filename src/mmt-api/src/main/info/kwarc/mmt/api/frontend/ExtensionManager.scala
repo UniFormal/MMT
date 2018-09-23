@@ -15,6 +15,8 @@ import utils._
 import utils.MyList._
 import web._
 
+import scala.util.Try
+
 
 trait Extension extends Logger {
   /** the controller that this extension is added to; only valid after creation of the extension, i.e., will return null if used in a non-lazy val-field */
@@ -191,6 +193,13 @@ class ExtensionManager(controller: Controller) extends Logger {
     */
   def addExtension(cls: String, args: List[String]): Extension = {
     log("trying to create extension " + cls)
+    val loaders = controller.backend.getStores.collect{case s : RealizationStorage => s}.map(_.loader)
+    var clsJ : Option[Class[_]] = None
+    loaders.foreach {loader =>
+      if (clsJ.isEmpty) clsJ = Try(Class.forName(cls,true,loader)).toOption
+    }
+    if (clsJ.isEmpty) throw RegistrationError("error while trying to load class " + cls)
+    /*
     val clsJ = try {
        Class.forName(cls)
     } catch {
@@ -198,12 +207,13 @@ class ExtensionManager(controller: Controller) extends Logger {
         // need to catch all Exceptions and Errors here because NoClassDefFoundError is not an Exception
         throw RegistrationError("error while trying to load class " + cls).setCausedBy(e)
     }
-    extensions.find(e => e.getClass == clsJ).foreach {e =>
+    */
+    extensions.find(e => e.getClass == clsJ.get).foreach {e =>
        log("... already loaded, skipping")
        return e
     }
     val ext = try {
-      val Ext = clsJ.asInstanceOf[Class[Extension]]
+      val Ext = clsJ.get.asInstanceOf[Class[Extension]]
       Ext.newInstance
     } catch {
       case e: Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
@@ -325,7 +335,7 @@ class ExtensionManager(controller: Controller) extends Logger {
         CheckCompanion, CheckTermCompanion, NavigateCompanion, CompareCompanion,
         ShowArchivesCompanion, LocalCompanion, AddArchiveCompanion, AddMathPathFSCompanion, AddMathPathJavaCompanion, ReadCompanion,
         ServerInfoActionCompanion, ServerOnCompanion, ServerOffCompanion,
-        MMTInfoCompanion, MMTVersionCompanion, ClearConsoleCompanion, PrintAllCompanion, PrintAllXMLCompanion, PrintConfigCompanion, HelpActionCompanion,
+        MMTInfoCompanion, MMTLegalCompanion, MMTVersionCompanion, ClearConsoleCompanion, PrintAllCompanion, PrintAllXMLCompanion, PrintConfigCompanion, HelpActionCompanion,
         ShowLMHCompanion, SetLMHRootCompanion, LMHInitCompanion, LMHCloneCompanion, LMHInstallCompanion, LMHListCompanion, LMHPullCompanion, LMHPushCompanion, LMHSetRemoteCompanion, LMHListRemoteCompanion,
         ClearCompanion, ExitCompanion, SetBaseCompanion,
         ListExtensionsCompanion, AddExtensionCompanion, RemoveExtensionCompanion, AddMWSCompanion,

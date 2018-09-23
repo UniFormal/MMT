@@ -1,13 +1,11 @@
 package info.kwarc.mmt.sequences
 
-import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.{checking, _}
 import checking._
 import uom._
 import objects._
 import objects.Conversions._
-
 import info.kwarc.mmt.lf._
-
 import Sequences._
 import Nat._
 import NatRules.NatLit
@@ -305,7 +303,7 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
             if (argsE != args)
               Simplify(OMA(f, argsE))
             else
-              Recurse 
+              Simplifiability.NoRecurse
          // turn sequence variables into variable sequences
          case OMBINDC(binder, con, args) =>
             val (conE,subs) = ExpandEllipsis.applyCont(con)
@@ -314,8 +312,8 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
             if (conE != con || argsE != args) {
               Simplify(OMBINDC(binder, conE, argsE))
             } else
-              Recurse
-         case _ => Recurse
+              Simplifiability.NoRecurse
+         case _ => Simplifiability.NoRecurse
       }
    }
 }

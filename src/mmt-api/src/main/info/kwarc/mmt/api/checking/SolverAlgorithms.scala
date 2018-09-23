@@ -125,9 +125,16 @@ trait SolverAlgorithms {self: Solver =>
               tmS = tmp
               ruleOpt match {
                  case Some(rule) =>
+                   log("applying inference rule " + rule.toString)
                     history += ("applying inference rule " + rule.toString)
                     try {
                       tp = rule(this)(tmS, covered)
+                      tp match {
+                        case None =>
+                          activerules = dropJust(activerules, rule)
+                          tryAgain = true
+                        case _ =>
+                      }
                     } catch {
                        case t : MaytriggerBacktrack#Backtrack =>
                           history += t.getMessage
@@ -493,7 +500,7 @@ trait SolverAlgorithms {self: Solver =>
     * @return true if equal
     */
    private def checkEqualityTermBased(t1: Term, t2: Term)(implicit stack : Stack, history: History, tp: Term) : Boolean = {
-     log("equality (trying congruence): " + t1 + " = " + t2)
+     log("equality (trying congruence): " + presentObj(t1) + " = " + presentObj(t2))
      val List(t1S,t2S) = List(t1, t2) map headNormalize
      if (t1S hasheq t2S) {
        true
@@ -633,6 +640,7 @@ trait SolverAlgorithms {self: Solver =>
          val d = getDef(p)
          d match {
            case Some(tD) =>
+             history += "Expanding Definition"
              tD
            case None =>
              // TODO apply abbrev rules?
@@ -663,10 +671,12 @@ trait SolverAlgorithms {self: Solver =>
           var simp: CannotSimplify = Simplifiability.NoRecurse
           computationRules foreach {rule =>
             if (rule.applicable(tm)) {
+              history += "trying " + rule.toString
               val ret = rule(this)(tm, false)(stack,history)
               ret match {
                 case Simplify(tmS) =>
                   log("applied computation rule " + rule.toString + " to " + presentObj(tm))
+                  log("~~>" + presentObj(tmS))
                   history += "applied computation rule " + rule.toString
                   history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
                   return tmS

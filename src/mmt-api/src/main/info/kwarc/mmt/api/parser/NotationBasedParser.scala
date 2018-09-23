@@ -147,6 +147,8 @@ class NotationBasedParser extends ObjectParser {
        val bvars = BoundName.getVars(boundNames)
        // handling of shadowing: we assume that an unknown cannot depend on a shadowed variable
        // so we remove shadowed (i.e., earlier) occurrences of bound variables
+       // There are reasonable cases, where the unknown does depend on a shadowed variable, e.g., in [x: type, c: x, x: type] c = c.
+       // The behavior in still unspecified in these cases.
        val bvarsD = bvars.reverse.distinct.reverse
        //apply meta-variable to all bound variables in whose scope it occurs
        checking.Solver.makeUnknown(name, bvarsD)
