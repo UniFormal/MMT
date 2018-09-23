@@ -31,9 +31,9 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
       val domain = TypeLevel(uniqueGN("A"), Nil, None, context)
             
       val subtype : TypeLevel = structureDeclaration(Some("S"), context)
-      val injection = introductionDeclaration(subtype.path, List(domain), Some("injection"), context)
+      val injection = introductionDeclaration(subtype.path, List(domain), Some("inj"), context)
       val injInjective = injection.injDecl
-      val lift = this.lift(domain.path, subtype.path, pred, Some("lift"), context)
+      val lift = this.lift(domain.path, subtype.path, pred, Some("g"), context)
       val inverse = this.inverse(domain.path, subtype.path, pred, injection.path, lift.path, Some("inverse"), context)
             
       val elabDecls = List(domain.toConstant, injection.toConstant, injInjective, lift, inverse) 
@@ -49,28 +49,35 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
     }
   }
   
-  /** Declares the existence of a lifting of any function out of the subtype to the domain, as long as the predicate holds on its argument */
-  private def lift(domain: GlobalName, subtype: GlobalName, pred:InternalDeclaration, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
+  /** 
+   * Let S be the predicate subtype of the type D by the predicate p
+   * Now given a function f: S -> T for any type T, there exists a unique lift g: D -> T for all y in D s.t. p y
+   */
+  private def lift(D: GlobalName, S: GlobalName, p:InternalDeclaration, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
       val T = newVar(uniqueLN("T"), Univ(1), ctx)
-      val f = newVar(uniqueLN("f"), Arrow(OMS(subtype), T.toTerm), ctx)
-      val y = newVar(uniqueLN("y"), OMS(domain), ctx)
-      val p = pred.applyTo(y)
-      Pi(List(T, f, y), Arrow(p, T.toTerm))
+      val f = newVar(uniqueLN("f"), Arrow(OMS(D), T.toTerm), ctx)
+      val y = newVar(uniqueLN("y"), OMS(D), ctx)
+      val proof = p.applyTo(y)
+      Pi(List(T, f, y), Arrow(proof, T.toTerm))
     }
-    makeConst(uniqueLN(name getOrElse "invert"), Ltp)
+    makeConst(uniqueLN(name getOrElse "g"), Ltp)
   }
   
-  /** Declares that the lifting function is inverse to the injection, if defined */
-  private def inverse(domain: GlobalName, subtype: GlobalName, pred: InternalDeclaration, injection: GlobalName, lift: GlobalName, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
+  /** Declares that the lifting function is inverse to the injection, if defined 
+   * i.e. in the above situation and with canonical injection inj: S -> D, we have:
+   * for all y in D s.t. p y => g(y) = f ° inj
+   */
+  private def inverse(D: GlobalName, S: GlobalName, p: InternalDeclaration, inj: GlobalName, g: GlobalName, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
       val T = newVar(uniqueLN("T"), Univ(1), ctx)
-      val f = newVar(uniqueLN("f"), Arrow(OMS(subtype), T.toTerm), ctx)
-      val x = newVar(uniqueLN("x"), OMS(subtype), ctx)
-      val y = ApplyGeneral(OMS(injection), List(x.toTerm))
-      val p = pred.applyTo(y)
-      val lifted = ApplyGeneral(OMS(lift), List(T.toTerm, f.toTerm, y, p))
-      Pi(List(T, f, x), Arrow(p, Eq(lifted, ApplyGeneral(f.toTerm, List(x.toTerm)))))
+      val f = newVar(uniqueLN("f"), Arrow(OMS(D), T.toTerm), ctx)
+      val x = newVar(uniqueLN("x"), OMS(S), ctx)
+      val y = ApplyGeneral(OMS(inj), List(x.toTerm))
+      val proof = p.applyTo(y)
+      val y_lifted = ApplyGeneral(OMS(g), List(T.toTerm, f.toTerm, y, proof))
+      val y_mapped = ApplyGeneral(f.toTerm, List(x.toTerm))
+      Pi(List(T, f, x), Arrow(proof, Eq(y_lifted, y_mapped)))
     }
     makeConst(uniqueLN(name getOrElse "inverse"), Ltp)
   }

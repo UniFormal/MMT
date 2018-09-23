@@ -138,7 +138,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    */
   def noConf(d: TermLevel, tmdecls: List[TermLevel])(implicit parent: GlobalName): List[Constant] = {
     var decls: List[Constant] = Nil
-    tmdecls.takeWhile(_ != this) foreach {b => 
+    tmdecls.takeWhile(_ != d) foreach {b => 
       if (b.ret == d.ret) {
         // TODO for dependently-typed, this can generate ill-typed declarations
         val newName = uniqueLN("no_conf_" + d.name.last+ "_" + b.name.last)

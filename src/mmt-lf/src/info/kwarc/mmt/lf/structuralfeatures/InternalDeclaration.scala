@@ -193,10 +193,13 @@ sealed abstract class InternalDeclaration {
       case ((Some(loc), arg), _) => (loc, arg)
       case ((None, arg), i) => (uniqueLN("x_"+i), arg)
     }
-    val con = dargs map {case (loc, tp) =>
-      val n = uniqueLN(loc.toString()+suf)
-      newVar(n, tp, None)
+    // In case of an OMV argument used in the type of a later argument
+    var subs: List[Sub] = Nil
+    val conOld : Context= dargs map {case (loc, tp) =>
+      subs+: loc / uniqueLN(loc+suf)
+      newVar(loc, tp, None)
     }
+    val con = conOld ^ subs
     val tp = ApplyGeneral(toTerm, con.map(_.toTerm))
     (con, tp)
   }
