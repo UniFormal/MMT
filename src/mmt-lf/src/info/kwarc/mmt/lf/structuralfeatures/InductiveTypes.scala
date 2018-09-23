@@ -61,10 +61,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     // the no junk axioms
     elabDecls ++= noJunks(decls, context)(dd.path)
     
-    elabDecls foreach {d =>
-     //log(InternalDeclarationUtil.present(d))
-     log(d.toString)
-    }
+    //elabDecls foreach {d =>log(InternalDeclarationUtil.defaultPresenter(d)(controller))}
     new Elaboration {
       val elabs : List[Declaration] = Nil 
       def domain = elabDecls map {d => d.name}

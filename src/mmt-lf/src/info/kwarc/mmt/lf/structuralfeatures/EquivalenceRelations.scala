@@ -39,7 +39,7 @@ class EquivalenceRelation extends StructuralFeature("equivRel") with ParametricT
       val reflTp = OMV(uniqueLN("refl_"+eqRel.name)) % Pi(context++a, rel(a, a))
       
       val elabDecls = eqRel.toConstant::(List(transTp, symmTp, reflTp) map {x => makeConst(x.name, () => {x.tp.get})})
-      elabDecls map {d => log(controller.presenter.asString(d))}
+      //elabDecls map {d => log(controller.presenter.asString(d))}
       new Elaboration {
         def domain = elabDecls map {d => d.name}
         def getO(n: LocalName) = {
@@ -47,7 +47,12 @@ class EquivalenceRelation extends StructuralFeature("equivRel") with ParametricT
         }
       }
     } catch {
-      case _ => throw LocalError("Wrong argument: Equivalence relation expects a relation as an argument. ")
+      case e: Throwable  => val le = LocalError("Wrong argument: Equivalence relation expects a relation as an argument. ")
+        e match {
+        case err: Error => log("Error while elaborating the equivalence Relation"+dd.name+": "+err.getMessage)
+        case _ => log("Throwable while elaborating the equivalence Relation "+dd.name+": "+e.getMessage)
+      }
+      throw le
     }
   }
 }

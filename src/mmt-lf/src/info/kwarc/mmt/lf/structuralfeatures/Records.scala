@@ -54,9 +54,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     
     elabDecls :+= reprDeclaration(structure, decls map (_.path))
     
-    elabDecls foreach {d =>
-      log(defaultPresenter(d)(controller))
-    }
+    //elabDecls foreach {d => log(defaultPresenter(d)(controller))}
     new Elaboration {
       val elabs : List[Declaration] = Nil 
       def domain = elabDecls map {d => d.name}

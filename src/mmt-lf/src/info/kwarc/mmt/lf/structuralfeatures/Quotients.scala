@@ -34,7 +34,7 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
       val quotInverse = inverse(domain, structure, eqRel, quotientMap, b, f, p, quotInvert.path, Some("quotInverse"))
       
       val elabDecls = List(structure, quotientMap).map(_.toConstant) ++ List(quotInvert, quotInverse, quotMapSurj)
-      elabDecls map {d => log(defaultPresenter(d)(controller))}
+      //elabDecls map {d => log(defaultPresenter(d)(controller))}
       new Elaboration {
         def domain = elabDecls map {d => d.name}
         def getO(n: LocalName) = {
