@@ -24,7 +24,7 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
     tState.verbosity = 2
-    val targetSection : Section = impsLibrarySections.foundation
+    val targetSection : Section = impsLibrarySections.impsMathLibrary
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)
@@ -295,6 +295,7 @@ class TranslationState ()
 {
   var theories_raw       : List[DFTheory]       = Nil
   var theories_decl      : List[DeclaredTheory] = Nil
+  var ensembles_decl     : List[DeclaredTheory] = Nil
 
   var languages          : List[DFLanguage]     = Nil
 
