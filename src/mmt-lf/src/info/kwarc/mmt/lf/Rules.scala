@@ -198,11 +198,12 @@ object PiType extends TypingRule(Pi.path) with PiOrArrowRule {
       (tm,tp) match {
          case (Lambda(x1,a1,t),Pi(x2,a2,b)) =>
             // this case is somewhat redundant, but allows reusing the variable name
+            // TODO this might check a1 >: a2 instead, but then a1 must be checked separately
             solver.check(Equality(stack,a1,a2,None))(history+"domains must be equal")
             val (xn,sub1) = Common.pickFresh(solver, x1)
             val sub2 = x2 / OMV(xn)
-            val nt = solver.substituteSolution(a2) // seems to be necessary, in case a2 has only been solved during the equality check above
-            solver.check(Typing(stack ++ xn % nt, t ^? sub1, b ^? sub2))(history + "type checking rule for Pi")
+            val aN = solver.substituteSolution(a2) // both a1 and a2 may contain unknowns, which may have been solved when checking a1==a2
+            solver.check(Typing(stack ++ xn % aN, t ^? sub1, b ^? sub2))(history + "type checking rule for Pi")
          case (tm, Pi(x2, a2, b)) =>
             val (xn,sub) = Common.pickFresh(solver, x2)
             val j = Typing(stack ++ xn % a2,  Apply(tm, xn), b ^? sub)
