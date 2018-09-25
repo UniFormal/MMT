@@ -150,13 +150,15 @@ object Importer
     types: List[isabelle.Export_Theory.Type] = Nil,
     consts: List[isabelle.Export_Theory.Const] = Nil,
     facts: List[isabelle.Export_Theory.Fact_Multi] = Nil,
-    locales: List[isabelle.Export_Theory.Locale] = Nil)
+    locales: List[isabelle.Export_Theory.Locale] = Nil,
+    locale_dependencies: List[isabelle.Export_Theory.Locale_Dependency] = Nil)
   {
     val header: String =
       element.head.span.content.iterator.takeWhile(tok => !tok.is_begin).map(_.source).mkString
     def header_relevant: Boolean =
       header.nonEmpty &&
-        (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty || locales.nonEmpty)
+        (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty ||
+          locales.nonEmpty || locale_dependencies.nonEmpty)
 
     def facts_single: List[isabelle.Export_Theory.Fact_Single] =
       (for {
@@ -453,6 +455,21 @@ object Importer
             }
 
             controller.add(new NestedModule(thy_draft.thy.toTerm, loc_name, loc_thy))
+          }
+        }
+
+        // locale dependencies (inclusions)
+        for (dep <- segment.locale_dependencies if dep.is_inclusion) {
+          decl_error(dep.entity) {
+            val item = thy_draft.declare_item(dep.entity)
+            val content = thy_draft.content
+
+            val from = OMS(content.get_locale(dep.source).global_name)
+            val to = OMS(content.get_locale(dep.target).global_name)
+
+            // FIXME !?
+            val view = DeclaredView(thy_doc_path, item.local_name, from, to, false)
+            controller.add(view)
           }
         }
       }
@@ -816,7 +833,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             } yield decl,
           consts = pure_theory.consts,
           facts = pure_theory.facts,
-          locales = pure_theory.locales)
+          locales = pure_theory.locales,
+          locale_dependencies = pure_theory.locale_dependencies)
       Theory_Export(pure_name, Source.empty, Nil, List(segment))
     }
 
@@ -940,7 +958,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             types = for (decl <- theory.types if defined(decl.entity)) yield decl,
             consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
             facts = for (decl <- theory.facts if defined(decl.entity)) yield decl,
-            locales = for (decl <- theory.locales if defined(decl.entity)) yield decl)
+            locales = for (decl <- theory.locales if defined(decl.entity)) yield decl,
+            locale_dependencies =
+              for (decl <- theory.locale_dependencies if defined(decl.entity)) yield decl)
         }
       }
       Theory_Export(node_name, Source(snapshot.node.source), theory.parents, segments)
@@ -982,6 +1002,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def get_const(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CONST, name))
       def get_fact(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.FACT, name))
       def get_locale(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE, name))
+      def get_locale_dependency(name: String): Item =
+        get(Item.Key(isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY, name))
 
       def is_empty: Boolean = rep.isEmpty
       def defined(key: Item.Key): Boolean = rep.isDefinedAt(key)
