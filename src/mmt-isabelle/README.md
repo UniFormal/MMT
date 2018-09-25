@@ -89,6 +89,7 @@ Examples:
       isabelle mmt_import -a -X doc
       isabelle mmt_import -d '$AFP' -B HOL-Analysis -X doc -X slow
       isabelle mmt_import -d '$AFP' -a -X doc -X slow
+      isabelle mmt_import -d '$AFP' -a -X doc -X very_slow
 
 Here `$AFP` refers to the Isabelle settings variable provided by the Archive
 of Formal Proofs as Isabelle component (using a suitable `init_component`
