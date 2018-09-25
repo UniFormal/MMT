@@ -36,8 +36,8 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     // to hold the result
     var elabDecls : List[Constant] = Nil
     
-    val structure: TypeLevel= structureDeclaration(None, context)
-    elabDecls :+= structure.toConstant
+    val structure = structureDeclaration(None, context)
+    elabDecls :+= structure
     
     val origDecls : List[InternalDeclaration] = dd.getDeclarations map {
       case c: Constant => fromConstant(c, controller, context)
@@ -45,7 +45,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     }
     val decls : List[Constant] = toEliminationDecls(origDecls, structure.path)
         
-    val make : Constant = this.introductionDeclaration(structure.path, origDecls, None, context).toConstant
+    val make : Constant = this.introductionDeclaration(structure.path, origDecls, None, context)
     elabDecls :+= make
     // copy all the declarations
     decls foreach (elabDecls ::= _)
@@ -53,7 +53,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     // the no junk axioms
     elabDecls = elabDecls.reverse ++ noJunksDeclarations(decls map (_.path), params, structure.path, make.path, origDecls)
     
-    elabDecls :+= reprDeclaration(structure, decls map (_.path))
+    elabDecls :+= reprDeclaration(structure.path, make.path, decls map (_.path), Some("repr"), context)
     
     //elabDecls foreach {d => log(defaultPresenter(d)(controller))}
     new Elaboration {
@@ -65,16 +65,22 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     }
   }
   
-  def introductionDeclaration(recType: GlobalName, decls: List[InternalDeclaration], nm: Option[String], context: Option[Context])(implicit parent : GlobalName): TermLevel = {
-    val (p, args) = (uniqueGN(nm getOrElse "make"), decls map (_.toVarDecl))
-    TermLevel(p, args, OMS(recType), None, context)
+  def introductionDeclaration(recType: GlobalName, decls: List[InternalDeclaration], nm: Option[String], context: Option[Context])(implicit parent : GlobalName) = {
+    val Ltp = () => {
+      PiOrEmpty(context getOrElse Context.empty ++ decls.map(_.toVarDecl), OMS(recType))
+    }
+    makeConst(uniqueLN(nm getOrElse "make"), Ltp)
   }
   
-  def reprDeclaration(structure:TypeLevel, recordFields:List[GlobalName])(implicit parent: GlobalName) : Constant = {
+  def reprDeclaration(recordType: GlobalName, introDecl: GlobalName, recordFields:List[GlobalName], name: Option[String], ctx: Option[Context])(implicit parent: GlobalName) : Constant = {
     val Ltp = () => {
-      val arg = structure.makeVar("m", Context.empty)
-      val ret : Term = Eq(structure.applyTo(recordFields map {f => ApplyGeneral(OMS(f), List(arg.toTerm))}), arg.toTerm)
-      Pi(List(arg), ret)
+      val con = (ctx getOrElse Context.empty)
+      val params = con  map (_.toTerm)
+      val recType = if (con.isEmpty) OMS(recordType) else ApplyGeneral(OMS(recordType), params)
+      val arg = newVar(uniqueLN(name getOrElse "m"), recType, ctx)
+      val resStr = ApplyGeneral(OMS(introDecl), params ++ (recordFields map {f => ApplyGeneral(OMS(f), params :+ arg.toTerm)}))
+      val ret : Term = Eq(resStr, arg.toTerm)
+      Pi(con :+ arg, ret)
     }
     makeConst(uniqueLN("repr"), Ltp)
   }

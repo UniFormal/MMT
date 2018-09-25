@@ -26,7 +26,7 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
         case tp => throw ImplementationError("Unexpectedly found: . ")
       }
       val rel = eqRel.toConstant
-      val structure = structureDeclaration(Some("Q"), context).toConstant
+      val structure = structureDeclaration(Some("Q"), context)
       
       val quotientMap = {
         val Ltp = () => {

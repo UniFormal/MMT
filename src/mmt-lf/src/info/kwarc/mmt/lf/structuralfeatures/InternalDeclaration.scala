@@ -167,7 +167,12 @@ object InternalDeclaration {
     (repls, modelContext)
   }
   
-  def structureDeclaration(name: Option[String], context: Option[Context])(implicit parent : GlobalName) = TypeLevel(uniqueGN(name getOrElse "M"), Nil, None, context)
+  def structureDeclaration(name: Option[String], context: Option[Context])(implicit parent : GlobalName) = {
+    val Ltp = () => {
+      PiOrEmpty(context getOrElse Context.empty, Univ(1))
+    }
+    makeConst(uniqueLN(name getOrElse "Type"), Ltp)
+  }
 }
 
 
