@@ -15,7 +15,7 @@ import InternalDeclarationUtil._
 /** theories as a set of types of expressions */ 
 class InductiveTypes extends StructuralFeature("inductive") with ParametricTheoryLike {
   object noLookupPresenter extends presentation.NotationBasedPresenter {
-    override def getNotations(p: GlobalName) = if (! (p.module.name.toString contains "LambdaPi")) Nil else super.getNotations(p)
+    override def getNotations(p: GlobalName) = if (! (p.doc.uri.path contains "urtheories")) Nil else super.getNotations(p)
     override def getAlias(p: GlobalName) = if (true) Nil else super.getAlias(p)
   }
   
@@ -100,17 +100,49 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    *       or induct_a(m,h,t) if t has type (a h) for some a: {H}type in I
    */
   def noJunks(decls : List[InternalDeclaration], context: Context)(implicit parent : GlobalName): List[Constant] = {
-    val (repls, modelContext) : (List[(GlobalName, OMV)], List[VarDecl]) = chain(decls, context)
+    val (repls, modelContext) = chain(decls, context)
     val model = modelContext.map(_.toTerm)
     var inductNames : List[(GlobalName,GlobalName)] = Nil
+    /*
+     * applies the inductive translation needed in noJunks by constructing terms that apply the appropriate induction functions
+     * @param tp the type of tm
+     * @param tm the term to translate
+     */
+    def induct(tp: Term, tm: Term): Term = tp match {
+      case Univ(1) => tm match {
+        case ApplyGeneral(OMS(p), args) =>
+          decls find {d => d.path == p} match {
+            case None => tm
+            case Some(d) =>
+              val dArgs = d.args
+              var tSub = Substitution()
+              val inductArgs = (dArgs zip args) map {case ((nO,t), a) =>
+                nO foreach {n => tSub = tSub ++ (OMV(n) / a)}
+                val tS = t ^? tSub 
+                induct(tS, a)
+              }
+              utils.listmap(inductNames, p) match {
+                case Some(inductP) => ApplyGeneral(OMS(inductP), inductArgs)
+              }
+          }
+      }
+      case ApplyGeneral(OMS(p), args) =>
+        utils.listmap(inductNames, p) match {
+          case Some(inductP) => ApplyGeneral(OMS(inductP), model:::args:::List(tm))
+          case None => tm
+        }
+      case _ => throw ImplementationError("missing case")
+    }
+    
     decls map {d =>
       val Ltp = () => {
         val (argCon, dApplied) = d.argContext(None)
-        val dAppliedInduct = induct(model, d.ret, dApplied, inductNames)
+        val dAppliedInduct = induct(d.ret, dApplied)
         val dPrimed = utils.listmap(repls, d.path).get
-        val dAppliedPrimed = ApplyGeneral(dPrimed, argCon map {vd => induct(model, vd.tp.get, vd.toTerm, inductNames)})
+        val dAppliedPrimed = ApplyGeneral(dPrimed, argCon map {vd => induct(vd.tp.get, vd.toTerm)})
+        val retPrimed = induct(Univ(1), d.ret)
         val ret = d match {
-          case tl: TermLevel => Eq(dAppliedInduct, dAppliedPrimed)
+          case tl: TermLevel => Eq(retPrimed, dAppliedInduct, dAppliedPrimed)
           case tl: TypeLevel => Arrow(dAppliedInduct, dAppliedPrimed)
         }
         Pi(context ++ modelContext ++ argCon, ret)
@@ -125,21 +157,6 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    * name of the declaration corresponding to n declared in noJunks
    */
   private def inductName(n: LocalName) = LocalName("induct_" + n.toPath)
-  /**
-   * applies the inductive translation needed in noJunks by constructing terms that apply the appropriate induction functions
-   * @param model the model for which we need the inductive translation (as built by noJunks)
-   * @param tp the type of tm
-   * @param tm the term to translate
-   * @param inductNames map of the declarations in the inductive type to the corresponding generated induction functions
-   */
-  private def induct(model: List[Term], tp: Term, tm: Term, inductNames: List[(GlobalName,GlobalName)]) = tp match {
-    case ApplyGeneral(OMS(p), args) =>
-      utils.listmap(inductNames, p) match {
-        case Some(inductP) => ApplyGeneral(OMS(inductP), model:::args:::List(tm))
-        case None => tm
-      }
-    case _ => throw ImplementationError("missing case")
-  }
   
     /**
    * Generate no confusion/injectivity declaration for term constructor d and all term constructors of the same return type
@@ -155,7 +172,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
         val Ltp = () => {
           val (aCtx, aApplied) = d.argContext(None)
           val (bCtx, bApplied) = b.argContext(None)
-          Pi(d.context++aCtx ++ bCtx, Neq(aApplied, bApplied))
+          Pi(d.context++aCtx ++ bCtx, Neq(b.ret, aApplied, bApplied))  // TODO does not type-check if ret depends on arguments
         }
         decls ::= makeConst(newName, Ltp)
       }

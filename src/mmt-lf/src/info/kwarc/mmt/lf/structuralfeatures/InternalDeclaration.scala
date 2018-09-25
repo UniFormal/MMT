@@ -63,11 +63,22 @@ private object InternalDeclarationUtil {
     iterPre(e)
   }  
 
-  val theory: MPath = LF._base ? "Inductive"
-  object Eq extends BinaryLFConstantScala(theory, "eq")
-  object Neq extends BinaryLFConstantScala(theory, "neq")
+  val theory: MPath = LF._base ? "DHOL"
+  object Ded {
+    val path = LF._base ? "Ded" ? "DED"
+    def apply(t: Term) = ApplySpine(OMS(path), t)
+  }
+  object Eq {
+    val path = theory ? "EQUAL"
+    def apply(s: Term, t: Term) = ApplySpine(OMS(path), s, t) // TODO just temporarily to make things compile, will produce ill-typed content
+    def apply(a: Term, s: Term, t: Term) = Ded(ApplySpine(OMS(path), a, s, t))
+  }
+  object Neq {
+    val path = theory ? "NOTEQUAL"
+    def apply(a: Term, s: Term, t: Term) = ApplySpine(OMS(path), a, s, t)
+  }
   
-  val Contra = OMS(theory ? "contra")
+  val Contra = OMS(theory ? "CONTRA")
   /** negate the statement in the type */
   def neg(tp: Term) : Term = Arrow(tp, Contra)
   
@@ -148,7 +159,7 @@ object InternalDeclaration {
   }
   
   /** build a dictionary from the declaration paths to OMV with their "primed" type, as well as a context with all the "primed" declarations*/
-  def chain(decls: List[InternalDeclaration], context: Context) : (List[(GlobalName, OMV)], List[VarDecl]) = {
+  def chain(decls: List[InternalDeclaration], context: Context) : (List[(GlobalName, OMV)], Context) = {
     var repls: List[(GlobalName,OMV)] = Nil
     val tr = TraversingTranslator(OMSReplacer(p => utils.listmap(repls, p)))
     val modelContext = decls map {d =>
@@ -198,12 +209,12 @@ sealed abstract class InternalDeclaration {
       case ((None, arg), i) => (uniqueLN("x_"+i), arg)
     }
     // In case of an OMV argument used in the type of a later argument
-    var subs: List[Sub] = Nil
-    val conOld : Context= dargs map {case (loc, tp) =>
-      subs+: loc / uniqueLN(loc+suf)
-      newVar(loc, tp, None)
+    var subs = Substitution()
+    val con: Context = dargs map {case (loc, tp) =>
+      val locSuf = uniqueLN(loc+suf)
+      subs = subs ++ OMV(loc) / OMV(locSuf)
+      newVar(locSuf, tp ^? subs, None)
     }
-    val con = conOld ^ subs
     val tp = ApplyGeneral(toTerm, con.map(_.toTerm))
     (con, tp)
   }
@@ -268,9 +279,8 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
     val Ltp = () => {
       val (aCtx, aApplied) = argContext(Some("_0"))
       val (bCtx, bApplied) = argContext(Some("_1"))
-      
-      val argEq = (aCtx zip bCtx) map {case (a,b) => Eq(a.toTerm, b.toTerm)}
-      val resNeq = Neq(aApplied, bApplied)
+      val argEq = (aCtx zip bCtx) map {case (a,b) => Eq(ret, a.toTerm, b.toTerm)} // TODO does not type-check if ret depends on arguments
+      val resNeq = Neq(ret, aApplied, bApplied)  // TODO does not type-check if ret depends on arguments
       val body = Arrow(Arrow(argEq, Contra), resNeq)
       PiOrEmpty(context++aCtx ++ bCtx,  body)
     }
@@ -287,7 +297,7 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
       val im = newVar(uniqueLN("image_point"), ret, Some(context))
       val (aCtx, aApplied) = argContext(None)
     
-      PiOrEmpty(context++im,  neg(PiOrEmpty(aCtx, neg(Eq(aApplied, im.toTerm)))))
+      PiOrEmpty(context++im,  neg(PiOrEmpty(aCtx, neg(Eq(ret, aApplied, im.toTerm)))))
     }
     makeConst(uniqueLN("surjective_"+name), Ltp)(parent)
   }
