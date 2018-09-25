@@ -137,7 +137,7 @@ object InternalDeclaration {
     val (retCtx, retTp) = (Context.empty, tp)//parsePi(tp)
     val FunType(args, ret) = retTp
     val context = Some(ctx getOrElse Context.empty ++ retCtx)
-    val p = parent.module ? c.path.last
+    val p = c.path
     if (JudgmentTypes.isJudgment(ret)(con.globalLookup)) {
       StatementLevel(p, args, c.df, context, Some(c.notC))
     } else {
