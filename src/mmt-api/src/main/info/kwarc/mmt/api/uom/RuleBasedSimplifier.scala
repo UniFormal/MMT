@@ -56,6 +56,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
               try {
                 traverse(t,initState, context)
               } catch {
+                case le: LookupError => println("Lookup Error while simplifying " + controller.presenter.asString(obj)+": ")
+                log(le.getMessage)
+                throw le
                 case e: Exception =>
                   // this should never happen; but if there is a bug, it's easier to locate this way 
                   throw GeneralError("error while simplifying " + controller.presenter.asString(obj)).setCausedBy(e)
@@ -87,9 +90,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
             t*/
          //TODO strangely, taking the optimization out introduces a checking error in mizar.mmt
          // this term was simplified before resulting in tS
-         case SimplificationResult(tS) =>
+         case SimplificationResult(tS) =>try{
            log("structure-shared term was already simplified")
-           tS
+           tS} catch {case e : Error => println("Error in traverse for case of SimplificationResult "+controller.presenter.asString(t)+": "++e.getMessage); throw e}
          case OMAorAny(Free(cont,bd), args) if cont.length == args.length =>
            // MMT-level untyped beta-reduction using 'free' as 'lambda'
            // should only be needed if we expand the definition of an unknown variable
@@ -97,11 +100,11 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
            val tC = bd ^? sub
            traverse(tC)
          // apply morphisms TODO should become computation rule once module expressions are handled properly
-         case OMM(tt, mor) =>
+         case OMM(tt, mor) => try {
             val tM = controller.globalLookup.ApplyMorphs(tt, mor)
-            traverse(tM)
+            traverse(tM)} catch {case e : Error => println("Error in traverse for case of OMM "+controller.presenter.asString(t)+": "++e.getMessage); throw e}
          // the main case
-         case ComplexTerm(_,_,_,_) =>
+         case ComplexTerm(_,_,_,_) =>try{
             logGroup {
                //log("state is" + init.t + " at " + init.path.toString)
                val (tS, globalChange) = logGroup {
@@ -114,7 +117,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
                   Changed(tSM)
                else
                   tSM
-            }
+            }} catch {case e : Error => 
+              log("Error in traverse for case of ComplexTerm: "+e.getMessage)
+              throw e}
          // expand abbreviations but not definitions
          case OMS(p) =>
             applyAbbrevRules(p) match {
@@ -138,20 +143,27 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
               // LocalChange impossible
             }
          // expand definitions of variables (Simple(_) prevents this case if the definiens is added later, e.g., when solving an unknown)
-         case OMV(n) => con(n).df match {
+         case OMV(n) => try {
+           con(n).df match {
            case Some(d) =>
              log("expanding and simplifying definition of variable " + n)
              traverse(d)(con.before(n), init)
            case None =>
              t
-         }
+         }}
+           catch {
+             case exc : LookupError => 
+               println("LookupError while traversing into OMV("+n+"): ")
+               log(exc.getMessage)
+               println(""); throw exc
+           }
          // literals read from XML may not be recognized yet
-         case u: UnknownOMLIT =>
-           u.recognize(init.rules).getOrElse(u)
-         case _ =>
+         case u: UnknownOMLIT =>try{
+           u.recognize(init.rules).getOrElse(u)} catch {case e : Error => println("Error in traverse for case of UnknownOMLIT "+controller.presenter.asString(t)+": "++e.getMessage); throw e}
+         case _ =>try{
             val tS = Simple(Traverser(this, t))
             SimplificationResult.put(t, tS)
-            tS
+            tS} catch {case e : Error => println("Error in traverse for case _ "+controller.presenter.asString(t)+": "++e.getMessage); throw e}
        }
       }
 

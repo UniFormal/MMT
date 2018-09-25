@@ -15,9 +15,9 @@ abstract class LazyConstant(val home : Term, val name : LocalName) extends Const
    protected var _not : Option[TextNotation] = None
    protected var _vs : Option[Visibility] = None
 
-   private var tpAccessed: Boolean = false
-   private var dfAccessed: Boolean = false
-   private var otherAccessed: Boolean = false
+   protected var tpDefined: Boolean = false
+   protected var dfDefined: Boolean = false
+   protected var otherDefined: Boolean = false
 
    /** called the first time the type is accessed, must set _tp */
    def onAccessTp: Unit
@@ -27,45 +27,67 @@ abstract class LazyConstant(val home : Term, val name : LocalName) extends Const
    def onAccessOther: Unit
 
    def tpC = {
-      if (tpAccessed) {
+      if (!tpDefined) {
          onAccessTp
-         tpAccessed = true
+         tpDefined = true
       }
       TermContainer(_tp)
    }
    def dfC = {
-      if (dfAccessed) {
+      if (!dfDefined) {
          onAccessDf
-         dfAccessed = true
+         dfDefined = true
       }
       TermContainer(_df)
    }
    def alias = {
-      if (otherAccessed) {
+      if (!otherDefined) {
          onAccessOther
-         otherAccessed = true
+         otherDefined = true
       }
       _alias
    }
    def rl = {
-      if (otherAccessed) {
+      if (!otherDefined) {
          onAccessOther
-         otherAccessed = true
+         otherDefined = true
       }
       _rl
    }
    def notC = {
-      if (otherAccessed) {
+      if (!otherDefined) {
          onAccessOther
-         otherAccessed = true
+         otherDefined = true
       }
       NotationContainer(_not)
    }
    def vs = {
-      if (otherAccessed) {
+      if (!otherDefined) {
          onAccessOther
-         otherAccessed = true
+         otherDefined = true
       }
       _vs getOrElse Visibility.public
    }
+}
+
+abstract class SimpleLazyConstant(h : Term, n : LocalName) extends LazyConstant(h,n) {
+  def onAccess: Unit
+  def onAccessTp {
+    onAccess
+    tpDefined = true
+    dfDefined = true
+    otherDefined = true
+  }
+  def onAccessDf {
+    onAccess
+    tpDefined = true
+    dfDefined = true
+    otherDefined = true
+  }
+  def onAccessOther {
+    onAccess
+    tpDefined = true
+    dfDefined = true
+    otherDefined = true
+  }
 }
