@@ -34,14 +34,7 @@ private object InternalDeclarationUtil {
      val (freshName,_) = Context.pickFresh(c, uniqueLN(name.toString()))
      VarDecl(freshName, tp)
    }
-  
-  object noLookupPresenter extends presentation.NotationBasedPresenter {
-    override def getNotations(p: GlobalName) = if (false) Nil else super.getNotations(p)
-    override def getAlias(p: GlobalName) = if (false) Nil else super.getAlias(p)
-  }
-  
-  def defaultPresenter(c: Constant)(implicit con: Controller): String = c.name + ": " + noLookupPresenter.asString(c.tp.get) + (if (c.df != None) " = "+noLookupPresenter.asString(c.df.get) else "")
-  
+    
    /** a very detailed presenter, useful for debugging */
   def present(c: Constant)(implicit parent: GlobalName) : String = {
     c.path + ": " + present(c.tp.get)

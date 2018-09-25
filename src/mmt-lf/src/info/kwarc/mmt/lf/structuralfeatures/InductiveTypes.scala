@@ -14,6 +14,16 @@ import InternalDeclarationUtil._
 
 /** theories as a set of types of expressions */ 
 class InductiveTypes extends StructuralFeature("inductive") with ParametricTheoryLike {
+  object noLookupPresenter extends presentation.NotationBasedPresenter {
+    override def getNotations(p: GlobalName) = if (! (p.module.name.toString contains "LambdaPi")) Nil else super.getNotations(p)
+    override def getAlias(p: GlobalName) = if (true) Nil else super.getAlias(p)
+  }
+  
+  override def start(args: List[String]) {
+    initOther(noLookupPresenter)
+  }
+  
+  def defaultPresenter(c: Constant)(implicit con: Controller): String = c.name + ": " + noLookupPresenter.asString(c.tp.get) + (if (c.df != None) " = "+noLookupPresenter.asString(c.df.get) else "")
 
   /**
    * Checks the validity of the inductive type(s) to be constructed
@@ -61,7 +71,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     // the no junk axioms
     elabDecls ++= noJunks(decls, context)(dd.path)
     
-    //elabDecls foreach {d =>log(InternalDeclarationUtil.defaultPresenter(d)(controller))}
+    elabDecls foreach {d =>log(defaultPresenter(d)(controller))}
     new Elaboration {
       val elabs : List[Declaration] = Nil 
       def domain = elabDecls map {d => d.name}
