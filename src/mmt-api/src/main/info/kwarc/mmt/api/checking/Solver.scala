@@ -383,6 +383,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
           None
       case _ => None
     }
+    def is(t: Term) = unapply(t).isDefined
   }
    
   /** substitutes some unknowns with solutions
