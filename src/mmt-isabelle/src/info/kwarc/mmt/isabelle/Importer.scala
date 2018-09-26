@@ -278,7 +278,7 @@ object Importer
             }
           val delim = Delim(isabelle.Symbol.decode(infix.delim))
           val fixity = Infix(delim, type_scheme._1.length, 2, assoc)
-          new TextNotation(fixity, Precedence.integer(infix.pri), None)
+          new TextNotation(fixity, Precedence.integer(infix.pri), Some(isabelle_init_theory))
         })
 
       if (infix_notation.isDefined) notation.presentationDim.set(infix_notation.get)
