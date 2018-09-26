@@ -45,27 +45,14 @@ object Importer
 
   /** MMT system environment **/
 
-  def init_controller(): Controller =
+  def init_environment(
+    options: isabelle.Options,
+    progress: isabelle.Progress = isabelle.No_Progress,
+    archive_dirs: List[isabelle.Path] = Nil,
+    init_archive: Boolean = false): (Controller, List[Archive]) =
   {
     val controller = new Controller
 
-    for {
-      config <-
-        List(File(isabelle.Path.explode("$ISABELLE_MMT_ROOT/deploy/mmtrc").file),
-          MMTSystem.userConfigFile)
-      if config.exists
-    } controller.loadConfigFile(config, false)
-
-    controller
-  }
-
-  def init_archives(
-    options: isabelle.Options,
-    controller: Controller,
-    progress: isabelle.Progress = isabelle.No_Progress,
-    archive_dirs: List[isabelle.Path] = Nil,
-    init_archive: Boolean = false): List[Archive] =
-  {
     val init_archive_dir =
       (if (init_archive) options.proper_string("mmt_archive_dir") else None).
         map(isabelle.Path.explode)
@@ -96,7 +83,15 @@ object Importer
       progress.echo("Adding " + archive)
       controller.addArchive(archive.root)
     }
-    archives
+
+    for {
+      config <-
+        List(File(isabelle.Path.explode("$ISABELLE_MMT_ROOT/deploy/mmtrc").file),
+          MMTSystem.userConfigFile)
+      if config.exists
+    } controller.loadConfigFile(config, false)
+
+    (controller, archives)
   }
 
 
@@ -342,14 +337,11 @@ object Importer
     chapter_archive: String => Option[String],
     progress: isabelle.Progress = isabelle.No_Progress)
   {
-    val controller = init_controller()
+    val (controller, archives) =
+      init_environment(options, progress = progress, archive_dirs = archive_dirs, init_archive = true)
 
     object MMT_Importer extends NonTraversingImporter { val key = "isabelle-omdoc" }
     controller.extman.addExtension(MMT_Importer, Nil)
-
-    val archives =
-      init_archives(options, controller, progress = progress,
-        archive_dirs = archive_dirs, init_archive = true)
 
     object Isabelle extends
       Isabelle(options, progress, logic, dirs, select_dirs, selection, archives, chapter_archive)
