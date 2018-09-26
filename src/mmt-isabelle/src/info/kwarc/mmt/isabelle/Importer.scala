@@ -363,7 +363,7 @@ object Importer
       // theory content
       val thy_draft =
         Isabelle.begin_theory(thy_export,
-          if (thy_is_pure) None else Some(URI(thy_source_path.file.toPath.toUri)),
+          if (thy_is_pure) None else Some(archive.narrationBase / thy_source_path.implode),
           if (thy_is_pure) None else Some(Isabelle.pure_path))
 
       controller.add(thy_draft.thy)
@@ -389,8 +389,9 @@ object Importer
 
       // PIDE theory source
       if (!thy_export.node_source.is_empty) {
-        isabelle.Isabelle_System.mkdirs(thy_source_path.dir)
-        isabelle.File.write(thy_source_path, thy_export.node_source.text)
+        val path = isabelle.File.path(archive.root.toJava) + thy_source_path
+        isabelle.Isabelle_System.mkdirs(path.dir)
+        isabelle.File.write(path, thy_export.node_source.text)
       }
 
       def decl_error(entity: isabelle.Export_Theory.Entity)(body: => Unit)
@@ -732,7 +733,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       val subdir = if (archive.root.getName == chapter) None else Some(chapter)
 
       val source_path =
-        isabelle.File.path(archive.root.toJava) +
           isabelle.Path.basic("source") +
           isabelle.Path.explode(subdir.getOrElse("")) +
           isabelle.Path.basic(session_name) +
