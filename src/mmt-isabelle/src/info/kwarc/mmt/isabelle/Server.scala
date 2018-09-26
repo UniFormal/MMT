@@ -33,26 +33,16 @@ Usage: isabelle mmt_server [OPTIONS]
       val more_args = getopts(args)
       if (more_args.nonEmpty) getopts.usage()
 
+      val progress = new isabelle.Console_Progress()
+
+      val controller = Importer.init_controller()
+      Importer.init_archives(controller, progress = progress, archive_dirs = archive_dirs)
+
       if (Util.isTaken(port)) isabelle.error("Port " + port + " already taken")
-
-      val controller = new Controller
-      for {
-        config <-
-          List(File(isabelle.Path.explode("$ISABELLE_MMT_ROOT/deploy/mmtrc").file),
-            MMTSystem.userConfigFile)
-        if config.exists
-      } controller.loadConfigFile(config, false)
-
-      val archives = archive_dirs.flatMap(dir => controller.backend.openArchive(dir.absolute_file))
-      for (archive <- archives) {
-        println("Adding " + archive)
-        controller.handleLine("mathpath archive " + archive.rootString) // FIXME quotes!?
-      }
-
       controller.handleLine("server on " + port)
 
-      println("Server http://127.0.0.1:" + port)
-      println("Waiting for INTERRUPT signal ...")
+      progress.echo("Server http://127.0.0.1:" + port)
+      progress.echo("Waiting for INTERRUPT signal ...")
 
       try { isabelle.POSIX_Interrupt.exception { while(true) Thread.sleep(Integer.MAX_VALUE) } }
       catch { case isabelle.Exn.Interrupt() => }

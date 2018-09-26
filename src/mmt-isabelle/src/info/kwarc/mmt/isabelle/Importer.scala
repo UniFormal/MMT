@@ -21,7 +21,7 @@ import utils._
  */
 object Importer
 {
-  /** MMT names and archives **/
+  /** MMT names **/
 
   /*common namespace for all theories in all sessions in all Isabelle archives*/
   val isabelle_base: DPath = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
@@ -41,11 +41,51 @@ object Importer
       s match { case Pattern(isabelle.Value.Int(i)) => Some(i) case _ => None }
   }
 
-  def init_archive(dir: isabelle.Path)
+
+
+  /** MMT system environment **/
+
+  def init_controller(): Controller =
   {
-    val meta_inf = dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
-    isabelle.Isabelle_System.mkdirs(meta_inf.dir)
-    isabelle.File.write(meta_inf, "id: Isabelle\ntitle: Isabelle\n")
+    val controller = new Controller
+
+    for {
+      config <-
+        List(File(isabelle.Path.explode("$ISABELLE_MMT_ROOT/deploy/mmtrc").file),
+          MMTSystem.userConfigFile)
+      if config.exists
+    } controller.loadConfigFile(config, false)
+
+    controller
+  }
+
+  def init_archives(
+    controller: Controller,
+    progress: isabelle.Progress = isabelle.No_Progress,
+    archive_dirs: List[isabelle.Path] = Nil,
+    init_archive_dir: Option[isabelle.Path] = None): List[Archive] =
+  {
+    val archives: List[Archive] =
+      (init_archive_dir.toList ::: archive_dirs).flatMap(dir =>
+        controller.backend.openArchive(dir.absolute_file))
+      match {
+        case Nil if init_archive_dir.isDefined =>
+          val meta_inf = init_archive_dir.get + isabelle.Path.explode("META-INF/MANIFEST.MF")
+          isabelle.Isabelle_System.mkdirs(meta_inf.dir)
+          isabelle.File.write(meta_inf, "id: Isabelle\ntitle: Isabelle\n")
+
+          controller.backend.openArchive(init_archive_dir.get.absolute_file) match {
+            case Nil => isabelle.error("Failed to initialize archive in " + init_archive_dir)
+            case archives => archives
+          }
+        case archives => archives
+      }
+
+    for (archive <- archives) {
+      progress.echo("Adding " + archive)
+      controller.handleLine("mathpath archive " + archive.rootString) // FIXME quotes!?
+    }
+    archives
   }
 
 
@@ -291,25 +331,14 @@ object Importer
     chapter_archive: String => Option[String],
     progress: isabelle.Progress = isabelle.No_Progress)
   {
-    val controller = new Controller
+    val controller = init_controller()
 
     object MMT_Importer extends NonTraversingImporter { val key = "isabelle-omdoc" }
     controller.extman.addExtension(MMT_Importer, Nil)
 
-    val archives: List[Archive] =
-      (init_archive_dir :: archive_dirs).flatMap(dir =>
-          controller.backend.openArchive(dir.absolute_file))
-      match {
-        case Nil =>
-          init_archive(init_archive_dir)
-          controller.backend.openArchive(init_archive_dir.absolute_file) match {
-            case Nil => isabelle.error("Failed to initialize archive in " + init_archive_dir)
-            case archives => archives
-          }
-        case archives => archives
-      }
-
-    archives.foreach(archive => progress.echo("Adding " + archive))
+    val archives =
+      init_archives(controller, progress = progress,
+        archive_dirs = archive_dirs, init_archive_dir = Some(init_archive_dir))
 
     object Isabelle extends
       Isabelle(options, progress, logic, dirs, select_dirs, selection, archives, chapter_archive)
