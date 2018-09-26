@@ -24,7 +24,7 @@ object Importer
   /** MMT names **/
 
   /*common namespace for all theories in all sessions in all Isabelle archives*/
-  val isabelle_base: DPath = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
+  val isabelle_base: DPath = DPath(URI("https", "isabelle.in.tum.de"))
   val isabelle_init_theory: MPath = lf.PLF._path
 
   def declared_theory(theory: String, meta_theory: Option[MPath] = None): DeclaredTheory =
@@ -72,7 +72,8 @@ object Importer
         case Nil if init_archive_dir.isDefined =>
           val meta_inf = init_archive_dir.get + isabelle.Path.explode("META-INF/MANIFEST.MF")
           isabelle.Isabelle_System.mkdirs(meta_inf.dir)
-          isabelle.File.write(meta_inf, "id: Isabelle\ntitle: Isabelle\n")
+          isabelle.File.write(meta_inf,
+            "id: Isabelle_Test\ntitle: Isabelle Test\nnarration-base: https://isabelle.in.tum.de/\n")
 
           controller.backend.openArchive(init_archive_dir.get.absolute_file) match {
             case Nil => isabelle.error("Failed to initialize archive in " + init_archive_dir)
