@@ -98,7 +98,9 @@ object Importer
       for {
         solver_error <- solver.getErrors
         if solver_error.level >= Level.Error
-      } yield solver_error.history.toString
+        history_entry <- solver_error.history.steps
+      } yield history_entry.present(solver.presentObj)
+
     if (errs.nonEmpty) isabelle.error(isabelle.cat_lines(err :: errs))
   }
 
