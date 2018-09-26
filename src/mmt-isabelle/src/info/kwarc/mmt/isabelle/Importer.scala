@@ -60,11 +60,16 @@ object Importer
   }
 
   def init_archives(
+    options: isabelle.Options,
     controller: Controller,
     progress: isabelle.Progress = isabelle.No_Progress,
     archive_dirs: List[isabelle.Path] = Nil,
-    init_archive_dir: Option[isabelle.Path] = None): List[Archive] =
+    init_archive: Boolean = false): List[Archive] =
   {
+    val init_archive_dir =
+      (if (init_archive) options.proper_string("mmt_archive_dir") else None).
+        map(isabelle.Path.explode)
+
     val archives: List[Archive] =
       (init_archive_dir.toList ::: archive_dirs).flatMap(dir =>
         controller.backend.openArchive(dir.absolute_file))
@@ -72,8 +77,13 @@ object Importer
         case Nil if init_archive_dir.isDefined =>
           val meta_inf = init_archive_dir.get + isabelle.Path.explode("META-INF/MANIFEST.MF")
           isabelle.Isabelle_System.mkdirs(meta_inf.dir)
+
+          val id = options.proper_string("mmt_archive_id").map("id: " + _)
+          val title = options.proper_string("mmt_archive_title").map("title: " + _)
+          val narration_base = options.proper_string("mmt_archive_narration_base").
+            map("narration-base: " + _)
           isabelle.File.write(meta_inf,
-            "id: Isabelle_Test\ntitle: Isabelle Test\nnarration-base: https://isabelle.in.tum.de/\n")
+            (id.toList ::: title.toList ::: narration_base.toList).mkString("", "\n", "\n"))
 
           controller.backend.openArchive(init_archive_dir.get.absolute_file) match {
             case Nil => isabelle.error("Failed to initialize archive in " + init_archive_dir)
@@ -321,7 +331,6 @@ object Importer
 
   /** Isabelle to MMT importer **/
 
-  val default_init_archive_dir: isabelle.Path = isabelle.Path.explode("isabelle_mmt")
   val default_logic: String = isabelle.Thy_Header.PURE
 
   def importer(options: isabelle.Options,
@@ -330,7 +339,6 @@ object Importer
     select_dirs: List[isabelle.Path] = Nil,
     selection: isabelle.Sessions.Selection = isabelle.Sessions.Selection.empty,
     archive_dirs: List[isabelle.Path],
-    init_archive_dir: isabelle.Path,
     chapter_archive: String => Option[String],
     progress: isabelle.Progress = isabelle.No_Progress)
   {
@@ -340,8 +348,8 @@ object Importer
     controller.extman.addExtension(MMT_Importer, Nil)
 
     val archives =
-      init_archives(controller, progress = progress,
-        archive_dirs = archive_dirs, init_archive_dir = Some(init_archive_dir))
+      init_archives(options, controller, progress = progress,
+        archive_dirs = archive_dirs, init_archive = true)
 
     object Isabelle extends
       Isabelle(options, progress, logic, dirs, select_dirs, selection, archives, chapter_archive)
@@ -532,7 +540,6 @@ object Importer
       var chapter_archive_default = ""
       var base_sessions: List[String] = Nil
       var select_dirs: List[isabelle.Path] = Nil
-      var init_archive_dir = default_init_archive_dir
       var requirements = false
       var exclude_session_groups: List[String] = Nil
       var all_sessions = false
@@ -551,7 +558,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     -C CH=AR     add mapping of chapter CH to archive AR, or default "_=AR"
     -B NAME      include session NAME and all descendants
     -D DIR       include session directory and select its sessions
-    -I DIR       init archive directory (default: """ + default_init_archive_dir + """)
     -R           operate on requirements of selected sessions
     -X NAME      exclude sessions from group NAME and all descendants
     -a           select all sessions
@@ -575,7 +581,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         }),
       "B:" -> (arg => base_sessions = base_sessions ::: List(arg)),
       "D:" -> (arg => { select_dirs = select_dirs ::: List(isabelle.Path.explode(arg)) }),
-      "I:" -> (arg => { init_archive_dir = isabelle.Path.explode(arg) }),
       "R" -> (_ => requirements = true),
       "X:" -> (arg => exclude_session_groups = exclude_session_groups ::: List(arg)),
       "a" -> (_ => all_sessions = true),
@@ -614,7 +619,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           select_dirs = select_dirs,
           selection = selection,
           archive_dirs = archive_dirs,
-          init_archive_dir = init_archive_dir,
           chapter_archive =
             (ch: String) => chapter_archive_map.get(ch) orElse
               isabelle.proper_string(chapter_archive_default),

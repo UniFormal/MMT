@@ -33,10 +33,11 @@ Usage: isabelle mmt_server [OPTIONS]
       val more_args = getopts(args)
       if (more_args.nonEmpty) getopts.usage()
 
+      val options = isabelle.Options.init()
       val progress = new isabelle.Console_Progress()
 
       val controller = Importer.init_controller()
-      Importer.init_archives(controller, progress = progress, archive_dirs = archive_dirs)
+      Importer.init_archives(options, controller, progress = progress, archive_dirs = archive_dirs)
 
       if (Util.isTaken(port)) isabelle.error("Port " + port + " already taken")
       controller.handleLine("server on " + port)

@@ -155,7 +155,6 @@ directories. Its command-line usage is as follows:
         -C CH=AR     add mapping of chapter CH to archive AR, or default "_=AR"
         -B NAME      include session NAME and all descendants
         -D DIR       include session directory and select its sessions
-        -I DIR       init archive directory (default: "isabelle_mmt")
         -R           operate on requirements of selected sessions
         -X NAME      exclude sessions from group NAME and all descendants
         -a           select all sessions
@@ -168,16 +167,16 @@ directories. Its command-line usage is as follows:
 
       Import specified sessions into MMT archive directories.
 
-Options `-A`, `-C`, `-I` specify target archives and a mapping from Isabelle
+Options `-A` and `-C` specify target archives and a mapping from Isabelle
 session chapters to MMT archives. Chapter names are provided in Isabelle
 session `ROOT` specifications, and archive names are the base directory
 names: if it is the same as the chapter name, the directory will be used at
 its root; otherwise the chapter becomes a sub-directory of the archive. The
 directories given via (multiple) `-A` options are recursively searched for
-MMT archives; if the result is empty, a fresh archive is initialized
-according to option `-I`. Thus it is possible to use `isabelle mmt` without
-any archive options and get results into the default directory
-`isabelle_mmt`, freshly initialized on demand.
+MMT archives. If the result is empty, a fresh archive is initialized
+Isabelle system options `mmt_archive_dir` etc. Thus it is possible to use
+`isabelle mmt` without any archive options and get results into a default
+directory (`isabelle_mmt`), freshly initialized on demand.
 
 Options `-B`, `-D`, `-R`, `-X`, `-a`, `-d`, `-g`, `-x` with remaining
 non-option arguments provide the standard Isabelle vocabulary to specify
