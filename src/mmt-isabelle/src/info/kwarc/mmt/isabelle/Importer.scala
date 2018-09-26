@@ -421,7 +421,7 @@ object Importer
             val content = thy_draft.content
             val item = thy_draft.declare_item(locale.entity)
             val loc_name = item.local_name
-            val loc_thy = Theory.empty((thy_draft.thy.path / loc_name).toDPath, loc_name, None)
+            val loc_thy = Theory.empty(thy_draft.thy.path.doc, thy_draft.thy.name / loc_name, None)
 
             // type parameters
             val type_env =
@@ -468,8 +468,9 @@ object Importer
             val to = OMS(content.get_locale(dep.target).global_name)
 
             // FIXME !?
-            val view = DeclaredView(thy_doc_path, item.local_name, from, to, false)
-            controller.add(view)
+            val view = DeclaredView(thy_draft.thy.path.doc, thy_draft.thy.name / item.local_name, from, to, false)
+            val nm = new NestedModule(thy_draft.thy.toTerm, item.local_name, view)
+            controller.add(nm)
           }
         }
       }
