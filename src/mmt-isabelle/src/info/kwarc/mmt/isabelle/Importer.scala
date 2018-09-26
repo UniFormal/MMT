@@ -83,7 +83,7 @@ object Importer
 
     for (archive <- archives) {
       progress.echo("Adding " + archive)
-      controller.handleLine("mathpath archive " + archive.rootString) // FIXME quotes!?
+      controller.addArchive(archive.root)
     }
     archives
   }
