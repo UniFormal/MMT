@@ -498,10 +498,8 @@ object Importer
             val from = OMS(content.get_locale(dep.source).global_name)
             val to = OMS(content.get_locale(dep.target).global_name)
 
-            // FIXME !?
             val view = DeclaredView(thy_draft.thy.path.doc, thy_draft.thy.name / item.local_name, from, to, false)
-            val nm = new NestedModule(thy_draft.thy.toTerm, item.local_name, view)
-            controller.add(nm)
+            controller.add(new NestedModule(thy_draft.thy.toTerm, item.local_name, view))
           }
         }
       }
