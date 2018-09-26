@@ -25,12 +25,12 @@ object Importer
 
   /*common namespace for all theories in all sessions in all Isabelle archives*/
   val isabelle_base: DPath = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
-  val isabelle_meta_theory: MPath = lf.PLF._path
+  val isabelle_init_theory: MPath = lf.PLF._path
 
-  def declared_theory(theory: String): DeclaredTheory =
+  def declared_theory(theory: String, meta_theory: Option[MPath] = None): DeclaredTheory =
   {
     val module = isabelle_base ? theory
-    Theory.empty(module.doc, module.name, Some(isabelle_meta_theory))
+    Theory.empty(module.doc, module.name, meta_theory)
   }
 
   class Indexed_Name(val name: String)
@@ -363,11 +363,15 @@ object Importer
       // theory content
       val thy_draft =
         Isabelle.begin_theory(thy_export,
-          if (thy_is_pure) None else Some(URI(thy_source_path.file.toPath.toUri)))
+          if (thy_is_pure) None else Some(URI(thy_source_path.file.toPath.toUri)),
+          if (thy_is_pure) None else Some(Isabelle.pure_path))
 
       controller.add(thy_draft.thy)
       controller.add(MRef(doc.path, thy_draft.thy.path))
 
+      if (thy_is_pure) {
+        controller.add(PlainInclude(isabelle_init_theory, thy_draft.thy.path))
+      }
       for (parent <- thy_export.parents) {
         controller.add(PlainInclude(declared_theory(parent).path, thy_draft.thy.path))
       }
@@ -1138,15 +1142,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     def theory_content(name: String): Content =
       imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
 
-    def begin_theory(thy_export: Theory_Export, thy_source: Option[URI]): Theory_Draft =
-      new Theory_Draft(thy_export, thy_source)
+    def begin_theory(thy_export: Theory_Export, thy_source: Option[URI], meta_theory: Option[MPath]): Theory_Draft =
+      new Theory_Draft(thy_export, thy_source, meta_theory)
 
-    class Theory_Draft private[Isabelle](thy_export: Theory_Export, thy_source: Option[URI])
+    class Theory_Draft private[Isabelle](thy_export: Theory_Export, thy_source: Option[URI], meta_theory: Option[MPath])
     {
       private val node_name = thy_export.node_name
       private val node_source = thy_export.node_source
 
-      val thy: DeclaredTheory = declared_theory(node_name.theory)
+      val thy: DeclaredTheory = declared_theory(node_name.theory, meta_theory = meta_theory)
       for (uri <- thy_source) SourceRef.update(thy, SourceRef(uri, SourceRegion.none))
 
       private val _content =
