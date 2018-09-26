@@ -1021,6 +1021,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         isabelle.commas(
           List(
             isabelle.Export_Theory.Kind.LOCALE,
+            isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY,
             isabelle.Export_Theory.Kind.CLASS,
             isabelle.Export_Theory.Kind.TYPE,
             isabelle.Export_Theory.Kind.CONST,
