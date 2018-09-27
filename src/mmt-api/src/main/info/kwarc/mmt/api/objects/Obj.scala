@@ -73,9 +73,9 @@ abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj]
    def subobject(pos: Position) : (Context, Obj) =
      pos.indices.foldLeft((Context(),this)) {
          case ((con,obj), i) =>
-            obj.subobjects.applyOrElse(i, null) match {
-               case null => throw GetError("position " + pos + " not valid in " + this)
-               case (newCon, so) => (con ++ newCon, so)
+            obj.subobjects.lift(i) match {
+               case None => throw GetError("position " + pos + " not valid in " + this)
+               case Some((newCon, so)) => (con ++ newCon, so)
             }
       }
    /* the constructor or constant used to form this term */
