@@ -21,25 +21,7 @@ import utils._
  */
 object Importer
 {
-  /** MMT names **/
-
-  /*common namespace for all theories in all sessions in all Isabelle archives*/
-  val isabelle_base: DPath = DPath(URI("https", "isabelle.in.tum.de"))
   val isabelle_init_theory: MPath = lf.PLF._path
-
-  def declared_theory(theory: String, meta_theory: Option[MPath] = None): DeclaredTheory =
-  {
-    val module = isabelle_base ? theory
-    Theory.empty(module.doc, module.name, meta_theory)
-  }
-
-  class Indexed_Name(val name: String)
-  {
-    def apply(i: Int): String = name + "(" + i + ")"
-    private val Pattern = (Regex.quote(name) + """\((\d+)\)""").r
-    def unapply(s: String): Option[Int] =
-      s match { case Pattern(isabelle.Value.Int(i)) => Some(i) case _ => None }
-  }
 
 
 
@@ -219,6 +201,14 @@ object Importer
 
   /** MMT import structures **/
 
+  class Indexed_Name(val name: String)
+  {
+    def apply(i: Int): String = name + "(" + i + ")"
+    private val Pattern = (Regex.quote(name) + """\((\d+)\)""").r
+    def unapply(s: String): Option[Int] =
+      s match { case Pattern(isabelle.Value.Int(i)) => Some(i) case _ => None }
+  }
+
   object Env
   {
     val empty: Env = new Env(Map.empty)
@@ -374,7 +364,7 @@ object Importer
         controller.add(PlainInclude(isabelle_init_theory, thy_draft.thy.path))
       }
       for (parent <- thy_export.parents) {
-        controller.add(PlainInclude(declared_theory(parent).path, thy_draft.thy.path))
+        controller.add(PlainInclude(Isabelle.make_theory(parent).path, thy_draft.thy.path))
       }
 
       def add_constant(item: Item, tp: Option[Term], df: Option[Term])
@@ -694,7 +684,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     }
 
 
-    /* resources */
+    /* theory resources */
 
     def resources: isabelle.Headless.Resources = session.resources
 
@@ -739,6 +729,14 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         DPath(archive.narrationBase / subdir.toList / session_name / name.theory_base_name)
 
       (archive, source_path, doc_path)
+    }
+
+    val isabelle_base: DPath = DPath(URI("https", "isabelle.in.tum.de"))
+    def make_theory(theory: String, meta_theory: Option[MPath] = None): DeclaredTheory =
+    {
+      val (archive, _, _) = theory_archive(import_name(theory))
+      val module = isabelle_base ? theory
+      Theory.empty(module.doc, module.name, meta_theory)
     }
 
 
@@ -846,7 +844,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     def PURE: String = isabelle.Thy_Header.PURE
     def pure_name: isabelle.Document.Node.Name = import_name(PURE)
 
-    lazy val pure_path: MPath = declared_theory(PURE).path
+    lazy val pure_path: MPath = make_theory(PURE).path
 
     lazy val pure_theory: isabelle.Export_Theory.Theory =
       isabelle.Export_Theory.read_pure_theory(store, cache = Some(cache))
@@ -1147,7 +1145,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       private val node_name = thy_export.node_name
       private val node_source = thy_export.node_source
 
-      val thy: DeclaredTheory = declared_theory(node_name.theory, meta_theory = meta_theory)
+      val thy: DeclaredTheory = make_theory(node_name.theory, meta_theory = meta_theory)
       for (uri <- thy_source) SourceRef.update(thy, SourceRef(uri, SourceRegion.none))
 
       private val _content =
