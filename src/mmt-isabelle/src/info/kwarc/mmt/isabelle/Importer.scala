@@ -491,8 +491,8 @@ object Importer
             val item = thy_draft.declare_item(dep.entity)
             val content = thy_draft.content
 
-            val from = OMS(content.get_locale(dep.source).global_name)
-            val to = OMS(content.get_locale(dep.target).global_name)
+            val from = OMMOD(content.get_locale(dep.source).global_name.toMPath)
+            val to = OMMOD(content.get_locale(dep.target).global_name.toMPath)
 
             val view = DeclaredView(thy_draft.thy.path.doc, thy_draft.thy.name / item.local_name, from, to, false)
             controller.add(new NestedModule(thy_draft.thy.toTerm, item.local_name, view))
