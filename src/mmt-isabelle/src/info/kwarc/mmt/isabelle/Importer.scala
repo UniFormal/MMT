@@ -731,11 +731,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       (archive, source_path, doc_path)
     }
 
-    val isabelle_base: DPath = DPath(URI("https", "isabelle.in.tum.de"))
     def make_theory(theory: String, meta_theory: Option[MPath] = None): DeclaredTheory =
     {
       val (archive, _, _) = theory_archive(import_name(theory))
-      val module = isabelle_base ? theory
+      val module = DPath(archive.narrationBase) ? theory
       Theory.empty(module.doc, module.name, meta_theory)
     }
 

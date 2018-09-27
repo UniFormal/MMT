@@ -45,7 +45,7 @@ Here are some example invocations of the main command-line tools:
 
 * HTTP server to browse the results:
 
-      isabelle mmt_server -A isabelle_mmt
+      isabelle mmt_server -A isabelle_test
 
 * MMT shell:
 
@@ -176,7 +176,7 @@ directories given via (multiple) `-A` options are recursively searched for
 MMT archives. If the result is empty, a fresh archive is initialized
 Isabelle system options `mmt_archive_dir` etc. Thus it is possible to use
 `isabelle mmt` without any archive options and get results into a default
-directory (`isabelle_mmt`), freshly initialized on demand.
+directory (`isabelle_test`), freshly initialized on demand.
 
 Options `-B`, `-D`, `-R`, `-X`, `-a`, `-d`, `-g`, `-x` with remaining
 non-option arguments provide the standard Isabelle vocabulary to specify
@@ -214,7 +214,7 @@ the results of that tool. The command-line usage is as follows:
 Option `-A` refers to archive directories that are recursively explored as
 in `isabelle mmt_build`. In order to refer to the default archive of that
 tool (option `-I` above), it needs to be included explicitly as `-A` here:
-e.g. `isabelle mmt_server -A isabelle_mmt`.
+e.g. `isabelle mmt_server -A isabelle_test`.
 
 Option `-p` specifies an alternative HTTP server port.
 

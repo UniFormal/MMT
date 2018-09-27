@@ -15,7 +15,7 @@ option mmt_type_checking : bool = false
 
 section "Meta info for default archive"
 
-option mmt_archive_dir : string = "isabelle_mmt"
+option mmt_archive_dir : string = "isabelle_test"
 option mmt_archive_id : string = "Isabelle_Test"
 option mmt_archive_title : string = "Isabelle Test"
-option mmt_archive_narration_base : string = "https://isabelle.in.tum.de"
+option mmt_archive_narration_base : string = ""
