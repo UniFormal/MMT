@@ -244,7 +244,7 @@ object Importer
               }
             val delim = Delim(isabelle.Symbol.decode(infix.delim))
             val fixity = Infix(delim, implicit_args, 2, assoc)
-            new TextNotation(fixity, Precedence.integer(infix.pri), Some(lf.PLF._path))
+            new TextNotation(fixity, Precedence.integer(infix.pri), None)
           }
           xname_notation ::: List(infix_notation)
       }
