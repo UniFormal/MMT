@@ -350,8 +350,7 @@ object Importer
       // theory content
       val thy_draft =
         Isabelle.begin_theory(thy_export,
-          if (thy_is_pure) None else Some(archive.narrationBase / thy_source_path.implode),
-          if (thy_is_pure) None else Some(Isabelle.pure_path))
+          if (thy_is_pure) None else Some(archive.narrationBase / thy_source_path.implode))
 
       controller.add(thy_draft.thy)
       controller.add(MRef(doc.path, thy_draft.thy.path))
@@ -727,11 +726,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       (archive, source_path, doc_path)
     }
 
-    def make_theory(theory: String, meta_theory: Option[MPath] = None): DeclaredTheory =
+    def make_theory(theory: String): DeclaredTheory =
     {
       val (archive, _, _) = theory_archive(import_name(theory))
       val module = DPath(archive.narrationBase) ? theory
-      Theory.empty(module.doc, module.name, meta_theory)
+      Theory.empty(module.doc, module.name, None)
     }
 
 
@@ -1144,15 +1143,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     def theory_content(name: String): Content =
       imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
 
-    def begin_theory(thy_export: Theory_Export, thy_source: Option[URI], meta_theory: Option[MPath]): Theory_Draft =
-      new Theory_Draft(thy_export, thy_source, meta_theory)
+    def begin_theory(thy_export: Theory_Export, thy_source: Option[URI]): Theory_Draft =
+      new Theory_Draft(thy_export, thy_source)
 
-    class Theory_Draft private[Isabelle](thy_export: Theory_Export, thy_source: Option[URI], meta_theory: Option[MPath])
+    class Theory_Draft private[Isabelle](thy_export: Theory_Export, thy_source: Option[URI])
     {
       private val node_name = thy_export.node_name
       private val node_source = thy_export.node_source
 
-      val thy: DeclaredTheory = make_theory(node_name.theory, meta_theory = meta_theory)
+      val thy: DeclaredTheory = make_theory(node_name.theory)
       for (uri <- thy_source) SourceRef.update(thy, SourceRef(uri, SourceRegion.none))
 
       private val _content =
