@@ -216,6 +216,43 @@ object Importer
     def + (entry: (String, Term)): Env = new Env(rep + entry)
   }
 
+  def notation(
+    xname: Option[String],
+    implicit_args: Int,
+    syntax: isabelle.Export_Theory.Syntax): NotationContainer =
+  {
+    val notation = NotationContainer()
+
+    def prefix_notation(delim: String, impl: Int): TextNotation =
+      new TextNotation(Prefix(Delim(isabelle.Symbol.decode(delim)), impl, 0), Precedence.infinite, None)
+
+    def xname_notation: List[TextNotation] = xname.toList.map(prefix_notation(_, 0))
+
+    val text_notations =
+      syntax match {
+        case isabelle.Export_Theory.No_Syntax => xname_notation
+        case isabelle.Export_Theory.Prefix(delim) =>
+          List(prefix_notation(delim, implicit_args))
+        case infix : isabelle.Export_Theory.Infix =>
+          val infix_notation =
+          {
+            val assoc =
+              infix.assoc match {
+                case isabelle.Export_Theory.Assoc.NO_ASSOC => None
+                case isabelle.Export_Theory.Assoc.LEFT_ASSOC => Some(true)
+                case isabelle.Export_Theory.Assoc.RIGHT_ASSOC => Some(false)
+              }
+            val delim = Delim(isabelle.Symbol.decode(infix.delim))
+            val fixity = Infix(delim, implicit_args, 2, assoc)
+            new TextNotation(fixity, Precedence.integer(infix.pri), Some(lf.PLF._path))
+          }
+          xname_notation ::: List(infix_notation)
+      }
+    text_notations.foreach(notation.parsingDim.set(_))
+
+    notation
+  }
+
   val dummy_type_scheme: (List[String], isabelle.Term.Typ) = (Nil, isabelle.Term.dummyT)
 
   object Item
@@ -244,7 +281,7 @@ object Importer
     node_name: isabelle.Document.Node.Name,
     node_source: Source,
     entity: isabelle.Export_Theory.Entity,
-    syntax: Option[isabelle.Export_Theory.Infix] = None,
+    syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
     type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme)
   {
     val key: Item.Key = Item.Key(entity.kind, entity.name)
@@ -253,34 +290,10 @@ object Importer
       LocalName(node_name.theory + "," + entity.kind.toString + "," + entity.name)
     def global_name: GlobalName = constant(None, None).path
 
-    def notation: NotationContainer =
-    {
-      val notation = NotationContainer()
-      val prefix_notation =
-        new TextNotation(Prefix(Delim(entity.xname), 0, 0), Precedence.infinite, None)
-      val infix_notation =
-        syntax.map(infix =>
-        {
-          val assoc =
-            infix.assoc match {
-              case isabelle.Export_Theory.Assoc.NO_ASSOC => None
-              case isabelle.Export_Theory.Assoc.LEFT_ASSOC => Some(true)
-              case isabelle.Export_Theory.Assoc.RIGHT_ASSOC => Some(false)
-            }
-          val delim = Delim(isabelle.Symbol.decode(infix.delim))
-          val fixity = Infix(delim, type_scheme._1.length, 2, assoc)
-          new TextNotation(fixity, Precedence.integer(infix.pri), Some(lf.PLF._path))
-        })
-
-      if (infix_notation.isDefined) notation.parsingDim.set(infix_notation.get)
-      notation.parsingDim.set(prefix_notation)
-
-      notation
-    }
-
     def constant(tp: Option[Term], df: Option[Term]): Constant =
     {
-      val c = Constant(OMID(theory_path), local_name, Nil, tp, df, None, notation)
+      val notC = notation(Some(entity.xname), type_scheme._1.length, syntax)
+      val c = Constant(OMID(theory_path), local_name, Nil, tp, df, None, notC)
       for (sref <- node_source.ref(theory_source, entity.pos)) SourceRef.update(c, sref)
       c
     }
@@ -463,9 +476,10 @@ object Importer
             // term parameters
             val term_env =
               (type_env /: locale.args) {
-                case (env, (x, ty)) =>
+                case (env, ((x, ty), syntax)) =>
+                  val notC = notation(None, 0, syntax)
                   val tp = content.import_type(ty, type_env)
-                  val c = Constant(loc_thy.toTerm, LocalName(x), Nil, Some(tp), None, None)
+                  val c = Constant(loc_thy.toTerm, LocalName(x), Nil, Some(tp), None, None, notC)
                   loc_thy.add(c)
                   env + (x -> c.toTerm)
               }
@@ -1161,7 +1175,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       def declare_item(
         entity: isabelle.Export_Theory.Entity,
-        syntax: Option[isabelle.Export_Theory.Infix] = None,
+        syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
         type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
       {
         val item = Item(thy_source, thy.path, node_name, node_source, entity, syntax, type_scheme)
