@@ -272,8 +272,8 @@ object Importer
           new TextNotation(fixity, Precedence.integer(infix.pri), Some(lf.PLF._path))
         })
 
-      if (infix_notation.isDefined) notation.presentationDim.set(infix_notation.get)
-      notation.presentationDim.set(prefix_notation)
+      if (infix_notation.isDefined) notation.parsingDim.set(infix_notation.get)
+      notation.parsingDim.set(prefix_notation)
 
       notation
     }
