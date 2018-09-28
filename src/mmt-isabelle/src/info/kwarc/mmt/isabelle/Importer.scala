@@ -21,10 +21,6 @@ import utils._
  */
 object Importer
 {
-  val isabelle_init_theory: MPath = lf.PLF._path
-
-
-
   /** MMT system environment **/
 
   def init_environment(
@@ -273,7 +269,7 @@ object Importer
             }
           val delim = Delim(isabelle.Symbol.decode(infix.delim))
           val fixity = Infix(delim, type_scheme._1.length, 2, assoc)
-          new TextNotation(fixity, Precedence.integer(infix.pri), Some(isabelle_init_theory))
+          new TextNotation(fixity, Precedence.integer(infix.pri), Some(lf.PLF._path))
         })
 
       if (infix_notation.isDefined) notation.presentationDim.set(infix_notation.get)
@@ -361,7 +357,7 @@ object Importer
       controller.add(MRef(doc.path, thy_draft.thy.path))
 
       if (thy_is_pure) {
-        controller.add(PlainInclude(isabelle_init_theory, thy_draft.thy.path))
+        controller.add(PlainInclude(Isabelle.bootstrap_theory, thy_draft.thy.path))
       }
       for (parent <- thy_export.parents) {
         controller.add(PlainInclude(Isabelle.make_theory(parent).path, thy_draft.thy.path))
@@ -840,6 +836,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     /* Pure theory */
 
+    /* bootstrap theory according to MathHub/MMT/urtheories/source/isabelle.mmt */
+
+    val bootstrap_theory: MPath = lf.Typed._base ? "Isabelle"
+
     def PURE: String = isabelle.Thy_Header.PURE
     def pure_name: isabelle.Document.Node.Name = import_name(PURE)
 
@@ -857,7 +857,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             for {
               decl <- pure_theory.types
               if decl.entity.name != isabelle.Pure_Thy.DUMMY &&
-                decl.entity.name != isabelle.Pure_Thy.FUN
+                decl.entity.name != isabelle.Pure_Thy.FUN &&
+                decl.entity.name != isabelle.Pure_Thy.PROP
             } yield decl,
           consts = pure_theory.consts,
           facts = pure_theory.facts,
@@ -894,8 +895,14 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     object Prop
     {
-      lazy val path: GlobalName = pure_type(isabelle.Pure_Thy.PROP)
+      val path: GlobalName = GlobalName(bootstrap_theory, LocalName("prop"))
       def apply(): Term = OMS(path)
+    }
+
+    object Ded
+    {
+      val path: GlobalName = GlobalName(bootstrap_theory, LocalName("ded"))
+      def apply(t: Term): Term = lf.Apply(OMS(path), t)
     }
 
     object Class
@@ -1069,6 +1076,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           ty match {
             case isabelle.Term.Type(isabelle.Pure_Thy.FUN, List(a, b)) =>
               lf.Arrow(import_type(a, env), import_type(b, env))
+            case isabelle.Term.Type(isabelle.Pure_Thy.PROP, Nil) => Prop()
             case isabelle.Term.Type(name, args) =>
               val op = OMS(get_type(name).global_name)
               if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(content.import_type(_, env)))
@@ -1109,7 +1117,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       }
 
       def import_sorts(typargs: List[(String, isabelle.Term.Sort)]): List[Term] =
-        typargs.flatMap({ case (a, s) => s.map(c => lf.Apply(import_class(c), OMV(a))) })
+        typargs.flatMap({ case (a, s) => s.map(c => Ded(lf.Apply(import_class(c), OMV(a)))) })
 
       def import_prop(prop: isabelle.Export_Theory.Prop, env: Env = Env.empty): Term =
       {
@@ -1117,7 +1125,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         val sorts = import_sorts(prop.typargs)
         val vars = prop.args.map({ case (x, ty) => OMV(x) % import_type(ty, env) })
         val t = import_term(prop.term, env)
-        Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
+        Type.all(types, lf.Arrow(sorts, Ded(if (vars.isEmpty) t else lf.Pi(vars, t))))
       }
     }
 
