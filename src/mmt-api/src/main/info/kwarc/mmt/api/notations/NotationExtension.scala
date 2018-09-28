@@ -180,7 +180,32 @@ object MixfixNotation extends NotationExtension {
    }
 }
 
-case class HOAS(apply: GlobalName, bind: GlobalName, typeAtt: GlobalName)
+/**
+ * convenience apply/unapply for a HOAS application operator
+ * unapply recurses to uncurry
+ */
+class HOASApplySpine(app: GlobalName) {
+  val applyT = OMS(app)
+  def apply(f: Term, args: List[Term]) = OMA(this.applyT, f :: args)
+  def unapply(t: Term) : Option[(Term,List[Term], List[Position])] = t match {
+    case OMA(this.applyT, f :: a) =>
+       val fPos = Position(1)
+       val aPos = (1 until 1+a.length).toList.map(i => Position(1+i))
+       unapply(f) match {
+         case None =>
+           Some((f, a, fPos :: aPos))
+         case Some((g, b, q)) =>
+           val gbPos = q map {x => fPos / x} // nested terms are found as subterms of f
+           Some((g, b:::a, gbPos ::: aPos))
+       }
+    case _ => None
+  }  
+}
+
+/** tuple of HOAS symbol names */
+case class HOAS(apply: GlobalName, bind: GlobalName, typeAtt: GlobalName) {
+  val applySpine = new HOASApplySpine(apply)
+}
 
 /**
  * OMA(apply, op, args)) <--> OMA(op, args)
@@ -219,8 +244,7 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
    def constructTerm(fun: Term, args: List[Term]) = hoas.apply(fun::args)
 
    def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = t match {
-      case OMA(OMS(hoas.apply), OMS(op)::rest) =>
-         val appPos = (0 until 1+rest.length).toList.map(i => Position(1+i))
+      case hoas.applySpine(OMS(op), rest, appPos) =>
          val notations = getNotations(op)
          MyList(notations) mapFind {not =>
              if (not.canHandle(0,0,rest.length, false)) {
