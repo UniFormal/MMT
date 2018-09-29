@@ -379,8 +379,12 @@ object Importer
       {
         val context = Context(thy_draft.thy.path)
         if (options.bool("mmt_type_checking")) {
-          for (t <- tp.iterator ++ df.iterator) check_term(controller, context, t)
-          if (tp.isDefined && df.isDefined) check_term_type(controller, context, df.get, tp.get)
+          for (t <- tp.iterator ++ df.iterator if t != Isabelle.Unknown.term) {
+            check_term(controller, context, t)
+          }
+          if (tp.isDefined && df.isDefined && df.get != Isabelle.Unknown.term) {
+            check_term_type(controller, context, df.get, tp.get)
+          }
         }
         val c = item.constant(tp, df)
         controller.add(c)
@@ -446,7 +450,7 @@ object Importer
           decl_error(decl.entity) {
             val item = thy_draft.declare_item(decl.entity)
             val tp = thy_draft.content.import_prop(decl.prop)
-            add_constant(item, Some(tp), None)
+            add_constant(item, Some(tp), Some(Isabelle.Unknown.term))
           }
         }
 
@@ -887,6 +891,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     def pure_type(name: String): GlobalName = pure_entity(pure_theory.types.map(_.entity), name)
     def pure_const(name: String): GlobalName = pure_entity(pure_theory.consts.map(_.entity), name)
+
+    object Unknown
+    {
+      val path: GlobalName = GlobalName(bootstrap_theory, LocalName("unknown"))
+      val term: Term = OMS(path)
+    }
 
     object Type
     {
