@@ -13,7 +13,7 @@ In particular, the following versions from 30-Sep-2018 should fit together:
 
   * Isabelle/b96dd4963e2d
   * AFP/854bc290d72b
-  * MMT/fd839f9cc9c8
+  * MMT/a17ada923bcf
   * MathHub/MMT/urtheories/90ce1411f808
 
 
