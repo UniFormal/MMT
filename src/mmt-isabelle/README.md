@@ -9,9 +9,9 @@ https://isabelle.sketis.net/devel/release_snapshot or a repository clone
 from http://isabelle.in.tum.de/repos/isabelle -- see also its
 `README_REPOSITORY` file with the all-important **Quick start in 30min**.
 
-In particular, the following versions from 30-Sep-2018 should fit together:
+In particular, the following versions from 01-Oct-2018 should fit together:
 
-  * Isabelle/b96dd4963e2d
+  * Isabelle/4b06a20b13b5
   * AFP/854bc290d72b
   * MMT/a17ada923bcf
   * MathHub/MMT/urtheories/90ce1411f808
