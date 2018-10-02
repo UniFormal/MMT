@@ -158,6 +158,7 @@ object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OM
   private def constructPolynomial(varName: String, ls : List[BigDecimal]) : Term = ApplySpine(
     OMS(MitM.polycons),
     NatRules.NatLit(ls.length),
+    OMS((MitM.basepath / "smglom" / "algebra") ? "RationalField" ? "rationalField"),
     StringLiterals.apply(varName),
     Sequences.flatseq(ls.map(_.toBigInt).map(NatRules.NatLit.of):_*)
   )

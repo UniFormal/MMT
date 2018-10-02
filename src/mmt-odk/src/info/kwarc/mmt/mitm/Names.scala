@@ -1,11 +1,12 @@
 package info.kwarc.mmt.mitm
 
-import info.kwarc.mmt.api.{DPath, uom}
+import info.kwarc.mmt.api.{DPath, MPath, uom}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.refactoring.{Preprocessor, SimpleParameterPreprocessor}
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardNat, StandardPositive}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{ApplySpine, LFClassicHOLPreprocessor}
+import info.kwarc.mmt.odk.LFX.LFRecSymbol
 
 object MitM {
   val basepath = DPath(URI("http","mathhub.info") / "MitM")
@@ -85,4 +86,17 @@ object MitM {
     exists = Some(MitM.exists),
     equal = Some(eq)
   )).withKey("MitM").withKey(logic)
+}
+
+object ModelsOf extends LFRecSymbol("ModelsOf") {
+  // val path2 = Records.path ? "ModelsOfUnary"
+  // val term2 = OMS(path2)
+  def apply(mp : MPath, args : Term*) = OMA(this.term,List(OMPMOD(mp,args.toList)))
+  def apply(t : Term) = OMA(this.term,List(t))
+  def unapply(t : Term) : Option[Term] = t match {
+    case OMA(this.term, List(tm)) => Some(tm)
+    // case OMA(this.term2,List(OMMOD(mp))) => Some(OMMOD(mp))
+    case OMA(this.term, OMMOD(mp) :: args) => Some(OMPMOD(mp,args))
+    case _ => None
+  }
 }

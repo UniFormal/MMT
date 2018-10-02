@@ -15,6 +15,8 @@ import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, RuleConstant, Structure}
 import info.kwarc.mmt.mitm.MitM
 
+import scala.collection.mutable
+
 object IntegerLiterals extends RepresentedRealizedType(z,Z)
 object NatLiterals extends RepresentedRealizedType(n,N)
 object PosLiterals extends RepresentedRealizedType(p,P)
@@ -223,6 +225,7 @@ class SubtypeJudgRule(val tm1 : Term, val tm2 : Term, val by : GlobalName) exten
     Some(true)
   }
 }
+
 
 object subtypeJudg {
   val name = "subtypeJudge"

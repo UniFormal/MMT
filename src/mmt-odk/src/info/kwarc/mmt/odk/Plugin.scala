@@ -15,9 +15,11 @@ import uom._
 import utils._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.mitm.MitM
-import info.kwarc.mmt.odk.OpenMath.CodingServer
+import info.kwarc.mmt.odk.OpenMath.{CodingServer, OMInteger, OMString}
 import info.kwarc.mmt.odk.SCSCP.Server.MitMServer
+import info.kwarc.mmt.odk.Sage.Sage
 import info.kwarc.mmt.odk.Singular.SingularImporter
+import info.kwarc.mmt.sequences.Sequences
 
 import scala.util.Try
 
@@ -188,7 +190,26 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
 
 class GAPSystem(serverurl : String, port : Int = 26133) extends VREWithAlignmentAndSCSCP("GAP",Systems.gapsym,"ODK/GAP",serverurl,port)
 class SingularSystem(serverurl : String, port : Int = 26133) extends VREWithAlignmentAndSCSCP("Singular",Systems.singularsym,"ODK/Singular",serverurl,port)
-class SageSystem(serverurl : String, port : Int = 26133) extends VREWithAlignmentAndSCSCP("Sage",Systems.sagesym,"ODK/Sage",serverurl,port)
+class SageSystem(serverurl : String, port : Int = 26133) extends VREWithAlignmentAndSCSCP("Sage",Systems.sagesym,"ODK/Sage",serverurl,port) {
+  object NonTrivials extends StatelessTraverser {
+    val nf = Sage.Sage.docpath ? """sage.rings.number_field.number_field""" ? "NumberField"
+    override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+      case ApplySpine(OMS(MitM.polycons),List(_,r,_,lst)) =>
+        val ls = Sequences.flatseq.unapplySeq(lst).getOrElse(return t)
+        OMA(r,ls.toList)
+      case OMA(OMS(MitM.polycons),List(_,r,_,lst)) =>
+        val ls = Sequences.flatseq.unapplySeq(lst).getOrElse(return t)
+        OMA(r,ls.toList)
+      case ApplySpine(OMS(`nf`),a :: Nil) =>
+        OMA(OMS(`nf`),List(a,StringLiterals("x")))
+      case OMA(OMS(`nf`),a :: Nil) =>
+        OMA(OMS(`nf`),List(a,StringLiterals("x")))
+      case _ => Traverser(this,t)
+    }
+  }
+
+  override def translateToSystem(t: Term): Term = NonTrivials(super.translateToSystem(t),Context.empty)
+}
 
 object RemoteGAPSystem extends GAPSystem("neptune.eecs.jacobs-university.de")
 
