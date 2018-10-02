@@ -11,7 +11,7 @@ from http://isabelle.in.tum.de/repos/isabelle -- see also its
 
 In particular, the following versions from 01-Oct-2018 should fit together:
 
-  * Isabelle/4b06a20b13b5
+  * Isabelle/b7274dfbf4b3
   * AFP/854bc290d72b
   * MMT/a17ada923bcf
   * MathHub/MMT/urtheories/90ce1411f808
@@ -93,10 +93,10 @@ The subsequent setup works well for hardware with 64 GB of main memory:
 
 Examples:
 
-      isabelle mmt_import -a -X doc
-      isabelle mmt_import -d '$AFP' -B HOL-Analysis -X doc -X slow
-      isabelle mmt_import -d '$AFP' -a -X doc -X slow
-      isabelle mmt_import -d '$AFP' -a -X doc -X very_slow
+      isabelle mmt_import -a -X doc -X no_doc
+      isabelle mmt_import -d '$AFP' -B HOL-Analysis -X doc -X no_doc -X slow
+      isabelle mmt_import -d '$AFP' -a -X doc -X no_doc -X slow
+      isabelle mmt_import -d '$AFP' -a -X doc -X no_doc -X very_slow
 
 Here `$AFP` refers to the Isabelle settings variable provided by the Archive
 of Formal Proofs as Isabelle component (using a suitable `init_component`
@@ -117,7 +117,7 @@ serves as catch-all pattern.
 Since all sessions in AFP are guaranteed to belong to the chapter `AFP`, the
 following works for Isabelle + AFP as one big import process:
 
-      isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X slow -x HOL-ODE-Numerics
+      isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X no_doc -X slow -x HOL-ODE-Numerics
 
 Note that other Isabelle applications may have their own chapter naming
 scheme, or re-use official Isabelle chapter names; if nothing is specified,

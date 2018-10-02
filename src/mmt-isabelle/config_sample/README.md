@@ -38,8 +38,14 @@ $ISABELLE_HOME_USER (cf. `isabelle getenv ISABELLE_HOME_USER`).
 Example command-line invocation
 ===============================
 
+    # build Isabelle/MMT tool
     isabelle mmt_build
-    isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X slow -x HOL-ODE-Numerics
+
+    # import Isabelle (without documentation sessions)
+    isabelle mmt_import -A content/MathHub -C _=Distribution -a -X doc -X no_doc
+
+    # import Isabelle + AFP (without exceedingly slow sessions)
+    isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X no_doc -X slow -x HOL-ODE-Numerics
 
 This takes about 1 day. It puts AFP sessions into the "Isabelle/AFP"
 archive, and everything else into the "Isabelle/Distribution" archive of
