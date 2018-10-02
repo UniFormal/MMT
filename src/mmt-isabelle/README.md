@@ -117,7 +117,7 @@ serves as catch-all pattern.
 Since all sessions in AFP are guaranteed to belong to the chapter `AFP`, the
 following works for Isabelle + AFP as one big import process:
 
-      isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X no_doc -X slow -x HOL-ODE-Numerics
+      isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X no_doc -X slow -x HOL-ODE-Numerics -x HLDE
 
 Note that other Isabelle applications may have their own chapter naming
 scheme, or re-use official Isabelle chapter names; if nothing is specified,
