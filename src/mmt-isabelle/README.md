@@ -13,8 +13,8 @@ In particular, the following versions from 01-Oct-2018 should fit together:
 
   * Isabelle/b7274dfbf4b3
   * AFP/854bc290d72b
-  * MMT/a17ada923bcf
-  * MathHub/MMT/urtheories/90ce1411f808
+  * MMT/9fd420f8f0ee
+  * MathHub/MMT/urtheories/703627a3213f
 
 
 ## Setup
