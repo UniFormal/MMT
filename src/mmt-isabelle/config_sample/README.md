@@ -45,7 +45,7 @@ Example command-line invocation
     isabelle mmt_import -A content/MathHub -C _=Distribution -a -X doc -X no_doc
 
     # import Isabelle + AFP (without exceedingly slow sessions)
-    isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X no_doc -X slow -x HOL-ODE-Numerics -x HLDE
+    isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X no_doc -X slow -x HOL-ODE-Numerics -x Diophantine_Eqns_Lin_Hom -x HLDE
 
 This takes about 1 day. It puts AFP sessions into the "Isabelle/AFP"
 archive, and everything else into the "Isabelle/Distribution" archive of
