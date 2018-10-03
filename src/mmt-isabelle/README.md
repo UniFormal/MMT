@@ -9,7 +9,7 @@ https://isabelle.sketis.net/devel/release_snapshot or a repository clone
 from http://isabelle.in.tum.de/repos/isabelle -- see also its
 `README_REPOSITORY` file with the all-important **Quick start in 30min**.
 
-In particular, the following versions from 01-Oct-2018 should fit together:
+In particular, the following versions from Oct-2018 should fit together:
 
   * Isabelle/742c88258cf8
   * AFP/854bc290d72b
