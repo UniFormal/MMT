@@ -13,7 +13,7 @@ In particular, the following versions from 01-Oct-2018 should fit together:
 
   * Isabelle/742c88258cf8
   * AFP/854bc290d72b
-  * MMT/9fd420f8f0ee
+  * MMT/1b24663b4c4e
   * MathHub/MMT/urtheories/703627a3213f
 
 The frozen snapshot https://isabelle.sketis.net/devel/Isabelle_03-Oct-2018
