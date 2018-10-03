@@ -11,10 +11,13 @@ from http://isabelle.in.tum.de/repos/isabelle -- see also its
 
 In particular, the following versions from 01-Oct-2018 should fit together:
 
-  * Isabelle/b7274dfbf4b3
+  * Isabelle/742c88258cf8
   * AFP/854bc290d72b
   * MMT/9fd420f8f0ee
   * MathHub/MMT/urtheories/703627a3213f
+
+The frozen snapshot https://isabelle.sketis.net/devel/Isabelle_03-Oct-2018
+should be available over some months; it corresponds to Isabelle/742c88258cf8.
 
 
 ## Setup
