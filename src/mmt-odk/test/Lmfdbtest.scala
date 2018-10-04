@@ -20,7 +20,7 @@ object Lmfdbtest {
 
        server on 8080
        extension info.kwarc.mmt.odk.Plugin
-    """.split("\n").foreach(controller.handleLine(_).throwErrorIfAny())
+    """.split("\n").foreach(controller.handleLine(_))
 
     val c = controller.get(Path.parse("http://www.lmfdb.org/db/elliptic_curves?curves?11a1")).asInstanceOf[FinalConstant]
     val d = controller.get(Path.parse("http://www.lmfdb.org/db/elliptic_curves?curves?35a2")).asInstanceOf[FinalConstant]
