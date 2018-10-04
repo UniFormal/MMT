@@ -29,16 +29,21 @@ abstract class Test(archivepath : String,
   def logPrefix = "user"
   def report = controller.report
 
-  // If you want to log additional stuff, just put it in this list
-
+  // setup logging
   controller.handleLine("log console")
-  if (logfile.isDefined) controller.handleLine("log html " + logfile.get)// /home/raupi/lmh/mmtlog.txt")
+  logfile.foreach(lf => controller.handleLine("log html " + lf))
   ("test" :: logprefixes) foreach (s => controller.handleLine("log+ " + s))
+
+  // add the archives
+  controller.handleLine("mathpath archive " + archivepath)
+  controller.handleLine("lmh root " + archivepath)
+
+  // add the plugins
   controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
   controller.handleLine("extension info.kwarc.mmt.odk.Plugin")
   controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
   // controller.handleLine("extension info.kwarc.mmt.metamath.Plugin")
-  controller.handleLine("mathpath archive " + archivepath)
+
   controller.handleLine(("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath).trim)
 
 
@@ -65,7 +70,10 @@ abstract class Test(archivepath : String,
         controller.handleLine("server on " + serverport.get)
       }
       if (gotoshell) {
-        Future {Run.main(Array())}(scala.concurrent.ExecutionContext.global)
+        Future {
+          Run.disableFirstRun = true
+          Run.main(Array())
+        }(scala.concurrent.ExecutionContext.global)
         Thread.sleep(1000)
       }
       run
@@ -91,12 +99,18 @@ abstract class DennisTest(prefixes : String*) extends Test(
 ) {
 }
 
+object TomTest {
+  val tomMathHub = System.getProperty("user.home") + "/Projects/gl.mathhub.info"
+  val tomAlignments = tomMathHub + "/alignments/Public"
+}
+
+
 abstract class TomTest(prefixes : String*) extends Test(
-  "/home/twiesing/Projects/KWARC/MathHub/localmh/MathHub",
+  TomTest.tomMathHub,
   prefixes.toList,
-  "/home/twiesing/Projects/KWARC/MathHub/localmh/MathHub/alignments/Public",
+  TomTest.tomAlignments,
   Some(8080),
-  true,
+  false,
   None
 )
 
