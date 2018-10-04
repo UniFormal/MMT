@@ -149,9 +149,14 @@ object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OM
     // and then make an actual polynomial term
     case JSONString(s) =>
       val factorMap = extractPolyFactors(parsePoly(s))
-      val varname = factorMap.keys.head
-      constructPolynomial(varname, factorMap(varname))
-    case _ => throw new Exception("not a polynomial")
+      if(factorMap.keys.nonEmpty){
+        val varname = factorMap.keys.head
+        constructPolynomial(varname, factorMap(varname))
+      } else {
+        constructPolynomial("x", List(0))
+      }
+    // case JSONInt(i) => decode(JSONString(i.toString)) // to interpret integers as polynomials
+    case _ => throw new Exception(s"not a polynomial: Expected a JSONString, but got a ${c.getClass}: ${c.toCompactString}")
   }
 
   // Constructs a polynomial out of a list of rational numbers
@@ -203,7 +208,9 @@ object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OM
 
     // find all the individual parts
     var partRE = """\*?([aA-zZ])(?:\^([+-]?\d+(?:\.\d+)?))?""".r
-    val theParts = partRE.findAllMatchIn(factorRE.replaceAllIn(s, "")).map(m => (m.group(1), BigDecimal(m.group(2))))
+    val theParts = partRE.findAllMatchIn(factorRE.replaceAllIn(s, "")).map(m =>
+      (m.group(1), BigDecimal(Option(m.group(2)).getOrElse("1")))
+    )
 
     // return the extracted factor and list
     (theFactor, theParts.toList)
@@ -226,15 +233,25 @@ object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OM
 
   /** given a parsed set of factors, returns a map of poly factors */
   private def extractPolyFactors(parts: List[(BigDecimal, List[(String, BigDecimal)])]): Map[String, List[BigDecimal]] = {
-    val map = mutable.Map[String, mutable.Buffer[BigDecimal]]() // the map of a single polynomial
+    val map = mutable.Map[String, mutable.ListBuffer[BigDecimal]]() // the map of a single polynomial
+
+    val powers = parts.flatMap(fl => fl._2.map(_._2))
+    val maxIndex = if(powers.isEmpty) 0 else powers.max.toIntExact
+
+    def setPower(variable: String, power: Int, value: BigDecimal): Unit = {
+      if(!map.contains(variable)){
+        map(variable) = mutable.ListBuffer.fill(maxIndex + 1)(BigDecimal(0))
+      }
+      map(variable)(power) = value
+    }
 
     // create appropriate buffers for each variable
     parts.foreach(part => {
+      if(part._2.isEmpty){
+        setPower("x", 0, part._1)
+      }
       part._2.foreach(sd => {
-        if(!map.contains(sd._1)){
-          map(sd._1) = mutable.Buffer[BigDecimal]()
-        }
-        map(sd._1)(sd._2.toIntExact) = part._1
+        setPower(sd._1, sd._2.toIntExact, part._1)
       })
     })
 
