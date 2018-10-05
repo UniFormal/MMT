@@ -113,6 +113,8 @@ abstract class RuleSet extends Rule {self =>
 class MutableRuleSet extends RuleSet {
    private val rules = new HashSet[Rule]
 
+  def add(r : Rule*) = r.foreach(rules += _)
+
    /* Its construction and use corresponds to algebraic theories. */
    def declares(rs: Rule*) {rs foreach {rules += _}}
    def imports(rss: RuleSet*) {rss foreach {rules ++= _.getAll}}

@@ -48,7 +48,13 @@ class Plugin extends ChangeListener {
     }
   }
 
-  def getRule : ComputationRule = new ComputationRule(Systems.evalSymbol) {
+  def simplify(tm : Term, con : Context) = {
+    val rs = RuleSet.collectRules(controller,con)
+    rs.add(getRule(con))
+    controller.simplifier.apply(tm,con,rs,expDef=true)
+  }
+
+  def getRule(con : Context) : ComputationRule = new ComputationRule(Systems.evalSymbol) {
     override def alternativeHeads: List[GlobalName] = List(Apply.path)
 
     override def applicable(tm: Term): Boolean = tm match {
@@ -62,7 +68,7 @@ class Plugin extends ChangeListener {
         case ApplySpine(OMS(Systems.evalSymbol),List(OMS(s),t)) => (s,t)
         case _ => return Simplifiability.NoRecurse
       }
-      Simplify(callVRE(check.simplify(subtm),sys))
+      Simplify(callVRE(simplify(subtm,con),sys))
     }
   }
 
