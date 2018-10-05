@@ -48,7 +48,10 @@ class Plugin extends ChangeListener {
     }
   }
 
-  def simplify(tm : Term, con : Context) = {
+  def simplify(tm : Term, conO : Option[Context]) = {
+    val con = conO.getOrElse {
+      controller.getTheory(MitM.mathpath).getInnerContext
+    }
     val rs = RuleSet.collectRules(controller,con)
     rs.add(getRule(con))
     controller.simplifier.apply(tm,con,rs,expDef=true)
@@ -68,7 +71,7 @@ class Plugin extends ChangeListener {
         case ApplySpine(OMS(Systems.evalSymbol),List(OMS(s),t)) => (s,t)
         case _ => return Simplifiability.NoRecurse
       }
-      Simplify(callVRE(simplify(subtm,con),sys))
+      Simplify(callVRE(simplify(subtm,Some(con)),sys))
     }
   }
 
