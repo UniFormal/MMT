@@ -3,7 +3,7 @@ package info.kwarc.mmt.odk.SCSCP.Server
 import info.kwarc.mmt.odk.SCSCP.Protocol._
 import info.kwarc.mmt.odk.SCSCP.Lowlevel.Readers.SCSCPReader
 import info.kwarc.mmt.odk.SCSCP.Lowlevel.Writers.SCSCPWriter
-import java.net.Socket
+import java.net.{InetSocketAddress, Socket}
 
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.odk.OpenMath._
@@ -15,10 +15,12 @@ import scala.collection.mutable
 /** Represents a single client connected to the server */
 class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = "UTF-8") {
 
+  /** logs a debug message */
+  def debug(s: String): Unit = server.debug(s"client $identifier: $s")
+
   /** An identifier for this client, which is unique within the server */
   // TODO: Do not rely on the port and remote IP to be given by the string
-  val identifier: String = socket.getInetAddress.toString
-
+  val identifier: String = s"${socket.getInetAddress.getHostName}:${socket.getPort}"
   // create reader and writer instances
   val reader: SCSCPReader = new SCSCPReader(socket.getInputStream, encoding)
   val writer: SCSCPWriter = new SCSCPWriter(socket.getOutputStream, encoding)
@@ -60,6 +62,7 @@ class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = 
       // did it also send a supported version
       val client_version = pi(SCSCPAttributes.VERSION)
       if (!SCSCPConstants.VERSIONS.contains(client_version)) {
+        debug("got unsupported scscp version")
         quit(Some("unsupported version"))
         throw new UnsupportedProtocolVersion()
       }
@@ -68,6 +71,8 @@ class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = 
       // make a PI for the version
       val version_pi = SCSCPPi(Map((SCSCPAttributes.VERSION, client_version)))
       writer.write(version_pi)
+
+      debug(s"negotiated scscp version $client_version")
 
       // and return it
       client_version
@@ -81,6 +86,8 @@ class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = 
     * @param reason Reason for quitting. Optional.
     */
   def quit(reason: Option[String] = None): Unit = {
+    debug(s"quitting: ${reason.getOrElse("")}")
+
     // build the reason
     val mp: Map[String, String] = reason match {
       case Some(r) => Map((SCSCPAttributes.REASON, r))
@@ -121,6 +128,8 @@ class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = 
   private def processPi(pi: SCSCPPi): Unit = {
     // read info messages
     if (pi.attributes.contains(SCSCPAttributes.INFO)) {
+      debug(s"handling client INFO")
+
       val msg = pi(SCSCPAttributes.INFO)
       info.enqueue(msg)
       onInfo(msg)
@@ -128,16 +137,20 @@ class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = 
       // when the client has quit
       // we should just end it all
     } else if (pi.key.contains(SCSCPMessageKeys.QUIT)) {
-      val reason = pi.attributes.lift(SCSCPAttributes.REASON)
+      debug(s"handling client QUIT")
+
+      val reason = pi.attributes.get(SCSCPAttributes.REASON)
       socket.close()
 
       hasQuit = true
       onQuit(reason)
     } else if (pi.key.contains(SCSCPMessageKeys.TERMINATE)) {
+      debug(s"handling client TERMINATE")
       // As per spec, we can compute the computation either way
       // for simplicity of implementation we actually will
       // and just ignore this instruction
     } else {
+      debug(s"got unknown processing instruction")
       // as per spec, we ignore unknown processing instructions
       // throw new UnknownProcessingInstruction()
     }
@@ -145,6 +158,8 @@ class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = 
 
   /** handles a single procedure call */
   private def processOM(om: OMObject): Unit = {
+
+    debug(s"handling object (procedure call): $om")
 
     // figure out what call to make
     val call = SCSCPCall.parse(om)
@@ -159,9 +174,12 @@ class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = 
       // get the handler for the right procedure
       val handler = server.getHandler(call.procedure)
 
+
       // make the computation and store the result
       // we do this by
+      debug(s"calling handler $handler")
       val result = handler.handle(this, call.arguments, call.parameters: _*)
+      debug(s"handler returned result $result")
 
       // and prepare a response
       call.arguments.return_method.getOrElse(SCSCPReturnObject) match {
@@ -178,13 +196,16 @@ class SCSCPServerClient(socket: Socket, server: SCSCPServer, encoding: String = 
       }
     } catch {
       case e :SignatureMismatchException =>
+        debug(s"caught signature mismatch in call: $e")
         SCSCPTerminated(OMError(scscp1(scscp1.errorSystemSpecific),
           OMString("expected signature: " + e.getExpected + ", actual: " + e.getActual, None) :: Nil, None, None), returnparams)
       case e: Exception =>
+        debug(s"caught exception in call: $e")
         SCSCPTerminated(OMError(scscp1(scscp1.errorSystemSpecific), OMString(e.getClass.getCanonicalName, None) :: Nil, None, None), returnparams)
     }
 
     // and write the result
+    debug(s"writing call result: $retvat")
     writer.write(retvat.toObject)
   }
 

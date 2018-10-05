@@ -1,7 +1,10 @@
 package info.kwarc.mmt.odk.SCSCP.Server
 
 import info.kwarc.mmt.api.frontend.Extension
-import info.kwarc.mmt.odk.{GAPSystem, SageSystem, SingularSystem}
+import info.kwarc.mmt.api.objects.OMID
+import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.odk.OpenMath.Coding.OMMMTCoding
+import info.kwarc.mmt.odk.{GAPSystem, SageSystem, SingularSystem, Systems}
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.odk.SCSCP.CD.{SymbolSet, scscp1, scscp2}
 import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
@@ -15,7 +18,7 @@ import scala.concurrent.Future
 class MitMServer extends Extension {
   override def logPrefix: String = "mitm"
 
-  var server : SCSCPServer = null //
+  var server : Option[SCSCPServer] = None //
 
   implicit val ec = scala.concurrent.ExecutionContext.global
 
@@ -23,22 +26,52 @@ class MitMServer extends Extension {
     // connect the handlers for registerServer and removeServer
 
     // and serve it forever
-    // TODO should maybe be refactored to use ServerExtension instead, but I'm not sure how incompatible all of
-    // TODO Tom's code is with that
     Future {
       try {
-        server = SCSCPServer("MitMServer", "1.0", "MitMServer")
-        server.register(OMSymbol("registerServer", "mitm_transient", None, None), RegisterServerHandler)
-        server.register(OMSymbol("removeServer", "mitm_transient", None, None), RemoveServerHandler)
-        server.register(OMSymbol("getAllServers", "mitm_transient", None, None), GetAllServersHandler)
-        server.processForever()
+        val theServer = SCSCPServer("MitMServer", "1.0", "MitMServer", {s => log(s)})
+        log("Starting SCSCP Server on 0.0.0.0:26133")
+        server = Some(theServer)
+        theServer.register(OMSymbol("mitmEval", "mitm_transient", None, None), MiTMEvalHandler)
+        theServer.register(OMSymbol("registerServer", "mitm_transient", None, None), RegisterServerHandler)
+        theServer.register(OMSymbol("removeServer", "mitm_transient", None, None), RemoveServerHandler)
+        theServer.register(OMSymbol("getAllServers", "mitm_transient", None, None), GetAllServersHandler)
+        theServer.processForever()
+        log("SCSCP Server stopped")
       } catch {
         case e : java.net.BindException =>
           log("SCSCP Server already running")
           controller.extman.removeExtension(this)
+        case f: Exception =>
+          log(s"got exception: $f")
       }
     }
   }
+
+  override def destroy: Unit = {
+    server.foreach(_.quit(None))
+  }
+
+  object MiTMEvalHandler extends SCSCPHandler {
+    override val min: Int = 1
+    override val max: Int = 1
+
+    /** a coding to decode / encode MMT terms */
+    protected val coding = new OMMMTCoding(URI(controller.getBase.toPath))
+
+    override val signature = None
+
+    /** the odk plugin, so that we can interact and call it */
+    protected lazy val odkPlugin: info.kwarc.mmt.odk.Plugin  = controller.extman.get(classOf[info.kwarc.mmt.odk.Plugin]).head
+
+    def handle(client: SCSCPServerClient, arguments: SCSCPCallArguments, parameters: OMExpression*): OMExpression = {
+      val theTerm = OMID(Systems.evalSymbol)(parameters.map(coding.encode): _*)
+      log(s"client ${client.identifier} -> MiTM: ${theTerm.toString}")
+      val theResult = odkPlugin.simplify(theTerm, None)
+      log(s"MitM -> client ${client.identifier}: ${theResult.toString}")
+      coding.decode(theResult).asInstanceOf[OMExpression]
+    }
+  }
+
 
   /**
     * Registers the server in the MitM proxy and returns the id of the server.
@@ -47,7 +80,7 @@ class MitMServer extends Extension {
     override val min: Int = 1
     override val max: Int = 2
     // i.e. the signature is address: string, port: integer
-    override val signature = SymbolSet(List(OMSymbol("string", "omtypes", None, None), OMSymbol("integer", "omptypes", None, None)))
+    override val signature = Some(SymbolSet(List(OMSymbol("string", "omtypes", None, None), OMSymbol("integer", "omptypes", None, None))))
 
     def handle(client: SCSCPServerClient, arguments: SCSCPCallArguments, parameters: OMExpression*): OMExpression = {
       val listOfArgs = parameters.toList
@@ -60,7 +93,7 @@ class MitMServer extends Extension {
   object RemoveServerHandler extends SCSCPHandler {
     override val min: Int = 1
     override val max: Int = 1
-    override val signature = SymbolSet(List(OMSymbol("string", "omtypes", None, None)))
+    override val signature = Some(SymbolSet(List(OMSymbol("string", "omtypes", None, None))))
     def handle(client: SCSCPServerClient, arguments: SCSCPCallArguments, parameters: OMExpression*): OMExpression = {
       val server = getArgAsString(parameters.toList, 0)
       MitMDatabase.removeServer(server.text)
@@ -70,7 +103,7 @@ class MitMServer extends Extension {
   object GetAllServersHandler extends SCSCPHandler {
     override val min: Int = 0
     override val max: Int = 0
-    override val signature = SymbolSet(Nil)
+    override val signature = Some(SymbolSet(Nil))
 
     override def handle(client: SCSCPServerClient, arguments: SCSCPCallArguments, parameters: OMExpression*): OMExpression = {
       var listOfServers : List[OMString] = List()
@@ -112,16 +145,16 @@ class MitMServer extends Extension {
             args match {
               // bound number of args + bound domain
               case List(`symbol`, OMInteger(min, None), OMInteger(max, None), sig:OMApplication) =>
-                mitm.server.register(symbol, new RemoteCallHandler(client, min.toInt, max.toInt, sig, symbol))
+                mitm.server.get.register(symbol, new RemoteCallHandler(client, min.toInt, max.toInt, sig, symbol))
               // unbound number of args + bound domain
               case List(`symbol`, OMInteger(min, None), `infinity`, sig:OMApplication) =>
-                mitm.server.register(symbol, new RemoteCallHandler(client, min.toInt, -1, sig, symbol))
+                mitm.server.get.register(symbol, new RemoteCallHandler(client, min.toInt, -1, sig, symbol))
               // bound number of args + unbound domain
               case List(`symbol`, OMInteger(min, None), OMInteger(max, None), `unboundDomain`) =>
-                mitm.server.register(symbol, new RemoteCallHandler(client, min.toInt, max.toInt, SymbolSet(Nil), symbol))
+                mitm.server.get.register(symbol, new RemoteCallHandler(client, min.toInt, max.toInt, SymbolSet(Nil), symbol))
               // unbound number of args + unbound domain
               case List(`symbol`, OMInteger(min, None), `infinity`, `unboundDomain`) =>
-                mitm.server.register(symbol, new RemoteCallHandler(client, min.toInt, -1, SymbolSet(Nil), symbol))
+                mitm.server.get.register(symbol, new RemoteCallHandler(client, min.toInt, -1, SymbolSet(Nil), symbol))
               case _ =>
                 throw new RemoteServerException
             }
@@ -139,7 +172,7 @@ class MitMServer extends Extension {
       val client = mapOfServerNamesToClients(serverID)
       val listOfFunctions = mapOfServersToFunctions.get(serverID)
       for (symbol : OMSymbol <- listOfFunctions.get) {
-        mitm.server.unregister(symbol)
+        mitm.server.foreach(_.unregister(symbol))
       }
       client.quit()
       mapOfServerNamesToClients -= serverID
@@ -155,7 +188,7 @@ class MitMServer extends Extension {
 class RemoteCallHandler(CAS: SCSCPClient, minArgs: Int, maxArgs: Int, sig: OMApplication, symbol: OMSymbol) extends SCSCPHandler {
   override val min: Int = minArgs
   override val max: Int = maxArgs
-  override val signature = sig
+  override val signature = Some(sig)
 
   override def handle(client: SCSCPServerClient, arguments: SCSCPCallArguments, parameters: OMExpression*): OMExpression =
     CAS(new SCSCPCall(symbol, SCSCPCallArguments(CAS.newCallId, Some(SCSCPReturnObject), null), parameters: _*)).fetch().get

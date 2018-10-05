@@ -4,7 +4,7 @@ import java.io.InputStream
 
 import info.kwarc.mmt.api.utils.JSON
 import info.kwarc.mmt.odk.OpenMath.Coding.{OMJSONCoding, OMXMLCoding}
-import info.kwarc.mmt.odk.OpenMath.OMObject
+import info.kwarc.mmt.odk.OpenMath.{OMAny, OMObject}
 import info.kwarc.mmt.odk.SCSCP.Lowlevel._
 
 import scala.collection.mutable.ListBuffer
@@ -114,19 +114,19 @@ class SCSCPReader(val stream: InputStream, val encoding: String = "UTF-8") {
         if (inst == END_INST) {
           try {
 
-            // try to read JSON
+            // try and read json
             try {
-              val xml = xmlCoder(scala.xml.XML.loadString(buffer.toString))
-              _codingState = XMLState
-              return xml
+              val json: OMObject = jsonCoder(JSON.parse(buffer.toString))
+              _codingState = JSONState
+              return json
             } catch {
               case e: Exception =>
             }
 
-            // then try to read JSON
-            val json = jsonCoder(JSON.parse(buffer.toString))
-            _codingState = JSONState
-            return json
+            // try and read xml
+            val xml: OMObject = xmlCoder(scala.xml.XML.loadString(buffer.toString))
+            _codingState = XMLState
+            return xml
 
           } catch {
             case e: Exception => throw new OpenMathParsingFailure(e)

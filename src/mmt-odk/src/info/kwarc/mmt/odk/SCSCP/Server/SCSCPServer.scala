@@ -27,6 +27,9 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   private val handlers = mutable.Map[OMSymbol, SCSCPHandler]()
   private val client_map = mutable.Map[String, SCSCPServerClient]()
 
+  /** prints a debug message, to be overwritten by sub class */
+  def debug(message: String): Unit = {}
+
   /** a list of clients connected to this server */
   def clients : List[SCSCPServerClient] = {
     client_map.toList.map(_._2)
@@ -40,12 +43,12 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     */
   def register(symbol: OMSymbol, handler: SCSCPHandler) {
     // TODO: Figure out relative paths, etc.
-
     if (handlers.isDefinedAt(symbol)) {
       throw new Exception("Handler already defined for symbol: " + symbol)
     }
 
     handlers(symbol) = handler
+    debug(s"Registered handler for ${symbol.toString}")
   }
 
   // register the default handlers
@@ -82,13 +85,17 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     }
 
     handlers -= symbol
+    debug(s"Unregistered handler for ${symbol.toString}")
   }
 
-  /** Processes forever, blocking */
+  /** a boolean indicating if we have quit the server */
+  private var hasQuit: Boolean = false
+
+  /** Processes forever until  */
   def processForever() {
 
     // process stuff forever
-    while(true){
+    while(!hasQuit){
       process()
       Thread.sleep(10)
     }
@@ -128,6 +135,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     try {
       val client = new SCSCPServerClient(socket, this, encoding)
       client_map(client.identifier) = client
+      debug(s"added client ${client.identifier}")
     } catch {
       case p: ProtocolError =>
     }
@@ -140,6 +148,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
       if (!c.connected) {
         c.quit()
         client_map -= c.identifier
+        debug(s"removed client ${c.identifier}")
       }
     })
 
@@ -159,12 +168,24 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
 
   /** Quits all clients attached to this server */
   def quit(reason: Option[String]) {
+    debug(s"quitting server: ${reason.getOrElse("")}")
+    hasQuit = true // ends the process forever
     cleanupClients()
     clients.foreach(_.quit(reason))
   }
 }
 
 object SCSCPServer {
-  def apply(service_name: String, service_version: String, service_identifier: String, host: String = "0.0.0.0", port: Int = 26133, encoding: String = "UTF-8") =
-    new SCSCPServer(service_name, service_version, service_identifier, new java.net.ServerSocket(port, 0, InetAddress.getByName(host)), encoding)
+  def apply(
+             service_name: String,
+             service_version: String,
+             service_identifier: String,
+             logHandler: String => Unit = {s => {}},
+             host: String = "0.0.0.0",
+             port: Int = 26133,
+             encoding: String = "UTF-8"
+           ): SCSCPServer =
+    new SCSCPServer(service_name, service_version, service_identifier, new java.net.ServerSocket(port, 0, InetAddress.getByName(host)), encoding) {
+      override def debug(message: String): Unit = logHandler(message)
+    }
 }

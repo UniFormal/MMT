@@ -31,7 +31,7 @@ object ServerExample {
 class AdditionHandler() extends SCSCPHandler {
   val min : Int = 0
   val max : Int = -1
-  val signature = SymbolSet(Nil) // TODO:
+  val signature = Some(SymbolSet(Nil)) // TODO:
   def handle(client: SCSCPServerClient, arguments : SCSCPCallArguments, parameters: OMExpression* ) : OMExpression = {
     OMInteger(parameters.toList.map({
       case i:OMInteger => i.int
