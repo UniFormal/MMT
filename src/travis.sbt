@@ -51,7 +51,8 @@ travisConfig := {
 
       // setup the test environment, so that the lmh versioning is ignored on devel
       "before_script" -> List(
-        "if [ \"$TRAVIS_BRANCH\" == \"devel\" ]; then export TEST_USE_DEVEL=1; fi; echo $TEST_USE_DEVEL;"
+        "if [ \"$TRAVIS_BRANCH\" == \"devel\" ]; then export TEST_USE_DEVEL=1; fi; echo $TEST_USE_DEVEL;",
+        "if [ \"$TRAVIS_BRANCH\" == \"no-unmanaged-jars\" ]; then export TEST_USE_DEVEL=1; fi; echo $TEST_USE_DEVEL;"
       )
     ),
 
