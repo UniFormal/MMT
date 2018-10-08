@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.refactoring.{Preprocessor, SimpleParameterPreprocessor
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardNat, StandardPositive}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{ApplySpine, LFClassicHOLPreprocessor}
+import info.kwarc.mmt.odk.LFX
 import info.kwarc.mmt.odk.LFX.LFRecSymbol
 
 object MitM {
@@ -97,6 +98,42 @@ object ModelsOf extends LFRecSymbol("ModelsOf") {
     case OMA(this.term, List(tm)) => Some(tm)
     // case OMA(this.term2,List(OMMOD(mp))) => Some(OMMOD(mp))
     case OMA(this.term, OMMOD(mp) :: args) => Some(OMPMOD(mp,args))
+    case _ => None
+  }
+}
+
+object Lists {
+  val baseURI = LFX.ns / "Datatypes"
+  val th = baseURI ? "ListSymbols"
+}
+
+object ListNil {
+  val path = Lists.th ? "nil"
+  val term = OMS(path)
+}
+
+object Append {
+  val path2 = Lists.th ? "ls"
+  val term2 = OMS(path2)
+  val path = Lists.th ? "append"
+  val term = OMS(path)
+  def apply(a: Term, ls : Term) : Term = OMA(this.term,List(a,ls))
+  def unapply(tm : Term) : Option[(Term,Term)] = tm match {
+    case OMA(this.term,List(a,ls)) => Some((a,ls))
+    case OMA(this.term2,args) if args.nonEmpty =>
+      if (args.length==1) Some((args.head,ListNil.term))
+      else Some((args.head,OMA(this.term2,args.tail)))
+    case _ => None
+  }
+}
+
+object LFList {
+  val path = Lists.th ? "ls"
+  val term = OMS(path)
+  def apply(tms : List[Term]) : Term = OMA(this.term,tms)
+  def unapply(ls : Term) : Option[List[Term]] = ls match {
+    case OMA(this.term,args) => Some(args)
+    case Append(a,lsi) => unapply(lsi).map(a :: _)
     case _ => None
   }
 }

@@ -14,7 +14,7 @@ import objects._
 import uom._
 import utils._
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.mitm.MitM
+import info.kwarc.mmt.mitm.{LFList, MitM}
 import info.kwarc.mmt.odk.OpenMath.{CodingServer, OMInteger, OMString}
 import info.kwarc.mmt.odk.SCSCP.Server.MitMServer
 import info.kwarc.mmt.odk.Sage.Sage
@@ -53,11 +53,48 @@ class Plugin extends ChangeListener {
       controller.getTheory(MitM.mathpath).getInnerContext
     }
     val rs = RuleSet.collectRules(controller,con)
-    rs.add(getRule(con))
+    rs.add(getSystemRule(con))
+    rs.add(getQueryRule)
     controller.simplifier.apply(tm,con,rs,expDef=true)
   }
 
-  def getRule(con : Context) : ComputationRule = new ComputationRule(Systems.evalSymbol) {
+  val getQueryRule = new ComputationRule(Systems.querysym) {
+    override def alternativeHeads: List[GlobalName] = List(Apply.path)
+
+    override def applicable(tm: Term): Boolean = IsQuery.unapply(tm).isDefined
+
+    private object IsQuery {
+      def unapply(tm: Term) = tm match {
+        case OMA(OMS(Systems.querysym), List(r)) => Some(r)
+        case ApplySpine(OMS(Systems.querysym), List(r)) => Some(r)
+        case _ => None
+      }
+    }
+
+    override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
+      case IsQuery(q) =>
+        val queryexts = controller.extman.get(classOf[QueryFunctionExtension])
+        val ret = Try(controller.evaluator(Query.parse(q)(queryexts,controller.relman))).toOption
+        ret match {
+          case Some(qr) => Simplify(resultToTerm(qr))
+          case _ => Simplifiability.NoRecurse
+        }
+      case _ => Simplifiability.NoRecurse
+    }
+
+    def resultToTerm(qr : QueryResult) : Term = qr match {
+      case SetResult(s) => LFList(s.toList.map(resultToTerm))
+      case ElemResult(ls :: Nil) => ls match {
+        case t : Term => t
+        case p : ContentPath => OMID(p)
+        case s : StringValue => StringLiterals(s.string)
+        case _ => ???
+      }
+    }
+
+  }
+
+  def getSystemRule(con : Context) : ComputationRule = new ComputationRule(Systems.evalSymbol) {
     override def alternativeHeads: List[GlobalName] = List(Apply.path)
 
     override def applicable(tm: Term): Boolean = tm match {
@@ -88,6 +125,7 @@ object Systems {
   val sagesym = vretheory ? "SageEval"
   val singularsym = vretheory ? "SingularEval"
   val lmfdbsym = vretheory ? "LMFDBEval"
+  val querysym = vretheory ? "ODKQuery"
 }
 
 
