@@ -197,7 +197,7 @@ class ExtensionManager(controller: Controller) extends Logger {
        try {
          Class.forName(cls)
        } catch {case e: ClassNotFoundException =>
-         controller.backend.loadClass(cls)
+         controller.backend.loadClass(cls).get
        }
     } catch {
       case e: Throwable =>
@@ -212,7 +212,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       val Ext = clsJ.asInstanceOf[Class[Extension]]
       Ext.newInstance
     } catch {
-      case e: Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
+      case e: Exception =>
+        throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
     }
     addExtension(ext, args)
     ext
