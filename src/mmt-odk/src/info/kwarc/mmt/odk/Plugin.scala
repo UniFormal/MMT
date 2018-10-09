@@ -16,7 +16,7 @@ import utils._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.mitm.{LFList, MitM}
 import info.kwarc.mmt.odk.OpenMath.{CodingServer, OMInteger, OMString}
-import info.kwarc.mmt.odk.SCSCP.Server.MitMServer
+import info.kwarc.mmt.odk.SCSCP.MiTM.MitMServer
 import info.kwarc.mmt.odk.Sage.Sage
 import info.kwarc.mmt.odk.Singular.SingularImporter
 import info.kwarc.mmt.sequences.Sequences
