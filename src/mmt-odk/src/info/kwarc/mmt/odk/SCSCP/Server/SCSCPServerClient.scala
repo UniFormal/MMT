@@ -3,7 +3,7 @@ package info.kwarc.mmt.odk.SCSCP.Server
 import info.kwarc.mmt.odk.SCSCP.Protocol._
 import info.kwarc.mmt.odk.SCSCP.Lowlevel.Readers.SCSCPReader
 import info.kwarc.mmt.odk.SCSCP.Lowlevel.Writers.SCSCPWriter
-import java.net.{InetSocketAddress, Socket}
+import java.net.Socket
 
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.odk.OpenMath._

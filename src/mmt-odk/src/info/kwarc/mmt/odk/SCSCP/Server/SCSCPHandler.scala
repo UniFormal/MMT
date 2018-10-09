@@ -5,7 +5,7 @@ import info.kwarc.mmt.odk.SCSCP.CD.SymbolSet
 import info.kwarc.mmt.odk.SCSCP.Protocol.SCSCPCallArguments
 
 /** A handler for SCSCP based functions */
-abstract class SCSCPHandler {
+trait SCSCPHandler {
   /** Minimal number of arguments to be passed to this handler. */
   val min : Int
   /** Maximal number of arguments to be passed to this handler. If < 0 assume Infinity */

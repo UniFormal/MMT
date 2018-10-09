@@ -3,13 +3,11 @@ package info.kwarc.mmt.odk.SCSCP.Server
 import java.io.InterruptedIOException
 import java.net.{InetAddress, ServerSocket, Socket}
 
-import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
 import info.kwarc.mmt.odk.SCSCP.CD.scscp2
 import info.kwarc.mmt.odk.SCSCP.Protocol.ProtocolError
 
 import scala.collection.mutable
-import scala.concurrent.Future
 
 /**
   * A (single threaded) implementation of the SCSCP protocol, version 1.3
@@ -26,6 +24,11 @@ import scala.concurrent.Future
 class SCSCPServer(val service_name: String, val service_version: String, val service_identifier: String, socket: ServerSocket, encoding: String = "UTF-8") {
   private val handlers = mutable.Map[OMSymbol, SCSCPHandler]()
   private val client_map = mutable.Map[String, SCSCPServerClient]()
+
+  /** the hostname this server is bound to */
+  def hostname: String = socket.getInetAddress.getHostName
+  /** the port this server is bound to */
+  def port: Int = socket.getLocalPort
 
   /** prints a debug message, to be overwritten by sub class */
   def debug(message: String): Unit = {}
@@ -71,6 +74,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     handlers(symbol)
   }
 
+  /** gets the names of the registered handler */
   def getHandlerNames : List[OMSymbol] = handlers.toList.map(_._1)
 
   /**
