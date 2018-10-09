@@ -17,7 +17,7 @@ object MitM {
   val logic = path ? "Logic"
   // val natliterals = ODK.path ? "Nat"
   // val intliterals = ODK.path ? "Int"
-  val literals = path ? "Literals"
+  // val literals = path ? "Literals"
   val strings = path ? "Strings"
   val lists = path ? "Lists"
   val vectors = path ? "Vectors"
@@ -32,14 +32,14 @@ object MitM {
   val BoolLit = new RepresentedRealizedType(OMS(bool),uom.StandardBool)
   val tt = BoolLit(true)
   val ff = BoolLit(false)
-  val int = literals ? "int_lit"
-  val nat = literals ? "nat_lit"
-  val pos = literals ? "pos_lit"
-  val succ = literals ? "nat_lit_succ"
+
+  val intliterals = path ? "IntLiterals"
+  val natliterals = MitM.path ? "NatLiterals"
   val string = strings ? "string"
-  val list = lists ? "list"
-  val nil = lists ? "nil"
-  val cons = lists ? "cons"
+  val int = intliterals ? "int_lit"
+  val nat = natliterals ? "nat_lit"
+  val pos = natliterals ? "pos_lit"
+  val succ = natliterals ? "nat_lit_succ"
   val vector = vectors ? "vector"
   val zerovec = vectors ? "zerovec"
   val vectorprepend = vectors ? "vector_prepend"

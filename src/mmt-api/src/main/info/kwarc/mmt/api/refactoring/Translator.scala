@@ -503,7 +503,7 @@ class AcrossLibraryTranslator(controller : Controller,
         }
         case OMATTR(arg, key, value) => OMATTR(TermClass(arg).update, TermClass(key).update.asInstanceOf[OMID], TermClass(value).update)
         // TODO -----------v-----------------------------------------------------------------^
-        case OMLIT(vl, _) => ???
+        case OMLIT(_, _) => currentTerm
         case UnknownOMLIT(vl, st) => UnknownOMLIT(vl, TermClass(st).update)
         case OMFOREIGN(_) => currentTerm
         case OMSemiFormal(_) => currentTerm

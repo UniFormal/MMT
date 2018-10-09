@@ -6,7 +6,7 @@ import uom._
 import utils._
 import valuebases._
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
-import info.kwarc.mmt.mitm.MitM
+import info.kwarc.mmt.mitm.{Append, LFList, ListNil, MitM}
 import info.kwarc.mmt.odk._
 import info.kwarc.mmt.sequences.{NatRules, Sequences}
 
@@ -53,7 +53,7 @@ object StandardBool extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.standar
   }
 }
 
-object TMList extends ListCodec[JSON](Codecs.standardList, MitM.list, MitM.nil, MitM.cons) {
+object TMList extends ListCodec[JSON](Codecs.standardList, LFList.path, ListNil.path, Append.path) {
   def aggregate(cs: List[JSON]): JSON = JSONArray(cs:_*)
   def separate(j: JSON): List[JSON] = j match {
     case JSONArray(js@_*) => js.toList

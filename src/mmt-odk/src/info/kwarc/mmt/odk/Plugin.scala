@@ -43,7 +43,8 @@ class Plugin extends ChangeListener {
   def callVRE(t : Term, system : GlobalName) = {
     val systems = controller.extman.get(classOf[VRESystem])
     systems.find(_.sym == system) match {
-      case Some(s) => s.call(t)
+      case Some(s) =>
+        s.call(t)
       case _ => ???
     }
   }
@@ -135,7 +136,7 @@ abstract class VRESystem(val id : String, val sym : GlobalName) extends QueryExt
   /** has this system evaluate t and returns the result as an MitM expression **/
   def call(t : Term) : Term
 
-  def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QuerySubstitution): scala.collection.mutable.HashSet[List[BaseType]] = {
+  def evaluate(q: Query, e: QueryEvaluator)(implicit substitution: QuerySubstitution): scala.collection.mutable.HashSet[List[BaseType]] = {
     // evaluate the qiery normally
     val result = e.evalSet(q)
 
@@ -204,11 +205,11 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
   }
   */
 
-  lazy val links : List[DeclaredLink] = (archive.allContent ::: mitm.allContent).map(controller.get).collect {
-    case th : DeclaredTheory => th.getNamedStructures collect {
+  lazy val links : List[DeclaredLink] = (archive.allContent ::: mitm.allContent).map(p => Try(controller.get(p)).toOption).collect {
+    case Some(th : DeclaredTheory) => th.getNamedStructures collect {
       case s : DeclaredStructure => s
     }
-    case v : DeclaredView => List(v)
+    case Some(v : DeclaredView) => List(v)
   }.flatten
 
   private def translator(to : Archive) = {
