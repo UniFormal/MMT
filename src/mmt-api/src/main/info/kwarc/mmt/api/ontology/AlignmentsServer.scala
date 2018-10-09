@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.Extension
+import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.objects._
 import web._
 
@@ -32,8 +32,7 @@ class AddAlignments extends Extension {
         errors::=e.getMessage + " (in File: " + f.toString + ")"
         Nil
     }
-    args.headOption.foreach(a ⇒ {
-      val filebase = File(a)
+    AlignmentsServer.findAlignmentsFolder(controller, args.headOption).foreach(filebase ⇒ {
       val fs = FilePath.getall(filebase)
       val afiles = fs.filter(f => f.getExtension.contains("align"))
       log("Files: " + afiles)
@@ -158,8 +157,7 @@ class AlignmentsServer extends ServerExtension("align") {
   private var filebase : File = null
   override def start(args: List[String]) {
     controller.extman.addExtension(new AlignQuery)
-    args.headOption.foreach(a ⇒ try {
-      filebase = File(a)
+    AlignmentsServer.findAlignmentsFolder(controller, args.headOption).foreach(filebase ⇒ try {
       val fs = FilePath.getall(filebase)
       val afiles = fs.filter(f => f.getExtension.contains("align"))
       log("Files: " + afiles)
@@ -371,4 +369,12 @@ class AlignmentsServer extends ServerExtension("align") {
     }
   }
 
+}
+
+object AlignmentsServer {
+  /** finds the alignments folder given an optional path */
+  def findAlignmentsFolder(controller: Controller, path: Option[String]): Option[File] = {
+    if(path.isDefined){ return Some(File(path.get)) }
+    controller.getMathHub.flatMap {mh => mh.getEntry("alignments/Public").map(_.root)}
+  }
 }
