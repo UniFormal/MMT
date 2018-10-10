@@ -18,6 +18,7 @@ import scala.collection.mutable
 object GAP {
   val _base = DPath(URI.http colon "www.gap-system.org")
   val theory = _base ? "Types"
+  val importbase = _base / "mitm"
 
   val has = OMS(theory ? "Has")
   val get = OMS(theory ? "Is")

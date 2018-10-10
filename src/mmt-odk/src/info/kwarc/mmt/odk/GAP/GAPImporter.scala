@@ -9,14 +9,14 @@ class GAPImporter extends Importer {
   def inExts = List("xml", "json")
   override def inDim = RedirectableDimension("gap")
 
-  val docImporter = new GAPDocImporter
+  // val docImporter = new GAPDocImporter
   val sysImporter = new GAPJSONImporter
   override val logPrefix = "gapimporter"
 
   override def init(controller : Controller) {
     this.controller = controller
     report = controller.report
-    initOther(docImporter)
+    // initOther(docImporter)
     initOther(sysImporter)
   }
 
@@ -25,11 +25,11 @@ class GAPImporter extends Importer {
       val ext = bt.inFile.getExtension.get //should always be set considering inExts above
       if (sysImporter.inExts.contains(ext)) {
         sysImporter.importDocument(bt, index)
-      } else if (docImporter.inExts.contains(ext)) {
+      } /* else if (docImporter.inExts.contains(ext)) {
         docImporter.importDocument(bt, index)
       } else {
         throw new ImplementationError("unexpected extension " + ext)
-      }
+      } */ else BuildResult.empty
     } catch {
       case e : Exception => throw new ImplementationError("unexpected error in Gap Importer: " + e.getMessage)
     }
