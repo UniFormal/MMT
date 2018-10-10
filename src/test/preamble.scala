@@ -2,6 +2,7 @@ import info.kwarc.mmt.api
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{Logger, Run}
 import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
+import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.web.JSONBasedGraphServer
 
 import scala.concurrent.Future
@@ -87,6 +88,52 @@ abstract class Test(archivepath : String,
 }
 
 /**
+  * Auto-magical path-finder for all the development setups.
+  * If you use a custom folder, please add into the appropriate lists
+  */
+object MagicTest {
+  lazy private val home = File(System.getProperty("user.home"))
+
+  /** the root for archives to use */
+  lazy val archiveRoot: File = {
+    List(
+      home / "work" / "MathHub", // Dennis
+      home / "Projects" / "gl.mathhub.info", // Tom
+      home / "Development" / "KWARC" / "content", // Jonas
+      home / "content" // Michael
+    ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
+  }
+
+  /** the root for alignments */
+  lazy val alignments: Option[File] = List(
+    home / "work" / "Stuff" / "AlignmentsPublic", // Dennis
+    archiveRoot / "alignments" / "Public", // if installed via lmh
+    archiveRoot / "Alignments" / "Public" // if manually installed into differently cased path
+  ).find(_.exists)
+
+  /** the logfile to use for MMT */
+  lazy val logfile: Option[File] = {
+    if((home / "work").exists){
+      Some(home / "work" / "mmtlog.html") // Dennis
+    } else {
+      None
+    }
+  }
+}
+
+/**
+  * A magic test configuration that automatically figures out the paths to everything
+  */
+abstract class MagicTest(prefixes : String*) extends Test(
+  MagicTest.archiveRoot.toString,
+  prefixes.toList,
+  MagicTest.alignments.map(_.toString).getOrElse(""),
+  Some(8080),
+  true,
+  MagicTest.logfile.map(_.toString)
+)
+
+/**
   * As an example, here's my default. All test files of mine just extend this:
   */
 abstract class DennisTest(prefixes : String*) extends Test(
@@ -98,21 +145,6 @@ abstract class DennisTest(prefixes : String*) extends Test(
   Some("/home/jazzpirate/work/mmtlog.html")
 ) {
 }
-
-object TomTest {
-  val tomMathHub = System.getProperty("user.home") + "/Projects/gl.mathhub.info"
-  val tomAlignments = tomMathHub + "/alignments/Public"
-}
-
-
-abstract class TomTest(prefixes : String*) extends Test(
-  TomTest.tomMathHub,
-  prefixes.toList,
-  TomTest.tomAlignments,
-  Some(8080),
-  true,
-  None
-)
 
 abstract class JonasTest(prefixes: String*) extends Test(
   "/home/jbetzend/Development/KWARC/content/",
