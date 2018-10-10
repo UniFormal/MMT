@@ -1,6 +1,6 @@
-package info.kwarc.mmt.mitm
+package info.kwarc.mmt.MiTM
 
-import info.kwarc.mmt.api.{DPath, MPath, uom}
+import info.kwarc.mmt.api.{DPath, GlobalName, MPath, uom}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.refactoring.{Preprocessor, SimpleParameterPreprocessor}
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardNat, StandardPositive}
@@ -10,46 +10,57 @@ import info.kwarc.mmt.odk.LFX
 import info.kwarc.mmt.odk.LFX.LFRecSymbol
 
 object MitM {
-  val basepath = DPath(URI("http","mathhub.info") / "MitM")
-  val path = basepath / "Foundation"
-  val mathpath = path ? "Math"
+  val basepath: DPath = DPath(URI("http","mathhub.info") / "MitM")
+  private val path = basepath / "Foundation"
 
-  val logic = path ? "Logic"
-  // val natliterals = ODK.path ? "Nat"
-  // val intliterals = ODK.path ? "Int"
-  // val literals = path ? "Literals"
-  val strings = path ? "Strings"
-  val lists = path ? "Lists"
-  val vectors = path ? "Vectors"
-  val matrices = path ? "Matrices"
+  val mathpath: MPath = path ? "Math"
 
-  val polypath = (basepath / "smglom" / "elliptic_curves") ? "Base"
-  val polynomials = polypath ? "polynomial"
-  val polycons = polypath ? "poly_con"
-
-  // val tms = typesystem ? "tm"
-  val bool = logic ? "bool"
+  // logic
+  val logic: MPath = path ? "Logic"
+  val bool: GlobalName = logic ? "bool"
   val BoolLit = new RepresentedRealizedType(OMS(bool),uom.StandardBool)
   val tt = BoolLit(true)
   val ff = BoolLit(false)
 
-  val intliterals = path ? "IntLiterals"
-  val natliterals = MitM.path ? "NatLiterals"
-  val string = strings ? "string"
-  val int = intliterals ? "int_lit"
-  val nat = natliterals ? "nat_lit"
-  val pos = natliterals ? "pos_lit"
-  val succ = natliterals ? "nat_lit_succ"
-  val vector = vectors ? "vector"
-  val zerovec = vectors ? "zerovec"
-  val vectorprepend = vectors ? "vector_prepend"
-  val matrix = matrices ? "matrix"
-  val matrixconst = matrices ? "matrix_const"
+  // elliptic curves
+  val polypath: MPath = (basepath / "smglom" / "elliptic_curves") ? "Base"
+  val polynomials: GlobalName = polypath ? "polynomial"
+  val polycons: GlobalName = polypath ? "poly_con"
+
+
+  // strings
+  val strings: MPath = path ? "Strings"
+  val string: GlobalName = strings ? "string"
+
+  // lists
+  val lists: MPath = path ? "Lists" // unused?
+
+  // Vectors
+  val vectors: MPath = path ? "Vectors"
+  val vector: GlobalName = vectors ? "vector"
+  val zerovec: GlobalName = vectors ? "zerovec"
+  val vectorprepend: GlobalName = vectors ? "vector_prepend"
+
+
+  // matrices
+  val matrices: MPath = path ? "Matrices"
+  val matrix: GlobalName = matrices ? "matrix"
+  val matrixconst: GlobalName = matrices ? "matrix_const"
+
+  // literals
+  private val intliterals = path ? "IntLiterals"
+  val int: GlobalName = intliterals ? "int_lit"
+
+  private val natliterals = path ? "NatLiterals"
+  val nat: GlobalName = natliterals ? "nat_lit"
+  val pos: GlobalName = natliterals ? "pos_lit"
+  val succ: GlobalName = natliterals ? "nat_lit_succ"
+
 
   val n = OMS(nat)
   val z = OMS(int)
   val p = OMS(pos)
-  val N = StandardNat
+  val N= StandardNat
   val Z = StandardInt
   val P = StandardPositive
 
@@ -136,4 +147,18 @@ object LFList {
     case Append(a,lsi) => unapply(lsi).map(a :: _)
     case _ => None
   }
+}
+
+/** Symbols used for all the different Systems */
+object MiTMSystems {
+  private val _basepath = DPath(URI("http","opendreamkit.org"))
+  private val vretheory = _basepath ? "Systems"
+
+  val evalSymbol: GlobalName = vretheory ? "Eval"
+
+  val gapsym: GlobalName = vretheory ? "GAPEval"
+  val sagesym: GlobalName = vretheory ? "SageEval"
+  val singularsym: GlobalName = vretheory ? "SingularEval"
+  val lmfdbsym: GlobalName = vretheory ? "LMFDBEval"
+  val querysym: GlobalName = vretheory ? "ODKQuery"
 }

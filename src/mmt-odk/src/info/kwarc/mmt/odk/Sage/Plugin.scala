@@ -25,5 +25,6 @@ class Plugin extends frontend.Plugin {
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
     controller.extman.addExtension(new SageImporter)
+    controller.extman.addExtension(new SageSystem)
   }
 }

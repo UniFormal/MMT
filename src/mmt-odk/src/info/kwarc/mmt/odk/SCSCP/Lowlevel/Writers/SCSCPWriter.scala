@@ -19,16 +19,21 @@ class SCSCPWriter(stream: OutputStream, val encoding: String = "UTF-8", var codi
   private val jsonCoder = new OMJSONCoding()
 
   /**
-    * Writes a string to the stream
+    * Writes a string to the stream, or fails silently
     *
     * @param s
     */
   private def write(s: String): Unit = {
-    stream.write(
-      (s + "\n").getBytes(Charset.forName(encoding))
-    )
+    try {
+      stream.write(
+        (s + "\n").getBytes(Charset.forName(encoding))
+      )
 
-    stream.flush()
+      stream.flush()
+    } catch {
+      case se: java.net.SocketException =>
+    }
+
   }
 
   /**

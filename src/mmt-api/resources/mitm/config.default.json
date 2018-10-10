@@ -1,0 +1,5 @@
+{
+  "gap": "localhost:26133",
+  "sage": "localhost:26136",
+  "singular": "localhost:26135"
+}

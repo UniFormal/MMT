@@ -1,4 +1,4 @@
-package info.kwarc.mmt.odk.SCSCP.MiTM
+package info.kwarc.mmt.MiTM.Server
 
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.odk.SCSCP.CD.{SymbolSet, scscp1, scscp2}
@@ -6,7 +6,11 @@ import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
 import info.kwarc.mmt.odk.SCSCP.Protocol.{SCSCPCall, SCSCPCallArguments, SCSCPReturnObject}
 import info.kwarc.mmt.odk.SCSCP.Server.{RemoteServerException, SCSCPHandler, SCSCPServer, SCSCPServerClient}
 
-
+/**
+  * a database of mitm systems
+  * TODO: Figure out where this is used
+  * @param scscpServer
+  */
 class MitMDatabase(scscpServer: => SCSCPServer) {
   var mapOfServersToFunctions : Map[String, List[OMSymbol]] = Map()
   var mapOfServerNamesToClients : Map[String, SCSCPClient] = Map()

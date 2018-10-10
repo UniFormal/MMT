@@ -12,7 +12,7 @@ import info.kwarc.mmt.api.opaque._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.lf.{Arrow, Typed}
-import info.kwarc.mmt.mitm.ModelsOf
+import info.kwarc.mmt.MiTM.ModelsOf
 
 import scala.collection.mutable
 import scala.util.Try

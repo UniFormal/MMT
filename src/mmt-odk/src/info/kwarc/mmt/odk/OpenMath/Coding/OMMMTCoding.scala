@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.utils.URI
 /**
   * Decode / Encode MMT Terms as OpenMath objects.
   */
-class OMMMTCoding(default : URI) extends OMCoding[Term] {
+class OMMMTCoding(default: => URI) extends OMCoding[Term] {
 
   /** encode an arbitrary OpenMath term as an MMT Term */
   def encode(om : OMAny) : Term = {

@@ -7,13 +7,13 @@ import uom._
 import utils._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.odk.Singular.SingularImporter
-import info.kwarc.mmt.mitm.MitM._
+import info.kwarc.mmt.MiTM.MitM._
 import SemanticOperator._
 import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, RuleConstant, Structure}
-import info.kwarc.mmt.mitm.MitM
+import info.kwarc.mmt.MiTM.MitM
 
 import scala.collection.mutable
 

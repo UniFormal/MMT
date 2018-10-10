@@ -6,7 +6,7 @@ import uom._
 import utils._
 import valuebases._
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
-import info.kwarc.mmt.mitm.{Append, LFList, ListNil, MitM}
+import info.kwarc.mmt.MiTM.{Append, LFList, ListNil, MitM}
 import info.kwarc.mmt.odk._
 import info.kwarc.mmt.sequences.{NatRules, Sequences}
 
