@@ -30,8 +30,8 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   /** the port this server is bound to */
   def port: Int = socket.getLocalPort
 
-  /** prints a debug message, to be overwritten by sub class */
-  def debug(message: String): Unit = {}
+  /** handles a log event */
+  protected[Server] def event(event: SCSCPServerEvent): Unit = {}
 
   /** a list of clients connected to this server */
   def clients : List[SCSCPServerClient] = {
@@ -51,7 +51,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     }
 
     handlers(symbol) = handler
-    debug(s"Registered handler for ${symbol.toString}")
+    event(SCSCPRegisteredHandler(symbol, this))
   }
 
   // register the default handlers
@@ -89,7 +89,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     }
 
     handlers -= symbol
-    debug(s"Unregistered handler for ${symbol.toString}")
+    event(SCSCPUnregistered(symbol, this))
   }
 
   /** a boolean indicating if we have quit the server */
@@ -139,7 +139,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     try {
       val client = new SCSCPServerClient(socket, this, encoding)
       client_map(client.identifier) = client
-      debug(s"added client ${client.identifier}")
+      event(SCSCPAddedClient(client, this))
     } catch {
       case p: ProtocolError =>
     }
@@ -152,7 +152,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
       if (!c.connected) {
         c.quit()
         client_map -= c.identifier
-        debug(s"removed client ${c.identifier}")
+        event(SCSCPRemovedClient(c, this))
       }
     })
 
@@ -172,7 +172,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
 
   /** Quits all clients attached to this server */
   def quit(reason: Option[String]) {
-    debug(s"quitting server: ${reason.getOrElse("")}")
+    event(SCSCPQuittingServer(reason, this))
     hasQuit = true // ends the process forever
     cleanupClients()
     clients.foreach(_.quit(reason))
@@ -190,6 +190,6 @@ object SCSCPServer {
              encoding: String = "UTF-8"
            ): SCSCPServer =
     new SCSCPServer(service_name, service_version, service_identifier, new java.net.ServerSocket(port, 0, InetAddress.getByName(host)), encoding) {
-      override def debug(message: String): Unit = logHandler(message)
+      override def event(message: SCSCPServerEvent): Unit = logHandler(message.toString)
     }
 }
