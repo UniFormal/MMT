@@ -110,7 +110,7 @@ abstract class TomTest(prefixes : String*) extends Test(
   prefixes.toList,
   TomTest.tomAlignments,
   Some(8080),
-  false,
+  true,
   None
 )
 
