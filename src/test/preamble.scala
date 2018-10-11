@@ -133,19 +133,6 @@ abstract class MagicTest(prefixes : String*) extends Test(
   MagicTest.logfile.map(_.toString)
 )
 
-/**
-  * As an example, here's my default. All test files of mine just extend this:
-  */
-abstract class DennisTest(prefixes : String*) extends Test(
-  "/home/jazzpirate/work/MathHub",
-  prefixes.toList,
-  "/home/jazzpirate/work/Stuff/AlignmentsPublic",
-  Some(8080),
-  true,
-  Some("/home/jazzpirate/work/mmtlog.html")
-) {
-}
-
 abstract class JonasTest(prefixes: String*) extends Test(
   "/home/jbetzend/Development/KWARC/content/",
   prefixes.toList,
