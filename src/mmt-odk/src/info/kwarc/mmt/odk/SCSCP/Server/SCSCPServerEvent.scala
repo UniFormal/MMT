@@ -1,5 +1,6 @@
 package info.kwarc.mmt.odk.SCSCP.Server
 
+import info.kwarc.mmt.api.Stacktrace
 import info.kwarc.mmt.odk.OpenMath.{OMExpression, OMObject, OMSymbol}
 import info.kwarc.mmt.odk.SCSCP.Protocol.{SCSCPCall, SCSCPResult}
 
@@ -75,7 +76,7 @@ case class SCSCPSignatureMismatch(call: SCSCPCall, mismatch: SignatureMismatchEx
 }
 
 case class SCSCPCallException(call: SCSCPCall, exception: Exception, client: SCSCPServerClient) extends SCSCPServerClientEvent(client) {
-  def message: String = s"Exception occurred: " + exception
+  def message: String = s"Exception occurred: " + exception.toString + "\n" + Stacktrace.asString(exception)
 }
 
 case class SCSCPWriteResult(call: SCSCPCall, result: SCSCPResult, client: SCSCPServerClient) extends SCSCPServerClientEvent(client) {
