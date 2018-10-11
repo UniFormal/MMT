@@ -10,15 +10,19 @@ case class VersionSpecificProject(project: Project, excludes: Exclusions) {
   def exclusions(newExclusions : Exclusions) : VersionSpecificProject = VersionSpecificProject(project, newExclusions)
 
   /** aggregates a list of projects in this project, excluding the configured [[Exclusions]]s */
-  def aggregate(projects: ProjectReference*) : Project = {
-    project
-      .aggregate(excludes(projects.toList) :_*)
-  }
+  def aggregate(projects: ProjectReference*) : Project = project.aggregate(excludes(projects.toList) :_*)
+
 
   /** marks this project as depending on a given set of projects */
   def dependsOn(projects: ProjectReference*) : Project = {
     def toClassPathDep(p: ProjectReference) : ClasspathDep[ProjectReference] = p
-    project.dependsOn(excludes(projects.toList).map(toClassPathDep(_)) :_*)
+    project.dependsOn(excludes(projects.toList).map(toClassPathDep) :_*)
+  }
+
+  /** aggregates and depends on a list of projects */
+  def aggregatesAndDepends(projects: ProjectReference*) : Project = {
+    def toClassPathDep(p: ProjectReference) : ClasspathDep[ProjectReference] = p
+    this.dependsOn(projects:_*).aggregate(projects:_*)
   }
 }
 
