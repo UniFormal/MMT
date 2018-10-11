@@ -1,4 +1,4 @@
-package info.kwarc.mmt.MiTM.Server
+package info.kwarc.mmt.MitM.Server
 
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.odk.SCSCP.CD.{SymbolSet, scscp1, scscp2}

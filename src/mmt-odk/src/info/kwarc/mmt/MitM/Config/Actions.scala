@@ -1,4 +1,4 @@
-package info.kwarc.mmt.MiTM.Config
+package info.kwarc.mmt.MitM.Config
 
 import info.kwarc.mmt.odk.Plugin
 

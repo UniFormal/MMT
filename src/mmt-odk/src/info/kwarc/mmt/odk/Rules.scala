@@ -6,22 +6,20 @@ import objects._
 import uom._
 import utils._
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.odk.Singular.SingularImporter
-import info.kwarc.mmt.MiTM.MitM._
 import SemanticOperator._
 import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, RuleConstant, Structure}
-import info.kwarc.mmt.MiTM.MitM
+import info.kwarc.mmt.MitM.MitM
 
 import scala.collection.mutable
 
-object IntegerLiterals extends RepresentedRealizedType(z,Z)
-object NatLiterals extends RepresentedRealizedType(n,N)
-object PosLiterals extends RepresentedRealizedType(p,P)
+object IntegerLiterals extends RepresentedRealizedType(MitM.z,MitM.Z)
+object NatLiterals extends RepresentedRealizedType(MitM.n,MitM.N)
+object PosLiterals extends RepresentedRealizedType(MitM.p,MitM.P)
 
-object NatSucc extends RealizedOperator(succ, n =>: n, Arithmetic.Succ, N =>: N)
+object NatSucc extends RealizedOperator(MitM.succ, MitM.n =>: MitM.n, Arithmetic.Succ, MitM.N =>: MitM.N)
 
 object NatSuccInverse extends InverseOperator(MitM.succ) {
   def unapply(l: OMLIT): Option[List[OMLIT]] = l match {

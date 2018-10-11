@@ -1,4 +1,4 @@
-package info.kwarc.mmt.MiTM
+package info.kwarc.mmt.MitM
 
 import info.kwarc.mmt.api.{DPath, GlobalName, MPath, uom}
 import info.kwarc.mmt.api.objects._
@@ -150,7 +150,7 @@ object LFList {
 }
 
 /** Symbols used for all the different Systems */
-object MiTMSystems {
+object MitMSystems {
   private val _basepath = DPath(URI("http","opendreamkit.org"))
   private val vretheory = _basepath ? "Systems"
 

@@ -1,6 +1,6 @@
-package info.kwarc.mmt.MiTM.VRESystem
+package info.kwarc.mmt.MitM.VRESystem
 
-import info.kwarc.mmt.MiTM.Config.MiTMSystemLocation
+import info.kwarc.mmt.MitM.Config.MitMSystemLocation
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.odk.OpenMath.Coding.OMMiTMCoding
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
@@ -13,7 +13,7 @@ trait UsesSCSCP { this : VRESystem =>
   /** the head to wrap all calls to SCSCP in */
   val head: OMSymbol
   /** the location of the scscp server */
-  def location: MiTMSystemLocation
+  def location: MitMSystemLocation
 
   /** generates a new call id for SCSCP */
   private def newCallId = s"$id:${java.lang.System.currentTimeMillis().toString}:${scala.util.Random.nextInt().toString}"

@@ -1,14 +1,14 @@
 package info.kwarc.mmt.odk.Sage
 
-import info.kwarc.mmt.MiTM.VRESystem.VREWithAlignmentAndSCSCP
-import info.kwarc.mmt.MiTM.{MiTMSystems, MitM}
+import info.kwarc.mmt.MitM.VRESystem.VREWithAlignmentAndSCSCP
+import info.kwarc.mmt.MitM.{MitMSystems, MitM}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
 import info.kwarc.mmt.odk.StringLiterals
 import info.kwarc.mmt.sequences.Sequences
 
-class SageSystem extends VREWithAlignmentAndSCSCP("Sage",MiTMSystems.sagesym,OMSymbol("MitM_Evaluate", "scscp_transient_1", None, None), "ODK/Sage") {
+class SageSystem extends VREWithAlignmentAndSCSCP("Sage",MitMSystems.sagesym,OMSymbol("MitM_Evaluate", "scscp_transient_1", None, None), "ODK/Sage") {
   object NonTrivials extends StatelessTraverser {
     val nf = Sage.docpath ? """sage.rings.number_field.number_field""" ? "NumberField"
     override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {

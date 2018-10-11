@@ -1,9 +1,9 @@
 package info.kwarc.mmt.odk
 
-import info.kwarc.mmt.MiTM.Config.{Actions, MiTMConfig}
-import info.kwarc.mmt.MiTM.MitM
-import info.kwarc.mmt.MiTM.Server.Server
-import info.kwarc.mmt.MiTM.VRESystem.Rules
+import info.kwarc.mmt.MitM.Config.{Actions, MitMConfig}
+import info.kwarc.mmt.MitM.MitM
+import info.kwarc.mmt.MitM.Server.Server
+import info.kwarc.mmt.MitM.VRESystem.Rules
 import info.kwarc.mmt.api.MPath
 import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.odk.OpenMath.CodingServer
@@ -35,5 +35,5 @@ class Plugin extends ChangeListener with Rules with Actions {
     controller.extman.addExtension(MitM.preproc)
   }
 
-  var config: MiTMConfig = MiTMConfig.default
+  var config: MitMConfig = MitMConfig.default
 }

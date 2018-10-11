@@ -4,7 +4,7 @@ package info.kwarc.mmt.odk.LMFDB
 import info.kwarc.mmt.api._
 import backend._
 import frontend._
-import info.kwarc.mmt.MiTM.VRESystem.VRESystem
+import info.kwarc.mmt.MitM.VRESystem.VRESystem
 import ontology._
 import info.kwarc.mmt.api.ontology.{BaseType, Query, QueryEvaluator}
 import info.kwarc.mmt.api.web.WebQuery
@@ -16,7 +16,7 @@ import utils._
 import valuebases._
 import info.kwarc.mmt.odk._
 import info.kwarc.mmt.lf.Apply
-import info.kwarc.mmt.MiTM.{MitM, MiTMSystems}
+import info.kwarc.mmt.MitM.{MitM, MitMSystems}
 
 import scala.collection.mutable.HashSet
 import scala.util.Try
@@ -309,7 +309,7 @@ abstract class LMFDBStore extends Storage with LMFDBBackend {
   }
 }
 
-class LMFDBSystem extends VRESystem("lmfdb",MiTMSystems.lmfdbsym) with LMFDBBackend {//QueryExtension("lmfdb") with LMFDBBackend {
+class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBackend {//QueryExtension("lmfdb") with LMFDBBackend {
   def warmup(): Unit = {}
 
   val namespace = LMFDB.path

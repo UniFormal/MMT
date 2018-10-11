@@ -3,7 +3,7 @@ package info.kwarc.mmt.odk.OpenMath.Coding
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.{OMLIT, Term}
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.MiTM.MitM
+import info.kwarc.mmt.MitM.MitM
 import info.kwarc.mmt.odk.{IntegerLiterals, StringLiterals}
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.odk.SCSCP.Protocol.OpenMathError

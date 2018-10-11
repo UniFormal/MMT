@@ -1,4 +1,4 @@
-package info.kwarc.mmt.MiTM.Server
+package info.kwarc.mmt.MitM.Server
 
 import info.kwarc.mmt.api.frontend.actions._
 import info.kwarc.mmt.api.web.Util

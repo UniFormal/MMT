@@ -1,6 +1,7 @@
-package info.kwarc.mmt.MiTM.VRESystem
+package info.kwarc.mmt.MitM.VRESystem
 
-import info.kwarc.mmt.MiTM.{LFList, MiTMSystems, MitM}
+import info.kwarc.mmt.MitM.VRESystem.VRESystem
+import info.kwarc.mmt.MitM.{LFList, MitM, MitMSystems, VRESystem}
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
@@ -33,15 +34,15 @@ trait Rules { this: Plugin =>
   }
 
   /** a rule used to evaluate MMT queries */
-  private val queryRule: ComputationRule = new ComputationRule(MiTMSystems.querysym) {
+  private val queryRule: ComputationRule = new ComputationRule(MitMSystems.querysym) {
     override def alternativeHeads: List[GlobalName] = List(Apply.path)
 
     override def applicable(tm: Term): Boolean = IsQuery.unapply(tm).isDefined
 
     private object IsQuery {
       def unapply(tm: Term) = tm match {
-        case OMA(OMS(MiTMSystems.querysym), List(r)) => Some(r)
-        case ApplySpine(OMS(MiTMSystems.querysym), List(r)) => Some(r)
+        case OMA(OMS(MitMSystems.querysym), List(r)) => Some(r)
+        case ApplySpine(OMS(MitMSystems.querysym), List(r)) => Some(r)
         case _ => None
       }
     }
@@ -70,18 +71,18 @@ trait Rules { this: Plugin =>
   }
 
   /** a rule used to evaluate code within systems */
-  private def systemRule(con : Context) : ComputationRule = new ComputationRule(MiTMSystems.evalSymbol) {
+  private def systemRule(con : Context) : ComputationRule = new ComputationRule(MitMSystems.evalSymbol) {
     override def alternativeHeads: List[GlobalName] = List(Apply.path)
 
     override def applicable(tm: Term): Boolean = tm match {
-      case OMA(OMS(MiTMSystems.evalSymbol),List(OMS(_),_)) | ApplySpine(OMS(MiTMSystems.evalSymbol),List(OMS(_),_)) => true
+      case OMA(OMS(MitMSystems.evalSymbol),List(OMS(_),_)) | ApplySpine(OMS(MitMSystems.evalSymbol),List(OMS(_),_)) => true
       case _ => false
     }
 
     override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
       val (sys, subtm) = tm match {
-        case OMA(OMS(MiTMSystems.evalSymbol),List(OMS(s),t)) => (s,t)
-        case ApplySpine(OMS(MiTMSystems.evalSymbol),List(OMS(s),t)) => (s,t)
+        case OMA(OMS(MitMSystems.evalSymbol),List(OMS(s),t)) => (s,t)
+        case ApplySpine(OMS(MitMSystems.evalSymbol),List(OMS(s),t)) => (s,t)
         case _ => return Simplifiability.NoRecurse
       }
       Simplify(callVRE(simplify(subtm,Some(con)),sys))

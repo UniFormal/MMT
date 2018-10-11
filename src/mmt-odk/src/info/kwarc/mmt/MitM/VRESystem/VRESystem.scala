@@ -1,7 +1,6 @@
-package info.kwarc.mmt.MiTM.VRESystem
+package info.kwarc.mmt.MitM.VRESystem
 
-import info.kwarc.mmt.MiTM.Config.MiTMSystemLocation
-import info.kwarc.mmt.MiTM.{MitM, MiTMSystems}
+import info.kwarc.mmt.MitM.Config.MitMSystemLocation
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.modules._
@@ -43,7 +42,7 @@ abstract class VRESystem(val id : String, val sym : GlobalName) extends QueryExt
 
 abstract class VREWithAlignmentAndSCSCP(id : String, sym : GlobalName, val head: OMSymbol, archiveId : String)
   extends VRESystem(id, sym) with AlignmentBasedMitMTranslation with UsesSCSCP {
-  def location: MiTMSystemLocation = odkPlugin.config(id)
+  def location: MitMSystemLocation = odkPlugin.config(id)
 
   lazy val archive: Archive = controller.backend.getArchive(archiveId).getOrElse(throw GeneralError(s"Missing archive $archiveId"))
   def call(t : Term): Term = translateToMitM(scscpcall(translateToSystem(t)))

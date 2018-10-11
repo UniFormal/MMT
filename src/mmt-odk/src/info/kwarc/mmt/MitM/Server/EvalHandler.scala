@@ -1,4 +1,4 @@
-package info.kwarc.mmt.MiTM.Server
+package info.kwarc.mmt.MitM.Server
 
 import info.kwarc.mmt.api.objects.{OMA, Term}
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
