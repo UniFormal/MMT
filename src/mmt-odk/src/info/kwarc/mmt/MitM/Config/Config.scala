@@ -15,7 +15,7 @@ case class MitMConfig(gap: MitMSystemLocation, singular: MitMSystemLocation, sag
 }
 
 object MitMConfig {
-  lazy val default: MitMConfig = apply(MMTSystem.getResourceAsString("MitM/config.default.json"))
+  lazy val default: MitMConfig = apply(MMTSystem.getResourceAsString("mitm/config.default.json"))
   def apply(config: String): MitMConfig = apply(JSON.parse(config).asInstanceOf[JSONObject])
   def apply(json: JSONObject): MitMConfig = {
     val parser = new JSONObjectParser(json)
