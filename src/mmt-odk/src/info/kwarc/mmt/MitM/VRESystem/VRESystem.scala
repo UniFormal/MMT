@@ -63,7 +63,7 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
     a
   }
 
-  lazy val links : List[DeclaredLink] = (archive.allContent ::: mitm.allContent).map(p => Try(controller.get(p)).toOption).collect {
+  private lazy val links : List[DeclaredLink] = (archive.allContent ::: mitm.allContent).map(p => Try(controller.get(p)).toOption).collect {
     case Some(th : DeclaredTheory) => th.getNamedStructures collect {
       case s : DeclaredStructure => s
     }
@@ -79,15 +79,16 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
     new AcrossLibraryTranslator(controller,aligns ::: complexTranslations,linktrs,to)
   }
 
+  private lazy val translator_to = translator(archive)
+  private lazy val translator_from = translator(mitm)
+
   def translateToSystem(t : Term) : Term = {
-    val trl = translator(archive)
-    val (res,succ) = trl.translate(t)
+    val (res,succ) = translator_to.translate(t)
     succ.foreach(s => throw BackendError("could not translate symbol",s))
     res
   }
   def translateToMitM(t : Term) : Term = {
-    val trl = translator(mitm)
-    val (res,succ) = trl.translate(t)
+    val (res,succ) = translator_from.translate(t)
     succ.foreach(s => throw BackendError("could not translate symbol", s))
     res
   }
@@ -95,7 +96,9 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
   def warmup(): Unit = {
     // initialize the lazy vals
     alignmentserver
-    links
+    translator_to
+    translator_from
+    print("")
   }
 }
 
