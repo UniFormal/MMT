@@ -21,31 +21,55 @@ import utils._
  */
 object Importer
 {
-  /** MMT names and archives **/
+  /** MMT system environment **/
 
-  /*common namespace for all theories in all sessions in all Isabelle archives*/
-  val isabelle_base: DPath = DPath(URI("https", "isabelle.in.tum.de") / "Isabelle")
-  val isabelle_meta_theory: MPath = lf.PLF._path
-
-  def declared_theory(theory: String): DeclaredTheory =
+  def init_environment(
+    options: isabelle.Options,
+    progress: isabelle.Progress = isabelle.No_Progress,
+    archive_dirs: List[isabelle.Path] = Nil,
+    init_archive: Boolean = false): (Controller, List[Archive]) =
   {
-    val module = isabelle_base ? theory
-    Theory.empty(module.doc, module.name, Some(isabelle_meta_theory))
-  }
+    val controller = new Controller
 
-  class Indexed_Name(val name: String)
-  {
-    def apply(i: Int): String = name + "(" + i + ")"
-    private val Pattern = (Regex.quote(name) + """\((\d+)\)""").r
-    def unapply(s: String): Option[Int] =
-      s match { case Pattern(isabelle.Value.Int(i)) => Some(i) case _ => None }
-  }
+    val init_archive_dir =
+      (if (init_archive) options.proper_string("mmt_archive_dir") else None).
+        map(isabelle.Path.explode)
 
-  def init_archive(dir: isabelle.Path)
-  {
-    val meta_inf = dir + isabelle.Path.explode("META-INF/MANIFEST.MF")
-    isabelle.Isabelle_System.mkdirs(meta_inf.dir)
-    isabelle.File.write(meta_inf, "id: Isabelle\ntitle: Isabelle\n")
+    val archives: List[Archive] =
+      (init_archive_dir.toList ::: archive_dirs).flatMap(dir =>
+        controller.backend.openArchive(dir.absolute_file))
+      match {
+        case Nil if init_archive_dir.isDefined =>
+          val meta_inf = init_archive_dir.get + isabelle.Path.explode("META-INF/MANIFEST.MF")
+          isabelle.Isabelle_System.mkdirs(meta_inf.dir)
+
+          val id = options.proper_string("mmt_archive_id").map("id: " + _)
+          val title = options.proper_string("mmt_archive_title").map("title: " + _)
+          val narration_base = options.proper_string("mmt_archive_narration_base").
+            map("narration-base: " + _)
+          isabelle.File.write(meta_inf,
+            (id.toList ::: title.toList ::: narration_base.toList).mkString("", "\n", "\n"))
+
+          controller.backend.openArchive(init_archive_dir.get.absolute_file) match {
+            case Nil => isabelle.error("Failed to initialize archive in " + init_archive_dir)
+            case archives => archives
+          }
+        case archives => archives
+      }
+
+    for (archive <- archives) {
+      progress.echo("Adding " + archive)
+      controller.addArchive(archive.root)
+    }
+
+    for {
+      config <-
+        List(File(isabelle.Path.explode("$ISABELLE_MMT_ROOT/deploy/mmtrc").file),
+          MMTSystem.userConfigFile)
+      if config.exists
+    } controller.loadConfigFile(config, false)
+
+    (controller, archives)
   }
 
 
@@ -58,7 +82,9 @@ object Importer
       for {
         solver_error <- solver.getErrors
         if solver_error.level >= Level.Error
-      } yield solver_error.history.toString
+        history_entry <- solver_error.history.steps
+      } yield history_entry.present(solver.presentObj)
+
     if (errs.nonEmpty) isabelle.error(isabelle.cat_lines(err :: errs))
   }
 
@@ -150,13 +176,15 @@ object Importer
     types: List[isabelle.Export_Theory.Type] = Nil,
     consts: List[isabelle.Export_Theory.Const] = Nil,
     facts: List[isabelle.Export_Theory.Fact_Multi] = Nil,
-    locales: List[isabelle.Export_Theory.Locale] = Nil)
+    locales: List[isabelle.Export_Theory.Locale] = Nil,
+    locale_dependencies: List[isabelle.Export_Theory.Locale_Dependency] = Nil)
   {
     val header: String =
       element.head.span.content.iterator.takeWhile(tok => !tok.is_begin).map(_.source).mkString
     def header_relevant: Boolean =
       header.nonEmpty &&
-        (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty || locales.nonEmpty)
+        (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty ||
+          locales.nonEmpty || locale_dependencies.nonEmpty)
 
     def facts_single: List[isabelle.Export_Theory.Fact_Single] =
       (for {
@@ -169,6 +197,14 @@ object Importer
 
   /** MMT import structures **/
 
+  class Indexed_Name(val name: String)
+  {
+    def apply(i: Int): String = name + "(" + i + ")"
+    private val Pattern = (Regex.quote(name) + """\((\d+)\)""").r
+    def unapply(s: String): Option[Int] =
+      s match { case Pattern(isabelle.Value.Int(i)) => Some(i) case _ => None }
+  }
+
   object Env
   {
     val empty: Env = new Env(Map.empty)
@@ -178,6 +214,43 @@ object Importer
   {
     def get(x: String): Term = rep.getOrElse(x, OMV(x))
     def + (entry: (String, Term)): Env = new Env(rep + entry)
+  }
+
+  def notation(
+    xname: Option[String],
+    implicit_args: Int,
+    syntax: isabelle.Export_Theory.Syntax): NotationContainer =
+  {
+    val notation = NotationContainer()
+
+    def prefix_notation(delim: String, impl: Int): TextNotation =
+      new TextNotation(Prefix(Delim(isabelle.Symbol.decode(delim)), impl, 0), Precedence.infinite, None)
+
+    def xname_notation: List[TextNotation] = xname.toList.map(prefix_notation(_, 0))
+
+    val text_notations =
+      syntax match {
+        case isabelle.Export_Theory.No_Syntax => xname_notation
+        case isabelle.Export_Theory.Prefix(delim) =>
+          List(prefix_notation(delim, implicit_args))
+        case infix : isabelle.Export_Theory.Infix =>
+          val infix_notation =
+          {
+            val assoc =
+              infix.assoc match {
+                case isabelle.Export_Theory.Assoc.NO_ASSOC => None
+                case isabelle.Export_Theory.Assoc.LEFT_ASSOC => Some(true)
+                case isabelle.Export_Theory.Assoc.RIGHT_ASSOC => Some(false)
+              }
+            val delim = Delim(isabelle.Symbol.decode(infix.delim))
+            val fixity = Infix(delim, implicit_args, 2, assoc)
+            new TextNotation(fixity, Precedence.integer(infix.pri), None)
+          }
+          xname_notation ::: List(infix_notation)
+      }
+    text_notations.foreach(notation.parsingDim.set(_))
+
+    notation
   }
 
   val dummy_type_scheme: (List[String], isabelle.Term.Typ) = (Nil, isabelle.Term.dummyT)
@@ -208,7 +281,7 @@ object Importer
     node_name: isabelle.Document.Node.Name,
     node_source: Source,
     entity: isabelle.Export_Theory.Entity,
-    syntax: Option[isabelle.Export_Theory.Infix] = None,
+    syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
     type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme)
   {
     val key: Item.Key = Item.Key(entity.kind, entity.name)
@@ -217,34 +290,10 @@ object Importer
       LocalName(node_name.theory + "," + entity.kind.toString + "," + entity.name)
     def global_name: GlobalName = constant(None, None).path
 
-    def notation: NotationContainer =
-    {
-      val notation = NotationContainer()
-      val prefix_notation =
-        new TextNotation(Prefix(Delim(entity.xname), 0, 0), Precedence.infinite, None)
-      val infix_notation =
-        syntax.map(infix =>
-        {
-          val assoc =
-            infix.assoc match {
-              case isabelle.Export_Theory.Assoc.NO_ASSOC => None
-              case isabelle.Export_Theory.Assoc.LEFT_ASSOC => Some(true)
-              case isabelle.Export_Theory.Assoc.RIGHT_ASSOC => Some(false)
-            }
-          val delim = Delim(isabelle.Symbol.decode(infix.delim))
-          val fixity = Infix(delim, type_scheme._1.length, 2, assoc)
-          new TextNotation(fixity, Precedence.integer(infix.pri), None)
-        })
-
-      if (infix_notation.isDefined) notation.presentationDim.set(infix_notation.get)
-      notation.presentationDim.set(prefix_notation)
-
-      notation
-    }
-
     def constant(tp: Option[Term], df: Option[Term]): Constant =
     {
-      val c = Constant(OMID(theory_path), local_name, Nil, tp, df, None, notation)
+      val notC = notation(Some(entity.xname), type_scheme._1.length, syntax)
+      val c = Constant(OMID(theory_path), local_name, Nil, tp, df, None, notC)
       for (sref <- node_source.ref(theory_source, entity.pos)) SourceRef.update(c, sref)
       c
     }
@@ -276,7 +325,6 @@ object Importer
 
   /** Isabelle to MMT importer **/
 
-  val default_init_archive_dir: isabelle.Path = isabelle.Path.explode("isabelle_mmt")
   val default_logic: String = isabelle.Thy_Header.PURE
 
   def importer(options: isabelle.Options,
@@ -285,29 +333,14 @@ object Importer
     select_dirs: List[isabelle.Path] = Nil,
     selection: isabelle.Sessions.Selection = isabelle.Sessions.Selection.empty,
     archive_dirs: List[isabelle.Path],
-    init_archive_dir: isabelle.Path,
     chapter_archive: String => Option[String],
     progress: isabelle.Progress = isabelle.No_Progress)
   {
-    val controller = new Controller
+    val (controller, archives) =
+      init_environment(options, progress = progress, archive_dirs = archive_dirs, init_archive = true)
 
     object MMT_Importer extends NonTraversingImporter { val key = "isabelle-omdoc" }
     controller.extman.addExtension(MMT_Importer, Nil)
-
-    val archives: List[Archive] =
-      (init_archive_dir :: archive_dirs).flatMap(dir =>
-          controller.backend.openArchive(dir.absolute_file))
-      match {
-        case Nil =>
-          init_archive(init_archive_dir)
-          controller.backend.openArchive(init_archive_dir.absolute_file) match {
-            case Nil => isabelle.error("Failed to initialize archive in " + init_archive_dir)
-            case archives => archives
-          }
-        case archives => archives
-      }
-
-    archives.foreach(archive => progress.echo("Adding " + archive))
 
     object Isabelle extends
       Isabelle(options, progress, logic, dirs, select_dirs, selection, archives, chapter_archive)
@@ -330,21 +363,28 @@ object Importer
       // theory content
       val thy_draft =
         Isabelle.begin_theory(thy_export,
-          if (thy_is_pure) None else Some(URI(thy_source_path.file.toPath.toUri)))
+          if (thy_is_pure) None else Some(archive.narrationBase / thy_source_path.implode))
 
       controller.add(thy_draft.thy)
       controller.add(MRef(doc.path, thy_draft.thy.path))
 
+      if (thy_is_pure) {
+        controller.add(PlainInclude(Isabelle.bootstrap_theory, thy_draft.thy.path))
+      }
       for (parent <- thy_export.parents) {
-        controller.add(PlainInclude(declared_theory(parent).path, thy_draft.thy.path))
+        controller.add(PlainInclude(Isabelle.make_theory(parent).path, thy_draft.thy.path))
       }
 
       def add_constant(item: Item, tp: Option[Term], df: Option[Term])
       {
         val context = Context(thy_draft.thy.path)
         if (options.bool("mmt_type_checking")) {
-          for (t <- tp.iterator ++ df.iterator) check_term(controller, context, t)
-          if (tp.isDefined && df.isDefined) check_term_type(controller, context, df.get, tp.get)
+          for (t <- tp.iterator ++ df.iterator if t != Isabelle.Unknown.term) {
+            check_term(controller, context, t)
+          }
+          if (tp.isDefined && df.isDefined && df.get != Isabelle.Unknown.term) {
+            check_term_type(controller, context, df.get, tp.get)
+          }
         }
         val c = item.constant(tp, df)
         controller.add(c)
@@ -352,8 +392,9 @@ object Importer
 
       // PIDE theory source
       if (!thy_export.node_source.is_empty) {
-        isabelle.Isabelle_System.mkdirs(thy_source_path.dir)
-        isabelle.File.write(thy_source_path, thy_export.node_source.text)
+        val path = isabelle.File.path(archive.root.toJava) + thy_source_path
+        isabelle.Isabelle_System.mkdirs(path.dir)
+        isabelle.File.write(path, thy_export.node_source.text)
       }
 
       def decl_error(entity: isabelle.Export_Theory.Entity)(body: => Unit)
@@ -409,7 +450,7 @@ object Importer
           decl_error(decl.entity) {
             val item = thy_draft.declare_item(decl.entity)
             val tp = thy_draft.content.import_prop(decl.prop)
-            add_constant(item, Some(tp), None)
+            add_constant(item, Some(tp), Some(Isabelle.Unknown.term))
           }
         }
 
@@ -419,7 +460,7 @@ object Importer
             val content = thy_draft.content
             val item = thy_draft.declare_item(locale.entity)
             val loc_name = item.local_name
-            val loc_thy = Theory.empty((thy_draft.thy.path / loc_name).toDPath, loc_name, None)
+            val loc_thy = Theory.empty(thy_draft.thy.path.doc, thy_draft.thy.name / loc_name, None)
 
             // type parameters
             val type_env =
@@ -439,9 +480,10 @@ object Importer
             // term parameters
             val term_env =
               (type_env /: locale.args) {
-                case (env, (x, ty)) =>
+                case (env, ((x, ty), syntax)) =>
+                  val notC = notation(None, 0, syntax)
                   val tp = content.import_type(ty, type_env)
-                  val c = Constant(loc_thy.toTerm, LocalName(x), Nil, Some(tp), None, None)
+                  val c = Constant(loc_thy.toTerm, LocalName(x), Nil, Some(tp), None, None, notC)
                   loc_thy.add(c)
                   env + (x -> c.toTerm)
               }
@@ -453,6 +495,20 @@ object Importer
             }
 
             controller.add(new NestedModule(thy_draft.thy.toTerm, loc_name, loc_thy))
+          }
+        }
+
+        // locale dependencies (inclusions)
+        for (dep <- segment.locale_dependencies if dep.is_inclusion) {
+          decl_error(dep.entity) {
+            val item = thy_draft.declare_item(dep.entity)
+            val content = thy_draft.content
+
+            val from = OMMOD(content.get_locale(dep.source).global_name.toMPath)
+            val to = OMMOD(content.get_locale(dep.target).global_name.toMPath)
+
+            val view = DeclaredView(thy_draft.thy.path.doc, thy_draft.thy.name / item.local_name, from, to, false)
+            controller.add(new NestedModule(thy_draft.thy.toTerm, item.local_name, view))
           }
         }
       }
@@ -479,7 +535,6 @@ object Importer
       var chapter_archive_default = ""
       var base_sessions: List[String] = Nil
       var select_dirs: List[isabelle.Path] = Nil
-      var init_archive_dir = default_init_archive_dir
       var requirements = false
       var exclude_session_groups: List[String] = Nil
       var all_sessions = false
@@ -498,7 +553,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     -C CH=AR     add mapping of chapter CH to archive AR, or default "_=AR"
     -B NAME      include session NAME and all descendants
     -D DIR       include session directory and select its sessions
-    -I DIR       init archive directory (default: """ + default_init_archive_dir + """)
     -R           operate on requirements of selected sessions
     -X NAME      exclude sessions from group NAME and all descendants
     -a           select all sessions
@@ -522,7 +576,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         }),
       "B:" -> (arg => base_sessions = base_sessions ::: List(arg)),
       "D:" -> (arg => { select_dirs = select_dirs ::: List(isabelle.Path.explode(arg)) }),
-      "I:" -> (arg => { init_archive_dir = isabelle.Path.explode(arg) }),
       "R" -> (_ => requirements = true),
       "X:" -> (arg => exclude_session_groups = exclude_session_groups ::: List(arg)),
       "a" -> (_ => all_sessions = true),
@@ -561,7 +614,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           select_dirs = select_dirs,
           selection = selection,
           archive_dirs = archive_dirs,
-          init_archive_dir = init_archive_dir,
           chapter_archive =
             (ch: String) => chapter_archive_map.get(ch) orElse
               isabelle.proper_string(chapter_archive_default),
@@ -645,7 +697,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     }
 
 
-    /* resources */
+    /* theory resources */
 
     def resources: isabelle.Headless.Resources = session.resources
 
@@ -681,7 +733,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       val subdir = if (archive.root.getName == chapter) None else Some(chapter)
 
       val source_path =
-        isabelle.File.path(archive.root.toJava) +
           isabelle.Path.basic("source") +
           isabelle.Path.explode(subdir.getOrElse("")) +
           isabelle.Path.basic(session_name) +
@@ -691,6 +742,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         DPath(archive.narrationBase / subdir.toList / session_name / name.theory_base_name)
 
       (archive, source_path, doc_path)
+    }
+
+    def make_theory(theory: String): DeclaredTheory =
+    {
+      val (archive, _, _) = theory_archive(import_name(theory))
+      val module = DPath(archive.narrationBase) ? theory
+      Theory.empty(module.doc, module.name, None)
     }
 
 
@@ -795,10 +853,14 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     /* Pure theory */
 
+    /* bootstrap theory according to MathHub/MMT/urtheories/source/isabelle.mmt */
+
+    val bootstrap_theory: MPath = lf.Typed._base ? "Isabelle"
+
     def PURE: String = isabelle.Thy_Header.PURE
     def pure_name: isabelle.Document.Node.Name = import_name(PURE)
 
-    lazy val pure_path: MPath = declared_theory(PURE).path
+    lazy val pure_path: MPath = make_theory(PURE).path
 
     lazy val pure_theory: isabelle.Export_Theory.Theory =
       isabelle.Export_Theory.read_pure_theory(store, cache = Some(cache))
@@ -812,11 +874,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             for {
               decl <- pure_theory.types
               if decl.entity.name != isabelle.Pure_Thy.DUMMY &&
-                decl.entity.name != isabelle.Pure_Thy.FUN
+                decl.entity.name != isabelle.Pure_Thy.FUN &&
+                decl.entity.name != isabelle.Pure_Thy.PROP
             } yield decl,
           consts = pure_theory.consts,
           facts = pure_theory.facts,
-          locales = pure_theory.locales)
+          locales = pure_theory.locales,
+          locale_dependencies = pure_theory.locale_dependencies)
       Theory_Export(pure_name, Source.empty, Nil, List(segment))
     }
 
@@ -827,6 +891,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     def pure_type(name: String): GlobalName = pure_entity(pure_theory.types.map(_.entity), name)
     def pure_const(name: String): GlobalName = pure_entity(pure_theory.consts.map(_.entity), name)
+
+    object Unknown
+    {
+      val path: GlobalName = GlobalName(bootstrap_theory, LocalName("unknown"))
+      val term: Term = OMS(path)
+    }
 
     object Type
     {
@@ -848,8 +918,14 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     object Prop
     {
-      lazy val path: GlobalName = pure_type(isabelle.Pure_Thy.PROP)
+      val path: GlobalName = GlobalName(bootstrap_theory, LocalName("prop"))
       def apply(): Term = OMS(path)
+    }
+
+    object Ded
+    {
+      val path: GlobalName = GlobalName(bootstrap_theory, LocalName("ded"))
+      def apply(t: Term): Term = lf.Apply(OMS(path), t)
     }
 
     object Class
@@ -940,7 +1016,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             types = for (decl <- theory.types if defined(decl.entity)) yield decl,
             consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
             facts = for (decl <- theory.facts if defined(decl.entity)) yield decl,
-            locales = for (decl <- theory.locales if defined(decl.entity)) yield decl)
+            locales = for (decl <- theory.locales if defined(decl.entity)) yield decl,
+            locale_dependencies =
+              for (decl <- theory.locale_dependencies if defined(decl.entity)) yield decl)
         }
       }
       Theory_Export(node_name, Source(snapshot.node.source), theory.parents, segments)
@@ -971,6 +1049,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         isabelle.commas(
           List(
             isabelle.Export_Theory.Kind.LOCALE,
+            isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY,
             isabelle.Export_Theory.Kind.CLASS,
             isabelle.Export_Theory.Kind.TYPE,
             isabelle.Export_Theory.Kind.CONST,
@@ -982,6 +1061,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def get_const(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CONST, name))
       def get_fact(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.FACT, name))
       def get_locale(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE, name))
+      def get_locale_dependency(name: String): Item =
+        get(Item.Key(isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY, name))
 
       def is_empty: Boolean = rep.isEmpty
       def defined(key: Item.Key): Boolean = rep.isDefinedAt(key)
@@ -1018,6 +1099,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           ty match {
             case isabelle.Term.Type(isabelle.Pure_Thy.FUN, List(a, b)) =>
               lf.Arrow(import_type(a, env), import_type(b, env))
+            case isabelle.Term.Type(isabelle.Pure_Thy.PROP, Nil) => Prop()
             case isabelle.Term.Type(name, args) =>
               val op = OMS(get_type(name).global_name)
               if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(content.import_type(_, env)))
@@ -1058,7 +1140,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       }
 
       def import_sorts(typargs: List[(String, isabelle.Term.Sort)]): List[Term] =
-        typargs.flatMap({ case (a, s) => s.map(c => lf.Apply(import_class(c), OMV(a))) })
+        typargs.flatMap({ case (a, s) => s.map(c => Ded(lf.Apply(import_class(c), OMV(a)))) })
 
       def import_prop(prop: isabelle.Export_Theory.Prop, env: Env = Env.empty): Term =
       {
@@ -1066,7 +1148,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         val sorts = import_sorts(prop.typargs)
         val vars = prop.args.map({ case (x, ty) => OMV(x) % import_type(ty, env) })
         val t = import_term(prop.term, env)
-        Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) t else lf.Pi(vars, t)))
+        Type.all(types, lf.Arrow(sorts, Ded(if (vars.isEmpty) t else lf.Pi(vars, t))))
       }
     }
 
@@ -1093,7 +1175,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       private val node_name = thy_export.node_name
       private val node_source = thy_export.node_source
 
-      val thy: DeclaredTheory = declared_theory(node_name.theory)
+      val thy: DeclaredTheory = make_theory(node_name.theory)
       for (uri <- thy_source) SourceRef.update(thy, SourceRef(uri, SourceRegion.none))
 
       private val _content =
@@ -1103,7 +1185,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       def declare_item(
         entity: isabelle.Export_Theory.Entity,
-        syntax: Option[isabelle.Export_Theory.Infix] = None,
+        syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
         type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
       {
         val item = Item(thy_source, thy.path, node_name, node_source, entity, syntax, type_scheme)

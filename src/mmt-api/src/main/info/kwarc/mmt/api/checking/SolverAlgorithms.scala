@@ -625,6 +625,8 @@ trait SolverAlgorithms {self: Solver =>
       val tS = controller.simplifier(t, constantContext ++ solutionNoDefs ++ stack.context, rules, expDef = false)
       if (tS != t)
         history += ("simplified: " + presentObj(t) + " ~~> " + presentObj(tS))
+      // TODO stability does not consider simplifier-only simplification rules yet; so even stable terms can be simplifiable here
+      // retaining the stability flag sounds reasonable; but is it always correct?
       if (Stability.is(t))
         Stability.set(tS)
       tS

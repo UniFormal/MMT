@@ -3,13 +3,11 @@ package info.kwarc.mmt.odk.SCSCP.Server
 import java.io.InterruptedIOException
 import java.net.{InetAddress, ServerSocket, Socket}
 
-import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
 import info.kwarc.mmt.odk.SCSCP.CD.scscp2
 import info.kwarc.mmt.odk.SCSCP.Protocol.ProtocolError
 
 import scala.collection.mutable
-import scala.concurrent.Future
 
 /**
   * A (single threaded) implementation of the SCSCP protocol, version 1.3
@@ -27,6 +25,14 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   private val handlers = mutable.Map[OMSymbol, SCSCPHandler]()
   private val client_map = mutable.Map[String, SCSCPServerClient]()
 
+  /** the hostname this server is bound to */
+  def hostname: String = socket.getInetAddress.getHostName
+  /** the port this server is bound to */
+  def port: Int = socket.getLocalPort
+
+  /** handles a log event */
+  protected[Server] def event(event: SCSCPServerEvent): Unit = {}
+
   /** a list of clients connected to this server */
   def clients : List[SCSCPServerClient] = {
     client_map.toList.map(_._2)
@@ -40,12 +46,12 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     */
   def register(symbol: OMSymbol, handler: SCSCPHandler) {
     // TODO: Figure out relative paths, etc.
-
     if (handlers.isDefinedAt(symbol)) {
       throw new Exception("Handler already defined for symbol: " + symbol)
     }
 
     handlers(symbol) = handler
+    event(SCSCPRegisteredHandler(symbol, this))
   }
 
   // register the default handlers
@@ -68,6 +74,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     handlers(symbol)
   }
 
+  /** gets the names of the registered handler */
   def getHandlerNames : List[OMSymbol] = handlers.toList.map(_._1)
 
   /**
@@ -82,13 +89,17 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     }
 
     handlers -= symbol
+    event(SCSCPUnregistered(symbol, this))
   }
 
-  /** Processes forever, blocking */
+  /** a boolean indicating if we have quit the server */
+  private var hasQuit: Boolean = false
+
+  /** Processes forever until  */
   def processForever() {
 
     // process stuff forever
-    while(true){
+    while(!hasQuit){
       process()
       Thread.sleep(10)
     }
@@ -128,6 +139,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     try {
       val client = new SCSCPServerClient(socket, this, encoding)
       client_map(client.identifier) = client
+      event(SCSCPAddedClient(client, this))
     } catch {
       case p: ProtocolError =>
     }
@@ -140,6 +152,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
       if (!c.connected) {
         c.quit()
         client_map -= c.identifier
+        event(SCSCPRemovedClient(c, this))
       }
     })
 
@@ -159,12 +172,24 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
 
   /** Quits all clients attached to this server */
   def quit(reason: Option[String]) {
+    event(SCSCPQuittingServer(reason, this))
+    hasQuit = true // ends the process forever
     cleanupClients()
     clients.foreach(_.quit(reason))
   }
 }
 
 object SCSCPServer {
-  def apply(service_name: String, service_version: String, service_identifier: String, host: String = "0.0.0.0", port: Int = 26133, encoding: String = "UTF-8") =
-    new SCSCPServer(service_name, service_version, service_identifier, new java.net.ServerSocket(port, 0, InetAddress.getByName(host)), encoding)
+  def apply(
+             service_name: String,
+             service_version: String,
+             service_identifier: String,
+             logHandler: String => Unit = {s => {}},
+             host: String = "0.0.0.0",
+             port: Int = 26133,
+             encoding: String = "UTF-8"
+           ): SCSCPServer =
+    new SCSCPServer(service_name, service_version, service_identifier, new java.net.ServerSocket(port, 0, InetAddress.getByName(host)), encoding) {
+      override def event(message: SCSCPServerEvent): Unit = logHandler(message.toString)
+    }
 }

@@ -21,14 +21,12 @@ class StatisticsExporter extends Exporter {
     val rep = controller.report
     val rs = controller.depstore
     log("[  -> statistics]     "+doc.path.toPath+" "+bf.outFile.toString())
-    // Ugly workaround
-    // TODO: Fix the problem:
-    // (the output of typedRelationalExtractor is written to content, but the statistic is made only from relational/narration
-    val stat = rs.makeStatistics(doc.path)
-    def jstatmap(substat:List[(StatisticEntries, Int)]) = JSONArray.fromList(substat map {case (dec, n) => JSONObject(dec.getKey -> JSONInt(n))})
-    val jstat = stat.entries map {case (pre, substat) => JSONObject(pre.getKey -> jstatmap(substat))}
-    val j = JSONArray.fromList(jstat)
-    rh(j.toString)
+    rh(rs.makeStatistics(doc.path).toJSON.toString)
+    var root = bf.archive.rootString
+    val filename : String = (root+"/export/statistics/description_of_statistics_keys.json")
+    log(filename)
+    val usageFile = File(filename)
+    utils.File.write(usageFile, rs.statDescription.toString())
   }
 
   /**
@@ -39,13 +37,8 @@ class StatisticsExporter extends Exporter {
   def exportTheory(thy: DeclaredTheory, bf: BuildTask) {
     val rep = controller.report
     val rs = controller.depstore
-    val stat = rs.makeStatistics(thy.path)
-    def jstatmap(substat:List[(StatisticEntries, Int)]) = JSONArray.fromList(substat map {case (dec, n) => JSONObject(dec.getKey -> JSONInt(n))})
-    val jstat = stat.entries map {case (pre, substat) => JSONObject(pre.getKey -> jstatmap(substat))}
-    val j = JSONArray.fromList(jstat)
-    rh(j.toString)
+    rh(rs.makeStatistics(thy.path).toJSON.toString)
   }
   def exportView(view: DeclaredView, bf: BuildTask)  {}
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
-
 }

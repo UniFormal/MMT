@@ -6,20 +6,20 @@ import objects._
 import uom._
 import utils._
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.odk.Singular.SingularImporter
-import info.kwarc.mmt.mitm.MitM._
 import SemanticOperator._
 import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, RuleConstant, Structure}
-import info.kwarc.mmt.mitm.MitM
+import info.kwarc.mmt.MitM.MitM
 
-object IntegerLiterals extends RepresentedRealizedType(z,Z)
-object NatLiterals extends RepresentedRealizedType(n,N)
-object PosLiterals extends RepresentedRealizedType(p,P)
+import scala.collection.mutable
 
-object NatSucc extends RealizedOperator(succ, n =>: n, Arithmetic.Succ, N =>: N)
+object IntegerLiterals extends RepresentedRealizedType(MitM.z,MitM.Z)
+object NatLiterals extends RepresentedRealizedType(MitM.n,MitM.N)
+object PosLiterals extends RepresentedRealizedType(MitM.p,MitM.P)
+
+object NatSucc extends RealizedOperator(MitM.succ, MitM.n =>: MitM.n, Arithmetic.Succ, MitM.N =>: MitM.N)
 
 object NatSuccInverse extends InverseOperator(MitM.succ) {
   def unapply(l: OMLIT): Option[List[OMLIT]] = l match {
@@ -223,6 +223,7 @@ class SubtypeJudgRule(val tm1 : Term, val tm2 : Term, val by : GlobalName) exten
     Some(true)
   }
 }
+
 
 object subtypeJudg {
   val name = "subtypeJudge"

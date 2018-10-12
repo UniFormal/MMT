@@ -4,6 +4,7 @@ package info.kwarc.mmt.odk.LMFDB
 import info.kwarc.mmt.api._
 import backend._
 import frontend._
+import info.kwarc.mmt.MitM.VRESystem.VRESystem
 import ontology._
 import info.kwarc.mmt.api.ontology.{BaseType, Query, QueryEvaluator}
 import info.kwarc.mmt.api.web.WebQuery
@@ -15,7 +16,7 @@ import utils._
 import valuebases._
 import info.kwarc.mmt.odk._
 import info.kwarc.mmt.lf.Apply
-import info.kwarc.mmt.mitm.MitM
+import info.kwarc.mmt.MitM.{MitM, MitMSystems}
 
 import scala.collection.mutable.HashSet
 import scala.util.Try
@@ -24,9 +25,11 @@ class Plugin extends frontend.Plugin {
   val theory = MitM.mathpath
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
-    controller.backend.addStore(LMFDBStore)
+    controller.backend.addStore(new LMFDBStore {
+      def debug(s: String) = report("lmfdb", s)
+    })
     controller.extman.addExtension(new ImplementsRuleGenerator)
-    controller.extman.addExtension(LMFDBSystem)
+    controller.extman.addExtension(new LMFDBSystem)
   }
 }
 
@@ -166,7 +169,7 @@ trait LMFDBBackend {
   /** runs a simple lmfdb query */
   protected def lmfdbquery(db:String, query:String) : List[JSON] = {
     // get the url
-    val url = LMFDB.uri / s"$db?_format=json$query"
+    val url = LMFDB.uri / s"${db.stripPrefix("/")}?_format=json$query"
 
     debug(s"attempting to retrieve json from $url")
 
@@ -237,10 +240,7 @@ trait LMFDBBackend {
 
 
 
-object LMFDBStore extends Storage with LMFDBBackend {
-
-  def debug(s : String): Unit = {}
-
+abstract class LMFDBStore extends Storage with LMFDBBackend {
   def load(path: Path)(implicit controller: Controller) {
 
     val db = DB.fromPath(path, allowSchemaPath = false).getOrElse {
@@ -309,7 +309,9 @@ object LMFDBStore extends Storage with LMFDBBackend {
   }
 }
 
-object LMFDBSystem extends VRESystem("lmfdb",Systems.lmfdbsym) with LMFDBBackend {//QueryExtension("lmfdb") with LMFDBBackend {
+class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBackend {//QueryExtension("lmfdb") with LMFDBBackend {
+  def warmup(): Unit = {}
+
   val namespace = LMFDB.path
 
   def debug(s : String): Unit = log(s)

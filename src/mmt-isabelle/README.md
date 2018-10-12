@@ -9,6 +9,16 @@ https://isabelle.sketis.net/devel/release_snapshot or a repository clone
 from http://isabelle.in.tum.de/repos/isabelle -- see also its
 `README_REPOSITORY` file with the all-important **Quick start in 30min**.
 
+In particular, the following versions from Oct-2018 should fit together:
+
+  * Isabelle/742c88258cf8
+  * AFP/854bc290d72b
+  * MMT/1b24663b4c4e
+  * MathHub/MMT/urtheories/703627a3213f
+
+The frozen snapshot https://isabelle.sketis.net/devel/Isabelle_03-Oct-2018
+should be available over some months; it corresponds to Isabelle/742c88258cf8.
+
 
 ## Setup
 
@@ -45,7 +55,7 @@ Here are some example invocations of the main command-line tools:
 
 * HTTP server to browse the results:
 
-      isabelle mmt_server -A isabelle_mmt
+      isabelle mmt_server -A isabelle_test
 
 * MMT shell:
 
@@ -86,9 +96,10 @@ The subsequent setup works well for hardware with 64 GB of main memory:
 
 Examples:
 
-      isabelle mmt_import -a -X doc
-      isabelle mmt_import -d '$AFP' -B HOL-Analysis -X doc -X slow
-      isabelle mmt_import -d '$AFP' -a -X doc -X slow
+      isabelle mmt_import -a -X doc -X no_doc
+      isabelle mmt_import -d '$AFP' -B HOL-Analysis -X doc -X no_doc -X slow
+      isabelle mmt_import -d '$AFP' -a -X doc -X no_doc -X slow
+      isabelle mmt_import -d '$AFP' -a -X doc -X no_doc -X very_slow
 
 Here `$AFP` refers to the Isabelle settings variable provided by the Archive
 of Formal Proofs as Isabelle component (using a suitable `init_component`
@@ -109,7 +120,7 @@ serves as catch-all pattern.
 Since all sessions in AFP are guaranteed to belong to the chapter `AFP`, the
 following works for Isabelle + AFP as one big import process:
 
-      isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X slow
+      isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X no_doc -X slow -x HOL-ODE-Numerics -x Diophantine_Eqns_Lin_Hom -x HLDE
 
 Note that other Isabelle applications may have their own chapter naming
 scheme, or re-use official Isabelle chapter names; if nothing is specified,
@@ -154,7 +165,6 @@ directories. Its command-line usage is as follows:
         -C CH=AR     add mapping of chapter CH to archive AR, or default "_=AR"
         -B NAME      include session NAME and all descendants
         -D DIR       include session directory and select its sessions
-        -I DIR       init archive directory (default: "isabelle_mmt")
         -R           operate on requirements of selected sessions
         -X NAME      exclude sessions from group NAME and all descendants
         -a           select all sessions
@@ -167,16 +177,16 @@ directories. Its command-line usage is as follows:
 
       Import specified sessions into MMT archive directories.
 
-Options `-A`, `-C`, `-I` specify target archives and a mapping from Isabelle
+Options `-A` and `-C` specify target archives and a mapping from Isabelle
 session chapters to MMT archives. Chapter names are provided in Isabelle
 session `ROOT` specifications, and archive names are the base directory
 names: if it is the same as the chapter name, the directory will be used at
 its root; otherwise the chapter becomes a sub-directory of the archive. The
 directories given via (multiple) `-A` options are recursively searched for
-MMT archives; if the result is empty, a fresh archive is initialized
-according to option `-I`. Thus it is possible to use `isabelle mmt` without
-any archive options and get results into the default directory
-`isabelle_mmt`, freshly initialized on demand.
+MMT archives. If the result is empty, a fresh archive is initialized
+Isabelle system options `mmt_archive_dir` etc. Thus it is possible to use
+`isabelle mmt` without any archive options and get results into a default
+directory (`isabelle_test`), freshly initialized on demand.
 
 Options `-B`, `-D`, `-R`, `-X`, `-a`, `-d`, `-g`, `-x` with remaining
 non-option arguments provide the standard Isabelle vocabulary to specify
@@ -214,7 +224,7 @@ the results of that tool. The command-line usage is as follows:
 Option `-A` refers to archive directories that are recursively explored as
 in `isabelle mmt_build`. In order to refer to the default archive of that
 tool (option `-I` above), it needs to be included explicitly as `-A` here:
-e.g. `isabelle mmt_server -A isabelle_mmt`.
+e.g. `isabelle mmt_server -A isabelle_test`.
 
 Option `-p` specifies an alternative HTTP server port.
 

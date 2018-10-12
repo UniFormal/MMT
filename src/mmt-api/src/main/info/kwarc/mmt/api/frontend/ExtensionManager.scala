@@ -193,30 +193,27 @@ class ExtensionManager(controller: Controller) extends Logger {
     */
   def addExtension(cls: String, args: List[String]): Extension = {
     log("trying to create extension " + cls)
-    val loaders = controller.backend.getStores.collect{case s : RealizationStorage => s}.map(_.loader)
-    var clsJ : Option[Class[_]] = None
-    loaders.foreach {loader =>
-      if (clsJ.isEmpty) clsJ = Try(Class.forName(cls,true,loader)).toOption
-    }
-    if (clsJ.isEmpty) throw RegistrationError("error while trying to load class " + cls)
-    /*
     val clsJ = try {
-       Class.forName(cls)
+       try {
+         Class.forName(cls)
+       } catch {case e: ClassNotFoundException =>
+         controller.backend.loadClass(cls).get
+       }
     } catch {
       case e: Throwable =>
         // need to catch all Exceptions and Errors here because NoClassDefFoundError is not an Exception
         throw RegistrationError("error while trying to load class " + cls).setCausedBy(e)
     }
-    */
-    extensions.find(e => e.getClass == clsJ.get).foreach {e =>
+    extensions.find(e => e.getClass == clsJ).foreach {e =>
        log("... already loaded, skipping")
        return e
     }
     val ext = try {
-      val Ext = clsJ.get.asInstanceOf[Class[Extension]]
+      val Ext = clsJ.asInstanceOf[Class[Extension]]
       Ext.newInstance
     } catch {
-      case e: Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
+      case e: Exception =>
+        throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
     }
     addExtension(ext, args)
     ext

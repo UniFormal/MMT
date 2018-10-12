@@ -8,7 +8,17 @@ import info.kwarc.mmt.api.utils._
 
 sealed abstract class SageObject
 case class SageMethod(name : String, doc : String, arity : Int, tp : String)
-case class ParsedCategory(name : String, implied: List[String], axioms: List[String], structure : List[String],
+case class SageFunction(n : String, doc : String, arity : Int, tp : String) extends SageObject {
+  val steps = n.split("\\.")
+  val theory = Sage.docpath ? LocalName(steps.init.mkString("."))
+  val name = LocalName(steps.last)
+  val document = steps.init.init.toList
+  // val dpath = steps.init.init.foldLeft(Sage.catdoc)((d,s) => d/s)
+  // val tname = LocalName(steps.init.last)
+  // val cname = LocalName(steps.last)
+}
+
+case class ParsedCategory(n : String, implied: List[String], axioms: List[String], structure : List[String],
                           doc : String,
                           mmt : String,
                           gap : String,
@@ -16,23 +26,33 @@ case class ParsedCategory(name : String, implied: List[String], axioms: List[Str
                           morph_methods: (String,List[SageMethod]),
                           parent_methods: (String,List[SageMethod]),
                           subcategory_methods : (String,List[SageMethod])) extends SageObject {
-  override def toString = "Category " + name + "\n  Inherits: " + implied.mkString(",") + "\n  Axioms: " +
+  override def toString = "Category " + steps.last + "\n  Inherits: " + implied.mkString(",") + "\n  Axioms: " +
     axioms.mkString(",") + "\n  Structure: " + structure.mkString(",") + "\n  Doc: " + doc
 
-  private val steps = name.replaceAll("""sage.categories.""","").replaceAll("sage.","").split("\\.")
-  private val dpath = Sage.catdoc / steps.head
-  private val tname = LocalName(steps.tail.mkString("."))
-  val path = dpath ? tname
+  val steps = n.split("\\.")
+  val document = steps.init.toList
+  val theory = Sage.docpath ? LocalName(steps.mkString("."))
+  // private val dpath = steps.init.foldLeft(Sage.catdoc)((d,s) => d/s)
+  // private val tname = LocalName(steps.last + "_Category")
+  // val path = dpath ? tname
   // println(path)
   val includes = implied.distinct
 
-  val isStructure = structure contains name
+  val isStructure = structure contains steps.last
 }
-case class ParsedClass(name : String, doc : String, implied: List[String],methods : List[SageMethod]) extends SageObject {
-  private val steps = name.replaceAll("""sage.categories.""","").replaceAll("""sage.classes.""","").replaceAll("sage.","").replaceAll("_class","").split("\\.")
-  private val dpath = Sage.clssdoc / steps.head
-  private val tname = LocalName(steps.tail.mkString("."))
-  val path = dpath ? tname
+case class ParsedClass(n : String, doc : String, implied: List[String],methods : List[SageMethod]) extends SageObject {
+  val steps = n.split("\\.")
+  val classes_theory = Sage.docpath ? LocalName(steps.init.mkString("."))
+  val name = LocalName(steps.last)
+  val document = steps.init.toList
+  val classes_document = steps.init.init.toList
+  val theory = Sage.docpath ? LocalName(steps.mkString("."))
+  // private val dpath = steps.init.foldLeft(Sage.clssdoc)((d,s) => d / s)
+  // private val tname = LocalName(steps.last)
+  // val path = dpath ? tname
+  // ???
+  // val ctpath = dpath.^ ? steps.init.last
+  // val cpath = ctpath ? tname
   // println(path)
   val includes = implied.distinct
 }
@@ -50,6 +70,7 @@ class SageImporter extends Importer {
 
   var categories : List[ParsedCategory] = Nil
   var classes : List[ParsedClass] = Nil
+  var functions : List[SageFunction] = Nil
 
   def doMethod(input : JSONObject, name : String, tp : String) : SageMethod = {
     val doc = input.getAsString("__doc__")
@@ -57,6 +78,15 @@ class SageImporter extends Importer {
       case e : Exception => 0
     }
     SageMethod(name,doc,arity,tp)
+  }
+
+  def doFunction(n : String,o : JSONObject) = {
+    val name = o.getAsString("name")
+    val doc = o.getAsString("__doc__")
+    val arity = try { o.getAsList(classOf[String],"args").length } catch {
+      case e: Exception => 0
+    }
+    functions ::= SageFunction(name,doc,arity,"GlobalFunction")
   }
 
   def doClass(obj : JSONObject) = {
@@ -124,14 +154,18 @@ class SageImporter extends Importer {
         doCategory(obj)
       case j : JSON => throw new ParseError("Not a JSONObject: " + j)
     }
-    case JSONObject(List((JSONString("categories"),cats : JSONObject),(JSONString("classes"),clss : JSONObject))) =>
+    case JSONObject(List((JSONString("categories"),cats : JSONObject),(JSONString("classes"),clss : JSONObject),(JSONString("functions"),funs : JSONObject))) =>
       cats.map.map(_._2).foreach {
         case o : JSONObject => doCategory(o)
       }
       clss.map.map(_._2).foreach {
         case o : JSONObject => doClass(o)
       }
+      funs.map.foreach {
+        case (n,o : JSONObject) => doFunction(n.toString,o)
+      }
     case _ =>
+      println(input.asInstanceOf[JSONObject].map.map(_._1.toString))
       throw new ParseError("Input not a JSONArray!")
   }
 
@@ -157,16 +191,18 @@ class SageImporter extends Importer {
     // categories foreach(c => log(c.toString))
     categories = categories.distinct
     classes = classes.distinct
-    val allaxioms = categories.flatMap(_.axioms).distinct
-    val allmethods = (categories.flatMap(c => c.elem_methods._2 ::: c.subcategory_methods._2 :::
-      c.morph_methods._2 ::: c.parent_methods._2) ::: classes.flatMap(_.methods)).distinct
+    functions = functions.distinct
+    // val allaxioms = categories.flatMap(_.axioms).distinct
+    // val allmethods = (categories.flatMap(c => c.elem_methods._2 ::: c.subcategory_methods._2 :::
+    //   c.morph_methods._2 ::: c.parent_methods._2) ::: classes.flatMap(_.methods)).distinct
 
     val trans = new SageTranslator(controller,bf,index,toplog)
-    trans(categories ::: classes)
+    trans(categories ::: classes ::: functions)
     log(categories.length + " Categories")
-    log(allaxioms.length + " Axioms")
-    log(allmethods.length + " Methods")
+    // log(allaxioms.length + " Axioms")
+    // log(allmethods.length + " Methods")
     log(classes.length + " Classes")
+    log(functions.length + " Functions")
     BuildResult.empty
   }
 }

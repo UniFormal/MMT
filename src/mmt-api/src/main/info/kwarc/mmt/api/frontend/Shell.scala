@@ -42,6 +42,9 @@ class Shell extends StandardIOHelper {
   lazy val runStyle = MMTSystem.runStyle
   lazy val controller = new Controller
 
+  /** if set to true, disables the first run / setup routine during test cases */
+  var disableFirstRun = false
+
   /** creates controller, loads configurations/startup files, processes arguments, possibly drops into shell or terminates */
   def main(a: Array[String]) {
     try {
@@ -109,7 +112,7 @@ class Shell extends StandardIOHelper {
      }
 
      // guess if MMT is run for the first time and offer changing into setup
-     if (a.isEmpty && defRc.map(!_.exists).getOrElse(true)) {
+     if (a.isEmpty && defRc.map(!_.exists).getOrElse(true) && !disableFirstRun) {
        println("\n\n\n\n\nIt looks like you might be running MMT for the first time.\n" +
                "Do you want me to run setup (y/n)?"
        )

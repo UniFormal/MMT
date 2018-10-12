@@ -4,20 +4,17 @@ import info.kwarc.mmt.api.objects.{OMS, Term}
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.DeclaredModule
-import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.{RealizedType, StandardBool, StandardDouble, StandardInt}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
-import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
-import info.kwarc.mmt.odk.Singular.Singular
-import info.kwarc.mmt.odk._
 
 import scala.collection.mutable
 
 object GAP {
   val _base = DPath(URI.http colon "www.gap-system.org")
   val theory = _base ? "Types"
+  val importbase = _base / "mitm"
 
   val has = OMS(theory ? "Has")
   val get = OMS(theory ? "Is")
@@ -72,7 +69,7 @@ class Plugin extends frontend.Plugin {
     controller.extman.addExtension(new GAPJSONImporter)
     controller.extman.addExtension(FilterRelations)
     controller.extman.addExtension(GAPGraphExporter)
-    controller.extman.addExtension(RemoteGAPSystem)
+    controller.extman.addExtension(new GAPSystem)
   }
 }
 

@@ -63,7 +63,7 @@ class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermCont
    def getInnerContext = codomainAsContext
    
    def translate(newHome: Term, prefix: LocalName, translator: Translator,context : Context): DeclaredStructure = {
-     def tl(m: Term)= translator.applyModule(Context.empty, m)
+     def tl(m: Term)= translator.applyModule(context, m)
      val res = new DeclaredStructure(home, prefix/name, tpC map tl, isImplicit)
      getDeclarations foreach {d =>
        res.add(d.translate(res.toTerm, LocalName.empty, translator,context))

@@ -56,6 +56,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
               try {
                 traverse(t,initState, context)
               } catch {
+                case le: LookupError => println("Lookup Error while simplifying " + controller.presenter.asString(obj)+": ")
+                log(le.getMessage)
+                throw le
                 case e: Exception =>
                   // this should never happen; but if there is a bug, it's easier to locate this way 
                   throw GeneralError("error while simplifying " + controller.presenter.asString(obj)).setCausedBy(e)
@@ -75,9 +78,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
       // by marking with and testing for Simplified(_), we avoid traversing a term twice
       // Note that certain operations remove the simplified marker: changing the toplevel, substitution application
       def traverse(t: Term)(implicit con : Context, init: UOMState) : Term = {
-       log("traversing into " + controller.presenter.asString(t))
-       t match {
-         /* TODO this optimization saves 10-20% on examples (One would expect it to save more time.) by avoiding retraversal of simplified terms.
+        log("traversing into " + controller.presenter.asString(t))
+        t match {
+          /* TODO this optimization saves 10-20% on examples (One would expect it to save more time.) by avoiding retraversal of simplified terms.
             However, there is a subtle problem: When looking up a type and simplifying it, the marker may be reintroduced on the previously checked term.
             Then later lookups will consider it simple even if they occur in a context with more simplification rules.
             The RuleBasedChecker already removes these markers after each CheckingUnit, but that is not enough.
@@ -85,38 +88,49 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
          case Simple(t) =>
             log("term is already simple")
             t*/
-         //TODO strangely, taking the optimization out introduces a checking error in mizar.mmt
-         // this term was simplified before resulting in tS
-         case SimplificationResult(tS) =>
-           log("structure-shared term was already simplified")
-           tS
-         case OMAorAny(Free(cont,bd), args) if cont.length == args.length =>
-           // MMT-level untyped beta-reduction using 'free' as 'lambda'
-           // should only be needed if we expand the definition of an unknown variable
-           val sub = (cont / args).get // defined due to guard
-           val tC = bd ^? sub
-           traverse(tC)
-         // apply morphisms TODO should become computation rule once module expressions are handled properly
-         case OMM(tt, mor) =>
+          //TODO strangely, taking the optimization out introduces a checking error in mizar.mmt
+          // this term was simplified before resulting in tS
+          case SimplificationResult(tS) => try {
+            log("structure-shared term was already simplified")
+            tS
+          } catch {
+            case e: Error => println("Error in traverse for case of SimplificationResult " + controller.presenter.asString(t) + ": " ++ e.getMessage); throw e
+          }
+          case OMAorAny(Free(cont, bd), args) if cont.length == args.length =>
+            // MMT-level untyped beta-reduction using 'free' as 'lambda'
+            // should only be needed if we expand the definition of an unknown variable
+            val sub = (cont / args).get // defined due to guard
+          val tC = bd ^? sub
+            traverse(tC)
+          // apply morphisms TODO should become computation rule once module expressions are handled properly
+          case OMM(tt, mor) => try {
             val tM = controller.globalLookup.ApplyMorphs(tt, mor)
             traverse(tM)
-         // the main case
-         case ComplexTerm(_,_,_,_) =>
+          } catch {
+            case e: Error => println("Error in traverse for case of OMM " + controller.presenter.asString(t) + ": " ++ e.getMessage); throw e
+          }
+          // the main case
+          case ComplexTerm(_, _, _, _) => try {
             logGroup {
-               //log("state is" + init.t + " at " + init.path.toString)
-               val (tS, globalChange) = logGroup {
-                  applyAux(t)
-               }
-               //log("simplified to " + controller.presenter.asString(tS))
-               val tSM = Simple(tS.from(t))
-               SimplificationResult.put(t, tSM) // store result to recall later in case of structure sharing
-               if (globalChange)
-                  Changed(tSM)
-               else
-                  tSM
+              //log("state is" + init.t + " at " + init.path.toString)
+              val (tS, globalChange) = logGroup {
+                applyAux(t)
+              }
+              //log("simplified to " + controller.presenter.asString(tS))
+              val tSM = Simple(tS.from(t))
+              SimplificationResult.put(t, tSM) // store result to recall later in case of structure sharing
+              if (globalChange)
+                Changed(tSM)
+              else
+                tSM
             }
-         // expand abbreviations but not definitions
-         case OMS(p) =>
+          } catch {
+            case e: Error =>
+              log("Error in traverse for case of ComplexTerm: " + e.getMessage)
+              throw e
+          }
+          // expand abbreviations but not definitions
+          case OMS(p) =>
             applyAbbrevRules(p) match {
               case GlobalChange(tS) => tS.from(t)
               case NoChange =>
@@ -137,22 +151,39 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
                 }
               // LocalChange impossible
             }
-         // expand definitions of variables (Simple(_) prevents this case if the definiens is added later, e.g., when solving an unknown)
-         case OMV(n) => con(n).df match {
-           case Some(d) =>
-             log("expanding and simplifying definition of variable " + n)
-             traverse(d)(con.before(n), init)
-           case None =>
-             t
-         }
-         // literals read from XML may not be recognized yet
-         case u: UnknownOMLIT =>
-           u.recognize(init.rules).getOrElse(u)
-         case _ =>
+          // expand definitions of variables (Simple(_) prevents this case if the definiens is added later, e.g., when solving an unknown)
+          case OMV(n) => try {
+            con(n).df match {
+              case Some(d) =>
+                log("expanding and simplifying definition of variable " + n)
+                traverse(d)(con.before(n), init)
+              case None =>
+                t
+            }
+          }
+          catch {
+            case exc: LookupError =>
+              println("LookupError while traversing into OMV(" + n + "): ")
+              log(exc.getMessage)
+              println("");
+              throw exc
+          }
+          // literals read from XML may not be recognized yet
+          case u: UnknownOMLIT => try {
+            u.recognize(init.rules).getOrElse(u)
+          } catch {
+            case e: Error => println("Error in traverse for case of UnknownOMLIT " + controller.presenter.asString(t) + ": " ++ e.getMessage); throw e
+          }
+          case _ => try {
             val tS = Simple(Traverser(this, t))
             SimplificationResult.put(t, tS)
             tS
-       }
+          } catch {
+            case e: Error =>
+              println("Error in traverse for case _ " + controller.presenter.asString(t) + ": " ++ e.getMessage)
+              throw e
+          }
+        }
       }
 
      /** an auxiliary method of apply that applies simplification rules

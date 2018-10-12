@@ -69,12 +69,12 @@ trait RealizationStorage {
    */
   def loadObject(p: MPath): SemanticObject = {
     val cls = SemanticObject.mmtToJava(p)
-    reflect(cls, p)
+    loadSemanticObject(cls, p)
   }
 
   /** gets the object for a java class name (cls must be in Scala's syntax for java .class files) */
-  protected def reflect(cls: String, p: Path): SemanticObject = {
-    val c = try {
+  def loadClass(cls: String, p: Path): Class[_] = {
+    try {
       Class.forName(cls, true, loader)
     } catch {
       case e: ClassNotFoundException =>
@@ -86,10 +86,13 @@ trait RealizationStorage {
       case e: Error =>
         throw BackendError(s"class $cls for $p exists, but: " + e.getMessage, p).setCausedBy(e)
     }
+  }
+  /** gets the object for a java class name (cls must be in Scala's syntax for java .class files) */
+  protected def loadSemanticObject(cls: String, p: Path): SemanticObject = {
+    val c = loadClass(cls, p)
     val r = try {
       c.getField("MODULE$").get(null)
-    }
-    catch {
+    } catch {
       case e: Exception =>
         throw BackendError(s"class $cls for $p exists, but an error occurred when accessing the Scala object", p).setCausedBy(e)
     }
@@ -213,7 +216,7 @@ class RealizationArchive(file: File) extends Storage with RealizationStorage {
     }
     val s = uom.GenericScalaExporter.mpathToScala(mp)
     //controller.report("backend", "trying to load class " + s)
-    val r = reflect(s + "$", mp) match {
+    val r = loadSemanticObject(s + "$", mp) match {
       case r: uom.RealizedTheory => r
       case _ => throw BackendError("class for " + mp + " exists but is not a realization", mp)
     }

@@ -23,7 +23,7 @@ object Codecs {
   val rationalPolynomial = path ? "rationalPolynomial"
 }
 
-object LMFDBCoder extends Coder(List(TMInt,TMString,BoolAsInt,StandardBool,TMNat,TMPos), List(TMList,StandardVector,StandardMatrix)) {
+object LMFDBCoder extends Coder(List(TMInt,TMString,BoolAsInt,StandardBool,TMNat,TMPos,StandardPolynomial), List(TMList,StandardVector,StandardMatrix)) {
    override def destruct(t: Term) = t match {
      case ApplySpine(OMS(op), pars) => Some((op, pars))
      case _ => None

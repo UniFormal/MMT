@@ -9,6 +9,7 @@ import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.parser.ParseResult
 import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure, UniformTranslator}
+import info.kwarc.mmt.api.uom.RealizedType
 
 import scala.collection.mutable
 import scala.util.{Success, Try}
@@ -503,7 +504,8 @@ class AcrossLibraryTranslator(controller : Controller,
         }
         case OMATTR(arg, key, value) => OMATTR(TermClass(arg).update, TermClass(key).update.asInstanceOf[OMID], TermClass(value).update)
         // TODO -----------v-----------------------------------------------------------------^
-        case OMLIT(vl, _) => ???
+        case OMLIT(v,rt) =>
+          OMLIT(v,RealizedType(TermClass(rt.synType).update,rt.semType))
         case UnknownOMLIT(vl, st) => UnknownOMLIT(vl, TermClass(st).update)
         case OMFOREIGN(_) => currentTerm
         case OMSemiFormal(_) => currentTerm

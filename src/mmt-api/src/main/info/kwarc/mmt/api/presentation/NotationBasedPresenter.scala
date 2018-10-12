@@ -597,6 +597,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                   return default
                case Some(objP) =>
                   val PragmaticTerm(op, subargs, context, args, attrib, not, pos) = objP
+                  if (attrib) return default // TODO specify and implement handling of HOAS type attributions
                   val firstVarNumber = subargs.length+1
                   val firstArgNumber = subargs.length+context.length+1
                   /*
