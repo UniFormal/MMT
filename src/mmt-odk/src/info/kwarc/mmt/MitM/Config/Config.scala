@@ -1,6 +1,5 @@
 package info.kwarc.mmt.MitM.Config
 
-import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.utils._
 
 /** configuration for the MitM Architecture */
@@ -26,7 +25,9 @@ object MitMConfig {
 }
 
 /** Represents the location of a single MitM SCSCP System */
-case class MitMSystemLocation(hostname: String, port: Int)
+case class MitMSystemLocation(hostname: String, port: Int) {
+  def toLocation: String = hostname + (if(port != 26133) s":$port" else "")
+}
 object MitMSystemLocation extends JSONConverter[MitMSystemLocation] {
   def toJSON(obj: MitMSystemLocation): JSON = JSONString(obj.hostname + ":" + obj.port)
   def fromJSONOption(j: JSON): Option[MitMSystemLocation] = j match {

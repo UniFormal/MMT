@@ -10,16 +10,14 @@ import info.kwarc.mmt.odk.OpenMath.CodingServer
 
 /** the plugin used for ODK */
 class Plugin extends ChangeListener with Rules with Actions {
+  override val logPrefix = "odk"
+
   val theory: MPath = MitM.mathpath
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
 
   override def start(args: List[String]) {
-
-    // the three other systems that we know of
-    controller.extman.addExtension(new LMFDB.Plugin)
-    controller.extman.addExtension(new GAP.Plugin)
-    controller.extman.addExtension(new Sage.Plugin)
-    controller.extman.addExtension(new Singular.Plugin)
+    // load the systems
+    controller.extman.addExtension(MitMConfigActionCompanion)
 
     // custom servers
     controller.extman.addExtension(new Server)
@@ -34,6 +32,4 @@ class Plugin extends ChangeListener with Rules with Actions {
     // initialization
     controller.extman.addExtension(MitM.preproc)
   }
-
-  var config: MitMConfig = MitMConfig.default
 }

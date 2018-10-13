@@ -42,7 +42,7 @@ abstract class VRESystem(val id : String, val sym : GlobalName) extends QueryExt
 
 abstract class VREWithAlignmentAndSCSCP(id : String, sym : GlobalName, val head: OMSymbol, archiveId : String)
   extends VRESystem(id, sym) with AlignmentBasedMitMTranslation with UsesSCSCP {
-  def location: MitMSystemLocation = odkPlugin.config(id)
+  def location: MitMSystemLocation = odkPlugin.config.get(id)
 
   lazy val archive: Archive = controller.backend.getArchive(archiveId).getOrElse(throw GeneralError(s"Missing archive $archiveId"))
   def call(t : Term): Term = translateToMitM(scscpcall(translateToSystem(t)))
