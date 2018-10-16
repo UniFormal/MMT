@@ -73,6 +73,7 @@ object Orders {
     ,"elliptic_curves/elliptic-curve-toolchest.omf.mmt"
     ,"algebra/hecke.mmt"
     ,"sets/poset.mmt"
+    ,"algebra/bands.mmt"
     ,"algebra/lattice.mmt"
     ,"calculus/normedmetric.mmt"
     ,"calculus/sequencesconvergence.mmt"

@@ -1,14 +1,16 @@
 package info.kwarc.mmt.MitM.VRESystem
 
 import info.kwarc.mmt.MitM.Config.MitMSystemLocation
+import info.kwarc.mmt.MitM.MitM
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
 import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.refactoring.{AcrossLibraryTranslation, AcrossLibraryTranslator, AlignmentTranslation, LinkTranslation}
+import info.kwarc.mmt.api.refactoring._
 import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
 import info.kwarc.mmt.odk.Plugin
 
@@ -48,6 +50,21 @@ abstract class VREWithAlignmentAndSCSCP(id : String, sym : GlobalName, val head:
   def call(t : Term): Term = translateToMitM(scscpcall(translateToSystem(t)))
 }
 
+object Translations {
+  val lftoOMA = new AcrossLibraryTranslation {
+    override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
+      case ApplySpine(f,ls) =>
+        true
+      case _ => false
+    }
+
+    override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
+      case ApplySpine(f,ls) =>
+        OMA(f,ls)
+    }
+  }
+}
+
 trait AlignmentBasedMitMTranslation { this : VRESystem =>
 
   /** the mitm/smglom archive */
@@ -55,7 +72,9 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
   /** the archive belonging to this system */
   val archive : Archive
 
-  val complexTranslations : List[AcrossLibraryTranslation] = Nil
+  def complexTranslations : List[AcrossLibraryTranslation] = Nil
+  def toTranslations : List[AcrossLibraryTranslation] = Translations.lftoOMA :: Nil
+  def fromTranslations : List[AcrossLibraryTranslation] = Nil
 
   lazy protected val alignmentserver: AlignmentsServer = controller.extman.get(classOf[AlignmentsServer]).headOption.getOrElse {
     val a = new AlignmentsServer
@@ -70,17 +89,17 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
     case Some(v : DeclaredView) => List(v)
   }.flatten
 
-  private def translator(to : Archive) = {
+  private def translator(to : Archive,trls : List[AcrossLibraryTranslation]) = {
     val aligns = alignmentserver.getAll.collect {
-      case fa : FormalAlignment => AlignmentTranslation(fa)(controller)
+      case fa : FormalAlignment if fa.props.contains(("type","VRE" + this.id)) => AlignmentTranslation(fa)(controller)
     }
-    val linktrs = links.map(l => LinkTranslation(l)(controller))
+    val linktrs : List[TranslationGroup]= links.map(l => LinkTranslation(l))
 
-    new AcrossLibraryTranslator(controller,aligns ::: complexTranslations,linktrs,to)
+    new AcrossLibraryTranslator(controller,aligns ::: complexTranslations ::: trls,linktrs,to)
   }
 
-  private lazy val translator_to = translator(archive)
-  private lazy val translator_from = translator(mitm)
+  private lazy val translator_to = translator(archive,toTranslations)
+  private lazy val translator_from = translator(mitm,fromTranslations)
 
   def translateToSystem(t : Term) : Term = {
     val (res,succ) = translator_to.translate(t)

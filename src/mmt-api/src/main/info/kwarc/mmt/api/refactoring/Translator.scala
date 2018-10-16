@@ -57,32 +57,11 @@ case class SymbolApplication(s: GlobalName, app: Application) extends Applicatio
   }
 }
 
-object Application {
-  var controller : Controller = null
-  def apply(ls: List[GlobalName], f: GlobalName, args: List[Term]) = OMApplication(OMS(f), args, ls)
-
-  def unapply(t: Term): Option[(List[GlobalName],GlobalName, List[Term])] = smartunapply(t, OMApplication)
-
-  private def smartunapply(t: Term, app: Application): Option[(List[GlobalName],GlobalName, List[Term])] = t match {
-    case app(OMS(f), args) =>
-      controller.get(f) match {
-        case c: Constant if c.rl contains "apply" =>
-          val napp = SymbolApplication(f, app)
-          smartunapply(t, napp).map(r => (f :: r._1, r._2, r._3))
-        case _ =>
-          Some((Nil,f, args))
-      }
-    case app(OMS(f), args) =>
-      Some((Nil, f, args))
-    case _ => None
-  }
-}
-
 
 abstract class AcrossLibraryTranslation extends UniformTranslator {
-  def applicable(tm : Term) : Boolean
-  def apply(tm : Term) : Term
-  def apply(context: Context, tm: Term) : Term = apply(tm)
+  def applicable(tm : Term)(implicit translator: AcrossLibraryTranslator) : Boolean
+  def apply(tm : Term)(implicit translator: AcrossLibraryTranslator) : Term
+  def apply(context: Context, tm: Term) : Term = tm
 }
 
 object AlignmentTranslation {
@@ -91,12 +70,12 @@ object AlignmentTranslation {
     if (from.toOption.isDefined && to.toOption.isDefined) new AlignmentTranslation(alignment)
     else None
   }
-  object None extends AlignmentTranslation(SimpleAlignment(ParseResult.free,ParseResult.free,false))(null) {
-    override def applicable(tm: Term): Boolean = false
+  object None extends AlignmentTranslation(SimpleAlignment(ParseResult.free,ParseResult.free,false)) {
+    override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = false
   }
 }
 
-class AlignmentTranslation(val alignment : FormalAlignment)(implicit controller : Controller) extends AcrossLibraryTranslation {
+class AlignmentTranslation(val alignment : FormalAlignment) extends AcrossLibraryTranslation {
   override def toString: String = "Alignment " + alignment.toString
 
   override def equals(obj: scala.Any): Boolean = obj match {
@@ -131,15 +110,10 @@ class AlignmentTranslation(val alignment : FormalAlignment)(implicit controller 
   }
   */
 
-  private val appl = if(Application.controller == null) {
-    Application.controller = controller
-    Application
-  } else Application //controller.pragmatic.StrictOMA
-
-  def apply(tm : Term) = //traverser(tm,())
+  def apply(tm : Term)(implicit translator: AcrossLibraryTranslator) = //traverser(tm,())
     (alignment,tm) match {
       case (_,OMID(alignment.from.mmturi)) => OMID(alignment.to.mmturi)
-      case (align @ ArgumentAlignment(_,_,_,_),appl(ls,alignment.from.mmturi,args)) =>
+      case (align @ ArgumentAlignment(_,_,_,_),translator.Application(ls,alignment.from.mmturi,args)) =>
         // println("Pragma! " + ls + " from " + align.from.mmturi)
         def reorder(ts: List[Term]): List[Term] = {
           val max = align.arguments.maxBy(p => p._2)._2
@@ -149,14 +123,14 @@ class AlignmentTranslation(val alignment : FormalAlignment)(implicit controller 
             else ts(ni.get - 1)
           }).toList
         }
-        appl(ls,align.to.mmturi match {
+        translator.Application(ls,align.to.mmturi match {
           case gn : GlobalName => gn
         },reorder(args))
     }
 
-  def applicable(tm : Term) = (alignment,tm) match {
+  def applicable(tm : Term)(implicit translator: AcrossLibraryTranslator) = (alignment,tm) match {
     case (_,OMID(alignment.from.mmturi)) => true
-    case (ArgumentAlignment(_,_,_,_),appl(_,alignment.from.mmturi, args)) if Try(controller.get(alignment.to.mmturi)).isSuccess => true
+    case (ArgumentAlignment(_,_,_,_),translator.Application(_,alignment.from.mmturi, args)) if Try(translator.ctrl.get(alignment.to.mmturi)).isSuccess => true
     case _ => false
   }
 }
@@ -165,15 +139,15 @@ abstract class TranslationGroup {
   def applicable(tm : Term)(implicit trl : AcrossLibraryTranslator) : List[(AcrossLibraryTranslation,Term)]
 }
 
-case class LinkTranslation(ln : DeclaredLink)(implicit controller: Controller) extends TranslationGroup {
+case class LinkTranslation(ln : DeclaredLink) extends TranslationGroup {
   override def toString: String = "DeclaredLink " + ln.path
   val from = ln.from match {
     case OMMOD(mp) => mp
     case _ => ??? // TODO materialize properly
   }
   case class InnerTranslation(p : GlobalName) extends AcrossLibraryTranslation {
-    def applicable(tm : Term) = true
-    def apply(tm : Term) = {
+    def applicable(tm : Term)(implicit translator: AcrossLibraryTranslator) = true
+    def apply(tm : Term)(implicit translator: AcrossLibraryTranslator) = {
       require(tm == OMS(p))
       ln match {
         case s : DeclaredStructure => OMS(s.parent ? (ln.name / p.name))
@@ -182,12 +156,13 @@ case class LinkTranslation(ln : DeclaredLink)(implicit controller: Controller) e
     }
   }
 
-  def applicable(tm : Term)(implicit trl : AcrossLibraryTranslator) =
+  def applicable(tm : Term)(implicit translator: AcrossLibraryTranslator) =
     AcrossLibraryTranslator.getSymbols(tm).filter(s => s.module == from).map(p => (InnerTranslation(p),OMS(p)))
 }
 
 object AcrossLibraryTranslator {
   // TODO maybe replace -----------------------------------------------------------------
+
   def getSymbols(tm : Term) = {
     var symbols : List[GlobalName] = Nil
     val traverser = new StatelessTraverser {
@@ -203,6 +178,8 @@ object AcrossLibraryTranslator {
   }
 
   // TODO --------------------------------------------------------------------------------
+
+  def trivial(ctrl : Controller) = new AcrossLibraryTranslator(ctrl,Nil,Nil,ctrl.backend.getArchives.head)
 }
 
 class AcrossLibraryTranslator(controller : Controller,
@@ -211,19 +188,36 @@ class AcrossLibraryTranslator(controller : Controller,
                               to : Archive) extends Logger/* extends ServerExtension("translate") */ {
   val report = controller.report
   override def logPrefix = "translator"
-/*
-  override def start(args: List[String]) = {
+  val ctrl : Controller = controller
 
+  // TODO maybe replace -----------------------------------------------------------
+  object Application {
+    def apply(ls: List[GlobalName], f: GlobalName, args: List[Term]) = OMApplication(OMS(f), args, ls)
+
+    def unapply(t: Term): Option[(List[GlobalName],GlobalName, List[Term])] = smartunapply(t, OMApplication)
+
+    private def smartunapply(t: Term, app: Application): Option[(List[GlobalName],GlobalName, List[Term])] = t match {
+      case app(OMS(f), args) =>
+        controller.get(f) match {
+          case c: Constant if c.rl contains "apply" =>
+            val napp = SymbolApplication(f, app)
+            smartunapply(t, napp).map(r => (f :: r._1, r._2, r._3))
+          case _ =>
+            Some((Nil,f, args))
+        }
+      case app(OMS(f), args) =>
+        Some((Nil, f, args))
+      case _ => None
+    }
   }
 
-  def apply(path: List[String], query: String, body: Body, session: Session) = {
-    ???
-  }
-  */
+  // TODO -------------------------------------------------------------------------
+
+
   private implicit val trl = this
 
   object DefinitionExpander extends AcrossLibraryTranslation {
-    def applicable(tm: Term) = tm match {
+    def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator) = tm match {
       case OMS(p) =>
         controller.get(p) match {
           case c: Constant if c.df.isDefined => true
@@ -232,7 +226,7 @@ class AcrossLibraryTranslator(controller : Controller,
       case _ => false
     }
 
-    def apply(tm: Term) = tm match {
+    def apply(tm: Term)(implicit translator: AcrossLibraryTranslator) = tm match {
       case OMS(p) =>
         controller.get(p) match {
           case c: Constant if c.df.isDefined => c.df.get

@@ -6,7 +6,8 @@ import uom._
 import utils._
 import valuebases._
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
-import info.kwarc.mmt.MitM.{Append, LFList, ListNil, MitM}
+import info.kwarc.mmt.MitM.MitM
+import info.kwarc.mmt.odk.LFX.{Append, LFList, ListNil}
 import info.kwarc.mmt.odk._
 import info.kwarc.mmt.sequences.{NatRules, Sequences}
 
@@ -162,16 +163,16 @@ object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OM
   // Constructs a polynomial out of a list of rational numbers
   private def constructPolynomial(varName: String, ls : List[BigDecimal]) : Term = ApplySpine(
     OMS(MitM.polycons),
-    NatRules.NatLit(ls.length),
-    OMS((MitM.basepath / "smglom" / "algebra") ? "RationalField" ? "rationalField"),
+    NatLiterals(ls.length),
+    OMS(MitM.rationalRing),
     StringLiterals.apply(varName),
-    Sequences.flatseq(ls.map(_.toBigInt).map(NatRules.NatLit.of):_*)
+    LFList(ls.map(_.toBigInt).map(IntegerLiterals.of))
   )
 
   // turns a polynomial into a list of rational numbers
   private def destructPolynomial(t : Term): (String, List[BigDecimal]) = t match {
-    case ApplySpine(OMS(MitM.polycons), _ :: OMLIT(vname: String, StringLiterals) :: Sequences.flatseq(ls @ _*) :: Nil) =>
-      (vname, ls.toList.map({ case NatRules.NatLit(bi: BigInt) => BigDecimal(bi)}))
+    case ApplySpine(OMS(MitM.polycons), _ :: OMLIT(vname: String, StringLiterals) :: LFList(ls) :: Nil) =>
+      (vname, ls.map({ case IntegerLiterals(bi: BigInt) => BigDecimal(bi)}))
     case _ => throw new Exception("not a polynomial")
   }
 

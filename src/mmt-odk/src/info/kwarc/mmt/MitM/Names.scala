@@ -1,13 +1,13 @@
 package info.kwarc.mmt.MitM
 
-import info.kwarc.mmt.api.{DPath, GlobalName, MPath, uom}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.refactoring.{Preprocessor, SimpleParameterPreprocessor}
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardNat, StandardPositive}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{ApplySpine, LFClassicHOLPreprocessor}
-import info.kwarc.mmt.odk.LFX
-import info.kwarc.mmt.odk.LFX.LFRecSymbol
+import info.kwarc.mmt.odk.{IntegerLiterals, LFX, StringLiterals}
+import info.kwarc.mmt.odk.LFX.{LFList, LFRecSymbol}
 
 object MitM {
   val basepath: DPath = DPath(URI("http","mathhub.info") / "MitM")
@@ -23,9 +23,31 @@ object MitM {
   val ff = BoolLit(false)
 
   // elliptic curves
-  val polypath: MPath = (basepath / "smglom" / "elliptic_curves") ? "Base"
+  val polypath: MPath = (basepath / "smglom" / "algebra") ? "Polynomials"
   val polynomials: GlobalName = polypath ? "polynomial"
-  val polycons: GlobalName = polypath ? "poly_con"
+  val multipoly : GlobalName = polypath ? "multi_polynomial"
+  val polycons: GlobalName = polypath.parent ? "RationalPolynomials" ? "poly_con"
+
+  val rationalRing = (basepath / "smglom" / "algebra") ? "RationalField" ? "rationalField"
+
+  object Monomial {
+    def apply(vars : List[(String,BigInt)],coeff : BigInt, ring : Term = OMS(MitM.rationalRing)) =
+      OMA(OMS(MitM.monomial_con),ring :: LFX.Tuple(LFList(vars.map(p => LFX.Tuple(StringLiterals(p._1),IntegerLiterals(p._2)))),
+        IntegerLiterals(coeff)):: Nil)
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(MitM.monomial_con),List(ring,LFX.Tuple(LFList(ls),IntegerLiterals(coeff)))) =>
+        val ils = ls.map {
+          case LFX.Tuple(StringLiterals(x),IntegerLiterals(i)) => (x,i)
+          case _ => ???
+        }
+        Some((ils,coeff,ring))
+      case _ => None
+    }
+  }
+
+  val monomials : GlobalName = polypath ? "monomial"
+  val monomial_con : GlobalName = polypath.parent ? "RationalPolynomials" ? "monomial_con"
+  val multi_polycon : GlobalName = polypath.parent ? "RationalPolynomials" ? "multi_poly_con"
 
 
   // strings
@@ -100,55 +122,6 @@ object MitM {
   )).withKey("MitM").withKey(logic)
 }
 
-object ModelsOf extends LFRecSymbol("ModelsOf") {
-  // val path2 = Records.path ? "ModelsOfUnary"
-  // val term2 = OMS(path2)
-  def apply(mp : MPath, args : Term*) = OMA(this.term,List(OMPMOD(mp,args.toList)))
-  def apply(t : Term) = OMA(this.term,List(t))
-  def unapply(t : Term) : Option[Term] = t match {
-    case OMA(this.term, List(tm)) => Some(tm)
-    // case OMA(this.term2,List(OMMOD(mp))) => Some(OMMOD(mp))
-    case OMA(this.term, OMMOD(mp) :: args) => Some(OMPMOD(mp,args))
-    case _ => None
-  }
-}
-
-object Lists {
-  val baseURI = LFX.ns / "Datatypes"
-  val th = baseURI ? "ListSymbols"
-}
-
-object ListNil {
-  val path = Lists.th ? "nil"
-  val term = OMS(path)
-}
-
-object Append {
-  val path2 = Lists.th ? "ls"
-  val term2 = OMS(path2)
-  val path = Lists.th ? "append"
-  val term = OMS(path)
-  def apply(a: Term, ls : Term) : Term = OMA(this.term,List(a,ls))
-  def unapply(tm : Term) : Option[(Term,Term)] = tm match {
-    case OMA(this.term,List(a,ls)) => Some((a,ls))
-    case OMA(this.term2,args) if args.nonEmpty =>
-      if (args.length==1) Some((args.head,ListNil.term))
-      else Some((args.head,OMA(this.term2,args.tail)))
-    case _ => None
-  }
-}
-
-object LFList {
-  val path = Lists.th ? "ls"
-  val term = OMS(path)
-  def apply(tms : List[Term]) : Term = OMA(this.term,tms)
-  def unapply(ls : Term) : Option[List[Term]] = ls match {
-    case OMA(this.term,args) => Some(args)
-    case Append(a,lsi) => unapply(lsi).map(a :: _)
-    case _ => None
-  }
-}
-
 /** Symbols used for all the different Systems */
 object MitMSystems {
   private val _basepath = DPath(URI("http","opendreamkit.org"))
@@ -162,3 +135,4 @@ object MitMSystems {
   val lmfdbsym: GlobalName = vretheory ? "LMFDBEval"
   val querysym: GlobalName = vretheory ? "ODKQuery"
 }
+
