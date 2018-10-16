@@ -133,15 +133,6 @@ abstract class MagicTest(prefixes : String*) extends Test(
   MagicTest.logfile.map(_.toString)
 )
 
-abstract class JonasTest(prefixes: String*) extends Test(
-  "/home/jbetzend/Development/KWARC/content/",
-  prefixes.toList,
-  "",
-  None,
-  true,
-  None
-)
-
 abstract class MichaelTest(prefixes: String*) extends Test(
   "/home/michael/content/",
   prefixes.toList,
