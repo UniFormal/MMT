@@ -251,7 +251,8 @@ case class IOpaqueElement(
 //
 
 trait IModuleItem extends IAPIObjectItem {
-  val parent: Some[IDocumentRef]
+  /** there is no parent */
+  val parent: Option[IReference] = None
 
   /** name of the module */
   val name: String
@@ -273,7 +274,6 @@ trait IModuleRef extends IModuleItem with IReference with INarrativeElement
 
 /** a reference to a theory */
 case class ITheoryRef(
-                       override val parent: Some[IDocumentRef],
                        override val id: IAPIObjectItem.URI,
                        override val name: String
                      ) extends IModuleRef {
@@ -283,7 +283,6 @@ case class ITheoryRef(
 
 /** a reference to a view */
 case class IViewRef(
-                     override val parent: Some[IDocumentRef],
                      override val id: IAPIObjectItem.URI,
                      override val name: String
                      ) extends IModuleRef {
@@ -311,7 +310,6 @@ trait IModule extends IModuleItem with IReferencable {
 
 /** a description of a theory */
 case class ITheory(
-                    override val parent: Some[IDocumentRef],
                     override val id: IAPIObjectItem.URI,
                     override val name: String,
 
@@ -333,7 +331,6 @@ case class ITheory(
 
 /** a description of a view */
 case class IView(
-                  override val parent: Some[IDocumentRef],
                   override val id: IAPIObjectItem.URI,
                   override val name: String,
 
