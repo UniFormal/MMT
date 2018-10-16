@@ -183,7 +183,7 @@ object Query {
       Mapping(parse(domain), name, function)
 
     /** Comprehension binder */
-    case OMBINDC( OMID(QMTQuery.Mapping), Context(VarDecl(name, _, _, _, _)), List(domain, pred)) =>
+    case OMBINDC( OMID(QMTQuery.Comprehension), Context(VarDecl(name, _, _, _, _)), List(domain, pred)) =>
       Comprehension(parse(domain), name, Prop.parse(pred))
 
     /** Tuple */
