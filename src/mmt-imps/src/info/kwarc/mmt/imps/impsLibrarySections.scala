@@ -276,7 +276,7 @@ package object impsLibrarySections
 
   def banachFixedPointTheorem : Section = Section(
     "banach-fixed-point-theorem",
-    List(partialOrders,metricSpacePairs),
+    List(partialOrders,metricSpaceSubspaces),
     List("fixed-point-theorem.t"),
     List("ms-closed-ball.json")
   )

@@ -95,33 +95,13 @@ class IMPSImportTask(val controller  : Controller,
         case t@DFTranslation(_,_,_,_,_,_,_,_,_,_,_,_,_,_) => doTranslation(t, doc.path, uri)
         case DFTheoryEnsembleMultiple(name,integ,src,cmt) =>
 
-          val ensemble : TheoryEnsemble = tState.ensembles.find(e => e.name.toLowerCase == name.s.toLowerCase).get
-          val ln       : LocalName      = LocalName(ensemble.baseTheory.name.toString + "-" + integ.n.toString + "-tuples")
-
           if (tState.verbosity > 0) {
             println(" > adding theory-multiple " + name)
           }
 
-          val nu_multiple = new DeclaredTheory(bt.narrationDPath,
-            ln,
-            Some(IMPSTheory.QCT.quasiLutinsPath),
-            modules.Theory.noParams,
-            modules.Theory.noBase)
-
-          val mref : MRef = MRef(doc.path,nu_multiple.path)
-          controller.add(nu_multiple)
-          controller.add(mref)
-
+          val ensemble : TheoryEnsemble          = tState.ensembles.find(e => e.name.toLowerCase == name.s.toLowerCase).get
           val base     : DeclaredTheory          = ensemble.baseTheory
           val renaming : Int => String => String = ensemble.replicaRenamer
-
-          // Include all includes
-          val includes : List[DeclaredTheory] = recursiveIncludes(List(base)).filter(t => t != base)
-          for (incl <- includes) {
-            val includee : DeclaredTheory = incl
-            val includer : DeclaredTheory = nu_multiple
-            controller add PlainInclude(includee.path,includer.path)
-          }
 
           val n = integ.n
           for (i <- 0 until n)
@@ -135,16 +115,107 @@ class IMPSImportTask(val controller  : Controller,
               val replica = makeReplica(base, doc.path, bt.narrationDPath, renaming(i))
               ensemble.replicaMap = ensemble.replicaMap + (i -> replica)
             }
-
-            assert(ensemble.replicaMap.contains(i))
-            val theReplica : DeclaredTheory = ensemble.replicaMap(i)
-            controller add PlainInclude(theReplica.path,nu_multiple.path)
           }
 
-          // register new Theory Multiple
-          ensemble.multipleMap = ensemble.multipleMap + (n -> nu_multiple)
-          println("-- The following keys are now in the multipleMap of ensemble " + ensemble.name + ": " + ensemble.multipleMap.keySet)
-          tState.theories_decl = nu_multiple :: tState.theories_decl
+          for (j <- 1 to n)
+          {
+            if (!ensemble.multipleMap.contains(j))
+            {
+              if (tState.verbosity > 1) {
+                println("   > adding multiple number " + j.toString)
+              }
+
+              val ln : LocalName = LocalName(ensemble.baseTheory.name.toString + "-" + j.toString + "-tuples")
+
+              val nu_multiple = new DeclaredTheory(bt.narrationDPath,
+                ln,
+                Some(IMPSTheory.QCT.quasiLutinsPath),
+                modules.Theory.noParams,
+                modules.Theory.noBase)
+
+              val mref : MRef = MRef(doc.path,nu_multiple.path)
+              controller.add(nu_multiple)
+              controller.add(mref)
+
+              // Include all includes
+              val includes : List[DeclaredTheory] = recursiveIncludes(List(base)).filter(t => t != base)
+              for (incl <- includes) {
+                val includee : DeclaredTheory = incl
+                val includer : DeclaredTheory = nu_multiple
+                controller add PlainInclude(includee.path,includer.path)
+              }
+
+              // include lower multiple, if applicable
+              if (j != 1) { controller add PlainInclude(ensemble.multipleMap(j-1).path,nu_multiple.path) }
+
+              assert(ensemble.replicaMap.contains(j-1))
+              val theReplica : DeclaredTheory = ensemble.replicaMap(j-1)
+              controller add PlainInclude(theReplica.path,nu_multiple.path)
+
+              // register new Theory Multiple
+              ensemble.multipleMap = ensemble.multipleMap + (j -> nu_multiple)
+              tState.theories_decl = nu_multiple :: tState.theories_decl
+            }
+          }
+        case DFTheoryEnsembleInstances(name, _, targetThys, targetMuls, ensembleSorts, ensembleConsts, multiples, _, perms, renamings, src, cmt) =>
+
+          val ensemble : TheoryEnsemble = tState.ensembles.find(te => te.name.toLowerCase == name.s.toLowerCase).get
+
+          val targets : List[DeclaredTheory] = if (targetThys.isDefined) {
+            targetThys.get.ns.map(nm => getTheory(nm.toString))
+          } else if (targetMuls.isDefined) {
+            val range = 0 until targetMuls.get.n.n
+            range.map(n => ensemble.replicaMap(n)).toList
+          } else ??? // should not happen, either argument is always present
+
+          var permutations : List[List[Int]] = List.empty
+
+          if (perms.isDefined) {
+            permutations = perms.get.nns.map(ls => ls.map(_.n))
+          } else if (multiples.isDefined) {
+
+          } else ??? // should not happen, either argument is always present
+
+          val sources : List[DeclaredTheory] = ???
+
+          var views : List[DeclaredView] = List.empty
+          for (ind <- targets.indices)
+          {
+            val ln = ???
+            val source_thy_t : Term = ensemble.baseTheory.toTerm
+            val target_thy_t : Term = targets(ind).toTerm
+
+            val nu_view = new DeclaredView(bt.narrationDPath, ln, TermContainer(source_thy_t), TermContainer(target_thy_t), isImplicit = false)
+            val mref : MRef = MRef(doc.path,nu_view.path)
+            controller add nu_view
+            controller add mref
+
+            views = views ::: List(nu_view)
+          }
+
+          if (ensembleSorts.isDefined) {
+            assert(targetThys.isDefined)
+            assert(targetMuls.isEmpty)
+          }
+
+          if (ensembleConsts.isDefined) {
+            assert(targetThys.isDefined)
+            assert(targetMuls.isEmpty)
+
+            // Define special constant renamer
+            def renamer(in : String) : String = {
+              var renamed = in
+              if (renamings.isDefined) {
+                for (re <- renamings.get.ns) {
+                  if (in.toLowerCase == re.old.toString.toLowerCase) { renamed = re.nu.toString }
+                }
+              }
+              renamed
+            }
+
+            ???
+          }
+
 
         // If it's none of these, fall back to doDeclaration
         case _                             => doDeclaration(exp,uri)
@@ -872,15 +943,25 @@ class IMPSImportTask(val controller  : Controller,
         val ensemble : TheoryEnsemble = tState.ensembles.find(e => e.name.toString.toLowerCase == basename.s.toLowerCase).get
 
         val base     : DeclaredTheory = getTheory(basename.s)
-
         val nums     : List[Int]      = numbers.ns.map(_.n)
         assert(nums.nonEmpty)
 
-        println(ensemble.multipleMap)
-
         val multiples : List[DeclaredTheory] = nums.map(j => ensemble.multipleMap(j))
         for (m <- multiples) {
-          controller add PlainInclude(base.path,m.path) // ToDo: ???
+          controller add PlainInclude(base.path,m.path) // Seems fishy, but also seems to work.
+        }
+
+      case DFOverloading(operator, pairs, _, _) =>
+
+        val name : LocalName = LocalName(operator.s)
+
+        for (pair <- pairs)
+        {
+          val thy : DeclaredTheory = getTheory(pair.tname.s)
+          val c   : Constant       = getConstant(pair.sname.s,thy)
+
+          val nu_constant = symbols.Constant(thy.toTerm,name,List.empty,c.tp,Some(c.toTerm),Some("Overloading"))
+          controller add nu_constant
         }
 
       case DFInductor(name,princ,thy,trans,bh,ish,du,src,cmt) =>
@@ -1708,9 +1789,11 @@ class IMPSImportTask(val controller  : Controller,
   def getConstant(name : String, thy : DeclaredTheory) : Constant =
   {
     val con = thy.getConstants.find(c => c.name.toString.toLowerCase == name.toLowerCase)
-    if (con.isEmpty) { ??!(name) }
-    assert(con.isDefined)
-    con.get
+    if (con.isDefined) { con.get }
+    else {
+      val foundTheory = locateMathSymbolHome(name, thy)
+      getConstant(name, foundTheory.get)
+    }
   }
 
   def recursiveIncludes(ts : List[DeclaredTheory]) : List[DeclaredTheory] =
@@ -1732,7 +1815,15 @@ class IMPSImportTask(val controller  : Controller,
       c.alias.map(_.toString.toLowerCase).contains(s.toLowerCase) || (c.name.toString.toLowerCase == s.toLowerCase)
     }
 
-    val srcthy : Option[DeclaredTheory] = recursiveIncludes(List(thy)).reverse.find(t => t.getConstants.exists(c => cmatch(c,s)))
+    var multipleCandidates : List[DeclaredTheory] = List.empty
+    if (tState.ensembles.exists(te => te.name.toLowerCase == thy.name.toString.toLowerCase))
+    {
+      val ensemble = tState.ensembles.find(te => te.name.toLowerCase == thy.name.toString.toLowerCase).get
+      multipleCandidates = recursiveIncludes(ensemble.multipleMap.values.toList).reverse
+    }
+
+    val candidates : List[DeclaredTheory]   = (recursiveIncludes(List(thy)).reverse ::: multipleCandidates).distinct
+    val srcthy     : Option[DeclaredTheory] = candidates.find(t => t.getConstants.exists(c => cmatch(c,s)))
     if (tState.verbosity > 3)
     {
       println(" > Locating IMPSMathSymbol " + s + " for use in theory " + thy.name.toString)
@@ -1740,9 +1831,6 @@ class IMPSImportTask(val controller  : Controller,
 
     if (srcthy.isEmpty) {
       println(" >>> location for " + s + " could not be found, starting from " + thy.name)
-      println(thy)
-      println("Foo")
-      Thread.sleep(20000)
     }
 
     srcthy

@@ -3,7 +3,6 @@ package info.kwarc.mmt.imps
 import info.kwarc.mmt.api._
 
 import scala.io.Source
-import scala.util.Either
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureChecker, RelationHandler}
@@ -12,7 +11,6 @@ import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf.Typed
 import info.kwarc.mmt.api.utils.JSON
-import info.kwarc.mmt.imps.impsLibrarySections.allSections
 
 class IMPSImporter extends Importer
 {
@@ -24,7 +22,7 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
     tState.verbosity = 3
-    val targetSection : Section = impsLibrarySections.metricSpacePairs
+    val targetSection : Section = impsLibrarySections.impsMathLibrary
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)
