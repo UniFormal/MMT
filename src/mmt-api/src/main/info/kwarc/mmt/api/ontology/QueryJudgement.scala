@@ -38,8 +38,6 @@ object QueryJudgement {
       Equals(vname, tm1, tm2)
     case OMBINDC(OMID(QMTJudgements.Types),Context(VarDecl(vname,_,_,_,_)),List(tm1, tm2)) =>
       Types(vname, tm1, tm2)
-    case _ =>
-      print("match failure?"); throw new GeneralError("wtf")
   }
 }
 

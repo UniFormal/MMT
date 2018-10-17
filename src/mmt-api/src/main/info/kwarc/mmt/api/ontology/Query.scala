@@ -101,22 +101,22 @@ object Query {
   def parse(t : Term)(implicit queryFunctions: List[QueryFunctionExtension], relManager: RelationalManager) : Query = t match {
     /** the isolated query with an optional hint */
     // TODO: String Literals
-    case OMA(OMID(QMTQuery.I), OML(name, _, _, _, _) :: q :: Nil) =>
-      I(parse(q), Some(name.toPath))
+    case OMA(OMID(QMTQuery.I), str(name) :: q :: Nil) =>
+      I(parse(q), Some(name))
 
     /** slicing a query result */
     // TODO: Integer literals
-    case OMA(OMID(QMTQuery.Slice), OML(s, _, _, _, _) :: OML(e, _, _, _, _) :: q :: Nil) =>
-      Slice(parse(q), Some(s.toPath.toInt), Some(e.toPath.toInt))
-    case OMA(OMID(QMTQuery.SliceFrom), OML(s, _, _, _, _) :: q :: Nil) =>
-      Slice(parse(q), Some(s.toPath.toInt), None)
-    case OMA(OMID(QMTQuery.SliceUntil), OML(e, _, _, _, _) :: q :: Nil) =>
-      Slice(parse(q), None, Some(e.toPath.toInt))
+    case OMA(OMID(QMTQuery.Slice), str(s) :: str(e) :: q :: Nil) =>
+      Slice(parse(q), Some(s.toInt), Some(e.toInt))
+    case OMA(OMID(QMTQuery.SliceFrom), str(s) :: q :: Nil) =>
+      Slice(parse(q), Some(s.toInt), None)
+    case OMA(OMID(QMTQuery.SliceUntil), str(e) :: q :: Nil) =>
+      Slice(parse(q), None, Some(e.toInt))
 
     /** picking a specific element form a Query */
     // TODO: Integer literals
-    case OMA(OMID(QMTQuery.Element), OML(s, _, _, _, _) :: q :: Nil) =>
-      Element(parse(q), s.toPath.toInt)
+    case OMA(OMID(QMTQuery.Element), str(s) :: q :: Nil) =>
+      Element(parse(q), s.toInt)
 
     /** a bound variable */
     case OMV(name) =>
@@ -124,13 +124,13 @@ object Query {
 
     /** a component of a given query */
     // TODO: No Labels?
-    case OMA(OMID(QMTQuery.Component), OML(n, _, _, _, _) :: q :: Nil) =>
-      Component(parse(q), ComponentKey.parse(n.toPath))
+    case OMA(OMID(QMTQuery.Component), str(n) :: q :: Nil) =>
+      Component(parse(q), ComponentKey.parse(n))
 
     /** a subobject at a given position */
     // TODO: No Labels?
-    case OMA(OMID(QMTQuery.SubObject), OML(p, _, _, _,_) :: q :: Nil) =>
-        SubObject(parse(q), Position.parse(p.toPath))
+    case OMA(OMID(QMTQuery.SubObject), str(p) :: q :: Nil) =>
+        SubObject(parse(q), Position.parse(p))
 
     /** related to a specific query by a given relation */
     case OMA(OMID(QMTQuery.Related), q :: by :: Nil) =>
@@ -192,13 +192,13 @@ object Query {
 
     /** Projection */
     //TODO: Integer literals
-    case OMA(OMID(QMTQuery.Projection), OML(s, _, _, _, _) :: q :: Nil) =>
-      Projection(parse(q), s.toPath.toInt)
+    case OMA(OMID(QMTQuery.Projection), str(s) :: q :: Nil) =>
+      Projection(parse(q), s.toInt)
 
     /** QueryFunction */
     // TODO: Parameters
-    case OMA(OMID(QMTQuery.QueryFunctionApply), OML(name, _, _, _, _) :: q :: args) =>
-      val fun = queryFunctions.find(_.name == name.toPath).getOrElse {
+    case OMA(OMID(QMTQuery.QueryFunctionApply), str(name) :: q :: args) =>
+      val fun = queryFunctions.find(_.name == name).getOrElse {
         throw ParseError("illegal function: " + name)
       }
       QueryFunctionApply(fun, parse(q), Nil)
@@ -303,5 +303,23 @@ object Query {
 
     case _ =>
       throw ParseError("illegal query expression: " + n)
+  }
+
+  /** helper object to match any string-like literal */
+  private[ontology] object str {
+    def apply(s: String): Term = OML(LocalName(s), None, None, None, None)
+    def unapply(tm: Term): Option[String] = tm match {
+      // an OML, as parsed from surface syntax
+      case OML(s, _, _, _, _) => Some(s.toPath)
+
+      // a known OMLIT with a string value
+      // HACK HACK HACK this might match something that isn't actually a string
+      case OMLIT(v: String, _) => Some(v)
+
+      // an UnknownOMLIT
+      // HACK HACK HACK this might match something that isn't actually a string
+      case UnknownOMLIT(v: String, _) => Some(v)
+      case _ => None
+    }
   }
 }

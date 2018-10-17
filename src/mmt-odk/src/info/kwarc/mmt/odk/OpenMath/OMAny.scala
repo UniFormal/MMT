@@ -481,7 +481,7 @@ case class OMAttributionPairs(pairs : List[(OMSymbol, OMAnyVal)], id : Option[St
   * @param id Identifier
   * @param cdbase CD Base URI
   */
-case class OMBinding(B: OMExpression, vars: OMBindVariables, C: OMExpression, id: Option[String], cdbase: Option[URI]) extends OMCompoundElement with CompoundAttributes {
+case class  OMBinding(B: OMExpression, vars: OMBindVariables, C: OMExpression, id: Option[String], cdbase: Option[URI]) extends OMCompoundElement with CompoundAttributes {
   def absolutize(uri : URI) : OMBinding = {
     val r = OMAny.absolutizeURI(uri, cdbase)
 

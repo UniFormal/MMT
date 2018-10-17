@@ -47,8 +47,8 @@ class OMMMTCoding(default: => URI) extends OMCoding[Term] {
     case OMApplication(f,args,id,cdbase) => OMA(actencode(f),args map actencode)
 
     // binding
-    case OMBinding(binder,OMBindVariables(vars,inner_id),expr,id,cdbase) =>
-      OMBIND(actencode(binder), vars map (v => VarDecl(LocalName(v.name))), actencode(expr))
+    case OMBinding(binder,OMBindVariables(vars,inner_id),terms,id,cdbase) =>
+      OMBINDC(actencode(binder), vars map (v => VarDecl(LocalName(v.name))), BindingBody.unapply(actencode(terms)).get)
     case OMBindVariables(vars,id) => throw GeneralError(s"bound variables only supported within an OMBinding")
 
     // attribution: not supported
@@ -73,18 +73,60 @@ class OMMMTCoding(default: => URI) extends OMCoding[Term] {
   }
 
   def decodeAnyVal(t : Term) : OMAnyVal = t match {
+
+    // path are symbols
+    case OMID(GlobalName(MPath(parent, mname), name)) => OMSymbol(name.toPath, mname.toPath, None, Some(URI(parent.toPath)))
+    case OMID(m@MPath(_, _)) => decodeAnyVal(OMID(m.toGlobalName))
+
+    // primitives
     case OMI(i) => OMInteger(i,None)
     case OMF(r) => OMFloat(r,None)
     case OMSTR(s) => OMString(s,None)
+
+    // TODO: for now this is jsut represented as a string
+    // should really be something different
+    case OML(p, _, _, _, _) => OMString(p.toPath, None)
+
+    // TODO: Any other literals should be encoded as OMFOREIGN
+
+
     case OMS(p) => OMSymbol(p.name.toString,p.module.toString,None,None)
     case OMV(name) => OMVariable(name.toString,None)
+
+    // simple binding
     case OMA(f,args) => OMApplication(decexpr(f),args map decexpr,None,None)
+
+    case OMBINDC(binder, Context(variables @ _*), exprs) =>
+      OMBinding(
+        decexpr(binder),
+        OMBindVariables(
+          variables.collect({case VarDecl(p, _, _, _, _) => OMVarVar(OMVariable(p.toPath, None))}).toList,
+          None
+        ),
+        decexpr(BindingBody(exprs)),
+        None,
+        None
+    )
   }
   private def decexpr(t : Term) = decode(t) match {
     case expr: OMExpression => relativize(expr)
     case _ => throw new Exception("Does not yield OMExpression:" + t)
   }
   def decode(t : Term) : OMAny = decodeAnyVal(t) // should probably recurse into the above
+
+  // hacky support for binders with multiple bodies
+  object BindingBody {
+    // todo: adapt this
+    private val bindingAnd = OMS(Path.parseS("http://www.openmath.org/?OpenMath?Binding", NamespaceMap.empty))
+    def apply(terms: List[Term]): Term = terms match {
+      case List(term) => term
+      case _ => bindingAnd(terms:_*)
+    }
+    def unapply(tm: Term): Option[List[Term]] = tm match {
+      case OMA(`bindingAnd`, terms) => Some(terms)
+      case _ => Some(List(tm))
+    }
+  }
 }
 
 object GAPEncoding extends OMMMTCoding(URI("http://www.gap-system.org"))

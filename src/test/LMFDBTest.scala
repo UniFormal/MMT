@@ -2,6 +2,7 @@ import info.kwarc.mmt.api.{LocalName, Path}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.odk.NatLiterals
+import info.kwarc.mmt.odk.OpenMath.Coding.{OMMiTMCoding, OMXMLCoding}
 
 object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp") {
   def run : Unit = {
@@ -34,6 +35,14 @@ object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp") {
           ))
       )
     )
+
+    val mmtCoder = new OMMiTMCoding(controller)
+    val xmlCoder = new OMXMLCoding
+
+
+    val asXML = xmlCoder.encode(mmtCoder.decode(queryTerm))
+    print(asXML)
+
 
     val query = Query.parse(queryTerm)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
     print(query)

@@ -31,7 +31,7 @@ abstract class VRESystem(val id : String, val sym : GlobalName) extends QueryExt
 
   /** evaluates a given query inside of this system */
   def evaluate(q: Query, e: QueryEvaluator)(implicit substitution: QuerySubstitution): scala.collection.mutable.HashSet[List[BaseType]] = {
-    // evaluate the qiery normally
+    // evaluate the query normally
     val result = e.evalSet(q)
 
     // and return the map
