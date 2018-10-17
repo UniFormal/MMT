@@ -302,21 +302,24 @@ object MorphismApplicationTerm extends InferenceRule(ModExp.morphismapplication,
  */
 object MorphismApplicationCompute extends ComputationRule(ModExp.morphismapplication) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
-      val OMM(t,m) = tm
-      val mI = solver.inferType(m, covered)(stack, history + ("inferring type of morphism"))
-      val (mDom,mCod) = mI match {
-        case Some(MorphType(d,c)) => (d,c)
-        case _ => return Recurse
+      tm match {
+        case OMM(t,m) =>
+          val mI = solver.inferType(m, covered)(stack, history + ("inferring type of morphism"))
+          val (mDom,mCod) = mI match {
+            case Some(MorphType(d,c)) => (d,c)
+            case _ => return Recurse
+          }
+          val impl = solver.lookup.getImplicit(mCod, ComplexTheory(solver.outerContext)).getOrElse {
+            solver.error("morphism does not translate into the current theory")
+            return Recurse
+          }
+          val translator = ApplyMorphism(OMCOMP(m,impl))
+          if (t.freeVars.nonEmpty) {
+            solver.error("cannot apply morphism to term with free variables yet")
+          }
+          val tT = translator(Context.empty, t)
+          Simplify(tT)
+        case _ => Simplifiability.NoRecurse // may happen if in binder of OMBIND
       }
-      val impl = solver.lookup.getImplicit(mCod, ComplexTheory(solver.outerContext)).getOrElse {
-        solver.error("morphism does not translate into the current theory")
-        return Recurse
-      }
-      val translator = ApplyMorphism(OMCOMP(m,impl))
-      if (t.freeVars.nonEmpty) {
-        solver.error("cannot apply morphism to term with free variables yet")
-      }
-      val tT = translator(Context.empty, t)
-      Simplify(tT)
    }
 }

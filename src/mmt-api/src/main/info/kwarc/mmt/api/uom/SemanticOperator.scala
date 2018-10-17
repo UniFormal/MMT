@@ -101,7 +101,4 @@ object SemanticOperator {
   trait Commutative {self: InvertibleBinary =>
     def invertRight(x: Any, r: Any) = invertLeft(x,r)
   }
-
-  implicit def fromTerm(t: objects.Term): SynOpType = SynOpType(Nil, t)
-  implicit def fromSemType(s: SemanticType): SemOpType = SemOpType(Nil,s)
 }

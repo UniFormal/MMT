@@ -194,6 +194,26 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term]
 }
 
+/** A variant of InferenceRule that may additionally use the expected type.
+ *  Thus it can be used both for type inference and for type checking.
+ *  @param head the head of the term whose type this rule infers
+ */
+abstract class InferenceAndTypingRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t) {
+   /**
+    *  @param tp the expected type
+    *    if provided, tp is convered
+    *  @param covered whether tm is covered (if true and tp provided, typing is covered too)
+    *  @return the inferred type and the result of type-checking
+    *    post: if the latter is Some(true), typing is covered wrt to the provided and the returned type  
+    */
+   def apply(solver: Solver, tm: Term, tp: Option[Term], covered: Boolean)(implicit stack: Stack, history: History): (Option[Term], Option[Boolean])
+
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] =
+     apply(solver, tm, None, covered)._1
+}
+
+
+
 @deprecated("must be reimplemented cleanly","")
 abstract class TheoryExpRule(head : GlobalName, oftype : GlobalName) extends InferenceRule(head,oftype) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {

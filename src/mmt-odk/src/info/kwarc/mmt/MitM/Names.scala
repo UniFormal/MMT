@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.refactoring.{Preprocessor, SimpleParameterPreprocessor}
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardNat, StandardPositive}
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.lf.{ApplySpine, LFClassicHOLPreprocessor}
+import info.kwarc.mmt.lf._
 import info.kwarc.mmt.odk.{IntegerLiterals, LFX, StringLiterals}
 import info.kwarc.mmt.odk.LFX.{LFList, LFRecSymbol}
 
@@ -82,7 +82,9 @@ object MitM {
   val n = OMS(nat)
   val z = OMS(int)
   val p = OMS(pos)
-  val N= StandardNat
+  def synType(t: Term) = uom.SynOpType(List(Apply.path), Nil, t)
+  
+  val N = StandardNat
   val Z = StandardInt
   val P = StandardPositive
 

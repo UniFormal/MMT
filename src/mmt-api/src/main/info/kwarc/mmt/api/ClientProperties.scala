@@ -85,6 +85,8 @@ object TermProperty {
          case o:OML =>
             o.tp foreach eraseAll
             o.df foreach eraseAll
+         case o:OMLIT =>
+           eraseAll(o.rt.synType)
          case _ =>
       }
    }

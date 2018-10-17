@@ -19,14 +19,16 @@ object IntegerLiterals extends RepresentedRealizedType(MitM.z,MitM.Z)
 object NatLiterals extends RepresentedRealizedType(MitM.n,MitM.N)
 object PosLiterals extends RepresentedRealizedType(MitM.p,MitM.P)
 
-object NatSucc extends RealizedOperator(MitM.succ, MitM.n =>: MitM.n, Arithmetic.Succ, MitM.N =>: MitM.N)
+object NatSucc extends RealizedOperator(MitM.succ, MitM.n =>: MitM.synType(MitM.n), Arithmetic.Succ, MitM.N =>: MitM.N)
 
+/* FR: This is already part of Arithmetic.Succ
 object NatSuccInverse extends InverseOperator(MitM.succ) {
   def unapply(l: OMLIT): Option[List[OMLIT]] = l match {
     case NatLiterals(u : BigInt) if u>0 => Some(List(NatLiterals.of(u-1)))
     case _ => None
   }
 }
+*/
 
 object StringLiterals extends RepresentedRealizedType(OMS(MitM.string),StandardString)
 

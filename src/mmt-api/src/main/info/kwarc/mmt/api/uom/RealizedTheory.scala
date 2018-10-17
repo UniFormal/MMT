@@ -72,8 +72,14 @@ abstract class RealizationInScala extends RealizedTheory(None) {
     * @param r a BreadthRule for n-ary operators and an AbbrevRule for nullary operators
     */
    def rule(r: SyntaxDrivenRule) {
+     rule(r, "realize")
+   }
+   /**
+    * adds a [[RuleConstant]] whose name is derived from the head of a rule
+    */
+   private def rule(r: SyntaxDrivenRule, tag: String) {
       val rc = {
-        val name = r.head.name / "realize"
+        val name = r.head.name / tag
         val tp = OMS(r.head)
         symbols.RuleConstant(toTerm, name, tp, Some(r)) //TODO nicer type
       }
@@ -138,15 +144,15 @@ abstract class RealizationInScala extends RealizedTheory(None) {
        val lit = rType of fun.app(Nil)
        val ar = new AbbrevRule(op, lit)
        rule(ar)
-       val inv = new InverseOperator(op / invertTag) {
+       val inv = new InverseOperator(op) {
            def unapply(l: OMLIT) = {
               if (l == lit) Some(Nil)
               else None
            }
        }
-       rule(inv)
+       rule(inv, invertTag)
      } else {
-        val synTp = SynOpType(aTypes.map(_.synType), rType.synType)
+        val synTp = SynOpType(Nil, aTypes.map(_.synType), rType.synType)
         val semOp = new SemanticOperator(aTypes.map(_.semType) =>: rType.semType) {
           def apply(args: List[Any]) = fun.app(args)
         }
@@ -158,7 +164,7 @@ abstract class RealizationInScala extends RealizedTheory(None) {
 
    /** typed variant, experimental, not used by ScalaExporter yet */
    def functionT[U,V](op:GlobalName, argType1: RepresentedRealizedType[U], rType: RepresentedRealizedType[V])(comp: U => V) {
-      val synTp = SynOpType(List(argType1.synType), rType.synType)
+      val synTp = SynOpType(Nil, List(argType1.synType), rType.synType)
       val semOp = new SemanticOperator(List(argType1.semType) =>: rType.semType) {
         def apply(args: List[Any]) = args(0) match {
             case argType1.semType(x) => comp(x)
@@ -174,7 +180,7 @@ abstract class RealizationInScala extends RealizedTheory(None) {
    def inverse(op: GlobalName, aTypeN: GlobalName, rTypeN: GlobalName)(comp: Any => Option[Any]) {
      val rType = getRealizedType(rTypeN)
      val List(aType) = List(aTypeN) map {n => getRealizedType(n)}
-     val inv = new InverseOperator(op / invertTag) {
+     val inv = new InverseOperator(op) {
         def unapply(l: OMLIT) = l match {
             case rType(y) => comp(y) match {
                case Some(x) => Some(List(aType of x))
@@ -183,7 +189,7 @@ abstract class RealizationInScala extends RealizedTheory(None) {
             case _ => None
         }
       }
-      rule(inv)
+      rule(inv, invertTag)
    }
    /** the partial inverse of an n-ary operator */
    def inverse(op: GlobalName, aTypesN: List[GlobalName], rTypeN: GlobalName)(fun: InvFunctionN) {
@@ -192,7 +198,7 @@ abstract class RealizationInScala extends RealizedTheory(None) {
       }
       val rType = getRealizedType(rTypeN)
       val aTypes = aTypesN map {n => getRealizedType(n)}
-      val inv = new InverseOperator(op / invertTag) {
+      val inv = new InverseOperator(op) {
          def unapply(l: OMLIT) = l match {
             case rType(y) => fun.app(y) match {
                case Some(xs) =>
@@ -207,7 +213,7 @@ abstract class RealizationInScala extends RealizedTheory(None) {
             case _ => None
          }
       }
-      rule(inv)
+      rule(inv, invertTag)
    }
 }
 

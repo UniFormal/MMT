@@ -55,13 +55,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
             val tS: Term =
               try {
                 traverse(t,initState, context)
-              } catch {
-                case le: LookupError => println("Lookup Error while simplifying " + controller.presenter.asString(obj)+": ")
-                log(le.getMessage)
-                throw le
-                case e: Exception =>
-                  // this should never happen; but if there is a bug, it's easier to locate this way 
-                  throw GeneralError("error while simplifying " + controller.presenter.asString(obj)).setCausedBy(e)
+              } catch {case e: Exception =>
+                // this should never happen; but if there is a bug, it's easier to locate this way 
+                throw GeneralError("error while simplifying " + controller.presenter.asString(obj) + "\n" + obj.toStr(true)).setCausedBy(e)
               }
             tS
          case c: Context =>
@@ -78,9 +74,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
       // by marking with and testing for Simplified(_), we avoid traversing a term twice
       // Note that certain operations remove the simplified marker: changing the toplevel, substitution application
       def traverse(t: Term)(implicit con : Context, init: UOMState) : Term = {
-        log("traversing into " + controller.presenter.asString(t))
-        t match {
-          /* TODO this optimization saves 10-20% on examples (One would expect it to save more time.) by avoiding retraversal of simplified terms.
+       log("traversing into " + controller.presenter.asString(t))
+       t match {
+         /* TODO this optimization saves 10-20% on examples (One would expect it to save more time.) by avoiding retraversal of simplified terms.
             However, there is a subtle problem: When looking up a type and simplifying it, the marker may be reintroduced on the previously checked term.
             Then later lookups will consider it simple even if they occur in a context with more simplification rules.
             The RuleBasedChecker already removes these markers after each CheckingUnit, but that is not enough.
@@ -88,49 +84,38 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
          case Simple(t) =>
             log("term is already simple")
             t*/
-          //TODO strangely, taking the optimization out introduces a checking error in mizar.mmt
-          // this term was simplified before resulting in tS
-          case SimplificationResult(tS) => try {
-            log("structure-shared term was already simplified")
-            tS
-          } catch {
-            case e: Error => println("Error in traverse for case of SimplificationResult " + controller.presenter.asString(t) + ": " ++ e.getMessage); throw e
-          }
-          case OMAorAny(Free(cont, bd), args) if cont.length == args.length =>
-            // MMT-level untyped beta-reduction using 'free' as 'lambda'
-            // should only be needed if we expand the definition of an unknown variable
-            val sub = (cont / args).get // defined due to guard
-          val tC = bd ^? sub
-            traverse(tC)
-          // apply morphisms TODO should become computation rule once module expressions are handled properly
-          case OMM(tt, mor) => try {
+         //TODO strangely, taking the optimization out introduces a checking error in mizar.mmt
+         // this term was simplified before resulting in tS
+         case SimplificationResult(tS) =>
+           log("structure-shared term was already simplified")
+           tS
+         case OMAorAny(Free(cont,bd), args) if cont.length == args.length =>
+           // MMT-level untyped beta-reduction using 'free' as 'lambda'
+           // should only be needed if we expand the definition of an unknown variable
+           val sub = (cont / args).get // defined due to guard
+           val tC = bd ^? sub
+           traverse(tC)
+         // apply morphisms TODO should become computation rule once module expressions are handled properly
+         case OMM(tt, mor) =>
             val tM = controller.globalLookup.ApplyMorphs(tt, mor)
             traverse(tM)
-          } catch {
-            case e: Error => println("Error in traverse for case of OMM " + controller.presenter.asString(t) + ": " ++ e.getMessage); throw e
-          }
-          // the main case
-          case ComplexTerm(_, _, _, _) => try {
+         // the main case
+         case ComplexTerm(_,_,_,_) =>
             logGroup {
-              //log("state is" + init.t + " at " + init.path.toString)
-              val (tS, globalChange) = logGroup {
-                applyAux(t)
-              }
-              //log("simplified to " + controller.presenter.asString(tS))
-              val tSM = Simple(tS.from(t))
-              SimplificationResult.put(t, tSM) // store result to recall later in case of structure sharing
-              if (globalChange)
-                Changed(tSM)
-              else
-                tSM
+               //log("state is" + init.t + " at " + init.path.toString)
+               val (tS, globalChange) = logGroup {
+                  applyAux(t)
+               }
+               //log("simplified to " + controller.presenter.asString(tS))
+               val tSM = Simple(tS.from(t))
+               SimplificationResult.put(t, tSM) // store result to recall later in case of structure sharing
+               if (globalChange)
+                  Changed(tSM)
+               else
+                  tSM
             }
-          } catch {
-            case e: Error =>
-              log("Error in traverse for case of ComplexTerm: " + e.getMessage)
-              throw e
-          }
-          // expand abbreviations but not definitions
-          case OMS(p) =>
+         // expand abbreviations but not definitions
+         case OMS(p) =>
             applyAbbrevRules(p) match {
               case GlobalChange(tS) => tS.from(t)
               case NoChange =>
@@ -151,39 +136,22 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
                 }
               // LocalChange impossible
             }
-          // expand definitions of variables (Simple(_) prevents this case if the definiens is added later, e.g., when solving an unknown)
-          case OMV(n) => try {
-            con(n).df match {
-              case Some(d) =>
-                log("expanding and simplifying definition of variable " + n)
-                traverse(d)(con.before(n), init)
-              case None =>
-                t
-            }
-          }
-          catch {
-            case exc: LookupError =>
-              println("LookupError while traversing into OMV(" + n + "): ")
-              log(exc.getMessage)
-              println("");
-              throw exc
-          }
-          // literals read from XML may not be recognized yet
-          case u: UnknownOMLIT => try {
-            u.recognize(init.rules).getOrElse(u)
-          } catch {
-            case e: Error => println("Error in traverse for case of UnknownOMLIT " + controller.presenter.asString(t) + ": " ++ e.getMessage); throw e
-          }
-          case _ => try {
+         // expand definitions of variables (Simple(_) prevents this case if the definiens is added later, e.g., when solving an unknown)
+         case OMV(n) => con(n).df match {
+           case Some(d) =>
+             log("expanding and simplifying definition of variable " + n)
+             traverse(d)(con.before(n), init)
+           case None =>
+             t
+           }
+         // literals read from XML may not be recognized yet
+         case u: UnknownOMLIT =>
+           u.recognize(init.rules).getOrElse(u)
+         case _ =>
             val tS = Simple(Traverser(this, t))
             SimplificationResult.put(t, tS)
             tS
-          } catch {
-            case e: Error =>
-              println("Error in traverse for case _ " + controller.presenter.asString(t) + ": " ++ e.getMessage)
-              throw e
-          }
-        }
+       }
       }
 
      /** an auxiliary method of apply that applies simplification rules
@@ -272,15 +240,22 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
       */
      def matches(t: Term): List[(GlobalName, List[Term], Boolean)] = t match {
         case StrictOMA(strApps, p, args) => List((p, args, false))
-        case OMS(p) => List((p, Nil, true))
+        case OMS(p) =>
+          // TODO maybe also look up definition of p
+          List((p, Nil, true))
         case l: OMLIT =>
+           // This case inverts any known injective function that returns this literal.
+           // That is needed, e.g., to match the literal against the constant zero.
+           // It's unclear how helpful it is in general.
+           // TODO Can this introduce a cycle?
            matchRules.flatMap {m =>
               m.unapply(l) match {
-                 case None => Nil
-                 case Some(args) => List((m.head, args, args.isEmpty))
+                 case None =>
+                   Nil
+                 case Some(args) =>
+                   List((m.head, args, args.isEmpty))
               }
            }
-           Nil //TODO use match rules
         case _ => Nil
      }
   }
@@ -325,7 +300,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
       var insideS = inside
       var changed = false
       state.breadthRules.filter(_.head == op) foreach {rule =>
-         val ch = rule.apply.apply(insideS)
+         val ch = rule.apply(insideS)
          log("rule " + rule + ": " + ch)
          ch match {
             case NoChange =>
@@ -363,6 +338,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
     def simplify(t: Obj)(implicit stack: Stack, history: History) =
       apply(t, stack.context, state.rules, expDef)
     def outerContext = Context.empty
+
     def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = simplify(tm) match {
        case AnonymousTheory(mt, ds) =>
          Some(new AnonymousTheory(mt, Nil))
@@ -377,7 +353,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
              OML(c.name, c.tp, c.df, c.not)
            case PlainInclude(from, to) =>
              IncludeOML(from, Nil)
-           case _ => ???
+           case _ => ??? //TODO
          })
          Some(new AnonymousTheory(th.meta, ds))
        case _ =>

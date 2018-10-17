@@ -5,10 +5,14 @@ import objects._
 import parser._
 import checking._
 
-/** helper class to store the type of a [[RealizedOperator]]s */
-case class SynOpType(args: List[Term], ret: Term) {
+/** helper class to store the type of a [[RealizedOperator]]s
+ *  @param under HOAS application operators
+ *  @param args argument types
+ *  @param ret return type
+ */
+case class SynOpType(under: List[GlobalName], args: List[Term], ret: Term) {
   def arity = args.length
-  def =>:(arg: Term) = SynOpType(arg::args, ret)
+  def =>:(arg: Term) = SynOpType(under, arg::args, ret)
 }
 
 /** helper class to store the type of a [[SemanticOperator]]s */
@@ -16,6 +20,11 @@ case class SemOpType(args: List[SemanticType], ret: SemanticType) {
   def arity = args.length
   /** enables the notation a =>: b =>: c for function types */
   def =>:(arg: SemanticType) = SemOpType(arg::args, ret)
+  
+  def subtype(into: SemOpType): Boolean = {
+    if (args.length != into.args.length) return false
+    ((into.args zip args) forall {case (a,i) => i subtype a}) && (ret subtype into.ret)
+  }
 }
 
 /** A RealizedOperator couples a syntactic constant (a Constant) with a semantic function (a Scala function) */
@@ -35,7 +44,7 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
      semOp.init
      if (synTp.arity != semTp.arity)
        throw ImplementationError("syntactic and semantic arity are not equal")
-     if (!semOp.getTypes.contains(semTp))
+     if (! (semOp.getTypes exists {st => semTp subtype st}))
        throw ImplementationError("the semantic operator does not have the semantic type")
   }
 
@@ -71,18 +80,49 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
         NoChange
    }
 
+   /** the inversion rule if the semantic operator is invertible */
+   private def getInversionRule: Option[InverseOperator] = semOp match {
+     case so: Invertible =>
+       val io = new InverseOperator(synOp) {
+         def unapply(l: OMLIT): Option[List[OMLIT]] = {
+            val v = l match {
+              case retType(v) => v
+              case _ => return None
+            }
+            val uargs = semTp.args.zipWithIndex map {case (t,i) => new UnknownArg(t,i)}
+            val r = so.invert(uargs, v) 
+            if (r contains true) {
+              // both lists have length arity
+              val args = (argTypes zip uargs) map {case (atp,ua) =>
+                // .get defined because so.invert succeeded
+                // .of defined because only valid solutions are filled in
+                atp.of(ua.getSolution.get)
+              }
+              Some(args)
+            } else None
+         }
+       }
+       Some(io)
+     case _ => None
+   }
+   
    /** the solution rule if the semantic operator is invertible */
-   //TODO pragmatic applications
-   def getSolutionRule: Option[SolutionRule] = semOp match {
+   private def getSolutionRule: Option[SolutionRule] = semOp match {
      case so: Invertible =>
        val sr = new ValueSolutionRule(synOp) {
          def applicable(t: Term) = t match {
-           case OMA(OMS(`synOp`), args) if args.length == arity =>
-             val nonlits = args.zipWithIndex.filterNot(_._1.isInstanceOf[OMLIT])
-             nonlits match {
-               case (_,i)::Nil => Some(i)
-               case _ => None
-             }
+           case OMA(f,args) =>
+             val comps = f::args
+             if (comps.startsWith(synTp.under ::: List(OMS(synOp)))) {
+               val effectiveArgs = args.drop(synTp.under.length+1) 
+               if (effectiveArgs.length == arity) {
+                 val nonlits = effectiveArgs.zipWithIndex.filterNot(_._1.isInstanceOf[OMLIT])
+                 nonlits match {
+                   case (_,i)::Nil => Some(i)
+                   case _ => None
+                 }
+               } else None
+             } else None
            case _ => None
          }
          def apply(j: Equality): Option[(Equality,String)] = {
@@ -90,7 +130,8 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
              case retType(v) => v
              case _ => return None
            }
-           val OMA(_, args) = j.tm1
+           val OMA(_, allArgs) = j.tm1
+           val args = allArgs.drop(synTp.under.length)
            val ukArgs = args.zipWithIndex map {
              case (l: OMLIT, p) => KnownArg(l.value, p)
              case (_, p) => new UnknownArg(semTp.args(p), p)
@@ -122,7 +163,7 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
      case _ => None
    }
 
-   override def providedRules = super.providedRules ::: getSolutionRule.toList
+   override def providedRules = super.providedRules ::: getSolutionRule.toList ::: getInversionRule.toList
 }
 
 object RealizedOperator {
@@ -135,6 +176,7 @@ object RealizedOperator {
 
 /**
  *  counterpart to a [[RealizedOperator]] for the partial inverse
+ *  This is also possible if head is injective. See [[lf.SolutionRules]] for the non-injective case.
  */
 abstract class InverseOperator(val head: GlobalName) extends UOMRule {
    /** takes the result of applying 'head' and returns the list of arguments */

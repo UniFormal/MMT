@@ -72,9 +72,10 @@ class UniqueGraph(lib: Lookup) extends LabeledHashRelation[Term,Term] {
       val morphN = Morph.simplify(morph)(lib)
       val current = apply(fromN,toN)
       current foreach {c =>
-        if (Morph.equal(c, morphN, from)(lib))
+        // note that Library may instantiate this with itself, i.e., local lookup
+        if (Morph.equal(c, morphN, from)(lib)) {
           return
-        else
+        } else
           throw AlreadyDefined(from, to, c, morphN)
       }
       super.update(fromN, toN, morphN)
@@ -106,23 +107,19 @@ class ThinGeneratedCategory(lib: Lookup) {
       // TODO: decompose links into complex theories
       from match {
          case OMPMOD(_, _) =>
-            //TODO handle args
-            val existsAlready = impl(from,to).isDefined
-            // if existsAlready == true, this will check equality and throw exception if inequal
-            direct(from, to) = morph
-            if (! existsAlready) {
-               impl  (from, to) = morph
-               (impl into from) foreach {
-                  case (f,m) =>
-                    impl(f,to) = OMCOMP(m, morph)
-                    (impl outOf to) foreach {
-                        case (t,m2) => impl(f, t) = OMCOMP(m, morph, m2)
-                    }
-               }
-               (impl outOf to) foreach {
-                  case (t,m) => impl(from, t) = OMCOMP(morph, m)
-               }
-            }
+             //TODO handle args
+             direct(from, to) = morph
+             impl(from, to) = morph // if a morphism already exists, this will check equality and throw exception if inequal
+             (impl into from) foreach {
+                case (f,m) =>
+                  impl(f,to) = OMCOMP(m, morph)
+                  (impl outOf to) foreach {
+                      case (t,m2) => impl(f, t) = OMCOMP(m, morph, m2)
+                  }
+             }
+             (impl outOf to) foreach {
+                case (t,m) => impl(from, t) = OMCOMP(morph, m)
+             }
          case ComplexTheory(cont) =>
             cont.getIncludes.foreach {i => update(OMMOD(i), to, morph)}
          case TUnion(ts) => ts.foreach {t => update(t, to, morph)}

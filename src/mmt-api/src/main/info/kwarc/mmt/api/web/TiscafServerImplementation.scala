@@ -77,7 +77,7 @@ trait TiscafServerImplementation extends HServer with ServerImplementation {
   }
 
   /** stop the server; for some reason this throws IOException which we catch here */
-  override def stop: Unit = {
+  override def stop {
     try {
       super.stop
     } catch {

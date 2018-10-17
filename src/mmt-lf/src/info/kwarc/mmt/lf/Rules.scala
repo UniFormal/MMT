@@ -125,39 +125,33 @@ object StandardArgumentChecker extends ArgumentChecker {
  *
  * This rule implements currying and all arguments at once
  */
-class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.path, OfType.path) {
-   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule(Apply.path, OfType.path) {
+   def apply(solver: Solver, tm: Term, tpO: Option[Term], covered: Boolean)(implicit stack: Stack, history: History) : (Option[Term], Option[Boolean]) = {
       // calling Beta first could make this rule more reusable because it would avoid inferring the type of a possibly large lambda
 
-      // auxiliary function that handles one argument at a time
-      def iterate(fT: Term, args: List[Term]): Option[Term] = {
-         (fT,args) match {
+      /* inspects the function type to extract the expected types of the arguments
+       * @param retType the type after applying to previous arguments
+       * @param args the remaining arguments
+       * @param argTypes the types of the previous arguments (reverse order)
+       * @return the types of all arguments 
+       */
+      def iterate(retType: Term, args: List[Term], argTypes: List[Term]): Option[(List[Term],Term)] = {
+         (retType,args) match {
            case (_, Nil) =>
-             history += "no arguments, type is: " + solver.presentObj(fT)
-             Some(fT)
+             Some((argTypes.reverse,retType))
            case (Pi(x,a,b), t::rest) =>
-              history += "function type is: " + solver.presentObj(fT)
-              history += "argument is: " + solver.presentObj(t)
-              val check = conforms(solver)(t, a, covered)(stack, history + "checking argument")
-              if (check) {
-                 history += "substituting argument in return type"
-                 // substitute for x and newly-solved unknowns (as solved by conforms)
-                 val bS = solver.substituteSolution(b ^? (x/t))
-                 iterate(bS, rest)
-              } else {
-                history += "argument check did not succeed: " + solver.presentObj(t) + ":" + solver.presentObj(a) + ", giving up for now"
-                None
-              }
+              val bS = b ^? (x/t)
+              iterate(bS, rest, a::argTypes)
            /*case ApplyGeneral(OMV(u), _) =>
               history += "does not look like a function type at this point"
               None*/
            case _ =>
-              val fTPi = Common.makePi(solver, fT)
-              if (fTPi != fT)
-                 iterate(fTPi, args)
+              val rTPi = Common.makePi(solver, retType)
+              if (rTPi != retType)
+                 iterate(rTPi, args, argTypes)
               else {
                 val unks = solver.getUnsolvedVariables
-                if (fTPi.freeVars.exists(unks.isDeclared)) {
+                if (rTPi.freeVars.exists(unks.isDeclared)) {
                    // this might be convertible into a function type once the unknown variable is solved
                    history += "does not look like a function type at this point"
                    solver.error("this is not a function type (type level rewriting is not supported)")
@@ -170,19 +164,43 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
       }
       tm match {
          case ApplySpine(f,args) =>
-            history += "inferring type of function " + solver.presentObj(f)
-            val fTOpt = solver.inferType(f, covered)(stack, history.branch)
+            val fTOpt = solver.inferType(f, covered)(stack, history + ("inferring type of function " + solver.presentObj(f)))
             fTOpt match {
               case Some(fT) =>
-                iterate(fT, args)
+                history += "function is " + solver.presentObj(f) + " of type " + solver.presentObj(fT)
+                iterate(fT, args, Nil) match {
+                  case Some((argTypes,tmI)) =>
+                    // It is not clear whether it is better to type-check the return type or the arguments first.
+                    // Conceivably the latter allows solving more unknowns early and localize errors.
+                    // But it can also introduce complex terms early, thus slowing down (factor 2  in experiments) checking and 
+                    // even lead to failures where beta-reductions substitutions to the arguments of unknowns.
+                    // Using tryToCheckWithoutDelay instead of check here avoids the latter but not the former.
+                    // Therefore, the early check of the type is skipped. Future experiments may find better heuristics.
+                    //val resCheckResult = tpO flatMap {tp =>
+                    //   solver.check(Subtyping(stack, tmI, tp))(history + "checking return type against expected type")
+                    //}
+                    val resCheckResult: Option[Boolean] = None
+                    // check the arguments
+                    // open question: should later arguments still be ckeched if an error is found?
+                    val argCheckResult = (args zip argTypes).zipWithIndex forall {case ((t,a),i) =>
+                      val aS = solver.substituteSolution(a) // previous checks may have solved some unknowns
+                      conforms(solver)(t, aS, covered)(stack, history + ("checking argument " + (i+1)))
+                    }
+                    // no point in returning a positive check result if this is internally ill-typed
+                    val checkResult = resCheckResult map {r => r && argCheckResult}
+                    // we return the inferred type and (if expected type provided) the type check result
+                    val tmIS = solver.substituteSolution(tmI)
+                    (Some(tmIS), checkResult)
+                  case None => (None, None)
+                }
               case None =>
                 history += "failed"
                 //TODO commented out because it looks redundant, check if it's ever helpful
                 //args.foreach {t => solver.inferType(t)(stack, history.branch)} // inference of the argument may solve some variables
-                None
+                (None,None)
             }
          case _ =>
-            None // should be impossible
+            (None,None) // should be impossible
       }
    }
 }
@@ -313,11 +331,14 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
            }
          case(OMS(p),ls) =>
            val dfO = solver.lookup.getConstant(p).df
-           if (dfO.isDefined) reduce(dfO.get,args)
-           else if (reduced)
-             Simplify(ApplySpine(f,args : _*))
-           else
-             Simplifiability.NoRecurse
+           dfO match {
+             case Some(df) => reduce(df,args)
+             case None =>
+               if (reduced)
+                 Simplify(ApplySpine(f,args : _*))
+               else
+                 Simplifiability.NoRecurse
+           }
          case _ =>
             /*// simplify f recursively to see if it becomes a Lambda
             val fS = solver.simplify(f)

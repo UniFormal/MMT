@@ -197,6 +197,8 @@ class SimplificationRuleGenerator extends ChangeListener {
         v = outer(before, t, after)
   */
   private def generateSolutionRule(c: Constant, names: OuterInnerNames, rhs: Term) {
+     // TODO obtain implicit arguments of outer in terms of arguments of inner, currently only trivial case handled
+     if (names.implArgsOuter.nonEmpty) return
      rhs match {
         // rhs must be a variable
         case OMV(v) =>
@@ -311,8 +313,7 @@ class GeneratedDepthRule(val from: Constant, desc: String, names: OuterInnerName
  * @param aftPositions the positions of the names.after in names.inside
  */
 class GeneratedSolutionRule(from: Constant, desc: String, names: OuterInnerNames,
-                            vPosition: Int, bfrPositions: List[Int], aftPositions: List[Int])
-   extends ValueSolutionRule(names.inner) {
+                            vPosition: Int, bfrPositions: List[Int], aftPositions: List[Int]) extends ValueSolutionRule(names.inner) {
    override def toString = desc
    def applicable(t: Term) : Option[Int] = t match {
       case ApplySpine(OMS(this.head), args) =>
@@ -328,7 +329,7 @@ class GeneratedSolutionRule(from: Constant, desc: String, names: OuterInnerNames
          val before = bfrPositions.map(i => explArgs(i))
          val after  = aftPositions.map(i => explArgs(i))
          val t      = explArgs(vPosition)
-         // TODO generate new unknowns for the implicit arguments of outer
+         // TODO build implicit arguments of outer (currently guaranteed to be empty)
          val inverted = ApplyGeneral(OMS(names.outer), before ::: j.tm2 :: after)
          Some((Equality(j.stack, inverted, t, None), "inverting " + names.inner.name))
    }

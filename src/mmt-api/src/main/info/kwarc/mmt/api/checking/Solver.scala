@@ -518,8 +518,9 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     * precondition: value is well-typed if the the overall check succeeds
     */
    protected def solveType(name: LocalName, value: Term)(implicit history: History) : Boolean = {
-      log("solving type of " + name + " as " + presentObj(value))
-      history += "solving type of " + name + " as " + value
+      lazy val msg = "solving type of " + name + " as " + presentObj(value) 
+      log(msg)
+      history += msg
       val newSolution = simplify(substituteSolution(value))(Stack.empty, history)
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.tp.isDefined) {
@@ -580,7 +581,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    protected def typeCheckSolution(vd: VarDecl)(implicit history: History): Boolean = {
       (vd.tp, vd.df) match {
          case (Some(FreeOrAny(tpCon,tp)), Some(FreeOrAny(dfCon,df))) =>
-           val eqCon = check(EqualityContext(Stack.empty, tpCon, dfCon, true))(history + "checking solution of metavariable against solved type")
+           val eqCon = check(EqualityContext(Stack.empty, tpCon, dfCon, true))(history + "checking equality of contexts of solution of of metavariable and type")
+           if (!eqCon) return false
            val subs = (tpCon alpha dfCon).getOrElse(return false)
            check(Typing(Stack(tpCon), df ^? subs, tp))(history + "checking solution of metavariable against solved type")
          case _ => true

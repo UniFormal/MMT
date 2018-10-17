@@ -1,7 +1,6 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.NotFound
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import symbols._
@@ -101,8 +100,10 @@ object Morph {
                   // check if p contains an assignment to t (will fail if cod = p.from)
                   lib.getO(pt) match {
                     case Some(l: DefinedStructure) =>
-                      // restrict l to t
-                      result ::= l.df
+                      // restrict m to t
+                      val mR = l.df
+                      if (!isInclude(mR)) // the smaller we keep the codomain, the better
+                         result ::= mR
                     case _ =>
                       result ::= m
                   }
@@ -110,8 +111,8 @@ object Morph {
                   result ::= m
               }
             case OMIDENT(t) =>
-              // an identity is needed only at the beginning because it defines the codomain
-              if (result.nonEmpty) {
+              // an identity is needed only at the beginning because it defines the domain
+              if (result.isEmpty) {
                 result ::= m
               }
             case OMStructuralInclude(from,to) =>
@@ -201,8 +202,7 @@ object Morph {
    */
   def equal(a: Term, b: Term, from: Term)(implicit lib: Lookup): Boolean = {
     if (a hasheq b) return true // optimization
-    val aS = simplify(OMCOMP(OMIDENT(from),a))
-    val bS = simplify(OMCOMP(OMIDENT(from),a))
+    val List(aS,bS) = List(a,b) map {m => simplify(OMCOMP(OMIDENT(from),m))}
     aS == bS
   }
 }
