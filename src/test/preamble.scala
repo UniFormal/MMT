@@ -132,12 +132,3 @@ abstract class MagicTest(prefixes : String*) extends Test(
   true,
   MagicTest.logfile.map(_.toString)
 )
-
-abstract class MichaelTest(prefixes: String*) extends Test(
-  "/home/michael/content/",
-  prefixes.toList,
-  "",
-  Some(8080),
-  true,
-  None
-)
