@@ -8,7 +8,7 @@ package info.kwarc.mmt.mathhub
   */
 
 
-import info.kwarc.mmt.api.utils.{JSON, JSONConverter, JSONObjectBuffer}
+import info.kwarc.mmt.api.utils._
 
 /** anything returned by the API */
 trait IResponse {
@@ -53,8 +53,8 @@ trait IGroupItem extends IAPIObjectItem {
   def toJSONBuffer: JSONObjectBuffer = {
     val buffer = new JSONObjectBuffer
 
-    buffer.add("title", title)
-    buffer.add("teaser", teaser)
+    buffer.add("title", JSONString(title))
+    buffer.add("teaser", JSONString(teaser))
 
     buffer
   }
@@ -82,9 +82,9 @@ case class IGroup(
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("description", description)
-    buffer.add("responsible", responsible)
-    buffer.add("archives", archives)
+    buffer.add("description", JSONString(description))
+    buffer.add("responsible", JSONArray(responsible.map(JSONString): _*))
+    buffer.add("archives", JSONArray(archives.map(_.toJSON):_*))
 
     buffer
   }
@@ -113,8 +113,8 @@ trait IArchiveItem extends IAPIObjectItem {
   def toJSONBuffer: JSONObjectBuffer = {
     val buffer = new JSONObjectBuffer
 
-    buffer.add("title", title)
-    buffer.add("teaser", teaser)
+    buffer.add("title", JSONString(title))
+    buffer.add("teaser", JSONString(teaser))
 
     buffer
   }
@@ -144,9 +144,9 @@ case class IArchive(
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("description", description)
-    buffer.add("responsible", responsible)
-    buffer.add("narrativeRoot", narrativeRoot)
+    buffer.add("description", JSONString(description))
+    buffer.add("responsible", JSONArray(responsible.map(JSONString):_*))
+    buffer.add("narrativeRoot", narrativeRoot.toJSON)
 
     buffer
   }
@@ -196,7 +196,7 @@ case class IDocument(
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("decls", decls)
+    buffer.add("decls", JSONArray(decls.map(_.toJSON):_*))
 
     buffer
   }
@@ -238,8 +238,8 @@ case class IOpaqueElement(
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("contentFormat", contentFormat)
-    buffer.add("content", content)
+    buffer.add("contentFormat", JSONString(contentFormat))
+    buffer.add("content", JSONString(content))
 
     buffer
   }
@@ -263,7 +263,7 @@ trait IModuleItem extends IAPIObjectItem {
   def toJSONBuffer: JSONObjectBuffer = {
     val buffer = new JSONObjectBuffer
 
-    buffer.add("name", name)
+    buffer.add("name", JSONString(name))
 
     buffer
   }
@@ -301,8 +301,8 @@ trait IModule extends IModuleItem with IReferencable {
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("presentation", presentation)
-    buffer.add("source", source)
+    buffer.add("presentation", JSONString(presentation))
+    buffer.add("source", source.map(JSONString).getOrElse(JSONNull))
 
     buffer
   }
@@ -323,7 +323,7 @@ case class ITheory(
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("meta", meta)
+    buffer.add("meta", meta.map(_.toJSON).getOrElse(JSONNull))
 
     buffer
   }
@@ -345,8 +345,8 @@ case class IView(
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("domain", domain)
-    buffer.add("codomain", codomain)
+    buffer.add("domain", domain.toJSON)
+    buffer.add("codomain", codomain.toJSON)
 
     buffer
   }
@@ -364,8 +364,8 @@ case class IMMTVersionInfo(
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = new JSONObjectBuffer
 
-    buffer.add("versionNumber", versionNumber)
-    buffer.add("buildDate", buildDate)
+    buffer.add("versionNumber", JSONString(versionNumber))
+    buffer.add("buildDate", buildDate.map(JSONString).getOrElse(JSONNull))
 
     buffer
   }
@@ -401,11 +401,11 @@ trait IAPIObjectItem extends IResponse {
     val buffer = toJSONBuffer
 
     // add shared attributes
-    buffer.add("kind", kind)
-    buffer.add("ref", ref)
-    buffer.add("id", id)
-    buffer.add("name", name)
-    buffer.add("parent", parent)
+    buffer.add("kind", JSONString(kind))
+    buffer.add("ref", JSONBoolean(ref))
+    buffer.add("id", JSONString(id))
+    buffer.add("name", JSONString(name))
+    buffer.add("parent", parent.map(_.toJSON).getOrElse(JSONNull))
 
     buffer.result()
   }
@@ -414,10 +414,4 @@ trait IAPIObjectItem extends IResponse {
 object IAPIObjectItem {
   type HTML = String
   type URI = String
-
-  /** so that we can convert all the things into JSON */
-  implicit def converter[T <: IResponse]: JSONConverter[T] = new JSONConverter[T] {
-    def toJSON(obj: T): JSON = obj.toJSON
-    def fromJSONOption(j: JSON): Option[T] = None
-  }
 }

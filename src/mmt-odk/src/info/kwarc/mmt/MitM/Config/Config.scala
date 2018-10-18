@@ -19,8 +19,11 @@ object MitMConfig {
   def apply(json: JSONObject): MitMConfig = {
     val parser = new JSONObjectParser(json)
 
-    implicit val converter: JSONConverter[MitMSystemLocation] = MitMSystemLocation
-    MitMConfig(parser.take("gap"), parser.take("singular"), parser.take("sage"))
+    MitMConfig(
+      MitMSystemLocation(parser.take[JSONString]("gap").value),
+      MitMSystemLocation(parser.take[JSONString]("singular").value),
+      MitMSystemLocation(parser.take[JSONString]("sage").value)
+    )
   }
 }
 
@@ -28,7 +31,7 @@ object MitMConfig {
 case class MitMSystemLocation(hostname: String, port: Int) {
   def toLocation: String = hostname + (if(port != 26133) s":$port" else "")
 }
-object MitMSystemLocation extends JSONConverter[MitMSystemLocation] {
+object MitMSystemLocation {
   def toJSON(obj: MitMSystemLocation): JSON = JSONString(obj.hostname + ":" + obj.port)
   def fromJSONOption(j: JSON): Option[MitMSystemLocation] = j match {
     case JSONString(s) => Some(apply(s))

@@ -20,10 +20,10 @@ class OMJSONCoding extends OMCoding[JSON] {
         val parser = new JSONObjectParser(o)
 
         val omel = decodeExpression(parser.take[JSON]("object"))
-        val version = parser.takeO[String]("version")
+        val version = parser.takeO[JSONString]("version").map(_.value)
 
-        val id = parser.takeO[String]("id")
-        val cdbase = parser.takeO[String]("cdbase").map(URI.apply)
+        val id = parser.takeO[JSONString]("id").map(_.value)
+        val cdbase = parser.takeO[JSONString]("cdbase").map(_.value).map(URI.apply)
 
         OMObject(omel, version, id, cdbase)
       case _ =>
@@ -58,7 +58,7 @@ class OMJSONCoding extends OMCoding[JSON] {
         val pairs = decodeAttributionPairs(parser.take[JSON]("attributes").asInstanceOf[JSONArray])
         val value = decodeVar(parser.take[JSON]("object"))
 
-        val id = parser.takeO[String]("id")
+        val id = parser.takeO[JSONString]("id").map(_.value)
 
         OMAttVar(pairs, value, id)
       }
@@ -69,20 +69,20 @@ class OMJSONCoding extends OMCoding[JSON] {
   }
 
   def decodeAnyVal(json : JSON): OMAnyVal = decodeAnyValInt(new JSONObjectParser(json.asInstanceOf[JSONObject]))
-  private def decodeAnyValInt(parser: JSONObjectParser): OMAnyVal = parser.take[String]("kind") match {
+  private def decodeAnyValInt(parser: JSONObjectParser): OMAnyVal = parser.take[JSONString]("kind").value match {
     case "OMR" =>
-      val href = URI(parser.take[String]("href"))
-      val id = parser.takeO[String]("id")
+      val href = URI(parser.take[JSONString]("href").value)
+      val id = parser.takeO[JSONString]("id").map(_.value)
 
       OMReference(href, id)
     // Basic Elements
     case "OMI" =>
-      val id = parser.takeO[String]("id")
+      val id = parser.takeO[JSONString]("id").map(_.value)
 
-      lazy val integer = parser.takeO[Int]("integer").map(BigInt(_))
-      lazy val decimalInteger = parser.takeO[String]("decimalInteger").map(s => BigInt(s))
-      lazy val hexInteger = parser.takeO[String]("hexInteger").map(
-        s => BigInt(java.lang.Long.parseUnsignedLong(s.toLowerCase, 16))
+      lazy val integer = parser.takeO[JSONInt]("integer").map(i => BigInt(i.value))
+      lazy val decimalInteger = parser.takeO[JSONString]("decimalInteger").map(s => BigInt(s.value))
+      lazy val hexInteger = parser.takeO[JSONString]("hexInteger").map(
+        s => BigInt(java.lang.Long.parseUnsignedLong(s.value.toLowerCase, 16))
       )
 
       val value = integer.getOrElse(decimalInteger.getOrElse(hexInteger.getOrElse(throw new Error("Invalid integer"))))
@@ -90,12 +90,12 @@ class OMJSONCoding extends OMCoding[JSON] {
       OMInteger(value, id)
 
     case "OMF" =>
-      val id = parser.takeO[String]("id")
+      val id = parser.takeO[JSONString]("id").map(_.value)
 
-      lazy val float = parser.takeO[Double]("float")
-      lazy val decimal = parser.takeO[String]("decimal").map(s => s.trim.toDouble)
-      lazy val hexadecimal = parser.takeO[String]("hexadecimal").map(
-        s => OMCoding.hex2Double(s.trim)
+      lazy val float = parser.takeO[JSONFloat]("float").map(_.value)
+      lazy val decimal = parser.takeO[JSONString]("decimal").map(s => s.value.trim.toDouble)
+      lazy val hexadecimal = parser.takeO[JSONString]("hexadecimal").map(
+        s => OMCoding.hex2Double(s.value.trim)
       )
 
       val value = float.getOrElse(decimal.getOrElse(hexadecimal.getOrElse(throw new Error("invalid float"))))
@@ -103,41 +103,41 @@ class OMJSONCoding extends OMCoding[JSON] {
       OMFloat(value, id)
 
     case "OMSTR" =>
-      val id = parser.takeO[String]("id")
-      val text = parser.take[String]("string")
+      val id = parser.takeO[JSONString]("id").map(_.value)
+      val text = parser.take[JSONString]("string").value
 
       OMString(text, id)
 
     case "OMB" =>
-      val id = parser.takeO[String]("id")
+      val id = parser.takeO[JSONString]("id").map(_.value)
 
-      lazy val base64 = parser.takeO[String]("base64").map(s => OMCoding.hex2Bytes(s))
-      lazy val bytes = parser.takeO[List[Int]]("bytes").map(ary => ary.map(_.toByte))
+      lazy val base64 = parser.takeO[JSONString]("base64").map(s => OMCoding.hex2Bytes(s.value))
+      lazy val bytes = parser.takeO[JSONArray]("bytes").map(ary => ary.values.map(_.asInstanceOf[JSONInt].value.toByte))
 
       val value = base64.getOrElse(bytes.getOrElse(throw new Error("invalid bytes")))
 
-      OMBytes(value, id)
+      OMBytes(value.toList, id)
 
     case "OMS" =>
-      val name = parser.take[String]("name")
-      val cd = parser.take[String]("cd")
+      val name = parser.take[JSONString]("name").value
+      val cd = parser.take[JSONString]("cd").value
 
-      val id = parser.takeO[String]("id")
-      val cdbase = parser.takeO[String]("cdbase").map(URI.apply)
+      val id = parser.takeO[JSONString]("id").map(_.value)
+      val cdbase = parser.takeO[JSONString]("cdbase").map(s => URI.apply(s.value))
 
       OMSymbol(name, cd, id, cdbase)
 
     case "OMV" =>
-      val name = parser.take[String]("name")
-      val id = parser.takeO[String]("id")
+      val name = parser.take[JSONString]("name").value
+      val id = parser.takeO[JSONString]("id").map(_.value)
 
       OMVariable(name, id)
 
     // Derived Elements
     case "OMFOREIGN" =>
-      val id = parser.takeO[String]("id")
-      val cdbase = parser.takeO[String]("cdbase").map(URI.apply)
-      val encoding = parser.takeO[String]("encoding")
+      val id = parser.takeO[JSONString]("id").map(_.value)
+      val cdbase = parser.takeO[JSONString]("cdbase").map(s => URI(s.value))
+      val encoding = parser.takeO[JSONString]("encoding").map(_.value)
 
       val obj = parser.take[JSON]("object")
 
@@ -151,18 +151,18 @@ class OMJSONCoding extends OMCoding[JSON] {
 
     // Compound elements
     case "OMA" =>
-      val id = parser.takeO[String]("id")
-      val cdbase = parser.takeO[String]("cdbase").map(URI.apply)
+      val id = parser.takeO[JSONString]("id").map(_.value)
+      val cdbase = parser.takeO[JSONString]("cdbase").map(s => URI(s.value))
 
       val elem = decodeExpression(parser.take[JSON]("applicant"))
-      val args = parser.takeO[List[JSON]]("arguments").getOrElse(List())
+      val args = parser.takeO[JSONArray]("arguments").map(_.values.toList).getOrElse(List())
         .map(decodeExpression)
 
       OMApplication(elem, args, id, cdbase)
 
     case "OMATTR" =>
-      val id = parser.takeO[String]("id")
-      val cdbase = parser.takeO[String]("cdbase").map(URI.apply)
+      val id = parser.takeO[JSONString]("id").map(_.value)
+      val cdbase = parser.takeO[JSONString]("cdbase").map(s => URI(s.value))
 
       val pairs = decodeAttributionPairs(parser.take[JSON]("attributes").asInstanceOf[JSONArray])
       val obj = decodeExpression(parser.take[JSON]("object"))
@@ -170,8 +170,8 @@ class OMJSONCoding extends OMCoding[JSON] {
       OMAttribution(pairs, obj, id, cdbase)
 
     case "OMBIND" =>
-      val id = parser.takeO[String]("id")
-      val cdbase = parser.takeO[String]("cdbase").map(URI.apply)
+      val id = parser.takeO[JSONString]("id").map(_.value)
+      val cdbase = parser.takeO[JSONString]("cdbase").map(s => URI(s.value))
 
       val binder = decodeExpression(parser.take[JSON]("binder"))
       val variables = decodeBindVariables(parser.take[JSON]("variables").asInstanceOf[JSONArray])
@@ -180,11 +180,11 @@ class OMJSONCoding extends OMCoding[JSON] {
       OMBinding(binder, variables, obj, id, cdbase)
 
     case "OME" =>
-      val id = parser.takeO[String]("id")
-      val cdbase = parser.takeO[String]("cdbase").map(URI.apply)
+      val id = parser.takeO[JSONString]("id").map(_.value)
+      val cdbase = parser.takeO[JSONString]("cdbase").map(s => URI(s.value))
 
       val error = decodeSymbol(parser.take[JSON]("error"))
-      val params = parser.takeO[List[JSON]]("arguments").getOrElse(List())
+      val params = parser.takeO[JSONArray]("arguments").map(_.values.toList).getOrElse(List())
         .map(decodeAnyVal)
 
       OMError(error, params, id, cdbase)
@@ -203,11 +203,11 @@ class OMJSONCoding extends OMCoding[JSON] {
     case OMObject(omel, version, id, cdbase) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OMOBJ")
-      obj.addO("openmath", version)
+      obj.add("kind", JSONString("OMOBJ"))
+      obj.addO("openmath", version.map(JSONString))
 
-      obj.addO("id", id)
-      obj.addO("cdbase", cdbase.map(_.toString))
+      obj.addO("id", id.map(JSONString))
+      obj.addO("cdbase", cdbase.map(b => JSONString(b.toString)))
       obj.add("object", encodeNode(omel))
 
       obj.result()
@@ -227,9 +227,9 @@ class OMJSONCoding extends OMCoding[JSON] {
 
       pairs.foreach({ab =>
         val pair = new JSONListBuffer
-        pair += encode(ab._1)
-        pair += encode(ab._2)
-        ary += pair.result().asInstanceOf[JSON]
+        pair add encode(ab._1)
+        pair add encode(ab._2)
+        ary add pair.result().asInstanceOf[JSON]
       })
 
       ary.result()
@@ -240,8 +240,8 @@ class OMJSONCoding extends OMCoding[JSON] {
     case OMAttVar(pairs, value, id) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OMATTR")
-      obj.addO("id", id)
+      obj.add("kind", JSONString("OMATTR"))
+      obj.addO("id", id.map(JSONString))
       obj.add("attributes", encodeAttributionPairs(pairs).asInstanceOf[JSON])
       obj.add("object", encodeVar(value))
 
@@ -251,7 +251,7 @@ class OMJSONCoding extends OMCoding[JSON] {
     case OMBindVariables(vars, id) =>
       val ary = new JSONListBuffer
 
-      vars.foreach({ v => ary += encodeVar(v)})
+      vars.foreach({ v => ary add encodeVar(v)})
 
       ary.result()
   }
@@ -260,60 +260,60 @@ class OMJSONCoding extends OMCoding[JSON] {
     case OMReference(href, id) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OMR")
-      obj.add("href", href.toString)
-      obj.addO("id", id)
+      obj.add("kind", JSONString("OMR"))
+      obj.add("href", JSONString(href.toString))
+      obj.addO("id", id.map(JSONString))
 
       obj.result()
     // Basic Elements
     case OMInteger(int, id) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OMI")
-      obj.addO("id", id)
-      obj.add("decimal", int.toString(10))
+      obj.add("kind", JSONString("OMI"))
+      obj.addO("id", id.map(JSONString))
+      obj.add("decimal", JSONString(int.toString(10)))
 
       obj.result()
     case OMFloat(dbl, id) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OMF")
-      obj.addO("id", id)
-      obj.add("decimal", dbl.toString)
+      obj.add("kind", JSONString("OMF"))
+      obj.addO("id", id.map(JSONString))
+      obj.add("decimal", JSONString(dbl.toString))
 
       obj.result()
     case OMString(text, id) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OMSTR")
-      obj.addO("id", id)
-      obj.add("string", text)
+      obj.add("kind", JSONString("OMSTR"))
+      obj.addO("id", id.map(JSONString))
+      obj.add("string", JSONString(text))
 
       obj.result()
     case OMBytes(bytes, id) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OMB")
-      obj.addO("id", id)
-      obj.add("base64", OMCoding.bytes2Hex(bytes))
+      obj.add("kind", JSONString("OMB"))
+      obj.addO("id", id.map(JSONString))
+      obj.add("base64", JSONString(OMCoding.bytes2Hex(bytes)))
 
       obj.result()
     case OMSymbol(name, cd, id, cdbase) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OMS")
-      obj.add("name", name)
-      obj.add("cd", cd)
-      obj.addO("id", id)
-      obj.addO("cdbase", cdbase.map(_.toString))
+      obj.add("kind", JSONString("OMS"))
+      obj.add("name", JSONString(name))
+      obj.add("cd", JSONString(cd))
+      obj.addO("id", id.map(JSONString))
+      obj.addO("cdbase", cdbase.map(b => JSONString(b.toString)))
 
       obj.result()
     case OMVariable(name, id) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OMV")
-      obj.add("name", name)
-      obj.addO("id", id)
+      obj.add("kind", JSONString("OMV"))
+      obj.add("name", JSONString(name))
+      obj.addO("id", id.map(JSONString))
 
       obj.result()
 
@@ -321,10 +321,10 @@ class OMJSONCoding extends OMCoding[JSON] {
     case OMForeign(o, encoding, id, cdbase) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OMFOREIGN")
-      obj.addO("encoding", encoding)
-      obj.addO("id", id)
-      obj.addO("cdbase", cdbase.map(_.toString))
+      obj.add("kind", JSONString("OMFOREIGN"))
+      obj.addO("encoding", encoding.map(JSONString))
+      obj.addO("id", id.map(JSONString))
+      obj.addO("cdbase", cdbase.map(b => JSONString(b.toString)))
 
       o match {
         case a: OMAny =>
@@ -332,7 +332,7 @@ class OMJSONCoding extends OMCoding[JSON] {
         case j: JSON =>
           obj.add("foreign", j)
         case _ =>
-          obj.add("foreign", o.toString)
+          obj.add("foreign", JSONString(o.toString))
       }
 
       obj.result()
@@ -341,13 +341,13 @@ class OMJSONCoding extends OMCoding[JSON] {
     case OMApplication(elem, args, id, cdbase) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OMA")
-      obj.addO("id", id)
-      obj.addO("cdbase", cdbase.map(_.toString))
+      obj.add("kind", JSONString("OMA"))
+      obj.addO("id", id.map(JSONString))
+      obj.addO("cdbase", cdbase.map(b => JSONString(b.toString)))
       obj.add("applicant", encode(elem))
 
       val oargs = new JSONListBuffer
-      args.foreach { a => oargs += encode(a)}
+      args.foreach { a => oargs add encode(a)}
       obj.add("arguments", oargs.result().asInstanceOf[JSON])
 
       obj.result()
@@ -355,9 +355,9 @@ class OMJSONCoding extends OMCoding[JSON] {
     case OMAttribution(pairs, o, id, cdbase) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OMATTR")
-      obj.addO("id", id)
-      obj.addO("cdbase", cdbase.map(_.toString))
+      obj.add("kind", JSONString("OMATTR"))
+      obj.addO("id", id.map(JSONString))
+      obj.addO("cdbase", cdbase.map(b => JSONString(b.toString)))
 
       obj.add("attributes", encodeAttributionPairs(pairs).asInstanceOf[JSON])
       obj.add("object", encode(o))
@@ -366,9 +366,9 @@ class OMJSONCoding extends OMCoding[JSON] {
     case OMBinding(a, vars, c, id, cdbase) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OMBIND")
-      obj.addO("id", id)
-      obj.addO("cdbase", cdbase.map(_.toString))
+      obj.add("kind", JSONString("OMBIND"))
+      obj.addO("id", id.map(JSONString))
+      obj.addO("cdbase", cdbase.map(b => JSONString(b.toString)))
 
       obj.add("binder", encode(a))
       obj.add("variables", encodeBindVariables(vars).asInstanceOf[JSON])
@@ -378,14 +378,14 @@ class OMJSONCoding extends OMCoding[JSON] {
     case OMError(name, params, id, cdbase) =>
       val obj = new JSONObjectBuffer
 
-      obj.add("kind", "OME")
-      obj.addO("id", id)
-      obj.addO("cdbase", cdbase.map(_.toString))
+      obj.add("kind", JSONString("OME"))
+      obj.addO("id", id.map(JSONString))
+      obj.addO("cdbase", cdbase.map(b => JSONString(b.toString)))
 
       obj.add("error", encode(name))
 
       val pargs = new JSONListBuffer
-      params.foreach { a => pargs += encode(a)}
+      params.foreach { a => pargs add encode(a)}
       obj.add("arguments", pargs.result().asInstanceOf[JSON])
 
       obj.result()
