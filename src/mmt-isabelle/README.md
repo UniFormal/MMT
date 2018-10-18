@@ -20,6 +20,20 @@ The frozen snapshot https://isabelle.sketis.net/devel/Isabelle_03-Oct-2018
 should be available over some months; it corresponds to Isabelle/742c88258cf8.
 
 
+## Side-conditions and potential problems
+
+* Ubuntu Linux 18.04: the kernel update linux-image-4.15.0-36-generic introduces
+  a timing problem with socket communication in the Isabelle Prover IDE that
+  affects all Isabelle versions since 2013. Loading big sessions becomes very
+  slow. This can be avoided by downgrading to linux-image-4.15.0-34-generic or
+  by including the changeset Isabelle/6ededdc829bb.
+
+* Java 8: too many CPU cores (e.g. 20, 40, 80) degrade the performance to a
+  point where it is almost unusable. Java 11 works much better in this respect,
+  but requires a more recent Isabelle repository version
+  (e.g. Isabelle/9dabb405a3ba).
+
+
 ## Setup
 
 Isabelle/MMT is a command-line tool within the Isabelle system environment.
