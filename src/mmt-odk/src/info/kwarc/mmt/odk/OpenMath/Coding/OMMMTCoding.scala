@@ -118,13 +118,13 @@ class OMMMTCoding(default: => URI) extends OMCoding[Term] {
   // hacky support for binders with multiple bodies
   object BindingBody {
     // todo: adapt this
-    private val bindingAnd = OMS(Path.parseS("http://www.openmath.org/?OpenMath?Binding", NamespaceMap.empty))
+    private val multiBodyBinding = OMS(utils.mmt.mmtbase ? "OpenMath" ? "MultiBody")
     def apply(terms: List[Term]): Term = terms match {
       case List(term) => term
-      case _ => bindingAnd(terms:_*)
+      case _ => multiBodyBinding(terms:_*)
     }
     def unapply(tm: Term): Option[List[Term]] = tm match {
-      case OMA(`bindingAnd`, terms) => Some(terms)
+      case OMA(`multiBodyBinding`, terms) => Some(terms)
       case _ => Some(List(tm))
     }
   }
