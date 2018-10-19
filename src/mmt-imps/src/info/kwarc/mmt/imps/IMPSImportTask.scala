@@ -222,6 +222,49 @@ class IMPSImportTask(val controller  : Controller,
             if (ensembleSorts.isDefined) {
               assert(targetThys.isDefined)
               assert(targetMuls.isEmpty)
+
+              /* Translate all explicity listed sort pairs */
+
+              for (sortMapping <- ensembleSorts.get.sorts)
+              {
+                val sourceName : String = sortMapping.nm.s
+                val sourceSort : Term   = matchSort(IMPSAtomSort(sourceName),locateMathSymbolHome(sourceName,ensemble.baseTheory).get)
+
+                for (targetSort : ODefString <- sortMapping.sorts)
+                {
+                  var trgt : Either[IMPSSort,IMPSMathExp] = targetSort.o match
+                  {
+                    case scala.util.Right(srt_name) => scala.util.Left(IMPSAtomSort(srt_name.toString))
+                    case scala.util.Left((dfs,ime)) => assert(ime.isDefined) ; scala.util.Right(ime.get)
+                  }
+
+                  val target_term : Term = trgt match {
+                    case scala.util.Left(is)  => val q = locateMathSymbolHome(is.toString,target) ; assert(q.isDefined) ; matchSort(is,q.get)
+                    case scala.util.Right(im) => doMathExp(im,target,Nil)
+                  }
+
+                  val target_tp : Option[Term] = trgt match {
+                    case scala.util.Left(is) => Some(IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType)))
+                    case scala.util.Right(_) => None
+                  }
+
+                  val quelle : Option[DeclaredTheory] = locateMathSymbolHome(sourceName, source)
+                  assert(quelle.isDefined)
+
+                  val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(sourceName),Nil,target_tp,Some(target_term),None)
+                  if (tState.verbosity > 1)
+                  {
+                    val disp : String = targetSort.o match {
+                      case scala.util.Left((df,_)) => df.toString
+                      case scala.util.Right(xname) => xname.toString
+                    }
+                    println(" >  adding ensemble-instance sort-mapping: " + sourceName + " → " + disp)
+                  }
+
+                  controller add nu_sort_map
+                }
+              }
+
             }
 
             if (ensembleConsts.isDefined) {
